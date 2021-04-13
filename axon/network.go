@@ -246,20 +246,6 @@ func (nt *Network) UpdateExtFlags() {
 	}
 }
 
-// InitGinc initializes the Ge excitatory and Gi inhibitory conductance accumulation states
-// including ActSent and G*Raw values.
-// called at start of trial always (at layer level), and can be called optionally
-// when delta-based Ge computation needs to be updated (e.g., weights
-// might have changed strength)
-func (nt *Network) InitGInc() {
-	for _, ly := range nt.Layers {
-		if ly.IsOff() {
-			continue
-		}
-		ly.(AxonLayer).InitGInc()
-	}
-}
-
 // AlphaCycInitImpl handles all initialization at start of new input pattern, including computing
 // input scaling from running average activation etc.
 func (nt *Network) AlphaCycInitImpl() {
@@ -299,17 +285,17 @@ func (nt *Network) GScaleFmAvgAct() {
 // This basic version doesn't use the time info, but more specialized types do, and we
 // want to keep a consistent API for end-user code.
 func (nt *Network) CycleImpl(ltime *Time) {
-	nt.SendGDelta(ltime) // also does integ
+	nt.SendSpike(ltime) // also does integ
 	nt.AvgMaxGe(ltime)
 	nt.InhibFmGeAct(ltime)
 	nt.ActFmG(ltime)
 	nt.AvgMaxAct(ltime)
 }
 
-// SendGeDelta sends change in activation since last sent, if above thresholds
+// SendSpike sends change in activation since last sent, if above thresholds
 // and integrates sent deltas into GeRaw and time-integrated Ge values
-func (nt *Network) SendGDelta(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.SendGDelta(ltime) }, "SendGDelta")
+func (nt *Network) SendSpike(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SendSpike(ltime) }, "SendSpike")
 	nt.ThrLayFun(func(ly AxonLayer) { ly.GFmInc(ltime) }, "GFmInc   ")
 }
 
@@ -476,7 +462,7 @@ func (nt *Network) SizeReport() string {
 			pj := pji.(AxonPrjn).AsAxon()
 			ns := len(pj.Syns)
 			syn += ns
-			pmem := ns*int(unsafe.Sizeof(Synapse{})) + len(pj.GInc)*4 + len(pj.WbRecv)*int(unsafe.Sizeof(WtBalRecvPrjn{}))
+			pmem := ns*int(unsafe.Sizeof(Synapse{})) + len(pj.Gbuf)*4 + len(pj.WbRecv)*int(unsafe.Sizeof(WtBalRecvPrjn{}))
 			synMem += pmem
 			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(), ns, (datasize.ByteSize)(pmem).HumanReadable())
 		}

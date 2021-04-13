@@ -150,12 +150,8 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
 
-	// InitGInc initializes synaptic conductance increments -- optional
-	InitGInc()
-
-	// SendGDelta sends change in activation since last sent, to increment recv
-	// synaptic conductances G, if above thresholds
-	SendGDelta(ltime *Time)
+	// SendSpike sends spike to receivers
+	SendSpike(ltime *Time)
 
 	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
 	GFmInc(ltime *Time)
@@ -226,13 +222,14 @@ type AxonPrjn interface {
 	// the Send and Recv layers are reversed.
 	InitWtSym(rpj AxonPrjn)
 
-	// InitGInc initializes the per-projection synaptic conductance threadsafe increments.
-	// This is not typically needed (called during InitWts only) but can be called when needed
-	InitGInc()
+	// InitGbuf initializes the per-projection synaptic conductance buffers.
+	// This is not typically needed (called during InitWts, InitActs)
+	// but can be called when needed.
+	InitGbuf()
 
-	// SendGDelta sends the delta-activation from sending neuron index si,
-	// to integrate synaptic conductances on receivers
-	SendGDelta(si int, delta float32)
+	// SendSpike sends a spike from sending neuron index si,
+	// to add to buffer on receivers.
+	SendSpike(si int)
 
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc()

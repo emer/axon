@@ -1,16 +1,16 @@
-# Leabra in Go emergent
+# Axon in Go emergent
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/emer/leabra)](https://goreportcard.com/report/github.com/emer/leabra)
-[![GoDoc](https://godoc.org/github.com/emer/leabra?status.svg)](https://godoc.org/github.com/emer/leabra)
-[![Travis](https://travis-ci.com/emer/leabra.svg?branch=master)](https://travis-ci.com/emer/leabra)
+[![Go Report Card](https://goreportcard.com/badge/github.com/emer/axon)](https://goreportcard.com/report/github.com/emer/axon)
+[![GoDoc](https://godoc.org/github.com/emer/axon?status.svg)](https://godoc.org/github.com/emer/axon)
+[![Travis](https://travis-ci.com/emer/axon.svg?branch=master)](https://travis-ci.com/emer/axon)
 
-This is the Go implementation of the Leabra algorithm for biologically-based models of cognition, based on the [Go emergent](https://github.com/emer/emergent) framework (with optional Python interface).
+This is the Go implementation of the Axon algorithm for biologically-based models of cognition, based on the [Go emergent](https://github.com/emer/emergent) framework (with optional Python interface).
 
 See [Wiki Install](https://github.com/emer/emergent/wiki/Install) for installation instructions, and the [Wiki Rationale](https://github.com/emer/emergent/wiki/Rationale) and [History](https://github.com/emer/emergent/wiki/History) pages for a more detailed rationale for the new version of emergent, and a history of emergent (and its predecessors).
 
-See the [ra25 example](https://github.com/emer/leabra/blob/master/examples/ra25/README.md) for a complete working example (intended to be a good starting point for creating your own models), and any of the 26 models in the [Comp Cog Neuro sims](https://github.com/CompCogNeuro/sims) repository which also provide good starting points.  See the [etable wiki](https://github.com/emer/etable/wiki) for docs and example code for the widely-used etable data table structure, and the `family_trees` example in the CCN textbook sims which has good examples of many standard network representation analysis techniques (PCA, cluster plots, RSA).
+See the [ra25 example](https://github.com/emer/axon/blob/master/examples/ra25/README.md) for a complete working example (intended to be a good starting point for creating your own models), and any of the 26 models in the [Comp Cog Neuro sims](https://github.com/CompCogNeuro/sims) repository which also provide good starting points.  See the [etable wiki](https://github.com/emer/etable/wiki) for docs and example code for the widely-used etable data table structure, and the `family_trees` example in the CCN textbook sims which has good examples of many standard network representation analysis techniques (PCA, cluster plots, RSA).
 
-See [python README](https://github.com/emer/leabra/blob/master/python/README.md) and [Python Wiki](https://github.com/emer/emergent/wiki/Python) for info on using Python to run models.
+See [python README](https://github.com/emer/axon/blob/master/python/README.md) and [Python Wiki](https://github.com/emer/emergent/wiki/Python) for info on using Python to run models.
 
 # Current Status / News
 
@@ -20,17 +20,17 @@ See [python README](https://github.com/emer/leabra/blob/master/python/README.md)
 
 * 12/30/2019: Version 1.0.0 Released! -- [CCN textbook simulations](https://github.com/CompCogNeuro/sims) are done and `hip`, `deep` and `pbwm` variants are in place and robustly tested.
 
-* 3/2019: Python interface is up and running!  See the `python` directory in `leabra` for the [README](https://github.com/emer/leabra/blob/master/python/README.md) status and how to give it a try.  You can run the full `examples/ra25` code using Python, including the GUI etc.
+* 3/2019: Python interface is up and running!  See the `python` directory in `axon` for the [README](https://github.com/emer/axon/blob/master/python/README.md) status and how to give it a try.  You can run the full `examples/ra25` code using Python, including the GUI etc.
 
 # Design
 
-* `leabra` sub-package provides a clean, well-organized implementation of core Leabra algorithms and Network structures. More specialized modifications such as `DeepLeabra` or `PBWM` or `PVLV` are all (going to be) implemented as additional specialized code that builds on / replaces elements of the basic version.  The goal is to make all of the code simpler, more transparent, and more easily modified by end users.  You should not have to dig through deep chains of C++ inheritance to find out what is going on.  Nevertheless, the basic tradeoffs of code re-use dictate that not everything should be in-line in one massive blob of code, so there is still some inevitable tracking down of function calls etc.  The algorithm overview below should be helpful in finding everything.
+* `axon` sub-package provides a clean, well-organized implementation of core Axon algorithms and Network structures. More specialized modifications such as `DeepAxon` or `PBWM` or `PVLV` are all (going to be) implemented as additional specialized code that builds on / replaces elements of the basic version.  The goal is to make all of the code simpler, more transparent, and more easily modified by end users.  You should not have to dig through deep chains of C++ inheritance to find out what is going on.  Nevertheless, the basic tradeoffs of code re-use dictate that not everything should be in-line in one massive blob of code, so there is still some inevitable tracking down of function calls etc.  The algorithm overview below should be helpful in finding everything.
 
-* `ActParams` (in [act.go](https://github.com/emer/leabra/blob/master/leabra/act.go)), `InhibParams` (in [inhib.go](https://github.com/emer/leabra/blob/master/leabra/inhib.go)), and `LearnNeurParams` / `LearnSynParams` (in [learn.go](https://github.com/emer/leabra/blob/master/leabra/learn.go)) provide the core parameters and functions used, including the X-over-X-plus-1 activation function, FFFB inhibition, and the XCal BCM-like learning rule, etc.  This function-based organization should be clearer than the purely structural organization used in C++ emergent.
+* `ActParams` (in [act.go](https://github.com/emer/axon/blob/master/axon/act.go)), `InhibParams` (in [inhib.go](https://github.com/emer/axon/blob/master/axon/inhib.go)), and `LearnNeurParams` / `LearnSynParams` (in [learn.go](https://github.com/emer/axon/blob/master/axon/learn.go)) provide the core parameters and functions used, including the X-over-X-plus-1 activation function, FFFB inhibition, and the XCal BCM-like learning rule, etc.  This function-based organization should be clearer than the purely structural organization used in C++ emergent.
 
 * There are 3 main levels of structure: `Network`, `Layer` and `Prjn` (projection).  The network calls methods on its Layers, and Layers iterate over both `Neuron` data structures (which have only a minimal set of methods) and the `Prjn`s, to implement the relevant computations.  The `Prjn` fully manages everything about a projection of connectivity between two layers, including the full list of `Syanpse` elements in the connection.  There is no "ConGroup" or "ConState" level as was used in C++, which greatly simplifies many things.  The Layer also has a set of `Pool` elements, one for each level at which inhibition is computed (there is always one for the Layer, and then optionally one for each Sub-Pool of units (*Pool* is the new simpler term for "Unit Group" from C++ emergent).
 
-* The `NetworkStru` and `LayerStru` structs manage all the core structural aspects of things (data structures etc), and then the algorithm-specific versions (e.g., `leabra.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while then directly implementing the algorithm code.  Almost every step of computation has an associated method in `leabra.Layer`, so look first in [layer.go](https://github.com/emer/leabra/blob/master/leabra/layer.go) to see how something is implemented.  
+* The `NetworkStru` and `LayerStru` structs manage all the core structural aspects of things (data structures etc), and then the algorithm-specific versions (e.g., `axon.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while then directly implementing the algorithm code.  Almost every step of computation has an associated method in `axon.Layer`, so look first in [layer.go](https://github.com/emer/axon/blob/master/axon/layer.go) to see how something is implemented.  
 
 * Each structural element directly has all the parameters controlling its behavior -- e.g., the `Layer` contains an `ActParams` field (named `Act`), etc, instead of using a separate `Spec` structure as in C++ emergent.  The Spec-like ability to share parameter settings across multiple layers etc is instead achieved through a **styling**-based paradigm -- you apply parameter "styles" to relevant layers instead of assigning different specs to them.  This paradigm should be less confusing and less likely to result in accidental or poorly-understood parameter applications.  We adopt the CSS (cascading-style-sheets) standard where parameters can be specifed in terms of the Name of an object (e.g., `#Hidden`), the *Class* of an object (e.g., `.TopDown` -- where the class name TopDown is manually assigned to relevant elements), and the *Type* of an object (e.g., `Layer` applies to all layers).  Multiple space-separated classes can be assigned to any given element, enabling a powerful combinatorial styling strategy to be used.
 
@@ -42,14 +42,14 @@ func (nt *Network) InitActs() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(*Layer).InitActs() // ly is the emer.Layer interface -- (*Layer) converts to leabra.Layer
+		ly.(*Layer).InitActs() // ly is the emer.Layer interface -- (*Layer) converts to axon.Layer
 	}
 }
 ```
 
 * The emer interfaces are designed to support generic access to network state, e.g., for the 3D network viewer, but specifically avoid anything algorithmic.  Thus, they should allow viewing of any kind of network, including PyTorch backprop nets.
 
-* There is also a `leabra.LeabraLayer` and `leabra.LeabraPrjn` interface, defined in [leabra.go](https://github.com/emer/leabra/blob/master/leabra/leabra.go), which provides a virtual interface for the Leabra-specific algorithm functions at the basic level.  These interfaces are used in the base leabra code, so that any more specialized version that embeds the basic leabra types will be called instead.  See `deep` sub-package for implemented example that does DeepLeabra on top of the basic `leabra` foundation.
+* There is also a `axon.AxonLayer` and `axon.AxonPrjn` interface, defined in [axon.go](https://github.com/emer/axon/blob/master/axon/axon.go), which provides a virtual interface for the Axon-specific algorithm functions at the basic level.  These interfaces are used in the base axon code, so that any more specialized version that embeds the basic axon types will be called instead.  See `deep` sub-package for implemented example that does DeepAxon on top of the basic `axon` foundation.
 
 * Layers have a `Shape` property, using the `etensor.Shape` type, which specifies their n-dimensional (tensor) shape.  Standard layers are expected to use a 2D Y*X shape (note: dimension order is now outer-to-inner or *RowMajor* now), and a 4D shape then enables `Pools` ("unit groups") as hypercolumn-like structures within a layer that can have their own local level of inihbition, and are also used extensively for organizing patterns of connectivity.
 
@@ -57,19 +57,19 @@ func (nt *Network) InitActs() {
 
 There are several changes from the original C++ emergent implementation for how things are named now:
 * `Pool <- Unit_Group` -- A group of Neurons that share pooled inhibition.  Can be entire layer and / or sub-pools within a layer.
-* `AlphaCyc <- Trial` -- We are now distinguishing more clearly between network-level timing units (e.g., the 100 msec alpha cycle over which learning operates within posterior cortex) and environmental or experimental timing units, e.g., the `Trial` etc. Please see the [TimeScales](https://godoc.org/github.com/emer/leabra/leabra#TimeScales) type for an attempt to standardize the different units of time along these different dimensions.  The `examples/ra25` example uses trials and epochs for controlling the "environment" (such as it is), while the algorithm-specific code refers to AlphaCyc, Quarter, and Cycle, which are the only time scales that are specifically coded within the algorithm -- everything else is up to the specific model code.
+* `AlphaCyc <- Trial` -- We are now distinguishing more clearly between network-level timing units (e.g., the 100 msec alpha cycle over which learning operates within posterior cortex) and environmental or experimental timing units, e.g., the `Trial` etc. Please see the [TimeScales](https://godoc.org/github.com/emer/axon/axon#TimeScales) type for an attempt to standardize the different units of time along these different dimensions.  The `examples/ra25` example uses trials and epochs for controlling the "environment" (such as it is), while the algorithm-specific code refers to AlphaCyc, Quarter, and Cycle, which are the only time scales that are specifically coded within the algorithm -- everything else is up to the specific model code.
 
-# The Leabra Algorithm
+# The Axon Algorithm
 
-Leabra stands for *Local, Error-driven and Associative, Biologically Realistic Algorithm*, and it implements a balance between error-driven (backpropagation) and associative (Hebbian) learning on top of a biologically-based point-neuron activation function with inhibitory competition dynamics (either via inhibitory interneurons or an approximation thereof), which produce k-Winners-Take-All (kWTA) sparse distributed representations.  Extensive documentation is available from the online textbook: [Computational Cognitive Neuroscience](https://CompCogNeuro.org) which serves as a second edition to the original book: *Computational Explorations in Cognitive Neuroscience: Understanding
+Axon stands for *Local, Error-driven and Associative, Biologically Realistic Algorithm*, and it implements a balance between error-driven (backpropagation) and associative (Hebbian) learning on top of a biologically-based point-neuron activation function with inhibitory competition dynamics (either via inhibitory interneurons or an approximation thereof), which produce k-Winners-Take-All (kWTA) sparse distributed representations.  Extensive documentation is available from the online textbook: [Computational Cognitive Neuroscience](https://CompCogNeuro.org) which serves as a second edition to the original book: *Computational Explorations in Cognitive Neuroscience: Understanding
 the Mind by Simulating the Brain*, O'Reilly and Munakata, 2000,
 Cambridge, MA: MIT Press. [Computational Explorations..](http://psych.colorado.edu/~oreilly/comp_ex_cog_neuro.html)
 
 The name is pronounced like "Libra" and is intended to connote the *balance* of various different factors in an attempt to approach the "golden middle" ground between biological realism and computational efficiency and the ability to simulate complex cognitive function.
 
-The version of Leabra implemented here corresponds to version 8.5 of [C++ emergent (cemer)](https://github.com/emer/cemer).
+The version of Axon implemented here corresponds to version 8.5 of [C++ emergent (cemer)](https://github.com/emer/cemer).
 
-The basic activation dynamics of Leabra are based on standard electrophysiological principles of real neurons, and in discrete spiking mode we implement exactly the AdEx (adapting exponential) model of Gerstner and colleagues [Scholarpedia article on AdEx](https://www.scholarpedia.org/article/Adaptive_exponential_integrate-and-fire_model).  The basic `leabra` package implements the rate code mode (which runs faster and allows for smaller networks), which provides a very close approximation to the AdEx model behavior, in terms of a graded activation signal matching the actual instantaneous rate of spiking across a population of AdEx neurons.  We generally conceive of a single rate-code neuron as representing a microcolumn of roughly 100 spiking pyramidal neurons in the neocortex.  Conversion factors from biological units from AdEx to normalized units used in Leabra are in this [google sheet](https://docs.google.com/spreadsheets/d/1jn-NcXY4-y3pOw6inFOgPYlaQodrGIjcsAWkiD9f1FQ/edit?usp=sharing).
+The basic activation dynamics of Axon are based on standard electrophysiological principles of real neurons, and in discrete spiking mode we implement exactly the AdEx (adapting exponential) model of Gerstner and colleagues [Scholarpedia article on AdEx](https://www.scholarpedia.org/article/Adaptive_exponential_integrate-and-fire_model).  The basic `axon` package implements the rate code mode (which runs faster and allows for smaller networks), which provides a very close approximation to the AdEx model behavior, in terms of a graded activation signal matching the actual instantaneous rate of spiking across a population of AdEx neurons.  We generally conceive of a single rate-code neuron as representing a microcolumn of roughly 100 spiking pyramidal neurons in the neocortex.  Conversion factors from biological units from AdEx to normalized units used in Axon are in this [google sheet](https://docs.google.com/spreadsheets/d/1jn-NcXY4-y3pOw6inFOgPYlaQodrGIjcsAWkiD9f1FQ/edit?usp=sharing).
 
 The excitatory synaptic input conductance (`Ge` in the code, known as *net input* in artificial neural networks) is computed as an average, not a sum, over connections, based on normalized, sigmoidaly transformed weight values, which are subject to scaling on a connection-group level to alter relative contributions.  Automatic scaling is performed to
 compensate for differences in expected activity level in the different projections.  See section on [Input Scaling](#input-scaling) for details.
@@ -80,38 +80,75 @@ There is a single learning equation, derived from a very detailed model of spike
 
 Weights are subject to a contrast enhancement function, which compensates for the soft (exponential) weight bounding that keeps weights within the normalized 0-1 range.  Contrast enhancement is important for enhancing the selectivity of self-organizing learning, and generally results in faster learning with better overall results.  Learning operates on the underlying internal linear weight value.  Biologically, we associate the underlying linear weight value with internal synaptic factors such as actin scaffolding, CaMKII phosphorlation level, etc, while the contrast enhancement operates at the level of AMPA receptor expression.
 
-There are various extensions to the algorithm that implement special neural mechanisms associated with the prefrontal cortex and basal ganglia [PBWM](#pbwm), dopamine systems [PVLV](#pvlv), the [Hippocampus](#hippocampus), and predictive learning and temporal integration dynamics associated with the thalamocortical circuits [DeepLeabra](#deepleabra).  All of these are (will be) implemented as additional modifications of the core, simple `leabra` implementation, instead of having everything rolled into one giant hairball as in the original C++ implementation.
+There are various extensions to the algorithm that implement special neural mechanisms associated with the prefrontal cortex and basal ganglia [PBWM](#pbwm), dopamine systems [PVLV](#pvlv), the [Hippocampus](#hippocampus), and predictive learning and temporal integration dynamics associated with the thalamocortical circuits [DeepAxon](#deepaxon).  All of these are (will be) implemented as additional modifications of the core, simple `axon` implementation, instead of having everything rolled into one giant hairball as in the original C++ implementation.
 
+# Neural data for parameters
+
+* Brunel00: https://nest-simulator.readthedocs.io/en/nest-2.20.1/auto_examples/brunel_alpha_nest.html
+* SahHestrinNicoll90 -- actual data for AMPA, NMDA
+* XiangHuguenardPrince98a -- actual data for GABAa
+
+Axonal conduction delays:
+
+* http://www.scholarpedia.org/article/Axonal_conduction_delay 
+    + thalamocortical is very fast: 1.2 ms
+    + corticocortical axonal conduction delays in monkey average 2.3 ms (.5 to 8 range)
+    + corpus callosum (long distance) average around 10 ms
+    + Brunel00: 1.5 ms
+    
+AMPA rise, decay times:
+
+* SHN90: rise times 1-3ms -- recorded at soma -- reflect conductance delays
+* SHN90: decay times 4-8ms mostly
+* Brunel00: 0.5 ms -- too short!
+
+GABAa rise, decay times:
+
+* XHP98a: 0.5ms rise, 6-7ms decay
+
+# Implementation strategy
+
+* Prjn integrates conductances for each recv prjn
+* Send spike adds wt to ring buff at given offset
+* For all the spikes that arrive that timestep, increment G += wts
+* build in psyn with probability of failure -- needs to be sensitive to wt
+* then decay with tau
+* integrate all the G's in to cell body
+* support background balanced G, I current on cell body to diminish sensitivity!
+
+
+    
+    
 # Pseudocode as a LaTeX doc for Paper Appendix
 
 You can copy the mediawiki source of the following section into a file, and run [pandoc](https://pandoc.org/) on it to convert to LaTeX (or other formats) for inclusion in a paper.  As this wiki page is always kept updated, it is best to regenerate from this source -- very easy:
 
 ```bash
-curl "https://raw.githubusercontent.com/emer/leabra/master/README.md" -o appendix.md
+curl "https://raw.githubusercontent.com/emer/axon/master/README.md" -o appendix.md
 pandoc appendix.md -f gfm -t latex -o appendix.tex
 ```
 
 You can then edit the resulting .tex file to only include the parts you want, etc.
 
-# Leabra Algorithm Equations
+# Axon Algorithm Equations
 
-The pseudocode for Leabra is given here, showing exactly how the pieces of the algorithm fit together, using the equations and variables from the actual code.  Compared to the original C++ emergent implementation, this Go version of emergent is much more readable, while also not being too much slower overall.
+The pseudocode for Axon is given here, showing exactly how the pieces of the algorithm fit together, using the equations and variables from the actual code.  Compared to the original C++ emergent implementation, this Go version of emergent is much more readable, while also not being too much slower overall.
 
-There are also other implementations of Leabra available:
-* [leabra7](https://github.com/PrincetonUniversity/leabra7) Python implementation of the version 7 of Leabra, by Daniel Greenidge and Ken Norman at Princeton.
+There are also other implementations of Axon available:
+* [axon7](https://github.com/PrincetonUniversity/axon7) Python implementation of the version 7 of Axon, by Daniel Greenidge and Ken Norman at Princeton.
 * [Matlab](https://github.com/emer/cemer/blob/master/Matlab/) (link into the cemer C++ emergent source tree) -- a complete implementation of these equations in Matlab, coded by Sergio Verduzco-Flores.
-* [Python](https://github.com/benureau/leabra) implementation by Fabien Benureau.
-* [R](https://github.com/johannes-titz/leabRa) implementation by Johannes Titz.
+* [Python](https://github.com/benureau/axon) implementation by Fabien Benureau.
+* [R](https://github.com/johannes-titz/axon) implementation by Johannes Titz.
 
 This repository contains specialized additions to the core algorithm described here:
-* [deep](https://github.com/emer/leabra/blob/master/deep) has the DeepLeabra mechanisms for simulating the deep neocortical <-> thalamus pathways (wherein basic Leabra represents purely superficial-layer processing)
-* [pbwm](https://github.com/emer/leabra/blob/master/rl) has basic reinforcement learning models such as Rescorla-Wagner and TD (temporal differences).
-* [pbwm](https://github.com/emer/leabra/blob/master/pbwm1) has the prefrontal-cortex basal ganglia working memory model (PBWM).
-* [hip](https://github.com/emer/leabra/blob/master/hip) has the hippocampus specific learning mechanisms.
+* [deep](https://github.com/emer/axon/blob/master/deep) has the DeepAxon mechanisms for simulating the deep neocortical <-> thalamus pathways (wherein basic Axon represents purely superficial-layer processing)
+* [pbwm](https://github.com/emer/axon/blob/master/rl) has basic reinforcement learning models such as Rescorla-Wagner and TD (temporal differences).
+* [pbwm](https://github.com/emer/axon/blob/master/pbwm1) has the prefrontal-cortex basal ganglia working memory model (PBWM).
+* [hip](https://github.com/emer/axon/blob/master/hip) has the hippocampus specific learning mechanisms.
 
 ## Timing
 
-Leabra is organized around the following timing, based on an internally-generated alpha-frequency (10 Hz, 100 msec periods) cycle of expectation followed by outcome, supported by neocortical circuitry in the deep layers and the thalamus, as hypothesized in the [DeepLeabra](#deepleabra) extension to standard Leabra:
+Axon is organized around the following timing, based on an internally-generated alpha-frequency (10 Hz, 100 msec periods) cycle of expectation followed by outcome, supported by neocortical circuitry in the deep layers and the thalamus, as hypothesized in the [DeepAxon](#deepaxon) extension to standard Axon:
 
 * A **Trial** lasts 100 msec (10 Hz, alpha frequency), and comprises one sequence of expectation -- outcome learning, organized into 4 quarters.
     + Biologically, the deep neocortical layers (layers 5, 6) and the thalamus have a natural oscillatory rhythm at the alpha frequency.  Specific dynamics in these layers organize the cycle of expectation vs. outcome within the alpha cycle.
@@ -123,7 +160,7 @@ Leabra is organized around the following timing, based on an internally-generate
 
 ## Variables
 
-The `leabra.Neuron` struct contains all the neuron (unit) level variables, and the `leabra.Layer` contains a simple Go slice of these variables.  Optionally, there can be `leabra.Pool` pools of subsets of neurons that correspond to hypercolumns, and support more local inhibitory dynamics (these used to be called UnitGroups in the C++ version).
+The `axon.Neuron` struct contains all the neuron (unit) level variables, and the `axon.Layer` contains a simple Go slice of these variables.  Optionally, there can be `axon.Pool` pools of subsets of neurons that correspond to hypercolumns, and support more local inhibitory dynamics (these used to be called UnitGroups in the C++ version).
 
 * `Act`   = overall rate coded activation value -- what is sent to other neurons -- typically in range 0-1
 * `Ge` = total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E
@@ -155,7 +192,7 @@ The following are more implementation-level variables used in integrating synapt
 * `GiRaw` = raw inhibitory conductance (net input) received from sending units (send delta's are added to this value)
 * `GiInc` = delta increment in GiRaw sent using SendGeDelta
 
-Neurons are connected via synapses parameterized with the following variables, contained in the `leabra.Synapse` struct.  The `leabra.Prjn` contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures in the Go version.  
+Neurons are connected via synapses parameterized with the following variables, contained in the `axon.Synapse` struct.  The `axon.Prjn` contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures in the Go version.  
 
 * `Wt` = synaptic weight value -- sigmoid contrast-enhanced
 * `LWt` = linear (underlying) weight value -- learns according to the lrate specified in the connection spec -- this is converted into the effective weight value, Wt, via sigmoidal contrast enhancement (see `WtSigParams`)
@@ -165,7 +202,7 @@ Neurons are connected via synapses parameterized with the following variables, c
 
 ## Activation Update Cycle (every 1 msec): Ge, Gi, Act
 
-The `leabra.Network` `Cycle` method in `leabra/network.go` looks like this:
+The `axon.Network` `Cycle` method in `axon/network.go` looks like this:
 
 ```Go
 // Cycle runs one cycle of activation updating:
@@ -185,7 +222,7 @@ func (nt *Network) Cycle(ltime *Time) {
 }
 ```
 
-For every cycle of activation updating, we compute the excitatory input conductance `Ge`, then compute inhibition `Gi` based on average `Ge` and `Act` (from previous cycle), then compute the `Act` based on those conductances.  The equations below are not shown in computational order but rather conceptual order for greater clarity.  All of the relevant parameters are in the `leabra.Layer.Act` and `Inhib` fields, which are of type `ActParams` and `InhibParams` -- in this Go version, the parameters have been organized functionally, not structurally, into three categories.
+For every cycle of activation updating, we compute the excitatory input conductance `Ge`, then compute inhibition `Gi` based on average `Ge` and `Act` (from previous cycle), then compute the `Act` based on those conductances.  The equations below are not shown in computational order but rather conceptual order for greater clarity.  All of the relevant parameters are in the `axon.Layer.Act` and `Inhib` fields, which are of type `ActParams` and `InhibParams` -- in this Go version, the parameters have been organized functionally, not structurally, into three categories.
 
 * `Ge` excitatory conductance is actually computed using a highly efficient delta-sender-activation based algorithm, which only does the expensive multiplication of activations * weights when the sending activation changes by a given amount (`OptThreshParams.Delta`).  However, conceptually, the conductance is given by this equation:
     + `GeRaw += Sum_(recv) Prjn.GScale * Send.Act * Wt`
@@ -193,7 +230,7 @@ For every cycle of activation updating, we compute the excitatory input conducta
     + `Ge += DtParams.Integ * (1/ DtParams.GTau) * (GeRaw - Ge)`
         + This does a time integration of excitatory conductance, `GTau = 1.4` default, and global integration time constant, `Integ = 1` for 1 msec default.
 
-* `Gi` inhibtory conductance combines computed and synaptic-level inhibition (if present) -- most of code is in `leabra/inhib.go`
+* `Gi` inhibtory conductance combines computed and synaptic-level inhibition (if present) -- most of code is in `axon/inhib.go`
     + `ffNetin = avgGe + FFFBParams.MaxVsAvg * (maxGe - avgGe)`
     + `ffi = FFFBParams.FF * MAX(ffNetin - FFBParams.FF0, 0)`
         + feedforward component of inhibition with FF multiplier (1 by default) -- has FF0 offset and can't be negative (that's what the MAX(.. ,0) part does).
@@ -203,7 +240,7 @@ For every cycle of activation updating, we compute the excitatory input conducta
     + `Gi = FFFBParams.Gi * (ffi + fbi)`
         + total inhibitory conductance, with global Gi multiplier -- default of 1.8 typically produces good sparse distributed representations in reasonably large layers (25 units or more).
 
-* `Act` activation from Ge, Gi, Gl (most of code is in `leabra/act.go`, e.g., `ActParams.ActFmG` method).  When neurons are above thresholds in subsequent condition, they obey the "geLin" function which is linear in Ge:
+* `Act` activation from Ge, Gi, Gl (most of code is in `axon/act.go`, e.g., `ActParams.ActFmG` method).  When neurons are above thresholds in subsequent condition, they obey the "geLin" function which is linear in Ge:
     + `geThr = (Gi * (Erev.I - Thr) + Gbar.L * (Erev.L - Thr) / (Thr - Erev.E)`
     + `nwAct = NoisyXX1(Ge * Gbar.E - geThr)`
         + geThr = amount of excitatory conductance required to put the neuron exactly at the firing threshold, `XX1Params.Thr` = .5 default, and NoisyXX1 is the x / (x+1) function convolved with gaussian noise kernel, where x = `XX1Parms.Gain` * Ge - geThr) and Gain is 100 by default
@@ -219,7 +256,7 @@ For every cycle of activation updating, we compute the excitatory input conducta
 
 ![XCAL DWt Function](fig_xcal_dwt_fun.png?raw=true "The XCAL dWt function, showing direction and magnitude of synaptic weight changes dWt as a function of the short-term average activity of the sending neuron *x* times the receiving neuron *y*.  This quantity is a simple mathematical approximation to the level of postsynaptic Ca++, reflecting the dependence of the NMDA channel on both sending and receiving neural activity.  This function was extracted directly from the detailed biophysical Urakubo et al. 2008 model, by fitting a piecewise linear function to the synaptic weight change behavior that emerges from it as a function of a wide range of sending and receiving spiking patterns.")
 
-Learning is based on running-averages of activation variables, parameterized in the `leabra.Layer.Learn` `LearnParams` field, mostly implemented in the `leabra/learn.go` file.
+Learning is based on running-averages of activation variables, parameterized in the `axon.Layer.Learn` `LearnParams` field, mostly implemented in the `axon/learn.go` file.
 
 * **Running averages** computed continuously every cycle, and note the compounding form.  Tau params in `LrnActAvgParams`:
     + `AvgSS += (1 / SSTau) * (Act - AvgSS)`
@@ -246,7 +283,7 @@ Learning is based on running-averages of activation variables, parameterized in 
         + `XCAL(x, th) = (x < DThr) ? 0 : (x > th * DRev) ? (x - th) : (-x * ((1-DRev)/DRev))`
         + DThr = 0.0001, DRev = 0.1 defaults, and x ? y : z terminology is C syntax for: if x is true, then y, else z
 
-    + **DWtNorm** -- normalizing the DWt weight changes is standard in current backprop, using the AdamMax version of the original RMS normalization idea, and benefits Leabra as well, and is On by default, params on `DwtNormParams`:
+    + **DWtNorm** -- normalizing the DWt weight changes is standard in current backprop, using the AdamMax version of the original RMS normalization idea, and benefits Axon as well, and is On by default, params on `DwtNormParams`:
         + `Norm = MAX((1 - (1 / DecayTau)) * Norm, ABS(dwt))`
             + increment the Norm normalization using abs (L1 norm) instead of squaring (L2 norm), and with a small amount of decay: DecayTau = 1000.
         + `dwt *= LrComp / MAX(Norm, NormMin)`
@@ -261,7 +298,7 @@ Learning is based on running-averages of activation variables, parameterized in 
 * **Weight Balance** -- this option (off by default but recommended for larger models) attempts to maintain more balanced weights across units, to prevent some units from hogging the representational space, by changing the rates of weight increase and decrease in the soft weight bounding function, as a function of the average receiving weights.  All params in `WtBalParams`:
     + `if (Wb.Avg < LoThr): Wb.Fact = LoGain * (LoThr - MAX(Wb.Avg, AvgThr)); Wb.Dec = 1 / (1 + Wb.Fact); Wb.Inc = 2 - Wb.Dec`
     + `else: Wb.Fact = HiGain * (Wb.Avg - HiThr); Wb.Inc = 1 / (1 + Wb.Fact); Wb.Dec = 2 - Wb.Inc`
-        + `Wb` is the `WtBalRecvPrjn` structure stored on the `leabra.Prjn`, per each Recv neuron.  `Wb.Avg` = average of recv weights (computed separately and only every N = 10 weight updates, to minimize computational cost).  If this average is relatively low (compared to LoThr = .4) then there is a bias to increase more than decrease, in proportion to how much below this threshold they are (LoGain = 6).  If the average is relatively high (compared to HiThr = .4), then decreases are stronger than increases, HiGain = 4.
+        + `Wb` is the `WtBalRecvPrjn` structure stored on the `axon.Prjn`, per each Recv neuron.  `Wb.Avg` = average of recv weights (computed separately and only every N = 10 weight updates, to minimize computational cost).  If this average is relatively low (compared to LoThr = .4) then there is a bias to increase more than decrease, in proportion to how much below this threshold they are (LoGain = 6).  If the average is relatively high (compared to HiThr = .4), then decreases are stronger than increases, HiGain = 4.
     + A key feature of this mechanism is that it does not change the sign of any weight changes, including not causing weights to change that are otherwise not changing due to the learning rule.  This is not true of an alternative mechanism that has been used in various models, which normalizes the total weight value by subtracting the average.  Overall this weight balance mechanism is important for larger networks on harder tasks, where the hogging problem can be a significant problem.
 
 * **Weight update equation** 
@@ -296,7 +333,7 @@ Typically the `Ge` value should be between .5 and 1, to maintain a reasonably re
 
 ### Automatic Rescaling
 
-Here are the relevant factors that are used to compute the automatic rescaling to take into account the expected activity level on the sending layer, and the number of connections in the projection.  The actual code is in `leabra/layer.go: GScaleFmAvgAct()` and `leabra/act.go SLayActScale`
+Here are the relevant factors that are used to compute the automatic rescaling to take into account the expected activity level on the sending layer, and the number of connections in the projection.  The actual code is in `axon/layer.go: GScaleFmAvgAct()` and `axon/act.go SLayActScale`
 
 * `savg` = sending layer average activation
 * `snu` = sending layer number of units

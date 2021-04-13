@@ -24,6 +24,9 @@ const NeuronVarStart = 8
 type Neuron struct {
 	Flags   NeurFlags `desc:"bit flags for binary state variables"`
 	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
+	Spike   float32   `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
+	ISI     float32   `desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`
+	ISIAvg  float32   `desc:"average inter-spike-interval -- average time interval between spikes.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`
 	Act     float32   `desc:"rate-coded activation value reflecting final output of neuron communicated to other neurons, typically in range 0-1.  This value includes adaptation and synaptic depression / facilitation effects which produce temporal contrast (see ActLrn for version without this).  For rate-code activation, this is noisy-x-over-x-plus-one (NXX1) function; for discrete spiking it is computed from the inverse of the inter-spike interval (ISI), and Spike reflects the discrete spikes."`
 	ActLrn  float32   `desc:"learning activation value, reflecting *dendritic* activity that is not affected by synaptic depression or adapdation channels which are located near the axon hillock.  This is the what drives the Avg* values that drive learning. Computationally, neurons strongly discount the signals sent to other neurons to provide temporal contrast, but need to learn based on a more stable reflection of their overall inputs in the dendrites."`
 	Ge      float32   `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
@@ -55,19 +58,22 @@ type Neuron struct {
 
 	GiSyn    float32 `desc:"aggregated synaptic inhibition (from Inhib projections) -- time integral of GiRaw -- this is added with computed FFFB inhibition to get the full inhibition in Gi"`
 	GiSelf   float32 `desc:"total amount of self-inhibition -- time-integrated to avoid oscillations"`
-	ActSent  float32 `desc:"last activation value sent (only send when diff is over threshold)"`
 	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from sending units (send delta's are added to this value)"`
 	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from sending units (send delta's are added to this value)"`
 	GknaFast float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`
 	GknaMed  float32 `desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`
 	GknaSlow float32 `desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`
-
-	Spike  float32 `desc:"whether neuron has spiked or not (0 or 1), for discrete spiking neurons."`
-	ISI    float32 `desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`
-	ISIAvg float32 `desc:"average inter-spike-interval -- average time interval between spikes.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`
+	AlphaMax float32 `desc:"Maximum activation over Alpha cycle period"`
+	VmEff    float32 `desc:"Effective membrane potential, including simulated backpropagating action potential contribution from activity level."`
+	Gnmda    float32 `desc:"net NMDA conductance, after Vm gating and Gbar -- added directly to Ge as it has the same reversal potential."`
+	NMDA     float32 `desc:"NMDA channel activation -- underlying time-integrated value with decay"`
+	NMDASyn  float32 `desc:"synaptic NMDA activation directly from projection(s)"`
+	GgabaB   float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- set to Gk for GIRK, with .1 reversal potential."`
+	GABAB    float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
+	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
 }
 
-var NeuronVars = []string{"Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgL", "AvgLLrn", "AvgSLrn", "ActQ0", "ActQ1", "ActQ2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "Noise", "GiSyn", "GiSelf", "ActSent", "GeRaw", "GiRaw", "GknaFast", "GknaMed", "GknaSlow", "Spike", "ISI", "ISIAvg"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgL", "AvgLLrn", "AvgSLrn", "ActQ0", "ActQ1", "ActQ2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GknaFast", "GknaMed", "GknaSlow", "AlphaMax", "VmEff", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
 
 var NeuronVarsMap map[string]int
 
@@ -75,6 +81,9 @@ var NeuronVarProps = map[string]string{
 	"Vm":     `min:"0" max:"1"`,
 	"ActDel": `auto-scale:"+"`,
 	"ActDif": `auto-scale:"+"`,
+	"NMDA":   `auto-scale:"+"`,
+	"GABAB":  `auto-scale:"+"`,
+	"GABABx": `auto-scale:"+"`,
 }
 
 func init() {

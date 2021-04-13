@@ -15,6 +15,7 @@ import (
 	"github.com/chewxy/math32"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
+	"github.com/emer/emergent/ringidx"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/indent"
@@ -25,6 +26,7 @@ import (
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnStru
+	Com     SynComParams   `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
 	WtInit  WtInitParams   `view:"inline" desc:"initial random weight distribution"`
 	WtScale WtScaleParams  `view:"inline" desc:"weight scaling parameters: modulates overall strength of projection, using both absolute and relative factors"`
 	Learn   LearnSynParams `view:"add-fields" desc:"synaptic-level learning parameters"`
@@ -32,7 +34,8 @@ type Prjn struct {
 
 	// misc state variables below:
 	GScale float32         `desc:"scaling factor for integrating synaptic input conductances (G's) -- computed in AlphaCycInit, incorporates running-average activity levels"`
-	GInc   []float32       `desc:"local per-recv unit increment accumulator for synaptic conductance from sending units -- goes to either GeRaw or GiRaw on neuron depending on projection type -- this will be thread-safe"`
+	Gidx   ringidx.FIx     `desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	Gbuf   []float32       `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 	WbRecv []WtBalRecvPrjn `desc:"weight balance state variables for this projection, one per recv neuron"`
 }
 
@@ -48,6 +51,7 @@ func (pj *Prjn) AsAxon() *Prjn {
 }
 
 func (pj *Prjn) Defaults() {
+	pj.Com.Defaults()
 	pj.WtInit.Defaults()
 	pj.WtScale.Defaults()
 	pj.Learn.Defaults()
@@ -56,6 +60,7 @@ func (pj *Prjn) Defaults() {
 
 // UpdateParams updates all params given any changes that might have been made to individual values
 func (pj *Prjn) UpdateParams() {
+	pj.Com.Update()
 	pj.WtScale.Update()
 	pj.Learn.Update()
 	pj.Learn.LrateInit = pj.Learn.Lrate
@@ -68,7 +73,9 @@ func (pj *Prjn) SetType(typ emer.PrjnType) emer.Prjn   { pj.Typ = typ; return pj
 // AllParams returns a listing of all parameters in the Layer
 func (pj *Prjn) AllParams() string {
 	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n"
-	b, _ := json.MarshalIndent(&pj.WtInit, "", " ")
+	b, _ := json.MarshalIndent(&pj.Com, "", " ")
+	str += "Com: {\n " + JsonToParams(b)
+	b, _ = json.MarshalIndent(&pj.WtInit, "", " ")
 	str += "WtInit: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.WtScale, "", " ")
 	str += "WtScale: {\n " + JsonToParams(b)
@@ -301,9 +308,10 @@ func (pj *Prjn) Build() error {
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
 	rsh := pj.Recv.Shape()
-	//	ssh := pj.Send.Shape()
 	rlen := rsh.Len()
-	pj.GInc = make([]float32, rlen)
+	pj.Gidx.Len = pj.Com.Delay + 1
+	pj.Gidx.Zi = 0
+	pj.Gbuf = make([]float32, rlen*pj.Gidx.Len)
 	pj.WbRecv = make([]WtBalRecvPrjn, rlen)
 	return nil
 }
@@ -423,7 +431,7 @@ func (pj *Prjn) InitWts() {
 		wb := &pj.WbRecv[wi]
 		wb.Init()
 	}
-	pj.AxonPrj.InitGInc()
+	pj.AxonPrj.InitGbuf()
 }
 
 // InitWtSym initializes weight symmetry -- is given the reciprocal projection where
@@ -499,47 +507,55 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	}
 }
 
-// InitGInc initializes the per-projection GInc threadsafe increment -- not
-// typically needed (called during InitWts only) but can be called when needed
-func (pj *Prjn) InitGInc() {
-	for ri := range pj.GInc {
-		pj.GInc[ri] = 0
+// InitGbuf initializes the G buffer values to 0
+func (pj *Prjn) InitGbuf() {
+	for ri := range pj.Gbuf {
+		pj.Gbuf[ri] = 0
 	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// SendGDelta sends the delta-activation from sending neuron index si,
-// to integrate synaptic conductances on receivers
-func (pj *Prjn) SendGDelta(si int, delta float32) {
-	scdel := delta * pj.GScale
+// SendSpike sends a spike from sending neuron index si,
+// to add to buffer on receivers.
+func (pj *Prjn) SendSpike(si int) {
+	sc := pj.GScale
+	del := pj.Com.Delay
+	sz := del + 1
+	di := pj.Gidx.Idx(del) // index in buffer to put new values -- end of line
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
 	syns := pj.Syns[st : st+nc]
 	scons := pj.SConIdx[st : st+nc]
 	for ci := range syns {
 		ri := scons[ci]
-		pj.GInc[ri] += scdel * syns[ci].Wt
+		pj.Gbuf[int(ri)*sz+di] += sc * syns[ci].Wt // todo: extra mult here -- premultiply is better
 	}
 }
 
 // RecvGInc increments the receiver's GeRaw or GiRaw from that of all the projections.
 func (pj *Prjn) RecvGInc() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	del := pj.Com.Delay
+	sz := del + 1
+	zi := pj.Gidx.Zi
 	if pj.Typ == emer.Inhib {
 		for ri := range rlay.Neurons {
+			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			rn.GiRaw += pj.GInc[ri]
-			pj.GInc[ri] = 0
+			rn.GiRaw += pj.Gbuf[bi]
+			pj.Gbuf[bi] = 0
 		}
 	} else {
 		for ri := range rlay.Neurons {
+			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			rn.GeRaw += pj.GInc[ri]
-			pj.GInc[ri] = 0
+			rn.GeRaw += pj.Gbuf[bi]
+			pj.Gbuf[bi] = 0
 		}
 	}
+	pj.Gidx.Shift(1) // rotate buffer
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

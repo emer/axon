@@ -816,7 +816,6 @@ func (ly *Layer) AlphaCycInit() {
 		ly.AxonLay.GenNoise()
 	}
 	ly.AxonLay.DecayState(ly.Act.Init.Decay)
-	ly.AxonLay.InitGInc()
 	if ly.Act.Clamp.Hard && ly.Typ == emer.Input {
 		ly.AxonLay.HardClamp()
 	}
@@ -937,60 +936,23 @@ func (ly *Layer) HardClamp() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// InitGinc initializes the Ge excitatory and Gi inhibitory conductance accumulation states
-// including ActSent and G*Raw values.
-// called at start of trial always, and can be called optionally
-// when delta-based Ge computation needs to be updated (e.g., weights
-// might have changed strength)
-func (ly *Layer) InitGInc() {
+// SendSpike sends spike to receivers
+func (ly *Layer) SendSpike(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
+		if nrn.IsOff() || nrn.Spike == 0 {
 			continue
 		}
-		ly.Act.InitGInc(nrn)
-	}
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).InitGInc()
-	}
-}
-
-// SendGDelta sends change in activation since last sent, to increment recv
-// synaptic conductances G, if above thresholds
-func (ly *Layer) SendGDelta(ltime *Time) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if nrn.Act > ly.Act.OptThresh.Send {
-			delta := nrn.Act - nrn.ActSent
-			if math32.Abs(delta) > ly.Act.OptThresh.Delta {
-				for _, sp := range ly.SndPrjns {
-					if sp.IsOff() {
-						continue
-					}
-					sp.(AxonPrjn).SendGDelta(ni, delta)
-				}
-				nrn.ActSent = nrn.Act
+		for _, sp := range ly.SndPrjns {
+			if sp.IsOff() {
+				continue
 			}
-		} else if nrn.ActSent > ly.Act.OptThresh.Send {
-			delta := -nrn.ActSent // un-send the last above-threshold activation to get back to 0
-			for _, sp := range ly.SndPrjns {
-				if sp.IsOff() {
-					continue
-				}
-				sp.(AxonPrjn).SendGDelta(ni, delta)
-			}
-			nrn.ActSent = 0
+			sp.(AxonPrjn).SendSpike(ni) // todo: test timing diff for this vs. direct
 		}
 	}
 }
 
-// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
+// GFmInc integrates new synaptic conductances from increments sent during last Spike
 func (ly *Layer) GFmInc(ltime *Time) {
 	ly.RecvGInc(ltime)
 	ly.GFmIncNeur(ltime)
@@ -1018,7 +980,9 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 		}
 		// note: each step broken out here so other variants can add extra terms to Raw
 		ly.Act.GeFmRaw(nrn, nrn.GeRaw)
+		nrn.GeRaw = 0
 		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
+		nrn.GiRaw = 0
 	}
 }
 
