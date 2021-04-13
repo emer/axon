@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -55,7 +55,7 @@ type MatrixLayer struct {
 	ACh    float32      `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons reflecting the absolute value of reward or CS predictions thereof -- used for resetting the trace of matrix learning"`
 }
 
-var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, leabra.LayerProps)
+var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, axon.LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "MatrixLayer", Desc: "defaults",
@@ -98,7 +98,7 @@ func (ly *MatrixLayer) Defaults() {
 	// drivers vs. modulators
 
 	for _, pji := range ly.RcvPrjns {
-		pj := pji.(leabra.LeabraPrjn).AsLeabra()
+		pj := pji.(axon.AxonPrjn).AsAxon()
 		if _, ok := pj.Send.(*GPLayer); ok { // From GPe TA or In
 			pj.WtScale.Abs = 3
 			pj.Learn.Learn = false
@@ -147,7 +147,7 @@ func (ly *MatrixLayer) InitActs() {
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act.
 // Matrix extends to call DALrnFmDA and updates AlphaMax -> ActLrn
-func (ly *MatrixLayer) ActFmG(ltime *leabra.Time) {
+func (ly *MatrixLayer) ActFmG(ltime *axon.Time) {
 	ly.Layer.ActFmG(ltime)
 	ly.DAActLrn(ltime)
 }
@@ -156,7 +156,7 @@ func (ly *MatrixLayer) ActFmG(ltime *leabra.Time) {
 // applying Burst and Dip Gain factors, and then reversing sign for D2R.
 // Also sets ActLrn based on whether corresponding VThal stripe fired
 // above ThalThr -- flips sign of learning for stripe firing vs. not.
-func (ly *MatrixLayer) DAActLrn(ltime *leabra.Time) {
+func (ly *MatrixLayer) DAActLrn(ltime *axon.Time) {
 	da := ly.DA
 	if da > 0 {
 		da *= ly.Matrix.BurstGain
@@ -200,7 +200,7 @@ func (ly *MatrixLayer) UnitVarIdx(varNm string) (int, error) {
 	if !(varNm == "DALrn" || varNm == "ACh") {
 		return -1, fmt.Errorf("pcore.NeuronVars: variable named: %s not found", varNm)
 	}
-	nn := len(leabra.NeuronVars)
+	nn := len(axon.NeuronVars)
 	// nn = DA
 	if varNm == "DALrn" {
 		return nn + 1, nil
@@ -213,7 +213,7 @@ func (ly *MatrixLayer) UnitVarIdx(varNm string) (int, error) {
 // This is the core unit var access method used by other methods,
 // so it is the only one that needs to be updated for derived layer types.
 func (ly *MatrixLayer) UnitVal1D(varIdx int, idx int) float32 {
-	nn := len(leabra.NeuronVars)
+	nn := len(axon.NeuronVars)
 	if varIdx < 0 || varIdx > nn+2 { // nn = DA, nn+1 = DALrn, nn+2 = ACh
 		return math32.NaN()
 	}
@@ -256,12 +256,12 @@ func (tp *MatrixTraceParams) Defaults() {
 // MatrixPrjn does dopamine-modulated, gated trace learning, for Matrix learning
 // in PBWM context
 type MatrixPrjn struct {
-	leabra.Prjn
+	axon.Prjn
 	Trace  MatrixTraceParams `view:"inline" desc:"special parameters for matrix trace learning"`
 	TrSyns []TraceSyn        `desc:"trace synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 }
 
-var KiT_MatrixPrjn = kit.Types.AddType(&MatrixPrjn{}, leabra.PrjnProps)
+var KiT_MatrixPrjn = kit.Types.AddType(&MatrixPrjn{}, axon.PrjnProps)
 
 func (pj *MatrixPrjn) Defaults() {
 	pj.Prjn.Defaults()
@@ -297,7 +297,7 @@ func (pj *MatrixPrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*MatrixLayer)
 
 	da := rlay.DA

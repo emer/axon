@@ -8,12 +8,13 @@ package pvlv
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/minmax"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
-	"strconv"
 )
 
 type IModLayer interface {
@@ -21,24 +22,24 @@ type IModLayer interface {
 }
 
 type AvgMaxModLayer interface {
-	AvgMaxMod(*leabra.Time)
+	AvgMaxMod(*axon.Time)
 }
 
 // ModSender has methods for sending modulation, and setting the value to be sent.
 type ModSender interface {
-	SendMods(ltime *leabra.Time)
+	SendMods(ltime *axon.Time)
 	ModSendValue(ni int32) float32
 }
 
 // ModReceiver has one method to integrate incoming modulation, and another
 type ModReceiver interface {
 	ReceiveMods(sender ModSender, scale float32) // copy incoming modulation values into the layer's own ModNet variable
-	ModsFmInc(ltime *leabra.Time)                // set modulation levels
+	ModsFmInc(ltime *axon.Time)                  // set modulation levels
 }
 
 // ModLayer is a layer that RECEIVES modulatory input
 type ModLayer struct {
-	leabra.Layer
+	axon.Layer
 	ModNeurs     []ModNeuron     `desc:"neuron-level modulation state"`
 	ModPools     []ModPool       `desc:"pools for maintaining aggregate values"`
 	ModReceivers []ModRcvrParams `desc:"layer names and scale values for mods sent from this layer"`
@@ -73,7 +74,7 @@ type ModParams struct {
 	NegGain          float32 `viewif:"DaMod.On&&ModGain" desc:"for negative dopamine, how much to change the default gain value as a function of dopamine: gain = gain * (1 + da * NegNain) -- da is multiplied by minus or plus depending on phase"`
 	PosGain          float32 `viewif:"DaMod.On&&ModGain" desc:"for positive dopamine, how much to change the default gain value as a function of dopamine: gain = gain * (1 + da * PosGain) -- da is multiplied by minus or plus depending on phase"`
 	ActModZero       bool    `desc:"for modulation coming from the BLA via deep_mod_net -- when this modulation signal is below zero, does it have the ability to zero out the patch activations?  i.e., is the modulation required to enable patch firing?"`
-	ModNetThreshold  float32 `desc:"threshold on deep_mod_net before deep mod is applied -- if not receiving even this amount of overall input from deep_mod sender, then do not use the deep_mod_net to drive deep_mod and deep_lrn values -- only for SUPER units -- based on LAYER level maximum for base LeabraLayerSpec, PVLV classes are based on actual deep_mod_net for each unit"`
+	ModNetThreshold  float32 `desc:"threshold on deep_mod_net before deep mod is applied -- if not receiving even this amount of overall input from deep_mod sender, then do not use the deep_mod_net to drive deep_mod and deep_lrn values -- only for SUPER units -- based on LAYER level maximum for base AxonLayerSpec, PVLV classes are based on actual deep_mod_net for each unit"`
 	ModSendThreshold float32 `desc:"threshold for including neuron activation in total to send (for ModNet)"`
 	IsModSender      bool    `desc:"does this layer send modulation to other layers?"`
 	IsModReceiver    bool    `desc:"does this layer receive modulation from other layers?"`
@@ -115,8 +116,8 @@ func (ly *ModLayer) AsMod() *ModLayer {
 	return ly
 }
 
-// AsLeabra gets a pointer to the generic Leabra portion of the layer
-func (ly *ModLayer) AsLeabra() *leabra.Layer {
+// AsAxon gets a pointer to the generic Axon portion of the layer
+func (ly *ModLayer) AsAxon() *axon.Layer {
 	return &ly.Layer
 }
 
@@ -238,7 +239,7 @@ func (ly *ModLayer) UnitVarIdx(varNm string) (int, error) {
 	if err != nil {
 		return vidx, err
 	}
-	vidx += len(leabra.NeuronVars)
+	vidx += len(axon.NeuronVars)
 	return vidx, err
 }
 
@@ -253,7 +254,7 @@ func (ly *ModLayer) UnitVal1D(varIdx int, idx int) float32 {
 	if varIdx < 0 || varIdx >= len(ModNeuronVarsAll) {
 		return math32.NaN()
 	}
-	nn := len(leabra.NeuronVars)
+	nn := len(axon.NeuronVars)
 	if varIdx < nn {
 		nrn := &ly.Neurons[idx]
 		return nrn.VarByIndex(varIdx)
@@ -294,7 +295,7 @@ func (ly *ModLayer) Defaults() {
 	}
 }
 
-// UpdateParams passes on an UpdateParams call to the layer's underlying Leabra layer.
+// UpdateParams passes on an UpdateParams call to the layer's underlying Axon layer.
 func (ly *ModLayer) UpdateParams() {
 	ly.Layer.UpdateParams()
 }
@@ -353,7 +354,7 @@ func (ly *ModLayer) ModSendValue(ni int32) float32 {
 
 // SendMods calculates the level of modulation to send to receivers, based on subpool activations, and calls
 // ReceiveMods for the receivers to process sent values.
-func (ly *ModLayer) SendMods(_ *leabra.Time) {
+func (ly *ModLayer) SendMods(_ *axon.Time) {
 	for pi := range ly.ModPools {
 		mpl := &ly.ModPools[pi]
 		mpl.ModSent = 0
@@ -391,7 +392,7 @@ func (ly *ModLayer) ReceiveMods(sender ModSender, scale float32) {
 //
 // If ModNet is above threshold, ModLrn for each neuron is set to the ratio of its ModNet input to its subpool
 // activation value, with special cases for extreme values.
-func (ly *ModLayer) ModsFmInc(_ *leabra.Time) {
+func (ly *ModLayer) ModsFmInc(_ *axon.Time) {
 	plMax := ly.ModPools[0].ModNetStats.Max
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -447,8 +448,8 @@ func (ly *ModLayer) GScaleFmAvgAct() {
 		if p.IsOff() {
 			continue
 		}
-		pj := p.(leabra.LeabraPrjn).AsLeabra()
-		slay := p.SendLay().(leabra.LeabraLayer).AsLeabra()
+		pj := p.(axon.AxonPrjn).AsAxon()
+		slay := p.SendLay().(axon.AxonLayer).AsAxon()
 		slpl := &slay.Pools[0]
 		savg := slpl.ActAvg.ActPAvgEff
 		snu := len(slay.Neurons)
@@ -469,7 +470,7 @@ func (ly *ModLayer) GScaleFmAvgAct() {
 		if p.IsOff() {
 			continue
 		}
-		pj := p.(leabra.LeabraPrjn).AsLeabra()
+		pj := p.(axon.AxonPrjn).AsAxon()
 		switch pj.Typ {
 		case emer.Inhib:
 			if totGiRel > 0 {
@@ -517,7 +518,7 @@ func (ly *ModLayer) SetDA(da float32) {
 // end rl.DALayer
 
 // AvgMaxMod runs the standard activation statistics calculation as used for other pools on a layer's ModPools.
-func (ly *ModLayer) AvgMaxMod(_ *leabra.Time) {
+func (ly *ModLayer) AvgMaxMod(_ *axon.Time) {
 	for pi := range ly.ModPools {
 		mpl := &ly.ModPools[pi]
 		pl := &ly.Pools[pi]
@@ -538,7 +539,7 @@ func (ly *ModLayer) AvgMaxMod(_ *leabra.Time) {
 }
 
 // ActFmG calculates activation from net input, applying modulation values.
-func (ly *ModLayer) ActFmG(_ *leabra.Time) {
+func (ly *ModLayer) ActFmG(_ *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		mnr := &ly.ModNeurs[ni]

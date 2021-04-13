@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"encoding/json"
@@ -22,7 +22,7 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// leabra.Prjn is a basic Leabra projection with synaptic learning parameters
+// axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnStru
 	WtInit  WtInitParams   `view:"inline" desc:"initial random weight distribution"`
@@ -40,10 +40,10 @@ var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
 
 var PrjnProps = ki.Props{}
 
-// AsLeabra returns this prjn as a leabra.Prjn -- all derived prjns must redefine
-// this to return the base Prjn type, so that the LeabraPrjn interface does not
+// AsAxon returns this prjn as a axon.Prjn -- all derived prjns must redefine
+// this to return the base Prjn type, so that the AxonPrjn interface does not
 // need to include accessors to all the basic stuff.
-func (pj *Prjn) AsLeabra() *Prjn {
+func (pj *Prjn) AsAxon() *Prjn {
 	return pj
 }
 
@@ -131,11 +131,11 @@ func (pj *Prjn) SynVal1D(varIdx int, synIdx int) float32 {
 }
 
 // SynVals sets values of given variable name for each synapse, using the natural ordering
-// of the synapses (sender based for Leabra),
+// of the synapses (sender based for Axon),
 // into given float32 slice (only resized if not big enough).
 // Returns error on invalid var name.
 func (pj *Prjn) SynVals(vals *[]float32, varNm string) error {
-	vidx, err := pj.LeabraPrj.SynVarIdx(varNm)
+	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
 	if err != nil {
 		return err
 	}
@@ -146,7 +146,7 @@ func (pj *Prjn) SynVals(vals *[]float32, varNm string) error {
 		*vals = (*vals)[0:ns]
 	}
 	for i := range pj.Syns {
-		(*vals)[i] = pj.LeabraPrj.SynVal1D(vidx, i)
+		(*vals)[i] = pj.AxonPrj.SynVal1D(vidx, i)
 	}
 	return nil
 }
@@ -155,19 +155,19 @@ func (pj *Prjn) SynVals(vals *[]float32, varNm string) error {
 // between given send, recv unit indexes (1D, flat indexes).
 // Returns math32.NaN() for access errors (see SynValTry for error message)
 func (pj *Prjn) SynVal(varNm string, sidx, ridx int) float32 {
-	vidx, err := pj.LeabraPrj.SynVarIdx(varNm)
+	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
 	if err != nil {
 		return math32.NaN()
 	}
 	synIdx := pj.SynIdx(sidx, ridx)
-	return pj.LeabraPrj.SynVal1D(vidx, synIdx)
+	return pj.AxonPrj.SynVal1D(vidx, synIdx)
 }
 
 // SetSynVal sets value of given variable name on the synapse
 // between given send, recv unit indexes (1D, flat indexes)
 // returns error for access errors.
 func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
-	vidx, err := pj.LeabraPrj.SynVarIdx(varNm)
+	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
 	if err != nil {
 		return err
 	}
@@ -190,8 +190,8 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
 func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
-	slay := pj.Send.(LeabraLayer).AsLeabra()
-	rlay := pj.Recv.(LeabraLayer).AsLeabra()
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
 	nr := len(rlay.Neurons)
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("{\n"))
@@ -322,7 +322,7 @@ func (pj *Prjn) SetScalesRPool(scales etensor.Tensor) {
 
 	rsh := pj.Recv.Shape()
 	if rsh.NumDims() != 4 {
-		log.Printf("leabra.Prjn.SetScalesRPool: recv layer must have 4D shape")
+		log.Printf("axon.Prjn.SetScalesRPool: recv layer must have 4D shape")
 		return
 	}
 	rNpY := rsh.Dim(0)
@@ -423,14 +423,14 @@ func (pj *Prjn) InitWts() {
 		wb := &pj.WbRecv[wi]
 		wb.Init()
 	}
-	pj.LeabraPrj.InitGInc()
+	pj.AxonPrj.InitGInc()
 }
 
 // InitWtSym initializes weight symmetry -- is given the reciprocal projection where
 // the Send and Recv layers are reversed.
-func (pj *Prjn) InitWtSym(rpjp LeabraPrjn) {
-	rpj := rpjp.AsLeabra()
-	slay := pj.Send.(LeabraLayer).AsLeabra()
+func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
+	rpj := rpjp.AsAxon()
+	slay := pj.Send.(AxonLayer).AsAxon()
 	ns := int32(len(slay.Neurons))
 	for si := int32(0); si < ns; si++ {
 		nc := pj.SConN[si]
@@ -526,7 +526,7 @@ func (pj *Prjn) SendGDelta(si int, delta float32) {
 
 // RecvGInc increments the receiver's GeRaw or GiRaw from that of all the projections.
 func (pj *Prjn) RecvGInc() {
-	rlay := pj.Recv.(LeabraLayer).AsLeabra()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if pj.Typ == emer.Inhib {
 		for ri := range rlay.Neurons {
 			rn := &rlay.Neurons[ri]
@@ -550,8 +550,8 @@ func (pj *Prjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(LeabraLayer).AsLeabra()
-	rlay := pj.Recv.(LeabraLayer).AsLeabra()
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.AvgS < pj.Learn.XCal.LrnThr && sn.AvgM < pj.Learn.XCal.LrnThr {
@@ -624,8 +624,8 @@ func (pj *Prjn) WtBalFmWt() {
 		return
 	}
 
-	rlay := pj.Recv.(LeabraLayer).AsLeabra()
-	if rlay.LeabraLay.IsTarget() {
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	if rlay.AxonLay.IsTarget() {
 		return
 	}
 	for ri := range rlay.Neurons {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
@@ -17,9 +17,9 @@ import (
 // They receive phasic input representing 5IB bursting via CTCtxtPrjn inputs
 // from SuperLayer and also from self projections.
 type CTLayer struct {
-	TopoInhibLayer                 // access as .TopoInhibLayer
-	BurstQtr       leabra.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines, 32 bit versions."`
-	CtxtGes        []float32       `desc:"slice of context (temporally delayed) excitatory conducances."`
+	TopoInhibLayer               // access as .TopoInhibLayer
+	BurstQtr       axon.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines, 32 bit versions."`
+	CtxtGes        []float32     `desc:"slice of context (temporally delayed) excitatory conducances."`
 }
 
 var KiT_CTLayer = kit.Types.AddType(&CTLayer{}, LayerProps)
@@ -28,7 +28,7 @@ func (ly *CTLayer) Defaults() {
 	ly.TopoInhibLayer.Defaults()
 	ly.Act.Init.Decay = 0            // deep doesn't decay!
 	ly.Inhib.ActAvg.UseFirst = false // first activations can be very far off
-	ly.BurstQtr.Set(int(leabra.Q4))
+	ly.BurstQtr.Set(int(axon.Q4))
 	ly.Typ = CT
 }
 
@@ -54,7 +54,7 @@ func (ly *CTLayer) InitActs() {
 }
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *CTLayer) GFmInc(ltime *leabra.Time) {
+func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -71,7 +71,7 @@ func (ly *CTLayer) GFmInc(ltime *leabra.Time) {
 // CtxtGe excitatory conductance on CT layers.
 // This must be called at the end of the Burst quarter for this layer.
 // Satisfies the CtxtSender interface.
-func (ly *CTLayer) SendCtxtGe(ltime *leabra.Time) {
+func (ly *CTLayer) SendCtxtGe(ltime *axon.Time) {
 	if !ly.BurstQtr.Has(ltime.Quarter) {
 		return
 	}
@@ -102,7 +102,7 @@ func (ly *CTLayer) SendCtxtGe(ltime *leabra.Time) {
 // CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
 // overall Ctxt value, only on Deep layers.
 // This must be called at the end of the DeepBurst quarter for this layer, after SendCtxtGe.
-func (ly *CTLayer) CtxtFmGe(ltime *leabra.Time) {
+func (ly *CTLayer) CtxtFmGe(ltime *axon.Time) {
 	if !ly.BurstQtr.Has(ltime.Quarter) {
 		return
 	}

@@ -5,13 +5,13 @@
 package agate
 
 import (
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/deep"
+	"github.com/emer/axon/glong"
+	"github.com/emer/axon/pcore"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/emer/leabra/deep"
-	"github.com/emer/leabra/glong"
-	"github.com/emer/leabra/leabra"
-	"github.com/emer/leabra/pcore"
 	"github.com/goki/ki/kit"
 )
 
@@ -58,7 +58,7 @@ func (nt *Network) SynVarNames() []string {
 // Appropriate PoolOneToOne connections are made between layers,
 // using standard styles.
 // space is the spacing between layers (2 typical)
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal leabra.LeabraLayer) {
+func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
 	return pcore.AddBG(&nt.Network.Network, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
 }
 
@@ -82,7 +82,7 @@ func (nt *Network) AddPFC(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, pul
 
 // AddMaintLayer adds a MaintLayer using 4D shape with pools,
 // and lateral NMDAMaint PoolOneToOne connectivity.
-func AddMaintLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *MaintLayer {
+func AddMaintLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *MaintLayer {
 	ly := &MaintLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	glong.ConnectNMDA(nt, ly, ly, prjn.NewPoolOneToOne())
@@ -91,7 +91,7 @@ func AddMaintLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nN
 
 // AddOutLayer adds a OutLayer using 4D shape with pools,
 // and lateral PoolOneToOne connectivity.
-func AddOutLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *OutLayer {
+func AddOutLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *OutLayer {
 	ly := &OutLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	return ly
@@ -104,7 +104,7 @@ func AddOutLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // Standard Deep CTCtxtPrjn PoolOneToOne Super -> CT projection, and
 // 1to1 projections Super -> Maint and Maint -> Out class PFCFixed are created by default.
 // CT is placed Behind Super, then Out and Maint, and Pulvinar behind CT if created.
-func AddPFC(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, pulvLay bool) (super, ct, maint, out, pulv emer.Layer) {
+func AddPFC(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, pulvLay bool) (super, ct, maint, out, pulv emer.Layer) {
 	if name == "" {
 		name = "PFC"
 	}
@@ -145,7 +145,7 @@ func AddPFC(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX in
 // 1to1 projections Super -> Maint and Maint -> Out class PFCFixed are created by default.
 // CT is placed Behind Super, then Out and Maint, and Pulvinar behind CT if created.
 // Py is Python version, returns layers as a slice
-func AddPFCPy(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, pulvLay bool) []emer.Layer {
+func AddPFCPy(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, pulvLay bool) []emer.Layer {
 	super, ct, maint, out, pulv := AddPFC(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX, pulvLay)
 	return []emer.Layer{super, ct, maint, out, pulv}
 }

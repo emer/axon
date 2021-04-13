@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
@@ -16,13 +16,13 @@ import (
 // layer-level neuromodulatory variables: dopamine, ach, serotonin.
 // See ModLayer for a version that includes DA-modulated learning parameters,
 type Layer struct {
-	leabra.Layer
+	axon.Layer
 	DA  float32 `inactive:"+" desc:"current dopamine level for this layer"`
 	ACh float32 `inactive:"+" desc:"current acetylcholine level for this layer"`
 	SE  float32 `inactive:"+" desc:"current serotonin level for this layer"`
 }
 
-var KiT_Layer = kit.Types.AddType(&Layer{}, leabra.LayerProps)
+var KiT_Layer = kit.Types.AddType(&Layer{}, axon.LayerProps)
 
 // DALayer interface:
 
@@ -47,17 +47,17 @@ func (ly *Layer) AsGate() *GateLayer {
 
 // GateSend updates gating state and sends it along to other layers.
 // most layers don't implement -- only gating layers
-func (ly *Layer) GateSend(ltime *leabra.Time) {
+func (ly *Layer) GateSend(ltime *axon.Time) {
 }
 
 // RecGateAct records the gating activation from current activation, when gating occcurs
 // based on GateState.Now -- only for gating layers
-func (ly *Layer) RecGateAct(ltime *leabra.Time) {
+func (ly *Layer) RecGateAct(ltime *axon.Time) {
 }
 
 // SendMods is called at end of Cycle to send modulator signals (DA, etc)
 // which will then be active for the next cycle of processing
-func (ly *Layer) SendMods(ltime *leabra.Time) {
+func (ly *Layer) SendMods(ltime *axon.Time) {
 }
 
 func (ly *Layer) Defaults() {
@@ -129,7 +129,7 @@ func (ly *Layer) UnitVal1D(varIdx int, idx int) float32 {
 		return math32.NaN()
 	}
 	varIdx -= nn
-	return ly.LeabraLay.(PBWMLayer).UnitValByIdx(NeurVars(varIdx), idx)
+	return ly.AxonLay.(PBWMLayer).UnitValByIdx(NeurVars(varIdx), idx)
 }
 
 // UnitVarNum returns the number of Neuron-level variables
@@ -154,10 +154,10 @@ func (ly *Layer) DoQuarter2DWt() bool {
 }
 
 // QuarterFinal does updating after end of a quarter
-func (ly *Layer) QuarterFinal(ltime *leabra.Time) {
+func (ly *Layer) QuarterFinal(ltime *axon.Time) {
 	ly.Layer.QuarterFinal(ltime)
 	if ltime.Quarter == 1 {
-		ly.LeabraLay.(PBWMLayer).Quarter2DWt()
+		ly.AxonLay.(PBWMLayer).Quarter2DWt()
 	}
 }
 
@@ -169,7 +169,7 @@ func (ly *Layer) Quarter2DWt() {
 		}
 		if rly, ok := p.RecvLay().(PBWMLayer); ok {
 			if rly.DoQuarter2DWt() {
-				p.(leabra.LeabraPrjn).DWt()
+				p.(axon.AxonPrjn).DWt()
 			}
 		}
 	}

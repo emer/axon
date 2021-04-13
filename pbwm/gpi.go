@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
@@ -19,11 +19,11 @@ import (
 // GPiThalPrjn accumulates per-prjn raw conductance that is needed for separately weighting
 // NoGo vs. Go inputs
 type GPiThalPrjn struct {
-	leabra.Prjn           // access as .Prjn
-	GeRaw       []float32 `desc:"per-recv, per-prjn raw excitatory input"`
+	axon.Prjn           // access as .Prjn
+	GeRaw     []float32 `desc:"per-recv, per-prjn raw excitatory input"`
 }
 
-var KiT_GPiThalPrjn = kit.Types.AddType(&GPiThalPrjn{}, leabra.PrjnProps)
+var KiT_GPiThalPrjn = kit.Types.AddType(&GPiThalPrjn{}, axon.PrjnProps)
 
 func (pj *GPiThalPrjn) Build() error {
 	err := pj.Prjn.Build()
@@ -45,7 +45,7 @@ func (pj *GPiThalPrjn) InitGInc() {
 
 // RecvGInc increments the receiver's GeInc or GiInc from that of all the projections.
 func (pj *GPiThalPrjn) RecvGInc() {
-	rlay := pj.Recv.(leabra.LeabraLayer).AsLeabra()
+	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	if pj.Typ == emer.Inhib {
 		for ri := range rlay.Neurons {
 			rn := &rlay.Neurons[ri]
@@ -68,13 +68,13 @@ func (pj *GPiThalPrjn) RecvGInc() {
 
 // GPiTimingParams has timing parameters for gating in the GPiThal layer
 type GPiTimingParams struct {
-	GateQtr leabra.Quarters `desc:"Quarter(s) when gating takes place, typically Q1 and Q3, which is the quarter prior to the PFC GateQtr when deep layer updating takes place. Note: this is a bitflag and must be accessed using bitflag.Set / Has etc routines, 32 bit versions."`
-	Cycle   int             `def:"18" desc:"cycle within Qtr to determine if activation over threshold for gating.  We send GateState updates on this cycle either way."`
+	GateQtr axon.Quarters `desc:"Quarter(s) when gating takes place, typically Q1 and Q3, which is the quarter prior to the PFC GateQtr when deep layer updating takes place. Note: this is a bitflag and must be accessed using bitflag.Set / Has etc routines, 32 bit versions."`
+	Cycle   int           `def:"18" desc:"cycle within Qtr to determine if activation over threshold for gating.  We send GateState updates on this cycle either way."`
 }
 
 func (gt *GPiTimingParams) Defaults() {
-	gt.GateQtr.Set(int(leabra.Q1))
-	gt.GateQtr.Set(int(leabra.Q3))
+	gt.GateQtr.Set(int(axon.Q1))
+	gt.GateQtr.Set(int(axon.Q3))
 	gt.Cycle = 18
 }
 
@@ -115,7 +115,7 @@ type GPiThalLayer struct {
 	GPiNeurs []GPiNeuron     `desc:"slice of GPiNeuron state for this layer -- flat list of len = Shape.Len().  You must iterate over index and use pointer to modify values."`
 }
 
-var KiT_GPiThalLayer = kit.Types.AddType(&GPiThalLayer{}, leabra.LayerProps)
+var KiT_GPiThalLayer = kit.Types.AddType(&GPiThalLayer{}, axon.LayerProps)
 
 // Sel: "GPiThalLayer", Desc: "defaults ",
 // 	Params: params.Params{
@@ -289,14 +289,14 @@ func (ly *GPiThalLayer) InitActs() {
 // need to clear incrementing GeRaw from prjns
 func (ly *GPiThalLayer) AlphaCycInit() {
 	ly.GateLayer.AlphaCycInit()
-	ly.LeabraLay.InitGInc()
+	ly.AxonLay.InitGInc()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *GPiThalLayer) GFmInc(ltime *leabra.Time) {
+func (ly *GPiThalLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
 	goPrjn, nogoPrjn, _ := ly.MatrixPrjns()
 	for ni := range ly.Neurons {
@@ -313,13 +313,13 @@ func (ly *GPiThalLayer) GFmInc(ltime *leabra.Time) {
 }
 
 // GateSend updates gating state and sends it along to other layers
-func (ly *GPiThalLayer) GateSend(ltime *leabra.Time) {
+func (ly *GPiThalLayer) GateSend(ltime *axon.Time) {
 	ly.GateFmAct(ltime)
 	ly.SendGateStates()
 }
 
 // GateFmAct updates GateState from current activations, at time of gating
-func (ly *GPiThalLayer) GateFmAct(ltime *leabra.Time) {
+func (ly *GPiThalLayer) GateFmAct(ltime *axon.Time) {
 	gateQtr := ly.Timing.GateQtr.Has(ltime.Quarter)
 	qtrCyc := ltime.QuarterCycle()
 	for ni := range ly.Neurons {
@@ -364,7 +364,7 @@ func (ly *GPiThalLayer) SendGateStates() {
 
 // RecGateAct records the gating activation from current activation, when gating occcurs
 // based on GateState.Now
-func (ly *GPiThalLayer) RecGateAct(ltime *leabra.Time) {
+func (ly *GPiThalLayer) RecGateAct(ltime *axon.Time) {
 	for gi := range ly.GateStates {
 		gs := &ly.GateStates[gi]
 		if !gs.Now { // not gating now

@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
-	"github.com/emer/leabra/rl"
 	"github.com/goki/ki/kit"
 )
 
@@ -21,14 +21,14 @@ import (
 // To handle positive-only reward signals, need to include both a reward prediction
 // and reward outcome layer.
 type CINLayer struct {
-	leabra.Layer
+	axon.Layer
 	RewThr  float32       `desc:"threshold on reward values from RewLays, to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
 	RewLays emer.LayNames `desc:"Reward-representing layer(s) from which this computes ACh as Max absolute value"`
 	SendACh rl.SendACh    `desc:"list of layers to send acetylcholine to"`
 	ACh     float32       `desc:"acetylcholine value for this layer"`
 }
 
-var KiT_CINLayer = kit.Types.AddType(&CINLayer{}, leabra.LayerProps)
+var KiT_CINLayer = kit.Types.AddType(&CINLayer{}, axon.LayerProps)
 
 func (ly *CINLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -59,14 +59,14 @@ func (ly *CINLayer) MaxAbsRew() float32 {
 		if lyi == nil {
 			continue
 		}
-		ly := lyi.(leabra.LeabraLayer).AsLeabra()
+		ly := lyi.(axon.AxonLayer).AsAxon()
 		act := math32.Abs(ly.Pools[0].Inhib.Act.Max)
 		mx = math32.Max(mx, act)
 	}
 	return mx
 }
 
-func (ly *CINLayer) ActFmG(ltime *leabra.Time) {
+func (ly *CINLayer) ActFmG(ltime *axon.Time) {
 	ract := ly.MaxAbsRew()
 	if ly.RewThr > 0 {
 		if ract > ly.RewThr {
@@ -84,7 +84,7 @@ func (ly *CINLayer) ActFmG(ltime *leabra.Time) {
 
 // CyclePost is called at end of Cycle
 // We use it to send ACh, which will then be active for the next cycle of processing.
-func (ly *CINLayer) CyclePost(ltime *leabra.Time) {
+func (ly *CINLayer) CyclePost(ltime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.ACh = act
 	ly.SendACh.SendACh(ly.Network, act)

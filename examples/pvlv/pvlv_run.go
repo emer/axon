@@ -6,8 +6,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/emer/leabra/examples/pvlv/data"
-	"github.com/emer/leabra/leabra"
+
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/examples/pvlv/data"
 	"github.com/goki/ki/kit"
 )
 
@@ -38,7 +39,7 @@ func (ss *Sim) SettleMinus(train bool) {
 	for qtr := 0; qtr < 3; qtr++ {
 		for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
 			ss.Net.Cycle(&ss.Time)
-			if ss.CycleLogUpdt == leabra.Cycle {
+			if ss.CycleLogUpdt == axon.Cycle {
 				ev.GlobalStep++
 				ss.LogCycleData()
 			}
@@ -46,14 +47,14 @@ func (ss *Sim) SettleMinus(train bool) {
 			if ss.Stepper.StepPoint(int(Cycle)) {
 				return
 			}
-			//ss.MaybeUpdate(train, false, leabra.FastSpike)
+			//ss.MaybeUpdate(train, false, axon.FastSpike)
 			if ss.ViewOn {
 				switch viewUpdt {
-				case leabra.Cycle:
+				case axon.Cycle:
 					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
 						ss.UpdateView()
 					}
-				case leabra.FastSpike: // every 10 cycles
+				case axon.FastSpike: // every 10 cycles
 					if (cyc+1)%10 == 0 {
 						ss.UpdateView()
 					}
@@ -63,16 +64,16 @@ func (ss *Sim) SettleMinus(train bool) {
 		ss.Net.QuarterFinal(&ss.Time)
 		if ss.ViewOn {
 			switch viewUpdt {
-			case leabra.Quarter:
+			case axon.Quarter:
 				ss.UpdateView()
-			case leabra.Phase:
+			case axon.Phase:
 				if qtr >= 2 {
 					ss.UpdateView()
 				}
 			}
 		}
 		ss.Time.QuarterInc()
-		if ss.CycleLogUpdt == leabra.Quarter {
+		if ss.CycleLogUpdt == axon.Quarter {
 			ev.GlobalStep++
 			ss.LogCycleData()
 		}
@@ -90,7 +91,7 @@ func (ss *Sim) SettlePlus(train bool) {
 	}
 	for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
 		ss.Net.Cycle(&ss.Time)
-		if ss.CycleLogUpdt == leabra.Cycle {
+		if ss.CycleLogUpdt == axon.Cycle {
 			ev.GlobalStep++
 			ss.LogCycleData()
 		}
@@ -100,11 +101,11 @@ func (ss *Sim) SettlePlus(train bool) {
 		}
 		if ss.ViewOn {
 			switch viewUpdt {
-			case leabra.Cycle:
+			case axon.Cycle:
 				if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
 					ss.UpdateView()
 				}
-			case leabra.FastSpike:
+			case axon.FastSpike:
 				if (cyc+1)%10 == 0 {
 					ss.UpdateView()
 				}
@@ -114,12 +115,12 @@ func (ss *Sim) SettlePlus(train bool) {
 	ss.Net.QuarterFinal(&ss.Time)
 	if ss.ViewOn {
 		switch viewUpdt {
-		case leabra.Quarter, leabra.Phase:
+		case axon.Quarter, axon.Phase:
 			ss.UpdateView()
 		}
 	}
 	ss.Time.QuarterInc()
-	if ss.CycleLogUpdt == leabra.Quarter {
+	if ss.CycleLogUpdt == axon.Quarter {
 		ev.GlobalStep++
 		ss.LogCycleData()
 	}
@@ -145,7 +146,7 @@ func (ss *Sim) TrialEnd(_ *PVLVEnv, train bool) {
 	if !train {
 		viewUpdt = ss.TestUpdt
 	}
-	if ss.ViewOn && viewUpdt == leabra.Trial {
+	if ss.ViewOn && viewUpdt == axon.Trial {
 		ss.UpdateView()
 	}
 }
@@ -161,7 +162,7 @@ func (ss *Sim) ApplyInputs() {
 
 	lays := []string{"StimIn", "ContextIn", "USTimeIn"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := ev.State(ly.Nm)
 		if pats == nil {
 			continue
@@ -174,7 +175,7 @@ func (ss *Sim) ApplyPVInputs() {
 	ev := &ss.Env
 	lays := []string{"PosPV", "NegPV"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := ev.State(ly.Nm)
 		if pats == nil {
 			continue
@@ -198,7 +199,7 @@ func (ev *PVLVEnv) RunOneTrialBlk(ss *Sim) {
 		curTG = ev.TrialInstances.ReadNext()
 		ev.AlphaCycle.Max = curTG.AlphaTicksPerTrialGp
 		blockDone = ev.RunOneTrial(ss, curTG) // run one instantiated trial type (aka "trial group")
-		if ss.ViewOn && ss.TrainUpdt == leabra.Trial {
+		if ss.ViewOn && ss.TrainUpdt == axon.Trial {
 			ss.UpdateView()
 		}
 		if ss.Stepper.StepPoint(int(SGTrial)) {
@@ -211,7 +212,7 @@ func (ev *PVLVEnv) RunOneTrialBlk(ss *Sim) {
 	if ss.Stepper.StepPoint(int(TrialBlock)) {
 		return
 	}
-	if ss.ViewOn && ss.TrainUpdt >= leabra.Epoch {
+	if ss.ViewOn && ss.TrainUpdt >= axon.Epoch {
 		ss.UpdateView()
 	}
 }
@@ -229,7 +230,7 @@ func (ev *PVLVEnv) RunOneTrial(ss *Sim, curTrial *data.TrialInstance) (blockDone
 		if ss.Stepper.StepPoint(int(AlphaFull)) {
 			return
 		}
-		if ss.ViewOn && ss.TrainUpdt <= leabra.Quarter {
+		if ss.ViewOn && ss.TrainUpdt <= axon.Quarter {
 			ss.UpdateView()
 		}
 	}
@@ -237,7 +238,7 @@ func (ev *PVLVEnv) RunOneTrial(ss *Sim, curTrial *data.TrialInstance) (blockDone
 	blockDone = ev.TrialCt.Incr()
 	ss.TrialEnd(ev, train)
 	//ss.LogTrialData(ev) // accumulate
-	if ss.ViewOn && ss.TrainUpdt == leabra.Trial {
+	if ss.ViewOn && ss.TrainUpdt == axon.Trial {
 		ss.UpdateView()
 	}
 	return blockDone
@@ -263,7 +264,7 @@ func (ev *PVLVEnv) RunOneAlphaCycle(ss *Sim, trial *data.TrialInstance) {
 	if train {
 		ss.Net.DWt()
 	}
-	if ss.ViewOn && ss.TrainUpdt == leabra.AlphaCycle {
+	if ss.ViewOn && ss.TrainUpdt == axon.AlphaCycle {
 		ss.UpdateView()
 	}
 	ss.LogTrialTypeData()

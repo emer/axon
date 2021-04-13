@@ -8,19 +8,19 @@ import (
 	"fmt"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
 // AlphaMaxLayer computes the maximum activation per neuron over the alpha cycle.
 // Needed for recording activations on layers with transient dynamics over alpha.
 type AlphaMaxLayer struct {
-	leabra.Layer
+	axon.Layer
 	AlphaMaxCyc int       `desc:"cycle upon which to start updating AlphaMax value"`
 	AlphaMaxs   []float32 `desc:"per-neuron maximum activation value during alpha cycle"`
 }
 
-var KiT_AlphaMaxLayer = kit.Types.AddType(&AlphaMaxLayer{}, leabra.LayerProps)
+var KiT_AlphaMaxLayer = kit.Types.AddType(&AlphaMaxLayer{}, axon.LayerProps)
 
 func (ly *AlphaMaxLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -54,7 +54,7 @@ func (ly *AlphaMaxLayer) AlphaCycInit() {
 	ly.InitAlphaMax()
 }
 
-func (ly *AlphaMaxLayer) ActFmG(ltime *leabra.Time) {
+func (ly *AlphaMaxLayer) ActFmG(ltime *axon.Time) {
 	ly.Layer.ActFmG(ltime)
 	if ltime.Cycle >= ly.AlphaMaxCyc {
 		ly.AlphaMaxFmAct(ltime)
@@ -62,7 +62,7 @@ func (ly *AlphaMaxLayer) ActFmG(ltime *leabra.Time) {
 }
 
 // AlphaMaxFmAct computes AlphaMax from Activation
-func (ly *AlphaMaxLayer) AlphaMaxFmAct(ltime *leabra.Time) {
+func (ly *AlphaMaxLayer) AlphaMaxFmAct(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

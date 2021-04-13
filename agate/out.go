@@ -7,8 +7,8 @@ package agate
 import (
 	"log"
 
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
@@ -29,7 +29,7 @@ type OutLayer struct {
 	Out OutParams `desc:"Parameters for output layer function"`
 }
 
-var KiT_OutLayer = kit.Types.AddType(&OutLayer{}, leabra.LayerProps)
+var KiT_OutLayer = kit.Types.AddType(&OutLayer{}, axon.LayerProps)
 
 func (ly *OutLayer) Defaults() {
 	ly.MaintLayer.Defaults()
@@ -52,14 +52,14 @@ func (ly *OutLayer) ClearLays() ([]PulseClearer, error) {
 }
 
 // CyclePost calls ResetMaint
-func (ly *OutLayer) CyclePost(ltime *leabra.Time) {
+func (ly *OutLayer) CyclePost(ltime *axon.Time) {
 	ly.MaintLayer.CyclePost(ltime)
 	ly.PulseClear(ltime)
 }
 
 // PulseClear sends a simulated synchronous pulse of activation / inhibition
 // to clear ClearLays
-func (ly *OutLayer) PulseClear(ltime *leabra.Time) {
+func (ly *OutLayer) PulseClear(ltime *axon.Time) {
 	if ltime.Cycle < ly.NMDA.AlphaMaxCyc {
 		return
 	}

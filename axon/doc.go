@@ -3,9 +3,9 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package leabra provides the basic reference leabra implementation, for rate-coded
+Package axon provides the basic reference axon implementation, for rate-coded
 activations and standard error-driven learning.  Other packages provide spiking
-or deep leabra, PVLV, PBWM, etc.
+or deep axon, PVLV, PBWM, etc.
 
 The overall design seeks an "optimal" tradeoff between simplicity, transparency, ability to flexibly
 recombine and extend elements, and avoiding having to rewrite a bunch of stuff.
@@ -71,13 +71,13 @@ conductances G.
 The Pools (type Pool, in pool.go) hold state used for computing pooled inhibition, but also are
 used to hold overall aggregate pooled state variables -- the first element in Pools applies
 to the layer itself, and subsequent ones are for each sub-pool (4D layers).
-These pools play the same role as the LeabraUnGpState structures in C++ emergent.
+These pools play the same role as the AxonUnGpState structures in C++ emergent.
 
 Prjns directly support all synapse-level computation, and hold the LearnSynParams and
 iterate directly over all of their synapses.  It is the exact same Prjn object that lives
 in the RecvPrjns of the receiver-side, and the SendPrjns of the sender-side, and it maintains
 and coordinates both sides of the state.  This clarifies and simplifies a lot of code.
-There is no separate equivalent of LeabraConSpec / LeabraConState at the level of
+There is no separate equivalent of AxonConSpec / AxonConState at the level of
 connection groups per unit per projection.
 
 The pattern of connectivity between units is specified by the prjn.Pattern interface
@@ -90,4 +90,4 @@ been established).  This approach allows patterns to just focus on patterns, and
 at all how they are used to allocate actual connections.
 
 */
-package leabra
+package axon

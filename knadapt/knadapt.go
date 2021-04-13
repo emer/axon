@@ -115,7 +115,7 @@ func (ka *Params) GcFmRate(gKNaF, gKNaM, gKNaS *float32, act float32) {
 
 /*
 class STATE_CLASS(KNaAdaptMiscSpec) : public STATE_CLASS(SpecMemberBase) {
-  // ##INLINE ##NO_TOKENS ##CAT_Leabra extra params associated with sodium-gated potassium channel adaptation mechanism
+  // ##INLINE ##NO_TOKENS ##CAT_Axon extra params associated with sodium-gated potassium channel adaptation mechanism
 INHERITED(SpecMemberBase)
 public:
   bool          clamp;          // #DEF_true apply adaptation even to clamped layers -- only happens if kna_adapt.on is true

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"bufio"
@@ -29,10 +29,10 @@ import (
 	"github.com/goki/mat32"
 )
 
-// LayFunChan is a channel that runs LeabraLayer functions
-type LayFunChan chan func(ly LeabraLayer)
+// LayFunChan is a channel that runs AxonLayer functions
+type LayFunChan chan func(ly AxonLayer)
 
-// leabra.NetworkStru holds the basic structural components of a network (layers)
+// axon.NetworkStru holds the basic structural components of a network (layers)
 type NetworkStru struct {
 	EmerNet  emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Nm       string                `desc:"overall name of network -- helps discriminate if there are multiple"`
@@ -246,7 +246,7 @@ func (nt *NetworkStru) AllWtScales() string {
 			if p.IsOff() {
 				continue
 			}
-			pj := p.(LeabraPrjn).AsLeabra()
+			pj := p.(AxonPrjn).AsAxon()
 			str += fmt.Sprintf("\t%23s\t\tAbs:\t%g\tRel:\t%g\n", pj.Name(), pj.WtScale.Abs, pj.WtScale.Rel)
 		}
 	}
@@ -269,7 +269,7 @@ func (nt *NetworkStru) AddLayerInit(ly emer.Layer, name string, shape []int, typ
 // AddLayer adds a new layer with given name and shape to the network.
 // 2D and 4D layer shapes are generally preferred but not essential -- see
 // AddLayer2D and 4D for convenience methods for those.  4D layers enable
-// pool (unit-group) level inhibition in Leabra networks, for example.
+// pool (unit-group) level inhibition in Axon networks, for example.
 // shape is in row-major format with outer-most dimensions first:
 // e.g., 4D 3, 2, 4, 5 = 3 rows (Y) of 2 cols (X) of pools, with each unit
 // group having 4 rows (Y) of 5 (X) units.
@@ -286,7 +286,7 @@ func (nt *NetworkStru) AddLayer2D(name string, shapeY, shapeX int, typ emer.Laye
 }
 
 // AddLayer4D adds a new layer with given name and 4D shape to the network.
-// 4D layers enable pool (unit-group) level inhibition in Leabra networks, for example.
+// 4D layers enable pool (unit-group) level inhibition in Axon networks, for example.
 // shape is in row-major format with outer-most dimensions first:
 // e.g., 4D 3, 2, 4, 5 = 3 rows (Y) of 2 cols (X) of pools, with each pool
 // having 4 rows (Y) of 5 (X) neurons.
@@ -642,7 +642,7 @@ func (nt *NetworkStru) ThrWorker(tt int) {
 			if ly.IsOff() {
 				continue
 			}
-			fun(ly.(LeabraLayer))
+			fun(ly.(AxonLayer))
 		}
 		nt.ThrTimes[tt].Stop()
 		nt.WaitGp.Done()
@@ -654,14 +654,14 @@ func (nt *NetworkStru) ThrWorker(tt int) {
 
 // ThrLayFun calls function on layer, using threaded (go routine worker) computation if NThreads > 1
 // and otherwise just iterates over layers in the current thread.
-func (nt *NetworkStru) ThrLayFun(fun func(ly LeabraLayer), funame string) {
+func (nt *NetworkStru) ThrLayFun(fun func(ly AxonLayer), funame string) {
 	nt.FunTimerStart(funame)
 	if nt.NThreads <= 1 {
 		for _, ly := range nt.Layers {
 			if ly.IsOff() {
 				continue
 			}
-			fun(ly.(LeabraLayer))
+			fun(ly.(AxonLayer))
 		}
 	} else {
 		for th := 0; th < nt.NThreads; th++ {

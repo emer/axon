@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ import (
 // Note: all non-float32 infrastructure variables must be at the start!
 const NeuronVarStart = 8
 
-// leabra.Neuron holds all of the neuron (unit) level variables -- this is the most basic version with
+// axon.Neuron holds all of the neuron (unit) level variables -- this is the most basic version with
 // rate-code only and no optional features at all.
 // All variables accessible via Unit interface must be float32 and start at the top, in contiguous order
 type Neuron struct {

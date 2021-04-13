@@ -19,7 +19,7 @@ package obsolete
 //		{"EnvProg", etensor.STRING, nil, nil}, // program to set up environment for this configuration
 //		{"TrainEpochs", etensor.INT, nil, nil}, // number of total epochs to train for
 //		{"UseTrialGp", etensor.BOOl, nil, nil}, // If true uses eco_trials_per_epoch as master; ELSE uses trials_per_epoch - avoids confusion since these two are logically interdependent. network.group member can be used to index and count the number of eco trials.
-//		{"TrialGpsPerEpoch", etensor.INT, nil, nil}, // If used (use_eco == true), assigns the number of ecologically-defined trials per epoch.  Thus, the eco_trial becomes the dominant "trial" of reference. An eco trial is defined as two or more conventional Leabra-like trials in sequence. This concept is meant to capture the temporally-extended nature of most learning episodes under ecological conditions. Eco trials can be tracked by the network variable network.group.
+//		{"TrialGpsPerEpoch", etensor.INT, nil, nil}, // If used (use_eco == true), assigns the number of ecologically-defined trials per epoch.  Thus, the eco_trial becomes the dominant "trial" of reference. An eco trial is defined as two or more conventional Axon-like trials in sequence. This concept is meant to capture the temporally-extended nature of most learning episodes under ecological conditions. Eco trials can be tracked by the network variable network.group.
 //		{"PermuteTrialGps", etensor.BOOl, nil, nil}, // permute list of TrialInstance-level trials after generation
 //		{"TrialsPerEpoch", etensor.INT, nil, nil}, // number of trials per epoch
 //		{"SaveFinalWts", etensor.BOOl, nil, nil}, // save final weights after training
@@ -55,7 +55,7 @@ type RunConfig struct {
 	EnvProg          string `desc:"Program to set up environment for this configuration"`
 	TrainEpochs      int    `desc:"Number of total epochs to train for"`
 	UseTrialGp       bool   `desc:"If true uses eco_trials_per_epoch as master; ELSE uses trials_per_epoch - avoids confusion since these two are logically interdependent. network.group member can be used to index and count the number of eco trials."`
-	TrialGpsPerEpoch int    `desc:"If used (use_eco == true), assigns the number of ecologically-defined trials per epoch.  Thus, the eco_trial becomes the dominant 'trial' of reference. An eco trial is defined as two or more conventional Leabra-like trials in sequence. This concept is meant to capture the temporally-extended nature of most learning episodes under ecological conditions. Eco trials can be tracked by the network variable network.group."`
+	TrialGpsPerEpoch int    `desc:"If used (use_eco == true), assigns the number of ecologically-defined trials per epoch.  Thus, the eco_trial becomes the dominant 'trial' of reference. An eco trial is defined as two or more conventional Axon-like trials in sequence. This concept is meant to capture the temporally-extended nature of most learning episodes under ecological conditions. Eco trials can be tracked by the network variable network.group."`
 	PermuteTrialGps  bool   `desc:"Permute list of Trial-level trials after generation"`
 	TrialsPerEpoch   int    `desc:"Number of trials per epoch"`
 	SaveFinalWts     bool   `desc:"Save final weights after training"`

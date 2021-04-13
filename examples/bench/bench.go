@@ -16,6 +16,7 @@ import (
 	"math/rand"
 	"os"
 
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/params"
@@ -24,10 +25,9 @@ import (
 	"github.com/emer/emergent/timer"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	"github.com/emer/leabra/leabra"
 )
 
-var Net *leabra.Network
+var Net *axon.Network
 var Pats *etable.Table
 var EpcLog *etable.Table
 var Thread = false // much slower for small net
@@ -65,7 +65,7 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(net *leabra.Network, threads, units int) {
+func ConfigNet(net *axon.Network, threads, units int) {
 	net.InitName(net, "BenchNet")
 
 	squn := int(math.Sqrt(float64(units)))
@@ -137,18 +137,18 @@ func ConfigEpcLog(dt *etable.Table) {
 	}, 0)
 }
 
-func TrainNet(net *leabra.Network, pats, epcLog *etable.Table, epcs int) {
-	ltime := leabra.NewTime()
+func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
+	ltime := axon.NewTime()
 	net.InitWts()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 
 	epcLog.SetNumRows(epcs)
 
-	inLay := net.LayerByName("Input").(*leabra.Layer)
-	hid1Lay := net.LayerByName("Hidden1").(*leabra.Layer)
-	hid2Lay := net.LayerByName("Hidden2").(*leabra.Layer)
-	outLay := net.LayerByName("Output").(*leabra.Layer)
+	inLay := net.LayerByName("Input").(*axon.Layer)
+	hid1Lay := net.LayerByName("Hidden1").(*axon.Layer)
+	hid2Lay := net.LayerByName("Hidden2").(*axon.Layer)
+	outLay := net.LayerByName("Output").(*axon.Layer)
 
 	_ = hid1Lay
 	_ = hid2Lay
@@ -242,7 +242,7 @@ func main() {
 		fmt.Printf("Running bench with: %v threads, %v epochs, %v pats, %v units\n", threads, epochs, pats, units)
 	}
 
-	Net = &leabra.Network{}
+	Net = &axon.Network{}
 	ConfigNet(Net, threads, units)
 
 	Pats = &etable.Table{}

@@ -5,22 +5,22 @@
 package pcore
 
 import (
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
 // pcore.Network has methods for configuring specialized PCore network components
 // PCore = Pallidal Core mode of BG
 type Network struct {
-	leabra.Network
+	axon.Network
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
-var NetworkProps = leabra.NetworkProps
+var NetworkProps = axon.NetworkProps
 
 // UnitVarNames returns a list of variable names available on the units in this layer
 func (nt *Network) UnitVarNames() []string {
@@ -39,7 +39,7 @@ func (nt *Network) SynVarNames() []string {
 // Appropriate PoolOneToOne connections are made between layers,
 // using standard styles
 // space is the spacing between layers (2 typical)
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal leabra.LeabraLayer) {
+func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
 	return AddBG(&nt.Network, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
 }
 
@@ -53,7 +53,7 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 //         for mixing in to other models
 
 // AddCINLayer adds a CINLayer, with a single neuron.
-func AddCINLayer(nt *leabra.Network, name string) *CINLayer {
+func AddCINLayer(nt *axon.Network, name string) *CINLayer {
 	ly := &CINLayer{}
 	nt.AddLayerInit(ly, name, []int{1, 1}, emer.Hidden)
 	return ly
@@ -62,7 +62,7 @@ func AddCINLayer(nt *leabra.Network, name string) *CINLayer {
 // AddMatrixLayer adds a MatrixLayer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
-func AddMatrixLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DaReceptors) *MatrixLayer {
+func AddMatrixLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DaReceptors) *MatrixLayer {
 	ly := &MatrixLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	ly.DaR = da
@@ -70,14 +70,14 @@ func AddMatrixLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, n
 }
 
 // ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
-func ConnectToMatrix(nt *leabra.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+func ConnectToMatrix(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayersPrjn(send, recv, pat, emer.Forward, &MatrixPrjn{})
 }
 
 // AddGPLayer adds a GPLayer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
-func AddGPeLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPLayer {
+func AddGPeLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPLayer {
 	ly := &GPLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	ly.SetClass("GP")
@@ -87,7 +87,7 @@ func AddGPeLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // AddGPiLayer adds a GPiLayer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
-func AddGPiLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPiLayer {
+func AddGPiLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPiLayer {
 	ly := &GPiLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	ly.SetClass("GP")
@@ -97,7 +97,7 @@ func AddGPiLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // AddSTNLayer adds a subthalamic nucleus Layer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
-func AddSTNLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *STNLayer {
+func AddSTNLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *STNLayer {
 	ly := &STNLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	return ly
@@ -106,7 +106,7 @@ func AddSTNLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // AddVThalLayer adds a ventral thalamus (VA/VL/VM) Layer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
-func AddVThalLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *VThalLayer {
+func AddVThalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *VThalLayer {
 	ly := &VThalLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	return ly
@@ -119,7 +119,7 @@ func AddVThalLayer(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nN
 // Appropriate PoolOneToOne connections are made between layers,
 // using standard styles.
 // space is the spacing between layers (2 typical)
-func AddBG(nt *leabra.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal leabra.LeabraLayer) {
+func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
 	gpi = AddGPiLayer(nt, prefix+"GPi", nPoolsY, nPoolsX, 1, 1)
 	vthal = AddVThalLayer(nt, prefix+"VThal", nPoolsY, nPoolsX, 1, 1)
 	gpeOuti := AddGPeLayer(nt, prefix+"GPeOut", nPoolsY, nPoolsX, 1, 1)
@@ -209,7 +209,7 @@ func AddBG(nt *leabra.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 // using standard styles.
 // space is the spacing between layers (2 typical)
 // Py is Python version, returns layers as a slice
-func AddBGPy(nt *leabra.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) []leabra.LeabraLayer {
+func AddBGPy(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) []axon.AxonLayer {
 	mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal := AddBG(nt, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
-	return []leabra.LeabraLayer{mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal}
+	return []axon.AxonLayer{mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal}
 }

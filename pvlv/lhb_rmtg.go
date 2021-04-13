@@ -6,10 +6,11 @@ package pvlv
 
 import (
 	"fmt"
+
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	_ "github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
@@ -28,14 +29,14 @@ type LHbRMTgGains struct {
 }
 
 type LHbRMTgLayer struct {
-	leabra.Layer
+	axon.Layer
 	RcvFrom       emer.LayNames
 	Gains         LHbRMTgGains         `view:"inline"`
 	PVNegDiscount float32              `desc:"reduction in effective PVNeg net value (when positive) so that negative outcomes can never be completely predicted away -- still allows for positive da for less-bad outcomes"`
 	InternalState LHBRMTgInternalState // for debugging
 }
 
-var KiT_LHbRMTgLayer = kit.Types.AddType(&LHbRMTgLayer{}, leabra.LayerProps)
+var KiT_LHbRMTgLayer = kit.Types.AddType(&LHbRMTgLayer{}, axon.LayerProps)
 
 type LHBRMTgInternalState struct {
 	VSPatchPosD1   float32
@@ -86,7 +87,7 @@ func (ly *LHbRMTgLayer) Build() error {
 	if nu == 0 {
 		return fmt.Errorf("build Layer %v: no units specified in Shape", ly.Nm)
 	}
-	ly.Neurons = make([]leabra.Neuron, nu)
+	ly.Neurons = make([]axon.Neuron, nu)
 	err := ly.BuildPools(nu)
 	if err != nil {
 		return err
@@ -98,14 +99,14 @@ func (ly *LHbRMTgLayer) Build() error {
 	return err
 }
 
-func (ly *LHbRMTgLayer) ActFmG(ltime *leabra.Time) {
+func (ly *LHbRMTgLayer) ActFmG(ltime *axon.Time) {
 	if ltime.Quarter != 3 {
 		return
 	}
 	var vsPatchPosD1, vsPatchPosD2, vsPatchNegD1, vsPatchNegD2, vsMatrixPosD1, vsMatrixPosD2,
 		vsMatrixNegD1, vsMatrixNegD2, pvPos, pvNeg float32
 	for _, lNm := range ly.RcvFrom {
-		sLy := ly.Network.LayerByName(lNm).(leabra.LeabraLayer).AsLeabra()
+		sLy := ly.Network.LayerByName(lNm).(axon.AxonLayer).AsAxon()
 		lyAct := TotalAct(sLy)
 		switch lNm {
 		case "VSPatchPosD1":

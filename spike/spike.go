@@ -6,13 +6,13 @@ package spike
 
 import (
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 )
 
 // ActParams is full set of activation params including those from base
-// leabra and the additional Spiking-specific ones.
+// axon and the additional Spiking-specific ones.
 type ActParams struct {
-	leabra.ActParams
+	axon.ActParams
 	Spike SpikeParams `view:"inline" desc:"spiking parameters"`
 }
 
@@ -27,12 +27,12 @@ func (sk *ActParams) Update() {
 }
 
 // CopyFromAct copies ActParams from source (e.g., rate-code params)
-func (sk *ActParams) CopyFromAct(act *leabra.ActParams) {
+func (sk *ActParams) CopyFromAct(act *axon.ActParams) {
 	sk.ActParams = *act
 	sk.Update()
 }
 
-func (sk *ActParams) SpikeVmFmG(nrn *leabra.Neuron) {
+func (sk *ActParams) SpikeVmFmG(nrn *axon.Neuron) {
 	updtVm := true
 	if sk.Spike.Tr > 0 && nrn.ISI >= 0 && nrn.ISI < float32(sk.Spike.Tr) {
 		updtVm = false // don't update the spiking vm during refract
@@ -58,7 +58,7 @@ func (sk *ActParams) SpikeVmFmG(nrn *leabra.Neuron) {
 		nrn.Inet = inet2
 	}
 
-	if sk.Noise.Type == leabra.VmNoise {
+	if sk.Noise.Type == axon.VmNoise {
 		nwVm += nrn.Noise
 	}
 	nrn.Vm = sk.VmRange.ClipVal(nwVm)
@@ -66,7 +66,7 @@ func (sk *ActParams) SpikeVmFmG(nrn *leabra.Neuron) {
 
 // SpikeActFmVm computes the discrete spiking activation
 // from membrane potential Vm
-func (sk *ActParams) SpikeActFmVm(nrn *leabra.Neuron) {
+func (sk *ActParams) SpikeActFmVm(nrn *axon.Neuron) {
 	var thr float32
 	if sk.Spike.Exp {
 		thr = sk.Spike.ExpThr

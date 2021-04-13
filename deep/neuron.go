@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 )
 
 var (
@@ -29,9 +29,9 @@ func init() {
 	for i, v := range SuperNeuronVars {
 		SuperNeuronVarsMap[v] = i
 	}
-	ln := len(leabra.NeuronVars)
+	ln := len(axon.NeuronVars)
 	NeuronVarsAll = make([]string, len(NeuronVars)+ln)
-	copy(NeuronVarsAll, leabra.NeuronVars)
+	copy(NeuronVarsAll, axon.NeuronVars)
 	copy(NeuronVarsAll[ln:], NeuronVars)
 }
 

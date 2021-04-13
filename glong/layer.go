@@ -6,7 +6,7 @@ package glong
 
 import (
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
@@ -19,13 +19,13 @@ import (
 // It also records AlphaMax = maximum activation within an AlphaCycle,
 // which is important given the transient dynamics.
 type Layer struct {
-	leabra.Layer
+	axon.Layer
 	NMDA    NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
 	GABAB   GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
 	GlNeurs []Neuron    `desc:"slice of extra glong.Neuron state for this layer -- flat list of len = Shape.Len(). You must iterate over index and use pointer to modify values."`
 }
 
-var KiT_Layer = kit.Types.AddType(&Layer{}, leabra.LayerProps)
+var KiT_Layer = kit.Types.AddType(&Layer{}, axon.LayerProps)
 
 func (ly *Layer) Defaults() {
 	ly.Layer.Defaults()
@@ -90,7 +90,7 @@ func (ly *Layer) AlphaCycInit() {
 }
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *Layer) GFmInc(ltime *leabra.Time) {
+func (ly *Layer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
 	ly.RecvGnmdaPInc(ltime)
 	ly.GFmIncNeur(ltime)
@@ -99,7 +99,7 @@ func (ly *Layer) GFmInc(ltime *leabra.Time) {
 // RecvGInc calls RecvGInc on receiving projections to collect Neuron-level G*Inc values.
 // This is called by GFmInc overall method, but separated out for cases that need to
 // do something different.
-func (ly *Layer) RecvGInc(ltime *leabra.Time) {
+func (ly *Layer) RecvGInc(ltime *axon.Time) {
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
@@ -107,12 +107,12 @@ func (ly *Layer) RecvGInc(ltime *leabra.Time) {
 		if p.Type() == NMDA { // skip NMDA
 			continue
 		}
-		p.(leabra.LeabraPrjn).RecvGInc()
+		p.(axon.AxonPrjn).RecvGInc()
 	}
 }
 
 // RecvGnmdaPInc increments the recurrent-specific GeInc
-func (ly *Layer) RecvGnmdaPInc(ltime *leabra.Time) {
+func (ly *Layer) RecvGnmdaPInc(ltime *axon.Time) {
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
@@ -120,7 +120,7 @@ func (ly *Layer) RecvGnmdaPInc(ltime *leabra.Time) {
 		if p.Type() != NMDA { // skip non-NMDA
 			continue
 		}
-		pj := p.(leabra.LeabraPrjn).AsLeabra()
+		pj := p.(axon.AxonPrjn).AsAxon()
 		for ri := range ly.GlNeurs {
 			rn := &ly.GlNeurs[ri]
 			rn.NMDASyn += pj.GInc[ri]
@@ -131,7 +131,7 @@ func (ly *Layer) RecvGnmdaPInc(ltime *leabra.Time) {
 
 // GFmIncNeur is the neuron-level code for GFmInc that integrates overall Ge, Gi values
 // from their G*Raw accumulators.
-func (ly *Layer) GFmIncNeur(ltime *leabra.Time) {
+func (ly *Layer) GFmIncNeur(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -149,7 +149,7 @@ func (ly *Layer) GFmIncNeur(ltime *leabra.Time) {
 	}
 }
 
-func (ly *Layer) GABABFmGi(ltime *leabra.Time) {
+func (ly *Layer) GABABFmGi(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -166,7 +166,7 @@ func (ly *Layer) GABABFmGi(ltime *leabra.Time) {
 	}
 }
 
-func (ly *Layer) ActFmG(ltime *leabra.Time) {
+func (ly *Layer) ActFmG(ltime *axon.Time) {
 	ly.Layer.ActFmG(ltime)
 	ly.GABABFmGi(ltime)
 	if ltime.Cycle >= ly.NMDA.AlphaMaxCyc {
@@ -175,7 +175,7 @@ func (ly *Layer) ActFmG(ltime *leabra.Time) {
 }
 
 // AlphaMaxFmAct computes AlphaMax from Activation
-func (ly *Layer) AlphaMaxFmAct(ltime *leabra.Time) {
+func (ly *Layer) AlphaMaxFmAct(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

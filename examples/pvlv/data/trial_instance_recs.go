@@ -1,6 +1,6 @@
 package data
 
-import "github.com/emer/leabra/pvlv"
+import "github.com/emer/axon/pvlv"
 
 // A set of trial groups, sourced from an TrialParams list, instantiated according to the
 // PercentOfTotal field in the source list.

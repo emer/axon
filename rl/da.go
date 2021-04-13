@@ -5,8 +5,8 @@
 package rl
 
 import (
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
@@ -72,12 +72,12 @@ func (sd *SendDA) AddAllBut(net emer.Network, excl []string) {
 
 // ClampDaLayer is an Input layer that just sends its activity as the dopamine signal
 type ClampDaLayer struct {
-	leabra.Layer
+	axon.Layer
 	SendDA SendDA  `desc:"list of layers to send dopamine to"`
 	DA     float32 `desc:"dopamine value for this layer"`
 }
 
-var KiT_ClampDaLayer = kit.Types.AddType(&ClampDaLayer{}, leabra.LayerProps)
+var KiT_ClampDaLayer = kit.Types.AddType(&ClampDaLayer{}, axon.LayerProps)
 
 func (ly *ClampDaLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -101,7 +101,7 @@ func (ly *ClampDaLayer) Build() error {
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *ClampDaLayer) CyclePost(ltime *leabra.Time) {
+func (ly *ClampDaLayer) CyclePost(ltime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)

@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// leabra.Network has parameters for running a basic rate-coded Leabra network
+// axon.Network has parameters for running a basic rate-coded Axon network
 type Network struct {
 	NetworkStru
 	WtBalInterval int `def:"10" desc:"how frequently to update the weight balance average weight factor -- relatively expensive"`
@@ -30,7 +30,7 @@ type Network struct {
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
-func (nt *Network) AsLeabra() *Network {
+func (nt *Network) AsAxon() *Network {
 	return nt
 }
 
@@ -94,13 +94,13 @@ func (nt *Network) SynVarProps() map[string]string {
 //  The following methods constitute the primary user-called API during AlphaCyc method
 //  to compute one complete algorithmic alpha cycle update.
 //
-//  They just call the corresponding Impl method using the LeabraNetwork interface
+//  They just call the corresponding Impl method using the AxonNetwork interface
 //  so that other network types can specialize any of these entry points.
 
 // AlphaCycInit handles all initialization at start of new input pattern, including computing
 // input scaling from running average activation etc.
 func (nt *Network) AlphaCycInit() {
-	nt.EmerNet.(LeabraNetwork).AlphaCycInitImpl()
+	nt.EmerNet.(AxonNetwork).AlphaCycInitImpl()
 }
 
 // Cycle runs one cycle of activation updating:
@@ -112,8 +112,8 @@ func (nt *Network) AlphaCycInit() {
 // This basic version doesn't use the time info, but more specialized types do, and we
 // want to keep a consistent API for end-user code.
 func (nt *Network) Cycle(ltime *Time) {
-	nt.EmerNet.(LeabraNetwork).CycleImpl(ltime)
-	nt.EmerNet.(LeabraNetwork).CyclePostImpl(ltime) // always call this after std cycle..
+	nt.EmerNet.(AxonNetwork).CycleImpl(ltime)
+	nt.EmerNet.(AxonNetwork).CyclePostImpl(ltime) // always call this after std cycle..
 }
 
 // CyclePost is called after the standard Cycle update, and calls CyclePost
@@ -121,23 +121,23 @@ func (nt *Network) Cycle(ltime *Time) {
 // need to do something special after Act is finally computed.
 // For example, sending a neuromodulatory signal such as dopamine.
 func (nt *Network) CyclePost(ltime *Time) {
-	nt.EmerNet.(LeabraNetwork).CyclePostImpl(ltime)
+	nt.EmerNet.(AxonNetwork).CyclePostImpl(ltime)
 }
 
 // QuarterFinal does updating after end of a quarter
 func (nt *Network) QuarterFinal(ltime *Time) {
-	nt.EmerNet.(LeabraNetwork).QuarterFinalImpl(ltime)
+	nt.EmerNet.(AxonNetwork).QuarterFinalImpl(ltime)
 }
 
 // DWt computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWt() {
-	nt.EmerNet.(LeabraNetwork).DWtImpl()
+	nt.EmerNet.(AxonNetwork).DWtImpl()
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
 // Also calls WtBalFmWt every WtBalInterval times
 func (nt *Network) WtFmDWt() {
-	nt.EmerNet.(LeabraNetwork).WtFmDWtImpl()
+	nt.EmerNet.(AxonNetwork).WtFmDWtImpl()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -151,7 +151,7 @@ func (nt *Network) InitWts() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).InitWts()
+		ly.(AxonLayer).InitWts()
 	}
 	// separate pass to enforce symmetry
 	// st := time.Now()
@@ -159,7 +159,7 @@ func (nt *Network) InitWts() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).InitWtSym()
+		ly.(AxonLayer).InitWtSym()
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
@@ -186,7 +186,7 @@ func (nt *Network) InitTopoScales() {
 				if !pt.HasTopoWts() {
 					continue
 				}
-				pj := p.(LeabraPrjn).AsLeabra()
+				pj := p.(AxonPrjn).AsAxon()
 				slay := p.SendLay()
 				pt.TopoWts(slay.Shape(), ly.Shape(), scales)
 				pj.SetScalesRPool(scales)
@@ -194,7 +194,7 @@ func (nt *Network) InitTopoScales() {
 				if !pt.TopoWts {
 					continue
 				}
-				pj := p.(LeabraPrjn).AsLeabra()
+				pj := p.(AxonPrjn).AsAxon()
 				pj.SetScalesFunc(pt.GaussWts)
 			}
 		}
@@ -210,7 +210,7 @@ func (nt *Network) DecayState(decay float32) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).DecayState(decay)
+		ly.(AxonLayer).DecayState(decay)
 	}
 }
 
@@ -220,7 +220,7 @@ func (nt *Network) InitActs() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).InitActs()
+		ly.(AxonLayer).InitActs()
 	}
 }
 
@@ -230,7 +230,7 @@ func (nt *Network) InitExt() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).InitExt()
+		ly.(AxonLayer).InitExt()
 	}
 }
 
@@ -242,7 +242,7 @@ func (nt *Network) UpdateExtFlags() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).UpdateExtFlags()
+		ly.(AxonLayer).UpdateExtFlags()
 	}
 }
 
@@ -256,7 +256,7 @@ func (nt *Network) InitGInc() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).InitGInc()
+		ly.(AxonLayer).InitGInc()
 	}
 }
 
@@ -267,7 +267,7 @@ func (nt *Network) AlphaCycInitImpl() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).AlphaCycInit()
+		ly.(AxonLayer).AlphaCycInit()
 	}
 }
 
@@ -283,7 +283,7 @@ func (nt *Network) GScaleFmAvgAct() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(LeabraLayer).GScaleFmAvgAct()
+		ly.(AxonLayer).GScaleFmAvgAct()
 	}
 }
 
@@ -309,28 +309,28 @@ func (nt *Network) CycleImpl(ltime *Time) {
 // SendGeDelta sends change in activation since last sent, if above thresholds
 // and integrates sent deltas into GeRaw and time-integrated Ge values
 func (nt *Network) SendGDelta(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.SendGDelta(ltime) }, "SendGDelta")
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.GFmInc(ltime) }, "GFmInc   ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SendGDelta(ltime) }, "SendGDelta")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.GFmInc(ltime) }, "GFmInc   ")
 }
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 func (nt *Network) AvgMaxGe(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.AvgMaxGe(ltime) }, "AvgMaxGe")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxGe(ltime) }, "AvgMaxGe")
 }
 
 // InhibiFmGeAct computes inhibition Gi from Ge and Act stats within relevant Pools
 func (nt *Network) InhibFmGeAct(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.InhibFmGeAct(ltime) }, "InhibFmGeAct")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.InhibFmGeAct(ltime) }, "InhibFmGeAct")
 }
 
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 func (nt *Network) ActFmG(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.ActFmG(ltime) }, "ActFmG   ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.ActFmG(ltime) }, "ActFmG   ")
 }
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 func (nt *Network) AvgMaxAct(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.AvgMaxAct(ltime) }, "AvgMaxAct")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxAct(ltime) }, "AvgMaxAct")
 }
 
 // CyclePostImpl is called after the standard Cycle update, and calls CyclePost
@@ -338,12 +338,12 @@ func (nt *Network) AvgMaxAct(ltime *Time) {
 // need to do something special after Act is finally computed.
 // For example, sending a neuromodulatory signal such as dopamine.
 func (nt *Network) CyclePostImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.CyclePost(ltime) }, "CyclePost")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.CyclePost(ltime) }, "CyclePost")
 }
 
 // QuarterFinalImpl does updating after end of a quarter
 func (nt *Network) QuarterFinalImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.QuarterFinal(ltime) }, "QuarterFinal")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.QuarterFinal(ltime) }, "QuarterFinal")
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -351,13 +351,13 @@ func (nt *Network) QuarterFinalImpl(ltime *Time) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl() {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.DWt() }, "DWt     ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt() }, "DWt     ")
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 // Also calls WtBalFmWt every WtBalInterval times
 func (nt *Network) WtFmDWtImpl() {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.WtFmDWt() }, "WtFmDWt")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt() }, "WtFmDWt")
 	nt.WtBalCtr++
 	if nt.WtBalCtr >= nt.WtBalInterval {
 		nt.WtBalCtr = 0
@@ -367,7 +367,7 @@ func (nt *Network) WtFmDWtImpl() {
 
 // WtBalFmWt updates the weight balance factors based on average recv weights
 func (nt *Network) WtBalFmWt() {
-	nt.ThrLayFun(func(ly LeabraLayer) { ly.WtBalFmWt() }, "WtBalFmWt")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.WtBalFmWt() }, "WtBalFmWt")
 }
 
 // LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
@@ -377,7 +377,7 @@ func (nt *Network) LrateMult(mult float32) {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(LeabraLayer).LrateMult(mult)
+		ly.(AxonLayer).LrateMult(mult)
 	}
 }
 
@@ -398,7 +398,7 @@ func (nt *Network) UnLesionNeurons() {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(LeabraLayer).AsLeabra().UnLesionNeurons()
+		ly.(AxonLayer).AsAxon().UnLesionNeurons()
 	}
 }
 
@@ -419,9 +419,9 @@ func (nt *Network) CollectDWts(dwts *[]float32, nwts int) bool {
 		made = true
 	}
 	for _, lyi := range nt.Layers {
-		ly := lyi.(LeabraLayer).AsLeabra()
+		ly := lyi.(AxonLayer).AsAxon()
 		for _, pji := range ly.SndPrjns {
-			pj := pji.(LeabraPrjn).AsLeabra()
+			pj := pji.(AxonPrjn).AsAxon()
 			ns := len(pj.Syns)
 			nsz := idx + ns
 			if len(*dwts) < nsz {
@@ -441,9 +441,9 @@ func (nt *Network) CollectDWts(dwts *[]float32, nwts int) bool {
 func (nt *Network) SetDWts(dwts []float32) {
 	idx := 0
 	for _, lyi := range nt.Layers {
-		ly := lyi.(LeabraLayer).AsLeabra()
+		ly := lyi.(AxonLayer).AsAxon()
 		for _, pji := range ly.SndPrjns {
-			pj := pji.(LeabraPrjn).AsLeabra()
+			pj := pji.(AxonPrjn).AsAxon()
 			ns := len(pj.Syns)
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
@@ -466,14 +466,14 @@ func (nt *Network) SizeReport() string {
 	syn := 0
 	synMem := 0
 	for _, lyi := range nt.Layers {
-		ly := lyi.(LeabraLayer).AsLeabra()
+		ly := lyi.(AxonLayer).AsAxon()
 		nn := len(ly.Neurons)
 		nmem := nn * int(unsafe.Sizeof(Neuron{}))
 		neur += nn
 		neurMem += nmem
 		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, nn, (datasize.ByteSize)(nmem).HumanReadable())
 		for _, pji := range ly.SndPrjns {
-			pj := pji.(LeabraPrjn).AsLeabra()
+			pj := pji.(AxonPrjn).AsAxon()
 			ns := len(pj.Syns)
 			syn += ns
 			pmem := ns*int(unsafe.Sizeof(Synapse{})) + len(pj.GInc)*4 + len(pj.WbRecv)*int(unsafe.Sizeof(WtBalRecvPrjn{}))
@@ -495,7 +495,7 @@ func (nt *Network) ThreadAlloc(nThread int) string {
 	}
 	if nl == nThread {
 		for li, lyi := range nt.Layers {
-			ly := lyi.(LeabraLayer).AsLeabra()
+			ly := lyi.(AxonLayer).AsAxon()
 			ly.SetThread(li)
 		}
 		return fmt.Sprintf("Number of threads: %d == number of layers: %d\n", nThread, nl)
@@ -528,7 +528,7 @@ func (nt *Network) ThreadAlloc(nThread int) string {
 	// cache per-layer data first
 	ld := make([]td, nl)
 	for li, lyi := range nt.Layers {
-		ly := lyi.(LeabraLayer).AsLeabra()
+		ly := lyi.(AxonLayer).AsAxon()
 		ld[li].Neur, ld[li].Syn, ld[li].Tot = ly.CostEst()
 	}
 
@@ -597,7 +597,7 @@ func (nt *Network) ThreadReport() string {
 		tsyn := 0
 		ttot := 0
 		for _, lyi := range nt.ThrLay[th] {
-			ly := lyi.(LeabraLayer).AsLeabra()
+			ly := lyi.(AxonLayer).AsAxon()
 			neur, syn, tot := ly.CostEst()
 			tneur += neur
 			tsyn += syn

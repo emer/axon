@@ -31,7 +31,7 @@ Naming rule: DA when a singleton, DaMod (lowercase a) when CamelCased with somet
 
 * pbwm.Layer has DA, ACh, SE -- can be modulated
 
-* ModLayer adds DA-modulated learning on top of basic Leabra learning
+* ModLayer adds DA-modulated learning on top of basic Axon learning
 
 * GateLayer has GateStates in 1-to-1 correspondence with Pools, to keep
    track of gating state -- source gating layers can send updates to other layers.
@@ -46,7 +46,7 @@ Naming rule: DA when a singleton, DaMod (lowercase a) when CamelCased with somet
 * GPiThalLayer receives from Matrix Go and GPe NoGo to compute final WTA gating, and
    broadcasts GateState info to its SendTo layers.  See Timing params for timing.
 
-* PFCLayer for active maintenance -- reproduces a DeepLeabra like framework,
+* PFCLayer for active maintenance -- reproduces a DeepAxon like framework,
    with update timing according to BurstQtr.  Gating is computed in quarter
    *before* updating in BurstQtr.
    At *end* of BurstQtr, Super Burst -> Deep Ctxt to drive maintenance via Ctxt in Deep.

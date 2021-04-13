@@ -7,7 +7,7 @@ package pcore
 import (
 	"strings"
 
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
@@ -19,7 +19,7 @@ type GPiLayer struct {
 	GPLayer
 }
 
-var KiT_GPiLayer = kit.Types.AddType(&GPiLayer{}, leabra.LayerProps)
+var KiT_GPiLayer = kit.Types.AddType(&GPiLayer{}, axon.LayerProps)
 
 func (ly *GPiLayer) Defaults() {
 	ly.GPLayer.Defaults()
@@ -28,7 +28,7 @@ func (ly *GPiLayer) Defaults() {
 	// note: GPLayer took care of STN input prjns
 
 	for _, pji := range ly.RcvPrjns {
-		pj := pji.(leabra.LeabraPrjn).AsLeabra()
+		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.Learn.WtSig.Gain = 1
 		pj.WtInit.Mean = 0.5
 		pj.WtInit.Var = 0

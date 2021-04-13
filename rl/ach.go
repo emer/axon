@@ -5,8 +5,8 @@
 package rl
 
 import (
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
@@ -72,12 +72,12 @@ func (sd *SendACh) AddAllBut(net emer.Network, excl []string) {
 
 // ClampAChLayer is an Input layer that just sends its activity as the acetylcholine signal
 type ClampAChLayer struct {
-	leabra.Layer
+	axon.Layer
 	SendACh SendACh `desc:"list of layers to send acetylcholine to"`
 	ACh     float32 `desc:"acetylcholine value for this layer"`
 }
 
-var KiT_ClampAChLayer = kit.Types.AddType(&ClampAChLayer{}, leabra.LayerProps)
+var KiT_ClampAChLayer = kit.Types.AddType(&ClampAChLayer{}, axon.LayerProps)
 
 // AChLayer interface:
 
@@ -96,7 +96,7 @@ func (ly *ClampAChLayer) Build() error {
 
 // CyclePost is called at end of Cycle
 // We use it to send ACh, which will then be active for the next cycle of processing.
-func (ly *ClampAChLayer) CyclePost(ltime *leabra.Time) {
+func (ly *ClampAChLayer) CyclePost(ltime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.ACh = act
 	ly.SendACh.SendACh(ly.Network, act)

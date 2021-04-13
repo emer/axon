@@ -18,6 +18,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/pbwm"
+	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/netview"
@@ -31,9 +34,6 @@ import (
 	"github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/simat"
 	"github.com/emer/etable/split"
-	"github.com/emer/leabra/leabra"
-	"github.com/emer/leabra/pbwm"
-	"github.com/emer/leabra/rl"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/gi/giv"
@@ -221,29 +221,29 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	BurstDaGain float32           `desc:"strength of dopamine bursts: 1 default -- reduce for PD OFF, increase for PD ON"`
-	DipDaGain   float32           `desc:"strength of dopamine dips: 1 default -- reduce to siulate D2 agonists"`
-	Net         *pbwm.Network     `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	TrnEpcLog   *etable.Table     `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog   *etable.Table     `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog   *etable.Table     `view:"no-inline" desc:"testing trial-level log data"`
-	RunLog      *etable.Table     `view:"no-inline" desc:"summary log of each run"`
-	RunStats    *etable.Table     `view:"no-inline" desc:"aggregate stats on all runs"`
-	SimMat      *simat.SimMat     `view:"no-inline" desc:"similarity matrix"`
-	Params      params.Sets       `view:"no-inline" desc:"full collection of param sets"`
-	ParamSet    string            `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
-	Tag         string            `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	MaxRuns     int               `desc:"maximum number of model runs to perform"`
-	MaxEpcs     int               `desc:"maximum number of epochs to run per model run"`
-	MaxTrls     int               `desc:"maximum number of training trials per epoch"`
-	NZeroStop   int               `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
-	TrainEnv    SIREnv            `desc:"Training environment -- SIR environment"`
-	TestEnv     SIREnv            `desc:"Testing nvironment -- SIR environment"`
-	Time        leabra.Time       `desc:"leabra timing parameters and state"`
-	ViewOn      bool              `desc:"whether to update the network view while running"`
-	TrainUpdt   leabra.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
-	TestUpdt    leabra.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
-	TstRecLays  []string          `desc:"names of layers to record activations etc of during testing"`
+	BurstDaGain float32         `desc:"strength of dopamine bursts: 1 default -- reduce for PD OFF, increase for PD ON"`
+	DipDaGain   float32         `desc:"strength of dopamine dips: 1 default -- reduce to siulate D2 agonists"`
+	Net         *pbwm.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	TrnEpcLog   *etable.Table   `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog   *etable.Table   `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog   *etable.Table   `view:"no-inline" desc:"testing trial-level log data"`
+	RunLog      *etable.Table   `view:"no-inline" desc:"summary log of each run"`
+	RunStats    *etable.Table   `view:"no-inline" desc:"aggregate stats on all runs"`
+	SimMat      *simat.SimMat   `view:"no-inline" desc:"similarity matrix"`
+	Params      params.Sets     `view:"no-inline" desc:"full collection of param sets"`
+	ParamSet    string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
+	Tag         string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
+	MaxRuns     int             `desc:"maximum number of model runs to perform"`
+	MaxEpcs     int             `desc:"maximum number of epochs to run per model run"`
+	MaxTrls     int             `desc:"maximum number of training trials per epoch"`
+	NZeroStop   int             `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
+	TrainEnv    SIREnv          `desc:"Training environment -- SIR environment"`
+	TestEnv     SIREnv          `desc:"Testing nvironment -- SIR environment"`
+	Time        axon.Time       `desc:"axon timing parameters and state"`
+	ViewOn      bool            `desc:"whether to update the network view while running"`
+	TrainUpdt   axon.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
+	TestUpdt    axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
+	TstRecLays  []string        `desc:"names of layers to record activations etc of during testing"`
 
 	TrlDA         float64 `inactive:"+" desc:"dopamine level on this trial"`
 	TrlAbsDA      float64 `inactive:"+" desc:"absolute value of dopamine on this trial"`
@@ -312,8 +312,8 @@ func (ss *Sim) New() {
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
-	ss.TrainUpdt = leabra.AlphaCycle //leabra.AlphaCycle
-	ss.TestUpdt = leabra.AlphaCycle
+	ss.TrainUpdt = axon.AlphaCycle //axon.AlphaCycle
+	ss.TestUpdt = axon.AlphaCycle
 	ss.TstRecLays = []string{"Input", "Output", "GPiThal", "PFCmntD", "PFCoutD"}
 	ss.Defaults()
 }
@@ -505,11 +505,11 @@ func (ss *Sim) AlphaCyc(train bool) {
 			ss.Time.CycleInc()
 			if ss.ViewOn {
 				switch viewUpdt {
-				case leabra.Cycle:
+				case axon.Cycle:
 					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
 						ss.UpdateView(train)
 					}
-				case leabra.FastSpike:
+				case axon.FastSpike:
 					if (cyc+1)%10 == 0 {
 						ss.UpdateView(train)
 					}
@@ -520,9 +520,9 @@ func (ss *Sim) AlphaCyc(train bool) {
 		ss.Time.QuarterInc()
 		if ss.ViewOn {
 			switch {
-			case viewUpdt <= leabra.Quarter:
+			case viewUpdt <= axon.Quarter:
 				ss.UpdateView(train)
-			case viewUpdt == leabra.Phase:
+			case viewUpdt == axon.Phase:
 				if qtr >= 2 {
 					ss.UpdateView(train)
 				}
@@ -536,7 +536,7 @@ func (ss *Sim) AlphaCyc(train bool) {
 	if train {
 		ss.Net.DWt()
 	}
-	if ss.ViewOn && viewUpdt == leabra.AlphaCycle {
+	if ss.ViewOn && viewUpdt == axon.AlphaCycle {
 		ss.UpdateView(train)
 	}
 }
@@ -551,7 +551,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 	lays := []string{"Input", "CtrlInput", "Output"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := en.State(ly.Nm)
 		if pats == nil {
 			continue
@@ -572,11 +572,11 @@ func (ss *Sim) ApplyReward(train bool) {
 	if en.Act != Recall1 && en.Act != Recall2 { // only reward on recall trials!
 		return
 	}
-	out := ss.Net.LayerByName("Output").(leabra.LeabraLayer).AsLeabra()
+	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
 	mxi := out.Pools[0].Inhib.Act.MaxIdx
 	en.SetReward(mxi)
 	pats := en.State("Reward")
-	ly := ss.Net.LayerByName("Rew").(leabra.LeabraLayer).AsLeabra()
+	ly := ss.Net.LayerByName("Rew").(axon.AxonLayer).AsAxon()
 	ly.ApplyExt1DTsr(pats)
 }
 
@@ -593,11 +593,11 @@ func (ss *Sim) TrainTrial() {
 	// if epoch counter has changed
 	epc, _, chg := ss.TrainEnv.Counter(env.Epoch)
 	if chg {
-		if ss.ViewOn && ss.TrainUpdt > leabra.AlphaCycle {
+		if ss.ViewOn && ss.TrainUpdt > axon.AlphaCycle {
 			ss.UpdateView(true)
 		}
 		ss.LogTrnEpc(ss.TrnEpcLog)
-		if ss.ViewOn && ss.TrainUpdt > leabra.AlphaCycle {
+		if ss.ViewOn && ss.TrainUpdt > axon.AlphaCycle {
 			ss.UpdateView(true)
 		}
 		if epc >= ss.MaxEpcs || (ss.NZeroStop > 0 && ss.NZero >= ss.NZeroStop) {
@@ -671,9 +671,9 @@ func (ss *Sim) InitStats() {
 // different time-scales over which stats could be accumulated etc.
 // You can also aggregate directly from log data, as is done for testing stats
 func (ss *Sim) TrialStats(accum bool) (sse, avgsse, cosdiff float64) {
-	out := ss.Net.LayerByName("Output").(leabra.LeabraLayer).AsLeabra()
-	snc := ss.Net.LayerByName("SNc").(leabra.LeabraLayer).AsLeabra()
-	rp := ss.Net.LayerByName("RWPred").(leabra.LeabraLayer).AsLeabra()
+	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	snc := ss.Net.LayerByName("SNc").(axon.AxonLayer).AsAxon()
+	rp := ss.Net.LayerByName("RWPred").(axon.AxonLayer).AsAxon()
 	ss.TrlDA = float64(snc.Neurons[0].Act)
 	ss.TrlAbsDA = math.Abs(ss.TrlDA)
 	ss.TrlRewPred = float64(rp.Neurons[0].Act)
@@ -767,7 +767,7 @@ func (ss *Sim) TestTrial(returnOnChg bool) {
 	// Query counters FIRST
 	_, _, chg := ss.TestEnv.Counter(env.Epoch)
 	if chg {
-		if ss.ViewOn && ss.TestUpdt > leabra.AlphaCycle {
+		if ss.ViewOn && ss.TestUpdt > axon.AlphaCycle {
 			ss.UpdateView(false)
 		}
 		ss.LogTstEpc(ss.TstEpcLog)
@@ -1049,7 +1049,7 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 
 	for _, lnm := range ss.TstRecLays {
 		tsr := ss.ValsTsr(lnm)
-		ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		ly.UnitValsTensor(tsr, "ActM")
 		dt.SetCellTensor(lnm, row, tsr)
 	}
@@ -1079,7 +1079,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
 		{"RewPred", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.TstRecLays {
-		ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		sch = append(sch, etable.Column{lnm, etensor.FLOAT64, ly.Shp.Shp, nil})
 	}
 	dt.SetFromSchema(sch, nt)

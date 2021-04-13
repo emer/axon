@@ -5,21 +5,21 @@
 package pbwm
 
 import (
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
 // pbwm.Network has methods for configuring specialized PBWM network components
 type Network struct {
-	leabra.Network
+	axon.Network
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
-var NetworkProps = leabra.NetworkProps
+var NetworkProps = axon.NetworkProps
 
 // NewLayer returns new layer of default pbwm.Layer type
 func (nt *Network) NewLayer() emer.Layer {
@@ -28,7 +28,7 @@ func (nt *Network) NewLayer() emer.Layer {
 
 // NewPrjn returns new prjn of default type
 func (nt *Network) NewPrjn() emer.Prjn {
-	return &leabra.Prjn{}
+	return &axon.Prjn{}
 }
 
 // Defaults sets all the default parameters for all layers and projections
@@ -51,9 +51,9 @@ func (nt *Network) UnitVarNames() []string {
 var SynVarsAll []string
 
 func init() {
-	ln := len(leabra.SynapseVars)
+	ln := len(axon.SynapseVars)
 	SynVarsAll = make([]string, len(TraceSynVars)+ln)
-	copy(SynVarsAll, leabra.SynapseVars)
+	copy(SynVarsAll, axon.SynapseVars)
 	copy(SynVarsAll[ln:], TraceSynVars)
 }
 
@@ -98,7 +98,7 @@ func (nt *Network) AddCINLayer(name string) *CINLayer {
 // and each pool has nNeurY, nNeurX neurons.  Appropriate PoolOneToOne connections
 // are made to drive GPiThal, with BgFixed class name set so
 // they can be styled appropriately (no learning, WtRnd.Mean=0.8, Var=0)
-func (nt *Network) AddDorsalBG(prefix string, nY, nMaint, nOut, nNeurY, nNeurX int) (mtxGo, mtxNoGo, gpe, gpi, cin leabra.LeabraLayer) {
+func (nt *Network) AddDorsalBG(prefix string, nY, nMaint, nOut, nNeurY, nNeurX int) (mtxGo, mtxNoGo, gpe, gpi, cin axon.AxonLayer) {
 	return AddDorsalBG(&nt.Network, prefix, nY, nMaint, nOut, nNeurY, nNeurX)
 }
 
@@ -107,7 +107,7 @@ func (nt *Network) AddDorsalBG(prefix string, nY, nMaint, nOut, nNeurY, nNeurX i
 // out is true for output-gating layer, and dynmaint is true for maintenance-only dyn,
 // else Full set of 5 dynamic maintenance types. Both have the class "PFC" set.
 // deep is positioned behind super.
-func (nt *Network) AddPFCLayer(name string, nY, nX, nNeurY, nNeurX int, out, dynMaint bool) (sp, dp leabra.LeabraLayer) {
+func (nt *Network) AddPFCLayer(name string, nY, nX, nNeurY, nNeurX int, out, dynMaint bool) (sp, dp axon.AxonLayer) {
 	return AddPFCLayer(&nt.Network, name, nY, nX, nNeurY, nNeurX, out, dynMaint)
 }
 
@@ -117,13 +117,13 @@ func (nt *Network) AddPFCLayer(name string, nY, nX, nNeurY, nNeurX int, out, dyn
 // and each pool has nNeurY, nNeurX neurons.
 // dynMaint is true for maintenance-only dyn, else full set of 5 dynamic maintenance types.
 // Appropriate OneToOne connections are made between PFCmntD -> PFCout.
-func (nt *Network) AddPFC(prefix string, nY, nMaint, nOut, nNeurY, nNeurX int, dynMaint bool) (pfcMnt, pfcMntD, pfcOut, pfcOutD leabra.LeabraLayer) {
+func (nt *Network) AddPFC(prefix string, nY, nMaint, nOut, nNeurY, nNeurX int, dynMaint bool) (pfcMnt, pfcMntD, pfcOut, pfcOutD axon.AxonLayer) {
 	return AddPFC(&nt.Network, prefix, nY, nMaint, nOut, nNeurY, nNeurX, dynMaint)
 }
 
 // AddPBWM adds a DorsalBG and PFC with given params
 // Defaults to simple case of basic maint dynamics in Deep
-func (nt *Network) AddPBWM(prefix string, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX int) (mtxGo, mtxNoGo, gpe, gpi, cin, pfcMnt, pfcMntD, pfcOut, pfcOutD leabra.LeabraLayer) {
+func (nt *Network) AddPBWM(prefix string, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX int) (mtxGo, mtxNoGo, gpe, gpi, cin, pfcMnt, pfcMntD, pfcOut, pfcOutD axon.AxonLayer) {
 	return AddPBWM(&nt.Network, prefix, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX)
 }
 
@@ -132,7 +132,7 @@ func (nt *Network) AddPBWM(prefix string, nY, nMaint, nOut, nNeurBgY, nNeurBgX, 
 //         for mixing in to other models
 
 // AddCINLayer adds a CINLayer, with a single neuron.
-func AddCINLayer(nt *leabra.Network, name string) *CINLayer {
+func AddCINLayer(nt *axon.Network, name string) *CINLayer {
 	ly := &CINLayer{}
 	nt.AddLayerInit(ly, name, []int{1, 1}, emer.Hidden)
 	return ly
@@ -141,7 +141,7 @@ func AddCINLayer(nt *leabra.Network, name string) *CINLayer {
 // AddMatrixLayer adds a MatrixLayer of given size, with given name.
 // nY = number of pools in Y dimension, nMaint + nOut are pools in X dimension,
 // and each pool has nNeurY, nNeurX neurons.  da gives the DaReceptor type (D1R = Go, D2R = NoGo)
-func AddMatrixLayer(nt *leabra.Network, name string, nY, nMaint, nOut, nNeurY, nNeurX int, da DaReceptors) *MatrixLayer {
+func AddMatrixLayer(nt *axon.Network, name string, nY, nMaint, nOut, nNeurY, nNeurX int, da DaReceptors) *MatrixLayer {
 	tX := nMaint + nOut
 	mtx := &MatrixLayer{}
 	nt.AddLayerInit(mtx, name, []int{nY, tX, nNeurY, nNeurX}, emer.Hidden)
@@ -153,7 +153,7 @@ func AddMatrixLayer(nt *leabra.Network, name string, nY, nMaint, nOut, nNeurY, n
 // AddGPeLayer adds a pbwm.Layer to serve as a GPe layer, with given name.
 // nY = number of pools in Y dimension, nMaint + nOut are pools in X dimension,
 // and each pool has 1x1 neurons.
-func AddGPeLayer(nt *leabra.Network, name string, nY, nMaint, nOut int) *Layer {
+func AddGPeLayer(nt *axon.Network, name string, nY, nMaint, nOut int) *Layer {
 	tX := nMaint + nOut
 	gpe := &Layer{}
 	nt.AddLayerInit(gpe, name, []int{nY, tX, 1, 1}, emer.Hidden)
@@ -163,7 +163,7 @@ func AddGPeLayer(nt *leabra.Network, name string, nY, nMaint, nOut int) *Layer {
 // AddGPiThalLayer adds a GPiThalLayer of given size, with given name.
 // nY = number of pools in Y dimension, nMaint + nOut are pools in X dimension,
 // and each pool has 1x1 neurons.
-func AddGPiThalLayer(nt *leabra.Network, name string, nY, nMaint, nOut int) *GPiThalLayer {
+func AddGPiThalLayer(nt *axon.Network, name string, nY, nMaint, nOut int) *GPiThalLayer {
 	tX := nMaint + nOut
 	gpi := &GPiThalLayer{}
 	nt.AddLayerInit(gpi, name, []int{nY, tX, 1, 1}, emer.Hidden)
@@ -176,7 +176,7 @@ func AddGPiThalLayer(nt *leabra.Network, name string, nY, nMaint, nOut int) *GPi
 // and each pool has nNeurY, nNeurX neurons.  Appropriate PoolOneToOne connections
 // are made to drive GPiThal, with BgFixed class name set so
 // they can be styled appropriately (no learning, WtRnd.Mean=0.8, Var=0)
-func AddDorsalBG(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int) (mtxGo, mtxNoGo, gpe, gpi, cin leabra.LeabraLayer) {
+func AddDorsalBG(nt *axon.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int) (mtxGo, mtxNoGo, gpe, gpi, cin axon.AxonLayer) {
 	mtxGo = AddMatrixLayer(nt, prefix+"MatrixGo", nY, nMaint, nOut, nNeurY, nNeurX, D1R)
 	mtxNoGo = AddMatrixLayer(nt, prefix+"MatrixNoGo", nY, nMaint, nOut, nNeurY, nNeurX, D2R)
 	gpe = AddGPeLayer(nt, prefix+"GPeNoGo", nY, nMaint, nOut)
@@ -205,8 +205,8 @@ func AddDorsalBG(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurY, nN
 // out is true for output-gating layer, and dynmaint is true for maintenance-only dyn,
 // else Full set of 5 dynamic maintenance types. Both have the class "PFC" set.
 // deep is positioned behind super.
-func AddPFCLayer(nt *leabra.Network, name string, nY, nX, nNeurY, nNeurX int, out, dynMaint bool) (sp, dp leabra.LeabraLayer) {
-	sp = nt.AddLayer(name, []int{nY, nX, nNeurY, nNeurX}, emer.Hidden).(leabra.LeabraLayer)
+func AddPFCLayer(nt *axon.Network, name string, nY, nX, nNeurY, nNeurX int, out, dynMaint bool) (sp, dp axon.AxonLayer) {
+	sp = nt.AddLayer(name, []int{nY, nX, nNeurY, nNeurX}, emer.Hidden).(axon.AxonLayer)
 	ddp := &PFCDeepLayer{}
 	dp = ddp
 	dym := 1
@@ -232,7 +232,7 @@ func AddPFCLayer(nt *leabra.Network, name string, nY, nX, nNeurY, nNeurX int, ou
 // and each pool has nNeurY, nNeurX neurons.
 // dynMaint is true for maintenance-only dyn, else full set of 5 dynamic maintenance types.
 // Appropriate OneToOne connections are made between PFCmntD -> PFCout.
-func AddPFC(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int, dynMaint bool) (pfcMnt, pfcMntD, pfcOut, pfcOutD leabra.LeabraLayer) {
+func AddPFC(nt *axon.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int, dynMaint bool) (pfcMnt, pfcMntD, pfcOut, pfcOutD axon.AxonLayer) {
 	if prefix == "" {
 		prefix = "PFC"
 	}
@@ -255,7 +255,7 @@ func AddPFC(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX 
 
 // AddPBWM adds a DorsalBG and PFC with given params
 // Defaults to simple case of basic maint dynamics in Deep
-func AddPBWM(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX int) (mtxGo, mtxNoGo, gpe, gpi, cin, pfcMnt, pfcMntD, pfcOut, pfcOutD leabra.LeabraLayer) {
+func AddPBWM(nt *axon.Network, prefix string, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX int) (mtxGo, mtxNoGo, gpe, gpi, cin, pfcMnt, pfcMntD, pfcOut, pfcOutD axon.AxonLayer) {
 	mtxGo, mtxNoGo, gpe, gpi, cin = AddDorsalBG(nt, prefix, nY, nMaint, nOut, nNeurBgY, nNeurBgX)
 	pfcMnt, pfcMntD, pfcOut, pfcOutD = AddPFC(nt, prefix, nY, nMaint, nOut, nNeurPfcY, nNeurPfcX, true) // default dynmaint
 	if pfcMnt != nil {
@@ -276,9 +276,9 @@ func AddPBWM(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurBgY, nNeu
 // are made to drive GPiThal, with BgFixed class name set so
 // they can be styled appropriately (no learning, WtRnd.Mean=0.8, Var=0)
 // Py is Python version, returns layers as a slice
-func AddDorsalBGPy(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int) []leabra.LeabraLayer {
+func AddDorsalBGPy(nt *axon.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int) []axon.AxonLayer {
 	mtxGo, mtxNoGo, gpe, gpi, cin := AddDorsalBG(nt, prefix, nY, nMaint, nOut, nNeurY, nNeurX)
-	return []leabra.LeabraLayer{mtxGo, mtxNoGo, gpe, gpi, cin}
+	return []axon.AxonLayer{mtxGo, mtxNoGo, gpe, gpi, cin}
 }
 
 // AddPFCPy adds paired PFCmnt, PFCout and associated Deep layers,
@@ -288,17 +288,17 @@ func AddDorsalBGPy(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurY, 
 // dynMaint is true for maintenance-only dyn, else full set of 5 dynamic maintenance types.
 // Appropriate OneToOne connections are made between PFCmntD -> PFCout.
 // Py is Python version, returns layers as a slice
-func AddPFCPy(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int, dynMaint bool) []leabra.LeabraLayer {
+func AddPFCPy(nt *axon.Network, prefix string, nY, nMaint, nOut, nNeurY, nNeurX int, dynMaint bool) []axon.AxonLayer {
 	pfcMnt, pfcMntD, pfcOut, pfcOutD := AddPFC(nt, prefix, nY, nMaint, nOut, nNeurY, nNeurX, dynMaint)
-	return []leabra.LeabraLayer{pfcMnt, pfcMntD, pfcOut, pfcOutD}
+	return []axon.AxonLayer{pfcMnt, pfcMntD, pfcOut, pfcOutD}
 }
 
 // AddPBWMPy adds a DorsalBG and PFC with given params
 // Defaults to simple case of basic maint dynamics in Deep
 // Py is Python version, returns layers as a slice
-func AddPBWMPy(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX int) []leabra.LeabraLayer {
+func AddPBWMPy(nt *axon.Network, prefix string, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX int) []axon.AxonLayer {
 	mtxGo, mtxNoGo, gpe, gpi, cin, pfcMnt, pfcMntD, pfcOut, pfcOutD := AddPBWM(nt, prefix, nY, nMaint, nOut, nNeurBgY, nNeurBgX, nNeurPfcY, nNeurPfcX)
-	return []leabra.LeabraLayer{mtxGo, mtxNoGo, gpe, gpi, cin, pfcMnt, pfcMntD, pfcOut, pfcOutD}
+	return []axon.AxonLayer{mtxGo, mtxNoGo, gpe, gpi, cin, pfcMnt, pfcMntD, pfcOut, pfcOutD}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -309,17 +309,17 @@ func AddPBWMPy(nt *leabra.Network, prefix string, nY, nMaint, nOut, nNeurBgY, nN
 
 // CycleImpl runs one cycle of activation updating
 // PBWM calls GateSend after Cycle and before DeepBurst
-func (nt *Network) CycleImpl(ltime *leabra.Time) {
-	nt.Network.CycleImpl(ltime) // basic version from leabra.Network
+func (nt *Network) CycleImpl(ltime *axon.Time) {
+	nt.Network.CycleImpl(ltime) // basic version from axon.Network
 	nt.GateSend(ltime)          // GateLayer (GPiThal) computes gating, sends to other layers
 	nt.RecGateAct(ltime)        // Record activation state at time of gating (in ActG neuron var)
 
-	nt.EmerNet.(leabra.LeabraNetwork).CyclePostImpl(ltime) // always call this after std cycle..
+	nt.EmerNet.(axon.AxonNetwork).CyclePostImpl(ltime) // always call this after std cycle..
 }
 
 // GateSend is called at end of Cycle, computes Gating and sends to other layers
-func (nt *Network) GateSend(ltime *leabra.Time) {
-	nt.ThrLayFun(func(ly leabra.LeabraLayer) {
+func (nt *Network) GateSend(ltime *axon.Time) {
+	nt.ThrLayFun(func(ly axon.AxonLayer) {
 		if pl, ok := ly.(PBWMLayer); ok {
 			pl.GateSend(ltime)
 		}
@@ -327,8 +327,8 @@ func (nt *Network) GateSend(ltime *leabra.Time) {
 }
 
 // RecGateAct is called after GateSend, to record gating activations at time of gating
-func (nt *Network) RecGateAct(ltime *leabra.Time) {
-	nt.ThrLayFun(func(ly leabra.LeabraLayer) {
+func (nt *Network) RecGateAct(ltime *axon.Time) {
+	nt.ThrLayFun(func(ly axon.AxonLayer) {
 		if pl, ok := ly.(PBWMLayer); ok {
 			pl.RecGateAct(ltime)
 		}
@@ -337,8 +337,8 @@ func (nt *Network) RecGateAct(ltime *leabra.Time) {
 
 // SendMods is called at end of Cycle to send modulator signals (DA, etc)
 // which will then be active for the next cycle of processing
-func (nt *Network) SendMods(ltime *leabra.Time) {
-	nt.ThrLayFun(func(ly leabra.LeabraLayer) {
+func (nt *Network) SendMods(ltime *axon.Time) {
+	nt.ThrLayFun(func(ly axon.AxonLayer) {
 		if pl, ok := ly.(PBWMLayer); ok {
 			pl.SendMods(ltime)
 		}

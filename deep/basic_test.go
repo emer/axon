@@ -9,15 +9,15 @@ import (
 	"testing"
 
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
-	"github.com/emer/leabra/leabra"
 )
 
 // Note: this test project exactly reproduces the configuration and behavior of
-// C++ emergent/demo/leabra/basic_leabra_test.proj  in version 8.5.6 svn 11492
+// C++ emergent/demo/axon/basic_axon_test.proj  in version 8.5.6 svn 11492
 
 // difTol is the numerical difference tolerance for comparing vs. target values
 const difTol = float32(1.0e-8)
@@ -125,11 +125,11 @@ func TestNetAct(t *testing.T) {
 	TestNet.InitWts()
 	TestNet.InitExt()
 
-	inLay := TestNet.LayerByName("Input").(*leabra.Layer)
-	hidLay := TestNet.LayerByName("Hidden").(*leabra.Layer)
-	outLay := TestNet.LayerByName("Output").(*leabra.Layer)
+	inLay := TestNet.LayerByName("Input").(*axon.Layer)
+	hidLay := TestNet.LayerByName("Hidden").(*axon.Layer)
+	outLay := TestNet.LayerByName("Output").(*axon.Layer)
 
-	ltime := leabra.NewTime()
+	ltime := axon.NewTime()
 
 	printCycs := false
 	printQtrs := false
@@ -230,9 +230,9 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestNetLearn(t *testing.T) {
-	inLay := TestNet.LayerByName("Input").(*leabra.Layer)
-	hidLay := TestNet.LayerByName("Hidden").(*leabra.Layer)
-	outLay := TestNet.LayerByName("Output").(*leabra.Layer)
+	inLay := TestNet.LayerByName("Input").(*axon.Layer)
+	hidLay := TestNet.LayerByName("Hidden").(*axon.Layer)
+	outLay := TestNet.LayerByName("Output").(*axon.Layer)
 
 	printCycs := false
 	printQtrs := false
@@ -313,7 +313,7 @@ func TestNetLearn(t *testing.T) {
 		TestNet.InitWts()
 		TestNet.InitExt()
 
-		ltime := leabra.NewTime()
+		ltime := axon.NewTime()
 
 		for pi := 0; pi < 4; pi++ {
 			inpat, err := InPats.SubSpaceTry([]int{pi})

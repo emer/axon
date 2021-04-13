@@ -6,11 +6,12 @@ package pvlv
 
 import (
 	"fmt"
-	"github.com/chewxy/math32"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
-	"github.com/emer/leabra/rl"
 	"strconv"
+
+	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/rl"
+	"github.com/emer/emergent/emer"
 )
 
 // Gain constants for inputs to the VTA
@@ -64,13 +65,13 @@ func (ly *VTALayer) Build() error {
 	for _, lyNm := range []string{
 		"PPTg", "LHbRMTg", "PosPV", "NegPV", "VSPatchPosD1", "VSPatchPosD2",
 		"VSPatchNegD1", "VSPatchNegD2"} {
-		ly.RecvFrom[lyNm] = net.LayerByName(lyNm).(leabra.LeabraLayer).AsLeabra()
+		ly.RecvFrom[lyNm] = net.LayerByName(lyNm).(axon.AxonLayer).AsAxon()
 	}
 	nu := ly.Shp.Len()
 	if nu == 0 {
 		return fmt.Errorf("build Layer %v: no units specified in Shape", ly.Nm)
 	}
-	ly.Neurons = make([]leabra.Neuron, nu)
+	ly.Neurons = make([]axon.Neuron, nu)
 	err := ly.BuildPools(nu)
 	if err != nil {
 		return err
@@ -152,8 +153,8 @@ func (ly *VTALayer) GetMonitorVal(data []string) float64 {
 	return float64(val)
 }
 
-func (ly *VTALayer) ActFmG(ltime *leabra.Time) {
-	if ltime.Quarter == int(leabra.Q4) {
+func (ly *VTALayer) ActFmG(ltime *axon.Time) {
+	if ltime.Quarter == int(axon.Q4) {
 		ly.VTAAct(ltime)
 	} else {
 		nrn := &ly.Neurons[0]
@@ -165,11 +166,11 @@ func (ly *VTALayer) ActFmG(ltime *leabra.Time) {
 	ly.DA = 0
 }
 
-func (ly *VTALayer) CyclePost(_ *leabra.Time) {
+func (ly *VTALayer) CyclePost(_ *axon.Time) {
 	ly.SendDA.SendDA(ly.Network, ly.SendVal)
 }
 
-func (ly *VTALayer) VTAAct(ltime *leabra.Time) {
+func (ly *VTALayer) VTAAct(ltime *axon.Time) {
 	if ly.Valence == POS {
 		ly.VTAActP(ltime)
 	} else {
@@ -178,7 +179,7 @@ func (ly *VTALayer) VTAAct(ltime *leabra.Time) {
 }
 
 // VTAp activation
-func (ly *VTALayer) VTAActP(_ *leabra.Time) {
+func (ly *VTALayer) VTAActP(_ *axon.Time) {
 	pptGLy := ly.RecvFrom["PPTg"]
 	lhbLy := ly.RecvFrom["LHbRMTg"]
 	posPVLy := ly.RecvFrom["PosPV"]
@@ -265,7 +266,7 @@ func (ly *VTALayer) VTAActP(_ *leabra.Time) {
 }
 
 // VTAn activation
-func (ly *VTALayer) VTAActN(_ *leabra.Time) {
+func (ly *VTALayer) VTAActN(_ *axon.Time) {
 	negPVLy := ly.RecvFrom["NegPV"]
 	lhbLy := ly.RecvFrom["LHbRMTg"]
 	vsPatchNegD1Ly := ly.RecvFrom["VSPatchNegD1"]

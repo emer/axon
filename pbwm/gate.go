@@ -5,7 +5,7 @@
 package pbwm
 
 import (
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"
 )
@@ -118,7 +118,7 @@ type GateLayer struct {
 	GateStates []GateState `desc:"slice of gating state values for this layer, one for each separate gating pool, according to its GateType.  For MaintOut, it is ordered such that 0:MaintN are Maint and MaintN:n are Out"`
 }
 
-var KiT_GateLayer = kit.Types.AddType(&GateLayer{}, leabra.LayerProps)
+var KiT_GateLayer = kit.Types.AddType(&GateLayer{}, axon.LayerProps)
 
 func (ly *GateLayer) AsGate() *GateLayer {
 	return ly
@@ -143,7 +143,7 @@ func (ly *GateLayer) SetGateState(poolIdx int, state *GateState) {
 
 // SetGateStates sets the GateStates from given source states, of given gating type
 func (ly *GateLayer) SetGateStates(states []GateState, typ GateTypes) {
-	myt := ly.LeabraLay.(GateLayerer).GateType()
+	myt := ly.AxonLay.(GateLayerer).GateType()
 	if myt < MaintOut && typ < MaintOut && myt != typ { // mismatch
 		return
 	}

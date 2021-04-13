@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"github.com/chewxy/math32"
 )
 
 ///////////////////////////////////////////////////////////////////////
-//  learn.go contains the learning params and functions for leabra
+//  learn.go contains the learning params and functions for axon
 
-// leabra.LearnNeurParams manages learning-related parameters at the neuron-level.
+// axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
 	ActAvg  LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
@@ -57,7 +57,7 @@ func (ln *LearnNeurParams) AvgLFmAvgM(nrn *Neuron) {
 ///////////////////////////////////////////////////////////////////////
 //  LearnSynParams
 
-// leabra.LearnSynParams manages learning-related parameters at the synapse-level.
+// axon.LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
 	Learn     bool           `desc:"enable learning for this projection"`
 	Lrate     float32        `desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
@@ -252,7 +252,7 @@ func (al *AvgLParams) Defaults() {
 // CosDiffParams specify how to integrate cosine of difference between plus and minus phase activations
 // Used to modulate amount of hebbian learning, and overall learning rate.
 type CosDiffParams struct {
-	Tau float32 `def:"100" min:"1" desc:"time constant in alpha-cycles (roughly how long significant change takes, 1.4 x half-life) for computing running average CosDiff value for the layer, CosDiffAvg = cosine difference between ActM and ActP -- this is an important statistic for how much phase-based difference there is between phases in this layer -- it is used in standard X_COS_DIFF modulation of l_mix in LeabraConSpec, and for modulating learning rate as a function of predictability in the DeepLeabra predictive auto-encoder learning -- running average variance also computed with this: cos_diff_var"`
+	Tau float32 `def:"100" min:"1" desc:"time constant in alpha-cycles (roughly how long significant change takes, 1.4 x half-life) for computing running average CosDiff value for the layer, CosDiffAvg = cosine difference between ActM and ActP -- this is an important statistic for how much phase-based difference there is between phases in this layer -- it is used in standard X_COS_DIFF modulation of l_mix in AxonConSpec, and for modulating learning rate as a function of predictability in the DeepAxon predictive auto-encoder learning -- running average variance also computed with this: cos_diff_var"`
 	//   bool          lrate_mod; // modulate learning rate in this layer as a function of the cos_diff on this alpha-cycle relative to running average cos_diff values (see avg_tau) -- lrate_mod = cos_diff_lrate_mult * (cos_diff / cos_diff_avg) -- if this layer is less predictable than previous alpha-cycles, we don't learn as much
 	//   float         lrmod_z_thr; // #DEF_-1.5 #CONDSHOW_ON_lrate_mod&&!lrmod_fm_trc threshold for setting learning rate modulation to zero, as function of z-normalized cos_diff value on this alpha-cycle -- normalization computed using incrementally computed average and variance values -- this essentially has the network ignoring alpha-cycles where the diff was significantly below average -- replaces the manual unlearnable alpha-cycle mechanism
 	//   bool          set_net_unlrn;  // #CONDSHOW_ON_lrate_mod&&!lrmod_fm_trc set the network-level unlearnable_alpha-cycle flag based on our learning rate modulation factor -- only makes sense for one layer to do this
@@ -327,7 +327,7 @@ func (cd *CosDiffStats) Init() {
 //  XCalParams
 
 // XCalParams are parameters for temporally eXtended Contrastive Attractor Learning function (XCAL)
-// which is the standard learning equation for leabra .
+// which is the standard learning equation for axon .
 type XCalParams struct {
 	MLrn    float32 `def:"1" min:"0" desc:"multiplier on learning based on the medium-term floating average threshold which produces error-driven learning -- this is typically 1 when error-driven learning is being used, and 0 when pure Hebbian learning is used. The long-term floating average threshold is provided by the receiving unit"`
 	SetLLrn bool    `def:"false" desc:"if true, set a fixed AvgLLrn weighting factor that determines how much of the long-term floating average threshold (i.e., BCM, Hebbian) component of learning is used -- this is useful for setting a fully Hebbian learning connection, e.g., by setting MLrn = 0 and LLrn = 1. If false, then the receiving unit's AvgLLrn factor is used, which dynamically modulates the amount of the long-term component as a function of how active overall it is"`
@@ -591,7 +591,7 @@ func (wb *WtBalParams) WtBal(wbAvg float32) (fact, inc, dec float32) {
 
 /*
   /////////////////////////////////////
-  // CtLeabraXCAL code
+  // CtAxonXCAL code
 
   INLINE void   GetLrates(LEABRA_CON_STATE* cg, LEABRA_NETWORK_STATE* net, int thr_no,
                           float& clrate, bool& deep_on, float& bg_lrate, float& fg_lrate)  {

@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/etensor"
 )
 
-// LeabraNetwork defines the essential algorithmic API for Leabra, at the network level.
+// AxonNetwork defines the essential algorithmic API for Axon, at the network level.
 // These are the methods that the user calls in their Sim code:
 // * AlphaCycInit
 // * Cycle
@@ -26,13 +26,13 @@ import (
 //
 // All of the structural API is in emer.Network, which this interface also inherits for
 // convenience.
-type LeabraNetwork interface {
+type AxonNetwork interface {
 	emer.Network
 
-	// AsLeabra returns this network as a leabra.Network -- so that the
-	// LeabraNetwork interface does not need to include accessors
+	// AsAxon returns this network as a axon.Network -- so that the
+	// AxonNetwork interface does not need to include accessors
 	// to all the basic stuff
-	AsLeabra() *Network
+	AsAxon() *Network
 
 	// AlphaCycInitImpl handles all initialization at start of new input pattern, including computing
 	// input scaling from running average activation etc.
@@ -66,19 +66,19 @@ type LeabraNetwork interface {
 	WtFmDWtImpl()
 }
 
-// LeabraLayer defines the essential algorithmic API for Leabra, at the layer level.
-// These are the methods that the leabra.Network calls on its layers at each step
+// AxonLayer defines the essential algorithmic API for Axon, at the layer level.
+// These are the methods that the axon.Network calls on its layers at each step
 // of processing.  Other Layer types can selectively re-implement (override) these methods
 // to modify the computation, while inheriting the basic behavior for non-overridden methods.
 //
 // All of the structural API is in emer.Layer, which this interface also inherits for
 // convenience.
-type LeabraLayer interface {
+type AxonLayer interface {
 	emer.Layer
 
-	// AsLeabra returns this layer as a leabra.Layer -- so that the LeabraLayer
+	// AsAxon returns this layer as a axon.Layer -- so that the AxonLayer
 	// interface does not need to include accessors to all the basic stuff
-	AsLeabra() *Layer
+	AsAxon() *Layer
 
 	// InitWts initializes the weight values in the network, i.e., resetting learning
 	// Also calls InitActs
@@ -205,26 +205,26 @@ type LeabraLayer interface {
 	LrateMult(mult float32)
 }
 
-// LeabraPrjn defines the essential algorithmic API for Leabra, at the projection level.
-// These are the methods that the leabra.Layer calls on its prjns at each step
+// AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
+// These are the methods that the axon.Layer calls on its prjns at each step
 // of processing.  Other Prjn types can selectively re-implement (override) these methods
 // to modify the computation, while inheriting the basic behavior for non-overridden methods.
 //
 // All of the structural API is in emer.Prjn, which this interface also inherits for
 // convenience.
-type LeabraPrjn interface {
+type AxonPrjn interface {
 	emer.Prjn
 
-	// AsLeabra returns this prjn as a leabra.Prjn -- so that the LeabraPrjn
+	// AsAxon returns this prjn as a axon.Prjn -- so that the AxonPrjn
 	// interface does not need to include accessors to all the basic stuff.
-	AsLeabra() *Prjn
+	AsAxon() *Prjn
 
 	// InitWts initializes weight values according to Learn.WtInit params
 	InitWts()
 
 	// InitWtSym initializes weight symmetry -- is given the reciprocal projection where
 	// the Send and Recv layers are reversed.
-	InitWtSym(rpj LeabraPrjn)
+	InitWtSym(rpj AxonPrjn)
 
 	// InitGInc initializes the per-projection synaptic conductance threadsafe increments.
 	// This is not typically needed (called during InitWts only) but can be called when needed

@@ -6,7 +6,7 @@ package hip
 
 import (
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 )
 
 // Contrastive Hebbian Learning (CHL) parameters
@@ -67,11 +67,11 @@ func (ch *CHLParams) DWt(hebb, err float32) float32 {
 //  CHLPrjn
 
 // hip.CHLPrjn is a Contrastive Hebbian Learning (CHL) projection,
-// based on basic rate-coded leabra.Prjn, that implements a
+// based on basic rate-coded axon.Prjn, that implements a
 // pure CHL learning rule, which works better in the hippocampus.
 type CHLPrjn struct {
-	leabra.Prjn           // access as .Prjn
-	CHL         CHLParams `view:"inline" desc:"parameters for CHL learning -- if CHL is On then WtSig.SoftBound is automatically turned off -- incompatible"`
+	axon.Prjn           // access as .Prjn
+	CHL       CHLParams `view:"inline" desc:"parameters for CHL learning -- if CHL is On then WtSig.SoftBound is automatically turned off -- incompatible"`
 }
 
 func (pj *CHLPrjn) Defaults() {
@@ -108,7 +108,7 @@ func (pj *CHLPrjn) DWt() {
 
 // SAvgCor computes the sending average activation, corrected according to the SAvgCor
 // correction factor (typically makes layer appear more sparse than it is)
-func (pj *CHLPrjn) SAvgCor(slay *leabra.Layer) float32 {
+func (pj *CHLPrjn) SAvgCor(slay *axon.Layer) float32 {
 	savg := .5 + pj.CHL.SAvgCor*(slay.Pools[0].ActAvg.ActPAvgEff-0.5)
 	savg = math32.Max(pj.CHL.SAvgThr, savg) // keep this computed value within bounds
 	return 0.5 / savg
@@ -116,8 +116,8 @@ func (pj *CHLPrjn) SAvgCor(slay *leabra.Layer) float32 {
 
 // DWtCHL computes the weight change (learning) for CHL
 func (pj *CHLPrjn) DWtCHL() {
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
-	rlay := pj.Recv.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	if slay.Pools[0].ActP.Avg < pj.CHL.SAvgThr { // inactive, no learn
 		return
 	}

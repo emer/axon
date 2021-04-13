@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"fmt"
 	"unsafe"
 )
 
-// leabra.Synapse holds state for the synaptic connection between neurons
+// axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
 	Wt     float32 `desc:"synaptic weight value -- sigmoid contrast-enhanced"`
 	LWt    float32 `desc:"linear (underlying) weight value -- learns according to the lrate specified in the connection spec -- this is converted into the effective weight value, Wt, via sigmoidal contrast enhancement (see WtSigParams)"`

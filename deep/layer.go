@@ -17,7 +17,7 @@ import (
 // but need to use the *old type* in the code, so we have this unfortunate
 // redundancy here.
 
-// LayerType has the DeepLeabra extensions to the emer.LayerType types, for gui
+// LayerType has the DeepAxon extensions to the emer.LayerType types, for gui
 type LayerType emer.LayerType
 
 //go:generate stringer -type=LayerType

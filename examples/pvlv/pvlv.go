@@ -33,14 +33,14 @@ import (
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/pvlv"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
-	"github.com/emer/leabra/leabra"
-	"github.com/emer/leabra/pvlv"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 
-	"github.com/emer/leabra/examples/pvlv/data"
+	"github.com/emer/axon/examples/pvlv/data"
 )
 
 var TheSim Sim // this is in a global mainly for debugging--otherwise it can be impossible to find
@@ -86,18 +86,18 @@ type Sim struct {
 	//AnalysisParams               params.Set        `view:"no-inline" desc:"??"`
 	Env PVLVEnv `desc:"environment -- PVLV environment"`
 	//TestEnv                      PVLVEnv           `desc:"Testing environment -- PVLV environment"`
-	devMenuSetup                 bool              `view:"-" desc:"stepping menu layout. Default is one button, true means original \"wide\" setup"`
-	StepsToRun                   int               `view:"-" desc:"number of StopStepGrain steps to execute before stopping"`
-	nStepsBox                    *gi.SpinBox       `view:"-"`
-	OrigSteps                    int               `view:"-" desc:"saved number of StopStepGrain steps to execute before stopping"`
-	StepGrain                    StepGrain         `view:"-" desc:"granularity for the Step command"`
-	StopStepCondition            StopStepCond      `desc:"granularity for conditional stop"`
-	StopConditionTrialNameString string            `desc:"if StopStepCond is TrialName or NotTrialName, this string is used for matching the current AlphaTrialName"`
-	StopStepCounter              env.Ctr           `inactive:"+" view:"-" desc:"number of times we've hit whatever StopStepGrain is set to'"`
-	StepMode                     bool              `view:"-" desc:"running from Step command?"`
-	TestMode                     bool              `inactive:"+" desc:"testing mode, no training"`
-	CycleLogUpdt                 leabra.TimeScales `desc:"time scale for updating CycleOutputData. NOTE: Only Cycle and Quarter are currently implemented"`
-	NetTimesCycleQtr             bool              `desc:"turn this OFF to see cycle-level updating"`
+	devMenuSetup                 bool            `view:"-" desc:"stepping menu layout. Default is one button, true means original \"wide\" setup"`
+	StepsToRun                   int             `view:"-" desc:"number of StopStepGrain steps to execute before stopping"`
+	nStepsBox                    *gi.SpinBox     `view:"-"`
+	OrigSteps                    int             `view:"-" desc:"saved number of StopStepGrain steps to execute before stopping"`
+	StepGrain                    StepGrain       `view:"-" desc:"granularity for the Step command"`
+	StopStepCondition            StopStepCond    `desc:"granularity for conditional stop"`
+	StopConditionTrialNameString string          `desc:"if StopStepCond is TrialName or NotTrialName, this string is used for matching the current AlphaTrialName"`
+	StopStepCounter              env.Ctr         `inactive:"+" view:"-" desc:"number of times we've hit whatever StopStepGrain is set to'"`
+	StepMode                     bool            `view:"-" desc:"running from Step command?"`
+	TestMode                     bool            `inactive:"+" desc:"testing mode, no training"`
+	CycleLogUpdt                 axon.TimeScales `desc:"time scale for updating CycleOutputData. NOTE: Only Cycle and Quarter are currently implemented"`
+	NetTimesCycleQtr             bool            `desc:"turn this OFF to see cycle-level updating"`
 	TrialAnalysisTimeLogInterval int
 	TrialAnalUpdateCmpGraphs     bool                `desc:"turn off to preserve existing cmp graphs - else saves cur as cmp for new run"`
 	Net                          *pvlv.Network       `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
@@ -107,10 +107,10 @@ type Sim struct {
 	CycleOutputMetadata          map[string][]string `view:"-"`
 	TimeLogBlock                 int                 `desc:"current block within current run phase"`
 	TimeLogBlockAll              int                 `desc:"current block across all phases of the run"`
-	Time                         leabra.Time         `desc:"leabra timing parameters and state"`
+	Time                         axon.Time           `desc:"axon timing parameters and state"`
 	ViewOn                       bool                `desc:"whether to update the network view while running"`
-	TrainUpdt                    leabra.TimeScales   `desc:"at what time scale to update the display during training?  Anything longer than TrialGp updates at TrialGp in this model"`
-	TestUpdt                     leabra.TimeScales   `desc:"at what time scale to update the display during testing?  Anything longer than TrialGp updates at TrialGp in this model"`
+	TrainUpdt                    axon.TimeScales     `desc:"at what time scale to update the display during training?  Anything longer than TrialGp updates at TrialGp in this model"`
+	TestUpdt                     axon.TimeScales     `desc:"at what time scale to update the display during testing?  Anything longer than TrialGp updates at TrialGp in this model"`
 	TstRecLays                   []string            `view:"-" desc:"names of layers to record activations etc of during testing"`
 	ContextModel                 ContextModel        `desc:"how to treat multi-part contexts. elemental=all parts, conjunctive=single context encodes parts, both=parts plus conjunctively encoded"`
 	// internal state - view:"-"
@@ -211,9 +211,9 @@ func (ss *Sim) Defaults() {
 	if err != nil {
 		panic(err)
 	}
-	ss.TrainUpdt = leabra.AlphaCycle
-	ss.TestUpdt = leabra.AlphaCycle
-	ss.CycleLogUpdt = leabra.Quarter
+	ss.TrainUpdt = axon.AlphaCycle
+	ss.TestUpdt = axon.AlphaCycle
+	ss.CycleLogUpdt = axon.Quarter
 	ss.NetTimesCycleQtr = true
 	ss.TrialAnalysisTimeLogInterval = 1
 	ss.TrialAnalUpdateCmpGraphs = true
@@ -223,11 +223,11 @@ func (ss *Sim) Defaults() {
 	ss.RndSeed = 1
 }
 
-func (ss *Sim) MaybeUpdate(train, exact bool, checkTS leabra.TimeScales) {
+func (ss *Sim) MaybeUpdate(train, exact bool, checkTS axon.TimeScales) {
 	if !ss.ViewOn {
 		return
 	}
-	var ts leabra.TimeScales
+	var ts axon.TimeScales
 	if train {
 		ts = ss.TrainUpdt
 	} else {
@@ -592,7 +592,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	width := 1600
 	height := 1600
 	gi.SetAppName("pvlv")
-	gi.SetAppAbout(`Current version of the Primary Value Learned Value model of the phasic dopamine signaling system. See <a href="https://github.com/emer/leabra/blob/master/examples/pvlv/README.md">README.md on GitHub</a>.</p>`)
+	gi.SetAppAbout(`Current version of the Primary Value Learned Value model of the phasic dopamine signaling system. See <a href="https://github.com/emer/axon/blob/master/examples/pvlv/README.md">README.md on GitHub</a>.</p>`)
 
 	win := gi.NewMainWindow("pvlv", "PVLV", width, height)
 	ss.Win = win
@@ -817,7 +817,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/leabra/blob/master/examples/pvlv/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
@@ -1179,7 +1179,7 @@ func (ss *Sim) ExecuteRun() bool {
 		if allDone || ss.Stopped() {
 			break
 		}
-		if ss.ViewOn && ss.TrainUpdt >= leabra.Run {
+		if ss.ViewOn && ss.TrainUpdt >= axon.Run {
 			ss.UpdateView()
 		}
 		ss.Stepper.StepPoint(int(Condition))
@@ -1395,7 +1395,7 @@ func (ss *Sim) LogTrialTypeData() {
 				// ??
 			}
 			tsr := ss.ValsTsr(lnm)
-			ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+			ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 			err := ly.UnitValsTensor(tsr, "Act") // get minus phase act
 			if err == nil {
 				dt.SetCellTensor(colNm, row, tsr)
@@ -1421,14 +1421,14 @@ func (ss *Sim) LogTrialTypeData() {
 	ss.TrialTypeDataPlot.GoUpdate()
 }
 
-func GetLeabraMonitorVal(ly *leabra.Layer, data []string) float64 {
+func GetAxonMonitorVal(ly *axon.Layer, data []string) float64 {
 	var val float32
 	var err error
 	var varIdx int
 	valType := data[0]
 	varIdx, err = pvlv.NeuronVarIdxByName(valType)
 	if err != nil {
-		varIdx, err = leabra.NeuronVarIdxByName(valType)
+		varIdx, err = axon.NeuronVarIdxByName(valType)
 		if err != nil {
 			fmt.Printf("index lookup failed for %v_%v_%v_%v: \n", ly.Name(), data[1], valType, err)
 		}
@@ -1466,8 +1466,8 @@ func (ss *Sim) LogCycleData() {
 			lnm := parts[0]
 			ly := ss.Net.LayerByName(lnm)
 			switch ly.(type) {
-			case *leabra.Layer:
-				val = GetLeabraMonitorVal(ly.(*leabra.Layer), monData)
+			case *axon.Layer:
+				val = GetAxonMonitorVal(ly.(*axon.Layer), monData)
 			default:
 				val = ly.(MonitorVal).GetMonitorVal(monData)
 			}
@@ -1476,7 +1476,7 @@ func (ss *Sim) LogCycleData() {
 	}
 	label := fmt.Sprintf("%20s: %3d", ev.AlphaTrialName, row)
 	ss.CycleDataPlot.Params.XAxisLabel = label
-	if ss.CycleLogUpdt == leabra.Quarter || row%25 == 0 {
+	if ss.CycleLogUpdt == axon.Quarter || row%25 == 0 {
 		ss.CycleDataPlot.GoUpdate()
 	}
 }

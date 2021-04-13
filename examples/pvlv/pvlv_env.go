@@ -13,12 +13,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emer/axon/examples/pvlv/data"
+	"github.com/emer/axon/pvlv"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/params"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	"github.com/emer/leabra/examples/pvlv/data"
-	"github.com/emer/leabra/pvlv"
 	"github.com/goki/ki/kit"
 )
 
@@ -486,7 +486,7 @@ func (ev *PVLVEnv) SetupOneAlphaTrial(curTrial *data.TrialInstance, stimNum int)
 		ev.StdInputData.SetNumRows(0)
 	}
 
-	// configure and write all the leabra trials for one eco trial
+	// configure and write all the axon trials for one eco trial
 	for i := 0; i < curTrial.AlphaTicksPerTrialGp; i++ {
 		i := ev.AlphaCycle.Cur
 		alphaTrialName := curTrial.TrialName + "_t" + strconv.Itoa(i)

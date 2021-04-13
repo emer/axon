@@ -6,8 +6,8 @@ package glong
 
 import (
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 )
@@ -57,7 +57,7 @@ func (np *NMDAParams) Gnmda(nmda, vm float32) float32 {
 // which actually does the NMDA computations.  Excitatory conductance is aggregated
 // separately for this projection.
 type NMDAPrjn struct {
-	leabra.Prjn // access as .Prjn
+	axon.Prjn // access as .Prjn
 }
 
 var KiT_NMDAPrjn = kit.Types.AddType(&NMDAPrjn{}, PrjnProps)

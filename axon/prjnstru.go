@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"errors"
@@ -21,12 +21,12 @@ import (
 // The exact same struct object is added to the Recv and Send layers, and it manages everything
 // about the connectivity, and methods on the Prjn handle all the relevant computation.
 type PrjnStru struct {
-	LeabraPrj   LeabraPrjn      `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an LeabraPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	AxonPrj     AxonPrjn        `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Off         bool            `desc:"inactivate this projection -- allows for easy experimentation"`
 	Cls         string          `desc:"Class is for applying parameter styles, can be space separated multple tags"`
 	Notes       string          `desc:"can record notes about this projection here"`
 	Send        emer.Layer      `desc:"sending layer for this projection"`
-	Recv        emer.Layer      `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*leabra.Layer)"`
+	Recv        emer.Layer      `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*axon.Layer)"`
 	Pat         prjn.Pattern    `desc:"pattern of connectivity"`
 	Typ         emer.PrjnType   `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
 	RConN       []int32         `view:"-" desc:"number of recv connections for each neuron in the receiving layer, as a flat list"`
@@ -45,11 +45,11 @@ type PrjnStru struct {
 // Init MUST be called to initialize the prjn's pointer to itself as an emer.Prjn
 // which enables the proper interface methods to be called.
 func (ps *PrjnStru) Init(prjn emer.Prjn) {
-	ps.LeabraPrj = prjn.(LeabraPrjn)
+	ps.AxonPrj = prjn.(AxonPrjn)
 }
 
 func (ps *PrjnStru) TypeName() string { return "Prjn" } // always, for params..
-func (ps *PrjnStru) Class() string    { return ps.LeabraPrj.PrjnTypeName() + " " + ps.Cls }
+func (ps *PrjnStru) Class() string    { return ps.AxonPrj.PrjnTypeName() + " " + ps.Cls }
 func (ps *PrjnStru) Name() string {
 	return ps.Send.Name() + "To" + ps.Recv.Name()
 }
@@ -203,9 +203,9 @@ func (ps *PrjnStru) String() string {
 // it always prints a message if a parameter fails to be set.
 // returns true if any params were set, and error if there were any errors.
 func (ps *PrjnStru) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
-	app, err := pars.Apply(ps.LeabraPrj, setMsg) // essential to go through LeabraPrj
+	app, err := pars.Apply(ps.AxonPrj, setMsg) // essential to go through AxonPrj
 	if app {
-		ps.LeabraPrj.UpdateParams()
+		ps.AxonPrj.UpdateParams()
 	}
 	return app, err
 }
@@ -214,6 +214,6 @@ func (ps *PrjnStru) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 // are not at their default values -- useful for setting param styles etc.
 func (ps *PrjnStru) NonDefaultParams() string {
 	pth := ps.Recv.Name() + "." + ps.Name() // redundant but clearer..
-	nds := giv.StructNonDefFieldsStr(ps.LeabraPrj, pth)
+	nds := giv.StructNonDefFieldsStr(ps.AxonPrj, pth)
 	return nds
 }

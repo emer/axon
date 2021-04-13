@@ -6,8 +6,8 @@ package pvlv
 
 import (
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
 	"github.com/emer/etable/etensor"
-	"github.com/emer/leabra/leabra"
 )
 
 // IAmygPrjn has one method, AsAmygModPrjn, which recasts the projection as a moddulatory projection
@@ -27,8 +27,8 @@ type ISetScalePrjn interface {
 
 // AmygModPrjn holds parameters and state variables for modulatory projections to amygdala layers
 type AmygModPrjn struct {
-	leabra.Prjn
-	SetScale    bool        `desc:"only for Leabra algorithm: if initializing the weights, set the connection scaling parameter in addition to intializing the weights -- for specifically-supported specs, this will for example set a gaussian scaling parameter on top of random initial weights, instead of just setting the initial weights to a gaussian weighted value -- for other specs that do not support a custom init_wts function, this will set the scale values to what the random weights would otherwise be set to, and set the initial weight value to a constant (init_wt_val)"`
+	axon.Prjn
+	SetScale    bool        `desc:"only for Axon algorithm: if initializing the weights, set the connection scaling parameter in addition to intializing the weights -- for specifically-supported specs, this will for example set a gaussian scaling parameter on top of random initial weights, instead of just setting the initial weights to a gaussian weighted value -- for other specs that do not support a custom init_wts function, this will set the scale values to what the random weights would otherwise be set to, and set the initial weight value to a constant (init_wt_val)"`
 	SetScaleMin float32     `desc:"minimum scale value for SetScale projections"`
 	SetScaleMax float32     `desc:"maximum scale value for SetScale projections"`
 	InitWtVal   float32     `desc:"constant initial weight value for specs that do not support a custom init_wts function and have set_scale set: the scale values are set to what the random weights would otherwise be set to, and the initial weight value is set to this constant: the net actual weight value is scale * init_wt_val.."`
@@ -90,7 +90,7 @@ func (pj *AmygModPrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlayi := pj.Recv.(IModLayer)
 	rlay := rlayi.AsMod()
 	clRate := pj.Learn.Lrate // * rlay.CosDiff.ModAvgLLrn

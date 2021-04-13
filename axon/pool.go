@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
+	"github.com/emer/axon/fffb"
 	"github.com/emer/etable/minmax"
-	"github.com/emer/leabra/fffb"
 )
 
 // Pool contains computed values for FFFB inhibition, and various other state values for layers

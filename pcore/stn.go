@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
@@ -64,7 +64,7 @@ type STNLayer struct {
 	STNNeurs []STNNeuron `desc:"slice of extra STNNeuron state for this layer -- flat list of len = Shape.Len(). You must iterate over index and use pointer to modify values."`
 }
 
-var KiT_STNLayer = kit.Types.AddType(&STNLayer{}, leabra.LayerProps)
+var KiT_STNLayer = kit.Types.AddType(&STNLayer{}, axon.LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "STNLayer", Desc: "defaults",
@@ -114,7 +114,7 @@ func (ly *STNLayer) Defaults() {
 	}
 
 	for _, pji := range ly.RcvPrjns {
-		pj := pji.(leabra.LeabraPrjn).AsLeabra()
+		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.Learn.Learn = false
 		pj.Learn.Norm.On = false
 		pj.Learn.Momentum.On = false
@@ -172,8 +172,8 @@ func (ly *STNLayer) AlphaCycInit() {
 	}
 }
 
-func (ly *STNLayer) ActFmG(ltime *leabra.Time) {
-	for ni := range ly.Neurons { // note: copied from leabra ActFmG, not calling it..
+func (ly *STNLayer) ActFmG(ltime *axon.Time) {
+	for ni := range ly.Neurons { // note: copied from axon ActFmG, not calling it..
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue

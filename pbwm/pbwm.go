@@ -5,13 +5,13 @@
 package pbwm
 
 import (
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 )
 
 // PBWMLayer defines the essential algorithmic API for PBWM at the layer level.
-// Builds upon the leabra.LeabraLayer API
+// Builds upon the axon.AxonLayer API
 type PBWMLayer interface {
-	leabra.LeabraLayer
+	axon.AxonLayer
 
 	// AsPBWM returns this layer as a pbwm.Layer (base Layer in PBWM)
 	AsPBWM() *Layer
@@ -26,15 +26,15 @@ type PBWMLayer interface {
 	// GateSend updates gating state and sends it along to other layers.
 	// Called after std Cycle methods.
 	// Only implemented for gating layers.
-	GateSend(ltime *leabra.Time)
+	GateSend(ltime *axon.Time)
 
 	// RecGateAct records the gating activation from current activation, when gating occcurs
 	// based on GateState.Now
-	RecGateAct(ltime *leabra.Time)
+	RecGateAct(ltime *axon.Time)
 
 	// SendMods is called at end of Cycle to send modulator signals (DA, etc)
 	// which will then be active for the next cycle of processing
-	SendMods(ltime *leabra.Time)
+	SendMods(ltime *axon.Time)
 
 	// Quarter2DWt is optional Q2 DWt -- PFC and matrix layers can do this as appropriate
 	Quarter2DWt()

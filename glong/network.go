@@ -5,20 +5,20 @@
 package glong
 
 import (
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
 // glong.Network has methods for configuring specialized Glong network components.
 type Network struct {
-	leabra.Network
+	axon.Network
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
-var NetworkProps = leabra.NetworkProps
+var NetworkProps = axon.NetworkProps
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
@@ -56,20 +56,20 @@ func (nt *Network) ConnectNMDA(send, recv emer.Layer, pat prjn.Pattern) emer.Prj
 //         for mixing in to other models
 
 // AddGlongLayer2D adds a glong.Layer using 2D shape
-func AddGlongLayer2D(nt *leabra.Network, name string, nNeurY, nNeurX int) *Layer {
+func AddGlongLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.Hidden)
 	return ly
 }
 
 // AddGlongLayer4D adds a glong.Layer using 4D shape with pools
-func AddGlongLayer4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+func AddGlongLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	return ly
 }
 
 // ConnectNMDA adds a NMDAPrjn between given layers
-func ConnectNMDA(nt *leabra.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+func ConnectNMDA(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayersPrjn(send, recv, pat, NMDA, &NMDAPrjn{})
 }

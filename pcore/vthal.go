@@ -7,7 +7,7 @@ package pcore
 import (
 	"strings"
 
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
@@ -17,7 +17,7 @@ type VThalLayer struct {
 	Layer
 }
 
-var KiT_VThalLayer = kit.Types.AddType(&VThalLayer{}, leabra.LayerProps)
+var KiT_VThalLayer = kit.Types.AddType(&VThalLayer{}, axon.LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "VThalLayer", Desc: "defaults",
@@ -53,7 +53,7 @@ func (ly *VThalLayer) Defaults() {
 	ly.Act.Init.Decay = 0
 
 	for _, pji := range ly.RcvPrjns {
-		pj := pji.(leabra.LeabraPrjn).AsLeabra()
+		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.Learn.Learn = false
 		pj.Learn.Norm.On = false
 		pj.Learn.Momentum.On = false

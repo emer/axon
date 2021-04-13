@@ -3,17 +3,17 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package leabra is the overall repository for all standard Leabra algorithm code
+Package axon is the overall repository for all standard Axon algorithm code
 implemented in the Go language (golang) with Python wrappers.
 
 This top-level of the repository has no functional code -- everything is organized
 into the following sub-repositories:
 
-* leabra: the core standard implementation with the minimal set of standard mechanisms
+* axon: the core standard implementation with the minimal set of standard mechanisms
 exclusively using rate-coded neurons -- there are too many differences with spiking,
 so that is now separated out into a different package.
 
-* deep: the DeepLeabra version which performs predictive
+* deep: the DeepAxon version which performs predictive
 learning by attempting to predict the activation states over the Pulvinar nucleus
 of the thalamus (in posterior sensory cortex), which are driven phasically every
 100 msec by deep layer 5 intrinsic bursting (5IB) neurons that have strong focal
@@ -28,4 +28,4 @@ patterns in a classic supervised-learning manner.
 * python: follow the instructions in the README.md file to build a python wrapper
 that will allow you to fully control the models using Python.
 */
-package leabra
+package axon

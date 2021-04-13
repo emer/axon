@@ -6,10 +6,11 @@ package pvlv
 
 import (
 	"fmt"
-	"github.com/emer/leabra/interinhib"
-	"github.com/emer/leabra/leabra"
-	"github.com/goki/ki/kit"
 	"strconv"
+
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/interinhib"
+	"github.com/goki/ki/kit"
 )
 
 // IBlAmygLayer has one method, AsBlAmygLayer, that returns a pointer to the layer specifically as a BLA layer.
@@ -36,7 +37,7 @@ func (ly *BlAmygLayer) Build() error {
 	if nu == 0 {
 		return fmt.Errorf("build Layer %v: no units specified in Shape", ly.Nm)
 	}
-	ly.Neurons = make([]leabra.Neuron, nu)
+	ly.Neurons = make([]axon.Neuron, nu)
 	err := ly.AsMod().Build()
 	if err != nil {
 		return err
@@ -98,7 +99,7 @@ func (ly *BlAmygLayer) GetMonitorVal(data []string) float64 {
 }
 
 // InhibiFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-func (ly *BlAmygLayer) InhibFmGeAct(ltime *leabra.Time) {
+func (ly *BlAmygLayer) InhibFmGeAct(ltime *axon.Time) {
 	lpl := &ly.Pools[0]
 	ly.Inhib.Layer.Inhib(&lpl.Inhib)
 	ly.ILI.Inhib(&ly.Layer) // does inter-layer inhibition

@@ -8,9 +8,9 @@ import (
 	"log"
 
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/deep"
 	"github.com/emer/etable/minmax"
-	"github.com/emer/leabra/deep"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
@@ -20,12 +20,12 @@ import (
 // (which can be negative -- there are no constraints).
 // Use with RWPrjn which does simple delta-rule learning on minus-plus.
 type RWPredLayer struct {
-	leabra.Layer
+	axon.Layer
 	PredRange minmax.F32 `desc:"default 0.1..0.99 range of predictions that can be represented -- having a truncated range preserves some sensitivity in dopamine at the extremes of good or poor performance"`
 	DA        float32    `inactive:"+" desc:"dopamine value for this layer"`
 }
 
-var KiT_RWPredLayer = kit.Types.AddType(&RWPredLayer{}, leabra.LayerProps)
+var KiT_RWPredLayer = kit.Types.AddType(&RWPredLayer{}, axon.LayerProps)
 
 func (ly *RWPredLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -38,7 +38,7 @@ func (ly *RWPredLayer) GetDA() float32   { return ly.DA }
 func (ly *RWPredLayer) SetDA(da float32) { ly.DA = da }
 
 // ActFmG computes linear activation for RWPred
-func (ly *RWPredLayer) ActFmG(ltime *leabra.Time) {
+func (ly *RWPredLayer) ActFmG(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -58,7 +58,7 @@ func (ly *RWPredLayer) ActFmG(ltime *leabra.Time) {
 // DA is computed -- critical for effective use of RW only for PV cases.
 // RWPred prediction is also accessed directly from Rew layer to avoid any issues.
 type RWDaLayer struct {
-	leabra.Layer
+	axon.Layer
 	SendDA    SendDA  `desc:"list of layers to send dopamine to"`
 	RewLay    string  `desc:"name of Reward-representing layer from which this computes DA -- if nothing clamped, no dopamine computed"`
 	RWPredLay string  `desc:"name of RWPredLayer layer that is subtracted from the reward value"`
@@ -83,7 +83,7 @@ func (ly *RWDaLayer) GetDA() float32   { return ly.DA }
 func (ly *RWDaLayer) SetDA(da float32) { ly.DA = da }
 
 // RWLayers returns the reward and RWPred layers based on names
-func (ly *RWDaLayer) RWLayers() (*leabra.Layer, *RWPredLayer, error) {
+func (ly *RWDaLayer) RWLayers() (*axon.Layer, *RWPredLayer, error) {
 	tly, err := ly.Network.LayerByNameTry(ly.RewLay)
 	if err != nil {
 		log.Printf("RWDaLayer %s, RewLay: %v\n", ly.Name(), err)
@@ -94,7 +94,7 @@ func (ly *RWDaLayer) RWLayers() (*leabra.Layer, *RWPredLayer, error) {
 		log.Printf("RWDaLayer %s, RWPredLay: %v\n", ly.Name(), err)
 		return nil, nil, err
 	}
-	return tly.(leabra.LeabraLayer).AsLeabra(), ply.(*RWPredLayer), nil
+	return tly.(axon.AxonLayer).AsAxon(), ply.(*RWPredLayer), nil
 }
 
 // Build constructs the layer state, including calling Build on the projections.
@@ -111,14 +111,14 @@ func (ly *RWDaLayer) Build() error {
 	return err
 }
 
-func (ly *RWDaLayer) ActFmG(ltime *leabra.Time) {
+func (ly *RWDaLayer) ActFmG(ltime *axon.Time) {
 	rly, ply, _ := ly.RWLayers()
 	if rly == nil || ply == nil {
 		return
 	}
 	rnrn := &(rly.Neurons[0])
 	hasRew := false
-	if rnrn.HasFlag(leabra.NeurHasExt) {
+	if rnrn.HasFlag(axon.NeurHasExt) {
 		hasRew = true
 	}
 	ract := rnrn.Act
@@ -139,7 +139,7 @@ func (ly *RWDaLayer) ActFmG(ltime *leabra.Time) {
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *RWDaLayer) CyclePost(ltime *leabra.Time) {
+func (ly *RWDaLayer) CyclePost(ltime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)
@@ -152,7 +152,7 @@ func (ly *RWDaLayer) CyclePost(ltime *leabra.Time) {
 // Use in RWPredLayer typically to generate reward predictions.
 // Has no weight bounds or limits on sign etc.
 type RWPrjn struct {
-	leabra.Prjn
+	axon.Prjn
 	DaTol float32 `desc:"tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal"`
 }
 
@@ -172,8 +172,8 @@ func (pj *RWPrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
-	rlay := pj.Recv.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	lda := pj.Recv.(DALayer).GetDA()
 	if pj.DaTol > 0 {
 		if math32.Abs(lda) <= pj.DaTol {

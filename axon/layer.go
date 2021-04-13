@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"encoding/json"
@@ -27,7 +27,7 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// leabra.Layer has parameters for running a basic rate-coded Leabra layer
+// axon.Layer has parameters for running a basic rate-coded Axon layer
 type Layer struct {
 	LayerStru
 	Act     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
@@ -40,10 +40,10 @@ type Layer struct {
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
-// AsLeabra returns this layer as a leabra.Layer -- all derived layers must redefine
-// this to return the base Layer type, so that the LeabraLayer interface does not
+// AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
+// this to return the base Layer type, so that the AxonLayer interface does not
 // need to include accessors to all the basic stuff
-func (ly *Layer) AsLeabra() *Layer {
+func (ly *Layer) AsAxon() *Layer {
 	return ly
 }
 
@@ -143,7 +143,7 @@ func (ly *Layer) UnitVals(vals *[]float32, varNm string) error {
 	} else if len(*vals) < nn {
 		*vals = (*vals)[0:nn]
 	}
-	vidx, err := ly.LeabraLay.UnitVarIdx(varNm)
+	vidx, err := ly.AxonLay.UnitVarIdx(varNm)
 	if err != nil {
 		nan := math32.NaN()
 		for i := range ly.Neurons {
@@ -152,7 +152,7 @@ func (ly *Layer) UnitVals(vals *[]float32, varNm string) error {
 		return err
 	}
 	for i := range ly.Neurons {
-		(*vals)[i] = ly.LeabraLay.UnitVal1D(vidx, i)
+		(*vals)[i] = ly.AxonLay.UnitVal1D(vidx, i)
 	}
 	return nil
 }
@@ -161,12 +161,12 @@ func (ly *Layer) UnitVals(vals *[]float32, varNm string) error {
 // for each unit in the layer, as a float32 tensor in same shape as layer units.
 func (ly *Layer) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 	if tsr == nil {
-		err := fmt.Errorf("leabra.UnitValsTensor: Tensor is nil")
+		err := fmt.Errorf("axon.UnitValsTensor: Tensor is nil")
 		log.Println(err)
 		return err
 	}
 	tsr.SetShape(ly.Shp.Shp, ly.Shp.Strd, ly.Shp.Nms)
-	vidx, err := ly.LeabraLay.UnitVarIdx(varNm)
+	vidx, err := ly.AxonLay.UnitVarIdx(varNm)
 	if err != nil {
 		nan := math.NaN()
 		for i := range ly.Neurons {
@@ -175,7 +175,7 @@ func (ly *Layer) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 		return err
 	}
 	for i := range ly.Neurons {
-		v := ly.LeabraLay.UnitVal1D(vidx, i)
+		v := ly.AxonLay.UnitVal1D(vidx, i)
 		if math32.IsNaN(v) {
 			tsr.SetFloat1D(1, math.NaN())
 		} else {
@@ -188,12 +188,12 @@ func (ly *Layer) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 // UnitVal returns value of given variable name on given unit,
 // using shape-based dimensional index
 func (ly *Layer) UnitVal(varNm string, idx []int) float32 {
-	vidx, err := ly.LeabraLay.UnitVarIdx(varNm)
+	vidx, err := ly.AxonLay.UnitVarIdx(varNm)
 	if err != nil {
 		return math32.NaN()
 	}
 	fidx := ly.Shp.Offset(idx)
-	return ly.LeabraLay.UnitVal1D(vidx, fidx)
+	return ly.AxonLay.UnitVal1D(vidx, fidx)
 }
 
 // RecvPrjnVals fills in values of given synapse variable name,
@@ -516,12 +516,12 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 // InitWts initializes the weight values in the network, i.e., resetting learning
 // Also calls InitActs
 func (ly *Layer) InitWts() {
-	ly.LeabraLay.UpdateParams()
+	ly.AxonLay.UpdateParams()
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(LeabraPrjn).InitWts()
+		p.(AxonPrjn).InitWts()
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -529,8 +529,8 @@ func (ly *Layer) InitWts() {
 		pl.ActAvg.ActPAvg = ly.Inhib.ActAvg.Init
 		pl.ActAvg.ActPAvgEff = ly.Inhib.ActAvg.EffInit()
 	}
-	ly.LeabraLay.InitActAvg()
-	ly.LeabraLay.InitActs()
+	ly.AxonLay.InitActAvg()
+	ly.AxonLay.InitActs()
 	ly.CosDiff.Init()
 }
 
@@ -562,8 +562,8 @@ func (ly *Layer) InitWtSym() {
 		if p.IsOff() {
 			continue
 		}
-		plp := p.(LeabraPrjn)
-		if !(plp.AsLeabra().WtInit.Sym) {
+		plp := p.(AxonPrjn)
+		if !(plp.AsAxon().WtInit.Sym) {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
@@ -574,8 +574,8 @@ func (ly *Layer) InitWtSym() {
 		if !has {
 			continue
 		}
-		rlp := rpj.(LeabraPrjn)
-		if !(rlp.AsLeabra().WtInit.Sym) {
+		rlp := rpj.(AxonPrjn)
+		if !(rlp.AsAxon().WtInit.Sym) {
 			continue
 		}
 		plp.InitWtSym(rlp)
@@ -797,7 +797,7 @@ func (ly *Layer) UpdateExtFlags() {
 // input scaling from running average activation etc.
 // should already have presented the external input to the network at this point.
 func (ly *Layer) AlphaCycInit() {
-	ly.LeabraLay.AvgLFmAvgM()
+	ly.AxonLay.AvgLFmAvgM()
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		ly.Inhib.ActAvg.AvgFmAct(&pl.ActAvg.ActMAvg, pl.ActM.Avg)
@@ -811,14 +811,14 @@ func (ly *Layer) AlphaCycInit() {
 		}
 		nrn.ActQ0 = nrn.ActP
 	}
-	ly.LeabraLay.GScaleFmAvgAct()
+	ly.AxonLay.GScaleFmAvgAct()
 	if ly.Act.Noise.Type != NoNoise && ly.Act.Noise.Fixed && ly.Act.Noise.Dist != erand.Mean {
-		ly.LeabraLay.GenNoise()
+		ly.AxonLay.GenNoise()
 	}
-	ly.LeabraLay.DecayState(ly.Act.Init.Decay)
-	ly.LeabraLay.InitGInc()
+	ly.AxonLay.DecayState(ly.Act.Init.Decay)
+	ly.AxonLay.InitGInc()
 	if ly.Act.Clamp.Hard && ly.Typ == emer.Input {
-		ly.LeabraLay.HardClamp()
+		ly.AxonLay.HardClamp()
 	}
 }
 
@@ -848,8 +848,8 @@ func (ly *Layer) GScaleFmAvgAct() {
 		if p.IsOff() {
 			continue
 		}
-		pj := p.(LeabraPrjn).AsLeabra()
-		slay := p.SendLay().(LeabraLayer).AsLeabra()
+		pj := p.(AxonPrjn).AsAxon()
+		slay := p.SendLay().(AxonLayer).AsAxon()
 		slpl := &slay.Pools[0]
 		savg := slpl.ActAvg.ActPAvgEff
 		snu := len(slay.Neurons)
@@ -872,7 +872,7 @@ func (ly *Layer) GScaleFmAvgAct() {
 		if p.IsOff() {
 			continue
 		}
-		pj := p.(LeabraPrjn).AsLeabra()
+		pj := p.(AxonPrjn).AsAxon()
 		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
 				pj.GScale /= totGiRel
@@ -954,7 +954,7 @@ func (ly *Layer) InitGInc() {
 		if p.IsOff() {
 			continue
 		}
-		p.(LeabraPrjn).InitGInc()
+		p.(AxonPrjn).InitGInc()
 	}
 }
 
@@ -973,7 +973,7 @@ func (ly *Layer) SendGDelta(ltime *Time) {
 					if sp.IsOff() {
 						continue
 					}
-					sp.(LeabraPrjn).SendGDelta(ni, delta)
+					sp.(AxonPrjn).SendGDelta(ni, delta)
 				}
 				nrn.ActSent = nrn.Act
 			}
@@ -983,7 +983,7 @@ func (ly *Layer) SendGDelta(ltime *Time) {
 				if sp.IsOff() {
 					continue
 				}
-				sp.(LeabraPrjn).SendGDelta(ni, delta)
+				sp.(AxonPrjn).SendGDelta(ni, delta)
 			}
 			nrn.ActSent = 0
 		}
@@ -1004,7 +1004,7 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 		if p.IsOff() {
 			continue
 		}
-		p.(LeabraPrjn).RecvGInc()
+		p.(AxonPrjn).RecvGInc()
 	}
 }
 
@@ -1157,7 +1157,7 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 		}
 	}
 	if ltime.Quarter == 3 {
-		ly.LeabraLay.CosDiffFmActs()
+		ly.AxonLay.CosDiffFmActs()
 	}
 }
 
@@ -1190,7 +1190,7 @@ func (ly *Layer) CosDiffFmActs() {
 
 	ly.Learn.CosDiff.AvgVarFmCos(&ly.CosDiff.Avg, &ly.CosDiff.Var, ly.CosDiff.Cos)
 
-	if ly.LeabraLay.IsTarget() {
+	if ly.AxonLay.IsTarget() {
 		ly.CosDiff.AvgLrn = 0 // no BCM for non-hidden layers
 		ly.CosDiff.ModAvgLLrn = 0
 	} else {
@@ -1220,7 +1220,7 @@ func (ly *Layer) DWt() {
 		if p.IsOff() {
 			continue
 		}
-		p.(LeabraPrjn).DWt()
+		p.(AxonPrjn).DWt()
 	}
 }
 
@@ -1230,7 +1230,7 @@ func (ly *Layer) WtFmDWt() {
 		if p.IsOff() {
 			continue
 		}
-		p.(LeabraPrjn).WtFmDWt()
+		p.(AxonPrjn).WtFmDWt()
 	}
 }
 
@@ -1240,7 +1240,7 @@ func (ly *Layer) WtBalFmWt() {
 		if p.IsOff() {
 			continue
 		}
-		p.(LeabraPrjn).WtBalFmWt()
+		p.(AxonPrjn).WtBalFmWt()
 	}
 }
 
@@ -1251,7 +1251,7 @@ func (ly *Layer) LrateMult(mult float32) {
 		// if p.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(LeabraPrjn).LrateMult(mult)
+		p.(AxonPrjn).LrateMult(mult)
 	}
 }
 
@@ -1269,7 +1269,7 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 	neur = len(ly.Neurons) * perNeur
 	syn = 0
 	for _, pji := range ly.SndPrjns {
-		pj := pji.(LeabraPrjn).AsLeabra()
+		pj := pji.(AxonPrjn).AsAxon()
 		ns := len(pj.Syns)
 		syn += ns
 	}

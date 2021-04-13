@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ import (
 )
 
 // Note: this test project exactly reproduces the configuration and behavior of
-// C++ emergent/demo/leabra/basic_leabra_test.proj  in version 8.5.6 svn 11492
+// C++ emergent/demo/axon/basic_axon_test.proj  in version 8.5.6 svn 11492
 
 var TestNet Network
 var InPats *etensor.Float32

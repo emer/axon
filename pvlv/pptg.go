@@ -5,17 +5,18 @@
 package pvlv
 
 import (
-	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"strconv"
 
-	//"github.com/emer/leabra/pbwm"
+	"github.com/emer/axon/axon"
+	"github.com/emer/emergent/emer"
+
+	//"github.com/emer/axon/pbwm"
 	"github.com/goki/ki/kit"
 )
 
 // The PPTg passes on a positively-rectified version of its input signal.
 type PPTgLayer struct {
-	leabra.Layer
+	axon.Layer
 	Ge              float32
 	GePrev          float32
 	SendAct         float32
@@ -25,7 +26,7 @@ type PPTgLayer struct {
 	ClampActivation bool    `desc:"clamp activation directly, after applying gain"`
 }
 
-var KiT_PPTgLayer = kit.Types.AddType(&PPTgLayer{}, leabra.LayerProps)
+var KiT_PPTgLayer = kit.Types.AddType(&PPTgLayer{}, axon.LayerProps)
 
 func (ly *PPTgLayer) Build() error {
 	err := ly.Layer.Build()
@@ -62,7 +63,7 @@ func (ly *PPTgLayer) SetDA(da float32) {
 	ly.DA = da
 }
 
-func (ly *PPTgLayer) QuarterFinal(ltime *leabra.Time) {
+func (ly *PPTgLayer) QuarterFinal(ltime *axon.Time) {
 	ly.Layer.QuarterFinal(ltime)
 	ly.Ge = ly.Neurons[0].Ge
 	if ltime.PlusPhase {
@@ -87,7 +88,7 @@ func (ly *PPTgLayer) GetMonitorVal(data []string) float64 {
 	return float64(val)
 }
 
-func (ly *PPTgLayer) ActFmG(_ *leabra.Time) {
+func (ly *PPTgLayer) ActFmG(_ *axon.Time) {
 	nrn := &ly.Neurons[0]
 	geSave := nrn.Ge
 	nrn.Ge = ly.DNetGain * (nrn.Ge - ly.GePrev)

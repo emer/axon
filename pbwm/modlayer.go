@@ -5,20 +5,20 @@
 package pbwm
 
 import (
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
-// ModLayer provides DA modulated learning to basic Leabra layers.
+// ModLayer provides DA modulated learning to basic Axon layers.
 type ModLayer struct {
 	Layer
 	DaMod DaModParams `desc:"dopamine modulation effects, typically affecting Ge or gain -- a phase-based difference in modulation will result in learning effects through standard error-driven learning."`
 }
 
-var KiT_ModLayer = kit.Types.AddType(&ModLayer{}, leabra.LayerProps)
+var KiT_ModLayer = kit.Types.AddType(&ModLayer{}, axon.LayerProps)
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *ModLayer) GFmInc(ltime *leabra.Time) {
+func (ly *ModLayer) GFmInc(ltime *axon.Time) {
 	if !ly.DaMod.GeModOn() {
 		ly.Layer.GFmInc(ltime)
 		return
@@ -37,7 +37,7 @@ func (ly *ModLayer) GFmInc(ltime *leabra.Time) {
 
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act
-func (ly *ModLayer) ActFmG(ltime *leabra.Time) {
+func (ly *ModLayer) ActFmG(ltime *axon.Time) {
 	if !ly.DaMod.GainModOn() {
 		ly.Layer.ActFmG(ltime)
 		return

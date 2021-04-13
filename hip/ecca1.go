@@ -6,7 +6,7 @@ package hip
 
 import (
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 )
 
 // hip.EcCa1Prjn is for EC <-> CA1 projections, to perform error-driven
@@ -16,7 +16,7 @@ import (
 // Q2, 3: CA3 -> CA1 -> ECout     : ActM = minus phase for recall
 // Q4: ECin -> CA1, ECin -> ECout : ActP = plus phase for everything
 type EcCa1Prjn struct {
-	leabra.Prjn // access as .Prjn
+	axon.Prjn // access as .Prjn
 }
 
 func (pj *EcCa1Prjn) Defaults() {
@@ -39,8 +39,8 @@ func (pj *EcCa1Prjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
-	rlay := pj.Recv.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])

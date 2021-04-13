@@ -6,8 +6,8 @@ package deep
 
 import (
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/efuns"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"
 )
@@ -43,8 +43,8 @@ func (ti *TopoInhib) Update() {
 
 // TopoInhibLayer is a layer with topographically organized inhibition among pools
 type TopoInhibLayer struct {
-	leabra.Layer           // access as .Layer
-	TopoInhib    TopoInhib `desc:"topographic inhibition parameters for pool-level inhibition (only used for layers with pools)"`
+	axon.Layer           // access as .Layer
+	TopoInhib  TopoInhib `desc:"topographic inhibition parameters for pool-level inhibition (only used for layers with pools)"`
 }
 
 var KiT_TopoInhibLayer = kit.Types.AddType(&TopoInhibLayer{}, LayerProps)
@@ -78,7 +78,7 @@ func (ly *TopoInhibLayer) TopoGiPos(py, px, d int) float32 {
 }
 
 // TopoGi computes topographic Gi between pools
-func (ly *TopoInhibLayer) TopoGi(ltime *leabra.Time) {
+func (ly *TopoInhibLayer) TopoGi(ltime *axon.Time) {
 	pyn := ly.Shp.Dim(0)
 	pxn := ly.Shp.Dim(1)
 	wd := ly.TopoInhib.Width
@@ -111,7 +111,7 @@ func (ly *TopoInhibLayer) TopoGi(ltime *leabra.Time) {
 }
 
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-func (ly *TopoInhibLayer) InhibFmGeAct(ltime *leabra.Time) {
+func (ly *TopoInhibLayer) InhibFmGeAct(ltime *axon.Time) {
 	lpl := &ly.Pools[0]
 	ly.Inhib.Layer.Inhib(&lpl.Inhib)
 	ly.PoolInhibFmGeAct(ltime)

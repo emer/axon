@@ -7,11 +7,12 @@ package pvlv
 import (
 	"fmt"
 	_ "fmt"
-	"github.com/chewxy/math32"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
-	"github.com/goki/ki/kit"
 	"reflect"
+
+	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
+	"github.com/emer/emergent/emer"
+	"github.com/goki/ki/kit"
 )
 
 // TraceSyn holds extra synaptic state for trace projections
@@ -35,7 +36,7 @@ var KiT_DALrnRule = kit.Enums.AddEnum(DALrnRuleN, kit.NotBitFlag, nil)
 
 // MSNPrjn does dopamine-modulated, for striatum-like layers
 type MSNPrjn struct {
-	leabra.Prjn
+	axon.Prjn
 	LearningRule DALrnRule
 	Trace        MSNTraceParams `view:"inline" desc:"special parameters for striatum trace learning"`
 	TrSyns       []TraceSyn     `desc:"trace synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
@@ -87,7 +88,7 @@ func (pj *MSNPrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*MSNLayer)
 	var effLRate float32
 	if rlay.IsOff() {
@@ -161,19 +162,19 @@ var (
 )
 
 func init() {
-	TraceVarsMap = make(map[string]int, len(TraceVars)+len(leabra.SynapseVars))
-	for i, v := range leabra.SynapseVars {
+	TraceVarsMap = make(map[string]int, len(TraceVars)+len(axon.SynapseVars))
+	for i, v := range axon.SynapseVars {
 		TraceVarsMap[v] = i
 	}
 	for i, v := range TraceVars {
-		TraceVarsMap[v] = i + len(leabra.SynapseVars)
+		TraceVarsMap[v] = i + len(axon.SynapseVars)
 	}
-	for k, v := range leabra.SynapseVarProps {
+	for k, v := range axon.SynapseVarProps {
 		SynapseVarProps[k] = v
 	}
-	ln := len(leabra.SynapseVars)
+	ln := len(axon.SynapseVars)
 	SynapseVarsAll = make([]string, len(TraceVars)+ln)
-	copy(SynapseVarsAll, leabra.SynapseVars)
+	copy(SynapseVarsAll, axon.SynapseVars)
 	copy(SynapseVarsAll[ln:], TraceVars)
 }
 
@@ -228,7 +229,7 @@ func (pj *MSNPrjn) SynVal(varNm string, sidx, ridx int) float32 {
 		return math32.NaN()
 	}
 	synIdx := pj.SynIdx(sidx, ridx)
-	return pj.LeabraPrj.SynVal1D(vidx, synIdx)
+	return pj.AxonPrj.SynVal1D(vidx, synIdx)
 }
 
 func (pj *MSNPrjn) SynVarIdx(varNm string) (int, error) {
@@ -240,7 +241,7 @@ func (pj *MSNPrjn) SynVarIdx(varNm string) (int, error) {
 //	if err == nil {
 //		return vidx, err
 //	}
-//	nn := len(leabra.SynapseVars)
+//	nn := len(axon.SynapseVars)
 //	switch varNm {
 //	case "NTr":
 //		return nn, nil
@@ -258,7 +259,7 @@ func (pj *MSNPrjn) SynVal1D(varIdx int, synIdx int) float32 {
 	if varIdx < 0 || varIdx >= len(SynapseVarsAll) {
 		return math32.NaN()
 	}
-	nn := len(leabra.SynapseVars)
+	nn := len(axon.SynapseVars)
 	if varIdx < nn {
 		return pj.Prjn.SynVal1D(varIdx, synIdx)
 	}

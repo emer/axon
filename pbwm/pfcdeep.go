@@ -5,20 +5,20 @@
 package pbwm
 
 import (
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
 // PFCGateParams has parameters for PFC gating
 type PFCGateParams struct {
-	GateQtr   leabra.Quarters `desc:"Quarter(s) that the effect of gating on updating Deep from Super occurs -- this is typically 1 quarter after the GPiThal GateQtr"`
-	OutGate   bool            `desc:"if true, this PFC layer is an output gate layer, which means that it only has transient activation during gating"`
-	OutQ1Only bool            `viewif:"OutGate" def:"true" desc:"for output gating, only compute gating in first quarter -- do not compute in 3rd quarter -- this is typically true, and GateQtr is typically set to only Q1 as well -- does Burst updating immediately after first quarter gating signal -- allows gating signals time to influence performance within a single trial"`
+	GateQtr   axon.Quarters `desc:"Quarter(s) that the effect of gating on updating Deep from Super occurs -- this is typically 1 quarter after the GPiThal GateQtr"`
+	OutGate   bool          `desc:"if true, this PFC layer is an output gate layer, which means that it only has transient activation during gating"`
+	OutQ1Only bool          `viewif:"OutGate" def:"true" desc:"for output gating, only compute gating in first quarter -- do not compute in 3rd quarter -- this is typically true, and GateQtr is typically set to only Q1 as well -- does Burst updating immediately after first quarter gating signal -- allows gating signals time to influence performance within a single trial"`
 }
 
 func (gp *PFCGateParams) Defaults() {
-	gp.GateQtr.Set(int(leabra.Q2))
-	gp.GateQtr.Set(int(leabra.Q4))
+	gp.GateQtr.Set(int(axon.Q2))
+	gp.GateQtr.Set(int(axon.Q4))
 	gp.OutQ1Only = true
 }
 
@@ -61,7 +61,7 @@ type PFCDeepLayer struct {
 	PFCNeurs []PFCNeuron    `desc:"slice of PFCNeuron state for this layer -- flat list of len = Shape.Len().  You must iterate over index and use pointer to modify values."`
 }
 
-var KiT_PFCDeepLayer = kit.Types.AddType(&PFCDeepLayer{}, leabra.LayerProps)
+var KiT_PFCDeepLayer = kit.Types.AddType(&PFCDeepLayer{}, axon.LayerProps)
 
 func (ly *PFCDeepLayer) Defaults() {
 	ly.GateLayer.Defaults()
@@ -70,7 +70,7 @@ func (ly *PFCDeepLayer) Defaults() {
 	if ly.Gate.OutGate && ly.Gate.OutQ1Only {
 		ly.Maint.MaxMaint = 1
 		ly.Gate.GateQtr = 0
-		ly.Gate.GateQtr.Set(int(leabra.Q1))
+		ly.Gate.GateQtr.Set(int(axon.Q1))
 	}
 	if len(ly.Dyns) > 0 {
 		ly.Maint.UseDyn = true
@@ -127,13 +127,13 @@ func (ly *PFCDeepLayer) MaintPFC() *PFCDeepLayer {
 
 // SuperPFC returns corresponding PFC super layer with same name without D
 // should not be nil.  Super can be any layer type.
-func (ly *PFCDeepLayer) SuperPFC() leabra.LeabraLayer {
+func (ly *PFCDeepLayer) SuperPFC() axon.AxonLayer {
 	dnm := ly.Nm[:len(ly.Nm)-1]
 	li := ly.Network.LayerByName(dnm)
 	if li == nil {
 		return nil
 	}
-	return li.(leabra.LeabraLayer)
+	return li.(axon.AxonLayer)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +153,7 @@ func (ly *PFCDeepLayer) InitActs() {
 //  Cycle
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *PFCDeepLayer) GFmInc(ltime *leabra.Time) {
+func (ly *PFCDeepLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -170,13 +170,13 @@ func (ly *PFCDeepLayer) GFmInc(ltime *leabra.Time) {
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act.
 // PFC extends to call Gating.
-func (ly *PFCDeepLayer) ActFmG(ltime *leabra.Time) {
+func (ly *PFCDeepLayer) ActFmG(ltime *axon.Time) {
 	ly.GateLayer.ActFmG(ltime)
 	ly.Gating(ltime)
 }
 
 // Gating updates PFC Gating state
-func (ly *PFCDeepLayer) Gating(ltime *leabra.Time) {
+func (ly *PFCDeepLayer) Gating(ltime *axon.Time) {
 	if ly.Gate.OutGate && ly.Gate.OutQ1Only {
 		if ltime.Quarter > 1 {
 			return
@@ -195,7 +195,7 @@ func (ly *PFCDeepLayer) Gating(ltime *leabra.Time) {
 					ly.ClearMaint(gi)
 				}
 			} else {
-				pfcs := ly.SuperPFC().AsLeabra()
+				pfcs := ly.SuperPFC().AsAxon()
 				pfcs.DecayStatePool(gi, ly.Maint.Clear)
 			}
 		}
@@ -215,20 +215,20 @@ func (ly *PFCDeepLayer) ClearMaint(pool int) {
 	gs := &pfcm.GateStates[pool] // 0 based
 	if gs.Cnt >= 1 {             // important: only for established maint, not just gated..
 		gs.Cnt = -1 // reset
-		pfcs := pfcm.SuperPFC().AsLeabra()
+		pfcs := pfcm.SuperPFC().AsAxon()
 		pfcs.DecayStatePool(pool, pfcm.Maint.Clear)
 	}
 }
 
 // QuarterFinal does updating after end of a quarter
-func (ly *PFCDeepLayer) QuarterFinal(ltime *leabra.Time) {
+func (ly *PFCDeepLayer) QuarterFinal(ltime *axon.Time) {
 	ly.GateLayer.QuarterFinal(ltime)
 	ly.UpdtGateCnt(ltime)
 	ly.DeepMaint(ltime)
 }
 
 // DeepMaint updates deep maintenance activations
-func (ly *PFCDeepLayer) DeepMaint(ltime *leabra.Time) {
+func (ly *PFCDeepLayer) DeepMaint(ltime *axon.Time) {
 	if !ly.Gate.GateQtr.Has(ltime.Quarter) {
 		return
 	}
@@ -236,7 +236,7 @@ func (ly *PFCDeepLayer) DeepMaint(ltime *leabra.Time) {
 	if slyi == nil {
 		return
 	}
-	sly := slyi.AsLeabra()
+	sly := slyi.AsAxon()
 	yN := ly.Shp.Dim(2)
 	xN := ly.Shp.Dim(3)
 
@@ -279,7 +279,7 @@ func (ly *PFCDeepLayer) DeepMaint(ltime *leabra.Time) {
 }
 
 // UpdtGateCnt updates the gate counter
-func (ly *PFCDeepLayer) UpdtGateCnt(ltime *leabra.Time) {
+func (ly *PFCDeepLayer) UpdtGateCnt(ltime *axon.Time) {
 	if !ly.Gate.GateQtr.Has(ltime.Quarter) {
 		return
 	}
@@ -296,7 +296,7 @@ func (ly *PFCDeepLayer) UpdtGateCnt(ltime *leabra.Time) {
 
 // RecGateAct records the gating activation from current activation,
 // when gating occcurs based on GateState.Now
-func (ly *PFCDeepLayer) RecGateAct(ltime *leabra.Time) {
+func (ly *PFCDeepLayer) RecGateAct(ltime *axon.Time) {
 	for gi := range ly.GateStates {
 		gs := &ly.GateStates[gi]
 		if !gs.Now { // not gating now

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 )
 
 var (
@@ -23,14 +23,14 @@ var (
 )
 
 func init() {
-	ln := len(leabra.NeuronVars)
+	ln := len(axon.NeuronVars)
 	NeuronVarsAll = make([]string, len(NeuronVars)+ln)
-	copy(NeuronVarsAll, leabra.NeuronVars)
+	copy(NeuronVarsAll, axon.NeuronVars)
 	copy(NeuronVarsAll[ln:], NeuronVars)
 
-	ln = len(leabra.SynapseVars)
+	ln = len(axon.SynapseVars)
 	SynVarsAll = make([]string, len(TraceSynVars)+ln)
-	copy(SynVarsAll, leabra.SynapseVars)
+	copy(SynVarsAll, axon.SynapseVars)
 	copy(SynVarsAll[ln:], TraceSynVars)
 }
 

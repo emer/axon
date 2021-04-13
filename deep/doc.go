@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package deep provides the DeepLeabra variant of Leabra, which performs predictive
+Package deep provides the DeepAxon variant of Axon, which performs predictive
 learning by attempting to predict the activation states over the Pulvinar nucleus
 of the thalamus (in posterior sensory cortex), which are driven phasically every
 100 msec by deep layer 5 intrinsic bursting (5IB) neurons that have strong focal
@@ -13,7 +13,7 @@ neurons.
 This package has 3 specialized Layer types:
 
 * SuperLayer: implements the superficial layer neurons, which function just
-  like standard leabra.Layer neurons, while also directly computing the
+  like standard axon.Layer neurons, while also directly computing the
   Burst activation signal that reflects the deep layer 5IB bursting activation,
   via thresholding of the superficial layer activations
   (Bursting is thought to have a higher threshold).

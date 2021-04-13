@@ -2,26 +2,26 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/chans"
+	"github.com/emer/axon/knadapt"
+	"github.com/emer/axon/nxx1"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
-	"github.com/emer/leabra/chans"
-	"github.com/emer/leabra/knadapt"
-	"github.com/emer/leabra/nxx1"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
 ///////////////////////////////////////////////////////////////////////
-//  act.go contains the activation params and functions for leabra
+//  act.go contains the activation params and functions for axon
 
-// leabra.ActParams contains all the activation computation params and functions
-// for basic Leabra, at the neuron level .
-// This is included in leabra.Layer to drive the computation.
+// axon.ActParams contains all the activation computation params and functions
+// for basic Axon, at the neuron level .
+// This is included in axon.Layer to drive the computation.
 type ActParams struct {
 	XX1        nxx1.Params     `view:"inline" desc:"Noisy X/X+1 rate code activation function parameters"`
 	OptThresh  OptThreshParams `view:"inline" desc:"optimization thresholds for faster processing"`
@@ -262,7 +262,7 @@ func (ac *ActParams) HardClamp(nrn *Neuron) {
 // OptThreshParams provides optimization thresholds for faster processing
 type OptThreshParams struct {
 	Send  float32 `def:"0.1" desc:"don't send activation when act <= send -- greatly speeds processing"`
-	Delta float32 `def:"0.005" desc:"don't send activation changes until they exceed this threshold: only for when LeabraNetwork::send_delta is on!"`
+	Delta float32 `def:"0.005" desc:"don't send activation changes until they exceed this threshold: only for when AxonNetwork::send_delta is on!"`
 }
 
 func (ot *OptThreshParams) Update() {
@@ -298,7 +298,7 @@ func (ai *ActInitParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  DtParams
 
-// DtParams are time and rate constants for temporal derivatives in Leabra (Vm, net input)
+// DtParams are time and rate constants for temporal derivatives in Axon (Vm, net input)
 type DtParams struct {
 	Integ  float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
 	VmTau  float32 `def:"3.3" min:"1" desc:"membrane potential and rate-code activation time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized -- for rate-code activation, this also determines how fast to integrate computed activation values over time"`

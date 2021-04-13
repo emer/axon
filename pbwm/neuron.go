@@ -4,7 +4,7 @@
 
 package pbwm
 
-import "github.com/emer/leabra/leabra"
+import "github.com/emer/axon/axon"
 
 // NeurVars are indexes into extra PBWM neuron-level variables
 type NeurVars int
@@ -37,8 +37,8 @@ func init() {
 	for i, v := range NeuronVars {
 		NeuronVarsMap[v] = i
 	}
-	ln := len(leabra.NeuronVars)
+	ln := len(axon.NeuronVars)
 	NeuronVarsAll = make([]string, len(NeuronVars)+ln)
-	copy(NeuronVarsAll, leabra.NeuronVars)
+	copy(NeuronVarsAll, axon.NeuronVars)
 	copy(NeuronVarsAll[ln:], NeuronVars)
 }

@@ -6,8 +6,9 @@ package pvlv
 
 import (
 	"fmt"
+
+	"github.com/emer/axon/axon"
 	_ "github.com/emer/etable/etensor"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
@@ -47,7 +48,7 @@ func (ly *CElAmygLayer) Build() error {
 	if nu == 0 {
 		return fmt.Errorf("build Layer %v: no units specified in Shape", ly.Nm)
 	}
-	ly.Neurons = make([]leabra.Neuron, nu)
+	ly.Neurons = make([]axon.Neuron, nu)
 	err := ly.BuildPools(nu)
 	if err != nil {
 		return err

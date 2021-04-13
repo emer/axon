@@ -11,7 +11,7 @@ import (
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "base params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "default Leabra layer params",
+			{Sel: "Layer", Desc: "default Axon layer params",
 				Params: params.Params{
 					"Layer.Act.Init.Decay":     "0",
 					"Layer.Act.Erev.K":         "0.1",

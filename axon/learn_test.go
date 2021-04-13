@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestXCal(t *testing.T) {
 	xcal.Defaults()
 
 	// note: these values have been validated against emergent v8.5.6 svn 11492 in
-	// demo/leabra/basic_leabra_test.proj, TestLearn program
+	// demo/axon/basic_axon_test.proj, TestLearn program
 
 	tstSr := []float32{.01, .02, .03, .04, .05, .1, .2, .3, .4, .5, .6, .7, .8}
 	tstThrp := []float32{.1, .1, .1, .1, .1, .1, .2, .2, .2, .2, .2, .3, .3}

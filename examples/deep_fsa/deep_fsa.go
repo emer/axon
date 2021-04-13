@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// deep_fsa runs a DeepLeabra network on the classic Reber grammar
+// deep_fsa runs a DeepAxon network on the classic Reber grammar
 // finite state automaton problem.
 package main
 
@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/netview"
@@ -27,8 +29,6 @@ import (
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // _ = include to get gui views
 	"github.com/emer/etable/split"
-	"github.com/emer/leabra/deep"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/gi/giv"
@@ -91,7 +91,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "CTCtxtPrjn", Desc: "no weight balance on CT context prjns -- makes a diff!",
 				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "false", // this should be true for larger DeepLeabra models -- e.g., sg..
+					"Prjn.Learn.WtBal.On": "false", // this should be true for larger DeepAxon models -- e.g., sg..
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
@@ -151,29 +151,29 @@ var InputNameMap map[string]int
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *deep.Network     `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	TrnEpcLog    *etable.Table     `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog    *etable.Table     `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog    *etable.Table     `view:"no-inline" desc:"testing trial-level log data"`
-	TstErrLog    *etable.Table     `view:"no-inline" desc:"log of all test trials where errors were made"`
-	TstErrStats  *etable.Table     `view:"no-inline" desc:"stats on test trials where errors were made"`
-	TstCycLog    *etable.Table     `view:"no-inline" desc:"testing cycle-level log data"`
-	RunLog       *etable.Table     `view:"no-inline" desc:"summary log of each run"`
-	RunStats     *etable.Table     `view:"no-inline" desc:"aggregate stats on all runs"`
-	Params       params.Sets       `view:"no-inline" desc:"full collection of param sets"`
-	ParamSet     string            `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
-	Tag          string            `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	MaxRuns      int               `desc:"maximum number of model runs to perform"`
-	MaxEpcs      int               `desc:"maximum number of epochs to run per model run"`
-	NZeroStop    int               `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
-	TrainEnv     FSAEnv            `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
-	TestEnv      FSAEnv            `desc:"Testing environment -- manages iterating over testing"`
-	Time         leabra.Time       `desc:"leabra timing parameters and state"`
-	ViewOn       bool              `desc:"whether to update the network view while running"`
-	TrainUpdt    leabra.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
-	TestUpdt     leabra.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
-	TestInterval int               `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	LayStatNms   []string          `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
+	Net          *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	TrnEpcLog    *etable.Table   `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog    *etable.Table   `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog    *etable.Table   `view:"no-inline" desc:"testing trial-level log data"`
+	TstErrLog    *etable.Table   `view:"no-inline" desc:"log of all test trials where errors were made"`
+	TstErrStats  *etable.Table   `view:"no-inline" desc:"stats on test trials where errors were made"`
+	TstCycLog    *etable.Table   `view:"no-inline" desc:"testing cycle-level log data"`
+	RunLog       *etable.Table   `view:"no-inline" desc:"summary log of each run"`
+	RunStats     *etable.Table   `view:"no-inline" desc:"aggregate stats on all runs"`
+	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
+	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
+	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
+	MaxRuns      int             `desc:"maximum number of model runs to perform"`
+	MaxEpcs      int             `desc:"maximum number of epochs to run per model run"`
+	NZeroStop    int             `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
+	TrainEnv     FSAEnv          `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
+	TestEnv      FSAEnv          `desc:"Testing environment -- manages iterating over testing"`
+	Time         axon.Time       `desc:"axon timing parameters and state"`
+	ViewOn       bool            `desc:"whether to update the network view while running"`
+	TrainUpdt    axon.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
+	TestUpdt     axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
+	TestInterval int             `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	LayStatNms   []string        `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
 
 	// statistics: note use float64 as that is best for etable.Table
 	TrlErr        float64 `inactive:"+" desc:"1 if trial was error, 0 if correct -- based on SSE = 0 (subject to .5 unit-wise tolerance)"`
@@ -234,8 +234,8 @@ func (ss *Sim) New() {
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
-	ss.TrainUpdt = leabra.AlphaCycle
-	ss.TestUpdt = leabra.Cycle
+	ss.TrainUpdt = axon.AlphaCycle
+	ss.TestUpdt = axon.Cycle
 	ss.TestInterval = 500
 	ss.LayStatNms = []string{"HiddenP", "Hidden"}
 	if InputNameMap == nil {
@@ -401,11 +401,11 @@ func (ss *Sim) AlphaCyc(train bool) {
 			ss.Time.CycleInc()
 			if ss.ViewOn {
 				switch viewUpdt {
-				case leabra.Cycle:
+				case axon.Cycle:
 					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
 						ss.UpdateView(train)
 					}
-				case leabra.FastSpike:
+				case axon.FastSpike:
 					if (cyc+1)%10 == 0 {
 						ss.UpdateView(train)
 					}
@@ -416,9 +416,9 @@ func (ss *Sim) AlphaCyc(train bool) {
 		ss.Time.QuarterInc()
 		if ss.ViewOn {
 			switch {
-			case viewUpdt <= leabra.Quarter:
+			case viewUpdt <= axon.Quarter:
 				ss.UpdateView(train)
-			case viewUpdt == leabra.Phase:
+			case viewUpdt == axon.Phase:
 				if qtr >= 2 {
 					ss.UpdateView(train)
 				}
@@ -429,7 +429,7 @@ func (ss *Sim) AlphaCyc(train bool) {
 	if train {
 		ss.Net.DWt()
 	}
-	if ss.ViewOn && viewUpdt == leabra.AlphaCycle {
+	if ss.ViewOn && viewUpdt == axon.AlphaCycle {
 		ss.UpdateView(train)
 	}
 	if !train {
@@ -446,8 +446,8 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 	// going to the same layers, but good practice and cheap anyway
 
 	// just using direct access to state here
-	in := ss.Net.LayerByName("Input").(leabra.LeabraLayer).AsLeabra()
-	trg := ss.Net.LayerByName("Targets").(leabra.LeabraLayer).AsLeabra()
+	in := ss.Net.LayerByName("Input").(axon.AxonLayer).AsAxon()
+	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
 	fsenv := en.(*FSAEnv)
 	ns := fsenv.NNext.Values[0]
@@ -485,7 +485,7 @@ func (ss *Sim) TrainTrial() {
 	if chg {
 		ss.LogTrnEpc(ss.TrnEpcLog)
 		ss.TrainEnv.Trial.Cur = 0
-		if ss.ViewOn && ss.TrainUpdt > leabra.AlphaCycle {
+		if ss.ViewOn && ss.TrainUpdt > axon.AlphaCycle {
 			ss.UpdateView(true)
 		}
 		if ss.TestInterval > 0 && epc%ss.TestInterval == 0 { // note: epc is *next* so won't trigger first time
@@ -559,8 +559,8 @@ func (ss *Sim) InitStats() {
 // different time-scales over which stats could be accumulated etc.
 // You can also aggregate directly from log data, as is done for testing stats
 func (ss *Sim) TrialStats(accum bool) {
-	inp := ss.Net.LayerByName("HiddenP").(leabra.LeabraLayer).AsLeabra()
-	trg := ss.Net.LayerByName("Targets").(leabra.LeabraLayer).AsLeabra()
+	inp := ss.Net.LayerByName("HiddenP").(axon.AxonLayer).AsAxon()
+	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	ss.TrlCosDiff = float64(inp.CosDiff.Cos)
 	// ss.TrlSSE, ss.TrlAvgSSE = inp.MSE(0.5) // 0.5 = per-unit tolerance -- right side of .5
 	// compute SSE against target as activation of inp outside of trg > .5
@@ -671,7 +671,7 @@ func (ss *Sim) TestTrial(returnOnChg bool) {
 	// Query counters FIRST
 	_, _, chg := ss.TestEnv.Counter(env.Epoch)
 	if chg {
-		if ss.ViewOn && ss.TestUpdt > leabra.AlphaCycle {
+		if ss.ViewOn && ss.TestUpdt > axon.AlphaCycle {
 			ss.UpdateView(false)
 		}
 		ss.LogTstEpc(ss.TstEpcLog)
@@ -849,7 +849,7 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 	dt.SetCellFloat("PerTrlMSec", row, ss.EpcPerTrlMSec)
 
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		dt.SetCellFloat(ly.Nm+" ActAvg", row, float64(ly.Pools[0].ActAvg.ActPAvgEff))
 	}
 
@@ -931,8 +931,8 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 	dt.SetCellFloat("AvgSSE", row, ss.TrlAvgSSE)
 	dt.SetCellFloat("CosDiff", row, ss.TrlCosDiff)
 
-	inp := ss.Net.LayerByName("HiddenP").(leabra.LeabraLayer).AsLeabra()
-	trg := ss.Net.LayerByName("Targets").(leabra.LeabraLayer).AsLeabra()
+	inp := ss.Net.LayerByName("HiddenP").(axon.AxonLayer).AsAxon()
+	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	ivt := ss.ValsTsr("Input")
 	trgt := ss.ValsTsr("Target")
 	inp.UnitValsTensor(ivt, "ActM")
@@ -947,8 +947,8 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
-	inp := ss.Net.LayerByName("HiddenP").(leabra.LeabraLayer).AsLeabra()
-	trg := ss.Net.LayerByName("Targets").(leabra.LeabraLayer).AsLeabra()
+	inp := ss.Net.LayerByName("HiddenP").(axon.AxonLayer).AsAxon()
+	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 
 	dt.SetMetaData("name", "TstTrlLog")
 	dt.SetMetaData("desc", "Record of testing per input pattern")
@@ -1086,7 +1086,7 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 
 	dt.SetCellFloat("Cycle", cyc, float64(cyc))
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(leabra.LeabraLayer).AsLeabra()
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		dt.SetCellFloat(ly.Nm+" Ge.Avg", cyc, float64(ly.Pools[0].Inhib.Ge.Avg))
 		dt.SetCellFloat(ly.Nm+" Act.Avg", cyc, float64(ly.Pools[0].Inhib.Act.Avg))
 	}
@@ -1232,9 +1232,9 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	height := 1200
 
 	gi.SetAppName("DeepFSA")
-	gi.SetAppAbout(`This demonstrates a basic DeepLeabra model on the Finite State Automaton problem (e.g., the Reber grammar). See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	gi.SetAppAbout(`This demonstrates a basic DeepAxon model on the Finite State Automaton problem (e.g., the Reber grammar). See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("DeepFSA", "DeepLeabra Finite State Automaton", width, height)
+	win := gi.NewMainWindow("DeepFSA", "DeepAxon Finite State Automaton", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -1374,7 +1374,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/leabra/blob/master/examples/deep_fsa/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/deep_fsa/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

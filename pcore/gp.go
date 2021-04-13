@@ -5,7 +5,7 @@
 package pcore
 
 import (
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
@@ -17,7 +17,7 @@ type GPLayer struct {
 	GPLay GPLays `desc:"type of GP layer"`
 }
 
-var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, leabra.LayerProps)
+var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, axon.LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "GPLayer", Desc: "defaults",
@@ -71,8 +71,8 @@ func (ly *GPLayer) Defaults() {
 	}
 
 	for _, pjii := range ly.RcvPrjns {
-		pji := pjii.(leabra.LeabraPrjn)
-		pj := pji.AsLeabra()
+		pji := pjii.(axon.AxonPrjn)
+		pj := pji.AsAxon()
 		pj.Learn.Learn = false
 		pj.Learn.Norm.On = false
 		pj.Learn.Momentum.On = false

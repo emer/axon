@@ -6,12 +6,13 @@ package pvlv
 
 import (
 	"fmt"
-	"github.com/chewxy/math32"
-	"github.com/emer/etable/etensor"
-	"github.com/emer/leabra/leabra"
-	"github.com/goki/ki/kit"
 	"log"
 	"unsafe"
+
+	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
+	"github.com/emer/etable/etensor"
+	"github.com/goki/ki/kit"
 )
 
 // UnitVarNames returns a list of variable names available on the units in this layer
@@ -56,9 +57,9 @@ func init() {
 	for i, v := range ModNeuronVars {
 		ModNeuronVarsMap[v] = i
 	}
-	ln := len(leabra.NeuronVars)
+	ln := len(axon.NeuronVars)
 	ModNeuronVarsAll = make([]string, len(ModNeuronVars)+ln)
-	copy(ModNeuronVarsAll, leabra.NeuronVars)
+	copy(ModNeuronVarsAll, axon.NeuronVars)
 	copy(ModNeuronVarsAll[ln:], ModNeuronVars)
 }
 
@@ -107,7 +108,7 @@ func (ly *ModLayer) UnitVals(vals *[]float32, varNm string) error {
 		*vals = (*vals)[0:nn]
 	}
 	for i := 0; i < nn; i++ {
-		(*vals)[i] = ly.LeabraLay.(IModLayer).AsMod().UnitValByIdx(ModNeuronVar(vidx), i)
+		(*vals)[i] = ly.AxonLay.(IModLayer).AsMod().UnitValByIdx(ModNeuronVar(vidx), i)
 	}
 	return nil
 }
@@ -116,7 +117,7 @@ func (ly *ModLayer) UnitVals(vals *[]float32, varNm string) error {
 //// for each unit in the layer, as a float32 tensor in same shape as layer units.
 func (ly *ModLayer) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 	if tsr == nil {
-		err := fmt.Errorf("leabra.UnitValsTensor: Tensor is nil")
+		err := fmt.Errorf("axon.UnitValsTensor: Tensor is nil")
 		log.Println(err)
 		return err
 	}
@@ -126,7 +127,7 @@ func (ly *ModLayer) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 	}
 	tsr.SetShape(ly.Shp.Shp, ly.Shp.Strd, ly.Shp.Nms)
 	for i := range ly.ModNeurs {
-		vl := ly.LeabraLay.(*ModLayer).UnitValByIdx(ModNeuronVar(vidx), i)
+		vl := ly.AxonLay.(*ModLayer).UnitValByIdx(ModNeuronVar(vidx), i)
 		tsr.SetFloat1D(i, float64(vl))
 	}
 	return nil
@@ -148,7 +149,7 @@ func (ly *ModLayer) ModUnitVals(vals *[]float32, varNm string) error {
 		*vals = (*vals)[0:nn]
 	}
 	for i := range ly.Neurons {
-		(*vals)[i] = ly.LeabraLay.UnitVal1D(vidx, i)
+		(*vals)[i] = ly.AxonLay.UnitVal1D(vidx, i)
 	}
 	return nil
 }

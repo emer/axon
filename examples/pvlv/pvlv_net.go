@@ -5,11 +5,12 @@
 package main
 
 import (
+	"log"
+
+	"github.com/emer/axon/pvlv"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/emer/leabra/pvlv"
-	"log"
 )
 
 func (ss *Sim) ConfigNet(net *pvlv.Network) {

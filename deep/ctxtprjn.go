@@ -6,8 +6,8 @@ package deep
 
 import (
 	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 )
@@ -15,12 +15,12 @@ import (
 // CtxtSender is an interface for layers that implement the SendCtxtGe method
 // (SuperLayer, CTLayer)
 type CtxtSender interface {
-	leabra.LeabraLayer
+	axon.AxonLayer
 
 	// SendCtxtGe sends activation over CTCtxtPrjn projections to integrate
 	// CtxtGe excitatory conductance on CT layers.
 	// This must be called at the end of the Burst quarter for this layer.
-	SendCtxtGe(ltime *leabra.Time)
+	SendCtxtGe(ltime *axon.Time)
 }
 
 // CTCtxtPrjn is the "context" temporally-delayed projection into CTLayer,
@@ -28,9 +28,9 @@ type CtxtSender interface {
 // is integrated only at end of Burst Quarter.
 // Set FmSuper for the main projection from corresponding Super layer.
 type CTCtxtPrjn struct {
-	leabra.Prjn           // access as .Prjn
-	FmSuper     bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Learn = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
-	CtxtGeInc   []float32 `desc:"local per-recv unit accumulator for Ctxt excitatory conductance from sending units -- not a delta -- the full value"`
+	axon.Prjn           // access as .Prjn
+	FmSuper   bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Learn = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
+	CtxtGeInc []float32 `desc:"local per-recv unit accumulator for Ctxt excitatory conductance from sending units -- not a delta -- the full value"`
 }
 
 var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
@@ -131,9 +131,9 @@ func (pj *CTCtxtPrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	sslay, issuper := pj.Send.(*SuperLayer)
-	rlay := pj.Recv.(leabra.LeabraLayer).AsLeabra()
+	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		sact := float32(0)
 		if issuper {
@@ -187,14 +187,14 @@ func (pj *CTCtxtPrjn) DWt() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  PrjnType
 
-// PrjnType has the DeepLeabra extensions to the emer.PrjnType types, for gui
+// PrjnType has the DeepAxon extensions to the emer.PrjnType types, for gui
 type PrjnType emer.PrjnType
 
 //go:generate stringer -type=PrjnType
 
 var KiT_PrjnType = kit.Enums.AddEnumExt(emer.KiT_PrjnType, PrjnTypeN, kit.NotBitFlag, nil)
 
-// The DeepLeabra prjn types
+// The DeepAxon prjn types
 const (
 	// CTCtxt are projections from Superficial layers to CT layers that
 	// send Burst activations drive updating of CtxtGe excitatory conductance,

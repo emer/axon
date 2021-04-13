@@ -5,17 +5,17 @@
 package rl
 
 import (
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/emer/leabra/leabra"
 )
 
 // NOTE: rl layers are designed to be "mix-ins" with other networks so there is no
 // RL network type -- just routines to add layers of different types.
 
 // AddClampDaLayer adds a ClampDaLayer of given name
-func AddClampDaLayer(nt *leabra.Network, name string) *ClampDaLayer {
+func AddClampDaLayer(nt *axon.Network, name string) *ClampDaLayer {
 	da := &ClampDaLayer{}
 	nt.AddLayerInit(da, name, []int{1, 1}, emer.Input)
 	return da
@@ -24,8 +24,8 @@ func AddClampDaLayer(nt *leabra.Network, name string) *ClampDaLayer {
 // AddTDLayers adds the standard TD temporal differences layers, generating a DA signal.
 // Projection from Rew to RewInteg is given class TDRewToInteg -- should
 // have no learning and 1 weight.
-func AddTDLayers(nt *leabra.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, ri, td leabra.LeabraLayer) {
-	rew = nt.AddLayer2D(prefix+"Rew", 1, 1, emer.Input).(leabra.LeabraLayer)
+func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, ri, td axon.AxonLayer) {
+	rew = nt.AddLayer2D(prefix+"Rew", 1, 1, emer.Input).(axon.AxonLayer)
 	rp = &TDRewPredLayer{}
 	nt.AddLayerInit(rp, prefix+"RewPred", []int{1, 1}, emer.Hidden)
 	ri = &TDRewIntegLayer{}
@@ -38,7 +38,7 @@ func AddTDLayers(nt *leabra.Network, prefix string, rel relpos.Relations, space 
 	ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
 	td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), YAlign: relpos.Front, Space: space})
 
-	pj := nt.ConnectLayers(rew, ri, prjn.NewFull(), emer.Forward).(leabra.LeabraPrjn).AsLeabra()
+	pj := nt.ConnectLayers(rew, ri, prjn.NewFull(), emer.Forward).(axon.AxonPrjn).AsAxon()
 	pj.SetClass("TDRewToInteg")
 	pj.Learn.Learn = false
 	pj.WtInit.Mean = 1
@@ -57,8 +57,8 @@ func AddTDLayers(nt *leabra.Network, prefix string, rel relpos.Relations, space 
 // AddRWLayers adds simple Rescorla-Wagner (PV only) dopamine system, with a primary
 // Reward layer, a RWPred prediction layer, and a dopamine layer that computes diff.
 // Only generates DA when Rew layer has external input -- otherwise zero.
-func AddRWLayers(nt *leabra.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, da leabra.LeabraLayer) {
-	rew = nt.AddLayer2D(prefix+"Rew", 1, 1, emer.Input).(leabra.LeabraLayer)
+func AddRWLayers(nt *axon.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, da axon.AxonLayer) {
+	rew = nt.AddLayer2D(prefix+"Rew", 1, 1, emer.Input).(axon.AxonLayer)
 	rp = &RWPredLayer{}
 	nt.AddLayerInit(rp, prefix+"RWPred", []int{1, 1}, emer.Hidden)
 	da = &RWDaLayer{}
@@ -75,16 +75,16 @@ func AddRWLayers(nt *leabra.Network, prefix string, rel relpos.Relations, space 
 // Projection from Rew to RewInteg is given class TDRewToInteg -- should
 // have no learning and 1 weight.
 // Py is Python version, returns layers as a slice
-func AddTDLayersPy(nt *leabra.Network, prefix string, rel relpos.Relations, space float32) []leabra.LeabraLayer {
+func AddTDLayersPy(nt *axon.Network, prefix string, rel relpos.Relations, space float32) []axon.AxonLayer {
 	rew, rp, ri, td := AddTDLayers(nt, prefix, rel, space)
-	return []leabra.LeabraLayer{rew, rp, ri, td}
+	return []axon.AxonLayer{rew, rp, ri, td}
 }
 
 // AddRWLayersPy adds simple Rescorla-Wagner (PV only) dopamine system, with a primary
 // Reward layer, a RWPred prediction layer, and a dopamine layer that computes diff.
 // Only generates DA when Rew layer has external input -- otherwise zero.
 // Py is Python version, returns layers as a slice
-func AddRWLayersPy(nt *leabra.Network, prefix string, rel relpos.Relations, space float32) []leabra.LeabraLayer {
+func AddRWLayersPy(nt *axon.Network, prefix string, rel relpos.Relations, space float32) []axon.AxonLayer {
 	rew, rp, da := AddRWLayers(nt, prefix, rel, space)
-	return []leabra.LeabraLayer{rew, rp, da}
+	return []axon.AxonLayer{rew, rp, da}
 }

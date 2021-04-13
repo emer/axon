@@ -6,11 +6,12 @@ package pvlv
 
 import (
 	"fmt"
-	"github.com/chewxy/math32"
-	"github.com/emer/emergent/emer"
-	"github.com/emer/leabra/leabra"
-	"github.com/goki/ki/kit"
 	"strconv"
+
+	"github.com/chewxy/math32"
+	"github.com/emer/axon/axon"
+	"github.com/emer/emergent/emer"
+	"github.com/goki/ki/kit"
 )
 
 type MSNLayer struct {
@@ -20,7 +21,7 @@ type MSNLayer struct {
 	DIParams    DelayedInhibParams  `view:"no-inline add-fields"`
 }
 
-var KiT_MSNLayer = kit.Types.AddType(&MSNLayer{}, leabra.LayerProps)
+var KiT_MSNLayer = kit.Types.AddType(&MSNLayer{}, axon.LayerProps)
 
 type IMSNLayer interface {
 	AsMSNLayer() *MSNLayer
@@ -179,7 +180,7 @@ func (ly *MSNLayer) SetDA(da float32) {
 	ly.DA = da
 }
 
-func (ly *MSNLayer) QuarterInitPrvs(ltime *leabra.Time) {
+func (ly *MSNLayer) QuarterInitPrvs(ltime *axon.Time) {
 	for ni := range ly.DIState {
 		dis := &ly.DIState[ni]
 		if ltime.Quarter == 0 {
@@ -229,7 +230,7 @@ func (ly *MSNLayer) InitActs() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
-func (ly *MSNLayer) PoolDelayedInhib(pl *leabra.Pool) {
+func (ly *MSNLayer) PoolDelayedInhib(pl *axon.Pool) {
 	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 		nrn := &ly.Neurons[ni]
 		dis := &ly.DIState[ni]
@@ -242,7 +243,7 @@ func (ly *MSNLayer) PoolDelayedInhib(pl *leabra.Pool) {
 	}
 }
 
-func (ly *MSNLayer) ModsFmInc(_ *leabra.Time) {
+func (ly *MSNLayer) ModsFmInc(_ *axon.Time) {
 	plMax := ly.ModPools[0].ModNetStats.Max
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -287,7 +288,7 @@ func (ly *MSNLayer) ModsFmInc(_ *leabra.Time) {
 
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
 // this is here for matrix delyed inhibition, not needed otherwise
-func (ly *MSNLayer) InhibFmGeAct(ltime *leabra.Time) {
+func (ly *MSNLayer) InhibFmGeAct(ltime *axon.Time) {
 	if ly.DIParams.Active {
 		lpl := &ly.Pools[0]
 		ly.Inhib.Layer.Inhib(&lpl.Inhib)

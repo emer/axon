@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ const difTol = float32(1.0e-8)
 
 func TestActUpdt(t *testing.T) {
 	// note: these values have been validated against emergent v8.5.6 svn 11473 in
-	// demo/leabra/basic_leabra_test.proj, TestAct program
+	// demo/axon/basic_axon_test.proj, TestAct program
 	geinc := []float32{.01, .02, .03, .04, .05, .1, .2, .3}
 	corge := []float32{0.007142857, 0.023469387, 0.049562685, 0.085589334, 0.13159695, 0.21617055, 0.3831916, 0.64519763}
 	ge := make([]float32, len(geinc))

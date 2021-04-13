@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"github.com/emer/emergent/emer"
@@ -13,22 +13,22 @@ import (
 	"github.com/goki/mat32"
 )
 
-// leabra.LayerStru manages the structural elements of the layer, which are common
+// axon.LayerStru manages the structural elements of the layer, which are common
 // to any Layer type
 type LayerStru struct {
-	LeabraLay LeabraLayer    `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an LeabraLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Network   emer.Network   `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
-	Nm        string         `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
-	Cls       string         `desc:"Class is for applying parameter styles, can be space separated multple tags"`
-	Off       bool           `desc:"inactivate this layer -- allows for easy experimentation"`
-	Shp       etensor.Shape  `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
-	Typ       emer.LayerType `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
-	Thr       int            `desc:"the thread number (go routine) to use in updating this layer. The user is responsible for allocating layers to threads, trying to maintain an even distribution across layers and establishing good break-points."`
-	Rel       relpos.Rel     `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
-	Ps        mat32.Vec3     `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
-	Idx       int            `desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Leabra networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
-	RcvPrjns  emer.Prjns     `desc:"list of receiving projections into this layer from other layers"`
-	SndPrjns  emer.Prjns     `desc:"list of sending projections from this layer to other layers"`
+	AxonLay  AxonLayer      `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Network  emer.Network   `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
+	Nm       string         `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
+	Cls      string         `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Off      bool           `desc:"inactivate this layer -- allows for easy experimentation"`
+	Shp      etensor.Shape  `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
+	Typ      emer.LayerType `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
+	Thr      int            `desc:"the thread number (go routine) to use in updating this layer. The user is responsible for allocating layers to threads, trying to maintain an even distribution across layers and establishing good break-points."`
+	Rel      relpos.Rel     `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
+	Ps       mat32.Vec3     `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
+	Idx      int            `desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
+	RcvPrjns emer.Prjns     `desc:"list of receiving projections into this layer from other layers"`
+	SndPrjns emer.Prjns     `desc:"list of sending projections from this layer to other layers"`
 }
 
 // emer.Layer interface methods
@@ -37,7 +37,7 @@ type LayerStru struct {
 // which enables the proper interface methods to be called.  Also sets the name, and
 // the parent network that this layer belongs to (which layers may want to retain).
 func (ls *LayerStru) InitName(lay emer.Layer, name string, net emer.Network) {
-	ls.LeabraLay = lay.(LeabraLayer)
+	ls.AxonLay = lay.(AxonLayer)
 	ls.Nm = name
 	ls.Network = net
 }
@@ -156,9 +156,9 @@ func (ls *LayerStru) Config(shape []int, typ emer.LayerType) {
 func (ls *LayerStru) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 	applied := false
 	var rerr error
-	app, err := pars.Apply(ls.LeabraLay, setMsg) // essential to go through LeabraPrj
+	app, err := pars.Apply(ls.AxonLay, setMsg) // essential to go through AxonPrj
 	if app {
-		ls.LeabraLay.UpdateParams()
+		ls.AxonLay.UpdateParams()
 		applied = true
 	}
 	if err != nil {
@@ -179,7 +179,7 @@ func (ls *LayerStru) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) 
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
 func (ls *LayerStru) NonDefaultParams() string {
-	nds := giv.StructNonDefFieldsStr(ls.LeabraLay, ls.Nm)
+	nds := giv.StructNonDefFieldsStr(ls.AxonLay, ls.Nm)
 	for _, pj := range ls.RcvPrjns {
 		pnd := pj.NonDefaultParams()
 		nds += pnd

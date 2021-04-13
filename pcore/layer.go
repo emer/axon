@@ -8,19 +8,19 @@ import (
 	"fmt"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/glong"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/glong"
 	"github.com/goki/ki/kit"
 )
 
 // Layer is the base layer type for PCore framework.
-// Adds a dopamine variable to base Leabra layer type.
+// Adds a dopamine variable to base Axon layer type.
 type Layer struct {
 	glong.AlphaMaxLayer
 	DA float32 `inactive:"+" desc:"dopamine value for this layer"`
 }
 
-var KiT_Layer = kit.Types.AddType(&Layer{}, leabra.LayerProps)
+var KiT_Layer = kit.Types.AddType(&Layer{}, axon.LayerProps)
 
 // DALayer interface:
 

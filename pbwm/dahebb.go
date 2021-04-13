@@ -6,17 +6,17 @@ package pbwm
 
 import (
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
 // DaHebbPrjn does dopamine-modulated Hebbian learning -- i.e., the 3-factor
 // learning rule: Da * Recv.Act * Send.Act
 type DaHebbPrjn struct {
-	leabra.Prjn
+	axon.Prjn
 }
 
-var KiT_DaHebbPrjn = kit.Types.AddType(&DaHebbPrjn{}, leabra.PrjnProps)
+var KiT_DaHebbPrjn = kit.Types.AddType(&DaHebbPrjn{}, axon.PrjnProps)
 
 func (pj *DaHebbPrjn) Defaults() {
 	pj.Prjn.Defaults()
@@ -32,9 +32,9 @@ func (pj *DaHebbPrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlayi := pj.Recv.(PBWMLayer)
-	rlay := rlayi.AsLeabra()
+	rlay := rlayi.AsAxon()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])

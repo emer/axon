@@ -9,20 +9,20 @@ import (
 	"log"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
 // BurstParams determine how the 5IB Burst activation is computed from
 // standard Act activation values in SuperLayer -- thresholded.
 type BurstParams struct {
-	BurstQtr leabra.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines, 32 bit versions."`
-	ThrRel   float32         `max:"1" def:"0.1,0.2,0.5" desc:"Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds."`
-	ThrAbs   float32         `min:"0" max:"1" def:"0.1,0.2,0.5" desc:"Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  Overall effective threshold is MAX of relative and absolute thresholds."`
+	BurstQtr axon.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines, 32 bit versions."`
+	ThrRel   float32       `max:"1" def:"0.1,0.2,0.5" desc:"Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds."`
+	ThrAbs   float32       `min:"0" max:"1" def:"0.1,0.2,0.5" desc:"Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  Overall effective threshold is MAX of relative and absolute thresholds."`
 }
 
 func (db *BurstParams) Defaults() {
-	db.BurstQtr.Set(int(leabra.Q4))
+	db.BurstQtr.Set(int(axon.Q4))
 	db.ThrRel = 0.1
 	db.ThrAbs = 0.1
 }
@@ -43,7 +43,7 @@ func (at *TRCAttnParams) ModVal(val float32, attn float32) float32 {
 	return val * (at.Min + (1-at.Min)*attn)
 }
 
-// SuperLayer is the DeepLeabra superficial layer, based on basic rate-coded leabra.Layer.
+// SuperLayer is the DeepAxon superficial layer, based on basic rate-coded axon.Layer.
 // Computes the Burst activation from regular activations.
 type SuperLayer struct {
 	TopoInhibLayer               // access as .TopoInhibLayer
@@ -94,18 +94,18 @@ func (ly *SuperLayer) DecayState(decay float32) {
 //  TRC-Based Attention
 
 // TRCLayer returns the TRC layer for attentional modulation
-func (ly *SuperLayer) TRCLayer() (*leabra.Layer, error) {
+func (ly *SuperLayer) TRCLayer() (*axon.Layer, error) {
 	tly, err := ly.Network.LayerByNameTry(ly.Attn.TRCLay)
 	if err != nil {
 		err = fmt.Errorf("SuperLayer %s: TRC Layer: %v", ly.Name(), err)
 		log.Println(err)
 		return nil, err
 	}
-	return tly.(leabra.LeabraLayer).AsLeabra(), nil
+	return tly.(axon.AxonLayer).AsAxon(), nil
 }
 
 // MaxPoolActAvg returns the max Inhib.Act.Avg value across pools
-func MaxPoolActAvg(ly *leabra.Layer) float32 {
+func MaxPoolActAvg(ly *axon.Layer) float32 {
 	laymax := float32(0)
 	np := len(ly.Pools)
 	for pi := 1; pi < np; pi++ {
@@ -115,7 +115,7 @@ func MaxPoolActAvg(ly *leabra.Layer) float32 {
 	return laymax
 }
 
-func (ly *SuperLayer) ActFmG(ltime *leabra.Time) {
+func (ly *SuperLayer) ActFmG(ltime *axon.Time) {
 	ly.TopoInhibLayer.ActFmG(ltime)
 	if !ly.Attn.On {
 		return
@@ -145,7 +145,7 @@ func (ly *SuperLayer) ActFmG(ltime *leabra.Time) {
 //  Burst -- computed in CyclePost
 
 // QuarterFinal does updating after end of a quarter
-func (ly *SuperLayer) QuarterFinal(ltime *leabra.Time) {
+func (ly *SuperLayer) QuarterFinal(ltime *axon.Time) {
 	ly.TopoInhibLayer.QuarterFinal(ltime)
 	if ly.Burst.BurstQtr.HasNext(ltime.Quarter) {
 		// if will be updating next quarter, save just prior
@@ -164,14 +164,14 @@ func (ly *SuperLayer) BurstPrv() {
 }
 
 // CyclePost calls BurstFmAct
-func (ly *SuperLayer) CyclePost(ltime *leabra.Time) {
+func (ly *SuperLayer) CyclePost(ltime *axon.Time) {
 	ly.TopoInhibLayer.CyclePost(ltime)
 	ly.BurstFmAct(ltime)
 }
 
 // BurstFmAct updates Burst layer 5IB bursting value from current Act
 // (superficial activation), subject to thresholding.
-func (ly *SuperLayer) BurstFmAct(ltime *leabra.Time) {
+func (ly *SuperLayer) BurstFmAct(ltime *axon.Time) {
 	if !ly.Burst.BurstQtr.Has(ltime.Quarter) {
 		return
 	}
@@ -201,7 +201,7 @@ func (ly *SuperLayer) BurstFmAct(ltime *leabra.Time) {
 // CtxtGe excitatory conductance on CT layers.
 // This must be called at the end of the Burst quarter for this layer.
 // Satisfies the CtxtSender interface.
-func (ly *SuperLayer) SendCtxtGe(ltime *leabra.Time) {
+func (ly *SuperLayer) SendCtxtGe(ltime *axon.Time) {
 	if !ly.Burst.BurstQtr.Has(ltime.Quarter) {
 		return
 	}

@@ -6,9 +6,9 @@ package agate
 
 import (
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/glong"
-	"github.com/emer/leabra/interinhib"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/glong"
+	"github.com/emer/axon/interinhib"
 	"github.com/goki/ki/kit"
 )
 
@@ -31,7 +31,7 @@ type MaintLayer struct {
 	InterInhib interinhib.InterInhib `desc:"inhibition from output layer"`
 }
 
-var KiT_MaintLayer = kit.Types.AddType(&MaintLayer{}, leabra.LayerProps)
+var KiT_MaintLayer = kit.Types.AddType(&MaintLayer{}, axon.LayerProps)
 
 func (ly *MaintLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -45,7 +45,7 @@ func (ly *MaintLayer) Defaults() {
 }
 
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-func (ly *MaintLayer) InhibFmGeAct(ltime *leabra.Time) {
+func (ly *MaintLayer) InhibFmGeAct(ltime *axon.Time) {
 	lpl := &ly.Pools[0]
 	mxact := ly.InterInhibMaxAct(ltime)
 	lpl.Inhib.Act.Avg = math32.Max(ly.InterInhib.Gi*mxact, lpl.Inhib.Act.Avg)
@@ -55,7 +55,7 @@ func (ly *MaintLayer) InhibFmGeAct(ltime *leabra.Time) {
 }
 
 // InterInhibMaxAct returns the AlphaMax activation for source layers
-func (ly *MaintLayer) InterInhibMaxAct(ltime *leabra.Time) float32 {
+func (ly *MaintLayer) InterInhibMaxAct(ltime *axon.Time) float32 {
 	mxact := float32(0)
 	for _, lnm := range ly.InterInhib.Lays {
 		oli := ly.Network.LayerByName(lnm)
@@ -97,7 +97,7 @@ func (ly *MaintLayer) PulseClearNMDA() {
 // PulseClearNMDA method for clearing NMDA and activating
 // GABAB refractory inhibition
 type PulseClearer interface {
-	leabra.LeabraLayer
+	axon.AxonLayer
 
 	// PulseClearNMDA simulates a synchronous pulse of activation that
 	// clears the NMDA and puts the layer into a refractory state by

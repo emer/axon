@@ -8,8 +8,8 @@ import (
 	"log"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/deep"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
+	"github.com/emer/axon/deep"
 	"github.com/goki/ki/kit"
 )
 
@@ -18,11 +18,11 @@ import (
 // estimated V(t+1) based on its learned weights in plus phase.
 // Use TDRewPredPrjn for DA modulated learning.
 type TDRewPredLayer struct {
-	leabra.Layer
+	axon.Layer
 	DA float32 `inactive:"+" desc:"dopamine value for this layer"`
 }
 
-var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, leabra.LayerProps)
+var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, axon.LayerProps)
 
 // DALayer interface:
 
@@ -30,7 +30,7 @@ func (ly *TDRewPredLayer) GetDA() float32   { return ly.DA }
 func (ly *TDRewPredLayer) SetDA(da float32) { ly.DA = da }
 
 // ActFmG computes linear activation for TDRewPred
-func (ly *TDRewPredLayer) ActFmG(ltime *leabra.Time) {
+func (ly *TDRewPredLayer) ActFmG(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -66,12 +66,12 @@ func (tp *TDRewIntegParams) Defaults() {
 // It computes r(t) from (typically fixed) weights from a reward layer,
 // and directly accesses values from RewPred layer.
 type TDRewIntegLayer struct {
-	leabra.Layer
+	axon.Layer
 	RewInteg TDRewIntegParams `desc:"parameters for reward integration"`
 	DA       float32          `desc:"dopamine value for this layer"`
 }
 
-var KiT_TDRewIntegLayer = kit.Types.AddType(&TDRewIntegLayer{}, leabra.LayerProps)
+var KiT_TDRewIntegLayer = kit.Types.AddType(&TDRewIntegLayer{}, axon.LayerProps)
 
 func (ly *TDRewIntegLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -102,7 +102,7 @@ func (ly *TDRewIntegLayer) Build() error {
 	return err
 }
 
-func (ly *TDRewIntegLayer) ActFmG(ltime *leabra.Time) {
+func (ly *TDRewIntegLayer) ActFmG(ltime *axon.Time) {
 	rply, _ := ly.RewPredLayer()
 	if rply == nil {
 		return
@@ -128,13 +128,13 @@ func (ly *TDRewIntegLayer) ActFmG(ltime *leabra.Time) {
 // TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD)
 // between the TDRewIntegLayer activations in the minus and plus phase.
 type TDDaLayer struct {
-	leabra.Layer
+	axon.Layer
 	SendDA   SendDA  `desc:"list of layers to send dopamine to"`
 	RewInteg string  `desc:"name of TDRewIntegLayer from which this computes the temporal derivative"`
 	DA       float32 `desc:"dopamine value for this layer"`
 }
 
-var KiT_TDDaLayer = kit.Types.AddType(&TDDaLayer{}, leabra.LayerProps)
+var KiT_TDDaLayer = kit.Types.AddType(&TDDaLayer{}, axon.LayerProps)
 
 func (ly *TDDaLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -172,7 +172,7 @@ func (ly *TDDaLayer) Build() error {
 	return err
 }
 
-func (ly *TDDaLayer) ActFmG(ltime *leabra.Time) {
+func (ly *TDDaLayer) ActFmG(ltime *axon.Time) {
 	rily, _ := ly.RewIntegLayer()
 	if rily == nil {
 		return
@@ -195,7 +195,7 @@ func (ly *TDDaLayer) ActFmG(ltime *leabra.Time) {
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *TDDaLayer) CyclePost(ltime *leabra.Time) {
+func (ly *TDDaLayer) CyclePost(ltime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)
@@ -209,7 +209,7 @@ func (ly *TDDaLayer) CyclePost(ltime *leabra.Time) {
 // Use in TDRewPredLayer typically to generate reward predictions.
 // Has no weight bounds or limits on sign etc.
 type TDRewPredPrjn struct {
-	leabra.Prjn
+	axon.Prjn
 }
 
 var KiT_TDRewPredPrjn = kit.Types.AddType(&TDRewPredPrjn{}, deep.PrjnProps)
@@ -228,8 +228,8 @@ func (pj *TDRewPredPrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
-	// rlay := pj.Recv.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	// rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	da := pj.Recv.(DALayer).GetDA()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]

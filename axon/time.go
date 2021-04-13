@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
 import (
 	"github.com/goki/ki/bitflag"
 	"github.com/goki/ki/kit"
 )
 
-// leabra.Time contains all the timing state and parameter information for running a model
+// axon.Time contains all the timing state and parameter information for running a model
 type Time struct {
 	Time      float32 `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	Cycle     int     `desc:"cycle counter: number of iterations of activation updating (settling) on the current alpha-cycle (100 msec / 10 Hz) trial -- this counts time sequentially through the entire trial, typically from 0 to 99 cycles"`

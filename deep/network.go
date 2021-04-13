@@ -5,21 +5,21 @@
 package deep
 
 import (
+	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/emer/leabra/leabra"
 	"github.com/goki/ki/kit"
 )
 
-// deep.Network has parameters for running a DeepLeabra network
+// deep.Network has parameters for running a DeepAxon network
 type Network struct {
-	leabra.Network
+	axon.Network
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
-var NetworkProps = leabra.NetworkProps
+var NetworkProps = axon.NetworkProps
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
@@ -41,42 +41,42 @@ func (nt *Network) UnitVarNames() []string {
 //  Basic Add Layer methods (independent of Network)
 
 // AddSuperLayer2D adds a SuperLayer of given size, with given name.
-func AddSuperLayer2D(nt *leabra.Network, name string, nNeurY, nNeurX int) *SuperLayer {
+func AddSuperLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *SuperLayer {
 	ly := &SuperLayer{}
 	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.Hidden)
 	return ly
 }
 
 // AddSuperLayer4D adds a SuperLayer of given size, with given name.
-func AddSuperLayer4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *SuperLayer {
+func AddSuperLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *SuperLayer {
 	ly := &SuperLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	return ly
 }
 
 // AddCTLayer2D adds a CTLayer of given size, with given name.
-func AddCTLayer2D(nt *leabra.Network, name string, nNeurY, nNeurX int) *CTLayer {
+func AddCTLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *CTLayer {
 	ly := &CTLayer{}
 	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, CT)
 	return ly
 }
 
 // AddCTLayer4D adds a CTLayer of given size, with given name.
-func AddCTLayer4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *CTLayer {
+func AddCTLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *CTLayer {
 	ly := &CTLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, CT)
 	return ly
 }
 
 // AddTRCLayer2D adds a TRCLayer of given size, with given name.
-func AddTRCLayer2D(nt *leabra.Network, name string, nNeurY, nNeurX int) *TRCLayer {
+func AddTRCLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *TRCLayer {
 	ly := &TRCLayer{}
 	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, TRC)
 	return ly
 }
 
 // AddTRCLayer4D adds a TRCLayer of given size, with given name.
-func AddTRCLayer4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *TRCLayer {
+func AddTRCLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *TRCLayer {
 	ly := &TRCLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, TRC)
 	return ly
@@ -85,7 +85,7 @@ func AddTRCLayer4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nN
 // ConnectSuperToCT adds a CTCtxtPrjn from given sending Super layer to a CT layer
 // This automatically sets the FmSuper flag to engage proper defaults,
 // uses a OneToOne prjn pattern, and sets the class to CTFmSuper
-func ConnectSuperToCT(nt *leabra.Network, send, recv emer.Layer) emer.Prjn {
+func ConnectSuperToCT(nt *axon.Network, send, recv emer.Layer) emer.Prjn {
 	pj := nt.ConnectLayersPrjn(send, recv, prjn.NewOneToOne(), CTCtxt, &CTCtxtPrjn{}).(*CTCtxtPrjn)
 	pj.SetClass("CTFmSuper")
 	pj.FmSuper = true
@@ -94,22 +94,22 @@ func ConnectSuperToCT(nt *leabra.Network, send, recv emer.Layer) emer.Prjn {
 
 // ConnectCtxtToCT adds a CTCtxtPrjn from given sending layer to a CT layer
 // Use ConnectSuperToCT for main projection from corresponding superficial layer.
-func ConnectCtxtToCT(nt *leabra.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+func ConnectCtxtToCT(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayersPrjn(send, recv, pat, CTCtxt, &CTCtxtPrjn{})
 }
 
 // ConnectSuperToCTFake adds a FAKE CTCtxtPrjn from given sending Super layer to a CT layer
 // uses a OneToOne prjn pattern, and sets the class to CTFmSuper.
-// This does NOT make a CTCtxtPrjn -- instead makes a regular leabra.Prjn -- for testing!
-func ConnectSuperToCTFake(nt *leabra.Network, send, recv emer.Layer) emer.Prjn {
+// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
+func ConnectSuperToCTFake(nt *axon.Network, send, recv emer.Layer) emer.Prjn {
 	pj := nt.ConnectLayers(send, recv, prjn.NewOneToOne(), CTCtxt)
 	pj.SetClass("CTFmSuper")
 	return pj
 }
 
 // ConnectCtxtToCTFake adds a FAKE CTCtxtPrjn from given sending layer to a CT layer
-// This does NOT make a CTCtxtPrjn -- instead makes a regular leabra.Prjn -- for testing!
-func ConnectCtxtToCTFake(nt *leabra.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
+func ConnectCtxtToCTFake(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayers(send, recv, pat, CTCtxt)
 }
 
@@ -118,7 +118,7 @@ func ConnectCtxtToCTFake(nt *leabra.Network, send, recv emer.Layer, pat prjn.Pat
 // TRC projects back to Super and CT layers, type = Back, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-func AddDeep2D(nt *leabra.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
+func AddDeep2D(nt *axon.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer2D(nt, name, shapeY, shapeX)
 	ct = AddCTLayer2D(nt, name+"CT", shapeY, shapeX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
@@ -138,7 +138,7 @@ func AddDeep2D(nt *leabra.Network, name string, shapeY, shapeX int) (super, ct, 
 // TRC projects back to Super and CT layers, also PoolOneToOne, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-func AddDeep4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
+func AddDeep4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct = AddCTLayer4D(nt, name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
@@ -156,7 +156,7 @@ func AddDeep4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 // AddDeepNoTRC2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
-func AddDeepNoTRC2D(nt *leabra.Network, name string, shapeY, shapeX int) (super, ct emer.Layer) {
+func AddDeepNoTRC2D(nt *axon.Network, name string, shapeY, shapeX int) (super, ct emer.Layer) {
 	super = AddSuperLayer2D(nt, name, shapeY, shapeX)
 	ct = AddCTLayer2D(nt, name+"CT", shapeY, shapeX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
@@ -167,7 +167,7 @@ func AddDeepNoTRC2D(nt *leabra.Network, name string, shapeY, shapeX int) (super,
 // AddDeepNoTRC4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
-func AddDeepNoTRC4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct emer.Layer) {
+func AddDeepNoTRC4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct emer.Layer) {
 	super = AddSuperLayer4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct = AddCTLayer4D(nt, name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
@@ -180,8 +180,8 @@ func AddDeepNoTRC4D(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, n
 // TRC projects back to Super and CT layers, type = Back, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-// This does NOT make a CTCtxtPrjn -- instead makes a regular leabra.Prjn -- for testing!
-func AddDeep2DFakeCT(nt *leabra.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
+// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
+func AddDeep2DFakeCT(nt *axon.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer2D(nt, name, shapeY, shapeX)
 	ct = AddCTLayer2D(nt, name+"CT", shapeY, shapeX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
@@ -201,8 +201,8 @@ func AddDeep2DFakeCT(nt *leabra.Network, name string, shapeY, shapeX int) (super
 // TRC projects back to Super and CT layers, also PoolOneToOne, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-// This does NOT make a CTCtxtPrjn -- instead makes a regular leabra.Prjn -- for testing!
-func AddDeep4DFakeCT(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
+// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
+func AddDeep4DFakeCT(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct = AddCTLayer4D(nt, name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
@@ -226,7 +226,7 @@ func AddDeep4DFakeCT(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, 
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
 // Py is Python version, returns layers as a slice
-func AddDeep2DPy(nt *leabra.Network, name string, shapeY, shapeX int) []emer.Layer {
+func AddDeep2DPy(nt *axon.Network, name string, shapeY, shapeX int) []emer.Layer {
 	super, ct, trc := AddDeep2D(nt, name, shapeY, shapeX)
 	return []emer.Layer{super, ct, trc}
 }
@@ -237,7 +237,7 @@ func AddDeep2DPy(nt *leabra.Network, name string, shapeY, shapeX int) []emer.Lay
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
 // Py is Python version, returns layers as a slice
-func AddDeep4DPy(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
+func AddDeep4DPy(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
 	super, ct, trc := AddDeep4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return []emer.Layer{super, ct, trc}
 }
@@ -246,7 +246,7 @@ func AddDeep4DPy(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // with CTCtxtPrjn Full projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
 // Py is Python version, returns layers as a slice
-func AddDeepNoTRC2DPy(nt *leabra.Network, name string, shapeY, shapeX int) []emer.Layer {
+func AddDeepNoTRC2DPy(nt *axon.Network, name string, shapeY, shapeX int) []emer.Layer {
 	super, ct := AddDeepNoTRC2D(nt, name, shapeY, shapeX)
 	return []emer.Layer{super, ct}
 }
@@ -255,7 +255,7 @@ func AddDeepNoTRC2DPy(nt *leabra.Network, name string, shapeY, shapeX int) []eme
 // with CTCtxtPrjn PoolOneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
 // Py is Python version, returns layers as a slice
-func AddDeepNoTRC4DPy(nt *leabra.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
+func AddDeepNoTRC4DPy(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
 	super, ct := AddDeepNoTRC4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return []emer.Layer{super, ct}
 }
@@ -318,20 +318,20 @@ func (nt *Network) ConnectCtxtToCT(send, recv emer.Layer, pat prjn.Pattern) emer
 //  Compute methods
 
 // QuarterFinal does updating after end of a quarter
-func (nt *Network) QuarterFinal(ltime *leabra.Time) {
+func (nt *Network) QuarterFinal(ltime *axon.Time) {
 	nt.Network.QuarterFinal(ltime)
 	nt.CTCtxt(ltime)
 }
 
 // CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
-func (nt *Network) CTCtxt(ltime *leabra.Time) {
-	nt.ThrLayFun(func(ly leabra.LeabraLayer) {
+func (nt *Network) CTCtxt(ltime *axon.Time) {
+	nt.ThrLayFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(CtxtSender); ok {
 			dl.SendCtxtGe(ltime)
 		}
 	}, "SendCtxtGe")
 
-	nt.ThrLayFun(func(ly leabra.LeabraLayer) {
+	nt.ThrLayFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(*CTLayer); ok {
 			dl.CtxtFmGe(ltime)
 		}

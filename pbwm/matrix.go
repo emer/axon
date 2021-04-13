@@ -5,24 +5,24 @@
 package pbwm
 
 import (
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 )
 
 // MatrixParams has parameters for Dorsal Striatum Matrix computation
 // These are the main Go / NoGo gating units in BG driving updating of PFC WM in PBWM
 type MatrixParams struct {
-	LearnQtr    leabra.Quarters `desc:"Quarter(s) when learning takes place, typically Q2 and Q4, corresponding to the PFC GateQtr. Note: this is a bitflag and must be accessed using bitflag.Set / Has etc routines, 32 bit versions."`
-	PatchShunt  float32         `def:"0.2,0.5" min:"0" max:"1" desc:"how much the patch shunt activation multiplies the dopamine values -- 0 = complete shunting, 1 = no shunting -- should be a factor < 1.0"`
-	ShuntACh    bool            `def:"true" desc:"also shunt the ACh value driven from CIN units -- this prevents clearing of MSNConSpec traces -- more plausibly the patch units directly interfere with the effects of CIN's rather than through ach, but it is easier to implement with ach shunting here."`
-	OutAChInhib float32         `def:"0,0.3" desc:"how much does the LACK of ACh from the CIN units drive extra inhibition to output-gating Matrix units -- gi += out_ach_inhib * (1-ach) -- provides a bias for output gating on reward trials -- do NOT apply to NoGo, only Go -- this is a key param -- between 0.1-0.3 usu good -- see how much output gating happening and change accordingly"`
-	BurstGain   float32         `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
-	DipGain     float32         `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
+	LearnQtr    axon.Quarters `desc:"Quarter(s) when learning takes place, typically Q2 and Q4, corresponding to the PFC GateQtr. Note: this is a bitflag and must be accessed using bitflag.Set / Has etc routines, 32 bit versions."`
+	PatchShunt  float32       `def:"0.2,0.5" min:"0" max:"1" desc:"how much the patch shunt activation multiplies the dopamine values -- 0 = complete shunting, 1 = no shunting -- should be a factor < 1.0"`
+	ShuntACh    bool          `def:"true" desc:"also shunt the ACh value driven from CIN units -- this prevents clearing of MSNConSpec traces -- more plausibly the patch units directly interfere with the effects of CIN's rather than through ach, but it is easier to implement with ach shunting here."`
+	OutAChInhib float32       `def:"0,0.3" desc:"how much does the LACK of ACh from the CIN units drive extra inhibition to output-gating Matrix units -- gi += out_ach_inhib * (1-ach) -- provides a bias for output gating on reward trials -- do NOT apply to NoGo, only Go -- this is a key param -- between 0.1-0.3 usu good -- see how much output gating happening and change accordingly"`
+	BurstGain   float32       `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
+	DipGain     float32       `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 }
 
 func (mp *MatrixParams) Defaults() {
-	mp.LearnQtr.Set(int(leabra.Q2))
-	mp.LearnQtr.Set(int(leabra.Q4))
+	mp.LearnQtr.Set(int(axon.Q2))
+	mp.LearnQtr.Set(int(axon.Q4))
 	mp.PatchShunt = 0.2
 	mp.ShuntACh = true
 	mp.OutAChInhib = 0.3
@@ -51,7 +51,7 @@ type MatrixLayer struct {
 	MatrixNeurs []MatrixNeuron `desc:"slice of MatrixNeuron state for this layer -- flat list of len = Shape.Len().  You must iterate over index and use pointer to modify values."`
 }
 
-var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, leabra.LayerProps)
+var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, axon.LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "MatrixLayer", Desc: "defaults",
@@ -164,7 +164,7 @@ func (ly *MatrixLayer) InitActs() {
 
 // InhibiFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
 // Matrix version applies OutAChInhib to bias output gating on reward trials
-func (ly *MatrixLayer) InhibFmGeAct(ltime *leabra.Time) {
+func (ly *MatrixLayer) InhibFmGeAct(ltime *axon.Time) {
 	ly.GateLayer.InhibFmGeAct(ltime)
 
 	if ly.Matrix.OutAChInhib == 0 {
@@ -196,13 +196,13 @@ func (ly *MatrixLayer) InhibFmGeAct(ltime *leabra.Time) {
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act.
 // Matrix extends to call DaAChFmLay
-func (ly *MatrixLayer) ActFmG(ltime *leabra.Time) {
+func (ly *MatrixLayer) ActFmG(ltime *axon.Time) {
 	ly.DaAChFmLay(ltime)
 	ly.GateLayer.ActFmG(ltime)
 }
 
 // DaAChFmLay computes Da and ACh from layer and Shunt received from PatchLayer units
-func (ly *MatrixLayer) DaAChFmLay(ltime *leabra.Time) {
+func (ly *MatrixLayer) DaAChFmLay(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -223,7 +223,7 @@ func (ly *MatrixLayer) DaAChFmLay(ltime *leabra.Time) {
 
 // RecGateAct records the gating activation from current activation, when gating occcurs
 // based on GateState.Now
-func (ly *MatrixLayer) RecGateAct(ltime *leabra.Time) {
+func (ly *MatrixLayer) RecGateAct(ltime *axon.Time) {
 	for gi := range ly.GateStates {
 		gs := &ly.GateStates[gi]
 		if !gs.Now { // not gating now

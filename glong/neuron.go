@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 )
 
 var (
@@ -20,7 +20,7 @@ var (
 
 	NeuronVarsMap map[string]int
 
-	// NeuronVarProps are integrated neuron var props including leabra
+	// NeuronVarProps are integrated neuron var props including axon
 	NeuronVarProps = map[string]string{
 		"NMDA":   `auto-scale:"+"`,
 		"GABAB":  `auto-scale:"+"`,
@@ -29,16 +29,16 @@ var (
 )
 
 func init() {
-	ln := len(leabra.NeuronVars)
+	ln := len(axon.NeuronVars)
 	NeuronVarsAll = make([]string, len(NeuronVars)+ln)
-	copy(NeuronVarsAll, leabra.NeuronVars)
+	copy(NeuronVarsAll, axon.NeuronVars)
 	copy(NeuronVarsAll[ln:], NeuronVars)
 
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	for i, v := range NeuronVars {
 		NeuronVarsMap[v] = i
 	}
-	for v, p := range leabra.NeuronVarProps {
+	for v, p := range axon.NeuronVarProps {
 		NeuronVarProps[v] = p
 	}
 }

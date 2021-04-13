@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package leabra
+package axon
 
-import "github.com/emer/leabra/fffb"
+import "github.com/emer/axon/fffb"
 
-// leabra.InhibParams contains all the inhibition computation params and functions for basic Leabra
-// This is included in leabra.Layer to support computation.
+// axon.InhibParams contains all the inhibition computation params and functions for basic Axon
+// This is included in axon.Layer to support computation.
 // This also includes other misc layer-level params such as running-average activation in the layer
 // which is used for netinput rescaling and potentially for adapting inhibition over time
 type InhibParams struct {

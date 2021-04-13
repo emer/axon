@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/chewxy/math32"
-	"github.com/emer/leabra/leabra"
+	"github.com/emer/axon/axon"
 	"github.com/goki/mat32"
 )
 
@@ -86,7 +86,7 @@ func (tp *TraceParams) LrateMod(gated, d2r, posDa bool) float32 {
 // MatrixTracePrjn does dopamine-modulated, gated trace learning, for Matrix learning
 // in PBWM context
 type MatrixTracePrjn struct {
-	leabra.Prjn
+	axon.Prjn
 	Trace  TraceParams `view:"inline" desc:"special parameters for matrix trace learning"`
 	TrSyns []TraceSyn  `desc:"trace synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 }
@@ -125,7 +125,7 @@ func (pj *MatrixTracePrjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(leabra.LeabraLayer).AsLeabra()
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlayi := pj.Recv.(PBWMLayer)
 	rlay := rlayi.(*MatrixLayer) // note: won't work if derived
 	d2r := (rlay.DaR == D2R)
@@ -218,7 +218,7 @@ func (pj *MatrixTracePrjn) SynVarIdx(varNm string) (int, error) {
 	if err == nil {
 		return vidx, err
 	}
-	nn := len(leabra.SynapseVars)
+	nn := len(axon.SynapseVars)
 	switch varNm {
 	case "NTr":
 		return nn, nil
@@ -236,7 +236,7 @@ func (pj *MatrixTracePrjn) SynVal1D(varIdx int, synIdx int) float32 {
 	if varIdx < 0 || varIdx >= len(SynVarsAll) {
 		return math32.NaN()
 	}
-	nn := len(leabra.SynapseVars)
+	nn := len(axon.SynapseVars)
 	if varIdx < nn {
 		return pj.Prjn.SynVal1D(varIdx, synIdx)
 	}
