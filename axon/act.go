@@ -5,10 +5,11 @@
 package axon
 
 import (
+	"math/rand"
+
 	"github.com/chewxy/math32"
 	"github.com/emer/axon/chans"
 	"github.com/emer/axon/knadapt"
-	"github.com/emer/axon/nxx1"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/ints"
@@ -23,26 +24,22 @@ import (
 // for basic Axon, at the neuron level .
 // This is included in axon.Layer to drive the computation.
 type ActParams struct {
-	Spike     SpikeParams     `view:"inline" desc:"Spiking function parameters"`
-	XX1       nxx1.Params     `view:"inline" desc:"Noisy X/X+1 rate code activation function parameters"`
-	OptThresh OptThreshParams `view:"inline" desc:"optimization thresholds for faster processing"`
-	Init      ActInitParams   `view:"inline" desc:"initial values for key network state variables -- initialized at start of trial with InitActs or DecayActs"`
-	Dt        DtParams        `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
-	Gbar      chans.Chans     `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
-	Erev      chans.Chans     `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
-	Clamp     ClampParams     `view:"inline" desc:"how external inputs drive neural activations"`
-	Noise     ActNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add to activations"`
-	VmRange   minmax.F32      `view:"inline" desc:"range for Vm membrane potential -- [0, 2.0] by default"`
-	KNa       knadapt.Params  `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
+	Spike   SpikeParams    `view:"inline" desc:"Spiking function parameters"`
+	Init    ActInitParams  `view:"inline" desc:"initial values for key network state variables -- initialized at start of trial with InitActs or DecayActs"`
+	Dt      DtParams       `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
+	Gbar    chans.Chans    `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
+	Erev    chans.Chans    `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
+	Clamp   ClampParams    `view:"inline" desc:"how external inputs drive neural activations"`
+	Noise   ActNoiseParams `view:"inline" desc:"how, where, when, and how much noise to add"`
+	VmRange minmax.F32     `view:"inline" desc:"range for Vm membrane potential -- [0, 2.0] by default"`
+	KNa     knadapt.Params `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
 }
 
 func (ac *ActParams) Defaults() {
 	ac.Spike.Defaults()
-	ac.XX1.Defaults()
-	ac.OptThresh.Defaults()
 	ac.Init.Defaults()
 	ac.Dt.Defaults()
-	ac.Gbar.SetAll(1.0, 0.1, 1.0, 1.0)
+	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0)
 	ac.Erev.SetAll(1.0, 0.3, 0.25, 0.25)
 	ac.Clamp.Defaults()
 	ac.VmRange.Max = 2.0
@@ -55,8 +52,6 @@ func (ac *ActParams) Defaults() {
 // Update must be called after any changes to parameters
 func (ac *ActParams) Update() {
 	ac.Spike.Update()
-	ac.XX1.Update()
-	ac.OptThresh.Update()
 	ac.Init.Update()
 	ac.Dt.Update()
 	ac.Clamp.Update()
@@ -73,7 +68,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	if decay > 0 { // no-op for most, but not all..
 		nrn.Act -= decay * (nrn.Act - ac.Init.Act)
 		nrn.Ge -= decay * (nrn.Ge - ac.Init.Ge)
-		nrn.Gi -= decay * nrn.Gi
+		nrn.Gi -= decay * (nrn.Gi - ac.Init.Gi)
 		nrn.GiSelf -= decay * nrn.GiSelf
 		nrn.Gk -= decay * nrn.Gk
 		nrn.Vm -= decay * (nrn.Vm - ac.Init.Vm)
@@ -99,7 +94,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Act = ac.Init.Act
 	nrn.ActLrn = ac.Init.Act
 	nrn.Ge = ac.Init.Ge
-	nrn.Gi = 0
+	nrn.Gi = ac.Init.Gi
 	nrn.Gk = 0
 	nrn.GknaFast = 0
 	nrn.GknaMed = 0
@@ -149,7 +144,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32) {
 		}
 	}
 
-	ac.Dt.GeFmRaw(geRaw, &nrn.Ge)
+	ac.Dt.GeFmRaw(geRaw, &nrn.Ge, ac.Init.Ge)
 	// first place noise is required -- generate here!
 	if ac.Noise.Type != NoNoise && !ac.Noise.Fixed && ac.Noise.Dist != erand.Mean {
 		nrn.Noise = float32(ac.Noise.Gen(-1))
@@ -162,7 +157,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32) {
 // GiFmRaw integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFmRaw(nrn *Neuron, giRaw float32) {
-	ac.Dt.GiFmRaw(giRaw, &nrn.GiSyn)
+	ac.Dt.GiFmRaw(giRaw, &nrn.GiSyn, ac.Init.Gi)
 	nrn.GiSyn = math32.Max(nrn.GiSyn, 0) // negative inhib G doesn't make any sense
 }
 
@@ -193,7 +188,7 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 		// add spike current if relevant
 		if ac.Spike.Exp {
 			inet2 += ac.Gbar.L * ac.Spike.ExpSlope *
-				math32.Exp((vmEff-ac.XX1.Thr)/ac.Spike.ExpSlope)
+				math32.Exp((vmEff-ac.Spike.Thr)/ac.Spike.ExpSlope)
 		}
 		nwVm += ac.Dt.VmDt * inet2
 		nrn.Inet = inet2
@@ -237,7 +232,7 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 		}
 	}
 
-	nwAct := ac.Spike.ActFmISI(nrn.ISIAvg, .001, 1) // todo: use real #'s
+	nwAct := ac.Spike.ActFmISI(nrn.ISIAvg, .001, ac.Dt.Integ)
 	if nwAct > 1 {
 		nwAct = 1
 	}
@@ -254,19 +249,43 @@ func (ac *ActParams) HasHardClamp(nrn *Neuron) bool {
 	return ac.Clamp.Hard && nrn.HasFlag(NeurHasExt)
 }
 
-// HardClamp clamps activation from external input -- just does it -- use HasHardClamp to check
-// if it should do it.  Also adds any Noise *if* noise is set to ActNoise.
+// HardClamp drives Poisson rate spiking according to external input.
+// Also adds any Noise *if* noise is set to ActNoise.
 func (ac *ActParams) HardClamp(nrn *Neuron) {
 	ext := nrn.Ext
 	if ac.Noise.Type == ActNoise {
 		ext += nrn.Noise
 	}
-	clmp := ac.Clamp.Range.ClipVal(ext)
-	nrn.Act = clmp + nrn.Noise
-	nrn.ActLrn = clmp
-	nrn.Vm = ac.XX1.Thr + nrn.Act/ac.XX1.Gain
-	nrn.ActDel = 0
-	nrn.Inet = 0
+	if nrn.ISI > 1 {
+		nrn.ISI -= 1
+		nrn.Spike = 0
+	} else {
+		if ext <= 0 {
+			nrn.ISI = 0
+			nrn.ISIAvg = -1
+			nrn.Spike = 0
+		} else {
+			nrn.Spike = 1
+			nrn.ISI = (1000 * float32(rand.ExpFloat64())) / (ac.Clamp.Rate * ext)
+			nrn.ISI = mat32.Max(float32(ac.Spike.Tr), nrn.ISI)
+			if nrn.ISIAvg == -1 {
+				nrn.ISIAvg = -2
+			} else if nrn.ISI > 0 { // must have spiked to update
+				ac.Spike.AvgFmISI(&nrn.ISIAvg, nrn.ISI+1)
+			}
+		}
+	}
+
+	nwAct := ac.Spike.ActFmISI(nrn.ISIAvg, .001, ac.Dt.Integ)
+	if nwAct > 1 {
+		nwAct = 1
+	}
+	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
+	nrn.ActDel = nwAct - nrn.Act
+	nrn.Act = nwAct
+	if ac.KNa.On {
+		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -282,9 +301,9 @@ type SpikeParams struct {
 	MaxHz    float32 `def:"180" min:"1" desc:"for translating spiking interval (rate) into rate-code activation equivalent (and vice-versa, for clamped layers), what is the maximum firing rate associated with a maximum activation value (max act is typically 1.0 -- depends on act_range)"`
 	RateTau  float32 `def:"5" min:"1" desc:"constant for integrating the spiking interval in estimating spiking rate"`
 	RateDt   float32 `view:"-" desc:"rate = 1 / tau"`
-	Exp      bool    `def:"false" desc:"if true, turn on exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation -- this mechanism has an unfortunate interaction with the continuous inhibitory currents generated by the standard FFFB inhibitory function, which cause this mechanism to desensitize and fail to spike"`
-	ExpSlope float32 `viewif:"Exp" def:"0.02" desc:"slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation -- a value of 0 disables this mechanism"`
-	ExpThr   float32 `viewif:"Exp" def:"1.2" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
+	Exp      bool    `def:"true" desc:"if true, turn on exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
+	ExpSlope float32 `viewif:"Exp" def:"0.02" desc:"slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
+	ExpThr   float32 `viewif:"Exp" def:"1" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
 }
 
 func (sk *SpikeParams) Defaults() {
@@ -293,9 +312,9 @@ func (sk *SpikeParams) Defaults() {
 	sk.Tr = 3
 	sk.MaxHz = 180
 	sk.RateTau = 5
-	sk.Exp = false
+	sk.Exp = true
 	sk.ExpSlope = 0.02
-	sk.ExpThr = 1.2
+	sk.ExpThr = 1.0
 	sk.Update()
 }
 
@@ -333,42 +352,27 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  OptThreshParams
-
-// OptThreshParams provides optimization thresholds for faster processing
-type OptThreshParams struct {
-	Send  float32 `def:"0.1" desc:"don't send activation when act <= send -- greatly speeds processing"`
-	Delta float32 `def:"0.005" desc:"don't send activation changes until they exceed this threshold: only for when AxonNetwork::send_delta is on!"`
-}
-
-func (ot *OptThreshParams) Update() {
-}
-
-func (ot *OptThreshParams) Defaults() {
-	ot.Send = .1
-	ot.Delta = 0.005
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
 //  ActInitParams
 
 // ActInitParams are initial values for key network state variables.
 // Initialized at start of trial with Init_Acts or DecayState.
 type ActInitParams struct {
 	Decay float32 `def:"0,1" max:"1" min:"0" desc:"proportion to decay activation state toward initial values at start of every trial"`
-	Vm    float32 `def:"0.4" desc:"initial membrane potential -- see e_rev.l for the resting potential (typically .3) -- often works better to have a somewhat elevated initial membrane potential relative to that"`
+	Vm    float32 `def:"0.3" desc:"initial membrane potential -- see e_rev.l for the resting potential (typically .3)"`
 	Act   float32 `def:"0" desc:"initial activation value -- typically 0"`
 	Ge    float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
+	Gi    float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
 }
 
 func (ai *ActInitParams) Update() {
 }
 
 func (ai *ActInitParams) Defaults() {
-	ai.Decay = 1
-	ai.Vm = 0.4
+	ai.Decay = 0
+	ai.Vm = 0.3
 	ai.Act = 0
 	ai.Ge = 0
+	ai.Gi = 0
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -404,12 +408,14 @@ func (dp *DtParams) Defaults() {
 	dp.Update()
 }
 
-func (dp *DtParams) GeFmRaw(geRaw float32, ge *float32) {
-	*ge += geRaw - *ge*dp.GeDt
+// GeFmRaw updates ge from raw input, decaying with time constant, back to min baseline value
+func (dp *DtParams) GeFmRaw(geRaw float32, ge *float32, min float32) {
+	*ge += geRaw - dp.GeDt*(*ge-min)
 }
 
-func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32) {
-	*gi += giRaw - *gi*dp.GiDt
+// GiFmRaw updates gi from raw input, decaying with time constant, back to min baseline value
+func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32, min float32) {
+	*gi += giRaw - dp.GiDt*(*gi-min)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -431,12 +437,9 @@ const (
 	NoNoise ActNoiseType = iota
 
 	// VmNoise means noise is added to the membrane potential.
-	// IMPORTANT: this should NOT be used for rate-code (NXX1) activations,
-	// because they do not depend directly on the vm -- this then has no effect
 	VmNoise
 
 	// GeNoise means noise is added to the excitatory conductance (Ge).
-	// This should be used for rate coded activations (NXX1)
 	GeNoise
 
 	// ActNoise means noise is added to the final rate code activation
@@ -459,7 +462,7 @@ func (an *ActNoiseParams) Update() {
 }
 
 func (an *ActNoiseParams) Defaults() {
-	an.Fixed = true
+	an.Fixed = false
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -467,11 +470,11 @@ func (an *ActNoiseParams) Defaults() {
 
 // ClampParams are for specifying how external inputs are clamped onto network activation values
 type ClampParams struct {
-	Hard    bool       `def:"true" desc:"whether to hard clamp inputs where activation is directly set to external input value (Act = Ext) or do soft clamping where Ext is added into Ge excitatory current (Ge += Gain * Ext)"`
-	Range   minmax.F32 `viewif:"Hard" desc:"range of external input activation values allowed -- Max is .95 by default due to saturating nature of rate code activation function"`
-	Gain    float32    `viewif:"!Hard" def:"0.02:0.5" desc:"soft clamp gain factor (Ge += Gain * Ext)"`
-	Avg     bool       `viewif:"!Hard" desc:"compute soft clamp as the average of current and target netins, not the sum -- prevents some of the main effect problems associated with adding external inputs"`
-	AvgGain float32    `viewif:"!Hard && Avg" def:"0.2" desc:"gain factor for averaging the Ge -- clamp value Ext contributes with AvgGain and current Ge as (1-AvgGain)"`
+	Hard    bool    `def:"true" desc:"whether to hard clamp inputs where spiking rate is set to Poisson noise with external input * Rate factor"`
+	Rate    float32 `desc:"maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
+	Gain    float32 `viewif:"!Hard" def:"0.02:0.5" desc:"soft clamp gain factor (Ge += Gain * Ext)"`
+	Avg     bool    `viewif:"!Hard" desc:"compute soft clamp as the average of current and target netins, not the sum -- prevents some of the main effect problems associated with adding external inputs"`
+	AvgGain float32 `viewif:"!Hard && Avg" def:"0.2" desc:"gain factor for averaging the Ge -- clamp value Ext contributes with AvgGain and current Ge as (1-AvgGain)"`
 }
 
 func (cp *ClampParams) Update() {
@@ -479,7 +482,7 @@ func (cp *ClampParams) Update() {
 
 func (cp *ClampParams) Defaults() {
 	cp.Hard = true
-	cp.Range.Max = 0.95
+	cp.Rate = 100
 	cp.Gain = 0.2
 	cp.Avg = false
 	cp.AvgGain = 0.2

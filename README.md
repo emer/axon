@@ -114,7 +114,7 @@ GABAa rise, decay times:
 * build in psyn with probability of failure -- needs to be sensitive to wt
 * then decay with tau
 * integrate all the G's in to cell body
-* support background balanced G, I current on cell body to diminish sensitivity!
+* support background balanced G, I current on cell body to diminish sensitivity! Init
 
 
     
