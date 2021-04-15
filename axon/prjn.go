@@ -19,7 +19,6 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/indent"
-	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 )
 
@@ -40,8 +39,6 @@ type Prjn struct {
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
-
-var PrjnProps = ki.Props{}
 
 // AsAxon returns this prjn as a axon.Prjn -- all derived prjns must redefine
 // this to return the base Prjn type, so that the AxonPrjn interface does not

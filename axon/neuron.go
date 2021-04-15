@@ -34,6 +34,7 @@ type Neuron struct {
 	Gk      float32   `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
 	Inet    float32   `desc:"net current produced by all channels -- drives update of Vm"`
 	Vm      float32   `desc:"membrane potential -- integrates Inet current over time"`
+	VmDend  float32   `desc:"dendritic membrane potential -- subject to multiplier"`
 
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
@@ -63,8 +64,6 @@ type Neuron struct {
 	GknaFast float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`
 	GknaMed  float32 `desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`
 	GknaSlow float32 `desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`
-	AlphaMax float32 `desc:"Maximum activation over Alpha cycle period"`
-	VmEff    float32 `desc:"Effective membrane potential, including simulated backpropagating action potential contribution from activity level."`
 	Gnmda    float32 `desc:"net NMDA conductance, after Vm gating and Gbar -- added directly to Ge as it has the same reversal potential."`
 	NMDA     float32 `desc:"NMDA channel activation -- underlying time-integrated value with decay"`
 	NMDASyn  float32 `desc:"synaptic NMDA activation directly from projection(s)"`
@@ -73,17 +72,27 @@ type Neuron struct {
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
 }
 
-var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgL", "AvgLLrn", "AvgSLrn", "ActQ0", "ActQ1", "ActQ2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GknaFast", "GknaMed", "GknaSlow", "AlphaMax", "VmEff", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgL", "AvgLLrn", "AvgSLrn", "ActQ0", "ActQ1", "ActQ2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
 
 var NeuronVarsMap map[string]int
 
 var NeuronVarProps = map[string]string{
-	"Vm":     `min:"0" max:"1"`,
-	"ActDel": `auto-scale:"+"`,
-	"ActDif": `auto-scale:"+"`,
-	"NMDA":   `auto-scale:"+"`,
-	"GABAB":  `auto-scale:"+"`,
-	"GABABx": `auto-scale:"+"`,
+	"Vm":       `min:"0" max:"1"`,
+	"VmDend":   `min:"0" max:"1"`,
+	"ISI":      `auto-scale:"+"`,
+	"ISIAvg":   `auto-scale:"+"`,
+	"Gi":       `auto-scale:"+"`,
+	"Gk":       `auto-scale:"+"`,
+	"ActDel":   `auto-scale:"+"`,
+	"ActDif":   `auto-scale:"+"`,
+	"GknaFast": `auto-scale:"+"`,
+	"GknaMed":  `auto-scale:"+"`,
+	"GknaSlow": `auto-scale:"+"`,
+	"Gnmda":    `auto-scale:"+"`,
+	"NMDA":     `auto-scale:"+"`,
+	"GgabaB":   `auto-scale:"+"`,
+	"GABAB":    `auto-scale:"+"`,
+	"GABABx":   `auto-scale:"+"`,
 }
 
 func init() {

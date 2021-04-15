@@ -9,6 +9,7 @@ import (
 
 	"github.com/chewxy/math32"
 	"github.com/emer/axon/chans"
+	"github.com/emer/axon/glong"
 	"github.com/emer/axon/knadapt"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
@@ -24,15 +25,17 @@ import (
 // for basic Axon, at the neuron level .
 // This is included in axon.Layer to drive the computation.
 type ActParams struct {
-	Spike   SpikeParams    `view:"inline" desc:"Spiking function parameters"`
-	Init    ActInitParams  `view:"inline" desc:"initial values for key network state variables -- initialized at start of trial with InitActs or DecayActs"`
-	Dt      DtParams       `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
-	Gbar    chans.Chans    `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
-	Erev    chans.Chans    `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
-	Clamp   ClampParams    `view:"inline" desc:"how external inputs drive neural activations"`
-	Noise   ActNoiseParams `view:"inline" desc:"how, where, when, and how much noise to add"`
-	VmRange minmax.F32     `view:"inline" desc:"range for Vm membrane potential -- [0, 2.0] by default"`
-	KNa     knadapt.Params `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
+	Spike   SpikeParams       `view:"inline" desc:"Spiking function parameters"`
+	Init    ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized at start of trial with InitActs or DecayActs"`
+	Dt      DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
+	Gbar    chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
+	Erev    chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
+	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
+	Noise   ActNoiseParams    `view:"inline" desc:"how, where, when, and how much noise to add"`
+	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0, 2.0] by default"`
+	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
+	NMDA    glong.NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
+	GABAB   glong.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
 }
 
 func (ac *ActParams) Defaults() {
@@ -40,12 +43,15 @@ func (ac *ActParams) Defaults() {
 	ac.Init.Defaults()
 	ac.Dt.Defaults()
 	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0)
-	ac.Erev.SetAll(1.0, 0.3, 0.25, 0.25)
+	ac.Erev.SetAll(1.0, 0.3, 0.25, 0.1) // K = hyperpolarized -90mv
 	ac.Clamp.Defaults()
+	ac.Noise.Defaults()
 	ac.VmRange.Max = 2.0
 	ac.KNa.Defaults()
-	ac.KNa.On = false
-	ac.Noise.Defaults()
+	ac.KNa.On = true
+	ac.NMDA.Defaults()
+	ac.NMDA.Gbar = 0.01 // a bit weaker by default
+	ac.GABAB.Defaults()
 	ac.Update()
 }
 
@@ -72,8 +78,8 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 		nrn.GiSelf -= decay * nrn.GiSelf
 		nrn.Gk -= decay * nrn.Gk
 		nrn.Vm -= decay * (nrn.Vm - ac.Init.Vm)
+		nrn.VmDend -= decay * (nrn.VmDend - ac.Init.Vm)
 		nrn.GiSyn -= decay * nrn.GiSyn
-		nrn.VmEff -= decay * nrn.VmEff
 		nrn.Gnmda -= decay * nrn.Gnmda
 		nrn.NMDA -= decay * nrn.NMDA
 		nrn.NMDASyn -= decay * nrn.NMDASyn
@@ -103,11 +109,10 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GiSyn = 0
 	nrn.Inet = 0
 	nrn.Vm = ac.Init.Vm
+	nrn.VmDend = ac.Init.Vm
 	nrn.Targ = 0
 	nrn.Ext = 0
 	nrn.ActDel = 0
-	nrn.AlphaMax = 0
-	nrn.VmEff = 0
 	nrn.Gnmda = 0
 	nrn.NMDA = 0
 	nrn.NMDASyn = 0
@@ -167,8 +172,6 @@ func (ac *ActParams) InetFmG(vm, ge, gi, gk float32) float32 {
 }
 
 // VmFmG computes membrane potential Vm from conductances Ge, Gi, and Gk.
-// The Vm value is only used in pure rate-code computation within the sub-threshold regime
-// because firing rate is a direct function of excitatory conductance Ge.
 func (ac *ActParams) VmFmG(nrn *Neuron) {
 	updtVm := true
 	if ac.Spike.Tr > 0 && nrn.ISI >= 0 && nrn.ISI < float32(ac.Spike.Tr) {
@@ -176,10 +179,10 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	}
 
 	nwVm := nrn.Vm
+	ge := nrn.Ge * ac.Gbar.E
+	gi := nrn.Gi * ac.Gbar.I
+	gk := nrn.Gk * ac.Gbar.K
 	if updtVm {
-		ge := nrn.Ge * ac.Gbar.E
-		gi := nrn.Gi * ac.Gbar.I
-		gk := nrn.Gk * ac.Gbar.K
 		vmEff := nrn.Vm
 		// midpoint method: take a half-step in vmEff
 		inet1 := ac.InetFmG(vmEff, ge, gi, gk)
@@ -193,6 +196,14 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 		nwVm += ac.Dt.VmDt * inet2
 		nrn.Inet = inet2
 	}
+	{ // always update VmDend
+		vmEff := nrn.VmDend
+		// midpoint method: take a half-step in vmEff
+		inet1 := ac.InetFmG(vmEff, ge, gi, gk)
+		vmEff += .5 * ac.Dt.VmDendDt * inet1 // go half way
+		inet2 := ac.InetFmG(vmEff, ge, gi, gk)
+		nrn.VmDend = ac.VmRange.ClipVal(nrn.VmDend + ac.Dt.VmDendDt*inet2)
+	}
 
 	if ac.Noise.Type == VmNoise {
 		nwVm += nrn.Noise
@@ -200,7 +211,7 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	nrn.Vm = ac.VmRange.ClipVal(nwVm)
 }
 
-// ActFmG computes rate-coded activation Act from conductances Ge, Gi, Gk
+// ActFmG computes Spike from Vm and ISI-based activation
 func (ac *ActParams) ActFmG(nrn *Neuron) {
 	if ac.HasHardClamp(nrn) {
 		ac.HardClamp(nrn) // todo: spiking..
@@ -241,6 +252,7 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	nrn.Act = nwAct
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
+		nrn.Gk = nrn.GknaFast + nrn.GknaMed + nrn.GknaSlow
 	}
 }
 
@@ -378,22 +390,25 @@ func (ai *ActInitParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  DtParams
 
-// DtParams are time and rate constants for temporal derivatives in Axon (Vm, net input)
+// DtParams are time and rate constants for temporal derivatives in Axon (Vm, G)
 type DtParams struct {
-	Integ  float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
-	VmTau  float32 `def:"3.3" min:"1" desc:"membrane potential and rate-code activation time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized -- for rate-code activation, this also determines how fast to integrate computed activation values over time"`
-	GeTau  float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
-	GiTau  float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
-	AvgTau float32 `def:"200" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- used mostly for visualization and tracking *hog* units"`
+	Integ     float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
+	VmTau     float32 `def:"2.81" min:"1" desc:"membrane potential time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
+	VmDendTau float32 `def:"5" min:"1" desc:"dendritic membrane potential integration time constant"`
+	GeTau     float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
+	GiTau     float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
+	AvgTau    float32 `def:"200" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- used mostly for visualization and tracking *hog* units"`
 
-	VmDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
-	GeDt  float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
-	GiDt  float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
-	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	VmDt     float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
+	VmDendDt float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
+	GeDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
+	GiDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
+	AvgDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (dp *DtParams) Update() {
 	dp.VmDt = dp.Integ / dp.VmTau
+	dp.VmDendDt = dp.Integ / dp.VmDendTau
 	dp.GeDt = dp.Integ / dp.GeTau
 	dp.GiDt = dp.Integ / dp.GiTau
 	dp.AvgDt = 1 / dp.AvgTau
@@ -401,7 +416,8 @@ func (dp *DtParams) Update() {
 
 func (dp *DtParams) Defaults() {
 	dp.Integ = 1
-	dp.VmTau = 3.3
+	dp.VmTau = 2.81
+	dp.VmDendTau = 5
 	dp.GeTau = 5
 	dp.GiTau = 7
 	dp.AvgTau = 200

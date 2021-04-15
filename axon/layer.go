@@ -978,8 +978,13 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
+
+		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, nrn.NMDASyn)
+		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
+
 		// note: each step broken out here so other variants can add extra terms to Raw
-		ly.Act.GeFmRaw(nrn, nrn.GeRaw)
+		ly.Act.GeFmRaw(nrn, nrn.GeRaw+nrn.Gnmda)
 		nrn.GeRaw = 0
 		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 		nrn.GiRaw = 0
@@ -1057,6 +1062,15 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.AvgsFmAct(nrn)
+
+		// note: this is here because it depends on Gi
+		nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+		nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
+		if ly.Act.KNa.On {
+			nrn.Gk += nrn.GgabaB // Gk was set by KNa
+		} else {
+			nrn.Gk = nrn.GgabaB
+		}
 	}
 }
 

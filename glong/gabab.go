@@ -8,8 +8,8 @@ import (
 	"github.com/chewxy/math32"
 )
 
-// GABABParams control the GABAB dynamics in PFC Maint neurons, based on Brunel & Wang (2001)
-// parameters.  We have to do some things to make it work for rate code neurons..
+// GABABParams control the GABAB dynamics in PFC Maint neurons,
+// based on Brunel & Wang (2001) parameters.
 type GABABParams struct {
 	RiseTau  float32 `def:"45" desc:"rise time for bi-exponential time dynamics of GABA-B"`
 	DecayTau float32 `def:"50" desc:"decay time for bi-exponential time dynamics of GABA-B"`

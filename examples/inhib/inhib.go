@@ -53,9 +53,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.Learn": "false",
 					"Prjn.WtInit.Dist": "Uniform",
-					"Prjn.WtInit.Mean": "0.25",
-					"Prjn.WtInit.Var":  "0.2",
-					"Prjn.Com.Delay":   "10",
+					"Prjn.WtInit.Mean": "0.5",
+					"Prjn.WtInit.Var":  "0.25",
+					"Prjn.Com.Delay":   "2",
 				}},
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
@@ -66,6 +66,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dt.GiTau":       "7",
 					"Layer.Act.Gbar.I":         "0.4",
 					"Layer.Act.Gbar.L":         "0.2",
+					"Layer.Act.GABAB.Smult":    "20", // no gabab
+					"Layer.Act.NMDA.GeTot":     "1",  // no nmda
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
@@ -75,7 +77,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Var":   "0.05",
 					"Layer.Act.Noise.Type":  "GeNoise",
 					"Layer.Act.Noise.Fixed": "false",
+					"Layer.Act.Gbar.E":      "1.2", // more excitable
 					"Layer.Act.Gbar.L":      "0.1", // smaller, less leaky..
+					"Layer.Act.GABAB.Smult": "0",   // no gabab
+					"Layer.Act.NMDA.GeTot":  "0",   // no nmda
 				}},
 			{Sel: ".Inhib", Desc: "inhibitory projections",
 				Params: params.Params{
@@ -83,6 +88,11 @@ var ParamSets = params.Sets{
 					"Prjn.WtInit.Mean": "0.5",
 					"Prjn.WtInit.Var":  "0",
 					"Prjn.WtInit.Sym":  "false",
+					"Prjn.Com.Delay":   "1",
+				}},
+			{Sel: ".ToInhib", Desc: "to inhibitory projections",
+				Params: params.Params{
+					"Prjn.Com.Delay": "1",
 				}},
 		},
 	}},
@@ -91,8 +101,8 @@ var ParamSets = params.Sets{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
 					"Prjn.WtInit.Dist": "Uniform",
-					"Prjn.WtInit.Mean": "0.25",
-					"Prjn.WtInit.Var":  "0.2",
+					"Prjn.WtInit.Mean": "0.5",
+					"Prjn.WtInit.Var":  "0.25",
 				}},
 		},
 	}},
@@ -210,10 +220,9 @@ func (ss *Sim) ConfigNetFF(net *axon.Network) {
 
 	full := prjn.NewFull()
 
-	pj := net.ConnectLayers(inp, hid, full, emer.Forward)
-	pj.SetClass("Excite")
-	net.ConnectLayers(hid, inh, full, emer.Back)
-	net.ConnectLayers(inp, inh, full, emer.Forward)
+	net.ConnectLayers(inp, hid, full, emer.Forward).SetClass("Excite")
+	net.ConnectLayers(hid, inh, full, emer.Back).SetClass("ToInhib")
+	net.ConnectLayers(inp, inh, full, emer.Forward).SetClass("ToInhib")
 	net.ConnectLayers(inh, hid, full, emer.Inhib)
 	net.ConnectLayers(inh, inh, full, emer.Inhib)
 
@@ -241,20 +250,17 @@ func (ss *Sim) ConfigNetBidir(net *axon.Network) {
 
 	full := prjn.NewFull()
 
-	pj := net.ConnectLayers(inp, hid, full, emer.Forward)
-	pj.SetClass("Excite")
-	net.ConnectLayers(inp, inh, full, emer.Forward)
-	net.ConnectLayers(hid2, inh, full, emer.Forward)
-	net.ConnectLayers(hid, inh, full, emer.Back)
+	net.ConnectLayers(inp, hid, full, emer.Forward).SetClass("Excite")
+	net.ConnectLayers(inp, inh, full, emer.Forward).SetClass("ToInhib")
+	net.ConnectLayers(hid2, inh, full, emer.Forward).SetClass("ToInhib")
+	net.ConnectLayers(hid, inh, full, emer.Back).SetClass("ToInhib")
 	net.ConnectLayers(inh, hid, full, emer.Inhib)
 	net.ConnectLayers(inh, inh, full, emer.Inhib)
 
-	pj = net.ConnectLayers(hid, hid2, full, emer.Forward)
-	pj.SetClass("Excite")
-	pj = net.ConnectLayers(hid2, hid, full, emer.Back)
-	pj.SetClass("Excite")
-	net.ConnectLayers(hid, inh2, full, emer.Forward)
-	net.ConnectLayers(hid2, inh2, full, emer.Back)
+	net.ConnectLayers(hid, hid2, full, emer.Forward).SetClass("Excite")
+	net.ConnectLayers(hid2, hid, full, emer.Back).SetClass("Excite")
+	net.ConnectLayers(hid, inh2, full, emer.Forward).SetClass("ToInhib")
+	net.ConnectLayers(hid2, inh2, full, emer.Back).SetClass("ToInhib")
 	net.ConnectLayers(inh2, hid2, full, emer.Inhib)
 	net.ConnectLayers(inh2, inh2, full, emer.Inhib)
 

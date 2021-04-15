@@ -116,7 +116,7 @@ GABAa rise, decay times:
 * integrate all the G's in to cell body
 * support background balanced G, I current on cell body to diminish sensitivity! Init
 
-
+* Detailed model of dendritic dynamics relative to cell body, with data -- dendrites a bit slower, don't reset after spiking?  GaoGrahamZhouEtAl20
     
     
 # Pseudocode as a LaTeX doc for Paper Appendix
