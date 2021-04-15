@@ -66,21 +66,28 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dt.GiTau":       "7",
 					"Layer.Act.Gbar.I":         "0.4",
 					"Layer.Act.Gbar.L":         "0.2",
-					"Layer.Act.GABAB.Smult":    "20", // no gabab
-					"Layer.Act.NMDA.GeTot":     "1",  // no nmda
+					"Layer.Act.GABAB.Smult":    "10", // key to have lower
+					"Layer.Act.NMDA.GeTot":     "1",
+					"Layer.Act.NMDA.Gbar":      "0.02",
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Act.Spike.Thr":   "0.5",
-					"Layer.Act.Init.Vm":     "0.4", // key for firing early, plus noise
+					"Layer.Act.Init.Vm":     "0.45", // key for firing early, plus noise
 					"Layer.Act.Noise.Dist":  "Gaussian",
-					"Layer.Act.Noise.Var":   "0.05",
+					"Layer.Act.Noise.Mean":  "0.01",
+					"Layer.Act.Noise.Var":   "0.02",
 					"Layer.Act.Noise.Type":  "GeNoise",
 					"Layer.Act.Noise.Fixed": "false",
-					"Layer.Act.Gbar.E":      "1.2", // more excitable
+					"Layer.Act.Gbar.E":      "1.5", // more excitable
 					"Layer.Act.Gbar.L":      "0.1", // smaller, less leaky..
-					"Layer.Act.GABAB.Smult": "0",   // no gabab
-					"Layer.Act.NMDA.GeTot":  "0",   // no nmda
+					"Layer.Act.KNa.On":      "false",
+					"Layer.Act.GABAB.Smult": "0", // no gabab
+					"Layer.Act.NMDA.GeTot":  "0", // no nmda
+				}},
+			{Sel: ".Back", Desc: "feedback excitatory",
+				Params: params.Params{
+					"Prjn.WtScale.Rel": "0.2",
 				}},
 			{Sel: ".Inhib", Desc: "inhibitory projections",
 				Params: params.Params{
@@ -129,7 +136,7 @@ type Sim struct {
 	InputPct   float32 `def:"20" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
 	FFFBInhib  bool    `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
 
-	HiddenGbarI       float32 `def:"0.2" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
+	HiddenGbarI       float32 `def:"0.1" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
 	InhibGbarI        float32 `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
 	FFinhibWtScale    float32 `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
 	FBinhibWtScale    float32 `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
@@ -188,7 +195,7 @@ func (ss *Sim) Defaults() {
 	ss.TrainedWts = false
 	ss.InputPct = 20
 	ss.FFFBInhib = false
-	ss.HiddenGbarI = 0.2
+	ss.HiddenGbarI = 0.1
 	ss.InhibGbarI = 0.4
 	ss.FFinhibWtScale = 1
 	ss.FBinhibWtScale = .5
