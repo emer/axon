@@ -64,7 +64,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Fixed": "true",
 					"Layer.Act.Dt.GeTau":       "5",
 					"Layer.Act.Dt.GiTau":       "7",
-					"Layer.Act.Gbar.I":         "0.4",
+					"Layer.Act.Gbar.I":         "0.1",
 					"Layer.Act.Gbar.L":         "0.2",
 					"Layer.Act.GABAB.Smult":    "10", // key to have lower
 					"Layer.Act.NMDA.GeTot":     "1",
@@ -135,16 +135,17 @@ type Sim struct {
 	TrainedWts bool    `desc:"simulate trained weights by having higher variance and Gaussian distributed weight values -- otherwise lower variance, uniform"`
 	InputPct   float32 `def:"20" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
 	FFFBInhib  bool    `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
+	FFFBGi     float32 `def:"1" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
 
-	HiddenGbarI       float32 `def:"0.1" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
-	InhibGbarI        float32 `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
-	FFinhibWtScale    float32 `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
-	FBinhibWtScale    float32 `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
-	HiddenGeTau       float32 `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Hidden neurons"`
-	InhibGeTau        float32 `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Inhib neurons"`
-	HiddenGiTau       float32 `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
-	InhibGiTau        float32 `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
-	FmInhibWtScaleAbs float32 `def:"1" desc:"absolute weight scaling of projections from inhibition onto hidden and inhib layers -- this must be set to 0 to turn off the connection-based inhibition when using the FFFBInhib computed inbhition"`
+	KNaAdapt       bool    `desc:"turn on adaptation, or not"`
+	HiddenGbarI    float32 `def:"0.1" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
+	InhibGbarI     float32 `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
+	FFinhibWtScale float32 `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
+	FBinhibWtScale float32 `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
+	HiddenGeTau    float32 `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Hidden neurons"`
+	InhibGeTau     float32 `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Inhib neurons"`
+	HiddenGiTau    float32 `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
+	InhibGiTau     float32 `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
 
 	SpikeRasters   map[string]*etensor.Float32   `desc:"spike raster data for different layers"`
 	SpikeRastGrids map[string]*etview.TensorGrid `desc:"spike raster plots for different layers"`
@@ -195,6 +196,8 @@ func (ss *Sim) Defaults() {
 	ss.TrainedWts = false
 	ss.InputPct = 20
 	ss.FFFBInhib = false
+	ss.FFFBGi = 0.7
+	ss.KNaAdapt = false
 	ss.HiddenGbarI = 0.1
 	ss.InhibGbarI = 0.4
 	ss.FFinhibWtScale = 1
@@ -203,7 +206,6 @@ func (ss *Sim) Defaults() {
 	ss.InhibGeTau = 5
 	ss.HiddenGiTau = 7
 	ss.InhibGiTau = 7
-	ss.FmInhibWtScaleAbs = 1
 	ss.Time.CycPerQtr = 50
 }
 
@@ -469,10 +471,17 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	if nt == ss.NetBidir {
 		ffinhsc *= 0.5 // 2 inhib prjns so .5 ea
 	}
+
+	fminh := float32(1)
+	if ss.FFFBInhib {
+		fminh = 0
+	}
+
 	hid := nt.LayerByName("Hidden").(axon.AxonLayer).AsAxon()
 	hid.Act.Gbar.I = ss.HiddenGbarI
 	hid.Act.Dt.GeTau = ss.HiddenGeTau
 	hid.Act.Dt.GiTau = ss.HiddenGiTau
+	hid.Act.KNa.On = ss.KNaAdapt
 	hid.Act.Update()
 	inh := nt.LayerByName("Inhib").(axon.AxonLayer).AsAxon()
 	inh.Act.Gbar.I = ss.InhibGbarI
@@ -484,16 +493,19 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	fb := inh.RcvPrjns.SendName("Hidden").(axon.AxonPrjn).AsAxon()
 	fb.WtScale.Rel = ss.FBinhibWtScale
 	hid.Inhib.Layer.On = ss.FFFBInhib
+	hid.Inhib.Layer.Gi = ss.FFFBGi
 	inh.Inhib.Layer.On = ss.FFFBInhib
+	inh.Inhib.Layer.Gi = ss.FFFBGi
 	fi := hid.RcvPrjns.SendName("Inhib").(axon.AxonPrjn).AsAxon()
-	fi.WtScale.Abs = ss.FmInhibWtScaleAbs
+	fi.WtScale.Abs = fminh
 	fi = inh.RcvPrjns.SendName("Inhib").(axon.AxonPrjn).AsAxon()
-	fi.WtScale.Abs = ss.FmInhibWtScaleAbs
+	fi.WtScale.Abs = fminh
 	if nt == ss.NetBidir {
 		hid = nt.LayerByName("Hidden2").(axon.AxonLayer).AsAxon()
 		hid.Act.Gbar.I = ss.HiddenGbarI
 		hid.Act.Dt.GeTau = ss.HiddenGeTau
 		hid.Act.Dt.GiTau = ss.HiddenGiTau
+		hid.Act.KNa.On = ss.KNaAdapt
 		hid.Act.Update()
 		inh = nt.LayerByName("Inhib2").(axon.AxonLayer).AsAxon()
 		inh.Act.Gbar.I = ss.InhibGbarI
@@ -501,11 +513,13 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 		inh.Act.Dt.GiTau = ss.InhibGiTau
 		inh.Act.Update()
 		hid.Inhib.Layer.On = ss.FFFBInhib
+		hid.Inhib.Layer.Gi = ss.FFFBGi
 		inh.Inhib.Layer.On = ss.FFFBInhib
+		inh.Inhib.Layer.Gi = ss.FFFBGi
 		fi = hid.RcvPrjns.SendName("Inhib2").(axon.AxonPrjn).AsAxon()
-		fi.WtScale.Abs = ss.FmInhibWtScaleAbs
+		fi.WtScale.Abs = fminh
 		fi = inh.RcvPrjns.SendName("Inhib2").(axon.AxonPrjn).AsAxon()
-		fi.WtScale.Abs = ss.FmInhibWtScaleAbs
+		fi.WtScale.Abs = fminh
 		ff = inh.RcvPrjns.SendName("Hidden").(axon.AxonPrjn).AsAxon()
 		ff.WtScale.Rel = ffinhsc
 		fb = inh.RcvPrjns.SendName("Hidden2").(axon.AxonPrjn).AsAxon()

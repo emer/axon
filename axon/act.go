@@ -48,9 +48,9 @@ func (ac *ActParams) Defaults() {
 	ac.Noise.Defaults()
 	ac.VmRange.Max = 2.0
 	ac.KNa.Defaults()
-	ac.KNa.On = true
+	ac.KNa.On = false
 	ac.NMDA.Defaults()
-	ac.NMDA.Gbar = 0.01 // a bit weaker by default
+	ac.NMDA.Gbar = 0.02
 	ac.GABAB.Defaults()
 	ac.Update()
 }
@@ -86,6 +86,10 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 		nrn.GgabaB -= decay * nrn.GgabaB
 		nrn.GABAB -= decay * nrn.GABAB
 		nrn.GABABx -= decay * nrn.GABABx
+		if decay == 1 {
+			nrn.ISI = -1
+			nrn.ISIAvg = -1
+		}
 	}
 	nrn.ActDel = 0
 	nrn.Inet = 0
@@ -214,7 +218,7 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 // ActFmG computes Spike from Vm and ISI-based activation
 func (ac *ActParams) ActFmG(nrn *Neuron) {
 	if ac.HasHardClamp(nrn) {
-		ac.HardClamp(nrn) // todo: spiking..
+		ac.HardClamp(nrn)
 		return
 	}
 	var thr float32
@@ -250,6 +254,7 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.ActDel = nwAct - nrn.Act
 	nrn.Act = nwAct
+	nrn.ActLrn = nrn.Act
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk = nrn.GknaFast + nrn.GknaMed + nrn.GknaSlow
@@ -295,6 +300,7 @@ func (ac *ActParams) HardClamp(nrn *Neuron) {
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.ActDel = nwAct - nrn.Act
 	nrn.Act = nwAct
+	nrn.ActLrn = nrn.Act
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 	}

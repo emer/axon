@@ -25,7 +25,6 @@ import (
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
@@ -74,8 +73,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.8",
-					"Layer.Act.Gbar.L":     "0.1", // set explictly, new default, a bit better vs 0.2
+					"Layer.Inhib.Layer.Gi":  "0.8",
+					"Layer.Act.Init.Decay":  "0.0",  // 1 is worse..
+					"Layer.Act.Gbar.L":      "0.1",  // 0.1 > 0.2
+					"Layer.Act.Gbar.E":      "1.0",  // 1.2 maybe better % cor but not cosdiff
+					"Layer.Act.NMDA.Gbar":   "0.04", // .04 > .02
+					"Layer.Act.NMDA.Tau":    "100",  // 50 no diff
+					"Layer.Act.GABAB.Gbar":  "0.2",
+					"Layer.Act.GABAB.Gbase": "0.1",
+					"Layer.Act.GABAB.Smult": "10", // 10 > 15
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -83,13 +89,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.4",
+					"Layer.Inhib.Layer.Gi": "0.8",
+					"Layer.Act.Init.Decay": "1", // no diff??
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
 			{Sel: "Sim", Desc: "best params always finish in this time",
 				Params: params.Params{
-					"Sim.MaxEpcs": "50",
+					"Sim.MaxEpcs": "200",
 				}},
 		},
 	}},
@@ -222,10 +229,11 @@ func (ss *Sim) New() {
 		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
 	}
 	ss.ViewOn = true
-	ss.TrainUpdt = axon.AlphaCycle
+	ss.TrainUpdt = axon.Cycle // axon.AlphaCycle
 	ss.TestUpdt = axon.Cycle
-	ss.TestInterval = 5
-	ss.LayStatNms = []string{"Hidden1", "Hidden2", "Output"}
+	ss.TestInterval = 500
+	ss.LayStatNms = []string{"Hidden1", "Output"}
+	ss.Time.CycPerQtr = 25 // 40 better?  30 worse..
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -249,7 +257,7 @@ func (ss *Sim) ConfigEnv() {
 		ss.MaxRuns = 10
 	}
 	if ss.MaxEpcs == 0 { // allow user override
-		ss.MaxEpcs = 50
+		ss.MaxEpcs = 200
 		ss.NZeroStop = 5
 	}
 
@@ -278,21 +286,21 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "RA25")
 	inp := net.AddLayer2D("Input", 5, 5, emer.Input)
-	hid1 := net.AddLayer2D("Hidden1", 7, 7, emer.Hidden)
-	hid2 := net.AddLayer4D("Hidden2", 2, 4, 3, 2, emer.Hidden)
+	hid1 := net.AddLayer2D("Hidden1", 10, 10, emer.Hidden)
+	// hid2 := net.AddLayer2D("Hidden2", 10, 10, emer.Hidden)
 	out := net.AddLayer2D("Output", 5, 5, emer.Target)
 
 	// use this to position layers relative to each other
 	// default is Above, YAlign = Front, XAlign = Center
-	hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden1", YAlign: relpos.Front, Space: 2})
+	// hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden1", YAlign: relpos.Front, Space: 2})
 
 	// note: see emergent/prjn module for all the options on how to connect
 	// NewFull returns a new prjn.Full connectivity pattern
 	full := prjn.NewFull()
 
 	net.ConnectLayers(inp, hid1, full, emer.Forward)
-	net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid2, out, full)
+	// net.BidirConnectLayers(hid1, hid2, full)
+	net.BidirConnectLayers(hid1, out, full)
 
 	// note: can set these to do parallel threaded computation across multiple cpus
 	// not worth it for this small of a model, but definitely helps for larger ones
@@ -900,9 +908,9 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Epoch", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("SSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("AvgSSE", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("PctErr", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1) // default plot
-	plt.SetColParams("PctCor", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1) // default plot
-	plt.SetColParams("CosDiff", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1) // default plot
+	plt.SetColParams("PctCor", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)  // default plot
+	plt.SetColParams("CosDiff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.LayStatNms {

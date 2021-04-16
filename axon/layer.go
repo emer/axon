@@ -1127,6 +1127,8 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 			if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 				nrn.Ext = nrn.Targ
 				nrn.SetFlag(NeurHasExt)
+				nrn.ISI = -1
+				nrn.ISIAvg = -1
 			}
 		case 3:
 			nrn.ActP = nrn.Act
