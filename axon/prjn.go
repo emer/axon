@@ -32,8 +32,8 @@ type Prjn struct {
 	Syns    []Synapse      `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale float32         `desc:"scaling factor for integrating synaptic input conductances (G's) -- computed in AlphaCycInit, incorporates running-average activity levels"`
-	Gidx   ringidx.FIx     `desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	GScale float32         `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's) -- computed in AlphaCycInit, incorporates running-average activity levels"`
+	Gidx   ringidx.FIx     `inactive:"+" desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
 	Gbuf   []float32       `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 	WbRecv []WtBalRecvPrjn `desc:"weight balance state variables for this projection, one per recv neuron"`
 }

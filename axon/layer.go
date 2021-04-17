@@ -52,6 +52,8 @@ func (ly *Layer) Defaults() {
 	ly.Inhib.Defaults()
 	ly.Learn.Defaults()
 	ly.Inhib.Layer.On = true
+	ly.Inhib.Layer.Gi = 1.0
+	ly.Inhib.Pool.Gi = 1.0
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
@@ -1062,6 +1064,9 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.AvgsFmAct(nrn)
+		if ltime.Quarter < 3 {
+			nrn.ActM += ly.Act.Dt.MDt * (nrn.AvgS - nrn.ActM)
+		}
 
 		// note: this is here because it depends on Gi
 		nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
@@ -1123,7 +1128,8 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 		case 1:
 			nrn.ActQ2 = nrn.Act
 		case 2:
-			nrn.ActM = nrn.Act
+			// ActM  now set in ActFmG
+			// nrn.ActM = nrn.AvgM           // using integrated average to this point
 			if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 				nrn.Ext = nrn.Targ
 				nrn.SetFlag(NeurHasExt)

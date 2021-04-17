@@ -67,36 +67,50 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "true",
-					"Prjn.Learn.Momentum.On": "true",
-					"Prjn.Learn.WtBal.On":    "false",
+					"Prjn.Learn.Norm.On":     "false", // on = much worse!
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.WtBal.On":    "true", // on = much better!
+					"Prjn.Com.Delay":         "2",    // 1 == 2 = 3
+					"Prjn.Learn.Lrate":       "0.04",
+					"Prjn.Learn.WtSig.Gain":  "6",
+					"Prjn.Learn.XCal.DThr":   "0.0001", // better than neigh
+					"Prjn.Learn.XCal.DRev":   "0.1",    // "
 				}},
 			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "0.8",
-					"Layer.Act.Init.Decay":  "0.0",  // 1 is worse..
-					"Layer.Act.Gbar.L":      "0.1",  // 0.1 > 0.2
-					"Layer.Act.Gbar.E":      "1.0",  // 1.2 maybe better % cor but not cosdiff
-					"Layer.Act.NMDA.Gbar":   "0.04", // .04 > .02
-					"Layer.Act.NMDA.Tau":    "100",  // 50 no diff
-					"Layer.Act.GABAB.Gbar":  "0.2",
-					"Layer.Act.GABAB.Gbase": "0.1",
-					"Layer.Act.GABAB.Smult": "10", // 10 > 15
+					"Layer.Inhib.Layer.Gi":     "1.2",  // 1.4 > 1.5 > 1.2 > lower but 1.4 is TOO sparse!
+					"Layer.Act.Init.Decay":     "0.5",  // 0.5 > 1 > 0
+					"Layer.Act.Gbar.L":         "0.2",  // 0.2 > 0.1
+					"Layer.Act.Gbar.E":         "1.0",  // 1.2 maybe better % cor but not cosdiff
+					"Layer.Act.NMDA.Gbar":      "0.03", // 0.03 > .04 > .02
+					"Layer.Act.NMDA.Tau":       "100",  // 50 no diff
+					"Layer.Act.GABAB.Gbar":     "0.2",  // .1 == .2 pretty much
+					"Layer.Act.GABAB.Gbase":    "0.2",  // .1 == .2
+					"Layer.Act.GABAB.Smult":    "10",   // 10 > 8 > 15
+					"Layer.Learn.ActAvg.SSTau": "4",    // 4 > 2 for 50 cyc qtr
+					"Layer.Learn.ActAvg.STau":  "2",    //
+					"Layer.Learn.ActAvg.MTau":  "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
+					"Layer.Act.Dt.MTau":        "20",   // for 50 cyc qtr, 20 > 10
+					"Layer.Act.KNa.On":         "true", // on > off
+					"Layer.Act.Noise.Dist":     "Gaussian",
+					"Layer.Act.Noise.Var":      "0.01", // 0.01 > 0.005 > 0.02
+					"Layer.Act.Noise.Type":     "GeNoise",
+					"Layer.Act.Clamp.Rate":     "100",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.2",
+					"Prjn.WtScale.Rel": "0.3", // 0.3 > 0.2 > 0.1
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8",
-					"Layer.Act.Init.Decay": "1", // no diff??
+					"Layer.Inhib.Layer.Gi": "0.6", // 0.6 > 0.7 > 0.8
+					"Layer.Act.Init.Decay": "1",   // 1 >> 0.5 >> 0
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
 			{Sel: "Sim", Desc: "best params always finish in this time",
 				Params: params.Params{
-					"Sim.MaxEpcs": "200",
+					"Sim.MaxEpcs": "100",
 				}},
 		},
 	}},
@@ -233,7 +247,8 @@ func (ss *Sim) New() {
 	ss.TestUpdt = axon.Cycle
 	ss.TestInterval = 500
 	ss.LayStatNms = []string{"Hidden1", "Output"}
-	ss.Time.CycPerQtr = 25 // 40 better?  30 worse..
+	ss.Time.Defaults()
+	ss.Time.CycPerQtr = 50 // 50 > 40 > 30 > 25..
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -254,10 +269,10 @@ func (ss *Sim) Config() {
 
 func (ss *Sim) ConfigEnv() {
 	if ss.MaxRuns == 0 { // allow user override
-		ss.MaxRuns = 10
+		ss.MaxRuns = 5
 	}
 	if ss.MaxEpcs == 0 { // allow user override
-		ss.MaxEpcs = 200
+		ss.MaxEpcs = 100
 		ss.NZeroStop = 5
 	}
 
@@ -493,6 +508,11 @@ func (ss *Sim) TrainTrial() {
 		}
 	}
 
+	// ly := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	// ly.SetType(emer.Compare)
+	// ss.ApplyInputs(&ss.TrainEnv)
+	// ss.AlphaCyc(false) // test
+	// ly.SetType(emer.Target)
 	ss.ApplyInputs(&ss.TrainEnv)
 	ss.AlphaCyc(true)   // train
 	ss.TrialStats(true) // accumulate

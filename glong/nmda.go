@@ -19,7 +19,7 @@ type NMDAParams struct {
 func (np *NMDAParams) Defaults() {
 	np.GeTot = 1
 	np.Tau = 100
-	np.Gbar = 0.02
+	np.Gbar = 0.03
 }
 
 // GFmV returns the NMDA conductance as a function of normalized membrane potential
