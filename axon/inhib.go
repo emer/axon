@@ -29,6 +29,8 @@ func (ip *InhibParams) Defaults() {
 	ip.Pool.Defaults()
 	ip.Self.Defaults()
 	ip.ActAvg.Defaults()
+	ip.Layer.Gi = 1.0
+	ip.Pool.Gi = 1.0
 }
 
 ///////////////////////////////////////////////////////////////////////
