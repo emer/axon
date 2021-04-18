@@ -45,7 +45,11 @@ func (ln *LearnNeurParams) InitActAvg(nrn *Neuron) {
 // AvgsFmAct updates the running averages based on current learning activation.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
-	ln.ActAvg.AvgsFmAct(nrn.ActLrn, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn)
+	// if ln.ActAvg.Spike {
+	ln.ActAvg.AvgsFmAct(ln.ActAvg.SpikeG*nrn.Spike, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn)
+	// } else {
+	// 	ln.ActAvg.AvgsFmAct(nrn.ActLrn, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn)
+	// }
 }
 
 // AvgLFmAct computes long-term average activation value, and learning factor, from current AvgM.
@@ -148,14 +152,20 @@ func (ls *LearnSynParams) WtFmDWt(wbInc, wbDec float32, dwt, wt, lwt *float32, s
 	*dwt = 0
 }
 
-// LrnActAvgParams has rate constants for averaging over activations at different time scales,
-// to produce the running average activation values that then drive learning in the XCAL learning rules
+// LrnActAvgParams has rate constants for averaging over activations
+// at different time scales, to produce the running average activation
+// values that then drive learning in the XCAL learning rules.
+// Is driven directly by spikes that increment running-average at super-short
+// timescale.  Time cycle of 50 msec quarters / theta window learning works
+// Cyc:50, SS:35 S:8, M:40 (best)
+// Cyc:25, SS:20, S:4, M:20
 type LrnActAvgParams struct {
-	SSTau float32 `def:"2,4,7"  min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking -- in general 4 is the largest value without starting to impair learning, but a value of 7 can be combined with m_in_s = 0 with somewhat worse results"`
-	STau  float32 `def:"2" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the short time-scale AvgS value from the super-short AvgSS value (cascade mode) -- AvgS represents the plus phase learning signal that reflects the most recent past information"`
-	MTau  float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome) -- the default value of 10 generally cannot be exceeded without impairing learning"`
-	LrnM  float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron AvgSLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
-	Init  float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
+	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives AvgSS value"`
+	SSTau  float32 `def:"35"  min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking -- in general 4 is the largest value without starting to impair learning, but a value of 7 can be combined with m_in_s = 0 with somewhat worse results"`
+	STau   float32 `def:"8" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the short time-scale AvgS value from the super-short AvgSS value (cascade mode) -- AvgS represents the plus phase learning signal that reflects the most recent past information"`
+	MTau   float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome) -- the default value of 10 generally cannot be exceeded without impairing learning"`
+	LrnM   float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron AvgSLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
+	Init   float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
 
 	SSDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	SDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -164,8 +174,8 @@ type LrnActAvgParams struct {
 }
 
 // AvgsFmAct computes averages based on current act
-func (aa *LrnActAvgParams) AvgsFmAct(ruAct float32, avgSS, avgS, avgM, avgSLrn *float32) {
-	*avgSS += aa.SSDt * (ruAct - *avgSS)
+func (aa *LrnActAvgParams) AvgsFmAct(act float32, avgSS, avgS, avgM, avgSLrn *float32) {
+	*avgSS += aa.SSDt * (act - *avgSS)
 	*avgS += aa.SDt * (*avgSS - *avgS)
 	*avgM += aa.MDt * (*avgS - *avgM)
 
@@ -180,9 +190,10 @@ func (aa *LrnActAvgParams) Update() {
 }
 
 func (aa *LrnActAvgParams) Defaults() {
-	aa.SSTau = 4.0 // 2.0 for 25 cycle qtr
-	aa.STau = 2.0
-	aa.MTau = 40.0 // 35 for 25 cycle qtr
+	aa.SpikeG = 8
+	aa.SSTau = 35 // 20 for 25 cycle qtr
+	aa.STau = 8
+	aa.MTau = 40 // 20 for 25 cycle qtr
 	aa.LrnM = 0.1
 	aa.Init = 0.15
 	aa.Update()

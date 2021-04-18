@@ -622,11 +622,13 @@ func (pj *Prjn) WtFmDWt() {
 			ri := pj.SConIdx[si]
 			wb := &pj.WbRecv[ri]
 			pj.Learn.WtFmDWt(wb.Inc, wb.Dec, &sy.DWt, &sy.Wt, &sy.LWt, sy.Scale)
+			pj.Com.Fail(&sy.Wt)
 		}
 	} else {
 		for si := range pj.Syns {
 			sy := &pj.Syns[si]
 			pj.Learn.WtFmDWt(1, 1, &sy.DWt, &sy.Wt, &sy.LWt, sy.Scale)
+			pj.Com.Fail(&sy.Wt)
 		}
 	}
 }
@@ -654,8 +656,12 @@ func (pj *Prjn) WtBalFmWt() {
 		for ci := range rsidxs {
 			rsi := rsidxs[ci]
 			sy := &pj.Syns[rsi]
-			if sy.Wt >= pj.Learn.WtBal.AvgThr {
-				sumWt += sy.Wt
+			wt := sy.Wt
+			if wt == 0 { // if turned off
+				wt = sy.Scale * pj.Learn.WtSig.SigFmLinWt(sy.LWt)
+			}
+			if wt >= pj.Learn.WtBal.AvgThr {
+				sumWt += wt
 				sumN++
 			}
 		}

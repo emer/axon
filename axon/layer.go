@@ -1268,43 +1268,48 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 
 // note: use float64 for stats as that is best for logging
 
-// MSE returns the sum-squared-error and mean-squared-error
-// over the layer, in terms of ActP - ActM (valid even on non-target layers FWIW).
-// Uses the given tolerance per-unit to count an error at all
-// (e.g., .5 = activity just has to be on the right side of .5).
-func (ly *Layer) MSE(tol float32) (sse, mse float64) {
+// PctUnitErr returns the proportion of units where the thresholded value of
+// Targ (Target or Compare types) or ActP does not match that of ActM.
+// If Act > ly.Act.Clamp.ErrThr, effective activity = 1 else 0
+// robust to noisy activations.
+func (ly *Layer) PctUnitErr() float64 {
 	nn := len(ly.Neurons)
 	if nn == 0 {
-		return 0, 0
+		return 0
 	}
-	sse = 0.0
+	thr := ly.Act.Clamp.ErrThr
+	wrong := 0
+	n := 0
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		var d float32
-		if ly.Typ == emer.Compare {
-			d = nrn.Targ - nrn.ActM
+		trg := false
+		if ly.Typ == emer.Compare || ly.Typ == emer.Target {
+			if nrn.Targ > thr {
+				trg = true
+			}
 		} else {
-			d = nrn.ActP - nrn.ActM
+			if nrn.ActP > thr {
+				trg = true
+			}
 		}
-		if math32.Abs(d) < tol {
-			continue
+		if nrn.ActM > thr {
+			if !trg {
+				wrong++
+			}
+		} else {
+			if trg {
+				wrong++
+			}
 		}
-		sse += float64(d * d)
+		n++
 	}
-	return sse, sse / float64(nn)
-}
-
-// SSE returns the sum-squared-error over the layer, in terms of ActP - ActM
-// (valid even on non-target layers FWIW).
-// Uses the given tolerance per-unit to count an error at all
-// (e.g., .5 = activity just has to be on the right side of .5).
-// Use this in Python which only allows single return values.
-func (ly *Layer) SSE(tol float32) float64 {
-	sse, _ := ly.MSE(tol)
-	return sse
+	if n > 0 {
+		return float64(wrong) / float64(n)
+	}
+	return 0
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -31,7 +31,7 @@ func NewTime() *Time {
 // Defaults sets default values
 func (tm *Time) Defaults() {
 	tm.TimePerCyc = 0.001
-	tm.CycPerQtr = 25
+	tm.CycPerQtr = 50
 }
 
 // Reset resets the counters all back to zero

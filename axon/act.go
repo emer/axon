@@ -496,6 +496,7 @@ func (an *ActNoiseParams) Defaults() {
 
 // ClampParams are for specifying how external inputs are clamped onto network activation values
 type ClampParams struct {
+	ErrThr  float32 `def:"0.4" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
 	Hard    bool    `def:"true" desc:"whether to hard clamp inputs where spiking rate is set to Poisson noise with external input * Rate factor"`
 	Rate    float32 `desc:"maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
 	Gain    float32 `viewif:"!Hard" def:"0.02:0.5" desc:"soft clamp gain factor (Ge += Gain * Ext)"`
@@ -507,6 +508,7 @@ func (cp *ClampParams) Update() {
 }
 
 func (cp *ClampParams) Defaults() {
+	cp.ErrThr = 0.4 // seems best but .5 also fine
 	cp.Hard = true
 	cp.Rate = 100
 	cp.Gain = 0.2
@@ -554,6 +556,15 @@ func (sc *SynComParams) WtFail(wt float32) bool {
 		return false
 	}
 	return erand.BoolP(fp)
+}
+
+// Fail updates failure status of given weight
+func (sc *SynComParams) Fail(wt *float32) {
+	if sc.PFail > 0 {
+		if sc.WtFail(*wt) {
+			*wt = 0
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
