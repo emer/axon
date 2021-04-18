@@ -17,8 +17,8 @@ clean:
 	$(GOCLEAN)
 	
 # NOTE: MUST update version number here prior to running 'make release'
-VERS=v1.1.32
-PACKAGE=leabra
+VERS=v1.2.1
+PACKAGE=axon
 GIT_COMMIT=`git rev-parse --short HEAD`
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
 VERS_FILE=version.go
