@@ -42,15 +42,15 @@ func (ac *ActParams) Defaults() {
 	ac.Spike.Defaults()
 	ac.Init.Defaults()
 	ac.Dt.Defaults()
-	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0)
+	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0) // gbar l = 0.2 > 0.1
 	ac.Erev.SetAll(1.0, 0.3, 0.1, 0.1) // K = hyperpolarized -90mv
 	ac.Clamp.Defaults()
 	ac.Noise.Defaults()
 	ac.VmRange.Max = 2.0
 	ac.KNa.Defaults()
-	ac.KNa.On = true
+	ac.KNa.On = true // generally beneficial
 	ac.NMDA.Defaults()
-	ac.NMDA.Gbar = 0.03
+	ac.NMDA.Gbar = 0.03 // 0.3 best.
 	ac.GABAB.Defaults()
 	ac.Update()
 }
@@ -314,25 +314,25 @@ func (ac *ActParams) HardClamp(nrn *Neuron) {
 // the AdEx adaptive exponential function (adapt is KNaAdapt)
 type SpikeParams struct {
 	Thr      float32 `def:"0.5" desc:"threshold value Theta (Q) for firing output activation (.5 is more accurate value based on AdEx biological parameters and normalization"`
-	VmR      float32 `def:"0.3,0,0.15" desc:"post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.30 is apropriate biologically-based value for AdEx (Brette & Gurstner, 2005) parameters"`
+	VmR      float32 `def:"0.3" desc:"post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.3 is apropriate biologically-based value for AdEx (Brette & Gurstner, 2005) parameters"`
 	Tr       int     `def:"3" desc:"post-spiking explicit refractory period, in cycles -- prevents Vm updating for this number of cycles post firing"`
-	MaxHz    float32 `def:"180" min:"1" desc:"for translating spiking interval (rate) into rate-code activation equivalent (and vice-versa, for clamped layers), what is the maximum firing rate associated with a maximum activation value (max act is typically 1.0 -- depends on act_range)"`
-	RateTau  float32 `def:"5" min:"1" desc:"constant for integrating the spiking interval in estimating spiking rate"`
-	RateDt   float32 `view:"-" desc:"rate = 1 / tau"`
 	Exp      bool    `def:"true" desc:"if true, turn on exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpSlope float32 `viewif:"Exp" def:"0.02" desc:"slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpThr   float32 `viewif:"Exp" def:"1" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
+	MaxHz    float32 `def:"180" min:"1" desc:"for translating spiking interval (rate) into rate-code activation equivalent (and vice-versa, for clamped layers), what is the maximum firing rate associated with a maximum activation value (max act is typically 1.0 -- depends on act_range)"`
+	RateTau  float32 `def:"5" min:"1" desc:"constant for integrating the spiking interval in estimating spiking rate"`
+	RateDt   float32 `view:"-" desc:"rate = 1 / tau"`
 }
 
 func (sk *SpikeParams) Defaults() {
 	sk.Thr = 0.5
 	sk.VmR = 0.3
 	sk.Tr = 3
-	sk.MaxHz = 180
-	sk.RateTau = 5
 	sk.Exp = true
 	sk.ExpSlope = 0.02
 	sk.ExpThr = 1.0
+	sk.MaxHz = 180
+	sk.RateTau = 5
 	sk.Update()
 }
 
@@ -376,7 +376,7 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 // Initialized at start of trial with Init_Acts or DecayState.
 type ActInitParams struct {
 	Decay float32 `def:"0,1" max:"1" min:"0" desc:"proportion to decay activation state toward initial values at start of every trial"`
-	Vm    float32 `def:"0.3" desc:"initial membrane potential -- see e_rev.l for the resting potential (typically .3)"`
+	Vm    float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
 	Act   float32 `def:"0" desc:"initial activation value -- typically 0"`
 	Ge    float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
 	Gi    float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
@@ -496,9 +496,9 @@ func (an *ActNoiseParams) Defaults() {
 
 // ClampParams are for specifying how external inputs are clamped onto network activation values
 type ClampParams struct {
-	ErrThr  float32 `def:"0.4" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
+	ErrThr  float32 `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
 	Hard    bool    `def:"true" desc:"whether to hard clamp inputs where spiking rate is set to Poisson noise with external input * Rate factor"`
-	Rate    float32 `desc:"maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
+	Rate    float32 `def:"180" desc:"maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
 	Gain    float32 `viewif:"!Hard" def:"0.02:0.5" desc:"soft clamp gain factor (Ge += Gain * Ext)"`
 	Avg     bool    `viewif:"!Hard" desc:"compute soft clamp as the average of current and target netins, not the sum -- prevents some of the main effect problems associated with adding external inputs"`
 	AvgGain float32 `viewif:"!Hard && Avg" def:"0.2" desc:"gain factor for averaging the Ge -- clamp value Ext contributes with AvgGain and current Ge as (1-AvgGain)"`
@@ -508,9 +508,9 @@ func (cp *ClampParams) Update() {
 }
 
 func (cp *ClampParams) Defaults() {
-	cp.ErrThr = 0.4 // seems best but .5 also fine
+	cp.ErrThr = 0.5
 	cp.Hard = true
-	cp.Rate = 100
+	cp.Rate = 180
 	cp.Gain = 0.2
 	cp.Avg = false
 	cp.AvgGain = 0.2

@@ -15,7 +15,7 @@ type GABABParams struct {
 	DecayTau float32 `def:"50" desc:"decay time for bi-exponential time dynamics of GABA-B"`
 	Gbar     float32 `def:"0.2" desc:"overall strength multiplier of GABA-B current"`
 	Gbase    float32 `def:"0.2" desc:"baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)"`
-	Smult    float32 `def:"10" desc:"multiplier for converting Gi from FFFB to GABA spikes"`
+	GiSpike  float32 `def:"10" desc:"multiplier for converting Gi to equivalent GABA spikes"`
 	MaxTime  float32 `inactive:"+" desc:"time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau"`
 	TauFact  float32 `view:"-" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
 }
@@ -25,7 +25,7 @@ func (gp *GABABParams) Defaults() {
 	gp.DecayTau = 50
 	gp.Gbar = 0.2
 	gp.Gbase = 0.2
-	gp.Smult = 10
+	gp.GiSpike = 10
 	gp.Update()
 }
 
@@ -43,7 +43,7 @@ func (gp *GABABParams) GFmV(v float32) float32 {
 // GFmS returns the GABA-B conductance as a function of GABA spiking rate,
 // based on normalized spiking factor (i.e., Gi from FFFB etc)
 func (gp *GABABParams) GFmS(s float32) float32 {
-	ss := s * gp.Smult // convert to spikes
+	ss := s * gp.GiSpike // convert to spikes
 	return 1 / (1 + math32.Exp(-(ss-7.1)/1.4))
 }
 
