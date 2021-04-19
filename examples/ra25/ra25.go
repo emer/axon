@@ -86,17 +86,17 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Tau":        "100",  // 50 no diff
 					"Layer.Act.GABAB.Gbar":      "0.2",  // .1 == .2 pretty much
 					"Layer.Act.GABAB.Gbase":     "0.2",  // .1 == .2
-					"Layer.Act.GABAB.Smult":     "10",   // 10 > 8 > 15
+					"Layer.Act.GABAB.GiSpike":   "10",   // 10 > 8 > 15
 					"Layer.Learn.ActAvg.SpikeG": "8",
-					"Layer.Learn.ActAvg.SSTau":  "35",   // 4 > 2 for 50 cyc qtr
-					"Layer.Learn.ActAvg.STau":   "8",    //
+					"Layer.Learn.ActAvg.SSTau":  "40",   // 4 > 2 for 50 cyc qtr
+					"Layer.Learn.ActAvg.STau":   "10",   //
 					"Layer.Learn.ActAvg.MTau":   "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
 					"Layer.Act.Dt.MTau":         "20",   // for 50 cyc qtr, 20 > 10
 					"Layer.Act.KNa.On":          "true", // on > off
 					"Layer.Act.Noise.Dist":      "Gaussian",
 					"Layer.Act.Noise.Var":       "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":      "NoNoise", // now, no noise is better
-					"Layer.Act.Clamp.Rate":      "100",
+					"Layer.Act.Clamp.Rate":      "120",     // 180 default, 120 best here
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
