@@ -127,6 +127,9 @@ func (ls *LearnSynParams) BCMdWt(suAvgSLrn, ruAvgSLrn, ruAvgL float32) float32 {
 // weight and lwt is the linear weight value
 func (ls *LearnSynParams) WtFmDWt(wbInc, wbDec float32, dwt, wt, lwt *float32, scale float32) {
 	if *dwt == 0 {
+		if *wt == 0 { // restore failed wts
+			*wt = scale * ls.WtSig.SigFmLinWt(*lwt)
+		}
 		return
 	}
 	if ls.WtSig.SoftBound {
