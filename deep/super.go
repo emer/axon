@@ -211,7 +211,7 @@ func (ly *SuperLayer) SendCtxtGe(ltime *axon.Time) {
 			continue
 		}
 		snr := &ly.SuperNeurs[ni]
-		if snr.Burst > ly.Act.OptThresh.Send {
+		if snr.Burst > 0.1 {
 			for _, sp := range ly.SndPrjns {
 				if sp.IsOff() {
 					continue

@@ -591,6 +591,8 @@ func (ly *Layer) InitExt() {
 		nrn := &ly.Neurons[ni]
 		nrn.Ext = 0
 		nrn.Targ = 0
+		nrn.ISI = -1
+		nrn.ISIAvg = -1
 		nrn.ClearMask(msk)
 	}
 }
@@ -981,6 +983,7 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 			continue
 		}
 
+		// important: add other sources of GeRaw here in NMDA driver
 		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, nrn.NMDASyn)
 		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib

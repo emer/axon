@@ -19,6 +19,7 @@ import (
 type CTLayer struct {
 	TopoInhibLayer               // access as .TopoInhibLayer
 	BurstQtr       axon.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines, 32 bit versions."`
+	CtxtGeGain     float32       `desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
 	CtxtGes        []float32     `desc:"slice of context (temporally delayed) excitatory conducances."`
 }
 
@@ -30,6 +31,7 @@ func (ly *CTLayer) Defaults() {
 	ly.Inhib.ActAvg.UseFirst = false // first activations can be very far off
 	ly.BurstQtr.Set(int(axon.Q4))
 	ly.Typ = CT
+	ly.CtxtGeGain = 0.5
 }
 
 func (ly *CTLayer) Class() string {
@@ -61,9 +63,18 @@ func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		geRaw := nrn.GeRaw + ly.CtxtGes[ni]
-		ly.Act.GeFmRaw(nrn, geRaw)
+
+		geRaw := nrn.GeRaw + ly.CtxtGeGain*ly.CtxtGes[ni]
+
+		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, geRaw, nrn.NMDASyn)
+		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
+
+		// note: each step broken out here so other variants can add extra terms to Raw
+		ly.Act.GeFmRaw(nrn, geRaw+nrn.Gnmda)
+		nrn.GeRaw = 0
 		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
+		nrn.GiRaw = 0
 	}
 }
 
@@ -80,7 +91,7 @@ func (ly *CTLayer) SendCtxtGe(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		if nrn.Act > ly.Act.OptThresh.Send {
+		if nrn.Act > 0.1 {
 			for _, sp := range ly.SndPrjns {
 				if sp.IsOff() {
 					continue

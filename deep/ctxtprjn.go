@@ -79,8 +79,8 @@ func (pj *CTCtxtPrjn) Build() error {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
-func (pj *CTCtxtPrjn) InitGInc() {
-	pj.Prjn.InitGInc()
+func (pj *CTCtxtPrjn) InitGbuf() {
+	pj.Prjn.InitGbuf()
 	for ri := range pj.CtxtGeInc {
 		pj.CtxtGeInc[ri] = 0
 	}
@@ -89,8 +89,8 @@ func (pj *CTCtxtPrjn) InitGInc() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// SendGDelta: disabled for this type
-func (pj *CTCtxtPrjn) SendGDelta(si int, delta float32) {
+// SendSpike: disabled for this type
+func (pj *CTCtxtPrjn) SendSpike(si int) {
 }
 
 // RecvGInc: disabled for this type

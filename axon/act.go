@@ -32,7 +32,7 @@ type ActParams struct {
 	Erev    chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
 	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
 	Noise   ActNoiseParams    `view:"inline" desc:"how, where, when, and how much noise to add"`
-	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0, 2.0] by default"`
+	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
 	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
 	NMDA    glong.NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
 	GABAB   glong.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
@@ -42,11 +42,11 @@ func (ac *ActParams) Defaults() {
 	ac.Spike.Defaults()
 	ac.Init.Defaults()
 	ac.Dt.Defaults()
-	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0) // gbar l = 0.2 > 0.1
-	ac.Erev.SetAll(1.0, 0.3, 0.1, 0.1) // K = hyperpolarized -90mv
+	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0) // E, L, I, K: gbar l = 0.2 > 0.1
+	ac.Erev.SetAll(1.0, 0.3, 0.1, 0.1) // E, L, I, K: K = hyperpolarized -90mv
 	ac.Clamp.Defaults()
 	ac.Noise.Defaults()
-	ac.VmRange.Max = 2.0
+	ac.VmRange.Set(0.1, 1.0)
 	ac.KNa.Defaults()
 	ac.KNa.On = true // generally beneficial
 	ac.NMDA.Defaults()
@@ -227,7 +227,7 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	} else {
 		thr = ac.Spike.Thr
 	}
-	if nrn.Vm > thr {
+	if nrn.Vm >= thr {
 		nrn.Spike = 1
 		nrn.Vm = ac.Spike.VmR
 		nrn.Inet = 0

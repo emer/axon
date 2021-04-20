@@ -65,17 +65,19 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "true",
-					"Prjn.Learn.Momentum.On": "true",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.Momentum.On": "false",
 					"Prjn.Learn.WtBal.On":    "true",
+					"Prjn.Learn.Lrate":       "0.04",
 				}},
-			{Sel: "Layer", Desc: "using default 1.8 inhib for hidden layers",
+			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "1.8",
+					"Layer.Inhib.Layer.Gi":     "1.0",
 					"Layer.Learn.AvgL.Gain":    "1.5",  // key to lower relative to 2.5
-					"Layer.Act.Gbar.L":         "0.1",  // lower leak = better
+					"Layer.Act.Gbar.L":         "0.2",  // lower leak = better
 					"Layer.Inhib.ActAvg.Fixed": "true", // simpler to have everything fixed, for replicability
 					"Layer.Act.Init.Decay":     "0",    // essential to have all layers no decay
+					"Layer.Act.Clamp.Rate":     "150",
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{
@@ -87,7 +89,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
-					"Layer.TRC.DriveScale": "0.8", // using .8 for localist layer
+					"Layer.TRC.DriveScale": "0.3", // using .8 for localist layer
 				}},
 			{Sel: "CTCtxtPrjn", Desc: "no weight balance on CT context prjns -- makes a diff!",
 				Params: params.Params{
@@ -99,42 +101,26 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Input", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "2.0",
+					"Layer.Act.Init.Decay":    "1",
+					"Layer.Inhib.Layer.Gi":    "1.0",
 					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Act.GABAB.Gbar":    "0.1",
+					"Layer.Act.GABAB.GiSpike": "5",
+					"Layer.Act.NMDA.Gbar":     "0.1",
+				}},
+			{Sel: ".CT", Desc: "CT gain factor is key",
+				Params: params.Params{
+					"Layer.CtxtGeGain":     "0.3",
+					"Layer.Inhib.Layer.Gi": "1.1",
 				}},
 			{Sel: "#HiddenPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
 					"Prjn.WtScale.Rel": "0.05",
 				}},
-			{Sel: "#HiddenCTToHiddenCT", Desc: "testing",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "false",
-				}},
-		},
-	}},
-	{Name: "DefaultInhib", Desc: "output uses default inhib instead of lower", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "#Output", Desc: "go back to default",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.8",
-				}},
-		},
-	}},
-	{Name: "NoMomentum", Desc: "no momentum or normalization", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "no norm or momentum",
-				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "false",
-					"Prjn.Learn.Momentum.On": "false",
-				}},
-		},
-	}},
-	{Name: "WtBalOn", Desc: "try with weight bal on", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "weight bal on",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true",
-				}},
+			// {Sel: "#HiddenCTToHiddenCT", Desc: "testing",
+			// 	Params: params.Params{
+			// 		"Prjn.Learn.WtBal.On": "false",
+			// 	}},
 		},
 	}},
 }
@@ -315,7 +301,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	// good to check
 	net.ConnectCtxtToCT(hidct, hidct, full)
 	// net.LateralConnectLayer(hidct, full) // note: this does not work AT ALL -- essential to learn from t-1
-	net.ConnectCtxtToCT(in, hidct, full)
+	// net.ConnectCtxtToCT(in, hidct, full)
 
 	net.Defaults()
 	ss.SetParams("Network", ss.LogSetParams) // only set Network params
@@ -451,6 +437,11 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
 	fsenv := en.(*FSAEnv)
 	ns := fsenv.NNext.Values[0]
+	for ni := range in.Neurons {
+		inr := &in.Neurons[ni]
+		inr.ClearMask(clrmsk)
+		inr.SetMask(setmsk)
+	}
 	for i := 0; i < ns; i++ {
 		lbl := fsenv.NextLabels.Values[i]
 		li, ok := InputNameMap[lbl]
@@ -572,7 +563,7 @@ func (ss *Sim) TrialStats(accum bool) {
 			continue
 		}
 		tgn := &trg.Neurons[ni]
-		if tgn.Act > 0.5 {
+		if tgn.Ext > 0.5 {
 			if inn.ActM > 0.4 {
 				gotOne = true
 			}

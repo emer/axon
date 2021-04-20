@@ -215,8 +215,16 @@ func (ly *TRCLayer) SetDriverNeuron(tni int, drvGe, drvInhib float32) {
 		return
 	}
 	geRaw := (1-drvInhib)*nrn.GeRaw + drvGe
-	ly.Act.GeFmRaw(nrn, geRaw)
+
+	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, geRaw, nrn.NMDASyn)
+	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
+
+	// note: each step broken out here so other variants can add extra terms to Raw
+	ly.Act.GeFmRaw(nrn, geRaw+nrn.Gnmda)
+	nrn.GeRaw = 0
 	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
+	nrn.GiRaw = 0
 }
 
 // SetDriverActs sets the driver activations, integrating across all the driver layers

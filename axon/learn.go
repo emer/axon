@@ -511,7 +511,7 @@ func (dn *DWtNormParams) Update() {
 }
 
 func (dn *DWtNormParams) Defaults() {
-	dn.On = true
+	dn.On = false
 	dn.DecayTau = 1000
 	dn.LrComp = 0.15
 	dn.NormMin = 0.001
@@ -546,7 +546,7 @@ func (mp *MomentumParams) Update() {
 }
 
 func (mp *MomentumParams) Defaults() {
-	mp.On = true
+	mp.On = false
 	mp.MTau = 10
 	mp.LrComp = 0.1
 	mp.Update()
