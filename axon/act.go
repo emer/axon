@@ -195,7 +195,7 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 		// add spike current if relevant
 		if ac.Spike.Exp {
 			inet2 += ac.Gbar.L * ac.Spike.ExpSlope *
-				math32.Exp((vmEff-ac.Spike.Thr)/ac.Spike.ExpSlope)
+				mat32.FastExp((vmEff-ac.Spike.Thr)/ac.Spike.ExpSlope)
 		}
 		nwVm += ac.Dt.VmDt * inet2
 		nrn.Inet = inet2

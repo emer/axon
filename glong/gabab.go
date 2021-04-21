@@ -6,6 +6,7 @@ package glong
 
 import (
 	"github.com/chewxy/math32"
+	"github.com/goki/mat32"
 )
 
 // GABABParams control the GABAB dynamics in PFC Maint neurons,
@@ -37,14 +38,14 @@ func (gp *GABABParams) Update() {
 // GFmV returns the GABA-B conductance as a function of normalized membrane potential
 func (gp *GABABParams) GFmV(v float32) float32 {
 	vbio := v*100 - 100
-	return 1 / (1 + math32.Exp(0.1*((vbio+90)+10)))
+	return 1 / (1 + mat32.FastExp(0.1*((vbio+90)+10)))
 }
 
 // GFmS returns the GABA-B conductance as a function of GABA spiking rate,
 // based on normalized spiking factor (i.e., Gi from FFFB etc)
 func (gp *GABABParams) GFmS(s float32) float32 {
 	ss := s * gp.GiSpike // convert to spikes
-	return 1 / (1 + math32.Exp(-(ss-7.1)/1.4))
+	return 1 / (1 + mat32.FastExp(-(ss-7.1)/1.4))
 }
 
 // BiExp computes bi-exponential update, returns dG and dX deltas to add to g and x

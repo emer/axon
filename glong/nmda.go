@@ -4,9 +4,7 @@
 
 package glong
 
-import (
-	"github.com/chewxy/math32"
-)
+import "github.com/goki/mat32"
 
 // NMDAParams control the NMDA dynamics, based on Brunel & Wang (2001)
 // parameters.
@@ -25,7 +23,7 @@ func (np *NMDAParams) Defaults() {
 // GFmV returns the NMDA conductance as a function of normalized membrane potential
 func (np *NMDAParams) GFmV(v float32) float32 {
 	vbio := v*100 - 100
-	return 1 / (1 + 0.28*math32.Exp(-0.062*vbio))
+	return 1 / (1 + 0.28*mat32.FastExp(-0.062*vbio))
 }
 
 // NMDA returns the updated NMDA activation from current NMDA, GeRaw, and NMDASyn input

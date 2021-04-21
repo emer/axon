@@ -10,6 +10,7 @@ import (
 	"github.com/chewxy/math32"
 	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
+	"github.com/goki/mat32"
 )
 
 // CaParams control the calcium dynamics in STN neurons.
@@ -44,7 +45,7 @@ func (kc *CaParams) Defaults() {
 // KCaGFmCa returns the driving conductance for KCa channels based on given Ca level.
 // This equation comes from Gillies & Willshaw, 2006.
 func (kc *CaParams) KCaGFmCa(ca float32) float32 {
-	return 0.81 / (1 + math32.Exp(-(math32.Log(ca)+0.3))/0.46)
+	return 0.81 / (1 + mat32.FastExp(-(math32.Log(ca)+0.3))/0.46)
 }
 
 ///////////////////////////////////////////////////////////////////////////
