@@ -40,8 +40,8 @@ func (fb *Params) Defaults() {
 	fb.Update()
 }
 
-// FFInhib returns the feedforward inhibition value based on average and max excitatory conductance within
-// relevant scope
+// FFInhib returns the feedforward inhibition value based on average
+// and max excitatory conductance within relevant scope
 func (fb *Params) FFInhib(avgGe, maxGe float32) float32 {
 	ffNetin := avgGe + fb.MaxVsAvg*(maxGe-avgGe)
 	var ffi float32
@@ -65,7 +65,7 @@ func (fb *Params) FBUpdt(fbi *float32, newFbi float32) {
 // Inhib is full inhibition computation for given inhib state, which must have
 // the Ge and Act values updated to reflect the current Avg and Max of those
 // values in relevant inhibitory pool.
-func (fb *Params) Inhib(inh *Inhib) {
+func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 	if !fb.On {
 		inh.Zero()
 		return
@@ -77,6 +77,6 @@ func (fb *Params) Inhib(inh *Inhib) {
 	inh.FFi = ffi
 	fb.FBUpdt(&inh.FBi, fbi)
 
-	inh.Gi = fb.Gi * (ffi + inh.FBi)
+	inh.Gi = gimult * fb.Gi * (ffi + inh.FBi)
 	inh.GiOrig = inh.Gi
 }

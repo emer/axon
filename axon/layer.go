@@ -30,12 +30,14 @@ import (
 // axon.Layer has parameters for running a basic rate-coded Axon layer
 type Layer struct {
 	LayerStru
-	Act     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
-	Inhib   InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
-	Learn   LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
-	Neurons []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
-	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
-	CosDiff CosDiffStats    `desc:"cosine difference between ActM, ActP stats"`
+	Act        ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
+	Inhib      InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
+	Learn      LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
+	Neurons    []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
+	Pools      []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
+	GiMult     float32         `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	GiAdaptCtr int             `inactive:"+" desc:"counter for how long it has been since last adapting inhibition"`
+	CosDiff    CosDiffStats    `desc:"cosine difference between ActM, ActP stats"`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
@@ -54,6 +56,8 @@ func (ly *Layer) Defaults() {
 	ly.Inhib.Layer.On = true
 	ly.Inhib.Layer.Gi = 1.0
 	ly.Inhib.Pool.Gi = 1.0
+	ly.GiMult = 1
+	ly.GiAdaptCtr = 0
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
@@ -394,6 +398,8 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte(fmt.Sprintf("\"ActMAvg\": \"%g\",\n", ly.Pools[0].ActAvg.ActMAvg)))
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\"\n", ly.Pools[0].ActAvg.ActPAvg)))
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.GiMult)))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
@@ -454,6 +460,10 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			pl := &ly.Pools[0]
 			pl.ActAvg.ActPAvg = float32(pv)
 			ly.Inhib.ActAvg.EffFmAvg(&pl.ActAvg.ActPAvgEff, pl.ActAvg.ActPAvg)
+		}
+		if gi, ok := lw.MetaData["GiMult"]; ok {
+			pv, _ := strconv.ParseFloat(gi, 32)
+			ly.GiMult = float32(pv)
 		}
 	}
 	var err error
@@ -519,6 +529,8 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 // Also calls InitActs
 func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
+	ly.GiMult = 1
+	ly.GiAdaptCtr = 0
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
@@ -808,6 +820,16 @@ func (ly *Layer) AlphaCycInit() {
 		ly.Inhib.ActAvg.AvgFmAct(&pl.ActAvg.ActPAvg, pl.ActP.Avg)
 		ly.Inhib.ActAvg.EffFmAvg(&pl.ActAvg.ActPAvgEff, pl.ActAvg.ActPAvg)
 	}
+	if ly.Inhib.Adapt.On {
+		if ly.GiAdaptCtr >= ly.Inhib.Adapt.Interval {
+			pl := &ly.Pools[0]
+			ly.Inhib.Adapt.Adapt(&ly.GiMult, ly.Inhib.ActAvg.Init, pl.ActAvg.ActMAvg)
+			ly.GiAdaptCtr = 0
+		} else {
+			ly.GiAdaptCtr++
+		}
+	}
+
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1015,7 +1037,7 @@ func (ly *Layer) AvgMaxGe(ltime *Time) {
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
 func (ly *Layer) InhibFmGeAct(ltime *Time) {
 	lpl := &ly.Pools[0]
-	ly.Inhib.Layer.Inhib(&lpl.Inhib)
+	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.GiMult)
 	ly.PoolInhibFmGeAct(ltime)
 	ly.InhibFmPool(ltime)
 }
@@ -1030,7 +1052,7 @@ func (ly *Layer) PoolInhibFmGeAct(ltime *Time) {
 	lyInhib := ly.Inhib.Layer.On
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
-		ly.Inhib.Pool.Inhib(&pl.Inhib)
+		ly.Inhib.Pool.Inhib(&pl.Inhib, ly.GiMult)
 		if lyInhib {
 			pl.Inhib.LayGi = lpl.Inhib.Gi
 			pl.Inhib.Gi = math32.Max(pl.Inhib.Gi, lpl.Inhib.Gi) // pool is max of layer
