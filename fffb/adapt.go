@@ -9,10 +9,10 @@ package fffb
 // by AvgAct.Init
 type Adapt struct {
 	On       bool    `desc:"enable adaptive layer inhibition gain as stored in layer GiCur value"`
-	LoTolPct float32 `def:"0.5" viewif:"On=true" desc:"tolerance for lower than target average activation of AvgAct.Init as a proportion of that target value -- only once activations move outside this tolerance are inhibitory values adapted"`
-	HiTolPct float32 `def:"0.1" viewif:"On=true" desc:"tolerance for higher than target average activation of AvgAct.Init as a proportion of that target value -- only once activations move outside this tolerance are inhibitory values adapted"`
-	Interval int     `viewif:"On=true" desc:"interval in trials between updates of the adaptive inhibition values -- only check and update this often -- typically the same order as the number of trials per epoch used in training the model"`
-	Tau      float32 `def:"200,500" viewif:"On=true" desc:"time constant for rate of updating the inhibitory gain value, in terms of trial_interval periods (e.g., 100 = adapt gain over 100 trial intervals) -- adaptation rate is 1/tau * (ActMAvg - AvgAct.Init) / AvgAct.Init"`
+	HiTol    float32 `def:"0" viewif:"On=true" desc:"tolerance for higher than target average activation (AvgAct.Init) as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
+	LoTol    float32 `def:"0.8" viewif:"On=true" desc:"tolerance for lower than target average activation (AvgAct.Init) as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
+	Interval int     `def:"100" viewif:"On=true" desc:"interval in trials between updates of the adaptive inhibition values -- only check and update this often"`
+	Tau      float32 `def:"2" viewif:"On=true" desc:"time constant for rate of updating the inhibitory gain value, in terms of Interval periods, to soften the dynamics -- adaptation rate is (1/Tau) * (ActMAvg - AvgAct.Init) / AvgAct.Init"`
 
 	Dt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -23,19 +23,18 @@ func (ad *Adapt) Update() {
 
 func (ad *Adapt) Defaults() {
 	ad.On = false
-	ad.LoTolPct = 0.5
-	ad.HiTolPct = 0.1
+	ad.HiTol = 0
+	ad.LoTol = 0.8
 	ad.Interval = 100
-	ad.Tau = 200
+	ad.Tau = 2
 	ad.Update()
 }
 
+// Adapt adapts the given gi multiplier factor as function of target and actual
+// average activation, given current params.
 func (ad *Adapt) Adapt(gimult *float32, trg, act float32) bool {
 	del := (act - trg) / trg
-	if del < -ad.LoTolPct {
-		*gimult += ad.Dt * del
-		return true
-	} else if del > ad.HiTolPct {
+	if del < -ad.LoTol || del > ad.HiTol {
 		*gimult += ad.Dt * del
 		return true
 	}
