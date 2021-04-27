@@ -63,21 +63,17 @@ func (ln *LearnNeurParams) AvgLFmAvgM(nrn *Neuron) {
 
 // axon.LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn     bool           `desc:"enable learning for this projection"`
-	Lrate     float32        `desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
-	LrateInit float32        `desc:"initial learning rate -- this is set from Lrate in UpdateParams, which is called when Params are updated, and used in LrateMult to compute a new learning rate for learning rate schedules."`
-	XCal      XCalParams     `view:"inline" desc:"parameters for the XCal learning rule"`
-	WtSig     WtSigParams    `view:"inline" desc:"parameters for the sigmoidal contrast weight enhancement"`
-	Norm      DWtNormParams  `view:"inline" desc:"parameters for normalizing weight changes by abs max dwt"`
-	Momentum  MomentumParams `view:"inline" desc:"parameters for momentum across weight changes"`
-	WtBal     WtBalParams    `view:"inline" desc:"parameters for balancing strength of weight increases vs. decreases"`
+	Learn     bool        `desc:"enable learning for this projection"`
+	Lrate     float32     `desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
+	LrateInit float32     `desc:"initial learning rate -- this is set from Lrate in UpdateParams, which is called when Params are updated, and used in LrateMult to compute a new learning rate for learning rate schedules."`
+	XCal      XCalParams  `view:"inline" desc:"parameters for the XCal learning rule"`
+	WtSig     WtSigParams `view:"inline" desc:"parameters for the sigmoidal contrast weight enhancement"`
+	WtBal     WtBalParams `view:"inline" desc:"parameters for balancing strength of weight increases vs. decreases"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.XCal.Update()
 	ls.WtSig.Update()
-	ls.Norm.Update()
-	ls.Momentum.Update()
 	ls.WtBal.Update()
 }
 
@@ -87,8 +83,6 @@ func (ls *LearnSynParams) Defaults() {
 	ls.LrateInit = ls.Lrate
 	ls.XCal.Defaults()
 	ls.WtSig.Defaults()
-	ls.Norm.Defaults()
-	ls.Momentum.Defaults()
 	ls.WtBal.Defaults()
 }
 
@@ -132,18 +126,11 @@ func (ls *LearnSynParams) WtFmDWt(wbInc, wbDec float32, dwt, wt, lwt *float32, s
 		}
 		return
 	}
-	if ls.WtSig.SoftBound {
-		if *dwt > 0 {
-			*dwt *= wbInc * (1 - *lwt)
-		} else {
-			*dwt *= wbDec * *lwt
-		}
+	// always doing softbound by default
+	if *dwt > 0 {
+		*dwt *= wbInc * (1 - *lwt)
 	} else {
-		if *dwt > 0 {
-			*dwt *= wbInc
-		} else {
-			*dwt *= wbDec
-		}
+		*dwt *= wbDec * *lwt
 	}
 	*lwt += *dwt
 	if *lwt < 0 {
@@ -397,9 +384,8 @@ func (xc *XCalParams) LongLrate(avgLLrn float32) float32 {
 
 // WtSigParams are sigmoidal weight contrast enhancement function parameters
 type WtSigParams struct {
-	Gain      float32 `def:"1,6" min:"0" desc:"gain (contrast, sharpness) of the weight contrast function (1 = linear)"`
-	Off       float32 `def:"1" min:"0" desc:"offset of the function (1=centered at .5, >1=higher, <1=lower) -- 1 is standard for XCAL"`
-	SoftBound bool    `def:"true" desc:"apply exponential soft bounding to the weight changes"`
+	Gain float32 `def:"1,6" min:"0" desc:"gain (contrast, sharpness) of the weight contrast function (1 = linear)"`
+	Off  float32 `def:"1" min:"0" desc:"offset of the function (1=centered at .5, >1=higher, <1=lower) -- 1 is standard for XCAL"`
 }
 
 func (ws *WtSigParams) Update() {
@@ -408,7 +394,6 @@ func (ws *WtSigParams) Update() {
 func (ws *WtSigParams) Defaults() {
 	ws.Gain = 6
 	ws.Off = 1
-	ws.SoftBound = true
 }
 
 // SigFun is the sigmoid function for value w in 0-1 range, with gain and offset params
@@ -480,82 +465,6 @@ func (ws *WtSigParams) LinFmSigWt(sw float32) float32 {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  DWtNormParams
-
-// DWtNormParams are weight change (dwt) normalization parameters, using MAX(ABS(dwt)) aggregated over
-// Sending connections in a given projection for a given unit.
-// Slowly decays and instantly resets to any current max(abs)
-// Serves as an estimate of the variance in the weight changes, assuming zero net mean overall.
-type DWtNormParams struct {
-	On       bool    `def:"true" desc:"whether to use dwt normalization, only on error-driven dwt component, based on projection-level max_avg value -- slowly decays and instantly resets to any current max"`
-	DecayTau float32 `viewif:"On" min:"1" def:"1000,10000" desc:"time constant for decay of dwnorm factor -- generally should be long-ish, between 1000-10000 -- integration rate factor is 1/tau"`
-	NormMin  float32 `viewif:"On" min:"0" def:"0.001" desc:"minimum effective value of the normalization factor -- provides a lower bound to how much normalization can be applied"`
-	LrComp   float32 `viewif:"On" min:"0" def:"0.15" desc:"overall learning rate multiplier to compensate for changes due to use of normalization -- allows for a common master learning rate to be used between different conditions -- 0.1 for synapse-level, maybe higher for other levels"`
-	Stats    bool    `viewif:"On" def:"false" desc:"record the avg, max values of err, bcm hebbian, and overall dwt change per con group and per projection"`
-
-	DecayDt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate constant of decay = 1 / decay_tau"`
-	DecayDtC float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"complement rate constant of decay = 1 - (1 / decay_tau)"`
-}
-
-// DWtNormParams updates the dwnorm running max_abs, slowly decaying value
-// jumps up to max(abs_dwt) and slowly decays
-// returns the effective normalization factor, as a multiplier, including lrate comp
-func (dn *DWtNormParams) NormFmAbsDWt(norm *float32, absDwt float32) float32 {
-	*norm = math32.Max(dn.DecayDtC**norm, absDwt)
-	if *norm == 0 {
-		return 1
-	}
-	return dn.LrComp / math32.Max(*norm, dn.NormMin)
-}
-
-func (dn *DWtNormParams) Update() {
-	dn.DecayDt = 1 / dn.DecayTau
-	dn.DecayDtC = 1 - dn.DecayDt
-}
-
-func (dn *DWtNormParams) Defaults() {
-	dn.On = false
-	dn.DecayTau = 1000
-	dn.LrComp = 0.15
-	dn.NormMin = 0.001
-	dn.Stats = false
-	dn.Update()
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  MomentumParams
-
-// MomentumParams implements standard simple momentum -- accentuates consistent directions of weight change and
-// cancels out dithering -- biologically captures slower timecourse of longer-term plasticity mechanisms.
-type MomentumParams struct {
-	On     bool    `def:"true" desc:"whether to use standard simple momentum"`
-	MTau   float32 `viewif:"On" min:"1" def:"10" desc:"time constant factor for integration of momentum -- 1/tau is dt (e.g., .1), and 1-1/tau (e.g., .95 or .9) is traditional momentum time-integration factor"`
-	LrComp float32 `viewif:"On" min:"0" def:"0.1" desc:"overall learning rate multiplier to compensate for changes due to JUST momentum without normalization -- allows for a common master learning rate to be used between different conditions -- generally should use .1 to compensate for just momentum itself"`
-
-	MDt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate constant of momentum integration = 1 / m_tau"`
-	MDtC float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"complement rate constant of momentum integration = 1 - (1 / m_tau)"`
-}
-
-// MomentFmDWt updates synaptic moment variable based on dwt weight change value
-// and returns new momentum factor * LrComp
-func (mp *MomentumParams) MomentFmDWt(moment *float32, dwt float32) float32 {
-	*moment = mp.MDtC**moment + dwt
-	return mp.LrComp * *moment
-}
-
-func (mp *MomentumParams) Update() {
-	mp.MDt = 1 / mp.MTau
-	mp.MDtC = 1 - mp.MDt
-}
-
-func (mp *MomentumParams) Defaults() {
-	mp.On = false
-	mp.MTau = 10
-	mp.LrComp = 0.1
-	mp.Update()
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
 //  WtBalParams
 
 // WtBalParams are weight balance soft renormalization params:
@@ -564,6 +473,7 @@ func (mp *MomentumParams) Defaults() {
 // Plugs into soft bounding function.
 type WtBalParams struct {
 	On     bool    `desc:"perform weight balance soft normalization?  if so, maintains overall weight balance across units by progressively penalizing weight increases as a function of amount of averaged receiver weight above a high threshold (hi_thr) and long time-average activation above an act_thr -- this is generally very beneficial for larger models where hog units are a problem, but not as much for smaller models where the additional constraints are not beneficial -- uses a sigmoidal function: WbInc = 1 / (1 + HiGain*(WbAvg - HiThr) + ActGain * (nrn.ActAvg - ActThr)))"`
+	Targs  bool    `desc:"apply soft bounding to target layers -- off by default"`
 	AvgThr float32 `viewif:"On" def:"0.25" desc:"threshold on weight value for inclusion into the weight average that is then subject to the further HiThr threshold for then driving a change in weight balance -- this AvgThr allows only stronger weights to contribute so that weakening of lower weights does not dilute sensitivity to number and strength of strong weights"`
 	HiThr  float32 `viewif:"On" def:"0.4" desc:"high threshold on weight average (subject to AvgThr) before it drives changes in weight increase vs. decrease factors"`
 	HiGain float32 `viewif:"On" def:"4" desc:"gain multiplier applied to above-HiThr thresholded weight averages -- higher values turn weight increases down more rapidly as the weights become more imbalanced"`
@@ -602,34 +512,3 @@ func (wb *WtBalParams) WtBal(wbAvg float32) (fact, inc, dec float32) {
 	}
 	return fact, inc, dec
 }
-
-/*
-  /////////////////////////////////////
-  // CtAxonXCAL code
-
-  INLINE void   GetLrates(LEABRA_CON_STATE* cg, LEABRA_NETWORK_STATE* net, int thr_no,
-                          float& clrate, bool& deep_on, float& bg_lrate, float& fg_lrate)  {
-    LEABRA_LAYER_STATE* rlay = cg->GetRecvLayer(net);
-    clrate = cur_lrate * rlay->lrate_mod;
-    deep_on = deep.on;
-    if(deep_on) {
-      if(!rlay->deep_lrate_mod)
-        deep_on = false;          // only applicable to deep_norm active layers
-    }
-    if(deep_on) {
-      bg_lrate = deep.bg_lrate;
-      fg_lrate = deep.fg_lrate;
-    }
-  }
-  // #IGNORE get the current learning rates including layer-specific and potential deep modulations
-
-  // todo: should go back and explore this at some point:
-  // if(xcal.one_thr) {
-  //   float eff_thr = ru_avg_l_lrn * ru_avg_l + (1.0f - ru_avg_l_lrn) * srm;
-  //   eff_thr = fminf(eff_thr, 1.0f);
-  //   dwt += clrate * xcal.dWtFun(srs, eff_thr);
-  // }
-  // also: fminf(ru_avg_l,1.0f) for threshold as an option..
-
-
-*/

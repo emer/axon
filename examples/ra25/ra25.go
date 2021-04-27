@@ -67,11 +67,10 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "false", // on = much worse!
-					"Prjn.Learn.Momentum.On": "false",
-					"Prjn.Learn.WtBal.On":    "true", // on = much better!
-					"Prjn.Com.Delay":         "2",    // 1 == 2 = 3
-					"Prjn.Learn.Lrate":       "0.04",
+					"Prjn.Learn.WtBal.On":    "true",  // on = much better!
+					"Prjn.Learn.WtBal.Targs": "false", // false = better
+					"Prjn.Com.Delay":         "2",     // 1 == 2 = 3
+					"Prjn.Learn.Lrate":       "0.04",  // .3, WtSig.Gain = 1 is pretty close
 					"Prjn.Learn.WtSig.Gain":  "6",
 					"Prjn.Learn.XCal.DThr":   "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":   "0.1",    // local opt

@@ -414,8 +414,6 @@ func (pj *Prjn) InitWtsSyn(syn *Synapse) {
 	syn.LWt = pj.Learn.WtSig.LinFmSigWt(syn.Wt)
 	syn.Wt *= syn.Scale // note: scale comes after so LWt is always "pure" non-scaled value
 	syn.DWt = 0
-	syn.Norm = 0
-	syn.Moment = 0
 }
 
 // InitWts initializes weight values according to Learn.WtInit params
@@ -582,31 +580,7 @@ func (pj *Prjn) DWt() {
 
 			bcm *= pj.Learn.XCal.LongLrate(rn.AvgLLrn)
 			err *= pj.Learn.XCal.MLrn
-			dwt := bcm + err
-			norm := float32(1)
-			if pj.Learn.Norm.On {
-				norm = pj.Learn.Norm.NormFmAbsDWt(&sy.Norm, math32.Abs(dwt))
-			}
-			if pj.Learn.Momentum.On {
-				dwt = norm * pj.Learn.Momentum.MomentFmDWt(&sy.Moment, dwt)
-			} else {
-				dwt *= norm
-			}
-			sy.DWt += pj.Learn.Lrate * dwt
-		}
-		// aggregate max DWtNorm over sending synapses
-		if pj.Learn.Norm.On {
-			maxNorm := float32(0)
-			for ci := range syns {
-				sy := &syns[ci]
-				if sy.Norm > maxNorm {
-					maxNorm = sy.Norm
-				}
-			}
-			for ci := range syns {
-				sy := &syns[ci]
-				sy.Norm = maxNorm
-			}
+			sy.DWt += pj.Learn.Lrate * (bcm + err)
 		}
 	}
 }
@@ -640,7 +614,7 @@ func (pj *Prjn) WtBalFmWt() {
 	}
 
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
+	if !pj.Learn.WtBal.Targs && rlay.AxonLay.IsTarget() {
 		return
 	}
 	for ri := range rlay.Neurons {
