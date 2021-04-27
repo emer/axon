@@ -528,7 +528,7 @@ func (cp *ClampParams) AvgGe(ext, ge float32) float32 {
 type SynComParams struct {
 	Delay      int     `desc:"synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must rebuild network!"`
 	PFail      float32 `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail * (1-Min(Wt/Max, 1))^2"`
-	PFailWtMax float32 `desc:"maximum weight value that experiences no synaptic failure -- weights at or above this level never fail to communicate, while probability of failure increases parabolically below this level"`
+	PFailWtMax float32 `desc:"maximum weight value that experiences no synaptic failure -- weights at or above this level never fail to communicate, while probability of failure increases parabolically below this level -- enter 0 to have a uniform probability of failure regardless of weight size"`
 }
 
 func (sc *SynComParams) Defaults() {
@@ -542,6 +542,9 @@ func (sc *SynComParams) Update() {
 
 // WtFailP returns probability of weight (synapse) failure given current weight value
 func (sc *SynComParams) WtFailP(wt float32) float32 {
+	if sc.PFailWtMax == 0 {
+		return sc.PFail
+	}
 	if wt >= sc.PFailWtMax {
 		return 0
 	}
