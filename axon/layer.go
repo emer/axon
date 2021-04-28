@@ -1020,6 +1020,24 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 func (ly *Layer) AvgMaxGe(ltime *Time) {
+	// todo: this does not take account of communication delay -- may be too strong
+	// if ly.Inhib.FFAct {
+	// 	avg := float32(0)
+	// 	max := float32(0)
+	// 	for _, p := range ly.RcvPrjns {
+	// 		if p.IsOff() {
+	// 			continue
+	// 		}
+	// 		pj := p.(AxonPrjn).AsAxon()
+	// 		sl := pj.Send.(AxonLayer).AsAxon()
+	// 		slp := &sl.Pools[0]
+	// 		avg += pj.GScale * slp.Inhib.Act.Avg
+	// 		max += pj.GScale * slp.Inhib.Act.Max
+	// 	}
+	// 	pl := &ly.Pools[0]
+	// 	pl.Inhib.Ge.Avg = avg
+	// 	pl.Inhib.Ge.Max = max
+	// } else {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Ge.Init()
@@ -1032,6 +1050,7 @@ func (ly *Layer) AvgMaxGe(ltime *Time) {
 		}
 		pl.Inhib.Ge.CalcAvg()
 	}
+	// }
 }
 
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
@@ -1114,7 +1133,11 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 			if nrn.IsOff() {
 				continue
 			}
-			pl.Inhib.Act.UpdateVal(nrn.Act, ni)
+			if ly.Inhib.AvgSS {
+				pl.Inhib.Act.UpdateVal(nrn.AvgSS, ni)
+			} else {
+				pl.Inhib.Act.UpdateVal(nrn.Act, ni)
+			}
 		}
 		pl.Inhib.Act.CalcAvg()
 	}

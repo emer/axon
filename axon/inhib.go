@@ -13,6 +13,7 @@ import "github.com/emer/axon/fffb"
 type InhibParams struct {
 	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer"`
 	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
+	AvgSS  bool            `desc:"Use AvgSS for computing average activation used in inibition computations"`
 	Self   SelfInhibParams `view:"inline" desc:"neuron self-inhibition parameters -- can be beneficial for producing more graded, linear response -- not typically used in cortical networks"`
 	ActAvg ActAvgParams    `view:"inline" desc:"running-average activation computation values -- for overall estimates of layer activation levels, used in netinput scaling"`
 	Adapt  fffb.Adapt      `view:"inline" desc:"adaptive inhibition multiplier"`
