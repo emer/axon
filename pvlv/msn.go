@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/chewxy/math32"
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/kit"
+	"github.com/goki/mat32"
 )
 
 type MSNLayer struct {
@@ -257,7 +257,7 @@ func (ly *MSNLayer) ModsFmInc(_ *axon.Time) {
 				mnr.ModLevel = 1
 			} else {
 				newLrn := mnr.ModNet / plMax
-				if math32.IsInf(newLrn, 0) || math32.IsNaN(newLrn) {
+				if mat32.IsInf(newLrn, 0) || mat32.IsNaN(newLrn) {
 					mnr.ModLrn = 1
 				} else {
 					mnr.ModLrn = newLrn
@@ -273,9 +273,9 @@ func (ly *MSNLayer) ModsFmInc(_ *axon.Time) {
 				}
 			} else {
 				newLrn := mnr.ModNet / plMax
-				if math32.IsInf(newLrn, 1) || math32.IsNaN(newLrn) {
+				if mat32.IsInf(newLrn, 1) || mat32.IsNaN(newLrn) {
 					mnr.ModLrn = 1
-				} else if math32.IsInf(newLrn, -1) {
+				} else if mat32.IsInf(newLrn, -1) {
 					mnr.ModLrn = -1
 				} else {
 					mnr.ModLrn = newLrn
@@ -297,7 +297,7 @@ func (ly *MSNLayer) InhibFmGeAct(ltime *axon.Time) {
 			for pi := 1; pi < np; pi++ {
 				pl := &ly.Pools[pi]
 				ly.Inhib.Pool.Inhib(&pl.Inhib)
-				pl.Inhib.Gi = math32.Max(pl.Inhib.Gi, lpl.Inhib.Gi)
+				pl.Inhib.Gi = mat32.Max(pl.Inhib.Gi, lpl.Inhib.Gi)
 				ly.PoolDelayedInhib(pl)
 			}
 		} else {

@@ -5,7 +5,6 @@
 package glong
 
 import (
-	"github.com/chewxy/math32"
 	"github.com/goki/mat32"
 )
 
@@ -31,8 +30,8 @@ func (gp *GABABParams) Defaults() {
 }
 
 func (gp *GABABParams) Update() {
-	gp.TauFact = math32.Pow(gp.DecayTau/gp.RiseTau, gp.RiseTau/(gp.DecayTau-gp.RiseTau))
-	gp.MaxTime = ((gp.RiseTau * gp.DecayTau) / (gp.DecayTau - gp.RiseTau)) * math32.Log(gp.DecayTau/gp.RiseTau)
+	gp.TauFact = mat32.Pow(gp.DecayTau/gp.RiseTau, gp.RiseTau/(gp.DecayTau-gp.RiseTau))
+	gp.MaxTime = ((gp.RiseTau * gp.DecayTau) / (gp.DecayTau - gp.RiseTau)) * mat32.Log(gp.DecayTau/gp.RiseTau)
 }
 
 // GFmV returns the GABA-B conductance as a function of normalized membrane potential

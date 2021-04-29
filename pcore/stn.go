@@ -7,7 +7,6 @@ package pcore
 import (
 	"strings"
 
-	"github.com/chewxy/math32"
 	"github.com/emer/axon/axon"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -45,7 +44,7 @@ func (kc *CaParams) Defaults() {
 // KCaGFmCa returns the driving conductance for KCa channels based on given Ca level.
 // This equation comes from Gillies & Willshaw, 2006.
 func (kc *CaParams) KCaGFmCa(ca float32) float32 {
-	return 0.81 / (1 + mat32.FastExp(-(math32.Log(ca)+0.3))/0.46)
+	return 0.81 / (1 + mat32.FastExp(-(mat32.Log(ca)+0.3))/0.46)
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -230,18 +229,18 @@ func (ly *STNLayer) UnitVarIdx(varNm string) (int, error) {
 // so it is the only one that needs to be updated for derived layer types.
 func (ly *STNLayer) UnitVal1D(varIdx int, idx int) float32 {
 	if varIdx < 0 {
-		return math32.NaN()
+		return mat32.NaN()
 	}
 	nn := ly.Layer.UnitVarNum()
 	if varIdx < nn {
 		return ly.Layer.UnitVal1D(varIdx, idx)
 	}
 	if idx < 0 || idx >= len(ly.Neurons) {
-		return math32.NaN()
+		return mat32.NaN()
 	}
 	varIdx -= nn
 	if varIdx > len(STNNeuronVars) {
-		return math32.NaN()
+		return mat32.NaN()
 	}
 	snr := &ly.STNNeurs[idx]
 	return snr.VarByIndex(varIdx)

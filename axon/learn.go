@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"github.com/chewxy/math32"
+	"github.com/goki/mat32"
 )
 
 ///////////////////////////////////////////////////////////////////////
@@ -226,7 +226,7 @@ func (al *AvgLParams) ErrModFmLayErr(layCosDiffAvg float32) float32 {
 	if !al.ErrMod {
 		return mod
 	}
-	mod *= math32.Max(layCosDiffAvg, al.ModMin)
+	mod *= mat32.Max(layCosDiffAvg, al.ModMin)
 	return mod
 }
 
@@ -296,7 +296,7 @@ func (cd *CosDiffParams) AvgVarFmCos(avg, vr *float32, cos float32) {
 // 	if vr <= 0 {
 // 		return 1
 // 	}
-// 	zval := (cos - avg) / math32.Sqrt(vr) // stdev = sqrt of var
+// 	zval := (cos - avg) / mat32.Sqrt(vr) // stdev = sqrt of var
 // 	// z-normal value is starting point for learning rate factor
 // 	//    if zval < lrmod_z_thr {
 // 	// 	return 0
@@ -404,7 +404,7 @@ func SigFun(w, gain, off float32) float32 {
 	if w >= 1 {
 		return 1
 	}
-	return (1 / (1 + math32.Pow((off*(1-w))/w, gain)))
+	return (1 / (1 + mat32.Pow((off*(1-w))/w, gain)))
 }
 
 // SigFun61 is the sigmoid function for value w in 0-1 range, with default gain = 6, offset = 1 params
@@ -427,7 +427,7 @@ func SigInvFun(w, gain, off float32) float32 {
 	if w >= 1 {
 		return 1
 	}
-	return 1.0 / (1.0 + math32.Pow((1.0-w)/w, 1/gain)/off)
+	return 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1/gain)/off)
 }
 
 // SigInvFun61 is the inverse of the sigmoid function, with default gain = 6, offset = 1 params
@@ -438,7 +438,7 @@ func SigInvFun61(w float32) float32 {
 	if w >= 1 {
 		return 1
 	}
-	rval := 1.0 / (1.0 + math32.Pow((1.0-w)/w, 1.0/6.0))
+	rval := 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1.0/6.0))
 	return rval
 }
 
@@ -473,7 +473,7 @@ func (ws *WtSigParams) LinFmSigWt(sw float32) float32 {
 // Plugs into soft bounding function.
 type WtBalParams struct {
 	On     bool    `desc:"perform weight balance soft normalization?  if so, maintains overall weight balance across units by progressively penalizing weight increases as a function of amount of averaged receiver weight above a high threshold (hi_thr) and long time-average activation above an act_thr -- this is generally very beneficial for larger models where hog units are a problem, but not as much for smaller models where the additional constraints are not beneficial -- uses a sigmoidal function: WbInc = 1 / (1 + HiGain*(WbAvg - HiThr) + ActGain * (nrn.ActAvg - ActThr)))"`
-	Targs  bool    `desc:"apply soft bounding to target layers -- off by default"`
+	Targs  bool    `desc:"apply soft bounding to target layers -- appears to be beneficial but still testing"`
 	AvgThr float32 `viewif:"On" def:"0.25" desc:"threshold on weight value for inclusion into the weight average that is then subject to the further HiThr threshold for then driving a change in weight balance -- this AvgThr allows only stronger weights to contribute so that weakening of lower weights does not dilute sensitivity to number and strength of strong weights"`
 	HiThr  float32 `viewif:"On" def:"0.4" desc:"high threshold on weight average (subject to AvgThr) before it drives changes in weight increase vs. decrease factors"`
 	HiGain float32 `viewif:"On" def:"4" desc:"gain multiplier applied to above-HiThr thresholded weight averages -- higher values turn weight increases down more rapidly as the weights become more imbalanced"`

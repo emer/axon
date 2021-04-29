@@ -9,10 +9,10 @@ import (
 	"log"
 	"unsafe"
 
-	"github.com/chewxy/math32"
 	"github.com/emer/axon/axon"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/kit"
+	"github.com/goki/mat32"
 )
 
 // UnitVarNames returns a list of variable names available on the units in this layer
@@ -88,7 +88,7 @@ func (mnr *ModNeuron) VarByName(varNm string) (float32, error) {
 	var err error
 	i, err = NeuronVarIdxByName(varNm)
 	if err != nil {
-		return math32.NaN(), err
+		return mat32.NaN(), err
 	}
 	return mnr.VarByIndex(i), nil
 }

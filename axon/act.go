@@ -7,7 +7,6 @@ package axon
 import (
 	"math/rand"
 
-	"github.com/chewxy/math32"
 	"github.com/emer/axon/chans"
 	"github.com/emer/axon/glong"
 	"github.com/emer/axon/knadapt"
@@ -167,7 +166,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32) {
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFmRaw(nrn *Neuron, giRaw float32) {
 	ac.Dt.GiFmRaw(giRaw, &nrn.GiSyn, ac.Init.Gi)
-	nrn.GiSyn = math32.Max(nrn.GiSyn, 0) // negative inhib G doesn't make any sense
+	nrn.GiSyn = mat32.Max(nrn.GiSyn, 0) // negative inhib G doesn't make any sense
 }
 
 // InetFmG computes net current from conductances and Vm
@@ -612,7 +611,7 @@ func (ws *WtScaleParams) Update() {
 // for purposes of computing scaling factors with partial connectivity
 // For 25% layer activity, binomial SEM = sqrt(p(1-p)) = .43, so 3x = 1.3 so 2 is a reasonable default.
 func (ws *WtScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
-	ncon = math32.Max(ncon, 1) // prjn Avg can be < 1 in some cases
+	ncon = mat32.Max(ncon, 1) // prjn Avg can be < 1 in some cases
 	semExtra := 2
 	slayActN := int(mat32.Round(savg * snu)) // sending layer actual # active
 	slayActN = ints.MaxInt(slayActN, 1)
@@ -620,8 +619,8 @@ func (ws *WtScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 	if ncon == snu {
 		sc = 1 / float32(slayActN)
 	} else {
-		maxActN := int(math32.Min(ncon, float32(slayActN))) // max number we could get
-		avgActN := int(mat32.Round(savg * ncon))            // recv average actual # active if uniform
+		maxActN := int(mat32.Min(ncon, float32(slayActN))) // max number we could get
+		avgActN := int(mat32.Round(savg * ncon))           // recv average actual # active if uniform
 		avgActN = ints.MaxInt(avgActN, 1)
 		expActN := avgActN + semExtra // expected
 		expActN = ints.MinInt(expActN, maxActN)

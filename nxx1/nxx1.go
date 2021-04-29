@@ -20,7 +20,6 @@ overall values.
 package nxx1
 
 import (
-	"github.com/chewxy/math32"
 	"github.com/goki/mat32"
 )
 
@@ -55,7 +54,7 @@ type Params struct {
 
 func (xp *Params) Update() {
 	xp.SigGainNVar = xp.SigGain / xp.NVar
-	xp.SigMultEff = xp.SigMult * math32.Pow(xp.Gain*xp.NVar, xp.SigMultPow)
+	xp.SigMultEff = xp.SigMult * mat32.Pow(xp.Gain*xp.NVar, xp.SigMultPow)
 	xp.SigValAt0 = 0.5 * xp.SigMultEff
 	xp.InterpVal = xp.XX1GainCor(xp.InterpRange) - xp.SigValAt0
 }
@@ -122,7 +121,7 @@ func (xp *Params) XX1GainCorGain(x, gain float32) float32 {
 // but ok for lower gains).  Using external gain factor.
 func (xp *Params) NoisyXX1Gain(x, gain float32) float32 {
 	if x < xp.InterpRange {
-		sigMultEffArg := xp.SigMult * math32.Pow(gain*xp.NVar, xp.SigMultPow)
+		sigMultEffArg := xp.SigMult * mat32.Pow(gain*xp.NVar, xp.SigMultPow)
 		sigValAt0Arg := 0.5 * sigMultEffArg
 
 		if x < 0 { // sigmoidal for < 0
