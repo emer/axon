@@ -65,60 +65,65 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true",
-					"Prjn.Learn.Lrate":    "0.04",
+					"Prjn.Learn.WtBal.On":     "true",
+					"Prjn.Learn.WtBal.Targs":  "true",
+					"Prjn.Learn.XCal.SetLLrn": "true",
+					"Prjn.Learn.XCal.LLrn":    "0",
+					"Prjn.Learn.WtSig.Gain":   "6",
+					"Prjn.Learn.Lrate":        "0.04",
 				}},
 			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "1.0",
+					"Layer.Inhib.Layer.Gi":     "1.1",  // 1.1 > 1.2 > 1.0
 					"Layer.Learn.AvgL.Gain":    "1.5",  // key to lower relative to 2.5
 					"Layer.Act.Gbar.L":         "0.2",  // lower leak = better
 					"Layer.Inhib.ActAvg.Fixed": "true", // simpler to have everything fixed, for replicability
-					"Layer.Act.Init.Decay":     "0",    // essential to have all layers no decay
-					"Layer.Act.Clamp.Rate":     "150",
+					"Layer.Act.Init.Decay":     "0.5",  // essential to have all layers no decay
+					"Layer.Act.Clamp.Rate":     "120",  // 120 == 100 > 150
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Fixed": "true",
+					"Layer.Inhib.ActAvg.Fixed": "false", // not clear any diff
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.2",
+					"Prjn.WtScale.Rel": "0.2", // 0.2 > 0.3
+				}},
+			{Sel: ".Input", Desc: "input layers need more inhibition",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.15",
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
-					"Layer.TRC.DriveScale": "0.3", // using .8 for localist layer
+					"Layer.Inhib.Layer.Gi": "1.2",   // 1.2 > 1.1 maybe > 1.3
+					"Layer.TRC.DriveScale": "0.15",  // .15 >= .1
+					"Layer.TRC.MaxInhib":   "0.2",   // 0.6 def
+					"Layer.Act.Init.Decay": "1",     // 1 > 0.5
+					"Layer.Act.GABAB.Gbar": "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
+					"Layer.Act.NMDA.Gbar":  "0.1",   // 0.1 > .05 > .2
 				}},
 			{Sel: "CTCtxtPrjn", Desc: "no weight balance on CT context prjns -- makes a diff!",
 				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "false", // this should be true for larger DeepAxon models -- e.g., sg..
+					"Prjn.Learn.WtBal.On": "true", // this should be true for larger DeepAxon models -- e.g., sg..
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
 					"Prjn.WtInit.Mean": "0.5",
 				}},
-			{Sel: ".Input", Desc: "input layers need more inhibition",
-				Params: params.Params{
-					"Layer.Act.Init.Decay":    "1",
-					"Layer.Inhib.Layer.Gi":    "1.0",
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Act.GABAB.Gbar":    "0.1",
-					"Layer.Act.GABAB.GiSpike": "5",
-					"Layer.Act.NMDA.Gbar":     "0.1",
-				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
-					"Layer.CtxtGeGain":     "0.3",
-					"Layer.Inhib.Layer.Gi": "1.1",
+					"Layer.CtxtGeGain":     "0.2", // 0.2 > 0.3 > 0.1
+					"Layer.Inhib.Layer.Gi": "1.1", // 1.1 > 1.0
+					"Layer.Act.Init.Decay": "0.5", // 0.5 > 0.2? > 0
 				}},
 			{Sel: "#HiddenPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.05",
+					"Prjn.WtScale.Rel": "0.1", // 0.1 > .05 lba
 				}},
-			// {Sel: "#HiddenCTToHiddenCT", Desc: "testing",
-			// 	Params: params.Params{
-			// 		"Prjn.Learn.WtBal.On": "false",
-			// 	}},
+			{Sel: "#HiddenCTToHiddenCT", Desc: "testing",
+				Params: params.Params{
+					"Prjn.WtScale.Rel": "1", // 1 > other
+				}},
 		},
 	}},
 }
@@ -273,7 +278,7 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
 	in := net.AddLayer2D("Input", 1, 7, emer.Input)
-	hid, hidct, hidp := net.AddDeep2D("Hidden", 8, 8)
+	hid, hidct, hidp := net.AddDeep2D("Hidden", 10, 10)
 
 	hidp.Shape().CopyShape(in.Shape())
 	hidp.(*deep.TRCLayer).Drivers.Add("Input")

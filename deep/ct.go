@@ -31,7 +31,7 @@ func (ly *CTLayer) Defaults() {
 	ly.Inhib.ActAvg.UseFirst = false // first activations can be very far off
 	ly.BurstQtr.Set(int(axon.Q4))
 	ly.Typ = CT
-	ly.CtxtGeGain = 0.5
+	ly.CtxtGeGain = 0.2
 }
 
 func (ly *CTLayer) Class() string {

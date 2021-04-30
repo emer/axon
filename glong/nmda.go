@@ -11,7 +11,7 @@ import "github.com/goki/mat32"
 type NMDAParams struct {
 	GeTot float32 `desc:"how much of the NMDA is driven by total Ge synaptic input, as opposed to from projections specifically marked as NMDA-communicating type, e.g., for active maintenance, in NMDASyn"`
 	Tau   float32 `def:"100" desc:"decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential"`
-	Gbar  float32 `desc:"strength of NMDA current -- 0.02 is just over level sufficient to maintain in face of completely blank input"`
+	Gbar  float32 `def:"0.03,0.01" desc:"strength of NMDA current -- 0.02 is just over level sufficient to maintain in face of completely blank input"`
 }
 
 func (np *NMDAParams) Defaults() {
