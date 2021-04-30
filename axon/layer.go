@@ -397,7 +397,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActMAvg\": \"%g\",\n", ly.Pools[0].ActAvg.ActMAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\"\n", ly.Pools[0].ActAvg.ActPAvg)))
+	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.Pools[0].ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.GiMult)))
 	depth--
