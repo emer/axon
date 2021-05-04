@@ -882,7 +882,8 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 		ss.TrnEpcPlot.GoUpdate()
 	}
 	if ss.TrnEpcFile != nil {
-		if ss.TrainEnv.Run.Cur == ss.StartRun && epc == 0 {
+		if ss.TrainEnv.Run.Cur == ss.StartRun && row == 0 {
+			// note: can't just use row=0 b/c reset table each run
 			dt.WriteCSVHeaders(ss.TrnEpcFile, etable.Tab)
 		}
 		dt.WriteCSVRow(ss.TrnEpcFile, row, etable.Tab)
