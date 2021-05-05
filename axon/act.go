@@ -276,7 +276,7 @@ func (ac *ActParams) HardClamp(nrn *Neuron) {
 		nrn.ISI -= 1
 		nrn.Spike = 0
 	} else {
-		if ext <= 0 {
+		if ext <= 0.0001 {
 			nrn.ISI = 0
 			nrn.ISIAvg = -1
 			nrn.Spike = 0
