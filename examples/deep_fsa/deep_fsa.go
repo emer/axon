@@ -79,7 +79,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Gbar.L":         "0.2",  // lower leak = better
 					"Layer.Inhib.ActAvg.Fixed": "true", // simpler to have everything fixed, for replicability
 					"Layer.Act.Init.Decay":     "0.5",  // essential to have all layers no decay
-					"Layer.Act.Clamp.Rate":     "180",  // 120 == 100 > 150
+					"Layer.Act.Clamp.Rate":     "120",  // 120 == 100 > 150
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{
@@ -96,9 +96,12 @@ var ParamSets = params.Sets{
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.2",   // 1.2 > 1.1 maybe > 1.3
+					"Layer.TRC.DriveScale": "0.15",  // .15 >= .1
+					"Layer.TRC.MaxInhib":   "0.6",   // 0.6 def
 					"Layer.Act.Init.Decay": "1",     // 1 > 0.5
 					"Layer.Act.GABAB.Gbar": "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
 					"Layer.Act.NMDA.Gbar":  "0.1",   // 0.1 > .05 > .2
+					"Layer.Act.Clamp.Rate": "180",   // 120 == 100 > 150
 				}},
 			{Sel: "CTCtxtPrjn", Desc: "no weight balance on CT context prjns -- makes a diff!",
 				Params: params.Params{
