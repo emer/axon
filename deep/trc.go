@@ -80,7 +80,11 @@ func (tp *TRCParams) DriveGe(act float32) float32 {
 			return tp.BinOff
 		}
 	} else {
-		return act
+		if tp.HardClamp {
+			return act
+		} else {
+			return tp.DriveScale * act
+		}
 	}
 }
 
