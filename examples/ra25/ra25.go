@@ -81,6 +81,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":      "1.2",  // 1.4 > 1.5 > 1.2 > lower but 1.4 is TOO sparse!
 					"Layer.Act.Init.Decay":      "0.5",  // 0.5 > 1 > 0
+					"Layer.Act.Init.KnaDecay":   "0.0",  // 0 ?
 					"Layer.Act.Gbar.L":          "0.2",  // 0.2 > 0.1
 					"Layer.Act.Gbar.E":          "1.0",  // 1.2 maybe better % cor but not cosdiff
 					"Layer.Act.NMDA.Gbar":       "0.03", // 0.03 > .04 > .02
@@ -105,8 +106,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6", // 0.6 > 0.7 > 0.8
-					"Layer.Act.Init.Decay": "1",   // 1 >> 0.5 >> 0
+					"Layer.Inhib.Layer.Gi": "0.6",   // 0.6 > 0.7 > 0.8
+					"Layer.Act.Init.Decay": "0.5",   // 0.5 == 1 after clamp fix > .2
+					"Layer.Act.GABAB.Gbar": "0.005", // .005 > .01 > .02 > .05 > .1 > .2
+					"Layer.Act.NMDA.Gbar":  "0.03",  // .03 > .02 > .01
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object

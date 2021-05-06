@@ -71,27 +71,40 @@ func (ac *ActParams) Update() {
 // Called with ac.Init.Decay by Layer during AlphaCycInit
 func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	if decay > 0 { // no-op for most, but not all..
+		nrn.Spike = 0
 		nrn.Act -= decay * (nrn.Act - ac.Init.Act)
 		nrn.Ge -= decay * (nrn.Ge - ac.Init.Ge)
 		nrn.Gi -= decay * (nrn.Gi - ac.Init.Gi)
-		nrn.GiSelf -= decay * nrn.GiSelf
 		nrn.Gk -= decay * nrn.Gk
+
 		nrn.Vm -= decay * (nrn.Vm - ac.Init.Vm)
 		nrn.VmDend -= decay * (nrn.VmDend - ac.Init.Vm)
+
 		nrn.GiSyn -= decay * nrn.GiSyn
+		nrn.GiSelf -= decay * nrn.GiSelf
+
 		nrn.Gnmda -= decay * nrn.Gnmda
 		nrn.NMDA -= decay * nrn.NMDA
 		nrn.NMDASyn -= decay * nrn.NMDASyn
+
 		nrn.GgabaB -= decay * nrn.GgabaB
 		nrn.GABAB -= decay * nrn.GABAB
 		nrn.GABABx -= decay * nrn.GABABx
+
 		if decay == 1 {
-			nrn.ISI = -1
+			nrn.ISI = -1 // always reset on full decay
 			nrn.ISIAvg = -1
 		}
 	}
+
+	nrn.GknaFast -= ac.Init.KnaDecay * nrn.GknaFast
+	nrn.GknaMed -= ac.Init.KnaDecay * nrn.GknaMed
+	nrn.GknaSlow -= ac.Init.KnaDecay * nrn.GknaSlow
+
 	nrn.ActDel = 0
 	nrn.Inet = 0
+	nrn.GeRaw = 0
+	nrn.GiRaw = 0
 }
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
@@ -105,20 +118,27 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Ge = ac.Init.Ge
 	nrn.Gi = ac.Init.Gi
 	nrn.Gk = 0
-	nrn.GknaFast = 0
-	nrn.GknaMed = 0
-	nrn.GknaSlow = 0
-	nrn.GiSelf = 0
-	nrn.GiSyn = 0
 	nrn.Inet = 0
 	nrn.Vm = ac.Init.Vm
 	nrn.VmDend = ac.Init.Vm
 	nrn.Targ = 0
 	nrn.Ext = 0
+
 	nrn.ActDel = 0
+
+	nrn.GiSyn = 0
+	nrn.GiSelf = 0
+	nrn.GeRaw = 0
+	nrn.GiRaw = 0
+
+	nrn.GknaFast = 0
+	nrn.GknaMed = 0
+	nrn.GknaSlow = 0
+
 	nrn.Gnmda = 0
 	nrn.NMDA = 0
 	nrn.NMDASyn = 0
+
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
 	nrn.GABABx = 0
@@ -136,6 +156,7 @@ func (ac *ActParams) InitActQs(nrn *Neuron) {
 	nrn.ActM = 0
 	nrn.ActP = 0
 	nrn.ActDif = 0
+	nrn.GeM = 0
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -292,6 +313,11 @@ func (ac *ActParams) HardClamp(nrn *Neuron) {
 		}
 	}
 
+	// keep everything else clamped
+	nrn.Vm = ac.Init.Vm
+	nrn.VmDend = ac.Init.Vm
+	nrn.Inet = 0
+
 	nwAct := ac.Spike.ActFmISI(nrn.ISIAvg, .001, ac.Dt.Integ)
 	if nwAct > 1 {
 		nwAct = 1
@@ -374,18 +400,20 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 // ActInitParams are initial values for key network state variables.
 // Initialized at start of trial with Init_Acts or DecayState.
 type ActInitParams struct {
-	Decay float32 `def:"0,1" max:"1" min:"0" desc:"proportion to decay activation state toward initial values at start of every trial"`
-	Vm    float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
-	Act   float32 `def:"0" desc:"initial activation value -- typically 0"`
-	Ge    float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
-	Gi    float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
+	Decay    float32 `def:"0,0.5,1" max:"1" min:"0" desc:"proportion to decay activation state toward initial values at start of every trial -- if 1 it is effectively equivalent to full clear, resetting other derived values (e.g., ISI)"`
+	KnaDecay float32 `max:"1" min:"0" desc:"decay of Kna values -- has a separate decay because often useful to have this not decay at all even if decay is on"`
+	Vm       float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
+	Act      float32 `def:"0" desc:"initial activation value -- typically 0"`
+	Ge       float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
+	Gi       float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
 }
 
 func (ai *ActInitParams) Update() {
 }
 
 func (ai *ActInitParams) Defaults() {
-	ai.Decay = 0
+	ai.Decay = 0.5
+	ai.KnaDecay = 0
 	ai.Vm = 0.3
 	ai.Act = 0
 	ai.Ge = 0
