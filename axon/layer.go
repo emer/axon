@@ -1110,6 +1110,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Learn.AvgsFmAct(nrn)
 		if ltime.Quarter < 3 {
 			nrn.ActM += ly.Act.Dt.MDt * (nrn.AvgS - nrn.ActM)
+			nrn.GeM += ly.Act.Dt.MDt * (nrn.Ge - nrn.GeM)
 		}
 
 		// note: this is here because it depends on Gi
@@ -1136,6 +1137,22 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 			pl.Inhib.Act.UpdateVal(nrn.Act, ni)
 		}
 		pl.Inhib.Act.CalcAvg()
+	}
+}
+
+// AvgGeM computes the average and max GeM stats
+func (ly *Layer) AvgGeM(ltime *Time) {
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.GeM.Init()
+		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			pl.GeM.UpdateVal(nrn.GeM, ni)
+		}
+		pl.GeM.CalcAvg()
 	}
 }
 
@@ -1186,7 +1203,10 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 			nrn.ActAvg += ly.Act.Dt.AvgDt * (nrn.Act - nrn.ActAvg)
 		}
 	}
-	if ltime.Quarter == 3 {
+	switch ltime.Quarter {
+	case 2:
+		ly.AvgGeM(ltime)
+	case 3:
 		ly.AxonLay.CosDiffFmActs()
 	}
 }

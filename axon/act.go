@@ -402,7 +402,7 @@ type DtParams struct {
 	VmDendTau float32 `def:"5" min:"1" desc:"dendritic membrane potential integration time constant"`
 	GeTau     float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau     float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
-	MTau      float32 `def:"20" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the minus phase ActM value from the short AvgS value -- this is used for scoring performance, not for learning"`
+	MTau      float32 `def:"20" min:"1" desc:"time constant for continuously updating the minus phase ActM value from the short AvgS value, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), "`
 	AvgTau    float32 `def:"200" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- used mostly for visualization and tracking *hog* units"`
 
 	VmDt     float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`

@@ -18,6 +18,7 @@ type Pool struct {
 	Inhib        fffb.Inhib      `desc:"FFFB inhibition computed values, including Ge and Act AvgMax which drive inhibition"`
 	ActM         minmax.AvgMax32 `desc:"minus phase average and max Act activation values, for ActAvg updt"`
 	ActP         minmax.AvgMax32 `desc:"plus phase average and max Act activation values, for ActAvg updt"`
+	GeM          minmax.AvgMax32 `desc:"stats for GeM minus phase averaged Ge values"`
 	ActAvg       ActAvg          `desc:"running-average activation levels used for netinput scaling and adaptive inhibition"`
 }
 

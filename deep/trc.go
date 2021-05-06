@@ -396,7 +396,7 @@ func (ly *TRCLayer) ActFmG(ltime *axon.Time) {
 	if !ly.TRC.DriversOff && ly.TRC.BurstQtr.Has(ltime.Quarter) {
 		ly.SetDriverActs()
 	}
-	ly.Layer.ActFmG(ltime)
+	ly.TopoInhibLayer.ActFmG(ltime)
 }
 
 // QuarterFinal does updating after end of a quarter
@@ -412,5 +412,5 @@ func (ly *TRCLayer) QuarterFinal(ltime *axon.Time) {
 			nrn.ISIAvg = -1
 		}
 	}
-	ly.Layer.QuarterFinal(ltime)
+	ly.TopoInhibLayer.QuarterFinal(ltime)
 }
