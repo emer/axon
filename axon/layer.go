@@ -574,7 +574,7 @@ func (ly *Layer) InitActAvg() {
 				if nrn.IsOff() {
 					continue
 				}
-				nrn.TrgAvg = strg + inc*float32(ni)
+				nrn.TrgAvg = strg + inc*float32((ni-pl.StIdx))
 				nrn.AvgPct = nrn.TrgAvg
 				nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
 				nrn.AvgDif = 0
@@ -862,7 +862,7 @@ func (ly *Layer) AlphaCycInit() {
 		ly.Inhib.ActAvg.AvgFmAct(&pl.ActAvg.ActPAvg, pl.ActP.Avg)
 		ly.Inhib.ActAvg.EffFmAvg(&pl.ActAvg.ActPAvgEff, pl.ActAvg.ActPAvg)
 	}
-	if ly.Inhib.Adapt.On {
+	if ly.Inhib.Adapt.On && !ly.AxonLay.IsTarget() {
 		if ly.GiAdaptCtr >= ly.Inhib.Adapt.Interval {
 			pl := &ly.Pools[0]
 			ly.Inhib.Adapt.Adapt(&ly.GiMult, ly.Inhib.ActAvg.Init, pl.ActAvg.ActMAvg)
