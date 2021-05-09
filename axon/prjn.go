@@ -590,6 +590,37 @@ func (pj *Prjn) DWt() {
 	}
 }
 
+// DWtSubMean subtracts a portion of the mean recv DWt per projection
+func (pj *Prjn) DWtSubMean() {
+	if !pj.Learn.Learn || pj.Learn.XCal.SubMean == 0 {
+		return
+	}
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	if rlay.AxonLay.IsTarget() {
+		return
+	}
+	sm := pj.Learn.XCal.SubMean
+	for ri := range rlay.Neurons {
+		nc := int(pj.RConN[ri])
+		if nc < 1 {
+			continue
+		}
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+		sumDWt := float32(0)
+		for ci := range rsidxs {
+			rsi := rsidxs[ci]
+			sumDWt += pj.Syns[rsi].DWt
+		}
+		sumDWt /= float32(nc)
+		for ci := range rsidxs {
+			rsi := rsidxs[ci]
+			sy := &pj.Syns[rsi]
+			sy.DWt -= sm * sumDWt
+		}
+	}
+}
+
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 func (pj *Prjn) WtFmDWt() {
 	if !pj.Learn.Learn {
@@ -651,6 +682,34 @@ func (pj *Prjn) WtBalFmWt() {
 		}
 		wb.Avg = sumWt
 		wb.Fact, wb.Inc, wb.Dec = pj.Learn.WtBal.WtBal(sumWt)
+	}
+}
+
+// SynScale performs synaptic scaling based on running average activation vs. targets
+func (pj *Prjn) SynScale() {
+	if !pj.Learn.Learn {
+		return
+	}
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	if rlay.AxonLay.IsTarget() {
+		return
+	}
+	lr := rlay.Learn.SynScale.Rate
+	for ri := range rlay.Neurons {
+		nrn := &rlay.Neurons[ri]
+		if nrn.IsOff() {
+			continue
+		}
+		adif := nrn.AvgDif
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+		for ci := range rsidxs {
+			rsi := rsidxs[ci]
+			sy := &pj.Syns[rsi]
+			sy.LWt -= lr * adif * sy.LWt
+			sy.Wt = sy.Scale * pj.Learn.WtSig.SigFmLinWt(sy.LWt)
+		}
 	}
 }
 

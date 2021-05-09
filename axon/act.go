@@ -431,14 +431,12 @@ type DtParams struct {
 	GeTau     float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau     float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	MTau      float32 `def:"20" min:"1" desc:"time constant for continuously updating the minus phase ActM value from the short AvgS value, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), "`
-	AvgTau    float32 `def:"200" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- used mostly for visualization and tracking *hog* units"`
 
 	VmDt     float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	GeDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
 	GiDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
 	MDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
-	AvgDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (dp *DtParams) Update() {
@@ -447,7 +445,6 @@ func (dp *DtParams) Update() {
 	dp.GeDt = dp.Integ / dp.GeTau
 	dp.GiDt = dp.Integ / dp.GiTau
 	dp.MDt = dp.Integ / dp.MTau
-	dp.AvgDt = 1 / dp.AvgTau
 }
 
 func (dp *DtParams) Defaults() {
@@ -457,7 +454,6 @@ func (dp *DtParams) Defaults() {
 	dp.GeTau = 5
 	dp.GiTau = 7
 	dp.MTau = 20 // 20 for 50 cycle, 10 for 25 cycle qtr
-	dp.AvgTau = 200
 	dp.Update()
 }
 

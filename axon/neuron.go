@@ -53,7 +53,11 @@ type Neuron struct {
 	ActP   float32 `desc:"the activation state at end of fourth quarter, which is the traditional posterior-cortical plus_phase activation"`
 	ActDif float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
 	ActDel float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
-	ActAvg float32 `desc:"average activation (of final plus phase activation state) over long time intervals (time constant = DtPars.AvgTau -- typically 200) -- useful for finding hog units and seeing overall distribution of activation"`
+
+	ActAvg float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = SynScale.AvgTau -- typically 200) -- useful for finding hog units and seeing overall distribution of activation"`
+	AvgPct float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SynScale.Interval intervals"`
+	TrgAvg float32 `desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`
+	AvgDif float32 `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SynScale.Interval intervals"`
 
 	Noise float32 `desc:"noise value added to unit (ActNoiseParams determines distribution, and when / where it is added)"`
 
@@ -73,7 +77,7 @@ type Neuron struct {
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
 }
 
-var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgL", "AvgLLrn", "AvgSLrn", "ActQ0", "ActQ1", "ActQ2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgL", "AvgLLrn", "AvgSLrn", "ActQ0", "ActQ1", "ActQ2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "AvgPct", "TrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
 
 var NeuronVarsMap map[string]int
 
@@ -86,6 +90,8 @@ var NeuronVarProps = map[string]string{
 	"Gk":       `auto-scale:"+"`,
 	"ActDel":   `auto-scale:"+"`,
 	"ActDif":   `auto-scale:"+"`,
+	"AvgPct":   `min:"-2" max:"2"`,
+	"TrgAvg":   `min:"-2" max:"2"`,
 	"GknaFast": `auto-scale:"+"`,
 	"GknaMed":  `auto-scale:"+"`,
 	"GknaSlow": `auto-scale:"+"`,

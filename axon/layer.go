@@ -549,10 +549,52 @@ func (ly *Layer) InitWts() {
 }
 
 // InitActAvg initializes the running-average activation values that drive learning.
+// and the longer time averaging values.
 func (ly *Layer) InitActAvg() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		ly.Learn.InitActAvg(nrn)
+	}
+	strg := ly.Learn.SynScale.TrgRange.Min
+	rng := ly.Learn.SynScale.TrgRange.Range()
+	inc := float32(0)
+	if ly.Is4D() {
+		nNy := ly.Shp.Dim(2)
+		nNx := ly.Shp.Dim(3)
+		nn := nNy * nNx
+		if nn > 1 {
+			inc = rng / float32(nn-1)
+		}
+		np := len(ly.Pools)
+		for pi := 1; pi < np; pi++ {
+			pl := &ly.Pools[pi]
+			// todo: permute list
+			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+				nrn := &ly.Neurons[ni]
+				if nrn.IsOff() {
+					continue
+				}
+				nrn.TrgAvg = strg + inc*float32(ni)
+				nrn.AvgPct = nrn.TrgAvg
+				nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
+				nrn.AvgDif = 0
+			}
+		}
+	} else {
+		nn := len(ly.Neurons)
+		if nn > 1 {
+			inc = rng / float32(nn-1)
+		}
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			nrn.TrgAvg = strg + inc*float32(ni)
+			nrn.AvgPct = nrn.TrgAvg
+			nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
+			nrn.AvgDif = 0
+		}
 	}
 }
 
@@ -1200,7 +1242,7 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 		case 3:
 			nrn.ActP = nrn.Act
 			nrn.ActDif = nrn.ActP - nrn.ActM
-			nrn.ActAvg += ly.Act.Dt.AvgDt * (nrn.Act - nrn.ActAvg)
+			nrn.ActAvg += ly.Learn.SynScale.AvgDt * (nrn.ActM - nrn.ActAvg)
 		}
 	}
 	switch ltime.Quarter {
@@ -1274,6 +1316,16 @@ func (ly *Layer) DWt() {
 	}
 }
 
+// DWtSubMean subtracts a portion of the mean recv DWt per projection
+func (ly *Layer) DWtSubMean() {
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).DWtSubMean()
+	}
+}
+
 // WtFmDWt updates the weights from delta-weight changes -- on the sending projections
 func (ly *Layer) WtFmDWt() {
 	for _, p := range ly.SndPrjns {
@@ -1291,6 +1343,32 @@ func (ly *Layer) WtBalFmWt() {
 			continue
 		}
 		p.(AxonPrjn).WtBalFmWt()
+	}
+}
+
+// SynScale performs synaptic scaling based on running average activation vs. targets
+func (ly *Layer) SynScale() {
+	lyavg := mat32.Max(ly.Pools[0].ActAvg.ActMAvg, 0.0001)
+
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.AvgDif.Init()
+		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			nrn.AvgPct = nrn.ActAvg / lyavg
+			nrn.AvgDif = nrn.AvgPct - nrn.TrgAvg
+			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), ni)
+		}
+		pl.AvgDif.CalcAvg()
+	}
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).SynScale()
 	}
 }
 

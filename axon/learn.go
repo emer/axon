@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"github.com/emer/etable/minmax"
 	"github.com/goki/mat32"
 )
 
@@ -14,21 +15,24 @@ import (
 // axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
-	ActAvg  LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
-	AvgL    AvgLParams      `view:"inline" desc:"parameters for computing AvgL long-term running average"`
-	CosDiff CosDiffParams   `view:"inline" desc:"parameters for computing cosine diff between minus and plus phase"`
+	ActAvg   LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
+	AvgL     AvgLParams      `view:"inline" desc:"parameters for computing AvgL long-term running average"`
+	CosDiff  CosDiffParams   `view:"inline" desc:"parameters for computing cosine diff between minus and plus phase"`
+	SynScale SynScaleParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
 }
 
 func (ln *LearnNeurParams) Update() {
 	ln.ActAvg.Update()
 	ln.AvgL.Update()
 	ln.CosDiff.Update()
+	ln.SynScale.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
 	ln.ActAvg.Defaults()
 	ln.AvgL.Defaults()
 	ln.CosDiff.Defaults()
+	ln.SynScale.Defaults()
 }
 
 // InitActAvg initializes the running-average activation values that drive learning.
@@ -39,17 +43,13 @@ func (ln *LearnNeurParams) InitActAvg(nrn *Neuron) {
 	nrn.AvgM = ln.ActAvg.Init
 	nrn.AvgL = ln.AvgL.Init
 	nrn.AvgSLrn = 0
-	nrn.ActAvg = ln.ActAvg.Init
+	nrn.AvgLLrn = 0
 }
 
 // AvgsFmAct updates the running averages based on current learning activation.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
-	// if ln.ActAvg.Spike {
 	ln.ActAvg.AvgsFmAct(ln.ActAvg.SpikeG*nrn.Spike, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn)
-	// } else {
-	// 	ln.ActAvg.AvgsFmAct(nrn.ActLrn, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn)
-	// }
 }
 
 // AvgLFmAct computes long-term average activation value, and learning factor, from current AvgM.
@@ -325,11 +325,38 @@ func (cd *CosDiffStats) Init() {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
+//  SynScaleParams
+
+// SynScaleParams govern the synaptic scaling to maintain target level of overall long-term
+// average activity in neurons.
+// Weights are rescaled in proportion to avg diff -- larger weights affected in proportion.
+type SynScaleParams struct {
+	TrgRange minmax.F32 `desc:"default 0.5..1.5 -- range of target average activations as proportion of overall layer activity level -- individual neurons are assigned values within this range to TrgAvg"`
+	Permute  bool       `desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization"`
+	AvgTau   float32    `def:"200" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly)"`
+	Rate     float32    `def:"0.01" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity"`
+
+	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+}
+
+func (ss *SynScaleParams) Update() {
+	ss.AvgDt = 1 / ss.AvgTau
+}
+
+func (ss *SynScaleParams) Defaults() {
+	ss.TrgRange.Set(.5, 1.5)
+	ss.AvgTau = 200
+	ss.Rate = 0.01
+	ss.Update()
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
 //  XCalParams
 
 // XCalParams are parameters for temporally eXtended Contrastive Attractor Learning function (XCAL)
 // which is the standard learning equation for axon .
 type XCalParams struct {
+	SubMean float32 `def:"0.8" desc:"amount of the mean dWt to subtract -- 1.0 = full zero-sum dWt"`
 	MLrn    float32 `def:"1" min:"0" desc:"multiplier on learning based on the medium-term floating average threshold which produces error-driven learning -- this is typically 1 when error-driven learning is being used, and 0 when pure Hebbian learning is used. The long-term floating average threshold is provided by the receiving unit"`
 	SetLLrn bool    `def:"false" desc:"if true, set a fixed AvgLLrn weighting factor that determines how much of the long-term floating average threshold (i.e., BCM, Hebbian) component of learning is used -- this is useful for setting a fully Hebbian learning connection, e.g., by setting MLrn = 0 and LLrn = 1. If false, then the receiving unit's AvgLLrn factor is used, which dynamically modulates the amount of the long-term component as a function of how active overall it is"`
 	LLrn    float32 `viewif:"SetLLrn" desc:"fixed l_lrn weighting factor that determines how much of the long-term floating average threshold (i.e., BCM, Hebbian) component of learning is used -- this is useful for setting a fully Hebbian learning connection, e.g., by setting MLrn = 0 and LLrn = 1."`
@@ -349,6 +376,7 @@ func (xc *XCalParams) Update() {
 }
 
 func (xc *XCalParams) Defaults() {
+	xc.SubMean = 0.8
 	xc.MLrn = 1
 	xc.SetLLrn = false
 	xc.LLrn = 1

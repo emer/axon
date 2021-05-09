@@ -190,11 +190,17 @@ type AxonLayer interface {
 	// DWt computes the weight change (learning) -- calls DWt method on sending projections
 	DWt()
 
+	// DWtSubMean subtracts a portion of the mean recv DWt per projection
+	DWtSubMean()
+
 	// WtFmDWt updates the weights from delta-weight changes -- on the sending projections
 	WtFmDWt()
 
 	// WtBalFmWt computes the Weight Balance factors based on average recv weights
 	WtBalFmWt()
+
+	// SynScale performs synaptic scaling based on running average activation vs. targets
+	SynScale()
 
 	// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
 	// Useful for implementing learning rate schedules.
@@ -237,11 +243,17 @@ type AxonPrjn interface {
 	// DWt computes the weight change (learning) -- on sending projections
 	DWt()
 
+	// DWtSubMean subtracts a portion of the mean recv DWt per projection
+	DWtSubMean()
+
 	// WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 	WtFmDWt()
 
 	// WtBalFmWt computes the Weight Balance factors based on average recv weights
 	WtBalFmWt()
+
+	// SynScale performs synaptic scaling based on running average activation vs. targets
+	SynScale()
 
 	// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
 	// Useful for implementing learning rate schedules.

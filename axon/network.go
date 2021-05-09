@@ -24,8 +24,10 @@ import (
 // axon.Network has parameters for running a basic rate-coded Axon network
 type Network struct {
 	NetworkStru
-	WtBalInterval int `def:"10" desc:"how frequently to update the weight balance average weight factor -- relatively expensive"`
-	WtBalCtr      int `inactive:"+" desc:"counter for how long it has been since last WtBal"`
+	WtBalInterval    int `def:"10" desc:"how frequently to update the weight balance average weight factor -- relatively expensive"`
+	WtBalCtr         int `inactive:"+" desc:"counter for how long it has been since last WtBal"`
+	SynScaleInterval int `def:"100" desc:"how frequently to perform synaptic scaling -- long enough for meaningful changes"`
+	SynScaleCtr      int `inactive:"+" desc:"counter for how long it has been since last SynScale"`
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
@@ -48,6 +50,8 @@ func (nt *Network) NewPrjn() emer.Prjn {
 func (nt *Network) Defaults() {
 	nt.WtBalInterval = 10
 	nt.WtBalCtr = 0
+	nt.SynScaleInterval = 100
+	nt.SynScaleCtr = 0
 	for li, ly := range nt.Layers {
 		ly.Defaults()
 		ly.SetIndex(li)
@@ -147,6 +151,7 @@ func (nt *Network) WtFmDWt() {
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts() {
 	nt.WtBalCtr = 0
+	nt.SynScaleCtr = 0
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -338,6 +343,7 @@ func (nt *Network) QuarterFinalImpl(ltime *Time) {
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl() {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt() }, "DWt     ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean() }, "DWtSubMean ")
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
@@ -349,11 +355,21 @@ func (nt *Network) WtFmDWtImpl() {
 		nt.WtBalCtr = 0
 		nt.WtBalFmWt()
 	}
+	nt.SynScaleCtr++
+	if nt.SynScaleCtr >= nt.SynScaleInterval {
+		nt.SynScaleCtr = 0
+		nt.SynScale()
+	}
 }
 
 // WtBalFmWt updates the weight balance factors based on average recv weights
 func (nt *Network) WtBalFmWt() {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.WtBalFmWt() }, "WtBalFmWt")
+}
+
+// SynScale performs synaptic scaling, receiver based
+func (nt *Network) SynScale() {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SynScale() }, "SynScale")
 }
 
 // LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.

@@ -67,7 +67,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.WtBal.On":     "true",  // on = much better!
+					"Prjn.Learn.WtBal.On":     "false", // on = much better!
 					"Prjn.Learn.WtBal.Targs":  "false", // false = better
 					"Prjn.Com.Delay":          "2",     // 1 == 2 = 3
 					"Prjn.Learn.Lrate":        "0.04",  // .3, WtSig.Gain = 1 is pretty close
@@ -75,30 +75,37 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
 					"Prjn.Learn.XCal.SetLLrn": "true",
-					"Prjn.Learn.XCal.LLrn":    "0", // no real diff actually
+					"Prjn.Learn.XCal.LLrn":    "0",   // no real diff actually
+					"Prjn.Learn.XCal.SubMean": "0.8", // 0.8 > 0.5 > 0.9 > 0
 				}},
-			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
+			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":      "1.2",  // 1.4 > 1.5 > 1.2 > lower but 1.4 is TOO sparse!
-					"Layer.Act.Init.Decay":      "0.5",  // 0.5 > 1 > 0
-					"Layer.Act.Init.KnaDecay":   "0.0",  // 0 ?
-					"Layer.Act.Gbar.L":          "0.2",  // 0.2 > 0.1
-					"Layer.Act.Gbar.E":          "1.0",  // 1.2 maybe better % cor but not cosdiff
-					"Layer.Act.NMDA.Gbar":       "0.03", // 0.03 > .04 > .02
-					"Layer.Act.NMDA.Tau":        "100",  // 50 no diff
-					"Layer.Act.GABAB.Gbar":      "0.2",  // .1 == .2 pretty much
-					"Layer.Act.GABAB.Gbase":     "0.2",  // .1 == .2
-					"Layer.Act.GABAB.GiSpike":   "10",   // 10 > 8 > 15
-					"Layer.Learn.ActAvg.SpikeG": "8",
-					"Layer.Learn.ActAvg.SSTau":  "40",   // 4 > 2 for 50 cyc qtr
-					"Layer.Learn.ActAvg.STau":   "10",   //
-					"Layer.Learn.ActAvg.MTau":   "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
-					"Layer.Act.Dt.MTau":         "20",   // for 50 cyc qtr, 20 > 10
-					"Layer.Act.KNa.On":          "true", // on > off
-					"Layer.Act.Noise.Dist":      "Gaussian",
-					"Layer.Act.Noise.Var":       "0.0",     // 0.01 > 0.005 > 0.02
-					"Layer.Act.Noise.Type":      "NoNoise", // now, no noise is better
-					"Layer.Act.Clamp.Rate":      "120",     // 180 default, 120 best here
+					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
+					"Layer.Inhib.ActAvg.Init":           "0.05", // important for this to be accurate
+					"Layer.Inhib.Adapt.On":              "true", // absolutely key for keeping syn scale in sync
+					"Layer.Act.Init.Decay":              "0.5",  // 0.5 > 1 > 0
+					"Layer.Act.Init.KnaDecay":           "0.0",  // 0 > higher for all other models
+					"Layer.Act.Gbar.L":                  "0.2",  // 0.2 > 0.1
+					"Layer.Act.Gbar.E":                  "1.0",  // 1.2 maybe better % cor but not cosdiff
+					"Layer.Act.NMDA.Gbar":               "0.03", // 0.03 > .04 > .02
+					"Layer.Act.NMDA.Tau":                "100",  // 50 no diff
+					"Layer.Act.GABAB.Gbar":              "0.2",  // .1 == .2 pretty much
+					"Layer.Act.GABAB.Gbase":             "0.2",  // .1 == .2
+					"Layer.Act.GABAB.GiSpike":           "10",   // 10 > 8 > 15
+					"Layer.Learn.ActAvg.SpikeG":         "8",
+					"Layer.Learn.ActAvg.SSTau":          "40",   // 4 > 2 for 50 cyc qtr
+					"Layer.Learn.ActAvg.STau":           "10",   //
+					"Layer.Learn.ActAvg.MTau":           "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
+					"Layer.Act.Dt.MTau":                 "20",   // for 50 cyc qtr, 20 > 10
+					"Layer.Act.KNa.On":                  "true", // on > off
+					"Layer.Act.Noise.Dist":              "Gaussian",
+					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
+					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
+					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
+					"Layer.Learn.SynScale.Rate":         "0.01",
+					"Layer.Learn.SynScale.AvgTau":       "200",
+					"Layer.Learn.SynScale.TrgRange.Min": ".5",
+					"Layer.Learn.SynScale.TrgRange.Max": "1.5",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -106,7 +113,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6",   // 0.6 > 0.7 > 0.8
+					"Layer.Inhib.Layer.Gi": "0.6", // 0.6 > 0.7 > 0.8
+					"Layer.Inhib.Adapt.On": "false",
 					"Layer.Act.Init.Decay": "0.5",   // 0.5 == 1 after clamp fix > .2
 					"Layer.Act.GABAB.Gbar": "0.005", // .005 > .01 > .02 > .05 > .1 > .2
 					"Layer.Act.NMDA.Gbar":  "0.03",  // .03 > .02 > .01
@@ -119,34 +127,22 @@ var ParamSets = params.Sets{
 				}},
 		},
 	}},
-	{Name: "DefaultInhib", Desc: "output uses default inhib instead of lower", Sheets: params.Sheets{
+	{Name: "WtBalNoSubMean", Desc: "original config", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "#Output", Desc: "go back to default",
+			{Sel: "Prjn", Desc: "wtbal, no submean",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.8",
+					"Prjn.Learn.WtBal.On":     "true", // on = much better!
+					"Prjn.Learn.XCal.SubMean": "0",
+				}},
+			{Sel: "Layer", Desc: "go back to default",
+				Params: params.Params{
+					"Layer.Learn.SynScale.Rate": "0",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
 			{Sel: "Sim", Desc: "takes longer -- generally doesn't finish..",
 				Params: params.Params{
 					"Sim.MaxEpcs": "100",
-				}},
-		},
-	}},
-	{Name: "NoMomentum", Desc: "no momentum or normalization", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "no norm or momentum",
-				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "false",
-					"Prjn.Learn.Momentum.On": "false",
-				}},
-		},
-	}},
-	{Name: "WtBalOn", Desc: "try with weight bal on", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "weight bal on",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true",
 				}},
 		},
 	}},
@@ -245,10 +241,10 @@ func (ss *Sim) New() {
 		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
 	}
 	ss.ViewOn = true
-	ss.TrainUpdt = axon.Cycle // axon.AlphaCycle
+	ss.TrainUpdt = axon.AlphaCycle
 	ss.TestUpdt = axon.Cycle
 	ss.TestInterval = 500
-	ss.LayStatNms = []string{"Hidden1", "Output"}
+	ss.LayStatNms = []string{"Hidden1", "Hidden2", "Output"}
 	ss.Time.Defaults()
 	ss.Time.CycPerQtr = 50 // 50 > 40 > 30 > 25..
 }
@@ -304,7 +300,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "RA25")
 	inp := net.AddLayer2D("Input", 5, 5, emer.Input)
 	hid1 := net.AddLayer2D("Hidden1", 10, 10, emer.Hidden)
-	// hid2 := net.AddLayer2D("Hidden2", 10, 10, emer.Hidden)
+	hid2 := net.AddLayer2D("Hidden2", 10, 10, emer.Hidden)
 	out := net.AddLayer2D("Output", 5, 5, emer.Target)
 
 	// use this to position layers relative to each other
@@ -316,8 +312,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	full := prjn.NewFull()
 
 	net.ConnectLayers(inp, hid1, full, emer.Forward)
-	// net.BidirConnectLayers(hid1, hid2, full)
-	net.BidirConnectLayers(hid1, out, full)
+	net.BidirConnectLayers(hid1, hid2, full)
+	net.BidirConnectLayers(hid2, out, full)
 
 	// note: can set these to do parallel threaded computation across multiple cpus
 	// not worth it for this small of a model, but definitely helps for larger ones
@@ -877,8 +873,10 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 
 	for _, lnm := range ss.LayStatNms {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.Pools[0].ActAvg.ActPAvgEff))
 		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.Pools[0].GeM.Max))
+		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.Pools[0].ActAvg.ActMAvg))
+		dt.SetCellFloat(ly.Nm+"_AvgDifAvg", row, float64(ly.Pools[0].AvgDif.Avg))
+		dt.SetCellFloat(ly.Nm+"_AvgDifMax", row, float64(ly.Pools[0].AvgDif.Max))
 	}
 
 	// note: essential to use Go version of update when called from another goroutine
@@ -910,8 +908,10 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 		{"PerTrlMSec", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.LayStatNms {
-		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_AvgDifAvg", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_AvgDifMax", etensor.FLOAT64, nil, nil})
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -930,8 +930,10 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.LayStatNms {
-		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_AvgDifAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_AvgDifMax", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 	}
 	return plt
 }
