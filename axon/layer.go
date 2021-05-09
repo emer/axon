@@ -1348,17 +1348,16 @@ func (ly *Layer) WtBalFmWt() {
 
 // SynScale performs synaptic scaling based on running average activation vs. targets
 func (ly *Layer) SynScale() {
-	lyavg := mat32.Max(ly.Pools[0].ActAvg.ActMAvg, 0.0001)
-
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
+		plavg := mat32.Max(pl.ActAvg.ActMAvg, 0.0001)
 		pl.AvgDif.Init()
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			nrn.AvgPct = nrn.ActAvg / lyavg
+			nrn.AvgPct = nrn.ActAvg / plavg
 			nrn.AvgDif = nrn.AvgPct - nrn.TrgAvg
 			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), ni)
 		}
