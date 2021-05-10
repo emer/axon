@@ -576,6 +576,12 @@ func (pj *Prjn) DWt() {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			err := pj.Learn.CHLdWt(sn.AvgSLrn, sn.AvgM, rn.AvgSLrn, rn.AvgM)
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
 			sy.DWt += pj.Learn.Lrate * err
 		}
 	}

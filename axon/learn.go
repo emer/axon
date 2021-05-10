@@ -104,11 +104,11 @@ func (ls *LearnSynParams) WtFmDWt(dwt, wt, lwt *float32, scale float32) {
 		return
 	}
 	// always doing softbound by default
-	if *dwt > 0 {
-		*dwt *= (1 - *lwt)
-	} else {
-		*dwt *= *lwt
-	}
+	// if *dwt > 0 {
+	// 	*dwt *= (1 - *lwt)
+	// } else {
+	// 	*dwt *= *lwt
+	// }
 	*lwt += *dwt
 	if *lwt < 0 {
 		*lwt = 0
