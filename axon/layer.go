@@ -566,15 +566,22 @@ func (ly *Layer) InitActAvg() {
 			inc = rng / float32(nn-1)
 		}
 		np := len(ly.Pools)
+		porder := make([]int, nn)
+		for i := range porder {
+			porder[i] = i
+		}
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
-			// todo: permute list
+			if ly.Learn.SynScale.Permute {
+				erand.PermuteInts(porder)
+			}
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.IsOff() {
 					continue
 				}
-				nrn.TrgAvg = strg + inc*float32((ni-pl.StIdx))
+				vi := porder[ni-pl.StIdx]
+				nrn.TrgAvg = strg + inc*float32(vi)
 				nrn.AvgPct = nrn.TrgAvg
 				nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
 				nrn.AvgDif = 0
@@ -585,12 +592,20 @@ func (ly *Layer) InitActAvg() {
 		if nn > 1 {
 			inc = rng / float32(nn-1)
 		}
+		porder := make([]int, nn)
+		for i := range porder {
+			porder[i] = i
+		}
+		if ly.Learn.SynScale.Permute {
+			erand.PermuteInts(porder)
+		}
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			nrn.TrgAvg = strg + inc*float32(ni)
+			vi := porder[ni]
+			nrn.TrgAvg = strg + inc*float32(vi)
 			nrn.AvgPct = nrn.TrgAvg
 			nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
 			nrn.AvgDif = 0
@@ -1285,6 +1300,16 @@ func (ly *Layer) IsTarget() bool {
 
 // DWt computes the weight change (learning) -- calls DWt method on sending projections
 func (ly *Layer) DWt() {
+	lr := ly.Learn.SynScale.ErrLrate
+	if lr > 0 {
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			nrn.TrgAvg += lr * (nrn.AvgS - nrn.AvgM)
+		}
+	}
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue

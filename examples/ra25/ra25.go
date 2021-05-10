@@ -72,7 +72,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.WtSig.Gain":   "6",
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
-					"Prjn.Learn.XCal.SubMean": "0.8",    // 0.8 > 0.5 > 0.9 > 0
+					"Prjn.Learn.XCal.SubMean": "1",      // 0.8 > 0.5 > 0.9 > 0
 				}},
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
@@ -98,6 +98,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
 					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
+					"Layer.Learn.SynScale.ErrLrate":     "0.05",    // 0.05 > others
 					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
 					"Layer.Learn.SynScale.TrgRange.Min": "0.8",     // 0.8 best for objrec
@@ -105,12 +106,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.3", // 0.3 > 0.2 > 0.1
+					"Prjn.WtScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6", // 0.6 > 0.7 > 0.8
+					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 0.8 > 1 > .6
 					"Layer.Inhib.Adapt.On": "false",
+					"Layer.Act.Clamp.Hard": "true", // need more work to get soft clamp working -- look at TRC
+					"Layer.Act.Clamp.Gain": "0.2",
+					"Layer.Act.Clamp.Rate": "120",   // 120 > 100 > 150
 					"Layer.Act.Init.Decay": "0.5",   // 0.5 == 1 after clamp fix > .2
 					"Layer.Act.GABAB.Gbar": "0.005", // .005 > .01 > .02 > .05 > .1 > .2
 					"Layer.Act.NMDA.Gbar":  "0.03",  // .03 > .02 > .01
