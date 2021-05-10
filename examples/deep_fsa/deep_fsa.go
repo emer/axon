@@ -65,12 +65,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.WtBal.On":     "true",
-					"Prjn.Learn.WtBal.Targs":  "true",
-					"Prjn.Learn.XCal.SetLLrn": "true",
-					"Prjn.Learn.XCal.LLrn":    "0",
-					"Prjn.Learn.WtSig.Gain":   "6",
-					"Prjn.Learn.Lrate":        "0.04",
+					"Prjn.Learn.WtSig.Gain": "6",
+					"Prjn.Learn.Lrate":      "0.04",
 				}},
 			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{

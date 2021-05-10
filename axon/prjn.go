@@ -31,10 +31,9 @@ type Prjn struct {
 	Syns    []Synapse      `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale float32         `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's) -- computed in AlphaCycInit, incorporates running-average activity levels"`
-	Gidx   ringidx.FIx     `inactive:"+" desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	Gbuf   []float32       `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	WbRecv []WtBalRecvPrjn `desc:"weight balance state variables for this projection, one per recv neuron"`
+	GScale float32     `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's) -- computed in AlphaCycInit, incorporates running-average activity levels"`
+	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	Gbuf   []float32   `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -308,7 +307,6 @@ func (pj *Prjn) Build() error {
 	pj.Gidx.Len = pj.Com.Delay + 1
 	pj.Gidx.Zi = 0
 	pj.Gbuf = make([]float32, rlen*pj.Gidx.Len)
-	pj.WbRecv = make([]WtBalRecvPrjn, rlen)
 	return nil
 }
 
@@ -426,10 +424,6 @@ func (pj *Prjn) InitWts() {
 	for si := range pj.Syns {
 		sy := &pj.Syns[si]
 		pj.InitWtsSyn(sy)
-	}
-	for wi := range pj.WbRecv {
-		wb := &pj.WbRecv[wi]
-		wb.Init()
 	}
 	pj.AxonPrj.InitGbuf()
 }
@@ -581,11 +575,8 @@ func (pj *Prjn) DWt() {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			err, bcm := pj.Learn.CHLdWt(sn.AvgSLrn, sn.AvgM, rn.AvgSLrn, rn.AvgM, rn.AvgL)
-
-			bcm *= pj.Learn.XCal.LongLrate(rn.AvgLLrn)
-			err *= pj.Learn.XCal.MLrn
-			sy.DWt += pj.Learn.Lrate * (bcm + err)
+			err := pj.Learn.CHLdWt(sn.AvgSLrn, sn.AvgM, rn.AvgSLrn, rn.AvgM)
+			sy.DWt += pj.Learn.Lrate * err
 		}
 	}
 }
@@ -626,62 +617,10 @@ func (pj *Prjn) WtFmDWt() {
 	if !pj.Learn.Learn {
 		return
 	}
-	if pj.Learn.WtBal.On {
-		for si := range pj.Syns {
-			sy := &pj.Syns[si]
-			ri := pj.SConIdx[si]
-			wb := &pj.WbRecv[ri]
-			pj.Learn.WtFmDWt(wb.Inc, wb.Dec, &sy.DWt, &sy.Wt, &sy.LWt, sy.Scale)
-			pj.Com.Fail(&sy.Wt)
-		}
-	} else {
-		for si := range pj.Syns {
-			sy := &pj.Syns[si]
-			pj.Learn.WtFmDWt(1, 1, &sy.DWt, &sy.Wt, &sy.LWt, sy.Scale)
-			pj.Com.Fail(&sy.Wt)
-		}
-	}
-}
-
-// WtBalFmWt computes the Weight Balance factors based on average recv weights
-func (pj *Prjn) WtBalFmWt() {
-	if !pj.Learn.Learn || !pj.Learn.WtBal.On {
-		return
-	}
-
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if !pj.Learn.WtBal.Targs && rlay.AxonLay.IsTarget() {
-		return
-	}
-	for ri := range rlay.Neurons {
-		nc := int(pj.RConN[ri])
-		if nc < 1 {
-			continue
-		}
-		wb := &pj.WbRecv[ri]
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
-		sumWt := float32(0)
-		sumN := 0
-		for ci := range rsidxs {
-			rsi := rsidxs[ci]
-			sy := &pj.Syns[rsi]
-			wt := sy.Wt
-			if wt == 0 { // if turned off
-				wt = sy.Scale * pj.Learn.WtSig.SigFmLinWt(sy.LWt)
-			}
-			if wt >= pj.Learn.WtBal.AvgThr {
-				sumWt += wt
-				sumN++
-			}
-		}
-		if sumN > 0 {
-			sumWt /= float32(sumN)
-		} else {
-			sumWt = 0
-		}
-		wb.Avg = sumWt
-		wb.Fact, wb.Inc, wb.Dec = pj.Learn.WtBal.WtBal(sumWt)
+	for si := range pj.Syns {
+		sy := &pj.Syns[si]
+		pj.Learn.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.Scale)
+		pj.Com.Fail(&sy.Wt)
 	}
 }
 
@@ -717,23 +656,4 @@ func (pj *Prjn) SynScale() {
 // Useful for implementing learning rate schedules.
 func (pj *Prjn) LrateMult(mult float32) {
 	pj.Learn.Lrate = pj.Learn.LrateInit * mult
-}
-
-///////////////////////////////////////////////////////////////////////
-//  WtBalRecvPrjn
-
-// WtBalRecvPrjn are state variables used in computing the WtBal weight balance function
-// There is one of these for each Recv Neuron participating in the projection.
-type WtBalRecvPrjn struct {
-	Avg  float32 `desc:"average of effective weight values that exceed WtBal.AvgThr across given Recv Neuron's connections for given Prjn"`
-	Fact float32 `desc:"overall weight balance factor that drives changes in WbInc vs. WbDec via a sigmoidal function -- this is the net strength of weight balance changes"`
-	Inc  float32 `desc:"weight balance increment factor -- extra multiplier to add to weight increases to maintain overall weight balance"`
-	Dec  float32 `desc:"weight balance decrement factor -- extra multiplier to add to weight decreases to maintain overall weight balance"`
-}
-
-func (wb *WtBalRecvPrjn) Init() {
-	wb.Avg = 0
-	wb.Fact = 0
-	wb.Inc = 1
-	wb.Dec = 1
 }

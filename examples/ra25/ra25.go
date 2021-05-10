@@ -67,16 +67,12 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.WtBal.On":     "false", // on = much better!
-					"Prjn.Learn.WtBal.Targs":  "false", // false = better
-					"Prjn.Com.Delay":          "2",     // 1 == 2 = 3
-					"Prjn.Learn.Lrate":        "0.04",  // .3, WtSig.Gain = 1 is pretty close
+					"Prjn.Com.Delay":          "2",    // 1 == 2 = 3
+					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
 					"Prjn.Learn.WtSig.Gain":   "6",
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
-					"Prjn.Learn.XCal.SetLLrn": "true",
-					"Prjn.Learn.XCal.LLrn":    "0",   // no real diff actually
-					"Prjn.Learn.XCal.SubMean": "0.8", // 0.8 > 0.5 > 0.9 > 0
+					"Prjn.Learn.XCal.SubMean": "0.8",    // 0.8 > 0.5 > 0.9 > 0
 				}},
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
@@ -102,10 +98,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
 					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
-					"Layer.Learn.SynScale.Rate":         "0.01",
-					"Layer.Learn.SynScale.AvgTau":       "200",
-					"Layer.Learn.SynScale.TrgRange.Min": ".5",
-					"Layer.Learn.SynScale.TrgRange.Max": "1.5",
+					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
+					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Min": "0.8",     // 0.8 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Max": "2",       // 2 best for objrec
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

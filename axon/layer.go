@@ -855,7 +855,6 @@ func (ly *Layer) UpdateExtFlags() {
 // input scaling from running average activation etc.
 // should already have presented the external input to the network at this point.
 func (ly *Layer) AlphaCycInit() {
-	ly.AxonLay.AvgLFmAvgM()
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		ly.Inhib.ActAvg.AvgFmAct(&pl.ActAvg.ActMAvg, pl.ActM.Avg)
@@ -886,20 +885,6 @@ func (ly *Layer) AlphaCycInit() {
 	ly.AxonLay.DecayState(ly.Act.Init.Decay)
 	if ly.Act.Clamp.Hard && ly.Typ == emer.Input {
 		ly.AxonLay.HardClamp()
-	}
-}
-
-// AvgLFmAvgM updates AvgL long-term running average activation that drives BCM Hebbian learning
-func (ly *Layer) AvgLFmAvgM() {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.Learn.AvgLFmAvgM(nrn)
-		if ly.Learn.AvgL.ErrMod {
-			nrn.AvgLLrn *= ly.CosDiff.ModAvgLLrn
-		}
 	}
 }
 
@@ -1281,14 +1266,6 @@ func (ly *Layer) CosDiffFmActs() {
 	ly.CosDiff.Cos = cosv
 
 	ly.Learn.CosDiff.AvgVarFmCos(&ly.CosDiff.Avg, &ly.CosDiff.Var, ly.CosDiff.Cos)
-
-	if ly.AxonLay.IsTarget() {
-		ly.CosDiff.AvgLrn = 0 // no BCM for non-hidden layers
-		ly.CosDiff.ModAvgLLrn = 0
-	} else {
-		ly.CosDiff.AvgLrn = 1 - ly.CosDiff.Avg
-		ly.CosDiff.ModAvgLLrn = ly.Learn.AvgL.ErrModFmLayErr(ly.CosDiff.AvgLrn)
-	}
 }
 
 // IsTarget returns true if this layer is a Target layer.
@@ -1297,7 +1274,7 @@ func (ly *Layer) CosDiffFmActs() {
 // This is used for turning off BCM hebbian learning,
 // in CosDiffFmActs to set the CosDiff.ModAvgLLrn value
 // for error-modulated level of hebbian learning.
-// It is also used in WtBal to not apply it to target layers.
+// It is also used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *Layer) IsTarget() bool {
 	return ly.Typ == emer.Target
@@ -1333,16 +1310,6 @@ func (ly *Layer) WtFmDWt() {
 			continue
 		}
 		p.(AxonPrjn).WtFmDWt()
-	}
-}
-
-// WtBalFmWt computes the Weight Balance factors based on average recv weights
-func (ly *Layer) WtBalFmWt() {
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).WtBalFmWt()
 	}
 }
 

@@ -24,8 +24,6 @@ import (
 // axon.Network has parameters for running a basic rate-coded Axon network
 type Network struct {
 	NetworkStru
-	WtBalInterval    int `def:"10" desc:"how frequently to update the weight balance average weight factor -- relatively expensive"`
-	WtBalCtr         int `inactive:"+" desc:"counter for how long it has been since last WtBal"`
 	SynScaleInterval int `def:"100" desc:"how frequently to perform synaptic scaling -- long enough for meaningful changes"`
 	SynScaleCtr      int `inactive:"+" desc:"counter for how long it has been since last SynScale"`
 }
@@ -48,8 +46,6 @@ func (nt *Network) NewPrjn() emer.Prjn {
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
-	nt.WtBalInterval = 10
-	nt.WtBalCtr = 0
 	nt.SynScaleInterval = 100
 	nt.SynScaleCtr = 0
 	for li, ly := range nt.Layers {
@@ -139,7 +135,7 @@ func (nt *Network) DWt() {
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
-// Also calls WtBalFmWt every WtBalInterval times
+// Also calls SynScale every Interval times
 func (nt *Network) WtFmDWt() {
 	nt.EmerNet.(AxonNetwork).WtFmDWtImpl()
 }
@@ -150,7 +146,6 @@ func (nt *Network) WtFmDWt() {
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts() {
-	nt.WtBalCtr = 0
 	nt.SynScaleCtr = 0
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -347,24 +342,13 @@ func (nt *Network) DWtImpl() {
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
-// Also calls WtBalFmWt every WtBalInterval times
 func (nt *Network) WtFmDWtImpl() {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt() }, "WtFmDWt")
-	nt.WtBalCtr++
-	if nt.WtBalCtr >= nt.WtBalInterval {
-		nt.WtBalCtr = 0
-		nt.WtBalFmWt()
-	}
 	nt.SynScaleCtr++
 	if nt.SynScaleCtr >= nt.SynScaleInterval {
 		nt.SynScaleCtr = 0
 		nt.SynScale()
 	}
-}
-
-// WtBalFmWt updates the weight balance factors based on average recv weights
-func (nt *Network) WtBalFmWt() {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.WtBalFmWt() }, "WtBalFmWt")
 }
 
 // SynScale performs synaptic scaling, receiver based
@@ -478,7 +462,7 @@ func (nt *Network) SizeReport() string {
 			pj := pji.(AxonPrjn).AsAxon()
 			ns := len(pj.Syns)
 			syn += ns
-			pmem := ns*int(unsafe.Sizeof(Synapse{})) + len(pj.Gbuf)*4 + len(pj.WbRecv)*int(unsafe.Sizeof(WtBalRecvPrjn{}))
+			pmem := ns*int(unsafe.Sizeof(Synapse{})) + len(pj.Gbuf)*4
 			synMem += pmem
 			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(), ns, (datasize.ByteSize)(pmem).HumanReadable())
 		}

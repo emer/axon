@@ -62,7 +62,7 @@ type AxonNetwork interface {
 	DWtImpl()
 
 	// WtFmDWtImpl updates the weights from delta-weight changes.
-	// Also calls WtBalFmWt every WtBalInterval times
+	// Also calls SynScale every Interval times
 	WtFmDWtImpl()
 }
 
@@ -117,7 +117,7 @@ type AxonLayer interface {
 	// This is used for turning off BCM hebbian learning,
 	// in CosDiffFmActs to set the CosDiff.ModAvgLLrn value
 	// for error-modulated level of hebbian learning.
-	// It is also used in WtBal to not apply it to target layers.
+	// It is also used in SynScale to not apply it to target layers.
 	// In both cases, Target layers are purely error-driven.
 	IsTarget() bool
 
@@ -125,10 +125,6 @@ type AxonLayer interface {
 	// including computing netinput scaling from running average activation etc.
 	// should already have presented the external input to the network at this point.
 	AlphaCycInit()
-
-	// AvgLFmAvgM updates AvgL long-term running average activation that
-	// drives BCM Hebbian learning
-	AvgLFmAvgM()
 
 	// GScaleFmAvgAct computes the scaling factor for synaptic conductance input
 	// based on sending layer average activation.
@@ -196,9 +192,6 @@ type AxonLayer interface {
 	// WtFmDWt updates the weights from delta-weight changes -- on the sending projections
 	WtFmDWt()
 
-	// WtBalFmWt computes the Weight Balance factors based on average recv weights
-	WtBalFmWt()
-
 	// SynScale performs synaptic scaling based on running average activation vs. targets
 	SynScale()
 
@@ -248,9 +241,6 @@ type AxonPrjn interface {
 
 	// WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 	WtFmDWt()
-
-	// WtBalFmWt computes the Weight Balance factors based on average recv weights
-	WtBalFmWt()
 
 	// SynScale performs synaptic scaling based on running average activation vs. targets
 	SynScale()
