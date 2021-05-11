@@ -898,8 +898,8 @@ func (ly *Layer) AlphaCycInit() {
 		ly.AxonLay.GenNoise()
 	}
 	ly.AxonLay.DecayState(ly.Act.Init.Decay)
-	if ly.Act.Clamp.Hard && ly.Typ == emer.Input {
-		ly.AxonLay.HardClamp()
+	if ly.Typ == emer.Input && ly.Act.Clamp.Type == RateClamp {
+		ly.AxonLay.RateClamp()
 	}
 }
 
@@ -990,14 +990,14 @@ func (ly *Layer) DecayStatePool(pool int, decay float32) {
 	pl.Inhib.Decay(decay)
 }
 
-// HardClamp hard-clamps the activations in the layer -- called during AlphaCycInit for hard-clamped Input layers
-func (ly *Layer) HardClamp() {
+// RateClamp rate-clamps the activations in the layer.
+func (ly *Layer) RateClamp() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Act.HardClamp(nrn)
+		ly.Act.RateClamp(nrn)
 	}
 }
 
@@ -1254,7 +1254,6 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 }
 
 // CosDiffFmActs computes the cosine difference in activation state between minus and plus phases.
-// this is also used for modulating the amount of BCM hebbian learning
 func (ly *Layer) CosDiffFmActs() {
 	lpl := &ly.Pools[0]
 	avgM := lpl.ActM.Avg
@@ -1286,10 +1285,7 @@ func (ly *Layer) CosDiffFmActs() {
 // IsTarget returns true if this layer is a Target layer.
 // By default, returns true for layers of Type == emer.Target
 // Other Target layers include the TRCLayer in deep predictive learning.
-// This is used for turning off BCM hebbian learning,
-// in CosDiffFmActs to set the CosDiff.ModAvgLLrn value
-// for error-modulated level of hebbian learning.
-// It is also used in SynScale to not apply it to target layers.
+// It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *Layer) IsTarget() bool {
 	return ly.Typ == emer.Target

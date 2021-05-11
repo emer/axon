@@ -114,9 +114,6 @@ type AxonLayer interface {
 	// IsTarget returns true if this layer is a Target layer.
 	// By default, returns true for layers of Type == emer.Target
 	// Other Target layers include the TRCLayer in deep predictive learning.
-	// This is used for turning off BCM hebbian learning,
-	// in CosDiffFmActs to set the CosDiff.ModAvgLLrn value
-	// for error-modulated level of hebbian learning.
 	// It is also used in SynScale to not apply it to target layers.
 	// In both cases, Target layers are purely error-driven.
 	IsTarget() bool
@@ -139,9 +136,9 @@ type AxonLayer interface {
 	// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay)
 	DecayState(decay float32)
 
-	// HardClamp hard-clamps the activations in the layer -- called during AlphaCycInit
+	// RateClamp hard-clamps the activations in the layer -- called during AlphaCycInit
 	// for hard-clamped Input layers
-	HardClamp()
+	RateClamp()
 
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
@@ -180,7 +177,6 @@ type AxonLayer interface {
 
 	// CosDiffFmActs computes the cosine difference in activation state
 	// between minus and plus phases.
-	// This is also used for modulating the amount of BCM hebbian learning
 	CosDiffFmActs()
 
 	// DWt computes the weight change (learning) -- calls DWt method on sending projections

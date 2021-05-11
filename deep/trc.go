@@ -143,7 +143,7 @@ func (ly *TRCLayer) Class() string {
 }
 
 func (ly *TRCLayer) IsTarget() bool {
-	return true // We are a Target-like layer: don't use BCM hebbian learning!
+	return true // We are a Target-like layer: don't do various adaptive steps
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////

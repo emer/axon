@@ -165,15 +165,16 @@ func (ac *ActParams) InitActQs(nrn *Neuron) {
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32) {
-	if !ac.Clamp.Hard && nrn.HasFlag(NeurHasExt) {
-		if ac.Clamp.Avg {
-			geRaw = ac.Clamp.AvgGe(nrn.Ext, geRaw)
-		} else {
-			geRaw += nrn.Ext * ac.Clamp.Gain
-		}
+	if ac.Clamp.Type == AddGeClamp && nrn.HasFlag(NeurHasExt) {
+		geRaw += nrn.Ext * ac.Clamp.Ge
 	}
 
-	ac.Dt.GeFmRaw(geRaw, &nrn.Ge, ac.Init.Ge)
+	if ac.Clamp.Type == GeClamp && nrn.HasFlag(NeurHasExt) {
+		nrn.Ge = nrn.Ext * ac.Clamp.Ge
+	} else {
+		ac.Dt.GeFmRaw(geRaw, &nrn.Ge, ac.Init.Ge)
+	}
+
 	// first place noise is required -- generate here!
 	if ac.Noise.Type != NoNoise && !ac.Noise.Fixed && ac.Noise.Dist != erand.Mean {
 		nrn.Noise = float32(ac.Noise.Gen(-1))
@@ -237,8 +238,8 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 
 // ActFmG computes Spike from Vm and ISI-based activation
 func (ac *ActParams) ActFmG(nrn *Neuron) {
-	if ac.HasHardClamp(nrn) {
-		ac.HardClamp(nrn)
+	if ac.HasRateClamp(nrn) {
+		ac.RateClamp(nrn)
 		return
 	}
 	var thr float32
@@ -281,14 +282,14 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	}
 }
 
-// HasHardClamp returns true if this neuron has external input that should be hard clamped
-func (ac *ActParams) HasHardClamp(nrn *Neuron) bool {
-	return ac.Clamp.Hard && nrn.HasFlag(NeurHasExt)
+// HasRateClamp returns true if this neuron has external input that should be hard clamped
+func (ac *ActParams) HasRateClamp(nrn *Neuron) bool {
+	return ac.Clamp.Type == RateClamp && nrn.HasFlag(NeurHasExt)
 }
 
-// HardClamp drives Poisson rate spiking according to external input.
+// RateClamp drives Poisson rate spiking according to external input.
 // Also adds any Noise *if* noise is set to ActNoise.
-func (ac *ActParams) HardClamp(nrn *Neuron) {
+func (ac *ActParams) RateClamp(nrn *Neuron) {
 	ext := nrn.Ext
 	if ac.Noise.Type == ActNoise {
 		ext += nrn.Noise
@@ -470,20 +471,19 @@ func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32, min float32) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Noise
 
-// ActNoiseType are different types / locations of random noise for activations
-type ActNoiseType int
+// ActNoiseTypes are different types / locations of random noise for activations
+type ActNoiseTypes int
 
-//go:generate stringer -type=ActNoiseType
+//go:generate stringer -type=ActNoiseTypes
 
-var KiT_ActNoiseType = kit.Enums.AddEnum(ActNoiseTypeN, kit.NotBitFlag, nil)
+var KiT_ActNoiseTypes = kit.Enums.AddEnum(ActNoiseTypesN, kit.NotBitFlag, nil)
 
-func (ev ActNoiseType) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *ActNoiseType) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+func (ev ActNoiseTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *ActNoiseTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
-// The activation noise types
 const (
 	// NoNoise means no noise added
-	NoNoise ActNoiseType = iota
+	NoNoise ActNoiseTypes = iota
 
 	// VmNoise means noise is added to the membrane potential.
 	VmNoise
@@ -497,14 +497,14 @@ const (
 	// GeMultNoise means that noise is multiplicative on the Ge excitatory conductance values
 	GeMultNoise
 
-	ActNoiseTypeN
+	ActNoiseTypesN
 )
 
 // ActNoiseParams contains parameters for activation-level noise
 type ActNoiseParams struct {
 	erand.RndParams
-	Type  ActNoiseType `desc:"where and how to add processing noise"`
-	Fixed bool         `desc:"keep the same noise value over the entire alpha cycle -- prevents noise from being washed out and produces a stable effect that can be better used for learning -- this is strongly recommended for most learning situations"`
+	Type  ActNoiseTypes `desc:"where and how to add processing noise"`
+	Fixed bool          `desc:"keep the same noise value over the entire alpha cycle -- prevents noise from being washed out and produces a stable effect that can be better used for learning -- this is strongly recommended for most learning situations"`
 }
 
 func (an *ActNoiseParams) Update() {
@@ -517,14 +517,36 @@ func (an *ActNoiseParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  ClampParams
 
+// ClampTypes are different types of clamping
+type ClampTypes int
+
+//go:generate stringer -type=ClampTypes
+
+var KiT_ClampTypes = kit.Enums.AddEnum(ClampTypesN, kit.NotBitFlag, nil)
+
+func (ev ClampTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *ClampTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+const (
+	// RateClamp drives a poisson firing rate
+	RateClamp ClampTypes = iota
+
+	// GeClamp drives a constant excitatory input given by Ge value
+	// ignoring any other source of Ge input
+	GeClamp
+
+	// AddGeClamp adds a constant extra Ge value on top of existing Ge inputs
+	AddGeClamp
+
+	ClampTypesN
+)
+
 // ClampParams are for specifying how external inputs are clamped onto network activation values
 type ClampParams struct {
-	ErrThr  float32 `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
-	Hard    bool    `def:"true" desc:"whether to hard clamp inputs where spiking rate is set to Poisson noise with external input * Rate factor"`
-	Rate    float32 `def:"180" desc:"maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
-	Gain    float32 `viewif:"!Hard" def:"0.02:0.5" desc:"soft clamp gain factor (Ge += Gain * Ext)"`
-	Avg     bool    `viewif:"!Hard" desc:"compute soft clamp as the average of current and target netins, not the sum -- prevents some of the main effect problems associated with adding external inputs"`
-	AvgGain float32 `viewif:"!Hard && Avg" def:"0.2" desc:"gain factor for averaging the Ge -- clamp value Ext contributes with AvgGain and current Ge as (1-AvgGain)"`
+	ErrThr float32    `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
+	Type   ClampTypes `desc:"type of clamping to use"`
+	Rate   float32    `viewif:"Type=RateClamp" def:"180" desc:"for RateClamp mode, maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
+	Ge     float32    `viewif:"Type!=RateClamp" def:"0.2,0.5" desc:"amount of Ge driven for clamping, for GeClamp and AddGeClamp"`
 }
 
 func (cp *ClampParams) Update() {
@@ -532,16 +554,9 @@ func (cp *ClampParams) Update() {
 
 func (cp *ClampParams) Defaults() {
 	cp.ErrThr = 0.5
-	cp.Hard = true
+	cp.Type = RateClamp
 	cp.Rate = 180
-	cp.Gain = 0.2
-	cp.Avg = false
-	cp.AvgGain = 0.2
-}
-
-// AvgGe computes Avg-based Ge clamping value if using that option.
-func (cp *ClampParams) AvgGe(ext, ge float32) float32 {
-	return cp.AvgGain*cp.Gain*ext + (1-cp.AvgGain)*ge
+	cp.Ge = 0.5
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -112,8 +112,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 0.8 > 1 > .6
 					"Layer.Inhib.Adapt.On": "false",
-					"Layer.Act.Clamp.Hard": "true", // need more work to get soft clamp working -- look at TRC
-					"Layer.Act.Clamp.Gain": "0.2",
+					"Layer.Act.Clamp.Type": "GeClamp",
+					"Layer.Act.Clamp.Ge":   "0.4",   // .6 > .8
 					"Layer.Act.Clamp.Rate": "120",   // 120 > 100 > 150
 					"Layer.Act.Init.Decay": "0.5",   // 0.5 == 1 after clamp fix > .2
 					"Layer.Act.GABAB.Gbar": "0.005", // .005 > .01 > .02 > .05 > .1 > .2
