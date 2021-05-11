@@ -72,8 +72,8 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.WtSig.Gain":   "6",
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
-					"Prjn.Learn.XCal.DWtThr":  "0.001",
-					"Prjn.Learn.XCal.SubMean": "1", // 1 > 0.9 now..
+					"Prjn.Learn.XCal.DWtThr":  "0.0001", // 0.0001 > 0.001 in objrec
+					"Prjn.Learn.XCal.SubMean": "1",      // 1 > 0.9 now..
 				}},
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
@@ -99,12 +99,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
 					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
-					"Layer.Learn.SynScale.ErrLrate":     "0.05",    // 0.05 > others
-					"Layer.Learn.SynScale.ClipRange":    "true",
-					"Layer.Learn.SynScale.Rate":         "0.01", // 0.01 > 0.005 best for objrec -- needs faster
-					"Layer.Learn.SynScale.AvgTau":       "200",  // 200 > 500 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Min": "0.8",  // 0.8 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Max": "2",    // 2 best for objrec
+					"Layer.Learn.SynScale.ErrLrate":     "0.02",    // 0.02 > 0.05 objrec
+					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
+					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Min": "0.8",     // 0.8 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Max": "2",       // 2 best for objrec
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

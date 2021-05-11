@@ -1301,7 +1301,6 @@ func (ly *Layer) TrgAvgFmErr() {
 		return
 	}
 	trgavg := ly.Learn.SynScale.TrgRange.Midpoint()
-	clip := ly.Learn.SynScale.ClipRange
 	avg := float32(0)
 	if ly.Is4D() {
 		np := len(ly.Pools)
@@ -1325,10 +1324,7 @@ func (ly *Layer) TrgAvgFmErr() {
 					if nrn.IsOff() {
 						continue
 					}
-					nrn.TrgAvg += df
-					if clip {
-						nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg)
-					}
+					nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg + df)
 				}
 			}
 		}
@@ -1354,10 +1350,7 @@ func (ly *Layer) TrgAvgFmErr() {
 			if nrn.IsOff() {
 				continue
 			}
-			nrn.TrgAvg += df
-			if clip {
-				nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg)
-			}
+			nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg + df)
 		}
 	}
 }

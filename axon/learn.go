@@ -244,12 +244,11 @@ func (cd *CosDiffStats) Init() {
 // average activity in neurons.
 // Weights are rescaled in proportion to avg diff -- larger weights affected in proportion.
 type SynScaleParams struct {
-	ErrLrate  float32    `def:"0.05" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
-	TrgRange  minmax.F32 `desc:"default 0.8..2 -- range of target average activations as proportion of overall layer activity level -- individual neurons are assigned values within this range to TrgAvg"`
-	ClipRange bool       `desc:"when learning TrgAvg values, clip to TrgRange"`
-	Permute   bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
-	AvgTau    float32    `def:"500" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
-	Rate      float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
+	ErrLrate float32    `def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
+	TrgRange minmax.F32 `desc:"default 0.8..2 -- range of target average activations as proportion of overall layer activity level -- individual neurons are assigned values within this range to TrgAvg"`
+	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
+	AvgTau   float32    `def:"500" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
+	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
 
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -259,9 +258,8 @@ func (ss *SynScaleParams) Update() {
 }
 
 func (ss *SynScaleParams) Defaults() {
-	ss.ErrLrate = 0.05
+	ss.ErrLrate = 0.02
 	ss.TrgRange.Set(.8, 2)
-	ss.ClipRange = true
 	ss.Permute = true
 	ss.AvgTau = 500
 	ss.Rate = 0.005
@@ -274,8 +272,8 @@ func (ss *SynScaleParams) Defaults() {
 // XCalParams are parameters for temporally eXtended Contrastive Attractor Learning function (XCAL)
 // which is the standard learning equation for axon .
 type XCalParams struct {
-	SubMean float32 `def:"1" desc:"amount of the mean dWt to subtract -- 1.0 = full zero-sum dWt"`
-	DWtThr  float32 `def:"0.001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
+	SubMean float32 `def:"1" desc:"amount of the mean dWt to subtract -- 1.0 = full zero-sum dWt -- only on non-zero DWts (see DWtThr)"`
+	DWtThr  float32 `def:"0.0001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
 	DRev    float32 `def:"0.1" min:"0" max:"0.99" desc:"proportional point within LTD range where magnitude reverses to go back down to zero at zero -- err-driven svm component does better with smaller values"`
 	DThr    float32 `def:"0.0001,0.01" min:"0" desc:"minimum LTD threshold value below which no weight change occurs -- this is now *relative* to the threshold"`
 	LrnThr  float32 `def:"0.01" desc:"xcal learning threshold -- don't learn when sending unit activation is below this value in both phases -- due to the nature of the learning function being 0 when the sr coproduct is 0, it should not affect learning in any substantial way -- nonstandard learning algorithms that have different properties should ignore it"`
@@ -293,7 +291,7 @@ func (xc *XCalParams) Update() {
 
 func (xc *XCalParams) Defaults() {
 	xc.SubMean = 1
-	xc.DWtThr = 0.001
+	xc.DWtThr = 0.0001
 	xc.DRev = 0.1
 	xc.DThr = 0.0001
 	xc.LrnThr = 0.01
