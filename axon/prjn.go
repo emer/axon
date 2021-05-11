@@ -596,6 +596,7 @@ func (pj *Prjn) DWtSubMean() {
 	if rlay.AxonLay.IsTarget() {
 		return
 	}
+	thr := pj.Learn.XCal.DWtThr * pj.Learn.Lrate
 	sm := pj.Learn.XCal.SubMean
 	for ri := range rlay.Neurons {
 		nc := int(pj.RConN[ri])
@@ -605,15 +606,24 @@ func (pj *Prjn) DWtSubMean() {
 		st := int(pj.RConIdxSt[ri])
 		rsidxs := pj.RSynIdx[st : st+nc]
 		sumDWt := float32(0)
+		nnz := 0 // non-zero
 		for ci := range rsidxs {
 			rsi := rsidxs[ci]
-			sumDWt += pj.Syns[rsi].DWt
+			dw := pj.Syns[rsi].DWt
+			if dw > thr || dw < -thr {
+				sumDWt += dw
+				nnz++
+			}
 		}
-		sumDWt /= float32(nc)
-		for ci := range rsidxs {
-			rsi := rsidxs[ci]
-			sy := &pj.Syns[rsi]
-			sy.DWt -= sm * sumDWt
+		if nnz > 1 {
+			sumDWt /= float32(nnz)
+			for ci := range rsidxs {
+				rsi := rsidxs[ci]
+				sy := &pj.Syns[rsi]
+				if sy.DWt > thr || sy.DWt < -thr {
+					sy.DWt -= sm * sumDWt
+				}
+			}
 		}
 	}
 }

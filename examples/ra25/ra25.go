@@ -72,7 +72,8 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.WtSig.Gain":   "6",
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
-					"Prjn.Learn.XCal.SubMean": "1",      // 0.8 > 0.5 > 0.9 > 0
+					"Prjn.Learn.XCal.DWtThr":  "0.001",
+					"Prjn.Learn.XCal.SubMean": "1", // 1 > 0.9 now..
 				}},
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{

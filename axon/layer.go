@@ -1303,7 +1303,13 @@ func (ly *Layer) DWt() {
 			if nrn.IsOff() {
 				continue
 			}
-			nrn.TrgAvg += lr * (nrn.AvgS - nrn.AvgM)
+			td := lr * (nrn.AvgS - nrn.AvgM)
+			if td > 0 {
+				td *= (ly.Learn.SynScale.TrgRange.Max - nrn.TrgAvg)
+			} else {
+				td *= (nrn.TrgAvg - ly.Learn.SynScale.TrgRange.Min)
+			}
+			nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg + td)
 		}
 	}
 	for _, p := range ly.SndPrjns {

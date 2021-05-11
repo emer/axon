@@ -272,7 +272,8 @@ func (ss *SynScaleParams) Defaults() {
 // XCalParams are parameters for temporally eXtended Contrastive Attractor Learning function (XCAL)
 // which is the standard learning equation for axon .
 type XCalParams struct {
-	SubMean float32 `def:"0.8" desc:"amount of the mean dWt to subtract -- 1.0 = full zero-sum dWt"`
+	SubMean float32 `def:"1" desc:"amount of the mean dWt to subtract -- 1.0 = full zero-sum dWt"`
+	DWtThr  float32 `def:"0.001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
 	DRev    float32 `def:"0.1" min:"0" max:"0.99" desc:"proportional point within LTD range where magnitude reverses to go back down to zero at zero -- err-driven svm component does better with smaller values"`
 	DThr    float32 `def:"0.0001,0.01" min:"0" desc:"minimum LTD threshold value below which no weight change occurs -- this is now *relative* to the threshold"`
 	LrnThr  float32 `def:"0.01" desc:"xcal learning threshold -- don't learn when sending unit activation is below this value in both phases -- due to the nature of the learning function being 0 when the sr coproduct is 0, it should not affect learning in any substantial way -- nonstandard learning algorithms that have different properties should ignore it"`
@@ -289,7 +290,8 @@ func (xc *XCalParams) Update() {
 }
 
 func (xc *XCalParams) Defaults() {
-	xc.SubMean = 0.8
+	xc.SubMean = 1
+	xc.DWtThr = 0.001
 	xc.DRev = 0.1
 	xc.DThr = 0.0001
 	xc.LrnThr = 0.01
