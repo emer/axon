@@ -1294,24 +1294,77 @@ func (ly *Layer) IsTarget() bool {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
 
-// DWt computes the weight change (learning) -- calls DWt method on sending projections
-func (ly *Layer) DWt() {
+// TrgAvgFmErr updates new TrgAvg levels based on unit-wise error signal
+func (ly *Layer) TrgAvgFmErr() {
 	lr := ly.Learn.SynScale.ErrLrate
-	if lr > 0 {
+	if ly.IsTarget() || lr == 0 {
+		return
+	}
+	trgavg := ly.Learn.SynScale.TrgRange.Midpoint()
+	clip := ly.Learn.SynScale.ClipRange
+	avg := float32(0)
+	if ly.Is4D() {
+		np := len(ly.Pools)
+		for pi := 1; pi < np; pi++ {
+			pl := &ly.Pools[pi]
+			nn := 0
+			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+				nrn := &ly.Neurons[ni]
+				if nrn.IsOff() {
+					continue
+				}
+				nrn.TrgAvg += lr * (nrn.AvgS - nrn.AvgM)
+				avg += nrn.TrgAvg
+				nn++
+			}
+			if nn > 0 { // keep overall average normalized
+				avg /= float32(nn)
+				df := trgavg - avg
+				for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+					nrn := &ly.Neurons[ni]
+					if nrn.IsOff() {
+						continue
+					}
+					nrn.TrgAvg += df
+					if clip {
+						nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg)
+					}
+				}
+			}
+		}
+	} else {
+		nn := 0
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			td := lr * (nrn.AvgS - nrn.AvgM)
-			if td > 0 {
-				td *= (ly.Learn.SynScale.TrgRange.Max - nrn.TrgAvg)
-			} else {
-				td *= (nrn.TrgAvg - ly.Learn.SynScale.TrgRange.Min)
+			nrn.TrgAvg += lr * (nrn.AvgS - nrn.AvgM)
+			avg += nrn.TrgAvg
+			nn++
+		}
+		if nn == 0 {
+			return
+		}
+		// keep overall average normalized
+		avg /= float32(nn)
+		df := trgavg - avg
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
 			}
-			nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg + td)
+			nrn.TrgAvg += df
+			if clip {
+				nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg)
+			}
 		}
 	}
+}
+
+// DWt computes the weight change (learning) -- calls DWt method on sending projections
+func (ly *Layer) DWt() {
+	ly.TrgAvgFmErr()
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue

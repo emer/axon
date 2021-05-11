@@ -100,10 +100,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
 					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
 					"Layer.Learn.SynScale.ErrLrate":     "0.05",    // 0.05 > others
-					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
-					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Min": "0.8",     // 0.8 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Max": "2",       // 2 best for objrec
+					"Layer.Learn.SynScale.ClipRange":    "true",
+					"Layer.Learn.SynScale.Rate":         "0.01", // 0.01 > 0.005 best for objrec -- needs faster
+					"Layer.Learn.SynScale.AvgTau":       "200",  // 200 > 500 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Min": "0.8",  // 0.8 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Max": "2",    // 2 best for objrec
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

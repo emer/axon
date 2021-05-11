@@ -244,11 +244,12 @@ func (cd *CosDiffStats) Init() {
 // average activity in neurons.
 // Weights are rescaled in proportion to avg diff -- larger weights affected in proportion.
 type SynScaleParams struct {
-	ErrLrate float32    `def:"0.05" desc:"learning rate for adjustments to Trg value based on unit-level error signal"`
-	TrgRange minmax.F32 `desc:"default 0.8..2 -- range of target average activations as proportion of overall layer activity level -- individual neurons are assigned values within this range to TrgAvg"`
-	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
-	AvgTau   float32    `def:"500" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
-	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
+	ErrLrate  float32    `def:"0.05" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
+	TrgRange  minmax.F32 `desc:"default 0.8..2 -- range of target average activations as proportion of overall layer activity level -- individual neurons are assigned values within this range to TrgAvg"`
+	ClipRange bool       `desc:"when learning TrgAvg values, clip to TrgRange"`
+	Permute   bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
+	AvgTau    float32    `def:"500" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
+	Rate      float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
 
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -260,6 +261,7 @@ func (ss *SynScaleParams) Update() {
 func (ss *SynScaleParams) Defaults() {
 	ss.ErrLrate = 0.05
 	ss.TrgRange.Set(.8, 2)
+	ss.ClipRange = true
 	ss.Permute = true
 	ss.AvgTau = 500
 	ss.Rate = 0.005
