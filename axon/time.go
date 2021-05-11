@@ -18,7 +18,8 @@ type Time struct {
 	PlusPhase bool    `desc:"true if this is the plus phase (final quarter = 3) -- else minus phase"`
 
 	TimePerCyc float32 `def:"0.001" desc:"amount of time to increment per cycle"`
-	CycPerQtr  int     `def:"25" desc:"number of cycles per quarter to run -- 25 = standard 100 msec alpha-cycle"`
+	CycPerQtr  int     `desc:"number of cycles per quarter to run -- 25 = standard 100 msec alpha-cycle, 50 = theta cycle -- increase as needed for larger networks"`
+	PlusCyc    int     `def:"50" desc:"number of cycles in final plus phase"`
 }
 
 // NewTime returns a new Time struct with default parameters
@@ -32,6 +33,7 @@ func NewTime() *Time {
 func (tm *Time) Defaults() {
 	tm.TimePerCyc = 0.001
 	tm.CycPerQtr = 50
+	tm.PlusCyc = 50
 }
 
 // Reset resets the counters all back to zero
@@ -73,6 +75,14 @@ func (tm *Time) QuarterInc() {
 func (tm *Time) QuarterCycle() int {
 	qmin := tm.Quarter * tm.CycPerQtr
 	return tm.Cycle - qmin
+}
+
+// CurCycles returns the number of cycles to run for current quarter
+func (tm *Time) CurCycles() int {
+	if tm.Quarter == 3 {
+		return tm.PlusCyc
+	}
+	return tm.CycPerQtr
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

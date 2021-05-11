@@ -413,7 +413,8 @@ func (ss *Sim) AlphaCyc(train bool) {
 	ss.Net.AlphaCycInit()
 	ss.Time.AlphaCycStart()
 	for qtr := 0; qtr < 4; qtr++ {
-		for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
+		mxcyc := ss.Time.CurCycles()
+		for cyc := 0; cyc < mxcyc; cyc++ {
 			ss.Net.Cycle(&ss.Time)
 			if !train {
 				ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
