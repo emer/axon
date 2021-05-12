@@ -62,6 +62,16 @@ func (nt *Network) UpdateParams() {
 	}
 }
 
+// UpdateMPIRates updates rate constants to compensate for much faster learning
+// occuring as a result of MPI updating.
+// Call this after setting values to Defaults and params.
+func (nt *Network) UpdateMPIRates(nmpi int) {
+	nt.SynScaleInterval /= nmpi
+	for _, ly := range nt.Layers {
+		ly.(AxonLayer).AsAxon().UpdateMPIRates(nmpi)
+	}
+}
+
 // UnitVarNames returns a list of variable names available on the units in this network.
 // Not all layers need to support all variables, but must safely return 0's for
 // unsupported ones.  The order of this list determines NetView variable display order.
@@ -338,11 +348,12 @@ func (nt *Network) QuarterFinalImpl(ltime *Time) {
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl() {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt() }, "DWt     ")
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean() }, "DWtSubMean ")
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl() {
+	// do submean here so dwts accumulate for mini-batch / mpi
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean() }, "DWtSubMean ")
 	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt() }, "WtFmDWt")
 	nt.SynScaleCtr++
 	if nt.SynScaleCtr >= nt.SynScaleInterval {
@@ -396,38 +407,82 @@ func (nt *Network) UnLesionNeurons() {
 // in which case the method returns true so that the actual length of
 // dwts can be passed next time around.
 // Used for MPI sharing of weight changes across processors.
-func (nt *Network) CollectDWts(dwts *[]float32, nwts int) bool {
+func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	idx := 0
 	made := false
 	if *dwts == nil {
-		// todo: if nil, compute right size right away
-		*dwts = make([]float32, 0, nwts)
+		nwts := 0
+		for _, lyi := range nt.Layers {
+			ly := lyi.(AxonLayer).AsAxon()
+			nwts += 4               // ActAvgVals
+			nwts += len(ly.Neurons) // ActAvg
+			if ly.IsLearnTrgAvg() {
+				nwts += len(ly.Neurons)
+			}
+			for _, pji := range ly.SndPrjns {
+				pj := pji.(AxonPrjn).AsAxon()
+				nwts += len(pj.Syns)
+			}
+		}
+		*dwts = make([]float32, nwts)
 		made = true
 	}
 	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
+		(*dwts)[idx+0] = ly.ActAvg.ActMAvg
+		(*dwts)[idx+1] = ly.ActAvg.ActPAvg
+		(*dwts)[idx+2] = ly.ActAvg.ActPAvgEff
+		(*dwts)[idx+3] = ly.ActAvg.GiMult
+		idx += 4
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			(*dwts)[idx+ni] = nrn.ActAvg
+		}
+		idx += len(ly.Neurons)
+		if ly.IsLearnTrgAvg() {
+			for ni := range ly.Neurons {
+				nrn := &ly.Neurons[ni]
+				(*dwts)[idx+ni] = nrn.DTrgAvg
+			}
+			idx += len(ly.Neurons)
+		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
-			ns := len(pj.Syns)
-			nsz := idx + ns
-			if len(*dwts) < nsz {
-				*dwts = append(*dwts, make([]float32, nsz-len(*dwts))...)
-			}
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
 				(*dwts)[idx+j] = sy.DWt
 			}
-			idx += ns
+			idx += len(pj.Syns)
 		}
 	}
 	return made
 }
 
 // SetDWts sets the DWt weight changes from given array of floats, which must be correct size
-func (nt *Network) SetDWts(dwts []float32) {
+// navg is the number of processors aggregated in these dwts -- some variables need to be
+// averaged instead of summed (e.g., ActAvg)
+func (nt *Network) SetDWts(dwts []float32, navg int) {
 	idx := 0
+	davg := 1 / float32(navg)
 	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
+		ly.ActAvg.ActMAvg = davg * dwts[idx+0]
+		ly.ActAvg.ActPAvg = davg * dwts[idx+1]
+		ly.ActAvg.ActPAvgEff = davg * dwts[idx+2]
+		ly.ActAvg.GiMult = davg * dwts[idx+3]
+		idx += 4
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			nrn.ActAvg = davg * dwts[idx+ni]
+		}
+		idx += len(ly.Neurons)
+		if ly.IsLearnTrgAvg() {
+			for ni := range ly.Neurons {
+				nrn := &ly.Neurons[ni]
+				nrn.DTrgAvg = dwts[idx+ni]
+			}
+			idx += len(ly.Neurons)
+		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
 			ns := len(pj.Syns)

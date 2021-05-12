@@ -95,6 +95,9 @@ var ParamSets = params.Sets{
 					"Layer.Learn.ActAvg.MTau":           "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
 					"Layer.Act.Dt.MTau":                 "20",   // for 50 cyc qtr, 20 > 10
 					"Layer.Act.KNa.On":                  "true", // on > off
+					"Layer.Act.KNa.Fast.Max":            "0.1",  // 0.2 > 0.1
+					"Layer.Act.KNa.Med.Max":             "0.2",  // 0.2 > 0.1 def
+					"Layer.Act.KNa.Slow.Max":            "0.2",  // 1 def
 					"Layer.Act.Noise.Dist":              "Gaussian",
 					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
@@ -102,8 +105,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.SynScale.ErrLrate":     "0.02",    // 0.02 > 0.05 objrec
 					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Min": "0.8",     // 0.8 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Max": "2",       // 2 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Min": "0.5",     // 0.8 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Max": "1.8",     // 2 best for objrec
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -111,14 +114,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 0.8 > 1 > .6
-					"Layer.Inhib.Adapt.On": "false",
-					"Layer.Act.Clamp.Type": "GeClamp",
-					"Layer.Act.Clamp.Ge":   "0.4",   // .6 > .8
-					"Layer.Act.Clamp.Rate": "120",   // 120 > 100 > 150
-					"Layer.Act.Init.Decay": "0.5",   // 0.5 == 1 after clamp fix > .2
-					"Layer.Act.GABAB.Gbar": "0.005", // .005 > .01 > .02 > .05 > .1 > .2
-					"Layer.Act.NMDA.Gbar":  "0.03",  // .03 > .02 > .01
+					"Layer.Inhib.Layer.Gi":    "0.7",  // 0.7 > others for adapt start
+					"Layer.Inhib.ActAvg.Init": "0.21", // this has to be exact for adapt
+					"Layer.Inhib.Adapt.On":    "true",
+					"Layer.Inhib.Adapt.LoTol": ".2",
+					"Layer.Act.Clamp.Type":    "GeClamp",
+					"Layer.Act.Clamp.Ge":      "0.4",   // .4 > .6 > .8 still
+					"Layer.Act.Clamp.Rate":    "120",   // 120 > 100 > 150
+					"Layer.Act.Init.Decay":    "0.5",   // 0.5 == 1 after clamp fix > .2
+					"Layer.Act.GABAB.Gbar":    "0.005", // .005 > .01 > .02 > .05 > .1 > .2
+					"Layer.Act.NMDA.Gbar":     "0.03",  // .03 > .02 > .01
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
@@ -876,7 +881,8 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 	for _, lnm := range ss.LayStatNms {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.Pools[0].GeM.Max))
-		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.Pools[0].ActAvg.ActMAvg))
+		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
+		dt.SetCellFloat(ly.Nm+"_GiMult", row, float64(ly.ActAvg.GiMult))
 		dt.SetCellFloat(ly.Nm+"_AvgDifAvg", row, float64(ly.Pools[0].AvgDif.Avg))
 		dt.SetCellFloat(ly.Nm+"_AvgDifMax", row, float64(ly.Pools[0].AvgDif.Max))
 	}
@@ -912,6 +918,7 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 	for _, lnm := range ss.LayStatNms {
 		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_GiMult", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_AvgDifAvg", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_AvgDifMax", etensor.FLOAT64, nil, nil})
 	}
@@ -934,6 +941,7 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	for _, lnm := range ss.LayStatNms {
 		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_GiMult", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 		plt.SetColParams(lnm+"_AvgDifAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_AvgDifMax", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 	}

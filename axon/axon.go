@@ -118,6 +118,11 @@ type AxonLayer interface {
 	// In both cases, Target layers are purely error-driven.
 	IsTarget() bool
 
+	// IsInput returns true if this layer is an Input layer.
+	// By default, returns true for layers of Type == emer.Input
+	// Used to prevent adapting of inhibition or TrgAvg values.
+	IsInput() bool
+
 	// AlphaCycInit handles all initialization at start of new input pattern,
 	// including computing netinput scaling from running average activation etc.
 	// should already have presented the external input to the network at this point.

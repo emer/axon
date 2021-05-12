@@ -85,10 +85,10 @@ func (ka *Params) Defaults() {
 	ka.Fast.Max = 0.1
 	ka.Med.Tau = 200
 	ka.Med.Rise = 0.02
-	ka.Med.Max = 0.1
+	ka.Med.Max = 0.2
 	ka.Slow.Tau = 1000
 	ka.Slow.Rise = 0.001
-	ka.Slow.Max = 1
+	ka.Slow.Max = 0.2
 	ka.Update()
 }
 
@@ -112,42 +112,3 @@ func (ka *Params) GcFmRate(gKNaF, gKNaM, gKNaS *float32, act float32) {
 	ka.Med.GcFmRate(gKNaM, act)
 	ka.Slow.GcFmRate(gKNaS, act)
 }
-
-/*
-class STATE_CLASS(KNaAdaptMiscSpec) : public STATE_CLASS(SpecMemberBase) {
-  // ##INLINE ##NO_TOKENS ##CAT_Axon extra params associated with sodium-gated potassium channel adaptation mechanism
-INHERITED(SpecMemberBase)
-public:
-  bool          clamp;          // #DEF_true apply adaptation even to clamped layers -- only happens if kna_adapt.on is true
-  bool          invert_nd;      // #DEF_true invert the adaptation effect for the act_nd (non-depressed) value that is typically used for learning-drivng averages (avg_ss, _s, _m) -- only happens if kna_adapt.on is true
-  float         max_gc;         // #CONDSHOW_ON_clamp||invert_nd #DEF_0.2 for clamp or invert_nd, maximum k_na conductance that we expect to get (prior to multiplying by g_bar.k) -- apply a proportional reduction in clamped activation and/or enhancement of act_nd based on current k_na conductance -- default is appropriate for default kna_adapt params
-  float         max_adapt;      // #CONDSHOW_ON_clamp||invert_nd has opposite effects for clamp and invert_nd (and only operative when kna_adapt.on in addition): for clamp on clamped layers, this is the maximum amount of adaptation to apply to clamped activations when conductance is at max_gc -- biologically, values around .5 correspond generally to strong adaptation in primary visual cortex (V1) -- for invert_nd, this is the maximum amount of adaptation to invert, which is key for allowing learning to operate successfully despite the depression of activations due to adaptation -- values around .2 to .4 are good for g_bar.k = .2, depending on how strongly inputs are depressed -- need to experiment to find the best value for a given config
-  bool          no_targ;        // #DEF_true automatically exclude units in TARGET layers and also TRC (Pulvinar) thalamic neurons from adaptation effects -- typically such layers should not be subject to these effects, so this makes it easier to not have to manually set those override params
-
-  INLINE float Compute_Clamped(float clamp_act, float gc_kna_f, float gc_kna_m, float gc_kna_s) {
-    float gc_kna = gc_kna_f + gc_kna_m + gc_kna_s;
-    float pct_gc = fminf(gc_kna / max_gc, 1.0f);
-    return clamp_act * (1.0f - pct_gc * max_adapt);
-  }
-  // apply adaptation directly to a clamped activation value, reducing in proportion to amount of k_na current
-
-  INLINE float Compute_ActNd(float act, float gc_kna_f, float gc_kna_m, float gc_kna_s) {
-    float gc_kna = gc_kna_f + gc_kna_m + gc_kna_s;
-    float pct_gc = fminf(gc_kna / max_gc, 1.0f);
-    return act * (1.0f + pct_gc * max_adapt);
-  }
-  // apply inverse of adaptation to activation value, increasing in proportion to amount of k_na current
-
-  STATE_DECO_KEY("UnitSpec");
-  STATE_TA_STD_CODE_SPEC(KNaAdaptMiscSpec);
-
-  // STATE_UAE( UpdtDts(); );
-
-private:
-  void        Initialize()      { Defaults_init(); }
-  void        Defaults_init() {
-    clamp = true;  invert_nd = true;  max_gc = .2f;  max_adapt = 0.3f;  no_targ = true;
-  }
-};
-
-*/

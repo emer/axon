@@ -226,9 +226,9 @@ func (cd *CosDiffParams) AvgVarFmCos(avg, vr *float32, cos float32) {
 
 // CosDiffStats holds cosine-difference statistics at the layer level
 type CosDiffStats struct {
-	Cos float32 `desc:"cosine (normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CosDiffFmActs at end of QuarterFinal for quarter = 3"`
-	Avg float32 `desc:"running average of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal"`
-	Var float32 `desc:"running variance of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal, used for modulating overall learning rate"`
+	Cos float32 `inactive:"+" desc:"cosine (normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CosDiffFmActs at end of QuarterFinal for quarter = 3"`
+	Avg float32 `inactive:"+" desc:"running average of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal"`
+	Var float32 `inactive:"+" desc:"running variance of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal, used for modulating overall learning rate"`
 }
 
 func (cd *CosDiffStats) Init() {
@@ -245,7 +245,7 @@ func (cd *CosDiffStats) Init() {
 // Weights are rescaled in proportion to avg diff -- larger weights affected in proportion.
 type SynScaleParams struct {
 	ErrLrate float32    `def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
-	TrgRange minmax.F32 `desc:"default 0.8..2 -- range of target average activations as proportion of overall layer activity level -- individual neurons are assigned values within this range to TrgAvg"`
+	TrgRange minmax.F32 `desc:"default 0.1-1.9 -- range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range.  In general the range should have a midpoint of 0, because of the mean-normalized values"`
 	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	AvgTau   float32    `def:"500" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
 	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
@@ -259,7 +259,7 @@ func (ss *SynScaleParams) Update() {
 
 func (ss *SynScaleParams) Defaults() {
 	ss.ErrLrate = 0.02
-	ss.TrgRange.Set(.8, 2)
+	ss.TrgRange.Set(0.1, 1.9)
 	ss.Permute = true
 	ss.AvgTau = 500
 	ss.Rate = 0.005
