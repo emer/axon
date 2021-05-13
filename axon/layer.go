@@ -1135,7 +1135,14 @@ func (ly *Layer) AvgMaxGe(ltime *Time) {
 func (ly *Layer) InhibFmGeAct(ltime *Time) {
 	lpl := &ly.Pools[0]
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
+	ly.Inhib.Bg.GiBg(&lpl.Inhib.GiBg, lpl.Inhib.Gi)
+	if ly.Inhib.Layer.On {
+		lpl.Inhib.Gi += lpl.Inhib.GiBg
+	}
 	ly.PoolInhibFmGeAct(ltime)
+	if !ly.Inhib.Layer.On {
+		lpl.Inhib.Gi += lpl.Inhib.GiBg
+	}
 	ly.InhibFmPool(ltime)
 }
 
@@ -1154,6 +1161,8 @@ func (ly *Layer) PoolInhibFmGeAct(ltime *Time) {
 			pl.Inhib.LayGi = lpl.Inhib.Gi
 			pl.Inhib.Gi = mat32.Max(pl.Inhib.Gi, lpl.Inhib.Gi) // pool is max of layer
 		} else {
+			ly.Inhib.Bg.GiBg(&pl.Inhib.GiBg, pl.Inhib.Gi)
+			pl.Inhib.Gi += pl.Inhib.GiBg
 			lpl.Inhib.Gi = mat32.Max(pl.Inhib.Gi, lpl.Inhib.Gi) // update layer from pool
 		}
 	}

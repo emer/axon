@@ -77,7 +77,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
+					"Layer.Inhib.Layer.Gi":              "1.1", // 1.2 > 1.3 > 1.1 used in all larger models
+					"Layer.Inhib.Bg.On":                 "true",
+					"Layer.Inhib.Bg.Gi":                 "0.1",
+					"Layer.Inhib.Bg.Tau":                "10",
 					"Layer.Inhib.ActAvg.Init":           "0.05", // important for this to be accurate
 					"Layer.Inhib.Adapt.On":              "true", // absolutely key for keeping syn scale in sync
 					"Layer.Act.Init.Decay":              "0.5",  // 0.5 > 1 > 0
