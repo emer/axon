@@ -62,16 +62,6 @@ func (nt *Network) UpdateParams() {
 	}
 }
 
-// UpdateMPIRates updates rate constants to compensate for much faster learning
-// occuring as a result of MPI updating.
-// Call this after setting values to Defaults and params.
-func (nt *Network) UpdateMPIRates(nmpi int) {
-	nt.SynScaleInterval /= nmpi
-	for _, ly := range nt.Layers {
-		ly.(AxonLayer).AsAxon().UpdateMPIRates(nmpi)
-	}
-}
-
 // UnitVarNames returns a list of variable names available on the units in this network.
 // Not all layers need to support all variables, but must safely return 0's for
 // unsupported ones.  The order of this list determines NetView variable display order.

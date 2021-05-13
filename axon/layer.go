@@ -68,9 +68,7 @@ func (ly *Layer) Defaults() {
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
-	if ly.Typ == emer.Target { // best default is for output layers to adapt
-		ly.Inhib.Adapt.On = true
-		ly.Inhib.Adapt.LoTol = 0.2
+	if ly.Typ == emer.Target { // defaults for target layers
 		ly.Act.Clamp.Type = GeClamp
 	}
 }
@@ -84,17 +82,6 @@ func (ly *Layer) UpdateParams() {
 	for _, pj := range ly.RcvPrjns {
 		pj.UpdateParams()
 	}
-}
-
-// UpdateMPIRates updates rate constants to compensate for much faster learning
-// occuring as a result of MPI updating.
-// Call this after setting values to Defaults and params
-func (ly *Layer) UpdateMPIRates(nmpi int) {
-	ly.Learn.SynScale.AvgTau /= float32(nmpi)
-	ly.Learn.SynScale.Update()
-	ly.Inhib.ActAvg.Tau /= float32(nmpi)
-	ly.Inhib.Adapt.Interval /= nmpi
-	ly.Inhib.Update()
 }
 
 // JsonToParams reformates json output to suitable params display output

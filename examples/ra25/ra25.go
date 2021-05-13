@@ -105,8 +105,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.SynScale.ErrLrate":     "0.02",    // 0.02 > 0.05 objrec
 					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Min": "0.5",     // 0.8 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Max": "1.8",     // 2 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Min": "0.2",     // .2 - 2.0 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Max": "2.0",     // 2.0
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -114,10 +114,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.7",  // 0.7 > others for adapt start
-					"Layer.Inhib.ActAvg.Init": "0.21", // this has to be exact for adapt
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
 					"Layer.Inhib.Adapt.On":    "true",
-					"Layer.Inhib.Adapt.LoTol": ".2",
+					"Layer.Inhib.Adapt.LoTol": ".8", // .8 best
 					"Layer.Act.Clamp.Type":    "GeClamp",
 					"Layer.Act.Clamp.Ge":      "0.4",   // .4 > .6 > .8 still
 					"Layer.Act.Clamp.Rate":    "120",   // 120 > 100 > 150
