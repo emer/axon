@@ -14,7 +14,6 @@ type InhibParams struct {
 	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer"`
 	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
 	Self   SelfInhibParams `view:"inline" desc:"neuron self-inhibition parameters -- can be beneficial for producing more graded, linear response -- not typically used in cortical networks"`
-	Bg     fffb.Bg         `view:"inline" desc:"low and slow background inhibition computed from computed FFFB value -- if Layer is On, Bg is computed on that, otherwise on individual pools."`
 	ActAvg ActAvgParams    `view:"inline" desc:"running-average activation computation values -- for overall estimates of layer activation levels, used in netinput scaling"`
 	Adapt  fffb.Adapt      `view:"inline" desc:"adaptive inhibition multiplier"`
 }
@@ -23,7 +22,6 @@ func (ip *InhibParams) Update() {
 	ip.Layer.Update()
 	ip.Pool.Update()
 	ip.Self.Update()
-	ip.Bg.Update()
 	ip.ActAvg.Update()
 	ip.Adapt.Update()
 }
@@ -32,7 +30,6 @@ func (ip *InhibParams) Defaults() {
 	ip.Layer.Defaults()
 	ip.Pool.Defaults()
 	ip.Self.Defaults()
-	ip.Bg.Defaults()
 	ip.ActAvg.Defaults()
 	ip.Adapt.Defaults()
 	ip.Layer.Gi = 1.0

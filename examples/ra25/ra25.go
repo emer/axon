@@ -77,10 +77,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":              "1.1", // 1.2 > 1.3 > 1.1 used in all larger models
-					"Layer.Inhib.Bg.On":                 "true",
-					"Layer.Inhib.Bg.Gi":                 "0.1",
-					"Layer.Inhib.Bg.Tau":                "10",
+					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
 					"Layer.Inhib.ActAvg.Init":           "0.05", // important for this to be accurate
 					"Layer.Inhib.Adapt.On":              "true", // absolutely key for keeping syn scale in sync
 					"Layer.Act.Init.Decay":              "0.5",  // 0.5 > 1 > 0
@@ -117,16 +114,20 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Inhib.Adapt.On":    "true",
-					"Layer.Inhib.Adapt.LoTol": ".8", // .8 best
-					"Layer.Act.Clamp.Type":    "GeClamp",
-					"Layer.Act.Clamp.Ge":      "0.4",   // .4 > .6 > .8 still
-					"Layer.Act.Clamp.Rate":    "120",   // 120 > 100 > 150
-					"Layer.Act.Init.Decay":    "0.5",   // 0.5 == 1 after clamp fix > .2
-					"Layer.Act.GABAB.Gbar":    "0.005", // .005 > .01 > .02 > .05 > .1 > .2
-					"Layer.Act.NMDA.Gbar":     "0.03",  // .03 > .02 > .01
+					"Layer.Inhib.Layer.Gi":     "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init":  "0.24", // this has to be exact for adapt
+					"Layer.Inhib.Adapt.On":     "false",
+					"Layer.Inhib.Adapt.LoTol":  ".8", // .8 best
+					"Layer.Act.Clamp.Type":     "GeClamp",
+					"Layer.Act.Clamp.Ge":       "0.3",   // .3 works with bursting
+					"Layer.Act.Clamp.BurstThr": "0.5",   //
+					"Layer.Act.Clamp.BurstGe":  "1",     //
+					"Layer.Act.Clamp.BurstCyc": "10",    //
+					"Layer.Act.Spike.Tr":       "0",     // allow high freq bursting
+					"Layer.Act.Clamp.Rate":     "120",   // 120 > 100 > 150
+					"Layer.Act.Init.Decay":     "0.5",   // 0.5 == 1 after clamp fix > .2
+					"Layer.Act.GABAB.Gbar":     "0.005", // .005 > .01 > .02 > .05 > .1 > .2
+					"Layer.Act.NMDA.Gbar":      "0.03",  // .03 > .02 > .01
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
