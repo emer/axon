@@ -119,11 +119,12 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Adapt.On":     "false",
 					"Layer.Inhib.Adapt.LoTol":  ".8", // .8 best
 					"Layer.Act.Clamp.Type":     "GeClamp",
-					"Layer.Act.Clamp.Ge":       "0.3",   // .3 works with bursting
+					"Layer.Act.Clamp.Ge":       "0.4",   // .4 > others with no bursting -- fine with too
+					"Layer.Act.Clamp.Burst":    "true",  //
 					"Layer.Act.Clamp.BurstThr": "0.5",   //
-					"Layer.Act.Clamp.BurstGe":  "1",     //
-					"Layer.Act.Clamp.BurstCyc": "10",    //
-					"Layer.Act.Spike.Tr":       "0",     // allow high freq bursting
+					"Layer.Act.Clamp.BurstGe":  "2",     // 2 strongest
+					"Layer.Act.Clamp.BurstCyc": "20",    // 20 best for objrec
+					"Layer.Act.Spike.Tr":       "2",     // 2 >= 3 in objrec
 					"Layer.Act.Clamp.Rate":     "120",   // 120 > 100 > 150
 					"Layer.Act.Init.Decay":     "0.5",   // 0.5 == 1 after clamp fix > .2
 					"Layer.Act.GABAB.Gbar":     "0.005", // .005 > .01 > .02 > .05 > .1 > .2

@@ -171,7 +171,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) 
 
 	if ac.Clamp.Type == GeClamp && nrn.HasFlag(NeurHasExt) {
 		ge := ac.Clamp.Ge
-		if actm < ac.Clamp.BurstThr && cyc < ac.Clamp.BurstCyc {
+		if ac.Clamp.Burst && (actm < ac.Clamp.BurstThr && cyc < ac.Clamp.BurstCyc) {
 			ge += ac.Clamp.BurstGe
 		}
 		nrn.Ge = nrn.Ext * ge
@@ -551,9 +551,10 @@ type ClampParams struct {
 	Type     ClampTypes `desc:"type of clamping to use"`
 	Rate     float32    `viewif:"Type=RateClamp" def:"180" desc:"for RateClamp mode, maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
 	Ge       float32    `viewif:"Type!=RateClamp" def:"0.2,0.6" desc:"amount of Ge driven for clamping, for GeClamp and AddGeClamp"`
-	BurstThr float32    `viewif:"Type=GeClamp" desc:"for Target layers, if ActM < this threshold then the neuron bursts -- otherwise the burst is adapted and doesn't apply -- amplifies errors -- set to 1 to always burst (e.g., for input layers)"`
-	BurstCyc int        `def:"10" viewif:"Type=GeClamp" desc:"duration of extra bursting -- for Target layers, at start of plus phase, else start of alpha cycle"`
-	BurstGe  float32    `def:"1" viewif:"Type=GeClamp" desc:"extra bursting Ge during BurstCyc cycles -- added to Ge -- set Act.Spike.Tr refractory period shorter (e.g., 0 or 1) to allow higher frequency bursting"`
+	Burst    bool       `viewif:"Type=GeClamp" desc:"activate bursting at start of clamping window"`
+	BurstThr float32    `def:"0.5" viewif:"Burst&&Type=GeClamp" desc:"for Target layers, if ActM < this threshold then the neuron bursts -- otherwise the burst is adapted and doesn't apply -- amplifies errors -- set to 1 to always burst (e.g., for input layers)"`
+	BurstCyc int        `def:"0,20" viewif:"Burst&&Type=GeClamp" desc:"duration of extra bursting -- for Target layers, at start of plus phase, else start of alpha cycle"`
+	BurstGe  float32    `def:"2" viewif:"Burst&&Type=GeClamp" desc:"extra bursting Ge during BurstCyc cycles -- added to Ge -- 2 for maximum kick -- 1 and 1.5 should have slightly weaker effects.  Can potentially be useful to set Act.Spike.Tr = 2 to speed up bursting."`
 }
 
 func (cp *ClampParams) Update() {
@@ -564,9 +565,10 @@ func (cp *ClampParams) Defaults() {
 	cp.Type = RateClamp // Target layers set to GeClamp by default
 	cp.Rate = 180
 	cp.Ge = 0.6
-	cp.BurstCyc = 10
+	cp.Burst = false // maybe not necessary
+	cp.BurstCyc = 20
 	cp.BurstThr = 0.5
-	cp.BurstGe = 1.0
+	cp.BurstGe = 2.0
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
