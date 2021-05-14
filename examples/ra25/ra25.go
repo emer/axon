@@ -78,12 +78,11 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
-					"Layer.Inhib.ActAvg.Init":           "0.05", // important for this to be accurate
-					"Layer.Inhib.Adapt.On":              "true", // absolutely key for keeping syn scale in sync
+					"Layer.Inhib.ActAvg.Init":           "0.05", // for adapt, important for this to be accurate
+					"Layer.Inhib.Adapt.On":              "true", // not huge effects but beneficial
 					"Layer.Act.Init.Decay":              "0.5",  // 0.5 > 1 > 0
 					"Layer.Act.Init.KnaDecay":           "0.0",  // 0 > higher for all other models
 					"Layer.Act.Gbar.L":                  "0.2",  // 0.2 > 0.1
-					"Layer.Act.Gbar.E":                  "1.0",  // 1.2 maybe better % cor but not cosdiff
 					"Layer.Act.NMDA.Gbar":               "0.03", // 0.03 > .04 > .02
 					"Layer.Act.NMDA.Tau":                "100",  // 50 no diff
 					"Layer.Act.GABAB.Gbar":              "0.2",  // .1 == .2 pretty much
@@ -114,17 +113,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init":  "0.24", // this has to be exact for adapt
-					"Layer.Inhib.Adapt.On":     "false",
-					"Layer.Inhib.Adapt.LoTol":  ".8", // .8 best
+					"Layer.Inhib.Layer.Gi":     "0.9",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init":  "0.24",  // this has to be exact for adapt
+					"Layer.Inhib.Adapt.On":     "false", // no effect here -- and in general not much effect or worse
+					"Layer.Inhib.Adapt.LoTol":  ".8",    // .8 best if adapting
 					"Layer.Act.Clamp.Type":     "GeClamp",
 					"Layer.Act.Clamp.Ge":       "0.4",   // .4 > others with no bursting -- fine with too
-					"Layer.Act.Clamp.Burst":    "true",  //
+					"Layer.Act.Clamp.Burst":    "false", //
 					"Layer.Act.Clamp.BurstThr": "0.5",   //
-					"Layer.Act.Clamp.BurstGe":  "2",     // 2 strongest
-					"Layer.Act.Clamp.BurstCyc": "20",    // 20 best for objrec
-					"Layer.Act.Spike.Tr":       "2",     // 2 >= 3 in objrec
+					"Layer.Act.Clamp.BurstGe":  "1",     // 2 strongest
+					"Layer.Act.Clamp.BurstCyc": "10",    // 20 best for objrec
+					"Layer.Act.Spike.Tr":       "0",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
 					"Layer.Act.Clamp.Rate":     "120",   // 120 > 100 > 150
 					"Layer.Act.Init.Decay":     "0.5",   // 0.5 == 1 after clamp fix > .2
 					"Layer.Act.GABAB.Gbar":     "0.005", // .005 > .01 > .02 > .05 > .1 > .2
@@ -258,6 +257,7 @@ func (ss *Sim) New() {
 	ss.LayStatNms = []string{"Hidden1", "Hidden2", "Output"}
 	ss.Time.Defaults()
 	ss.Time.CycPerQtr = 50 // 50 > 40 > 30 > 25..
+	ss.Time.PlusCyc = 50   // 50 > 40 > 25
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
