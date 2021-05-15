@@ -70,6 +70,7 @@ var ParamSets = params.Sets{
 					"Prjn.Com.Delay":          "2",    // 1 == 2 = 3
 					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
 					"Prjn.Learn.WtSig.Gain":   "6",
+					"Prjn.Learn.WtSig.Min":    "0.25",   // .25 or .1 seems better than 0
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":  "0.0001", // 0.0001 > 0.001 in objrec

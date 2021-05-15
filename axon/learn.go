@@ -318,6 +318,7 @@ func (xc *XCalParams) DWt(srval, thrP float32) float32 {
 type WtSigParams struct {
 	Gain float32 `def:"1,6" min:"0" desc:"gain (contrast, sharpness) of the weight contrast function (1 = linear)"`
 	Off  float32 `def:"1" min:"0" desc:"offset of the function (1=centered at .5, >1=higher, <1=lower) -- 1 is standard for XCAL"`
+	Min  float32 `def:"0" min:"0" desc:"minimum contrast-enhanced weight value -- if > 0, prevents complete elimination of weights to preserve exploration"`
 }
 
 func (ws *WtSigParams) Update() {
@@ -376,13 +377,19 @@ func SigInvFun61(w float32) float32 {
 
 // SigFmLinWt returns sigmoidal contrast-enhanced weight from linear weight
 func (ws *WtSigParams) SigFmLinWt(lw float32) float32 {
-	if ws.Gain == 1 && ws.Off == 1 {
-		return lw
+	var wt float32
+	switch {
+	case ws.Gain == 1 && ws.Off == 1:
+		wt = lw
+	case ws.Gain == 6 && ws.Off == 1:
+		wt = SigFun61(lw)
+	default:
+		wt = SigFun(lw, ws.Gain, ws.Off)
 	}
-	if ws.Gain == 6 && ws.Off == 1 {
-		return SigFun61(lw)
+	if wt < ws.Min {
+		wt = ws.Min
 	}
-	return SigFun(lw, ws.Gain, ws.Off)
+	return wt
 }
 
 // LinFmSigWt returns linear weight from sigmoidal contrast-enhanced weight
