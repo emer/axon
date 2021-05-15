@@ -417,9 +417,21 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	if ly.IsLearnTrgAvg() {
 		w.Write([]byte(fmt.Sprintf("\"Units\": {\n")))
 		depth++
+
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte(fmt.Sprintf("\"ActAvg\": [ ")))
+		nn := len(ly.Neurons)
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			w.Write([]byte(fmt.Sprintf("%g", nrn.ActAvg)))
+			if ni < nn-1 {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte(" ]\n"))
+
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte(fmt.Sprintf("\"TrgAvg\": [ ")))
-		nn := len(ly.Neurons)
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			w.Write([]byte(fmt.Sprintf("%g", nrn.TrgAvg)))
@@ -428,6 +440,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 			}
 		}
 		w.Write([]byte(" ]\n"))
+
 		depth--
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("},\n"))
@@ -496,6 +509,15 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 		}
 	}
 	if lw.Units != nil {
+		if ta, ok := lw.Units["ActAvg"]; ok {
+			for ni := range ta {
+				if ni > len(ly.Neurons) {
+					break
+				}
+				nrn := &ly.Neurons[ni]
+				nrn.ActAvg = ta[ni]
+			}
+		}
 		if ta, ok := lw.Units["TrgAvg"]; ok {
 			for ni := range ta {
 				if ni > len(ly.Neurons) {
