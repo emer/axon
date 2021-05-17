@@ -1570,10 +1570,13 @@ func (ly *Layer) AdaptGScale() {
 		}
 		err := trg - act
 		pj.GScale.Err = err
-		pj.GScale.Scale += pj.WtScale.ScaleLrate * pj.GScale.Orig * err
-		min := 0.1 * pj.GScale.Orig
-		if pj.GScale.Scale < min {
-			pj.GScale.Scale = min
+		normerr := err / trg
+		if (normerr > 0 && normerr > pj.WtScale.LoTol) || (normerr < 0 && -normerr > pj.WtScale.HiTol) {
+			pj.GScale.Scale += pj.WtScale.ScaleLrate * pj.GScale.Orig * err
+			min := 0.1 * pj.GScale.Orig
+			if pj.GScale.Scale < min {
+				pj.GScale.Scale = min
+			}
 		}
 	}
 }

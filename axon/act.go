@@ -663,13 +663,17 @@ func (wp *WtInitParams) Defaults() {
 //  WtScaleParams
 
 // WtScaleParams are weight scaling parameters: modulates overall strength of projection,
-// using both absolute and relative factors
+// using both absolute and relative factors.
+// Also includes ability to adapt Scale factors to maintain AvgMaxGeM / GiM max conductances
+// according to Acts.GTarg target values.
 type WtScaleParams struct {
 	Rel        float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
 	Init       float32 `def:"1" min:"0" desc:"adjustment factor for the initial scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling -- typically Adapt should compensate for most cases"`
-	Adapt      bool    `def:"true" desc:"Adapt the 'GScale' scaling value so the GMaxAvg running-average value for this projections remains in the target range"`
+	Adapt      bool    `def:"true" desc:"Adapt the 'GScale' scaling value so the ActAvg.AvgMaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg"`
 	AvgTau     float32 `viewif:"Adapt" def:"500" desc:"time constant for integrating GMaxAvg average, in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
-	ScaleLrate float32 `viewif:"Adapt" def:"0.1" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors."`
+	ScaleLrate float32 `viewif:"Adapt" def:"0.01" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors."`
+	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
+	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
 
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -680,6 +684,8 @@ func (ws *WtScaleParams) Defaults() {
 	ws.Adapt = true
 	ws.AvgTau = 500
 	ws.ScaleLrate = 0.1
+	ws.HiTol = 0
+	ws.LoTol = 0.8
 	ws.Update()
 }
 
