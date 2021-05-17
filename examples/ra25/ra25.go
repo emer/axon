@@ -65,17 +65,6 @@ const LogPrec = 4
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
-				Params: params.Params{
-					"Prjn.Com.Delay":          "2",    // 1 == 2 = 3
-					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
-					"Prjn.Learn.WtSig.Gain":   "6",
-					"Prjn.Learn.WtSig.Min":    "0.0",    // .25 or .1 seems better than 0
-					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
-					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
-					"Prjn.Learn.XCal.DWtThr":  "0.0001", // 0.0001 > 0.001 in objrec
-					"Prjn.Learn.XCal.SubMean": "1",      // 1 > 0.9 now..
-				}},
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
@@ -90,6 +79,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.GABAB.Gbar":              "0.2",  // .1 == .2 pretty much
 					"Layer.Act.GABAB.Gbase":             "0.2",  // .1 == .2
 					"Layer.Act.GABAB.GiSpike":           "10",   // 10 > 8 > 15
+					"Layer.Act.GTarg.GeMax":             "0.3",
 					"Layer.Learn.ActAvg.SpikeG":         "8",
 					"Layer.Learn.ActAvg.SSTau":          "40",   // 4 > 2 for 50 cyc qtr
 					"Layer.Learn.ActAvg.STau":           "10",   //
@@ -108,6 +98,19 @@ var ParamSets = params.Sets{
 					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
 					"Layer.Learn.SynScale.TrgRange.Min": "0.2",     // .2 - 2.0 best for objrec
 					"Layer.Learn.SynScale.TrgRange.Max": "2.0",     // 2.0
+				}},
+			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
+				Params: params.Params{
+					"Prjn.Com.Delay":          "2",    // 1 == 2 = 3
+					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
+					"Prjn.Learn.WtSig.Gain":   "6",
+					"Prjn.Learn.WtSig.Min":    "0.0", // .25 or .1 seems better than 0
+					"Prjn.WtScale.ScaleLrate": "1",
+					"Prjn.WtScale.Init":       "2",
+					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
+					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
+					"Prjn.Learn.XCal.DWtThr":  "0.0001", // 0.0001 > 0.001 in objrec
+					"Prjn.Learn.XCal.SubMean": "1",      // 1 > 0.9 now..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -141,7 +144,7 @@ var ParamSets = params.Sets{
 		"Sim": &params.Sheet{ // sim params apply to sim object
 			{Sel: "Sim", Desc: "best params always finish in this time",
 				Params: params.Params{
-					"Sim.MaxEpcs": "100",
+					"Sim.MaxEpcs": "500",
 				}},
 		},
 	}},
@@ -893,7 +896,15 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 
 	for _, lnm := range ss.LayStatNms {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.Pools[0].GeM.Max))
+		ffpj := ly.RecvPrjn(0).(*axon.Prjn)
+		dt.SetCellFloat(ly.Nm+"_FF_AvgMaxG", row, float64(ffpj.GScale.AvgMax))
+		dt.SetCellFloat(ly.Nm+"_FF_Scale", row, float64(ffpj.GScale.Scale))
+		if ly.NRecvPrjns() > 1 {
+			fbpj := ly.RecvPrjn(1).(*axon.Prjn)
+			dt.SetCellFloat(ly.Nm+"_FB_AvgMaxG", row, float64(fbpj.GScale.AvgMax))
+			dt.SetCellFloat(ly.Nm+"_FB_Scale", row, float64(fbpj.GScale.Scale))
+		}
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
 		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
 		dt.SetCellFloat(ly.Nm+"_GiMult", row, float64(ly.ActAvg.GiMult))
 		dt.SetCellFloat(ly.Nm+"_AvgDifAvg", row, float64(ly.Pools[0].AvgDif.Avg))
@@ -929,6 +940,10 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 		{"PerTrlMSec", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.LayStatNms {
+		sch = append(sch, etable.Column{lnm + "_FF_AvgMaxG", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_FF_Scale", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_FB_AvgMaxG", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_FB_Scale", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_GiMult", etensor.FLOAT64, nil, nil})
@@ -952,6 +967,10 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.LayStatNms {
+		plt.SetColParams(lnm+"_FF_AvgMaxG", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_FF_Scale", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_FB_AvgMaxG", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_FB_Scale", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_GiMult", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)

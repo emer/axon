@@ -996,28 +996,33 @@ func (ly *Layer) InitGScale() {
 	}
 
 	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
 		pj := p.(AxonPrjn).AsAxon()
 		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
-				pj.GScale.Targ = pj.WtScale.Rel / totGiRel
+				pj.GScale.Rel = pj.WtScale.Rel / totGiRel
+				pj.GScale.Targ = ly.Act.GTarg.GiMax * pj.GScale.Rel
 				pj.GScale.Scale /= totGiRel
 			} else {
+				pj.GScale.Rel = 0
 				pj.GScale.Targ = 0
 				pj.GScale.Scale = 0
 			}
 		} else {
 			if totGeRel > 0 {
-				pj.GScale.Targ = pj.WtScale.Rel / totGeRel
+				pj.GScale.Rel = pj.WtScale.Rel / totGeRel
+				pj.GScale.Targ = ly.Act.GTarg.GeMax * pj.GScale.Rel
 				pj.GScale.Scale /= totGeRel
 			} else {
+				pj.GScale.Rel = 0
 				pj.GScale.Targ = 0
 				pj.GScale.Scale = 0
 			}
 		}
 		pj.GScale.Orig = pj.GScale.Scale
+		pj.GScale.Avg = 0
+		pj.GScale.Max = 0
+		pj.GScale.AvgAvg = 0.5 * pj.GScale.Targ // typically half
+		pj.GScale.AvgMax = pj.GScale.Targ
 	}
 }
 

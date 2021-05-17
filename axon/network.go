@@ -426,7 +426,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			pj := pji.(AxonPrjn).AsAxon()
 			(*dwts)[idx] = pj.GScale.Scale
 			(*dwts)[idx+1] = pj.GScale.AvgAvg
-			(*dwts)[idx+2] = pj.GScale.MaxAvg
+			(*dwts)[idx+2] = pj.GScale.AvgMax
 			idx += 3
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
@@ -468,7 +468,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			pj := pji.(AxonPrjn).AsAxon()
 			pj.GScale.Scale = dwts[idx]
 			pj.GScale.AvgAvg = dwts[idx+1]
-			pj.GScale.MaxAvg = dwts[idx+2]
+			pj.GScale.AvgMax = dwts[idx+2]
 			idx += 3
 			ns := len(pj.Syns)
 			for j := range pj.Syns {

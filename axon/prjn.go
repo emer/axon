@@ -50,7 +50,7 @@ func (pj *Prjn) Defaults() {
 	pj.WtInit.Defaults()
 	pj.WtScale.Defaults()
 	pj.Learn.Defaults()
-	pj.GScale.Defaults()
+	pj.GScale.Init()
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
@@ -65,21 +65,23 @@ func (pj *Prjn) UpdateParams() {
 type GScaleVals struct {
 	Scale  float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there."`
 	Orig   float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
-	Targ   float32 `inactive:"+" desc:"target proportion of total receiving conductance for this projection: WtScale.Abs * (WtScale.Rel / sum(WtScale.Rel across relevant prjns) -- drives changes in Scale to maintain"`
+	Rel    float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: WtScale.Rel / sum(WtScale.Rel across relevant prjns"`
+	Targ   float32 `inactive:"+" desc:"target for adapting projections: Act.GTarg.GeMax * Rel (or GiMax for inhibitory projections)"`
 	Avg    float32 `inactive:"+" desc:"average G value on this trial"`
 	Max    float32 `inactive:"+" desc:"maximum G value on this trial"`
 	AvgAvg float32 `inactive:"+" desc:"running average of the Avg"`
-	MaxAvg float32 `inactive:"+" desc:"running average of the Max"`
+	AvgMax float32 `inactive:"+" desc:"running average of the Max"`
 }
 
-func (gs *GScaleVals) Defaults() {
+func (gs *GScaleVals) Init() {
 	gs.Scale = 1
 	gs.Orig = 1
-	gs.Targ = .5
+	gs.Rel = 0
+	gs.Targ = 0
 	gs.Avg = 0
 	gs.Max = 0
 	gs.AvgAvg = gs.Targ
-	gs.MaxAvg = gs.Targ
+	gs.AvgMax = gs.Targ
 }
 
 func (pj *Prjn) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj }
@@ -602,7 +604,7 @@ func (pj *Prjn) RecvGIncStats() {
 		pj.GScale.Avg = avg
 		pj.GScale.AvgAvg += pj.WtScale.AvgDt * (avg - pj.GScale.AvgAvg)
 		pj.GScale.Max = max
-		pj.GScale.MaxAvg += pj.WtScale.AvgDt * (max - pj.GScale.MaxAvg)
+		pj.GScale.AvgMax += pj.WtScale.AvgDt * (max - pj.GScale.AvgMax)
 	}
 	pj.Gidx.Shift(1) // rotate buffer
 }
@@ -735,11 +737,16 @@ func (pj *Prjn) AdaptGScale() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	var trg float32
 	if pj.Typ == emer.Inhib {
-		trg = rlay.Act.GTarg.GiMax * pj.GScale.Targ
+		trg = rlay.Act.GTarg.GiMax * pj.GScale.Rel
 	} else {
-		trg = rlay.Act.GTarg.GeMax * pj.GScale.Targ
+		trg = rlay.Act.GTarg.GeMax * pj.GScale.Rel
 	}
-	pj.GScale.Scale += pj.WtScale.ScaleLrate * (trg - pj.GScale.MaxAvg)
+	pj.GScale.Targ = trg
+	pj.GScale.Scale += pj.WtScale.ScaleLrate * pj.GScale.Orig * (trg - pj.GScale.AvgMax)
+	min := 0.2 * pj.GScale.Orig
+	if pj.GScale.Scale < min {
+		pj.GScale.Scale = min
+	}
 }
 
 // SynScale performs synaptic scaling based on running average activation vs. targets

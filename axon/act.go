@@ -481,16 +481,16 @@ func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32, min float32) {
 // GTargParams are target conductance levels for excitation and inhibition,
 // driving adaptation of GScale.Scale conductance scaling
 type GTargParams struct {
-	GeMax float32 `def:"1" min:"0" desc:"target maximum excitatory conductance"`
-	GiMax float32 `def:"1" min:"0" desc:"target maximum inhibitory conductance -- for actual synaptic inhibitory neurons"`
+	GeMax float32 `def:"0.2" min:"0" desc:"target maximum instantaneous excitatory conductance across all incoming projections -- this is typically less than half of the GeM value, because GeM integrates instantaneous GeRaw over time"`
+	GiMax float32 `def:"0.2" min:"0" desc:"target maximum instantaneous inhibitory conductance across all incoming projections -- this is typically less than half of the GiM value, because GiM integrates instantaneous GiSyn over time -- for actual synaptic inhibitory neuron inputs (GiSyn) not FFFB computed inhibition"`
 }
 
 func (gt *GTargParams) Update() {
 }
 
 func (gt *GTargParams) Defaults() {
-	gt.GeMax = 1
-	gt.GiMax = 1
+	gt.GeMax = 0.2
+	gt.GiMax = 0.2
 	gt.Update()
 }
 
@@ -669,7 +669,7 @@ type WtScaleParams struct {
 	Init       float32 `def:"1" min:"0" desc:"adjustment factor for the initial scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling -- typically Adapt should compensate for most cases"`
 	Adapt      bool    `def:"true" desc:"Adapt the 'GScale' scaling value so the GMaxAvg running-average value for this projections remains in the target range"`
 	AvgTau     float32 `viewif:"Adapt" def:"500" desc:"time constant for integrating GMaxAvg average, in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
-	ScaleLrate float32 `viewif:"Adapt" def:"0.005" desc:"learning rate for adapting the GScale value, as function of target value"`
+	ScaleLrate float32 `viewif:"Adapt" def:"0.1" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors."`
 
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -679,7 +679,7 @@ func (ws *WtScaleParams) Defaults() {
 	ws.Init = 1
 	ws.Adapt = true
 	ws.AvgTau = 500
-	ws.ScaleLrate = 0.005
+	ws.ScaleLrate = 0.1
 	ws.Update()
 }
 
