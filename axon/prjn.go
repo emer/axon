@@ -31,7 +31,7 @@ type Prjn struct {
 	Syns    []Synapse      `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale float32     `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's) -- computed in AlphaCycInit, incorporates running-average activity levels"`
+	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
 	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
 	Gbuf   []float32   `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 }
@@ -50,7 +50,7 @@ func (pj *Prjn) Defaults() {
 	pj.WtInit.Defaults()
 	pj.WtScale.Defaults()
 	pj.Learn.Defaults()
-	pj.GScale = 1
+	pj.GScale.Defaults()
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
@@ -59,6 +59,27 @@ func (pj *Prjn) UpdateParams() {
 	pj.WtScale.Update()
 	pj.Learn.Update()
 	pj.Learn.LrateInit = pj.Learn.Lrate
+}
+
+// GScaleVals holds the conductance scaling and associated values
+type GScaleVals struct {
+	Scale  float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there."`
+	Orig   float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
+	Targ   float32 `inactive:"+" desc:"target proportion of total receiving conductance for this projection: WtScale.Abs * (WtScale.Rel / sum(WtScale.Rel across relevant prjns) -- drives changes in Scale to maintain"`
+	Avg    float32 `inactive:"+" desc:"average G value on this trial"`
+	Max    float32 `inactive:"+" desc:"maximum G value on this trial"`
+	AvgAvg float32 `inactive:"+" desc:"running average of the Avg"`
+	MaxAvg float32 `inactive:"+" desc:"running average of the Max"`
+}
+
+func (gs *GScaleVals) Defaults() {
+	gs.Scale = 1
+	gs.Orig = 1
+	gs.Targ = .5
+	gs.Avg = 0
+	gs.Max = 0
+	gs.AvgAvg = gs.Targ
+	gs.MaxAvg = gs.Targ
 }
 
 func (pj *Prjn) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj }
@@ -204,7 +225,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte(fmt.Sprintf("\"MetaData\": {\n")))
 	depth++
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.GScale)))
+	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.GScale.Scale)))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
@@ -279,7 +300,7 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 	if pw.MetaData != nil {
 		if gs, ok := pw.MetaData["GScale"]; ok {
 			pv, _ := strconv.ParseFloat(gs, 32)
-			pj.GScale = float32(pv)
+			pj.GScale.Scale = float32(pv)
 		}
 	}
 	var err error
@@ -514,7 +535,7 @@ func (pj *Prjn) InitGbuf() {
 // SendSpike sends a spike from sending neuron index si,
 // to add to buffer on receivers.
 func (pj *Prjn) SendSpike(si int) {
-	sc := pj.GScale
+	sc := pj.GScale.Scale
 	del := pj.Com.Delay
 	sz := del + 1
 	di := pj.Gidx.Idx(del) // index in buffer to put new values -- end of line
@@ -529,7 +550,65 @@ func (pj *Prjn) SendSpike(si int) {
 }
 
 // RecvGInc increments the receiver's GeRaw or GiRaw from that of all the projections.
-func (pj *Prjn) RecvGInc() {
+func (pj *Prjn) RecvGInc(ltime *Time) {
+	if ltime.PlusPhase {
+		pj.RecvGIncNoStats()
+	} else {
+		pj.RecvGIncStats()
+	}
+}
+
+// RecvGIncStats is called in minus phase to collect stats about conductances
+func (pj *Prjn) RecvGIncStats() {
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	del := pj.Com.Delay
+	sz := del + 1
+	zi := pj.Gidx.Zi
+	var max, avg float32
+	var n int
+	if pj.Typ == emer.Inhib {
+		for ri := range rlay.Neurons {
+			bi := ri*sz + zi
+			rn := &rlay.Neurons[ri]
+			g := pj.Gbuf[bi]
+			rn.GiRaw += g
+			pj.Gbuf[bi] = 0
+			if g > max {
+				max = g
+			}
+			if g > 0 {
+				avg += g
+				n++
+			}
+		}
+	} else {
+		for ri := range rlay.Neurons {
+			bi := ri*sz + zi
+			rn := &rlay.Neurons[ri]
+			g := pj.Gbuf[bi]
+			rn.GeRaw += g
+			pj.Gbuf[bi] = 0
+			if g > max {
+				max = g
+			}
+			if g > 0 {
+				avg += g
+				n++
+			}
+		}
+	}
+	if n > 0 {
+		avg /= float32(n)
+		pj.GScale.Avg = avg
+		pj.GScale.AvgAvg += pj.WtScale.AvgDt * (avg - pj.GScale.AvgAvg)
+		pj.GScale.Max = max
+		pj.GScale.MaxAvg += pj.WtScale.AvgDt * (max - pj.GScale.MaxAvg)
+	}
+	pj.Gidx.Shift(1) // rotate buffer
+}
+
+// RecvGIncNoStats is plus-phase version without stats
+func (pj *Prjn) RecvGIncNoStats() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Com.Delay
 	sz := del + 1
@@ -538,14 +617,16 @@ func (pj *Prjn) RecvGInc() {
 		for ri := range rlay.Neurons {
 			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			rn.GiRaw += pj.Gbuf[bi]
+			g := pj.Gbuf[bi]
+			rn.GiRaw += g
 			pj.Gbuf[bi] = 0
 		}
 	} else {
 		for ri := range rlay.Neurons {
 			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			rn.GeRaw += pj.Gbuf[bi]
+			g := pj.Gbuf[bi]
+			rn.GeRaw += g
 			pj.Gbuf[bi] = 0
 		}
 	}
@@ -638,6 +719,27 @@ func (pj *Prjn) WtFmDWt() {
 		pj.Learn.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.Scale)
 		pj.Com.Fail(&sy.Wt)
 	}
+}
+
+// SlowAdapt does the slow adaptation of AdaptGScale and SynScale
+func (pj *Prjn) SlowAdapt() {
+	pj.AdaptGScale()
+	pj.SynScale()
+}
+
+// AdaptGScale adapts the conductance scale based on targets
+func (pj *Prjn) AdaptGScale() {
+	if !pj.Learn.Learn || !pj.WtScale.Adapt {
+		return
+	}
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	var trg float32
+	if pj.Typ == emer.Inhib {
+		trg = rlay.Act.GTarg.GiMax * pj.GScale.Targ
+	} else {
+		trg = rlay.Act.GTarg.GeMax * pj.GScale.Targ
+	}
+	pj.GScale.Scale += pj.WtScale.ScaleLrate * (trg - pj.GScale.MaxAvg)
 }
 
 // SynScale performs synaptic scaling based on running average activation vs. targets

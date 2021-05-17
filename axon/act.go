@@ -29,6 +29,7 @@ type ActParams struct {
 	Dt      DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
 	Gbar    chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
 	Erev    chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
+	GTarg   GTargParams       `view:"inline" desc:"target conductance levels for excitation and inhibition, driving adaptation of GScale.Scale conductance scaling"`
 	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
 	Noise   ActNoiseParams    `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
@@ -43,6 +44,7 @@ func (ac *ActParams) Defaults() {
 	ac.Dt.Defaults()
 	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0) // E, L, I, K: gbar l = 0.2 > 0.1
 	ac.Erev.SetAll(1.0, 0.3, 0.1, 0.1) // E, L, I, K: K = hyperpolarized -90mv
+	ac.GTarg.Defaults()
 	ac.Clamp.Defaults()
 	ac.Noise.Defaults()
 	ac.VmRange.Set(0.1, 1.0)
@@ -59,6 +61,7 @@ func (ac *ActParams) Update() {
 	ac.Spike.Update()
 	ac.Init.Update()
 	ac.Dt.Update()
+	ac.GTarg.Update()
 	ac.Clamp.Update()
 	ac.Noise.Update()
 	ac.KNa.Update()
@@ -473,6 +476,25 @@ func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32, min float32) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
+// GTargParams
+
+// GTargParams are target conductance levels for excitation and inhibition,
+// driving adaptation of GScale.Scale conductance scaling
+type GTargParams struct {
+	GeMax float32 `def:"1" min:"0" desc:"target maximum excitatory conductance"`
+	GiMax float32 `def:"1" min:"0" desc:"target maximum inhibitory conductance -- for actual synaptic inhibitory neurons"`
+}
+
+func (gt *GTargParams) Update() {
+}
+
+func (gt *GTargParams) Defaults() {
+	gt.GeMax = 1
+	gt.GiMax = 1
+	gt.Update()
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
 //  Noise
 
 // ActNoiseTypes are different types / locations of random noise for activations
@@ -640,19 +662,29 @@ func (wp *WtInitParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  WtScaleParams
 
-/// WtScaleParams are weight scaling parameters: modulates overall strength of projection,
+// WtScaleParams are weight scaling parameters: modulates overall strength of projection,
 // using both absolute and relative factors
 type WtScaleParams struct {
-	Abs float32 `def:"1" min:"0" desc:"absolute scaling, which is not subject to normalization: directly multiplies weight values"`
-	Rel float32 `min:"0" desc:"[Default: 1] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into unit"`
+	Rel        float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
+	Init       float32 `def:"1" min:"0" desc:"adjustment factor for the initial scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling -- typically Adapt should compensate for most cases"`
+	Adapt      bool    `def:"true" desc:"Adapt the 'GScale' scaling value so the GMaxAvg running-average value for this projections remains in the target range"`
+	AvgTau     float32 `viewif:"Adapt" def:"500" desc:"time constant for integrating GMaxAvg average, in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
+	ScaleLrate float32 `viewif:"Adapt" def:"0.005" desc:"learning rate for adapting the GScale value, as function of target value"`
+
+	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (ws *WtScaleParams) Defaults() {
-	ws.Abs = 1
 	ws.Rel = 1
+	ws.Init = 1
+	ws.Adapt = true
+	ws.AvgTau = 500
+	ws.ScaleLrate = 0.005
+	ws.Update()
 }
 
 func (ws *WtScaleParams) Update() {
+	ws.AvgDt = 1 / ws.AvgTau
 }
 
 // SLayActScale computes scaling factor based on sending layer activity level (savg), number of units
@@ -680,7 +712,7 @@ func (ws *WtScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 	return sc
 }
 
-// FullScale returns full scaling factor, which is product of Abs * Rel * SLayActScale
+// FullScale returns full scaling factor, which is product of Init * Rel * SLayActScale
 func (ws *WtScaleParams) FullScale(savg, snu, ncon float32) float32 {
-	return ws.Abs * ws.Rel * ws.SLayActScale(savg, snu, ncon)
+	return ws.Init * ws.Rel * ws.SLayActScale(savg, snu, ncon)
 }

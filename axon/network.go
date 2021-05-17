@@ -24,8 +24,8 @@ import (
 // axon.Network has parameters for running a basic rate-coded Axon network
 type Network struct {
 	NetworkStru
-	SynScaleInterval int `def:"100" desc:"how frequently to perform synaptic scaling -- long enough for meaningful changes"`
-	SynScaleCtr      int `inactive:"+" desc:"counter for how long it has been since last SynScale"`
+	SlowInterval int `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation -- in SlowAdapt method-- long enough for meaningful changes"`
+	SlowCtr      int `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
@@ -46,8 +46,8 @@ func (nt *Network) NewPrjn() emer.Prjn {
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
-	nt.SynScaleInterval = 100
-	nt.SynScaleCtr = 0
+	nt.SlowInterval = 100
+	nt.SlowCtr = 0
 	for li, ly := range nt.Layers {
 		ly.Defaults()
 		ly.SetIndex(li)
@@ -146,7 +146,7 @@ func (nt *Network) WtFmDWt() {
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts() {
-	nt.SynScaleCtr = 0
+	nt.SlowCtr = 0
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -257,22 +257,6 @@ func (nt *Network) AlphaCycInitImpl() {
 	}
 }
 
-// GScaleFmAvgAct computes the scaling factor for synaptic input conductances G,
-// based on sending layer average activation.
-// This attempts to automatically adjust for overall differences in raw activity
-// coming into the units to achieve a general target of around .5 to 1
-// for the integrated Ge value.
-// This is automatically done during AlphaCycInit, but if scaling parameters are
-// changed at any point thereafter during AlphaCyc, this must be called.
-func (nt *Network) GScaleFmAvgAct() {
-	for _, ly := range nt.Layers {
-		if ly.IsOff() {
-			continue
-		}
-		ly.(AxonLayer).GScaleFmAvgAct()
-	}
-}
-
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
@@ -345,16 +329,17 @@ func (nt *Network) WtFmDWtImpl() {
 	// do submean here so dwts accumulate for mini-batch / mpi
 	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean() }, "DWtSubMean ")
 	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt() }, "WtFmDWt")
-	nt.SynScaleCtr++
-	if nt.SynScaleCtr >= nt.SynScaleInterval {
-		nt.SynScaleCtr = 0
-		nt.SynScale()
-	}
+	nt.EmerNet.(AxonNetwork).SlowAdapt()
 }
 
-// SynScale performs synaptic scaling, receiver based
-func (nt *Network) SynScale() {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.SynScale() }, "SynScale")
+// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
+// GScale conductance scaling, and adapting inhibition
+func (nt *Network) SlowAdapt() {
+	nt.SlowCtr++
+	if nt.SlowCtr >= nt.SlowInterval {
+		nt.SlowCtr = 0
+		nt.ThrLayFun(func(ly AxonLayer) { ly.SlowAdapt() }, "SlowAdapt")
+	}
 }
 
 // LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
@@ -404,14 +389,14 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 		nwts := 0
 		for _, lyi := range nt.Layers {
 			ly := lyi.(AxonLayer).AsAxon()
-			nwts += 4               // ActAvgVals
+			nwts += 5               // ActAvgVals
 			nwts += len(ly.Neurons) // ActAvg
 			if ly.IsLearnTrgAvg() {
 				nwts += len(ly.Neurons)
 			}
 			for _, pji := range ly.SndPrjns {
 				pj := pji.(AxonPrjn).AsAxon()
-				nwts += len(pj.Syns)
+				nwts += len(pj.Syns) + 3 // Scale, AvgAvg, MaxAvg
 			}
 		}
 		*dwts = make([]float32, nwts)
@@ -421,9 +406,10 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 		ly := lyi.(AxonLayer).AsAxon()
 		(*dwts)[idx+0] = ly.ActAvg.ActMAvg
 		(*dwts)[idx+1] = ly.ActAvg.ActPAvg
-		(*dwts)[idx+2] = ly.ActAvg.ActPAvgEff
-		(*dwts)[idx+3] = ly.ActAvg.GiMult
-		idx += 4
+		(*dwts)[idx+2] = ly.ActAvg.AvgMaxGeM
+		(*dwts)[idx+3] = ly.ActAvg.AvgMaxGiM
+		(*dwts)[idx+4] = ly.ActAvg.GiMult
+		idx += 5
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			(*dwts)[idx+ni] = nrn.ActAvg
@@ -438,6 +424,10 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
+			(*dwts)[idx] = pj.GScale.Scale
+			(*dwts)[idx+1] = pj.GScale.AvgAvg
+			(*dwts)[idx+2] = pj.GScale.MaxAvg
+			idx += 3
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
 				(*dwts)[idx+j] = sy.DWt
@@ -458,9 +448,10 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 		ly := lyi.(AxonLayer).AsAxon()
 		ly.ActAvg.ActMAvg = davg * dwts[idx+0]
 		ly.ActAvg.ActPAvg = davg * dwts[idx+1]
-		ly.ActAvg.ActPAvgEff = davg * dwts[idx+2]
-		ly.ActAvg.GiMult = davg * dwts[idx+3]
-		idx += 4
+		ly.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
+		ly.ActAvg.AvgMaxGiM = davg * dwts[idx+3]
+		ly.ActAvg.GiMult = davg * dwts[idx+4]
+		idx += 5
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			nrn.ActAvg = davg * dwts[idx+ni]
@@ -475,6 +466,10 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
+			pj.GScale.Scale = dwts[idx]
+			pj.GScale.AvgAvg = dwts[idx+1]
+			pj.GScale.MaxAvg = dwts[idx+2]
+			idx += 3
 			ns := len(pj.Syns)
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])

@@ -70,7 +70,7 @@ var ParamSets = params.Sets{
 					"Prjn.Com.Delay":          "2",    // 1 == 2 = 3
 					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
 					"Prjn.Learn.WtSig.Gain":   "6",
-					"Prjn.Learn.WtSig.Min":    "0.25",   // .25 or .1 seems better than 0
+					"Prjn.Learn.WtSig.Min":    "0.0",    // .25 or .1 seems better than 0
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":  "0.0001", // 0.0001 > 0.001 in objrec
@@ -80,7 +80,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
 					"Layer.Inhib.ActAvg.Init":           "0.05", // for adapt, important for this to be accurate
-					"Layer.Inhib.Adapt.On":              "true", // not huge effects but beneficial
+					"Layer.Inhib.ActAvg.Targ":           "0.05", // for adapt, important for this to be accurate
+					"Layer.Inhib.ActAvg.AdaptGi":        "true", // not huge effects but beneficial
 					"Layer.Act.Init.Decay":              "0.5",  // 0.5 > 1 > 0
 					"Layer.Act.Init.KnaDecay":           "0.0",  // 0 > higher for all other models
 					"Layer.Act.Gbar.L":                  "0.2",  // 0.2 > 0.1
@@ -112,23 +113,29 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.WtScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.24",
+					"Layer.Inhib.ActAvg.Targ": "0.24",
+				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "0.9",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init":  "0.24",  // this has to be exact for adapt
-					"Layer.Inhib.Adapt.On":     "false", // no effect here -- and in general not much effect or worse
-					"Layer.Inhib.Adapt.LoTol":  ".8",    // .8 best if adapting
-					"Layer.Act.Clamp.Type":     "GeClamp",
-					"Layer.Act.Clamp.Ge":       "0.4",   // .4 > others with no bursting -- fine with too
-					"Layer.Act.Clamp.Burst":    "false", //
-					"Layer.Act.Clamp.BurstThr": "0.5",   //
-					"Layer.Act.Clamp.BurstGe":  "1",     // 2 strongest
-					"Layer.Act.Clamp.BurstCyc": "10",    // 20 best for objrec
-					"Layer.Act.Spike.Tr":       "0",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
-					"Layer.Act.Clamp.Rate":     "120",   // 120 > 100 > 150
-					"Layer.Act.Init.Decay":     "0.5",   // 0.5 == 1 after clamp fix > .2
-					"Layer.Act.GABAB.Gbar":     "0.005", // .005 > .01 > .02 > .05 > .1 > .2
-					"Layer.Act.NMDA.Gbar":      "0.03",  // .03 > .02 > .01
+					"Layer.Inhib.Layer.Gi":       "0.9",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init":    "0.24",  // this has to be exact for adapt
+					"Layer.Inhib.ActAvg.Targ":    "0.24",  // this has to be exact for adapt
+					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
+					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
+					"Layer.Act.Clamp.Type":       "GeClamp",
+					"Layer.Act.Clamp.Ge":         "0.4",   // .4 > others with no bursting -- fine with too
+					"Layer.Act.Clamp.Burst":      "false", //
+					"Layer.Act.Clamp.BurstThr":   "0.5",   //
+					"Layer.Act.Clamp.BurstGe":    "1",     // 2 strongest
+					"Layer.Act.Clamp.BurstCyc":   "10",    // 20 best for objrec
+					"Layer.Act.Spike.Tr":         "0",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
+					"Layer.Act.Clamp.Rate":       "120",   // 120 > 100 > 150
+					"Layer.Act.Init.Decay":       "0.5",   // 0.5 == 1 after clamp fix > .2
+					"Layer.Act.GABAB.Gbar":       "0.005", // .005 > .01 > .02 > .05 > .1 > .2
+					"Layer.Act.NMDA.Gbar":        "0.03",  // .03 > .02 > .01
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object

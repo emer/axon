@@ -18,6 +18,7 @@ type Pool struct {
 	ActM         minmax.AvgMax32 `desc:"minus phase average and max Act activation values, for ActAvg updt"`
 	ActP         minmax.AvgMax32 `desc:"plus phase average and max Act activation values, for ActAvg updt"`
 	GeM          minmax.AvgMax32 `desc:"stats for GeM minus phase averaged Ge values"`
+	GiM          minmax.AvgMax32 `desc:"stats for GiM minus phase averaged Gi values"`
 	AvgDif       minmax.AvgMax32 `desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
 }
 

@@ -64,6 +64,10 @@ type AxonNetwork interface {
 	// WtFmDWtImpl updates the weights from delta-weight changes.
 	// Also calls SynScale every Interval times
 	WtFmDWtImpl()
+
+	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
+	// GScale conductance scaling, and adapting inhibition
+	SlowAdapt()
 }
 
 // AxonLayer defines the essential algorithmic API for Axon, at the layer level.
@@ -128,12 +132,9 @@ type AxonLayer interface {
 	// should already have presented the external input to the network at this point.
 	AlphaCycInit()
 
-	// GScaleFmAvgAct computes the scaling factor for synaptic conductance input
-	// based on sending layer average activation.
-	// This attempts to automatically adjust for overall differences in raw
-	// activity coming into the units to achieve a general target
-	// of around .5 to 1 for the integrated G values.
-	GScaleFmAvgAct()
+	// InitGScale computes the initial scaling factor for synaptic input conductances G,
+	// stored in GScale.Scale, based on sending layer initial activation.
+	InitGScale()
 
 	// GenNoise generates random noise for all neurons
 	GenNoise()
@@ -193,8 +194,9 @@ type AxonLayer interface {
 	// WtFmDWt updates the weights from delta-weight changes -- on the sending projections
 	WtFmDWt()
 
-	// SynScale performs synaptic scaling based on running average activation vs. targets
-	SynScale()
+	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
+	// GScale conductance scaling, and adapting inhibition
+	SlowAdapt()
 
 	// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
 	// Useful for implementing learning rate schedules.
@@ -232,7 +234,7 @@ type AxonPrjn interface {
 	SendSpike(si int)
 
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
-	RecvGInc()
+	RecvGInc(ltime *Time)
 
 	// DWt computes the weight change (learning) -- on sending projections
 	DWt()
@@ -243,8 +245,9 @@ type AxonPrjn interface {
 	// WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 	WtFmDWt()
 
-	// SynScale performs synaptic scaling based on running average activation vs. targets
-	SynScale()
+	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
+	// GScale conductance scaling, and adapting inhibition
+	SlowAdapt()
 
 	// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
 	// Useful for implementing learning rate schedules.

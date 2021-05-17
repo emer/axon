@@ -41,22 +41,6 @@ type Layer struct {
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
-// ActAvgVals are running-average activation levels used for netinput scaling and adaptive inhibition
-type ActAvgVals struct {
-	ActMAvg    float32 `inactive:"+" desc:"running-average minus-phase activity -- used for adapting inhibition -- see ActAvgParams.Tau for time constant etc"`
-	ActPAvg    float32 `inactive:"+" desc:"running-average plus-phase activity -- used for synaptic input scaling -- see ActAvgParams.Tau for time constant etc"`
-	ActPAvgEff float32 `inactive:"+" desc:"ActPAvg * ActAvgParams.Adjust -- adjusted effective layer activity directly used in synaptic input scaling"`
-	GiMult     float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
-	GiAdaptCtr int     `inactive:"+" desc:"counter for how long it has been since last adapting inhibition"`
-}
-
-// AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
-// this to return the base Layer type, so that the AxonLayer interface does not
-// need to include accessors to all the basic stuff
-func (ly *Layer) AsAxon() *Layer {
-	return ly
-}
-
 func (ly *Layer) Defaults() {
 	ly.Act.Defaults()
 	ly.Inhib.Defaults()
@@ -73,6 +57,8 @@ func (ly *Layer) Defaults() {
 	}
 }
 
+// todo: why is this UpdateParams and not just Update()?
+
 // UpdateParams updates all params given any changes that might have been made to individual values
 // including those in the receiving projections of this layer
 func (ly *Layer) UpdateParams() {
@@ -82,6 +68,22 @@ func (ly *Layer) UpdateParams() {
 	for _, pj := range ly.RcvPrjns {
 		pj.UpdateParams()
 	}
+}
+
+// ActAvgVals are running-average activation levels used for netinput scaling and adaptive inhibition
+type ActAvgVals struct {
+	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity -- used for adapting inhibition -- see ActAvgParams.Tau for time constant etc"`
+	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity"`
+	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn WtScale"`
+	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn WtScale"`
+	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+}
+
+// AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
+// this to return the base Layer type, so that the AxonLayer interface does not
+// need to include accessors to all the basic stuff
+func (ly *Layer) AsAxon() *Layer {
+	return ly
 }
 
 // JsonToParams reformates json output to suitable params display output
@@ -409,6 +411,10 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"AvgMaxGeM\": \"%g\",\n", ly.ActAvg.AvgMaxGeM)))
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"AvgMaxGiM\": \"%g\",\n", ly.ActAvg.AvgMaxGiM)))
+	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.ActAvg.GiMult)))
 	depth--
 	w.Write(indent.TabBytes(depth))
@@ -501,7 +507,14 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 		if ap, ok := lw.MetaData["ActPAvg"]; ok {
 			pv, _ := strconv.ParseFloat(ap, 32)
 			ly.ActAvg.ActPAvg = float32(pv)
-			ly.Inhib.ActAvg.EffFmAvg(&ly.ActAvg.ActPAvgEff, ly.ActAvg.ActPAvg)
+		}
+		if ap, ok := lw.MetaData["AvgMaxGeM"]; ok {
+			pv, _ := strconv.ParseFloat(ap, 32)
+			ly.ActAvg.AvgMaxGeM = float32(pv)
+		}
+		if ap, ok := lw.MetaData["AvgMaxGiM"]; ok {
+			pv, _ := strconv.ParseFloat(ap, 32)
+			ly.ActAvg.AvgMaxGiM = float32(pv)
 		}
 		if gi, ok := lw.MetaData["GiMult"]; ok {
 			pv, _ := strconv.ParseFloat(gi, 32)
@@ -593,12 +606,14 @@ func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
 	ly.ActAvg.ActMAvg = ly.Inhib.ActAvg.Init
 	ly.ActAvg.ActPAvg = ly.Inhib.ActAvg.Init
-	ly.ActAvg.ActPAvgEff = ly.Inhib.ActAvg.EffInit()
+	ly.ActAvg.AvgMaxGeM = ly.Act.GTarg.GeMax
+	ly.ActAvg.AvgMaxGiM = ly.Act.GTarg.GiMax
 	ly.ActAvg.GiMult = 1
-	ly.ActAvg.GiAdaptCtr = 0
 	ly.AxonLay.InitActAvg()
 	ly.AxonLay.InitActs()
 	ly.CosDiff.Init()
+
+	ly.AxonLay.InitGScale()
 
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
@@ -935,15 +950,6 @@ func (ly *Layer) AlphaCycInit() {
 	pl := &ly.Pools[0]
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg)
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg)
-	ly.Inhib.ActAvg.EffFmAvg(&ly.ActAvg.ActPAvgEff, ly.ActAvg.ActPAvg)
-	if ly.Inhib.Adapt.On && !ly.AxonLay.IsInput() {
-		if ly.ActAvg.GiAdaptCtr >= ly.Inhib.Adapt.Interval {
-			ly.Inhib.Adapt.Adapt(&ly.ActAvg.GiMult, ly.Inhib.ActAvg.Init, ly.ActAvg.ActMAvg)
-			ly.ActAvg.GiAdaptCtr = 0
-		} else {
-			ly.ActAvg.GiAdaptCtr++
-		}
-	}
 
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -952,7 +958,6 @@ func (ly *Layer) AlphaCycInit() {
 		}
 		nrn.ActQ0 = nrn.ActP
 	}
-	ly.AxonLay.GScaleFmAvgAct()
 	if ly.Act.Noise.Type != NoNoise && ly.Act.Noise.Fixed && ly.Act.Noise.Dist != erand.Mean {
 		ly.AxonLay.GenNoise()
 	}
@@ -962,12 +967,9 @@ func (ly *Layer) AlphaCycInit() {
 	}
 }
 
-// GScaleFmAvgAct computes the scaling factor for synaptic input conductances G,
-// based on sending layer average activation.
-// This attempts to automatically adjust for overall differences in raw activity
-// coming into the units to achieve a general target of around .5 to 1
-// for the integrated Ge value.
-func (ly *Layer) GScaleFmAvgAct() {
+// InitGScale computes the initial scaling factor for synaptic input conductances G,
+// stored in GScale.Scale, based on sending layer initial activation.
+func (ly *Layer) InitGScale() {
 	totGeRel := float32(0)
 	totGiRel := float32(0)
 	for _, p := range ly.RcvPrjns {
@@ -976,10 +978,10 @@ func (ly *Layer) GScaleFmAvgAct() {
 		}
 		pj := p.(AxonPrjn).AsAxon()
 		slay := p.SendLay().(AxonLayer).AsAxon()
-		savg := slay.ActAvg.ActPAvgEff
+		savg := slay.Inhib.ActAvg.Init
 		snu := len(slay.Neurons)
 		ncon := pj.RConNAvgMax.Avg
-		pj.GScale = pj.WtScale.FullScale(savg, float32(snu), ncon)
+		pj.GScale.Scale = pj.WtScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a prjn, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
 		// then set the scale to 0.
@@ -1000,13 +1002,22 @@ func (ly *Layer) GScaleFmAvgAct() {
 		pj := p.(AxonPrjn).AsAxon()
 		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
-				pj.GScale /= totGiRel
+				pj.GScale.Targ = pj.WtScale.Rel / totGiRel
+				pj.GScale.Scale /= totGiRel
+			} else {
+				pj.GScale.Targ = 0
+				pj.GScale.Scale = 0
 			}
 		} else {
 			if totGeRel > 0 {
-				pj.GScale /= totGeRel
+				pj.GScale.Targ = pj.WtScale.Rel / totGeRel
+				pj.GScale.Scale /= totGeRel
+			} else {
+				pj.GScale.Targ = 0
+				pj.GScale.Scale = 0
 			}
 		}
+		pj.GScale.Orig = pj.GScale.Scale
 	}
 }
 
@@ -1092,7 +1103,7 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).RecvGInc()
+		p.(AxonPrjn).RecvGInc(ltime)
 	}
 }
 
@@ -1215,6 +1226,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		if ltime.Quarter < 3 {
 			nrn.ActM += ly.Act.Dt.MDt * (nrn.AvgS - nrn.ActM)
 			nrn.GeM += ly.Act.Dt.MDt * (nrn.Ge - nrn.GeM)
+			nrn.GiM += ly.Act.Dt.MDt * (nrn.GiSyn - nrn.GiM)
 		}
 
 		// note: this is here because it depends on Gi
@@ -1249,15 +1261,21 @@ func (ly *Layer) AvgGeM(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.GeM.Init()
+		pl.GiM.Init()
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
 			pl.GeM.UpdateVal(nrn.GeM, ni)
+			pl.GiM.UpdateVal(nrn.GiM, ni)
 		}
 		pl.GeM.CalcAvg()
+		pl.GiM.CalcAvg()
 	}
+	lpl := &ly.Pools[0]
+	ly.ActAvg.AvgMaxGeM += ly.Inhib.ActAvg.AvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
+	ly.ActAvg.AvgMaxGiM += ly.Inhib.ActAvg.AvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -1503,6 +1521,27 @@ func (ly *Layer) WtFmDWt() {
 	}
 }
 
+// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
+// GScale conductance scaling, and adapting inhibition
+func (ly *Layer) SlowAdapt() {
+	ly.AdaptInhib()
+	ly.SynScale()
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).SlowAdapt()
+	}
+}
+
+// AdaptInhib adapts inhibition
+func (ly *Layer) AdaptInhib() {
+	if !ly.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
+		return
+	}
+	ly.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.Inhib.ActAvg.Targ, ly.ActAvg.ActMAvg)
+}
+
 // SynScale performs synaptic scaling based on running average activation vs. targets
 func (ly *Layer) SynScale() {
 	sp := 0
@@ -1549,12 +1588,6 @@ func (ly *Layer) SynScale() {
 			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), ni)
 		}
 		pl.AvgDif.CalcAvg()
-	}
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).SynScale()
 	}
 }
 

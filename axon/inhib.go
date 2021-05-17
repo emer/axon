@@ -14,8 +14,7 @@ type InhibParams struct {
 	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer"`
 	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
 	Self   SelfInhibParams `view:"inline" desc:"neuron self-inhibition parameters -- can be beneficial for producing more graded, linear response -- not typically used in cortical networks"`
-	ActAvg ActAvgParams    `view:"inline" desc:"running-average activation computation values -- for overall estimates of layer activation levels, used in netinput scaling"`
-	Adapt  fffb.Adapt      `view:"inline" desc:"adaptive inhibition multiplier"`
+	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
 }
 
 func (ip *InhibParams) Update() {
@@ -23,7 +22,6 @@ func (ip *InhibParams) Update() {
 	ip.Pool.Update()
 	ip.Self.Update()
 	ip.ActAvg.Update()
-	ip.Adapt.Update()
 }
 
 func (ip *InhibParams) Defaults() {
@@ -31,7 +29,6 @@ func (ip *InhibParams) Defaults() {
 	ip.Pool.Defaults()
 	ip.Self.Defaults()
 	ip.ActAvg.Defaults()
-	ip.Adapt.Defaults()
 	ip.Layer.Gi = 1.0
 	ip.Pool.Gi = 1.0
 }
@@ -72,40 +69,33 @@ func (si *SelfInhibParams) Inhib(self *float32, act float32) {
 //  ActAvgParams
 
 // ActAvgParams represents expected average activity levels in the layer.
-// Used for computing running-average computation that is then used for netinput scaling.
+// Used for computing running-average computation that is then used for G scaling.
 // Also specifies time constant for updating average
 // and for the target value for adapting inhibition in inhib_adapt.
 type ActAvgParams struct {
-	Init      float32 `min:"0" desc:"[typically 0.1 - 0.2] initial estimated average activity level in the layer (see also UseFirst option -- if that is off then it is used as a starting point for running average actual activity level, ActMAvg and ActPAvg) -- ActPAvg is used primarily for automatic netinput scaling, to balance out layers that have different activity levels -- thus it is important that init be relatively accurate -- good idea to update from recorded ActPAvg levels"`
-	Fixed     bool    `def:"false" desc:"if true, then the Init value is used as a constant for ActPAvgEff (the effective value used for netinput rescaling), instead of using the actual running average activation"`
-	UseExtAct bool    `def:"false" desc:"if true, then use the activation level computed from the external inputs to this layer (avg of targ or ext unit vars) -- this will only be applied to layers with Input or Target / Compare layer types, and falls back on the targ_init value if external inputs are not available or have a zero average -- implies fixed behavior"`
-	UseFirst  bool    `viewif:"Fixed=false" def:"true" desc:"use the first actual average value to override targ_init value -- actual value is likely to be a better estimate than our guess"`
-	Tau       float32 `viewif:"Fixed=false" def:"100" min:"1" desc:"time constant in trials for integrating time-average values at the layer level -- used for computing Pool.ActAvg.ActsMAvg, ActsPAvg"`
-	Adjust    float32 `viewif:"Fixed=false" def:"1" desc:"adjustment multiplier on the computed ActPAvg value that is used to compute ActPAvgEff, which is actually used for netinput rescaling -- if based on connectivity patterns or other factors the actual running-average value is resulting in netinputs that are too high or low, then this can be used to adjust the effective average activity value -- reducing the average activity with a factor < 1 will increase netinput scaling (stronger net inputs from layers that receive from this layer), and vice-versa for increasing (decreases net inputs)"`
+	Init      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] initial estimated average activity level in the layer -- see Targ for target value which can be different from this."`
+	AvgTau    float32 `def:"500" min:"1" desc:"time constant in trials for integrating time-average values at the layer level -- used for computing Pool.ActAvg.ActsMAvg, ActsPAvg"`
+	AdaptGi   bool    `desc:"enable adapting of layer inhibition Gi factor (stored in layer GiCur value) based on Targ - layer level ActAvg.ActsMAvg"`
+	Targ      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] target average activity for this layer -- used if if AdaptGi is on to drive adaptation of inhibition."`
+	HiTol     float32 `def:"0" viewif:"AdaptGi" desc:"tolerance for higher than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
+	LoTol     float32 `def:"0.8" viewif:"AdaptGi" desc:"tolerance for lower than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
+	AdaptRate float32 `def:"0.5" viewif:"AdaptGi" desc:"rate of Gi adaptation as function of AdaptRate * (Targ - ActMAvg) / Targ -- occurs at spaced intervals determined by Network.SlowInterval value"`
 
-	Dt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	AvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (aa *ActAvgParams) Update() {
-	aa.Dt = 1 / aa.Tau
+	aa.AvgDt = 1 / aa.AvgTau
 }
 
 func (aa *ActAvgParams) Defaults() {
-	aa.Init = 0.15
-	aa.Fixed = false
-	aa.UseExtAct = false
-	aa.UseFirst = true
-	aa.Tau = 100
-	aa.Adjust = 1
+	aa.Init = 0.1
+	aa.Targ = 0.1
+	aa.AvgTau = 500
+	aa.HiTol = 0
+	aa.LoTol = 0.8
+	aa.AdaptRate = 0.5
 	aa.Update()
-}
-
-// EffInit returns the initial value applied during InitWts for the AvgPAvgEff effective layer activity
-func (aa *ActAvgParams) EffInit() float32 {
-	if aa.Fixed {
-		return aa.Init
-	}
-	return aa.Adjust * aa.Init
 }
 
 // AvgFmAct updates the running-average activation given average activity level in layer
@@ -113,18 +103,16 @@ func (aa *ActAvgParams) AvgFmAct(avg *float32, act float32) {
 	if act < 0.0001 {
 		return
 	}
-	if aa.UseFirst && *avg == aa.Init {
-		*avg += 0.5 * (act - *avg)
-	} else {
-		*avg += aa.Dt * (act - *avg)
-	}
+	*avg += aa.AvgDt * (act - *avg)
 }
 
-// EffFmAvg updates the effective value from the running-average value
-func (aa *ActAvgParams) EffFmAvg(eff *float32, avg float32) {
-	if aa.Fixed {
-		*eff = aa.Init
-	} else {
-		*eff = aa.Adjust * avg
+// Adapt adapts the given gi multiplier factor as function of target and actual
+// average activation, given current params.
+func (aa *ActAvgParams) Adapt(gimult *float32, trg, act float32) bool {
+	del := (act - trg) / trg
+	if del < -aa.LoTol || del > aa.HiTol {
+		*gimult += aa.AdaptRate * del
+		return true
 	}
+	return false
 }

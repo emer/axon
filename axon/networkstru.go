@@ -247,7 +247,7 @@ func (nt *NetworkStru) AllWtScales() string {
 				continue
 			}
 			pj := p.(AxonPrjn).AsAxon()
-			str += fmt.Sprintf("\t%23s\t\tAbs:\t%g\tRel:\t%g\n", pj.Name(), pj.WtScale.Abs, pj.WtScale.Rel)
+			str += fmt.Sprintf("\t%23s\t\tInit:\t%g\tRel:\t%g\n", pj.Name(), pj.WtScale.Init, pj.WtScale.Rel)
 		}
 	}
 	return str
