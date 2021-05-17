@@ -79,7 +79,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.GABAB.Gbar":              "0.2",  // .1 == .2 pretty much
 					"Layer.Act.GABAB.Gbase":             "0.2",  // .1 == .2
 					"Layer.Act.GABAB.GiSpike":           "10",   // 10 > 8 > 15
-					"Layer.Act.GTarg.GeMax":             "0.3",
+					"Layer.Act.GTarg.GeMax":             "1",
 					"Layer.Learn.ActAvg.SpikeG":         "8",
 					"Layer.Learn.ActAvg.SSTau":          "40",   // 4 > 2 for 50 cyc qtr
 					"Layer.Learn.ActAvg.STau":           "10",   //
@@ -105,8 +105,8 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
 					"Prjn.Learn.WtSig.Gain":   "6",
 					"Prjn.Learn.WtSig.Min":    "0.0", // .25 or .1 seems better than 0
-					"Prjn.WtScale.ScaleLrate": "1",
-					"Prjn.WtScale.Init":       "2",
+					"Prjn.WtScale.ScaleLrate": ".1",
+					"Prjn.WtScale.Init":       "1",
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":  "0.0001", // 0.0001 > 0.001 in objrec

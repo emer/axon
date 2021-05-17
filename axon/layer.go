@@ -1000,29 +1000,21 @@ func (ly *Layer) InitGScale() {
 		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
 				pj.GScale.Rel = pj.WtScale.Rel / totGiRel
-				pj.GScale.Targ = ly.Act.GTarg.GiMax * pj.GScale.Rel
 				pj.GScale.Scale /= totGiRel
 			} else {
 				pj.GScale.Rel = 0
-				pj.GScale.Targ = 0
 				pj.GScale.Scale = 0
 			}
 		} else {
 			if totGeRel > 0 {
 				pj.GScale.Rel = pj.WtScale.Rel / totGeRel
-				pj.GScale.Targ = ly.Act.GTarg.GeMax * pj.GScale.Rel
 				pj.GScale.Scale /= totGeRel
 			} else {
 				pj.GScale.Rel = 0
-				pj.GScale.Targ = 0
 				pj.GScale.Scale = 0
 			}
 		}
-		pj.GScale.Orig = pj.GScale.Scale
-		pj.GScale.Avg = 0
-		pj.GScale.Max = 0
-		pj.GScale.AvgAvg = 0.5 * pj.GScale.Targ // typically half
-		pj.GScale.AvgMax = pj.GScale.Targ
+		pj.GScale.Init()
 	}
 }
 
@@ -1529,6 +1521,7 @@ func (ly *Layer) WtFmDWt() {
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // GScale conductance scaling, and adapting inhibition
 func (ly *Layer) SlowAdapt() {
+	ly.AdaptGScale()
 	ly.AdaptInhib()
 	ly.SynScale()
 	for _, p := range ly.RcvPrjns {
@@ -1536,6 +1529,52 @@ func (ly *Layer) SlowAdapt() {
 			continue
 		}
 		p.(AxonPrjn).SlowAdapt()
+	}
+}
+
+// AdaptGScale adapts the conductance scale based on targets
+func (ly *Layer) AdaptGScale() {
+	var sum float32
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		pj := p.(AxonPrjn).AsAxon()
+		sum += pj.GScale.AvgMax
+	}
+	if sum == 0 {
+		return
+	}
+	ge_trg := ly.Act.GTarg.GeMax
+	ge_act := ly.ActAvg.AvgMaxGeM
+	gi_trg := ly.Act.GTarg.GiMax
+	gi_act := ly.ActAvg.AvgMaxGiM
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		pj := p.(AxonPrjn).AsAxon()
+		pj.GScale.AvgMaxRel = pj.GScale.AvgMax / sum
+
+		if !pj.WtScale.Adapt {
+			continue
+		}
+
+		var trg, act float32
+		if pj.Typ == emer.Inhib {
+			trg = pj.GScale.Rel * gi_trg
+			act = pj.GScale.AvgMaxRel * gi_act
+		} else {
+			trg = pj.GScale.Rel * ge_trg
+			act = pj.GScale.AvgMaxRel * ge_act
+		}
+		err := trg - act
+		pj.GScale.Err = err
+		pj.GScale.Scale += pj.WtScale.ScaleLrate * pj.GScale.Orig * err
+		min := 0.1 * pj.GScale.Orig
+		if pj.GScale.Scale < min {
+			pj.GScale.Scale = min
+		}
 	}
 }
 

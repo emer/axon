@@ -481,16 +481,16 @@ func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32, min float32) {
 // GTargParams are target conductance levels for excitation and inhibition,
 // driving adaptation of GScale.Scale conductance scaling
 type GTargParams struct {
-	GeMax float32 `def:"0.2" min:"0" desc:"target maximum instantaneous excitatory conductance across all incoming projections -- this is typically less than half of the GeM value, because GeM integrates instantaneous GeRaw over time"`
-	GiMax float32 `def:"0.2" min:"0" desc:"target maximum instantaneous inhibitory conductance across all incoming projections -- this is typically less than half of the GiM value, because GiM integrates instantaneous GiSyn over time -- for actual synaptic inhibitory neuron inputs (GiSyn) not FFFB computed inhibition"`
+	GeMax float32 `def:"1" min:"0" desc:"target maximum excitatory conductance in the minus phase: GeM"`
+	GiMax float32 `def:"1" min:"0" desc:"target maximum inhibitory conductance in the minus phase: GiM -- for actual synaptic inhibitory neuron inputs (GiSyn) not FFFB computed inhibition"`
 }
 
 func (gt *GTargParams) Update() {
 }
 
 func (gt *GTargParams) Defaults() {
-	gt.GeMax = 0.2
-	gt.GiMax = 0.2
+	gt.GeMax = 1
+	gt.GiMax = 1
 	gt.Update()
 }
 
