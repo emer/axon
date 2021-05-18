@@ -95,7 +95,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
 					"Layer.Learn.SynScale.ErrLrate":     "0.02",    // 0.02 > 0.05 objrec
 					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
-					"Layer.Learn.SynScale.AvgTau":       "200",     // 200 > 500 best for objrec
+					"Layer.Act.Dt.TrlAvgTau":            "200",     // 200 > 500 best for objrec
 					"Layer.Learn.SynScale.TrgRange.Min": "0.2",     // .2 - 2.0 best for objrec
 					"Layer.Learn.SynScale.TrgRange.Max": "2.0",     // 2.0
 				}},

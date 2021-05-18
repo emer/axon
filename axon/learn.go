@@ -247,21 +247,16 @@ type SynScaleParams struct {
 	ErrLrate float32    `def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
 	TrgRange minmax.F32 `desc:"default 0.2-2 -- range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
-	AvgTau   float32    `def:"500" desc:"for integrating activation average (ActAvg), time constant in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
 	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
-
-	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (ss *SynScaleParams) Update() {
-	ss.AvgDt = 1 / ss.AvgTau
 }
 
 func (ss *SynScaleParams) Defaults() {
 	ss.ErrLrate = 0.02
 	ss.TrgRange.Set(0.2, 2)
 	ss.Permute = true
-	ss.AvgTau = 500
 	ss.Rate = 0.005
 	ss.Update()
 }

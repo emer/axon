@@ -52,7 +52,7 @@ type Neuron struct {
 	ActDif float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
 	ActDel float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
 
-	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = SynScale.AvgTau -- typically 200) -- useful for finding hog units and seeing overall distribution of activation"`
+	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.TrlAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
 	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SynScale.Interval intervals"`
 	TrgAvg  float32 `desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`
 	DTrgAvg float32 `desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`

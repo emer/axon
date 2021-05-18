@@ -60,17 +60,17 @@ func (pj *Prjn) UpdateParams() {
 	pj.Learn.LrateInit = pj.Learn.Lrate
 }
 
-// GScaleVals holds the conductance scaling and associated values
+// GScaleVals holds the conductance scaling and associated values needed for adapting scale
 type GScaleVals struct {
-	Scale     float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there."`
+	Scale     float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.WtScale adapt params"`
 	Orig      float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
 	Rel       float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: WtScale.Rel / sum(WtScale.Rel across relevant prjns)"`
-	AvgMaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on AvgMax values"`
+	AvgMaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on AvgMax values -- used for driving adaptation to maintain target relative values"`
 	Err       float32 `inactive:"+" desc:"error that drove last adjustment in scale"`
 	Avg       float32 `inactive:"+" desc:"average G value on this trial"`
 	Max       float32 `inactive:"+" desc:"maximum G value on this trial"`
-	AvgAvg    float32 `inactive:"+" desc:"running average of the Avg"`
-	AvgMax    float32 `inactive:"+" desc:"running average of the Max"`
+	AvgAvg    float32 `inactive:"+" desc:"running average of the Avg, integrated at ly.Act.Dt.TrlAvgTau"`
+	AvgMax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.TrlAvgTau -- used for computing AvgMaxRel, for adapting Scale"`
 }
 
 // Init completes the initialization of values based on initially computed ones
@@ -605,13 +605,13 @@ func (pj *Prjn) RecvGIncStats() {
 		if pj.GScale.AvgAvg == 0 {
 			pj.GScale.AvgAvg = avg
 		} else {
-			pj.GScale.AvgAvg += pj.WtScale.AvgDt * (avg - pj.GScale.AvgAvg)
+			pj.GScale.AvgAvg += rlay.Act.Dt.TrlAvgDt * (avg - pj.GScale.AvgAvg)
 		}
 		pj.GScale.Max = max
 		if pj.GScale.AvgMax == 0 {
 			pj.GScale.AvgMax = max
 		} else {
-			pj.GScale.AvgMax += pj.WtScale.AvgDt * (max - pj.GScale.AvgMax)
+			pj.GScale.AvgMax += rlay.Act.Dt.TrlAvgDt * (max - pj.GScale.AvgMax)
 		}
 	}
 	pj.Gidx.Shift(1) // rotate buffer

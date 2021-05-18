@@ -72,10 +72,10 @@ func (ly *Layer) UpdateParams() {
 
 // ActAvgVals are running-average activation levels used for netinput scaling and adaptive inhibition
 type ActAvgVals struct {
-	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity -- used for adapting inhibition -- see ActAvgParams.Tau for time constant etc"`
-	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity"`
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn WtScale"`
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn WtScale"`
+	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.TrlAvgTau -- used for adapting inhibition relative to target level"`
+	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.TrlAvgTau"`
+	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn WtScale"`
+	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn WtScale"`
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
 }
 
@@ -948,8 +948,8 @@ func (ly *Layer) UpdateExtFlags() {
 // should already have presented the external input to the network at this point.
 func (ly *Layer) AlphaCycInit() {
 	pl := &ly.Pools[0]
-	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg)
-	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg)
+	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.TrlAvgDt)
+	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.TrlAvgDt)
 
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1271,8 +1271,8 @@ func (ly *Layer) AvgGeM(ltime *Time) {
 		pl.GiM.CalcAvg()
 	}
 	lpl := &ly.Pools[0]
-	ly.ActAvg.AvgMaxGeM += ly.Inhib.ActAvg.AvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
-	ly.ActAvg.AvgMaxGiM += ly.Inhib.ActAvg.AvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
+	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.TrlAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
+	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.TrlAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -1319,7 +1319,7 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 		case 3:
 			nrn.ActP = nrn.Act
 			nrn.ActDif = nrn.ActP - nrn.ActM
-			nrn.ActAvg += ly.Learn.SynScale.AvgDt * (nrn.ActM - nrn.ActAvg)
+			nrn.ActAvg += ly.Act.Dt.TrlAvgDt * (nrn.ActM - nrn.ActAvg)
 		}
 	}
 	switch ltime.Quarter {

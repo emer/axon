@@ -439,12 +439,14 @@ type DtParams struct {
 	GeTau     float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau     float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	MTau      float32 `def:"20" min:"1" desc:"time constant for continuously updating the minus phase ActM value from the short AvgS value, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), "`
+	TrlAvgTau float32 `def:"200" desc:"time constant for integrating trial-wise slow averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg, Prjn.GScale.AvgAvg, AvgMax in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
 
 	VmDt     float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	GeDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
 	GiDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
 	MDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
+	TrlAvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (dp *DtParams) Update() {
@@ -453,6 +455,7 @@ func (dp *DtParams) Update() {
 	dp.GeDt = dp.Integ / dp.GeTau
 	dp.GiDt = dp.Integ / dp.GiTau
 	dp.MDt = dp.Integ / dp.MTau
+	dp.TrlAvgDt = 1 / dp.TrlAvgTau
 }
 
 func (dp *DtParams) Defaults() {
@@ -462,6 +465,7 @@ func (dp *DtParams) Defaults() {
 	dp.GeTau = 5
 	dp.GiTau = 7
 	dp.MTau = 20 // 20 for 50 cycle, 10 for 25 cycle qtr
+	dp.TrlAvgTau = 200
 	dp.Update()
 }
 
@@ -670,19 +674,15 @@ type WtScaleParams struct {
 	Rel        float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
 	Init       float32 `def:"1" min:"0" desc:"adjustment factor for the initial scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling -- typically Adapt should compensate for most cases"`
 	Adapt      bool    `def:"true" desc:"Adapt the 'GScale' scaling value so the ActAvg.AvgMaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg"`
-	AvgTau     float32 `viewif:"Adapt" def:"500" desc:"time constant for integrating GMaxAvg average, in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
 	ScaleLrate float32 `viewif:"Adapt" def:"0.01" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors."`
 	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
 	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
-
-	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (ws *WtScaleParams) Defaults() {
 	ws.Rel = 1
 	ws.Init = 1
 	ws.Adapt = true
-	ws.AvgTau = 500
 	ws.ScaleLrate = 0.1
 	ws.HiTol = 0
 	ws.LoTol = 0.8
@@ -690,7 +690,6 @@ func (ws *WtScaleParams) Defaults() {
 }
 
 func (ws *WtScaleParams) Update() {
-	ws.AvgDt = 1 / ws.AvgTau
 }
 
 // SLayActScale computes scaling factor based on sending layer activity level (savg), number of units

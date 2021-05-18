@@ -74,24 +74,19 @@ func (si *SelfInhibParams) Inhib(self *float32, act float32) {
 // and for the target value for adapting inhibition in inhib_adapt.
 type ActAvgParams struct {
 	Init      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] initial estimated average activity level in the layer -- see Targ for target value which can be different from this."`
-	AvgTau    float32 `def:"500" min:"1" desc:"time constant in trials for integrating time-average values at the layer level -- used for computing Pool.ActAvg.ActsMAvg, ActsPAvg"`
 	AdaptGi   bool    `desc:"enable adapting of layer inhibition Gi factor (stored in layer GiCur value) based on Targ - layer level ActAvg.ActsMAvg"`
 	Targ      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] target average activity for this layer -- used if if AdaptGi is on to drive adaptation of inhibition."`
 	HiTol     float32 `def:"0" viewif:"AdaptGi" desc:"tolerance for higher than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
 	LoTol     float32 `def:"0.8" viewif:"AdaptGi" desc:"tolerance for lower than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
 	AdaptRate float32 `def:"0.5" viewif:"AdaptGi" desc:"rate of Gi adaptation as function of AdaptRate * (Targ - ActMAvg) / Targ -- occurs at spaced intervals determined by Network.SlowInterval value"`
-
-	AvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (aa *ActAvgParams) Update() {
-	aa.AvgDt = 1 / aa.AvgTau
 }
 
 func (aa *ActAvgParams) Defaults() {
 	aa.Init = 0.1
 	aa.Targ = 0.1
-	aa.AvgTau = 500
 	aa.HiTol = 0
 	aa.LoTol = 0.8
 	aa.AdaptRate = 0.5
@@ -99,11 +94,11 @@ func (aa *ActAvgParams) Defaults() {
 }
 
 // AvgFmAct updates the running-average activation given average activity level in layer
-func (aa *ActAvgParams) AvgFmAct(avg *float32, act float32) {
+func (aa *ActAvgParams) AvgFmAct(avg *float32, act float32, dt float32) {
 	if act < 0.0001 {
 		return
 	}
-	*avg += aa.AvgDt * (act - *avg)
+	*avg += dt * (act - *avg)
 }
 
 // Adapt adapts the given gi multiplier factor as function of target and actual
