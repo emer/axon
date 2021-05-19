@@ -190,6 +190,14 @@ func (nt *Network) InitTopoScales() {
 				slay := p.SendLay()
 				pt.TopoWts(slay.Shape(), ly.Shape(), scales)
 				pj.SetScalesRPool(scales)
+			case *prjn.PoolTileSub:
+				if !pt.HasTopoWts() {
+					continue
+				}
+				pj := p.(AxonPrjn).AsAxon()
+				slay := p.SendLay()
+				pt.TopoWts(slay.Shape(), ly.Shape(), scales)
+				pj.SetScalesRPool(scales)
 			case *prjn.Circle:
 				if !pt.TopoWts {
 					continue
