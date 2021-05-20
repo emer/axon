@@ -738,7 +738,7 @@ func (pj *Prjn) SlowAdapt() {
 
 // SynScale performs synaptic scaling based on running average activation vs. targets
 func (pj *Prjn) SynScale() {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Learn || pj.Typ == emer.Inhib {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
