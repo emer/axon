@@ -434,7 +434,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 				w.Write([]byte(", "))
 			}
 		}
-		w.Write([]byte(" ]\n"))
+		w.Write([]byte(" ],\n"))
 
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte(fmt.Sprintf("\"TrgAvg\": [ ")))
@@ -529,6 +529,7 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 				}
 				nrn := &ly.Neurons[ni]
 				nrn.ActAvg = ta[ni]
+				fmt.Printf("ni: %d  aa: %g\n", ni, ta[ni])
 			}
 		}
 		if ta, ok := lw.Units["TrgAvg"]; ok {

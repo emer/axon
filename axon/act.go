@@ -574,7 +574,7 @@ const (
 // ClampParams are for specifying how external inputs are clamped onto network activation values
 type ClampParams struct {
 	ErrThr   float32    `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
-	Type     ClampTypes `desc:"type of clamping to use"`
+	Type     ClampTypes `def:"GeClamp" desc:"type of clamping to use -- GeClamp provides a more natural input with initial spike onset related to input strength, and some adaptation effects, etc"`
 	Rate     float32    `viewif:"Type=RateClamp" def:"180" desc:"for RateClamp mode, maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
 	Ge       float32    `viewif:"Type!=RateClamp" def:"0.2,0.6" desc:"amount of Ge driven for clamping, for GeClamp and AddGeClamp"`
 	Burst    bool       `viewif:"Type=GeClamp" desc:"activate bursting at start of clamping window"`
@@ -588,7 +588,7 @@ func (cp *ClampParams) Update() {
 
 func (cp *ClampParams) Defaults() {
 	cp.ErrThr = 0.5
-	cp.Type = RateClamp // Target layers set to GeClamp by default
+	cp.Type = GeClamp
 	cp.Rate = 180
 	cp.Ge = 0.6
 	cp.Burst = false // maybe not necessary

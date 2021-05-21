@@ -68,7 +68,7 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
-					"Layer.Inhib.ActAvg.Init":           "0.05", // for adapt, important for this to be accurate
+					"Layer.Inhib.ActAvg.Init":           "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":           "0.05", // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":        "true", // not huge effects but beneficial
 					"Layer.Act.Init.Decay":              "0.5",  // 0.5 > 1 > 0
@@ -88,7 +88,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.KNa.On":                  "true", // on > off
 					"Layer.Act.KNa.Fast.Max":            "0.1",  // 0.2 > 0.1
 					"Layer.Act.KNa.Med.Max":             "0.2",  // 0.2 > 0.1 def
-					"Layer.Act.KNa.Slow.Max":            "0.2",  // 1 def
+					"Layer.Act.KNa.Slow.Max":            "0.2",  // 1,2,2 best in larger models
 					"Layer.Act.Noise.Dist":              "Gaussian",
 					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
@@ -116,18 +116,20 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.WtScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
-			{Sel: ".Inhib", Desc: "inhibitory projection",
+			{Sel: ".Inhib", Desc: "inhibitory projection -- not useful",
 				Params: params.Params{
 					"Prjn.WtInit.Var":       "0.0",
-					"Prjn.WtInit.Mean":      "0.15",
-					"Prjn.WtScale.Init":     ".5",
+					"Prjn.WtInit.Mean":      "0.05",
+					"Prjn.WtScale.Init":     ".1",
 					"Prjn.WtScale.Adapt":    "false",
 					"Prjn.Learn.WtSig.Gain": "6",
 					"Prjn.IncGain":          "0.5",
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.24",
+					"Layer.Act.Clamp.Type":    "GeClamp", // GeClamp is much more natural and better..
+					"Layer.Act.Clamp.Ge":      "0.6",
+					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.ActAvg.Targ": "0.24",
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
@@ -372,7 +374,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
 
-	net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
+	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
 
 	// note: can set these to do parallel threaded computation across multiple cpus
 	// not worth it for this small of a model, but definitely helps for larger ones
