@@ -104,7 +104,6 @@ var ParamSets = params.Sets{
 					"Prjn.Com.Delay":          "2",    // 1 == 2 = 3
 					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
 					"Prjn.Learn.WtSig.Gain":   "6",
-					"Prjn.Learn.WtSig.Min":    "0.0", // .25 or .1 seems better than 0
 					"Prjn.WtScale.ScaleLrate": ".1",
 					"Prjn.WtScale.Init":       "1",
 					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
@@ -128,7 +127,7 @@ var ParamSets = params.Sets{
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
 					"Layer.Act.Clamp.Type":    "GeClamp", // GeClamp is much more natural and better..
-					"Layer.Act.Clamp.Ge":      "0.6",
+					"Layer.Act.Clamp.Ge":      "0.6",     // 0.6 >= 0.7 == 0.5
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.ActAvg.Targ": "0.24",
 				}},
@@ -140,7 +139,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
 					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
 					"Layer.Act.Clamp.Type":       "GeClamp",
-					"Layer.Act.Clamp.Ge":         "0.4",   // .4 > others with no bursting -- fine with too
+					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6
 					"Layer.Act.Clamp.Burst":      "false", //
 					"Layer.Act.Clamp.BurstThr":   "0.5",   //
 					"Layer.Act.Clamp.BurstGe":    "1",     // 2 strongest
