@@ -96,7 +96,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.SynScale.ErrLrate":     "0.02",    // 0.02 > 0.05 objrec
 					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Act.Dt.TrlAvgTau":            "20",      // 20 > higher for objrec, lvis
-					"Layer.Learn.SynScale.TrgRange.Min": "0.2",     // .2 - 2.0 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.SynScale.TrgRange.Max": "2.0",     // 2.0
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",

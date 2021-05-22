@@ -245,7 +245,7 @@ func (cd *CosDiffStats) Init() {
 // Weights are rescaled in proportion to avg diff -- larger weights affected in proportion.
 type SynScaleParams struct {
 	ErrLrate float32    `def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
-	TrgRange minmax.F32 `desc:"default 0.2-2 -- range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
+	TrgRange minmax.F32 `desc:"default 0.5-2 -- range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
 }
@@ -255,7 +255,7 @@ func (ss *SynScaleParams) Update() {
 
 func (ss *SynScaleParams) Defaults() {
 	ss.ErrLrate = 0.02
-	ss.TrgRange.Set(0.2, 2)
+	ss.TrgRange.Set(0.5, 2)
 	ss.Permute = true
 	ss.Rate = 0.005
 	ss.Update()
