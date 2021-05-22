@@ -560,7 +560,8 @@ func (pj *Prjn) RecvGInc(ltime *Time) {
 	}
 }
 
-// RecvGIncStats is called in minus phase to collect stats about conductances
+// RecvGIncStats is called every cycle during minus phase,
+// to increment GeRaw or GiRaw, and also collect stats about conductances.
 func (pj *Prjn) RecvGIncStats() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Com.Delay
@@ -605,13 +606,13 @@ func (pj *Prjn) RecvGIncStats() {
 		if pj.GScale.AvgAvg == 0 {
 			pj.GScale.AvgAvg = avg
 		} else {
-			pj.GScale.AvgAvg += rlay.Act.Dt.TrlAvgDt * (avg - pj.GScale.AvgAvg)
+			pj.GScale.AvgAvg += pj.WtScale.AvgDt * (avg - pj.GScale.AvgAvg)
 		}
 		pj.GScale.Max = max
 		if pj.GScale.AvgMax == 0 {
 			pj.GScale.AvgMax = max
 		} else {
-			pj.GScale.AvgMax += rlay.Act.Dt.TrlAvgDt * (max - pj.GScale.AvgMax)
+			pj.GScale.AvgMax += pj.WtScale.AvgDt * (max - pj.GScale.AvgMax)
 		}
 	}
 	pj.Gidx.Shift(1) // rotate buffer

@@ -439,7 +439,7 @@ type DtParams struct {
 	GeTau     float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau     float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	MTau      float32 `def:"20" min:"1" desc:"time constant for continuously updating the minus phase ActM value from the short AvgS value, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), "`
-	TrlAvgTau float32 `def:"20" desc:"time constant for integrating trial-wise slow averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg, Prjn.GScale.AvgAvg, AvgMax in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
+	TrlAvgTau float32 `def:"20" desc:"time constant for integrating trial-wise slow averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
 
 	VmDt     float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
@@ -677,6 +677,9 @@ type WtScaleParams struct {
 	ScaleLrate float32 `viewif:"Adapt" def:"0.02" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors."`
 	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
 	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
+	AvgTau     float32 `def:"500" desc:"time constant for integrating projection-level averages for this scaling process: Prjn.GScale.AvgAvg, AvgMax (roughly, how long it takes for value to change significantly) -- these are updated at the cycle level and "`
+
+	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (ws *WtScaleParams) Defaults() {
@@ -686,10 +689,12 @@ func (ws *WtScaleParams) Defaults() {
 	ws.ScaleLrate = 0.02
 	ws.HiTol = 0
 	ws.LoTol = 0.8
+	ws.AvgTau = 500
 	ws.Update()
 }
 
 func (ws *WtScaleParams) Update() {
+	ws.AvgDt = 1 / ws.AvgTau
 }
 
 // SLayActScale computes scaling factor based on sending layer activity level (savg), number of units
