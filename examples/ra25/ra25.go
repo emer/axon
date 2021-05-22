@@ -93,9 +93,9 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
 					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
+					"Layer.Act.Dt.TrlAvgTau":            "20",      // 20 > higher for objrec, lvis
 					"Layer.Learn.SynScale.ErrLrate":     "0.02",    // 0.02 > 0.05 objrec
 					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
-					"Layer.Act.Dt.TrlAvgTau":            "20",      // 20 > higher for objrec, lvis
 					"Layer.Learn.SynScale.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.SynScale.TrgRange.Max": "2.0",     // 2.0
 				}},

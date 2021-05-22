@@ -113,7 +113,7 @@ func (ly *TopoInhibLayer) TopoGi(ltime *axon.Time) {
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
 func (ly *TopoInhibLayer) InhibFmGeAct(ltime *axon.Time) {
 	lpl := &ly.Pools[0]
-	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.GiMult)
+	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
 	ly.PoolInhibFmGeAct(ltime)
 	if ly.Is4D() && ly.TopoInhib.On {
 		ly.TopoGi(ltime)

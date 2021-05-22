@@ -70,17 +70,20 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "1.1",  // 1.1 > 1.2 > 1.0
-					"Layer.Learn.AvgL.Gain":    "1.5",  // key to lower relative to 2.5
-					"Layer.Act.Gbar.L":         "0.2",  // lower leak = better
-					"Layer.Inhib.ActAvg.Fixed": "true", // simpler to have everything fixed, for replicability
-					"Layer.Act.Init.Decay":     "0.5",  // 0.5 >= 0.2 >= 0 -- not much diff for just hid
-					"Layer.Act.Clamp.Rate":     "120",  // 120 == 100 > 150
+					"Layer.Inhib.ActAvg.Init":           "0.15",
+					"Layer.Inhib.ActAvg.Targ":           "0.15",
+					"Layer.Inhib.Layer.Gi":              "1.1",  // 1.1 > 1.2 > 1.0
+					"Layer.Act.Gbar.L":                  "0.2",  // std
+					"Layer.Act.Init.Decay":              "0.5",  // 0.5 >= 0.2 >= 0 -- not much diff for just hid
+					"Layer.Act.Clamp.Rate":              "120",  // 120 == 100 > 150
+					"Layer.Act.Dt.TrlAvgTau":            "20",   // 20 > higher for objrec, lvis
+					"Layer.Learn.SynScale.ErrLrate":     "0.01", // 0.02 > 0.05 objrec
+					"Layer.Learn.SynScale.Rate":         "0.01", // 0.01 > 0.005 best for objrec -- needs faster
+					"Layer.Learn.SynScale.TrgRange.Min": "0.2",  // .5 best for Lvis, .2 - 2.0 best for objrec
+					"Layer.Learn.SynScale.TrgRange.Max": "2.0",  // 2.0
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Fixed": "false", // not clear any diff
-				}},
+				Params: params.Params{}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.WtScale.Rel": "0.2", // 0.2 > 0.3
@@ -88,11 +91,12 @@ var ParamSets = params.Sets{
 			{Sel: ".Input", Desc: "input layers need more inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Inhib.ActAvg.Targ": "0.15",
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.2", // 1.2 > 1.1 maybe > 1.3
-					"Layer.TRC.HardClamp":  "true",
+					"Layer.TRC.HardClamp":  "false",
 					"Layer.TRC.DriveScale": "0.15",  // .15 >= .1
 					"Layer.TRC.MaxInhib":   "0.6",   // 0.6 def
 					"Layer.Act.Init.Decay": "0.5",   // 0.5 maybe > 1 ?  starts out faster..
@@ -101,9 +105,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Rate": "180",   // 120 == 100 > 150
 				}},
 			{Sel: "CTCtxtPrjn", Desc: "no weight balance on CT context prjns -- makes a diff!",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true", // this should be true for larger DeepAxon models -- e.g., sg..
-				}},
+				Params: params.Params{}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
 					"Prjn.WtInit.Mean": "0.5",
@@ -845,7 +847,7 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 
 	for _, lnm := range ss.LayStatNms {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		dt.SetCellFloat(ly.Nm+" ActAvg", row, float64(ly.Pools[0].ActAvg.ActPAvgEff))
+		dt.SetCellFloat(ly.Nm+" ActAvg", row, float64(ly.ActAvg.ActMAvg))
 	}
 
 	// note: essential to use Go version of update when called from another goroutine

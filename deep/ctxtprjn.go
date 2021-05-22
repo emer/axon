@@ -93,13 +93,13 @@ func (pj *CTCtxtPrjn) SendSpike(si int) {
 }
 
 // RecvGInc: disabled for this type
-func (pj *CTCtxtPrjn) RecvGInc() {
+func (pj *CTCtxtPrjn) RecvGInc(ltime *axon.Time) {
 }
 
 // SendCtxtGe sends the full Burst activation from sending neuron index si,
 // to integrate CtxtGe excitatory conductance on receivers
 func (pj *CTCtxtPrjn) SendCtxtGe(si int, dburst float32) {
-	scdb := dburst * pj.GScale
+	scdb := dburst * pj.GScale.Scale
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
 	syns := pj.Syns[st : st+nc]

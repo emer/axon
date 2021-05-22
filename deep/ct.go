@@ -27,8 +27,7 @@ var KiT_CTLayer = kit.Types.AddType(&CTLayer{}, LayerProps)
 
 func (ly *CTLayer) Defaults() {
 	ly.TopoInhibLayer.Defaults()
-	ly.Act.Init.Decay = 0            // deep doesn't decay!
-	ly.Inhib.ActAvg.UseFirst = false // first activations can be very far off
+	ly.Act.Init.Decay = 0 // deep doesn't decay!
 	ly.BurstQtr.Set(int(axon.Q4))
 	ly.Typ = CT
 	ly.CtxtGeGain = 0.2
@@ -57,6 +56,10 @@ func (ly *CTLayer) InitActs() {
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
 func (ly *CTLayer) GFmInc(ltime *axon.Time) {
+	cyc := ltime.Cycle // for bursting
+	if ly.IsTarget() {
+		cyc = ltime.QuarterCycle()
+	}
 	ly.RecvGInc(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -71,7 +74,7 @@ func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 
 		// note: each step broken out here so other variants can add extra terms to Raw
-		ly.Act.GeFmRaw(nrn, geRaw+nrn.Gnmda)
+		ly.Act.GeFmRaw(nrn, geRaw+nrn.Gnmda, cyc, nrn.ActM)
 		nrn.GeRaw = 0
 		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 		nrn.GiRaw = 0

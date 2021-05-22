@@ -216,7 +216,7 @@ func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 
 // SetDriverNeuron sets the driver activation for given Neuron,
 // based on given Ge driving value (use DriveFmMaxAvg) from driver layer (Burst or Act)
-func (ly *TRCLayer) SetDriverNeuron(tni int, drvGe, drvInhib float32) {
+func (ly *TRCLayer) SetDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) {
 	if tni >= len(ly.Neurons) {
 		return
 	}
@@ -237,7 +237,7 @@ func (ly *TRCLayer) SetDriverNeuron(tni int, drvGe, drvInhib float32) {
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 
 		// note: each step broken out here so other variants can add extra terms to Raw
-		ly.Act.GeFmRaw(nrn, geRaw+nrn.Gnmda)
+		ly.Act.GeFmRaw(nrn, geRaw+nrn.Gnmda, cyc, nrn.ActM)
 		nrn.GeRaw = 0
 		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 		nrn.GiRaw = 0
@@ -245,7 +245,11 @@ func (ly *TRCLayer) SetDriverNeuron(tni int, drvGe, drvInhib float32) {
 }
 
 // SetDriverActs sets the driver activations, integrating across all the driver layers
-func (ly *TRCLayer) SetDriverActs() {
+func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
+	cyc := ltime.Cycle // for bursting
+	if ly.IsTarget() {
+		cyc = ltime.QuarterCycle()
+	}
 	nux, nuy := UnitsSize(&ly.Layer)
 	nun := nux * nuy
 	pyn := ly.Shp.Dim(0)
@@ -267,7 +271,7 @@ func (ly *TRCLayer) SetDriverActs() {
 				for dni := range dly.Neurons {
 					tni := drv.Off + dni
 					drvAct := DriveAct(dni, dly, sly, issuper)
-					ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib)
+					ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
 				}
 			} else { // copy flat to all pools -- not typical
 				for dni := range dly.Neurons {
@@ -276,7 +280,7 @@ func (ly *TRCLayer) SetDriverActs() {
 					for py := 0; py < pyn; py++ {
 						for px := 0; px < pxn; px++ {
 							pni := (py*pxn+px)*nun + tni
-							ly.SetDriverNeuron(pni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib)
+							ly.SetDriverNeuron(pni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
 						}
 					}
 				}
@@ -308,7 +312,7 @@ func (ly *TRCLayer) SetDriverActs() {
 						avg /= float32(avgn)
 					}
 					tni := drv.Off + dni
-					ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib)
+					ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
 				}
 			} else if ly.TRC.NoTopo { // ly is 4D
 				for dni := 0; dni < dnun; dni++ {
@@ -336,7 +340,7 @@ func (ly *TRCLayer) SetDriverActs() {
 					for py := 0; py < pyn; py++ {
 						for px := 0; px < pxn; px++ {
 							pni := (py*pxn+px)*nun + tni
-							ly.SetDriverNeuron(pni, drvGe, drvInhib)
+							ly.SetDriverNeuron(pni, drvGe, drvInhib, cyc)
 						}
 					}
 				}
@@ -371,7 +375,7 @@ func (ly *TRCLayer) SetDriverActs() {
 								avg /= float32(avgn)
 							}
 							tni := pni + drv.Off + dni
-							ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib)
+							ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
 						}
 					}
 				}
@@ -387,14 +391,14 @@ func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
 		ly.GFmIncNeur(ltime) // regular
 		return
 	}
-	ly.SetDriverActs()
+	ly.SetDriverActs(ltime)
 }
 
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act
 func (ly *TRCLayer) ActFmG(ltime *axon.Time) {
 	if !ly.TRC.DriversOff && ly.TRC.BurstQtr.Has(ltime.Quarter) {
-		ly.SetDriverActs()
+		ly.SetDriverActs(ltime)
 	}
 	ly.TopoInhibLayer.ActFmG(ltime)
 }
