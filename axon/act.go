@@ -479,6 +479,25 @@ func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32, min float32) {
 	*gi += giRaw - dp.GiDt*(*gi-min)
 }
 
+// AvgVarUpdt updates the average and variance from current value, using TrlAvgDt
+func (dp *DtParams) AvgVarUpdt(avg, vr *float32, val float32) {
+	if *avg == 0 { // first time -- set
+		*avg = val
+		*vr = 0
+	} else {
+		del := val - *avg
+		incr := dp.TrlAvgDt * del
+		*avg += incr
+		// following is magic exponentially-weighted incremental variance formula
+		// derived by Finch, 2009: Incremental calculation of weighted mean and variance
+		if *vr == 0 {
+			*vr = 2 * (1 - dp.TrlAvgDt) * del * incr
+		} else {
+			*vr = (1 - dp.TrlAvgDt) * (*vr + del*incr)
+		}
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 // GTargParams
 
@@ -647,30 +666,13 @@ func (sc *SynComParams) Fail(wt *float32) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  WtInitParams
+//  PrjnScaleParams
 
-// WtInitParams are weight initialization parameters -- basically the
-// random distribution parameters but also Symmetry flag
-type WtInitParams struct {
-	erand.RndParams
-	Sym bool `desc:"symmetrize the weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
-}
-
-func (wp *WtInitParams) Defaults() {
-	wp.Mean = 0.5
-	wp.Var = 0.25
-	wp.Dist = erand.Uniform
-	wp.Sym = true
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  WtScaleParams
-
-// WtScaleParams are weight scaling parameters: modulates overall strength of projection,
+// PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,
 // using both absolute and relative factors.
 // Also includes ability to adapt Scale factors to maintain AvgMaxGeM / GiM max conductances
 // according to Acts.GTarg target values.
-type WtScaleParams struct {
+type PrjnScaleParams struct {
 	Rel        float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
 	Init       float32 `def:"1" min:"0" desc:"adjustment factor for the initial scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling -- typically Adapt should compensate for most cases"`
 	Adapt      bool    `def:"true" desc:"Adapt the 'GScale' scaling value so the ActAvg.AvgMaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg"`
@@ -682,7 +684,7 @@ type WtScaleParams struct {
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
-func (ws *WtScaleParams) Defaults() {
+func (ws *PrjnScaleParams) Defaults() {
 	ws.Rel = 1
 	ws.Init = 1
 	ws.Adapt = true
@@ -693,7 +695,7 @@ func (ws *WtScaleParams) Defaults() {
 	ws.Update()
 }
 
-func (ws *WtScaleParams) Update() {
+func (ws *PrjnScaleParams) Update() {
 	ws.AvgDt = 1 / ws.AvgTau
 }
 
@@ -703,7 +705,7 @@ func (ws *WtScaleParams) Update() {
 // to add to the average expected number of active connections to receive,
 // for purposes of computing scaling factors with partial connectivity
 // For 25% layer activity, binomial SEM = sqrt(p(1-p)) = .43, so 3x = 1.3 so 2 is a reasonable default.
-func (ws *WtScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
+func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 	ncon = mat32.Max(ncon, 1) // prjn Avg can be < 1 in some cases
 	semExtra := 2
 	slayActN := int(mat32.Round(savg * snu)) // sending layer actual # active
@@ -723,6 +725,6 @@ func (ws *WtScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 }
 
 // FullScale returns full scaling factor, which is product of Init * Rel * SLayActScale
-func (ws *WtScaleParams) FullScale(savg, snu, ncon float32) float32 {
+func (ws *PrjnScaleParams) FullScale(savg, snu, ncon float32) float32 {
 	return ws.Init * ws.Rel * ws.SLayActScale(savg, snu, ncon)
 }

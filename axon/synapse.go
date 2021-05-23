@@ -11,17 +11,17 @@ import (
 
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
-	Wt    float32 `desc:"synaptic weight value -- sigmoid contrast-enhanced"`
-	LWt   float32 `desc:"linear (underlying) weight value -- learns according to the lrate specified in the connection spec -- this is converted into the effective weight value, Wt, via sigmoidal contrast enhancement (see WtSigParams)"`
-	DWt   float32 `desc:"change in synaptic weight, from learning"`
-	Scale float32 `desc:"scaling parameter for this connection: effective weight value is scaled by this factor -- useful for topographic connectivity patterns e.g., to enforce more distant connections to always be lower in magnitude than closer connections.  Value defaults to 1 (cannot be exactly 0 -- otherwise is automatically reset to 1 -- use a very small number to approximate 0).  Typically set by using the prjn.Pattern Weights() values where appropriate"`
+	Wt  float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1"`
+	SWt float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine, while the LWt reflects the AMPA receptor efficacy and number.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
+	LWt float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, "`
+	DWt float32 `desc:"change in synaptic weight, from learning"`
 }
 
 func (sy *Synapse) VarNames() []string {
 	return SynapseVars
 }
 
-var SynapseVars = []string{"Wt", "LWt", "DWt", "Scale"}
+var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt"}
 
 var SynapseVarProps = map[string]string{
 	"DWt": `auto-scale:"+"`,

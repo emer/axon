@@ -15,21 +15,18 @@ import (
 // axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
-	ActAvg   LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
-	CosDiff  CosDiffParams   `view:"inline" desc:"parameters for computing cosine diff between minus and plus phase"`
-	SynScale SynScaleParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
+	ActAvg    LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
+	TrgAvgAct TrgAvgActParams `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
 }
 
 func (ln *LearnNeurParams) Update() {
 	ln.ActAvg.Update()
-	ln.CosDiff.Update()
-	ln.SynScale.Update()
+	ln.TrgAvgAct.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
 	ln.ActAvg.Defaults()
-	ln.CosDiff.Defaults()
-	ln.SynScale.Defaults()
+	ln.TrgAvgAct.Defaults()
 }
 
 // InitActAvg initializes the running-average activation values that drive learning.
@@ -48,20 +45,160 @@ func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
 }
 
 ///////////////////////////////////////////////////////////////////////
+//  SWtParams
+
+// SWtParams manages structural, slowly adapting weight values, in terms of initialization
+// and updating over course of learning, imposing constraints.
+type SWtParams struct {
+	Lrate     float32    `desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
+	SigGain   float32    `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
+	Mean      float32    `def:"0.5" desc:"initial target mean SWt weight values across receiving neuron's projection"`
+	InitPct   float32    `desc:"how much of the initial random weights are captured in the SWt values"`
+	Var       float32    `def:"0.25" desc:"initial variance in SWt values, prior to constraints"`
+	Min       float32    `min:"0.001" desc:"minimum SWt value -- important that this is always >= 0.001"`
+	Sym       bool       `desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
+	MeanRange minmax.F32 `view:"inline" desc:"range to constrain adaptation of mean SWt -- target per recv neuron means (Prjns.SWtMeans) change due to synaptic scaling drive to maintain target average activity level, TrgAvg."`
+}
+
+func (sp *SWtParams) Update() {
+
+}
+
+func (sp *SWtParams) Defaults() {
+	sp.Lrate = 0.1
+	sp.SigGain = 6
+	sp.Mean = 0.5
+	sp.InitPct = 0.5
+	sp.Var = 0.25
+	sp.Min = 0.1
+	sp.Sym = true
+	sp.MeanRange.Set(0.3, 0.7)
+}
+
+// WtVal returns the effective Wt value given the SWt and LWt values
+func (sp *SWtParams) WtVal(swt, lwt float32) float32 {
+	return swt * sp.SigFmLinWt(lwt)
+}
+
+// ClipSWt returns SWt value clipped to valid range
+func (sp *SWtParams) ClipSWt(swt float32) float32 {
+	if swt > 1 {
+		return 1
+	}
+	if swt < sp.Min {
+		return sp.Min
+	}
+	return swt
+}
+
+// SigFun is the sigmoid function for value w in 0-1 range, with gain and offset params
+func SigFun(w, gain, off float32) float32 {
+	if w <= 0 {
+		return 0
+	}
+	if w >= 1 {
+		return 1
+	}
+	return (1 / (1 + mat32.Pow((off*(1-w))/w, gain)))
+}
+
+// SigFun61 is the sigmoid function for value w in 0-1 range, with default gain = 6, offset = 1 params
+func SigFun61(w float32) float32 {
+	if w <= 0 {
+		return 0
+	}
+	if w >= 1 {
+		return 1
+	}
+	pw := (1 - w) / w
+	return (1 / (1 + pw*pw*pw*pw*pw*pw))
+}
+
+// SigInvFun is the inverse of the sigmoid function
+func SigInvFun(w, gain, off float32) float32 {
+	if w <= 0 {
+		return 0
+	}
+	if w >= 1 {
+		return 1
+	}
+	return 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1/gain)/off)
+}
+
+// SigInvFun61 is the inverse of the sigmoid function, with default gain = 6, offset = 1 params
+func SigInvFun61(w float32) float32 {
+	if w <= 0 {
+		return 0
+	}
+	if w >= 1 {
+		return 1
+	}
+	rval := 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1.0/6.0))
+	return rval
+}
+
+// SigFmLinWt returns sigmoidal contrast-enhanced weight from linear weight,
+// centered at 1 in preparation for multiplying times SWt
+func (sp *SWtParams) SigFmLinWt(lw float32) float32 {
+	var wt float32
+	switch {
+	case sp.SigGain == 1:
+		wt = lw
+	case sp.SigGain == 6:
+		wt = SigFun61(lw)
+	default:
+		wt = SigFun(lw, sp.SigGain, 1)
+	}
+	return 2 * wt // center at 1 instead of .5
+}
+
+// LinFmSigWt returns linear weight from sigmoidal contrast-enhanced weight.
+// wt is in range 0-2 centered at 1 -- return value is in 0-1 range, centered at .5
+func (sp *SWtParams) LinFmSigWt(wt float32) float32 {
+	wt *= 0.5
+	if sp.SigGain == 1 {
+		return wt
+	}
+	if sp.SigGain == 6 {
+		return SigInvFun61(wt)
+	}
+	return SigInvFun(wt, sp.SigGain, 1)
+}
+
+// WtFmDWt updates the synaptic weights from accumulated weight changes
+// wbInc and wbDec are the weight balance factors, wt is the sigmoidal contrast-enhanced
+// weight and lwt is the linear weight value
+func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
+	if *dwt == 0 {
+		if *wt == 0 { // restore failed wts
+			*wt = sp.WtVal(swt, *lwt)
+		}
+		return
+	}
+	// note: softbound happened at dwt stage
+	*lwt += *dwt
+	if *lwt < 0 {
+		*lwt = 0
+	} else if *lwt > 1 {
+		*lwt = 1
+	}
+	*wt = sp.WtVal(swt, *lwt)
+	*dwt = 0
+}
+
+///////////////////////////////////////////////////////////////////////
 //  LearnSynParams
 
-// axon.LearnSynParams manages learning-related parameters at the synapse-level.
+// LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn     bool        `desc:"enable learning for this projection"`
-	Lrate     float32     `desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
-	LrateInit float32     `desc:"initial learning rate -- this is set from Lrate in UpdateParams, which is called when Params are updated, and used in LrateMult to compute a new learning rate for learning rate schedules."`
-	XCal      XCalParams  `view:"inline" desc:"parameters for the XCal learning rule"`
-	WtSig     WtSigParams `view:"inline" desc:"parameters for the sigmoidal contrast weight enhancement"`
+	Learn     bool       `desc:"enable learning for this projection"`
+	Lrate     float32    `desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
+	LrateInit float32    `desc:"initial learning rate -- this is set from Lrate in UpdateParams, which is called when Params are updated, and used in LrateMult to compute a new learning rate for learning rate schedules."`
+	XCal      XCalParams `view:"inline" desc:"parameters for the XCal learning rule"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.XCal.Update()
-	ls.WtSig.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
@@ -69,20 +206,6 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Lrate = 0.04
 	ls.LrateInit = ls.Lrate
 	ls.XCal.Defaults()
-	ls.WtSig.Defaults()
-}
-
-// LWtFmWt updates the linear weight value based on the current effective Wt value.
-// effective weight is sigmoidally contrast-enhanced relative to the linear weight.
-func (ls *LearnSynParams) LWtFmWt(syn *Synapse) {
-	syn.LWt = ls.WtSig.LinFmSigWt(syn.Wt / syn.Scale) // must factor out scale too!
-}
-
-// WtFmLWt updates the effective weight value based on the current linear Wt value.
-// effective weight is sigmoidally contrast-enhanced relative to the linear weight.
-func (ls *LearnSynParams) WtFmLWt(syn *Synapse) {
-	syn.Wt = ls.WtSig.SigFmLinWt(syn.LWt)
-	syn.Wt *= syn.Scale
 }
 
 // CHLdWt returns the error-driven weight change component for the
@@ -91,32 +214,6 @@ func (ls *LearnSynParams) CHLdWt(suAvgSLrn, suAvgM, ruAvgSLrn, ruAvgM float32) f
 	srs := suAvgSLrn * ruAvgSLrn
 	srm := suAvgM * ruAvgM
 	return ls.XCal.DWt(srs, srm)
-}
-
-// WtFmDWt updates the synaptic weights from accumulated weight changes
-// wbInc and wbDec are the weight balance factors, wt is the sigmoidal contrast-enhanced
-// weight and lwt is the linear weight value
-func (ls *LearnSynParams) WtFmDWt(dwt, wt, lwt *float32, scale float32) {
-	if *dwt == 0 {
-		if *wt == 0 { // restore failed wts
-			*wt = scale * ls.WtSig.SigFmLinWt(*lwt)
-		}
-		return
-	}
-	// always doing softbound by default
-	// if *dwt > 0 {
-	// 	*dwt *= (1 - *lwt)
-	// } else {
-	// 	*dwt *= *lwt
-	// }
-	*lwt += *dwt
-	if *lwt < 0 {
-		*lwt = 0
-	} else if *lwt > 1 {
-		*lwt = 1
-	}
-	*wt = scale * ls.WtSig.SigFmLinWt(*lwt)
-	*dwt = 0
 }
 
 // LrnActAvgParams has rate constants for averaging over activations
@@ -168,92 +265,22 @@ func (aa *LrnActAvgParams) Defaults() {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  CosDiffParams
+//  TrgAvgActParams
 
-// CosDiffParams specify how to integrate cosine of difference between plus and minus phase activations
-// Used to modulate amount of hebbian learning, and overall learning rate.
-type CosDiffParams struct {
-	Tau float32 `def:"100" min:"1" desc:"time constant in alpha-cycles (roughly how long significant change takes, 1.4 x half-life) for computing running average CosDiff value for the layer, CosDiffAvg = cosine difference between ActM and ActP -- this is an important statistic for how much phase-based difference there is between phases in this layer -- it is used in standard X_COS_DIFF modulation of l_mix in AxonConSpec, and for modulating learning rate as a function of predictability in the DeepAxon predictive auto-encoder learning -- running average variance also computed with this: cos_diff_var"`
-
-	Dt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate constant = 1 / Tau"`
-	DtC float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"complement of rate constant = 1 - Dt"`
-}
-
-func (cd *CosDiffParams) Update() {
-	cd.Dt = 1 / cd.Tau
-	cd.DtC = 1 - cd.Dt
-}
-
-func (cd *CosDiffParams) Defaults() {
-	cd.Tau = 100
-	cd.Update()
-}
-
-// AvgVarFmCos updates the average and variance from current cosine diff value
-func (cd *CosDiffParams) AvgVarFmCos(avg, vr *float32, cos float32) {
-	if *avg == 0 { // first time -- set
-		*avg = cos
-		*vr = 0
-	} else {
-		del := cos - *avg
-		incr := cd.Dt * del
-		*avg += incr
-		// following is magic exponentially-weighted incremental variance formula
-		// derived by Finch, 2009: Incremental calculation of weighted mean and variance
-		if *vr == 0 {
-			*vr = 2 * cd.DtC * del * incr
-		} else {
-			*vr = cd.DtC * (*vr + del*incr)
-		}
-	}
-}
-
-// LrateMod computes learning rate modulation based on cos diff vals
-// func (cd *CosDiffParams) LrateMod(cos, avg, vr float32) float32 {
-// 	if vr <= 0 {
-// 		return 1
-// 	}
-// 	zval := (cos - avg) / mat32.Sqrt(vr) // stdev = sqrt of var
-// 	// z-normal value is starting point for learning rate factor
-// 	//    if zval < lrmod_z_thr {
-// 	// 	return 0
-// 	// }
-// 	return 1
-// }
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  CosDiffStats
-
-// CosDiffStats holds cosine-difference statistics at the layer level
-type CosDiffStats struct {
-	Cos float32 `inactive:"+" desc:"cosine (normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CosDiffFmActs at end of QuarterFinal for quarter = 3"`
-	Avg float32 `inactive:"+" desc:"running average of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal"`
-	Var float32 `inactive:"+" desc:"running variance of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal, used for modulating overall learning rate"`
-}
-
-func (cd *CosDiffStats) Init() {
-	cd.Cos = 0
-	cd.Avg = 0
-	cd.Var = 0
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  SynScaleParams
-
-// SynScaleParams govern the synaptic scaling to maintain target level of overall long-term
-// average activity in neurons.
-// Weights are rescaled in proportion to avg diff -- larger weights affected in proportion.
-type SynScaleParams struct {
+// TrgAvgActParams govern the target and actual long-term average activity in neurons.
+// Target value is adapted by unit-wise error and difference in actual vs. target
+// drives synaptic scaling.
+type TrgAvgActParams struct {
 	ErrLrate float32    `def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
 	TrgRange minmax.F32 `desc:"default 0.5-2 -- range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
 }
 
-func (ss *SynScaleParams) Update() {
+func (ss *TrgAvgActParams) Update() {
 }
 
-func (ss *SynScaleParams) Defaults() {
+func (ss *TrgAvgActParams) Defaults() {
 	ss.ErrLrate = 0.02
 	ss.TrgRange.Set(0.5, 2)
 	ss.Permute = true
@@ -304,92 +331,4 @@ func (xc *XCalParams) DWt(srval, thrP float32) float32 {
 		dwt = srval * xc.DRevRatio
 	}
 	return dwt
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  WtSigParams
-
-// WtSigParams are sigmoidal weight contrast enhancement function parameters
-type WtSigParams struct {
-	Gain float32 `def:"1,6" min:"0" desc:"gain (contrast, sharpness) of the weight contrast function (1 = linear)"`
-	Off  float32 `def:"1" min:"0" desc:"offset of the function (1=centered at .5, >1=higher, <1=lower) -- 1 is standard for XCAL"`
-}
-
-func (ws *WtSigParams) Update() {
-}
-
-func (ws *WtSigParams) Defaults() {
-	ws.Gain = 6
-	ws.Off = 1
-}
-
-// SigFun is the sigmoid function for value w in 0-1 range, with gain and offset params
-func SigFun(w, gain, off float32) float32 {
-	if w <= 0 {
-		return 0
-	}
-	if w >= 1 {
-		return 1
-	}
-	return (1 / (1 + mat32.Pow((off*(1-w))/w, gain)))
-}
-
-// SigFun61 is the sigmoid function for value w in 0-1 range, with default gain = 6, offset = 1 params
-func SigFun61(w float32) float32 {
-	if w <= 0 {
-		return 0
-	}
-	if w >= 1 {
-		return 1
-	}
-	pw := (1 - w) / w
-	return (1 / (1 + pw*pw*pw*pw*pw*pw))
-}
-
-// SigInvFun is the inverse of the sigmoid function
-func SigInvFun(w, gain, off float32) float32 {
-	if w <= 0 {
-		return 0
-	}
-	if w >= 1 {
-		return 1
-	}
-	return 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1/gain)/off)
-}
-
-// SigInvFun61 is the inverse of the sigmoid function, with default gain = 6, offset = 1 params
-func SigInvFun61(w float32) float32 {
-	if w <= 0 {
-		return 0
-	}
-	if w >= 1 {
-		return 1
-	}
-	rval := 1.0 / (1.0 + mat32.Pow((1.0-w)/w, 1.0/6.0))
-	return rval
-}
-
-// SigFmLinWt returns sigmoidal contrast-enhanced weight from linear weight
-func (ws *WtSigParams) SigFmLinWt(lw float32) float32 {
-	var wt float32
-	switch {
-	case ws.Gain == 1 && ws.Off == 1:
-		wt = lw
-	case ws.Gain == 6 && ws.Off == 1:
-		wt = SigFun61(lw)
-	default:
-		wt = SigFun(lw, ws.Gain, ws.Off)
-	}
-	return wt
-}
-
-// LinFmSigWt returns linear weight from sigmoidal contrast-enhanced weight
-func (ws *WtSigParams) LinFmSigWt(sw float32) float32 {
-	if ws.Gain == 1 && ws.Off == 1 {
-		return sw
-	}
-	if ws.Gain == 6 && ws.Off == 1 {
-		return SigInvFun61(sw)
-	}
-	return SigInvFun(sw, ws.Gain, ws.Off)
 }

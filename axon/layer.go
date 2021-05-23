@@ -74,9 +74,22 @@ func (ly *Layer) UpdateParams() {
 type ActAvgVals struct {
 	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.TrlAvgTau -- used for adapting inhibition relative to target level"`
 	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.TrlAvgTau"`
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn WtScale"`
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn WtScale"`
+	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
+	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+}
+
+// CosDiffStats holds cosine-difference statistics at the layer level
+type CosDiffStats struct {
+	Cos float32 `inactive:"+" desc:"cosine (normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CosDiffFmActs at end of QuarterFinal for quarter = 3"`
+	Avg float32 `inactive:"+" desc:"running average of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal"`
+	Var float32 `inactive:"+" desc:"running variance of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal, used for modulating overall learning rate"`
+}
+
+func (cd *CosDiffStats) Init() {
+	cd.Cos = 0
+	cd.Avg = 0
+	cd.Var = 0
 }
 
 // AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
@@ -631,8 +644,8 @@ func (ly *Layer) InitActAvg() {
 		nrn := &ly.Neurons[ni]
 		ly.Learn.InitActAvg(nrn)
 	}
-	strg := ly.Learn.SynScale.TrgRange.Min
-	rng := ly.Learn.SynScale.TrgRange.Range()
+	strg := ly.Learn.TrgAvgAct.TrgRange.Min
+	rng := ly.Learn.TrgAvgAct.TrgRange.Range()
 	inc := float32(0)
 	if ly.Is4D() {
 		nNy := ly.Shp.Dim(2)
@@ -648,7 +661,7 @@ func (ly *Layer) InitActAvg() {
 		}
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
-			if ly.Learn.SynScale.Permute {
+			if ly.Learn.TrgAvgAct.Permute {
 				erand.PermuteInts(porder)
 			}
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
@@ -673,7 +686,7 @@ func (ly *Layer) InitActAvg() {
 		for i := range porder {
 			porder[i] = i
 		}
-		if ly.Learn.SynScale.Permute {
+		if ly.Learn.TrgAvgAct.Permute {
 			erand.PermuteInts(porder)
 		}
 		for ni := range ly.Neurons {
@@ -712,7 +725,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		plp := p.(AxonPrjn)
-		if !(plp.AsAxon().WtInit.Sym) {
+		if !(plp.AsAxon().SWt.Sym) {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
@@ -724,7 +737,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		rlp := rpj.(AxonPrjn)
-		if !(rlp.AsAxon().WtInit.Sym) {
+		if !(rlp.AsAxon().SWt.Sym) {
 			continue
 		}
 		plp.InitWtSym(rlp)
@@ -982,7 +995,7 @@ func (ly *Layer) InitGScale() {
 		savg := slay.Inhib.ActAvg.Init
 		snu := len(slay.Neurons)
 		ncon := pj.RConNAvgMax.Avg
-		pj.GScale.Scale = pj.WtScale.FullScale(savg, float32(snu), ncon)
+		pj.GScale.Scale = pj.PrjnScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a prjn, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
 		// then set the scale to 0.
@@ -990,9 +1003,9 @@ func (ly *Layer) InitGScale() {
 		// 	continue
 		// }
 		if pj.Typ == emer.Inhib {
-			totGiRel += pj.WtScale.Rel
+			totGiRel += pj.PrjnScale.Rel
 		} else {
-			totGeRel += pj.WtScale.Rel
+			totGeRel += pj.PrjnScale.Rel
 		}
 	}
 
@@ -1000,7 +1013,7 @@ func (ly *Layer) InitGScale() {
 		pj := p.(AxonPrjn).AsAxon()
 		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
-				pj.GScale.Rel = pj.WtScale.Rel / totGiRel
+				pj.GScale.Rel = pj.PrjnScale.Rel / totGiRel
 				pj.GScale.Scale /= totGiRel
 			} else {
 				pj.GScale.Rel = 0
@@ -1008,7 +1021,7 @@ func (ly *Layer) InitGScale() {
 			}
 		} else {
 			if totGeRel > 0 {
-				pj.GScale.Rel = pj.WtScale.Rel / totGeRel
+				pj.GScale.Rel = pj.PrjnScale.Rel / totGeRel
 				pj.GScale.Scale /= totGeRel
 			} else {
 				pj.GScale.Rel = 0
@@ -1357,7 +1370,7 @@ func (ly *Layer) CosDiffFmActs() {
 	}
 	ly.CosDiff.Cos = cosv
 
-	ly.Learn.CosDiff.AvgVarFmCos(&ly.CosDiff.Avg, &ly.CosDiff.Var, ly.CosDiff.Cos)
+	ly.Act.Dt.AvgVarUpdt(&ly.CosDiff.Avg, &ly.CosDiff.Var, ly.CosDiff.Cos)
 }
 
 // IsTarget returns true if this layer is a Target layer.
@@ -1380,7 +1393,7 @@ func (ly *Layer) IsInput() bool {
 //  Learning
 
 func (ly *Layer) IsLearnTrgAvg() bool {
-	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || ly.Learn.SynScale.ErrLrate == 0 {
+	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || ly.Learn.TrgAvgAct.ErrLrate == 0 {
 		return false
 	}
 	return true
@@ -1391,7 +1404,7 @@ func (ly *Layer) DTrgAvgFmErr() {
 	if !ly.IsLearnTrgAvg() {
 		return
 	}
-	lr := ly.Learn.SynScale.ErrLrate
+	lr := ly.Learn.TrgAvgAct.ErrLrate
 	if ly.Is4D() {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
@@ -1481,7 +1494,7 @@ func (ly *Layer) TrgAvgFmD() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.TrgAvg = ly.Learn.SynScale.TrgRange.ClipVal(nrn.TrgAvg + nrn.DTrgAvg)
+		nrn.TrgAvg = ly.Learn.TrgAvgAct.TrgRange.ClipVal(nrn.TrgAvg + nrn.DTrgAvg)
 		nrn.DTrgAvg = 0
 	}
 }
@@ -1557,7 +1570,7 @@ func (ly *Layer) AdaptGScale() {
 		pj := p.(AxonPrjn).AsAxon()
 		pj.GScale.AvgMaxRel = pj.GScale.AvgMax / sum
 
-		if !pj.WtScale.Adapt {
+		if !pj.PrjnScale.Adapt {
 			continue
 		}
 
@@ -1572,8 +1585,8 @@ func (ly *Layer) AdaptGScale() {
 		err := trg - act
 		pj.GScale.Err = err
 		normerr := err / trg
-		if (normerr > 0 && normerr > pj.WtScale.LoTol) || (normerr < 0 && -normerr > pj.WtScale.HiTol) {
-			pj.GScale.Scale += pj.WtScale.ScaleLrate * pj.GScale.Orig * err
+		if (normerr > 0 && normerr > pj.PrjnScale.LoTol) || (normerr < 0 && -normerr > pj.PrjnScale.HiTol) {
+			pj.GScale.Scale += pj.PrjnScale.ScaleLrate * pj.GScale.Orig * err
 			min := 0.1 * pj.GScale.Orig
 			if pj.GScale.Scale < min {
 				pj.GScale.Scale = min

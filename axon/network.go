@@ -14,8 +14,6 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -163,50 +161,6 @@ func (nt *Network) InitWts() {
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
-}
-
-// InitTopoScales initializes synapse-specific scale parameters from
-// prjn types that support them, with flags set to support it,
-// includes: prjn.PoolTile prjn.Circle.
-// call before InitWts if using Topo wts
-func (nt *Network) InitTopoScales() {
-	scales := &etensor.Float32{}
-	for _, ly := range nt.Layers {
-		if ly.IsOff() {
-			continue
-		}
-		rpjn := ly.RecvPrjns()
-		for _, p := range *rpjn {
-			if p.IsOff() {
-				continue
-			}
-			pat := p.Pattern()
-			switch pt := pat.(type) {
-			case *prjn.PoolTile:
-				if !pt.HasTopoWts() {
-					continue
-				}
-				pj := p.(AxonPrjn).AsAxon()
-				slay := p.SendLay()
-				pt.TopoWts(slay.Shape(), ly.Shape(), scales)
-				pj.SetScalesRPool(scales)
-			case *prjn.PoolTileSub:
-				if !pt.HasTopoWts() {
-					continue
-				}
-				pj := p.(AxonPrjn).AsAxon()
-				slay := p.SendLay()
-				pt.TopoWts(slay.Shape(), ly.Shape(), scales)
-				pj.SetScalesRPool(scales)
-			case *prjn.Circle:
-				if !pt.TopoWts {
-					continue
-				}
-				pj := p.(AxonPrjn).AsAxon()
-				pj.SetScalesFunc(pt.GaussWts)
-			}
-		}
-	}
 }
 
 // DecayState decays activation state by given proportion
@@ -713,9 +667,9 @@ var NetworkProps = ki.Props{
 				}},
 			},
 		}},
-		{"AllWtScales", ki.Props{
+		{"AllPrjnScales", ki.Props{
 			"icon":        "file-sheet",
-			"desc":        "AllWtScales returns a listing of all WtScale parameters in the Network in all Layers, Recv projections.  These are among the most important and numerous of parameters (in larger networks) -- this helps keep track of what they all are set to.",
+			"desc":        "AllPrjnScales returns a listing of all PrjnScale parameters in the Network in all Layers, Recv projections.  These are among the most important and numerous of parameters (in larger networks) -- this helps keep track of what they all are set to.",
 			"show-return": true,
 		}},
 	},

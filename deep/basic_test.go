@@ -45,7 +45,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.2",
+					"Prjn.PrjnScale.Rel": "0.2",
 				}},
 		},
 	}},

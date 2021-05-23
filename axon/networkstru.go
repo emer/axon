@@ -230,11 +230,11 @@ func (nt *NetworkStru) AllParams() string {
 	return nds
 }
 
-// AllWtScales returns a listing of all WtScale parameters in the Network
+// AllPrjnScales returns a listing of all PrjnScale parameters in the Network
 // in all Layers, Recv projections.  These are among the most important
 // and numerous of parameters (in larger networks) -- this helps keep
 // track of what they all are set to.
-func (nt *NetworkStru) AllWtScales() string {
+func (nt *NetworkStru) AllPrjnScales() string {
 	str := ""
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -247,7 +247,7 @@ func (nt *NetworkStru) AllWtScales() string {
 				continue
 			}
 			pj := p.(AxonPrjn).AsAxon()
-			str += fmt.Sprintf("\t%23s\t\tInit:\t%g\tRel:\t%g\n", pj.Name(), pj.WtScale.Init, pj.WtScale.Rel)
+			str += fmt.Sprintf("\t%23s\t\tInit:\t%g\tRel:\t%g\n", pj.Name(), pj.PrjnScale.Init, pj.PrjnScale.Rel)
 		}
 	}
 	return str

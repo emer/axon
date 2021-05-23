@@ -86,7 +86,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.2", // 0.2 > 0.3
+					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
 				}},
 			{Sel: ".Input", Desc: "input layers need more inhibition",
 				Params: params.Params{
@@ -121,11 +121,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#HiddenPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.1", // 0.1 > .05 lba
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > .05 lba
 				}},
 			{Sel: "#HiddenCTToHiddenCT", Desc: "testing",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "1", // 1 > other
+					"Prjn.PrjnScale.Rel": "1", // 1 > other
 				}},
 		},
 	}},

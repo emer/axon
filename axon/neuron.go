@@ -53,10 +53,10 @@ type Neuron struct {
 	ActDel float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
 
 	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.TrlAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
-	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SynScale.Interval intervals"`
+	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`
 	TrgAvg  float32 `desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`
 	DTrgAvg float32 `desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`
-	AvgDif  float32 `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SynScale.Interval intervals"`
+	AvgDif  float32 `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`
 
 	Noise float32 `desc:"noise value added to unit (ActNoiseParams determines distribution, and when / where it is added)"`
 

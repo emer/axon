@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -24,16 +25,17 @@ import (
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnStru
-	Com     SynComParams   `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
-	WtInit  WtInitParams   `view:"inline" desc:"initial random weight distribution"`
-	WtScale WtScaleParams  `view:"inline" desc:"weight scaling parameters: modulates overall strength of projection, using both absolute and relative factors"`
-	Learn   LearnSynParams `view:"add-fields" desc:"synaptic-level learning parameters"`
-	Syns    []Synapse      `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
+	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
+	SWt       SWtParams       `view:"inline" desc:"slowly adapting structural weight value parameters, which control initial weight values and slower outer-loop adjustments."`
+	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
+	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
+	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
-	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	Gbuf   []float32   `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	GScale   GScaleVals  `view:"inline" desc:"conductance scaling values"`
+	SWtMeans []float32   `desc:"for each recv neuron, adapted target SWt mean value for this projection -- adapted by deviations from TrgAvg activity levels for each neuron.  Initialized based on SWt param settings."`
+	Gidx     ringidx.FIx `inactive:"+" desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	Gbuf     []float32   `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -47,24 +49,25 @@ func (pj *Prjn) AsAxon() *Prjn {
 
 func (pj *Prjn) Defaults() {
 	pj.Com.Defaults()
-	pj.WtInit.Defaults()
-	pj.WtScale.Defaults()
+	pj.SWt.Defaults()
+	pj.PrjnScale.Defaults()
 	pj.Learn.Defaults()
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
 func (pj *Prjn) UpdateParams() {
 	pj.Com.Update()
-	pj.WtScale.Update()
+	pj.PrjnScale.Update()
+	pj.SWt.Update()
 	pj.Learn.Update()
 	pj.Learn.LrateInit = pj.Learn.Lrate
 }
 
 // GScaleVals holds the conductance scaling and associated values needed for adapting scale
 type GScaleVals struct {
-	Scale     float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.WtScale adapt params"`
+	Scale     float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
 	Orig      float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
-	Rel       float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: WtScale.Rel / sum(WtScale.Rel across relevant prjns)"`
+	Rel       float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
 	AvgMaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on AvgMax values -- used for driving adaptation to maintain target relative values"`
 	Err       float32 `inactive:"+" desc:"error that drove last adjustment in scale"`
 	Avg       float32 `inactive:"+" desc:"average G value on this trial"`
@@ -93,10 +96,10 @@ func (pj *Prjn) AllParams() string {
 	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n"
 	b, _ := json.MarshalIndent(&pj.Com, "", " ")
 	str += "Com: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.WtInit, "", " ")
-	str += "WtInit: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.WtScale, "", " ")
-	str += "WtScale: {\n " + JsonToParams(b)
+	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
+	str += "SWt: {\n " + JsonToParams(b)
+	b, _ = json.MarshalIndent(&pj.PrjnScale, "", " ")
+	str += "PrjnScale: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
 	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " XCal: {", "\n  XCal: {", -1)
 	return str
@@ -203,7 +206,8 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 	sy := &pj.Syns[synIdx]
 	sy.SetVarByIndex(vidx, val)
 	if varNm == "Wt" {
-		pj.Learn.LWtFmWt(sy)
+		sy.SWt = sy.Wt
+		sy.LWt = 0.5
 	}
 	return nil
 }
@@ -330,58 +334,16 @@ func (pj *Prjn) Build() error {
 	pj.Gidx.Len = pj.Com.Delay + 1
 	pj.Gidx.Zi = 0
 	pj.Gbuf = make([]float32, rlen*pj.Gidx.Len)
+	pj.SWtMeans = make([]float32, rlen)
 	return nil
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
-// SetScalesRPool initializes synaptic Scale values using given tensor
-// of values which has unique values for each recv neuron within a given pool.
-func (pj *Prjn) SetScalesRPool(scales etensor.Tensor) {
-	rNuY := scales.Dim(0)
-	rNuX := scales.Dim(1)
-	rNu := rNuY * rNuX
-	rfsz := scales.Len() / rNu
-
-	rsh := pj.Recv.Shape()
-	rNpY := rsh.Dim(0)
-	rNpX := rsh.Dim(1)
-	r2d := false
-	if rsh.NumDims() != 4 {
-		r2d = true
-		rNpY = 1
-		rNpX = 1
-	}
-
-	for rpy := 0; rpy < rNpY; rpy++ {
-		for rpx := 0; rpx < rNpX; rpx++ {
-			for ruy := 0; ruy < rNuY; ruy++ {
-				for rux := 0; rux < rNuX; rux++ {
-					ri := 0
-					if r2d {
-						ri = rsh.Offset([]int{ruy, rux})
-					} else {
-						ri = rsh.Offset([]int{rpy, rpx, ruy, rux})
-					}
-					scst := (ruy*rNuX + rux) * rfsz
-					nc := int(pj.RConN[ri])
-					st := int(pj.RConIdxSt[ri])
-					for ci := 0; ci < nc; ci++ {
-						// si := int(pj.RConIdx[st+ci]) // could verify coords etc
-						rsi := pj.RSynIdx[st+ci]
-						sy := &pj.Syns[rsi]
-						sc := scales.FloatVal1D(scst + ci)
-						sy.Scale = float32(sc)
-					}
-				}
-			}
-		}
-	}
-}
-
 // SetWtsFunc initializes synaptic Wt value using given function
 // based on receiving and sending unit indexes.
+// Strongly suggest calling SWtReScale after.
 func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
@@ -392,31 +354,12 @@ func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) flo
 		st := int(pj.RConIdxSt[ri])
 		for ci := 0; ci < nc; ci++ {
 			si := int(pj.RConIdx[st+ci])
+			rsi := pj.RSynIdx[st+ci]
+			sy := &pj.Syns[rsi]
 			wt := wtFun(si, ri, ssh, rsh)
-			rsi := pj.RSynIdx[st+ci]
-			sy := &pj.Syns[rsi]
-			sy.Wt = wt * sy.Scale
-			pj.Learn.LWtFmWt(sy)
-		}
-	}
-}
-
-// SetScalesFunc initializes synaptic Scale values using given function
-// based on receiving and sending unit indexes.
-func (pj *Prjn) SetScalesFunc(scaleFun func(si, ri int, send, recv *etensor.Shape) float32) {
-	rsh := pj.Recv.Shape()
-	rn := rsh.Len()
-	ssh := pj.Send.Shape()
-
-	for ri := 0; ri < rn; ri++ {
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
-		for ci := 0; ci < nc; ci++ {
-			si := int(pj.RConIdx[st+ci])
-			sc := scaleFun(si, ri, ssh, rsh)
-			rsi := pj.RSynIdx[st+ci]
-			sy := &pj.Syns[rsi]
-			sy.Scale = sc
+			sy.SWt = wt
+			sy.Wt = wt
+			sy.LWt = 0.5
 		}
 	}
 }
@@ -424,31 +367,100 @@ func (pj *Prjn) SetScalesFunc(scaleFun func(si, ri int, send, recv *etensor.Shap
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Prjn) InitWtsSyn(syn *Synapse) {
-	if syn.Scale == 0 {
-		syn.Scale = 1
-	}
-	syn.Wt = float32(pj.WtInit.Gen(-1))
-	// enforce normalized weight range -- required for most uses and if not
-	// then a new type of prjn should be used:
-	if syn.Wt < 0 {
-		syn.Wt = 0
-	}
-	if syn.Wt > 1 {
-		syn.Wt = 1
-	}
-	syn.LWt = pj.Learn.WtSig.LinFmSigWt(syn.Wt)
-	syn.Wt *= syn.Scale // note: scale comes after so LWt is always "pure" non-scaled value
+func (pj *Prjn) InitWtsSyn(syn *Synapse, mean float32) {
+	wtv := pj.SWt.Var * 2 * (rand.Float32() - 0.5)
+	syn.Wt = mean + wtv
+	syn.SWt = mean + pj.SWt.InitPct*wtv
+	rwt := syn.Wt / syn.SWt
+	syn.LWt = pj.SWt.LinFmSigWt(rwt) // should preserve current Wt val
 	syn.DWt = 0
 }
 
-// InitWts initializes weight values according to Learn.WtInit params
+// InitWts initializes weight values according to SWt params,
+// enforcing current constraints.
 func (pj *Prjn) InitWts() {
-	for si := range pj.Syns {
-		sy := &pj.Syns[si]
-		pj.InitWtsSyn(sy)
-	}
 	pj.AxonPrj.InitGbuf()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for ri := range rlay.Neurons {
+		nrn := &rlay.Neurons[ri]
+		if nrn.IsOff() {
+			continue
+		}
+		smn := pj.SWt.Mean
+		pj.SWtMeans[ri] = smn
+
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+
+		for ci := range rsidxs {
+			rsi := rsidxs[ci]
+			sy := &pj.Syns[rsi]
+			pj.InitWtsSyn(sy, smn)
+		}
+	}
+	pj.SWtReScale()
+}
+
+// SWtReScale rescales the SWt values to preserve the target overall mean value
+func (pj *Prjn) SWtReScale() {
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for ri := range rlay.Neurons {
+		nrn := &rlay.Neurons[ri]
+		if nrn.IsOff() {
+			continue
+		}
+		smn := pj.SWtMeans[ri]
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+
+		var nmin, nmax int
+		var sum float32
+		for ci := range rsidxs {
+			rsi := rsidxs[ci]
+			swt := pj.Syns[rsi].SWt
+			sum += swt
+			if swt == pj.SWt.Min {
+				nmin++
+			} else if swt == 1 {
+				nmax++
+			}
+		}
+		if nc <= 1 {
+			continue
+		}
+		amn := sum / float32(nc)
+		mdf := smn / amn // multiplicative
+		if mdf == 1 {
+			continue
+		}
+		if mdf > 1 {
+			if nmax > 0 && nmax < nc {
+				amn = sum / float32(nc-nmax)
+				mdf = smn / amn
+			}
+			for ci := range rsidxs {
+				rsi := rsidxs[ci]
+				sy := &pj.Syns[rsi]
+				if sy.SWt < 1 {
+					sy.SWt *= mdf
+				}
+			}
+		} else {
+			if nmin > 0 && nmin < nc {
+				amn = sum / float32(nc-nmin)
+				mdf = smn / amn
+			}
+			for ci := range rsidxs {
+				rsi := rsidxs[ci]
+				sy := &pj.Syns[rsi]
+				if sy.SWt > pj.SWt.Min {
+					sy.SWt *= mdf
+				}
+			}
+		}
+	}
 }
 
 // InitWtSym initializes weight symmetry -- is given the reciprocal projection where
@@ -496,7 +508,7 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 						rsy := &rpj.Syns[rrii]
 						rsy.Wt = sy.Wt
 						rsy.LWt = sy.LWt
-						rsy.Scale = sy.Scale
+						rsy.SWt = sy.SWt
 						// note: if we support SymFmTop then can have option to go other way
 						break
 					}
@@ -510,7 +522,7 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 						rsy := &rpj.Syns[rrii]
 						rsy.Wt = sy.Wt
 						rsy.LWt = sy.LWt
-						rsy.Scale = sy.Scale
+						rsy.SWt = sy.SWt
 						// note: if we support SymFmTop then can have option to go other way
 						break
 					}
@@ -606,13 +618,13 @@ func (pj *Prjn) RecvGIncStats() {
 		if pj.GScale.AvgAvg == 0 {
 			pj.GScale.AvgAvg = avg
 		} else {
-			pj.GScale.AvgAvg += pj.WtScale.AvgDt * (avg - pj.GScale.AvgAvg)
+			pj.GScale.AvgAvg += pj.PrjnScale.AvgDt * (avg - pj.GScale.AvgAvg)
 		}
 		pj.GScale.Max = max
 		if pj.GScale.AvgMax == 0 {
 			pj.GScale.AvgMax = max
 		} else {
-			pj.GScale.AvgMax += pj.WtScale.AvgDt * (max - pj.GScale.AvgMax)
+			pj.GScale.AvgMax += pj.PrjnScale.AvgDt * (max - pj.GScale.AvgMax)
 		}
 	}
 	pj.Gidx.Shift(1) // rotate buffer
@@ -654,6 +666,7 @@ func (pj *Prjn) DWt() {
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.AvgS < pj.Learn.XCal.LrnThr && sn.AvgM < pj.Learn.XCal.LrnThr {
@@ -674,7 +687,7 @@ func (pj *Prjn) DWt() {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += pj.Learn.Lrate * err
+			sy.DWt += lr * err
 		}
 	}
 }
@@ -727,40 +740,68 @@ func (pj *Prjn) WtFmDWt() {
 	}
 	for si := range pj.Syns {
 		sy := &pj.Syns[si]
-		pj.Learn.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.Scale)
+		pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 		pj.Com.Fail(&sy.Wt)
 	}
 }
 
 // SlowAdapt does the slow adaptation: SynScale
 func (pj *Prjn) SlowAdapt() {
-	pj.SynScale()
+	pj.SWtFmWt()
 }
 
-// SynScale performs synaptic scaling based on running average activation vs. targets
-func (pj *Prjn) SynScale() {
-	if !pj.Learn.Learn || pj.Typ == emer.Inhib {
+// SWtFmWt updates structural, slowly-adapting SWt value based on current learned weight values
+// and updated AvgDif value for difference from TrgAvg target average activation.
+func (pj *Prjn) SWtFmWt() {
+	if !pj.Learn.Learn {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
 		return
 	}
-	lr := rlay.Learn.SynScale.Rate
+	lr := pj.SWt.Lrate
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
 			continue
 		}
-		adif := nrn.AvgDif
+		dadif := -lr * nrn.AvgDif
+		if dadif > 0 {
+			pj.SWtMeans[ri] += (pj.SWt.MeanRange.Max - pj.SWtMeans[ri]) * dadif
+		} else {
+			pj.SWtMeans[ri] += (pj.SWtMeans[ri] - pj.SWt.MeanRange.Min) * dadif
+		}
+
 		nc := int(pj.RConN[ri])
 		st := int(pj.RConIdxSt[ri])
 		rsidxs := pj.RSynIdx[st : st+nc]
 		for ci := range rsidxs {
 			rsi := rsidxs[ci]
 			sy := &pj.Syns[rsi]
-			sy.LWt -= lr * adif * sy.LWt
-			sy.Wt = sy.Scale * pj.Learn.WtSig.SigFmLinWt(sy.LWt)
+
+			sy.SWt = pj.SWt.ClipSWt(sy.SWt + lr*(sy.Wt-sy.SWt))
+			rwt := sy.Wt / sy.SWt
+			sy.LWt = pj.SWt.LinFmSigWt(rwt) // should preserve current Wt val
+		}
+	}
+
+	pj.SWtReScale()
+
+	// Recompute weights after rescaling!
+
+	for ri := range rlay.Neurons {
+		nrn := &rlay.Neurons[ri]
+		if nrn.IsOff() {
+			continue
+		}
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+		for ci := range rsidxs {
+			rsi := rsidxs[ci]
+			sy := &pj.Syns[rsi]
+			sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 		}
 	}
 }

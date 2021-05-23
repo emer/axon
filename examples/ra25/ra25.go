@@ -67,60 +67,65 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":              "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
-					"Layer.Inhib.ActAvg.Init":           "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
-					"Layer.Inhib.ActAvg.Targ":           "0.05", // for adapt, important for this to be accurate
-					"Layer.Inhib.ActAvg.AdaptGi":        "true", // not huge effects but beneficial
-					"Layer.Act.Init.Decay":              "0.5",  // 0.5 > 1 > 0
-					"Layer.Act.Init.KnaDecay":           "0.0",  // 0 > higher for all other models
-					"Layer.Act.Gbar.L":                  "0.2",  // 0.2 > 0.1
-					"Layer.Act.NMDA.Gbar":               "0.03", // 0.03 > .04 > .02
-					"Layer.Act.NMDA.Tau":                "100",  // 50 no diff
-					"Layer.Act.GABAB.Gbar":              "0.2",  // .1 == .2 pretty much
-					"Layer.Act.GABAB.Gbase":             "0.2",  // .1 == .2
-					"Layer.Act.GABAB.GiSpike":           "10",   // 10 > 8 > 15
-					"Layer.Act.GTarg.GeMax":             "1",
-					"Layer.Learn.ActAvg.SpikeG":         "8",
-					"Layer.Learn.ActAvg.SSTau":          "40",   // 4 > 2 for 50 cyc qtr
-					"Layer.Learn.ActAvg.STau":           "10",   //
-					"Layer.Learn.ActAvg.MTau":           "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
-					"Layer.Act.Dt.MTau":                 "20",   // for 50 cyc qtr, 20 > 10
-					"Layer.Act.KNa.On":                  "true", // on > off
-					"Layer.Act.KNa.Fast.Max":            "0.1",  // 0.2 > 0.1
-					"Layer.Act.KNa.Med.Max":             "0.2",  // 0.2 > 0.1 def
-					"Layer.Act.KNa.Slow.Max":            "0.2",  // 1,2,2 best in larger models
-					"Layer.Act.Noise.Dist":              "Gaussian",
-					"Layer.Act.Noise.Var":               "0.0",     // 0.01 > 0.005 > 0.02
-					"Layer.Act.Noise.Type":              "NoNoise", // now, no noise is better
-					"Layer.Act.Clamp.Rate":              "120",     // 180 default, 120 best here
-					"Layer.Act.Dt.TrlAvgTau":            "20",      // 20 > higher for objrec, lvis
-					"Layer.Learn.SynScale.ErrLrate":     "0.02",    // 0.02 > 0.05 objrec
-					"Layer.Learn.SynScale.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
-					"Layer.Learn.SynScale.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Max": "2.0",     // 2.0
+					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
+					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
+					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
+					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
+					"Layer.Act.Init.Decay":               "0.5",  // 0.5 > 1 > 0
+					"Layer.Act.Init.KnaDecay":            "0.0",  // 0 > higher for all other models
+					"Layer.Act.Gbar.L":                   "0.2",  // 0.2 > 0.1
+					"Layer.Act.NMDA.Gbar":                "0.03", // 0.03 > .04 > .02
+					"Layer.Act.NMDA.Tau":                 "100",  // 50 no diff
+					"Layer.Act.GABAB.Gbar":               "0.2",  // .1 == .2 pretty much
+					"Layer.Act.GABAB.Gbase":              "0.2",  // .1 == .2
+					"Layer.Act.GABAB.GiSpike":            "10",   // 10 > 8 > 15
+					"Layer.Act.GTarg.GeMax":              "1",
+					"Layer.Learn.ActAvg.SpikeG":          "8",
+					"Layer.Learn.ActAvg.SSTau":           "40",   // 4 > 2 for 50 cyc qtr
+					"Layer.Learn.ActAvg.STau":            "10",   //
+					"Layer.Learn.ActAvg.MTau":            "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
+					"Layer.Act.Dt.MTau":                  "20",   // for 50 cyc qtr, 20 > 10
+					"Layer.Act.KNa.On":                   "true", // on > off
+					"Layer.Act.KNa.Fast.Max":             "0.1",  // 0.2 > 0.1
+					"Layer.Act.KNa.Med.Max":              "0.2",  // 0.2 > 0.1 def
+					"Layer.Act.KNa.Slow.Max":             "0.2",  // 1,2,2 best in larger models
+					"Layer.Act.Noise.Dist":               "Gaussian",
+					"Layer.Act.Noise.Var":                "0.0",     // 0.01 > 0.005 > 0.02
+					"Layer.Act.Noise.Type":               "NoNoise", // now, no noise is better
+					"Layer.Act.Clamp.Rate":               "120",     // 180 default, 120 best here
+					"Layer.Act.Dt.TrlAvgTau":             "20",      // 20 > higher for objrec, lvis
+					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02",    // .02 > 0.05 for objrec
+					"Layer.Learn.TrgAvgAct.Rate":         "0.01",    // 0.01 > 0.005 best forobjrec -- needs faster
+					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
+					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Com.Delay":          "2",    // 1 == 2 = 3
-					"Prjn.Learn.Lrate":        "0.04", // .3, WtSig.Gain = 1 is pretty close
-					"Prjn.Learn.WtSig.Gain":   "6",
-					"Prjn.WtScale.ScaleLrate": ".1",
-					"Prjn.WtScale.Init":       "1",
-					"Prjn.Learn.XCal.DThr":    "0.0001", // local opt
-					"Prjn.Learn.XCal.DRev":    "0.1",    // local opt
-					"Prjn.Learn.XCal.DWtThr":  "0.0001", // 0.0001 > 0.001 in objrec
-					"Prjn.Learn.XCal.SubMean": "1",      // 1 > 0.9 now..
+					"Prjn.Com.Delay":            "2",    // 1 == 2 = 3
+					"Prjn.Learn.Lrate":          "0.04", // .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Lrate":            "0.1",  // 0.01 > .1 maybe
+					"Prjn.SWt.InitPct":          "0.5",
+					"Prjn.SWt.Mean":             "0.6", // 0.6 > 0.5 > 0.4
+					"Prjn.SWt.Min":              "0.25",
+					"Prjn.SWt.MeanRange.Min":    "0.2",
+					"Prjn.SWt.MeanRange.Max":    "0.8",
+					"Prjn.PrjnScale.ScaleLrate": ".1", // was .1
+					"Prjn.PrjnScale.Init":       "1",
+					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt
+					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt
+					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec
+					"Prjn.Learn.XCal.SubMean":   "1",      // 1 > 0.9 now..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
 			{Sel: ".Inhib", Desc: "inhibitory projection -- not useful",
 				Params: params.Params{
 					"Prjn.WtInit.Var":       "0.0",
 					"Prjn.WtInit.Mean":      "0.05",
-					"Prjn.WtScale.Init":     ".1",
-					"Prjn.WtScale.Adapt":    "false",
+					"Prjn.PrjnScale.Init":   ".1",
+					"Prjn.PrjnScale.Adapt":  "false",
 					"Prjn.Learn.WtSig.Gain": "6",
 					"Prjn.IncGain":          "0.5",
 				}},
@@ -167,7 +172,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Layer", Desc: "go back to default",
 				Params: params.Params{
-					"Layer.Learn.SynScale.Rate": "0",
+					"Layer.Learn.TrgAvgAct.Rate": "0",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
