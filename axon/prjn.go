@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"strconv"
 	"strings"
 
@@ -26,8 +25,8 @@ import (
 type Prjn struct {
 	PrjnStru
 	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
-	SWt       SWtParams       `view:"inline" desc:"slowly adapting structural weight value parameters, which control initial weight values and slower outer-loop adjustments."`
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
+	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting structural weight value parameters, which control initial weight values and slower outer-loop adjustments, to differentiate."`
 	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
 	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
@@ -368,9 +367,9 @@ func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) flo
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
 func (pj *Prjn) InitWtsSyn(syn *Synapse, mean float32) {
-	wtv := pj.SWt.Var * 2 * (rand.Float32() - 0.5)
+	wtv := pj.SWt.Init.RndVar()
 	syn.Wt = mean + wtv
-	syn.SWt = mean + pj.SWt.InitPct*wtv
+	syn.SWt = pj.SWt.ClipSWt(mean + pj.SWt.Init.SPct*wtv)
 	rwt := syn.Wt / syn.SWt
 	syn.LWt = pj.SWt.LinFmSigWt(rwt) // should preserve current Wt val
 	syn.DWt = 0
@@ -386,7 +385,7 @@ func (pj *Prjn) InitWts() {
 		if nrn.IsOff() {
 			continue
 		}
-		smn := pj.SWt.Mean
+		smn := pj.SWt.Init.Mean
 		pj.SWtMeans[ri] = smn
 
 		nc := int(pj.RConN[ri])
@@ -399,11 +398,21 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn)
 		}
 	}
-	pj.SWtReScale()
+	pj.SWtRescale()
 }
 
-// SWtReScale rescales the SWt values to preserve the target overall mean value
-func (pj *Prjn) SWtReScale() {
+// SWtRescale rescales the SWt values to preserve the target overall mean value
+func (pj *Prjn) SWtRescale() {
+	if pj.SWt.Adapt.SubNorm {
+		pj.SWtRescaleSub()
+	} else {
+		pj.SWtRescaleDiv()
+	}
+}
+
+// SWtRescaleDiv rescales the SWt values to preserve the target overall mean value
+// Divisive normalization mode.
+func (pj *Prjn) SWtRescaleDiv() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
@@ -421,9 +430,9 @@ func (pj *Prjn) SWtReScale() {
 			rsi := rsidxs[ci]
 			swt := pj.Syns[rsi].SWt
 			sum += swt
-			if swt == pj.SWt.Min {
+			if swt <= pj.SWt.Limit.SWt.Min {
 				nmin++
-			} else if swt == 1 {
+			} else if swt >= pj.SWt.Limit.SWt.Max {
 				nmax++
 			}
 		}
@@ -431,11 +440,11 @@ func (pj *Prjn) SWtReScale() {
 			continue
 		}
 		amn := sum / float32(nc)
-		mdf := smn / amn // multiplicative
+		mdf := smn / amn // divisive
 		if mdf == 1 {
 			continue
 		}
-		if mdf > 1 {
+		if mdf > 1 { // need to increase
 			if nmax > 0 && nmax < nc {
 				amn = sum / float32(nc-nmax)
 				mdf = smn / amn
@@ -443,8 +452,8 @@ func (pj *Prjn) SWtReScale() {
 			for ci := range rsidxs {
 				rsi := rsidxs[ci]
 				sy := &pj.Syns[rsi]
-				if sy.SWt < 1 {
-					sy.SWt *= mdf
+				if sy.SWt <= pj.SWt.Limit.SWt.Max {
+					sy.SWt = pj.SWt.ClipSWt(sy.SWt * mdf)
 				}
 			}
 		} else {
@@ -455,8 +464,70 @@ func (pj *Prjn) SWtReScale() {
 			for ci := range rsidxs {
 				rsi := rsidxs[ci]
 				sy := &pj.Syns[rsi]
-				if sy.SWt > pj.SWt.Min {
-					sy.SWt *= mdf
+				if sy.SWt >= pj.SWt.Limit.SWt.Min {
+					sy.SWt = pj.SWt.ClipSWt(sy.SWt * mdf)
+				}
+			}
+		}
+	}
+}
+
+// SWtRescaleSub rescales the SWt values to preserve the target overall mean value
+// Subtractive normalization mode.
+func (pj *Prjn) SWtRescaleSub() {
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for ri := range rlay.Neurons {
+		nrn := &rlay.Neurons[ri]
+		if nrn.IsOff() {
+			continue
+		}
+		smn := pj.SWtMeans[ri]
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+
+		var nmin, nmax int
+		var sum float32
+		for ci := range rsidxs {
+			rsi := rsidxs[ci]
+			swt := pj.Syns[rsi].SWt
+			sum += swt
+			if swt <= pj.SWt.Limit.SWt.Min {
+				nmin++
+			} else if swt >= pj.SWt.Limit.SWt.Max {
+				nmax++
+			}
+		}
+		if nc <= 1 {
+			continue
+		}
+		amn := sum / float32(nc)
+		mdf := smn - amn // subtractive
+		if mdf == 0 {
+			continue
+		}
+		if mdf > 0 { // need to increase
+			if nmax > 0 && nmax < nc {
+				amn = sum / float32(nc-nmax)
+				mdf = smn - amn
+			}
+			for ci := range rsidxs {
+				rsi := rsidxs[ci]
+				sy := &pj.Syns[rsi]
+				if sy.SWt <= pj.SWt.Limit.SWt.Max {
+					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
+				}
+			}
+		} else {
+			if nmin > 0 && nmin < nc {
+				amn = sum / float32(nc-nmin)
+				mdf = smn - amn
+			}
+			for ci := range rsidxs {
+				rsi := rsidxs[ci]
+				sy := &pj.Syns[rsi]
+				if sy.SWt >= pj.SWt.Limit.SWt.Min {
+					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
 				}
 			}
 		}
@@ -760,17 +831,23 @@ func (pj *Prjn) SWtFmWt() {
 	if rlay.AxonLay.IsTarget() {
 		return
 	}
-	lr := pj.SWt.Lrate
+	lr := pj.SWt.Adapt.Lrate
+	sb := pj.SWt.Limit.SoftBound
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
 			continue
 		}
 		dadif := -lr * nrn.AvgDif
-		if dadif > 0 {
-			pj.SWtMeans[ri] += (pj.SWt.MeanRange.Max - pj.SWtMeans[ri]) * dadif
+		smn := pj.SWtMeans[ri]
+		if sb {
+			if dadif >= 0 {
+				pj.SWtMeans[ri] += (pj.SWt.Limit.Mean.Max - smn) * dadif
+			} else {
+				pj.SWtMeans[ri] += (smn - pj.SWt.Limit.Mean.Min) * dadif
+			}
 		} else {
-			pj.SWtMeans[ri] += (pj.SWtMeans[ri] - pj.SWt.MeanRange.Min) * dadif
+			pj.SWtMeans[ri] = pj.SWt.Limit.Mean.ClipVal(smn + dadif)
 		}
 
 		nc := int(pj.RConN[ri])
@@ -780,15 +857,25 @@ func (pj *Prjn) SWtFmWt() {
 			rsi := rsidxs[ci]
 			sy := &pj.Syns[rsi]
 
-			sy.SWt = pj.SWt.ClipSWt(sy.SWt + lr*(sy.Wt-sy.SWt))
+			dswt := lr * (sy.Wt - sy.SWt)
+			if sb {
+				if dswt >= 0 {
+					sy.SWt += (pj.SWt.Limit.SWt.Max - sy.SWt) * dswt
+				} else {
+					sy.SWt += (sy.SWt - pj.SWt.Limit.SWt.Min) * dswt
+				}
+			} else {
+				sy.SWt = pj.SWt.ClipSWt(sy.SWt + dswt)
+			}
 			rwt := sy.Wt / sy.SWt
 			sy.LWt = pj.SWt.LinFmSigWt(rwt) // should preserve current Wt val
 		}
 	}
 
-	pj.SWtReScale()
+	pj.SWtRescale()
 
-	// Recompute weights after rescaling!
+	// Recompute weights after rescaling: this actually changes Wt values
+	// as function of rescaling changes, using current LWt values
 
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]

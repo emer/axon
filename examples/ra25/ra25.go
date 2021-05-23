@@ -101,14 +101,18 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Com.Delay":            "2",    // 1 == 2 = 3
-					"Prjn.Learn.Lrate":          "0.04", // .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Lrate":            "0.1",  // 0.01 > .1 maybe
-					"Prjn.SWt.InitPct":          "0.5",
-					"Prjn.SWt.Mean":             "0.6", // 0.6 > 0.5 > 0.4
-					"Prjn.SWt.Min":              "0.25",
-					"Prjn.SWt.MeanRange.Min":    "0.2",
-					"Prjn.SWt.MeanRange.Max":    "0.8",
+					"Prjn.Com.Delay":            "2",     // 1 == 2 = 3
+					"Prjn.Learn.Lrate":          "0.04",  // .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.Lrate":      "0.05",  // 0.05 > .1
+					"Prjn.SWt.Adapt.SubNorm":    "false", // divnorm seems better
+					"Prjn.SWt.Adapt.SigGain":    "6",
+					"Prjn.SWt.Init.SPct":        "0.2",  // .2 > .5
+					"Prjn.SWt.Init.Mean":        "0.5",  // 0.6 > 0.5 > 0.4 -- usu should be lower
+					"Prjn.SWt.Limit.SoftBound":  "true", // seems critical
+					"Prjn.SWt.Limit.SWt.Min":    "0.2",
+					"Prjn.SWt.Limit.SWt.Max":    "0.8",
+					"Prjn.SWt.Limit.Mean.Min":   "0.3",
+					"Prjn.SWt.Limit.Mean.Max":   "0.7",
 					"Prjn.PrjnScale.ScaleLrate": ".1", // was .1
 					"Prjn.PrjnScale.Init":       "1",
 					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt

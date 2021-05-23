@@ -725,7 +725,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		plp := p.(AxonPrjn)
-		if !(plp.AsAxon().SWt.Sym) {
+		if !(plp.AsAxon().SWt.Init.Sym) {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
@@ -737,7 +737,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		rlp := rpj.(AxonPrjn)
-		if !(rlp.AsAxon().SWt.Sym) {
+		if !(rlp.AsAxon().SWt.Init.Sym) {
 			continue
 		}
 		plp.InitWtSym(rlp)
