@@ -107,14 +107,11 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.SubNorm":    "false", // divnorm seems better
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.Targ":       "true",
-					"Prjn.SWt.Init.SPct":        ".2",   // .2 best here, 1 best for larger nets: objrec, lvis
-					"Prjn.SWt.Init.TargSPct":    ".2",   // ?
-					"Prjn.SWt.Init.Mean":        "0.5",  // 0.6 > 0.5 > 0.4 -- usu should be lower
-					"Prjn.SWt.Limit.SoftBound":  "true", // seems critical
-					"Prjn.SWt.Limit.SWt.Min":    "0.3",
-					"Prjn.SWt.Limit.SWt.Max":    "0.7",
-					"Prjn.SWt.Limit.Mean.Min":   "0.3",
-					"Prjn.SWt.Limit.Mean.Max":   "0.7",
+					"Prjn.SWt.Init.SPct":        ".5",  // .2 best here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Init.TargSPct":    ".5",  // ?
+					"Prjn.SWt.Init.Mean":        "0.5", // 0.6 > 0.5 > 0.4 -- usu should be lower
+					"Prjn.SWt.Limit.Min":        "0.3",
+					"Prjn.SWt.Limit.Max":        "0.7",
 					"Prjn.PrjnScale.ScaleLrate": ".1", // was .1
 					"Prjn.PrjnScale.Init":       "1",
 					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt

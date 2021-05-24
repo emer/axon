@@ -49,27 +49,28 @@ func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
 ///////////////////////////////////////////////////////////////////////
 //  SWtParams
 
-// SWtParams manages structural, slowly adapting weight values (SWt), in terms of initialization
-// and updating over course of learning.
+// SWtParams manages structural, slowly adapting weight values (SWt),
+// in terms of initialization and updating over course of learning.
 // SWts impose initial and slowly adapting constraints on neuron connectivity
 // to encourage differentiation of neuron representations and overall good behavior
 // in terms of not hogging the representational space.
+// The TrgAvg activity constraint is not enforced through SWt -- it needs to be
+// more dynamic and supported by the regular learned weights.
 type SWtParams struct {
 	Init  SWtInitParams  `desc:"initialization of SWt values"`
-	Adapt SWtAdaptParams `desc:"adaptation of SWt values in response to LWt learning and changes in target mean"`
-	Limit SWtLimitParams `desc:"limiting ranges for SWt and per-recv neuron means"`
+	Adapt SWtAdaptParams `desc:"adaptation of SWt values in response to LWt learning"`
+	Limit minmax.F32     `def:"[0.2,0.6]" view:"inline" desc:"[default: 0.2-0.6] range limits for SWt values"`
 }
 
 func (sp *SWtParams) Defaults() {
 	sp.Init.Defaults()
 	sp.Adapt.Defaults()
-	sp.Limit.Defaults()
+	sp.Limit.Set(0.2, 0.6)
 }
 
 func (sp *SWtParams) Update() {
 	sp.Init.Update()
 	sp.Adapt.Update()
-	sp.Limit.Update()
 }
 
 // WtVal returns the effective Wt value given the SWt and LWt values
@@ -79,7 +80,7 @@ func (sp *SWtParams) WtVal(swt, lwt float32) float32 {
 
 // ClipSWt returns SWt value clipped to valid range
 func (sp *SWtParams) ClipSWt(swt float32) float32 {
-	return sp.Limit.SWt.ClipVal(swt)
+	return sp.Limit.ClipVal(swt)
 }
 
 // SigFun is the sigmoid function for value w in 0-1 range, with gain and offset params
@@ -187,8 +188,8 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 type SWtInitParams struct {
 	SPct     float32 `def:"1" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
 	TargSPct float32 `def:"0" desc:"SPct for target layers -- in general target layers should be less subject to SWt constraints, to optimize decoding of whatever signal is present"`
-	Mean     float32 `def:"0.4" desc:"initial target mean SWt weight values across receiving neuron's projection"`
-	Var      float32 `def:"0.25" desc:"initial variance in SWt values, prior to constraints"`
+	Mean     float32 `def:"0.4" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value."`
+	Var      float32 `def:"0.25" desc:"initial variance in weight values, prior to constraints."`
 	Sym      bool    `def:"true" desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
 }
 
@@ -226,22 +227,6 @@ func (sp *SWtAdaptParams) Defaults() {
 }
 
 func (sp *SWtAdaptParams) Update() {
-}
-
-// SWtLimitParams for limits on SWt values
-type SWtLimitParams struct {
-	SoftBound bool       `def:"true" desc:"use soft bounding on approach to limits"`
-	SWt       minmax.F32 `def:"[0.2,0.6]" view:"inline" desc:"[default: .3-.7] range limits for SWt values"`
-	Mean      minmax.F32 `def:"[0.2,0.6]" view:"inline" desc:"[default: .3-.7] range limits for recv projection of SWt values (Prjns.SWtMeans), to constrain adaptation -- target means change due to synaptic scaling to maintain per-neuron target average activity level, TrgAvg."`
-}
-
-func (sp *SWtLimitParams) Defaults() {
-	sp.SoftBound = true
-	sp.SWt.Set(0.2, 0.6)
-	sp.Mean.Set(0.2, 0.6)
-}
-
-func (sp *SWtLimitParams) Update() {
 }
 
 ///////////////////////////////////////////////////////////////////////
