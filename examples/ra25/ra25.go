@@ -103,10 +103,12 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Com.Delay":            "2",     // 1 == 2 = 3
 					"Prjn.Learn.Lrate":          "0.04",  // .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      "0.02",  // 0.05 > .1
+					"Prjn.SWt.Adapt.Lrate":      "0.01",  // objrec 0.005 -- .01 for smaller
 					"Prjn.SWt.Adapt.SubNorm":    "false", // divnorm seems better
 					"Prjn.SWt.Adapt.SigGain":    "6",
-					"Prjn.SWt.Init.SPct":        "0.3",  // .2 > .5
+					"Prjn.SWt.Adapt.Targ":       "true",
+					"Prjn.SWt.Init.SPct":        "1",    // 1 best for larger
+					"Prjn.SWt.Init.TargSPct":    "1",    // ?
 					"Prjn.SWt.Init.Mean":        "0.5",  // 0.6 > 0.5 > 0.4 -- usu should be lower
 					"Prjn.SWt.Limit.SoftBound":  "true", // seems critical
 					"Prjn.SWt.Limit.SWt.Min":    "0.3",

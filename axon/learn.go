@@ -156,6 +156,13 @@ func (sp *SWtParams) LinFmSigWt(wt float32) float32 {
 	return SigInvFun(wt, sp.Adapt.SigGain, 1)
 }
 
+// LWtFmWts returns linear, learning LWt from wt and swt.
+// LWt is set to reproduce given Wt relative to given SWt base value.
+func (sp *SWtParams) LWtFmWts(wt, swt float32) float32 {
+	rwt := wt / swt
+	return sp.LinFmSigWt(rwt)
+}
+
 // WtFmDWt updates the synaptic weights from accumulated weight changes.
 // wt is the sigmoidal contrast-enhanced weight and lwt is the linear weight value.
 func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
@@ -178,15 +185,17 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 
 // SWtInitParams for initial SWt values
 type SWtInitParams struct {
-	SPct float32 `desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
-	Mean float32 `def:"0.5" desc:"initial target mean SWt weight values across receiving neuron's projection"`
-	Var  float32 `def:"0.25" desc:"initial variance in SWt values, prior to constraints"`
-	Sym  bool    `desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
+	SPct     float32 `def:"1" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
+	TargSPct float32 `def:"0" desc:"SPct for target layers -- in general target layers should be less subject to SWt constraints, to optimize decoding of whatever signal is present"`
+	Mean     float32 `def:"0.4" desc:"initial target mean SWt weight values across receiving neuron's projection"`
+	Var      float32 `def:"0.25" desc:"initial variance in SWt values, prior to constraints"`
+	Sym      bool    `def:"true" desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
 }
 
 func (sp *SWtInitParams) Defaults() {
-	sp.SPct = 0.2
-	sp.Mean = 0.5
+	sp.SPct = 1
+	sp.TargSPct = 0
+	sp.Mean = 0.4
 	sp.Var = 0.25
 	sp.Sym = true
 }
@@ -201,15 +210,17 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	Lrate   float32 `def:"0.2" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
+	Lrate   float32 `def:"0.005" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
 	SigGain float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 	SubNorm bool    `desc:"use subtractive normalization to enforce target mean -- otherwise divisive"`
+	Targ    bool    `desc:"if true, target layers also adapt their SWt values -- in general target layers should be less subject to SWt constraints, to optimize decoding of whatever signal is present"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
-	sp.Lrate = 0.02
+	sp.Lrate = 0.005
 	sp.SigGain = 6
 	sp.SubNorm = false
+	sp.Targ = false
 }
 
 func (sp *SWtAdaptParams) Update() {
@@ -218,14 +229,14 @@ func (sp *SWtAdaptParams) Update() {
 // SWtLimitParams for limits on SWt values
 type SWtLimitParams struct {
 	SoftBound bool       `def:"true" desc:"use soft bounding on approach to limits"`
-	SWt       minmax.F32 `def:"[0.3,0.7]" view:"inline" desc:"[default: .3-.7] range limits for SWt values"`
-	Mean      minmax.F32 `def:"[0.3,0.7]" view:"inline" desc:"[default: .3-.7] range limits for recv projection of SWt values (Prjns.SWtMeans), to constrain adaptation -- target means change due to synaptic scaling to maintain per-neuron target average activity level, TrgAvg."`
+	SWt       minmax.F32 `def:"[0.2,0.6]" view:"inline" desc:"[default: .3-.7] range limits for SWt values"`
+	Mean      minmax.F32 `def:"[0.2,0.6]" view:"inline" desc:"[default: .3-.7] range limits for recv projection of SWt values (Prjns.SWtMeans), to constrain adaptation -- target means change due to synaptic scaling to maintain per-neuron target average activity level, TrgAvg."`
 }
 
 func (sp *SWtLimitParams) Defaults() {
 	sp.SoftBound = true
-	sp.SWt.Set(0.3, 0.7)
-	sp.Mean.Set(0.3, 0.7)
+	sp.SWt.Set(0.2, 0.6)
+	sp.Mean.Set(0.2, 0.6)
 }
 
 func (sp *SWtLimitParams) Update() {

@@ -366,13 +366,12 @@ func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) flo
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Prjn) InitWtsSyn(syn *Synapse, mean float32) {
+func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	wtv := pj.SWt.Init.RndVar()
-	syn.Wt = mean + wtv
-	syn.SWt = pj.SWt.ClipSWt(mean + pj.SWt.Init.SPct*wtv)
-	rwt := syn.Wt / syn.SWt
-	syn.LWt = pj.SWt.LinFmSigWt(rwt) // should preserve current Wt val
-	syn.DWt = 0
+	sy.Wt = mean + wtv
+	sy.SWt = pj.SWt.ClipSWt(mean + spct*wtv)
+	sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+	sy.DWt = 0
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -380,6 +379,10 @@ func (pj *Prjn) InitWtsSyn(syn *Synapse, mean float32) {
 func (pj *Prjn) InitWts() {
 	pj.AxonPrj.InitGbuf()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	spct := pj.SWt.Init.SPct
+	if rlay.AxonLay.IsTarget() {
+		spct = pj.SWt.Init.TargSPct
+	}
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
@@ -395,7 +398,7 @@ func (pj *Prjn) InitWts() {
 		for ci := range rsidxs {
 			rsi := rsidxs[ci]
 			sy := &pj.Syns[rsi]
-			pj.InitWtsSyn(sy, smn)
+			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
 	pj.SWtRescale()
@@ -832,7 +835,7 @@ func (pj *Prjn) SWtFmWt() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
+	if !pj.SWt.Adapt.Targ && rlay.AxonLay.IsTarget() {
 		return
 	}
 	lr := pj.SWt.Adapt.Lrate
@@ -871,8 +874,7 @@ func (pj *Prjn) SWtFmWt() {
 			} else {
 				sy.SWt = pj.SWt.ClipSWt(sy.SWt + dswt)
 			}
-			rwt := sy.Wt / sy.SWt
-			sy.LWt = pj.SWt.LinFmSigWt(rwt) // should preserve current Wt val
+			sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 		}
 	}
 
