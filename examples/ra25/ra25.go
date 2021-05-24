@@ -95,7 +95,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Rate":               "120",     // 180 default, 120 best here
 					"Layer.Act.Dt.TrlAvgTau":             "20",      // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02",    // .02 > 0.05 for objrec
-					"Layer.Learn.TrgAvgAct.Rate":         "0.01",    // 0.01 > 0.005 best forobjrec -- needs faster
+					"Layer.Learn.TrgAvgAct.Rate":         "0.01",    // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 				}},
