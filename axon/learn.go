@@ -186,16 +186,14 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 
 // SWtInitParams for initial SWt values
 type SWtInitParams struct {
-	SPct     float32 `def:"1" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
-	TargSPct float32 `def:"0" desc:"SPct for target layers -- in general target layers should be less subject to SWt constraints, to optimize decoding of whatever signal is present"`
-	Mean     float32 `def:"0.4" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value."`
-	Var      float32 `def:"0.25" desc:"initial variance in weight values, prior to constraints."`
-	Sym      bool    `def:"true" desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
+	SPct float32 `def:"1" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
+	Mean float32 `def:"0.4" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value."`
+	Var  float32 `def:"0.25" desc:"initial variance in weight values, prior to constraints."`
+	Sym  bool    `def:"true" desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
 }
 
 func (sp *SWtInitParams) Defaults() {
 	sp.SPct = 1
-	sp.TargSPct = 0
 	sp.Mean = 0.4
 	sp.Var = 0.25
 	sp.Sym = true
@@ -211,11 +209,11 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	On      bool    `desc:"if true, adaptation is active -- if false, recv projection means and limits are not enforced."`
-	Lrate   float32 `def:"0.005" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
-	SigGain float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
-	SubNorm bool    `desc:"use subtractive normalization to enforce target mean -- otherwise divisive"`
-	Targ    bool    `desc:"if true, target layers also adapt their SWt values -- in general target layers should be less subject to SWt constraints, to optimize decoding of whatever signal is present"`
+	On           bool    `desc:"if true, adaptation is active -- if false, recv projection means and limits are not enforced."`
+	Lrate        float32 `def:"0.005" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
+	SigGain      float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
+	SubNorm      bool    `desc:"use subtractive normalization to enforce target mean -- otherwise divisive"`
+	WtSScaleCred bool    `desc:"use weight instead of SWt for synaptic scaling credit assignment -- temporary testing case"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
@@ -223,7 +221,6 @@ func (sp *SWtAdaptParams) Defaults() {
 	sp.Lrate = 0.005
 	sp.SigGain = 6
 	sp.SubNorm = false
-	sp.Targ = false
 }
 
 func (sp *SWtAdaptParams) Update() {

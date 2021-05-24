@@ -101,23 +101,22 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Com.Delay":            "2",     // 1 == 2 = 3
-					"Prjn.Learn.Lrate":          "0.04",  // .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      "0.01",  // objrec 0.005 -- .01 for smaller
-					"Prjn.SWt.Adapt.SubNorm":    "false", // divnorm seems better
-					"Prjn.SWt.Adapt.SigGain":    "6",
-					"Prjn.SWt.Adapt.Targ":       "true",
-					"Prjn.SWt.Init.SPct":        ".5",  // .2 best here, 1 best for larger nets: objrec, lvis
-					"Prjn.SWt.Init.TargSPct":    ".5",  // ?
-					"Prjn.SWt.Init.Mean":        "0.5", // 0.6 > 0.5 > 0.4 -- usu should be lower
-					"Prjn.SWt.Limit.Min":        "0.3",
-					"Prjn.SWt.Limit.Max":        "0.7",
-					"Prjn.PrjnScale.ScaleLrate": ".1", // was .1
-					"Prjn.PrjnScale.Init":       "1",
-					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt
-					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt
-					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec
-					"Prjn.Learn.XCal.SubMean":   "1",      // 1 > 0.9 now..
+					"Prjn.Com.Delay":              "2",     // 1 == 2 = 3
+					"Prjn.Learn.Lrate":            "0.04",  // .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.Lrate":        "0.01",  // objrec 0.005 -- .01 for smaller
+					"Prjn.SWt.Adapt.SubNorm":      "false", // divnorm seems better
+					"Prjn.SWt.Adapt.SigGain":      "6",
+					"Prjn.SWt.Adapt.WtSScaleCred": "false",
+					"Prjn.SWt.Init.SPct":          ".5",  // .2 best here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Init.Mean":          "0.5", // 0.6 > 0.5 > 0.4 -- usu should be lower
+					"Prjn.SWt.Limit.Min":          "0.3",
+					"Prjn.SWt.Limit.Max":          "0.7",
+					"Prjn.PrjnScale.ScaleLrate":   ".1", // was .1
+					"Prjn.PrjnScale.Init":         "1",
+					"Prjn.Learn.XCal.DThr":        "0.0001", // local opt
+					"Prjn.Learn.XCal.DRev":        "0.1",    // local opt
+					"Prjn.Learn.XCal.DWtThr":      "0.0001", // 0.0001 > 0.001 in objrec
+					"Prjn.Learn.XCal.SubMean":     "1",      // 1 > 0.9 now..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

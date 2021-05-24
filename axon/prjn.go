@@ -417,9 +417,6 @@ func (pj *Prjn) InitWts() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.SWt.Init.SPct
 	smn := pj.SWt.Init.Mean
-	if rlay.AxonLay.IsTarget() {
-		spct = pj.SWt.Init.TargSPct
-	}
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
@@ -872,9 +869,6 @@ func (pj *Prjn) SWtFmWt() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() && !pj.SWt.Adapt.Targ {
-		return
-	}
 	lr := pj.SWt.Adapt.Lrate
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
@@ -926,9 +920,17 @@ func (pj *Prjn) SynScale() {
 			rsi := rsidxs[ci]
 			sy := &pj.Syns[rsi]
 			if adif >= 0 { // key to have soft bounding on lwt here!
-				sy.LWt += (1 - sy.LWt) * adif * sy.SWt
+				if pj.SWt.Adapt.WtSScaleCred {
+					sy.LWt += (1 - sy.LWt) * adif * sy.Wt
+				} else {
+					sy.LWt += (1 - sy.LWt) * adif * sy.SWt
+				}
 			} else {
-				sy.LWt += sy.LWt * adif * sy.SWt
+				if pj.SWt.Adapt.WtSScaleCred {
+					sy.LWt += sy.LWt * adif * sy.Wt
+				} else {
+					sy.LWt += sy.LWt * adif * sy.SWt
+				}
 			}
 			sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 		}
