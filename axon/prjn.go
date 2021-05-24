@@ -17,6 +17,7 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/indent"
+	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -51,6 +52,9 @@ func (pj *Prjn) Defaults() {
 	pj.SWt.Defaults()
 	pj.PrjnScale.Defaults()
 	pj.Learn.Defaults()
+	if pj.Typ == emer.Inhib {
+		pj.SWt.Adapt.On = false
+	}
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
@@ -95,10 +99,10 @@ func (pj *Prjn) AllParams() string {
 	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n"
 	b, _ := json.MarshalIndent(&pj.Com, "", " ")
 	str += "Com: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
-	str += "SWt: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.PrjnScale, "", " ")
 	str += "PrjnScale: {\n " + JsonToParams(b)
+	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
+	str += "SWt: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
 	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " XCal: {", "\n  XCal: {", -1)
 	return str
@@ -205,8 +209,10 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 	sy := &pj.Syns[synIdx]
 	sy.SetVarByIndex(vidx, val)
 	if varNm == "Wt" {
-		sy.SWt = sy.Wt
-		sy.LWt = 0.5
+		if sy.SWt == 0 {
+			sy.SWt = sy.Wt
+		}
+		sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 	return nil
 }
@@ -231,6 +237,22 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	depth++
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.GScale.Scale)))
+	depth--
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte("},\n"))
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"MetaVals\": {\n")))
+	depth++
+	w.Write(indent.TabBytes(depth))
+	w.Write([]byte(fmt.Sprintf("\"SWtMeans\": [ ")))
+	nn := len(pj.SWtMeans)
+	for ni := range pj.SWtMeans {
+		w.Write([]byte(fmt.Sprintf("%g", pj.SWtMeans[ni])))
+		if ni < nn-1 {
+			w.Write([]byte(", "))
+		}
+	}
+	w.Write([]byte(" ]\n"))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
@@ -265,6 +287,19 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 			rsi := pj.RSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			w.Write([]byte(strconv.FormatFloat(float64(sy.Wt), 'g', weights.Prec, 32)))
+			if ci == nc-1 {
+				w.Write([]byte(" "))
+			} else {
+				w.Write([]byte(", "))
+			}
+		}
+		w.Write([]byte("],\n"))
+		w.Write(indent.TabBytes(depth))
+		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
+		for ci := 0; ci < nc; ci++ {
+			rsi := pj.RSynIdx[st+ci]
+			sy := &pj.Syns[rsi]
+			w.Write([]byte(strconv.FormatFloat(float64(sy.SWt), 'g', weights.Prec, 32)))
 			if ci == nc-1 {
 				w.Write([]byte(" "))
 			} else {
@@ -308,11 +343,23 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 			pj.GScale.Scale = float32(pv)
 		}
 	}
+	if pw.MetaVals != nil {
+		if gs, ok := pw.MetaVals["SWtMeans"]; ok {
+			mx := ints.MinInt(len(gs), len(pj.SWtMeans))
+			for i := 0; i < mx; i++ {
+				pj.SWtMeans[i] = gs[i]
+			}
+		}
+	}
 	var err error
 	for i := range pw.Rs {
 		pr := &pw.Rs[i]
 		for si := range pr.Si {
-			er := pj.SetSynVal("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
+			er := pj.SetSynVal("SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
+			if er != nil {
+				err = er
+			}
+			er = pj.SetSynVal("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
 			if er != nil {
 				err = er
 			}
@@ -401,7 +448,9 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
-	pj.SWtRescale()
+	if pj.SWt.Adapt.On {
+		pj.SWtRescale()
+	}
 }
 
 // SWtRescale rescales the SWt values to preserve the target overall mean value
@@ -831,11 +880,11 @@ func (pj *Prjn) SlowAdapt() {
 // SWtFmWt updates structural, slowly-adapting SWt value based on current learned weight values
 // and updated AvgDif value for difference from TrgAvg target average activation.
 func (pj *Prjn) SWtFmWt() {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Learn || !pj.SWt.Adapt.On {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if !pj.SWt.Adapt.Targ && rlay.AxonLay.IsTarget() {
+	if rlay.AxonLay.IsTarget() && !pj.SWt.Adapt.Targ {
 		return
 	}
 	lr := pj.SWt.Adapt.Lrate

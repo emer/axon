@@ -210,6 +210,7 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
+	On      bool    `desc:"if true, adaptation is active -- if false, recv projection means and limits are not enforced."`
 	Lrate   float32 `def:"0.005" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
 	SigGain float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 	SubNorm bool    `desc:"use subtractive normalization to enforce target mean -- otherwise divisive"`
@@ -217,6 +218,7 @@ type SWtAdaptParams struct {
 }
 
 func (sp *SWtAdaptParams) Defaults() {
+	sp.On = true
 	sp.Lrate = 0.005
 	sp.SigGain = 6
 	sp.SubNorm = false
