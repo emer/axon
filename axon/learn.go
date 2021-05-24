@@ -201,13 +201,13 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	Lrate   float32 `desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
+	Lrate   float32 `def:"0.2" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
 	SigGain float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 	SubNorm bool    `desc:"use subtractive normalization to enforce target mean -- otherwise divisive"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
-	sp.Lrate = 0.05
+	sp.Lrate = 0.02
 	sp.SigGain = 6
 	sp.SubNorm = false
 }
@@ -218,13 +218,13 @@ func (sp *SWtAdaptParams) Update() {
 // SWtLimitParams for limits on SWt values
 type SWtLimitParams struct {
 	SoftBound bool       `def:"true" desc:"use soft bounding on approach to limits"`
-	SWt       minmax.F32 `view:"inline" desc:"range limits for SWt values"`
-	Mean      minmax.F32 `view:"inline" desc:"range limits for recv projection of SWt values (Prjns.SWtMeans), to constrain adaptation -- target means change due to synaptic scaling to maintain per-neuron target average activity level, TrgAvg."`
+	SWt       minmax.F32 `def:"[0.3,0.7]" view:"inline" desc:"[default: .3-.7] range limits for SWt values"`
+	Mean      minmax.F32 `def:"[0.3,0.7]" view:"inline" desc:"[default: .3-.7] range limits for recv projection of SWt values (Prjns.SWtMeans), to constrain adaptation -- target means change due to synaptic scaling to maintain per-neuron target average activity level, TrgAvg."`
 }
 
 func (sp *SWtLimitParams) Defaults() {
 	sp.SoftBound = true
-	sp.SWt.Set(0.2, 0.8)
+	sp.SWt.Set(0.3, 0.7)
 	sp.Mean.Set(0.3, 0.7)
 }
 

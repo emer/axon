@@ -342,7 +342,7 @@ func (pj *Prjn) Build() error {
 
 // SetWtsFunc initializes synaptic Wt value using given function
 // based on receiving and sending unit indexes.
-// Strongly suggest calling SWtReScale after.
+// Strongly suggest calling SWtRescale after.
 func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
@@ -454,6 +454,7 @@ func (pj *Prjn) SWtRescaleDiv() {
 				sy := &pj.Syns[rsi]
 				if sy.SWt <= pj.SWt.Limit.SWt.Max {
 					sy.SWt = pj.SWt.ClipSWt(sy.SWt * mdf)
+					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		} else {
@@ -466,6 +467,7 @@ func (pj *Prjn) SWtRescaleDiv() {
 				sy := &pj.Syns[rsi]
 				if sy.SWt >= pj.SWt.Limit.SWt.Min {
 					sy.SWt = pj.SWt.ClipSWt(sy.SWt * mdf)
+					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		}
@@ -516,6 +518,7 @@ func (pj *Prjn) SWtRescaleSub() {
 				sy := &pj.Syns[rsi]
 				if sy.SWt <= pj.SWt.Limit.SWt.Max {
 					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
+					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		} else {
@@ -528,6 +531,7 @@ func (pj *Prjn) SWtRescaleSub() {
 				sy := &pj.Syns[rsi]
 				if sy.SWt >= pj.SWt.Limit.SWt.Min {
 					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
+					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		}
@@ -873,24 +877,8 @@ func (pj *Prjn) SWtFmWt() {
 	}
 
 	pj.SWtRescale()
-
-	// Recompute weights after rescaling: this actually changes Wt values
+	// Note: Rescale recomputes weights after rescaling: this actually changes Wt values
 	// as function of rescaling changes, using current LWt values
-
-	for ri := range rlay.Neurons {
-		nrn := &rlay.Neurons[ri]
-		if nrn.IsOff() {
-			continue
-		}
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
-		for ci := range rsidxs {
-			rsi := rsidxs[ci]
-			sy := &pj.Syns[rsi]
-			sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
-		}
-	}
 }
 
 // LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
