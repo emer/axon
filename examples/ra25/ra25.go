@@ -107,8 +107,8 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.SubNorm":    "false", // divnorm seems better
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.Targ":       "true",
-					"Prjn.SWt.Init.SPct":        "1",    // 1 best for larger
-					"Prjn.SWt.Init.TargSPct":    "1",    // ?
+					"Prjn.SWt.Init.SPct":        ".2",   // .2 best here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Init.TargSPct":    ".2",   // ?
 					"Prjn.SWt.Init.Mean":        "0.5",  // 0.6 > 0.5 > 0.4 -- usu should be lower
 					"Prjn.SWt.Limit.SoftBound":  "true", // seems critical
 					"Prjn.SWt.Limit.SWt.Min":    "0.3",
