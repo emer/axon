@@ -214,6 +214,7 @@ type SWtAdaptParams struct {
 	SigGain      float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 	SubNorm      bool    `desc:"use subtractive normalization to enforce target mean -- otherwise divisive"`
 	WtSScaleCred bool    `desc:"use weight instead of SWt for synaptic scaling credit assignment -- temporary testing case"`
+	NoSScaleCred bool    `desc:"no weight scale credit assignment -- all raised uniformly -- maybe better"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {

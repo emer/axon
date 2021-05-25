@@ -920,13 +920,17 @@ func (pj *Prjn) SynScale() {
 			rsi := rsidxs[ci]
 			sy := &pj.Syns[rsi]
 			if adif >= 0 { // key to have soft bounding on lwt here!
-				if pj.SWt.Adapt.WtSScaleCred {
+				if pj.SWt.Adapt.NoSScaleCred {
+					sy.LWt += (1 - sy.LWt) * adif
+				} else if pj.SWt.Adapt.WtSScaleCred {
 					sy.LWt += (1 - sy.LWt) * adif * sy.Wt
 				} else {
 					sy.LWt += (1 - sy.LWt) * adif * sy.SWt
 				}
 			} else {
-				if pj.SWt.Adapt.WtSScaleCred {
+				if pj.SWt.Adapt.NoSScaleCred {
+					sy.LWt += sy.LWt * adif
+				} else if pj.SWt.Adapt.WtSScaleCred {
 					sy.LWt += sy.LWt * adif * sy.Wt
 				} else {
 					sy.LWt += sy.LWt * adif * sy.SWt
