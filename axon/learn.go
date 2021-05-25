@@ -186,15 +186,15 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 
 // SWtInitParams for initial SWt values
 type SWtInitParams struct {
-	SPct float32 `def:"1" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
-	Mean float32 `def:"0.4" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value."`
+	SPct float32 `def:"0.5" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
+	Mean float32 `def:"0.5" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value."`
 	Var  float32 `def:"0.25" desc:"initial variance in weight values, prior to constraints."`
 	Sym  bool    `def:"true" desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
 }
 
 func (sp *SWtInitParams) Defaults() {
-	sp.SPct = 1
-	sp.Mean = 0.4
+	sp.SPct = 0.5
+	sp.Mean = 0.5
 	sp.Var = 0.25
 	sp.Sym = true
 }
@@ -209,19 +209,15 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	On           bool    `desc:"if true, adaptation is active -- if false, recv projection means and limits are not enforced."`
-	Lrate        float32 `def:"0.005" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
-	SigGain      float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
-	SubNorm      bool    `desc:"use subtractive normalization to enforce target mean -- otherwise divisive"`
-	WtSScaleCred bool    `desc:"use weight instead of SWt for synaptic scaling credit assignment -- temporary testing case"`
-	NoSScaleCred bool    `desc:"no weight scale credit assignment -- all raised uniformly -- maybe better"`
+	On      bool    `desc:"if true, adaptation is active -- if false, recv projection means and limits are not enforced."`
+	Lrate   float32 `def:"0.02" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
+	SigGain float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
 	sp.On = true
-	sp.Lrate = 0.005
+	sp.Lrate = 0.02
 	sp.SigGain = 6
-	sp.SubNorm = false
 }
 
 func (sp *SWtAdaptParams) Update() {
@@ -312,7 +308,7 @@ func (aa *LrnActAvgParams) Defaults() {
 // Target value is adapted by unit-wise error and difference in actual vs. target
 // drives synaptic scaling.
 type TrgAvgActParams struct {
-	ErrLrate float32    `def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
+	ErrLrate float32    `def:"0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
 	TrgRange minmax.F32 `desc:"default 0.5-2 -- range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
@@ -322,7 +318,7 @@ func (ss *TrgAvgActParams) Update() {
 }
 
 func (ss *TrgAvgActParams) Defaults() {
-	ss.ErrLrate = 0.02
+	ss.ErrLrate = 0.01
 	ss.TrgRange.Set(0.5, 2)
 	ss.Permute = true
 	ss.Rate = 0.005

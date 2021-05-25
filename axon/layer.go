@@ -1121,7 +1121,7 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 // from their G*Raw accumulators.
 func (ly *Layer) GFmIncNeur(ltime *Time) {
 	cyc := ltime.Cycle // for bursting
-	if ly.IsTarget() {
+	if ly.AxonLay.IsTarget() {
 		cyc = ltime.QuarterCycle()
 	}
 	for ni := range ly.Neurons {
@@ -1428,10 +1428,8 @@ func (ly *Layer) DTrgAvgFmErr() {
 }
 
 // DTrgAvgSubMean subtracts the mean from DTrgAvg values
+// Called by TrgAvgFmD
 func (ly *Layer) DTrgAvgSubMean() {
-	if !ly.IsLearnTrgAvg() {
-		return
-	}
 	if ly.Is4D() {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
@@ -1488,6 +1486,7 @@ func (ly *Layer) TrgAvgFmD() {
 	if !ly.IsLearnTrgAvg() {
 		return
 	}
+	ly.DTrgAvgSubMean()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1509,21 +1508,10 @@ func (ly *Layer) DWt() {
 	}
 }
 
-// DWtSubMean subtracts a portion of the mean recv DWt per projection
-func (ly *Layer) DWtSubMean() {
-	ly.DTrgAvgSubMean()
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).DWtSubMean()
-	}
-}
-
 // WtFmDWt updates the weights from delta-weight changes -- on the sending projections
 func (ly *Layer) WtFmDWt() {
 	ly.TrgAvgFmD()
-	for _, p := range ly.SndPrjns {
+	for _, p := range ly.RcvPrjns { // must be recv to do SubMean
 		if p.IsOff() {
 			continue
 		}

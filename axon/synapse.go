@@ -11,20 +11,22 @@ import (
 
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
-	Wt  float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1"`
-	SWt float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine, while the LWt reflects the AMPA receptor efficacy and number.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
-	LWt float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, "`
-	DWt float32 `desc:"change in synaptic weight, from learning"`
+	Wt   float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1"`
+	SWt  float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine, while the LWt reflects the AMPA receptor efficacy and number.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
+	LWt  float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, "`
+	DWt  float32 `desc:"change in synaptic weight, from learning"`
+	DSWt float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
 }
 
 func (sy *Synapse) VarNames() []string {
 	return SynapseVars
 }
 
-var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt"}
+var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt"}
 
 var SynapseVarProps = map[string]string{
-	"DWt": `auto-scale:"+"`,
+	"DWt":  `auto-scale:"+"`,
+	"DSWt": `auto-scale:"+"`,
 }
 
 var SynapseVarsMap map[string]int

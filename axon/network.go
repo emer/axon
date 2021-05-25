@@ -288,8 +288,6 @@ func (nt *Network) DWtImpl() {
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl() {
-	// do submean here so dwts accumulate for mini-batch / mpi
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean() }, "DWtSubMean ")
 	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt() }, "WtFmDWt")
 	nt.EmerNet.(AxonNetwork).SlowAdapt()
 }
