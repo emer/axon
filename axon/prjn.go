@@ -847,3 +847,12 @@ func (pj *Prjn) SynScale() {
 func (pj *Prjn) LrateMult(mult float32) {
 	pj.Learn.Lrate = pj.Learn.LrateInit * mult
 }
+
+// LrateInit sets the base learning rate against which LrateMult multiplies.
+// This can be useful if changing LrateMult dynamically while also changing
+// the base learning rate too.  Also sets lrate in proportion to given mult
+// relative to this new init value.
+func (pj *Prjn) LrateInit(init, mult float32) {
+	pj.Learn.LrateInit = init
+	pj.AxonPrj.LrateMult(mult)
+}

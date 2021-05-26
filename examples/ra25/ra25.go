@@ -103,13 +103,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Com.Delay":            "2",    // 1 == 2 = 3
 					"Prjn.Learn.Lrate":          "0.04", // .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      "0.02", // objrec 0.005 -- .01 for smaller
+					"Prjn.SWt.Adapt.Lrate":      "0.1",  // unclear.
 					"Prjn.SWt.Adapt.SigGain":    "6",
-					"Prjn.SWt.Init.SPct":        "0.5", // .2 best here, 1 best for larger nets: objrec, lvis
-					"Prjn.SWt.Init.Mean":        "0.5", // 0.6 > 0.5 > 0.4 -- usu should be lower
-					"Prjn.SWt.Limit.Min":        "0.3",
-					"Prjn.SWt.Limit.Max":        "0.7",
-					"Prjn.PrjnScale.ScaleLrate": ".1", // was .1
+					"Prjn.SWt.Init.SPct":        "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
+					"Prjn.SWt.Limit.Min":        "0.2",
+					"Prjn.SWt.Limit.Max":        "0.8",
+					"Prjn.PrjnScale.ScaleLrate": "0.5", // lvis best with .5
 					"Prjn.PrjnScale.Init":       "1",
 					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt

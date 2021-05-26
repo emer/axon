@@ -313,6 +313,19 @@ func (nt *Network) LrateMult(mult float32) {
 	}
 }
 
+// LrateInit sets the base learning rate against which LrateMult multiplies.
+// This can be useful if changing LrateMult dynamically while also changing
+// the base learning rate too.  Also sets lrate in proportion to given mult
+// relative to this new init value.
+func (nt *Network) LrateInit(init, mult float32) {
+	for _, ly := range nt.Layers {
+		// if ly.IsOff() { // keep all sync'd
+		// 	continue
+		// }
+		ly.(AxonLayer).LrateInit(init, mult)
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  Lesion methods
 

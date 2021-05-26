@@ -199,6 +199,12 @@ type AxonLayer interface {
 	// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
 	// Useful for implementing learning rate schedules.
 	LrateMult(mult float32)
+
+	// LrateInit sets the base learning rate against which LrateMult multiplies.
+	// This can be useful if changing LrateMult dynamically while also changing
+	// the base learning rate too.  Also sets lrate in proportion to given mult
+	// relative to this new init value.
+	LrateInit(init, mult float32)
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
@@ -247,4 +253,10 @@ type AxonPrjn interface {
 	// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
 	// Useful for implementing learning rate schedules.
 	LrateMult(mult float32)
+
+	// LrateInit sets the base learning rate against which LrateMult multiplies.
+	// This can be useful if changing LrateMult dynamically while also changing
+	// the base learning rate too.  Also sets lrate in proportion to given mult
+	// relative to this new init value.
+	LrateInit(init, mult float32)
 }

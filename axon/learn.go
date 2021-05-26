@@ -59,13 +59,13 @@ func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
 type SWtParams struct {
 	Init  SWtInitParams  `desc:"initialization of SWt values"`
 	Adapt SWtAdaptParams `desc:"adaptation of SWt values in response to LWt learning"`
-	Limit minmax.F32     `def:"[0.2,0.6]" view:"inline" desc:"[default: 0.2-0.6] range limits for SWt values"`
+	Limit minmax.F32     `def:"[0.2,0.8]" view:"inline" desc:"range limits for SWt values"`
 }
 
 func (sp *SWtParams) Defaults() {
 	sp.Init.Defaults()
 	sp.Adapt.Defaults()
-	sp.Limit.Set(0.2, 0.6)
+	sp.Limit.Set(0.2, 0.8)
 }
 
 func (sp *SWtParams) Update() {
@@ -186,8 +186,8 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 
 // SWtInitParams for initial SWt values
 type SWtInitParams struct {
-	SPct float32 `def:"0.5" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values"`
-	Mean float32 `def:"0.5" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value."`
+	SPct float32 `min:"0" max:"1" def:"1,0.5" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values.  1 gives the strongest initial biasing effect, for larger models that need more structural support. 0.5 should work for most models where stronger constraints are not needed."`
+	Mean float32 `def:"0.5,0.4" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value.  some projections may benefit from lower mean of .4"`
 	Var  float32 `def:"0.25" desc:"initial variance in weight values, prior to constraints."`
 	Sym  bool    `def:"true" desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
 }
@@ -209,14 +209,14 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	On      bool    `desc:"if true, adaptation is active -- if false, recv projection means and limits are not enforced."`
-	Lrate   float32 `def:"0.02" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
+	On      bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated -- generally good to have Init.SPct=0 in such cases too."`
+	Lrate   float32 `def:"0.1" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
 	SigGain float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
 	sp.On = true
-	sp.Lrate = 0.02
+	sp.Lrate = 0.1
 	sp.SigGain = 6
 }
 

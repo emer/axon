@@ -1546,10 +1546,10 @@ func (ly *Layer) AdaptGScale() {
 	if sum == 0 {
 		return
 	}
-	ge_trg := ly.Act.GTarg.GeMax
-	ge_act := ly.ActAvg.AvgMaxGeM
-	gi_trg := ly.Act.GTarg.GiMax
-	gi_act := ly.ActAvg.AvgMaxGiM
+	geErr := ly.Act.GTarg.GeMax - ly.ActAvg.AvgMaxGeM
+	geNormErr := geErr / ly.Act.GTarg.GeMax
+	giErr := ly.Act.GTarg.GiMax - ly.ActAvg.AvgMaxGiM
+	giNormErr := giErr / ly.Act.GTarg.GiMax
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
@@ -1561,19 +1561,17 @@ func (ly *Layer) AdaptGScale() {
 			continue
 		}
 
-		var trg, act float32
+		var relErr, normErr float32
 		if pj.Typ == emer.Inhib {
-			trg = pj.GScale.Rel * gi_trg
-			act = pj.GScale.AvgMaxRel * gi_act
+			relErr = pj.GScale.Rel * giErr
+			normErr = giNormErr
 		} else {
-			trg = pj.GScale.Rel * ge_trg
-			act = pj.GScale.AvgMaxRel * ge_act
+			relErr = pj.GScale.Rel * geErr
+			normErr = geNormErr
 		}
-		err := trg - act
-		pj.GScale.Err = err
-		normerr := err / trg
-		if (normerr > 0 && normerr > pj.PrjnScale.LoTol) || (normerr < 0 && -normerr > pj.PrjnScale.HiTol) {
-			pj.GScale.Scale += pj.PrjnScale.ScaleLrate * pj.GScale.Orig * err
+		pj.GScale.Err = relErr
+		if (normErr > 0 && normErr > pj.PrjnScale.LoTol) || (normErr < 0 && -normErr > pj.PrjnScale.HiTol) {
+			pj.GScale.Scale += pj.PrjnScale.ScaleLrate * pj.GScale.Orig * relErr
 			min := 0.1 * pj.GScale.Orig
 			if pj.GScale.Scale < min {
 				pj.GScale.Scale = min
@@ -1647,6 +1645,19 @@ func (ly *Layer) LrateMult(mult float32) {
 		// 	continue
 		// }
 		p.(AxonPrjn).LrateMult(mult)
+	}
+}
+
+// LrateInit sets the base learning rate against which LrateMult multiplies.
+// This can be useful if changing LrateMult dynamically while also changing
+// the base learning rate too.  Also sets lrate in proportion to given mult
+// relative to this new init value.
+func (ly *Layer) LrateInit(init, mult float32) {
+	for _, p := range ly.RcvPrjns {
+		// if p.IsOff() { // keep all sync'd
+		// 	continue
+		// }
+		p.(AxonPrjn).LrateInit(init, mult)
 	}
 }
 
