@@ -63,52 +63,26 @@ const LogPrec = 4
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
-				Params: params.Params{
-					"Prjn.Learn.WtSig.Gain": "6",
-					"Prjn.Learn.Lrate":      "0.04",
-				}},
 			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init":           "0.15",
-					"Layer.Inhib.ActAvg.Targ":           "0.15",
-					"Layer.Inhib.Layer.Gi":              "1.1",  // 1.1 > 1.2 > 1.0
-					"Layer.Act.Gbar.L":                  "0.2",  // std
-					"Layer.Act.Init.Decay":              "0.5",  // 0.5 >= 0.2 >= 0 -- not much diff for just hid
-					"Layer.Act.Clamp.Rate":              "120",  // 120 == 100 > 150
-					"Layer.Act.Dt.TrlAvgTau":            "20",   // 20 > higher for objrec, lvis
-					"Layer.Learn.SynScale.ErrLrate":     "0.01", // 0.02 > 0.05 objrec
-					"Layer.Learn.SynScale.Rate":         "0.01", // 0.01 > 0.005 best for objrec -- needs faster
-					"Layer.Learn.SynScale.TrgRange.Min": "0.2",  // .5 best for Lvis, .2 - 2.0 best for objrec
-					"Layer.Learn.SynScale.TrgRange.Max": "2.0",  // 2.0
+					"Layer.Inhib.ActAvg.Init":            "0.15",
+					"Layer.Inhib.ActAvg.Targ":            "0.15",
+					"Layer.Inhib.Layer.Gi":               "1.1",  // 1.1 > 1.2 > 1.0
+					"Layer.Act.Gbar.L":                   "0.2",  // std
+					"Layer.Act.Init.Decay":               "0.5",  // 0.5 >= 0.2 >= 0 -- not much diff for just hid
+					"Layer.Act.Clamp.Rate":               "120",  // 120 == 100 > 150
+					"Layer.Act.Dt.TrlAvgTau":             "20",   // 20 > higher for objrec, lvis
+					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.01 > 0.005 best for objrec -- needs faster
+					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
+					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
-				}},
 			{Sel: ".Input", Desc: "input layers need more inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.ActAvg.Targ": "0.15",
-				}},
-			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.2", // 1.2 > 1.1 maybe > 1.3
-					"Layer.TRC.HardClamp":  "false",
-					"Layer.TRC.DriveScale": "0.15",  // .15 >= .1
-					"Layer.TRC.MaxInhib":   "0.6",   // 0.6 def
-					"Layer.Act.Init.Decay": "0.5",   // 0.5 maybe > 1 ?  starts out faster..
-					"Layer.Act.GABAB.Gbar": "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
-					"Layer.Act.NMDA.Gbar":  "0.1",   // 0.1 > .05 > .2
-					"Layer.Act.Clamp.Rate": "180",   // 120 == 100 > 150
-				}},
-			{Sel: "CTCtxtPrjn", Desc: "no weight balance on CT context prjns -- makes a diff!",
-				Params: params.Params{}},
-			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
-				Params: params.Params{
-					"Prjn.WtInit.Mean": "0.5",
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
@@ -118,6 +92,39 @@ var ParamSets = params.Sets{
 					"Layer.Act.KNa.On":     "true",
 					"Layer.Act.NMDA.Gbar":  "0.03", // larger not better
 					"Layer.Act.GABAB.Gbar": "0.2",
+				}},
+			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "1.2",   // 1.2 > 1.1 maybe > 1.3
+					"Layer.TRC.DriveScale":    "0.15",  // .15 >= .1
+					"Layer.TRC.FullDriveAct":  "0.6",   // 0.6 def
+					"Layer.Act.Clamp.Burst":   "false", // not obviously better
+					"Layer.Act.Clamp.BurstGe": "1",
+					"Layer.Act.Init.Decay":    "0.5",   // 0.5 maybe > 1 ?  starts out faster..
+					"Layer.Act.GABAB.Gbar":    "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
+					"Layer.Act.NMDA.Gbar":     "0.1",   // 0.1 > .05 > .2
+					"Layer.Act.Clamp.Rate":    "180",   // 120 == 100 > 150
+				}},
+			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
+				Params: params.Params{
+					"Prjn.Learn.Lrate":        "0.04",
+					"Prjn.SWt.Adapt.Lrate":    "0.1", // 0.01 seems to work fine, but .1 maybe more reliable
+					"Prjn.SWt.Adapt.SigGain":  "6",
+					"Prjn.SWt.Adapt.DreamVar": "0.0", // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":      "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Init.Mean":      "0.5", // 0.5 generally good
+					"Prjn.SWt.Limit.Min":      "0.2",
+					"Prjn.SWt.Limit.Max":      "0.8",
+				}},
+			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
+				}},
+			{Sel: "CTCtxtPrjn", Desc: "no weight balance on CT context prjns -- makes a diff!",
+				Params: params.Params{}},
+			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
+				Params: params.Params{
+					"Prjn.SWt.Init.Mean": "0.5",
 				}},
 			{Sel: "#HiddenPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
@@ -143,29 +150,30 @@ var InputNameMap map[string]int
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	TrnEpcLog    *etable.Table   `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog    *etable.Table   `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog    *etable.Table   `view:"no-inline" desc:"testing trial-level log data"`
-	TstErrLog    *etable.Table   `view:"no-inline" desc:"log of all test trials where errors were made"`
-	TstErrStats  *etable.Table   `view:"no-inline" desc:"stats on test trials where errors were made"`
-	TstCycLog    *etable.Table   `view:"no-inline" desc:"testing cycle-level log data"`
-	RunLog       *etable.Table   `view:"no-inline" desc:"summary log of each run"`
-	RunStats     *etable.Table   `view:"no-inline" desc:"aggregate stats on all runs"`
-	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
-	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
-	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	MaxRuns      int             `desc:"maximum number of model runs to perform"`
-	MaxEpcs      int             `desc:"maximum number of epochs to run per model run"`
-	NZeroStop    int             `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
-	TrainEnv     FSAEnv          `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
-	TestEnv      FSAEnv          `desc:"Testing environment -- manages iterating over testing"`
-	Time         axon.Time       `desc:"axon timing parameters and state"`
-	ViewOn       bool            `desc:"whether to update the network view while running"`
-	TrainUpdt    axon.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
-	TestUpdt     axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
-	TestInterval int             `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	LayStatNms   []string        `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
+	Net          *deep.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	TrnEpcLog    *etable.Table    `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog    *etable.Table    `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog    *etable.Table    `view:"no-inline" desc:"testing trial-level log data"`
+	TstErrLog    *etable.Table    `view:"no-inline" desc:"log of all test trials where errors were made"`
+	TstErrStats  *etable.Table    `view:"no-inline" desc:"stats on test trials where errors were made"`
+	TstCycLog    *etable.Table    `view:"no-inline" desc:"testing cycle-level log data"`
+	RunLog       *etable.Table    `view:"no-inline" desc:"summary log of each run"`
+	RunStats     *etable.Table    `view:"no-inline" desc:"aggregate stats on all runs"`
+	ErrLrMod     axon.ErrLrateMod `view:"inline" desc:"learning rate modulation as function of error"`
+	Params       params.Sets      `view:"no-inline" desc:"full collection of param sets"`
+	ParamSet     string           `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
+	Tag          string           `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
+	MaxRuns      int              `desc:"maximum number of model runs to perform"`
+	MaxEpcs      int              `desc:"maximum number of epochs to run per model run"`
+	NZeroStop    int              `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
+	TrainEnv     FSAEnv           `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
+	TestEnv      FSAEnv           `desc:"Testing environment -- manages iterating over testing"`
+	Time         axon.Time        `desc:"axon timing parameters and state"`
+	ViewOn       bool             `desc:"whether to update the network view while running"`
+	TrainUpdt    axon.TimeScales  `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
+	TestUpdt     axon.TimeScales  `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
+	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	LayStatNms   []string         `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
 
 	// statistics: note use float64 as that is best for etable.Table
 	TrlErr        float64 `inactive:"+" desc:"1 if trial was error, 0 if correct -- based on SSE = 0 (subject to .5 unit-wise tolerance)"`
@@ -223,6 +231,8 @@ func (ss *Sim) New() {
 	ss.TstCycLog = &etable.Table{}
 	ss.RunLog = &etable.Table{}
 	ss.RunStats = &etable.Table{}
+	ss.ErrLrMod.Defaults()
+	ss.ErrLrMod.Base = 0.2
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
@@ -257,7 +267,7 @@ func (ss *Sim) ConfigEnv() {
 		ss.MaxRuns = 10
 	}
 	if ss.MaxEpcs == 0 { // allow user override
-		ss.MaxEpcs = 50
+		ss.MaxEpcs = 60
 		ss.NZeroStop = 5
 	}
 
@@ -418,7 +428,10 @@ func (ss *Sim) AlphaCyc(train bool) {
 		}
 	}
 
+	ss.TrialStats(train)
+
 	if train {
+		ss.ErrLrMod.LrateMod(ss.Net.AsAxon(), float32(ss.TrlErr))
 		ss.Net.DWt()
 	}
 	if ss.ViewOn && viewUpdt == axon.AlphaCycle {
@@ -502,8 +515,7 @@ func (ss *Sim) TrainTrial() {
 	}
 
 	ss.ApplyInputs(&ss.TrainEnv)
-	ss.AlphaCyc(true)   // train
-	ss.TrialStats(true) // accumulate
+	ss.AlphaCyc(true) // train
 }
 
 // RunEnd is called at the end of a run -- save weights, record final log, etc here
@@ -523,6 +535,7 @@ func (ss *Sim) NewRun() {
 	ss.TrainEnv.Init(run)
 	ss.TestEnv.Init(run)
 	ss.Time.Reset()
+	ss.Net.LrateInit(0.04, 1) // restore initial learning rate value -- for err mod
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.TrnEpcLog.SetNumRows(0)
@@ -678,8 +691,7 @@ func (ss *Sim) TestTrial(returnOnChg bool) {
 	}
 
 	ss.ApplyInputs(&ss.TestEnv)
-	ss.AlphaCyc(false)   // !train
-	ss.TrialStats(false) // !accumulate
+	ss.AlphaCyc(false) // !train
 	ss.LogTstTrl(ss.TstTrlLog)
 }
 

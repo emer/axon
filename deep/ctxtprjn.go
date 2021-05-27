@@ -38,8 +38,8 @@ func (pj *CTCtxtPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	if pj.FmSuper {
 		pj.Learn.Learn = false
-		pj.WtInit.Mean = 0.5 // .5 better than .8 in several cases..
-		pj.WtInit.Var = 0
+		pj.SWt.Init.Mean = 0.5 // .5 better than .8 in several cases..
+		pj.SWt.Init.Var = 0
 	}
 }
 
@@ -133,6 +133,7 @@ func (pj *CTCtxtPrjn) DWt() {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	sslay, issuper := pj.Send.(*SuperLayer)
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate
 	for si := range slay.Neurons {
 		sact := float32(0)
 		if issuper {
@@ -151,7 +152,13 @@ func (pj *CTCtxtPrjn) DWt() {
 			// following line should be ONLY diff: sact for *both* short and medium *sender*
 			// activations, which are first two args:
 			err := pj.Learn.CHLdWt(sact, sact, rn.AvgSLrn, rn.AvgM)
-			sy.DWt += pj.Learn.Lrate * err
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += lr * err
 		}
 	}
 }

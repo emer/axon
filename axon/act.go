@@ -165,6 +165,14 @@ func (ac *ActParams) InitActQs(nrn *Neuron) {
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
 
+// BurstGe returns extra bursting excitatory conductance based on params
+func (ac *ActParams) BurstGe(cyc int, actm float32) float32 {
+	if ac.Clamp.Burst && actm < ac.Clamp.BurstThr && cyc < ac.Clamp.BurstCyc {
+		return ac.Clamp.BurstGe
+	}
+	return 0
+}
+
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) {
@@ -173,10 +181,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) 
 	}
 
 	if ac.Clamp.Type == GeClamp && nrn.HasFlag(NeurHasExt) {
-		ge := ac.Clamp.Ge
-		if ac.Clamp.Burst && (actm < ac.Clamp.BurstThr && cyc < ac.Clamp.BurstCyc) {
-			ge += ac.Clamp.BurstGe
-		}
+		ge := ac.Clamp.Ge + ac.BurstGe(cyc, actm)
 		nrn.Ge = nrn.Ext * ge
 	} else {
 		ac.Dt.GeFmRaw(geRaw, &nrn.Ge, ac.Init.Ge)

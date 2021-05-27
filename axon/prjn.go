@@ -784,6 +784,7 @@ func (pj *Prjn) SWtFmWt() {
 	max := pj.SWt.Limit.Max
 	min := pj.SWt.Limit.Min
 	lr := pj.SWt.Adapt.Lrate
+	dvar := pj.SWt.Adapt.DreamVar
 	for ri := range rlay.Neurons {
 		nc := int(pj.RConN[ri])
 		if nc < 1 {
@@ -802,11 +803,26 @@ func (pj *Prjn) SWtFmWt() {
 			sumDWt += sy.DSWt
 		}
 		sumDWt /= float32(nc)
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
-			sy.SWt += lr * (sy.DSWt - sumDWt)
-			sy.DSWt = 0
-			sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+		if dvar > 0 {
+			for _, rsi := range rsidxs {
+				sy := &pj.Syns[rsi]
+				sy.SWt += lr * (sy.DSWt - sumDWt)
+				sy.DSWt = 0
+				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.SWt.Adapt.RndVar()
+				if sy.LWt > 1 {
+					sy.LWt = 1
+				} else if sy.LWt < 0 {
+					sy.LWt = 0
+				}
+				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+			}
+		} else {
+			for _, rsi := range rsidxs {
+				sy := &pj.Syns[rsi]
+				sy.SWt += lr * (sy.DSWt - sumDWt)
+				sy.DSWt = 0
+				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+			}
 		}
 	}
 }
@@ -820,7 +836,7 @@ func (pj *Prjn) SynScale() {
 	if rlay.AxonLay.IsTarget() {
 		return
 	}
-	lr := rlay.Learn.TrgAvgAct.Rate
+	lr := rlay.Learn.TrgAvgAct.SynScaleRate
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {

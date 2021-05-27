@@ -209,18 +209,25 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	On      bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated -- generally good to have Init.SPct=0 in such cases too."`
-	Lrate   float32 `def:"0.1" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating."`
-	SigGain float32 `def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
+	On       bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated -- generally good to have Init.SPct=0 in such cases too."`
+	Lrate    float32 `viewif:"On" def:"0.1,0.01" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support."`
+	SigGain  float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
+	DreamVar float32 `viewif:"On" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning."`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
 	sp.On = true
 	sp.Lrate = 0.1
 	sp.SigGain = 6
+	sp.DreamVar = 0.0
 }
 
 func (sp *SWtAdaptParams) Update() {
+}
+
+// RndVar returns the random variance (zero mean) based on DreamVar param
+func (sp *SWtAdaptParams) RndVar() float32 {
+	return sp.DreamVar * 2 * (rand.Float32() - 0.5)
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -229,7 +236,7 @@ func (sp *SWtAdaptParams) Update() {
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
 	Learn     bool       `desc:"enable learning for this projection"`
-	Lrate     float32    `desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
+	Lrate     float32    `def:"desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
 	LrateInit float32    `desc:"initial learning rate -- this is set from Lrate in UpdateParams, which is called when Params are updated, and used in LrateMult to compute a new learning rate for learning rate schedules."`
 	XCal      XCalParams `view:"inline" desc:"parameters for the XCal learning rule"`
 }
@@ -308,20 +315,20 @@ func (aa *LrnActAvgParams) Defaults() {
 // Target value is adapted by unit-wise error and difference in actual vs. target
 // drives synaptic scaling.
 type TrgAvgActParams struct {
-	ErrLrate float32    `def:"0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange."`
-	TrgRange minmax.F32 `desc:"default 0.5-2 -- range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
-	Permute  bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
-	Rate     float32    `def:"0.005" desc:"learning rate parameter for how much to scale weights in proportion to the AvgDif between target and actual proportion activity -- set higher for smaller models"`
+	ErrLrate     float32    `def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
+	SynScaleRate float32    `def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
+	TrgRange     minmax.F32 `def:"[0.5,2] desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
+	Permute      bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 }
 
 func (ss *TrgAvgActParams) Update() {
 }
 
 func (ss *TrgAvgActParams) Defaults() {
-	ss.ErrLrate = 0.01
+	ss.ErrLrate = 0.02
+	ss.SynScaleRate = 0.01
 	ss.TrgRange.Set(0.5, 2)
 	ss.Permute = true
-	ss.Rate = 0.005
 	ss.Update()
 }
 
@@ -368,4 +375,54 @@ func (xc *XCalParams) DWt(srval, thrP float32) float32 {
 		dwt = srval * xc.DRevRatio
 	}
 	return dwt
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  ErrLrateMod
+
+// ErrLrateMod implements global performance-based error learning rate modulation.
+// Computed learning rate modulator is constrained to be <= 1.
+// This can be added to a Sim and called prior to DWt() to dynamically change lrate
+// based on overall network performance.
+// This depends on the LrateInit learning rate saved during InitWts() based on
+// Lrate at that time -- if restarting a network, call net.LrateInit to reset prior to
+// calling InitWts()
+type ErrLrateMod struct {
+	On   bool    `desc:"toggle use of this modulation factor"`
+	Base float32 `viewif:"On" min:"0" max:"1" desc:"baseline learning rate -- what you get for correct cases"`
+	Err  float32 `viewif:"On" desc:"multiplier on error factor -- resulting lrate mod is Base + Err * err, so Err should be large enough to get to 1 for full error cases (maxes out at 1)"`
+}
+
+func (em *ErrLrateMod) Defaults() {
+	em.On = true
+	em.Base = 0.2
+	em.Err = 4
+}
+
+func (em *ErrLrateMod) Update() {
+}
+
+// Mod returns the learning rate modulation factor as a function
+// of any kind of normalized error measure (0 = no error, 1 = maximum error).
+func (em *ErrLrateMod) Mod(err float32) float32 {
+	lrm := em.Base + em.Err*err
+	if lrm > 1 {
+		lrm = 1
+	}
+	return lrm
+}
+
+// LrateMod calls LrateMult on given network, using computed Mod factor
+// based on given normalized global error measure (0 = no error, 1 = maximum).
+// returns modulation factor applied.
+func (em *ErrLrateMod) LrateMod(net *Network, err float32) float32 {
+	if em.Err == 0 {
+		em.Defaults()
+	}
+	if !em.On {
+		return 1
+	}
+	mod := em.Mod(err)
+	net.LrateMult(mod)
+	return mod
 }

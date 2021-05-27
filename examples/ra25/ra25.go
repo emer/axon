@@ -95,7 +95,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Rate":               "120",     // 180 default, 120 best here
 					"Layer.Act.Dt.TrlAvgTau":             "20",      // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02",    // 0.01 for lvis, needs faster here
-					"Layer.Learn.TrgAvgAct.Rate":         "0.01",    // 0.005 for lvis, needs faster here
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01",    // 0.005 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 				}},
@@ -103,8 +103,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Com.Delay":            "2",    // 1 == 2 = 3
 					"Prjn.Learn.Lrate":          "0.04", // .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      "0.1",  // unclear.
+					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
+					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
 					"Prjn.SWt.Init.SPct":        "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":        "0.2",
