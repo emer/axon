@@ -85,9 +85,9 @@ func (tm *Time) CurCycles() int {
 	return tm.CycPerQtr
 }
 
-// TotalCycles returns the total number of cycles
+// TotalCycles returns the total number of cycles: 3 * CycPerQtr + PlusCyc
 func (tm *Time) TotalCycles() int {
-	return tm.CycPerQtr + tm.PlusCyc
+	return 3*tm.CycPerQtr + tm.PlusCyc
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

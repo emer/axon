@@ -185,62 +185,41 @@ var ParamSets = params.Sets{
 	}},
 }
 
-// ErrLrateModParams are overall performance-based error learning rate modulation parameters.
-// Computed learning rate modulator is constrained to be <= 1
-type ErrLrateModParams struct {
-	Base float32 `min:"0" max:"1" desc:"baseline learning rate"`
-	Err  float32 `desc:"multiplier on error factor"`
-}
-
-func (em *ErrLrateModParams) Defaults() {
-	em.Base = 0.5
-	em.Err = 2
-}
-
-func (em *ErrLrateModParams) Update() {
-}
-
-// LrateMod returns the learning rate modulation as a function of any kind of normalized error measure
-func (em *ErrLrateModParams) LrateMod(err float32) float32 {
-	lrm := em.Base + em.Err*err
-	if lrm > 1 {
-		lrm = 1
-	}
-	return lrm
-}
-
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *axon.Network     `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Pats         *etable.Table     `view:"no-inline" desc:"the training patterns to use"`
-	TrnEpcLog    *etable.Table     `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog    *etable.Table     `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog    *etable.Table     `view:"no-inline" desc:"testing trial-level log data"`
-	TstErrLog    *etable.Table     `view:"no-inline" desc:"log of all test trials where errors were made"`
-	TstErrStats  *etable.Table     `view:"no-inline" desc:"stats on test trials where errors were made"`
-	TstCycLog    *etable.Table     `view:"no-inline" desc:"testing cycle-level log data"`
-	RunLog       *etable.Table     `view:"no-inline" desc:"summary log of each run"`
-	RunStats     *etable.Table     `view:"no-inline" desc:"aggregate stats on all runs"`
-	ErrLrMod     ErrLrateModParams `view:"inline" desc:"learning rate modulation as function of error"`
-	Params       params.Sets       `view:"no-inline" desc:"full collection of param sets"`
-	ParamSet     string            `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
-	Tag          string            `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	StartRun     int               `desc:"starting run number -- typically 0 but can be set in command args for parallel runs on a cluster"`
-	MaxRuns      int               `desc:"maximum number of model runs to perform (starting from StartRun)"`
-	MaxEpcs      int               `desc:"maximum number of epochs to run per model run"`
-	NZeroStop    int               `desc:"if a positive number, training will stop after this many epochs with zero UnitErr"`
-	TrainEnv     env.FixedTable    `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
-	TestEnv      env.FixedTable    `desc:"Testing environment -- manages iterating over testing"`
-	Time         axon.Time         `desc:"axon timing parameters and state"`
-	ViewOn       bool              `desc:"whether to update the network view while running"`
-	TrainUpdt    axon.TimeScales   `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
-	TestUpdt     axon.TimeScales   `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
-	TestInterval int               `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	LayStatNms   []string          `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
+	Net         *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Pats        *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
+	TrnEpcLog   *etable.Table    `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog   *etable.Table    `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog   *etable.Table    `view:"no-inline" desc:"testing trial-level log data"`
+	TstErrLog   *etable.Table    `view:"no-inline" desc:"log of all test trials where errors were made"`
+	TstErrStats *etable.Table    `view:"no-inline" desc:"stats on test trials where errors were made"`
+	TstCycLog   *etable.Table    `view:"no-inline" desc:"testing cycle-level log data"`
+	RunLog      *etable.Table    `view:"no-inline" desc:"summary log of each run"`
+	RunStats    *etable.Table    `view:"no-inline" desc:"aggregate stats on all runs"`
+	PostCycs    int              `desc:"number of cycles to run after main alphacyc cycles, between stimuli"`
+	PostDecay   float32          `desc:"decay to apply at start of PostCycs"`
+	ErrLrMod    axon.ErrLrateMod `view:"inline" desc:"learning rate modulation as function of error"`
+
+	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
+	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
+	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
+	StartRun     int             `desc:"starting run number -- typically 0 but can be set in command args for parallel runs on a cluster"`
+	MaxRuns      int             `desc:"maximum number of model runs to perform (starting from StartRun)"`
+	MaxEpcs      int             `desc:"maximum number of epochs to run per model run"`
+	NZeroStop    int             `desc:"if a positive number, training will stop after this many epochs with zero UnitErr"`
+	TrainEnv     env.FixedTable  `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
+	TestEnv      env.FixedTable  `desc:"Testing environment -- manages iterating over testing"`
+	Time         axon.Time       `desc:"axon timing parameters and state"`
+	ViewOn       bool            `desc:"whether to update the network view while running"`
+	TrainUpdt    axon.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
+	TestUpdt     axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
+	TestInterval int             `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	LayStatNms   []string        `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
 
 	// statistics: note use float64 as that is best for etable.Table
 	TrlErr        float64 `inactive:"+" desc:"1 if trial was error, 0 if correct -- based on UnitErr = 0 (subject to .5 unit-wise tolerance)"`
@@ -297,6 +276,9 @@ func (ss *Sim) New() {
 	ss.TstCycLog = &etable.Table{}
 	ss.RunLog = &etable.Table{}
 	ss.RunStats = &etable.Table{}
+	ss.ErrLrMod.Defaults()
+	ss.PostCycs = 0
+	ss.PostDecay = 0.2
 	ss.Params = ParamSets
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
 	for i := 0; i < 100; i++ {
@@ -515,12 +497,36 @@ func (ss *Sim) AlphaCyc(train bool) {
 	ss.TrialStats(train)
 
 	if train {
-		ss.Net.LrateMult(ss.ErrLrMod.LrateMod(float32(1 - ss.TrlCosDiff)))
+		ss.ErrLrMod.LrateMod(ss.Net, float32(1-ss.TrlCosDiff))
 		ss.Net.DWt()
 	}
 	if ss.ViewOn && viewUpdt == axon.AlphaCycle {
 		ss.UpdateView(train)
 	}
+
+	// include extra off cycles at end
+	if ss.PostCycs > 0 {
+		ss.Net.InitExt()
+		ss.Net.DecayState(ss.PostDecay)
+		mxcyc := ss.PostCycs
+		for cyc := 0; cyc < mxcyc; cyc++ {
+			ss.Net.Cycle(&ss.Time)
+			ss.Time.CycleInc()
+			if ss.ViewOn {
+				switch viewUpdt {
+				case axon.Cycle:
+					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
+						ss.UpdateView(train)
+					}
+				case axon.FastSpike:
+					if (cyc+1)%10 == 0 {
+						ss.UpdateView(train)
+					}
+				}
+			}
+		}
+	}
+
 	if ss.TstCycPlot != nil && !train {
 		ss.TstCycPlot.GoUpdate() // make sure up-to-date at end
 	}
