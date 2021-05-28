@@ -577,6 +577,7 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			}
 		}
 	}
+	ly.SynScale() // update AvgPct based on loaded ActAvg values
 	return err
 }
 
