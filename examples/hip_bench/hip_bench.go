@@ -308,6 +308,8 @@ func (ss *Sim) ConfigEnv() {
 	ss.TrainEnv.Nm = "TrainEnv"
 	ss.TrainEnv.Dsc = "training params and state"
 	ss.TrainEnv.Table = etable.NewIdxView(ss.TrainAB)
+	// to simulate training items in order, uncomment this line:
+	// ss.TrainEnv.Sequential = true
 	ss.TrainEnv.Validate()
 	ss.TrainEnv.Run.Max = ss.MaxRuns // note: we are not setting epoch max -- do that manually
 

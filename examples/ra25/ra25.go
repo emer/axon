@@ -71,7 +71,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
-					"Layer.Act.Init.Decay":               "0.5",  // 0.5 > 1 > 0
+					"Layer.Act.Init.Decay":               "0",    // 0.5 > 1 > 0
+					"Layer.Act.Init.GlongDecay":          "1",    // 0.5 > 1 > 0
 					"Layer.Act.Init.KnaDecay":            "0.0",  // 0 > higher for all other models
 					"Layer.Act.Gbar.L":                   "0.2",  // 0.2 > 0.1
 					"Layer.Act.NMDA.Gbar":                "0.03", // 0.03 > .04 > .02
@@ -152,9 +153,9 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.BurstCyc":   "10",    // 20 best for objrec
 					"Layer.Act.Spike.Tr":         "0",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
 					"Layer.Act.Clamp.Rate":       "120",   // 120 > 100 > 150
-					"Layer.Act.Init.Decay":       "0.5",   // 0.5 == 1 after clamp fix > .2
-					"Layer.Act.GABAB.Gbar":       "0.005", // .005 > .01 > .02 > .05 > .1 > .2
-					"Layer.Act.NMDA.Gbar":        "0.03",  // .03 > .02 > .01
+					// "Layer.Act.Init.Decay":       "0.5",   // 0.5 == 1 after clamp fix > .2
+					"Layer.Act.GABAB.Gbar": "0.005", // .005 > .01 > .02 > .05 > .1 > .2
+					"Layer.Act.NMDA.Gbar":  "0.03",  // .03 > .02 > .01
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
@@ -277,6 +278,8 @@ func (ss *Sim) New() {
 	ss.RunLog = &etable.Table{}
 	ss.RunStats = &etable.Table{}
 	ss.ErrLrMod.Defaults()
+	ss.ErrLrMod.Base = 0.5
+	ss.ErrLrMod.Err = 2
 	ss.PostCycs = 0
 	ss.PostDecay = 0.2
 	ss.Params = ParamSets
@@ -292,7 +295,6 @@ func (ss *Sim) New() {
 	ss.Time.Defaults()
 	ss.Time.CycPerQtr = 50 // 50 > 40 > 30 > 25..
 	ss.Time.PlusCyc = 50   // 50 > 40 > 25
-	ss.ErrLrMod.Defaults()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////

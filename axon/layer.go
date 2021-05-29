@@ -751,8 +751,6 @@ func (ly *Layer) InitExt() {
 		nrn := &ly.Neurons[ni]
 		nrn.Ext = 0
 		nrn.Targ = 0
-		nrn.ISI = -1
-		nrn.ISIAvg = -1
 		nrn.ClearMask(msk)
 	}
 }
@@ -1327,7 +1325,7 @@ func (ly *Layer) QuarterFinal(ltime *Time) {
 			if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 				nrn.Ext = nrn.Targ
 				nrn.SetFlag(NeurHasExt)
-				nrn.ISI = -1
+				nrn.ISI = -1 // get fresh update on plus phase output acts
 				nrn.ISIAvg = -1
 			}
 		case 3:
