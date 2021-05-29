@@ -413,8 +413,8 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 // ActInitParams are initial values for key network state variables.
 // Initialized at start of trial with Init_Acts or DecayState.
 type ActInitParams struct {
-	Decay      float32 `def:"0,0.5,1" max:"1" min:"0" desc:"proportion to decay activation state toward initial values at start of every trial -- if 1 it is effectively equivalent to full clear, resetting other derived values (e.g., ISI)"`
-	GlongDecay float32 `def:"0,0.5,1" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential"`
+	Decay      float32 `def:"0,0.5,1" max:"1" min:"0" desc:"proportion to decay activation state toward initial values at start of every AlphaCycle -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
+	GlongDecay float32 `def:"0,0.5,1" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow each new trial to start afresh -- but set Decay to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
 	KnaDecay   float32 `max:"1" min:"0" desc:"decay of Kna values -- has a separate decay because often useful to have this not decay at all even if decay is on"`
 	Vm         float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
 	Act        float32 `def:"0" desc:"initial activation value -- typically 0"`
@@ -426,8 +426,8 @@ func (ai *ActInitParams) Update() {
 }
 
 func (ai *ActInitParams) Defaults() {
-	ai.Decay = 0.5
-	ai.GlongDecay = 0.5
+	ai.Decay = 0
+	ai.GlongDecay = 1
 	ai.KnaDecay = 0
 	ai.Vm = 0.3
 	ai.Act = 0
