@@ -67,9 +67,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":            "0.15",
 					"Layer.Inhib.ActAvg.Targ":            "0.15",
-					"Layer.Inhib.Layer.Gi":               "1.1",  // 1.1 > 1.2 > 1.0
-					"Layer.Act.Gbar.L":                   "0.2",  // std
-					"Layer.Act.Init.Decay":               "0.5",  // 0.5 >= 0.2 >= 0 -- not much diff for just hid
+					"Layer.Inhib.Layer.Gi":               "1.1", // 1.1 > 1.2 > 1.0
+					"Layer.Act.Gbar.L":                   "0.2", // std
+					"Layer.Act.Decay.Act":                "0.0", // both 0 better
+					"Layer.Act.Decay.Glong":              "0.0",
 					"Layer.Act.Clamp.Rate":               "120",  // 120 == 100 > 150
 					"Layer.Act.Dt.TrlAvgTau":             "20",   // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
@@ -86,12 +87,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
-					"Layer.CtxtGeGain":     "0.2", // 0.2 > 0.3 > 0.1
-					"Layer.Inhib.Layer.Gi": "1.1", // 1.1 > 1.0
-					"Layer.Act.Init.Decay": "0.5", // 0.5 > 0.2? > 0 -- not big effects
-					"Layer.Act.KNa.On":     "true",
-					"Layer.Act.NMDA.Gbar":  "0.03", // larger not better
-					"Layer.Act.GABAB.Gbar": "0.2",
+					"Layer.CtxtGeGain":      "0.2", // 0.2 > 0.3 > 0.1
+					"Layer.Inhib.Layer.Gi":  "1.1", // 1.1 > 1.0
+					"Layer.Act.KNa.On":      "true",
+					"Layer.Act.NMDA.Gbar":   "0.03", // larger not better
+					"Layer.Act.GABAB.Gbar":  "0.2",
+					"Layer.Act.Decay.Act":   "0.0",
+					"Layer.Act.Decay.Glong": "0.0",
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
@@ -100,10 +102,11 @@ var ParamSets = params.Sets{
 					"Layer.TRC.FullDriveAct":  "0.6",   // 0.6 def
 					"Layer.Act.Clamp.Burst":   "false", // not obviously better
 					"Layer.Act.Clamp.BurstGe": "1",
-					"Layer.Act.Init.Decay":    "0.5",   // 0.5 maybe > 1 ?  starts out faster..
 					"Layer.Act.GABAB.Gbar":    "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
 					"Layer.Act.NMDA.Gbar":     "0.1",   // 0.1 > .05 > .2
 					"Layer.Act.Clamp.Rate":    "180",   // 120 == 100 > 150
+					"Layer.Act.Decay.Act":     "0.5",
+					"Layer.Act.Decay.Glong":   "1", // clear long
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{

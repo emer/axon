@@ -27,7 +27,9 @@ var KiT_CTLayer = kit.Types.AddType(&CTLayer{}, LayerProps)
 
 func (ly *CTLayer) Defaults() {
 	ly.TopoInhibLayer.Defaults()
-	ly.Act.Init.Decay = 0 // deep doesn't decay!
+	ly.Act.Decay.Act = 0 // deep doesn't decay!
+	ly.Act.Decay.Glong = 0
+	ly.Act.Decay.KNa = 0
 	ly.BurstQtr.Set(int(axon.Q4))
 	ly.Typ = CT
 	ly.CtxtGeGain = 0.2

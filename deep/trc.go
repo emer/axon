@@ -114,7 +114,9 @@ var KiT_TRCLayer = kit.Types.AddType(&TRCLayer{}, LayerProps)
 
 func (ly *TRCLayer) Defaults() {
 	ly.TopoInhibLayer.Defaults()
-	ly.Act.Init.Decay = 0.5
+	ly.Act.Decay.Act = 0.5
+	ly.Act.Decay.Glong = 1
+	ly.Act.Decay.KNa = 0
 	ly.Act.GABAB.Gbar = 0.005 // output layer settings
 	ly.Act.NMDA.Gbar = 0.01
 	ly.TRC.Defaults()

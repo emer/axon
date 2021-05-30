@@ -71,9 +71,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
-					"Layer.Act.Init.Decay":               "0",    // 0.5 > 1 > 0
-					"Layer.Act.Init.GlongDecay":          "1",    // 0.5 > 1 > 0
-					"Layer.Act.Init.KnaDecay":            "0.0",  // 0 > higher for all other models
+					"Layer.Act.Decay.Act":                "0",    // 0.5 > 1 > 0
+					"Layer.Act.Decay.Glong":              "0.7",  // LVis .7 best?
+					"Layer.Act.Decay.KNa":                "0.0",  // 0 > higher for all other models
 					"Layer.Act.Gbar.L":                   "0.2",  // 0.2 > 0.1
 					"Layer.Act.NMDA.Gbar":                "0.03", // 0.03 > .04 > .02
 					"Layer.Act.NMDA.Tau":                 "100",  // 50 no diff
@@ -99,6 +99,35 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01",    // 0.005 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
+				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
+				Params: params.Params{
+					"Layer.Act.Clamp.Type":    "GeClamp", // GeClamp is much more natural and better..
+					"Layer.Act.Clamp.Ge":      "0.6",     // 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Inhib.ActAvg.Targ": "0.24",
+					"Layer.Act.Decay.Act":     "0.5", // 0.5 > 1 > 0
+					"Layer.Act.Decay.Glong":   "1",   // LVis .7 best?
+				}},
+			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":       "0.9",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init":    "0.24",  // this has to be exact for adapt
+					"Layer.Inhib.ActAvg.Targ":    "0.24",  // this has to be exact for adapt
+					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
+					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
+					"Layer.Act.Clamp.Type":       "GeClamp",
+					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6
+					"Layer.Act.Clamp.Burst":      "false", //
+					"Layer.Act.Clamp.BurstThr":   "0.5",   //
+					"Layer.Act.Clamp.BurstGe":    "1",     // 2 strongest
+					"Layer.Act.Clamp.BurstCyc":   "10",    // 20 best for objrec
+					"Layer.Act.Spike.Tr":         "0",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
+					"Layer.Act.Clamp.Rate":       "120",   // 120 > 100 > 150
+					"Layer.Act.GABAB.Gbar":       "0.005", // .005 > .01 > .02 > .05 > .1 > .2
+					"Layer.Act.NMDA.Gbar":        "0.03",  // .03 > .02 > .01
+					"Layer.Act.Decay.Act":        "0.5",   // 0.5 > 1 > 0
+					"Layer.Act.Decay.Glong":      "1",     // LVis .7 best?
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
@@ -130,32 +159,6 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Adapt":  "false",
 					"Prjn.Learn.WtSig.Gain": "6",
 					"Prjn.IncGain":          "0.5",
-				}},
-			{Sel: "#Input", Desc: "critical now to specify the activity level",
-				Params: params.Params{
-					"Layer.Act.Clamp.Type":    "GeClamp", // GeClamp is much more natural and better..
-					"Layer.Act.Clamp.Ge":      "0.6",     // 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.ActAvg.Targ": "0.24",
-				}},
-			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "0.9",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init":    "0.24",  // this has to be exact for adapt
-					"Layer.Inhib.ActAvg.Targ":    "0.24",  // this has to be exact for adapt
-					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
-					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
-					"Layer.Act.Clamp.Type":       "GeClamp",
-					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6
-					"Layer.Act.Clamp.Burst":      "false", //
-					"Layer.Act.Clamp.BurstThr":   "0.5",   //
-					"Layer.Act.Clamp.BurstGe":    "1",     // 2 strongest
-					"Layer.Act.Clamp.BurstCyc":   "10",    // 20 best for objrec
-					"Layer.Act.Spike.Tr":         "0",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
-					"Layer.Act.Clamp.Rate":       "120",   // 120 > 100 > 150
-					// "Layer.Act.Init.Decay":       "0.5",   // 0.5 == 1 after clamp fix > .2
-					"Layer.Act.GABAB.Gbar": "0.005", // .005 > .01 > .02 > .05 > .1 > .2
-					"Layer.Act.NMDA.Gbar":  "0.03",  // .03 > .02 > .01
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object

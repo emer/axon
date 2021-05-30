@@ -56,7 +56,9 @@ var KiT_SuperLayer = kit.Types.AddType(&SuperLayer{}, LayerProps)
 
 func (ly *SuperLayer) Defaults() {
 	ly.TopoInhibLayer.Defaults()
-	ly.Act.Init.Decay = 0 // deep doesn't decay!
+	ly.Act.Decay.Act = 0 // deep doesn't decay!
+	ly.Act.Decay.Glong = 0.5
+	ly.Act.Decay.KNa = 0
 	ly.Burst.Defaults()
 	ly.Attn.Defaults()
 	if ly.Attn.TRCLay == "" {

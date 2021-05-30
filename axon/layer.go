@@ -973,7 +973,7 @@ func (ly *Layer) AlphaCycInit() {
 	if ly.Act.Noise.Type != NoNoise && ly.Act.Noise.Fixed && ly.Act.Noise.Dist != erand.Mean {
 		ly.AxonLay.GenNoise()
 	}
-	ly.AxonLay.DecayState(ly.Act.Init.Decay)
+	ly.AxonLay.DecayState(ly.Act.Decay.Act)
 	if ly.Typ == emer.Input && ly.Act.Clamp.Type == RateClamp {
 		ly.AxonLay.RateClamp()
 	}
