@@ -46,6 +46,78 @@ func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
 	ln.ActAvg.AvgsFmAct(ln.ActAvg.SpikeG*nrn.Spike, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn)
 }
 
+// LrnActAvgParams has rate constants for averaging over activations
+// at different time scales, to produce the running average activation
+// values that then drive learning in the XCAL learning rules.
+// Is driven directly by spikes that increment running-average at super-short
+// timescale.  Time cycle of 50 msec quarters / theta window learning works
+// Cyc:50, SS:35 S:8, M:40 (best)
+// Cyc:25, SS:20, S:4, M:20
+type LrnActAvgParams struct {
+	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives AvgSS value"`
+	SSTau  float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking -- in general 4 is the largest value without starting to impair learning, but a value of 7 can be combined with m_in_s = 0 with somewhat worse results"`
+	STau   float32 `def:"10" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the short time-scale AvgS value from the super-short AvgSS value (cascade mode) -- AvgS represents the plus phase learning signal that reflects the most recent past information"`
+	MTau   float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome) -- the default value of 10 generally cannot be exceeded without impairing learning"`
+	LrnM   float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron AvgSLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
+	Init   float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
+
+	SSDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	SDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	MDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	LrnS float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"1-LrnM"`
+}
+
+// AvgsFmAct computes averages based on current act
+func (aa *LrnActAvgParams) AvgsFmAct(act float32, avgSS, avgS, avgM, avgSLrn *float32) {
+	*avgSS += aa.SSDt * (act - *avgSS)
+	*avgS += aa.SDt * (*avgSS - *avgS)
+	*avgM += aa.MDt * (*avgS - *avgM)
+
+	*avgSLrn = aa.LrnS**avgS + aa.LrnM**avgM
+}
+
+func (aa *LrnActAvgParams) Update() {
+	aa.SSDt = 1 / aa.SSTau
+	aa.SDt = 1 / aa.STau
+	aa.MDt = 1 / aa.MTau
+	aa.LrnS = 1 - aa.LrnM
+}
+
+func (aa *LrnActAvgParams) Defaults() {
+	aa.SpikeG = 8
+	aa.SSTau = 40 // 20 for 25 cycle qtr
+	aa.STau = 10
+	aa.MTau = 40 // 20 for 25 cycle qtr
+	aa.LrnM = 0.1
+	aa.Init = 0.15
+	aa.Update()
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  TrgAvgActParams
+
+// TrgAvgActParams govern the target and actual long-term average activity in neurons.
+// Target value is adapted by unit-wise error and difference in actual vs. target
+// drives synaptic scaling.
+type TrgAvgActParams struct {
+	ErrLrate     float32    `def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
+	SynScaleRate float32    `def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
+	TrgRange     minmax.F32 `def:"[0.5,2] desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
+	Permute      bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
+}
+
+func (ss *TrgAvgActParams) Update() {
+}
+
+func (ss *TrgAvgActParams) Defaults() {
+	ss.ErrLrate = 0.02
+	ss.SynScaleRate = 0.01
+	ss.TrgRange.Set(0.5, 2)
+	ss.Permute = true
+	ss.Update()
+}
+
 ///////////////////////////////////////////////////////////////////////
 //  SWtParams
 
@@ -235,20 +307,19 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn     bool       `desc:"enable learning for this projection"`
-	Lrate     float32    `def:"desc:"current effective learning rate (multiplies DWt values, determining rate of change of weights)"`
-	LrateInit float32    `desc:"initial learning rate -- this is set from Lrate in UpdateParams, which is called when Params are updated, and used in LrateMult to compute a new learning rate for learning rate schedules."`
-	XCal      XCalParams `view:"inline" desc:"parameters for the XCal learning rule"`
+	Learn bool        `desc:"enable learning for this projection"`
+	Lrate LrateParams `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	XCal  XCalParams  `view:"inline" desc:"parameters for the XCal learning rule"`
 }
 
 func (ls *LearnSynParams) Update() {
+	ls.Lrate.Update()
 	ls.XCal.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
 	ls.Learn = true
-	ls.Lrate = 0.04
-	ls.LrateInit = ls.Lrate
+	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
 }
 
@@ -260,76 +331,30 @@ func (ls *LearnSynParams) CHLdWt(suAvgSLrn, suAvgM, ruAvgSLrn, ruAvgM float32) f
 	return ls.XCal.DWt(srs, srm)
 }
 
-// LrnActAvgParams has rate constants for averaging over activations
-// at different time scales, to produce the running average activation
-// values that then drive learning in the XCAL learning rules.
-// Is driven directly by spikes that increment running-average at super-short
-// timescale.  Time cycle of 50 msec quarters / theta window learning works
-// Cyc:50, SS:35 S:8, M:40 (best)
-// Cyc:25, SS:20, S:4, M:20
-type LrnActAvgParams struct {
-	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives AvgSS value"`
-	SSTau  float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking -- in general 4 is the largest value without starting to impair learning, but a value of 7 can be combined with m_in_s = 0 with somewhat worse results"`
-	STau   float32 `def:"10" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the short time-scale AvgS value from the super-short AvgSS value (cascade mode) -- AvgS represents the plus phase learning signal that reflects the most recent past information"`
-	MTau   float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome) -- the default value of 10 generally cannot be exceeded without impairing learning"`
-	LrnM   float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron AvgSLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
-	Init   float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
-
-	SSDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	SDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	MDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	LrnS float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"1-LrnM"`
+// LrateParams manages learning rate parameters
+type LrateParams struct {
+	Base  float32 `def:"0.04,0.01" desc:"base learning rate for this projection -- can be modulated by other factors below."`
+	Sched float32 `desc:"scheduled learning rate multiplier, simulating reduction in plasticity over aging"`
+	Mod   float32 `desc:"dynamic learning rate modulation due to neuromodulatory or other such factors"`
+	Eff   float32 `inactive:"+" desc:"effective actual learning rate multiplier used in computing DWt: Eff = eMod * Sched * Base"`
 }
 
-// AvgsFmAct computes averages based on current act
-func (aa *LrnActAvgParams) AvgsFmAct(act float32, avgSS, avgS, avgM, avgSLrn *float32) {
-	*avgSS += aa.SSDt * (act - *avgSS)
-	*avgS += aa.SDt * (*avgSS - *avgS)
-	*avgM += aa.MDt * (*avgS - *avgM)
-
-	*avgSLrn = aa.LrnS**avgS + aa.LrnM**avgM
+func (ls *LrateParams) Defaults() {
+	ls.Base = 0.04
+	ls.Sched = 1
+	ls.Mod = 1
+	ls.Update()
 }
 
-func (aa *LrnActAvgParams) Update() {
-	aa.SSDt = 1 / aa.SSTau
-	aa.SDt = 1 / aa.STau
-	aa.MDt = 1 / aa.MTau
-	aa.LrnS = 1 - aa.LrnM
+func (ls *LrateParams) Update() {
+	ls.Eff = ls.Mod * ls.Sched * ls.Base
 }
 
-func (aa *LrnActAvgParams) Defaults() {
-	aa.SpikeG = 8
-	aa.SSTau = 40 // 20 for 25 cycle qtr
-	aa.STau = 10
-	aa.MTau = 40 // 20 for 25 cycle qtr
-	aa.LrnM = 0.1
-	aa.Init = 0.15
-	aa.Update()
-
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  TrgAvgActParams
-
-// TrgAvgActParams govern the target and actual long-term average activity in neurons.
-// Target value is adapted by unit-wise error and difference in actual vs. target
-// drives synaptic scaling.
-type TrgAvgActParams struct {
-	ErrLrate     float32    `def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
-	SynScaleRate float32    `def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
-	TrgRange     minmax.F32 `def:"[0.5,2] desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
-	Permute      bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
-}
-
-func (ss *TrgAvgActParams) Update() {
-}
-
-func (ss *TrgAvgActParams) Defaults() {
-	ss.ErrLrate = 0.02
-	ss.SynScaleRate = 0.01
-	ss.TrgRange.Set(0.5, 2)
-	ss.Permute = true
-	ss.Update()
+// Init initializes modulation values back to 1 and updates Eff
+func (ls *LrateParams) Init() {
+	ls.Sched = 1
+	ls.Mod = 1
+	ls.Update()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -378,51 +403,56 @@ func (xc *XCalParams) DWt(srval, thrP float32) float32 {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  ErrLrateMod
+//  LrateMod
 
-// ErrLrateMod implements global performance-based error learning rate modulation.
-// Computed learning rate modulator is constrained to be <= 1.
+// LrateMod implements global learning rate modulation, based on a performance-based
+// factor, for example error.  Increasing levels of the factor = higher learning rate.
 // This can be added to a Sim and called prior to DWt() to dynamically change lrate
 // based on overall network performance.
-// This depends on the LrateInit learning rate saved during InitWts() based on
-// Lrate at that time -- if restarting a network, call net.LrateInit to reset prior to
-// calling InitWts()
-type ErrLrateMod struct {
-	On   bool    `desc:"toggle use of this modulation factor"`
-	Base float32 `viewif:"On" min:"0" max:"1" desc:"baseline learning rate -- what you get for correct cases"`
-	Err  float32 `viewif:"On" desc:"multiplier on error factor -- resulting lrate mod is Base + Err * err, so Err should be large enough to get to 1 for full error cases (maxes out at 1)"`
+type LrateMod struct {
+	On    bool       `desc:"toggle use of this modulation factor"`
+	Base  float32    `viewif:"On" min:"0" max:"1" desc:"baseline learning rate -- what you get for correct cases"`
+	Range minmax.F32 `viewif:"On" desc:"defines the range over which modulation occurs for the modulator factor -- Min and below get the Base level of learning rate modulation, Max and above get a modulation of 1"`
 }
 
-func (em *ErrLrateMod) Defaults() {
-	em.On = true
-	em.Base = 0.2
-	em.Err = 4
+func (lr *LrateMod) Defaults() {
+	lr.On = true
+	lr.Base = 0.2
+	lr.Range.Set(0, 0.5)
 }
 
-func (em *ErrLrateMod) Update() {
+func (lr *LrateMod) Update() {
 }
 
 // Mod returns the learning rate modulation factor as a function
-// of any kind of normalized error measure (0 = no error, 1 = maximum error).
-func (em *ErrLrateMod) Mod(err float32) float32 {
-	lrm := em.Base + em.Err*err
-	if lrm > 1 {
+// of any kind of normalized modulation factor, e.g., an error measure
+// (0 = no error = Base learning rate, 1 = maximum error).
+func (lr *LrateMod) Mod(fact float32) float32 {
+	lrm := float32(1)
+	switch {
+	case fact < lr.Range.Min:
+		lrm = 0
+	case fact > lr.Range.Max:
 		lrm = 1
+	default:
+		lrm = lr.Range.NormVal(fact)
 	}
-	return lrm
+	mod := lr.Base + lrm*(1-lr.Base)
+	return mod
 }
 
-// LrateMod calls LrateMult on given network, using computed Mod factor
-// based on given normalized global error measure (0 = no error, 1 = maximum).
+// LrateMod calls LrateMod on given network, using computed Mod factor
+// based on given normalized modulation factor
+// (0 = no error = Base learning rate, 1 = maximum error).
 // returns modulation factor applied.
-func (em *ErrLrateMod) LrateMod(net *Network, err float32) float32 {
-	if em.Err == 0 {
-		em.Defaults()
+func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
+	if lr.Range.Max == 0 {
+		lr.Defaults()
 	}
-	if !em.On {
+	if !lr.On {
 		return 1
 	}
-	mod := em.Mod(err)
-	net.LrateMult(mod)
+	mod := lr.Mod(fact)
+	net.LrateMod(mod)
 	return mod
 }

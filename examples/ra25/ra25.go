@@ -132,7 +132,7 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
 					"Prjn.Com.Delay":            "2",    // 1 == 2 = 3
-					"Prjn.Learn.Lrate":          "0.04", // .3, WtSig.Gain = 1 is pretty close
+					"Prjn.Learn.Lrate.Base":     "0.04", // 0.04 def, .3, WtSig.Gain = 1 is pretty close
 					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
@@ -195,19 +195,19 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net         *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Pats        *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
-	TrnEpcLog   *etable.Table    `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog   *etable.Table    `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog   *etable.Table    `view:"no-inline" desc:"testing trial-level log data"`
-	TstErrLog   *etable.Table    `view:"no-inline" desc:"log of all test trials where errors were made"`
-	TstErrStats *etable.Table    `view:"no-inline" desc:"stats on test trials where errors were made"`
-	TstCycLog   *etable.Table    `view:"no-inline" desc:"testing cycle-level log data"`
-	RunLog      *etable.Table    `view:"no-inline" desc:"summary log of each run"`
-	RunStats    *etable.Table    `view:"no-inline" desc:"aggregate stats on all runs"`
-	PostCycs    int              `desc:"number of cycles to run after main alphacyc cycles, between stimuli"`
-	PostDecay   float32          `desc:"decay to apply at start of PostCycs"`
-	ErrLrMod    axon.ErrLrateMod `view:"inline" desc:"learning rate modulation as function of error"`
+	Net         *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Pats        *etable.Table `view:"no-inline" desc:"the training patterns to use"`
+	TrnEpcLog   *etable.Table `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog   *etable.Table `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog   *etable.Table `view:"no-inline" desc:"testing trial-level log data"`
+	TstErrLog   *etable.Table `view:"no-inline" desc:"log of all test trials where errors were made"`
+	TstErrStats *etable.Table `view:"no-inline" desc:"stats on test trials where errors were made"`
+	TstCycLog   *etable.Table `view:"no-inline" desc:"testing cycle-level log data"`
+	RunLog      *etable.Table `view:"no-inline" desc:"summary log of each run"`
+	RunStats    *etable.Table `view:"no-inline" desc:"aggregate stats on all runs"`
+	PostCycs    int           `desc:"number of cycles to run after main alphacyc cycles, between stimuli"`
+	PostDecay   float32       `desc:"decay to apply at start of PostCycs"`
+	ErrLrMod    axon.LrateMod `view:"inline" desc:"learning rate modulation as function of error"`
 
 	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
 	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
@@ -282,7 +282,7 @@ func (ss *Sim) New() {
 	ss.RunStats = &etable.Table{}
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.5
-	ss.ErrLrMod.Err = 2
+	ss.ErrLrMod.Range.Set(0, 0.5)
 	ss.PostCycs = 0
 	ss.PostDecay = 0.2
 	ss.Params = ParamSets
@@ -615,7 +615,6 @@ func (ss *Sim) NewRun() {
 	ss.TrainEnv.Init(run)
 	ss.TestEnv.Init(run)
 	ss.Time.Reset()
-	ss.Net.LrateMult(1) // restore initial learning rate value
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.TrnEpcLog.SetNumRows(0)

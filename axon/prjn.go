@@ -61,7 +61,6 @@ func (pj *Prjn) UpdateParams() {
 	pj.PrjnScale.Update()
 	pj.SWt.Update()
 	pj.Learn.Update()
-	pj.Learn.LrateInit = pj.Learn.Lrate
 }
 
 // GScaleVals holds the conductance scaling and associated values needed for adapting scale
@@ -102,7 +101,7 @@ func (pj *Prjn) AllParams() string {
 	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
 	str += "SWt: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
-	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " XCal: {", "\n  XCal: {", -1)
+	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " Lrate: {", "\n  Lrate: {", -1)
 	return str
 }
 
@@ -414,6 +413,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
+	pj.Learn.Lrate.Init()
 	pj.AxonPrj.InitGbuf()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.SWt.Init.SPct
@@ -700,7 +700,7 @@ func (pj *Prjn) DWt() {
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate
+	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.AvgS < pj.Learn.XCal.LrnThr && sn.AvgM < pj.Learn.XCal.LrnThr {
@@ -730,7 +730,7 @@ func (pj *Prjn) DWt() {
 // Computed in receiving direction, does SubMean subtraction first.
 func (pj *Prjn) WtFmDWt() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	thr := pj.Learn.XCal.DWtThr * pj.Learn.Lrate
+	thr := pj.Learn.XCal.DWtThr * pj.Learn.Lrate.Eff
 	sm := pj.Learn.XCal.SubMean
 	for ri := range rlay.Neurons {
 		nc := int(pj.RConN[ri])
@@ -858,17 +858,18 @@ func (pj *Prjn) SynScale() {
 	}
 }
 
-// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
-// Useful for implementing learning rate schedules.
-func (pj *Prjn) LrateMult(mult float32) {
-	pj.Learn.Lrate = pj.Learn.LrateInit * mult
+// LrateMod sets the Lrate modulation parameter for Prjns, which is
+// for dynamic modulation of learning rate (see also LrateSched).
+// Updates the effective learning rate factor accordingly.
+func (pj *Prjn) LrateMod(mod float32) {
+	pj.Learn.Lrate.Mod = mod
+	pj.Learn.Lrate.Update()
 }
 
-// LrateInit sets the base learning rate against which LrateMult multiplies.
-// This can be useful if changing LrateMult dynamically while also changing
-// the base learning rate too.  Also sets lrate in proportion to given mult
-// relative to this new init value.
-func (pj *Prjn) LrateInit(init, mult float32) {
-	pj.Learn.LrateInit = init
-	pj.AxonPrj.LrateMult(mult)
+// LrateSched sets the schedule-based learning rate multiplier.
+// See also LrateMod.
+// Updates the effective learning rate factor accordingly.
+func (pj *Prjn) LrateSched(sched float32) {
+	pj.Learn.Lrate.Sched = sched
+	pj.Learn.Lrate.Update()
 }

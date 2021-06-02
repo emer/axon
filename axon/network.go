@@ -302,27 +302,27 @@ func (nt *Network) SlowAdapt() {
 	}
 }
 
-// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
-// Useful for implementing learning rate schedules.
-func (nt *Network) LrateMult(mult float32) {
+// LrateMod sets the Lrate modulation parameter for Prjns, which is
+// for dynamic modulation of learning rate (see also LrateSched).
+// Updates the effective learning rate factor accordingly.
+func (nt *Network) LrateMod(mod float32) {
 	for _, ly := range nt.Layers {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).LrateMult(mult)
+		ly.(AxonLayer).AsAxon().LrateMod(mod)
 	}
 }
 
-// LrateInit sets the base learning rate against which LrateMult multiplies.
-// This can be useful if changing LrateMult dynamically while also changing
-// the base learning rate too.  Also sets lrate in proportion to given mult
-// relative to this new init value.
-func (nt *Network) LrateInit(init, mult float32) {
+// LrateSched sets the schedule-based learning rate multiplier.
+// See also LrateMod.
+// Updates the effective learning rate factor accordingly.
+func (nt *Network) LrateSched(sched float32) {
 	for _, ly := range nt.Layers {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).LrateInit(init, mult)
+		ly.(AxonLayer).AsAxon().LrateSched(sched)
 	}
 }
 

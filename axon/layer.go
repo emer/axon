@@ -27,7 +27,8 @@ import (
 	"github.com/goki/mat32"
 )
 
-// axon.Layer has parameters for running a basic rate-coded Axon layer
+// axon.Layer implements the basic Axon spiking activation function,
+// and manages learning in the projections.
 type Layer struct {
 	LayerStru
 	Act     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
@@ -1636,27 +1637,27 @@ func (ly *Layer) SynScale() {
 	}
 }
 
-// LrateMult sets the new Lrate parameter for Prjns to LrateInit * mult.
-// Useful for implementing learning rate schedules.
-func (ly *Layer) LrateMult(mult float32) {
+// LrateMod sets the Lrate modulation parameter for Prjns, which is
+// for dynamic modulation of learning rate (see also LrateSched).
+// Updates the effective learning rate factor accordingly.
+func (ly *Layer) LrateMod(mod float32) {
 	for _, p := range ly.RcvPrjns {
 		// if p.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).LrateMult(mult)
+		p.(AxonPrjn).AsAxon().LrateMod(mod)
 	}
 }
 
-// LrateInit sets the base learning rate against which LrateMult multiplies.
-// This can be useful if changing LrateMult dynamically while also changing
-// the base learning rate too.  Also sets lrate in proportion to given mult
-// relative to this new init value.
-func (ly *Layer) LrateInit(init, mult float32) {
+// LrateSched sets the schedule-based learning rate multiplier.
+// See also LrateMod.
+// Updates the effective learning rate factor accordingly.
+func (ly *Layer) LrateSched(sched float32) {
 	for _, p := range ly.RcvPrjns {
 		// if p.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).LrateInit(init, mult)
+		p.(AxonPrjn).AsAxon().LrateSched(sched)
 	}
 }
 

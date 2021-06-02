@@ -133,7 +133,7 @@ func (pj *CTCtxtPrjn) DWt() {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	sslay, issuper := pj.Send.(*SuperLayer)
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate
+	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sact := float32(0)
 		if issuper {

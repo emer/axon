@@ -26,6 +26,7 @@ func (pj *HebbPrjn) DWt() {
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.AvgS < pj.Learn.XCal.LrnThr && sn.AvgM < pj.Learn.XCal.LrnThr {
@@ -43,7 +44,7 @@ func (pj *HebbPrjn) DWt() {
 			sact := sn.AvgSLrn
 			wt := sy.LWt
 			dwt := ract * (pj.IncGain*sact*(1-wt) - (1-sact)*wt)
-			sy.DWt += pj.Learn.Lrate * dwt
+			sy.DWt += lr * dwt
 		}
 	}
 }

@@ -110,7 +110,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.Lrate":        "0.04",
+					"Prjn.Learn.Lrate.Base":   "0.04",
 					"Prjn.SWt.Adapt.Lrate":    "0.1", // 0.01 seems to work fine, but .1 maybe more reliable
 					"Prjn.SWt.Adapt.SigGain":  "6",
 					"Prjn.SWt.Adapt.DreamVar": "0.0", // 0.01 is just tolerable
@@ -153,30 +153,30 @@ var InputNameMap map[string]int
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *deep.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	TrnEpcLog    *etable.Table    `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog    *etable.Table    `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog    *etable.Table    `view:"no-inline" desc:"testing trial-level log data"`
-	TstErrLog    *etable.Table    `view:"no-inline" desc:"log of all test trials where errors were made"`
-	TstErrStats  *etable.Table    `view:"no-inline" desc:"stats on test trials where errors were made"`
-	TstCycLog    *etable.Table    `view:"no-inline" desc:"testing cycle-level log data"`
-	RunLog       *etable.Table    `view:"no-inline" desc:"summary log of each run"`
-	RunStats     *etable.Table    `view:"no-inline" desc:"aggregate stats on all runs"`
-	ErrLrMod     axon.ErrLrateMod `view:"inline" desc:"learning rate modulation as function of error"`
-	Params       params.Sets      `view:"no-inline" desc:"full collection of param sets"`
-	ParamSet     string           `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
-	Tag          string           `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	MaxRuns      int              `desc:"maximum number of model runs to perform"`
-	MaxEpcs      int              `desc:"maximum number of epochs to run per model run"`
-	NZeroStop    int              `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
-	TrainEnv     FSAEnv           `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
-	TestEnv      FSAEnv           `desc:"Testing environment -- manages iterating over testing"`
-	Time         axon.Time        `desc:"axon timing parameters and state"`
-	ViewOn       bool             `desc:"whether to update the network view while running"`
-	TrainUpdt    axon.TimeScales  `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
-	TestUpdt     axon.TimeScales  `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
-	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	LayStatNms   []string         `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
+	Net          *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	TrnEpcLog    *etable.Table   `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog    *etable.Table   `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog    *etable.Table   `view:"no-inline" desc:"testing trial-level log data"`
+	TstErrLog    *etable.Table   `view:"no-inline" desc:"log of all test trials where errors were made"`
+	TstErrStats  *etable.Table   `view:"no-inline" desc:"stats on test trials where errors were made"`
+	TstCycLog    *etable.Table   `view:"no-inline" desc:"testing cycle-level log data"`
+	RunLog       *etable.Table   `view:"no-inline" desc:"summary log of each run"`
+	RunStats     *etable.Table   `view:"no-inline" desc:"aggregate stats on all runs"`
+	ErrLrMod     axon.LrateMod   `view:"inline" desc:"learning rate modulation as function of error"`
+	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
+	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
+	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
+	MaxRuns      int             `desc:"maximum number of model runs to perform"`
+	MaxEpcs      int             `desc:"maximum number of epochs to run per model run"`
+	NZeroStop    int             `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
+	TrainEnv     FSAEnv          `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
+	TestEnv      FSAEnv          `desc:"Testing environment -- manages iterating over testing"`
+	Time         axon.Time       `desc:"axon timing parameters and state"`
+	ViewOn       bool            `desc:"whether to update the network view while running"`
+	TrainUpdt    axon.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
+	TestUpdt     axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
+	TestInterval int             `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	LayStatNms   []string        `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
 
 	// statistics: note use float64 as that is best for etable.Table
 	TrlErr        float64 `inactive:"+" desc:"1 if trial was error, 0 if correct -- based on SSE = 0 (subject to .5 unit-wise tolerance)"`
@@ -236,6 +236,7 @@ func (ss *Sim) New() {
 	ss.RunStats = &etable.Table{}
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.2
+	ss.ErrLrMod.Range.Set(0, 0.5)
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
@@ -538,7 +539,6 @@ func (ss *Sim) NewRun() {
 	ss.TrainEnv.Init(run)
 	ss.TestEnv.Init(run)
 	ss.Time.Reset()
-	ss.Net.LrateInit(0.04, 1) // restore initial learning rate value -- for err mod
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.TrnEpcLog.SetNumRows(0)
