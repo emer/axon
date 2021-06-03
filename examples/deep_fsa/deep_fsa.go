@@ -236,7 +236,7 @@ func (ss *Sim) New() {
 	ss.RunStats = &etable.Table{}
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.2
-	ss.ErrLrMod.Range.Set(0, 0.5)
+	ss.ErrLrMod.Range.Set(0.2, 0.8)
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
