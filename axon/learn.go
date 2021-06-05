@@ -38,12 +38,13 @@ func (ln *LearnNeurParams) InitActAvg(nrn *Neuron) {
 	nrn.AvgS = ln.ActAvg.Init
 	nrn.AvgM = ln.ActAvg.Init
 	nrn.AvgSLrn = 0
+	nrn.AvgMLrn = 0
 }
 
 // AvgsFmAct updates the running averages based on current learning activation.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
-	ln.ActAvg.AvgsFmAct(ln.ActAvg.SpikeG*nrn.Spike, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn)
+	ln.ActAvg.AvgsFmAct(ln.ActAvg.SpikeG*nrn.Spike, &nrn.AvgSS, &nrn.AvgS, &nrn.AvgM, &nrn.AvgSLrn, &nrn.AvgMLrn)
 }
 
 // LrnActAvgParams has rate constants for averaging over activations
@@ -55,6 +56,7 @@ func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
 // Cyc:25, SS:20, S:4, M:20
 type LrnActAvgParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives AvgSS value"`
+	MinLrn float32 `desc:"minimum learning activation -- below this goes to zero"`
 	SSTau  float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking -- in general 4 is the largest value without starting to impair learning, but a value of 7 can be combined with m_in_s = 0 with somewhat worse results"`
 	STau   float32 `def:"10" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the short time-scale AvgS value from the super-short AvgSS value (cascade mode) -- AvgS represents the plus phase learning signal that reflects the most recent past information"`
 	MTau   float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome) -- the default value of 10 generally cannot be exceeded without impairing learning"`
@@ -68,12 +70,21 @@ type LrnActAvgParams struct {
 }
 
 // AvgsFmAct computes averages based on current act
-func (aa *LrnActAvgParams) AvgsFmAct(act float32, avgSS, avgS, avgM, avgSLrn *float32) {
+func (aa *LrnActAvgParams) AvgsFmAct(act float32, avgSS, avgS, avgM, avgSLrn, avgMLrn *float32) {
 	*avgSS += aa.SSDt * (act - *avgSS)
 	*avgS += aa.SDt * (*avgSS - *avgS)
 	*avgM += aa.MDt * (*avgS - *avgM)
+	*avgMLrn = *avgM
+	if *avgMLrn < aa.MinLrn {
+		*avgMLrn = 0
+	}
 
-	*avgSLrn = aa.LrnS**avgS + aa.LrnM**avgM
+	thrS := *avgS
+	if thrS < aa.MinLrn {
+		thrS = 0
+	}
+
+	*avgSLrn = aa.LrnS*thrS + aa.LrnM**avgMLrn
 }
 
 func (aa *LrnActAvgParams) Update() {
@@ -325,9 +336,9 @@ func (ls *LearnSynParams) Defaults() {
 
 // CHLdWt returns the error-driven weight change component for the
 // temporally eXtended Contrastive Attractor Learning (XCAL), CHL version
-func (ls *LearnSynParams) CHLdWt(suAvgSLrn, suAvgM, ruAvgSLrn, ruAvgM float32) float32 {
+func (ls *LearnSynParams) CHLdWt(suAvgSLrn, suAvgMLrn, ruAvgSLrn, ruAvgMLrn float32) float32 {
 	srs := suAvgSLrn * ruAvgSLrn
-	srm := suAvgM * ruAvgM
+	srm := suAvgMLrn * ruAvgMLrn
 	return ls.XCal.DWt(srs, srm)
 }
 
