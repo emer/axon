@@ -75,12 +75,11 @@ func (aa *LrnActAvgParams) AvgsFmAct(act float32, avgSS, avgS, avgM, avgSLrn, av
 	*avgS += aa.SDt * (*avgSS - *avgS)
 	*avgM += aa.MDt * (*avgS - *avgM)
 	*avgMLrn = *avgM
-	if *avgMLrn < aa.MinLrn {
-		*avgMLrn = 0
-	}
 
 	thrS := *avgS
-	if thrS < aa.MinLrn {
+
+	if *avgMLrn < aa.MinLrn && thrS < aa.MinLrn {
+		*avgMLrn = 0
 		thrS = 0
 	}
 

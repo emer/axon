@@ -82,7 +82,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.GABAB.GiSpike":            "10",   // 10 > 8 > 15
 					"Layer.Act.GTarg.GeMax":              "1",
 					"Layer.Learn.ActAvg.SpikeG":          "8",
-					"Layer.Learn.ActAvg.MinLrn":          "0.01",
+					"Layer.Learn.ActAvg.MinLrn":          "0.1",
 					"Layer.Learn.ActAvg.SSTau":           "40",   // 4 > 2 for 50 cyc qtr
 					"Layer.Learn.ActAvg.STau":            "10",   //
 					"Layer.Learn.ActAvg.MTau":            "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
