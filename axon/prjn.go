@@ -72,8 +72,8 @@ type GScaleVals struct {
 	Err       float32 `inactive:"+" desc:"error that drove last adjustment in scale"`
 	Avg       float32 `inactive:"+" desc:"average G value on this trial"`
 	Max       float32 `inactive:"+" desc:"maximum G value on this trial"`
-	AvgAvg    float32 `inactive:"+" desc:"running average of the Avg, integrated at ly.Act.Dt.TrlAvgTau"`
-	AvgMax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.TrlAvgTau -- used for computing AvgMaxRel, for adapting Scale"`
+	AvgAvg    float32 `inactive:"+" desc:"running average of the Avg, integrated at ly.Act.Dt.LongAvgTau"`
+	AvgMax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.LongAvgTau -- used for computing AvgMaxRel, for adapting Scale"`
 }
 
 // Init completes the initialization of values based on initially computed ones

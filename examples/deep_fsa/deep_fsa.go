@@ -72,7 +72,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":                "0.0", // both 0 better
 					"Layer.Act.Decay.Glong":              "0.0",
 					"Layer.Act.Clamp.Rate":               "120",  // 120 == 100 > 150
-					"Layer.Act.Dt.TrlAvgTau":             "20",   // 20 > higher for objrec, lvis
+					"Layer.Act.Dt.LongAvgTau":            "20",   // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
@@ -396,8 +396,8 @@ func (ss *Sim) AlphaCyc(train bool) {
 		ss.Net.WtFmDWt()
 	}
 
-	ss.Net.AlphaCycInit()
-	ss.Time.AlphaCycStart()
+	ss.Net.NewState()
+	ss.Time.NewState()
 	for qtr := 0; qtr < 4; qtr++ {
 		for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
 			ss.Net.Cycle(&ss.Time)

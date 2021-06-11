@@ -139,7 +139,7 @@ func (pj *CTCtxtPrjn) DWt() {
 		if issuper {
 			sact = sslay.SuperNeurs[si].BurstPrv
 		} else {
-			sact = slay.Neurons[si].ActQ0
+			sact = slay.Neurons[si].ActPrv
 		}
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])

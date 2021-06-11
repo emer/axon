@@ -82,7 +82,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.GABAB.GiSpike":            "10",   // 10 > 8 > 15
 					"Layer.Act.GTarg.GeMax":              "1",
 					"Layer.Learn.ActAvg.SpikeG":          "8",
-					"Layer.Learn.ActAvg.MinLrn":          "0.1",
+					"Layer.Learn.ActAvg.MinLrn":          "0.02",
 					"Layer.Learn.ActAvg.SSTau":           "40",   // 4 > 2 for 50 cyc qtr
 					"Layer.Learn.ActAvg.STau":            "10",   //
 					"Layer.Learn.ActAvg.MTau":            "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
@@ -95,7 +95,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Var":                "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":               "NoNoise", // now, no noise is better
 					"Layer.Act.Clamp.Rate":               "120",     // 180 default, 120 best here
-					"Layer.Act.Dt.TrlAvgTau":             "20",      // 20 > higher for objrec, lvis
+					"Layer.Act.Dt.LongAvgTau":            "20",      // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02",    // 0.01 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01",    // 0.005 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
@@ -206,8 +206,6 @@ type Sim struct {
 	TstCycLog   *etable.Table `view:"no-inline" desc:"testing cycle-level log data"`
 	RunLog      *etable.Table `view:"no-inline" desc:"summary log of each run"`
 	RunStats    *etable.Table `view:"no-inline" desc:"aggregate stats on all runs"`
-	PostCycs    int           `desc:"number of cycles to run after main alphacyc cycles, between stimuli"`
-	PostDecay   float32       `desc:"decay to apply at start of PostCycs"`
 	ErrLrMod    axon.LrateMod `view:"inline" desc:"learning rate modulation as function of error"`
 
 	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
@@ -284,8 +282,6 @@ func (ss *Sim) New() {
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.5
 	ss.ErrLrMod.Range.Set(0, 0.5)
-	ss.PostCycs = 0
-	ss.PostDecay = 0.2
 	ss.Params = ParamSets
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
 	for i := 0; i < 100; i++ {
@@ -297,8 +293,6 @@ func (ss *Sim) New() {
 	ss.TestInterval = 500
 	ss.LayStatNms = []string{"Hidden1", "Hidden2", "Output"}
 	ss.Time.Defaults()
-	ss.Time.CycPerQtr = 50 // 50 > 40 > 30 > 25..
-	ss.Time.PlusCyc = 50   // 50 > 40 > 25
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -443,12 +437,12 @@ func (ss *Sim) UpdateView(train bool) {
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Running the Network, starting bottom-up..
 
-// AlphaCyc runs one alpha-cycle (100 msec, 4 quarters)			 of processing.
+// ThetaCyc runs one theta cycle (200 msec) of processing.
 // External inputs must have already been applied prior to calling,
 // using ApplyExt method on relevant layers (see TrainTrial, TestTrial).
 // If train is true, then learning DWt or WtFmDWt calls are made.
-// Handles netview updating within scope of AlphaCycle
-func (ss *Sim) AlphaCyc(train bool) {
+// Handles netview updating within scope, and calls TrainStats()
+func (ss *Sim) ThetaCyc(train bool) {
 	// ss.Win.PollEvents() // this can be used instead of running in a separate goroutine
 	viewUpdt := ss.TrainUpdt
 	if !train {
@@ -463,41 +457,71 @@ func (ss *Sim) AlphaCyc(train bool) {
 		ss.Net.WtFmDWt()
 	}
 
-	ss.Net.AlphaCycInit()
-	ss.Time.AlphaCycStart()
-	for qtr := 0; qtr < 4; qtr++ {
-		mxcyc := ss.Time.CurCycles()
-		for cyc := 0; cyc < mxcyc; cyc++ {
-			ss.Net.Cycle(&ss.Time)
-			if !train {
-				ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
-			}
-			ss.Time.CycleInc()
-			if ss.ViewOn {
-				switch viewUpdt {
-				case axon.Cycle:
-					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
-						ss.UpdateView(train)
-					}
-				case axon.FastSpike:
-					if (cyc+1)%10 == 0 {
-						ss.UpdateView(train)
-					}
-				}
-			}
+	minusCyc := 150
+	plusCyc := 50
+
+	ss.Net.NewState()
+	ss.Time.NewState()
+	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
+		ss.Net.Cycle(&ss.Time)
+		if !train {
+			ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
 		}
-		ss.Net.QuarterFinal(&ss.Time)
-		ss.Time.QuarterInc()
+		ss.Time.CycleInc()
+		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
+		case 50:
+			ss.Net.ActSt1(&ss.Time)
+		case 100:
+			ss.Net.ActSt2(&ss.Time)
+		}
 		if ss.ViewOn {
-			switch {
-			case viewUpdt <= axon.Quarter:
+			switch viewUpdt {
+			case axon.Cycle:
 				ss.UpdateView(train)
-			case viewUpdt == axon.Phase:
-				if qtr >= 2 {
+			case axon.FastSpike:
+				if ss.Time.Cycle%10 == 0 {
+					ss.UpdateView(train)
+				}
+			case axon.GammaCycle:
+				if ss.Time.Cycle%25 == 0 {
+					ss.UpdateView(train)
+				}
+			case axon.AlphaCycle:
+				if ss.Time.Cycle%100 == 0 {
 					ss.UpdateView(train)
 				}
 			}
 		}
+	}
+	ss.Net.MinusPhase(&ss.Time)
+	ss.Time.NewPhase()
+	if viewUpdt == axon.Phase {
+		ss.UpdateView(train)
+	}
+	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
+		ss.Net.Cycle(&ss.Time)
+		if !train {
+			ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+		}
+		ss.Time.CycleInc()
+		if ss.ViewOn {
+			switch viewUpdt {
+			case axon.Cycle:
+				ss.UpdateView(train)
+			case axon.FastSpike:
+				if ss.Time.Cycle%10 == 0 {
+					ss.UpdateView(train)
+				}
+			case axon.GammaCycle:
+				if ss.Time.Cycle%25 == 0 {
+					ss.UpdateView(train)
+				}
+			}
+		}
+	}
+	ss.Net.PlusPhase(&ss.Time)
+	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle {
+		ss.UpdateView(train)
 	}
 
 	ss.TrialStats(train)
@@ -508,29 +532,6 @@ func (ss *Sim) AlphaCyc(train bool) {
 	}
 	if ss.ViewOn && viewUpdt == axon.AlphaCycle {
 		ss.UpdateView(train)
-	}
-
-	// include extra off cycles at end
-	if ss.PostCycs > 0 {
-		ss.Net.InitExt()
-		ss.Net.DecayState(ss.PostDecay)
-		mxcyc := ss.PostCycs
-		for cyc := 0; cyc < mxcyc; cyc++ {
-			ss.Net.Cycle(&ss.Time)
-			ss.Time.CycleInc()
-			if ss.ViewOn {
-				switch viewUpdt {
-				case axon.Cycle:
-					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
-						ss.UpdateView(train)
-					}
-				case axon.FastSpike:
-					if (cyc+1)%10 == 0 {
-						ss.UpdateView(train)
-					}
-				}
-			}
-		}
 	}
 
 	if ss.TstCycPlot != nil && !train {
@@ -588,14 +589,8 @@ func (ss *Sim) TrainTrial() {
 		}
 	}
 
-	// ly := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
-	// ly.SetType(emer.Compare)
-	// ss.ApplyInputs(&ss.TrainEnv)
-	// ss.AlphaCyc(false) // test
-	// ly.SetType(emer.Target)
 	ss.ApplyInputs(&ss.TrainEnv)
-	ss.AlphaCyc(true) // train
-	// ss.TrialStats(true) // now in alphacyc
+	ss.ThetaCyc(true)
 }
 
 // RunEnd is called at the end of a run -- save weights, record final log, etc here
@@ -742,8 +737,7 @@ func (ss *Sim) TestTrial(returnOnChg bool) {
 	}
 
 	ss.ApplyInputs(&ss.TestEnv)
-	ss.AlphaCyc(false) // !train
-	// ss.TrialStats(false) // now in AlphaCyc
+	ss.ThetaCyc(false) // !train
 	ss.LogTstTrl(ss.TstTrlLog)
 	if ss.NetData != nil { // offline record net data from testing, just final state
 		ss.NetData.Record(ss.Counters(false))
@@ -756,8 +750,7 @@ func (ss *Sim) TestItem(idx int) {
 	ss.TestEnv.Trial.Cur = idx
 	ss.TestEnv.SetTrialName()
 	ss.ApplyInputs(&ss.TestEnv)
-	ss.AlphaCyc(false) // !train
-	// ss.TrialStats(false) // !accumulate
+	ss.ThetaCyc(false) // !train
 	ss.TestEnv.Trial.Cur = cur
 }
 

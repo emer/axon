@@ -95,10 +95,10 @@ func (nt *Network) SynVarProps() map[string]string {
 //  They just call the corresponding Impl method using the AxonNetwork interface
 //  so that other network types can specialize any of these entry points.
 
-// AlphaCycInit handles all initialization at start of new input pattern, including computing
+// NewState handles all initialization at start of new input pattern, including computing
 // input scaling from running average activation etc.
-func (nt *Network) AlphaCycInit() {
-	nt.EmerNet.(AxonNetwork).AlphaCycInitImpl()
+func (nt *Network) NewState() {
+	nt.EmerNet.(AxonNetwork).NewStateImpl()
 }
 
 // Cycle runs one cycle of activation updating:
@@ -122,9 +122,34 @@ func (nt *Network) CyclePost(ltime *Time) {
 	nt.EmerNet.(AxonNetwork).CyclePostImpl(ltime)
 }
 
-// QuarterFinal does updating after end of a quarter
-func (nt *Network) QuarterFinal(ltime *Time) {
-	nt.EmerNet.(AxonNetwork).QuarterFinalImpl(ltime)
+// MinusPhase does updating after end of minus phase
+func (nt *Network) MinusPhase(ltime *Time) {
+	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ltime)
+}
+
+// PlusPhase does updating after end of plus phase
+func (nt *Network) PlusPhase(ltime *Time) {
+	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ltime)
+}
+
+// ActSt1 saves current acts into ActSt1
+func (nt *Network) ActSt1(ltime *Time) {
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(AxonLayer).ActSt1(ltime)
+	}
+}
+
+// ActSt2 saves current acts into ActSt2
+func (nt *Network) ActSt2(ltime *Time) {
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(AxonLayer).ActSt2(ltime)
+	}
 }
 
 // DWt computes the weight change (learning) based on current running-average activation values
@@ -165,7 +190,7 @@ func (nt *Network) InitWts() {
 
 // DecayState decays activation state by given proportion
 // e.g., 1 = decay completely, and 0 = decay not at all
-// This is called automatically in AlphaCycInit, but is avail
+// This is called automatically in NewState, but is avail
 // here for ad-hoc decay cases.
 func (nt *Network) DecayState(decay float32) {
 	for _, ly := range nt.Layers {
@@ -208,14 +233,13 @@ func (nt *Network) UpdateExtFlags() {
 	}
 }
 
-// AlphaCycInitImpl handles all initialization at start of new input pattern, including computing
-// input scaling from running average activation etc.
-func (nt *Network) AlphaCycInitImpl() {
+// NewStateImpl handles all initialization at start of new input state
+func (nt *Network) NewStateImpl() {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).AlphaCycInit()
+		ly.(AxonLayer).NewState()
 	}
 }
 
@@ -273,9 +297,14 @@ func (nt *Network) CyclePostImpl(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.CyclePost(ltime) }, "CyclePost")
 }
 
-// QuarterFinalImpl does updating after end of a quarter
-func (nt *Network) QuarterFinalImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.QuarterFinal(ltime) }, "QuarterFinal")
+// MinusPhaseImpl does updating after end of minus phase
+func (nt *Network) MinusPhaseImpl(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.MinusPhase(ltime) }, "MinusPhase")
+}
+
+// PlusPhaseImpl does updating after end of plus phase
+func (nt *Network) PlusPhaseImpl(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.PlusPhase(ltime) }, "PlusPhase")
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

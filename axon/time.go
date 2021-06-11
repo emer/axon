@@ -5,21 +5,19 @@
 package axon
 
 import (
-	"github.com/goki/ki/bitflag"
 	"github.com/goki/ki/kit"
 )
 
-// axon.Time contains all the timing state and parameter information for running a model
+// axon.Time contains all the timing state and parameter information for running a model.
+//
 type Time struct {
-	Time      float32 `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
-	Cycle     int     `desc:"cycle counter: number of iterations of activation updating (settling) on the current alpha-cycle (100 msec / 10 Hz) trial -- this counts time sequentially through the entire trial, typically from 0 to 99 cycles"`
-	CycleTot  int     `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time"`
-	Quarter   int     `desc:"[0-3] current gamma-frequency (25 msec / 40 Hz) quarter of alpha-cycle (100 msec / 10 Hz) trial being processed.  Due to 0-based indexing, the first quarter is 0, second is 1, etc -- the plus phase final quarter is 3."`
-	PlusPhase bool    `desc:"true if this is the plus phase (final quarter = 3) -- else minus phase"`
+	Time       float32 `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
+	Cycle      int     `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
+	PhaseCycle int     `desc:"cycle within current phase -- minus or plus"`
+	CycleTot   int     `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time"`
+	PlusPhase  bool    `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
 
 	TimePerCyc float32 `def:"0.001" desc:"amount of time to increment per cycle"`
-	CycPerQtr  int     `desc:"number of cycles per quarter to run -- 25 = standard 100 msec alpha-cycle, 50 = theta cycle -- increase as needed for larger networks"`
-	PlusCyc    int     `def:"50" desc:"number of cycles in final plus phase"`
 }
 
 // NewTime returns a new Time struct with default parameters
@@ -32,120 +30,38 @@ func NewTime() *Time {
 // Defaults sets default values
 func (tm *Time) Defaults() {
 	tm.TimePerCyc = 0.001
-	tm.CycPerQtr = 50
-	tm.PlusCyc = 50
 }
 
 // Reset resets the counters all back to zero
 func (tm *Time) Reset() {
 	tm.Time = 0
 	tm.Cycle = 0
+	tm.PhaseCycle = 0
 	tm.CycleTot = 0
-	tm.Quarter = 0
 	tm.PlusPhase = false
-	if tm.CycPerQtr == 0 {
+	if tm.TimePerCyc == 0 {
 		tm.Defaults()
 	}
 }
 
-// AlphaCycStart starts a new alpha-cycle (set of 4 quarters)
-func (tm *Time) AlphaCycStart() {
+// NewState resets cycle at start of new state of processing
+func (tm *Time) NewState() {
 	tm.Cycle = 0
-	tm.Quarter = 0
+	tm.PhaseCycle = 0
+}
+
+// NewPhase updates from minus phase to plus phase and resets PhaseCycle
+func (tm *Time) NewPhase() {
+	tm.PlusPhase = true
+	tm.PhaseCycle = 0
 }
 
 // CycleInc increments at the cycle level
 func (tm *Time) CycleInc() {
 	tm.Cycle++
+	tm.PhaseCycle++
 	tm.CycleTot++
 	tm.Time += tm.TimePerCyc
-}
-
-// QuarterInc increments at the quarter level, updating Quarter and PlusPhase
-func (tm *Time) QuarterInc() {
-	tm.Quarter++
-	if tm.Quarter == 3 {
-		tm.PlusPhase = true
-	} else {
-		tm.PlusPhase = false
-	}
-}
-
-// QuarterCycle returns the number of cycles into current quarter
-func (tm *Time) QuarterCycle() int {
-	qmin := tm.Quarter * tm.CycPerQtr
-	return tm.Cycle - qmin
-}
-
-// CurCycles returns the number of cycles to run for current quarter
-func (tm *Time) CurCycles() int {
-	if tm.Quarter == 3 {
-		return tm.PlusCyc
-	}
-	return tm.CycPerQtr
-}
-
-// TotalCycles returns the total number of cycles: 3 * CycPerQtr + PlusCyc
-func (tm *Time) TotalCycles() int {
-	return 3*tm.CycPerQtr + tm.PlusCyc
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Quarters
-
-// Quarters are the different alpha trial quarters, as a bitflag,
-// for use in relevant timing parameters where quarters need to be specified.
-// The Q1..4 defined values are integer *bit positions* -- use Set, Has etc methods
-// to set bits from these bit positions.
-type Quarters int32
-
-//go:generate stringer -type=Quarters
-
-var KiT_Quarters = kit.Enums.AddEnum(QuartersN, kit.BitFlag, nil)
-
-func (qt Quarters) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(qt) }
-func (qt *Quarters) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(qt, b) }
-
-// The quarters
-const (
-	// Q1 is the first quarter, which, due to 0-based indexing, shows up as Quarter = 0 in timer
-	Q1 Quarters = iota
-	Q2
-	Q3
-	Q4
-	QuartersN
-)
-
-// Set sets given quarter bit (adds to any existing) (qtr = 0..3 = same as Quarters)
-func (qt *Quarters) Set(qtr int) {
-	bitflag.Set32((*int32)(qt), qtr)
-}
-
-// Clear clears given quarter bit (qtr = 0..3 = same as Quarters)
-func (qt *Quarters) Clear(qtr int) {
-	bitflag.Clear32((*int32)(qt), qtr)
-}
-
-// Has returns true if the given quarter is set (qtr = 0..3 = same as Quarters)
-func (qt Quarters) Has(qtr int) bool {
-	return bitflag.Has32(int32(qt), qtr)
-}
-
-// HasNext returns true if the quarter after given quarter is set.
-// This wraps around from Q4 to Q1.  (qtr = 0..3 = same as Quarters)
-func (qt Quarters) HasNext(qtr int) bool {
-	nqt := (qtr + 1) % 4
-	return qt.Has(nqt)
-}
-
-// HasPrev returns true if the quarter before given quarter is set.
-// This wraps around from Q1 to Q4.  (qtr = 0..3 = same as Quarters)
-func (qt Quarters) HasPrev(qtr int) bool {
-	pqt := (qtr - 1)
-	if pqt < 0 {
-		pqt += 4
-	}
-	return qt.Has(pqt)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -175,15 +91,14 @@ const (
 
 	// FastSpike is typically 10 cycles = 10 msec (100hz) = the fastest spiking time
 	// generally observed in the brain.  This can be useful for visualizing updates
-	// at a granularity in between Cycle and Quarter.
+	// at a granularity in between Cycle and GammaCycle.
 	FastSpike
 
-	// Quarter is typically 25 cycles = 25 msec (40hz) = 1/4 of the 100 msec alpha trial
-	// This is also the GammaCycle (gamma = 40hz), but we use Quarter functionally
-	// by virtue of there being 4 per AlphaCycle.
-	Quarter
+	// GammaCycle is typically 25 cycles = 25 msec (40hz)
+	GammaCycle
 
-	// Phase is either Minus or Plus phase -- Minus = first 3 quarters, Plus = last quarter
+	// Phase is either Minus or Plus phase, where plus phase is bursting / outcome
+	// that drives positive learning relative to prediction in minus phase.
 	Phase
 
 	// BetaCycle is typically 50 cycles = 50 msec (20 hz) = one beta-frequency cycle.
@@ -191,8 +106,7 @@ const (
 	// occurs at this frequency.
 	BetaCycle
 
-	// AlphaCycle is typically 100 cycles = 100 msec (10 hz) = one alpha-frequency cycle,
-	// which is the fundamental unit of learning in posterior cortex.
+	// AlphaCycle is typically 100 cycles = 100 msec (10 hz) = one alpha-frequency cycle.
 	AlphaCycle
 
 	// ThetaCycle is typically 200 cycles = 200 msec (5 hz) = two alpha-frequency cycles.
@@ -208,7 +122,7 @@ const (
 
 	// Trial is one unit of behavior in an experiment -- it is typically environmentally
 	// defined instead of endogenously defined in terms of basic brain rhythms.
-	// In the minimal case it could be one AlphaCycle, but could be multiple, and
+	// In the minimal case it could be one ThetaCycle, but could be multiple, and
 	// could encompass multiple Events (e.g., one event is fixation, next is stimulus,
 	// last is response)
 	Trial

@@ -11,9 +11,9 @@ import (
 
 // AxonNetwork defines the essential algorithmic API for Axon, at the network level.
 // These are the methods that the user calls in their Sim code:
-// * AlphaCycInit
+// * NewState
 // * Cycle
-// * QuarterFinal
+// * MinusPhase, PlusPhase
 // * DWt
 // * WtFmDwt
 // Because we don't want to have to force the user to use the interface cast in calling
@@ -34,9 +34,9 @@ type AxonNetwork interface {
 	// to all the basic stuff
 	AsAxon() *Network
 
-	// AlphaCycInitImpl handles all initialization at start of new input pattern, including computing
+	// NewStateImpl handles all initialization at start of new input pattern, including computing
 	// input scaling from running average activation etc.
-	AlphaCycInitImpl()
+	NewStateImpl()
 
 	// CycleImpl runs one cycle of activation updating:
 	// * Sends Ge increments from sending to receiving layers
@@ -54,8 +54,11 @@ type AxonNetwork interface {
 	// For example, sending a neuromodulatory signal such as dopamine.
 	CyclePostImpl(ltime *Time)
 
-	// QuarterFinalImpl does updating after end of a quarter
-	QuarterFinalImpl(ltime *Time)
+	// MinusPhaseImpl does updating after minus phase
+	MinusPhaseImpl(ltime *Time)
+
+	// PlusPhaseImpl does updating after plus phase
+	PlusPhaseImpl(ltime *Time)
 
 	// DWtImpl computes the weight change (learning) based on current
 	// running-average activation values
@@ -127,10 +130,10 @@ type AxonLayer interface {
 	// Used to prevent adapting of inhibition or TrgAvg values.
 	IsInput() bool
 
-	// AlphaCycInit handles all initialization at start of new input pattern,
+	// NewState handles all initialization at start of new input pattern,
 	// including computing netinput scaling from running average activation etc.
 	// should already have presented the external input to the network at this point.
-	AlphaCycInit()
+	NewState()
 
 	// InitGScale computes the initial scaling factor for synaptic input conductances G,
 	// stored in GScale.Scale, based on sending layer initial activation.
@@ -142,7 +145,7 @@ type AxonLayer interface {
 	// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay)
 	DecayState(decay float32)
 
-	// RateClamp hard-clamps the activations in the layer -- called during AlphaCycInit
+	// RateClamp hard-clamps the activations in the layer -- called during NewState
 	// for hard-clamped Input layers
 	RateClamp()
 
@@ -175,11 +178,17 @@ type AxonLayer interface {
 	// For example, sending a neuromodulatory signal such as dopamine.
 	CyclePost(ltime *Time)
 
-	//////////////////////////////////////////////////////////////////////////////////////
-	//  Quarter Methods
+	// MinusPhase does updating after end of minus phase
+	MinusPhase(ltime *Time)
 
-	// QuarterFinal does updating after end of a quarter
-	QuarterFinal(ltime *Time)
+	// PlusPhase does updating after end of plus phase
+	PlusPhase(ltime *Time)
+
+	// ActSt1 saves current activations into ActSt1
+	ActSt1(ltime *Time)
+
+	// ActSt2 saves current activations into ActSt2
+	ActSt2(ltime *Time)
 
 	// CosDiffFmActs computes the cosine difference in activation state
 	// between minus and plus phases.

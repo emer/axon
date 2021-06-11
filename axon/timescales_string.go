@@ -15,7 +15,7 @@ func _() {
 	var x [1]struct{}
 	_ = x[Cycle-0]
 	_ = x[FastSpike-1]
-	_ = x[Quarter-2]
+	_ = x[GammaCycle-2]
 	_ = x[Phase-3]
 	_ = x[BetaCycle-4]
 	_ = x[AlphaCycle-5]
@@ -34,9 +34,9 @@ func _() {
 	_ = x[TimeScalesN-18]
 }
 
-const _TimeScales_name = "CycleFastSpikeQuarterPhaseBetaCycleAlphaCycleThetaCycleEventTrialTickSequenceConditionBlockEpochRunExptSceneEpisodeTimeScalesN"
+const _TimeScales_name = "CycleFastSpikeGammaCyclePhaseBetaCycleAlphaCycleThetaCycleEventTrialTickSequenceConditionBlockEpochRunExptSceneEpisodeTimeScalesN"
 
-var _TimeScales_index = [...]uint8{0, 5, 14, 21, 26, 35, 45, 55, 60, 65, 69, 77, 86, 91, 96, 99, 103, 108, 115, 126}
+var _TimeScales_index = [...]uint8{0, 5, 14, 24, 29, 38, 48, 58, 63, 68, 72, 80, 89, 94, 99, 102, 106, 111, 118, 129}
 
 func (i TimeScales) String() string {
 	if i < 0 || i >= TimeScales(len(_TimeScales_index)-1) {

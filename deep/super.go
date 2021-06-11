@@ -16,13 +16,11 @@ import (
 // BurstParams determine how the 5IB Burst activation is computed from
 // standard Act activation values in SuperLayer -- thresholded.
 type BurstParams struct {
-	BurstQtr axon.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines, 32 bit versions."`
-	ThrRel   float32       `max:"1" def:"0.1,0.2,0.5" desc:"Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds."`
-	ThrAbs   float32       `min:"0" max:"1" def:"0.1,0.2,0.5" desc:"Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  Overall effective threshold is MAX of relative and absolute thresholds."`
+	ThrRel float32 `max:"1" def:"0.1,0.2,0.5" desc:"Relative component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  This is the distance between the average and maximum activation values within layer (e.g., 0 = average, 1 = max).  Overall effective threshold is MAX of relative and absolute thresholds."`
+	ThrAbs float32 `min:"0" max:"1" def:"0.1,0.2,0.5" desc:"Absolute component of threshold on superficial activation value, below which it does not drive Burst (and above which, Burst = Act).  Overall effective threshold is MAX of relative and absolute thresholds."`
 }
 
 func (db *BurstParams) Defaults() {
-	db.BurstQtr.Set(int(axon.Q4))
 	db.ThrRel = 0.1
 	db.ThrAbs = 0.1
 }
@@ -146,15 +144,10 @@ func (ly *SuperLayer) ActFmG(ltime *axon.Time) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Burst -- computed in CyclePost
 
-// QuarterFinal does updating after end of a quarter
-func (ly *SuperLayer) QuarterFinal(ltime *axon.Time) {
-	ly.TopoInhibLayer.QuarterFinal(ltime)
-	if ly.Burst.BurstQtr.HasNext(ltime.Quarter) {
-		// if will be updating next quarter, save just prior
-		// this logic works for all cases, but e.g., BurstPrv doesn't update
-		// until end of minus phase for Q4 BurstQtr
-		ly.BurstPrv()
-	}
+// MinusPhase does updating after end of minus phase
+func (ly *SuperLayer) MinusPhase(ltime *axon.Time) {
+	ly.TopoInhibLayer.MinusPhase(ltime)
+	ly.BurstPrv()
 }
 
 // BurstPrv saves Burst as BurstPrv

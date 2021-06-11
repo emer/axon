@@ -25,7 +25,7 @@ import (
 // This is included in axon.Layer to drive the computation.
 type ActParams struct {
 	Spike   SpikeParams       `view:"inline" desc:"Spiking function parameters"`
-	Init    ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized at start of trial with InitActs, or targets for decay."`
+	Init    ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState"`
 	Decay   DecayParams       `view:"inline" desc:"amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora) "`
 	Dt      DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
 	Gbar    chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
@@ -77,7 +77,7 @@ func (ac *ActParams) Update() {
 // in proportion to given decay parameter.  Special case values
 // such as Glong and KNa are also decayed with their
 // separately parameterized values.
-// Called with ac.Decay.Act by Layer during AlphaCycInit
+// Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
 	nrn.ISI = -1
@@ -155,13 +155,13 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	ac.InitActQs(nrn)
 }
 
-// InitActQs initializes quarter-based activation states in neuron (ActQ0-2, ActM, ActP, ActDif)
+// InitActQs initializes quarter-based activation states in neuron (ActPrv-2, ActM, ActP, ActDif)
 // Called from InitActs, which is called from InitWts, but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitActQs(nrn *Neuron) {
-	nrn.ActQ0 = 0
-	nrn.ActQ1 = 0
-	nrn.ActQ2 = 0
+	nrn.ActPrv = 0
+	nrn.ActSt1 = 0
+	nrn.ActSt2 = 0
 	nrn.ActM = 0
 	nrn.ActP = 0
 	nrn.ActDif = 0
@@ -417,7 +417,7 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 //  ActInitParams
 
 // ActInitParams are initial values for key network state variables.
-// Initialized at start of trial with Init_Acts or DecayState.
+// Initialized in InitActs called by InitWts, and provides target values for DecayState.
 type ActInitParams struct {
 	Vm  float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
 	Act float32 `def:"0" desc:"initial activation value -- typically 0"`
@@ -438,10 +438,11 @@ func (ai *ActInitParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  DecayParams
 
-// DecayParams control the decay of activation state at start of every AlphaCycle
+// DecayParams control the decay of activation state in the DecayState function
+// called in NewState when a new state is to be processed.
 type DecayParams struct {
-	Act   float32 `def:"0,0.5,1" max:"1" min:"0" desc:"proportion to decay most activation state variables toward initial values at start of every AlphaCycle (except those controlled separately below) -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
-	Glong float32 `def:"0,0.7" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow each new trial to start afresh -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
+	Act   float32 `def:"0,0.2,0.5,1" max:"1" min:"0" desc:"proportion to decay most activation state variables toward initial values at start of every AlphaCycle (except those controlled separately below) -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
+	Glong float32 `def:"0,0.6" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow a fresh start -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
 	KNa   float32 `max:"1" min:"0" desc:"decay of Kna adaptation values -- has a separate decay because often useful to have this not decay at all even if decay is on."`
 }
 
@@ -449,8 +450,8 @@ func (ai *DecayParams) Update() {
 }
 
 func (ai *DecayParams) Defaults() {
-	ai.Act = 0
-	ai.Glong = 0.7
+	ai.Act = 0.2
+	ai.Glong = 0.6
 	ai.KNa = 0
 }
 
@@ -459,13 +460,13 @@ func (ai *DecayParams) Defaults() {
 
 // DtParams are time and rate constants for temporal derivatives in Axon (Vm, G)
 type DtParams struct {
-	Integ     float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
-	VmTau     float32 `def:"2.81" min:"1" desc:"membrane potential time constant in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
-	VmDendTau float32 `def:"5" min:"1" desc:"dendritic membrane potential integration time constant"`
-	GeTau     float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
-	GiTau     float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
-	MTau      float32 `def:"20" min:"1" desc:"time constant for continuously updating the minus phase ActM value from the short AvgS value, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (roughly, how long it takes for value to change significantly -- 1.4x the half-life), "`
-	TrlAvgTau float32 `def:"20" desc:"time constant for integrating trial-wise slow averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg in trials (roughly, how long it takes for value to change significantly) -- set lower for smaller models"`
+	Integ      float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
+	VmTau      float32 `def:"2.81" min:"1" desc:"membrane potential time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
+	VmDendTau  float32 `def:"5" min:"1" desc:"dendritic membrane potential integration time constant"`
+	GeTau      float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
+	GiTau      float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
+	MTau       float32 `def:"20" min:"1" desc:"time constant for continuously updating the minus phase ActM value from the short AvgS value, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
+	LongAvgTau float32 `def:"20" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg in trials (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
 
 	VmDt     float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
@@ -481,7 +482,7 @@ func (dp *DtParams) Update() {
 	dp.GeDt = dp.Integ / dp.GeTau
 	dp.GiDt = dp.Integ / dp.GiTau
 	dp.MDt = dp.Integ / dp.MTau
-	dp.TrlAvgDt = 1 / dp.TrlAvgTau
+	dp.TrlAvgDt = 1 / dp.LongAvgTau
 }
 
 func (dp *DtParams) Defaults() {
@@ -491,7 +492,7 @@ func (dp *DtParams) Defaults() {
 	dp.GeTau = 5
 	dp.GiTau = 7
 	dp.MTau = 20 // 20 for 50 cycle, 10 for 25 cycle qtr
-	dp.TrlAvgTau = 20
+	dp.LongAvgTau = 20
 	dp.Update()
 }
 
@@ -705,7 +706,7 @@ type PrjnScaleParams struct {
 	ScaleLrate float32 `viewif:"Adapt" def:"0.5" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors -- fastest value with some smoothing at .5 works well."`
 	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
 	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.8 = 80% lower than target) -- only once activations move outside this tolerance are scale values adapted"`
-	AvgTau     float32 `def:"500" desc:"time constant for integrating projection-level averages for this scaling process: Prjn.GScale.AvgAvg, AvgMax (roughly, how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
+	AvgTau     float32 `def:"500" desc:"time constant for integrating projection-level averages for this scaling process: Prjn.GScale.AvgAvg, AvgMax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
 
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }

@@ -73,18 +73,18 @@ func (ly *Layer) UpdateParams() {
 
 // ActAvgVals are running-average activation levels used for netinput scaling and adaptive inhibition
 type ActAvgVals struct {
-	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.TrlAvgTau -- used for adapting inhibition relative to target level"`
-	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.TrlAvgTau"`
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.TrlAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
+	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
+	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
+	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
+	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
 }
 
 // CosDiffStats holds cosine-difference statistics at the layer level
 type CosDiffStats struct {
-	Cos float32 `inactive:"+" desc:"cosine (normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CosDiffFmActs at end of QuarterFinal for quarter = 3"`
-	Avg float32 `inactive:"+" desc:"running average of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal"`
-	Var float32 `inactive:"+" desc:"running variance of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in QuarterFinal, used for modulating overall learning rate"`
+	Cos float32 `inactive:"+" desc:"cosine (normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CosDiffFmActs called by PlusPhase"`
+	Avg float32 `inactive:"+" desc:"running average of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in PlusPhase"`
+	Var float32 `inactive:"+" desc:"running variance of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in PlusPhase"`
 }
 
 func (cd *CosDiffStats) Init() {
@@ -956,10 +956,10 @@ func (ly *Layer) UpdateExtFlags() {
 	}
 }
 
-// AlphaCycInit handles all initialization at start of new input pattern, including computing
+// NewState handles all initialization at start of new input pattern, including computing
 // input scaling from running average activation etc.
 // should already have presented the external input to the network at this point.
-func (ly *Layer) AlphaCycInit() {
+func (ly *Layer) NewState() {
 	pl := &ly.Pools[0]
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.TrlAvgDt)
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.TrlAvgDt)
@@ -969,7 +969,7 @@ func (ly *Layer) AlphaCycInit() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActQ0 = nrn.ActP
+		nrn.ActPrv = nrn.ActP
 	}
 	if ly.Act.Noise.Type != NoNoise && ly.Act.Noise.Fixed && ly.Act.Noise.Dist != erand.Mean {
 		ly.AxonLay.GenNoise()
@@ -1122,7 +1122,7 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 func (ly *Layer) GFmIncNeur(ltime *Time) {
 	cyc := ltime.Cycle // for bursting
 	if ly.AxonLay.IsTarget() {
-		cyc = ltime.QuarterCycle()
+		cyc = ltime.PhaseCycle
 	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1233,7 +1233,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.AvgsFmAct(nrn)
-		if ltime.Quarter < 3 {
+		if !ltime.PlusPhase {
 			nrn.ActM += ly.Act.Dt.MDt * (nrn.AvgS - nrn.ActM)
 			nrn.GeM += ly.Act.Dt.MDt * (nrn.Ge - nrn.GeM)
 			nrn.GiM += ly.Act.Dt.MDt * (nrn.GiSyn - nrn.GiM)
@@ -1297,49 +1297,67 @@ func (ly *Layer) CyclePost(ltime *Time) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  Quarter
+//  Phase-level
 
-// QuarterFinal does updating after end of a quarter
-func (ly *Layer) QuarterFinal(ltime *Time) {
+// MinusPhase does updating at end of the minus phase
+func (ly *Layer) MinusPhase(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		switch ltime.Quarter {
-		case 2:
-			pl.ActM = pl.Inhib.Act
-		case 3:
-			pl.ActP = pl.Inhib.Act
-		}
+		pl.ActM = pl.Inhib.Act
 	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		switch ltime.Quarter {
-		case 0:
-			nrn.ActQ1 = nrn.Act
-		case 1:
-			nrn.ActQ2 = nrn.Act
-		case 2:
-			// ActM  now set in ActFmG
-			// nrn.ActM = nrn.AvgM           // using integrated average to this point
-			if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
-				nrn.Ext = nrn.Targ
-				nrn.SetFlag(NeurHasExt)
-				nrn.ISI = -1 // get fresh update on plus phase output acts
-				nrn.ISIAvg = -1
-			}
-		case 3:
-			nrn.ActP = nrn.Act
-			nrn.ActDif = nrn.ActP - nrn.ActM
-			nrn.ActAvg += ly.Act.Dt.TrlAvgDt * (nrn.ActM - nrn.ActAvg)
+		nrn.ActM = nrn.Act
+		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
+			nrn.Ext = nrn.Targ
+			nrn.SetFlag(NeurHasExt)
+			nrn.ISI = -1 // get fresh update on plus phase output acts
+			nrn.ISIAvg = -1
 		}
 	}
-	switch ltime.Quarter {
-	case 2:
-		ly.AvgGeM(ltime)
-	case 3:
-		ly.AxonLay.CosDiffFmActs()
+	ly.AvgGeM(ltime)
+}
+
+// PlusPhase does updating at end of the plus phase
+func (ly *Layer) PlusPhase(ltime *Time) {
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.ActP = pl.Inhib.Act
+	}
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.ActP = nrn.Act
+		nrn.ActDif = nrn.ActP - nrn.ActM
+		nrn.ActAvg += ly.Act.Dt.TrlAvgDt * (nrn.ActM - nrn.ActAvg)
+	}
+	ly.AxonLay.CosDiffFmActs()
+}
+
+// ActSt1 saves current activation state in ActSt1 variables
+func (ly *Layer) ActSt1(ltime *Time) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.ActSt1 = nrn.Act
+	}
+}
+
+// ActSt2 saves current activation state in ActSt2 variables
+func (ly *Layer) ActSt2(ltime *Time) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.ActSt2 = nrn.Act
 	}
 }
 

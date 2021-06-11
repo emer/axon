@@ -90,7 +90,7 @@ func TestMakeNet(t *testing.T) {
 	TestNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
 	TestNet.Build()
 	TestNet.InitWts()
-	TestNet.AlphaCycInit() // get GScale
+	TestNet.NewState() // get GScale
 
 	// var buf bytes.Buffer
 	// TestNet.WriteWtsJSON(&buf)
@@ -164,8 +164,8 @@ func TestNetAct(t *testing.T) {
 		inLay.ApplyExt(inpat)
 		outLay.ApplyExt(inpat)
 
-		TestNet.AlphaCycInit()
-		ltime.AlphaCycStart()
+		TestNet.NewState()
+		ltime.NewState()
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < ltime.CycPerQtr; cyc++ {
 				TestNet.Cycle(ltime)
@@ -182,8 +182,7 @@ func TestNetAct(t *testing.T) {
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, cyc, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 				}
 			}
-			TestNet.QuarterFinal(ltime)
-			ltime.QuarterInc()
+			TestNet.MinusPhase(ltime)
 
 			if printCycs && printQtrs {
 				fmt.Printf("=============================\n")
@@ -323,8 +322,8 @@ func TestNetLearn(t *testing.T) {
 			inLay.ApplyExt(inpat)
 			outLay.ApplyExt(inpat)
 
-			TestNet.AlphaCycInit()
-			ltime.AlphaCycStart()
+			TestNet.NewState()
+			ltime.NewState()
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < ltime.CycPerQtr; cyc++ {
 					TestNet.Cycle(ltime)
@@ -345,8 +344,7 @@ func TestNetLearn(t *testing.T) {
 					}
 
 				}
-				TestNet.QuarterFinal(ltime)
-				ltime.QuarterInc()
+				TestNet.MinusPhase(ltime)
 
 				hidLay.UnitVals(&hidAvgS, "AvgS")
 				hidLay.UnitVals(&hidAvgM, "AvgM")

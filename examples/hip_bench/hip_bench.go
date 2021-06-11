@@ -771,7 +771,7 @@ func (ss *Sim) MemStats(train bool) {
 	trgOffN := 0.0
 	actMi, _ := ecout.UnitVarIdx("ActM")
 	targi, _ := ecout.UnitVarIdx("Targ")
-	actQ1i, _ := ecout.UnitVarIdx("ActQ1")
+	actQ1i, _ := ecout.UnitVarIdx("ActSt1")
 	for ni := 0; ni < nn; ni++ {
 		actm := ecout.UnitVal1D(actMi, ni)
 		trg := ecout.UnitVal1D(targi, ni) // full pattern target

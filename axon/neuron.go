@@ -45,15 +45,15 @@ type Neuron struct {
 	AvgSLrn float32 `desc:"short time-scale activation average that is used for learning -- typically includes a small contribution from AvgMLrn in addition to mostly AvgS, as determined by LrnActAvgParams.LrnM -- important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- AvgS is subject to thresholding prior to mixing xo low values become zero"`
 	AvgMLrn float32 `desc:"medium time-scale activation average used in learning: subect to thresholding so low values become zero"`
 
-	ActQ0  float32 `desc:"the activation state at start of current alpha cycle (same as the state at end of previous cycle)"`
-	ActQ1  float32 `desc:"the activation state at end of first quarter of current alpha cycle"`
-	ActQ2  float32 `desc:"the activation state at end of second quarter of current alpha cycle"`
+	ActPrv float32 `desc:"the final activation state at end of previous state"`
+	ActSt1 float32 `desc:"the activation state at specific time point within current state processing window, as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
+	ActSt2 float32 `desc:"the activation state at specific time point within current state processing window, as saved by ActSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
 	ActM   float32 `desc:"the activation state at end of third quarter, which is the traditional posterior-cortical minus phase activation"`
 	ActP   float32 `desc:"the activation state at end of fourth quarter, which is the traditional posterior-cortical plus_phase activation"`
 	ActDif float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
 	ActDel float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
 
-	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.TrlAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
+	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
 	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`
 	TrgAvg  float32 `desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`
 	DTrgAvg float32 `desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`
@@ -78,7 +78,7 @@ type Neuron struct {
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
 }
 
-var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActQ0", "ActQ1", "ActQ2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActPrv", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
 
 var NeuronVarsMap map[string]int
 

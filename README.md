@@ -16,6 +16,26 @@ See [python README](https://github.com/emer/axon/blob/master/python/README.md) a
 
 * May 2021: Initial implementation and significant experimentation.
 
+# Converting Existing Leabra Models
+
+In the name of progress and making things sensible going forward, various names have been changed to better fit the way that Axon works.  This will require some renaming for existing Leabra models.
+
+## leabra -> axon
+
+The first step is to do a global replace of `leabra` -> `axon` and `Leabra` -> `Axon`
+
+## Alpha Cycle
+
+The notion of the AlphaCycle as a basic unit of processing in Leabra does not quite work in Axon: it typically takes 200 msec (cycles) for a full learning cycle, corresponding to a ThetaCycle.  This was actually the original idea for predictive learning, where the full processing of a given input state was supposed to take two alpha cycles = 1 theta cycle, which corresponds to the strongly-peaked duration of a single fixation in humans.  In Axon, the processing of time has been generalized, so it isn't tied so specifically to a particular cycle.
+
+The concept of a `Quarter` is no longer as sensible, so it has been removed.  In the `TimeScales` enum, it is replaced with `GammaCycle`. There are now two more generic `ActSt1` and `ActSt2` activation state variables that can be captured at any point by calling methods of the corresponding name.  `ActPrv` is the new name for `ActQ0` and it is captured in the `NewState` method.
+
+* `NewState` methods are called when starting to process a new "state", which corresponds to a new fixation, a new sniff, and generally a new "trial" in standard neural network terminology.
+    + `AlphaCycleInit` -> `NewState`
+    + `Time.AlphaCycStart` -> `NewState`
+
+* The standard `AlphaCyc` method in your simulation should be replaced with something like `ThetaCyc` from the `ra25` example, which contains all the new timing logic.  In general, see the `ra25` example for all the relevant updates.    
+
 # Design
 
 * `axon` sub-package provides a clean, well-organized implementation of core Axon algorithms and Network structures. More specialized modifications such as `DeepAxon` or `PBWM` or `PVLV` are all (going to be) implemented as additional specialized code that builds on / replaces elements of the basic version.  The goal is to make all of the code simpler, more transparent, and more easily modified by end users.  You should not have to dig through deep chains of C++ inheritance to find out what is going on.  Nevertheless, the basic tradeoffs of code re-use dictate that not everything should be in-line in one massive blob of code, so there is still some inevitable tracking down of function calls etc.  The algorithm overview below should be helpful in finding everything.
