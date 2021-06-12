@@ -520,7 +520,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 		}
 	}
 	ss.Net.PlusPhase(&ss.Time)
-	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle {
+	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
 		ss.UpdateView(train)
 	}
 

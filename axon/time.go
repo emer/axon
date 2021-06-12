@@ -48,6 +48,7 @@ func (tm *Time) Reset() {
 func (tm *Time) NewState() {
 	tm.Cycle = 0
 	tm.PhaseCycle = 0
+	tm.PlusPhase = false
 }
 
 // NewPhase updates from minus phase to plus phase and resets PhaseCycle
