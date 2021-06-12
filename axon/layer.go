@@ -1339,6 +1339,41 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 	ly.AxonLay.CosDiffFmActs()
 }
 
+// TargToExt sets external input Ext from target values Targ
+// This is done at end of MinusPhase to allow targets to drive activity in plus phase.
+// This can be called separately to simulate alpha cycles within theta cycles, for example.
+func (ly *Layer) TargToExt() {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
+			nrn.Ext = nrn.Targ
+			nrn.SetFlag(NeurHasExt)
+			nrn.ISI = -1 // get fresh update on plus phase output acts
+			nrn.ISIAvg = -1
+		}
+	}
+}
+
+// ClearTargExt clears external inputs Ext that were set from target values Targ.
+// This can be called to simulate alpha cycles within theta cycles, for example.
+func (ly *Layer) ClearTargExt() {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
+			nrn.Ext = 0
+			nrn.ClearFlag(NeurHasExt)
+			nrn.ISI = -1 // get fresh update on plus phase output acts
+			nrn.ISIAvg = -1
+		}
+	}
+}
+
 // ActSt1 saves current activation state in ActSt1 variables
 func (ly *Layer) ActSt1(ltime *Time) {
 	for ni := range ly.Neurons {

@@ -21,6 +21,7 @@ import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/patgen"
@@ -207,6 +208,7 @@ type Sim struct {
 	RunLog      *etable.Table `view:"no-inline" desc:"summary log of each run"`
 	RunStats    *etable.Table `view:"no-inline" desc:"aggregate stats on all runs"`
 	ErrLrMod    axon.LrateMod `view:"inline" desc:"learning rate modulation as function of error"`
+	PAlphaPlus  float32       `desc:"probability of an alpha-cycle plus phase within theta cycle -- like teacher forcing"`
 
 	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
 	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
@@ -280,8 +282,9 @@ func (ss *Sim) New() {
 	ss.RunLog = &etable.Table{}
 	ss.RunStats = &etable.Table{}
 	ss.ErrLrMod.Defaults()
-	ss.ErrLrMod.Base = 0.5
-	ss.ErrLrMod.Range.Set(0, 0.5)
+	ss.ErrLrMod.Base = 0.5 // 0.5 > 0.2
+	ss.ErrLrMod.Range.Set(0.2, 0.8)
+	ss.PAlphaPlus = 0 // .2 works fine
 	ss.Params = ParamSets
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
 	for i := 0; i < 100; i++ {
@@ -469,10 +472,16 @@ func (ss *Sim) ThetaCyc(train bool) {
 		}
 		ss.Time.CycleInc()
 		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
-		case 50:
+		case 75:
 			ss.Net.ActSt1(&ss.Time)
+			if erand.BoolProb(float64(ss.PAlphaPlus), -1) {
+				ss.Net.TargToExt()
+				ss.Time.PlusPhase = true
+			}
 		case 100:
 			ss.Net.ActSt2(&ss.Time)
+			ss.Net.ClearTargExt()
+			ss.Time.PlusPhase = false
 		}
 		if ss.ViewOn {
 			switch viewUpdt {

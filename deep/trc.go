@@ -43,23 +43,21 @@ func (dr *Drivers) AddOne(laynm string) {
 // (e.g., Pulvinar) neurons is computed from the corresponding driver neuron Burst activation.
 // Drivers are hard clamped using Clamp.Rate.
 type TRCParams struct {
-	DriversOff   bool          `def:"false" desc:"Turn off the driver inputs, in which case this layer behaves like a standard layer"`
-	BurstQtr     axon.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines"`
-	DriveScale   float32       `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies activation of driver layer to produce Ge excitatory input to TRC unit -- see also Act.Clamp.Burst settings which can produce extra bursting in Ge inputs."`
-	FullDriveAct float32       `def:"0.6" min:"0.01" desc:"Level of Max driver layer activation at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (MaxAct/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
-	NoTopo       bool          `desc:"Do not treat the pools in this layer as topographically organized relative to driver inputs -- all drivers compress down to give same input to all pools"`
-	AvgMix       float32       `min:"0" max:"1" desc:"proportion of average across driver pools that is combined with Max to provide some graded tie-breaker signal -- especially important for large pool downsampling, e.g., when doing NoTopo"`
-	Binarize     bool          `desc:"Apply threshold to driver burst input for computing plus-phase activations -- above BinThr, then Act = BinOn, below = BinOff.  This is beneficial for layers with weaker graded activations, such as V1 or other perceptual inputs."`
-	BinThr       float32       `viewif:"Binarize" desc:"Threshold for binarizing in terms of sending Burst activation"`
-	BinOn        float32       `def:"0.3" viewif:"Binarize" desc:"Resulting driver Ge value for units above threshold -- lower value around 0.3 or so seems best (DriveScale is NOT applied -- generally same range as that)."`
-	BinOff       float32       `def:"0" viewif:"Binarize" desc:"Resulting driver Ge value for units below threshold -- typically 0."`
+	DriversOff   bool    `def:"false" desc:"Turn off the driver inputs, in which case this layer behaves like a standard layer"`
+	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies activation of driver layer to produce Ge excitatory input to TRC unit -- see also Act.Clamp.Burst settings which can produce extra bursting in Ge inputs."`
+	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer activation at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (MaxAct/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
+	NoTopo       bool    `desc:"Do not treat the pools in this layer as topographically organized relative to driver inputs -- all drivers compress down to give same input to all pools"`
+	AvgMix       float32 `min:"0" max:"1" desc:"proportion of average across driver pools that is combined with Max to provide some graded tie-breaker signal -- especially important for large pool downsampling, e.g., when doing NoTopo"`
+	Binarize     bool    `desc:"Apply threshold to driver burst input for computing plus-phase activations -- above BinThr, then Act = BinOn, below = BinOff.  This is beneficial for layers with weaker graded activations, such as V1 or other perceptual inputs."`
+	BinThr       float32 `viewif:"Binarize" desc:"Threshold for binarizing in terms of sending Burst activation"`
+	BinOn        float32 `def:"0.3" viewif:"Binarize" desc:"Resulting driver Ge value for units above threshold -- lower value around 0.3 or so seems best (DriveScale is NOT applied -- generally same range as that)."`
+	BinOff       float32 `def:"0" viewif:"Binarize" desc:"Resulting driver Ge value for units below threshold -- typically 0."`
 }
 
 func (tp *TRCParams) Update() {
 }
 
 func (tp *TRCParams) Defaults() {
-	tp.BurstQtr.Set(int(axon.Q4))
 	tp.DriveScale = 0.05
 	tp.FullDriveAct = 0.6
 	tp.Binarize = false
@@ -88,7 +86,7 @@ func (tp *TRCParams) GeFmMaxAvg(max, avg float32) float32 {
 
 // TRCLayer is the thalamic relay cell layer for DeepAxon.
 // It has normal activity during the minus phase, as activated by CT etc inputs,
-// and is then driven by strong 5IB driver inputs in the plus phase.
+// and is then driven by strong 5IB driver inputs in the Time.PlusPhase.
 // For attentional modulation, TRC maintains pool-level correspondence with CT inputs
 // which creates challenges for aligning with driver inputs.
 // * Max operation used to integrate across multiple drivers, where necessary,
@@ -208,9 +206,9 @@ func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 	return act
 }
 
-// SetDriverNeuron sets the driver activation for given Neuron,
+// GeFmDriverNeuron sets the driver activation for given Neuron,
 // based on given Ge driving value (use DriveFmMaxAvg) from driver layer (Burst or Act)
-func (ly *TRCLayer) SetDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) {
+func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) {
 	if tni >= len(ly.Neurons) {
 		return
 	}
@@ -232,11 +230,11 @@ func (ly *TRCLayer) SetDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) {
 	nrn.GiRaw = 0
 }
 
-// SetDriverActs sets the driver activations, integrating across all the driver layers
-func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
+// GeFmDrivers sets the driver activations, integrating across all the driver layers
+func (ly *TRCLayer) GeFmDrivers(ltime *axon.Time) {
 	cyc := ltime.Cycle // for bursting
 	if ly.IsTarget() {
-		cyc = ltime.QuarterCycle()
+		cyc = ltime.PhaseCycle
 	}
 	nux, nuy := UnitsSize(&ly.Layer)
 	nun := nux * nuy
@@ -256,7 +254,7 @@ func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
 				for dni := range dly.Neurons {
 					tni := drv.Off + dni
 					drvAct := DriveAct(dni, dly, sly, issuper)
-					ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
+					ly.GeFmDriverNeuron(tni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
 				}
 			} else { // copy flat to all pools -- not typical
 				for dni := range dly.Neurons {
@@ -265,7 +263,7 @@ func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
 					for py := 0; py < pyn; py++ {
 						for px := 0; px < pxn; px++ {
 							pni := (py*pxn+px)*nun + tni
-							ly.SetDriverNeuron(pni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
+							ly.GeFmDriverNeuron(pni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
 						}
 					}
 				}
@@ -297,7 +295,7 @@ func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
 						avg /= float32(avgn)
 					}
 					tni := drv.Off + dni
-					ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
+					ly.GeFmDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
 				}
 			} else if ly.TRC.NoTopo { // ly is 4D
 				for dni := 0; dni < dnun; dni++ {
@@ -325,7 +323,7 @@ func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
 					for py := 0; py < pyn; py++ {
 						for px := 0; px < pxn; px++ {
 							pni := (py*pxn+px)*nun + tni
-							ly.SetDriverNeuron(pni, drvGe, drvInhib, cyc)
+							ly.GeFmDriverNeuron(pni, drvGe, drvInhib, cyc)
 						}
 					}
 				}
@@ -360,7 +358,7 @@ func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
 								avg /= float32(avgn)
 							}
 							tni := pni + drv.Off + dni
-							ly.SetDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
+							ly.GeFmDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
 						}
 					}
 				}
@@ -372,18 +370,9 @@ func (ly *TRCLayer) SetDriverActs(ltime *axon.Time) {
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
 func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
-	if ly.TRC.DriversOff || !ly.TRC.BurstQtr.Has(ltime.Quarter) {
+	if ly.TRC.DriversOff || !ltime.PlusPhase {
 		ly.GFmIncNeur(ltime) // regular
 		return
 	}
-	ly.SetDriverActs(ltime)
-}
-
-// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
-// and updates learning running-average activations from that Act
-func (ly *TRCLayer) ActFmG(ltime *axon.Time) {
-	if !ly.TRC.DriversOff && ly.TRC.BurstQtr.Has(ltime.Quarter) {
-		ly.SetDriverActs(ltime)
-	}
-	ly.TopoInhibLayer.ActFmG(ltime)
+	ly.GeFmDrivers(ltime)
 }

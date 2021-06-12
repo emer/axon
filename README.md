@@ -46,6 +46,14 @@ The concept of a `Quarter` is no longer as sensible, so it has been removed.  In
 
 * Removed: all the BCM-related `AvgL` mechanisms -- only using the core error-driven learning components.
 
+## Stats
+
+SSE not used anymore -- relevant call is now `PctUnitErr` which returns proportion (0-1) of units that have an error (activity on wrong side of target).  This is not normalized for expected activity, so in general scales with that and will tend to be rather low.
+
+## Deep
+
+Must call `ss.Net.CTCtxt()` explicitly to update the CT context reps -- generally call after plus phase, but can also experiment with other timings.
+
 # Design
 
 * `axon` sub-package provides a clean, well-organized implementation of core Axon algorithms and Network structures. More specialized modifications such as `DeepAxon` or `PBWM` or `PVLV` are all (going to be) implemented as additional specialized code that builds on / replaces elements of the basic version.  The goal is to make all of the code simpler, more transparent, and more easily modified by end users.  You should not have to dig through deep chains of C++ inheritance to find out what is going on.  Nevertheless, the basic tradeoffs of code re-use dictate that not everything should be in-line in one massive blob of code, so there is still some inevitable tracking down of function calls etc.  The algorithm overview below should be helpful in finding everything.

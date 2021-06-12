@@ -166,8 +166,9 @@ func (ly *SuperLayer) CyclePost(ltime *axon.Time) {
 
 // BurstFmAct updates Burst layer 5IB bursting value from current Act
 // (superficial activation), subject to thresholding.
+// Updated during Time.PlusPhase
 func (ly *SuperLayer) BurstFmAct(ltime *axon.Time) {
-	if !ly.Burst.BurstQtr.Has(ltime.Quarter) {
+	if !ltime.PlusPhase {
 		return
 	}
 	lpl := &ly.Pools[0]
@@ -194,12 +195,9 @@ func (ly *SuperLayer) BurstFmAct(ltime *axon.Time) {
 
 // SendCtxtGe sends Burst activation over CTCtxtPrjn projections to integrate
 // CtxtGe excitatory conductance on CT layers.
-// This must be called at the end of the Burst quarter for this layer.
+// This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
 // Satisfies the CtxtSender interface.
 func (ly *SuperLayer) SendCtxtGe(ltime *axon.Time) {
-	if !ly.Burst.BurstQtr.Has(ltime.Quarter) {
-		return
-	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

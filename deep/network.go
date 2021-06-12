@@ -317,12 +317,6 @@ func (nt *Network) ConnectCtxtToCT(send, recv emer.Layer, pat prjn.Pattern) emer
 //////////////////////////////////////////////////////////////////////////////////////
 //  Compute methods
 
-// QuarterFinal does updating after end of a quarter
-func (nt *Network) QuarterFinal(ltime *axon.Time) {
-	nt.Network.QuarterFinal(ltime)
-	nt.CTCtxt(ltime)
-}
-
 // CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
 func (nt *Network) CTCtxt(ltime *axon.Time) {
 	nt.ThrLayFun(func(ly axon.AxonLayer) {

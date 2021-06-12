@@ -17,10 +17,9 @@ import (
 // They receive phasic input representing 5IB bursting via CTCtxtPrjn inputs
 // from SuperLayer and also from self projections.
 type CTLayer struct {
-	TopoInhibLayer               // access as .TopoInhibLayer
-	BurstQtr       axon.Quarters `desc:"Quarter(s) when bursting occurs -- typically Q4 but can also be Q2 and Q4 for beta-frequency updating.  Note: this is a bitflag and must be accessed using its Set / Has etc routines, 32 bit versions."`
-	CtxtGeGain     float32       `desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
-	CtxtGes        []float32     `desc:"slice of context (temporally delayed) excitatory conducances."`
+	TopoInhibLayer           // access as .TopoInhibLayer
+	CtxtGeGain     float32   `desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
+	CtxtGes        []float32 `desc:"slice of context (temporally delayed) excitatory conducances."`
 }
 
 var KiT_CTLayer = kit.Types.AddType(&CTLayer{}, LayerProps)
@@ -30,7 +29,6 @@ func (ly *CTLayer) Defaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.KNa = 0
-	ly.BurstQtr.Set(int(axon.Q4))
 	ly.Typ = CT
 	ly.CtxtGeGain = 0.2
 }
@@ -60,7 +58,7 @@ func (ly *CTLayer) InitActs() {
 func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 	cyc := ltime.Cycle // for bursting
 	if ly.IsTarget() {
-		cyc = ltime.QuarterCycle()
+		cyc = ltime.PhaseCycle
 	}
 	ly.RecvGInc(ltime)
 	for ni := range ly.Neurons {
@@ -85,12 +83,9 @@ func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 
 // SendCtxtGe sends activation over CTCtxtPrjn projections to integrate
 // CtxtGe excitatory conductance on CT layers.
-// This must be called at the end of the Burst quarter for this layer.
+// This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
 // Satisfies the CtxtSender interface.
 func (ly *CTLayer) SendCtxtGe(ltime *axon.Time) {
-	if !ly.BurstQtr.Has(ltime.Quarter) {
-		return
-	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -117,11 +112,8 @@ func (ly *CTLayer) SendCtxtGe(ltime *axon.Time) {
 
 // CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
 // overall Ctxt value, only on Deep layers.
-// This must be called at the end of the DeepBurst quarter for this layer, after SendCtxtGe.
+// This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
 func (ly *CTLayer) CtxtFmGe(ltime *axon.Time) {
-	if !ly.BurstQtr.Has(ltime.Quarter) {
-		return
-	}
 	for ni := range ly.CtxtGes {
 		ly.CtxtGes[ni] = 0
 	}

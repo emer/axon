@@ -132,6 +132,29 @@ func (nt *Network) PlusPhase(ltime *Time) {
 	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ltime)
 }
 
+// TargToExt sets external input Ext from target values Targ
+// This is done at end of MinusPhase to allow targets to drive activity in plus phase.
+// This can be called separately to simulate alpha cycles within theta cycles, for example.
+func (nt *Network) TargToExt() {
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(AxonLayer).AsAxon().TargToExt()
+	}
+}
+
+// ClearTargExt clears external inputs Ext that were set from target values Targ.
+// This can be called to simulate alpha cycles within theta cycles, for example.
+func (nt *Network) ClearTargExt() {
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(AxonLayer).AsAxon().ClearTargExt()
+	}
+}
+
 // ActSt1 saves current acts into ActSt1
 func (nt *Network) ActSt1(ltime *Time) {
 	for _, ly := range nt.Layers {
