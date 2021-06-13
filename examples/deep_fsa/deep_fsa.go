@@ -66,13 +66,16 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{
+					"Layer.Inhib.FBAct.RiseTau":          "1",
+					"Layer.Inhib.FBAct.DecayTau":         "10",
 					"Layer.Inhib.ActAvg.Init":            "0.15",
 					"Layer.Inhib.ActAvg.Targ":            "0.15",
 					"Layer.Inhib.Layer.Gi":               "1.1", // 1.1 > 1.2 > 1.0
 					"Layer.Act.Gbar.L":                   "0.2", // std
 					"Layer.Act.Decay.Act":                "0.0", // both 0 better
 					"Layer.Act.Decay.Glong":              "0.0",
-					"Layer.Act.Dt.LongAvgTau":            "20",   // 20 > higher for objrec, lvis
+					"Layer.Act.Dt.LongAvgTau":            "20", // 20 > higher for objrec, lvis
+					"Layer.Learn.ActAvg.MinLrn":          "0.02",
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
@@ -612,6 +615,7 @@ func (ss *Sim) TrialStats(accum bool) {
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	ss.TrlCosDiff = float64(inp.CosDiff.Cos)
 	err := 0.0
+	thr := float32(0.3)
 	gotOne := false
 	for ni := range inp.Neurons {
 		inn := &inp.Neurons[ni]
@@ -620,11 +624,11 @@ func (ss *Sim) TrialStats(accum bool) {
 		}
 		tgn := &trg.Neurons[ni]
 		if tgn.Ext > 0.5 {
-			if inn.ActM > 0.5 {
+			if inn.ActM > thr {
 				gotOne = true
 			}
 		} else {
-			if inn.ActM > 0.5 {
+			if inn.ActM > thr {
 				err += float64(inn.ActM)
 			}
 		}

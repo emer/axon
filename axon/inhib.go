@@ -11,6 +11,7 @@ import "github.com/emer/axon/fffb"
 // This also includes other misc layer-level params such as running-average activation in the layer
 // which is used for netinput rescaling and potentially for adapting inhibition over time
 type InhibParams struct {
+	FBAct  FBActParams     `view:"inline" desc:"feedback inhibition activation computation parameters"`
 	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer"`
 	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
 	Self   SelfInhibParams `view:"inline" desc:"neuron self-inhibition parameters -- can be beneficial for producing more graded, linear response -- not typically used in cortical networks"`
@@ -18,6 +19,7 @@ type InhibParams struct {
 }
 
 func (ip *InhibParams) Update() {
+	ip.FBAct.Update()
 	ip.Layer.Update()
 	ip.Pool.Update()
 	ip.Self.Update()
@@ -25,12 +27,45 @@ func (ip *InhibParams) Update() {
 }
 
 func (ip *InhibParams) Defaults() {
+	ip.FBAct.Defaults()
 	ip.Layer.Defaults()
 	ip.Pool.Defaults()
 	ip.Self.Defaults()
 	ip.ActAvg.Defaults()
-	ip.Layer.Gi = 1.0
-	ip.Pool.Gi = 1.0
+	ip.Layer.Gi = 1.1
+	ip.Pool.Gi = 1.1
+}
+
+///////////////////////////////////////////////////////////////////////
+//  FBActParams
+
+// FBActParams defines parameters for average activation value in pool
+// that drives feedback inhibition in the FFFB inhibition function.
+type FBActParams struct {
+	RiseTau  float32 `def:"1" desc:"time constant for increases in pool-level average activation driven by current instantaneous activation across the pool"`
+	DecayTau float32 `def:"1" desc:"time constant for decreases in pool-level average activation driven by current instantaneous activation across the pool"`
+	RiseDt   float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	DecayDt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+}
+
+func (fb *FBActParams) Update() {
+	fb.RiseDt = 1 / fb.RiseTau
+	fb.DecayDt = 1 / fb.DecayTau
+}
+
+func (fb *FBActParams) Defaults() {
+	fb.RiseTau = 1
+	fb.DecayTau = 1
+	fb.Update()
+}
+
+// AvgAct updates the average activation from new average act
+func (fb *FBActParams) AvgAct(avg *float32, act float32) {
+	if act > *avg {
+		*avg += fb.RiseDt * (act - *avg)
+	} else {
+		*avg += fb.DecayDt * (act - *avg)
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////

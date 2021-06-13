@@ -1214,7 +1214,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.AvgsFmAct(nrn)
-		nrn.ActInt += ly.Act.Dt.IntDt * (nrn.AvgS - nrn.ActInt)
+		nrn.ActInt += ly.Act.Dt.IntDt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
@@ -1256,14 +1256,9 @@ func (ly *Layer) InhibAct(ltime *Time) {
 		if nn > 1 {
 			avg /= float32(nn)
 		}
-		// straight avg seems to work best..
-		// if avg > pl.Inhib.Act.Avg {
-		// 	pl.Inhib.Act.Avg = avg
-		// } else {
-		pl.Inhib.Act.Avg += ly.Inhib.ActAvg.InhDt * (avg - pl.Inhib.Act.Avg)
-		// }
+		ly.Inhib.FBAct.AvgAct(&pl.Inhib.Act.Avg, avg)
 		pl.Inhib.Act.Max = max
-		pl.Inhib.Act.MaxIdx = maxi - pl.StIdx
+		pl.Inhib.Act.MaxIdx = maxi
 	}
 }
 
