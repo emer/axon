@@ -36,7 +36,8 @@ func (ip *InhibParams) Defaults() {
 ///////////////////////////////////////////////////////////////////////
 //  SelfInhibParams
 
-// SelfInhibParams defines parameters for Neuron self-inhibition -- activation of the neuron directly feeds back
+// SelfInhibParams defines parameters for Neuron self-inhibition
+// activation of the neuron directly feeds back
 // to produce a proportional additional contribution to Gi
 type SelfInhibParams struct {
 	On  bool    `desc:"enable neuron self-inhibition"`
@@ -73,18 +74,23 @@ func (si *SelfInhibParams) Inhib(self *float32, act float32) {
 // Also specifies time constant for updating average
 // and for the target value for adapting inhibition in inhib_adapt.
 type ActAvgParams struct {
+	InhTau    float32 `min:"1" desc:"inhibition average activation time constant (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- integrates spiking activity across pools with this time constant for driving feedback inhibition"`
 	Init      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] initial estimated average activity level in the layer -- see Targ for target value which can be different from this."`
 	AdaptGi   bool    `desc:"enable adapting of layer inhibition Gi factor (stored in layer GiCur value) based on Targ - layer level ActAvg.ActsMAvg"`
 	Targ      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] target average activity for this layer -- used if if AdaptGi is on to drive adaptation of inhibition."`
 	HiTol     float32 `def:"0" viewif:"AdaptGi" desc:"tolerance for higher than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
 	LoTol     float32 `def:"0.8" viewif:"AdaptGi" desc:"tolerance for lower than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
 	AdaptRate float32 `def:"0.5" viewif:"AdaptGi" desc:"rate of Gi adaptation as function of AdaptRate * (Targ - ActMAvg) / Targ -- occurs at spaced intervals determined by Network.SlowInterval value"`
+
+	InhDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (aa *ActAvgParams) Update() {
+	aa.InhDt = 1 / aa.InhTau
 }
 
 func (aa *ActAvgParams) Defaults() {
+	aa.InhTau = 5
 	aa.Init = 0.1
 	aa.Targ = 0.1
 	aa.HiTol = 0

@@ -26,9 +26,9 @@ type Neuron struct {
 	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
 	Spike   float32   `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
 	ISI     float32   `desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`
-	ISIAvg  float32   `desc:"average inter-spike-interval -- average time interval between spikes.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`
-	Act     float32   `desc:"rate-coded activation value reflecting final output of neuron communicated to other neurons, typically in range 0-1.  This value includes adaptation and synaptic depression / facilitation effects which produce temporal contrast (see ActLrn for version without this).  For rate-code activation, this is noisy-x-over-x-plus-one (NXX1) function; for discrete spiking it is computed from the inverse of the inter-spike interval (ISI), and Spike reflects the discrete spikes."`
-	ActLrn  float32   `desc:"learning activation value, reflecting *dendritic* activity that is not affected by synaptic depression or adapdation channels which are located near the axon hillock.  This is the what drives the Avg* values that drive learning. Computationally, neurons strongly discount the signals sent to other neurons to provide temporal contrast, but need to learn based on a more stable reflection of their overall inputs in the dendrites."`
+	ISIAvg  float32   `desc:"average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`
+	Act     float32   `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This is for display purposes only."`
+	ActInt  float32   `desc:"integrated activation value computed from running-average spiking values used in learning (AvgS) integrated with an additional running average to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (typically based on ActM)"`
 	Ge      float32   `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
 	Gi      float32   `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
 	Gk      float32   `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
@@ -39,19 +39,19 @@ type Neuron struct {
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 
-	AvgSS   float32 `desc:"super-short time-scale average of ActLrn activation -- provides the lowest-level time integration -- for spiking this integrates over spikes before subsequent averaging, and it is also useful for rate-code to provide a longer time integral overall"`
-	AvgS    float32 `desc:"short time-scale average of ActLrn activation -- tracks the most recent activation states (integrates over AvgSS values), and represents the plus phase for learning in XCAL algorithms"`
-	AvgM    float32 `desc:"medium time-scale average of ActLrn activation -- integrates over AvgS values, and represents the minus phase for learning in XCAL algorithms"`
-	AvgSLrn float32 `desc:"short time-scale activation average that is used for learning -- typically includes a small contribution from AvgMLrn in addition to mostly AvgS, as determined by LrnActAvgParams.LrnM -- important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- AvgS is subject to thresholding prior to mixing xo low values become zero"`
+	AvgSS   float32 `desc:"super-short time-scale average of spiking -- goes up instantaneously when a Spike occurs, and then decays until the next spike -- provides the lowest-level time integration for running-averages that simulate accumulation of Calcium over time"`
+	AvgS    float32 `desc:"short time-scale average of spiking, as a running average over AvgSS -- tracks the most recent activation states, and represents the plus phase for learning in error-driven learning (see AvgSLrn)"`
+	AvgM    float32 `desc:"medium time-scale average of spiking, as a running average over AvgS -- represents the minus phase for error-driven learning"`
+	AvgSLrn float32 `desc:"short time-scale activation average that is used for learning -- typically includes a small contribution from AvgMLrn in addition to mostly AvgS, as determined by LrnActAvgParams.LrnM -- important to ensure that when neuron turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- AvgS is subject to thresholding prior to mixing so low values become zero"`
 	AvgMLrn float32 `desc:"medium time-scale activation average used in learning: subect to thresholding so low values become zero"`
 
-	ActPrv float32 `desc:"the final activation state at end of previous state"`
 	ActSt1 float32 `desc:"the activation state at specific time point within current state processing window, as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
 	ActSt2 float32 `desc:"the activation state at specific time point within current state processing window, as saved by ActSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
 	ActM   float32 `desc:"the activation state at end of third quarter, which is the traditional posterior-cortical minus phase activation"`
 	ActP   float32 `desc:"the activation state at end of fourth quarter, which is the traditional posterior-cortical plus_phase activation"`
 	ActDif float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
 	ActDel float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
+	ActPrv float32 `desc:"the final activation state at end of previous state"`
 
 	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
 	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`
@@ -78,7 +78,7 @@ type Neuron struct {
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
 }
 
-var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActLrn", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActPrv", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActPrv", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
 
 var NeuronVarsMap map[string]int
 

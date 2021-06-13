@@ -961,8 +961,8 @@ func (ly *Layer) UpdateExtFlags() {
 // should already have presented the external input to the network at this point.
 func (ly *Layer) NewState() {
 	pl := &ly.Pools[0]
-	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.TrlAvgDt)
-	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.TrlAvgDt)
+	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.LongAvgDt)
+	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.LongAvgDt)
 
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1145,24 +1145,6 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 func (ly *Layer) AvgMaxGe(ltime *Time) {
-	// todo: this does not take account of communication delay -- may be too strong
-	// if ly.Inhib.FFAct {
-	// 	avg := float32(0)
-	// 	max := float32(0)
-	// 	for _, p := range ly.RcvPrjns {
-	// 		if p.IsOff() {
-	// 			continue
-	// 		}
-	// 		pj := p.(AxonPrjn).AsAxon()
-	// 		sl := pj.Send.(AxonLayer).AsAxon()
-	// 		slp := &sl.Pools[0]
-	// 		avg += pj.GScale * slp.Inhib.Act.Avg
-	// 		max += pj.GScale * slp.Inhib.Act.Max
-	// 	}
-	// 	pl := &ly.Pools[0]
-	// 	pl.Inhib.Ge.Avg = avg
-	// 	pl.Inhib.Ge.Max = max
-	// } else {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Ge.Init()
@@ -1175,7 +1157,6 @@ func (ly *Layer) AvgMaxGe(ltime *Time) {
 		}
 		pl.Inhib.Ge.CalcAvg()
 	}
-	// }
 }
 
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
@@ -1233,10 +1214,10 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.AvgsFmAct(nrn)
+		nrn.ActInt += ly.Act.Dt.IntDt * (nrn.AvgS - nrn.ActInt)
 		if !ltime.PlusPhase {
-			nrn.ActM += ly.Act.Dt.MDt * (nrn.AvgS - nrn.ActM)
-			nrn.GeM += ly.Act.Dt.MDt * (nrn.Ge - nrn.GeM)
-			nrn.GiM += ly.Act.Dt.MDt * (nrn.GiSyn - nrn.GiM)
+			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
+			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 		}
 
 		// note: this is here because it depends on Gi
@@ -1250,19 +1231,36 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	}
 }
 
-// AvgMaxAct computes the average and max Act stats, used in inhibition
-func (ly *Layer) AvgMaxAct(ltime *Time) {
+// InhibAct computes the average and max Act stats, used in inhibition
+func (ly *Layer) InhibAct(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		pl.Inhib.Act.Init()
+		var avg, max float32
+		maxi := 0
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			pl.Inhib.Act.UpdateVal(nrn.Act, ni)
+			avg += nrn.Spike
+			if nrn.Act > max {
+				max = nrn.Act
+				maxi = ni
+			}
 		}
-		pl.Inhib.Act.CalcAvg()
+		nn := pl.EdIdx - pl.StIdx
+		pl.Inhib.Act.Sum = avg
+		pl.Inhib.Act.N = nn
+		if nn > 1 {
+			avg /= float32(nn)
+		}
+		if avg > pl.Inhib.Act.Avg {
+			pl.Inhib.Act.Avg = avg
+		} else {
+			pl.Inhib.Act.Avg += ly.Inhib.ActAvg.InhDt * (avg - pl.Inhib.Act.Avg)
+		}
+		pl.Inhib.Act.Max = max
+		pl.Inhib.Act.MaxIdx = maxi - pl.StIdx
 	}
 }
 
@@ -1284,8 +1282,8 @@ func (ly *Layer) AvgGeM(ltime *Time) {
 		pl.GiM.CalcAvg()
 	}
 	lpl := &ly.Pools[0]
-	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.TrlAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
-	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.TrlAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
+	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
+	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -1301,16 +1299,12 @@ func (ly *Layer) CyclePost(ltime *Time) {
 
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ltime *Time) {
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		pl.ActM = pl.Inhib.Act
-	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActM = nrn.Act
+		nrn.ActM = nrn.ActInt
 		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 			nrn.Ext = nrn.Targ
 			nrn.SetFlag(NeurHasExt)
@@ -1318,23 +1312,43 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 			nrn.ISIAvg = -1
 		}
 	}
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.ActM.Init()
+		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			pl.ActM.UpdateVal(nrn.ActM, ni)
+		}
+		pl.ActM.CalcAvg()
+	}
 	ly.AvgGeM(ltime)
 }
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ltime *Time) {
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		pl.ActP = pl.Inhib.Act
-	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActP = nrn.Act
+		nrn.ActP = nrn.ActInt
 		nrn.ActDif = nrn.ActP - nrn.ActM
-		nrn.ActAvg += ly.Act.Dt.TrlAvgDt * (nrn.ActM - nrn.ActAvg)
+		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
+	}
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.ActP.Init()
+		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			pl.ActP.UpdateVal(nrn.ActP, ni)
+		}
+		pl.ActP.CalcAvg()
 	}
 	ly.AxonLay.CosDiffFmActs()
 }
@@ -1381,7 +1395,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.Act
+		nrn.ActSt1 = nrn.ActInt
 	}
 }
 
@@ -1392,7 +1406,7 @@ func (ly *Layer) ActSt2(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.Act
+		nrn.ActSt2 = nrn.ActInt
 	}
 }
 

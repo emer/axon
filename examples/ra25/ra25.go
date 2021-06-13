@@ -68,26 +68,27 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > 1.1 used in all larger models
-					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
-					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
-					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
-					"Layer.Act.Decay.Act":                "0",    // 0.5 > 1 > 0
-					"Layer.Act.Decay.Glong":              "0.7",  // LVis .7 best?
-					"Layer.Act.Decay.KNa":                "0.0",  // 0 > higher for all other models
-					"Layer.Act.Gbar.L":                   "0.2",  // 0.2 > 0.1
-					"Layer.Act.NMDA.Gbar":                "0.03", // 0.03 > .04 > .02
-					"Layer.Act.NMDA.Tau":                 "100",  // 50 no diff
-					"Layer.Act.GABAB.Gbar":               "0.2",  // .1 == .2 pretty much
-					"Layer.Act.GABAB.Gbase":              "0.2",  // .1 == .2
-					"Layer.Act.GABAB.GiSpike":            "10",   // 10 > 8 > 15
+					"Layer.Inhib.Layer.Gi":               "1.2", // 1.2 > 1.3 > 1.1 used in all larger models
+					"Layer.Inhib.ActAvg.InhTau":          "50",
+					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
+					"Layer.Inhib.ActAvg.Targ":            "0.05",  // for adapt, important for this to be accurate
+					"Layer.Inhib.ActAvg.AdaptGi":         "false", // not huge effects but beneficial
+					"Layer.Act.Decay.Act":                "0.0",   // 0, .7 best?
+					"Layer.Act.Decay.Glong":              "0.7",   //
+					"Layer.Act.Decay.KNa":                "0.0",   // 0 > higher for all other models
+					"Layer.Act.Gbar.L":                   "0.2",   // 0.2 > 0.1
+					"Layer.Act.NMDA.Gbar":                "0.03",  // 0.03 > .04 > .02
+					"Layer.Act.NMDA.Tau":                 "100",   // 50 no diff
+					"Layer.Act.GABAB.Gbar":               "0.2",   // .1 == .2 pretty much
+					"Layer.Act.GABAB.Gbase":              "0.2",   // .1 == .2
+					"Layer.Act.GABAB.GiSpike":            "10",    // 10 > 8 > 15
 					"Layer.Act.GTarg.GeMax":              "1",
 					"Layer.Learn.ActAvg.SpikeG":          "8",
 					"Layer.Learn.ActAvg.MinLrn":          "0.02",
 					"Layer.Learn.ActAvg.SSTau":           "40",   // 4 > 2 for 50 cyc qtr
 					"Layer.Learn.ActAvg.STau":            "10",   //
 					"Layer.Learn.ActAvg.MTau":            "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
-					"Layer.Act.Dt.MTau":                  "20",   // for 50 cyc qtr, 20 > 10
+					"Layer.Act.Dt.IntTau":                "5",    // for 50 cyc qtr, 20 > 10
 					"Layer.Act.KNa.On":                   "true", // on > off
 					"Layer.Act.KNa.Fast.Max":             "0.1",  // 0.2 > 0.1
 					"Layer.Act.KNa.Med.Max":              "0.2",  // 0.2 > 0.1 def
@@ -282,7 +283,7 @@ func (ss *Sim) New() {
 	ss.RunLog = &etable.Table{}
 	ss.RunStats = &etable.Table{}
 	ss.ErrLrMod.Defaults()
-	ss.ErrLrMod.Base = 0.5 // 0.5 > 0.2
+	ss.ErrLrMod.Base = 0.5 // 0.5 > 0.2 -- not very useful in this model, but key in larger nets
 	ss.ErrLrMod.Range.Set(0.2, 0.8)
 	ss.PAlphaPlus = 0 // .2 works fine
 	ss.Params = ParamSets
@@ -437,6 +438,25 @@ func (ss *Sim) UpdateView(train bool) {
 	}
 }
 
+func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
+	switch viewUpdt {
+	case axon.Cycle:
+		ss.UpdateView(train)
+	case axon.FastSpike:
+		if ss.Time.Cycle%10 == 0 {
+			ss.UpdateView(train)
+		}
+	case axon.GammaCycle:
+		if ss.Time.Cycle%25 == 0 {
+			ss.UpdateView(train)
+		}
+	case axon.AlphaCycle:
+		if ss.Time.Cycle%100 == 0 {
+			ss.UpdateView(train)
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Running the Network, starting bottom-up..
 
@@ -483,26 +503,14 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.Net.ClearTargExt()
 			ss.Time.PlusPhase = false
 		}
+
+		if cyc == minusCyc-1 { // do before view update
+			ss.Net.MinusPhase(&ss.Time)
+		}
 		if ss.ViewOn {
-			switch viewUpdt {
-			case axon.Cycle:
-				ss.UpdateView(train)
-			case axon.FastSpike:
-				if ss.Time.Cycle%10 == 0 {
-					ss.UpdateView(train)
-				}
-			case axon.GammaCycle:
-				if ss.Time.Cycle%25 == 0 {
-					ss.UpdateView(train)
-				}
-			case axon.AlphaCycle:
-				if ss.Time.Cycle%100 == 0 {
-					ss.UpdateView(train)
-				}
-			}
+			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
-	ss.Net.MinusPhase(&ss.Time)
 	ss.Time.NewPhase()
 	if viewUpdt == axon.Phase {
 		ss.UpdateView(train)
@@ -513,22 +521,14 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
 		}
 		ss.Time.CycleInc()
+
+		if cyc == plusCyc-1 { // do before view update
+			ss.Net.PlusPhase(&ss.Time)
+		}
 		if ss.ViewOn {
-			switch viewUpdt {
-			case axon.Cycle:
-				ss.UpdateView(train)
-			case axon.FastSpike:
-				if ss.Time.Cycle%10 == 0 {
-					ss.UpdateView(train)
-				}
-			case axon.GammaCycle:
-				if ss.Time.Cycle%25 == 0 {
-					ss.UpdateView(train)
-				}
-			}
+			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
-	ss.Net.PlusPhase(&ss.Time)
 	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
 		ss.UpdateView(train)
 	}
@@ -1256,8 +1256,8 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	for _, lnm := range ss.LayStatNms {
-		plt.SetColParams(lnm+" Ge.Avg", true, true, 0, true, .5)
-		plt.SetColParams(lnm+" Act.Avg", true, true, 0, true, .5)
+		plt.SetColParams(lnm+" Ge.Avg", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
+		plt.SetColParams(lnm+" Act.Avg", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 	}
 	return plt
 }

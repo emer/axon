@@ -19,6 +19,7 @@ import (
 	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
@@ -368,6 +369,25 @@ func (ss *Sim) UpdateView(train bool) {
 	}
 }
 
+func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
+	switch viewUpdt {
+	case axon.Cycle:
+		ss.UpdateView(train)
+	case axon.FastSpike:
+		if ss.Time.Cycle%10 == 0 {
+			ss.UpdateView(train)
+		}
+	case axon.GammaCycle:
+		if ss.Time.Cycle%25 == 0 {
+			ss.UpdateView(train)
+		}
+	case axon.AlphaCycle:
+		if ss.Time.Cycle%100 == 0 {
+			ss.UpdateView(train)
+		}
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Running the Network, starting bottom-up..
 
@@ -407,36 +427,24 @@ func (ss *Sim) ThetaCyc(train bool) {
 		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
 		case 75:
 			ss.Net.ActSt1(&ss.Time)
-			// if train && erand.BoolProb(float64(ss.PAlphaPlus), -1) {
-			// 	didAlphaPlus = true
-			// 	ss.Time.PlusPhase = true // turns on drivers
-			// } else {
-			// 	didAlphaPlus = false
-			// }
+			if train && erand.BoolProb(float64(ss.PAlphaPlus), -1) {
+				didAlphaPlus = true
+				ss.Time.PlusPhase = true // turns on drivers
+			} else {
+				didAlphaPlus = false
+			}
 		case 100:
 			ss.Net.ActSt2(&ss.Time)
 			ss.Time.PlusPhase = false // turns off drivers
-			// if didAlphaPlus { // this is not good...
+			// if didAlphaPlus {         // this is not good...
 			// 	ss.Net.CTCtxt(&ss.Time) // update context..
 			// }
 		}
+		if cyc == minusCyc-1 { // do before view update
+			ss.Net.MinusPhase(&ss.Time)
+		}
 		if ss.ViewOn {
-			switch viewUpdt {
-			case axon.Cycle:
-				ss.UpdateView(train)
-			case axon.FastSpike:
-				if ss.Time.Cycle%10 == 0 {
-					ss.UpdateView(train)
-				}
-			case axon.GammaCycle:
-				if ss.Time.Cycle%25 == 0 {
-					ss.UpdateView(train)
-				}
-			case axon.AlphaCycle:
-				if ss.Time.Cycle%100 == 0 {
-					ss.UpdateView(train)
-				}
-			}
+			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
 	ss.Net.MinusPhase(&ss.Time)
@@ -455,18 +463,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.Net.CTCtxt(&ss.Time) // update context at end
 		}
 		if ss.ViewOn {
-			switch viewUpdt {
-			case axon.Cycle:
-				ss.UpdateView(train)
-			case axon.FastSpike:
-				if ss.Time.Cycle%10 == 0 {
-					ss.UpdateView(train)
-				}
-			case axon.GammaCycle:
-				if ss.Time.Cycle%25 == 0 {
-					ss.UpdateView(train)
-				}
-			}
+			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
 	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
@@ -614,7 +611,7 @@ func (ss *Sim) TrialStats(accum bool) {
 	inp := ss.Net.LayerByName("HiddenP").(axon.AxonLayer).AsAxon()
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	ss.TrlCosDiff = float64(inp.CosDiff.Cos)
-	sse := 0.0
+	err := 0.0
 	gotOne := false
 	for ni := range inp.Neurons {
 		inn := &inp.Neurons[ni]
@@ -623,19 +620,19 @@ func (ss *Sim) TrialStats(accum bool) {
 		}
 		tgn := &trg.Neurons[ni]
 		if tgn.Ext > 0.5 {
-			if inn.ActM > 0.4 {
+			if inn.ActM > 0.5 {
 				gotOne = true
 			}
 		} else {
 			if inn.ActM > 0.5 {
-				sse += float64(inn.ActM)
+				err += float64(inn.ActM)
 			}
 		}
 	}
 	if !gotOne {
-		sse += 1
+		err += 1
 	}
-	ss.TrlUnitErr = sse
+	ss.TrlUnitErr = err
 	if ss.TrlUnitErr > 0 {
 		ss.TrlErr = 1
 	} else {

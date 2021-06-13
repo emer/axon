@@ -86,6 +86,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	if decay > 0 { // no-op for most, but not all..
 		nrn.Spike = 0
 		nrn.Act -= decay * (nrn.Act - ac.Init.Act)
+		nrn.ActInt -= decay * (nrn.ActInt - ac.Init.Act)
 		nrn.Ge -= decay * (nrn.Ge - ac.Init.Ge)
 		nrn.Gi -= decay * (nrn.Gi - ac.Init.Gi)
 		nrn.Gk -= decay * nrn.Gk
@@ -94,6 +95,10 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 		nrn.GiSyn -= decay * nrn.GiSyn
 		nrn.GiSelf -= decay * nrn.GiSelf
+
+		nrn.AvgSS -= decay * (nrn.AvgSS - ac.Init.Act)
+		nrn.AvgS -= decay * (nrn.AvgS - ac.Init.Act)
+		nrn.AvgM -= decay * (nrn.AvgM - ac.Init.Act)
 	}
 
 	nrn.VmDend -= ac.Decay.Glong * (nrn.VmDend - ac.Init.Vm)
@@ -123,7 +128,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.ISI = -1
 	nrn.ISIAvg = -1
 	nrn.Act = ac.Init.Act
-	nrn.ActLrn = ac.Init.Act
+	nrn.ActInt = ac.Init.Act
 	nrn.Ge = ac.Init.Ge
 	nrn.Gi = ac.Init.Gi
 	nrn.Gk = 0
@@ -152,13 +157,14 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GABAB = 0
 	nrn.GABABx = 0
 
-	ac.InitActQs(nrn)
+	ac.InitLongActs(nrn)
 }
 
-// InitActQs initializes quarter-based activation states in neuron (ActPrv-2, ActM, ActP, ActDif)
+// InitLongActs initializes longer time-scale activation states in neuron
+// (ActPrv, ActSt*, ActM, ActP, ActDif)
 // Called from InitActs, which is called from InitWts, but otherwise not automatically called
 // (DecayState is used instead)
-func (ac *ActParams) InitActQs(nrn *Neuron) {
+func (ac *ActParams) InitLongActs(nrn *Neuron) {
 	nrn.ActPrv = 0
 	nrn.ActSt1 = 0
 	nrn.ActSt2 = 0
@@ -293,7 +299,6 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.ActDel = nwAct - nrn.Act
 	nrn.Act = nwAct
-	nrn.ActLrn = nrn.Act
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk = nrn.GknaFast + nrn.GknaMed + nrn.GknaSlow
@@ -344,7 +349,6 @@ func (ac *ActParams) RateClamp(nrn *Neuron) {
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.ActDel = nwAct - nrn.Act
 	nrn.Act = nwAct
-	nrn.ActLrn = nrn.Act
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 	}
@@ -364,8 +368,8 @@ type SpikeParams struct {
 	ExpSlope float32 `viewif:"Exp" def:"0.02" desc:"slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpThr   float32 `viewif:"Exp" def:"1" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
 	MaxHz    float32 `def:"180" min:"1" desc:"for translating spiking interval (rate) into rate-code activation equivalent (and vice-versa, for clamped layers), what is the maximum firing rate associated with a maximum activation value (max act is typically 1.0 -- depends on act_range)"`
-	RateTau  float32 `def:"5" min:"1" desc:"constant for integrating the spiking interval in estimating spiking rate"`
-	RateDt   float32 `view:"-" desc:"rate = 1 / tau"`
+	ISITau   float32 `def:"5" min:"1" desc:"constant for integrating the spiking interval in estimating spiking rate"`
+	ISIDt    float32 `view:"-" desc:"rate = 1 / tau"`
 }
 
 func (sk *SpikeParams) Defaults() {
@@ -376,12 +380,12 @@ func (sk *SpikeParams) Defaults() {
 	sk.ExpSlope = 0.02
 	sk.ExpThr = 1.0
 	sk.MaxHz = 180
-	sk.RateTau = 5
+	sk.ISITau = 5
 	sk.Update()
 }
 
 func (sk *SpikeParams) Update() {
-	sk.RateDt = 1 / sk.RateTau
+	sk.ISIDt = 1 / sk.ISITau
 }
 
 // ActToISI compute spiking interval from a given rate-coded activation,
@@ -409,7 +413,7 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 	} else if isi < 0.8**avg {
 		*avg = isi // if significantly less than we take that
 	} else { // integrate on slower
-		*avg += sk.RateDt * (isi - *avg) // running avg updt
+		*avg += sk.ISIDt * (isi - *avg) // running avg updt
 	}
 }
 
@@ -465,15 +469,15 @@ type DtParams struct {
 	VmDendTau  float32 `def:"5" min:"1" desc:"dendritic membrane potential integration time constant"`
 	GeTau      float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau      float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
-	MTau       float32 `def:"20" min:"1" desc:"time constant for continuously updating the minus phase ActM value from the short AvgS value, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
+	IntTau     float32 `def:"20" min:"1" desc:"time constant for integrating AvgS values over time, used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
 	LongAvgTau float32 `def:"20" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg in trials (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
 
-	VmDt     float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
-	VmDendDt float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
-	GeDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
-	GiDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
-	MDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
-	TrlAvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
+	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
+	GeDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
+	GiDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
+	IntDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
+	LongAvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (dp *DtParams) Update() {
@@ -481,8 +485,8 @@ func (dp *DtParams) Update() {
 	dp.VmDendDt = dp.Integ / dp.VmDendTau
 	dp.GeDt = dp.Integ / dp.GeTau
 	dp.GiDt = dp.Integ / dp.GiTau
-	dp.MDt = dp.Integ / dp.MTau
-	dp.TrlAvgDt = 1 / dp.LongAvgTau
+	dp.IntDt = dp.Integ / dp.IntTau
+	dp.LongAvgDt = 1 / dp.LongAvgTau
 }
 
 func (dp *DtParams) Defaults() {
@@ -491,7 +495,7 @@ func (dp *DtParams) Defaults() {
 	dp.VmDendTau = 5
 	dp.GeTau = 5
 	dp.GiTau = 7
-	dp.MTau = 20 // 20 for 50 cycle, 10 for 25 cycle qtr
+	dp.IntTau = 20
 	dp.LongAvgTau = 20
 	dp.Update()
 }
@@ -506,21 +510,21 @@ func (dp *DtParams) GiFmRaw(giRaw float32, gi *float32, min float32) {
 	*gi += giRaw - dp.GiDt*(*gi-min)
 }
 
-// AvgVarUpdt updates the average and variance from current value, using TrlAvgDt
+// AvgVarUpdt updates the average and variance from current value, using LongAvgDt
 func (dp *DtParams) AvgVarUpdt(avg, vr *float32, val float32) {
 	if *avg == 0 { // first time -- set
 		*avg = val
 		*vr = 0
 	} else {
 		del := val - *avg
-		incr := dp.TrlAvgDt * del
+		incr := dp.LongAvgDt * del
 		*avg += incr
 		// following is magic exponentially-weighted incremental variance formula
 		// derived by Finch, 2009: Incremental calculation of weighted mean and variance
 		if *vr == 0 {
-			*vr = 2 * (1 - dp.TrlAvgDt) * del * incr
+			*vr = 2 * (1 - dp.LongAvgDt) * del * incr
 		} else {
-			*vr = (1 - dp.TrlAvgDt) * (*vr + del*incr)
+			*vr = (1 - dp.LongAvgDt) * (*vr + del*incr)
 		}
 	}
 }
@@ -604,12 +608,13 @@ func (ev ClampTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON
 func (ev *ClampTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 const (
-	// RateClamp drives a poisson firing rate
-	RateClamp ClampTypes = iota
-
 	// GeClamp drives a constant excitatory input given by Ge value
-	// ignoring any other source of Ge input
-	GeClamp
+	// ignoring any other source of Ge input -- like a current clamp.
+	// This works best in general by allowing more natural temporal dynamics.
+	GeClamp ClampTypes = iota
+
+	// RateClamp drives a poisson firing rate in proportion to clamped value.
+	RateClamp
 
 	// AddGeClamp adds a constant extra Ge value on top of existing Ge inputs
 	AddGeClamp
