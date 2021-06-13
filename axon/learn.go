@@ -56,7 +56,7 @@ func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
 // Cyc:25, SS:20, S:4, M:20
 type LrnActAvgParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives AvgSS value"`
-	MinLrn float32 `desc:"minimum learning activation -- below this goes to zero"`
+	MinLrn float32 `def:"0.02" desc:"minimum learning activation -- below this goes to zero"`
 	SSTau  float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking -- in general 4 is the largest value without starting to impair learning, but a value of 7 can be combined with m_in_s = 0 with somewhat worse results"`
 	STau   float32 `def:"10" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the short time-scale AvgS value from the super-short AvgSS value (cascade mode) -- AvgS represents the plus phase learning signal that reflects the most recent past information"`
 	MTau   float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome) -- the default value of 10 generally cannot be exceeded without impairing learning"`
@@ -95,6 +95,7 @@ func (aa *LrnActAvgParams) Update() {
 
 func (aa *LrnActAvgParams) Defaults() {
 	aa.SpikeG = 8
+	aa.MinLrn = 0.02
 	aa.SSTau = 40 // 20 for 25 cycle qtr
 	aa.STau = 10
 	aa.MTau = 40 // 20 for 25 cycle qtr

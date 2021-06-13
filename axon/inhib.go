@@ -90,7 +90,7 @@ func (aa *ActAvgParams) Update() {
 }
 
 func (aa *ActAvgParams) Defaults() {
-	aa.InhTau = 5
+	aa.InhTau = 1
 	aa.Init = 0.1
 	aa.Targ = 0.1
 	aa.HiTol = 0

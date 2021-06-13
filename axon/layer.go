@@ -1242,7 +1242,9 @@ func (ly *Layer) InhibAct(ltime *Time) {
 			if nrn.IsOff() {
 				continue
 			}
-			avg += nrn.AvgSS
+			// in theory having quicker activation than Act will be useful, but maybe the delay is
+			// not such a big deal, and otherwise it tracks pretty smoothly and closely
+			avg += nrn.Act // AvgSS, AvgS not clearly better, nor is spike..
 			if nrn.Act > max {
 				max = nrn.Act
 				maxi = ni
