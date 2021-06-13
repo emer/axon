@@ -69,19 +69,19 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":               "1.2", // 1.2 > 1.3 > 1.1 used in all larger models
-					"Layer.Inhib.ActAvg.InhTau":          "50",
-					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
-					"Layer.Inhib.ActAvg.Targ":            "0.05",  // for adapt, important for this to be accurate
-					"Layer.Inhib.ActAvg.AdaptGi":         "false", // not huge effects but beneficial
-					"Layer.Act.Decay.Act":                "0.0",   // 0, .7 best?
-					"Layer.Act.Decay.Glong":              "0.7",   //
-					"Layer.Act.Decay.KNa":                "0.0",   // 0 > higher for all other models
-					"Layer.Act.Gbar.L":                   "0.2",   // 0.2 > 0.1
-					"Layer.Act.NMDA.Gbar":                "0.03",  // 0.03 > .04 > .02
-					"Layer.Act.NMDA.Tau":                 "100",   // 50 no diff
-					"Layer.Act.GABAB.Gbar":               "0.2",   // .1 == .2 pretty much
-					"Layer.Act.GABAB.Gbase":              "0.2",   // .1 == .2
-					"Layer.Act.GABAB.GiSpike":            "10",    // 10 > 8 > 15
+					"Layer.Inhib.ActAvg.InhTau":          "20",
+					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
+					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
+					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
+					"Layer.Act.Decay.Act":                "0.0",  // 0, .7 best?
+					"Layer.Act.Decay.Glong":              "0.7",  //
+					"Layer.Act.Decay.KNa":                "0.0",  // 0 > higher for all other models
+					"Layer.Act.Gbar.L":                   "0.2",  // 0.2 > 0.1
+					"Layer.Act.NMDA.Gbar":                "0.03", // 0.03 > .04 > .02
+					"Layer.Act.NMDA.Tau":                 "100",  // 50 no diff
+					"Layer.Act.GABAB.Gbar":               "0.2",  // .1 == .2 pretty much
+					"Layer.Act.GABAB.Gbase":              "0.2",  // .1 == .2
+					"Layer.Act.GABAB.GiSpike":            "10",   // 10 > 8 > 15
 					"Layer.Act.GTarg.GeMax":              "1",
 					"Layer.Learn.ActAvg.SpikeG":          "8",
 					"Layer.Learn.ActAvg.MinLrn":          "0.02",
@@ -284,7 +284,7 @@ func (ss *Sim) New() {
 	ss.RunStats = &etable.Table{}
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.5 // 0.5 > 0.2 -- not very useful in this model, but key in larger nets
-	ss.ErrLrMod.Range.Set(0.2, 0.8)
+	ss.ErrLrMod.Range.Set(0, 0.5)
 	ss.PAlphaPlus = 0 // .2 works fine
 	ss.Params = ParamSets
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs

@@ -95,10 +95,6 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 		nrn.GiSyn -= decay * nrn.GiSyn
 		nrn.GiSelf -= decay * nrn.GiSelf
-
-		nrn.AvgSS -= decay * (nrn.AvgSS - ac.Init.Act)
-		nrn.AvgS -= decay * (nrn.AvgS - ac.Init.Act)
-		nrn.AvgM -= decay * (nrn.AvgM - ac.Init.Act)
 	}
 
 	nrn.VmDend -= ac.Decay.Glong * (nrn.VmDend - ac.Init.Vm)

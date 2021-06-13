@@ -1242,7 +1242,7 @@ func (ly *Layer) InhibAct(ltime *Time) {
 			if nrn.IsOff() {
 				continue
 			}
-			avg += nrn.Spike
+			avg += nrn.AvgSS
 			if nrn.Act > max {
 				max = nrn.Act
 				maxi = ni
@@ -1254,11 +1254,12 @@ func (ly *Layer) InhibAct(ltime *Time) {
 		if nn > 1 {
 			avg /= float32(nn)
 		}
-		if avg > pl.Inhib.Act.Avg {
-			pl.Inhib.Act.Avg = avg
-		} else {
-			pl.Inhib.Act.Avg += ly.Inhib.ActAvg.InhDt * (avg - pl.Inhib.Act.Avg)
-		}
+		// straight avg seems to work best..
+		// if avg > pl.Inhib.Act.Avg {
+		// 	pl.Inhib.Act.Avg = avg
+		// } else {
+		pl.Inhib.Act.Avg += ly.Inhib.ActAvg.InhDt * (avg - pl.Inhib.Act.Avg)
+		// }
 		pl.Inhib.Act.Max = max
 		pl.Inhib.Act.MaxIdx = maxi - pl.StIdx
 	}
