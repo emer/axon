@@ -42,30 +42,22 @@ func (ip *InhibParams) Defaults() {
 // FBActParams defines parameters for average activation value in pool
 // that drives feedback inhibition in the FFFB inhibition function.
 type FBActParams struct {
-	RiseTau  float32 `def:"1" desc:"time constant for increases in pool-level average activation driven by current instantaneous activation across the pool"`
-	DecayTau float32 `def:"1" desc:"time constant for decreases in pool-level average activation driven by current instantaneous activation across the pool"`
-	RiseDt   float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	DecayDt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	Tau float32 `def:"20" desc:"time constant for integrating pool-level average activation driven by current instantaneous activation across the pool"`
+	Dt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (fb *FBActParams) Update() {
-	fb.RiseDt = 1 / fb.RiseTau
-	fb.DecayDt = 1 / fb.DecayTau
+	fb.Dt = 1 / fb.Tau
 }
 
 func (fb *FBActParams) Defaults() {
-	fb.RiseTau = 1
-	fb.DecayTau = 1
+	fb.Tau = 20
 	fb.Update()
 }
 
 // AvgAct updates the average activation from new average act
 func (fb *FBActParams) AvgAct(avg *float32, act float32) {
-	if act > *avg {
-		*avg += fb.RiseDt * (act - *avg)
-	} else {
-		*avg += fb.DecayDt * (act - *avg)
-	}
+	*avg += fb.Dt * (act - *avg)
 }
 
 ///////////////////////////////////////////////////////////////////////

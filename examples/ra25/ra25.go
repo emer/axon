@@ -68,9 +68,10 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":               "1.2", // 1.2 > 1.3 > 1.1 used in all larger models
-					"Layer.Inhib.FBAct.RiseTau":          "1",
-					"Layer.Inhib.FBAct.DecayTau":         "10",
+					"Layer.Inhib.Layer.Gi":               "1.2", // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.FBAct.RiseTau":          "20",
+					"Layer.Inhib.FBAct.DecayTau":         "20",
+					"Layer.Act.Dt.IntTau":                "60",   // 40 > 20 in larger nets
 					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
@@ -89,7 +90,6 @@ var ParamSets = params.Sets{
 					"Layer.Learn.ActAvg.SSTau":           "40",   // 4 > 2 for 50 cyc qtr
 					"Layer.Learn.ActAvg.STau":            "10",   //
 					"Layer.Learn.ActAvg.MTau":            "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
-					"Layer.Act.Dt.IntTau":                "5",    // for 50 cyc qtr, 20 > 10
 					"Layer.Act.KNa.On":                   "true", // on > off
 					"Layer.Act.KNa.Fast.Max":             "0.1",  // 0.2 > 0.1
 					"Layer.Act.KNa.Med.Max":              "0.2",  // 0.2 > 0.1 def

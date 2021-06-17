@@ -429,7 +429,7 @@ type LrateMod struct {
 func (lr *LrateMod) Defaults() {
 	lr.On = true
 	lr.Base = 0.2
-	lr.Range.Set(0, 0.5)
+	lr.Range.Set(0.2, 0.8)
 }
 
 func (lr *LrateMod) Update() {
