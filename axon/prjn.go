@@ -417,6 +417,10 @@ func (pj *Prjn) InitWts() {
 	pj.AxonPrj.InitGbuf()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.SWt.Init.SPct
+	if rlay.AxonLay.IsTarget() {
+		pj.SWt.Init.SPct = 0
+		spct = 0
+	}
 	smn := pj.SWt.Init.Mean
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
@@ -431,7 +435,7 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
-	if pj.SWt.Adapt.On {
+	if pj.SWt.Adapt.On && !rlay.AxonLay.IsTarget() {
 		pj.SWtRescale()
 	}
 }
@@ -781,6 +785,9 @@ func (pj *Prjn) SWtFmWt() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	if rlay.AxonLay.IsTarget() {
+		return
+	}
 	max := pj.SWt.Limit.Max
 	min := pj.SWt.Limit.Min
 	lr := pj.SWt.Adapt.Lrate

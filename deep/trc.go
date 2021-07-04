@@ -223,8 +223,10 @@ func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) 
 	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 
+	// note: excluding gnmda during driving phase -- probably could exclude always due to ge context?
+
 	// note: each step broken out here so other variants can add extra terms to Raw
-	ly.Act.GeFmRaw(nrn, geRaw+nrn.Gnmda, cyc, actm)
+	ly.Act.GeFmRaw(nrn, geRaw, cyc, actm)
 	nrn.GeRaw = 0
 	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 	nrn.GiRaw = 0

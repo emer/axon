@@ -42,7 +42,7 @@ func (ip *InhibParams) Defaults() {
 // FBActParams defines parameters for average activation value in pool
 // that drives feedback inhibition in the FFFB inhibition function.
 type FBActParams struct {
-	Tau float32 `def:"20" desc:"time constant for integrating pool-level average activation driven by current instantaneous activation across the pool"`
+	Tau float32 `def:"30" desc:"time constant for integrating pool-level average activation driven by current instantaneous activation across the pool"`
 	Dt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
@@ -51,7 +51,7 @@ func (fb *FBActParams) Update() {
 }
 
 func (fb *FBActParams) Defaults() {
-	fb.Tau = 20
+	fb.Tau = 30
 	fb.Update()
 }
 

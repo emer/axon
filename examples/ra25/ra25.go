@@ -68,15 +68,14 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":               "1.2", // 1.2 > 1.3 > (1.1 used in larger models)
-					"Layer.Inhib.FBAct.RiseTau":          "20",
-					"Layer.Inhib.FBAct.DecayTau":         "20",
-					"Layer.Act.Dt.IntTau":                "60",   // 40 > 20 in larger nets
+					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.FBAct.Tau":              "20",   // 20 > 30 ?
+					"Layer.Act.Dt.IntTau":                "40",   // 40 > 20 in larger nets
 					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
-					"Layer.Act.Decay.Act":                "0.0",  // 0, .7 best?
-					"Layer.Act.Decay.Glong":              "0.7",  //
+					"Layer.Act.Decay.Act":                "0.2",  // 0, .7 best?
+					"Layer.Act.Decay.Glong":              "0.6",  //
 					"Layer.Act.Decay.KNa":                "0.0",  // 0 > higher for all other models
 					"Layer.Act.Gbar.L":                   "0.2",  // 0.2 > 0.1
 					"Layer.Act.NMDA.Gbar":                "0.03", // 0.03 > .04 > .02
@@ -530,17 +529,14 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
-	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
-		ss.UpdateView(train)
-	}
-
 	ss.TrialStats(train)
 
 	if train {
 		ss.ErrLrMod.LrateMod(ss.Net, float32(1-ss.TrlCosDiff))
 		ss.Net.DWt()
 	}
-	if ss.ViewOn && viewUpdt == axon.AlphaCycle {
+
+	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
 		ss.UpdateView(train)
 	}
 

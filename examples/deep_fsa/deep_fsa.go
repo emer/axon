@@ -66,8 +66,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{
-					"Layer.Inhib.FBAct.RiseTau":          "1",
-					"Layer.Inhib.FBAct.DecayTau":         "10",
+					"Layer.Inhib.FBAct.Tau":              "30",
 					"Layer.Inhib.ActAvg.Init":            "0.15",
 					"Layer.Inhib.ActAvg.Targ":            "0.15",
 					"Layer.Inhib.Layer.Gi":               "1.1", // 1.1 > 1.2 > 1.0
@@ -137,6 +136,14 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1", // 1 > other
 				}},
+			// {Sel: "#HiddenCTToHiddenP", Desc: "no swt to output layers",
+			// 	Params: params.Params{
+			// 		"Prjn.Com.PFail":          "0.0",
+			// 		"Prjn.Com.PFailWtMax":     "0.0",
+			// 		"Prjn.SWt.Adapt.DreamVar": "0.0",   // nope
+			// 		"Prjn.SWt.Adapt.On":       "false", // off > on
+			// 		"Prjn.SWt.Init.SPct":      "0",     // when off, 0
+			// 	}},
 		},
 	}},
 }
@@ -469,9 +476,6 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
-	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
-		ss.UpdateView(train)
-	}
 
 	ss.TrialStats(train)
 
@@ -479,7 +483,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 		ss.ErrLrMod.LrateMod(ss.Net.AsAxon(), float32(ss.TrlErr))
 		ss.Net.DWt()
 	}
-	if ss.ViewOn && viewUpdt == axon.AlphaCycle {
+
+	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
 		ss.UpdateView(train)
 	}
 

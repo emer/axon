@@ -114,7 +114,7 @@ func (aa *LrnActAvgParams) Defaults() {
 type TrgAvgActParams struct {
 	ErrLrate     float32    `def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
 	SynScaleRate float32    `def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
-	TrgRange     minmax.F32 `def:"[0.5,2] desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
+	TrgRange     minmax.F32 `desc:"[default .5 to 2] range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 }
 
@@ -142,7 +142,7 @@ func (ss *TrgAvgActParams) Defaults() {
 type SWtParams struct {
 	Init  SWtInitParams  `desc:"initialization of SWt values"`
 	Adapt SWtAdaptParams `desc:"adaptation of SWt values in response to LWt learning"`
-	Limit minmax.F32     `def:"[0.2,0.8]" view:"inline" desc:"range limits for SWt values"`
+	Limit minmax.F32     `def:"{0.2 0.8}" view:"inline" desc:"range limits for SWt values"`
 }
 
 func (sp *SWtParams) Defaults() {
@@ -269,7 +269,7 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 
 // SWtInitParams for initial SWt values
 type SWtInitParams struct {
-	SPct float32 `min:"0" max:"1" def:"1,0.5" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values.  1 gives the strongest initial biasing effect, for larger models that need more structural support. 0.5 should work for most models where stronger constraints are not needed."`
+	SPct float32 `min:"0" max:"1" def:"0,1,0.5" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values.  1 gives the strongest initial biasing effect, for larger models that need more structural support. 0.5 should work for most models where stronger constraints are not needed."`
 	Mean float32 `def:"0.5,0.4" desc:"target mean weight values across receiving neuron's projection -- the mean SWt values are constrained to remain at this value.  some projections may benefit from lower mean of .4"`
 	Var  float32 `def:"0.25" desc:"initial variance in weight values, prior to constraints."`
 	Sym  bool    `def:"true" desc:"symmetrize the initial weight values with those in reciprocal projection -- typically true for bidirectional excitatory connections"`
@@ -292,10 +292,10 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	On       bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated -- generally good to have Init.SPct=0 in such cases too."`
-	Lrate    float32 `viewif:"On" def:"0.1,0.01" desc:"what fraction of the current learned Wt value to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support."`
+	On       bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated, in which case it is generally good to have Init.SPct=0 too."`
+	Lrate    float32 `viewif:"On" def:"0.1,0.01,0.001" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
 	SigGain  float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
-	DreamVar float32 `viewif:"On" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning."`
+	DreamVar float32 `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
