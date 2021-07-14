@@ -10,6 +10,7 @@ import (
 	"math"
 
 	"github.com/emer/axon/axon"
+	"github.com/goki/ki/bitflag"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -218,7 +219,7 @@ func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) 
 	}
 	actm := nrn.ActM
 	geRaw := (1-drvInhib)*nrn.GeRaw + (drvGe * (1 + ly.Act.BurstGe(cyc, actm)))
-
+	nrn.ClearFlag(axon.NeurHasExt)
 	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, geRaw, nrn.NMDASyn)
 	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
@@ -377,4 +378,16 @@ func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
 		return
 	}
 	ly.GeFmDrivers(ltime)
+}
+
+// InitExt initializes external input state -- called prior to apply ext
+func (ly *TRCLayer) InitExt() {
+	msk := bitflag.Mask32(int(axon.NeurHasExt), int(axon.NeurHasCmpr))
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		nrn.Ext = 0
+		nrn.Targ = 0
+		nrn.ClearMask(msk)
+		nrn.SetFlag(axon.NeurHasTarg)
+	}
 }

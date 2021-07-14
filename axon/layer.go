@@ -1206,6 +1206,10 @@ func (ly *Layer) InhibFmPool(ltime *Time) {
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act
 func (ly *Layer) ActFmG(ltime *Time) {
+	intdt := ly.Act.Dt.IntDt
+	if ltime.PlusPhase {
+		intdt *= 3.0
+	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1214,7 +1218,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.AvgsFmAct(nrn)
-		nrn.ActInt += ly.Act.Dt.IntDt * (nrn.Act - nrn.ActInt) // using reg act here now
+		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
@@ -1308,6 +1312,7 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 			nrn.SetFlag(NeurHasExt)
 			nrn.ISI = -1 // get fresh update on plus phase output acts
 			nrn.ISIAvg = -1
+			nrn.ActInt = ly.Act.Init.Act // reset for plus phase
 		}
 	}
 	for pi := range ly.Pools {

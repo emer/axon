@@ -457,7 +457,6 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
-	ss.Net.MinusPhase(&ss.Time)
 	ss.Time.NewPhase()
 	if viewUpdt == axon.Phase {
 		ss.UpdateView(train)
