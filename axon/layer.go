@@ -969,7 +969,7 @@ func (ly *Layer) NewState() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActPrv = nrn.ActP
+		nrn.ActPrv = nrn.AvgM // nrn.ActP -- this is used in deep learning, makes big diff!
 	}
 	if ly.Act.Noise.Type != NoNoise && ly.Act.Noise.Fixed && ly.Act.Noise.Dist != erand.Mean {
 		ly.AxonLay.GenNoise()
