@@ -62,8 +62,8 @@ github.com/emer/emergent v1.1.31/go.mod h1:XhFMJgoZeOYplTDMDUcmGPuthfTqJPbBLmXEP
 github.com/emer/empi v1.0.10 h1:8Tn26WyTVLDjkeJ6jHBT3o9OU7HZmP5H9shJXXU7WUo=
 github.com/emer/empi v1.0.10/go.mod h1:QJRkECkqMO3/UeuknKEzqH+oEf6MWogBeu5LPi+Y9mU=
 github.com/emer/etable v1.0.27/go.mod h1:JM0+fr/d33YNapi3hmKJ9lQPnaavT/4KimxBPnwxLsY=
-github.com/emer/etable v1.0.30 h1:SD7sr1HLJdLiZZStP/I79l6/DUJgloR3wGXn0f9rWtU=
-github.com/emer/etable v1.0.30/go.mod h1:OOQgaHD1Y6cGB4vVZUiGNbxg9sA2P9lDii/4JC5V9yc=
+github.com/emer/etable v1.0.33 h1:JihJl3oL+IS3eGioo8wE8ZieE3GLjP68d+0PiqrPevU=
+github.com/emer/etable v1.0.33/go.mod h1:ogctqfMI7WBSIqtDr0qJVl60j6irA5yJwm5ft8CMvQs=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -98,8 +98,8 @@ github.com/go-latex/latex v0.0.0-20210118124228-b3d85cf34e07/go.mod h1:CO1AlKB2C
 github.com/goki/freetype v0.0.0-20181231101311-fa8a33aabaff h1:W71vTCKoxtdXgnm1ECDFkfQnpdqAO00zzGXLA5yaEX8=
 github.com/goki/freetype v0.0.0-20181231101311-fa8a33aabaff/go.mod h1:wfqRWLHRBsRgkp5dmbG56SA0DmVtwrF5N3oPdI8t+Aw=
 github.com/goki/gi v1.2.7/go.mod h1:/Sn7ECgNCELcEQ1NgaotU9ZgKVOvTn9dP5eG3lat170=
-github.com/goki/gi v1.2.8 h1:XJ2aeK9QwNUY2e8TUlCnb+Wo2J1T/kZ0a+hWMNNC0QE=
-github.com/goki/gi v1.2.8/go.mod h1:QD3XZEJgjPyh6MI8vQFdy6V9HVOOeE1WCZrKawuMVpI=
+github.com/goki/gi v1.2.10 h1:vjTcrZwn1jc8T/w/ioCxdZ/n64jHlsLbL/Tm736C95s=
+github.com/goki/gi v1.2.10/go.mod h1:QD3XZEJgjPyh6MI8vQFdy6V9HVOOeE1WCZrKawuMVpI=
 github.com/goki/ki v1.0.0/go.mod h1:X+gmVeAym3JDSbbiA7iF1qkgAlTVWl1JV9sRsGDzxOA=
 github.com/goki/ki v1.1.3 h1:/aH3XhiE/xWGp9AhCqs601/OlAjixiz1HbeXJ7yUwmM=
 github.com/goki/ki v1.1.3/go.mod h1:E179pDNvlateb0xMnmPevDvTJ7i28pu9OBNeBQbQa8w=

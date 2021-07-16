@@ -1627,7 +1627,7 @@ func (ly *Layer) AdaptGScale() {
 		pj := p.(AxonPrjn).AsAxon()
 		pj.GScale.AvgMaxRel = pj.GScale.AvgMax / sum
 
-		if !pj.PrjnScale.Adapt {
+		if !pj.Learn.Learn || !pj.PrjnScale.Adapt {
 			continue
 		}
 

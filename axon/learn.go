@@ -436,19 +436,13 @@ func (lr *LrateMod) Update() {
 }
 
 // Mod returns the learning rate modulation factor as a function
-// of any kind of normalized modulation factor, e.g., an error measure
-// (0 = no error = Base learning rate, 1 = maximum error).
+// of any kind of normalized modulation factor, e.g., an error measure.
+// If fact <= Range.Min, returns Base
+// If fact >= Range.Max, returns 1
+// otherwise, returns proportional value between Base..1
 func (lr *LrateMod) Mod(fact float32) float32 {
-	lrm := float32(1)
-	switch {
-	case fact < lr.Range.Min:
-		lrm = 0
-	case fact > lr.Range.Max:
-		lrm = 1
-	default:
-		lrm = lr.Range.NormVal(fact)
-	}
-	mod := lr.Base + lrm*(1-lr.Base)
+	lrm := lr.Range.NormVal(fact)    // clips to 0-1 range
+	mod := lr.Base + lrm*(1-lr.Base) // resulting mod is in Base-1 range
 	return mod
 }
 
