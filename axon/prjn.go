@@ -799,7 +799,7 @@ func (pj *Prjn) SWtFmWt() {
 		}
 		st := int(pj.RConIdxSt[ri])
 		rsidxs := pj.RSynIdx[st : st+nc]
-		sumDWt := float32(0)
+		avgDWt := float32(0)
 		for _, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
 			if sy.DSWt >= 0 { // softbound for SWt
@@ -807,13 +807,13 @@ func (pj *Prjn) SWtFmWt() {
 			} else {
 				sy.DSWt *= (sy.SWt - min)
 			}
-			sumDWt += sy.DSWt
+			avgDWt += sy.DSWt
 		}
-		sumDWt /= float32(nc)
+		avgDWt /= float32(nc)
 		if dvar > 0 {
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
-				sy.SWt += lr * (sy.DSWt - sumDWt)
+				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.SWt.Adapt.RndVar()
 				if sy.LWt > 1 {
@@ -826,7 +826,7 @@ func (pj *Prjn) SWtFmWt() {
 		} else {
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
-				sy.SWt += lr * (sy.DSWt - sumDWt)
+				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 			}
