@@ -412,7 +412,7 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 						sy := &pj.Syns[rsi]
 						swt := swts.FloatVal1D(scst + ci)
 						sy.SWt = float32(swt)
-						sy.Wt = pj.SWt.ClipWt(sy.SWt + pj.SWt.Init.RndVar())
+						sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
 						sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 					}
 				}
@@ -460,6 +460,7 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 			rsi := pj.RSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			sy.SWt = swt
+			sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
 			sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 		}
 	}
