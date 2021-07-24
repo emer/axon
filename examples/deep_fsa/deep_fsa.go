@@ -105,7 +105,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Burst":   "false", // not obviously better
 					"Layer.Act.Clamp.BurstGe": "1",
 					"Layer.Act.GABAB.Gbar":    "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
-					"Layer.Act.NMDA.Gbar":     "0.1",   // 0.1 > .05 > .2
+					"Layer.Act.NMDA.Gbar":     "0.2",   // 0.1 > .05 > .2
 					"Layer.Act.Decay.Act":     "0.5",
 					"Layer.Act.Decay.Glong":   "1", // clear long
 				}},

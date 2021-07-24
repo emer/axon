@@ -375,6 +375,52 @@ func (pj *Prjn) Build() error {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
+// SetSWtsRPool initializes SWt structural weight values using given tensor
+// of values which has unique values for each recv neuron within a given pool.
+func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
+	rNuY := swts.Dim(0)
+	rNuX := swts.Dim(1)
+	rNu := rNuY * rNuX
+	rfsz := swts.Len() / rNu
+
+	rsh := pj.Recv.Shape()
+	rNpY := rsh.Dim(0)
+	rNpX := rsh.Dim(1)
+	r2d := false
+	if rsh.NumDims() != 4 {
+		r2d = true
+		rNpY = 1
+		rNpX = 1
+	}
+
+	for rpy := 0; rpy < rNpY; rpy++ {
+		for rpx := 0; rpx < rNpX; rpx++ {
+			for ruy := 0; ruy < rNuY; ruy++ {
+				for rux := 0; rux < rNuX; rux++ {
+					ri := 0
+					if r2d {
+						ri = rsh.Offset([]int{ruy, rux})
+					} else {
+						ri = rsh.Offset([]int{rpy, rpx, ruy, rux})
+					}
+					scst := (ruy*rNuX + rux) * rfsz
+					nc := int(pj.RConN[ri])
+					st := int(pj.RConIdxSt[ri])
+					for ci := 0; ci < nc; ci++ {
+						// si := int(pj.RConIdx[st+ci]) // could verify coords etc
+						rsi := pj.RSynIdx[st+ci]
+						sy := &pj.Syns[rsi]
+						swt := swts.FloatVal1D(scst + ci)
+						sy.SWt = float32(swt)
+						sy.Wt = pj.SWt.ClipWt(sy.SWt + pj.SWt.Init.RndVar())
+						sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+					}
+				}
+			}
+		}
+	}
+}
+
 // SetWtsFunc initializes synaptic Wt value using given function
 // based on receiving and sending unit indexes.
 // Strongly suggest calling SWtRescale after.
@@ -394,6 +440,27 @@ func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) flo
 			sy.SWt = wt
 			sy.Wt = wt
 			sy.LWt = 0.5
+		}
+	}
+}
+
+// SetSWtsFunc initializes structural SWt values using given function
+// based on receiving and sending unit indexes.
+func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) float32) {
+	rsh := pj.Recv.Shape()
+	rn := rsh.Len()
+	ssh := pj.Send.Shape()
+
+	for ri := 0; ri < rn; ri++ {
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		for ci := 0; ci < nc; ci++ {
+			si := int(pj.RConIdx[st+ci])
+			swt := swtFun(si, ri, ssh, rsh)
+			rsi := pj.RSynIdx[st+ci]
+			sy := &pj.Syns[rsi]
+			sy.SWt = swt
+			sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 		}
 	}
 }

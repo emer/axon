@@ -14,6 +14,8 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
+	"github.com/emer/emergent/prjn"
+	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -209,6 +211,42 @@ func (nt *Network) InitWts() {
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
+}
+
+// InitTopoSWts initializes SWt structural weight parameters from
+// prjn types that support topographic weight patterns, having flags set to support it,
+// includes: prjn.PoolTile prjn.Circle.
+// call before InitWts if using Topo wts
+func (nt *Network) InitTopoSWts() {
+	swts := &etensor.Float32{}
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		rpjn := ly.RecvPrjns()
+		for _, p := range *rpjn {
+			if p.IsOff() {
+				continue
+			}
+			pat := p.Pattern()
+			switch pt := pat.(type) {
+			case *prjn.PoolTile:
+				if !pt.HasTopoWts() {
+					continue
+				}
+				pj := p.(AxonPrjn).AsAxon()
+				slay := p.SendLay()
+				pt.TopoWts(slay.Shape(), ly.Shape(), swts)
+				pj.SetSWtsRPool(swts)
+			case *prjn.Circle:
+				if !pt.TopoWts {
+					continue
+				}
+				pj := p.(AxonPrjn).AsAxon()
+				pj.SetSWtsFunc(pt.GaussWts)
+			}
+		}
+	}
 }
 
 // DecayState decays activation state by given proportion

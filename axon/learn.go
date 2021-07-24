@@ -166,6 +166,17 @@ func (sp *SWtParams) ClipSWt(swt float32) float32 {
 	return sp.Limit.ClipVal(swt)
 }
 
+// ClipWt returns Wt value clipped to 0-1 range
+func (sp *SWtParams) ClipWt(wt float32) float32 {
+	if wt > 1 {
+		return 1
+	}
+	if wt < 0 {
+		return 0
+	}
+	return wt
+}
+
 // SigFun is the sigmoid function for value w in 0-1 range, with gain and offset params
 func SigFun(w, gain, off float32) float32 {
 	if w <= 0 {
