@@ -382,12 +382,15 @@ func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
 
 // InitExt initializes external input state -- called prior to apply ext
 func (ly *TRCLayer) InitExt() {
-	msk := bitflag.Mask32(int(axon.NeurHasExt), int(axon.NeurHasCmpr))
+	msk := bitflag.Mask32(int(axon.NeurHasExt), int(axon.NeurHasTarg), int(axon.NeurHasCmpr))
+	drvoff := ly.TRC.DriversOff
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		nrn.Ext = 0
 		nrn.Targ = 0
 		nrn.ClearMask(msk)
-		nrn.SetFlag(axon.NeurHasTarg)
+		if !drvoff {
+			nrn.SetFlag(axon.NeurHasTarg)
+		}
 	}
 }
