@@ -143,8 +143,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":        "0.2",
 					"Prjn.SWt.Limit.Max":        "0.8",
-					"Prjn.PrjnScale.ScaleLrate": "0.5", // lvis best with .5
-					"Prjn.PrjnScale.Init":       "1",
+					"Prjn.PrjnScale.ScaleLrate": "0.5",    // lvis best with .5
 					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec
@@ -158,7 +157,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.WtInit.Var":       "0.0",
 					"Prjn.WtInit.Mean":      "0.05",
-					"Prjn.PrjnScale.Init":   ".1",
+					"Prjn.PrjnScale.Abs":    ".1",
 					"Prjn.PrjnScale.Adapt":  "false",
 					"Prjn.Learn.WtSig.Gain": "6",
 					"Prjn.IncGain":          "0.5",

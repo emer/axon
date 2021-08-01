@@ -532,16 +532,16 @@ func (dp *DtParams) AvgVarUpdt(avg, vr *float32, val float32) {
 // GTargParams are target conductance levels for excitation and inhibition,
 // driving adaptation of GScale.Scale conductance scaling
 type GTargParams struct {
-	GeMax float32 `def:"1" min:"0" desc:"target maximum excitatory conductance in the minus phase: GeM"`
-	GiMax float32 `def:"1" min:"0" desc:"target maximum inhibitory conductance in the minus phase: GiM -- for actual synaptic inhibitory neuron inputs (GiSyn) not FFFB computed inhibition"`
+	GeMax float32 `def:"1.2" min:"0" desc:"target maximum excitatory conductance in the minus phase: GeM"`
+	GiMax float32 `def:"1.2" min:"0" desc:"target maximum inhibitory conductance in the minus phase: GiM -- for actual synaptic inhibitory neuron inputs (GiSyn) not FFFB computed inhibition"`
 }
 
 func (gt *GTargParams) Update() {
 }
 
 func (gt *GTargParams) Defaults() {
-	gt.GeMax = 1
-	gt.GiMax = 1
+	gt.GeMax = 1.2
+	gt.GiMax = 1.2
 	gt.Update()
 }
 
@@ -703,8 +703,8 @@ func (sc *SynComParams) Fail(wt *float32) {
 // according to Acts.GTarg target values.
 type PrjnScaleParams struct {
 	Rel        float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
-	Init       float32 `def:"1" min:"0" desc:"adjustment factor for the initial scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling -- typically Adapt should compensate for most cases"`
-	Adapt      bool    `def:"true" desc:"Adapt the 'GScale' scaling value so the ActAvg.AvgMaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg"`
+	Abs        float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
+	Adapt      bool    `def:"false" desc:"Adapt the 'GScale' scaling value so the ActAvg.AvgMaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg -- sometimes this is essential but often it is better to tune the Abs values manually, as the adaptation-based adjustments can disrupt things during learning"`
 	ScaleLrate float32 `viewif:"Adapt" def:"0.5" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors -- fastest value with some smoothing at .5 works well."`
 	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
 	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.8 = 80% lower than target) -- only once activations move outside this tolerance are scale values adapted"`
@@ -715,8 +715,8 @@ type PrjnScaleParams struct {
 
 func (ws *PrjnScaleParams) Defaults() {
 	ws.Rel = 1
-	ws.Init = 1
-	ws.Adapt = true
+	ws.Abs = 1
+	ws.Adapt = false
 	ws.ScaleLrate = 0.5
 	ws.HiTol = 0
 	ws.LoTol = 0.8
@@ -753,7 +753,7 @@ func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
 	return sc
 }
 
-// FullScale returns full scaling factor, which is product of Init * Rel * SLayActScale
+// FullScale returns full scaling factor, which is product of Abs * Rel * SLayActScale
 func (ws *PrjnScaleParams) FullScale(savg, snu, ncon float32) float32 {
-	return ws.Init * ws.Rel * ws.SLayActScale(savg, snu, ncon)
+	return ws.Abs * ws.Rel * ws.SLayActScale(savg, snu, ncon)
 }

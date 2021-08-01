@@ -63,12 +63,21 @@ func (ly *Layer) Defaults() {
 // UpdateParams updates all params given any changes that might have been made to individual values
 // including those in the receiving projections of this layer
 func (ly *Layer) UpdateParams() {
+	if !ly.Is4D() && ly.Inhib.Pool.On {
+		ly.Inhib.Pool.On = false
+	}
 	ly.Act.Update()
 	ly.Inhib.Update()
 	ly.Learn.Update()
 	for _, pj := range ly.RcvPrjns {
 		pj.UpdateParams()
 	}
+}
+
+// HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
+// This is the proper check for using pool-level target average activations, for example.
+func (ly *Layer) HasPoolInhib() bool {
+	return ly.Inhib.Pool.On
 }
 
 // ActAvgVals are running-average activation levels used for netinput scaling and adaptive inhibition
@@ -648,7 +657,7 @@ func (ly *Layer) InitActAvg() {
 	strg := ly.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Learn.TrgAvgAct.TrgRange.Range()
 	inc := float32(0)
-	if ly.Is4D() {
+	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool {
 		nNy := ly.Shp.Dim(2)
 		nNx := ly.Shp.Dim(3)
 		nn := nNy * nNx
@@ -1474,33 +1483,19 @@ func (ly *Layer) DTrgAvgFmErr() {
 		return
 	}
 	lr := ly.Learn.TrgAvgAct.ErrLrate
-	if ly.Is4D() {
-		np := len(ly.Pools)
-		for pi := 1; pi < np; pi++ {
-			pl := &ly.Pools[pi]
-			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-				nrn := &ly.Neurons[ni]
-				if nrn.IsOff() {
-					continue
-				}
-				nrn.DTrgAvg += lr * (nrn.AvgS - nrn.AvgM)
-			}
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
 		}
-	} else {
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			nrn.DTrgAvg += lr * (nrn.AvgS - nrn.AvgM)
-		}
+		nrn.DTrgAvg += lr * (nrn.AvgS - nrn.AvgM)
 	}
 }
 
 // DTrgAvgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
 func (ly *Layer) DTrgAvgSubMean() {
-	if ly.Is4D() {
+	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]

@@ -247,7 +247,7 @@ func (nt *NetworkStru) AllPrjnScales() string {
 				continue
 			}
 			pj := p.(AxonPrjn).AsAxon()
-			str += fmt.Sprintf("\t%23s\t\tInit:\t%g\tRel:\t%g\n", pj.Name(), pj.PrjnScale.Init, pj.PrjnScale.Rel)
+			str += fmt.Sprintf("\t%23s\t\tAbs:\t%g\tRel:\t%g\n", pj.Name(), pj.PrjnScale.Abs, pj.PrjnScale.Rel)
 		}
 	}
 	return str
