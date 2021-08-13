@@ -478,6 +478,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	sy.DWt = 0
 	sy.DSWt = 0
+	sy.Covar = 0
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -777,9 +778,10 @@ func (pj *Prjn) DWt() {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
-			continue
-		}
+		// if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
+		// 	continue
+		// }
+		svar := sn.VarDif
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -796,6 +798,8 @@ func (pj *Prjn) DWt() {
 				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
+			cv := svar * rn.VarDif
+			sy.Covar += rlay.Learn.RLrate.CovarDt * (cv - sy.Covar) // simple running average
 		}
 	}
 }
@@ -858,20 +862,26 @@ func (pj *Prjn) SWtFmWt() {
 	if rlay.AxonLay.IsTarget() {
 		return
 	}
+	slay := pj.Send.(AxonLayer).AsAxon()
 	max := pj.SWt.Limit.Max
 	min := pj.SWt.Limit.Min
 	lr := pj.SWt.Adapt.Lrate
 	dvar := pj.SWt.Adapt.DreamVar
 	for ri := range rlay.Neurons {
+		rn := &rlay.Neurons[ri]
 		nc := int(pj.RConN[ri])
 		if nc < 1 {
 			continue
 		}
 		st := int(pj.RConIdxSt[ri])
 		rsidxs := pj.RSynIdx[st : st+nc]
+		rcons := pj.RConIdx[st : st+nc]
 		avgDWt := float32(0)
-		for _, rsi := range rsidxs {
+		for ci, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
+			si := rcons[ci]
+			sn := &slay.Neurons[si]
+			sy.DSWt += pj.SWt.Adapt.CovarLrate * (rn.Var + sn.Var - sy.Covar)
 			if sy.DSWt >= 0 { // softbound for SWt
 				sy.DSWt *= (max - sy.SWt)
 			} else {

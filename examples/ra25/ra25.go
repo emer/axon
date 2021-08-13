@@ -106,6 +106,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.ActThr":          "0.2",  // 0.2 is best
 					"Layer.Learn.RLrate.ActDifThr":       "0.0",  // 0 best -- built into function anyway
 					"Layer.Learn.RLrate.Min":             "0.01", // .01 best
+					"Layer.Learn.RLrate.CovarTau":        "100",
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -143,6 +144,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":      "0.1", // .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
+					"Prjn.SWt.Adapt.CovarLrate": "1",
 					"Prjn.SWt.Init.SPct":        "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":        "0.2",
