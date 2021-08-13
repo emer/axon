@@ -134,6 +134,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.VmDend = ac.Init.Vm
 	nrn.Targ = 0
 	nrn.Ext = 0
+	nrn.RLrate = 0
 
 	nrn.ActDel = 0
 

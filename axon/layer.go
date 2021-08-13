@@ -1349,6 +1349,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		nrn.ActP = nrn.ActInt
 		nrn.ActDif = nrn.ActP - nrn.ActM
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.AvgS, nrn.AvgM)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]

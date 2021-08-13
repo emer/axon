@@ -102,6 +102,10 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01",    // 0.005 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
+					"Layer.Learn.RLrate.On":              "true",
+					"Layer.Learn.RLrate.ActThr":          "0.2",  // 0.2 is best
+					"Layer.Learn.RLrate.ActDifThr":       "0.0",  // 0 best -- built into function anyway
+					"Layer.Learn.RLrate.Min":             "0.01", // .01 best
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -134,9 +138,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Com.Delay":            "2",    // 1 == 2 = 3
-					"Prjn.Learn.Lrate.Base":     "0.04", // 0.04 def, .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.Com.Delay":            "2",   // 1 == 2 = 3
+					"Prjn.Learn.Lrate.Base":     "0.2", // 0.04 def, .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.Lrate":      "0.1", // .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
 					"Prjn.SWt.Init.SPct":        "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
@@ -531,7 +535,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ss.TrialStats(train)
 
 	if train {
-		ss.ErrLrMod.LrateMod(ss.Net, float32(1-ss.TrlCosDiff))
+		// ss.ErrLrMod.LrateMod(ss.Net, float32(1-ss.TrlCosDiff))
 		ss.Net.DWt()
 	}
 

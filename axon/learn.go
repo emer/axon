@@ -19,16 +19,19 @@ import (
 type LearnNeurParams struct {
 	ActAvg    LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
 	TrgAvgAct TrgAvgActParams `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
+	RLrate    RLrateParams    `view:"inline" desc:"recv neuron learning rate modulation params"`
 }
 
 func (ln *LearnNeurParams) Update() {
 	ln.ActAvg.Update()
 	ln.TrgAvgAct.Update()
+	ln.RLrate.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
 	ln.ActAvg.Defaults()
 	ln.TrgAvgAct.Defaults()
+	ln.RLrate.Defaults()
 }
 
 // InitActAvg initializes the running-average activation values that drive learning.
@@ -119,16 +122,51 @@ type TrgAvgActParams struct {
 	Pool         bool       `desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
 }
 
-func (ss *TrgAvgActParams) Update() {
+func (ta *TrgAvgActParams) Update() {
 }
 
-func (ss *TrgAvgActParams) Defaults() {
-	ss.ErrLrate = 0.02
-	ss.SynScaleRate = 0.01
-	ss.TrgRange.Set(0.5, 2)
-	ss.Permute = true
-	ss.Pool = true
-	ss.Update()
+func (ta *TrgAvgActParams) Defaults() {
+	ta.ErrLrate = 0.02
+	ta.SynScaleRate = 0.01
+	ta.TrgRange.Set(0.5, 2)
+	ta.Permute = true
+	ta.Pool = true
+	ta.Update()
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  RLrateParams
+
+// RLrateParams recv neuron learning rate modulation parameters.
+// RLrate is computed as |AvgS - AvgM| / Max(AvgS, AvgM) subject to thresholding
+type RLrateParams struct {
+	On        bool    `def:"true" desc:"use learning rate modulation"`
+	ActThr    float32 `def:"0.2" desc:"threshold on Max(AvgS, AvgM) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	ActDifThr float32 `def:"0" desc:"threshold on recv neuron error delta, i.e., |AvgS - AvgM| below which lrate is at Min value"`
+	Min       float32 `def:"0.01" desc:"minimum learning rate value when below ActDifThr"`
+}
+
+func (rl *RLrateParams) Update() {
+}
+
+func (rl *RLrateParams) Defaults() {
+	rl.On = true
+	rl.ActThr = 0.2
+	rl.ActDifThr = 0.0
+	rl.Min = 0.01
+}
+
+// RLrate returns the learning rate as a function of AvgS and AvgM values
+func (rl *RLrateParams) RLrate(avgS, avgM float32) float32 {
+	max := mat32.Max(avgS, avgM)
+	if max > rl.ActThr { // avoid div by 0
+		dif := mat32.Abs(avgS - avgM)
+		if dif < rl.ActDifThr {
+			return rl.Min
+		}
+		return dif / max
+	}
+	return rl.Min
 }
 
 ///////////////////////////////////////////////////////////////////////

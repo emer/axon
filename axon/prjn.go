@@ -393,6 +393,8 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 		rNpX = 1
 	}
 
+	wsz := swts.Len()
+
 	for rpy := 0; rpy < rNpY; rpy++ {
 		for rpx := 0; rpx < rNpX; rpx++ {
 			for ruy := 0; ruy < rNuY; ruy++ {
@@ -410,7 +412,7 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 						// si := int(pj.RConIdx[st+ci]) // could verify coords etc
 						rsi := pj.RSynIdx[st+ci]
 						sy := &pj.Syns[rsi]
-						swt := swts.FloatVal1D(scst + ci)
+						swt := swts.FloatVal1D((scst + ci) % wsz)
 						sy.SWt = float32(swt)
 						sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
 						sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
@@ -793,7 +795,7 @@ func (pj *Prjn) DWt() {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += lr * err
+			sy.DWt += rn.RLrate * lr * err
 		}
 	}
 }

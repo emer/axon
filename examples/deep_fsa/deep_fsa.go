@@ -71,14 +71,18 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Targ":            "0.15",
 					"Layer.Inhib.Layer.Gi":               "1.1", // 1.1 > 1.2 > 1.0
 					"Layer.Act.Gbar.L":                   "0.2", // std
-					"Layer.Act.Decay.Act":                "0.0", // both 0 better
-					"Layer.Act.Decay.Glong":              "0.0",
+					"Layer.Act.Decay.Act":                "0.2", // lvis best = .2, .6 good here too
+					"Layer.Act.Decay.Glong":              "0.6",
 					"Layer.Act.Dt.LongAvgTau":            "20", // 20 > higher for objrec, lvis
 					"Layer.Learn.ActAvg.MinLrn":          "0.02",
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
+					"Layer.Learn.RLrate.On":              "true",
+					"Layer.Learn.RLrate.ActThr":          "0.2",  // 0.2 is best
+					"Layer.Learn.RLrate.ActDifThr":       "0.0",  // 0 best -- built into function anyway
+					"Layer.Learn.RLrate.Min":             "0.01", // .01 best
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
@@ -111,7 +115,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.04",
+					"Prjn.Learn.Lrate.Base":   "0.1",
 					"Prjn.SWt.Adapt.Lrate":    "0.1", // 0.01 seems to work fine, but .1 maybe more reliable
 					"Prjn.SWt.Adapt.SigGain":  "6",
 					"Prjn.SWt.Adapt.DreamVar": "0.0", // 0.01 is just tolerable
@@ -479,7 +483,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ss.TrialStats(train)
 
 	if train {
-		ss.ErrLrMod.LrateMod(ss.Net.AsAxon(), float32(ss.TrlErr))
+		// ss.ErrLrMod.LrateMod(ss.Net.AsAxon(), float32(ss.TrlErr))
 		ss.Net.DWt()
 	}
 

@@ -52,6 +52,7 @@ type Neuron struct {
 	ActDif float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
 	ActDel float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
 	ActPrv float32 `desc:"the final activation state at end of previous state"`
+	RLrate float32 `desc:"recv-unit based learning rate computed from the activity dynamics of recv unit -- extra filtering when recv unit is likely close enough"`
 
 	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
 	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`
@@ -78,7 +79,7 @@ type Neuron struct {
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
 }
 
-var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActPrv", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActPrv", "RLrate", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
 
 var NeuronVarsMap map[string]int
 
