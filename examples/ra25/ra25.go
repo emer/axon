@@ -145,6 +145,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
 					"Prjn.SWt.Adapt.CovarLrate": "1",
+					"Prjn.SWt.Adapt.CovarNeg":   "false",
 					"Prjn.SWt.Init.SPct":        "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":        "0.2",

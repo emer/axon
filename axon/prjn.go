@@ -881,7 +881,11 @@ func (pj *Prjn) SWtFmWt() {
 			sy := &pj.Syns[rsi]
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
-			sy.DSWt += pj.SWt.Adapt.CovarLrate * (rn.Var + sn.Var - sy.Covar)
+			cvd := (rn.Var + sn.Var - 2.0*sy.Covar)
+			if pj.SWt.Adapt.CovarNeg && cvd > 0 {
+				cvd = 0
+			}
+			sy.DSWt += pj.SWt.Adapt.CovarLrate * cvd
 			if sy.DSWt >= 0 { // softbound for SWt
 				sy.DSWt *= (max - sy.SWt)
 			} else {

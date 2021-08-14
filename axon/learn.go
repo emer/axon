@@ -352,7 +352,8 @@ type SWtAdaptParams struct {
 	Lrate      float32 `viewif:"On" def:"0.1,0.01,0.001" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
 	SigGain    float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 	DreamVar   float32 `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
-	CovarLrate float32 `viewif:"On" desc:"learning rate on covariance-based factor, which is added into accumulated DWts and then subject to overall Lrate -- factor is diff-cov (Moore & Chaudhuri, 2021): Recv.Var + Send.Var - Syn.Covar"`
+	CovarLrate float32 `viewif:"On" desc:"learning rate on covariance-based factor, which is added into accumulated DWts and then subject to overall Lrate -- factor is diff-cov (Moore & Chaudhuri, 2021): Recv.Var + Send.Var - 2 * Syn.Covar"`
+	CovarNeg   bool    `viewif:"On" desc:"only use negative values of Covar-based learning factor"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
@@ -361,6 +362,7 @@ func (sp *SWtAdaptParams) Defaults() {
 	sp.SigGain = 6
 	sp.DreamVar = 0.0
 	sp.CovarLrate = 0.0
+	sp.CovarNeg = true
 }
 
 func (sp *SWtAdaptParams) Update() {
