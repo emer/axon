@@ -882,9 +882,6 @@ func (pj *Prjn) SWtFmWt() {
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
 			cvd := (rn.Var + sn.Var - 2.0*sy.Covar)
-			if pj.SWt.Adapt.CovarNeg && cvd > 0 {
-				cvd = 0
-			}
 			sy.DSWt += pj.SWt.Adapt.CovarLrate * cvd
 			if sy.DSWt >= 0 { // softbound for SWt
 				sy.DSWt *= (max - sy.SWt)
@@ -900,11 +897,6 @@ func (pj *Prjn) SWtFmWt() {
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.SWt.Adapt.RndVar()
-				if sy.LWt > 1 {
-					sy.LWt = 1
-				} else if sy.LWt < 0 {
-					sy.LWt = 0
-				}
 				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 			}
 		} else {
@@ -913,6 +905,7 @@ func (pj *Prjn) SWtFmWt() {
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 			}
 		}
 	}

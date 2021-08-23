@@ -107,7 +107,7 @@ type ActAvgParams struct {
 	Targ      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] target average activity for this layer -- used if if AdaptGi is on to drive adaptation of inhibition."`
 	HiTol     float32 `def:"0" viewif:"AdaptGi" desc:"tolerance for higher than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
 	LoTol     float32 `def:"0.8" viewif:"AdaptGi" desc:"tolerance for lower than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
-	AdaptRate float32 `def:"0.5" viewif:"AdaptGi" desc:"rate of Gi adaptation as function of AdaptRate * (Targ - ActMAvg) / Targ -- occurs at spaced intervals determined by Network.SlowInterval value"`
+	AdaptRate float32 `def:"0.5,0.02" viewif:"AdaptGi" desc:"rate of Gi adaptation as function of AdaptRate * (Targ - ActMAvg) / Targ -- occurs at spaced intervals determined by Network.SlowInterval value"`
 
 	InhDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }

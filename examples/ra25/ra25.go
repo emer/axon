@@ -103,10 +103,10 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 					"Layer.Learn.RLrate.On":              "true",
-					"Layer.Learn.RLrate.ActThr":          "0.2",  // 0.2 is best
+					"Layer.Learn.RLrate.ActThr":          "0.1",  // 0.1 > others in larger models
 					"Layer.Learn.RLrate.ActDifThr":       "0.0",  // 0 best -- built into function anyway
 					"Layer.Learn.RLrate.Min":             "0.01", // .01 best
-					"Layer.Learn.RLrate.CovarTau":        "100",
+					"Layer.Learn.RLrate.CovarTau":        "100",  // 500 for larger models
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -141,20 +141,20 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Com.Delay":            "2",   // 1 == 2 = 3
 					"Prjn.Learn.Lrate.Base":     "0.2", // 0.04 def, .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      "0.1", // .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.SWt.Adapt.Lrate":      "1",   // .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
+					"Prjn.SWt.Adapt.LWtRange":   "0.8",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
-					"Prjn.SWt.Adapt.CovarLrate": "1",
-					"Prjn.SWt.Adapt.CovarNeg":   "false",
-					"Prjn.SWt.Init.SPct":        "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Adapt.CovarLrate": "0.1",
+					"Prjn.SWt.Init.SPct":        "1",   // .5 ok here, 1 best for larger nets: objrec, lvis
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
-					"Prjn.SWt.Limit.Min":        "0.2",
-					"Prjn.SWt.Limit.Max":        "0.8",
+					"Prjn.SWt.Limit.Min":        "0.0",
+					"Prjn.SWt.Limit.Max":        "1",
 					"Prjn.PrjnScale.ScaleLrate": "0.5",    // lvis best with .5
 					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec
-					"Prjn.Learn.XCal.SubMean":   "1",      // 1 > 0.9 now..
+					"Prjn.Learn.XCal.SubMean":   "0",      // 1 > 0.9 now..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -164,10 +164,14 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.WtInit.Var":       "0.0",
 					"Prjn.WtInit.Mean":      "0.05",
-					"Prjn.PrjnScale.Abs":    ".1",
+					"Prjn.PrjnScale.Abs":    "0.1",
 					"Prjn.PrjnScale.Adapt":  "false",
 					"Prjn.Learn.WtSig.Gain": "6",
 					"Prjn.IncGain":          "0.5",
+				}},
+			{Sel: "#Hidden2ToOutput", Desc: "to out is special",
+				Params: params.Params{
+					"Prjn.SWt.Adapt.LWtRange": "1",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object

@@ -26,8 +26,9 @@ func (sy *Synapse) VarNames() []string {
 var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "Covar"}
 
 var SynapseVarProps = map[string]string{
-	"DWt":  `auto-scale:"+"`,
-	"DSWt": `auto-scale:"+"`,
+	"DWt":   `auto-scale:"+"`,
+	"DSWt":  `auto-scale:"+"`,
+	"Covar": `auto-scale:"+"`,
 }
 
 var SynapseVarsMap map[string]int

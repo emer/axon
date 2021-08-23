@@ -163,6 +163,9 @@ func (rl *RLrateParams) Defaults() {
 
 // RLrate returns the learning rate as a function of AvgS and AvgM values
 func (rl *RLrateParams) RLrate(avgS, avgM float32) float32 {
+	if !rl.On {
+		return 1.0
+	}
 	max := mat32.Max(avgS, avgM)
 	if max > rl.ActThr { // avoid div by 0
 		dif := mat32.Abs(avgS - avgM)
@@ -185,8 +188,8 @@ func (rl *RLrateParams) RLrate(avgS, avgM float32) float32 {
 // The TrgAvg activity constraint is not enforced through SWt -- it needs to be
 // more dynamic and supported by the regular learned weights.
 type SWtParams struct {
-	Init  SWtInitParams  `desc:"initialization of SWt values"`
-	Adapt SWtAdaptParams `desc:"adaptation of SWt values in response to LWt learning"`
+	Init  SWtInitParams  `view:"inline" desc:"initialization of SWt values"`
+	Adapt SWtAdaptParams `view:"inline" desc:"adaptation of SWt values in response to LWt learning"`
 	Limit minmax.F32     `def:"{0.2 0.8}" view:"inline" desc:"range limits for SWt values"`
 }
 
@@ -269,7 +272,8 @@ func SigInvFun61(w float32) float32 {
 }
 
 // SigFmLinWt returns sigmoidal contrast-enhanced weight from linear weight,
-// centered at 1 in preparation for multiplying times SWt
+// centered at 1 and normed in range +/- LWtRange around that
+// in preparation for multiplying times SWt
 func (sp *SWtParams) SigFmLinWt(lw float32) float32 {
 	var wt float32
 	switch {
@@ -280,13 +284,21 @@ func (sp *SWtParams) SigFmLinWt(lw float32) float32 {
 	default:
 		wt = SigFun(lw, sp.Adapt.SigGain, 1)
 	}
-	return 2 * wt // center at 1 instead of .5
+	return sp.Adapt.LWtMult*(wt-0.5) + 1.0 // center at 1 instead of .5
 }
 
 // LinFmSigWt returns linear weight from sigmoidal contrast-enhanced weight.
-// wt is in range 0-2 centered at 1 -- return value is in 0-1 range, centered at .5
+// wt is centered at 1, and normed in range +/- LWtRange around that,
+// return value is in 0-1 range, centered at .5
 func (sp *SWtParams) LinFmSigWt(wt float32) float32 {
-	wt *= 0.5
+	min := 1 - sp.Adapt.LWtRange
+	max := 1 + sp.Adapt.LWtRange
+	if wt < min {
+		wt = min
+	} else if wt > max {
+		wt = max
+	}
+	wt = sp.Adapt.LWtNorm*(wt-1.0) + 0.5
 	if sp.Adapt.SigGain == 1 {
 		return wt
 	}
@@ -349,23 +361,29 @@ func (sp *SWtInitParams) RndVar() float32 {
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
 	On         bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated, in which case it is generally good to have Init.SPct=0 too."`
-	Lrate      float32 `viewif:"On" def:"0.1,0.01,0.001" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
+	Lrate      float32 `viewif:"On" def:"0.1,0.01,0.001,0.0002" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
 	SigGain    float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
+	LWtRange   float32 `def:"1" desc:"range of effect of lwt sigmoided and multiplying SWt, on either side of 1: (i.e., 1 += LwtRange)"`
 	DreamVar   float32 `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
-	CovarLrate float32 `viewif:"On" desc:"learning rate on covariance-based factor, which is added into accumulated DWts and then subject to overall Lrate -- factor is diff-cov (Moore & Chaudhuri, 2021): Recv.Var + Send.Var - 2 * Syn.Covar"`
-	CovarNeg   bool    `viewif:"On" desc:"only use negative values of Covar-based learning factor"`
+	CovarLrate float32 `def:"0.1" viewif:"On" desc:"learning rate on covariance-based factor, which is added into accumulated DWts and then subject to overall Lrate -- factor is diff-cov (Moore & Chaudhuri, 2021): Recv.Var + Send.Var - 2 * Syn.Covar"`
+
+	LWtMult float32 `view:"-" desc:"2 * LWtRange -- for multiplying"`
+	LWtNorm float32 `view:"-" desc:"1 / (2 * LWtRange) -- for normalizing"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
 	sp.On = true
 	sp.Lrate = 0.1
 	sp.SigGain = 6
+	sp.LWtRange = 1
 	sp.DreamVar = 0.0
-	sp.CovarLrate = 0.0
-	sp.CovarNeg = true
+	sp.CovarLrate = 0.1
+	sp.Update()
 }
 
 func (sp *SWtAdaptParams) Update() {
+	sp.LWtMult = 2.0 * sp.LWtRange
+	sp.LWtNorm = 1.0 / sp.LWtMult
 }
 
 // RndVar returns the random variance (zero mean) based on DreamVar param
