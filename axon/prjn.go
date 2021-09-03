@@ -810,16 +810,19 @@ func (pj *Prjn) WtFmDWt() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	thr := pj.Learn.XCal.DWtThr * pj.Learn.Lrate.Eff
 	sm := pj.Learn.XCal.SubMean
-	for ri := range rlay.Neurons {
-		nc := int(pj.RConN[ri])
-		if nc < 1 {
-			continue
-		}
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
-		sumDWt := float32(0)
-		nnz := 0 // non-zero
-		if sm > 0 && !rlay.AxonLay.IsTarget() {
+	if rlay.AxonLay.IsTarget() {
+		sm = 0
+	}
+	if sm > 0 {
+		for ri := range rlay.Neurons {
+			nc := int(pj.RConN[ri])
+			if nc < 1 {
+				continue
+			}
+			st := int(pj.RConIdxSt[ri])
+			rsidxs := pj.RSynIdx[st : st+nc]
+			sumDWt := float32(0)
+			nnz := 0 // non-zero
 			for _, rsi := range rsidxs {
 				dw := pj.Syns[rsi].DWt
 				if dw > thr || dw < -thr {
@@ -827,20 +830,39 @@ func (pj *Prjn) WtFmDWt() {
 					nnz++
 				}
 			}
-		}
-		if nnz > 1 {
-			sumDWt /= float32(nnz)
-		}
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
-			if sy.DWt > thr || sy.DWt < -thr {
-				sy.DWt -= sm * sumDWt
-			} else {
-				sy.DWt = 0
+			if nnz > 1 {
+				sumDWt /= float32(nnz)
 			}
-			sy.DSWt += sy.DWt
-			pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
-			pj.Com.Fail(&sy.Wt)
+			for _, rsi := range rsidxs {
+				sy := &pj.Syns[rsi]
+				if sy.DWt > thr || sy.DWt < -thr {
+					sy.DWt -= sm * sumDWt
+				} else {
+					sy.DWt = 0
+				}
+				sy.DSWt += sy.DWt
+				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
+				pj.Com.Fail(&sy.Wt)
+			}
+		}
+
+	} else {
+		for ri := range rlay.Neurons {
+			nc := int(pj.RConN[ri])
+			if nc < 1 {
+				continue
+			}
+			st := int(pj.RConIdxSt[ri])
+			rsidxs := pj.RSynIdx[st : st+nc]
+			for _, rsi := range rsidxs {
+				sy := &pj.Syns[rsi]
+				if sy.DWt <= thr && sy.DWt >= -thr {
+					sy.DWt = 0
+				}
+				sy.DSWt += sy.DWt
+				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
+				pj.Com.Fail(&sy.Wt)
+			}
 		}
 	}
 }

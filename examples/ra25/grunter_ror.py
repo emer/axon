@@ -25,14 +25,14 @@ import getpass
 # max number of hours -- slurm will terminate if longer, so be generous
 # 2d = 48, 3d = 72, 4d = 96, 5d = 120, 6d = 144, 7d = 168
 # full run taking about 60 hrs, so use 72
-hours = 24
+hours = 1
 
 # memory per CPU, which is only way to allocate on hpc2 (otherwise per node and doesn't fit)
 # to tune, look at AveRSS from salloc report
 # on a prior job, and divide that by number of tasks
 # 7 is max per node x 16 nodes x 2 cpus
 # full orig requires 7G @ 2 CPU
-mem = "4G" # 3G @ 2 thr is minimum, 5G reserves a node and is sig faster
+mem = "1G" # 3G @ 2 thr is minimum, 5G reserves a node and is sig faster
 
 # number of mpi "tasks" (procs in MPI terminology)
 tasks = 1

@@ -141,10 +141,10 @@ func (ta *TrgAvgActParams) Defaults() {
 // RLrate is computed as |AvgS - AvgM| / Max(AvgS, AvgM) subject to thresholding
 type RLrateParams struct {
 	On        bool    `def:"true" desc:"use learning rate modulation"`
-	ActThr    float32 `def:"0.2" desc:"threshold on Max(AvgS, AvgM) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	ActThr    float32 `def:"0.1" desc:"threshold on Max(AvgS, AvgM) below which Min lrate applies -- must be > 0 to prevent div by zero"`
 	ActDifThr float32 `def:"0" desc:"threshold on recv neuron error delta, i.e., |AvgS - AvgM| below which lrate is at Min value"`
-	Min       float32 `def:"0.01" desc:"minimum learning rate value when below ActDifThr"`
-	CovarTau  float32 `desc:"time constant for integrating covariance / variance, at the same time of weight update computations"`
+	Min       float32 `def:"0.001" desc:"minimum learning rate value when below ActDifThr"`
+	CovarTau  float32 `def:"500" desc:"time constant for integrating covariance / variance, at the same time of weight update computations"`
 	CovarDt   float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
@@ -154,10 +154,10 @@ func (rl *RLrateParams) Update() {
 
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
-	rl.ActThr = 0.2
+	rl.ActThr = 0.1
 	rl.ActDifThr = 0.0
-	rl.Min = 0.01
-	rl.CovarTau = 100
+	rl.Min = 0.001
+	rl.CovarTau = 500
 	rl.Update()
 }
 
@@ -362,7 +362,7 @@ type SWtAdaptParams struct {
 	Lrate      float32 `viewif:"On" def:"0.1,0.01,0.001,0.0002" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
 	SigGain    float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 	DreamVar   float32 `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
-	CovarLrate float32 `def:"0.1" viewif:"On" desc:"learning rate on covariance-based factor, which is added into accumulated DWts and then subject to overall Lrate -- factor is diff-cov (Moore & Chaudhuri, 2021): Recv.Var + Send.Var - 2 * Syn.Covar"`
+	CovarLrate float32 `def:"0,0.1" viewif:"On" desc:"learning rate on covariance-based factor, which is added into accumulated DWts and then subject to overall Lrate -- factor is diff-cov (Moore & Chaudhuri, 2021): Recv.Var + Send.Var - 2 * Syn.Covar"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
@@ -370,7 +370,7 @@ func (sp *SWtAdaptParams) Defaults() {
 	sp.Lrate = 0.1
 	sp.SigGain = 6
 	sp.DreamVar = 0.0
-	sp.CovarLrate = 0.1
+	sp.CovarLrate = 0 // .1 when used
 	sp.Update()
 }
 

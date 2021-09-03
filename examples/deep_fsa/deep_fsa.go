@@ -80,8 +80,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
 					"Layer.Learn.RLrate.On":              "true",
-					"Layer.Learn.RLrate.ActThr":          "0.2",  // 0.2 is best
-					"Layer.Learn.RLrate.ActDifThr":       "0.0",  // 0 best -- built into function anyway
+					"Layer.Learn.RLrate.ActThr":          "0.1",  // 0.1 is best
+					"Layer.Learn.RLrate.ActDifThr":       "0.0",  //
 					"Layer.Learn.RLrate.Min":             "0.01", // .01 best
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
@@ -115,14 +115,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.1",
-					"Prjn.SWt.Adapt.Lrate":    "0.1", // 0.01 seems to work fine, but .1 maybe more reliable
-					"Prjn.SWt.Adapt.SigGain":  "6",
-					"Prjn.SWt.Adapt.DreamVar": "0.0", // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":      "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
-					"Prjn.SWt.Init.Mean":      "0.5", // 0.5 generally good
-					"Prjn.SWt.Limit.Min":      "0.2",
-					"Prjn.SWt.Limit.Max":      "0.8",
+					"Prjn.Learn.Lrate.Base":     "0.04", // .04 for rlr too!
+					"Prjn.SWt.Adapt.Lrate":      "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
+					"Prjn.SWt.Adapt.SigGain":    "6",
+					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable
+					"Prjn.SWt.Adapt.CovarLrate": "0.0",
+					"Prjn.SWt.Init.SPct":        "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
+					"Prjn.SWt.Limit.Min":        "0.2",
+					"Prjn.SWt.Limit.Max":        "0.8",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
