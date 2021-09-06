@@ -80,9 +80,9 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
 					"Layer.Learn.RLrate.On":              "true",
-					"Layer.Learn.RLrate.ActThr":          "0.1",  // 0.1 is best
-					"Layer.Learn.RLrate.ActDifThr":       "0.0",  //
-					"Layer.Learn.RLrate.Min":             "0.01", // .01 best
+					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 is best
+					"Layer.Learn.RLrate.ActDifThr":       "0.05",  //
+					"Layer.Learn.RLrate.Min":             "0.001", // .01 best
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
