@@ -19,7 +19,7 @@ import (
 type LearnNeurParams struct {
 	ActAvg    LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
 	TrgAvgAct TrgAvgActParams `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
-	RLrate    RLrateParams    `view:"inline" desc:"recv neuron learning rate modulation params"`
+	RLrate    RLrateParams    `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLrate = |AvgS - AvgM| / Max(AvgS, AvgM)"`
 }
 
 func (ln *LearnNeurParams) Update() {
@@ -142,7 +142,7 @@ func (ta *TrgAvgActParams) Defaults() {
 type RLrateParams struct {
 	On        bool    `def:"true" desc:"use learning rate modulation"`
 	ActThr    float32 `def:"0.1" desc:"threshold on Max(AvgS, AvgM) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDifThr float32 `def:"0" desc:"threshold on recv neuron error delta, i.e., |AvgS - AvgM| below which lrate is at Min value"`
+	ActDifThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |AvgS - AvgM| below which lrate is at Min value"`
 	Min       float32 `def:"0.001" desc:"minimum learning rate value when below ActDifThr"`
 }
 
@@ -152,7 +152,7 @@ func (rl *RLrateParams) Update() {
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
 	rl.ActThr = 0.1
-	rl.ActDifThr = 0.0
+	rl.ActDifThr = 0.02
 	rl.Min = 0.001
 	rl.Update()
 }

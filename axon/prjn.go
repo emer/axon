@@ -777,9 +777,9 @@ func (pj *Prjn) DWt() {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		// if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
-		// 	continue
-		// }
+		if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
+			continue
+		}
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
