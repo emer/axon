@@ -104,9 +104,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 					"Layer.Learn.RLrate.On":              "true",
 					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 > others in larger models
-					"Layer.Learn.RLrate.ActDifThr":       "0.05",  // .05 best on lvis
+					"Layer.Learn.RLrate.ActDifThr":       "0.02",  // .05 best on lvis
 					"Layer.Learn.RLrate.Min":             "0.001", // .01 > .001 best on lvis
-					"Layer.Learn.RLrate.CovarTau":        "500",   // 500 for larger models
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -144,7 +143,6 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":      "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
-					"Prjn.SWt.Adapt.CovarLrate": "0",   // 0 > .1, .01
 					"Prjn.SWt.Init.SPct":        "0.5", // .5 > 1 here, 1 best for larger nets: objrec, lvis
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":        "0.2",

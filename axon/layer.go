@@ -99,7 +99,6 @@ type CosDiffStats struct {
 func (cd *CosDiffStats) Init() {
 	cd.Cos = 0
 	cd.Avg = 0
-	cd.Var = 0
 }
 
 // AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
@@ -685,8 +684,6 @@ func (ly *Layer) InitActAvg() {
 				nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
 				nrn.AvgDif = 0
 				nrn.DTrgAvg = 0
-				nrn.VarDif = 0
-				nrn.Var = 0
 			}
 		}
 	} else {
@@ -712,8 +709,6 @@ func (ly *Layer) InitActAvg() {
 			nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
 			nrn.AvgDif = 0
 			nrn.DTrgAvg = 0
-			nrn.VarDif = 0
-			nrn.Var = 0
 		}
 	}
 }
@@ -1350,13 +1345,9 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nv := nrn.ActM - nrn.ActAvg
-		nrn.VarDif = nv
-		nv *= nv
-		nrn.Var += ly.Learn.RLrate.CovarDt * (nv - nrn.Var) // simple running average
 		nrn.ActP = nrn.ActInt
 		nrn.ActDif = nrn.ActP - nrn.ActM
-		nrn.ActAvg += ly.Act.Dt.LongAvgDt * nrn.VarDif
+		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.AvgS, nrn.AvgM)
 	}
 	for pi := range ly.Pools {
