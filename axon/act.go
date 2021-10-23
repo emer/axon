@@ -493,7 +493,7 @@ func (dp *DtParams) Defaults() {
 	dp.VmDendTau = 5
 	dp.GeTau = 5
 	dp.GiTau = 7
-	dp.IntTau = 20
+	dp.IntTau = 40
 	dp.LongAvgTau = 20
 	dp.Update()
 }

@@ -44,16 +44,16 @@ func (at *TRCAttnParams) ModVal(val float32, attn float32) float32 {
 // SuperLayer is the DeepAxon superficial layer, based on basic rate-coded axon.Layer.
 // Computes the Burst activation from regular activations.
 type SuperLayer struct {
-	TopoInhibLayer               // access as .TopoInhibLayer
-	Burst          BurstParams   `view:"inline" desc:"parameters for computing Burst from act, in Superficial layers (but also needed in Deep layers for deep self connections)"`
-	Attn           TRCAttnParams `view:"inline" desc:"determine how the TRCLayer activation modulates SuperLayer feedforward excitatory conductances, representing TRC effects on layer V4 inputs (not separately simulated) -- must have a valid layer."`
-	SuperNeurs     []SuperNeuron `desc:"slice of super neuron values -- same size as Neurons"`
+	axon.Layer               // access as .Layer
+	Burst      BurstParams   `view:"inline" desc:"parameters for computing Burst from act, in Superficial layers (but also needed in Deep layers for deep self connections)"`
+	Attn       TRCAttnParams `view:"inline" desc:"determine how the TRCLayer activation modulates SuperLayer feedforward excitatory conductances, representing TRC effects on layer V4 inputs (not separately simulated) -- must have a valid layer."`
+	SuperNeurs []SuperNeuron `desc:"slice of super neuron values -- same size as Neurons"`
 }
 
 var KiT_SuperLayer = kit.Types.AddType(&SuperLayer{}, LayerProps)
 
 func (ly *SuperLayer) Defaults() {
-	ly.TopoInhibLayer.Defaults()
+	ly.Layer.Defaults()
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0.5
 	ly.Act.Decay.KNa = 0
@@ -67,14 +67,14 @@ func (ly *SuperLayer) Defaults() {
 // UpdateParams updates all params given any changes that might have been made to individual values
 // including those in the receiving projections of this layer
 func (ly *SuperLayer) UpdateParams() {
-	ly.TopoInhibLayer.UpdateParams()
+	ly.Layer.UpdateParams()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
 func (ly *SuperLayer) InitActs() {
-	ly.TopoInhibLayer.InitActs()
+	ly.Layer.InitActs()
 	for ni := range ly.SuperNeurs {
 		snr := &ly.SuperNeurs[ni]
 		snr.Burst = 0
@@ -83,7 +83,7 @@ func (ly *SuperLayer) InitActs() {
 }
 
 func (ly *SuperLayer) DecayState(decay float32) {
-	ly.TopoInhibLayer.DecayState(decay)
+	ly.Layer.DecayState(decay)
 	for ni := range ly.SuperNeurs {
 		snr := &ly.SuperNeurs[ni]
 		snr.Burst -= decay * (snr.Burst - ly.Act.Init.Act)
@@ -116,7 +116,7 @@ func MaxPoolActAvg(ly *axon.Layer) float32 {
 }
 
 func (ly *SuperLayer) ActFmG(ltime *axon.Time) {
-	ly.TopoInhibLayer.ActFmG(ltime)
+	ly.Layer.ActFmG(ltime)
 	if !ly.Attn.On {
 		return
 	}
@@ -146,7 +146,7 @@ func (ly *SuperLayer) ActFmG(ltime *axon.Time) {
 
 // MinusPhase does updating after end of minus phase
 func (ly *SuperLayer) MinusPhase(ltime *axon.Time) {
-	ly.TopoInhibLayer.MinusPhase(ltime)
+	ly.Layer.MinusPhase(ltime)
 	ly.BurstPrv()
 }
 
@@ -160,7 +160,7 @@ func (ly *SuperLayer) BurstPrv() {
 
 // CyclePost calls BurstFmAct
 func (ly *SuperLayer) CyclePost(ltime *axon.Time) {
-	ly.TopoInhibLayer.CyclePost(ltime)
+	ly.Layer.CyclePost(ltime)
 	ly.BurstFmAct(ltime)
 }
 
@@ -243,7 +243,7 @@ func (ly *SuperLayer) ValidateTRCLayer() error {
 
 // Build constructs the layer state, including calling Build on the projections.
 func (ly *SuperLayer) Build() error {
-	err := ly.TopoInhibLayer.Build()
+	err := ly.Layer.Build()
 	if err != nil {
 		return err
 	}
@@ -263,7 +263,7 @@ func (ly *SuperLayer) UnitVarNames() []string {
 // according to UnitVarNames() list (using a map to lookup index),
 // or -1 and error message if not found.
 func (ly *SuperLayer) UnitVarIdx(varNm string) (int, error) {
-	vidx, err := ly.TopoInhibLayer.UnitVarIdx(varNm)
+	vidx, err := ly.Layer.UnitVarIdx(varNm)
 	if err == nil {
 		return vidx, err
 	}
@@ -271,7 +271,7 @@ func (ly *SuperLayer) UnitVarIdx(varNm string) (int, error) {
 	if err != nil {
 		return vidx, err
 	}
-	vidx += ly.TopoInhibLayer.UnitVarNum()
+	vidx += ly.Layer.UnitVarNum()
 	return vidx, nil
 }
 
@@ -283,9 +283,9 @@ func (ly *SuperLayer) UnitVal1D(varIdx int, idx int) float32 {
 	if varIdx < 0 {
 		return mat32.NaN()
 	}
-	nn := ly.TopoInhibLayer.UnitVarNum()
+	nn := ly.Layer.UnitVarNum()
 	if varIdx < nn {
-		return ly.TopoInhibLayer.UnitVal1D(varIdx, idx)
+		return ly.Layer.UnitVal1D(varIdx, idx)
 	}
 	if idx < 0 || idx >= len(ly.Neurons) {
 		return mat32.NaN()
@@ -301,5 +301,5 @@ func (ly *SuperLayer) UnitVal1D(varIdx int, idx int) float32 {
 // UnitVarNum returns the number of Neuron-level variables
 // for this layer.  This is needed for extending indexes in derived types.
 func (ly *SuperLayer) UnitVarNum() int {
-	return ly.TopoInhibLayer.UnitVarNum() + len(SuperNeuronVars)
+	return ly.Layer.UnitVarNum() + len(SuperNeuronVars)
 }

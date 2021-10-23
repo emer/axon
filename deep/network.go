@@ -82,6 +82,40 @@ func AddTRCLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 	return ly
 }
 
+// AddTRCALayer2D adds a TRCALayer of given size, with given name.
+func AddTRCALayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *TRCALayer {
+	ly := &TRCALayer{}
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, TRC)
+	return ly
+}
+
+// AddTRCALayer4D adds a TRCALayer of given size, with given name.
+func AddTRCALayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *TRCALayer {
+	ly := &TRCALayer{}
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, TRC)
+	return ly
+}
+
+// ConnectToTRC2D connects Super and CT with given TRC: CT -> TRC is class CTToPulv,
+// From TRC = type = Back, class = FmPulv
+// 2D version uses Full projections.
+func ConnectToTRC2D(nt *axon.Network, super, ct, trc emer.Layer) {
+	full := prjn.NewFull()
+	nt.ConnectLayers(ct, trc, full, emer.Forward).SetClass("CTToPulv")
+	nt.ConnectLayers(trc, super, full, emer.Back).SetClass("FmPulv")
+	nt.ConnectLayers(trc, ct, full, emer.Back).SetClass("FmPulv")
+}
+
+// ConnectToTRC4D connects Super and CT with given TRC: CT -> TRC is class CTToPulv,
+// From TRC = type = Back, class = FmPulv
+// 4D version uses PoolOneToOne projections.
+func ConnectToTRC4D(nt *axon.Network, super, ct, trc emer.Layer) {
+	pone2one := prjn.NewPoolOneToOne()
+	nt.ConnectLayers(ct, trc, pone2one, emer.Forward).SetClass("CTToPulv")
+	nt.ConnectLayers(trc, super, pone2one, emer.Back).SetClass("FmPulv")
+	nt.ConnectLayers(trc, ct, pone2one, emer.Back).SetClass("FmPulv")
+}
+
 // ConnectSuperToCT adds a CTCtxtPrjn from given sending Super layer to a CT layer
 // This automatically sets the FmSuper flag to engage proper defaults,
 // uses a OneToOne prjn pattern, and sets the class to CTFmSuper
@@ -98,65 +132,40 @@ func ConnectCtxtToCT(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) 
 	return nt.ConnectLayersPrjn(send, recv, pat, CTCtxt, &CTCtxtPrjn{})
 }
 
-// ConnectSuperToCTFake adds a FAKE CTCtxtPrjn from given sending Super layer to a CT layer
-// uses a OneToOne prjn pattern, and sets the class to CTFmSuper.
-// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
-func ConnectSuperToCTFake(nt *axon.Network, send, recv emer.Layer) emer.Prjn {
-	pj := nt.ConnectLayers(send, recv, prjn.NewOneToOne(), CTCtxt)
-	pj.SetClass("CTFmSuper")
-	return pj
-}
-
-// ConnectCtxtToCTFake adds a FAKE CTCtxtPrjn from given sending layer to a CT layer
-// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
-func ConnectCtxtToCTFake(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, CTCtxt)
-}
-
-// AddDeep2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCTTRC2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and TRC Pulvinar for Super (P suffix).
-// TRC projects back to Super and CT layers, type = Back, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
-// Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-func AddDeep2D(nt *axon.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
+func AddSuperCTTRC2D(nt *axon.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer2D(nt, name, shapeY, shapeX)
 	ct = AddCTLayer2D(nt, name+"CT", shapeY, shapeX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
-	full := prjn.NewFull()
 	ConnectSuperToCT(nt, super, ct)
 	trci := AddTRCLayer2D(nt, name+"P", shapeY, shapeX)
 	trc = trci
+	trci.Driver = name
 	trci.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: 2})
-	nt.ConnectLayers(ct, trc, full, emer.Forward).SetClass("CTToPulv")
-	nt.ConnectLayers(trc, super, full, emer.Back).SetClass("FmPulv")
-	nt.ConnectLayers(trc, ct, full, emer.Back).SetClass("FmPulv")
 	return
 }
 
-// AddDeep4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCTTRC4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and TRC Pulvinar for Super (P suffix).
-// TRC projects back to Super and CT layers, also PoolOneToOne, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
-// Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-func AddDeep4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
+func AddSuperCTTRC4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct = AddCTLayer4D(nt, name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
-	pone2one := prjn.NewPoolOneToOne()
 	ConnectSuperToCT(nt, super, ct)
 	trci := AddTRCLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	trc = trci
+	trci.Driver = name
 	trci.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: 2})
-	nt.ConnectLayers(ct, trc, pone2one, emer.Forward).SetClass("CTToPulv")
-	nt.ConnectLayers(trc, super, pone2one, emer.Back).SetClass("FmPulv")
-	nt.ConnectLayers(trc, ct, pone2one, emer.Back).SetClass("FmPulv")
 	return
 }
 
-// AddDeepNoTRC2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCT2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
-func AddDeepNoTRC2D(nt *axon.Network, name string, shapeY, shapeX int) (super, ct emer.Layer) {
+func AddSuperCT2D(nt *axon.Network, name string, shapeY, shapeX int) (super, ct emer.Layer) {
 	super = AddSuperLayer2D(nt, name, shapeY, shapeX)
 	ct = AddCTLayer2D(nt, name+"CT", shapeY, shapeX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
@@ -164,154 +173,120 @@ func AddDeepNoTRC2D(nt *axon.Network, name string, shapeY, shapeX int) (super, c
 	return
 }
 
-// AddDeepNoTRC4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCT4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
-func AddDeepNoTRC4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct emer.Layer) {
+func AddSuperCT4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct emer.Layer) {
 	super = AddSuperLayer4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct = AddCTLayer4D(nt, name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
 	ConnectSuperToCT(nt, super, ct)
-	return
-}
-
-// AddDeep2DFakeCT adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
-// with FAKE CTCtxtPrjn OneToOne projection from Super to CT, and TRC Pulvinar for Super (P suffix).
-// TRC projects back to Super and CT layers, type = Back, class = FmPulv
-// CT is placed Behind Super, and Pulvinar behind CT.
-// Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
-func AddDeep2DFakeCT(nt *axon.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
-	super = AddSuperLayer2D(nt, name, shapeY, shapeX)
-	ct = AddCTLayer2D(nt, name+"CT", shapeY, shapeX)
-	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
-	full := prjn.NewFull()
-	ConnectSuperToCTFake(nt, super, ct)
-	trci := AddTRCLayer2D(nt, name+"P", shapeY, shapeX)
-	trc = trci
-	trci.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: 2})
-	nt.ConnectLayers(ct, trc, full, emer.Forward).SetClass("CTToPulv")
-	nt.ConnectLayers(trc, super, full, emer.Back).SetClass("FmPulv")
-	nt.ConnectLayers(trc, ct, full, emer.Back).SetClass("FmPulv")
-	return
-}
-
-// AddDeep4DFakeCT adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
-// with FAKE CTCtxtPrjn OneToOne projection from Super to CT, and TRC Pulvinar for Super (P suffix).
-// TRC projects back to Super and CT layers, also PoolOneToOne, class = FmPulv
-// CT is placed Behind Super, and Pulvinar behind CT.
-// Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
-// This does NOT make a CTCtxtPrjn -- instead makes a regular axon.Prjn -- for testing!
-func AddDeep4DFakeCT(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
-	super = AddSuperLayer4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
-	ct = AddCTLayer4D(nt, name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
-	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
-	pone2one := prjn.NewPoolOneToOne()
-	ConnectSuperToCTFake(nt, super, ct)
-	trci := AddTRCLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
-	trc = trci
-	trci.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: 2})
-	nt.ConnectLayers(ct, trc, pone2one, emer.Forward).SetClass("CTToPulv")
-	nt.ConnectLayers(trc, super, pone2one, emer.Back).SetClass("FmPulv")
-	nt.ConnectLayers(trc, ct, pone2one, emer.Back).SetClass("FmPulv")
 	return
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Python versions
 
-// AddDeep2DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCTTRC2DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn Full projection from Super to CT, and TRC Pulvinar for Super (P suffix).
 // TRC projects back to Super and CT layers, type = Back, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
 // Py is Python version, returns layers as a slice
-func AddDeep2DPy(nt *axon.Network, name string, shapeY, shapeX int) []emer.Layer {
-	super, ct, trc := AddDeep2D(nt, name, shapeY, shapeX)
+func AddSuperCTTRC2DPy(nt *axon.Network, name string, shapeY, shapeX int) []emer.Layer {
+	super, ct, trc := AddSuperCTTRC2D(nt, name, shapeY, shapeX)
 	return []emer.Layer{super, ct, trc}
 }
 
-// AddDeep4DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCTTRC4DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn PoolOneToOne projection from Super to CT, and TRC Pulvinar for Super (P suffix).
 // TRC projects back to Super and CT layers, also PoolOneToOne, class = FmPulv
 // CT is placed Behind Super, and Pulvinar behind CT.
 // Drivers must be added to the TRC layer, and it must be sized appropriately for those drivers.
 // Py is Python version, returns layers as a slice
-func AddDeep4DPy(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
-	super, ct, trc := AddDeep4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+func AddSuperCTTRC4DPy(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
+	super, ct, trc := AddSuperCTTRC4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return []emer.Layer{super, ct, trc}
 }
 
-// AddDeepNoTRC2DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCT2DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn Full projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
 // Py is Python version, returns layers as a slice
-func AddDeepNoTRC2DPy(nt *axon.Network, name string, shapeY, shapeX int) []emer.Layer {
-	super, ct := AddDeepNoTRC2D(nt, name, shapeY, shapeX)
+func AddSuperCT2DPy(nt *axon.Network, name string, shapeY, shapeX int) []emer.Layer {
+	super, ct := AddSuperCT2D(nt, name, shapeY, shapeX)
 	return []emer.Layer{super, ct}
 }
 
-// AddDeepNoTRC4DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCT4DPy adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn PoolOneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
 // Py is Python version, returns layers as a slice
-func AddDeepNoTRC4DPy(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
-	super, ct := AddDeepNoTRC4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+func AddSuperCT4DPy(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) []emer.Layer {
+	super, ct := AddSuperCT4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	return []emer.Layer{super, ct}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Network versions of Add Layer methods
 
-// AddDeep2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCTTRC2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT.
 // Optionally creates a TRC Pulvinar for Super.
 // CT is placed Behind Super, and Pulvinar behind CT if created.
-func (nt *Network) AddDeep2D(name string, shapeY, shapeX int) (super, ct, pulv emer.Layer) {
-	return AddDeep2D(&nt.Network, name, shapeY, shapeX)
+func (nt *Network) AddSuperCTTRC2D(name string, shapeY, shapeX int) (super, ct, pulv emer.Layer) {
+	return AddSuperCTTRC2D(&nt.Network, name, shapeY, shapeX)
 }
 
-// AddDeep4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCTTRC4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT.
 // Optionally creates a TRC Pulvinar for Super.
 // CT is placed Behind Super, and Pulvinar behind CT if created.
-func (nt *Network) AddDeep4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, pulv emer.Layer) {
-	return AddDeep4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+func (nt *Network) AddSuperCTTRC4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, pulv emer.Layer) {
+	return AddSuperCTTRC4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 }
 
-// AddDeep2DFakeCT adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
-// with FAKE CTCtxtPrjn OneToOne projection from Super to CT.
-// Optionally creates a TRC Pulvinar for Super.
-// CT is placed Behind Super, and Pulvinar behind CT if created.
-func (nt *Network) AddDeep2DFakeCT(name string, shapeY, shapeX int) (super, ct, pulv emer.Layer) {
-	return AddDeep2DFakeCT(&nt.Network, name, shapeY, shapeX)
-}
-
-// AddDeep4DFakeCT adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
-// with FAKE CTCtxtPrjn OneToOne projection from Super to CT.
-// Optionally creates a TRC Pulvinar for Super.
-// CT is placed Behind Super, and Pulvinar behind CT if created.
-func (nt *Network) AddDeep4DFakeCT(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, pulv emer.Layer) {
-	return AddDeep4DFakeCT(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
-}
-
-// AddDeepNoTRC2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCT2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
-func (nt *Network) AddDeepNoTRC2D(name string, shapeY, shapeX int) (super, ct emer.Layer) {
-	return AddDeepNoTRC2D(&nt.Network, name, shapeY, shapeX)
+func (nt *Network) AddSuperCT2D(name string, shapeY, shapeX int) (super, ct emer.Layer) {
+	return AddSuperCT2D(&nt.Network, name, shapeY, shapeX)
 }
 
-// AddDeepNoTRC4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
+// AddSuperCT4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn PoolOneToOne projection from Super to CT, and NO TRC Pulvinar.
 // CT is placed Behind Super.
-func (nt *Network) AddDeepNoTRC4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct emer.Layer) {
-	return AddDeepNoTRC4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+func (nt *Network) AddSuperCT4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct emer.Layer) {
+	return AddSuperCT4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+}
+
+// ConnectToTRC2D connects Super and CT with given TRC: CT -> TRC is class CTToPulv,
+// From TRC = type = Back, class = FmPulv
+// 2D version uses Full projections.
+func (nt *Network) ConnectToTRC2D(super, ct, trc emer.Layer) {
+	ConnectToTRC2D(&nt.Network, super, ct, trc)
+}
+
+// ConnectToTRC4D connects Super and CT with given TRC: CT -> TRC is class CTToPulv,
+// From TRC = type = Back, class = FmPulv
+// 4D version uses PoolOneToOne projections.
+func (nt *Network) ConnectToTRC4D(super, ct, trc emer.Layer) {
+	ConnectToTRC4D(&nt.Network, super, ct, trc)
 }
 
 // ConnectCtxtToCT adds a CTCtxtPrjn from given sending layer to a CT layer
 func (nt *Network) ConnectCtxtToCT(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return ConnectCtxtToCT(&nt.Network, send, recv, pat)
+}
+
+// AddTRCLayer2D adds a TRCLayer of given size, with given name.
+func (nt *Network) AddTRCLayer2D(name string, nNeurY, nNeurX int) *TRCLayer {
+	return AddTRCLayer2D(&nt.Network, name, nNeurY, nNeurX)
+}
+
+// AddTRCLayer4D adds a TRCLayer of given size, with given name.
+func (nt *Network) AddTRCLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *TRCLayer {
+	return AddTRCLayer4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

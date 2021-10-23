@@ -343,12 +343,15 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 	var err error
 	for i := range pw.Rs {
 		pr := &pw.Rs[i]
+		hasWt1 := len(pr.Wt1) >= len(pr.Si)
 		for si := range pr.Si {
-			er := pj.SetSynVal("SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
-			if er != nil {
-				err = er
+			if hasWt1 {
+				er := pj.SetSynVal("SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
+				if er != nil {
+					err = er
+				}
 			}
-			er = pj.SetSynVal("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
+			er := pj.SetSynVal("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
 			if er != nil {
 				err = er
 			}

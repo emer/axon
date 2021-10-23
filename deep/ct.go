@@ -17,15 +17,15 @@ import (
 // They receive phasic input representing 5IB bursting via CTCtxtPrjn inputs
 // from SuperLayer and also from self projections.
 type CTLayer struct {
-	TopoInhibLayer           // access as .TopoInhibLayer
-	CtxtGeGain     float32   `desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
-	CtxtGes        []float32 `desc:"slice of context (temporally delayed) excitatory conducances."`
+	axon.Layer           // access as .Layer
+	CtxtGeGain float32   `desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
+	CtxtGes    []float32 `desc:"slice of context (temporally delayed) excitatory conducances."`
 }
 
 var KiT_CTLayer = kit.Types.AddType(&CTLayer{}, LayerProps)
 
 func (ly *CTLayer) Defaults() {
-	ly.TopoInhibLayer.Defaults()
+	ly.Layer.Defaults()
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.KNa = 0
@@ -39,7 +39,7 @@ func (ly *CTLayer) Class() string {
 
 // Build constructs the layer state, including calling Build on the projections.
 func (ly *CTLayer) Build() error {
-	err := ly.TopoInhibLayer.Build()
+	err := ly.Layer.Build()
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (ly *CTLayer) Build() error {
 }
 
 func (ly *CTLayer) InitActs() {
-	ly.TopoInhibLayer.InitActs()
+	ly.Layer.InitActs()
 	for ni := range ly.CtxtGes {
 		ly.CtxtGes[ni] = 0
 	}
@@ -142,14 +142,14 @@ func (ly *CTLayer) UnitVarNames() []string {
 // according to UnitVarNames() list (using a map to lookup index),
 // or -1 and error message if not found.
 func (ly *CTLayer) UnitVarIdx(varNm string) (int, error) {
-	vidx, err := ly.TopoInhibLayer.UnitVarIdx(varNm)
+	vidx, err := ly.Layer.UnitVarIdx(varNm)
 	if err == nil {
 		return vidx, err
 	}
 	if varNm != "CtxtGe" {
 		return -1, fmt.Errorf("deep.CTLayer: variable named: %s not found", varNm)
 	}
-	nn := ly.TopoInhibLayer.UnitVarNum()
+	nn := ly.Layer.UnitVarNum()
 	return nn, nil
 }
 
@@ -158,12 +158,12 @@ func (ly *CTLayer) UnitVarIdx(varNm string) (int, error) {
 // This is the core unit var access method used by other methods,
 // so it is the only one that needs to be updated for derived layer types.
 func (ly *CTLayer) UnitVal1D(varIdx int, idx int) float32 {
-	nn := ly.TopoInhibLayer.UnitVarNum()
+	nn := ly.Layer.UnitVarNum()
 	if varIdx < 0 || varIdx > nn { // nn = CtxtGes
 		return mat32.NaN()
 	}
 	if varIdx < nn {
-		return ly.TopoInhibLayer.UnitVal1D(varIdx, idx)
+		return ly.Layer.UnitVal1D(varIdx, idx)
 	}
 	if idx < 0 || idx >= len(ly.Neurons) {
 		return mat32.NaN()
@@ -174,5 +174,5 @@ func (ly *CTLayer) UnitVal1D(varIdx int, idx int) float32 {
 // UnitVarNum returns the number of Neuron-level variables
 // for this layer.  This is needed for extending indexes in derived types.
 func (ly *CTLayer) UnitVarNum() int {
-	return ly.TopoInhibLayer.UnitVarNum() + 1
+	return ly.Layer.UnitVarNum() + 1
 }

@@ -7,38 +7,12 @@ package deep
 import (
 	"fmt"
 	"log"
-	"math"
 
 	"github.com/emer/axon/axon"
 	"github.com/goki/ki/bitflag"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
-
-// Driver describes the source of driver inputs from cortex into TRC (pulvinar)
-type Driver struct {
-	Driver string `desc:"driver layer"`
-	Off    int    `inactive:"-" desc:"offset into TRC pool"`
-}
-
-// Drivers are a list of drivers
-type Drivers []*Driver
-
-// Add adds new driver(s)
-func (dr *Drivers) Add(laynms ...string) {
-	for _, laynm := range laynms {
-		d := &Driver{}
-		d.Driver = laynm
-		*dr = append(*dr, d)
-	}
-}
-
-// AddOne adds one new driver -- python does not work with varargs
-func (dr *Drivers) AddOne(laynm string) {
-	d := &Driver{}
-	d.Driver = laynm
-	*dr = append(*dr, d)
-}
 
 // TRCParams provides parameters for how the plus-phase (outcome) state of thalamic relay cell
 // (e.g., Pulvinar) neurons is computed from the corresponding driver neuron Burst activation.
@@ -104,31 +78,29 @@ func (tp *TRCParams) GeFmMaxAvg(max, avg float32) float32 {
 // * Similarly, there shouldn't generally be more TRC pools than driver pools, but
 //   if so, drivers replicate across pools.
 type TRCLayer struct {
-	TopoInhibLayer           // access as .TopoInhibLayer
-	TRC            TRCParams `view:"inline" desc:"parameters for computing TRC plus-phase (outcome) activations based on Burst activation from corresponding driver neuron"`
-	Drivers        Drivers   `desc:"name of SuperLayer that sends 5IB Burst driver inputs to this layer"`
+	axon.Layer           // access as .Layer
+	TRC        TRCParams `view:"inline" desc:"parameters for computing TRC plus-phase (outcome) activations based on Burst activation from corresponding driver neuron"`
+	Driver     string    `desc:"name of SuperLayer that sends 5IB Burst driver inputs to this layer"`
 }
 
 var KiT_TRCLayer = kit.Types.AddType(&TRCLayer{}, LayerProps)
 
 func (ly *TRCLayer) Defaults() {
-	ly.TopoInhibLayer.Defaults()
+	ly.Layer.Defaults()
 	ly.Act.Decay.Act = 0.5
 	ly.Act.Decay.Glong = 1
 	ly.Act.Decay.KNa = 0
 	ly.Act.GABAB.Gbar = 0.005 // output layer settings
 	ly.Act.NMDA.Gbar = 0.01
 	ly.TRC.Defaults()
-	ly.TopoInhib.Defaults()
 	ly.Typ = TRC
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
 // including those in the receiving projections of this layer
 func (ly *TRCLayer) UpdateParams() {
-	ly.TopoInhibLayer.UpdateParams()
+	ly.Layer.UpdateParams()
 	ly.TRC.Update()
-	ly.TopoInhib.Update()
 }
 
 func (ly *TRCLayer) Class() string {
@@ -142,55 +114,15 @@ func (ly *TRCLayer) IsTarget() bool {
 ///////////////////////////////////////////////////////////////////////////////////////
 // Drivers
 
-func (ly *TRCLayer) InitWts() {
-	ly.TopoInhibLayer.InitWts()
-	ly.SetDriverOffs()
-}
-
-// UnitsSize returns the dimension of the units, either within a pool for 4D, or layer for 2D
-func UnitsSize(ly *axon.Layer) (x, y int) {
-	if ly.Is4D() {
-		y = ly.Shp.Dim(2)
-		x = ly.Shp.Dim(3)
-	} else {
-		y = ly.Shp.Dim(0)
-		x = ly.Shp.Dim(1)
-	}
-	return
-}
-
 // DriverLayer returns the driver layer for given Driver
-func (ly *TRCLayer) DriverLayer(drv *Driver) (*axon.Layer, error) {
-	tly, err := ly.Network.LayerByNameTry(drv.Driver)
+func (ly *TRCLayer) DriverLayer(drv string) (*axon.Layer, error) {
+	tly, err := ly.Network.LayerByNameTry(drv)
 	if err != nil {
 		err = fmt.Errorf("TRCLayer %s: Driver Layer: %v", ly.Name(), err)
 		log.Println(err)
 		return nil, err
 	}
 	return tly.(axon.AxonLayer).AsAxon(), nil
-}
-
-// SetDriverOffs sets the driver offsets
-func (ly *TRCLayer) SetDriverOffs() error {
-	mx, my := UnitsSize(&ly.Layer)
-	mn := my * mx
-	off := 0
-	var err error
-	for _, drv := range ly.Drivers {
-		var dl *axon.Layer
-		dl, err = ly.DriverLayer(drv)
-		if err != nil {
-			continue
-		}
-		drv.Off = off
-		x, y := UnitsSize(dl)
-		off += y * x
-	}
-	if off > mn {
-		err = fmt.Errorf("TRCLayer %s: size of drivers: %d is greater than units: %d", ly.Name(), off, mn)
-		log.Println(err)
-	}
-	return err
 }
 
 func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
@@ -239,134 +171,16 @@ func (ly *TRCLayer) GeFmDrivers(ltime *axon.Time) {
 	if ly.IsTarget() {
 		cyc = ltime.PhaseCycle
 	}
-	nux, nuy := UnitsSize(&ly.Layer)
-	nun := nux * nuy
-	pyn := ly.Shp.Dim(0)
-	pxn := ly.Shp.Dim(1)
-	for _, drv := range ly.Drivers {
-		dly, err := ly.DriverLayer(drv)
-		if err != nil {
-			continue
-		}
-		sly, issuper := dly.AxonLay.(*SuperLayer)
-		drvMax := dly.Pools[0].Inhib.Act.Max
-		drvInhib := mat32.Min(1, drvMax/ly.TRC.FullDriveAct)
-
-		if dly.Is2D() {
-			if ly.Is2D() {
-				for dni := range dly.Neurons {
-					tni := drv.Off + dni
-					drvAct := DriveAct(dni, dly, sly, issuper)
-					ly.GeFmDriverNeuron(tni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
-				}
-			} else { // copy flat to all pools -- not typical
-				for dni := range dly.Neurons {
-					drvAct := DriveAct(dni, dly, sly, issuper)
-					tni := drv.Off + dni
-					for py := 0; py < pyn; py++ {
-						for px := 0; px < pxn; px++ {
-							pni := (py*pxn+px)*nun + tni
-							ly.GeFmDriverNeuron(pni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
-						}
-					}
-				}
-			}
-		} else { // dly is 4D
-			dpyn := dly.Shp.Dim(0)
-			dpxn := dly.Shp.Dim(1)
-			duxn, duyn := UnitsSize(dly)
-			dnun := duxn * duyn
-			if ly.Is2D() {
-				for dni := 0; dni < dnun; dni++ {
-					max := float32(0)
-					avg := float32(0)
-					avgn := 0
-					for py := 0; py < dpyn; py++ {
-						for px := 0; px < dpxn; px++ {
-							pi := (py*dpxn + px)
-							pni := pi*dnun + dni
-							act := DriveAct(pni, dly, sly, issuper)
-							max = mat32.Max(max, act)
-							pmax := dly.Pools[1+pi].Inhib.Act.Max
-							if pmax > 0.5 {
-								avg += act
-								avgn++
-							}
-						}
-					}
-					if avgn > 0 {
-						avg /= float32(avgn)
-					}
-					tni := drv.Off + dni
-					ly.GeFmDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
-				}
-			} else if ly.TRC.NoTopo { // ly is 4D
-				for dni := 0; dni < dnun; dni++ {
-					max := float32(0)
-					avg := float32(0)
-					avgn := 0
-					for py := 0; py < dpyn; py++ {
-						for px := 0; px < dpxn; px++ {
-							pi := (py*dpxn + px)
-							pni := pi*dnun + dni
-							act := DriveAct(pni, dly, sly, issuper)
-							max = mat32.Max(max, act)
-							pmax := dly.Pools[1+pi].Inhib.Act.Max
-							if pmax > 0.5 {
-								avg += act
-								avgn++
-							}
-						}
-					}
-					if avgn > 0 {
-						avg /= float32(avgn)
-					}
-					drvGe := ly.TRC.GeFmMaxAvg(max, avg)
-					tni := drv.Off + dni
-					for py := 0; py < pyn; py++ {
-						for px := 0; px < pxn; px++ {
-							pni := (py*pxn+px)*nun + tni
-							ly.GeFmDriverNeuron(pni, drvGe, drvInhib, cyc)
-						}
-					}
-				}
-			} else { // ly is 4D
-				pyr := float64(dpyn) / float64(pyn)
-				pxr := float64(dpxn) / float64(pxn)
-				for py := 0; py < pyn; py++ {
-					sdpy := int(math.Round(float64(py) * pyr))
-					edpy := int(math.Round(float64(py+1) * pyr))
-					for px := 0; px < pxn; px++ {
-						sdpx := int(math.Round(float64(px) * pxr))
-						edpx := int(math.Round(float64(px+1) * pxr))
-						pni := (py*pxn + px) * nun
-						for dni := 0; dni < dnun; dni++ {
-							max := float32(0)
-							avg := float32(0)
-							avgn := 0
-							for dpy := sdpy; dpy < edpy; dpy++ {
-								for dpx := sdpx; dpx < edpx; dpx++ {
-									pi := (dpy*dpxn + dpx)
-									dpni := pi*dnun + dni
-									act := DriveAct(dpni, dly, sly, issuper)
-									max = mat32.Max(max, act)
-									pmax := dly.Pools[1+pi].Inhib.Act.Max
-									if pmax > 0.5 {
-										avg += act
-										avgn++
-									}
-								}
-							}
-							if avgn > 0 {
-								avg /= float32(avgn)
-							}
-							tni := pni + drv.Off + dni
-							ly.GeFmDriverNeuron(tni, ly.TRC.GeFmMaxAvg(max, avg), drvInhib, cyc)
-						}
-					}
-				}
-			}
-		}
+	dly, err := ly.DriverLayer(ly.Driver)
+	if err != nil {
+		return
+	}
+	sly, issuper := dly.AxonLay.(*SuperLayer)
+	drvMax := dly.Pools[0].Inhib.Act.Max
+	drvInhib := mat32.Min(1, drvMax/ly.TRC.FullDriveAct)
+	for dni := range dly.Neurons {
+		drvAct := DriveAct(dni, dly, sly, issuper)
+		ly.GeFmDriverNeuron(dni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
 	}
 }
 

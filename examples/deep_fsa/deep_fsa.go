@@ -132,7 +132,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.5",
 				}},
-			{Sel: "#HiddenPToHiddenCT", Desc: "critical to make this small so deep context dominates",
+			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > .05 lba
 				}},
@@ -140,7 +140,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1", // 1 > other
 				}},
-			// {Sel: "#HiddenCTToHiddenP", Desc: "no swt to output layers",
+			// {Sel: "#HiddenCTToInputP", Desc: "no swt to output layers",
 			// 	Params: params.Params{
 			// 		"Prjn.Com.PFail":          "0.0",
 			// 		"Prjn.Com.PFailWtMax":     "0.0",
@@ -253,7 +253,7 @@ func (ss *Sim) New() {
 	ss.TrainUpdt = axon.AlphaCycle
 	ss.TestUpdt = axon.Cycle
 	ss.TestInterval = 500
-	ss.LayStatNms = []string{"HiddenP", "Hidden"}
+	ss.LayStatNms = []string{"InputP", "Hidden"}
 	if InputNameMap == nil {
 		InputNameMap = make(map[string]int, len(InputNames))
 		for i, nm := range InputNames {
@@ -305,25 +305,26 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
 	in := net.AddLayer2D("Input", 1, 7, emer.Input)
-	hid, hidct, hidp := net.AddDeep2D("Hidden", 10, 10)
+	inp := net.AddTRCLayer2D("InputP", 1, 7)
 
-	hidp.Shape().CopyShape(in.Shape())
-	hidp.(*deep.TRCLayer).Drivers.Add("Input")
+	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10)
+	inp.Driver = "Input"
 
 	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization
 
 	in.SetClass("Input")
-	hidp.SetClass("Input")
+	inp.SetClass("Input")
 	trg.SetClass("Input")
 
 	hidct.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
-	hidp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", YAlign: relpos.Front, Space: 2})
-	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "HiddenP", XAlign: relpos.Left, Space: 2})
+	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", YAlign: relpos.Front, Space: 2})
+	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
+	net.ConnectToTRC2D(hid, hidct, inp)
 
 	// for this small localist model with longer-term dependencies,
 	// these additional context projections turn out to be essential!
@@ -619,7 +620,7 @@ func (ss *Sim) InitStats() {
 // different time-scales over which stats could be accumulated etc.
 // You can also aggregate directly from log data, as is done for testing stats
 func (ss *Sim) TrialStats(accum bool) {
-	inp := ss.Net.LayerByName("HiddenP").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	ss.TrlCosDiff = float64(inp.CosDiff.Cos)
 	err := 0.0
@@ -981,7 +982,7 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 	dt.SetCellFloat("UnitErr", row, ss.TrlUnitErr)
 	dt.SetCellFloat("CosDiff", row, ss.TrlCosDiff)
 
-	inp := ss.Net.LayerByName("HiddenP").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	ivt := ss.ValsTsr("Input")
 	trgt := ss.ValsTsr("Target")
@@ -997,7 +998,7 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
-	inp := ss.Net.LayerByName("HiddenP").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 
 	dt.SetMetaData("name", "TstTrlLog")

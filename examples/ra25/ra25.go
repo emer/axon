@@ -21,7 +21,6 @@ import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
-	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/patgen"
@@ -104,7 +103,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 					"Layer.Learn.RLrate.On":              "true",
 					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 > others in larger models
-					"Layer.Learn.RLrate.ActDifThr":       "0.02",  // .02 > .05 best on lvis
+					"Layer.Learn.RLrate.ActDifThr":       "0.04",  // .02 > .05 best on lvis
 					"Layer.Learn.RLrate.Min":             "0.001", // .01 > .001 best on lvis
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
@@ -215,7 +214,6 @@ type Sim struct {
 	RunLog      *etable.Table `view:"no-inline" desc:"summary log of each run"`
 	RunStats    *etable.Table `view:"no-inline" desc:"aggregate stats on all runs"`
 	ErrLrMod    axon.LrateMod `view:"inline" desc:"learning rate modulation as function of error"`
-	PAlphaPlus  float32       `desc:"probability of an alpha-cycle plus phase within theta cycle -- like teacher forcing"`
 
 	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
 	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
@@ -291,7 +289,6 @@ func (ss *Sim) New() {
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.5 // 0.5 > 0.2 -- not very useful in this model, but key in larger nets
 	ss.ErrLrMod.Range.Set(0, 0.5)
-	ss.PAlphaPlus = 0 // .2 works fine
 	ss.Params = ParamSets
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
 	for i := 0; i < 100; i++ {
@@ -500,14 +497,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
 		case 75:
 			ss.Net.ActSt1(&ss.Time)
-			if erand.BoolProb(float64(ss.PAlphaPlus), -1) {
-				ss.Net.TargToExt()
-				ss.Time.PlusPhase = true
-			}
 		case 100:
 			ss.Net.ActSt2(&ss.Time)
-			ss.Net.ClearTargExt()
-			ss.Time.PlusPhase = false
 		}
 
 		if cyc == minusCyc-1 { // do before view update
