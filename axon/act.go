@@ -37,6 +37,7 @@ type ActParams struct {
 	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
 	NMDA    glong.NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
 	GABAB   glong.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
+	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
 }
 
 func (ac *ActParams) Defaults() {
@@ -55,6 +56,7 @@ func (ac *ActParams) Defaults() {
 	ac.NMDA.Defaults()
 	ac.NMDA.Gbar = 0.03 // 0.3 best.
 	ac.GABAB.Defaults()
+	ac.Attn.Defaults()
 	ac.Update()
 }
 
@@ -68,6 +70,7 @@ func (ac *ActParams) Update() {
 	ac.Clamp.Update()
 	ac.Noise.Update()
 	ac.KNa.Update()
+	ac.Attn.Update()
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -154,6 +157,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
 	nrn.GABABx = 0
+	nrn.Attn = 1
 
 	ac.InitLongActs(nrn)
 }
@@ -189,6 +193,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) 
 	if ac.Clamp.Type == AddGeClamp && nrn.HasFlag(NeurHasExt) {
 		geRaw += nrn.Ext * ac.Clamp.Ge
 	}
+	geRaw = ac.Attn.ModVal(geRaw, nrn.Attn)
 
 	if ac.Clamp.Type == GeClamp && nrn.HasFlag(NeurHasExt) {
 		ge := ac.Clamp.Ge + ac.BurstGe(cyc, actm)
@@ -644,6 +649,31 @@ func (cp *ClampParams) Defaults() {
 	cp.BurstCyc = 20
 	cp.BurstThr = 0.5
 	cp.BurstGe = 2.0
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  AttnParams
+
+// AttnParams determine how the Attn modulates Ge
+type AttnParams struct {
+	On  bool    `desc:"is attentional modulation active?"`
+	Min float32 `desc:"minimum act multiplier if attention is 0"`
+}
+
+func (at *AttnParams) Defaults() {
+	at.On = true
+	at.Min = 0.8
+}
+
+func (at *AttnParams) Update() {
+}
+
+// ModVal returns the attn-modulated value -- attn must be between 1-0
+func (at *AttnParams) ModVal(val float32, attn float32) float32 {
+	if !at.On {
+		return val
+	}
+	return val * (at.Min + (1-at.Min)*attn)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -77,9 +77,10 @@ type Neuron struct {
 	GgabaB   float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- set to Gk for GIRK, with .1 reversal potential."`
 	GABAB    float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
+	Attn     float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 }
 
-var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActPrv", "RLrate", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActPrv", "RLrate", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx", "Attn"}
 
 var NeuronVarsMap map[string]int
 

@@ -165,7 +165,7 @@ func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) 
 	nrn.GiRaw = 0
 }
 
-// GeFmDrivers sets the driver activations, integrating across all the driver layers
+// GeFmDrivers computes excitatory conductance from driver neurons
 func (ly *TRCLayer) GeFmDrivers(ltime *axon.Time) {
 	cyc := ltime.Cycle // for bursting
 	if ly.IsTarget() {

@@ -289,6 +289,26 @@ func (nt *Network) AddTRCLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 	return AddTRCLayer4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 }
 
+// AddTRCALayer2D adds a TRCALayer of given size, with given name.
+func (nt *Network) AddTRCALayer2D(name string, nNeurY, nNeurX int) *TRCALayer {
+	return AddTRCALayer2D(&nt.Network, name, nNeurY, nNeurX)
+}
+
+// AddTRCALayer4D adds a TRCLayer of given size, with given name.
+func (nt *Network) AddTRCALayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *TRCALayer {
+	return AddTRCALayer4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+}
+
+// AddSuperLayer2D adds a SuperLayer of given size, with given name.
+func (nt *Network) AddSuperLayer2D(name string, nNeurY, nNeurX int) *SuperLayer {
+	return AddSuperLayer2D(&nt.Network, name, nNeurY, nNeurX)
+}
+
+// AddSuperLayer4D adds a TRCLayer of given size, with given name.
+func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *SuperLayer {
+	return AddSuperLayer4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  Compute methods
 
