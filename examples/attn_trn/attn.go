@@ -90,44 +90,45 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":     "1.0",
 					"Layer.Inhib.Pool.On":     "true",
 					"Layer.Inhib.Layer.On":    "false", // TRC drives layer-level
-					"Layer.Inhib.ActAvg.Init": ".01",
+					"Layer.Inhib.ActAvg.Init": "0.01",
 					"Layer.Act.Decay.Act":     "1",
 					"Layer.Act.Decay.Glong":   "1",
 					"Layer.Act.Decay.KNa":     "1",
 					"Layer.Act.KNa.On":        "false", // turn off by default
+					"Layer.Act.Noise.Dist":    "Gaussian",
+					"Layer.Act.Noise.Var":     "0.02",
+					"Layer.Act.Noise.Type":    "NoNoise", // "GeNoise",
 				}},
 			{Sel: "SuperLayer", Desc: "pool etc",
 				Params: params.Params{
+					"Layer.Inhib.Layer.On":    "true",
+					"Layer.Inhib.Layer.Gi":    "1.2",
 					"Layer.Inhib.Pool.Gi":     "1.2",
 					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Layer.On":    "false", // TRC drives layer-level
-					"Layer.Inhib.ActAvg.Init": ".01",
+					"Layer.Inhib.ActAvg.Init": "0.025",
 					"Layer.Act.Attn.On":       "true",
-					"Layer.Act.Attn.Min":      "0.8", //
+					"Layer.Act.Attn.Min":      "0.5", //
 				}},
 			{Sel: "TRCALayer", Desc: "topo etc pool etc",
 				Params: params.Params{
 					"Layer.Inhib.Pool.On":     "false",
 					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Layer.Gi":    "1.0",
-					"Layer.Inhib.ActAvg.Init": ".01",
-					"Layer.TopoDrive.On":      "true",
-					"Layer.TopoDrive.Gain":    "5",
-					"Layer.TopoDrive.SendThr": "0.5",
-					"Layer.TopoDrive.Width":   "1",
+					"Layer.Inhib.Layer.Gi":    "1.2",
+					"Layer.Inhib.ActAvg.Init": "0.2",
+					"Layer.SendAttn.Thr":      "0.1",
 				}},
 			{Sel: "#LIP", Desc: "pool etc",
 				Params: params.Params{
 					"Layer.Inhib.Pool.On":     "false",
+					"Layer.Inhib.Layer.Gi":    "2.0",
 					"Layer.Inhib.Layer.On":    "true", // TRN drives all layer-level
-					"Layer.Inhib.ActAvg.Init": ".2",
+					"Layer.Inhib.ActAvg.Init": "0.2",
 				}},
 			{Sel: "TRNLayer", Desc: "trn just does whole layer",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On":  "false",
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "2.0",
-					// "Layer.Inhib.Layer.FBTau":  "3",
+					"Layer.Inhib.Pool.On":     "false",
+					"Layer.Inhib.Layer.On":    "true",
+					"Layer.Inhib.Layer.Gi":    "2.0",
 					"Layer.Inhib.ActAvg.Init": ".03",
 					"Layer.Act.Dt.GTau":       "3",
 				}},
@@ -135,13 +136,21 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 				}},
+			{Sel: "#V2ToV2A", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.8",
+				}},
 			{Sel: "#LIPToV2A", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.0", // rel has no effect here..
+					"Prjn.PrjnScale.Rel": "0.5",
+				}},
+			{Sel: "#V2AToV2A", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.4", // 0.4
 				}},
 			{Sel: "#V1ToV2", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
+					"Prjn.PrjnScale.Abs": "1.2",
 				}},
 		},
 	}},
@@ -161,19 +170,21 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Cycles     int             `def:"200" desc:"number of cycles per trial"`
-	KNaAdapt   bool            `def:"true" desc:"sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time"`
-	Net        *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Test       TestType        `desc:"select which type of test (input patterns) to use"`
-	TstTrlLog  *etable.Table   `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
-	TstStats   *etable.Table   `view:"no-inline" desc:"aggregate stats on testing data"`
-	Params     params.Sets     `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
-	TestEnv    AttnEnv         `desc:"Testing environment -- manages iterating over testing"`
-	Time       axon.Time       `desc:"axon timing parameters and state"`
-	ViewOn     bool            `desc:"whether to update the network view while running"`
-	ViewUpdt   axon.TimeScales `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
-	AttnLay    string          `desc:"layer to measure attentional effects on"`
-	TstRecLays []string        `desc:"names of layers to record activations etc of during testing"`
+	Cycles      int             `def:"200" desc:"number of cycles per trial"`
+	KNaAdapt    bool            `def:"true" desc:"sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time"`
+	Net         *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Prjn3x3Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
+	Prjn5x5Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
+	Test        TestType        `desc:"select which type of test (input patterns) to use"`
+	TstTrlLog   *etable.Table   `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
+	TstStats    *etable.Table   `view:"no-inline" desc:"aggregate stats on testing data"`
+	Params      params.Sets     `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
+	TestEnv     AttnEnv         `desc:"Testing environment -- manages iterating over testing"`
+	Time        axon.Time       `desc:"axon timing parameters and state"`
+	ViewOn      bool            `desc:"whether to update the network view while running"`
+	ViewUpdt    axon.TimeScales `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
+	AttnLay     string          `desc:"layer to measure attentional effects on"`
+	TstRecLays  []string        `desc:"names of layers to record activations etc of during testing"`
 
 	S1Act  float32 `desc:"max activation in center of stimulus 1 (attended, stronger)"`
 	S2Act  float32 `desc:"max activation in center of stimulus 2 (ignored, weaker)"`
@@ -205,8 +216,21 @@ func (ss *Sim) New() {
 	ss.TstStats = &etable.Table{}
 	ss.Params = ParamSets
 	ss.ViewOn = true
-	ss.ViewUpdt = axon.Cycle // axon.FastSpike
+	ss.ViewUpdt = axon.AlphaCycle // axon.Cycle // axon.FastSpike
 	ss.TstRecLays = []string{"V2"}
+
+	ss.Prjn3x3Skp1 = prjn.NewPoolTile()
+	ss.Prjn3x3Skp1.Size.Set(3, 3)
+	ss.Prjn3x3Skp1.Skip.Set(1, 1)
+	ss.Prjn3x3Skp1.Start.Set(-1, -1)
+	ss.Prjn3x3Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
+
+	ss.Prjn5x5Skp1 = prjn.NewPoolTile()
+	ss.Prjn5x5Skp1.Size.Set(5, 5)
+	ss.Prjn5x5Skp1.Skip.Set(1, 1)
+	ss.Prjn5x5Skp1.Start.Set(-2, -2)
+	ss.Prjn5x5Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
+
 	ss.Defaults()
 }
 
@@ -259,8 +283,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	lip := net.AddLayer4D("LIP", psz.Y, psz.X, 1, 1, emer.Input)
 	v2a := net.AddTRCALayer4D("V2A", psz.Y, psz.X, 1, 1)
 
-	v2a.Driver = "V2"
-	v2a.SendTo.Add("V2")
+	v2a.SendAttn.ToLays.Add("V2")
 
 	v2a.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "V2", YAlign: relpos.Front, Space: 1})
 	lip.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "V2", YAlign: relpos.Front, XAlign: relpos.Left})
@@ -271,6 +294,8 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	// net.ConnectLayers(v2ct, v2p, one2one, emer.Forward)
 
 	net.ConnectLayers(v1, v2, one2one, emer.Forward)
+	net.ConnectLayers(v2, v2a, ss.Prjn5x5Skp1, emer.Forward)
+	net.ConnectLayers(v2a, v2a, ss.Prjn5x5Skp1, emer.Lateral)
 	net.ConnectLayers(lip, v2, pone2one, emer.Back)
 	net.ConnectLayers(lip, v2a, pone2one, emer.Back)
 
@@ -281,6 +306,8 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		log.Println(err)
 		return
 	}
+
+	net.InitTopoSWts() //  sets all wt scales
 	net.InitWts()
 }
 
@@ -445,14 +472,15 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	cx := int(pt.X)
 	cy := int(pt.Y)
 	avg := float32(0)
-	n := 0
-	thr := float32(0.01)
-	for dy := -1; dy <= 1; dy++ {
+	thr := float32(0.1)
+	_ = thr
+	hwd := 1
+	for dy := -hwd; dy <= hwd; dy++ {
 		y := cy + dy
 		if y < 0 || y >= sz.Y {
 			continue
 		}
-		for dx := -1; dx <= 1; dx++ {
+		for dx := -hwd; dx <= hwd; dx++ {
 			x := cx + dx
 			if x < 0 || x >= sz.X {
 				continue
@@ -463,15 +491,14 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 				nrn := &ly.Neurons[ni]
 				if nrn.Act >= thr {
 					avg += nrn.Act
-					n++
 				}
 			}
 		}
 	}
-	if n > 0 {
-		avg /= float32(n)
-	}
-	return avg
+	// if n > 0 {
+	// 	avg /= float32(n)
+	// }
+	return avg / float32(9)
 }
 
 func (ss *Sim) TrialStats() {

@@ -134,6 +134,7 @@ func ConnectCtxtToCT(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) 
 
 // AddSuperCTTRC2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and TRC Pulvinar for Super (P suffix).
+// TRC.Driver is set to Super -- needs other CT connections from higher up.
 // CT is placed Behind Super, and Pulvinar behind CT.
 func AddSuperCTTRC2D(nt *axon.Network, name string, shapeY, shapeX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer2D(nt, name, shapeY, shapeX)
@@ -149,6 +150,7 @@ func AddSuperCTTRC2D(nt *axon.Network, name string, shapeY, shapeX int) (super, 
 
 // AddSuperCTTRC4D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn OneToOne projection from Super to CT, and TRC Pulvinar for Super (P suffix).
+// TRC.Driver is set to Super -- needs other CT connections from higher up.
 // CT is placed Behind Super, and Pulvinar behind CT.
 func AddSuperCTTRC4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (super, ct, trc emer.Layer) {
 	super = AddSuperLayer4D(nt, name, nPoolsY, nPoolsX, nNeurY, nNeurX)

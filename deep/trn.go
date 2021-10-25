@@ -5,11 +5,7 @@
 package deep
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/efuns"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"
@@ -36,42 +32,23 @@ func (ly *TRNLayer) InitActs() {
 ///////////////////////////////////////////////////////////////////////////////////////
 // TRCALayer -- attention TRC
 
-// TopoDrive provides for topographic gaussian activation integrating over neighborhood.
-type TopoDrive struct {
-	On      bool      `desc:"use topographic inhibition"`
-	Width   int       `desc:"half-width of topographic inhibition within layer"`
-	Wrap    bool      `desc:"wrap-around coordinates -- otherwise clipped at edges"`
-	Sigma   float32   `desc:"normalized gaussian sigma as proportion of Width, for gaussian weighting"`
-	Gain    float32   `desc:"overall inhibition multiplier for topographic inhibition (generally <= 1)"`
-	SendThr float32   `desc:"threshold on layer-wide max activation (or average act for pooled 4D layers) for sending attention (below this, sends attn = 1)"`
-	Wts     []float32 `inactive:"+" desc:"gaussian weights as function of distance, precomputed.  index 0 = dist 1"`
+// SendAttnParams parameters for sending attention
+type SendAttnParams struct {
+	Thr    float32       `desc:"threshold on layer-wide max activation (or average act for pooled 4D layers) for sending attention (below this, sends attn = 1)"`
+	ToLays emer.LayNames `desc:"list of layers to send attentional modulation to"`
 }
 
-func (ti *TopoDrive) Defaults() {
-	ti.Width = 4
-	ti.Wrap = false
-	ti.Sigma = 0.5
-	ti.Gain = 1
-	ti.SendThr = 0.5
-	ti.Update()
+func (ti *SendAttnParams) Defaults() {
+	ti.Thr = 0.1
 }
 
-func (ti *TopoDrive) Update() {
-	if len(ti.Wts) != ti.Width {
-		ti.Wts = make([]float32, ti.Width)
-	}
-	sig := float32(ti.Width) * ti.Sigma
-	for i := range ti.Wts {
-		ti.Wts[i] = ti.Gain * efuns.Gauss1DNoNorm(float32(i+1), sig)
-	}
+func (ti *SendAttnParams) Update() {
 }
 
 // TRCALayer is the thalamic relay cell layer for Attention in DeepAxon.
 type TRCALayer struct {
-	axon.Layer               // access as .Layer
-	TopoDrive  TopoDrive     `view:"inline" desc:"topographic parameters for integrating driver inputs"`
-	Driver     string        `desc:"name of Layer that drives topographic attentional input to this layer"`
-	SendTo     emer.LayNames `desc:"list of layers to send attentional modulation to"`
+	axon.Layer                // access as .Layer
+	SendAttn   SendAttnParams `view:"inline" desc:"sending attention parameters"`
 }
 
 var KiT_TRCALayer = kit.Types.AddType(&TRCALayer{}, LayerProps)
@@ -83,8 +60,7 @@ func (ly *TRCALayer) Defaults() {
 	ly.Act.Decay.KNa = 0
 	ly.Act.GABAB.Gbar = 0.005 // output layer settings
 	ly.Act.NMDA.Gbar = 0.01
-	ly.TopoDrive.Defaults()
-	ly.TopoDrive.On = true
+	ly.SendAttn.Defaults()
 	ly.Typ = TRC
 }
 
@@ -92,7 +68,7 @@ func (ly *TRCALayer) Defaults() {
 // including those in the receiving projections of this layer
 func (ly *TRCALayer) UpdateParams() {
 	ly.Layer.UpdateParams()
-	ly.TopoDrive.Update()
+	ly.SendAttn.Update()
 }
 
 func (ly *TRCALayer) Class() string {
@@ -103,132 +79,11 @@ func (ly *TRCALayer) IsTarget() bool {
 	return false // We are not
 }
 
-// DriverLayer returns the driver layer for given Driver
-func (ly *TRCALayer) DriverLayer(drv string) (*axon.Layer, error) {
-	tly, err := ly.Network.LayerByNameTry(drv)
-	if err != nil {
-		err = fmt.Errorf("TRCALayer %s: Driver Layer: %v", ly.Name(), err)
-		log.Println(err)
-		return nil, err
-	}
-	return tly.(axon.AxonLayer).AsAxon(), nil
-}
-
-// TopoGePos returns position-specific Ge contribution from driver layer, or false if not valid
-func (ly *TRCALayer) TopoGePos(dly *axon.Layer, py, px, widx int, sum *float32, n *int) {
-	pyn := dly.Shp.Dim(0)
-	pxn := dly.Shp.Dim(1)
-	if py < 0 || py >= pyn {
-		if !ly.TopoDrive.Wrap {
-			return
-		}
-		if py < 0 {
-			py += pyn
-		} else {
-			py -= pyn
-		}
-	}
-	if px < 0 || px >= pxn {
-		if !ly.TopoDrive.Wrap {
-			return
-		}
-		if px < 0 {
-			px += pxn
-		} else {
-			px -= pxn
-		}
-	}
-	pi := py*pxn + px
-	var g float32
-	if dly.Is4D() {
-		pl := &dly.Pools[pi+1]
-		g = pl.Inhib.Act.Avg
-	} else {
-		nr := &dly.Neurons[pi+1]
-		g = nr.Act
-	}
-	g *= ly.TopoDrive.Wts[widx]
-	*sum += g
-	(*n)++
-}
-
-func (ly *TRCALayer) GeFmDriverNeuron(tni int, drvGe float32, cyc int) {
-	if tni >= len(ly.Neurons) {
-		return
-	}
-	nrn := &ly.Neurons[tni]
-	if nrn.IsOff() {
-		return
-	}
-	actm := nrn.ActM
-	geRaw := nrn.GeRaw + drvGe
-	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, geRaw, nrn.NMDASyn)
-	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
-	ly.Act.GeFmRaw(nrn, geRaw, cyc, actm)
-	nrn.GeRaw = 0
-	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
-	nrn.GiRaw = 0
-}
-
-// GeFmDrivers computes excitatory conductance from driver neurons
-func (ly *TRCALayer) GeFmDrivers(ltime *axon.Time) {
-	cyc := ltime.Cycle
-
-	yn := ly.Shp.Dim(0)
-	xn := ly.Shp.Dim(1)
-	wd := ly.TopoDrive.Width
-
-	dly, err := ly.DriverLayer(ly.Driver)
-	if err != nil {
-		return
-	}
-	// sly, issuper := dly.AxonLay.(*SuperLayer)
-
-	pyn := ints.MinInt(yn, dly.Shp.Dim(0))
-	pxn := ints.MinInt(xn, dly.Shp.Dim(1))
-
-	for py := 0; py < pyn; py++ {
-		for px := 0; px < pxn; px++ {
-			sum := float32(0)
-			n := 0
-			for iy := 1; iy <= wd; iy++ {
-				for ix := 1; ix <= wd; ix++ {
-					widx := ints.MinInt(iy-1, ix-1)
-					ly.TopoGePos(dly, py+iy, px+ix, widx, &sum, &n)
-					ly.TopoGePos(dly, py-iy, px+ix, widx, &sum, &n)
-					ly.TopoGePos(dly, py+iy, px-ix, widx, &sum, &n)
-					ly.TopoGePos(dly, py-iy, px-ix, widx, &sum, &n)
-				}
-			}
-			if n == 0 {
-				continue
-			}
-			sum /= float32(n)
-			pi := py*xn + px
-			if ly.Is4D() {
-				pl := &ly.Pools[pi+1]
-				for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-					ly.GeFmDriverNeuron(ni, sum, cyc)
-				}
-			} else {
-				ly.GeFmDriverNeuron(pi, sum, cyc)
-			}
-		}
-	}
-}
-
-// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *TRCALayer) GFmInc(ltime *axon.Time) {
-	ly.RecvGInc(ltime)
-	// ly.GFmIncNeur(ltime) // regular
-	ly.GeFmDrivers(ltime)
-}
-
 // CyclePost is called at end of Cycle
 // We use it to send Attn
 func (ly *TRCALayer) CyclePost(ltime *axon.Time) {
 	ly.AttnFmAct(ltime)
-	ly.SendAttn(ltime)
+	ly.SendAttnLays(ltime)
 }
 
 // AttnFmAct computes our attention signal from activations
@@ -254,7 +109,7 @@ func (ly *TRCALayer) AttnFmAct(ltime *axon.Time) {
 				pl := &ly.Pools[pi+1]
 				act := pl.Inhib.Act.Avg
 				attn := float32(1)
-				if amax >= ly.TopoDrive.SendThr {
+				if amax >= ly.SendAttn.Thr {
 					attn = act / amax
 				}
 				for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
@@ -272,7 +127,7 @@ func (ly *TRCALayer) AttnFmAct(ltime *axon.Time) {
 				nrn := &ly.Neurons[ni]
 				act := nrn.Act
 				attn := float32(1)
-				if amax >= ly.TopoDrive.SendThr {
+				if amax >= ly.SendAttn.Thr {
 					attn = act / amax
 				}
 				nrn.Attn = attn
@@ -281,9 +136,9 @@ func (ly *TRCALayer) AttnFmAct(ltime *axon.Time) {
 	}
 }
 
-// SendAttn sends attention signal to SendTo layers
-func (ly *TRCALayer) SendAttn(ltime *axon.Time) {
-	for _, nm := range ly.SendTo {
+// SendAttnLays sends attention signal to all layers
+func (ly *TRCALayer) SendAttnLays(ltime *axon.Time) {
+	for _, nm := range ly.SendAttn.ToLays {
 		tlyi := ly.Network.LayerByName(nm)
 		if tlyi == nil {
 			continue
