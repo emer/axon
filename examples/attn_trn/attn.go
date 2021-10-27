@@ -105,7 +105,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":    "1.2",
 					"Layer.Inhib.Pool.Gi":     "1.2",
 					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.ActAvg.Init": "0.025",
+					"Layer.Inhib.ActAvg.Init": "0.05",
 					"Layer.Act.Attn.On":       "true",
 					"Layer.Act.Attn.Min":      "0.5", //
 				}},
@@ -116,6 +116,13 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":    "1.2",
 					"Layer.Inhib.ActAvg.Init": "0.2",
 					"Layer.SendAttn.Thr":      "0.1",
+				}},
+			{Sel: "#V2CTA", Desc: "topo etc pool etc",
+				Params: params.Params{
+					"Layer.Inhib.Pool.On":     "false",
+					"Layer.Inhib.Layer.On":    "true",
+					"Layer.Inhib.Layer.Gi":    "1.0",
+					"Layer.Inhib.ActAvg.Init": "0.3",
 				}},
 			{Sel: "#LIP", Desc: "pool etc",
 				Params: params.Params{
@@ -136,15 +143,19 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 				}},
-			{Sel: "#V2ToV2A", Desc: "",
+			{Sel: "#V2ToV2CTA", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.8",
+					"Prjn.PrjnScale.Rel": "0.2", // 0.8
 				}},
-			{Sel: "#LIPToV2A", Desc: "",
+			{Sel: "#LIPToV2CTA", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.5",
+					"Prjn.PrjnScale.Rel": "0.5", // 0.5
 				}},
-			{Sel: "#V2AToV2A", Desc: "",
+			{Sel: "#LIPToV2TA", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.5", // 0.5
+				}},
+			{Sel: "#V2CTAToV2CTA", Desc: "lateral within V2CTA",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.4", // 0.4
 				}},
@@ -224,12 +235,16 @@ func (ss *Sim) New() {
 	ss.Prjn3x3Skp1.Skip.Set(1, 1)
 	ss.Prjn3x3Skp1.Start.Set(-1, -1)
 	ss.Prjn3x3Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
+	ss.Prjn3x3Skp1.GaussInPool.On = false
+	ss.Prjn3x3Skp1.GaussFull.CtrMove = 0
 
 	ss.Prjn5x5Skp1 = prjn.NewPoolTile()
 	ss.Prjn5x5Skp1.Size.Set(5, 5)
 	ss.Prjn5x5Skp1.Skip.Set(1, 1)
 	ss.Prjn5x5Skp1.Start.Set(-2, -2)
 	ss.Prjn5x5Skp1.TopoRange.Min = 0.8 // note: none of these make a very big diff
+	ss.Prjn5x5Skp1.GaussInPool.On = false
+	ss.Prjn5x5Skp1.GaussFull.CtrMove = 0
 
 	ss.Defaults()
 }
@@ -281,23 +296,31 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	v1 := net.AddLayer4D("V1", psz.Y, psz.X, fsz.Y, fsz.X, emer.Input)
 	v2 := net.AddSuperLayer4D("V2", psz.Y, psz.X, fsz.Y, fsz.X)
 	lip := net.AddLayer4D("LIP", psz.Y, psz.X, 1, 1, emer.Input)
-	v2a := net.AddTRCALayer4D("V2A", psz.Y, psz.X, 1, 1)
+	v2cta := net.AddLayer4D("V2CTA", psz.Y, psz.X, 1, 1, emer.Hidden)
+	v2ta := net.AddTRCALayer4D("V2TA", psz.Y, psz.X, 1, 1)
 
-	v2a.SendAttn.ToLays.Add("V2")
+	v2ta.SendAttn.ToLays.Add("V2")
 
-	v2a.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "V2", YAlign: relpos.Front, Space: 1})
+	v2ta.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "V2", YAlign: relpos.Front, Space: 1})
+	v2cta.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "V2TA", XAlign: relpos.Left, Space: 2})
 	lip.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "V2", YAlign: relpos.Front, XAlign: relpos.Left})
 
 	one2one := prjn.NewOneToOne()
 	pone2one := prjn.NewPoolOneToOne()
+	circle := prjn.NewCircle()
+	circle.Radius = 6
+	circle.TopoWts = true
+	circle.Sigma = 1
 
 	// net.ConnectLayers(v2ct, v2p, one2one, emer.Forward)
 
 	net.ConnectLayers(v1, v2, one2one, emer.Forward)
-	net.ConnectLayers(v2, v2a, ss.Prjn5x5Skp1, emer.Forward)
-	net.ConnectLayers(v2a, v2a, ss.Prjn5x5Skp1, emer.Lateral)
+	net.ConnectLayers(v2, v2cta, ss.Prjn5x5Skp1, emer.Forward)
+	net.ConnectLayers(v2cta, v2cta, circle, emer.Lateral)
+	net.ConnectLayers(v2cta, v2ta, ss.Prjn5x5Skp1, emer.Forward)
 	net.ConnectLayers(lip, v2, pone2one, emer.Back)
-	net.ConnectLayers(lip, v2a, pone2one, emer.Back)
+	net.ConnectLayers(lip, v2cta, ss.Prjn5x5Skp1, emer.Back)
+	net.ConnectLayers(lip, v2ta, ss.Prjn5x5Skp1, emer.Back) // was ponetoone
 
 	net.Defaults()
 	ss.SetParams("Network", false) // only set Network params
@@ -307,8 +330,8 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		return
 	}
 
-	net.InitTopoSWts() //  sets all wt scales
 	net.InitWts()
+	net.InitTopoSWts() //  sets all wt scales
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -321,7 +344,7 @@ func (ss *Sim) Init() {
 	ss.TestEnv.Init(0)
 	ss.Time.Reset()
 	// ss.Time.CycPerQtr = 55 // 220 total
-	ss.Net.InitWts()
+	// ss.Net.InitWts()
 	ss.StopNow = false
 	ss.SetParams("", false) // all sheets
 	ss.TstTrlLog.SetNumRows(0)
