@@ -10,8 +10,8 @@ import "github.com/goki/mat32"
 // it is the primary test of Reynolds & Heeger 2009 attentional dynamics.
 // Presents two gabor filters at .25 vs. .75 positions, one of which is in attn focus.
 // focus is LIP input at end, with -1 feature.
-// small LIP = 0.06, large LIP = 0.30
-// small V1 = 0.08, large V1 = 0.12
+// small LIP = 0.09, large LIP = 0.30
+// small V1 = 0.08, large V1 = 0.012
 var StimAttnSizeAll = Stims{
 	// small input, large attention
 	StimSet{"InS_AtL_C0", []Stim{Stim{mat32.Vec2{.25, .5}, 2, 0.08, 0.0}, Stim{mat32.Vec2{.75, .5}, 2, 0.08, 0.0}, Stim{mat32.Vec2{.25, .5}, -1, 0.30, 0}}},

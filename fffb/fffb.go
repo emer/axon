@@ -22,6 +22,8 @@ type Params struct {
 	FBTau    float32 `viewif:"On" min:"0" def:"1.4,3,5" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) for integrating feedback inhibitory values -- prevents oscillations that otherwise occur -- the fast default of 1.4 should be used for most cases but sometimes a slower value (3 or higher) can be more robust, especially when inhibition is strong or inputs are more rapidly changing"`
 	MaxVsAvg float32 `viewif:"On" def:"0,0.5,1" desc:"what proportion of the maximum vs. average netinput to use in the feedforward inhibition computation -- 0 = all average, 1 = all max, and values in between = proportional mix between average and max (ff_netin = avg + ff_max_vs_avg * (max - avg)) -- including more max can be beneficial especially in situations where the average can vary significantly but the activity should not -- max is more robust in many situations but less flexible and sensitive to the overall distribution -- max is better for cases more closely approximating single or strictly fixed winner-take-all behavior -- 0.5 is a good compromise in many cases and generally requires a reduction of .1 or slightly more (up to .3-.5) from the gi value for 0"`
 	FF0      float32 `viewif:"On" def:"0.1" desc:"feedforward zero point for average netinput -- below this level, no FF inhibition is computed based on avg netinput, and this value is subtraced from the ff inhib contribution above this value -- the 0.1 default should be good for most cases (and helps FF_FB produce k-winner-take-all dynamics), but if average netinputs are lower than typical, you may need to lower it"`
+	FFEx     float32 `viewif:"On" def:"0,0.1" desc:"extra feedforward inhibition applied when average netinput exceeds a higher threshold -- produces a nonlinear inhibition effect that is consistent with a wide range of neuroscience data, including popout and the Reynolds & Heeger, 2009 attention model"`
+	FFEx0    float32 `viewif:"On" def:"0.3" desc:"point of average netinput at which extra inhibition based on feedforward level starts"`
 
 	FBDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -37,6 +39,8 @@ func (fb *Params) Defaults() {
 	fb.FBTau = 1.4
 	fb.MaxVsAvg = 0
 	fb.FF0 = 0.1
+	fb.FFEx = 0
+	fb.FFEx0 = 0.3
 	fb.Update()
 }
 
@@ -47,6 +51,9 @@ func (fb *Params) FFInhib(avgGe, maxGe float32) float32 {
 	var ffi float32
 	if ffNetin > fb.FF0 {
 		ffi = fb.FF * (ffNetin - fb.FF0)
+		if ffNetin > fb.FFEx0 {
+			ffi += fb.FFEx * (ffNetin - fb.FFEx0)
+		}
 	}
 	return ffi
 }

@@ -89,8 +89,12 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi":     "1.0",
 					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.FFEx0":  "0.18",
+					"Layer.Inhib.Pool.FFEx":   "0.1",
 					"Layer.Inhib.Layer.On":    "false", // TRC drives layer-level
 					"Layer.Inhib.ActAvg.Init": "0.01",
+					"Layer.Inhib.Layer.FFEx0": "0.18",
+					"Layer.Inhib.Layer.FFEx":  "0.1",
 					"Layer.Act.Decay.Act":     "1",
 					"Layer.Act.Decay.Glong":   "1",
 					"Layer.Act.Decay.KNa":     "1",
@@ -103,8 +107,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "1.2",
+					"Layer.Inhib.Layer.FFEx0": "0.01", // must be < FF0
+					"Layer.Inhib.Layer.FFEx":  "0",    // some effect randomly
+					"Layer.Inhib.Layer.FF0":   "0.01", // doesn't have any effect until < .02
 					"Layer.Inhib.Pool.Gi":     "1.2",
 					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.FFEx0":  "0.18",
+					"Layer.Inhib.Pool.FFEx":   "10",
 					"Layer.Inhib.ActAvg.Init": "0.05",
 					"Layer.Act.Attn.On":       "true",
 					"Layer.Act.Attn.Min":      "0.5", //
@@ -114,6 +123,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":     "false",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "1.2",
+					"Layer.Inhib.Layer.FFEx0": "0.18",
+					"Layer.Inhib.Layer.FFEx":  "30",
 					"Layer.Inhib.ActAvg.Init": "0.2",
 					"Layer.SendAttn.Thr":      "0.1",
 				}},
@@ -122,14 +133,16 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":     "false",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "1.0",
+					"Layer.Inhib.Layer.FFEx0": "0.15",
+					"Layer.Inhib.Layer.FFEx":  "20",
 					"Layer.Inhib.ActAvg.Init": "0.3",
 				}},
 			{Sel: "#LIP", Desc: "pool etc",
 				Params: params.Params{
 					"Layer.Inhib.Pool.On":     "false",
-					"Layer.Inhib.Layer.Gi":    "2.0",
+					"Layer.Inhib.Layer.Gi":    "1.5",
 					"Layer.Inhib.Layer.On":    "true", // TRN drives all layer-level
-					"Layer.Inhib.ActAvg.Init": "0.2",
+					"Layer.Inhib.ActAvg.Init": "0.3",
 				}},
 			{Sel: "TRNLayer", Desc: "trn just does whole layer",
 				Params: params.Params{
@@ -153,11 +166,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#LIPToV2TA", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.5", // 0.5
+					"Prjn.PrjnScale.Rel": "0.2", // 0.2
+				}},
+			{Sel: "#LIPToV2", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.0",
 				}},
 			{Sel: "#V2CTAToV2CTA", Desc: "lateral within V2CTA",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.4", // 0.4
+					"Prjn.PrjnScale.Rel": "0.0", // 0.4
 				}},
 			{Sel: "#V1ToV2", Desc: "",
 				Params: params.Params{
@@ -315,9 +332,9 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	// net.ConnectLayers(v2ct, v2p, one2one, emer.Forward)
 
 	net.ConnectLayers(v1, v2, one2one, emer.Forward)
-	net.ConnectLayers(v2, v2cta, ss.Prjn5x5Skp1, emer.Forward)
+	net.ConnectLayers(v2, v2ta, ss.Prjn5x5Skp1, emer.Forward) // or v2cta
 	net.ConnectLayers(v2cta, v2cta, circle, emer.Lateral)
-	net.ConnectLayers(v2cta, v2ta, ss.Prjn5x5Skp1, emer.Forward)
+	// net.ConnectLayers(v2cta, v2ta, ss.Prjn5x5Skp1, emer.Forward)
 	net.ConnectLayers(lip, v2, pone2one, emer.Back)
 	net.ConnectLayers(lip, v2cta, ss.Prjn5x5Skp1, emer.Back)
 	net.ConnectLayers(lip, v2ta, ss.Prjn5x5Skp1, emer.Back) // was ponetoone
@@ -329,7 +346,12 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		log.Println(err)
 		return
 	}
+	ss.InitWts()
+}
 
+// InitWts initialize weights
+func (ss *Sim) InitWts() {
+	net := ss.Net
 	net.InitWts()
 	net.InitTopoSWts() //  sets all wt scales
 }
@@ -344,7 +366,7 @@ func (ss *Sim) Init() {
 	ss.TestEnv.Init(0)
 	ss.Time.Reset()
 	// ss.Time.CycPerQtr = 55 // 220 total
-	// ss.Net.InitWts()
+	ss.InitWts()
 	ss.StopNow = false
 	ss.SetParams("", false) // all sheets
 	ss.TstTrlLog.SetNumRows(0)
@@ -492,8 +514,8 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 	sz := evec.Vec2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
 	pt := stm.PosXY(sz)
-	cx := int(pt.X)
-	cy := int(pt.Y)
+	cx := int(mat32.Round(pt.X))
+	cy := int(mat32.Round(pt.Y))
 	avg := float32(0)
 	thr := float32(0.1)
 	_ = thr
