@@ -52,50 +52,49 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "false",
-					"Prjn.WtInit.Dist": "Uniform",
-					"Prjn.WtInit.Mean": "0.5",
-					"Prjn.WtInit.Var":  "0.25",
-					"Prjn.Com.Delay":   "2",
+					// "Prjn.SWt.Init.Dist": "Uniform",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.25",
+					"Prjn.Com.Delay":     "2",
 				}},
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Inhib.Layer.On":     "false",
-					"Layer.Inhib.ActAvg.Init":  "0.2",
-					"Layer.Inhib.ActAvg.Fixed": "true",
-					"Layer.Act.Dt.GeTau":       "5",
-					"Layer.Act.Dt.GiTau":       "7",
-					"Layer.Act.Gbar.I":         "0.1",
-					"Layer.Act.Gbar.L":         "0.2",
-					"Layer.Act.GABAB.Smult":    "10", // key to have lower
-					"Layer.Act.NMDA.GeTot":     "1",
-					"Layer.Act.NMDA.Gbar":      "0.02",
+					"Layer.Inhib.Layer.On":    "false",
+					"Layer.Inhib.ActAvg.Init": "0.25",
+					"Layer.Act.Dt.GeTau":      "5",
+					"Layer.Act.Dt.GiTau":      "7",
+					"Layer.Act.Gbar.I":        "0.1",
+					"Layer.Act.Gbar.L":        "0.2",
+					"Layer.Act.GABAB.GiSpike": "10",
+					"Layer.Act.NMDA.GeTot":    "1",
+					"Layer.Act.NMDA.Gbar":     "0.03",
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Spike.Thr":   "0.5",
-					"Layer.Act.Init.Vm":     "0.45", // key for firing early, plus noise
-					"Layer.Act.Noise.Dist":  "Gaussian",
-					"Layer.Act.Noise.Mean":  "0.01",
-					"Layer.Act.Noise.Var":   "0.02",
-					"Layer.Act.Noise.Type":  "GeNoise",
-					"Layer.Act.Noise.Fixed": "false",
-					"Layer.Act.Gbar.E":      "1.5", // more excitable
-					"Layer.Act.Gbar.L":      "0.1", // smaller, less leaky..
-					"Layer.Act.KNa.On":      "false",
-					"Layer.Act.GABAB.Smult": "0", // no gabab
-					"Layer.Act.NMDA.GeTot":  "0", // no nmda
+					"Layer.Act.Spike.Thr":     "0.5",
+					"Layer.Act.Init.Vm":       "0.45", // key for firing early, plus noise
+					"Layer.Act.Noise.Dist":    "Gaussian",
+					"Layer.Act.Noise.Mean":    "0.01",
+					"Layer.Act.Noise.Var":     "0.02",
+					"Layer.Act.Noise.Type":    "GeNoise",
+					"Layer.Act.Noise.Fixed":   "false",
+					"Layer.Act.Gbar.E":        "1.5", // more excitable
+					"Layer.Act.Gbar.L":        "0.1", // smaller, less leaky..
+					"Layer.Act.KNa.On":        "false",
+					"Layer.Act.GABAB.GiSpike": "0", // no gabab
+					"Layer.Act.NMDA.GeTot":    "0", // no nmda
 				}},
 			{Sel: ".Back", Desc: "feedback excitatory",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.2",
+					"Prjn.PrjnScale.Rel": "0.2",
 				}},
 			{Sel: ".Inhib", Desc: "inhibitory projections",
 				Params: params.Params{
-					"Prjn.WtInit.Dist": "Uniform",
-					"Prjn.WtInit.Mean": "0.5",
-					"Prjn.WtInit.Var":  "0",
-					"Prjn.WtInit.Sym":  "false",
-					"Prjn.Com.Delay":   "1",
+					// "Prjn.SWt.Init.Dist": "Uniform",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0",
+					"Prjn.SWt.Init.Sym":  "false",
+					"Prjn.Com.Delay":     "1",
 				}},
 			{Sel: ".ToInhib", Desc: "to inhibitory projections",
 				Params: params.Params{
@@ -107,9 +106,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
-					"Prjn.WtInit.Dist": "Uniform",
-					"Prjn.WtInit.Mean": "0.5",
-					"Prjn.WtInit.Var":  "0.25",
+					// "Prjn.SWt.Init.Dist": "Uniform",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.25",
 				}},
 		},
 	}},
@@ -117,9 +116,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
-					"Prjn.WtInit.Dist": "Gaussian",
-					"Prjn.WtInit.Mean": "0.25",
-					"Prjn.WtInit.Var":  "0.7",
+					// "Prjn.SWt.Init.Dist": "Gaussian",
+					"Prjn.SWt.Init.Mean": "0.25",
+					"Prjn.SWt.Init.Var":  "0.7",
 				}},
 		},
 	}},
@@ -137,8 +136,9 @@ type Sim struct {
 	FFFBInhib  bool    `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
 	FFFBGi     float32 `def:"1" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
 
+	Cycles         int     `def:"200" desc:"number of cycles per trial"`
 	KNaAdapt       bool    `desc:"turn on adaptation, or not"`
-	HiddenGbarI    float32 `def:"0.1" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
+	HiddenGbarI    float32 `def:"0.25" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
 	InhibGbarI     float32 `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
 	FFinhibWtScale float32 `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
 	FBinhibWtScale float32 `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
@@ -155,6 +155,7 @@ type Sim struct {
 	Params         params.Sets                   `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
 	ParamSet       string                        `view:"-" desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
 	Time           axon.Time                     `desc:"axon timing parameters and state"`
+	ViewOn         bool                          `desc:"whether to update the network view while running"`
 	ViewUpdt       axon.TimeScales               `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
 	TstRecLays     []string                      `desc:"names of layers to record activations etc of during testing"`
 	SpikeRecLays   []string                      `desc:"names of layers to record spikes of during testing"`
@@ -184,6 +185,7 @@ func (ss *Sim) New() {
 	ss.NetBidir = &axon.Network{}
 	ss.TstCycLog = &etable.Table{}
 	ss.Params = ParamSets
+	ss.ViewOn = true
 	ss.ViewUpdt = axon.Cycle
 	ss.TstRecLays = []string{"Hidden", "Inhib"}
 	ss.SpikeRecLays = []string{"Hidden", "Inhib", "Input"}
@@ -193,12 +195,13 @@ func (ss *Sim) New() {
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
+	ss.Cycles = 200
 	ss.TrainedWts = false
 	ss.InputPct = 20
 	ss.FFFBInhib = false
 	ss.FFFBGi = 0.7
 	ss.KNaAdapt = false
-	ss.HiddenGbarI = 0.1
+	ss.HiddenGbarI = 0.25
 	ss.InhibGbarI = 0.4
 	ss.FFinhibWtScale = 1
 	ss.FBinhibWtScale = .5
@@ -206,7 +209,6 @@ func (ss *Sim) Defaults() {
 	ss.InhibGeTau = 5
 	ss.HiddenGiTau = 7
 	ss.InhibGiTau = 7
-	ss.Time.CycPerQtr = 50
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -315,7 +317,7 @@ func (ss *Sim) Init() {
 	ss.SetParams("", false) // all sheets
 	ss.InitWts(ss.NetFF)
 	ss.InitWts(ss.NetBidir)
-	ss.UpdateView()
+	ss.UpdateView(false)
 }
 
 // Counters returns a string of the current counter state
@@ -325,7 +327,7 @@ func (ss *Sim) Counters() string {
 	return fmt.Sprintf("Cycle:\t%d\t\t\t", ss.Time.Cycle)
 }
 
-func (ss *Sim) UpdateView() {
+func (ss *Sim) UpdateView(train bool) {
 	var nv *netview.NetView
 	if ss.BidirNet {
 		nv = ss.NetViewBidir
@@ -336,6 +338,25 @@ func (ss *Sim) UpdateView() {
 		nv.Record(ss.Counters())
 		// note: essential to use Go version of update when called from another goroutine
 		nv.GoUpdate() // note: using counters is significantly slower..
+	}
+}
+
+func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
+	switch viewUpdt {
+	case axon.Cycle:
+		ss.UpdateView(train)
+	case axon.FastSpike:
+		if ss.Time.Cycle%10 == 0 {
+			ss.UpdateView(train)
+		}
+	case axon.GammaCycle:
+		if ss.Time.Cycle%25 == 0 {
+			ss.UpdateView(train)
+		}
+	case axon.AlphaCycle:
+		if ss.Time.Cycle%100 == 0 {
+			ss.UpdateView(train)
+		}
 	}
 }
 
@@ -351,50 +372,61 @@ func (ss *Sim) Net() *axon.Network {
 	}
 }
 
-// AlphaCyc runs one alpha-cycle (100 msec, 4 quarters)			 of processing.
+// ThetaCyc runs one theta cycle (200 msec) of processing.
 // External inputs must have already been applied prior to calling,
 // using ApplyExt method on relevant layers (see TrainTrial, TestTrial).
-// Handles netview updating within scope of AlphaCycle
-func (ss *Sim) AlphaCyc() {
+// If train is true, then learning DWt or WtFmDWt calls are made.
+// Handles netview updating within scope, and calls TrainStats()
+func (ss *Sim) ThetaCyc(train bool) {
 	// ss.Win.PollEvents() // this can be used instead of running in a separate goroutine
 	viewUpdt := ss.ViewUpdt
 
+	plusCyc := 50
+	minusCyc := ss.Cycles - plusCyc
+
 	nt := ss.Net()
 
-	// note: this has no learning calls
-
-	nt.AlphaCycInit()
-	ss.Time.AlphaCycStart()
-	for qtr := 0; qtr < 4; qtr++ {
-		for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
-			nt.Cycle(&ss.Time)
-			ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
-			ss.Time.CycleInc()
-			switch viewUpdt {
-			case axon.Cycle:
-				if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
-					ss.UpdateView()
-				}
-			case axon.FastSpike:
-				if (cyc+1)%10 == 0 {
-					ss.UpdateView()
-				}
-			}
+	nt.NewState()
+	ss.Time.NewState()
+	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
+		nt.Cycle(&ss.Time)
+		ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+		ss.Time.CycleInc()
+		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
+		case 75:
+			nt.ActSt1(&ss.Time)
+		case 100:
+			nt.ActSt2(&ss.Time)
 		}
-		nt.QuarterFinal(&ss.Time)
-		ss.Time.QuarterInc()
-		switch {
-		case viewUpdt <= axon.Quarter:
-			ss.UpdateView()
-		case viewUpdt == axon.Phase:
-			if qtr >= 2 {
-				ss.UpdateView()
-			}
+		if cyc == minusCyc-1 { // do before view update
+			nt.MinusPhase(&ss.Time)
+		}
+		if ss.ViewOn {
+			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
+	ss.Time.NewPhase()
+	if viewUpdt == axon.Phase {
+		ss.UpdateView(train)
+	}
+	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
+		nt.Cycle(&ss.Time)
+		ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+		ss.Time.CycleInc()
+		if cyc == plusCyc-1 { // do before view update
+			nt.PlusPhase(&ss.Time)
+			// nt.CTCtxt(&ss.Time) // update context at end
+		}
+		if ss.ViewOn {
+			ss.UpdateViewTime(train, viewUpdt)
+		}
+	}
+	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
+		ss.UpdateView(train)
+	}
 
-	if viewUpdt == axon.AlphaCycle {
-		ss.UpdateView()
+	if ss.TstCycPlot != nil {
+		ss.TstCycPlot.GoUpdate() // make sure up-to-date at end
 	}
 }
 
@@ -438,7 +470,7 @@ func (ss *Sim) TestTrial() {
 	// nt.InitActs()
 	ss.SetParams("", false) // all sheets
 	ss.ApplyInputs()
-	ss.AlphaCyc()
+	ss.ThetaCyc(false)
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -489,17 +521,17 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	inh.Act.Dt.GiTau = ss.InhibGiTau
 	inh.Act.Update()
 	ff := inh.RcvPrjns.SendName("Input").(axon.AxonPrjn).AsAxon()
-	ff.WtScale.Rel = ffinhsc
+	ff.PrjnScale.Rel = ffinhsc
 	fb := inh.RcvPrjns.SendName("Hidden").(axon.AxonPrjn).AsAxon()
-	fb.WtScale.Rel = ss.FBinhibWtScale
+	fb.PrjnScale.Rel = ss.FBinhibWtScale
 	hid.Inhib.Layer.On = ss.FFFBInhib
 	hid.Inhib.Layer.Gi = ss.FFFBGi
 	inh.Inhib.Layer.On = ss.FFFBInhib
 	inh.Inhib.Layer.Gi = ss.FFFBGi
 	fi := hid.RcvPrjns.SendName("Inhib").(axon.AxonPrjn).AsAxon()
-	fi.WtScale.Abs = fminh
+	fi.PrjnScale.Abs = fminh
 	fi = inh.RcvPrjns.SendName("Inhib").(axon.AxonPrjn).AsAxon()
-	fi.WtScale.Abs = fminh
+	fi.PrjnScale.Abs = fminh
 	if nt == ss.NetBidir {
 		hid = nt.LayerByName("Hidden2").(axon.AxonLayer).AsAxon()
 		hid.Act.Gbar.I = ss.HiddenGbarI
@@ -517,16 +549,16 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 		inh.Inhib.Layer.On = ss.FFFBInhib
 		inh.Inhib.Layer.Gi = ss.FFFBGi
 		fi = hid.RcvPrjns.SendName("Inhib2").(axon.AxonPrjn).AsAxon()
-		fi.WtScale.Abs = fminh
+		fi.PrjnScale.Abs = fminh
 		fi = inh.RcvPrjns.SendName("Inhib2").(axon.AxonPrjn).AsAxon()
-		fi.WtScale.Abs = fminh
+		fi.PrjnScale.Abs = fminh
 		ff = inh.RcvPrjns.SendName("Hidden").(axon.AxonPrjn).AsAxon()
-		ff.WtScale.Rel = ffinhsc
+		ff.PrjnScale.Rel = ffinhsc
 		fb = inh.RcvPrjns.SendName("Hidden2").(axon.AxonPrjn).AsAxon()
-		fb.WtScale.Rel = ss.FBinhibWtScale
+		fb.PrjnScale.Rel = ss.FBinhibWtScale
 		inh = nt.LayerByName("Inhib").(axon.AxonLayer).AsAxon()
 		ff = inh.RcvPrjns.SendName("Hidden2").(axon.AxonPrjn).AsAxon()
-		ff.WtScale.Rel = ffinhsc
+		ff.PrjnScale.Rel = ffinhsc
 	}
 	return err
 }

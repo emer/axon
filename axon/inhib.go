@@ -4,7 +4,9 @@
 
 package axon
 
-import "github.com/emer/axon/fffb"
+import (
+	"github.com/emer/axon/fffb"
+)
 
 // axon.InhibParams contains all the inhibition computation params and functions for basic Axon
 // This is included in axon.Layer to support computation.
@@ -14,6 +16,7 @@ type InhibParams struct {
 	FBAct  FBActParams     `view:"inline" desc:"feedback inhibition activation computation parameters"`
 	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer"`
 	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
+	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
 	Self   SelfInhibParams `view:"inline" desc:"neuron self-inhibition parameters -- can be beneficial for producing more graded, linear response -- not typically used in cortical networks"`
 	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
 }
@@ -22,6 +25,7 @@ func (ip *InhibParams) Update() {
 	ip.FBAct.Update()
 	ip.Layer.Update()
 	ip.Pool.Update()
+	ip.Topo.Update()
 	ip.Self.Update()
 	ip.ActAvg.Update()
 }
@@ -30,6 +34,7 @@ func (ip *InhibParams) Defaults() {
 	ip.FBAct.Defaults()
 	ip.Layer.Defaults()
 	ip.Pool.Defaults()
+	ip.Topo.Defaults()
 	ip.Self.Defaults()
 	ip.ActAvg.Defaults()
 	ip.Layer.Gi = 1.1
@@ -143,4 +148,34 @@ func (aa *ActAvgParams) Adapt(gimult *float32, trg, act float32) bool {
 		return true
 	}
 	return false
+}
+
+///////////////////////////////////////////////////////////////////////
+//  TopoInhibParams
+
+// TopoInhibParams provides for topographic gaussian inhibition integrating over neighborhood.
+type TopoInhibParams struct {
+	On    bool    `desc:"use topographic inhibition"`
+	Width int     `viewif:"On" desc:"half-width of topographic inhibition within layer"`
+	Sigma float32 `viewif:"On" desc:"normalized gaussian sigma as proportion of Width, for gaussian weighting"`
+	Gi    float32 `viewif:"On" desc:"overall inhibition multiplier for topographic inhibition (generally <= 1)"`
+	FF    float32 `viewif:"On" desc:"overall inhibitory contribution from feedforward inhibition -- multiplies average netinput from pools or Ge from neurons"`
+	FB    float32 `viewif:"On" desc:"overall inhibitory contribution from feedback inhibition -- multiplies average activation from pools or Act from neurons"`
+	FF0   float32 `viewif:"On" desc:"feedforward zero point for average netinput -- below this level, no FF inhibition is computed based on avg netinput, and this value is subtraced from the ff inhib contribution above this value"`
+}
+
+func (ti *TopoInhibParams) Defaults() {
+	ti.Width = 4
+	ti.Sigma = 0.5
+	ti.Gi = 0.1
+	ti.FF = 1
+	ti.FB = 0
+	ti.FF0 = 0.1
+}
+
+func (ti *TopoInhibParams) Update() {
+}
+
+func (ti *TopoInhibParams) GiFmGeAct(ge, act float32) float32 {
+	return ti.Gi * (ti.FF*ge + ti.FB*act)
 }

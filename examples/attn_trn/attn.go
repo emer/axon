@@ -113,10 +113,10 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":     "1.2",
 					"Layer.Inhib.Pool.On":     "true",
 					"Layer.Inhib.Pool.FFEx0":  "0.18",
-					"Layer.Inhib.Pool.FFEx":   "10",
+					"Layer.Inhib.Pool.FFEx":   "0",
 					"Layer.Inhib.ActAvg.Init": "0.05",
 					"Layer.Act.Attn.On":       "true",
-					"Layer.Act.Attn.Min":      "0.5", //
+					"Layer.Act.Attn.Min":      "0.2", // 0.5
 				}},
 			{Sel: "TRCALayer", Desc: "topo etc pool etc",
 				Params: params.Params{
@@ -124,8 +124,13 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "1.2",
 					"Layer.Inhib.Layer.FFEx0": "0.18",
-					"Layer.Inhib.Layer.FFEx":  "30",
+					"Layer.Inhib.Layer.FFEx":  "0",
 					"Layer.Inhib.ActAvg.Init": "0.2",
+					"Layer.Inhib.Topo.On":     "true",
+					"Layer.Inhib.Topo.Width":  "4",
+					"Layer.Inhib.Topo.Sigma":  "1.0",
+					"Layer.Inhib.Topo.Gi":     "0.04",
+					"Layer.Inhib.Topo.FF0":    "0.18",
 					"Layer.SendAttn.Thr":      "0.1",
 				}},
 			{Sel: "#V2CTA", Desc: "topo etc pool etc",
@@ -164,9 +169,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.5", // 0.5
 				}},
+			{Sel: ".Inhib", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1",
+				}},
 			{Sel: "#LIPToV2TA", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // 0.2
+					"Prjn.PrjnScale.Rel": "0.3", // 0.3
 				}},
 			{Sel: "#LIPToV2", Desc: "",
 				Params: params.Params{
@@ -333,11 +342,13 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	net.ConnectLayers(v1, v2, one2one, emer.Forward)
 	net.ConnectLayers(v2, v2ta, ss.Prjn5x5Skp1, emer.Forward) // or v2cta
-	net.ConnectLayers(v2cta, v2cta, circle, emer.Lateral)
+	// net.ConnectLayers(v2, v2, ss.Prjn5x5Skp1, emer.Inhib)
+	// net.ConnectLayers(v2ta, v2ta, circle, emer.Inhib)
+	// net.ConnectLayers(v2cta, v2cta, circle, emer.Lateral)
 	// net.ConnectLayers(v2cta, v2ta, ss.Prjn5x5Skp1, emer.Forward)
 	net.ConnectLayers(lip, v2, pone2one, emer.Back)
-	net.ConnectLayers(lip, v2cta, ss.Prjn5x5Skp1, emer.Back)
-	net.ConnectLayers(lip, v2ta, ss.Prjn5x5Skp1, emer.Back) // was ponetoone
+	net.ConnectLayers(lip, v2cta, pone2one, emer.Back) // ss.Prjn5x5Skp1
+	net.ConnectLayers(lip, v2ta, pone2one, emer.Back)  // ss.Prjn5x5Skp1 was ponetoone
 
 	net.Defaults()
 	ss.SetParams("Network", false) // only set Network params
@@ -514,18 +525,22 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 	sz := evec.Vec2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
 	pt := stm.PosXY(sz)
-	cx := int(mat32.Round(pt.X))
-	cy := int(mat32.Round(pt.Y))
+	cx := int(mat32.Round(pt.X)) - 1
+	cy := int(mat32.Round(pt.Y)) - 1
+	if cx > sz.X/2 {
+		cx++
+	}
+	// fmt.Printf("cx: %d  cy: %d\n", cx, cy)
 	avg := float32(0)
 	thr := float32(0.1)
 	_ = thr
 	hwd := 1
-	for dy := -hwd; dy <= hwd; dy++ {
+	for dy := 0; dy <= hwd; dy++ {
 		y := cy + dy
 		if y < 0 || y >= sz.Y {
 			continue
 		}
-		for dx := -hwd; dx <= hwd; dx++ {
+		for dx := 0; dx <= hwd; dx++ {
 			x := cx + dx
 			if x < 0 || x >= sz.X {
 				continue
@@ -535,7 +550,8 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.Act >= thr {
-					avg += nrn.Act
+					avg += nrn.Attn
+					// avg += nrn.Act
 				}
 			}
 		}
@@ -543,7 +559,7 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 	// if n > 0 {
 	// 	avg /= float32(n)
 	// }
-	return avg / float32(9)
+	return avg / float32(4)
 }
 
 func (ss *Sim) TrialStats() {

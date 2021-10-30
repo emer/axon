@@ -1172,6 +1172,7 @@ func (ly *Layer) InhibFmGeAct(ltime *Time) {
 	lpl := &ly.Pools[0]
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
 	ly.PoolInhibFmGeAct(ltime)
+	ly.TopoGi(ltime)
 	ly.InhibFmPool(ltime)
 }
 
@@ -1195,6 +1196,72 @@ func (ly *Layer) PoolInhibFmGeAct(ltime *Time) {
 	}
 	if !lyInhib {
 		lpl.Inhib.GiOrig = lpl.Inhib.Gi // effective GiOrig
+	}
+}
+
+// TopoGi computes topographic Gi inhibition
+func (ly *Layer) TopoGi(ltime *Time) {
+	if !ly.Inhib.Topo.On {
+		return
+	}
+	pyn := ly.Shp.Dim(0)
+	pxn := ly.Shp.Dim(1)
+	wd := ly.Inhib.Topo.Width
+
+	ssq := ly.Inhib.Topo.Sigma * float32(wd)
+	ssq *= ssq
+	ff0 := ly.Inhib.Topo.FF0
+
+	l4d := ly.Is4D()
+
+	for py := 0; py < pyn; py++ {
+		for px := 0; px < pxn; px++ {
+			var gi float32
+			for iy := -wd; iy <= wd; iy++ {
+				ty := py + iy
+				if ty < 0 || ty >= pyn {
+					continue
+				}
+				for ix := -wd; ix <= wd; ix++ {
+					tx := px + ix
+					if tx < 0 || tx >= pxn {
+						continue
+					}
+					ds := float32(iy*iy + ix*ix)
+					df := mat32.Sqrt(ds)
+					di := int(mat32.Round(df))
+					if di > wd {
+						continue
+					}
+					wt := mat32.FastExp(-0.5 * ds / ssq)
+					ti := ty*pxn + tx
+					var tge, tact float32
+					if l4d {
+						pl := &ly.Pools[ti+1]
+						tge = pl.Inhib.Ge.Avg
+						tact = pl.Inhib.Act.Avg
+					} else {
+						nrn := &ly.Neurons[ti]
+						tge = nrn.Ge
+						tact = nrn.Act
+					}
+					if tge < ff0 {
+						tge = 0
+					} else {
+						tge -= ff0
+					}
+					gi += wt * ly.Inhib.Topo.GiFmGeAct(tge, tact)
+				}
+			}
+			pi := py*pxn + px
+			if l4d {
+				pl := &ly.Pools[pi+1]
+				pl.Inhib.Gi += gi
+			} else {
+				nrn := &ly.Neurons[pi]
+				nrn.GiSelf = gi
+			}
+		}
 	}
 }
 

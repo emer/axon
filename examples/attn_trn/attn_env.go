@@ -7,7 +7,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/chewxy/math32"
 	"github.com/emer/emergent/efuns"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/evec"
@@ -46,6 +45,7 @@ type AttnEnv struct {
 	Dsc          string     `desc:"description of this environment"`
 	ContrastGain float32    `desc:"gain on contrast function"`
 	ContrastOff  float32    `desc:"offset on contrast function"`
+	LIPGauss     bool       `desc:"use gaussian for LIP -- otherwise fixed circle"`
 	Stims        Stims      `desc:"a list of stimuli to present"`
 	CurStim      *StimSet   `inactive:"+" desc:"current stimuli presented"`
 	Act          float32    `desc:"activation level (midpoint) -- feature is incremented, rest decremented relative to this"`
@@ -116,7 +116,7 @@ func (ev *AttnEnv) Init(run int) {
 }
 
 func (ev *AttnEnv) ContrastAct(act, contrast float32) float32 {
-	cact := 0.5 * act * (math32.Exp(ev.ContrastGain*contrast+ev.ContrastOff) - 1)
+	cact := 0.5 * act * (mat32.FastExp(ev.ContrastGain*contrast+ev.ContrastOff) - 1)
 	// fmt.Printf("ctrst: %g  cact: %g\n", contrast, cact)
 	return cact
 }
@@ -129,7 +129,7 @@ func (ev *AttnEnv) RenderV1(stm *Stim, tsr *etensor.Float32) {
 	cact := ev.ContrastAct(ev.Act, stm.Contrast)
 	for yp := 0; yp < ev.V1Pools.Y; yp++ {
 		for xp := 0; xp < ev.V1Pools.X; xp++ {
-			d := math32.Hypot(float32(xp)-x, float32(yp)-y)
+			d := mat32.Hypot(float32(xp)-x, float32(yp)-y)
 			gauss := efuns.Gauss1DNoNorm(d, sig)
 			fi := 0
 			for yf := 0; yf < ev.V1Feats.Y; yf++ {
@@ -155,10 +155,22 @@ func (ev *AttnEnv) RenderV1(stm *Stim, tsr *etensor.Float32) {
 func (ev *AttnEnv) RenderLIP(stm *Stim, tsr *etensor.Float32) {
 	ps := stm.PosXY(ev.V1Pools)
 	sig := stm.Width * float32(ev.V1Pools.X)
+	wd := mat32.Round(sig)
 	for yp := 0; yp < ev.V1Pools.Y; yp++ {
 		for xp := 0; xp < ev.V1Pools.X; xp++ {
-			d := math32.Hypot(float32(xp)-ps.X, float32(yp)-ps.Y)
-			gauss := efuns.Gauss1DNoNorm(d, sig)
+			d := mat32.Hypot(float32(xp)-ps.X, float32(yp)-ps.Y)
+			var gauss float32
+			if mat32.Round(d) <= wd {
+				if ev.LIPGauss {
+					gauss = efuns.Gauss1DNoNorm(d, sig)
+				} else {
+					gauss = 1
+				}
+			} else {
+				if ev.LIPGauss {
+					gauss = efuns.Gauss1DNoNorm(d, sig)
+				}
+			}
 			idx := []int{yp, xp, 0, 0}
 			cv := tsr.Value(idx)
 			cv += gauss
