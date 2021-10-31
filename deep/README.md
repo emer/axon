@@ -62,6 +62,9 @@ It is relatively easy to make something that locks in a given attentional patter
 
 ## Reynolds & Heeger (2009)
 
+The basic phenomena behind this model are well captured by the FFFB inhibitory dynamics, but FFFB in general retains proportional activity as a function of excitatory drive.  However, the key distinction between "contrast gain" and "response gain" is not captured by FFFB.  In particular when the attentional spotlight is wide, then an additional amount of inhibition is generated relative to a narrow attentional spotlight.
+
+A different way of thinking about this is in terms of nonlinear inhibition of the same type that is implicated in popout effects and is well documented empirically (Murphy & Miller, 2009; etc).  When there is a lot of excitatory drive (for the same features) within a proximal region, above a threshold level, then an additional amount of inhibition is added.  The `Inhib.Topo` settings compute this topographic inhibition, and the `examples/attn_trn` example shows how it drives the RH09 effects.
 
 ## Folded Feedback (Grossberg, 1999)
 

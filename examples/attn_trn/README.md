@@ -11,13 +11,13 @@ See stims.go for stimulus input sets -- generate gabor gaussians with different 
 
 Here's the key pattern demonstrating the critical effect of pooled inhibition:
 
-![RT](figs/fig_reynolds_heeger_09_fig2.png?raw=true "Reynolds & Heeger, 2009, figure 2")
+![RT](fig_reynolds_heeger_09_fig2.png?raw=true "Reynolds & Heeger, 2009, figure 2")
 
 * Left panel (A): when the attentional spotlight is relatively wide, the effects are relatively small and only in a sensitive part of the curve because the broad top-down activation drives corresponding broad pooled inhibition and basically cancels it out.
 
 * Right panel (B): small attentional spotlight is not canceled out and has increasingly large effects.  
 
-![RT](figs/fig_attn_trn_reynolds_heeger_09_small_big_attn.png?raw=true "Model's behavior")
+![RT](fig_attn_trn_reynolds_heeger_09_small_big_attn.png?raw=true "Model's behavior")
 
 The model always shows the key qualitative effect of "contrast gain" vs. "response gain", but getting larger effects is somewhat difficult due to the extent to which the localist activations and connectivity quickly compound and saturate and don't linearly communicate a graded effect across layers.  It is likely in learned weights and more realistic distributed representations the dynamics would be more graded.
 

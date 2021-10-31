@@ -550,8 +550,8 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.Act >= thr {
-					// avg += nrn.Attn
-					avg += nrn.Act
+					avg += nrn.Attn
+					// avg += nrn.Act
 				}
 			}
 		}
@@ -810,7 +810,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	height := 1200
 
 	gi.SetAppName("attn")
-	gi.SetAppAbout(`attn: This simulation illustrates how object recognition (ventral, what) and spatial (dorsal, where) pathways interact to produce spatial attention effects, and accurately capture the effects of brain damage to the spatial pathway. See <a href="https://github.com/CompCogNeuro/sims/blob/master/ch6/attn/README.md">README.md on GitHub</a>.</p>`)
+	gi.SetAppAbout(`attn: This simulation illustrates how object recognition (ventral, what) and spatial (dorsal, where) pathways interact to produce spatial attention effects, and accurately capture the effects of brain damage to the spatial pathway. See <a href="https://github.com/emer/axon/blob/master/examples/attn_trn/README.md">README.md on GitHub</a>.</p>`)
 
 	win := gi.NewMainWindow("attn", "Attention", width, height)
 	ss.Win = win
@@ -894,7 +894,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/CompCogNeuro/sims/blob/master/ch6/attn/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/attn_trn/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
