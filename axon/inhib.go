@@ -11,7 +11,7 @@ import (
 // axon.InhibParams contains all the inhibition computation params and functions for basic Axon
 // This is included in axon.Layer to support computation.
 // This also includes other misc layer-level params such as running-average activation in the layer
-// which is used for netinput rescaling and potentially for adapting inhibition over time
+// which is used for Ge rescaling and potentially for adapting inhibition over time
 type InhibParams struct {
 	FBAct  FBActParams     `view:"inline" desc:"feedback inhibition activation computation parameters"`
 	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer"`
@@ -159,9 +159,9 @@ type TopoInhibParams struct {
 	Width int     `viewif:"On" desc:"half-width of topographic inhibition within layer"`
 	Sigma float32 `viewif:"On" desc:"normalized gaussian sigma as proportion of Width, for gaussian weighting"`
 	Gi    float32 `viewif:"On" desc:"overall inhibition multiplier for topographic inhibition (generally <= 1)"`
-	FF    float32 `viewif:"On" desc:"overall inhibitory contribution from feedforward inhibition -- multiplies average netinput from pools or Ge from neurons"`
+	FF    float32 `viewif:"On" desc:"overall inhibitory contribution from feedforward inhibition -- multiplies average Ge from pools or Ge from neurons"`
 	FB    float32 `viewif:"On" desc:"overall inhibitory contribution from feedback inhibition -- multiplies average activation from pools or Act from neurons"`
-	FF0   float32 `viewif:"On" desc:"feedforward zero point for average netinput -- below this level, no FF inhibition is computed based on avg netinput, and this value is subtraced from the ff inhib contribution above this value"`
+	FF0   float32 `viewif:"On" desc:"feedforward zero point for Ge per neuron (summed Ge is compared to N * FF0) -- below this level, no FF inhibition is computed, above this it is FF * (Sum Ge - N * FF0)"`
 }
 
 func (ti *TopoInhibParams) Defaults() {
@@ -176,6 +176,11 @@ func (ti *TopoInhibParams) Defaults() {
 func (ti *TopoInhibParams) Update() {
 }
 
-func (ti *TopoInhibParams) GiFmGeAct(ge, act float32) float32 {
+func (ti *TopoInhibParams) GiFmGeAct(ge, act, ff0 float32) float32 {
+	if ge < ff0 {
+		ge = 0
+	} else {
+		ge -= ff0
+	}
 	return ti.Gi * (ti.FF*ge + ti.FB*act)
 }

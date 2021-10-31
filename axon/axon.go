@@ -131,7 +131,7 @@ type AxonLayer interface {
 	IsInput() bool
 
 	// NewState handles all initialization at start of new input pattern,
-	// including computing netinput scaling from running average activation etc.
+	// including computing Ge scaling from running average activation etc.
 	// should already have presented the external input to the network at this point.
 	NewState()
 

@@ -36,7 +36,7 @@ type Layer struct {
 	Learn   LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
 	Neurons []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
 	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
-	ActAvg  ActAvgVals      `view:"inline" desc:"running-average activation levels used for netinput scaling and adaptive inhibition"`
+	ActAvg  ActAvgVals      `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
 	CosDiff CosDiffStats    `desc:"cosine difference between ActM, ActP stats"`
 }
 
@@ -80,7 +80,7 @@ func (ly *Layer) HasPoolInhib() bool {
 	return ly.Inhib.Pool.On
 }
 
-// ActAvgVals are running-average activation levels used for netinput scaling and adaptive inhibition
+// ActAvgVals are running-average activation levels used for Ge scaling and adaptive inhibition
 type ActAvgVals struct {
 	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
 	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
@@ -1216,7 +1216,7 @@ func (ly *Layer) TopoGi(ltime *Time) {
 
 	for py := 0; py < pyn; py++ {
 		for px := 0; px < pxn; px++ {
-			var gi float32
+			var tge, tact, twt float32
 			for iy := -wd; iy <= wd; iy++ {
 				ty := py + iy
 				if ty < 0 || ty >= pyn {
@@ -1234,25 +1234,21 @@ func (ly *Layer) TopoGi(ltime *Time) {
 						continue
 					}
 					wt := mat32.FastExp(-0.5 * ds / ssq)
+					twt += wt
 					ti := ty*pxn + tx
-					var tge, tact float32
 					if l4d {
 						pl := &ly.Pools[ti+1]
-						tge = pl.Inhib.Ge.Avg
-						tact = pl.Inhib.Act.Avg
+						tge += wt * pl.Inhib.Ge.Avg
+						tact += wt * pl.Inhib.Act.Avg
 					} else {
 						nrn := &ly.Neurons[ti]
-						tge = nrn.Ge
-						tact = nrn.Act
+						tge += wt * nrn.Ge
+						tact += wt * nrn.Act
 					}
-					if tge < ff0 {
-						tge = 0
-					} else {
-						tge -= ff0
-					}
-					gi += wt * ly.Inhib.Topo.GiFmGeAct(tge, tact)
 				}
 			}
+
+			gi := ly.Inhib.Topo.GiFmGeAct(tge, tact, ff0*twt)
 			pi := py*pxn + px
 			if l4d {
 				pl := &ly.Pools[pi+1]

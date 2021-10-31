@@ -130,7 +130,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Topo.Width":  "4",
 					"Layer.Inhib.Topo.Sigma":  "1.0",
 					"Layer.Inhib.Topo.Gi":     "0.04",
-					"Layer.Inhib.Topo.FF0":    "0.18",
+					"Layer.Inhib.Topo.FF0":    "0.15",
 					"Layer.SendAttn.Thr":      "0.1",
 				}},
 			{Sel: "#V2CTA", Desc: "topo etc pool etc",
@@ -550,8 +550,8 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.Act >= thr {
-					avg += nrn.Attn
-					// avg += nrn.Act
+					// avg += nrn.Attn
+					avg += nrn.Act
 				}
 			}
 		}
