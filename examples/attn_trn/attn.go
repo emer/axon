@@ -25,6 +25,7 @@ import (
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
+	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -100,7 +101,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.KNa":     "1",
 					"Layer.Act.KNa.On":        "false", // turn off by default
 					"Layer.Act.Noise.Dist":    "Gaussian",
-					"Layer.Act.Noise.Var":     "0.02",
+					"Layer.Act.Noise.Var":     "0.002",
 					"Layer.Act.Noise.Type":    "NoNoise", // "GeNoise",
 				}},
 			{Sel: "SuperLayer", Desc: "pool etc",
@@ -110,13 +111,21 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.FFEx0": "0.01", // must be < FF0
 					"Layer.Inhib.Layer.FFEx":  "0",    // some effect randomly
 					"Layer.Inhib.Layer.FF0":   "0.01", // doesn't have any effect until < .02
-					"Layer.Inhib.Pool.Gi":     "1.2",
+					"Layer.Inhib.Pool.Gi":     "1.5",
 					"Layer.Inhib.Pool.On":     "true",
 					"Layer.Inhib.Pool.FFEx0":  "0.18",
 					"Layer.Inhib.Pool.FFEx":   "0",
 					"Layer.Inhib.ActAvg.Init": "0.05",
 					"Layer.Act.Attn.On":       "true",
 					"Layer.Act.Attn.Min":      "0.2", // 0.5
+					"Layer.Inhib.Topo.On":     "true",
+					"Layer.Inhib.Topo.Width":  "4",
+					"Layer.Inhib.Topo.Sigma":  "1.0",
+					"Layer.Inhib.Topo.Gi":     "0.05",
+					"Layer.Inhib.Topo.FF0":    "0.15",
+					"Layer.Act.Noise.Dist":    "Gaussian",
+					"Layer.Act.Noise.Var":     "0.02",    // .02
+					"Layer.Act.Noise.Type":    "GeNoise", // "GeNoise",
 				}},
 			{Sel: "TRCALayer", Desc: "topo etc pool etc",
 				Params: params.Params{
@@ -129,8 +138,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Topo.On":     "true",
 					"Layer.Inhib.Topo.Width":  "4",
 					"Layer.Inhib.Topo.Sigma":  "1.0",
-					"Layer.Inhib.Topo.Gi":     "0.04",
-					"Layer.Inhib.Topo.FF0":    "0.15",
+					"Layer.Inhib.Topo.Gi":     "0.03",
+					"Layer.Inhib.Topo.FF0":    "0.18",
 					"Layer.SendAttn.Thr":      "0.1",
 				}},
 			{Sel: "#V2CTA", Desc: "topo etc pool etc",
@@ -208,12 +217,14 @@ var ParamSets = params.Sets{
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
 	Cycles      int             `def:"200" desc:"number of cycles per trial"`
+	Runs        int             `def:"10" desc:"number of runs to run to collect stats"`
 	KNaAdapt    bool            `def:"true" desc:"sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time"`
 	Net         *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Prjn3x3Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
 	Prjn5x5Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
 	Test        TestType        `desc:"select which type of test (input patterns) to use"`
 	TstTrlLog   *etable.Table   `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
+	TstRunLog   *etable.Table   `view:"no-inline" desc:"aggregated testing data"`
 	TstStats    *etable.Table   `view:"no-inline" desc:"aggregate stats on testing data"`
 	Params      params.Sets     `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
 	TestEnv     AttnEnv         `desc:"Testing environment -- manages iterating over testing"`
@@ -232,6 +243,7 @@ type Sim struct {
 	NetView    *netview.NetView            `view:"-" desc:"the network viewer"`
 	ToolBar    *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
 	TstTrlPlot *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
+	TstRunPlot *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
 	ValsTsrs   map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
 	IsRunning  bool                        `view:"-" desc:"true if sim is running"`
 	StopNow    bool                        `view:"-" desc:"flag to stop running"`
@@ -250,6 +262,7 @@ func (ss *Sim) New() {
 	ss.Net = &deep.Network{}
 	ss.Test = AttnSize
 	ss.TstTrlLog = &etable.Table{}
+	ss.TstRunLog = &etable.Table{}
 	ss.TstStats = &etable.Table{}
 	ss.Params = ParamSets
 	ss.ViewOn = true
@@ -279,6 +292,7 @@ func (ss *Sim) New() {
 func (ss *Sim) Defaults() {
 	ss.AttnLay = "V2"
 	ss.Cycles = 200
+	ss.Runs = 25
 	ss.KNaAdapt = false
 }
 
@@ -290,6 +304,7 @@ func (ss *Sim) Config() {
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigTstTrlLog(ss.TstTrlLog)
+	ss.ConfigTstRunLog(ss.TstRunLog)
 }
 
 func (ss *Sim) ConfigEnv() {
@@ -550,8 +565,8 @@ func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.Act >= thr {
-					avg += nrn.Attn
-					// avg += nrn.Act
+					// avg += nrn.Attn
+					avg += nrn.Act
 				}
 			}
 		}
@@ -638,13 +653,40 @@ func (ss *Sim) TestAll() {
 			break
 		}
 	}
-	ss.TestStats()
 }
 
 // RunTestAll runs through the full set of testing items, has stop running = false at end -- for gui
 func (ss *Sim) RunTestAll() {
 	ss.StopNow = false
 	ss.TestAll()
+	ss.Stopped()
+}
+
+// TestRuns runs through the full set of testing items
+func (ss *Sim) TestRuns() {
+	ss.SetParams("", false) // in case params were changed
+	ss.UpdateEnv()
+	ss.TestEnv.Init(0)
+	for {
+		ss.TestTrial()
+		_, _, chg := ss.TestEnv.Counter(env.Epoch)
+		if ss.StopNow {
+			break
+		}
+		if chg {
+			ss.TestEnv.Run.Incr()
+			if ss.TestEnv.Run.Cur >= ss.Runs {
+				break
+			}
+		}
+	}
+	ss.TestStats()
+}
+
+// RunTestRuns runs through the full set of testing items, has stop running = false at end -- for gui
+func (ss *Sim) RunTestRuns() {
+	ss.StopNow = false
+	ss.TestRuns()
 	ss.Stopped()
 }
 
@@ -725,8 +767,10 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 		dt.SetNumRows(row + 1)
 	}
 
-	trl := row
+	trl := ss.TestEnv.Trial.Cur
+	rn := ss.TestEnv.Run.Cur
 
+	dt.SetCellFloat("Run", row, float64(rn))
 	dt.SetCellFloat("Trial", row, float64(trl))
 	dt.SetCellString("TrialName", row, ss.TestEnv.String())
 	dt.SetCellFloat("Cycle", row, float64(ss.Time.Cycle))
@@ -752,6 +796,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
+		{"Run", etensor.INT64, nil, nil},
 		{"Trial", etensor.INT64, nil, nil},
 		{"TrialName", etensor.STRING, nil, nil},
 		{"Cycle", etensor.INT64, nil, nil},
@@ -772,6 +817,7 @@ func (ss *Sim) ConfigTstTrlPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetTable(dt)
 	plt.Params.Points = true
 	// order of params: on, fixMin, min, fixMax, max
+	plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 220)
@@ -789,9 +835,44 @@ func (ss *Sim) ConfigTstTrlPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 func (ss *Sim) TestStats() {
 	dt := ss.TstTrlLog
 	runix := etable.NewIdxView(dt)
-	spl := split.GroupBy(runix, []string{"TrialName"})
-	split.Desc(spl, "Cycle")
-	ss.TstStats = spl.AggsToTable(etable.AddAggName)
+	spl := split.GroupBy(runix, []string{"Trial"})
+	split.Agg(spl, "TrialName", agg.AggMean)
+	split.Agg(spl, "S1Act", agg.AggMean)
+	split.Agg(spl, "S2Act", agg.AggMean)
+	split.Agg(spl, "PctMod", agg.AggMean)
+	ss.TstStats = spl.AggsToTable(etable.ColNameOnly)
+	ss.TstRunLog = ss.TstStats.Clone()
+	ss.TstRunPlot.SetTable(ss.TstRunLog)
+}
+
+func (ss *Sim) ConfigTstRunLog(dt *etable.Table) {
+	dt.SetMetaData("name", "TstRunLog")
+	dt.SetMetaData("desc", "Record of testing per input pattern")
+	dt.SetMetaData("read-only", "true")
+	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+
+	sch := etable.Schema{
+		{"Trial", etensor.INT64, nil, nil},
+		{"TrialName", etensor.STRING, nil, nil},
+		{"S1Act", etensor.FLOAT64, nil, nil},
+		{"S2Act", etensor.FLOAT64, nil, nil},
+		{"PctMod", etensor.FLOAT64, nil, nil},
+	}
+	dt.SetFromSchema(sch, 0)
+}
+
+func (ss *Sim) ConfigTstRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Attn Test Run Plot"
+	plt.Params.XAxisCol = "Trial"
+	plt.SetTable(dt)
+	plt.Params.Points = true
+	// order of params: on, fixMin, min, fixMax, max
+	plt.SetColParams("Trial", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("TrialName", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("S1Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("S2Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("PctMod", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	return plt
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -842,6 +923,9 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	plt := tv.AddNewTab(eplot.KiT_Plot2D, "TstTrlPlot").(*eplot.Plot2D)
 	ss.TstTrlPlot = ss.ConfigTstTrlPlot(plt, ss.TstTrlLog)
 
+	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TstRunPlot").(*eplot.Plot2D)
+	ss.TstRunPlot = ss.ConfigTstRunPlot(plt, ss.TstRunLog)
+
 	split.SetSplits(.2, .8)
 
 	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: "update", Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.", UpdateFunc: func(act *gi.Action) {
@@ -874,6 +958,16 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.IsRunning = true
 			tbar.UpdateActions()
 			go ss.RunTestAll()
+		}
+	})
+
+	tbar.AddAction(gi.ActOpts{Label: "Test Runs", Icon: "fast-fwd", Tooltip: "Tests all of the testing trials x runs times for stats.", UpdateFunc: func(act *gi.Action) {
+		act.SetActiveStateUpdt(!ss.IsRunning)
+	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		if !ss.IsRunning {
+			ss.IsRunning = true
+			tbar.UpdateActions()
+			go ss.RunTestRuns()
 		}
 	})
 

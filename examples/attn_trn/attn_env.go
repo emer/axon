@@ -43,7 +43,8 @@ type Stims []StimSet
 type AttnEnv struct {
 	Nm           string     `desc:"name of this environment"`
 	Dsc          string     `desc:"description of this environment"`
-	ContrastGain float32    `desc:"gain on contrast function"`
+	ContrastMult float32    `desc:"multiplier on contrast function"`
+	ContrastGain float32    `desc:"gain on contrast function inside exponential"`
 	ContrastOff  float32    `desc:"offset on contrast function"`
 	LIPGauss     bool       `desc:"use gaussian for LIP -- otherwise fixed circle"`
 	Stims        Stims      `desc:"a list of stimuli to present"`
@@ -66,8 +67,9 @@ func (ev *AttnEnv) Defaults() {
 	ev.V1Pools.Set(16, 16)
 	ev.V1Feats.Set(2, 4)
 	ev.Act = 0.5
-	ev.ContrastGain = 0.8
-	ev.ContrastOff = 0 // 0.01
+	ev.ContrastMult = 1.5
+	ev.ContrastGain = 0.3
+	ev.ContrastOff = 0.05 // 0.01
 }
 
 // Config configures according to current settings
@@ -116,7 +118,7 @@ func (ev *AttnEnv) Init(run int) {
 }
 
 func (ev *AttnEnv) ContrastAct(act, contrast float32) float32 {
-	cact := 0.5 * act * (mat32.FastExp(ev.ContrastGain*contrast+ev.ContrastOff) - 1)
+	cact := ev.ContrastMult * act * (mat32.FastExp(ev.ContrastGain*contrast+ev.ContrastOff) - 1)
 	// fmt.Printf("ctrst: %g  cact: %g\n", contrast, cact)
 	return cact
 }
