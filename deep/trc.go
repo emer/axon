@@ -21,8 +21,6 @@ type TRCParams struct {
 	DriversOff   bool    `def:"false" desc:"Turn off the driver inputs, in which case this layer behaves like a standard layer"`
 	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies activation of driver layer to produce Ge excitatory input to TRC unit -- see also Act.Clamp.Burst settings which can produce extra bursting in Ge inputs."`
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer activation at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (MaxAct/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
-	NoTopo       bool    `desc:"Do not treat the pools in this layer as topographically organized relative to driver inputs -- all drivers compress down to give same input to all pools"`
-	AvgMix       float32 `min:"0" max:"1" desc:"proportion of average across driver pools that is combined with Max to provide some graded tie-breaker signal -- especially important for large pool downsampling, e.g., when doing NoTopo"`
 	Binarize     bool    `desc:"Apply threshold to driver burst input for computing plus-phase activations -- above BinThr, then Act = BinOn, below = BinOff.  This is beneficial for layers with weaker graded activations, such as V1 or other perceptual inputs."`
 	BinThr       float32 `viewif:"Binarize" desc:"Threshold for binarizing in terms of sending Burst activation"`
 	BinOn        float32 `def:"0.3" viewif:"Binarize" desc:"Resulting driver Ge value for units above threshold -- lower value around 0.3 or so seems best (DriveScale is NOT applied -- generally same range as that)."`
@@ -51,12 +49,6 @@ func (tp *TRCParams) DriveGe(act float32) float32 {
 	} else {
 		return tp.BinOff
 	}
-}
-
-// GeFmMaxAvg returns the drive Ge value as function of max and average
-func (tp *TRCParams) GeFmMaxAvg(max, avg float32) float32 {
-	deff := (1-tp.AvgMix)*max + tp.AvgMix*avg
-	return tp.DriveGe(deff)
 }
 
 // TRCLayer is the thalamic relay cell layer for DeepAxon.
@@ -180,7 +172,7 @@ func (ly *TRCLayer) GeFmDrivers(ltime *axon.Time) {
 	drvInhib := mat32.Min(1, drvMax/ly.TRC.FullDriveAct)
 	for dni := range dly.Neurons {
 		drvAct := DriveAct(dni, dly, sly, issuper)
-		ly.GeFmDriverNeuron(dni, ly.TRC.GeFmMaxAvg(drvAct, drvAct), drvInhib, cyc)
+		ly.GeFmDriverNeuron(dni, ly.TRC.DriveGe(drvAct), drvInhib, cyc)
 	}
 }
 
