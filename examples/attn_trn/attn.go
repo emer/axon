@@ -15,7 +15,6 @@ import (
 	"log"
 	"strconv"
 
-	"github.com/chewxy/math32"
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
@@ -114,7 +113,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":     "1.5",
 					"Layer.Inhib.Pool.On":     "true",
 					"Layer.Inhib.Pool.FFEx0":  "0.18",
-					"Layer.Inhib.Pool.FFEx":   "0",
+					"Layer.Inhib.Pool.FFEx":   "0", // 10? no big effects
 					"Layer.Inhib.ActAvg.Init": "0.05",
 					"Layer.Act.Attn.On":       "true",
 					"Layer.Act.Attn.Min":      "0.2", // 0.5
@@ -530,7 +529,7 @@ func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 			}
 			pi := y*sz.X + x
 			pl := &ly.Pools[pi+1]
-			max = math32.Max(max, pl.Inhib.Act.Max)
+			max = mat32.Max(max, pl.Inhib.Act.Max)
 		}
 	}
 	return max
@@ -582,7 +581,7 @@ func (ss *Sim) TrialStats() {
 	ss.S2Act = ss.StimAvgAct(&ss.TestEnv.CurStim.Stims[1], ss.AttnLay)
 	if ss.S1Act > 0 {
 		ss.PctMod = (ss.S1Act - ss.S2Act) / ss.S1Act
-		ss.PctMod = math32.Max(ss.PctMod, 0)
+		ss.PctMod = mat32.Max(ss.PctMod, 0)
 	} else {
 		ss.PctMod = 0
 	}

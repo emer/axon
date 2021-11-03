@@ -314,6 +314,12 @@ func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 //////////////////////////////////////////////////////////////////////////////////////
 //  Compute methods
 
+// PlusPhase does updating after end of plus phase
+func (nt *Network) PlusPhase(ltime *axon.Time) {
+	nt.EmerNet.(axon.AxonNetwork).PlusPhaseImpl(ltime)
+	nt.CTCtxt(ltime)
+}
+
 // CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
 func (nt *Network) CTCtxt(ltime *axon.Time) {
 	nt.ThrLayFun(func(ly axon.AxonLayer) {

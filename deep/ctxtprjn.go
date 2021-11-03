@@ -35,12 +35,7 @@ type CTCtxtPrjn struct {
 var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 
 func (pj *CTCtxtPrjn) Defaults() {
-	pj.Prjn.Defaults()
-	if pj.FmSuper {
-		pj.Learn.Learn = false
-		pj.SWt.Init.Mean = 0.5 // .5 better than .8 in several cases..
-		pj.SWt.Init.Var = 0
-	}
+	pj.Prjn.Defaults() // note: used to have other defaults
 }
 
 func (pj *CTCtxtPrjn) UpdateParams() {

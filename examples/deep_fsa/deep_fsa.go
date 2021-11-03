@@ -306,9 +306,10 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
 	in := net.AddLayer2D("Input", 1, 7, emer.Input)
 	inp := net.AddTRCLayer2D("InputP", 1, 7)
-
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10)
 	inp.Driver = "Input"
+
+	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10) // note: tried 4D 6,6,2,2 with pool 1to1 -- not better
+	// also 12,12 not better than 10,10
 
 	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization
 
@@ -325,6 +326,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
 	net.ConnectToTRC2D(hid, hidct, inp)
+	// hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // onetoone default, full not better
 
 	// for this small localist model with longer-term dependencies,
 	// these additional context projections turn out to be essential!
@@ -473,8 +475,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 		}
 		ss.Time.CycleInc()
 		if cyc == plusCyc-1 { // do before view update
-			ss.Net.PlusPhase(&ss.Time)
-			ss.Net.CTCtxt(&ss.Time) // update context at end
+			ss.Net.PlusPhase(&ss.Time) // auto calls CTCtxt
 		}
 		if ss.ViewOn {
 			ss.UpdateViewTime(train, viewUpdt)

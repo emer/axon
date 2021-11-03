@@ -166,11 +166,11 @@ type TopoInhibParams struct {
 
 func (ti *TopoInhibParams) Defaults() {
 	ti.Width = 4
-	ti.Sigma = 0.5
-	ti.Gi = 0.1
+	ti.Sigma = 1
+	ti.Gi = 0.05
 	ti.FF = 1
 	ti.FB = 0
-	ti.FF0 = 0.1
+	ti.FF0 = 0.15
 }
 
 func (ti *TopoInhibParams) Update() {
