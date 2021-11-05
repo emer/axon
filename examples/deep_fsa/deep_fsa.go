@@ -75,6 +75,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":              "0.6",
 					"Layer.Act.Dt.LongAvgTau":            "20", // 20 > higher for objrec, lvis
 					"Layer.Learn.ActAvg.MinLrn":          "0.02",
+					"Layer.Learn.TrgAvgAct.On":           "true", // this is important!
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.01 > 0.005 best for objrec -- needs faster
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec

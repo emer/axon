@@ -115,17 +115,19 @@ func (aa *LrnActAvgParams) Defaults() {
 // Target value is adapted by unit-wise error and difference in actual vs. target
 // drives synaptic scaling.
 type TrgAvgActParams struct {
-	ErrLrate     float32    `def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
-	SynScaleRate float32    `def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
-	TrgRange     minmax.F32 `desc:"[default .5 to 2] range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
-	Permute      bool       `def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
-	Pool         bool       `desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
+	On           bool       `desc:"whether to use target average activity mechanism to scale synaptic weights"`
+	ErrLrate     float32    `viewif:"On" def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
+	SynScaleRate float32    `viewif:"On" def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
+	TrgRange     minmax.F32 `viewif:"On" desc:"[default .5 to 2] range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
+	Permute      bool       `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
+	Pool         bool       `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
 }
 
 func (ta *TrgAvgActParams) Update() {
 }
 
 func (ta *TrgAvgActParams) Defaults() {
+	ta.On = true
 	ta.ErrLrate = 0.02
 	ta.SynScaleRate = 0.01
 	ta.TrgRange.Set(0.5, 2)

@@ -866,7 +866,7 @@ func (pj *Prjn) WtFmDWt() {
 	}
 }
 
-// SlowAdapt does the slow adaptation: SynScale
+// SlowAdapt does the slow adaptation: SWt learning and SynScale
 func (pj *Prjn) SlowAdapt() {
 	pj.SWtFmWt()
 	pj.SynScale()
@@ -931,7 +931,7 @@ func (pj *Prjn) SynScale() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
+	if !rlay.IsLearnTrgAvg() {
 		return
 	}
 	lr := rlay.Learn.TrgAvgAct.SynScaleRate

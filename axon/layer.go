@@ -1534,7 +1534,7 @@ func (ly *Layer) IsInput() bool {
 //  Learning
 
 func (ly *Layer) IsLearnTrgAvg() bool {
-	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || ly.Learn.TrgAvgAct.ErrLrate == 0 {
+	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || !ly.Learn.TrgAvgAct.On {
 		return false
 	}
 	return true
@@ -1546,6 +1546,9 @@ func (ly *Layer) DTrgAvgFmErr() {
 		return
 	}
 	lr := ly.Learn.TrgAvgAct.ErrLrate
+	if lr == 0 {
+		return
+	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1611,7 +1614,7 @@ func (ly *Layer) DTrgAvgSubMean() {
 
 // TrgAvgFmD updates TrgAvg from DTrgAvg
 func (ly *Layer) TrgAvgFmD() {
-	if !ly.IsLearnTrgAvg() {
+	if !ly.IsLearnTrgAvg() || ly.Learn.TrgAvgAct.ErrLrate == 0 {
 		return
 	}
 	ly.DTrgAvgSubMean()
