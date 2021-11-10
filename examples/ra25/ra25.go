@@ -68,7 +68,8 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
-					"Layer.Inhib.FBAct.Tau":              "20",   // 20 > 30 ?
+					"Layer.Inhib.Inhib.AvgTau":           "20",   // 20 > 30 ?
+					"Layer.Inhib.Layer.FF0":              "0.1",  // 0.1 def
 					"Layer.Act.Dt.IntTau":                "40",   // 40 > 20 in larger nets
 					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate

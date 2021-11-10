@@ -320,7 +320,7 @@ func (nt *Network) CycleImpl(ltime *Time) {
 	nt.AvgMaxGe(ltime)
 	nt.InhibFmGeAct(ltime)
 	nt.ActFmG(ltime)
-	nt.InhibAct(ltime)
+	nt.AvgMaxAct(ltime)
 }
 
 // SendSpike sends change in activation since last sent, if above thresholds
@@ -345,9 +345,9 @@ func (nt *Network) ActFmG(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.ActFmG(ltime) }, "ActFmG   ")
 }
 
-// InhibAct computes the average and max Ge stats, used in inhibition
-func (nt *Network) InhibAct(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.InhibAct(ltime) }, "InhibAct")
+// AvgMaxAct computes the average and max Act stats, used in inhibition
+func (nt *Network) AvgMaxAct(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxAct(ltime) }, "AvgMaxAct")
 }
 
 // CyclePostImpl is called after the standard Cycle update, and calls CyclePost

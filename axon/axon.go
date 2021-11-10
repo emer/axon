@@ -168,8 +168,8 @@ type AxonLayer interface {
 	// and updates learning running-average activations from that Act
 	ActFmG(ltime *Time)
 
-	// InhibAct computes the running-average activation used in driving inhibition
-	InhibAct(ltime *Time)
+	// AvgMaxAct computes the running-average activation used in driving inhibition
+	AvgMaxAct(ltime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate
 	// network layer loop.

@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emer/emergent/edge"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/weights"
@@ -1207,6 +1208,7 @@ func (ly *Layer) TopoGi(ltime *Time) {
 	pyn := ly.Shp.Dim(0)
 	pxn := ly.Shp.Dim(1)
 	wd := ly.Inhib.Topo.Width
+	wrap := ly.Inhib.Topo.Wrap
 
 	ssq := ly.Inhib.Topo.Sigma * float32(wd)
 	ssq *= ssq
@@ -1214,17 +1216,18 @@ func (ly *Layer) TopoGi(ltime *Time) {
 
 	l4d := ly.Is4D()
 
+	var clip bool
 	for py := 0; py < pyn; py++ {
 		for px := 0; px < pxn; px++ {
 			var tge, tact, twt float32
 			for iy := -wd; iy <= wd; iy++ {
 				ty := py + iy
-				if ty < 0 || ty >= pyn {
+				if ty, clip = edge.Edge(ty, pyn, wrap); clip {
 					continue
 				}
 				for ix := -wd; ix <= wd; ix++ {
 					tx := px + ix
-					if tx < 0 || tx >= pxn {
+					if tx, clip = edge.Edge(tx, pxn, wrap); clip {
 						continue
 					}
 					ds := float32(iy*iy + ix*ix)
@@ -1270,7 +1273,7 @@ func (ly *Layer) InhibFmPool(ltime *Time) {
 		}
 		pl := &ly.Pools[nrn.SubPool]
 		ly.Inhib.Self.Inhib(&nrn.GiSelf, nrn.Act)
-		nrn.Gi = pl.Inhib.Gi + nrn.GiSelf + nrn.GiSyn
+		nrn.Gi = pl.Inhib.Gi + nrn.GiSelf + ly.Inhib.Inhib.GiSyn(nrn.GiSyn)
 	}
 }
 
@@ -1306,8 +1309,8 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	}
 }
 
-// InhibAct computes the average and max Act stats, used in inhibition
-func (ly *Layer) InhibAct(ltime *Time) {
+// AvgMaxAct computes the average and max Act stats, used in inhibition
+func (ly *Layer) AvgMaxAct(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		var avg, max float32
@@ -1331,7 +1334,7 @@ func (ly *Layer) InhibAct(ltime *Time) {
 		if nn > 1 {
 			avg /= float32(nn)
 		}
-		ly.Inhib.FBAct.AvgAct(&pl.Inhib.Act.Avg, avg)
+		ly.Inhib.Inhib.AvgAct(&pl.Inhib.Act.Avg, avg)
 		pl.Inhib.Act.Max = max
 		pl.Inhib.Act.MaxIdx = maxi
 	}
