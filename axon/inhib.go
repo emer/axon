@@ -175,7 +175,7 @@ type TopoInhibParams struct {
 	FF      float32 `viewif:"On" desc:"overall inhibitory contribution from feedforward inhibition -- multiplies average Ge from pools or Ge from neurons"`
 	FB      float32 `viewif:"On" desc:"overall inhibitory contribution from feedback inhibition -- multiplies average activation from pools or Act from neurons"`
 	FF0     float32 `viewif:"On" desc:"feedforward zero point for Ge per neuron (summed Ge is compared to N * FF0) -- below this level, no FF inhibition is computed, above this it is FF * (Sum Ge - N * FF0)"`
-	WidthWt float32 `inactive:"+" viewif:"On" desc:"weight value at width -- to assess the value of Sigma"`
+	WidthWt float32 `inactive:"+" desc:"weight value at width -- to assess the value of Sigma"`
 }
 
 func (ti *TopoInhibParams) Defaults() {
