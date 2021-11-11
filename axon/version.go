@@ -3,7 +3,7 @@
 package axon
 
 const (
-	Version     = "v1.2.89"
-	GitCommit   = "7115cc8"          // the commit JUST BEFORE the release
-	VersionDate = "2021-11-10 10:14" // UTC
+	Version     = "v1.2.90"
+	GitCommit   = "e297878"          // the commit JUST BEFORE the release
+	VersionDate = "2021-11-11 09:04" // UTC
 )
