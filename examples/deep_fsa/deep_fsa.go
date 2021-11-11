@@ -66,7 +66,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
 				Params: params.Params{
-					"Layer.Inhib.FBAct.Tau":              "30",
+					"Layer.Inhib.Inhib.AvgTau":           "30",
 					"Layer.Inhib.ActAvg.Init":            "0.15",
 					"Layer.Inhib.ActAvg.Targ":            "0.15",
 					"Layer.Inhib.Layer.Gi":               "1.1", // 1.1 > 1.2 > 1.0
@@ -305,9 +305,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
-	in := net.AddLayer2D("Input", 1, 7, emer.Input)
-	inp := net.AddTRCLayer2D("InputP", 1, 7)
-	inp.Driver = "Input"
+	in, inp := net.AddInputTRC2D("Input", 1, 7)
 
 	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10) // note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
@@ -319,7 +317,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	trg.SetClass("Input")
 
 	hidct.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
-	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", YAlign: relpos.Front, Space: 2})
+	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
 	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
 
 	full := prjn.NewFull()

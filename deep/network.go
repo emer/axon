@@ -96,6 +96,26 @@ func AddTRCALayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNe
 	return ly
 }
 
+// AddInputTRC2D adds an Input and TRCLayer of given size, with given name.
+// The Input layer is set as the Driver of the TRCLayer
+func AddInputTRC2D(nt *axon.Network, name string, nNeurY, nNeurX int) (emer.Layer, *TRCLayer) {
+	in := nt.AddLayer2D(name, nNeurY, nNeurX, emer.Input)
+	trc := AddTRCLayer2D(nt, name+"P", nNeurY, nNeurX)
+	trc.Driver = name
+	trc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
+	return in, trc
+}
+
+// AddInputTRC4D adds an Input and TRCLayer of given size, with given name.
+// The Input layer is set as the Driver of the TRCLayer
+func AddInputTRC4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (emer.Layer, *TRCLayer) {
+	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, emer.Input)
+	trc := AddTRCLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
+	trc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: 2})
+	trc.Driver = name
+	return in, trc
+}
+
 // ConnectToTRC2D connects Super and CT with given TRC: CT -> TRC is class CTToPulv,
 // From TRC = type = Back, class = FmPulv
 // 2D version uses Full projections.
@@ -299,6 +319,18 @@ func (nt *Network) AddTRCALayer2D(name string, nNeurY, nNeurX int) *TRCALayer {
 // AddTRCALayer4D adds a TRCLayer of given size, with given name.
 func (nt *Network) AddTRCALayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *TRCALayer {
 	return AddTRCALayer4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+}
+
+// AddInputTRC2D adds an Input and TRCLayer of given size, with given name.
+// The Input layer is set as the Driver of the TRCLayer
+func (nt *Network) AddInputTRC2D(name string, nNeurY, nNeurX int) (emer.Layer, *TRCLayer) {
+	return AddInputTRC2D(&nt.Network, name, nNeurY, nNeurX)
+}
+
+// AddInputTRC4D adds an Input and TRCLayer of given size, with given name.
+// The Input layer is set as the Driver of the TRCLayer
+func (nt *Network) AddInputTRC4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) (emer.Layer, *TRCLayer) {
+	return AddInputTRC4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 }
 
 // AddSuperLayer2D adds a SuperLayer of given size, with given name.
