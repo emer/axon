@@ -357,6 +357,8 @@ func (nt *Network) CTCtxt(ltime *axon.Time) {
 	nt.ThrLayFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(CtxtSender); ok {
 			dl.SendCtxtGe(ltime)
+		} else {
+			LayerSendCtxtGe(ly.AsAxon(), ltime)
 		}
 	}, "SendCtxtGe")
 
@@ -365,4 +367,33 @@ func (nt *Network) CTCtxt(ltime *axon.Time) {
 			dl.CtxtFmGe(ltime)
 		}
 	}, "CtxtFmGe")
+}
+
+// LayerSendCtxtGe sends activation over CTCtxtPrjn projections to integrate
+// CtxtGe excitatory conductance on CT layers.
+// This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
+// Satisfies the CtxtSender interface.
+func LayerSendCtxtGe(ly *axon.Layer, ltime *axon.Time) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		if nrn.Act > 0.1 {
+			for _, sp := range ly.SndPrjns {
+				if sp.IsOff() {
+					continue
+				}
+				ptyp := sp.Type()
+				if ptyp != CTCtxt {
+					continue
+				}
+				pj, ok := sp.(*CTCtxtPrjn)
+				if !ok {
+					continue
+				}
+				pj.SendCtxtGe(ni, nrn.Act)
+			}
+		}
+	}
 }

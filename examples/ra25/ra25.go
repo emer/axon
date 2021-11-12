@@ -74,6 +74,10 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
+					"Layer.Inhib.Pool.FFEx0":             "0.15", // .15 > .18; Ex .05
+					"Layer.Inhib.Pool.FFEx":              "0.0",  // .05 best for lvis
+					"Layer.Inhib.Layer.FFEx0":            "0.15",
+					"Layer.Inhib.Layer.FFEx":             "0.0",  // .05
 					"Layer.Act.Decay.Act":                "0.2",  // 0, .7 best?
 					"Layer.Act.Decay.Glong":              "0.6",  //
 					"Layer.Act.Decay.KNa":                "0.0",  // 0 > higher for all other models
