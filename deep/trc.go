@@ -19,7 +19,7 @@ import (
 // Drivers are hard clamped using Clamp.Rate.
 type TRCParams struct {
 	DriversOff   bool    `def:"false" desc:"Turn off the driver inputs, in which case this layer behaves like a standard layer"`
-	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies activation of driver layer to produce Ge excitatory input to TRC unit -- see also Act.Clamp.Burst settings which can produce extra bursting in Ge inputs."`
+	DriveScale   float32 `def:"0.15" min:"0.0" desc:"multiplier on driver input strength, multiplies activation of driver layer to produce Ge excitatory input to TRC unit -- see also Act.Clamp.Burst settings which can produce extra bursting in Ge inputs."`
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer activation at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (MaxAct/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
 	Binarize     bool    `desc:"Apply threshold to driver burst input for computing plus-phase activations -- above BinThr, then Act = BinOn, below = BinOff.  This is beneficial for layers with weaker graded activations, such as V1 or other perceptual inputs."`
 	BinThr       float32 `viewif:"Binarize" desc:"Threshold for binarizing in terms of sending Burst activation"`
@@ -31,7 +31,7 @@ func (tp *TRCParams) Update() {
 }
 
 func (tp *TRCParams) Defaults() {
-	tp.DriveScale = 0.05
+	tp.DriveScale = 0.15
 	tp.FullDriveAct = 0.6
 	tp.Binarize = false
 	tp.BinThr = 0.4

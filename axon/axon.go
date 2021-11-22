@@ -100,6 +100,10 @@ type AxonLayer interface {
 	// InitWtsSym initializes the weight symmetry -- higher layers copy weights from lower layers
 	InitWtSym()
 
+	// InitGScale computes the initial scaling factor for synaptic input conductances G,
+	// stored in GScale.Scale, based on sending layer initial activation.
+	InitGScale()
+
 	// InitExt initializes external input state -- called prior to apply ext
 	InitExt()
 
@@ -134,10 +138,6 @@ type AxonLayer interface {
 	// including computing Ge scaling from running average activation etc.
 	// should already have presented the external input to the network at this point.
 	NewState()
-
-	// InitGScale computes the initial scaling factor for synaptic input conductances G,
-	// stored in GScale.Scale, based on sending layer initial activation.
-	InitGScale()
 
 	// GenNoise generates random noise for all neurons
 	GenNoise()
@@ -204,6 +204,10 @@ type AxonLayer interface {
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, SWt updating, and adapting inhibition
 	SlowAdapt()
+
+	// SynFail updates synaptic weight failure only -- normally done as part of DWt
+	// and WtFmDWt, but this call can be used during testing to update failing synapses.
+	SynFail()
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
@@ -248,4 +252,8 @@ type AxonPrjn interface {
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, and adapting inhibition
 	SlowAdapt()
+
+	// SynFail updates synaptic weight failure only -- normally done as part of DWt
+	// and WtFmDWt, but this call can be used during testing to update failing synapses.
+	SynFail()
 }

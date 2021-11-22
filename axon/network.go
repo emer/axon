@@ -249,6 +249,17 @@ func (nt *Network) InitTopoSWts() {
 	}
 }
 
+// InitGScale computes the initial scaling factor for synaptic input conductances G,
+// stored in GScale.Scale, based on sending layer initial activation.
+func (nt *Network) InitGScale() {
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(AxonLayer).InitGScale()
+	}
+}
+
 // DecayState decays activation state by given proportion
 // e.g., 1 = decay completely, and 0 = decay not at all
 // This is called automatically in NewState, but is avail
@@ -390,6 +401,11 @@ func (nt *Network) SlowAdapt() {
 		nt.SlowCtr = 0
 		nt.ThrLayFun(func(ly AxonLayer) { ly.SlowAdapt() }, "SlowAdapt")
 	}
+}
+
+// SynFail updates synaptic failure
+func (nt *Network) SynFail() {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail() }, "SynFail   ")
 }
 
 // LrateMod sets the Lrate modulation parameter for Prjns, which is

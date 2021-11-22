@@ -54,8 +54,13 @@ func (ly *Layer) Defaults() {
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
-	if ly.Typ == emer.Target { // defaults for target layers
-		ly.Act.Clamp.Type = GeClamp
+	switch ly.Typ {
+	case emer.Input:
+		ly.Act.Clamp.Ge = 1.0
+		ly.Inhib.Layer.Gi = 0.9
+		ly.Inhib.Pool.Gi = 0.9
+	case emer.Target:
+		ly.Act.Clamp.Ge = 0.6
 	}
 }
 
@@ -1768,6 +1773,17 @@ func (ly *Layer) SynScale() {
 			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), ni)
 		}
 		pl.AvgDif.CalcAvg()
+	}
+}
+
+// SynFail updates synaptic weight failure only -- normally done as part of DWt
+// and WtFmDWt, but this call can be used during testing to update failing synapses.
+func (ly *Layer) SynFail() {
+	for _, p := range ly.SndPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).SynFail()
 	}
 }
 

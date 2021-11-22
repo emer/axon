@@ -630,7 +630,7 @@ type ClampParams struct {
 	ErrThr   float32    `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
 	Type     ClampTypes `def:"GeClamp" desc:"type of clamping to use -- GeClamp provides a more natural input with initial spike onset related to input strength, and some adaptation effects, etc"`
 	Rate     float32    `viewif:"Type=RateClamp" def:"180" desc:"for RateClamp mode, maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
-	Ge       float32    `viewif:"Type!=RateClamp" def:"0.2,0.6" desc:"amount of Ge driven for clamping, for GeClamp and AddGeClamp"`
+	Ge       float32    `viewif:"Type!=RateClamp" def:"0.6,1" desc:"amount of Ge driven for clamping, for GeClamp and AddGeClamp -- use 0.6 for Target layers, 1.0 for Input layers"`
 	Burst    bool       `viewif:"Type=GeClamp" desc:"activate bursting at start of clamping window"`
 	BurstThr float32    `def:"0.5" viewif:"Burst&&Type=GeClamp" desc:"for Target layers, if ActM < this threshold then the neuron bursts -- otherwise the burst is adapted and doesn't apply -- amplifies errors -- set to 1 to always burst (e.g., for input layers)"`
 	BurstCyc int        `def:"0,20" viewif:"Burst&&Type=GeClamp" desc:"duration of extra bursting -- for Target layers, at start of plus phase, else start of alpha cycle"`
@@ -681,45 +681,41 @@ func (at *AttnParams) ModVal(val float32, attn float32) float32 {
 
 /// SynComParams are synaptic communication parameters: delay and probability of failure
 type SynComParams struct {
-	Delay      int     `desc:"synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must rebuild network!"`
-	PFail      float32 `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail * (1-Min(Wt/Max, 1))^2"`
-	PFailWtMax float32 `desc:"maximum weight value that experiences no synaptic failure -- weights at or above this level never fail to communicate, while probability of failure increases parabolically below this level -- enter 0 to have a uniform probability of failure regardless of weight size"`
+	Delay    int     `desc:"synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must rebuild network!"`
+	PFail    float32 `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
+	PFailSWt bool    `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
 }
 
 func (sc *SynComParams) Defaults() {
 	sc.Delay = 2
 	sc.PFail = 0 // 0.5 works?
-	sc.PFailWtMax = 0.8
+	sc.PFailSWt = false
 }
 
 func (sc *SynComParams) Update() {
 }
 
-// WtFailP returns probability of weight (synapse) failure given current weight value
-func (sc *SynComParams) WtFailP(wt float32) float32 {
-	if sc.PFailWtMax == 0 {
+// WtFailP returns probability of weight (synapse) failure given current SWt value
+func (sc *SynComParams) WtFailP(swt float32) float32 {
+	if !sc.PFailSWt {
 		return sc.PFail
 	}
-	if wt >= sc.PFailWtMax {
-		return 0
-	}
-	weff := 1 - wt/sc.PFailWtMax
-	return sc.PFail * weff * weff
+	return sc.PFail * (1 - swt)
 }
 
-// WtFail returns true if synapse should fail
-func (sc *SynComParams) WtFail(wt float32) bool {
-	fp := sc.WtFailP(wt)
+// WtFail returns true if synapse should fail, as function of SWt value (optionally)
+func (sc *SynComParams) WtFail(swt float32) bool {
+	fp := sc.WtFailP(swt)
 	if fp == 0 {
 		return false
 	}
 	return erand.BoolP(fp)
 }
 
-// Fail updates failure status of given weight
-func (sc *SynComParams) Fail(wt *float32) {
+// Fail updates failure status of given weight, given SWt value
+func (sc *SynComParams) Fail(wt *float32, swt float32) {
 	if sc.PFail > 0 {
-		if sc.WtFail(*wt) {
+		if sc.WtFail(swt) {
 			*wt = 0
 		}
 	}

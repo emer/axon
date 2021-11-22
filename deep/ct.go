@@ -18,7 +18,7 @@ import (
 // from SuperLayer and also from self projections.
 type CTLayer struct {
 	axon.Layer           // access as .Layer
-	CtxtGeGain float32   `desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
+	CtxtGeGain float32   `def:"0.2" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
 	CtxtGes    []float32 `desc:"slice of context (temporally delayed) excitatory conducances."`
 }
 

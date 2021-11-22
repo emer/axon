@@ -409,7 +409,7 @@ func (ls *LearnSynParams) CHLdWt(suAvgSLrn, suAvgMLrn, ruAvgSLrn, ruAvgMLrn floa
 
 // LrateParams manages learning rate parameters
 type LrateParams struct {
-	Base  float32 `def:"0.04,0.01" desc:"base learning rate for this projection -- can be modulated by other factors below."`
+	Base  float32 `def:"0.04,0.1,0.2" desc:"base learning rate for this projection -- can be modulated by other factors below -- for larger networks, use slower rates such as 0.04, smaller networks can use faster 0.2."`
 	Sched float32 `desc:"scheduled learning rate multiplier, simulating reduction in plasticity over aging"`
 	Mod   float32 `desc:"dynamic learning rate modulation due to neuromodulatory or other such factors"`
 	Eff   float32 `inactive:"+" desc:"effective actual learning rate multiplier used in computing DWt: Eff = eMod * Sched * Base"`

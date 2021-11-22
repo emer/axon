@@ -67,15 +67,15 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
-					"Layer.Inhib.Inhib.AvgTau":           "20",   // 20 > 30 ?
-					"Layer.Inhib.Layer.FF0":              "0.1",  // 0.1 def
-					"Layer.Act.Dt.IntTau":                "40",   // 40 > 20 in larger nets
-					"Layer.Inhib.ActAvg.Init":            "0.04", // start lower -- 0.04 more reliable than .03, faster than .05
-					"Layer.Inhib.ActAvg.Targ":            "0.05", // for adapt, important for this to be accurate
-					"Layer.Inhib.ActAvg.AdaptGi":         "true", // not huge effects but beneficial
-					"Layer.Inhib.Pool.FFEx0":             "0.15", // .15 > .18; Ex .05
-					"Layer.Inhib.Pool.FFEx":              "0.0",  // .05 best for lvis
+					"Layer.Inhib.Layer.Gi":               "1.2",   // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.Inhib.AvgTau":           "20",    // 20 > 30 ?
+					"Layer.Inhib.Layer.FF0":              "0.1",   // 0.1 def
+					"Layer.Act.Dt.IntTau":                "40",    // 40 > 20 in larger nets
+					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
+					"Layer.Inhib.ActAvg.Targ":            "0.05",  // for adapt, important for this to be accurate
+					"Layer.Inhib.ActAvg.AdaptGi":         "false", // not huge effects but beneficial
+					"Layer.Inhib.Pool.FFEx0":             "0.15",  // .15 > .18; Ex .05
+					"Layer.Inhib.Pool.FFEx":              "0.0",   // .05 best for lvis
 					"Layer.Inhib.Layer.FFEx0":            "0.15",
 					"Layer.Inhib.Layer.FFEx":             "0.0",  // .05
 					"Layer.Act.Decay.Act":                "0.2",  // 0, .7 best?
@@ -113,8 +113,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",     // 0.9 > 1.0
 					"Layer.Act.Clamp.Type":    "GeClamp", // GeClamp is much more natural and better..
-					"Layer.Act.Clamp.Ge":      "0.6",     // 0.6 >= 0.7 == 0.5
+					"Layer.Act.Clamp.Ge":      "1.0",     // 1.0 > 0.6 >= 0.7 == 0.5
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.ActAvg.Targ": "0.24",
 					"Layer.Act.Decay.Act":     "0.5", // 0.5 > 1 > 0
@@ -128,7 +129,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
 					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
 					"Layer.Act.Clamp.Type":       "GeClamp",
-					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6
+					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6 > 1.0
 					"Layer.Act.Clamp.Burst":      "false", //
 					"Layer.Act.Clamp.BurstThr":   "0.5",   //
 					"Layer.Act.Clamp.BurstGe":    "1",     // 2 strongest
@@ -156,6 +157,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec
 					"Prjn.Learn.XCal.SubMean":   "1",      // 1 > 0.9 now..
+					"Prjn.Com.PFail":            "0.0",    // even .2 fails
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

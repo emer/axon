@@ -15,7 +15,7 @@ import (
 // which is used for Ge rescaling and potentially for adapting inhibition over time
 type InhibParams struct {
 	Inhib  InhibMiscParams `view:"inline" desc:"misc inhibition computation parameters, including feedback activation "`
-	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer"`
+	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
 	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
 	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
 	Self   SelfInhibParams `view:"inline" desc:"neuron self-inhibition parameters -- can be beneficial for producing more graded, linear response -- not typically used in cortical networks"`

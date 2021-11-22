@@ -124,6 +124,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean":      "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":      "0.2",
 					"Prjn.SWt.Limit.Max":      "0.8",
+					"Prjn.Com.PFail":          "0.0",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

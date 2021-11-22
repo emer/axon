@@ -8,29 +8,19 @@ var SavedParamsSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "keeping default params for generic prjns",
-				Params: params.Params{
-					"Prjn.Learn.Momentum.On": "true",
-					"Prjn.Learn.Norm.On":     "true",
-					"Prjn.Learn.WtBal.On":    "false",
-				}},
+				Params: params.Params{}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.Learn.Lrate":       "0.04",
-					"Prjn.Learn.Momentum.On": "false",
-					"Prjn.Learn.Norm.On":     "false",
-					"Prjn.Learn.WtBal.On":    "false",
+					"Prjn.Learn.Lrate": "0.04",
 				}},
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":          "0.05",
-					"Prjn.Learn.Lrate":       "0.4",
-					"Prjn.Learn.Momentum.On": "false",
-					"Prjn.Learn.Norm.On":     "false",
-					"Prjn.Learn.WtBal.On":    "true",
+					"Prjn.CHL.Hebb":    "0.05",
+					"Prjn.Learn.Lrate": "0.4",
 				}},
 			{Sel: "#CA1ToECout", Desc: "extra strong from CA1 to ECout",
 				Params: params.Params{
-					"Prjn.WtScale.Abs": "4.0",
+					"Prjn.PrjnScale.Abs": "4.0",
 				}},
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
@@ -40,25 +30,25 @@ var SavedParamsSets = params.Sets{
 				}},
 			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
 				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
-					"Prjn.WtInit.Mean": "0.9",
-					"Prjn.WtInit.Var":  "0.01",
-					"Prjn.WtScale.Rel": "0.5",
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.WtInit.Mean":   "0.9",
+					"Prjn.WtInit.Var":    "0.01",
+					"Prjn.PrjnScale.Rel": "0.5",
 				}},
 			{Sel: "#DGToCA3", Desc: "Mossy fibers: strong, non-learning",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":    "0.001",
-					"Prjn.CHL.SAvgCor": "1",
-					"Prjn.Learn.Learn": "false",
-					"Prjn.WtInit.Mean": "0.9",
-					"Prjn.WtInit.Var":  "0.01",
-					"Prjn.WtScale.Rel": "8",
+					"Prjn.CHL.Hebb":      "0.001",
+					"Prjn.CHL.SAvgCor":   "1",
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.WtInit.Mean":   "0.9",
+					"Prjn.WtInit.Var":    "0.01",
+					"Prjn.PrjnScale.Rel": "8",
 				}},
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":    "0.01",
-					"Prjn.CHL.SAvgCor": "1",
-					"Prjn.WtScale.Rel": "2",
+					"Prjn.CHL.Hebb":      "0.01",
+					"Prjn.CHL.SAvgCor":   "1",
+					"Prjn.PrjnScale.Rel": "2",
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
@@ -98,47 +88,6 @@ var SavedParamsSets = params.Sets{
 			{Sel: ".HippoCHL", Desc: "no learning",
 				Params: params.Params{
 					"Prjn.Learn.Lrate": "0",
-				}},
-		},
-		"Sim": &params.Sheet{},
-	}},
-	{Name: "CHLWtBal", Desc: "CHL uses weight balance -- much better -- now in base", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".HippoCHL", Desc: "wtbal on",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true",
-				}},
-		},
-		"Sim": &params.Sheet{},
-	}},
-	{Name: "EncWtBal", Desc: "encoder uses weight balance -- worse", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".EcCa1Prjn", Desc: "wtbal on",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true",
-				}},
-		},
-		"Sim": &params.Sheet{},
-	}},
-	{Name: "EncMom", Desc: "encoder uses momentum -- worse", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".EcCa1Prjn", Desc: "moment on",
-				Params: params.Params{
-					"Prjn.Learn.Momentum.On": "true",
-					"Prjn.Learn.Norm.On":     "true",
-				}},
-		},
-		"Sim": &params.Sheet{},
-	}},
-	{Name: "AllWtBal", Desc: "All use weight balance", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".HippoCHL", Desc: "wtbal on",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true",
-				}},
-			{Sel: ".EcCa1Prjn", Desc: "wtbal on",
-				Params: params.Params{
-					"Prjn.Learn.WtBal.On": "true",
 				}},
 		},
 		"Sim": &params.Sheet{},

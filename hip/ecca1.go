@@ -6,7 +6,6 @@ package hip
 
 import (
 	"github.com/emer/axon/axon"
-	"github.com/goki/mat32"
 )
 
 // hip.EcCa1Prjn is for EC <-> CA1 projections, to perform error-driven
@@ -21,9 +20,6 @@ type EcCa1Prjn struct {
 
 func (pj *EcCa1Prjn) Defaults() {
 	pj.Prjn.Defaults()
-	pj.Prjn.Learn.Norm.On = false     // off by default
-	pj.Prjn.Learn.Momentum.On = false // off by default
-	pj.Prjn.Learn.WtBal.On = false    // todo: experiment
 }
 
 func (pj *EcCa1Prjn) UpdateParams() {
@@ -41,6 +37,7 @@ func (pj *EcCa1Prjn) DWt() {
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])
@@ -54,35 +51,7 @@ func (pj *EcCa1Prjn) DWt() {
 			rn := &rlay.Neurons[ri]
 
 			err := (sn.ActP * rn.ActP) - (sn.ActSt1 * rn.ActSt1)
-			bcm := pj.Learn.BCMdWt(sn.AvgSLrn, rn.AvgSLrn, rn.AvgL)
-			bcm *= pj.Learn.XCal.LongLrate(rn.AvgLLrn)
-			err *= pj.Learn.XCal.MLrn
-			dwt := bcm + err
-
-			norm := float32(1)
-			if pj.Learn.Norm.On {
-				norm = pj.Learn.Norm.NormFmAbsDWt(&sy.Norm, mat32.Abs(dwt))
-			}
-			if pj.Learn.Momentum.On {
-				dwt = norm * pj.Learn.Momentum.MomentFmDWt(&sy.Moment, dwt)
-			} else {
-				dwt *= norm
-			}
-			sy.DWt += pj.Learn.Lrate * dwt
-		}
-		// aggregate max DWtNorm over sending synapses
-		if pj.Learn.Norm.On {
-			maxNorm := float32(0)
-			for ci := range syns {
-				sy := &syns[ci]
-				if sy.Norm > maxNorm {
-					maxNorm = sy.Norm
-				}
-			}
-			for ci := range syns {
-				sy := &syns[ci]
-				sy.Norm = maxNorm
-			}
+			sy.DWt += rn.RLrate * lr * err
 		}
 	}
 }

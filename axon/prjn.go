@@ -844,7 +844,7 @@ func (pj *Prjn) WtFmDWt() {
 				}
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
-				pj.Com.Fail(&sy.Wt)
+				pj.Com.Fail(&sy.Wt, sy.SWt)
 			}
 		}
 
@@ -863,7 +863,7 @@ func (pj *Prjn) WtFmDWt() {
 				}
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
-				pj.Com.Fail(&sy.Wt)
+				pj.Com.Fail(&sy.Wt, sy.SWt)
 			}
 		}
 	}
@@ -913,6 +913,9 @@ func (pj *Prjn) SWtFmWt() {
 				sy := &pj.Syns[rsi]
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
+				if sy.Wt == 0 { // restore failed wts
+					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				}
 				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.SWt.Adapt.RndVar()
 				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 			}
@@ -921,6 +924,9 @@ func (pj *Prjn) SWtFmWt() {
 				sy := &pj.Syns[rsi]
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
+				if sy.Wt == 0 { // restore failed wts
+					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				}
 				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
 			}
@@ -955,6 +961,24 @@ func (pj *Prjn) SynScale() {
 				sy.LWt += sy.LWt * adif * sy.SWt
 			}
 			sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+		}
+	}
+}
+
+// SynFail updates synaptic weight failure only -- normally done as part of DWt
+// and WtFmDWt, but this call can be used during testing to update failing synapses.
+func (pj *Prjn) SynFail() {
+	slay := pj.Send.(AxonLayer).AsAxon()
+	for si := range slay.Neurons {
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		for ci := range syns {
+			sy := &syns[ci]
+			if sy.Wt == 0 { // restore failed wts
+				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+			}
+			pj.Com.Fail(&sy.Wt, sy.SWt)
 		}
 	}
 }

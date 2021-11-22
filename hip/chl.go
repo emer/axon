@@ -77,16 +77,13 @@ type CHLPrjn struct {
 func (pj *CHLPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	pj.CHL.Defaults()
-	pj.Prjn.Learn.Norm.On = false     // off by default
-	pj.Prjn.Learn.Momentum.On = false // off by default
-	pj.Prjn.Learn.WtBal.On = false    // todo: experiment
 }
 
 func (pj *CHLPrjn) UpdateParams() {
 	pj.CHL.Update()
-	if pj.CHL.On {
-		pj.Prjn.Learn.WtSig.SoftBound = false
-	}
+	// if pj.CHL.On {
+	// 	pj.Prjn.Learn.WtSig.SoftBound = false
+	// }
 	pj.Prjn.UpdateParams()
 }
 
@@ -109,18 +106,22 @@ func (pj *CHLPrjn) DWt() {
 // SAvgCor computes the sending average activation, corrected according to the SAvgCor
 // correction factor (typically makes layer appear more sparse than it is)
 func (pj *CHLPrjn) SAvgCor(slay *axon.Layer) float32 {
-	savg := .5 + pj.CHL.SAvgCor*(slay.Pools[0].ActAvg.ActPAvgEff-0.5)
+	savg := .5 + pj.CHL.SAvgCor*(slay.Inhib.ActAvg.Init-0.5)
 	savg = mat32.Max(pj.CHL.SAvgThr, savg) // keep this computed value within bounds
 	return 0.5 / savg
 }
 
 // DWtCHL computes the weight change (learning) for CHL
 func (pj *CHLPrjn) DWtCHL() {
+	if !pj.Learn.Learn {
+		return
+	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	if slay.Pools[0].ActP.Avg < pj.CHL.SAvgThr { // inactive, no learn
 		return
 	}
+	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])
@@ -141,30 +142,7 @@ func (pj *CHLPrjn) DWtCHL() {
 			err := pj.CHL.ErrDWt(sn.ActP, snActM, rn.ActP, rnActM, sy.LWt)
 
 			dwt := pj.CHL.DWt(hebb, err)
-			norm := float32(1)
-			if pj.Learn.Norm.On {
-				norm = pj.Learn.Norm.NormFmAbsDWt(&sy.Norm, mat32.Abs(dwt))
-			}
-			if pj.Learn.Momentum.On {
-				dwt = norm * pj.Learn.Momentum.MomentFmDWt(&sy.Moment, dwt)
-			} else {
-				dwt *= norm
-			}
-			sy.DWt += pj.Learn.Lrate * dwt
-		}
-		// aggregate max DWtNorm over sending synapses
-		if pj.Learn.Norm.On {
-			maxNorm := float32(0)
-			for ci := range syns {
-				sy := &syns[ci]
-				if sy.Norm > maxNorm {
-					maxNorm = sy.Norm
-				}
-			}
-			for ci := range syns {
-				sy := &syns[ci]
-				sy.Norm = maxNorm
-			}
+			sy.DWt += rn.RLrate * lr * dwt
 		}
 	}
 }
