@@ -85,6 +85,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4.0",
 				}},
+			{Sel: "#ECinToCA3", Desc: "stronger",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "4.0",
+				}},
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
@@ -126,28 +130,37 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":        ".1",
-					"Layer.Inhib.ActAvg.Init": "0.2",
+					"Layer.Act.KNa.On":        "false", // on > off
+					"Layer.Inhib.ActAvg.Init": "0.05",
 					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.Pool.Gi":     "2.0",
+					"Layer.Inhib.Pool.Gi":     "1.1",
 					"Layer.Inhib.Pool.On":     "true",
+				}},
+			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
+				Params: params.Params{
+					"Layer.Inhib.Pool.Gi": "1.1",
+					"Layer.Act.Clamp.Ge":  "1.2",
 				}},
 			{Sel: "#DG", Desc: "very sparse = high inibhition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.01",
-					"Layer.Inhib.Layer.Gi":    "3.8",
+					"Layer.Inhib.Layer.Gi":    "2.3",
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inibhition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.02",
-					"Layer.Inhib.Layer.Gi":    "2.8",
+					"Layer.Act.KNa.On":        "false", // on > off
+					"Layer.Inhib.ActAvg.Init": "0.01",
+					"Layer.Inhib.Layer.Gi":    "1.4",
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
+					"Layer.Act.KNa.On":        "false", // on > off
 					"Layer.Inhib.ActAvg.Init": "0.1",
 					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.Pool.Gi":     "2.4",
+					"Layer.Inhib.Pool.Gi":     "1.1",
+					"Layer.Inhib.Pool.FF":     "1.0",
 					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.FFEx":   "0.02",
 				}},
 		},
 	}},
@@ -266,8 +279,8 @@ func (ss *Sim) New() {
 	// ss.Params = SavedParamsSets
 	ss.RndSeed = 2
 	ss.ViewOn = true
-	ss.TrainUpdt = axon.AlphaCycle
-	ss.TestUpdt = axon.Cycle
+	ss.TrainUpdt = axon.Cycle // axon.AlphaCycle
+	ss.TestUpdt = axon.AlphaCycle
 	ss.TestInterval = 1
 	ss.LogSetParams = false
 	ss.MemThr = 0.34
@@ -507,7 +520,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	}
 	ecout.UpdateExtFlags() // call this after updating type
 
-	cycPerQtr := 50
+	cycPerQtr := 100
 
 	ss.Net.NewState()
 	ss.Time.NewState()
@@ -525,6 +538,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 		}
 		switch qtr + 1 {
 		case 1: // Second, Third Quarters: CA1 is driven by CA3 recall
+			ss.Net.ActSt1(&ss.Time)
 			ca1FmECin.PrjnScale.Abs = 0
 			ca1FmCa3.PrjnScale.Abs = 1
 			if train {
@@ -533,6 +547,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 				ca3FmDg.PrjnScale.Rel = 1 // significantly weaker for recall
 			}
 			ss.Net.InitGScale() // update computed scaling factors
+		case 2:
+			ss.Net.ActSt2(&ss.Time)
 		case 3: // Fourth Quarter: CA1 back to ECin drive only
 			ca1FmECin.PrjnScale.Abs = 1
 			ca1FmCa3.PrjnScale.Abs = 0
@@ -542,13 +558,13 @@ func (ss *Sim) ThetaCyc(train bool) {
 				ecin.UnitVals(&ss.TmpVals, "Act")
 				ecout.ApplyExt1D32(ss.TmpVals)
 			}
+			ss.Net.MinusPhase(&ss.Time)
+			ss.MemStats(train) // must come after QuarterFinal
+		case 4:
 			ss.Net.PlusPhase(&ss.Time)
 		}
 		if ss.ViewOn {
 			ss.UpdateViewTime(train, viewUpdt)
-		}
-		if qtr+1 == 3 {
-			ss.MemStats(train) // must come after QuarterFinal
 		}
 	}
 
@@ -681,6 +697,7 @@ func (ss *Sim) MemStats(train bool) {
 	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
 	ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
 	nn := ecout.Shape().Len()
+	actThr := float32(0.2)
 	trgOnWasOffAll := 0.0 // all units
 	trgOnWasOffCmp := 0.0 // only those that required completion, missing in ECin
 	trgOffWasOn := 0.0    // should have been off
@@ -694,21 +711,21 @@ func (ss *Sim) MemStats(train bool) {
 		actm := ecout.UnitVal1D(actMi, ni)
 		trg := ecout.UnitVal1D(targi, ni) // full pattern target
 		inact := ecin.UnitVal1D(actQ1i, ni)
-		if trg < 0.5 { // trgOff
+		if trg < actThr { // trgOff
 			trgOffN += 1
-			if actm > 0.5 {
+			if actm > actThr {
 				trgOffWasOn += 1
 			}
 		} else { // trgOn
 			trgOnN += 1
-			if inact < 0.5 { // missing in ECin -- completion target
+			if inact < actThr { // missing in ECin -- completion target
 				cmpN += 1
-				if actm < 0.5 {
+				if actm < actThr {
 					trgOnWasOffAll += 1
 					trgOnWasOffCmp += 1
 				}
 			} else {
-				if actm < 0.5 {
+				if actm < actThr {
 					trgOnWasOffAll += 1
 				}
 			}
@@ -1842,43 +1859,45 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	// 		win.Close()
 	// 	})
 
-	inQuitPrompt := false
-	gi.SetQuitReqFunc(func() {
-		if inQuitPrompt {
-			return
-		}
-		inQuitPrompt = true
-		gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Quit?",
-			Prompt: "Are you <i>sure</i> you want to quit and lose any unsaved params, weights, logs, etc?"}, gi.AddOk, gi.AddCancel,
-			win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-				if sig == int64(gi.DialogAccepted) {
-					gi.Quit()
-				} else {
-					inQuitPrompt = false
-				}
-			})
-	})
+	/*
+		inQuitPrompt := false
+		gi.SetQuitReqFunc(func() {
+			if inQuitPrompt {
+				return
+			}
+			inQuitPrompt = true
+			gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Quit?",
+				Prompt: "Are you <i>sure</i> you want to quit and lose any unsaved params, weights, logs, etc?"}, gi.AddOk, gi.AddCancel,
+				win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+					if sig == int64(gi.DialogAccepted) {
+						gi.Quit()
+					} else {
+						inQuitPrompt = false
+					}
+				})
+		})
 
-	// gi.SetQuitCleanFunc(func() {
-	// 	fmt.Printf("Doing final Quit cleanup here..\n")
-	// })
+		// gi.SetQuitCleanFunc(func() {
+		// 	fmt.Printf("Doing final Quit cleanup here..\n")
+		// })
 
-	inClosePrompt := false
-	win.SetCloseReqFunc(func(w *gi.Window) {
-		if inClosePrompt {
-			return
-		}
-		inClosePrompt = true
-		gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Close Window?",
-			Prompt: "Are you <i>sure</i> you want to close the window?  This will Quit the App as well, losing all unsaved params, weights, logs, etc"}, gi.AddOk, gi.AddCancel,
-			win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-				if sig == int64(gi.DialogAccepted) {
-					gi.Quit()
-				} else {
-					inClosePrompt = false
+			inClosePrompt := false
+			win.SetCloseReqFunc(func(w *gi.Window) {
+				if inClosePrompt {
+					return
 				}
+				inClosePrompt = true
+				gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Close Window?",
+					Prompt: "Are you <i>sure</i> you want to close the window?  This will Quit the App as well, losing all unsaved params, weights, logs, etc"}, gi.AddOk, gi.AddCancel,
+					win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+						if sig == int64(gi.DialogAccepted) {
+							gi.Quit()
+						} else {
+							inClosePrompt = false
+						}
+					})
 			})
-	})
+	*/
 
 	win.SetCloseCleanFunc(func(w *gi.Window) {
 		go gi.Quit() // once main window is closed, quit
