@@ -65,13 +65,62 @@ const LogPrec = 4
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "generic layer params",
+				Params: params.Params{
+					"Layer.Act.KNa.On":         "false", // on > off
+					"Layer.Learn.TrgAvgAct.On": "true",  // true > false?
+					"Layer.Learn.RLrate.On":    "true",  // true is key so far..
+					"Layer.Act.Gbar.L":         "0.1",
+					"Layer.Act.Decay.Act":      "0.2", // lvis best = .2, .6 good here too
+					"Layer.Act.Decay.Glong":    "0.6",
+				}},
+			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
+				Params: params.Params{
+					"Layer.Act.KNa.On":         "false", // on > off
+					"Layer.Learn.TrgAvgAct.On": "true",  // def true, not rel?
+					"Layer.Learn.RLrate.On":    "false", // def true, too slow?
+					"Layer.Inhib.ActAvg.Init":  "0.05",
+					"Layer.Inhib.Layer.On":     "false",
+					"Layer.Inhib.Pool.Gi":      "1.1",
+					"Layer.Inhib.Pool.On":      "true",
+				}},
+			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
+				Params: params.Params{
+					"Layer.Inhib.Pool.Gi": "1.1",
+					"Layer.Act.Clamp.Ge":  "1.2",
+				}},
+			{Sel: "#CA1", Desc: "CA1 only Pools",
+				Params: params.Params{
+					"Layer.Act.KNa.On":         "false", // on > off
+					"Layer.Learn.TrgAvgAct.On": "false", // def true, not rel?
+					"Layer.Learn.RLrate.On":    "false", // def true, too slow?
+					"Layer.Inhib.ActAvg.Init":  "0.1",
+					"Layer.Inhib.Layer.On":     "false",
+					"Layer.Inhib.Pool.Gi":      "1.1",
+					"Layer.Inhib.Pool.FF":      "1.0",
+					"Layer.Inhib.Pool.On":      "true",
+					"Layer.Inhib.Pool.FFEx":    "0.02",
+				}},
+			{Sel: "#DG", Desc: "very sparse = high inibhition",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.01",
+					"Layer.Inhib.Layer.Gi":    "2.3",
+				}},
+			{Sel: "#CA3", Desc: "sparse = high inibhition",
+				Params: params.Params{
+					"Layer.Act.KNa.On":        "false", // on > off
+					"Layer.Inhib.ActAvg.Init": "0.02",
+					"Layer.Inhib.Layer.Gi":    "1.4",
+				}},
 			{Sel: "Prjn", Desc: "keeping default params for generic prjns",
-				Params: params.Params{}},
+				Params: params.Params{
+					"Prjn.SWt.Init.SPct": "0.5", // 0.5 def -- no major effects
+				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base": "0.04",
 				}},
-			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
+			{Sel: ".HippoCHL", Desc: "hippo CHL projections",
 				Params: params.Params{
 					"Prjn.CHL.Hebb":         "0.05",
 					"Prjn.Learn.Lrate.Base": "0.2",
@@ -124,43 +173,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":         "0.01",
-					"Prjn.CHL.SAvgCor":      "0.4",
-					"Prjn.Learn.Lrate.Base": "0.1",
-				}},
-			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
-				Params: params.Params{
-					"Layer.Act.KNa.On":        "false", // on > off
-					"Layer.Inhib.ActAvg.Init": "0.05",
-					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.Pool.Gi":     "1.1",
-					"Layer.Inhib.Pool.On":     "true",
-				}},
-			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
-				Params: params.Params{
-					"Layer.Inhib.Pool.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":  "1.2",
-				}},
-			{Sel: "#DG", Desc: "very sparse = high inibhition",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.01",
-					"Layer.Inhib.Layer.Gi":    "2.3",
-				}},
-			{Sel: "#CA3", Desc: "sparse = high inibhition",
-				Params: params.Params{
-					"Layer.Act.KNa.On":        "false", // on > off
-					"Layer.Inhib.ActAvg.Init": "0.01",
-					"Layer.Inhib.Layer.Gi":    "1.4",
-				}},
-			{Sel: "#CA1", Desc: "CA1 only Pools",
-				Params: params.Params{
-					"Layer.Act.KNa.On":        "false", // on > off
-					"Layer.Inhib.ActAvg.Init": "0.1",
-					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.Pool.Gi":     "1.1",
-					"Layer.Inhib.Pool.FF":     "1.0",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.FFEx":   "0.02",
+					// "Prjn.CHL.Hebb":         "0.01",
+					// "Prjn.CHL.SAvgCor":      "0.4",
+					"Prjn.Learn.Lrate.Base": "0.2",
 				}},
 		},
 	}},
@@ -392,7 +407,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pj.SetClass("HippoCHL")
 
 	// Schafer collaterals
-	pj = net.ConnectLayersPrjn(ca3, ca1, full, emer.Forward, &hip.CHLPrjn{})
+	//	pj = net.ConnectLayersPrjn(ca3, ca1, full, emer.Forward, &hip.CHLPrjn{})
+	pj = net.ConnectLayers(ca3, ca1, full, emer.Forward)
 	pj.SetClass("HippoCHL")
 
 	// using 3 threads total
@@ -502,7 +518,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
 	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
 	ca1FmECin := ca1.RcvPrjns.SendName("ECin").(*hip.EcCa1Prjn)
-	ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(*hip.CHLPrjn)
+	// ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(*hip.CHLPrjn)
+	ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(axon.AxonPrjn).AsAxon()
 	ca3FmDg := ca3.RcvPrjns.SendName("DG").(axon.AxonPrjn).AsAxon()
 
 	// First Quarter: CA1 is driven by ECin, not by CA3 recall
@@ -520,12 +537,13 @@ func (ss *Sim) ThetaCyc(train bool) {
 	}
 	ecout.UpdateExtFlags() // call this after updating type
 
-	cycPerQtr := 100
+	cycPerQtr := []int{100, 100, 100, 50}
 
 	ss.Net.NewState()
 	ss.Time.NewState()
 	for qtr := 0; qtr < 4; qtr++ {
-		for cyc := 0; cyc < cycPerQtr; cyc++ {
+		maxCyc := cycPerQtr[qtr]
+		for cyc := 0; cyc < maxCyc; cyc++ {
 			ss.Net.Cycle(&ss.Time)
 			if !train {
 				ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
@@ -550,11 +568,10 @@ func (ss *Sim) ThetaCyc(train bool) {
 		case 2:
 			ss.Net.ActSt2(&ss.Time)
 		case 3: // Fourth Quarter: CA1 back to ECin drive only
-			ca1FmECin.PrjnScale.Abs = 1
-			ca1FmCa3.PrjnScale.Abs = 0
-			ss.Net.InitGScale() // update computed scaling factors
-
 			if train { // clamp ECout from ECin
+				ca1FmECin.PrjnScale.Abs = 1
+				ca1FmCa3.PrjnScale.Abs = 0
+				ss.Net.InitGScale() // update computed scaling factors
 				ecin.UnitVals(&ss.TmpVals, "Act")
 				ecout.ApplyExt1D32(ss.TmpVals)
 			}
@@ -695,7 +712,7 @@ func (ss *Sim) InitStats() {
 // values clamped from ECin activations
 func (ss *Sim) MemStats(train bool) {
 	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
-	ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.LayerByName("Input").(axon.AxonLayer).AsAxon() // note: must be input b/c ECin can be active
 	nn := ecout.Shape().Len()
 	actThr := float32(0.2)
 	trgOnWasOffAll := 0.0 // all units
@@ -710,7 +727,7 @@ func (ss *Sim) MemStats(train bool) {
 	for ni := 0; ni < nn; ni++ {
 		actm := ecout.UnitVal1D(actMi, ni)
 		trg := ecout.UnitVal1D(targi, ni) // full pattern target
-		inact := ecin.UnitVal1D(actQ1i, ni)
+		inact := inp.UnitVal1D(actQ1i, ni)
 		if trg < actThr { // trgOff
 			trgOffN += 1
 			if actm > actThr {
@@ -1680,6 +1697,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	// nv.Params.ColorMap = "Jet" // default is ColdHot
 	// which fares pretty well in terms of discussion here:
 	// https://matplotlib.org/tutorials/colors/colormaps.html
+	nv.Params.MaxRecs = 500
 	nv.SetNet(ss.Net)
 	ss.NetView = nv
 	nv.ViewDefaults()

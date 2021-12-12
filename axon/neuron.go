@@ -85,6 +85,8 @@ var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi",
 var NeuronVarsMap map[string]int
 
 var NeuronVarProps = map[string]string{
+	"Ge":       `min:"-2" max:"2"`,
+	"GeM":      `min:"-2" max:"2"`,
 	"Vm":       `min:"0" max:"1"`,
 	"VmDend":   `min:"0" max:"1"`,
 	"ISI":      `auto-scale:"+"`,

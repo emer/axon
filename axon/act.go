@@ -260,6 +260,9 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	if ac.Noise.Type == VmNoise {
 		nwVm += nrn.Noise
 	}
+	if mat32.IsNaN(nwVm) {
+		nwVm = ac.Init.Vm
+	}
 	nrn.Vm = ac.VmRange.ClipVal(nwVm)
 }
 

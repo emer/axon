@@ -64,7 +64,7 @@ const LogPrec = 4
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "using default 1.0 inhib for hidden layers",
+			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
 					"Layer.Inhib.Inhib.AvgTau":           "30",
 					"Layer.Inhib.ActAvg.Init":            "0.15",
@@ -120,7 +120,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":    "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
 					"Prjn.SWt.Adapt.SigGain":  "6",
 					"Prjn.SWt.Adapt.DreamVar": "0.0", // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":      "0.5", // .5 ok here, 1 best for larger nets: objrec, lvis
+					"Prjn.SWt.Init.SPct":      "1.0", // 1 works fine here -- .5 also ok
 					"Prjn.SWt.Init.Mean":      "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":      "0.2",
 					"Prjn.SWt.Limit.Max":      "0.8",
