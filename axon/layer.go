@@ -970,9 +970,9 @@ func (ly *Layer) UpdateExtFlags() {
 	}
 }
 
-// NewState handles all initialization at start of new input pattern, including computing
-// input scaling from running average activation etc.
-// should already have presented the external input to the network at this point.
+// NewState handles all initialization at start of new input pattern.
+// Should already have presented the external input to the network at this point.
+// Does NOT call InitGScale()
 func (ly *Layer) NewState() {
 	pl := &ly.Pools[0]
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.LongAvgDt)
@@ -1471,25 +1471,25 @@ func (ly *Layer) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current activation state in ActSt1 variables
+// ActSt1 saves current activation state in ActSt1 variables (using AvgSLrn)
 func (ly *Layer) ActSt1(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.ActInt
+		nrn.ActSt1 = nrn.AvgSLrn
 	}
 }
 
-// ActSt2 saves current activation state in ActSt2 variables
+// ActSt2 saves current activation state in ActSt2 variables (using AvgSLrn)
 func (ly *Layer) ActSt2(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.ActInt
+		nrn.ActSt2 = nrn.AvgSLrn
 	}
 }
 

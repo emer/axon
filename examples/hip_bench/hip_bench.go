@@ -127,7 +127,7 @@ type Sim struct {
 	Params       params.Sets              `view:"no-inline" desc:"full collection of param sets"`
 	ParamSet     string                   `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
 	Tag          string                   `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params)"`
-	BatchRun     int                      `desc:"current batch run number, for generating different seed"`
+	StartRun     int                      `desc:"current batch run number, for generating different seed"`
 	MaxRuns      int                      `desc:"maximum number of model runs to perform"`
 	MaxEpcs      int                      `desc:"maximum number of epochs to run per model run"`
 	PreTrainEpcs int                      `desc:"number of epochs to run for pretraining"`
@@ -192,7 +192,7 @@ type Sim struct {
 	IsRunning     bool                        `view:"-" desc:"true if sim is running"`
 	StopNow       bool                        `view:"-" desc:"flag to stop running"`
 	NeedsNewRun   bool                        `view:"-" desc:"flag to initialize NewRun if last one finished"`
-	RndSeed       int64                       `view:"-" desc:"the current random seed"`
+	RndSeeds      []int64                     `view:"-" desc:"a list of random seeds to use for each run"`
 	LastEpcTime   time.Time                   `view:"-" desc:"timer for last epoch"`
 }
 
@@ -225,7 +225,10 @@ func (ss *Sim) New() {
 	ss.Params = ParamSets // in def_params -- current best params, zycyc test
 	//ss.Params = OrigParamSets // original, previous model
 	// ss.Params = SavedParamsSets // current user-saved gui params
-	ss.RndSeed = 2
+	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
+	for i := 0; i < 100; i++ {
+		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
+	}
 	ss.ViewOn = true
 	ss.TrainUpdt = axon.AlphaCycle
 	ss.TestUpdt = axon.Cycle
@@ -267,7 +270,7 @@ func (hp *HipParams) Defaults() {
 func (ss *Sim) Defaults() {
 	ss.Hip.Defaults()
 	ss.Pat.Defaults()
-	ss.BatchRun = 0 // for initializing envs if using Gui
+	ss.StartRun = 0 // for initializing envs if using Gui
 	ss.Update()
 }
 
@@ -298,7 +301,7 @@ func (ss *Sim) ConfigEnv() {
 	if ss.MaxEpcs == 0 { // allow user override
 		ss.MaxEpcs = 30
 		ss.NZeroStop = 1
-		ss.PreTrainEpcs = 5 // seems sufficient? increase?
+		ss.PreTrainEpcs = 25 // seems sufficient? increase?
 	}
 
 	ss.TrainEnv.Nm = "TrainEnv"
@@ -315,8 +318,8 @@ func (ss *Sim) ConfigEnv() {
 	ss.TestEnv.Sequential = true
 	ss.TestEnv.Validate()
 
-	ss.TrainEnv.Init(ss.BatchRun)
-	ss.TestEnv.Init(ss.BatchRun)
+	ss.TrainEnv.Init(ss.StartRun)
+	ss.TestEnv.Init(ss.StartRun)
 }
 
 // SetEnv select which set of patterns to train on: AB or AC
@@ -326,7 +329,7 @@ func (ss *Sim) SetEnv(trainAC bool) {
 	} else {
 		ss.TrainEnv.Table = etable.NewIdxView(ss.TrainAB)
 	}
-	ss.TrainEnv.Init(ss.BatchRun)
+	ss.TrainEnv.Init(ss.StartRun)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -356,12 +359,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(ecout, ecin, onetoone, emer.Back)
 
 	// EC <-> CA1 encoder pathways
-	pj := net.ConnectLayersPrjn(ecin, ca1, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
-	pj.SetClass("EcCa1Prjn")
-	pj = net.ConnectLayersPrjn(ca1, ecout, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
-	pj.SetClass("EcCa1Prjn")
-	pj = net.ConnectLayersPrjn(ecout, ca1, pool1to1, emer.Back, &hip.EcCa1Prjn{})
-	pj.SetClass("EcCa1Prjn")
+	if false {
+		pj := net.ConnectLayersPrjn(ecin, ca1, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
+		pj.SetClass("EcCa1Prjn")
+		pj = net.ConnectLayersPrjn(ca1, ecout, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
+		pj.SetClass("EcCa1Prjn")
+		pj = net.ConnectLayersPrjn(ecout, ca1, pool1to1, emer.Back, &hip.EcCa1Prjn{})
+		pj.SetClass("EcCa1Prjn")
+	} else {
+		pj := net.ConnectLayers(ecin, ca1, pool1to1, emer.Forward)
+		pj.SetClass("EcCa1Prjn")
+		pj = net.ConnectLayers(ca1, ecout, pool1to1, emer.Forward)
+		pj.SetClass("EcCa1Prjn")
+		pj = net.ConnectLayers(ecout, ca1, pool1to1, emer.Back)
+		pj.SetClass("EcCa1Prjn")
+	}
 
 	// Perforant pathway
 	ppathDG := prjn.NewUnifRnd()
@@ -369,7 +381,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ppathCA3 := prjn.NewUnifRnd()
 	ppathCA3.PCon = hp.CA3PCon
 
-	pj = net.ConnectLayersPrjn(ecin, dg, ppathDG, emer.Forward, &hip.CHLPrjn{})
+	pj := net.ConnectLayersPrjn(ecin, dg, ppathDG, emer.Forward, &hip.CHLPrjn{})
 	pj.SetClass("HippoCHL")
 
 	if true { // toggle for bcm vs. ppath, zycyc: must use false for orig_param, true for def_param
@@ -438,7 +450,7 @@ func (ss *Sim) ReConfigNet() {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	rand.Seed(ss.RndSeed)
+	ss.InitRndSeed()
 	ss.SetParams("", ss.LogSetParams) // all sheets
 	ss.ReConfigNet()
 	ss.ConfigEnv() // re-config env just in case a different set of patterns was
@@ -448,10 +460,19 @@ func (ss *Sim) Init() {
 	ss.UpdateView(true)
 }
 
-// NewRndSeed gets a new random seed based on current time -- otherwise uses
-// the same random seed for every run
+// NewRndSeed gets a n// InitRndSeed initializes the random seed based on current training run number
+func (ss *Sim) InitRndSeed() {
+	run := ss.TrainEnv.Run.Cur
+	rand.Seed(ss.RndSeeds[run])
+}
+
+// NewRndSeed gets a new set of random seeds based on current time -- otherwise uses
+// the same random seeds for every run
 func (ss *Sim) NewRndSeed() {
-	ss.RndSeed = time.Now().UnixNano()
+	rs := time.Now().UnixNano()
+	for i := 0; i < 100; i++ {
+		ss.RndSeeds[i] = rs + int64(i)
+	}
 }
 
 // Counters returns a string of the current counter state
@@ -517,10 +538,9 @@ func (ss *Sim) ThetaCyc(train bool) {
 
 	ca1 := ss.Net.LayerByName("CA1").(axon.AxonLayer).AsAxon()
 	ca3 := ss.Net.LayerByName("CA3").(axon.AxonLayer).AsAxon()
-	ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
+	// ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
 	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
-	ca1FmECin := ca1.RcvPrjns.SendName("ECin").(*hip.EcCa1Prjn)
-	// ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(*hip.CHLPrjn)
+	ca1FmECin := ca1.RcvPrjns.SendName("ECin").(axon.AxonPrjn).AsAxon()
 	ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(axon.AxonPrjn).AsAxon()
 	ca3FmDg := ca3.RcvPrjns.SendName("DG").(axon.AxonPrjn).AsAxon()
 
@@ -539,7 +559,11 @@ func (ss *Sim) ThetaCyc(train bool) {
 	}
 	ecout.UpdateExtFlags() // call this after updating type
 
-	cycPerQtr := []int{100, 100, 100, 50}
+	ss.Net.InitGScale() // update computed scaling factors
+
+	// cycPerQtr := []int{100, 100, 100, 100}
+	cycPerQtr := []int{100, 25, 25, 50}
+	// cycPerQtr := []int{100, 1, 1, 50} // 150, 1, 1, 50 works for EcCa1Prjn, but 100, 1, 1, 50 does not
 
 	ss.Net.NewState()
 	ss.Time.NewState()
@@ -574,8 +598,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 				ca1FmECin.PrjnScale.Abs = 1
 				ca1FmCa3.PrjnScale.Abs = 0
 				ss.Net.InitGScale() // update computed scaling factors
-				ecin.UnitVals(&ss.TmpVals, "Act")
-				ecout.ApplyExt1D32(ss.TmpVals)
+				// ecin.UnitVals(&ss.TmpVals, "Act")
+				// ecout.ApplyExt1D32(ss.TmpVals)
 			}
 			ss.Net.MinusPhase(&ss.Time)
 			ss.MemStats(train) // must come after QuarterFinal
@@ -910,17 +934,24 @@ func (ss *Sim) PreTrain() {
 	ss.StopNow = false
 	curRun := ss.TrainEnv.Run.Cur
 	ss.TrainEnv.Init(curRun) // need this after changing num of rows in tables
+	done := false
 	for {
 		ss.PreTrainTrial()
-		if ss.StopNow || ss.TrainEnv.Run.Cur != curRun {
+		if ss.TrainEnv.Run.Cur != curRun {
+			done = true
+		}
+		if ss.StopNow || done {
 			break
 		}
 	}
-	b := &bytes.Buffer{}
-	ss.Net.WriteWtsJSON(b)
-	ss.PreTrainWts = b.Bytes()
-	ss.TrainEnv.Table = etable.NewIdxView(ss.TrainAB)
-	ss.SetDgCa3Off(ss.Net, false)
+	if done {
+		b := &bytes.Buffer{}
+		ss.Net.WriteWtsJSON(b)
+		ss.PreTrainWts = b.Bytes()
+		ss.TrainEnv.Table = etable.NewIdxView(ss.TrainAB)
+		ss.TrainEnv.Init(0)
+		ss.SetDgCa3Off(ss.Net, false)
+	}
 	ss.Stopped()
 }
 
@@ -999,10 +1030,31 @@ func (ss *Sim) TestAll() {
 	ss.LogTstEpc(ss.TstEpcLog)
 }
 
+// RunTrainTrial runs one train trial
+func (ss *Sim) RunTrainTrial() {
+	ss.StopNow = false
+	ss.TrainTrial()
+	ss.Stopped()
+}
+
+// RunTestTrial runs one test trial
+func (ss *Sim) RunTestTrial() {
+	ss.StopNow = false
+	ss.TestTrial(false)
+	ss.Stopped()
+}
+
 // RunTestAll runs through the full set of testing items, has stop running = false at end -- for gui
 func (ss *Sim) RunTestAll() {
 	ss.StopNow = false
 	ss.TestAll()
+	ss.Stopped()
+}
+
+// RunPreTrainTrial runs one pretrain trial
+func (ss *Sim) RunPreTrainTrial() {
+	ss.StopNow = false
+	ss.PreTrainTrial()
 	ss.Stopped()
 }
 
@@ -1162,16 +1214,15 @@ func (ss *Sim) ValsTsr(name string) *etensor.Float32 {
 // RunName returns a name for this run that combines Tag and Params -- add this to
 // any file names that are saved.
 func (ss *Sim) RunName() string {
+	rn := ""
 	if ss.Tag != "" {
-		pnm := ss.ParamsName()
-		if pnm == "Base" {
-			return ss.Tag
-		} else {
-			return ss.Tag + "_" + pnm
-		}
-	} else {
-		return ss.ParamsName()
+		rn += ss.Tag + "_"
 	}
+	rn += ss.ParamsName()
+	if ss.StartRun > 0 {
+		rn += fmt.Sprintf("_%03d", ss.StartRun)
+	}
+	return rn
 }
 
 // RunEpochName returns a string with the run and epoch numbers with leading zeros, suitable
@@ -1492,6 +1543,9 @@ func (ss *Sim) SimMatStat(lnm string) (float64, float64) {
 	smat := sm.Mat
 	nitm := smat.Dim(0)
 	ncat := nitm / len(ss.TstNms)
+	if ncat <= 0 {
+		ncat = 1
+	}
 	win_sum := float64(0)
 	win_n := 0
 	btn_sum := float64(0)
@@ -2006,7 +2060,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		if !ss.IsRunning {
 			ss.IsRunning = true
 			tbar.UpdateActions()
-			// ss.Train()
 			go ss.Train()
 		}
 	})
@@ -2022,9 +2075,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
-			ss.TrainTrial()
-			ss.IsRunning = false
-			vp.SetNeedsFullRender()
+			tbar.UpdateActions()
+			go ss.RunTrainTrial()
 		}
 	})
 
@@ -2058,6 +2110,16 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		}
 	})
 
+	tbar.AddAction(gi.ActOpts{Label: "PreTrain Step", Icon: "step-fwd", Tooltip: "One trial of pretraining.", UpdateFunc: func(act *gi.Action) {
+		act.SetActiveStateUpdt(!ss.IsRunning)
+	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		if !ss.IsRunning {
+			ss.IsRunning = true
+			tbar.UpdateActions()
+			go ss.RunPreTrainTrial()
+		}
+	})
+
 	tbar.AddSeparator("test")
 
 	tbar.AddAction(gi.ActOpts{Label: "Test Trial", Icon: "step-fwd", Tooltip: "Runs the next testing trial.", UpdateFunc: func(act *gi.Action) {
@@ -2065,9 +2127,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
-			ss.TestTrial(false) // don't return on trial -- wrap
-			ss.IsRunning = false
-			vp.SetNeedsFullRender()
+			tbar.UpdateActions()
+			go ss.RunTestTrial()
 		}
 	})
 
@@ -2240,11 +2301,14 @@ var SimProps = ki.Props{
 // zycyc
 // OuterLoopParams are the parameters to run for outer crossed factor testing
 //var OuterLoopParams = []string{"BigHip"}
-var OuterLoopParams = []string{"MedHip", "BigHip"}
+// var OuterLoopParams = []string{"MedHip", "BigHip"}
+var OuterLoopParams = []string{"MedHip"}
 
 // InnerLoopParams are the parameters to run for inner crossed factor testing
-//var InnerLoopParams = []string{"List020", "List040"}
-var InnerLoopParams = []string{"List020", "List040", "List060", "List080", "List100"}
+var InnerLoopParams = []string{"List010"}
+
+// var InnerLoopParams = []string{"List020", "List040"}
+// var InnerLoopParams = []string{"List020", "List040", "List060", "List080", "List100"}
 
 // TwoFactorRun runs outer-loop crossed with inner-loop params
 func (ss *Sim) TwoFactorRun() {
@@ -2256,7 +2320,7 @@ func (ss *Sim) TwoFactorRun() {
 	for _, otf := range OuterLoopParams {
 		for _, inf := range InnerLoopParams {
 			ss.Tag = usetag + otf + "_" + inf
-			rand.Seed(ss.RndSeed + int64(ss.BatchRun)) // TODO: non-parallel running should resemble parallel running results, now not
+			ss.InitRndSeed()
 			ss.SetParamsSet(otf, "", ss.LogSetParams)
 			ss.SetParamsSet(inf, "", ss.LogSetParams)
 			ss.ReConfigNet() // note: this applies Base params to Network
@@ -2279,7 +2343,7 @@ func (ss *Sim) CmdArgs() {
 	flag.StringVar(&ss.ParamSet, "params", "", "ParamSet name to use -- must be valid name as listed in compiled-in params or loaded params")
 	flag.StringVar(&ss.Tag, "tag", "", "extra tag to add to file names saved from this run")
 	flag.StringVar(&note, "note", "", "user note -- describe the run params etc")
-	flag.IntVar(&ss.BatchRun, "run", 0, "current batch run")
+	flag.IntVar(&ss.StartRun, "run", 0, "starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1")
 	flag.IntVar(&ss.MaxRuns, "runs", 10, "number of runs to do")
 	flag.IntVar(&ss.MaxEpcs, "epcs", 30, "maximum number of epochs to run (split between AB / AC)")
 	flag.BoolVar(&ss.LogSetParams, "setparams", false, "if true, print a record of each parameter that is set")
@@ -2299,7 +2363,7 @@ func (ss *Sim) CmdArgs() {
 
 	if saveEpcLog {
 		var err error
-		fnm := ss.LogFileName(strconv.Itoa(ss.BatchRun) + "epc")
+		fnm := ss.LogFileName("epc")
 		ss.TstEpcFile, err = os.Create(fnm)
 		if err != nil {
 			log.Println(err)
@@ -2311,7 +2375,7 @@ func (ss *Sim) CmdArgs() {
 	}
 	if saveRunLog {
 		var err error
-		fnm := ss.LogFileName(strconv.Itoa(ss.BatchRun) + "run")
+		fnm := ss.LogFileName("run")
 		ss.RunFile, err = os.Create(fnm)
 		if err != nil {
 			log.Println(err)
@@ -2324,8 +2388,8 @@ func (ss *Sim) CmdArgs() {
 	if ss.SaveWts {
 		fmt.Printf("Saving final weights per run\n")
 	}
-	fmt.Printf("Batch No. %d\n", ss.BatchRun)
-	fmt.Printf("Running %d Runs\n", ss.MaxRuns-ss.BatchRun)
+	fmt.Printf("Batch No. %d\n", ss.StartRun)
+	fmt.Printf("Running %d Runs\n", ss.MaxRuns-ss.StartRun)
 	// ss.Train()
 	ss.TwoFactorRun()
 	//fnm := ss.LogFileName("runs")

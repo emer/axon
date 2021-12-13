@@ -67,27 +67,28 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":               "1.2",   // 1.2 > 1.3 > (1.1 used in larger models)
-					"Layer.Inhib.Inhib.AvgTau":           "20",    // 20 > 30 ?
-					"Layer.Inhib.Layer.FF0":              "0.1",   // 0.1 def
+					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.Layer.Bg":               "0.2",  // new
+					"Layer.Inhib.Layer.FF0":              "0.1",  // 0.1 def
+					"Layer.Inhib.Inhib.AvgTau":           "30",   // 20 > 30 ?
+					"Layer.Inhib.Pool.FFEx0":             "0.15", // .15 > .18; Ex .05
+					"Layer.Inhib.Pool.FFEx":              "0.0",  // .05 best for lvis
+					"Layer.Inhib.Layer.FFEx0":            "0.15",
+					"Layer.Inhib.Layer.FFEx":             "0.0",   // .05
 					"Layer.Act.Dt.IntTau":                "40",    // 40 > 20 in larger nets
 					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05",  // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "false", // not huge effects but beneficial
-					"Layer.Inhib.Pool.FFEx0":             "0.15",  // .15 > .18; Ex .05
-					"Layer.Inhib.Pool.FFEx":              "0.0",   // .05 best for lvis
-					"Layer.Inhib.Layer.FFEx0":            "0.15",
-					"Layer.Inhib.Layer.FFEx":             "0.0",  // .05
-					"Layer.Act.Decay.Act":                "0.2",  // 0, .7 best?
-					"Layer.Act.Decay.Glong":              "0.6",  //
-					"Layer.Act.Decay.KNa":                "0.0",  // 0 > higher for all other models
-					"Layer.Act.Gbar.L":                   "0.2",  // 0.2 > 0.1
-					"Layer.Act.NMDA.Gbar":                "0.03", // 0.03 > .04 > .02
-					"Layer.Act.NMDA.Tau":                 "100",  // 50 no diff
-					"Layer.Act.GABAB.Gbar":               "0.2",  // .1 == .2 pretty much
-					"Layer.Act.GABAB.Gbase":              "0.2",  // .1 == .2
-					"Layer.Act.GABAB.GiSpike":            "10",   // 10 > 8 > 15
-					"Layer.Act.GTarg.GeMax":              "1",
+					"Layer.Act.Decay.Act":                "0.2",   // 0, .7 best?
+					"Layer.Act.Decay.Glong":              "0.6",   //
+					"Layer.Act.Decay.KNa":                "0.0",   // 0 > higher for all other models
+					"Layer.Act.Gbar.L":                   "0.2",   // 0.2 > 0.1
+					"Layer.Act.NMDA.Gbar":                "0.03",  // 0.03 > .04 > .02
+					"Layer.Act.NMDA.Tau":                 "100",   // 50 no diff
+					"Layer.Act.GABAB.Gbar":               "0.2",   // .1 == .2 pretty much
+					"Layer.Act.GABAB.Gbase":              "0.2",   // .1 == .2
+					"Layer.Act.GABAB.GiSpike":            "10",    // 10 > 8 > 15
+					"Layer.Act.GTarg.GeMax":              "1.2",
 					"Layer.Learn.ActAvg.SpikeG":          "8",
 					"Layer.Learn.ActAvg.MinLrn":          "0.02",
 					"Layer.Learn.ActAvg.SSTau":           "40",   // 4 > 2 for 50 cyc qtr
@@ -100,7 +101,6 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Dist":               "Gaussian",
 					"Layer.Act.Noise.Var":                "0.0",     // 0.01 > 0.005 > 0.02
 					"Layer.Act.Noise.Type":               "NoNoise", // now, no noise is better
-					"Layer.Act.Clamp.Rate":               "120",     // 180 default, 120 best here
 					"Layer.Act.Dt.LongAvgTau":            "20",      // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02",    // 0.01 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01",    // 0.005 for lvis, needs faster here
@@ -108,7 +108,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
 					"Layer.Learn.RLrate.On":              "true",
 					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 > others in larger models
-					"Layer.Learn.RLrate.ActDifThr":       "0.04",  // .02 > .05 best on lvis
+					"Layer.Learn.RLrate.ActDifThr":       "0.02",  // .02 > .05 best on lvis
 					"Layer.Learn.RLrate.Min":             "0.001", // .01 > .001 best on lvis
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
@@ -129,12 +129,12 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
 					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
 					"Layer.Act.Clamp.Type":       "GeClamp",
-					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6 > 1.0
+					"Layer.Act.Clamp.Ge":         "0.6",   // .5 >= .4 > .6 > 1.0
 					"Layer.Act.Clamp.Burst":      "false", //
 					"Layer.Act.Clamp.BurstThr":   "0.5",   //
 					"Layer.Act.Clamp.BurstGe":    "1",     // 2 strongest
 					"Layer.Act.Clamp.BurstCyc":   "10",    // 20 best for objrec
-					"Layer.Act.Spike.Tr":         "0",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
+					"Layer.Act.Spike.Tr":         "3",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
 					"Layer.Act.Clamp.Rate":       "120",   // 120 > 100 > 150
 					"Layer.Act.GABAB.Gbar":       "0.005", // .005 > .01 > .02 > .05 > .1 > .2
 					"Layer.Act.NMDA.Gbar":        "0.03",  // .03 > .02 > .01

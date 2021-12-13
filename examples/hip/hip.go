@@ -537,6 +537,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 	}
 	ecout.UpdateExtFlags() // call this after updating type
 
+	ss.Net.InitGScale() // update computed scaling factors
+
 	cycPerQtr := []int{100, 100, 100, 50}
 
 	ss.Net.NewState()

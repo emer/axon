@@ -49,9 +49,14 @@ func (pj *EcCa1Prjn) DWt() {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-
-			err := (sn.ActP * rn.ActP) - (sn.ActSt1 * rn.ActSt1)
-			sy.DWt += rn.RLrate * lr * err
+			err := pj.Learn.CHLdWt(sn.AvgSLrn, sn.ActSt1, rn.AvgSLrn, rn.ActSt1)
+			// err := (sn.ActP * rn.ActP) - (sn.ActSt1 * rn.ActSt1)
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += lr * err // rn.RLrate -- doesn't make sense here, b/c St1
 		}
 	}
 }

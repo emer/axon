@@ -17,42 +17,44 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.On": "true",  // true > false?
 					"Layer.Learn.RLrate.On":    "true",  // true is key so far..
 					"Layer.Act.Gbar.L":         "0.1",
-					"Layer.Act.Decay.Act":      "1.0", // lvis best = .2, .6 good here too
-					"Layer.Act.Decay.Glong":    "1.0",
+					"Layer.Act.Decay.Act":      "0.2", // lvis best = .2, .6 good here too
+					"Layer.Act.Decay.Glong":    "0.6",
+					"Layer.Inhib.Pool.Bg":      "0.0",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
 					"Layer.Act.KNa.On":         "false", // on > off
-					"Layer.Learn.TrgAvgAct.On": "true",  // def true, not rel?
+					"Layer.Learn.TrgAvgAct.On": "false", // def true, not rel?
 					"Layer.Learn.RLrate.On":    "false", // def true, too slow?
-					"Layer.Inhib.ActAvg.Init":  "0.05",
-					"Layer.Inhib.Layer.On":     "true",
-					"Layer.Inhib.Layer.Gi":     "0.5", // weak just to keep it from blowing up
-					"Layer.Inhib.Pool.Gi":      "1.2",
+					"Layer.Inhib.ActAvg.Init":  "0.15",
+					"Layer.Inhib.Layer.On":     "false",
+					"Layer.Inhib.Layer.Gi":     "0.2", // weak just to keep it from blowing up
+					"Layer.Inhib.Pool.Gi":      "1.1",
 					"Layer.Inhib.Pool.On":      "true",
 				}},
 			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":  "1.2",
+					"Layer.Act.Clamp.Ge":  "0.6",
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
 					"Layer.Act.KNa.On":         "false", // on > off
-					"Layer.Learn.TrgAvgAct.On": "false", // def true, not rel?
+					"Layer.Learn.TrgAvgAct.On": "true",  // def true, not rel?
 					"Layer.Learn.RLrate.On":    "false", // def true, too slow?
-					"Layer.Inhib.ActAvg.Init":  "0.1",
-					"Layer.Inhib.Layer.On":     "true",
+					"Layer.Inhib.ActAvg.Init":  "0.15",
+					"Layer.Inhib.Layer.On":     "false",
 					"Layer.Inhib.Layer.Gi":     "0.5", // weak just to keep it from blowing up
-					"Layer.Inhib.Pool.Gi":      "1.2",
+					"Layer.Inhib.Pool.Gi":      "1.2", // 1.2 > 1.1 > 1.3
 					"Layer.Inhib.Pool.FF":      "1.0",
 					"Layer.Inhib.Pool.On":      "true",
-					"Layer.Inhib.Pool.FFEx":    "0.0", // 0.02 was
+					"Layer.Inhib.Pool.FFEx0":   "1.0", // blowup protection
+					"Layer.Inhib.Pool.FFEx":    "0.0",
 				}},
 			{Sel: "#DG", Desc: "very sparse = high inibhition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.01",
-					"Layer.Inhib.Layer.Gi":    "2.3",
+					"Layer.Inhib.Layer.Gi":    "2.4",
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inibhition",
 				Params: params.Params{
@@ -64,9 +66,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.SWt.Init.SPct": "0.5", // 0.5 def, lower = less constraint
 				}},
-			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
+			{Sel: ".EcCa1Prjn", Desc: "encoder projections",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.04",
+					"Prjn.Learn.Lrate.Base": "0.04", // 0.04 for Axon -- 0.01 for EcCa1
 				}},
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections",
 				Params: params.Params{
@@ -89,8 +91,9 @@ var ParamSets = params.Sets{
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.PrjnScale.Abs": "1.0",
 				}},
 			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
 				Params: params.Params{
@@ -124,6 +127,10 @@ var ParamSets = params.Sets{
 					// "Prjn.CHL.Hebb":         "0.01",
 					// "Prjn.CHL.SAvgCor":      "0.4",
 					"Prjn.Learn.Lrate.Base": "0.2",
+				}},
+			{Sel: "#ECoutToCA1", Desc: "weaker",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1.0",
 				}},
 		},
 		// NOTE: it is essential not to put Pat / Hip params here, as we have to use Base

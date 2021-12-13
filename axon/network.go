@@ -97,8 +97,9 @@ func (nt *Network) SynVarProps() map[string]string {
 //  They just call the corresponding Impl method using the AxonNetwork interface
 //  so that other network types can specialize any of these entry points.
 
-// NewState handles all initialization at start of new input pattern, including computing
-// input scaling from running average activation etc.
+// NewState handles all initialization at start of new input pattern.
+// Should already have presented the external input to the network at this point.
+// Does NOT call InitGScale()
 func (nt *Network) NewState() {
 	nt.EmerNet.(AxonNetwork).NewStateImpl()
 }
@@ -157,7 +158,7 @@ func (nt *Network) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current acts into ActSt1
+// ActSt1 saves current acts into ActSt1 (using AvgS)
 func (nt *Network) ActSt1(ltime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -167,7 +168,7 @@ func (nt *Network) ActSt1(ltime *Time) {
 	}
 }
 
-// ActSt2 saves current acts into ActSt2
+// ActSt2 saves current acts into ActSt2 (using AvgS)
 func (nt *Network) ActSt2(ltime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
