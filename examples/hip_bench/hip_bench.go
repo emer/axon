@@ -301,7 +301,7 @@ func (ss *Sim) ConfigEnv() {
 	if ss.MaxEpcs == 0 { // allow user override
 		ss.MaxEpcs = 30
 		ss.NZeroStop = 1
-		ss.PreTrainEpcs = 25 // seems sufficient? increase?
+		ss.PreTrainEpcs = 10 // seems sufficient? increase?
 	}
 
 	ss.TrainEnv.Nm = "TrainEnv"
@@ -516,11 +516,13 @@ func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Running the Network, starting bottom-up..
 
+// TODO: separate code for pretrain, see about getting EcCa1 working.
+
 // ThetaCyc runs one theta cycle (200 msec) of processing.
 // External inputs must have already been applied prior to calling,
 // using ApplyExt method on relevant layers (see TrainTrial, TestTrial).
 // If train is true, then learning DWt or WtFmDWt calls are made.
-// Handles netview updating within scope, and calls TrainStats()
+// Handles netview updating within scope
 func (ss *Sim) ThetaCyc(train bool) {
 	// ss.Win.PollEvents() // this can be used instead of running in a separate goroutine
 	viewUpdt := ss.TrainUpdt
@@ -562,7 +564,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ss.Net.InitGScale() // update computed scaling factors
 
 	// cycPerQtr := []int{100, 100, 100, 100}
-	cycPerQtr := []int{100, 25, 25, 50}
+	cycPerQtr := []int{100, 25, 25, 50} // 100, 25, 25, 50 best so far, vs 75,50 at start, 50,50 instead of 25..
 	// cycPerQtr := []int{100, 1, 1, 50} // 150, 1, 1, 50 works for EcCa1Prjn, but 100, 1, 1, 50 does not
 
 	ss.Net.NewState()
@@ -613,6 +615,89 @@ func (ss *Sim) ThetaCyc(train bool) {
 
 	ca3FmDg.PrjnScale.Rel = dgwtscale // restore
 	ca1FmCa3.PrjnScale.Abs = 1
+
+	if train {
+		ss.Net.DWt()
+	}
+	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
+		ss.UpdateView(train)
+	}
+
+	if ss.TstCycPlot != nil && !train {
+		ss.TstCycPlot.GoUpdate() // make sure up-to-date at end
+	}
+}
+
+// PreThetaCyc runs one theta cycle (200 msec) of processing.
+// This one is for pretraining: no connection switching.
+func (ss *Sim) PreThetaCyc(train bool) {
+	// ss.Win.PollEvents() // this can be used instead of running in a separate goroutine
+	viewUpdt := ss.TrainUpdt
+	if !train {
+		viewUpdt = ss.TestUpdt
+	}
+
+	// update prior weight changes at start, so any DWt values remain visible at end
+	// you might want to do this less frequently to achieve a mini-batch update
+	// in which case, move it out to the TrainTrial method where the relevant
+	// counters are being dealt with.
+	if train {
+		ss.Net.WtFmDWt()
+	}
+
+	ca1 := ss.Net.LayerByName("CA1").(axon.AxonLayer).AsAxon()
+	// ca3 := ss.Net.LayerByName("CA3").(axon.AxonLayer).AsAxon()
+	// ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
+	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
+	ca1FmECin := ca1.RcvPrjns.SendName("ECin").(axon.AxonPrjn).AsAxon()
+	ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(axon.AxonPrjn).AsAxon()
+
+	// First Quarter: CA1 is driven by ECin, not by CA3 recall
+	// (which is not really active yet anyway)
+	ca1FmECin.PrjnScale.Abs = 1
+	ca1FmCa3.PrjnScale.Abs = 0
+
+	if train {
+		ecout.SetType(emer.Target) // clamp a plus phase during testing
+	} else {
+		ecout.SetType(emer.Compare) // don't clamp
+	}
+	ecout.UpdateExtFlags() // call this after updating type
+
+	ss.Net.InitGScale() // update computed scaling factors
+
+	cycPerQtr := []int{100, 50, 50, 50} // 100, 50, 50, 50 notably better
+
+	ss.Net.NewState()
+	ss.Time.NewState()
+	for qtr := 0; qtr < 4; qtr++ {
+		maxCyc := cycPerQtr[qtr]
+		for cyc := 0; cyc < maxCyc; cyc++ {
+			ss.Net.Cycle(&ss.Time)
+			if !train {
+				ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+			}
+			ss.Time.CycleInc()
+
+			if ss.ViewOn {
+				ss.UpdateViewTime(train, viewUpdt)
+			}
+		}
+		switch qtr + 1 {
+		case 1: // Second, Third Quarters: CA1 is driven by CA3 recall
+			ss.Net.ActSt1(&ss.Time)
+		case 2:
+			ss.Net.ActSt2(&ss.Time)
+		case 3: // Fourth Quarter: CA1 back to ECin drive only
+			ss.Net.MinusPhase(&ss.Time)
+			ss.MemStats(train) // must come after QuarterFinal
+		case 4:
+			ss.Net.PlusPhase(&ss.Time)
+		}
+		if ss.ViewOn {
+			ss.UpdateViewTime(train, viewUpdt)
+		}
+	}
 
 	if train {
 		ss.Net.DWt()
@@ -687,7 +772,8 @@ func (ss *Sim) TrainTrial() {
 }
 
 // PreTrainTrial runs one trial of pretraining using TrainEnv
-func (ss *Sim) PreTrainTrial() {
+// returns true if done with pretraining
+func (ss *Sim) PreTrainTrial() bool {
 	//if ss.NeedsNewRun {
 	//	ss.NewRun()
 	//}
@@ -704,14 +790,15 @@ func (ss *Sim) PreTrainTrial() {
 		}
 		if epc >= ss.PreTrainEpcs { // done with training..
 			ss.StopNow = true
-			return
+			return true
 		}
 	}
 
 	ss.ApplyInputs(&ss.TrainEnv)
-	ss.ThetaCyc(true)   // train
-	ss.TrialStats(true) // accumulate
+	ss.PreThetaCyc(true) // special!
+	ss.TrialStats(true)  // accumulate
 	ss.LogTrnTrl(ss.TrnTrlLog)
+	return false
 }
 
 // RunEnd is called at the end of a run -- save weights, record final log, etc here
@@ -749,8 +836,8 @@ func (ss *Sim) LoadPretrainedWts() bool {
 	err := ss.Net.ReadWtsJSON(b)
 	if err != nil {
 		log.Println(err)
-		// } else {
-		// 	fmt.Printf("loaded pretrained wts\n")
+	} else {
+		fmt.Printf("loaded pretrained wts\n")
 	}
 	return true
 }
@@ -936,10 +1023,7 @@ func (ss *Sim) PreTrain() {
 	ss.TrainEnv.Init(curRun) // need this after changing num of rows in tables
 	done := false
 	for {
-		ss.PreTrainTrial()
-		if ss.TrainEnv.Run.Cur != curRun {
-			done = true
-		}
+		done = ss.PreTrainTrial()
 		if ss.StopNow || done {
 			break
 		}

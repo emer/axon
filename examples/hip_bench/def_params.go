@@ -14,7 +14,7 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
 					"Layer.Act.KNa.On":         "false", // on > off
-					"Layer.Learn.TrgAvgAct.On": "true",  // true > false?
+					"Layer.Learn.TrgAvgAct.On": "false", // true > false?
 					"Layer.Learn.RLrate.On":    "true",  // true is key so far..
 					"Layer.Act.Gbar.L":         "0.1",
 					"Layer.Act.Decay.Act":      "0.2", // lvis best = .2, .6 good here too
@@ -77,7 +77,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PPath", Desc: "perforant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.15", // err driven: .15 > .2 > .25 > .1
+					"Prjn.Learn.Lrate.Base": "0.04", // err driven: .15 > .2 > .25 > .1
 					// moss=4, delta=4, lr=0.2, test = 3 are best
 				}},
 			{Sel: "#CA1ToECout", Desc: "extra strong from CA1 to ECout",
@@ -126,7 +126,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					// "Prjn.CHL.Hebb":         "0.01",
 					// "Prjn.CHL.SAvgCor":      "0.4",
-					"Prjn.Learn.Lrate.Base": "0.2",
+					"Prjn.Learn.Lrate.Base": "0.04",
 				}},
 			{Sel: "#ECoutToCA1", Desc: "weaker",
 				Params: params.Params{
