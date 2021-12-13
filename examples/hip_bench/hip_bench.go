@@ -296,7 +296,7 @@ func (ss *Sim) Config() {
 
 func (ss *Sim) ConfigEnv() {
 	if ss.MaxRuns == 0 { // allow user override
-		ss.MaxRuns = 10
+		ss.MaxRuns = 1
 	}
 	if ss.MaxEpcs == 0 { // allow user override
 		ss.MaxEpcs = 30
@@ -1238,7 +1238,7 @@ func (ss *Sim) WeightsFileName() string {
 
 // LogFileName returns default log file name
 func (ss *Sim) LogFileName(lognm string) string {
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + lognm + ".csv"
+	return ss.Net.Nm + "_" + ss.RunName() + "_" + lognm + ".tsv"
 }
 
 //////////////////////////////////////////////
@@ -2344,12 +2344,12 @@ func (ss *Sim) CmdArgs() {
 	flag.StringVar(&ss.Tag, "tag", "", "extra tag to add to file names saved from this run")
 	flag.StringVar(&note, "note", "", "user note -- describe the run params etc")
 	flag.IntVar(&ss.StartRun, "run", 0, "starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1")
-	flag.IntVar(&ss.MaxRuns, "runs", 10, "number of runs to do")
+	flag.IntVar(&ss.MaxRuns, "runs", 1, "number of runs to do")
 	flag.IntVar(&ss.MaxEpcs, "epcs", 30, "maximum number of epochs to run (split between AB / AC)")
 	flag.BoolVar(&ss.LogSetParams, "setparams", false, "if true, print a record of each parameter that is set")
 	flag.BoolVar(&ss.SaveWts, "wts", false, "if true, save final weights after each run")
 	flag.BoolVar(&saveEpcLog, "epclog", true, "if true, save train epoch log to file")
-	flag.BoolVar(&saveRunLog, "runlog", true, "if true, save run epoch log to file")
+	flag.BoolVar(&saveRunLog, "runlog", false, "if true, save run epoch log to file")
 	flag.BoolVar(&nogui, "nogui", true, "if not passing any other args and want to run nogui, use nogui")
 	flag.Parse()
 	ss.Init()
@@ -2388,8 +2388,9 @@ func (ss *Sim) CmdArgs() {
 	if ss.SaveWts {
 		fmt.Printf("Saving final weights per run\n")
 	}
-	fmt.Printf("Batch No. %d\n", ss.StartRun)
-	fmt.Printf("Running %d Runs\n", ss.MaxRuns-ss.StartRun)
+	fmt.Printf("Running Runs: %d - %d\n", ss.StartRun, ss.MaxRuns)
+	ss.TrainEnv.Run.Set(ss.StartRun)
+	ss.TrainEnv.Run.Max = ss.MaxRuns
 	// ss.Train()
 	ss.TwoFactorRun()
 	//fnm := ss.LogFileName("runs")
