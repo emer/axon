@@ -271,6 +271,7 @@ def submit():
 def results():
     # important: update this to include any results you want to add to results repo
     print("\n".join(glob.glob('*.tsv')))
+    print("\n".join(glob.glob('*.csv')))
 
 def status():
     slids = read_strings_strip("job.slurmid")
@@ -400,6 +401,44 @@ def queue():
         qout.append(r)
     
     write_string("job.queue", "\n".join(qout))
+
+# etcat runs etcat on given file type e.g., "_epc"
+def etcat(ftype):
+    grpath = os.path.join("gresults", sys.argv[2])
+    fls = os.path.join(grpath, "*" + ftype + ".tsv")
+    fl = glob.glob(fls)
+    if len(fl) == 0:
+        print("no epoch files in path: " + grpath)
+        exit(0)
+    allout = "_all" + ftype[1:]
+    avgout = "_avg" + ftype[1:]
+    alloutf = ""
+    avgoutf = ""
+    for f in fl:
+        if not "_00" in f: # find base one without run number
+            alloutf = f.replace(ftype, allout)
+            avgoutf = f.replace(ftype, avgout)
+    try:
+        result = subprocess.check_output(["etcat", "-avg", "-o", avgoutf] + fl, universal_newlines=True)
+    except subprocess.CalledProcessError:
+        print("Failed to run etcat")
+    try:
+        result = subprocess.check_output(["etcat", "-d", "-o", alloutf] + fl, universal_newlines=True)
+    except subprocess.CalledProcessError:
+        print("Failed to run etcat")
+    os.chdir(grpath)
+    try:
+        result = subprocess.check_output(["git", "add"] + glob.glob("*" + allout) + glob.glob("*" + avgout), universal_newlines=True)
+    except subprocess.CalledProcessError:
+        print("Failed to run git add")
+    try:
+        result = subprocess.check_output(["git", "commit", "-am", "etcat data"], universal_newlines=True)
+    except subprocess.CalledProcessError:
+        print("Failed to run git commit")
+    try:
+        result = subprocess.check_output(["git", "push"], universal_newlines=True)
+    except subprocess.CalledProcessError:
+        print("Failed to run git push")
     
 if len(sys.argv) < 2 or sys.argv[1] == "help":
     print("\ngrunter.py is the git-based run tool extended run script\n")
@@ -424,39 +463,8 @@ elif cmd == "cancel":
 elif cmd == "queue":
     queue()
 elif cmd == "etcat":
-    grpath = os.path.join("gresults", sys.argv[2])
-    fls = os.path.join(grpath, "*_epc.tsv")
-    fl = glob.glob(fls)
-    if len(fl) == 0:
-        print("no epoch files in path: " + grpath)
-        exit(0)
-    allout = ""
-    avgout = ""
-    for f in fl:
-        if not "_00" in f: # find base one without run number
-            allout = f.replace("_epc", "_allepc")
-            avgout = f.replace("_epc", "_avgepc")
-    try:
-        result = subprocess.check_output(["etcat", "-avg", "-o", avgout] + fl, universal_newlines=True)
-    except subprocess.CalledProcessError:
-        print("Failed to run etcat")
-    try:
-        result = subprocess.check_output(["etcat", "-d", "-o", allout] + fl, universal_newlines=True)
-    except subprocess.CalledProcessError:
-        print("Failed to run etcat")
-    os.chdir(grpath)
-    try:
-        result = subprocess.check_output(["git", "add"] + glob.glob("*_allepc.tsv") + glob.glob("*_avgepc.tsv"), universal_newlines=True)
-    except subprocess.CalledProcessError:
-        print("Failed to run git add")
-    try:
-        result = subprocess.check_output(["git", "commit", "-am", "etcat epc data"], universal_newlines=True)
-    except subprocess.CalledProcessError:
-        print("Failed to run git commit")
-    try:
-        result = subprocess.check_output(["git", "push"], universal_newlines=True)
-    except subprocess.CalledProcessError:
-        print("Failed to run git push")
+    # etcat("_epc")
+    etcat("_run")
 else:
     print("grunter.py: error: cmd not recognized: " + cmd)
     exit(1)

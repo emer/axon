@@ -462,7 +462,7 @@ func (ss *Sim) Init() {
 
 // NewRndSeed gets a n// InitRndSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRndSeed() {
-	run := ss.TrainEnv.Run.Cur
+	run := ss.StartRun + ss.TrainEnv.Run.Cur
 	rand.Seed(ss.RndSeeds[run])
 }
 
@@ -480,9 +480,9 @@ func (ss *Sim) NewRndSeed() {
 // and add a few tabs at the end to allow for expansion..
 func (ss *Sim) Counters(train bool) string {
 	if train {
-		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Time.Cycle, ss.TrainEnv.TrialName.Cur)
+		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.StartRun+ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Time.Cycle, ss.TrainEnv.TrialName.Cur)
 	} else {
-		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Time.Cycle, ss.TestEnv.TrialName.Cur)
+		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.StartRun+ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Time.Cycle, ss.TestEnv.TrialName.Cur)
 	}
 }
 
@@ -814,7 +814,7 @@ func (ss *Sim) RunEnd() {
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
 // for the new run value
 func (ss *Sim) NewRun() {
-	run := ss.TrainEnv.Run.Cur
+	run := ss.StartRun + ss.TrainEnv.Run.Cur
 	ss.TrainEnv.Table = etable.NewIdxView(ss.TrainAB)
 	ss.TrainEnv.Init(run)
 	ss.TestEnv.Init(run)
@@ -1317,7 +1317,7 @@ func (ss *Sim) RunEpochName(run, epc int) string {
 
 // WeightsFileName returns default current weights file name
 func (ss *Sim) WeightsFileName() string {
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur) + ".wts"
+	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(ss.StartRun+ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur) + ".wts"
 }
 
 // LogFileName returns default log file name
@@ -1340,7 +1340,7 @@ func (ss *Sim) LogTrnTrl(dt *etable.Table) {
 	}
 	dt.SetNumRows(row + 1)
 
-	dt.SetCellFloat("Run", row, float64(ss.TrainEnv.Run.Cur))
+	dt.SetCellFloat("Run", row, float64(ss.StartRun+ss.TrainEnv.Run.Cur))
 	dt.SetCellFloat("Epoch", row, float64(epc))
 	dt.SetCellFloat("Trial", row, float64(trl))
 	dt.SetCellString("TrialName", row, ss.TestEnv.TrialName.Cur)
@@ -1894,6 +1894,11 @@ func (ss *Sim) LogRun(dt *etable.Table) {
 
 	params := ss.RunName() // includes tag
 	spltparams := strings.Split(params, "_")
+	netsz := spltparams[0]
+	listsz := ""
+	if len(spltparams) > 1 {
+		listsz = spltparams[1]
+	}
 
 	fzero := ss.FirstZero
 	if fzero < 0 {
@@ -1902,8 +1907,8 @@ func (ss *Sim) LogRun(dt *etable.Table) {
 
 	dt.SetCellFloat("Run", row, float64(run))
 	dt.SetCellString("Params", row, params)
-	dt.SetCellString("NetSize", row, spltparams[0])
-	dt.SetCellString("ListSize", row, spltparams[1])
+	dt.SetCellString("NetSize", row, netsz)
+	dt.SetCellString("ListSize", row, listsz)
 	dt.SetCellFloat("NEpochs", row, float64(ss.TstEpcLog.Rows))
 	dt.SetCellFloat("FirstZero", row, float64(fzero))
 	dt.SetCellFloat("UnitErr", row, agg.Mean(epcix, "UnitErr")[0])
@@ -2385,13 +2390,15 @@ var SimProps = ki.Props{
 // zycyc
 // OuterLoopParams are the parameters to run for outer crossed factor testing
 //var OuterLoopParams = []string{"BigHip"}
-// var OuterLoopParams = []string{"MedHip", "BigHip"}
-var OuterLoopParams = []string{"MedHip"}
+var OuterLoopParams = []string{"MedHip", "BigHip"}
+
+// var OuterLoopParams = []string{"MedHip"}
 
 // InnerLoopParams are the parameters to run for inner crossed factor testing
-var InnerLoopParams = []string{"List010"}
+// var InnerLoopParams = []string{"List010"}
 
-// var InnerLoopParams = []string{"List020", "List040"}
+var InnerLoopParams = []string{"List020", "List040"}
+
 // var InnerLoopParams = []string{"List020", "List040", "List060", "List080", "List100"}
 
 // TwoFactorRun runs outer-loop crossed with inner-loop params
@@ -2433,7 +2440,7 @@ func (ss *Sim) CmdArgs() {
 	flag.BoolVar(&ss.LogSetParams, "setparams", false, "if true, print a record of each parameter that is set")
 	flag.BoolVar(&ss.SaveWts, "wts", false, "if true, save final weights after each run")
 	flag.BoolVar(&saveEpcLog, "epclog", true, "if true, save train epoch log to file")
-	flag.BoolVar(&saveRunLog, "runlog", false, "if true, save run epoch log to file")
+	flag.BoolVar(&saveRunLog, "runlog", true, "if true, save run epoch log to file")
 	flag.BoolVar(&nogui, "nogui", true, "if not passing any other args and want to run nogui, use nogui")
 	flag.Parse()
 	ss.Init()

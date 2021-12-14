@@ -16,8 +16,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.KNa.On":         "false", // on > off
 					"Layer.Learn.TrgAvgAct.On": "false", // true > false?
 					"Layer.Learn.RLrate.On":    "false", // no diff..
-					"Layer.Act.Gbar.L":         "0.2",
-					"Layer.Act.Decay.Act":      "0.5", // lvis best = .2, .6 good here too
+					"Layer.Act.Gbar.L":         "0.2",   // .2 > .1
+					"Layer.Act.Decay.Act":      "0.5",   // lvis best = .2, .6 good here too
 					"Layer.Act.Decay.Glong":    "0.8",
 					"Layer.Inhib.Pool.Bg":      "0.0",
 				}},
@@ -39,14 +39,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ECin", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":      "0.1",
 					"Layer.Act.Decay.Act":   "1.0", // lvis best = .2, .6 good here too
 					"Layer.Act.Decay.Glong": "1.0",
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
 					"Layer.Act.KNa.On":         "false", // on > off
-					"Layer.Act.Gbar.L":         "0.1",
 					"Layer.Learn.TrgAvgAct.On": "true",  // def true, not rel?
 					"Layer.Learn.RLrate.On":    "false", // def true, too slow?
 					"Layer.Inhib.ActAvg.Init":  "0.15",
@@ -61,7 +59,7 @@ var ParamSets = params.Sets{
 			{Sel: "#DG", Desc: "very sparse = high inibhition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.01",
-					"Layer.Inhib.Layer.Gi":    "2.4",
+					"Layer.Inhib.Layer.Gi":    "2.0", // 2.2 > 2.4
 					"Layer.Act.Decay.Act":     "1.0",
 					"Layer.Act.Decay.Glong":   "1.0",
 				}},
@@ -69,9 +67,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.KNa.On":        "false", // on > off
 					"Layer.Inhib.ActAvg.Init": "0.02",
-					"Layer.Inhib.Layer.Gi":    "1.8",
-					"Layer.Act.Decay.Act":     "0.8",
-					"Layer.Act.Decay.Glong":   "0.8",
+					"Layer.Inhib.Layer.Gi":    "1.6", // 1.6 > 1.8
+					"Layer.Act.Decay.Act":     "1.0", // 0.8
+					"Layer.Act.Decay.Glong":   "1.0",
 				}},
 			{Sel: "Prjn", Desc: "keeping default params for generic prjns",
 				Params: params.Params{
@@ -88,12 +86,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PPath", Desc: "perforant path, new Dg error-driven EcCa1Prjn prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.02", // axon: 0.02 > 0.1
+					"Prjn.Learn.Lrate.Base": "0.1", // .1 > .04 -- makes a diff
 					// moss=4, delta=4, lr=0.2, test = 3 are best
 				}},
 			{Sel: "#CA1ToECout", Desc: "extra strong from CA1 to ECout",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0", // 1.0 ok?
+					"Prjn.PrjnScale.Abs": "3.0", // 2.0 > 1.0?
 				}},
 			{Sel: "#ECinToCA3", Desc: "stronger",
 				Params: params.Params{
@@ -102,10 +100,10 @@ var ParamSets = params.Sets{
 			{Sel: "#ECinToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
 				Params: params.Params{
 					"Prjn.Learn.Learn":      "true", // absolutely essential to have on!
-					"Prjn.CHL.Hebb":         ".5",   // .5 > 1 overall
+					"Prjn.CHL.Hebb":         "0.5",  // .5 > 1 overall
 					"Prjn.CHL.SAvgCor":      "0.1",  // .1 > .2 > .3 > .4 ?
 					"Prjn.CHL.MinusQ1":      "true", // dg self err?
-					"Prjn.Learn.Lrate.Base": "0.01", // no diff 0.1 == 0.02 but higher prob worse
+					"Prjn.Learn.Lrate.Base": "0.01", // 0.01 == 0.04 == 0.1 -- all very similar
 				}},
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
@@ -131,13 +129,13 @@ var ParamSets = params.Sets{
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel":    "0.1",
-					"Prjn.Learn.Lrate.Base": "0.02", // 0.1 def
+					"Prjn.Learn.Lrate.Base": "0.1", // 0.1 v.s .04 not much diff
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
 					// "Prjn.CHL.Hebb":         "0.01",
 					// "Prjn.CHL.SAvgCor":      "0.4",
-					"Prjn.Learn.Lrate.Base": "0.04",
+					"Prjn.Learn.Lrate.Base": "0.1", // 0.1 > 0.04
 					"Prjn.PrjnScale.Rel":    "2",
 				}},
 			{Sel: "#ECoutToCA1", Desc: "weaker",
