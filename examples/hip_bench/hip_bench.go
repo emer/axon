@@ -359,7 +359,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(ecout, ecin, onetoone, emer.Back)
 
 	// EC <-> CA1 encoder pathways
-	if false {
+	if true {
 		pj := net.ConnectLayersPrjn(ecin, ca1, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
 		pj.SetClass("EcCa1Prjn")
 		pj = net.ConnectLayersPrjn(ca1, ecout, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
@@ -564,7 +564,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ss.Net.InitGScale() // update computed scaling factors
 
 	// cycPerQtr := []int{100, 100, 100, 100}
-	cycPerQtr := []int{100, 25, 25, 50} // 100, 25, 25, 50 best so far, vs 75,50 at start, 50,50 instead of 25..
+	cycPerQtr := []int{50, 50, 50, 50} // 100, 25, 25, 50 best so far, vs 75,50 at start, 50,50 instead of 25..
 	// cycPerQtr := []int{100, 1, 1, 50} // 150, 1, 1, 50 works for EcCa1Prjn, but 100, 1, 1, 50 does not
 
 	ss.Net.NewState()
