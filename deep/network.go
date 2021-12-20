@@ -21,6 +21,13 @@ var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
 var NetworkProps = axon.NetworkProps
 
+// NewNetwork returns a new deep Network
+func NewNetwork(name string) *Network {
+	net := &Network{}
+	net.InitName(net, name)
+	return net
+}
+
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
 	nt.Network.Defaults()

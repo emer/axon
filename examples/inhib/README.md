@@ -1,6 +1,6 @@
-Back to [All Sims](https://github.com/CompCogNeuro/sims) (also for general info and executable downloads)
-
 # Introduction
+
+This is adapted from [CCN Sims](https://github.com/CompCogNeuro/sims).
 
 This simulation explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons.  This inhibition is critical when neurons have bidirectional excitatory connections, as otherwise the positive feedback loops will result in the equivalent of epileptic seizures -- runaway excitatory activity.
 

@@ -37,23 +37,27 @@ var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
-				Params: params.Params{
-					"Prjn.Learn.Norm.On":     "true",
-					"Prjn.Learn.Momentum.On": "true",
-					"Prjn.Learn.WtBal.On":    "false",
-				}},
+				Params: params.Params{}},
 			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.8",
-					"Layer.Act.Gbar.L":     "0.2", // original value -- makes HUGE diff on perf!
+					"Layer.Inhib.Layer.Gi": "1.1",
+					"Layer.Act.Gbar.L":     "0.2",
+				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":  "0.9",     // 0.9 > 1.0
+					"Layer.Act.Clamp.Type":  "GeClamp", // GeClamp is much more natural and better..
+					"Layer.Act.Clamp.Ge":    "1.0",     // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Act.Decay.Act":   "0.5",     // 0.5 > 1 > 0
+					"Layer.Act.Decay.Glong": "1",       // LVis .7 best?
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.4",
+					"Layer.Inhib.Layer.Gi": "1.1",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.WtScale.Rel": "0.2",
+					"Prjn.PrjnScale.Rel": "0.2",
 				}},
 		},
 		"Sim": &params.Sheet{ // sim params apply to sim object
@@ -77,14 +81,16 @@ func ConfigNet(net *axon.Network, threads, units int) {
 	hid3Lay := net.AddLayer("Hidden3", shp, emer.Hidden)
 	outLay := net.AddLayer("Output", shp, emer.Target)
 
-	net.ConnectLayers(inLay, hid1Lay, prjn.NewFull(), emer.Forward)
-	net.ConnectLayers(hid1Lay, hid2Lay, prjn.NewFull(), emer.Forward)
-	net.ConnectLayers(hid2Lay, hid3Lay, prjn.NewFull(), emer.Forward)
-	net.ConnectLayers(hid3Lay, outLay, prjn.NewFull(), emer.Forward)
+	full := prjn.NewFull()
 
-	net.ConnectLayers(outLay, hid3Lay, prjn.NewFull(), emer.Back)
-	net.ConnectLayers(hid3Lay, hid2Lay, prjn.NewFull(), emer.Back)
-	net.ConnectLayers(hid2Lay, hid1Lay, prjn.NewFull(), emer.Back)
+	net.ConnectLayers(inLay, hid1Lay, full, emer.Forward)
+	net.ConnectLayers(hid1Lay, hid2Lay, full, emer.Forward)
+	net.ConnectLayers(hid2Lay, hid3Lay, full, emer.Forward)
+	net.ConnectLayers(hid3Lay, outLay, full, emer.Forward)
+
+	net.ConnectLayers(outLay, hid3Lay, full, emer.Back)
+	net.ConnectLayers(hid3Lay, hid2Lay, full, emer.Back)
+	net.ConnectLayers(hid2Lay, hid1Lay, full, emer.Back)
 
 	switch threads {
 	case 2:
@@ -114,8 +120,7 @@ func ConfigPats(dt *etable.Table, pats, units int) {
 	}, pats)
 
 	// note: actually can learn if activity is .15 instead of .25
-	// but C++ benchmark is for .25..
-	nOn := units / 6
+	nOn := units / 8
 
 	patgen.PermutedBinaryRows(dt.Cols[1], nOn, 1, 0)
 	patgen.PermutedBinaryRows(dt.Cols[2], nOn, 1, 0)
@@ -127,7 +132,6 @@ func ConfigEpcLog(dt *etable.Table) {
 		{"CosDiff", etensor.FLOAT32, nil, nil},
 		{"AvgCosDiff", etensor.FLOAT32, nil, nil},
 		{"SSE", etensor.FLOAT32, nil, nil},
-		{"Avg SSE", etensor.FLOAT32, nil, nil},
 		{"Count Err", etensor.FLOAT32, nil, nil},
 		{"Pct Err", etensor.FLOAT32, nil, nil},
 		{"Pct Cor", etensor.FLOAT32, nil, nil},
@@ -156,6 +160,8 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
 
+	cycPerQtr := 50
+
 	tmr := timer.Time{}
 	tmr.Start()
 	for epc := 0; epc < epcs; epc++ {
@@ -163,7 +169,6 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 		outCosDiff := float32(0)
 		cntErr := 0
 		sse := 0.0
-		avgSSE := 0.0
 		for pi := 0; pi < np; pi++ {
 			ppi := porder[pi]
 			inp := inPats.SubSpace([]int{ppi})
@@ -172,29 +177,30 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 			inLay.ApplyExt(inp)
 			outLay.ApplyExt(outp)
 
-			net.AlphaCycInit()
-			ltime.AlphaCycStart()
+			net.NewState()
+			ltime.NewState()
 			for qtr := 0; qtr < 4; qtr++ {
-				for cyc := 0; cyc < ltime.CycPerQtr; cyc++ {
+				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					net.Cycle(ltime)
 					ltime.CycleInc()
 				}
-				net.QuarterFinal(ltime)
-				ltime.QuarterInc()
+				if qtr == 2 {
+					net.MinusPhase(ltime)
+					ltime.NewPhase()
+				}
 			}
+			net.PlusPhase(ltime)
 			net.DWt()
 			net.WtFmDWt()
 			outCosDiff += outLay.CosDiff.Cos
-			pSSE, pAvgSSE := outLay.MSE(0.5)
+			pSSE := outLay.PctUnitErr()
 			sse += pSSE
-			avgSSE += pAvgSSE
 			if pSSE != 0 {
 				cntErr++
 			}
 		}
 		outCosDiff /= float32(np)
 		sse /= float64(np)
-		avgSSE /= float64(np)
 		pctErr := float64(cntErr) / float64(np)
 		pctCor := 1 - pctErr
 		// fmt.Printf("epc: %v  \tCosDiff: %v \tAvgCosDif: %v\n", epc, outCosDiff, outLay.CosDiff.Avg)
@@ -202,13 +208,12 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 		epcLog.SetCellFloat("CosDiff", epc, float64(outCosDiff))
 		epcLog.SetCellFloat("AvgCosDiff", epc, float64(outLay.CosDiff.Avg))
 		epcLog.SetCellFloat("SSE", epc, sse)
-		epcLog.SetCellFloat("Avg SSE", epc, avgSSE)
 		epcLog.SetCellFloat("Count Err", epc, float64(cntErr))
 		epcLog.SetCellFloat("Pct Err", epc, pctErr)
 		epcLog.SetCellFloat("Pct Cor", epc, pctCor)
-		epcLog.SetCellFloat("Hid1 ActAvg", epc, float64(hid1Lay.Pools[0].ActAvg.ActPAvgEff))
-		epcLog.SetCellFloat("Hid2 ActAvg", epc, float64(hid2Lay.Pools[0].ActAvg.ActPAvgEff))
-		epcLog.SetCellFloat("Out ActAvg", epc, float64(outLay.Pools[0].ActAvg.ActPAvgEff))
+		epcLog.SetCellFloat("Hid1 ActAvg", epc, float64(hid1Lay.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid2 ActAvg", epc, float64(hid2Lay.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Out ActAvg", epc, float64(outLay.ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if Silent {

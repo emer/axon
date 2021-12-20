@@ -370,12 +370,20 @@ func (pj *Prjn) Build() error {
 		return err
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
-	rsh := pj.Recv.Shape()
-	rlen := rsh.Len()
-	pj.Gidx.Len = pj.Com.Delay + 1
-	pj.Gidx.Zi = 0
-	pj.Gbuf = make([]float32, rlen*pj.Gidx.Len)
+	pj.BuildGbuf()
 	return nil
+}
+
+// BuildGbuf builds Gbuf with current Com Delay values, if not correct size
+func (pj *Prjn) BuildGbuf() {
+	rlen := pj.Recv.Shape().Len()
+	dl := pj.Com.Delay + 1
+	if pj.Gidx.Len == dl && len(pj.Gbuf) == dl {
+		return
+	}
+	pj.Gidx.Len = dl
+	pj.Gidx.Zi = 0
+	pj.Gbuf = make([]float32, dl*rlen)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -651,7 +659,9 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 }
 
 // InitGbuf initializes the G buffer values to 0
+// and insures that Gbuf is properly allocated
 func (pj *Prjn) InitGbuf() {
+	pj.BuildGbuf() // make sure correct size based on Com.Delay setting
 	for ri := range pj.Gbuf {
 		pj.Gbuf[ri] = 0
 	}

@@ -17,6 +17,7 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/evec"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/patgen"
@@ -130,22 +131,22 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	BidirNet   bool    `desc:"if true, use the bidirectionally-connected network -- otherwise use the simpler feedforward network"`
-	TrainedWts bool    `desc:"simulate trained weights by having higher variance and Gaussian distributed weight values -- otherwise lower variance, uniform"`
-	InputPct   float32 `def:"20" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
-	FFFBInhib  bool    `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
-	FFFBGi     float32 `def:"1" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
-
-	Cycles         int     `def:"200" desc:"number of cycles per trial"`
-	KNaAdapt       bool    `desc:"turn on adaptation, or not"`
-	HiddenGbarI    float32 `def:"0.25" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
-	InhibGbarI     float32 `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
-	FFinhibWtScale float32 `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
-	FBinhibWtScale float32 `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
-	HiddenGeTau    float32 `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Hidden neurons"`
-	InhibGeTau     float32 `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Inhib neurons"`
-	HiddenGiTau    float32 `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
-	InhibGiTau     float32 `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
+	BidirNet       bool       `desc:"if true, use the bidirectionally-connected network -- otherwise use the simpler feedforward network"`
+	TrainedWts     bool       `desc:"simulate trained weights by having higher variance and Gaussian distributed weight values -- otherwise lower variance, uniform"`
+	InputPct       float32    `def:"20" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
+	FFFBInhib      bool       `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
+	FFFBGi         float32    `def:"1" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
+	HidSize        evec.Vec2i `desc:"size of hidden layers"`
+	Cycles         int        `def:"200" desc:"number of cycles per trial"`
+	KNaAdapt       bool       `desc:"turn on adaptation, or not"`
+	HiddenGbarI    float32    `def:"0.25" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
+	InhibGbarI     float32    `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
+	FFinhibWtScale float32    `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
+	FBinhibWtScale float32    `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
+	HiddenGeTau    float32    `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Hidden neurons"`
+	InhibGeTau     float32    `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Inhib neurons"`
+	HiddenGiTau    float32    `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
+	InhibGiTau     float32    `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
 
 	SpikeRasters   map[string]*etensor.Float32   `desc:"spike raster data for different layers"`
 	SpikeRastGrids map[string]*etview.TensorGrid `desc:"spike raster plots for different layers"`
@@ -195,6 +196,7 @@ func (ss *Sim) New() {
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
+	ss.HidSize.Set(10, 10)
 	ss.Cycles = 200
 	ss.TrainedWts = false
 	ss.InputPct = 20
@@ -251,12 +253,12 @@ func (ss *Sim) ConfigNetFF(net *axon.Network) {
 
 func (ss *Sim) ConfigNetBidir(net *axon.Network) {
 	net.InitName(net, "InhibBidir")
-	inp := net.AddLayer2D("Input", 10, 10, emer.Input)
-	hid := net.AddLayer2D("Hidden", 10, 10, emer.Hidden)
-	inh := net.AddLayer2D("Inhib", 10, 2, emer.Hidden)
+	inp := net.AddLayer2D("Input", ss.HidSize.Y, ss.HidSize.X, emer.Input)
+	hid := net.AddLayer2D("Hidden", ss.HidSize.Y, ss.HidSize.X, emer.Hidden)
+	inh := net.AddLayer2D("Inhib", ss.HidSize.Y, 2, emer.Hidden)
 	inh.SetClass("InhibLay")
-	hid2 := net.AddLayer2D("Hidden2", 10, 10, emer.Hidden)
-	inh2 := net.AddLayer2D("Inhib2", 10, 2, emer.Hidden)
+	hid2 := net.AddLayer2D("Hidden2", ss.HidSize.Y, ss.HidSize.X, emer.Hidden)
+	inh2 := net.AddLayer2D("Inhib2", ss.HidSize.Y, 2, emer.Hidden)
 	inh2.SetClass("InhibLay")
 
 	full := prjn.NewFull()

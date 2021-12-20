@@ -263,8 +263,8 @@ func (hp *HipParams) Defaults() {
 	hp.MossyPCon = 0.02 // .02 > .05 > .01 (for small net)
 	hp.ECPctAct = 0.2
 
-	hp.MossyDel = 4     // 4 > 2 -- best is 4 del on 4 rel baseline
-	hp.MossyDelTest = 3 // for rel = 4: 3 > 2 > 0 > 4 -- 4 is very bad -- need a small amount..
+	hp.MossyDel = 3     // 4 > 2 -- best is 4 del on 4 rel baseline
+	hp.MossyDelTest = 0 // for rel = 4: 3 > 2 > 0 > 4 -- 4 is very bad -- need a small amount..
 }
 
 func (ss *Sim) Defaults() {
@@ -301,7 +301,7 @@ func (ss *Sim) ConfigEnv() {
 	if ss.MaxEpcs == 0 { // allow user override
 		ss.MaxEpcs = 30
 		ss.NZeroStop = 1
-		ss.PreTrainEpcs = 10 // seems sufficient? increase?
+		ss.PreTrainEpcs = 10 // 10 > 20 perf wise
 	}
 
 	ss.TrainEnv.Nm = "TrainEnv"
@@ -359,7 +359,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(ecout, ecin, onetoone, emer.Back)
 
 	// EC <-> CA1 encoder pathways
-	if true {
+	if false { // false = actually works better to use the regular projections here
 		pj := net.ConnectLayersPrjn(ecin, ca1, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
 		pj.SetClass("EcCa1Prjn")
 		pj = net.ConnectLayersPrjn(ca1, ecout, pool1to1, emer.Forward, &hip.EcCa1Prjn{})
@@ -546,9 +546,11 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(axon.AxonPrjn).AsAxon()
 	ca3FmDg := ca3.RcvPrjns.SendName("DG").(axon.AxonPrjn).AsAxon()
 
+	absGain := float32(2)
+
 	// First Quarter: CA1 is driven by ECin, not by CA3 recall
 	// (which is not really active yet anyway)
-	ca1FmECin.PrjnScale.Abs = 1
+	ca1FmECin.PrjnScale.Abs = absGain
 	ca1FmCa3.PrjnScale.Abs = 0
 
 	dgwtscale := ca3FmDg.PrjnScale.Rel
@@ -586,7 +588,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 		case 1: // Second, Third Quarters: CA1 is driven by CA3 recall
 			ss.Net.ActSt1(&ss.Time)
 			ca1FmECin.PrjnScale.Abs = 0
-			ca1FmCa3.PrjnScale.Abs = 1
+			ca1FmCa3.PrjnScale.Abs = absGain
 			if train {
 				ca3FmDg.PrjnScale.Rel = dgwtscale // restore after 1st quarter
 			} else {
@@ -597,7 +599,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.Net.ActSt2(&ss.Time)
 		case 3: // Fourth Quarter: CA1 back to ECin drive only
 			if train { // clamp ECout from ECin
-				ca1FmECin.PrjnScale.Abs = 1
+				ca1FmECin.PrjnScale.Abs = absGain
 				ca1FmCa3.PrjnScale.Abs = 0
 				ss.Net.InitGScale() // update computed scaling factors
 				// ecin.UnitVals(&ss.TmpVals, "Act")
@@ -614,7 +616,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	}
 
 	ca3FmDg.PrjnScale.Rel = dgwtscale // restore
-	ca1FmCa3.PrjnScale.Abs = 1
+	ca1FmCa3.PrjnScale.Abs = absGain
 
 	if train {
 		ss.Net.DWt()
@@ -1437,7 +1439,8 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 
 	for _, lnm := range ss.LayStatNms {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		dt.SetCellFloat(ly.Nm+" ActAvg", row, float64(ly.Pools[0].Inhib.Act.Avg))
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
+		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
 	}
 
 	// note: essential to use Go version of update when called from another goroutine
@@ -1471,7 +1474,8 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 		{"TrgOffWasOn", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.LayStatNms {
-		sch = append(sch, etable.Column{lnm + " ActAvg", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -1493,7 +1497,8 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("TrgOffWasOn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1) // default plot
 
 	for _, lnm := range ss.LayStatNms {
-		plt.SetColParams(lnm+" ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5)
+		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 2.0)
+		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5)
 	}
 	return plt
 }
@@ -1722,6 +1727,9 @@ func (ss *Sim) LogTstEpc(dt *etable.Table) {
 				dt.SetCellFloat(lnm+" "+ts, row, btn)
 			}
 		}
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
+		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
 	}
 
 	// base zero on testing performance!
@@ -1781,6 +1789,8 @@ func (ss *Sim) ConfigTstEpcLog(dt *etable.Table) {
 		for _, ts := range ss.SimMatStats {
 			sch = append(sch, etable.Column{lnm + " " + ts, etensor.FLOAT64, nil, nil})
 		}
+		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -1811,6 +1821,8 @@ func (ss *Sim) ConfigTstEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 		for _, ts := range ss.SimMatStats {
 			plt.SetColParams(lnm+" "+ts, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 		}
+		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 2.0)
+		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 0.5)
 	}
 	return plt
 }
@@ -2390,14 +2402,13 @@ var SimProps = ki.Props{
 // zycyc
 // OuterLoopParams are the parameters to run for outer crossed factor testing
 //var OuterLoopParams = []string{"BigHip"}
-var OuterLoopParams = []string{"MedHip", "BigHip"}
-
-// var OuterLoopParams = []string{"MedHip"}
+// var OuterLoopParams = []string{"MedHip", "BigHip"}
+var OuterLoopParams = []string{"MedHip"}
 
 // InnerLoopParams are the parameters to run for inner crossed factor testing
 // var InnerLoopParams = []string{"List010"}
 
-var InnerLoopParams = []string{"List020", "List040"}
+var InnerLoopParams = []string{"List040", "List060"}
 
 // var InnerLoopParams = []string{"List020", "List040", "List060", "List080", "List100"}
 

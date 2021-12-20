@@ -30,6 +30,13 @@ type Network struct {
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
+// NewNetwork returns a new axon Network
+func NewNetwork(name string) *Network {
+	net := &Network{}
+	net.InitName(net, name)
+	return net
+}
+
 func (nt *Network) AsAxon() *Network {
 	return nt
 }
