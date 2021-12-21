@@ -27,6 +27,7 @@ import (
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/etview" // include to get gui views
+	"github.com/emer/etable/norm"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/gi/giv"
@@ -50,32 +51,27 @@ const LogPrec = 4
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "no learning",
-				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
-					// "Prjn.SWt.Init.Dist": "Uniform",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
-					"Prjn.Com.Delay":     "2",
-				}},
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.ActAvg.Init": "0.25",
-					"Layer.Act.Dt.GeTau":      "5",
-					"Layer.Act.Dt.GiTau":      "7",
-					"Layer.Act.Gbar.I":        "0.1",
-					"Layer.Act.Gbar.L":        "0.2",
-					"Layer.Act.GABAB.GiSpike": "10",
-					"Layer.Act.NMDA.GeTot":    "1",
-					"Layer.Act.NMDA.Gbar":     "0.03",
+					"Layer.Inhib.Layer.On":     "false",
+					"Layer.Inhib.ActAvg.Init":  "0.25",
+					"Layer.Inhib.Inhib.AvgTau": "30", // 20 > 30 ?
+					"Layer.Act.Dt.GeTau":       "5",
+					"Layer.Act.Dt.GiTau":       "7",
+					"Layer.Act.Gbar.I":         "0.1",
+					"Layer.Act.Gbar.L":         "0.2",
+					"Layer.Act.GABAB.GiSpike":  "10",
+					"Layer.Act.NMDA.GeTot":     "1",
+					"Layer.Act.NMDA.Gbar":      "0.03",
+					"Layer.Act.Decay.Act":      "0.0", // 0.2 def
+					"Layer.Act.Decay.Glong":    "0.0", // 0.6 def
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Act.Spike.Thr":     "0.5",
-					"Layer.Act.Init.Vm":       "0.45", // key for firing early, plus noise
+					"Layer.Act.Init.Vm":       "0.48", // key for firing early, plus noise
 					"Layer.Act.Noise.Dist":    "Gaussian",
-					"Layer.Act.Noise.Mean":    "0.01",
+					"Layer.Act.Noise.Mean":    "0.02",
 					"Layer.Act.Noise.Var":     "0.02",
 					"Layer.Act.Noise.Type":    "GeNoise",
 					"Layer.Act.Noise.Fixed":   "false",
@@ -84,6 +80,22 @@ var ParamSets = params.Sets{
 					"Layer.Act.KNa.On":        "false",
 					"Layer.Act.GABAB.GiSpike": "0", // no gabab
 					"Layer.Act.NMDA.GeTot":    "0", // no nmda
+				}},
+			{Sel: "#Layer0", Desc: "Input layer",
+				Params: params.Params{
+					"Layer.Act.Noise.Dist":  "Gaussian",
+					"Layer.Act.Noise.Mean":  "0.0",
+					"Layer.Act.Noise.Var":   "0.1",
+					"Layer.Act.Noise.Type":  "GeNoise",
+					"Layer.Act.Noise.Fixed": "false",
+				}},
+			{Sel: "Prjn", Desc: "no learning",
+				Params: params.Params{
+					"Prjn.Learn.Learn": "false",
+					// "Prjn.SWt.Init.Dist": "Uniform",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.25",
+					"Prjn.Com.Delay":     "2",
 				}},
 			{Sel: ".Back", Desc: "feedback excitatory",
 				Params: params.Params{
@@ -118,8 +130,8 @@ var ParamSets = params.Sets{
 			{Sel: ".Excite", Desc: "excitatory connections",
 				Params: params.Params{
 					// "Prjn.SWt.Init.Dist": "Gaussian",
-					"Prjn.SWt.Init.Mean": "0.25",
-					"Prjn.SWt.Init.Var":  "0.7",
+					"Prjn.SWt.Init.Mean": "0.4",
+					"Prjn.SWt.Init.Var":  "0.8",
 				}},
 		},
 	}},
@@ -131,27 +143,26 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	BidirNet       bool       `desc:"if true, use the bidirectionally-connected network -- otherwise use the simpler feedforward network"`
-	TrainedWts     bool       `desc:"simulate trained weights by having higher variance and Gaussian distributed weight values -- otherwise lower variance, uniform"`
-	InputPct       float32    `def:"20" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
-	FFFBInhib      bool       `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
-	FFFBGi         float32    `def:"1" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
-	HidSize        evec.Vec2i `desc:"size of hidden layers"`
-	Cycles         int        `def:"200" desc:"number of cycles per trial"`
-	KNaAdapt       bool       `desc:"turn on adaptation, or not"`
-	HiddenGbarI    float32    `def:"0.25" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
-	InhibGbarI     float32    `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
-	FFinhibWtScale float32    `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
-	FBinhibWtScale float32    `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
-	HiddenGeTau    float32    `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Hidden neurons"`
-	InhibGeTau     float32    `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Inhib neurons"`
-	HiddenGiTau    float32    `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
-	InhibGiTau     float32    `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
+	Net            *axon.Network `view:"no-inline" desc:"the feedforward network -- click to view / edit parameters for layers, prjns, etc"`
+	TrainedWts     bool          `desc:"simulate trained weights by having higher variance and Gaussian distributed weight values -- otherwise lower variance, uniform"`
+	InputPct       float32       `def:"20" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
+	FFFBInhib      bool          `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
+	FFFBGi         float32       `def:"0.7" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
+	NLayers        int           `min:"1" desc:"number of hidden layers to add"`
+	HidSize        evec.Vec2i    `desc:"size of hidden layers"`
+	Cycles         int           `def:"500" desc:"number of cycles per trial"`
+	KNaAdapt       bool          `desc:"turn on adaptation, or not"`
+	HiddenGbarI    float32       `def:"0.27" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
+	InhibGbarI     float32       `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
+	FFinhibWtScale float32       `def:"0.5" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
+	FBinhibWtScale float32       `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
+	HiddenGeTau    float32       `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Hidden neurons"`
+	InhibGeTau     float32       `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Inhib neurons"`
+	HiddenGiTau    float32       `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
+	InhibGiTau     float32       `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
 
 	SpikeRasters   map[string]*etensor.Float32   `desc:"spike raster data for different layers"`
 	SpikeRastGrids map[string]*etview.TensorGrid `desc:"spike raster plots for different layers"`
-	NetFF          *axon.Network                 `view:"no-inline" desc:"the feedforward network -- click to view / edit parameters for layers, prjns, etc"`
-	NetBidir       *axon.Network                 `view:"no-inline" desc:"the bidirectional network -- click to view / edit parameters for layers, prjns, etc"`
 	TstCycLog      *etable.Table                 `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
 	Params         params.Sets                   `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
 	ParamSet       string                        `view:"-" desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
@@ -163,14 +174,13 @@ type Sim struct {
 	Pats           *etable.Table                 `view:"no-inline" desc:"the input patterns to use -- randomly generated"`
 
 	// internal state - view:"-"
-	Win          *gi.Window                  `view:"-" desc:"main GUI window"`
-	NetViewFF    *netview.NetView            `view:"-" desc:"the network viewer"`
-	NetViewBidir *netview.NetView            `view:"-" desc:"the network viewer"`
-	ToolBar      *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
-	TstCycPlot   *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
-	ValsTsrs     map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
-	IsRunning    bool                        `view:"-" desc:"true if sim is running"`
-	StopNow      bool                        `view:"-" desc:"flag to stop running"`
+	Win        *gi.Window                  `view:"-" desc:"main GUI window"`
+	NetView    *netview.NetView            `view:"-" desc:"the network viewer"`
+	ToolBar    *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
+	TstCycPlot *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
+	ValsTsrs   map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
+	IsRunning  bool                        `view:"-" desc:"true if sim is running"`
+	StopNow    bool                        `view:"-" desc:"flag to stop running"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,
@@ -182,31 +192,29 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.NetFF = &axon.Network{}
-	ss.NetBidir = &axon.Network{}
+	ss.Net = &axon.Network{}
 	ss.TstCycLog = &etable.Table{}
 	ss.Params = ParamSets
 	ss.ViewOn = true
 	ss.ViewUpdt = axon.Cycle
-	ss.TstRecLays = []string{"Hidden", "Inhib"}
-	ss.SpikeRecLays = []string{"Hidden", "Inhib", "Input"}
 	ss.Pats = &etable.Table{}
 	ss.Defaults()
 }
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
+	ss.NLayers = 2
 	ss.HidSize.Set(10, 10)
-	ss.Cycles = 200
+	ss.Cycles = 500
 	ss.TrainedWts = false
 	ss.InputPct = 20
 	ss.FFFBInhib = false
-	ss.FFFBGi = 0.7
+	ss.FFFBGi = 1.1
 	ss.KNaAdapt = false
-	ss.HiddenGbarI = 0.25
+	ss.HiddenGbarI = 0.27
 	ss.InhibGbarI = 0.4
-	ss.FFinhibWtScale = 1
-	ss.FBinhibWtScale = .5
+	ss.FFinhibWtScale = 0.5
+	ss.FBinhibWtScale = 0.5
 	ss.HiddenGeTau = 5
 	ss.InhibGeTau = 5
 	ss.HiddenGiTau = 7
@@ -219,68 +227,64 @@ func (ss *Sim) Defaults() {
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
 	ss.ConfigPats()
-	ss.ConfigNetFF(ss.NetFF)
-	ss.ConfigNetBidir(ss.NetBidir)
+	ss.ConfigNet(ss.Net)
 	ss.ConfigTstCycLog(ss.TstCycLog)
 }
 
-func (ss *Sim) ConfigNetFF(net *axon.Network) {
-	net.InitName(net, "InhibFF")
-	inp := net.AddLayer2D("Input", 10, 10, emer.Input)
-	hid := net.AddLayer2D("Hidden", 10, 10, emer.Hidden)
-	inh := net.AddLayer2D("Inhib", 10, 2, emer.Hidden)
-	inh.SetClass("InhibLay")
-
-	full := prjn.NewFull()
-
-	net.ConnectLayers(inp, hid, full, emer.Forward).SetClass("Excite")
-	net.ConnectLayers(hid, inh, full, emer.Back).SetClass("ToInhib")
-	net.ConnectLayers(inp, inh, full, emer.Forward).SetClass("ToInhib")
-	net.ConnectLayers(inh, hid, full, emer.Inhib)
-	net.ConnectLayers(inh, inh, full, emer.Inhib)
-
-	inh.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 1})
-
-	net.Defaults()
-	ss.SetParams("Network", false) // only set Network params
-	err := net.Build()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	ss.InitWts(net)
+func LayNm(n int) string {
+	return fmt.Sprintf("Layer%d", n)
 }
 
-func (ss *Sim) ConfigNetBidir(net *axon.Network) {
-	net.InitName(net, "InhibBidir")
-	inp := net.AddLayer2D("Input", ss.HidSize.Y, ss.HidSize.X, emer.Input)
-	hid := net.AddLayer2D("Hidden", ss.HidSize.Y, ss.HidSize.X, emer.Hidden)
-	inh := net.AddLayer2D("Inhib", ss.HidSize.Y, 2, emer.Hidden)
-	inh.SetClass("InhibLay")
-	hid2 := net.AddLayer2D("Hidden2", ss.HidSize.Y, ss.HidSize.X, emer.Hidden)
-	inh2 := net.AddLayer2D("Inhib2", ss.HidSize.Y, 2, emer.Hidden)
-	inh2.SetClass("InhibLay")
+func InhNm(n int) string {
+	return fmt.Sprintf("Inhib%d", n)
+}
+
+func LayByNm(net *axon.Network, n int) *axon.Layer {
+	return net.LayerByName(LayNm(n)).(*axon.Layer)
+}
+
+func InhByNm(net *axon.Network, n int) *axon.Layer {
+	return net.LayerByName(InhNm(n)).(*axon.Layer)
+}
+
+func (ss *Sim) ConfigNet(net *axon.Network) {
+	net.InitName(net, "Inhib")
+	net.AddLayer2D(LayNm(0), ss.HidSize.Y, ss.HidSize.X, emer.Input)
+
+	ss.SpikeRecLays = []string{"Layer0"}
+
+	for hi := 1; hi <= ss.NLayers; hi++ {
+		tl := net.AddLayer2D(LayNm(hi), ss.HidSize.Y, ss.HidSize.X, emer.Hidden)
+		il := net.AddLayer2D(InhNm(hi), ss.HidSize.Y, 2, emer.Hidden)
+		il.SetClass("InhibLay")
+		ss.TstRecLays = append(ss.TstRecLays, tl.Name())
+		ss.TstRecLays = append(ss.TstRecLays, il.Name())
+		ss.SpikeRecLays = append(ss.SpikeRecLays, tl.Name())
+		ss.SpikeRecLays = append(ss.SpikeRecLays, il.Name())
+	}
 
 	full := prjn.NewFull()
 
-	net.ConnectLayers(inp, hid, full, emer.Forward).SetClass("Excite")
-	net.ConnectLayers(inp, inh, full, emer.Forward).SetClass("ToInhib")
-	net.ConnectLayers(hid2, inh, full, emer.Forward).SetClass("ToInhib")
-	net.ConnectLayers(hid, inh, full, emer.Back).SetClass("ToInhib")
-	net.ConnectLayers(inh, hid, full, emer.Inhib)
-	net.ConnectLayers(inh, inh, full, emer.Inhib)
+	for hi := 1; hi <= ss.NLayers; hi++ {
+		ll := LayByNm(net, hi-1)
+		tl := LayByNm(net, hi)
+		il := InhByNm(net, hi)
+		net.ConnectLayers(ll, tl, full, emer.Forward).SetClass("Excite")
+		net.ConnectLayers(ll, il, full, emer.Forward).SetClass("ToInhib")
+		net.ConnectLayers(tl, il, full, emer.Back).SetClass("ToInhib")
+		net.ConnectLayers(il, tl, full, emer.Inhib)
+		net.ConnectLayers(il, il, full, emer.Inhib)
 
-	net.ConnectLayers(hid, hid2, full, emer.Forward).SetClass("Excite")
-	net.ConnectLayers(hid2, hid, full, emer.Back).SetClass("Excite")
-	net.ConnectLayers(hid, inh2, full, emer.Forward).SetClass("ToInhib")
-	net.ConnectLayers(hid2, inh2, full, emer.Back).SetClass("ToInhib")
-	net.ConnectLayers(inh2, hid2, full, emer.Inhib)
-	net.ConnectLayers(inh2, inh2, full, emer.Inhib)
+		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
+		il.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: tl.Name(), YAlign: relpos.Front, Space: 1})
 
-	inh.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 1})
-	hid2.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Hidden", YAlign: relpos.Front, XAlign: relpos.Middle})
-	inh2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden2", YAlign: relpos.Front, Space: 1})
-
+		if hi < ss.NLayers {
+			nl := LayByNm(net, hi+1)
+			net.ConnectLayers(nl, il, full, emer.Forward).SetClass("ToInhib")
+			net.ConnectLayers(tl, nl, full, emer.Forward).SetClass("Excite")
+			net.ConnectLayers(nl, tl, full, emer.Back).SetClass("Excite")
+		}
+	}
 	net.Defaults()
 	ss.SetParams("Network", false) // only set Network params
 	err := net.Build()
@@ -317,8 +321,7 @@ func (ss *Sim) Init() {
 	ss.Time.Reset()
 	ss.StopNow = false
 	ss.SetParams("", false) // all sheets
-	ss.InitWts(ss.NetFF)
-	ss.InitWts(ss.NetBidir)
+	ss.InitWts(ss.Net)
 	ss.UpdateView(false)
 }
 
@@ -330,12 +333,7 @@ func (ss *Sim) Counters() string {
 }
 
 func (ss *Sim) UpdateView(train bool) {
-	var nv *netview.NetView
-	if ss.BidirNet {
-		nv = ss.NetViewBidir
-	} else {
-		nv = ss.NetViewFF
-	}
+	nv := ss.NetView
 	if nv != nil && nv.IsVisible() {
 		nv.Record(ss.Counters())
 		// note: essential to use Go version of update when called from another goroutine
@@ -365,15 +363,6 @@ func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Running the Network, starting bottom-up..
 
-// Net returns the current active network
-func (ss *Sim) Net() *axon.Network {
-	if ss.BidirNet {
-		return ss.NetBidir
-	} else {
-		return ss.NetFF
-	}
-}
-
 // ThetaCyc runs one theta cycle (200 msec) of processing.
 // External inputs must have already been applied prior to calling,
 // using ApplyExt method on relevant layers (see TrainTrial, TestTrial).
@@ -386,22 +375,22 @@ func (ss *Sim) ThetaCyc(train bool) {
 	plusCyc := 50
 	minusCyc := ss.Cycles - plusCyc
 
-	nt := ss.Net()
+	net := ss.Net
 
-	nt.NewState()
+	net.NewState()
 	ss.Time.NewState()
 	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
-		nt.Cycle(&ss.Time)
+		net.Cycle(&ss.Time)
 		ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
 		ss.Time.CycleInc()
 		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
 		case 75:
-			nt.ActSt1(&ss.Time)
+			net.ActSt1(&ss.Time)
 		case 100:
-			nt.ActSt2(&ss.Time)
+			net.ActSt2(&ss.Time)
 		}
 		if cyc == minusCyc-1 { // do before view update
-			nt.MinusPhase(&ss.Time)
+			net.MinusPhase(&ss.Time)
 		}
 		if ss.ViewOn {
 			ss.UpdateViewTime(train, viewUpdt)
@@ -412,11 +401,11 @@ func (ss *Sim) ThetaCyc(train bool) {
 		ss.UpdateView(train)
 	}
 	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
-		nt.Cycle(&ss.Time)
+		net.Cycle(&ss.Time)
 		ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
 		ss.Time.CycleInc()
 		if cyc == plusCyc-1 { // do before view update
-			nt.PlusPhase(&ss.Time)
+			net.PlusPhase(&ss.Time)
 			// nt.CTCtxt(&ss.Time) // update context at end
 		}
 		if ss.ViewOn {
@@ -437,11 +426,11 @@ func (ss *Sim) ThetaCyc(train bool) {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
-	nt := ss.Net()
-	nt.InitExt() // clear any existing inputs -- not strictly necessary if always
+	net := ss.Net
+	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	ly := nt.LayerByName("Input").(axon.AxonLayer).AsAxon()
+	ly := net.LayerByName("Layer0").(axon.AxonLayer).AsAxon()
 	pat := ss.Pats.CellTensor("Input", 0)
 	ly.ApplyExt(pat)
 }
@@ -466,13 +455,18 @@ func (ss *Sim) Stopped() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Testing
 
-// TestTrial runs one trial of testing -- always sequentially presented inputs
+// TestTrial runs one trial of testing
 func (ss *Sim) TestTrial() {
-	// nt := ss.Net()
-	// nt.InitActs()
 	ss.SetParams("", false) // all sheets
 	ss.ApplyInputs()
 	ss.ThetaCyc(false)
+}
+
+// RunTestTrial runs one trial of testing
+func (ss *Sim) RunTestTrial() {
+	ss.StopNow = false
+	ss.TestTrial()
+	ss.Stopped()
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -495,72 +489,58 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 		}
 	}
 
-	nt := ss.Net()
+	net := ss.Net
 	if ss.TrainedWts {
 		ss.SetParamsSet("Trained", sheet, setMsg)
 	} else {
 		ss.SetParamsSet("Untrained", sheet, setMsg)
 	}
 	ffinhsc := ss.FFinhibWtScale
-	if nt == ss.NetBidir {
-		ffinhsc *= 0.5 // 2 inhib prjns so .5 ea
-	}
-
 	fminh := float32(1)
+	hidGbi := ss.HiddenGbarI
+	inhGbi := ss.InhibGbarI
 	if ss.FFFBInhib {
 		fminh = 0
+		hidGbi = 1
+		inhGbi = 1
 	}
 
-	hid := nt.LayerByName("Hidden").(axon.AxonLayer).AsAxon()
-	hid.Act.Gbar.I = ss.HiddenGbarI
-	hid.Act.Dt.GeTau = ss.HiddenGeTau
-	hid.Act.Dt.GiTau = ss.HiddenGiTau
-	hid.Act.KNa.On = ss.KNaAdapt
-	hid.Act.Update()
-	inh := nt.LayerByName("Inhib").(axon.AxonLayer).AsAxon()
-	inh.Act.Gbar.I = ss.InhibGbarI
-	inh.Act.Dt.GeTau = ss.InhibGeTau
-	inh.Act.Dt.GiTau = ss.InhibGiTau
-	inh.Act.Update()
-	ff := inh.RcvPrjns.SendName("Input").(axon.AxonPrjn).AsAxon()
-	ff.PrjnScale.Rel = ffinhsc
-	fb := inh.RcvPrjns.SendName("Hidden").(axon.AxonPrjn).AsAxon()
-	fb.PrjnScale.Rel = ss.FBinhibWtScale
-	hid.Inhib.Layer.On = ss.FFFBInhib
-	hid.Inhib.Layer.Gi = ss.FFFBGi
-	inh.Inhib.Layer.On = ss.FFFBInhib
-	inh.Inhib.Layer.Gi = ss.FFFBGi
-	fi := hid.RcvPrjns.SendName("Inhib").(axon.AxonPrjn).AsAxon()
-	fi.PrjnScale.Abs = fminh
-	fi = inh.RcvPrjns.SendName("Inhib").(axon.AxonPrjn).AsAxon()
-	fi.PrjnScale.Abs = fminh
-	if nt == ss.NetBidir {
-		hid = nt.LayerByName("Hidden2").(axon.AxonLayer).AsAxon()
-		hid.Act.Gbar.I = ss.HiddenGbarI
-		hid.Act.Dt.GeTau = ss.HiddenGeTau
-		hid.Act.Dt.GiTau = ss.HiddenGiTau
-		hid.Act.KNa.On = ss.KNaAdapt
-		hid.Act.Update()
-		inh = nt.LayerByName("Inhib2").(axon.AxonLayer).AsAxon()
-		inh.Act.Gbar.I = ss.InhibGbarI
-		inh.Act.Dt.GeTau = ss.InhibGeTau
-		inh.Act.Dt.GiTau = ss.InhibGiTau
-		inh.Act.Update()
-		hid.Inhib.Layer.On = ss.FFFBInhib
-		hid.Inhib.Layer.Gi = ss.FFFBGi
-		inh.Inhib.Layer.On = ss.FFFBInhib
-		inh.Inhib.Layer.Gi = ss.FFFBGi
-		fi = hid.RcvPrjns.SendName("Inhib2").(axon.AxonPrjn).AsAxon()
-		fi.PrjnScale.Abs = fminh
-		fi = inh.RcvPrjns.SendName("Inhib2").(axon.AxonPrjn).AsAxon()
-		fi.PrjnScale.Abs = fminh
-		ff = inh.RcvPrjns.SendName("Hidden").(axon.AxonPrjn).AsAxon()
+	for hi := 1; hi <= ss.NLayers; hi++ {
+		ll := LayByNm(net, hi-1)
+		tl := LayByNm(net, hi)
+		il := InhByNm(net, hi)
+
+		tl.Act.Gbar.I = hidGbi
+		tl.Act.Dt.GeTau = ss.HiddenGeTau
+		tl.Act.Dt.GiTau = ss.HiddenGiTau
+		tl.Act.KNa.On = ss.KNaAdapt
+		tl.Act.Update()
+		tl.Inhib.Layer.On = ss.FFFBInhib
+		tl.Inhib.Layer.Gi = ss.FFFBGi
+
+		il.Act.Gbar.I = inhGbi
+		il.Act.Dt.GeTau = ss.InhibGeTau
+		il.Act.Dt.GiTau = ss.InhibGiTau
+		il.Act.Update()
+		il.Inhib.Layer.On = ss.FFFBInhib
+		il.Inhib.Layer.Gi = ss.FFFBGi
+
+		ff := il.RcvPrjns.SendName(ll.Name()).(axon.AxonPrjn).AsAxon()
 		ff.PrjnScale.Rel = ffinhsc
-		fb = inh.RcvPrjns.SendName("Hidden2").(axon.AxonPrjn).AsAxon()
+		fb := il.RcvPrjns.SendName(tl.Name()).(axon.AxonPrjn).AsAxon()
 		fb.PrjnScale.Rel = ss.FBinhibWtScale
-		inh = nt.LayerByName("Inhib").(axon.AxonLayer).AsAxon()
-		ff = inh.RcvPrjns.SendName("Hidden2").(axon.AxonPrjn).AsAxon()
-		ff.PrjnScale.Rel = ffinhsc
+
+		fi := tl.RcvPrjns.SendName(il.Name()).(axon.AxonPrjn).AsAxon()
+		fi.PrjnScale.Abs = fminh
+		fi = il.RcvPrjns.SendName(il.Name()).(axon.AxonPrjn).AsAxon()
+		fi.PrjnScale.Abs = fminh
+
+		if hi < ss.NLayers {
+			nl := LayByNm(net, hi+1)
+
+			fb = il.RcvPrjns.SendName(nl.Name()).(axon.AxonPrjn).AsAxon()
+			fb.PrjnScale.Rel = ss.FBinhibWtScale
+		}
 	}
 	return err
 }
@@ -570,7 +550,7 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 // otherwise just the named sheet
 // if setMsg = true then we output a message for each param that was set.
 func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
-	nt := ss.Net()
+	net := ss.Net
 	pset, err := ss.Params.SetByNameTry(setNm)
 	if err != nil {
 		return err
@@ -578,7 +558,7 @@ func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
 	if sheet == "" || sheet == "Network" {
 		netp, ok := pset.Sheets["Network"]
 		if ok {
-			nt.ApplyParams(netp, setMsg)
+			net.ApplyParams(netp, setMsg)
 		}
 	}
 
@@ -649,10 +629,17 @@ func (ss *Sim) ConfigSpikeGrid(tg *etview.TensorGrid, sr *etensor.Float32) {
 	tg.SetTensor(sr)
 }
 
+// AvgLayVal returns average of given layer variable value
+func (ss *Sim) AvgLayVal(ly *axon.Layer, vnm string) float32 {
+	tv := ss.ValsTsr(ly.Name())
+	ly.UnitValsTensor(tv, vnm)
+	return norm.Mean32(tv.Values)
+}
+
 // LogTstCyc adds data from current cycle to the TstCycLog table.
 // log always contains number of testing items
 func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
-	nt := ss.Net()
+	net := ss.Net
 	if dt.Rows <= cyc {
 		dt.SetNumRows(cyc + 1)
 	}
@@ -662,13 +649,16 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 	dt.SetCellFloat("Cycle", row, float64(cyc))
 
 	for _, lnm := range ss.TstRecLays {
-		ly := nt.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		dt.SetCellFloat(lnm+"ActAvg", row, float64(ly.Pools[0].Inhib.Act.Avg))
+		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		dt.SetCellFloat(lnm+"IAct", row, float64(ly.Pools[0].Inhib.Act.Avg))
+		dt.SetCellFloat(lnm+"Spike", row, float64(ss.AvgLayVal(ly, "Spike")))
+		dt.SetCellFloat(lnm+"Ge", row, float64(ly.Pools[0].Inhib.Ge.Avg))
+		dt.SetCellFloat(lnm+"Gi", row, float64(ly.Neurons[0].Gi)) // all have the same
 	}
 
 	// record spike raster
 	for _, lnm := range ss.SpikeRecLays {
-		ly := nt.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		tv := ss.ValsTsr(lnm)
 		ly.UnitValsTensor(tv, "Spike")
 		sr := ss.SpikeRastTsr(lnm)
@@ -676,31 +666,40 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 	}
 
 	// note: essential to use Go version of update when called from another goroutine
-	if cyc%10 == 0 {
+	if cyc%20 == 0 {
 		ss.TstCycPlot.GoUpdate()
 	}
 }
 
 func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
-	nt := ss.Net()
+	net := ss.Net
 	dt.SetMetaData("name", "TstCycLog")
 	dt.SetMetaData("desc", "Record of testing per cycle")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
-	ncy := 200 // max cycles
+	ncy := ss.Cycles // max cycles
 	sch := etable.Schema{
 		{"Cycle", etensor.INT64, nil, nil},
 	}
 	for _, lnm := range ss.TstRecLays {
-		sch = append(sch, etable.Column{lnm + "ActAvg", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "IAct", etensor.FLOAT64, nil, nil})
+	}
+	for _, lnm := range ss.TstRecLays {
+		sch = append(sch, etable.Column{lnm + "Spike", etensor.FLOAT64, nil, nil})
+	}
+	for _, lnm := range ss.TstRecLays {
+		sch = append(sch, etable.Column{lnm + "Ge", etensor.FLOAT64, nil, nil})
+	}
+	for _, lnm := range ss.TstRecLays {
+		sch = append(sch, etable.Column{lnm + "Gi", etensor.FLOAT64, nil, nil})
 	}
 
 	dt.SetFromSchema(sch, ncy)
 
 	// spike rast
 	for _, lnm := range ss.SpikeRecLays {
-		ly := nt.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		sr := ss.SpikeRastTsr(lnm)
 		sr.SetShape([]int{ly.Shp.Len(), ncy}, nil, []string{"Nrn", "Cyc"})
 	}
@@ -714,7 +713,10 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.TstRecLays {
-		plt.SetColParams(lnm+"ActAvg", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.SetColParams(lnm+"IAct", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.SetColParams(lnm+"Spike", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.SetColParams(lnm+"Ge", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.SetColParams(lnm+"Gi", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	}
 	return plt
 }
@@ -754,18 +756,12 @@ feedforward and feedback inhibition to excitatory pyramidal neurons.
 
 	tv := gi.AddNewTabView(split, "tv")
 
-	nv := tv.AddNewTab(netview.KiT_NetView, "FF Net").(*netview.NetView)
+	nv := tv.AddNewTab(netview.KiT_NetView, "Net").(*netview.NetView)
 	nv.Var = "Act"
-	nv.Params.MaxRecs = 200
-	nv.SetNet(ss.NetFF)
-	ss.NetViewFF = nv
+	nv.Params.MaxRecs = 500
+	nv.SetNet(ss.Net)
+	ss.NetView = nv
 	nv.ViewDefaults()
-
-	nv = tv.AddNewTab(netview.KiT_NetView, "Bidir Net").(*netview.NetView)
-	nv.Var = "Act"
-	nv.Params.MaxRecs = 200
-	nv.SetNet(ss.NetBidir)
-	ss.NetViewBidir = nv
 
 	plt := tv.AddNewTab(eplot.KiT_Plot2D, "TstCycPlot").(*eplot.Plot2D)
 	ss.TstCycPlot = ss.ConfigTstCycPlot(plt, ss.TstCycLog)
@@ -803,9 +799,8 @@ feedforward and feedback inhibition to excitatory pyramidal neurons.
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.IsRunning = true
-			ss.TestTrial() // show every update
-			ss.IsRunning = false
-			vp.SetNeedsFullRender()
+			tbar.UpdateActions()
+			go ss.RunTestTrial()
 		}
 	})
 
