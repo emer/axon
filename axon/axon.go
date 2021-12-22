@@ -139,15 +139,8 @@ type AxonLayer interface {
 	// should already have presented the external input to the network at this point.
 	NewState()
 
-	// GenNoise generates random noise for all neurons
-	GenNoise()
-
 	// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay)
 	DecayState(decay float32)
-
-	// RateClamp hard-clamps the activations in the layer -- called during NewState
-	// for hard-clamped Input layers
-	RateClamp()
 
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods

@@ -60,7 +60,9 @@ type Neuron struct {
 	DTrgAvg float32 `desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`
 	AvgDif  float32 `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`
 
-	Noise float32 `desc:"noise value added to unit (ActNoiseParams determines distribution, and when / where it is added)"`
+	Attn    float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
+	NoiseP  float32 `desc:"accumulating poisson probability factor for driving noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda."`
+	NoiseGe float32 `desc:"integrated noise excitatory conductance, added into Ge"`
 
 	GiSyn    float32 `desc:"aggregated synaptic inhibition (from Inhib projections) -- time integral of GiRaw -- this is added with computed FFFB inhibition to get the full inhibition in Gi"`
 	GiSelf   float32 `desc:"total amount of self-inhibition -- time-integrated to avoid oscillations"`
@@ -77,10 +79,9 @@ type Neuron struct {
 	GgabaB   float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- set to Gk for GIRK, with .1 reversal potential."`
 	GABAB    float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
-	Attn     float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 }
 
-var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActPrv", "RLrate", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Noise", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx", "Attn"}
+var NeuronVars = []string{"Spike", "ISI", "ISIAvg", "Act", "ActInt", "Ge", "Gi", "Gk", "Inet", "Vm", "VmDend", "Targ", "Ext", "AvgSS", "AvgS", "AvgM", "AvgSLrn", "AvgMLrn", "ActSt1", "ActSt2", "ActM", "ActP", "ActDif", "ActDel", "ActPrv", "RLrate", "ActAvg", "AvgPct", "TrgAvg", "DTrgAvg", "AvgDif", "Attn", "NoiseP", "NoiseGe", "GiSyn", "GiSelf", "GeRaw", "GiRaw", "GeM", "GiM", "GknaFast", "GknaMed", "GknaSlow", "Gnmda", "NMDA", "NMDASyn", "GgabaB", "GABAB", "GABABx"}
 
 var NeuronVarsMap map[string]int
 

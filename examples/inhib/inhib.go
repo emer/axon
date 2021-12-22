@@ -65,29 +65,28 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Gbar":      "0.03",
 					"Layer.Act.Decay.Act":      "0.0", // 0.2 def
 					"Layer.Act.Decay.Glong":    "0.0", // 0.6 def
+					"Layer.Act.Noise.On":       "true",
+					"Layer.Act.Noise.Interval": "10",
+					"Layer.Act.Noise.Ge":       "0.01", // 0.01 enough to desync l1
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Spike.Thr":     "0.5",
-					"Layer.Act.Init.Vm":       "0.48", // key for firing early, plus noise
-					"Layer.Act.Noise.Dist":    "Gaussian",
-					"Layer.Act.Noise.Mean":    "0.02",
-					"Layer.Act.Noise.Var":     "0.02",
-					"Layer.Act.Noise.Type":    "GeNoise",
-					"Layer.Act.Noise.Fixed":   "false",
-					"Layer.Act.Gbar.E":        "1.5", // more excitable
-					"Layer.Act.Gbar.L":        "0.1", // smaller, less leaky..
-					"Layer.Act.KNa.On":        "false",
-					"Layer.Act.GABAB.GiSpike": "0", // no gabab
-					"Layer.Act.NMDA.GeTot":    "0", // no nmda
+					"Layer.Act.Spike.Thr":      "0.5",
+					"Layer.Act.Init.Vm":        "0.48", // key for firing early, plus noise
+					"Layer.Act.Noise.On":       "true",
+					"Layer.Act.Noise.Interval": "10",
+					"Layer.Act.Noise.Ge":       "0.1", // does a good job of dsynchronizing
+					"Layer.Act.Gbar.E":         "1.5", // more excitable
+					"Layer.Act.Gbar.L":         "0.1", // smaller, less leaky..
+					"Layer.Act.KNa.On":         "false",
+					"Layer.Act.GABAB.GiSpike":  "0", // no gabab
+					"Layer.Act.NMDA.GeTot":     "0", // no nmda
 				}},
 			{Sel: "#Layer0", Desc: "Input layer",
 				Params: params.Params{
-					"Layer.Act.Noise.Dist":  "Gaussian",
-					"Layer.Act.Noise.Mean":  "0.0",
-					"Layer.Act.Noise.Var":   "0.1",
-					"Layer.Act.Noise.Type":  "GeNoise",
-					"Layer.Act.Noise.Fixed": "false",
+					"Layer.Act.Noise.On":       "true",
+					"Layer.Act.Noise.Interval": "10",
+					"Layer.Act.Noise.Ge":       "0.15", // hard to disrupt strong inputs!
 				}},
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{

@@ -985,13 +985,7 @@ func (ly *Layer) NewState() {
 		}
 		nrn.ActPrv = nrn.AvgM // nrn.ActP -- this is used in deep learning, makes big diff!
 	}
-	if ly.Act.Noise.Type != NoNoise && ly.Act.Noise.Fixed && ly.Act.Noise.Dist != erand.Mean {
-		ly.AxonLay.GenNoise()
-	}
 	ly.AxonLay.DecayState(ly.Act.Decay.Act)
-	if ly.Typ == emer.Input && ly.Act.Clamp.Type == RateClamp {
-		ly.AxonLay.RateClamp()
-	}
 }
 
 // InitGScale computes the initial scaling factor for synaptic input conductances G,
@@ -1045,14 +1039,6 @@ func (ly *Layer) InitGScale() {
 	}
 }
 
-// GenNoise generates random noise for all neurons
-func (ly *Layer) GenNoise() {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		nrn.Noise = float32(ly.Act.Noise.Gen(-1))
-	}
-}
-
 // DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay).
 // This does *not* call InitGInc -- must call that separately at start of AlphaCyc
 func (ly *Layer) DecayState(decay float32) {
@@ -1081,17 +1067,6 @@ func (ly *Layer) DecayStatePool(pool int, decay float32) {
 		ly.Act.DecayState(nrn, decay)
 	}
 	pl.Inhib.Decay(decay)
-}
-
-// RateClamp rate-clamps the activations in the layer.
-func (ly *Layer) RateClamp() {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.Act.RateClamp(nrn)
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -13,7 +13,6 @@ import (
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/ints"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -32,7 +31,7 @@ type ActParams struct {
 	Erev    chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
 	GTarg   GTargParams       `view:"inline" desc:"target conductance levels for excitation and inhibition, driving adaptation of GScale.Scale conductance scaling"`
 	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
-	Noise   ActNoiseParams    `view:"inline" desc:"how, where, when, and how much noise to add"`
+	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
 	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
 	NMDA    glong.NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
@@ -97,6 +96,8 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 		nrn.Vm -= decay * (nrn.Vm - ac.Init.Vm)
 
+		nrn.NoiseGe -= decay * nrn.NoiseGe
+
 		nrn.GiSyn -= decay * nrn.GiSyn
 		nrn.GiSelf -= decay * nrn.GiSelf
 	}
@@ -137,9 +138,12 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.VmDend = ac.Init.Vm
 	nrn.Targ = 0
 	nrn.Ext = 0
-	nrn.RLrate = 0
 
 	nrn.ActDel = 0
+	nrn.RLrate = 1
+
+	nrn.NoiseP = 1
+	nrn.NoiseGe = 0
 
 	nrn.GiSyn = 0
 	nrn.GiSelf = 0
@@ -179,35 +183,24 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// BurstGe returns extra bursting excitatory conductance based on params
-func (ac *ActParams) BurstGe(cyc int, actm float32) float32 {
-	if ac.Clamp.Burst && actm < ac.Clamp.BurstThr && cyc < ac.Clamp.BurstCyc {
-		return ac.Clamp.BurstGe
-	}
-	return 0
-}
-
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) {
-	if ac.Clamp.Type == AddGeClamp && nrn.HasFlag(NeurHasExt) {
+	if ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
 		geRaw += nrn.Ext * ac.Clamp.Ge
 	}
 	geRaw = ac.Attn.ModVal(geRaw, nrn.Attn)
 
-	if ac.Clamp.Type == GeClamp && nrn.HasFlag(NeurHasExt) {
-		ge := ac.Clamp.Ge + ac.BurstGe(cyc, actm)
-		nrn.Ge = nrn.Ext * ge
+	if !ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
+		nrn.Ge = nrn.Ext * ac.Clamp.Ge
 	} else {
 		ac.Dt.GeFmRaw(geRaw, &nrn.Ge, ac.Init.Ge)
 	}
 
-	// first place noise is required -- generate here!
-	if ac.Noise.Type != NoNoise && !ac.Noise.Fixed && ac.Noise.Dist != erand.Mean {
-		nrn.Noise = float32(ac.Noise.Gen(-1))
-	}
-	if ac.Noise.Type == GeNoise {
-		nrn.Ge += nrn.Noise
+	if ac.Noise.On {
+		ge := ac.Noise.PGe(&nrn.NoiseP)
+		ac.Dt.GeFmRaw(ge, &nrn.NoiseGe, 0)
+		nrn.Ge += nrn.NoiseGe
 	}
 }
 
@@ -259,9 +252,6 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 		nrn.VmDend = ac.VmRange.ClipVal(nrn.VmDend + ac.Dt.VmDendDt*inet2)
 	}
 
-	if ac.Noise.Type == VmNoise {
-		nwVm += nrn.Noise
-	}
 	if mat32.IsNaN(nwVm) {
 		nwVm = ac.Init.Vm
 	}
@@ -270,10 +260,6 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 
 // ActFmG computes Spike from Vm and ISI-based activation
 func (ac *ActParams) ActFmG(nrn *Neuron) {
-	if ac.HasRateClamp(nrn) {
-		ac.RateClamp(nrn)
-		return
-	}
 	var thr float32
 	if ac.Spike.Exp {
 		thr = ac.Spike.ExpThr
@@ -310,55 +296,6 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk = nrn.GknaFast + nrn.GknaMed + nrn.GknaSlow
-	}
-}
-
-// HasRateClamp returns true if this neuron has external input that should be hard clamped
-func (ac *ActParams) HasRateClamp(nrn *Neuron) bool {
-	return ac.Clamp.Type == RateClamp && nrn.HasFlag(NeurHasExt)
-}
-
-// RateClamp drives Poisson rate spiking according to external input.
-// Also adds any Noise *if* noise is set to ActNoise.
-func (ac *ActParams) RateClamp(nrn *Neuron) {
-	ext := nrn.Ext
-	if ac.Noise.Type == ActNoise {
-		ext += nrn.Noise
-	}
-	if nrn.ISI > 1 {
-		nrn.ISI -= 1
-		nrn.Spike = 0
-	} else {
-		if ext <= 0.0001 {
-			nrn.ISI = 0
-			nrn.ISIAvg = -1
-			nrn.Spike = 0
-		} else {
-			nrn.Spike = 1
-			nrn.ISI = (1000 * float32(rand.ExpFloat64())) / (ac.Clamp.Rate * ext)
-			nrn.ISI = mat32.Max(float32(ac.Spike.Tr), nrn.ISI)
-			if nrn.ISIAvg == -1 {
-				nrn.ISIAvg = -2
-			} else if nrn.ISI > 0 { // must have spiked to update
-				ac.Spike.AvgFmISI(&nrn.ISIAvg, nrn.ISI+1)
-			}
-		}
-	}
-
-	// keep everything else clamped
-	nrn.Vm = ac.Init.Vm
-	nrn.VmDend = ac.Init.Vm
-	nrn.Inet = 0
-
-	nwAct := ac.Spike.ActFmISI(nrn.ISIAvg, .001, ac.Dt.Integ)
-	if nwAct > 1 {
-		nwAct = 1
-	}
-	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
-	nrn.ActDel = nwAct - nrn.Act
-	nrn.Act = nwAct
-	if ac.KNa.On {
-		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 	}
 }
 
@@ -559,101 +496,55 @@ func (gt *GTargParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Noise
 
-// ActNoiseTypes are different types / locations of random noise for activations
-type ActNoiseTypes int
+// SpikeNoiseParams parameterizes background spiking activity impinging on the neuron,
+// simulated using a poisson spiking process.
+type SpikeNoiseParams struct {
+	On       bool    `desc:"add noise simulating background spiking levels"`
+	Interval float32 `desc:"mean interval between spikes -- poisson lambda parameter, also the variance"`
+	Ge       float32 `desc:"excitatory conductance per spike"`
 
-//go:generate stringer -type=ActNoiseTypes
-
-var KiT_ActNoiseTypes = kit.Enums.AddEnum(ActNoiseTypesN, kit.NotBitFlag, nil)
-
-func (ev ActNoiseTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *ActNoiseTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-const (
-	// NoNoise means no noise added
-	NoNoise ActNoiseTypes = iota
-
-	// VmNoise means noise is added to the membrane potential.
-	VmNoise
-
-	// GeNoise means noise is added to the excitatory conductance (Ge).
-	GeNoise
-
-	// ActNoise means noise is added to the final rate code activation
-	ActNoise
-
-	// GeMultNoise means that noise is multiplicative on the Ge excitatory conductance values
-	GeMultNoise
-
-	ActNoiseTypesN
-)
-
-// ActNoiseParams contains parameters for activation-level noise
-type ActNoiseParams struct {
-	erand.RndParams
-	Type  ActNoiseTypes `desc:"where and how to add processing noise"`
-	Fixed bool          `desc:"keep the same noise value over the entire alpha cycle -- prevents noise from being washed out and produces a stable effect that can be better used for learning -- this is strongly recommended for most learning situations"`
+	ExpInt float32 `desc:"Exp(-Interval) which is the threshold for NoiseP as it is updated"`
 }
 
-func (an *ActNoiseParams) Update() {
+func (an *SpikeNoiseParams) Update() {
+	an.ExpInt = mat32.Exp(-an.Interval)
 }
 
-func (an *ActNoiseParams) Defaults() {
-	an.Fixed = false
+func (an *SpikeNoiseParams) Defaults() {
+	an.Interval = 10
+	an.Ge = 0.1
+	an.Update()
+}
+
+// PGe updates the NoiseP probability, multiplying a uniform random number [0-1]
+// and returns Ge from spiking if a spike is triggered
+func (an *SpikeNoiseParams) PGe(p *float32) float32 {
+	*p *= rand.Float32()
+	if *p <= an.ExpInt {
+		*p = 1
+		return an.Ge
+	}
+	return 0
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  ClampParams
 
-// ClampTypes are different types of clamping
-type ClampTypes int
-
-//go:generate stringer -type=ClampTypes
-
-var KiT_ClampTypes = kit.Enums.AddEnum(ClampTypesN, kit.NotBitFlag, nil)
-
-func (ev ClampTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *ClampTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-const (
-	// GeClamp drives a constant excitatory input given by Ge value
-	// ignoring any other source of Ge input -- like a current clamp.
-	// This works best in general by allowing more natural temporal dynamics.
-	GeClamp ClampTypes = iota
-
-	// RateClamp drives a poisson firing rate in proportion to clamped value.
-	RateClamp
-
-	// AddGeClamp adds a constant extra Ge value on top of existing Ge inputs
-	AddGeClamp
-
-	ClampTypesN
-)
-
-// ClampParams are for specifying how external inputs are clamped onto network activation values
+// ClampParams specify how external inputs drive excitatory conductances
+// (like a current clamp) -- either adds or overwrites existing conductances.
+// Noise is added in either case.
 type ClampParams struct {
-	ErrThr   float32    `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
-	Type     ClampTypes `def:"GeClamp" desc:"type of clamping to use -- GeClamp provides a more natural input with initial spike onset related to input strength, and some adaptation effects, etc"`
-	Rate     float32    `viewif:"Type=RateClamp" def:"180" desc:"for RateClamp mode, maximum spiking rate in Hz for Poisson spike generator (multiplies clamped input value to get rate)"`
-	Ge       float32    `viewif:"Type!=RateClamp" def:"0.6,1" desc:"amount of Ge driven for clamping, for GeClamp and AddGeClamp -- use 0.6 for Target layers, 1.0 for Input layers"`
-	Burst    bool       `viewif:"Type=GeClamp" desc:"activate bursting at start of clamping window"`
-	BurstThr float32    `def:"0.5" viewif:"Burst&&Type=GeClamp" desc:"for Target layers, if ActM < this threshold then the neuron bursts -- otherwise the burst is adapted and doesn't apply -- amplifies errors -- set to 1 to always burst (e.g., for input layers)"`
-	BurstCyc int        `def:"0,20" viewif:"Burst&&Type=GeClamp" desc:"duration of extra bursting -- for Target layers, at start of plus phase, else start of alpha cycle"`
-	BurstGe  float32    `def:"2" viewif:"Burst&&Type=GeClamp" desc:"extra bursting Ge during BurstCyc cycles -- added to Ge -- 2 for maximum kick -- 1 and 1.5 should have slightly weaker effects.  Can potentially be useful to set Act.Spike.Tr = 2 to speed up bursting."`
+	Ge     float32 `def:"0.6,1" desc:"amount of Ge driven for clamping -- generally use 0.6 for Target layers, 1.0 for Input layers"`
+	Add    bool    `def:"false" view:"add external conductance on top of any existing -- generally this is not a good idea for target layers (creates a main effect that learning can never match), but may be ok for input layers"`
+	ErrThr float32 `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
 }
 
 func (cp *ClampParams) Update() {
 }
 
 func (cp *ClampParams) Defaults() {
-	cp.ErrThr = 0.5
-	cp.Type = GeClamp
-	cp.Rate = 180
 	cp.Ge = 0.6
-	cp.Burst = false // maybe not necessary
-	cp.BurstCyc = 20
-	cp.BurstThr = 0.5
-	cp.BurstGe = 2.0
+	cp.ErrThr = 0.5
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

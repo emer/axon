@@ -98,14 +98,14 @@ var ParamSets = params.Sets{
 					"Layer.Act.KNa.Fast.Max":             "0.1",  // 0.2 > 0.1
 					"Layer.Act.KNa.Med.Max":              "0.2",  // 0.2 > 0.1 def
 					"Layer.Act.KNa.Slow.Max":             "0.2",  // 1,2,2 best in larger models
-					"Layer.Act.Noise.Dist":               "Gaussian",
-					"Layer.Act.Noise.Var":                "0.0",     // 0.01 > 0.005 > 0.02
-					"Layer.Act.Noise.Type":               "NoNoise", // now, no noise is better
-					"Layer.Act.Dt.LongAvgTau":            "20",      // 20 > higher for objrec, lvis
-					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02",    // 0.01 for lvis, needs faster here
-					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01",    // 0.005 for lvis, needs faster here
-					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",     // .5 best for Lvis, .2 - 2.0 best for objrec
-					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",     // 2.0
+					"Layer.Act.Noise.On":                 "true",
+					"Layer.Act.Noise.Interval":           "10",
+					"Layer.Act.Noise.Ge":                 "0.01",
+					"Layer.Act.Dt.LongAvgTau":            "20",   // 20 > higher for objrec, lvis
+					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.01 for lvis, needs faster here
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.005 for lvis, needs faster here
+					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
+					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
 					"Layer.Learn.RLrate.On":              "true",
 					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 > others in larger models
 					"Layer.Learn.RLrate.ActDifThr":       "0.02",  // .02 > .05 best on lvis
@@ -113,9 +113,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",     // 0.9 > 1.0
-					"Layer.Act.Clamp.Type":    "GeClamp", // GeClamp is much more natural and better..
-					"Layer.Act.Clamp.Ge":      "1.0",     // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":      "1.0", // 1.0 > 0.6 >= 0.7 == 0.5
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.ActAvg.Targ": "0.24",
 					"Layer.Act.Decay.Act":     "0.5", // 0.5 > 1 > 0
@@ -128,14 +127,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Targ":    "0.24",  // this has to be exact for adapt
 					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
 					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
-					"Layer.Act.Clamp.Type":       "GeClamp",
 					"Layer.Act.Clamp.Ge":         "0.6",   // .5 >= .4 > .6 > 1.0
-					"Layer.Act.Clamp.Burst":      "false", //
-					"Layer.Act.Clamp.BurstThr":   "0.5",   //
-					"Layer.Act.Clamp.BurstGe":    "1",     // 2 strongest
-					"Layer.Act.Clamp.BurstCyc":   "10",    // 20 best for objrec
-					"Layer.Act.Spike.Tr":         "3",     // lower for bursting: 2 >= 3 in objrec -- 0 very bad there, good here
-					"Layer.Act.Clamp.Rate":       "120",   // 120 > 100 > 150
 					"Layer.Act.GABAB.Gbar":       "0.005", // .005 > .01 > .02 > .05 > .1 > .2
 					"Layer.Act.NMDA.Gbar":        "0.03",  // .03 > .02 > .01
 					"Layer.Act.Decay.Act":        "0.5",   // 0.5 > 1 > 0
@@ -1334,6 +1326,7 @@ func (ss *Sim) ConfigRunLog(dt *etable.Table) {
 func (ss *Sim) ConfigRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.Params.Title = "Axon Random Associator 25 Run Plot"
 	plt.Params.XAxisCol = "Run"
+	plt.Params.LegendCol = "Params"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
