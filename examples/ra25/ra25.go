@@ -79,8 +79,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05",  // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "false", // not huge effects but beneficial
-					"Layer.Act.Decay.Act":                "0.2",   // 0, .7 best?
-					"Layer.Act.Decay.Glong":              "0.6",   //
+					"Layer.Act.Decay.Act":                "1.0",   // 0.2
+					"Layer.Act.Decay.Glong":              "1.0",   // 0.6
 					"Layer.Act.Decay.KNa":                "0.0",   // 0 > higher for all other models
 					"Layer.Act.Gbar.L":                   "0.2",   // 0.2 > 0.1
 					"Layer.Act.NMDA.Gbar":                "0.03",  // 0.03 > .04 > .02
