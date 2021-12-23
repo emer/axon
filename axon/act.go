@@ -96,7 +96,8 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 		nrn.Vm -= decay * (nrn.Vm - ac.Init.Vm)
 
-		nrn.NoiseGe -= decay * nrn.NoiseGe
+		nrn.GeNoise -= decay * nrn.GeNoise
+		nrn.GiNoise -= decay * nrn.GiNoise
 
 		nrn.GiSyn -= decay * nrn.GiSyn
 		nrn.GiSelf -= decay * nrn.GiSelf
@@ -142,8 +143,10 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.ActDel = 0
 	nrn.RLrate = 1
 
-	nrn.NoiseP = 1
-	nrn.NoiseGe = 0
+	nrn.GeNoiseP = 1
+	nrn.GeNoise = 0
+	nrn.GiNoiseP = 1
+	nrn.GiNoise = 0
 
 	nrn.GiSyn = 0
 	nrn.GiSelf = 0
@@ -198,9 +201,9 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) 
 	}
 
 	if ac.Noise.On {
-		ge := ac.Noise.PGe(&nrn.NoiseP)
-		ac.Dt.GeFmRaw(ge, &nrn.NoiseGe, 0)
-		nrn.Ge += nrn.NoiseGe
+		ge := ac.Noise.PGe(&nrn.GeNoiseP)
+		ac.Dt.GeFmRaw(ge, &nrn.GeNoise, 0)
+		nrn.Ge += nrn.GeNoise
 	}
 }
 
@@ -208,6 +211,11 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) 
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFmRaw(nrn *Neuron, giRaw float32) {
 	ac.Dt.GiFmRaw(giRaw, &nrn.GiSyn, ac.Init.Gi)
+	if ac.Noise.On {
+		gi := ac.Noise.PGi(&nrn.GiNoiseP)
+		ac.Dt.GiFmRaw(gi, &nrn.GiNoise, 0)
+		nrn.GiSyn += nrn.GiNoise
+	}
 	if nrn.GiSyn < 0 { // negative inhib G doesn't make any sense
 		nrn.GiSyn = 0
 	}
@@ -499,30 +507,47 @@ func (gt *GTargParams) Defaults() {
 // SpikeNoiseParams parameterizes background spiking activity impinging on the neuron,
 // simulated using a poisson spiking process.
 type SpikeNoiseParams struct {
-	On       bool    `desc:"add noise simulating background spiking levels"`
-	Interval float32 `desc:"mean interval between spikes -- poisson lambda parameter, also the variance"`
-	Ge       float32 `desc:"excitatory conductance per spike"`
+	On   bool    `desc:"add noise simulating background spiking levels"`
+	GeHz float32 `def:"100" desc:"mean frequency of excitatory spikes -- typically 50Hz but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
+	Ge   float32 `min:"0" desc:"excitatory conductance per spike -- around .01 can have an impact, .15 is needed to influence timing of clamped inputs"`
+	GiHz float32 `def:"200" desc:"mean interval between inhibitory spikes -- typically 100Hz fast spiking but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
+	Gi   float32 `min:"0" desc:"excitatory conductance per spike -- around .01 can have an impact, .15 is needed to influence timing of clamped inputs"`
 
-	ExpInt float32 `desc:"Exp(-Interval) which is the threshold for NoiseP as it is updated"`
+	GeExpInt float32 `view:"-" json:"-" xml:"-" desc:"Exp(-Interval) which is the threshold for GeNoiseP as it is updated"`
+	GiExpInt float32 `view:"-" json:"-" xml:"-" desc:"Exp(-Interval) which is the threshold for GiNoiseP as it is updated"`
 }
 
 func (an *SpikeNoiseParams) Update() {
-	an.ExpInt = mat32.Exp(-an.Interval)
+	an.GeExpInt = mat32.Exp(-1000.0 / an.GeHz)
+	an.GiExpInt = mat32.Exp(-1000.0 / an.GiHz)
 }
 
 func (an *SpikeNoiseParams) Defaults() {
-	an.Interval = 10
-	an.Ge = 0.1
+	an.GeHz = 100
+	an.Ge = 0.01
+	an.GiHz = 200
+	an.Gi = 0.01
 	an.Update()
 }
 
-// PGe updates the NoiseP probability, multiplying a uniform random number [0-1]
+// PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
 func (an *SpikeNoiseParams) PGe(p *float32) float32 {
 	*p *= rand.Float32()
-	if *p <= an.ExpInt {
+	if *p <= an.GeExpInt {
 		*p = 1
 		return an.Ge
+	}
+	return 0
+}
+
+// PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
+// and returns Gi from spiking if a spike is triggered
+func (an *SpikeNoiseParams) PGi(p *float32) float32 {
+	*p *= rand.Float32()
+	if *p <= an.GiExpInt {
+		*p = 1
+		return an.Gi
 	}
 	return 0
 }

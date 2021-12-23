@@ -99,8 +99,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.KNa.Med.Max":              "0.2",  // 0.2 > 0.1 def
 					"Layer.Act.KNa.Slow.Max":             "0.2",  // 1,2,2 best in larger models
 					"Layer.Act.Noise.On":                 "true",
-					"Layer.Act.Noise.Interval":           "10",
+					"Layer.Act.Noise.GeHz":               "10",
 					"Layer.Act.Noise.Ge":                 "0.01",
+					"Layer.Act.Noise.GiHz":               "5",
+					"Layer.Act.Noise.Gi":                 "0.01",
 					"Layer.Act.Dt.LongAvgTau":            "20",   // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.01 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.005 for lvis, needs faster here

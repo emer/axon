@@ -66,27 +66,28 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":      "0.0", // 0.2 def
 					"Layer.Act.Decay.Glong":    "0.0", // 0.6 def
 					"Layer.Act.Noise.On":       "true",
-					"Layer.Act.Noise.Interval": "10",
-					"Layer.Act.Noise.Ge":       "0.01", // 0.01 enough to desync l1
+					"Layer.Act.Noise.GeHz":     "100",
+					"Layer.Act.Noise.Ge":       "0.02", // 0.01 enough to desync l1
+					"Layer.Act.Noise.GiHz":     "200",
+					"Layer.Act.Noise.Gi":       "0.05", // 0.01 enough to desync l1
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Spike.Thr":      "0.5",
-					"Layer.Act.Init.Vm":        "0.48", // key for firing early, plus noise
-					"Layer.Act.Noise.On":       "true",
-					"Layer.Act.Noise.Interval": "10",
-					"Layer.Act.Noise.Ge":       "0.1", // does a good job of dsynchronizing
-					"Layer.Act.Gbar.E":         "1.5", // more excitable
-					"Layer.Act.Gbar.L":         "0.1", // smaller, less leaky..
-					"Layer.Act.KNa.On":         "false",
-					"Layer.Act.GABAB.GiSpike":  "0", // no gabab
-					"Layer.Act.NMDA.GeTot":     "0", // no nmda
+					"Layer.Act.Spike.Thr":     "0.5",
+					"Layer.Act.Init.Vm":       "0.48", // key for firing early, plus noise
+					"Layer.Act.Gbar.E":        "1.5",  // more excitable
+					"Layer.Act.Gbar.L":        "0.1",  // smaller, less leaky..
+					"Layer.Act.KNa.On":        "false",
+					"Layer.Act.GABAB.GiSpike": "0", // no gabab
+					"Layer.Act.NMDA.GeTot":    "0", // no nmda
+					"Layer.Act.Noise.On":      "true",
+					"Layer.Act.Noise.Ge":      "0.12", //
+					"Layer.Act.Noise.Gi":      "0.12", //
 				}},
 			{Sel: "#Layer0", Desc: "Input layer",
 				Params: params.Params{
-					"Layer.Act.Noise.On":       "true",
-					"Layer.Act.Noise.Interval": "10",
-					"Layer.Act.Noise.Ge":       "0.15", // hard to disrupt strong inputs!
+					"Layer.Act.Noise.On": "true",
+					"Layer.Act.Noise.Gi": "0.12", // hard to disrupt strong inputs!
 				}},
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
@@ -151,7 +152,7 @@ type Sim struct {
 	HidSize        evec.Vec2i    `desc:"size of hidden layers"`
 	Cycles         int           `def:"500" desc:"number of cycles per trial"`
 	KNaAdapt       bool          `desc:"turn on adaptation, or not"`
-	HiddenGbarI    float32       `def:"0.27" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
+	HiddenGbarI    float32       `def:"0.3" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
 	InhibGbarI     float32       `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
 	FFinhibWtScale float32       `def:"0.5" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
 	FBinhibWtScale float32       `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
@@ -210,7 +211,7 @@ func (ss *Sim) Defaults() {
 	ss.FFFBInhib = false
 	ss.FFFBGi = 1.1
 	ss.KNaAdapt = false
-	ss.HiddenGbarI = 0.27
+	ss.HiddenGbarI = 0.3
 	ss.InhibGbarI = 0.4
 	ss.FFinhibWtScale = 0.5
 	ss.FBinhibWtScale = 0.5
