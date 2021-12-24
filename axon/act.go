@@ -200,7 +200,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) 
 		ac.Dt.GeFmRaw(geRaw, &nrn.Ge, ac.Init.Ge)
 	}
 
-	if ac.Noise.On {
+	if ac.Noise.On && ac.Noise.Ge > 0 {
 		ge := ac.Noise.PGe(&nrn.GeNoiseP)
 		ac.Dt.GeFmRaw(ge, &nrn.GeNoise, 0)
 		nrn.Ge += nrn.GeNoise
@@ -211,7 +211,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw float32, cyc int, actm float32) 
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFmRaw(nrn *Neuron, giRaw float32) {
 	ac.Dt.GiFmRaw(giRaw, &nrn.GiSyn, ac.Init.Gi)
-	if ac.Noise.On {
+	if ac.Noise.On && ac.Noise.Gi > 0 {
 		gi := ac.Noise.PGi(&nrn.GiNoiseP)
 		ac.Dt.GiFmRaw(gi, &nrn.GiNoise, 0)
 		nrn.GiSyn += nrn.GiNoise
@@ -509,9 +509,9 @@ func (gt *GTargParams) Defaults() {
 type SpikeNoiseParams struct {
 	On   bool    `desc:"add noise simulating background spiking levels"`
 	GeHz float32 `def:"100" desc:"mean frequency of excitatory spikes -- typically 50Hz but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
-	Ge   float32 `min:"0" desc:"excitatory conductance per spike -- around .01 can have an impact, .15 is needed to influence timing of clamped inputs"`
-	GiHz float32 `def:"200" desc:"mean interval between inhibitory spikes -- typically 100Hz fast spiking but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
-	Gi   float32 `min:"0" desc:"excitatory conductance per spike -- around .01 can have an impact, .15 is needed to influence timing of clamped inputs"`
+	Ge   float32 `min:"0" desc:"excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs"`
+	GiHz float32 `def:"200" desc:"mean frequency of inhibitory spikes -- typically 100Hz fast spiking but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
+	Gi   float32 `min:"0" desc:"excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs"`
 
 	GeExpInt float32 `view:"-" json:"-" xml:"-" desc:"Exp(-Interval) which is the threshold for GeNoiseP as it is updated"`
 	GiExpInt float32 `view:"-" json:"-" xml:"-" desc:"Exp(-Interval) which is the threshold for GiNoiseP as it is updated"`
@@ -524,9 +524,9 @@ func (an *SpikeNoiseParams) Update() {
 
 func (an *SpikeNoiseParams) Defaults() {
 	an.GeHz = 100
-	an.Ge = 0.01
+	an.Ge = 0.001
 	an.GiHz = 200
-	an.Gi = 0.01
+	an.Gi = 0.001
 	an.Update()
 }
 

@@ -68,41 +68,45 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
-					"Layer.Inhib.Layer.Bg":               "0.2",  // new
+					"Layer.Inhib.Layer.Bg":               "0.0",  // new
 					"Layer.Inhib.Layer.FF0":              "0.1",  // 0.1 def
-					"Layer.Inhib.Inhib.AvgTau":           "30",   // 20 > 30 ?
 					"Layer.Inhib.Pool.FFEx0":             "0.15", // .15 > .18; Ex .05
 					"Layer.Inhib.Pool.FFEx":              "0.0",  // .05 best for lvis
 					"Layer.Inhib.Layer.FFEx0":            "0.15",
 					"Layer.Inhib.Layer.FFEx":             "0.0",   // .05
-					"Layer.Act.Dt.IntTau":                "40",    // 40 > 20 in larger nets
+					"Layer.Inhib.Inhib.AvgTau":           "30",    // 20 > 30 (small)
 					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Targ":            "0.05",  // for adapt, important for this to be accurate
-					"Layer.Inhib.ActAvg.AdaptGi":         "false", // not huge effects but beneficial
-					"Layer.Act.Decay.Act":                "1.0",   // 0.2
-					"Layer.Act.Decay.Glong":              "1.0",   // 0.6
+					"Layer.Inhib.ActAvg.AdaptGi":         "false", // false == true
+					"Layer.Act.Dt.IntTau":                "40",    // 40 > 20 in larger nets
+					"Layer.Act.Spike.Tr":                 "3",     // 3 def
+					"Layer.Act.Spike.VmR":                "0.3",   // 0.3 def
+					"Layer.Act.Decay.Act":                "0.2",   // 0.2
+					"Layer.Act.Decay.Glong":              "0.6",   // 0.6
 					"Layer.Act.Decay.KNa":                "0.0",   // 0 > higher for all other models
 					"Layer.Act.Gbar.L":                   "0.2",   // 0.2 > 0.1
 					"Layer.Act.NMDA.Gbar":                "0.03",  // 0.03 > .04 > .02
-					"Layer.Act.NMDA.Tau":                 "100",   // 50 no diff
+					"Layer.Act.NMDA.Tau":                 "100",   // 100, 50 no diff
 					"Layer.Act.GABAB.Gbar":               "0.2",   // .1 == .2 pretty much
 					"Layer.Act.GABAB.Gbase":              "0.2",   // .1 == .2
 					"Layer.Act.GABAB.GiSpike":            "10",    // 10 > 8 > 15
+					"Layer.Act.GABAB.RiseTau":            "45",    // 45 def
+					"Layer.Act.GABAB.DecayTau":           "50",    // 50 def
 					"Layer.Act.GTarg.GeMax":              "1.2",
 					"Layer.Learn.ActAvg.SpikeG":          "8",
 					"Layer.Learn.ActAvg.MinLrn":          "0.02",
-					"Layer.Learn.ActAvg.SSTau":           "40",   // 4 > 2 for 50 cyc qtr
-					"Layer.Learn.ActAvg.STau":            "10",   //
+					"Layer.Learn.ActAvg.SSTau":           "40",   // 40
+					"Layer.Learn.ActAvg.STau":            "10",   // 10
 					"Layer.Learn.ActAvg.MTau":            "40",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
 					"Layer.Act.KNa.On":                   "true", // on > off
 					"Layer.Act.KNa.Fast.Max":             "0.1",  // 0.2 > 0.1
 					"Layer.Act.KNa.Med.Max":              "0.2",  // 0.2 > 0.1 def
 					"Layer.Act.KNa.Slow.Max":             "0.2",  // 1,2,2 best in larger models
-					"Layer.Act.Noise.On":                 "true",
-					"Layer.Act.Noise.GeHz":               "10",
-					"Layer.Act.Noise.Ge":                 "0.01",
-					"Layer.Act.Noise.GiHz":               "5",
-					"Layer.Act.Noise.Gi":                 "0.01",
+					"Layer.Act.Noise.On":                 "false",
+					"Layer.Act.Noise.GeHz":               "100",
+					"Layer.Act.Noise.Ge":                 "0.001",
+					"Layer.Act.Noise.GiHz":               "200",
+					"Layer.Act.Noise.Gi":                 "0.001",
 					"Layer.Act.Dt.LongAvgTau":            "20",   // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.01 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.005 for lvis, needs faster here
@@ -128,8 +132,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init":    "0.24",  // this has to be exact for adapt
 					"Layer.Inhib.ActAvg.Targ":    "0.24",  // this has to be exact for adapt
 					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
-					"Layer.Inhib.ActAvg.LoTol":   ".8",    // .8 best if adapting
-					"Layer.Act.Clamp.Ge":         "0.6",   // .5 >= .4 > .6 > 1.0
+					"Layer.Inhib.ActAvg.LoTol":   "0.8",   // .8 best if adapting
+					"Layer.Act.Spike.Tr":         "0",     // 0 is essential here!
+					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6 > 1.0
 					"Layer.Act.GABAB.Gbar":       "0.005", // .005 > .01 > .02 > .05 > .1 > .2
 					"Layer.Act.NMDA.Gbar":        "0.03",  // .03 > .02 > .01
 					"Layer.Act.Decay.Act":        "0.5",   // 0.5 > 1 > 0

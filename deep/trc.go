@@ -142,7 +142,7 @@ func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) 
 		return
 	}
 	actm := nrn.ActM
-	geRaw := (1-drvInhib)*nrn.GeRaw + (drvGe * (1 + ly.Act.BurstGe(cyc, actm)))
+	geRaw := (1-drvInhib)*nrn.GeRaw + drvGe
 	nrn.ClearFlag(axon.NeurHasExt)
 	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, geRaw, nrn.NMDASyn)
 	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)

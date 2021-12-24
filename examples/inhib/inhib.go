@@ -81,8 +81,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.GABAB.GiSpike": "0", // no gabab
 					"Layer.Act.NMDA.GeTot":    "0", // no nmda
 					"Layer.Act.Noise.On":      "true",
-					"Layer.Act.Noise.Ge":      "0.12", //
-					"Layer.Act.Noise.Gi":      "0.12", //
+					"Layer.Act.Noise.Ge":      "0.12", // 0.12 desyncs inhib
+					"Layer.Act.Noise.Gi":      "0.12", // 0.12
 				}},
 			{Sel: "#Layer0", Desc: "Input layer",
 				Params: params.Params{

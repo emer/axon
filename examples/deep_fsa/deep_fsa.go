@@ -104,15 +104,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.2",   // 1.2 > 1.1 maybe > 1.3
-					"Layer.TRC.DriveScale":    "0.15",  // .15 >= .1
-					"Layer.TRC.FullDriveAct":  "0.6",   // 0.6 def
-					"Layer.Act.Clamp.Burst":   "false", // not obviously better
-					"Layer.Act.Clamp.BurstGe": "1",
-					"Layer.Act.GABAB.Gbar":    "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
-					"Layer.Act.NMDA.Gbar":     "0.2",   // 0.1 > .05 > .2
-					"Layer.Act.Decay.Act":     "0.5",
-					"Layer.Act.Decay.Glong":   "1", // clear long
+					"Layer.Inhib.Layer.Gi":   "1.2",   // 1.2 > 1.1 maybe > 1.3
+					"Layer.TRC.DriveScale":   "0.15",  // .15 >= .1
+					"Layer.TRC.FullDriveAct": "0.6",   // 0.6 def
+					"Layer.Act.Spike.Tr":     "3",     // 3 is best for ra25..
+					"Layer.Act.GABAB.Gbar":   "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
+					"Layer.Act.NMDA.Gbar":    "0.2",   // 0.1 > .05 > .2
+					"Layer.Act.Decay.Act":    "0.5",
+					"Layer.Act.Decay.Glong":  "1", // clear long
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
