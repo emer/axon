@@ -60,15 +60,116 @@ func guirun() {
 // LogPrec is precision for saving float values in logs
 const LogPrec = 4
 
-// ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
-// selected to apply on top of that
-var ParamSets = params.Sets{
+// ParamSetsMin sets the minimal non-default params
+// Base is always applied, and others can be optionally selected to apply on top of that
+var ParamSetsMin = params.Sets{
+	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "all defaults",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.ActAvg.Init": "0.04", // start lower -- 0.04 more reliable than .03
+				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+				}},
+			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":      "0",    // 0 is essential here!
+					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+				}},
+			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
+				Params: params.Params{
+					"Prjn.Learn.Lrate.Base": "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+				}},
+			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+				}},
+		},
+		"Sim": &params.Sheet{ // sim params apply to sim object
+			{Sel: "Sim", Desc: "best params always finish in this time",
+				Params: params.Params{
+					"Sim.MaxEpcs": "100",
+				}},
+		},
+	}},
+}
+
+// ParamSetsAlpha sets the params for trying to learn within an alpha cycle instead of theta
+// Base is always applied, and others can be optionally selected to apply on top of that
+var ParamSetsAlpha = params.Sets{
+	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "all defaults",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":     "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.ActAvg.Init":  "0.04", // start lower -- 0.04 more reliable than .03
+					"Layer.Inhib.Inhib.AvgTau": "30",   // no diff
+					"Layer.Act.Spike.Tr":       "1",    // no benefit
+					"Layer.Act.Dt.IntTau":      "20",   // no benefit
+					"Layer.Act.Decay.Act":      "0.5",  // more decay is better
+					"Layer.Act.Decay.Glong":    "0.8",  // 0.6
+					"Layer.Act.NMDA.Tau":       "100",  // 100, 50 no diff
+					"Layer.Act.GABAB.RiseTau":  "45",   // 45 def
+					"Layer.Act.GABAB.DecayTau": "50",   // 50 def
+					"Layer.Learn.ActAvg.SSTau": "20",   // 40
+					"Layer.Learn.ActAvg.STau":  "5",    // 10
+					"Layer.Learn.ActAvg.MTau":  "20",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
+				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
+				Params: params.Params{
+					"Layer.Act.Spike.Tr":      "3",    // 3 def
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":      "0.6",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+				}},
+			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":      "0",    // 0 is essential here!
+					"Layer.Act.Clamp.Ge":      "0.5",  // .6 > .5 v94
+					"Layer.Act.Decay.Act":     "1",    //
+					"Layer.Act.Decay.Glong":   "1",    //
+				}},
+			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
+				Params: params.Params{
+					"Prjn.Learn.Lrate.Base": "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.SWt.Init.SPct":    "0.5", // .5 > 1 here, 1 best for larger nets: objrec, lvis
+				}},
+			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+				}},
+		},
+		"Sim": &params.Sheet{ // sim params apply to sim object
+			{Sel: "Sim", Desc: "best params always finish in this time",
+				Params: params.Params{
+					"Sim.MaxEpcs": "100",
+				}},
+		},
+	}},
+}
+
+// ParamSetsAll sets most all params
+// Base is always applied, and others can be optionally selected to apply on top of that
+var ParamSetsAll = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":               "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
 					"Layer.Inhib.Layer.Bg":               "0.0",  // new
+					"Layer.Inhib.Layer.FB":               "1.0",  //
 					"Layer.Inhib.Layer.FF0":              "0.1",  // 0.1 def
 					"Layer.Inhib.Pool.FFEx0":             "0.15", // .15 > .18; Ex .05
 					"Layer.Inhib.Pool.FFEx":              "0.0",  // .05 best for lvis
@@ -128,17 +229,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "0.9",   // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init":    "0.24",  // this has to be exact for adapt
-					"Layer.Inhib.ActAvg.Targ":    "0.24",  // this has to be exact for adapt
-					"Layer.Inhib.ActAvg.AdaptGi": "false", // no effect here -- and in general not much effect or worse
-					"Layer.Inhib.ActAvg.LoTol":   "0.8",   // .8 best if adapting
-					"Layer.Act.Spike.Tr":         "0",     // 0 is essential here!
-					"Layer.Act.Clamp.Ge":         "0.5",   // .5 >= .4 > .6 > 1.0
-					"Layer.Act.GABAB.Gbar":       "0.005", // .005 > .01 > .02 > .05 > .1 > .2
-					"Layer.Act.NMDA.Gbar":        "0.03",  // .03 > .02 > .01
-					"Layer.Act.Decay.Act":        "0.5",   // 0.5 > 1 > 0
-					"Layer.Act.Decay.Glong":      "1",     // LVis .7 best?
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
+					"Layer.Inhib.ActAvg.Targ": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":      "0",    // 0 is essential here!
+					"Layer.Act.Clamp.Ge":      "0.6",  // .5 >= .4 > .6 > 1.0
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
@@ -295,7 +390,7 @@ func (ss *Sim) New() {
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.5 // 0.5 > 0.2 -- not very useful in this model, but key in larger nets
 	ss.ErrLrMod.Range.Set(0, 0.5)
-	ss.Params = ParamSets
+	ss.Params = ParamSetsMin         // ParamSetsAll
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
 	for i := 0; i < 100; i++ {
 		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
@@ -489,8 +584,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 		ss.Net.WtFmDWt()
 	}
 
-	minusCyc := 150
-	plusCyc := 50
+	minusCyc := 150 // 150
+	plusCyc := 50   // 50
 
 	ss.Net.NewState()
 	ss.Time.NewState()

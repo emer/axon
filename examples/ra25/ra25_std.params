@@ -1,104 +1,219 @@
-[
-  {
-    "Name": "Base",
-    "Desc": "these are the best params",
-    "Sheets": {
-      "Network": [
-        {
-          "Sel": "Prjn",
-          "Desc": "norm and momentum on works better, but wt bal is not better for smaller nets",
-          "Params": {
-            "Prjn.Learn.Momentum.On": "true",
-            "Prjn.Learn.Norm.On": "true",
-            "Prjn.Learn.WtBal.On": "false"
-          }
-        },
-        {
-          "Sel": "Layer",
-          "Desc": "using default 1.8 inhib for all of network -- can explore",
-          "Params": {
-            "Layer.Inhib.Layer.Gi": "1.8"
-          }
-        },
-        {
-          "Sel": ".Back",
-          "Desc": "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
-          "Params": {
-            "Prjn.WtScale.Rel": "0.2"
-          }
-        },
-        {
-          "Sel": "#Output",
-          "Desc": "output definitely needs lower inhib -- true for smaller layers in general",
-          "Params": {
-            "Layer.Inhib.Layer.Gi": "1.4"
-          }
-        }
-      ],
-      "Sim": [
-        {
-          "Sel": "Sim",
-          "Desc": "best params always finish in this time",
-          "Params": {
-            "Sim.MaxEpcs": "50"
-          }
-        }
-      ]
-    }
-  },
-  {
-    "Name": "DefaultInhib",
-    "Desc": "output uses default inhib instead of lower",
-    "Sheets": {
-      "Network": [
-        {
-          "Sel": "#Output",
-          "Desc": "go back to default",
-          "Params": {
-            "Layer.Inhib.Layer.Gi": "1.8"
-          }
-        }
-      ],
-      "Sim": [
-        {
-          "Sel": "Sim",
-          "Desc": "takes longer -- generally doesn't finish..",
-          "Params": {
-            "Sim.MaxEpcs": "100"
-          }
-        }
-      ]
-    }
-  },
-  {
-    "Name": "NoMomentum",
-    "Desc": "no momentum or normalization",
-    "Sheets": {
-      "Network": [
-        {
-          "Sel": "Prjn",
-          "Desc": "no norm or momentum",
-          "Params": {
-            "Prjn.Learn.Momentum.On": "false",
-            "Prjn.Learn.Norm.On": "false"
-          }
-        }
-      ]
-    }
-  },
-  {
-    "Name": "WtBalOn",
-    "Desc": "try with weight bal on",
-    "Sheets": {
-      "Network": [
-        {
-          "Sel": "Prjn",
-          "Desc": "weight bal on",
-          "Params": {
-            "Prjn.Learn.WtBal.On": "true"
-          }
-        }
-      ]
-    }
-  }
-]
+/////////////////////////////////////////////////
+Layer: Input
+Act: {
+  Spike: {  Thr: 0.5  VmR: 0.3  Tr: 3  Exp: true  ExpSlope: 0.02  ExpThr: 1  MaxHz: 180  ISITau: 5  ISIDt: 0.2 }
+  Init: {  Vm: 0.3  Act: 0  Ge: 0  Gi: 0 }
+  Decay: {  Act: 0.2  Glong: 0.6  KNa: 0 }
+  Dt: {  Integ: 1  VmTau: 2.81  VmDendTau: 5  GeTau: 5  GiTau: 7  IntTau: 40  LongAvgTau: 20 }
+  Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
+  Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
+  GTarg: {  GeMax: 1.2  GiMax: 1.2 }
+  Clamp: {  Ge: 1  Add: false  ErrThr: 0.5 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  VmRange: {  Min: 0.1  Max: 1 }
+  KNa: {  On: true  Rate: 0.8  Fast: {   On: true   Rise: 0.05   Max: 0.1   Tau: 50   Dt: 0.02 }   Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
+  } }
+  NMDA: {  GeTot: 1  Tau: 100  Gbar: 0.03 }
+  GABAB: {  RiseTau: 45  DecayTau: 50  Gbar: 0.2  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758 }
+  Attn: {  On: true  Min: 0.8 }
+}
+Inhib: {
+  Inhib: {  AvgTau: 30  GiSynThr: 0 }
+  Layer: {  On: true  Gi: 0.9  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Pool: {  On: false  Gi: 0.9  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
+  Self: {  On: false  Gi: 0.4  Tau: 1.4 }
+  ActAvg: {  InhTau: 1  Init: 0.15  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+}
+Learn: {
+  ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
+  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+}
+/////////////////////////////////////////////////
+Layer: Hidden1
+Act: {
+  Spike: {  Thr: 0.5  VmR: 0.3  Tr: 3  Exp: true  ExpSlope: 0.02  ExpThr: 1  MaxHz: 180  ISITau: 5  ISIDt: 0.2 }
+  Init: {  Vm: 0.3  Act: 0  Ge: 0  Gi: 0 }
+  Decay: {  Act: 0.2  Glong: 0.6  KNa: 0 }
+  Dt: {  Integ: 1  VmTau: 2.81  VmDendTau: 5  GeTau: 5  GiTau: 7  IntTau: 40  LongAvgTau: 20 }
+  Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
+  Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
+  GTarg: {  GeMax: 1.2  GiMax: 1.2 }
+  Clamp: {  Ge: 0.6  Add: false  ErrThr: 0.5 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  VmRange: {  Min: 0.1  Max: 1 }
+  KNa: {  On: true  Rate: 0.8  Fast: {   On: true   Rise: 0.05   Max: 0.1   Tau: 50   Dt: 0.02 }   Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
+  } }
+  NMDA: {  GeTot: 1  Tau: 100  Gbar: 0.03 }
+  GABAB: {  RiseTau: 45  DecayTau: 50  Gbar: 0.2  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758 }
+  Attn: {  On: true  Min: 0.8 }
+}
+Inhib: {
+  Inhib: {  AvgTau: 30  GiSynThr: 0 }
+  Layer: {  On: true  Gi: 1.2  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Pool: {  On: false  Gi: 1  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
+  Self: {  On: false  Gi: 0.4  Tau: 1.4 }
+  ActAvg: {  InhTau: 1  Init: 0.04  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+}
+Learn: {
+  ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
+  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+}
+///////////////////////////////////////////////////
+Prjn: InputToHidden1
+Com: {
+  Delay: 2 PFail: 0 PFailSWt: false
+}
+PrjnScale: {
+  Rel: 1 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
+}
+///////////////////////////////////////////////////
+Prjn: Hidden2ToHidden1
+Com: {
+  Delay: 2 PFail: 0 PFailSWt: false
+}
+PrjnScale: {
+  Rel: 0.3 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
+}
+/////////////////////////////////////////////////
+Layer: Hidden2
+Act: {
+  Spike: {  Thr: 0.5  VmR: 0.3  Tr: 3  Exp: true  ExpSlope: 0.02  ExpThr: 1  MaxHz: 180  ISITau: 5  ISIDt: 0.2 }
+  Init: {  Vm: 0.3  Act: 0  Ge: 0  Gi: 0 }
+  Decay: {  Act: 0.2  Glong: 0.6  KNa: 0 }
+  Dt: {  Integ: 1  VmTau: 2.81  VmDendTau: 5  GeTau: 5  GiTau: 7  IntTau: 40  LongAvgTau: 20 }
+  Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
+  Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
+  GTarg: {  GeMax: 1.2  GiMax: 1.2 }
+  Clamp: {  Ge: 0.6  Add: false  ErrThr: 0.5 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  VmRange: {  Min: 0.1  Max: 1 }
+  KNa: {  On: true  Rate: 0.8  Fast: {   On: true   Rise: 0.05   Max: 0.1   Tau: 50   Dt: 0.02 }   Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
+  } }
+  NMDA: {  GeTot: 1  Tau: 100  Gbar: 0.03 }
+  GABAB: {  RiseTau: 45  DecayTau: 50  Gbar: 0.2  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758 }
+  Attn: {  On: true  Min: 0.8 }
+}
+Inhib: {
+  Inhib: {  AvgTau: 30  GiSynThr: 0 }
+  Layer: {  On: true  Gi: 1.2  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Pool: {  On: false  Gi: 1  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
+  Self: {  On: false  Gi: 0.4  Tau: 1.4 }
+  ActAvg: {  InhTau: 1  Init: 0.04  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+}
+Learn: {
+  ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
+  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+}
+///////////////////////////////////////////////////
+Prjn: Hidden1ToHidden2
+Com: {
+  Delay: 2 PFail: 0 PFailSWt: false
+}
+PrjnScale: {
+  Rel: 1 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
+}
+///////////////////////////////////////////////////
+Prjn: OutputToHidden2
+Com: {
+  Delay: 2 PFail: 0 PFailSWt: false
+}
+PrjnScale: {
+  Rel: 0.3 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+}
+SWt: {
+  Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
+}
+/////////////////////////////////////////////////
+Layer: Output
+Act: {
+  Spike: {  Thr: 0.5  VmR: 0.3  Tr: 0  Exp: true  ExpSlope: 0.02  ExpThr: 1  MaxHz: 180  ISITau: 5  ISIDt: 0.2 }
+  Init: {  Vm: 0.3  Act: 0  Ge: 0  Gi: 0 }
+  Decay: {  Act: 0.2  Glong: 0.6  KNa: 0 }
+  Dt: {  Integ: 1  VmTau: 2.81  VmDendTau: 5  GeTau: 5  GiTau: 7  IntTau: 40  LongAvgTau: 20 }
+  Gbar: {  E: 1  L: 0.2  I: 1  K: 1 }
+  Erev: {  E: 1  L: 0.3  I: 0.1  K: 0.1 }
+  GTarg: {  GeMax: 1.2  GiMax: 1.2 }
+  Clamp: {  Ge: 0.5  Add: false  ErrThr: 0.5 }
+  Noise: {  On: false  GeHz: 100  Ge: 0.001  GiHz: 200  Gi: 0.001 }
+  VmRange: {  Min: 0.1  Max: 1 }
+  KNa: {  On: true  Rate: 0.8  Fast: {   On: true   Rise: 0.05   Max: 0.1   Tau: 50   Dt: 0.02 }   Med: {   On: true   Rise: 0.02   Max: 0.2   Tau: 200   Dt: 0.005 }   Slow: {   On: true   Rise: 0.001   Max: 0.2   Tau: 1000   Dt: 0.001
+  } }
+  NMDA: {  GeTot: 1  Tau: 100  Gbar: 0.03 }
+  GABAB: {  RiseTau: 45  DecayTau: 50  Gbar: 0.2  Gbase: 0.2  GiSpike: 10  MaxTime: 47.41225  TauFact: 2.5811758 }
+  Attn: {  On: true  Min: 0.8 }
+}
+Inhib: {
+  Inhib: {  AvgTau: 30  GiSynThr: 0 }
+  Layer: {  On: true  Gi: 0.9  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Pool: {  On: false  Gi: 1  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
+  Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
+  Self: {  On: false  Gi: 0.4  Tau: 1.4 }
+  ActAvg: {  InhTau: 1  Init: 0.24  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+}
+Learn: {
+  ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
+  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+}
+///////////////////////////////////////////////////
+Prjn: Hidden2ToOutput
+Com: {
+  Delay: 2 PFail: 0 PFailSWt: false
+}
+PrjnScale: {
+  Rel: 1 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+}
+SWt: {
+  Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
+  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Limit: {  Min: 0.2  Max: 0.8 }
+}
+Learn: {
+  Learn: true
+  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
+}
+
