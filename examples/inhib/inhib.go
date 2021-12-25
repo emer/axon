@@ -12,6 +12,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
+	"math/rand"
 	"strconv"
 	"strings"
 
@@ -67,22 +69,24 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":    "0.0", // 0.6 def
 					"Layer.Act.Noise.On":       "true",
 					"Layer.Act.Noise.GeHz":     "100",
-					"Layer.Act.Noise.Ge":       "0.02", // 0.01 enough to desync l1
+					"Layer.Act.Noise.Ge":       "0.002", // 0.001 min
 					"Layer.Act.Noise.GiHz":     "200",
-					"Layer.Act.Noise.Gi":       "0.05", // 0.01 enough to desync l1
+					"Layer.Act.Noise.Gi":       "0.002", // 0.001 min
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Act.Spike.Thr":     "0.5",
+					"Layer.Act.Spike.Tr":      "1",    // 3 def
+					"Layer.Act.Spike.VmR":     "0.45", // key for firing early, plus noise
 					"Layer.Act.Init.Vm":       "0.48", // key for firing early, plus noise
-					"Layer.Act.Gbar.E":        "1.5",  // more excitable
-					"Layer.Act.Gbar.L":        "0.1",  // smaller, less leaky..
+					"Layer.Act.Erev.L":        "0.4",  // more excitable
+					"Layer.Act.Gbar.L":        "0.2",  // smaller, less leaky..
 					"Layer.Act.KNa.On":        "false",
 					"Layer.Act.GABAB.GiSpike": "0", // no gabab
 					"Layer.Act.NMDA.GeTot":    "0", // no nmda
 					"Layer.Act.Noise.On":      "true",
-					"Layer.Act.Noise.Ge":      "0.12", // 0.12 desyncs inhib
-					"Layer.Act.Noise.Gi":      "0.12", // 0.12
+					"Layer.Act.Noise.Ge":      "0.01", // 0.001 min
+					"Layer.Act.Noise.Gi":      "0.0",  //
 				}},
 			{Sel: "#Layer0", Desc: "Input layer",
 				Params: params.Params{
@@ -161,26 +165,30 @@ type Sim struct {
 	HiddenGiTau    float32       `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
 	InhibGiTau     float32       `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
 
-	SpikeRasters   map[string]*etensor.Float32   `desc:"spike raster data for different layers"`
-	SpikeRastGrids map[string]*etview.TensorGrid `desc:"spike raster plots for different layers"`
-	TstCycLog      *etable.Table                 `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
-	Params         params.Sets                   `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
-	ParamSet       string                        `view:"-" desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
-	Time           axon.Time                     `desc:"axon timing parameters and state"`
-	ViewOn         bool                          `desc:"whether to update the network view while running"`
-	ViewUpdt       axon.TimeScales               `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
-	TstRecLays     []string                      `desc:"names of layers to record activations etc of during testing"`
-	SpikeRecLays   []string                      `desc:"names of layers to record spikes of during testing"`
-	Pats           *etable.Table                 `view:"no-inline" desc:"the input patterns to use -- randomly generated"`
+	SpikeRasters    map[string]*etensor.Float32   `desc:"spike raster data for different layers"`
+	SpikeRastGrids  map[string]*etview.TensorGrid `desc:"spike raster plots for different layers"`
+	TstCycLog       *etable.Table                 `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
+	Params          params.Sets                   `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
+	ParamSet        string                        `view:"-" desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
+	Time            axon.Time                     `desc:"axon timing parameters and state"`
+	ViewOn          bool                          `desc:"whether to update the network view while running"`
+	ViewUpdt        axon.TimeScales               `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
+	TstRecLays      []string                      `desc:"names of layers to record activations etc of during testing"`
+	SpikeRecLays    []string                      `desc:"names of layers to record spikes of during testing"`
+	SpikeCorrelLays []string                      `desc:"names of pairs of layers to compute spike correlograms for (colon separated)"`
+	SpikeCorrelsBin int                           `desc:"bin size for computing spiking correlations"`
+	SpikeCorrelsLog *etable.Table                 `view:"no-inline" desc:"spiking correlations data"`
+	Pats            *etable.Table                 `view:"no-inline" desc:"the input patterns to use -- randomly generated"`
 
 	// internal state - view:"-"
-	Win        *gi.Window                  `view:"-" desc:"main GUI window"`
-	NetView    *netview.NetView            `view:"-" desc:"the network viewer"`
-	ToolBar    *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
-	TstCycPlot *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
-	ValsTsrs   map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
-	IsRunning  bool                        `view:"-" desc:"true if sim is running"`
-	StopNow    bool                        `view:"-" desc:"flag to stop running"`
+	Win              *gi.Window                  `view:"-" desc:"main GUI window"`
+	NetView          *netview.NetView            `view:"-" desc:"the network viewer"`
+	ToolBar          *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
+	TstCycPlot       *eplot.Plot2D               `view:"-" desc:"the test-cycle plot"`
+	SpikeCorrelsPlot *eplot.Plot2D               `view:"-" desc:"the spiking correlogram plot"`
+	ValsTsrs         map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
+	IsRunning        bool                        `view:"-" desc:"true if sim is running"`
+	StopNow          bool                        `view:"-" desc:"flag to stop running"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,
@@ -194,6 +202,7 @@ var TheSim Sim
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	ss.TstCycLog = &etable.Table{}
+	ss.SpikeCorrelsLog = &etable.Table{}
 	ss.Params = ParamSets
 	ss.ViewOn = true
 	ss.ViewUpdt = axon.Cycle
@@ -206,13 +215,14 @@ func (ss *Sim) Defaults() {
 	ss.NLayers = 2
 	ss.HidSize.Set(10, 10)
 	ss.Cycles = 500
+	ss.SpikeCorrelsBin = 5
 	ss.TrainedWts = false
 	ss.InputPct = 20
 	ss.FFFBInhib = false
 	ss.FFFBGi = 1.1
 	ss.KNaAdapt = false
-	ss.HiddenGbarI = 0.3
-	ss.InhibGbarI = 0.4
+	ss.HiddenGbarI = 0.22
+	ss.InhibGbarI = 0.1 // lower = less synchrony
 	ss.FFinhibWtScale = 0.5
 	ss.FBinhibWtScale = 0.5
 	ss.HiddenGeTau = 5
@@ -229,6 +239,8 @@ func (ss *Sim) Config() {
 	ss.ConfigPats()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigTstCycLog(ss.TstCycLog)
+	ss.ConfigSpikeRasts()
+	ss.ConfigSpikeCorrelLog(ss.SpikeCorrelsLog)
 }
 
 func LayNm(n int) string {
@@ -252,6 +264,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.AddLayer2D(LayNm(0), ss.HidSize.Y, ss.HidSize.X, emer.Input)
 
 	ss.SpikeRecLays = []string{"Layer0"}
+	ss.SpikeCorrelLays = []string{}
 
 	for hi := 1; hi <= ss.NLayers; hi++ {
 		tl := net.AddLayer2D(LayNm(hi), ss.HidSize.Y, ss.HidSize.X, emer.Hidden)
@@ -261,6 +274,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		ss.TstRecLays = append(ss.TstRecLays, il.Name())
 		ss.SpikeRecLays = append(ss.SpikeRecLays, tl.Name())
 		ss.SpikeRecLays = append(ss.SpikeRecLays, il.Name())
+		ss.SpikeCorrelLays = append(ss.SpikeCorrelLays, tl.Name()+":"+tl.Name())
+		ss.SpikeCorrelLays = append(ss.SpikeCorrelLays, tl.Name()+":"+il.Name())
 	}
 
 	full := prjn.NewFull()
@@ -309,7 +324,13 @@ func (ss *Sim) ConfigPats() {
 		{"Input", etensor.FLOAT32, []int{10, 10}, []string{"Y", "X"}},
 	}
 	dt.SetFromSchema(sch, 1)
-	patgen.PermutedBinaryRows(dt.Cols[1], int(ss.InputPct), 1, 0)
+	pc := dt.Cols[1].(*etensor.Float32)
+	patgen.PermutedBinaryRows(pc, int(ss.InputPct), 1, 0)
+	for i, v := range pc.Values {
+		if v > 0.5 {
+			pc.Values[i] = 0.5 + 0.5*rand.Float32()
+		}
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -382,6 +403,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
 		net.Cycle(&ss.Time)
 		ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+		ss.RecSpikes(ss.Time.Cycle)
 		ss.Time.CycleInc()
 		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
 		case 75:
@@ -403,6 +425,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
 		net.Cycle(&ss.Time)
 		ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+		ss.RecSpikes(ss.Time.Cycle)
 		ss.Time.CycleInc()
 		if cyc == plusCyc-1 { // do before view update
 			net.PlusPhase(&ss.Time)
@@ -415,6 +438,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
 		ss.UpdateView(train)
 	}
+
+	ss.SpikeCorrels(ss.SpikeCorrelsLog)
 
 	if ss.TstCycPlot != nil {
 		ss.TstCycPlot.GoUpdate() // make sure up-to-date at end
@@ -629,6 +654,127 @@ func (ss *Sim) ConfigSpikeGrid(tg *etview.TensorGrid, sr *etensor.Float32) {
 	tg.SetTensor(sr)
 }
 
+// ConfigSpikeRasts configures spike rasters
+func (ss *Sim) ConfigSpikeRasts() {
+	ncy := ss.Cycles
+	for _, lnm := range ss.SpikeRecLays {
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		sr := ss.SpikeRastTsr(lnm)
+		sr.SetShape([]int{ly.Shp.Len(), ncy}, nil, []string{"Nrn", "Cyc"})
+	}
+}
+
+// RecSpikes records spikes
+func (ss *Sim) RecSpikes(cyc int) {
+	for _, lnm := range ss.SpikeRecLays {
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		tv := ss.ValsTsr(lnm)
+		ly.UnitValsTensor(tv, "Spike")
+		sr := ss.SpikeRastTsr(lnm)
+		ss.SetSpikeRastCol(sr, tv, cyc)
+	}
+}
+
+// ConfigSpikeCorrelLog configures spike correlogram log
+func (ss *Sim) ConfigSpikeCorrelLog(dt *etable.Table) {
+	dt.SetMetaData("name", "SpikeCorrelLog")
+	dt.SetMetaData("desc", "spiking correlograms")
+	dt.SetMetaData("read-only", "true")
+	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+
+	ncy := ss.Cycles // max cycles
+	bcy := ncy / ss.SpikeCorrelsBin
+	osz := bcy*2 + 1
+
+	sch := etable.Schema{
+		{"Delta", etensor.FLOAT64, nil, nil},
+	}
+	for _, lnm := range ss.SpikeCorrelLays {
+		sch = append(sch, etable.Column{lnm, etensor.FLOAT32, nil, nil})
+	}
+	dt.SetFromSchema(sch, osz)
+}
+
+func (ss *Sim) ConfigSpikeCorrelsPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Spiking Correlograms"
+	plt.Params.XAxisCol = "Delta"
+	plt.Params.Type = eplot.Bar
+	plt.SetTable(dt)
+	for _, lnm := range ss.SpikeCorrelLays {
+		plt.SetColParams(lnm, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+	}
+	return plt
+}
+
+// LayColonNames returns two layers with names separated by a colon
+func (ss *Sim) LayColonNames(nms string) (*axon.Layer, *axon.Layer) {
+	sp := strings.Split(nms, ":")
+	lna := sp[0]
+	lnb := sp[1]
+	la := ss.Net.LayerByName(lna).(axon.AxonLayer).AsAxon()
+	lb := ss.Net.LayerByName(lnb).(axon.AxonLayer).AsAxon()
+	return la, lb
+}
+
+// SpikeCorrels computes the spiking correlograms for all target layers
+func (ss *Sim) SpikeCorrels(dt *etable.Table) {
+	for _, lnm := range ss.SpikeCorrelLays {
+		cd := dt.ColByName(lnm).(*etensor.Float32)
+		la, lb := ss.LayColonNames(lnm)
+		same := la.Name() == lb.Name()
+		ar := ss.SpikeRastTsr(la.Name())
+		br := ss.SpikeRastTsr(lb.Name())
+		ss.SpikeCorrel(cd, ar, br, ss.SpikeCorrelsBin, same)
+	}
+	cd := dt.ColByName("Delta").(*etensor.Float64)
+	ncy := ss.Cycles
+	i := 0
+	for c := -ncy; c <= ncy; c += ss.SpikeCorrelsBin {
+		cd.Values[i] = float64(c)
+		i++
+	}
+}
+
+// SpikeCorrel computes the spiking correlogram between two spike records, A, B
+// (could be the same for auto-correlogram), with given bin size
+// time is inner (2nd) dimension of spiking records, neuron count is outer (1st).
+// Time deltas are A - B (positive = A after B, negative A before B)
+// same = true if A and B are the same data -- in which case the a=b same-spike is excluded
+func (ss *Sim) SpikeCorrel(out, ar, br *etensor.Float32, bin int, same bool) {
+	na := ar.Dim(0)
+	ncy := ar.Dim(1)
+	nb := br.Dim(0)
+	bcy := ncy / bin
+	osz := bcy*2 + 1
+	if out.Dim(0) != osz {
+		out.SetShape([]int{osz}, nil, nil)
+	}
+	out.SetZeros()
+	for a := 0; a < na; a++ {
+		for at := 0; at < ncy; at++ {
+			if ar.Value([]int{a, at}) == 0 {
+				continue
+			}
+			for b := 0; b < nb; b++ {
+				for bt := 0; bt < ncy; bt++ {
+					if br.Value([]int{b, bt}) == 0 {
+						continue
+					}
+					if same && (a == b) && (at == bt) {
+						continue
+					}
+					td := int(math.Round(float64(at-bt) / 5.0))
+					ti := bcy + td
+					if ti < 0 || ti >= osz {
+						continue
+					}
+					out.Values[ti]++
+				}
+			}
+		}
+	}
+}
+
 // AvgLayVal returns average of given layer variable value
 func (ss *Sim) AvgLayVal(ly *axon.Layer, vnm string) float32 {
 	tv := ss.ValsTsr(ly.Name())
@@ -656,15 +802,6 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 		dt.SetCellFloat(lnm+"Gi", row, float64(ly.Neurons[0].Gi)) // all have the same
 	}
 
-	// record spike raster
-	for _, lnm := range ss.SpikeRecLays {
-		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		tv := ss.ValsTsr(lnm)
-		ly.UnitValsTensor(tv, "Spike")
-		sr := ss.SpikeRastTsr(lnm)
-		ss.SetSpikeRastCol(sr, tv, row)
-	}
-
 	// note: essential to use Go version of update when called from another goroutine
 	if cyc%20 == 0 {
 		ss.TstCycPlot.GoUpdate()
@@ -672,7 +809,6 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 }
 
 func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
-	net := ss.Net
 	dt.SetMetaData("name", "TstCycLog")
 	dt.SetMetaData("desc", "Record of testing per cycle")
 	dt.SetMetaData("read-only", "true")
@@ -696,13 +832,6 @@ func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
 	}
 
 	dt.SetFromSchema(sch, ncy)
-
-	// spike rast
-	for _, lnm := range ss.SpikeRecLays {
-		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		sr := ss.SpikeRastTsr(lnm)
-		sr.SetShape([]int{ly.Shp.Len(), ncy}, nil, []string{"Nrn", "Cyc"})
-	}
 }
 
 func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
@@ -713,10 +842,10 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.TstRecLays {
-		plt.SetColParams(lnm+"IAct", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-		plt.SetColParams(lnm+"Spike", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-		plt.SetColParams(lnm+"Ge", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-		plt.SetColParams(lnm+"Gi", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+		plt.SetColParams(lnm+"IAct", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"Spike", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"Ge", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"Gi", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 1)
 	}
 	return plt
 }
@@ -778,6 +907,9 @@ feedforward and feedback inhibition to excitatory pyramidal neurons.
 		gi.AddNewSpace(stb, lnm+"_spc")
 		ss.ConfigSpikeGrid(tg, sr)
 	}
+
+	plt = tv.AddNewTab(eplot.KiT_Plot2D, "SpikeCorrelsPlot").(*eplot.Plot2D)
+	ss.SpikeCorrelsPlot = ss.ConfigSpikeCorrelsPlot(plt, ss.SpikeCorrelsLog)
 
 	split.SetSplits(.2, .8)
 

@@ -29,7 +29,9 @@ import (
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/etview"
 	_ "github.com/emer/etable/etview" // include to get gui views
+	"github.com/emer/etable/norm"
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -69,6 +71,7 @@ var ParamSetsMin = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
 					"Layer.Inhib.ActAvg.Init": "0.04", // start lower -- 0.04 more reliable than .03
+					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.2 > 0 > 0.4 -- starts to fail at 0.4
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -86,7 +89,7 @@ var ParamSetsMin = params.Sets{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base": "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
@@ -205,9 +208,9 @@ var ParamSetsAll = params.Sets{
 					"Layer.Act.KNa.Slow.Max":             "0.2",  // 1,2,2 best in larger models
 					"Layer.Act.Noise.On":                 "false",
 					"Layer.Act.Noise.GeHz":               "100",
-					"Layer.Act.Noise.Ge":                 "0.001",
+					"Layer.Act.Noise.Ge":                 "0.005", // 0.005 has some benefits, 0.01 too high
 					"Layer.Act.Noise.GiHz":               "200",
-					"Layer.Act.Noise.Gi":                 "0.001",
+					"Layer.Act.Noise.Gi":                 "0.005",
 					"Layer.Act.Dt.LongAvgTau":            "20",   // 20 > higher for objrec, lvis
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.01 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.005 for lvis, needs faster here
@@ -304,17 +307,19 @@ var ParamSetsAll = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net         *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Pats        *etable.Table `view:"no-inline" desc:"the training patterns to use"`
-	TrnEpcLog   *etable.Table `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog   *etable.Table `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog   *etable.Table `view:"no-inline" desc:"testing trial-level log data"`
-	TstErrLog   *etable.Table `view:"no-inline" desc:"log of all test trials where errors were made"`
-	TstErrStats *etable.Table `view:"no-inline" desc:"stats on test trials where errors were made"`
-	TstCycLog   *etable.Table `view:"no-inline" desc:"testing cycle-level log data"`
-	RunLog      *etable.Table `view:"no-inline" desc:"summary log of each run"`
-	RunStats    *etable.Table `view:"no-inline" desc:"aggregate stats on all runs"`
-	ErrLrMod    axon.LrateMod `view:"inline" desc:"learning rate modulation as function of error"`
+	Net            *axon.Network                 `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Pats           *etable.Table                 `view:"no-inline" desc:"the training patterns to use"`
+	TrnEpcLog      *etable.Table                 `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog      *etable.Table                 `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog      *etable.Table                 `view:"no-inline" desc:"testing trial-level log data"`
+	TstErrLog      *etable.Table                 `view:"no-inline" desc:"log of all test trials where errors were made"`
+	TstErrStats    *etable.Table                 `view:"no-inline" desc:"stats on test trials where errors were made"`
+	TstCycLog      *etable.Table                 `view:"no-inline" desc:"testing cycle-level log data"`
+	SpikeRasters   map[string]*etensor.Float32   `desc:"spike raster data for different layers"`
+	SpikeRastGrids map[string]*etview.TensorGrid `desc:"spike raster plots for different layers"`
+	RunLog         *etable.Table                 `view:"no-inline" desc:"summary log of each run"`
+	RunStats       *etable.Table                 `view:"no-inline" desc:"aggregate stats on all runs"`
+	ErrLrMod       axon.LrateMod                 `view:"inline" desc:"learning rate modulation as function of error"`
 
 	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
 	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
@@ -331,6 +336,7 @@ type Sim struct {
 	TestUpdt     axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
 	TestInterval int             `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	LayStatNms   []string        `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
+	SpikeRecLays []string        `desc:"names of layers to record spikes of during testing"`
 
 	// statistics: note use float64 as that is best for etable.Table
 	TrlErr        float64 `inactive:"+" desc:"1 if trial was error, 0 if correct -- based on UnitErr = 0 (subject to .5 unit-wise tolerance)"`
@@ -400,6 +406,7 @@ func (ss *Sim) New() {
 	ss.TestUpdt = axon.Cycle
 	ss.TestInterval = 500
 	ss.LayStatNms = []string{"Hidden1", "Hidden2", "Output"}
+	ss.SpikeRecLays = []string{"Input", "Hidden1", "Hidden2", "Output"}
 	ss.Time.Defaults()
 }
 
@@ -416,6 +423,7 @@ func (ss *Sim) Config() {
 	ss.ConfigTstEpcLog(ss.TstEpcLog)
 	ss.ConfigTstTrlLog(ss.TstTrlLog)
 	ss.ConfigTstCycLog(ss.TstCycLog)
+	ss.ConfigSpikeRasts()
 	ss.ConfigRunLog(ss.RunLog)
 }
 
@@ -594,6 +602,9 @@ func (ss *Sim) ThetaCyc(train bool) {
 		if !train {
 			ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
 		}
+		if !ss.NoGui {
+			ss.RecSpikes(ss.Time.Cycle)
+		}
 		ss.Time.CycleInc()
 		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
 		case 75:
@@ -617,6 +628,9 @@ func (ss *Sim) ThetaCyc(train bool) {
 		ss.Net.Cycle(&ss.Time)
 		if !train {
 			ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+		}
+		if !ss.NoGui {
+			ss.RecSpikes(ss.Time.Cycle)
 		}
 		ss.Time.CycleInc()
 
@@ -1305,6 +1319,78 @@ func (ss *Sim) ConfigTstEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 }
 
 //////////////////////////////////////////////
+//  SpikeRasters
+
+// SpikeRastTsr gets spike raster tensor of given name, creating if not yet made
+func (ss *Sim) SpikeRastTsr(name string) *etensor.Float32 {
+	if ss.SpikeRasters == nil {
+		ss.SpikeRasters = make(map[string]*etensor.Float32)
+	}
+	tsr, ok := ss.SpikeRasters[name]
+	if !ok {
+		tsr = &etensor.Float32{}
+		ss.SpikeRasters[name] = tsr
+	}
+	return tsr
+}
+
+// SpikeRastGrid gets spike raster grid of given name, creating if not yet made
+func (ss *Sim) SpikeRastGrid(name string) *etview.TensorGrid {
+	if ss.SpikeRastGrids == nil {
+		ss.SpikeRastGrids = make(map[string]*etview.TensorGrid)
+	}
+	tsr, ok := ss.SpikeRastGrids[name]
+	if !ok {
+		tsr = &etview.TensorGrid{}
+		ss.SpikeRastGrids[name] = tsr
+	}
+	return tsr
+}
+
+// SetSpikeRastCol sets column of given spike raster from data
+func (ss *Sim) SetSpikeRastCol(sr, vl *etensor.Float32, col int) {
+	for ni, v := range vl.Values {
+		sr.Set([]int{ni, col}, v)
+	}
+}
+
+// ConfigSpikeGrid configures the spike grid
+func (ss *Sim) ConfigSpikeGrid(tg *etview.TensorGrid, sr *etensor.Float32) {
+	tg.SetStretchMax()
+	sr.SetMetaData("grid-fill", "1")
+	tg.SetTensor(sr)
+}
+
+// ConfigSpikeRasts configures spike rasters
+func (ss *Sim) ConfigSpikeRasts() {
+	ncy := 200 // max cycles
+	// spike rast
+	for _, lnm := range ss.SpikeRecLays {
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		sr := ss.SpikeRastTsr(lnm)
+		sr.SetShape([]int{ly.Shp.Len(), ncy}, nil, []string{"Nrn", "Cyc"})
+	}
+}
+
+// RecSpikes records spikes
+func (ss *Sim) RecSpikes(cyc int) {
+	for _, lnm := range ss.SpikeRecLays {
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		tv := ss.ValsTsr(lnm)
+		ly.UnitValsTensor(tv, "Spike")
+		sr := ss.SpikeRastTsr(lnm)
+		ss.SetSpikeRastCol(sr, tv, cyc)
+	}
+}
+
+// AvgLayVal returns average of given layer variable value
+func (ss *Sim) AvgLayVal(ly *axon.Layer, vnm string) float32 {
+	tv := ss.ValsTsr(ly.Name())
+	ly.UnitValsTensor(tv, vnm)
+	return norm.Mean32(tv.Values)
+}
+
+//////////////////////////////////////////////
 //  TstCycLog
 
 // LogTstCyc adds data from current trial to the TstCycLog table.
@@ -1494,6 +1580,19 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "RunPlot").(*eplot.Plot2D)
 	ss.RunPlot = ss.ConfigRunPlot(plt, ss.RunLog)
+
+	stb := tv.AddNewTab(gi.KiT_Layout, "Spike Rasters").(*gi.Layout)
+	stb.Lay = gi.LayoutVert
+	stb.SetStretchMax()
+	for _, lnm := range ss.SpikeRecLays {
+		sr := ss.SpikeRastTsr(lnm)
+		tg := ss.SpikeRastGrid(lnm)
+		tg.SetName(lnm + "Spikes")
+		gi.AddNewLabel(stb, lnm, lnm+":")
+		stb.AddChild(tg)
+		gi.AddNewSpace(stb, lnm+"_spc")
+		ss.ConfigSpikeGrid(tg, sr)
+	}
 
 	split.SetSplits(.2, .8)
 
