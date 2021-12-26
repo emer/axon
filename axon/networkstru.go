@@ -416,6 +416,18 @@ func (nt *NetworkStru) Build() error {
 	return nil
 }
 
+// DeleteAll deletes all layers, prepares network for re-configuring and building
+func (nt *NetworkStru) DeleteAll() {
+	nt.StopThreads() // any existing..
+	nt.NThreads = 0
+	nt.Layers = nil
+	nt.LayMap = nil
+	nt.ThrLay = nil
+	nt.ThrChans = nil
+	nt.ThrTimes = nil
+	nt.FunTimes = nil
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  Weights File
 

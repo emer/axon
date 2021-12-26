@@ -56,14 +56,13 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Inhib.Layer.On":     "false",
-					"Layer.Inhib.ActAvg.Init":  "0.25",
+					"Layer.Inhib.ActAvg.Init":  "0.1",
 					"Layer.Inhib.Inhib.AvgTau": "30", // 20 > 30 ?
 					"Layer.Act.Dt.GeTau":       "5",
 					"Layer.Act.Dt.GiTau":       "7",
 					"Layer.Act.Gbar.I":         "0.1",
 					"Layer.Act.Gbar.L":         "0.2",
-					"Layer.Act.GABAB.GiSpike":  "10",
-					"Layer.Act.NMDA.GeTot":     "1",
+					"Layer.Act.GABAB.Gbar":     "0.2",
 					"Layer.Act.NMDA.Gbar":      "0.03",
 					"Layer.Act.Decay.Act":      "0.0", // 0.2 def
 					"Layer.Act.Decay.Glong":    "0.0", // 0.6 def
@@ -75,23 +74,25 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.5",
 					"Layer.Act.Spike.Thr":     "0.5",
-					"Layer.Act.Spike.Tr":      "1",    // 3 def
-					"Layer.Act.Spike.VmR":     "0.45", // key for firing early, plus noise
-					"Layer.Act.Init.Vm":       "0.48", // key for firing early, plus noise
-					"Layer.Act.Erev.L":        "0.4",  // more excitable
-					"Layer.Act.Gbar.L":        "0.2",  // smaller, less leaky..
+					"Layer.Act.Spike.Tr":      "1",   // 3 def
+					"Layer.Act.Spike.VmR":     "0.4", // key for firing early, plus noise
+					"Layer.Act.Init.Vm":       "0.4", // key for firing early, plus noise
+					"Layer.Act.Erev.L":        "0.4", // more excitable
+					"Layer.Act.Gbar.L":        "0.2", // smaller, less leaky..
 					"Layer.Act.KNa.On":        "false",
-					"Layer.Act.GABAB.GiSpike": "0", // no gabab
-					"Layer.Act.NMDA.GeTot":    "0", // no nmda
+					"Layer.Act.GABAB.Gbar":    "0", // no gabab
+					"Layer.Act.NMDA.Gbar":     "0", // no nmda
 					"Layer.Act.Noise.On":      "true",
 					"Layer.Act.Noise.Ge":      "0.01", // 0.001 min
 					"Layer.Act.Noise.Gi":      "0.0",  //
 				}},
 			{Sel: "#Layer0", Desc: "Input layer",
 				Params: params.Params{
+					"Layer.Act.Clamp.Ge": "0.6", // no inhib so needs to be lower
 					"Layer.Act.Noise.On": "true",
-					"Layer.Act.Noise.Gi": "0.12", // hard to disrupt strong inputs!
+					"Layer.Act.Noise.Gi": "0.002", // hard to disrupt strong inputs!
 				}},
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
@@ -111,11 +112,19 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0",
 					"Prjn.SWt.Init.Sym":  "false",
-					"Prjn.Com.Delay":     "1",
+					"Prjn.Com.Delay":     "0",
 				}},
 			{Sel: ".ToInhib", Desc: "to inhibitory projections",
 				Params: params.Params{
 					"Prjn.Com.Delay": "1",
+				}},
+			{Sel: ".RndSc", Desc: "random shortcut",
+				Params: params.Params{
+					"Prjn.Learn.Lrate.Base": "0.001", //
+					// "Prjn.Learn.Learn":      "false",
+					"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
+					"Prjn.SWt.Adapt.On":  "false", // seems better
+					// "Prjn.SWt.Init.Var":  "0.05",
 				}},
 		},
 	}},
@@ -141,6 +150,10 @@ var ParamSets = params.Sets{
 	}},
 }
 
+// todo:
+// * fft on Ge, correls
+// * README
+
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
@@ -149,21 +162,20 @@ var ParamSets = params.Sets{
 type Sim struct {
 	Net            *axon.Network `view:"no-inline" desc:"the feedforward network -- click to view / edit parameters for layers, prjns, etc"`
 	TrainedWts     bool          `desc:"simulate trained weights by having higher variance and Gaussian distributed weight values -- otherwise lower variance, uniform"`
-	InputPct       float32       `def:"20" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
 	FFFBInhib      bool          `def:"false" desc:"use feedforward, feedback (FFFB) computed inhibition instead of unit-level inhibition"`
-	FFFBGi         float32       `def:"0.7" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
+	FFFBGi         float32       `def:"1.1" min:"0" step:"0.1" desc:"overall inhibitory conductance for FFFB"`
+	GbarGABAB      float32       `min:"0" def:"0.2" desc:"strength of GABAB conductance -- set to 0 to turn off"`
+	GbarNMDA       float32       `min:"0" def:"0.03" desc:"strength of NMDA conductance -- set to 0 to turn off"`
+	HiddenGbarI    float32       `def:"0.3" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer -- turn up to .8-1 for untrained weights"`
+	InhibGbarI     float32       `def:"0.2" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
+	FFinhibWtScale float32       `def:"1" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
+	FBinhibWtScale float32       `def:"1" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
+	KNaAdapt       bool          `desc:"turn on adaptation, or not"`
+	ShortCutRel    float32       `min:"0" def:"0,0.5" desc:"strength of shortcut connections into higher layers -- with NLayers > 2, is important for limiting oscillations"`
 	NLayers        int           `min:"1" desc:"number of hidden layers to add"`
 	HidSize        evec.Vec2i    `desc:"size of hidden layers"`
-	Cycles         int           `def:"500" desc:"number of cycles per trial"`
-	KNaAdapt       bool          `desc:"turn on adaptation, or not"`
-	HiddenGbarI    float32       `def:"0.3" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Hidden layer"`
-	InhibGbarI     float32       `def:"0.4" min:"0" step:"0.05" desc:"inhibitory conductance strength for inhibition into Inhib layer (self-inhibition -- tricky!)"`
-	FFinhibWtScale float32       `def:"0.5" min:"0" step:"0.1" desc:"feedforward (FF) inhibition relative strength: for FF projections into Inhib neurons"`
-	FBinhibWtScale float32       `def:"0.5" min:"0" step:"0.1" desc:"feedback (FB) inhibition relative strength: for projections into Inhib neurons"`
-	HiddenGeTau    float32       `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Hidden neurons"`
-	InhibGeTau     float32       `def:"5" min:"1" step:"1" desc:"time constant (tau) for decaying Ge conductances into Inhib neurons"`
-	HiddenGiTau    float32       `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Hidden neurons"`
-	InhibGiTau     float32       `def:"7" min:"1" step:"1" desc:"time constant (tau) for decaying Gi conductances into Inhib neurons"`
+	InputPct       float32       `def:"15" min:"5" max:"50" step:"1" desc:"percent of active units in input layer (literally number of active units, because input has 100 units total)"`
+	Cycles         int           `def:"400" desc:"number of cycles per trial"`
 
 	SpikeRasters    map[string]*etensor.Float32   `desc:"spike raster data for different layers"`
 	SpikeRastGrids  map[string]*etview.TensorGrid `desc:"spike raster plots for different layers"`
@@ -212,23 +224,22 @@ func (ss *Sim) New() {
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
-	ss.NLayers = 2
-	ss.HidSize.Set(10, 10)
-	ss.Cycles = 500
+	ss.TrainedWts = true
 	ss.SpikeCorrelsBin = 5
-	ss.TrainedWts = false
-	ss.InputPct = 20
 	ss.FFFBInhib = false
 	ss.FFFBGi = 1.1
-	ss.KNaAdapt = false
-	ss.HiddenGbarI = 0.22
-	ss.InhibGbarI = 0.1 // lower = less synchrony
-	ss.FFinhibWtScale = 0.5
-	ss.FBinhibWtScale = 0.5
-	ss.HiddenGeTau = 5
-	ss.InhibGeTau = 5
-	ss.HiddenGiTau = 7
-	ss.InhibGiTau = 7
+	ss.GbarGABAB = 0.2
+	ss.GbarNMDA = 0.03
+	ss.HiddenGbarI = 0.3
+	ss.InhibGbarI = 0.2
+	ss.FFinhibWtScale = 1.0
+	ss.FBinhibWtScale = 1.0
+	ss.KNaAdapt = true
+	ss.ShortCutRel = 0.0
+	ss.NLayers = 2
+	ss.HidSize.Set(10, 10)
+	ss.InputPct = 15
+	ss.Cycles = 400
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -241,6 +252,14 @@ func (ss *Sim) Config() {
 	ss.ConfigTstCycLog(ss.TstCycLog)
 	ss.ConfigSpikeRasts()
 	ss.ConfigSpikeCorrelLog(ss.SpikeCorrelsLog)
+}
+
+func (ss *Sim) ReConfigNet() {
+	ss.Net.DeleteAll()
+	ss.TstCycLog.DeleteAll()
+	ss.SpikeCorrelsLog.DeleteAll()
+	ss.Config()
+	ss.NetView.Config()
 }
 
 func LayNm(n int) string {
@@ -261,8 +280,9 @@ func InhByNm(net *axon.Network, n int) *axon.Layer {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Inhib")
-	net.AddLayer2D(LayNm(0), ss.HidSize.Y, ss.HidSize.X, emer.Input)
+	inlay := net.AddLayer2D(LayNm(0), ss.HidSize.Y, ss.HidSize.X, emer.Input)
 
+	ss.TstRecLays = []string{}
 	ss.SpikeRecLays = []string{"Layer0"}
 	ss.SpikeCorrelLays = []string{}
 
@@ -279,6 +299,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 
 	full := prjn.NewFull()
+	rndcut := prjn.NewUnifRnd()
+	rndcut.PCon = 0.1
 
 	for hi := 1; hi <= ss.NLayers; hi++ {
 		ll := LayByNm(net, hi-1)
@@ -289,6 +311,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		net.ConnectLayers(tl, il, full, emer.Back).SetClass("ToInhib")
 		net.ConnectLayers(il, tl, full, emer.Inhib)
 		net.ConnectLayers(il, il, full, emer.Inhib)
+
+		if hi > 1 {
+			net.ConnectLayers(inlay, tl, rndcut, emer.Forward).SetClass("RndSc")
+		}
 
 		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
 		il.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: tl.Name(), YAlign: relpos.Front, Space: 1})
@@ -323,7 +349,7 @@ func (ss *Sim) ConfigPats() {
 		{"Name", etensor.STRING, nil, nil},
 		{"Input", etensor.FLOAT32, []int{10, 10}, []string{"Y", "X"}},
 	}
-	dt.SetFromSchema(sch, 1)
+	dt.SetFromSchema(sch, 10)
 	pc := dt.Cols[1].(*etensor.Float32)
 	patgen.PermutedBinaryRows(pc, int(ss.InputPct), 1, 0)
 	for i, v := range pc.Values {
@@ -456,7 +482,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 
 	ly := net.LayerByName("Layer0").(axon.AxonLayer).AsAxon()
-	pat := ss.Pats.CellTensor("Input", 0)
+	pat := ss.Pats.CellTensor("Input", rand.Intn(10))
 	ly.ApplyExt(pat)
 }
 
@@ -536,16 +562,14 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 		il := InhByNm(net, hi)
 
 		tl.Act.Gbar.I = hidGbi
-		tl.Act.Dt.GeTau = ss.HiddenGeTau
-		tl.Act.Dt.GiTau = ss.HiddenGiTau
 		tl.Act.KNa.On = ss.KNaAdapt
 		tl.Act.Update()
 		tl.Inhib.Layer.On = ss.FFFBInhib
 		tl.Inhib.Layer.Gi = ss.FFFBGi
+		tl.Act.GABAB.Gbar = ss.GbarGABAB
+		tl.Act.NMDA.Gbar = ss.GbarNMDA
 
 		il.Act.Gbar.I = inhGbi
-		il.Act.Dt.GeTau = ss.InhibGeTau
-		il.Act.Dt.GiTau = ss.InhibGiTau
 		il.Act.Update()
 		il.Inhib.Layer.On = ss.FFFBInhib
 		il.Inhib.Layer.Gi = ss.FFFBGi
@@ -559,6 +583,11 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 		fi.PrjnScale.Abs = fminh
 		fi = il.RcvPrjns.SendName(il.Name()).(axon.AxonPrjn).AsAxon()
 		fi.PrjnScale.Abs = fminh
+
+		if hi > 1 {
+			sc := tl.RcvPrjns.SendName("Layer0").(axon.AxonPrjn).AsAxon()
+			sc.PrjnScale.Rel = ss.ShortCutRel
+		}
 
 		if hi < ss.NLayers {
 			nl := LayByNm(net, hi+1)
@@ -698,7 +727,7 @@ func (ss *Sim) ConfigSpikeCorrelLog(dt *etable.Table) {
 func (ss *Sim) ConfigSpikeCorrelsPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.Params.Title = "Spiking Correlograms"
 	plt.Params.XAxisCol = "Delta"
-	plt.Params.Type = eplot.Bar
+	plt.Params.Type = eplot.XY // actually better
 	plt.SetTable(dt)
 	for _, lnm := range ss.SpikeCorrelLays {
 		plt.SetColParams(lnm, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
@@ -842,10 +871,10 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.TstRecLays {
-		plt.SetColParams(lnm+"IAct", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 1)
-		plt.SetColParams(lnm+"Spike", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 1)
-		plt.SetColParams(lnm+"Ge", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 1)
-		plt.SetColParams(lnm+"Gi", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"IAct", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"Spike", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"Ge", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"Gi", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	}
 	return plt
 }
@@ -908,7 +937,7 @@ feedforward and feedback inhibition to excitatory pyramidal neurons.
 		ss.ConfigSpikeGrid(tg, sr)
 	}
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "SpikeCorrelsPlot").(*eplot.Plot2D)
+	plt = tv.AddNewTab(eplot.KiT_Plot2D, "Spike Correls").(*eplot.Plot2D)
 	ss.SpikeCorrelsPlot = ss.ConfigSpikeCorrelsPlot(plt, ss.SpikeCorrelsLog)
 
 	split.SetSplits(.2, .8)
@@ -936,7 +965,16 @@ feedforward and feedback inhibition to excitatory pyramidal neurons.
 		}
 	})
 
-	tbar.AddAction(gi.ActOpts{Label: "Config Pats", Icon: "update", Tooltip: "Generates a new input pattern based on current InputPct amount.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(gi.ActOpts{Label: "ReBuild Net", Icon: "update", Tooltip: "rebuilds the network based on current paramters (N layers, Hidden Size).", UpdateFunc: func(act *gi.Action) {
+		act.SetActiveStateUpdt(!ss.IsRunning)
+	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		if !ss.IsRunning {
+			ss.ReConfigNet()
+			vp.SetNeedsFullRender()
+		}
+	})
+
+	tbar.AddAction(gi.ActOpts{Label: "ReBuild Pats", Icon: "update", Tooltip: "re-generates new input patterns based on current InputPct amount.", UpdateFunc: func(act *gi.Action) {
 		act.SetActiveStateUpdt(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {

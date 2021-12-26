@@ -4,13 +4,15 @@ This is adapted from [CCN Sims](https://github.com/CompCogNeuro/sims).
 
 This simulation explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons.  This inhibition is critical when neurons have bidirectional excitatory connections, as otherwise the positive feedback loops will result in the equivalent of epileptic seizures -- runaway excitatory activity.
 
-The network in the right view panel contains a 10x10 unit `Input` layer, which projects to both the 10x10 hidden layer of excitatory units, and a layer of 20 inhibitory neurons. These inhibitory neurons will regulate the activation level of the hidden layer units, and should be thought of as the inhibitory units for the hidden layer (even though they are in their own layer for the purposes of this simulation). The ratio of 20 inhibitory units to 120 total hidden units (17 percent) is like that found in the cortex, which is commonly cited as roughly 15 percent (White, 1989a; Zilles, 1990). The inhibitory neurons are just like the excitatory neurons, except that their outputs contribute to the inhibitory conductance of a neuron instead of its excitatory conductance. We have also set one of the activation parameters to be different for these inhibitory neurons, as discussed below.
+In the `axon` framework, it is also critical for exploring basic properties of spiking dynamics and especially the importance of GABA-B and NMDA channels for establishing a clearer, more stable separation between the most strongly activated neurons and the rest, which in turn is essential for enabling credit assignment during learning, causing neurons to become relatively specialized and differentiated from each other.
+
+The network is organized with a configurable number of layers, connected sequentially and bidirectionally, starting with the input layer named `Layer0`.  Each such layer of excitatory pyramidal neurons projects to the next layer of excitatory units, and a layer of 20 inhibitory neurons (`Inihib`). These inhibitory neurons regulate the activation level of the hidden layer units by sending inhibition proportional to incoming excitation. The ratio of 20 inhibitory units to 120 total hidden units (17 percent) is similar to that found in the cortex, which is commonly cited as roughly 15 percent (White, 1989a; Zilles, 1990). The inhibitory neurons are similar to the excitatory neurons (but with several important parameter differences, causing them to fire more regularly and reliably).
 
 # Exploration
 
 Let's begin as usual by viewing the weights of the network.
 
-* Select `r.Wt` in the `FF Net` netview and then click on some of the `Hidden` layer and `Inhib` layer units.
+* Select `r.Wt` in the `Net` netview and then click on some of the `Layer` excitatory and `Inhib` layer units.
 
 Most of the weights are random, except for those from the inhibitory units, which are fixed at a constant value of .5. Notice also that the hidden layer excitatory units receive from the input and inhibitory units, while the inhibitory units receive feedforward connections from the input layer, and feedback connections from the excitatory hidden units, as well as inhibitory connections from themselves.
 
@@ -20,15 +22,38 @@ Now, we will run the network. Note the graph view above the network, which will 
 
 You will see the input units activated by a random activity pattern, and after several cycles of activation updating, the hidden and inhibitory units will become active. The activation appears quite controlled, as the inhibition counterbalances the excitation from the input layer.
 
-* Select the `TstCycPlot` tab to view a plot of average activity in both the Inhib and Hidden layers -- you should see that the hidden layer (black line) has somewhere between 10-20 percent activation once it stabilizes after some initial oscillations.
+* Select the `TstCycPlot` tab to view a plot of average activity in the layers -- you should see that the first excitatory layer (black line) has around 10 percent activation once it stabilizes after some initial oscillations, while the next layer up is just a bit less active.
+
+* Select the `Spike Rasters` tab to view a plot of unit spiking over time (horizontal axis), which gives a better sense of the relative spike timing within and between layers.
 
 In the next sections, we manipulate some of the parameters in the control panel to get a better sense of the principles underlying the inhibitory dynamics in the network -- you can just stay with this plot view to see the results more quickly than watching the network view update.
+
+# GABA-B and NMDA channels for stabilizing patterns
+
+An essential step for enabling spiking neurons to form suitably stable, selective representations for learning was the inclusion of both NMDA and GABA-B channels, which are voltage dependent in a complementary manner as captured in the Sanders et al, 2013 model (which provided the basis for the implementation here).  These channels have long time constants and the voltage dependence causes them to promote a bistable activation state, with a smaller subset of neurons that have extra excitatory drive from the NMDA and avoid extra inhibition from GABA-B, while a majority of neurons have the opposite profile: extra inhibition from GABA-B and no additional excitation from NMDA.
+
+With stronger conductance levels, these channels can produce robust active maintenance dynamics characteristic of layer 3 in the prefrontal cortex (PFC), but for posterior cortex, we use lower values that produce a weaker, but still essential, form of bistability.  Without these channels, neurons all just "take turns" firing at different points in time, and there is no sense in which a small subset are engaged to represent a specific input pattern -- that had been a blocking failure in all prior attempts to use spiking in Leabra models.
+
+To see this in action:
+
+* Set `GbarGABAB` and `GbarNMDA` both to 0, then continue to `Test Trial` (parameters are updated when this button is pressed), while looking at the `Spike Rasters` plot.
+
+You should see that the `Layer2` spiking becomes highly synchronized and every neuron in the layer fires in each wave of activity, which appears as a solid vertical bar across the plot (with a bit of jitter over a few msec one way or the other).  This also happens in `Layer1` but somewhat less dramatically.  It is possible to tweak other parameters to reduce the strength of this oscillation, but inevitably the network ends up with each neuron in the layer firing at roughly the same overall frequency as the others, despite relatively distinct weight patterns.  This undifferentiated, non-selective pattern of activity prevents the network from learning to allocate different neurons to represent different things.
+
+* Click on `Spike Correls` which shows the spike correlations across all spikes in a layer, both the auto-correlation within a layer (e.g., `Layer2:Layer2`) and between the inhibitory and excitatory layers (e.g., `Layer2:Inhib2`).  Select those items to plot in turn.  
+
+You should see a strongly oscillating wavy pattern, reflecting the periodic nature of the spiking.  
+
+* Hit the `Defaults` button and then `Test Trial` again a couple of times, which restores the GABA-B and NMDA conductances.   Note that now the correlograms look much smoother, indicating that the strong oscillations are no longer present.
+
+* You can also see these effects in the `Net` view, where, with the default parameters, a subset of neurons has significant activity according to the `Act` variable (which integrates over spiking to show the running-average rate of spiking).  However with the GABAB and NMDA conductances set to 0, the activity patterns are much more diffuse and every neuron is weakly activated.
+
 
 # Strength of Inhibitory Conductances
 
 Let's start by manipulating the maximal conductance for the inhibitory current into the excitatory units, `HiddenGbarI`, which multiplies the level of inhibition coming into the hidden layer (excitatory) neurons (this sets the `Act.Gbar.I` parameter in the Hidden layer). Clearly, one would predict that this plays an important role.
 
-* Decrease `HiddenGbarI` from .4 to .3 and do `Test Trial`. Then increase it to .5 and test again.
+* Decrease `HiddenGbarI` from .3 to .2 and do `Test Trial`. Then increase it to .5 and test again.
 
 > **Question 3.6:** What effects does decreasing and increasing `HiddenGbarI` have on the average level of excitation of the hidden units and of the inhibitory units, and why does it have these effects (simple one-sentence answer)?
 
