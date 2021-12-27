@@ -243,7 +243,6 @@ func (ss *Sim) SpikeVsRate() {
 		ss.GbarE = float32(gbarE)
 		spike := float64(0)
 		ss.Noise = 0.1 // RunCycles calls SetParams to set this
-		ss.Spike = true
 		for ns := 0; ns < nsamp; ns++ {
 			ss.RunCycles()
 			if ss.StopNow {
@@ -253,7 +252,6 @@ func (ss *Sim) SpikeVsRate() {
 			spike += act
 		}
 		rate := float64(0)
-		ss.Spike = false
 		// ss.Noise = 0 // doesn't make much diff
 		for ns := 0; ns < nsamp; ns++ {
 			ss.RunCycles()
@@ -453,7 +451,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	gi.SetAppAbout(`This simulation illustrates the basic properties of neural spiking and
 rate-code activation, reflecting a balance of excitatory and inhibitory
 influences (including leak and synaptic inhibition).
-See <a href="https://github.com/CompCogNeuro/sims/blob/master/ch2/neuron/README.md">README.md on GitHub</a>.</p>`)
+See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
 
 	win := gi.NewMainWindow("neuron", "Neuron", width, height)
 	ss.Win = win
@@ -546,7 +544,7 @@ See <a href="https://github.com/CompCogNeuro/sims/blob/master/ch2/neuron/README.
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/CompCogNeuro/sims/blob/master/ch2/neuron/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
