@@ -64,32 +64,32 @@ func (ap *AMPARPParams) Defaults() {
 	ap.PP2A_PDZs = 4.0 / 1000
 }
 
-// UpdtP updates the phosphorylation n=new state from c=current
-// based on Ca signaling state
-func (ap *AMPARPParams) UpdtP(c, n *AMPARP, cas *CaSigVars) {
-	n.PD += ap.PKA * cas.PKA * c.DD
-	n.PP += ap.PKA * cas.PKA * c.DP
-	n.DP += ap.CaMKII * cas.CaMKII * c.DD
-	n.PP += ap.CaMKII * cas.CaMKII * c.PD
+// StepP updates the phosphorylation n=new state from c=current
+// based on current kinase / pp states
+func (ap *AMPARPParams) StepP(c, n *AMPARP, camkii, pka, pp1, can float32) {
+	n.PD += ap.PKA * pka * c.DD
+	n.PP += ap.PKA * pka * c.DP
+	n.DP += ap.CaMKII * camkii * c.DD
+	n.PP += ap.CaMKII * camkii * c.PD
 
-	n.DD += ap.PP_S845 * cas.PP1 * c.PD
-	n.DP += ap.PP_S845 * cas.PP1 * c.PP
-	n.DD += ap.PP_PDZs * cas.PP1 * c.DP
-	n.PD += ap.PP_PDZs * cas.PP1 * c.PP
+	n.DD += ap.PP_S845 * pp1 * c.PD
+	n.DP += ap.PP_S845 * pp1 * c.PP
+	n.DD += ap.PP_PDZs * pp1 * c.DP
+	n.PD += ap.PP_PDZs * pp1 * c.PP
 
-	n.DD += ap.CaN_S845 * cas.CaN * c.PD
-	n.DP += ap.CaN_S845 * cas.CaN * c.PP
-	n.DD += ap.CaN_PDZs * cas.CaN * c.DP
-	n.PD += ap.CaN_PDZs * cas.CaN * c.PP
+	n.DD += ap.CaN_S845 * can * c.PD
+	n.DP += ap.CaN_S845 * can * c.PP
+	n.DD += ap.CaN_PDZs * can * c.DP
+	n.PD += ap.CaN_PDZs * can * c.PP
 }
 
-// UpdtPP2A updates the phosphorylation n=new state from c=current
-// based on Ca signaling state
-func (ap *AMPARPParams) UpdtPP2A(c, n *AMPARP, cas *CaSigVars) {
-	n.DD += ap.PP2A_S845 * cas.PP2A * c.PD
-	n.DP += ap.PP2A_S845 * cas.PP2A * c.PP
-	n.DD += ap.PP2A_PDZs * cas.PP2A * c.DP
-	n.PD += ap.PP2A_PDZs * cas.PP2A * c.PP
+// StepPP2A updates the phosphorylation n=new state from c=current
+// based on current pp2a
+func (ap *AMPARPParams) StepPP2A(c, n *AMPARP, pp2a float32) {
+	n.DD += ap.PP2A_S845 * pp2a * c.PD
+	n.DP += ap.PP2A_S845 * pp2a * c.PP
+	n.DD += ap.PP2A_PDZs * pp2a * c.DP
+	n.PD += ap.PP2A_PDZs * pp2a * c.PP
 
 }
 
@@ -116,7 +116,7 @@ func (ap *AMPARTParams) Defaults() {
 	ap.Off = 1.0 / (30 * 1000)
 }
 
-func (ap *AMPARTParams) UpdtT(c, n *AMPARState) {
+func (ap *AMPARTParams) StepT(c, n *AMPARState) {
 	// Exo = Cyt -> Int
 	n.Int.PD += ap.ExoP * c.Cyt.PD // only Ser845P
 	n.Int.PP += ap.ExoP * c.Cyt.PP // only Ser845P
@@ -159,16 +159,16 @@ func (ap *AMPARTParams) UpdtT(c, n *AMPARState) {
 	n.PSD.PD += ap.Off * c.Trp.PD
 }
 
-// Updt updates the new state from c=current, n=new
+// Step updates the new state from c=current, n=new
 // based on Ca signaling state
-func (ap *AMPARParams) Updt(c, n *AMPARState, cas *CaSigState) {
+func (ap *AMPARParams) Step(c, n *AMPARState, cas *CaSigState) {
 	*n = *c
-	ap.Phos.UpdtP(&c.Cyt, &n.Cyt, &cas.CytAct)
-	ap.Phos.UpdtP(&c.Int, &n.Int, &cas.CytAct)
-	ap.Phos.UpdtP(&c.Trp, &n.Trp, &cas.PSDAct)
-	ap.Phos.UpdtP(&c.PSD, &n.PSD, &cas.PSDAct)
+	ap.Phos.StepP(&c.Cyt, &n.Cyt, cas.CaMKII.Cyt.CaMKIIact, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Int, &n.Int, cas.CaMKII.Cyt.CaMKIIact, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Trp, &n.Trp, cas.CaMKII.PSD.CaMKIIact, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
+	ap.Phos.StepP(&c.PSD, &n.PSD, cas.CaMKII.PSD.CaMKIIact, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
 
-	ap.Phos.UpdtPP2A(&c.Cyt, &n.Cyt, &cas.CytAct) // Cyt only
+	ap.Phos.StepPP2A(&c.Cyt, &n.Cyt, pp2a) // Cyt only
 
-	ap.Traffic.UpdtT(c, n)
+	ap.Traffic.StepT(c, n)
 }

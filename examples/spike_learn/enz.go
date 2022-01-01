@@ -32,14 +32,14 @@ func (rt *Enz) SetSec(k1, k2, k3 float32) {
 	rt.Update()
 }
 
-// Updt computes new S, P values based on current S, E, and P values
+// Step computes new S, P values based on current S, E, and P values
 // na, nb, nab can be nil to skip updating
-func (rt *Enz) Updt(cs, ce, cp float32, ns, np *float32) {
+func (rt *Enz) Step(cs, ce, cp float32, ns, np *float32) {
 	rate := cs * rt.K3 / (cs + rt.Km)
 	if ns != nil {
 		*ns -= rate
 	}
 	if np != nil {
-		*na += rate
+		*np += rate
 	}
 }
