@@ -76,12 +76,12 @@ func (cp *PP1Params) Defaults() {
 // kf is an additional forward multiplier, which is 1 for Cyt and 4 for PSD
 // cCaM, nCaM = current, new 3CaCaM from CaMKIIVars
 // cCa, nCa = current new Ca
-func (cp *PP1Params) StepPP1(kf float32, c, n *PP1Vars, pka, can, pp2a float32) {
-	cp.I1PP1.StepKf(kf, c.I1P, c.PP1act, c.PP1_I1P, &n.I1P, &n.PP1act, &n.PP1_I1P) // 1
+func (cp *PP1Params) StepPP1(k float32, c, n *PP1Vars, pka, can, pp2a float32) {
+	cp.I1PP1.StepK(k, c.I1P, c.PP1act, c.PP1_I1P, &n.I1P, &n.PP1act, &n.PP1_I1P) // 1
 
-	cp.PKAILP.StepKf(kf, c.I1, pka, c.I1P, &n.I1, &n.I1P)   // 2
-	cp.CaNILP.StepKf(kf, c.I1P, can, c.I1, &n.I1P, &n.I1)   // 3
-	cp.PP2AILP.StepKf(kf, c.I1P, pp2a, c.I1, &n.I1P, &n.I1) // 3
+	cp.PKAILP.StepK(k, c.I1, pka, c.I1P, &n.I1, &n.I1P)   // 2
+	cp.CaNILP.StepK(k, c.I1P, can, c.I1, &n.I1P, &n.I1)   // 3
+	cp.PP2AILP.StepK(k, c.I1P, pp2a, c.I1, &n.I1P, &n.I1) // 3
 }
 
 // Step does one step of updating

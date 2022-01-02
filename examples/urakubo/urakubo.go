@@ -230,9 +230,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ly.Act.VmFmG(nrn)
 	ly.Act.ActFmG(nrn)
 	nrn.Ge = nrn.Ge * ly.Act.Gbar.E // display effective Ge
-	cca := float32(0.2)             // resting value
-	nca := cca
-	ss.Spine.Step(cca, &nca)
+	ss.Spine.Step()
 }
 
 // Stop tells the sim to stop running
@@ -386,7 +384,7 @@ func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "Neuron Test Cycle Plot"
+	plt.Params.Title = "Urakubo Test Cycle Plot"
 	plt.Params.XAxisCol = "Cycle"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
@@ -395,13 +393,17 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Inet", eplot.Off, eplot.FixMin, -.2, eplot.FixMax, 1)
 	plt.SetColParams("Vm", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Act", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Spike", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Spike", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Gk", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("ISI", eplot.Off, eplot.FixMin, -2, eplot.FloatMax, 1)
 	plt.SetColParams("AvgISI", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
+	plt.SetColParams("Cyt_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Cyt_AC1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_AC1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("Trp_AMPAR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Trp_AMPAR", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
 }
@@ -440,7 +442,7 @@ func (ss *Sim) ConfigSpikeVsRateLog(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigSpikeVsRatePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "Neuron Spike Vs. Rate-Code Plot"
+	plt.Params.Title = "Urakubo Spike Vs. Rate-Code Plot"
 	plt.Params.XAxisCol = "GBarE"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
@@ -462,13 +464,13 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	width := 1600
 	height := 1200
 
-	gi.SetAppName("neuron")
+	gi.SetAppName("urakubo")
 	gi.SetAppAbout(`This simulation illustrates the basic properties of neural spiking and
 rate-code activation, reflecting a balance of excitatory and inhibitory
 influences (including leak and synaptic inhibition).
-See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
+See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md">README.md on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("neuron", "Neuron", width, height)
+	win := gi.NewMainWindow("urakubo", "Urakubo", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()

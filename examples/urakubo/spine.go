@@ -4,10 +4,25 @@
 
 package main
 
-import "github.com/emer/etable/etable"
+import (
+	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+)
+
+// CaState records the Ca levels
+type CaState struct {
+	Cyt float32 `desc:"in cytosol"`
+	PSD float32 `desc:"in PSD"`
+}
+
+func (ca *CaState) Init() {
+	ca.Cyt = CoToN(0.05, CytVol)
+	ca.PSD = CoToN(0.05, PSDVol)
+}
 
 // CaSigState is entire intracellular Ca-driven signaling state
 type CaSigState struct {
+	Ca     CaState     `desc:"Ca state"`
 	CaMKII CaMKIIState `desc:"CaMKII state"`
 	CaN    CaNState    `desc:"CaN = calcineurin state"`
 	PKA    PKAState    `desc:"PKA = protein kinase A"`
@@ -16,6 +31,7 @@ type CaSigState struct {
 }
 
 func (cs *CaSigState) Init() {
+	cs.Ca.Init()
 	cs.CaMKII.Init()
 	cs.CaN.Init()
 	cs.PKA.Init()
@@ -71,23 +87,37 @@ func (sp *Spine) Init() {
 	sp.Next().Init()
 }
 
+// AddCa injects calcium into the next state -- call before calling Step
+func (sp *Spine) AddCa(cyt, psd float32) {
+	n := sp.Next()
+	n.CaSig.Ca.Cyt += cyt
+	n.CaSig.Ca.PSD += psd
+}
+
 // Step does one step of updating, given the current and next levels of calcium
-// cCa, nCa = current, new Ca -- caller has to initialize nCa
-func (sp *Spine) Step(cCa float32, nCa *float32) {
+func (sp *Spine) Step() {
 	sp.CurIdx = 1 - sp.CurIdx
 	sp.NextIdx = 1 - sp.NextIdx
 	c := sp.Cur()
 	n := sp.Next()
 	*n = *c // start from current
-	sp.CaMKII.Step(&c.CaSig.CaMKII, &n.CaSig.CaMKII, &c.CaSig.PP1, cCa, c.CaSig.PP2A, nCa)
-	sp.CaN.Step(&c.CaSig.CaN, &n.CaSig.CaN, &c.CaSig.CaMKII, &n.CaSig.CaMKII, cCa, nCa)
+	sp.CaMKII.Step(&c.CaSig.CaMKII, &n.CaSig.CaMKII, &c.CaSig.Ca, &n.CaSig.Ca, &c.CaSig.PP1, c.CaSig.PP2A)
+	sp.CaN.Step(&c.CaSig.CaN, &n.CaSig.CaN, &c.CaSig.CaMKII, &n.CaSig.CaMKII, &c.CaSig.Ca, &n.CaSig.Ca)
 	sp.PKA.Step(&c.CaSig.PKA, &n.CaSig.PKA, &c.CaSig.CaMKII, &n.CaSig.CaMKII)
 	sp.PP1.Step(&c.CaSig.PP1, &n.CaSig.PP1, &c.CaSig.PKA, &c.CaSig.CaN, c.CaSig.PP2A)
 	sp.AMPAR.Step(&c.AMPAR, &n.AMPAR, &c.CaSig, c.CaSig.PP2A)
+
+	// buffer
+	if true {
+		n.CaSig.Ca.Cyt = CoToN(0.05, CytVol)
+		n.CaSig.Ca.PSD = CoToN(0.05, PSDVol)
+	}
 }
 
 func (sp *Spine) Log(dt *etable.Table, row int) {
 	c := sp.Cur()
+	dt.SetCellFloat("Cyt_Ca", row, CoFmN64(c.CaSig.Ca.Cyt, CytVol))
+	dt.SetCellFloat("PSD_Ca", row, CoFmN64(c.CaSig.Ca.PSD, PSDVol))
 	c.CaSig.CaMKII.Log(dt, row)
 	c.CaSig.CaN.Log(dt, row)
 	c.CaSig.PKA.Log(dt, row)
@@ -97,6 +127,8 @@ func (sp *Spine) Log(dt *etable.Table, row int) {
 
 func (sp *Spine) ConfigLog(sch *etable.Schema) {
 	c := sp.Cur()
+	*sch = append(*sch, etable.Column{"Cyt_Ca", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{"PSD_Ca", etensor.FLOAT64, nil, nil})
 	c.CaSig.CaMKII.ConfigLog(sch)
 	c.CaSig.CaN.ConfigLog(sch)
 	c.CaSig.PKA.ConfigLog(sch)
