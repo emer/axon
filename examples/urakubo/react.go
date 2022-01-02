@@ -26,16 +26,7 @@ func (rt *React) SetSec(f, b float32) {
 // Step computes new A, B, AB values based on current A, B, and AB values
 // na, nb, nab can be nil to skip updating
 func (rt *React) Step(ca, cb, cab float32, na, nb, nab *float32) {
-	df := rt.Kf*ca*cb - rt.Kb*cab
-	if nab != nil {
-		*nab += df
-	}
-	if na != nil {
-		*na -= df
-	}
-	if nb != nil {
-		*nb -= df
-	}
+	rt.StepKf(1, ca, cb, cab, na, nb, nab)
 }
 
 // StepKf computes new A, B, AB values based on current A, B, and AB values
@@ -43,7 +34,16 @@ func (rt *React) Step(ca, cb, cab float32, na, nb, nab *float32) {
 // Kf version has special rate multiplier for Kf
 func (rt *React) StepKf(kf, ca, cb, cab float32, na, nb, nab *float32) {
 	df := kf*rt.Kf*ca*cb - rt.Kb*cab
+	if df > 0 && na != nil && *na < df {
+		df = *na
+	}
+	if df > 0 && nb != nil && *nb < df {
+		df = *nb
+	}
 	if nab != nil {
+		if df < 0 && *nab < -df {
+			df = -*nab
+		}
 		*nab += df
 	}
 	if na != nil {

@@ -4,6 +4,11 @@
 
 package main
 
+import (
+	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+)
+
 // CaMVars are intracellular Ca-driven signaling variables for the
 // CaMKII+CaM binding -- each can have different numbers of Ca bound
 // Dupont = DupontHouartDekonnick03, has W* terms used in Genesis code
@@ -57,7 +62,19 @@ func (cs *CaMKIIVars) Active() {
 	}
 	cs.CaMKIIact = act
 	cs.CaMKIItot = tot
-	cs.ActPct = act / tot
+	if tot > 0 {
+		cs.ActPct = act / tot
+	} else {
+		cs.ActPct = 0
+	}
+}
+
+func (cs *CaMKIIVars) Log(dt *etable.Table, row int, pre string) {
+	dt.SetCellFloat(pre+"CaMKIIact", row, float64(cs.CaMKIIact))
+}
+
+func (cs *CaMKIIVars) ConfigLog(sch *etable.Schema, pre string) {
+	*sch = append(*sch, etable.Column{pre + "CaMKIIact", etensor.FLOAT64, nil, nil})
 }
 
 // CaMKIIState is overall intracellular Ca-driven signaling states
@@ -70,6 +87,16 @@ type CaMKIIState struct {
 func (cs *CaMKIIState) Init() {
 	cs.Cyt.Init() // confirmed cyt and psd seem to start with same conc
 	cs.PSD.Init()
+}
+
+func (cs *CaMKIIState) Log(dt *etable.Table, row int) {
+	cs.Cyt.Log(dt, row, "Cyt_")
+	cs.PSD.Log(dt, row, "PSD_")
+}
+
+func (cs *CaMKIIState) ConfigLog(sch *etable.Schema) {
+	cs.Cyt.ConfigLog(sch, "Cyt_")
+	cs.PSD.ConfigLog(sch, "PSD_")
 }
 
 // CaMKIIParams are the parameters governing the Ca+CaM binding
@@ -130,7 +157,7 @@ func (cp *CaMKIIParams) StepCaMKII(kf float32, c, n *CaMKIIVars, cCa, pp1, pp2a 
 	cp.CaMCaMKII3.StepKf(kf, c.Ca[3].CaM, c.CaMKII, c.Ca[3].CaM_CaMKII, &n.Ca[3].CaM, &n.CaMKII, &n.Ca[3].CaM_CaMKII) // 5
 
 	cp.CaMCaMKIIP.StepKf(kf, c.Ca[0].CaM, c.CaMKIIP, c.Ca[0].CaM_CaMKIIP, &n.Ca[0].CaM, &n.CaMKIIP, &n.Ca[0].CaM_CaMKIIP) // 9
-	for i := 1; i < 4; i++ {
+	for i := 0; i < 3; i++ {
 		cp.CaCaM_CaMKIIP.StepKf(kf, c.Ca[i].CaM_CaMKIIP, cCa, c.Ca[i+1].CaM_CaMKIIP, &n.Ca[i].CaM_CaMKIIP, nCa, &n.Ca[i+1].CaM_CaMKIIP) // 8
 	}
 

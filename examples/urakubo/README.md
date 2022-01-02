@@ -1,4 +1,4 @@
-# Neuron = single spiking neuron
+# Urakubo = Urakubo et al, 2008
 
 This is adapted from [CCN Sims](https://github.com/CompCogNeuro/sims).
 

@@ -4,6 +4,8 @@
 
 package main
 
+import "github.com/emer/etable/etable"
+
 // CaSigState is entire intracellular Ca-driven signaling state
 type CaSigState struct {
 	CaMKII CaMKIIState `desc:"CaMKII state"`
@@ -66,6 +68,7 @@ func (sp *Spine) Init() {
 	sp.CurIdx = 0
 	sp.NextIdx = 1
 	sp.Cur().Init()
+	sp.Next().Init()
 }
 
 // Step does one step of updating, given the current and next levels of calcium
@@ -81,4 +84,22 @@ func (sp *Spine) Step(cCa float32, nCa *float32) {
 	sp.PKA.Step(&c.CaSig.PKA, &n.CaSig.PKA, &c.CaSig.CaMKII, &n.CaSig.CaMKII)
 	sp.PP1.Step(&c.CaSig.PP1, &n.CaSig.PP1, &c.CaSig.PKA, &c.CaSig.CaN, c.CaSig.PP2A)
 	sp.AMPAR.Step(&c.AMPAR, &n.AMPAR, &c.CaSig, c.CaSig.PP2A)
+}
+
+func (sp *Spine) Log(dt *etable.Table, row int) {
+	c := sp.Cur()
+	c.CaSig.CaMKII.Log(dt, row)
+	c.CaSig.CaN.Log(dt, row)
+	c.CaSig.PKA.Log(dt, row)
+	c.CaSig.PP1.Log(dt, row)
+	c.AMPAR.Log(dt, row)
+}
+
+func (sp *Spine) ConfigLog(sch *etable.Schema) {
+	c := sp.Cur()
+	c.CaSig.CaMKII.ConfigLog(sch)
+	c.CaSig.CaN.ConfigLog(sch)
+	c.CaSig.PKA.ConfigLog(sch)
+	c.CaSig.PP1.ConfigLog(sch)
+	c.AMPAR.ConfigLog(sch)
 }

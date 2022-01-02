@@ -4,6 +4,11 @@
 
 package main
 
+import (
+	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+)
+
 // AMPARVars have AMPAR Phosphorylation (Pd = phosphorylated, Dp = dephosphorylated) state.
 // Two protein elements, separately Pd and Dp:
 // AMPAR = AMPA receptor (GluR1), which can be Pd at Ser845 by PKA
@@ -12,10 +17,11 @@ package main
 // Both can be Dp by PP1 and CaN (calcineurin)
 // Variables named as P or D for the Pd or Dp state, 1st is AMPAR @ Ser845, 2nd is PDZs
 type AMPARVars struct {
-	DD float32 `desc:"both dephosphorylated = Nophos"`
-	PD float32 `desc:"AMPA Ser845 phosphorylated = S845P"`
-	DP float32 `desc:"PDZs phosphorylated = StgP"`
-	PP float32 `desc:"both phosphorylated = S845PStgP"`
+	DD  float32 `desc:"both dephosphorylated = Nophos"`
+	PD  float32 `desc:"AMPA Ser845 phosphorylated = S845P"`
+	DP  float32 `desc:"PDZs phosphorylated = StgP"`
+	PP  float32 `desc:"both phosphorylated = S845PStgP"`
+	Tot float32 `desc:"total of all phos levels"`
 }
 
 func (as *AMPARVars) Init() {
@@ -23,6 +29,19 @@ func (as *AMPARVars) Init() {
 	as.PD = 0
 	as.DP = 0
 	as.PP = 0
+	as.Tot = 0
+}
+
+func (as *AMPARVars) Total() {
+	as.Tot = as.DD + as.PD + as.DP + as.PP
+}
+
+func (as *AMPARVars) Log(dt *etable.Table, row int, pre string) {
+	dt.SetCellFloat(pre+"AMPAR", row, float64(as.Tot))
+}
+
+func (as *AMPARVars) ConfigLog(sch *etable.Schema, pre string) {
+	*sch = append(*sch, etable.Column{pre + "AMPAR", etensor.FLOAT64, nil, nil})
 }
 
 // AMPARState is AMPAR Phosphorylation and trafficking state.
@@ -31,6 +50,7 @@ func (as *AMPARVars) Init() {
 // Int = Integrated into the membrane -- after exocytosis, still governed by Cyl rates
 // PSD = In the postsynaptic density -- includes non-trapped and trapped
 // Trp = Trapped by scaffolding in the PSD -- solidly fixed in place and active
+// Trp.Tot is the net effective AMPA conductance
 type AMPARState struct {
 	Cyt AMPARVars `view:"inline" desc:"in cytosol"`
 	Int AMPARVars `view:"inline" desc:"in integrated state"`
@@ -46,6 +66,32 @@ func (as *AMPARState) Init() {
 
 	as.Int.DD = 3 // Nophos_int
 	as.Int.PD = 3 // S845P_int
+	as.Int.Total()
+
+	as.Trp.DD = 1
+	as.Trp.PD = 3
+	as.Trp.Total()
+}
+
+func (as *AMPARState) Total() {
+	as.Cyt.Total()
+	as.Int.Total()
+	as.PSD.Total()
+	as.Trp.Total()
+}
+
+func (as *AMPARState) Log(dt *etable.Table, row int) {
+	as.Cyt.Log(dt, row, "Cyt_")
+	as.Int.Log(dt, row, "Int_")
+	as.PSD.Log(dt, row, "PSD_")
+	as.Trp.Log(dt, row, "Trp_")
+}
+
+func (as *AMPARState) ConfigLog(sch *etable.Schema) {
+	as.Cyt.ConfigLog(sch, "Cyt_")
+	as.Int.ConfigLog(sch, "Int_")
+	as.PSD.ConfigLog(sch, "PSD_")
+	as.Trp.ConfigLog(sch, "Trp_")
 }
 
 // AMPAR phosphorylation and trafficking parameters
@@ -166,6 +212,8 @@ func (ap *AMPARTrafParams) StepT(c, n *AMPARState) {
 	n.PSD.PP += ap.Off * c.Trp.PP
 	n.PSD.DD += ap.Off * c.Trp.DD
 	n.PSD.PD += ap.Off * c.Trp.PD
+
+	n.Total()
 }
 
 // AMPAR phosphorylation and trafficking parameters

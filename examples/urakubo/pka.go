@@ -4,6 +4,11 @@
 
 package main
 
+import (
+	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+)
+
 // PKAVars are intracellular Ca-driven signaling states
 // for PKA binding and phosphorylation with cAMP
 type PKAVars struct {
@@ -46,6 +51,14 @@ func (ps *PKAVars) Init() {
 	ps.PKAact = 0.05
 }
 
+func (ps *PKAVars) Log(dt *etable.Table, row int, pre string) {
+	dt.SetCellFloat(pre+"PKAact", row, float64(ps.PKAact))
+}
+
+func (ps *PKAVars) ConfigLog(sch *etable.Schema, pre string) {
+	*sch = append(*sch, etable.Column{pre + "PKAact", etensor.FLOAT64, nil, nil})
+}
+
 // PKAtate is overall intracellular Ca-driven signaling states
 // for PKA binding and phosphorylation with cAMP
 type PKAState struct {
@@ -56,6 +69,16 @@ type PKAState struct {
 func (ps *PKAState) Init() {
 	ps.Cyt.Init()
 	ps.PSD.Init()
+}
+
+func (ps *PKAState) Log(dt *etable.Table, row int) {
+	ps.Cyt.Log(dt, row, "Cyt_")
+	ps.PSD.Log(dt, row, "PSD_")
+}
+
+func (ps *PKAState) ConfigLog(sch *etable.Schema) {
+	ps.Cyt.ConfigLog(sch, "Cyt_")
+	ps.PSD.ConfigLog(sch, "PSD_")
 }
 
 // PKAParams are the parameters governing the

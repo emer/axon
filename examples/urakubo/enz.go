@@ -35,13 +35,7 @@ func (rt *Enz) SetSec(k1, k2, k3 float32) {
 // Step computes new S, P values based on current S, E, and P values
 // na, nb, nab can be nil to skip updating
 func (rt *Enz) Step(cs, ce, cp float32, ns, np *float32) {
-	rate := cs * rt.K3 / (cs + rt.Km)
-	if ns != nil {
-		*ns -= rate
-	}
-	if np != nil {
-		*np += rate
-	}
+	rt.StepKf(1, cs, ce, cp, ns, np)
 }
 
 // StepKf computes new S, P values based on current S, E, and P values
@@ -49,7 +43,13 @@ func (rt *Enz) Step(cs, ce, cp float32, ns, np *float32) {
 // Kf version has special rate multiplier for Kf
 func (rt *Enz) StepKf(kf, cs, ce, cp float32, ns, np *float32) {
 	rate := cs * rt.K3 / (cs + (rt.Km / kf))
+	if rate < 0 && np != nil && *np < -rate {
+		rate = *np
+	}
 	if ns != nil {
+		if rate > 0 && *ns < rate {
+			rate = *ns
+		}
 		*ns -= rate
 	}
 	if np != nil {

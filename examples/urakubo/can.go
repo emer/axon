@@ -4,6 +4,11 @@
 
 package main
 
+import (
+	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+)
+
 // CaNVars are intracellular Ca-driven signaling variables for the
 // CaN and CaM binding, at different levels of Ca binding
 type CaNVars struct {
@@ -31,6 +36,14 @@ func (cs *CaNCaMVars) Init() {
 	cs.CaNact = 0
 }
 
+func (cs *CaNCaMVars) Log(dt *etable.Table, row int, pre string) {
+	dt.SetCellFloat(pre+"CaNact", row, float64(cs.CaNact))
+}
+
+func (cs *CaNCaMVars) ConfigLog(sch *etable.Schema, pre string) {
+	*sch = append(*sch, etable.Column{pre + "CaNact", etensor.FLOAT64, nil, nil})
+}
+
 // CaNState is overall intracellular Ca-driven signaling states
 // for CaN-CaM binding in Cyt and PSD
 type CaNState struct {
@@ -41,6 +54,16 @@ type CaNState struct {
 func (cs *CaNState) Init() {
 	cs.Cyt.Init()
 	cs.PSD.Init()
+}
+
+func (cs *CaNState) Log(dt *etable.Table, row int) {
+	cs.Cyt.Log(dt, row, "Cyt_")
+	cs.PSD.Log(dt, row, "PSD_")
+}
+
+func (cs *CaNState) ConfigLog(sch *etable.Schema) {
+	cs.Cyt.ConfigLog(sch, "Cyt_")
+	cs.PSD.ConfigLog(sch, "PSD_")
 }
 
 // CaNParams are the parameters governing the Ca+CaN-CaM binding

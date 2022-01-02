@@ -3,9 +3,8 @@
 // license that can be found in the LICENSE file.
 
 /*
-spike_learn: This simulation illustrates the basic properties of neural spiking and
-rate-code activation, reflecting a balance of excitatory and inhibitory
-influences (including leak and synaptic inhibition).
+urakubo: This simulation replicates the Urakubo et al, 2008 detailed model of spike-driven
+learning, including intracellular Ca-driven signaling, involving CaMKII, CaN, PKA, PP1.
 */
 package main
 
@@ -64,6 +63,7 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
+	Spine          Spine         `desc:"the spine state with Urakubo intracellular model"`
 	GbarE          float32       `min:"0" step:"0.01" def:"0.3" desc:"excitatory conductance multiplier -- determines overall value of Ge which drives neuron to be more excited -- pushes up over threshold to fire if strong enough"`
 	GbarL          float32       `min:"0" step:"0.01" def:"0.3" desc:"leak conductance -- determines overall value of Gl which drives neuron to be less excited (inhibited) -- pushes back to resting membrane potential"`
 	ErevE          float32       `min:"0" max:"1" step:"0.01" def:"1" desc:"excitatory reversal (driving) potential -- determines where excitation pushes Vm up to"`
@@ -100,6 +100,8 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	ss.Spine.Defaults()
+	ss.Spine.Init()
 	ss.Net = &axon.Network{}
 	ss.TstCycLog = &etable.Table{}
 	ss.SpikeVsRateLog = &etable.Table{}
@@ -109,6 +111,7 @@ func (ss *Sim) New() {
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
+	ss.Spine.Defaults()
 	ss.UpdtInterval = 10
 	ss.Cycle = 0
 	ss.GbarE = 0.3
@@ -157,6 +160,7 @@ func (ss *Sim) InitWts(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	ss.Spine.Init()
 	ss.Cycle = 0
 	ss.InitWts(ss.Net)
 	ss.StopNow = false
@@ -184,7 +188,6 @@ func (ss *Sim) UpdateView() {
 
 // RunCycles updates neuron over specified number of cycles
 func (ss *Sim) RunCycles() {
-	ss.Init()
 	ss.StopNow = false
 	ss.Net.InitActs()
 	ss.SetParams("", false)
@@ -227,6 +230,9 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ly.Act.VmFmG(nrn)
 	ly.Act.ActFmG(nrn)
 	nrn.Ge = nrn.Ge * ly.Act.Gbar.E // display effective Ge
+	cca := float32(0.2)             // resting value
+	nca := cca
+	ss.Spine.Step(cca, &nca)
 }
 
 // Stop tells the sim to stop running
@@ -347,6 +353,8 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 	dt.SetCellFloat("ISI", row, float64(nrn.ISI))
 	dt.SetCellFloat("AvgISI", row, float64(nrn.ISIAvg))
 
+	ss.Spine.Log(dt, row)
+
 	// note: essential to use Go version of update when called from another goroutine
 	if cyc%ss.UpdtInterval == 0 {
 		ss.TstCycPlot.GoUpdate()
@@ -371,6 +379,9 @@ func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
 		{"ISI", etensor.FLOAT64, nil, nil},
 		{"AvgISI", etensor.FLOAT64, nil, nil},
 	}
+
+	ss.Spine.ConfigLog(&sch)
+
 	dt.SetFromSchema(sch, nt)
 }
 
@@ -380,14 +391,18 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Ge", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Inet", eplot.On, eplot.FixMin, -.2, eplot.FixMax, 1)
-	plt.SetColParams("Vm", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Ge", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Inet", eplot.Off, eplot.FixMin, -.2, eplot.FixMax, 1)
+	plt.SetColParams("Vm", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Act", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Spike", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Gk", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Gk", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("ISI", eplot.Off, eplot.FixMin, -2, eplot.FloatMax, 1)
 	plt.SetColParams("AvgISI", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+
+	plt.SetColParams("PSD_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Trp_AMPAR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+
 	return plt
 }
 
@@ -560,43 +575,45 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 	emen := win.MainMenu.ChildByName("Edit", 1).(*gi.Action)
 	emen.Menu.AddCopyCutPaste(win)
 
-	inQuitPrompt := false
-	gi.SetQuitReqFunc(func() {
-		if inQuitPrompt {
-			return
-		}
-		inQuitPrompt = true
-		gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Quit?",
-			Prompt: "Are you <i>sure</i> you want to quit and lose any unsaved params, weights, logs, etc?"}, gi.AddOk, gi.AddCancel,
-			win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-				if sig == int64(gi.DialogAccepted) {
-					gi.Quit()
-				} else {
-					inQuitPrompt = false
-				}
-			})
-	})
+	/*
+		inQuitPrompt := false
+		gi.SetQuitReqFunc(func() {
+			if inQuitPrompt {
+				return
+			}
+			inQuitPrompt = true
+			gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Quit?",
+				Prompt: "Are you <i>sure</i> you want to quit and lose any unsaved params, weights, logs, etc?"}, gi.AddOk, gi.AddCancel,
+				win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+					if sig == int64(gi.DialogAccepted) {
+						gi.Quit()
+					} else {
+						inQuitPrompt = false
+					}
+				})
+		})
 
-	// gi.SetQuitCleanFunc(func() {
-	// 	fmt.Printf("Doing final Quit cleanup here..\n")
-	// })
+		// gi.SetQuitCleanFunc(func() {
+		// 	fmt.Printf("Doing final Quit cleanup here..\n")
+		// })
 
-	inClosePrompt := false
-	win.SetCloseReqFunc(func(w *gi.Window) {
-		if inClosePrompt {
-			return
-		}
-		inClosePrompt = true
-		gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Close Window?",
-			Prompt: "Are you <i>sure</i> you want to close the window?  This will Quit the App as well, losing all unsaved params, weights, logs, etc"}, gi.AddOk, gi.AddCancel,
-			win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-				if sig == int64(gi.DialogAccepted) {
-					gi.Quit()
-				} else {
-					inClosePrompt = false
-				}
-			})
-	})
+		inClosePrompt := false
+		win.SetCloseReqFunc(func(w *gi.Window) {
+			if inClosePrompt {
+				return
+			}
+			inClosePrompt = true
+			gi.PromptDialog(vp, gi.DlgOpts{Title: "Really Close Window?",
+				Prompt: "Are you <i>sure</i> you want to close the window?  This will Quit the App as well, losing all unsaved params, weights, logs, etc"}, gi.AddOk, gi.AddCancel,
+				win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+					if sig == int64(gi.DialogAccepted) {
+						gi.Quit()
+					} else {
+						inClosePrompt = false
+					}
+				})
+		})
+	*/
 
 	win.SetCloseCleanFunc(func(w *gi.Window) {
 		go gi.Quit() // once main window is closed, quit

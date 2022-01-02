@@ -4,6 +4,11 @@
 
 package main
 
+import (
+	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+)
+
 // PP1Vars are intracellular Ca-driven signaling variables for the
 // PP1 - I-1 system
 type PP1Vars struct {
@@ -20,6 +25,14 @@ func (ps *PP1Vars) Init() {
 	ps.PP1act = 0
 }
 
+func (ps *PP1Vars) Log(dt *etable.Table, row int, pre string) {
+	dt.SetCellFloat(pre+"PP1act", row, float64(ps.PP1act))
+}
+
+func (ps *PP1Vars) ConfigLog(sch *etable.Schema, pre string) {
+	*sch = append(*sch, etable.Column{pre + "PP1act", etensor.FLOAT64, nil, nil})
+}
+
 // PP1State is overall intracellular Ca-driven signaling states
 // for PP1-I-1 in Cyt and PSD
 type PP1State struct {
@@ -30,6 +43,16 @@ type PP1State struct {
 func (ps *PP1State) Init() {
 	ps.Cyt.Init()
 	ps.PSD.Init()
+}
+
+func (ps *PP1State) Log(dt *etable.Table, row int) {
+	ps.Cyt.Log(dt, row, "Cyt_")
+	ps.PSD.Log(dt, row, "PSD_")
+}
+
+func (ps *PP1State) ConfigLog(sch *etable.Schema) {
+	ps.Cyt.ConfigLog(sch, "Cyt_")
+	ps.PSD.ConfigLog(sch, "PSD_")
 }
 
 // PP1Params are the parameters governing the PP1-I-1 binding
