@@ -4,18 +4,25 @@
 
 package main
 
-// AMPARP is AMPAR Phosphorylation (Pd = phosphorylated, Dp = dephosphorylated) state.
+// AMPARVars have AMPAR Phosphorylation (Pd = phosphorylated, Dp = dephosphorylated) state.
 // Two protein elements, separately Pd and Dp:
 // AMPAR = AMPA receptor (GluR1), which can be Pd at Ser845 by PKA
 // PDZs = PDZ domain binding proteins (e.g., SAP97 and stargazin), which bind to AMPAR
 //        and are separately Pd by CaMKII -- denoted as StgP in Urakubo code
 // Both can be Dp by PP1 and CaN (calcineurin)
 // Variables named as P or D for the Pd or Dp state, 1st is AMPAR @ Ser845, 2nd is PDZs
-type AMPARP struct {
-	DD float32 `desc:"both dephosphorylated"`
-	PD float32 `desc:"AMPA Ser845 phosphorylated"`
-	DP float32 `desc:"PDZs phosphorylated"`
-	PP float32 `desc:"both phosphorylated"`
+type AMPARVars struct {
+	DD float32 `desc:"both dephosphorylated = Nophos"`
+	PD float32 `desc:"AMPA Ser845 phosphorylated = S845P"`
+	DP float32 `desc:"PDZs phosphorylated = StgP"`
+	PP float32 `desc:"both phosphorylated = S845PStgP"`
+}
+
+func (as *AMPARVars) Init() {
+	as.DD = 0
+	as.PD = 0
+	as.DP = 0
+	as.PP = 0
 }
 
 // AMPARState is AMPAR Phosphorylation and trafficking state.
@@ -25,24 +32,26 @@ type AMPARP struct {
 // PSD = In the postsynaptic density -- includes non-trapped and trapped
 // Trp = Trapped by scaffolding in the PSD -- solidly fixed in place and active
 type AMPARState struct {
-	Cyt AMPARP `view:"inline" desc:"in cytosol"`
-	Int AMPARP `view:"inline" desc:"in integrated state"`
-	PSD AMPARP `view:"inline" desc:"in PSD but not trapped"`
-	Trp AMPARP `view:"inline" desc:"in PSD and trapped in place"`
+	Cyt AMPARVars `view:"inline" desc:"in cytosol"`
+	Int AMPARVars `view:"inline" desc:"in integrated state"`
+	PSD AMPARVars `view:"inline" desc:"in PSD but not trapped"`
+	Trp AMPARVars `view:"inline" desc:"in PSD and trapped in place"`
+}
+
+func (as *AMPARState) Init() {
+	as.Cyt.Init()
+	as.Int.Init()
+	as.PSD.Init()
+	as.Trp.Init()
+
+	as.Int.DD = 3 // Nophos_int
+	as.Int.PD = 3 // S845P_int
 }
 
 // AMPAR phosphorylation and trafficking parameters
 // Original kinetic rate constants are in units of (μM-1s-1),
 // converted to msec instead of sec
-type AMPARParams struct {
-	Phos    AMPARPParams `view:"inline" desc:"Phosphorylation parameters"`
-	Traffic AMPARTParams `view:"inline" desc:"Trafficking parameters"`
-}
-
-// AMPAR phosphorylation and trafficking parameters
-// Original kinetic rate constants are in units of (μM-1s-1),
-// converted to msec instead of sec
-type AMPARPParams struct {
+type AMPARPhosParams struct {
 	PKA       float32 `def:"0.020" desc:"rate of phosphorylation of AMPA Ser845 by PKA"`
 	CaMKII    float32 `def:"0.001" desc:"rate of phosphorylation of PDZs by CaMKII"`
 	PP_S845   float32 `def:"0.004" desc:"rate of dephosphorylation of AMPA Ser845 by PP1"`
@@ -53,7 +62,7 @@ type AMPARPParams struct {
 	PP2A_PDZs float32 `def:"0.004" desc:"rate of dephosphorylation of PDZs by PP2A"`
 }
 
-func (ap *AMPARPParams) Defaults() {
+func (ap *AMPARPhosParams) Defaults() {
 	ap.PKA = 20.0 / 1000
 	ap.CaMKII = 1.0 / 1000
 	ap.PP_S845 = 4.0 / 1000
@@ -64,9 +73,9 @@ func (ap *AMPARPParams) Defaults() {
 	ap.PP2A_PDZs = 4.0 / 1000
 }
 
-// StepP updates the phosphorylation n=new state from c=current
+// StepP updates the phosphorylation n=next state from c=current
 // based on current kinase / pp states
-func (ap *AMPARPParams) StepP(c, n *AMPARP, camkii, pka, pp1, can float32) {
+func (ap *AMPARPhosParams) StepP(c, n *AMPARVars, camkii, pka, pp1, can float32) {
 	n.PD += ap.PKA * pka * c.DD
 	n.PP += ap.PKA * pka * c.DP
 	n.DP += ap.CaMKII * camkii * c.DD
@@ -83,9 +92,9 @@ func (ap *AMPARPParams) StepP(c, n *AMPARP, camkii, pka, pp1, can float32) {
 	n.PD += ap.CaN_PDZs * can * c.PP
 }
 
-// StepPP2A updates the phosphorylation n=new state from c=current
+// StepPP2A updates the phosphorylation n=next state from c=current
 // based on current pp2a
-func (ap *AMPARPParams) StepPP2A(c, n *AMPARP, pp2a float32) {
+func (ap *AMPARPhosParams) StepPP2A(c, n *AMPARVars, pp2a float32) {
 	n.DD += ap.PP2A_S845 * pp2a * c.PD
 	n.DP += ap.PP2A_S845 * pp2a * c.PP
 	n.DD += ap.PP2A_PDZs * pp2a * c.DP
@@ -96,7 +105,7 @@ func (ap *AMPARPParams) StepPP2A(c, n *AMPARP, pp2a float32) {
 // AMPAR trafficking parameters
 // Original kinetic rate constants are in units of (μM-1s-1),
 // converted to msec instead of sec
-type AMPARTParams struct {
+type AMPARTrafParams struct {
 	ExoP    float32 `def:"0.0000055555" desc:"Ser845P excocytosis rate -- 30min"`
 	EndoP   float32 `def:"0.0000185" desc:"Ser845P endcytosis rate -- 9min"`
 	EndoD   float32 `def:"0.001" desc:"Ser845D endcytosis rate -- 1sec"`
@@ -106,7 +115,7 @@ type AMPARTParams struct {
 	Off     float32 `def:"0.000333" desc:"un-trapping in the PSD -- all off are the same"`
 }
 
-func (ap *AMPARTParams) Defaults() {
+func (ap *AMPARTrafParams) Defaults() {
 	ap.ExoP = 1.0 / (30 * 60 * 1000)
 	ap.EndoP = 1.0 / (9 * 60 * 1000)
 	ap.EndoD = 1.0 / 1000
@@ -116,7 +125,7 @@ func (ap *AMPARTParams) Defaults() {
 	ap.Off = 1.0 / (30 * 1000)
 }
 
-func (ap *AMPARTParams) StepT(c, n *AMPARState) {
+func (ap *AMPARTrafParams) StepT(c, n *AMPARState) {
 	// Exo = Cyt -> Int
 	n.Int.PD += ap.ExoP * c.Cyt.PD // only Ser845P
 	n.Int.PP += ap.ExoP * c.Cyt.PP // only Ser845P
@@ -159,10 +168,22 @@ func (ap *AMPARTParams) StepT(c, n *AMPARState) {
 	n.PSD.PD += ap.Off * c.Trp.PD
 }
 
-// Step updates the new state from c=current, n=new
-// based on Ca signaling state
-func (ap *AMPARParams) Step(c, n *AMPARState, cas *CaSigState) {
-	*n = *c
+// AMPAR phosphorylation and trafficking parameters
+// Original kinetic rate constants are in units of (μM-1s-1),
+// converted to msec instead of sec
+type AMPARParams struct {
+	Phos    AMPARPhosParams `view:"inline" desc:"Phosphorylation parameters"`
+	Traffic AMPARTrafParams `view:"inline" desc:"Trafficking parameters"`
+}
+
+func (ap *AMPARParams) Defaults() {
+	ap.Phos.Defaults()
+	ap.Traffic.Defaults()
+}
+
+// Step does full AMPAR updating, c=current, n=next
+// based on current Ca signaling state
+func (ap *AMPARParams) Step(c, n *AMPARState, cas *CaSigState, pp2a float32) {
 	ap.Phos.StepP(&c.Cyt, &n.Cyt, cas.CaMKII.Cyt.CaMKIIact, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
 	ap.Phos.StepP(&c.Int, &n.Int, cas.CaMKII.Cyt.CaMKIIact, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
 	ap.Phos.StepP(&c.Trp, &n.Trp, cas.CaMKII.PSD.CaMKIIact, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)

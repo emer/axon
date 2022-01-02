@@ -43,3 +43,16 @@ func (rt *Enz) Step(cs, ce, cp float32, ns, np *float32) {
 		*np += rate
 	}
 }
+
+// StepKf computes new S, P values based on current S, E, and P values
+// na, nb, nab can be nil to skip updating
+// Kf version has special rate multiplier for Kf
+func (rt *Enz) StepKf(kf, cs, ce, cp float32, ns, np *float32) {
+	rate := cs * rt.K3 / (cs + (rt.Km / kf))
+	if ns != nil {
+		*ns -= rate
+	}
+	if np != nil {
+		*np += rate
+	}
+}
