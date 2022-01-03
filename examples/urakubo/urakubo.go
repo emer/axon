@@ -230,7 +230,9 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ly.Act.VmFmG(nrn)
 	ly.Act.ActFmG(nrn)
 	nrn.Ge = nrn.Ge * ly.Act.Gbar.E // display effective Ge
-	ss.Spine.Step()
+	ss.Spine.StepTime(0.001)
+	// note: add calcium here!
+	ss.Spine.Integrate()
 }
 
 // Stop tells the sim to stop running

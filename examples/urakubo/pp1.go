@@ -12,24 +12,54 @@ import (
 // PP1Vars are intracellular Ca-driven signaling variables for the
 // PP1 - I-1 system
 type PP1Vars struct {
-	I1      float32 `desc:"dephosphorylated I-1 = I1_inactive"`
-	I1P     float32 `desc:"phosphorylated (active) I-1 = I1_active"`
-	PP1_I1P float32 `desc:"PP1 = protein phosphatase 1 bound with I-1P"`
-	PP1act  float32 `desc:"activated PP1"`
+	I1       float64 `desc:"dephosphorylated I-1 = I1_inactive"`
+	I1P      float64 `desc:"phosphorylated (active) I-1 = I1_active"`
+	PP1_I1P  float64 `desc:"PP1 = protein phosphatase 1 bound with I-1P"`
+	PP1act   float64 `desc:"activated PP1"`
+	PKAI1C   float64 `desc:"PKA+I1 complex for PKAI1 enzyme reaction"`
+	CaNI1PC  float64 `desc:"CaN+I1P complex for CaNI1P enzyme reaction"`
+	PP2AI1PC float64 `desc:"PP2A+I1P complex for PP2AI1P enzyme reaction"`
 }
 
-func (ps *PP1Vars) Init() {
-	ps.I1 = 2
+func (ps *PP1Vars) Init(vol float64) {
+	ps.I1 = CoToN(2, vol)
 	ps.I1P = 0
-	ps.PP1_I1P = 2
+	ps.PP1_I1P = CoToN(2, vol)
 	ps.PP1act = 0
+	ps.PKAI1C = 0
+	ps.CaNI1PC = 0
+	ps.PP2AI1PC = 0
 }
 
-func (ps *PP1Vars) Log(dt *etable.Table, row int, pre string) {
-	dt.SetCellFloat(pre+"PP1act", row, float64(ps.PP1act))
+func (ps *PP1Vars) Zero() {
+	ps.I1 = 0
+	ps.I1P = 0
+	ps.PP1_I1P = 0
+	ps.PP1act = 0
+	ps.PKAI1C = 0
+	ps.CaNI1PC = 0
+	ps.PP2AI1PC = 0
+}
+
+func (ps *PP1Vars) Integrate(d *PP1Vars) {
+	Integrate(&ps.I1, d.I1)
+	Integrate(&ps.I1P, d.I1P)
+	Integrate(&ps.PP1_I1P, d.PP1_I1P)
+	Integrate(&ps.PP1act, d.PP1act)
+	Integrate(&ps.PKAI1C, d.PKAI1C)
+	Integrate(&ps.CaNI1PC, d.CaNI1PC)
+	Integrate(&ps.PP2AI1PC, d.PP2AI1PC)
+}
+
+func (ps *PP1Vars) Log(dt *etable.Table, vol float64, row int, pre string) {
+	dt.SetCellFloat(pre+"I1", row, CoFmN(ps.I1, vol))
+	dt.SetCellFloat(pre+"I1P", row, CoFmN(ps.I1P, vol))
+	dt.SetCellFloat(pre+"PP1act", row, CoFmN(ps.PP1act, vol))
 }
 
 func (ps *PP1Vars) ConfigLog(sch *etable.Schema, pre string) {
+	*sch = append(*sch, etable.Column{pre + "I1", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "I1P", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "PP1act", etensor.FLOAT64, nil, nil})
 }
 
@@ -41,13 +71,23 @@ type PP1State struct {
 }
 
 func (ps *PP1State) Init() {
-	ps.Cyt.Init()
-	ps.PSD.Init()
+	ps.Cyt.Init(CytVol)
+	ps.PSD.Init(PSDVol)
+}
+
+func (ps *PP1State) Zero() {
+	ps.Cyt.Zero()
+	ps.PSD.Zero()
+}
+
+func (ps *PP1State) Integrate(d *PP1State) {
+	ps.Cyt.Integrate(&d.Cyt)
+	ps.PSD.Integrate(&d.PSD)
 }
 
 func (ps *PP1State) Log(dt *etable.Table, row int) {
-	ps.Cyt.Log(dt, row, "Cyt_")
-	ps.PSD.Log(dt, row, "PSD_")
+	ps.Cyt.Log(dt, CytVol, row, "Cyt_")
+	ps.PSD.Log(dt, PSDVol, row, "PSD_")
 }
 
 func (ps *PP1State) ConfigLog(sch *etable.Schema) {
@@ -58,35 +98,36 @@ func (ps *PP1State) ConfigLog(sch *etable.Schema) {
 // PP1Params are the parameters governing the PP1-I-1 binding
 type PP1Params struct {
 	I1PP1   React `desc:"1: I-1P + PP1act -> PP1-I1P -- Table SIi constants are backward = I1-PP1"`
-	PKAILP  Enz   `desc:"2: I-1P phosphorylated by PKA -- Table SIj numbers != Figure SI4"`
-	CaNILP  Enz   `desc:"3: I-1P dephosphorylated by CaN -- Table SIj number"`
-	PP2AILP Enz   `desc:"4: I-1P dephosphorylated by PP2A -- Table SIj number"`
+	PKAI1   Enz   `desc:"2: I-1P phosphorylated by PKA -- Table SIj numbers != Figure SI4"`
+	CaNI1P  Enz   `desc:"3: I-1P dephosphorylated by CaN -- Table SIj number"`
+	PP2aI1P Enz   `desc:"4: I-1P dephosphorylated by PP2A -- Table SIj number"`
 }
 
 func (cp *PP1Params) Defaults() {
 	// note: following are all in Cyt -- PSD is 4x for first values
-	// Cyt = 1/48 * values listed in Table SIh (0.02083333)
-	cp.I1PP1.SetSec(2.0834, 1)             // Kb = 100 μM-1 -- reversed for product = PP1-I1P
-	cp.PKAILP.SetSec(0.068157, 21.2, 5.3)  // Km = 8.1 μM-1
-	cp.CaNILP.SetSec(0.097222, 11.2, 2.8)  // Km = 3 μM-1
-	cp.PP2AILP.SetSec(0.097222, 11.2, 2.8) // Km = 3 μM-1
+	cp.I1PP1.SetVol(100, CytVol, 1)           // Kb = 100 μM-1 = 2.0834 -- reversed for product = PP1-I1P
+	cp.PKAI1.SetKmVol(8.1, CytVol, 21.2, 5.3) // Km = 8.1 μM-1 k1 = 0.068157
+	cp.CaNI1P.SetKmVol(3, CytVol, 11.2, 2.8)  // Km = 3 μM-1 = 0.097222
+	cp.PP2aI1P.SetKmVol(3, CytVol, 11.2, 2.8) // Km = 3 μM-1 = 0.097222
 }
 
 // StepPP1 does the bulk of Ca + PP1 + CaM binding reactions, in a given region
-// kf is an additional forward multiplier, which is 1 for Cyt and 4 for PSD
 // cCaM, nCaM = current, new 3CaCaM from CaMKIIVars
 // cCa, nCa = current new Ca
-func (cp *PP1Params) StepPP1(k float32, c, n *PP1Vars, pka, can, pp2a float32) {
-	cp.I1PP1.StepK(k, c.I1P, c.PP1act, c.PP1_I1P, &n.I1P, &n.PP1act, &n.PP1_I1P) // 1
+func (cp *PP1Params) StepPP1(vol float64, c, d *PP1Vars, pka, can, pp2a float64, dpka, dcan, dpp2a *float64) {
+	kf := CytVol / vol
+	cp.I1PP1.StepK(kf, c.I1P, c.PP1act, c.PP1_I1P, &d.I1P, &d.PP1act, &d.PP1_I1P) // 1
 
-	cp.PKAILP.StepK(k, c.I1, pka, c.I1P, &n.I1, &n.I1P)   // 2
-	cp.CaNILP.StepK(k, c.I1P, can, c.I1, &n.I1P, &n.I1)   // 3
-	cp.PP2AILP.StepK(k, c.I1P, pp2a, c.I1, &n.I1P, &n.I1) // 3
+	// cs, ce, cc, cp -> ds, de, dc, dp
+	cp.PKAI1.StepK(kf, c.I1, pka, c.PKAI1C, c.I1P, &d.I1, dpka, &d.PKAI1C, &d.I1P)    // 2
+	cp.CaNI1P.StepK(kf, c.I1P, can, c.CaNI1PC, c.I1, &d.I1P, dcan, &d.CaNI1PC, &d.I1) // 3
+	if dpp2a != nil {                                                                 // no PP2A in PSD
+		cp.PP2aI1P.StepK(kf, c.I1P, pp2a, c.PP2AI1PC, c.I1, &d.I1P, dpp2a, &d.PP2AI1PC, &d.I1) // 3
+	}
 }
 
-// Step does one step of updating
-// Next has already been initialized to current
-func (cp *PP1Params) Step(c, n *PP1State, pka *PKAState, can *CaNState, pp2a float32) {
-	cp.StepPP1(1, &c.Cyt, &n.Cyt, pka.Cyt.PKAact, can.Cyt.CaNact, pp2a)
-	cp.StepPP1(4, &c.PSD, &n.PSD, pka.PSD.PKAact, can.PSD.CaNact, 0)
+// Step does full CaN updating, c=current, d=delta
+func (cp *PP1Params) Step(c, d *PP1State, pka, dpka *PKAState, can, dcan *CaNState, pp2a float64, dpp2a *float64) {
+	cp.StepPP1(CytVol, &c.Cyt, &d.Cyt, pka.Cyt.PKAact, can.Cyt.CaNact, pp2a, &dpka.Cyt.PKAact, &dcan.Cyt.CaNact, dpp2a)
+	cp.StepPP1(PSDVol, &c.PSD, &d.PSD, pka.PSD.PKAact, can.PSD.CaNact, 0, &dpka.PSD.PKAact, &dcan.PSD.CaNact, nil)
 }

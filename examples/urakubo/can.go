@@ -13,13 +13,23 @@ import (
 // CaN and CaM binding, at different levels of Ca binding
 // stores N values -- Co = Concentration computed by volume as needed
 type CaNVars struct {
-	CaN    float32 `desc:"Calcineurin"`
-	CaNCaM float32 `desc:"CaN-CaM bound"`
+	CaN    float64 `desc:"Calcineurin"`
+	CaNCaM float64 `desc:"CaN-CaM bound"`
 }
 
-func (cs *CaNVars) Init(vol float32) {
+func (cs *CaNVars) Init(vol float64) {
 	cs.CaN = 0
 	cs.CaNCaM = 0
+}
+
+func (cs *CaNVars) Zero() {
+	cs.CaN = 0
+	cs.CaNCaM = 0
+}
+
+func (cs *CaNVars) Integrate(d *CaNVars) {
+	Integrate(&cs.CaN, d.CaN)
+	Integrate(&cs.CaNCaM, d.CaNCaM)
 }
 
 // CaNCaMVars are intracellular Ca-driven signaling states
@@ -27,10 +37,10 @@ func (cs *CaNVars) Init(vol float32) {
 // stores N values -- Co = Concentration computed by volume as needed
 type CaNCaMVars struct {
 	Ca     [3]CaNVars `desc:"increasing levels of Ca binding, 0-2"`
-	CaNact float32    `desc:"active CaN = Ca[2].CaNCaM"`
+	CaNact float64    `desc:"active CaN = Ca[2].CaNCaM"`
 }
 
-func (cs *CaNCaMVars) Init(vol float32) {
+func (cs *CaNCaMVars) Init(vol float64) {
 	for i := range cs.Ca {
 		cs.Ca[i].Init(vol)
 	}
@@ -38,8 +48,22 @@ func (cs *CaNCaMVars) Init(vol float32) {
 	cs.CaNact = 0
 }
 
-func (cs *CaNCaMVars) Log(dt *etable.Table, vol float32, row int, pre string) {
-	dt.SetCellFloat(pre+"CaNact", row, CoFmN64(cs.CaNact, vol))
+func (cs *CaNCaMVars) Zero() {
+	for i := range cs.Ca {
+		cs.Ca[i].Zero()
+	}
+	cs.CaNact = 0
+}
+
+func (cs *CaNCaMVars) Integrate(d *CaNCaMVars) {
+	for i := range cs.Ca {
+		cs.Ca[i].Integrate(&d.Ca[i])
+	}
+	cs.CaNact = cs.Ca[2].CaNCaM
+}
+
+func (cs *CaNCaMVars) Log(dt *etable.Table, vol float64, row int, pre string) {
+	dt.SetCellFloat(pre+"CaNact", row, CoFmN(cs.CaNact, vol))
 }
 
 func (cs *CaNCaMVars) ConfigLog(sch *etable.Schema, pre string) {
@@ -49,13 +73,23 @@ func (cs *CaNCaMVars) ConfigLog(sch *etable.Schema, pre string) {
 // CaNState is overall intracellular Ca-driven signaling states
 // for CaN-CaM binding in Cyt and PSD
 type CaNState struct {
-	Cyt CaNCaMVars `desc:"in cytosol -- volume = 0.08 fl"`
-	PSD CaNCaMVars `desc:"in PSD  -- volume = 0.02 fl"`
+	Cyt CaNCaMVars `desc:"in cytosol -- volume = 0.08 fl = 48"`
+	PSD CaNCaMVars `desc:"in PSD  -- volume = 0.02 fl = 12"`
 }
 
 func (cs *CaNState) Init() {
 	cs.Cyt.Init(CytVol)
 	cs.PSD.Init(PSDVol)
+}
+
+func (cs *CaNState) Zero() {
+	cs.Cyt.Zero()
+	cs.PSD.Zero()
+}
+
+func (cs *CaNState) Integrate(d *CaNState) {
+	cs.Cyt.Integrate(&d.Cyt)
+	cs.PSD.Integrate(&d.PSD)
 }
 
 func (cs *CaNState) Log(dt *etable.Table, row int) {
@@ -77,34 +111,29 @@ type CaNParams struct {
 
 func (cp *CaNParams) Defaults() {
 	// note: following are all in Cyt -- PSD is 4x for first values
-	// Cyt = 1/48 * values listed in Table SIh (0.02083333)
-	cp.CaNCaM.SetSecVol(40, CytVol, 0.04) // 1: 40 μM-1 = 0.83333, PSD = 3.3333
-	cp.CaCaN01.SetSecVol(20, CytVol, 1.0) // 2: 20 μM-1 = 0.41667, PSD = 1.6667
-	cp.CaCaN12.SetSecVol(10, CytVol, 2.0) // 3: 10 μM-1 = 0.20833, PSD = 0.83333
+	// See React docs for more info
+	cp.CaNCaM.SetVol(40, CytVol, 0.04) // 1: 40 μM-1 = 0.83333, PSD = 3.3333
+	cp.CaCaN01.SetVol(20, CytVol, 1.0) // 2: 20 μM-1 = 0.41667, PSD = 1.6667
+	cp.CaCaN12.SetVol(10, CytVol, 2.0) // 3: 10 μM-1 = 0.20833, PSD = 0.83333
 }
 
 // StepCaN does the bulk of Ca + CaN + CaM binding reactions, in a given region
-// kf is an additional forward multiplier, which is 1 for Cyt and 4 for PSD
-// cCaM, nCaM = current, next 3CaCaM from CaMKIIVars
-// cCa, nCa = current next Ca
-func (cp *CaNParams) StepCaN(vol float32, c, n *CaNCaMVars, cCa, cCaM float32, nCa, nCaM *float32) {
-	k := CytVol / vol
+// cCaM, dCaM = current, delta 3CaCaM from CaMKIIVars
+// cCa, dCa = current, delta Ca
+func (cp *CaNParams) StepCaN(vol float64, c, d *CaNCaMVars, cCa, cCaM float64, dCa, dCaM *float64) {
+	kf := CytVol / vol
 	for i := 0; i < 3; i++ {
-		cp.CaNCaM.StepK(k, c.Ca[i].CaN, cCaM, c.Ca[i].CaNCaM, &n.Ca[i].CaN, nCaM, &n.Ca[i].CaNCaM) // 1
+		cp.CaNCaM.StepK(kf, c.Ca[i].CaN, cCaM, c.Ca[i].CaNCaM, &d.Ca[i].CaN, dCaM, &d.Ca[i].CaNCaM) // 1
 	}
-	cp.CaCaN01.StepK(k, c.Ca[0].CaN, cCa, c.Ca[1].CaN, &n.Ca[0].CaN, nCa, &n.Ca[1].CaN)             // 2
-	cp.CaCaN01.StepK(k, c.Ca[0].CaNCaM, cCa, c.Ca[1].CaNCaM, &n.Ca[0].CaNCaM, nCa, &n.Ca[1].CaNCaM) // 2
+	cp.CaCaN01.StepK(kf, c.Ca[0].CaN, cCa, c.Ca[1].CaN, &d.Ca[0].CaN, dCa, &d.Ca[1].CaN)             // 2
+	cp.CaCaN01.StepK(kf, c.Ca[0].CaNCaM, cCa, c.Ca[1].CaNCaM, &d.Ca[0].CaNCaM, dCa, &d.Ca[1].CaNCaM) // 2
 
-	cp.CaCaN12.StepK(k, c.Ca[1].CaN, cCa, c.Ca[2].CaN, &n.Ca[1].CaN, nCa, &n.Ca[2].CaN)             // 3
-	cp.CaCaN12.StepK(k, c.Ca[1].CaNCaM, cCa, c.Ca[2].CaNCaM, &n.Ca[1].CaNCaM, nCa, &n.Ca[2].CaNCaM) // 3
-
-	n.CaNact = n.Ca[2].CaNCaM
+	cp.CaCaN12.StepK(kf, c.Ca[1].CaN, cCa, c.Ca[2].CaN, &d.Ca[1].CaN, dCa, &d.Ca[2].CaN)             // 3
+	cp.CaCaN12.StepK(kf, c.Ca[1].CaNCaM, cCa, c.Ca[2].CaNCaM, &d.Ca[1].CaNCaM, dCa, &d.Ca[2].CaNCaM) // 3
 }
 
-// Step does full CaN updating, c=current, n=next
-// Next has already been initialized to current
-// cCa, nCa = current, next Ca
-func (cp *CaNParams) Step(c, n *CaNState, cCaM, nCaM *CaMKIIState, cCa, nCa *CaState) {
-	cp.StepCaN(CytVol, &c.Cyt, &n.Cyt, cCa.Cyt, cCaM.Cyt.Ca[3].CaM, &nCa.Cyt, &nCaM.Cyt.Ca[3].CaM)
-	cp.StepCaN(PSDVol, &c.PSD, &n.PSD, cCa.PSD, cCaM.PSD.Ca[3].CaM, &nCa.PSD, &nCaM.PSD.Ca[3].CaM)
+// Step does full CaN updating, c=current, d=delta
+func (cp *CaNParams) Step(c, d *CaNState, cCaM, dCaM *CaMKIIState, cCa, dCa *CaState) {
+	cp.StepCaN(CytVol, &c.Cyt, &d.Cyt, cCa.Cyt, cCaM.Cyt.Ca[3].CaM, &dCa.Cyt, &dCaM.Cyt.Ca[3].CaM)
+	cp.StepCaN(PSDVol, &c.PSD, &d.PSD, cCa.PSD, cCaM.PSD.Ca[3].CaM, &dCa.PSD, &dCaM.PSD.Ca[3].CaM)
 }

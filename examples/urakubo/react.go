@@ -4,22 +4,14 @@
 
 package main
 
-// CoToN returns N based on concentration, for given volume:
-// = co * vol
-func CoToN(co, vol float32) float32 {
+// CoToN returns N based on concentration, for given volume: co * vol
+func CoToN(co, vol float64) float64 {
 	return co * vol
 }
 
-// CoFmN returns concentration from N, for given volume:
-// = co / vol
-func CoFmN(n, vol float32) float32 {
+// CoFmN returns concentration from N, for given volume: co / vol
+func CoFmN(n, vol float64) float64 {
 	return n / vol
-}
-
-// CoFmN64 returns concentration from N, for given volume:
-// = co / vol -- as float64
-func CoFmN64(n, vol float32) float64 {
-	return float64(n / vol)
 }
 
 const (
@@ -32,55 +24,65 @@ const (
 // A + B --> AB
 //      <-- Kb
 // where Kf is the forward and Kb is the backward time constant.
-// Time step of integration is msec, so constants are in those units.
-// Use SetSec to set in terms of seconds.
+// The source Kf and Kb constants are in terms of concentrations μM-1 and sec-1
+// but calculations take place using N's, and the forward direction has
+// two factors while reverse only has one, so a corrective volume factor needs
+// to be divided out to set the actual forward factor.
+// This is different for the PSD (smaller) vs. Cyt, so PSD constants are higher
+// by a factor of 4 = CytVol / PSDVol
 type React struct {
-	Kf float32 `desc:"forward rate constant, in μM-1 msec-1"`
-	Kb float32 `desc:"backward rate constant, in μM-1 msec-1"`
+	Kf float64 `desc:"forward rate constant for N / sec assuming 2 forward factors"`
+	Kb float64 `desc:"backward rate constant for N / sec assuming 1 backward factor"`
 }
 
-// SetSecVol sets reaction forward / backward time constants in seconds
-// (converts to milliseconds), divides forward Kf by volume to compensate
-// for 2 volume-based factors occurring in forward component, vs 1 in back
-func (rt *React) SetSecVol(f, vol, b float32) {
-	rt.Kf = CoFmN(f, vol) / 1000
-	rt.Kb = b / 1000
+// SetVol sets reaction forward / backward time constants in seconds,
+// dividing forward Kf by volume to compensate for 2 volume-based concentrations
+// occurring in forward component, vs just 1 in back
+func (rt *React) SetVol(f, vol, b float64) {
+	rt.Kf = CoFmN(f, vol)
+	rt.Kb = b
 }
 
-// SetSec sets reaction forward / backward time constants in seconds
-// (converts to milliseconds),
-func (rt *React) SetSec(f, b float32) {
-	rt.Kf = f / 1000
-	rt.Kb = b / 1000
+// Set sets reaction forward / backward time constants in seconds
+func (rt *React) Set(f, b float64) {
+	rt.Kf = f
+	rt.Kb = b
 }
 
-// Step computes new A, B, AB values based on current A, B, and AB values
-// na, nb, nab can be nil to skip updating
-func (rt *React) Step(ca, cb, cab float32, na, nb, nab *float32) {
-	rt.StepK(1, ca, cb, cab, na, nb, nab)
+// Step computes delta A, B, AB values based on current A, B, and AB values
+func (rt *React) Step(ca, cb, cab float64, da, db, dab *float64) {
+	df := rt.Kf*ca*cb - rt.Kb*cab
+	*dab += df
+	*da -= df
+	*db -= df
 }
 
-// StepK computes new A, B, AB values based on current A, B, and AB values
-// na, nb, nab can be nil to skip updating
-// K version has special rate multiplier for K's
-func (rt *React) StepK(k, ca, cb, cab float32, na, nb, nab *float32) {
-	df := k*rt.Kf*ca*cb - rt.Kb*cab
-	if nab != nil {
-		*nab += df
-		if *nab < 0 {
-			*nab = 0
-		}
-	}
-	if na != nil {
-		*na -= df
-		if *na < 0 {
-			*na = 0
-		}
-	}
-	if nb != nil {
-		*nb -= df
-		if *nb < 0 {
-			*nb = 0
-		}
+// StepK computes delta A, B, AB values based on current A, B, and AB values
+// K version has additional rate multiplier for Kf
+func (rt *React) StepK(kf, ca, cb, cab float64, da, db, dab *float64) {
+	df := kf*rt.Kf*ca*cb - rt.Kb*cab
+	*dab += df
+	*da -= df
+	*db -= df
+}
+
+/////////////////////////////////////////////////////////////
+// Integration
+
+// IntegrationDt is the time step of integration
+// orig uses 5e-5, 2e-4 is barely stable, 5e-4 is not
+// The AC1act dynamics in particular are not stable due to large ATP, AMP numbers
+// todo: experiment with those
+const IntegrationDt = 5e-5
+
+// Integrate adds delta to current value with integration rate constant IntegrationDt
+// new value cannot go below 0
+func Integrate(c *float64, d float64) {
+	// if *c > 1e-10 && d > 1e-10 { // note: exponential Euler requires separate A - B deltas
+	// 	dd := math.Exp()
+	// } else {
+	*c += IntegrationDt * d
+	if *c < 0 {
+		*c = 0
 	}
 }

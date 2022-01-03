@@ -5,54 +5,75 @@
 package main
 
 // Enz models an enzyme-catalyzed reaction based on the Michaelis-Menten kinetics
-// that transforms S = substrate into P product
+// that transforms S = substrate into P product via SE bound C complex
 //       K1     K3
-// S + E --> SE ---> P + E
+// S + E --> C(SE) ---> P + E
 //      <-- K2
-// S = substrate, E = enzyme, P = product
-// Time step of integration is msec, so constants are in those units.
-// Use SetSec to set in terms of seconds.
+// S = substrate, E = enzyme, C = SE complex, P = product
+// The source K constants are in terms of concentrations μM-1 and sec-1
+// but calculations take place using N's, and the forward direction has
+// two factors while reverse only has one, so a corrective volume factor needs
+// to be divided out to set the actual forward factor.
+// This is different for the PSD (smaller) vs. Cyt, so PSD constants are higher
+// by a factor of 4 = CytVol / PSDVol
 type Enz struct {
-	K1 float32 `desc:"S+E forward rate constant, in μM-1 msec-1"`
-	K2 float32 `desc:"SE backward rate constant, in μM-1 msec-1"`
-	K3 float32 `desc:"SE -> P + E catalyzed rate constant, in μM-1 msec-1"`
-	Km float32 `inactive:"+" desc:"Michaelis constant = (K2 + K3) / K1 -- goes into the rate"`
+	K1 float64 `desc:"S+E forward rate constant, in μM-1 msec-1"`
+	K2 float64 `desc:"SE backward rate constant, in μM-1 msec-1"`
+	K3 float64 `desc:"SE -> P + E catalyzed rate constant, in μM-1 msec-1"`
+	Km float64 `inactive:"+" desc:"Michaelis constant = (K2 + K3) / K1 -- goes into the rate"`
 }
 
 func (rt *Enz) Update() {
 	rt.Km = (rt.K2 + rt.K3) / rt.K1
 }
 
-// SetSec sets reaction forward / backward time constants in seconds
-// (converts to milliseconds)
-func (rt *Enz) SetSec(k1, k2, k3 float32) {
-	rt.K1 = k1 / 1000
-	rt.K2 = k2 / 1000
-	rt.K3 = k3 / 1000
+// SetKmVol sets time constants in seconds using Km, K2, K3
+// dividing forward K1 by volume to compensate for 2 volume-based concentrations
+// occurring in forward component (s * e), vs just 1 in back
+func (rt *Enz) SetKmVol(km, vol, k2, k3 float64) {
+	k1 := (k2 + k3) / km
+	rt.K1 = CoFmN(k1, vol)
+	rt.K2 = k2
+	rt.K3 = k3
 	rt.Update()
 }
 
-// Step computes new S, P values based on current S, E, and P values
-// na, nb, nab can be nil to skip updating
-func (rt *Enz) Step(cs, ce, cp float32, ns, np *float32) {
-	rt.StepK(1, cs, ce, cp, ns, np)
+// SetKm sets time constants in seconds using Km, K2, K3
+func (rt *Enz) SetKm(km, k2, k3 float64) {
+	k1 := (k2 + k3) / km
+	rt.K1 = k1
+	rt.K2 = k2
+	rt.K3 = k3
+	rt.Update()
 }
 
-// StepKf computes new S, P values based on current S, E, and P values
-// na, nb, nab can be nil to skip updating
-// K version has special rate multiplier for K
-func (rt *Enz) StepK(k, cs, ce, cp float32, ns, np *float32) {
-	rate := cs * rt.K3 / (cs + (rt.Km / k))
-	if rate < 0 && np != nil && *np < -rate {
-		rate = *np
-	}
-	if ns != nil {
-		if rate > 0 && *ns < rate {
-			rate = *ns
-		}
-		*ns -= rate
-	}
-	if np != nil {
-		*np += rate
-	}
+// Set sets time constants in seconds directly
+func (rt *Enz) Set(k1, k2, k3 float64) {
+	rt.K1 = k1
+	rt.K2 = k2
+	rt.K3 = k3
+	rt.Update()
+}
+
+// Step computes delta values based on current S, E, C, and P values
+func (rt *Enz) Step(cs, ce, cc, cp float64, ds, de, dc, dp *float64) {
+	df := rt.K1 * cs * ce // forward
+	db := rt.K2 * cc      // backward
+	do := rt.K3 * cc      // out to product
+	*dp += do
+	*dc += df - (do + db) // complex = forward - back - output
+	*de += (do + db) - df // e is released with product and backward from complex, consumed by forward
+	*ds -= (df - db)      // substrate = back - forward
+}
+
+// StepK computes delta values based on current S, E, C, and P values
+// K version has additional rate multiplier for Kf = K1
+func (rt *Enz) StepK(kf, cs, ce, cc, cp float64, ds, de, dc, dp *float64) {
+	df := kf * rt.K1 * cs * ce // forward
+	db := rt.K2 * cc           // backward
+	do := rt.K3 * cc           // out to product
+	*dp += do
+	*dc += df - (do + db) // complex = forward - back - output
+	*de += (do + db) - df // e is released with product and backward from complex, consumed by forward
+	*ds -= (df - db)      // substrate = back - forward
 }
