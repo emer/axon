@@ -14,11 +14,6 @@ func CoFmN(n, vol float64) float64 {
 	return n / vol
 }
 
-const (
-	CytVol = 48 // volume of cytosol, in ? units
-	PSDVol = 12 // volume of PSD, in ? units
-)
-
 // React models a basic chemical reaction:
 //       Kf
 // A + B --> AB
@@ -64,6 +59,25 @@ func (rt *React) StepK(kf, ca, cb, cab float64, da, db, dab *float64) {
 	*dab += df
 	*da -= df
 	*db -= df
+}
+
+/////////////////////////////////////////////////////////////
+// Buffer
+
+// Buffer provides a soft buffering driving deltas relative to a target N
+// which can be set by concentration and volume.
+type Buffer struct {
+	K    float64 `desc:"rate of buffering (akin to permeability / conductance of a channel)"`
+	Targ float64 `desc:"buffer target concentration -- drives delta relative to this"`
+}
+
+func (bf *Buffer) SetTargVol(targ, vol float64) {
+	bf.Targ = CoToN(targ, vol)
+}
+
+// Step computes da delta for current value ca relative to target value Targ
+func (bf *Buffer) Step(ca float64, da *float64) {
+	*da += bf.K * (bf.Targ - ca)
 }
 
 /////////////////////////////////////////////////////////////

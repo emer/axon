@@ -52,14 +52,14 @@ func (ps *PP1Vars) Integrate(d *PP1Vars) {
 }
 
 func (ps *PP1Vars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	dt.SetCellFloat(pre+"I1", row, CoFmN(ps.I1, vol))
-	dt.SetCellFloat(pre+"I1P", row, CoFmN(ps.I1P, vol))
+	// dt.SetCellFloat(pre+"I1", row, CoFmN(ps.I1, vol))
+	// dt.SetCellFloat(pre+"I1P", row, CoFmN(ps.I1P, vol))
 	dt.SetCellFloat(pre+"PP1act", row, CoFmN(ps.PP1act, vol))
 }
 
 func (ps *PP1Vars) ConfigLog(sch *etable.Schema, pre string) {
-	*sch = append(*sch, etable.Column{pre + "I1", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "I1P", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "I1", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "I1P", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "PP1act", etensor.FLOAT64, nil, nil})
 }
 

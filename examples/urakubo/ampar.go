@@ -249,10 +249,10 @@ func (ap *AMPARParams) Defaults() {
 // Step does full AMPAR updating, c=current, n=next
 // based on current Ca signaling state
 func (ap *AMPARParams) Step(c, d *AMPARState, cas *CaSigState, pp2a float64) {
-	ap.Phos.StepP(&c.Cyt, &d.Cyt, cas.CaMKII.Cyt.CaMKIIact, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
-	ap.Phos.StepP(&c.Int, &d.Int, cas.CaMKII.Cyt.CaMKIIact, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
-	ap.Phos.StepP(&c.Trp, &d.Trp, cas.CaMKII.PSD.CaMKIIact, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
-	ap.Phos.StepP(&c.PSD, &d.PSD, cas.CaMKII.PSD.CaMKIIact, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
+	ap.Phos.StepP(&c.Cyt, &d.Cyt, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Int, &d.Int, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Trp, &d.Trp, cas.CaMKII.PSD.Active, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
+	ap.Phos.StepP(&c.PSD, &d.PSD, cas.CaMKII.PSD.Active, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
 
 	ap.Phos.StepPP2A(&c.Cyt, &d.Cyt, pp2a) // Cyt only
 

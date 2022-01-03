@@ -8,7 +8,11 @@ import (
 	"fmt"
 
 	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
+)
+
+const (
+	CytVol = 48 // volume of cytosol, in essentially arbitrary units
+	PSDVol = 12 // volume of PSD
 )
 
 // The Stater interface defines the functions implemented for State
@@ -41,37 +45,6 @@ type Paramer interface {
 
 	// Step computes deltas d based on current values c
 	Step(c, d Paramer)
-}
-
-// CaState records the Ca levels
-type CaState struct {
-	Cyt float64 `desc:"in cytosol"`
-	PSD float64 `desc:"in PSD"`
-}
-
-func (cs *CaState) Init() {
-	cs.Cyt = CoToN(0.05, CytVol)
-	cs.PSD = CoToN(0.05, PSDVol)
-}
-
-func (cs *CaState) Zero() {
-	cs.Cyt = 0
-	cs.PSD = 0
-}
-
-func (cs *CaState) Integrate(d *CaState) {
-	Integrate(&cs.Cyt, d.Cyt)
-	Integrate(&cs.PSD, d.PSD)
-}
-
-func (cs *CaState) Log(dt *etable.Table, row int) {
-	dt.SetCellFloat("Cyt_Ca", row, CoFmN(cs.Cyt, CytVol))
-	dt.SetCellFloat("PSD_Ca", row, CoFmN(cs.PSD, PSDVol))
-}
-
-func (cs *CaState) ConfigLog(sch *etable.Schema) {
-	*sch = append(*sch, etable.Column{"Cyt_Ca", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{"PSD_Ca", etensor.FLOAT64, nil, nil})
 }
 
 // CaSigState is entire intracellular Ca-driven signaling state
@@ -161,6 +134,7 @@ func (ss *SpineState) ConfigLog(sch *etable.Schema) {
 // Spine represents all of the state and parameters of the Spine
 // involved in LTP / LTD
 type Spine struct {
+	CaBuf  CaBufParams  `desc:"Ca buffering parameters"`
 	CaMKII CaMKIIParams `desc:"CaMKII parameters"`
 	CaN    CaNParams    `desc:"CaN calcineurin parameters"`
 	PKA    PKAParams    `desc:"PKA = protein kinase A parameters"`
@@ -172,6 +146,7 @@ type Spine struct {
 }
 
 func (sp *Spine) Defaults() {
+	sp.CaBuf.Defaults()
 	sp.CaMKII.Defaults()
 	sp.CaN.Defaults()
 	sp.PKA.Defaults()
@@ -199,6 +174,7 @@ func (sp *Spine) Step() {
 	sp.PKA.Step(&sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII)
 	sp.PP1.Step(&sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, &sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, sp.States.CaSig.PP2A, &sp.Deltas.CaSig.PP2A)
 	// sp.AMPAR.Step(&sp.States.AMPAR, &sp.Deltas.AMPAR, &sp.States.CaSig, sp.States.CaSig.PP2A)
+	sp.CaBuf.Step(&sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
 }
 
 // Integrate integrates the deltas

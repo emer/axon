@@ -103,15 +103,15 @@ func (ps *PKAVars) Integrate(d *PKAVars) {
 
 func (ps *PKAVars) Log(dt *etable.Table, vol float64, row int, pre string) {
 	dt.SetCellFloat(pre+"AC1act", row, CoFmN(ps.AC1act, vol))
-	dt.SetCellFloat(pre+"cAMP", row, CoFmN(ps.CAMP, vol))
-	dt.SetCellFloat(pre+"R2C2_ABB", row, CoFmN(ps.R2C2_ABB, vol))
+	// dt.SetCellFloat(pre+"cAMP", row, CoFmN(ps.CAMP, vol))
+	// dt.SetCellFloat(pre+"R2C2_ABB", row, CoFmN(ps.R2C2_ABB, vol))
 	dt.SetCellFloat(pre+"PKAact", row, CoFmN(ps.PKAact, vol))
 }
 
 func (ps *PKAVars) ConfigLog(sch *etable.Schema, pre string) {
 	*sch = append(*sch, etable.Column{pre + "AC1act", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "cAMP", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "R2C2_ABB", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "cAMP", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "R2C2_ABB", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "PKAact", etensor.FLOAT64, nil, nil})
 }
 

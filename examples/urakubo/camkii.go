@@ -48,9 +48,9 @@ type CaMKIIVars struct {
 	PP1Thr286C  float64    `desc:"PP1+CaMKIIP complex for PP1Thr286 enzyme reaction"`
 	PP2AThr286C float64    `desc:"PP2A+CaMKIIP complex for PP2AThr286 enzyme reaction"`
 
-	CaMKIIact float64 `inactive:"+" desc:"computed total active CaMKII: .75 * Ca[1..3]CaM_CaMKII + 1 * Ca[3]CaM_CaMKIIP + .8 * Ca[1..2]CaM_CaMKIIP"`
-	CaMKIItot float64 `inactive:"+" desc:"computed total CaMKII across all states"`
-	ActPct    float64 `inactive:"+" desc:"computed proportion of active: CaMKIIact / Total CaMKII (constant?)"`
+	Active float64 `inactive:"+" desc:"computed total active CaMKII"`
+	Total  float64 `inactive:"+" desc:"computed total CaMKII across all states"`
+	Kauto  float64 `inactive:"+" desc:"rate constant for auto-phosphorylation"`
 }
 
 func (cs *CaMKIIVars) Init(vol float64) {
@@ -62,8 +62,7 @@ func (cs *CaMKIIVars) Init(vol float64) {
 	cs.CaMKIIP = 0 // WA
 	cs.PP1Thr286C = 0
 	cs.PP2AThr286C = 0
-	cs.Ca[0].CaM_CaMKII = CoToN(3, vol) // calling this WB
-	cs.Active()
+	cs.UpdtActive()
 }
 
 func (cs *CaMKIIVars) Zero() {
@@ -74,9 +73,9 @@ func (cs *CaMKIIVars) Zero() {
 	cs.CaMKIIP = 0
 	cs.PP1Thr286C = 0
 	cs.PP2AThr286C = 0
-	cs.CaMKIIact = 0
-	cs.CaMKIItot = 0
-	cs.ActPct = 0
+	cs.Active = 0
+	cs.Total = 0
+	cs.Kauto = 0
 }
 
 func (cs *CaMKIIVars) Integrate(d *CaMKIIVars) {
@@ -87,42 +86,69 @@ func (cs *CaMKIIVars) Integrate(d *CaMKIIVars) {
 	Integrate(&cs.CaMKIIP, d.CaMKIIP)
 	Integrate(&cs.PP1Thr286C, d.PP1Thr286C)
 	Integrate(&cs.PP2AThr286C, d.PP2AThr286C)
-	cs.Active()
+	cs.UpdtActive()
 }
 
-// Active updates active total and pct
-func (cs *CaMKIIVars) Active() {
-	var act float64
+// UpdtActive updates active, total, and the Kauto auto-phosphorylation rate constant
+// Code is from genesis_customizing/T286Phos/T286Phos.c and would be impossible to
+// reconstruct without that source (my first guess was wildy off, based only on
+// the supplement)
+func (cs *CaMKIIVars) UpdtActive() {
+	WI := cs.CaMKII
+	WA := cs.CaMKIIP
 
-	tot := cs.CaMKII + cs.CaMKIIP
-	for i := 0; i < 4; i++ {
-		tot += cs.Ca[i].CaM_CaMKII + cs.Ca[i].CaM_CaMKIIP
-		if i >= 1 && i < 3 {
-			act += 0.75*cs.Ca[i].CaM_CaMKII + 0.8*cs.Ca[i].CaM_CaMKII
-		} else if i == 3 {
-			act += 0.75*cs.Ca[i].CaM_CaMKII + cs.Ca[i].CaM_CaMKII
-		}
+	var WB, WT float64
+
+	for i := 0; i < 3; i++ {
+		WB += cs.Ca[i].CaM_CaMKII
+		WT += cs.Ca[i].CaM_CaMKIIP
 	}
-	cs.CaMKIIact = act
-	cs.CaMKIItot = tot
-	if tot > 0 {
-		cs.ActPct = act / tot
-	} else {
-		cs.ActPct = 0
+	WB += cs.Ca[3].CaM_CaMKII
+	WP := cs.Ca[3].CaM_CaMKIIP
+
+	TotalW := WI + WB + WP + WT + WA
+	Wb := WB / TotalW
+	Wp := WP / TotalW
+	Wt := WT / TotalW
+	Wa := WA / TotalW
+	cb := 0.75
+	ct := 0.8
+	ca := 0.8
+
+	T := Wb + Wp + Wt + Wa
+	tmp := T * (-0.22 + 1.826*T + -0.8*T*T)
+	tmp *= 0.75 * (cb*Wb + Wp + ct*Wt + ca*Wa)
+	if tmp < 0 {
+		tmp = 0
 	}
+	cs.Kauto = 0.29 * tmp
+	cs.Active = cb*WB + WP + ct*WT + ca*WA
+	cs.Total = T
 }
 
 func (cs *CaMKIIVars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	dt.SetCellFloat(pre+"CaM", row, CoFmN(cs.Ca[0].CaM, vol))
-	dt.SetCellFloat(pre+"CaCaM", row, CoFmN(cs.Ca[1].CaM, vol))
+	// dt.SetCellFloat(pre+"CaM", row, CoFmN(cs.Ca[0].CaM, vol))
+	// dt.SetCellFloat(pre+"CaCaM", row, CoFmN(cs.Ca[1].CaM, vol))
 	dt.SetCellFloat(pre+"Ca3CaM", row, CoFmN(cs.Ca[3].CaM, vol))
-	dt.SetCellFloat(pre+"CaMKIIact", row, CoFmN(cs.CaMKIIact, vol))
+	// dt.SetCellFloat(pre+"Ca0CaM_CaMKII", row, CoFmN(cs.Ca[0].CaM_CaMKII, vol))
+	// dt.SetCellFloat(pre+"Ca1CaM_CaMKII", row, CoFmN(cs.Ca[1].CaM_CaMKII, vol))
+	// dt.SetCellFloat(pre+"Ca0CaM_CaMKIIP", row, CoFmN(cs.Ca[0].CaM_CaMKIIP, vol))
+	// dt.SetCellFloat(pre+"Ca1CaM_CaMKIIP", row, CoFmN(cs.Ca[1].CaM_CaMKIIP, vol))
+	// dt.SetCellFloat(pre+"CaMKII", row, CoFmN(cs.CaMKII, vol))
+	// dt.SetCellFloat(pre+"CaMKIIP", row, CoFmN(cs.CaMKIIP, vol))
+	dt.SetCellFloat(pre+"CaMKIIact", row, CoFmN(cs.Active, vol))
 }
 
 func (cs *CaMKIIVars) ConfigLog(sch *etable.Schema, pre string) {
-	*sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "CaCaM", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "CaCaM", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Ca3CaM", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "Ca0CaM_CaMKII", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "Ca1CaM_CaMKII", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "Ca0CaM_CaMKIIP", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "Ca1CaM_CaMKIIP", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "CaMKII", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "CaMKIIP", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "CaMKIIact", etensor.FLOAT64, nil, nil})
 }
 
@@ -189,15 +215,6 @@ func (cp *CaMKIIParams) Defaults() {
 	cp.PP2AThr286.SetKmVol(11, CytVol, 1.34, 0.335) // 11: 11 μM Km = 0.0031724
 }
 
-// StepCaMKIIP is the special CaMKII phosphorylation function from Dupont et al, 2003
-func (cp *CaMKIIParams) StepCaMKIIP(c, t float64, d *float64) {
-	fact := t * (-0.22 + 1.826*t + 0.8*t*t)
-	if fact < 0 {
-		return
-	}
-	*d += 0.00029 * fact * c
-}
-
 // StepCaMKII does the bulk of Ca + CaM + CaMKII binding reactions, in a given region
 // cCa, nCa = current next Ca
 func (cp *CaMKIIParams) StepCaMKII(vol float64, c, d *CaMKIIVars, cCa, pp1, pp2a float64, dCa, dpp1, dpp2a *float64) {
@@ -229,7 +246,7 @@ func (cp *CaMKIIParams) StepCaMKII(vol float64, c, d *CaMKIIVars, cCa, pp1, pp2a
 	for i := 0; i < 4; i++ {
 		cc := &c.Ca[i]
 		dc := &d.Ca[i]
-		cp.StepCaMKIIP(cc.CaM_CaMKII, c.ActPct, &dc.CaM_CaMKIIP) // 7
+		dc.CaM_CaMKIIP += c.Kauto * cc.CaM_CaMKII // forward only autophos
 		// cs, ce, cc, cp -> ds, de, dc, dp
 		cp.PP1Thr286.StepK(kf, cc.CaM_CaMKIIP, pp1, c.PP1Thr286C, cc.CaM_CaMKII, &dc.CaM_CaMKIIP, dpp1, &d.PP1Thr286C, &dc.CaM_CaMKII) // 10
 		if dpp2a != nil {
