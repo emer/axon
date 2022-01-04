@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 )
@@ -32,9 +33,9 @@ func (cs *CaMVars) Zero() {
 }
 
 func (cs *CaMVars) Integrate(d *CaMVars) {
-	Integrate(&cs.CaM, d.CaM)
-	Integrate(&cs.CaM_CaMKII, d.CaM_CaMKII)
-	Integrate(&cs.CaM_CaMKIIP, d.CaM_CaMKIIP)
+	chem.Integrate(&cs.CaM, d.CaM)
+	chem.Integrate(&cs.CaM_CaMKII, d.CaM_CaMKII)
+	chem.Integrate(&cs.CaM_CaMKIIP, d.CaM_CaMKIIP)
 }
 
 // CaMKIIVars are intracellular Ca-driven signaling states
@@ -57,8 +58,8 @@ func (cs *CaMKIIVars) Init(vol float64) {
 	for i := range cs.Ca {
 		cs.Ca[i].Init(vol)
 	}
-	cs.Ca[0].CaM = CoToN(80, vol)
-	cs.CaMKII = CoToN(20, vol)
+	cs.Ca[0].CaM = chem.CoToN(80, vol)
+	cs.CaMKII = chem.CoToN(20, vol)
 	cs.CaMKIIP = 0 // WA
 	cs.PP1Thr286C = 0
 	cs.PP2AThr286C = 0
@@ -82,10 +83,10 @@ func (cs *CaMKIIVars) Integrate(d *CaMKIIVars) {
 	for i := range cs.Ca {
 		cs.Ca[i].Integrate(&d.Ca[i])
 	}
-	Integrate(&cs.CaMKII, d.CaMKII)
-	Integrate(&cs.CaMKIIP, d.CaMKIIP)
-	Integrate(&cs.PP1Thr286C, d.PP1Thr286C)
-	Integrate(&cs.PP2AThr286C, d.PP2AThr286C)
+	chem.Integrate(&cs.CaMKII, d.CaMKII)
+	chem.Integrate(&cs.CaMKIIP, d.CaMKIIP)
+	chem.Integrate(&cs.PP1Thr286C, d.PP1Thr286C)
+	chem.Integrate(&cs.PP2AThr286C, d.PP2AThr286C)
 	cs.UpdtActive()
 }
 
@@ -127,16 +128,16 @@ func (cs *CaMKIIVars) UpdtActive() {
 }
 
 func (cs *CaMKIIVars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	// dt.SetCellFloat(pre+"CaM", row, CoFmN(cs.Ca[0].CaM, vol))
-	// dt.SetCellFloat(pre+"CaCaM", row, CoFmN(cs.Ca[1].CaM, vol))
-	dt.SetCellFloat(pre+"Ca3CaM", row, CoFmN(cs.Ca[3].CaM, vol))
-	// dt.SetCellFloat(pre+"Ca0CaM_CaMKII", row, CoFmN(cs.Ca[0].CaM_CaMKII, vol))
-	// dt.SetCellFloat(pre+"Ca1CaM_CaMKII", row, CoFmN(cs.Ca[1].CaM_CaMKII, vol))
-	// dt.SetCellFloat(pre+"Ca0CaM_CaMKIIP", row, CoFmN(cs.Ca[0].CaM_CaMKIIP, vol))
-	// dt.SetCellFloat(pre+"Ca1CaM_CaMKIIP", row, CoFmN(cs.Ca[1].CaM_CaMKIIP, vol))
-	// dt.SetCellFloat(pre+"CaMKII", row, CoFmN(cs.CaMKII, vol))
-	// dt.SetCellFloat(pre+"CaMKIIP", row, CoFmN(cs.CaMKIIP, vol))
-	dt.SetCellFloat(pre+"CaMKIIact", row, CoFmN(cs.Active, vol))
+	// dt.SetCellFloat(pre+"CaM", row, chem.CoFmN(cs.Ca[0].CaM, vol))
+	// dt.SetCellFloat(pre+"CaCaM", row, chem.CoFmN(cs.Ca[1].CaM, vol))
+	dt.SetCellFloat(pre+"Ca3CaM", row, chem.CoFmN(cs.Ca[3].CaM, vol))
+	// dt.SetCellFloat(pre+"Ca0CaM_CaMKII", row, chem.CoFmN(cs.Ca[0].CaM_CaMKII, vol))
+	// dt.SetCellFloat(pre+"Ca1CaM_CaMKII", row, chem.CoFmN(cs.Ca[1].CaM_CaMKII, vol))
+	// dt.SetCellFloat(pre+"Ca0CaM_CaMKIIP", row, chem.CoFmN(cs.Ca[0].CaM_CaMKIIP, vol))
+	// dt.SetCellFloat(pre+"Ca1CaM_CaMKIIP", row, chem.CoFmN(cs.Ca[1].CaM_CaMKIIP, vol))
+	// dt.SetCellFloat(pre+"CaMKII", row, chem.CoFmN(cs.CaMKII, vol))
+	// dt.SetCellFloat(pre+"CaMKIIP", row, chem.CoFmN(cs.CaMKIIP, vol))
+	dt.SetCellFloat(pre+"CaMKIIact", row, chem.CoFmN(cs.Active, vol))
 }
 
 func (cs *CaMKIIVars) ConfigLog(sch *etable.Schema, pre string) {
@@ -154,6 +155,7 @@ func (cs *CaMKIIVars) ConfigLog(sch *etable.Schema, pre string) {
 
 // CaMKIIState is overall intracellular Ca-driven signaling states
 // for CaMKII in Cyt and PSD
+// 32 state vars total
 type CaMKIIState struct {
 	Cyt CaMKIIVars `desc:"in cytosol -- volume = 0.08 fl = 48"`
 	PSD CaMKIIVars `desc:"in PSD -- volume = 0.02 fl = 12"`
@@ -186,16 +188,16 @@ func (cs *CaMKIIState) ConfigLog(sch *etable.Schema) {
 
 // CaMKIIParams are the parameters governing the Ca+CaM binding
 type CaMKIIParams struct {
-	CaCaM01        React `desc:"1: Ca+CaM -> 1CaCaM = CaM-bind-Ca"`
-	CaCaM12        React `desc:"2: Ca+1CaM -> 2CaCaM = CaMCa-bind-Ca"`
-	CaCaM23        React `desc:"3: Ca+2CaM -> 3CaCaM = CaMCa2-bind-Ca"`
-	CaMCaMKII      React `desc:"4: CaM+CaMKII -> CaM-CaMKII [0-2] -- kIB_kBI_[0-2] -- WI = plain CaMKII, WBn = CaM bound"`
-	CaMCaMKII3     React `desc:"5: 3CaCaM+CaMKII -> 3CaCaM-CaMKII = kIB_kBI_3"`
-	CaCaM23_CaMKII React `desc:"6: Ca+2CaCaM-CaMKII -> 3CaCaM-CaMKII = CaMCa2-bind-Ca"`
-	CaCaM_CaMKIIP  React `desc:"8: Ca+nCaCaM-CaMKIIP -> n+1CaCaM-CaMKIIP = kTP_PT_*"`
-	CaMCaMKIIP     React `desc:"9: CaM+CaMKIIP -> CaM-CaMKIIP = kAT_kTA"` // note: typo in SI3 for top PP1, PP2A
-	PP1Thr286      Enz   `desc:"10: PP1 dephosphorylating CaMKIIP"`
-	PP2AThr286     Enz   `desc:"11: PP2A dephosphorylating CaMKIIP"`
+	CaCaM01        chem.React `desc:"1: Ca+CaM -> 1CaCaM = CaM-bind-Ca"`
+	CaCaM12        chem.React `desc:"2: Ca+1CaM -> 2CaCaM = CaMCa-bind-Ca"`
+	CaCaM23        chem.React `desc:"3: Ca+2CaM -> 3CaCaM = CaMCa2-bind-Ca"`
+	CaMCaMKII      chem.React `desc:"4: CaM+CaMKII -> CaM-CaMKII [0-2] -- kIB_kBI_[0-2] -- WI = plain CaMKII, WBn = CaM bound"`
+	CaMCaMKII3     chem.React `desc:"5: 3CaCaM+CaMKII -> 3CaCaM-CaMKII = kIB_kBI_3"`
+	CaCaM23_CaMKII chem.React `desc:"6: Ca+2CaCaM-CaMKII -> 3CaCaM-CaMKII = CaMCa2-bind-Ca"`
+	CaCaM_CaMKIIP  chem.React `desc:"8: Ca+nCaCaM-CaMKIIP -> n+1CaCaM-CaMKIIP = kTP_PT_*"`
+	CaMCaMKIIP     chem.React `desc:"9: CaM+CaMKIIP -> CaM-CaMKIIP = kAT_kTA"` // note: typo in SI3 for top PP1, PP2A
+	PP1Thr286      chem.Enz   `desc:"10: PP1 dephosphorylating CaMKIIP"`
+	PP2AThr286     chem.Enz   `desc:"11: PP2A dephosphorylating CaMKIIP"`
 }
 
 func (cp *CaMKIIParams) Defaults() {

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 )
@@ -35,14 +36,14 @@ type PKAVars struct {
 }
 
 func (ps *PKAVars) Init(vol float64) {
-	ps.AC1 = CoToN(2, vol)
+	ps.AC1 = chem.CoToN(2, vol)
 	ps.AC1act = 0
-	ps.PDEact = CoToN(1, vol)  // buffered!
-	ps.ATP = CoToN(10000, vol) // buffered! -- note: large #'s here contribute significantly to instability
+	ps.PDEact = chem.CoToN(1, vol)  // buffered!
+	ps.ATP = chem.CoToN(10000, vol) // buffered! -- note: large #'s here contribute significantly to instability
 	// todo: experiment with significantly smaller #'s
 	ps.CAMP = 0
-	ps.AMP = CoToN(1000, vol) // buffered!
-	ps.R2C2 = CoToN(2, vol)
+	ps.AMP = chem.CoToN(1000, vol) // buffered!
+	ps.R2C2 = chem.CoToN(2, vol)
 	ps.R2C2_B = 0
 	ps.R2C2_BB = 0
 	ps.R2C2_AB = 0
@@ -52,7 +53,7 @@ func (ps *PKAVars) Init(vol float64) {
 	ps.R2C_4 = 0
 	ps.R2_3 = 0
 	ps.R2_4 = 0
-	ps.PKAact = CoToN(0.05, vol)
+	ps.PKAact = chem.CoToN(0.05, vol)
 	ps.AC1ATPC = 0
 	ps.PDEcAMPC = 0
 }
@@ -80,32 +81,32 @@ func (ps *PKAVars) Zero() {
 }
 
 func (ps *PKAVars) Integrate(d *PKAVars) {
-	Integrate(&ps.AC1, d.AC1)
-	Integrate(&ps.AC1act, d.AC1act)
+	chem.Integrate(&ps.AC1, d.AC1)
+	chem.Integrate(&ps.AC1act, d.AC1act)
 	// PDEact buffered
 	// ATP buffered
-	Integrate(&ps.CAMP, d.CAMP)
+	chem.Integrate(&ps.CAMP, d.CAMP)
 	// AMP buffered
-	Integrate(&ps.R2C2, d.R2C2)
-	Integrate(&ps.R2C2_B, d.R2C2_B)
-	Integrate(&ps.R2C2_BB, d.R2C2_BB)
-	Integrate(&ps.R2C2_AB, d.R2C2_AB)
-	Integrate(&ps.R2C2_ABB, d.R2C2_ABB)
-	Integrate(&ps.R2C2_4, d.R2C2_4)
-	Integrate(&ps.R2C_3, d.R2C_3)
-	Integrate(&ps.R2C_4, d.R2C_4)
-	Integrate(&ps.R2_3, d.R2_3)
-	Integrate(&ps.R2_4, d.R2_4)
-	Integrate(&ps.PKAact, d.PKAact)
-	Integrate(&ps.AC1ATPC, d.AC1ATPC)
-	Integrate(&ps.PDEcAMPC, d.PDEcAMPC)
+	chem.Integrate(&ps.R2C2, d.R2C2)
+	chem.Integrate(&ps.R2C2_B, d.R2C2_B)
+	chem.Integrate(&ps.R2C2_BB, d.R2C2_BB)
+	chem.Integrate(&ps.R2C2_AB, d.R2C2_AB)
+	chem.Integrate(&ps.R2C2_ABB, d.R2C2_ABB)
+	chem.Integrate(&ps.R2C2_4, d.R2C2_4)
+	chem.Integrate(&ps.R2C_3, d.R2C_3)
+	chem.Integrate(&ps.R2C_4, d.R2C_4)
+	chem.Integrate(&ps.R2_3, d.R2_3)
+	chem.Integrate(&ps.R2_4, d.R2_4)
+	chem.Integrate(&ps.PKAact, d.PKAact)
+	chem.Integrate(&ps.AC1ATPC, d.AC1ATPC)
+	chem.Integrate(&ps.PDEcAMPC, d.PDEcAMPC)
 }
 
 func (ps *PKAVars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	dt.SetCellFloat(pre+"AC1act", row, CoFmN(ps.AC1act, vol))
-	// dt.SetCellFloat(pre+"cAMP", row, CoFmN(ps.CAMP, vol))
-	// dt.SetCellFloat(pre+"R2C2_ABB", row, CoFmN(ps.R2C2_ABB, vol))
-	dt.SetCellFloat(pre+"PKAact", row, CoFmN(ps.PKAact, vol))
+	dt.SetCellFloat(pre+"AC1act", row, chem.CoFmN(ps.AC1act, vol))
+	// dt.SetCellFloat(pre+"cAMP", row, chem.CoFmN(ps.CAMP, vol))
+	// dt.SetCellFloat(pre+"R2C2_ABB", row, chem.CoFmN(ps.R2C2_ABB, vol))
+	dt.SetCellFloat(pre+"PKAact", row, chem.CoFmN(ps.PKAact, vol))
 }
 
 func (ps *PKAVars) ConfigLog(sch *etable.Schema, pre string) {
@@ -117,6 +118,7 @@ func (ps *PKAVars) ConfigLog(sch *etable.Schema, pre string) {
 
 // PKAState is overall intracellular Ca-driven signaling states
 // for PKA binding and phosphorylation with cAMP
+// 32 state vars total
 type PKAState struct {
 	Cyt PKAVars `desc:"in cytosol -- volume = 0.08 fl = 48"`
 	PSD PKAVars `desc:"in PSD -- volume = 0.02 fl = 12"`
@@ -150,22 +152,22 @@ func (ps *PKAState) ConfigLog(sch *etable.Schema) {
 // PKAParams are the parameters governing the
 // PKA binding and phosphorylation with cAMP
 type PKAParams struct {
-	CaMAC1  React `desc:"1: 3Ca-CaM + AC1 -> AC1act"`
-	ATPcAMP React `desc:"2: basal activity of ATP -> cAMP without AC1 enzyme"`
-	R2C2_B  React `desc:"3: R2C2 + cAMP = cAMP-bind-site-B"`
-	R2C2_B1 React `desc:"4: R2C2-cAMP B + cAMP -> BB = cAMP-bind-site-B[1]"`
-	R2C2_A1 React `desc:"5: R2C2-cAMP B + cAMP -> AB = cAMP-bind-site-A[1]"`
-	R2C2_A2 React `desc:"6: R2C2-cAMP BB + cAMP -> ABB = cAMP-bind-site-A[2]"`
-	R2C2_B2 React `desc:"7: R2C2-cAMP AB + cAMP -> ABB = cAMP-bind-site-B[2]"`
-	R2C2_A  React `desc:"8: R2C2-cAMP ABB + cAMP -> 4 = cAMP-bind-site-A"`
-	R2C_A3  React `desc:"9: R2C-3cAMP -> R2C-4cAMP = cAMP-bind-site-A[3]"`
-	R2_A4   React `desc:"10: R2-3cAMP -> R2-4cAMP = cAMP-bind-site-A[4]"`
-	R2C_3   React `desc:"11: R2C-3cAMP + PKAact -> R2C2-3cAMP ABB (backwards) = Release-C1[1] -- Fig SI4 R2-3 -> R2C-3"`
-	R2C_4   React `desc:"12: R2C-4cAMP + PKAact -> R2C2-4cAMP (backwards) = Release-C1"`
-	R2_3    React `desc:"13: R2-3cAMP + PKAact -> R2C-3cAMP (backwards) = Release-C2[1]"`
-	R2_4    React `desc:"14: R2-4cAMP + PKAact -> R2C-4cAMP (backwards) = Release-C2"`
-	AC1ATP  Enz   `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15"`
-	PDEcAMP Enz   `desc:"16: PDE1act catalyzing cAMP -> AMP -- table SIg numbered 10 -> 16"`
+	CaMAC1  chem.React `desc:"1: 3Ca-CaM + AC1 -> AC1act"`
+	ATPcAMP chem.React `desc:"2: basal activity of ATP -> cAMP without AC1 enzyme"`
+	R2C2_B  chem.React `desc:"3: R2C2 + cAMP = cAMP-bind-site-B"`
+	R2C2_B1 chem.React `desc:"4: R2C2-cAMP B + cAMP -> BB = cAMP-bind-site-B[1]"`
+	R2C2_A1 chem.React `desc:"5: R2C2-cAMP B + cAMP -> AB = cAMP-bind-site-A[1]"`
+	R2C2_A2 chem.React `desc:"6: R2C2-cAMP BB + cAMP -> ABB = cAMP-bind-site-A[2]"`
+	R2C2_B2 chem.React `desc:"7: R2C2-cAMP AB + cAMP -> ABB = cAMP-bind-site-B[2]"`
+	R2C2_A  chem.React `desc:"8: R2C2-cAMP ABB + cAMP -> 4 = cAMP-bind-site-A"`
+	R2C_A3  chem.React `desc:"9: R2C-3cAMP -> R2C-4cAMP = cAMP-bind-site-A[3]"`
+	R2_A4   chem.React `desc:"10: R2-3cAMP -> R2-4cAMP = cAMP-bind-site-A[4]"`
+	R2C_3   chem.React `desc:"11: R2C-3cAMP + PKAact -> R2C2-3cAMP ABB (backwards) = Release-C1[1] -- Fig SI4 R2-3 -> R2C-3"`
+	R2C_4   chem.React `desc:"12: R2C-4cAMP + PKAact -> R2C2-4cAMP (backwards) = Release-C1"`
+	R2_3    chem.React `desc:"13: R2-3cAMP + PKAact -> R2C-3cAMP (backwards) = Release-C2[1]"`
+	R2_4    chem.React `desc:"14: R2-4cAMP + PKAact -> R2C-4cAMP (backwards) = Release-C2"`
+	AC1ATP  chem.Enz   `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15"`
+	PDEcAMP chem.Enz   `desc:"16: PDE1act catalyzing cAMP -> AMP -- table SIg numbered 10 -> 16"`
 }
 
 func (cp *PKAParams) Defaults() {

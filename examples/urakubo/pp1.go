@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 )
@@ -22,9 +23,9 @@ type PP1Vars struct {
 }
 
 func (ps *PP1Vars) Init(vol float64) {
-	ps.I1 = CoToN(2, vol)
+	ps.I1 = chem.CoToN(2, vol)
 	ps.I1P = 0
-	ps.PP1_I1P = CoToN(2, vol)
+	ps.PP1_I1P = chem.CoToN(2, vol)
 	ps.PP1act = 0
 	ps.PKAI1C = 0
 	ps.CaNI1PC = 0
@@ -42,19 +43,19 @@ func (ps *PP1Vars) Zero() {
 }
 
 func (ps *PP1Vars) Integrate(d *PP1Vars) {
-	Integrate(&ps.I1, d.I1)
-	Integrate(&ps.I1P, d.I1P)
-	Integrate(&ps.PP1_I1P, d.PP1_I1P)
-	Integrate(&ps.PP1act, d.PP1act)
-	Integrate(&ps.PKAI1C, d.PKAI1C)
-	Integrate(&ps.CaNI1PC, d.CaNI1PC)
-	Integrate(&ps.PP2AI1PC, d.PP2AI1PC)
+	chem.Integrate(&ps.I1, d.I1)
+	chem.Integrate(&ps.I1P, d.I1P)
+	chem.Integrate(&ps.PP1_I1P, d.PP1_I1P)
+	chem.Integrate(&ps.PP1act, d.PP1act)
+	chem.Integrate(&ps.PKAI1C, d.PKAI1C)
+	chem.Integrate(&ps.CaNI1PC, d.CaNI1PC)
+	chem.Integrate(&ps.PP2AI1PC, d.PP2AI1PC)
 }
 
 func (ps *PP1Vars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	// dt.SetCellFloat(pre+"I1", row, CoFmN(ps.I1, vol))
-	// dt.SetCellFloat(pre+"I1P", row, CoFmN(ps.I1P, vol))
-	dt.SetCellFloat(pre+"PP1act", row, CoFmN(ps.PP1act, vol))
+	// dt.SetCellFloat(pre+"I1", row, chem.CoFmN(ps.I1, vol))
+	// dt.SetCellFloat(pre+"I1P", row, chem.CoFmN(ps.I1P, vol))
+	dt.SetCellFloat(pre+"PP1act", row, chem.CoFmN(ps.PP1act, vol))
 }
 
 func (ps *PP1Vars) ConfigLog(sch *etable.Schema, pre string) {
@@ -65,6 +66,7 @@ func (ps *PP1Vars) ConfigLog(sch *etable.Schema, pre string) {
 
 // PP1State is overall intracellular Ca-driven signaling states
 // for PP1-I-1 in Cyt and PSD
+// 14 state vars total
 type PP1State struct {
 	Cyt PP1Vars `desc:"in cytosol -- volume = 0.08 fl"`
 	PSD PP1Vars `desc:"in PSD -- volume = 0.02 fl"`
@@ -97,10 +99,10 @@ func (ps *PP1State) ConfigLog(sch *etable.Schema) {
 
 // PP1Params are the parameters governing the PP1-I-1 binding
 type PP1Params struct {
-	I1PP1   React `desc:"1: I-1P + PP1act -> PP1-I1P -- Table SIi constants are backward = I1-PP1"`
-	PKAI1   Enz   `desc:"2: I-1P phosphorylated by PKA -- Table SIj numbers != Figure SI4"`
-	CaNI1P  Enz   `desc:"3: I-1P dephosphorylated by CaN -- Table SIj number"`
-	PP2aI1P Enz   `desc:"4: I-1P dephosphorylated by PP2A -- Table SIj number"`
+	I1PP1   chem.React `desc:"1: I-1P + PP1act -> PP1-I1P -- Table SIi constants are backward = I1-PP1"`
+	PKAI1   chem.Enz   `desc:"2: I-1P phosphorylated by PKA -- Table SIj numbers != Figure SI4"`
+	CaNI1P  chem.Enz   `desc:"3: I-1P dephosphorylated by CaN -- Table SIj number"`
+	PP2aI1P chem.Enz   `desc:"4: I-1P dephosphorylated by PP2A -- Table SIj number"`
 }
 
 func (cp *PP1Params) Defaults() {

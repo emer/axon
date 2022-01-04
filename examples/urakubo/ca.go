@@ -5,19 +5,21 @@
 package main
 
 import (
+	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 )
 
 // CaState records the Ca levels
+// 2 state vars total
 type CaState struct {
 	Cyt float64 `desc:"in cytosol"`
 	PSD float64 `desc:"in PSD"`
 }
 
 func (cs *CaState) Init() {
-	cs.Cyt = CoToN(0.05, CytVol)
-	cs.PSD = CoToN(0.05, PSDVol)
+	cs.Cyt = chem.CoToN(0.05, CytVol)
+	cs.PSD = chem.CoToN(0.05, PSDVol)
 }
 
 func (cs *CaState) Zero() {
@@ -26,13 +28,13 @@ func (cs *CaState) Zero() {
 }
 
 func (cs *CaState) Integrate(d *CaState) {
-	Integrate(&cs.Cyt, d.Cyt)
-	Integrate(&cs.PSD, d.PSD)
+	chem.Integrate(&cs.Cyt, d.Cyt)
+	chem.Integrate(&cs.PSD, d.PSD)
 }
 
 func (cs *CaState) Log(dt *etable.Table, row int) {
-	dt.SetCellFloat("Cyt_Ca", row, CoFmN(cs.Cyt, CytVol))
-	dt.SetCellFloat("PSD_Ca", row, CoFmN(cs.PSD, PSDVol))
+	dt.SetCellFloat("Cyt_Ca", row, chem.CoFmN(cs.Cyt, CytVol))
+	dt.SetCellFloat("PSD_Ca", row, chem.CoFmN(cs.PSD, PSDVol))
 }
 
 func (cs *CaState) ConfigLog(sch *etable.Schema) {
@@ -42,8 +44,8 @@ func (cs *CaState) ConfigLog(sch *etable.Schema) {
 
 // CaBufParams manages soft buffering dynamics of calcium
 type CaBufParams struct {
-	Cyt Buffer `desc:"Ca buffering in the cytosol"`
-	PSD Buffer `desc:"Ca buffering in the PSD"`
+	Cyt chem.Buffer `desc:"Ca buffering in the cytosol"`
+	PSD chem.Buffer `desc:"Ca buffering in the PSD"`
 }
 
 func (cp *CaBufParams) Defaults() {

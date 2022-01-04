@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 )
@@ -41,10 +42,10 @@ func (as *AMPARVars) Total() {
 }
 
 func (as *AMPARVars) Integrate(d *AMPARVars) {
-	Integrate(&as.DD, d.DD)
-	Integrate(&as.PD, d.PD)
-	Integrate(&as.DP, d.DP)
-	Integrate(&as.PP, d.PP)
+	chem.Integrate(&as.DD, d.DD)
+	chem.Integrate(&as.PD, d.PD)
+	chem.Integrate(&as.DP, d.DP)
+	chem.Integrate(&as.PP, d.PP)
 	as.Total()
 }
 
@@ -63,6 +64,7 @@ func (as *AMPARVars) ConfigLog(sch *etable.Schema, pre string) {
 // PSD = In the postsynaptic density -- includes non-trapped and trapped
 // Trp = Trapped by scaffolding in the PSD -- solidly fixed in place and active
 // Trp.Tot is the net effective AMPA conductance
+// 20 state vars total
 type AMPARState struct {
 	Cyt AMPARVars `view:"inline" desc:"in cytosol"`
 	Int AMPARVars `view:"inline" desc:"in integrated state"`

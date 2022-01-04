@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 )
 
@@ -14,6 +15,10 @@ const (
 	CytVol = 48 // volume of cytosol, in essentially arbitrary units
 	PSDVol = 12 // volume of PSD
 )
+
+func init() {
+	chem.IntegrationDt = 5e-5
+}
 
 // The Stater interface defines the functions implemented for State
 // structures.  This interface is not actually used, but is for
@@ -48,6 +53,7 @@ type Paramer interface {
 }
 
 // CaSigState is entire intracellular Ca-driven signaling state
+// Total state vars: 2 + 32 + 14 + 32 + 14 + 1 = 95
 type CaSigState struct {
 	Ca     CaState     `desc:"Ca state"`
 	CaMKII CaMKIIState `desc:"CaMKII state"`
@@ -63,7 +69,7 @@ func (cs *CaSigState) Init() {
 	cs.CaN.Init()
 	cs.PKA.Init()
 	cs.PP1.Init()
-	cs.PP2A = CoToN(0.03, CytVol)
+	cs.PP2A = chem.CoToN(0.03, CytVol)
 }
 
 func (cs *CaSigState) Zero() {
@@ -81,7 +87,7 @@ func (cs *CaSigState) Integrate(d *CaSigState) {
 	cs.CaN.Integrate(&d.CaN)
 	cs.PKA.Integrate(&d.PKA)
 	cs.PP1.Integrate(&d.PP1)
-	Integrate(&cs.PP2A, d.PP2A)
+	chem.Integrate(&cs.PP2A, d.PP2A)
 }
 
 func (cs *CaSigState) Log(dt *etable.Table, row int) {
@@ -101,6 +107,7 @@ func (cs *CaSigState) ConfigLog(sch *etable.Schema) {
 }
 
 // SpineState is entire state of spine including Ca signaling and AMPAR
+// Total state vars: 95 + 20 = 115
 type SpineState struct {
 	CaSig CaSigState `desc:"calcium signaling systems"`
 	AMPAR AMPARState `desc:"AMPA receptor state"`
@@ -152,7 +159,7 @@ func (sp *Spine) Defaults() {
 	sp.PKA.Defaults()
 	sp.PP1.Defaults()
 	sp.AMPAR.Defaults()
-	fmt.Printf("Integration Dt: %g\n", IntegrationDt)
+	fmt.Printf("Integration Dt = %g (%g steps per msec)\n", chem.IntegrationDt, 0.001/chem.IntegrationDt)
 }
 
 func (sp *Spine) Init() {
@@ -184,7 +191,7 @@ func (sp *Spine) Integrate() {
 
 // StepTime steps and integrates for given amount of time in secs
 func (sp *Spine) StepTime(secs float64) {
-	for t := 0.0; t < secs; t += IntegrationDt {
+	for t := 0.0; t < secs; t += chem.IntegrationDt {
 		sp.Step()
 		sp.Integrate()
 	}

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 )
@@ -28,8 +29,8 @@ func (cs *CaNVars) Zero() {
 }
 
 func (cs *CaNVars) Integrate(d *CaNVars) {
-	Integrate(&cs.CaN, d.CaN)
-	Integrate(&cs.CaNCaM, d.CaNCaM)
+	chem.Integrate(&cs.CaN, d.CaN)
+	chem.Integrate(&cs.CaNCaM, d.CaNCaM)
 }
 
 // CaNCaMVars are intracellular Ca-driven signaling states
@@ -44,7 +45,7 @@ func (cs *CaNCaMVars) Init(vol float64) {
 	for i := range cs.Ca {
 		cs.Ca[i].Init(vol)
 	}
-	cs.Ca[0].CaN = CoToN(3, vol)
+	cs.Ca[0].CaN = chem.CoToN(3, vol)
 	cs.CaNact = 0
 }
 
@@ -63,7 +64,7 @@ func (cs *CaNCaMVars) Integrate(d *CaNCaMVars) {
 }
 
 func (cs *CaNCaMVars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	dt.SetCellFloat(pre+"CaNact", row, CoFmN(cs.CaNact, vol))
+	dt.SetCellFloat(pre+"CaNact", row, chem.CoFmN(cs.CaNact, vol))
 }
 
 func (cs *CaNCaMVars) ConfigLog(sch *etable.Schema, pre string) {
@@ -72,6 +73,7 @@ func (cs *CaNCaMVars) ConfigLog(sch *etable.Schema, pre string) {
 
 // CaNState is overall intracellular Ca-driven signaling states
 // for CaN-CaM binding in Cyt and PSD
+// 14 state vars total
 type CaNState struct {
 	Cyt CaNCaMVars `desc:"in cytosol -- volume = 0.08 fl = 48"`
 	PSD CaNCaMVars `desc:"in PSD  -- volume = 0.02 fl = 12"`
@@ -104,9 +106,9 @@ func (cs *CaNState) ConfigLog(sch *etable.Schema) {
 
 // CaNParams are the parameters governing the Ca+CaN-CaM binding
 type CaNParams struct {
-	CaNCaM  React `desc:"1: CaN+CaM -> CaN-CaM"`
-	CaCaN01 React `desc:"2: Ca+CaM -> CaCaM"`
-	CaCaN12 React `desc:"3: Ca+CaCaM -> 2CaCaM"`
+	CaNCaM  chem.React `desc:"1: CaN+CaM -> CaN-CaM"`
+	CaCaN01 chem.React `desc:"2: Ca+CaM -> CaCaM"`
+	CaCaN12 chem.React `desc:"3: Ca+CaCaM -> 2CaCaM"`
 }
 
 func (cp *CaNParams) Defaults() {
