@@ -19,8 +19,8 @@ import (
 // Variables named as P or D for the Pd or Dp state, 1st is AMPAR @ Ser845, 2nd is PDZs
 type AMPARVars struct {
 	DD  float64 `desc:"both dephosphorylated = Nophos"`
-	PD  float64 `desc:"AMPA Ser845 phosphorylated = S845P"`
-	DP  float64 `desc:"PDZs phosphorylated = StgP"`
+	PD  float64 `desc:"AMPA Ser845 phosphorylated by PKA = S845P"`
+	DP  float64 `desc:"PDZs phosphorylated by CaMKII = StgP"`
 	PP  float64 `desc:"both phosphorylated = S845PStgP"`
 	Tot float64 `desc:"total of all phos levels"`
 }
@@ -49,8 +49,8 @@ func (as *AMPARVars) Integrate(d *AMPARVars) {
 	as.Total()
 }
 
-func (as *AMPARVars) Log(dt *etable.Table, row int, pre string) {
-	dt.SetCellFloat(pre+"AMPAR", row, float64(as.Tot))
+func (as *AMPARVars) Log(dt *etable.Table, vol float64, row int, pre string) {
+	dt.SetCellFloat(pre+"AMPAR", row, chem.CoFmN(as.Tot, vol))
 }
 
 func (as *AMPARVars) ConfigLog(sch *etable.Schema, pre string) {
@@ -59,58 +59,63 @@ func (as *AMPARVars) ConfigLog(sch *etable.Schema, pre string) {
 
 // AMPARState is AMPAR Phosphorylation and trafficking state.
 // 4 Locations / states, which have their own time constants:
-// Cyt = Cytosol, not integrated into membrane -- after endocyctosis
-// Int = Integrated into the membrane -- after exocytosis, still governed by Cyl rates
-// PSD = In the postsynaptic density -- includes non-trapped and trapped
+// Int = Cytosol, internal not integrated into membrane -- after endocyctosis
+// Mem = Cytosol, integrated into the membrane -- after exocytosis, still governed by Cyl rates
+// PSD = In the postsynaptic density, but not trapped by scaffold
 // Trp = Trapped by scaffolding in the PSD -- solidly fixed in place and active
 // Trp.Tot is the net effective AMPA conductance
 // 20 state vars total
 type AMPARState struct {
-	Cyt AMPARVars `view:"inline" desc:"in cytosol"`
-	Int AMPARVars `view:"inline" desc:"in integrated state"`
-	PSD AMPARVars `view:"inline" desc:"in PSD but not trapped"`
-	Trp AMPARVars `view:"inline" desc:"in PSD and trapped in place"`
+	Int      AMPARVars `view:"inline" desc:"cytosol internal"`
+	Mem      AMPARVars `view:"inline" desc:"cytosol integrated into the membrane"`
+	PSD      AMPARVars `view:"inline" desc:"in PSD but not trapped"`
+	Trp      AMPARVars `view:"inline" desc:"in PSD and trapped in place"`
+	Scaffold float64   `desc:"amount of unbound scaffold used for trapping"`
 }
 
 func (as *AMPARState) Init() {
-	as.Cyt.Init()
 	as.Int.Init()
+	as.Mem.Init()
 	as.PSD.Init()
 	as.Trp.Init()
 
-	as.Int.DD = 3 // Nophos_int
-	as.Int.PD = 3 // S845P_int
+	as.Int.DD = chem.CoToN(3, CytVol) // Nophos_int
+	as.Int.PD = chem.CoToN(3, CytVol) // S845P_int
 	as.Int.Total()
 
-	as.Trp.DD = 1
-	as.Trp.PD = 3
+	as.Trp.DD = chem.CoToN(1, PSDVol)
+	as.Trp.PD = chem.CoToN(3, PSDVol)
+
+	as.Scaffold = 0
 	as.Trp.Total()
 }
 
 func (as *AMPARState) Zero() {
-	as.Cyt.Zero()
 	as.Int.Zero()
+	as.Mem.Zero()
 	as.PSD.Zero()
 	as.Trp.Zero()
+	as.Scaffold = 0
 }
 
 func (as *AMPARState) Integrate(d *AMPARState) {
-	as.Cyt.Integrate(&d.Cyt)
 	as.Int.Integrate(&d.Int)
+	as.Mem.Integrate(&d.Mem)
 	as.PSD.Integrate(&d.PSD)
 	as.Trp.Integrate(&d.Trp)
+	chem.Integrate(&as.Scaffold, d.Scaffold)
 }
 
 func (as *AMPARState) Log(dt *etable.Table, row int) {
-	as.Cyt.Log(dt, row, "Cyt_")
-	as.Int.Log(dt, row, "Int_")
-	as.PSD.Log(dt, row, "PSD_")
-	as.Trp.Log(dt, row, "Trp_")
+	as.Int.Log(dt, CytVol, row, "Int_")
+	as.Mem.Log(dt, CytVol, row, "Mem_")
+	as.PSD.Log(dt, PSDVol, row, "PSD_")
+	as.Trp.Log(dt, PSDVol, row, "Trp_")
 }
 
 func (as *AMPARState) ConfigLog(sch *etable.Schema) {
-	as.Cyt.ConfigLog(sch, "Cyt_")
 	as.Int.ConfigLog(sch, "Int_")
+	as.Mem.ConfigLog(sch, "Mem_")
 	as.PSD.ConfigLog(sch, "PSD_")
 	as.Trp.ConfigLog(sch, "Trp_")
 }
@@ -118,121 +123,96 @@ func (as *AMPARState) ConfigLog(sch *etable.Schema) {
 // AMPAR phosphorylation and trafficking parameters
 // Original kinetic rate constants are in units of (μM-1s-1),
 type AMPARPhosParams struct {
-	PKA       float64 `def:"20" desc:"rate of phosphorylation of AMPA Ser845 by PKA"`
-	CaMKII    float64 `def:"1" desc:"rate of phosphorylation of PDZs by CaMKII"`
-	PP_S845   float64 `def:"4" desc:"rate of dephosphorylation of AMPA Ser845 by PP1"`
-	PP_PDZs   float64 `def:"100" desc:"rate of dephosphorylation of PDZs by PP1"`
-	CaN_S845  float64 `def:"1.5" desc:"rate of dephosphorylation of AMPA Ser845 by CaN"`
-	CaN_PDZs  float64 `def:"1" desc:"rate of dephosphorylation of PDZs by CaN"`
-	PP2A_S845 float64 `def:"100" desc:"rate of dephosphorylation of AMPA Ser845 by PP2A"`
-	PP2A_PDZs float64 `def:"4" desc:"rate of dephosphorylation of PDZs by PP2A"`
+	PKA       chem.SimpleEnz `desc:"rate of phosphorylation of AMPA Ser845 by PKA"`
+	CaMKII    chem.SimpleEnz `desc:"rate of phosphorylation of PDZs by CaMKII"`
+	PP_S845   chem.SimpleEnz `desc:"rate of dephosphorylation of AMPA Ser845 by PP1"`
+	PP_PDZs   chem.SimpleEnz `desc:"rate of dephosphorylation of PDZs by PP1"`
+	CaN_S845  chem.SimpleEnz `desc:"rate of dephosphorylation of AMPA Ser845 by CaN"`
+	CaN_PDZs  chem.SimpleEnz `desc:"rate of dephosphorylation of PDZs by CaN"`
+	PP2A_S845 chem.SimpleEnz `desc:"rate of dephosphorylation of AMPA Ser845 by PP2A"`
+	PP2A_PDZs chem.SimpleEnz `desc:"rate of dephosphorylation of PDZs by PP2A"`
 }
 
 func (ap *AMPARPhosParams) Defaults() {
-	ap.PKA = 20
-	ap.CaMKII = 1
-	ap.PP_S845 = 4
-	ap.PP_PDZs = 100
-	ap.CaN_S845 = 1.5
-	ap.CaN_PDZs = 1
-	ap.PP2A_S845 = 100
-	ap.PP2A_PDZs = 4
+	ap.PKA.Kf = 20
+	ap.CaMKII.Kf = 1
+	ap.PP_S845.Kf = 4
+	ap.PP_PDZs.Kf = 100
+	ap.CaN_S845.Kf = 1.5
+	ap.CaN_PDZs.Kf = 1
+	ap.PP2A_S845.Kf = 4
+	ap.PP2A_PDZs.Kf = 100
 }
 
 // StepP updates the phosphorylation d=delta state from c=current
 // based on current kinase / pp states
 func (ap *AMPARPhosParams) StepP(c, d *AMPARVars, camkii, pka, pp1, can float64) {
-	d.PD += ap.PKA * pka * c.DD
-	d.PP += ap.PKA * pka * c.DP
-	d.DP += ap.CaMKII * camkii * c.DD
-	d.PP += ap.CaMKII * camkii * c.PD
+	ap.PKA.Step(c.DD, pka, &d.DD, &d.PD)
+	ap.PKA.Step(c.DP, pka, &d.DP, &d.PP)
+	ap.CaMKII.Step(c.DD, camkii, &d.DD, &d.DP)
+	ap.CaMKII.Step(c.PD, camkii, &d.PD, &d.PP)
 
-	d.DD += ap.PP_S845 * pp1 * c.PD
-	d.DP += ap.PP_S845 * pp1 * c.PP
-	d.DD += ap.PP_PDZs * pp1 * c.DP
-	d.PD += ap.PP_PDZs * pp1 * c.PP
+	ap.PP_S845.Step(c.PD, pp1, &d.PD, &d.DD)
+	ap.PP_S845.Step(c.PP, pp1, &d.PP, &d.DP)
+	ap.PP_PDZs.Step(c.DP, pp1, &d.DP, &d.DD)
+	ap.PP_PDZs.Step(c.PP, pp1, &d.PP, &d.PD)
 
-	d.DD += ap.CaN_S845 * can * c.PD
-	d.DP += ap.CaN_S845 * can * c.PP
-	d.DD += ap.CaN_PDZs * can * c.DP
-	d.PD += ap.CaN_PDZs * can * c.PP
+	ap.CaN_S845.Step(c.PD, can, &d.PD, &d.DD)
+	ap.CaN_S845.Step(c.PP, can, &d.PP, &d.DP)
+	ap.CaN_PDZs.Step(c.DP, can, &d.DP, &d.DD)
+	ap.CaN_PDZs.Step(c.PP, can, &d.PP, &d.PD)
 }
 
 // StepPP2A updates the phosphorylation n=next state from c=current
 // based on current pp2a
 func (ap *AMPARPhosParams) StepPP2A(c, d *AMPARVars, pp2a float64) {
-	d.DD += ap.PP2A_S845 * pp2a * c.PD
-	d.DP += ap.PP2A_S845 * pp2a * c.PP
-	d.DD += ap.PP2A_PDZs * pp2a * c.DP
-	d.PD += ap.PP2A_PDZs * pp2a * c.PP
+	ap.PP2A_S845.Step(c.PD, pp2a, &d.PD, &d.DD)
+	ap.PP2A_S845.Step(c.PP, pp2a, &d.PP, &d.DP)
+	ap.PP2A_PDZs.Step(c.DP, pp2a, &d.DP, &d.DD)
+	ap.PP2A_PDZs.Step(c.PP, pp2a, &d.PP, &d.PD)
 
 }
 
 // AMPAR trafficking parameters
 // Original kinetic rate constants are in units of (μM-1s-1),
-// converted to msec instead of sec
 type AMPARTrafParams struct {
-	ExoP    float64 `def:"0.0055555" desc:"Ser845P excocytosis rate -- 30min"`
-	EndoP   float64 `def:"0.0185" desc:"Ser845P endcytosis rate -- 9min"`
-	EndoD   float64 `def:"1" desc:"Ser845D endcytosis rate -- 1sec"`
-	Diffuse float64 `def:"3.19488" desc:"diffusion between Int and PSD"`
-	OnP     float64 `def:"0.5" desc:"PDZsP trapping in the PSD -- faster when P"`
-	OnD     float64 `def:"0.03" desc:"PDZsD trapping in the PSD -- slower when D"`
-	Off     float64 `def:"0.0333" desc:"un-trapping in the PSD -- all off are the same"`
+	ExoEndoP chem.React   `desc:"Ser845P excocytosis, endocytosis rates -- Kf = 30min, Kb = 9min"`
+	EndoD    chem.React   `desc:"Ser845D endcytosis rate -- Kf = 1sec, Kb = 0"`
+	TrapP    chem.React   `desc:"PDZsP trapping in the PSD -- faster when P -- Kf is PSD + Scaffold -> Trp, Kb reverse"`
+	TrapD    chem.React   `desc:"PDZsD trapping in the PSD -- slower when D -- Kf is PSD + Scaffold -> Trp, Kb reverse"`
+	Diffuse  chem.Diffuse `desc:"diffusion for each category, all have the same constant"`
 }
 
 func (ap *AMPARTrafParams) Defaults() {
-	ap.ExoP = 1.0 / (30 * 60)
-	ap.EndoP = 1.0 / (9 * 60)
-	ap.EndoD = 1.0
-	ap.Diffuse = 1.0 / 0.313
-	ap.OnP = 0.5
-	ap.OnD = 0.03
-	ap.Off = 1.0 / 30
+	ap.ExoEndoP.Set(1.0/(9*60), 1.0/(30*60))
+	ap.EndoD.Set(1, 0)
+	ap.TrapP.Set(0.041667, 0.033333)
+	ap.TrapD.Set(0.0025, 0.033333)
+	ap.Diffuse.Set(1.6, 1.6)
 }
 
 // StepT computes trafficking deltas
 func (ap *AMPARTrafParams) StepT(c, d *AMPARState) {
-	// Exo = Cyt -> Int
-	d.Int.PD += ap.ExoP * c.Cyt.PD // only Ser845P
-	d.Int.PP += ap.ExoP * c.Cyt.PP // only Ser845P
-	// zero the other way
 
-	// Endo = Int -> Cyt
-	d.Cyt.PD += ap.EndoP * c.Int.PD // only Ser845P
-	d.Cyt.PP += ap.EndoP * c.Int.PP // only Ser845P
-	d.Cyt.DD += ap.EndoD * c.Int.DD // only Ser845D
-	d.Cyt.DP += ap.EndoD * c.Int.DP // only Ser845D
+	var dummy float64
+	// Exo = Int -> Mem
+	ap.ExoEndoP.Step(c.Int.PD, 1, c.Mem.PD, &d.Int.PD, &dummy, &d.Mem.PD)
+	ap.ExoEndoP.Step(c.Int.PP, 1, c.Mem.PP, &d.Int.PP, &dummy, &d.Mem.PP)
 
-	// Off = Trp -> PSD
-	d.PSD.DP += ap.Off * c.Trp.DP
-	d.PSD.PP += ap.Off * c.Trp.PP
-	d.PSD.DD += ap.Off * c.Trp.DD
-	d.PSD.PD += ap.Off * c.Trp.PD
+	ap.EndoD.Step(c.Mem.DD, 1, c.Int.DD, &d.Mem.DD, &dummy, &d.Int.DD)
+	ap.EndoD.Step(c.Mem.DP, 1, c.Int.DP, &d.Mem.DP, &dummy, &d.Int.DP)
 
-	// Diffuse = Int -> PSD
-	d.PSD.DD += ap.Diffuse * c.Int.DD
-	d.PSD.PD += ap.Diffuse * c.Int.PD
-	d.PSD.DP += ap.Diffuse * c.Int.DP
-	d.PSD.PP += ap.Diffuse * c.Int.PP
+	ap.TrapP.Step(c.PSD.DP, c.Scaffold, c.Trp.DP, &d.PSD.DP, &d.Scaffold, &d.Trp.DP)
+	ap.TrapP.Step(c.PSD.PP, c.Scaffold, c.Trp.PP, &d.PSD.PP, &d.Scaffold, &d.Trp.PP)
 
-	// Diffuse = PSD -> Int
-	d.Int.DD += ap.Diffuse * c.PSD.DD
-	d.Int.PD += ap.Diffuse * c.PSD.PD
-	d.Int.DP += ap.Diffuse * c.PSD.DP
-	d.Int.PP += ap.Diffuse * c.PSD.PP
+	ap.TrapD.Step(c.PSD.DD, c.Scaffold, c.Trp.DD, &d.PSD.DD, &d.Scaffold, &d.Trp.DD)
+	ap.TrapD.Step(c.PSD.PD, c.Scaffold, c.Trp.PD, &d.PSD.PD, &d.Scaffold, &d.Trp.PD)
 
-	// On = PSD -> Trp
-	d.Trp.DP += ap.OnP * c.PSD.DP
-	d.Trp.PP += ap.OnP * c.PSD.PP
-	d.Trp.DD += ap.OnD * c.PSD.DD
-	d.Trp.PD += ap.OnD * c.PSD.PD
-
-	// Off = Trp -> PSD
-	d.PSD.DP += ap.Off * c.Trp.DP
-	d.PSD.PP += ap.Off * c.Trp.PP
-	d.PSD.DD += ap.Off * c.Trp.DD
-	d.PSD.PD += ap.Off * c.Trp.PD
+	// Diffuse = Mem -> PSD
+	ap.Diffuse.Step(c.Mem.DD, c.PSD.DD, CytVol, PSDVol, &d.Mem.DD, &d.PSD.DD)
+	ap.Diffuse.Step(c.Mem.PD, c.PSD.PD, CytVol, PSDVol, &d.Mem.PD, &d.PSD.PD)
+	ap.Diffuse.Step(c.Mem.DP, c.PSD.DP, CytVol, PSDVol, &d.Mem.DP, &d.PSD.DP)
+	ap.Diffuse.Step(c.Mem.PP, c.PSD.PP, CytVol, PSDVol, &d.Mem.PP, &d.PSD.PP)
 }
 
 // AMPAR phosphorylation and trafficking parameters
@@ -251,12 +231,13 @@ func (ap *AMPARParams) Defaults() {
 // Step does full AMPAR updating, c=current, n=next
 // based on current Ca signaling state
 func (ap *AMPARParams) Step(c, d *AMPARState, cas *CaSigState, pp2a float64) {
-	ap.Phos.StepP(&c.Cyt, &d.Cyt, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
 	ap.Phos.StepP(&c.Int, &d.Int, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Mem, &d.Mem, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
 	ap.Phos.StepP(&c.Trp, &d.Trp, cas.CaMKII.PSD.Active, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
 	ap.Phos.StepP(&c.PSD, &d.PSD, cas.CaMKII.PSD.Active, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
 
-	ap.Phos.StepPP2A(&c.Cyt, &d.Cyt, pp2a) // Cyt only
+	ap.Phos.StepPP2A(&c.Int, &d.Int, pp2a) // Int only
+	ap.Phos.StepPP2A(&c.Mem, &d.Mem, pp2a) // Int only
 
 	ap.Traffic.StepT(c, d)
 }
