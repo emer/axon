@@ -47,6 +47,8 @@ type CaParams struct {
 	CytBuffer chem.Buffer  `desc:"Ca buffering in the cytosol"`
 	PSDBuffer chem.Buffer  `desc:"Ca buffering in the PSD"`
 	Diffuse   chem.Diffuse `desc:"Ca diffusion between Cyt and PSD"`
+	Clamp     bool         `desc:"clamp ca by fixed values"`
+	ClampCa   CaState      `desc:"clamped Ca values -- in concentration!"`
 }
 
 func (cp *CaParams) Defaults() {
@@ -59,9 +61,28 @@ func (cp *CaParams) Defaults() {
 	cp.PSDBuffer.K = (1.7927e5 * 0.8) / 12
 
 	cp.Diffuse.SetSym(600.0 / 0.0225)
+	cp.Clamp = false
+}
+
+// SetBuffTarg sets buffered target level of calcium in terms of concentrations
+func (cp *CaParams) SetBuffTarg(cyt, psd float64) {
+	cp.CytBuffer.SetTargVol(cyt, CytVol)
+	cp.PSDBuffer.SetTargVol(psd, PSDVol)
+}
+
+// Set clamped calcium levels in terms of concentrations
+func (cp *CaParams) SetClamp(cyt, psd float64) {
+	cp.Clamp = true
+	cp.ClampCa.Cyt = chem.CoToN(cyt, CytVol)
+	cp.ClampCa.PSD = chem.CoToN(psd, PSDVol)
 }
 
 func (cp *CaParams) Step(c *CaState, d *CaState) {
+	if cp.Clamp {
+		*c = cp.ClampCa
+		d.Zero()
+		return
+	}
 	cp.CytBuffer.Step(c.Cyt, &d.Cyt)
 	cp.PSDBuffer.Step(c.PSD, &d.PSD)
 	cp.Diffuse.Step(c.Cyt, c.PSD, CytVol, PSDVol, &d.Cyt, &d.PSD)

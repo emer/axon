@@ -167,12 +167,6 @@ func (sp *Spine) Init() {
 	sp.Deltas.Zero()
 }
 
-// AddCa injects calcium into the deltas -- call before calling Integrate
-func (sp *Spine) AddCa(cyt, psd float64) {
-	sp.Deltas.CaSig.Ca.Cyt += cyt
-	sp.Deltas.CaSig.Ca.PSD += psd
-}
-
 // Step computes the new Delta values
 func (sp *Spine) Step() {
 	sp.Deltas.Zero()
