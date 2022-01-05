@@ -188,16 +188,19 @@ func (cs *CaMKIIState) ConfigLog(sch *etable.Schema) {
 
 // CaMKIIParams are the parameters governing the Ca+CaM binding
 type CaMKIIParams struct {
-	CaCaM01        chem.React `desc:"1: Ca+CaM -> 1CaCaM = CaM-bind-Ca"`
-	CaCaM12        chem.React `desc:"2: Ca+1CaM -> 2CaCaM = CaMCa-bind-Ca"`
-	CaCaM23        chem.React `desc:"3: Ca+2CaM -> 3CaCaM = CaMCa2-bind-Ca"`
-	CaMCaMKII      chem.React `desc:"4: CaM+CaMKII -> CaM-CaMKII [0-2] -- kIB_kBI_[0-2] -- WI = plain CaMKII, WBn = CaM bound"`
-	CaMCaMKII3     chem.React `desc:"5: 3CaCaM+CaMKII -> 3CaCaM-CaMKII = kIB_kBI_3"`
-	CaCaM23_CaMKII chem.React `desc:"6: Ca+2CaCaM-CaMKII -> 3CaCaM-CaMKII = CaMCa2-bind-Ca"`
-	CaCaM_CaMKIIP  chem.React `desc:"8: Ca+nCaCaM-CaMKIIP -> n+1CaCaM-CaMKIIP = kTP_PT_*"`
-	CaMCaMKIIP     chem.React `desc:"9: CaM+CaMKIIP -> CaM-CaMKIIP = kAT_kTA"` // note: typo in SI3 for top PP1, PP2A
-	PP1Thr286      chem.Enz   `desc:"10: PP1 dephosphorylating CaMKIIP"`
-	PP2AThr286     chem.Enz   `desc:"11: PP2A dephosphorylating CaMKIIP"`
+	CaCaM01        chem.React   `desc:"1: Ca+CaM -> 1CaCaM = CaM-bind-Ca"`
+	CaCaM12        chem.React   `desc:"2: Ca+1CaM -> 2CaCaM = CaMCa-bind-Ca"`
+	CaCaM23        chem.React   `desc:"3: Ca+2CaM -> 3CaCaM = CaMCa2-bind-Ca"`
+	CaMCaMKII      chem.React   `desc:"4: CaM+CaMKII -> CaM-CaMKII [0-2] -- kIB_kBI_[0-2] -- WI = plain CaMKII, WBn = CaM bound"`
+	CaMCaMKII3     chem.React   `desc:"5: 3CaCaM+CaMKII -> 3CaCaM-CaMKII = kIB_kBI_3"`
+	CaCaM23_CaMKII chem.React   `desc:"6: Ca+2CaCaM-CaMKII -> 3CaCaM-CaMKII = CaMCa2-bind-Ca"`
+	CaCaM_CaMKIIP  chem.React   `desc:"8: Ca+nCaCaM-CaMKIIP -> n+1CaCaM-CaMKIIP = kTP_PT_*"`
+	CaMCaMKIIP     chem.React   `desc:"9: CaM+CaMKIIP -> CaM-CaMKIIP = kAT_kTA"` // note: typo in SI3 for top PP1, PP2A
+	PP1Thr286      chem.Enz     `desc:"10: PP1 dephosphorylating CaMKIIP"`
+	PP2AThr286     chem.Enz     `desc:"11: PP2A dephosphorylating CaMKIIP"`
+	CaMDiffuse     chem.Diffuse `desc:"CaM diffusion between Cyt and PSD"`
+	CaMKIIDiffuse  chem.Diffuse `desc:"CaMKII diffusion between Cyt and PSD -- symmetric, just WI"`
+	CaMKIIPDiffuse chem.Diffuse `desc:"CaMKIIP diffusion between Cyt and PSD -- asymmetric, everything else"`
 }
 
 func (cp *CaMKIIParams) Defaults() {
@@ -215,6 +218,10 @@ func (cp *CaMKIIParams) Defaults() {
 
 	cp.PP1Thr286.SetKmVol(11, CytVol, 1.34, 0.335)  // 10: 11 μM Km = 0.0031724
 	cp.PP2AThr286.SetKmVol(11, CytVol, 1.34, 0.335) // 11: 11 μM Km = 0.0031724
+
+	cp.CaMDiffuse.SetSym(130.0 / 0.0225)
+	cp.CaMKIIDiffuse.SetSym(6.0 / 0.0225)
+	cp.CaMKIIPDiffuse.Set(6.0/0.0225, 0.6/0.0225)
 }
 
 // StepCaMKII does the bulk of Ca + CaM + CaMKII binding reactions, in a given region
@@ -257,9 +264,25 @@ func (cp *CaMKIIParams) StepCaMKII(vol float64, c, d *CaMKIIVars, cCa, pp1, pp2a
 	}
 }
 
+// StepDiffuse does Cyt <-> PSD diffusion
+func (cp *CaMKIIParams) StepDiffuse(c, d *CaMKIIState) {
+	for i := 0; i < 4; i++ {
+		cc := &c.Cyt.Ca[i]
+		cd := &c.PSD.Ca[i]
+		dc := &d.Cyt.Ca[i]
+		dd := &d.PSD.Ca[i]
+		cp.CaMDiffuse.Step(cc.CaM, cd.CaM, CytVol, PSDVol, &dc.CaM, &dd.CaM)
+		cp.CaMKIIPDiffuse.Step(cc.CaM_CaMKII, cd.CaM_CaMKII, CytVol, PSDVol, &dc.CaM_CaMKII, &dd.CaM_CaMKII)
+		cp.CaMKIIPDiffuse.Step(cc.CaM_CaMKIIP, cd.CaM_CaMKIIP, CytVol, PSDVol, &dc.CaM_CaMKIIP, &dd.CaM_CaMKIIP)
+	}
+	cp.CaMKIIDiffuse.Step(c.Cyt.CaMKII, c.PSD.CaMKII, CytVol, PSDVol, &d.Cyt.CaMKII, &d.PSD.CaMKII)
+	cp.CaMKIIPDiffuse.Step(c.Cyt.CaMKIIP, c.PSD.CaMKIIP, CytVol, PSDVol, &d.Cyt.CaMKIIP, &d.PSD.CaMKIIP)
+}
+
 // Step does one step of CaMKII updating, c=current, d=delta
 // pp2a = current cyt pp2a
 func (cp *CaMKIIParams) Step(c, d *CaMKIIState, cCa, dCa *CaState, pp1, dpp1 *PP1State, pp2a float64, dpp2a *float64) {
 	cp.StepCaMKII(CytVol, &c.Cyt, &d.Cyt, cCa.Cyt, pp1.Cyt.PP1act, pp2a, &dCa.Cyt, &dpp1.Cyt.PP1act, dpp2a)
 	cp.StepCaMKII(PSDVol, &c.PSD, &d.PSD, cCa.PSD, pp1.PSD.PP1act, 0, &dCa.PSD, &dpp1.PSD.PP1act, nil)
+	cp.StepDiffuse(c, d)
 }

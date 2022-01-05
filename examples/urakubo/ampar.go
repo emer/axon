@@ -188,7 +188,7 @@ func (ap *AMPARTrafParams) Defaults() {
 	ap.EndoD.Set(1, 0)
 	ap.TrapP.Set(0.041667, 0.033333)
 	ap.TrapD.Set(0.0025, 0.033333)
-	ap.Diffuse.Set(1.6, 1.6)
+	ap.Diffuse.SetSym(1.6)
 }
 
 // StepT computes trafficking deltas

@@ -152,22 +152,24 @@ func (ps *PKAState) ConfigLog(sch *etable.Schema) {
 // PKAParams are the parameters governing the
 // PKA binding and phosphorylation with cAMP
 type PKAParams struct {
-	CaMAC1  chem.React `desc:"1: 3Ca-CaM + AC1 -> AC1act"`
-	ATPcAMP chem.React `desc:"2: basal activity of ATP -> cAMP without AC1 enzyme"`
-	R2C2_B  chem.React `desc:"3: R2C2 + cAMP = cAMP-bind-site-B"`
-	R2C2_B1 chem.React `desc:"4: R2C2-cAMP B + cAMP -> BB = cAMP-bind-site-B[1]"`
-	R2C2_A1 chem.React `desc:"5: R2C2-cAMP B + cAMP -> AB = cAMP-bind-site-A[1]"`
-	R2C2_A2 chem.React `desc:"6: R2C2-cAMP BB + cAMP -> ABB = cAMP-bind-site-A[2]"`
-	R2C2_B2 chem.React `desc:"7: R2C2-cAMP AB + cAMP -> ABB = cAMP-bind-site-B[2]"`
-	R2C2_A  chem.React `desc:"8: R2C2-cAMP ABB + cAMP -> 4 = cAMP-bind-site-A"`
-	R2C_A3  chem.React `desc:"9: R2C-3cAMP -> R2C-4cAMP = cAMP-bind-site-A[3]"`
-	R2_A4   chem.React `desc:"10: R2-3cAMP -> R2-4cAMP = cAMP-bind-site-A[4]"`
-	R2C_3   chem.React `desc:"11: R2C-3cAMP + PKAact -> R2C2-3cAMP ABB (backwards) = Release-C1[1] -- Fig SI4 R2-3 -> R2C-3"`
-	R2C_4   chem.React `desc:"12: R2C-4cAMP + PKAact -> R2C2-4cAMP (backwards) = Release-C1"`
-	R2_3    chem.React `desc:"13: R2-3cAMP + PKAact -> R2C-3cAMP (backwards) = Release-C2[1]"`
-	R2_4    chem.React `desc:"14: R2-4cAMP + PKAact -> R2C-4cAMP (backwards) = Release-C2"`
-	AC1ATP  chem.Enz   `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15"`
-	PDEcAMP chem.Enz   `desc:"16: PDE1act catalyzing cAMP -> AMP -- table SIg numbered 10 -> 16"`
+	CaMAC1      chem.React   `desc:"1: 3Ca-CaM + AC1 -> AC1act"`
+	ATPcAMP     chem.React   `desc:"2: basal activity of ATP -> cAMP without AC1 enzyme"`
+	R2C2_B      chem.React   `desc:"3: R2C2 + cAMP = cAMP-bind-site-B"`
+	R2C2_B1     chem.React   `desc:"4: R2C2-cAMP B + cAMP -> BB = cAMP-bind-site-B[1]"`
+	R2C2_A1     chem.React   `desc:"5: R2C2-cAMP B + cAMP -> AB = cAMP-bind-site-A[1]"`
+	R2C2_A2     chem.React   `desc:"6: R2C2-cAMP BB + cAMP -> ABB = cAMP-bind-site-A[2]"`
+	R2C2_B2     chem.React   `desc:"7: R2C2-cAMP AB + cAMP -> ABB = cAMP-bind-site-B[2]"`
+	R2C2_A      chem.React   `desc:"8: R2C2-cAMP ABB + cAMP -> 4 = cAMP-bind-site-A"`
+	R2C_A3      chem.React   `desc:"9: R2C-3cAMP -> R2C-4cAMP = cAMP-bind-site-A[3]"`
+	R2_A4       chem.React   `desc:"10: R2-3cAMP -> R2-4cAMP = cAMP-bind-site-A[4]"`
+	R2C_3       chem.React   `desc:"11: R2C-3cAMP + PKAact -> R2C2-3cAMP ABB (backwards) = Release-C1[1] -- Fig SI4 R2-3 -> R2C-3"`
+	R2C_4       chem.React   `desc:"12: R2C-4cAMP + PKAact -> R2C2-4cAMP (backwards) = Release-C1"`
+	R2_3        chem.React   `desc:"13: R2-3cAMP + PKAact -> R2C-3cAMP (backwards) = Release-C2[1]"`
+	R2_4        chem.React   `desc:"14: R2-4cAMP + PKAact -> R2C-4cAMP (backwards) = Release-C2"`
+	AC1ATP      chem.Enz     `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15"`
+	PDEcAMP     chem.Enz     `desc:"16: PDE1act catalyzing cAMP -> AMP -- table SIg numbered 10 -> 16"`
+	PKADiffuse  chem.Diffuse `desc:"PKA diffusion between Cyt and PSD"`
+	CAMPDiffuse chem.Diffuse `desc:"cAMP diffusion between Cyt and PSD"`
 }
 
 func (cp *PKAParams) Defaults() {
@@ -191,6 +193,9 @@ func (cp *PKAParams) Defaults() {
 
 	cp.AC1ATP.SetKmVol(40, CytVol, 40, 10)  // 15: Km = 40 = 0.026042
 	cp.PDEcAMP.SetKmVol(10, CytVol, 80, 20) // 16: Km = 10 = 0.20834
+
+	cp.PKADiffuse.SetSym(32.0 / 0.0225)
+	cp.CAMPDiffuse.SetSym(500.0 / 0.0225)
 }
 
 // StepPKA does the PKA + cAMP reactions, in a given region
@@ -219,8 +224,26 @@ func (cp *PKAParams) StepPKA(vol float64, c, d *PKAVars, cCaM float64, dCaM *flo
 	cp.PDEcAMP.StepK(kf, c.CAMP, c.PDEact, c.PDEcAMPC, c.AMP, &d.CAMP, &d.PDEact, &d.PDEcAMPC, &d.AMP)
 }
 
+// StepDiffuse does diffusion update, c=current, d=delta
+func (cp *PKAParams) StepDiffuse(c, d *PKAState) {
+	cp.PKADiffuse.Step(c.Cyt.R2C2, c.PSD.R2C2, CytVol, PSDVol, &d.Cyt.R2C2, &d.PSD.R2C2)
+	cp.PKADiffuse.Step(c.Cyt.R2C2_B, c.PSD.R2C2_B, CytVol, PSDVol, &d.Cyt.R2C2_B, &d.PSD.R2C2_B)
+	cp.PKADiffuse.Step(c.Cyt.R2C2_BB, c.PSD.R2C2_BB, CytVol, PSDVol, &d.Cyt.R2C2_BB, &d.PSD.R2C2_BB)
+	cp.PKADiffuse.Step(c.Cyt.R2C2_AB, c.PSD.R2C2_AB, CytVol, PSDVol, &d.Cyt.R2C2_AB, &d.PSD.R2C2_AB)
+	cp.PKADiffuse.Step(c.Cyt.R2C2_ABB, c.PSD.R2C2_ABB, CytVol, PSDVol, &d.Cyt.R2C2_ABB, &d.PSD.R2C2_ABB)
+	cp.PKADiffuse.Step(c.Cyt.R2C2_4, c.PSD.R2C2_4, CytVol, PSDVol, &d.Cyt.R2C2_4, &d.PSD.R2C2_4)
+	cp.PKADiffuse.Step(c.Cyt.R2C_3, c.PSD.R2C_3, CytVol, PSDVol, &d.Cyt.R2C_3, &d.PSD.R2C_3)
+	cp.PKADiffuse.Step(c.Cyt.R2C_4, c.PSD.R2C_4, CytVol, PSDVol, &d.Cyt.R2C_4, &d.PSD.R2C_4)
+	cp.PKADiffuse.Step(c.Cyt.R2_3, c.PSD.R2_3, CytVol, PSDVol, &d.Cyt.R2_3, &d.PSD.R2_3)
+	cp.PKADiffuse.Step(c.Cyt.R2_4, c.PSD.R2_4, CytVol, PSDVol, &d.Cyt.R2_4, &d.PSD.R2_4)
+
+	cp.CAMPDiffuse.Step(c.Cyt.CAMP, c.PSD.CAMP, CytVol, PSDVol, &d.Cyt.CAMP, &d.PSD.CAMP)
+	cp.CAMPDiffuse.Step(c.Cyt.PDEact, c.PSD.PDEact, CytVol, PSDVol, &d.Cyt.PDEact, &d.PSD.PDEact)
+}
+
 // Step does full PKA updating, c=current, d=delta
 func (cp *PKAParams) Step(c, d *PKAState, cCaM, dCaM *CaMKIIState) {
 	cp.StepPKA(CytVol, &c.Cyt, &d.Cyt, cCaM.Cyt.Ca[3].CaM, &dCaM.Cyt.Ca[3].CaM)
 	cp.StepPKA(PSDVol, &c.PSD, &d.PSD, cCaM.PSD.Ca[3].CaM, &dCaM.PSD.Ca[3].CaM)
+	cp.StepDiffuse(c, d)
 }

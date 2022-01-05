@@ -106,9 +106,10 @@ func (cs *CaNState) ConfigLog(sch *etable.Schema) {
 
 // CaNParams are the parameters governing the Ca+CaN-CaM binding
 type CaNParams struct {
-	CaNCaM  chem.React `desc:"1: CaN+CaM -> CaN-CaM"`
-	CaCaN01 chem.React `desc:"2: Ca+CaM -> CaCaM"`
-	CaCaN12 chem.React `desc:"3: Ca+CaCaM -> 2CaCaM"`
+	CaNCaM     chem.React   `desc:"1: CaN+CaM -> CaN-CaM"`
+	CaCaN01    chem.React   `desc:"2: Ca+CaM -> CaCaM"`
+	CaCaN12    chem.React   `desc:"3: Ca+CaCaM -> 2CaCaM"`
+	CaNDiffuse chem.Diffuse `desc:"CaN diffusion between Cyt and PSD"`
 }
 
 func (cp *CaNParams) Defaults() {
@@ -117,6 +118,7 @@ func (cp *CaNParams) Defaults() {
 	cp.CaNCaM.SetVol(40, CytVol, 0.04) // 1: 40 μM-1 = 0.83333, PSD = 3.3333
 	cp.CaCaN01.SetVol(20, CytVol, 1.0) // 2: 20 μM-1 = 0.41667, PSD = 1.6667
 	cp.CaCaN12.SetVol(10, CytVol, 2.0) // 3: 10 μM-1 = 0.20833, PSD = 0.83333
+	cp.CaNDiffuse.SetSym(20.0 / 0.0225)
 }
 
 // StepCaN does the bulk of Ca + CaN + CaM binding reactions, in a given region
@@ -134,8 +136,17 @@ func (cp *CaNParams) StepCaN(vol float64, c, d *CaNCaMVars, cCa, cCaM float64, d
 	cp.CaCaN12.StepK(kf, c.Ca[1].CaNCaM, cCa, c.Ca[2].CaNCaM, &d.Ca[1].CaNCaM, dCa, &d.Ca[2].CaNCaM) // 3
 }
 
+// StepDiffuse does diffusion update, c=current, d=delta
+func (cp *CaNParams) StepDiffuse(c, d *CaNState) {
+	for i := 0; i < 3; i++ {
+		cp.CaNDiffuse.Step(c.Cyt.Ca[i].CaN, c.PSD.Ca[i].CaN, CytVol, PSDVol, &d.Cyt.Ca[i].CaN, &d.PSD.Ca[i].CaN)
+		cp.CaNDiffuse.Step(c.Cyt.Ca[i].CaNCaM, c.PSD.Ca[i].CaNCaM, CytVol, PSDVol, &d.Cyt.Ca[i].CaNCaM, &d.PSD.Ca[i].CaNCaM)
+	}
+}
+
 // Step does full CaN updating, c=current, d=delta
 func (cp *CaNParams) Step(c, d *CaNState, cCaM, dCaM *CaMKIIState, cCa, dCa *CaState) {
 	cp.StepCaN(CytVol, &c.Cyt, &d.Cyt, cCa.Cyt, cCaM.Cyt.Ca[3].CaM, &dCa.Cyt, &dCaM.Cyt.Ca[3].CaM)
 	cp.StepCaN(PSDVol, &c.PSD, &d.PSD, cCa.PSD, cCaM.PSD.Ca[3].CaM, &dCa.PSD, &dCaM.PSD.Ca[3].CaM)
+	cp.StepDiffuse(c, d)
 }

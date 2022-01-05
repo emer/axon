@@ -17,7 +17,7 @@ const (
 )
 
 func init() {
-	chem.IntegrationDt = 5e-5
+	chem.IntegrationDt = 5e-6
 }
 
 // The Stater interface defines the functions implemented for State
@@ -141,7 +141,7 @@ func (ss *SpineState) ConfigLog(sch *etable.Schema) {
 // Spine represents all of the state and parameters of the Spine
 // involved in LTP / LTD
 type Spine struct {
-	CaBuf  CaBufParams  `desc:"Ca buffering parameters"`
+	Ca     CaParams     `desc:"Ca buffering and diffusion parameters"`
 	CaMKII CaMKIIParams `desc:"CaMKII parameters"`
 	CaN    CaNParams    `desc:"CaN calcineurin parameters"`
 	PKA    PKAParams    `desc:"PKA = protein kinase A parameters"`
@@ -153,7 +153,7 @@ type Spine struct {
 }
 
 func (sp *Spine) Defaults() {
-	sp.CaBuf.Defaults()
+	sp.Ca.Defaults()
 	sp.CaMKII.Defaults()
 	sp.CaN.Defaults()
 	sp.PKA.Defaults()
@@ -180,7 +180,7 @@ func (sp *Spine) Step() {
 	sp.CaN.Step(&sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
 	sp.PKA.Step(&sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII)
 	sp.PP1.Step(&sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, &sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, sp.States.CaSig.PP2A, &sp.Deltas.CaSig.PP2A)
-	sp.CaBuf.Step(&sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
+	sp.Ca.Step(&sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
 	sp.AMPAR.Step(&sp.States.AMPAR, &sp.Deltas.AMPAR, &sp.States.CaSig, sp.States.CaSig.PP2A)
 }
 

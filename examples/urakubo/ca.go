@@ -42,23 +42,27 @@ func (cs *CaState) ConfigLog(sch *etable.Schema) {
 	*sch = append(*sch, etable.Column{"PSD_Ca", etensor.FLOAT64, nil, nil})
 }
 
-// CaBufParams manages soft buffering dynamics of calcium
-type CaBufParams struct {
-	Cyt chem.Buffer `desc:"Ca buffering in the cytosol"`
-	PSD chem.Buffer `desc:"Ca buffering in the PSD"`
+// CaParams manages Ca parameters including soft buffering dynamics of calcium
+type CaParams struct {
+	CytBuffer chem.Buffer  `desc:"Ca buffering in the cytosol"`
+	PSDBuffer chem.Buffer  `desc:"Ca buffering in the PSD"`
+	Diffuse   chem.Diffuse `desc:"Ca diffusion between Cyt and PSD"`
 }
 
-func (cp *CaBufParams) Defaults() {
+func (cp *CaParams) Defaults() {
 	// note: verified constants from initial_routines/Ca2_efflux.g
 	// using showmsg /efflux_PSD / cytosol and showfield /efflux_PSD *
 	// and doing the math.. replicates corresponding behavior in model
-	cp.Cyt.SetTargVol(0.05, CytVol)
-	cp.Cyt.K = (1.0426e5 * 0.8) / 12
-	cp.PSD.SetTargVol(0.05, PSDVol)
-	cp.PSD.K = (1.7927e5 * 0.8) / 12
+	cp.CytBuffer.SetTargVol(0.05, CytVol)
+	cp.CytBuffer.K = (1.0426e5 * 0.8) / 12
+	cp.PSDBuffer.SetTargVol(0.05, PSDVol)
+	cp.PSDBuffer.K = (1.7927e5 * 0.8) / 12
+
+	cp.Diffuse.SetSym(600.0 / 0.0225)
 }
 
-func (cp *CaBufParams) Step(c *CaState, d *CaState) {
-	cp.Cyt.Step(c.Cyt, &d.Cyt)
-	cp.PSD.Step(c.PSD, &d.PSD)
+func (cp *CaParams) Step(c *CaState, d *CaState) {
+	cp.CytBuffer.Step(c.Cyt, &d.Cyt)
+	cp.PSDBuffer.Step(c.PSD, &d.PSD)
+	cp.Diffuse.Step(c.Cyt, c.PSD, CytVol, PSDVol, &d.Cyt, &d.PSD)
 }

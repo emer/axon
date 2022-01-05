@@ -99,10 +99,12 @@ func (ps *PP1State) ConfigLog(sch *etable.Schema) {
 
 // PP1Params are the parameters governing the PP1-I-1 binding
 type PP1Params struct {
-	I1PP1   chem.React `desc:"1: I-1P + PP1act -> PP1-I1P -- Table SIi constants are backward = I1-PP1"`
-	PKAI1   chem.Enz   `desc:"2: I-1P phosphorylated by PKA -- Table SIj numbers != Figure SI4"`
-	CaNI1P  chem.Enz   `desc:"3: I-1P dephosphorylated by CaN -- Table SIj number"`
-	PP2aI1P chem.Enz   `desc:"4: I-1P dephosphorylated by PP2A -- Table SIj number"`
+	I1PP1      chem.React   `desc:"1: I-1P + PP1act -> PP1-I1P -- Table SIi constants are backward = I1-PP1"`
+	PKAI1      chem.Enz     `desc:"2: I-1P phosphorylated by PKA -- Table SIj numbers != Figure SI4"`
+	CaNI1P     chem.Enz     `desc:"3: I-1P dephosphorylated by CaN -- Table SIj number"`
+	PP2aI1P    chem.Enz     `desc:"4: I-1P dephosphorylated by PP2A -- Table SIj number"`
+	I1Diffuse  chem.Diffuse `desc:"I1 diffusion between Cyt and PSD"`
+	PP1Diffuse chem.Diffuse `desc:"PP1 diffusion between Cyt and PSD"`
 }
 
 func (cp *PP1Params) Defaults() {
@@ -111,6 +113,8 @@ func (cp *PP1Params) Defaults() {
 	cp.PKAI1.SetKmVol(8.1, CytVol, 21.2, 5.3) // Km = 8.1 μM-1 k1 = 0.068157
 	cp.CaNI1P.SetKmVol(3, CytVol, 11.2, 2.8)  // Km = 3 μM-1 = 0.097222
 	cp.PP2aI1P.SetKmVol(3, CytVol, 11.2, 2.8) // Km = 3 μM-1 = 0.097222
+	cp.I1Diffuse.SetSym(35.9 / 0.0225)
+	cp.PP1Diffuse.Set(31.4/0.0225, 5.23/0.0225)
 }
 
 // StepPP1 does the bulk of Ca + PP1 + CaM binding reactions, in a given region
@@ -128,8 +132,17 @@ func (cp *PP1Params) StepPP1(vol float64, c, d *PP1Vars, pka, can, pp2a float64,
 	}
 }
 
+// StepDiffuse does diffusion update, c=current, d=delta
+func (cp *PP1Params) StepDiffuse(c, d *PP1State) {
+	cp.I1Diffuse.Step(c.Cyt.I1, c.PSD.I1, CytVol, PSDVol, &d.Cyt.I1, &d.PSD.I1)
+	cp.I1Diffuse.Step(c.Cyt.I1P, c.PSD.I1P, CytVol, PSDVol, &d.Cyt.I1P, &d.PSD.I1P)
+	cp.PP1Diffuse.Step(c.Cyt.PP1_I1P, c.PSD.PP1_I1P, CytVol, PSDVol, &d.Cyt.PP1_I1P, &d.PSD.PP1_I1P)
+	cp.PP1Diffuse.Step(c.Cyt.PP1act, c.PSD.PP1act, CytVol, PSDVol, &d.Cyt.PP1act, &d.PSD.PP1act)
+}
+
 // Step does full CaN updating, c=current, d=delta
 func (cp *PP1Params) Step(c, d *PP1State, pka, dpka *PKAState, can, dcan *CaNState, pp2a float64, dpp2a *float64) {
 	cp.StepPP1(CytVol, &c.Cyt, &d.Cyt, pka.Cyt.PKAact, can.Cyt.CaNact, pp2a, &dpka.Cyt.PKAact, &dcan.Cyt.CaNact, dpp2a)
 	cp.StepPP1(PSDVol, &c.PSD, &d.PSD, pka.PSD.PKAact, can.PSD.CaNact, 0, &dpka.PSD.PKAact, &dcan.PSD.CaNact, nil)
+	cp.StepDiffuse(c, d)
 }
