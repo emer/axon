@@ -148,5 +148,5 @@ func (cp *CaNParams) StepDiffuse(c, d *CaNState) {
 func (cp *CaNParams) Step(c, d *CaNState, cCaM, dCaM *CaMKIIState, cCa, dCa *CaState) {
 	cp.StepCaN(CytVol, &c.Cyt, &d.Cyt, cCa.Cyt, cCaM.Cyt.Ca[3].CaM, &dCa.Cyt, &dCaM.Cyt.Ca[3].CaM)
 	cp.StepCaN(PSDVol, &c.PSD, &d.PSD, cCa.PSD, cCaM.PSD.Ca[3].CaM, &dCa.PSD, &dCaM.PSD.Ca[3].CaM)
-	// cp.StepDiffuse(c, d)
+	cp.StepDiffuse(c, d)
 }

@@ -103,23 +103,23 @@ func (ps *PKAVars) Integrate(d *PKAVars) {
 }
 
 func (ps *PKAVars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	// dt.SetCellFloat(pre+"AC1", row, chem.CoFmN(ps.AC1, vol))
 	dt.SetCellFloat(pre+"AC1act", row, chem.CoFmN(ps.AC1act, vol))
 	dt.SetCellFloat(pre+"cAMP", row, chem.CoFmN(ps.CAMP, vol))
-	dt.SetCellFloat(pre+"R2C2", row, chem.CoFmN(ps.R2C2, vol))
-	dt.SetCellFloat(pre+"R2C2_B", row, chem.CoFmN(ps.R2C2_B, vol))
-	dt.SetCellFloat(pre+"R2C2_ABB", row, chem.CoFmN(ps.R2C2_ABB, vol))
 	dt.SetCellFloat(pre+"PKAact", row, chem.CoFmN(ps.PKAact, vol))
+	// dt.SetCellFloat(pre+"AC1", row, chem.CoFmN(ps.AC1, vol))
+	// dt.SetCellFloat(pre+"R2C2", row, chem.CoFmN(ps.R2C2, vol))
+	// dt.SetCellFloat(pre+"R2C2_B", row, chem.CoFmN(ps.R2C2_B, vol))
+	// dt.SetCellFloat(pre+"R2C2_ABB", row, chem.CoFmN(ps.R2C2_ABB, vol))
 }
 
 func (ps *PKAVars) ConfigLog(sch *etable.Schema, pre string) {
-	// *sch = append(*sch, etable.Column{pre + "AC1", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "AC1act", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "cAMP", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "R2C2", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "R2C2_B", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "R2C2_ABB", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "PKAact", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "AC1", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "R2C2", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "R2C2_B", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "R2C2_ABB", etensor.FLOAT64, nil, nil})
 }
 
 // PKAState is overall intracellular Ca-driven signaling states
@@ -172,7 +172,7 @@ type PKAParams struct {
 	R2C_4       chem.React   `desc:"12: R2C-4cAMP + PKAact -> R2C2-4cAMP (backwards) = Release-C1"`
 	R2_3        chem.React   `desc:"13: R2-3cAMP + PKAact -> R2C-3cAMP (backwards) = Release-C2[1]"`
 	R2_4        chem.React   `desc:"14: R2-4cAMP + PKAact -> R2C-4cAMP (backwards) = Release-C2"`
-	AC1ATP      chem.EnzRate `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15 -- note: uses EnzRate not std Enz -- does not consume AC1"`
+	AC1ATP      chem.EnzRate `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15 -- note: uses EnzRate not std Enz -- does not consume AC1act"`
 	PDEcAMP     chem.Enz     `desc:"16: PDE1act catalyzing cAMP -> AMP -- table SIg numbered 10 -> 16"`
 	PKADiffuse  chem.Diffuse `desc:"PKA diffusion between Cyt and PSD"`
 	CAMPDiffuse chem.Diffuse `desc:"cAMP diffusion between Cyt and PSD"`
@@ -252,5 +252,5 @@ func (cp *PKAParams) StepDiffuse(c, d *PKAState) {
 func (cp *PKAParams) Step(c, d *PKAState, cCaM, dCaM *CaMKIIState) {
 	cp.StepPKA(CytVol, &c.Cyt, &d.Cyt, cCaM.Cyt.Ca[3].CaM, &dCaM.Cyt.Ca[3].CaM)
 	cp.StepPKA(PSDVol, &c.PSD, &d.PSD, cCaM.PSD.Ca[3].CaM, &dCaM.PSD.Ca[3].CaM)
-	// cp.StepDiffuse(c, d)
+	cp.StepDiffuse(c, d)
 }

@@ -54,13 +54,13 @@ func (ps *PP1Vars) Integrate(d *PP1Vars) {
 
 func (ps *PP1Vars) Log(dt *etable.Table, vol float64, row int, pre string) {
 	// dt.SetCellFloat(pre+"I1", row, chem.CoFmN(ps.I1, vol))
-	// dt.SetCellFloat(pre+"I1P", row, chem.CoFmN(ps.I1P, vol))
+	dt.SetCellFloat(pre+"I1P", row, chem.CoFmN(ps.I1P, vol))
 	dt.SetCellFloat(pre+"PP1act", row, chem.CoFmN(ps.PP1act, vol))
 }
 
 func (ps *PP1Vars) ConfigLog(sch *etable.Schema, pre string) {
 	// *sch = append(*sch, etable.Column{pre + "I1", etensor.FLOAT64, nil, nil})
-	// *sch = append(*sch, etable.Column{pre + "I1P", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "I1P", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "PP1act", etensor.FLOAT64, nil, nil})
 }
 
@@ -144,5 +144,5 @@ func (cp *PP1Params) StepDiffuse(c, d *PP1State) {
 func (cp *PP1Params) Step(c, d *PP1State, pka, dpka *PKAState, can, dcan *CaNState, pp2a float64, dpp2a *float64) {
 	cp.StepPP1(CytVol, &c.Cyt, &d.Cyt, pka.Cyt.PKAact, can.Cyt.CaNact, pp2a, &dpka.Cyt.PKAact, &dcan.Cyt.CaNact, dpp2a)
 	cp.StepPP1(PSDVol, &c.PSD, &d.PSD, pka.PSD.PKAact, can.PSD.CaNact, 0, &dpka.PSD.PKAact, &dcan.PSD.CaNact, nil)
-	// cp.StepDiffuse(c, d)
+	cp.StepDiffuse(c, d)
 }

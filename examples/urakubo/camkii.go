@@ -129,30 +129,30 @@ func (cs *CaMKIIVars) UpdtActive() {
 
 func (cs *CaMKIIVars) Log(dt *etable.Table, vol float64, row int, pre string) {
 	dt.SetCellFloat(pre+"CaM", row, chem.CoFmN(cs.Ca[0].CaM, vol))
-	dt.SetCellFloat(pre+"CaCaM", row, chem.CoFmN(cs.Ca[1].CaM, vol))
-	dt.SetCellFloat(pre+"Ca2CaM", row, chem.CoFmN(cs.Ca[2].CaM, vol))
 	dt.SetCellFloat(pre+"Ca3CaM", row, chem.CoFmN(cs.Ca[3].CaM, vol))
+	dt.SetCellFloat(pre+"CaMKIIact", row, chem.CoFmN(cs.Active, vol))
+	// dt.SetCellFloat(pre+"CaCaM", row, chem.CoFmN(cs.Ca[1].CaM, vol))
+	// dt.SetCellFloat(pre+"Ca2CaM", row, chem.CoFmN(cs.Ca[2].CaM, vol))
 	// dt.SetCellFloat(pre+"Ca0CaM_CaMKII", row, chem.CoFmN(cs.Ca[0].CaM_CaMKII, vol))
 	// dt.SetCellFloat(pre+"Ca1CaM_CaMKII", row, chem.CoFmN(cs.Ca[1].CaM_CaMKII, vol))
 	// dt.SetCellFloat(pre+"Ca0CaM_CaMKIIP", row, chem.CoFmN(cs.Ca[0].CaM_CaMKIIP, vol))
 	// dt.SetCellFloat(pre+"Ca1CaM_CaMKIIP", row, chem.CoFmN(cs.Ca[1].CaM_CaMKIIP, vol))
 	// dt.SetCellFloat(pre+"CaMKII", row, chem.CoFmN(cs.CaMKII, vol))
 	// dt.SetCellFloat(pre+"CaMKIIP", row, chem.CoFmN(cs.CaMKIIP, vol))
-	dt.SetCellFloat(pre+"CaMKIIact", row, chem.CoFmN(cs.Active, vol))
 }
 
 func (cs *CaMKIIVars) ConfigLog(sch *etable.Schema, pre string) {
 	*sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "CaCaM", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "Ca2CaM", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Ca3CaM", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "CaMKIIact", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "CaCaM", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "Ca2CaM", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "Ca0CaM_CaMKII", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "Ca1CaM_CaMKII", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "Ca0CaM_CaMKIIP", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "Ca1CaM_CaMKIIP", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "CaMKII", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "CaMKIIP", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "CaMKIIact", etensor.FLOAT64, nil, nil})
 }
 
 // CaMKIIState is overall intracellular Ca-driven signaling states
@@ -286,5 +286,5 @@ func (cp *CaMKIIParams) StepDiffuse(c, d *CaMKIIState) {
 func (cp *CaMKIIParams) Step(c, d *CaMKIIState, cCa, dCa *CaState, pp1, dpp1 *PP1State, pp2a float64, dpp2a *float64) {
 	cp.StepCaMKII(CytVol, &c.Cyt, &d.Cyt, cCa.Cyt, pp1.Cyt.PP1act, pp2a, &dCa.Cyt, &dpp1.Cyt.PP1act, dpp2a)
 	cp.StepCaMKII(PSDVol, &c.PSD, &d.PSD, cCa.PSD, pp1.PSD.PP1act, 0, &dCa.PSD, &dpp1.PSD.PP1act, nil)
-	// cp.StepDiffuse(c, d)
+	cp.StepDiffuse(c, d)
 }
