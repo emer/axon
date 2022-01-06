@@ -72,11 +72,24 @@ var ClampCa1Ca = []float64{
 	510.7747, 0.05939326808,
 }
 
-// InitSettle settles out the spine for 200 secs
-func InitSettle() {
+// InitSettle settles out the spine for given number of secs (100 is good)
+func InitSettle(secs float64) {
 	ss := &TheSim
 	ss.StopNow = false
-	ss.Spine.StepTime(100)
+	ss.Spine.StepTime(secs)
+}
+
+func GraphRun(secs float64) {
+	ss := &TheSim
+	nms := int(secs / 0.001)
+	sms := ss.Msec
+	for msec := 0; msec < nms; msec++ {
+		ss.NeuronUpdt(sms + msec)
+		ss.LogDefault()
+		if ss.StopNow {
+			break
+		}
+	}
 }
 
 // CaPerMsec returns calcium per msec for given input data
@@ -128,7 +141,7 @@ func BaselineFun() {
 
 func CaTargFun() {
 	ss := &TheSim
-	InitSettle()
+	InitSettle(100)
 	ss.Spine.Ca.SetBuffTarg(ss.CaTarg.Cyt, ss.CaTarg.PSD)
 	for msec := 0; msec < 20000; msec++ {
 		ss.NeuronUpdt(msec)
@@ -144,7 +157,7 @@ func ClampCa1Fun() {
 	ss := &TheSim
 	cas := CaPerMsec(ClampCa1Ca)
 	nca := len(cas)
-	InitSettle()
+	InitSettle(100)
 	bca := 0.05
 	for msec := 0; msec < 20000; msec++ {
 		tms := (msec + 500) % 1000
@@ -160,5 +173,6 @@ func ClampCa1Fun() {
 			break
 		}
 	}
+	GraphRun(20)
 	ss.Stopped()
 }

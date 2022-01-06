@@ -271,12 +271,13 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 		}
 	}
 
-	plt.SetColParams("Cyt_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Cyt_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("Trp_AMPAR", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Cyt_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Trp_AMPAR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
 }
