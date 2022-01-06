@@ -144,5 +144,5 @@ func (cp *PP1Params) StepDiffuse(c, d *PP1State) {
 func (cp *PP1Params) Step(c, d *PP1State, pka, dpka *PKAState, can, dcan *CaNState, pp2a float64, dpp2a *float64) {
 	cp.StepPP1(CytVol, &c.Cyt, &d.Cyt, pka.Cyt.PKAact, can.Cyt.CaNact, pp2a, &dpka.Cyt.PKAact, &dcan.Cyt.CaNact, dpp2a)
 	cp.StepPP1(PSDVol, &c.PSD, &d.PSD, pka.PSD.PKAact, can.PSD.CaNact, 0, &dpka.PSD.PKAact, &dcan.PSD.CaNact, nil)
-	cp.StepDiffuse(c, d)
+	// cp.StepDiffuse(c, d)
 }

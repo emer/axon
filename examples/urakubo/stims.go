@@ -19,7 +19,9 @@ func (ev *Stims) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev
 
 // The different stimulus functions
 const (
-	CaTarg Stims = iota
+	Baseline Stims = iota
+
+	CaTarg
 
 	ClampCa1
 
@@ -28,6 +30,7 @@ const (
 
 // StimFuncs are the stimulus functions
 var StimFuncs = map[Stims]func(){
+	Baseline: BaselineFun,
 	CaTarg:   CaTargFun,
 	ClampCa1: ClampCa1Fun,
 }
@@ -109,6 +112,18 @@ func CaPerMsec(orig []float64) []float64 {
 		// fmt.Printf("%d \tct:  %g  \tca:  %g  \tst:  %g  \tet:  %g  \tsca:  %g \teca:  %g\n", i, ct, ca, st, et, sca, eca)
 	}
 	return rdt[:mxi+1]
+}
+
+func BaselineFun() {
+	ss := &TheSim
+	for msec := 0; msec < 120000; msec++ {
+		ss.NeuronUpdt(msec)
+		ss.LogDefault()
+		if ss.StopNow {
+			break
+		}
+	}
+	ss.Stopped()
 }
 
 func CaTargFun() {

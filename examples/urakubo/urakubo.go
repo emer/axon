@@ -126,6 +126,7 @@ func (ss *Sim) InitWts(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	ss.Spine.Defaults()
 	ss.Spine.Init()
 	ss.Msec = 0
 	ss.InitWts(ss.Net)
@@ -178,7 +179,7 @@ func (ss *Sim) LogDefault() {
 	if ss.Msec%10 == 0 {
 		ss.Log(ss.Msec10Log, (msec/10)%1000)
 		if ss.Msec%100 == 0 {
-			ss.Log(ss.Msec100Log, (msec/100)%1000)
+			ss.Log(ss.Msec100Log, (msec / 100))
 			ss.MsecPlot.GoUpdate()
 			ss.Msec10Plot.GoUpdate()
 			ss.Msec100Plot.GoUpdate()
@@ -213,7 +214,7 @@ func (ss *Sim) Log(dt *etable.Table, row int) {
 	}
 	nrn := ss.Neuron
 
-	dt.SetCellFloat("Msec", row, float64(ss.Msec))
+	dt.SetCellFloat("Time", row, float64(ss.Msec)*0.001)
 	dt.SetCellFloat("Ge", row, float64(nrn.Ge))
 	dt.SetCellFloat("Inet", row, float64(nrn.Inet))
 	dt.SetCellFloat("Vm", row, float64(nrn.Vm))
@@ -233,7 +234,7 @@ func (ss *Sim) ConfigLog(dt *etable.Table) {
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
-		{"Msec", etensor.INT64, nil, nil},
+		{"Time", etensor.FLOAT64, nil, nil},
 		{"Ge", etensor.FLOAT64, nil, nil},
 		{"Inet", etensor.FLOAT64, nil, nil},
 		{"Vm", etensor.FLOAT64, nil, nil},
@@ -251,10 +252,10 @@ func (ss *Sim) ConfigLog(dt *etable.Table) {
 
 func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.Params.Title = "Urakubo Data Plot"
-	plt.Params.XAxisCol = "Msec"
+	plt.Params.XAxisCol = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Msec", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Ge", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Inet", eplot.Off, eplot.FixMin, -.2, eplot.FixMax, 1)
 	plt.SetColParams("Vm", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
@@ -264,12 +265,18 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetColParams("ISI", eplot.Off, eplot.FixMin, -2, eplot.FloatMax, 1)
 	plt.SetColParams("AvgISI", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
-	plt.SetColParams("Cyt_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("PSD_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	for _, cn := range dt.ColNames {
+		if cn != "Time" {
+			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+		}
+	}
+
+	plt.SetColParams("Cyt_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("PSD_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("Trp_AMPAR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Trp_AMPAR", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
 }
@@ -296,9 +303,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	height := 1200
 
 	gi.SetAppName("urakubo")
-	gi.SetAppAbout(`This simulation illustrates the basic properties of neural spiking and
-rate-code activation, reflecting a balance of excitatory and inhibitory
-influences (including leak and synaptic inhibition).
+	gi.SetAppAbout(`This simulation replicates the Urakubo et al, 2008 biophysical model of LTP / LTD.
 See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md">README.md on GitHub</a>.</p>`)
 
 	win := gi.NewMainWindow("urakubo", "Urakubo", width, height)

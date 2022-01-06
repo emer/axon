@@ -31,7 +31,7 @@ type PKAVars struct {
 	R2_3     float64 `desc:"R2-3cAMP"`
 	R2_4     float64 `desc:"R2-4cAMP"`
 	PKAact   float64 `desc:"active PKA"`
-	AC1ATPC  float64 `desc:"AC1act+ATP complex for AC1ATP enzyme reaction"`
+	AC1ATPC  float64 `desc:"AC1act+ATP complex for AC1ATP enzyme reaction -- reflects rate"`
 	PDEcAMPC float64 `desc:"PDEact+cAMP complex for PDEcAMP enzyme reaction"`
 }
 
@@ -54,7 +54,7 @@ func (ps *PKAVars) Init(vol float64) {
 	ps.R2_3 = 0
 	ps.R2_4 = 0
 	ps.PKAact = chem.CoToN(0.05, vol)
-	ps.AC1ATPC = 0
+	ps.AC1ATPC = chem.CoToN(0.00025355, vol)
 	ps.PDEcAMPC = 0
 }
 
@@ -98,21 +98,27 @@ func (ps *PKAVars) Integrate(d *PKAVars) {
 	chem.Integrate(&ps.R2_3, d.R2_3)
 	chem.Integrate(&ps.R2_4, d.R2_4)
 	chem.Integrate(&ps.PKAact, d.PKAact)
-	chem.Integrate(&ps.AC1ATPC, d.AC1ATPC)
+	// chem.Integrate(&ps.AC1ATPC, d.AC1ATPC) // set directly
 	chem.Integrate(&ps.PDEcAMPC, d.PDEcAMPC)
 }
 
 func (ps *PKAVars) Log(dt *etable.Table, vol float64, row int, pre string) {
+	// dt.SetCellFloat(pre+"AC1", row, chem.CoFmN(ps.AC1, vol))
 	dt.SetCellFloat(pre+"AC1act", row, chem.CoFmN(ps.AC1act, vol))
-	// dt.SetCellFloat(pre+"cAMP", row, chem.CoFmN(ps.CAMP, vol))
-	// dt.SetCellFloat(pre+"R2C2_ABB", row, chem.CoFmN(ps.R2C2_ABB, vol))
+	dt.SetCellFloat(pre+"cAMP", row, chem.CoFmN(ps.CAMP, vol))
+	dt.SetCellFloat(pre+"R2C2", row, chem.CoFmN(ps.R2C2, vol))
+	dt.SetCellFloat(pre+"R2C2_B", row, chem.CoFmN(ps.R2C2_B, vol))
+	dt.SetCellFloat(pre+"R2C2_ABB", row, chem.CoFmN(ps.R2C2_ABB, vol))
 	dt.SetCellFloat(pre+"PKAact", row, chem.CoFmN(ps.PKAact, vol))
 }
 
 func (ps *PKAVars) ConfigLog(sch *etable.Schema, pre string) {
+	// *sch = append(*sch, etable.Column{pre + "AC1", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "AC1act", etensor.FLOAT64, nil, nil})
-	// *sch = append(*sch, etable.Column{pre + "cAMP", etensor.FLOAT64, nil, nil})
-	// *sch = append(*sch, etable.Column{pre + "R2C2_ABB", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "cAMP", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "R2C2", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "R2C2_B", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "R2C2_ABB", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "PKAact", etensor.FLOAT64, nil, nil})
 }
 
@@ -166,7 +172,7 @@ type PKAParams struct {
 	R2C_4       chem.React   `desc:"12: R2C-4cAMP + PKAact -> R2C2-4cAMP (backwards) = Release-C1"`
 	R2_3        chem.React   `desc:"13: R2-3cAMP + PKAact -> R2C-3cAMP (backwards) = Release-C2[1]"`
 	R2_4        chem.React   `desc:"14: R2-4cAMP + PKAact -> R2C-4cAMP (backwards) = Release-C2"`
-	AC1ATP      chem.Enz     `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15"`
+	AC1ATP      chem.EnzRate `desc:"15: AC1act catalyzing ATP -> cAMP -- table SIg numbered 9 -> 15 -- note: uses EnzRate not std Enz -- does not consume AC1"`
 	PDEcAMP     chem.Enz     `desc:"16: PDE1act catalyzing cAMP -> AMP -- table SIg numbered 10 -> 16"`
 	PKADiffuse  chem.Diffuse `desc:"PKA diffusion between Cyt and PSD"`
 	CAMPDiffuse chem.Diffuse `desc:"cAMP diffusion between Cyt and PSD"`
@@ -175,8 +181,8 @@ type PKAParams struct {
 func (cp *PKAParams) Defaults() {
 	// note: following are all in Cyt -- PSD is 4x for first values
 	// See React docs for more info
-	cp.CaMAC1.SetVol(5, CytVol, 1)      // 1: 5 μM-1 = 0.10416
-	cp.ATPcAMP.Set(4.0e-7, 0)           // 2: raw
+	cp.CaMAC1.SetVol(6, CytVol, 1)      // 1: 6 μM-1 = 0.125 -- NOTE: error in table (5) vs model 0.10416
+	cp.ATPcAMP.Set(4.0e-7, 0)           // 2: called "leak"
 	cp.R2C2_B.SetVol(0.2, CytVol, 0.1)  // 3: 0.2 μM-1 = 0.0041667 = cAMP-bind-site-B
 	cp.R2C2_B1.SetVol(0.1, CytVol, 0.2) // 4: 0.1 μM-1 = 0.002083, cAMP-bind-site-B[1]
 	cp.R2C2_A1.SetVol(2, CytVol, 5)     // 5: 2 μM-1 = 0.041667 = cAMP-bind-site-A[1]
@@ -191,7 +197,7 @@ func (cp *PKAParams) Defaults() {
 	cp.R2_3.SetVol(20, CytVol, 1)  // 13: 20 μM-1 = 0.41667 = Release-C2[1]
 	cp.R2_4.SetVol(2, CytVol, 10)  // 14: 2 μM-1 = 0.041667 = Release-C2
 
-	cp.AC1ATP.SetKmVol(40, CytVol, 40, 10)  // 15: Km = 40 = 0.026042
+	cp.AC1ATP.SetKmVol(40, CytVol, 40, 10)  // 15: Km = 40 * 48 (ac) = 0.026042
 	cp.PDEcAMP.SetKmVol(10, CytVol, 80, 20) // 16: Km = 10 = 0.20834
 
 	cp.PKADiffuse.SetSym(32.0 / 0.0225)
@@ -219,8 +225,9 @@ func (cp *PKAParams) StepPKA(vol float64, c, d *PKAVars, cCaM float64, dCaM *flo
 	cp.R2_3.StepK(kf, c.PKAact, c.R2_3, c.R2C_3, &d.PKAact, &d.R2_3, &d.R2C_3)          // 13
 	cp.R2_4.StepK(kf, c.PKAact, c.R2_4, c.R2C_4, &d.PKAact, &d.R2_4, &d.R2C_4)          // 14
 
+	// cs, ce, ds, dp, cc
+	cp.AC1ATP.StepK(kf, c.ATP, c.AC1act, &d.ATP, &d.CAMP, &c.AC1ATPC)
 	// cs, ce, cc, cp -> ds, de, dc, dp
-	cp.AC1ATP.StepK(kf, c.ATP, c.AC1act, c.AC1ATPC, c.CAMP, &d.ATP, &d.AC1act, &d.AC1ATPC, &d.CAMP)
 	cp.PDEcAMP.StepK(kf, c.CAMP, c.PDEact, c.PDEcAMPC, c.AMP, &d.CAMP, &d.PDEact, &d.PDEcAMPC, &d.AMP)
 }
 
@@ -245,5 +252,5 @@ func (cp *PKAParams) StepDiffuse(c, d *PKAState) {
 func (cp *PKAParams) Step(c, d *PKAState, cCaM, dCaM *CaMKIIState) {
 	cp.StepPKA(CytVol, &c.Cyt, &d.Cyt, cCaM.Cyt.Ca[3].CaM, &dCaM.Cyt.Ca[3].CaM)
 	cp.StepPKA(PSDVol, &c.PSD, &d.PSD, cCaM.PSD.Ca[3].CaM, &dCaM.PSD.Ca[3].CaM)
-	cp.StepDiffuse(c, d)
+	// cp.StepDiffuse(c, d)
 }
