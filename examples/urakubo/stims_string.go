@@ -16,12 +16,13 @@ func _() {
 	_ = x[Baseline-0]
 	_ = x[CaTarg-1]
 	_ = x[ClampCa1-2]
-	_ = x[StimsN-3]
+	_ = x[STDP-3]
+	_ = x[StimsN-4]
 }
 
-const _Stims_name = "BaselineCaTargClampCa1StimsN"
+const _Stims_name = "BaselineCaTargClampCa1STDPStimsN"
 
-var _Stims_index = [...]uint8{0, 8, 14, 22, 28}
+var _Stims_index = [...]uint8{0, 8, 14, 22, 26, 32}
 
 func (i Stims) String() string {
 	if i < 0 || i >= Stims(len(_Stims_index)-1) {

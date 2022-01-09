@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/goki/ki/kit"
 )
 
@@ -25,6 +27,8 @@ const (
 
 	ClampCa1
 
+	STDP
+
 	StimsN
 )
 
@@ -33,67 +37,63 @@ var StimFuncs = map[Stims]func(){
 	Baseline: BaselineFun,
 	CaTarg:   CaTargFun,
 	ClampCa1: ClampCa1Fun,
+	STDP:     STDPFun,
 }
 
 // ClampCa1Ca is direct copy of Ca values from test_stdp.g genesis func
 var ClampCa1Ca = []float64{
-	509.98792, 0.05731354654,
-	509.99052, 1.800978422,
-	509.99422, 3.778658628,
-	509.99922, 3.385097265,
-	510.00052, 3.192493439,
-	510.00072, 3.175482512,
-	510.00122, 3.484202623,
-	510.00222, 9.131223679,
-	510.00392, 7.309978008,
-	510.00652, 3.479086161,
-	510.01022, 2.207912683,
-	510.01522, 1.591691375,
-	510.02172, 1.139062405,
-	510.02992, 0.8029100895,
-	510.04002, 0.5597535968,
-	510.05222, 0.3869290054,
-	510.06672, 0.2666117251,
-	510.08372, 0.1854287386,
-	510.1034, 0.1331911981,
+	509.987, 0.05731354654,
+	509.990, 1.800978422,
+	509.994, 3.778658628,
+	509.999, 3.385097265,
+	510.000, 3.192493439,
+	510.001, 3.484202623,
+	510.002, 9.131223679,
+	510.003, 7.309978008,
+	510.006, 3.479086161,
+	510.010, 2.207912683,
+	510.015, 1.591691375,
+	510.021, 1.139062405,
+	510.029, 0.8029100895,
+	510.040, 0.5597535968,
+	510.052, 0.3869290054,
+	510.066, 0.2666117251,
+	510.083, 0.1854287386,
+	510.103, 0.1331911981,
 	510.126, 0.1012685224,
-	510.1517, 0.08303561062,
-	510.1807, 0.07339032739,
-	510.2132, 0.06863268465,
-	510.2494, 0.06637191772,
-	510.2895, 0.06523273885,
-	510.3337, 0.06451437622,
-	510.3822, 0.06390291452,
-	510.4352, 0.06327681988,
-	510.4929, 0.062598221,
-	510.5555, 0.06186179072,
-	510.6232, 0.06107418239,
-	510.6962, 0.06024680287,
-	510.7747, 0.05939326808,
+	510.151, 0.08303561062,
+	510.180, 0.07339032739,
+	510.213, 0.06863268465,
+	510.249, 0.06637191772,
+	510.289, 0.06523273885,
+	510.333, 0.06451437622,
+	510.382, 0.06390291452,
+	510.435, 0.06327681988,
+	510.492, 0.062598221,
+	510.555, 0.06186179072,
+	510.623, 0.06107418239,
+	510.696, 0.06024680287,
+	510.774, 0.05939326808,
 }
 
-// InitSettle settles out the spine for given number of secs (100 is good)
-func InitSettle(secs float64) {
-	ss := &TheSim
-	ss.StopNow = false
-	ss.Spine.StepTime(secs)
+var ClampVm = []float64{
+	16.990, -64.62194824,
+	16.994, -63.22241211,
+	16.999, -62.93297958,
+	17.001, -62.99502563,
+	17.002, -58.25670624,
+	17.003, -4.396664619,
+	17.004, -40.63706589,
+	17.007, -55.61388779,
+	17.010, -60.13838196,
+	17.015, -61.69696426,
+	17.022, -62.90755844,
+	17.030, -63.82915497,
+	17.040, -64.40870667,
 }
 
-func GraphRun(secs float64) {
-	ss := &TheSim
-	nms := int(secs / 0.001)
-	sms := ss.Msec
-	for msec := 0; msec < nms; msec++ {
-		ss.NeuronUpdt(sms + msec)
-		ss.LogDefault()
-		if ss.StopNow {
-			break
-		}
-	}
-}
-
-// CaPerMsec returns calcium per msec for given input data
-func CaPerMsec(orig []float64) []float64 {
+// PerMsec returns per msec for given input data
+func PerMsec(orig []float64) []float64 {
 	ost := orig[0]
 	nca := len(orig) / 2
 	oet := orig[(nca-1)*2]
@@ -141,7 +141,7 @@ func BaselineFun() {
 
 func CaTargFun() {
 	ss := &TheSim
-	InitSettle(100)
+	ss.InitSettle(100)
 	ss.Spine.Ca.SetBuffTarg(ss.CaTarg.Cyt, ss.CaTarg.PSD)
 	for msec := 0; msec < 20000; msec++ {
 		ss.NeuronUpdt(msec)
@@ -155,9 +155,9 @@ func CaTargFun() {
 
 func ClampCa1Fun() {
 	ss := &TheSim
-	cas := CaPerMsec(ClampCa1Ca)
+	cas := PerMsec(ClampCa1Ca)
 	nca := len(cas)
-	InitSettle(100)
+	ss.InitSettle(100)
 	bca := 0.05
 	for msec := 0; msec < 20000; msec++ {
 		tms := (msec + 500) % 1000
@@ -173,6 +173,35 @@ func ClampCa1Fun() {
 			break
 		}
 	}
-	GraphRun(20)
+	ss.GraphRun(20)
+	ss.Stopped()
+}
+
+func STDPFun() {
+	ss := &TheSim
+	vms := PerMsec(ClampVm)
+	fmt.Printf("%v\n", ClampVm)
+	nvm := len(vms)
+	ss.InitSettle(10)
+	bvm := -65.0
+	for msec := 0; msec < 20000; msec++ {
+		tms := (msec + 500) % 1000
+		vm := bvm
+		if tms < nvm {
+			vm = vms[tms]
+		}
+		if tms == ss.DeltaT {
+			ss.Spine.States.Spike = 1
+		} else {
+			ss.Spine.States.Spike = 0
+		}
+		ss.Spine.States.Vm = vm
+		ss.NeuronUpdt(msec)
+		ss.LogDefault()
+		if ss.StopNow {
+			break
+		}
+	}
+	ss.GraphRun(20)
 	ss.Stopped()
 }

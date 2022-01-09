@@ -47,6 +47,7 @@ type Sim struct {
 	Spine      Spine         `desc:"the spine state with Urakubo intracellular model"`
 	Neuron     *axon.Neuron  `desc:"the neuron"`
 	Stim       Stims         `desc:"what stimulation to drive with"`
+	DeltaT     int           `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
 	CaTarg     CaState       `desc:"target calcium level for CaTarg stim"`
 	Msec       int           `inactive:"+" desc:"current cycle of updating"`
 	Msec100Log *etable.Table `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
@@ -86,6 +87,7 @@ func (ss *Sim) New() {
 // Defaults sets default params
 func (ss *Sim) Defaults() {
 	ss.Spine.Defaults()
+	ss.DeltaT = 16
 	ss.CaTarg.Cyt = 10
 	ss.CaTarg.PSD = 10
 }
@@ -201,6 +203,24 @@ func (ss *Sim) Stopped() {
 			ss.ToolBar.UpdateActions()
 		}
 		vp.SetNeedsFullRender()
+	}
+}
+
+// InitSettle settles out the spine for given number of secs (100 is good)
+func (ss *Sim) InitSettle(secs float64) {
+	ss.StopNow = false
+	ss.Spine.StepTime(secs)
+}
+
+func (ss *Sim) GraphRun(secs float64) {
+	nms := int(secs / 0.001)
+	sms := ss.Msec
+	for msec := 0; msec < nms; msec++ {
+		ss.NeuronUpdt(sms + msec)
+		ss.LogDefault()
+		if ss.StopNow {
+			break
+		}
 	}
 }
 
