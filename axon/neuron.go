@@ -34,7 +34,7 @@ type Neuron struct {
 	Gk      float32   `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
 	Inet    float32   `desc:"net current produced by all channels -- drives update of Vm"`
 	Vm      float32   `desc:"membrane potential -- integrates Inet current over time"`
-	VmDend  float32   `desc:"dendritic membrane potential -- subject to multiplier"`
+	VmDend  float32   `desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`
 
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
