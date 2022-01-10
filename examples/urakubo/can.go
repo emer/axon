@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -45,8 +47,27 @@ func (cs *CaNCaMVars) Init(vol float64) {
 	for i := range cs.Ca {
 		cs.Ca[i].Init(vol)
 	}
+	// original
 	cs.Ca[0].CaN = chem.CoToN(3, vol)
 	cs.CaNact = 0
+
+	// All vals below from 500 sec baseline
+	cs.Ca[0].CaN = chem.CoToN(1.305, vol)
+	cs.Ca[0].CaNCaM = chem.CoToN(0.0279, vol)
+	cs.Ca[1].CaN = chem.CoToN(1.305, vol)
+	cs.Ca[1].CaNCaM = chem.CoToN(0.0279, vol)
+	cs.Ca[2].CaN = chem.CoToN(0.3263, vol)
+	cs.Ca[2].CaNCaM = chem.CoToN(0.006976, vol)
+	cs.CaNact = chem.CoToN(0.006976, vol)
+}
+
+// Generate Code for Initializing
+func (cs *CaNCaMVars) InitCode(vol float64, pre string) {
+	for i := range cs.Ca {
+		fmt.Printf("\tcs.%s.Ca[%d].CaN = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaN, vol))
+		fmt.Printf("\tcs.%s.Ca[%d].CaNCaM = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaNCaM, vol))
+	}
+	fmt.Printf("\tcs.%s.CaNact = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.CaNact, vol))
 }
 
 func (cs *CaNCaMVars) Zero() {
@@ -82,6 +103,12 @@ type CaNState struct {
 func (cs *CaNState) Init() {
 	cs.Cyt.Init(CytVol)
 	cs.PSD.Init(PSDVol)
+}
+
+func (cs *CaNState) InitCode() {
+	fmt.Printf("\nCaNState:\n")
+	cs.Cyt.InitCode(CytVol, "Cyt")
+	cs.PSD.InitCode(PSDVol, "PSD")
 }
 
 func (cs *CaNState) Zero() {

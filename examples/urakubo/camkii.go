@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -58,12 +60,28 @@ func (cs *CaMKIIVars) Init(vol float64) {
 	for i := range cs.Ca {
 		cs.Ca[i].Init(vol)
 	}
-	cs.Ca[0].CaM = chem.CoToN(80, vol)
-	cs.CaMKII = chem.CoToN(20, vol)
-	cs.CaMKIIP = 0 // WA
+	cs.Ca[0].CaM = chem.CoToN(78.31, vol)    // orig: 80
+	cs.Ca[1].CaM = chem.CoToN(1.002, vol)    // orig: 0
+	cs.Ca[2].CaM = chem.CoToN(0.006682, vol) // orig: 0
+	cs.Ca[3].CaM = chem.CoToN(2.2-05, vol)   // orig: 0
+	cs.CaMKII = chem.CoToN(19.4, vol)        // orig: 20
+	cs.CaMKIIP = 0                           // WA
 	cs.PP1Thr286C = 0
 	cs.PP2AThr286C = 0
 	cs.UpdtActive()
+}
+
+// Generate Code for Initializing
+func (cs *CaMKIIVars) InitCode(vol float64, pre string) {
+	for i := range cs.Ca {
+		fmt.Printf("\tcs.%s.Ca[%d].CaM = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM, vol))
+		fmt.Printf("\tcs.%s.Ca[%d].CaM_CaMKII = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_CaMKII, vol))
+		fmt.Printf("\tcs.%s.Ca[%d].CaM_CaMKIIP = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_CaMKIIP, vol))
+	}
+	fmt.Printf("\tcs.%s.CaMKII = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.CaMKII, vol))
+	fmt.Printf("\tcs.%s.CaMKIIP = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.CaMKIIP, vol))
+	fmt.Printf("\tcs.%s.PP1Thr286C = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.PP1Thr286C, vol))
+	fmt.Printf("\tcs.%s.PP2AThr286C = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.PP2AThr286C, vol))
 }
 
 func (cs *CaMKIIVars) Zero() {
@@ -164,8 +182,31 @@ type CaMKIIState struct {
 }
 
 func (cs *CaMKIIState) Init() {
-	cs.Cyt.Init(CytVol) // confirmed cyt and psd seem to start with same conc
+	cs.Cyt.Init(CytVol)
 	cs.PSD.Init(PSDVol)
+
+	// All vals below from 500 sec baseline
+	// Note: all CaMKIIP = 0 after baseline
+
+	vol := float64(CytVol)
+	cs.Cyt.Ca[0].CaM_CaMKII = chem.CoToN(0.2615, vol)
+	cs.Cyt.Ca[1].CaM_CaMKII = chem.CoToN(0.003347, vol)
+	cs.Cyt.Ca[2].CaM_CaMKII = chem.CoToN(2.231e-05, vol)
+	cs.Cyt.Ca[3].CaM = chem.CoToN(1.988e-05, vol)
+	cs.Cyt.Ca[3].CaM_CaMKII = chem.CoToN(0.0014, vol)
+
+	vol = PSDVol
+	cs.PSD.Ca[0].CaM_CaMKII = chem.CoToN(1.991, vol)
+	cs.PSD.Ca[1].CaM_CaMKII = chem.CoToN(0.0255, vol)
+	cs.PSD.Ca[2].CaM_CaMKII = chem.CoToN(0.00017, vol)
+	cs.PSD.Ca[3].CaM = chem.CoToN(2.739e-05, vol)
+	cs.PSD.Ca[3].CaM_CaMKII = chem.CoToN(0.01099, vol)
+}
+
+func (cs *CaMKIIState) InitCode() {
+	fmt.Printf("\nCaMKIIState:\n")
+	cs.Cyt.InitCode(CytVol, "Cyt")
+	cs.PSD.InitCode(PSDVol, "PSD")
 }
 
 func (cs *CaMKIIState) Zero() {

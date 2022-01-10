@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -30,6 +32,20 @@ func (ps *PP1Vars) Init(vol float64) {
 	ps.PKAI1C = 0
 	ps.CaNI1PC = 0
 	ps.PP2AI1PC = 0
+
+	// All vals below from 500 sec baseline
+	ps.I1 = chem.CoToN(1.059, vol)
+	ps.I1P = chem.CoToN(0.936, vol)
+	ps.CaNI1PC = chem.CoToN(0.002176, vol)
+}
+
+func (ps *PP1Vars) InitCode(vol float64, pre string) {
+	fmt.Printf("\tps.%s.I1 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.I1, vol))
+	fmt.Printf("\tps.%s.I1P = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.I1P, vol))
+	fmt.Printf("\tps.%s.PP1_I1P = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.PP1_I1P, vol))
+	fmt.Printf("\tps.%s.PP1act = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.PP1act, vol))
+	fmt.Printf("\tps.%s.CaNI1PC = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.CaNI1PC, vol))
+	fmt.Printf("\tps.%s.PP2AI1PC = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.PP2AI1PC, vol))
 }
 
 func (ps *PP1Vars) Zero() {
@@ -75,6 +91,22 @@ type PP1State struct {
 func (ps *PP1State) Init() {
 	ps.Cyt.Init(CytVol)
 	ps.PSD.Init(PSDVol)
+
+	vol := float64(CytVol)
+	ps.Cyt.PP1_I1P = chem.CoToN(0.989, vol)
+	ps.Cyt.PP1act = chem.CoToN(0.01338, vol)
+	ps.Cyt.PP2AI1PC = chem.CoToN(0.006718, vol)
+
+	vol = PSDVol
+	ps.PSD.PP1_I1P = chem.CoToN(5.934, vol)
+	ps.PSD.PP1act = chem.CoToN(0.06834, vol)
+	ps.PSD.PP2AI1PC = chem.CoToN(0, vol)
+}
+
+func (ps *PP1State) InitCode() {
+	fmt.Printf("\nPP1State:\n")
+	ps.Cyt.InitCode(CytVol, "Cyt")
+	ps.PSD.InitCode(PSDVol, "PSD")
 }
 
 func (ps *PP1State) Zero() {

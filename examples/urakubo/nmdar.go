@@ -38,6 +38,8 @@ type NMDARState struct {
 
 func (cs *NMDARState) Init() {
 	cs.Zero()
+	cs.N1[0] = 1
+	cs.Total()
 }
 
 func (cs *NMDARState) Zero() {
@@ -47,11 +49,26 @@ func (cs *NMDARState) Zero() {
 	cs.Ji = 0
 	cs.Vca = 0
 	cs.Vi = 0
+	for k := 0; k < 3; k++ {
+		cs.N0[k] = 0
+		cs.N1[k] = 0
+		cs.N2[k] = 0
+		cs.N3[k] = 0
+		cs.No[k] = 0
+	}
+}
+
+func (cs *NMDARState) Total() {
+	cs.Nt0 = cs.N0[0] + cs.N1[0] + cs.N2[0] + cs.N3[0] + cs.No[0]
+	cs.Nt1 = cs.N0[1] + cs.N1[1] + cs.N2[1] + cs.N3[1] + cs.No[1]
+	cs.Nt2 = cs.N0[2] + cs.N1[2] + cs.N2[2] + cs.N3[2] + cs.No[2]
+	cs.Nopen = (cs.No[0] + cs.No[1] + cs.No[2])
 }
 
 func (cs *NMDARState) Log(dt *etable.Table, row int) {
 	pre := "NMDA_"
 	dt.SetCellFloat(pre+"Mg", row, cs.Mg)
+	dt.SetCellFloat(pre+"Nopen", row, cs.Nopen)
 	dt.SetCellFloat(pre+"Jca", row, cs.Jca)
 	dt.SetCellFloat(pre+"Nt0", row, cs.Nt0)
 	dt.SetCellFloat(pre+"Nt1", row, cs.Nt1)
@@ -61,6 +78,7 @@ func (cs *NMDARState) Log(dt *etable.Table, row int) {
 func (cs *NMDARState) ConfigLog(sch *etable.Schema) {
 	pre := "NMDA_"
 	*sch = append(*sch, etable.Column{pre + "Mg", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "Nopen", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Jca", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nt0", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nt1", etensor.FLOAT64, nil, nil})
@@ -72,7 +90,7 @@ func (cs *NMDARState) ConfigLog(sch *etable.Schema) {
 // The [3] arrays correspond to Nt0, Nt1, Nt2: plain NMDA, 2CaM, 3CaM
 type NMDARParams struct {
 	Erev   float64 `def:"0" desc:"reversal potential for NMDARs"`
-	Pca    float64 `def:"1" desc:"Normalization for Ca flux (pmol sec-1 mV-1)"`
+	Pca    float64 `def:"89635" desc:"Normalization for Ca flux (pmol sec-1 mV-1)"`
 	Gmax   float64 `def:"10" desc:"maximum conductance (nS)"`
 	Kfcam1 float64 `def:"400" desc:"CaM forward rate constant for CaM + C0"`
 	Kbcam1 float64 `def:"34.8" desc:"CaM backward rate constant for CaM + C0"`
@@ -95,7 +113,7 @@ type NMDARParams struct {
 
 func (nr *NMDARParams) Defaults() {
 	nr.Erev = 0
-	nr.Pca = 1
+	nr.Pca = 1.7927e5 * 0.5 // SVR_PSD
 	nr.Gmax = 10
 
 	nr.Kfcam1 = 400
@@ -122,7 +140,7 @@ func (nr *NMDARParams) Defaults() {
 
 // Step increments NMDAR state
 // ca = Ca2+ Co, c2 = 2Ca2+CaM Co, c3 = 3Ca2+CaM Co
-func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool) {
+func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool, dca *float64) {
 	var NN0, NN1, NN2, NN3, NNo [3]float64
 
 	dt := chem.IntegrationDt
@@ -212,10 +230,6 @@ func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool) 
 		}
 	}
 
-	cs.Nt0 = cs.N0[0] + cs.N1[0] + cs.N2[0] + cs.N3[0] + cs.No[0]
-	cs.Nt1 = cs.N0[1] + cs.N1[1] + cs.N2[1] + cs.N3[1] + cs.No[1]
-	cs.Nt2 = cs.N0[2] + cs.N1[2] + cs.N2[2] + cs.N3[2] + cs.No[2]
-
 	cs.Mg = 1 / (1 + 0.4202*math.Exp(-0.062*vm)) // Mg(1.5)/3.57
 	if vm > -0.1 && vm < 0.1 {
 		cs.Vca = -1/0.0756 + 0.5*vm
@@ -225,5 +239,8 @@ func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool) 
 	cs.Vi = (nr.Erev - vm) * cs.Mg
 	cs.Jca = cs.Vca * nr.Pca * (cs.No[0] + cs.No[1] + cs.No[2])
 	cs.Ji = cs.Vi * nr.Gmax * (cs.No[0] + cs.No[1] + cs.No[2])
-	cs.Nopen = (cs.No[0] + cs.No[1] + cs.No[2])
+
+	cs.Total()
+
+	*dca += cs.Jca
 }

@@ -81,6 +81,7 @@ func (ss *Sim) New() {
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
+	ss.Stim = STDP
 	ss.Defaults()
 }
 
@@ -161,6 +162,7 @@ func (ss *Sim) RunStim() {
 		fmt.Printf("Stim function: %s not found!\n", ss.Stim)
 		return
 	}
+	ss.StopNow = false
 	go fn()
 }
 
@@ -204,12 +206,6 @@ func (ss *Sim) Stopped() {
 		}
 		vp.SetNeedsFullRender()
 	}
-}
-
-// InitSettle settles out the spine for given number of secs (100 is good)
-func (ss *Sim) InitSettle(secs float64) {
-	ss.StopNow = false
-	ss.Spine.StepTime(secs)
 }
 
 func (ss *Sim) GraphRun(secs float64) {
@@ -291,8 +287,9 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 		}
 	}
 
-	plt.SetColParams("Cyt_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("PSD_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VmS", eplot.On, eplot.FixMin, -65, eplot.FloatMax, 1)
+	plt.SetColParams("PreSpike", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)

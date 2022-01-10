@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -27,6 +29,14 @@ type AMPARVars struct {
 
 func (as *AMPARVars) Init() {
 	as.Zero()
+}
+
+// Generate Code for Initializing
+func (as *AMPARVars) InitCode(vol float64, pre string) {
+	fmt.Printf("\tas.%s.DD = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(as.DD, vol))
+	fmt.Printf("\tas.%s.PD = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(as.PD, vol))
+	fmt.Printf("\tas.%s.DP = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(as.DP, vol))
+	fmt.Printf("\tas.%s.PP = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(as.PP, vol))
 }
 
 func (as *AMPARVars) Zero() {
@@ -68,14 +78,14 @@ func (as *AMPARVars) ConfigLog(sch *etable.Schema, pre string) {
 // AMPARState is AMPAR Phosphorylation and trafficking state.
 // 4 Locations / states, which have their own time constants:
 // Int = Cytosol, internal not integrated into membrane -- after endocyctosis
-// Mem = Cytosol, integrated into the membrane -- after exocytosis, still governed by Cyl rates
+// Mbr = Cytosol, integrated into the membrane -- after exocytosis, still governed by Cyl rates
 // PSD = In the postsynaptic density, but not trapped by scaffold
 // Trp = Trapped by scaffolding in the PSD -- solidly fixed in place and active
 // Trp.Tot is the net effective AMPA conductance
 // 20 state vars total
 type AMPARState struct {
 	Int      AMPARVars `view:"inline" desc:"cytosol internal"`
-	Mem      AMPARVars `view:"inline" desc:"cytosol exocytosed into the membrane"`
+	Mbr      AMPARVars `view:"inline" desc:"cytosol exocytosed into the membrane"`
 	PSD      AMPARVars `view:"inline" desc:"in PSD but not trapped"`
 	Trp      AMPARVars `view:"inline" desc:"in PSD and trapped in place"`
 	Scaffold float64   `desc:"amount of unbound scaffold used for trapping"`
@@ -83,7 +93,7 @@ type AMPARState struct {
 
 func (as *AMPARState) Init() {
 	as.Int.Init()
-	as.Mem.Init()
+	as.Mbr.Init()
 	as.PSD.Init()
 	as.Trp.Init()
 
@@ -94,13 +104,44 @@ func (as *AMPARState) Init() {
 	as.Trp.DD = chem.CoToN(1, PSDVol)
 	as.Trp.PD = chem.CoToN(3, PSDVol)
 
-	as.Scaffold = 0
+	as.Scaffold = chem.CoToN(2.569, PSDVol)
+
+	// All vals below from 500 sec baseline
+	vol := float64(CytVol)
+	as.Int.DD = chem.CoToN(1.405, vol)
+	as.Int.PD = chem.CoToN(4.619, vol)
+	as.Int.DP = chem.CoToN(0.08153, vol)
+	as.Int.PP = chem.CoToN(0.2662, vol)
+	as.Mbr.DD = chem.CoToN(0.002097, vol)
+	as.Mbr.PD = chem.CoToN(0.2286, vol)
+	as.Mbr.DP = chem.CoToN(0.0001729, vol)
+	as.Mbr.PP = chem.CoToN(0.01466, vol)
+
+	vol = PSDVol
+	as.PSD.DD = chem.CoToN(0.04437, vol)
+	as.PSD.PD = chem.CoToN(0.1816, vol)
+	as.PSD.DP = chem.CoToN(0.004169, vol)
+	as.PSD.PP = chem.CoToN(0.01556, vol)
+	as.Trp.DD = chem.CoToN(0.3028, vol)
+	as.Trp.PD = chem.CoToN(0.7228, vol)
+	as.Trp.DP = chem.CoToN(0.07396, vol)
+	as.Trp.PP = chem.CoToN(0.1836, vol)
+
 	as.Trp.Total()
+}
+
+func (as *AMPARState) InitCode() {
+	fmt.Printf("\nAMPARState:\n")
+	as.Int.InitCode(CytVol, "Int")
+	as.Mbr.InitCode(CytVol, "Mbr")
+	as.PSD.InitCode(PSDVol, "PSD")
+	as.Trp.InitCode(PSDVol, "Trp")
+	fmt.Printf("\tas.Scaffold = chem.CoToN(%.4g, vol)\n", chem.CoFmN(as.Scaffold, PSDVol))
 }
 
 func (as *AMPARState) Zero() {
 	as.Int.Zero()
-	as.Mem.Zero()
+	as.Mbr.Zero()
 	as.PSD.Zero()
 	as.Trp.Zero()
 	as.Scaffold = 0
@@ -108,7 +149,7 @@ func (as *AMPARState) Zero() {
 
 func (as *AMPARState) Integrate(d *AMPARState) {
 	as.Int.Integrate(&d.Int)
-	as.Mem.Integrate(&d.Mem)
+	as.Mbr.Integrate(&d.Mbr)
 	as.PSD.Integrate(&d.PSD)
 	as.Trp.Integrate(&d.Trp)
 	chem.Integrate(&as.Scaffold, d.Scaffold)
@@ -116,14 +157,14 @@ func (as *AMPARState) Integrate(d *AMPARState) {
 
 func (as *AMPARState) Log(dt *etable.Table, row int) {
 	as.Int.Log(dt, CytVol, row, "Int_")
-	as.Mem.Log(dt, CytVol, row, "Mem_")
+	as.Mbr.Log(dt, CytVol, row, "Mbr_")
 	as.PSD.Log(dt, PSDVol, row, "PSD_")
 	as.Trp.Log(dt, PSDVol, row, "Trp_")
 }
 
 func (as *AMPARState) ConfigLog(sch *etable.Schema) {
 	as.Int.ConfigLog(sch, "Int_")
-	as.Mem.ConfigLog(sch, "Mem_")
+	as.Mbr.ConfigLog(sch, "Mbr_")
 	as.PSD.ConfigLog(sch, "PSD_")
 	as.Trp.ConfigLog(sch, "Trp_")
 }
@@ -202,12 +243,12 @@ func (ap *AMPARTrafParams) Defaults() {
 func (ap *AMPARTrafParams) StepT(c, d *AMPARState) {
 
 	var dummy float64
-	// Exo = Int -> Mem
-	ap.EndoExoP.Step(c.Mem.PD, 1, c.Int.PD, &d.Mem.PD, &dummy, &d.Int.PD)
-	ap.EndoExoP.Step(c.Mem.PP, 1, c.Int.PP, &d.Mem.PP, &dummy, &d.Int.PP)
+	// Exo = Int -> Mbr
+	ap.EndoExoP.Step(c.Mbr.PD, 1, c.Int.PD, &d.Mbr.PD, &dummy, &d.Int.PD)
+	ap.EndoExoP.Step(c.Mbr.PP, 1, c.Int.PP, &d.Mbr.PP, &dummy, &d.Int.PP)
 
-	ap.EndoD.Step(c.Mem.DD, 1, c.Int.DD, &d.Mem.DD, &dummy, &d.Int.DD)
-	ap.EndoD.Step(c.Mem.DP, 1, c.Int.DP, &d.Mem.DP, &dummy, &d.Int.DP)
+	ap.EndoD.Step(c.Mbr.DD, 1, c.Int.DD, &d.Mbr.DD, &dummy, &d.Int.DD)
+	ap.EndoD.Step(c.Mbr.DP, 1, c.Int.DP, &d.Mbr.DP, &dummy, &d.Int.DP)
 
 	ap.TrapP.Step(c.PSD.DP, c.Scaffold, c.Trp.DP, &d.PSD.DP, &d.Scaffold, &d.Trp.DP)
 	ap.TrapP.Step(c.PSD.PP, c.Scaffold, c.Trp.PP, &d.PSD.PP, &d.Scaffold, &d.Trp.PP)
@@ -215,11 +256,11 @@ func (ap *AMPARTrafParams) StepT(c, d *AMPARState) {
 	ap.TrapD.Step(c.PSD.DD, c.Scaffold, c.Trp.DD, &d.PSD.DD, &d.Scaffold, &d.Trp.DD)
 	ap.TrapD.Step(c.PSD.PD, c.Scaffold, c.Trp.PD, &d.PSD.PD, &d.Scaffold, &d.Trp.PD)
 
-	// Diffuse = Mem -> PSD
-	ap.Diffuse.Step(c.Mem.DD, c.PSD.DD, CytVol, PSDVol, &d.Mem.DD, &d.PSD.DD)
-	ap.Diffuse.Step(c.Mem.PD, c.PSD.PD, CytVol, PSDVol, &d.Mem.PD, &d.PSD.PD)
-	ap.Diffuse.Step(c.Mem.DP, c.PSD.DP, CytVol, PSDVol, &d.Mem.DP, &d.PSD.DP)
-	ap.Diffuse.Step(c.Mem.PP, c.PSD.PP, CytVol, PSDVol, &d.Mem.PP, &d.PSD.PP)
+	// Diffuse = Mbr -> PSD
+	ap.Diffuse.Step(c.Mbr.DD, c.PSD.DD, CytVol, PSDVol, &d.Mbr.DD, &d.PSD.DD)
+	ap.Diffuse.Step(c.Mbr.PD, c.PSD.PD, CytVol, PSDVol, &d.Mbr.PD, &d.PSD.PD)
+	ap.Diffuse.Step(c.Mbr.DP, c.PSD.DP, CytVol, PSDVol, &d.Mbr.DP, &d.PSD.DP)
+	ap.Diffuse.Step(c.Mbr.PP, c.PSD.PP, CytVol, PSDVol, &d.Mbr.PP, &d.PSD.PP)
 }
 
 // AMPAR phosphorylation and trafficking parameters
@@ -239,12 +280,12 @@ func (ap *AMPARParams) Defaults() {
 // based on current Ca signaling state
 func (ap *AMPARParams) Step(c, d *AMPARState, cas *CaSigState, pp2a float64) {
 	ap.Phos.StepP(&c.Int, &d.Int, CytVol, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
-	ap.Phos.StepP(&c.Mem, &d.Mem, CytVol, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Mbr, &d.Mbr, CytVol, cas.CaMKII.Cyt.Active, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
 	ap.Phos.StepP(&c.Trp, &d.Trp, PSDVol, cas.CaMKII.PSD.Active, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
 	ap.Phos.StepP(&c.PSD, &d.PSD, PSDVol, cas.CaMKII.PSD.Active, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
 
 	ap.Phos.StepPP2A(&c.Int, &d.Int, CytVol, pp2a) // Cyt only
-	ap.Phos.StepPP2A(&c.Mem, &d.Mem, CytVol, pp2a) // Cyt only
+	ap.Phos.StepPP2A(&c.Mbr, &d.Mbr, CytVol, pp2a) // Cyt only
 
 	ap.Traffic.StepT(c, d)
 }

@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -56,6 +58,43 @@ func (ps *PKAVars) Init(vol float64) {
 	ps.PKAact = chem.CoToN(0.05, vol)
 	ps.AC1ATPC = chem.CoToN(0.00025355, vol)
 	ps.PDEcAMPC = 0
+
+	// All vals below from 500 sec baseline
+	ps.AC1act = chem.CoToN(0.0002385, vol)
+	ps.CAMP = chem.CoToN(0.004477, vol)
+	ps.R2C2 = chem.CoToN(1.982, vol)
+	ps.R2C2_B = chem.CoToN(0.01775, vol)
+	ps.R2C2_BB = chem.CoToN(3.973e-05, vol)
+	ps.R2C2_AB = chem.CoToN(3.179e-05, vol)
+	ps.R2C2_ABB = chem.CoToN(1.419e-07, vol)
+	ps.R2C2_4 = chem.CoToN(1.274e-10, vol)
+
+	ps.R2C_3 = chem.CoToN(1.003e-06, vol)
+	ps.R2C_4 = chem.CoToN(8.958e-08, vol)
+	ps.R2_3 = chem.CoToN(1.78e-06, vol)
+	ps.R2_4 = chem.CoToN(1.592e-05, vol)
+	ps.PKAact = chem.CoToN(0.032, vol)
+	ps.AC1ATPC = chem.CoToN(9.701e+05, vol)
+	ps.PDEcAMPC = chem.CoToN(0.0004477, vol)
+}
+
+func (ps *PKAVars) InitCode(vol float64, pre string) {
+	fmt.Printf("\tps.%s.AC1 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.AC1, vol))
+	fmt.Printf("\tps.%s.AC1act = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.AC1act, vol))
+	fmt.Printf("\tps.%s.CAMP = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.CAMP, vol))
+	fmt.Printf("\tps.%s.R2C2 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C2, vol))
+	fmt.Printf("\tps.%s.R2C2_B = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C2_B, vol))
+	fmt.Printf("\tps.%s.R2C2_BB = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C2_BB, vol))
+	fmt.Printf("\tps.%s.R2C2_AB = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C2_AB, vol))
+	fmt.Printf("\tps.%s.R2C2_ABB = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C2_ABB, vol))
+	fmt.Printf("\tps.%s.R2C2_4 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C2_4, vol))
+	fmt.Printf("\tps.%s.R2C_3 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C_3, vol))
+	fmt.Printf("\tps.%s.R2C_4 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2C_4, vol))
+	fmt.Printf("\tps.%s.R2_3 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2_3, vol))
+	fmt.Printf("\tps.%s.R2_4 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.R2_4, vol))
+	fmt.Printf("\tps.%s.PKAact = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.PKAact, vol))
+	fmt.Printf("\tps.%s.AC1ATPC = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.AC1ATPC, vol))
+	fmt.Printf("\tps.%s.PDEcAMPC = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(ps.PDEcAMPC, vol))
 }
 
 func (ps *PKAVars) Zero() {
@@ -133,6 +172,12 @@ type PKAState struct {
 func (ps *PKAState) Init() {
 	ps.Cyt.Init(CytVol)
 	ps.PSD.Init(PSDVol)
+}
+
+func (ps *PKAState) InitCode() {
+	fmt.Printf("\nPKAState:\n")
+	ps.Cyt.InitCode(CytVol, "Cyt")
+	ps.PSD.InitCode(PSDVol, "PSD")
 }
 
 func (ps *PKAState) Zero() {

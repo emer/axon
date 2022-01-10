@@ -9,6 +9,7 @@ import (
 
 	"github.com/emer/emergent/chem"
 	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
 )
 
 const (
@@ -37,7 +38,16 @@ func (cs *CaSigState) Init() {
 	cs.CaN.Init()
 	cs.PKA.Init()
 	cs.PP1.Init()
-	cs.PP2A = chem.CoToN(0.03, CytVol)
+	cs.PP2A = chem.CoToN(0.02321, CytVol) // 0.03 orig
+}
+
+func (cs *CaSigState) InitCode() {
+	cs.CaMKII.InitCode()
+	cs.CaN.InitCode()
+	cs.PKA.InitCode()
+	cs.PP1.InitCode()
+	fmt.Printf("\nCaSigState:\n")
+	fmt.Printf("\tcs.PP2A = chem.CoToN(%.4g, CytVol)\n", chem.CoFmN(cs.PP2A, CytVol))
 }
 
 func (cs *CaSigState) Zero() {
@@ -77,45 +87,58 @@ func (cs *CaSigState) ConfigLog(sch *etable.Schema) {
 // SpineState is entire state of spine including Ca signaling and AMPAR
 // Total state vars: 95 + 20 = 115
 type SpineState struct {
-	NMDAR NMDARState `desc:"NMDA receptor state"`
-	CaSig CaSigState `desc:"calcium signaling systems"`
-	AMPAR AMPARState `desc:"AMPA receptor state"`
-	Vm    float64    `desc:"clamped Vm in spine"`
-	Spike float64    `desc:"discrete spike firing"`
+	Time      float64    `desc:"internal time counter, in seconds, incremented by Dt"`
+	NMDAR     NMDARState `desc:"NMDA receptor state"`
+	CaSig     CaSigState `desc:"calcium signaling systems"`
+	AMPAR     AMPARState `desc:"AMPA receptor state"`
+	VmS       float64    `desc:"Vm in spine"`
+	PreSpike  float64    `desc:"discrete spike firing -- 0 = no spike, 1 = spike"`
+	PreSpikeT float64    `desc:"time of last spike firing -- needed to prevent repeated spiking from same singal"`
 }
 
 func (ss *SpineState) Init() {
+	ss.Time = 0
 	ss.NMDAR.Init()
 	ss.CaSig.Init()
 	ss.AMPAR.Init()
-	ss.Vm = -65
-	ss.Spike = 0
+	ss.VmS = -65
+	ss.PreSpike = 0
+	ss.PreSpikeT = -1
+}
+
+func (ss *SpineState) InitCode() {
+	ss.CaSig.InitCode()
+	ss.AMPAR.InitCode()
 }
 
 func (ss *SpineState) Zero() {
+	ss.Time = 0
 	ss.NMDAR.Zero()
 	ss.CaSig.Zero()
 	ss.AMPAR.Zero()
-	ss.Vm = -65
-	ss.Spike = 0
+	ss.VmS = 0
+	ss.PreSpike = 0
+	ss.PreSpikeT = 0
 }
 
 func (ss *SpineState) Integrate(d *SpineState) {
+	ss.Time += chem.IntegrationDt
+	// no NMDAR integration
 	ss.CaSig.Integrate(&d.CaSig)
 	ss.AMPAR.Integrate(&d.AMPAR)
 }
 
 func (ss *SpineState) Log(dt *etable.Table, row int) {
-	dt.SetCellFloat("Vm", row, ss.Vm)
-	dt.SetCellFloat("Spike", row, ss.Spike)
+	dt.SetCellFloat("VmS", row, ss.VmS)
+	dt.SetCellFloat("PreSpike", row, ss.PreSpike)
 	ss.NMDAR.Log(dt, row)
 	ss.CaSig.Log(dt, row)
 	ss.AMPAR.Log(dt, row)
 }
 
 func (ss *SpineState) ConfigLog(sch *etable.Schema) {
-	// *sch = append(*sch, etable.Column{"Vm", etensor.FLOAT64, nil, nil})
-	// *sch = append(*sch, etable.Column{"Spike", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{"VmS", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{"PreSpike", etensor.FLOAT64, nil, nil})
 	ss.NMDAR.ConfigLog(sch)
 	ss.CaSig.ConfigLog(sch)
 	ss.AMPAR.ConfigLog(sch)
@@ -152,15 +175,24 @@ func (sp *Spine) Init() {
 	sp.Deltas.Zero()
 }
 
+func (sp *Spine) InitCode() {
+	sp.States.InitCode()
+}
+
 // Step computes the new Delta values
 func (sp *Spine) Step() {
 	sp.Deltas.Zero()
 
-	vm := sp.States.Vm
-	spike := sp.States.Spike > 0 // note: nmda has a 5msec delay!
-	// fmt.Printf("vm: %g  spike: %g\n", vm, sp.States.Spike)
+	vms := sp.States.VmS
+	preSpike := false
+	if sp.States.PreSpike > 0 {
+		if sp.States.Time-sp.States.PreSpikeT > 0.003 { // refractory period
+			preSpike = true
+			sp.States.PreSpikeT = sp.States.Time
+		}
+	}
 
-	sp.NMDAR.Step(&sp.States.NMDAR, vm, sp.States.CaSig.Ca.PSD, sp.States.CaSig.CaMKII.PSD.Ca[2].CaM, sp.States.CaSig.CaMKII.PSD.Ca[3].CaM, spike)
+	sp.NMDAR.Step(&sp.States.NMDAR, vms, sp.States.CaSig.Ca.PSD, sp.States.CaSig.CaMKII.PSD.Ca[2].CaM, sp.States.CaSig.CaMKII.PSD.Ca[3].CaM, preSpike, &sp.Deltas.CaSig.Ca.PSD)
 	sp.CaMKII.Step(&sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, sp.States.CaSig.PP2A, &sp.Deltas.CaSig.PP2A)
 	sp.CaN.Step(&sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
 	sp.PKA.Step(&sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII)

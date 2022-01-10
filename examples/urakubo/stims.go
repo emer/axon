@@ -5,8 +5,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/goki/ki/kit"
 )
 
@@ -129,19 +127,19 @@ func PerMsec(orig []float64) []float64 {
 
 func BaselineFun() {
 	ss := &TheSim
-	for msec := 0; msec < 120000; msec++ {
+	for msec := 0; msec < 500000; msec++ { // 500000 = 500 sec for full baseline
 		ss.NeuronUpdt(msec)
 		ss.LogDefault()
 		if ss.StopNow {
 			break
 		}
 	}
+	ss.Spine.InitCode()
 	ss.Stopped()
 }
 
 func CaTargFun() {
 	ss := &TheSim
-	ss.InitSettle(100)
 	ss.Spine.Ca.SetBuffTarg(ss.CaTarg.Cyt, ss.CaTarg.PSD)
 	for msec := 0; msec < 20000; msec++ {
 		ss.NeuronUpdt(msec)
@@ -157,7 +155,6 @@ func ClampCa1Fun() {
 	ss := &TheSim
 	cas := PerMsec(ClampCa1Ca)
 	nca := len(cas)
-	ss.InitSettle(100)
 	bca := 0.05
 	for msec := 0; msec < 20000; msec++ {
 		tms := (msec + 500) % 1000
@@ -173,35 +170,39 @@ func ClampCa1Fun() {
 			break
 		}
 	}
-	ss.GraphRun(20)
+	ss.GraphRun(2)
 	ss.Stopped()
 }
 
 func STDPFun() {
 	ss := &TheSim
 	vms := PerMsec(ClampVm)
-	fmt.Printf("%v\n", ClampVm)
 	nvm := len(vms)
-	ss.InitSettle(10)
 	bvm := -65.0
-	for msec := 0; msec < 20000; msec++ {
-		tms := (msec + 500) % 1000
+	peakT := 13 // offset in ClampVm for peak
+	toff := 500
+	vmoff := toff - peakT // peak hits at toff exactly
+	psms := toff - ss.DeltaT
+	tott := 1 * 1000
+	for msec := 0; msec < tott; msec++ {
+		ims := msec % 1000
+		vmms := ims - vmoff
 		vm := bvm
-		if tms < nvm {
-			vm = vms[tms]
+		if vmms >= 0 && vmms < nvm {
+			vm = vms[vmms]
 		}
-		if tms == ss.DeltaT {
-			ss.Spine.States.Spike = 1
+		if ims == psms {
+			ss.Spine.States.PreSpike = 1
 		} else {
-			ss.Spine.States.Spike = 0
+			ss.Spine.States.PreSpike = 0
 		}
-		ss.Spine.States.Vm = vm
+		ss.Spine.States.VmS = vm
 		ss.NeuronUpdt(msec)
 		ss.LogDefault()
 		if ss.StopNow {
 			break
 		}
 	}
-	ss.GraphRun(20)
+	// ss.GraphRun(2)
 	ss.Stopped()
 }
