@@ -73,6 +73,9 @@ func (cs *NMDARState) Log(dt *etable.Table, row int) {
 	dt.SetCellFloat(pre+"Nt0", row, cs.Nt0)
 	dt.SetCellFloat(pre+"Nt1", row, cs.Nt1)
 	dt.SetCellFloat(pre+"Nt2", row, cs.Nt2)
+	// dt.SetCellFloat(pre+"N0[0]", row, cs.N0[0])
+	// dt.SetCellFloat(pre+"N0[1]", row, cs.N0[1])
+	// dt.SetCellFloat(pre+"N0[2]", row, cs.N0[2])
 }
 
 func (cs *NMDARState) ConfigLog(sch *etable.Schema) {
@@ -83,6 +86,9 @@ func (cs *NMDARState) ConfigLog(sch *etable.Schema) {
 	*sch = append(*sch, etable.Column{pre + "Nt0", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nt1", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nt2", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "N0[0]", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "N0[1]", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "N0[2]", etensor.FLOAT64, nil, nil})
 }
 
 // NMDARParams holds parameters for NMDA receptor with allosteric dynamics
@@ -144,6 +150,7 @@ func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool, 
 	var NN0, NN1, NN2, NN3, NNo [3]float64
 
 	dt := chem.IntegrationDt
+	_ = dt
 
 	if spike {
 		T := nr.Glu
@@ -242,5 +249,5 @@ func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool, 
 
 	cs.Total()
 
-	*dca += cs.Jca
+	*dca += cs.Jca * PSDVol
 }

@@ -192,7 +192,7 @@ func (sp *Spine) Step() {
 		}
 	}
 
-	sp.NMDAR.Step(&sp.States.NMDAR, vms, sp.States.CaSig.Ca.PSD, sp.States.CaSig.CaMKII.PSD.Ca[2].CaM, sp.States.CaSig.CaMKII.PSD.Ca[3].CaM, preSpike, &sp.Deltas.CaSig.Ca.PSD)
+	sp.NMDAR.Step(&sp.States.NMDAR, vms, chem.CoFmN(sp.States.CaSig.Ca.PSD, PSDVol), chem.CoFmN(sp.States.CaSig.CaMKII.PSD.Ca[2].CaM, PSDVol), chem.CoFmN(sp.States.CaSig.CaMKII.PSD.Ca[3].CaM, PSDVol), preSpike, &sp.Deltas.CaSig.Ca.PSD)
 	sp.CaMKII.Step(&sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, sp.States.CaSig.PP2A, &sp.Deltas.CaSig.PP2A)
 	sp.CaN.Step(&sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
 	sp.PKA.Step(&sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII)

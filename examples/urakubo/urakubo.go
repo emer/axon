@@ -48,6 +48,7 @@ type Sim struct {
 	Neuron     *axon.Neuron  `desc:"the neuron"`
 	Stim       Stims         `desc:"what stimulation to drive with"`
 	DeltaT     int           `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
+	NReps      int           `desc:"number of repetitions -- depends on Stim type"`
 	CaTarg     CaState       `desc:"target calcium level for CaTarg stim"`
 	Msec       int           `inactive:"+" desc:"current cycle of updating"`
 	Msec100Log *etable.Table `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
@@ -82,13 +83,14 @@ func (ss *Sim) New() {
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
 	ss.Stim = STDP
+	ss.DeltaT = 16
+	ss.NReps = 20
 	ss.Defaults()
 }
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
 	ss.Spine.Defaults()
-	ss.DeltaT = 16
 	ss.CaTarg.Cyt = 10
 	ss.CaTarg.PSD = 10
 }

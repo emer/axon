@@ -181,9 +181,10 @@ func STDPFun() {
 	bvm := -65.0
 	peakT := 13 // offset in ClampVm for peak
 	toff := 500
-	vmoff := toff - peakT // peak hits at toff exactly
-	psms := toff - ss.DeltaT
-	tott := 1 * 1000
+	vmoff := toff - peakT        // peak hits at toff exactly
+	psms := toff + 5 - ss.DeltaT // 5 is lag
+	tott := ss.NReps * 1000
+
 	for msec := 0; msec < tott; msec++ {
 		ims := msec % 1000
 		vmms := ims - vmoff
