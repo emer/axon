@@ -38,7 +38,12 @@ func (cs *CaSigState) Init() {
 	cs.CaN.Init()
 	cs.PKA.Init()
 	cs.PP1.Init()
-	cs.PP2A = chem.CoToN(0.02321, CytVol) // 0.03 orig
+
+	cs.PP2A = chem.CoToN(0.03, CytVol)
+
+	if InitBaseline {
+		cs.PP2A = chem.CoToN(0.0273, CytVol) // 0.03 orig
+	}
 }
 
 func (cs *CaSigState) InitCode() {

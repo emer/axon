@@ -59,23 +59,25 @@ func (ps *PKAVars) Init(vol float64) {
 	ps.AC1ATPC = chem.CoToN(0.00025355, vol)
 	ps.PDEcAMPC = 0
 
-	// All vals below from 500 sec baseline
-	ps.AC1act = chem.CoToN(0.0002385, vol)
-	ps.CAMP = chem.CoToN(0.004477, vol)
-	ps.R2C2 = chem.CoToN(1.982, vol)
-	ps.R2C2_B = chem.CoToN(0.01775, vol)
-	ps.R2C2_BB = chem.CoToN(3.973e-05, vol)
-	ps.R2C2_AB = chem.CoToN(3.179e-05, vol)
-	ps.R2C2_ABB = chem.CoToN(1.419e-07, vol)
-	ps.R2C2_4 = chem.CoToN(1.274e-10, vol)
+	if InitBaseline {
+		// All vals below from 500 sec baseline
+		ps.AC1act = chem.CoToN(0.0002385, vol)
+		ps.CAMP = chem.CoToN(0.004477, vol)
+		ps.R2C2 = chem.CoToN(1.982, vol)
+		ps.R2C2_B = chem.CoToN(0.01775, vol)
+		ps.R2C2_BB = chem.CoToN(3.973e-05, vol)
+		ps.R2C2_AB = chem.CoToN(3.179e-05, vol)
+		ps.R2C2_ABB = chem.CoToN(1.423e-07, vol)
+		ps.R2C2_4 = chem.CoToN(1.274e-10, vol)
 
-	ps.R2C_3 = chem.CoToN(1.003e-06, vol)
-	ps.R2C_4 = chem.CoToN(8.958e-08, vol)
-	ps.R2_3 = chem.CoToN(1.78e-06, vol)
-	ps.R2_4 = chem.CoToN(1.592e-05, vol)
-	ps.PKAact = chem.CoToN(0.032, vol)
-	ps.AC1ATPC = chem.CoToN(9.701e+05, vol)
-	ps.PDEcAMPC = chem.CoToN(0.0004477, vol)
+		ps.R2C_3 = chem.CoToN(6.304e-07, vol)
+		ps.R2C_4 = chem.CoToN(5.645e-08, vol)
+		ps.R2_3 = chem.CoToN(6.981e-07, vol)
+		ps.R2_4 = chem.CoToN(6.251e-06, vol)
+		ps.PKAact = chem.CoToN(0.04515, vol)
+		ps.AC1ATPC = chem.CoToN(2.335e+05, vol)
+		ps.PDEcAMPC = chem.CoToN(0.0004477, vol)
+	}
 }
 
 func (ps *PKAVars) InitCode(vol float64, pre string) {

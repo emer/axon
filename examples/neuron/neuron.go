@@ -346,6 +346,7 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 	dt.SetCellFloat("Gk", row, float64(nrn.Gk))
 	dt.SetCellFloat("ISI", row, float64(nrn.ISI))
 	dt.SetCellFloat("AvgISI", row, float64(nrn.ISIAvg))
+	dt.SetCellFloat("VmDend", row, float64(nrn.VmDend))
 
 	// note: essential to use Go version of update when called from another goroutine
 	if cyc%ss.UpdtInterval == 0 {
@@ -370,6 +371,7 @@ func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
 		{"Gk", etensor.FLOAT64, nil, nil},
 		{"ISI", etensor.FLOAT64, nil, nil},
 		{"AvgISI", etensor.FLOAT64, nil, nil},
+		{"VmDend", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, nt)
 }
@@ -388,6 +390,7 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Gk", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("ISI", eplot.Off, eplot.FixMin, -2, eplot.FloatMax, 1)
 	plt.SetColParams("AvgISI", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VmDend", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
 }
 

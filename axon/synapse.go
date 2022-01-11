@@ -6,6 +6,7 @@ package axon
 
 import (
 	"fmt"
+	"reflect"
 	"unsafe"
 )
 
@@ -33,8 +34,16 @@ var SynapseVarsMap map[string]int
 
 func init() {
 	SynapseVarsMap = make(map[string]int, len(SynapseVars))
+	typ := reflect.TypeOf((*Synapse)(nil)).Elem()
 	for i, v := range SynapseVars {
 		SynapseVarsMap[v] = i
+		pstr := SynapseVarProps[v]
+		if fld, has := typ.FieldByName(v); has {
+			if desc, ok := fld.Tag.Lookup("desc"); ok {
+				pstr += ` desc:"` + desc + `"`
+				SynapseVarProps[v] = pstr
+			}
+		}
 	}
 }
 

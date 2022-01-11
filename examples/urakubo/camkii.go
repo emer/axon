@@ -60,14 +60,20 @@ func (cs *CaMKIIVars) Init(vol float64) {
 	for i := range cs.Ca {
 		cs.Ca[i].Init(vol)
 	}
-	cs.Ca[0].CaM = chem.CoToN(78.31, vol)    // orig: 80
-	cs.Ca[1].CaM = chem.CoToN(1.002, vol)    // orig: 0
-	cs.Ca[2].CaM = chem.CoToN(0.006682, vol) // orig: 0
-	cs.Ca[3].CaM = chem.CoToN(2.2-05, vol)   // orig: 0
-	cs.CaMKII = chem.CoToN(19.4, vol)        // orig: 20
-	cs.CaMKIIP = 0                           // WA
+	cs.Ca[0].CaM = chem.CoToN(80, vol)
+	cs.CaMKII = chem.CoToN(20, vol)
+	cs.CaMKIIP = 0 // WA
 	cs.PP1Thr286C = 0
 	cs.PP2AThr286C = 0
+
+	if InitBaseline {
+		cs.Ca[0].CaM = chem.CoToN(78.31, vol)    // orig: 80
+		cs.Ca[1].CaM = chem.CoToN(1.002, vol)    // orig: 0
+		cs.Ca[2].CaM = chem.CoToN(0.006682, vol) // orig: 0
+		cs.Ca[3].CaM = chem.CoToN(1.988-05, vol) // orig: 0
+		cs.CaMKII = chem.CoToN(19.37, vol)       // orig: 20
+	}
+
 	cs.UpdtActive()
 }
 
@@ -185,22 +191,23 @@ func (cs *CaMKIIState) Init() {
 	cs.Cyt.Init(CytVol)
 	cs.PSD.Init(PSDVol)
 
-	// All vals below from 500 sec baseline
-	// Note: all CaMKIIP = 0 after baseline
+	if InitBaseline {
+		// All vals below from 500 sec baseline
+		// Note: all CaMKIIP = 0 after baseline
+		vol := float64(CytVol)
+		cs.Cyt.Ca[0].CaM_CaMKII = chem.CoToN(0.2612, vol)
+		cs.Cyt.Ca[1].CaM_CaMKII = chem.CoToN(0.003344, vol)
+		cs.Cyt.Ca[2].CaM_CaMKII = chem.CoToN(2.229e-05, vol)
+		cs.Cyt.Ca[3].CaM = chem.CoToN(1.988e-05, vol)
+		cs.Cyt.Ca[3].CaM_CaMKII = chem.CoToN(0.0014, vol)
 
-	vol := float64(CytVol)
-	cs.Cyt.Ca[0].CaM_CaMKII = chem.CoToN(0.2615, vol)
-	cs.Cyt.Ca[1].CaM_CaMKII = chem.CoToN(0.003347, vol)
-	cs.Cyt.Ca[2].CaM_CaMKII = chem.CoToN(2.231e-05, vol)
-	cs.Cyt.Ca[3].CaM = chem.CoToN(1.988e-05, vol)
-	cs.Cyt.Ca[3].CaM_CaMKII = chem.CoToN(0.0014, vol)
-
-	vol = PSDVol
-	cs.PSD.Ca[0].CaM_CaMKII = chem.CoToN(1.991, vol)
-	cs.PSD.Ca[1].CaM_CaMKII = chem.CoToN(0.0255, vol)
-	cs.PSD.Ca[2].CaM_CaMKII = chem.CoToN(0.00017, vol)
-	cs.PSD.Ca[3].CaM = chem.CoToN(2.739e-05, vol)
-	cs.PSD.Ca[3].CaM_CaMKII = chem.CoToN(0.01099, vol)
+		vol = PSDVol
+		cs.PSD.Ca[0].CaM_CaMKII = chem.CoToN(1.991, vol)
+		cs.PSD.Ca[1].CaM_CaMKII = chem.CoToN(0.02548, vol)
+		cs.PSD.Ca[2].CaM_CaMKII = chem.CoToN(0.0001698, vol)
+		cs.PSD.Ca[3].CaM = chem.CoToN(2.738e-05, vol)
+		cs.PSD.Ca[3].CaM_CaMKII = chem.CoToN(0.01098, vol)
+	}
 }
 
 func (cs *CaMKIIState) InitCode() {

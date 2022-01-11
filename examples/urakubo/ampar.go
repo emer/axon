@@ -99,34 +99,40 @@ func (as *AMPARState) Init() {
 
 	as.Int.DD = chem.CoToN(3, CytVol) // Nophos_int
 	as.Int.PD = chem.CoToN(3, CytVol) // S845P_int
-	as.Int.Total()
 
 	as.Trp.DD = chem.CoToN(1, PSDVol)
 	as.Trp.PD = chem.CoToN(3, PSDVol)
 
-	as.Scaffold = chem.CoToN(2.569, PSDVol)
+	as.Scaffold = 0
 
-	// All vals below from 500 sec baseline
-	vol := float64(CytVol)
-	as.Int.DD = chem.CoToN(1.405, vol)
-	as.Int.PD = chem.CoToN(4.619, vol)
-	as.Int.DP = chem.CoToN(0.08153, vol)
-	as.Int.PP = chem.CoToN(0.2662, vol)
-	as.Mbr.DD = chem.CoToN(0.002097, vol)
-	as.Mbr.PD = chem.CoToN(0.2286, vol)
-	as.Mbr.DP = chem.CoToN(0.0001729, vol)
-	as.Mbr.PP = chem.CoToN(0.01466, vol)
+	if InitBaseline {
+		as.Scaffold = chem.CoToN(2.234, PSDVol)
 
-	vol = PSDVol
-	as.PSD.DD = chem.CoToN(0.04437, vol)
-	as.PSD.PD = chem.CoToN(0.1816, vol)
-	as.PSD.DP = chem.CoToN(0.004169, vol)
-	as.PSD.PP = chem.CoToN(0.01556, vol)
-	as.Trp.DD = chem.CoToN(0.3028, vol)
-	as.Trp.PD = chem.CoToN(0.7228, vol)
-	as.Trp.DP = chem.CoToN(0.07396, vol)
-	as.Trp.PP = chem.CoToN(0.1836, vol)
+		// All vals below from 500 sec baseline
+		vol := float64(CytVol)
+		as.Int.DD = chem.CoToN(0.8335, vol)
+		as.Int.PD = chem.CoToN(4.916, vol)
+		as.Int.DP = chem.CoToN(0.05513, vol)
+		as.Int.PP = chem.CoToN(0.3207, vol)
+		as.Mbr.DD = chem.CoToN(0.002045, vol)
+		as.Mbr.PD = chem.CoToN(0.3199, vol)
+		as.Mbr.DP = chem.CoToN(0.0002025, vol)
+		as.Mbr.PP = chem.CoToN(0.02452, vol)
 
+		vol = PSDVol
+		as.PSD.DD = chem.CoToN(0.0379, vol)
+		as.PSD.PD = chem.CoToN(0.2744, vol)
+		as.PSD.DP = chem.CoToN(0.004491, vol)
+		as.PSD.PP = chem.CoToN(0.02951, vol)
+		as.Trp.DD = chem.CoToN(0.2388, vol)
+		as.Trp.PD = chem.CoToN(1.09, vol)
+		as.Trp.DP = chem.CoToN(0.07655, vol)
+		as.Trp.PP = chem.CoToN(0.305, vol)
+	}
+
+	as.Int.Total()
+	as.Mbr.Total()
+	as.PSD.Total()
 	as.Trp.Total()
 }
 

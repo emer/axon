@@ -33,10 +33,12 @@ func (ps *PP1Vars) Init(vol float64) {
 	ps.CaNI1PC = 0
 	ps.PP2AI1PC = 0
 
-	// All vals below from 500 sec baseline
-	ps.I1 = chem.CoToN(1.059, vol)
-	ps.I1P = chem.CoToN(0.936, vol)
-	ps.CaNI1PC = chem.CoToN(0.002176, vol)
+	if InitBaseline {
+		// All vals below from 500 sec baseline
+		ps.I1 = chem.CoToN(0.8722, vol)
+		ps.I1P = chem.CoToN(1.131, vol)
+		ps.CaNI1PC = chem.CoToN(0.002632, vol)
+	}
 }
 
 func (ps *PP1Vars) InitCode(vol float64, pre string) {
@@ -92,15 +94,17 @@ func (ps *PP1State) Init() {
 	ps.Cyt.Init(CytVol)
 	ps.PSD.Init(PSDVol)
 
-	vol := float64(CytVol)
-	ps.Cyt.PP1_I1P = chem.CoToN(0.989, vol)
-	ps.Cyt.PP1act = chem.CoToN(0.01338, vol)
-	ps.Cyt.PP2AI1PC = chem.CoToN(0.006718, vol)
+	if InitBaseline {
+		vol := float64(CytVol)
+		ps.Cyt.PP1_I1P = chem.CoToN(0.9909, vol)
+		ps.Cyt.PP1act = chem.CoToN(0.008759, vol)
+		ps.Cyt.PP2AI1PC = chem.CoToN(0.008215, vol)
 
-	vol = PSDVol
-	ps.PSD.PP1_I1P = chem.CoToN(5.934, vol)
-	ps.PSD.PP1act = chem.CoToN(0.06834, vol)
-	ps.PSD.PP2AI1PC = chem.CoToN(0, vol)
+		vol = PSDVol
+		ps.PSD.PP1_I1P = chem.CoToN(5.949, vol)
+		ps.PSD.PP1act = chem.CoToN(0.05258, vol)
+		ps.PSD.PP2AI1PC = chem.CoToN(0, vol)
+	}
 }
 
 func (ps *PP1State) InitCode() {

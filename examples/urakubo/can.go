@@ -51,14 +51,16 @@ func (cs *CaNCaMVars) Init(vol float64) {
 	cs.Ca[0].CaN = chem.CoToN(3, vol)
 	cs.CaNact = 0
 
-	// All vals below from 500 sec baseline
-	cs.Ca[0].CaN = chem.CoToN(1.305, vol)
-	cs.Ca[0].CaNCaM = chem.CoToN(0.0279, vol)
-	cs.Ca[1].CaN = chem.CoToN(1.305, vol)
-	cs.Ca[1].CaNCaM = chem.CoToN(0.0279, vol)
-	cs.Ca[2].CaN = chem.CoToN(0.3263, vol)
-	cs.Ca[2].CaNCaM = chem.CoToN(0.006976, vol)
-	cs.CaNact = chem.CoToN(0.006976, vol)
+	if InitBaseline {
+		// All vals below from 500 sec baseline
+		cs.Ca[0].CaN = chem.CoToN(1.305, vol)
+		cs.Ca[0].CaNCaM = chem.CoToN(0.0279, vol)
+		cs.Ca[1].CaN = chem.CoToN(1.305, vol)
+		cs.Ca[1].CaNCaM = chem.CoToN(0.0279, vol)
+		cs.Ca[2].CaN = chem.CoToN(0.3263, vol)
+		cs.Ca[2].CaNCaM = chem.CoToN(0.006977, vol)
+		cs.CaNact = chem.CoToN(0.006977, vol)
+	}
 }
 
 // Generate Code for Initializing

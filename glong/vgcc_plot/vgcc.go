@@ -105,8 +105,8 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
-		{"V", etensor.FLOAT32, nil, nil},
-		{"Gvgcc", etensor.FLOAT32, nil, nil},
+		{"V", etensor.FLOAT64, nil, nil},
+		{"Gvgcc", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -180,13 +180,13 @@ func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
-		{"Time", etensor.FLOAT32, nil, nil},
-		{"V", etensor.FLOAT32, nil, nil},
-		{"Gvgcc", etensor.FLOAT32, nil, nil},
-		{"M", etensor.FLOAT32, nil, nil},
-		{"H", etensor.FLOAT32, nil, nil},
-		{"dM", etensor.FLOAT32, nil, nil},
-		{"dH", etensor.FLOAT32, nil, nil},
+		{"Time", etensor.FLOAT64, nil, nil},
+		{"V", etensor.FLOAT64, nil, nil},
+		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"M", etensor.FLOAT64, nil, nil},
+		{"H", etensor.FLOAT64, nil, nil},
+		{"dM", etensor.FLOAT64, nil, nil},
+		{"dH", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }

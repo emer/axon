@@ -11,6 +11,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strconv"
 
 	"github.com/emer/axon/axon"
@@ -38,31 +39,37 @@ func main() {
 // LogPrec is precision for saving float values in logs
 const LogPrec = 4
 
+// InitBaseline = use iterated baseline for initialization
+var InitBaseline = true
+
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Spine      Spine         `desc:"the spine state with Urakubo intracellular model"`
-	Neuron     *axon.Neuron  `desc:"the neuron"`
-	Stim       Stims         `desc:"what stimulation to drive with"`
-	DeltaT     int           `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
-	NReps      int           `desc:"number of repetitions -- depends on Stim type"`
-	CaTarg     CaState       `desc:"target calcium level for CaTarg stim"`
-	Msec       int           `inactive:"+" desc:"current cycle of updating"`
-	Msec100Log *etable.Table `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
-	Msec10Log  *etable.Table `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
-	MsecLog    *etable.Table `view:"no-inline" desc:"millisecond level log, shows last second"`
-	Net        *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Spine        Spine         `desc:"the spine state with Urakubo intracellular model"`
+	Neuron       *axon.Neuron  `desc:"the neuron"`
+	Stim         Stims         `desc:"what stimulation to drive with"`
+	DeltaT       int           `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
+	NReps        int           `desc:"number of repetitions -- depends on Stim type"`
+	CaTarg       CaState       `desc:"target calcium level for CaTarg stim"`
+	InitBaseline bool          `desc:"use the adapted baseline"`
+	Msec         int           `inactive:"+" desc:"current cycle of updating"`
+	Msec100Log   *etable.Table `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
+	Msec10Log    *etable.Table `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
+	MsecLog      *etable.Table `view:"no-inline" desc:"millisecond level log, shows last second"`
+	GenesisLog   *etable.Table `view:"no-inline" desc:"genesis data"`
+	Net          *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 
 	// internal state - view:"-"
 	Win         *gi.Window       `view:"-" desc:"main GUI window"`
 	NetView     *netview.NetView `view:"-" desc:"the network viewer"`
 	ToolBar     *gi.ToolBar      `view:"-" desc:"the master toolbar"`
-	Msec100Plot *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Msec10Plot  *eplot.Plot2D    `view:"-" desc:"the plot"`
-	MsecPlot    *eplot.Plot2D    `view:"-" desc:"the plot"`
+	Msec100Plot *eplot.Plot2D    `view:"-" desc:"the plot at 100 msec scale"`
+	Msec10Plot  *eplot.Plot2D    `view:"-" desc:"the plot at 10 msec scale"`
+	MsecPlot    *eplot.Plot2D    `view:"-" desc:"the plot at msec scale"`
+	GenesisPlot *eplot.Plot2D    `view:"-" desc:"the plot from genesis runs"`
 	IsRunning   bool             `view:"-" desc:"true if sim is running"`
 	StopNow     bool             `view:"-" desc:"flag to stop running"`
 }
@@ -76,9 +83,11 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	ss.InitBaseline = true
 	ss.Spine.Defaults()
 	ss.Spine.Init()
 	ss.Net = &axon.Network{}
+	ss.GenesisLog = &etable.Table{}
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
@@ -131,6 +140,7 @@ func (ss *Sim) InitWts(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	InitBaseline = ss.InitBaseline
 	ss.Spine.Defaults()
 	ss.Spine.Init()
 	ss.Msec = 0
@@ -311,6 +321,87 @@ func (ss *Sim) ResetPlots() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
+// 		Genesis Plots
+
+var GeneColMap = map[string]string{
+	"Time":                 "00_Time",
+	"Ca.Co12":              "08 PSD_Ca",
+	"Ca.Co6":               "07 Cyt_Ca",
+	"CaM-AC1.Co10":         "31 PSD_AC1act",
+	"CaM-AC1.Co4":          "26 Cyt_AC1act",
+	"CaMCa3.Co15":          "22 PSD_Ca3CaM",
+	"I1_active.Co14":       "36 PSD_I1P",
+	"Internal_AMPAR.Co16":  "40 Int_AMPAR",
+	"Jca27":                "13 NMDA_Jca",
+	"Jca31":                "17 PSD_VGCC_Jca",
+	"Jca32":                "18 Cyt_VGCC_Jca",
+	"Ji29":                 "17 NMDA_Ji",
+	"Memb_AMPAR.Co17":      "41 Mbr_AMPAR",
+	"Mg30":                 "11 NMDA_Mg",
+	"Nopen26":              "12 NMDA_Nopen",
+	"Nt023":                "14 NMDA_Nt0",
+	"Nt124":                "15 NMDA_Nt1",
+	"Nt225":                "16 NMDA_Nt2",
+	"PP1_active.Co1":       "35 Cyt_PP1act",
+	"PP1_active.Co7":       "37 PSD_PP1act",
+	"PSD_AMPAR.Co18":       "42 PSD_AMPAR",
+	"Trapped_AMPAR.Co19":   "43 Trp_AMPAR",
+	"Vca28":                "16 NMDA_Vca",
+	"Vm21":                 "01 Vsoma",
+	"Vm22":                 "02 Vdend",
+	"activeCaMKII.Co11":    "23 PSD_CaMKIIact",
+	"activeCaMKII.Co5":     "21 Cyt_CaMKIIact",
+	"activeCaN.Co3":        "24 Cyt_CaNact",
+	"activeCaN.Co9":        "25 PSD_CaNact",
+	"activePKA.Co2":        "30 Cyt_PKAact",
+	"activePKA.Co8":        "33 PSD_PKAact",
+	"cAMP.Co13":            "32 PSD_cAMP",
+	"membrane_potential20": "03 Vdend2",
+}
+
+func (ss *Sim) RenameGenesisLog() {
+	dt := ss.GenesisLog
+	if dt.ColNames[1] != "Ca.Co12" {
+		return
+	}
+	omap := make(map[string]int)
+	for i, cn := range dt.ColNames {
+		if nn, ok := GeneColMap[cn]; ok {
+			dt.ColNames[i] = nn
+		}
+		omap[dt.ColNames[i]] = i
+	}
+	sort.Strings(dt.ColNames)
+	nc := make([]etensor.Tensor, len(dt.ColNames))
+	for i, cn := range dt.ColNames {
+		oi := omap[cn]
+		nc[i] = dt.Cols[oi]
+		dt.ColNames[i] = cn[3:]
+	}
+	dt.Cols = nc
+	dt.UpdateColNameMap()
+
+	if ss.InitBaseline {
+		ix := etable.IdxView{}
+		ix.Table = dt
+		for ri := 0; ri < dt.Rows; ri++ {
+			t := dt.CellFloat("Time", ri)
+			if t > 500 {
+				ix.Idxs = append(ix.Idxs, ri)
+			}
+			dt.SetCellFloat("Time", ri, t-500)
+		}
+		ss.GenesisLog = ix.NewTable()
+	}
+}
+
+func (ss *Sim) OpenGenesisData(fname gi.FileName) {
+	ss.GenesisLog.OpenCSV(fname, etable.Tab)
+	ss.RenameGenesisLog()
+	ss.GenesisPlot.SetTable(ss.GenesisLog)
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
@@ -363,6 +454,9 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "MsecPlot").(*eplot.Plot2D)
 	ss.MsecPlot = ss.ConfigPlot(plt, ss.MsecLog)
 
+	plt = tv.AddNewTab(eplot.KiT_Plot2D, "GenesisPlot").(*eplot.Plot2D)
+	ss.GenesisPlot = ss.ConfigPlot(plt, ss.GenesisLog)
+
 	split.SetSplits(.2, .8)
 
 	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: "update", Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.", UpdateFunc: func(act *gi.Action) {
@@ -396,6 +490,12 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 		if !ss.IsRunning {
 			ss.ResetPlots()
 		}
+	})
+
+	tbar.AddAction(gi.ActOpts{Label: "Genesis Plot", Icon: "file-open", Tooltip: "Open Genesis Urakubo model data from geneplot directory.", UpdateFunc: func(act *gi.Action) {
+		act.SetActiveStateUpdt(!ss.IsRunning)
+	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		giv.CallMethod(ss, "OpenGenesisData", vp)
 	})
 
 	tbar.AddAction(gi.ActOpts{Label: "Defaults", Icon: "update", Tooltip: "Restore initial default parameters.", UpdateFunc: func(act *gi.Action) {
@@ -475,12 +575,12 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 // These props register Save methods so they can be used
 var SimProps = ki.Props{
 	"CallMethods": ki.PropSlice{
-		{"SaveWeights", ki.Props{
-			"desc": "save network weights to file",
-			"icon": "file-save",
+		{"OpenGenesisData", ki.Props{
+			"desc": "Load data from Genesis version of Urakubo model, from geneplot directory",
+			"icon": "file-open",
 			"Args": ki.PropSlice{
 				{"File Name", ki.Props{
-					"ext": ".wts",
+					"ext": ".tsv",
 				}},
 			},
 		}},
