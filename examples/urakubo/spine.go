@@ -172,7 +172,7 @@ func (sp *Spine) Defaults() {
 	sp.PKA.Defaults()
 	sp.PP1.Defaults()
 	sp.AMPAR.Defaults()
-	fmt.Printf("Integration Dt = %g (%g steps per msec)\n", chem.IntegrationDt, 0.001/chem.IntegrationDt)
+	// fmt.Printf("Integration Dt = %g (%g steps per msec)\n", chem.IntegrationDt, 0.001/chem.IntegrationDt)
 }
 
 func (sp *Spine) Init() {

@@ -87,7 +87,7 @@ type AMPARState struct {
 	Int      AMPARVars `view:"inline" desc:"cytosol internal"`
 	Mbr      AMPARVars `view:"inline" desc:"cytosol exocytosed into the membrane"`
 	PSD      AMPARVars `view:"inline" desc:"in PSD but not trapped"`
-	Trp      AMPARVars `view:"inline" desc:"in PSD and trapped in place"`
+	Trp      AMPARVars `view:"inline" desc:"in PSD and trapped in place -- this is the effective weight"`
 	Scaffold float64   `desc:"amount of unbound scaffold used for trapping"`
 }
 

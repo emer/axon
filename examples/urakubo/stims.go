@@ -27,15 +27,18 @@ const (
 
 	STDP
 
+	STDPSweep
+
 	StimsN
 )
 
 // StimFuncs are the stimulus functions
 var StimFuncs = map[Stims]func(){
-	Baseline: BaselineFun,
-	CaTarg:   CaTargFun,
-	ClampCa1: ClampCa1Fun,
-	STDP:     STDPFun,
+	Baseline:  BaselineFun,
+	CaTarg:    CaTargFun,
+	ClampCa1:  ClampCa1Fun,
+	STDP:      STDPFun,
+	STDPSweep: STDPSweepFun,
 }
 
 // ClampCa1Ca is direct copy of Ca values from test_stdp.g genesis func
@@ -204,6 +207,50 @@ func STDPFun() {
 			break
 		}
 	}
-	// ss.GraphRun(2)
+	ss.GraphRun(2)
+	ss.Stopped()
+}
+
+func STDPSweepFun() {
+	ss := &TheSim
+	vms := PerMsec(ClampVm)
+	nvm := len(vms)
+	bvm := -65.0
+	peakT := 13 // offset in ClampVm for peak
+	toff := 500
+	vmoff := toff - peakT // peak hits at toff exactly
+	tott := ss.NReps * 1000
+
+	ss.ResetDWtPlots()
+
+	for dt := -ss.DeltaTRange; dt <= ss.DeltaTRange; dt += ss.DeltaTInc {
+		psms := toff + 5 - dt // 5 is lag
+		ss.ResetTimePlots()
+		ss.Init()
+
+		for msec := 0; msec < tott; msec++ {
+			ims := msec % 1000
+			vmms := ims - vmoff
+			vm := bvm
+			if vmms >= 0 && vmms < nvm {
+				vm = vms[vmms]
+			}
+			if ims == psms {
+				ss.Spine.States.PreSpike = 1
+			} else {
+				ss.Spine.States.PreSpike = 0
+			}
+			ss.Spine.States.VmS = vm
+			ss.NeuronUpdt(msec)
+			ss.LogDefault()
+			if ss.StopNow {
+				break
+			}
+		}
+		ss.GraphRun(2)
+		ss.LogDWt(ss.DWtLog, float64(dt), 0)
+		ss.DWtPlot.GoUpdate()
+	}
+
 	ss.Stopped()
 }

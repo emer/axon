@@ -52,10 +52,14 @@ type Sim struct {
 	Neuron       *axon.Neuron  `desc:"the neuron"`
 	Stim         Stims         `desc:"what stimulation to drive with"`
 	DeltaT       int           `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
+	DeltaTRange  int           `desc:"range for sweep of DeltaT -- actual range is - to +"`
+	DeltaTInc    int           `desc:"increment for sweep of DeltaT"`
 	NReps        int           `desc:"number of repetitions -- depends on Stim type"`
 	CaTarg       CaState       `desc:"target calcium level for CaTarg stim"`
 	InitBaseline bool          `desc:"use the adapted baseline"`
 	Msec         int           `inactive:"+" desc:"current cycle of updating"`
+	InitWt       float64       `desc:"initial weight value: Trp_AMPA value at baseline"`
+	DWtLog       *etable.Table `view:"no-inline" desc:"final weight change plot for each condition"`
 	Msec100Log   *etable.Table `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
 	Msec10Log    *etable.Table `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
 	MsecLog      *etable.Table `view:"no-inline" desc:"millisecond level log, shows last second"`
@@ -66,6 +70,7 @@ type Sim struct {
 	Win         *gi.Window       `view:"-" desc:"main GUI window"`
 	NetView     *netview.NetView `view:"-" desc:"the network viewer"`
 	ToolBar     *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+	DWtPlot     *eplot.Plot2D    `view:"-" desc:"the plot of dwt"`
 	Msec100Plot *eplot.Plot2D    `view:"-" desc:"the plot at 100 msec scale"`
 	Msec10Plot  *eplot.Plot2D    `view:"-" desc:"the plot at 10 msec scale"`
 	MsecPlot    *eplot.Plot2D    `view:"-" desc:"the plot at msec scale"`
@@ -86,13 +91,17 @@ func (ss *Sim) New() {
 	ss.InitBaseline = true
 	ss.Spine.Defaults()
 	ss.Spine.Init()
+	ss.InitWt = ss.Spine.States.AMPAR.Trp.Tot
 	ss.Net = &axon.Network{}
 	ss.GenesisLog = &etable.Table{}
+	ss.DWtLog = &etable.Table{}
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
 	ss.Stim = STDP
 	ss.DeltaT = 16
+	ss.DeltaTRange = 50
+	ss.DeltaTInc = 5
 	ss.NReps = 20
 	ss.Defaults()
 }
@@ -110,9 +119,10 @@ func (ss *Sim) Defaults() {
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
 	ss.ConfigNet(ss.Net)
-	ss.ConfigLog(ss.MsecLog)
-	ss.ConfigLog(ss.Msec10Log)
-	ss.ConfigLog(ss.Msec100Log)
+	ss.ConfigDWtLog(ss.DWtLog)
+	ss.ConfigTimeLog(ss.MsecLog)
+	ss.ConfigTimeLog(ss.Msec10Log)
+	ss.ConfigTimeLog(ss.Msec100Log)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -191,11 +201,11 @@ func (ss *Sim) NeuronUpdt(msec int) {
 // LogDefault does default logging for current Msec
 func (ss *Sim) LogDefault() {
 	msec := ss.Msec
-	ss.Log(ss.MsecLog, msec%1000)
+	ss.LogTime(ss.MsecLog, msec%1000)
 	if ss.Msec%10 == 0 {
-		ss.Log(ss.Msec10Log, (msec/10)%1000)
+		ss.LogTime(ss.Msec10Log, (msec/10)%1000)
 		if ss.Msec%100 == 0 {
-			ss.Log(ss.Msec100Log, (msec / 100))
+			ss.LogTime(ss.Msec100Log, (msec / 100))
 			ss.MsecPlot.GoUpdate()
 			ss.Msec10Plot.GoUpdate()
 			ss.Msec100Plot.GoUpdate()
@@ -233,10 +243,10 @@ func (ss *Sim) GraphRun(secs float64) {
 }
 
 //////////////////////////////////////////////
-//  Log
+//  Time Log
 
-// Log adds data from current msec to the given table at given row
-func (ss *Sim) Log(dt *etable.Table, row int) {
+// LogTime adds data from current msec to the given table at given row
+func (ss *Sim) LogTime(dt *etable.Table, row int) {
 	if dt.Rows <= row {
 		dt.SetNumRows(row + 1)
 	}
@@ -255,9 +265,9 @@ func (ss *Sim) Log(dt *etable.Table, row int) {
 	ss.Spine.Log(dt, row)
 }
 
-func (ss *Sim) ConfigLog(dt *etable.Table) {
-	dt.SetMetaData("name", "Data Log")
-	dt.SetMetaData("desc", "Record of neuron / spine data")
+func (ss *Sim) ConfigTimeLog(dt *etable.Table) {
+	dt.SetMetaData("name", "Urakubo Time Log")
+	dt.SetMetaData("desc", "Record of neuron / spine data over time")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
@@ -278,8 +288,8 @@ func (ss *Sim) ConfigLog(dt *etable.Table) {
 	dt.SetFromSchema(sch, 1000)
 }
 
-func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "Urakubo Data Plot"
+func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Urakubo Time Plot"
 	plt.Params.XAxisCol = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
@@ -299,8 +309,8 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 		}
 	}
 
-	plt.SetColParams("VmS", eplot.On, eplot.FixMin, -65, eplot.FloatMax, 1)
-	plt.SetColParams("PreSpike", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VmS", eplot.Off, eplot.FixMin, -65, eplot.FloatMax, 1)
+	plt.SetColParams("PreSpike", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
@@ -311,13 +321,69 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	return plt
 }
 
-func (ss *Sim) ResetPlots() {
+//////////////////////////////////////////////
+//  DWt Log
+
+// LogDWt adds data for current dwt value as function of x, y values
+func (ss *Sim) LogDWt(dt *etable.Table, x, y float64) {
+	row := dt.Rows
+	if dt.Rows <= row {
+		dt.SetNumRows(row + 1)
+	}
+
+	dt.SetCellFloat("X", row, x)
+	dt.SetCellFloat("Y", row, y)
+
+	wt := ss.Spine.States.AMPAR.Trp.Tot
+	dwt := (wt / ss.InitWt) - 1
+
+	dt.SetCellFloat("DWt", row, float64(dwt))
+}
+
+func (ss *Sim) ConfigDWtLog(dt *etable.Table) {
+	dt.SetMetaData("name", "Urakubo DWt Log")
+	dt.SetMetaData("desc", "Record of final proportion dWt change")
+	dt.SetMetaData("read-only", "true")
+	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+
+	sch := etable.Schema{
+		{"X", etensor.FLOAT64, nil, nil},
+		{"Y", etensor.FLOAT64, nil, nil},
+		{"DWt", etensor.FLOAT64, nil, nil},
+	}
+	dt.SetFromSchema(sch, 0)
+}
+
+func (ss *Sim) ConfigDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Urakubo DWt Plot"
+	plt.Params.XAxisCol = "X"
+	plt.SetTable(dt)
+	// order of params: on, fixMin, min, fixMax, max
+	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -1, eplot.FixMax, 1)
+
+	return plt
+}
+
+func (ss *Sim) ConfigGenesisPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Urakubo Genesis Data Plot"
+	plt.Params.XAxisCol = "Time"
+	plt.SetTable(dt)
+	return plt
+}
+
+func (ss *Sim) ResetTimePlots() {
 	ss.MsecLog.SetNumRows(0)
 	ss.MsecPlot.Update()
 	ss.Msec10Log.SetNumRows(0)
 	ss.Msec10Plot.Update()
 	ss.Msec100Log.SetNumRows(0)
 	ss.Msec100Plot.Update()
+}
+
+func (ss *Sim) ResetDWtPlots() {
+	ss.DWtLog.SetNumRows(0)
+	ss.DWtPlot.Update()
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -398,7 +464,12 @@ func (ss *Sim) RenameGenesisLog() {
 func (ss *Sim) OpenGenesisData(fname gi.FileName) {
 	ss.GenesisLog.OpenCSV(fname, etable.Tab)
 	ss.RenameGenesisLog()
-	ss.GenesisPlot.SetTable(ss.GenesisLog)
+	dt := ss.GenesisLog
+	dt.SetMetaData("name", string(fname))
+	dt.SetMetaData("desc", "Genesis Urakubo model data")
+	dt.SetMetaData("read-only", "true")
+	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+	ss.GenesisPlot.SetTable(dt)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -445,17 +516,20 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 	ss.NetView = nv
 	ss.ConfigNetView(nv) // add labels etc
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "Msec100Plot").(*eplot.Plot2D)
-	ss.Msec100Plot = ss.ConfigPlot(plt, ss.Msec100Log)
+	plt := tv.AddNewTab(eplot.KiT_Plot2D, "DWtPlot").(*eplot.Plot2D)
+	ss.DWtPlot = ss.ConfigDWtPlot(plt, ss.DWtLog)
+
+	plt = tv.AddNewTab(eplot.KiT_Plot2D, "Msec100Plot").(*eplot.Plot2D)
+	ss.Msec100Plot = ss.ConfigTimePlot(plt, ss.Msec100Log)
 
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "Msec10Plot").(*eplot.Plot2D)
-	ss.Msec10Plot = ss.ConfigPlot(plt, ss.Msec10Log)
+	ss.Msec10Plot = ss.ConfigTimePlot(plt, ss.Msec10Log)
 
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "MsecPlot").(*eplot.Plot2D)
-	ss.MsecPlot = ss.ConfigPlot(plt, ss.MsecLog)
+	ss.MsecPlot = ss.ConfigTimePlot(plt, ss.MsecLog)
 
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "GenesisPlot").(*eplot.Plot2D)
-	ss.GenesisPlot = ss.ConfigPlot(plt, ss.GenesisLog)
+	ss.GenesisPlot = ss.ConfigGenesisPlot(plt, ss.GenesisLog)
 
 	split.SetSplits(.2, .8)
 
@@ -484,11 +558,11 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 
 	tbar.AddSeparator("run-sep")
 
-	tbar.AddAction(gi.ActOpts{Label: "Reset Plots", Icon: "update", Tooltip: "Reset Plots.", UpdateFunc: func(act *gi.Action) {
+	tbar.AddAction(gi.ActOpts{Label: "Reset Plots", Icon: "update", Tooltip: "Reset Time Plots.", UpdateFunc: func(act *gi.Action) {
 		act.SetActiveStateUpdt(!ss.IsRunning)
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
-			ss.ResetPlots()
+			ss.ResetTimePlots()
 		}
 	})
 
