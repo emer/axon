@@ -24,6 +24,7 @@ import (
 // This is included in axon.Layer to drive the computation.
 type ActParams struct {
 	Spike   SpikeParams       `view:"inline" desc:"Spiking function parameters"`
+	Dend    DendParams        `view:"inline" desc:"dendrite-specific parameters"`
 	Init    ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState"`
 	Decay   DecayParams       `view:"inline" desc:"amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora) "`
 	Dt      DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
@@ -41,6 +42,7 @@ type ActParams struct {
 
 func (ac *ActParams) Defaults() {
 	ac.Spike.Defaults()
+	ac.Dend.Defaults()
 	ac.Init.Defaults()
 	ac.Decay.Defaults()
 	ac.Dt.Defaults()
@@ -62,6 +64,7 @@ func (ac *ActParams) Defaults() {
 // Update must be called after any changes to parameters
 func (ac *ActParams) Update() {
 	ac.Spike.Update()
+	ac.Dend.Update()
 	ac.Init.Update()
 	ac.Decay.Update()
 	ac.Dt.Update()
@@ -237,26 +240,44 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	ge := nrn.Ge * ac.Gbar.E
 	gi := nrn.Gi * ac.Gbar.I
 	gk := nrn.Gk * ac.Gbar.K
-	if updtVm {
+	var expi float32
+	if updtVm || ac.Spike.GbarR > 0 {
 		vmEff := nrn.Vm
+		giEff := gi
+		if !updtVm { // GbarR > 0
+			giEff += ac.Spike.GbarR
+		}
 		// midpoint method: take a half-step in vmEff
-		inet1 := ac.InetFmG(vmEff, ge, gi, gk)
+		inet1 := ac.InetFmG(vmEff, ge, giEff, gk)
 		vmEff += .5 * ac.Dt.VmDt * inet1 // go half way
-		inet2 := ac.InetFmG(vmEff, ge, gi, gk)
+		vmEff = ac.VmRange.ClipVal(vmEff)
+		inet2 := ac.InetFmG(vmEff, ge, giEff, gk)
 		// add spike current if relevant
-		if ac.Spike.Exp {
-			inet2 += ac.Gbar.L * ac.Spike.ExpSlope *
+		if updtVm && ac.Spike.Exp {
+			expi = ac.Gbar.L * ac.Spike.ExpSlope *
 				mat32.FastExp((vmEff-ac.Spike.Thr)/ac.Spike.ExpSlope)
+			if expi > 2 {
+				expi = 2
+			}
+			inet2 += expi
 		}
 		nwVm += ac.Dt.VmDt * inet2
 		nrn.Inet = inet2
 	}
 	{ // always update VmDend
 		vmEff := nrn.VmDend
+		giEff := gi
+		if !updtVm { // GbarR > 0
+			giEff += ac.Dend.GbarR
+		}
 		// midpoint method: take a half-step in vmEff
-		inet1 := ac.InetFmG(vmEff, ge, gi, gk)
+		inet1 := ac.InetFmG(vmEff, ge, giEff, gk)
 		vmEff += .5 * ac.Dt.VmDendDt * inet1 // go half way
-		inet2 := ac.InetFmG(vmEff, ge, gi, gk)
+		vmEff = ac.VmRange.ClipVal(vmEff)
+		inet2 := ac.InetFmG(vmEff, ge, giEff, gk)
+		if updtVm {
+			inet2 += ac.Dend.ExpGbar * expi
+		}
 		nrn.VmDend = ac.VmRange.ClipVal(nrn.VmDend + ac.Dt.VmDendDt*inet2)
 	}
 
@@ -276,7 +297,9 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	}
 	if nrn.Vm >= thr {
 		nrn.Spike = 1
-		nrn.Vm = ac.Spike.VmR
+		if ac.Spike.GbarR == 0 {
+			nrn.Vm = ac.Spike.VmR
+		}
 		nrn.Inet = 0
 		if nrn.ISIAvg == -1 {
 			nrn.ISIAvg = -2
@@ -315,8 +338,9 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 // the AdEx adaptive exponential function (adapt is KNaAdapt)
 type SpikeParams struct {
 	Thr      float32 `def:"0.5" desc:"threshold value Theta (Q) for firing output activation (.5 is more accurate value based on AdEx biological parameters and normalization"`
-	VmR      float32 `def:"0.3" desc:"post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.3 is apropriate biologically-based value for AdEx (Brette & Gurstner, 2005) parameters"`
+	VmR      float32 `def:"0.3" desc:"post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.3 is apropriate biologically-based value for AdEx (Brette & Gurstner, 2005) parameters.  See also GbarR"`
 	Tr       int     `def:"3" desc:"post-spiking explicit refractory period, in cycles -- prevents Vm updating for this number of cycles post firing"`
+	GbarR    float32 `def:"0,2" desc:"conductance of Kdr delayed rectifier currents -- if non-zero, then this is used to reset membrane potential instead of hard VmR reset -- applied for Tr msec -- only needed when using Vm for driving spike-associated channels more realistically, e.g. in learning from Ca"`
 	Exp      bool    `def:"true" desc:"if true, turn on exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpSlope float32 `viewif:"Exp" def:"0.02" desc:"slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpThr   float32 `viewif:"Exp" def:"1" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
@@ -328,6 +352,7 @@ type SpikeParams struct {
 func (sk *SpikeParams) Defaults() {
 	sk.Thr = 0.5
 	sk.VmR = 0.3
+	sk.GbarR = 0
 	sk.Tr = 3
 	sk.Exp = true
 	sk.ExpSlope = 0.02
@@ -368,6 +393,23 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 	} else { // integrate on slower
 		*avg += sk.ISIDt * (isi - *avg) // running avg updt
 	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  DendParams
+
+// DendParams are the parameters for updating dendrite-specific dynamics
+type DendParams struct {
+	ExpGbar float32 `def:"0.1" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma -- which uses Gbar.L"`
+	GbarR   float32 `def:"0,0.1" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+}
+
+func (dp *DendParams) Defaults() {
+	dp.ExpGbar = 0.1 // may actually work
+	dp.GbarR = 0.1
+}
+
+func (dp *DendParams) Update() {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -423,7 +465,7 @@ type DtParams struct {
 	GeTau      float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau      float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	IntTau     float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
-	LongAvgTau float32 `def:"20" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
+	LongAvgTau float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
 
 	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`

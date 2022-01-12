@@ -207,7 +207,7 @@ func STDPFun() {
 			break
 		}
 	}
-	ss.GraphRun(2)
+	// ss.GraphRun(2)
 	ss.Stopped()
 }
 

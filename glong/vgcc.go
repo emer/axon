@@ -17,15 +17,31 @@ func (np *VGCCParams) Defaults() {
 
 // GFmV returns the VGCC conductance as a function of normalized membrane potential
 func (np *VGCCParams) GFmV(v float32) float32 {
-	vbio := mat32.Min(v*100-100, 0) // critical to not go past 0
+	vbio := v*100 - 100
+	if vbio > 0 {
+		vbio = 0
+	}
 	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))
 }
 
-// DMHFmV returns the change in M, H factors as a function of V
+// MFmV returns the M gate function from vbio (not normalized, must not exceed 0)
+func (np *VGCCParams) MFmV(vbio float32) float32 {
+	return 1.0 / (1.0 + mat32.FastExp(-(vbio + 37)))
+}
+
+// HFmV returns the H gate function from vbio (not normalized, must not exceed 0)
+func (np *VGCCParams) HFmV(vbio float32) float32 {
+	return 1.0 / (1.0 + mat32.FastExp((vbio+41)*2))
+}
+
+// DMHFmV returns the change in M, H factors as a function of V normalized (0-1)
 func (np *VGCCParams) DMHFmV(v, m, h float32) (float32, float32) {
-	vbio := mat32.Min(v*100-100, 0) // critical to not go past 0
-	dm := ((1.0 / (1.0 + mat32.FastExp(-(vbio + 37)))) - m) / 0.0036
-	dh := ((1.0 / (1.0 + mat32.FastExp((vbio+41)/0.5))) - h) / 0.029
+	vbio := v*100 - 100
+	if vbio > 0 {
+		vbio = 0
+	}
+	dm := (np.MFmV(vbio) - m) / 0.0036
+	dh := (np.HFmV(vbio) - h) / 0.029
 	return dm, dh
 }
 

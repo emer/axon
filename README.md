@@ -26,7 +26,7 @@ In the name of progress and making things sensible going forward, various names 
 
 The first step is to do a global replace of `leabra` -> `axon` and `Leabra` -> `Axon`
 
-## Alpha Cycle
+## Alpha Cycle -> Theta Cycle
 
 The notion of the AlphaCycle as a basic unit of processing in Leabra does not quite work in Axon: it typically takes 200 msec (cycles) for a full learning cycle, corresponding to a ThetaCycle.  This was actually the original idea for predictive learning, where the full processing of a given input state was supposed to take two alpha cycles = 1 theta cycle, which corresponds to the strongly-peaked duration of a single fixation in humans.  In Axon, the processing of time has been generalized, so it isn't tied so specifically to a particular cycle.
 
@@ -187,7 +187,28 @@ GABAa rise, decay times:
 
 * XHP98a: 0.5ms rise, 6-7ms decay
 
+## Temporal and Spatial Dynamics of Dendritic Integration
 
+A series of models around 2000 investigated the role of active dendritic channels on signal integration across different dendritic compartments (Migliore et al, 1999; Poirazi et al, 2003; Jarsky et al, 2005) -- see Poirazi & Papoutsi (2020) for a recent review.  A common conclusion was that the A-type K channel can be inactivated as a result of elevated Vm in the dendrite, driving a nonlinear gating-like interaction between dendritic inputs: when enough input comes in (e.g., from 2 different projections), then the rest of the inputs are all integrated more-or-less linearly, but below this critical threshold, inputs are much more damped by the A-type K channels.  There are also other complexifications associated with VGCC L-type and T-type voltage-gated Ca channels which can drive Ca spikes, to amplify regular AMPA conductances, relative weakness and attenuation of active HH Na spiking channels, etc.  See following figure from Spruston (2008) for a summary of some key traces:
+
+![Differences between Soma vs. Dendrites](fig_dendrite_coinc_spruston08_fig5.png?raw=true "Figure 5 from Spruston (2008), showing mutual dependence on two dendritic compartments for synaptic integration in panel a, and also significant differences in temporal duration of elevated Vm in dendrites vs. soma.")
+
+The key question here is: to what extent do we need to account for these additional degrees of freedom in the model?  First, a key premise of the AdEx model is that anything taking place during the action potential (AP) is too fast and stereotyped to worry about.  Further, AdEx primarily accounts for soma-level spiking dynamics, and may not do a good job of reflecting what happens in the more distal dendrites -- as we can see in the above figure, membrane potential in the dendrites updates more slowly and is not reset as significantly after spiking.  This is captured in the use of separate Vm variables: `VmDend` for dendrites, and plain `Vm` for the somatic spiking potential.  Here are some specific considerations:
+
+* The `Kdr` delayed rectifier channel, part of the classical HH model, resets the membrane potential back to resting after a spike -- according to detailed traces from the Urakubo model with this channel, and the above figures, this is not quite an instantaneous process, with a time constant somewhere between 1-2 msec.  This is not important for overall spiking behavior, but it is important when Vm is used for more realistic Ca-based learning (as in the Urakubo model).
+
+* In the simplest model used initially, `VmDend` does not get the Exp rise of the spike, nor does it get the VmR reset, and it has a longer time constant.  Could experiment with more dynamic versions, where it gets *some* of the spike, and some of the Kdr / VmR effects.
+
+
+
+
+
+
+
+
+## Urakubo 
+
+# Extensions: BG / PFC / DA
 
 There are various extensions to the algorithm that implement special neural mechanisms associated with the prefrontal cortex and basal ganglia [PBWM](#pbwm), dopamine systems [PVLV](#pvlv), the [Hippocampus](#hippocampus), and predictive learning and temporal integration dynamics associated with the thalamocortical circuits [DeepAxon](#deepaxon).  All of these are (will be) implemented as additional modifications of the core, simple `axon` implementation, instead of having everything rolled into one giant hairball as in the original C++ implementation.
 
@@ -435,4 +456,20 @@ Here are the relevant factors that are used to compute the automatic rescaling t
     + `sc = 1 / expActN`
 
 This `sc` factor multiplies the `GScale` factor as computed above.
+
+# References
+
+* Jarsky, T., Roxin, A., Kath, W. L., & Spruston, N. (2005). Conditional dendritic spike propagation following distal synaptic activation of hippocampal CA1 pyramidal neurons. Nat Neurosci, 8, 1667–1676. http://dx.doi.org/10.1038/nn1599
+
+* Migliore, M., Hoffman, D. A., Magee, J. C., & Johnston, D. (1999). Role of an A-Type K+ Conductance in the Back-Propagation of Action Potentials in the Dendrites of Hippocampal Pyramidal Neurons. Journal of Computational Neuroscience, 7(1), 5–15. https://doi.org/10.1023/A:1008906225285
+
+* Poirazi, P., Brannon, T., & Mel, B. W. (2003). Arithmetic of Subthreshold Synaptic Summation in a Model CA1 Pyramidal Cell. Neuron, 37(6), 977–987. https://doi.org/10.1016/S0896-6273(03)00148-X
+
+* Poirazi, P., & Papoutsi, A. (2020). Illuminating dendritic function with computational models. Nature Reviews Neuroscience, 21(6), 303–321. https://doi.org/10.1038/s41583-020-0301-7
+
+* Sanders, H., Berends, M., Major, G., Goldman, M. S., & Lisman, J. E. (2013). NMDA and GABAB (KIR) Conductances: The "Perfect Couple" for Bistability. Journal of Neuroscience, 33(2), 424–429. https://doi.org/10.1523/JNEUROSCI.1854-12.2013
+
+* Spruston, N. (2008). Pyramidal neurons: Dendritic structure and synaptic integration. Nature Reviews. Neuroscience, 9(3), 201–221. http://www.ncbi.nlm.nih.gov/pubmed/18270515
+
+* Urakubo, H., Honda, M., Froemke, R. C., & Kuroda, S. (2008). Requirement of an allosteric kinetics of NMDA receptors for spike timing-dependent plasticity. The Journal of Neuroscience, 28(13), 3310–3323. http://www.ncbi.nlm.nih.gov/pubmed/18367598
 

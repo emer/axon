@@ -72,6 +72,9 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
 					"Layer.Inhib.ActAvg.Init": "0.04", // start lower -- 0.04 more reliable than .03
 					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.2 > 0 > 0.4 -- starts to fail at 0.4
+					"Layer.Act.Spike.GbarR":   "0",    // > 0 doesn't work at all
+					"Layer.Act.Dend.ExpGbar":  "0.1",
+					"Layer.Act.Dend.GbarR":    "0.1", // 0.1 works ok
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{

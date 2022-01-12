@@ -65,7 +65,7 @@ func (ss *Sim) Config() {
 	ss.Vstart = -90
 	ss.Vend = 0
 	ss.Vstep = 1
-	ss.TimeSteps = 1000
+	ss.TimeSteps = 200
 	ss.TimeSpike = true
 	ss.SpikeFreq = 50
 	ss.TimeVstart = -70
@@ -88,13 +88,16 @@ func (ss *Sim) VmRun() {
 
 	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
 	dt.SetNumRows(nv)
-	var v, g float32
 	for vi := 0; vi < nv; vi++ {
-		v = ss.Vstart + float32(vi)*ss.Vstep
+		v := ss.Vstart + float32(vi)*ss.Vstep
 		vnorm := (v + 100) / 100
-		g = ss.VGCC.GFmV(vnorm)
+		g := ss.VGCC.GFmV(vnorm)
+		m := ss.VGCC.MFmV(v)
+		h := ss.VGCC.HFmV(v)
 		dt.SetCellFloat("V", vi, float64(v))
 		dt.SetCellFloat("Gvgcc", vi, float64(g))
+		dt.SetCellFloat("M", vi, float64(m))
+		dt.SetCellFloat("H", vi, float64(h))
 	}
 	ss.Plot.Update()
 }
@@ -107,6 +110,8 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 	sch := etable.Schema{
 		{"V", etensor.FLOAT64, nil, nil},
 		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"M", etensor.FLOAT64, nil, nil},
+		{"H", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -133,7 +138,7 @@ func (ss *Sim) TimeRun() {
 	dt := ss.TimeTable
 
 	m := float32(0)
-	h := float32(0)
+	h := float32(1)
 	msdt := float32(0.001)
 	v := ss.TimeVstart
 	vinc := float32(2) * (ss.TimeVend - ss.TimeVstart) / float32(ss.TimeSteps)
