@@ -22,7 +22,7 @@ VGCC(vm) = M^3 H * G(vm)
 
 The intersection of M and H produces a very narrow membrane potential window centered around -40 mV where the gates are both activated, with the fast updating (3.6 msec tau) and cubic dependence on M essentially shutting off the current very quickly when the action potential goes away.  The longer H time constant provides a slow adaptation-like dynamic that is sensitive to frequency (more adaptation at higher frequencies).
 
-![M and H gating from V](fig_vgcc_m_h_from_v.png?raw=true "M and H gating factors as a function of V (biological units)")
+![M and H gating from V](fig_vgcc_time_plot.png?raw=true "M and H gating factors as a function of V (biological units)")
 
 The `Time Run` plot (above) shows these dynamics playing out with a sequence of spiking.
 
