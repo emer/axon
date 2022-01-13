@@ -1,7 +1,7 @@
 // Copyright (c) 2020, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-// eqplot plots an equation updating over time in a etable.Table and Plot2D.
+// nmdaplot plots an equation updating over time in a etable.Table and Plot2D.
 // This is a good starting point for any plotting to explore specific equations.
 // This example plots a double exponential (biexponential) model of synaptic currents.
 package main
@@ -46,7 +46,8 @@ type Sim struct {
 	Vstep     float64       `def:"1" desc:"voltage increment"`
 	Tau       float64       `def:"100" desc:"decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential"`
 	TimeSteps int           `desc:"number of time steps"`
-	Gin       float64       `desc:"NMDA g current input at every time step"`
+	TimeV     float64       `desc:"voltage for TimeRun"`
+	TimeGin   float64       `desc:"NMDA Gsyn current input at every time step"`
 	Table     *etable.Table `view:"no-inline" desc:"table for plot"`
 	Plot      *eplot.Plot2D `view:"-" desc:"the plot"`
 	TimeTable *etable.Table `view:"no-inline" desc:"table for plot"`
@@ -68,7 +69,8 @@ func (ss *Sim) Config() {
 	ss.Vstep = 1
 	ss.Tau = 100
 	ss.TimeSteps = 1000
-	ss.Gin = .5
+	ss.TimeV = -50
+	ss.TimeGin = .5
 	ss.Update()
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
@@ -97,19 +99,19 @@ func (ss *Sim) Run() {
 		g = (ss.NMDAerev - v) / (1 + 1*math.Exp(-ss.NMDAv*v)/ss.NMDAd)
 
 		dt.SetCellFloat("V", vi, v)
-		dt.SetCellFloat("g_NMDA", vi, g)
+		dt.SetCellFloat("Gnmda", vi, g)
 	}
 	ss.Plot.Update()
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "EqPlotTable")
+	dt.SetMetaData("name", "NmDaplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"V", etensor.FLOAT64, nil, nil},
-		{"g_NMDA", etensor.FLOAT64, nil, nil},
+		{"Gnmda", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -120,7 +122,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("g_NMDA", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Gnmda", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 
@@ -131,30 +133,36 @@ func (ss *Sim) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	dt.SetNumRows(ss.TimeSteps)
+	v := ss.TimeV
+
 	g := 0.0
+	nmda := 0.0
+	dt.SetNumRows(ss.TimeSteps)
 	for ti := 0; ti < ss.TimeSteps; ti++ {
 		t := float64(ti) * .001
-		if ti < ss.TimeSteps/2 {
-			g = g + ss.Gin - g/ss.Tau
-		} else {
-			g = g - g/ss.Tau
+		gin := ss.TimeGin
+		if ti > ss.TimeSteps/2 {
+			gin = 0
 		}
+		nmda += gin - (nmda / ss.Tau)
+		g = nmda / (1 + math.Exp(-ss.NMDAv*v)/ss.NMDAd)
 
 		dt.SetCellFloat("Time", ti, t)
-		dt.SetCellFloat("g_NMDA", ti, g)
+		dt.SetCellFloat("Gnmda", ti, g)
+		dt.SetCellFloat("NMDA", ti, nmda)
 	}
 	ss.TimePlot.Update()
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
-	dt.SetMetaData("name", "EqPlotTable")
+	dt.SetMetaData("name", "NmDaplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"Time", etensor.FLOAT64, nil, nil},
-		{"g_NMDA", etensor.FLOAT64, nil, nil},
+		{"Gnmda", etensor.FLOAT64, nil, nil},
+		{"NMDA", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -165,7 +173,8 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("g_NMDA", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Gnmda", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("NMDA", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 
@@ -176,10 +185,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	// gi.WinEventTrace = true
 
-	gi.SetAppName("eqplot")
+	gi.SetAppName("nmda_plot")
 	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("eqplot", "Plotting Equations", width, height)
+	win := gi.NewMainWindow("nmdaplot", "Plotting Equations", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -200,7 +209,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tv := gi.AddNewTabView(split, "tv")
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "Plot").(*eplot.Plot2D)
+	plt := tv.AddNewTab(eplot.KiT_Plot2D, "V-G Plot").(*eplot.Plot2D)
 	ss.Plot = ss.ConfigPlot(plt, ss.Table)
 
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TimePlot").(*eplot.Plot2D)
@@ -220,7 +229,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/eqplot/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/nmda_plot/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

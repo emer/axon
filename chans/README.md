@@ -1,14 +1,20 @@
-# Glong: longer time-scale conductances from GABA-B / GIRK and NMDA receptors
+# Chans: Channels of all types
+
+`chans.go` contains `Chans` which defines the basic `E, L, I, K` channels.
+
+Other channels are described below.  There are various `_plot` directories with simple programs to plot the various functions and explore parameters.
+
+# Longer time-scale conductances from GABA-B / GIRK and NMDA receptors
 
 This package implements two complementary conductances, GABA-B / GIRK and NMDA, that have relatively long time constants (on the order of 100-200 msec) and thus drive these longer-scale dynamics in neurons, beyond the basic AMPA and GABA-A channels with short ~10 msec time constants.  In addition to their longer time constants, these neurons have interesting mirror-image rectification properties (voltage dependencies), inward and outward, which are a critical part of their function (Sanders et al, 2013).
 
-# GABA-B / GIRK
+## GABA-B / GIRK
 
 GABA-B is an inhibitory channel activated by the usual GABA inhibitory neurotransmitter, which is coupled to the GIRK *G-protein coupled inwardly rectifying potassium (K) channel*.  It is ubiquitous in the brain, and is likely essential for basic neural function (especially in spiking networks from a computational perspective).  The inward rectification is caused by a Mg+ ion block *from the inside* of the neuron, which means that these channels are most open when the neuron is hyperpolarized (inactive), and thus it serves to *keep inactive neurons inactive*.
 
 In standard Leabra rate-code neurons using FFFB inhibition, the continuous nature of the GABA-A type inhibition serves this function already, so these GABA-B channels have not been as important, but whenever a discrete spiking function has been used along with FFFB inhibition or direct interneuron inhibition, there is a strong tendency for every neuron to fire at some point, in a rolling fashion, because neurons that are initially inhibited during the first round of firing can just pop back up once that initial wave of associated GABA-A inhibition passes.  This is especially problematic for untrained networks where excitatory connections are not well differentiated, and neurons are receiving very similar levels of excitatory input.  In this case, learning does not have the ability to further differentiate the neurons, and does not work effectively.
 
-# NMDA
+## NMDA
 
 NMDA is predominantly important for learning in most parts of the brain, but in frontal areas especially, a particular type of NMDA receptor drives sustained active maintenance, by driving sustained excitatory voltage-gated conductances (Goldman-Rakic, 1995; Lisman et al, 1998; Brunel & Wang, 2001).  The well-known external Mg+ ion block of NMDA channels, which is essential for its Hebbian character in learning, also has the beneficial effect of *keeping active neurons active* by virtue of causing an outward rectification that is the mirror-image of the GIRK inward rectification, with the complementary functional effect.  The Brunel & Wang (2001) model is widely used in many other active maintenance / working memory models.
 
@@ -16,13 +22,13 @@ Sanders et al, 2013 emphasize the "perfect couple" nature of the complementary b
 
 We are using both NMDA and GABA-B to support robust active maintenance but also the ability to clear out previously-maintained representations, as a result of the GABA-B sustained inhibition.
 
-# Implementation
+## Implementation
 
-## Spiking effects on Vm: Backpropagating Action Potentials
+### Spiking effects on Vm: Backpropagating Action Potentials
 
 Spikes in the soma of a neuron also drive backpropagating action potentials back into the dendrites, which increases the overall membrane potential there above what is produced by the raw synaptic inputs.  In our rate code models, we simulate these effects by adding a proportion of the rate code activation value to the `Vm` value.  Also note that this `Vm` value is an equilibrium Vm that is not reset back to rest after each spike, so it is itself perhaps a bit elevated as a result.
 
-## GABA-B
+### GABA-B
 
 The GABA-B / GIRK dynamics are based on a combination of Sanders et al, 2013 and Thomson & Destexhe, 1999 (which was major source for Sanders et al, 2013).
 
@@ -46,7 +52,7 @@ See `gabab_plot` subdirectory for program that generates these plots:
 
 **Bi-exponential time course with 45msec rise and 50msec decay** fitting to results from Thomson & Destexhe (1999)
 
-## NMDA
+### NMDA
 
 The NMDA code uses the exponential function from Brunel & Wang (2001), which is very similar in shape to the Sanders et al, 2013 curve, to compute the voltage dependency of the current:
 
@@ -62,6 +68,12 @@ See the `nmda_plot` directory for a program that plots this function, which look
 ![GABA-B V-G](nmda_plot/fig_brunelwang01.png)
 
 **V-G plot for NMDA** from Brunel & Wang (2001)
+
+# VGCC: Voltage-gated Calcium Channels
+
+VGCC implements an L-type Ca channel that opens as a function of membrane potential.  It tends to broaden the effect of action potential spikes in the dendrites.  See the `vgcc_plot` for more info.
+
+# 
 
 
 

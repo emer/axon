@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// eqplot plots an equation updating over time in a etable.Table and Plot2D.
+// gababplot plots an equation updating over time in a etable.Table and Plot2D.
 // This is a good starting point for any plotting to explore specific equations.
 // This example plots a double exponential (biexponential) model of synaptic currents.
 package main
@@ -119,7 +119,7 @@ func (ss *Sim) VGRun() {
 }
 
 func (ss *Sim) ConfigVGTable(dt *etable.Table) {
-	dt.SetMetaData("name", "EqPlotTable")
+	dt.SetMetaData("name", "GaBabplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
@@ -161,7 +161,7 @@ func (ss *Sim) SGRun() {
 }
 
 func (ss *Sim) ConfigSGTable(dt *etable.Table) {
-	dt.SetMetaData("name", "SG_EqPlotTable")
+	dt.SetMetaData("name", "SG_GaBabplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
@@ -209,7 +209,7 @@ func (ss *Sim) TimeRun() {
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
-	dt.SetMetaData("name", "TimeEqPlotTable")
+	dt.SetMetaData("name", "TimeGaBabplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
@@ -239,10 +239,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	// gi.WinEventTrace = true
 
-	gi.SetAppName("eqplot")
+	gi.SetAppName("gabab_plot")
 	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("eqplot", "Plotting Equations", width, height)
+	win := gi.NewMainWindow("gababplot", "Plotting Equations", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -291,7 +291,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/eqplot/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/gabab_plot/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

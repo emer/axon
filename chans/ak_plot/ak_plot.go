@@ -1,7 +1,7 @@
 // Copyright (c) 2020, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-// eqplot plots an equation updating over time in a etable.Table and Plot2D.
+// akplot plots an equation updating over time in a etable.Table and Plot2D.
 // This is a good starting point for any plotting to explore specific equations.
 // This example plots a double exponential (biexponential) model of synaptic currents.
 package main
@@ -38,21 +38,21 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	VGCC       chans.VGCCParams `desc:"VGCC function"`
-	Vstart     float32          `def:"-90" desc:"starting voltage"`
-	Vend       float32          `def:"0" desc:"ending voltage"`
-	Vstep      float32          `def:"1" desc:"voltage increment"`
-	TimeSteps  int              `desc:"number of time steps"`
-	TimeSpike  bool             `desc:"do spiking instead of voltage ramp"`
-	SpikeFreq  float32          `desc:"spiking frequency"`
-	TimeVstart float32          `desc:"time-run starting membrane potential"`
-	TimeVend   float32          `desc:"time-run ending membrane potential"`
-	Table      *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot       *eplot.Plot2D    `view:"-" desc:"the plot"`
-	TimeTable  *etable.Table    `view:"no-inline" desc:"table for plot"`
-	TimePlot   *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win        *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+	AK         chans.AKParams `desc:"AK function"`
+	Vstart     float32        `def:"-100" desc:"starting voltage"`
+	Vend       float32        `def:"100" desc:"ending voltage"`
+	Vstep      float32        `def:"1" desc:"voltage increment"`
+	TimeSteps  int            `desc:"number of time steps"`
+	TimeSpike  bool           `desc:"do spiking instead of voltage ramp"`
+	SpikeFreq  float32        `desc:"spiking frequency"`
+	TimeVstart float32        `desc:"time-run starting membrane potential"`
+	TimeVend   float32        `desc:"time-run ending membrane potential"`
+	Table      *etable.Table  `view:"no-inline" desc:"table for plot"`
+	Plot       *eplot.Plot2D  `view:"-" desc:"the plot"`
+	TimeTable  *etable.Table  `view:"no-inline" desc:"table for plot"`
+	TimePlot   *eplot.Plot2D  `view:"-" desc:"the plot"`
+	Win        *gi.Window     `view:"-" desc:"main GUI window"`
+	ToolBar    *gi.ToolBar    `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation
@@ -60,10 +60,10 @@ var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	ss.VGCC.Defaults()
-	ss.VGCC.Gbar = 1
-	ss.Vstart = -90
-	ss.Vend = 0
+	ss.AK.Defaults()
+	ss.AK.Gbar = 1
+	ss.Vstart = -100
+	ss.Vend = 100
 	ss.Vstep = 1
 	ss.TimeSteps = 200
 	ss.TimeSpike = true
@@ -86,47 +86,67 @@ func (ss *Sim) VmRun() {
 	ss.Update()
 	dt := ss.Table
 
+	ap := &ss.AK
+
 	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
-		v := ss.Vstart + float32(vi)*ss.Vstep
-		vnorm := (v + 100) / 100
-		g := ss.VGCC.GFmV(vnorm)
-		m := ss.VGCC.MFmV(v)
-		h := ss.VGCC.HFmV(v)
-		dt.SetCellFloat("V", vi, float64(v))
-		dt.SetCellFloat("Gvgcc", vi, float64(g))
+		vbio := ss.Vstart + float32(vi)*ss.Vstep
+		// vnorm := (vbio + 100) / 100
+		k := ap.KFmV(vbio)
+		a := ap.AlphaFmVK(vbio, k)
+		b := ap.BetaFmVK(vbio, k)
+		mt := ap.MTauFmAlphaBeta(a, b)
+		ht := ap.HTauFmV(vbio)
+		m := ap.MFmAlpha(a)
+		h := ap.HFmV(vbio)
+		g := ap.Gak(m, h)
+		dt.SetCellFloat("V", vi, float64(vbio))
+		dt.SetCellFloat("Gak", vi, float64(g))
 		dt.SetCellFloat("M", vi, float64(m))
 		dt.SetCellFloat("H", vi, float64(h))
+		dt.SetCellFloat("MTau", vi, float64(mt))
+		dt.SetCellFloat("HTau", vi, float64(ht))
+		dt.SetCellFloat("K", vi, float64(k))
+		dt.SetCellFloat("Alpha", vi, float64(a))
+		dt.SetCellFloat("Beta", vi, float64(b))
 	}
 	ss.Plot.Update()
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "EqPlotTable")
+	dt.SetMetaData("name", "AkplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"V", etensor.FLOAT64, nil, nil},
-		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"Gak", etensor.FLOAT64, nil, nil},
 		{"M", etensor.FLOAT64, nil, nil},
 		{"H", etensor.FLOAT64, nil, nil},
+		{"MTau", etensor.FLOAT64, nil, nil},
+		{"HTau", etensor.FLOAT64, nil, nil},
+		{"K", etensor.FLOAT64, nil, nil},
+		{"Alpha", etensor.FLOAT64, nil, nil},
+		{"Beta", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
 func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "VGCC V-G Function Plot"
+	plt.Params.Title = "AK V-G Function Plot"
 	plt.Params.XAxisCol = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gvgcc", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Gak", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("H", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dH", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("MTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("HTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("K", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Alpha", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Beta", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 
@@ -136,6 +156,8 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 func (ss *Sim) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
+
+	ap := &ss.AK
 
 	m := float32(0)
 	h := float32(1)
@@ -150,18 +172,32 @@ func (ss *Sim) TimeRun() {
 	for ti := 0; ti < ss.TimeSteps; ti++ {
 		vnorm := (v + 100) / 100
 		t := float32(ti) * msdt
-		g = ss.VGCC.Gvgcc(vnorm, m, h)
-		dm, dh := ss.VGCC.DMHFmV(vnorm, m, h)
-		m += msdt * dm
-		h += msdt * dh
+
+		k := ap.KFmV(v)
+		a := ap.AlphaFmVK(v, k)
+		b := ap.BetaFmVK(v, k)
+		mt := ap.MTauFmAlphaBeta(a, b)
+		ht := ap.HTauFmV(v)
+		g = ap.Gak(m, h)
+
+		dm, dh := ss.AK.DMHFmV(vnorm, m, h)
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("V", ti, float64(v))
-		dt.SetCellFloat("Gvgcc", ti, float64(g))
+		dt.SetCellFloat("Gak", ti, float64(g))
 		dt.SetCellFloat("M", ti, float64(m))
 		dt.SetCellFloat("H", ti, float64(h))
 		dt.SetCellFloat("dM", ti, float64(dm))
 		dt.SetCellFloat("dH", ti, float64(dh))
+		dt.SetCellFloat("MTau", ti, float64(mt))
+		dt.SetCellFloat("HTau", ti, float64(ht))
+		dt.SetCellFloat("K", ti, float64(k))
+		dt.SetCellFloat("Alpha", ti, float64(a))
+		dt.SetCellFloat("Beta", ti, float64(b))
+
+		g = ss.AK.Gak(m, h)
+		m += msdt * dm
+		h += msdt * dh
 
 		if ss.TimeSpike {
 			if ti%isi < 3 {
@@ -180,18 +216,23 @@ func (ss *Sim) TimeRun() {
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
-	dt.SetMetaData("name", "EqPlotTable")
+	dt.SetMetaData("name", "AkplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"Time", etensor.FLOAT64, nil, nil},
 		{"V", etensor.FLOAT64, nil, nil},
-		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"Gak", etensor.FLOAT64, nil, nil},
 		{"M", etensor.FLOAT64, nil, nil},
 		{"H", etensor.FLOAT64, nil, nil},
 		{"dM", etensor.FLOAT64, nil, nil},
 		{"dH", etensor.FLOAT64, nil, nil},
+		{"MTau", etensor.FLOAT64, nil, nil},
+		{"HTau", etensor.FLOAT64, nil, nil},
+		{"K", etensor.FLOAT64, nil, nil},
+		{"Alpha", etensor.FLOAT64, nil, nil},
+		{"Beta", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -202,11 +243,16 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gvgcc", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Gak", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("M", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("H", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("dM", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("dH", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("MTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("HTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("K", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Alpha", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Beta", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 
@@ -217,10 +263,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	// gi.WinEventTrace = true
 
-	gi.SetAppName("eqplot")
+	gi.SetAppName("ak_plot")
 	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("eqplot", "Plotting Equations", width, height)
+	win := gi.NewMainWindow("ak_plot", "Plotting Equations", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -261,7 +307,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/eqplot/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/ak_plot/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
