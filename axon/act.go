@@ -8,7 +8,6 @@ import (
 	"math/rand"
 
 	"github.com/emer/axon/chans"
-	"github.com/emer/axon/glong"
 	"github.com/emer/axon/knadapt"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
@@ -35,8 +34,8 @@ type ActParams struct {
 	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
 	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
-	NMDA    glong.NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
-	GABAB   glong.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
+	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
+	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
 	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
 }
 

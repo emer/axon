@@ -9,7 +9,7 @@ package main
 import (
 	"strconv"
 
-	"github.com/emer/axon/glong"
+	"github.com/emer/axon/chans"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -38,7 +38,7 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	VGCC       glong.VGCCParams `desc:"VGCC function"`
+	VGCC       chans.VGCCParams `desc:"VGCC function"`
 	Vstart     float32          `def:"-90" desc:"starting voltage"`
 	Vend       float32          `def:"0" desc:"ending voltage"`
 	Vstep      float32          `def:"1" desc:"voltage increment"`

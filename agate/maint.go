@@ -6,7 +6,7 @@ package agate
 
 import (
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/glong"
+	"github.com/emer/axon/chans"
 	"github.com/emer/axon/interinhib"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -26,7 +26,7 @@ func (pc *PulseClearParams) Defaults() {
 // MaintLayer is a layer with NMDA channels that supports active maintenance
 // in frontal cortex, via NMDA channels (in an NMDAMaintPrjn).
 type MaintLayer struct {
-	glong.Layer
+	chans.Layer
 	PulseClear PulseClearParams      `desc:"parameters for the synchronous pulse of activation / inhibition that clears NMDA maintenance."`
 	InterInhib interinhib.InterInhib `desc:"inhibition from output layer"`
 }

@@ -8,7 +8,7 @@ import (
 	"fmt"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/glong"
+	"github.com/emer/axon/chans"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -16,7 +16,7 @@ import (
 // Layer is the base layer type for PCore framework.
 // Adds a dopamine variable to base Axon layer type.
 type Layer struct {
-	glong.AlphaMaxLayer
+	chans.AlphaMaxLayer
 	DA float32 `inactive:"+" desc:"dopamine value for this layer"`
 }
 

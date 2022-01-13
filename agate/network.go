@@ -6,8 +6,8 @@ package agate
 
 import (
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/chans"
 	"github.com/emer/axon/deep"
-	"github.com/emer/axon/glong"
 	"github.com/emer/axon/pcore"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
@@ -43,7 +43,7 @@ func (nt *Network) UnitVarNames() []string {
 
 // UnitVarProps returns properties for variables
 func (nt *Network) UnitVarProps() map[string]string {
-	return glong.NeuronVarProps
+	return chans.NeuronVarProps
 }
 
 // SynVarNames returns the names of all the variables on the synapses in this network.
@@ -85,7 +85,7 @@ func (nt *Network) AddPFC(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, pul
 func AddMaintLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *MaintLayer {
 	ly := &MaintLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
-	glong.ConnectNMDA(nt, ly, ly, prjn.NewPoolOneToOne())
+	chans.ConnectNMDA(nt, ly, ly, prjn.NewPoolOneToOne())
 	return ly
 }
 
