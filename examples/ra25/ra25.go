@@ -72,9 +72,8 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
 					"Layer.Inhib.ActAvg.Init": "0.04", // start lower -- 0.04 more reliable than .03
 					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.2 > 0 > 0.4 -- starts to fail at 0.4
-					"Layer.Act.Spike.GbarR":   "0",    // > 0 doesn't work at all
-					"Layer.Act.Dend.ExpGbar":  "0.1",
-					"Layer.Act.Dend.GbarR":    "0.1", // 0.1 works ok
+					"Layer.Act.Dend.GbarExp":  "0.2",  // 0.2 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":    "2",    // 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -86,7 +85,7 @@ var ParamSetsMin = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
 					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "0",    // 0 is essential here!
+					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
 					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",

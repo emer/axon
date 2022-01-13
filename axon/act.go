@@ -225,35 +225,41 @@ func (ac *ActParams) GiFmRaw(nrn *Neuron, giRaw float32) {
 }
 
 // InetFmG computes net current from conductances and Vm
-func (ac *ActParams) InetFmG(vm, ge, gi, gk float32) float32 {
-	return ge*(ac.Erev.E-vm) + ac.Gbar.L*(ac.Erev.L-vm) + gi*(ac.Erev.I-vm) + gk*(ac.Erev.K-vm)
+func (ac *ActParams) InetFmG(vm, ge, gl, gi, gk float32) float32 {
+	inet := ge*(ac.Erev.E-vm) + gl*ac.Gbar.L*(ac.Erev.L-vm) + gi*(ac.Erev.I-vm) + gk*(ac.Erev.K-vm)
+	if inet > ac.Dt.VmTau {
+		inet = ac.Dt.VmTau
+	} else if inet < -ac.Dt.VmTau {
+		inet = -ac.Dt.VmTau
+	}
+	return inet
+}
+
+// VmFmInet computes new Vm value from inet, clamping range
+func (ac *ActParams) VmFmInet(vm, dt, inet float32) float32 {
+	return ac.VmRange.ClipVal(vm + dt*inet)
 }
 
 // VmFmG computes membrane potential Vm from conductances Ge, Gi, and Gk.
 func (ac *ActParams) VmFmG(nrn *Neuron) {
 	updtVm := true
+	// note: nrn.ISI has NOT yet been updated at this point: 0 right after spike, etc
+	// so it takes a full 3 time steps after spiking for Tr period
 	if ac.Spike.Tr > 0 && nrn.ISI >= 0 && nrn.ISI < float32(ac.Spike.Tr) {
 		updtVm = false // don't update the spiking vm during refract
 	}
 
-	nwVm := nrn.Vm
 	ge := nrn.Ge * ac.Gbar.E
 	gi := nrn.Gi * ac.Gbar.I
 	gk := nrn.Gk * ac.Gbar.K
 	var expi float32
-	if updtVm || ac.Spike.GbarR > 0 {
+	if updtVm {
 		vmEff := nrn.Vm
-		giEff := gi
-		if !updtVm { // GbarR > 0
-			giEff += ac.Spike.GbarR
-		}
 		// midpoint method: take a half-step in vmEff
-		inet1 := ac.InetFmG(vmEff, ge, giEff, gk)
-		vmEff += .5 * ac.Dt.VmDt * inet1 // go half way
-		vmEff = ac.VmRange.ClipVal(vmEff)
-		inet2 := ac.InetFmG(vmEff, ge, giEff, gk)
-		// add spike current if relevant
-		if updtVm && ac.Spike.Exp {
+		inet1 := ac.InetFmG(vmEff, ge, 1, gi, gk)
+		vmEff = ac.VmFmInet(vmEff, .5*ac.Dt.VmDt, inet1) // go half way
+		inet2 := ac.InetFmG(vmEff, ge, 1, gi, gk)
+		if updtVm && ac.Spike.Exp { // add spike current if relevant
 			expi = ac.Gbar.L * ac.Spike.ExpSlope *
 				mat32.FastExp((vmEff-ac.Spike.Thr)/ac.Spike.ExpSlope)
 			if expi > 2 {
@@ -261,30 +267,34 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 			}
 			inet2 += expi
 		}
-		nwVm += ac.Dt.VmDt * inet2
+		nrn.Vm = ac.VmFmInet(nrn.Vm, ac.Dt.VmDt, inet2)
 		nrn.Inet = inet2
-	}
-	{ // always update VmDend
-		vmEff := nrn.VmDend
-		giEff := gi
-		if !updtVm { // GbarR > 0
-			giEff += ac.Dend.GbarR
+	} else { // decay back to VmR
+		var dvm float32
+		if int(nrn.ISI) == ac.Spike.Tr-1 {
+			dvm = (ac.Spike.VmR - nrn.Vm)
+		} else {
+			dvm = ac.Spike.RDt * (ac.Spike.VmR - nrn.Vm)
 		}
-		// midpoint method: take a half-step in vmEff
-		inet1 := ac.InetFmG(vmEff, ge, giEff, gk)
-		vmEff += .5 * ac.Dt.VmDendDt * inet1 // go half way
-		vmEff = ac.VmRange.ClipVal(vmEff)
-		inet2 := ac.InetFmG(vmEff, ge, giEff, gk)
-		if updtVm {
-			inet2 += ac.Dend.ExpGbar * expi
-		}
-		nrn.VmDend = ac.VmRange.ClipVal(nrn.VmDend + ac.Dt.VmDendDt*inet2)
+		nrn.Vm = nrn.Vm + dvm
+		nrn.Inet = dvm * ac.Dt.VmTau
 	}
 
-	if mat32.IsNaN(nwVm) {
-		nwVm = ac.Init.Vm
+	{ // always update VmDend
+		vmEff := nrn.VmDend
+		glEff := float32(1)
+		if !updtVm {
+			glEff += ac.Dend.GbarR
+		}
+		// midpoint method: take a half-step in vmEff
+		inet1 := ac.InetFmG(vmEff, ge, glEff, gi, gk)
+		vmEff = ac.VmFmInet(vmEff, .5*ac.Dt.VmDendDt, inet1) // go half way
+		inet2 := ac.InetFmG(vmEff, ge, glEff, gi, gk)
+		if updtVm {
+			inet2 += ac.Dend.GbarExp * expi
+		}
+		nrn.VmDend = ac.VmFmInet(nrn.VmDend, ac.Dt.VmDendDt, inet2)
 	}
-	nrn.Vm = ac.VmRange.ClipVal(nwVm)
 }
 
 // ActFmG computes Spike from Vm and ISI-based activation
@@ -297,10 +307,6 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	}
 	if nrn.Vm >= thr {
 		nrn.Spike = 1
-		if ac.Spike.GbarR == 0 {
-			nrn.Vm = ac.Spike.VmR
-		}
-		nrn.Inet = 0
 		if nrn.ISIAvg == -1 {
 			nrn.ISIAvg = -2
 		} else if nrn.ISI > 0 { // must have spiked to update
@@ -338,22 +344,23 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 // the AdEx adaptive exponential function (adapt is KNaAdapt)
 type SpikeParams struct {
 	Thr      float32 `def:"0.5" desc:"threshold value Theta (Q) for firing output activation (.5 is more accurate value based on AdEx biological parameters and normalization"`
-	VmR      float32 `def:"0.3" desc:"post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.3 is apropriate biologically-based value for AdEx (Brette & Gurstner, 2005) parameters.  See also GbarR"`
-	Tr       int     `def:"3" desc:"post-spiking explicit refractory period, in cycles -- prevents Vm updating for this number of cycles post firing"`
-	GbarR    float32 `def:"0,2" desc:"conductance of Kdr delayed rectifier currents -- if non-zero, then this is used to reset membrane potential instead of hard VmR reset -- applied for Tr msec -- only needed when using Vm for driving spike-associated channels more realistically, e.g. in learning from Ca"`
+	VmR      float32 `def:"0.3" desc:"post-spiking membrane potential to reset to, produces refractory effect if lower than VmInit -- 0.3 is apropriate biologically-based value for AdEx (Brette & Gurstner, 2005) parameters.  See also RTau"`
+	Tr       int     `min:"1" def:"3" desc:"post-spiking explicit refractory period, in cycles -- prevents Vm updating for this number of cycles post firing -- Vm is reduced in exponential steps over this period according to RTau, being fixed at Tr to VmR exactly"`
+	RTau     float32 `def:"1.6667" desc:"time constant for decaying Vm down to VmR -- at end of Tr it is set to VmR exactly -- this provides a more realistic shape of the post-spiking Vm which is only relevant for more realistic channels that key off of Vm -- does not otherwise affect standard computation"`
 	Exp      bool    `def:"true" desc:"if true, turn on exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpSlope float32 `viewif:"Exp" def:"0.02" desc:"slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpThr   float32 `viewif:"Exp" def:"1" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
 	MaxHz    float32 `def:"180" min:"1" desc:"for translating spiking interval (rate) into rate-code activation equivalent, what is the maximum firing rate associated with a maximum activation value of 1"`
 	ISITau   float32 `def:"5" min:"1" desc:"constant for integrating the spiking interval in estimating spiking rate"`
 	ISIDt    float32 `view:"-" desc:"rate = 1 / tau"`
+	RDt      float32 `view:"-" desc:"rate = 1 / tau"`
 }
 
 func (sk *SpikeParams) Defaults() {
 	sk.Thr = 0.5
 	sk.VmR = 0.3
-	sk.GbarR = 0
 	sk.Tr = 3
+	sk.RTau = 1.6667
 	sk.Exp = true
 	sk.ExpSlope = 0.02
 	sk.ExpThr = 1.0
@@ -363,7 +370,11 @@ func (sk *SpikeParams) Defaults() {
 }
 
 func (sk *SpikeParams) Update() {
+	if sk.Tr <= 0 {
+		sk.Tr = 1 // hard min
+	}
 	sk.ISIDt = 1 / sk.ISITau
+	sk.RDt = 1 / sk.RTau
 }
 
 // ActToISI compute spiking interval from a given rate-coded activation,
@@ -400,13 +411,13 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
-	ExpGbar float32 `def:"0.1" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma -- which uses Gbar.L"`
-	GbarR   float32 `def:"0,0.1" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	GbarExp float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
+	GbarR   float32 `def:"2" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
 }
 
 func (dp *DendParams) Defaults() {
-	dp.ExpGbar = 0.1 // may actually work
-	dp.GbarR = 0.1
+	dp.GbarExp = 0.2
+	dp.GbarR = 2
 }
 
 func (dp *DendParams) Update() {
