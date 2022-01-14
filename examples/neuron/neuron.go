@@ -15,6 +15,7 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/chans"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
@@ -58,37 +59,59 @@ var ParamSets = params.Sets{
 	}},
 }
 
+// Extra state for neuron -- VGCC and AK
+type NeuronEx struct {
+	Gvgcc float32 `desc:"VGCC total conductance"`
+	VGCCm float32 `desc:"VGCC M gate -- activates with increasing Vm"`
+	VGCCh float32 `desc:"VGCC H gate -- deactivates with increasing Vm"`
+	Gak   float32 `desc:"AK total conductance"`
+	AKm   float32 `desc:"AK M gate -- activates with increasing Vm"`
+	AKh   float32 `desc:"AK H gate -- deactivates with increasing Vm"`
+}
+
+func (nrn *NeuronEx) Init() {
+	nrn.Gvgcc = 0
+	nrn.VGCCm = 0
+	nrn.VGCCh = 1
+	nrn.Gak = 0
+	nrn.AKm = 0
+	nrn.AKh = 1
+}
+
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	GbarE          float32       `min:"0" step:"0.01" def:"0.3" desc:"excitatory conductance multiplier -- determines overall value of Ge which drives neuron to be more excited -- pushes up over threshold to fire if strong enough"`
-	GbarL          float32       `min:"0" step:"0.01" def:"0.3" desc:"leak conductance -- determines overall value of Gl which drives neuron to be less excited (inhibited) -- pushes back to resting membrane potential"`
-	ErevE          float32       `min:"0" max:"1" step:"0.01" def:"1" desc:"excitatory reversal (driving) potential -- determines where excitation pushes Vm up to"`
-	ErevL          float32       `min:"0" max:"1" step:"0.01" def:"0.3" desc:"leak reversal (driving) potential -- determines where excitation pulls Vm down to"`
-	Noise          float32       `min:"0" step:"0.01" desc:"the variance parameter for Gaussian noise added to unit activations on every cycle"`
-	KNaAdapt       bool          `desc:"apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time"`
-	NCycles        int           `min:"10" def:"200" desc:"total number of cycles to run"`
-	OnCycle        int           `min:"0" def:"10" desc:"when does excitatory input into neuron come on?"`
-	OffCycle       int           `min:"0" def:"160" desc:"when does excitatory input into neuron go off?"`
-	UpdtInterval   int           `min:"1" def:"10"  desc:"how often to update display (in cycles)"`
-	Net            *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	TstCycLog      *etable.Table `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
-	SpikeVsRateLog *etable.Table `view:"no-inline" desc:"plot of measured spike rate vs. noisy X/X+1 rate function"`
-	Params         params.Sets   `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
+	Ge           float32          `min:"0" step:"0.01" desc:"Raw synaptic excitatory conductance"`
+	Gi           float32          `min:"0" step:"0.01" desc:"Inhibitory conductance "`
+	ErevE        float32          `min:"0" max:"1" step:"0.01" def:"1" desc:"excitatory reversal (driving) potential -- determines where excitation pushes Vm up to"`
+	ErevI        float32          `min:"0" max:"1" step:"0.01" def:"0.3" desc:"leak reversal (driving) potential -- determines where excitation pulls Vm down to"`
+	Noise        float32          `min:"0" step:"0.01" desc:"the variance parameter for Gaussian noise added to unit activations on every cycle"`
+	KNaAdapt     bool             `desc:"apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time"`
+	NMDAGbar     float32          `def:"0,0.03" desc:"strength of NMDA current -- 0.03 default for posterior cortex"`
+	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
+	VGCC         chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
+	AK           chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
+	NCycles      int              `min:"10" def:"200" desc:"total number of cycles to run"`
+	OnCycle      int              `min:"0" def:"10" desc:"when does excitatory input into neuron come on?"`
+	OffCycle     int              `min:"0" def:"160" desc:"when does excitatory input into neuron go off?"`
+	UpdtInterval int              `min:"1" def:"10"  desc:"how often to update display (in cycles)"`
+	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	NeuronEx     NeuronEx         `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	TstCycLog    *etable.Table    `view:"no-inline" desc:"testing trial-level log data -- click to see record of network's response to each input"`
+	Params       params.Sets      `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
 
 	Cycle int `inactive:"+" desc:"current cycle of updating"`
 
 	// internal state - view:"-"
-	Win             *gi.Window       `view:"-" desc:"main GUI window"`
-	NetView         *netview.NetView `view:"-" desc:"the network viewer"`
-	ToolBar         *gi.ToolBar      `view:"-" desc:"the master toolbar"`
-	TstCycPlot      *eplot.Plot2D    `view:"-" desc:"the test-trial plot"`
-	SpikeVsRatePlot *eplot.Plot2D    `view:"-" desc:"the spike vs. rate plot"`
-	IsRunning       bool             `view:"-" desc:"true if sim is running"`
-	StopNow         bool             `view:"-" desc:"flag to stop running"`
+	Win        *gi.Window       `view:"-" desc:"main GUI window"`
+	NetView    *netview.NetView `view:"-" desc:"the network viewer"`
+	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+	TstCycPlot *eplot.Plot2D    `view:"-" desc:"the test-trial plot"`
+	IsRunning  bool             `view:"-" desc:"true if sim is running"`
+	StopNow    bool             `view:"-" desc:"flag to stop running"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,
@@ -102,7 +125,6 @@ var TheSim Sim
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	ss.TstCycLog = &etable.Table{}
-	ss.SpikeVsRateLog = &etable.Table{}
 	ss.Params = ParamSets
 	ss.Defaults()
 }
@@ -111,12 +133,18 @@ func (ss *Sim) New() {
 func (ss *Sim) Defaults() {
 	ss.UpdtInterval = 10
 	ss.Cycle = 0
-	ss.GbarE = 0.3
-	ss.GbarL = 0.3
+	ss.Ge = 0.7
+	ss.Gi = 1.0
 	ss.ErevE = 1
-	ss.ErevL = 0.3
+	ss.ErevI = 0.3
 	ss.Noise = 0
 	ss.KNaAdapt = true
+	ss.NMDAGbar = 0
+	ss.GABABGbar = 0
+	ss.VGCC.Defaults()
+	ss.VGCC.Gbar = 0
+	ss.AK.Defaults()
+	ss.AK.Gbar = 0
 	ss.NCycles = 200
 	ss.OnCycle = 10
 	ss.OffCycle = 160
@@ -129,7 +157,6 @@ func (ss *Sim) Defaults() {
 func (ss *Sim) Config() {
 	ss.ConfigNet(ss.Net)
 	ss.ConfigTstCycLog(ss.TstCycLog)
-	ss.ConfigSpikeVsRateLog(ss.SpikeVsRateLog)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -159,6 +186,7 @@ func (ss *Sim) InitWts(net *axon.Network) {
 func (ss *Sim) Init() {
 	ss.Cycle = 0
 	ss.InitWts(ss.Net)
+	ss.NeuronEx.Init()
 	ss.StopNow = false
 	ss.SetParams("", false) // all sheets
 	ss.UpdateView()
@@ -224,53 +252,40 @@ func (ss *Sim) RunCycles() {
 func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
 	nrn := &(ly.Neurons[0])
+	nex := &ss.NeuronEx
+	ge := ss.Ge
+	if !inputOn {
+		ge = 0
+	}
+	nrn.GeRaw = ge
+	nrn.Ge = nrn.GeRaw
+	nrn.Gi = ss.Gi
+	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, 1)
+	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
+
+	nex.Gvgcc = ss.VGCC.Gvgcc(nrn.VmDend, nex.VGCCm, nex.VGCCh)
+	dm, dh := ss.VGCC.DMHFmV(nrn.VmDend, nex.VGCCm, nex.VGCCh)
+	nex.VGCCm += dm
+	nex.VGCCh += dh
+
+	nex.Gak = ss.AK.Gak(nex.AKm, nex.AKh)
+	dm, dh = ss.AK.DMHFmV(nrn.VmDend, nex.AKm, nex.AKh)
+	nex.AKm += dm
+	nex.AKh += dh
+
+	nrn.Gk += nex.Gak
+	nrn.Ge += nex.Gvgcc + nrn.Gnmda
+	nrn.Gi += nrn.GgabaB
+
 	ly.Act.VmFmG(nrn)
 	ly.Act.ActFmG(nrn)
-	nrn.Ge = nrn.Ge * ly.Act.Gbar.E // display effective Ge
 }
 
 // Stop tells the sim to stop running
 func (ss *Sim) Stop() {
 	ss.StopNow = true
-}
-
-// SpikeVsRate runs comparison between spiking vs. rate-code
-func (ss *Sim) SpikeVsRate() {
-	row := 0
-	nsamp := 100
-	// ss.KNaAdapt = false
-	for gbarE := 0.1; gbarE <= 0.7; gbarE += 0.025 {
-		ss.GbarE = float32(gbarE)
-		spike := float64(0)
-		ss.Noise = 0.1 // RunCycles calls SetParams to set this
-		for ns := 0; ns < nsamp; ns++ {
-			ss.RunCycles()
-			if ss.StopNow {
-				break
-			}
-			act := ss.TstCycLog.CellFloat("Act", 159)
-			spike += act
-		}
-		rate := float64(0)
-		// ss.Noise = 0 // doesn't make much diff
-		for ns := 0; ns < nsamp; ns++ {
-			ss.RunCycles()
-			if ss.StopNow {
-				break
-			}
-			act := ss.TstCycLog.CellFloat("Act", 159)
-			rate += act
-		}
-		if ss.StopNow {
-			break
-		}
-		spike /= float64(nsamp)
-		rate /= float64(nsamp)
-		ss.LogSpikeVsRate(ss.SpikeVsRateLog, row, gbarE, spike, rate)
-		row++
-	}
-	ss.Defaults()
-	ss.SpikeVsRatePlot.GoUpdate()
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -287,12 +302,14 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	}
 	err := ss.SetParamsSet("Base", sheet, setMsg)
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
-	ly.Act.Gbar.E = float32(ss.GbarE)
-	ly.Act.Gbar.L = float32(ss.GbarL)
+	ly.Act.Gbar.E = 1
+	ly.Act.Gbar.L = 0.2
 	ly.Act.Erev.E = float32(ss.ErevE)
-	ly.Act.Erev.L = float32(ss.ErevL)
+	ly.Act.Erev.I = float32(ss.ErevI)
 	// ly.Act.Noise.Var = float64(ss.Noise)
 	ly.Act.KNa.On = ss.KNaAdapt
+	ly.Act.NMDA.Gbar = ss.NMDAGbar
+	ly.Act.GABAB.Gbar = ss.GABABGbar
 	ly.Act.Update()
 	return err
 }
@@ -336,14 +353,16 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
 	nrn := &(ly.Neurons[0])
+	nex := &ss.NeuronEx
 
 	dt.SetCellFloat("Cycle", row, float64(cyc))
 	dt.SetCellFloat("Ge", row, float64(nrn.Ge))
+	dt.SetCellFloat("Gi", row, float64(nrn.Gi))
 	dt.SetCellFloat("Inet", row, float64(nrn.Inet))
 	dt.SetCellFloat("Vm", row, float64(nrn.Vm))
 	dt.SetCellFloat("Act", row, float64(nrn.Act))
 	dt.SetCellFloat("Spike", row, float64(nrn.Spike))
-	dt.SetCellFloat("Gk", row, float64(nrn.Gk))
+	dt.SetCellFloat("Gk", row, float64(nrn.Gk+nex.Gak))
 	dt.SetCellFloat("ISI", row, float64(nrn.ISI))
 	dt.SetCellFloat("AvgISI", row, float64(nrn.ISIAvg))
 	dt.SetCellFloat("VmDend", row, float64(nrn.VmDend))
@@ -351,6 +370,12 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 	dt.SetCellFloat("Gnmda", row, float64(nrn.Gnmda))
 	dt.SetCellFloat("GABAB", row, float64(nrn.GABAB))
 	dt.SetCellFloat("GgabaB", row, float64(nrn.GgabaB))
+	dt.SetCellFloat("Gvgcc", row, float64(nex.Gvgcc))
+	dt.SetCellFloat("VGCCm", row, float64(nex.VGCCm))
+	dt.SetCellFloat("VGCCh", row, float64(nex.VGCCh))
+	dt.SetCellFloat("Gak", row, float64(nex.Gak))
+	dt.SetCellFloat("AKm", row, float64(nex.AKm))
+	dt.SetCellFloat("AKh", row, float64(nex.AKh))
 
 	// note: essential to use Go version of update when called from another goroutine
 	if cyc%ss.UpdtInterval == 0 {
@@ -368,6 +393,7 @@ func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
 	sch := etable.Schema{
 		{"Cycle", etensor.INT64, nil, nil},
 		{"Ge", etensor.FLOAT64, nil, nil},
+		{"Gi", etensor.FLOAT64, nil, nil},
 		{"Inet", etensor.FLOAT64, nil, nil},
 		{"Vm", etensor.FLOAT64, nil, nil},
 		{"Act", etensor.FLOAT64, nil, nil},
@@ -380,6 +406,12 @@ func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
 		{"Gnmda", etensor.FLOAT64, nil, nil},
 		{"GABAB", etensor.FLOAT64, nil, nil},
 		{"GgabaB", etensor.FLOAT64, nil, nil},
+		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"VGCCm", etensor.FLOAT64, nil, nil},
+		{"VGCCh", etensor.FLOAT64, nil, nil},
+		{"Gak", etensor.FLOAT64, nil, nil},
+		{"AKm", etensor.FLOAT64, nil, nil},
+		{"AKh", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, nt)
 }
@@ -391,6 +423,7 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Ge", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Gi", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Inet", eplot.On, eplot.FixMin, -.2, eplot.FixMax, 1)
 	plt.SetColParams("Vm", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
@@ -403,51 +436,18 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("Gnmda", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("GABAB", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("GgabaB", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Gvgcc", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCh", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Gak", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("AKm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("AKh", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
 }
 
 func (ss *Sim) ResetTstCycPlot() {
 	ss.TstCycLog.SetNumRows(0)
 	ss.TstCycPlot.Update()
-}
-
-//////////////////////////////////////////////
-//  SpikeVsRateLog
-
-// LogSpikeVsRate adds data from current cycle to the SpikeVsRateLog table.
-func (ss *Sim) LogSpikeVsRate(dt *etable.Table, row int, gbarE, spike, rate float64) {
-	if dt.Rows <= row {
-		dt.SetNumRows(row + 1)
-	}
-	dt.SetCellFloat("GBarE", row, gbarE)
-	dt.SetCellFloat("Spike", row, spike)
-	dt.SetCellFloat("Rate", row, rate)
-}
-
-func (ss *Sim) ConfigSpikeVsRateLog(dt *etable.Table) {
-	dt.SetMetaData("name", "SpikeVsRateLog")
-	dt.SetMetaData("desc", "Record spiking vs. rate-code activation")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	nt := 24 // typical number
-	sch := etable.Schema{
-		{"GBarE", etensor.FLOAT64, nil, nil},
-		{"Spike", etensor.FLOAT64, nil, nil},
-		{"Rate", etensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, nt)
-}
-
-func (ss *Sim) ConfigSpikeVsRatePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "Neuron Spike Vs. Rate-Code Plot"
-	plt.Params.XAxisCol = "GBarE"
-	plt.SetTable(dt)
-	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("GBarE", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Spike", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Rate", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	return plt
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -499,9 +499,6 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 	plt := tv.AddNewTab(eplot.KiT_Plot2D, "TstCycPlot").(*eplot.Plot2D)
 	ss.TstCycPlot = ss.ConfigTstCycPlot(plt, ss.TstCycLog)
 
-	plt = tv.AddNewTab(eplot.KiT_Plot2D, "SpikeVsRatePlot").(*eplot.Plot2D)
-	ss.SpikeVsRatePlot = ss.ConfigSpikeVsRatePlot(plt, ss.SpikeVsRateLog)
-
 	split.SetSplits(.2, .8)
 
 	tbar.AddAction(gi.ActOpts{Label: "Init", Icon: "update", Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.", UpdateFunc: func(act *gi.Action) {
@@ -535,17 +532,6 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.ResetTstCycPlot()
-		}
-	})
-
-	tbar.AddAction(gi.ActOpts{Label: "Spike Vs Rate", Icon: "play", Tooltip: "Runs Spike vs Rate test.", UpdateFunc: func(act *gi.Action) {
-		act.SetActiveStateUpdt(!ss.IsRunning)
-	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		if !ss.IsRunning {
-			ss.IsRunning = true
-			go ss.SpikeVsRate()
-			ss.IsRunning = false
-			vp.SetNeedsFullRender()
 		}
 	})
 

@@ -34,14 +34,15 @@ func (np *VGCCParams) HFmV(vbio float32) float32 {
 	return 1.0 / (1.0 + mat32.FastExp((vbio+41)*2))
 }
 
-// DMHFmV returns the change in M, H factors as a function of V normalized (0-1)
+// DMHFmV returns the change at msec update scale in M, H factors
+// as a function of V normalized (0-1)
 func (np *VGCCParams) DMHFmV(v, m, h float32) (float32, float32) {
 	vbio := v*100 - 100
 	if vbio > 0 {
 		vbio = 0
 	}
-	dm := (np.MFmV(vbio) - m) / 0.0036
-	dh := (np.HFmV(vbio) - h) / 0.029
+	dm := (np.MFmV(vbio) - m) / 3.6
+	dh := (np.HFmV(vbio) - h) / 29.0
 	return dm, dh
 }
 

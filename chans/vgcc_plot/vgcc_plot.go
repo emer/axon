@@ -152,8 +152,8 @@ func (ss *Sim) TimeRun() {
 		t := float32(ti) * msdt
 		g = ss.VGCC.Gvgcc(vnorm, m, h)
 		dm, dh := ss.VGCC.DMHFmV(vnorm, m, h)
-		m += msdt * dm
-		h += msdt * dh
+		m += dm
+		h += dh
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("V", ti, float64(v))

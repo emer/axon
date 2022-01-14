@@ -76,10 +76,11 @@ func (ap *AKParams) MFmAlpha(alpha float32) float32 {
 
 // MTauFmAlphaBeta returns the MTau rate constant in msec from alpha, beta
 func (ap *AKParams) MTauFmAlphaBeta(alpha, beta float32) float32 {
-	return beta / (ap.Dm * (1 + alpha))
+	return 1 + beta/(ap.Dm*(1+alpha)) // minimum of 1 msec
 }
 
-// DMHFmV returns the change in M, H factors as a function of V normalized (0-1)
+// DMHFmV returns the change at msec update scale in M, H factors
+// as a function of V normalized (0-1)
 func (ap *AKParams) DMHFmV(v, m, h float32) (float32, float32) {
 	vbio := v*100 - 100
 	if vbio > 0 {

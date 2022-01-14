@@ -27,8 +27,10 @@ This voltage-gated K channel has a narrow window of activation between the M and
 ```
 
 ```Go
-    Mtau(Alpha, Beta) = Beta / (0.5 * (1 + Alpha))
+    Mtau(Alpha, Beta) = 1 + Beta / (0.5 * (1 + Alpha))
 ```
+
+NOTE: to work properly with 1 msec Dt updating, the MTau adds a 1 -- otherwise MTau goes to high.
 
 ![G from V](fig_ak_chan_g_from_v.png?raw=true "G = M * H as a function of V (biological units)")
 
@@ -38,7 +40,7 @@ This voltage-gated K channel has a narrow window of activation between the M and
 
 ![Htau from V](fig_ak_chan_htau_from_v.png?raw=true "Htau rate of change of H as a function of V (biological units)")
 
-![Gak and M over time](fig_ak_chan_time_plot.png?raw=true "Gak and M gate developing over time in response to simulated spiking potentials -- H is gradually inactivating over time causing the longer time-scale weakening.")
+![Gak and M over time](fig_ak_chan_time_plot.png?raw=true "Gak developing over time in response to simulated spiking potentials, with a baseline Vm of -50 -- H quickly inactivates.")
 
-The `Time Run` plot (above) shows how the Gak current develops over time in response to spiking.  Because it only depends on the M and H gating factors, with both changing relatively slowly due to the complex dependencies in their updating, the net current is relatively persistent compared to e.g., the VGCC currents.
+The `Time Run` plot (above) shows how the Gak current develops over time in response to spiking, which it tracks directly due to very fast M dynamics.  The H current inactivates significantly when the consistent Vm level (TimeVstart) is elevated -- e.g., -50 as shown in the figure.
 

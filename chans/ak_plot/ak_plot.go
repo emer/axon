@@ -68,7 +68,7 @@ func (ss *Sim) Config() {
 	ss.TimeSteps = 200
 	ss.TimeSpike = true
 	ss.SpikeFreq = 50
-	ss.TimeVstart = -70
+	ss.TimeVstart = -50
 	ss.TimeVend = -20
 	ss.Update()
 	ss.Table = &etable.Table{}
@@ -196,8 +196,8 @@ func (ss *Sim) TimeRun() {
 		dt.SetCellFloat("Beta", ti, float64(b))
 
 		g = ss.AK.Gak(m, h)
-		m += msdt * dm
-		h += msdt * dh
+		m += dm // already in msec time constants
+		h += dh
 
 		if ss.TimeSpike {
 			if ti%isi < 3 {

@@ -75,7 +75,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":              "0.6",
 					"Layer.Act.Dt.LongAvgTau":            "20",  // 20 > higher for objrec, lvis
 					"Layer.Act.Dend.GbarExp":             "0.2", // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":               "2",   // 2 good for 0.2
+					"Layer.Act.Dend.GbarR":               "3",   // 3 good for 0.2
 					"Layer.Learn.ActAvg.MinLrn":          "0.02",
 					"Layer.Learn.TrgAvgAct.On":           "true", // this is important!
 					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
