@@ -73,7 +73,9 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.04", // start lower -- 0.04 more reliable than .03
 					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.2 > 0 > 0.4 -- starts to fail at 0.4
 					"Layer.Act.Dend.GbarExp":  "0.2",  // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":    "2",    // 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dend.GbarR":    "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dt.VmDendTau":  "5",    // faster dt results in faster learning but more failures
+					"Layer.Act.Dt.VmSteps":    "2",    // 2 > 3 -- somehow works better
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{

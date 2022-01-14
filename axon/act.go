@@ -239,6 +239,19 @@ func (ac *ActParams) VmFmInet(vm, dt, inet float32) float32 {
 	return ac.VmRange.ClipVal(vm + dt*inet)
 }
 
+// VmInteg integrates Vm over VmSteps to obtain a more stable value
+// Returns the new Vm and inet values.
+func (ac *ActParams) VmInteg(vm, dt, ge, gl, gi, gk float32) (float32, float32) {
+	dt *= ac.Dt.DtStep
+	nvm := vm
+	var inet float32
+	for i := 0; i < ac.Dt.VmSteps; i++ {
+		inet = ac.InetFmG(nvm, ge, gl, gi, gk)
+		nvm = ac.VmFmInet(nvm, dt, inet)
+	}
+	return nvm, inet
+}
+
 // VmFmG computes membrane potential Vm from conductances Ge, Gi, and Gk.
 func (ac *ActParams) VmFmG(nrn *Neuron) {
 	updtVm := true
@@ -253,21 +266,19 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	gk := nrn.Gk * ac.Gbar.K
 	var expi float32
 	if updtVm {
-		vmEff := nrn.Vm
-		// midpoint method: take a half-step in vmEff
-		inet1 := ac.InetFmG(vmEff, ge, 1, gi, gk)
-		vmEff = ac.VmFmInet(vmEff, .5*ac.Dt.VmDt, inet1) // go half way
-		inet2 := ac.InetFmG(vmEff, ge, 1, gi, gk)
+		nvm, inet := ac.VmInteg(nrn.Vm, ac.Dt.VmDt, ge, 1, gi, gk)
 		if updtVm && ac.Spike.Exp { // add spike current if relevant
+			exVm := 0.5 * (nvm + nrn.Vm) // midpoint for this
 			expi = ac.Gbar.L * ac.Spike.ExpSlope *
-				mat32.FastExp((vmEff-ac.Spike.Thr)/ac.Spike.ExpSlope)
-			if expi > 2 {
-				expi = 2
+				mat32.FastExp((exVm-ac.Spike.Thr)/ac.Spike.ExpSlope)
+			if expi > ac.Dt.VmTau {
+				expi = ac.Dt.VmTau
 			}
-			inet2 += expi
+			inet += expi
+			nvm = ac.VmFmInet(nvm, ac.Dt.VmDt, expi)
 		}
-		nrn.Vm = ac.VmFmInet(nrn.Vm, ac.Dt.VmDt, inet2)
-		nrn.Inet = inet2
+		nrn.Vm = nvm
+		nrn.Inet = inet
 	} else { // decay back to VmR
 		var dvm float32
 		if int(nrn.ISI) == ac.Spike.Tr-1 {
@@ -280,19 +291,15 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	}
 
 	{ // always update VmDend
-		vmEff := nrn.VmDend
 		glEff := float32(1)
 		if !updtVm {
 			glEff += ac.Dend.GbarR
 		}
-		// midpoint method: take a half-step in vmEff
-		inet1 := ac.InetFmG(vmEff, ge, glEff, gi, gk)
-		vmEff = ac.VmFmInet(vmEff, .5*ac.Dt.VmDendDt, inet1) // go half way
-		inet2 := ac.InetFmG(vmEff, ge, glEff, gi, gk)
+		nvm, _ := ac.VmInteg(nrn.VmDend, ac.Dt.VmDendDt, ge, glEff, gi, gk)
 		if updtVm {
-			inet2 += ac.Dend.GbarExp * expi
+			nvm = ac.VmFmInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
 		}
-		nrn.VmDend = ac.VmFmInet(nrn.VmDend, ac.Dt.VmDendDt, inet2)
+		nrn.VmDend = nvm
 	}
 }
 
@@ -411,12 +418,12 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
 	GbarExp float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
-	GbarR   float32 `def:"2" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	GbarR   float32 `def:"3" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
 }
 
 func (dp *DendParams) Defaults() {
 	dp.GbarExp = 0.2
-	dp.GbarR = 2
+	dp.GbarR = 3
 }
 
 func (dp *DendParams) Update() {
@@ -471,7 +478,8 @@ func (ai *DecayParams) Defaults() {
 type DtParams struct {
 	Integ      float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
 	VmTau      float32 `def:"2.81" min:"1" desc:"membrane potential time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
-	VmDendTau  float32 `def:"5" min:"1" desc:"dendritic membrane potential integration time constant"`
+	VmDendTau  float32 `def:"5" min:"1" desc:"dendritic membrane potential time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
+	VmSteps    int     `def:"2" min:"1" desc:"number of integration steps to take in computing new Vm value -- this is the one computation that can be most numerically unstable so taking multiple steps with proportionally smaller dt is beneficial"`
 	GeTau      float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau      float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	IntTau     float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
@@ -479,6 +487,7 @@ type DtParams struct {
 
 	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
+	DtStep    float32 `view:"-" json:"-" xml:"-" desc:"1 / VmSteps"`
 	GeDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
 	GiDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
 	IntDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = Integ / tau"`
@@ -486,8 +495,12 @@ type DtParams struct {
 }
 
 func (dp *DtParams) Update() {
+	if dp.VmSteps < 1 {
+		dp.VmSteps = 1
+	}
 	dp.VmDt = dp.Integ / dp.VmTau
 	dp.VmDendDt = dp.Integ / dp.VmDendTau
+	dp.DtStep = 1 / float32(dp.VmSteps)
 	dp.GeDt = dp.Integ / dp.GeTau
 	dp.GiDt = dp.Integ / dp.GiTau
 	dp.IntDt = dp.Integ / dp.IntTau
@@ -498,6 +511,7 @@ func (dp *DtParams) Defaults() {
 	dp.Integ = 1
 	dp.VmTau = 2.81
 	dp.VmDendTau = 5
+	dp.VmSteps = 2
 	dp.GeTau = 5
 	dp.GiTau = 7
 	dp.IntTau = 40
