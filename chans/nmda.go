@@ -22,7 +22,7 @@ func (np *NMDAParams) Defaults() {
 
 // GFmV returns the NMDA conductance as a function of normalized membrane potential
 func (np *NMDAParams) GFmV(v float32) float32 {
-	vbio := v*100 - 100
+	vbio := VToBio(v)
 	if vbio > 0 { // critical to not go past 0
 		vbio = 0
 	}

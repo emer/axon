@@ -92,7 +92,7 @@ func (ss *Sim) VmRun() {
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
 		vbio := ss.Vstart + float32(vi)*ss.Vstep
-		// vnorm := (vbio + 100) / 100
+		// vnorm := chans.VFmBio(vbio)
 		k := ap.KFmV(vbio)
 		a := ap.AlphaFmVK(vbio, k)
 		b := ap.BetaFmVK(vbio, k)
@@ -170,7 +170,7 @@ func (ss *Sim) TimeRun() {
 	dt.SetNumRows(ss.TimeSteps)
 	var g float32
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		vnorm := (v + 100) / 100
+		vnorm := chans.VFmBio(v)
 		t := float32(ti) * msdt
 
 		k := ap.KFmV(v)

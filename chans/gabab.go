@@ -36,7 +36,10 @@ func (gp *GABABParams) Update() {
 
 // GFmV returns the GABA-B conductance as a function of normalized membrane potential
 func (gp *GABABParams) GFmV(v float32) float32 {
-	vbio := mat32.Max(v*100-100, -90) // critical to not go past -90
+	vbio := VToBio(v)
+	if vbio < -90 {
+		vbio = -90
+	}
 	return 1.0 / (1.0 + mat32.FastExp(0.1*((vbio+90)+10)))
 }
 

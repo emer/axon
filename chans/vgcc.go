@@ -17,7 +17,7 @@ func (np *VGCCParams) Defaults() {
 
 // GFmV returns the VGCC conductance as a function of normalized membrane potential
 func (np *VGCCParams) GFmV(v float32) float32 {
-	vbio := v*100 - 100
+	vbio := VToBio(v)
 	if vbio > 0 {
 		vbio = 0
 	}
@@ -37,7 +37,7 @@ func (np *VGCCParams) HFmV(vbio float32) float32 {
 // DMHFmV returns the change at msec update scale in M, H factors
 // as a function of V normalized (0-1)
 func (np *VGCCParams) DMHFmV(v, m, h float32) (float32, float32) {
-	vbio := v*100 - 100
+	vbio := VToBio(v)
 	if vbio > 0 {
 		vbio = 0
 	}

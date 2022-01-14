@@ -15,6 +15,7 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/chans"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/etable/eplot"
@@ -42,29 +43,58 @@ const LogPrec = 4
 // InitBaseline = use iterated baseline for initialization
 var InitBaseline = true
 
+// Extra state for neuron -- VGCC and AK
+type NeuronEx struct {
+	Gvgcc      float32 `desc:"VGCC total conductance"`
+	VGCCm      float32 `desc:"VGCC M gate -- activates with increasing Vm"`
+	VGCCh      float32 `desc:"VGCC H gate -- deactivates with increasing Vm"`
+	VGCCJcaPSD float32 `desc:"VGCC Ca calcium contribution to PSD"`
+	VGCCJcaCyt float32 `desc:"VGCC Ca calcium contribution to Cyt"`
+	Gak        float32 `desc:"AK total conductance"`
+	AKm        float32 `desc:"AK M gate -- activates with increasing Vm"`
+	AKh        float32 `desc:"AK H gate -- deactivates with increasing Vm"`
+}
+
+func (nex *NeuronEx) Init() {
+	nex.Gvgcc = 0
+	nex.VGCCm = 0
+	nex.VGCCh = 1
+	nex.VGCCJcaPSD = 0
+	nex.VGCCJcaCyt = 0
+	nex.Gak = 0
+	nex.AKm = 0
+	nex.AKh = 1
+}
+
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Spine        Spine         `desc:"the spine state with Urakubo intracellular model"`
-	Neuron       *axon.Neuron  `desc:"the neuron"`
-	Stim         Stims         `desc:"what stimulation to drive with"`
-	DeltaT       int           `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
-	DeltaTRange  int           `desc:"range for sweep of DeltaT -- actual range is - to +"`
-	DeltaTInc    int           `desc:"increment for sweep of DeltaT"`
-	NReps        int           `desc:"number of repetitions -- depends on Stim type"`
-	CaTarg       CaState       `desc:"target calcium level for CaTarg stim"`
-	InitBaseline bool          `desc:"use the adapted baseline"`
-	Msec         int           `inactive:"+" desc:"current cycle of updating"`
-	InitWt       float64       `desc:"initial weight value: Trp_AMPA value at baseline"`
-	DWtLog       *etable.Table `view:"no-inline" desc:"final weight change plot for each condition"`
-	Msec100Log   *etable.Table `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
-	Msec10Log    *etable.Table `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
-	MsecLog      *etable.Table `view:"no-inline" desc:"millisecond level log, shows last second"`
-	GenesisLog   *etable.Table `view:"no-inline" desc:"genesis data"`
-	Net          *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Spine        Spine            `desc:"the spine state with Urakubo intracellular model"`
+	Neuron       *axon.Neuron     `view:"no-inline" desc:"the neuron"`
+	NeuronEx     NeuronEx         `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	Stim         Stims            `desc:"what stimulation to drive with"`
+	GeStim       float32          `desc:"stimulating current injection"`
+	DeltaT       int              `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
+	DeltaTRange  int              `desc:"range for sweep of DeltaT -- actual range is - to +"`
+	DeltaTInc    int              `desc:"increment for sweep of DeltaT"`
+	NReps        int              `desc:"number of repetitions -- depends on Stim type"`
+	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
+	InitBaseline bool             `desc:"use the adapted baseline"`
+	Msec         int              `inactive:"+" desc:"current cycle of updating"`
+	NMDAGbar     float32          `def:"0,0.03" desc:"strength of NMDA current -- 0.03 default for posterior cortex"`
+	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
+	VGCC         chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
+	AK           chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
+	InitWt       float64          `desc:"initial weight value: Trp_AMPA value at baseline"`
+	DWtLog       *etable.Table    `view:"no-inline" desc:"final weight change plot for each condition"`
+	Msec100Log   *etable.Table    `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
+	Msec10Log    *etable.Table    `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
+	MsecLog      *etable.Table    `view:"no-inline" desc:"millisecond level log, shows last second"`
+	GenesisLog   *etable.Table    `view:"no-inline" desc:"genesis data"`
+	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 
 	// internal state - view:"-"
 	Win         *gi.Window       `view:"-" desc:"main GUI window"`
@@ -102,15 +132,25 @@ func (ss *Sim) New() {
 	ss.DeltaT = 16
 	ss.DeltaTRange = 50
 	ss.DeltaTInc = 5
-	ss.NReps = 20
+	ss.NReps = 1 // 20
 	ss.Defaults()
 }
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
 	ss.Spine.Defaults()
+	ss.GeStim = 0.6
+	ss.NMDAGbar = 0.0  // 0.03
+	ss.GABABGbar = 0.0 // 0.2
+	ss.VGCC.Defaults()
+	ss.VGCC.Gbar = 0
+	ss.AK.Defaults()
+	ss.AK.Gbar = 0
 	ss.CaTarg.Cyt = 10
 	ss.CaTarg.PSD = 10
+	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
+	ly.Act.Dt.VmDendDt = 2.81
+	ly.Act.Dt.Update()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +193,11 @@ func (ss *Sim) Init() {
 	InitBaseline = ss.InitBaseline
 	ss.Spine.Defaults()
 	ss.Spine.Init()
+	ss.NeuronEx.Init()
 	ss.Msec = 0
+	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
+	ly.Act.NMDA.Gbar = ss.NMDAGbar
+	ly.Act.GABAB.Gbar = ss.GABABGbar
 	ss.InitWts(ss.Net)
 	ss.StopNow = false
 	ss.UpdateView()
@@ -189,12 +233,48 @@ func (ss *Sim) RunStim() {
 }
 
 // NeuronUpdt updates the neuron and spine for given msec
-func (ss *Sim) NeuronUpdt(msec int) {
+func (ss *Sim) NeuronUpdt(msec int, ge, gi float32) {
 	ss.Msec = msec
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
 	nrn := ss.Neuron
+	nex := &ss.NeuronEx
+
+	vbio := chans.VToBio(nrn.VmDend)
+
+	nrn.GeRaw = ge
+	ly.Act.Dt.GeFmRaw(nrn.GeRaw, &nrn.Ge, ly.Act.Init.Ge)
+	nrn.Gi = gi
+	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, 1)
+	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
+
+	nex.Gvgcc = ss.VGCC.Gvgcc(nrn.VmDend, nex.VGCCm, nex.VGCCh)
+	dm, dh := ss.VGCC.DMHFmV(nrn.VmDend, nex.VGCCm, nex.VGCCh)
+	nex.VGCCm += dm
+	nex.VGCCh += dh
+
+	nex.Gak = ss.AK.Gak(nex.AKm, nex.AKh)
+	dm, dh = ss.AK.DMHFmV(nrn.VmDend, nex.AKm, nex.AKh)
+	nex.AKm += dm
+	nex.AKh += dh
+
+	nrn.Gk += nex.Gak
+	nrn.Ge += nex.Gvgcc + nrn.Gnmda
+	nrn.Gi += nrn.GgabaB
+
+	psd_pca := float32(1.7927e5 * 0.04) //  SVR_PSD
+	cyt_pca := float32(1.0426e5 * 0.04) // SVR_CYT
+
+	// todo: inject into cell
+	nex.VGCCJcaPSD = -vbio * psd_pca * nex.Gvgcc
+	nex.VGCCJcaCyt = -vbio * cyt_pca * nex.Gvgcc
+
+	ss.Spine.States.VmS = float64(vbio)
+
 	ly.Act.VmFmG(nrn)
 	ly.Act.ActFmG(nrn)
+
 	ss.Spine.StepTime(0.001)
 }
 
@@ -234,7 +314,7 @@ func (ss *Sim) GraphRun(secs float64) {
 	nms := int(secs / 0.001)
 	sms := ss.Msec
 	for msec := 0; msec < nms; msec++ {
-		ss.NeuronUpdt(sms + msec)
+		ss.NeuronUpdt(sms+msec, 0, 0)
 		ss.LogDefault()
 		if ss.StopNow {
 			break
@@ -251,6 +331,7 @@ func (ss *Sim) LogTime(dt *etable.Table, row int) {
 		dt.SetNumRows(row + 1)
 	}
 	nrn := ss.Neuron
+	nex := &ss.NeuronEx
 
 	dt.SetCellFloat("Time", row, float64(ss.Msec)*0.001)
 	dt.SetCellFloat("Ge", row, float64(nrn.Ge))
@@ -261,6 +342,19 @@ func (ss *Sim) LogTime(dt *etable.Table, row int) {
 	dt.SetCellFloat("Gk", row, float64(nrn.Gk))
 	dt.SetCellFloat("ISI", row, float64(nrn.ISI))
 	dt.SetCellFloat("AvgISI", row, float64(nrn.ISIAvg))
+	dt.SetCellFloat("VmDend", row, float64(nrn.VmDend))
+	dt.SetCellFloat("NMDA", row, float64(nrn.NMDA))
+	dt.SetCellFloat("Gnmda", row, float64(nrn.Gnmda))
+	dt.SetCellFloat("GABAB", row, float64(nrn.GABAB))
+	dt.SetCellFloat("GgabaB", row, float64(nrn.GgabaB))
+	dt.SetCellFloat("Gvgcc", row, float64(nex.Gvgcc))
+	dt.SetCellFloat("VGCCm", row, float64(nex.VGCCm))
+	dt.SetCellFloat("VGCCh", row, float64(nex.VGCCh))
+	dt.SetCellFloat("VGCCJcaPSD", row, float64(nex.VGCCJcaPSD))
+	dt.SetCellFloat("VGCCJcaCyt", row, float64(nex.VGCCJcaCyt))
+	dt.SetCellFloat("Gak", row, float64(nex.Gak))
+	dt.SetCellFloat("AKm", row, float64(nex.AKm))
+	dt.SetCellFloat("AKh", row, float64(nex.AKh))
 
 	ss.Spine.Log(dt, row)
 }
@@ -281,6 +375,19 @@ func (ss *Sim) ConfigTimeLog(dt *etable.Table) {
 		{"Gk", etensor.FLOAT64, nil, nil},
 		{"ISI", etensor.FLOAT64, nil, nil},
 		{"AvgISI", etensor.FLOAT64, nil, nil},
+		{"VmDend", etensor.FLOAT64, nil, nil},
+		{"NMDA", etensor.FLOAT64, nil, nil},
+		{"Gnmda", etensor.FLOAT64, nil, nil},
+		{"GABAB", etensor.FLOAT64, nil, nil},
+		{"GgabaB", etensor.FLOAT64, nil, nil},
+		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"VGCCm", etensor.FLOAT64, nil, nil},
+		{"VGCCh", etensor.FLOAT64, nil, nil},
+		{"VGCCJcaPSD", etensor.FLOAT64, nil, nil},
+		{"VGCCJcaCyt", etensor.FLOAT64, nil, nil},
+		{"Gak", etensor.FLOAT64, nil, nil},
+		{"AKm", etensor.FLOAT64, nil, nil},
+		{"AKh", etensor.FLOAT64, nil, nil},
 	}
 
 	ss.Spine.ConfigLog(&sch)
@@ -302,6 +409,19 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("Gk", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("ISI", eplot.Off, eplot.FixMin, -2, eplot.FloatMax, 1)
 	plt.SetColParams("AvgISI", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VmDend", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("NMDA", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Gnmda", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("GABAB", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("GgabaB", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Gvgcc", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCh", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCJcaPSD", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCJcaCyt", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Gak", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("AKm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("AKh", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	for _, cn := range dt.ColNames {
 		if cn != "Time" {

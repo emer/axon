@@ -34,11 +34,11 @@ const (
 
 // StimFuncs are the stimulus functions
 var StimFuncs = map[Stims]func(){
-	Baseline:  BaselineFun,
-	CaTarg:    CaTargFun,
-	ClampCa1:  ClampCa1Fun,
-	STDP:      STDPFun,
-	STDPSweep: STDPSweepFun,
+	Baseline: BaselineFun,
+	CaTarg:   CaTargFun,
+	ClampCa1: ClampCa1Fun,
+	STDP:     STDPFun,
+	//	STDPSweep: STDPSweepFun,
 }
 
 // ClampCa1Ca is direct copy of Ca values from test_stdp.g genesis func
@@ -131,7 +131,7 @@ func PerMsec(orig []float64) []float64 {
 func BaselineFun() {
 	ss := &TheSim
 	for msec := 0; msec < 500000; msec++ { // 500000 = 500 sec for full baseline
-		ss.NeuronUpdt(msec)
+		ss.NeuronUpdt(msec, 0, 0)
 		ss.LogDefault()
 		if ss.StopNow {
 			break
@@ -145,7 +145,7 @@ func CaTargFun() {
 	ss := &TheSim
 	ss.Spine.Ca.SetBuffTarg(ss.CaTarg.Cyt, ss.CaTarg.PSD)
 	for msec := 0; msec < 20000; msec++ {
-		ss.NeuronUpdt(msec)
+		ss.NeuronUpdt(msec, 0, 0)
 		ss.LogDefault()
 		if ss.StopNow {
 			break
@@ -167,7 +167,7 @@ func ClampCa1Fun() {
 		}
 		cca := bca + ((ca - bca) / 3)
 		ss.Spine.Ca.SetClamp(cca, ca)
-		ss.NeuronUpdt(msec)
+		ss.NeuronUpdt(msec, 0, 0)
 		ss.LogDefault()
 		if ss.StopNow {
 			break
@@ -179,29 +179,23 @@ func ClampCa1Fun() {
 
 func STDPFun() {
 	ss := &TheSim
-	vms := PerMsec(ClampVm)
-	nvm := len(vms)
-	bvm := -65.0
-	peakT := 13 // offset in ClampVm for peak
 	toff := 500
-	vmoff := toff - peakT        // peak hits at toff exactly
+	dur := 1
 	psms := toff + 5 - ss.DeltaT // 5 is lag
 	tott := ss.NReps * 1000
 
 	for msec := 0; msec < tott; msec++ {
 		ims := msec % 1000
-		vmms := ims - vmoff
-		vm := bvm
-		if vmms >= 0 && vmms < nvm {
-			vm = vms[vmms]
-		}
 		if ims == psms {
 			ss.Spine.States.PreSpike = 1
 		} else {
 			ss.Spine.States.PreSpike = 0
 		}
-		ss.Spine.States.VmS = vm
-		ss.NeuronUpdt(msec)
+		ge := float32(0.0)
+		if ims >= toff && ims < toff+dur {
+			ge = ss.GeStim
+		}
+		ss.NeuronUpdt(msec, ge, 0)
 		ss.LogDefault()
 		if ss.StopNow {
 			break
@@ -211,6 +205,7 @@ func STDPFun() {
 	ss.Stopped()
 }
 
+/*
 func STDPSweepFun() {
 	ss := &TheSim
 	vms := PerMsec(ClampVm)
@@ -254,3 +249,4 @@ func STDPSweepFun() {
 
 	ss.Stopped()
 }
+*/

@@ -82,7 +82,7 @@ func (ap *AKParams) MTauFmAlphaBeta(alpha, beta float32) float32 {
 // DMHFmV returns the change at msec update scale in M, H factors
 // as a function of V normalized (0-1)
 func (ap *AKParams) DMHFmV(v, m, h float32) (float32, float32) {
-	vbio := v*100 - 100
+	vbio := VFmBio(v)
 	if vbio > 0 {
 		vbio = 0
 	}
