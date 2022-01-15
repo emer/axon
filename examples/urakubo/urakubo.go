@@ -18,6 +18,7 @@ import (
 	"github.com/emer/axon/chans"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/netview"
+	"github.com/emer/emergent/params"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -37,11 +38,33 @@ func main() {
 	})
 }
 
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
+// LogPrec is precision for saving float values in logs -- requires 6 not 4!
+const LogPrec = 6
 
 // InitBaseline = use iterated baseline for initialization
 var InitBaseline = true
+
+// ParamSets for basic parameters
+// Base is always applied, and others can be optionally selected to apply on top of that
+var ParamSets = params.Sets{
+	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "all defaults",
+				Params: params.Params{
+					"Layer.Act.Spike.Tr":     "5",
+					"Layer.Act.Spike.RTau":   "2",
+					"Layer.Act.Dt.Vm":        "1",
+					"Layer.Act.Dt.VmDendTau": "1",
+					"Layer.Act.Dt.VmSteps":   "2",
+					// Erev = .35 = -65 instead of -70
+					"Layer.Act.Spike.Thr": ".55", // also bump up
+					"Layer.Act.Spike.VmR": ".45",
+					"Layer.Act.Init.Vm":   ".35",
+					"Layer.Act.Erev.L":    ".35",
+				}},
+		},
+	}},
+}
 
 // Extra state for neuron -- VGCC and AK
 type NeuronEx struct {
@@ -72,9 +95,11 @@ func (nex *NeuronEx) Init() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
+	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Spine        Spine            `desc:"the spine state with Urakubo intracellular model"`
 	Neuron       *axon.Neuron     `view:"no-inline" desc:"the neuron"`
 	NeuronEx     NeuronEx         `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	Params       params.Sets      `view:"no-inline" desc:"full collection of param sets"`
 	Stim         Stims            `desc:"what stimulation to drive with"`
 	GeStim       float32          `desc:"stimulating current injection"`
 	DeltaT       int              `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
@@ -83,7 +108,7 @@ type Sim struct {
 	NReps        int              `desc:"number of repetitions -- depends on Stim type"`
 	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
 	InitBaseline bool             `desc:"use the adapted baseline"`
-	Msec         int              `inactive:"+" desc:"current cycle of updating"`
+	NMDAAxon     bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
 	NMDAGbar     float32          `def:"0,0.03" desc:"strength of NMDA current -- 0.03 default for posterior cortex"`
 	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
 	VGCC         chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
@@ -94,9 +119,9 @@ type Sim struct {
 	Msec10Log    *etable.Table    `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
 	MsecLog      *etable.Table    `view:"no-inline" desc:"millisecond level log, shows last second"`
 	GenesisLog   *etable.Table    `view:"no-inline" desc:"genesis data"`
-	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 
 	// internal state - view:"-"
+	Msec        int              `inactive:"+" desc:"current cycle of updating"`
 	Win         *gi.Window       `view:"-" desc:"main GUI window"`
 	NetView     *netview.NetView `view:"-" desc:"the network viewer"`
 	ToolBar     *gi.ToolBar      `view:"-" desc:"the master toolbar"`
@@ -123,6 +148,7 @@ func (ss *Sim) New() {
 	ss.Spine.Init()
 	ss.InitWt = ss.Spine.States.AMPAR.Trp.Tot
 	ss.Net = &axon.Network{}
+	ss.Params = ParamSets
 	ss.GenesisLog = &etable.Table{}
 	ss.DWtLog = &etable.Table{}
 	ss.MsecLog = &etable.Table{}
@@ -139,18 +165,15 @@ func (ss *Sim) New() {
 // Defaults sets default params
 func (ss *Sim) Defaults() {
 	ss.Spine.Defaults()
-	ss.GeStim = 0.6
-	ss.NMDAGbar = 0.0  // 0.03
-	ss.GABABGbar = 0.0 // 0.2
+	ss.GeStim = 0.5
+	ss.NMDAGbar = 0.001 // 0.03
+	ss.GABABGbar = 0.0  // 0.2
 	ss.VGCC.Defaults()
-	ss.VGCC.Gbar = 0
+	ss.VGCC.Gbar = 0.01
 	ss.AK.Defaults()
 	ss.AK.Gbar = 0
 	ss.CaTarg.Cyt = 10
 	ss.CaTarg.PSD = 10
-	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
-	ly.Act.Dt.VmDendDt = 2.81
-	ly.Act.Dt.Update()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +191,6 @@ func (ss *Sim) Config() {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Neuron")
 	ly := net.AddLayer2D("Neuron", 1, 1, emer.Hidden).(*axon.Layer)
-
 	net.Defaults()
 	err := net.Build()
 	if err != nil {
@@ -184,6 +206,52 @@ func (ss *Sim) InitWts(net *axon.Network) {
 	net.InitWts()
 }
 
+// SetParams sets the params for "Base" and then current ParamSet.
+// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
+// otherwise just the named sheet
+// if setMsg = true then we output a message for each param that was set.
+func (ss *Sim) SetParams(sheet string, setMsg bool) error {
+	if sheet == "" {
+		// this is important for catching typos and ensuring that all sheets can be used
+		ss.Params.ValidateSheets([]string{"Network", "Sim"})
+	}
+	err := ss.SetParamsSet("Base", sheet, setMsg)
+	// if ss.ParamSet != "" && ss.ParamSet != "Base" {
+	// 	sps := strings.Fields(ss.ParamSet)
+	// 	for _, ps := range sps {
+	// 		err = ss.SetParamsSet(ps, sheet, setMsg)
+	// 	}
+	// }
+	return err
+}
+
+// SetParamsSet sets the params for given params.Set name.
+// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
+// otherwise just the named sheet
+// if setMsg = true then we output a message for each param that was set.
+func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
+	pset, err := ss.Params.SetByNameTry(setNm)
+	if err != nil {
+		return err
+	}
+	if sheet == "" || sheet == "Network" {
+		netp, ok := pset.Sheets["Network"]
+		if ok {
+			ss.Net.ApplyParams(netp, setMsg)
+		}
+	}
+
+	if sheet == "" || sheet == "Sim" {
+		simp, ok := pset.Sheets["Sim"]
+		if ok {
+			simp.Apply(ss, setMsg)
+		}
+	}
+	// note: if you have more complex environments with parameters, definitely add
+	// sheets for them, e.g., "TrainEnv", "TestEnv" etc
+	return err
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Init, utils
 
@@ -195,8 +263,13 @@ func (ss *Sim) Init() {
 	ss.Spine.Init()
 	ss.NeuronEx.Init()
 	ss.Msec = 0
+	ss.SetParams("", false) // all sheets
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
-	ly.Act.NMDA.Gbar = ss.NMDAGbar
+	if ss.NMDAAxon {
+		ly.Act.NMDA.Gbar = ss.NMDAGbar
+	} else {
+		ly.Act.NMDA.Gbar = 0
+	}
 	ly.Act.GABAB.Gbar = ss.GABABGbar
 	ss.InitWts(ss.Net)
 	ss.StopNow = false
@@ -239,13 +312,15 @@ func (ss *Sim) NeuronUpdt(msec int, ge, gi float32) {
 	nrn := ss.Neuron
 	nex := &ss.NeuronEx
 
-	vbio := chans.VToBio(nrn.VmDend)
+	vbio := chans.VToBio(nrn.Vm) // dend
 
+	// note: Ge should only
 	nrn.GeRaw = ge
-	ly.Act.Dt.GeFmRaw(nrn.GeRaw, &nrn.Ge, ly.Act.Init.Ge)
+	ly.Act.Dt.GeSynFmRaw(nrn.GeRaw, &nrn.GeSyn, ly.Act.Init.Ge)
+	nrn.Ge = nrn.GeSyn
 	nrn.Gi = gi
 	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, 1)
-	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+	ly.Act.NMDA.DGnmda(nrn.NMDA, nrn.VmDend, &nrn.Gnmda)
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 
@@ -261,7 +336,12 @@ func (ss *Sim) NeuronUpdt(msec int, ge, gi float32) {
 
 	nrn.Gk += nex.Gak
 	nrn.Ge += nex.Gvgcc + nrn.Gnmda
+	if !ss.NMDAAxon {
+		nrn.Ge += ss.NMDAGbar * float32(ss.Spine.States.NMDAR.Ji)
+	}
 	nrn.Gi += nrn.GgabaB
+
+	ss.Spine.Ca.SetInject(float64(nex.VGCCJcaPSD), float64(nex.VGCCJcaCyt))
 
 	psd_pca := float32(1.7927e5 * 0.04) //  SVR_PSD
 	cyt_pca := float32(1.0426e5 * 0.04) // SVR_CYT
@@ -400,10 +480,11 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.Params.XAxisCol = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	// plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Time", eplot.Off, eplot.FixMin, .48, eplot.FixMax, .52)
 	plt.SetColParams("Ge", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Inet", eplot.Off, eplot.FixMin, -.2, eplot.FixMax, 1)
-	plt.SetColParams("Vm", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Vm", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Act", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Spike", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Gk", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
@@ -417,8 +498,8 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("Gvgcc", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("VGCCm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("VGCCh", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("VGCCJcaPSD", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("VGCCJcaCyt", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCJcaPSD", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("VGCCJcaCyt", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Gak", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("AKm", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("AKh", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
@@ -429,14 +510,14 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 		}
 	}
 
-	plt.SetColParams("VmS", eplot.Off, eplot.FixMin, -65, eplot.FloatMax, 1)
+	plt.SetColParams("VmS", eplot.Off, eplot.FixMin, -70, eplot.FloatMax, 1)
 	plt.SetColParams("PreSpike", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("PSD_Ca", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("Cyt_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("Trp_AMPAR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Cyt_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Trp_AMPAR", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
 }

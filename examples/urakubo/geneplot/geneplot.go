@@ -38,7 +38,7 @@ func main() {
 }
 
 // LogPrec is precision for saving float values in logs
-const LogPrec = 4
+const LogPrec = 6
 
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant

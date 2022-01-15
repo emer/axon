@@ -47,8 +47,9 @@ type CaParams struct {
 	CytBuffer chem.Buffer  `desc:"Ca buffering in the cytosol"`
 	PSDBuffer chem.Buffer  `desc:"Ca buffering in the PSD"`
 	Diffuse   chem.Diffuse `desc:"Ca diffusion between Cyt and PSD"`
+	InjectCa  CaState      `desc:"extra Ca injection values in N terms -- see SetInject for concentration -- be sure to zero or update as needed"`
 	Clamp     bool         `desc:"clamp ca by fixed values"`
-	ClampCa   CaState      `desc:"clamped Ca values -- in concentration!"`
+	ClampCa   CaState      `desc:"clamped Ca values -- in N terms -- see SetClamp for concentration"`
 }
 
 func (cp *CaParams) Defaults() {
@@ -64,17 +65,27 @@ func (cp *CaParams) Defaults() {
 	cp.Clamp = false
 }
 
+func (cp *CaParams) Init() {
+	cp.InjectCa.Zero()
+}
+
 // SetBuffTarg sets buffered target level of calcium in terms of concentrations
 func (cp *CaParams) SetBuffTarg(cyt, psd float64) {
 	cp.CytBuffer.SetTargVol(cyt, CytVol)
 	cp.PSDBuffer.SetTargVol(psd, PSDVol)
 }
 
-// Set clamped calcium levels in terms of concentrations
+// SetClamp sets clamped calcium levels in terms of concentrations
 func (cp *CaParams) SetClamp(cyt, psd float64) {
 	cp.Clamp = true
 	cp.ClampCa.Cyt = chem.CoToN(cyt, CytVol)
 	cp.ClampCa.PSD = chem.CoToN(psd, PSDVol)
+}
+
+// SetInject sets injected calcium levels in terms of concentrations
+func (cp *CaParams) SetInject(cyt, psd float64) {
+	cp.InjectCa.Cyt = chem.CoToN(cyt, CytVol)
+	cp.InjectCa.PSD = chem.CoToN(psd, PSDVol)
 }
 
 func (cp *CaParams) Step(c *CaState, d *CaState) {
@@ -83,6 +94,8 @@ func (cp *CaParams) Step(c *CaState, d *CaState) {
 		d.Zero()
 		return
 	}
+	d.PSD += cp.InjectCa.PSD
+	d.Cyt += cp.InjectCa.Cyt
 	cp.CytBuffer.Step(c.Cyt, &d.Cyt)
 	cp.PSDBuffer.Step(c.PSD, &d.PSD)
 	cp.Diffuse.Step(c.Cyt, c.PSD, CytVol, PSDVol, &d.Cyt, &d.PSD)

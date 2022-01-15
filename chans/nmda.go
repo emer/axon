@@ -10,14 +10,22 @@ import "github.com/goki/mat32"
 // parameters.
 type NMDAParams struct {
 	GeTot float32 `desc:"how much of the NMDA is driven by total Ge synaptic input, as opposed to from projections specifically marked as NMDA-communicating type, e.g., for active maintenance, in NMDASyn"`
-	Tau   float32 `def:"100" desc:"decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential"`
-	Gbar  float32 `def:"0.03,0.01" desc:"strength of NMDA current -- 0.02 is just over level sufficient to maintain in face of completely blank input"`
+	Tau   float32 `def:"100" desc:"decay time constant for NMDA channel activation as a function of mactivation -- rise time is 2 msec and not worth extra effort for biexponential"`
+	Gbar  float32 `def:"0,0.15" desc:"strength of NMDA current"`
+	DGTau float32 `def:"1" desc:"decay time constant for net conductance itself, after channels have been opened"`
+	DGDt  float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (np *NMDAParams) Defaults() {
 	np.GeTot = 1
 	np.Tau = 100
-	np.Gbar = 0.03
+	np.Gbar = 0.15
+	np.DGTau = 1
+	np.Update()
+}
+
+func (np *NMDAParams) Update() {
+	np.DGDt = 1 / np.DGTau
 }
 
 // GFmV returns the NMDA conductance as a function of normalized membrane potential
@@ -37,4 +45,9 @@ func (np *NMDAParams) NMDA(nmda, geraw, nmdaSyn float32) float32 {
 // Gnmda returns the NMDA net conductance from nmda activation and vm
 func (np *NMDAParams) Gnmda(nmda, vm float32) float32 {
 	return np.Gbar * np.GFmV(vm) * nmda
+}
+
+// DGnmda updates a Gnmda conductance with time constant of decay, given nmda activation and vm
+func (np *NMDAParams) DGnmda(nmda, vm float32, g *float32) {
+	*g += np.Gnmda(nmda, vm) - np.DGDt*(*g)
 }

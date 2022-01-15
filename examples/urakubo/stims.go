@@ -34,11 +34,11 @@ const (
 
 // StimFuncs are the stimulus functions
 var StimFuncs = map[Stims]func(){
-	Baseline: BaselineFun,
-	CaTarg:   CaTargFun,
-	ClampCa1: ClampCa1Fun,
-	STDP:     STDPFun,
-	//	STDPSweep: STDPSweepFun,
+	Baseline:  BaselineFun,
+	CaTarg:    CaTargFun,
+	ClampCa1:  ClampCa1Fun,
+	STDP:      STDPFun,
+	STDPSweep: STDPSweepFun,
 }
 
 // ClampCa1Ca is direct copy of Ca values from test_stdp.g genesis func
@@ -205,15 +205,10 @@ func STDPFun() {
 	ss.Stopped()
 }
 
-/*
 func STDPSweepFun() {
 	ss := &TheSim
-	vms := PerMsec(ClampVm)
-	nvm := len(vms)
-	bvm := -65.0
-	peakT := 13 // offset in ClampVm for peak
 	toff := 500
-	vmoff := toff - peakT // peak hits at toff exactly
+	dur := 1
 	tott := ss.NReps * 1000
 
 	ss.ResetDWtPlots()
@@ -225,18 +220,16 @@ func STDPSweepFun() {
 
 		for msec := 0; msec < tott; msec++ {
 			ims := msec % 1000
-			vmms := ims - vmoff
-			vm := bvm
-			if vmms >= 0 && vmms < nvm {
-				vm = vms[vmms]
-			}
 			if ims == psms {
 				ss.Spine.States.PreSpike = 1
 			} else {
 				ss.Spine.States.PreSpike = 0
 			}
-			ss.Spine.States.VmS = vm
-			ss.NeuronUpdt(msec)
+			ge := float32(0.0)
+			if ims >= toff && ims < toff+dur {
+				ge = ss.GeStim
+			}
+			ss.NeuronUpdt(msec, ge, 0)
 			ss.LogDefault()
 			if ss.StopNow {
 				break
@@ -249,4 +242,3 @@ func STDPSweepFun() {
 
 	ss.Stopped()
 }
-*/

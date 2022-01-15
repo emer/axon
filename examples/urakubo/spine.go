@@ -178,6 +178,7 @@ func (sp *Spine) Defaults() {
 func (sp *Spine) Init() {
 	sp.States.Init()
 	sp.Deltas.Zero()
+	sp.Ca.Init()
 }
 
 func (sp *Spine) InitCode() {

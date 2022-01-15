@@ -67,6 +67,7 @@ type NeuronEx struct {
 	Gak   float32 `desc:"AK total conductance"`
 	AKm   float32 `desc:"AK M gate -- activates with increasing Vm"`
 	AKh   float32 `desc:"AK H gate -- deactivates with increasing Vm"`
+	InISI float32 `desc:"input ISI countdown for spiking mode -- counts up"`
 }
 
 func (nrn *NeuronEx) Init() {
@@ -76,6 +77,7 @@ func (nrn *NeuronEx) Init() {
 	nrn.Gak = 0
 	nrn.AKm = 0
 	nrn.AKh = 1
+	nrn.InISI = 0
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -84,6 +86,8 @@ func (nrn *NeuronEx) Init() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
+	GeClamp      bool             `desc:"clamp constant Ge value -- otherwise drive discrete spiking input"`
+	SpikeHz      float32          `desc:"frequency of input spiking for !GeClamp mode"`
 	Ge           float32          `min:"0" step:"0.01" desc:"Raw synaptic excitatory conductance"`
 	Gi           float32          `min:"0" step:"0.01" desc:"Inhibitory conductance "`
 	ErevE        float32          `min:"0" max:"1" step:"0.01" def:"1" desc:"excitatory reversal (driving) potential -- determines where excitation pushes Vm up to"`
@@ -133,6 +137,7 @@ func (ss *Sim) New() {
 func (ss *Sim) Defaults() {
 	ss.UpdtInterval = 10
 	ss.Cycle = 0
+	ss.SpikeHz = 50
 	ss.Ge = 0.7
 	ss.Gi = 1.0
 	ss.ErevE = 1
@@ -253,14 +258,27 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
 	nrn := &(ly.Neurons[0])
 	nex := &ss.NeuronEx
-	ge := ss.Ge
-	if !inputOn {
-		ge = 0
+	if inputOn {
+		if ss.GeClamp {
+			nrn.GeRaw = ss.Ge
+			nrn.GeSyn = nrn.GeRaw
+		} else {
+			nex.InISI += 1
+			if nex.InISI > 1000/ss.SpikeHz {
+				nrn.GeRaw = 1
+				nex.InISI = 0
+			} else {
+				nrn.GeRaw = 0
+			}
+			ly.Act.Dt.GeSynFmRaw(nrn.GeRaw, &nrn.GeSyn, ly.Act.Init.Ge)
+		}
+	} else {
+		nrn.GeRaw = 0
+		nrn.GeSyn = 0
 	}
-	nrn.GeRaw = ge
-	nrn.Ge = nrn.GeRaw
+	nrn.Ge = nrn.GeSyn
 	nrn.Gi = ss.Gi
-	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, 1)
+	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, 0)
 	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
@@ -356,6 +374,7 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 	nex := &ss.NeuronEx
 
 	dt.SetCellFloat("Cycle", row, float64(cyc))
+	dt.SetCellFloat("GeSyn", row, float64(nrn.GeSyn))
 	dt.SetCellFloat("Ge", row, float64(nrn.Ge))
 	dt.SetCellFloat("Gi", row, float64(nrn.Gi))
 	dt.SetCellFloat("Inet", row, float64(nrn.Inet))
@@ -392,6 +411,7 @@ func (ss *Sim) ConfigTstCycLog(dt *etable.Table) {
 	nt := ss.NCycles // max cycles
 	sch := etable.Schema{
 		{"Cycle", etensor.INT64, nil, nil},
+		{"GeSyn", etensor.FLOAT64, nil, nil},
 		{"Ge", etensor.FLOAT64, nil, nil},
 		{"Gi", etensor.FLOAT64, nil, nil},
 		{"Inet", etensor.FLOAT64, nil, nil},
@@ -422,6 +442,7 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GeSyn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Ge", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Gi", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Inet", eplot.On, eplot.FixMin, -.2, eplot.FixMax, 1)

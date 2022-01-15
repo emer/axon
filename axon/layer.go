@@ -1121,11 +1121,11 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 
 		// important: add other sources of GeRaw here in NMDA driver
 		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, nrn.NMDASyn)
-		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+		ly.Act.NMDA.DGnmda(nrn.NMDA, nrn.VmDend, &nrn.Gnmda)
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 
 		// note: each step broken out here so other variants can add extra terms to Raw
-		ly.Act.GeFmRaw(nrn, nrn.GeRaw+nrn.Gnmda, cyc, nrn.ActM)
+		ly.Act.GeFmRaw(nrn, nrn.GeRaw, nrn.Gnmda, cyc, nrn.ActM)
 		nrn.GeRaw = 0
 		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 		nrn.GiRaw = 0
@@ -1253,7 +1253,7 @@ func (ly *Layer) InhibFmPool(ltime *Time) {
 		}
 		pl := &ly.Pools[nrn.SubPool]
 		ly.Inhib.Self.Inhib(&nrn.GiSelf, nrn.Act)
-		nrn.Gi = pl.Inhib.Gi + nrn.GiSelf + ly.Inhib.Inhib.GiSyn(nrn.GiSyn)
+		nrn.Gi = pl.Inhib.Gi + nrn.GiSelf + ly.Inhib.Inhib.GiSyn(nrn.GiSyn+nrn.GiNoise)
 	}
 }
 
