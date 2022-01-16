@@ -51,11 +51,14 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Act.Spike.Tr":     "5",
-					"Layer.Act.Spike.RTau":   "2",
-					"Layer.Act.Dt.Vm":        "1",
+					"Layer.Act.Spike.Tr":     "7",
+					"Layer.Act.Spike.RTau":   "3", // maybe could go a bit wider even
+					"Layer.Act.Dt.VmTau":     "1",
 					"Layer.Act.Dt.VmDendTau": "1",
 					"Layer.Act.Dt.VmSteps":   "2",
+					"Layer.Act.Dt.GeTau":     "1",    // not natural but fits spike current injection
+					"Layer.Act.VmRange.Max":  "0.97", // max for dendrite
+					"Layer.Act.Spike.ExpThr": "0.9",  // note: critical to keep < Max!
 					// Erev = .35 = -65 instead of -70
 					"Layer.Act.Spike.Thr": ".55", // also bump up
 					"Layer.Act.Spike.VmR": ".45",
@@ -165,11 +168,11 @@ func (ss *Sim) New() {
 // Defaults sets default params
 func (ss *Sim) Defaults() {
 	ss.Spine.Defaults()
-	ss.GeStim = 0.5
-	ss.NMDAGbar = 0.001 // 0.03
-	ss.GABABGbar = 0.0  // 0.2
+	ss.GeStim = 2
+	ss.NMDAGbar = 0.15 // 0.1 to 0.15 matches pre-spike increase in vm
+	ss.GABABGbar = 0.0 // 0.2
 	ss.VGCC.Defaults()
-	ss.VGCC.Gbar = 0.01
+	ss.VGCC.Gbar = 0.12 // 0.12 matches vgcc jca
 	ss.AK.Defaults()
 	ss.AK.Gbar = 0
 	ss.CaTarg.Cyt = 10
@@ -337,7 +340,7 @@ func (ss *Sim) NeuronUpdt(msec int, ge, gi float32) {
 	nrn.Gk += nex.Gak
 	nrn.Ge += nex.Gvgcc + nrn.Gnmda
 	if !ss.NMDAAxon {
-		nrn.Ge += ss.NMDAGbar * float32(ss.Spine.States.NMDAR.Ji)
+		nrn.Ge += ss.NMDAGbar * float32(ss.Spine.States.NMDAR.G)
 	}
 	nrn.Gi += nrn.GgabaB
 
@@ -481,7 +484,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	// plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Time", eplot.Off, eplot.FixMin, .48, eplot.FixMax, .52)
+	plt.SetColParams("Time", eplot.Off, eplot.FixMin, .48, eplot.FixMax, .54)
 	plt.SetColParams("Ge", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Inet", eplot.Off, eplot.FixMin, -.2, eplot.FixMax, 1)
 	plt.SetColParams("Vm", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)

@@ -17,23 +17,21 @@ import (
 
 // NMDARState holds NMDA receptor states, with allosteric dynamics
 // from Urakubo et al, (2008)
-// The [3] arrays correspond to Nt0, Nt1, Nt2: plain NMDA, 2CaM, 3CaM
+// The [3] arrays correspond to Nt0, Nt1, Nt2: plain NMDA, 2CaM phos, 3CaM phos
 type NMDARState struct {
 	Mg    float64    `desc:"level of Mg block as a function of membrane potential: 1/(1 + (1.5/3.57)exp(-0.062*Vm)"`
-	Ei    float64    `desc:""`
-	Jca   float64    `desc:"Calcium current"`
-	Ji    float64    `desc:"injected current from current clamp?"`
-	Vca   float64    `desc:""`
-	Vi    float64    `desc:""`
+	Vca   float64    `desc:"voltage-dependent calcium flux driver: determines Jca as function of V, includes Mg factor"`
+	Jca   float64    `desc:"overall calcium current = Vca * Pca * Nopen"`
+	G     float64    `desc:"ionic conductance through the NMDA channel for driving Vm changes = Mg * GMax * Nopen"`
 	N0    [3]float64 `desc:"Number in state 1"`
 	N1    [3]float64 `desc:"Number in state 2"`
 	N2    [3]float64 `desc:"Number in state 3"`
 	N3    [3]float64 `desc:"Number in state 4"`
-	No    [3]float64 `desc:"Number in Open state"`
-	Nt0   float64    `desc:"Total N of NMDAR -- 0 index in N* states"`
-	Nt1   float64    `desc:"Total N of NMDAR_2Ca2+CaM"`
-	Nt2   float64    `desc:"Total N of NMDAR_3Ca2+CaM"`
-	Nopen float64    `desc:"Total N in open state"`
+	No    [3]float64 `desc:"Number in Open state -- actually open to allow Ca to flow"`
+	Nt0   float64    `inactive:"+" desc:"Total N of NMDAR plain = sum of 0 index in N* states"`
+	Nt1   float64    `inactive:"+" desc:"Total N of NMDAR_2Ca2+CaM = sum of 1 index in N* states"`
+	Nt2   float64    `inactive:"+" desc:"Total N of NMDAR_3Ca2+CaM = sum of 2 index in N* states"`
+	Nopen float64    `inactive:"+" desc:"Total N in open state = sum(No[0..2])"`
 }
 
 func (cs *NMDARState) Init() {
@@ -44,11 +42,8 @@ func (cs *NMDARState) Init() {
 
 func (cs *NMDARState) Zero() {
 	cs.Mg = 0
-	cs.Ei = 0
-	cs.Jca = 0
-	cs.Ji = 0
 	cs.Vca = 0
-	cs.Vi = 0
+	cs.Jca = 0
 	for k := 0; k < 3; k++ {
 		cs.N0[k] = 0
 		cs.N1[k] = 0
@@ -70,7 +65,7 @@ func (cs *NMDARState) Log(dt *etable.Table, row int) {
 	dt.SetCellFloat(pre+"Mg", row, cs.Mg)
 	dt.SetCellFloat(pre+"Nopen", row, cs.Nopen)
 	dt.SetCellFloat(pre+"Jca", row, cs.Jca)
-	dt.SetCellFloat(pre+"Ji", row, cs.Ji)
+	dt.SetCellFloat(pre+"G", row, cs.G)
 	dt.SetCellFloat(pre+"Nt0", row, cs.Nt0)
 	dt.SetCellFloat(pre+"Nt1", row, cs.Nt1)
 	dt.SetCellFloat(pre+"Nt2", row, cs.Nt2)
@@ -84,7 +79,7 @@ func (cs *NMDARState) ConfigLog(sch *etable.Schema) {
 	*sch = append(*sch, etable.Column{pre + "Mg", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nopen", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Jca", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "Ji", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "G", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nt0", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nt1", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Nt2", etensor.FLOAT64, nil, nil})
@@ -241,15 +236,15 @@ func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool, 
 
 	cs.Mg = 1 / (1 + 0.4202*math.Exp(-0.062*vm)) // Mg(1.5)/3.57
 	if vm > -0.1 && vm < 0.1 {
-		cs.Vca = -1/0.0756 + 0.5*vm
+		cs.Vca = (1.0 / (0.0756 + 0.5*vm)) * cs.Mg
 	} else {
 		cs.Vca = -vm / (1 - math.Exp(0.0756*vm)) * cs.Mg
 	}
-	cs.Vi = (nr.Erev - vm) * cs.Mg
-	cs.Jca = cs.Vca * nr.Pca * (cs.No[0] + cs.No[1] + cs.No[2])
-	cs.Ji = cs.Vi * nr.Gmax * (cs.No[0] + cs.No[1] + cs.No[2])
 
 	cs.Total()
+
+	cs.Jca = cs.Vca * nr.Pca * cs.Nopen
+	cs.G = cs.Mg * nr.Gmax * cs.Nopen
 
 	*dca += cs.Jca * PSDVol
 }
