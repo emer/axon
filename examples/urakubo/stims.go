@@ -5,7 +5,10 @@
 package main
 
 import (
+	"math/rand"
+
 	"github.com/goki/ki/kit"
+	"github.com/goki/mat32"
 )
 
 type Stims int32
@@ -25,20 +28,50 @@ const (
 
 	ClampCa1
 
+	GClamp
+
 	STDP
 
 	STDPSweep
+
+	Poisson
+
+	SPoissonRGClamp
+
+	PoissonHzSweep
+
+	PoissonDurSweep
+
+	OpPhaseDurSweep
+
+	ThetaErr
+
+	ThetaErrAll
 
 	StimsN
 )
 
 // StimFuncs are the stimulus functions
 var StimFuncs = map[Stims]func(){
-	Baseline:  BaselineFun,
-	CaTarg:    CaTargFun,
-	ClampCa1:  ClampCa1Fun,
-	STDP:      STDPFun,
-	STDPSweep: STDPSweepFun,
+	Baseline:        BaselineFun,
+	CaTarg:          CaTargFun,
+	ClampCa1:        ClampCa1Fun,
+	STDP:            STDPFun,
+	STDPSweep:       STDPSweepFun,
+	Poisson:         PoissonFun,
+	SPoissonRGClamp: SPoissonRGClampFun,
+	PoissonHzSweep:  PoissonHzSweepFun,
+	PoissonDurSweep: PoissonDurSweepFun,
+	OpPhaseDurSweep: OpPhaseDurSweepFun,
+	ThetaErr:        ThetaErrFun,
+	ThetaErrAll:     ThetaErrAllFun,
+}
+
+// RGeStimForHz is the strength of GeStim G clamp to obtain a given R firing rate
+var RGeStimForHz = map[int]float32{
+	25:  .09,
+	50:  .12,
+	100: .15,
 }
 
 // ClampCa1Ca is direct copy of Ca values from test_stdp.g genesis func
@@ -173,7 +206,7 @@ func ClampCa1Fun() {
 			break
 		}
 	}
-	ss.GraphRun(2)
+	ss.GraphRun(ss.FinalSecs)
 	ss.Stopped()
 }
 
@@ -201,7 +234,7 @@ func STDPFun() {
 			break
 		}
 	}
-	// ss.GraphRun(2)
+	ss.GraphRun(ss.FinalSecs)
 	ss.Stopped()
 }
 
@@ -211,7 +244,7 @@ func STDPSweepFun() {
 	dur := 1
 	tott := ss.NReps * 1000
 
-	ss.ResetDWtPlots()
+	ss.ResetDWtPlot()
 
 	for dt := -ss.DeltaTRange; dt <= ss.DeltaTRange; dt += ss.DeltaTInc {
 		psms := toff + 5 - dt // 5 is lag
@@ -232,13 +265,378 @@ func STDPSweepFun() {
 			ss.NeuronUpdt(msec, ge, 0)
 			ss.LogDefault()
 			if ss.StopNow {
-				break
+				ss.Stopped()
+				return
 			}
 		}
-		ss.GraphRun(2)
+		ss.GraphRun(ss.FinalSecs)
 		ss.LogDWt(ss.DWtLog, float64(dt), 0)
 		ss.DWtPlot.GoUpdate()
 	}
 
+	ss.Stopped()
+}
+
+func PoissonFun() {
+	ss := &TheSim
+
+	Sint := mat32.Exp(-1000.0 / ss.SendHz)
+	Rint := mat32.Exp(-1000.0 / ss.RecvHz)
+
+	for ri := 0; ri < ss.NReps; ri++ {
+		Sp := float32(1)
+		Rp := float32(1)
+
+		for msec := 0; msec < ss.DurMsec; msec++ {
+			Sp *= rand.Float32()
+			if Sp <= Sint {
+				ss.Spine.States.PreSpike = 1
+				Sp = 1
+			} else {
+				ss.Spine.States.PreSpike = 0
+			}
+
+			ge := float32(0.0)
+			Rp *= rand.Float32()
+			if Rp <= Rint {
+				ge = ss.GeStim
+				Rp = 1
+			}
+
+			ss.NeuronUpdt(msec, ge, 0)
+			ss.LogDefault()
+			if ss.StopNow {
+				break
+			}
+		}
+		ss.Spine.States.PreSpike = 0
+		ss.GraphRun(ss.ISISec)
+	}
+	ss.GraphRun(ss.FinalSecs)
+	ss.Stopped()
+}
+
+func SPoissonRGClampFun() {
+	ss := &TheSim
+
+	Sint := mat32.Exp(-1000.0 / ss.SendHz)
+
+	for ri := 0; ri < ss.NReps; ri++ {
+		Sp := float32(1)
+
+		for msec := 0; msec < ss.DurMsec; msec++ {
+			Sp *= rand.Float32()
+			if Sp <= Sint {
+				ss.Spine.States.PreSpike = 1
+				Sp = 1
+			} else {
+				ss.Spine.States.PreSpike = 0
+			}
+
+			ss.NeuronUpdt(msec, ss.GeStim, 0)
+			ss.LogDefault()
+			if ss.StopNow {
+				break
+			}
+		}
+		ss.Spine.States.PreSpike = 0
+		ss.GraphRun(ss.ISISec)
+	}
+	ss.GraphRun(ss.FinalSecs)
+	ss.Stopped()
+}
+
+func PoissonHzSweepFun() {
+	ss := &TheSim
+
+	ss.ResetDWtPlot()
+
+	for shz := 10; shz <= 100; shz += 10 {
+		for rhz := 10; rhz <= 100; rhz += 10 {
+			Sint := mat32.Exp(-1000.0 / float32(shz))
+			Rint := mat32.Exp(-1000.0 / float32(rhz))
+
+			ss.ResetTimePlots()
+			ss.Init()
+			for ri := 0; ri < ss.NReps; ri++ {
+				Sp := float32(1)
+				Rp := float32(1)
+
+				for msec := 0; msec < ss.DurMsec; msec++ {
+					Sp *= rand.Float32()
+					if Sp <= Sint {
+						ss.Spine.States.PreSpike = 1
+						Sp = 1
+					} else {
+						ss.Spine.States.PreSpike = 0
+					}
+
+					Rp *= rand.Float32()
+					ge := float32(0.0)
+					if Rp <= Rint {
+						ge = ss.GeStim
+						Rp = 1
+					}
+
+					ss.NeuronUpdt(msec, ge, 0)
+					ss.LogDefault()
+					if ss.StopNow {
+						ss.Stopped()
+						return
+					}
+				}
+				ss.Spine.States.PreSpike = 0
+				ss.GraphRun(ss.ISISec)
+			}
+			ss.GraphRun(ss.FinalSecs)
+			ss.LogDWt(ss.DWtLog, float64(rhz), float64(shz))
+			ss.DWtPlot.GoUpdate()
+		}
+	}
+	ss.Stopped()
+}
+
+func PoissonDurSweepFun() {
+	ss := &TheSim
+
+	ss.ResetDWtPlot()
+
+	for dur := 200; dur <= 1000; dur += 100 {
+		for rhz := 10; rhz <= 100; rhz += 10 {
+			Sint := mat32.Exp(-1000.0 / float32(ss.SendHz))
+			Rint := mat32.Exp(-1000.0 / float32(rhz))
+
+			ss.ResetTimePlots()
+			ss.Init()
+			for ri := 0; ri < ss.NReps; ri++ {
+				Sp := float32(1)
+				Rp := float32(1)
+
+				for msec := 0; msec < dur; msec++ {
+					Sp *= rand.Float32()
+					if Sp <= Sint {
+						ss.Spine.States.PreSpike = 1
+						Sp = 1
+					} else {
+						ss.Spine.States.PreSpike = 0
+					}
+
+					ge := float32(0.0)
+					Rp *= rand.Float32()
+					if Rp <= Rint {
+						ge = ss.GeStim
+						Rp = 1
+					}
+
+					ss.NeuronUpdt(msec, ge, 0)
+					ss.LogDefault()
+					if ss.StopNow {
+						ss.Stopped()
+						return
+					}
+				}
+				ss.Spine.States.PreSpike = 0
+				ss.GraphRun(ss.ISISec)
+			}
+			ss.GraphRun(ss.FinalSecs)
+			ss.LogDWt(ss.DWtLog, float64(rhz), float64(dur))
+			ss.DWtPlot.GoUpdate()
+		}
+	}
+	ss.Stopped()
+}
+
+// OpPhase runs sending, recv in opposite phases (half interval off at start)
+// This is what was used in the original XCAL Dwt function derivation in Genesis model
+func OpPhaseDurSweepFun() {
+	ss := &TheSim
+
+	ss.ResetDWtPlot()
+
+	for dur := 200; dur <= 1000; dur += 100 {
+		for rhz := 10; rhz <= 100; rhz += 10 {
+			Sint := 1000.0 / float32(ss.SendHz)
+			Rint := 1000.0 / float32(rhz)
+
+			ss.ResetTimePlots()
+			ss.Init()
+			for ri := 0; ri < ss.NReps; ri++ {
+				Sp := Sint / 2
+				Rp := Rint
+
+				for msec := 0; msec < dur; msec++ {
+					fms := float32(msec)
+					if fms-Sp >= Sint {
+						ss.Spine.States.PreSpike = 1
+						Sp = fms
+					} else {
+						ss.Spine.States.PreSpike = 0
+					}
+
+					ge := float32(0.0)
+					if fms-Rp >= Rint {
+						ge = ss.GeStim
+						Rp = fms
+					}
+
+					ss.NeuronUpdt(msec, ge, 0)
+					ss.LogDefault()
+					if ss.StopNow {
+						ss.Stopped()
+						return
+					}
+				}
+				ss.Spine.States.PreSpike = 0
+				ss.GraphRun(ss.ISISec)
+			}
+			ss.GraphRun(ss.FinalSecs)
+			ss.LogDWt(ss.DWtLog, float64(rhz), float64(dur))
+			ss.DWtPlot.GoUpdate()
+		}
+	}
+	ss.Stopped()
+}
+
+func ThetaErrFun() {
+	ss := &TheSim
+
+	ss.ResetDWtPlot()
+
+	hz := []int{25, 50, 100}
+	nhz := len(hz)
+
+	phsdur := []int{ss.DurMsec / 2, ss.DurMsec / 2}
+	nphs := len(phsdur)
+
+	sphz := []int{0, 0}
+	rphz := []int{0, 0}
+
+	for smi := 0; smi < nhz; smi++ {
+		sphz[0] = hz[smi] // minus phase
+		rphz[0] = hz[smi] // minus phase
+		for spi := 0; spi < nhz; spi++ {
+			sphz[1] = hz[spi] // plus phase
+			rphz[1] = hz[spi] // plus phase
+
+			ss.ResetTimePlots()
+			ss.Init()
+			for ri := 0; ri < ss.NReps; ri++ {
+				Sp := float32(1)
+				Rp := float32(1)
+				for pi := 0; pi < nphs; pi++ {
+					dur := phsdur[pi]
+					shz := sphz[pi]
+					rhz := rphz[pi]
+					Sint := mat32.Exp(-1000.0 / float32(shz))
+					Rint := mat32.Exp(-1000.0 / float32(rhz))
+					for msec := 0; msec < dur; msec++ {
+						Sp *= rand.Float32()
+						if Sp <= Sint {
+							ss.Spine.States.PreSpike = 1
+							Sp = 1
+						} else {
+							ss.Spine.States.PreSpike = 0
+						}
+
+						ge := float32(0.0)
+						Rp *= rand.Float32()
+						if Rp <= Rint {
+							ge = ss.GeStim
+							Rp = 1
+						}
+						if ss.RGClamp {
+							ge = RGeStimForHz[rhz]
+						}
+
+						ss.NeuronUpdt(msec, ge, 0)
+						ss.LogDefault()
+						if ss.StopNow {
+							ss.Stopped()
+							return
+						}
+					}
+				}
+				ss.Spine.States.PreSpike = 0
+				ss.GraphRun(ss.ISISec)
+			}
+			ss.GraphRun(ss.FinalSecs)
+			ss.LogPhaseDWt(ss.PhaseDWtLog, sphz, rphz)
+			ss.PhaseDWtPlot.GoUpdate()
+		}
+	}
+	ss.Stopped()
+}
+
+func ThetaErrAllFun() {
+	ss := &TheSim
+
+	ss.ResetDWtPlot()
+
+	hz := []int{25, 50, 100}
+	nhz := len(hz)
+
+	phsdur := []int{ss.DurMsec / 2, ss.DurMsec / 2}
+	nphs := len(phsdur)
+
+	sphz := []int{0, 0}
+	rphz := []int{0, 0}
+
+	for smi := 0; smi < nhz; smi++ {
+		sphz[0] = hz[smi] // minus phase
+		for spi := 0; spi < nhz; spi++ {
+			sphz[1] = hz[spi] // plus phase
+			for rmi := 0; rmi < nhz; rmi++ {
+				rphz[0] = hz[rmi] // minus phase
+				for rpi := 0; rpi < nhz; rpi++ {
+					rphz[1] = hz[rpi] // plus phase
+
+					ss.ResetTimePlots()
+					ss.Init()
+					for ri := 0; ri < ss.NReps; ri++ {
+						Sp := float32(1)
+						Rp := float32(1)
+						for pi := 0; pi < nphs; pi++ {
+							dur := phsdur[pi]
+							shz := sphz[pi]
+							rhz := rphz[pi]
+							Sint := mat32.Exp(-1000.0 / float32(shz))
+							Rint := mat32.Exp(-1000.0 / float32(rhz))
+							for msec := 0; msec < dur; msec++ {
+								Sp *= rand.Float32()
+								if Sp <= Sint {
+									ss.Spine.States.PreSpike = 1
+									Sp = 1
+								} else {
+									ss.Spine.States.PreSpike = 0
+								}
+
+								ge := float32(0.0)
+								Rp *= rand.Float32()
+								if Rp <= Rint {
+									ge = ss.GeStim
+									Rp = 1
+								}
+								if ss.RGClamp {
+									ge = RGeStimForHz[rhz]
+								}
+
+								ss.NeuronUpdt(msec, ge, 0)
+								ss.LogDefault()
+								if ss.StopNow {
+									ss.Stopped()
+									return
+								}
+							}
+						}
+						ss.Spine.States.PreSpike = 0
+						ss.GraphRun(ss.ISISec)
+					}
+					ss.GraphRun(ss.FinalSecs)
+					ss.LogPhaseDWt(ss.PhaseDWtLog, sphz, rphz)
+					ss.PhaseDWtPlot.GoUpdate()
+				}
+			}
+		}
+	}
 	ss.Stopped()
 }

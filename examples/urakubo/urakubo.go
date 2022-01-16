@@ -108,7 +108,13 @@ type Sim struct {
 	DeltaT       int              `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
 	DeltaTRange  int              `desc:"range for sweep of DeltaT -- actual range is - to +"`
 	DeltaTInc    int              `desc:"increment for sweep of DeltaT"`
-	NReps        int              `desc:"number of repetitions -- depends on Stim type"`
+	DurMsec      int              `desc:"duration for activity window"`
+	SendHz       float32          `desc:"sending firing frequency"`
+	RecvHz       float32          `desc:"receiving firing frequency"`
+	RGClamp      bool             `desc:"use Ge current clamping instead of distrete pulsing for firing rate-based manips, e.g., ThetaErr"`
+	ISISec       float64          `desc:"inter-stimulus-interval in seconds -- between reps"`
+	NReps        int              `desc:"number of repetitions -- takes 100 to produce classic STDP"`
+	FinalSecs    float64          `desc:"number of seconds to run after the manipulation"`
 	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
 	InitBaseline bool             `desc:"use the adapted baseline"`
 	NMDAAxon     bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
@@ -118,23 +124,25 @@ type Sim struct {
 	AK           chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
 	InitWt       float64          `desc:"initial weight value: Trp_AMPA value at baseline"`
 	DWtLog       *etable.Table    `view:"no-inline" desc:"final weight change plot for each condition"`
+	PhaseDWtLog  *etable.Table    `view:"no-inline" desc:"minus-plus final weight change plot for each condition"`
 	Msec100Log   *etable.Table    `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
 	Msec10Log    *etable.Table    `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
 	MsecLog      *etable.Table    `view:"no-inline" desc:"millisecond level log, shows last second"`
 	GenesisLog   *etable.Table    `view:"no-inline" desc:"genesis data"`
 
 	// internal state - view:"-"
-	Msec        int              `inactive:"+" desc:"current cycle of updating"`
-	Win         *gi.Window       `view:"-" desc:"main GUI window"`
-	NetView     *netview.NetView `view:"-" desc:"the network viewer"`
-	ToolBar     *gi.ToolBar      `view:"-" desc:"the master toolbar"`
-	DWtPlot     *eplot.Plot2D    `view:"-" desc:"the plot of dwt"`
-	Msec100Plot *eplot.Plot2D    `view:"-" desc:"the plot at 100 msec scale"`
-	Msec10Plot  *eplot.Plot2D    `view:"-" desc:"the plot at 10 msec scale"`
-	MsecPlot    *eplot.Plot2D    `view:"-" desc:"the plot at msec scale"`
-	GenesisPlot *eplot.Plot2D    `view:"-" desc:"the plot from genesis runs"`
-	IsRunning   bool             `view:"-" desc:"true if sim is running"`
-	StopNow     bool             `view:"-" desc:"flag to stop running"`
+	Msec         int              `inactive:"+" desc:"current cycle of updating"`
+	Win          *gi.Window       `view:"-" desc:"main GUI window"`
+	NetView      *netview.NetView `view:"-" desc:"the network viewer"`
+	ToolBar      *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+	DWtPlot      *eplot.Plot2D    `view:"-" desc:"the plot of dwt"`
+	PhaseDWtPlot *eplot.Plot2D    `view:"-" desc:"the plot of dwt"`
+	Msec100Plot  *eplot.Plot2D    `view:"-" desc:"the plot at 100 msec scale"`
+	Msec10Plot   *eplot.Plot2D    `view:"-" desc:"the plot at 10 msec scale"`
+	MsecPlot     *eplot.Plot2D    `view:"-" desc:"the plot at msec scale"`
+	GenesisPlot  *eplot.Plot2D    `view:"-" desc:"the plot from genesis runs"`
+	IsRunning    bool             `view:"-" desc:"true if sim is running"`
+	StopNow      bool             `view:"-" desc:"flag to stop running"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,
@@ -154,6 +162,7 @@ func (ss *Sim) New() {
 	ss.Params = ParamSets
 	ss.GenesisLog = &etable.Table{}
 	ss.DWtLog = &etable.Table{}
+	ss.PhaseDWtLog = &etable.Table{}
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
@@ -161,7 +170,13 @@ func (ss *Sim) New() {
 	ss.DeltaT = 16
 	ss.DeltaTRange = 50
 	ss.DeltaTInc = 5
-	ss.NReps = 1 // 20
+	ss.RGClamp = true
+	ss.NReps = 1      // 20
+	ss.FinalSecs = .5 // 2
+	ss.DurMsec = 200
+	ss.ISISec = 1
+	ss.SendHz = 50
+	ss.RecvHz = 50
 	ss.Defaults()
 }
 
@@ -186,6 +201,7 @@ func (ss *Sim) Defaults() {
 func (ss *Sim) Config() {
 	ss.ConfigNet(ss.Net)
 	ss.ConfigDWtLog(ss.DWtLog)
+	ss.ConfigPhaseDWtLog(ss.PhaseDWtLog)
 	ss.ConfigTimeLog(ss.MsecLog)
 	ss.ConfigTimeLog(ss.Msec10Log)
 	ss.ConfigTimeLog(ss.Msec100Log)
@@ -483,8 +499,8 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.Params.XAxisCol = "Time"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	// plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Time", eplot.Off, eplot.FixMin, .48, eplot.FixMax, .54)
+	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	// plt.SetColParams("Time", eplot.Off, eplot.FixMin, .48, eplot.FixMax, .54)
 	plt.SetColParams("Ge", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Inet", eplot.Off, eplot.FixMin, -.2, eplot.FixMax, 1)
 	plt.SetColParams("Vm", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
@@ -525,6 +541,15 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	return plt
 }
 
+func (ss *Sim) ResetTimePlots() {
+	ss.MsecLog.SetNumRows(0)
+	ss.MsecPlot.Update()
+	ss.Msec10Log.SetNumRows(0)
+	ss.Msec10Plot.Update()
+	ss.Msec100Log.SetNumRows(0)
+	ss.Msec100Plot.Update()
+}
+
 //////////////////////////////////////////////
 //  DWt Log
 
@@ -561,12 +586,80 @@ func (ss *Sim) ConfigDWtLog(dt *etable.Table) {
 func (ss *Sim) ConfigDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.Params.Title = "Urakubo DWt Plot"
 	plt.Params.XAxisCol = "X"
+	plt.Params.LegendCol = "Y"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -1, eplot.FixMax, 1)
+	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -0.4, eplot.FixMax, 0.4)
 
 	return plt
 }
+
+//////////////////////////////////////////////
+//  PhaseDWt Log
+
+// LogPhaseDWt adds data for current dwt value as function of phase and phase hz levels
+func (ss *Sim) LogPhaseDWt(dt *etable.Table, sphz, rphz []int) {
+	row := dt.Rows
+	if dt.Rows <= row {
+		dt.SetNumRows(row + 1)
+	}
+
+	chl := (float64(sphz[1])/100.0)*(float64(rphz[1])/100.0) - (float64(sphz[0])/100.0)*(float64(rphz[0])/100.0)
+
+	dt.SetCellFloat("CHL", row, float64(chl))
+	dt.SetCellString("Cond", row, fmt.Sprintf("S:%d-%d R:%d-%d", sphz[0], sphz[1], rphz[0], rphz[1]))
+	dt.SetCellFloat("SMhz", row, float64(sphz[0]))
+	dt.SetCellFloat("SPhz", row, float64(sphz[1]))
+	dt.SetCellFloat("RMhz", row, float64(rphz[0]))
+	dt.SetCellFloat("RPhz", row, float64(rphz[1]))
+
+	wt := ss.Spine.States.AMPAR.Trp.Tot
+	dwt := (wt / ss.InitWt) - 1
+
+	dt.SetCellFloat("DWt", row, float64(dwt))
+}
+
+func (ss *Sim) ConfigPhaseDWtLog(dt *etable.Table) {
+	dt.SetMetaData("name", "Urakubo Phase DWt Log")
+	dt.SetMetaData("desc", "Record of final proportion dWt change")
+	dt.SetMetaData("read-only", "true")
+	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+
+	sch := etable.Schema{
+		{"CHL", etensor.FLOAT64, nil, nil},
+		{"Cond", etensor.STRING, nil, nil},
+		{"SMhz", etensor.FLOAT64, nil, nil},
+		{"SPhz", etensor.FLOAT64, nil, nil},
+		{"RMhz", etensor.FLOAT64, nil, nil},
+		{"RPhz", etensor.FLOAT64, nil, nil},
+		{"DWt", etensor.FLOAT64, nil, nil},
+	}
+	dt.SetFromSchema(sch, 0)
+}
+
+func (ss *Sim) ConfigPhaseDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Urakubo Phase DWt Plot"
+	plt.Params.XAxisCol = "CHL"
+	plt.Params.LegendCol = "Cond"
+	plt.Params.Lines = false
+	plt.Params.Points = true
+	plt.SetTable(dt)
+	// order of params: on, fixMin, min, fixMax, max
+	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -0.4, eplot.FixMax, 0.4)
+	plt.SetColParams("CHL", eplot.On, eplot.FixMin, -1, eplot.FixMax, 1)
+
+	return plt
+}
+
+func (ss *Sim) ResetDWtPlot() {
+	ss.DWtLog.SetNumRows(0)
+	ss.DWtPlot.Update()
+	ss.PhaseDWtLog.SetNumRows(0)
+	ss.PhaseDWtPlot.Update()
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////
+// 		Genesis Plots
 
 func (ss *Sim) ConfigGenesisPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.Params.Title = "Urakubo Genesis Data Plot"
@@ -574,24 +667,6 @@ func (ss *Sim) ConfigGenesisPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plo
 	plt.SetTable(dt)
 	return plt
 }
-
-func (ss *Sim) ResetTimePlots() {
-	ss.MsecLog.SetNumRows(0)
-	ss.MsecPlot.Update()
-	ss.Msec10Log.SetNumRows(0)
-	ss.Msec10Plot.Update()
-	ss.Msec100Log.SetNumRows(0)
-	ss.Msec100Plot.Update()
-}
-
-func (ss *Sim) ResetDWtPlots() {
-	ss.DWtLog.SetNumRows(0)
-	ss.DWtPlot.Update()
-
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////
-// 		Genesis Plots
 
 var GeneColMap = map[string]string{
 	"Time":                 "00_Time",
@@ -723,6 +798,9 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 	plt := tv.AddNewTab(eplot.KiT_Plot2D, "DWtPlot").(*eplot.Plot2D)
 	ss.DWtPlot = ss.ConfigDWtPlot(plt, ss.DWtLog)
 
+	plt = tv.AddNewTab(eplot.KiT_Plot2D, "PhaseDWtPlot").(*eplot.Plot2D)
+	ss.PhaseDWtPlot = ss.ConfigPhaseDWtPlot(plt, ss.PhaseDWtLog)
+
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "Msec100Plot").(*eplot.Plot2D)
 	ss.Msec100Plot = ss.ConfigTimePlot(plt, ss.Msec100Log)
 
@@ -767,6 +845,14 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.ResetTimePlots()
+		}
+	})
+
+	tbar.AddAction(gi.ActOpts{Label: "Reset DWt Plot", Icon: "update", Tooltip: "Reset DWt Plot.", UpdateFunc: func(act *gi.Action) {
+		act.SetActiveStateUpdt(!ss.IsRunning)
+	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		if !ss.IsRunning {
+			ss.ResetDWtPlot()
 		}
 	})
 
