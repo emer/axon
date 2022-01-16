@@ -1121,7 +1121,7 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 
 		// important: add other sources of GeRaw here in NMDA driver
 		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, nrn.NMDASyn)
-		ly.Act.NMDA.DGnmda(nrn.NMDA, nrn.VmDend, &nrn.Gnmda)
+		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 
 		// note: each step broken out here so other variants can add extra terms to Raw

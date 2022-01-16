@@ -323,7 +323,7 @@ func (ss *Sim) NeuronUpdt(msec int, ge, gi float32) {
 	nrn.Ge = nrn.GeSyn
 	nrn.Gi = gi
 	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, 1)
-	ly.Act.NMDA.DGnmda(nrn.NMDA, nrn.VmDend, &nrn.Gnmda)
+	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 

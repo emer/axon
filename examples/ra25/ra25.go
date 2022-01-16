@@ -69,17 +69,17 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.Layer.Gi":    "1.1", // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.Layer.FB":    "1.1",
 					"Layer.Inhib.ActAvg.Init": "0.08", // start lower -- 0.04 more reliable than .03
 					"Layer.Inhib.Layer.Bg":    "0.0",  // 0.3 > 0.2 > 0 > 0.4 -- starts to fail at 0.4
-					"Layer.Act.Decay.Glong":   "1.0",  // 0.6
+					"Layer.Act.Decay.Glong":   "0.6",  // 0.6
 					"Layer.Act.Dend.GbarExp":  "0.2",  // 0.2 > 0.1 > 0
 					"Layer.Act.Dend.GbarR":    "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
 					"Layer.Act.Dt.VmDendTau":  "2.81", // 5 > 2.81 -- faster dt results in faster learning but more failures
 					"Layer.Act.Dt.VmSteps":    "2",    // 2 > 3 -- somehow works better
 					"Layer.Act.Dt.GeTau":      "5",
 					"Layer.Act.NMDA.Gbar":     "0.15", //
-					"Layer.Act.NMDA.DGTau":    "1",    // // .15 x 1 or .05 x 3 works..
 					"Layer.Act.GABAB.Gbar":    "0.2",  //
 					"Layer.Act.GABAB.Gbase":   "0.2",  //
 					"Layer.Act.GABAB.GiSpike": "10",   //

@@ -54,7 +54,7 @@ func (ac *ActParams) Defaults() {
 	ac.KNa.Defaults()
 	ac.KNa.On = true // generally beneficial
 	ac.NMDA.Defaults()
-	ac.NMDA.Gbar = 0.03 // 0.3 best.
+	ac.NMDA.Gbar = 0.15 // .15 now -- was 0.3 best.
 	ac.GABAB.Defaults()
 	ac.Attn.Defaults()
 	ac.Update()

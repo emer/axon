@@ -99,19 +99,15 @@ var ParamSets = params.Sets{
 					"Layer.CtxtGeGain":      "0.2", // 0.2 > 0.3 > 0.1
 					"Layer.Inhib.Layer.Gi":  "1.1", // 1.1 > 1.0
 					"Layer.Act.KNa.On":      "true",
-					"Layer.Act.NMDA.Gbar":   "0.03", // larger not better
-					"Layer.Act.GABAB.Gbar":  "0.2",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.2",   // 1.2 > 1.1 maybe > 1.3
-					"Layer.TRC.DriveScale":   "0.15",  // .15 >= .1
-					"Layer.TRC.FullDriveAct": "0.6",   // 0.6 def
-					"Layer.Act.Spike.Tr":     "3",     // 3 is best for ra25..
-					"Layer.Act.GABAB.Gbar":   "0.005", // 0.005 > 0.01 > 0.002 -- sensitive
-					"Layer.Act.NMDA.Gbar":    "0.2",   // 0.1 > .05 > .2
+					"Layer.Inhib.Layer.Gi":   "1.1",  // 1.1 > 1.2 with new GeSyn
+					"Layer.TRC.DriveScale":   "0.15", // .15 >= .1
+					"Layer.TRC.FullDriveAct": "0.6",  // 0.6 def
+					"Layer.Act.Spike.Tr":     "3",    // 1 is best for ra25..
 					"Layer.Act.Decay.Act":    "0.5",
 					"Layer.Act.Decay.Glong":  "1", // clear long
 				}},
