@@ -66,33 +66,22 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.Inhib.AvgTau":           "30",
-					"Layer.Inhib.ActAvg.Init":            "0.15",
-					"Layer.Inhib.ActAvg.Targ":            "0.15",
-					"Layer.Inhib.Layer.Gi":               "1.1", // 1.1 > 1.2 > 1.0
-					"Layer.Act.Gbar.L":                   "0.2", // std
-					"Layer.Act.Decay.Act":                "0.2", // lvis best = .2, .6 good here too
-					"Layer.Act.Decay.Glong":              "0.6",
-					"Layer.Act.Dt.LongAvgTau":            "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":             "0.2", // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":               "3",   // 3 good for 0.2
-					"Layer.Learn.ActAvg.MinLrn":          "0.02",
-					"Layer.Learn.TrgAvgAct.On":           "true", // this is important!
-					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.02 > 0.05 objrec
-					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.01 > 0.005 best for objrec -- needs faster
-					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
-					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
-					"Layer.Learn.RLrate.On":              "true",
-					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 is best
-					"Layer.Learn.RLrate.ActDifThr":       "0.02",  // .05 best on lvis
-					"Layer.Learn.RLrate.Min":             "0.001", // .01 best
+					"Layer.Inhib.Inhib.AvgTau": "30",
+					"Layer.Inhib.ActAvg.Init":  "0.15",
+					"Layer.Inhib.Layer.Gi":     "1.1", // 1.1 > 1.2 > 1.0
+					"Layer.Act.Gbar.L":         "0.2", // std
+					"Layer.Act.Decay.Act":      "0.2", // lvis best = .2, .6 good here too
+					"Layer.Act.Decay.Glong":    "0.6",
+					"Layer.Act.Dt.LongAvgTau":  "20",   // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":   "0.2",  // 0.2 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":     "3",    // 3 good for 0.2
+					"Layer.Act.Dt.VmDendTau":   "2.81", // 5 > 2.81 in ra25
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
 			{Sel: ".Input", Desc: "input layers need more inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.ActAvg.Targ": "0.15",
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
@@ -111,7 +100,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.5",
 					"Layer.Act.Decay.Glong":  "1",   // clear long
 					"Layer.Act.GABAB.Gbar":   "0.2", // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":    "0.6", // .6 > .4 > .2 std -- strange!
+					"Layer.Act.NMDA.Gbar":    "0.6", // .6 > .4 > .2 std -- strange but real!
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{

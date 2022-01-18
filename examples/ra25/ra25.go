@@ -69,21 +69,17 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "1.2",  // 1.1 > 1.2
-					"Layer.Inhib.Layer.FB":       "1.0",  // 1.0 > 0.8 > 1.1+
-					"Layer.Inhib.ActAvg.Init":    "0.04", // 0.8 > 0.4
-					"Layer.Inhib.Layer.Bg":       "0.3",  // 0 > 0.2
-					"Layer.Act.Decay.Glong":      "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":     "0.2",  // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":       "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
-					"Layer.Act.Dend.NMDAinGeSyn": "false",
-					"Layer.Act.Dt.VmDendTau":     "5", // 2.81 > 5
-					"Layer.Act.Dt.VmSteps":       "2", // 2 > 3 -- somehow works better
-					"Layer.Act.Dt.GeTau":         "5",
-					"Layer.Act.NMDA.Gbar":        "0.15", //
-					"Layer.Act.GABAB.Gbar":       "0.2",  // 0.2 > 0.15
-					"Layer.Act.GABAB.Gbase":      "0.2",  //
-					"Layer.Act.GABAB.GiSpike":    "10",   //
+					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.0
+					"Layer.Act.Decay.Glong":   "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp":  "0.2",  // 0.2 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":    "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dt.VmDendTau":  "5",    // 5 > 2.81 here but small effect
+					"Layer.Act.Dt.VmSteps":    "2",    // 2 > 3 -- somehow works better
+					"Layer.Act.Dt.GeTau":      "5",
+					"Layer.Act.NMDA.Gbar":     "0.15", //
+					"Layer.Act.GABAB.Gbar":    "0.2",  // 0.2 > 0.15
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -93,11 +89,11 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.Layer.FB":    "1.0",
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
 					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
 					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
 					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					// "Layer.Act.NMDA.Gbar":     "0.3",  // higher not better
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
