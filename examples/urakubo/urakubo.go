@@ -104,18 +104,17 @@ type Sim struct {
 	NeuronEx     NeuronEx         `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
 	Params       params.Sets      `view:"no-inline" desc:"full collection of param sets"`
 	Stim         Stims            `desc:"what stimulation to drive with"`
+	ISISec       float64          `desc:"inter-stimulus-interval in seconds -- between reps"`
+	NReps        int              `desc:"number of repetitions -- takes 100 to produce classic STDP"`
+	FinalSecs    float64          `def:"20,50,100" desc:"number of seconds to run after the manipulation -- results are strongest after 100, decaying somewhat after that point -- 20 shows similar qualitative results but weaker, 50 is pretty close to 100 -- less than 20 not recommended."`
+	DurMsec      int              `desc:"duration for activity window"`
+	SendHz       float32          `desc:"sending firing frequency"`
+	RecvHz       float32          `desc:"receiving firing frequency"`
 	GeStim       float32          `desc:"stimulating current injection"`
 	DeltaT       int              `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
 	DeltaTRange  int              `desc:"range for sweep of DeltaT -- actual range is - to +"`
 	DeltaTInc    int              `desc:"increment for sweep of DeltaT"`
-	DurMsec      int              `desc:"duration for activity window"`
-	SendHz       float32          `desc:"sending firing frequency"`
-	RecvHz       float32          `desc:"receiving firing frequency"`
 	RGClamp      bool             `desc:"use Ge current clamping instead of distrete pulsing for firing rate-based manips, e.g., ThetaErr"`
-	ISISec       float64          `desc:"inter-stimulus-interval in seconds -- between reps"`
-	NReps        int              `desc:"number of repetitions -- takes 100 to produce classic STDP"`
-	FinalSecs    float64          `def:"20,50,100" desc:"number of seconds to run after the manipulation -- results are strongest after 100, decaying somewhat after that point -- 20 shows similar qualitative results but weaker, 50 is pretty close to 100 -- less than 20 not recommended."`
-	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
 	InitBaseline bool             `desc:"use the adapted baseline"`
 	VmDend       bool             `desc:"use dendritic Vm signal for driving spine channels"`
 	NMDAAxon     bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
@@ -123,7 +122,8 @@ type Sim struct {
 	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
 	VGCC         chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
 	AK           chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
-	InitWt       float64          `desc:"initial weight value: Trp_AMPA value at baseline"`
+	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
+	InitWt       float64          `inactive:"+" desc:"initial weight value: Trp_AMPA value at baseline"`
 	DWtLog       *etable.Table    `view:"no-inline" desc:"final weight change plot for each condition"`
 	PhaseDWtLog  *etable.Table    `view:"no-inline" desc:"minus-plus final weight change plot for each condition"`
 	Msec100Log   *etable.Table    `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
