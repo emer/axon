@@ -19,19 +19,20 @@ func _() {
 	_ = x[GClamp-3]
 	_ = x[STDP-4]
 	_ = x[STDPSweep-5]
-	_ = x[Poisson-6]
-	_ = x[SPoissonRGClamp-7]
-	_ = x[PoissonHzSweep-8]
-	_ = x[PoissonDurSweep-9]
-	_ = x[OpPhaseDurSweep-10]
-	_ = x[ThetaErr-11]
-	_ = x[ThetaErrAll-12]
-	_ = x[StimsN-13]
+	_ = x[STDPPacketSweep-6]
+	_ = x[Poisson-7]
+	_ = x[SPoissonRGClamp-8]
+	_ = x[PoissonHzSweep-9]
+	_ = x[PoissonDurSweep-10]
+	_ = x[OpPhaseDurSweep-11]
+	_ = x[ThetaErr-12]
+	_ = x[ThetaErrAll-13]
+	_ = x[StimsN-14]
 }
 
-const _Stims_name = "BaselineCaTargClampCa1GClampSTDPSTDPSweepPoissonSPoissonRGClampPoissonHzSweepPoissonDurSweepOpPhaseDurSweepThetaErrThetaErrAllStimsN"
+const _Stims_name = "BaselineCaTargClampCa1GClampSTDPSTDPSweepSTDPPacketSweepPoissonSPoissonRGClampPoissonHzSweepPoissonDurSweepOpPhaseDurSweepThetaErrThetaErrAllStimsN"
 
-var _Stims_index = [...]uint8{0, 8, 14, 22, 28, 32, 41, 48, 63, 77, 92, 107, 115, 126, 132}
+var _Stims_index = [...]uint8{0, 8, 14, 22, 28, 32, 41, 56, 63, 78, 92, 107, 122, 130, 141, 147}
 
 func (i Stims) String() string {
 	if i < 0 || i >= Stims(len(_Stims_index)-1) {

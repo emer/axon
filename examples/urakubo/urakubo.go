@@ -114,11 +114,11 @@ type Sim struct {
 	RGClamp      bool             `desc:"use Ge current clamping instead of distrete pulsing for firing rate-based manips, e.g., ThetaErr"`
 	ISISec       float64          `desc:"inter-stimulus-interval in seconds -- between reps"`
 	NReps        int              `desc:"number of repetitions -- takes 100 to produce classic STDP"`
-	FinalSecs    float64          `desc:"number of seconds to run after the manipulation"`
+	FinalSecs    float64          `def:"20,50,100" desc:"number of seconds to run after the manipulation -- results are strongest after 100, decaying somewhat after that point -- 20 shows similar qualitative results but weaker, 50 is pretty close to 100 -- less than 20 not recommended."`
 	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
 	InitBaseline bool             `desc:"use the adapted baseline"`
 	NMDAAxon     bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
-	NMDAGbar     float32          `def:"0,0.03" desc:"strength of NMDA current -- 0.03 default for posterior cortex"`
+	NMDAGbar     float32          `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
 	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
 	VGCC         chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
 	AK           chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
@@ -171,8 +171,8 @@ func (ss *Sim) New() {
 	ss.DeltaTRange = 50
 	ss.DeltaTInc = 5
 	ss.RGClamp = true
-	ss.NReps = 1      // 20
-	ss.FinalSecs = .5 // 2
+	ss.NReps = 1 // 20
+	ss.FinalSecs = 20
 	ss.DurMsec = 200
 	ss.ISISec = 1
 	ss.SendHz = 50

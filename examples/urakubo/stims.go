@@ -34,6 +34,8 @@ const (
 
 	STDPSweep
 
+	STDPPacketSweep
+
 	Poisson
 
 	SPoissonRGClamp
@@ -58,6 +60,7 @@ var StimFuncs = map[Stims]func(){
 	ClampCa1:        ClampCa1Fun,
 	STDP:            STDPFun,
 	STDPSweep:       STDPSweepFun,
+	STDPPacketSweep: STDPPacketSweepFun,
 	Poisson:         PoissonFun,
 	SPoissonRGClamp: SPoissonRGClampFun,
 	PoissonHzSweep:  PoissonHzSweepFun,
@@ -277,6 +280,52 @@ func STDPSweepFun() {
 	ss.Stopped()
 }
 
+// STDPPacket runs a sequence of Dur pre-post spike packets with sweep of
+// pre-post offset in < 1/2 SendHz ISI range, with ISI interval between packets, N reps,
+// and varying the frequency of pre-post firing (X axis).
+func STDPPacketSweepFun() {
+	ss := &TheSim
+
+	isi := int(1000.0 / ss.SendHz)
+	hisi := isi / 2
+	dr := hisi - 5 // allow for lag
+
+	ss.ResetDWtPlot()
+
+	for dt := -dr; dt <= dr; dt++ {
+		rms := hisi
+		sms := hisi + 5 - dt // 5 is lag
+		ss.ResetTimePlots()
+		ss.Init()
+
+		for ri := 0; ri < ss.NReps; ri++ {
+			for msec := 0; msec < ss.DurMsec; msec++ {
+				ims := msec % isi
+				if ims == sms {
+					ss.Spine.States.PreSpike = 1
+				} else {
+					ss.Spine.States.PreSpike = 0
+				}
+				ge := float32(0.0)
+				if ims == rms {
+					ge = ss.GeStim
+				}
+				ss.NeuronUpdt(msec, ge, 0)
+				ss.LogDefault()
+				if ss.StopNow {
+					ss.Stopped()
+					return
+				}
+			}
+		}
+		ss.GraphRun(ss.FinalSecs)
+		ss.LogDWt(ss.DWtLog, float64(dt), float64(ss.SendHz))
+		ss.DWtPlot.GoUpdate()
+	}
+
+	ss.Stopped()
+}
+
 func PoissonFun() {
 	ss := &TheSim
 
@@ -371,8 +420,8 @@ func PoissonHzSweepFun() {
 						ss.Spine.States.PreSpike = 0
 					}
 
-					Rp *= rand.Float32()
 					ge := float32(0.0)
+					Rp *= rand.Float32()
 					if Rp <= Rint {
 						ge = ss.GeStim
 						Rp = 1
