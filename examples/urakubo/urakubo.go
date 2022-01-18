@@ -642,12 +642,13 @@ func (ss *Sim) ConfigPhaseDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Pl
 	plt.Params.Title = "Urakubo Phase DWt Plot"
 	plt.Params.XAxisCol = "CHL"
 	plt.Params.LegendCol = "Cond"
-	plt.Params.Lines = false
-	plt.Params.Points = true
+	plt.Params.Scale = 3
 	plt.SetTable(dt)
+	plt.Params.Points = true
+	plt.Params.Lines = false
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -0.4, eplot.FixMax, 0.4)
-	plt.SetColParams("CHL", eplot.On, eplot.FixMin, -1, eplot.FixMax, 1)
+	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -1, eplot.FixMax, 1)
+	plt.SetColParams("CHL", eplot.Off, eplot.FixMin, -1, eplot.FixMax, 1)
 
 	return plt
 }
