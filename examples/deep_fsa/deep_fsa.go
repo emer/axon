@@ -109,7 +109,9 @@ var ParamSets = params.Sets{
 					"Layer.TRC.FullDriveAct": "0.6",  // 0.6 def
 					"Layer.Act.Spike.Tr":     "3",    // 1 is best for ra25..
 					"Layer.Act.Decay.Act":    "0.5",
-					"Layer.Act.Decay.Glong":  "1", // clear long
+					"Layer.Act.Decay.Glong":  "1",   // clear long
+					"Layer.Act.GABAB.Gbar":   "0.2", // .2 > old: 0.005
+					"Layer.Act.NMDA.Gbar":    "0.6", // .6 > .4 > .2 std -- strange!
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
@@ -1237,7 +1239,7 @@ func (ss *Sim) ConfigRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D 
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Run", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("FirstZero", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0) // default plot
+	plt.SetColParams("FirstZero", eplot.On, eplot.FixMin, -1, eplot.FloatMax, 0) // default plot
 	plt.SetColParams("UnitErr", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("PctErr", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("PctCor", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)

@@ -202,6 +202,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32, cyc int, actm fl
 
 	if !ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
 		nrn.GeSyn = nrn.Ext * ac.Clamp.Ge
+		geExt = 0 // no extra in this case
 	} else {
 		ac.Dt.GeSynFmRaw(geRaw, &nrn.GeSyn, ac.Init.Ge)
 	}
@@ -360,7 +361,7 @@ type SpikeParams struct {
 	RTau     float32 `def:"1.6667" desc:"time constant for decaying Vm down to VmR -- at end of Tr it is set to VmR exactly -- this provides a more realistic shape of the post-spiking Vm which is only relevant for more realistic channels that key off of Vm -- does not otherwise affect standard computation"`
 	Exp      bool    `def:"true" desc:"if true, turn on exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
 	ExpSlope float32 `viewif:"Exp" def:"0.02" desc:"slope in Vm (2 mV = .02 in normalized units) for extra exponential excitatory current that drives Vm rapidly upward for spiking as it gets past its nominal firing threshold (Thr) -- nicely captures the Hodgkin Huxley dynamics of Na and K channels -- uses Brette & Gurstner 2005 AdEx formulation"`
-	ExpThr   float32 `viewif:"Exp" def:"0.8" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
+	ExpThr   float32 `viewif:"Exp" def:"0.9" desc:"membrane potential threshold for actually triggering a spike when using the exponential mechanism"`
 	MaxHz    float32 `def:"180" min:"1" desc:"for translating spiking interval (rate) into rate-code activation equivalent, what is the maximum firing rate associated with a maximum activation value of 1"`
 	ISITau   float32 `def:"5" min:"1" desc:"constant for integrating the spiking interval in estimating spiking rate"`
 	ISIDt    float32 `view:"-" desc:"rate = 1 / tau"`
@@ -374,7 +375,7 @@ func (sk *SpikeParams) Defaults() {
 	sk.RTau = 1.6667
 	sk.Exp = true
 	sk.ExpSlope = 0.02
-	sk.ExpThr = 0.8
+	sk.ExpThr = 0.9
 	sk.MaxHz = 180
 	sk.ISITau = 5
 	sk.Update()

@@ -69,20 +69,21 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.1 > 1.2
-					"Layer.Inhib.Layer.FB":    "1.0",  // 1.0 > 0.8 > 1.1+
-					"Layer.Inhib.ActAvg.Init": "0.08", // 0.8 > 0.4
-					"Layer.Inhib.Layer.Bg":    "0.0",  // 0 > 0.2
-					"Layer.Act.Decay.Glong":   "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":  "0.2",  // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":    "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
-					"Layer.Act.Dt.VmDendTau":  "2.81", // 2.81 > 5
-					"Layer.Act.Dt.VmSteps":    "2",    // 2 > 3 -- somehow works better
-					"Layer.Act.Dt.GeTau":      "5",
-					"Layer.Act.NMDA.Gbar":     "0.15", //
-					"Layer.Act.GABAB.Gbar":    "0.2",  // 0.2 > 0.15
-					"Layer.Act.GABAB.Gbase":   "0.2",  //
-					"Layer.Act.GABAB.GiSpike": "10",   //
+					"Layer.Inhib.Layer.Gi":       "1.2",  // 1.1 > 1.2
+					"Layer.Inhib.Layer.FB":       "1.0",  // 1.0 > 0.8 > 1.1+
+					"Layer.Inhib.ActAvg.Init":    "0.04", // 0.8 > 0.4
+					"Layer.Inhib.Layer.Bg":       "0.3",  // 0 > 0.2
+					"Layer.Act.Decay.Glong":      "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp":     "0.2",  // 0.2 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":       "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dend.NMDAinGeSyn": "false",
+					"Layer.Act.Dt.VmDendTau":     "5", // 2.81 > 5
+					"Layer.Act.Dt.VmSteps":       "2", // 2 > 3 -- somehow works better
+					"Layer.Act.Dt.GeTau":         "5",
+					"Layer.Act.NMDA.Gbar":        "0.15", //
+					"Layer.Act.GABAB.Gbar":       "0.2",  // 0.2 > 0.15
+					"Layer.Act.GABAB.Gbase":      "0.2",  //
+					"Layer.Act.GABAB.GiSpike":    "10",   //
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -95,7 +96,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
 					"Layer.Inhib.Layer.FB":    "1.0",
 					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "2",    // 1 is new minimum..
+					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
 					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
@@ -1086,8 +1087,11 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 		// 	dt.SetCellFloat(ly.Nm+"_FB_AvgMaxG", row, float64(fbpj.GScale.AvgMax))
 		// 	dt.SetCellFloat(ly.Nm+"_FB_Scale", row, float64(fbpj.GScale.Scale))
 		// }
-		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
 		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
+		dt.SetCellFloat(ly.Nm+"_AvgGe", row, float64(ly.Pools[0].Inhib.Ge.Avg))
+		dt.SetCellFloat(ly.Nm+"_MaxGe", row, float64(ly.Pools[0].Inhib.Ge.Max))
+		dt.SetCellFloat(ly.Nm+"_Gi", row, float64(ly.Pools[0].Inhib.Gi))
 		// dt.SetCellFloat(ly.Nm+"_GiMult", row, float64(ly.ActAvg.GiMult))
 		dt.SetCellFloat(ly.Nm+"_AvgDifAvg", row, float64(ly.Pools[0].AvgDif.Avg))
 		dt.SetCellFloat(ly.Nm+"_AvgDifMax", row, float64(ly.Pools[0].AvgDif.Max))
@@ -1126,8 +1130,11 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 		// sch = append(sch, etable.Column{lnm + "_FF_Scale", etensor.FLOAT64, nil, nil})
 		// sch = append(sch, etable.Column{lnm + "_FB_AvgMaxG", etensor.FLOAT64, nil, nil})
 		// sch = append(sch, etable.Column{lnm + "_FB_Scale", etensor.FLOAT64, nil, nil})
-		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_AvgGe", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_MaxGe", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_Gi", etensor.FLOAT64, nil, nil})
 		// sch = append(sch, etable.Column{lnm + "_GiMult", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_AvgDifAvg", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_AvgDifMax", etensor.FLOAT64, nil, nil})
@@ -1153,8 +1160,11 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 		// plt.SetColParams(lnm+"_FF_Scale", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		// plt.SetColParams(lnm+"_FB_AvgMaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		// plt.SetColParams(lnm+"_FB_Scale", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
-		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
+		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"_AvgGe", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"_MaxGe", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams(lnm+"_Gi", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 		// plt.SetColParams(lnm+"_GiMult", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 		plt.SetColParams(lnm+"_AvgDifAvg", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		plt.SetColParams(lnm+"_AvgDifMax", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)

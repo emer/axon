@@ -94,7 +94,7 @@ type Sim struct {
 	ErevI        float32          `min:"0" max:"1" step:"0.01" def:"0.3" desc:"leak reversal (driving) potential -- determines where excitation pulls Vm down to"`
 	Noise        float32          `min:"0" step:"0.01" desc:"the variance parameter for Gaussian noise added to unit activations on every cycle"`
 	KNaAdapt     bool             `desc:"apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time"`
-	NMDAGbar     float32          `def:"0,0.03" desc:"strength of NMDA current -- 0.03 default for posterior cortex"`
+	NMDAGbar     float32          `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
 	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
 	VGCC         chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
 	AK           chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
@@ -138,8 +138,8 @@ func (ss *Sim) Defaults() {
 	ss.UpdtInterval = 10
 	ss.Cycle = 0
 	ss.SpikeHz = 50
-	ss.Ge = 0.7
-	ss.Gi = 1.0
+	ss.Ge = 1.0
+	ss.Gi = 0.8
 	ss.ErevE = 1
 	ss.ErevI = 0.3
 	ss.Noise = 0
@@ -233,11 +233,6 @@ func (ss *Sim) RunCycles() {
 			inputOn = false
 		}
 		// nrn.Noise = float32(ly.Act.Noise.Gen(-1))
-		if inputOn {
-			nrn.Ge = 1
-		} else {
-			nrn.Ge = 0
-		}
 		// nrn.Ge += nrn.Noise // GeNoise
 		nrn.Gi = 0
 		ss.NeuronUpdt(ss.Net, inputOn)
@@ -265,7 +260,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 		} else {
 			nex.InISI += 1
 			if nex.InISI > 1000/ss.SpikeHz {
-				nrn.GeRaw = 1
+				nrn.GeRaw = ss.Ge
 				nex.InISI = 0
 			} else {
 				nrn.GeRaw = 0
@@ -442,10 +437,10 @@ func (ss *Sim) ConfigTstCycPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Cycle", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GeSyn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("GeSyn", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Ge", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Gi", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Inet", eplot.On, eplot.FixMin, -.2, eplot.FixMax, 1)
+	plt.SetColParams("Inet", eplot.Off, eplot.FixMin, -.2, eplot.FixMax, 1)
 	plt.SetColParams("Vm", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Act", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Spike", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)

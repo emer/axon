@@ -8,11 +8,11 @@ import "github.com/goki/mat32"
 
 // VGCCParams control the standard L-type Ca channel
 type VGCCParams struct {
-	Gbar float32 `def:"0.01" desc:"strength of VGCC current"`
+	Gbar float32 `def:"0.12" desc:"strength of VGCC current -- 0.12 value from Urakubo et al (2008) model"`
 }
 
 func (np *VGCCParams) Defaults() {
-	np.Gbar = 0.01
+	np.Gbar = 0.12
 }
 
 // GFmV returns the VGCC conductance as a function of normalized membrane potential

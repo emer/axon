@@ -117,6 +117,7 @@ type Sim struct {
 	FinalSecs    float64          `def:"20,50,100" desc:"number of seconds to run after the manipulation -- results are strongest after 100, decaying somewhat after that point -- 20 shows similar qualitative results but weaker, 50 is pretty close to 100 -- less than 20 not recommended."`
 	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
 	InitBaseline bool             `desc:"use the adapted baseline"`
+	VmDend       bool             `desc:"use dendritic Vm signal for driving spine channels"`
 	NMDAAxon     bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
 	NMDAGbar     float32          `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
 	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
@@ -189,7 +190,7 @@ func (ss *Sim) Defaults() {
 	ss.VGCC.Defaults()
 	ss.VGCC.Gbar = 0.12 // 0.12 matches vgcc jca
 	ss.AK.Defaults()
-	ss.AK.Gbar = 0
+	ss.AK.Gbar = 0 // todo: figure this out!
 	ss.CaTarg.Cyt = 10
 	ss.CaTarg.PSD = 10
 }
@@ -339,7 +340,7 @@ func (ss *Sim) NeuronUpdt(msec int, ge, gi float32) {
 	nrn.Ge = nrn.GeSyn
 	nrn.Gi = gi
 	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, 1)
-	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend) // gbar = 0 if !NMDAAxon
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 
@@ -360,12 +361,12 @@ func (ss *Sim) NeuronUpdt(msec int, ge, gi float32) {
 	}
 	nrn.Gi += nrn.GgabaB
 
+	// todo: Ca from NMDAAxon
 	ss.Spine.Ca.SetInject(float64(nex.VGCCJcaPSD), float64(nex.VGCCJcaCyt))
 
 	psd_pca := float32(1.7927e5 * 0.04) //  SVR_PSD
 	cyt_pca := float32(1.0426e5 * 0.04) // SVR_CYT
 
-	// todo: inject into cell
 	nex.VGCCJcaPSD = -vbio * psd_pca * nex.Gvgcc
 	nex.VGCCJcaCyt = -vbio * cyt_pca * nex.Gvgcc
 
@@ -589,7 +590,7 @@ func (ss *Sim) ConfigDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D 
 	plt.Params.LegendCol = "Y"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -0.4, eplot.FixMax, 0.4)
+	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -0.5, eplot.FixMax, 0.5)
 
 	return plt
 }
@@ -872,7 +873,7 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/urakubo/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
