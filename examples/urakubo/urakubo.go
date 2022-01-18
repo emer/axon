@@ -648,7 +648,7 @@ func (ss *Sim) ConfigPhaseDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Pl
 	plt.Params.Lines = false
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -1, eplot.FixMax, 1)
-	plt.SetColParams("CHL", eplot.Off, eplot.FixMin, -1, eplot.FixMax, 1)
+	plt.SetColParams("CHL", eplot.Off, eplot.FixMin, -1, eplot.FixMax, 2)
 
 	return plt
 }
