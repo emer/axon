@@ -128,4 +128,32 @@ The next plot shows the case for `RGClamp = true`, where the recv unit is curren
 
 You can see single stimulus events in the `MsecPlot` at full temporal resolution by running the `STDP` or `Poisson` Stim cases with `Nreps = 1, ISISec = 0, FinalSecs = 0`, so you just see the one trace.  This can be used for exploring parameter differences, seeing the Ca-driven dynamics etc.
 
+# CaMKII drives everything?
 
+![STDP Chem](results/fig_urakubo22_stdp_100rep_final1_chem.png?raw=true "Signaling state at end of std STDP induction")
+
+The above figure suggests that the final dWt is strongly related to CaMKII levels. 
+
+TODO: measure peak Ca too and plot that!  have to grab it within each spike window.
+
+
+# LFS 900 @ 1Hz = LTD?
+
+One standard way of generating LTD is low-frequency stimulation (LFS) for a large number of repetitions, e.g., 900 @ 1Hz (Dudek & Bear, 1992).  However, this does not produce the appropriate results in the basic Urakubo model:
+
+![LFS 900 1hz](results/fig_urakubo22_lfs900_1hz_ge.1.png?raw=true "LFS 900 reps at 1Hz, should cause LTD but does not")
+
+* `Stim = STDP`
+* `NReps = 900` 
+* `FinalSecs = 1`
+* `ISISec = 1`
+* `GeStim = .1 or .2` // .1 produces 2-5 mV EPSP, .2 = 10 mV
+
+The next step is to add DAPK1 based on Goodell et al. (2017), which showed that this form of LTD is dependent on DAPK1.  They provide a sufficient basis for implementing DAPK1 in the existing model, using existing CaMKII and other enzymatic dynamics.
+
+# References
+
+
+Dudek, S. M., & Bear, M. F. (1992). Homosynaptic long-term depression in area CA1 of hippocampus and effects of N-methyl-D-aspartate receptor blockade. Proceedings of the National Academy of Sciences U. S. A., 89(10), 4363–4367. http://www.ncbi.nlm.nih.gov/pubmed/1350090
+
+Goodell, D. J., Zaegel, V., Coultrap, S. J., Hell, J. W., & Bayer, K. U. (2017). DAPK1 mediates LTD by making CaMKII/GluN2B binding LTP specific. Cell Reports, 19(11), 2231–2243. https://doi.org/10.1016/j.celrep.2017.05.068

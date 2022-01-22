@@ -535,7 +535,9 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("PSD_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("PSD_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_PP1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_CaNact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Trp_AMPAR", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
@@ -568,6 +570,8 @@ func (ss *Sim) LogDWt(dt *etable.Table, x, y float64) {
 	dwt := (wt / ss.InitWt) - 1
 
 	dt.SetCellFloat("DWt", row, float64(dwt))
+
+	ss.Spine.Log(dt, row)
 }
 
 func (ss *Sim) ConfigDWtLog(dt *etable.Table) {
@@ -581,6 +585,9 @@ func (ss *Sim) ConfigDWtLog(dt *etable.Table) {
 		{"Y", etensor.FLOAT64, nil, nil},
 		{"DWt", etensor.FLOAT64, nil, nil},
 	}
+
+	ss.Spine.ConfigLog(&sch)
+
 	dt.SetFromSchema(sch, 0)
 }
 
@@ -591,6 +598,10 @@ func (ss *Sim) ConfigDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D 
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -0.5, eplot.FixMax, 0.5)
+
+	plt.SetColParams("PSD_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_PP1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_CaNact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
 }
