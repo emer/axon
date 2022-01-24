@@ -20,24 +20,41 @@ type CaMVars struct {
 	CaM         float64 `desc:"CaM = Ca calmodulin, [0-3]Ca bound but unbound to CaMKII"`
 	CaM_CaMKII  float64 `desc:"CaMKII-CaM bound together = WBn in Dupont"`
 	CaM_CaMKIIP float64 `desc:"CaMKIIP-CaM bound together, P = phosphorylated at Thr286 = WTn in Dupont"`
+	CaM_DAPK1   float64 `desc:"DAPK1-CaM bound together, de-phosphorylated at S308 by CaN -- this is the active form for GluN2B binding"`
+	CaM_DAPK1P  float64 `desc:"DAPK1-CaM bound together, P = phosphorylated at S308 -- this is the inactive form for GluN2B binding"`
 }
 
 func (cs *CaMVars) Init(vol float64) {
-	cs.CaM = 0
-	cs.CaM_CaMKII = 0
-	cs.CaM_CaMKIIP = 0
+	cs.Zero()
 }
 
 func (cs *CaMVars) Zero() {
 	cs.CaM = 0
 	cs.CaM_CaMKII = 0
 	cs.CaM_CaMKIIP = 0
+	cs.CaM_DAPK1 = 0
+	cs.CaM_DAPK1P = 0
 }
 
 func (cs *CaMVars) Integrate(d *CaMVars) {
 	chem.Integrate(&cs.CaM, d.CaM)
 	chem.Integrate(&cs.CaM_CaMKII, d.CaM_CaMKII)
 	chem.Integrate(&cs.CaM_CaMKIIP, d.CaM_CaMKIIP)
+	chem.Integrate(&cs.CaM_DAPK1, d.CaM_DAPK1)
+	chem.Integrate(&cs.CaM_DAPK1P, d.CaM_DAPK1P)
+}
+
+// AutoPVars hold the auto-phosphorylation variables, for CaMKII and DAPK1
+type AutoPVars struct {
+	Act   float64 `desc:"total active CaMKII"`
+	Total float64 `desc:"total CaMKII across all states"`
+	K     float64 `desc:"rate constant for further autophosphorylation as function of current state"`
+}
+
+func (av *AutoPVars) Zero() {
+	av.Act = 0
+	av.Total = 0
+	av.K = 0
 }
 
 // CaMKIIVars are intracellular Ca-driven signaling states
@@ -46,14 +63,18 @@ func (cs *CaMVars) Integrate(d *CaMVars) {
 // stores N values -- Co = Concentration computed by volume as needed
 type CaMKIIVars struct {
 	Ca          [4]CaMVars `desc:"increasing levels of Ca binding, 0-3"`
-	CaMKII      float64    `desc:"unbound CaMKII = CaM kinase II -- WI in Dupont"`
-	CaMKIIP     float64    `desc:"unbound CaMKII P = phosphorylated at Thr286 -- shown with * in Figure S13 = WA in Dupont"`
+	CaMKII      float64    `desc:"unbound CaMKII = CaM kinase II -- WI in Dupont -- this is the inactive form for NMDA GluN2B binding"`
+	CaMKIIP     float64    `desc:"unbound CaMKII P = phosphorylated at Thr286 -- shown with * in Figure S13 = WA in Dupont -- this is the active form for NMDA GluN2B binding"`
+	DAPK1       float64    `desc:"unbound DAPK1, de-phosphorylated at S308 by CaN -- this is the active form for NMDA GluN2B binding"`
+	DAPK1P      float64    `desc:"unbound DAPK1, P = phosphorylated at S308 -- this is the inactive form for NMDA GluN2B binding"`
 	PP1Thr286C  float64    `desc:"PP1+CaMKIIP complex for PP1Thr286 enzyme reaction"`
 	PP2AThr286C float64    `desc:"PP2A+CaMKIIP complex for PP2AThr286 enzyme reaction"`
+	CaNS308C    float64    `desc:"CaN+DAPK1P complex for CaNS308 enzyme reaction"`
 
-	Active float64 `inactive:"+" desc:"computed total active CaMKII"`
-	Total  float64 `inactive:"+" desc:"computed total CaMKII across all states"`
-	Kauto  float64 `inactive:"+" desc:"rate constant for auto-phosphorylation"`
+	CaMKIIauto AutoPVars `view:"inline" inactive:"+" desc:"auto-phosphorylation state"`
+	DAPK1auto  AutoPVars `view:"inline" inactive:"+" desc:"auto-phosphorylation state"`
+
+	// todo: add competitive GluNRB binding for CaMKII and DAPK1
 }
 
 func (cs *CaMKIIVars) Init(vol float64) {
@@ -66,12 +87,18 @@ func (cs *CaMKIIVars) Init(vol float64) {
 	cs.PP1Thr286C = 0
 	cs.PP2AThr286C = 0
 
+	cs.DAPK1 = chem.CoToN(20, vol) // total guess -- Goodell says "highly enriched"
+	cs.DAPK1P = 0                  // assumption
+	cs.CaNS308C = 0
+
 	if InitBaseline {
 		cs.Ca[0].CaM = chem.CoToN(78.31, vol)    // orig: 80
 		cs.Ca[1].CaM = chem.CoToN(1.002, vol)    // orig: 0
 		cs.Ca[2].CaM = chem.CoToN(0.006682, vol) // orig: 0
 		cs.Ca[3].CaM = chem.CoToN(1.988-05, vol) // orig: 0
 		cs.CaMKII = chem.CoToN(19.37, vol)       // orig: 20
+
+		// todo DAPK1 baselines
 	}
 
 	cs.UpdtActive()
@@ -83,11 +110,16 @@ func (cs *CaMKIIVars) InitCode(vol float64, pre string) {
 		fmt.Printf("\tcs.%s.Ca[%d].CaM = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM, vol))
 		fmt.Printf("\tcs.%s.Ca[%d].CaM_CaMKII = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_CaMKII, vol))
 		fmt.Printf("\tcs.%s.Ca[%d].CaM_CaMKIIP = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_CaMKIIP, vol))
+		fmt.Printf("\tcs.%s.Ca[%d].CaM_DAPK1 = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_DAPK1, vol))
+		fmt.Printf("\tcs.%s.Ca[%d].CaM_DAPK1P = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_DAPK1P, vol))
 	}
 	fmt.Printf("\tcs.%s.CaMKII = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.CaMKII, vol))
 	fmt.Printf("\tcs.%s.CaMKIIP = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.CaMKIIP, vol))
 	fmt.Printf("\tcs.%s.PP1Thr286C = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.PP1Thr286C, vol))
 	fmt.Printf("\tcs.%s.PP2AThr286C = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.PP2AThr286C, vol))
+	fmt.Printf("\tcs.%s.DAPK1 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.DAPK1, vol))
+	fmt.Printf("\tcs.%s.DAPK1P = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.DAPK1P, vol))
+	fmt.Printf("\tcs.%s.CaNS308C = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.CaNS308C, vol))
 }
 
 func (cs *CaMKIIVars) Zero() {
@@ -98,9 +130,11 @@ func (cs *CaMKIIVars) Zero() {
 	cs.CaMKIIP = 0
 	cs.PP1Thr286C = 0
 	cs.PP2AThr286C = 0
-	cs.Active = 0
-	cs.Total = 0
-	cs.Kauto = 0
+	cs.DAPK1 = 0
+	cs.DAPK1P = 0
+	cs.CaNS308C = 0
+	cs.CaMKIIauto.Zero()
+	cs.DAPK1auto.Zero()
 }
 
 func (cs *CaMKIIVars) Integrate(d *CaMKIIVars) {
@@ -111,14 +145,23 @@ func (cs *CaMKIIVars) Integrate(d *CaMKIIVars) {
 	chem.Integrate(&cs.CaMKIIP, d.CaMKIIP)
 	chem.Integrate(&cs.PP1Thr286C, d.PP1Thr286C)
 	chem.Integrate(&cs.PP2AThr286C, d.PP2AThr286C)
+	chem.Integrate(&cs.DAPK1, d.DAPK1)
+	chem.Integrate(&cs.DAPK1P, d.DAPK1P)
+	chem.Integrate(&cs.CaNS308C, d.CaNS308C)
 	cs.UpdtActive()
 }
 
-// UpdtActive updates active, total, and the Kauto auto-phosphorylation rate constant
+// UpdtActive updates active
+func (cs *CaMKIIVars) UpdtActive() {
+	cs.UpdtCaMKIIActive()
+	cs.UpdtDAPK1Active()
+}
+
+// UpdtCaMKIIActive updates active, total, and the Kauto auto-phosphorylation rate constant
 // Code is from genesis_customizing/T286Phos/T286Phos.c and would be impossible to
 // reconstruct without that source (my first guess was wildy off, based only on
 // the supplement)
-func (cs *CaMKIIVars) UpdtActive() {
+func (cs *CaMKIIVars) UpdtCaMKIIActive() {
 	WI := cs.CaMKII
 	WA := cs.CaMKIIP
 
@@ -146,15 +189,50 @@ func (cs *CaMKIIVars) UpdtActive() {
 	if tmp < 0 {
 		tmp = 0
 	}
-	cs.Kauto = 0.29 * tmp
-	cs.Active = cb*WB + WP + ct*WT + ca*WA
-	cs.Total = T
+	cs.CaMKIIauto.K = 0.29 * tmp
+	cs.CaMKIIauto.Act = cb*WB + WP + ct*WT + ca*WA
+	cs.CaMKIIauto.Total = T
+}
+
+// UpdtDAPK1Active updates DAPK1
+func (cs *CaMKIIVars) UpdtDAPK1Active() {
+	WI := cs.DAPK1
+	WA := cs.DAPK1P
+
+	var WB, WT float64
+
+	for i := 0; i < 3; i++ {
+		WB += cs.Ca[i].CaM_DAPK1
+		WT += cs.Ca[i].CaM_DAPK1P
+	}
+	WB += cs.Ca[3].CaM_DAPK1
+	WP := cs.Ca[3].CaM_DAPK1P
+
+	TotalW := WI + WB + WP + WT + WA
+	Wb := WB / TotalW
+	Wp := WP / TotalW
+	Wt := WT / TotalW
+	Wa := WA / TotalW
+	cb := 0.75
+	ct := 0.8
+	ca := 0.8
+
+	T := Wb + Wp + Wt + Wa
+	tmp := T * (-0.22 + 1.826*T + -0.8*T*T)
+	tmp *= 0.75 * (cb*Wb + Wp + ct*Wt + ca*Wa)
+	if tmp < 0 {
+		tmp = 0
+	}
+	cs.DAPK1auto.K = 0.29 * tmp
+	cs.DAPK1auto.Act = cb*WB + WP + ct*WT + ca*WA
+	cs.DAPK1auto.Total = T
 }
 
 func (cs *CaMKIIVars) Log(dt *etable.Table, vol float64, row int, pre string) {
 	dt.SetCellFloat(pre+"CaM", row, chem.CoFmN(cs.Ca[0].CaM, vol))
 	dt.SetCellFloat(pre+"Ca3CaM", row, chem.CoFmN(cs.Ca[3].CaM, vol))
-	dt.SetCellFloat(pre+"CaMKIIact", row, chem.CoFmN(cs.Active, vol))
+	dt.SetCellFloat(pre+"CaMKIIact", row, chem.CoFmN(cs.CaMKIIauto.Act, vol))
+	dt.SetCellFloat(pre+"DAPK1act", row, chem.CoFmN(cs.DAPK1auto.Act, vol))
 	// dt.SetCellFloat(pre+"CaCaM", row, chem.CoFmN(cs.Ca[1].CaM, vol))
 	// dt.SetCellFloat(pre+"Ca2CaM", row, chem.CoFmN(cs.Ca[2].CaM, vol))
 	// dt.SetCellFloat(pre+"Ca0CaM_CaMKII", row, chem.CoFmN(cs.Ca[0].CaM_CaMKII, vol))
@@ -169,6 +247,7 @@ func (cs *CaMKIIVars) ConfigLog(sch *etable.Schema, pre string) {
 	*sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Ca3CaM", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "CaMKIIact", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "DAPK1act", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "CaCaM", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "Ca2CaM", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "Ca0CaM_CaMKII", etensor.FLOAT64, nil, nil})
@@ -248,6 +327,7 @@ type CaMKIIParams struct {
 	CaMCaMKIIP     chem.React   `desc:"9: CaM+CaMKIIP -> CaM-CaMKIIP = kAT_kTA"` // note: typo in SI3 for top PP1, PP2A
 	PP1Thr286      chem.Enz     `desc:"10: PP1 dephosphorylating CaMKIIP"`
 	PP2AThr286     chem.Enz     `desc:"11: PP2A dephosphorylating CaMKIIP"`
+	CaNS308        chem.Enz     `desc:"CaN dephosphorylating DAPK1P"`
 	CaMDiffuse     chem.Diffuse `desc:"CaM diffusion between Cyt and PSD"`
 	CaMKIIDiffuse  chem.Diffuse `desc:"CaMKII diffusion between Cyt and PSD -- symmetric, just WI"`
 	CaMKIIPDiffuse chem.Diffuse `desc:"CaMKIIP diffusion between Cyt and PSD -- asymmetric, everything else"`
@@ -305,7 +385,7 @@ func (cp *CaMKIIParams) StepCaMKII(vol float64, c, d *CaMKIIVars, cCa, pp1, pp2a
 	for i := 0; i < 4; i++ {
 		cc := &c.Ca[i]
 		dc := &d.Ca[i]
-		dc.CaM_CaMKIIP += c.Kauto * cc.CaM_CaMKII // forward only autophos
+		dc.CaM_CaMKIIP += c.CaMKIIauto.K * cc.CaM_CaMKII // forward only autophos
 		// cs, ce, cc, cp -> ds, de, dc, dp
 		cp.PP1Thr286.StepK(kf, cc.CaM_CaMKIIP, pp1, c.PP1Thr286C, cc.CaM_CaMKII, &dc.CaM_CaMKIIP, dpp1, &d.PP1Thr286C, &dc.CaM_CaMKII) // 10
 		if dpp2a != nil {

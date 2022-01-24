@@ -16,7 +16,7 @@ By contrast, the present model is purpose-built in compact, well-documented high
 
 ![Urakubo et al., (2008) Model](figs/fig_urakubo_et_al_08_bcm_sum.png?raw=true "Summary of Urakubo et al., 2008 model, and how it simulates many STDP data points, and behavior for more realistic spike trains can be summarized by a simple linearized BCM-like function")
 
-The above figure summarizes the model and some of the STDP data that it simulates, along with the derivation of the XCAL checkmark linearized BCM-like learning function from more realistic spiking inputs.
+The above figure summarizes the model and some of the STDP data that it simulates, along with the derivation of the XCAL checkmark linearized BCM-like learning function from more realistic spiking inputs.  The detailed CaMKII portion of the model is directly from Dupont et al (2003) with some parameter modifications, while the compartmental spiking model is from Migliore et al. (1999) and Poirazi et al. (2003).  Other signaling cascades were adapted from Bhalla and Iyengar (1999) and earlier cerebellar LTD models by this group: Kuroda et al. (2001); Doi et al. (2005).
 
 In our version, we omitted the full compartmental model in favor of the basic Axon AdEx-style model which just summarizes the Vm curve resulting from a spike.  However, we did have to adjust a few parameters to match the Vm curve from the Genesis model (though these do not appear to make much difference in the end).
 
@@ -149,11 +149,72 @@ One standard way of generating LTD is low-frequency stimulation (LFS) for a larg
 * `ISISec = 1`
 * `GeStim = .1 or .2` // .1 produces 2-5 mV EPSP, .2 = 10 mV
 
-The next step is to add DAPK1 based on Goodell et al. (2017), which showed that this form of LTD is dependent on DAPK1.  They provide a sufficient basis for implementing DAPK1 in the existing model, using existing CaMKII and other enzymatic dynamics.
+# DAPK1 and Competitive NMDA GluN2B binding of CaMKII for LTD
+
+There is recent evidence for a competitive interaction between DAPK1 and CaMKII binding at the GluN2B subunit of the NMDA receptor (Goodell et al., 2017), which is important for the LFS LTD, that the model does not currently capture.  Thus, it is important to add this dynamic, tuning it to capture the LFS LTD effects, and then testing whether this is sufficient to capture the CHL error-driven learning dynamic of primary interest.
+
+## CaMKII binding to GluN2B
+
+The Urakubo model does not directly include the role of CaMKII binding to the GluN2B subunit of the NMDAR (Bayer et al, 2001; Coultrap & Bayer, 2012; Barcomb et al, 2016), but does have indirect accounting for it.  There are two primary effects:
+
+* Concentrating CaMKII at the PSD on the NMDA receptors depends on GluN2B binding.  Only the PSD-localized CaMKII can activate and stabilize AMPAR in the PSD, so this is the primary determinant of LTP effects of CaMKII.  The GluN2B binding is dependent on the CaMKII T286 autophosphorylation (CaMKIIP in the model), which is in turn a complex function of Ca-CaM binding, driven by Ca influx.  This is reflected in the model by the asymmetric diffusion constants for CaMKIIP, which is 10 times larger for Cyt -> PSD than the PSD -> Cyt direction (6 vs. 0.6).
+
+* Altering the CaM binding constants: "modified the binding constants between bare CaM and the inactive subunit in consideration of experimentally observed basal activity (Fukunaga et al., 1993; Kawaguchi and Hirano, 2002). This modification also implicitly represents CaMKII by binding to NMDARs (Bayer et al., 2001; Leonard et al., 2002)".  In their Figure SI3, these are functions 4 and 5, which have forward constants of .0004 μM-1 for the unbound case, which then jumps massively up to 8 μM-1 once there are 2 Ca-CaM already bound, which seems to correspond to the GluN2B binding case.
+
+Thus, to incorporate DAPK1, we need to make both of those factors dependent on a competitive interaction with DAPK1 binding to this same GluN2B site, instead of just automatically having this happen.  We could have a substrate of GluN2B that is consumed by either DAPK1 or CaMKII as a function of their relative strengths?  Not sure how best to do that exactly, but that's the general idea.
+
+## DAPK1 dynamics
+
+Goodell et al. (2017) provide a detailed investigation of DAPK1 dynamics.
+
+* DAPK1/GluN2B binding is homologous to the well-studied CaMKII/GluN2B binding to the same region.
+
+* However, it has the opposite dependence on Ca-CaM binding: inversely proportional -- key question is exactly how.
+
+* DAPK1 autophosphorylates at the S308 site (instead of T286, which is CaMKII spot).  de Diego et al., (2010) suggest that the S308 site is similar to T286 in having multiple additional binding steps, and remains phosphorylated after CaM dissociation (autophosphorylation).  Thus, it is reasonable to apply the same complicated T286 logic here it seems, but there are some twists.
+
+* Per Shani et al. (2001), "It was found that in the absence of Ca2+/CaM, DRP-1 displayed unexpectedly high basal levels of autophosphorylation. The latter was strongly inhibited by Ca2+/CaM concentrations that fully activate the enzyme, suggesting inverse relationships between autophosphorylation and substrate phosphorylation."
+
+    DAPK1P (AutoP) = inactive form for binding to GluN2B (akin to its substrate P. effects) -- this is default state.  Data: mutant S308A cannot autoP, and shows increased substrate binding / apoptosis.  mutant S308D is always autoP (aspartic acid), and prevented apoptosis.
+
+* Auto-P is also inhibitory on further Ca/CaM binding -- forward rate for that is slower.  But there is a kind of positive feedback loop here, where more successful Ca/CaM binding will then result in less AutoP and that makes further Ca/CaM binding possible.  So in presence of Ca, it should  de-AutoP, but relatively slowly at first, then accelerating.
+
+* Thus, overall, DAPK1 is default baseline autophosphorylated.  And it is relatively insensitive to Ca/CaM in this state, because of the inhibited binding constants.  However, when you get some initial CaN dephosphorylation activity, that then allows more Ca-CaM binding, which further inhibits autoP, and you move further away from full autoP.  It is this de-P DAPK1 that is actually "active" catalytically: this is when it binds to GluN2B most strongly.
+
+* So, key point: CaN is "pulling the trigger" for a learning event, after which time DAPK1 effectively measures / integrates the Ca/CaM through a kind of inverse-autophosphorylation process (the opposite form of positive feedback loop present in CaMKII).  This is then the "opponent process" to the CaMKII, both of which are competing for GluN2B.  If DAPK1 wins out, then LTD happens.  If CaMKII wins, then LTP happens.  But critically, both are directly integrating Ca signals through a similar integrative, rate-sensitive dynamic!  However, *if* DAPK1 preferentially reflects the earlier minus phase time frame of activity (i.e., it decays more quickly), then it directly represents this minus phase co-product, while CaMKII gets to be the plus phase.  It could really be that simple and direct!
+
+* CaN is the primary source of dephosphorylation at S308, such that CaN is primary initiator of DAPK1 binding to GluN2B.  CaN is directly activated by Ca/CaM, so it is in a good position to detect the onset of a learning window, opening up the DAPK1 to be sensitive to further Ca levels.  It is unclear (yet) if PP1 and PP2A, which dephosphorylate the T286 site on CaMKII, might also play a similar role on DAPK1, and if not, why not?  PP1 does de-activate CaN however, so indirectly it is having that effect, and it may thus set the overall time window for a given plasticity event.
+
+* In summary, at the most abstract, computational level, CaMKII represents the plus phase $<xy>_s$ signal, and DAPK1 represents the minus phase $<xy>_m$ signal, in terms of time-integrated Ca++ signals across these phases. These two kinases share many properties, but differ critically in their signs (at multiple levels), and this makes them work just like a classic opponent-process: Go - NoGo, excitation vs. inhibition, etc. They both compete at the NMDA GluN2B site, so that is the final locus of the opponent competitive dynamic. If DAPK1 wins, LTD happens.
+If CaMKII wins, LTP happens. If there is a tie, nothing happens! Perfect error-driven learning! Furthermore, both rely on a similar auto-phosphorylation (autoP) dynamic to integrate over recent synaptic activity.
 
 # References
 
+* Barcomb, K., Hell, J. W., Benke, T. A., & Bayer, K. U. (2016). The CaMKII/GluN2B Protein Interaction Maintains Synaptic Strength. *Journal of Biological Chemistry, 291(31),* 16082–16089. https://doi.org/10.1074/jbc.M116.734822
 
-Dudek, S. M., & Bear, M. F. (1992). Homosynaptic long-term depression in area CA1 of hippocampus and effects of N-methyl-D-aspartate receptor blockade. Proceedings of the National Academy of Sciences U. S. A., 89(10), 4363–4367. http://www.ncbi.nlm.nih.gov/pubmed/1350090
+* Bayer, K.-U., De Koninck, P., Leonard, A. S., Hell, J. W., & Schulman, H. (2001). Interaction with the NMDA receptor locks CaMKII in an active conformation. *Nature, 411(6839),* 801–805. https://doi.org/10.1038/35081080
 
-Goodell, D. J., Zaegel, V., Coultrap, S. J., Hell, J. W., & Bayer, K. U. (2017). DAPK1 mediates LTD by making CaMKII/GluN2B binding LTP specific. Cell Reports, 19(11), 2231–2243. https://doi.org/10.1016/j.celrep.2017.05.068
+* Bhalla, U. S., & Iyengar, R. (1999). Emergent properties of networks of biological signaling pathways. *Science.* https://doi.org/10.1126/science.283.5400.381
+
+* Coultrap, S. J., & Bayer, K. U. (2012). CaMKII regulation in information processing and storage. *Trends in Neurosciences, 35(10),* 607–618. https://doi.org/10.1016/j.tins.2012.05.003
+
+* de Diego, I., Kuper, J., Bakalova, N., Kursula, P., & Wilmanns, M. (2010). Molecular basis of the death-associated protein kinase-calcium/calmodulin regulator complex. Science Signaling, 3(106), ra6. https://doi.org/10.1126/scisignal.2000552
+
+* Dudek, S. M., & Bear, M. F. (1992). Homosynaptic long-term depression in area CA1 of hippocampus and effects of N-methyl-D-aspartate receptor blockade. *Proceedings of the National Academy of Sciences U. S. A., 89(10),* 4363–4367. http://www.ncbi.nlm.nih.gov/pubmed/1350090
+
+* Doi, T., Kuroda, S., Michikawa, T., & Kawato, M. (2005). Inositol 1,4,5-trisphosphate-dependent Ca2+ threshold dynamics detect spike timing in cerebellar purkinje cells. *Journal of Neuroscience, 25(4),* 950–961. https://doi.org/10.1523/JNEUROSCI.2727-04.2005
+
+* Dupont, G., Houart, G., & De Koninck, P. (2003). Sensitivity of CaM kinase II to the frequency of Ca2+ oscillations: A simple model. *Cell Calcium, 34(6),* 485–497. https://doi.org/10.1016/S0143-4160(03)00152-0
+
+* Goodell, D. J., Zaegel, V., Coultrap, S. J., Hell, J. W., & Bayer, K. U. (2017). DAPK1 mediates LTD by making CaMKII/GluN2B binding LTP specific. *Cell Reports, 19(11),* 2231–2243. https://doi.org/10.1016/j.celrep.2017.05.068
+
+* Kuroda, S., Schweighofer, N., & Kawato, M. (2001). Exploration of signal transduction pathways in cerebellar long-term depression by kinetic simulation. *Journal of Neuroscience, 21(15),* 5693–5702. https://doi.org/10.1523/JNEUROSCI.21-15-05693.2001
+
+* Migliore, M., Hoffman, D. A., Magee, J. C., & Johnston, D. (1999). Role of an A-Type K+ Conductance in the Back-Propagation of Action Potentials in the Dendrites of Hippocampal Pyramidal Neurons. *Journal of Computational Neuroscience, 7(1),* 5–15. https://doi.org/10.1023/A:1008906225285
+
+* Poirazi, P., Brannon, T., & Mel, B. W. (2003). Arithmetic of Subthreshold Synaptic Summation in a Model CA1 Pyramidal Cell. *Neuron, 37(6),* 977–987. https://doi.org/10.1016/S0896-6273(03)00148-X
+
+* Shani, G., Henis-Korenblit, S., Jona, G., Gileadi, O., Eisenstein, M., Ziv, T., Admon, A., & Kimchi, A. (2001). Autophosphorylation restrains the apoptotic activity of DRP-1 kinase by controlling dimerization and calmodulin binding. The EMBO Journal, 20(5), 1099–1113. https://doi.org/10.1093/emboj/20.5.1099
+
+* Urakubo, H., Honda, M., Froemke, R. C., & Kuroda, S. (2008). Requirement of an allosteric kinetics of NMDA receptors for spike timing-dependent plasticity. *The Journal of Neuroscience, 28(13),* 3310–3323. http://www.ncbi.nlm.nih.gov/pubmed/18367598
+
