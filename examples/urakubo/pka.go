@@ -61,22 +61,23 @@ func (ps *PKAVars) Init(vol float64) {
 
 	if InitBaseline {
 		// All vals below from 500 sec baseline
-		ps.AC1act = chem.CoToN(0.0002385, vol)
-		ps.CAMP = chem.CoToN(0.004477, vol)
-		ps.R2C2 = chem.CoToN(1.982, vol)
-		ps.R2C2_B = chem.CoToN(0.01775, vol)
-		ps.R2C2_BB = chem.CoToN(3.973e-05, vol)
-		ps.R2C2_AB = chem.CoToN(3.179e-05, vol)
-		ps.R2C2_ABB = chem.CoToN(1.423e-07, vol)
-		ps.R2C2_4 = chem.CoToN(1.274e-10, vol)
 
-		ps.R2C_3 = chem.CoToN(6.304e-07, vol)
-		ps.R2C_4 = chem.CoToN(5.645e-08, vol)
-		ps.R2_3 = chem.CoToN(6.981e-07, vol)
-		ps.R2_4 = chem.CoToN(6.251e-06, vol)
-		ps.PKAact = chem.CoToN(0.04515, vol)
-		ps.AC1ATPC = chem.CoToN(2.335e+05, vol)
-		ps.PDEcAMPC = chem.CoToN(0.0004477, vol)
+		ps.AC1act = chem.CoToN(0.0004371, vol)
+		ps.CAMP = chem.CoToN(0.005518, vol)
+		ps.R2C2 = chem.CoToN(1.978, vol)
+		ps.R2C2_B = chem.CoToN(0.02181, vol)
+		ps.R2C2_BB = chem.CoToN(6.006e-05, vol)
+		ps.R2C2_AB = chem.CoToN(4.814e-05, vol)
+		ps.R2C2_ABB = chem.CoToN(2.635e-07, vol)
+		ps.R2C2_4 = chem.CoToN(2.859e-10, vol)
+
+		ps.R2C_3 = chem.CoToN(1.162e-06, vol)
+		ps.R2C_4 = chem.CoToN(1.271e-07, vol)
+		ps.R2_3 = chem.CoToN(1.295e-06, vol)
+		ps.R2_4 = chem.CoToN(1.423e-05, vol)
+		ps.PKAact = chem.CoToN(0.04461, vol)
+		ps.AC1ATPC = chem.CoToN(3.832e+05, vol)
+		ps.PDEcAMPC = chem.CoToN(0.0005518, vol)
 	}
 }
 
@@ -296,8 +297,8 @@ func (cp *PKAParams) StepDiffuse(c, d *PKAState) {
 }
 
 // Step does full PKA updating, c=current, d=delta
-func (cp *PKAParams) Step(c, d *PKAState, cCaM, dCaM *CaMKIIState) {
-	cp.StepPKA(CytVol, &c.Cyt, &d.Cyt, cCaM.Cyt.Ca[3].CaM, &dCaM.Cyt.Ca[3].CaM)
-	cp.StepPKA(PSDVol, &c.PSD, &d.PSD, cCaM.PSD.Ca[3].CaM, &dCaM.PSD.Ca[3].CaM)
+func (cp *PKAParams) Step(c, d *PKAState, cCaM, dCaM *CaMState) {
+	cp.StepPKA(CytVol, &c.Cyt, &d.Cyt, cCaM.Cyt.CaM[3], &dCaM.Cyt.CaM[3])
+	cp.StepPKA(PSDVol, &c.PSD, &d.PSD, cCaM.PSD.CaM[3], &dCaM.PSD.CaM[3])
 	cp.StepDiffuse(c, d)
 }

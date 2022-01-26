@@ -25,7 +25,9 @@ func init() {
 // Total state vars: 2 + 32 + 14 + 32 + 14 + 1 = 95
 type CaSigState struct {
 	Ca     CaState     `desc:"Ca state"`
+	CaM    CaMState    `desc:"CaM calmodulin state"`
 	CaMKII CaMKIIState `desc:"CaMKII state"`
+	DAPK1  DAPK1State  `desc:"DAPK1 state"`
 	CaN    CaNState    `desc:"CaN = calcineurin state"`
 	PKA    PKAState    `desc:"PKA = protein kinase A"`
 	PP1    PP1State    `desc:"PP1 = protein phosphatase 1"`
@@ -34,7 +36,9 @@ type CaSigState struct {
 
 func (cs *CaSigState) Init() {
 	cs.Ca.Init()
+	cs.CaM.Init()
 	cs.CaMKII.Init()
+	cs.DAPK1.Init()
 	cs.CaN.Init()
 	cs.PKA.Init()
 	cs.PP1.Init()
@@ -42,12 +46,14 @@ func (cs *CaSigState) Init() {
 	cs.PP2A = chem.CoToN(0.03, CytVol)
 
 	if InitBaseline {
-		cs.PP2A = chem.CoToN(0.0273, CytVol) // 0.03 orig
+		cs.PP2A = chem.CoToN(0.02239, CytVol)
 	}
 }
 
 func (cs *CaSigState) InitCode() {
+	cs.CaM.InitCode()
 	cs.CaMKII.InitCode()
+	cs.DAPK1.InitCode()
 	cs.CaN.InitCode()
 	cs.PKA.InitCode()
 	cs.PP1.InitCode()
@@ -57,7 +63,9 @@ func (cs *CaSigState) InitCode() {
 
 func (cs *CaSigState) Zero() {
 	cs.Ca.Zero()
+	cs.CaM.Zero()
 	cs.CaMKII.Zero()
+	cs.DAPK1.Zero()
 	cs.CaN.Zero()
 	cs.PKA.Zero()
 	cs.PP1.Zero()
@@ -66,7 +74,9 @@ func (cs *CaSigState) Zero() {
 
 func (cs *CaSigState) Integrate(d *CaSigState) {
 	cs.Ca.Integrate(&d.Ca)
+	cs.CaM.Integrate(&d.CaM)
 	cs.CaMKII.Integrate(&d.CaMKII)
+	cs.DAPK1.Integrate(&d.DAPK1)
 	cs.CaN.Integrate(&d.CaN)
 	cs.PKA.Integrate(&d.PKA)
 	cs.PP1.Integrate(&d.PP1)
@@ -75,7 +85,9 @@ func (cs *CaSigState) Integrate(d *CaSigState) {
 
 func (cs *CaSigState) Log(dt *etable.Table, row int) {
 	cs.Ca.Log(dt, row)
+	cs.CaM.Log(dt, row)
 	cs.CaMKII.Log(dt, row)
+	cs.DAPK1.Log(dt, row)
 	cs.CaN.Log(dt, row)
 	cs.PKA.Log(dt, row)
 	cs.PP1.Log(dt, row)
@@ -83,7 +95,9 @@ func (cs *CaSigState) Log(dt *etable.Table, row int) {
 
 func (cs *CaSigState) ConfigLog(sch *etable.Schema) {
 	cs.Ca.ConfigLog(sch)
+	cs.CaM.ConfigLog(sch)
 	cs.CaMKII.ConfigLog(sch)
+	cs.DAPK1.ConfigLog(sch)
 	cs.CaN.ConfigLog(sch)
 	cs.PKA.ConfigLog(sch)
 	cs.PP1.ConfigLog(sch)
@@ -154,7 +168,9 @@ func (ss *SpineState) ConfigLog(sch *etable.Schema) {
 type Spine struct {
 	NMDAR  NMDARParams  `desc:"NMDA receptors"`
 	Ca     CaParams     `desc:"Ca buffering and diffusion parameters"`
+	CaM    CaMParams    `desc:"CaM calmodulin Ca binding parameters"`
 	CaMKII CaMKIIParams `desc:"CaMKII parameters"`
+	DAPK1  DAPK1Params  `desc:"DAPK1 parameters"`
 	CaN    CaNParams    `desc:"CaN calcineurin parameters"`
 	PKA    PKAParams    `desc:"PKA = protein kinase A parameters"`
 	PP1    PP1Params    `desc:"PP1 = protein phosphatase 1 parameters"`
@@ -167,7 +183,9 @@ type Spine struct {
 func (sp *Spine) Defaults() {
 	sp.NMDAR.Defaults()
 	sp.Ca.Defaults()
+	sp.CaM.Defaults()
 	sp.CaMKII.Defaults()
+	sp.DAPK1.Defaults()
 	sp.CaN.Defaults()
 	sp.PKA.Defaults()
 	sp.PP1.Defaults()
@@ -178,7 +196,7 @@ func (sp *Spine) Defaults() {
 func (sp *Spine) Init() {
 	sp.States.Init()
 	sp.Deltas.Zero()
-	sp.Ca.Init()
+	sp.Ca.Init() // drivers
 }
 
 func (sp *Spine) InitCode() {
@@ -198,10 +216,12 @@ func (sp *Spine) Step() {
 		}
 	}
 
-	sp.NMDAR.Step(&sp.States.NMDAR, vms, chem.CoFmN(sp.States.CaSig.Ca.PSD, PSDVol), chem.CoFmN(sp.States.CaSig.CaMKII.PSD.Ca[2].CaM, PSDVol), chem.CoFmN(sp.States.CaSig.CaMKII.PSD.Ca[3].CaM, PSDVol), preSpike, &sp.Deltas.CaSig.Ca.PSD)
-	sp.CaMKII.Step(&sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, sp.States.CaSig.PP2A, &sp.Deltas.CaSig.PP2A)
-	sp.CaN.Step(&sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
-	sp.PKA.Step(&sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII)
+	sp.NMDAR.Step(&sp.States.NMDAR, vms, chem.CoFmN(sp.States.CaSig.Ca.PSD, PSDVol), chem.CoFmN(sp.States.CaSig.CaM.PSD.CaM[2], PSDVol), chem.CoFmN(sp.States.CaSig.CaM.PSD.CaM[3], PSDVol), preSpike, &sp.Deltas.CaSig.Ca.PSD)
+	sp.CaM.Step(&sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
+	sp.CaMKII.Step(&sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, sp.States.CaSig.PP2A, &sp.Deltas.CaSig.PP2A)
+	sp.DAPK1.Step(&sp.States.CaSig.DAPK1, &sp.Deltas.CaSig.DAPK1, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN)
+	sp.CaN.Step(&sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
+	sp.PKA.Step(&sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM)
 	sp.PP1.Step(&sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, &sp.States.CaSig.PKA, &sp.Deltas.CaSig.PKA, &sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, sp.States.CaSig.PP2A, &sp.Deltas.CaSig.PP2A)
 	sp.Ca.Step(&sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)
 	sp.AMPAR.Step(&sp.States.AMPAR, &sp.Deltas.AMPAR, &sp.States.CaSig, sp.States.CaSig.PP2A)

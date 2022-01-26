@@ -167,17 +167,17 @@ func (ss *Sim) New() {
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
-	ss.Stim = STDP
+	ss.Stim = Poisson // STDP
+	ss.ISISec = .1    // 1
+	ss.NReps = 10     // 20
+	ss.FinalSecs = 0  // 20
+	ss.DurMsec = 200
+	ss.SendHz = 50
+	ss.RecvHz = 50
 	ss.DeltaT = 16
 	ss.DeltaTRange = 50
 	ss.DeltaTInc = 5
 	ss.RGClamp = true
-	ss.NReps = 1 // 20
-	ss.FinalSecs = 20
-	ss.DurMsec = 200
-	ss.ISISec = 1
-	ss.SendHz = 50
-	ss.RecvHz = 50
 	ss.Defaults()
 }
 
@@ -536,9 +536,11 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_DAPK1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_PP1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaNact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Cyt_DAPK1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Trp_AMPAR", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
@@ -629,6 +631,8 @@ func (ss *Sim) LogPhaseDWt(dt *etable.Table, sphz, rphz []int) {
 	dwt := (wt / ss.InitWt) - 1
 
 	dt.SetCellFloat("DWt", row, float64(dwt))
+
+	ss.Spine.Log(dt, row)
 }
 
 func (ss *Sim) ConfigPhaseDWtLog(dt *etable.Table) {
@@ -646,6 +650,9 @@ func (ss *Sim) ConfigPhaseDWtLog(dt *etable.Table) {
 		{"RPhz", etensor.FLOAT64, nil, nil},
 		{"DWt", etensor.FLOAT64, nil, nil},
 	}
+
+	ss.Spine.ConfigLog(&sch)
+
 	dt.SetFromSchema(sch, 0)
 }
 
@@ -660,6 +667,10 @@ func (ss *Sim) ConfigPhaseDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Pl
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("DWt", eplot.On, eplot.FixMin, -1, eplot.FixMax, 1)
 	plt.SetColParams("CHL", eplot.Off, eplot.FixMin, -1, eplot.FixMax, 2)
+
+	plt.SetColParams("PSD_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_PP1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_CaNact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
 }

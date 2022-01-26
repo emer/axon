@@ -53,13 +53,13 @@ func (cs *CaNCaMVars) Init(vol float64) {
 
 	if InitBaseline {
 		// All vals below from 500 sec baseline
-		cs.Ca[0].CaN = chem.CoToN(1.305, vol)
-		cs.Ca[0].CaNCaM = chem.CoToN(0.0279, vol)
-		cs.Ca[1].CaN = chem.CoToN(1.305, vol)
-		cs.Ca[1].CaNCaM = chem.CoToN(0.0279, vol)
-		cs.Ca[2].CaN = chem.CoToN(0.3263, vol)
-		cs.Ca[2].CaNCaM = chem.CoToN(0.006977, vol)
-		cs.CaNact = chem.CoToN(0.006977, vol)
+		cs.Ca[0].CaN = chem.CoToN(1.284, vol)
+		cs.Ca[0].CaNCaM = chem.CoToN(0.04952, vol)
+		cs.Ca[1].CaN = chem.CoToN(1.284, vol)
+		cs.Ca[1].CaNCaM = chem.CoToN(0.04953, vol)
+		cs.Ca[2].CaN = chem.CoToN(0.321, vol)
+		cs.Ca[2].CaNCaM = chem.CoToN(0.01238, vol)
+		cs.CaNact = chem.CoToN(0.01238, vol)
 	}
 }
 
@@ -174,8 +174,8 @@ func (cp *CaNParams) StepDiffuse(c, d *CaNState) {
 }
 
 // Step does full CaN updating, c=current, d=delta
-func (cp *CaNParams) Step(c, d *CaNState, cCaM, dCaM *CaMKIIState, cCa, dCa *CaState) {
-	cp.StepCaN(CytVol, &c.Cyt, &d.Cyt, cCa.Cyt, cCaM.Cyt.Ca[3].CaM, &dCa.Cyt, &dCaM.Cyt.Ca[3].CaM)
-	cp.StepCaN(PSDVol, &c.PSD, &d.PSD, cCa.PSD, cCaM.PSD.Ca[3].CaM, &dCa.PSD, &dCaM.PSD.Ca[3].CaM)
+func (cp *CaNParams) Step(c, d *CaNState, cCaM, dCaM *CaMState, cCa, dCa *CaState) {
+	cp.StepCaN(CytVol, &c.Cyt, &d.Cyt, cCa.Cyt, cCaM.Cyt.CaM[3], &dCa.Cyt, &dCaM.Cyt.CaM[3])
+	cp.StepCaN(PSDVol, &c.PSD, &d.PSD, cCa.PSD, cCaM.PSD.CaM[3], &dCa.PSD, &dCaM.PSD.CaM[3])
 	cp.StepDiffuse(c, d)
 }

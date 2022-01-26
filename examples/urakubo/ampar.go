@@ -106,28 +106,28 @@ func (as *AMPARState) Init() {
 	as.Scaffold = 0
 
 	if InitBaseline {
-		as.Scaffold = chem.CoToN(2.234, PSDVol)
+		as.Scaffold = chem.CoToN(2.279, PSDVol)
 
 		// All vals below from 500 sec baseline
 		vol := float64(CytVol)
-		as.Int.DD = chem.CoToN(0.8335, vol)
-		as.Int.PD = chem.CoToN(4.916, vol)
-		as.Int.DP = chem.CoToN(0.05513, vol)
-		as.Int.PP = chem.CoToN(0.3207, vol)
-		as.Mbr.DD = chem.CoToN(0.002045, vol)
-		as.Mbr.PD = chem.CoToN(0.3199, vol)
-		as.Mbr.DP = chem.CoToN(0.0002025, vol)
-		as.Mbr.PP = chem.CoToN(0.02452, vol)
+		as.Int.DD = chem.CoToN(0.9131, vol)
+		as.Int.PD = chem.CoToN(4.853, vol)
+		as.Int.DP = chem.CoToN(0.06488, vol)
+		as.Int.PP = chem.CoToN(0.3407, vol)
+		as.Mbr.DD = chem.CoToN(0.002103, vol)
+		as.Mbr.PD = chem.CoToN(0.2922, vol)
+		as.Mbr.DP = chem.CoToN(0.0002223, vol)
+		as.Mbr.PP = chem.CoToN(0.02386, vol)
 
 		vol = PSDVol
-		as.PSD.DD = chem.CoToN(0.0379, vol)
-		as.PSD.PD = chem.CoToN(0.2744, vol)
-		as.PSD.DP = chem.CoToN(0.004491, vol)
-		as.PSD.PP = chem.CoToN(0.02951, vol)
-		as.Trp.DD = chem.CoToN(0.2388, vol)
-		as.Trp.PD = chem.CoToN(1.09, vol)
-		as.Trp.DP = chem.CoToN(0.07655, vol)
-		as.Trp.PP = chem.CoToN(0.305, vol)
+		as.PSD.DD = chem.CoToN(0.03938, vol)
+		as.PSD.PD = chem.CoToN(0.2455, vol)
+		as.PSD.DP = chem.CoToN(0.004974, vol)
+		as.PSD.PP = chem.CoToN(0.02832, vol)
+		as.Trp.DD = chem.CoToN(0.2606, vol)
+		as.Trp.PD = chem.CoToN(1.03, vol)
+		as.Trp.DP = chem.CoToN(0.08482, vol)
+		as.Trp.PP = chem.CoToN(0.3454, vol)
 	}
 
 	as.Int.Total()
@@ -285,10 +285,10 @@ func (ap *AMPARParams) Defaults() {
 // Step does full AMPAR updating, c=current, n=next
 // based on current Ca signaling state
 func (ap *AMPARParams) Step(c, d *AMPARState, cas *CaSigState, pp2a float64) {
-	ap.Phos.StepP(&c.Int, &d.Int, CytVol, cas.CaMKII.Cyt.CaMKIIauto.Act, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
-	ap.Phos.StepP(&c.Mbr, &d.Mbr, CytVol, cas.CaMKII.Cyt.CaMKIIauto.Act, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
-	ap.Phos.StepP(&c.Trp, &d.Trp, PSDVol, cas.CaMKII.PSD.CaMKIIauto.Act, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
-	ap.Phos.StepP(&c.PSD, &d.PSD, PSDVol, cas.CaMKII.PSD.CaMKIIauto.Act, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
+	ap.Phos.StepP(&c.Int, &d.Int, CytVol, cas.CaMKII.Cyt.Auto.Act, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Mbr, &d.Mbr, CytVol, cas.CaMKII.Cyt.Auto.Act, cas.CaN.Cyt.CaNact, cas.PKA.Cyt.PKAact, cas.PP1.Cyt.PP1act)
+	ap.Phos.StepP(&c.Trp, &d.Trp, PSDVol, cas.CaMKII.PSD.Auto.Act, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
+	ap.Phos.StepP(&c.PSD, &d.PSD, PSDVol, cas.CaMKII.PSD.Auto.Act, cas.CaN.PSD.CaNact, cas.PKA.PSD.PKAact, cas.PP1.PSD.PP1act)
 
 	ap.Phos.StepPP2A(&c.Int, &d.Int, CytVol, pp2a) // Cyt only
 	ap.Phos.StepPP2A(&c.Mbr, &d.Mbr, CytVol, pp2a) // Cyt only

@@ -115,6 +115,7 @@ The Y axis is the DWt result of the model. If the model was perfectly capturing 
 ![ThetaErr RSPk 200ms](results/fig_urakubo22_thetaerr_rspk_200ms_final100_10rep.png?raw=true "Theta (200 msec) packets of pre - post activity at different rates -- X is Recv Hz, Send Hz are different lines as shown in legend -- recv unit is driven by punctate spikes")
 
 * `Stim = ThetaErr`
+* `ISISec = 1`
 * `NReps = 10` 
 * `FinalSecs = 100`
 * `DurMsec = 200`
@@ -147,6 +148,7 @@ One standard way of generating LTD is low-frequency stimulation (LFS) for a larg
 * `NReps = 900` 
 * `FinalSecs = 1`
 * `ISISec = 1`
+* `DeltaT = 0` // key!
 * `GeStim = .1 or .2` // .1 produces 2-5 mV EPSP, .2 = 10 mV
 
 # DAPK1 and Competitive NMDA GluN2B binding of CaMKII for LTD

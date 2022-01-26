@@ -332,6 +332,7 @@ func PoissonFun() {
 	Sint := mat32.Exp(-1000.0 / ss.SendHz)
 	Rint := mat32.Exp(-1000.0 / ss.RecvHz)
 
+	tmsec := 0
 	for ri := 0; ri < ss.NReps; ri++ {
 		Sp := float32(1)
 		Rp := float32(1)
@@ -352,11 +353,12 @@ func PoissonFun() {
 				Rp = 1
 			}
 
-			ss.NeuronUpdt(msec, ge, 0)
+			ss.NeuronUpdt(tmsec, ge, 0)
 			ss.LogDefault()
 			if ss.StopNow {
 				break
 			}
+			tmsec++
 		}
 		ss.Spine.States.PreSpike = 0
 		ss.GraphRun(ss.ISISec)
