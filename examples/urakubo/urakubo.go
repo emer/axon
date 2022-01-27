@@ -41,8 +41,14 @@ func main() {
 // LogPrec is precision for saving float values in logs -- requires 6 not 4!
 const LogPrec = 6
 
-// InitBaseline = use iterated baseline for initialization
+// InitBaseline = use 500 sec pre-compiled baseline for initialization
+// Set from Sim var -- global for easy access.
 var InitBaseline = true
+
+// UseDAPK1 = use the DAPK1 competitive GluNR2B binding (departs from standard
+// Urakubo -- otherwise the same)
+// Set from Sim var -- global for easy access.
+var UseDAPK1 = false
 
 // ParamSets for basic parameters
 // Base is always applied, and others can be optionally selected to apply on top of that
@@ -116,6 +122,8 @@ type Sim struct {
 	DeltaTInc    int              `desc:"increment for sweep of DeltaT"`
 	RGClamp      bool             `desc:"use Ge current clamping instead of distrete pulsing for firing rate-based manips, e.g., ThetaErr"`
 	InitBaseline bool             `desc:"use the adapted baseline"`
+	UseDAPK1     bool             `desc:"use the DAPK1 competitive GluNR2B binding (departs from standard Urakubo -- otherwise the same)"`
+	CaNDAPK1     float64          `desc:"Km for the CaM dephosphorylation of DAPK1"`
 	VmDend       bool             `desc:"use dendritic Vm signal for driving spine channels"`
 	NMDAAxon     bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
 	NMDAGbar     float32          `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
@@ -156,6 +164,7 @@ var TheSim Sim
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.InitBaseline = true
+	ss.UseDAPK1 = true
 	ss.Spine.Defaults()
 	ss.Spine.Init()
 	ss.InitWt = ss.Spine.States.AMPAR.Trp.Tot
@@ -168,9 +177,9 @@ func (ss *Sim) New() {
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
 	ss.Stim = Poisson // STDP
-	ss.ISISec = .1    // 1
+	ss.ISISec = 1     // 1
 	ss.NReps = 10     // 20
-	ss.FinalSecs = 0  // 20
+	ss.FinalSecs = 20 // 20
 	ss.DurMsec = 200
 	ss.SendHz = 50
 	ss.RecvHz = 50
@@ -279,7 +288,9 @@ func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
 // and resets the epoch log table
 func (ss *Sim) Init() {
 	InitBaseline = ss.InitBaseline
+	UseDAPK1 = ss.UseDAPK1
 	ss.Spine.Defaults()
+	ss.Spine.DAPK1.CaNSer308.SetKmVol(ss.CaNDAPK1, CytVol, 1.34, 0.335) // 10: 11 μM Km = 0.0031724
 	ss.Spine.Init()
 	ss.NeuronEx.Init()
 	ss.Msec = 0

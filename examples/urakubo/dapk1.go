@@ -19,6 +19,7 @@ import (
 type CaDAPK1Vars struct {
 	CaM_DAPK1  float64 `desc:"DAPK1-CaM bound together, de-phosphorylated at S308 by CaN -- this is the active form for GluN2B and CaM binding -- equating to WTn in Dupont"`
 	CaM_DAPK1P float64 `desc:"DAPK1-CaM bound together, P = phosphorylated at S308 -- this is the inactive form for GluN2B and CaM binding -- equating to WBn in Dupont"`
+	N2B_DAPK1  float64 `desc:"DAPK1 (noP) bound to NMDA N2B (only for PSD compartment)"`
 }
 
 func (cs *CaDAPK1Vars) Init(vol float64) {
@@ -28,11 +29,13 @@ func (cs *CaDAPK1Vars) Init(vol float64) {
 func (cs *CaDAPK1Vars) Zero() {
 	cs.CaM_DAPK1 = 0
 	cs.CaM_DAPK1P = 0
+	cs.N2B_DAPK1 = 0
 }
 
 func (cs *CaDAPK1Vars) Integrate(d *CaDAPK1Vars) {
 	chem.Integrate(&cs.CaM_DAPK1, d.CaM_DAPK1)
 	chem.Integrate(&cs.CaM_DAPK1P, d.CaM_DAPK1P)
+	chem.Integrate(&cs.N2B_DAPK1, d.N2B_DAPK1)
 }
 
 // DAPK1Vars are intracellular Ca-driven signaling states
@@ -43,6 +46,7 @@ type DAPK1Vars struct {
 	Ca         [4]CaDAPK1Vars `desc:"increasing levels of Ca binding, 0-3"`
 	DAPK1      float64        `desc:"unbound DAPK1, de-phosphorylated at S308 by CaN -- this is the active form for NMDA GluN2B and CaM binding"`
 	DAPK1P     float64        `desc:"unbound DAPK1, P = phosphorylated at S308 -- this is the inactive form for NMDA GluN2B and CaM binding"`
+	N2B_DAPK1  float64        `desc:"DAPK1 (noP) bound to N2B (only for PSD compartment)"`
 	CaNSer308C float64        `desc:"CaN+DAPK1P complex for CaNSer308 enzyme reaction"`
 	Auto       AutoPVars      `view:"inline" inactive:"+" desc:"auto-phosphorylation state"`
 	// todo: add competitive GluNRB binding
@@ -54,11 +58,13 @@ func (cs *DAPK1Vars) Init(vol float64) {
 	}
 	cs.DAPK1 = 0                    //
 	cs.DAPK1P = chem.CoToN(20, vol) // Shani says P form in baseline -- Goodell says "highly enriched"
+	cs.N2B_DAPK1 = 0
 	cs.CaNSer308C = 0
 
 	if InitBaseline {
 		cs.DAPK1P = chem.CoToN(19.09, vol) // orig: 20
 		cs.DAPK1 = chem.CoToN(2.303e-6, vol)
+		// todo: update N2B
 		cs.CaNSer308C = chem.CoToN(0.004463, vol)
 
 		cs.Ca[0].CaM_DAPK1 = chem.CoToN(0.1598, vol)
@@ -79,9 +85,13 @@ func (cs *DAPK1Vars) InitCode(vol float64, pre string) {
 	for i := range cs.Ca {
 		fmt.Printf("\tcs.%s.Ca[%d].CaM_DAPK1 = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_DAPK1, vol))
 		fmt.Printf("\tcs.%s.Ca[%d].CaM_DAPK1P = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].CaM_DAPK1P, vol))
+		if cs.Ca[i].N2B_DAPK1 != 0 {
+			fmt.Printf("\tcs.%s.Ca[%d].N2B_DAPK1 = chem.CoToN(%.4g, vol)\n", pre, i, chem.CoFmN(cs.Ca[i].N2B_DAPK1, vol))
+		}
 	}
 	fmt.Printf("\tcs.%s.DAPK1 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.DAPK1, vol))
 	fmt.Printf("\tcs.%s.DAPK1P = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.DAPK1P, vol))
+	fmt.Printf("\tcs.%s.N2B_DAPK1 = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.N2B_DAPK1, vol))
 	fmt.Printf("\tcs.%s.CaNSer308C = chem.CoToN(%.4g, vol)\n", pre, chem.CoFmN(cs.CaNSer308C, vol))
 }
 
@@ -91,6 +101,7 @@ func (cs *DAPK1Vars) Zero() {
 	}
 	cs.DAPK1 = 0
 	cs.DAPK1P = 0
+	cs.N2B_DAPK1 = 0
 	cs.CaNSer308C = 0
 	cs.Auto.Zero()
 }
@@ -101,24 +112,28 @@ func (cs *DAPK1Vars) Integrate(d *DAPK1Vars) {
 	}
 	chem.Integrate(&cs.DAPK1, d.DAPK1)
 	chem.Integrate(&cs.DAPK1P, d.DAPK1P)
+	chem.Integrate(&cs.N2B_DAPK1, d.N2B_DAPK1)
 	chem.Integrate(&cs.CaNSer308C, d.CaNSer308C)
 	cs.UpdtActive()
 }
 
-// UpdtActive updates DAPK1 -- everything is just reversed relative to the
-// P state of the kinase relative to DAPK1
+// UpdtActive updates DAPK1 Auto.K, and calls UpdtActiveRev to get Auto.Act
+// in terms of the reverse of P and noP
 func (cs *DAPK1Vars) UpdtActive() {
-	WI := cs.DAPK1
+	WI := cs.DAPK1 + cs.N2B_DAPK1
 	WA := cs.DAPK1P
+	n2b := cs.N2B_DAPK1
 
 	var WB, WT float64
 
 	for i := 0; i < 3; i++ {
-		WB += cs.Ca[i].CaM_DAPK1
+		WB += cs.Ca[i].CaM_DAPK1 + cs.Ca[i].N2B_DAPK1
 		WT += cs.Ca[i].CaM_DAPK1P
+		n2b += cs.Ca[i].N2B_DAPK1
 	}
-	WB += cs.Ca[3].CaM_DAPK1
+	WB += cs.Ca[3].CaM_DAPK1 + cs.Ca[3].N2B_DAPK1
 	WP := cs.Ca[3].CaM_DAPK1P
+	n2b += cs.Ca[3].N2B_DAPK1
 
 	TotalW := WI + WB + WP + WT + WA
 	Wb := WB / TotalW
@@ -136,8 +151,8 @@ func (cs *DAPK1Vars) UpdtActive() {
 		tmp = 0
 	}
 	cs.Auto.K = 0.29 * tmp
-	// cs.Auto.Act = cb*WB + WP + ct*WT + ca*WA
 	cs.Auto.Total = T
+	cs.Auto.N2B = n2b
 
 	cs.UpdtActiveRev()
 }
@@ -145,36 +160,21 @@ func (cs *DAPK1Vars) UpdtActive() {
 // UpdtActiveRev updates DAPK1 -- everything is just reversed relative to the
 // P state of the kinase relative to DAPK1
 func (cs *DAPK1Vars) UpdtActiveRev() {
-	WI := cs.DAPK1P
-	WA := cs.DAPK1
+	WA := cs.DAPK1 + cs.N2B_DAPK1
 
 	var WB, WT float64
 
 	for i := 0; i < 3; i++ {
 		WB += cs.Ca[i].CaM_DAPK1P
-		WT += cs.Ca[i].CaM_DAPK1
+		WT += cs.Ca[i].CaM_DAPK1 + cs.Ca[i].N2B_DAPK1
 	}
 	WB += cs.Ca[3].CaM_DAPK1P
-	WP := cs.Ca[3].CaM_DAPK1
+	WP := cs.Ca[3].CaM_DAPK1 + cs.Ca[3].N2B_DAPK1
 
-	TotalW := WI + WB + WP + WT + WA
-	Wb := WB / TotalW
-	Wp := WP / TotalW
-	Wt := WT / TotalW
-	Wa := WA / TotalW
-	cb := 0.75
-	ct := 0.8
-	ca := 0.8
-
-	T := Wb + Wp + Wt + Wa
-	tmp := T * (-0.22 + 1.826*T + -0.8*T*T) // baseline effect from total
-	tmp *= 0.75 * (cb*Wb + Wp + ct*Wt + ca*Wa)
-	if tmp < 0 {
-		tmp = 0
-	}
-	// cs.Auto.K = 0.29 * tmp
-	cs.Auto.Act = cb*WB + WP + ct*WT + ca*WA
-	// cs.Auto.Total = T
+	// Note: the only thing not in here is WI = base DAPK1P
+	// It is not 100% clear that this exact formula applies here
+	// for example, it predicts Phos + CaM (WB) contributes..
+	cs.Auto.Act = 0.75*WB + WP + 0.8*WT + 0.8*WA
 }
 
 func (cs *DAPK1Vars) Log(dt *etable.Table, vol float64, row int, pre string) {
@@ -286,7 +286,7 @@ func (cp *DAPK1Params) Defaults() {
 
 // StepDAPK1 does the bulk of Ca + CaM + DAPK1 binding reactions, in a given region
 // cCa, nCa = current next Ca
-func (cp *DAPK1Params) StepDAPK1(vol float64, c, d *DAPK1Vars, cm, dm *CaMVars, cCa, can float64, dCa, dcan *float64) {
+func (cp *DAPK1Params) StepDAPK1(vol float64, c, d *DAPK1Vars, cm, dm *CaMVars, cnm, dnm *NMDARState, cCa, can float64, dCa, dcan *float64) {
 	kf := CytVol / vol
 
 	// NOTE: everything is just reversed for P vs. non-P -- inverse of CaMKII
@@ -335,8 +335,8 @@ func (cp *DAPK1Params) StepDiffuse(c, d *DAPK1State) {
 
 // Step does one step of DAPK1 updating, c=current, d=delta
 // pp2a = current cyt pp2a
-func (cp *DAPK1Params) Step(c, d *DAPK1State, cm, dm *CaMState, cCa, dCa *CaState, can, dcan *CaNState) {
-	cp.StepDAPK1(CytVol, &c.Cyt, &d.Cyt, &cm.Cyt, &dm.Cyt, cCa.Cyt, can.Cyt.CaNact, &dCa.Cyt, &dcan.Cyt.CaNact)
-	cp.StepDAPK1(PSDVol, &c.PSD, &d.PSD, &cm.PSD, &dm.PSD, cCa.PSD, can.PSD.CaNact, &dCa.PSD, &dcan.PSD.CaNact)
+func (cp *DAPK1Params) Step(c, d *DAPK1State, cm, dm *CaMState, cCa, dCa *CaState, can, dcan *CaNState, cnm, dnm *NMDARState) {
+	cp.StepDAPK1(CytVol, &c.Cyt, &d.Cyt, &cm.Cyt, &dm.Cyt, nil, nil, cCa.Cyt, can.Cyt.CaNact, &dCa.Cyt, &dcan.Cyt.CaNact)
+	cp.StepDAPK1(PSDVol, &c.PSD, &d.PSD, &cm.PSD, &dm.PSD, cnm, dnm, cCa.PSD, can.PSD.CaNact, &dCa.PSD, &dcan.PSD.CaNact)
 	cp.StepDiffuse(c, d)
 }

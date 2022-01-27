@@ -19,25 +19,30 @@ import (
 // from Urakubo et al, (2008)
 // The [3] arrays correspond to Nt0, Nt1, Nt2: plain NMDA, 2CaM phos, 3CaM phos
 type NMDARState struct {
-	Mg    float64    `desc:"level of Mg block as a function of membrane potential: 1/(1 + (1.5/3.57)exp(-0.062*Vm)"`
-	Vca   float64    `desc:"voltage-dependent calcium flux driver: determines Jca as function of V, includes Mg factor"`
-	Jca   float64    `desc:"overall calcium current = Vca * Pca * Nopen"`
-	G     float64    `desc:"ionic conductance through the NMDA channel for driving Vm changes = Mg * GMax * Nopen"`
-	N0    [3]float64 `desc:"Number in state 1"`
-	N1    [3]float64 `desc:"Number in state 2"`
-	N2    [3]float64 `desc:"Number in state 3"`
-	N3    [3]float64 `desc:"Number in state 4"`
-	No    [3]float64 `desc:"Number in Open state -- actually open to allow Ca to flow"`
-	Nt0   float64    `inactive:"+" desc:"Total N of NMDAR plain = sum of 0 index in N* states"`
-	Nt1   float64    `inactive:"+" desc:"Total N of NMDAR_2Ca2+CaM = sum of 1 index in N* states"`
-	Nt2   float64    `inactive:"+" desc:"Total N of NMDAR_3Ca2+CaM = sum of 2 index in N* states"`
-	Nopen float64    `inactive:"+" desc:"Total N in open state = sum(No[0..2])"`
+	Mg     float64    `desc:"level of Mg block as a function of membrane potential: 1/(1 + (1.5/3.57)exp(-0.062*Vm)"`
+	Vca    float64    `desc:"voltage-dependent calcium flux driver: determines Jca as function of V, includes Mg factor"`
+	Jca    float64    `desc:"overall calcium current = Vca * Pca * Nopen"`
+	G      float64    `desc:"ionic conductance through the NMDA channel for driving Vm changes = Mg * GMax * Nopen"`
+	N0     [3]float64 `desc:"Number in state 1"`
+	N1     [3]float64 `desc:"Number in state 2"`
+	N2     [3]float64 `desc:"Number in state 3"`
+	N3     [3]float64 `desc:"Number in state 4"`
+	No     [3]float64 `desc:"Number in Open state -- actually open to allow Ca to flow"`
+	Nt0    float64    `inactive:"+" desc:"Total N of NMDAR plain = sum of 0 index in N* states"`
+	Nt1    float64    `inactive:"+" desc:"Total N of NMDAR_2Ca2+CaM = sum of 1 index in N* states"`
+	Nt2    float64    `inactive:"+" desc:"Total N of NMDAR_3Ca2+CaM = sum of 2 index in N* states"`
+	Nopen  float64    `inactive:"+" desc:"Total N in open state = sum(No[0..2])"`
+	Ntotal float64    `inactive:"+" desc:"overall total -- should be conserved"`
+	GluN2B float64    `desc:"number of available non-bound GluN2B binding sites -- CaMKII and DAPK1 compete to bind here -- Thr286 phosphorylated CaMKII binds, as does *de* phosphorylated DAPK1 at Ser308 -- the number of each bound is tracked in the CaMKII and DAPK1 PSD states"`
 }
 
 func (cs *NMDARState) Init() {
 	cs.Zero()
 	cs.N1[0] = 1
 	cs.Total()
+	cs.GluN2B = cs.Ntotal // presumably
+
+	// todo InitBaseline for basline binding
 }
 
 func (cs *NMDARState) Zero() {
@@ -51,6 +56,19 @@ func (cs *NMDARState) Zero() {
 		cs.N3[k] = 0
 		cs.No[k] = 0
 	}
+	cs.GluN2B = 0
+}
+
+func (cs *NMDARState) Integrate(d *NMDARState) {
+	for k := 0; k < 3; k++ {
+		chem.Integrate(&cs.N0[k], d.N0[k])
+		chem.Integrate(&cs.N1[k], d.N1[k])
+		chem.Integrate(&cs.N2[k], d.N2[k])
+		chem.Integrate(&cs.N3[k], d.N3[k])
+		chem.Integrate(&cs.No[k], d.No[k])
+	}
+	cs.Total()
+	chem.Integrate(&cs.GluN2B, d.GluN2B)
 }
 
 func (cs *NMDARState) Total() {
@@ -58,6 +76,7 @@ func (cs *NMDARState) Total() {
 	cs.Nt1 = cs.N0[1] + cs.N1[1] + cs.N2[1] + cs.N3[1] + cs.No[1]
 	cs.Nt2 = cs.N0[2] + cs.N1[2] + cs.N2[2] + cs.N3[2] + cs.No[2]
 	cs.Nopen = (cs.No[0] + cs.No[1] + cs.No[2])
+	cs.Ntotal = cs.Nt0 + cs.Nt1 + cs.Nt2
 }
 
 func (cs *NMDARState) Log(dt *etable.Table, row int) {
@@ -72,6 +91,7 @@ func (cs *NMDARState) Log(dt *etable.Table, row int) {
 	// dt.SetCellFloat(pre+"N0[0]", row, cs.N0[0])
 	// dt.SetCellFloat(pre+"N0[1]", row, cs.N0[1])
 	// dt.SetCellFloat(pre+"N0[2]", row, cs.N0[2])
+	dt.SetCellFloat("GluN2B", row, cs.GluN2B)
 }
 
 func (cs *NMDARState) ConfigLog(sch *etable.Schema) {
@@ -86,6 +106,7 @@ func (cs *NMDARState) ConfigLog(sch *etable.Schema) {
 	// *sch = append(*sch, etable.Column{pre + "N0[0]", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "N0[1]", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "N0[2]", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{"GluN2B", etensor.FLOAT64, nil, nil})
 }
 
 // NMDARParams holds parameters for NMDA receptor with allosteric dynamics
@@ -141,110 +162,101 @@ func (nr *NMDARParams) Defaults() {
 	nr.Glu = 0.4 // was 0.12
 }
 
-// Step increments NMDAR state
+// Step increments NMDAR state in response to Ca/CaM binding
 // ca = Ca2+ Co, c2 = 2Ca2+CaM Co, c3 = 3Ca2+CaM Co
-func (nr *NMDARParams) Step(cs *NMDARState, vm, ca, c2, c3 float64, spike bool, dca *float64) {
-	var NN0, NN1, NN2, NN3, NNo [3]float64
-
+func (nr *NMDARParams) StepCaCaM(c, d *NMDARState, vm, ca, c2, c3 float64, spike bool, dca *float64) {
 	dt := chem.IntegrationDt
-	_ = dt
 
 	if spike {
 		T := nr.Glu
 		for k := 0; k < 3; k++ {
-			NN0[k] = cs.N0[k] * math.Exp(-nr.Kf1*T)
-			NN1[k] = (cs.N0[k] * nr.Kf1) / (nr.Kf2 - nr.Kf1)
-			NN1[k] = (math.Exp(-nr.Kf1*T) - math.Exp(-nr.Kf2*T)) * NN1[k]
-			NN1[k] = cs.N1[k]*math.Exp(-nr.Kf2*T) + NN1[k]
-			NN2[k] = cs.N2[k] - (NN1[k] - cs.N1[k]) - (NN0[k] - cs.N0[k])
+			d.N0[k] = c.N0[k] * math.Exp(-nr.Kf1*T)
+			d.N1[k] = (c.N0[k] * nr.Kf1) / (nr.Kf2 - nr.Kf1)
+			d.N1[k] = (math.Exp(-nr.Kf1*T) - math.Exp(-nr.Kf2*T)) * d.N1[k]
+			d.N1[k] = c.N1[k]*math.Exp(-nr.Kf2*T) + d.N1[k]
+			d.N2[k] = c.N2[k] - (d.N1[k] - c.N1[k]) - (d.N0[k] - c.N0[k])
 
-			cs.N0[k] = NN0[k]
-			cs.N1[k] = NN1[k]
-			cs.N2[k] = NN2[k]
+			c.N0[k] = d.N0[k] // immediate reset
+			c.N1[k] = d.N1[k]
+			c.N2[k] = d.N2[k]
 		}
 	}
 
 	j := int(math.Ceil(dt / 0.00003))
-	ddt := dt / float64(j)
 
 	for i := 0; i < j; i++ {
-		NN0[0] = cs.N1[0] * nr.Kb1
-		NN1[0] = cs.N2[0]*nr.Kb2 - cs.N1[0]*nr.Kb1
-		NN2[0] = cs.N3[0]*1.8 + cs.No[0]*275 - cs.N2[0]*(nr.Kb2+8+280)
-		NN3[0] = cs.N2[0]*8 - cs.N3[0]*1.8
-		NNo[0] = cs.N2[0]*280 - cs.No[0]*275
+		d.N0[0] = c.N1[0] * nr.Kb1
+		d.N1[0] = c.N2[0]*nr.Kb2 - c.N1[0]*nr.Kb1
+		d.N2[0] = c.N3[0]*1.8 + c.No[0]*275 - c.N2[0]*(nr.Kb2+8+280)
+		d.N3[0] = c.N2[0]*8 - c.N3[0]*1.8
+		d.No[0] = c.N2[0]*280 - c.No[0]*275
 
 		for k := 1; k < 3; k++ {
-			NN0[k] = cs.N1[k] * nr.Kb1
-			NN1[k] = cs.N2[k]*nr.Kb2 - cs.N1[k]*nr.Kb1
-			NN2[k] = cs.N3[k]*2 + cs.No[k]*2000 - cs.N2[k]*(nr.Kb2+3+150)
-			NN3[k] = cs.N2[k]*3 - cs.N3[k]*2
-			NNo[k] = cs.N2[k]*150 - cs.No[k]*2000
+			d.N0[k] = c.N1[k] * nr.Kb1
+			d.N1[k] = c.N2[k]*nr.Kb2 - c.N1[k]*nr.Kb1
+			d.N2[k] = c.N3[k]*2 + c.No[k]*2000 - c.N2[k]*(nr.Kb2+3+150)
+			d.N3[k] = c.N2[k]*3 - c.N3[k]*2
+			d.No[k] = c.N2[k]*150 - c.No[k]*2000
 		}
 		//
 		// NMDAR binding to 2Ca2+CaM
 		//
-		NN0[0] += -nr.Kfcam1*cs.N0[0]*c2 + nr.Kbcam1*cs.N0[1]
-		NN1[0] += -nr.Kfcam2*cs.N1[0]*c2 + nr.Kbcam2*cs.N1[1]
-		NN2[0] += -nr.Kfcam3*cs.N2[0]*c2 + nr.Kbcam3*cs.N2[1]
-		NN3[0] += -nr.Kfcam4*cs.N3[0]*c2 + nr.Kbcam4*cs.N3[1]
-		NNo[0] += -nr.Kfcam5*cs.No[0]*c2 + nr.Kbcam5*cs.No[1]
+		d.N0[0] += -nr.Kfcam1*c.N0[0]*c2 + nr.Kbcam1*c.N0[1]
+		d.N1[0] += -nr.Kfcam2*c.N1[0]*c2 + nr.Kbcam2*c.N1[1]
+		d.N2[0] += -nr.Kfcam3*c.N2[0]*c2 + nr.Kbcam3*c.N2[1]
+		d.N3[0] += -nr.Kfcam4*c.N3[0]*c2 + nr.Kbcam4*c.N3[1]
+		d.No[0] += -nr.Kfcam5*c.No[0]*c2 + nr.Kbcam5*c.No[1]
 
-		NN0[1] += nr.Kfcam1*cs.N0[0]*c2 - nr.Kbcam1*cs.N0[1]
-		NN1[1] += nr.Kfcam2*cs.N1[0]*c2 - nr.Kbcam2*cs.N1[1]
-		NN2[1] += nr.Kfcam3*cs.N2[0]*c2 - nr.Kbcam3*cs.N2[1]
-		NN3[1] += nr.Kfcam4*cs.N3[0]*c2 - nr.Kbcam4*cs.N3[1]
-		NNo[1] += nr.Kfcam5*cs.No[0]*c2 - nr.Kbcam5*cs.No[1]
+		d.N0[1] += nr.Kfcam1*c.N0[0]*c2 - nr.Kbcam1*c.N0[1]
+		d.N1[1] += nr.Kfcam2*c.N1[0]*c2 - nr.Kbcam2*c.N1[1]
+		d.N2[1] += nr.Kfcam3*c.N2[0]*c2 - nr.Kbcam3*c.N2[1]
+		d.N3[1] += nr.Kfcam4*c.N3[0]*c2 - nr.Kbcam4*c.N3[1]
+		d.No[1] += nr.Kfcam5*c.No[0]*c2 - nr.Kbcam5*c.No[1]
 		//
 		// NMDAR binding to 3Ca2+CaM
 		//
-		NN0[0] += -nr.Kfcam1*cs.N0[0]*c2 + nr.Kbcam1*cs.N0[2]
-		NN1[0] += -nr.Kfcam2*cs.N1[0]*c2 + nr.Kbcam2*cs.N1[2]
-		NN2[0] += -nr.Kfcam3*cs.N2[0]*c2 + nr.Kbcam3*cs.N2[2]
-		NN3[0] += -nr.Kfcam4*cs.N3[0]*c2 + nr.Kbcam4*cs.N3[2]
-		NNo[0] += -nr.Kfcam5*cs.No[0]*c2 + nr.Kbcam5*cs.No[2]
+		d.N0[0] += -nr.Kfcam1*c.N0[0]*c2 + nr.Kbcam1*c.N0[2]
+		d.N1[0] += -nr.Kfcam2*c.N1[0]*c2 + nr.Kbcam2*c.N1[2]
+		d.N2[0] += -nr.Kfcam3*c.N2[0]*c2 + nr.Kbcam3*c.N2[2]
+		d.N3[0] += -nr.Kfcam4*c.N3[0]*c2 + nr.Kbcam4*c.N3[2]
+		d.No[0] += -nr.Kfcam5*c.No[0]*c2 + nr.Kbcam5*c.No[2]
 
-		NN0[2] += nr.Kfcam1*cs.N0[0]*c2 - nr.Kbcam1*cs.N0[2]
-		NN1[2] += nr.Kfcam2*cs.N1[0]*c2 - nr.Kbcam2*cs.N1[2]
-		NN2[2] += nr.Kfcam3*cs.N2[0]*c2 - nr.Kbcam3*cs.N2[2]
-		NN3[2] += nr.Kfcam4*cs.N3[0]*c2 - nr.Kbcam4*cs.N3[2]
-		NNo[2] += nr.Kfcam5*cs.No[0]*c2 - nr.Kbcam5*cs.No[2]
+		d.N0[2] += nr.Kfcam1*c.N0[0]*c2 - nr.Kbcam1*c.N0[2]
+		d.N1[2] += nr.Kfcam2*c.N1[0]*c2 - nr.Kbcam2*c.N1[2]
+		d.N2[2] += nr.Kfcam3*c.N2[0]*c2 - nr.Kbcam3*c.N2[2]
+		d.N3[2] += nr.Kfcam4*c.N3[0]*c2 - nr.Kbcam4*c.N3[2]
+		d.No[2] += nr.Kfcam5*c.No[0]*c2 - nr.Kbcam5*c.No[2]
 
 		//
 		// NMDAR-3Ca2+CaM dissociating to NMDAR-2Ca2+CaM + Ca2+
 		//
-		NN0[1] += -nr.KC2C3*cs.N0[1]*ca + nr.KC3C2*cs.N0[2]
-		NN1[1] += -nr.KC2C3*cs.N1[1]*ca + nr.KC3C2*cs.N1[2]
-		NN2[1] += -nr.KC2C3*cs.N2[1]*ca + nr.KC3C2*cs.N2[2]
-		NN3[1] += -nr.KC2C3*cs.N3[1]*ca + nr.KC3C2*cs.N3[2]
-		NNo[1] += -nr.KC2C3*cs.No[1]*ca + nr.KC3C2*cs.No[2]
+		d.N0[1] += -nr.KC2C3*c.N0[1]*ca + nr.KC3C2*c.N0[2]
+		d.N1[1] += -nr.KC2C3*c.N1[1]*ca + nr.KC3C2*c.N1[2]
+		d.N2[1] += -nr.KC2C3*c.N2[1]*ca + nr.KC3C2*c.N2[2]
+		d.N3[1] += -nr.KC2C3*c.N3[1]*ca + nr.KC3C2*c.N3[2]
+		d.No[1] += -nr.KC2C3*c.No[1]*ca + nr.KC3C2*c.No[2]
 
-		NN0[2] += nr.KC2C3*cs.N0[1]*ca - nr.KC3C2*cs.N0[2]
-		NN1[2] += nr.KC2C3*cs.N1[1]*ca - nr.KC3C2*cs.N1[2]
-		NN2[2] += nr.KC2C3*cs.N2[1]*ca - nr.KC3C2*cs.N2[2]
-		NN3[2] += nr.KC2C3*cs.N3[1]*ca - nr.KC3C2*cs.N3[2]
-		NNo[2] += nr.KC2C3*cs.No[1]*ca - nr.KC3C2*cs.No[2]
-
-		for k := 0; k < 3; k++ {
-			cs.N0[k] += ddt * NN0[k]
-			cs.N1[k] += ddt * NN1[k]
-			cs.N2[k] += ddt * NN2[k]
-			cs.N3[k] += ddt * NN3[k]
-			cs.No[k] += ddt * NNo[k]
-		}
+		d.N0[2] += nr.KC2C3*c.N0[1]*ca - nr.KC3C2*c.N0[2]
+		d.N1[2] += nr.KC2C3*c.N1[1]*ca - nr.KC3C2*c.N1[2]
+		d.N2[2] += nr.KC2C3*c.N2[1]*ca - nr.KC3C2*c.N2[2]
+		d.N3[2] += nr.KC2C3*c.N3[1]*ca - nr.KC3C2*c.N3[2]
+		d.No[2] += nr.KC2C3*c.No[1]*ca - nr.KC3C2*c.No[2]
 	}
+}
 
-	cs.Mg = 1 / (1 + 0.4202*math.Exp(-0.062*vm)) // Mg(1.5)/3.57
+// Step increments NMDAR state
+// ca = Ca2+ Co, c2 = 2Ca2+CaM Co, c3 = 3Ca2+CaM Co
+func (nr *NMDARParams) Step(c, d *NMDARState, vm, ca, c2, c3 float64, spike bool, dca *float64) {
+	nr.StepCaCaM(c, d, vm, ca, c2, c3, spike, dca)
+
+	c.Mg = 1 / (1 + 0.4202*math.Exp(-0.062*vm)) // Mg(1.5)/3.57
 	if vm > -0.1 && vm < 0.1 {
-		cs.Vca = (1.0 / (0.0756 + 0.5*vm)) * cs.Mg
+		c.Vca = (1.0 / (0.0756 + 0.5*vm)) * c.Mg
 	} else {
-		cs.Vca = -vm / (1 - math.Exp(0.0756*vm)) * cs.Mg
+		c.Vca = -vm / (1 - math.Exp(0.0756*vm)) * c.Mg
 	}
+	c.Jca = c.Vca * nr.Pca * c.Nopen
+	c.G = c.Mg * nr.Gmax * c.Nopen
 
-	cs.Total()
-
-	cs.Jca = cs.Vca * nr.Pca * cs.Nopen
-	cs.G = cs.Mg * nr.Gmax * cs.Nopen
-
-	*dca += cs.Jca * PSDVol
+	*dca += c.Jca * PSDVol
 }

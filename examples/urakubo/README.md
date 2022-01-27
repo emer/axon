@@ -165,6 +165,8 @@ The Urakubo model does not directly include the role of CaMKII binding to the Gl
 
 Thus, to incorporate DAPK1, we need to make both of those factors dependent on a competitive interaction with DAPK1 binding to this same GluN2B site, instead of just automatically having this happen.  We could have a substrate of GluN2B that is consumed by either DAPK1 or CaMKII as a function of their relative strengths?  Not sure how best to do that exactly, but that's the general idea.
 
+Also, the Urakubo model centrally features Ca-CaM binding to NMDA receptors to mediate the allosteric effects -- this is not on GluN2B, but rather on the NR1 C0 region -- which is on the 2A subunit, not 2B -- so an entirely different mechanism (e.g., Akyol et al, 04).  Interestingly, the NR2A subtype is only expressed later in development, so the allosteric effect may have a developmental timecourse (Umemiya et al, 2001).
+
 ## DAPK1 dynamics
 
 Goodell et al. (2017) provide a detailed investigation of DAPK1 dynamics.
@@ -191,6 +193,8 @@ Goodell et al. (2017) provide a detailed investigation of DAPK1 dynamics.
 If CaMKII wins, LTP happens. If there is a tie, nothing happens! Perfect error-driven learning! Furthermore, both rely on a similar auto-phosphorylation (autoP) dynamic to integrate over recent synaptic activity.
 
 # References
+
+* Akyol, Z., Bartos, J. A., Merrill, M. A., Faga, L. A., Jaren, O. R., Shea, M. A., & Hell, J. W. (2004). Apo-Calmodulin Binds with its C-terminal Domain to the N-Methyl-d-aspartate Receptor NR1 C0 Region *. Journal of Biological Chemistry, 279(3), 2166–2175. https://doi.org/10.1074/jbc.M302542200
 
 * Barcomb, K., Hell, J. W., Benke, T. A., & Bayer, K. U. (2016). The CaMKII/GluN2B Protein Interaction Maintains Synaptic Strength. *Journal of Biological Chemistry, 291(31),* 16082–16089. https://doi.org/10.1074/jbc.M116.734822
 
@@ -220,3 +224,4 @@ If CaMKII wins, LTP happens. If there is a tie, nothing happens! Perfect error-d
 
 * Urakubo, H., Honda, M., Froemke, R. C., & Kuroda, S. (2008). Requirement of an allosteric kinetics of NMDA receptors for spike timing-dependent plasticity. *The Journal of Neuroscience, 28(13),* 3310–3323. http://www.ncbi.nlm.nih.gov/pubmed/18367598
 
+* Umemiya, M., Chen, N., Raymond, L. A., & Murphy, T. H. (2001). A Calcium-Dependent Feedback Mechanism Participates in Shaping Single NMDA Miniature EPSCs. Journal of Neuroscience, 21(1), 1–9. https://doi.org/10.1523/JNEUROSCI.21-01-00001.2001

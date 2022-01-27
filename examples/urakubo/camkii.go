@@ -19,6 +19,7 @@ import (
 type CaCaMKIIVars struct {
 	CaM_CaMKII  float64 `desc:"CaMKII-CaM bound together = WBn in Dupont"`
 	CaM_CaMKIIP float64 `desc:"CaMKIIP-CaM bound together, P = phosphorylated at Thr286 = WTn in Dupont"`
+	N2B_CaMKIIP float64 `desc:"CaMKIIP bound to NMDA N2B (only for PSD compartment)"`
 }
 
 func (cs *CaCaMKIIVars) Init(vol float64) {
@@ -28,11 +29,13 @@ func (cs *CaCaMKIIVars) Init(vol float64) {
 func (cs *CaCaMKIIVars) Zero() {
 	cs.CaM_CaMKII = 0
 	cs.CaM_CaMKIIP = 0
+	cs.N2B_CaMKIIP = 0
 }
 
 func (cs *CaCaMKIIVars) Integrate(d *CaCaMKIIVars) {
 	chem.Integrate(&cs.CaM_CaMKII, d.CaM_CaMKII)
 	chem.Integrate(&cs.CaM_CaMKIIP, d.CaM_CaMKIIP)
+	chem.Integrate(&cs.N2B_CaMKIIP, d.N2B_CaMKIIP)
 }
 
 // AutoPVars hold the auto-phosphorylation variables, for CaMKII and DAPK1
@@ -40,12 +43,14 @@ type AutoPVars struct {
 	Act   float64 `desc:"total active CaMKII"`
 	Total float64 `desc:"total CaMKII across all states"`
 	K     float64 `desc:"rate constant for further autophosphorylation as function of current state"`
+	N2B   float64 `desc:"total N2B bound CaMKII"`
 }
 
 func (av *AutoPVars) Zero() {
 	av.Act = 0
 	av.Total = 0
 	av.K = 0
+	av.N2B = 0
 }
 
 // CaMKIIVars are intracellular Ca-driven signaling states
@@ -56,11 +61,10 @@ type CaMKIIVars struct {
 	Ca          [4]CaCaMKIIVars `desc:"increasing levels of Ca binding, 0-3"`
 	CaMKII      float64         `desc:"unbound CaMKII = CaM kinase II -- WI in Dupont -- this is the inactive form for NMDA GluN2B binding"`
 	CaMKIIP     float64         `desc:"unbound CaMKII P = phosphorylated at Thr286 -- shown with * in Figure S13 = WA in Dupont -- this is the active form for NMDA GluN2B binding"`
+	N2B_CaMKIIP float64         `desc:"CaMKIIP bound to NMDA N2B (only for PSD compartment)"`
 	PP1Thr286C  float64         `desc:"PP1+CaMKIIP complex for PP1Thr286 enzyme reaction"`
 	PP2AThr286C float64         `desc:"PP2A+CaMKIIP complex for PP2AThr286 enzyme reaction"`
 	Auto        AutoPVars       `view:"inline" inactive:"+" desc:"auto-phosphorylation state"`
-
-	// todo: add competitive GluNRB binding for CaMKII and DAPK1
 }
 
 func (cs *CaMKIIVars) Init(vol float64) {
@@ -120,15 +124,18 @@ func (cs *CaMKIIVars) Integrate(d *CaMKIIVars) {
 func (cs *CaMKIIVars) UpdtActive() {
 	WI := cs.CaMKII
 	WA := cs.CaMKIIP
+	n2b := cs.N2B_CaMKIIP
 
 	var WB, WT float64
 
 	for i := 0; i < 3; i++ {
 		WB += cs.Ca[i].CaM_CaMKII
 		WT += cs.Ca[i].CaM_CaMKIIP
+		n2b += cs.Ca[i].N2B_CaMKIIP
 	}
 	WB += cs.Ca[3].CaM_CaMKII
 	WP := cs.Ca[3].CaM_CaMKIIP
+	n2b += cs.Ca[3].N2B_CaMKIIP
 
 	TotalW := WI + WB + WP + WT + WA
 	Wb := WB / TotalW
@@ -148,6 +155,7 @@ func (cs *CaMKIIVars) UpdtActive() {
 	cs.Auto.K = 0.29 * tmp
 	cs.Auto.Act = cb*WB + WP + ct*WT + ca*WA
 	cs.Auto.Total = T
+	cs.Auto.N2B = n2b
 }
 
 func (cs *CaMKIIVars) Log(dt *etable.Table, vol float64, row int, pre string) {
