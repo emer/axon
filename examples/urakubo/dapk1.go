@@ -20,6 +20,7 @@ type CaDAPK1Vars struct {
 	CaM_DAPK1  float64 `desc:"DAPK1-CaM bound together, de-phosphorylated at S308 by CaN -- this is the active form for GluN2B and CaM binding -- equating to WTn in Dupont"`
 	CaM_DAPK1P float64 `desc:"DAPK1-CaM bound together, P = phosphorylated at S308 -- this is the inactive form for GluN2B and CaM binding -- equating to WBn in Dupont"`
 	N2B_DAPK1  float64 `desc:"DAPK1 (noP) bound to NMDA N2B (only for PSD compartment)"`
+	N2B_DAPK1P float64 `desc:"DAPK1P bound to NMDA N2B (only for PSD compartment)"`
 }
 
 func (cs *CaDAPK1Vars) Init(vol float64) {
@@ -77,7 +78,7 @@ func (cs *DAPK1Vars) Init(vol float64) {
 		cs.Ca[3].CaM_DAPK1P = chem.CoToN(0.01179, vol)
 	}
 
-	cs.UpdtActive()
+	cs.AutoK()
 }
 
 // Generate Code for Initializing
@@ -114,12 +115,12 @@ func (cs *DAPK1Vars) Integrate(d *DAPK1Vars) {
 	chem.Integrate(&cs.DAPK1P, d.DAPK1P)
 	chem.Integrate(&cs.N2B_DAPK1, d.N2B_DAPK1)
 	chem.Integrate(&cs.CaNSer308C, d.CaNSer308C)
-	cs.UpdtActive()
+	cs.AutoK()
 }
 
-// UpdtActive updates DAPK1 Auto.K, and calls UpdtActiveRev to get Auto.Act
-// in terms of the reverse of P and noP
-func (cs *DAPK1Vars) UpdtActive() {
+// AutoK updates DAPK1 Auto.K, using the TOTAL Phos. activity,
+// including N2B and not
+func (cs *DAPK1Vars) AutoK() {
 	WI := cs.DAPK1 + cs.N2B_DAPK1
 	WA := cs.DAPK1P
 	n2b := cs.N2B_DAPK1
@@ -154,12 +155,11 @@ func (cs *DAPK1Vars) UpdtActive() {
 	cs.Auto.Total = T
 	cs.Auto.N2B = n2b
 
-	cs.UpdtActiveRev()
+	cs.Active()
 }
 
-// UpdtActiveRev updates DAPK1 -- everything is just reversed relative to the
-// P state of the kinase relative to DAPK1
-func (cs *DAPK1Vars) UpdtActiveRev() {
+// Active computes Auto.Act based on the non-P states
+func (cs *DAPK1Vars) Active() {
 	WA := cs.DAPK1 + cs.N2B_DAPK1
 
 	var WB, WT float64
