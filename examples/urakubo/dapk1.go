@@ -62,7 +62,7 @@ func (cs *DAPK1Vars) Init(vol float64) {
 	cs.N2B_DAPK1 = 0
 	cs.CaNSer308C = 0
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		cs.DAPK1P = chem.CoToN(19.09, vol) // orig: 20
 		cs.DAPK1 = chem.CoToN(2.303e-6, vol)
 		// todo: update N2B
@@ -211,7 +211,7 @@ func (cs *DAPK1State) Init() {
 	cs.Cyt.Init(CytVol)
 	cs.PSD.Init(PSDVol)
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		// All vals below from 500 sec baseline
 		// Note: all DAPK1P = 0 after baseline
 	}

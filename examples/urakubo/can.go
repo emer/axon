@@ -51,7 +51,7 @@ func (cs *CaNCaMVars) Init(vol float64) {
 	cs.Ca[0].CaN = chem.CoToN(3, vol)
 	cs.CaNact = 0
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		// All vals below from 500 sec baseline
 		cs.Ca[0].CaN = chem.CoToN(1.284, vol)
 		cs.Ca[0].CaNCaM = chem.CoToN(0.04952, vol)

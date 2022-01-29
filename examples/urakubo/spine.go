@@ -45,7 +45,7 @@ func (cs *CaSigState) Init() {
 
 	cs.PP2A = chem.CoToN(0.03, CytVol)
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		cs.PP2A = chem.CoToN(0.02239, CytVol)
 	}
 }

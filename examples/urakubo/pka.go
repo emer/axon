@@ -59,7 +59,7 @@ func (ps *PKAVars) Init(vol float64) {
 	ps.AC1ATPC = chem.CoToN(0.00025355, vol)
 	ps.PDEcAMPC = 0
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		// All vals below from 500 sec baseline
 
 		ps.AC1act = chem.CoToN(0.0004371, vol)

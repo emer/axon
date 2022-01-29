@@ -105,7 +105,7 @@ func (as *AMPARState) Init() {
 
 	as.Scaffold = 0
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		as.Scaffold = chem.CoToN(2.279, PSDVol)
 
 		// All vals below from 500 sec baseline

@@ -23,7 +23,7 @@ func (cs *CaMVars) Init(vol float64) {
 	}
 	cs.CaM[0] = chem.CoToN(80, vol)
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		cs.CaM[0] = chem.CoToN(89.2, vol)     // orig: 80
 		cs.CaM[1] = chem.CoToN(1.142, vol)    // orig: 0
 		cs.CaM[2] = chem.CoToN(0.007617, vol) // orig: 0
@@ -76,7 +76,7 @@ func (cs *CaMState) Init() {
 	cs.Cyt.Init(CytVol)
 	cs.PSD.Init(PSDVol)
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		// All vals below from 500 sec baseline
 		vol := float64(CytVol)
 		cs.Cyt.CaM[3] = chem.CoToN(3.645e-05, vol)

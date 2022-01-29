@@ -41,14 +41,21 @@ func main() {
 // LogPrec is precision for saving float values in logs -- requires 6 not 4!
 const LogPrec = 6
 
-// InitBaseline = use 500 sec pre-compiled baseline for initialization
-// Set from Sim var -- global for easy access.
-var InitBaseline = true
+// SimOpts has high-level simulation options that are accessed in the code
+type SimOpts struct {
+	InitBaseline bool `def:"true" desc:"use 500 sec pre-compiled baseline for initialization"`
+	UseN2B       bool `def:"true" desc:"use the GluN2B binding for CaMKII dynamics -- explicitly breaks out this binding and its consequences for localizing CaMKII in the PSD, but without UseDAPK1, it should replicate original Urakubo dynamics, as it does not include any competition there."`
+	UseDAPK1     bool `desc:"use the DAPK1 competitive GluN2B binding (departs from standard Urakubo -- otherwise the same."`
+}
 
-// UseDAPK1 = use the DAPK1 competitive GluNR2B binding (departs from standard
-// Urakubo -- otherwise the same)
-// Set from Sim var -- global for easy access.
-var UseDAPK1 = false
+// TheOpts are the global sim options
+var TheOpts SimOpts
+
+func (so *SimOpts) Defaults() {
+	so.InitBaseline = true
+	so.UseN2B = true
+	// so.UseDAPK1 = true
+}
 
 // ParamSets for basic parameters
 // Base is always applied, and others can be optionally selected to apply on top of that
@@ -104,40 +111,39 @@ func (nex *NeuronEx) Init() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Spine        Spine            `desc:"the spine state with Urakubo intracellular model"`
-	Neuron       *axon.Neuron     `view:"no-inline" desc:"the neuron"`
-	NeuronEx     NeuronEx         `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
-	Params       params.Sets      `view:"no-inline" desc:"full collection of param sets"`
-	Stim         Stims            `desc:"what stimulation to drive with"`
-	ISISec       float64          `desc:"inter-stimulus-interval in seconds -- between reps"`
-	NReps        int              `desc:"number of repetitions -- takes 100 to produce classic STDP"`
-	FinalSecs    float64          `def:"20,50,100" desc:"number of seconds to run after the manipulation -- results are strongest after 100, decaying somewhat after that point -- 20 shows similar qualitative results but weaker, 50 is pretty close to 100 -- less than 20 not recommended."`
-	DurMsec      int              `desc:"duration for activity window"`
-	SendHz       float32          `desc:"sending firing frequency"`
-	RecvHz       float32          `desc:"receiving firing frequency"`
-	GeStim       float32          `desc:"stimulating current injection"`
-	DeltaT       int              `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
-	DeltaTRange  int              `desc:"range for sweep of DeltaT -- actual range is - to +"`
-	DeltaTInc    int              `desc:"increment for sweep of DeltaT"`
-	RGClamp      bool             `desc:"use Ge current clamping instead of distrete pulsing for firing rate-based manips, e.g., ThetaErr"`
-	InitBaseline bool             `desc:"use the adapted baseline"`
-	UseDAPK1     bool             `desc:"use the DAPK1 competitive GluNR2B binding (departs from standard Urakubo -- otherwise the same)"`
-	CaNDAPK1     float64          `desc:"Km for the CaM dephosphorylation of DAPK1"`
-	VmDend       bool             `desc:"use dendritic Vm signal for driving spine channels"`
-	NMDAAxon     bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
-	NMDAGbar     float32          `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
-	GABABGbar    float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
-	VGCC         chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
-	AK           chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
-	CaTarg       CaState          `desc:"target calcium level for CaTarg stim"`
-	InitWt       float64          `inactive:"+" desc:"initial weight value: Trp_AMPA value at baseline"`
-	DWtLog       *etable.Table    `view:"no-inline" desc:"final weight change plot for each condition"`
-	PhaseDWtLog  *etable.Table    `view:"no-inline" desc:"minus-plus final weight change plot for each condition"`
-	Msec100Log   *etable.Table    `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
-	Msec10Log    *etable.Table    `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
-	MsecLog      *etable.Table    `view:"no-inline" desc:"millisecond level log, shows last second"`
-	GenesisLog   *etable.Table    `view:"no-inline" desc:"genesis data"`
+	Net         *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Spine       Spine            `desc:"the spine state with Urakubo intracellular model"`
+	Neuron      *axon.Neuron     `view:"no-inline" desc:"the neuron"`
+	NeuronEx    NeuronEx         `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	Params      params.Sets      `view:"no-inline" desc:"full collection of param sets"`
+	Stim        Stims            `desc:"what stimulation to drive with"`
+	ISISec      float64          `desc:"inter-stimulus-interval in seconds -- between reps"`
+	NReps       int              `desc:"number of repetitions -- takes 100 to produce classic STDP"`
+	FinalSecs   float64          `def:"20,50,100" desc:"number of seconds to run after the manipulation -- results are strongest after 100, decaying somewhat after that point -- 20 shows similar qualitative results but weaker, 50 is pretty close to 100 -- less than 20 not recommended."`
+	DurMsec     int              `desc:"duration for activity window"`
+	SendHz      float32          `desc:"sending firing frequency"`
+	RecvHz      float32          `desc:"receiving firing frequency"`
+	GeStim      float32          `desc:"stimulating current injection"`
+	DeltaT      int              `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
+	DeltaTRange int              `desc:"range for sweep of DeltaT -- actual range is - to +"`
+	DeltaTInc   int              `desc:"increment for sweep of DeltaT"`
+	RGClamp     bool             `desc:"use Ge current clamping instead of distrete pulsing for firing rate-based manips, e.g., ThetaErr"`
+	Opts        SimOpts          `view:"inline" desc:"global simulation options controlling major differences in behavior"`
+	CaNDAPK1    float64          `desc:"Km for the CaM dephosphorylation of DAPK1"`
+	VmDend      bool             `desc:"use dendritic Vm signal for driving spine channels"`
+	NMDAAxon    bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
+	NMDAGbar    float32          `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
+	GABABGbar   float32          `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
+	VGCC        chans.VGCCParams `desc:"VGCC parameters: set Gbar > 0 to include"`
+	AK          chans.AKParams   `desc:"A-type potassium channel parameters: set Gbar > 0 to include"`
+	CaTarg      CaState          `desc:"target calcium level for CaTarg stim"`
+	InitWt      float64          `inactive:"+" desc:"initial weight value: Trp_AMPA value at baseline"`
+	DWtLog      *etable.Table    `view:"no-inline" desc:"final weight change plot for each condition"`
+	PhaseDWtLog *etable.Table    `view:"no-inline" desc:"minus-plus final weight change plot for each condition"`
+	Msec100Log  *etable.Table    `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
+	Msec10Log   *etable.Table    `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
+	MsecLog     *etable.Table    `view:"no-inline" desc:"millisecond level log, shows last second"`
+	GenesisLog  *etable.Table    `view:"no-inline" desc:"genesis data"`
 
 	// internal state - view:"-"
 	Msec         int              `inactive:"+" desc:"current cycle of updating"`
@@ -163,8 +169,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.InitBaseline = true
-	ss.UseDAPK1 = true
+	ss.Opts.Defaults()
 	ss.Spine.Defaults()
 	ss.Spine.Init()
 	ss.InitWt = ss.Spine.States.AMPAR.Trp.Tot
@@ -176,10 +181,10 @@ func (ss *Sim) New() {
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
-	ss.Stim = Poisson // STDP
-	ss.ISISec = 1     // 1
-	ss.NReps = 10     // 20
-	ss.FinalSecs = 20 // 20
+	ss.Stim = STDP   // Poisson // STDP
+	ss.ISISec = 1    // 1
+	ss.NReps = 1     // 10     // 20
+	ss.FinalSecs = 0 // 20 // 20
 	ss.DurMsec = 200
 	ss.SendHz = 50
 	ss.RecvHz = 50
@@ -192,6 +197,7 @@ func (ss *Sim) New() {
 
 // Defaults sets default params
 func (ss *Sim) Defaults() {
+	ss.Opts.Defaults()
 	ss.Spine.Defaults()
 	ss.GeStim = 2
 	ss.NMDAGbar = 0.15 // 0.1 to 0.15 matches pre-spike increase in vm
@@ -287,9 +293,7 @@ func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	InitBaseline = ss.InitBaseline
-	UseDAPK1 = ss.UseDAPK1
-	ss.Spine.Defaults()
+	TheOpts = ss.Opts
 	ss.Spine.DAPK1.CaNSer308.SetKmVol(ss.CaNDAPK1, CytVol, 1.34, 0.335) // 10: 11 μM Km = 0.0031724
 	ss.Spine.Init()
 	ss.NeuronEx.Init()
@@ -761,7 +765,7 @@ func (ss *Sim) RenameGenesisLog() {
 	dt.Cols = nc
 	dt.UpdateColNameMap()
 
-	if ss.InitBaseline {
+	if TheOpts.InitBaseline {
 		ix := etable.IdxView{}
 		ix.Table = dt
 		for ri := 0; ri < dt.Rows; ri++ {

@@ -33,7 +33,7 @@ func (ps *PP1Vars) Init(vol float64) {
 	ps.CaNI1PC = 0
 	ps.PP2AI1PC = 0
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		// All vals below from 500 sec baseline
 		ps.I1 = chem.CoToN(0.9848, vol)
 		ps.I1P = chem.CoToN(1.019, vol)
@@ -94,7 +94,7 @@ func (ps *PP1State) Init() {
 	ps.Cyt.Init(CytVol)
 	ps.PSD.Init(PSDVol)
 
-	if InitBaseline {
+	if TheOpts.InitBaseline {
 		vol := float64(CytVol)
 		ps.Cyt.PP1_I1P = chem.CoToN(0.9899, vol)
 		ps.Cyt.PP1act = chem.CoToN(0.009715, vol)
