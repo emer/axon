@@ -53,7 +53,7 @@ var TheOpts SimOpts
 
 func (so *SimOpts) Defaults() {
 	so.InitBaseline = true
-	so.UseN2B = true
+	so.UseN2B = false
 	// so.UseDAPK1 = true
 }
 
@@ -296,6 +296,7 @@ func (ss *Sim) Init() {
 	TheOpts = ss.Opts
 	ss.Spine.DAPK1.CaNSer308.SetKmVol(ss.CaNDAPK1, CytVol, 1.34, 0.335) // 10: 11 μM Km = 0.0031724
 	ss.Spine.Init()
+	ss.InitWt = ss.Spine.States.AMPAR.Trp.Tot
 	ss.NeuronEx.Init()
 	ss.Msec = 0
 	ss.SetParams("", false) // all sheets
@@ -551,12 +552,15 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("PSD_DAPK1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_CaMKIIn2b", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+	if ss.Opts.UseDAPK1 {
+		plt.SetColParams("PSD_DAPK1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
+		plt.SetColParams("Cyt_DAPK1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	}
 	plt.SetColParams("PSD_PP1act", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaNact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_CaMKIIact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("Cyt_DAPK1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
-	plt.SetColParams("Trp_AMPAR", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("Trp_AMPAR", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 
 	return plt
 }

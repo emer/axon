@@ -161,11 +161,21 @@ There is recent evidence for a competitive interaction between DAPK1 and CaMKII 
 
 The Urakubo model does not directly include the role of CaMKII binding to the GluN2B subunit of the NMDAR (Bayer et al, 2001; Coultrap & Bayer, 2012; Barcomb et al, 2016), but does have indirect accounting for it.  There are two primary effects:
 
-* Concentrating CaMKII at the PSD on the NMDA receptors depends on GluN2B binding.  Only the PSD-localized CaMKII can activate and stabilize AMPAR in the PSD, so this is the primary determinant of LTP effects of CaMKII.  The GluN2B binding is dependent on the CaMKII T286 autophosphorylation (CaMKIIP in the model), which is in turn a complex function of Ca-CaM binding, driven by Ca influx.  This is reflected in the model by the asymmetric diffusion constants for CaMKIIP, which is 10 times larger for Cyt -> PSD than the PSD -> Cyt direction (6 vs. 0.6).
+* Concentrating CaMKII at the PSD on the NMDA receptors depends on GluN2B binding.  Only the PSD-localized CaMKII can activate and stabilize AMPAR in the PSD, so this is the primary determinant of LTP effects of CaMKII.  One site of GluN2B binding is dependent on the CaMKII T286 autophosphorylation (CaMKIIP in the model), which is in turn a complex function of Ca-CaM binding, driven by Ca influx, and another is dependent on Ca-CaM binding (Bayer et al, 2001).  This is reflected in the model by the asymmetric diffusion constants for CaMKIIP, which is 10 times larger for Cyt -> PSD than the PSD -> Cyt direction (6 vs. 0.6).
 
 * Altering the CaM binding constants: "modified the binding constants between bare CaM and the inactive subunit in consideration of experimentally observed basal activity (Fukunaga et al., 1993; Kawaguchi and Hirano, 2002). This modification also implicitly represents CaMKII by binding to NMDARs (Bayer et al., 2001; Leonard et al., 2002)".  In the adapted Figure SI3 shown above, it is reactions 6 and 9.
 
-Thus, to incorporate DAPK1, we need to make both of those factors dependent on a competitive interaction with DAPK1 binding to this same GluN2B site, instead of just automatically having this happen.  We add a substrate of GluN2B that is consumed by either DAPK1 or CaMKII as a function of their relative strengths.
+Thus, to incorporate DAPK1, we first need to simulate the GluN2B binding dynamics explicitly.
+
+Shen & Meyer (1999), Bayer et al (2001) and Leonard et al (2002) have the relevant details on GluN2B binding.  The key points are:
+
+* There are two N2B binding sites: a -C and -P, and the -C is determined by Ca/CaM activation of CaMKII (only), while -P depends on T286 autophosphorylation.  In general, the dynamics are that Ca/CaM activation causes the initial binding, and T286 keeps it around longer after Ca/CaM is gone.  It seems that S
+
+* >In fact, this NR2B domain contains two sites with different modes of regulated CaMKII binding (Fig. 1), a Ca2+/CaM-regulated site within residues 1,120 -- 1,482 of NR2B (NR2B-C) and a phosphorylation-regulated site within residues 839 -- 1,120 (NR2B-P).
+
+* >During washes with Ca2+ but without CaM, however, CaM remained bound to the complex. Thus, interaction with NR2B-C seems to increase the CaM affinity of CaMKII, similar to CaM trapping by the autophosphorylated kinase, as CaM dissociates from unphosphorylated kinase that is not complexed with NR2B-C with an off rate of approximately 2 s-1 (ref. 11)
+
+* >Immunoblotting with an antibody sensitive to phosphorylated T286 showed that the autonomously active NR2B- C-bound enzyme is not phosphorylated at T286.
 
 Also, the Urakubo model centrally features Ca-CaM binding to NMDA receptors to mediate the allosteric effects -- this is not on GluN2B, but rather on the NR1 C0 region -- which is on the 2A subunit, not 2B -- so an entirely different mechanism (e.g., Akyol et al, 04).  Interestingly, the NR2A subtype is only expressed later in development, so the allosteric effect may have a developmental timecourse (Umemiya et al, 2001).
 
