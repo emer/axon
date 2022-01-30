@@ -32,7 +32,7 @@ Params list at left side control lots of things (see tooltips), e.g.:
 * `Stim` determines the stimulation program -- see `stims.go` for code -- figures below show some examples.
 * `ISISec` = spacing between individual stimulation patterns
 * `NReps` = number of repetitions of patterns -- more = bigger effects on weights
-* `FinalSecs` = number of seconds to allow AMPAR trafficking to settle out -- has significant effects on final results.
+* `FinalSecs` = number of seconds to allow AMPAR trafficking to settle out -- has significant effects on final results, particularly on showing LTD effects which emerge over time.  50 secs is long enough to be close to asymptotic -- 20 vs. 50 still shows some diffs but 50 vs. 100 is pretty close.
 * Other params used in different cases -- see examples below -- and below that are overall parameters of the neuron etc.
 
 Tab bar selects different plots:
@@ -76,26 +76,26 @@ Here is the replication in current model -- viewed as stacked slices through the
 
 Sender = 100Hz:
 
-![OppPhaseDur 100 SendHz](results/fig_urakubo22_opphasedur_100shz_final100_1rep.png?raw=true "Opposite phase firing (180 degrees out of phase at start) as function of Recv Hz on X axis and different durations (lines)")
+![OppPhaseDur 100 SendHz](results/fig_urakubo22_opphasedur_100shz_final50_1rep.png?raw=true "Opposite phase firing (180 degrees out of phase at start) as function of Recv Hz on X axis and different durations (lines)")
 
 Sender = 50Hz:
 
-![OppPhaseDur 50 SendHz](results/fig_urakubo22_opphasedur_50shz_final100_1rep.png?raw=true "Opposite phase firing (180 degrees out of phase at start) as function of Recv Hz on X axis and different durations (lines)")
+![OppPhaseDur 50 SendHz](results/fig_urakubo22_opphasedur_50shz_final50_1rep.png?raw=true "Opposite phase firing (180 degrees out of phase at start) as function of Recv Hz on X axis and different durations (lines)")
 
 * `Stim = OpPhaseDurSweep`
 * `NReps = 1` 
-* `FinalSecs = 100`
+* `FinalSecs = 50`
 * `SendHz = 50 or 100`
 
 # Random Poisson Firing
 
 This case shows what bad memory had consolidated as the basis for the original XCAL checkmark learning rule -- random poisson firing of send and recv neurons over a packet of a given duration. This produces a more complex curve, e.g., for 200msec activity packets (theta cycle), as a function of recv firing rate (X axis) and sending firing rate (legend / different lines):
 
-![Poisson 200msec](results/fig_urakubo22_poisson_200msec_isi1_final100_10rep.png?raw=true "Poisson random 200 msec packets of pre - post activity at different rates -- X is Recv Hz, Send Hz are different lines as shown in legend")
+![Poisson 200msec](results/fig_urakubo22_poisson_200msec_isi1_final50_10rep.png?raw=true "Poisson random 200 msec packets of pre - post activity at different rates -- X is Recv Hz, Send Hz are different lines as shown in legend")
 
 * `Stim = PoissonHzSweep`
 * `NReps = 10` 
-* `FinalSecs = 100`
+* `FinalSecs = 50`
 * `DurMsec = 200`
 
 # CHL Error-driven Learning
@@ -112,18 +112,18 @@ With X = normalized frequency for sender (Hz/100), Y = norm recv frequency.  Fir
 
 The Y axis is the DWt result of the model. If the model was perfectly capturing the CHL learning rule, the points would all be along a positive diagonal line (i.e., the r = 1 line).  Clearly, the original Urakubo model does not accurately capture the CHL function, although some subset of points are not too far off.  It is particularly inaccurate on the negative error cases, which require strong LTD, despite relatively high levels of activity.
 
-![ThetaErr RSPk 200ms](results/fig_urakubo22_thetaerr_rspk_200ms_final100_10rep.png?raw=true "Theta (200 msec) packets of pre - post activity at different rates -- X is Recv Hz, Send Hz are different lines as shown in legend -- recv unit is driven by punctate spikes")
+![ThetaErr RSPk 200ms](results/old/fig_urakubo22_thetaerr_rspk_200ms_final100_10rep.png?raw=true "Theta (200 msec) packets of pre - post activity at different rates -- X is Recv Hz, Send Hz are different lines as shown in legend -- recv unit is driven by punctate spikes")
 
 * `Stim = ThetaErr`
 * `ISISec = 1`
 * `NReps = 10` 
-* `FinalSecs = 100`
+* `FinalSecs = 50`
 * `DurMsec = 200`
 * `RGClamp = false or true`
 
 The next plot shows the case for `RGClamp = true`, where the recv unit is current-clamped to drive its spiking, instead of phasically driving individual spikes at a prescribed regular interval according to the target Hz.
 
-![ThetaErr RGe 200ms](results/fig_urakubo22_thetaerr_rge_200ms_final100_10rep.png?raw=true "Theta (200 msec) packets of pre - post activity at different rates -- X is Recv Hz, Send Hz are different lines as shown in legend -- recv unit is driven by current clamp")
+![ThetaErr RGe 200ms](results/fig_urakubo22_thetaerr_rge_200ms_final50_10rep.png?raw=true "Theta (200 msec) packets of pre - post activity at different rates -- X is Recv Hz, Send Hz are different lines as shown in legend -- recv unit is driven by current clamp")
 
 # Basic model behavior
 
