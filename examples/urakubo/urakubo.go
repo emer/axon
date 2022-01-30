@@ -53,7 +53,7 @@ var TheOpts SimOpts
 
 func (so *SimOpts) Defaults() {
 	so.InitBaseline = true
-	so.UseN2B = false
+	so.UseN2B = true
 	// so.UseDAPK1 = true
 }
 
@@ -181,10 +181,10 @@ func (ss *Sim) New() {
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
-	ss.Stim = STDP   // Poisson // STDP
-	ss.ISISec = 1    // 1
-	ss.NReps = 1     // 10     // 20
-	ss.FinalSecs = 0 // 20 // 20
+	ss.Stim = STDP    // Poisson // STDP
+	ss.ISISec = 1     // 1
+	ss.NReps = 10     // 10     // 20
+	ss.FinalSecs = 10 // 20 // 20
 	ss.DurMsec = 200
 	ss.SendHz = 50
 	ss.RecvHz = 50

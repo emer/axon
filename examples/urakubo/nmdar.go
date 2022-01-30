@@ -145,7 +145,7 @@ func (nr *NMDARParams) Defaults() {
 
 	nr.Glu = 0.4 // was 0.12
 
-	nr.GluN2BN = 20
+	nr.GluN2BN = 150 // 150 works for N2B only
 }
 
 // Special init function for state
