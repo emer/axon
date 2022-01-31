@@ -142,7 +142,7 @@ TODO: measure peak Ca too and plot that!  have to grab it within each spike wind
 
 One standard way of generating LTD is low-frequency stimulation (LFS) for a large number of repetitions, e.g., 900 @ 1Hz (Dudek & Bear, 1992).  However, this does not produce the appropriate results in the basic Urakubo model:
 
-![LFS 900 1hz](results/fig_urakubo22_lfs900_1hz_ge.1.png?raw=true "LFS 900 reps at 1Hz, should cause LTD but does not")
+![LFS 900 1hz](results/fig_urakubo22_lfs900_1hz_final20_ge.1.png?raw=true "LFS 900 reps at 1Hz, should cause LTD but does not")
 
 * `Stim = STDP`
 * `NReps = 900` 
@@ -163,29 +163,31 @@ The Urakubo model does not directly include the role of CaMKII binding to the Gl
 
 * Concentrating CaMKII at the PSD on the NMDA receptors depends on GluN2B binding.  Only the PSD-localized CaMKII can activate and stabilize AMPAR in the PSD, so this is the primary determinant of LTP effects of CaMKII.  One site of GluN2B binding is dependent on the CaMKII T286 autophosphorylation (CaMKIIP in the model), which is in turn a complex function of Ca-CaM binding, driven by Ca influx, and another is dependent on Ca-CaM binding (Bayer et al, 2001).  This is reflected in the model by the asymmetric diffusion constants for CaMKIIP, which is 10 times larger for Cyt -> PSD than the PSD -> Cyt direction (6 vs. 0.6).
 
-* Altering the CaM binding constants: "modified the binding constants between bare CaM and the inactive subunit in consideration of experimentally observed basal activity (Fukunaga et al., 1993; Kawaguchi and Hirano, 2002). This modification also implicitly represents CaMKII by binding to NMDARs (Bayer et al., 2001; Leonard et al., 2002)".  In the adapted Figure SI3 shown above, it is reactions 6 and 9.
+* Altering the CaM binding constants: "modified the binding constants between bare CaM and the inactive subunit in consideration of experimentally observed basal activity (Fukunaga et al., 1993; Kawaguchi and Hirano, 2002). This modification also implicitly represents CaMKII by binding to NMDARs (Bayer et al., 2001; Leonard et al., 2002)".  In the adapted Figure SI3 shown above, it is reactions 4 and 9: 4 is CaM + plain CaMKII (0.0004 Kf, 1 Kb), 9 is CaM + CaMKIIP (8 Kf, 0.001 Kb).
 
 Thus, to incorporate DAPK1, we first need to simulate the GluN2B binding dynamics explicitly.
 
 Shen & Meyer (1999), Bayer et al (2001) and Leonard et al (2002) have the relevant details on GluN2B binding.  The key points are:
 
-* There are two N2B binding sites: a -C and -P, and the -C is determined by Ca/CaM activation of CaMKII (only), while -P depends on T286 autophosphorylation.  In general, the dynamics are that Ca/CaM activation causes the initial binding, and T286 keeps it around longer after Ca/CaM is gone.  It seems that S
+* There are two N2B binding sites: a -C and -P, and the -C is determined by Ca/CaM activation of CaMKII (only), while -P depends on T286 autophosphorylation.  In general, the dynamics are that Ca/CaM activation causes the initial binding, and T286 keeps it around longer after Ca/CaM is gone. 
 
-* >In fact, this NR2B domain contains two sites with different modes of regulated CaMKII binding (Fig. 1), a Ca2+/CaM-regulated site within residues 1,120 -- 1,482 of NR2B (NR2B-C) and a phosphorylation-regulated site within residues 839 -- 1,120 (NR2B-P).
+* >In fact, this NR2B domain contains two sites with different modes of regulated CaMKII binding (Fig. 1), a Ca2+/CaM-regulated site within residues 1,120 -- 1,482 of NR2B (NR2B-C, later determined to be 1303) and a phosphorylation-regulated site within residues 839 -- 1,120 (NR2B-P). 
 
 * >During washes with Ca2+ but without CaM, however, CaM remained bound to the complex. Thus, interaction with NR2B-C seems to increase the CaM affinity of CaMKII, similar to CaM trapping by the autophosphorylated kinase, as CaM dissociates from unphosphorylated kinase that is not complexed with NR2B-C with an off rate of approximately 2 s-1 (ref. 11)
 
-* >Immunoblotting with an antibody sensitive to phosphorylated T286 showed that the autonomously active NR2B- C-bound enzyme is not phosphorylated at T286.
+* >Immunoblotting with an antibody sensitive to phosphorylated T286 showed that the autonomously active NR2B-C-bound enzyme is not phosphorylated at T286.
 
 Also, the Urakubo model centrally features Ca-CaM binding to NMDA receptors to mediate the allosteric effects -- this is not on GluN2B, but rather on the NR1 C0 region -- which is on the 2A subunit, not 2B -- so an entirely different mechanism (e.g., Akyol et al, 04).  Interestingly, the NR2A subtype is only expressed later in development, so the allosteric effect may have a developmental timecourse (Umemiya et al, 2001).
 
-In preparation for understanding DAPK1, here's a summary of the key AutoP dynamic on CaMKII, as summarized in above figure.  First, T286 P and Ca/CaM binding are *separate processes* that nevertheless interact strongly.  There are separate vars for for P no-P, and various levels of Ca/CaM binding.  Further there is a "total activity" factor that integrates across P and Ca/CaM states, and yet another GluN2B binding function, so there are 4 primary dynamics:
+In preparation for understanding DAPK1, here's a summary of the key AutoP dynamic on CaMKII, as summarized in above figure.  First, T286 P and Ca/CaM binding are *separate processes* that nevertheless interact strongly.  There are separate vars for for P, noP, and various levels of Ca/CaM binding.  Further there is a "total activity" factor that integrates across P and Ca/CaM states, and yet another GluN2B binding function, so there are 4 primary dynamics:
 
-* **Auto.K** -- determines rate of further AutoP, and it is a complicated function of current P and Ca/CaM binding: TODO: plot this function!  Critically, non-P but Ca/CaM binding contributes positively to rate of AutoP -- not only P itself.  And there is some "mass action" effect that is a function of any Ca/CaM or P state.  More P does accelerate this function, but not massively so: if completely left alone and driven by constant Ca input, it accelerates, but PP1 quickly turns off.  Also Ca/CaM unbinds with decent speed.
+* **CaM** -- CaM only binds to noP CaMKII, *except* for the very first binding to CaMKIIP (eq 9), which has a high Kf (8) and slow Kb (0.001).  P *or* N2B is responsible for this high CaM binding, so eq 9 should apply to either case.  Any N2B bound CaMKII (noP) should have same as 9 affinity.  Also, T286P prevents further CaM binding (presumably the CaM is actually bound to T286?), and P also reduces magnitude of Ca binding to CaM (eq 8) but balances the Kf, Kb (both 1).  Question: should N2B also induce same 8 dynamics in CaMKII plain case?
+
+* **Auto.K** -- determines rate of further AutoP, and it is a complicated function of current P and Ca/CaM binding.  Critically, noP but Ca/CaM binding contributes positively to rate of AutoP -- not only P itself.  And there is some "mass action" effect that is a function of any Ca/CaM or P state.  More P does accelerate this function, but not massively so: if completely left alone and driven by constant Ca input, it accelerates, but PP1 quickly turns off.  Also Ca/CaM unbinds with decent speed.
 
 * **Auto.Act** -- total activation: to first order, any CaMKII with *either* P or Ca/CaM binding contributes, with weak diffs (e.g., 3CaCaMP is the most active, contributes with a factor of 1, but other ones contribute with factors between .75 - .8, so not that big of a diff).  This total act is what drives the further kinase activity for AMPAR trafficking.
 
-* **GluN2B** binding -- There is a *distinct* function for GluN2B binding, at 2Ca-CaM + raw CaMKII and 2Ca-CaM-CaMKII (both non-P), plus apparently a generic P binding bump.
+* **GluN2B** binding -- There is a *distinct* function for GluN2B binding.  Per above, `GluN2BCaCaM` (10 Kf, 0.001 Kb) drives N2B binding as function of any CaM (does not accelerate for simplicity).  `GluN2BP` for CaMKIIP, no CaM (0.01 Kf, 0.0001 Kb) keeps P bound (low Kb), but does not drive much forward binding.  `GluN2NoP` for CaMKII (noP) (0.00001 Kf, 1000 Kb) unbinds noP (high Kb) quickly, and does not do much forward binding (todo just set to 0?)
 
 ## DAPK1 dynamics
 
@@ -201,13 +203,21 @@ Goodell et al. (2017) provide a detailed investigation of DAPK1 dynamics.
 
 * Per Shani et al. (2001), "It was found that in the absence of Ca2+/CaM, DRP-1 displayed unexpectedly high basal levels of autophosphorylation. The latter was strongly inhibited by Ca2+/CaM concentrations that fully activate the enzyme, suggesting inverse relationships between autophosphorylation and substrate phosphorylation."
 
-    DAPK1P (AutoP) = inactive form for binding to GluN2B (akin to its substrate P. effects) -- this is default state.  Data: mutant S308A cannot autoP, and shows increased substrate binding / apoptosis.  mutant S308D is always autoP (aspartic acid), and prevented apoptosis.
+    DAPK1P (S380 AutoP) = inactive form for binding to GluN2B (akin to its substrate P. effects) -- this is default state.  Data: mutant S308A cannot autoP, and shows increased substrate binding / apoptosis.  mutant S308D is always autoP (aspartic acid), and prevented apoptosis.
 
-* Auto-P is also inhibitory on further Ca/CaM binding -- forward rate for that is slower.  Thus, it acts as a *negative feedback loop* on further Ca/CaM binding -- saturates, unlike CaMKII which gets more active with further AutoP.  This may be important for minus vs. plus differentiation.  In the model, using same eq's and rates for Auto.K rate as CaMKII.
+* Per Shohat et al (2001), "The autophosphorylation of Ser308 was found to be Ca2􏰄/CaM-independent; moreover, it was strongly inhibited by the addition of Ca2􏰄/CaM."  Thus, Ca/CaM inhibits P, and P inhibits Ca/CaM reciprocally.
 
-* Thus, overall, DAPK1 is default baseline autophosphorylated.  And it is relatively insensitive to Ca/CaM in this state, because of the inhibited binding constants.  However, when you get some initial CaN dephosphorylation activity, that then allows more Ca-CaM binding.
+* In summary, it starts out fully P, then with some initial deP from CaN, further Ca/CaM binding further inhibits additional autoP pressure -- so it integrates Ca/CaM into levels of deP and its overall kinetic binding activity is a function of Ca/CaM + deP (this can be a mirror of CaMKII where it is Ca/CaM + P).
 
-, which further inhibits autoP, and you move further away from full autoP.  It is this de-P DAPK1 that is actually "active" catalytically: this is when it binds to GluN2B most strongly.
+* There does not appear to be a strong interaction between CaM binding and GluN2B binding?  Most of the interaction is with AutoP causing P, and CaM inhibiting that.  But GluN2B binding is just more-or-less an outcome of these CaM, deP vs. AutoP dynamics, without changing them significantly?  TODO: verify this!
+
+* Goodell et al (2017) show that deP is due to CaN, although other lit shows PP2A deP activity, but that is likely in non-neuronal context (Bialik & Kimchi, 2014), and PP2A is not in PSD.
+
+* To implement, we need Act to have reversed roles of P and noP, but AutoK is still driven by P but inhibited by Ca/CaM levels (invert that for example).
+
+* TODO: must graph AutoK function, figure that out!
+
+* Thus, overall, DAPK1 is default baseline autophosphorylated.  And it is relatively insensitive to Ca/CaM in this state, because of the inhibited binding constants.  However, when you get some initial CaN dephosphorylation activity, that then allows more Ca-CaM binding, which further inhibits autoP, and you move further away from full autoP.  It is this noP DAPK1 that is actually "active" catalytically: this is when it binds to GluN2B most strongly.
 
 * So, key point: CaN is "pulling the trigger" for a learning event, after which time DAPK1 effectively measures / integrates the Ca/CaM through a kind of inverse-autophosphorylation process (the opposite form of positive feedback loop present in CaMKII).  This is then the "opponent process" to the CaMKII, both of which are competing for GluN2B.  If DAPK1 wins out, then LTD happens.  If CaMKII wins, then LTP happens.  But critically, both are directly integrating Ca signals through a similar integrative, rate-sensitive dynamic!  However, *if* DAPK1 preferentially reflects the earlier minus phase time frame of activity (i.e., it decays more quickly), then it directly represents this minus phase co-product, while CaMKII gets to be the plus phase.  It could really be that simple and direct!
 
