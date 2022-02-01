@@ -95,15 +95,32 @@ func (ps *PP1State) Init() {
 	ps.PSD.Init(PSDVol)
 
 	if TheOpts.InitBaseline {
-		vol := float64(CytVol)
-		ps.Cyt.PP1_I1P = chem.CoToN(0.9899, vol)
-		ps.Cyt.PP1act = chem.CoToN(0.009715, vol)
-		ps.Cyt.PP2AI1PC = chem.CoToN(0.007606, vol)
+		if TheOpts.UseDAPK1 {
+			vol := float64(CytVol)
+			ps.Cyt.I1 = chem.CoToN(0.7067, vol)
+			ps.Cyt.I1P = chem.CoToN(1.297, vol)
+			ps.Cyt.PP1_I1P = chem.CoToN(0.9919, vol)
+			ps.Cyt.PP1act = chem.CoToN(0.007648, vol)
+			ps.Cyt.CaNI1PC = chem.CoToN(0.001204, vol)
+			ps.Cyt.PP2AI1PC = chem.CoToN(0.007992, vol)
+			vol = PSDVol
+			ps.PSD.I1 = chem.CoToN(0.7066, vol)
+			ps.PSD.I1P = chem.CoToN(1.297, vol)
+			ps.PSD.PP1_I1P = chem.CoToN(5.955, vol)
+			ps.PSD.PP1act = chem.CoToN(0.04591, vol)
+			ps.PSD.CaNI1PC = chem.CoToN(0.001205, vol)
+			ps.PSD.PP2AI1PC = chem.CoToN(0, vol)
+		} else {
+			vol := float64(CytVol)
+			ps.Cyt.PP1_I1P = chem.CoToN(0.9899, vol)
+			ps.Cyt.PP1act = chem.CoToN(0.009715, vol)
+			ps.Cyt.PP2AI1PC = chem.CoToN(0.007606, vol)
 
-		vol = PSDVol
-		ps.PSD.PP1_I1P = chem.CoToN(5.943, vol)
-		ps.PSD.PP1act = chem.CoToN(0.05832, vol)
-		ps.PSD.PP2AI1PC = chem.CoToN(0, vol)
+			vol = PSDVol
+			ps.PSD.PP1_I1P = chem.CoToN(5.943, vol)
+			ps.PSD.PP1act = chem.CoToN(0.05832, vol)
+			ps.PSD.PP2AI1PC = chem.CoToN(0, vol)
+		}
 	}
 }
 

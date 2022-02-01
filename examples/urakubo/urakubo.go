@@ -54,7 +54,7 @@ var TheOpts SimOpts
 func (so *SimOpts) Defaults() {
 	so.InitBaseline = true
 	so.UseN2B = true
-	// so.UseDAPK1 = true
+	so.UseDAPK1 = true
 }
 
 // ParamSets for basic parameters
@@ -129,6 +129,8 @@ type Sim struct {
 	DeltaTInc   int              `desc:"increment for sweep of DeltaT"`
 	RGClamp     bool             `desc:"use Ge current clamping instead of distrete pulsing for firing rate-based manips, e.g., ThetaErr"`
 	Opts        SimOpts          `view:"inline" desc:"global simulation options controlling major differences in behavior"`
+	DAPK1AutoK  float64          `desc:"strength of AutoK autophosphorylation of DAPK1 -- must be strong enough to balance CaM drive"`
+	DAPK1_AMPAR float64          `desc:"strength of AMPAR inhibitory effect from DAPK1"`
 	CaNDAPK1    float64          `desc:"Km for the CaM dephosphorylation of DAPK1"`
 	VmDend      bool             `desc:"use dendritic Vm signal for driving spine channels"`
 	NMDAAxon    bool             `desc:"use the Axon NMDA channel instead of the allosteric Urakubo one"`
@@ -143,6 +145,7 @@ type Sim struct {
 	Msec100Log  *etable.Table    `view:"no-inline" desc:"every 100 msec plot -- a point every 100 msec, shows full run"`
 	Msec10Log   *etable.Table    `view:"no-inline" desc:"every 10 msec plot -- a point every 10 msec, shows last 10 seconds"`
 	MsecLog     *etable.Table    `view:"no-inline" desc:"millisecond level log, shows last second"`
+	AutoKLog    *etable.Table    `view:"no-inline" desc:"autoK data"`
 	GenesisLog  *etable.Table    `view:"no-inline" desc:"genesis data"`
 
 	// internal state - view:"-"
@@ -155,6 +158,7 @@ type Sim struct {
 	Msec100Plot  *eplot.Plot2D    `view:"-" desc:"the plot at 100 msec scale"`
 	Msec10Plot   *eplot.Plot2D    `view:"-" desc:"the plot at 10 msec scale"`
 	MsecPlot     *eplot.Plot2D    `view:"-" desc:"the plot at msec scale"`
+	AutoKPlot    *eplot.Plot2D    `view:"-" desc:"the plot of AutoK functions"`
 	GenesisPlot  *eplot.Plot2D    `view:"-" desc:"the plot from genesis runs"`
 	IsRunning    bool             `view:"-" desc:"true if sim is running"`
 	StopNow      bool             `view:"-" desc:"flag to stop running"`
@@ -175,12 +179,13 @@ func (ss *Sim) New() {
 	ss.InitWt = ss.Spine.States.AMPAR.Trp.Tot
 	ss.Net = &axon.Network{}
 	ss.Params = ParamSets
-	ss.GenesisLog = &etable.Table{}
 	ss.DWtLog = &etable.Table{}
 	ss.PhaseDWtLog = &etable.Table{}
 	ss.MsecLog = &etable.Table{}
 	ss.Msec10Log = &etable.Table{}
 	ss.Msec100Log = &etable.Table{}
+	ss.AutoKLog = &etable.Table{}
+	ss.GenesisLog = &etable.Table{}
 	ss.Stim = STDP    // Poisson // STDP
 	ss.ISISec = 1     // 1
 	ss.NReps = 10     // 10     // 20
@@ -199,6 +204,9 @@ func (ss *Sim) New() {
 func (ss *Sim) Defaults() {
 	ss.Opts.Defaults()
 	ss.Spine.Defaults()
+	ss.DAPK1AutoK = DAPK1AutoK
+	ss.DAPK1_AMPAR = DAPK1_AMPAR
+	ss.CaNDAPK1 = 11
 	ss.GeStim = 2
 	ss.NMDAGbar = 0.15 // 0.1 to 0.15 matches pre-spike increase in vm
 	ss.GABABGbar = 0.0 // 0.2
@@ -221,6 +229,7 @@ func (ss *Sim) Config() {
 	ss.ConfigTimeLog(ss.MsecLog)
 	ss.ConfigTimeLog(ss.Msec10Log)
 	ss.ConfigTimeLog(ss.Msec100Log)
+	ss.ConfigAutoKLog(ss.AutoKLog)
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -294,6 +303,8 @@ func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
 // and resets the epoch log table
 func (ss *Sim) Init() {
 	TheOpts = ss.Opts
+	DAPK1AutoK = ss.DAPK1AutoK
+	DAPK1_AMPAR = ss.DAPK1_AMPAR
 	ss.Spine.DAPK1.CaNSer308.SetKmVol(ss.CaNDAPK1, CytVol, 1.34, 0.335) // 10: 11 μM Km = 0.0031724
 	ss.Spine.Init()
 	ss.InitWt = ss.Spine.States.AMPAR.Trp.Tot
@@ -549,6 +560,7 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("VmS", eplot.Off, eplot.FixMin, -70, eplot.FloatMax, 1)
 	plt.SetColParams("PreSpike", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_Ca", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
+	plt.SetColParams("PSD_CaMact", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("Cyt_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_AC1act", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	plt.SetColParams("PSD_CaMKIIact", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
@@ -699,6 +711,68 @@ func (ss *Sim) ResetDWtPlot() {
 	ss.DWtPlot.Update()
 	ss.PhaseDWtLog.SetNumRows(0)
 	ss.PhaseDWtPlot.Update()
+}
+
+//////////////////////////////////////////////
+//  AutoK Log
+
+func (ss *Sim) ConfigAutoKLog(dt *etable.Table) {
+	dt.SetMetaData("name", "Urakubo AutoK Plot")
+	dt.SetMetaData("desc", "autoK as function of diff variables")
+	dt.SetMetaData("read-only", "true")
+	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
+
+	sch := etable.Schema{
+		{"Total", etensor.FLOAT64, nil, nil},
+		{"AutoK", etensor.FLOAT64, nil, nil},
+	}
+
+	dt.SetFromSchema(sch, 0)
+}
+
+func (ss *Sim) ConfigAutoKPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Urakubo AutoK Plot"
+	plt.Params.XAxisCol = "Total"
+	plt.SetTable(dt)
+	// order of params: on, fixMin, min, fixMax, max
+	plt.SetColParams("AutoK", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 1)
+	return plt
+}
+
+// AutoK plots AutoK as function of T total
+func (ss *Sim) AutoK() {
+	dt := ss.AutoKLog
+
+	max := 1.0
+	inc := 0.01
+	n := int(max / inc)
+	dt.SetNumRows(n)
+
+	cb := 0.75
+	ct := 0.8
+	ca := 0.8
+
+	row := 0
+	for T := 0.0; T <= max; T += inc {
+		// this is a function that turns positive around 0.13 and is
+		// roughly parabolic after that but not quite..
+		tmp := T * (-0.22 + 1.826*T + -0.8*T*T)
+		if false {
+			Wb := .25 * T
+			Wp := .25 * T
+			Wt := .25 * T
+			Wa := .25 * T
+			tmp *= 0.75 * (cb*Wb + Wp + ct*Wt + ca*Wa)
+			// if tmp < 0 {
+			// 	tmp = 0
+			// }
+		}
+		// autok := 0.29 * tmp
+		autok := tmp
+		dt.SetCellFloat("AutoK", row, autok)
+		dt.SetCellFloat("Total", row, T)
+		row++
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -853,6 +927,9 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "MsecPlot").(*eplot.Plot2D)
 	ss.MsecPlot = ss.ConfigTimePlot(plt, ss.MsecLog)
 
+	plt = tv.AddNewTab(eplot.KiT_Plot2D, "AutoKPlot").(*eplot.Plot2D)
+	ss.AutoKPlot = ss.ConfigAutoKPlot(plt, ss.AutoKLog)
+
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "GenesisPlot").(*eplot.Plot2D)
 	ss.GenesisPlot = ss.ConfigGenesisPlot(plt, ss.GenesisLog)
 
@@ -896,6 +973,14 @@ See <a href="https://github.com/emer/axon/blob/master/examples/urakubo/README.md
 	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		if !ss.IsRunning {
 			ss.ResetDWtPlot()
+		}
+	})
+
+	tbar.AddAction(gi.ActOpts{Label: "AutoK Plot", Icon: "update", Tooltip: "Plot AutoK function.", UpdateFunc: func(act *gi.Action) {
+		act.SetActiveStateUpdt(!ss.IsRunning)
+	}}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		if !ss.IsRunning {
+			ss.AutoK()
 		}
 	})
 

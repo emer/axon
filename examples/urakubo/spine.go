@@ -46,7 +46,11 @@ func (cs *CaSigState) Init() {
 	cs.PP2A = chem.CoToN(0.03, CytVol)
 
 	if TheOpts.InitBaseline {
-		cs.PP2A = chem.CoToN(0.02239, CytVol)
+		if TheOpts.UseDAPK1 {
+			cs.PP2A = chem.CoToN(0.01849, CytVol)
+		} else {
+			cs.PP2A = chem.CoToN(0.02239, CytVol)
+		}
 	}
 }
 
@@ -224,7 +228,7 @@ func (sp *Spine) Step() {
 	sp.CaMKII.Step(&sp.States.CaSig.CaMKII, &sp.Deltas.CaSig.CaMKII, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.PP1, &sp.Deltas.CaSig.PP1, sp.States.CaSig.PP2A, sp.States.NMDAR.GluN2B, &sp.Deltas.CaSig.PP2A, &sp.Deltas.NMDAR.GluN2B)
 
 	if TheOpts.UseDAPK1 {
-		sp.DAPK1.Step(&sp.States.CaSig.DAPK1, &sp.Deltas.CaSig.DAPK1, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, &sp.States.NMDAR, &sp.Deltas.NMDAR)
+		sp.DAPK1.Step(&sp.States.CaSig.DAPK1, &sp.Deltas.CaSig.DAPK1, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca, &sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, sp.States.CaSig.PP2A, sp.States.NMDAR.GluN2B, &sp.Deltas.CaSig.PP2A, &sp.Deltas.NMDAR.GluN2B)
 	}
 
 	sp.CaN.Step(&sp.States.CaSig.CaN, &sp.Deltas.CaSig.CaN, &sp.States.CaSig.CaM, &sp.Deltas.CaSig.CaM, &sp.States.CaSig.Ca, &sp.Deltas.CaSig.Ca)

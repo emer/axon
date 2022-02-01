@@ -145,7 +145,7 @@ func (nr *NMDARParams) Defaults() {
 
 	nr.Glu = 0.4 // was 0.12
 
-	nr.GluN2BN = 120 // 120 works for N2B only (no DAPK1)
+	nr.GluN2BN = chem.CoToN(10, PSDVol) // 120 works for N2B only (no DAPK1)
 }
 
 // Special init function for state

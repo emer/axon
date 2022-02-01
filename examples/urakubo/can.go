@@ -52,14 +52,23 @@ func (cs *CaNCaMVars) Init(vol float64) {
 	cs.CaNact = 0
 
 	if TheOpts.InitBaseline {
-		// All vals below from 500 sec baseline
-		cs.Ca[0].CaN = chem.CoToN(1.284, vol)
-		cs.Ca[0].CaNCaM = chem.CoToN(0.04952, vol)
-		cs.Ca[1].CaN = chem.CoToN(1.284, vol)
-		cs.Ca[1].CaNCaM = chem.CoToN(0.04953, vol)
-		cs.Ca[2].CaN = chem.CoToN(0.321, vol)
-		cs.Ca[2].CaNCaM = chem.CoToN(0.01238, vol)
-		cs.CaNact = chem.CoToN(0.01238, vol)
+		if TheOpts.UseDAPK1 {
+			cs.Ca[0].CaN = chem.CoToN(1.322, vol)
+			cs.Ca[0].CaNCaM = chem.CoToN(0.01114, vol)
+			cs.Ca[1].CaN = chem.CoToN(1.322, vol)
+			cs.Ca[1].CaNCaM = chem.CoToN(0.01114, vol)
+			cs.Ca[2].CaN = chem.CoToN(0.3306, vol)
+			cs.Ca[2].CaNCaM = chem.CoToN(0.002786, vol)
+			cs.CaNact = chem.CoToN(0.002786, vol)
+		} else {
+			cs.Ca[0].CaN = chem.CoToN(1.284, vol)
+			cs.Ca[0].CaNCaM = chem.CoToN(0.04952, vol)
+			cs.Ca[1].CaN = chem.CoToN(1.284, vol)
+			cs.Ca[1].CaNCaM = chem.CoToN(0.04953, vol)
+			cs.Ca[2].CaN = chem.CoToN(0.321, vol)
+			cs.Ca[2].CaNCaM = chem.CoToN(0.01238, vol)
+			cs.CaNact = chem.CoToN(0.01238, vol)
+		}
 	}
 }
 

@@ -17,7 +17,7 @@
       orient="auto">
       <path
         id="path546"
-        style="stroke-width:0.62500000;stroke-linejoin:round;fill-rule:evenodd;"
+        style="stroke-linejoin:round;fill-rule:evenodd;stroke-width:0.62500000;"
         transform="scale(0.6) rotate(180) translate(0,0)"
         d="M 8.718588,4.0337353 L -2.2072895,0.016013255 L 8.718589,-4.001708 C 6.97309,-1.6296469 6.9831476,1.6157441 8.718588,4.0337353 z " />
     </marker>
@@ -50,11 +50,11 @@
   </defs>
   <sodipodi:namedview
     id="namedview81"
-    inkscape:zoom="2.2410533"
-    inkscape:document-units="px"
-    inkscape:current-layer="Layer1"
     inkscape:cx="0"
-    inkscape:cy="0">
+    inkscape:current-layer="Layer1"
+    inkscape:cy="0"
+    inkscape:zoom="2.2410533"
+    inkscape:document-units="px">
     <inkscape:grid
       id="grid887"
       spacingx="12"
@@ -2196,7 +2196,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     style="display:inline">
     <text
       id="text59"
-      style="stroke-width:1px;stroke-opacity:1;stroke:none;font-size:15px;fill:#0000FF;text-align:AlignLeft;font-family:Arial;fill-opacity:1;"
+      style="stroke-opacity:1;fill:#0000FF;stroke-width:1px;stroke:none;font-size:15px;text-align:AlignLeft;font-family:Arial;fill-opacity:1;"
       transform="none"
       x="509.13556"
       y="515.26086">
@@ -2207,7 +2207,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text728"
-      style="stroke-width:1px;stroke:none;font-size:15px;font-family:Arial;fill:#0000FF;fill-opacity:1;stroke-opacity:1;text-align:AlignLeft;"
+      style="stroke:none;font-size:15px;font-family:Arial;fill:#0000FF;fill-opacity:1;text-align:AlignLeft;stroke-width:1px;stroke-opacity:1;"
       transform="none"
       x="511.81287"
       y="392.99695">
@@ -2218,7 +2218,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text189"
-      style="stroke-opacity:1;text-align:AlignLeft;stroke-width:1px;font-size:15px;stroke:none;fill-opacity:1;font-family:Arial;fill:#0000FF;"
+      style="font-family:Arial;fill:#0000FF;text-align:AlignLeft;stroke-width:1px;stroke:none;fill-opacity:1;stroke-opacity:1;font-size:15px;"
       transform="none"
       x="511.81287"
       y="267.16327">
@@ -2229,7 +2229,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text162"
-      style="text-align:AlignLeft;stroke-width:1px;font-family:Arial;fill:#000000;fill-opacity:1;stroke:none;font-size:15px;stroke-opacity:1;"
+      style="font-family:Arial;fill-opacity:1;font-size:15px;text-align:AlignLeft;fill:#000000;stroke:none;stroke-opacity:1;stroke-width:1px;"
       transform="none"
       x="530.10785"
       y="115.562515">
@@ -2240,34 +2240,23 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text783"
-      style="fill-opacity:1;fill:#0000FF;font-size:15px;stroke-width:1px;font-family:Arial;stroke:none;text-align:AlignLeft;stroke-opacity:1;"
+      style="fill:#0000FF;font-size:15px;stroke:none;text-align:AlignLeft;fill-opacity:1;stroke-width:1px;font-family:Arial;stroke-opacity:1;"
       transform="none"
       x="479.99997"
       y="150.8138">
       <tspan
-        id="tspan843"
+        id="tspan81"
         x="479.99997"
         y="150.8138">8</tspan>
     </text>
     <text
-      id="text511"
-      style="font-size:12px;stroke-opacity:1;stroke-width:1px;fill-opacity:1;fill:#FF0000;stroke:none;font-family:Arial;text-align:AlignLeft;"
-      transform="none"
-      x="472.25134"
-      y="175.30794">
-      <tspan
-        id="tspan205"
-        x="472.25134"
-        y="175.30794">Only 1st CaM to P</tspan>
-    </text>
-    <text
       id="text541"
-      style="stroke-opacity:1;stroke:none;font-size:12px;font-family:Arial;text-align:AlignLeft;fill-opacity:1;stroke-width:1px;fill:#FF0000;"
+      style="stroke-opacity:1;font-size:12px;font-family:Arial;text-align:AlignLeft;fill-opacity:1;fill:#FF0000;stroke:none;stroke-width:1px;"
       transform="none"
       x="557.08356"
       y="194.624">
       <tspan
-        id="tspan205"
+        id="tspan425"
         x="557.08356"
         y="194.624">P | N2B</tspan>
     </text>
@@ -2278,134 +2267,166 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
       x="512.9079"
       y="363.29468">
       <tspan
-        id="tspan205"
+        id="tspan540"
         x="512.9079"
         y="363.29468">No CaM -&gt; P!</tspan>
     </text>
     <text
-      id="text147"
-      style="text-align:AlignLeft;stroke:none;stroke-opacity:1;fill-opacity:1;font-size:12px;font-family:Arial;fill:#FF0000;stroke-width:1px;"
-      transform="none"
-      x="124.47444"
-      y="365.972">
-      <tspan
-        id="tspan205"
-        x="124.47444"
-        y="365.972">CaM only to noP</tspan>
-    </text>
-    <text
       id="text106"
-      style="text-align:AlignLeft;stroke-width:1px;stroke:none;fill-opacity:1;fill:#FF0000;font-size:12px;stroke-opacity:1;font-family:Arial;"
+      style="fill-opacity:1;stroke-opacity:1;text-align:AlignLeft;stroke-width:1px;stroke:none;fill:#FF0000;font-size:12px;font-family:Arial;"
       transform="none"
       x="450.789"
       y="247.72401">
       <tspan
-        id="tspan205"
+        id="tspan300"
         x="450.789"
         y="247.72401">Ca+ binding inhibited by P</tspan>
     </text>
     <text
       id="text694"
-      style="font-family:Arial;font-size:12px;fill:#FF0000;stroke-width:1px;text-align:AlignLeft;stroke:none;fill-opacity:1;stroke-opacity:1;"
+      style="font-family:Arial;font-size:12px;stroke-width:1px;text-align:AlignLeft;stroke:none;fill:#FF0000;fill-opacity:1;stroke-opacity:1;"
+      transform="none"
+      x="80.14005"
+      y="611.4593">
+      <tspan
+        id="tspan89"
+        x="80.14005"
+        y="611.4593">(act)</tspan>
+    </text>
+    <text
+      id="text305"
+      style="stroke:none;font-size:12px;stroke-width:1px;text-align:AlignLeft;font-family:Arial;fill:#FF0000;fill-opacity:1;stroke-opacity:1;"
+      transform="none"
+      x="75.51909"
+      y="484.1693">
+      <tspan
+        id="tspan89"
+        x="75.51909"
+        y="484.1693">(inact)</tspan>
+    </text>
+    <text
+      id="text364"
+      style="font-family:Arial;fill-opacity:1;stroke-opacity:1;fill:#FF0000;font-size:12px;stroke-width:1px;text-align:AlignLeft;stroke:none;"
+      transform="none"
+      x="75.51909"
+      y="359.22806">
+      <tspan
+        id="tspan89"
+        x="75.51909"
+        y="359.22806">(inact)</tspan>
+    </text>
+    <text
+      id="text844"
+      style="stroke-opacity:1;font-size:12px;text-align:AlignLeft;stroke:none;font-family:Arial;fill-opacity:1;stroke-width:1px;fill:#FF0000;"
+      transform="none"
+      x="75.51909"
+      y="233.445">
+      <tspan
+        id="tspan89"
+        x="75.51909"
+        y="233.445">(inact)</tspan>
+    </text>
+    <text
+      id="text640"
+      style="font-family:Arial;font-size:12px;fill-opacity:1;stroke-opacity:1;stroke-width:1px;text-align:AlignLeft;stroke:none;fill:#FF0000;"
       transform="none"
       x="200.46033"
       y="112.96595">
       <tspan
-        id="tspan205"
+        id="tspan89"
         x="200.46033"
         y="112.96595">(only one excluded from Auto.K, Act)</tspan>
     </text>
     <text
       id="text561"
-      style="font-family:Arial;font-size:15px;fill-opacity:1;stroke-width:1px;stroke-opacity:1;fill:#FF0000;text-align:AlignLeft;stroke:none;"
+      style="fill-opacity:1;stroke-width:1px;stroke-opacity:1;fill:#FF0000;text-align:AlignLeft;stroke:none;font-family:Arial;font-size:15px;"
       transform="none"
       x="112.63063"
-      y="561.0448">
-      <text
-        id="tspan351"
-        x="112.63063"
-        y="561.0448" />
-    </text>
+      y="561.0448" />
+    <text
+      id="text351"
+      x="112.63063"
+      y="561.0448" />
     <text
       id="text510"
-      style="stroke-opacity:1;stroke-width:1px;font-family:Arial;text-align:AlignLeft;stroke:none;fill-opacity:1;font-size:15px;fill:#FF0000;"
+      style="font-family:Arial;text-align:AlignLeft;stroke:none;stroke-opacity:1;fill-opacity:1;font-size:15px;fill:#FF0000;stroke-width:1px;"
       transform="none"
-      x="108.61466"
-      y="428.96405">
+      x="106.16046"
+      y="433.85065">
       <tspan
-        id="tspan351"
-        x="108.61466"
-        y="428.96405">N2B = 8</tspan>
+        id="tspan274"
+        x="106.16046"
+        y="433.85065">N2B = 8</tspan>
     </text>
     <text
-      id="text"
-      style="fill-opacity:1;text-align:AlignLeft;stroke-opacity:1;fill:#FF0000;stroke:none;font-family:Arial;stroke-width:1px;font-size:15px;"
+      id="text602"
+      style="text-align:AlignLeft;fill-opacity:1;font-size:15px;font-family:Arial;fill:#FF0000;stroke-width:1px;stroke:none;stroke-opacity:1;"
+      transform="none"
+      x="106.16046"
+      y="311.1405">
+      <tspan
+        id="tspan274"
+        x="106.16046"
+        y="311.1405">N2B = 8</tspan>
+    </text>
+    <text
+      id="text801"
+      style="font-size:15px;fill:#FF0000;stroke:none;stroke-opacity:1;stroke-width:1px;fill-opacity:1;text-align:AlignLeft;font-family:Arial;"
+      transform="none"
+      x="106.16046"
+      y="181.96017">
+      <tspan
+        id="tspan274"
+        x="106.16046"
+        y="181.96017">N2B = 8</tspan>
+    </text>
+    <text
+      id="text211"
+      style="stroke-opacity:1;fill:#FF0000;stroke:none;stroke-width:1px;font-size:15px;text-align:AlignLeft;font-family:Arial;fill-opacity:1;"
       transform="none"
       x="196.74286"
       y="188.44942">
       <tspan
-        id="tspan351"
+        id="tspan445"
         x="196.74286"
         y="188.44942">(noP = weaker)</tspan>
     </text>
     <text
       id="text156"
-      style="font-size:15px;stroke-width:1px;font-family:Arial;text-align:AlignLeft;fill-opacity:1;fill:#FF0000;stroke:none;stroke-opacity:1;"
+      style="text-align:AlignLeft;fill-opacity:1;fill:#FF0000;stroke:none;stroke-opacity:1;font-size:15px;stroke-width:1px;font-family:Arial;"
       transform="none"
       x="79.54611"
       y="114.154">
       <tspan
-        id="tspan351"
+        id="tspan237"
         x="79.54611"
         y="114.154">N2B</tspan>
     </text>
     <text
       id="text878"
-      style="fill:#FF0000;stroke:none;stroke-width:1px;text-align:AlignLeft;fill-opacity:1;font-size:15px;stroke-opacity:1;font-family:Arial;"
+      style="stroke:none;stroke-width:1px;fill-opacity:1;stroke-opacity:1;font-family:Arial;fill:#FF0000;text-align:AlignLeft;font-size:15px;"
       transform="none"
       x="411.97906"
       y="115.49265">
       <tspan
-        id="tspan351"
+        id="tspan495"
         x="411.97906"
         y="115.49265">N2B</tspan>
     </text>
     <text
       id="text133"
-      style="fill:#FF0000;font-size:15px;fill-opacity:1;stroke:none;stroke-opacity:1;font-family:Arial;stroke-width:1px;text-align:AlignLeft;"
+      style="stroke:none;stroke-opacity:1;stroke-width:1px;text-align:AlignLeft;fill:#FF0000;font-size:15px;fill-opacity:1;font-family:Arial;"
       transform="none"
       x="303.5479"
       y="553.97784">
       <tspan
-        id="tspan351"
+        id="tspan466"
         x="303.5479"
         y="553.97784">N2B = 0.02</tspan>
     </text>
     <text
-      id="text420"
-      style="text-align:AlignLeft;font-family:Arial;font-size:15px;stroke-width:1px;fill-opacity:1;fill:#FF0000;stroke:none;stroke-opacity:1;"
-      transform="none"
-      x="106.16045"
-      y="182.20236">
-      <tspan
-        id="tspan351"
-        x="106.16045"
-        y="182.20236">N2B = 8</tspan>
-    </text>
-    <text
-      id="text605"
-      style="font-size:15px;fill:#FF0000;fill-opacity:1;stroke-width:1px;stroke-opacity:1;stroke:none;font-family:Arial;text-align:AlignLeft;"
-      transform="none"
-      x="108.61466"
-      y="308.9312">
-      <tspan
-        id="tspan351"
-        x="108.61466"
-        y="308.9312">N2B = 8</tspan>
-    </text>
-    <text
-      id="text495"
-      style="fill-opacity:1;text-align:AlignLeft;stroke:none;fill:#0000FF;font-size:15px;font-family:Arial;stroke-opacity:1;stroke-width:1px;"
+      id="text47"
+      style="stroke-opacity:1;stroke-width:1px;fill-opacity:1;font-family:Arial;fill:#0000FF;font-size:15px;text-align:AlignLeft;stroke:none;"
       transform="none"
       x="44.43026"
       y="563.64685">
@@ -2416,7 +2437,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text356"
-      style="stroke-opacity:1;fill-opacity:1;font-size:15px;fill:#0000FF;stroke-width:1px;font-family:Arial;text-align:AlignLeft;stroke:none;"
+      style="text-align:AlignLeft;stroke-opacity:1;font-size:15px;stroke-width:1px;font-family:Arial;stroke:none;fill-opacity:1;fill:#0000FF;"
       transform="none"
       x="303.42874"
       y="572.5712">
@@ -2427,7 +2448,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text429"
-      style="font-size:15px;stroke-width:1px;stroke-opacity:1;fill-opacity:1;font-family:Arial;fill:#0000FF;text-align:AlignLeft;stroke:none;"
+      style="font-size:15px;stroke-opacity:1;font-family:Arial;text-align:AlignLeft;stroke-width:1px;fill-opacity:1;fill:#0000FF;stroke:none;"
       transform="none"
       x="60.01367"
       y="518.1325">
@@ -2438,7 +2459,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text159"
-      style="fill:#0000FF;stroke:none;font-size:15px;fill-opacity:1;stroke-width:1px;font-family:Arial;text-align:AlignLeft;stroke-opacity:1;"
+      style="font-size:15px;stroke-width:1px;stroke-opacity:1;stroke:none;fill-opacity:1;font-family:Arial;text-align:AlignLeft;fill:#0000FF;"
       transform="none"
       x="252.95674"
       y="518.1284">
@@ -2448,30 +2469,30 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
         y="518.1284">25</tspan>
     </text>
     <text
-      id="text456"
-      style="stroke-opacity:1;font-family:Arial;fill:#0000FF;fill-opacity:1;stroke-width:1px;stroke:none;font-size:15px;text-align:AlignLeft;"
+      id="text76"
+      style="text-align:AlignLeft;fill-opacity:1;font-size:15px;stroke:none;fill:#0000FF;stroke-opacity:1;font-family:Arial;stroke-width:1px;"
       transform="none"
-      x="144.4462"
+      x="148.1446"
       y="577.9054">
       <tspan
-        id="tspan285"
-        x="144.4462"
+        id="tspan287"
+        x="148.1446"
         y="577.9054">8</tspan>
     </text>
     <text
-      id="text451"
-      style="stroke-opacity:1;font-size:15px;fill-opacity:1;font-family:Arial;stroke:none;fill:#0000FF;text-align:AlignLeft;stroke-width:1px;"
+      id="text767"
+      style="font-size:15px;fill:#0000FF;stroke-opacity:1;stroke-width:1px;stroke:none;text-align:AlignLeft;fill-opacity:1;font-family:Arial;"
       transform="none"
       x="110.66224"
       y="449.43536">
       <tspan
-        id="tspan285"
+        id="tspan287"
         x="110.66224"
         y="449.43536">0.0004</tspan>
     </text>
     <text
-      id="text540"
-      style="stroke:none;font-family:Arial;fill-opacity:1;text-align:AlignLeft;stroke-width:1px;font-size:15px;fill:#0000FF;stroke-opacity:1;"
+      id="text888"
+      style="stroke:none;font-family:Arial;text-align:AlignLeft;stroke-opacity:1;fill-opacity:1;stroke-width:1px;font-size:15px;fill:#0000FF;"
       transform="none"
       x="244.52785"
       y="392.76556">
@@ -2481,30 +2502,30 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
         y="392.76556">133</tspan>
     </text>
     <text
-      id="text445"
-      style="stroke:none;font-size:15px;font-family:Arial;fill-opacity:1;stroke-opacity:1;stroke-width:1px;text-align:AlignLeft;fill:#0000FF;"
+      id="text790"
+      style="font-size:15px;font-family:Arial;fill-opacity:1;stroke-opacity:1;text-align:AlignLeft;fill:#0000FF;stroke:none;stroke-width:1px;"
       transform="none"
       x="253.006"
       y="262.0235">
       <tspan
-        id="tspan590"
+        id="tspan15"
         x="253.006"
         y="262.0235">51</tspan>
     </text>
     <text
-      id="text81"
-      style="font-size:15px;stroke:none;fill-opacity:1;text-align:AlignLeft;fill:#0000FF;stroke-width:1px;stroke-opacity:1;font-family:Arial;"
+      id="text408"
+      style="font-size:15px;fill:#0000FF;stroke-opacity:1;font-family:Arial;stroke:none;fill-opacity:1;text-align:AlignLeft;stroke-width:1px;"
       transform="none"
       x="110.66224"
       y="326.72522">
       <tspan
-        id="tspan590"
+        id="tspan387"
         x="110.66224"
         y="326.72522">0.0004</tspan>
     </text>
     <text
       id="text413"
-      style="font-family:Arial;text-align:AlignLeft;fill-opacity:1;stroke-width:1px;fill:#0000FF;font-size:15px;stroke-opacity:1;stroke:none;"
+      style="text-align:AlignLeft;fill-opacity:1;stroke-width:1px;stroke:none;font-family:Arial;fill:#0000FF;font-size:15px;stroke-opacity:1;"
       transform="none"
       x="439.97168"
       y="126.72612">
@@ -2515,95 +2536,95 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     </text>
     <text
       id="text241"
-      style="stroke-opacity:1;stroke:none;stroke-width:1px;fill:#0000FF;font-size:15px;text-align:AlignLeft;fill-opacity:1;font-family:Arial;"
+      style="fill:#0000FF;fill-opacity:1;stroke-opacity:1;stroke:none;stroke-width:1px;font-size:15px;text-align:AlignLeft;font-family:Arial;"
       transform="none"
       x="110.66224"
       y="126.72612">
       <tspan
-        id="tspan553"
+        id="tspan831"
         x="110.66224"
         y="126.72612">1000</tspan>
     </text>
     <text
       id="text953"
-      style="fill:#0000FF;text-align:AlignLeft;stroke:none;stroke-width:1px;font-size:15px;font-family:Arial;stroke-opacity:1;fill-opacity:1;"
+      style="stroke-width:1px;fill-opacity:1;fill:#0000FF;text-align:AlignLeft;stroke:none;font-size:15px;font-family:Arial;stroke-opacity:1;"
       transform="none"
       x="110.66224"
       y="199.45978">
       <tspan
-        id="tspan553"
+        id="tspan737"
         x="110.66224"
         y="199.45978">0.0004</tspan>
     </text>
     <path
-      id="path211"
+      id="path631"
       style="stroke-width:3px;fill:#0000FF;fill-opacity:1;marker-end:url(#Arrow2Mend);stroke:#000000;stroke-opacity:1;"
       transform="matrix(-4.371139e-08,1,-1,-4.371139e-08,643.4474,-360.99097)"
       d="m 477.8445,143.45924 31.291088,0 " />
     <path
-      id="path274"
-      style="stroke-opacity:1;stroke-width:3px;fill:#0000FF;fill-opacity:1;marker-end:url(#Arrow2Mend);stroke:#000000;"
+      id="path485"
+      style="stroke-width:3px;fill:#0000FF;fill-opacity:1;marker-end:url(#Arrow2Mend);stroke:#000000;stroke-opacity:1;"
       d="m 124.43927,592.5784 31.291088,0 " />
     <path
       id="path202"
-      style="stroke-width:1px;marker-end:url(#Arrow1Mend);fill:#0000FF;fill-opacity:1;stroke:#000000;stroke-opacity:1;"
+      style="stroke:#000000;stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);fill:#0000FF;fill-opacity:1;"
       transform="matrix(-1,8.742278e-08,-8.742278e-08,-1,590.3474,1122.6863)"
       d="m 294.99435,553.47784 0.04714966,22.830872 " />
     <path
-      id="path831"
-      style="fill:#0000FF;fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);"
+      id="path26"
+      style="fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);fill:#0000FF;"
       transform="matrix(-1,8.742278e-08,-8.742278e-08,-1,207.49173,1122.6863)"
       d="m 129.31197,553.2525 0.09101868,22.073792 " />
     <g
-      id="g888"
+      id="g90"
       transform="translate(-2.1278687,0)">
       <rect
-        id="rect287"
+        id="rect194"
         style="fill-opacity:1;stroke:none;fill:#FFFFFF;"
         x="341.9338"
         y="73.98538"
         width="15.303709"
         height="12.426196" />
       <text
-        id="text528"
-        style="text-align:AlignLeft;stroke:none;fill:#000000;fill-opacity:1;font-family:Arial;font-size:15px;"
+        id="text563"
+        style="font-family:Arial;font-size:15px;text-align:AlignLeft;stroke:none;fill:#000000;fill-opacity:1;"
         transform="none"
         x="340.891"
         y="85.72826">
         <tspan
-          id="tspan258"
+          id="tspan433"
           x="340.891"
           y="85.72826">10</tspan>
       </text>
     </g>
     <g
-      id="g15"
+      id="g78"
       transform="translate(1.3386536,0)">
       <rect
-        id="rect790"
+        id="rect324"
         style="stroke:none;fill:#FFFFFF;fill-opacity:1;"
         x="340.80023"
         y="29.829487"
         width="19.199734"
         height="12.929706" />
       <text
-        id="text47"
-        style="stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:15px;"
+        id="text353"
+        style="font-family:Arial;font-size:15px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;"
         transform="none"
         x="339.37607"
         y="41.837013">
         <tspan
-          id="tspan947"
+          id="tspan957"
           x="339.37607"
           y="41.837013">11</tspan>
       </text>
     </g>
     <g
-      id="g433"
+      id="g721"
       transform="translate(0,253.89848)">
       <text
-        id="text89"
-        style="font-size:15px;text-align:AlignLeft;stroke:none;stroke-opacity:1;font-family:Arial;fill-opacity:1;stroke-width:1px;fill:#0000FF;"
+        id="text199"
+        style="font-size:15px;stroke:none;stroke-opacity:1;fill-opacity:1;stroke-width:1px;text-align:AlignLeft;font-family:Arial;fill:#0000FF;"
         transform="none"
         x="184.28833"
         y="315.04968">
@@ -2613,16 +2634,16 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
           y="315.04968">1</tspan>
       </text>
       <path
-        id="path26"
-        style="stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;"
+        id="path"
+        style="fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;"
         d="m 180.34567,290.97623 0.14901733,31.564346 " />
     </g>
     <g
-      id="g324"
+      id="g705"
       transform="translate(0,-4.0159607)">
       <text
         id="text582"
-        style="fill:#0000FF;text-align:AlignLeft;stroke-opacity:1;stroke:none;fill-opacity:1;font-family:Arial;font-size:15px;stroke-width:1px;"
+        style="fill-opacity:1;font-family:Arial;font-size:15px;stroke-width:1px;fill:#0000FF;text-align:AlignLeft;stroke-opacity:1;stroke:none;"
         transform="none"
         x="184.28833"
         y="315.04968">
@@ -2633,7 +2654,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
       </text>
       <path
         id="path297"
-        style="stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);"
+        style="fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;"
         d="m 180.34567,290.97623 0.14901733,31.564346 " />
     </g>
     <g
@@ -2641,7 +2662,7 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
       transform="translate(0,124.04883)">
       <text
         id="text267"
-        style="text-align:AlignLeft;font-size:15px;stroke-opacity:1;stroke:none;stroke-width:1px;font-family:Arial;fill:#0000FF;fill-opacity:1;"
+        style="font-size:15px;stroke:none;font-family:Arial;fill:#0000FF;fill-opacity:1;text-align:AlignLeft;stroke-width:1px;stroke-opacity:1;"
         transform="none"
         x="184.28833"
         y="315.04968">
@@ -2652,15 +2673,15 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
       </text>
       <path
         id="path271"
-        style="fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;"
+        style="stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;"
         d="m 180.34567,290.97623 0.14901733,31.564346 " />
     </g>
     <g
-      id="g78"
+      id="g538"
       transform="translate(0,-126.726105)">
       <text
         id="text894"
-        style="font-family:Arial;font-size:15px;stroke:none;text-align:AlignLeft;stroke-width:1px;fill:#0000FF;stroke-opacity:1;fill-opacity:1;"
+        style="stroke:none;text-align:AlignLeft;stroke-opacity:1;fill-opacity:1;font-family:Arial;font-size:15px;stroke-width:1px;fill:#0000FF;"
         transform="none"
         x="184.28833"
         y="315.04968">
@@ -2671,46 +2692,46 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
       </text>
       <path
         id="path802"
-        style="stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);"
+        style="fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;"
         d="m 180.34567,290.97623 0.14901733,31.564346 " />
     </g>
     <g
       id="g463">
       <text
-        id="text737"
-        style="fill-opacity:1;stroke-opacity:1;font-family:Arial;stroke:none;text-align:AlignLeft;font-size:15px;stroke-width:1px;fill:#0000FF;"
+        id="text703"
+        style="fill-opacity:1;font-size:15px;stroke-width:1px;stroke-opacity:1;font-family:Arial;stroke:none;text-align:AlignLeft;fill:#0000FF;"
         transform="none"
         x="486.82462"
         y="628.71405">
         <tspan
-          id="tspan843"
+          id="tspan828"
           x="486.82462"
           y="628.71405">8</tspan>
       </text>
       <text
-        id="text538"
-        style="stroke-width:1px;stroke-opacity:1;fill:#FF0000;font-family:Arial;fill-opacity:1;stroke:none;text-align:AlignLeft;font-size:15px;"
+        id="text746"
+        style="fill:#FF0000;fill-opacity:1;stroke:none;font-size:15px;stroke-width:1px;stroke-opacity:1;font-family:Arial;text-align:AlignLeft;"
         transform="none"
         x="487.00812"
         y="653.8583">
         <tspan
-          id="tspan351"
+          id="tspan376"
           x="487.00812"
           y="653.8583">N2B</tspan>
       </text>
       <path
-        id="path957"
-        style="stroke:#000000;stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);fill:#0000FF;fill-opacity:1;"
+        id="path2"
+        style="fill:#0000FF;fill-opacity:1;stroke:#000000;stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);"
         transform="matrix(-1,8.742278e-08,-8.742278e-08,-1,590.3474,1122.6863)"
         d="m 91.07242,510.5413 0.04714966,-22.830872 " />
       <path
-        id="path828"
+        id="path718"
         style="stroke:#000000;stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);fill:#0000FF;fill-opacity:1;"
         transform="matrix(-1,8.742278e-08,-8.742278e-08,-1,590.3474,1122.6863)"
         d="m 79.63223,487.88367 0.04714966,22.830872 " />
       <text
         id="text632"
-        style="text-align:AlignLeft;font-family:Arial;fill-opacity:1;stroke:none;stroke-opacity:1;fill:#0000FF;font-size:15px;stroke-width:1px;"
+        style="font-family:Arial;fill:#0000FF;font-size:15px;stroke-width:1px;text-align:AlignLeft;fill-opacity:1;stroke:none;stroke-opacity:1;"
         transform="none"
         x="513.7428"
         y="683.384">
@@ -2723,85 +2744,66 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
     <g
       id="g996">
       <text
-        id="text376"
-        style="stroke:none;font-size:15px;fill-opacity:1;font-family:Arial;fill:#0000FF;stroke-opacity:1;stroke-width:1px;text-align:AlignLeft;"
+        id="text447"
+        style="stroke:none;fill-opacity:1;fill:#0000FF;font-size:15px;font-family:Arial;stroke-opacity:1;stroke-width:1px;text-align:AlignLeft;"
         transform="none"
         x="240.9581"
         y="628.71405">
         <tspan
-          id="tspan843"
+          id="tspan94"
           x="240.9581"
           y="628.71405">8</tspan>
       </text>
       <text
-        id="text2"
-        style="fill-opacity:1;font-size:15px;font-family:Arial;stroke-opacity:1;text-align:AlignLeft;stroke-width:1px;fill:#FF0000;stroke:none;"
+        id="text577"
+        style="font-family:Arial;text-align:AlignLeft;fill:#FF0000;stroke:none;fill-opacity:1;font-size:15px;stroke-opacity:1;stroke-width:1px;"
         transform="none"
         x="241.14162"
         y="653.8583">
         <tspan
-          id="tspan351"
+          id="tspan623"
           x="241.14162"
           y="653.8583">N2B</tspan>
       </text>
       <path
-        id="path718"
+        id="path33"
         style="stroke:#000000;stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);fill:#0000FF;fill-opacity:1;"
         transform="matrix(-1,8.742278e-08,-8.742278e-08,-1,590.3474,1122.6863)"
         d="m 336.93893,510.54132 0.04714966,-22.830872 " />
       <path
-        id="path447"
-        style="stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);fill:#0000FF;fill-opacity:1;stroke:#000000;"
+        id="path643"
+        style="stroke:#000000;stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);fill:#0000FF;fill-opacity:1;"
         transform="matrix(-1,8.742278e-08,-8.742278e-08,-1,590.3474,1122.6863)"
         d="m 325.49875,487.8837 0.04714966,22.830872 " />
       <text
-        id="text94"
-        style="font-size:15px;fill-opacity:1;text-align:AlignLeft;font-family:Arial;stroke-width:1px;stroke-opacity:1;fill:#0000FF;stroke:none;"
+        id="text891"
+        style="fill-opacity:1;stroke-width:1px;stroke:none;font-size:15px;text-align:AlignLeft;font-family:Arial;stroke-opacity:1;fill:#0000FF;"
         transform="none"
         x="267.8763"
         y="683.384">
         <tspan
-          id="tspan98"
+          id="tspan336"
           x="271.8923"
           y="628.4991">0.001</tspan>
       </text>
     </g>
     <text
-      id="text746"
-      style="stroke-opacity:1;fill:#0000FF;font-size:15px;stroke-width:1px;text-align:AlignLeft;font-family:Arial;fill-opacity:1;stroke:none;"
+      id="text598"
+      style="stroke-opacity:1;font-size:15px;stroke-width:1px;text-align:AlignLeft;font-family:Arial;stroke:none;fill:#0000FF;fill-opacity:1;"
       transform="none"
       x="512.4042"
       y="248.76695">
       <tspan
-        id="tspan98"
+        id="tspan410"
         x="516.42017"
         y="193.88205">0.001</tspan>
     </text>
     <g
-      id="g199"
+      id="g981"
       transform="translate(1.1155396,254.34468)">
       <text
-        id="text194"
-        style="text-align:AlignLeft;font-size:15px;stroke-width:1px;fill-opacity:1;fill:#0000FF;font-family:Arial;stroke:none;stroke-opacity:1;"
-        transform="none"
-        x="511.81287"
-        y="312.23135">
-        <tspan
-          id="tspan981"
-          x="511.81287"
-          y="312.23135">1</tspan>
-      </text>
-      <path
-        id="path721"
-        style="stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;"
-        d="m 510.028,295.39667 0,22.806736 " />
-    </g>
-    <g
-      id="g705"
-      transform="translate(0,124.495026)">
-      <text
         id="text79"
-        style="fill:#0000FF;fill-opacity:1;stroke:none;text-align:AlignLeft;stroke-opacity:1;font-size:15px;stroke-width:1px;font-family:Arial;"
+        style="text-align:AlignLeft;font-size:15px;fill:#0000FF;stroke:none;stroke-width:1px;fill-opacity:1;font-family:Arial;stroke-opacity:1;"
         transform="none"
         x="511.81287"
         y="312.23135">
@@ -2812,22 +2814,22 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
       </text>
       <path
         id="path270"
-        style="fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;"
+        style="marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;"
         d="m 510.028,295.39667 0,22.806736 " />
     </g>
     <g
       id="g493"
-      transform="translate(-214.85431,124.71814)">
+      transform="translate(0,124.495026)">
       <text
         id="text86"
-        style="fill:#0000FF;text-align:AlignLeft;fill-opacity:1;stroke-width:1px;stroke:none;font-size:15px;font-family:Arial;stroke-opacity:1;"
+        style="fill-opacity:1;stroke:none;font-size:15px;stroke-width:1px;fill:#0000FF;text-align:AlignLeft;stroke-opacity:1;font-family:Arial;"
         transform="none"
         x="511.81287"
         y="312.23135">
         <tspan
           id="tspan819"
           x="511.81287"
-          y="312.23135">1000</tspan>
+          y="312.23135">1</tspan>
       </text>
       <path
         id="path52"
@@ -2835,56 +2837,75 @@ LgMAAAAAANAN4jIAAAAAAADdIC4DAAAAAADQDeIyAAAAAAAA3SAuAwAAAAAA0A3iMgAAAAAAAN34
         d="m 510.028,295.39667 0,22.806736 " />
     </g>
     <g
-      id="g237"
-      transform="translate(-214.85431,-2.6772919)">
+      id="g175"
+      transform="translate(-214.85431,124.71814)">
       <text
-        id="text86"
-        style="stroke:none;stroke-opacity:1;text-align:AlignLeft;font-family:Arial;fill-opacity:1;fill:#0000FF;font-size:15px;stroke-width:1px;"
+        id="text885"
+        style="text-align:AlignLeft;stroke:none;stroke-width:1px;font-size:15px;font-family:Arial;stroke-opacity:1;fill:#0000FF;fill-opacity:1;"
         transform="none"
         x="511.81287"
         y="312.23135">
         <tspan
-          id="tspan819"
+          id="tspan710"
+          x="511.81287"
+          y="312.23135">1000</tspan>
+      </text>
+      <path
+        id="path749"
+        style="stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;"
+        d="m 510.028,295.39667 0,22.806736 " />
+    </g>
+    <g
+      id="g818"
+      transform="translate(-214.85431,-2.6772919)">
+      <text
+        id="text903"
+        style="fill:#0000FF;font-size:15px;stroke-width:1px;stroke:none;text-align:AlignLeft;font-family:Arial;fill-opacity:1;stroke-opacity:1;"
+        transform="none"
+        x="511.81287"
+        y="312.23135">
+        <tspan
+          id="tspan224"
           x="511.81287"
           y="312.23135">200</tspan>
       </text>
       <path
-        id="path52"
-        style="marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;"
+        id="path547"
+        style="stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;"
         d="m 510.028,295.39667 0,22.806736 " />
     </g>
     <path
-      id="path623"
-      style="fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;"
+      id="path612"
+      style="stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;"
       transform="matrix(-4.371139e-08,1,-1,-4.371139e-08,552.6419,-337.11823)"
       d="m 446.00793,82.5504 0,22.806736 " />
     <path
-      id="path891"
-      style="stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;"
+      id="path532"
+      style="fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;"
       d="m 510.028,295.39667 0,22.806736 " />
     <path
-      id="path643"
-      style="fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;"
+      id="path616"
+      style="stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;"
       transform="matrix(-4.371139e-08,1,-1,-4.371139e-08,232.25687,-17.62564)"
       d="m 126.27991,92.81336 0,22.806736 " />
     <path
-      id="path52"
-      style="fill-opacity:1;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;"
+      id="path839"
+      style="marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:1px;fill:#0000FF;fill-opacity:1;"
       d="m 511.36667,174.9176 0,22.806736 " />
     <text
-      id="text86"
-      style="font-family:Arial;fill:#0000FF;stroke:none;stroke-opacity:1;font-size:15px;fill-opacity:1;stroke-width:1px;text-align:AlignLeft;"
+      id="text786"
+      style="font-family:Arial;stroke-opacity:1;text-align:AlignLeft;fill:#0000FF;stroke:none;font-size:15px;fill-opacity:1;stroke-width:1px;"
       transform="none"
       x="511.81287"
       y="312.23135">
       <tspan
-        id="tspan819"
+        id="tspan51"
         x="511.81287"
         y="312.23135">1</tspan>
     </text>
     <text
       id="text39"
-      style="stroke:none;fill:#FF0000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:12px;"
+      style="font-size:12px;stroke:none;fill:#FF0000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;"
       transform="none"
       x="311.99997"
       y="192.76648">

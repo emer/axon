@@ -70,11 +70,38 @@ var StimFuncs = map[Stims]func(){
 	ThetaErrAll:     ThetaErrAllFun,
 }
 
-// RGeStimForHz is the strength of GeStim G clamp to obtain a given R firing rate
-var RGeStimForHz = map[int]float32{
+// RGeStimForHzMap is the strength of GeStim G clamp to obtain a given R firing rate
+var RGeStimForHzMap = map[int]float32{
 	25:  .09,
 	50:  .12,
 	100: .15,
+}
+
+func RGeStimForHz(hz float32) float32 {
+	var gel, geh, hzl, hzh float32
+	switch {
+	case hz <= 25:
+		gel = 0
+		geh = RGeStimForHzMap[25]
+		hzl = 0
+		hzh = 25
+	case hz <= 50:
+		gel = RGeStimForHzMap[25]
+		geh = RGeStimForHzMap[50]
+		hzl = 25
+		hzh = 50
+	case hz <= 100:
+		gel = RGeStimForHzMap[50]
+		geh = RGeStimForHzMap[100]
+		hzl = 50
+		hzh = 100
+	default:
+		gel = RGeStimForHzMap[100]
+		geh = 2 * gel
+		hzl = 100
+		hzh = 200
+	}
+	return gel + ((hz-hzl)/(hzh-hzl))*(geh-gel)
 }
 
 // ClampCa1Ca is direct copy of Ca values from test_stdp.g genesis func
@@ -569,6 +596,7 @@ func ThetaErrFun() {
 			sphz[1] = hz[spi] // plus phase
 			rphz[1] = hz[spi] // plus phase
 
+			tmsec := 0
 			ss.ResetTimePlots()
 			ss.Init()
 			for ri := 0; ri < ss.NReps; ri++ {
@@ -596,21 +624,24 @@ func ThetaErrFun() {
 							Rp = 1
 						}
 						if ss.RGClamp {
-							ge = RGeStimForHz[rhz]
+							ge = RGeStimForHz(float32(rhz))
 						}
 
-						ss.NeuronUpdt(msec, ge, 0)
+						ss.NeuronUpdt(tmsec, ge, 0)
 						ss.LogDefault()
 						if ss.StopNow {
 							ss.Stopped()
 							return
 						}
+						tmsec++
 					}
 				}
 				ss.Spine.States.PreSpike = 0
 				ss.GraphRun(ss.ISISec)
+				tmsec = ss.Msec
 			}
 			ss.GraphRun(ss.FinalSecs)
+			tmsec = ss.Msec
 			ss.LogPhaseDWt(ss.PhaseDWtLog, sphz, rphz)
 			ss.PhaseDWtPlot.GoUpdate()
 		}
@@ -668,7 +699,7 @@ func ThetaErrAllFun() {
 									Rp = 1
 								}
 								if ss.RGClamp {
-									ge = RGeStimForHz[rhz]
+									ge = RGeStimForHz(float32(rhz))
 								}
 
 								ss.NeuronUpdt(msec, ge, 0)

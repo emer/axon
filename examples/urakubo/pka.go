@@ -60,24 +60,41 @@ func (ps *PKAVars) Init(vol float64) {
 	ps.PDEcAMPC = 0
 
 	if TheOpts.InitBaseline {
-		// All vals below from 500 sec baseline
+		if TheOpts.UseDAPK1 {
+			ps.AC1 = chem.CoToN(2, vol)
+			ps.AC1act = chem.CoToN(0.0001049, vol)
+			ps.CAMP = chem.CoToN(0.003709, vol)
+			ps.R2C2 = chem.CoToN(1.985, vol)
+			ps.R2C2_B = chem.CoToN(0.01471, vol)
+			ps.R2C2_BB = chem.CoToN(2.724e-05, vol)
+			ps.R2C2_AB = chem.CoToN(2.179e-05, vol)
+			ps.R2C2_ABB = chem.CoToN(8.07e-08, vol)
+			ps.R2C2_4 = chem.CoToN(5.973e-11, vol)
+			ps.R2C_3 = chem.CoToN(3.506e-07, vol)
+			ps.R2C_4 = chem.CoToN(2.596e-08, vol)
+			ps.R2_3 = chem.CoToN(3.81e-07, vol)
+			ps.R2_4 = chem.CoToN(2.822e-06, vol)
+			ps.PKAact = chem.CoToN(0.04599, vol)
+			ps.AC1ATPC = chem.CoToN(1.1e+05, vol)
+			ps.PDEcAMPC = chem.CoToN(0.0003709, vol)
+		} else {
+			ps.AC1act = chem.CoToN(0.0004371, vol)
+			ps.CAMP = chem.CoToN(0.005518, vol)
+			ps.R2C2 = chem.CoToN(1.978, vol)
+			ps.R2C2_B = chem.CoToN(0.02181, vol)
+			ps.R2C2_BB = chem.CoToN(6.006e-05, vol)
+			ps.R2C2_AB = chem.CoToN(4.814e-05, vol)
+			ps.R2C2_ABB = chem.CoToN(2.635e-07, vol)
+			ps.R2C2_4 = chem.CoToN(2.859e-10, vol)
 
-		ps.AC1act = chem.CoToN(0.0004371, vol)
-		ps.CAMP = chem.CoToN(0.005518, vol)
-		ps.R2C2 = chem.CoToN(1.978, vol)
-		ps.R2C2_B = chem.CoToN(0.02181, vol)
-		ps.R2C2_BB = chem.CoToN(6.006e-05, vol)
-		ps.R2C2_AB = chem.CoToN(4.814e-05, vol)
-		ps.R2C2_ABB = chem.CoToN(2.635e-07, vol)
-		ps.R2C2_4 = chem.CoToN(2.859e-10, vol)
-
-		ps.R2C_3 = chem.CoToN(1.162e-06, vol)
-		ps.R2C_4 = chem.CoToN(1.271e-07, vol)
-		ps.R2_3 = chem.CoToN(1.295e-06, vol)
-		ps.R2_4 = chem.CoToN(1.423e-05, vol)
-		ps.PKAact = chem.CoToN(0.04461, vol)
-		ps.AC1ATPC = chem.CoToN(3.832e+05, vol)
-		ps.PDEcAMPC = chem.CoToN(0.0005518, vol)
+			ps.R2C_3 = chem.CoToN(1.162e-06, vol)
+			ps.R2C_4 = chem.CoToN(1.271e-07, vol)
+			ps.R2_3 = chem.CoToN(1.295e-06, vol)
+			ps.R2_4 = chem.CoToN(1.423e-05, vol)
+			ps.PKAact = chem.CoToN(0.04461, vol)
+			ps.AC1ATPC = chem.CoToN(3.832e+05, vol)
+			ps.PDEcAMPC = chem.CoToN(0.0005518, vol)
+		}
 	}
 }
 

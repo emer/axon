@@ -13,8 +13,14 @@ import (
 )
 
 // CaMVars are intracellular Ca-driven signaling states for CaM binding with Ca
+// From Urakubo: Ca2+ binding kinetics of CaM has extensively been analyzed
+// (Linse et al., 1991; Holmes, 2000). CaM binds to four Ca2+ ions,
+// but two or three Ca2+-binding is enough to activate CaM
+// (James et al., 1995; Chin and Means, 2000).
+// For simplicity, 3Ca2+⋅CaM is assumed to be an active form,
+// and reactions for 4Ca2+⋅CaM are omitted.
 type CaMVars struct {
-	CaM [4]float64 `desc:"increasing levels of Ca binding to CaM, 0-3"`
+	CaM [4]float64 `desc:"increasing levels of Ca binding to CaM, 0-3, [3] is active form"`
 }
 
 func (cs *CaMVars) Init(vol float64) {
@@ -51,15 +57,15 @@ func (cs *CaMVars) Integrate(d *CaMVars) {
 }
 
 func (cs *CaMVars) Log(dt *etable.Table, vol float64, row int, pre string) {
-	dt.SetCellFloat(pre+"CaM", row, chem.CoFmN(cs.CaM[0], vol))
-	dt.SetCellFloat(pre+"Ca3CaM", row, chem.CoFmN(cs.CaM[3], vol))
+	// dt.SetCellFloat(pre+"CaM", row, chem.CoFmN(cs.CaM[0], vol))
+	dt.SetCellFloat(pre+"CaMact", row, chem.CoFmN(cs.CaM[3], vol))
 	// dt.SetCellFloat(pre+"CaCaM", row, chem.CoFmN(cs.Ca[1], vol))
 	// dt.SetCellFloat(pre+"Ca2CaM", row, chem.CoFmN(cs.Ca[2], vol))
 }
 
 func (cs *CaMVars) ConfigLog(sch *etable.Schema, pre string) {
-	*sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
-	*sch = append(*sch, etable.Column{pre + "Ca3CaM", etensor.FLOAT64, nil, nil})
+	// *sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "CaMact", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "CaCaM", etensor.FLOAT64, nil, nil})
 	// *sch = append(*sch, etable.Column{pre + "Ca2CaM", etensor.FLOAT64, nil, nil})
 }
@@ -77,7 +83,20 @@ func (cs *CaMState) Init() {
 	cs.PSD.Init(PSDVol)
 
 	if TheOpts.InitBaseline {
-		// All vals below from 500 sec baseline
+		if TheOpts.UseDAPK1 {
+			vol := float64(CytVol)
+			cs.Cyt.CaM[0] = chem.CoToN(80.2, vol)
+			cs.Cyt.CaM[1] = chem.CoToN(1.027, vol)
+			cs.Cyt.CaM[2] = chem.CoToN(0.006837, vol)
+			cs.Cyt.CaM[3] = chem.CoToN(8.372e-06, vol)
+			vol = PSDVol
+			cs.PSD.CaM[0] = chem.CoToN(80.2, vol)
+			cs.PSD.CaM[1] = chem.CoToN(1.027, vol)
+			cs.PSD.CaM[2] = chem.CoToN(0.006837, vol)
+			cs.PSD.CaM[3] = chem.CoToN(8.74e-06, vol)
+		} else {
+
+		}
 		vol := float64(CytVol)
 		cs.Cyt.CaM[3] = chem.CoToN(3.645e-05, vol)
 		vol = PSDVol

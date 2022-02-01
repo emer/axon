@@ -231,21 +231,68 @@ func (cs *CaMKIIState) Init() {
 	cs.PSD.Init(PSDVol)
 
 	if TheOpts.InitBaseline {
-		// All vals below from 500 sec baseline
-		// Note: all CaMKIIP = 0 after baseline
-		vol := float64(CytVol)
-		cs.Cyt.Ca[0].CaM_CaMKII = chem.CoToN(0.2962, vol)
-		cs.Cyt.Ca[1].CaM_CaMKII = chem.CoToN(0.003792, vol)
-		cs.Cyt.Ca[2].CaM_CaMKII = chem.CoToN(2.53e-05, vol)
-		cs.Cyt.Ca[3].CaM_CaMKII = chem.CoToN(0.002523, vol)
-		cs.Cyt.CaMKII = chem.CoToN(19.28, vol) // orig: 20
+		if TheOpts.UseDAPK1 {
+			vol := float64(CytVol)
+			cs.Cyt.Ca[0].CaM_CaMKII = chem.CoToN(0.1345, vol)
+			cs.Cyt.Ca[0].CaM_CaMKIIP = chem.CoToN(4.264e-05, vol)
+			cs.Cyt.Ca[1].CaM_CaMKII = chem.CoToN(0.001728, vol)
+			cs.Cyt.Ca[1].CaM_CaMKIIP = chem.CoToN(1.139e-05, vol)
+			cs.Cyt.Ca[2].CaM_CaMKII = chem.CoToN(1.277e-05, vol)
+			cs.Cyt.Ca[2].CaM_CaMKIIP = chem.CoToN(1.002e-05, vol)
+			cs.Cyt.Ca[3].CaM_CaMKII = chem.CoToN(3.192e-06, vol)
+			cs.Cyt.Ca[3].CaM_CaMKIIP = chem.CoToN(8.221e-06, vol)
+			cs.Cyt.N2B[0].CaM_CaMKII = chem.CoToN(0, vol)
+			cs.Cyt.N2B[0].CaM_CaMKIIP = chem.CoToN(0, vol)
+			cs.Cyt.N2B[1].CaM_CaMKII = chem.CoToN(0, vol)
+			cs.Cyt.N2B[1].CaM_CaMKIIP = chem.CoToN(0, vol)
+			cs.Cyt.N2B[2].CaM_CaMKII = chem.CoToN(0, vol)
+			cs.Cyt.N2B[2].CaM_CaMKIIP = chem.CoToN(0, vol)
+			cs.Cyt.N2B[3].CaM_CaMKII = chem.CoToN(0, vol)
+			cs.Cyt.N2B[3].CaM_CaMKIIP = chem.CoToN(0, vol)
+			cs.Cyt.CaMKII = chem.CoToN(18.86, vol)
+			cs.Cyt.CaMKIIP = chem.CoToN(6.744e-09, vol)
+			cs.Cyt.N2B_CaMKII = chem.CoToN(0, vol)
+			cs.Cyt.N2B_CaMKIIP = chem.CoToN(0, vol)
+			cs.Cyt.PP1Thr286C = chem.CoToN(1.005e-08, vol)
+			cs.Cyt.PP2AThr286C = chem.CoToN(1.132e-11, vol)
+			vol = PSDVol
+			cs.PSD.Ca[0].CaM_CaMKII = chem.CoToN(0.04955, vol)
+			cs.PSD.Ca[0].CaM_CaMKIIP = chem.CoToN(4.023e-05, vol)
+			cs.PSD.Ca[1].CaM_CaMKII = chem.CoToN(0.0006401, vol)
+			cs.PSD.Ca[1].CaM_CaMKIIP = chem.CoToN(1.136e-05, vol)
+			cs.PSD.Ca[2].CaM_CaMKII = chem.CoToN(5.612e-06, vol)
+			cs.PSD.Ca[2].CaM_CaMKIIP = chem.CoToN(1.033e-05, vol)
+			cs.PSD.Ca[3].CaM_CaMKII = chem.CoToN(3.242e-06, vol)
+			cs.PSD.Ca[3].CaM_CaMKIIP = chem.CoToN(9.615e-06, vol)
+			cs.PSD.N2B[0].CaM_CaMKII = chem.CoToN(4.031, vol)
+			cs.PSD.N2B[0].CaM_CaMKIIP = chem.CoToN(0.8687, vol)
+			cs.PSD.N2B[1].CaM_CaMKII = chem.CoToN(0.05161, vol)
+			cs.PSD.N2B[1].CaM_CaMKIIP = chem.CoToN(0.04602, vol)
+			cs.PSD.N2B[2].CaM_CaMKII = chem.CoToN(0.0003437, vol)
+			cs.PSD.N2B[2].CaM_CaMKIIP = chem.CoToN(0.004259, vol)
+			cs.PSD.N2B[3].CaM_CaMKII = chem.CoToN(0.0007132, vol)
+			cs.PSD.N2B[3].CaM_CaMKIIP = chem.CoToN(0.001191, vol)
+			cs.PSD.CaMKII = chem.CoToN(18.95, vol)
+			cs.PSD.CaMKIIP = chem.CoToN(7.755e-07, vol)
+			cs.PSD.N2B_CaMKII = chem.CoToN(0.002476, vol)
+			cs.PSD.N2B_CaMKIIP = chem.CoToN(2.156e-06, vol)
+			cs.PSD.PP1Thr286C = chem.CoToN(0.000384, vol)
+			cs.PSD.PP2AThr286C = chem.CoToN(5.204e-09, vol)
+		} else {
+			vol := float64(CytVol)
+			cs.Cyt.Ca[0].CaM_CaMKII = chem.CoToN(0.2962, vol)
+			cs.Cyt.Ca[1].CaM_CaMKII = chem.CoToN(0.003792, vol)
+			cs.Cyt.Ca[2].CaM_CaMKII = chem.CoToN(2.53e-05, vol)
+			cs.Cyt.Ca[3].CaM_CaMKII = chem.CoToN(0.002523, vol)
+			cs.Cyt.CaMKII = chem.CoToN(19.28, vol) // orig: 20
 
-		vol = PSDVol
-		cs.PSD.Ca[0].CaM_CaMKII = chem.CoToN(2.257, vol)
-		cs.PSD.Ca[1].CaM_CaMKII = chem.CoToN(0.02889, vol)
-		cs.PSD.Ca[2].CaM_CaMKII = chem.CoToN(0.0001927, vol)
-		cs.PSD.Ca[3].CaM_CaMKII = chem.CoToN(0.01968, vol)
-		cs.PSD.CaMKII = chem.CoToN(19.35, vol) // orig: 20
+			vol = PSDVol
+			cs.PSD.Ca[0].CaM_CaMKII = chem.CoToN(2.257, vol)
+			cs.PSD.Ca[1].CaM_CaMKII = chem.CoToN(0.02889, vol)
+			cs.PSD.Ca[2].CaM_CaMKII = chem.CoToN(0.0001927, vol)
+			cs.PSD.Ca[3].CaM_CaMKII = chem.CoToN(0.01968, vol)
+			cs.PSD.CaMKII = chem.CoToN(19.35, vol) // orig: 20
+		}
 	}
 	cs.Cyt.ActiveK()
 	cs.PSD.ActiveK()
@@ -285,9 +332,9 @@ type CaMKIIParams struct {
 	CaCaM23_N2B   chem.React `desc:"6: for N2B Ca+2CaCaM-CaMKII -> 3CaCaM-CaMKII = CaMCa2-bind-Ca"`
 	CaMCaMKII     chem.React `desc:"4: CaM+CaMKII -> CaM-CaMKII [0-2] -- kIB_kBI_[0-2] -- WI = plain CaMKII, WBn = CaM bound"`
 	CaMCaMKII_N2B chem.React `desc:"4: for N2B: CaM+CaMKII -> CaM-CaMKII [0-2] -- kIB_kBI_[0-2] -- WI = plain CaMKII, WBn = CaM bound -- Not much N2B_CaMKII (noP) so not a big factor"`
-	CaMCaMKII3    chem.React `desc:"5: 3CaCaM+CaMKII -> 3CaCaM-CaMKII = kIB_kBI_3"`
+	CaMCaMKII3    chem.React `desc:"5: 3CaCaM+CaMKII -> 3CaCaM-CaMKII = kIB_kBI_3 -- active CaM binds strongly"`
+	CaMCaMKIIP    chem.React `desc:"9: CaM+CaMKIIP -> CaM-CaMKIIP = kAT_kTA -- T286P causes strong CaM binding"`
 	CaCaM_CaMKIIP chem.React `desc:"8: Ca+nCaCaM-CaMKIIP -> n+1CaCaM-CaMKIIP = kTP_PT_*"`
-	CaMCaMKIIP    chem.React `desc:"9: CaM+CaMKIIP -> CaM-CaMKIIP = kAT_kTA"`
 
 	GluN2BCaCaM chem.React `desc:"GluN2B S1303 binding for any level of Ca/CaM, P or noP"`
 	GluN2BP     chem.React `desc:"GluN2B binding for CaMKIIP without any Ca/CaM -- maintains but does not attract"`
@@ -309,11 +356,11 @@ func (cp *CaMKIIParams) Defaults() {
 	cp.CaCaM23_N2B.SetVol(25.6, CytVol, 0.02) // 6 N2B: 25.6 μM-1 = 0.53333, PSD 2.1333 = CaMCa2-bind-Ca
 
 	cp.CaMCaMKII.SetVol(0.0004, CytVol, 1) // 4: 0.0004 μM-1 = 8.3333e-6, PSD 3.3333e-5 = kIB_kBI_[0-2]
-	cp.CaMCaMKII_N2B.SetVol(8, CytVol, 1)  // 4: for N2B -- note, Kb could be 0.001 per
-	cp.CaMCaMKII3.SetVol(8, CytVol, 1)     // 5: 8 μM-1 = 0.16667, PSD 3.3333e-5 = kIB_kBI_3
-
-	cp.CaCaM_CaMKIIP.SetVol(1, CytVol, 1)  // 8: 1 μM-1 = 0.020834, PSD 0.0833335 = kTP_PT_*
+	cp.CaMCaMKII_N2B.SetVol(8, CytVol, 1)  // 4: N2B causes CaM to bind like T286P = 9 -- todo kB = 0.001 or 1?
+	cp.CaMCaMKII3.SetVol(8, CytVol, 1)     // 5: 8 μM-1 = 0.16667, PSD 3.3333e-5 = kIB_kBI_3 -- 3CaCaM is active
 	cp.CaMCaMKIIP.SetVol(8, CytVol, 0.001) // 9: 8 μM-1 = 0.16667, PSD 0.66667 = kAT_kTA
+
+	cp.CaCaM_CaMKIIP.SetVol(1, CytVol, 1) // 8: 1 μM-1 = 0.020834, PSD 0.0833335 = kTP_PT_*
 
 	// GluN2B binding
 	cp.GluN2BCaCaM.SetVol(8, PSDVol, 0.001) // high affinity
@@ -388,51 +435,46 @@ func (cp *CaMKIIParams) StepDiffuse(c, d *CaMKIIState) {
 ////////////////////////////////////////////////////////////////////
 // N2B versions
 
-// StepCaMKIIN2B does the bulk of Ca + CaM + CaMKII binding reactions, in a given region
+// StepCaMKIIN2B does the bulk of Ca + CaM + CaMKII binding reactions, in a given region.
+// N2B version applies non-N2B rates for non-N2B bound, N2B for bound in PSD region only.
+// PSD has both so one func needs to handle Cyt and PSD cases.
 // cCa, nCa = current next Ca
-func (cp *CaMKIIParams) StepCaMKIIN2B(vol float64, c, d *CaMKIIVars, cm, dm *CaMVars, cCa, pp1, cGluN2B float64, dCa, dpp1, dGluN2B *float64) {
+func (cp *CaMKIIParams) StepCaMKIIN2B(vol float64, c, d *CaMKIIVars, cm, dm *CaMVars, cCa, pp1, pp2a, cGluN2B float64, dCa, dpp1, dpp2a, dGluN2B *float64) {
 	kf := CytVol / vol
 
-	// note: only called for PSD!
+	psd := vol == PSDVol
 
+	// basic Ca binding to CaM
 	cp.CaCaM01.StepK(kf, c.Ca[0].CaM_CaMKII, cCa, c.Ca[1].CaM_CaMKII, &d.Ca[0].CaM_CaMKII, dCa, &d.Ca[1].CaM_CaMKII) // 1
 	cp.CaCaM12.StepK(kf, c.Ca[1].CaM_CaMKII, cCa, c.Ca[2].CaM_CaMKII, &d.Ca[1].CaM_CaMKII, dCa, &d.Ca[2].CaM_CaMKII) // 2
-
-	cp.CaCaM01.StepK(kf, c.N2B[0].CaM_CaMKII, cCa, c.N2B[1].CaM_CaMKII, &d.N2B[0].CaM_CaMKII, dCa, &d.N2B[1].CaM_CaMKII) // 1
-	cp.CaCaM12.StepK(kf, c.N2B[1].CaM_CaMKII, cCa, c.N2B[2].CaM_CaMKII, &d.N2B[1].CaM_CaMKII, dCa, &d.N2B[2].CaM_CaMKII) // 2
-
-	cp.CaCaM23.StepK(kf, c.Ca[2].CaM_CaMKII, cCa, c.Ca[3].CaM_CaMKII, &d.Ca[2].CaM_CaMKII, dCa, &d.Ca[3].CaM_CaMKII)         // 6 non
-	cp.CaCaM23_N2B.StepK(kf, c.N2B[2].CaM_CaMKII, cCa, c.N2B[3].CaM_CaMKII, &d.N2B[2].CaM_CaMKII, dCa, &d.N2B[3].CaM_CaMKII) // 6 N2B
+	cp.CaCaM23.StepK(kf, c.Ca[2].CaM_CaMKII, cCa, c.Ca[3].CaM_CaMKII, &d.Ca[2].CaM_CaMKII, dCa, &d.Ca[3].CaM_CaMKII) // 6 non
 
 	for i := 0; i < 3; i++ {
-		cp.CaMCaMKII.StepK(kf, cm.CaM[i], c.CaMKII, c.Ca[i].CaM_CaMKII, &dm.CaM[i], &d.CaMKII, &d.Ca[i].CaM_CaMKII)               // 4
-		cp.CaMCaMKII_N2B.StepK(kf, cm.CaM[i], c.N2B_CaMKII, c.N2B[i].CaM_CaMKII, &dm.CaM[i], &d.N2B_CaMKII, &d.N2B[i].CaM_CaMKII) // 4 N2B
+		cp.CaMCaMKII.StepK(kf, cm.CaM[i], c.CaMKII, c.Ca[i].CaM_CaMKII, &dm.CaM[i], &d.CaMKII, &d.Ca[i].CaM_CaMKII)                    // 4
+		cp.CaCaM_CaMKIIP.StepK(kf, c.Ca[i].CaM_CaMKIIP, cCa, c.Ca[i+1].CaM_CaMKIIP, &d.Ca[i].CaM_CaMKIIP, dCa, &d.Ca[i+1].CaM_CaMKIIP) // 8
 	}
+	cp.CaMCaMKII3.StepK(kf, cm.CaM[3], c.CaMKII, c.Ca[3].CaM_CaMKII, &dm.CaM[3], &d.CaMKII, &d.Ca[3].CaM_CaMKII)     // 5
+	cp.CaMCaMKIIP.StepK(kf, cm.CaM[0], c.CaMKIIP, c.Ca[0].CaM_CaMKIIP, &dm.CaM[0], &d.CaMKIIP, &d.Ca[0].CaM_CaMKIIP) // 9
 
-	cp.CaMCaMKII3.StepK(kf, cm.CaM[3], c.CaMKII, c.Ca[3].CaM_CaMKII, &dm.CaM[3], &d.CaMKII, &d.Ca[3].CaM_CaMKII)           // 5
-	cp.CaMCaMKII3.StepK(kf, cm.CaM[3], c.N2B_CaMKII, c.N2B[3].CaM_CaMKII, &dm.CaM[3], &d.N2B_CaMKII, &d.N2B[3].CaM_CaMKII) // 5 same..
+	if psd {
+		cp.CaCaM01.StepK(kf, c.N2B[0].CaM_CaMKII, cCa, c.N2B[1].CaM_CaMKII, &d.N2B[0].CaM_CaMKII, dCa, &d.N2B[1].CaM_CaMKII)     // 1
+		cp.CaCaM12.StepK(kf, c.N2B[1].CaM_CaMKII, cCa, c.N2B[2].CaM_CaMKII, &d.N2B[1].CaM_CaMKII, dCa, &d.N2B[2].CaM_CaMKII)     // 2
+		cp.CaCaM23_N2B.StepK(kf, c.N2B[2].CaM_CaMKII, cCa, c.N2B[3].CaM_CaMKII, &d.N2B[2].CaM_CaMKII, dCa, &d.N2B[3].CaM_CaMKII) // 6 N2B
 
-	cp.CaMCaMKIIP.StepK(kf, cm.CaM[0], c.CaMKIIP, c.Ca[0].CaM_CaMKIIP, &dm.CaM[0], &d.CaMKIIP, &d.Ca[0].CaM_CaMKIIP)           // 9
-	cp.CaMCaMKIIP.StepK(kf, cm.CaM[0], c.N2B_CaMKIIP, c.N2B[0].CaM_CaMKIIP, &dm.CaM[0], &d.N2B_CaMKIIP, &d.N2B[0].CaM_CaMKIIP) // 9 same..
-
-	for i := 0; i < 3; i++ {
-		cp.CaCaM_CaMKIIP.StepK(kf, c.Ca[i].CaM_CaMKIIP, cCa, c.Ca[i+1].CaM_CaMKIIP, &d.Ca[i].CaM_CaMKIIP, dCa, &d.Ca[i+1].CaM_CaMKIIP)     // 8
-		cp.CaCaM_CaMKIIP.StepK(kf, c.N2B[i].CaM_CaMKIIP, cCa, c.N2B[i+1].CaM_CaMKIIP, &d.N2B[i].CaM_CaMKIIP, dCa, &d.N2B[i+1].CaM_CaMKIIP) // 8 same..
+		for i := 0; i < 3; i++ {
+			cp.CaMCaMKII_N2B.StepK(kf, cm.CaM[i], c.N2B_CaMKII, c.N2B[i].CaM_CaMKII, &dm.CaM[i], &d.N2B_CaMKII, &d.N2B[i].CaM_CaMKII)          // 4 N2B
+			cp.CaCaM_CaMKIIP.StepK(kf, c.N2B[i].CaM_CaMKIIP, cCa, c.N2B[i+1].CaM_CaMKIIP, &d.N2B[i].CaM_CaMKIIP, dCa, &d.N2B[i+1].CaM_CaMKIIP) // 8 same..
+		}
+		cp.CaMCaMKII3.StepK(kf, cm.CaM[3], c.N2B_CaMKII, c.N2B[3].CaM_CaMKII, &dm.CaM[3], &d.N2B_CaMKII, &d.N2B[3].CaM_CaMKII)     // 5 same..
+		cp.CaMCaMKIIP.StepK(kf, cm.CaM[0], c.N2B_CaMKIIP, c.N2B[0].CaM_CaMKIIP, &dm.CaM[0], &d.N2B_CaMKIIP, &d.N2B[0].CaM_CaMKIIP) // 9 same (P drives same accel CaM binding as N2B)
 	}
 
 	// cs, ce, cc, cp -> ds, de, dc, dp
-	cp.PP1Thr286.StepK(kf, c.CaMKIIP, pp1, c.PP1Thr286C, c.CaMKII, &d.CaMKIIP, dpp1, &d.PP1Thr286C, &d.CaMKII)                 // 10
-	cp.PP1Thr286.StepK(kf, c.N2B_CaMKIIP, pp1, c.PP1Thr286C, c.N2B_CaMKII, &d.N2B_CaMKIIP, dpp1, &d.PP1Thr286C, &d.N2B_CaMKII) // 10 same..
+	cp.PP1Thr286.StepK(kf, c.CaMKIIP, pp1, c.PP1Thr286C, c.CaMKII, &d.CaMKIIP, dpp1, &d.PP1Thr286C, &d.CaMKII) // 10
 
-	// note: no pp2a -- PSD only
-
-	// GluN2B binding
-	for i := 0; i < 4; i++ { // note: currently using same for all..
-		cp.GluN2BCaCaM.Step(c.Ca[i].CaM_CaMKII, cGluN2B, c.N2B[i].CaM_CaMKII, &d.Ca[i].CaM_CaMKII, dGluN2B, &d.N2B[i].CaM_CaMKII)
-		cp.GluN2BCaCaM.Step(c.Ca[i].CaM_CaMKIIP, cGluN2B, c.N2B[i].CaM_CaMKIIP, &d.Ca[i].CaM_CaMKIIP, dGluN2B, &d.N2B[i].CaM_CaMKIIP)
+	if dpp2a != nil {
+		cp.PP2AThr286.StepK(kf, c.CaMKIIP, pp2a, c.PP2AThr286C, c.CaMKII, &d.CaMKIIP, dpp2a, &d.PP2AThr286C, &d.CaMKII) // 11
 	}
-	cp.GluN2BP.Step(c.CaMKIIP, cGluN2B, c.N2B_CaMKIIP, &d.CaMKIIP, dGluN2B, &d.N2B_CaMKIIP)
-	cp.GluN2BNoP.Step(c.CaMKII, cGluN2B, c.N2B_CaMKII, &d.CaMKII, dGluN2B, &d.N2B_CaMKII)
 
 	for i := 0; i < 4; i++ {
 		cc := &c.Ca[i]
@@ -442,15 +484,31 @@ func (cp *CaMKIIParams) StepCaMKIIN2B(vol float64, c, d *CaMKIIVars, cm, dm *CaM
 		dc.CaM_CaMKII -= dak
 		// cs, ce, cc, cp -> ds, de, dc, dp
 		cp.PP1Thr286.StepK(kf, cc.CaM_CaMKIIP, pp1, c.PP1Thr286C, cc.CaM_CaMKII, &dc.CaM_CaMKIIP, dpp1, &d.PP1Thr286C, &dc.CaM_CaMKII) // 10
-
-		cc = &c.N2B[i]
-		dc = &d.N2B[i]
-		dak = c.Auto.K * cc.CaM_CaMKII
-		dc.CaM_CaMKIIP += dak
-		dc.CaM_CaMKII -= dak
-		// cs, ce, cc, cp -> ds, de, dc, dp
-		cp.PP1Thr286.StepK(kf, cc.CaM_CaMKIIP, pp1, c.PP1Thr286C, cc.CaM_CaMKII, &dc.CaM_CaMKIIP, dpp1, &d.PP1Thr286C, &dc.CaM_CaMKII) // 10
 	}
+
+	if psd {
+		cp.PP1Thr286.StepK(kf, c.N2B_CaMKIIP, pp1, c.PP1Thr286C, c.N2B_CaMKII, &d.N2B_CaMKIIP, dpp1, &d.PP1Thr286C, &d.N2B_CaMKII) // 10 same..
+
+		// GluN2B binding
+		cp.GluN2BP.Step(c.CaMKIIP, cGluN2B, c.N2B_CaMKIIP, &d.CaMKIIP, dGluN2B, &d.N2B_CaMKIIP)
+		cp.GluN2BNoP.Step(c.CaMKII, cGluN2B, c.N2B_CaMKII, &d.CaMKII, dGluN2B, &d.N2B_CaMKII)
+
+		for i := 0; i < 4; i++ { // note: currently using same for all..
+			cc := &c.N2B[i]
+			dc := &d.N2B[i]
+			dak := c.Auto.K * cc.CaM_CaMKII
+			dc.CaM_CaMKIIP += dak
+			dc.CaM_CaMKII -= dak
+
+			// cs, ce, cc, cp -> ds, de, dc, dp
+			cp.PP1Thr286.StepK(kf, cc.CaM_CaMKIIP, pp1, c.PP1Thr286C, cc.CaM_CaMKII, &dc.CaM_CaMKIIP, dpp1, &d.PP1Thr286C, &dc.CaM_CaMKII) // 10
+
+			// GluN2B binding
+			cp.GluN2BCaCaM.Step(c.Ca[i].CaM_CaMKII, cGluN2B, cc.CaM_CaMKII, &d.Ca[i].CaM_CaMKII, dGluN2B, &dc.CaM_CaMKII)
+			cp.GluN2BCaCaM.Step(c.Ca[i].CaM_CaMKIIP, cGluN2B, cc.CaM_CaMKIIP, &d.Ca[i].CaM_CaMKIIP, dGluN2B, &dc.CaM_CaMKIIP)
+		}
+	}
+
 }
 
 // StepDiffuseN2B does Cyt <-> PSD diffusion
@@ -474,8 +532,8 @@ func (cp *CaMKIIParams) StepDiffuseN2B(c, d *CaMKIIState) {
 // pp2a = current cyt pp2a
 func (cp *CaMKIIParams) Step(c, d *CaMKIIState, cm, dm *CaMState, cCa, dCa *CaState, pp1, dpp1 *PP1State, pp2a, cGluN2B float64, dpp2a, dGluN2B *float64) {
 	if TheOpts.UseN2B {
-		cp.StepCaMKII(CytVol, &c.Cyt, &d.Cyt, &cm.Cyt, &dm.Cyt, cCa.Cyt, pp1.Cyt.PP1act, pp2a, &dCa.Cyt, &dpp1.Cyt.PP1act, dpp2a)
-		cp.StepCaMKIIN2B(PSDVol, &c.PSD, &d.PSD, &cm.PSD, &dm.PSD, cCa.PSD, pp1.PSD.PP1act, cGluN2B, &dCa.PSD, &dpp1.PSD.PP1act, dGluN2B)
+		cp.StepCaMKIIN2B(CytVol, &c.Cyt, &d.Cyt, &cm.Cyt, &dm.Cyt, cCa.Cyt, pp1.Cyt.PP1act, pp2a, cGluN2B, &dCa.Cyt, &dpp1.Cyt.PP1act, dpp2a, dGluN2B)
+		cp.StepCaMKIIN2B(PSDVol, &c.PSD, &d.PSD, &cm.PSD, &dm.PSD, cCa.PSD, pp1.PSD.PP1act, pp2a, cGluN2B, &dCa.PSD, &dpp1.PSD.PP1act, dpp2a, dGluN2B)
 		cp.StepDiffuseN2B(c, d)
 	} else {
 		cp.StepCaMKII(CytVol, &c.Cyt, &d.Cyt, &cm.Cyt, &dm.Cyt, cCa.Cyt, pp1.Cyt.PP1act, pp2a, &dCa.Cyt, &dpp1.Cyt.PP1act, dpp2a)
