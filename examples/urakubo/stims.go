@@ -48,26 +48,29 @@ const (
 
 	ThetaErr
 
-	ThetaErrAll
+	ThetaErrSweep
+
+	ThetaErrAllSweep
 
 	StimsN
 )
 
 // StimFuncs are the stimulus functions
 var StimFuncs = map[Stims]func(){
-	Baseline:        BaselineFun,
-	CaTarg:          CaTargFun,
-	ClampCa1:        ClampCa1Fun,
-	STDP:            STDPFun,
-	STDPSweep:       STDPSweepFun,
-	STDPPacketSweep: STDPPacketSweepFun,
-	Poisson:         PoissonFun,
-	SPoissonRGClamp: SPoissonRGClampFun,
-	PoissonHzSweep:  PoissonHzSweepFun,
-	PoissonDurSweep: PoissonDurSweepFun,
-	OpPhaseDurSweep: OpPhaseDurSweepFun,
-	ThetaErr:        ThetaErrFun,
-	ThetaErrAll:     ThetaErrAllFun,
+	Baseline:         BaselineFun,
+	CaTarg:           CaTargFun,
+	ClampCa1:         ClampCa1Fun,
+	STDP:             STDPFun,
+	STDPSweep:        STDPSweepFun,
+	STDPPacketSweep:  STDPPacketSweepFun,
+	Poisson:          PoissonFun,
+	SPoissonRGClamp:  SPoissonRGClampFun,
+	PoissonHzSweep:   PoissonHzSweepFun,
+	PoissonDurSweep:  PoissonDurSweepFun,
+	OpPhaseDurSweep:  OpPhaseDurSweepFun,
+	ThetaErr:         ThetaErrFun,
+	ThetaErrSweep:    ThetaErrSweepFun,
+	ThetaErrAllSweep: ThetaErrAllSweepFun,
 }
 
 // RGeStimForHzMap is the strength of GeStim G clamp to obtain a given R firing rate
@@ -580,6 +583,67 @@ func ThetaErrFun() {
 
 	ss.ResetDWtPlot()
 
+	phsdur := []int{ss.DurMsec / 2, ss.DurMsec / 2}
+	nphs := len(phsdur)
+
+	// using send, recv for minus, plus
+	sphz := []int{int(ss.SendHz), int(ss.RecvHz)}
+	rphz := []int{int(ss.SendHz), int(ss.RecvHz)}
+
+	tmsec := 0
+	ss.ResetTimePlots()
+	ss.Init()
+	for ri := 0; ri < ss.NReps; ri++ {
+		Sp := float32(1)
+		Rp := float32(1)
+		for pi := 0; pi < nphs; pi++ {
+			dur := phsdur[pi]
+			shz := sphz[pi]
+			rhz := rphz[pi]
+			Sint := mat32.Exp(-1000.0 / float32(shz))
+			Rint := mat32.Exp(-1000.0 / float32(rhz))
+			for msec := 0; msec < dur; msec++ {
+				Sp *= rand.Float32()
+				if Sp <= Sint {
+					ss.Spine.States.PreSpike = 1
+					Sp = 1
+				} else {
+					ss.Spine.States.PreSpike = 0
+				}
+
+				ge := float32(0.0)
+				Rp *= rand.Float32()
+				if Rp <= Rint {
+					ge = ss.GeStim
+					Rp = 1
+				}
+				if ss.RGClamp {
+					ge = RGeStimForHz(float32(rhz))
+				}
+
+				ss.NeuronUpdt(tmsec, ge, 0)
+				ss.LogDefault()
+				if ss.StopNow {
+					ss.Stopped()
+					return
+				}
+				tmsec++
+			}
+		}
+		ss.Spine.States.PreSpike = 0
+		ss.GraphRun(ss.ISISec)
+		tmsec = ss.Msec
+	}
+	ss.GraphRun(ss.FinalSecs)
+	tmsec = ss.Msec
+	ss.Stopped()
+}
+
+func ThetaErrSweepFun() {
+	ss := &TheSim
+
+	ss.ResetDWtPlot()
+
 	hz := []int{25, 50, 100}
 	nhz := len(hz)
 
@@ -649,7 +713,7 @@ func ThetaErrFun() {
 	ss.Stopped()
 }
 
-func ThetaErrAllFun() {
+func ThetaErrAllSweepFun() {
 	ss := &TheSim
 
 	ss.ResetDWtPlot()

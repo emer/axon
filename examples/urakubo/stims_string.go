@@ -26,13 +26,14 @@ func _() {
 	_ = x[PoissonDurSweep-10]
 	_ = x[OpPhaseDurSweep-11]
 	_ = x[ThetaErr-12]
-	_ = x[ThetaErrAll-13]
-	_ = x[StimsN-14]
+	_ = x[ThetaErrSweep-13]
+	_ = x[ThetaErrAllSweep-14]
+	_ = x[StimsN-15]
 }
 
-const _Stims_name = "BaselineCaTargClampCa1GClampSTDPSTDPSweepSTDPPacketSweepPoissonSPoissonRGClampPoissonHzSweepPoissonDurSweepOpPhaseDurSweepThetaErrThetaErrAllStimsN"
+const _Stims_name = "BaselineCaTargClampCa1GClampSTDPSTDPSweepSTDPPacketSweepPoissonSPoissonRGClampPoissonHzSweepPoissonDurSweepOpPhaseDurSweepThetaErrThetaErrSweepThetaErrAllSweepStimsN"
 
-var _Stims_index = [...]uint8{0, 8, 14, 22, 28, 32, 41, 56, 63, 78, 92, 107, 122, 130, 141, 147}
+var _Stims_index = [...]uint8{0, 8, 14, 22, 28, 32, 41, 56, 63, 78, 92, 107, 122, 130, 143, 159, 165}
 
 func (i Stims) String() string {
 	if i < 0 || i >= Stims(len(_Stims_index)-1) {

@@ -121,8 +121,8 @@ type Sim struct {
 	NReps       int              `desc:"number of repetitions -- takes 100 to produce classic STDP"`
 	FinalSecs   float64          `def:"20,50,100" desc:"number of seconds to run after the manipulation -- results are strongest after 100, decaying somewhat after that point -- 20 shows similar qualitative results but weaker, 50 is pretty close to 100 -- less than 20 not recommended."`
 	DurMsec     int              `desc:"duration for activity window"`
-	SendHz      float32          `desc:"sending firing frequency"`
-	RecvHz      float32          `desc:"receiving firing frequency"`
+	SendHz      float32          `desc:"sending firing frequency (used as minus phase for ThetaErr)"`
+	RecvHz      float32          `desc:"receiving firing frequency (used as plus phase for ThetaErr)"`
 	GeStim      float32          `desc:"stimulating current injection"`
 	DeltaT      int              `desc:"in msec, difference of Tpost - Tpre == pos = LTP, neg = LTD STDP"`
 	DeltaTRange int              `desc:"range for sweep of DeltaT -- actual range is - to +"`
@@ -186,10 +186,10 @@ func (ss *Sim) New() {
 	ss.Msec100Log = &etable.Table{}
 	ss.AutoKLog = &etable.Table{}
 	ss.GenesisLog = &etable.Table{}
-	ss.Stim = STDP    // Poisson // STDP
-	ss.ISISec = 1     // 1
-	ss.NReps = 10     // 10     // 20
-	ss.FinalSecs = 10 // 20 // 20
+	ss.Stim = ThetaErr
+	ss.ISISec = 0.8
+	ss.NReps = 1
+	ss.FinalSecs = 0
 	ss.DurMsec = 200
 	ss.SendHz = 50
 	ss.RecvHz = 50
