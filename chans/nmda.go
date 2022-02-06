@@ -12,12 +12,14 @@ type NMDAParams struct {
 	GeTot float32 `desc:"how much of the NMDA is driven by total Ge synaptic input, as opposed to from projections specifically marked as NMDA-communicating type, e.g., for active maintenance, in NMDASyn"`
 	Tau   float32 `def:"100" desc:"decay time constant for NMDA channel activation as a function of mactivation -- rise time is 2 msec and not worth extra effort for biexponential"`
 	Gbar  float32 `def:"0,0.15" desc:"strength of NMDA current"`
+	MgC   float32 `def:"0.28,0.42" desc:"magnesium ion concentration factor: Brunel & Wang (2001) and Sanders et al (2013) use 0.28; Urakubo et al (2008) use 0.42"`
 }
 
 func (np *NMDAParams) Defaults() {
 	np.GeTot = 1
 	np.Tau = 100
 	np.Gbar = 0.15
+	np.MgC = 0.28
 }
 
 func (np *NMDAParams) Update() {
@@ -29,7 +31,7 @@ func (np *NMDAParams) GFmV(v float32) float32 {
 	if vbio > 0 { // critical to not go past 0
 		vbio = 0
 	}
-	return 1.0 / (1.0 + 0.28*mat32.FastExp(-0.062*vbio))
+	return 1.0 / (1.0 + np.MgC*mat32.FastExp(-0.062*vbio))
 }
 
 // NMDA returns the updated NMDA activation from current NMDA, GeRaw, and NMDASyn input

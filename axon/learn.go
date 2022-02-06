@@ -383,20 +383,24 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn bool        `desc:"enable learning for this projection"`
-	Lrate LrateParams `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
-	XCal  XCalParams  `view:"inline" desc:"parameters for the XCal learning rule"`
+	Learn  bool            `desc:"enable learning for this projection"`
+	Lrate  LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	XCal   XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
+	Kinase bool            `desc:"if true, use experimental kinase learning rule"`
+	KinAvg LrnActAvgParams `view:"inline" desc:"averaging rates for computing kinase learning factors"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.Lrate.Update()
 	ls.XCal.Update()
+	ls.KinAvg.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
 	ls.Learn = true
 	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
+	ls.KinAvg.Defaults()
 }
 
 // CHLdWt returns the error-driven weight change component for the
