@@ -1077,14 +1077,20 @@ func (ly *Layer) SendSpike(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() || nrn.Spike == 0 {
+			ly.Act.SenderGDecay(nrn)
 			continue
 		}
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue
 			}
-			sp.(AxonPrjn).SendSpike(ni) // todo: test timing diff for this vs. direct
+			if sp.Type() == emer.Inhib {
+				sp.(AxonPrjn).SendISpike(ni, nrn.Si)
+			} else {
+				sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda*(1.0-nrn.SnmdaI))
+			}
 		}
+		ly.Act.SenderGSpiked(nrn)
 	}
 }
 
@@ -1120,8 +1126,19 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 		}
 
 		// important: add other sources of GeRaw here in NMDA driver
-		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, nrn.NMDASyn)
-		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+		nrn.GnmdaSyn = ly.Act.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw)
+		mgg, cav := ly.Act.NMDA.VFactors(nrn.VmDend)
+		nrn.Gnmda = ly.Act.NMDA.Gbar * nrn.GnmdaSyn * mgg
+		nrn.Jca = mgg * cav
+		nrn.GnmdaRaw = 0
+		if nrn.Spike > 0 {
+			inh := (1 - nrn.SnmdaI)
+			nrn.SnmdaO += inh * (1 - nrn.SnmdaO)
+			nrn.SnmdaI += inh
+		} else {
+			nrn.SnmdaO -= ly.Act.NMDA.Dt * nrn.SnmdaO
+			nrn.SnmdaI -= ly.Act.NMDA.IDt * nrn.SnmdaI
+		}
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 
 		// note: each step broken out here so other variants can add extra terms to Raw

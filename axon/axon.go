@@ -224,14 +224,22 @@ type AxonPrjn interface {
 	// the Send and Recv layers are reversed.
 	InitWtSym(rpj AxonPrjn)
 
-	// InitGbuf initializes the per-projection synaptic conductance buffers.
+	// InitGBufs initializes the per-projection synaptic conductance buffers.
 	// This is not typically needed (called during InitWts, InitActs)
 	// but can be called when needed.
-	InitGbuf()
+	InitGBufs()
 
-	// SendSpike sends a spike from sending neuron index si,
+	// SendESpike sends an excitatory spike from sending neuron index si,
 	// to add to buffer on receivers.
-	SendSpike(si int)
+	// Sends proportion of synaptic channels that remain open as function
+	// of time since last spike, for Ge and Gnmda channels
+	SendESpike(si int, sge, snmda float32)
+
+	// SendISpike sends an inhibitory spike from sending neuron index si,
+	// to add to buffer on receivers.  For Prjn = Inhib type.
+	// Sends proportion of synaptic channels that remain open as function
+	// of time since last spike.
+	SendISpike(si int, sgi float32)
 
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc(ltime *Time)

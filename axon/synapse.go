@@ -17,13 +17,17 @@ type Synapse struct {
 	LWt  float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, "`
 	DWt  float32 `desc:"change in synaptic weight, from learning"`
 	DSWt float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
+	Ca   float32 `desc:"current calcium level = send.SnmdaO * recv.Jca, for Kinase based learning"`
+	CaI  float32 `desc:"first stage integrated Ca calcium level (like CaM), feeds into CaP, for Kinase based learning"`
+	CaP  float32 `desc:"shorter timescale integrated CaI value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	CaD  float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 }
 
 func (sy *Synapse) VarNames() []string {
 	return SynapseVars
 }
 
-var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt"}
+var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "Ca", "CaI", "CaP", "CaD"}
 
 var SynapseVarProps = map[string]string{
 	"DWt":  `auto-scale:"+"`,

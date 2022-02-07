@@ -31,9 +31,10 @@ type Prjn struct {
 	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
-	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for Gbuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	Gbuf   []float32   `desc:"conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	GScale   GScaleVals  `view:"inline" desc:"conductance scaling values"`
+	Gidx     ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	GBuf     []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	GnmdaBuf []float32   `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -370,20 +371,21 @@ func (pj *Prjn) Build() error {
 		return err
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
-	pj.BuildGbuf()
+	pj.BuildGBufs()
 	return nil
 }
 
-// BuildGbuf builds Gbuf with current Com Delay values, if not correct size
-func (pj *Prjn) BuildGbuf() {
+// BuildGBuf builds GBuf with current Com Delay values, if not correct size
+func (pj *Prjn) BuildGBufs() {
 	rlen := pj.Recv.Shape().Len()
 	dl := pj.Com.Delay + 1
-	if pj.Gidx.Len == dl && len(pj.Gbuf) == dl {
+	if pj.Gidx.Len == dl && len(pj.GBuf) == dl {
 		return
 	}
 	pj.Gidx.Len = dl
 	pj.Gidx.Zi = 0
-	pj.Gbuf = make([]float32, dl*rlen)
+	pj.GBuf = make([]float32, dl*rlen)
+	pj.GnmdaBuf = make([]float32, dl*rlen)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -498,7 +500,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
 	pj.Learn.Lrate.Init()
-	pj.AxonPrj.InitGbuf()
+	pj.AxonPrj.InitGBufs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.SWt.Init.SPct
 	if rlay.AxonLay.IsTarget() {
@@ -658,22 +660,29 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	}
 }
 
-// InitGbuf initializes the G buffer values to 0
-// and insures that Gbuf is properly allocated
-func (pj *Prjn) InitGbuf() {
-	pj.BuildGbuf() // make sure correct size based on Com.Delay setting
-	for ri := range pj.Gbuf {
-		pj.Gbuf[ri] = 0
+// InitGBufs initializes the G buffer values to 0
+// and insures that G*Buf are properly allocated
+func (pj *Prjn) InitGBufs() {
+	pj.BuildGBufs() // make sure correct size based on Com.Delay setting
+	for ri := range pj.GBuf {
+		pj.GBuf[ri] = 0
+	}
+	for ri := range pj.GnmdaBuf {
+		pj.GnmdaBuf[ri] = 0
 	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// SendSpike sends a spike from sending neuron index si,
+// SendESpike sends an excitatory spike from sending neuron index si,
 // to add to buffer on receivers.
-func (pj *Prjn) SendSpike(si int) {
+// Sends proportion of synaptic channels that remain open as function
+// of time since last spike, for Ge and Gnmda channels.
+func (pj *Prjn) SendESpike(si int, sge, snmda float32) {
 	sc := pj.GScale.Scale
+	sge *= sc
+	snmda *= sc
 	del := pj.Com.Delay
 	sz := del + 1
 	di := pj.Gidx.Idx(del) // index in buffer to put new values -- end of line
@@ -683,7 +692,28 @@ func (pj *Prjn) SendSpike(si int) {
 	scons := pj.SConIdx[st : st+nc]
 	for ci := range syns {
 		ri := scons[ci]
-		pj.Gbuf[int(ri)*sz+di] += sc * syns[ci].Wt // todo: extra mult here -- premultiply is better
+		pj.GBuf[int(ri)*sz+di] += sge * syns[ci].Wt
+		pj.GnmdaBuf[int(ri)*sz+di] += snmda * syns[ci].Wt
+	}
+}
+
+// SendISpike sends an inhibitory spike from sending neuron index si,
+// to add to buffer on receivers.
+// Sends proportion of synaptic channels that remain open as function
+// of time since last spike.
+func (pj *Prjn) SendISpike(si int, sgi float32) {
+	sc := pj.GScale.Scale
+	sgi *= sc
+	del := pj.Com.Delay
+	sz := del + 1
+	di := pj.Gidx.Idx(del) // index in buffer to put new values -- end of line
+	nc := pj.SConN[si]
+	st := pj.SConIdxSt[si]
+	syns := pj.Syns[st : st+nc]
+	scons := pj.SConIdx[st : st+nc]
+	for ci := range syns {
+		ri := scons[ci]
+		pj.GBuf[int(ri)*sz+di] += sgi * syns[ci].Wt
 	}
 }
 
@@ -709,9 +739,9 @@ func (pj *Prjn) RecvGIncStats() {
 		for ri := range rlay.Neurons {
 			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			g := pj.Gbuf[bi]
+			g := pj.GBuf[bi]
 			rn.GiRaw += g
-			pj.Gbuf[bi] = 0
+			pj.GBuf[bi] = 0
 			if g > max {
 				max = g
 			}
@@ -724,9 +754,11 @@ func (pj *Prjn) RecvGIncStats() {
 		for ri := range rlay.Neurons {
 			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			g := pj.Gbuf[bi]
+			g := pj.GBuf[bi]
 			rn.GeRaw += g
-			pj.Gbuf[bi] = 0
+			rn.GnmdaRaw += pj.GnmdaBuf[bi]
+			pj.GBuf[bi] = 0
+			pj.GnmdaBuf[bi] = 0
 			if g > max {
 				max = g
 			}
@@ -764,17 +796,18 @@ func (pj *Prjn) RecvGIncNoStats() {
 		for ri := range rlay.Neurons {
 			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			g := pj.Gbuf[bi]
+			g := pj.GBuf[bi]
 			rn.GiRaw += g
-			pj.Gbuf[bi] = 0
+			pj.GBuf[bi] = 0
 		}
 	} else {
 		for ri := range rlay.Neurons {
 			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			g := pj.Gbuf[bi]
-			rn.GeRaw += g
-			pj.Gbuf[bi] = 0
+			rn.GeRaw += pj.GBuf[bi]
+			rn.GnmdaRaw += pj.GnmdaBuf[bi]
+			pj.GBuf[bi] = 0
+			pj.GnmdaBuf[bi] = 0
 		}
 	}
 	pj.Gidx.Shift(1) // rotate buffer

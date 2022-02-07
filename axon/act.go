@@ -106,26 +106,35 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 		nrn.GiSyn -= decay * nrn.GiSyn
 		nrn.GiSelf -= decay * nrn.GiSelf
+
+		nrn.Se += decay * (1 - nrn.Se) // return to 1
+		nrn.Si += decay * (1 - nrn.Si) // return to 1
 	}
 
-	nrn.VmDend -= ac.Decay.Glong * (nrn.VmDend - ac.Init.Vm)
+	glong := ac.Decay.Glong
 
-	nrn.Gnmda -= ac.Decay.Glong * nrn.Gnmda
-	nrn.NMDA -= ac.Decay.Glong * nrn.NMDA
-	nrn.NMDASyn -= ac.Decay.Glong * nrn.NMDASyn
-
-	nrn.GgabaB -= ac.Decay.Glong * nrn.GgabaB
-	nrn.GABAB -= ac.Decay.Glong * nrn.GABAB
-	nrn.GABABx -= ac.Decay.Glong * nrn.GABABx
+	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
 
 	nrn.GknaFast -= ac.Decay.KNa * nrn.GknaFast
 	nrn.GknaMed -= ac.Decay.KNa * nrn.GknaMed
 	nrn.GknaSlow -= ac.Decay.KNa * nrn.GknaSlow
 
+	nrn.GgabaB -= glong * nrn.GgabaB
+	nrn.GABAB -= glong * nrn.GABAB
+	nrn.GABABx -= glong * nrn.GABABx
+
+	nrn.Snmda += glong * (1 - nrn.Snmda) // return to 1
+	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
+	nrn.Gnmda -= glong * nrn.Gnmda
+	nrn.SnmdaO -= glong * nrn.SnmdaO
+	nrn.SnmdaI -= glong * nrn.SnmdaI
+	nrn.Jca -= glong * nrn.Jca
+
 	nrn.ActDel = 0
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.GnmdaRaw = 0
 }
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
@@ -146,6 +155,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Targ = 0
 	nrn.Ext = 0
 
+	nrn.Attn = 1
 	nrn.ActDel = 0
 	nrn.RLrate = 1
 
@@ -156,21 +166,29 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.GiSyn = 0
 	nrn.GiSelf = 0
-	nrn.GeRaw = 0
-	nrn.GiRaw = 0
+
+	nrn.Se = 1
+	nrn.Si = 1
+	nrn.Snmda = 1
 
 	nrn.GknaFast = 0
 	nrn.GknaMed = 0
 	nrn.GknaSlow = 0
 
-	nrn.Gnmda = 0
-	nrn.NMDA = 0
-	nrn.NMDASyn = 0
-
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
 	nrn.GABABx = 0
-	nrn.Attn = 1
+
+	nrn.GnmdaSyn = 0
+	nrn.Gnmda = 0
+	nrn.Snmda = 0
+	nrn.SnmdaO = 0
+	nrn.SnmdaI = 0
+	nrn.Jca = 0
+
+	nrn.GeRaw = 0
+	nrn.GiRaw = 0
+	nrn.GnmdaRaw = 0
 
 	ac.InitLongActs(nrn)
 }
@@ -191,6 +209,22 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
+
+// SenderGDecay updates Se, Si, Snmda when the neuron has not
+// spiked this time around -- decays the sender channels back open
+// in effect.
+func (ac *ActParams) SenderGDecay(nrn *Neuron) {
+	nrn.Se += (1 - nrn.Se) * ac.Dt.GeDt
+	nrn.Si += (1 - nrn.Si) * ac.Dt.GiDt
+	nrn.Snmda += (1 - nrn.Snmda) * ac.NMDA.Dt
+}
+
+// SenderGSpiked sets Se, Si, Snmda to 0 when the neuron spikes
+func (ac *ActParams) SenderGSpiked(nrn *Neuron) {
+	nrn.Se = 0
+	nrn.Si = 0
+	// nrn.Snmda = 0
+}
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
 // geExt is extra conductance to add to the final Ge value

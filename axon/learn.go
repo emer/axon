@@ -60,9 +60,9 @@ func (ln *LearnNeurParams) AvgsFmAct(nrn *Neuron) {
 type LrnActAvgParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives AvgSS value"`
 	MinLrn float32 `def:"0.02" desc:"minimum learning activation -- below this goes to zero"`
-	SSTau  float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking -- in general 4 is the largest value without starting to impair learning, but a value of 7 can be combined with m_in_s = 0 with somewhat worse results"`
+	SSTau  float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the super-short time-scale AvgSS value -- this is provides a pre-integration step before integrating into the AvgS short time scale -- it is particularly important for spiking"`
 	STau   float32 `def:"10" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the short time-scale AvgS value from the super-short AvgSS value (cascade mode) -- AvgS represents the plus phase learning signal that reflects the most recent past information"`
-	MTau   float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome) -- the default value of 10 generally cannot be exceeded without impairing learning"`
+	MTau   float32 `def:"40" min:"1" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the medium time-scale AvgM value from the short AvgS value (cascade mode) -- AvgM represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	LrnM   float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron AvgSLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
 	Init   float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
 
@@ -383,24 +383,23 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn  bool            `desc:"enable learning for this projection"`
-	Lrate  LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
-	XCal   XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
-	Kinase bool            `desc:"if true, use experimental kinase learning rule"`
-	KinAvg LrnActAvgParams `view:"inline" desc:"averaging rates for computing kinase learning factors"`
+	Learn  bool         `desc:"enable learning for this projection"`
+	Lrate  LrateParams  `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	XCal   XCalParams   `view:"inline" desc:"parameters for the XCal learning rule"`
+	Kinase KinaseParams `desc:"kinase learning rule parameters"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.Lrate.Update()
 	ls.XCal.Update()
-	ls.KinAvg.Update()
+	ls.Kinase.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
 	ls.Learn = true
 	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
-	ls.KinAvg.Defaults()
+	ls.Kinase.Defaults()
 }
 
 // CHLdWt returns the error-driven weight change component for the
@@ -529,4 +528,63 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 	mod := lr.Mod(fact)
 	net.LrateMod(mod)
 	return mod
+}
+
+/////////////////////////////////////////////////////
+// Kinase
+
+// KinaseParams has rate constants for averaging over activations
+// at different time scales, to produce the running average activation
+// values that then drive learning in the XCAL learning rules.
+// Is driven directly by spikes that increment running-average at super-short
+// timescale.  Time cycle of 50 msec quarters / theta window learning works
+// Cyc:50, SS:35 S:8, M:40 (best)
+// Cyc:25, SS:20, S:4, M:20
+type KinaseParams struct {
+	On     bool    `desc:"if true, use Kinase learning algorithm instead of original XCal"`
+	MinLrn float32 `def:"0.02" desc:"minimum learning activation -- below this goes to zero"`
+	ITau   float32 `def:"40" min:"1" desc:"Ca integration time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
+	PTau   float32 `def:"10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
+	DTau   float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
+	LrnM   float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron AvgSLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set ITau=7 and set this to 0 but learning is generally somewhat worse"`
+	Init   float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
+
+	IDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	PDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	DDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	LrnS float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"1-LrnM"`
+}
+
+// FmCa computes updates from current Ca value
+func (aa *KinaseParams) FmCa(ca float32, caI, caP, caD *float32) {
+	*caI += aa.IDt * (ca - *caI)
+	*caP += aa.PDt * (*caI - *caP)
+	*caD += aa.DDt * (*caP - *caD)
+
+	// *caMLrn = *caM
+	// thrS := *caS
+	// if *avgMLrn < aa.MinLrn && thrS < aa.MinLrn {
+	// 	*avgMLrn = 0
+	// 	thrS = 0
+	// }
+	//
+	// 	*avgSLrn = aa.LrnS*thrS + aa.LrnM**avgMLrn
+}
+
+func (aa *KinaseParams) Update() {
+	aa.IDt = 1 / aa.ITau
+	aa.PDt = 1 / aa.PTau
+	aa.DDt = 1 / aa.DTau
+	aa.LrnS = 1 - aa.LrnM
+}
+
+func (aa *KinaseParams) Defaults() {
+	aa.MinLrn = 0.02
+	aa.ITau = 40
+	aa.PTau = 10
+	aa.DTau = 40
+	aa.LrnM = 0.1
+	aa.Init = 0.15
+	aa.Update()
+
 }
