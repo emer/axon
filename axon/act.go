@@ -223,7 +223,7 @@ func (ac *ActParams) SenderGDecay(nrn *Neuron) {
 func (ac *ActParams) SenderGSpiked(nrn *Neuron) {
 	nrn.Se = 0
 	nrn.Si = 0
-	// nrn.Snmda = 0
+	nrn.Snmda = (1 - nrn.SnmdaI) // note: things are out of order here and this is not working
 }
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn

@@ -78,9 +78,11 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.Dt.VmDendTau":  "5",    // 5 > 2.81 here but small effect
 					"Layer.Act.Dt.VmSteps":    "2",    // 2 > 3 -- somehow works better
 					"Layer.Act.Dt.GeTau":      "5",
-					"Layer.Act.NMDA.Gbar":     "0.15", // 1.5 for SnmdaI, 4 or so with Snmda factor
-					"Layer.Act.NMDA.ITau":     "1",    // get rid of I
-					"Layer.Act.GABAB.Gbar":    "0.2",  // 0.2 > 0.15
+					"Layer.Act.NMDA.Gbar":     "1.5", // 1.5 for SnmdaI, 4 or so with Snmda factor
+					"Layer.Act.NMDA.ITau":     "1",   // get rid of I
+					"Layer.Act.NMDA.Tau":      "100", // 30 not good
+					"Layer.Act.NMDA.MgC":      "1.2",
+					"Layer.Act.GABAB.Gbar":    "0.2", // 0.2 > 0.15
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
