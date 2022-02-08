@@ -12,10 +12,10 @@ import "github.com/goki/mat32"
 // on Mg ion blockage, and presynaptic Glu-based opening, which in a simple model just
 // increments
 type NMDAParams struct {
+	Gbar float32 `def:"0,0.15,1.4" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.  0.15 standard for SnmdaDeplete = false, 1.4 when on."`
 	Tau  float32 `def:"30,100" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential"`
-	ITau float32 `def:"100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics -- set to 1 to eliminate that mechanism"`
-	Gbar float32 `def:"0,0.15" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance"`
-	MgC  float32 `def:"[1:1.5]" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM.  TODO: need to experiment with this to determine functional effects, but probably switch to higher 1.5 mm based on accuracy of Urakubo and more recent value."`
+	ITau float32 `def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics -- set to 1 to eliminate that mechanism"`
+	MgC  float32 `def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. For SnmdaDeplete, 1.2 is best, otherwise 1.0 is better."`
 
 	Dt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	IDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
@@ -23,9 +23,9 @@ type NMDAParams struct {
 }
 
 func (np *NMDAParams) Defaults() {
+	np.Gbar = 0.15
 	np.Tau = 100
 	np.ITau = 100
-	np.Gbar = 0.15
 	np.MgC = 1.0
 	np.Update()
 }

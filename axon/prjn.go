@@ -494,6 +494,10 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	sy.DWt = 0
 	sy.DSWt = 0
+	sy.Ca = 0
+	sy.CaM = 0
+	sy.CaP = 0
+	sy.CaD = 0
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -816,11 +820,49 @@ func (pj *Prjn) RecvGIncNoStats() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
+// SynCa updates synaptic calcium per-cycle, for Kinase learning
+func (pj *Prjn) SynCa() {
+	if !pj.Learn.Learn || !pj.Learn.Kinase.On {
+		return
+	}
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		// if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
+		// 	continue
+		// }
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			sy := &syns[ci]
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			sy.Ca = sn.SnmdaO * rn.Jca
+			pj.Learn.Kinase.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+		}
+	}
+}
+
 // DWt computes the weight change (learning) -- on sending projections
 func (pj *Prjn) DWt() {
 	if !pj.Learn.Learn {
 		return
 	}
+	if pj.Learn.Kinase.On {
+		pj.DWtKinase()
+	} else {
+		pj.DWtXCal()
+	}
+}
+
+// DWtXCal computes the weight change (learning) -- on sending projections
+// XCal version uses the CHL-based plus - minus temporal derivative with
+// checkmark-based BCM-like XCal learning rule originally derived from
+// Urakubo et al (2008)
+func (pj *Prjn) DWtXCal() {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -838,6 +880,39 @@ func (pj *Prjn) DWt() {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			err := pj.Learn.CHLdWt(sn.AvgSLrn, sn.AvgMLrn, rn.AvgSLrn, rn.AvgMLrn)
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtKinase computes the weight change (learning) -- on sending projections.
+// Uses the new experimental Kinase learning rule based on competition between
+// CaMKII (LTP) and DAPK1 (LTD) kinases.
+func (pj *Prjn) DWtKinase() {
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		// TODO experiment
+		// sn := &slay.Neurons[si]
+		// if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
+		// 	continue
+		// }
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			sy := &syns[ci]
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			err := pj.Learn.Kinase.DWt(sy.CaP, sy.CaD)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

@@ -244,6 +244,9 @@ type AxonPrjn interface {
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc(ltime *Time)
 
+	// SynCa updates synaptic calcium per-synapse, for Kinase learning
+	SynCa()
+
 	// DWt computes the weight change (learning) -- on sending projections
 	DWt()
 

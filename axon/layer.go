@@ -1304,6 +1304,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 			nrn.Gk = nrn.GgabaB
 		}
 	}
+	ly.SynCa() // for now
 }
 
 // AvgMaxAct computes the average and max Act stats, used in inhibition
@@ -1625,6 +1626,16 @@ func (ly *Layer) TrgAvgFmD() {
 		}
 		nrn.TrgAvg = ly.Learn.TrgAvgAct.TrgRange.ClipVal(nrn.TrgAvg + nrn.DTrgAvg)
 		nrn.DTrgAvg = 0
+	}
+}
+
+// SynCa updates synaptic calcium per-cycle, for Kinase learning
+func (ly *Layer) SynCa() {
+	for _, p := range ly.SndPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).SynCa()
 	}
 }
 

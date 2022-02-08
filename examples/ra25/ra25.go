@@ -69,20 +69,22 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.0
-					"Layer.Act.Decay.Glong":   "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":  "0.2",  // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":    "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
-					"Layer.Act.Dt.VmDendTau":  "5",    // 5 > 2.81 here but small effect
-					"Layer.Act.Dt.VmSteps":    "2",    // 2 > 3 -- somehow works better
-					"Layer.Act.Dt.GeTau":      "5",
-					"Layer.Act.NMDA.Gbar":     "1.5", // 1.5 for SnmdaI, 4 or so with Snmda factor
-					"Layer.Act.NMDA.ITau":     "1",   // get rid of I
-					"Layer.Act.NMDA.Tau":      "100", // 30 not good
-					"Layer.Act.NMDA.MgC":      "1.2",
-					"Layer.Act.GABAB.Gbar":    "0.2", // 0.2 > 0.15
+					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
+					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.2 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":        "3",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dt.VmDendTau":      "5",    // 5 > 2.81 here but small effect
+					"Layer.Act.Dt.VmSteps":        "2",    // 2 > 3 -- somehow works better
+					"Layer.Act.Dt.GeTau":          "5",
+					"Layer.Act.Dend.SeiDeplete":   "false", // noisy!  try on larger models
+					"Layer.Act.Dend.SnmdaDeplete": "false",
+					"Layer.Act.NMDA.Gbar":         "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
+					"Layer.Act.NMDA.ITau":         "1",    // 1 = get rid of I
+					"Layer.Act.NMDA.Tau":          "100",  // 30 not good
+					"Layer.Act.NMDA.MgC":          "1.0",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Act.GABAB.Gbar":        "0.2",  // 0.2 > 0.15
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -100,9 +102,15 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Lrate.Base":    "0.04", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.Lrate":     "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":       "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Kinase.On":     "true",
+					"Prjn.Learn.Kinase.MinLrn": "0.02",
+					"Prjn.Learn.Kinase.MTau":   "40",
+					"Prjn.Learn.Kinase.PTau":   "10",
+					"Prjn.Learn.Kinase.DTau":   "40",
+					"Prjn.Learn.Kinase.DScale": "0.93",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
