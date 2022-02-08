@@ -35,6 +35,7 @@ type Prjn struct {
 	Gidx     ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
 	GBuf     []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 	GnmdaBuf []float32   `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	AvgDWt   float32     `desc:"average DWt value across all synapses"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -829,9 +830,9 @@ func (pj *Prjn) SynCa() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		// if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
-		// 	continue
-		// }
+		if sn.AvgS < pj.Learn.Kinase.SAvgThr && sn.AvgM < pj.Learn.Kinase.SAvgThr {
+			continue
+		}
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -899,11 +900,10 @@ func (pj *Prjn) DWtKinase() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
-		// TODO experiment
-		// sn := &slay.Neurons[si]
-		// if sn.AvgSLrn < pj.Learn.XCal.LrnThr && sn.AvgMLrn < pj.Learn.XCal.LrnThr {
-		// 	continue
-		// }
+		sn := &slay.Neurons[si]
+		if sn.AvgS < pj.Learn.Kinase.SAvgThr && sn.AvgM < pj.Learn.Kinase.SAvgThr {
+			continue
+		}
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -919,6 +919,7 @@ func (pj *Prjn) DWtKinase() {
 			} else {
 				err *= sy.LWt
 			}
+			sy.DWtRaw = err
 			sy.DWt += rn.RLrate * lr * err
 		}
 	}
@@ -934,6 +935,7 @@ func (pj *Prjn) WtFmDWt() {
 		sm = 0
 	}
 	if sm > 0 {
+		var ssum float32
 		for ri := range rlay.Neurons {
 			nc := int(pj.RConN[ri])
 			if nc < 1 {
@@ -953,6 +955,7 @@ func (pj *Prjn) WtFmDWt() {
 			if nnz > 1 {
 				sumDWt /= float32(nnz)
 			}
+			ssum += sumDWt
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
 				if sy.DWt > thr || sy.DWt < -thr {
@@ -963,9 +966,10 @@ func (pj *Prjn) WtFmDWt() {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
+				pj.Learn.Kinase.ResetCa(sy)
 			}
 		}
-
+		pj.AvgDWt = ssum / float32(len(rlay.Neurons))
 	} else {
 		for ri := range rlay.Neurons {
 			nc := int(pj.RConN[ri])
@@ -982,6 +986,7 @@ func (pj *Prjn) WtFmDWt() {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
+				pj.Learn.Kinase.ResetCa(sy)
 			}
 		}
 	}

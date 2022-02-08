@@ -81,7 +81,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.Dend.SeiDeplete":   "false", // noisy!  try on larger models
 					"Layer.Act.Dend.SnmdaDeplete": "false",
 					"Layer.Act.NMDA.Gbar":         "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
-					"Layer.Act.NMDA.ITau":         "1",    // 1 = get rid of I
+					"Layer.Act.NMDA.ITau":         "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
 					"Layer.Act.NMDA.Tau":          "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":          "1.0",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.GABAB.Gbar":        "0.2",  // 0.2 > 0.15
@@ -102,15 +102,15 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":    "0.04", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":     "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":       "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.On":     "true",
-					"Prjn.Learn.Kinase.MinLrn": "0.02",
-					"Prjn.Learn.Kinase.MTau":   "40",
-					"Prjn.Learn.Kinase.PTau":   "10",
-					"Prjn.Learn.Kinase.DTau":   "40",
-					"Prjn.Learn.Kinase.DScale": "0.93",
+					"Prjn.Learn.Lrate.Base":     "0.01", // 0.01 > 0.008 > 0.004 -- very sensitive..
+					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":        "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Kinase.On":      "true",
+					"Prjn.Learn.Kinase.SAvgThr": "0.02", // 0.02 = 0.01 > 0.05
+					"Prjn.Learn.Kinase.MTau":    "40",
+					"Prjn.Learn.Kinase.PTau":    "10",
+					"Prjn.Learn.Kinase.DTau":    "40",
+					"Prjn.Learn.Kinase.DScale":  "0.93", // 0.93 > 0.94 > 1 > .9
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -1086,14 +1086,14 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 
 	for _, lnm := range ss.LayStatNms {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		// ffpj := ly.RecvPrjn(0).(*axon.Prjn)
-		// dt.SetCellFloat(ly.Nm+"_FF_AvgMaxG", row, float64(ffpj.GScale.AvgMax))
-		// dt.SetCellFloat(ly.Nm+"_FF_Scale", row, float64(ffpj.GScale.Scale))
-		// if ly.NRecvPrjns() > 1 {
-		// 	fbpj := ly.RecvPrjn(1).(*axon.Prjn)
-		// 	dt.SetCellFloat(ly.Nm+"_FB_AvgMaxG", row, float64(fbpj.GScale.AvgMax))
-		// 	dt.SetCellFloat(ly.Nm+"_FB_Scale", row, float64(fbpj.GScale.Scale))
-		// }
+		if ly.NRecvPrjns() > 0 {
+			ffpj := ly.RecvPrjn(0).(*axon.Prjn)
+			dt.SetCellFloat(ly.Nm+"_FF_AvgDWt", row, float64(ffpj.AvgDWt))
+			if ly.NRecvPrjns() > 1 {
+				fbpj := ly.RecvPrjn(1).(*axon.Prjn)
+				dt.SetCellFloat(ly.Nm+"_FB_AvgDWt", row, float64(fbpj.AvgDWt))
+			}
+		}
 		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
 		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
 		dt.SetCellFloat(ly.Nm+"_AvgGe", row, float64(ly.Pools[0].Inhib.Ge.Avg))
@@ -1145,6 +1145,8 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 		// sch = append(sch, etable.Column{lnm + "_GiMult", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_AvgDifAvg", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_AvgDifMax", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_FF_AvgDWt", etensor.FLOAT64, nil, nil})
+		sch = append(sch, etable.Column{lnm + "_FB_AvgDWt", etensor.FLOAT64, nil, nil})
 	}
 	dt.SetFromSchema(sch, 0)
 }

@@ -541,35 +541,30 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 // Cyc:50, SS:35 S:8, M:40 (best)
 // Cyc:25, SS:20, S:4, M:20
 type KinaseParams struct {
-	On     bool    `desc:"if true, use Kinase learning algorithm instead of original XCal"`
-	MinLrn float32 `def:"0.02" desc:"minimum learning activation -- below this goes to zero"`
-	MTau   float32 `def:"40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
-	PTau   float32 `def:"10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
-	DTau   float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
-	DScale float32 `def:"0.93" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
-	LrnM   float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron AvgSLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set ITau=7 and set this to 0 but learning is generally somewhat worse"`
-	Init   float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
+	On      bool    `desc:"if true, use Kinase learning algorithm instead of original XCal"`
+	SAvgThr float32 `def:"0.02" desc:"optimization for compute speed -- threshold on sending avg values to update Ca values -- depends on Ca clearing upon Wt update"`
+	MTau    float32 `def:"40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
+	PTau    float32 `def:"10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
+	DTau    float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
+	DScale  float32 `def:"0.93" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
 
-	MDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	PDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	DDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	LrnS float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"1-LrnM"`
+	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
 func (kp *KinaseParams) Update() {
 	kp.MDt = 1 / kp.MTau
 	kp.PDt = 1 / kp.PTau
 	kp.DDt = 1 / kp.DTau
-	kp.LrnS = 1 - kp.LrnM
 }
 
 func (kp *KinaseParams) Defaults() {
-	kp.MinLrn = 0.02
+	kp.SAvgThr = 0.02
 	kp.MTau = 40
 	kp.PTau = 10
 	kp.DTau = 40
-	kp.LrnM = 0.1
-	kp.Init = 0.15
+	kp.DScale = 0.93
 	kp.Update()
 }
 
@@ -578,21 +573,17 @@ func (kp *KinaseParams) FmCa(ca float32, caM, caP, caD *float32) {
 	*caM += kp.MDt * (ca - *caM)
 	*caP += kp.PDt * (*caM - *caP)
 	*caD += kp.DDt * (*caP - *caD)
-
-	// *caMLrn = *caM
-	// thrS := *caS
-	// if *avgMLrn < aa.MinLrn && thrS < aa.MinLrn {
-	// 	*avgMLrn = 0
-	// 	thrS = 0
-	// }
-	//
-	// 	*avgSLrn = aa.LrnS*thrS + aa.LrnM**avgMLrn
 }
 
 // DWt computes the weight change from CaP, CaD values
 func (kp *KinaseParams) DWt(caP, caD float32) float32 {
-	if caP < kp.MinLrn && caD < kp.MinLrn {
-		return 0
-	}
 	return caP - kp.DScale*caD
+}
+
+// ResetCa resets all the Ca vals on the synapse
+func (kp *KinaseParams) ResetCa(sy *Synapse) {
+	sy.Ca = 0
+	sy.CaM = 0
+	sy.CaP = 0
+	sy.CaD = 0
 }

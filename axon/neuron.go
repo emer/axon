@@ -118,6 +118,7 @@ var NeuronVarProps = map[string]string{
 	"GknaMed":  `auto-scale:"+"`,
 	"GknaSlow": `auto-scale:"+"`,
 	"Gnmda":    `auto-scale:"+"`,
+	"Jca":      `auto-scale:"+"`,
 	"GgabaB":   `auto-scale:"+"`,
 	"GABAB":    `auto-scale:"+"`,
 	"GABABx":   `auto-scale:"+"`,
