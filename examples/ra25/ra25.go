@@ -92,19 +92,13 @@ var ParamSetsMin = params.Sets{
 
 					// Voff = 5, MgC = 1.4, CaMax = 90, VGCCCa = 20 is a reasonable "high voltage" config
 					// Voff = 0, MgC = 1, CaMax = 100, VGCCCa = 20 is a good "default" config
-					"Layer.Act.NMDA.Gbar": "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
-					"Layer.Act.NMDA.ITau": "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":  "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":  "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff": "5",    // 5 > 0 but need to reduce gbar -- too much
-
-					"Layer.Act.Dend.VGCCCa": "20", // 20 seems reasonable, but not obviously better than 0
+					"Layer.Act.NMDA.Gbar":   "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
+					"Layer.Act.NMDA.ITau":   "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Act.NMDA.Tau":    "100",  // 30 not good
+					"Layer.Act.NMDA.MgC":    "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Act.NMDA.Voff":   "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Act.Dend.VGCCCa": "20",   // 20 seems reasonable, but not obviously better than 0
 					"Layer.Act.Dend.CaMax":  "90",
-					"Layer.Learn.NMDA.Gbar": "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
-					"Layer.Learn.NMDA.ITau": "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Learn.NMDA.Tau":  "100",  // 30 not good
-					"Layer.Learn.NMDA.MgC":  "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Learn.NMDA.Voff": "5",    // 5 > 0
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{

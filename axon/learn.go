@@ -7,7 +7,6 @@ package axon
 import (
 	"math/rand"
 
-	"github.com/emer/axon/chans"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/mat32"
 )
@@ -18,24 +17,21 @@ import (
 // axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
-	ActAvg    LrnActAvgParams  `view:"inline" desc:"parameters for computing running average activations that drive learning"`
-	TrgAvgAct TrgAvgActParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
-	RLrate    RLrateParams     `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLrate = |AvgS - AvgM| / Max(AvgS, AvgM)"`
-	NMDA      chans.NMDAParams `view:"inline" desc:"NMDA parameters for learning effects of NMDA, as contrasted with the activation-based effects -- for ease of experimentation and also maybe they are biologically distinct enough for there to be different subsets.  Certainly different mixes of subtypes"`
+	ActAvg    LrnActAvgParams `view:"inline" desc:"parameters for computing running average activations that drive learning"`
+	TrgAvgAct TrgAvgActParams `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
+	RLrate    RLrateParams    `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLrate = |AvgS - AvgM| / Max(AvgS, AvgM)"`
 }
 
 func (ln *LearnNeurParams) Update() {
 	ln.ActAvg.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLrate.Update()
-	ln.NMDA.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
 	ln.ActAvg.Defaults()
 	ln.TrgAvgAct.Defaults()
 	ln.RLrate.Defaults()
-	ln.NMDA.Defaults()
 }
 
 // InitActAvg initializes the running-average activation values that drive learning.

@@ -1130,8 +1130,8 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 
 		// Separate factors for learning
-		nrn.RnmdaSyn = ly.Learn.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw)
-		mgg, cav := ly.Learn.NMDA.VFactors(nrn.VmDend)
+		nrn.RnmdaSyn = ly.Act.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw)
+		mgg, cav := ly.Act.NMDA.VFactors(nrn.VmDend)
 		nrn.Jca = nrn.RnmdaSyn * mgg * cav
 		nrn.GnmdaRaw = 0
 
@@ -1142,8 +1142,8 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 			nrn.SnmdaI += inh
 			nrn.Jca += ly.Act.Dend.VGCCCa
 		} else {
-			nrn.SnmdaO -= ly.Learn.NMDA.Dt * nrn.SnmdaO
-			nrn.SnmdaI -= ly.Learn.NMDA.IDt * nrn.SnmdaI
+			nrn.SnmdaO -= ly.Act.NMDA.Dt * nrn.SnmdaO
+			nrn.SnmdaI -= ly.Act.NMDA.IDt * nrn.SnmdaI
 		}
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 
