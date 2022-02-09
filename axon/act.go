@@ -126,9 +126,11 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	nrn.Snmda += glong * (1 - nrn.Snmda) // return to 1
 	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
 	nrn.Gnmda -= glong * nrn.Gnmda
+
+	nrn.RnmdaSyn -= glong * nrn.RnmdaSyn
+	nrn.Jca -= glong * nrn.Jca
 	nrn.SnmdaO -= glong * nrn.SnmdaO
 	nrn.SnmdaI -= glong * nrn.SnmdaI
-	nrn.Jca -= glong * nrn.Jca
 
 	nrn.ActDel = 0
 	nrn.Inet = 0
@@ -181,6 +183,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.GnmdaSyn = 0
 	nrn.Gnmda = 0
+	nrn.RnmdaSyn = 0
 	nrn.SnmdaO = 0
 	nrn.SnmdaI = 0
 	nrn.Jca = 0
@@ -466,12 +469,16 @@ type DendParams struct {
 	SnmdaDeplete bool    `desc:"When a sending spike occurs, deplete the Snmda factor to track availability of each synapse's channels based on time since last spiking.  This introduces significant noise in NMDA dynamics due to long time constant, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
 	GbarExp      float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
 	GbarR        float32 `def:"3" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	VGCCCa       float32 `desc:"extra calcium to add to Jca during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
+	CaMax        float32 `desc:"maximum expected calcium level -- used for normalizing Jca, which then drives learning"`
 }
 
 func (dp *DendParams) Defaults() {
 	// note: leaving *Deplete as off by default but no active preference
 	dp.GbarExp = 0.2
 	dp.GbarR = 3
+	dp.VGCCCa = 0
+	dp.CaMax = 100
 }
 
 func (dp *DendParams) Update() {

@@ -16,6 +16,7 @@ type NMDAParams struct {
 	Tau  float32 `def:"30,100" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential"`
 	ITau float32 `def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics -- set to 1 to eliminate that mechanism"`
 	MgC  float32 `def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. For SnmdaDeplete, 1.2 is best, otherwise 1.0 is better."`
+	Voff float32 `def:"0" desc:"offset in membrane potential for v-dependent functions -- easier to experiment with this rather than changing the entire model's dynamics -- TODO remove later"`
 
 	Dt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	IDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
@@ -27,6 +28,7 @@ func (np *NMDAParams) Defaults() {
 	np.Tau = 100
 	np.ITau = 100
 	np.MgC = 1.0
+	np.Voff = 0
 	np.Update()
 }
 
@@ -39,6 +41,7 @@ func (np *NMDAParams) Update() {
 // MgGFmVbio returns the NMDA conductance as a function of biological membrane potential
 // based on Mg ion blocking
 func (np *NMDAParams) MgGFmVbio(vbio float32) float32 {
+	vbio += np.Voff
 	if vbio >= 0 {
 		return 0
 	}
@@ -55,6 +58,7 @@ func (np *NMDAParams) MgGFmV(v float32) float32 {
 // potential -- this factor is needed for computing the calcium current * MgGFmV.
 // This is the same function used in VGCC for their conductance factor.
 func (np *NMDAParams) CaFmVbio(vbio float32) float32 {
+	vbio += np.Voff
 	if vbio > -0.1 && vbio < 0.1 {
 		return 1.0 / (0.0756 + 0.5*vbio)
 	}

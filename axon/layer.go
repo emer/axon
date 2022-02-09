@@ -1127,19 +1127,27 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 
 		// important: add other sources of GeRaw here in NMDA driver
 		nrn.GnmdaSyn = ly.Act.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw)
-		mgg, cav := ly.Act.NMDA.VFactors(nrn.VmDend)
-		nrn.Gnmda = ly.Act.NMDA.Gbar * nrn.GnmdaSyn * mgg
-		nrn.Jca = mgg * cav
+		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
+
+		// Separate factors for learning
+		nrn.RnmdaSyn = ly.Learn.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw)
+		mgg, cav := ly.Learn.NMDA.VFactors(nrn.VmDend)
+		nrn.Jca = nrn.RnmdaSyn * mgg * cav
 		nrn.GnmdaRaw = 0
+
+		// sender-side nmda, for learning
 		if nrn.Spike > 0 {
 			inh := (1 - nrn.SnmdaI)
 			nrn.SnmdaO += inh * (1 - nrn.SnmdaO)
 			nrn.SnmdaI += inh
+			nrn.Jca += ly.Act.Dend.VGCCCa
 		} else {
-			nrn.SnmdaO -= ly.Act.NMDA.Dt * nrn.SnmdaO
-			nrn.SnmdaI -= ly.Act.NMDA.IDt * nrn.SnmdaI
+			nrn.SnmdaO -= ly.Learn.NMDA.Dt * nrn.SnmdaO
+			nrn.SnmdaI -= ly.Learn.NMDA.IDt * nrn.SnmdaI
 		}
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
+
+		nrn.Jca /= ly.Act.Dend.CaMax
 
 		// note: each step broken out here so other variants can add extra terms to Raw
 		ly.Act.GeFmRaw(nrn, nrn.GeRaw, nrn.Gnmda, cyc, nrn.ActM)
