@@ -139,17 +139,16 @@ func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) 
 	if nrn.IsOff() {
 		return
 	}
-	actm := nrn.ActM
 	geRaw := (1-drvInhib)*nrn.GeRaw + drvGe
+
 	nrn.ClearFlag(axon.NeurHasExt)
-	nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, geRaw, nrn.NMDASyn)
-	nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
-	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
+
+	ly.Act.NMDAFmRaw(nrn, 0) // note: could also do drv?
 
 	// note: excluding gnmda during driving phase -- probably could exclude always due to ge context?
 
 	// note: each step broken out here so other variants can add extra terms to Raw
-	ly.Act.GeFmRaw(nrn, geRaw, 0, cyc, actm)
+	ly.Act.GeFmRaw(nrn, geRaw, nrn.Gnmda)
 	nrn.GeRaw = 0
 	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 	nrn.GiRaw = 0
@@ -178,7 +177,13 @@ func (ly *TRCLayer) GeFmDrivers(ltime *axon.Time) {
 func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
 	if ly.TRC.DriversOff || !ltime.PlusPhase {
-		ly.GFmIncNeur(ltime) // regular
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			ly.GFmIncNeur(ltime, nrn, 0) // regular
+		}
 		return
 	}
 	ly.GeFmDrivers(ltime)

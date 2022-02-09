@@ -1097,7 +1097,13 @@ func (ly *Layer) SendSpike(ltime *Time) {
 // GFmInc integrates new synaptic conductances from increments sent during last Spike
 func (ly *Layer) GFmInc(ltime *Time) {
 	ly.RecvGInc(ltime)
-	ly.GFmIncNeur(ltime)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.GFmIncNeur(ltime, nrn, 0) // no extra
+	}
 }
 
 // RecvGInc calls RecvGInc on receiving projections to collect Neuron-level G*Inc values.
@@ -1113,48 +1119,15 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 }
 
 // GFmIncNeur is the neuron-level code for GFmInc that integrates overall Ge, Gi values
-// from their G*Raw accumulators.
-func (ly *Layer) GFmIncNeur(ltime *Time) {
-	cyc := ltime.Cycle // for bursting
-	if ly.AxonLay.IsTarget() {
-		cyc = ltime.PhaseCycle
-	}
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
+// from their G*Raw accumulators.  Takes an extra increment to add to geRaw
+func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
+	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
+	ly.Act.NMDAFmRaw(nrn, geExt)
 
-		// important: add other sources of GeRaw here in NMDA driver
-		nrn.GnmdaSyn = ly.Act.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw)
-		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
-
-		// Separate factors for learning
-		nrn.RnmdaSyn = ly.Act.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw)
-		mgg, cav := ly.Act.NMDA.VFactors(nrn.VmDend)
-		nrn.Jca = nrn.RnmdaSyn * mgg * cav
-		nrn.GnmdaRaw = 0
-
-		// sender-side nmda, for learning
-		if nrn.Spike > 0 {
-			inh := (1 - nrn.SnmdaI)
-			nrn.SnmdaO += inh * (1 - nrn.SnmdaO)
-			nrn.SnmdaI += inh
-			nrn.Jca += ly.Act.Dend.VGCCCa
-		} else {
-			nrn.SnmdaO -= ly.Act.NMDA.Dt * nrn.SnmdaO
-			nrn.SnmdaI -= ly.Act.NMDA.IDt * nrn.SnmdaI
-		}
-		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
-
-		nrn.Jca /= ly.Act.Dend.CaMax
-
-		// note: each step broken out here so other variants can add extra terms to Raw
-		ly.Act.GeFmRaw(nrn, nrn.GeRaw, nrn.Gnmda, cyc, nrn.ActM)
-		nrn.GeRaw = 0
-		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
-		nrn.GiRaw = 0
-	}
+	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda)
+	nrn.GeRaw = 0
+	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
+	nrn.GiRaw = 0
 }
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition

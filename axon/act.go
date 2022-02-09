@@ -234,9 +234,34 @@ func (ac *ActParams) SenderGSpiked(nrn *Neuron) {
 	}
 }
 
+// NMDAFmRaw updates all the NMDA variables from GnmdaRaw and current Vm, Spiking
+func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
+	// important: add other sources of GeRaw here in NMDA driver
+	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw+geExt)
+	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
+
+	// Separate factors for learning
+	nrn.RnmdaSyn = ac.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
+	mgg, cav := ac.NMDA.VFactors(nrn.VmDend)
+	nrn.Jca = nrn.RnmdaSyn * mgg * cav
+	nrn.GnmdaRaw = 0
+
+	// sender-side nmda, for learning
+	if nrn.Spike > 0 {
+		inh := (1 - nrn.SnmdaI)
+		nrn.SnmdaO += inh * (1 - nrn.SnmdaO)
+		nrn.SnmdaI += inh
+		nrn.Jca += ac.Dend.VGCCCa
+	} else {
+		nrn.SnmdaO -= ac.NMDA.Dt * nrn.SnmdaO
+		nrn.SnmdaI -= ac.NMDA.IDt * nrn.SnmdaI
+	}
+	nrn.Jca /= ac.Dend.CaMax
+}
+
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
 // geExt is extra conductance to add to the final Ge value
-func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32, cyc int, actm float32) {
+func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32) {
 	if ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
 		geRaw += nrn.Ext * ac.Clamp.Ge
 	}

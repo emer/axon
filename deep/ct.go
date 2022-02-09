@@ -56,28 +56,13 @@ func (ly *CTLayer) InitActs() {
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
 func (ly *CTLayer) GFmInc(ltime *axon.Time) {
-	cyc := ltime.Cycle // for bursting
-	if ly.IsTarget() {
-		cyc = ltime.PhaseCycle
-	}
 	ly.RecvGInc(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-
-		geRaw := nrn.GeRaw + ly.CtxtGeGain*ly.CtxtGes[ni]
-
-		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, geRaw, nrn.NMDASyn)
-		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
-		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
-
-		// note: each step broken out here so other variants can add extra terms to Raw
-		ly.Act.GeFmRaw(nrn, geRaw, nrn.Gnmda, cyc, nrn.ActM)
-		nrn.GeRaw = 0
-		ly.Act.GiFmRaw(nrn, nrn.GiRaw)
-		nrn.GiRaw = 0
+		ly.GFmIncNeur(ltime, nrn, ly.CtxtGeGain*ly.CtxtGes[ni]) // extra context for ge
 	}
 }
 
