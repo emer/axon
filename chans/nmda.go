@@ -6,38 +6,86 @@ package chans
 
 import "github.com/goki/mat32"
 
-// NMDAParams control the NMDA dynamics, based on Brunel & Wang (2001)
-// parameters.
+// NMDAParams control the NMDA dynamics, based on Jahr & Stevens (1990) equations
+// which are widely used in models, from Brunel & Wang (2001) to Sanders et al. (2013).
+// The overall conductance is a function of a voltage-dependent postsynaptic factor based
+// on Mg ion blockage, and presynaptic Glu-based opening, which in a simple model just
+// increments
 type NMDAParams struct {
-	GeTot float32 `desc:"how much of the NMDA is driven by total Ge synaptic input, as opposed to from projections specifically marked as NMDA-communicating type, e.g., for active maintenance, in NMDASyn"`
-	Tau   float32 `def:"100" desc:"decay time constant for NMDA channel activation as a function of mactivation -- rise time is 2 msec and not worth extra effort for biexponential"`
-	Gbar  float32 `def:"0,0.15" desc:"strength of NMDA current"`
+	Gbar float32 `def:"0,0.15,1.4" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.  0.15 standard for SnmdaDeplete = false, 1.4 when on."`
+	Tau  float32 `def:"30,100" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential"`
+	ITau float32 `def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics -- set to 1 to eliminate that mechanism"`
+	MgC  float32 `def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. For SnmdaDeplete, 1.2 is best, otherwise 1.0 is better."`
+	Voff float32 `def:"0" desc:"offset in membrane potential for v-dependent functions -- easier to experiment with this rather than changing the entire model's dynamics -- TODO remove later"`
+
+	Dt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	IDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	MgFact float32 `view:"-" json:"-" xml:"-" desc:"MgFact = MgC / 3.57"`
 }
 
 func (np *NMDAParams) Defaults() {
-	np.GeTot = 1
-	np.Tau = 100
 	np.Gbar = 0.15
+	np.Tau = 100
+	np.ITau = 1 // off by default, as it doesn't work in actual axon models..
+	np.MgC = 1.0
+	np.Voff = 0
+	np.Update()
 }
 
 func (np *NMDAParams) Update() {
+	np.Dt = 1 / np.Tau
+	np.IDt = 1 / np.ITau
+	np.MgFact = np.MgC / 3.57
 }
 
-// GFmV returns the NMDA conductance as a function of normalized membrane potential
-func (np *NMDAParams) GFmV(v float32) float32 {
-	vbio := VToBio(v)
-	if vbio > 0 { // critical to not go past 0
-		vbio = 0
+// MgGFmVbio returns the NMDA conductance as a function of biological membrane potential
+// based on Mg ion blocking
+func (np *NMDAParams) MgGFmVbio(vbio float32) float32 {
+	vbio += np.Voff
+	if vbio >= 0 {
+		return 0
 	}
-	return 1.0 / (1.0 + 0.28*mat32.FastExp(-0.062*vbio))
+	return 1.0 / (1.0 + np.MgFact*mat32.FastExp(-0.062*vbio))
 }
 
-// NMDA returns the updated NMDA activation from current NMDA, GeRaw, and NMDASyn input
-func (np *NMDAParams) NMDA(nmda, geraw, nmdaSyn float32) float32 {
-	return nmda + np.GeTot*geraw + nmdaSyn - (nmda / np.Tau)
+// MgGFmV returns the NMDA conductance as a function of normalized membrane potential
+// based on Mg ion blocking
+func (np *NMDAParams) MgGFmV(v float32) float32 {
+	return np.MgGFmVbio(VToBio(v))
 }
 
-// Gnmda returns the NMDA net conductance from nmda activation and vm
+// CaFmVbio returns the calcium current factor as a function of biological membrane
+// potential -- this factor is needed for computing the calcium current * MgGFmV.
+// This is the same function used in VGCC for their conductance factor.
+func (np *NMDAParams) CaFmVbio(vbio float32) float32 {
+	vbio += np.Voff
+	if vbio > -0.1 && vbio < 0.1 {
+		return 1.0 / (0.0756 + 0.5*vbio)
+	}
+	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))
+}
+
+// CaFmV returns the calcium current factor as a function of normalized membrane
+// potential -- this factor is needed for computing the calcium current * MgGFmV
+func (np *NMDAParams) CaFmV(v float32) float32 {
+	return np.CaFmVbio(VToBio(v))
+}
+
+// VFactors returns MgGFmV and CaFmV based on normalized membrane potential.
+// Just does the voltage conversion once.
+func (np *NMDAParams) VFactors(v float32) (mgg, cav float32) {
+	vbio := VToBio(v)
+	return np.MgGFmVbio(vbio), np.CaFmVbio(vbio)
+}
+
+// NMDASyn returns the updated synaptic NMDA Glu binding
+// based on new raw spike-driven Glu binding.
+func (np *NMDAParams) NMDASyn(nmda, raw float32) float32 {
+	return nmda + raw - np.Dt*nmda
+}
+
+// Gnmda returns the NMDA net conductance from nmda Glu binding and Vm
+// including the GBar factor
 func (np *NMDAParams) Gnmda(nmda, vm float32) float32 {
-	return np.Gbar * np.GFmV(vm) * nmda
+	return np.Gbar * np.MgGFmV(vm) * nmda
 }

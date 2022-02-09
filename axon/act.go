@@ -106,26 +106,37 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 		nrn.GiSyn -= decay * nrn.GiSyn
 		nrn.GiSelf -= decay * nrn.GiSelf
+
+		nrn.Se += decay * (1 - nrn.Se) // return to 1
+		nrn.Si += decay * (1 - nrn.Si) // return to 1
 	}
 
-	nrn.VmDend -= ac.Decay.Glong * (nrn.VmDend - ac.Init.Vm)
+	glong := ac.Decay.Glong
 
-	nrn.Gnmda -= ac.Decay.Glong * nrn.Gnmda
-	nrn.NMDA -= ac.Decay.Glong * nrn.NMDA
-	nrn.NMDASyn -= ac.Decay.Glong * nrn.NMDASyn
-
-	nrn.GgabaB -= ac.Decay.Glong * nrn.GgabaB
-	nrn.GABAB -= ac.Decay.Glong * nrn.GABAB
-	nrn.GABABx -= ac.Decay.Glong * nrn.GABABx
+	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
 
 	nrn.GknaFast -= ac.Decay.KNa * nrn.GknaFast
 	nrn.GknaMed -= ac.Decay.KNa * nrn.GknaMed
 	nrn.GknaSlow -= ac.Decay.KNa * nrn.GknaSlow
 
+	nrn.GgabaB -= glong * nrn.GgabaB
+	nrn.GABAB -= glong * nrn.GABAB
+	nrn.GABABx -= glong * nrn.GABABx
+
+	nrn.Snmda += glong * (1 - nrn.Snmda) // return to 1
+	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
+	nrn.Gnmda -= glong * nrn.Gnmda
+
+	nrn.RnmdaSyn -= glong * nrn.RnmdaSyn
+	nrn.Jca -= glong * nrn.Jca
+	nrn.SnmdaO -= glong * nrn.SnmdaO
+	nrn.SnmdaI -= glong * nrn.SnmdaI
+
 	nrn.ActDel = 0
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.GnmdaRaw = 0
 }
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
@@ -146,6 +157,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Targ = 0
 	nrn.Ext = 0
 
+	nrn.Attn = 1
 	nrn.ActDel = 0
 	nrn.RLrate = 1
 
@@ -156,21 +168,29 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.GiSyn = 0
 	nrn.GiSelf = 0
-	nrn.GeRaw = 0
-	nrn.GiRaw = 0
+
+	nrn.Se = 1
+	nrn.Si = 1
+	nrn.Snmda = 1
 
 	nrn.GknaFast = 0
 	nrn.GknaMed = 0
 	nrn.GknaSlow = 0
 
-	nrn.Gnmda = 0
-	nrn.NMDA = 0
-	nrn.NMDASyn = 0
-
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
 	nrn.GABABx = 0
-	nrn.Attn = 1
+
+	nrn.GnmdaSyn = 0
+	nrn.Gnmda = 0
+	nrn.RnmdaSyn = 0
+	nrn.SnmdaO = 0
+	nrn.SnmdaI = 0
+	nrn.Jca = 0
+
+	nrn.GeRaw = 0
+	nrn.GiRaw = 0
+	nrn.GnmdaRaw = 0
 
 	ac.InitLongActs(nrn)
 }
@@ -191,6 +211,28 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
+
+// SenderGDecay updates Se, Si, Snmda when the neuron has not
+// spiked this time around -- decays the sender channels back open
+// in effect.
+func (ac *ActParams) SenderGDecay(nrn *Neuron) {
+	nrn.Se += (1 - nrn.Se) * ac.Dt.GeDt
+	nrn.Si += (1 - nrn.Si) * ac.Dt.GiDt
+	nrn.Snmda += (1 - nrn.Snmda) * ac.NMDA.Dt
+}
+
+// SenderGSpiked sets Se, Si, Snmda to 0 when the neuron spikes, if doing depletion
+func (ac *ActParams) SenderGSpiked(nrn *Neuron) {
+	// note that timing for S* factors is prior to communication delay
+	// but their effect will be delayed so this is appropriate
+	if ac.Dend.SeiDeplete {
+		nrn.Se = 0
+		nrn.Si = 0
+	}
+	if ac.Dend.SnmdaDeplete {
+		nrn.Snmda = 0
+	}
+}
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
 // geExt is extra conductance to add to the final Ge value
@@ -423,13 +465,20 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
-	GbarExp float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
-	GbarR   float32 `def:"3" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	SeiDeplete   bool    `desc:"When a sending spike occurs, deplete the Se and Si factors to track availability of each synapse's channels based on time since last spiking.  This introduces noise, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
+	SnmdaDeplete bool    `desc:"When a sending spike occurs, deplete the Snmda factor to track availability of each synapse's channels based on time since last spiking.  This introduces significant noise in NMDA dynamics due to long time constant, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
+	GbarExp      float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
+	GbarR        float32 `def:"3" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	VGCCCa       float32 `desc:"extra calcium to add to Jca during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
+	CaMax        float32 `desc:"maximum expected calcium level -- used for normalizing Jca, which then drives learning"`
 }
 
 func (dp *DendParams) Defaults() {
+	// note: leaving *Deplete as off by default but no active preference
 	dp.GbarExp = 0.2
 	dp.GbarR = 3
+	dp.VGCCCa = 0
+	dp.CaMax = 100
 }
 
 func (dp *DendParams) Update() {

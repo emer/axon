@@ -589,7 +589,7 @@ func (nt *Network) SizeReport() string {
 			pj := pji.(AxonPrjn).AsAxon()
 			ns := len(pj.Syns)
 			syn += ns
-			pmem := ns*int(unsafe.Sizeof(Synapse{})) + len(pj.Gbuf)*4
+			pmem := 2*ns*int(unsafe.Sizeof(Synapse{})) + len(pj.GBuf)*4
 			synMem += pmem
 			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(), ns, (datasize.ByteSize)(pmem).HumanReadable())
 		}

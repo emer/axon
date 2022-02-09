@@ -1077,14 +1077,20 @@ func (ly *Layer) SendSpike(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() || nrn.Spike == 0 {
+			ly.Act.SenderGDecay(nrn)
 			continue
 		}
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue
 			}
-			sp.(AxonPrjn).SendSpike(ni) // todo: test timing diff for this vs. direct
+			if sp.Type() == emer.Inhib {
+				sp.(AxonPrjn).SendISpike(ni, nrn.Si)
+			} else {
+				sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda*(1.0-nrn.SnmdaI))
+			}
 		}
+		ly.Act.SenderGSpiked(nrn)
 	}
 }
 
@@ -1120,9 +1126,28 @@ func (ly *Layer) GFmIncNeur(ltime *Time) {
 		}
 
 		// important: add other sources of GeRaw here in NMDA driver
-		nrn.NMDA = ly.Act.NMDA.NMDA(nrn.NMDA, nrn.GeRaw, nrn.NMDASyn)
-		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.NMDA, nrn.VmDend)
+		nrn.GnmdaSyn = ly.Act.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw)
+		nrn.Gnmda = ly.Act.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
+
+		// Separate factors for learning
+		nrn.RnmdaSyn = ly.Act.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw)
+		mgg, cav := ly.Act.NMDA.VFactors(nrn.VmDend)
+		nrn.Jca = nrn.RnmdaSyn * mgg * cav
+		nrn.GnmdaRaw = 0
+
+		// sender-side nmda, for learning
+		if nrn.Spike > 0 {
+			inh := (1 - nrn.SnmdaI)
+			nrn.SnmdaO += inh * (1 - nrn.SnmdaO)
+			nrn.SnmdaI += inh
+			nrn.Jca += ly.Act.Dend.VGCCCa
+		} else {
+			nrn.SnmdaO -= ly.Act.NMDA.Dt * nrn.SnmdaO
+			nrn.SnmdaI -= ly.Act.NMDA.IDt * nrn.SnmdaI
+		}
 		// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
+
+		nrn.Jca /= ly.Act.Dend.CaMax
 
 		// note: each step broken out here so other variants can add extra terms to Raw
 		ly.Act.GeFmRaw(nrn, nrn.GeRaw, nrn.Gnmda, cyc, nrn.ActM)
@@ -1287,6 +1312,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 			nrn.Gk = nrn.GgabaB
 		}
 	}
+	ly.SynCa() // for now
 }
 
 // AvgMaxAct computes the average and max Act stats, used in inhibition
@@ -1608,6 +1634,16 @@ func (ly *Layer) TrgAvgFmD() {
 		}
 		nrn.TrgAvg = ly.Learn.TrgAvgAct.TrgRange.ClipVal(nrn.TrgAvg + nrn.DTrgAvg)
 		nrn.DTrgAvg = 0
+	}
+}
+
+// SynCa updates synaptic calcium per-cycle, for Kinase learning
+func (ly *Layer) SynCa() {
+	for _, p := range ly.SndPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).SynCa()
 	}
 }
 

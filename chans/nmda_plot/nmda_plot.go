@@ -39,10 +39,11 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 	NMDAv     float64       `def:"0.062" desc:"multiplier on NMDA as function of voltage"`
+	MgC       float64       `desc:"magnesium ion concentration -- somewhere between 1 and 1.5"`
 	NMDAd     float64       `def:"3.57" desc:"denominator of NMDA function"`
 	NMDAerev  float64       `def:"0" desc:"NMDA reversal / driving potential"`
 	Vstart    float64       `def:"-90" desc:"starting voltage"`
-	Vend      float64       `def:"0" desc:"ending voltage"`
+	Vend      float64       `def:"10" desc:"ending voltage"`
 	Vstep     float64       `def:"1" desc:"voltage increment"`
 	Tau       float64       `def:"100" desc:"decay time constant for NMDA current -- rise time is 2 msec and not worth extra effort for biexponential"`
 	TimeSteps int           `desc:"number of time steps"`
@@ -62,6 +63,7 @@ var TheSim Sim
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
 	ss.NMDAv = 0.062
+	ss.MgC = 1
 	ss.NMDAd = 3.57
 	ss.NMDAerev = 0
 	ss.Vstart = -90
@@ -90,13 +92,19 @@ func (ss *Sim) Run() {
 	ss.Update()
 	dt := ss.Table
 
+	mgf := ss.MgC / ss.NMDAd
+
 	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
 	dt.SetNumRows(nv)
 	v := 0.0
 	g := 0.0
 	for vi := 0; vi < nv; vi++ {
 		v = ss.Vstart + float64(vi)*ss.Vstep
-		g = (ss.NMDAerev - v) / (1 + 1*math.Exp(-ss.NMDAv*v)/ss.NMDAd)
+		if v >= 0 {
+			g = 0
+		} else {
+			g = (ss.NMDAerev - v) / (1 + mgf*math.Exp(-ss.NMDAv*v))
+		}
 
 		dt.SetCellFloat("V", vi, v)
 		dt.SetCellFloat("Gnmda", vi, g)
@@ -141,10 +149,10 @@ func (ss *Sim) TimeRun() {
 	for ti := 0; ti < ss.TimeSteps; ti++ {
 		t := float64(ti) * .001
 		gin := ss.TimeGin
-		if ti > ss.TimeSteps/2 {
+		if ti < 10 || ti > ss.TimeSteps/2 {
 			gin = 0
 		}
-		nmda += gin - (nmda / ss.Tau)
+		nmda += gin*(1-nmda) - (nmda / ss.Tau)
 		g = nmda / (1 + math.Exp(-ss.NMDAv*v)/ss.NMDAd)
 
 		dt.SetCellFloat("Time", ti, t)

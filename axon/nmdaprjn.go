@@ -10,10 +10,14 @@ import (
 	"github.com/goki/ki/kit"
 )
 
+// TODO: this should just drive GnmdaBuf with some additional scaling factor
+// and probably does not even need to exist at all because you can just change
+// SNMDA to drive a stronger amount of nmda relative to regular excitatory current
+
 // NMDAPrjn is a projection with NMDA maintenance channels.
 // It marks a projection for special treatment in a MaintLayer
-// which actually does the NMDA computations.  Excitatory conductance is aggregated
-// separately for this projection.
+// which actually does the NMDA computations.
+// Excitatory conductance is aggregated separately for this projection.
 type NMDAPrjn struct {
 	Prjn // access as .Prjn
 }
