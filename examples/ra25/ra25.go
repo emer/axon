@@ -92,13 +92,15 @@ var ParamSetsMin = params.Sets{
 
 					// Voff = 5, MgC = 1.4, CaMax = 90, VGCCCa = 20 is a reasonable "high voltage" config
 					// Voff = 0, MgC = 1, CaMax = 100, VGCCCa = 20 is a good "default" config
-					"Layer.Act.NMDA.Gbar":   "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
-					"Layer.Act.NMDA.ITau":   "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":    "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":    "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":   "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.Dend.VGCCCa": "20",   // 20 seems reasonable, but not obviously better than 0
-					"Layer.Act.Dend.CaMax":  "90",
+					/*
+						"Layer.Act.NMDA.Gbar":   "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
+						"Layer.Act.NMDA.ITau":   "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+						"Layer.Act.NMDA.Tau":    "100",  // 30 not good
+						"Layer.Act.NMDA.MgC":    "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+						"Layer.Act.NMDA.Voff":   "5",    // 5 > 0 but need to reduce gbar -- too much
+						"Layer.Act.Dend.VGCCCa": "20",   // 20 seems reasonable, but not obviously better than 0
+						"Layer.Act.Dend.CaMax":  "90",
+					*/
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -116,10 +118,10 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":     "0.08", // kinase: 0.1 with Jca normalized
-					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":        "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.On":      "true",
+					"Prjn.Learn.Lrate.Base":     "0.2", // 0.2 std; kinase: 0.08 - 0.1 with Jca normalized
+					"Prjn.SWt.Adapt.Lrate":      "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":        "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Kinase.On":      "false",
 					"Prjn.Learn.Kinase.SAvgThr": "0.02", // 0.02 = 0.01 > 0.05
 					"Prjn.Learn.Kinase.MTau":    "40",
 					"Prjn.Learn.Kinase.PTau":    "10",

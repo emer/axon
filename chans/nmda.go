@@ -26,7 +26,7 @@ type NMDAParams struct {
 func (np *NMDAParams) Defaults() {
 	np.Gbar = 0.15
 	np.Tau = 100
-	np.ITau = 100
+	np.ITau = 1 // off by default, as it doesn't work in actual axon models..
 	np.MgC = 1.0
 	np.Voff = 0
 	np.Update()
