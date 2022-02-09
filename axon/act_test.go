@@ -17,9 +17,9 @@ func TestActUpdt(t *testing.T) {
 	geinc := []float32{.01, .02, .03, .04, .05, .1, .2, .3, .2}
 	corge := []float32{0.01, 0.038, 0.090399995, 0.17232, 0.28785598, 0.48028478, 0.8342278, 1.4173822, 2.0839057}
 	ge := make([]float32, len(geinc))
-	corinet := []float32{0.006738626, 0.024927208, 0.056907285, 0.1016768, 0.1538688, 0.22306465, 0.42970985, 0, 0}
+	corinet := []float32{0.006738626, 0.024916597, 0.056841508, 0.10141031, 0.15299979, 0.22057664, 0.42951083, 3.0841844, -1.1801764}
 	inet := make([]float32, len(geinc))
-	corvm := []float32{0.3023981, 0.311269, 0.33152068, 0.3677046, 0.42246217, 0.5018446, 0.65476626, 0.3, 0.3}
+	corvm := []float32{0.30244464, 0.31150782, 0.3322872, 0.3696565, 0.4266923, 0.5105742, 0.67541546, 1, 0.5800084}
 	vm := make([]float32, len(geinc))
 	corspk := []float32{0, 0, 0, 0, 0, 0, 0, 1, 0}
 	spk := make([]float32, len(geinc))
@@ -35,7 +35,7 @@ func TestActUpdt(t *testing.T) {
 
 	for i := range geinc {
 		nrn.GeRaw += geinc[i]
-		ac.GeFmRaw(nrn, nrn.GeRaw, 1, 0.5)
+		ac.GeFmRaw(nrn, nrn.GeRaw, 0)
 		ac.GiFmRaw(nrn, nrn.GiRaw)
 		ac.VmFmG(nrn)
 		ac.ActFmG(nrn)

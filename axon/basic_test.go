@@ -189,19 +189,19 @@ func TestNetAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.6291466, 0, 0, 0}
-	qtr0HidGes := []float32{0.5408259, 0, 0, 0}
-	qtr0HidGis := []float32{0.12581292, 0.12581292, 0.12581292, 0.12581292}
-	qtr0OutActs := []float32{0.5448547, 0, 0, 0}
-	qtr0OutGes := []float32{0.17616737, 0, 0, 0}
-	qtr0OutGis := []float32{0.056886084, 0.056886084, 0.056886084, 0.056886084}
+	qtr0HidActs := []float32{0.69444317, 0, 0, 0}
+	qtr0HidGes := []float32{0.49736744, 0, 0, 0}
+	qtr0HidGis := []float32{0.12770666, 0.12770666, 0.12770666, 0.12770666}
+	qtr0OutActs := []float32{0.6002374, 0, 0, 0}
+	qtr0OutGes := []float32{0.47270662, 0, 0, 0}
+	qtr0OutGis := []float32{0.08700732, 0.08700732, 0.08700732, 0.08700732}
 
-	qtr3HidActs := []float32{0.6275331, 0, 0, 0}
-	qtr3HidGes := []float32{0.50843596, 0, 0, 0}
-	qtr3HidGis := []float32{0.18011907, 0.18011907, 0.18011907, 0.18011907}
-	qtr3OutActs := []float32{0.66682786, 0, 0, 0}
+	qtr3HidActs := []float32{0.65811175, 0, 0, 0}
+	qtr3HidGes := []float32{0.8887471, 0, 0, 0}
+	qtr3HidGis := []float32{0.2869603, 0.2869603, 0.2869603, 0.2869603}
+	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
-	qtr3OutGis := []float32{0.19600207, 0.19600207, 0.19600207, 0.19600207}
+	qtr3OutGis := []float32{0.20013061, 0.20013061, 0.20013061, 0.20013061}
 
 	inActs := []float32{}
 	hidActs := []float32{}
