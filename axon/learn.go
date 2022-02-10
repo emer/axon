@@ -383,10 +383,10 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn  bool         `desc:"enable learning for this projection"`
-	Lrate  LrateParams  `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
-	XCal   XCalParams   `view:"inline" desc:"parameters for the XCal learning rule"`
-	Kinase KinaseParams `view:"inline" desc:"kinase learning rule parameters"`
+	Learn  bool            `desc:"enable learning for this projection"`
+	Lrate  LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	XCal   XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
+	Kinase KinaseSynParams `view:"inline" desc:"kinase learning rule parameters"`
 }
 
 func (ls *LearnSynParams) Update() {
@@ -533,14 +533,14 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 /////////////////////////////////////////////////////
 // Kinase
 
-// KinaseParams has rate constants for averaging over activations
+// KinaseSynParams has rate constants for averaging over activations
 // at different time scales, to produce the running average activation
 // values that then drive learning in the XCAL learning rules.
 // Is driven directly by spikes that increment running-average at super-short
 // timescale.  Time cycle of 50 msec quarters / theta window learning works
 // Cyc:50, SS:35 S:8, M:40 (best)
 // Cyc:25, SS:20, S:4, M:20
-type KinaseParams struct {
+type KinaseSynParams struct {
 	On      bool    `desc:"if true, use Kinase learning algorithm instead of original XCal"`
 	SAvgThr float32 `def:"0.02" desc:"optimization for compute speed -- threshold on sending avg values to update Ca values -- depends on Ca clearing upon Wt update"`
 	MTau    float32 `def:"40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
@@ -553,13 +553,13 @@ type KinaseParams struct {
 	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
-func (kp *KinaseParams) Update() {
+func (kp *KinaseSynParams) Update() {
 	kp.MDt = 1 / kp.MTau
 	kp.PDt = 1 / kp.PTau
 	kp.DDt = 1 / kp.DTau
 }
 
-func (kp *KinaseParams) Defaults() {
+func (kp *KinaseSynParams) Defaults() {
 	kp.SAvgThr = 0.02
 	kp.MTau = 40
 	kp.PTau = 10
@@ -569,19 +569,19 @@ func (kp *KinaseParams) Defaults() {
 }
 
 // FmCa computes updates from current Ca value
-func (kp *KinaseParams) FmCa(ca float32, caM, caP, caD *float32) {
+func (kp *KinaseSynParams) FmCa(ca float32, caM, caP, caD *float32) {
 	*caM += kp.MDt * (ca - *caM)
 	*caP += kp.PDt * (*caM - *caP)
 	*caD += kp.DDt * (*caP - *caD)
 }
 
 // DWt computes the weight change from CaP, CaD values
-func (kp *KinaseParams) DWt(caP, caD float32) float32 {
+func (kp *KinaseSynParams) DWt(caP, caD float32) float32 {
 	return caP - kp.DScale*caD
 }
 
 // ResetCa resets all the Ca vals on the synapse
-func (kp *KinaseParams) ResetCa(sy *Synapse) {
+func (kp *KinaseSynParams) ResetCa(sy *Synapse) {
 	sy.Ca = 0
 	sy.CaM = 0
 	sy.CaP = 0

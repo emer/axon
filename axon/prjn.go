@@ -841,7 +841,7 @@ func (pj *Prjn) SynCa() {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			sy.Ca = sn.SnmdaO * rn.Jca
+			sy.Ca = sn.SnmdaO * rn.RCa
 			pj.Learn.Kinase.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
 	}

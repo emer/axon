@@ -17,7 +17,7 @@ type Synapse struct {
 	LWt    float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, "`
 	DWt    float32 `desc:"change in synaptic weight, from learning"`
 	DSWt   float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
-	Ca     float32 `desc:"current calcium level = send.SnmdaO * recv.Jca, for Kinase based learning"`
+	Ca     float32 `desc:"current calcium level = send.SnmdaO * recv.RCa, for Kinase based learning"`
 	CaM    float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP, for Kinase based learning"`
 	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`

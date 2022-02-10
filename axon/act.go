@@ -128,7 +128,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	nrn.Gnmda -= glong * nrn.Gnmda
 
 	nrn.RnmdaSyn -= glong * nrn.RnmdaSyn
-	nrn.Jca -= glong * nrn.Jca
+	nrn.RCa -= glong * nrn.RCa
 	nrn.SnmdaO -= glong * nrn.SnmdaO
 	nrn.SnmdaI -= glong * nrn.SnmdaI
 
@@ -186,7 +186,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.RnmdaSyn = 0
 	nrn.SnmdaO = 0
 	nrn.SnmdaI = 0
-	nrn.Jca = 0
+	nrn.RCa = 0
 
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
@@ -243,7 +243,7 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	// Separate factors for learning
 	nrn.RnmdaSyn = ac.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
 	mgg, cav := ac.NMDA.VFactors(nrn.VmDend)
-	nrn.Jca = nrn.RnmdaSyn * mgg * cav
+	nrn.RCa = nrn.RnmdaSyn * mgg * cav
 	nrn.GnmdaRaw = 0
 
 	// sender-side nmda, for learning
@@ -251,12 +251,12 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 		inh := (1 - nrn.SnmdaI)
 		nrn.SnmdaO += inh * (1 - nrn.SnmdaO)
 		nrn.SnmdaI += inh
-		nrn.Jca += ac.Dend.VGCCCa
+		nrn.RCa += ac.Dend.VGCCCa
 	} else {
 		nrn.SnmdaO -= ac.NMDA.Dt * nrn.SnmdaO
 		nrn.SnmdaI -= ac.NMDA.IDt * nrn.SnmdaI
 	}
-	nrn.Jca /= ac.Dend.CaMax
+	nrn.RCa = ac.Dend.CaNorm(nrn.RCa)
 }
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
@@ -490,12 +490,13 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
-	SeiDeplete   bool    `desc:"When a sending spike occurs, deplete the Se and Si factors to track availability of each synapse's channels based on time since last spiking.  This introduces noise, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
-	SnmdaDeplete bool    `desc:"When a sending spike occurs, deplete the Snmda factor to track availability of each synapse's channels based on time since last spiking.  This introduces significant noise in NMDA dynamics due to long time constant, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
 	GbarExp      float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
 	GbarR        float32 `def:"3" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
-	VGCCCa       float32 `desc:"extra calcium to add to Jca during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
-	CaMax        float32 `desc:"maximum expected calcium level -- used for normalizing Jca, which then drives learning"`
+	VGCCCa       float32 `desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
+	CaMax        float32 `desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
+	CaThr        float32 `desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
+	SeiDeplete   bool    `desc:"When a sending spike occurs, deplete the Se and Si factors to track availability of each synapse's channels based on time since last spiking.  This introduces noise, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
+	SnmdaDeplete bool    `desc:"When a sending spike occurs, deplete the Snmda factor to track availability of each synapse's channels based on time since last spiking.  This introduces significant noise in NMDA dynamics due to long time constant, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
 }
 
 func (dp *DendParams) Defaults() {
@@ -504,9 +505,22 @@ func (dp *DendParams) Defaults() {
 	dp.GbarR = 3
 	dp.VGCCCa = 0
 	dp.CaMax = 100
+	dp.CaThr = 0.2
 }
 
 func (dp *DendParams) Update() {
+}
+
+// CaNorm normalizes and thresholds the calcium level according to CaMax, CaThr
+func (dp *DendParams) CaNorm(ca float32) float32 {
+	ca /= dp.CaMax
+	ca -= dp.CaThr
+	if ca < 0 {
+		ca = 0
+	} else {
+		ca /= (1 - dp.CaThr)
+	}
+	return ca
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
