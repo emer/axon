@@ -577,7 +577,7 @@ type DtParams struct {
 	GeTau      float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau      float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	IntTau     float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
-	LongAvgTau float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.SpkCaDaxGeM, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
+	LongAvgTau float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
 
 	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
@@ -809,16 +809,16 @@ func (sc *SynComParams) Fail(wt *float32, swt float32) {
 
 // PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,
 // using both absolute and relative factors.
-// Also includes ability to adapt Scale factors to maintain SpkCaDaxGeM / GiM max conductances
+// Also includes ability to adapt Scale factors to maintain AvgMaxGeM / GiM max conductances
 // according to Acts.GTarg target values.
 type PrjnScaleParams struct {
 	Rel        float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
 	Abs        float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
-	Adapt      bool    `def:"false" desc:"Adapt the 'GScale' scaling value so the ActAvg.SpkCaDaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg -- sometimes this is essential but often it is better to tune the Abs values manually, as the adaptation-based adjustments can disrupt things during learning"`
+	Adapt      bool    `def:"false" desc:"Adapt the 'GScale' scaling value so the ActAvg.AvgMaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg -- sometimes this is essential but often it is better to tune the Abs values manually, as the adaptation-based adjustments can disrupt things during learning"`
 	ScaleLrate float32 `viewif:"Adapt" def:"0.5" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors -- fastest value with some smoothing at .5 works well."`
-	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target SpkCaDaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
-	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target SpkCaDaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.8 = 80% lower than target) -- only once activations move outside this tolerance are scale values adapted"`
-	AvgTau     float32 `def:"500" desc:"time constant for integrating projection-level averages for this scaling process: Prjn.GScale.AvgAvg, SpkCaDax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
+	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
+	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.8 = 80% lower than target) -- only once activations move outside this tolerance are scale values adapted"`
+	AvgTau     float32 `def:"500" desc:"time constant for integrating projection-level averages for this scaling process: Prjn.GScale.AvgAvg, AvgMax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
 
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }

@@ -67,26 +67,26 @@ func (pj *Prjn) UpdateParams() {
 
 // GScaleVals holds the conductance scaling and associated values needed for adapting scale
 type GScaleVals struct {
-	Scale       float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
-	Orig        float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
-	Rel         float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
-	SpkCaDaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on SpkCaDax values -- used for driving adaptation to maintain target relative values"`
-	Err         float32 `inactive:"+" desc:"error that drove last adjustment in scale"`
-	Avg         float32 `inactive:"+" desc:"average G value on this trial"`
-	Max         float32 `inactive:"+" desc:"maximum G value on this trial"`
-	AvgAvg      float32 `inactive:"+" desc:"running average of the Avg, integrated at ly.Act.Dt.LongAvgTau"`
-	SpkCaDax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.LongAvgTau -- used for computing SpkCaDaxRel, for adapting Scale"`
+	Scale     float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
+	Orig      float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
+	Rel       float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
+	AvgMaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on AvgMax values -- used for driving adaptation to maintain target relative values"`
+	Err       float32 `inactive:"+" desc:"error that drove last adjustment in scale"`
+	Avg       float32 `inactive:"+" desc:"average G value on this trial"`
+	Max       float32 `inactive:"+" desc:"maximum G value on this trial"`
+	AvgAvg    float32 `inactive:"+" desc:"running average of the Avg, integrated at ly.Act.Dt.LongAvgTau"`
+	AvgMax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.LongAvgTau -- used for computing AvgMaxRel, for adapting Scale"`
 }
 
 // Init completes the initialization of values based on initially computed ones
 func (gs *GScaleVals) Init() {
 	gs.Orig = gs.Scale
-	gs.SpkCaDaxRel = gs.Rel
+	gs.AvgMaxRel = gs.Rel
 	gs.Err = 0
 	gs.Avg = 0
 	gs.Max = 0
 	gs.AvgAvg = 0 // 0 = use first
-	gs.SpkCaDax = 0
+	gs.AvgMax = 0
 }
 
 func (pj *Prjn) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj }
@@ -782,10 +782,10 @@ func (pj *Prjn) RecvGIncStats() {
 			pj.GScale.AvgAvg += pj.PrjnScale.AvgDt * (avg - pj.GScale.AvgAvg)
 		}
 		pj.GScale.Max = max
-		if pj.GScale.SpkCaDax == 0 {
-			pj.GScale.SpkCaDax = max
+		if pj.GScale.AvgMax == 0 {
+			pj.GScale.AvgMax = max
 		} else {
-			pj.GScale.SpkCaDax += pj.PrjnScale.AvgDt * (max - pj.GScale.SpkCaDax)
+			pj.GScale.AvgMax += pj.PrjnScale.AvgDt * (max - pj.GScale.AvgMax)
 		}
 	}
 	pj.Gidx.Shift(1) // rotate buffer

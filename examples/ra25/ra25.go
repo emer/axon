@@ -1071,7 +1071,7 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 			}
 		}
 		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
-		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.SpkCaDaxGeM))
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
 		dt.SetCellFloat(ly.Nm+"_AvgGe", row, float64(ly.Pools[0].Inhib.Ge.Avg))
 		dt.SetCellFloat(ly.Nm+"_MaxGe", row, float64(ly.Pools[0].Inhib.Ge.Max))
 		dt.SetCellFloat(ly.Nm+"_Gi", row, float64(ly.Pools[0].Inhib.Gi))
@@ -1109,9 +1109,9 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 		{"PerTrlMSec", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.LayStatNms {
-		// sch = append(sch, etable.Column{lnm + "_FF_SpkCaDaxG", etensor.FLOAT64, nil, nil})
+		// sch = append(sch, etable.Column{lnm + "_FF_AvgMaxG", etensor.FLOAT64, nil, nil})
 		// sch = append(sch, etable.Column{lnm + "_FF_Scale", etensor.FLOAT64, nil, nil})
-		// sch = append(sch, etable.Column{lnm + "_FB_SpkCaDaxG", etensor.FLOAT64, nil, nil})
+		// sch = append(sch, etable.Column{lnm + "_FB_AvgMaxG", etensor.FLOAT64, nil, nil})
 		// sch = append(sch, etable.Column{lnm + "_FB_Scale", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
@@ -1141,9 +1141,9 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.LayStatNms {
-		// plt.SetColParams(lnm+"_FF_SpkCaDaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
+		// plt.SetColParams(lnm+"_FF_AvgMaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		// plt.SetColParams(lnm+"_FF_Scale", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
-		// plt.SetColParams(lnm+"_FB_SpkCaDaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
+		// plt.SetColParams(lnm+"_FB_AvgMaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		// plt.SetColParams(lnm+"_FB_Scale", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)

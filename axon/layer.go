@@ -88,11 +88,11 @@ func (ly *Layer) HasPoolInhib() bool {
 
 // ActAvgVals are running-average activation levels used for Ge scaling and adaptive inhibition
 type ActAvgVals struct {
-	ActMAvg     float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
-	ActPAvg     float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
-	SpkCaDaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
-	SpkCaDaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
-	GiMult      float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
+	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
+	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
+	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
+	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
 }
 
 // CosDiffStats holds cosine-difference statistics at the layer level
@@ -439,9 +439,9 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"SpkCaDaxGeM\": \"%g\",\n", ly.ActAvg.SpkCaDaxGeM)))
+	w.Write([]byte(fmt.Sprintf("\"AvgMaxGeM\": \"%g\",\n", ly.ActAvg.AvgMaxGeM)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"SpkCaDaxGiM\": \"%g\",\n", ly.ActAvg.SpkCaDaxGiM)))
+	w.Write([]byte(fmt.Sprintf("\"AvgMaxGiM\": \"%g\",\n", ly.ActAvg.AvgMaxGiM)))
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.ActAvg.GiMult)))
 	depth--
@@ -536,13 +536,13 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			pv, _ := strconv.ParseFloat(ap, 32)
 			ly.ActAvg.ActPAvg = float32(pv)
 		}
-		if ap, ok := lw.MetaData["SpkCaDaxGeM"]; ok {
+		if ap, ok := lw.MetaData["AvgMaxGeM"]; ok {
 			pv, _ := strconv.ParseFloat(ap, 32)
-			ly.ActAvg.SpkCaDaxGeM = float32(pv)
+			ly.ActAvg.AvgMaxGeM = float32(pv)
 		}
-		if ap, ok := lw.MetaData["SpkCaDaxGiM"]; ok {
+		if ap, ok := lw.MetaData["AvgMaxGiM"]; ok {
 			pv, _ := strconv.ParseFloat(ap, 32)
-			ly.ActAvg.SpkCaDaxGiM = float32(pv)
+			ly.ActAvg.AvgMaxGiM = float32(pv)
 		}
 		if gi, ok := lw.MetaData["GiMult"]; ok {
 			pv, _ := strconv.ParseFloat(gi, 32)
@@ -635,8 +635,8 @@ func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
 	ly.ActAvg.ActMAvg = ly.Inhib.ActAvg.Init
 	ly.ActAvg.ActPAvg = ly.Inhib.ActAvg.Init
-	ly.ActAvg.SpkCaDaxGeM = ly.Act.GTarg.GeMax
-	ly.ActAvg.SpkCaDaxGiM = ly.Act.GTarg.GiMax
+	ly.ActAvg.AvgMaxGeM = ly.Act.GTarg.GeMax
+	ly.ActAvg.AvgMaxGiM = ly.Act.GTarg.GiMax
 	ly.ActAvg.GiMult = 1
 	ly.AxonLay.InitActAvg()
 	ly.AxonLay.InitActs()
@@ -1001,7 +1001,7 @@ func (ly *Layer) InitGScale() {
 		slay := p.SendLay().(AxonLayer).AsAxon()
 		savg := slay.Inhib.ActAvg.Init
 		snu := len(slay.Neurons)
-		ncon := pj.RConNSpkCaDax.Avg
+		ncon := pj.RConNAvgMax.Avg
 		pj.GScale.Scale = pj.PrjnScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a prjn, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
@@ -1130,8 +1130,8 @@ func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	nrn.GiRaw = 0
 }
 
-// SpkCaDaxGe computes the average and max Ge stats, used in inhibition
-func (ly *Layer) SpkCaDaxGe(ltime *Time) {
+// AvgMaxGe computes the average and max Ge stats, used in inhibition
+func (ly *Layer) AvgMaxGe(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Ge.Init()
@@ -1288,8 +1288,8 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	ly.SynCa() // for now
 }
 
-// SpkCaDaxAct computes the average and max Act stats, used in inhibition
-func (ly *Layer) SpkCaDaxAct(ltime *Time) {
+// AvgMaxAct computes the average and max Act stats, used in inhibition
+func (ly *Layer) AvgMaxAct(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		var avg, max float32
@@ -1337,8 +1337,8 @@ func (ly *Layer) AvgGeM(ltime *Time) {
 		pl.GiM.CalcAvg()
 	}
 	lpl := &ly.Pools[0]
-	ly.ActAvg.SpkCaDaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.SpkCaDaxGeM)
-	ly.ActAvg.SpkCaDaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.SpkCaDaxGiM)
+	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
+	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -1664,21 +1664,21 @@ func (ly *Layer) AdaptGScale() {
 			continue
 		}
 		pj := p.(AxonPrjn).AsAxon()
-		sum += pj.GScale.SpkCaDax
+		sum += pj.GScale.AvgMax
 	}
 	if sum == 0 {
 		return
 	}
-	geErr := ly.Act.GTarg.GeMax - ly.ActAvg.SpkCaDaxGeM
+	geErr := ly.Act.GTarg.GeMax - ly.ActAvg.AvgMaxGeM
 	geNormErr := geErr / ly.Act.GTarg.GeMax
-	giErr := ly.Act.GTarg.GiMax - ly.ActAvg.SpkCaDaxGiM
+	giErr := ly.Act.GTarg.GiMax - ly.ActAvg.AvgMaxGiM
 	giNormErr := giErr / ly.Act.GTarg.GiMax
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
 		pj := p.(AxonPrjn).AsAxon()
-		pj.GScale.SpkCaDaxRel = pj.GScale.SpkCaDax / sum
+		pj.GScale.AvgMaxRel = pj.GScale.AvgMax / sum
 
 		if !pj.Learn.Learn || !pj.PrjnScale.Adapt {
 			continue

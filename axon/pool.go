@@ -14,7 +14,7 @@ import (
 // * average / max stats on Ge and Act that drive inhibition
 type Pool struct {
 	StIdx, EdIdx int             `desc:"starting and ending (exlusive) indexes for the list of neurons in this pool"`
-	Inhib        fffb.Inhib      `desc:"FFFB inhibition computed values, including Ge and Act SpkCaDax which drive inhibition"`
+	Inhib        fffb.Inhib      `desc:"FFFB inhibition computed values, including Ge and Act AvgMax which drive inhibition"`
 	ActM         minmax.AvgMax32 `desc:"minus phase average and max Act activation values, for ActAvg updt"`
 	ActP         minmax.AvgMax32 `desc:"plus phase average and max Act activation values, for ActAvg updt"`
 	GeM          minmax.AvgMax32 `desc:"stats for GeM minus phase averaged Ge values"`
