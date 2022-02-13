@@ -299,15 +299,15 @@ func TestNetLearn(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidAvgS := []float32{0.5697344, 0.054755755, 0.054755755, 0.054755755}
-	qtr0HidAvgM := []float32{0.30031276, 0.10729555, 0.10729555, 0.10729555}
-	qtr0OutAvgS := []float32{0.40196124, 0.054755755, 0.054755755, 0.054755755}
-	qtr0OutAvgM := []float32{0.21776359, 0.10729555, 0.10729555, 0.10729555}
+	qtr0HidSpkCaP := []float32{0.5697344, 0.054755755, 0.054755755, 0.054755755}
+	qtr0HidSpkCaD := []float32{0.30031276, 0.10729555, 0.10729555, 0.10729555}
+	qtr0OutSpkCaP := []float32{0.40196124, 0.054755755, 0.054755755, 0.054755755}
+	qtr0OutSpkCaD := []float32{0.21776359, 0.10729555, 0.10729555, 0.10729555}
 
-	qtr3HidAvgS := []float32{0.89222527, 0.0012329844, 0.0012329844, 0.0012329844}
-	qtr3HidAvgM := []float32{0.8385092, 0.0070280116, 0.0070280116, 0.0070280116}
-	qtr3OutAvgS := []float32{0.8830335, 0.0012329844, 0.0012329844, 0.0012329844}
-	qtr3OutAvgM := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
+	qtr3HidSpkCaP := []float32{0.89222527, 0.0012329844, 0.0012329844, 0.0012329844}
+	qtr3HidSpkCaD := []float32{0.8385092, 0.0070280116, 0.0070280116, 0.0070280116}
+	qtr3OutSpkCaP := []float32{0.8830335, 0.0012329844, 0.0012329844, 0.0012329844}
+	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
 	hidDwts := []float32{0.0015839314, 0.0018261874, 0.0018425429, 0.0018425632}
@@ -323,11 +323,11 @@ func TestNetLearn(t *testing.T) {
 	hidAct := []float32{}
 	hidGes := []float32{}
 	hidGis := []float32{}
-	hidAvgSS := []float32{}
-	hidAvgS := []float32{}
-	hidAvgM := []float32{}
-	outAvgS := []float32{}
-	outAvgM := []float32{}
+	hidSpkCaM := []float32{}
+	hidSpkCaP := []float32{}
+	hidSpkCaD := []float32{}
+	outSpkCaP := []float32{}
+	outSpkCaD := []float32{}
 
 	cycPerQtr := 50
 
@@ -358,15 +358,15 @@ func TestNetLearn(t *testing.T) {
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
 					hidLay.UnitVals(&hidGis, "Gi")
-					hidLay.UnitVals(&hidAvgSS, "AvgSS")
-					hidLay.UnitVals(&hidAvgS, "AvgS")
-					hidLay.UnitVals(&hidAvgM, "AvgM")
+					hidLay.UnitVals(&hidSpkCaM, "SpkCaM")
+					hidLay.UnitVals(&hidSpkCaP, "SpkCaP")
+					hidLay.UnitVals(&hidSpkCaD, "SpkCaD")
 
-					outLay.UnitVals(&outAvgS, "AvgS")
-					outLay.UnitVals(&outAvgM, "AvgM")
+					outLay.UnitVals(&outSpkCaP, "SpkCaP")
+					outLay.UnitVals(&outSpkCaD, "SpkCaD")
 
 					if printCycs {
-						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ltime.Cycle, hidAct, hidGes, hidGis, hidAvgSS, hidAvgS, hidAvgM, outAvgS, outAvgM)
+						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ltime.Cycle, hidAct, hidGes, hidGis, hidSpkCaM, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
 					}
 				}
 				if qtr == 2 {
@@ -374,27 +374,27 @@ func TestNetLearn(t *testing.T) {
 					ltime.NewPhase()
 				}
 
-				hidLay.UnitVals(&hidAvgS, "AvgS")
-				hidLay.UnitVals(&hidAvgM, "AvgM")
+				hidLay.UnitVals(&hidSpkCaP, "SpkCaP")
+				hidLay.UnitVals(&hidSpkCaD, "SpkCaD")
 
-				outLay.UnitVals(&outAvgS, "AvgS")
-				outLay.UnitVals(&outAvgM, "AvgM")
+				outLay.UnitVals(&outSpkCaP, "SpkCaP")
+				outLay.UnitVals(&outSpkCaD, "SpkCaD")
 
 				if printQtrs {
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ltime.Cycle, hidAvgS, hidAvgM, outAvgS, outAvgM)
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ltime.Cycle, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
 				}
 
 				if pi == 0 && qtr == 0 {
-					CmprFloats(hidAvgS, qtr0HidAvgS, "qtr 0 hidAvgS", t)
-					CmprFloats(hidAvgM, qtr0HidAvgM, "qtr 0 hidAvgM", t)
-					CmprFloats(outAvgS, qtr0OutAvgS, "qtr 0 outAvgS", t)
-					CmprFloats(outAvgM, qtr0OutAvgM, "qtr 0 outAvgM", t)
+					CmprFloats(hidSpkCaP, qtr0HidSpkCaP, "qtr 0 hidSpkCaP", t)
+					CmprFloats(hidSpkCaD, qtr0HidSpkCaD, "qtr 0 hidSpkCaD", t)
+					CmprFloats(outSpkCaP, qtr0OutSpkCaP, "qtr 0 outSpkCaP", t)
+					CmprFloats(outSpkCaD, qtr0OutSpkCaD, "qtr 0 outSpkCaD", t)
 				}
 				if pi == 0 && qtr == 3 {
-					CmprFloats(hidAvgS, qtr3HidAvgS, "qtr 3 hidAvgS", t)
-					CmprFloats(hidAvgM, qtr3HidAvgM, "qtr 3 hidAvgM", t)
-					CmprFloats(outAvgS, qtr3OutAvgS, "qtr 3 outAvgS", t)
-					CmprFloats(outAvgM, qtr3OutAvgM, "qtr 3 outAvgM", t)
+					CmprFloats(hidSpkCaP, qtr3HidSpkCaP, "qtr 3 hidSpkCaP", t)
+					CmprFloats(hidSpkCaD, qtr3HidSpkCaD, "qtr 3 hidSpkCaD", t)
+					CmprFloats(outSpkCaP, qtr3OutSpkCaP, "qtr 3 outSpkCaP", t)
+					CmprFloats(outSpkCaD, qtr3OutSpkCaD, "qtr 3 outSpkCaD", t)
 				}
 			}
 			TestNet.PlusPhase(ltime)

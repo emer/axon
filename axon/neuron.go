@@ -39,11 +39,11 @@ type Neuron struct {
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 
-	AvgSS   float32 `desc:"super-short time-scale average of spiking -- goes up instantaneously when a Spike occurs, and then decays until the next spike -- provides the lowest-level time integration for running-averages that simulate accumulation of Calcium over time"`
-	AvgS    float32 `desc:"short time-scale average of spiking, as a running average over AvgSS -- tracks the most recent activation states, and represents the plus phase for learning in error-driven learning (see AvgSLrn)"`
-	AvgM    float32 `desc:"medium time-scale average of spiking, as a running average over AvgS -- represents the minus phase for error-driven learning"`
-	AvgSLrn float32 `desc:"short time-scale activation average that is used for learning -- typically includes a small contribution from AvgMLrn in addition to mostly AvgS, as determined by LrnActAvgParams.LrnM -- important to ensure that when neuron turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- AvgS is subject to thresholding prior to mixing so low values become zero"`
-	AvgMLrn float32 `desc:"medium time-scale activation average used in learning: subect to thresholding so low values become zero"`
+	SpkCaM float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
+	SpkCaP float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	SpkCaD float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	LrnCaP float32 `desc:"SpkCaP value used for learning -- subject to thresholding prior to mixing so low values become zero, and other possible modulations"`
+	LrnCaD float32 `desc:"SpkCaD value used for learning -- subect to thresholding so low values become zero"`
 
 	ActInt float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM)"`
 	ActSt1 float32 `desc:"the activation state at specific time point within current state processing window, as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`

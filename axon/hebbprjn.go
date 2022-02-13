@@ -29,7 +29,7 @@ func (pj *HebbPrjn) DWt() {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.AvgS < pj.Learn.XCal.LrnThr && sn.AvgM < pj.Learn.XCal.LrnThr {
+		if sn.SpkCaP < pj.Learn.XCal.LrnThr && sn.SpkCaD < pj.Learn.XCal.LrnThr {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -40,8 +40,8 @@ func (pj *HebbPrjn) DWt() {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			ract := rn.AvgSLrn
-			sact := sn.AvgSLrn
+			ract := rn.LrnCaP
+			sact := sn.LrnCaP
 			wt := sy.LWt
 			dwt := ract * (pj.IncGain*sact*(1-wt) - (1-sact)*wt)
 			sy.DWt += lr * dwt

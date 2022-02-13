@@ -165,7 +165,7 @@ func (nt *Network) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current acts into ActSt1 (using AvgS)
+// ActSt1 saves current acts into ActSt1 (using SpkCaP)
 func (nt *Network) ActSt1(ltime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -175,7 +175,7 @@ func (nt *Network) ActSt1(ltime *Time) {
 	}
 }
 
-// ActSt2 saves current acts into ActSt2 (using AvgS)
+// ActSt2 saves current acts into ActSt2 (using SpkCaP)
 func (nt *Network) ActSt2(ltime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -336,10 +336,10 @@ func (nt *Network) NewStateImpl() {
 // want to keep a consistent API for end-user code.
 func (nt *Network) CycleImpl(ltime *Time) {
 	nt.SendSpike(ltime) // also does integ
-	nt.AvgMaxGe(ltime)
+	nt.SpkCaDaxGe(ltime)
 	nt.InhibFmGeAct(ltime)
 	nt.ActFmG(ltime)
-	nt.AvgMaxAct(ltime)
+	nt.SpkCaDaxAct(ltime)
 }
 
 // SendSpike sends change in activation since last sent, if above thresholds
@@ -349,9 +349,9 @@ func (nt *Network) SendSpike(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.GFmInc(ltime) }, "GFmInc   ")
 }
 
-// AvgMaxGe computes the average and max Ge stats, used in inhibition
-func (nt *Network) AvgMaxGe(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxGe(ltime) }, "AvgMaxGe")
+// SpkCaDaxGe computes the average and max Ge stats, used in inhibition
+func (nt *Network) SpkCaDaxGe(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SpkCaDaxGe(ltime) }, "SpkCaDaxGe")
 }
 
 // InhibiFmGeAct computes inhibition Gi from Ge and Act stats within relevant Pools
@@ -364,9 +364,9 @@ func (nt *Network) ActFmG(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.ActFmG(ltime) }, "ActFmG   ")
 }
 
-// AvgMaxAct computes the average and max Act stats, used in inhibition
-func (nt *Network) AvgMaxAct(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxAct(ltime) }, "AvgMaxAct")
+// SpkCaDaxAct computes the average and max Act stats, used in inhibition
+func (nt *Network) SpkCaDaxAct(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SpkCaDaxAct(ltime) }, "SpkCaDaxAct")
 }
 
 // CyclePostImpl is called after the standard Cycle update, and calls CyclePost
@@ -493,8 +493,8 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 		ly := lyi.(AxonLayer).AsAxon()
 		(*dwts)[idx+0] = ly.ActAvg.ActMAvg
 		(*dwts)[idx+1] = ly.ActAvg.ActPAvg
-		(*dwts)[idx+2] = ly.ActAvg.AvgMaxGeM
-		(*dwts)[idx+3] = ly.ActAvg.AvgMaxGiM
+		(*dwts)[idx+2] = ly.ActAvg.SpkCaDaxGeM
+		(*dwts)[idx+3] = ly.ActAvg.SpkCaDaxGiM
 		(*dwts)[idx+4] = ly.ActAvg.GiMult
 		idx += 5
 		for ni := range ly.Neurons {
@@ -513,7 +513,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			pj := pji.(AxonPrjn).AsAxon()
 			(*dwts)[idx] = pj.GScale.Scale
 			(*dwts)[idx+1] = pj.GScale.AvgAvg
-			(*dwts)[idx+2] = pj.GScale.AvgMax
+			(*dwts)[idx+2] = pj.GScale.SpkCaDax
 			idx += 3
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
@@ -535,8 +535,8 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 		ly := lyi.(AxonLayer).AsAxon()
 		ly.ActAvg.ActMAvg = davg * dwts[idx+0]
 		ly.ActAvg.ActPAvg = davg * dwts[idx+1]
-		ly.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
-		ly.ActAvg.AvgMaxGiM = davg * dwts[idx+3]
+		ly.ActAvg.SpkCaDaxGeM = davg * dwts[idx+2]
+		ly.ActAvg.SpkCaDaxGiM = davg * dwts[idx+3]
 		ly.ActAvg.GiMult = davg * dwts[idx+4]
 		idx += 5
 		for ni := range ly.Neurons {
@@ -555,7 +555,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			pj := pji.(AxonPrjn).AsAxon()
 			pj.GScale.Scale = davg * dwts[idx]
 			pj.GScale.AvgAvg = davg * dwts[idx+1]
-			pj.GScale.AvgMax = davg * dwts[idx+2]
+			pj.GScale.SpkCaDax = davg * dwts[idx+2]
 			idx += 3
 			ns := len(pj.Syns)
 			for j := range pj.Syns {

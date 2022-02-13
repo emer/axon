@@ -88,11 +88,11 @@ func (ly *Layer) HasPoolInhib() bool {
 
 // ActAvgVals are running-average activation levels used for Ge scaling and adaptive inhibition
 type ActAvgVals struct {
-	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
-	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
-	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	ActMAvg     float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
+	ActPAvg     float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
+	SpkCaDaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
+	SpkCaDaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
+	GiMult      float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
 }
 
 // CosDiffStats holds cosine-difference statistics at the layer level
@@ -439,9 +439,9 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"AvgMaxGeM\": \"%g\",\n", ly.ActAvg.AvgMaxGeM)))
+	w.Write([]byte(fmt.Sprintf("\"SpkCaDaxGeM\": \"%g\",\n", ly.ActAvg.SpkCaDaxGeM)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"AvgMaxGiM\": \"%g\",\n", ly.ActAvg.AvgMaxGiM)))
+	w.Write([]byte(fmt.Sprintf("\"SpkCaDaxGiM\": \"%g\",\n", ly.ActAvg.SpkCaDaxGiM)))
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.ActAvg.GiMult)))
 	depth--
@@ -536,13 +536,13 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			pv, _ := strconv.ParseFloat(ap, 32)
 			ly.ActAvg.ActPAvg = float32(pv)
 		}
-		if ap, ok := lw.MetaData["AvgMaxGeM"]; ok {
+		if ap, ok := lw.MetaData["SpkCaDaxGeM"]; ok {
 			pv, _ := strconv.ParseFloat(ap, 32)
-			ly.ActAvg.AvgMaxGeM = float32(pv)
+			ly.ActAvg.SpkCaDaxGeM = float32(pv)
 		}
-		if ap, ok := lw.MetaData["AvgMaxGiM"]; ok {
+		if ap, ok := lw.MetaData["SpkCaDaxGiM"]; ok {
 			pv, _ := strconv.ParseFloat(ap, 32)
-			ly.ActAvg.AvgMaxGiM = float32(pv)
+			ly.ActAvg.SpkCaDaxGiM = float32(pv)
 		}
 		if gi, ok := lw.MetaData["GiMult"]; ok {
 			pv, _ := strconv.ParseFloat(gi, 32)
@@ -635,8 +635,8 @@ func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
 	ly.ActAvg.ActMAvg = ly.Inhib.ActAvg.Init
 	ly.ActAvg.ActPAvg = ly.Inhib.ActAvg.Init
-	ly.ActAvg.AvgMaxGeM = ly.Act.GTarg.GeMax
-	ly.ActAvg.AvgMaxGiM = ly.Act.GTarg.GiMax
+	ly.ActAvg.SpkCaDaxGeM = ly.Act.GTarg.GeMax
+	ly.ActAvg.SpkCaDaxGiM = ly.Act.GTarg.GiMax
 	ly.ActAvg.GiMult = 1
 	ly.AxonLay.InitActAvg()
 	ly.AxonLay.InitActs()
@@ -657,7 +657,7 @@ func (ly *Layer) InitWts() {
 func (ly *Layer) InitActAvg() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Learn.InitActAvg(nrn)
+		ly.Learn.InitSpkCa(nrn)
 	}
 	strg := ly.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Learn.TrgAvgAct.TrgRange.Range()
@@ -983,7 +983,7 @@ func (ly *Layer) NewState() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActPrv = nrn.AvgM // nrn.ActP -- this is used in deep learning, makes big diff!
+		nrn.ActPrv = nrn.SpkCaD // nrn.ActP -- this is used in deep learning, makes big diff!
 	}
 	ly.AxonLay.DecayState(ly.Act.Decay.Act)
 }
@@ -1001,7 +1001,7 @@ func (ly *Layer) InitGScale() {
 		slay := p.SendLay().(AxonLayer).AsAxon()
 		savg := slay.Inhib.ActAvg.Init
 		snu := len(slay.Neurons)
-		ncon := pj.RConNAvgMax.Avg
+		ncon := pj.RConNSpkCaDax.Avg
 		pj.GScale.Scale = pj.PrjnScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a prjn, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
@@ -1130,8 +1130,8 @@ func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	nrn.GiRaw = 0
 }
 
-// AvgMaxGe computes the average and max Ge stats, used in inhibition
-func (ly *Layer) AvgMaxGe(ltime *Time) {
+// SpkCaDaxGe computes the average and max Ge stats, used in inhibition
+func (ly *Layer) SpkCaDaxGe(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Ge.Init()
@@ -1269,7 +1269,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		}
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
-		ly.Learn.AvgsFmAct(nrn)
+		ly.Learn.SpkCaFmSpike(nrn)
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
@@ -1288,8 +1288,8 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	ly.SynCa() // for now
 }
 
-// AvgMaxAct computes the average and max Act stats, used in inhibition
-func (ly *Layer) AvgMaxAct(ltime *Time) {
+// SpkCaDaxAct computes the average and max Act stats, used in inhibition
+func (ly *Layer) SpkCaDaxAct(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		var avg, max float32
@@ -1301,7 +1301,7 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 			}
 			// in theory having quicker activation than Act will be useful, but maybe the delay is
 			// not such a big deal, and otherwise it tracks pretty smoothly and closely
-			avg += nrn.Act // AvgSS, AvgS not clearly better, nor is spike..
+			avg += nrn.Act // SpkCaM, SpkCaP not clearly better, nor is spike..
 			if nrn.Act > max {
 				max = nrn.Act
 				maxi = ni
@@ -1337,8 +1337,8 @@ func (ly *Layer) AvgGeM(ltime *Time) {
 		pl.GiM.CalcAvg()
 	}
 	lpl := &ly.Pools[0]
-	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
-	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
+	ly.ActAvg.SpkCaDaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.SpkCaDaxGeM)
+	ly.ActAvg.SpkCaDaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.SpkCaDaxGiM)
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -1393,7 +1393,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		nrn.ActP = nrn.ActInt
 		nrn.ActDif = nrn.ActP - nrn.ActM
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.AvgS, nrn.AvgM)
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.SpkCaP, nrn.SpkCaD)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1445,25 +1445,25 @@ func (ly *Layer) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current activation state in ActSt1 variables (using AvgSLrn)
+// ActSt1 saves current activation state in ActSt1 variables (using LrnCaP)
 func (ly *Layer) ActSt1(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.AvgSLrn
+		nrn.ActSt1 = nrn.LrnCaP
 	}
 }
 
-// ActSt2 saves current activation state in ActSt2 variables (using AvgSLrn)
+// ActSt2 saves current activation state in ActSt2 variables (using LrnCaP)
 func (ly *Layer) ActSt2(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.AvgSLrn
+		nrn.ActSt2 = nrn.LrnCaP
 	}
 }
 
@@ -1536,13 +1536,13 @@ func (ly *Layer) DTrgAvgFmErr() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.DTrgAvg += lr * (nrn.AvgS - nrn.AvgM)
+		nrn.DTrgAvg += lr * (nrn.SpkCaP - nrn.SpkCaD)
 	}
 }
 
-// DTrgAvgSubMean subtracts the mean from DTrgAvg values
+// DTrgSpkCaPubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
-func (ly *Layer) DTrgAvgSubMean() {
+func (ly *Layer) DTrgSpkCaPubMean() {
 	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
@@ -1599,7 +1599,7 @@ func (ly *Layer) TrgAvgFmD() {
 	if !ly.IsLearnTrgAvg() || ly.Learn.TrgAvgAct.ErrLrate == 0 {
 		return
 	}
-	ly.DTrgAvgSubMean()
+	ly.DTrgSpkCaPubMean()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1664,21 +1664,21 @@ func (ly *Layer) AdaptGScale() {
 			continue
 		}
 		pj := p.(AxonPrjn).AsAxon()
-		sum += pj.GScale.AvgMax
+		sum += pj.GScale.SpkCaDax
 	}
 	if sum == 0 {
 		return
 	}
-	geErr := ly.Act.GTarg.GeMax - ly.ActAvg.AvgMaxGeM
+	geErr := ly.Act.GTarg.GeMax - ly.ActAvg.SpkCaDaxGeM
 	geNormErr := geErr / ly.Act.GTarg.GeMax
-	giErr := ly.Act.GTarg.GiMax - ly.ActAvg.AvgMaxGiM
+	giErr := ly.Act.GTarg.GiMax - ly.ActAvg.SpkCaDaxGiM
 	giNormErr := giErr / ly.Act.GTarg.GiMax
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
 		pj := p.(AxonPrjn).AsAxon()
-		pj.GScale.AvgMaxRel = pj.GScale.AvgMax / sum
+		pj.GScale.SpkCaDaxRel = pj.GScale.SpkCaDax / sum
 
 		if !pj.Learn.Learn || !pj.PrjnScale.Adapt {
 			continue

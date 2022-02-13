@@ -151,8 +151,8 @@ type AxonLayer interface {
 	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
 	GFmInc(ltime *Time)
 
-	// AvgMaxGe computes the average and max Ge stats, used in inhibition
-	AvgMaxGe(ltime *Time)
+	// SpkCaDaxGe computes the average and max Ge stats, used in inhibition
+	SpkCaDaxGe(ltime *Time)
 
 	// InhibiFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
 	InhibFmGeAct(ltime *Time)
@@ -161,8 +161,8 @@ type AxonLayer interface {
 	// and updates learning running-average activations from that Act
 	ActFmG(ltime *Time)
 
-	// AvgMaxAct computes the running-average activation used in driving inhibition
-	AvgMaxAct(ltime *Time)
+	// SpkCaDaxAct computes the running-average activation used in driving inhibition
+	SpkCaDaxAct(ltime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate
 	// network layer loop.

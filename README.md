@@ -16,6 +16,8 @@ See [python README](https://github.com/emer/axon/blob/master/python/README.md) a
 
 # Current Status / News
 
+* Feb 2022: Major development process to explore Kinase-based learning rules.
+
 * May-July 2021: Initial implementation and significant experimentation.  The fully spiking-based Axon framework is capable of learning to categorize rendered 3D object images based on the deep, bidirectionally-connected LVis model originally reported in O'Reilly et al. (2013).  Given the noisy, complex nature of the spiking dynamics, getting this level of functionality out of a large, deep network architecture was not easy, and it drove a number of critical additional mechanisms that are necessary for this model to work.
 
 # Converting Existing Leabra Models
@@ -106,6 +108,8 @@ Like Leabra, Axon is intended to capture a middle ground between neuroscience, c
 * **Auto-normalized, relatively scaled Excitatory Conductances:** As in Leabra, the excitatory synaptic input conductance (`Ge` in the code, known as *net input* in artificial neural networks) is computed as an average, not a sum, over connections, based on normalized weight values, which are subject to scaling on a projection level to alter relative contributions.  Automatic scaling is performed to compensate for differences in expected activity level in the different projections.  See section on [Input Scaling](#input-scaling) for details.
 
 * **FFFB computed inhibition:** Also as in Leabra, inhibition is computed using a feed-forward (FF) and feed-back (FB) inhibition function (*FFFB*) that closely approximates the behavior of inhibitory interneurons in the neocortex.  FF is based on a multiplicative factor applied to the average excitatory conductance coming into a layer, and FB is based on a multiplicative factor applied to the average activation within the layer.  These simple linear functions do an excellent job of controlling the overall activation levels in bidirectionally connected networks, producing behavior very similar to the more abstract computational implementation of kWTA dynamics implemented in previous versions.  See the `examples/inhib` model (from the CCN textbook originally) for an exploration of the basic excitatory and inhibitory dynamics in these models, comparing interneurons with FFFB.
+
+TODO: new Kinase mechanism.
 
 * **Temporal-difference activation states drive approximate backpropagation learning:** Axon also uses the same learning equation as in Leabra, derived from a highly detailed model of spike timing dependent plasticity (STDP) by Urakubo, Honda, Froemke, et al (2008), that produces a combination of Hebbian associative and error-driven learning.  For historical reasons, we call this the *XCAL* equation (*eXtended Contrastive Attractor Learning*), and it is functionally very similar to the *BCM* learning rule developed by Bienenstock, Cooper, and Munro (1982).  The essential learning dynamic involves a Hebbian-like co-product of sending neuron activation times receiving neuron activation, which biologically reflects the amount of calcium entering through NMDA channels, and this co-product is then compared against a floating threshold value.
 

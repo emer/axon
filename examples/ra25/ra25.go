@@ -15,7 +15,6 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/emer/axon/axon"
@@ -66,6 +65,13 @@ const LogPrec = 4
 // Base is always applied, and others can be optionally selected to apply on top of that
 var ParamSetsMin = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+		"NetSize": &params.Sheet{
+			{Sel: "Layer", Desc: "all layers",
+				Params: params.Params{
+					"Layer.X": "8",
+					"Layer.Y": "8",
+				}},
+		},
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
@@ -100,6 +106,10 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.Dend.VGCCCa": "20",   // 20 seems reasonable, but not obviously better than 0
 					"Layer.Act.Dend.CaMax":  "90",
 					"Layer.Act.Dend.CaThr":  "0.2",
+				},
+				Hypers: params.Hypers{
+					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
+					"Layer.Inhib.ActAvg.Init": {"StdDev": "0.01", "Min": "0.01"},
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -120,7 +130,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Lrate.Base":     "0.2", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
 					"Prjn.SWt.Adapt.Lrate":      "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":        "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.On":      "true",
+					"Prjn.Learn.Kinase.On":      "false",
 					"Prjn.Learn.Kinase.SAvgThr": "0.02", // 0.02 = 0.01 > 0.05
 					"Prjn.Learn.Kinase.MTau":    "40",
 					"Prjn.Learn.Kinase.PTau":    "10",
@@ -356,8 +366,7 @@ type Sim struct {
 	RunStats       *etable.Table                 `view:"no-inline" desc:"aggregate stats on all runs"`
 	ErrLrMod       axon.LrateMod                 `view:"inline" desc:"learning rate modulation as function of error"`
 
-	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
-	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set -- can use multiple names separated by spaces (don't put spaces in ParamSet names!)"`
+	Params       emer.Params     `view:"inline" desc:"manages parameters"`
 	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
 	StartRun     int             `desc:"starting run number -- typically 0 but can be set in command args for parallel runs on a cluster"`
 	MaxRuns      int             `desc:"maximum number of model runs to perform (starting from StartRun)"`
@@ -386,29 +395,28 @@ type Sim struct {
 	NZero         int     `inactive:"+" desc:"number of epochs in a row with no TrlErr"`
 
 	// internal state - view:"-"
-	SumErr       float64                     `view:"-" inactive:"+" desc:"sum to increment as we go through epoch"`
-	SumUnitErr   float64                     `view:"-" inactive:"+" desc:"sum to increment as we go through epoch"`
-	SumCosDiff   float64                     `view:"-" inactive:"+" desc:"sum to increment as we go through epoch"`
-	Win          *gi.Window                  `view:"-" desc:"main GUI window"`
-	NetView      *netview.NetView            `view:"-" desc:"the network viewer"`
-	ToolBar      *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
-	TrnEpcPlot   *eplot.Plot2D               `view:"-" desc:"the training epoch plot"`
-	TstEpcPlot   *eplot.Plot2D               `view:"-" desc:"the testing epoch plot"`
-	TstTrlPlot   *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
-	TstCycPlot   *eplot.Plot2D               `view:"-" desc:"the test-cycle plot"`
-	RunPlot      *eplot.Plot2D               `view:"-" desc:"the run plot"`
-	TrnEpcFile   *os.File                    `view:"-" desc:"log file"`
-	RunFile      *os.File                    `view:"-" desc:"log file"`
-	ValsTsrs     map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
-	SaveWts      bool                        `view:"-" desc:"for command-line run only, auto-save final weights after each run"`
-	NoGui        bool                        `view:"-" desc:"if true, runing in no GUI mode"`
-	LogSetParams bool                        `view:"-" desc:"if true, print message for all params that are set"`
-	IsRunning    bool                        `view:"-" desc:"true if sim is running"`
-	StopNow      bool                        `view:"-" desc:"flag to stop running"`
-	NeedsNewRun  bool                        `view:"-" desc:"flag to initialize NewRun if last one finished"`
-	RndSeeds     []int64                     `view:"-" desc:"a list of random seeds to use for each run"`
-	NetData      *netview.NetData            `view:"-" desc:"net data for recording in nogui mode"`
-	LastEpcTime  time.Time                   `view:"-" desc:"timer for last epoch"`
+	SumErr      float64                     `view:"-" inactive:"+" desc:"sum to increment as we go through epoch"`
+	SumUnitErr  float64                     `view:"-" inactive:"+" desc:"sum to increment as we go through epoch"`
+	SumCosDiff  float64                     `view:"-" inactive:"+" desc:"sum to increment as we go through epoch"`
+	Win         *gi.Window                  `view:"-" desc:"main GUI window"`
+	NetView     *netview.NetView            `view:"-" desc:"the network viewer"`
+	ToolBar     *gi.ToolBar                 `view:"-" desc:"the master toolbar"`
+	TrnEpcPlot  *eplot.Plot2D               `view:"-" desc:"the training epoch plot"`
+	TstEpcPlot  *eplot.Plot2D               `view:"-" desc:"the testing epoch plot"`
+	TstTrlPlot  *eplot.Plot2D               `view:"-" desc:"the test-trial plot"`
+	TstCycPlot  *eplot.Plot2D               `view:"-" desc:"the test-cycle plot"`
+	RunPlot     *eplot.Plot2D               `view:"-" desc:"the run plot"`
+	TrnEpcFile  *os.File                    `view:"-" desc:"log file"`
+	RunFile     *os.File                    `view:"-" desc:"log file"`
+	ValsTsrs    map[string]*etensor.Float32 `view:"-" desc:"for holding layer values"`
+	SaveWts     bool                        `view:"-" desc:"for command-line run only, auto-save final weights after each run"`
+	NoGui       bool                        `view:"-" desc:"if true, runing in no GUI mode"`
+	IsRunning   bool                        `view:"-" desc:"true if sim is running"`
+	StopNow     bool                        `view:"-" desc:"flag to stop running"`
+	NeedsNewRun bool                        `view:"-" desc:"flag to initialize NewRun if last one finished"`
+	RndSeeds    []int64                     `view:"-" desc:"a list of random seeds to use for each run"`
+	NetData     *netview.NetData            `view:"-" desc:"net data for recording in nogui mode"`
+	LastEpcTime time.Time                   `view:"-" desc:"timer for last epoch"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,
@@ -431,7 +439,10 @@ func (ss *Sim) New() {
 	ss.ErrLrMod.Defaults()
 	ss.ErrLrMod.Base = 0.5 // 0.5 > 0.2 -- not very useful in this model, but key in larger nets
 	ss.ErrLrMod.Range.Set(0, 0.5)
-	ss.Params = ParamSetsMin         // ParamSetsAll
+	ss.Params.Params = ParamSetsMin
+	ss.Params.AddNetwork(ss.Net)
+	ss.Params.AddSim(ss)
+	ss.Params.AddNetSize()
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
 	for i := 0; i < 100; i++ {
 		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
@@ -494,10 +505,13 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
+	ss.Params.AddLayers([]string{"Hidden1", "Hidden2"}, "Hidden")
+	ss.Params.SetObject("NetSize")
+
 	net.InitName(net, "RA25")
 	inp := net.AddLayer2D("Input", 5, 5, emer.Input)
-	hid1 := net.AddLayer2D("Hidden1", 10, 10, emer.Hidden)
-	hid2 := net.AddLayer2D("Hidden2", 10, 10, emer.Hidden)
+	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), emer.Hidden)
+	hid2 := net.AddLayer2D("Hidden2", ss.Params.LayY("Hidden2", 10), ss.Params.LayX("Hidden2", 10), emer.Hidden)
 	out := net.AddLayer2D("Output", 5, 5, emer.Target)
 
 	// use this to position layers relative to each other
@@ -527,7 +541,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// and thus removes error-driven learning -- but stats are still computed.
 
 	net.Defaults()
-	ss.SetParams("Network", ss.LogSetParams) // only set Network params
+	ss.Params.SetObject("Network") // only set Network params
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
@@ -546,7 +560,8 @@ func (ss *Sim) Init() {
 	ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.StopNow = false
-	ss.SetParams("", ss.LogSetParams) // all sheets
+	ss.Params.SetAll()
+	// fmt.Println(ss.Params.NetHypers.JSONString())
 	ss.NewRun()
 	ss.UpdateView(true)
 }
@@ -566,10 +581,10 @@ func (ss *Sim) NewRndSeed() {
 	}
 }
 
-// Counters returns a string of the current counter state
+// StateString returns a string of the current counter state
 // use tabs to achieve a reasonable formatting overall
 // and add a few tabs at the end to allow for expansion..
-func (ss *Sim) Counters(train bool) string {
+func (ss *Sim) StateString(train bool) string {
 	if train {
 		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%s\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Time.Cycle, ss.TrainEnv.TrialName.Cur)
 	} else {
@@ -579,7 +594,7 @@ func (ss *Sim) Counters(train bool) string {
 
 func (ss *Sim) UpdateView(train bool) {
 	if ss.NetView != nil && ss.NetView.IsVisible() {
-		ss.NetView.Record(ss.Counters(train))
+		ss.NetView.Record(ss.StateString(train))
 		// note: essential to use Go version of update when called from another goroutine
 		ss.NetView.GoUpdate() // note: using counters is significantly slower..
 	}
@@ -893,7 +908,7 @@ func (ss *Sim) TestTrial(returnOnChg bool) {
 	ss.ThetaCyc(false) // !train
 	ss.LogTstTrl(ss.TstTrlLog)
 	if ss.NetData != nil { // offline record net data from testing, just final state
-		ss.NetData.Record(ss.Counters(false))
+		ss.NetData.Record(ss.StateString(false))
 	}
 }
 
@@ -927,61 +942,7 @@ func (ss *Sim) RunTestAll() {
 }
 
 /////////////////////////////////////////////////////////////////////////
-//   Params setting
-
-// ParamsName returns name of current set of parameters
-func (ss *Sim) ParamsName() string {
-	if ss.ParamSet == "" {
-		return "Base"
-	}
-	return ss.ParamSet
-}
-
-// SetParams sets the params for "Base" and then current ParamSet.
-// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
-// otherwise just the named sheet
-// if setMsg = true then we output a message for each param that was set.
-func (ss *Sim) SetParams(sheet string, setMsg bool) error {
-	if sheet == "" {
-		// this is important for catching typos and ensuring that all sheets can be used
-		ss.Params.ValidateSheets([]string{"Network", "Sim"})
-	}
-	err := ss.SetParamsSet("Base", sheet, setMsg)
-	if ss.ParamSet != "" && ss.ParamSet != "Base" {
-		sps := strings.Fields(ss.ParamSet)
-		for _, ps := range sps {
-			err = ss.SetParamsSet(ps, sheet, setMsg)
-		}
-	}
-	return err
-}
-
-// SetParamsSet sets the params for given params.Set name.
-// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
-// otherwise just the named sheet
-// if setMsg = true then we output a message for each param that was set.
-func (ss *Sim) SetParamsSet(setNm string, sheet string, setMsg bool) error {
-	pset, err := ss.Params.SetByNameTry(setNm)
-	if err != nil {
-		return err
-	}
-	if sheet == "" || sheet == "Network" {
-		netp, ok := pset.Sheets["Network"]
-		if ok {
-			ss.Net.ApplyParams(netp, setMsg)
-		}
-	}
-
-	if sheet == "" || sheet == "Sim" {
-		simp, ok := pset.Sheets["Sim"]
-		if ok {
-			simp.Apply(ss, setMsg)
-		}
-	}
-	// note: if you have more complex environments with parameters, definitely add
-	// sheets for them, e.g., "TrainEnv", "TestEnv" etc
-	return err
-}
+//   Pats
 
 func (ss *Sim) ConfigPats() {
 	dt := ss.Pats
@@ -1032,7 +993,7 @@ func (ss *Sim) RunName() string {
 	if ss.Tag != "" {
 		rn += ss.Tag + "_"
 	}
-	rn += ss.ParamsName()
+	rn += ss.Params.Name()
 	if ss.StartRun > 0 {
 		rn += fmt.Sprintf("_%03d", ss.StartRun)
 	}
@@ -1110,7 +1071,7 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 			}
 		}
 		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
-		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.SpkCaDaxGeM))
 		dt.SetCellFloat(ly.Nm+"_AvgGe", row, float64(ly.Pools[0].Inhib.Ge.Avg))
 		dt.SetCellFloat(ly.Nm+"_MaxGe", row, float64(ly.Pools[0].Inhib.Ge.Max))
 		dt.SetCellFloat(ly.Nm+"_Gi", row, float64(ly.Pools[0].Inhib.Gi))
@@ -1148,9 +1109,9 @@ func (ss *Sim) ConfigTrnEpcLog(dt *etable.Table) {
 		{"PerTrlMSec", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.LayStatNms {
-		// sch = append(sch, etable.Column{lnm + "_FF_AvgMaxG", etensor.FLOAT64, nil, nil})
+		// sch = append(sch, etable.Column{lnm + "_FF_SpkCaDaxG", etensor.FLOAT64, nil, nil})
 		// sch = append(sch, etable.Column{lnm + "_FF_Scale", etensor.FLOAT64, nil, nil})
-		// sch = append(sch, etable.Column{lnm + "_FB_AvgMaxG", etensor.FLOAT64, nil, nil})
+		// sch = append(sch, etable.Column{lnm + "_FB_SpkCaDaxG", etensor.FLOAT64, nil, nil})
 		// sch = append(sch, etable.Column{lnm + "_FB_Scale", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_ActAvg", etensor.FLOAT64, nil, nil})
 		sch = append(sch, etable.Column{lnm + "_MaxGeM", etensor.FLOAT64, nil, nil})
@@ -1180,9 +1141,9 @@ func (ss *Sim) ConfigTrnEpcPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot
 	plt.SetColParams("PerTrlMSec", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 
 	for _, lnm := range ss.LayStatNms {
-		// plt.SetColParams(lnm+"_FF_AvgMaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
+		// plt.SetColParams(lnm+"_FF_SpkCaDaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		// plt.SetColParams(lnm+"_FF_Scale", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
-		// plt.SetColParams(lnm+"_FB_AvgMaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
+		// plt.SetColParams(lnm+"_FB_SpkCaDaxG", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		// plt.SetColParams(lnm+"_FB_Scale", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, .5)
 		plt.SetColParams(lnm+"_ActAvg", eplot.Off, eplot.FixMin, 0, eplot.FixMax, .5)
 		plt.SetColParams(lnm+"_MaxGeM", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
@@ -1862,12 +1823,12 @@ func (ss *Sim) CmdArgs() {
 	var saveRunLog bool
 	var saveNetData bool
 	var note string
-	flag.StringVar(&ss.ParamSet, "params", "", "ParamSet name to use -- must be valid name as listed in compiled-in params or loaded params")
+	flag.StringVar(&ss.Params.ExtraSets, "params", "", "ParamSet name to use -- must be valid name as listed in compiled-in params or loaded params")
 	flag.StringVar(&ss.Tag, "tag", "", "extra tag to add to file names saved from this run")
 	flag.StringVar(&note, "note", "", "user note -- describe the run params etc")
 	flag.IntVar(&ss.StartRun, "run", 0, "starting run number -- determines the random seed -- runs counts from there -- can do all runs in parallel by launching separate jobs with each run, runs = 1")
 	flag.IntVar(&ss.MaxRuns, "runs", 10, "number of runs to do (note that MaxEpcs is in paramset)")
-	flag.BoolVar(&ss.LogSetParams, "setparams", false, "if true, print a record of each parameter that is set")
+	flag.BoolVar(&ss.Params.SetMsg, "setparams", false, "if true, print a record of each parameter that is set")
 	flag.BoolVar(&ss.SaveWts, "wts", false, "if true, save final weights after each run")
 	flag.BoolVar(&saveEpcLog, "epclog", true, "if true, save train epoch log to file")
 	flag.BoolVar(&saveRunLog, "runlog", true, "if true, save run epoch log to file")
@@ -1879,8 +1840,8 @@ func (ss *Sim) CmdArgs() {
 	if note != "" {
 		fmt.Printf("note: %s\n", note)
 	}
-	if ss.ParamSet != "" {
-		fmt.Printf("Using ParamSet: %s\n", ss.ParamSet)
+	if ss.Params.ExtraSets != "" {
+		fmt.Printf("Using ParamSet: %s\n", ss.Params.ExtraSets)
 	}
 
 	if saveEpcLog {
