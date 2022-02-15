@@ -8,6 +8,7 @@ import (
 	"math/rand"
 
 	"github.com/emer/etable/minmax"
+	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -47,7 +48,7 @@ func (ln *LearnNeurParams) InitSpkCa(nrn *Neuron) {
 // SpkCaFmSpike updates the simple spike-based calcium signaling vals.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) SpkCaFmSpike(nrn *Neuron) {
-	ln.SpkCa.SpkCaFmSpike(ln.SpkCa.SpikeG*nrn.Spike, &nrn.SpkCaM, &nrn.SpkCaP, &nrn.SpkCaD, &nrn.LrnCaP, &nrn.LrnCaD)
+	ln.SpkCa.SpkCaFmSpike(nrn.Spike, &nrn.SpkCaM, &nrn.SpkCaP, &nrn.SpkCaD, &nrn.LrnCaP, &nrn.LrnCaD)
 }
 
 // SpkCaParams has rate constants for averaging over activations
@@ -74,7 +75,7 @@ type SpkCaParams struct {
 
 // SpkCaFmSpike computes SpkCa calcium signals based on current spike
 func (aa *SpkCaParams) SpkCaFmSpike(spike float32, scam, scap, scad, lrnCaP, lrnCaD *float32) {
-	*scam += aa.MDt * (spike - *scam)
+	*scam += aa.MDt * (aa.SpikeG*spike - *scam)
 	*scap += aa.PDt * (*scam - *scap)
 	*scad += aa.DDt * (*scap - *scad)
 	*lrnCaD = *scad
@@ -530,6 +531,36 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 /////////////////////////////////////////////////////
 // Kinase
 
+// KinaseRules are different options for Kinase-based learning rules
+type KinaseRules int32
+
+//go:generate stringer -type=KinaseRules
+
+var KiT_KinaseRules = kit.Enums.AddEnum(KinaseRulesN, kit.NotBitFlag, nil)
+
+func (ev KinaseRules) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *KinaseRules) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+// The time scales
+const (
+	// NeurSpkCa uses neuron-level spike-driven calcium signals
+	// integrated at P vs. D time scales -- this is the original
+	// Leabra and Axon XCAL / CHL learning rule.
+	NeurSpkCa KinaseRules = iota
+
+	// SynSpkCa uses synapse-level spike-driven calcium signals
+	// integrated at P vs. D time scales -- synapse version of
+	// original learning rule.
+	SynSpkCa
+
+	// SynNMDACa uses synapse-level NMDA-driven calcium signals
+	// integrated at P vs. D time scales -- abstract version
+	// of the KinaseB biophysical learniung rule
+	SynNMDACa
+
+	KinaseRulesN
+)
+
 // KinaseSynParams has rate constants for averaging over activations
 // at different time scales, to produce the running average activation
 // values that then drive learning in the XCAL learning rules.
@@ -538,12 +569,13 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 // Cyc:50, SS:35 S:8, M:40 (best)
 // Cyc:25, SS:20, S:4, M:20
 type KinaseSynParams struct {
-	On      bool    `desc:"if true, use Kinase learning algorithm instead of original XCal"`
-	SAvgThr float32 `def:"0.02" desc:"optimization for compute speed -- threshold on sending avg values to update Ca values -- depends on Ca clearing upon Wt update"`
-	MTau    float32 `def:"40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
-	PTau    float32 `def:"10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
-	DTau    float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
-	DScale  float32 `def:"0.93" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
+	Rule    KinaseRules `desc:"version of Kinase learning rule to use"`
+	XCal    bool        `desc:"use the XCal check-mark function -- otherwise just use the direct subtraction between the P - D values."`
+	SAvgThr float32     `def:"0.02" desc:"optimization for compute speed -- threshold on sending avg values to update Ca values -- depends on Ca clearing upon Wt update"`
+	MTau    float32     `def:"40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
+	PTau    float32     `def:"10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
+	DTau    float32     `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
+	DScale  float32     `def:"0.93" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
 
 	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -557,6 +589,7 @@ func (kp *KinaseSynParams) Update() {
 }
 
 func (kp *KinaseSynParams) Defaults() {
+	kp.XCal = true
 	kp.SAvgThr = 0.02
 	kp.MTau = 40
 	kp.PTau = 10

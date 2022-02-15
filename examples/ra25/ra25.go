@@ -66,7 +66,7 @@ var ParamSetsMin = params.Sets{
 		"NetSize": &params.Sheet{
 			{Sel: "Layer", Desc: "all layers",
 				Params: params.Params{
-					"Layer.X": "8",
+					"Layer.X": "8", // 10 orig, 8 is similar, faster
 					"Layer.Y": "8",
 				}},
 		},
@@ -93,6 +93,8 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.Dend.SeiDeplete":   "false", // noisy!  try on larger models
 					"Layer.Act.Dend.SnmdaDeplete": "false",
 					"Layer.Act.GABAB.Gbar":        "0.2", // 0.2 > 0.15
+
+					"Layer.Learn.SpkCa.LrnM": ".1", // 0.1 default -- no diff -- try in larger models
 
 					// Voff = 5, MgC = 1.4, CaMax = 90, VGCCCa = 20 is a reasonable "high voltage" config
 					// Voff = 0, MgC = 1, CaMax = 100, VGCCCa = 20 is a good "default" config
@@ -125,10 +127,10 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":     "0.2", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
-					"Prjn.SWt.Adapt.Lrate":      "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":        "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.On":      "false",
+					"Prjn.Learn.Lrate.Base": "0.2", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
+					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					// "Prjn.Learn.Kinase.On":      "false",
 					"Prjn.Learn.Kinase.SAvgThr": "0.02", // 0.02 = 0.01 > 0.05
 					"Prjn.Learn.Kinase.MTau":    "40",
 					"Prjn.Learn.Kinase.PTau":    "10",
@@ -665,6 +667,9 @@ func (ss *Sim) TrainTrial() {
 	// if epoch counter has changed
 	epc, _, chg := ss.TrainEnv.Counter(env.Epoch)
 	if chg {
+		if (ss.PCAInterval > 0) && ((epc-1)%ss.PCAInterval == 0) { // -1 so runs on first epc
+			ss.PCAStats()
+		}
 		ss.Log(elog.Train, elog.Epoch)
 		if ss.ViewOn && ss.TrainUpdt > axon.AlphaCycle {
 			ss.GUI.UpdateNetView()
@@ -944,7 +949,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.NoPlot(elog.Test, elog.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(elog.Train, elog.Run, "LegendCol", "Params")
-	ss.Stats.ConfigRasters(ss.Net, ss.Net.LayersByType())
+	ss.Stats.ConfigRasters(ss.Net, ss.Net.LayersByClass())
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -1004,13 +1009,13 @@ func (ss *Sim) LogRunStats() {
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func (ss *Sim) PCAStats() {
-	ss.Stats.PCAStats(ss.Logs.IdxView(elog.Analyze, elog.Trial), "ActM", ss.Net.LayersByType(emer.Hidden))
+	ss.Stats.PCAStats(ss.Logs.IdxView(elog.Analyze, elog.Trial), "ActM", ss.Net.LayersByClass("Hidden"))
 	ss.Logs.ResetLog(elog.Analyze, elog.Trial)
 }
 
 // RasterRec updates spike raster record for given cycle
 func (ss *Sim) RasterRec(cyc int) {
-	ss.Stats.RasterRec(ss.Net, cyc, "Spike", ss.Net.LayersByType())
+	ss.Stats.RasterRec(ss.Net, cyc, "Spike", ss.Net.LayersByClass())
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -1030,7 +1035,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	stb := ss.GUI.TabView.AddNewTab(gi.KiT_Layout, "Spike Rasters").(*gi.Layout)
 	stb.Lay = gi.LayoutVert
 	stb.SetStretchMax()
-	layers := ss.Net.LayersByType() // all
+	layers := ss.Net.LayersByClass() // all
 	for _, lnm := range layers {
 		sr := ss.Stats.F32Tensor("Raster_" + lnm)
 		tg := ss.GUI.RasterGrid(lnm)
