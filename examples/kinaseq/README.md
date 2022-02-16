@@ -1,5 +1,7 @@
 # Kinase Equations
 
+See: https://github.com/ccnlab/kinase/tree/main/sims/kinase for a parallel exploration based on a biophysically detailed model, building up from the Urakubo et al (2008) model.
+
 This standalone simulation is used to explore the synapse-level updating of calcium-based signals that drive the more abstract forms of Kinase learning rules, based on recv and send spiking impulses, passing through a cascade of exponential integrations with different time constants.
 
 The Leabra and initial Axon equations used these cascading updated variables on each neuron (recv and send) separately, with the final values multiplied for the CHL-like DWt function.
@@ -8,9 +10,9 @@ The Leabra and initial Axon equations used these cascading updated variables on 
 
 * `CaP` = LTP, plus phase faster integration of CaM, reflecting CaMKII biologically.  Faster time constant makes this reflect the plus phase relative to the `CaD` LTD, minus-phase variable.  This is `AvgS` in Leabra.
 
-* `CaD` = LTD, minus phase slower integration of CaP (cascaded one further step).  This is `AvgM` in Leabra.
+* `CaD` = LTD, minus phase slower integration of CaP (cascaded one further step), reflecting DAPK1 biologically.  This is `AvgM` in Leabra.
 
-The CHL product-based learning rule is a function of the difference between the plus-phase vs. minus-phase factors:
+The CHL product-based learning rule is a function of the difference between the plus-phase vs. minus-phase products of factors for S = Sender and R = Receiver:
 
 * `PDWt = SCaP * RCaP - SCaD * RCaD`
 
