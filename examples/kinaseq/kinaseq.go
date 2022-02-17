@@ -6,7 +6,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -19,7 +18,6 @@ import (
 	"github.com/goki/gi/gimain"
 	"github.com/goki/gi/giv"
 	"github.com/goki/ki/ki"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -37,159 +35,6 @@ func guirun() {
 
 // LogPrec is precision for saving float values in logs
 const LogPrec = 4
-
-// KinaseRules are different options for Kinase-based learning rules
-type KinaseRules int32
-
-//go:generate stringer -type=KinaseRules
-
-var KiT_KinaseRules = kit.Enums.AddEnum(KinaseRulesN, kit.NotBitFlag, nil)
-
-func (ev KinaseRules) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *KinaseRules) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-// The time scales
-const (
-	// NeurSpkCa uses neuron-level spike-driven calcium signals
-	// integrated at P vs. D time scales -- this is the original
-	// Leabra and Axon XCAL / CHL learning rule.
-	NeurSpkCa KinaseRules = iota
-
-	// SynSpkCaOR uses synapse-level spike-driven calcium signals
-	// with an OR rule for pre OR post spiking driving the CaM up,
-	// which is then integrated at P vs. D time scales.
-	// Basically a synapse version of original learning rule.
-	SynSpkCaOR
-
-	// SynSpkNMDAOR uses synapse-level spike-driven calcium signals
-	// with an OR rule for pre OR post spiking driving the CaM up,
-	// with NMDAo multiplying the spike drive to fit Bio Ca better
-	// including the Bonus factor.
-	// which is then integrated at P vs. D time scales.
-	SynSpkNMDAOR
-
-	// SynNMDACa uses synapse-level NMDA-driven calcium signals
-	// (which can be either Urakubo allosteric or Kinase abstract)
-	// integrated at P vs. D time scales -- abstract version
-	// of the KinaseB biophysical learniung rule
-	SynNMDACa
-
-	KinaseRulesN
-)
-
-// KinaseSynParams has rate constants for averaging over activations
-// at different time scales, to produce the running average activation
-// values that then drive learning.
-type KinaseSynParams struct {
-	Rule   KinaseRules     `desc:"which learning rule to use"`
-	OptP   float32         `desc:"optimized p inc gain"`
-	SpikeG float32         `def:"20,8,200" desc:"spiking gain for Spk rules"`
-	MTau   float32         `def:"10,40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
-	PTau   float32         `def:"40,10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
-	DTau   float32         `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
-	DScale float32         `def:"0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
-	PFun   etensor.Float32 `view:"no-inline" desc:"P function table"`
-	DFun   etensor.Float32 `view:"no-inline" desc:"D function table"`
-	Tmax   int             `desc:"maximum time in lookup tables"`
-	Ymax   float32         `desc:"maximum y value in lookup tables"`
-	Yres   float32         `desc:"resolution of Y value in lookup tables"`
-
-	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-}
-
-func (kp *KinaseSynParams) Defaults() {
-	kp.Rule = SynSpkCaOR
-	kp.OptP = 100
-	kp.SpikeG = 8 // 200 // 8
-	kp.MTau = 10  // 40
-	kp.PTau = 40  // 10
-	kp.DTau = 40
-	kp.DScale = 1.05
-	kp.Tmax = 100
-	kp.Ymax = 2
-	kp.Yres = 0.02
-	kp.Update()
-}
-
-func (kp *KinaseSynParams) Update() {
-	kp.MDt = 1 / kp.MTau
-	kp.PDt = 1 / kp.PTau
-	kp.DDt = 1 / kp.DTau
-	kp.FillFun()
-}
-
-// FmSpike computes updates from current spike value
-func (kp *KinaseSynParams) FmSpike(spike float32, caM, caP, caD *float32) {
-	*caM += kp.MDt * (kp.SpikeG*spike - *caM)
-	*caP += kp.PDt * (*caM - *caP)
-	*caD += kp.DDt * (*caP - *caD)
-}
-
-// DWt computes the weight change from CaP, CaD values
-func (kp *KinaseSynParams) DWt(caP, caD float32) float32 {
-	return caP - kp.DScale*caD
-}
-
-// FillFun fill in the functions
-func (kp *KinaseSynParams) FillFun() {
-	yn := int(kp.Ymax/kp.Yres) + 1
-	kp.PFun.SetShape([]int{yn, yn, kp.Tmax + 1}, nil, []string{"ps", "ms", "time"})
-	fmt.Printf("PFun has %d elements\n", kp.PFun.Len())
-	for pi := 0; pi < yn; pi++ {
-		for mi := 0; mi < yn; mi++ {
-			pv := float32(pi) * kp.Yres
-			mv := float32(mi) * kp.Yres
-			m := mv
-			ps := pv
-			for t := 0; t <= kp.Tmax; t++ {
-				ps += kp.PDt * (m - ps)
-				m -= kp.MDt * m
-				kp.PFun.Set([]int{pi, mi, t}, ps)
-			}
-		}
-	}
-}
-
-// PVal returns P value for given initial P value, m value, and time point
-func (kp *KinaseSynParams) PVal(pv, mv float32, t int) float32 {
-	if pv > kp.Ymax {
-		pv = kp.Ymax
-	}
-	if pv < 0 {
-		pv = 0
-	}
-	if mv > kp.Ymax {
-		mv = kp.Ymax
-	}
-	if mv < 0 {
-		mv = 0
-	}
-	if t < 0 {
-		t = 0
-	}
-	if t > kp.Tmax {
-		t = kp.Tmax
-	}
-	pi := int(pv / kp.Yres)
-	mi := int(mv / kp.Yres)
-	yv := kp.PFun.Value([]int{pi, mi, t})
-	// interpolation definitely helping.
-	if pi < kp.PFun.Dim(0)-1 {
-		pr := (pv - (float32(pi) * kp.Yres)) / kp.Yres
-		yvh := kp.PFun.Value([]int{pi + 1, mi, t})
-		yv += pr * (yvh - yv)
-	}
-	if mi < kp.PFun.Dim(0)-1 {
-		mr := (mv - (float32(mi) * kp.Yres)) / kp.Yres
-		yvh := kp.PFun.Value([]int{pi, mi + 1, t})
-		yv += mr * (yvh - yv)
-	}
-	return yv
-}
-
-///////////////////////////////////////////////
 
 // Sim holds the params, table, etc
 type Sim struct {
@@ -246,11 +91,11 @@ func (ss *Sim) Run() {
 
 	kp := &ss.Kinase
 
-	var rSpk, rSpkCaM, rSpkCaP, rSpkCaD float32                   // recv
-	var sSpk, sSpkCaM, sSpkCaP, sSpkCaD float32                   // send
-	var pSpkCaM, pSpkCaP, pSpkCaD, pDWt float32                   // product
-	var cSpk, cSpkCaM, cSpkCaP, cSpkCaD, cDWt, cISI float32       // syn continuous
-	var oSpk, oSpkCaM, oSpkCaP, oSpkCaD, oCaM, oCaP, oDWt float32 // syn optimized compute
+	var rSpk, rSpkCaM, rSpkCaP, rSpkCaD float32                         // recv
+	var sSpk, sSpkCaM, sSpkCaP, sSpkCaD float32                         // send
+	var pSpkCaM, pSpkCaP, pSpkCaD, pDWt float32                         // product
+	var cSpk, cSpkCaM, cSpkCaP, cSpkCaD, cDWt, cISI float32             // syn continuous
+	var oSpk, oSpkCaM, oSpkCaP, oSpkCaD, oCaM, oCaP, oCaD, oDWt float32 // syn optimized compute
 
 	for nr := 0; nr < ss.NReps; nr++ {
 		cISI = -1
@@ -305,26 +150,31 @@ func (ss *Sim) Run() {
 				isi := int(cISI)
 
 				// get old before cam update, for previous isi
-				if isi > 0 {
-					oSpkCaP = kp.PVal(oSpkCaP, oSpkCaM, isi) // update
+				if isi >= 0 {
+					oSpkCaD = kp.DFmLastSpike(oSpkCaD, oSpkCaP, oSpkCaM, isi) // reverse order
+					oSpkCaP = kp.PFmLastSpike(oSpkCaP, oSpkCaM, isi)
 				}
 
-				mprv := float32(0)
-				if isi > 0 {
+				var mprv float32
+				if isi >= 0 {
 					mprv = oSpkCaM * mat32.FastExp(-cISI/(kp.MTau-0.5))
 				}
 				minc := kp.MDt * (kp.SpikeG*cSpk - mprv)
 				oSpkCaM = mprv + minc
 
 				oCaM = oSpkCaM
-				oCaP = kp.PVal(oSpkCaP, oSpkCaM, 0) // update
+				oCaP = kp.PFmLastSpike(oSpkCaP, oSpkCaM, 0)
+				oCaD = kp.DFmLastSpike(oSpkCaD, oSpkCaP, oSpkCaM, 0)
+				// fmt.Printf("t: %d  isi: %d  ocam: %g  ocap: %g  ocad: %g  val: %g\n", t, isi, oSpkCaM, oSpkCaP, oSpkCaD, oCaD)
 				cISI = 0
 			} else if cISI >= 0 {
 				cISI += 1
 				isi := int(cISI)
 
-				oCaM = oSpkCaM * mat32.Exp(-cISI/(kp.MTau-0.5))
-				oCaP = kp.PVal(oSpkCaP, oSpkCaM, isi)
+				oCaM = oSpkCaM * mat32.FastExp(-cISI/(kp.MTau-0.5))
+				oCaP = kp.PFmLastSpike(oSpkCaP, oSpkCaM, isi)
+				oCaD = kp.DFmLastSpike(oSpkCaD, oSpkCaP, oSpkCaM, isi)
+				// fmt.Printf("t: %d  isi: %d  ocam: %g  ocap: %g  ocad: %g  val: %g\n", t, isi, oSpkCaM, oSpkCaP, oSpkCaD, oCaD)
 			}
 
 			if ss.NReps == 1 || t == ss.DurMsec-1 {
@@ -348,7 +198,7 @@ func (ss *Sim) Run() {
 				dt.SetCellFloat("SynOSpike", row, float64(ss.SpikeDisp*oSpk))
 				dt.SetCellFloat("SynOSpkCaM", row, float64(oCaM))
 				dt.SetCellFloat("SynOSpkCaP", row, float64(oCaP))
-				dt.SetCellFloat("SynOSpkCaD", row, float64(oSpkCaD))
+				dt.SetCellFloat("SynOSpkCaD", row, float64(oCaD))
 				dt.SetCellFloat("SynODWt", row, float64(oDWt))
 			}
 		}
@@ -392,7 +242,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.Params.Title = "Kinase Learning Plot"
 	plt.Params.XAxisCol = "Time"
 	plt.SetTable(dt)
-	plt.Params.Points = true
+	// plt.Params.Points = true
 
 	for _, cn := range dt.ColNames {
 		if cn == "Time" {
@@ -408,6 +258,8 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	// plt.SetColParams("SynOSpkCaM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("SynCSpkCaP", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("SynOSpkCaP", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("SynCSpkCaD", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("SynOSpkCaD", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 
@@ -445,7 +297,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	plt := tv.AddNewTab(eplot.KiT_Plot2D, "Plot").(*eplot.Plot2D)
 	ss.Plot = ss.ConfigPlot(plt, ss.Table)
 
-	split.SetSplits(.3, .7)
+	split.SetSplits(.2, .8)
 
 	tbar.AddAction(gi.ActOpts{Label: "Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		ss.Run()
