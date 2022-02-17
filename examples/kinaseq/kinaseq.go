@@ -6,6 +6,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -108,7 +109,7 @@ func (kp *KinaseSynParams) Defaults() {
 	kp.DScale = 1.05
 	kp.Tmax = 100
 	kp.Ymax = 2
-	kp.Yres = 0.01
+	kp.Yres = 0.02
 	kp.Update()
 }
 
@@ -135,6 +136,7 @@ func (kp *KinaseSynParams) DWt(caP, caD float32) float32 {
 func (kp *KinaseSynParams) FillFun() {
 	yn := int(kp.Ymax/kp.Yres) + 1
 	kp.PFun.SetShape([]int{yn, yn, kp.Tmax + 1}, nil, []string{"ps", "ms", "time"})
+	fmt.Printf("PFun has %d elements\n", kp.PFun.Len())
 	for pi := 0; pi < yn; pi++ {
 		for mi := 0; mi < yn; mi++ {
 			pv := float32(pi) * kp.Yres
@@ -173,16 +175,17 @@ func (kp *KinaseSynParams) PVal(pv, mv float32, t int) float32 {
 	pi := int(pv / kp.Yres)
 	mi := int(mv / kp.Yres)
 	yv := kp.PFun.Value([]int{pi, mi, t})
-	// if pi < kp.PFun.Dim(0)-1 {
-	// 	pr := (pv - (float32(pi) * kp.Yres)) / kp.Yres
-	// 	yvh := kp.PFun.Value([]int{pi + 1, mi, t})
-	// 	yv += pr * (yvh - yv)
-	// }
-	// if mi < kp.PFun.Dim(0)-1 {
-	// 	mr := (mv - (float32(mi) * kp.Yres)) / kp.Yres
-	// 	yvh := kp.PFun.Value([]int{pi, mi + 1, t})
-	// 	yv += mr * (yvh - yv)
-	// }
+	// interpolation definitely helping.
+	if pi < kp.PFun.Dim(0)-1 {
+		pr := (pv - (float32(pi) * kp.Yres)) / kp.Yres
+		yvh := kp.PFun.Value([]int{pi + 1, mi, t})
+		yv += pr * (yvh - yv)
+	}
+	if mi < kp.PFun.Dim(0)-1 {
+		mr := (mv - (float32(mi) * kp.Yres)) / kp.Yres
+		yvh := kp.PFun.Value([]int{pi, mi + 1, t})
+		yv += mr * (yvh - yv)
+	}
 	return yv
 }
 
