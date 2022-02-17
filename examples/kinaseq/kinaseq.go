@@ -142,8 +142,8 @@ func (kp *KinaseSynParams) FillFun() {
 			m := mv
 			ps := pv
 			for t := 0; t <= kp.Tmax; t++ {
-				m -= kp.MDt * m
 				ps += kp.PDt * (m - ps)
+				m -= kp.MDt * m
 				kp.PFun.Set([]int{pi, mi, t}, ps)
 			}
 		}
@@ -212,7 +212,7 @@ func (ss *Sim) Config() {
 	ss.PGain = 10
 	ss.SpikeDisp = 0.1
 	ss.NReps = 1
-	ss.DurMsec = 200
+	ss.DurMsec = 1000
 	ss.SendHz = 20
 	ss.RecvHz = 20
 	ss.Update()
@@ -250,6 +250,7 @@ func (ss *Sim) Run() {
 	var oSpk, oSpkCaM, oSpkCaP, oSpkCaD, oCaM, oCaP, oDWt float32 // syn optimized compute
 
 	for nr := 0; nr < ss.NReps; nr++ {
+		cISI = -1
 		for t := 0; t < ss.DurMsec; t++ {
 			row := t
 			if ss.NReps == 1 {
@@ -299,26 +300,28 @@ func (ss *Sim) Run() {
 			// optimized
 			if cSpk > 0 {
 				isi := int(cISI)
+
+				// get old before cam update, for previous isi
+				if isi > 0 {
+					oSpkCaP = kp.PVal(oSpkCaP, oSpkCaM, isi) // update
+				}
+
 				mprv := float32(0)
 				if isi > 0 {
-					mprv = oSpkCaM * mat32.FastExp(-kp.MDt*cISI)
+					mprv = oSpkCaM * mat32.FastExp(-cISI/(kp.MTau-0.5))
 				}
 				minc := kp.MDt * (kp.SpikeG*cSpk - mprv)
 				oSpkCaM = mprv + minc
 
-				if isi > 0 {
-					oSpkCaP = kp.PVal(oSpkCaP, oSpkCaM, isi) // update
-				}
-				// oSpkCaP += kp.PVal(oSpkCaP, oSpkCaM, 0) // update
 				oCaM = oSpkCaM
-				oCaP = oSpkCaP
+				oCaP = kp.PVal(oSpkCaP, oSpkCaM, 0) // update
 				cISI = 0
-			} else {
+			} else if cISI >= 0 {
 				cISI += 1
 				isi := int(cISI)
 
-				oCaM = oSpkCaM * mat32.Exp(-kp.MDt*cISI)
-				oCaP = kp.PVal(oSpkCaP, oSpkCaM, (isi - 1))
+				oCaM = oSpkCaM * mat32.Exp(-cISI/(kp.MTau-0.5))
+				oCaP = kp.PVal(oSpkCaP, oSpkCaM, isi)
 			}
 
 			if ss.NReps == 1 || t == ss.DurMsec-1 {
@@ -386,6 +389,7 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.Params.Title = "Kinase Learning Plot"
 	plt.Params.XAxisCol = "Time"
 	plt.SetTable(dt)
+	plt.Params.Points = true
 
 	for _, cn := range dt.ColNames {
 		if cn == "Time" {
