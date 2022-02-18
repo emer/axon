@@ -46,7 +46,7 @@ It is also notable that the `CaD` value in both of these cases reaches its asymp
 
 One of the most salient results from this model is that integrating spiking at the synapse level ("average of products") produces a much less variable DWt signal than doing it at the neuron level ("product of averages").  The intuition is that for the latter (aka `NeurSpkCa`), a great deal depends on the precise timing of the *last few spikes* at the end of the sequence, and the product operation itself introduces further variance (each term has multiplicative "leverage" over the other).
 
-Here are results for different matched levels of firing, showing final DWt values after each of 10000 different 200 msec trials of learning, with the indicated level of firing on both send and recv, with no change over time.  The expected DWt value should be 0 as there is no minus-plus phase difference.
+Here are results for different matched levels of firing, showing final DWt values after each of 10000 different 200 msec trials of learning, with the indicated level of firing on both send and recv, with no change over time.  The expected DWt value should be 0 as there is no minus-plus phase difference.  `SynPDwt` is the "product" dwt (`NeurSpkCa`), and `SynCDWt` is `SynSpkCa` continuously integrated.
 
 100 Hz:
 
@@ -60,7 +60,7 @@ Here are results for different matched levels of firing, showing final DWt value
 
 ![SynSpkCa vs. NeurSpkCa at 20hz](results/fig_synspk_vs_neurspk_20hz.png?raw=true "SynSpkCa vs. NeurSpkCa at 20hz")
 
-The differences are greatest when the firing rate is high.  Lower firing rates allow for greater variance in precise timing, and thus have greater variance in the Syn mechanism.
+The differences are greatest when the firing rate is high, where `NeurSpkCa` is highly variable, while `SynSpkCa` is relatively consistent across different rates.
 
 # Optimized SynSpkCa integration only at Spikes
 
