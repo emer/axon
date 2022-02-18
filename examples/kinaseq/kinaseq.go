@@ -138,7 +138,7 @@ func (ss *Sim) Run() {
 			// either side drives up..
 			cSpk = 0
 			switch kp.Rule {
-			case kinase.SynSpkCaOR:
+			case kinase.SynSpkCa:
 				if sSpk > 0 || rSpk > 0 {
 					cSpk = 1
 				}

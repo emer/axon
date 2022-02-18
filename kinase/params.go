@@ -14,17 +14,18 @@ import (
 // at different time scales, to produce the running average activation
 // values that then drive learning.
 type SynParams struct {
-	Rule    Rules   `desc:"which learning rule to use"`
-	SpikeG  float32 `def:"20,8,200" desc:"spiking gain for Spk rules"`
-	MTau    float32 `def:"10,40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
-	PTau    float32 `def:"40,10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
-	DTau    float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
-	DScale  float32 `def:"0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
-	Tmax    int     `view:"-" desc:"maximum time in lookup tables"`
-	Mmax    float32 `view:"-" desc:"maximum CaM value in lookup tables"`
-	PDmax   float32 `view:"-" desc:"maximum CaP, CaD value in lookup tables"`
-	Yres    float32 `view:"-" desc:"resolution of Y value in lookup tables"`
-	FuntKey string  `view:"-" desc:"string representation of relevant params for funt table access"`
+	Rule     Rules   `desc:"which learning rule to use"`
+	OptInteg bool    `desc:"use the optimized spike-only integration of cascaded CaM, CaP, CaD values -- much faster and highly accurate for SynSpkCa, less so for SynMDACa"`
+	SpikeG   float32 `def:"8,20" desc:"spiking gain factor -- only alters the overall range of values, keeping them in roughly the unit scale."`
+	MTau     float32 `def:"10,40" min:"1" desc:"CaM mean running-average time constant in cycles, reflecting calmodulin and total Ca influx biologically, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP value"`
+	PTau     float32 `def:"40,10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, reflecting CaMKII dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaM value, resulting in faster tracking of plus-phase signals."`
+	DTau     float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, reflecting DAPK1 dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
+	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
+	Tmax     int     `view:"-" desc:"maximum time in lookup tables"`
+	Mmax     float32 `view:"-" desc:"maximum CaM value in lookup tables"`
+	PDmax    float32 `view:"-" desc:"maximum CaP, CaD value in lookup tables"`
+	Yres     float32 `view:"-" desc:"resolution of Y value in lookup tables"`
+	FuntKey  string  `view:"-" desc:"string representation of relevant params for funt table access"`
 
 	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -32,12 +33,12 @@ type SynParams struct {
 }
 
 func (kp *SynParams) Defaults() {
-	kp.Rule = SynSpkCaOR
-	kp.SpikeG = 8 // 200 // 8
-	kp.MTau = 10  // 40
-	kp.PTau = 40  // 10
+	kp.Rule = SynSpkCa
+	kp.SpikeG = 8
+	kp.MTau = 10 // was 40 -- 10 matches Urakubo NMDA
+	kp.PTau = 40 // 10
 	kp.DTau = 40
-	kp.DScale = 1.05
+	kp.DScale = 1 // 0.93, 1.05
 	kp.Tmax = 100
 	kp.Mmax = 2.8
 	kp.PDmax = 1.8

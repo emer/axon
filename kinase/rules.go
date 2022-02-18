@@ -21,25 +21,24 @@ const (
 	// NeurSpkCa uses neuron-level spike-driven calcium signals
 	// integrated at P vs. D time scales -- this is the original
 	// Leabra and Axon XCAL / CHL learning rule.
+	// It exhibits strong sensitivity to final spikes and thus
+	// high levels of variance.
 	NeurSpkCa Rules = iota
 
-	// SynSpkCaOR uses synapse-level spike-driven calcium signals
+	// SynSpkCa uses synapse-level spike-driven calcium signals
 	// with an OR rule for pre OR post spiking driving the CaM up,
 	// which is then integrated at P vs. D time scales.
 	// Basically a synapse version of original learning rule.
-	SynSpkCaOR
-
-	// SynSpkNMDAOR uses synapse-level spike-driven calcium signals
-	// with an OR rule for pre OR post spiking driving the CaM up,
-	// with NMDAo multiplying the spike drive to fit Bio Ca better
-	// including the Bonus factor.
-	// which is then integrated at P vs. D time scales.
-	SynSpkNMDAOR
+	SynSpkCa
 
 	// SynNMDACa uses synapse-level NMDA-driven calcium signals
-	// (which can be either Urakubo allosteric or Kinase abstract)
-	// integrated at P vs. D time scales -- abstract version
-	// of the KinaseB biophysical learniung rule
+	// computed according to the very close approximation to the
+	// Urakubo et al (2008) allosteric NMDA dynamics, then
+	// integrated at P vs. D time scales.  For OptInteg optimization,
+	// there is some residual inaccuracy due to use of simple exponential
+	// Ca decay instead of actual NMDA Ca signal over time.
+	// This is an abstract version of a biologically realistic model,
+	// very close in many details to a fully biophysically-grounded one.
 	SynNMDACa
 
 	RulesN

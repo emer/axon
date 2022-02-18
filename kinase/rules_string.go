@@ -14,15 +14,14 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[NeurSpkCa-0]
-	_ = x[SynSpkCaOR-1]
-	_ = x[SynSpkNMDAOR-2]
-	_ = x[SynNMDACa-3]
-	_ = x[RulesN-4]
+	_ = x[SynSpkCa-1]
+	_ = x[SynNMDACa-2]
+	_ = x[RulesN-3]
 }
 
-const _Rules_name = "NeurSpkCaSynSpkCaORSynSpkNMDAORSynNMDACaRulesN"
+const _Rules_name = "NeurSpkCaSynSpkCaSynNMDACaRulesN"
 
-var _Rules_index = [...]uint8{0, 9, 19, 31, 40, 46}
+var _Rules_index = [...]uint8{0, 9, 17, 26, 32}
 
 func (i Rules) String() string {
 	if i < 0 || i >= Rules(len(_Rules_index)-1) {
