@@ -60,8 +60,8 @@ func (ss *Sim) Config() {
 	ss.Kinase.Defaults()
 	ss.PGain = 10
 	ss.SpikeDisp = 0.1
-	ss.NReps = 1
-	ss.DurMsec = 1000
+	ss.NReps = 100
+	ss.DurMsec = 200
 	ss.SendHz = 20
 	ss.RecvHz = 20
 	ss.Update()
@@ -177,6 +177,8 @@ func (ss *Sim) Run() {
 				oCaD = kp.DFmLastSpike(oSpkCaD, oSpkCaP, oSpkCaM, isi)
 				// fmt.Printf("t: %d  isi: %d  ocam: %g  ocap: %g  ocad: %g  val: %g\n", t, isi, oSpkCaM, oSpkCaP, oSpkCaD, oCaD)
 			}
+
+			oDWt = kp.DWt(oCaP, oCaD)
 
 			if ss.NReps == 1 || t == ss.DurMsec-1 {
 				dt.SetCellFloat("RSpike", row, float64(ss.SpikeDisp*rSpk))

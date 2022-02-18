@@ -152,7 +152,7 @@ func (kp *SynParams) PDClip(v float32) float32 {
 // using PFunt lookup table
 func (kp *SynParams) PFmLastSpike(pv, mv float32, t int) float32 {
 	ft, ok := FuntsForParams(kp.FuntKey)
-	if ok { // will always exist due to Update() logic
+	if !ok { // will always exist due to Update() logic
 		return 0
 	}
 	pv = kp.PDClip(pv)
@@ -179,7 +179,7 @@ func (kp *SynParams) PFmLastSpike(pv, mv float32, t int) float32 {
 // using DFunt lookup table
 func (kp *SynParams) DFmLastSpike(dv, pv, mv float32, t int) float32 {
 	ft, ok := FuntsForParams(kp.FuntKey)
-	if ok { // will always exist due to Update() logic
+	if !ok { // will always exist due to Update() logic
 		return 0
 	}
 	dv = kp.PDClip(dv)
