@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emer/axon/kinase"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -38,17 +39,17 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	Kinase    KinaseSynParams `desc:Kinase rate constants"`
-	PGain     float32         `desc:"multiplier on product factor to equate to SynC"`
-	SpikeDisp float32         `desc:"spike multiplier for display purposes"`
-	NReps     int             `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
-	DurMsec   int             `desc:"duration for activity window"`
-	SendHz    float32         `desc:"sending firing frequency (used as minus phase for ThetaErr)"`
-	RecvHz    float32         `desc:"receiving firing frequency (used as plus phase for ThetaErr)"`
-	Table     *etable.Table   `view:"no-inline" desc:"table for plot"`
-	Plot      *eplot.Plot2D   `view:"-" desc:"the plot"`
-	Win       *gi.Window      `view:"-" desc:"main GUI window"`
-	ToolBar   *gi.ToolBar     `view:"-" desc:"the master toolbar"`
+	Kinase    kinase.SynParams `desc:Kinase rate constants"`
+	PGain     float32          `desc:"multiplier on product factor to equate to SynC"`
+	SpikeDisp float32          `desc:"spike multiplier for display purposes"`
+	NReps     int              `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
+	DurMsec   int              `desc:"duration for activity window"`
+	SendHz    float32          `desc:"sending firing frequency (used as minus phase for ThetaErr)"`
+	RecvHz    float32          `desc:"receiving firing frequency (used as plus phase for ThetaErr)"`
+	Table     *etable.Table    `view:"no-inline" desc:"table for plot"`
+	Plot      *eplot.Plot2D    `view:"-" desc:"the plot"`
+	Win       *gi.Window       `view:"-" desc:"main GUI window"`
+	ToolBar   *gi.ToolBar      `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation
@@ -137,7 +138,7 @@ func (ss *Sim) Run() {
 			// either side drives up..
 			cSpk = 0
 			switch kp.Rule {
-			case SynSpkCaOR:
+			case kinase.SynSpkCaOR:
 				if sSpk > 0 || rSpk > 0 {
 					cSpk = 1
 				}
