@@ -1285,7 +1285,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 			nrn.Gk = nrn.GgabaB
 		}
 	}
-	ly.SynCa() // for now
+	ly.SynCa(ltime) // for now
 }
 
 // AvgMaxAct computes the average and max Act stats, used in inhibition
@@ -1611,53 +1611,59 @@ func (ly *Layer) TrgAvgFmD() {
 }
 
 // SynCa updates synaptic calcium per-cycle, for Kinase learning
-func (ly *Layer) SynCa() {
+func (ly *Layer) SynCa(ltime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).SynCa()
+		p.(AxonPrjn).SynCa(ltime)
+	}
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).RecvSynCaOpt(ltime)
 	}
 }
 
 // DWt computes the weight change (learning) -- calls DWt method on sending projections
-func (ly *Layer) DWt() {
+func (ly *Layer) DWt(ltime *Time) {
 	ly.DTrgAvgFmErr()
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).DWt()
+		p.(AxonPrjn).DWt(ltime)
 	}
 }
 
 // WtFmDWt updates the weights from delta-weight changes -- on the sending projections
-func (ly *Layer) WtFmDWt() {
+func (ly *Layer) WtFmDWt(ltime *Time) {
 	ly.TrgAvgFmD()
 	for _, p := range ly.RcvPrjns { // must be recv to do SubMean
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).WtFmDWt()
+		p.(AxonPrjn).WtFmDWt(ltime)
 	}
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // GScale conductance scaling, and adapting inhibition
-func (ly *Layer) SlowAdapt() {
-	ly.AdaptGScale()
-	ly.AdaptInhib()
+func (ly *Layer) SlowAdapt(ltime *Time) {
+	ly.AdaptGScale(ltime)
+	ly.AdaptInhib(ltime)
 	ly.SynScale()
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).SlowAdapt()
+		p.(AxonPrjn).SlowAdapt(ltime)
 	}
 }
 
 // AdaptGScale adapts the conductance scale based on targets
-func (ly *Layer) AdaptGScale() {
+func (ly *Layer) AdaptGScale(ltime *Time) {
 	var sum float32
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
@@ -1704,7 +1710,7 @@ func (ly *Layer) AdaptGScale() {
 }
 
 // AdaptInhib adapts inhibition
-func (ly *Layer) AdaptInhib() {
+func (ly *Layer) AdaptInhib(ltime *Time) {
 	if !ly.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
 		return
 	}
@@ -1762,12 +1768,12 @@ func (ly *Layer) SynScale() {
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
-func (ly *Layer) SynFail() {
+func (ly *Layer) SynFail(ltime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).SynFail()
+		p.(AxonPrjn).SynFail(ltime)
 	}
 }
 

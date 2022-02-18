@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emer/axon/kinase"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/ringidx"
@@ -495,10 +496,12 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	sy.DWt = 0
 	sy.DSWt = 0
+	sy.SpikeT = -1
 	sy.Ca = 0
 	sy.CaM = 0
 	sy.CaP = 0
 	sy.CaD = 0
+	sy.DWtRaw = 0
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -822,15 +825,27 @@ func (pj *Prjn) RecvGIncNoStats() {
 //  Learn methods
 
 // SynCa updates synaptic calcium per-cycle, for Kinase learning
-func (pj *Prjn) SynCa() {
-	if !pj.Learn.Learn { // || !pj.Learn.Kinase.On { // TODO
+func (pj *Prjn) SynCa(ltime *Time) {
+	kp := &pj.Learn.Kinase
+	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa {
 		return
 	}
+	if kp.OptInteg {
+		pj.SynCaOpt(ltime)
+	} else {
+		pj.SynCaCont(ltime)
+	}
+}
+
+// SynCaOpt updates synaptic calcium per-cycle, for Kinase learning.
+// Optimized version only updates at point of spiking, sender based.
+func (pj *Prjn) SynCaOpt(ltime *Time) {
+	kp := &pj.Learn.Kinase
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.SpkCaP < pj.Learn.Kinase.SAvgThr && sn.SpkCaD < pj.Learn.Kinase.SAvgThr {
+		if sn.Spike == 0 {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -842,31 +857,104 @@ func (pj *Prjn) SynCa() {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy.Ca = sn.SnmdaO * rn.RCa
-			pj.Learn.Kinase.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			if kp.Rule == kinase.SynNMDACa {
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			} else {
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
+			}
+		}
+	}
+}
+
+// RecvSynCaOpt updates synaptic calcium per-cycle, for Kinase learning.
+// Optimized version only updates at point of spiking, sender based.
+// Receiver-based option
+func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
+	kp := &pj.Learn.Kinase
+	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa || !kp.OptInteg {
+		return
+	}
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for ri := range rlay.Neurons {
+		rn := &rlay.Neurons[ri]
+		if rn.Spike == 0 {
+			continue
+		}
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+		rcons := pj.RConIdx[st : st+nc]
+		for ci, rsi := range rsidxs {
+			sy := &pj.Syns[rsi]
+			si := rcons[ci]
+			sn := &slay.Neurons[si]
+			sy.Ca = sn.SnmdaO * rn.RCa
+			if kp.Rule == kinase.SynNMDACa {
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			} else {
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
+			}
+		}
+	}
+}
+
+// SynCaCont updates synaptic calcium per-cycle, for Kinase learning
+func (pj *Prjn) SynCaCont(ltime *Time) {
+	if !pj.Learn.Learn || pj.Learn.Kinase.Rule == kinase.NeurSpkCa {
+		return
+	}
+	kp := &pj.Learn.Kinase
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.SpkCaP < slay.Learn.SpkCa.MinLrn && sn.SpkCaD < slay.Learn.SpkCa.MinLrn {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			sy := &syns[ci]
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			sy.Ca = sn.SnmdaO * rn.RCa
+			if kp.Rule == kinase.SynNMDACa {
+				kp.FmSpike(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			} else {
+				var spk float32
+				if sn.Spike > 0 || rn.Spike > 0 {
+					spk = 1
+				}
+				kp.FmSpike(spk, &sy.CaM, &sy.CaP, &sy.CaD)
+			}
 		}
 	}
 }
 
 // DWt computes the weight change (learning) -- on sending projections
-func (pj *Prjn) DWt() {
+func (pj *Prjn) DWt(ltime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	switch pj.Learn.Kinase.Rule {
-	case NeurSpkCa:
-		pj.DWtNeurSpkCa()
-	case SynSpkCa:
-		pj.DWtSynSpkCa()
-	case SynNMDACa:
-		pj.DWtSynNMDACa()
+	case kinase.NeurSpkCa:
+		pj.DWtNeurSpkCa(ltime)
+	case kinase.SynSpkCa:
+		pj.DWtSynSpkCa(ltime)
+	case kinase.SynNMDACa:
+		pj.DWtSynNMDACa(ltime)
 	}
 }
 
-// DWtXCal computes the weight change (learning) -- on sending projections
-// XCal version uses the CHL-based plus - minus temporal derivative with
+// DWtNeurSpkCa computes the weight change (learning) -- on sending projections
+// using the separately-integrated neuron-level spike-driven Ca values,
+// equivalent to the CHL plus - minus temporal derivative with
 // checkmark-based BCM-like XCal learning rule originally derived from
 // Urakubo et al (2008)
-func (pj *Prjn) DWtNeurSpkCa() {
+func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -895,11 +983,10 @@ func (pj *Prjn) DWtNeurSpkCa() {
 	}
 }
 
-// DWtXCal computes the weight change (learning) -- on sending projections
-// XCal version uses the CHL-based plus - minus temporal derivative with
-// checkmark-based BCM-like XCal learning rule originally derived from
-// Urakubo et al (2008)
-func (pj *Prjn) DWtSynSpkCa() {
+// DWtSynSpkCa computes the weight change (learning) based on
+// synaptically-integrated pre or post spike signals
+func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
+	kp := &pj.Learn.Kinase
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -913,10 +1000,11 @@ func (pj *Prjn) DWtSynSpkCa() {
 		syns := pj.Syns[st : st+nc]
 		scons := pj.SConIdx[st : st+nc]
 		for ci := range syns {
-			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			err := pj.Learn.CHLdWt(sn.LrnCaP, sn.LrnCaD, rn.LrnCaP, rn.LrnCaD)
+			sy := &syns[ci]
+			_, caP, caD := kp.CurCaFmISI(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
+			err := kp.DWt(caP, caD)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
@@ -931,13 +1019,13 @@ func (pj *Prjn) DWtSynSpkCa() {
 // DWtSynNMDACa computes the weight change (learning) -- on sending projections.
 // Uses the new experimental Kinase learning rule based on competition between
 // CaMKII (LTP) and DAPK1 (LTD) kinases.
-func (pj *Prjn) DWtSynNMDACa() {
+func (pj *Prjn) DWtSynNMDACa(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.SpkCaP < pj.Learn.Kinase.SAvgThr && sn.SpkCaD < pj.Learn.Kinase.SAvgThr {
+		if sn.SpkCaP < slay.Learn.SpkCa.MinLrn && sn.SpkCaD < slay.Learn.SpkCa.MinLrn {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -963,7 +1051,7 @@ func (pj *Prjn) DWtSynNMDACa() {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes.
 // Computed in receiving direction, does SubMean subtraction first.
-func (pj *Prjn) WtFmDWt() {
+func (pj *Prjn) WtFmDWt(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	thr := pj.Learn.XCal.DWtThr * pj.Learn.Lrate.Eff
 	sm := pj.Learn.XCal.SubMean
@@ -1002,7 +1090,6 @@ func (pj *Prjn) WtFmDWt() {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
-				pj.Learn.Kinase.ResetCa(sy)
 			}
 		}
 		pj.AvgDWt = ssum / float32(len(rlay.Neurons))
@@ -1022,14 +1109,13 @@ func (pj *Prjn) WtFmDWt() {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
-				pj.Learn.Kinase.ResetCa(sy)
 			}
 		}
 	}
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
-func (pj *Prjn) SlowAdapt() {
+func (pj *Prjn) SlowAdapt(ltime *Time) {
 	pj.SWtFmWt()
 	pj.SynScale()
 }
@@ -1126,7 +1212,7 @@ func (pj *Prjn) SynScale() {
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
-func (pj *Prjn) SynFail() {
+func (pj *Prjn) SynFail(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		nc := int(pj.SConN[si])

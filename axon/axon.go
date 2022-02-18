@@ -62,15 +62,15 @@ type AxonNetwork interface {
 
 	// DWtImpl computes the weight change (learning) based on current
 	// running-average activation values
-	DWtImpl()
+	DWtImpl(ltime *Time)
 
 	// WtFmDWtImpl updates the weights from delta-weight changes.
 	// Also calls SynScale every Interval times
-	WtFmDWtImpl()
+	WtFmDWtImpl(ltime *Time)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, and adapting inhibition
-	SlowAdapt()
+	SlowAdapt(ltime *Time)
 }
 
 // AxonLayer defines the essential algorithmic API for Axon, at the layer level.
@@ -188,19 +188,19 @@ type AxonLayer interface {
 	CosDiffFmActs()
 
 	// DWt computes the weight change (learning) -- calls DWt method on sending projections
-	DWt()
+	DWt(ltime *Time)
 
 	// WtFmDWt updates the weights from delta-weight changes.
 	// Computed from receiver perspective, does SubMean.
-	WtFmDWt()
+	WtFmDWt(ltime *Time)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, SWt updating, and adapting inhibition
-	SlowAdapt()
+	SlowAdapt(ltime *Time)
 
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
-	SynFail()
+	SynFail(ltime *Time)
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
@@ -245,19 +245,23 @@ type AxonPrjn interface {
 	RecvGInc(ltime *Time)
 
 	// SynCa updates synaptic calcium per-synapse, for Kinase learning
-	SynCa()
+	SynCa(ltime *Time)
+
+	// RecvSynCaOpt updates synaptic calcium per-synapse, for Kinase learning
+	// receiver-side spiking version, for optimized case only
+	RecvSynCaOpt(ltime *Time)
 
 	// DWt computes the weight change (learning) -- on sending projections
-	DWt()
+	DWt(ltime *Time)
 
 	// WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-	WtFmDWt()
+	WtFmDWt(ltime *Time)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, and adapting inhibition
-	SlowAdapt()
+	SlowAdapt(ltime *Time)
 
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
-	SynFail()
+	SynFail(ltime *Time)
 }

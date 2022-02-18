@@ -7,8 +7,8 @@ package axon
 import (
 	"math/rand"
 
+	"github.com/emer/axon/kinase"
 	"github.com/emer/etable/minmax"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -53,11 +53,8 @@ func (ln *LearnNeurParams) SpkCaFmSpike(nrn *Neuron) {
 
 // SpkCaParams has rate constants for averaging over activations
 // at different time scales, to produce the running average activation
-// values that then drive learning in the XCAL learning rules.
-// Is driven directly by spikes that increment running-average at super-short
-// timescale.  Time cycle of 50 msec quarters / theta window learning works
-// Cyc:50, SS:35 S:8, M:40 (best)
-// Cyc:25, SS:20, S:4, M:20
+// values that then drive learning in the NeurSpkCa version of the Kinase
+// learning rule.
 type SpkCaParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives SpkCaM value"`
 	MinLrn float32 `def:"0.02" desc:"minimum learning activation -- below this goes to zero"`
@@ -381,10 +378,10 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn  bool            `desc:"enable learning for this projection"`
-	Lrate  LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
-	XCal   XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
-	Kinase KinaseSynParams `view:"inline" desc:"kinase learning rule parameters"`
+	Learn  bool             `desc:"enable learning for this projection"`
+	Lrate  LrateParams      `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	Kinase kinase.SynParams `view:"inline" desc:"kinase learning rule parameters"`
+	XCal   XCalParams       `view:"inline" desc:"parameters for the XCal learning rule"`
 }
 
 func (ls *LearnSynParams) Update() {
@@ -526,94 +523,4 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 	mod := lr.Mod(fact)
 	net.LrateMod(mod)
 	return mod
-}
-
-/////////////////////////////////////////////////////
-// Kinase
-
-// KinaseRules are different options for Kinase-based learning rules
-type KinaseRules int32
-
-//go:generate stringer -type=KinaseRules
-
-var KiT_KinaseRules = kit.Enums.AddEnum(KinaseRulesN, kit.NotBitFlag, nil)
-
-func (ev KinaseRules) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *KinaseRules) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-// The time scales
-const (
-	// NeurSpkCa uses neuron-level spike-driven calcium signals
-	// integrated at P vs. D time scales -- this is the original
-	// Leabra and Axon XCAL / CHL learning rule.
-	NeurSpkCa KinaseRules = iota
-
-	// SynSpkCa uses synapse-level spike-driven calcium signals
-	// integrated at P vs. D time scales -- synapse version of
-	// original learning rule.
-	SynSpkCa
-
-	// SynNMDACa uses synapse-level NMDA-driven calcium signals
-	// integrated at P vs. D time scales -- abstract version
-	// of the KinaseB biophysical learniung rule
-	SynNMDACa
-
-	KinaseRulesN
-)
-
-// KinaseSynParams has rate constants for averaging over activations
-// at different time scales, to produce the running average activation
-// values that then drive learning in the XCAL learning rules.
-// Is driven directly by spikes that increment running-average at super-short
-// timescale.  Time cycle of 50 msec quarters / theta window learning works
-// Cyc:50, SS:35 S:8, M:40 (best)
-// Cyc:25, SS:20, S:4, M:20
-type KinaseSynParams struct {
-	Rule    KinaseRules `desc:"version of Kinase learning rule to use"`
-	XCal    bool        `desc:"use the XCal check-mark function -- otherwise just use the direct subtraction between the P - D values."`
-	SAvgThr float32     `def:"0.02" desc:"optimization for compute speed -- threshold on sending avg values to update Ca values -- depends on Ca clearing upon Wt update"`
-	MTau    float32     `def:"40" min:"1" desc:"CaM mean running-average time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP short time scale"`
-	PTau    float32     `def:"10" min:"1" desc:"LTP Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaI value, resulting in faster tracking of plus-phase signals."`
-	DTau    float32     `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
-	DScale  float32     `def:"0.93" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
-
-	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-}
-
-func (kp *KinaseSynParams) Update() {
-	kp.MDt = 1 / kp.MTau
-	kp.PDt = 1 / kp.PTau
-	kp.DDt = 1 / kp.DTau
-}
-
-func (kp *KinaseSynParams) Defaults() {
-	kp.XCal = true
-	kp.SAvgThr = 0.02
-	kp.MTau = 40
-	kp.PTau = 10
-	kp.DTau = 40
-	kp.DScale = 0.93
-	kp.Update()
-}
-
-// FmCa computes updates from current Ca value
-func (kp *KinaseSynParams) FmCa(ca float32, caM, caP, caD *float32) {
-	*caM += kp.MDt * (ca - *caM)
-	*caP += kp.PDt * (*caM - *caP)
-	*caD += kp.DDt * (*caP - *caD)
-}
-
-// DWt computes the weight change from CaP, CaD values
-func (kp *KinaseSynParams) DWt(caP, caD float32) float32 {
-	return caP - kp.DScale*caD
-}
-
-// ResetCa resets all the Ca vals on the synapse
-func (kp *KinaseSynParams) ResetCa(sy *Synapse) {
-	sy.Ca = 0
-	sy.CaM = 0
-	sy.CaP = 0
-	sy.CaD = 0
 }

@@ -186,14 +186,14 @@ func (nt *Network) ActSt2(ltime *Time) {
 }
 
 // DWt computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWt() {
-	nt.EmerNet.(AxonNetwork).DWtImpl()
+func (nt *Network) DWt(ltime *Time) {
+	nt.EmerNet.(AxonNetwork).DWtImpl(ltime)
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
 // Also calls SynScale every Interval times
-func (nt *Network) WtFmDWt() {
-	nt.EmerNet.(AxonNetwork).WtFmDWtImpl()
+func (nt *Network) WtFmDWt(ltime *Time) {
+	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ltime)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -391,29 +391,29 @@ func (nt *Network) PlusPhaseImpl(ltime *Time) {
 //  Learn methods
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWtImpl() {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt() }, "DWt     ")
+func (nt *Network) DWtImpl(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt(ltime) }, "DWt     ")
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
-func (nt *Network) WtFmDWtImpl() {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt() }, "WtFmDWt")
-	nt.EmerNet.(AxonNetwork).SlowAdapt()
+func (nt *Network) WtFmDWtImpl(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt(ltime) }, "WtFmDWt")
+	nt.EmerNet.(AxonNetwork).SlowAdapt(ltime)
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // GScale conductance scaling, and adapting inhibition
-func (nt *Network) SlowAdapt() {
+func (nt *Network) SlowAdapt(ltime *Time) {
 	nt.SlowCtr++
 	if nt.SlowCtr >= nt.SlowInterval {
 		nt.SlowCtr = 0
-		nt.ThrLayFun(func(ly AxonLayer) { ly.SlowAdapt() }, "SlowAdapt")
+		nt.ThrLayFun(func(ly AxonLayer) { ly.SlowAdapt(ltime) }, "SlowAdapt")
 	}
 }
 
 // SynFail updates synaptic failure
-func (nt *Network) SynFail() {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail() }, "SynFail   ")
+func (nt *Network) SynFail(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail(ltime) }, "SynFail   ")
 }
 
 // LrateMod sets the Lrate modulation parameter for Prjns, which is

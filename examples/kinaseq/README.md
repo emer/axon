@@ -40,7 +40,11 @@ Also, the `SynSpk` value then drives the CaM, CaP, CaD cascade of time integrati
 
 These interactions in integration are evident in the above figure.  The blue `CaP` line shows how sequences of closely-spaced spikes ramp up quickly -- thus roughly synchronous firing between pre and post neurons hitting the synapse in rapid succession can produce significantly stronger learning signals relative to more spaced-out spiking.  Due to the common starting point of the spike trains, this rough synchrony is present in the above trace.
 
+Due to the temporal-difference nature of the learning mechanism, LTP will be driven when there is a progression toward increasing synchrony over time, such that the faster `CaP` signal rises above the more slowly adapting `CaD` one toward the end of the 200 msec theta cycle window.
+
 It is also notable that the `CaD` value in both of these cases reaches its asymptotic value right around the 200 msec point, suggesting that the theta cycle is the relevant timescale for learning.  This is due to the rate constants, which are biologically constrained based on the dynamics of Ca influx and the increase rate of CaMII as explored in the biophysical model: [kinase](https://github.com/ccnlab/kinase/tree/main/sims/kinase).
+
+It is also evident that the precise timing of the 
 
 ## SynSpkCa DWt is much less variable than `NeurSpkCa`
 

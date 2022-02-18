@@ -148,34 +148,11 @@ func (ss *Sim) Run() {
 
 			// optimized
 			if cSpk > 0 {
-				isi := int(cISI)
-
-				// get old before cam update, for previous isi
-				if isi >= 0 {
-					oSpkCaD = kp.DFmLastSpike(oSpkCaD, oSpkCaP, oSpkCaM, isi) // reverse order
-					oSpkCaP = kp.PFmLastSpike(oSpkCaP, oSpkCaM, isi)
-				}
-
-				var mprv float32
-				if isi >= 0 {
-					mprv = oSpkCaM * mat32.FastExp(-cISI/(kp.MTau-0.5))
-				}
-				minc := kp.MDt * (kp.SpikeG*cSpk - mprv)
-				oSpkCaM = mprv + minc
-
-				oCaM = oSpkCaM
-				oCaP = kp.PFmLastSpike(oSpkCaP, oSpkCaM, 0)
-				oCaD = kp.DFmLastSpike(oSpkCaD, oSpkCaP, oSpkCaM, 0)
-				// fmt.Printf("t: %d  isi: %d  ocam: %g  ocap: %g  ocad: %g  val: %g\n", t, isi, oSpkCaM, oSpkCaP, oSpkCaD, oCaD)
-				cISI = 0
+				kp.FuntCaFmSpike(cSpk, &cISI, &oSpkCaM, &oSpkCaP, &oSpkCaD)
+				oCaM, oCaP, oCaD = kp.CurCaFmISI(cISI, oSpkCaM, oSpkCaP, oSpkCaD)
 			} else if cISI >= 0 {
 				cISI += 1
-				isi := int(cISI)
-
-				oCaM = oSpkCaM * mat32.FastExp(-cISI/(kp.MTau-0.5))
-				oCaP = kp.PFmLastSpike(oSpkCaP, oSpkCaM, isi)
-				oCaD = kp.DFmLastSpike(oSpkCaD, oSpkCaP, oSpkCaM, isi)
-				// fmt.Printf("t: %d  isi: %d  ocam: %g  ocap: %g  ocad: %g  val: %g\n", t, isi, oSpkCaM, oSpkCaP, oSpkCaD, oCaD)
+				oCaM, oCaP, oCaD = kp.CurCaFmISI(cISI, oSpkCaM, oSpkCaP, oSpkCaD)
 			}
 
 			oDWt = kp.DWt(oCaP, oCaD)

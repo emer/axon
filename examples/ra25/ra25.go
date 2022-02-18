@@ -127,15 +127,15 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.2", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
-					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					// "Prjn.Learn.Kinase.On":      "false",
-					"Prjn.Learn.Kinase.SAvgThr": "0.02", // 0.02 = 0.01 > 0.05
-					"Prjn.Learn.Kinase.MTau":    "40",
-					"Prjn.Learn.Kinase.PTau":    "10",
-					"Prjn.Learn.Kinase.DTau":    "40",
-					"Prjn.Learn.Kinase.DScale":  "0.93", // 0.93 > 0.94 > 1 > .9
+					"Prjn.Learn.Lrate.Base":      "0.2",       // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
+					"Prjn.SWt.Adapt.Lrate":       "0.1",       // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":         "0.5",       // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Kinase.Rule":     "NeurSpkCa", // todo: SynSpkCa
+					"Prjn.Learn.Kinase.OptInteg": "false",
+					"Prjn.Learn.Kinase.MTau":     "10",
+					"Prjn.Learn.Kinase.PTau":     "40",
+					"Prjn.Learn.Kinase.DTau":     "40",
+					"Prjn.Learn.Kinase.DScale":   "1",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -567,7 +567,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	// in which case, move it out to the TrainTrial method where the relevant
 	// counters are being dealt with.
 	if train {
-		ss.Net.WtFmDWt()
+		ss.Net.WtFmDWt(&ss.Time)
 	}
 
 	minusCyc := 150 // 150
@@ -625,7 +625,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ss.StatCounters(train)
 
 	if train {
-		ss.Net.DWt()
+		ss.Net.DWt(&ss.Time)
 	}
 
 	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
