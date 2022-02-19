@@ -92,6 +92,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddItem(&elog.Item{
 		Name:   "PctErr",
 		Type:   etensor.FLOAT64,
+		Plot:   elog.DFalse,
 		FixMax: elog.DTrue,
 		Range:  minmax.F64{Max: 1},
 		Write: elog.WriteMap{
@@ -116,6 +117,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddItem(&elog.Item{
 		Name:   "PctCor",
 		Type:   etensor.FLOAT64,
+		Plot:   elog.DTrue,
 		FixMax: elog.DTrue,
 		Range:  minmax.F64{Max: 1},
 		Write: elog.WriteMap{
@@ -128,6 +130,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddItem(&elog.Item{
 		Name:   "CosDiff",
 		Type:   etensor.FLOAT64,
+		Plot:   elog.DTrue,
 		FixMax: elog.DTrue,
 		Range:  minmax.F64{Max: 1},
 		Write: elog.WriteMap{

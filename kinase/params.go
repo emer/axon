@@ -58,6 +58,14 @@ func (kp *SynParams) FmSpike(spike float32, caM, caP, caD *float32) {
 	*caD += kp.DDt * (*caP - *caD)
 }
 
+// FmCa computes updates from current calcium level, for
+// continuously-updating mode (not optimized).
+// Ca is assumed to correspond to CaM level, so only CaP, CaD updated.
+func (kp *SynParams) FmCa(ca float32, caP, caD *float32) {
+	*caP += kp.PDt * (ca - *caP)
+	*caD += kp.DDt * (*caP - *caD)
+}
+
 // DWt computes the weight change from CaP, CaD values
 func (kp *SynParams) DWt(caP, caD float32) float32 {
 	return caP - kp.DScale*caD

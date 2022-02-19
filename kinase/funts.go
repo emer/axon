@@ -7,7 +7,6 @@ package kinase
 import (
 	"fmt"
 
-	"github.com/c2h5oh/datasize"
 	"github.com/emer/etable/etensor"
 )
 
@@ -64,7 +63,7 @@ func (kp *SynParams) Funts() bool {
 	mn := int(kp.Mmax/kp.Yres) + 1
 	pn := int(kp.PDmax/kp.Yres) + 1
 	ft.CaP.SetShape([]int{pn, mn, kp.Tmax + 1}, nil, []string{"P", "M", "T"})
-	fmt.Printf("PFunt has %d elements\n", ft.CaP.Len())
+	// fmt.Printf("PFunt has %d elements\n", ft.CaP.Len())
 	for pi := 0; pi < pn; pi++ {
 		for mi := 0; mi < mn; mi++ {
 			pv := float32(pi) * kp.Yres
@@ -79,7 +78,7 @@ func (kp *SynParams) Funts() bool {
 		}
 	}
 	ft.CaD.SetShape([]int{pn, pn, mn, kp.Tmax + 1}, nil, []string{"D", "P", "M", "T"})
-	fmt.Printf("DFunt has %s elements\n", datasize.ByteSize(ft.CaD.Len()).HumanReadable())
+	// fmt.Printf("DFunt has %s elements\n", datasize.ByteSize(ft.CaD.Len()).HumanReadable())
 	for di := 0; di < pn; di++ {
 		for pi := 0; pi < pn; pi++ {
 			for mi := 0; mi < mn; mi++ {

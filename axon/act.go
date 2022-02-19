@@ -242,7 +242,12 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 
 	// Separate factors for learning
 	nrn.RnmdaSyn = ac.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
-	mgg, cav := ac.NMDA.VFactors(nrn.VmDend)
+
+	vmd := nrn.VmDend
+	if ac.Dend.CaVm {
+		vmd = nrn.Vm
+	}
+	mgg, cav := ac.NMDA.VFactors(vmd)
 	nrn.RCa = nrn.RnmdaSyn * mgg * cav
 	nrn.GnmdaRaw = 0
 
@@ -493,6 +498,7 @@ type DendParams struct {
 	GbarExp      float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
 	GbarR        float32 `def:"3" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
 	VGCCCa       float32 `desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
+	CaVm         bool    `desc:"use regular soma Vm for computing calcium levels used in learning, instead of the VmDend (which is still used for computing Gnmda for bistability)"`
 	CaMax        float32 `desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
 	CaThr        float32 `desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
 	SeiDeplete   bool    `desc:"When a sending spike occurs, deplete the Se and Si factors to track availability of each synapse's channels based on time since last spiking.  This introduces noise, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`

@@ -497,7 +497,6 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.DWt = 0
 	sy.DSWt = 0
 	sy.SpikeT = -1
-	sy.Ca = 0
 	sy.CaM = 0
 	sy.CaP = 0
 	sy.CaD = 0
@@ -856,9 +855,10 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			sy.Ca = sn.SnmdaO * rn.RCa
 			if kp.Rule == kinase.SynNMDACa {
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+				ca := sn.SnmdaO * rn.RCa
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, ca, &sy.CaM, &sy.CaP, &sy.CaD)
+				sy.CaM = ca
 			} else {
 				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
@@ -889,9 +889,10 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 			sy := &pj.Syns[rsi]
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
-			sy.Ca = sn.SnmdaO * rn.RCa
 			if kp.Rule == kinase.SynNMDACa {
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+				ca := sn.SnmdaO * rn.RCa
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, ca, &sy.CaM, &sy.CaP, &sy.CaD)
+				sy.CaM = ca
 			} else {
 				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
@@ -920,9 +921,9 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			sy.Ca = sn.SnmdaO * rn.RCa
 			if kp.Rule == kinase.SynNMDACa {
-				kp.FmSpike(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+				sy.CaM = sn.SnmdaO * rn.RCa
+				kp.FmCa(sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
 				var spk float32
 				if sn.Spike > 0 || rn.Spike > 0 {
@@ -945,7 +946,7 @@ func (pj *Prjn) DWt(ltime *Time) {
 	case kinase.SynSpkCa:
 		pj.DWtSynSpkCa(ltime)
 	case kinase.SynNMDACa:
-		pj.DWtSynNMDACa(ltime)
+		pj.DWtSynSpkCa(ltime)
 	}
 }
 
@@ -978,6 +979,7 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 			} else {
 				err *= sy.LWt
 			}
+			sy.DWtRaw = err
 			sy.DWt += rn.RLrate * lr * err
 		}
 	}
@@ -1005,38 +1007,6 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			sy := &syns[ci]
 			_, caP, caD := kp.CurCaFmISI(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			err := kp.DWt(caP, caD)
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLrate * lr * err
-		}
-	}
-}
-
-// DWtSynNMDACa computes the weight change (learning) -- on sending projections.
-// Uses the new experimental Kinase learning rule based on competition between
-// CaMKII (LTP) and DAPK1 (LTD) kinases.
-func (pj *Prjn) DWtSynNMDACa(ltime *Time) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.SpkCaP < slay.Learn.SpkCa.MinLrn && sn.SpkCaD < slay.Learn.SpkCa.MinLrn {
-			continue
-		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			err := pj.Learn.Kinase.DWt(sy.CaP, sy.CaD)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
