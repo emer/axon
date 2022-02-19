@@ -26,9 +26,15 @@ For spiking, the relative timing of pre-post spiking has been an obsession since
 
 However, at a computational level, capturing these pre-post timing interactions clearly requires computationally-expensive synapse-level integration.  Thus, a major technical issue we address is how to more efficiently integrate this synapse-level signal at the theoretically most efficient level which is when either the sender or receiver spikes, with the subsequent integration computed based on time passed instead of incrementally updating.
 
-The first issue is how the pre-post spikes interact in computing the Ca and CaM first-level integrations of synaptic activity.  The simplest, most straightforward case is:
+The first issue is how the pre-post spikes interact in computing the Ca and CaM first-level integrations of synaptic activity.  Because each spike is itself a discrete event, there needs to be some kind of time window over which the pre-post spiking interact, if they are to have any interaction at all.  At the most extreme end of the non-interaction spectrum is the simple "OR" rule:
 
-* `SynSpkCa` "OR" rule: `SynSpk = SSpk || RSpk` -- either spike counts, and there is no explicit interaction at the level of the Ca influx per spike, or anything distinctive about a pre vs. postsynaptic spike.
+* `SynOrSpk` "OR" rule: `SynSpk = SSpk || RSpk` -- either spike counts, and there is no explicit interaction at the level of the Ca influx per spike, or anything distinctive about a pre vs. postsynaptic spike.
+
+However, this does not actually work in practice, despite many attempts with the `ra25` basic example.  In effect, the sender and receiver are each broadcasting their spikes to all the other neurons, and the lack of interaction leads to a kind of sum across these spikes, producing insufficient levels of selectivity across different neurons.
+
+* `SynCaMProd`: A simple next step is to use the *product* of the pre and post `CaM` values, each separately integrated over a roughly 20 msec tau window, to kick off the synaptic integration.  This works, but is not notably different in performance from `SynNMDACa`.
+
+TODO: explore this version in this model.
 
 Counterintuitively, under typical conditions in dendritic spines as explored in the biophysical [kinase](https://github.com/ccnlab/kinase/tree/main/sims/kinase) model, this is actually a reasonable first-order approximation of calcium influx from pre-post spikes.  The postsynaptic Vm is often reasonably depolarized in active neurons in awake behaving conditions, so the Glu release from pre-spikes has a direct impact, while there is often enough residual channel open state from prior Glu release for backpropagating action potentials to drive an extra burst of Ca influx.
 
@@ -68,24 +74,12 @@ The differences are greatest when the firing rate is high, where `NeurSpkCa` is 
 
 # Optimized SynSpkCa integration only at Spikes
 
-For the simple `SynSpkCa` rule, it is possible to only update values at each spike event, because the intervening dynamics are fully determined therefrom.  However, due to the cascading nature of the integration, it is highly non-linear and requires a massive lookup table to accurately capture the dynamics, as a function of the exact CaM, CaP, and CaD levels at the moment a new spike comes in.
+For the simple `SynSpkCa` rule, it is possible to only update values at each spike event, because the intervening dynamics are fully determined therefrom.  However, due to the cascading nature of the integration, it is highly non-linear and a closed-form equation is unlikely to exist.  
 
-This is now implemented in the `kinase` package, using the `Funts` function tables.
+In a first pass implementation attempt, a massive lookup table was created to accurately capture the dynamics, as a function of the exact CaM, CaP, and CaD levels at the moment a new spike comes in, implemented in the `kinase` package, using the `Funts` function tables.  With a resolution of .01, the results were quite accurate.  See `results/fig_synspk_mpd_optimized_fit_*` figures for results.
 
-With a resolution of .01, the results are quite accurate.  Compare the `SynC` continuously-integrated values vs. the `SynO` optimized values in the following figures:
+However, in practice, this lookup table approach ended up being *much slower* than just computing the synaptic values continuously, because the lookup table is so big that random access of it creates major memory cache disruption, and significant slowing.
 
-100Hz:
-
-![Optimized integration, 100hz](results/fig_synspk_mpd_optimized_fit_100hz_res01.png?raw=true "Optimized integration at 100hz, res=0.01")
-
-20Hz:
-
-![Optimized integration, 20hz](results/fig_synspk_mpd_optimized_fit_20hz_res01.png?raw=true "Optimized integration at 20hz, res=0.01")
-
-20Hz with `Yres = 0.02` resolution, which significantly reduces the size of the lookup table needed for the CaD level integration, from 887 to 112 million entries:
-
-![Optimized integration, 20hz](results/fig_synspk_mpd_optimized_fit_20hz_res02.png?raw=true "Optimized integration at 20hz, res=0.02")
-
-The differences in the optimized vs. continuously-integrated cases is now evident, but the margin of error is relatively small and does not notably increase over time, as the errors tend to cancel out over time.
+Thus, a new approach is to still only compute at spike intervals, but *use a for loop* to iterate the updating from the prior point of time!  That is likely to be much more efficient!
 
 

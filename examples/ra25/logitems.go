@@ -153,6 +153,9 @@ func (ss *Sim) ConfigLogItems() {
 				trls := ctx.Logs.Table(ctx.Mode, elog.Trial)
 				tmr.N = trls.Rows
 				pertrl := tmr.AvgMSecs()
+				if ctx.Row == 0 {
+					pertrl = 0 // first one is always inaccruate
+				}
 				ctx.Stats.SetFloat(nm, pertrl)
 				ctx.SetFloat64(pertrl)
 				tmr.ResetStart()
@@ -166,7 +169,7 @@ func (ss *Sim) ConfigLogItems() {
 			Name:   clnm + "_ActAvg",
 			Type:   etensor.FLOAT64,
 			Plot:   elog.DFalse,
-			FixMax: elog.DTrue,
+			FixMax: elog.DFalse,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				elog.Scope(elog.Train, elog.Epoch): func(ctx *elog.Context) {

@@ -925,11 +925,8 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 				sy.CaM = sn.SnmdaO * rn.RCa
 				kp.FmCa(sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
-				var spk float32
-				if sn.Spike > 0 || rn.Spike > 0 {
-					spk = 1
-				}
-				kp.FmSpike(spk, &sy.CaM, &sy.CaP, &sy.CaD)
+				sy.CaM = sn.SpkCaM * rn.SpkCaM
+				kp.FmCa(sy.CaM, &sy.CaP, &sy.CaD)
 			}
 		}
 	}
