@@ -856,9 +856,8 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			if kp.Rule == kinase.SynNMDACa {
-				ca := sn.SnmdaO * rn.RCa
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, ca, &sy.CaM, &sy.CaP, &sy.CaD)
-				sy.CaM = ca
+				sy.Ca = sn.SnmdaO * rn.RCa
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
 				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
@@ -890,9 +889,8 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
 			if kp.Rule == kinase.SynNMDACa {
-				ca := sn.SnmdaO * rn.RCa
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, ca, &sy.CaM, &sy.CaP, &sy.CaD)
-				sy.CaM = ca
+				sy.Ca = sn.SnmdaO * rn.RCa
+				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
 				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
@@ -922,11 +920,11 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			if kp.Rule == kinase.SynNMDACa {
-				sy.CaM = sn.SnmdaO * rn.RCa
-				kp.FmCa(sy.CaM, &sy.CaP, &sy.CaD)
+				sy.Ca = sn.SnmdaO * rn.RCa
+				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
-				sy.CaM = sn.SpkCaM * rn.SpkCaM
-				kp.FmCa(sy.CaM, &sy.CaP, &sy.CaD)
+				sy.Ca = sn.SpkCaM * rn.SpkCaM
+				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
 		}
 	}
@@ -1003,7 +1001,11 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
 			_, caP, caD := kp.CurCaFmISI(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
-			err := kp.DWt(caP, caD)
+			df := kp.DScale * caD
+			if df < kp.LTDThr {
+				df = kp.LTDThr
+			}
+			err := pj.Learn.XCal.DWt(caP, df)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

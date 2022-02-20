@@ -17,6 +17,7 @@ type SynParams struct {
 	PTau     float32 `def:"40" min:"1" desc:"LTP Ca-driven factor time constant in cycles, reflecting CaMKII dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaM value, resulting in faster tracking of plus-phase signals."`
 	DTau     float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, reflecting DAPK1 dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
 	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
+	LTDThr   float32 `desc:"threshold on CaP value to drive LTD instead of LTP -- plugs into XCal equation at that point for bottom end"`
 	Tmax     int     `view:"-" desc:"maximum time in lookup tables"`
 	Mmax     float32 `view:"-" desc:"maximum CaM value in lookup tables"`
 	PDmax    float32 `view:"-" desc:"maximum CaP, CaD value in lookup tables"`
@@ -36,6 +37,7 @@ func (kp *SynParams) Defaults() {
 	kp.PTau = 40 // 10
 	kp.DTau = 40
 	kp.DScale = 1 // 0.93, 1.05
+	kp.LTDThr = 0.02
 	kp.Tmax = 100
 	kp.Mmax = 2.8
 	kp.PDmax = 1.8
@@ -51,7 +53,7 @@ func (kp *SynParams) Update() {
 }
 
 // FmSpike computes updates from current spike value, for
-// continuously-updating mode (not optimized)
+// continuously-updating mode
 func (kp *SynParams) FmSpike(spike float32, caM, caP, caD *float32) {
 	*caM += kp.MDt * (kp.SpikeG*spike - *caM)
 	*caP += kp.PDt * (*caM - *caP)
@@ -59,10 +61,10 @@ func (kp *SynParams) FmSpike(spike float32, caM, caP, caD *float32) {
 }
 
 // FmCa computes updates from current calcium level, for
-// continuously-updating mode (not optimized).
-// Ca is assumed to correspond to CaM level, so only CaP, CaD updated.
-func (kp *SynParams) FmCa(ca float32, caP, caD *float32) {
-	*caP += kp.PDt * (ca - *caP)
+// continuously-updating mode
+func (kp *SynParams) FmCa(ca float32, caM, caP, caD *float32) {
+	*caM += kp.MDt * (ca - *caM)
+	*caP += kp.PDt * (*caM - *caP)
 	*caD += kp.DDt * (*caP - *caD)
 }
 
