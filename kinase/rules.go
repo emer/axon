@@ -25,8 +25,9 @@ const (
 	// high levels of variance.
 	NeurSpkCa Rules = iota
 
-	// SynSpkCa uses synapse-level spike-driven calcium signals
-	// with an OR rule for pre OR post spiking driving the CaM up,
+	// SynSpkCa integrates synapse-level spike-driven calcium signals
+	// starting with a product of pre and post CaM values at the point
+	// of either spike (using neuron level SpkCa params),
 	// which is then integrated at P vs. D time scales.
 	// Basically a synapse version of original learning rule.
 	SynSpkCa
@@ -34,9 +35,7 @@ const (
 	// SynNMDACa uses synapse-level NMDA-driven calcium signals
 	// computed according to the very close approximation to the
 	// Urakubo et al (2008) allosteric NMDA dynamics, then
-	// integrated at P vs. D time scales.  For OptInteg optimization,
-	// there is some residual inaccuracy due to use of simple exponential
-	// Ca decay instead of actual NMDA Ca signal over time.
+	// integrated at P vs. D time scales.
 	// This is an abstract version of a biologically realistic model,
 	// very close in many details to a fully biophysically-grounded one.
 	SynNMDACa

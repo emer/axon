@@ -85,8 +85,8 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
 					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":      "0.5",  // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":        "6",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dend.GbarExp":      "0.5",  // 0.5 > 0.2 old def
+					"Layer.Act.Dend.GbarR":        "6",    // 6 > 3 old def
 					"Layer.Act.Dt.VmDendTau":      "5",    // 5 > 2.81 here but small effect
 					"Layer.Act.Dt.VmSteps":        "2",    // 2 > 3 -- somehow works better
 					"Layer.Act.Dt.GeTau":          "5",

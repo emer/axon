@@ -857,9 +857,9 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 			rn := &rlay.Neurons[ri]
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
+				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
 		}
 	}
@@ -890,9 +890,9 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 			sn := &slay.Neurons[si]
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
-				kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
+				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
 		}
 	}
@@ -984,6 +984,7 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 // synaptically-integrated pre or post spike signals
 func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	kp := &pj.Learn.Kinase
+	_ = kp
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -1000,12 +1001,13 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, caP, caD := kp.CurCaFmISI(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
-			df := kp.DScale * caD
-			if df < kp.LTDThr {
-				df = kp.LTDThr
-			}
-			err := pj.Learn.XCal.DWt(caP, df)
+			// _, caP, caD := kp.CurCaFmISI(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
+			// df := kp.DScale * caD
+			// if df < kp.LTDThr {
+			// 	df = kp.LTDThr
+			// }
+			// err := pj.Learn.XCal.DWt(caP, df)
+			err := float32(0)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

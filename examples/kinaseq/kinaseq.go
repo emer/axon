@@ -7,13 +7,12 @@ package main
 
 import (
 	"math/rand"
-	"strconv"
-	"strings"
 
+	"github.com/emer/axon/axon"
 	"github.com/emer/axon/kinase"
+	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -39,17 +38,34 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	Kinase    kinase.SynParams `desc:Kinase rate constants"`
-	PGain     float32          `desc:"multiplier on product factor to equate to SynC"`
-	SpikeDisp float32          `desc:"spike multiplier for display purposes"`
-	NReps     int              `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
-	DurMsec   int              `desc:"duration for activity window"`
-	SendHz    float32          `desc:"sending firing frequency (used as minus phase for ThetaErr)"`
-	RecvHz    float32          `desc:"receiving firing frequency (used as plus phase for ThetaErr)"`
-	Table     *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot      *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win       *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar   *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+	Net        *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	SendNeur   *axon.Neuron     `view:"no-inline" desc:"the sending neuron"`
+	RecvNeur   *axon.Neuron     `view:"no-inline" desc:"the receiving neuron"`
+	NeuronEx   NeuronEx         `view:"no-inline" desc:"extra neuron state"`
+	Kinase     kinase.SynParams `desc:"kinase params"`
+	Params     emer.Params      `view:"inline" desc:"all parameter management"`
+	PGain      float32          `desc:"multiplier on product factor to equate to SynC"`
+	SpikeDisp  float32          `desc:"spike multiplier for display purposes"`
+	RGeClamp   bool             `desc:"use current Ge clamping for recv neuron -- otherwise spikes driven externally"`
+	RGeBase    float32          `desc:"baseline recv Ge level"`
+	RGiBase    float32          `desc:"baseline recv Gi level"`
+	NReps      int              `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
+	MinusMsec  int              `desc:"number of msec in minus phase"`
+	PlusMsec   int              `desc:"number of msec in plus phase"`
+	ISIMsec    int              `desc:"quiet space between spiking"`
+	TrialMsec  int              `view:"-" desc:"total trial msec: minus, plus isi"`
+	MinusHz    int              `desc:"minus phase firing frequency"`
+	PlusHz     int              `desc:"plus phase firing frequency"`
+	SendDiffHz int              `desc:"additive difference in sending firing frequency relative to recv (recv has basic minus, plus)"`
+	SynNeur    axon.Synapse     `view:"no-inline" desc:"NeurSpkCa product synapse state values, P_ in log"`
+	SynSpk     axon.Synapse     `view:"no-inline" desc:"SynSpkCa synapse state values, X_ in log"`
+	SynNNMDA   axon.Synapse     `view:"no-inline" desc:"SynNMDACa synapse state values, N_ in log"`
+	SynOpt     axon.Synapse     `view:"no-inline" desc:"optimized computation synapse state values, O_ in log"`
+	Time       axon.Time        `desc:"axon time recording"`
+	Table      *etable.Table    `view:"no-inline" desc:"table for plot"`
+	Plot       *eplot.Plot2D    `view:"-" desc:"the plot"`
+	Win        *gi.Window       `view:"-" desc:"main GUI window"`
+	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation
@@ -57,14 +73,23 @@ var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
+	ss.Net = &axon.Network{}
+	ss.Params.Params = ParamSets
+	ss.Params.AddNetwork(ss.Net)
 	ss.Kinase.Defaults()
+	ss.Time.Defaults()
 	ss.PGain = 10
 	ss.SpikeDisp = 0.1
-	ss.NReps = 100
-	ss.DurMsec = 200
-	ss.SendHz = 20
-	ss.RecvHz = 20
+	ss.RGeBase = 0.5
+	ss.RGiBase = 2
+	ss.NReps = 1
+	ss.MinusMsec = 150
+	ss.PlusMsec = 50
+	ss.ISIMsec = 0
+	ss.MinusHz = 50
+	ss.PlusHz = 25
 	ss.Update()
+	ss.ConfigNet(ss.Net)
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
 }
@@ -72,6 +97,15 @@ func (ss *Sim) Config() {
 // Update updates computed values
 func (ss *Sim) Update() {
 	ss.Kinase.Update()
+	ss.TrialMsec = ss.MinusMsec + ss.PlusMsec + ss.ISIMsec
+}
+
+// Init restarts the run and applies current parameters
+func (ss *Sim) Init() {
+	ss.Params.SetAll()
+	ss.Time.Reset()
+	ss.Net.InitWts()
+	ss.NeuronEx.Init()
 }
 
 // Run runs the equation.
@@ -80,167 +114,77 @@ func (ss *Sim) Run() {
 	dt := ss.Table
 
 	if ss.NReps == 1 {
-		dt.SetNumRows(ss.DurMsec)
+		dt.SetNumRows(ss.TrialMsec)
 	} else {
 		dt.SetNumRows(ss.NReps)
 	}
 
-	Sint := mat32.Exp(-1000.0 / float32(ss.SendHz))
-	Rint := mat32.Exp(-1000.0 / float32(ss.RecvHz))
 	Sp := float32(1)
 	Rp := float32(1)
 
-	kp := &ss.Kinase
+	ss.Time.Reset()
 
-	var rSpk, rSpkCaM, rSpkCaP, rSpkCaD float32                         // recv
-	var sSpk, sSpkCaM, sSpkCaP, sSpkCaD float32                         // send
-	var pSpkCaM, pSpkCaP, pSpkCaD, pDWt float32                         // product
-	var cSpk, cSpkCaM, cSpkCaP, cSpkCaD, cDWt, cISI float32             // syn continuous
-	var oSpk, oSpkCaM, oSpkCaP, oSpkCaD, oCaM, oCaP, oCaD, oDWt float32 // syn optimized compute
+	ge := ss.RGeBase
+	gi := ss.RGiBase
 
 	for nr := 0; nr < ss.NReps; nr++ {
-		cISI = -1
-		for t := 0; t < ss.DurMsec; t++ {
-			row := t
-			if ss.NReps == 1 {
-				dt.SetCellFloat("Time", row, float64(row))
-			} else {
-				row = nr
-				dt.SetCellFloat("Time", row, float64(row))
+		ss.Time.NewState()
+		for phs := 0; phs < 3; phs++ {
+			var maxms, rhz int
+			switch phs {
+			case 0:
+				rhz = ss.MinusHz
+				maxms = ss.MinusMsec
+			case 1:
+				rhz = ss.PlusHz
+				maxms = ss.PlusMsec
+			case 2:
+				rhz = 0
+				maxms = ss.ISIMsec
+			}
+			shz := rhz + ss.SendDiffHz
+			if shz < 0 {
+				shz = 0
 			}
 
-			Sp *= rand.Float32()
-			if Sp <= Sint {
-				sSpk = 1
-				Sp = 1
-			} else {
-				sSpk = 0
-			}
-
-			Rp *= rand.Float32()
-			if Rp <= Rint {
-				rSpk = 1
-				Rp = 1
-			} else {
-				rSpk = 0
-			}
-
-			kp.FmSpike(rSpk, &rSpkCaM, &rSpkCaP, &rSpkCaD)
-			kp.FmSpike(sSpk, &sSpkCaM, &sSpkCaP, &sSpkCaD)
-
-			// this is standard CHL form
-			pSpkCaM = ss.PGain * rSpkCaM * sSpkCaM
-			pSpkCaP = ss.PGain * rSpkCaP * sSpkCaP
-			pSpkCaD = ss.PGain * rSpkCaD * sSpkCaD
-
-			pDWt = kp.DWt(pSpkCaP, pSpkCaD)
-
-			// either side drives up..
-			cSpk = 0
-			switch kp.Rule {
-			case kinase.SynSpkCa:
-				if sSpk > 0 || rSpk > 0 {
-					cSpk = 1
+			Sint := mat32.Exp(-1000.0 / float32(shz))
+			Rint := mat32.Exp(-1000.0 / float32(rhz))
+			for t := 0; t < maxms; t++ {
+				row := ss.Time.Cycle
+				if ss.NReps == 1 {
+					dt.SetCellFloat("Cycle", row, float64(row))
+				} else {
+					row = nr
+					dt.SetCellFloat("Cycle", row, float64(row))
 				}
+
+				Sp *= rand.Float32()
+				sSpk := false
+				if Sp <= Sint {
+					sSpk = true
+					Sp = 1
+				}
+
+				Rp *= rand.Float32()
+				rSpk := false
+				if Rp <= Rint {
+					rSpk = true
+					Rp = 1
+				}
+
+				ss.NeuronUpdt(sSpk, rSpk, ge, gi)
+
+				if ss.NReps == 1 {
+					ss.Log(ss.Table, row, row)
+				}
+				ss.Time.CycleInc()
 			}
-			kp.FmSpike(cSpk, &cSpkCaM, &cSpkCaP, &cSpkCaD)
-			cDWt = kp.DWt(cSpkCaP, cSpkCaD)
-
-			// optimized
-			if cSpk > 0 {
-				kp.FuntCaFmSpike(cSpk, &cISI, &oSpkCaM, &oSpkCaP, &oSpkCaD)
-				oCaM, oCaP, oCaD = kp.CurCaFmISI(cISI, oSpkCaM, oSpkCaP, oSpkCaD)
-			} else if cISI >= 0 {
-				cISI += 1
-				oCaM, oCaP, oCaD = kp.CurCaFmISI(cISI, oSpkCaM, oSpkCaP, oSpkCaD)
-			}
-
-			oDWt = kp.DWt(oCaP, oCaD)
-
-			if ss.NReps == 1 || t == ss.DurMsec-1 {
-				dt.SetCellFloat("RSpike", row, float64(ss.SpikeDisp*rSpk))
-				dt.SetCellFloat("RSpkCaM", row, float64(rSpkCaM))
-				dt.SetCellFloat("RSpkCaP", row, float64(rSpkCaP))
-				dt.SetCellFloat("RSpkCaD", row, float64(rSpkCaD))
-				dt.SetCellFloat("SSpike", row, float64(ss.SpikeDisp*sSpk))
-				dt.SetCellFloat("SSpkCaM", row, float64(sSpkCaM))
-				dt.SetCellFloat("SSpkCaP", row, float64(sSpkCaP))
-				dt.SetCellFloat("SSpkCaD", row, float64(sSpkCaD))
-				dt.SetCellFloat("SynPSpkCaM", row, float64(pSpkCaM))
-				dt.SetCellFloat("SynPSpkCaP", row, float64(pSpkCaP))
-				dt.SetCellFloat("SynPSpkCaD", row, float64(pSpkCaD))
-				dt.SetCellFloat("SynPDWt", row, float64(pDWt))
-				dt.SetCellFloat("SynCSpike", row, float64(ss.SpikeDisp*cSpk))
-				dt.SetCellFloat("SynCSpkCaM", row, float64(cSpkCaM))
-				dt.SetCellFloat("SynCSpkCaP", row, float64(cSpkCaP))
-				dt.SetCellFloat("SynCSpkCaD", row, float64(cSpkCaD))
-				dt.SetCellFloat("SynCDWt", row, float64(cDWt))
-				dt.SetCellFloat("SynOSpike", row, float64(ss.SpikeDisp*oSpk))
-				dt.SetCellFloat("SynOSpkCaM", row, float64(oCaM))
-				dt.SetCellFloat("SynOSpkCaP", row, float64(oCaP))
-				dt.SetCellFloat("SynOSpkCaD", row, float64(oCaD))
-				dt.SetCellFloat("SynODWt", row, float64(oDWt))
+			if ss.NReps > 1 {
+				ss.Log(ss.Table, nr, nr)
 			}
 		}
 	}
 	ss.Plot.Update()
-}
-
-func (ss *Sim) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "Kinase Opt Table")
-	dt.SetMetaData("read-only", "true")
-	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
-
-	sch := etable.Schema{
-		{"Time", etensor.FLOAT64, nil, nil},
-		{"RSpike", etensor.FLOAT64, nil, nil},
-		{"RSpkCaM", etensor.FLOAT64, nil, nil},
-		{"RSpkCaP", etensor.FLOAT64, nil, nil},
-		{"RSpkCaD", etensor.FLOAT64, nil, nil},
-		{"SSpike", etensor.FLOAT64, nil, nil},
-		{"SSpkCaM", etensor.FLOAT64, nil, nil},
-		{"SSpkCaP", etensor.FLOAT64, nil, nil},
-		{"SSpkCaD", etensor.FLOAT64, nil, nil},
-		{"SynPSpkCaM", etensor.FLOAT64, nil, nil},
-		{"SynPSpkCaP", etensor.FLOAT64, nil, nil},
-		{"SynPSpkCaD", etensor.FLOAT64, nil, nil},
-		{"SynPDWt", etensor.FLOAT64, nil, nil},
-		{"SynCSpike", etensor.FLOAT64, nil, nil},
-		{"SynCSpkCaM", etensor.FLOAT64, nil, nil},
-		{"SynCSpkCaP", etensor.FLOAT64, nil, nil},
-		{"SynCSpkCaD", etensor.FLOAT64, nil, nil},
-		{"SynCDWt", etensor.FLOAT64, nil, nil},
-		{"SynOSpkCaM", etensor.FLOAT64, nil, nil},
-		{"SynOSpkCaP", etensor.FLOAT64, nil, nil},
-		{"SynOSpkCaD", etensor.FLOAT64, nil, nil},
-		{"SynODWt", etensor.FLOAT64, nil, nil},
-	}
-	dt.SetFromSchema(sch, 0)
-}
-
-func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "Kinase Learning Plot"
-	plt.Params.XAxisCol = "Time"
-	plt.SetTable(dt)
-	// plt.Params.Points = true
-
-	for _, cn := range dt.ColNames {
-		if cn == "Time" {
-			continue
-		}
-		if strings.Contains(cn, "DWt") {
-			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-		} else {
-			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-		}
-	}
-	// plt.SetColParams("SynCSpkCaM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	// plt.SetColParams("SynOSpkCaM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("SynCSpkCaP", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("SynOSpkCaP", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("SynCSpkCaD", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("SynOSpkCaD", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	return plt
 }
 
 // ConfigGui configures the GoGi gui interface for this simulation,
