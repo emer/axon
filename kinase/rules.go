@@ -32,6 +32,12 @@ const (
 	// Basically a synapse version of original learning rule.
 	SynSpkCa
 
+	// SynContCa integrates synapse-level spike-driven calcium signals
+	// starting with a product of pre and post CaLrn values ,
+	// which is then integrated at P vs. D time scales.
+	// Basically a synapse version of original learning rule.
+	SynContCa
+
 	// SynNMDACa uses synapse-level NMDA-driven calcium signals
 	// computed according to the very close approximation to the
 	// Urakubo et al (2008) allosteric NMDA dynamics, then

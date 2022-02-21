@@ -19,21 +19,21 @@ import (
 // axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
-	SpkCa     SpkCaParams      `view:"inline" desc:"parameters for computing simple spike-driven calcium signaling variables"`
+	SpikeCa   SpikeCaParams    `view:"inline" desc:"parameters for computing simple spike-driven calcium signaling variables"`
 	Snmda     chans.NMDAParams `view:"inline" desc:"Sending neuron NMDA channel parameters, for Snmda values used in SynNMDACa learning rule"`
 	TrgAvgAct TrgAvgActParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
 	RLrate    RLrateParams     `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLrate = |SpkCaP - SpkCaD| / Max(SpkCaP, SpkCaD)"`
 }
 
 func (ln *LearnNeurParams) Update() {
-	ln.SpkCa.Update()
+	ln.SpikeCa.Update()
 	ln.Snmda.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLrate.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
-	ln.SpkCa.Defaults()
+	ln.SpikeCa.Defaults()
 	ln.Snmda.Defaults()
 	ln.Snmda.ITau = 100
 	ln.Snmda.Tau = 30
@@ -42,67 +42,57 @@ func (ln *LearnNeurParams) Defaults() {
 	ln.RLrate.Defaults()
 }
 
-// InitSpkCa initializes the running-average activation values that drive learning.
+// InitSpikeCa initializes the running-average activation values that drive learning.
 // Called by InitWts (at start of learning).
-func (ln *LearnNeurParams) InitSpkCa(nrn *Neuron) {
-	nrn.SpkCaM = ln.SpkCa.Init
-	nrn.SpkCaP = ln.SpkCa.Init
-	nrn.SpkCaD = ln.SpkCa.Init
-	nrn.LrnCaP = 0
-	nrn.LrnCaD = 0
+func (ln *LearnNeurParams) InitSpikeCa(nrn *Neuron) {
+	nrn.CaM = ln.SpikeCa.Init
+	nrn.CaP = ln.SpikeCa.Init
+	nrn.CaD = ln.SpikeCa.Init
+	nrn.CaPLrn = 0
+	nrn.CaDLrn = 0
 }
 
-// SpkCaFmSpike updates the simple spike-based calcium signaling vals.
+// CaFmSpike updates the simple spike-based calcium signaling vals.
 // Computed after new activation for current cycle is updated.
-func (ln *LearnNeurParams) SpkCaFmSpike(nrn *Neuron) {
-	ln.SpkCa.SpkCaFmSpike(nrn.Spike, &nrn.SpkCaM, &nrn.SpkCaP, &nrn.SpkCaD, &nrn.LrnCaP, &nrn.LrnCaD)
+func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
+	ln.SpikeCa.CaFmSpike(nrn.Spike, &nrn.CaLrn, &nrn.CaM, &nrn.CaP, &nrn.CaD, &nrn.CaPLrn, &nrn.CaDLrn)
 	ln.Snmda.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
 }
 
-// SpkCaParams has rate constants for averaging over activations
+// SpikeCaParams has rate constants for averaging over activations
 // at different time scales, to produce the running average activation
 // values that then drive learning in the NeurSpkCa version of the Kinase
 // learning rule.
-type SpkCaParams struct {
+type SpikeCaParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives SpkCaM value"`
 	MinLrn float32 `def:"0.02" desc:"minimum learning activation -- below this goes to zero"`
-	MTau   float32 `def:"10" min:"1" desc:"CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.  tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), for continuously updating the spike-based SpkCaM value"`
-	PTau   float32 `def:"40" min:"1" desc:"LTP Ca-driven factor time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Continuously updates the spike-based SpkCaP value.  SpkCaP represents the plus phase learning signal that reflects the most recent past information"`
-	DTau   float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Continuously updates the spike-based SpkCaD value.  SpkCaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
+	LrnTau float32 `def:"20" min:"1" desc:"spike-driven calcium for synapse-level learning rules (CaLrn) time constant in cycles (msec)"`
+	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
+	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
+	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	// TODO: can we remove LrnM in favor of the longer PTau and shorter MTau?
-	LrnM float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron LrnCaP variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
+	LrnM float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron CaPLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
 	Init float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
 
-	MDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	PDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	DDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	LrnS float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"1-LrnM"`
+	LrnDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	MDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	PDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	DDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	LrnS  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"1-LrnM"`
 }
 
-// SpkCaFmSpike computes SpkCa calcium signals based on current spike
-func (aa *SpkCaParams) SpkCaFmSpike(spike float32, scam, scap, scad, lrnCaP, lrnCaD *float32) {
-	*scam += aa.MDt * (aa.SpikeG*spike - *scam)
-	*scap += aa.PDt * (*scam - *scap)
-	*scad += aa.DDt * (*scap - *scad)
-	*lrnCaD = *scad
-	thrP := *scap
-	if *lrnCaD < aa.MinLrn && thrP < aa.MinLrn {
-		*lrnCaD = 0
-		thrP = 0
-	}
-	*lrnCaP = aa.LrnS*thrP + aa.LrnM**lrnCaD
-}
-
-func (aa *SpkCaParams) Update() {
+func (aa *SpikeCaParams) Update() {
+	aa.LrnDt = 1 / aa.LrnTau
 	aa.MDt = 1 / aa.MTau
 	aa.PDt = 1 / aa.PTau
 	aa.DDt = 1 / aa.DTau
 	aa.LrnS = 1 - aa.LrnM
 }
 
-func (aa *SpkCaParams) Defaults() {
+func (aa *SpikeCaParams) Defaults() {
 	aa.SpikeG = 8
 	aa.MinLrn = 0.02
+	aa.LrnTau = 20
 	aa.MTau = 40 // 20 for 25 cycle qtr
 	aa.PTau = 10
 	aa.DTau = 40 // 20 for 25 cycle qtr
@@ -110,6 +100,21 @@ func (aa *SpkCaParams) Defaults() {
 	aa.Init = 0.15
 	aa.Update()
 
+}
+
+// CaFmSpike computes Ca* calcium signals based on current spike
+func (aa *SpikeCaParams) CaFmSpike(spike float32, calrn, scam, scap, scad, capLrn, cadLrn *float32) {
+	*calrn += aa.LrnDt * (aa.SpikeG*spike - *calrn)
+	*scam += aa.MDt * (aa.SpikeG*spike - *scam)
+	*scap += aa.PDt * (*scam - *scap)
+	*scad += aa.DDt * (*scap - *scad)
+	*cadLrn = *scad
+	thrP := *scap
+	if *cadLrn < aa.MinLrn && thrP < aa.MinLrn {
+		*cadLrn = 0
+		thrP = 0
+	}
+	*capLrn = aa.LrnS*thrP + aa.LrnM**cadLrn
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -144,11 +149,11 @@ func (ta *TrgAvgActParams) Defaults() {
 //  RLrateParams
 
 // RLrateParams recv neuron learning rate modulation parameters.
-// RLrate is computed as |SpkCaP - SpkCaD| / Max(SpkCaP, SpkCaD) subject to thresholding
+// RLrate is computed as |CaP - CaD| / Max(CaP, CaD) subject to thresholding
 type RLrateParams struct {
 	On        bool    `def:"true" desc:"use learning rate modulation"`
-	ActThr    float32 `def:"0.1" desc:"threshold on Max(SpkCaP, SpkCaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDifThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |SpkCaP - SpkCaD| below which lrate is at Min value"`
+	ActThr    float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	ActDifThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
 	Min       float32 `def:"0.001" desc:"minimum learning rate value when below ActDifThr"`
 }
 
@@ -163,14 +168,14 @@ func (rl *RLrateParams) Defaults() {
 	rl.Update()
 }
 
-// RLrate returns the learning rate as a function of SpkCaP and SpkCaD values
-func (rl *RLrateParams) RLrate(avgS, avgM float32) float32 {
+// RLrate returns the learning rate as a function of CaP and CaD values
+func (rl *RLrateParams) RLrate(scap, scad float32) float32 {
 	if !rl.On {
 		return 1.0
 	}
-	max := mat32.Max(avgS, avgM)
+	max := mat32.Max(scap, scad)
 	if max > rl.ActThr { // avoid div by 0
-		dif := mat32.Abs(avgS - avgM)
+		dif := mat32.Abs(scap - scad)
 		if dif < rl.ActDifThr {
 			return rl.Min
 		}
@@ -335,6 +340,24 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 	*dwt = 0
 }
 
+// InitWtsSyn initializes weight values based on WtInit randomness parameters
+// for an individual synapse.
+// It also updates the linear weight value based on the sigmoidal weight value.
+func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
+	wtv := sp.Init.RndVar()
+	sy.Wt = mean + wtv
+	sy.SWt = sp.ClipSWt(mean + spct*wtv)
+	sy.LWt = sp.LWtFmWts(sy.Wt, sy.SWt)
+	sy.DWt = 0
+	sy.DSWt = 0
+	sy.SpikeT = -1
+	sy.Ca = 0
+	sy.CaM = 0
+	sy.CaP = 0
+	sy.CaD = 0
+	sy.DWtRaw = 0
+}
+
 // SWtInitParams for initial SWt values
 type SWtInitParams struct {
 	SPct float32 `min:"0" max:"1" def:"0,1,0.5" desc:"how much of the initial random weights are captured in the SWt values -- rest goes into the LWt values.  1 gives the strongest initial biasing effect, for larger models that need more structural support. 0.5 should work for most models where stronger constraints are not needed."`
@@ -408,9 +431,9 @@ func (ls *LearnSynParams) Defaults() {
 
 // CHLdWt returns the error-driven weight change component for the
 // temporally eXtended Contrastive Attractor Learning (XCAL), CHL version
-func (ls *LearnSynParams) CHLdWt(suLrnCaP, suLrnCaD, ruLrnCaP, ruLrnCaD float32) float32 {
-	srp := suLrnCaP * ruLrnCaP
-	srd := suLrnCaD * ruLrnCaD
+func (ls *LearnSynParams) CHLdWt(suCaPLrn, suCaDLrn, ruCaPLrn, ruCaDLrn float32) float32 {
+	srp := suCaPLrn * ruCaPLrn
+	srd := suCaDLrn * ruCaDLrn
 	if ls.XCal.On {
 		return ls.XCal.DWt(srp, srd)
 	}

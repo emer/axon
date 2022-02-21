@@ -490,17 +490,7 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
 func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
-	wtv := pj.SWt.Init.RndVar()
-	sy.Wt = mean + wtv
-	sy.SWt = pj.SWt.ClipSWt(mean + spct*wtv)
-	sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
-	sy.DWt = 0
-	sy.DSWt = 0
-	sy.SpikeT = -1
-	sy.CaM = 0
-	sy.CaP = 0
-	sy.CaD = 0
-	sy.DWtRaw = 0
+	pj.SWt.InitWtsSyn(sy, mean, spct)
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -908,7 +898,7 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.SpkCaP < slay.Learn.SpkCa.MinLrn && sn.SpkCaD < slay.Learn.SpkCa.MinLrn {
+		if sn.CaP < slay.Learn.SpikeCa.MinLrn && sn.CaD < slay.Learn.SpikeCa.MinLrn {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -919,11 +909,19 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if kp.Rule == kinase.SynNMDACa {
+			switch kp.Rule {
+			case kinase.SynNMDACa:
 				sy.Ca = sn.SnmdaO * rn.RCa
 				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			} else {
-				sy.Ca = sn.SpkCaM * rn.SpkCaM
+			case kinase.SynSpkCa:
+				if sn.Spike > 0 || rn.Spike > 0 {
+					sy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
+				} else {
+					sy.Ca = 0
+				}
+				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			case kinase.SynContCa:
+				sy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
 				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
 		}
@@ -956,7 +954,7 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.LrnCaP < pj.Learn.XCal.LrnThr && sn.LrnCaD < pj.Learn.XCal.LrnThr {
+		if sn.CaPLrn < pj.Learn.XCal.LrnThr && sn.CaDLrn < pj.Learn.XCal.LrnThr {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -967,7 +965,7 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			err := pj.Learn.CHLdWt(sn.LrnCaP, sn.LrnCaD, rn.LrnCaP, rn.LrnCaD)
+			err := pj.Learn.CHLdWt(sn.CaPLrn, sn.CaDLrn, rn.CaPLrn, rn.CaDLrn)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
@@ -989,7 +987,7 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.LrnCaP < pj.Learn.XCal.LrnThr && sn.LrnCaD < pj.Learn.XCal.LrnThr {
+		if sn.CaPLrn < pj.Learn.XCal.LrnThr && sn.CaDLrn < pj.Learn.XCal.LrnThr {
 			continue
 		}
 		nc := int(pj.SConN[si])

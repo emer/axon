@@ -657,7 +657,7 @@ func (ly *Layer) InitWts() {
 func (ly *Layer) InitActAvg() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Learn.InitSpkCa(nrn)
+		ly.Learn.InitSpikeCa(nrn)
 	}
 	strg := ly.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Learn.TrgAvgAct.TrgRange.Range()
@@ -983,7 +983,7 @@ func (ly *Layer) NewState() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActPrv = nrn.SpkCaD // nrn.ActP -- this is used in deep learning, makes big diff!
+		nrn.ActPrv = nrn.CaD // nrn.ActP -- this is used in deep learning, makes big diff!
 	}
 	ly.AxonLay.DecayState(ly.Act.Decay.Act)
 }
@@ -1274,7 +1274,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		}
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
-		ly.Learn.SpkCaFmSpike(nrn)
+		ly.Learn.CaFmSpike(nrn)
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
@@ -1397,7 +1397,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		nrn.ActP = nrn.ActInt
 		nrn.ActDif = nrn.ActP - nrn.ActM
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.SpkCaP, nrn.SpkCaD)
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaP, nrn.CaD)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1449,25 +1449,25 @@ func (ly *Layer) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current activation state in ActSt1 variables (using LrnCaP)
+// ActSt1 saves current activation state in ActSt1 variables (using CaPLrn)
 func (ly *Layer) ActSt1(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.LrnCaP
+		nrn.ActSt1 = nrn.CaPLrn
 	}
 }
 
-// ActSt2 saves current activation state in ActSt2 variables (using LrnCaP)
+// ActSt2 saves current activation state in ActSt2 variables (using CaPLrn)
 func (ly *Layer) ActSt2(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.LrnCaP
+		nrn.ActSt2 = nrn.CaPLrn
 	}
 }
 
@@ -1540,7 +1540,7 @@ func (ly *Layer) DTrgAvgFmErr() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.DTrgAvg += lr * (nrn.SpkCaP - nrn.SpkCaD)
+		nrn.DTrgAvg += lr * (nrn.CaP - nrn.CaD)
 	}
 }
 

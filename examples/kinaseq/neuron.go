@@ -11,8 +11,10 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/chans"
+	"github.com/emer/axon/kinase"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
+	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -25,22 +27,24 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Act.Decay.Glong":  "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp": "0.5",  // 0.5 best
-					"Layer.Act.Dend.GbarR":   "6",    // 6 best
-					"Layer.Act.Dt.VmDendTau": "5",    // 5 > 2.81 here but small effect
-					"Layer.Act.NMDA.Gbar":    "0.15", // 0.15
-					"Layer.Act.NMDA.ITau":    "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":     "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":     "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":    "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.Dend.VGCCCa":  "20",   // 20 seems reasonable, but not obviously better than 0
-					"Layer.Act.Dend.CaMax":   "100",
-					"Layer.Act.Dend.CaThr":   "0.2",
-					"Layer.Act.Dend.CaVm":    "false",
-					"Layer.Learn.SpkCa.MTau": "10",
-					"Layer.Learn.SpkCa.PTau": "40",
-					"Layer.Learn.SpkCa.DTau": "40",
+					"Layer.Act.Decay.Glong":      "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp":     "0.5",  // 0.5 best
+					"Layer.Act.Dend.GbarR":       "6",    // 6 best
+					"Layer.Act.Dt.VmDendTau":     "5",    // 5 > 2.81 here but small effect
+					"Layer.Act.NMDA.Gbar":        "0.15", // 0.15
+					"Layer.Act.NMDA.ITau":        "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Act.NMDA.Tau":         "100",  // 30 not good
+					"Layer.Act.NMDA.MgC":         "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Act.NMDA.Voff":        "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Act.Dend.VGCCCa":      "20",   // 20 seems reasonable, but not obviously better than 0
+					"Layer.Act.Dend.CaMax":       "100",
+					"Layer.Act.Dend.CaThr":       "0.2",
+					"Layer.Learn.SpikeCa.LrnTau": "20",
+					"Layer.Learn.SpikeCa.MTau":   "10",
+					"Layer.Learn.SpikeCa.PTau":   "40",
+					"Layer.Learn.SpikeCa.DTau":   "40",
+					"Layer.Learn.Snmda.ITau":     "100", // urak 100
+					"Layer.Learn.Snmda.Tau":      "30",  // urak 30
 				}},
 		},
 	}},
@@ -50,6 +54,8 @@ var ParamSets = params.Sets{
 type NeuronEx struct {
 	SSpikeT    int     `desc:"time of last sending spike"`
 	RSpikeT    int     `desc:"time of last recv spike"`
+	Sp         float32 `desc:"sending poisson firing probability accumulator"`
+	Rp         float32 `desc:"recv poisson firing probability accumulator"`
 	NMDAGmg    float32 `desc:"NMDA mg-based blocking conductance"`
 	Gvgcc      float32 `desc:"VGCC total conductance"`
 	VGCCm      float32 `desc:"VGCC M gate -- activates with increasing Vm"`
@@ -65,6 +71,8 @@ type NeuronEx struct {
 func (nex *NeuronEx) Init() {
 	nex.SSpikeT = -1
 	nex.RSpikeT = -1
+	nex.Sp = 1
+	nex.Rp = 1
 	nex.LearnNow = -1
 	nex.NMDAGmg = 0
 	nex.Gvgcc = 0
@@ -77,10 +85,15 @@ func (nex *NeuronEx) Init() {
 	nex.AKh = 1
 }
 
+func (ss *Sim) InitSyn(sy *axon.Synapse) {
+	ss.Prjn.InitWtsSyn(sy, 0.5, 1)
+}
+
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Neuron")
 	sly := net.AddLayer2D("Send", 1, 1, emer.Hidden).(*axon.Layer)
 	rly := net.AddLayer2D("Recv", 1, 1, emer.Hidden).(*axon.Layer)
+	pj := net.ConnectLayers(sly, rly, prjn.NewFull(), emer.Forward)
 	net.Defaults()
 	err := net.Build()
 	if err != nil {
@@ -89,6 +102,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	ss.SendNeur = &sly.Neurons[0]
 	ss.RecvNeur = &rly.Neurons[0]
+	ss.Prjn = pj.(*axon.Prjn)
 }
 
 // NeuronUpdt updates the neuron with whether send or recv spiked
@@ -105,47 +119,46 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		sn.Spike = 1
 		sn.ISI = 0
 		nex.SSpikeT = ss.Time.CycleTot
-		inh := (1 - sn.SnmdaI)
-		sn.SnmdaO += inh * (1 - sn.SnmdaO)
-		sn.SnmdaI += inh
 	} else {
 		sn.Spike = 0
 		sn.ISI += 1
-		sn.SnmdaO -= ac.NMDA.Dt * sn.SnmdaO
-		sn.SnmdaI -= ac.NMDA.IDt * sn.SnmdaI
 	}
+	ly.Learn.Snmda.SnmdaFmSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
 	if !ss.RGeClamp {
 		if rSpk {
 			rn.Spike = 1
 			rn.ISI = 0
 			nex.RSpikeT = ss.Time.CycleTot
-			inh := (1 - rn.SnmdaI)
-			rn.SnmdaO += inh * (1 - rn.SnmdaO)
-			rn.SnmdaI += inh
 		} else {
 			rn.Spike = 0
 			rn.ISI += 1
-			rn.SnmdaO -= ac.NMDA.Dt * rn.SnmdaO
-			rn.SnmdaI -= ac.NMDA.IDt * rn.SnmdaI
 		}
+		ly.Learn.Snmda.SnmdaFmSpike(rn.Spike, &rn.SnmdaO, &rn.SnmdaI)
+		rn.Ge = ge
+		rn.GeSyn = ge
+		rn.Gi = gi
+		rn.GnmdaSyn = ge
+		rn.Gnmda = ac.NMDA.Gnmda(rn.GnmdaSyn, rn.VmDend)
+		rn.RnmdaSyn = ge
+		mgg, cav := ac.NMDA.VFactors(rn.VmDend) // note: using Vm does NOT work well at all
+		nex.NMDAGmg = mgg
+		rn.RCa = rn.RnmdaSyn * mgg * cav
+		rn.GnmdaRaw = 0
+		if rn.Spike > 0 {
+			rn.RCa += ac.Dend.VGCCCa
+		}
+		rn.RCa = ac.Dend.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
+	} else {
+		rn.GeRaw = ge
+		rn.GnmdaRaw = ge
+		ac.Dt.GeSynFmRaw(rn.GeRaw, &rn.GeSyn, ac.Init.Ge)
+		rn.Ge = rn.GeSyn
+		rn.Gi = gi
+		ac.NMDAFmRaw(rn, 0)
+		nex.NMDAGmg = ac.NMDA.MgGFmV(rn.VmDend)
 	}
-
-	// note: Ge should only
-	rn.GeRaw = ge
-	rn.GnmdaRaw = ge
-	ac.Dt.GeSynFmRaw(rn.GeRaw, &rn.GeSyn, ac.Init.Ge)
-	rn.Ge = rn.GeSyn
-	rn.Gi = gi
-	ac.NMDAFmRaw(rn, 0)
-
-	vmd := rn.VmDend
-	// if ss.DendVm {
-	// 	vmd = rn.VmDend
-	// }
-
-	nex.NMDAGmg = ac.NMDA.MgGFmV(vmd)
 	rn.GABAB, rn.GABABx = ac.GABAB.GABAB(rn.GABAB, rn.GABABx, rn.Gi)
-	rn.GgabaB = ac.GABAB.GgabaB(rn.GABAB, vmd)
+	rn.GgabaB = ac.GABAB.GgabaB(rn.GABAB, rn.VmDend)
 
 	// nex.Gvgcc = ss.VGCC.Gvgcc(vmd, nex.VGCCm, nex.VGCCh)
 	// dm, dh := ss.VGCC.DMHFmV(vmd, nex.VGCCm, nex.VGCCh)
@@ -178,8 +191,8 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 	if ss.RGeClamp {
 		ac.ActFmG(rn)
 	}
-	ly.Learn.SpkCaFmSpike(rn)
-	ly.Learn.SpkCaFmSpike(sn)
+	ly.Learn.CaFmSpike(rn)
+	ly.Learn.CaFmSpike(sn)
 
 	ss.SynUpdt()
 }
@@ -192,17 +205,24 @@ func (ss *Sim) SynUpdt() {
 	rn := ss.RecvNeur
 	psy := &ss.SynNeur
 	ssy := &ss.SynSpk
-	nsy := &ss.SynNNMDA
-	// osy := &ss.SynOpt
+	nsy := &ss.SynNMDA
+	osy := &ss.SynOpt
 
 	// this is standard CHL s * r product form
-	psy.CaM = ss.PGain * sn.SpkCaM * rn.SpkCaM
-	psy.CaP = ss.PGain * sn.SpkCaP * rn.SpkCaP
-	psy.CaD = ss.PGain * sn.SpkCaD * rn.SpkCaD
+	psy.CaM = ss.PGain * sn.CaM * rn.CaM
+	psy.CaP = ss.PGain * sn.CaP * rn.CaP
+	psy.CaD = ss.PGain * sn.CaD * rn.CaD
 	psy.DWt = psy.CaP - psy.CaD
 
-	// SynSpkCA
-	ssy.Ca = sn.SpkCaM * rn.SpkCaM
+	if kp.Rule == kinase.SynContCa {
+		ssy.Ca = kp.SpikeG * sn.CaM * rn.CaM
+	} else { // SynSpkCa is default
+		if sn.Spike > 0 || rn.Spike > 0 {
+			ssy.Ca = kp.SpikeG * sn.CaM * rn.CaM
+		} else {
+			ssy.Ca = 0
+		}
+	}
 	kp.FmCa(ssy.Ca, &ssy.CaM, &ssy.CaP, &ssy.CaD)
 	ssy.DWt = kp.DWt(ssy.CaP, ssy.CaD)
 
@@ -210,6 +230,10 @@ func (ss *Sim) SynUpdt() {
 	nsy.Ca = sn.SnmdaO * rn.RCa
 	kp.FmCa(nsy.Ca, &nsy.CaM, &nsy.CaP, &nsy.CaD)
 	nsy.DWt = kp.DWt(nsy.CaP, nsy.CaD)
+
+	osy.Ca = 10 * sn.CaM * rn.CaM
+	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+	osy.DWt = kp.DWt(osy.CaP, osy.CaD)
 
 	// // optimized
 	// if cSpk > 0 {
@@ -222,10 +246,20 @@ func (ss *Sim) SynUpdt() {
 	// oDWt = kp.DWt(oCaP, oCaD)
 }
 
-// Log records data for given cycle
-func (ss *Sim) Log(dt *etable.Table, row, cyc int) {
+func (ss *Sim) LogSyn(dt *etable.Table, row int, pre string, sy *axon.Synapse) {
+	dt.SetCellFloat(pre+"Ca", row, float64(sy.Ca))
+	dt.SetCellFloat(pre+"CaM", row, float64(sy.CaM))
+	dt.SetCellFloat(pre+"CaP", row, float64(sy.CaP))
+	dt.SetCellFloat(pre+"CaD", row, float64(sy.CaD))
+	dt.SetCellFloat(pre+"DWt", row, float64(sy.DWt))
+	dt.SetCellFloat(pre+"Wt", row, float64(sy.Wt))
+}
+
+// LogState records data for given cycle
+func (ss *Sim) LogState(dt *etable.Table, row, trl, cyc int) {
 	sn := ss.SendNeur
 	rn := ss.RecvNeur
+	dt.SetCellFloat("Trial", row, float64(trl))
 	dt.SetCellFloat("Cycle", row, float64(cyc))
 	dt.SetCellFloat("SSpike", row, float64(ss.SpikeDisp*sn.Spike))
 	dt.SetCellFloat("RSpike", row, float64(ss.SpikeDisp*rn.Spike))
@@ -258,50 +292,32 @@ func (ss *Sim) Log(dt *etable.Table, row, cyc int) {
 
 	psy := &ss.SynNeur
 	ssy := &ss.SynSpk
-	nsy := &ss.SynNNMDA
+	nsy := &ss.SynNMDA
 	osy := &ss.SynOpt
 
-	dt.SetCellFloat("R_CaM", row, float64(rn.SpkCaM))
-	dt.SetCellFloat("R_CaP", row, float64(rn.SpkCaP))
-	dt.SetCellFloat("R_CaD", row, float64(rn.SpkCaD))
+	dt.SetCellFloat("R_CaM", row, float64(rn.CaM))
+	dt.SetCellFloat("R_CaP", row, float64(rn.CaP))
+	dt.SetCellFloat("R_CaD", row, float64(rn.CaD))
 
-	dt.SetCellFloat("S_CaM", row, float64(sn.SpkCaM))
-	dt.SetCellFloat("S_CaP", row, float64(sn.SpkCaP))
-	dt.SetCellFloat("S_CaD", row, float64(sn.SpkCaD))
+	dt.SetCellFloat("S_CaM", row, float64(sn.CaM))
+	dt.SetCellFloat("S_CaP", row, float64(sn.CaP))
+	dt.SetCellFloat("S_CaD", row, float64(sn.CaD))
 
-	dt.SetCellFloat("P_CaM", row, float64(psy.CaM))
-	dt.SetCellFloat("P_CaP", row, float64(psy.CaP))
-	dt.SetCellFloat("P_CaD", row, float64(psy.CaD))
-	dt.SetCellFloat("P_DWt", row, float64(psy.DWt))
-	dt.SetCellFloat("P_Wt", row, float64(psy.Wt))
-
-	dt.SetCellFloat("X_CaM", row, float64(ssy.CaM))
-	dt.SetCellFloat("X_CaP", row, float64(ssy.CaP))
-	dt.SetCellFloat("X_CaD", row, float64(ssy.CaD))
-	dt.SetCellFloat("X_DWt", row, float64(ssy.DWt))
-	dt.SetCellFloat("X_Wt", row, float64(ssy.Wt))
-
-	dt.SetCellFloat("N_Ca", row, float64(nsy.Ca))
-	dt.SetCellFloat("N_CaM", row, float64(nsy.CaM))
-	dt.SetCellFloat("N_CaP", row, float64(nsy.CaP))
-	dt.SetCellFloat("N_CaD", row, float64(nsy.CaD))
-	dt.SetCellFloat("N_DWt", row, float64(nsy.DWt))
-	dt.SetCellFloat("N_Wt", row, float64(nsy.Wt))
-
-	dt.SetCellFloat("O_Ca", row, float64(osy.Ca))
-	dt.SetCellFloat("O_CaM", row, float64(osy.CaM))
-	dt.SetCellFloat("O_CaP", row, float64(osy.CaP))
-	dt.SetCellFloat("O_CaD", row, float64(osy.CaD))
-	dt.SetCellFloat("O_DWt", row, float64(osy.DWt))
-	dt.SetCellFloat("O_Wt", row, float64(osy.Wt))
+	ss.LogSyn(dt, row, "P_", psy)
+	ss.LogSyn(dt, row, "X_", ssy)
+	ss.LogSyn(dt, row, "N_", nsy)
+	ss.LogSyn(dt, row, "O_", osy)
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "Kinase Opt Table")
+	dt.SetMetaData("name", "Kinase Equations Table")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
+		{"Cond", etensor.STRING, nil, nil},
+		{"ErrDWt", etensor.FLOAT64, nil, nil},
+		{"Trial", etensor.FLOAT64, nil, nil},
 		{"Cycle", etensor.FLOAT64, nil, nil},
 		{"SSpike", etensor.FLOAT64, nil, nil},
 		{"RSpike", etensor.FLOAT64, nil, nil},
@@ -331,55 +347,46 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 		// {"AKm", etensor.FLOAT64, nil, nil},
 		// {"AKh", etensor.FLOAT64, nil, nil},
 		// {"LearnNow", etensor.FLOAT64, nil, nil},
-
 		{"R_CaM", etensor.FLOAT64, nil, nil},
 		{"R_CaP", etensor.FLOAT64, nil, nil},
 		{"R_CaD", etensor.FLOAT64, nil, nil},
 		{"S_CaM", etensor.FLOAT64, nil, nil},
 		{"S_CaP", etensor.FLOAT64, nil, nil},
 		{"S_CaD", etensor.FLOAT64, nil, nil},
-
-		{"P_CaM", etensor.FLOAT64, nil, nil},
-		{"P_CaP", etensor.FLOAT64, nil, nil},
-		{"P_CaD", etensor.FLOAT64, nil, nil},
-		{"P_DWt", etensor.FLOAT64, nil, nil},
-		{"P_Wt", etensor.FLOAT64, nil, nil},
-
-		{"X_CaM", etensor.FLOAT64, nil, nil},
-		{"X_CaP", etensor.FLOAT64, nil, nil},
-		{"X_CaD", etensor.FLOAT64, nil, nil},
-		{"X_DWt", etensor.FLOAT64, nil, nil},
-		{"X_Wt", etensor.FLOAT64, nil, nil},
-
-		{"N_Ca", etensor.FLOAT64, nil, nil},
-		{"N_CaM", etensor.FLOAT64, nil, nil},
-		{"N_CaP", etensor.FLOAT64, nil, nil},
-		{"N_CaD", etensor.FLOAT64, nil, nil},
-		{"N_DWt", etensor.FLOAT64, nil, nil},
-		{"N_Wt", etensor.FLOAT64, nil, nil},
-
-		{"O_CaM", etensor.FLOAT64, nil, nil},
-		{"O_CaP", etensor.FLOAT64, nil, nil},
-		{"O_CaD", etensor.FLOAT64, nil, nil},
-		{"O_DWt", etensor.FLOAT64, nil, nil},
-		{"O_Wt", etensor.FLOAT64, nil, nil},
 	}
+
+	ss.ConfigSynapse(&sch, "P_")
+	ss.ConfigSynapse(&sch, "X_")
+	ss.ConfigSynapse(&sch, "N_")
+	ss.ConfigSynapse(&sch, "O_")
+
 	dt.SetFromSchema(sch, 0)
 }
 
-func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "Kinase Learning Plot"
+func (ss *Sim) ConfigSynapse(sch *etable.Schema, pre string) {
+	*sch = append(*sch, etable.Column{pre + "Ca", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "CaP", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "CaD", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "DWt", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "Wt", etensor.FLOAT64, nil, nil})
+}
+
+func (ss *Sim) ConfigTrialPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Kinase Equations Trial Plot"
 	plt.Params.XAxisCol = "Cycle"
 	plt.SetTable(dt)
-	// plt.Params.Points = true
 
 	for _, cn := range dt.ColNames {
 		if cn == "Cycle" {
 			continue
 		}
-		if strings.Contains(cn, "DWt") {
+		switch {
+		case strings.Contains(cn, "DWt"):
 			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-		} else {
+		case strings.HasPrefix(cn, "X_"):
+			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		default:
 			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 		}
 	}
@@ -389,12 +396,56 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetColParams("SSpike", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("RSpike", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 
-	plt.SetColParams("N_Ca", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("N_CaM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("N_CaP", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("N_CaD", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("N_DWt", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("N_Wt", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	return plt
+}
+
+func (ss *Sim) ConfigRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Kinase Equations Run Plot"
+	plt.Params.XAxisCol = "Trial"
+	// plt.Params.LegendCol = "Cond"
+	plt.SetTable(dt)
+	// plt.Params.Points = true
+
+	for _, cn := range dt.ColNames {
+		if cn == "Cycle" {
+			continue
+		}
+		switch {
+		case strings.Contains(cn, "DWt"):
+			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		case strings.HasPrefix(cn, "X_"):
+			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		default:
+			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+		}
+	}
+
+	return plt
+}
+
+func (ss *Sim) ConfigDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
+	plt.Params.Title = "Kinase Equations DWt Plot"
+	plt.Params.XAxisCol = "ErrDWt"
+	plt.Params.LegendCol = "Cond"
+	plt.Params.Scale = 3
+	plt.SetTable(dt)
+	plt.Params.Points = true
+	plt.Params.Lines = false
+
+	for _, cn := range dt.ColNames {
+		switch {
+		case cn == "ErrDWt":
+			plt.SetColParams(cn, eplot.Off, eplot.FixMin, -1, eplot.FixMax, 1.5)
+		case cn == "X_DWt":
+			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		// case strings.Contains(cn, "DWt"):
+		// 	plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		// case strings.HasPrefix(cn, "X_"):
+		// 	plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		default:
+			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		}
+	}
 
 	return plt
 }

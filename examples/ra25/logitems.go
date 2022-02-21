@@ -295,6 +295,9 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				elog.Scope(elog.Train, elog.Epoch): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
+				}, elog.Scope(elog.AllModes, elog.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, elog.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Top5",
@@ -303,6 +306,9 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				elog.Scope(elog.Train, elog.Epoch): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
+				}, elog.Scope(elog.AllModes, elog.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, elog.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Next5",
@@ -311,6 +317,9 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				elog.Scope(elog.Train, elog.Epoch): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
+				}, elog.Scope(elog.AllModes, elog.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, elog.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Rest",
@@ -319,6 +328,9 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				elog.Scope(elog.Train, elog.Epoch): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
+				}, elog.Scope(elog.AllModes, elog.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, elog.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
 	}
 }

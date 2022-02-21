@@ -10,7 +10,7 @@ package kinase
 type SynParams struct {
 	Rule     Rules   `desc:"which learning rule to use"`
 	OptInteg bool    `desc:"use the optimized spike-only integration of cascaded CaM, CaP, CaD values -- iterates cascaded updates between spikes."`
-	SpikeG   float32 `def:"8" desc:"spiking gain factor -- only alters the overall range of values, keeping them in roughly the unit scale."`
+	SpikeG   float32 `def:"10,36" desc:"spiking gain factor for all algos -- only alters the overall range of values, keeping them in roughly the unit scale."`
 	MTau     float32 `def:"10" min:"1" desc:"CaM mean running-average time constant in cycles, reflecting calmodulin and total Ca influx biologically, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). This provides a pre-integration step before integrating into the CaP value"`
 	PTau     float32 `def:"40" min:"1" desc:"LTP Ca-driven factor time constant in cycles, reflecting CaMKII dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaM value, resulting in faster tracking of plus-phase signals."`
 	DTau     float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, reflecting DAPK1 dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
@@ -23,8 +23,8 @@ type SynParams struct {
 
 func (kp *SynParams) Defaults() {
 	kp.Rule = SynSpkCa
-	kp.OptInteg = true
-	kp.SpikeG = 8
+	kp.OptInteg = false
+	kp.SpikeG = 36
 	kp.MTau = 10 // was 40 -- 10 matches Urakubo NMDA
 	kp.PTau = 40 // 10
 	kp.DTau = 40
