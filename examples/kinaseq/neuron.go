@@ -30,7 +30,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dend.GbarR":   "6",    // 6 best
 					"Layer.Act.Dt.VmDendTau": "5",    // 5 > 2.81 here but small effect
 					"Layer.Act.NMDA.Gbar":    "0.15", // 0.15
-					"Layer.Act.NMDA.ITau":    "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Act.NMDA.ITau":    "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
 					"Layer.Act.NMDA.Tau":     "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":     "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.NMDA.Voff":    "5",    // 5 > 0 but need to reduce gbar -- too much

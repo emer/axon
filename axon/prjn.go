@@ -984,7 +984,6 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 // synaptically-integrated pre or post spike signals
 func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	kp := &pj.Learn.Kinase
-	_ = kp
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -1001,13 +1000,14 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			// _, caP, caD := kp.CurCaFmISI(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
-			// df := kp.DScale * caD
-			// if df < kp.LTDThr {
-			// 	df = kp.LTDThr
-			// }
-			// err := pj.Learn.XCal.DWt(caP, df)
-			err := float32(0)
+			_, caP, caD := kp.CurCa(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
+			ds := kp.DScale * caD
+			var err float32
+			if pj.Learn.XCal.On {
+				err = pj.Learn.XCal.DWt(caP, ds)
+			} else {
+				err = caP - ds
+			}
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

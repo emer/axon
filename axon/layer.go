@@ -1087,7 +1087,11 @@ func (ly *Layer) SendSpike(ltime *Time) {
 			if sp.Type() == emer.Inhib {
 				sp.(AxonPrjn).SendISpike(ni, nrn.Si)
 			} else {
-				sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda*(1.0-nrn.SnmdaI))
+				if ly.Act.Dend.SnmdaDeplete {
+					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda*(1.0-nrn.SnmdaI))
+				} else {
+					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda) // no I either
+				}
 			}
 		}
 		ly.Act.SenderGSpiked(nrn)
@@ -1104,6 +1108,7 @@ func (ly *Layer) GFmInc(ltime *Time) {
 		}
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 	}
+	ly.SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
 }
 
 // RecvGInc calls RecvGInc on receiving projections to collect Neuron-level G*Inc values.
@@ -1285,7 +1290,6 @@ func (ly *Layer) ActFmG(ltime *Time) {
 			nrn.Gk = nrn.GgabaB
 		}
 	}
-	ly.SynCa(ltime) // for now
 }
 
 // AvgMaxAct computes the average and max Act stats, used in inhibition

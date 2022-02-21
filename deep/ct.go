@@ -64,6 +64,7 @@ func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 		}
 		ly.GFmIncNeur(ltime, nrn, ly.CtxtGeGain*ly.CtxtGes[ni]) // extra context for ge
 	}
+	ly.SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
 }
 
 // SendCtxtGe sends activation over CTCtxtPrjn projections to integrate

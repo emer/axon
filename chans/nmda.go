@@ -13,10 +13,10 @@ import "github.com/goki/mat32"
 // increments
 type NMDAParams struct {
 	Gbar float32 `def:"0,0.15,1.4" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.  0.15 standard for SnmdaDeplete = false, 1.4 when on."`
-	Tau  float32 `def:"30,100" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential"`
-	ITau float32 `def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics -- set to 1 to eliminate that mechanism"`
-	MgC  float32 `def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. For SnmdaDeplete, 1.2 is best, otherwise 1.0 is better."`
-	Voff float32 `def:"0" desc:"offset in membrane potential for v-dependent functions -- easier to experiment with this rather than changing the entire model's dynamics -- TODO remove later"`
+	Tau  float32 `def:"30,100" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far."`
+	ITau float32 `def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism."`
+	MgC  float32 `def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far."`
+	Voff float32 `def:"0,5" desc:"offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model."`
 
 	Dt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	IDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
@@ -27,8 +27,8 @@ func (np *NMDAParams) Defaults() {
 	np.Gbar = 0.15
 	np.Tau = 100
 	np.ITau = 1 // off by default, as it doesn't work in actual axon models..
-	np.MgC = 1.0
-	np.Voff = 0
+	np.MgC = 1.4
+	np.Voff = 5
 	np.Update()
 }
 
@@ -88,4 +88,18 @@ func (np *NMDAParams) NMDASyn(nmda, raw float32) float32 {
 // including the GBar factor
 func (np *NMDAParams) Gnmda(nmda, vm float32) float32 {
 	return np.Gbar * np.MgGFmV(vm) * nmda
+}
+
+// SnmdaFmSpike updates sender-based NMDA channel opening based on neural spiking
+// using the inhibition and decay factors.  These dynamics closely match the
+// Urakubo et al (2008) allosteric NMDA receptor behavior, with ITau = 100, Tau = 30
+func (np *NMDAParams) SnmdaFmSpike(spike float32, snmdaO, snmdaI *float32) {
+	if spike > 0 {
+		inh := (1 - *snmdaI)
+		*snmdaO += inh * (1 - *snmdaO)
+		*snmdaI += inh
+	} else {
+		*snmdaO -= np.Dt * *snmdaO
+		*snmdaI -= np.IDt * *snmdaI
+	}
 }

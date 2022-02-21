@@ -34,7 +34,7 @@ type ActParams struct {
 	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
 	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
-	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters plus more general params"`
+	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
 	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
 	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
 }
@@ -240,28 +240,15 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw+geExt)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 
-	// Separate factors for learning
 	nrn.RnmdaSyn = ac.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
 
-	vmd := nrn.VmDend
-	if ac.Dend.CaVm {
-		vmd = nrn.Vm
-	}
-	mgg, cav := ac.NMDA.VFactors(vmd)
+	mgg, cav := ac.NMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
 	nrn.RCa = nrn.RnmdaSyn * mgg * cav
 	nrn.GnmdaRaw = 0
-
-	// sender-side nmda, for learning
 	if nrn.Spike > 0 {
-		inh := (1 - nrn.SnmdaI)
-		nrn.SnmdaO += inh * (1 - nrn.SnmdaO)
-		nrn.SnmdaI += inh
 		nrn.RCa += ac.Dend.VGCCCa
-	} else {
-		nrn.SnmdaO -= ac.NMDA.Dt * nrn.SnmdaO
-		nrn.SnmdaI -= ac.NMDA.IDt * nrn.SnmdaI
 	}
-	nrn.RCa = ac.Dend.CaNorm(nrn.RCa)
+	nrn.RCa = ac.Dend.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 }
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
@@ -495,20 +482,19 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
-	GbarExp      float32 `def:"0.2" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
-	GbarR        float32 `def:"3" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	GbarExp      float32 `def:"0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
+	GbarR        float32 `def:"6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
 	VGCCCa       float32 `desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
-	CaVm         bool    `desc:"use regular soma Vm for computing calcium levels used in learning, instead of the VmDend (which is still used for computing Gnmda for bistability)"`
-	CaMax        float32 `desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
-	CaThr        float32 `desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
+	CaMax        float32 `def:"100" desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
+	CaThr        float32 `def:"0.2" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
 	SeiDeplete   bool    `desc:"When a sending spike occurs, deplete the Se and Si factors to track availability of each synapse's channels based on time since last spiking.  This introduces noise, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
 	SnmdaDeplete bool    `desc:"When a sending spike occurs, deplete the Snmda factor to track availability of each synapse's channels based on time since last spiking.  This introduces significant noise in NMDA dynamics due to long time constant, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
 }
 
 func (dp *DendParams) Defaults() {
 	// note: leaving *Deplete as off by default but no active preference
-	dp.GbarExp = 0.2
-	dp.GbarR = 3
+	dp.GbarExp = 0.5
+	dp.GbarR = 6
 	dp.VGCCCa = 0
 	dp.CaMax = 100
 	dp.CaThr = 0.2

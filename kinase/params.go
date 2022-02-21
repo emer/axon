@@ -15,7 +15,6 @@ type SynParams struct {
 	PTau     float32 `def:"40" min:"1" desc:"LTP Ca-driven factor time constant in cycles, reflecting CaMKII dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life). Continuously updates based on current CaM value, resulting in faster tracking of plus-phase signals."`
 	DTau     float32 `def:"40" min:"1" desc:"LTD Ca-driven factor time constant in cycles, reflecting DAPK1 dynamics biologically, should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life).  Continuously updates based on current CaP value, resulting in slower integration that still reflects earlier minus-phase signals."`
 	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
-	LTDThr   float32 `desc:"threshold on CaP value to drive LTD instead of LTP -- plugs into XCal equation at that point for bottom end"`
 
 	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -30,7 +29,6 @@ func (kp *SynParams) Defaults() {
 	kp.PTau = 40 // 10
 	kp.DTau = 40
 	kp.DScale = 1 // 0.93, 1.05
-	kp.LTDThr = 0.02
 	kp.Update()
 }
 
@@ -71,19 +69,19 @@ func (kp *SynParams) ISIFmTime(ctime, stime int32) int {
 	return int(ctime - stime)
 }
 
-// CurCaFmISI returns the current Ca* values based on Ca values updated
-// at last spike, for optimized function table (funt) based computation.
+// CurCa returns the current Ca* values, dealing with updating for
+// optimized spike-time update versions.
 // ctime is current time in msec, and stime is last spike time (-1 if never)
-// func (kp *SynParams) CurCaFmISI(ctime, stime int32, caM, caP, caD float32) (cCaM, cCaP, cCaD float32) {
-// 	isi := kp.ISIFmTime(ctime, stime)
-// 	if !kp.OptInteg || isi < 0 {
-// 		return caM, caP, caD
-// 	}
-// 	cCaM = caM * mat32.FastExp(-float32(isi)/(kp.MTau-0.5)) // 0.5 factor makes it fit perfectly..
-// 	cCaP = kp.PFmLastSpike(caP, caM, isi)
-// 	cCaD = kp.DFmLastSpike(caD, caP, caM, isi)
-// 	return
-// }
+func (kp *SynParams) CurCa(ctime, stime int32, caM, caP, caD float32) (cCaM, cCaP, cCaD float32) {
+	// isi := kp.ISIFmTime(ctime, stime)
+	// if !kp.OptInteg || isi < 0 {
+	return caM, caP, caD
+	// }
+	// cCaM = caM * mat32.FastExp(-float32(isi)/(kp.MTau-0.5)) // 0.5 factor makes it fit perfectly..
+	// cCaP = kp.PFmLastSpike(caP, caM, isi)
+	// cCaD = kp.DFmLastSpike(caD, caP, caM, isi)
+	// return
+}
 
 // FuntCaFmSpike updates the function-table-based Ca values based on a spike
 // having occured (spk > 0) -- can pass a Ca value for spk instead of 1
