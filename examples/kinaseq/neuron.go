@@ -239,20 +239,20 @@ func (ss *Sim) SynUpdt() {
 	nsy.DWt = kp.DWt(nsy.CaP, nsy.CaD)
 
 	// opt = SynContCa
-	// osy.Ca = 10 * sn.CaM * rn.CaM
-	// kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
-	// osy.DWt = kp.DWt(osy.CaP, osy.CaD)
+	osy.Ca = 10 * sn.CaM * rn.CaM
+	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+	osy.DWt = kp.DWt(osy.CaP, osy.CaD)
 
-	if synspk {
-		osy.Ca, osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
-		osy.Ca = kp.SpikeG * sn.CaM * rn.CaM
-		kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
-		osy.SpikeT = ctime
-		osy.DWt = kp.DWt(osy.CaP, osy.CaD)
-	} else if ss.Time.Cycle == ss.TrialMsec-ss.ISIMsec-1 {
-		_, _, caP, caD := kp.CurCa(ctime, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
-		osy.DWt = kp.DWt(caP, caD)
-	}
+	// if synspk {
+	// 	osy.Ca, osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
+	// 	osy.Ca = kp.SpikeG * sn.CaM * rn.CaM
+	// 	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+	// 	osy.SpikeT = ctime
+	// 	osy.DWt = kp.DWt(osy.CaP, osy.CaD)
+	// } else if ss.Time.Cycle == ss.TrialMsec-ss.ISIMsec-1 {
+	// 	_, _, caP, caD := kp.CurCa(ctime, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
+	// 	osy.DWt = kp.DWt(caP, caD)
+	// }
 }
 
 func (ss *Sim) LogSyn(dt *etable.Table, row int, pre string, sy *axon.Synapse) {

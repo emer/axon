@@ -69,6 +69,7 @@ type Sim struct {
 	Plots      map[string]*eplot.Plot2D `view:"-" desc:"all plots"`
 	Win        *gi.Window               `view:"-" desc:"main GUI window"`
 	ToolBar    *gi.ToolBar              `view:"-" desc:"the master toolbar"`
+	StopNow    bool                     `view:"-" desc:"stop button"`
 }
 
 // TheSim is the overall state for this simulation
@@ -80,6 +81,7 @@ func (ss *Sim) Config() {
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
 	ss.Kinase.Defaults()
+	// ss.Kinase.Rule = kinase.SynContCa
 	ss.Time.Defaults()
 	ss.PGain = 10
 	ss.SpikeDisp = 0.1
@@ -206,6 +208,7 @@ func (ss *Sim) RunImpl(minusHz, plusHz, ntrials int) {
 func (ss *Sim) Trial() {
 	ss.Update()
 	ss.TrialImpl(ss.MinusHz, ss.PlusHz)
+	ss.Plot("TrialPlot").Update()
 }
 
 // TrialImpl runs one trial for given parameters
@@ -262,7 +265,6 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 			ss.Time.CycleInc()
 		}
 	}
-	ss.Plot("TrialPlot").Update()
 }
 
 // ConfigGui configures the GoGi gui interface for this simulation,
