@@ -214,11 +214,18 @@ func (ss *Sim) SynUpdt() {
 	psy.CaD = ss.PGain * sn.CaD * rn.CaD
 	psy.DWt = psy.CaP - psy.CaD
 
+	ctime := int32(ss.Time.CycleTot)
+
+	synspk := false
+	if sn.Spike > 0 || rn.Spike > 0 {
+		synspk = true
+	}
 	if kp.Rule == kinase.SynContCa {
 		ssy.Ca = kp.SpikeG * sn.CaM * rn.CaM
 	} else { // SynSpkCa is default
-		if sn.Spike > 0 || rn.Spike > 0 {
+		if synspk {
 			ssy.Ca = kp.SpikeG * sn.CaM * rn.CaM
+			ssy.SpikeT = ctime
 		} else {
 			ssy.Ca = 0
 		}
@@ -231,19 +238,21 @@ func (ss *Sim) SynUpdt() {
 	kp.FmCa(nsy.Ca, &nsy.CaM, &nsy.CaP, &nsy.CaD)
 	nsy.DWt = kp.DWt(nsy.CaP, nsy.CaD)
 
-	osy.Ca = 10 * sn.CaM * rn.CaM
-	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
-	osy.DWt = kp.DWt(osy.CaP, osy.CaD)
+	// opt = SynContCa
+	// osy.Ca = 10 * sn.CaM * rn.CaM
+	// kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+	// osy.DWt = kp.DWt(osy.CaP, osy.CaD)
 
-	// // optimized
-	// if cSpk > 0 {
-	// 	kp.FuntCaFmSpike(cSpk, &cISI, &oSpkCaM, &oSpkCaP, &oSpkCaD)
-	// 	oCaM, oCaP, oCaD = kp.CurCaFmISI(cISI, oSpkCaM, oSpkCaP, oSpkCaD)
-	// } else if cISI >= 0 {
-	// 	cISI += 1
-	// 	oCaM, oCaP, oCaD = kp.CurCaFmISI(cISI, oSpkCaM, oSpkCaP, oSpkCaD)
-	// }
-	// oDWt = kp.DWt(oCaP, oCaD)
+	if synspk {
+		osy.Ca, osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
+		osy.Ca = kp.SpikeG * sn.CaM * rn.CaM
+		kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+		osy.SpikeT = ctime
+		osy.DWt = kp.DWt(osy.CaP, osy.CaD)
+	} else if ss.Time.Cycle == ss.TrialMsec-ss.ISIMsec-1 {
+		_, _, caP, caD := kp.CurCa(ctime, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
+		osy.DWt = kp.DWt(caP, caD)
+	}
 }
 
 func (ss *Sim) LogSyn(dt *etable.Table, row int, pre string, sy *axon.Synapse) {

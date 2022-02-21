@@ -998,7 +998,7 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(int32(ltime.CycleTot), sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
+			_, _, caP, caD := kp.CurCa(int32(ltime.CycleTot), sy.SpikeT, sy.Ca, sy.CaM, sy.CaP, sy.CaD)
 			ds := kp.DScale * caD
 			var err float32
 			if pj.Learn.XCal.On {
