@@ -45,10 +45,10 @@ func (ln *LearnNeurParams) Defaults() {
 // InitSpikeCa initializes the running-average activation values that drive learning.
 // Called by InitWts (at start of learning).
 func (ln *LearnNeurParams) InitSpikeCa(nrn *Neuron) {
-	nrn.CaLrn = ln.SpikeCa.Init
-	nrn.CaM = ln.SpikeCa.Init
-	nrn.CaP = ln.SpikeCa.Init
-	nrn.CaD = ln.SpikeCa.Init
+	nrn.CaLrn = 0
+	nrn.CaM = 0
+	nrn.CaP = 0
+	nrn.CaD = 0
 	nrn.CaPLrn = 0
 	nrn.CaDLrn = 0
 }
@@ -73,7 +73,6 @@ type SpikeCaParams struct {
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	// TODO: can we remove LrnM in favor of the longer PTau and shorter MTau?
 	LrnM float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron CaPLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
-	Init float32 `def:"0.15" min:"0" max:"1" desc:"initial value for average"`
 
 	LrnDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -98,7 +97,6 @@ func (aa *SpikeCaParams) Defaults() {
 	aa.PTau = 40
 	aa.DTau = 40 // 20 for 25 cycle qtr
 	aa.LrnM = 0.1
-	aa.Init = 0.15
 	aa.Update()
 
 }

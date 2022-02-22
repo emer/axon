@@ -838,6 +838,9 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 		if sn.Spike == 0 {
 			continue
 		}
+		if sn.CaP < slay.Learn.SpikeCa.MinLrn && sn.CaD < slay.Learn.SpikeCa.MinLrn {
+			continue
+		}
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -849,6 +852,9 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 			}
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			if rn.CaP < slay.Learn.SpikeCa.MinLrn && rn.CaD < slay.Learn.SpikeCa.MinLrn {
+				continue
+			}
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
@@ -877,6 +883,9 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 		if rn.Spike == 0 {
 			continue
 		}
+		if rn.CaP < slay.Learn.SpikeCa.MinLrn && rn.CaD < slay.Learn.SpikeCa.MinLrn {
+			continue
+		}
 		nc := int(pj.RConN[ri])
 		st := int(pj.RConIdxSt[ri])
 		rsidxs := pj.RSynIdx[st : st+nc]
@@ -888,6 +897,9 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 			}
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
+			if sn.CaP < slay.Learn.SpikeCa.MinLrn && sn.CaD < slay.Learn.SpikeCa.MinLrn {
+				continue
+			}
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
@@ -921,6 +933,9 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			if rn.CaP < slay.Learn.SpikeCa.MinLrn && rn.CaD < slay.Learn.SpikeCa.MinLrn {
+				continue
+			}
 			switch kp.Rule {
 			case kinase.SynNMDACa:
 				sy.Ca = sn.SnmdaO * rn.RCa
