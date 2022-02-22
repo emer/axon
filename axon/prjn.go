@@ -832,6 +832,7 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 	kp := &pj.Learn.Kinase
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	ctime := int32(ltime.CycleTot)
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
@@ -845,12 +846,17 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			if rn.Spike == 0 {
+				continue
+			}
+			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
-				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
-				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
+				sy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
 			}
+			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			sy.SpikeT = ctime
 		}
 	}
 }
@@ -863,6 +869,7 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa || !kp.OptInteg {
 		return
 	}
+	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	for ri := range rlay.Neurons {
@@ -878,12 +885,17 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 			sy := &pj.Syns[rsi]
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
+			if sn.Spike == 0 {
+				continue
+			}
+			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
-				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			} else {
-				// kp.FuntCaFmSpike(int32(ltime.CycleTot), &sy.SpikeT, 1, &sy.CaM, &sy.CaP, &sy.CaD)
+				sy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
 			}
+			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			sy.SpikeT = ctime
 		}
 	}
 }
@@ -919,9 +931,6 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 				} else {
 					sy.Ca = 0
 				}
-				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			case kinase.SynContCa:
-				sy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
 				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			}
 		}
@@ -984,6 +993,7 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	kp := &pj.Learn.Kinase
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
@@ -998,7 +1008,7 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, _, caP, caD := kp.CurCa(int32(ltime.CycleTot), sy.SpikeT, sy.Ca, sy.CaM, sy.CaP, sy.CaD)
+			_, caP, caD := kp.CurCa(ctime, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			ds := kp.DScale * caD
 			var err float32
 			if pj.Learn.XCal.On {

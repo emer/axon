@@ -15,14 +15,13 @@ func _() {
 	var x [1]struct{}
 	_ = x[NeurSpkCa-0]
 	_ = x[SynSpkCa-1]
-	_ = x[SynContCa-2]
-	_ = x[SynNMDACa-3]
-	_ = x[RulesN-4]
+	_ = x[SynNMDACa-2]
+	_ = x[RulesN-3]
 }
 
-const _Rules_name = "NeurSpkCaSynSpkCaSynContCaSynNMDACaRulesN"
+const _Rules_name = "NeurSpkCaSynSpkCaSynNMDACaRulesN"
 
-var _Rules_index = [...]uint8{0, 9, 17, 26, 35, 41}
+var _Rules_index = [...]uint8{0, 9, 17, 26, 32}
 
 func (i Rules) String() string {
 	if i < 0 || i >= Rules(len(_Rules_index)-1) {

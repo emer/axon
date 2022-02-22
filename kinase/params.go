@@ -10,28 +10,25 @@ package kinase
 type SynParams struct {
 	Rule     Rules   `desc:"which learning rule to use"`
 	OptInteg bool    `desc:"use the optimized spike-only integration of cascaded CaM, CaP, CaD values -- iterates cascaded updates between spikes."`
-	SpikeG   float32 `def:"10,36" desc:"spiking gain factor for synapse-based algos (NeurSpkCa uses layer level params) -- 10 for SynContCa, 36 for SynSpkCa to match NeurSpkCa in overall dwt magnitude -- only alters the overall range of values, keeping them in roughly the unit scale."`
-	MTau     float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
+	SpikeG   float32 `def:"42" desc:"spiking gain factor for synapse-based algos (NeurSpkCa uses layer level params) -- 42 for SynSpkCa matches NeurSpkCa in overall dwt magnitude -- only alters the overall range of values, keeping them in roughly the unit scale."`
+	MTau     float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaLrn * ru->CaLrn with typical 20 msec Tau.`
 	PTau     float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau     float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	LrnTau   float32 `def:"20" min:"1" desc:"for SynContCa rule only -- must match the value used on the layer-level Learn.SpikeCa params: spike-driven calcium for synapse-level learning rules (CaLrn) time constant in cycles (msec)"`
 
-	DScale float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle"`
+	DScale float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle.  Use 1 for SynSpkCa, 0.93 for SynNMDACa."`
 
-	MDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	PDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	DDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	LrnDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
 func (kp *SynParams) Defaults() {
 	kp.Rule = SynSpkCa
 	kp.OptInteg = true
-	kp.SpikeG = 36
-	kp.MTau = 10 // was 40 -- 10 matches Urakubo NMDA
-	kp.PTau = 40 // 10
+	kp.SpikeG = 42
+	kp.MTau = 5
+	kp.PTau = 40
 	kp.DTau = 40
-	kp.LrnTau = 20
 	kp.DScale = 1 // 0.93, 1.05
 	kp.Update()
 }
@@ -40,7 +37,6 @@ func (kp *SynParams) Update() {
 	kp.MDt = 1 / kp.MTau
 	kp.PDt = 1 / kp.PTau
 	kp.DDt = 1 / kp.DTau
-	kp.LrnDt = 1 / kp.LrnTau
 }
 
 // FmSpike computes updates from current spike value, for
@@ -77,22 +73,17 @@ func (kp *SynParams) ISIFmTime(ctime, stime int32) int {
 // CurCa returns the current Ca* values, dealing with updating for
 // optimized spike-time update versions.
 // ctime is current time in msec, and stime is last spike time (-1 if never)
-func (kp *SynParams) CurCa(ctime, stime int32, ca, caM, caP, caD float32) (cCa, cCaM, cCaP, cCaD float32) {
+func (kp *SynParams) CurCa(ctime, stime int32, caM, caP, caD float32) (cCaM, cCaP, cCaD float32) {
 	isi := kp.ISIFmTime(ctime, stime)
-	cCa, cCaM, cCaP, cCaD = ca, caM, caP, caD
+	cCaM, cCaP, cCaD = caM, caP, caD
 	if !kp.OptInteg || isi <= 0 {
 		return
 	}
-	switch kp.Rule {
-	case SynContCa:
-		for i := 0; i < isi; i++ {
-			cCa -= kp.LrnDt * cCa
-			kp.FmCa(cCa, &cCaM, &cCaP, &cCaD)
-		}
-	default:
-		for i := 0; i < isi; i++ {
-			kp.FmCa(0, &cCaM, &cCaP, &cCaD) // just decay
-		}
+	if isi > 100 {
+		return 0, 0, 0
+	}
+	for i := 0; i < isi; i++ {
+		kp.FmCa(0, &cCaM, &cCaP, &cCaD) // just decay to 0
 	}
 	return
 }

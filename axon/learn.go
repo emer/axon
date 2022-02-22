@@ -93,8 +93,8 @@ func (aa *SpikeCaParams) Defaults() {
 	aa.SpikeG = 8
 	aa.MinLrn = 0.02
 	aa.LrnTau = 20
-	aa.MTau = 40 // 20 for 25 cycle qtr
-	aa.PTau = 10
+	aa.MTau = 10 // 20 for 25 cycle qtr
+	aa.PTau = 40
 	aa.DTau = 40 // 20 for 25 cycle qtr
 	aa.LrnM = 0.1
 	aa.Init = 0.15

@@ -11,7 +11,6 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/chans"
-	"github.com/emer/axon/kinase"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
@@ -208,7 +207,7 @@ func (ss *Sim) SynUpdt() {
 	nsy := &ss.SynNMDA
 	osy := &ss.SynOpt
 
-	// this is standard CHL s * r product form
+	// NeurSpkCa continuous update: standard CHL s * r product form
 	psy.CaM = ss.PGain * sn.CaM * rn.CaM
 	psy.CaP = ss.PGain * sn.CaP * rn.CaP
 	psy.CaD = ss.PGain * sn.CaD * rn.CaD
@@ -216,43 +215,41 @@ func (ss *Sim) SynUpdt() {
 
 	ctime := int32(ss.Time.CycleTot)
 
+	// SynSpkCa: continuous synaptic updating
 	synspk := false
 	if sn.Spike > 0 || rn.Spike > 0 {
 		synspk = true
 	}
-	if kp.Rule == kinase.SynContCa {
-		ssy.Ca = kp.SpikeG * sn.CaM * rn.CaM
-	} else { // SynSpkCa is default
-		if synspk {
-			ssy.Ca = kp.SpikeG * sn.CaM * rn.CaM
-			ssy.SpikeT = ctime
-		} else {
-			ssy.Ca = 0
-		}
+	if synspk {
+		ssy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
+		ssy.SpikeT = ctime
+	} else {
+		ssy.Ca = 0
 	}
 	kp.FmCa(ssy.Ca, &ssy.CaM, &ssy.CaP, &ssy.CaD)
 	ssy.DWt = kp.DWt(ssy.CaP, ssy.CaD)
 
-	// SynNMDACa
+	// SynNMDACa: NMDA driven synaptic updating
 	nsy.Ca = sn.SnmdaO * rn.RCa
 	kp.FmCa(nsy.Ca, &nsy.CaM, &nsy.CaP, &nsy.CaD)
 	nsy.DWt = kp.DWt(nsy.CaP, nsy.CaD)
 
-	// opt = SynContCa
-	osy.Ca = 10 * sn.CaM * rn.CaM
-	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
-	osy.DWt = kp.DWt(osy.CaP, osy.CaD)
+	// opt = SynContCa -- not supported anymore
+	// osy.Ca = 10 * sn.CaM * rn.CaM
+	// kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+	// osy.DWt = kp.DWt(osy.CaP, osy.CaD)
 
-	// if synspk {
-	// 	osy.Ca, osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
-	// 	osy.Ca = kp.SpikeG * sn.CaM * rn.CaM
-	// 	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
-	// 	osy.SpikeT = ctime
-	// 	osy.DWt = kp.DWt(osy.CaP, osy.CaD)
-	// } else if ss.Time.Cycle == ss.TrialMsec-ss.ISIMsec-1 {
-	// 	_, _, caP, caD := kp.CurCa(ctime, osy.SpikeT, osy.Ca, osy.CaM, osy.CaP, osy.CaD)
-	// 	osy.DWt = kp.DWt(caP, caD)
-	// }
+	// OptInteg form of SynSpkCa
+	if synspk {
+		osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.SpikeT, osy.CaM, osy.CaP, osy.CaD)
+		osy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
+		kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+		osy.SpikeT = ctime
+		osy.DWt = kp.DWt(osy.CaP, osy.CaD)
+	} else if ss.Time.Cycle == ss.TrialMsec-ss.ISIMsec-1 { // make sure we have at end of plus
+		_, caP, caD := kp.CurCa(ctime, osy.SpikeT, osy.CaM, osy.CaP, osy.CaD)
+		osy.DWt = kp.DWt(caP, caD)
+	}
 }
 
 func (ss *Sim) LogSyn(dt *etable.Table, row int, pre string, sy *axon.Synapse) {
@@ -413,16 +410,12 @@ func (ss *Sim) ConfigRunPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D 
 	plt.Params.XAxisCol = "Trial"
 	// plt.Params.LegendCol = "Cond"
 	plt.SetTable(dt)
-	// plt.Params.Points = true
+	plt.Params.Points = true
+	plt.Params.Lines = false
 
 	for _, cn := range dt.ColNames {
-		if cn == "Cycle" {
-			continue
-		}
 		switch {
 		case strings.Contains(cn, "DWt"):
-			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-		case strings.HasPrefix(cn, "X_"):
 			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 		default:
 			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)

@@ -130,13 +130,13 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
+					"Prjn.Learn.Lrate.Base":      "0.1", // 0.1 for SynSpkCa even though dwt equated
 					"Prjn.SWt.Adapt.Lrate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.SpikeG":   "12",
+					"Prjn.Learn.Kinase.SpikeG":   "12",  // 42 nominal for spkca, but 12 is better..
 					"Prjn.Learn.Kinase.Rule":     "SynSpkCa",
-					"Prjn.Learn.Kinase.OptInteg": "false", // doesn't work, removing
-					"Prjn.Learn.Kinase.MTau":     "5",     // 5 > 10 test more
+					"Prjn.Learn.Kinase.OptInteg": "true",
+					"Prjn.Learn.Kinase.MTau":     "5", // 5 > 10 test more
 					"Prjn.Learn.Kinase.PTau":     "40",
 					"Prjn.Learn.Kinase.DTau":     "40",
 					"Prjn.Learn.Kinase.DScale":   "1",

@@ -159,6 +159,9 @@ func (ss *Sim) ConfigLogItems() {
 				ctx.Stats.SetFloat(nm, pertrl)
 				ctx.SetFloat64(pertrl)
 				tmr.ResetStart()
+			}, elog.Scope(elog.AllModes, elog.Run): func(ctx *elog.Context) {
+				ix := ctx.LastNRows(ctx.Mode, elog.Epoch, 5)
+				ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 			}}})
 
 	// Standard stats for Ge and AvgAct tuning -- for all hidden, output layers
