@@ -45,6 +45,7 @@ func (ln *LearnNeurParams) Defaults() {
 // InitSpikeCa initializes the running-average activation values that drive learning.
 // Called by InitWts (at start of learning).
 func (ln *LearnNeurParams) InitSpikeCa(nrn *Neuron) {
+	nrn.CaLrn = ln.SpikeCa.Init
 	nrn.CaM = ln.SpikeCa.Init
 	nrn.CaP = ln.SpikeCa.Init
 	nrn.CaD = ln.SpikeCa.Init

@@ -844,11 +844,11 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 		scons := pj.SConIdx[st : st+nc]
 		for ci := range syns {
 			sy := &syns[ci]
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if rn.Spike == 0 {
+			if sy.SpikeT == ctime {
 				continue
 			}
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
@@ -883,11 +883,11 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 		rcons := pj.RConIdx[st : st+nc]
 		for ci, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
-			si := rcons[ci]
-			sn := &slay.Neurons[si]
-			if sn.Spike == 0 {
+			if sy.SpikeT == ctime {
 				continue
 			}
+			si := rcons[ci]
+			sn := &slay.Neurons[si]
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
 				sy.Ca = sn.SnmdaO * rn.RCa
@@ -1008,7 +1008,7 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(ctime, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
+			_, caP, caD := kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			ds := kp.DScale * caD
 			var err float32
 			if pj.Learn.XCal.On {

@@ -109,6 +109,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Learn.SpikeCa.MTau":   "10",
 					"Layer.Learn.SpikeCa.PTau":   "40",
 					"Layer.Learn.SpikeCa.DTau":   "40",
+					"Layer.Learn.SpikeCa.Init":   "0",
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
@@ -752,6 +753,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	}
 	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
 		ss.Net.Cycle(&ss.Time)
+		ss.StatCounters(train)
 		if !train {
 			ss.Log(elog.Test, elog.Cycle)
 		}
