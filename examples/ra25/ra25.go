@@ -502,13 +502,13 @@ type Sim struct {
 	Net          *axon.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params       emer.Params     `view:"inline" desc:"all parameter management"`
 	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	Pats         *etable.Table   `view:"no-inline" desc:"the training patterns to use"`
 	Stats        estats.Stats    `desc:"contains computed statistic values"`
 	Logs         elog.Logs       `desc:"Contains all the logs and information about the logs.'"`
 	StartRun     int             `desc:"starting run number -- typically 0 but can be set in command args for parallel runs on a cluster"`
 	MaxRuns      int             `desc:"maximum number of model runs to perform (starting from StartRun)"`
 	MaxEpcs      int             `desc:"maximum number of epochs to run per model run"`
 	NZeroStop    int             `desc:"if a positive number, training will stop after this many epochs with zero UnitErr"`
+	Pats         *etable.Table   `view:"no-inline" desc:"the training patterns to use"`
 	TrainEnv     env.FixedTable  `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
 	TestEnv      env.FixedTable  `desc:"Testing environment -- manages iterating over testing"`
 	Time         axon.Time       `desc:"axon timing parameters and state"`
@@ -536,12 +536,12 @@ var TheSim Sim
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
-	ss.Pats = &etable.Table{}
 	ss.Params.Params = ParamSetsMin
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
+	ss.Pats = &etable.Table{}
 	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
 	for i := 0; i < 100; i++ {
 		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
@@ -1296,12 +1296,11 @@ func (ss *Sim) ConfigGui() *gi.Window {
 								fmt.Printf("testing index: %d\n", idxs[0])
 								ss.TestItem(idxs[0])
 								ss.GUI.IsRunning = false
-								ss.GUI.ViewPort.SetNeedsFullRender()
+								ss.GUI.UpdateWindow()
 							}
 						}
 					}
 				})
-
 		},
 	})
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Test All",

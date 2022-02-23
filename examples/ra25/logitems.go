@@ -60,15 +60,6 @@ func (ss *Sim) ConfigLogItems() {
 				ctx.SetStatInt("Cycle")
 			}}})
 	ss.Logs.AddItem(&elog.Item{
-		Name:  "FirstZero",
-		Type:  etensor.FLOAT64,
-		Plot:  elog.DTrue,
-		Range: minmax.F64{Min: -1},
-		Write: elog.WriteMap{
-			elog.Scope(elog.Train, elog.Run): func(ctx *elog.Context) {
-				ctx.SetStatInt("FirstZero")
-			}}})
-	ss.Logs.AddItem(&elog.Item{
 		Name: "UnitErr",
 		Type: etensor.FLOAT64,
 		Plot: elog.DFalse,
@@ -162,6 +153,15 @@ func (ss *Sim) ConfigLogItems() {
 			}, elog.Scope(elog.AllModes, elog.Run): func(ctx *elog.Context) {
 				ix := ctx.LastNRows(ctx.Mode, elog.Epoch, 5)
 				ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+			}}})
+	ss.Logs.AddItem(&elog.Item{
+		Name:  "FirstZero",
+		Type:  etensor.FLOAT64,
+		Plot:  elog.DTrue,
+		Range: minmax.F64{Min: -1},
+		Write: elog.WriteMap{
+			elog.Scope(elog.Train, elog.Run): func(ctx *elog.Context) {
+				ctx.SetStatInt("FirstZero")
 			}}})
 
 	// Standard stats for Ge and AvgAct tuning -- for all hidden, output layers
