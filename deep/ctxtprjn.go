@@ -121,7 +121,7 @@ func (pj *CTCtxtPrjn) RecvCtxtGeInc() {
 //  Learn methods
 
 // DWt computes the weight change (learning) for Ctxt projections
-func (pj *CTCtxtPrjn) DWt() {
+func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}

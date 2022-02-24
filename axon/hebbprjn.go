@@ -20,7 +20,7 @@ func (pj *HebbPrjn) UpdateParams() {
 }
 
 // DWt computes the hebbian weight change
-func (pj *HebbPrjn) DWt() {
+func (pj *HebbPrjn) DWt(ltime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}

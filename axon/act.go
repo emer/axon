@@ -482,8 +482,8 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
-	GbarExp      float32 `def:"0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
-	GbarR        float32 `def:"6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	GbarExp      float32 `def:"0.2,0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
+	GbarR        float32 `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
 	VGCCCa       float32 `desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
 	CaMax        float32 `def:"100" desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
 	CaThr        float32 `def:"0.2" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
@@ -493,9 +493,9 @@ type DendParams struct {
 
 func (dp *DendParams) Defaults() {
 	// note: leaving *Deplete as off by default but no active preference
-	dp.GbarExp = 0.5
-	dp.GbarR = 6
-	dp.VGCCCa = 0
+	dp.GbarExp = 0.2
+	dp.GbarR = 3
+	dp.VGCCCa = 20
 	dp.CaMax = 100
 	dp.CaThr = 0.2
 }

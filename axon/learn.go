@@ -477,7 +477,7 @@ type XCalParams struct {
 	DWtThr  float32 `def:"0.0001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
 	DRev    float32 `def:"0.1" min:"0" max:"0.99" desc:"proportional point within LTD range where magnitude reverses to go back down to zero at zero -- err-driven svm component does better with smaller values"`
 	DThr    float32 `def:"0.0001,0.01" min:"0" desc:"minimum LTD threshold value below which no weight change occurs -- this is now *relative* to the threshold"`
-	LrnThr  float32 `def:"0.01" desc:"xcal learning threshold -- don't learn when sending unit activation is below this value in both phases -- due to the nature of the learning function being 0 when the sr coproduct is 0, it should not affect learning in any substantial way -- nonstandard learning algorithms that have different properties should ignore it"`
+	LrnThr  float32 `def:"0.05" desc:"xcal learning threshold -- don't learn when sending unit activation is below this value in both phases -- due to the nature of the learning function being 0 when the sr coproduct is 0, it should not affect learning in any substantial way -- nonstandard learning algorithms that have different properties should ignore it"`
 
 	DRevRatio float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"-(1-DRev)/DRev -- multiplication factor in learning rule -- builds in the minus sign!"`
 }
@@ -491,12 +491,13 @@ func (xc *XCalParams) Update() {
 }
 
 func (xc *XCalParams) Defaults() {
+	xc.On = true
 	xc.SubMean = 1
 	xc.PThrMin = 0
 	xc.DWtThr = 0.0001
 	xc.DRev = 0.1
 	xc.DThr = 0.0001
-	xc.LrnThr = 0.01
+	xc.LrnThr = 0.05
 	xc.Update()
 }
 
