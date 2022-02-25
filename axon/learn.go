@@ -35,7 +35,7 @@ func (ln *LearnNeurParams) Update() {
 func (ln *LearnNeurParams) Defaults() {
 	ln.SpikeCa.Defaults()
 	ln.Snmda.Defaults()
-	ln.Snmda.ITau = 100
+	ln.Snmda.ITau = 1
 	ln.Snmda.Tau = 30
 	ln.Snmda.Update()
 	ln.TrgAvgAct.Defaults()
@@ -66,19 +66,16 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // learning rule.
 type SpikeCaParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives SpkCaM value"`
-	MinLrn float32 `def:"0.02" desc:"minimum learning activation -- below this goes to zero"`
-	LrnTau float32 `def:"20" min:"1" desc:"spike-driven calcium for synapse-level learning rules (CaLrn) time constant in cycles (msec)"`
+	MinLrn float32 `def:"0.01" desc:"minimum learning activation -- below this goes to zero"`
+	LrnTau float32 `def:"30" min:"1" desc:"spike-driven calcium for synapse-level learning rules (CaLrn) time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	// TODO: can we remove LrnM in favor of the longer PTau and shorter MTau?
-	LrnM float32 `def:"0.1,0" min:"0" max:"1" desc:"how much of the medium term average activation to mix in with the short (plus phase) to compute the Neuron CaPLrn variable that is used for the unit's short-term average in learning. This is important to ensure that when unit turns off in plus phase (short time scale), enough medium-phase trace remains so that learning signal doesn't just go all the way to 0, at which point no learning would take place -- typically need faster time constant for updating S such that this trace of the M signal is lost -- can set SSTau=7 and set this to 0 but learning is generally somewhat worse"`
 
 	LrnDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	PDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	DDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	LrnS  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"1-LrnM"`
 }
 
 func (aa *SpikeCaParams) Update() {
@@ -86,17 +83,15 @@ func (aa *SpikeCaParams) Update() {
 	aa.MDt = 1 / aa.MTau
 	aa.PDt = 1 / aa.PTau
 	aa.DDt = 1 / aa.DTau
-	aa.LrnS = 1 - aa.LrnM
 }
 
 func (aa *SpikeCaParams) Defaults() {
 	aa.SpikeG = 8
-	aa.MinLrn = 0.02
-	aa.LrnTau = 20
-	aa.MTau = 10 // 20 for 25 cycle qtr
+	aa.MinLrn = 0.01
+	aa.LrnTau = 30
+	aa.MTau = 10
 	aa.PTau = 40
-	aa.DTau = 40 // 20 for 25 cycle qtr
-	aa.LrnM = 0.1
+	aa.DTau = 40
 	aa.Update()
 
 }
@@ -108,12 +103,11 @@ func (aa *SpikeCaParams) CaFmSpike(spike float32, calrn, scam, scap, scad, capLr
 	*scap += aa.PDt * (*scam - *scap)
 	*scad += aa.DDt * (*scap - *scad)
 	*cadLrn = *scad
-	thrP := *scap
-	if *cadLrn < aa.MinLrn && thrP < aa.MinLrn {
+	*capLrn = *scap
+	if *cadLrn < aa.MinLrn && *capLrn < aa.MinLrn {
+		*capLrn = 0
 		*cadLrn = 0
-		thrP = 0
 	}
-	*capLrn = aa.LrnS*thrP + aa.LrnM**cadLrn
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -426,6 +420,7 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
 	ls.Kinase.Defaults()
+	ls.Kinase.Rule = kinase.NeurSpkCa
 }
 
 // CHLdWt returns the error-driven weight change component for the
@@ -472,12 +467,12 @@ func (ls *LrateParams) Init() {
 // which is the standard learning equation for axon .
 type XCalParams struct {
 	On      bool    `desc:"if true, use XCal function -- otherwise just does a direct subtraction"`
-	SubMean float32 `def:"1" desc:"amount of the mean dWt to subtract -- 1.0 = full zero-sum dWt -- only on non-zero DWts (see DWtThr)"`
-	PThrMin float32 `desc:"minimum potentiation threshold term in raw original units -- PThr = crossover point between LTD and LTP = floating threshold value based on LTD factor (CaD) -- this establishes a minimum value for the threshold"`
+	SubMean float32 `def:"1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts (see DWtThr)"`
+	PThrMin float32 `def:"0.05" desc:"minimum LTP potentiation threshold in raw original units -- PThr = floating threshold crossover point between LTD and LTP, which is set to the LTD factor (CaD) -- this establishes a minimum value for the threshold"`
 	DWtThr  float32 `def:"0.0001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
 	DRev    float32 `def:"0.1" min:"0" max:"0.99" desc:"proportional point within LTD range where magnitude reverses to go back down to zero at zero -- err-driven svm component does better with smaller values"`
 	DThr    float32 `def:"0.0001,0.01" min:"0" desc:"minimum LTD threshold value below which no weight change occurs -- this is now *relative* to the threshold"`
-	LrnThr  float32 `def:"0.05" desc:"xcal learning threshold -- don't learn when sending unit activation is below this value in both phases -- due to the nature of the learning function being 0 when the sr coproduct is 0, it should not affect learning in any substantial way -- nonstandard learning algorithms that have different properties should ignore it"`
+	LrnThr  float32 `def:"0.01" desc:"learning threshold on CaPLrn and CaDLrn (in their raw units) -- does not learn if both of these values are below this threshold."`
 
 	DRevRatio float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"-(1-DRev)/DRev -- multiplication factor in learning rule -- builds in the minus sign!"`
 }
@@ -493,11 +488,11 @@ func (xc *XCalParams) Update() {
 func (xc *XCalParams) Defaults() {
 	xc.On = true
 	xc.SubMean = 1
-	xc.PThrMin = 0
+	xc.PThrMin = 0.05
 	xc.DWtThr = 0.0001
 	xc.DRev = 0.1
 	xc.DThr = 0.0001
-	xc.LrnThr = 0.05
+	xc.LrnThr = 0.01
 	xc.Update()
 }
 

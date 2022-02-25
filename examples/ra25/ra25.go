@@ -85,7 +85,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
 					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def
+					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
 					"Layer.Act.Dend.GbarR":        "3",    // 6 > 3 old def
 					"Layer.Act.Dt.VmDendTau":      "5",    // 5 > 2.81 here but small effect
 					"Layer.Act.Dt.VmSteps":        "2",    // 2 > 3 -- somehow works better
@@ -104,7 +104,6 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.Dend.VGCCCa":      "20",   // 20 seems reasonable, but not obviously better than 0
 					"Layer.Act.Dend.CaMax":       "100",
 					"Layer.Act.Dend.CaThr":       "0.2",
-					"Layer.Learn.SpikeCa.LrnM":   "0", // 0.1 default -- no diff -- try in larger models
 					"Layer.Learn.SpikeCa.LrnTau": "40",
 					"Layer.Learn.SpikeCa.MTau":   "10",
 					"Layer.Learn.SpikeCa.PTau":   "40",
@@ -131,10 +130,10 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.2", // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.SpikeG":   "6",   // 42 nominal for spkca, but 12 is better..
+					"Prjn.Learn.Lrate.Base":      "0.15", // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":       "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":         "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Kinase.SpikeG":   "6",    // 42 nominal for spkca, but 12 is better..
 					"Prjn.Learn.Kinase.Rule":     "SynSpkCa",
 					"Prjn.Learn.Kinase.OptInteg": "false",
 					"Prjn.Learn.Kinase.MTau":     "5", // 5 > 10 test more
@@ -258,7 +257,6 @@ var ParamSetsMin = params.Sets{
 					"Layer.Learn.SpikeCa.MTau":    "10",
 					"Layer.Learn.SpikeCa.PTau":    "40",
 					"Layer.Learn.SpikeCa.DTau":    "40",
-					"Layer.Learn.SpikeCa.LrnM":    "0",   // 0.1 def -- 0 = no diff -- try in larger models
 					"Layer.Learn.Snmda.ITau":      "1",   // urak 100
 					"Layer.Learn.Snmda.Tau":       "100", // urak 30
 				}},
@@ -289,6 +287,51 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
 					"Prjn.Learn.XCal.PThrMin":    "0.05", // can handle this -- todo: try bigger, test more
+				}},
+			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+				}},
+		},
+	}},
+}
+
+// ParamSetsDefs is truly minimal relying almost entirely on defaults
+var ParamSetsDefs = params.Sets{
+	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+		"NetSize": &params.Sheet{
+			{Sel: "Layer", Desc: "all layers",
+				Params: params.Params{
+					"Layer.X": "8", // 10 orig, 8 is similar, faster
+					"Layer.Y": "8",
+				}},
+		},
+		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "all defaults",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.0
+				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+				}},
+			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
+					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					// "Layer.Act.NMDA.Gbar":     "0.3",  // higher not better
+				}},
+			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
+				Params: params.Params{
+					"Prjn.Learn.Lrate.Base": "0.15", // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":  "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":    "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -536,7 +579,7 @@ var TheSim Sim
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSetsMin
+	ss.Params.Params = ParamSetsDefs // ParamSetsMin
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -721,7 +764,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	plusCyc := 50   // 50
 
 	ss.Net.NewState()
-	ss.Time.NewState()
+	ss.Time.NewState(train)
 	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
 		ss.Net.Cycle(&ss.Time)
 		ss.StatCounters(train)

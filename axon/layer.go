@@ -1150,7 +1150,9 @@ func (ly *Layer) GFmInc(ltime *Time) {
 		}
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 	}
-	ly.SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
+	if !ltime.Testing {
+		ly.SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
+	}
 }
 
 // RecvGInc calls RecvGInc on receiving projections to collect Neuron-level G*Inc values.

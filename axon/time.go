@@ -9,13 +9,14 @@ import (
 )
 
 // axon.Time contains all the timing state and parameter information for running a model.
-//
+// Can also include other relevant state context, e.g., Testing vs. Training modes.
 type Time struct {
 	Time       float32 `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	Cycle      int     `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
 	PhaseCycle int     `desc:"cycle within current phase -- minus or plus"`
 	CycleTot   int     `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time"`
 	PlusPhase  bool    `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
+	Testing    bool    `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 
 	TimePerCyc float32 `def:"0.001" desc:"amount of time to increment per cycle"`
 }
@@ -39,16 +40,19 @@ func (tm *Time) Reset() {
 	tm.PhaseCycle = 0
 	tm.CycleTot = 0
 	tm.PlusPhase = false
+	tm.Testing = false
 	if tm.TimePerCyc == 0 {
 		tm.Defaults()
 	}
 }
 
-// NewState resets cycle at start of new state of processing
-func (tm *Time) NewState() {
+// NewState resets cycle at start of new state of processing.
+// Pass true if network is in training mode, and false if testing.
+func (tm *Time) NewState(train bool) {
 	tm.Cycle = 0
 	tm.PhaseCycle = 0
 	tm.PlusPhase = false
+	tm.Testing = !train
 }
 
 // NewPhase updates from minus phase to plus phase and resets PhaseCycle

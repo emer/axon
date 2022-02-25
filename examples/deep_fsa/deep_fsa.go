@@ -72,14 +72,13 @@ var ParamSets = params.Sets{
 					"Layer.Act.Gbar.L":           "0.2", // std
 					"Layer.Act.Decay.Act":        "0.2", // lvis best = .2, .6 good here too
 					"Layer.Act.Decay.Glong":      "0.6",
-					"Layer.Act.Dt.LongAvgTau":    "20",   // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":     "0.2",  // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":       "3",    // 3 good for 0.2
-					"Layer.Act.Dt.VmDendTau":     "2.81", // 5 > 2.81 in ra25
-					"Layer.Learn.SpikeCa.LrnM":   "0",    // 0.1 default -- no diff -- try in larger models
-					"Layer.Learn.SpikeCa.LrnTau": "40",
-					"Layer.Learn.SpikeCa.MTau":   "40",
-					"Layer.Learn.SpikeCa.PTau":   "10",
+					"Layer.Act.Dt.LongAvgTau":    "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":     "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":       "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dt.VmDendTau":     "8",   // 5 >> 2.81 -- big diff
+					"Layer.Learn.SpikeCa.LrnTau": "30",  // 30 > 40 ?
+					"Layer.Learn.SpikeCa.MTau":   "10",  // no diff 40,10 vs. 10,40
+					"Layer.Learn.SpikeCa.PTau":   "40",
 					"Layer.Learn.SpikeCa.DTau":   "40",
 					"Layer.Learn.SpikeCa.MinLrn": "0.01",
 				}},
@@ -110,24 +109,20 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1", // .04 for rlr too!
-					"Prjn.SWt.Adapt.Lrate":       "0.1", // 0.01 seems to work fine, but .1 maybe more reliable
-					"Prjn.SWt.Adapt.SigGain":     "6",
-					"Prjn.SWt.Adapt.DreamVar":    "0.0", // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":         "1.0", // 1 works fine here -- .5 also ok
-					"Prjn.SWt.Init.Mean":         "0.5", // 0.5 generally good
-					"Prjn.SWt.Limit.Min":         "0.2",
-					"Prjn.SWt.Limit.Max":         "0.8",
+					"Prjn.Learn.Lrate.Base":      "0.03", // .04 for rlr too!
+					"Prjn.SWt.Adapt.Lrate":       "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
+					"Prjn.SWt.Adapt.DreamVar":    "0.0",  // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":         "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":             "0.0",
-					"Prjn.Learn.Kinase.SpikeG":   "6", // 42 nominal for spkca, but 12 is better..
-					"Prjn.Learn.Kinase.Rule":     "NeurSpkCa",
+					"Prjn.Learn.Kinase.SpikeG":   "12", // 12 > 24 > 6 -- lr = 0.04 still
+					"Prjn.Learn.Kinase.Rule":     "SynSpkCa",
 					"Prjn.Learn.Kinase.OptInteg": "false",
 					"Prjn.Learn.Kinase.MTau":     "5", // 5 > 10 test more
 					"Prjn.Learn.Kinase.PTau":     "40",
 					"Prjn.Learn.Kinase.DTau":     "40",
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
-					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.PThrMin":    "0.02", // 0.02 = 0.01 >> 0.05 (but 0.05 better for objrec)
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -437,7 +432,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	_ = didAlphaPlus
 
 	ss.Net.NewState()
-	ss.Time.NewState()
+	ss.Time.NewState(train)
 	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
 		ss.Net.Cycle(&ss.Time)
 		if !train {
