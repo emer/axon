@@ -79,13 +79,13 @@ func (nt *NetworkStru) LayerByName(name string) emer.Layer {
 	return ly
 }
 
-// LayerByNameTry returns a layer by looking it up by name -- emits a log error message
+// LayerByNameTry returns a layer by looking it up by name -- returns error message
 // if layer is not found
 func (nt *NetworkStru) LayerByNameTry(name string) (emer.Layer, error) {
 	ly := nt.LayerByName(name)
 	if ly == nil {
 		err := fmt.Errorf("Layer named: %v not found in Network: %v\n", name, nt.Nm)
-		log.Println(err)
+		// log.Println(err)
 		return ly, err
 	}
 	return ly, nil
