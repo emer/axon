@@ -19,21 +19,21 @@ import (
 // axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
-	SpikeCa   SpikeCaParams    `view:"inline" desc:"parameters for computing simple spike-driven calcium signaling variables"`
+	NeurCa    NeurCaParams     `view:"inline" desc:"parameters for computing simple spike-driven calcium signaling variables"`
 	Snmda     chans.NMDAParams `view:"inline" desc:"Sending neuron NMDA channel parameters, for Snmda values used in SynNMDACa learning rule"`
 	TrgAvgAct TrgAvgActParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
 	RLrate    RLrateParams     `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLrate = |SpkCaP - SpkCaD| / Max(SpkCaP, SpkCaD)"`
 }
 
 func (ln *LearnNeurParams) Update() {
-	ln.SpikeCa.Update()
+	ln.NeurCa.Update()
 	ln.Snmda.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLrate.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
-	ln.SpikeCa.Defaults()
+	ln.NeurCa.Defaults()
 	ln.Snmda.Defaults()
 	ln.Snmda.ITau = 1
 	ln.Snmda.Tau = 30
@@ -42,10 +42,10 @@ func (ln *LearnNeurParams) Defaults() {
 	ln.RLrate.Defaults()
 }
 
-// InitSpikeCa initializes the running-average activation values that drive learning.
+// InitNeurCa initializes the running-average activation values that drive learning.
 // Called by InitWts (at start of learning).
-func (ln *LearnNeurParams) InitSpikeCa(nrn *Neuron) {
-	nrn.CaLrn = 0
+func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
+	nrn.CaSyn = 0
 	nrn.CaM = 0
 	nrn.CaP = 0
 	nrn.CaD = 0
@@ -56,39 +56,40 @@ func (ln *LearnNeurParams) InitSpikeCa(nrn *Neuron) {
 // CaFmSpike updates the simple spike-based calcium signaling vals.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
-	ln.SpikeCa.CaFmSpike(nrn.Spike, &nrn.CaLrn, &nrn.CaM, &nrn.CaP, &nrn.CaD, &nrn.CaPLrn, &nrn.CaDLrn)
+	ln.NeurCa.CaFmSpike(nrn.Spike, &nrn.CaSyn, &nrn.CaM, &nrn.CaP, &nrn.CaD, &nrn.CaPLrn, &nrn.CaDLrn)
 	ln.Snmda.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
 }
 
-// SpikeCaParams has rate constants for averaging over activations
-// at different time scales, to produce the running average activation
-// values that then drive learning in the NeurSpkCa version of the Kinase
-// learning rule.
-type SpikeCaParams struct {
-	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives SpkCaM value"`
+// NeurCaParams parameterizes the neuron-level spike-triggered calcium
+// signals for the NeurSpkCa version of the Kinase learning rule.
+// Spikes trigger decaying traces of Ca integrated in a cascading fashion
+// at multiple time scales, with P = LTP / plus-phase and D = LTD / minus phase
+// driving key subtraction for error-driven learning rule.
+type NeurCaParams struct {
+	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
 	MinLrn float32 `def:"0.01" desc:"minimum learning activation -- below this goes to zero"`
-	LrnTau float32 `def:"30" min:"1" desc:"spike-driven calcium for synapse-level learning rules (CaLrn) time constant in cycles (msec)"`
+	SynTau float32 `def:"40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn) time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 
-	LrnDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	SynDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	PDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	DDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
-func (aa *SpikeCaParams) Update() {
-	aa.LrnDt = 1 / aa.LrnTau
+func (aa *NeurCaParams) Update() {
+	aa.SynDt = 1 / aa.SynTau
 	aa.MDt = 1 / aa.MTau
 	aa.PDt = 1 / aa.PTau
 	aa.DDt = 1 / aa.DTau
 }
 
-func (aa *SpikeCaParams) Defaults() {
+func (aa *NeurCaParams) Defaults() {
 	aa.SpikeG = 8
 	aa.MinLrn = 0.01
-	aa.LrnTau = 30
+	aa.SynTau = 40
 	aa.MTau = 10
 	aa.PTau = 40
 	aa.DTau = 40
@@ -97,8 +98,8 @@ func (aa *SpikeCaParams) Defaults() {
 }
 
 // CaFmSpike computes Ca* calcium signals based on current spike
-func (aa *SpikeCaParams) CaFmSpike(spike float32, calrn, scam, scap, scad, capLrn, cadLrn *float32) {
-	*calrn += aa.LrnDt * (aa.SpikeG*spike - *calrn)
+func (aa *NeurCaParams) CaFmSpike(spike float32, casyn, scam, scap, scad, capLrn, cadLrn *float32) {
+	*casyn += aa.SynDt * (aa.SpikeG*spike - *casyn)
 	*scam += aa.MDt * (aa.SpikeG*spike - *scam)
 	*scap += aa.PDt * (*scam - *scap)
 	*scad += aa.DDt * (*scap - *scad)

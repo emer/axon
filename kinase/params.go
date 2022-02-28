@@ -10,7 +10,7 @@ package kinase
 type SynParams struct {
 	Rule     Rules   `desc:"which learning rule to use"`
 	SpikeG   float32 `def:"12" desc:"spiking gain factor for synapse-based algos (NeurSpkCa uses layer level params) -- 42 for SynSpkCa matches NeurSpkCa in overall dwt magnitude but is too high in practice -- 12 is better -- only alters the overall range of values, keeping them in roughly the unit scale."`
-	MTau     float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaLrn * ru->CaLrn with typical 20 msec Tau.`
+	MTau     float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaSyn * ru->CaSyn with typical 20 msec Tau.`
 	PTau     float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau     float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle.  Use 1 for SynSpkCa, 0.93 for SynNMDACa."`

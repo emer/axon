@@ -66,21 +66,21 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.Inhib.AvgTau":   "30",
-					"Layer.Inhib.ActAvg.Init":    "0.15",
-					"Layer.Inhib.Layer.Gi":       "1.1", // 1.1 > 1.2 > 1.0
-					"Layer.Act.Gbar.L":           "0.2", // std
-					"Layer.Act.Decay.Act":        "0.2", // lvis best = .2, .6 good here too
-					"Layer.Act.Decay.Glong":      "0.6",
-					"Layer.Act.Dt.LongAvgTau":    "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":     "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":       "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":     "8",   // 5 >> 2.81 -- big diff
-					"Layer.Learn.SpikeCa.LrnTau": "30",  // 30 > 40 ?
-					"Layer.Learn.SpikeCa.MTau":   "10",  // no diff 40,10 vs. 10,40
-					"Layer.Learn.SpikeCa.PTau":   "40",
-					"Layer.Learn.SpikeCa.DTau":   "40",
-					"Layer.Learn.SpikeCa.MinLrn": "0.01",
+					"Layer.Inhib.Inhib.AvgTau":  "30",
+					"Layer.Inhib.ActAvg.Init":   "0.15",
+					"Layer.Inhib.Layer.Gi":      "1.1", // 1.1 > 1.2 > 1.0
+					"Layer.Act.Gbar.L":          "0.2", // std
+					"Layer.Act.Decay.Act":       "0.2", // lvis best = .2, .6 good here too
+					"Layer.Act.Decay.Glong":     "0.6",
+					"Layer.Act.Dt.LongAvgTau":   "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":    "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":      "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dt.VmDendTau":    "8",   // 5 >> 2.81 -- big diff
+					"Layer.Learn.NeurCa.LrnTau": "30",  // 30 > 40 ?
+					"Layer.Learn.NeurCa.MTau":   "10",  // no diff 40,10 vs. 10,40
+					"Layer.Learn.NeurCa.PTau":   "40",
+					"Layer.Learn.NeurCa.DTau":   "40",
+					"Layer.Learn.NeurCa.MinLrn": "0.01",
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},

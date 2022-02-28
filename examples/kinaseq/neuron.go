@@ -221,7 +221,7 @@ func (ss *Sim) SynUpdt() {
 		synspk = true
 	}
 	if synspk {
-		ssy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
+		ssy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
 		ssy.SpikeT = ctime
 	} else {
 		ssy.Ca = 0
@@ -242,7 +242,7 @@ func (ss *Sim) SynUpdt() {
 	// OptInteg form of SynSpkCa
 	if synspk {
 		osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.SpikeT, osy.CaM, osy.CaP, osy.CaD)
-		osy.Ca = kp.SpikeG * sn.CaLrn * rn.CaLrn
+		osy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
 		kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
 		osy.SpikeT = ctime
 		osy.DWt = kp.DWt(osy.CaP, osy.CaD)

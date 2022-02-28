@@ -39,7 +39,7 @@ type Neuron struct {
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 
-	CaLrn  float32 `desc:"simple spike-driven calcium signal for synapse-level Ca-driven learning rules: SynSpkCa and SynContCa"`
+	CaSyn  float32 `desc:"spike-driven calcium trace for synapse-level Ca-driven learning rules: SynSpkCa"`
 	CaM    float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
 	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`

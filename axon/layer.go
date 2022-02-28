@@ -699,7 +699,7 @@ func (ly *Layer) InitWts() {
 func (ly *Layer) InitActAvg() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Learn.InitSpikeCa(nrn)
+		ly.Learn.InitNeurCa(nrn)
 	}
 	strg := ly.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Learn.TrgAvgAct.TrgRange.Range()
