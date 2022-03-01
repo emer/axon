@@ -55,7 +55,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Learn.NeurCa.MTau":   "10",
 					"Layer.Learn.NeurCa.PTau":   "40",
 					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.MinLrn": "0.01",
+					"Layer.Learn.NeurCa.LrnThr": "0.01",
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
@@ -78,15 +78,16 @@ var ParamSetsMin = params.Sets{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base":      "0.05", // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":       "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Adapt.Lrate":       "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.SpikeG":   "12",   // 42 nominal for spkca, but 12 is better..
-					"Prjn.Learn.Kinase.Rule":     "SynSpkCa",
-					"Prjn.Learn.Kinase.OptInteg": "true",
+					"Prjn.Learn.Kinase.SpikeG":   "42",   // 42 nominal for spkca, but 12 is better..
+					"Prjn.Learn.Kinase.Rule":     "SynNMDACa",
+					"Prjn.Learn.Kinase.OptInteg": "false",
 					"Prjn.Learn.Kinase.MTau":     "5", // 5 > 10 test more
 					"Prjn.Learn.Kinase.PTau":     "40",
 					"Prjn.Learn.Kinase.DTau":     "40",
 					"Prjn.Learn.Kinase.DScale":   "1",
+					"Prjn.Learn.Kinase.RCaThr":   "0.2",
 					"Prjn.Learn.XCal.On":         "true",
 					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
 				}},
@@ -113,6 +114,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Lrate.Base":      "0.1", // 0.1 for SynSpkCa even though dwt equated
 					"Prjn.SWt.Adapt.Lrate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Kinase.SpikeG":   "10",  // 42 nominal for spkca, but 12 is better..
 					"Prjn.Learn.Kinase.Rule":     "SynSpkCa",
 					"Prjn.Learn.Kinase.OptInteg": "true",
 					"Prjn.Learn.Kinase.MTau":     "5", // 5 > 10 = 2 - todo test more
@@ -120,7 +122,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Kinase.DTau":     "40",
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
-					"Prjn.Learn.XCal.PThrMin":    "0.05", // can handle this -- todo: try bigger, test more
+					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
 				}},
 		},
 	}},

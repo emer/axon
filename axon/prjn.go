@@ -17,6 +17,7 @@ import (
 	"github.com/emer/emergent/ringidx"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -32,11 +33,12 @@ type Prjn struct {
 	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale   GScaleVals  `view:"inline" desc:"conductance scaling values"`
-	Gidx     ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	GBuf     []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	GnmdaBuf []float32   `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	AvgDWt   float32     `desc:"average DWt value across all synapses"`
+	GScale   GScaleVals      `view:"inline" desc:"conductance scaling values"`
+	Gidx     ringidx.FIx     `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	GBuf     []float32       `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	GnmdaBuf []float32       `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	AvgDWt   float32         `desc:"average DWt value across all synapses"`
+	DWtRaw   minmax.AvgMax32 `desc:"average, max DWtRaw value across all synapses"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -826,6 +828,46 @@ func (pj *Prjn) SynCa(ltime *Time) {
 	}
 }
 
+// SynCaCont updates synaptic calcium per-cycle, for Kinase learning
+func (pj *Prjn) SynCaCont(ltime *Time) {
+	if !pj.Learn.Learn || pj.Learn.Kinase.Rule == kinase.NeurSpkCa {
+		return
+	}
+	kp := &pj.Learn.Kinase
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	np := &slay.Learn.NeurCa
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.CaP < np.LrnThr && sn.CaD < np.LrnThr {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			sy := &syns[ci]
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			if rn.CaP < np.LrnThr && rn.CaD < np.LrnThr {
+				continue
+			}
+			switch kp.Rule {
+			case kinase.SynNMDACa:
+				sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
+			case kinase.SynSpkCa:
+				if sn.Spike > 0 || rn.Spike > 0 {
+					sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
+				} else {
+					sy.Ca = 0
+				}
+			}
+			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+		}
+	}
+}
+
 // SynCaOpt updates synaptic calcium per-cycle, for Kinase learning.
 // Optimized version only updates at point of spiking, sender based.
 func (pj *Prjn) SynCaOpt(ltime *Time) {
@@ -833,12 +875,13 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
+	np := &slay.Learn.NeurCa
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
 			continue
 		}
-		if sn.CaP < slay.Learn.NeurCa.MinLrn && sn.CaD < slay.Learn.NeurCa.MinLrn {
+		if sn.CaP < np.LrnThr && sn.CaD < np.LrnThr {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -852,14 +895,14 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 			}
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < slay.Learn.NeurCa.MinLrn && rn.CaD < slay.Learn.NeurCa.MinLrn {
+			if rn.CaP < np.LrnThr && rn.CaD < np.LrnThr {
 				continue
 			}
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
-				sy.Ca = sn.SnmdaO * rn.RCa
+				sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
 			} else {
-				sy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
+				sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
 			}
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			sy.SpikeT = ctime
@@ -878,12 +921,13 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	np := &slay.Learn.NeurCa
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
 		if rn.Spike == 0 {
 			continue
 		}
-		if rn.CaP < slay.Learn.NeurCa.MinLrn && rn.CaD < slay.Learn.NeurCa.MinLrn {
+		if rn.CaP < np.LrnThr && rn.CaD < np.LrnThr {
 			continue
 		}
 		nc := int(pj.RConN[ri])
@@ -897,57 +941,17 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 			}
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
-			if sn.CaP < slay.Learn.NeurCa.MinLrn && sn.CaD < slay.Learn.NeurCa.MinLrn {
+			if sn.CaP < np.LrnThr && sn.CaD < np.LrnThr {
 				continue
 			}
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 			if kp.Rule == kinase.SynNMDACa {
-				sy.Ca = sn.SnmdaO * rn.RCa
+				sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
 			} else {
-				sy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
+				sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
 			}
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			sy.SpikeT = ctime
-		}
-	}
-}
-
-// SynCaCont updates synaptic calcium per-cycle, for Kinase learning
-func (pj *Prjn) SynCaCont(ltime *Time) {
-	if !pj.Learn.Learn || pj.Learn.Kinase.Rule == kinase.NeurSpkCa {
-		return
-	}
-	kp := &pj.Learn.Kinase
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.CaP < slay.Learn.NeurCa.MinLrn && sn.CaD < slay.Learn.NeurCa.MinLrn {
-			continue
-		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if rn.CaP < slay.Learn.NeurCa.MinLrn && rn.CaD < slay.Learn.NeurCa.MinLrn {
-				continue
-			}
-			switch kp.Rule {
-			case kinase.SynNMDACa:
-				sy.Ca = sn.SnmdaO * rn.RCa
-				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			case kinase.SynSpkCa:
-				if sn.Spike > 0 || rn.Spike > 0 {
-					sy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
-				} else {
-					sy.Ca = 0
-				}
-				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			}
 		}
 	}
 }
@@ -963,7 +967,7 @@ func (pj *Prjn) DWt(ltime *Time) {
 	case kinase.SynSpkCa:
 		pj.DWtSynSpkCa(ltime)
 	case kinase.SynNMDACa:
-		pj.DWtSynSpkCa(ltime)
+		pj.DWtSynNMDACa(ltime)
 	}
 }
 
@@ -1043,6 +1047,47 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	}
 }
 
+// DWtSynNMDACa computes the weight change (learning) based on
+// synaptically-integrated pre or post spike signals
+func (pj *Prjn) DWtSynNMDACa(ltime *Time) {
+	kp := &pj.Learn.Kinase
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	ctime := int32(ltime.CycleTot)
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.CaPLrn < pj.Learn.XCal.LrnThr && sn.CaDLrn < pj.Learn.XCal.LrnThr {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			sy := &syns[ci]
+			_, caP, caD := kp.CurCa(ctime-1, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
+			ds := kp.DScale * caD
+			var err float32
+			if pj.Learn.XCal.On {
+				err = pj.Learn.XCal.DWt(caP, ds)
+			} else {
+				err = caP - ds
+			}
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWtRaw = err
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
 // WtFmDWt updates the synaptic weight values from delta-weight changes.
 // Computed in receiving direction, does SubMean subtraction first.
 func (pj *Prjn) WtFmDWt(ltime *Time) {
@@ -1052,6 +1097,7 @@ func (pj *Prjn) WtFmDWt(ltime *Time) {
 	if rlay.AxonLay.IsTarget() {
 		sm = 0
 	}
+	pj.DWtRaw.Init()
 	if sm > 0 {
 		var ssum float32
 		for ri := range rlay.Neurons {
@@ -1084,6 +1130,7 @@ func (pj *Prjn) WtFmDWt(ltime *Time) {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
+				pj.DWtRaw.UpdateVal(mat32.Abs(sy.DWtRaw), ri)
 			}
 		}
 		pj.AvgDWt = ssum / float32(len(rlay.Neurons))
@@ -1103,9 +1150,11 @@ func (pj *Prjn) WtFmDWt(ltime *Time) {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
+				pj.DWtRaw.UpdateVal(mat32.Abs(sy.DWtRaw), ri)
 			}
 		}
 	}
+	pj.DWtRaw.CalcAvg()
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale

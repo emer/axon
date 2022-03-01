@@ -67,48 +67,55 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // driving key subtraction for error-driven learning rule.
 type NeurCaParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
-	MinLrn float32 `def:"0.01" desc:"minimum learning activation -- below this goes to zero"`
-	SynTau float32 `def:"40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn) time constant in cycles (msec)"`
+	LrnThr float32 `def:"0.01" desc:"learning threshold on CaP and CaD: minimum values for learning (CaPLrn, CaDLrn) -- below this these values go to zero"`
+	SynTau float32 `def:"40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 
-	SynDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	MDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	PDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	DDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	MDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	PDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	DDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	SynSpkG float32 `view:"+" json:"-" xml:"-" inactive:"+" desc:"Ca gain factor for SynSpkCa learning rule, to compensate for the effect of SynTau, which increases Ca as it gets larger."`
 }
 
-func (aa *NeurCaParams) Update() {
-	aa.SynDt = 1 / aa.SynTau
-	aa.MDt = 1 / aa.MTau
-	aa.PDt = 1 / aa.PTau
-	aa.DDt = 1 / aa.DTau
+func (np *NeurCaParams) Update() {
+	np.SynDt = 1 / np.SynTau
+	np.MDt = 1 / np.MTau
+	np.PDt = 1 / np.PTau
+	np.DDt = 1 / np.DTau
+	np.SynSpkG = mat32.Sqrt(30) / mat32.Sqrt(np.SynTau)
 }
 
-func (aa *NeurCaParams) Defaults() {
-	aa.SpikeG = 8
-	aa.MinLrn = 0.01
-	aa.SynTau = 40
-	aa.MTau = 10
-	aa.PTau = 40
-	aa.DTau = 40
-	aa.Update()
+func (np *NeurCaParams) Defaults() {
+	np.SpikeG = 8
+	np.LrnThr = 0.01
+	np.SynTau = 40
+	np.MTau = 10
+	np.PTau = 40
+	np.DTau = 40
+	np.Update()
 
 }
 
-// CaFmSpike computes Ca* calcium signals based on current spike
-func (aa *NeurCaParams) CaFmSpike(spike float32, casyn, scam, scap, scad, capLrn, cadLrn *float32) {
-	*casyn += aa.SynDt * (aa.SpikeG*spike - *casyn)
-	*scam += aa.MDt * (aa.SpikeG*spike - *scam)
-	*scap += aa.PDt * (*scam - *scap)
-	*scad += aa.DDt * (*scap - *scad)
+// CaFmSpike computes Ca* calcium signals based on current spike, for NeurSpkCa
+func (np *NeurCaParams) CaFmSpike(spike float32, casyn, scam, scap, scad, capLrn, cadLrn *float32) {
+	*casyn += np.SynDt * (np.SpikeG*spike - *casyn)
+	*scam += np.MDt * (np.SpikeG*spike - *scam)
+	*scap += np.PDt * (*scam - *scap)
+	*scad += np.DDt * (*scap - *scad)
 	*cadLrn = *scad
 	*capLrn = *scap
-	if *cadLrn < aa.MinLrn && *capLrn < aa.MinLrn {
+	if *cadLrn < np.LrnThr && *capLrn < np.LrnThr {
 		*capLrn = 0
 		*cadLrn = 0
 	}
+}
+
+// SynSpkCa computes synaptic spiking Ca from send and recv neuron CaSyn vals
+func (np *NeurCaParams) SynSpkCa(snCaSyn, rnCaSyn float32) float32 {
+	return np.SynSpkG * snCaSyn * rnCaSyn
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

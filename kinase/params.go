@@ -9,11 +9,12 @@ package kinase
 // values that then drive learning.
 type SynParams struct {
 	Rule     Rules   `desc:"which learning rule to use"`
-	SpikeG   float32 `def:"12" desc:"spiking gain factor for synapse-based algos (NeurSpkCa uses layer level params) -- 42 for SynSpkCa matches NeurSpkCa in overall dwt magnitude but is too high in practice -- 12 is better -- only alters the overall range of values, keeping them in roughly the unit scale."`
+	SpikeG   float32 `def:"8,2" desc:"spiking gain factor for synapse-based algos (NeurSpkCa uses layer level params) -- 42 for SynSpkCa matches NeurSpkCa in overall dwt magnitude but is too high in practice -- 8 is better for SynSpkCa -- alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
 	MTau     float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaSyn * ru->CaSyn with typical 20 msec Tau.`
 	PTau     float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau     float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle.  Use 1 for SynSpkCa, 0.93 for SynNMDACa."`
+	RCaThr   float32 `desc:"threshold on recv Ca level for driving synaptic-level learning -- reflects Ca buffering and minimum activity levels for CaM process, and computationally helps separate active from middling neurons"`
 	OptInteg bool    `def:"true" desc:"use the optimized spike-only integration of cascaded CaM, CaP, CaD values -- iterates cascaded updates between spikes -- significantly faster and same performance as non-optimized."`
 	MaxISI   int     `def:"100" desc:"maximum ISI for integrating in Opt mode -- above that just set to 0"`
 
@@ -24,11 +25,12 @@ type SynParams struct {
 
 func (kp *SynParams) Defaults() {
 	kp.Rule = SynSpkCa
-	kp.SpikeG = 12
+	kp.SpikeG = 8
 	kp.MTau = 5
 	kp.PTau = 40
 	kp.DTau = 40
 	kp.DScale = 1 // 0.93, 1.05
+	kp.RCaThr = 0.1
 	kp.OptInteg = true
 	kp.MaxISI = 100 // todo expt
 	kp.Update()
@@ -55,6 +57,16 @@ func (kp *SynParams) FmCa(ca float32, caM, caP, caD *float32) {
 	*caM += kp.MDt * (ca - *caM)
 	*caP += kp.PDt * (*caM - *caP)
 	*caD += kp.DDt * (*caP - *caD)
+}
+
+// SynNMDACa returns the synaptic Ca value for SynNMDACa rule
+// applying thresholding to rca value, and multiplying by SpikeG
+func (kp *SynParams) SynNMDACa(snmdao, rca float32) float32 {
+	rca -= kp.RCaThr
+	if rca < 0 {
+		rca = 0
+	}
+	return kp.SpikeG * snmdao * rca
 }
 
 // DWt computes the weight change from CaP, CaD values
