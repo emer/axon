@@ -40,7 +40,7 @@ type Layer struct {
 	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
 	ActAvg  ActAvgVals      `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
 	CosDiff CosDiffStats    `desc:"cosine difference between ActM, ActP stats"`
-	DWtRaw  minmax.AvgMax32 `desc:"average, max DWtRaw value across all synapses"`
+	DWtRaw  minmax.AvgMax32 `inactive:"+" desc:"average, max DWtRaw value across all synapses"`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
@@ -1174,6 +1174,7 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 	ly.Act.NMDAFmRaw(nrn, geExt)
+	ly.Learn.LrnNMDAFmRaw(nrn, geExt)
 
 	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda)
 	nrn.GeRaw = 0

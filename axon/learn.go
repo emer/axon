@@ -20,24 +20,24 @@ import (
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
 	NeurCa    NeurCaParams     `view:"inline" desc:"parameters for computing simple spike-driven calcium signaling variables"`
-	Snmda     chans.NMDAParams `view:"inline" desc:"Sending neuron NMDA channel parameters, for Snmda values used in SynNMDACa learning rule"`
+	LrnNMDA   chans.NMDAParams `view:"inline" desc:"Sending neuron NMDA channel parameters, for LrnNMDA values used in SynNMDACa learning rule"`
 	TrgAvgAct TrgAvgActParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
 	RLrate    RLrateParams     `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLrate = |SpkCaP - SpkCaD| / Max(SpkCaP, SpkCaD)"`
 }
 
 func (ln *LearnNeurParams) Update() {
 	ln.NeurCa.Update()
-	ln.Snmda.Update()
+	ln.LrnNMDA.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLrate.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
 	ln.NeurCa.Defaults()
-	ln.Snmda.Defaults()
-	ln.Snmda.ITau = 1
-	ln.Snmda.Tau = 30
-	ln.Snmda.Update()
+	ln.LrnNMDA.Defaults()
+	ln.LrnNMDA.ITau = 1
+	ln.LrnNMDA.Tau = 30
+	ln.LrnNMDA.Update()
 	ln.TrgAvgAct.Defaults()
 	ln.RLrate.Defaults()
 }
@@ -53,11 +53,23 @@ func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
 	nrn.CaDLrn = 0
 }
 
+// LrnNMDAFmRaw updates all the learning NMDA variables from GnmdaRaw and current Vm, Spiking
+func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
+	nrn.RnmdaSyn = ln.LrnNMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
+	mgg, cav := ln.LrnNMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
+	nrn.RCa = nrn.RnmdaSyn * mgg * cav
+	if nrn.Spike > 0 {
+		nrn.RCa += ln.NeurCa.VGCCCa
+	}
+	nrn.RCa = ln.NeurCa.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
+	nrn.GnmdaRaw = 0                    // reset now
+}
+
 // CaFmSpike updates the simple spike-based calcium signaling vals.
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 	ln.NeurCa.CaFmSpike(nrn.Spike, &nrn.CaSyn, &nrn.CaM, &nrn.CaP, &nrn.CaD, &nrn.CaPLrn, &nrn.CaDLrn)
-	ln.Snmda.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
+	ln.LrnNMDA.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
 }
 
 // NeurCaParams parameterizes the neuron-level spike-triggered calcium
@@ -68,10 +80,13 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 type NeurCaParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
 	LrnThr float32 `def:"0.01" desc:"learning threshold on CaP and CaD: minimum values for learning (CaPLrn, CaDLrn) -- below this these values go to zero"`
-	SynTau float32 `def:"40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
+	SynTau float32 `def:"20" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
+	VGCCCa float32 `def:"10" desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
+	CaMax  float32 `def:"120" desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
+	CaThr  float32 `def:"0.1" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
 
 	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -95,6 +110,9 @@ func (np *NeurCaParams) Defaults() {
 	np.MTau = 10
 	np.PTau = 40
 	np.DTau = 40
+	np.VGCCCa = 10
+	np.CaMax = 80
+	np.CaThr = 0.1
 	np.Update()
 
 }
@@ -111,6 +129,18 @@ func (np *NeurCaParams) CaFmSpike(spike float32, casyn, scam, scap, scad, capLrn
 		*capLrn = 0
 		*cadLrn = 0
 	}
+}
+
+// CaNorm normalizes and thresholds the calcium level according to CaMax, CaThr
+func (np *NeurCaParams) CaNorm(ca float32) float32 {
+	ca /= np.CaMax
+	ca -= np.CaThr
+	if ca < 0 {
+		ca = 0
+	} else {
+		ca /= (1 - np.CaThr)
+	}
+	return ca
 }
 
 // SynSpkCa computes synaptic spiking Ca from send and recv neuron CaSyn vals
