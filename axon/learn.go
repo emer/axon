@@ -80,13 +80,13 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 type NeurCaParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
 	LrnThr float32 `def:"0.01" desc:"learning threshold on CaP and CaD: minimum values for learning (CaPLrn, CaDLrn) -- below this these values go to zero"`
-	SynTau float32 `def:"20" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
+	SynTau float32 `def:"30" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	VGCCCa float32 `def:"10" desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
-	CaMax  float32 `def:"120" desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
-	CaThr  float32 `def:"0.1" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
+	CaMax  float32 `def:"80" desc:"maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
+	CaThr  float32 `def:"0.01" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
 
 	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -106,13 +106,13 @@ func (np *NeurCaParams) Update() {
 func (np *NeurCaParams) Defaults() {
 	np.SpikeG = 8
 	np.LrnThr = 0.01
-	np.SynTau = 40
+	np.SynTau = 30
 	np.MTau = 10
 	np.PTau = 40
 	np.DTau = 40
 	np.VGCCCa = 10
 	np.CaMax = 80
-	np.CaThr = 0.1
+	np.CaThr = 0.01
 	np.Update()
 
 }
@@ -137,8 +137,6 @@ func (np *NeurCaParams) CaNorm(ca float32) float32 {
 	ca -= np.CaThr
 	if ca < 0 {
 		ca = 0
-	} else {
-		ca /= (1 - np.CaThr)
 	}
 	return ca
 }

@@ -48,12 +48,12 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Learn.NeurCa.SynTau": "20",   // 20 best in larger models now..
+					"Layer.Learn.NeurCa.SynTau": "30",   // 30 best in larger models
 					"Layer.Learn.NeurCa.MTau":   "10",
 					"Layer.Learn.NeurCa.PTau":   "40",
 					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.LrnThr": "0.01",
-					"Layer.Learn.NeurCa.VGCCCa": "10", // 20 seems reasonable, but not obviously better than 0
+					"Layer.Learn.NeurCa.LrnThr": "0.01", // 0.05 best in lvis, bad in objrec
+					"Layer.Learn.NeurCa.VGCCCa": "10",   // 20 seems reasonable, but not obviously better than 0
 					"Layer.Learn.NeurCa.CaMax":  "120",
 					"Layer.Learn.NeurCa.CaThr":  "0.2",
 					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
@@ -108,7 +108,7 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Learn.NeurCa.SynTau": "20", // 20 best in larger models now
+					"Layer.Learn.NeurCa.SynTau": "30", // 30 best in larger models now
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
@@ -124,6 +124,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
 					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.LrnThr":     "0.01", // 0.05 best in lvis, bad for objrec
 				}},
 		},
 	}},
