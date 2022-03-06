@@ -380,9 +380,6 @@ func (ss *Sim) TrainTrial() {
 	// if epoch counter has changed
 	epc, _, chg := ss.TrainEnv.Counter(env.Epoch)
 	if chg {
-		if (ss.PCAInterval > 0) && ((epc-1)%ss.PCAInterval == 0) { // -1 so runs on first epc
-			ss.PCAStats()
-		}
 		ss.Log(elog.Train, elog.Epoch)
 		if ss.ViewOn && ss.TrainUpdt > axon.AlphaCycle {
 			ss.GUI.UpdateNetView()
@@ -406,9 +403,6 @@ func (ss *Sim) TrainTrial() {
 	ss.ApplyInputs(&ss.TrainEnv)
 	ss.ThetaCyc(true)
 	ss.Log(elog.Train, elog.Trial)
-	if (ss.PCAInterval > 0) && (epc%ss.PCAInterval == 0) {
-		ss.Log(elog.Analyze, elog.Trial)
-	}
 }
 
 // RunEnd is called at the end of a run -- save weights, record final log, etc here
@@ -575,37 +569,7 @@ func (ss *Sim) OpenPats() {
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
-// 		Logging
-
-// RunName returns a name for this run that combines Tag and Params -- add this to
-// any file names that are saved.
-func (ss *Sim) RunName() string {
-	rn := ""
-	if ss.Tag != "" {
-		rn += ss.Tag + "_"
-	}
-	rn += ss.Params.Name()
-	if ss.StartRun > 0 {
-		rn += fmt.Sprintf("_%03d", ss.StartRun)
-	}
-	return rn
-}
-
-// RunEpochName returns a string with the run and epoch numbers with leading zeros, suitable
-// for using in weights file names.  Uses 3, 5 digits for each.
-func (ss *Sim) RunEpochName(run, epc int) string {
-	return fmt.Sprintf("%03d_%05d", run, epc)
-}
-
-// WeightsFileName returns default current weights file name
-func (ss *Sim) WeightsFileName() string {
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur) + ".wts"
-}
-
-// LogFileName returns default log file name
-func (ss *Sim) LogFileName(lognm string) string {
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + lognm + ".tsv"
-}
+// 		Stats
 
 // InitStats initializes all the statistics.
 // called at start of new run
@@ -648,8 +612,8 @@ func (ss *Sim) TrialStats() {
 	}
 }
 
-//////////////////////////////////////////////
-//  Logging
+////////////////////////////////////////////////////////////////////////////////////////////
+// 		Logging
 
 func (ss *Sim) ConfigLogs() {
 	ss.ConfigLogItems()
@@ -660,7 +624,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.NoPlot(elog.Test, elog.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(elog.Train, elog.Run, "LegendCol", "Params")
-	ss.Stats.ConfigRasters(ss.Net, ss.Net.LayersByClass())
+	ss.Stats.ConfigRasters(ss.Net, 200, ss.Net.LayersByClass())
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -670,6 +634,11 @@ func (ss *Sim) Log(mode elog.EvalModes, time elog.Times) {
 	switch {
 	case mode == elog.Test && time == elog.Epoch:
 		ss.LogTestErrors()
+	case mode == elog.Train && time == elog.Epoch:
+		epc := ss.TrainEnv.Epoch.Cur
+		if (ss.PCAInterval > 0) && ((epc-1)%ss.PCAInterval == 0) { // -1 so runs on first epc
+			ss.PCAStats()
+		}
 	case time == elog.Cycle:
 		row = ss.Stats.Int("Cycle")
 	case time == elog.Trial:
@@ -683,9 +652,15 @@ func (ss *Sim) Log(mode elog.EvalModes, time elog.Times) {
 		ss.GUI.UpdatePlot(mode, time)
 	}
 
+	// post-logging special statistics
 	switch {
 	case mode == elog.Train && time == elog.Run:
 		ss.LogRunStats()
+	case mode == elog.Train && time == elog.Trial:
+		epc := ss.TrainEnv.Epoch.Cur
+		if (ss.PCAInterval > 0) && (epc%ss.PCAInterval == 0) {
+			ss.Log(elog.Analyze, elog.Trial)
+		}
 	}
 }
 
@@ -720,13 +695,43 @@ func (ss *Sim) LogRunStats() {
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func (ss *Sim) PCAStats() {
-	ss.Stats.PCAStats(ss.Logs.IdxView(elog.Analyze, elog.Trial), "ActM", ss.Net.LayersByClass("Hidden"))
+	ss.Stats.PCAStats(ss.Logs.IdxView(elog.Analyze, elog.Trial), "ActM", ss.Net.LayersByClass("Hidden", "Target"))
 	ss.Logs.ResetLog(elog.Analyze, elog.Trial)
 }
 
 // RasterRec updates spike raster record for given cycle
 func (ss *Sim) RasterRec(cyc int) {
-	ss.Stats.RasterRec(ss.Net, cyc, "Spike", ss.Net.LayersByClass())
+	ss.Stats.RasterRec(ss.Net, cyc, "Spike")
+}
+
+// RunName returns a name for this run that combines Tag and Params -- add this to
+// any file names that are saved.
+func (ss *Sim) RunName() string {
+	rn := ""
+	if ss.Tag != "" {
+		rn += ss.Tag + "_"
+	}
+	rn += ss.Params.Name()
+	if ss.StartRun > 0 {
+		rn += fmt.Sprintf("_%03d", ss.StartRun)
+	}
+	return rn
+}
+
+// RunEpochName returns a string with the run and epoch numbers with leading zeros, suitable
+// for using in weights file names.  Uses 3, 5 digits for each.
+func (ss *Sim) RunEpochName(run, epc int) string {
+	return fmt.Sprintf("%03d_%05d", run, epc)
+}
+
+// WeightsFileName returns default current weights file name
+func (ss *Sim) WeightsFileName() string {
+	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur) + ".wts"
+}
+
+// LogFileName returns default log file name
+func (ss *Sim) LogFileName(lognm string) string {
+	return ss.Net.Nm + "_" + ss.RunName() + "_" + lognm + ".tsv"
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -746,8 +751,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	stb := ss.GUI.TabView.AddNewTab(gi.KiT_Layout, "Spike Rasters").(*gi.Layout)
 	stb.Lay = gi.LayoutVert
 	stb.SetStretchMax()
-	layers := ss.Net.LayersByClass() // all
-	for _, lnm := range layers {
+	for _, lnm := range ss.Stats.Rasters {
 		sr := ss.Stats.F32Tensor("Raster_" + lnm)
 		ss.GUI.ConfigRasterGrid(stb, lnm, sr)
 	}

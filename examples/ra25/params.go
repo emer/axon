@@ -48,16 +48,16 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Learn.NeurCa.SynTau": "30",   // 30 best in larger models
+					"Layer.Learn.NeurCa.SynTau": "40",   // 40 best in larger models
 					"Layer.Learn.NeurCa.MTau":   "10",
 					"Layer.Learn.NeurCa.PTau":   "40",
 					"Layer.Learn.NeurCa.DTau":   "40",
 					"Layer.Learn.NeurCa.LrnThr": "0.01", // 0.05 best in lvis, bad in objrec
 					"Layer.Learn.NeurCa.VGCCCa": "10",   // 20 seems reasonable, but not obviously better than 0
-					"Layer.Learn.NeurCa.CaMax":  "120",
-					"Layer.Learn.NeurCa.CaThr":  "0.2",
+					"Layer.Learn.NeurCa.CaMax":  "200",
+					"Layer.Learn.NeurCa.CaThr":  "0.05",
 					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
-					"Layer.Learn.LrnNMDA.Tau":   "30", // urakubo = 30 > 20 but no major effect on PCA
+					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
@@ -75,15 +75,15 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
 					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
 					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
-					// "Layer.Act.NMDA.Gbar":     "0.3",  // higher not better
+					// "Layer.Learn.NeurCa.CaMax": "120",
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1",  // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":       "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":         "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.SpikeG":   "8",    // keep at 8 standard, adjust other things
-					"Prjn.Learn.Kinase.Rule":     "SynNMDACa",
+					"Prjn.Learn.Lrate.Base":      "0.1",      // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":       "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":         "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Kinase.SpikeG":   "4",        // keep at 12 standard, adjust other things
+					"Prjn.Learn.Kinase.Rule":     "SynSpkCa", // "SynNMDACa",
 					"Prjn.Learn.Kinase.OptInteg": "false",
 					"Prjn.Learn.Kinase.MTau":     "5", // 5 > 10 test more
 					"Prjn.Learn.Kinase.PTau":     "40",

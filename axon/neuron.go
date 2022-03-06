@@ -102,9 +102,9 @@ var NeuronVars = []string{}
 var NeuronVarsMap map[string]int
 
 var NeuronVarProps = map[string]string{
-	"GeSyn":    `min:"-2" max:"2"`,
-	"Ge":       `min:"-2" max:"2"`,
-	"GeM":      `min:"-2" max:"2"`,
+	"GeSyn":    `range:"2"`,
+	"Ge":       `range:"2"`,
+	"GeM":      `range:"2"`,
 	"Vm":       `min:"0" max:"1"`,
 	"VmDend":   `min:"0" max:"1"`,
 	"ISI":      `auto-scale:"+"`,
@@ -113,8 +113,8 @@ var NeuronVarProps = map[string]string{
 	"Gk":       `auto-scale:"+"`,
 	"ActDel":   `auto-scale:"+"`,
 	"ActDif":   `auto-scale:"+"`,
-	"AvgPct":   `min:"-2" max:"2"`,
-	"TrgAvg":   `min:"-2" max:"2"`,
+	"AvgPct":   `range:"2"`,
+	"TrgAvg":   `range:"2"`,
 	"DTrgAvg":  `auto-scale:"+"`,
 	"GknaFast": `auto-scale:"+"`,
 	"GknaMed":  `auto-scale:"+"`,
