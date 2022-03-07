@@ -69,7 +69,7 @@ There are some other things added but they are just more of what is already ther
 	SumDWts []float32 `view:"-" desc:"buffer of MPI summed dwt weight changes"`
 ```
 
-## AlphaCyc
+## ThetaCyc
 
 Now call the MPI version of WtFmDWt, which sums weight changes across procs:
 
@@ -79,9 +79,35 @@ Now call the MPI version of WtFmDWt, which sums weight changes across procs:
 	}
 ```
 
-## Stats etc
+## Allocating Patterns Across Nodes
 
-Many changes in `InitStats` and `TrialStats`, removing manual aggregation.
+In `ConfigEnv`, non-overlapping subsets of input patterns are allocated to different nodes, so that each epoch has the same full set of input patterns as with one processor.
+
+```go
+	ss.TrainEnv.Table = etable.NewIdxView(ss.Pats)
+	if ss.UseMPI {
+		st, ed, _ := empi.AllocN(ss.Pats.Rows)
+		ss.TrainEnv.Table.Idxs = ss.TrainEnv.Table.Idxs[st:ed]
+	}
+```
+
+## Logging
+
+The `elog` system has support for gathering all of the rows of Trial-level logs from each of the different processors into a combined table, which is then used for aggregating stats at the Epoch level.  To enable all the standard infrastructure to work in the same way as in the non-MPI case, the aggregated table is set as the Trial log.  This means that after we do the aggregation of the Trial data (at the Epoch level), we need to reset the number of rows back to the original number present per each processor, otherwise the table grows exponentially!  If the Trial data is always accumulated by adding rows and resetting back to 0 at the end of the epoch, then you would just do that as usual.
+
+Here's the relevant code in the `Log()` method:
+
+```go
+	var ntrow int
+	if ss.UseMPI && time == elog.Epoch { // Must gather data for trial level if doing epoch level
+		ss.Logs.MPIGatherTableRows(mode, elog.Trial, ss.Comm)
+	}
+    ...
+	if ss.UseMPI && time == elog.Epoch { // Must reset rows back to original number pre-gather!
+		dt := ss.Logs.Table(mode, elog.Trial)
+		dt.SetNumRows(ntrow)
+	}
+```
 
 ## LogFileName
 
@@ -98,26 +124,6 @@ func (ss *Sim) LogFileName(lognm string) string {
 	return nm
 }
 ```
-
-## LogTrnEpc
-
-Here we Gather the training trial-level data from all the procs, into a separate `TrnTrlLogAll` table, and use that if doing MPI:
-
-```go
-	trl := ss.TrnTrlLog
-	if ss.UseMPI {
-		empi.GatherTableRows(ss.TrnTrlLogAll, ss.TrnTrlLog, ss.Comm)
-		trl = ss.TrnTrlLogAll
-	}
-
-	tix := etable.NewIdxView(trl)
-
-	pcterr := agg.Mean(tix, "Err")[0]
-```
-
-The Gather appends all of the data from each proc in order by rank, in the resulting table.
-
-There are also other changes in this method that remove the manual epoch-level computations, and just rely on the `agg.Mean` etc calls as illustrated above, and as used already in the testing code.
 
 ## CmdArgs
 
@@ -152,11 +158,9 @@ func (ss *Sim) MPIFinalize() {
 }
 
 // CollectDWts collects the weight changes from all synapses into AllDWts
-func (ss *Sim) CollectDWts(net *leabra.Network) {
-    made := net.CollectDWts(&ss.AllDwts, 8329) // plug in number from printout below, to avoid realloc
-    if made {
-		mpi.Printf("MPI: AllDWts len: %d\n", len(ss.AllDWts)) // put this number in above make
-	}
+// includes all other long adapting factors too: DTrgAvg, ActAvg, etc
+func (ss *Sim) CollectDWts(net *axon.Network) {
+	net.CollectDWts(&ss.AllDWts)
 }
 
 // MPIWtFmDWt updates weights from weight changes, using MPI to integrate
@@ -170,9 +174,9 @@ func (ss *Sim) MPIWtFmDWt() {
 			ss.SumDWts = make([]float32, ndw)
 		}
 		ss.Comm.AllReduceF32(mpi.OpSum, ss.SumDWts, ss.AllDWts)
-		ss.Net.SetDWts(ss.SumDWts)
+		ss.Net.SetDWts(ss.SumDWts, mpi.WorldSize())
 	}
-	ss.Net.WtFmDWt()
+	ss.Net.WtFmDWt(&ss.Time)
 }
 ```
 
