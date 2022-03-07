@@ -102,8 +102,8 @@ github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/emer/emergent v1.1.26/go.mod h1:XhFMJgoZeOYplTDMDUcmGPuthfTqJPbBLmXEPN6uP8Y=
-github.com/emer/emergent v1.1.57 h1:mWTjd5iK6Ai9I5iyR6NSATVVM7HIRJBJUkf4pV6gIjU=
-github.com/emer/emergent v1.1.57/go.mod h1:PhaWB9B9ge8D9IlJI0Ypf2WOeeHbT5Ipwy+vZaWYimU=
+github.com/emer/emergent v1.1.58 h1:CQ5clkT0SXfiPiUPGl8SOdg6jQPKDZ6wqk9kiqsoIVs=
+github.com/emer/emergent v1.1.58/go.mod h1:Qq3uxfy81NlWBvTYZb5A5OkPHvTx3rJTHGj+PkM2zRg=
 github.com/emer/empi v1.0.12 h1:rDOLjrtqr8FzreMtWyzyx0/6hIPlTpjv/LzRSFPEq7Y=
 github.com/emer/empi v1.0.12/go.mod h1:QJRkECkqMO3/UeuknKEzqH+oEf6MWogBeu5LPi+Y9mU=
 github.com/emer/etable v1.0.27/go.mod h1:JM0+fr/d33YNapi3hmKJ9lQPnaavT/4KimxBPnwxLsY=
