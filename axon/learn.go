@@ -104,7 +104,7 @@ func (np *NeurCaParams) Update() {
 }
 
 func (np *NeurCaParams) Defaults() {
-	np.SpikeG = 12
+	np.SpikeG = 8
 	np.LrnThr = 0.01
 	np.SynTau = 40
 	np.MTau = 10
