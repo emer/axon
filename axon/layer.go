@@ -1092,6 +1092,8 @@ func (ly *Layer) DecayState(decay float32) {
 			continue
 		}
 		ly.Act.DecayState(nrn, decay)
+		ly.Learn.DecayNeurCa(nrn, ly.Act.Decay.Glong)
+		// Note: synapse-level Ca decay happens in DWt
 	}
 	for pi := range ly.Pools { // decaying average act is essential for inhib
 		pl := &ly.Pools[pi]
@@ -1503,7 +1505,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.CaPLrn
+		nrn.ActSt1 = nrn.CaP
 	}
 }
 
@@ -1514,7 +1516,7 @@ func (ly *Layer) ActSt2(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.CaPLrn
+		nrn.ActSt2 = nrn.CaP
 	}
 }
 
@@ -1674,6 +1676,14 @@ func (ly *Layer) SynCa(ltime *Time) {
 			continue
 		}
 		p.(AxonPrjn).RecvSynCaOpt(ltime)
+	}
+	if ly.Learn.NeurCa.SynDWtInt > 0 && (ltime.CycleTot%ly.Learn.NeurCa.SynDWtInt) == 0 {
+		for _, p := range ly.SndPrjns {
+			if p.IsOff() {
+				continue
+			}
+			p.(AxonPrjn).SynCaDWt(ltime)
+		}
 	}
 }
 

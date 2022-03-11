@@ -70,6 +70,7 @@ type Sim struct {
 	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
 	Stats        estats.Stats    `desc:"contains computed statistic values"`
 	Logs         elog.Logs       `desc:"Contains all the logs and information about the logs.'"`
+	ITICycles    int             `desc:"number of cycles between trials"`
 	StartRun     int             `desc:"starting run number -- typically 0 but can be set in command args for parallel runs on a cluster"`
 	MaxRuns      int             `desc:"maximum number of model runs to perform (starting from StartRun)"`
 	MaxEpcs      int             `desc:"maximum number of epochs to run per model run"`
@@ -111,6 +112,7 @@ func (ss *Sim) New() {
 	for i := 0; i < 100; i++ {
 		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
 	}
+	ss.ITICycles = 0
 	ss.ViewOn = true
 	ss.TrainUpdt = axon.AlphaCycle
 	ss.TestUpdt = axon.Cycle
@@ -336,6 +338,25 @@ func (ss *Sim) ThetaCyc(train bool) {
 	}
 	ss.TrialStats()
 	ss.StatCounters(train)
+
+	if viewUpdt == axon.Phase {
+		ss.GUI.UpdateNetView()
+	}
+	ss.Net.InitExt()
+	for cyc := 0; cyc < ss.ITICycles; cyc++ { // do the plus phase
+		ss.Net.Cycle(&ss.Time)
+		ss.StatCounters(train)
+		if !train {
+			ss.Log(elog.Test, elog.Cycle)
+		}
+		if ss.GUI.Active {
+			ss.RasterRec(ss.Time.Cycle)
+		}
+		ss.Time.CycleInc()
+		if ss.ViewOn {
+			ss.UpdateViewTime(train, viewUpdt)
+		}
+	}
 
 	if train {
 		ss.Net.DWt(&ss.Time)
@@ -624,7 +645,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.NoPlot(elog.Test, elog.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(elog.Train, elog.Run, "LegendCol", "Params")
-	ss.Stats.ConfigRasters(ss.Net, 200, ss.Net.LayersByClass())
+	ss.Stats.ConfigRasters(ss.Net, 200+ss.ITICycles, ss.Net.LayersByClass())
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -742,6 +763,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	title := "Leabra Random Associator"
 	ss.GUI.MakeWindow(ss, "ra25", title, `This demonstrates a basic Leabra model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
+	ss.GUI.NetView.Params.MaxRecs = 300
 	ss.GUI.NetView.SetNet(ss.Net)
 
 	ss.GUI.NetView.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"

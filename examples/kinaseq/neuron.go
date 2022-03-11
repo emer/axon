@@ -35,15 +35,15 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Tau":         "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":         "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.NMDA.Voff":        "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.Dend.VGCCCa":      "20",   // 20 seems reasonable, but not obviously better than 0
-					"Layer.Act.Dend.CaMax":       "100",
-					"Layer.Act.Dend.CaThr":       "0.2",
 					"Layer.Learn.SpikeCa.LrnTau": "20",
 					"Layer.Learn.SpikeCa.MTau":   "10",
 					"Layer.Learn.SpikeCa.PTau":   "40",
 					"Layer.Learn.SpikeCa.DTau":   "40",
-					"Layer.Learn.Snmda.ITau":     "100", // urak 100
-					"Layer.Learn.Snmda.Tau":      "30",  // urak 30
+					"Layer.Learn.NeurCa.ITau":    "100", // urak 100
+					"Layer.Learn.NeurCa.Tau":     "30",  // urak 30
+					"Layer.Learn.NeurCa.VGCCCa":  "20",  // 20 seems reasonable, but not obviously better than 0
+					"Layer.Learn.NeurCa.CaMax":   "100",
+					"Layer.Learn.NeurCa.CaThr":   "0.2",
 				}},
 		},
 	}},
@@ -122,7 +122,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		sn.Spike = 0
 		sn.ISI += 1
 	}
-	ly.Learn.Snmda.SnmdaFmSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
+	ly.Learn.LrnNMDA.SnmdaFmSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
 	if !ss.RGeClamp {
 		if rSpk {
 			rn.Spike = 1
@@ -132,7 +132,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 			rn.Spike = 0
 			rn.ISI += 1
 		}
-		ly.Learn.Snmda.SnmdaFmSpike(rn.Spike, &rn.SnmdaO, &rn.SnmdaI)
+		ly.Learn.LrnNMDA.SnmdaFmSpike(rn.Spike, &rn.SnmdaO, &rn.SnmdaI)
 		rn.Ge = ge
 		rn.GeSyn = ge
 		rn.Gi = gi
@@ -144,9 +144,9 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		rn.RCa = rn.RnmdaSyn * mgg * cav
 		rn.GnmdaRaw = 0
 		if rn.Spike > 0 {
-			rn.RCa += ac.Dend.VGCCCa
+			rn.RCa += ly.Learn.NeurCa.VGCCCa
 		}
-		rn.RCa = ac.Dend.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
+		rn.RCa = ly.Learn.NeurCa.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 	} else {
 		rn.GeRaw = ge
 		rn.GnmdaRaw = ge
@@ -227,12 +227,10 @@ func (ss *Sim) SynUpdt() {
 		ssy.Ca = 0
 	}
 	kp.FmCa(ssy.Ca, &ssy.CaM, &ssy.CaP, &ssy.CaD)
-	ssy.DWt = kp.DWt(ssy.CaP, ssy.CaD)
 
 	// SynNMDACa: NMDA driven synaptic updating
 	nsy.Ca = sn.SnmdaO * rn.RCa
 	kp.FmCa(nsy.Ca, &nsy.CaM, &nsy.CaP, &nsy.CaD)
-	nsy.DWt = kp.DWt(nsy.CaP, nsy.CaD)
 
 	// opt = SynContCa -- not supported anymore
 	// osy.Ca = 10 * sn.CaM * rn.CaM
@@ -245,18 +243,45 @@ func (ss *Sim) SynUpdt() {
 		osy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
 		kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
 		osy.SpikeT = ctime
-		osy.DWt = kp.DWt(osy.CaP, osy.CaD)
-	} else if ss.Time.Cycle == ss.TrialMsec-ss.ISIMsec-1 { // make sure we have at end of plus
+		// } else if ss.Time.Cycle == ss.TrialMsec-ss.ISIMsec-1 { // make sure we have at end of plus
+		// 	_, caP, caD := kp.CurCa(ctime, osy.SpikeT, osy.CaM, osy.CaP, osy.CaD)
+		// 	osy.DWt = kp.DWt(caP, caD)
+	}
+
+	sisi := int(sn.ISI)
+	risi := int(rn.ISI)
+
+	if (sisi == kp.TDWtISI && risi > kp.TDWtISI) || (risi == kp.TDWtISI && sisi > kp.TDWtISI) {
+		ssy.TDWt = kp.DWt(ssy.CaP, ssy.CaD)
+		nsy.TDWt = kp.DWt(nsy.CaP, nsy.CaD)
 		_, caP, caD := kp.CurCa(ctime, osy.SpikeT, osy.CaM, osy.CaP, osy.CaD)
-		osy.DWt = kp.DWt(caP, caD)
+		osy.TDWt = kp.DWt(caP, caD)
+	}
+	if (sisi == kp.DWtISI && risi > kp.DWtISI) || (risi == kp.DWtISI && sisi > kp.DWtISI) {
+		ssy.DWt += ssy.TDWt
+		nsy.DWt += ssy.TDWt
+		osy.DWt += ssy.TDWt
 	}
 }
+
+func (ss *Sim) InitWts() {
+	ssy := &ss.SynSpk
+	nsy := &ss.SynNMDA
+	osy := &ss.SynOpt
+	ssy.DWt = 0
+	nsy.DWt = 0
+	osy.DWt = 0
+}
+
+///////////////////////////////////////////////////////////////////
+//  Logging
 
 func (ss *Sim) LogSyn(dt *etable.Table, row int, pre string, sy *axon.Synapse) {
 	dt.SetCellFloat(pre+"Ca", row, float64(sy.Ca))
 	dt.SetCellFloat(pre+"CaM", row, float64(sy.CaM))
 	dt.SetCellFloat(pre+"CaP", row, float64(sy.CaP))
 	dt.SetCellFloat(pre+"CaD", row, float64(sy.CaD))
+	dt.SetCellFloat(pre+"TDWt", row, float64(sy.TDWt))
 	dt.SetCellFloat(pre+"DWt", row, float64(sy.DWt))
 	dt.SetCellFloat(pre+"Wt", row, float64(sy.Wt))
 }
@@ -374,6 +399,7 @@ func (ss *Sim) ConfigSynapse(sch *etable.Schema, pre string) {
 	*sch = append(*sch, etable.Column{pre + "CaM", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "CaP", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "CaD", etensor.FLOAT64, nil, nil})
+	*sch = append(*sch, etable.Column{pre + "TDWt", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "DWt", etensor.FLOAT64, nil, nil})
 	*sch = append(*sch, etable.Column{pre + "Wt", etensor.FLOAT64, nil, nil})
 }

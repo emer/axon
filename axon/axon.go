@@ -254,6 +254,10 @@ type AxonPrjn interface {
 	// DWt computes the weight change (learning) -- on sending projections
 	DWt(ltime *Time)
 
+	// SynCaDWt is periodically called to probe for conditions when DWt should be
+	// updated from the TDWt
+	SynCaDWt(ltime *Time)
+
 	// WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 	WtFmDWt(ltime *Time)
 

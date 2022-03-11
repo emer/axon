@@ -90,7 +90,7 @@ func (ss *Sim) Config() {
 	ss.NTrials = 1000
 	ss.MinusMsec = 150
 	ss.PlusMsec = 50
-	ss.ISIMsec = 0
+	ss.ISIMsec = 200
 	ss.MinusHz = 50
 	ss.PlusHz = 25
 	ss.Update()
@@ -221,7 +221,9 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 
 	nex := &ss.NeuronEx
 
-	ss.Time.NewState()
+	ss.InitWts()
+
+	ss.Time.NewState(true)
 	for phs := 0; phs < 3; phs++ {
 		var maxms, rhz int
 		switch phs {

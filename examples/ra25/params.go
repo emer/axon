@@ -43,21 +43,23 @@ var ParamSetsMin = params.Sets{
 
 					// Voff = 5, MgC = 1.4, CaMax = 90, VGCCCa = 20 is a reasonable "high voltage" config
 					// Voff = 0, MgC = 1, CaMax = 100, VGCCCa = 20 is a good "default" config
-					"Layer.Act.NMDA.Gbar":       "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
-					"Layer.Act.NMDA.ITau":       "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Learn.NeurCa.SynTau": "40",   // 40 best in larger models
-					"Layer.Learn.NeurCa.MTau":   "10",
-					"Layer.Learn.NeurCa.PTau":   "40",
-					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.LrnThr": "0.01", // 0.05 best in lvis, bad in objrec
-					"Layer.Learn.NeurCa.VGCCCa": "10",   // 20 seems reasonable, but not obviously better than 0
-					"Layer.Learn.NeurCa.CaMax":  "200",
-					"Layer.Learn.NeurCa.CaThr":  "0.05",
-					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
-					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
+					"Layer.Act.NMDA.Gbar":          "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
+					"Layer.Act.NMDA.ITau":          "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Act.NMDA.Tau":           "100",  // 30 not good
+					"Layer.Act.NMDA.MgC":           "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Act.NMDA.Voff":          "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Learn.RLrate.On":        "true",
+					"Layer.Learn.NeurCa.SpikeG":    "8",
+					"Layer.Learn.NeurCa.SynTau":    "40", // 40 best in larger models
+					"Layer.Learn.NeurCa.MTau":      "10",
+					"Layer.Learn.NeurCa.PTau":      "40",
+					"Layer.Learn.NeurCa.DTau":      "40",
+					"Layer.Learn.NeurCa.SynDWtInt": "10",
+					"Layer.Learn.NeurCa.VGCCCa":    "10", // 20 seems reasonable, but not obviously better than 0
+					"Layer.Learn.NeurCa.CaMax":     "200",
+					"Layer.Learn.NeurCa.CaThr":     "0.05",
+					"Layer.Learn.LrnNMDA.ITau":     "1",  // urakubo = 100, does not work here..
+					"Layer.Learn.LrnNMDA.Tau":      "50", // urakubo = 30 > 20 but no major effect on PCA
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
@@ -79,18 +81,22 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1",      // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.Learn.Lrate.Base":      "0.3",      // 0.1 for SynSpkCa even though dwt equated
 					"Prjn.SWt.Adapt.Lrate":       "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.SpikeG":   "4",        // keep at 12 standard, adjust other things
+					"Prjn.Learn.Kinase.SpikeG":   "10",       // keep at 12 standard, adjust other things
 					"Prjn.Learn.Kinase.Rule":     "SynSpkCa", // "SynNMDACa",
-					"Prjn.Learn.Kinase.OptInteg": "false",
-					"Prjn.Learn.Kinase.MTau":     "5", // 5 > 10 test more
+					"Prjn.Learn.Kinase.MTau":     "5",        // 5 > 10 test more
+					"Prjn.Learn.Kinase.OptInteg": "true",
 					"Prjn.Learn.Kinase.PTau":     "40",
 					"Prjn.Learn.Kinase.DTau":     "40",
+					"Prjn.Learn.Kinase.TDWtISI":  "10",
+					"Prjn.Learn.Kinase.LrnThr":   "0.5",
+					"Prjn.Learn.Kinase.DWtThr":   "0.2",
+					"Prjn.Learn.Kinase.TrlDecay": "0.6",
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
-					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.PThrMin":    "0.0", // 0.05 best for objrec, higher worse
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -123,7 +129,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Kinase.DTau":     "40",
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
-					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.PThrMin":    "0",    // 0.05 best for objrec, higher worse
 					"Prjn.Learn.XCal.LrnThr":     "0.01", // 0.05 best in lvis, bad for objrec
 				}},
 		},

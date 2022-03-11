@@ -40,8 +40,8 @@ func (pj *HebbPrjn) DWt(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			ract := rn.CaPLrn
-			sact := sn.CaPLrn
+			ract := rn.CaP
+			sact := sn.CaP
 			wt := sy.LWt
 			dwt := ract * (pj.IncGain*sact*(1-wt) - (1-sact)*wt)
 			sy.DWt += lr * dwt

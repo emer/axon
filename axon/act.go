@@ -127,10 +127,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
 	nrn.Gnmda -= glong * nrn.Gnmda
 
-	nrn.RnmdaSyn -= glong * nrn.RnmdaSyn
-	nrn.RCa -= glong * nrn.RCa
-	nrn.SnmdaO -= glong * nrn.SnmdaO
-	nrn.SnmdaI -= glong * nrn.SnmdaI
+	// learning-based NMDA, Ca values decayed in Learn.DecayNeurCa
 
 	nrn.ActDel = 0
 	nrn.Inet = 0
