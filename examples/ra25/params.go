@@ -31,7 +31,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
 					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
-					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
+					"Layer.Act.Decay.Glong":       "0.0",  // 0.6
 					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
 					"Layer.Act.Dend.GbarR":        "3",    // 6 > 3 old def
 					"Layer.Act.Dt.VmDendTau":      "5",    // 5 > 2.81 here but small effect
@@ -48,13 +48,13 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.NMDA.Tau":           "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":           "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.NMDA.Voff":          "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Learn.RLrate.On":        "true",
+					"Layer.Learn.RLrate.On":        "true", // beneficial still
 					"Layer.Learn.NeurCa.SpikeG":    "8",
 					"Layer.Learn.NeurCa.SynTau":    "40", // 40 best in larger models
 					"Layer.Learn.NeurCa.MTau":      "10",
 					"Layer.Learn.NeurCa.PTau":      "40",
 					"Layer.Learn.NeurCa.DTau":      "40",
-					"Layer.Learn.NeurCa.SynDWtInt": "10",
+					"Layer.Learn.NeurCa.SynDWtInt": "20", // 10-50 all work
 					"Layer.Learn.NeurCa.VGCCCa":    "10", // 20 seems reasonable, but not obviously better than 0
 					"Layer.Learn.NeurCa.CaMax":     "200",
 					"Layer.Learn.NeurCa.CaThr":     "0.05",
@@ -81,19 +81,19 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.3",      // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.Learn.Lrate.Base":      "0.12",     // 0.1 for SynSpkCa even though dwt equated
 					"Prjn.SWt.Adapt.Lrate":       "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.SpikeG":   "10",       // keep at 12 standard, adjust other things
+					"Prjn.Learn.Kinase.SpikeG":   "12",       // keep at 12 standard, adjust other things
 					"Prjn.Learn.Kinase.Rule":     "SynSpkCa", // "SynNMDACa",
 					"Prjn.Learn.Kinase.MTau":     "5",        // 5 > 10 test more
 					"Prjn.Learn.Kinase.OptInteg": "true",
 					"Prjn.Learn.Kinase.PTau":     "40",
 					"Prjn.Learn.Kinase.DTau":     "40",
-					"Prjn.Learn.Kinase.TDWtISI":  "10",
-					"Prjn.Learn.Kinase.LrnThr":   "0.5",
-					"Prjn.Learn.Kinase.DWtThr":   "0.2",
-					"Prjn.Learn.Kinase.TrlDecay": "0.6",
+					"Prjn.Learn.Kinase.TDWtISI":  "12",
+					"Prjn.Learn.Kinase.LrnThr":   "0.001",
+					"Prjn.Learn.Kinase.DWtThr":   "0.5",
+					"Prjn.Learn.Kinase.TrlDecay": "0.6", // 0.6 = same as glong
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
 					"Prjn.Learn.XCal.PThrMin":    "0.0", // 0.05 best for objrec, higher worse

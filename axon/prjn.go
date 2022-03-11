@@ -39,7 +39,6 @@ type Prjn struct {
 	GnmdaBuf []float32       `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 	AvgDWt   float32         `desc:"average DWt value across all synapses"`
 	DWtRaw   minmax.AvgMax32 `desc:"average, max DWtRaw value across all synapses"`
-	CaDAvg   minmax.AvgMax32 `desc:"average, max CaD average values"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -879,7 +878,6 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
 	np := &slay.Learn.NeurCa
-	lthr := kp.CaDLrnThr(pj.CaDAvg.Avg, pj.CaDAvg.Max)
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		sisi := int(sn.ISI)
@@ -908,7 +906,7 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
 			}
 			sy.SpikeT = ctime
-			if sy.CaD > lthr {
+			if sy.CaD > sy.Lrn { // peak finder
 				sy.Lrn = sy.CaD
 			}
 		}
@@ -928,7 +926,6 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	np := &slay.Learn.NeurCa
-	lthr := kp.CaDLrnThr(pj.CaDAvg.Avg, pj.CaDAvg.Max)
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
 		risi := int(rn.ISI)
@@ -957,7 +954,7 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
 			}
 			sy.SpikeT = ctime
-			if sy.CaD > lthr {
+			if sy.CaD > sy.Lrn {
 				sy.Lrn = sy.CaD
 			}
 		}
@@ -972,7 +969,6 @@ func (pj *Prjn) SynCaDWt(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
-	dwthr := kp.CaDDWtThr(pj.CaDAvg.Avg, pj.CaDAvg.Max)
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])
@@ -987,7 +983,7 @@ func (pj *Prjn) SynCaDWt(ltime *Time) {
 				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 				sy.SpikeT = ctime
 			}
-			pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate, dwthr)
+			pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate)
 		}
 	}
 }
@@ -1053,8 +1049,6 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	decay := kp.TrlDecay
 	lr := pj.Learn.Lrate.Eff
-	dwthr := kp.CaDDWtThr(pj.CaDAvg.Avg, pj.CaDAvg.Max)
-	var cad minmax.AvgMax32
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		// if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
@@ -1075,19 +1069,11 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 					sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
 				}
 			}
-			cad.UpdateVal(sy.CaD, ci)
 			sy.CaM -= decay * sy.CaM
 			sy.CaP -= decay * sy.CaP
 			sy.CaD -= decay * sy.CaD
-			pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate, dwthr) // might meet criterion now, after decay
+			pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) // might meet criterion now, after decay
 		}
-	}
-	cad.CalcAvg()
-	if pj.CaDAvg.Max == 0 {
-		pj.CaDAvg = cad
-	} else {
-		pj.CaDAvg.Avg += 0.01 * (cad.Avg - pj.CaDAvg.Avg)
-		pj.CaDAvg.Max += 0.01 * (cad.Max - pj.CaDAvg.Max)
 	}
 }
 

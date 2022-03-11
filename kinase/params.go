@@ -14,8 +14,8 @@ type SynParams struct {
 	PTau     float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau     float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	TDWtISI  int     `desc:"ISI for updating the temporary DWt value from current CaP vs. CaD levels -- should be within window where Ca levels are still elevated"`
-	LrnThr   float32 `desc:"threshold on CaD for whether the synapse had enough activity to drive learning, as proportion between average and max CaD"`
-	DWtThr   float32 `desc:"for synapses that already exceeded the LrnThr, threshold on CaD below which DWt is actually updated from TDWt, as proportion between average and max CaD"`
+	LrnThr   float32 `desc:"threshold on recent max CaD (Lrn) for whether the synapse had enough activity to drive learning"`
+	DWtThr   float32 `desc:"relative proportion of Lrn max CaD value to trigger DWt updating -- any decay more than this counts"`
 	TrlDecay float32 `desc:"decay between trials"`
 	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle.  Use 1 for SynSpkCa, 0.93 for SynNMDACa."`
 	OptInteg bool    `def:"true" desc:"use the optimized spike-only integration of cascaded CaM, CaP, CaD values -- iterates cascaded updates between spikes -- significantly faster and same performance as non-optimized."`
@@ -33,8 +33,8 @@ func (kp *SynParams) Defaults() {
 	kp.PTau = 40
 	kp.DTau = 40
 	kp.TDWtISI = 10
-	kp.LrnThr = 0.5
-	kp.DWtThr = 0.2
+	kp.LrnThr = 0.01
+	kp.DWtThr = 0.5
 	kp.TrlDecay = 0.6
 	kp.DScale = 1 // 0.93, 1.05
 	kp.OptInteg = true
@@ -102,20 +102,4 @@ func (kp *SynParams) CurCa(ctime, stime int32, caM, caP, caD float32) (cCaM, cCa
 		kp.FmCa(0, &cCaM, &cCaP, &cCaD) // just decay to 0
 	}
 	return
-}
-
-// CaDLrnThr returns learning threshold as function of average and max CaD
-func (kp *SynParams) CaDLrnThr(avg, max float32) float32 {
-	if max == 0 {
-		return 0.02 // default
-	}
-	return avg + kp.LrnThr*(max-avg)
-}
-
-// CaDDWtThr returns DWt threshold as function of average and max CaD
-func (kp *SynParams) CaDDWtThr(avg, max float32) float32 {
-	if max == 0 {
-		return 0.01 // default
-	}
-	return avg + kp.DWtThr*(max-avg)
 }

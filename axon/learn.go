@@ -487,8 +487,11 @@ func (ls *LearnSynParams) SynSpkDWt(scap, scad float32) float32 {
 
 // DWtFmTDWt updates the DWt from the TDWt, checking the learning threshold
 // using given aggregate learning rate
-func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr, thr float32) {
-	if sy.Lrn == 0 || sy.CaD > thr {
+func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) {
+	if sy.Lrn < ls.Kinase.LrnThr {
+		return
+	}
+	if sy.CaD >= ls.Kinase.DWtThr*sy.Lrn {
 		return
 	}
 	sy.Lrn = 0
