@@ -146,7 +146,7 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 			rn := &rlay.Neurons[ri]
 			// following line should be ONLY diff: sact for *both* short and medium *sender*
 			// activations, which are first two args:
-			err := pj.Learn.CHLdWt(sact, sact, rn.CaPLrn, rn.CaDLrn)
+			err := pj.Learn.CHLdWt(sact, sact, rn.CaP, rn.CaD)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

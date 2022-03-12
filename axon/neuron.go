@@ -19,9 +19,10 @@ import (
 // Note: all non-float32 infrastructure variables must be at the start!
 const NeuronVarStart = 8
 
-// axon.Neuron holds all of the neuron (unit) level variables -- this is the most basic version with
-// rate-code only and no optional features at all.
-// All variables accessible via Unit interface must be float32 and start at the top, in contiguous order
+// axon.Neuron holds all of the neuron (unit) level variables.
+// This is the most basic version, without any optional features.
+// All variables accessible via Unit interface must be float32
+// and start at the top, in contiguous order
 type Neuron struct {
 	Flags   NeurFlags `desc:"bit flags for binary state variables"`
 	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
@@ -39,10 +40,11 @@ type Neuron struct {
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 
-	CaSyn float32 `desc:"spike-driven calcium trace for synapse-level Ca-driven learning rules: SynSpkCa"`
-	CaM   float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
-	CaP   float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
-	CaD   float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	CaSyn  float32 `desc:"spike-driven calcium trace for synapse-level Ca-driven learning rules: SynSpkCa"`
+	CaM    float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
+	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	PctDWt float32 `desc:"percent of synapses that had DWt updated on the current cycle, for sending-neuron"`
 
 	ActInt float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM)"`
 	ActSt1 float32 `desc:"the activation state at specific time point within current state processing window, as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`

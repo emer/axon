@@ -31,7 +31,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
 					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
-					"Layer.Act.Decay.Glong":       "0.0",  // 0.6
+					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
 					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
 					"Layer.Act.Dend.GbarR":        "3",    // 6 > 3 old def
 					"Layer.Act.Dt.VmDendTau":      "5",    // 5 > 2.81 here but small effect
@@ -90,13 +90,14 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Kinase.OptInteg": "true",
 					"Prjn.Learn.Kinase.PTau":     "40",
 					"Prjn.Learn.Kinase.DTau":     "40",
-					"Prjn.Learn.Kinase.TDWtISI":  "12",
+					"Prjn.Learn.Kinase.TDWtISI":  "10",
 					"Prjn.Learn.Kinase.LrnThr":   "0.001",
 					"Prjn.Learn.Kinase.DWtThr":   "0.5",
 					"Prjn.Learn.Kinase.TrlDecay": "0.6", // 0.6 = same as glong
 					"Prjn.Learn.Kinase.DScale":   "1",
 					"Prjn.Learn.XCal.On":         "true",
-					"Prjn.Learn.XCal.PThrMin":    "0.0", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.PThrMin":    "0.0",  // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.LrnThr":     "0.01", // 0.05 best for objrec, higher worse
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

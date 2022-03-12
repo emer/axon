@@ -839,10 +839,11 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 	np := &slay.Learn.NeurCa
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		tdw := false
-		if int(sn.ISI) <= kp.TDWtISI {
-			tdw = true
+		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+			continue
 		}
+		sisi := int(sn.ISI)
+		stdw := (sisi == kp.TDWtISI || (sn.Spike > 0 && sisi < kp.TDWtISI))
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -851,6 +852,11 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			risi := int(rn.ISI)
+			rtdw := (risi == kp.TDWtISI || (rn.Spike > 0 && risi < kp.TDWtISI))
+			if rtdw || stdw {
+				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD) // prior to spiking update
+			}
 			switch kp.Rule {
 			case kinase.SynNMDACa:
 				sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
@@ -862,8 +868,8 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 				}
 			}
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			if tdw || int(rn.ISI) <= kp.TDWtISI {
-				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
+			if sy.CaD > sy.CaDMax { // peak finder
+				sy.CaDMax = sy.CaD
 			}
 		}
 	}
@@ -880,6 +886,9 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 	np := &slay.Learn.NeurCa
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
+		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+			continue
+		}
 		sisi := int(sn.ISI)
 		if !(sisi == kp.TDWtISI || (sn.Spike > 0 && sisi < kp.TDWtISI)) && sn.Spike == 0 {
 			continue
@@ -906,8 +915,8 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
 			}
 			sy.SpikeT = ctime
-			if sy.CaD > sy.Lrn { // peak finder
-				sy.Lrn = sy.CaD
+			if sy.CaD > sy.CaDMax { // peak finder
+				sy.CaDMax = sy.CaD
 			}
 		}
 	}
@@ -928,6 +937,9 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 	np := &slay.Learn.NeurCa
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
+		if rn.CaP < pj.Learn.XCal.LrnThr && rn.CaD < pj.Learn.XCal.LrnThr {
+			continue
+		}
 		risi := int(rn.ISI)
 		if !(risi == kp.TDWtISI || (rn.Spike > 0 && risi < kp.TDWtISI)) && rn.Spike == 0 {
 			continue
@@ -954,8 +966,8 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
 			}
 			sy.SpikeT = ctime
-			if sy.CaD > sy.Lrn {
-				sy.Lrn = sy.CaD
+			if sy.CaD > sy.CaDMax {
+				sy.CaDMax = sy.CaD
 			}
 		}
 	}
@@ -965,12 +977,21 @@ func (pj *Prjn) RecvSynCaOpt(ltime *Time) {
 // updated from the TDWt
 func (pj *Prjn) SynCaDWt(ltime *Time) {
 	kp := &pj.Learn.Kinase
+	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa || !kp.OptInteg {
+		return
+	}
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
-		// sn := &slay.Neurons[si]
+		sn := &slay.Neurons[si]
+		sn.PctDWt = 0
+		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+			continue
+		}
+		sndw := 0
+		sntot := 0
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -983,7 +1004,13 @@ func (pj *Prjn) SynCaDWt(ltime *Time) {
 				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime, sy.SpikeT, sy.CaM, sy.CaP, sy.CaD)
 				sy.SpikeT = ctime
 			}
-			pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate)
+			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
+				sndw++
+			}
+			sntot++
+		}
+		if sntot > 0 {
+			sn.PctDWt = float32(sndw) / float32(sntot)
 		}
 	}
 }
@@ -1051,9 +1078,11 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		// if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
-		// 	continue
-		// }
+		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+			continue
+		}
+		sndw := 0
+		sntot := 0
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -1072,7 +1101,13 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 			sy.CaM -= decay * sy.CaM
 			sy.CaP -= decay * sy.CaP
 			sy.CaD -= decay * sy.CaD
-			pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) // might meet criterion now, after decay
+			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
+				sndw++
+			}
+			sntot++
+		}
+		if sntot > 0 {
+			sn.PctDWt = float32(sndw) / float32(sntot)
 		}
 	}
 }

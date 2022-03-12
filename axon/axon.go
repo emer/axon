@@ -151,6 +151,10 @@ type AxonLayer interface {
 	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
 	GFmInc(ltime *Time)
 
+	// SynCa updates synaptic calcium per-cycle, for Kinase learning.
+	// Also periodically calls SynCaDWt to compute weight changes over time.
+	SynCa(ltime *Time)
+
 	// AvgMaxGe computes the average and max Ge stats, used in inhibition
 	AvgMaxGe(ltime *Time)
 

@@ -1155,7 +1155,7 @@ func (ly *Layer) GFmInc(ltime *Time) {
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 	}
 	if !ltime.Testing {
-		ly.SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
+		ly.AxonLay.(AxonLayer).SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
 	}
 }
 
@@ -1663,7 +1663,8 @@ func (ly *Layer) TrgAvgFmD() {
 	}
 }
 
-// SynCa updates synaptic calcium per-cycle, for Kinase learning
+// SynCa updates synaptic calcium per-cycle, for Kinase learning.
+// Also periodically calls SynCaDWt to compute weight changes over time.
 func (ly *Layer) SynCa(ltime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {

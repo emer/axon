@@ -94,7 +94,7 @@ type NeurCaParams struct {
 	MTau      float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau      float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau      float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	SynDWtInt int     `desc:"interval between synaptic DWt updates from TWt"`
+	SynDWtInt int     `def:"10" desc:"for synapse-level learning: interval between synaptic DWt updates from TDWt"`
 	VGCCCa    float32 `def:"10" desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
 	CaMax     float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
 	CaThr     float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
@@ -385,12 +385,12 @@ func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.DWt = 0
 	sy.DSWt = 0
 	sy.TDWt = 0
-	sy.Lrn = 0
 	sy.SpikeT = -1
 	sy.Ca = 0
 	sy.CaM = 0
 	sy.CaP = 0
 	sy.CaD = 0
+	sy.CaDMax = 0
 	sy.DWtRaw = 0
 }
 
@@ -486,15 +486,15 @@ func (ls *LearnSynParams) SynSpkDWt(scap, scad float32) float32 {
 }
 
 // DWtFmTDWt updates the DWt from the TDWt, checking the learning threshold
-// using given aggregate learning rate
-func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) {
-	if sy.Lrn < ls.Kinase.LrnThr {
-		return
+// using given aggregate learning rate.  Returns true if updated DWt
+func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
+	if sy.CaDMax < ls.Kinase.LrnThr {
+		return false
 	}
-	if sy.CaD >= ls.Kinase.DWtThr*sy.Lrn {
-		return
+	if sy.CaD >= ls.Kinase.DWtThr*sy.CaDMax {
+		return false
 	}
-	sy.Lrn = 0
+	sy.CaDMax = 0
 	sy.DWtRaw = sy.TDWt
 	if sy.TDWt > 0 {
 		sy.TDWt *= (1 - sy.LWt)
@@ -503,6 +503,7 @@ func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) {
 	}
 	sy.DWt += lr * sy.TDWt
 	sy.TDWt = 0
+	return true
 }
 
 // LrateParams manages learning rate parameters

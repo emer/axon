@@ -24,11 +24,11 @@ type Synapse struct {
 	DWt    float32 `desc:"change in synaptic weight, from learning"`
 	DSWt   float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
 	TDWt   float32 `desc:"temporary DWt value -- updated at a fixed offset from last spike (when Ca levels are still elevated), and added to the DWt value after a longer break of spiking where there is enough time for CaMKII driven AMPA receptor trafficking to take place"`
-	Lrn    float32 `desc:"set to max CaD if it exceeded the learning threshold at some point since last checked"`
 	Ca     float32 `desc:"Raw calcium singal for Kinase based learning: send.SnmdaO * recv.RCa"`
 	CaM    float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`
 	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	CaDMax float32 `desc:"maximum CaD value since last DWt change -- DWt occurs when current CaD has decreased by a given proportion from this recent peak"`
 	DWtRaw float32 `desc:"raw change in synaptic weight, from learning -- temporary for Kinase analysis"`
 }
 
@@ -36,16 +36,16 @@ func (sy *Synapse) VarNames() []string {
 	return SynapseVars
 }
 
-var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "TDWt", "Lrn", "Ca", "CaM", "CaP", "CaD", "DWtRaw"}
+var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "TDWt", "Ca", "CaM", "CaP", "CaD", "CaDMax", "DWtRaw"}
 
 var SynapseVarProps = map[string]string{
 	"DWt":    `auto-scale:"+"`,
 	"DSWt":   `auto-scale:"+"`,
 	"TDWt":   `auto-scale:"+"`,
-	"lrn":    `auto-scale:"+"`,
 	"CaM":    `auto-scale:"+"`,
 	"CaP":    `auto-scale:"+"`,
 	"CaD":    `auto-scale:"+"`,
+	"CaDMax": `auto-scale:"+"`,
 	"DWtRaw": `auto-scale:"+"`,
 }
 
