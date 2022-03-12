@@ -76,21 +76,21 @@ func (kp *SynParams) DWt(caP, caD float32) float32 {
 	return caP - kp.DScale*caD
 }
 
-// ISIFmTime returns the inter spike interval from current time
-// and last spike time, which is -1 if never spiked
-// (in which case return ISI is -1)
-func (kp *SynParams) ISIFmTime(ctime, stime int32) int {
-	if stime < 0 {
+// IntFmTime returns the interval from current time
+// and last update time, which is -1 if never updated
+// (in which case return is -1)
+func (kp *SynParams) IntFmTime(ctime, utime int32) int {
+	if utime < 0 {
 		return -1
 	}
-	return int(ctime - stime)
+	return int(ctime - utime)
 }
 
 // CurCa returns the current Ca* values, dealing with updating for
 // optimized spike-time update versions.
-// ctime is current time in msec, and stime is last spike time (-1 if never)
-func (kp *SynParams) CurCa(ctime, stime int32, caM, caP, caD float32) (cCaM, cCaP, cCaD float32) {
-	isi := kp.ISIFmTime(ctime, stime)
+// ctime is current time in msec, and utime is last update time (-1 if never)
+func (kp *SynParams) CurCa(ctime, utime int32, caM, caP, caD float32) (cCaM, cCaP, cCaD float32) {
+	isi := kp.IntFmTime(ctime, utime)
 	cCaM, cCaP, cCaD = caM, caP, caD
 	if !kp.OptInteg || isi <= 0 {
 		return

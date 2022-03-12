@@ -362,7 +362,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 		ss.Net.DWt(&ss.Time)
 	}
 
-	if ss.ViewOn && viewUpdt < axon.ThetaCycle {
+	if ss.ViewOn && viewUpdt <= axon.ThetaCycle {
 		ss.GUI.UpdateNetView()
 	}
 

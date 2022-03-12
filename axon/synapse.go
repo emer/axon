@@ -17,7 +17,7 @@ const SynapseVarStart = 4
 
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
-	SpikeT int32   `desc:"time of last spiking at the synapse level, for optimized synaptic-level Ca integration"`
+	CaUpT  int32   `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration"`
 	Wt     float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1"`
 	SWt    float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine, while the LWt reflects the AMPA receptor efficacy and number.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
 	LWt    float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, "`

@@ -1672,12 +1672,6 @@ func (ly *Layer) SynCa(ltime *Time) {
 		}
 		p.(AxonPrjn).SynCa(ltime)
 	}
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).RecvSynCaOpt(ltime)
-	}
 	if ly.Learn.NeurCa.SynDWtInt > 0 && (ltime.CycleTot%ly.Learn.NeurCa.SynDWtInt) == 0 {
 		for _, p := range ly.SndPrjns {
 			if p.IsOff() {

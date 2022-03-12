@@ -10,7 +10,6 @@ import (
 	"math/rand"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/kinase"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
@@ -45,7 +44,6 @@ type Sim struct {
 	RecvNeur   *axon.Neuron             `view:"no-inline" desc:"the receiving neuron"`
 	Prjn       *axon.Prjn               `view:"no-inline" desc:"prjn-level parameters -- for intializing synapse -- other params not used"`
 	NeuronEx   NeuronEx                 `view:"no-inline" desc:"extra neuron state"`
-	Kinase     kinase.SynParams         `desc:"kinase params"`
 	Params     emer.Params              `view:"inline" desc:"all parameter management"`
 	PGain      float32                  `desc:"multiplier on product factor to equate to SynC"`
 	SpikeDisp  float32                  `desc:"spike multiplier for display purposes"`
@@ -80,8 +78,6 @@ func (ss *Sim) Config() {
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
-	ss.Kinase.Defaults()
-	// ss.Kinase.Rule = kinase.SynContCa
 	ss.Time.Defaults()
 	ss.PGain = 10
 	ss.SpikeDisp = 0.1
@@ -99,11 +95,11 @@ func (ss *Sim) Config() {
 	ss.ConfigTable(ss.Log("RunLog"))
 	ss.ConfigTable(ss.Log("DWtLog"))
 	ss.ConfigTable(ss.Log("DWtVarLog"))
+	ss.Init()
 }
 
 // Update updates computed values
 func (ss *Sim) Update() {
-	ss.Kinase.Update()
 	ss.TrialMsec = ss.MinusMsec + ss.PlusMsec + ss.ISIMsec
 }
 

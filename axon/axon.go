@@ -251,10 +251,6 @@ type AxonPrjn interface {
 	// SynCa updates synaptic calcium per-synapse, for Kinase learning
 	SynCa(ltime *Time)
 
-	// RecvSynCaOpt updates synaptic calcium per-synapse, for Kinase learning
-	// receiver-side spiking version, for optimized case only
-	RecvSynCaOpt(ltime *Time)
-
 	// DWt computes the weight change (learning) -- on sending projections
 	DWt(ltime *Time)
 

@@ -374,6 +374,16 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 	*dwt = 0
 }
 
+// InitCaSyn initializes synaptic calcium state, including CaUpT
+func InitCaSyn(sy *Synapse) {
+	sy.CaUpT = -1
+	sy.Ca = 0
+	sy.CaM = 0
+	sy.CaP = 0
+	sy.CaD = 0
+	sy.CaDMax = 0
+}
+
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
@@ -385,13 +395,8 @@ func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.DWt = 0
 	sy.DSWt = 0
 	sy.TDWt = 0
-	sy.SpikeT = -1
-	sy.Ca = 0
-	sy.CaM = 0
-	sy.CaP = 0
-	sy.CaD = 0
-	sy.CaDMax = 0
 	sy.DWtRaw = 0
+	InitCaSyn(sy)
 }
 
 // SWtInitParams for initial SWt values
@@ -485,6 +490,13 @@ func (ls *LearnSynParams) SynSpkDWt(scap, scad float32) float32 {
 	return scap - ls.Kinase.DScale*scad
 }
 
+// CaDMax updates CaDMax from CaD
+func (ls *LearnSynParams) CaDMax(sy *Synapse) {
+	if sy.CaD > sy.CaDMax {
+		sy.CaDMax = sy.CaD
+	}
+}
+
 // DWtFmTDWt updates the DWt from the TDWt, checking the learning threshold
 // using given aggregate learning rate.  Returns true if updated DWt
 func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
@@ -503,6 +515,7 @@ func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
 	}
 	sy.DWt += lr * sy.TDWt
 	sy.TDWt = 0
+	InitCaSyn(sy)
 	return true
 }
 
