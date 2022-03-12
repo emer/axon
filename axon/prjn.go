@@ -900,6 +900,9 @@ func (pj *Prjn) SynCaOpt(ltime *Time) {
 		scons := pj.SConIdx[st : st+nc]
 		for ci := range syns {
 			sy := &syns[ci]
+			if sy.CaUpT == ctime { // recv did it
+				continue
+			}
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			risi := int(rn.ISI)

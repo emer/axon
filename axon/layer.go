@@ -1198,6 +1198,10 @@ func (ly *Layer) AvgMaxGe(ltime *Time) {
 
 	if !ltime.Testing {
 		ly.AxonLay.(AxonLayer).SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
+		ly.AxonLay.(AxonLayer).RecvSynCa(ltime)
+		if ltime.CycleTot%10 == 0 {
+			ly.AxonLay.(AxonLayer).SynCaDWt(ltime)
+		}
 	}
 }
 

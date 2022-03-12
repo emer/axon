@@ -354,10 +354,10 @@ func (nt *Network) SendSpike(ltime *Time) {
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 func (nt *Network) AvgMaxGe(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxGe(ltime) }, "AvgMaxGe")
-	nt.ThrLayFun(func(ly AxonLayer) { ly.RecvSynCa(ltime) }, "RecvSynCa")
-	if nt.SynDWtInterval > 0 && (ltime.CycleTot%nt.SynDWtInterval) == 0 {
-		nt.ThrLayFun(func(ly AxonLayer) { ly.SynCaDWt(ltime) }, "SynCaDWt")
-	}
+	// nt.ThrLayFun(func(ly AxonLayer) { ly.RecvSynCa(ltime) }, "RecvSynCa")
+	// if nt.SynDWtInterval > 0 && (ltime.CycleTot%nt.SynDWtInterval) == 0 {
+	// 	nt.ThrLayFun(func(ly AxonLayer) { ly.SynCaDWt(ltime) }, "SynCaDWt")
+	// }
 }
 
 // InhibiFmGeAct computes inhibition Gi from Ge and Act stats within relevant Pools
