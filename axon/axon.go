@@ -151,10 +151,6 @@ type AxonLayer interface {
 	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
 	GFmInc(ltime *Time)
 
-	// SynCa updates synaptic calcium per-cycle, for Kinase learning.
-	// Also periodically calls SynCaDWt to compute weight changes over time.
-	SynCa(ltime *Time)
-
 	// AvgMaxGe computes the average and max Ge stats, used in inhibition
 	AvgMaxGe(ltime *Time)
 
@@ -190,6 +186,15 @@ type AxonLayer interface {
 	// CosDiffFmActs computes the cosine difference in activation state
 	// between minus and plus phases.
 	CosDiffFmActs()
+
+	// SynCa updates synaptic calcium per-cycle, for Kinase learning.
+	SynCa(ltime *Time)
+
+	// RecvSynCa updates synaptic calcium per-cycle, for Kinase learning, recv-based.
+	RecvSynCa(ltime *Time)
+
+	// SynCaDWt updates DWt from TDWt if CaD has decayed sufficiently from its peak
+	SynCaDWt(ltime *Time)
 
 	// DWt computes the weight change (learning) -- calls DWt method on sending projections
 	DWt(ltime *Time)
@@ -250,6 +255,10 @@ type AxonPrjn interface {
 
 	// SynCa updates synaptic calcium per-synapse, for Kinase learning
 	SynCa(ltime *Time)
+
+	// RecvSynCa updates synaptic calcium per-synapse, for Kinase learning
+	// receiver-side spiking version, for optimized case only
+	RecvSynCa(ltime *Time)
 
 	// DWt computes the weight change (learning) -- on sending projections
 	DWt(ltime *Time)

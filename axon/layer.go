@@ -1154,9 +1154,6 @@ func (ly *Layer) GFmInc(ltime *Time) {
 		}
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 	}
-	if !ltime.Testing {
-		ly.AxonLay.(AxonLayer).SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
-	}
 }
 
 // RecvGInc calls RecvGInc on receiving projections to collect Neuron-level G*Inc values.
@@ -1197,6 +1194,10 @@ func (ly *Layer) AvgMaxGe(ltime *Time) {
 			pl.Inhib.Ge.UpdateVal(nrn.Ge, ni)
 		}
 		pl.Inhib.Ge.CalcAvg()
+	}
+
+	if !ltime.Testing {
+		ly.AxonLay.(AxonLayer).SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
 	}
 }
 
@@ -1664,7 +1665,6 @@ func (ly *Layer) TrgAvgFmD() {
 }
 
 // SynCa updates synaptic calcium per-cycle, for Kinase learning.
-// Also periodically calls SynCaDWt to compute weight changes over time.
 func (ly *Layer) SynCa(ltime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
@@ -1672,13 +1672,25 @@ func (ly *Layer) SynCa(ltime *Time) {
 		}
 		p.(AxonPrjn).SynCa(ltime)
 	}
-	if ly.Learn.NeurCa.SynDWtInt > 0 && (ltime.CycleTot%ly.Learn.NeurCa.SynDWtInt) == 0 {
-		for _, p := range ly.SndPrjns {
-			if p.IsOff() {
-				continue
-			}
-			p.(AxonPrjn).SynCaDWt(ltime)
+}
+
+// RecvSynCa updates synaptic calcium per-cycle, for Kinase learning, recv-based.
+func (ly *Layer) RecvSynCa(ltime *Time) {
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
 		}
+		p.(AxonPrjn).RecvSynCa(ltime)
+	}
+}
+
+// SynCaDWt updates DWt from TDWt if CaD has decayed sufficiently from its peak
+func (ly *Layer) SynCaDWt(ltime *Time) {
+	for _, p := range ly.SndPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).SynCaDWt(ltime)
 	}
 }
 

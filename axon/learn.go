@@ -89,15 +89,14 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // at multiple time scales, with P = LTP / plus-phase and D = LTD / minus phase
 // driving key subtraction for error-driven learning rule.
 type NeurCaParams struct {
-	SpikeG    float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
-	SynTau    float32 `def:"40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
-	MTau      float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
-	PTau      float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
-	DTau      float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	SynDWtInt int     `def:"10" desc:"for synapse-level learning: interval between synaptic DWt updates from TDWt"`
-	VGCCCa    float32 `def:"10" desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
-	CaMax     float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
-	CaThr     float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
+	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
+	SynTau float32 `def:"40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
+	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
+	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
+	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
+	VGCCCa float32 `def:"10" desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
+	CaMax  float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
+	CaThr  float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
 
 	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -120,7 +119,6 @@ func (np *NeurCaParams) Defaults() {
 	np.MTau = 10
 	np.PTau = 40
 	np.DTau = 40
-	np.SynDWtInt = 10
 	np.VGCCCa = 10
 	np.CaMax = 200
 	np.CaThr = 0.05
@@ -451,24 +449,27 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn  bool             `desc:"enable learning for this projection"`
-	Lrate  LrateParams      `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
-	Kinase kinase.SynParams `view:"inline" desc:"kinase learning rule parameters"`
-	XCal   XCalParams       `view:"inline" desc:"parameters for the XCal learning rule"`
+	Learn     bool             `desc:"enable learning for this projection"`
+	Lrate     LrateParams      `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	KinaseCa  kinase.CaParams  `view:"inline" desc:"kinase calcium Ca integration parameters"`
+	KinaseDWt kinase.DWtParams `view:"inline" desc:"kinase weight change parameters"`
+	XCal      XCalParams       `view:"inline" desc:"parameters for the XCal learning rule"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.Lrate.Update()
 	ls.XCal.Update()
-	ls.Kinase.Update()
+	ls.KinaseCa.Update()
+	ls.KinaseDWt.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
 	ls.Learn = true
 	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
-	ls.Kinase.Defaults()
-	ls.Kinase.Rule = kinase.NeurSpkCa
+	ls.KinaseCa.Defaults()
+	ls.KinaseDWt.Defaults()
+	ls.KinaseCa.Rule = kinase.NeurSpkCa
 }
 
 // CHLdWt returns the error-driven weight change component for the
@@ -485,9 +486,9 @@ func (ls *LearnSynParams) CHLdWt(suCaP, suCaD, ruCaP, ruCaD float32) float32 {
 // SynSpkDWt returns the weight change for given CaP, CaD values
 func (ls *LearnSynParams) SynSpkDWt(scap, scad float32) float32 {
 	if ls.XCal.On {
-		return ls.XCal.DWt(scap, ls.Kinase.DScale*scad)
+		return ls.XCal.DWt(scap, ls.KinaseDWt.DScale*scad)
 	}
-	return scap - ls.Kinase.DScale*scad
+	return scap - ls.KinaseDWt.DScale*scad
 }
 
 // CaDMax updates CaDMax from CaD
@@ -500,10 +501,10 @@ func (ls *LearnSynParams) CaDMax(sy *Synapse) {
 // DWtFmTDWt updates the DWt from the TDWt, checking the learning threshold
 // using given aggregate learning rate.  Returns true if updated DWt
 func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
-	if sy.CaDMax < ls.Kinase.LrnThr {
+	if sy.CaDMax < ls.KinaseDWt.CaDMaxThr {
 		return false
 	}
-	if sy.CaD >= ls.Kinase.DWtThr*sy.CaDMax {
+	if sy.CaD >= ls.KinaseDWt.CaDMaxPct*sy.CaDMax {
 		return false
 	}
 	sy.CaDMax = 0
@@ -557,7 +558,7 @@ type XCalParams struct {
 	DWtThr  float32 `def:"0.0001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
 	DRev    float32 `def:"0.1" min:"0" max:"0.99" desc:"proportional point within LTD range where magnitude reverses to go back down to zero at zero -- err-driven svm component does better with smaller values"`
 	DThr    float32 `def:"0.0001,0.01" min:"0" desc:"minimum LTD threshold value below which no weight change occurs -- this is now *relative* to the threshold"`
-	LrnThr  float32 `def:"0.01" desc:"learning threshold on CaPLrn and CaDLrn (in their raw units) -- does not learn if both of these values are below this threshold."`
+	LrnThr  float32 `def:"0.01" desc:"learning threshold on CaP and CaD (in their raw units) -- does not learn if both of these values are below this threshold -- this is purely a computational optimization."`
 
 	DRevRatio float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"-(1-DRev)/DRev -- multiplication factor in learning rule -- builds in the minus sign!"`
 }

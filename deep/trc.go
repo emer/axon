@@ -187,7 +187,6 @@ func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
 		return
 	}
 	ly.GeFmDrivers(ltime)
-	ly.SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
 }
 
 // InitExt initializes external input state -- called prior to apply ext

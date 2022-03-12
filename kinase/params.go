@@ -4,20 +4,16 @@
 
 package kinase
 
-// SynParams has rate constants for averaging over activations
-// at different time scales, to produce the running average activation
-// values that then drive learning.
-type SynParams struct {
-	Rule     Rules   `desc:"which learning rule to use"`
+// CaParams has rate constants for integrating spike-driven Ca calcium
+// at different time scales, including final CaP = CaMKII and CaD = DAPK1
+// timescales for LTP potentiation vs. LTD depression factors.
+type CaParams struct {
+	Rule     Rules   `desc:"which form of synaptic calcium and subsequent learning rule to use"`
 	SpikeG   float32 `def:"12" desc:"spiking gain factor for synapse-based algos (NeurSpkCa uses layer level params) -- 42 for SynSpkCa matches NeurSpkCa in overall dwt magnitude but is way too high in practice -- 8 is better for SynSpkCa (and is a target for SynNMDACa)-- alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
 	MTau     float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaSyn * ru->CaSyn with typical 20 msec Tau.`
 	PTau     float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau     float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	TDWtISI  int     `desc:"ISI for updating the temporary DWt value from current CaP vs. CaD levels -- should be within window where Ca levels are still elevated"`
-	LrnThr   float32 `desc:"threshold on recent max CaD (Lrn) for whether the synapse had enough activity to drive learning"`
-	DWtThr   float32 `desc:"relative proportion of Lrn max CaD value to trigger DWt updating -- any decay more than this counts"`
-	TrlDecay float32 `desc:"decay between trials"`
-	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic decrease in activity over the course of a theta cycle.  Use 1 for SynSpkCa, 0.93 for SynNMDACa."`
+	UpdtThr  float32 `def:"0.01" desc:"threshold on neuron-level CaP and CaD values for updating synapse-level Ca values -- this is purely a performance optimization that excludes random infrequent spikes"`
 	OptInteg bool    `def:"true" desc:"use the optimized spike-only integration of cascaded CaM, CaP, CaD values -- iterates cascaded updates between spikes -- significantly faster and same performance as non-optimized."`
 	MaxISI   int     `def:"100" desc:"maximum ISI for integrating in Opt mode -- above that just set to 0"`
 
@@ -26,23 +22,19 @@ type SynParams struct {
 	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
-func (kp *SynParams) Defaults() {
+func (kp *CaParams) Defaults() {
 	kp.Rule = SynSpkCa
 	kp.SpikeG = 12
 	kp.MTau = 5
 	kp.PTau = 40
 	kp.DTau = 40
-	kp.TDWtISI = 10
-	kp.LrnThr = 0.01
-	kp.DWtThr = 0.5
-	kp.TrlDecay = 0.6
-	kp.DScale = 1 // 0.93, 1.05
+	kp.UpdtThr = 0.01
 	kp.OptInteg = true
 	kp.MaxISI = 100 // todo expt
 	kp.Update()
 }
 
-func (kp *SynParams) Update() {
+func (kp *CaParams) Update() {
 	kp.MDt = 1 / kp.MTau
 	kp.PDt = 1 / kp.PTau
 	kp.DDt = 1 / kp.DTau
@@ -50,7 +42,7 @@ func (kp *SynParams) Update() {
 
 // FmSpike computes updates to CaM, CaP, CaD from current spike value.
 // The SpikeG factor determines strength of increase to CaM.
-func (kp *SynParams) FmSpike(spike float32, caM, caP, caD *float32) {
+func (kp *CaParams) FmSpike(spike float32, caM, caP, caD *float32) {
 	*caM += kp.MDt * (kp.SpikeG*spike - *caM)
 	*caP += kp.PDt * (*caM - *caP)
 	*caD += kp.DDt * (*caP - *caD)
@@ -59,7 +51,7 @@ func (kp *SynParams) FmSpike(spike float32, caM, caP, caD *float32) {
 // FmCa computes updates to CaM, CaP, CaD from current calcium level.
 // The SpikeG factor is NOT applied to Ca and should be pre-applied
 // as appropriate.
-func (kp *SynParams) FmCa(ca float32, caM, caP, caD *float32) {
+func (kp *CaParams) FmCa(ca float32, caM, caP, caD *float32) {
 	*caM += kp.MDt * (ca - *caM)
 	*caP += kp.PDt * (*caM - *caP)
 	*caD += kp.DDt * (*caP - *caD)
@@ -67,19 +59,14 @@ func (kp *SynParams) FmCa(ca float32, caM, caP, caD *float32) {
 
 // SynNMDACa returns the synaptic Ca value for SynNMDACa rule
 // applying thresholding to rca value, and multiplying by SpikeG
-func (kp *SynParams) SynNMDACa(snmdao, rca float32) float32 {
+func (kp *CaParams) SynNMDACa(snmdao, rca float32) float32 {
 	return kp.SpikeG * snmdao * rca
-}
-
-// DWt computes the weight change from CaP, CaD values
-func (kp *SynParams) DWt(caP, caD float32) float32 {
-	return caP - kp.DScale*caD
 }
 
 // IntFmTime returns the interval from current time
 // and last update time, which is -1 if never updated
 // (in which case return is -1)
-func (kp *SynParams) IntFmTime(ctime, utime int32) int {
+func (kp *CaParams) IntFmTime(ctime, utime int32) int {
 	if utime < 0 {
 		return -1
 	}
@@ -89,7 +76,7 @@ func (kp *SynParams) IntFmTime(ctime, utime int32) int {
 // CurCa returns the current Ca* values, dealing with updating for
 // optimized spike-time update versions.
 // ctime is current time in msec, and utime is last update time (-1 if never)
-func (kp *SynParams) CurCa(ctime, utime int32, caM, caP, caD float32) (cCaM, cCaP, cCaD float32) {
+func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD float32) (cCaM, cCaP, cCaD float32) {
 	isi := kp.IntFmTime(ctime, utime)
 	cCaM, cCaP, cCaD = caM, caP, caD
 	if !kp.OptInteg || isi <= 0 {
@@ -102,4 +89,31 @@ func (kp *SynParams) CurCa(ctime, utime int32, caM, caP, caD float32) (cCaM, cCa
 		kp.FmCa(0, &cCaM, &cCaP, &cCaD) // just decay to 0
 	}
 	return
+}
+
+// DWtParams has parameters controlling Kinase-based learning rules
+type DWtParams struct {
+	TDWtISI   int     `def:"10" desc:"ISI (inter spike interval) for updating the temporary TDWt value from current CaP vs. CaD levels -- should be within window where Ca levels are still elevated, and thus driving NMDA N2B binding"`
+	CaDMaxThr float32 `desc:"threshold on CaDMax peak level for whether the synapse had enough activity to drive learning"`
+	CaDMaxPct float32 `def:"0.5" desc:"proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes"`
+	TrlDecay  float32 `def:"0.6,0.2,0" desc:"decay of Ca state values between trials -- should generally match Layer.Decay.Glong -- when there is no sequential structure across trials, higher decay is appropriate, with lower decay as there is more meaningful structure."`
+	DScale    float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)"`
+}
+
+func (dp *DWtParams) Defaults() {
+	dp.TDWtISI = 10
+	dp.CaDMaxThr = 0.001
+	dp.CaDMaxThr = 0.5
+	dp.TrlDecay = 0.6
+	dp.DScale = 1 // 0.93, 1.05
+	dp.Update()
+}
+
+func (dp *DWtParams) Update() {
+}
+
+// DWt computes the weight change from CaP, CaD values, as the
+// simple substraction, while applying DScale to CaD
+func (dp *DWtParams) DWt(caP, caD float32) float32 {
+	return caP - dp.DScale*caD
 }
