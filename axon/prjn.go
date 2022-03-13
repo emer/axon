@@ -831,12 +831,12 @@ func (pj *Prjn) SynCa(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	twin := pj.Learn.KinaseDWt.TDWtWindow
+	twin := pj.Learn.KinaseDWt.TWindow
 	np := &slay.Learn.NeurCa
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		sn.PctDWt = 0
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+		if sn.CaP < kp.SUpdtThr && sn.CaD < kp.SUpdtThr {
 			continue
 		}
 		sndw := 0
@@ -852,11 +852,8 @@ func (pj *Prjn) SynCa(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
-				// if sy.CaP > kp.UpdtThr || sy.CaD > kp.UpdtThr {
-				// 	fmt.Printf("sy.CaP: %g  sy.CaD: %g\n", sy.CaP, sy.CaD)
-				// }
-				InitCaSyn(sy) // make sure
+			if rn.CaP < kp.RUpdtThr && rn.CaD < kp.RUpdtThr {
+				InitSynCa(sy) // make sure
 				continue
 			}
 			risi := int(rn.ISI)
@@ -896,9 +893,9 @@ func (pj *Prjn) DWt(ltime *Time) {
 	case kinase.NeurSpkCa:
 		pj.DWtNeurSpkCa(ltime)
 	case kinase.SynSpkCa:
-		pj.DWtSynSpkCa(ltime)
+		pj.DWtKinase(ltime)
 	case kinase.SynNMDACa:
-		pj.DWtSynNMDACa(ltime)
+		pj.DWtKinase(ltime)
 	}
 }
 
@@ -937,21 +934,21 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 	}
 }
 
-// DWtSynSpkCa computes the weight change (learning) based on
-// synaptically-integrated pre or post spike signals.
+// DWtKinase computes the weight change (learning) based on
+// synaptically-integrated provisional DWt changes.
 // Applies post-trial decay to simulate time passage, and checks
 // for whether learning should occur.
-func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
+func (pj *Prjn) DWtKinase(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
 	kd := &pj.Learn.KinaseDWt
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	decay := kd.TrlDecay
-	// twin := kd.TDWtWindow
+	// twin := kd.TWindow
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+		if sn.CaP < kp.SUpdtThr && sn.CaD < kp.SUpdtThr {
 			continue
 		}
 		sndw := 0
@@ -963,17 +960,11 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+			if rn.CaP < kp.RUpdtThr && rn.CaD < kp.RUpdtThr {
 				continue
 			}
 			sy := &syns[ci]
-			sy.CaM -= decay * sy.CaM
-			sy.CaP -= decay * sy.CaP
-			sy.CaD -= decay * sy.CaD
-			// TDWt may not have been captured yet, and time will effectively pass here..
-			// if int(sn.ISI) <= twin || int(rn.ISI) <= twin {
-			// 	pj.Learn.KinaseTDWt(sy)
-			// }
+			DecaySynCa(sy, decay)
 			// above decay, representing time passing after discrete trials, can trigger learning
 			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
 				sndw++
@@ -982,48 +973,6 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 		}
 		if sntot > 0 {
 			sn.PctDWt = float32(sndw) / float32(sntot)
-		}
-	}
-}
-
-// DWtSynNMDACa computes the weight change (learning) based on
-// synaptically-integrated pre or post spike signals
-func (pj *Prjn) DWtSynNMDACa(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	kd := &pj.Learn.KinaseDWt
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ctime := int32(ltime.CycleTot)
-	lr := pj.Learn.Lrate.Eff
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
-			continue
-		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(ctime-1, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-			ds := kd.DScale * caD
-			var err float32
-			if pj.Learn.XCal.On {
-				err = pj.Learn.XCal.DWt(caP, ds)
-			} else {
-				err = caP - ds
-			}
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWtRaw = err
-			sy.DWt += rn.RLrate * lr * err
 		}
 	}
 }

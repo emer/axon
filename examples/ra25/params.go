@@ -80,22 +80,23 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":           "0.12",     // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":            "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":              "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":      "12",       // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.Rule":        "SynSpkCa", // "SynNMDACa",
-					"Prjn.Learn.KinaseCa.MTau":        "5",        // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.PTau":        "40",
-					"Prjn.Learn.KinaseCa.DTau":        "40",
-					"Prjn.Learn.KinaseCa.UpdtThr":     "0.01",
-					"Prjn.Learn.KinaseDWt.TDWtWindow": "10",
-					"Prjn.Learn.KinaseDWt.CaDMaxPct":  "0.5",
-					"Prjn.Learn.KinaseDWt.TrlDecay":   "0.6", // 0.6 = same as glong -- works with 0, just sig worse..
-					"Prjn.Learn.KinaseDWt.DScale":     "1",
-					"Prjn.Learn.XCal.On":              "true",
-					"Prjn.Learn.XCal.PThrMin":         "0.05", // 0.05 best for objrec, higher worse
-					"Prjn.Learn.XCal.LrnThr":          "0.01",
+					"Prjn.Learn.Lrate.Base":         "0.1",      // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":          "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":            "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":    "8",        // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.Rule":      "SynSpkCa", // "SynNMDACa",
+					"Prjn.Learn.KinaseCa.MTau":      "5",        // 5 > 10 test more
+					"Prjn.Learn.KinaseCa.PTau":      "40",
+					"Prjn.Learn.KinaseCa.DTau":      "40",
+					"Prjn.Learn.KinaseCa.SUpdtThr":  "0.02",
+					"Prjn.Learn.KinaseCa.RUpdtThr":  "0.01",
+					"Prjn.Learn.KinaseDWt.TWindow":  "10",
+					"Prjn.Learn.KinaseDWt.DMaxPct":  "0.5",
+					"Prjn.Learn.KinaseDWt.TrlDecay": "0.6", // 0.6 = same as glong -- works with 0, just sig worse..
+					"Prjn.Learn.KinaseDWt.DScale":   "1",
+					"Prjn.Learn.XCal.On":            "true",
+					"Prjn.Learn.XCal.PThrMin":       "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.LrnThr":        "0.01",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

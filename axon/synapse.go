@@ -23,7 +23,7 @@ type Synapse struct {
 	LWt    float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, "`
 	DWt    float32 `desc:"change in synaptic weight, from learning"`
 	DSWt   float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
-	TDWt   float32 `desc:"temporary DWt value -- updated at a fixed offset from last spike (when Ca levels are still elevated), and added to the DWt value after a longer break of spiking where there is enough time for CaMKII driven AMPA receptor trafficking to take place"`
+	TDWt   float32 `desc:"transitional, temporary DWt value, which is updated in a window after synaptic activity when Ca levels are still elevated, and added to the DWt value after a longer break of spiking where there is enough time for CaMKII driven AMPA receptor trafficking to take place"`
 	Ca     float32 `desc:"Raw calcium singal for Kinase based learning: send.SnmdaO * recv.RCa"`
 	CaM    float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`
 	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`

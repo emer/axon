@@ -48,23 +48,22 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":          "0.1",      // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":           "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":             "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.SWt.Init.Var":              "0",        // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":     "12",       // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.Rule":       "SynSpkCa", // "SynNMDACa",
-					"Prjn.Learn.KinaseCa.MTau":       "5",        // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.PTau":       "40",
-					"Prjn.Learn.KinaseCa.DTau":       "40",
-					"Prjn.Learn.KinaseCa.UpdtThr":    "0",
-					"Prjn.Learn.KinaseDWt.CaMThr":    "0.1",
-					"Prjn.Learn.KinaseDWt.CaDMaxPct": "0.5",
-					"Prjn.Learn.KinaseDWt.TrlDecay":  "0.6",
-					"Prjn.Learn.KinaseDWt.DScale":    "1",
-					"Prjn.Learn.XCal.On":             "true",
-					"Prjn.Learn.XCal.PThrMin":        "0.05", // 0.05 best for objrec, higher worse
-					"Prjn.Learn.XCal.LrnThr":         "0.01", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.Lrate.Base":         "0.1",      // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":          "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":            "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWt.Init.Var":             "0",        // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":    "12",       // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.Rule":      "SynSpkCa", // "SynNMDACa",
+					"Prjn.Learn.KinaseCa.MTau":      "5",        // 5 > 10 test more
+					"Prjn.Learn.KinaseCa.PTau":      "40",
+					"Prjn.Learn.KinaseCa.DTau":      "40",
+					"Prjn.Learn.KinaseDWt.TWindow":  "10",
+					"Prjn.Learn.KinaseDWt.DMaxPct":  "0.5",
+					"Prjn.Learn.KinaseDWt.TrlDecay": "0.0",
+					"Prjn.Learn.KinaseDWt.DScale":   "1",
+					"Prjn.Learn.XCal.On":            "true",
+					"Prjn.Learn.XCal.PThrMin":       "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.LrnThr":        "0.01", // 0.05 best for objrec, higher worse
 				}},
 		},
 	}},
@@ -222,6 +221,10 @@ func (ss *Sim) SynUpdt() {
 	// ly := ss.Net.LayerByName("Recv").(axon.AxonLayer).AsAxon()
 	pj := ss.Prjn
 	kp := &pj.Learn.KinaseCa
+	twin := pj.Learn.KinaseDWt.TWindow
+	ctime := int32(ss.Time.CycleTot)
+
+	pmsec := ss.MinusMsec + ss.PlusMsec
 
 	sn := ss.SendNeur
 	rn := ss.RecvNeur
@@ -234,9 +237,18 @@ func (ss *Sim) SynUpdt() {
 	psy.CaM = ss.PGain * sn.CaM * rn.CaM
 	psy.CaP = ss.PGain * sn.CaP * rn.CaP
 	psy.CaD = ss.PGain * sn.CaD * rn.CaD
-	psy.DWt = psy.CaP - psy.CaD
+	if ss.Time.Cycle == pmsec {
+		if pj.Learn.XCal.On {
+			psy.DWt = pj.Learn.XCal.DWt(psy.CaP, psy.CaD)
+		} else {
+			psy.DWt = psy.CaP - psy.CaD
+		}
+	}
 
-	ctime := int32(ss.Time.CycleTot)
+	sisi := int(sn.ISI)
+	tdw := (sisi == twin || (sn.Spike > 0 && sisi < twin))
+	risi := int(rn.ISI)
+	tdw = tdw || (risi == twin || (rn.Spike > 0 && risi < twin))
 
 	// SynSpkCa: continuous synaptic updating
 	synspk := false
@@ -252,7 +264,7 @@ func (ss *Sim) SynUpdt() {
 	kp.FmCa(ssy.Ca, &ssy.CaM, &ssy.CaP, &ssy.CaD)
 
 	// SynNMDACa: NMDA driven synaptic updating
-	nsy.Ca = sn.SnmdaO * rn.RCa
+	nsy.Ca = kp.SpikeG * sn.SnmdaO * rn.RCa
 	kp.FmCa(nsy.Ca, &nsy.CaM, &nsy.CaP, &nsy.CaD)
 
 	// // OptInteg form of SynSpkCa
@@ -277,10 +289,18 @@ func (ss *Sim) SynUpdt() {
 	// 	}
 	// }
 
-	pj.Learn.KinaseTDWt(ssy)
-	pj.Learn.KinaseTDWt(nsy)
+	if tdw {
+		pj.Learn.KinaseTDWt(ssy)
+		pj.Learn.KinaseTDWt(nsy)
+	}
 	pj.Learn.CaDMax(ssy)
 	pj.Learn.CaDMax(nsy)
+
+	if ss.Time.Cycle == pmsec {
+		axon.DecaySynCa(ssy, pj.Learn.KinaseDWt.TrlDecay)
+		axon.DecaySynCa(nsy, pj.Learn.KinaseDWt.TrlDecay)
+	}
+
 	pj.Learn.DWtFmTDWt(ssy, 1)
 	pj.Learn.DWtFmTDWt(nsy, 1)
 }

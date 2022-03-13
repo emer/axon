@@ -79,7 +79,7 @@ func (ss *Sim) Config() {
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
 	ss.Time.Defaults()
-	ss.PGain = 10
+	ss.PGain = 1
 	ss.SpikeDisp = 0.1
 	ss.RGeBase = 0.5
 	ss.RGiBase = 2

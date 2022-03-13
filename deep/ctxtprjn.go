@@ -120,6 +120,11 @@ func (pj *CTCtxtPrjn) RecvCtxtGeInc() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
+// SynCa does Kinase learning based on Ca -- doesn't do
+func (pj *CTCtxtPrjn) SynCa(ltime *axon.Time) {
+	return
+}
+
 // DWt computes the weight change (learning) for Ctxt projections
 func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
