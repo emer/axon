@@ -1195,14 +1195,6 @@ func (ly *Layer) AvgMaxGe(ltime *Time) {
 		}
 		pl.Inhib.Ge.CalcAvg()
 	}
-
-	if !ltime.Testing {
-		ly.AxonLay.(AxonLayer).SynCa(ltime) // this is the point when RCa and Snmda* are updated based on last spike
-		ly.AxonLay.(AxonLayer).RecvSynCa(ltime)
-		if ltime.CycleTot%10 == 0 {
-			ly.AxonLay.(AxonLayer).SynCaDWt(ltime)
-		}
-	}
 }
 
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
@@ -1329,6 +1321,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaP, nrn.CaD)
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
@@ -1346,7 +1339,17 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	}
 }
 
-// AvgMaxAct computes the average and max Act stats, used in inhibition
+// PostAct does updates after activation (spiking) updated for all neurons,
+// including the running-average activation used in driving inhibition,
+// and synaptic-level calcium updates depending on spiking, NMDA
+func (ly *Layer) PostAct(ltime *Time) {
+	ly.AvgMaxAct(ltime)
+	if !ltime.Testing {
+		ly.AxonLay.(AxonLayer).SynCa(ltime)
+	}
+}
+
+// AvgMaxAct updates the running-average activation used in driving inhibition
 func (ly *Layer) AvgMaxAct(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1451,7 +1454,6 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		nrn.ActP = nrn.ActInt
 		nrn.ActDif = nrn.ActP - nrn.ActM
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaP, nrn.CaD)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1668,33 +1670,20 @@ func (ly *Layer) TrgAvgFmD() {
 	}
 }
 
-// SynCa updates synaptic calcium per-cycle, for Kinase learning.
+// SynCa does Kinase learning based on Ca driven from pre-post spiking.
+// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
+// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
+// Within the window of elevated synaptic Ca, CaP - CaD computes a
+// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
+// at the NMDA N2B site.  When the synaptic activity has fallen from a
+// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
+// last TDWt value converts to an actual synaptic change: DWt
 func (ly *Layer) SynCa(ltime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
 		p.(AxonPrjn).SynCa(ltime)
-	}
-}
-
-// RecvSynCa updates synaptic calcium per-cycle, for Kinase learning, recv-based.
-func (ly *Layer) RecvSynCa(ltime *Time) {
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).RecvSynCa(ltime)
-	}
-}
-
-// SynCaDWt updates DWt from TDWt if CaD has decayed sufficiently from its peak
-func (ly *Layer) SynCaDWt(ltime *Time) {
-	for _, p := range ly.SndPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).SynCaDWt(ltime)
 	}
 }
 

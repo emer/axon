@@ -24,9 +24,8 @@ import (
 // axon.Network has parameters for running a basic rate-coded Axon network
 type Network struct {
 	NetworkStru
-	SlowInterval   int `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation -- in SlowAdapt method-- long enough for meaningful changes"`
-	SynDWtInterval int `def:"10" desc:"how frequently to run SynDWt which checks for a relative decrease in CaD levels from peak, as point when longer-term synaptic changes can take place"`
-	SlowCtr        int `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
+	SlowInterval int `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation -- in SlowAdapt method-- long enough for meaningful changes"`
+	SlowCtr      int `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
@@ -55,7 +54,6 @@ func (nt *Network) NewPrjn() emer.Prjn {
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
 	nt.SlowInterval = 100
-	nt.SynDWtInterval = 10
 	nt.SlowCtr = 0
 	for li, ly := range nt.Layers {
 		ly.Defaults()
@@ -341,7 +339,7 @@ func (nt *Network) CycleImpl(ltime *Time) {
 	nt.AvgMaxGe(ltime)
 	nt.InhibFmGeAct(ltime)
 	nt.ActFmG(ltime)
-	nt.AvgMaxAct(ltime)
+	nt.PostAct(ltime)
 }
 
 // SendSpike sends change in activation since last sent, if above thresholds
@@ -354,10 +352,6 @@ func (nt *Network) SendSpike(ltime *Time) {
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
 func (nt *Network) AvgMaxGe(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxGe(ltime) }, "AvgMaxGe")
-	// nt.ThrLayFun(func(ly AxonLayer) { ly.RecvSynCa(ltime) }, "RecvSynCa")
-	// if nt.SynDWtInterval > 0 && (ltime.CycleTot%nt.SynDWtInterval) == 0 {
-	// 	nt.ThrLayFun(func(ly AxonLayer) { ly.SynCaDWt(ltime) }, "SynCaDWt")
-	// }
 }
 
 // InhibiFmGeAct computes inhibition Gi from Ge and Act stats within relevant Pools
@@ -370,9 +364,11 @@ func (nt *Network) ActFmG(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.ActFmG(ltime) }, "ActFmG   ")
 }
 
-// AvgMaxAct computes the average and max Act stats, used in inhibition
-func (nt *Network) AvgMaxAct(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxAct(ltime) }, "AvgMaxAct")
+// PostAct does updates after activation (spiking) updated for all neurons,
+// including the running-average activation used in driving inhibition,
+// and synaptic-level calcium updates depending on spiking, NMDA
+func (nt *Network) PostAct(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.PostAct(ltime) }, "PostAct")
 }
 
 // CyclePostImpl is called after the standard Cycle update, and calls CyclePost

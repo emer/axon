@@ -321,7 +321,7 @@ The `axon.Network` `Cycle` method in `axon/network.go` looks like this:
 // * Average and Max Ge stats
 // * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
 // * Activation from Ge, Gi, and Gl
-// * Average and Max Act stats
+// * PostAct: Average and Max Act stats, Synaptic Ca updates
 // This basic version doesn't use the time info, but more specialized types do, and we
 // want to keep a consistent API for end-user code.
 func (nt *Network) Cycle(ltime *Time) {
@@ -329,7 +329,7 @@ func (nt *Network) Cycle(ltime *Time) {
 	nt.AvgMaxGe(ltime)
 	nt.InhibFmGeAct(ltime)
 	nt.ActFmG(ltime)
-	nt.AvgMaxAct(ltime)
+	nt.PostAct(ltime)
 }
 ```
 

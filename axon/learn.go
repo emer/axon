@@ -483,12 +483,14 @@ func (ls *LearnSynParams) CHLdWt(suCaP, suCaD, ruCaP, ruCaD float32) float32 {
 	return srp - srd
 }
 
-// SynSpkDWt returns the weight change for given CaP, CaD values
-func (ls *LearnSynParams) SynSpkDWt(scap, scad float32) float32 {
+// KinaseTDWt updates the temporary weight change based on current Synapse
+// Ca values.
+func (ls *LearnSynParams) KinaseTDWt(sy *Synapse) {
 	if ls.XCal.On {
-		return ls.XCal.DWt(scap, ls.KinaseDWt.DScale*scad)
+		sy.TDWt = ls.XCal.DWt(sy.CaP, ls.KinaseDWt.DScale*sy.CaD)
+	} else {
+		sy.TDWt = sy.CaP - ls.KinaseDWt.DScale*sy.CaD
 	}
-	return scap - ls.KinaseDWt.DScale*scad
 }
 
 // CaDMax updates CaDMax from CaD
@@ -501,9 +503,6 @@ func (ls *LearnSynParams) CaDMax(sy *Synapse) {
 // DWtFmTDWt updates the DWt from the TDWt, checking the learning threshold
 // using given aggregate learning rate.  Returns true if updated DWt
 func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
-	if sy.CaDMax < ls.KinaseDWt.CaDMaxThr {
-		return false
-	}
 	if sy.CaD >= ls.KinaseDWt.CaDMaxPct*sy.CaDMax {
 		return false
 	}

@@ -161,8 +161,20 @@ type AxonLayer interface {
 	// and updates learning running-average activations from that Act
 	ActFmG(ltime *Time)
 
-	// AvgMaxAct computes the running-average activation used in driving inhibition
-	AvgMaxAct(ltime *Time)
+	// PostAct does updates after activation (spiking) updated for all neurons,
+	// including the running-average activation used in driving inhibition,
+	// and synaptic-level calcium updates depending on spiking, NMDA
+	PostAct(ltime *Time)
+
+	// SynCa does Kinase learning based on Ca driven from pre-post spiking.
+	// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
+	// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
+	// Within the window of elevated synaptic Ca, CaP - CaD computes a
+	// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
+	// at the NMDA N2B site.  When the synaptic activity has fallen from a
+	// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
+	// last TDWt value converts to an actual synaptic change: DWt
+	SynCa(ltime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate
 	// network layer loop.
@@ -186,15 +198,6 @@ type AxonLayer interface {
 	// CosDiffFmActs computes the cosine difference in activation state
 	// between minus and plus phases.
 	CosDiffFmActs()
-
-	// SynCa updates synaptic calcium per-cycle, for Kinase learning.
-	SynCa(ltime *Time)
-
-	// RecvSynCa updates synaptic calcium per-cycle, for Kinase learning, recv-based.
-	RecvSynCa(ltime *Time)
-
-	// SynCaDWt updates DWt from TDWt if CaD has decayed sufficiently from its peak
-	SynCaDWt(ltime *Time)
 
 	// DWt computes the weight change (learning) -- calls DWt method on sending projections
 	DWt(ltime *Time)
@@ -253,19 +256,18 @@ type AxonPrjn interface {
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc(ltime *Time)
 
-	// SynCa updates synaptic calcium per-synapse, for Kinase learning
+	// SynCa does Kinase learning based on Ca driven from pre-post spiking.
+	// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
+	// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
+	// Within the window of elevated synaptic Ca, CaP - CaD computes a
+	// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
+	// at the NMDA N2B site.  When the synaptic activity has fallen from a
+	// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
+	// last TDWt value converts to an actual synaptic change: DWt
 	SynCa(ltime *Time)
 
-	// RecvSynCa updates synaptic calcium per-synapse, for Kinase learning
-	// receiver-side spiking version, for optimized case only
-	RecvSynCa(ltime *Time)
-
-	// DWt computes the weight change (learning) -- on sending projections
+	// DWt computes the weight change (learning) -- on sending projections.
 	DWt(ltime *Time)
-
-	// SynCaDWt is periodically called to probe for conditions when DWt should be
-	// updated from the TDWt
-	SynCaDWt(ltime *Time)
 
 	// WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 	WtFmDWt(ltime *Time)

@@ -26,47 +26,45 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Act.Decay.Glong":        "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":       "0.5",  // 0.5 best
-					"Layer.Act.Dend.GbarR":         "6",    // 6 best
-					"Layer.Act.Dt.VmDendTau":       "5",    // 5 > 2.81 here but small effect
-					"Layer.Act.NMDA.Gbar":          "0.15", // 0.15
-					"Layer.Act.NMDA.ITau":          "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":           "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":           "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":          "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Learn.NeurCa.SpikeG":    "8",
-					"Layer.Learn.NeurCa.SynTau":    "40", // 40 best in larger models
-					"Layer.Learn.NeurCa.MTau":      "10",
-					"Layer.Learn.NeurCa.PTau":      "40",
-					"Layer.Learn.NeurCa.DTau":      "40",
-					"Layer.Learn.NeurCa.SynDWtInt": "20", // 10-50 all work
-					"Layer.Learn.NeurCa.VGCCCa":    "20", // 20 seems reasonable, but not obviously better than 0
-					"Layer.Learn.NeurCa.CaMax":     "100",
-					"Layer.Learn.NeurCa.CaThr":     "0.2",
-					"Layer.Learn.LrnNMDA.ITau":     "1",  // urakubo = 100, does not work here..
-					"Layer.Learn.LrnNMDA.Tau":      "50", // urakubo = 30 > 20 but no major effect on PCA
+					"Layer.Act.Decay.Glong":     "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp":    "0.5",  // 0.5 best
+					"Layer.Act.Dend.GbarR":      "6",    // 6 best
+					"Layer.Act.Dt.VmDendTau":    "5",    // 5 > 2.81 here but small effect
+					"Layer.Act.NMDA.Gbar":       "0.15", // 0.15
+					"Layer.Act.NMDA.ITau":       "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
+					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Learn.NeurCa.SpikeG": "8",
+					"Layer.Learn.NeurCa.SynTau": "40", // 40 best in larger models
+					"Layer.Learn.NeurCa.MTau":   "10",
+					"Layer.Learn.NeurCa.PTau":   "40",
+					"Layer.Learn.NeurCa.DTau":   "40",
+					"Layer.Learn.NeurCa.VGCCCa": "20", // 20 seems reasonable, but not obviously better than 0
+					"Layer.Learn.NeurCa.CaMax":  "100",
+					"Layer.Learn.NeurCa.CaThr":  "0.2",
+					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
+					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1",      // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":       "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":         "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.SWt.Init.Var":          "0",        // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Kinase.SpikeG":   "12",       // keep at 12 standard, adjust other things
-					"Prjn.Learn.Kinase.Rule":     "SynSpkCa", // "SynNMDACa",
-					"Prjn.Learn.Kinase.MTau":     "5",        // 5 > 10 test more
-					"Prjn.Learn.Kinase.OptInteg": "true",
-					"Prjn.Learn.Kinase.PTau":     "40",
-					"Prjn.Learn.Kinase.DTau":     "40",
-					"Prjn.Learn.Kinase.TDWtISI":  "10",
-					"Prjn.Learn.Kinase.LrnThr":   "0.001",
-					"Prjn.Learn.Kinase.DWtThr":   "0.5",
-					"Prjn.Learn.Kinase.TrlDecay": "0.6", // 0.6 = same as glong
-					"Prjn.Learn.Kinase.DScale":   "1",
-					"Prjn.Learn.XCal.On":         "true",
-					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
-					"Prjn.Learn.XCal.LrnThr":     "0.01", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.Lrate.Base":          "0.1",      // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":           "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":             "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWt.Init.Var":              "0",        // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":     "12",       // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.Rule":       "SynSpkCa", // "SynNMDACa",
+					"Prjn.Learn.KinaseCa.MTau":       "5",        // 5 > 10 test more
+					"Prjn.Learn.KinaseCa.PTau":       "40",
+					"Prjn.Learn.KinaseCa.DTau":       "40",
+					"Prjn.Learn.KinaseCa.UpdtThr":    "0",
+					"Prjn.Learn.KinaseDWt.CaMThr":    "0.1",
+					"Prjn.Learn.KinaseDWt.CaDMaxPct": "0.5",
+					"Prjn.Learn.KinaseDWt.TrlDecay":  "0.6",
+					"Prjn.Learn.KinaseDWt.DScale":    "1",
+					"Prjn.Learn.XCal.On":             "true",
+					"Prjn.Learn.XCal.PThrMin":        "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.LrnThr":         "0.01", // 0.05 best for objrec, higher worse
 				}},
 		},
 	}},
@@ -221,16 +219,16 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 
 // SynUpdt updates the synapses based on current neuron state
 func (ss *Sim) SynUpdt() {
-	ly := ss.Net.LayerByName("Recv").(axon.AxonLayer).AsAxon()
+	// ly := ss.Net.LayerByName("Recv").(axon.AxonLayer).AsAxon()
 	pj := ss.Prjn
-	kp := &pj.Learn.Kinase
+	kp := &pj.Learn.KinaseCa
 
 	sn := ss.SendNeur
 	rn := ss.RecvNeur
 	psy := &ss.SynNeur
 	ssy := &ss.SynSpk
 	nsy := &ss.SynNMDA
-	osy := &ss.SynOpt
+	// osy := &ss.SynOpt
 
 	// NeurSpkCa continuous update: standard CHL s * r product form
 	psy.CaM = ss.PGain * sn.CaM * rn.CaM
@@ -257,48 +255,34 @@ func (ss *Sim) SynUpdt() {
 	nsy.Ca = sn.SnmdaO * rn.RCa
 	kp.FmCa(nsy.Ca, &nsy.CaM, &nsy.CaP, &nsy.CaD)
 
-	sisi := int(sn.ISI)
-	stdw := (sisi == kp.TDWtISI || (sn.Spike > 0 && sisi < kp.TDWtISI))
-	risi := int(rn.ISI)
-	rtdw := (risi == kp.TDWtISI || (rn.Spike > 0 && risi < kp.TDWtISI))
+	// // OptInteg form of SynSpkCa
+	// if synspk || stdw || rtdw {
+	// 	osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.CaUpT, osy.CaM, osy.CaP, osy.CaD)
+	// 	if stdw || rtdw {
+	// 		osy.TDWt = kp.DWt(osy.CaP, osy.CaD) //
+	// 	}
+	// 	if synspk {
+	// 		osy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
+	// 	} else {
+	// 		osy.Ca = 0
+	// 	}
+	// 	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
+	// 	osy.CaUpT = ctime
+	//
+	// 	if osy.CaD > osy.CaDMax {
+	// 		osy.CaDMax = osy.CaD
+	// 	}
+	// 	if ss.Time.CycleTot%ly.Learn.NeurCa.SynDWtInt == 0 {
+	// 		pj.Learn.DWtFmTDWt(osy, 1)
+	// 	}
+	// }
 
-	// OptInteg form of SynSpkCa
-	if synspk || stdw || rtdw {
-		osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.CaUpT, osy.CaM, osy.CaP, osy.CaD)
-		if stdw || rtdw {
-			osy.TDWt = kp.DWt(osy.CaP, osy.CaD) //
-		}
-		if synspk {
-			osy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
-		} else {
-			osy.Ca = 0
-		}
-		kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
-		osy.CaUpT = ctime
-
-		if osy.CaD > osy.CaDMax {
-			osy.CaDMax = osy.CaD
-		}
-		if ss.Time.CycleTot%ly.Learn.NeurCa.SynDWtInt == 0 {
-			pj.Learn.DWtFmTDWt(osy, 1)
-		}
-	}
-
-	if stdw || rtdw {
-		ssy.TDWt = kp.DWt(ssy.CaP, ssy.CaD)
-		nsy.TDWt = kp.DWt(nsy.CaP, nsy.CaD)
-	}
-
-	if ssy.CaD > ssy.CaDMax {
-		ssy.CaDMax = ssy.CaD
-	}
-	if nsy.CaD > nsy.CaDMax {
-		nsy.CaDMax = nsy.CaD
-	}
-	if ss.Time.CycleTot%ly.Learn.NeurCa.SynDWtInt == 0 {
-		pj.Learn.DWtFmTDWt(ssy, 1)
-		pj.Learn.DWtFmTDWt(nsy, 1)
-	}
+	pj.Learn.KinaseTDWt(ssy)
+	pj.Learn.KinaseTDWt(nsy)
+	pj.Learn.CaDMax(ssy)
+	pj.Learn.CaDMax(nsy)
+	pj.Learn.DWtFmTDWt(ssy, 1)
+	pj.Learn.DWtFmTDWt(nsy, 1)
 }
 
 func (ss *Sim) InitWts() {

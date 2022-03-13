@@ -815,36 +815,35 @@ func (pj *Prjn) RecvGIncNoStats() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
-// SynCa updates synaptic calcium per-cycle, for Kinase learning
+// SynCa does Kinase learning based on Ca driven from pre-post spiking.
+// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
+// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
+// Within the window of elevated synaptic Ca, CaP - CaD computes a
+// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
+// at the NMDA N2B site.  When the synaptic activity has fallen from a
+// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
+// last TDWt value converts to an actual synaptic change: DWt
 func (pj *Prjn) SynCa(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
 	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa {
 		return
 	}
-	if kp.OptInteg {
-		pj.SynCaOpt(ltime)
-	} else {
-		pj.SynCaCont(ltime)
-	}
-}
-
-// SynCaCont updates synaptic calcium per-cycle, for Kinase learning
-func (pj *Prjn) SynCaCont(ltime *Time) {
-	if !pj.Learn.Learn || pj.Learn.KinaseCa.Rule == kinase.NeurSpkCa {
-		return
-	}
-	kp := &pj.Learn.KinaseCa
-	kd := &pj.Learn.KinaseDWt
+	lr := pj.Learn.Lrate.Eff
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	twin := pj.Learn.KinaseDWt.TDWtWindow
 	np := &slay.Learn.NeurCa
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
+		sn.PctDWt = 0
 		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
 			continue
 		}
+		sndw := 0
+		sntot := 0
 		sisi := int(sn.ISI)
-		tdw := (sisi == kd.TDWtISI || (sn.Spike > 0 && sisi < kd.TDWtISI))
+		tdw := (sisi == twin || (sn.Spike > 0 && sisi < twin))
+
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -853,8 +852,15 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+				// if sy.CaP > kp.UpdtThr || sy.CaD > kp.UpdtThr {
+				// 	fmt.Printf("sy.CaP: %g  sy.CaD: %g\n", sy.CaP, sy.CaD)
+				// }
+				InitCaSyn(sy) // make sure
+				continue
+			}
 			risi := int(rn.ISI)
-			tdw = tdw || (risi == kd.TDWtISI || (rn.Spike > 0 && risi < kd.TDWtISI))
+			tdw = tdw || (risi == twin || (rn.Spike > 0 && risi < twin))
 			switch kp.Rule {
 			case kinase.SynNMDACa:
 				sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
@@ -867,159 +873,9 @@ func (pj *Prjn) SynCaCont(ltime *Time) {
 			}
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 			if tdw {
-				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
+				pj.Learn.KinaseTDWt(sy)
 			}
 			pj.Learn.CaDMax(sy)
-		}
-	}
-}
-
-// SynCaOpt updates synaptic calcium per-cycle, for Kinase learning.
-// Also updates the temporary DWt, TDWt, at offset from spiking.
-// Optimized version only updates at point of spiking, sender based.
-func (pj *Prjn) SynCaOpt(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	kd := &pj.Learn.KinaseDWt
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ctime := int32(ltime.CycleTot)
-	np := &slay.Learn.NeurCa
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
-			continue
-		}
-		sisi := int(sn.ISI)
-		tdw := (sisi == kd.TDWtISI || (sn.Spike > 0 && sisi < kd.TDWtISI))
-		if !tdw && sn.Spike == 0 {
-			continue
-		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			if sy.CaUpT == ctime { // recv did it
-				continue
-			}
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			risi := int(rn.ISI)
-			tdw = tdw || (risi == kd.TDWtISI || (rn.Spike > 0 && risi < kd.TDWtISI))
-			spk := (sn.Spike > 0 || rn.Spike > 0)
-			if !(tdw || spk) {
-				continue
-			}
-			if spk {
-				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-				switch kp.Rule {
-				case kinase.SynNMDACa:
-					sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
-				case kinase.SynSpkCa:
-					sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
-				}
-				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			} else {
-				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-			}
-			if tdw {
-				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
-			}
-			sy.CaUpT = ctime
-			pj.Learn.CaDMax(sy)
-		}
-	}
-}
-
-// RecvSynCa updates synaptic calcium per-cycle, for Kinase learning.
-// Also updates the temporary DWt, TDWt, at offset from spiking.
-// Optimized version, recv based.
-func (pj *Prjn) RecvSynCa(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa || !kp.OptInteg {
-		return
-	}
-	kd := &pj.Learn.KinaseDWt
-	ctime := int32(ltime.CycleTot)
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	np := &slay.Learn.NeurCa
-	for ri := range rlay.Neurons {
-		rn := &rlay.Neurons[ri]
-		if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
-			continue
-		}
-		risi := int(rn.ISI)
-		tdw := (risi == kd.TDWtISI || (rn.Spike > 0 && risi < kd.TDWtISI))
-		if !tdw && rn.Spike == 0 {
-			continue
-		}
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
-		rcons := pj.RConIdx[st : st+nc]
-		for ci, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
-			if sy.CaUpT == ctime { // sender did it
-				continue
-			}
-			si := rcons[ci]
-			sn := &slay.Neurons[si]
-			sisi := int(sn.ISI)
-			tdw = tdw || (sisi == kd.TDWtISI || (sn.Spike > 0 && sisi < kd.TDWtISI))
-			spk := (sn.Spike > 0 || rn.Spike > 0)
-			if !(tdw || spk) {
-				continue
-			}
-			if spk {
-				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-				switch kp.Rule {
-				case kinase.SynNMDACa:
-					sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
-				case kinase.SynSpkCa:
-					sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
-				}
-				kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			} else {
-				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-			}
-			if tdw {
-				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
-			}
-			sy.CaUpT = ctime
-			pj.Learn.CaDMax(sy)
-		}
-	}
-}
-
-// SynCaDWt updates DWt from TDWt if CaD has decayed sufficiently from its peak
-func (pj *Prjn) SynCaDWt(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa {
-		return
-	}
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ctime := int32(ltime.CycleTot)
-	lr := pj.Learn.Lrate.Eff
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		sn.PctDWt = 0
-		sndw := 0
-		sntot := 0
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if kp.OptInteg { // update opt just because we're passing through
-				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-				sy.CaUpT = ctime
-			}
 			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
 				sndw++
 			}
@@ -1088,14 +944,14 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
 	kd := &pj.Learn.KinaseDWt
-	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	decay := kd.TrlDecay
+	// twin := kd.TDWtWindow
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
 			continue
 		}
 		sndw := 0
@@ -1107,18 +963,17 @@ func (pj *Prjn) DWtSynSpkCa(ltime *Time) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+				continue
+			}
 			sy := &syns[ci]
-			if kp.OptInteg { // Ca levels may not have been updated to this point
-				sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-				sy.CaUpT = ctime
-			}
-			// TDWt may not have been captured yet, and time will effectively pass here..
-			if int(sn.ISI) <= kd.TDWtISI || int(rn.ISI) <= kd.TDWtISI {
-				sy.TDWt = pj.Learn.SynSpkDWt(sy.CaP, sy.CaD)
-			}
 			sy.CaM -= decay * sy.CaM
 			sy.CaP -= decay * sy.CaP
 			sy.CaD -= decay * sy.CaD
+			// TDWt may not have been captured yet, and time will effectively pass here..
+			// if int(sn.ISI) <= twin || int(rn.ISI) <= twin {
+			// 	pj.Learn.KinaseTDWt(sy)
+			// }
 			// above decay, representing time passing after discrete trials, can trigger learning
 			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
 				sndw++
