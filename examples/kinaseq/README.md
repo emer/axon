@@ -1,6 +1,6 @@
 # Kinase Equations
 
-See: https://github.com/ccnlab/kinase/tree/main/sims/kinase for a parallel exploration based on a biophysically detailed model, building up from the Urakubo et al (2008) model.
+See: [kinase](https://github.com/ccnlab/kinase/tree/main/sims/kinase) for a parallel exploration based on a biophysically detailed model, building up from the Urakubo et al (2008) model.
 
 This standalone simulation is used to explore the synapse-level updating of calcium-based signals that drive the more abstract forms of Kinase learning rules, based on recv and send spiking impulses, passing through a cascade of exponential integrations with different time constants.
 

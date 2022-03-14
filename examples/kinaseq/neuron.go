@@ -48,13 +48,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":         "0.1",      // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":          "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":            "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.SWt.Init.Var":             "0",        // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":    "12",       // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.Rule":      "SynSpkCa", // "SynNMDACa",
-					"Prjn.Learn.KinaseCa.MTau":      "5",        // 5 > 10 test more
+					"Prjn.Learn.Lrate.Base":         "0.1",  // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":          "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":            "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWt.Init.Var":             "0",    // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":    "12",   // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.NMDAG":     "12",
+					"Prjn.Learn.KinaseCa.Rule":      "SynSpkTheta", // "SynNMDACa",
+					"Prjn.Learn.KinaseCa.MTau":      "5",           // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":      "40",
 					"Prjn.Learn.KinaseCa.DTau":      "40",
 					"Prjn.Learn.KinaseDWt.TWindow":  "10",
@@ -228,90 +229,89 @@ func (ss *Sim) SynUpdt() {
 
 	sn := ss.SendNeur
 	rn := ss.RecvNeur
-	psy := &ss.SynNeur
-	ssy := &ss.SynSpk
-	nsy := &ss.SynNMDA
-	// osy := &ss.SynOpt
 
-	// NeurSpkCa continuous update: standard CHL s * r product form
-	psy.CaM = ss.PGain * sn.CaM * rn.CaM
-	psy.CaP = ss.PGain * sn.CaP * rn.CaP
-	psy.CaD = ss.PGain * sn.CaD * rn.CaD
+	nst := &ss.SynNeurTheta
+	sst := &ss.SynSpkTheta
+	ssc := &ss.SynSpkCont
+	snc := &ss.SynNMDACont
+
+	//////////////////////////////
+	// Theta
+
+	// NeurSpkTheta continuous update: standard CHL s * r product form
+	nst.CaM = ss.PGain * sn.CaM * rn.CaM
+	nst.CaP = ss.PGain * sn.CaP * rn.CaP
+	nst.CaD = ss.PGain * sn.CaD * rn.CaD
+
+	synspk := false
+	if sn.Spike > 0 || rn.Spike > 0 {
+		synspk = true
+	}
+
+	// SynSpkTheta
+	if synspk {
+		sst.CaM, sst.CaP, sst.CaD = kp.CurCa(ctime-1, sst.CaUpT, sst.CaM, sst.CaP, sst.CaD)
+		sst.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
+		kp.FmCa(sst.Ca, &sst.CaM, &sst.CaP, &sst.CaD)
+		sst.CaUpT = ctime
+	}
+
 	if ss.Time.Cycle == pmsec {
 		if pj.Learn.XCal.On {
-			psy.DWt = pj.Learn.XCal.DWt(psy.CaP, psy.CaD)
+			nst.DWt = pj.Learn.XCal.DWt(nst.CaP, nst.CaD)
+			sst.DWt = pj.Learn.XCal.DWt(sst.CaP, sst.CaD)
 		} else {
-			psy.DWt = psy.CaP - psy.CaD
+			nst.DWt = nst.CaP - nst.CaD
+			sst.DWt = sst.CaP - sst.CaD
 		}
 	}
+
+	//////////////////////////////
+	// Cont
 
 	sisi := int(sn.ISI)
 	tdw := (sisi == twin || (sn.Spike > 0 && sisi < twin))
 	risi := int(rn.ISI)
 	tdw = tdw || (risi == twin || (rn.Spike > 0 && risi < twin))
 
-	// SynSpkCa: continuous synaptic updating
-	synspk := false
-	if sn.Spike > 0 || rn.Spike > 0 {
-		synspk = true
-	}
+	// SynSpkCont: continuous synaptic updating
 	if synspk {
-		ssy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
-		ssy.CaUpT = ctime
+		ssc.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
+		ssc.CaUpT = ctime
 	} else {
-		ssy.Ca = 0
+		ssc.Ca = 0
 	}
-	kp.FmCa(ssy.Ca, &ssy.CaM, &ssy.CaP, &ssy.CaD)
+	kp.FmCa(ssc.Ca, &ssc.CaM, &ssc.CaP, &ssc.CaD)
 
-	// SynNMDACa: NMDA driven synaptic updating
-	nsy.Ca = kp.SpikeG * sn.SnmdaO * rn.RCa
-	kp.FmCa(nsy.Ca, &nsy.CaM, &nsy.CaP, &nsy.CaD)
-
-	// // OptInteg form of SynSpkCa
-	// if synspk || stdw || rtdw {
-	// 	osy.CaM, osy.CaP, osy.CaD = kp.CurCa(ctime-1, osy.CaUpT, osy.CaM, osy.CaP, osy.CaD)
-	// 	if stdw || rtdw {
-	// 		osy.TDWt = kp.DWt(osy.CaP, osy.CaD) //
-	// 	}
-	// 	if synspk {
-	// 		osy.Ca = kp.SpikeG * sn.CaSyn * rn.CaSyn
-	// 	} else {
-	// 		osy.Ca = 0
-	// 	}
-	// 	kp.FmCa(osy.Ca, &osy.CaM, &osy.CaP, &osy.CaD)
-	// 	osy.CaUpT = ctime
-	//
-	// 	if osy.CaD > osy.CaDMax {
-	// 		osy.CaDMax = osy.CaD
-	// 	}
-	// 	if ss.Time.CycleTot%ly.Learn.NeurCa.SynDWtInt == 0 {
-	// 		pj.Learn.DWtFmTDWt(osy, 1)
-	// 	}
-	// }
+	// SynNMDACont: NMDA driven synaptic updating
+	snc.Ca = kp.SpikeG * sn.SnmdaO * rn.RCa
+	kp.FmCa(snc.Ca, &snc.CaM, &snc.CaP, &snc.CaD)
 
 	if tdw {
-		pj.Learn.KinaseTDWt(ssy)
-		pj.Learn.KinaseTDWt(nsy)
+		pj.Learn.KinaseTDWt(ssc)
+		pj.Learn.KinaseTDWt(snc)
 	}
-	pj.Learn.CaDMax(ssy)
-	pj.Learn.CaDMax(nsy)
+	pj.Learn.CaDMax(ssc)
+	pj.Learn.CaDMax(snc)
 
 	if ss.Time.Cycle == pmsec {
-		axon.DecaySynCa(ssy, pj.Learn.KinaseDWt.TrlDecay)
-		axon.DecaySynCa(nsy, pj.Learn.KinaseDWt.TrlDecay)
+		axon.DecaySynCa(ssc, pj.Learn.KinaseDWt.TrlDecay)
+		axon.DecaySynCa(snc, pj.Learn.KinaseDWt.TrlDecay)
 	}
 
-	pj.Learn.DWtFmTDWt(ssy, 1)
-	pj.Learn.DWtFmTDWt(nsy, 1)
+	pj.Learn.DWtFmTDWt(ssc, 1)
+	pj.Learn.DWtFmTDWt(snc, 1)
 }
 
 func (ss *Sim) InitWts() {
-	ssy := &ss.SynSpk
-	nsy := &ss.SynNMDA
-	osy := &ss.SynOpt
-	ssy.DWt = 0
-	nsy.DWt = 0
-	osy.DWt = 0
+	nst := &ss.SynNeurTheta
+	sst := &ss.SynSpkTheta
+	ssc := &ss.SynSpkCont
+	snc := &ss.SynNMDACont
+	nst.DWt = 0
+	sst.DWt = 0
+	ssc.DWt = 0
+	snc.DWt = 0
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -363,10 +363,10 @@ func (ss *Sim) LogState(dt *etable.Table, row, trl, cyc int) {
 	// dt.SetCellFloat("AKh", row, float64(nex.AKh))
 	// dt.SetCellFloat("LearnNow", row, float64(nex.LearnNow))
 
-	psy := &ss.SynNeur
-	ssy := &ss.SynSpk
-	nsy := &ss.SynNMDA
-	osy := &ss.SynOpt
+	nst := &ss.SynNeurTheta
+	sst := &ss.SynSpkTheta
+	ssc := &ss.SynSpkCont
+	snc := &ss.SynNMDACont
 
 	dt.SetCellFloat("R_CaM", row, float64(rn.CaM))
 	dt.SetCellFloat("R_CaP", row, float64(rn.CaP))
@@ -376,10 +376,10 @@ func (ss *Sim) LogState(dt *etable.Table, row, trl, cyc int) {
 	dt.SetCellFloat("S_CaP", row, float64(sn.CaP))
 	dt.SetCellFloat("S_CaD", row, float64(sn.CaD))
 
-	ss.LogSyn(dt, row, "P_", psy)
-	ss.LogSyn(dt, row, "X_", ssy)
-	ss.LogSyn(dt, row, "N_", nsy)
-	ss.LogSyn(dt, row, "O_", osy)
+	ss.LogSyn(dt, row, "NST_", nst)
+	ss.LogSyn(dt, row, "SST_", sst)
+	ss.LogSyn(dt, row, "SSC_", ssc)
+	ss.LogSyn(dt, row, "SNC_", snc)
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
@@ -428,10 +428,10 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 		{"S_CaD", etensor.FLOAT64, nil, nil},
 	}
 
-	ss.ConfigSynapse(&sch, "P_")
-	ss.ConfigSynapse(&sch, "X_")
-	ss.ConfigSynapse(&sch, "N_")
-	ss.ConfigSynapse(&sch, "O_")
+	ss.ConfigSynapse(&sch, "NST_")
+	ss.ConfigSynapse(&sch, "SST_")
+	ss.ConfigSynapse(&sch, "SSC_")
+	ss.ConfigSynapse(&sch, "SNC_")
 
 	dt.SetFromSchema(sch, 0)
 }
@@ -459,7 +459,7 @@ func (ss *Sim) ConfigTrialPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2
 		switch {
 		case strings.Contains(cn, "DWt"):
 			plt.SetColParams(cn, eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-		case cn == "X_CaP" || cn == "X_CaD":
+		case cn == "SSC_CaP" || cn == "SSC_CaD":
 			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 		default:
 			plt.SetColParams(cn, eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)

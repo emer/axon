@@ -13,15 +13,16 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[NeurSpkCa-0]
-	_ = x[SynSpkCa-1]
-	_ = x[SynNMDACa-2]
-	_ = x[RulesN-3]
+	_ = x[SynSpkCont-0]
+	_ = x[SynNMDACont-1]
+	_ = x[SynSpkTheta-2]
+	_ = x[NeurSpkTheta-3]
+	_ = x[RulesN-4]
 }
 
-const _Rules_name = "NeurSpkCaSynSpkCaSynNMDACaRulesN"
+const _Rules_name = "SynSpkContSynNMDAContSynSpkThetaNeurSpkThetaRulesN"
 
-var _Rules_index = [...]uint8{0, 9, 17, 26, 32}
+var _Rules_index = [...]uint8{0, 10, 21, 32, 44, 50}
 
 func (i Rules) String() string {
 	if i < 0 || i >= Rules(len(_Rules_index)-1) {

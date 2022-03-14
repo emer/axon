@@ -813,9 +813,98 @@ func (pj *Prjn) RecvGIncNoStats() {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  Learn methods
+//  SynCa methods
 
-// SynCa does Kinase learning based on Ca driven from pre-post spiking.
+// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// Optimized version only updates at point of spiking.
+// This pass goes through in sending order, filtering on sending spike.
+func (pj *Prjn) SendSynCa(ltime *Time) {
+	kp := &pj.Learn.KinaseCa
+	if !pj.Learn.Learn || kp.Rule != kinase.SynSpkTheta {
+		return
+	}
+	ctime := int32(ltime.CycleTot)
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	np := &slay.Learn.NeurCa
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.Spike == 0 {
+			continue
+		}
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+				continue
+			}
+			sy := &syns[ci]
+			// todo: use atomic
+			supt := sy.CaUpT
+			if supt == ctime { // already updated in sender pass
+				continue
+			}
+			sy.CaUpT = ctime
+			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
+			sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
+			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+		}
+	}
+}
+
+// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// Optimized version only updates at point of spiking.
+// This pass goes through in recv order, filtering on recv spike.
+func (pj *Prjn) RecvSynCa(ltime *Time) {
+	kp := &pj.Learn.KinaseCa
+	if !pj.Learn.Learn || kp.Rule != kinase.SynSpkTheta {
+		return
+	}
+	ctime := int32(ltime.CycleTot)
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	np := &slay.Learn.NeurCa
+	for ri := range rlay.Neurons {
+		rn := &rlay.Neurons[ri]
+		if rn.Spike == 0 {
+			continue
+		}
+		if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+			continue
+		}
+		nc := int(pj.RConN[ri])
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+		rcons := pj.RConIdx[st : st+nc]
+		for ci, rsi := range rsidxs {
+			si := rcons[ci]
+			sn := &slay.Neurons[si]
+			if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+				continue
+			}
+			sy := &pj.Syns[rsi]
+			// todo: use atomic
+			supt := sy.CaUpT
+			if supt == ctime { // already updated in sender pass
+				continue
+			}
+			sy.CaUpT = ctime
+			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
+			sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
+			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+		}
+	}
+}
+
+// SynCaCont does Kinase learning based on Ca driven from pre-post spiking,
+// for SynSpkCont and SynNMDACont learning variants.
 // Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
 // representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
 // Within the window of elevated synaptic Ca, CaP - CaD computes a
@@ -823,9 +912,9 @@ func (pj *Prjn) RecvGIncNoStats() {
 // at the NMDA N2B site.  When the synaptic activity has fallen from a
 // local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
 // last TDWt value converts to an actual synaptic change: DWt
-func (pj *Prjn) SynCa(ltime *Time) {
+func (pj *Prjn) SynCaCont(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn || kp.Rule == kinase.NeurSpkCa {
+	if !pj.Learn.Learn || (kp.Rule == kinase.NeurSpkTheta || kp.Rule == kinase.SynSpkTheta) {
 		return
 	}
 	lr := pj.Learn.Lrate.Eff
@@ -836,7 +925,7 @@ func (pj *Prjn) SynCa(ltime *Time) {
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		sn.PctDWt = 0
-		if sn.CaP < kp.SUpdtThr && sn.CaD < kp.SUpdtThr {
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
 			continue
 		}
 		sndw := 0
@@ -852,16 +941,16 @@ func (pj *Prjn) SynCa(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.RUpdtThr && rn.CaD < kp.RUpdtThr {
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
 				InitSynCa(sy) // make sure
 				continue
 			}
 			risi := int(rn.ISI)
 			tdw = tdw || (risi == twin || (rn.Spike > 0 && risi < twin))
 			switch kp.Rule {
-			case kinase.SynNMDACa:
+			case kinase.SynNMDACont:
 				sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
-			case kinase.SynSpkCa:
+			case kinase.SynSpkCont:
 				if sn.Spike > 0 || rn.Spike > 0 {
 					sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
 				} else {
@@ -884,18 +973,23 @@ func (pj *Prjn) SynCa(ltime *Time) {
 	}
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//  Learn methods
+
 // DWt computes the weight change (learning) -- on sending projections
 func (pj *Prjn) DWt(ltime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	switch pj.Learn.KinaseCa.Rule {
-	case kinase.NeurSpkCa:
-		pj.DWtNeurSpkCa(ltime)
-	case kinase.SynSpkCa:
-		pj.DWtKinase(ltime)
-	case kinase.SynNMDACa:
-		pj.DWtKinase(ltime)
+	case kinase.NeurSpkTheta:
+		pj.DWtNeurSpkTheta(ltime)
+	case kinase.SynSpkTheta:
+		pj.DWtSynSpkTheta(ltime)
+	case kinase.SynSpkCont:
+		pj.DWtCont(ltime)
+	case kinase.SynNMDACont:
+		pj.DWtCont(ltime)
 	}
 }
 
@@ -904,7 +998,7 @@ func (pj *Prjn) DWt(ltime *Time) {
 // equivalent to the CHL plus - minus temporal derivative with
 // checkmark-based BCM-like XCal learning rule originally derived from
 // Urakubo et al (2008)
-func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
+func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -934,11 +1028,58 @@ func (pj *Prjn) DWtNeurSpkCa(ltime *Time) {
 	}
 }
 
-// DWtKinase computes the weight change (learning) based on
-// synaptically-integrated provisional DWt changes.
+// DWtSynSpkTheta computes the weight change (learning) based on
+// synaptically-integrated spiking, for the optimized version
+// computed at the Theta cycle interval.
+func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
+	kp := &pj.Learn.KinaseCa
+	kd := &pj.Learn.KinaseDWt
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	ctime := int32(ltime.CycleTot)
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+				continue
+			}
+			sy := &syns[ci]
+			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
+			ds := kd.DScale * caD
+			var err float32
+			if pj.Learn.XCal.On {
+				err = pj.Learn.XCal.DWt(caP, ds)
+			} else {
+				err = caP - ds
+			}
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWtRaw = err
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtCont computes the weight change (learning) for continuous
+// learning variants (SynSpkCont and SynNMDACont), which have
+// already continuously computed DWt from TDWt.
 // Applies post-trial decay to simulate time passage, and checks
 // for whether learning should occur.
-func (pj *Prjn) DWtKinase(ltime *Time) {
+func (pj *Prjn) DWtCont(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
 	kd := &pj.Learn.KinaseDWt
 	slay := pj.Send.(AxonLayer).AsAxon()
@@ -948,7 +1089,7 @@ func (pj *Prjn) DWtKinase(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.CaP < kp.SUpdtThr && sn.CaD < kp.SUpdtThr {
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
 			continue
 		}
 		sndw := 0
@@ -960,7 +1101,7 @@ func (pj *Prjn) DWtKinase(ltime *Time) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.RUpdtThr && rn.CaD < kp.RUpdtThr {
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
 				continue
 			}
 			sy := &syns[ci]

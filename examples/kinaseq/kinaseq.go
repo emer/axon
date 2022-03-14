@@ -39,35 +39,35 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	Net        *axon.Network            `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	SendNeur   *axon.Neuron             `view:"no-inline" desc:"the sending neuron"`
-	RecvNeur   *axon.Neuron             `view:"no-inline" desc:"the receiving neuron"`
-	Prjn       *axon.Prjn               `view:"no-inline" desc:"prjn-level parameters -- for intializing synapse -- other params not used"`
-	NeuronEx   NeuronEx                 `view:"no-inline" desc:"extra neuron state"`
-	Params     emer.Params              `view:"inline" desc:"all parameter management"`
-	PGain      float32                  `desc:"multiplier on product factor to equate to SynC"`
-	SpikeDisp  float32                  `desc:"spike multiplier for display purposes"`
-	RGeClamp   bool                     `desc:"use current Ge clamping for recv neuron -- otherwise spikes driven externally"`
-	RGeBase    float32                  `desc:"baseline recv Ge level"`
-	RGiBase    float32                  `desc:"baseline recv Gi level"`
-	NTrials    int                      `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
-	MinusMsec  int                      `desc:"number of msec in minus phase"`
-	PlusMsec   int                      `desc:"number of msec in plus phase"`
-	ISIMsec    int                      `desc:"quiet space between spiking"`
-	TrialMsec  int                      `view:"-" desc:"total trial msec: minus, plus isi"`
-	MinusHz    int                      `desc:"minus phase firing frequency"`
-	PlusHz     int                      `desc:"plus phase firing frequency"`
-	SendDiffHz int                      `desc:"additive difference in sending firing frequency relative to recv (recv has basic minus, plus)"`
-	SynNeur    axon.Synapse             `view:"no-inline" desc:"NeurSpkCa product synapse state values, P_ in log"`
-	SynSpk     axon.Synapse             `view:"no-inline" desc:"SynSpkCa synapse state values, X_ in log"`
-	SynNMDA    axon.Synapse             `view:"no-inline" desc:"SynNMDACa synapse state values, N_ in log"`
-	SynOpt     axon.Synapse             `view:"no-inline" desc:"optimized computation synapse state values, O_ in log"`
-	Time       axon.Time                `desc:"axon time recording"`
-	Logs       map[string]*etable.Table `view:"no-inline" desc:"all logs"`
-	Plots      map[string]*eplot.Plot2D `view:"-" desc:"all plots"`
-	Win        *gi.Window               `view:"-" desc:"main GUI window"`
-	ToolBar    *gi.ToolBar              `view:"-" desc:"the master toolbar"`
-	StopNow    bool                     `view:"-" desc:"stop button"`
+	Net          *axon.Network            `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	SendNeur     *axon.Neuron             `view:"no-inline" desc:"the sending neuron"`
+	RecvNeur     *axon.Neuron             `view:"no-inline" desc:"the receiving neuron"`
+	Prjn         *axon.Prjn               `view:"no-inline" desc:"prjn-level parameters -- for intializing synapse -- other params not used"`
+	NeuronEx     NeuronEx                 `view:"no-inline" desc:"extra neuron state"`
+	Params       emer.Params              `view:"inline" desc:"all parameter management"`
+	PGain        float32                  `desc:"multiplier on product factor to equate to SynC"`
+	SpikeDisp    float32                  `desc:"spike multiplier for display purposes"`
+	RGeClamp     bool                     `desc:"use current Ge clamping for recv neuron -- otherwise spikes driven externally"`
+	RGeBase      float32                  `desc:"baseline recv Ge level"`
+	RGiBase      float32                  `desc:"baseline recv Gi level"`
+	NTrials      int                      `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
+	MinusMsec    int                      `desc:"number of msec in minus phase"`
+	PlusMsec     int                      `desc:"number of msec in plus phase"`
+	ISIMsec      int                      `desc:"quiet space between spiking"`
+	TrialMsec    int                      `view:"-" desc:"total trial msec: minus, plus isi"`
+	MinusHz      int                      `desc:"minus phase firing frequency"`
+	PlusHz       int                      `desc:"plus phase firing frequency"`
+	SendDiffHz   int                      `desc:"additive difference in sending firing frequency relative to recv (recv has basic minus, plus)"`
+	SynNeurTheta axon.Synapse             `view:"no-inline" desc:"synapse state values, NST_ in log"`
+	SynSpkTheta  axon.Synapse             `view:"no-inline" desc:"synapse state values, SST_ in log"`
+	SynSpkCont   axon.Synapse             `view:"no-inline" desc:"synapse state values, SSC_ in log"`
+	SynNMDACont  axon.Synapse             `view:"no-inline" desc:"synapse state values, SNC_ in log"`
+	Time         axon.Time                `desc:"axon time recording"`
+	Logs         map[string]*etable.Table `view:"no-inline" desc:"all logs"`
+	Plots        map[string]*eplot.Plot2D `view:"-" desc:"all plots"`
+	Win          *gi.Window               `view:"-" desc:"main GUI window"`
+	ToolBar      *gi.ToolBar              `view:"-" desc:"the master toolbar"`
+	StopNow      bool                     `view:"-" desc:"stop button"`
 }
 
 // TheSim is the overall state for this simulation
@@ -109,10 +109,10 @@ func (ss *Sim) Init() {
 	ss.Time.Reset()
 	ss.Net.InitWts()
 	ss.NeuronEx.Init()
-	ss.InitSyn(&ss.SynNeur)
-	ss.InitSyn(&ss.SynSpk)
-	ss.InitSyn(&ss.SynNMDA)
-	ss.InitSyn(&ss.SynOpt)
+	ss.InitSyn(&ss.SynNeurTheta)
+	ss.InitSyn(&ss.SynSpkTheta)
+	ss.InitSyn(&ss.SynSpkCont)
+	ss.InitSyn(&ss.SynNMDACont)
 }
 
 // Log returns / makes log table of given name

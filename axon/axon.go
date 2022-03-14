@@ -169,11 +169,7 @@ type AxonLayer interface {
 	// SynCa does Kinase learning based on Ca driven from pre-post spiking.
 	// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
 	// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-	// Within the window of elevated synaptic Ca, CaP - CaD computes a
-	// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
-	// at the NMDA N2B site.  When the synaptic activity has fallen from a
-	// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
-	// last TDWt value converts to an actual synaptic change: DWt
+	// Continuous variants do weight updates (DWt), while SynSpkTheta just updates Ca.
 	SynCa(ltime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate
@@ -256,7 +252,18 @@ type AxonPrjn interface {
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc(ltime *Time)
 
-	// SynCa does Kinase learning based on Ca driven from pre-post spiking.
+	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// Optimized version only updates at point of spiking.
+	// This pass goes through in sending order, filtering on sending spike.
+	SendSynCa(ltime *Time)
+
+	// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// Optimized version only updates at point of spiking.
+	// This pass goes through in recv order, filtering on recv spike.
+	RecvSynCa(ltime *Time)
+
+	// SynCaCont does Kinase learning based on Ca driven from pre-post spiking,
+	// for SynSpkCont and SynNMDACont learning variants.
 	// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
 	// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
 	// Within the window of elevated synaptic Ca, CaP - CaD computes a
@@ -264,7 +271,7 @@ type AxonPrjn interface {
 	// at the NMDA N2B site.  When the synaptic activity has fallen from a
 	// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
 	// last TDWt value converts to an actual synaptic change: DWt
-	SynCa(ltime *Time)
+	SynCaCont(ltime *Time)
 
 	// DWt computes the weight change (learning) -- on sending projections.
 	DWt(ltime *Time)

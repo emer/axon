@@ -90,7 +90,7 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // driving key subtraction for error-driven learning rule.
 type NeurCaParams struct {
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
-	SynTau float32 `def:"40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
+	SynTau float32 `def:"30,40" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
@@ -115,7 +115,7 @@ func (np *NeurCaParams) Update() {
 
 func (np *NeurCaParams) Defaults() {
 	np.SpikeG = 8
-	np.SynTau = 40
+	np.SynTau = 30
 	np.MTau = 10
 	np.PTau = 40
 	np.DTau = 40
@@ -476,7 +476,7 @@ func (ls *LearnSynParams) Defaults() {
 	ls.XCal.Defaults()
 	ls.KinaseCa.Defaults()
 	ls.KinaseDWt.Defaults()
-	ls.KinaseCa.Rule = kinase.NeurSpkCa
+	ls.KinaseCa.Rule = kinase.SynSpkTheta
 }
 
 // CHLdWt returns the error-driven weight change component for the

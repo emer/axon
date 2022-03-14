@@ -1670,20 +1670,24 @@ func (ly *Layer) TrgAvgFmD() {
 	}
 }
 
-// SynCa does Kinase learning based on Ca driven from pre-post spiking.
+// SynCa does cycle-level synaptic Ca updating for the Kinase learning mechanisms.
 // Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
 // representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-// Within the window of elevated synaptic Ca, CaP - CaD computes a
-// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
-// at the NMDA N2B site.  When the synaptic activity has fallen from a
-// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
-// last TDWt value converts to an actual synaptic change: DWt
+// Continuous variants do weight updates (DWt), while SynSpkTrial just updates Ca.
 func (ly *Layer) SynCa(ltime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).SynCa(ltime)
+		// the proper one for each algorithm variant is selected internally
+		p.(AxonPrjn).SynCaCont(ltime)
+		p.(AxonPrjn).SendSynCa(ltime)
+	}
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).RecvSynCa(ltime)
 	}
 }
 
