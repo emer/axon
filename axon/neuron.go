@@ -84,6 +84,11 @@ type Neuron struct {
 	GgabaB   float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential."`
 	GABAB    float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
 	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
+	Gvgcc    float32 `desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`
+	VgccM    float32 `desc:"activation gate of VGCC channels"`
+	VgccH    float32 `desc:"inactivation gate of VGCC channels"`
+	VgccCa   float32 `desc:"VGCC calcium flux"`
+	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 
 	GnmdaSyn float32 `desc:"integrated NMDA recv synaptic current -- adds GnmdaRaw and decays with time constant"`
 	Gnmda    float32 `desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`

@@ -36,6 +36,8 @@ type ActParams struct {
 	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
 	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
 	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
+	VGCC    chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
+	AK      chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
 	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
 }
 
@@ -56,6 +58,8 @@ func (ac *ActParams) Defaults() {
 	ac.NMDA.Defaults()
 	ac.NMDA.Gbar = 0.15 // .15 now -- was 0.3 best.
 	ac.GABAB.Defaults()
+	ac.VGCC.Defaults()
+	ac.AK.Defaults()
 	ac.Attn.Defaults()
 	ac.Update()
 }
@@ -73,6 +77,8 @@ func (ac *ActParams) Update() {
 	ac.KNa.Update()
 	ac.NMDA.Update()
 	ac.GABAB.Update()
+	ac.VGCC.Update()
+	ac.AK.Update()
 	ac.Attn.Update()
 }
 
@@ -122,6 +128,12 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	nrn.GgabaB -= glong * nrn.GgabaB
 	nrn.GABAB -= glong * nrn.GABAB
 	nrn.GABABx -= glong * nrn.GABABx
+
+	nrn.Gvgcc -= glong * nrn.Gvgcc
+	nrn.VgccM -= glong * nrn.VgccM
+	nrn.VgccH -= glong * nrn.VgccH
+	nrn.VgccCa -= glong * nrn.VgccCa
+	nrn.Gak -= glong * nrn.Gak
 
 	nrn.Snmda += glong * (1 - nrn.Snmda) // return to 1
 	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
@@ -177,6 +189,12 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
 	nrn.GABABx = 0
+
+	nrn.Gvgcc = 0
+	nrn.VgccM = 0
+	nrn.VgccH = 0
+	nrn.VgccCa = 0
+	nrn.Gak = 0
 
 	nrn.GnmdaSyn = 0
 	nrn.Gnmda = 0
@@ -236,16 +254,6 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	// important: add other sources of GeRaw here in NMDA driver
 	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw+geExt)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
-
-	// note: moved to learn NMDA
-	// nrn.RnmdaSyn = ac.NMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
-	// mgg, cav := ac.NMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
-	// nrn.RCa = nrn.RnmdaSyn * mgg * cav
-	// if nrn.Spike > 0 {
-	// 	nrn.RCa += ac.Dend.VGCCCa
-	// }
-	// nrn.RCa = ac.Dend.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
-	// nrn.GnmdaRaw = 0
 }
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
@@ -264,22 +272,33 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32) {
 	}
 
 	nrn.Ge = nrn.GeSyn + geExt
+	ac.GeNoise(nrn)
+}
 
-	if ac.Noise.On && ac.Noise.Ge > 0 {
-		ge := ac.Noise.PGe(&nrn.GeNoiseP)
-		ac.Dt.GeSynFmRaw(ge, &nrn.GeNoise, 0)
-		nrn.Ge += nrn.GeNoise
+// GeNoise updates nrn.GeNoise if active
+func (ac *ActParams) GeNoise(nrn *Neuron) {
+	if !ac.Noise.On || ac.Noise.Ge == 0 {
+		return
 	}
+	ge := ac.Noise.PGe(&nrn.GeNoiseP)
+	ac.Dt.GeSynFmRaw(ge, &nrn.GeNoise, 0)
+	nrn.Ge += nrn.GeNoise
+}
+
+// GiNoise updates nrn.GiNoise if active
+func (ac *ActParams) GiNoise(nrn *Neuron) {
+	if !ac.Noise.On || ac.Noise.Gi == 0 {
+		return
+	}
+	gi := ac.Noise.PGi(&nrn.GiNoiseP)
+	ac.Dt.GiSynFmRaw(gi, &nrn.GiNoise, 0)
 }
 
 // GiFmRaw integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFmRaw(nrn *Neuron, giRaw float32) {
 	ac.Dt.GiSynFmRaw(giRaw, &nrn.GiSyn, ac.Init.Gi)
-	if ac.Noise.On && ac.Noise.Gi > 0 {
-		gi := ac.Noise.PGi(&nrn.GiNoiseP)
-		ac.Dt.GiSynFmRaw(gi, &nrn.GiNoise, 0)
-	}
+	ac.GiNoise(nrn)
 	if nrn.GiSyn < 0 { // negative inhib G doesn't make any sense
 		nrn.GiSyn = 0
 	}
@@ -401,7 +420,14 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk = nrn.GknaFast + nrn.GknaMed + nrn.GknaSlow
+	} else {
+		nrn.Gk = 0
 	}
+	nrn.Gk += ac.AK.Gak(nrn.VmDend)
+	nrn.Gvgcc = ac.VGCC.Gvgcc(nrn.VmDend, nrn.VgccM, nrn.VgccH)
+	dm, dh := ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH)
+	nrn.VgccM += dm
+	nrn.VgccH += dh
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

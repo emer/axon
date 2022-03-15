@@ -48,6 +48,7 @@ type Sim struct {
 	PGain        float32                  `desc:"multiplier on product factor to equate to SynC"`
 	SpikeDisp    float32                  `desc:"spike multiplier for display purposes"`
 	RGeClamp     bool                     `desc:"use current Ge clamping for recv neuron -- otherwise spikes driven externally"`
+	RGeGain      float32                  `desc:"gain multiplier for RGe clamp"`
 	RGeBase      float32                  `desc:"baseline recv Ge level"`
 	RGiBase      float32                  `desc:"baseline recv Gi level"`
 	NTrials      int                      `desc:"number of repetitions -- if > 1 then only final @ end of Dur shown"`
@@ -81,8 +82,10 @@ func (ss *Sim) Config() {
 	ss.Time.Defaults()
 	ss.PGain = 1
 	ss.SpikeDisp = 0.1
-	ss.RGeBase = 0.5
-	ss.RGiBase = 2
+	ss.RGeClamp = true
+	ss.RGeGain = 0.2
+	ss.RGeBase = 0
+	ss.RGiBase = 0
 	ss.NTrials = 1000
 	ss.MinusMsec = 150
 	ss.PlusMsec = 50
@@ -212,10 +215,8 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 	dt := ss.Log("TrialLog")
 	dt.SetNumRows(ss.TrialMsec)
 
-	ge := ss.RGeBase
-	gi := ss.RGiBase
-
 	nex := &ss.NeuronEx
+	gi := ss.RGiBase
 
 	ss.InitWts()
 
@@ -238,23 +239,34 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 			shz = 0
 		}
 
-		Sint := mat32.Exp(-1000.0 / float32(shz))
-		Rint := mat32.Exp(-1000.0 / float32(rhz))
+		ge := ss.RGeBase + ss.RGeGain*RGeStimForHz(float32(rhz))
+
+		var Sint, Rint float32
+		if rhz > 0 {
+			Rint = mat32.Exp(-1000.0 / float32(rhz))
+		}
+		if shz > 0 {
+			Sint = mat32.Exp(-1000.0 / float32(shz))
+		}
 		for t := 0; t < maxms; t++ {
 			cyc := ss.Time.Cycle
 
-			nex.Sp *= rand.Float32()
 			sSpk := false
-			if nex.Sp <= Sint {
-				sSpk = true
-				nex.Sp = 1
+			if Sint > 0 {
+				nex.Sp *= rand.Float32()
+				if nex.Sp <= Sint {
+					sSpk = true
+					nex.Sp = 1
+				}
 			}
 
-			nex.Rp *= rand.Float32()
 			rSpk := false
-			if nex.Rp <= Rint {
-				rSpk = true
-				nex.Rp = 1
+			if Rint > 0 {
+				nex.Rp *= rand.Float32()
+				if nex.Rp <= Rint {
+					rSpk = true
+					nex.Rp = 1
+				}
 			}
 
 			ss.NeuronUpdt(sSpk, rSpk, ge, gi)

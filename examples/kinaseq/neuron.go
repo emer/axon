@@ -35,25 +35,28 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Act.Noise.On":        "true",
+					"Layer.Act.Noise.Ge":        "0.02", // induces significant variability in Rn Ge clamp firing
+					"Layer.Act.Noise.Gi":        "0.05",
 					"Layer.Learn.NeurCa.SpikeG": "8",
 					"Layer.Learn.NeurCa.SynTau": "40", // 40 best in larger models
 					"Layer.Learn.NeurCa.MTau":   "10",
 					"Layer.Learn.NeurCa.PTau":   "40",
 					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.VGCCCa": "20", // 20 seems reasonable, but not obviously better than 0
-					"Layer.Learn.NeurCa.CaMax":  "100",
-					"Layer.Learn.NeurCa.CaThr":  "0.2",
+					"Layer.Learn.NeurCa.VGCCCa": "10",
+					"Layer.Learn.NeurCa.CaMax":  "200",
+					"Layer.Learn.NeurCa.CaThr":  "0.05",
 					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
 					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":         "0.1",  // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":          "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":            "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.SWt.Init.Var":             "0",    // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":    "12",   // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.NMDAG":     "12",
+					"Prjn.Learn.Lrate.Base":         "0.1",         // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":          "0.08",        // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":            "0.5",         // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.SWt.Init.Var":             "0",           // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":    "12",          // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.NMDAG":     "100",         // just to match SynSpk..
 					"Prjn.Learn.KinaseCa.Rule":      "SynSpkTheta", // "SynNMDACa",
 					"Prjn.Learn.KinaseCa.MTau":      "5",           // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":      "40",
@@ -62,7 +65,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.KinaseDWt.DMaxPct":  "0.5",
 					"Prjn.Learn.KinaseDWt.TrlDecay": "0.0",
 					"Prjn.Learn.KinaseDWt.DScale":   "1",
-					"Prjn.Learn.XCal.On":            "true",
+					"Prjn.Learn.XCal.On":            "false",
 					"Prjn.Learn.XCal.PThrMin":       "0.05", // 0.05 best for objrec, higher worse
 					"Prjn.Learn.XCal.LrnThr":        "0.01", // 0.05 best for objrec, higher worse
 				}},
@@ -105,6 +108,45 @@ func (nex *NeuronEx) Init() {
 	nex.AKh = 1
 }
 
+////////////////////////////////////////////////////////////////////////
+
+// RGeStimForHzMap is the strength of GeStim G clamp to obtain a given R firing rate
+var RGeStimForHzMap = map[int]float32{
+	25:  .09,
+	50:  .12,
+	100: .15,
+}
+
+func RGeStimForHz(hz float32) float32 {
+	var gel, geh, hzl, hzh float32
+	switch {
+	case hz <= 25:
+		gel = 0
+		geh = RGeStimForHzMap[25]
+		hzl = 0
+		hzh = 25
+	case hz <= 50:
+		gel = RGeStimForHzMap[25]
+		geh = RGeStimForHzMap[50]
+		hzl = 25
+		hzh = 50
+	case hz <= 100:
+		gel = RGeStimForHzMap[50]
+		geh = RGeStimForHzMap[100]
+		hzl = 50
+		hzh = 100
+	default:
+		gel = RGeStimForHzMap[100]
+		geh = 2 * gel
+		hzl = 100
+		hzh = 200
+	}
+	return (gel + ((hz-hzl)/(hzh-hzl))*(geh-gel))
+}
+
+////////////////////////////////////////////////////////////////////////
+// Sim
+
 func (ss *Sim) InitSyn(sy *axon.Synapse) {
 	ss.Prjn.InitWtsSyn(sy, 0.5, 1)
 }
@@ -144,6 +186,14 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		sn.ISI += 1
 	}
 	ly.Learn.LrnNMDA.SnmdaFmSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
+
+	//	Recv
+
+	ac.GeNoise(rn)
+	ge += rn.GeNoise
+	ac.GiNoise(rn)
+	gi += rn.GiNoise
+
 	if !ss.RGeClamp {
 		if rSpk {
 			rn.Spike = 1
@@ -153,7 +203,6 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 			rn.Spike = 0
 			rn.ISI += 1
 		}
-		ly.Learn.LrnNMDA.SnmdaFmSpike(rn.Spike, &rn.SnmdaO, &rn.SnmdaI)
 		rn.Ge = ge
 		rn.GeSyn = ge
 		rn.Gi = gi
@@ -175,6 +224,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		rn.Ge = rn.GeSyn
 		rn.Gi = gi
 		ac.NMDAFmRaw(rn, 0)
+		ly.Learn.LrnNMDAFmRaw(rn, 0)
 		nex.NMDAGmg = ac.NMDA.MgGFmV(rn.VmDend)
 	}
 	rn.GABAB, rn.GABABx = ac.GABAB.GABAB(rn.GABAB, rn.GABABx, rn.Gi)
@@ -284,7 +334,7 @@ func (ss *Sim) SynUpdt() {
 	kp.FmCa(ssc.Ca, &ssc.CaM, &ssc.CaP, &ssc.CaD)
 
 	// SynNMDACont: NMDA driven synaptic updating
-	snc.Ca = kp.SpikeG * sn.SnmdaO * rn.RCa
+	snc.Ca = kp.NMDAG * sn.SnmdaO * rn.RCa
 	kp.FmCa(snc.Ca, &snc.CaM, &snc.CaP, &snc.CaD)
 
 	if tdw {
@@ -507,10 +557,10 @@ func (ss *Sim) ConfigDWtPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D 
 		switch {
 		case cn == "ErrDWt":
 			plt.SetColParams(cn, eplot.Off, eplot.FixMin, -1, eplot.FixMax, 1.5)
-		case cn == "X_DWt":
+		case cn == "SSC_DWt":
 			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-		// case strings.Contains(cn, "DWt"):
-		// 	plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+		case strings.Contains(cn, "_DWt"):
+			plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 		// case strings.HasPrefix(cn, "X_"):
 		// 	plt.SetColParams(cn, eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 		default:

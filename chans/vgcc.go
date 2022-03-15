@@ -15,6 +15,9 @@ func (np *VGCCParams) Defaults() {
 	np.Gbar = 0.12
 }
 
+func (np *VGCCParams) Update() {
+}
+
 // GFmV returns the VGCC conductance as a function of normalized membrane potential
 func (np *VGCCParams) GFmV(v float32) float32 {
 	vbio := VToBio(v)

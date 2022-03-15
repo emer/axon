@@ -38,21 +38,22 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	AK         chans.AKParams `desc:"AK function"`
-	Vstart     float32        `def:"-100" desc:"starting voltage"`
-	Vend       float32        `def:"100" desc:"ending voltage"`
-	Vstep      float32        `def:"1" desc:"voltage increment"`
-	TimeSteps  int            `desc:"number of time steps"`
-	TimeSpike  bool           `desc:"do spiking instead of voltage ramp"`
-	SpikeFreq  float32        `desc:"spiking frequency"`
-	TimeVstart float32        `desc:"time-run starting membrane potential"`
-	TimeVend   float32        `desc:"time-run ending membrane potential"`
-	Table      *etable.Table  `view:"no-inline" desc:"table for plot"`
-	Plot       *eplot.Plot2D  `view:"-" desc:"the plot"`
-	TimeTable  *etable.Table  `view:"no-inline" desc:"table for plot"`
-	TimePlot   *eplot.Plot2D  `view:"-" desc:"the plot"`
-	Win        *gi.Window     `view:"-" desc:"main GUI window"`
-	ToolBar    *gi.ToolBar    `view:"-" desc:"the master toolbar"`
+	AK         chans.AKParams  `desc:"AK function"`
+	AKs        chans.AKsParams `desc:"AKs simplified function"`
+	Vstart     float32         `def:"-100" desc:"starting voltage"`
+	Vend       float32         `def:"100" desc:"ending voltage"`
+	Vstep      float32         `def:"1" desc:"voltage increment"`
+	TimeSteps  int             `desc:"number of time steps"`
+	TimeSpike  bool            `desc:"do spiking instead of voltage ramp"`
+	SpikeFreq  float32         `desc:"spiking frequency"`
+	TimeVstart float32         `desc:"time-run starting membrane potential"`
+	TimeVend   float32         `desc:"time-run ending membrane potential"`
+	Table      *etable.Table   `view:"no-inline" desc:"table for plot"`
+	Plot       *eplot.Plot2D   `view:"-" desc:"the plot"`
+	TimeTable  *etable.Table   `view:"no-inline" desc:"table for plot"`
+	TimePlot   *eplot.Plot2D   `view:"-" desc:"the plot"`
+	Win        *gi.Window      `view:"-" desc:"main GUI window"`
+	ToolBar    *gi.ToolBar     `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation
@@ -62,6 +63,8 @@ var TheSim Sim
 func (ss *Sim) Config() {
 	ss.AK.Defaults()
 	ss.AK.Gbar = 1
+	ss.AKs.Defaults()
+	ss.AKs.Gbar = 1
 	ss.Vstart = -100
 	ss.Vend = 100
 	ss.Vstep = 1
@@ -92,7 +95,7 @@ func (ss *Sim) VmRun() {
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
 		vbio := ss.Vstart + float32(vi)*ss.Vstep
-		// vnorm := chans.VFmBio(vbio)
+		vnorm := chans.VFmBio(vbio)
 		k := ap.KFmV(vbio)
 		a := ap.AlphaFmVK(vbio, k)
 		b := ap.BetaFmVK(vbio, k)
@@ -101,6 +104,10 @@ func (ss *Sim) VmRun() {
 		m := ap.MFmAlpha(a)
 		h := ap.HFmV(vbio)
 		g := ap.Gak(m, h)
+
+		ms := ss.AKs.MFmV(vbio)
+		gs := ss.AKs.Gak(vnorm)
+
 		dt.SetCellFloat("V", vi, float64(vbio))
 		dt.SetCellFloat("Gak", vi, float64(g))
 		dt.SetCellFloat("M", vi, float64(m))
@@ -110,6 +117,9 @@ func (ss *Sim) VmRun() {
 		dt.SetCellFloat("K", vi, float64(k))
 		dt.SetCellFloat("Alpha", vi, float64(a))
 		dt.SetCellFloat("Beta", vi, float64(b))
+
+		dt.SetCellFloat("Ms", vi, float64(ms))
+		dt.SetCellFloat("Gaks", vi, float64(gs))
 	}
 	ss.Plot.Update()
 }
@@ -129,6 +139,8 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 		{"K", etensor.FLOAT64, nil, nil},
 		{"Alpha", etensor.FLOAT64, nil, nil},
 		{"Beta", etensor.FLOAT64, nil, nil},
+		{"Ms", etensor.FLOAT64, nil, nil},
+		{"Gaks", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -140,7 +152,9 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Gak", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Gaks", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Ms", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("H", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("MTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("HTau", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)

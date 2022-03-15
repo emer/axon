@@ -125,8 +125,6 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetColParams("Gvgcc", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("H", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dM", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dH", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 

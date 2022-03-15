@@ -75,7 +75,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dt.LongAvgTau":   "20",   // 20 > higher for objrec, lvis
 					"Layer.Act.Dend.GbarExp":    "0.2",  // 0.2 > 0.5 > 0.1 > 0
 					"Layer.Act.Dend.GbarR":      "3",    // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":    "5",    // 5 >> 2.81 -- big diff
+					"Layer.Act.Dt.VmDendTau":    "8",    // 8 > 5 >> 2.81 -- big diff
 					"Layer.Learn.RLrate.On":     "true", // beneficial still
 					"Layer.Learn.NeurCa.SpikeG": "8",
 					"Layer.Learn.NeurCa.SynTau": "30", // 40 best in larger models
@@ -120,9 +120,10 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar":       "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":            "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":                "0.0",
-					"Prjn.Learn.KinaseCa.SpikeG":    "8",           // keep at 8 standard, adjust other things
-					"Prjn.Learn.KinaseCa.Rule":      "SynSpkTheta", // "SynNMDACa",
-					"Prjn.Learn.KinaseCa.MTau":      "5",           // 5 > 10 test more
+					"Prjn.Learn.KinaseCa.SpikeG":    "12", // keep at 8 standard, adjust other things
+					"Prjn.Learn.KinaseCa.NMDAG":     "8",
+					"Prjn.Learn.KinaseCa.Rule":      "NeurSpkTheta", // "SynNMDACa",
+					"Prjn.Learn.KinaseCa.MTau":      "5",            // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":      "40",
 					"Prjn.Learn.KinaseCa.DTau":      "40",
 					"Prjn.Learn.KinaseCa.UpdtThr":   "0.01", //
@@ -141,8 +142,8 @@ var ParamSets = params.Sets{
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean":      "0.5",
-					"Prjn.Learn.Lrate.Base":   "0.04", // .04 for rlr too!
-					"Prjn.Learn.XCal.PThrMin": "0.0",  //
+					"Prjn.Learn.Lrate.Base":   "0.03", // .04 for rlr too!
+					"Prjn.Learn.XCal.PThrMin": "0.02", //
 				}},
 			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
