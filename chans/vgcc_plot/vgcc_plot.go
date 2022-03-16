@@ -94,10 +94,14 @@ func (ss *Sim) VmRun() {
 		g := ss.VGCC.GFmV(vnorm)
 		m := ss.VGCC.MFmV(v)
 		h := ss.VGCC.HFmV(v)
+		dm, dh := ss.VGCC.DMHFmV(vnorm, m, h)
+
 		dt.SetCellFloat("V", vi, float64(v))
 		dt.SetCellFloat("Gvgcc", vi, float64(g))
 		dt.SetCellFloat("M", vi, float64(m))
 		dt.SetCellFloat("H", vi, float64(h))
+		dt.SetCellFloat("dM", vi, float64(dm))
+		dt.SetCellFloat("dH", vi, float64(dh))
 	}
 	ss.Plot.Update()
 }
@@ -112,6 +116,8 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 		{"Gvgcc", etensor.FLOAT64, nil, nil},
 		{"M", etensor.FLOAT64, nil, nil},
 		{"H", etensor.FLOAT64, nil, nil},
+		{"dM", etensor.FLOAT64, nil, nil},
+		{"dH", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }

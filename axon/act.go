@@ -59,7 +59,9 @@ func (ac *ActParams) Defaults() {
 	ac.NMDA.Gbar = 0.15 // .15 now -- was 0.3 best.
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
+	ac.VGCC.Gbar = 0.02
 	ac.AK.Defaults()
+	ac.AK.Gbar = 1
 	ac.Attn.Defaults()
 	ac.Update()
 }
@@ -423,11 +425,14 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	} else {
 		nrn.Gk = 0
 	}
-	nrn.Gk += ac.AK.Gak(nrn.VmDend)
+	nrn.Gak = ac.AK.Gak(nrn.VmDend)
+	nrn.Gk += nrn.Gak
 	nrn.Gvgcc = ac.VGCC.Gvgcc(nrn.VmDend, nrn.VgccM, nrn.VgccH)
 	dm, dh := ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH)
 	nrn.VgccM += dm
 	nrn.VgccH += dh
+	vbio := chans.VToBio(nrn.VmDend)
+	nrn.VgccCa = -vbio * nrn.Gvgcc
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

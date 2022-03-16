@@ -16,7 +16,7 @@ import "github.com/goki/mat32"
 // See AKsParams for a much simpler version that works fine when full AP-like spikes are
 // not simulated, as in our standard axon models.
 type AKParams struct {
-	Gbar float32 `def:"0.01" desc:"strength of AK current"`
+	Gbar float32 `def:"2,0.01" desc:"strength of AK current"`
 	Beta float32 `def:"0.01446,02039" desc:"multiplier for the beta term; 0.01446 for distal, 0.02039 for proximal dendrites"`
 	Dm   float32 `def:"0.5,0.25" desc:"Dm factor: 0.5 for distal, 0.25 for proximal"`
 	Koff float32 `def:"1.8,1.5" desc:"offset for K, 1.8 for distal, 1.5 for proximal"`
@@ -122,7 +122,7 @@ func (ap *AKParams) Gak(m, h float32) float32 {
 // It is particularly important for counteracting the excitatory effects of
 // voltage gated calcium channels which can otherwise drive runaway excitatory currents.
 type AKsParams struct {
-	Gbar float32 `def:"0.01" desc:"strength of AK current"`
+	Gbar float32 `def:"2,0.01" desc:"strength of AK current"`
 	Hf   float32 `def:"0.076" desc:"H factor as a constant multiplier on overall M factor result -- rescales M to level consistent with H being present at full strength"`
 	Mf   float32 `def:"0.075" desc:"multiplier for M -- determines slope of function"`
 	Voff float32 `def:"2" desc:"voltage offset in biological units for M function"`

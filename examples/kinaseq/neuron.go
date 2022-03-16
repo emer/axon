@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/chans"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
@@ -26,24 +25,27 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Act.Decay.Glong":     "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":    "0.5",  // 0.5 best
-					"Layer.Act.Dend.GbarR":      "6",    // 6 best
-					"Layer.Act.Dt.VmDendTau":    "5",    // 5 > 2.81 here but small effect
-					"Layer.Act.NMDA.Gbar":       "0.15", // 0.15
-					"Layer.Act.NMDA.ITau":       "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.Noise.On":        "true",
-					"Layer.Act.Noise.Ge":        "0.02", // induces significant variability in Rn Ge clamp firing
-					"Layer.Act.Noise.Gi":        "0.05",
+					"Layer.Act.Decay.Glong":  "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp": "0.5",  // 0.5 best
+					"Layer.Act.Dend.GbarR":   "6",    // 6 best
+					"Layer.Act.Dt.VmDendTau": "5",    // 5 > 2.81 here but small effect
+					"Layer.Act.NMDA.Gbar":    "0.15", // 0.15
+					"Layer.Act.NMDA.ITau":    "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Act.NMDA.Tau":     "100",  // 30 not good
+					"Layer.Act.NMDA.MgC":     "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Act.NMDA.Voff":    "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Act.Noise.On":     "true",
+					"Layer.Act.Noise.Ge":     "0.02", // induces significant variability in Rn Ge clamp firing
+					"Layer.Act.Noise.Gi":     "0.05",
+					"Layer.Act.VGCC.Gbar":    "0.02",
+					"Layer.Act.AK.Gbar":      "2",
+					// "Layer.Act.AK.Hf":           "5.5",
+					// "Layer.Act.AK.Mf":           "0.2",
 					"Layer.Learn.NeurCa.SpikeG": "8",
 					"Layer.Learn.NeurCa.SynTau": "40", // 40 best in larger models
 					"Layer.Learn.NeurCa.MTau":   "10",
 					"Layer.Learn.NeurCa.PTau":   "40",
 					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.VGCCCa": "10",
 					"Layer.Learn.NeurCa.CaMax":  "200",
 					"Layer.Learn.NeurCa.CaThr":  "0.05",
 					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
@@ -56,7 +58,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":            "0.5",         // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.SWt.Init.Var":             "0",           // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.KinaseCa.SpikeG":    "12",          // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.NMDAG":     "100",         // just to match SynSpk..
+					"Prjn.Learn.KinaseCa.NMDAG":     "40",          // just to match SynSpk..
 					"Prjn.Learn.KinaseCa.Rule":      "SynSpkTheta", // "SynNMDACa",
 					"Prjn.Learn.KinaseCa.MTau":      "5",           // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":      "40",
@@ -75,20 +77,12 @@ var ParamSets = params.Sets{
 
 // Extra state for neuron
 type NeuronEx struct {
-	SCaUpT     int     `desc:"time of last sending spike"`
-	RCaUpT     int     `desc:"time of last recv spike"`
-	Sp         float32 `desc:"sending poisson firing probability accumulator"`
-	Rp         float32 `desc:"recv poisson firing probability accumulator"`
-	NMDAGmg    float32 `desc:"NMDA mg-based blocking conductance"`
-	Gvgcc      float32 `desc:"VGCC total conductance"`
-	VGCCm      float32 `desc:"VGCC M gate -- activates with increasing Vm"`
-	VGCCh      float32 `desc:"VGCC H gate -- deactivates with increasing Vm"`
-	VGCCJcaPSD float32 `desc:"VGCC Ca calcium contribution to PSD"`
-	VGCCJcaCyt float32 `desc:"VGCC Ca calcium contribution to Cyt"`
-	Gak        float32 `desc:"AK total conductance"`
-	AKm        float32 `desc:"AK M gate -- activates with increasing Vm"`
-	AKh        float32 `desc:"AK H gate -- deactivates with increasing Vm"`
-	LearnNow   float32 `desc:"when 0, it is time to learn according to theta cycle, otherwise increments up unless still -1 from init"`
+	SCaUpT   int     `desc:"time of last sending spike"`
+	RCaUpT   int     `desc:"time of last recv spike"`
+	Sp       float32 `desc:"sending poisson firing probability accumulator"`
+	Rp       float32 `desc:"recv poisson firing probability accumulator"`
+	NMDAGmg  float32 `desc:"NMDA mg-based blocking conductance"`
+	LearnNow float32 `desc:"when 0, it is time to learn according to theta cycle, otherwise increments up unless still -1 from init"`
 }
 
 func (nex *NeuronEx) Init() {
@@ -96,16 +90,8 @@ func (nex *NeuronEx) Init() {
 	nex.RCaUpT = -1
 	nex.Sp = 1
 	nex.Rp = 1
-	nex.LearnNow = -1
 	nex.NMDAGmg = 0
-	nex.Gvgcc = 0
-	nex.VGCCm = 0
-	nex.VGCCh = 1
-	nex.VGCCJcaPSD = 0
-	nex.VGCCJcaCyt = 0
-	nex.Gak = 0
-	nex.AKm = 0
-	nex.AKh = 1
+	nex.LearnNow = -1
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -175,8 +161,6 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 	rn := ss.RecvNeur
 	nex := &ss.NeuronEx
 
-	vbio := chans.VToBio(rn.Vm) // dend
-
 	if sSpk {
 		sn.Spike = 1
 		sn.ISI = 0
@@ -213,9 +197,6 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		nex.NMDAGmg = mgg
 		rn.RCa = rn.RnmdaSyn * mgg * cav
 		rn.GnmdaRaw = 0
-		if rn.Spike > 0 {
-			rn.RCa += ly.Learn.NeurCa.VGCCCa
-		}
 		rn.RCa = ly.Learn.NeurCa.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 	} else {
 		rn.GeRaw = ge
@@ -224,43 +205,20 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		rn.Ge = rn.GeSyn
 		rn.Gi = gi
 		ac.NMDAFmRaw(rn, 0)
-		ly.Learn.LrnNMDAFmRaw(rn, 0)
 		nex.NMDAGmg = ac.NMDA.MgGFmV(rn.VmDend)
 	}
 	rn.GABAB, rn.GABABx = ac.GABAB.GABAB(rn.GABAB, rn.GABABx, rn.Gi)
 	rn.GgabaB = ac.GABAB.GgabaB(rn.GABAB, rn.VmDend)
 
-	// nex.Gvgcc = ss.VGCC.Gvgcc(vmd, nex.VGCCm, nex.VGCCh)
-	// dm, dh := ss.VGCC.DMHFmV(vmd, nex.VGCCm, nex.VGCCh)
-	// nex.VGCCm += dm
-	// nex.VGCCh += dh
-	// isi := rn.ISI
-	// if isi >= ac.Spike.VmR-1 && isi <= ac.Spike.VmR {
-	// 	nex.VGCCm = 0 // resets
-	// }
-
-	// nex.Gak = ss.AK.Gak(nex.AKm, nex.AKh)
-	// dm, dh = ss.AK.DMHFmV(vmd, nex.AKm, nex.AKh)
-	// nex.AKm += dm
-	// nex.AKh += dh
-
-	// rn.Gk += nex.Gak
-	rn.Ge += nex.Gvgcc + rn.Gnmda
-	// if !ss.NMDAAxon {
-	// 	rn.Ge += ss.NMDAGbar * float32(ss.Spine.States.NMDAR.G)
-	// }
+	rn.Ge += rn.Gvgcc + rn.Gnmda
 	rn.Gi += rn.GgabaB
-
-	psd_pca := float32(1.7927e5 * 0.04) //  SVR_PSD
-	cyt_pca := float32(1.0426e5 * 0.04) // SVR_CYT
-
-	nex.VGCCJcaPSD = -vbio * psd_pca * nex.Gvgcc
-	nex.VGCCJcaCyt = -vbio * cyt_pca * nex.Gvgcc
 
 	ac.VmFmG(rn)
 	if ss.RGeClamp {
 		ac.ActFmG(rn)
 	}
+	ly.Learn.LrnNMDAFmRaw(rn, 0)
+
 	ly.Learn.CaFmSpike(rn)
 	ly.Learn.CaFmSpike(sn)
 
@@ -403,14 +361,11 @@ func (ss *Sim) LogState(dt *etable.Table, row, trl, cyc int) {
 	// dt.SetCellFloat("NMDAGmg", row, float64(nex.NMDAGmg))
 	// dt.SetCellFloat("GABAB", row, float64(rn.GABAB))
 	// dt.SetCellFloat("GgabaB", row, float64(rn.GgabaB))
-	// dt.SetCellFloat("Gvgcc", row, float64(nex.Gvgcc))
-	// dt.SetCellFloat("VGCCm", row, float64(nex.VGCCm))
-	// dt.SetCellFloat("VGCCh", row, float64(nex.VGCCh))
-	// dt.SetCellFloat("VGCCJcaPSD", row, float64(nex.VGCCJcaPSD))
-	// dt.SetCellFloat("VGCCJcaCyt", row, float64(nex.VGCCJcaCyt))
-	// dt.SetCellFloat("Gak", row, float64(nex.Gak))
-	// dt.SetCellFloat("AKm", row, float64(nex.AKm))
-	// dt.SetCellFloat("AKh", row, float64(nex.AKh))
+	dt.SetCellFloat("Gvgcc", row, float64(rn.Gvgcc))
+	dt.SetCellFloat("VgccM", row, float64(rn.VgccM))
+	dt.SetCellFloat("VgccH", row, float64(rn.VgccH))
+	dt.SetCellFloat("VgccCa", row, float64(rn.VgccCa))
+	dt.SetCellFloat("Gak", row, float64(rn.Gak))
 	// dt.SetCellFloat("LearnNow", row, float64(nex.LearnNow))
 
 	nst := &ss.SynNeurTheta
@@ -461,14 +416,11 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 		// {"NMDAGmg", etensor.FLOAT64, nil, nil},
 		// {"GABAB", etensor.FLOAT64, nil, nil},
 		// {"GgabaB", etensor.FLOAT64, nil, nil},
-		// {"Gvgcc", etensor.FLOAT64, nil, nil},
-		// {"VGCCm", etensor.FLOAT64, nil, nil},
-		// {"VGCCh", etensor.FLOAT64, nil, nil},
-		// {"VGCCJcaPSD", etensor.FLOAT64, nil, nil},
-		// {"VGCCJcaCyt", etensor.FLOAT64, nil, nil},
-		// {"Gak", etensor.FLOAT64, nil, nil},
-		// {"AKm", etensor.FLOAT64, nil, nil},
-		// {"AKh", etensor.FLOAT64, nil, nil},
+		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"VgccM", etensor.FLOAT64, nil, nil},
+		{"VgccH", etensor.FLOAT64, nil, nil},
+		{"VgccCa", etensor.FLOAT64, nil, nil},
+		{"Gak", etensor.FLOAT64, nil, nil},
 		// {"LearnNow", etensor.FLOAT64, nil, nil},
 		{"R_CaM", etensor.FLOAT64, nil, nil},
 		{"R_CaP", etensor.FLOAT64, nil, nil},

@@ -69,9 +69,7 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
 	nrn.RnmdaSyn = ln.LrnNMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
 	mgg, cav := ln.LrnNMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
 	nrn.RCa = nrn.RnmdaSyn * mgg * cav
-	if nrn.Spike > 0 {
-		nrn.RCa += ln.NeurCa.VGCCCa
-	}
+	nrn.RCa += nrn.VgccCa
 	nrn.RCa = ln.NeurCa.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 	nrn.GnmdaRaw = 0                    // reset now
 }
@@ -94,7 +92,6 @@ type NeurCaParams struct {
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	VGCCCa float32 `def:"10" desc:"extra calcium to add to RCa during recv neuron spiking due to VGCC activation -- biologically it closely tracks the spike impulse, so this amount is added at point of postsynaptic spiking."`
 	CaMax  float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
 	CaThr  float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
 
@@ -119,7 +116,6 @@ func (np *NeurCaParams) Defaults() {
 	np.MTau = 10
 	np.PTau = 40
 	np.DTau = 40
-	np.VGCCCa = 10
 	np.CaMax = 200
 	np.CaThr = 0.05
 	np.Update()

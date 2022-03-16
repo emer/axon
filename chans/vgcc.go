@@ -4,11 +4,13 @@
 
 package chans
 
-import "github.com/goki/mat32"
+import (
+	"github.com/goki/mat32"
+)
 
 // VGCCParams control the standard L-type Ca channel
 type VGCCParams struct {
-	Gbar float32 `def:"0.12" desc:"strength of VGCC current -- 0.12 value from Urakubo et al (2008) model"`
+	Gbar float32 `def:"0.02,0.12" desc:"strength of VGCC current -- 0.12 value from Urakubo et al (2008) model"`
 }
 
 func (np *VGCCParams) Defaults() {
@@ -29,11 +31,23 @@ func (np *VGCCParams) GFmV(v float32) float32 {
 
 // MFmV returns the M gate function from vbio (not normalized, must not exceed 0)
 func (np *VGCCParams) MFmV(vbio float32) float32 {
+	if vbio < -60 {
+		return 0
+	}
+	if vbio > -10 {
+		return 1
+	}
 	return 1.0 / (1.0 + mat32.FastExp(-(vbio + 37)))
 }
 
 // HFmV returns the H gate function from vbio (not normalized, must not exceed 0)
 func (np *VGCCParams) HFmV(vbio float32) float32 {
+	if vbio < -50 {
+		return 1
+	}
+	if vbio > -10 {
+		return 0
+	}
 	return 1.0 / (1.0 + mat32.FastExp((vbio+41)*2))
 }
 
