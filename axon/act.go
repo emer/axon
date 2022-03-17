@@ -258,6 +258,17 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 }
 
+// GvgccFmVm updates all the VGCC voltage-gated calcium channel variables
+// from VmDend
+func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
+	nrn.Gvgcc = ac.VGCC.Gvgcc(nrn.VmDend, nrn.VgccM, nrn.VgccH)
+	dm, dh := ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH)
+	nrn.VgccM += dm
+	nrn.VgccH += dh
+	vbio := chans.VToBio(nrn.VmDend)
+	nrn.VgccCa = -vbio * nrn.Gvgcc
+}
+
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32) {
@@ -427,12 +438,6 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	}
 	nrn.Gak = ac.AK.Gak(nrn.VmDend)
 	nrn.Gk += nrn.Gak
-	nrn.Gvgcc = ac.VGCC.Gvgcc(nrn.VmDend, nrn.VgccM, nrn.VgccH)
-	dm, dh := ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH)
-	nrn.VgccM += dm
-	nrn.VgccH += dh
-	vbio := chans.VToBio(nrn.VmDend)
-	nrn.VgccCa = -vbio * nrn.Gvgcc
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

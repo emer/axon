@@ -1173,9 +1173,10 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 	ly.Act.NMDAFmRaw(nrn, geExt)
+	ly.Act.GvgccFmVm(nrn)
 	ly.Learn.LrnNMDAFmRaw(nrn, geExt)
 
-	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda)
+	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda+nrn.Gvgcc)
 	nrn.GeRaw = 0
 	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 	nrn.GiRaw = 0

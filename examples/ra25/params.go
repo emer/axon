@@ -48,7 +48,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
 					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.VGCC.Gbar":       "0.02",
+					"Layer.Act.VGCC.Gbar":       "0.01",
 					"Layer.Act.AK.Gbar":         "1",    // 1 >= 0 > 2
 					"Layer.Learn.RLrate.On":     "true", // beneficial still
 					"Layer.Learn.NeurCa.SpikeG": "8",
@@ -58,6 +58,7 @@ var ParamSetsMin = params.Sets{
 					"Layer.Learn.NeurCa.DTau":   "40",
 					"Layer.Learn.NeurCa.CaMax":  "100",
 					"Layer.Learn.NeurCa.CaThr":  "0.05",
+					"Layer.Learn.NeurCa.Decay":  "false",
 					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
 					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
 				},
@@ -81,23 +82,22 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":         "0.1",  // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":          "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":            "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":    "12",   // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.NMDAG":     "4",    // 8 best here
-					"Prjn.Learn.KinaseCa.Rule":      "SynNMDACont",
-					"Prjn.Learn.KinaseCa.MTau":      "5", // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.PTau":      "40",
-					"Prjn.Learn.KinaseCa.DTau":      "40",
-					"Prjn.Learn.KinaseCa.UpdtThr":   "0.01",
-					"Prjn.Learn.KinaseDWt.TWindow":  "10",
-					"Prjn.Learn.KinaseDWt.DMaxPct":  "0.5",
-					"Prjn.Learn.KinaseDWt.TrlDecay": "0.6", // 0.6 = same as glong -- works with 0, just sig worse..
-					"Prjn.Learn.KinaseDWt.DScale":   "1",
-					"Prjn.Learn.XCal.On":            "true",
-					"Prjn.Learn.XCal.PThrMin":       "0.05", // 0.05 best for objrec, higher worse
-					"Prjn.Learn.XCal.LrnThr":        "0.01",
+					"Prjn.Learn.Lrate.Base":        "0.1",  // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.Lrate":         "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":           "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":   "12",   // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.NMDAG":    "4",    // 8 best here
+					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta",
+					"Prjn.Learn.KinaseCa.MTau":     "5", // 5 > 10 test more
+					"Prjn.Learn.KinaseCa.PTau":     "40",
+					"Prjn.Learn.KinaseCa.DTau":     "40",
+					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01",
+					"Prjn.Learn.KinaseDWt.TWindow": "10",
+					"Prjn.Learn.KinaseDWt.DMaxPct": "0.5",
+					"Prjn.Learn.KinaseDWt.DScale":  "1",
+					"Prjn.Learn.XCal.On":           "true",
+					"Prjn.Learn.XCal.PThrMin":      "0.05", // 0.05 best for objrec, higher worse
+					"Prjn.Learn.XCal.LrnThr":       "0.01",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
