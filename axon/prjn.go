@@ -1081,10 +1081,12 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 // for whether learning should occur.
 func (pj *Prjn) DWtCont(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	kd := &pj.Learn.KinaseDWt
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	decay := kd.TrlDecay
+	decay := rlay.Act.Decay.Glong
+	if !rlay.Learn.NeurCa.Decay {
+		decay = 0
+	}
 	// twin := kd.TWindow
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {

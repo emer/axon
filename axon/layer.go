@@ -1505,7 +1505,7 @@ func (ly *Layer) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current activation state in ActSt1 variables (using CaPLrn)
+// ActSt1 saves current activation state in ActSt1 variables (using CaP)
 func (ly *Layer) ActSt1(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1516,7 +1516,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 	}
 }
 
-// ActSt2 saves current activation state in ActSt2 variables (using CaPLrn)
+// ActSt2 saves current activation state in ActSt2 variables (using CaP)
 func (ly *Layer) ActSt2(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1673,7 +1673,7 @@ func (ly *Layer) TrgAvgFmD() {
 // SynCa does cycle-level synaptic Ca updating for the Kinase learning mechanisms.
 // Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
 // representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-// Continuous variants do weight updates (DWt), while SynSpkTrial just updates Ca.
+// Continuous variants do weight updates (DWt), while SynSpkTheta just updates Ca.
 func (ly *Layer) SynCa(ltime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {

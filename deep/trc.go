@@ -144,6 +144,7 @@ func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) 
 	nrn.ClearFlag(axon.NeurHasExt)
 
 	ly.Act.NMDAFmRaw(nrn, 0) // note: could also do drv?
+	ly.Learn.LrnNMDAFmRaw(nrn, 0)
 
 	// note: excluding gnmda during driving phase -- probably could exclude always due to ge context?
 

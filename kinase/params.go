@@ -93,16 +93,14 @@ func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD float32) (cCaM, cCaP
 
 // DWtParams has parameters controlling Kinase-based learning rules
 type DWtParams struct {
-	TWindow  int     `desc:"number of msec (cycles) after either a pre or postsynaptic spike, when the competitive binding of CaMKII vs. DAPK1 to NMDA N2B takes place, generating the provisional weight change value that can then turn into the actual weight change DWt"`
-	DMaxPct  float32 `def:"0.5" desc:"proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes"`
-	TrlDecay float32 `def:"0.6,0.2,0" desc:"decay of Ca state values between trials -- should generally match Layer.Decay.Glong -- when there is no sequential structure across trials, higher decay is appropriate, with lower decay as there is more meaningful structure."`
-	DScale   float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)"`
+	TWindow int     `desc:"number of msec (cycles) after either a pre or postsynaptic spike, when the competitive binding of CaMKII vs. DAPK1 to NMDA N2B takes place, generating the provisional weight change value that can then turn into the actual weight change DWt"`
+	DMaxPct float32 `def:"0.5" desc:"proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes"`
+	DScale  float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)"`
 }
 
 func (dp *DWtParams) Defaults() {
 	dp.TWindow = 10
 	dp.DMaxPct = 0.5
-	dp.TrlDecay = 0.6
 	dp.DScale = 1 // 0.93, 1.05
 	dp.Update()
 }

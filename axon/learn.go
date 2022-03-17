@@ -53,6 +53,9 @@ func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
 
 // DecayNeurCa decays neuron-level calcium by given factor (between trials)
 func (ln *LearnNeurParams) DecayNeurCa(nrn *Neuron, decay float32) {
+	if !ln.NeurCa.Decay {
+		return
+	}
 	nrn.CaSyn -= decay * nrn.CaSyn
 	nrn.CaM -= decay * nrn.CaM
 	nrn.CaP -= decay * nrn.CaP
@@ -94,6 +97,7 @@ type NeurCaParams struct {
 	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
 	CaMax  float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
 	CaThr  float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
+	Decay  bool    `desc:"if true, decay Ca values along with other longer duration state variables at the ThetaCycle boundary"`
 
 	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -118,8 +122,8 @@ func (np *NeurCaParams) Defaults() {
 	np.DTau = 40
 	np.CaMax = 200
 	np.CaThr = 0.05
+	np.Decay = false
 	np.Update()
-
 }
 
 // CaFmSpike computes Ca* calcium signals based on current spike, for NeurSpkCa

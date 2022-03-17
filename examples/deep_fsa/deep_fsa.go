@@ -66,25 +66,29 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.Inhib.AvgTau":  "30",
-					"Layer.Inhib.ActAvg.Init":   "0.15",
-					"Layer.Inhib.Layer.Gi":      "1.1", // 1.1 > 1.2 > 1.0
-					"Layer.Act.Gbar.L":          "0.2", // std
-					"Layer.Act.Decay.Act":       "0.2", // lvis best = .2, .6 good here too
-					"Layer.Act.Decay.Glong":     "0.6",
-					"Layer.Act.Dt.LongAvgTau":   "20",   // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":    "0.2",  // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":      "3",    // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":    "8",    // 8 > 5 >> 2.81 -- big diff
+					"Layer.Inhib.Inhib.AvgTau": "30",
+					"Layer.Inhib.ActAvg.Init":  "0.15",
+					"Layer.Inhib.Layer.Gi":     "1.1", // 1.1 > 1.2 > 1.0
+					"Layer.Act.Gbar.L":         "0.2", // std
+					"Layer.Act.Decay.Act":      "0.2", // lvis best = .2, .6 good here too
+					"Layer.Act.Decay.Glong":    "0.6",
+					"Layer.Act.Dt.LongAvgTau":  "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":     "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dt.VmDendTau":   "8",   // 8 > 5 >> 2.81 -- big diff
+					// "Layer.Act.NMDA.MgC":        "1.0",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					// "Layer.Act.NMDA.Voff":       "0",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Act.VGCC.Gbar":       "0.02",
+					"Layer.Act.AK.Gbar":         "1.0",
 					"Layer.Learn.RLrate.On":     "true", // beneficial still
 					"Layer.Learn.NeurCa.SpikeG": "8",
 					"Layer.Learn.NeurCa.SynTau": "30", // 40 best in larger models
 					"Layer.Learn.NeurCa.MTau":   "10",
 					"Layer.Learn.NeurCa.PTau":   "40",
 					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.VGCCCa": "10", // 20 seems reasonable, but not obviously better than 0
 					"Layer.Learn.NeurCa.CaMax":  "200",
 					"Layer.Learn.NeurCa.CaThr":  "0.05",
+					"Layer.Learn.NeurCa.Decay":  "false",
 					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
 					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
 				}},
@@ -115,25 +119,24 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":         "0.03", // .03 std
-					"Prjn.SWt.Adapt.Lrate":          "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
-					"Prjn.SWt.Adapt.DreamVar":       "0.0",  // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":            "1.0",  // 1 works fine here -- .5 also ok
-					"Prjn.Com.PFail":                "0.0",
-					"Prjn.Learn.KinaseCa.SpikeG":    "12", // keep at 8 standard, adjust other things
-					"Prjn.Learn.KinaseCa.NMDAG":     "8",
-					"Prjn.Learn.KinaseCa.Rule":      "NeurSpkTheta", // "SynNMDACa",
-					"Prjn.Learn.KinaseCa.MTau":      "5",            // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.PTau":      "40",
-					"Prjn.Learn.KinaseCa.DTau":      "40",
-					"Prjn.Learn.KinaseCa.UpdtThr":   "0.01", //
-					"Prjn.Learn.KinaseDWt.TWindow":  "10",
-					"Prjn.Learn.KinaseDWt.DMaxPct":  "0.5",
-					"Prjn.Learn.KinaseDWt.TrlDecay": "0.6", // 0.6 = same as glong -- works with 0, just sig worse..
-					"Prjn.Learn.KinaseDWt.DScale":   "1",
-					"Prjn.Learn.XCal.On":            "true",
-					"Prjn.Learn.XCal.PThrMin":       "0.05", // 0.05 bad for neur spk
-					"Prjn.Learn.XCal.LrnThr":        "0.01",
+					"Prjn.Learn.Lrate.Base":        "0.03", // .03 std
+					"Prjn.SWt.Adapt.Lrate":         "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
+					"Prjn.SWt.Adapt.DreamVar":      "0.0",  // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":           "1.0",  // 1 works fine here -- .5 also ok
+					"Prjn.Com.PFail":               "0.0",
+					"Prjn.Learn.KinaseCa.SpikeG":   "12", // 12 good
+					"Prjn.Learn.KinaseCa.NMDAG":    "8",
+					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta", // NeurSpkTheta, SynSpkTheta good, *Cont bad
+					"Prjn.Learn.KinaseCa.MTau":     "5",           // 5 > 10 test more
+					"Prjn.Learn.KinaseCa.PTau":     "40",
+					"Prjn.Learn.KinaseCa.DTau":     "40",
+					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01", //
+					"Prjn.Learn.KinaseDWt.TWindow": "10",
+					"Prjn.Learn.KinaseDWt.DMaxPct": "0.5",
+					"Prjn.Learn.KinaseDWt.DScale":  "1",
+					"Prjn.Learn.XCal.On":           "true",
+					"Prjn.Learn.XCal.PThrMin":      "0.0", // 0.05 bad for neur spk
+					"Prjn.Learn.XCal.LrnThr":       "0.01",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -141,9 +144,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean":      "0.5",
-					"Prjn.Learn.Lrate.Base":   "0.03", // .04 for rlr too!
-					"Prjn.Learn.XCal.PThrMin": "0.02", //
+					"Prjn.SWt.Init.Mean": "0.5",
+					// "Prjn.Learn.Lrate.Base":   "0.03", // .04 for rlr too!
+					// "Prjn.Learn.XCal.PThrMin": "0.02", //
 				}},
 			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
