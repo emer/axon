@@ -1084,7 +1084,7 @@ func (pj *Prjn) DWtCont(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	decay := rlay.Act.Decay.Glong
-	if !rlay.Learn.NeurCa.Decay {
+	if !kp.Decay {
 		decay = 0
 	}
 	// twin := kd.TWindow

@@ -10,12 +10,13 @@ package kinase
 type CaParams struct {
 	Rule    Rules   `desc:"selects the specific variant of the Kinase learning rule, determining the source of synaptic calcium and how it drives synaptic plasticity"`
 	SpikeG  float32 `def:"12" desc:"spiking gain factor for SynSpkCont and SynSpkTheta learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
-	NMDAG   float32 `def:"2:8" desc:"gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values."`
+	NMDAG   float32 `def:"0.8" desc:"gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values."`
 	MTau    float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaSyn * ru->CaSyn with typical 20 msec Tau.`
 	PTau    float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau    float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	UpdtThr float32 `def:"0.01,0.02" desc:"threshold on neuron-level CaP and CaD values for updating synapse-level Ca values -- this is purely a performance optimization that excludes random infrequent spikes -- try .02 to see if that still works, to get more performance advantage."`
+	UpdtThr float32 `def:"0.01,0.02,0.5" desc:"threshold on neuron-level CaP and CaD values for updating synapse-level Ca values -- this is purely a performance optimization that excludes random infrequent spikes -- try 0.02 then 0.05 to see if that still works, to get more performance advantage."`
 	MaxISI  int     `def:"100" desc:"maximum ISI for integrating in Opt mode -- above that just set to 0"`
+	Decay   bool    `def:"true" desc:"if true, decay synaptic Ca values along with other longer duration state variables at the ThetaCycle boundary"`
 
 	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -25,12 +26,13 @@ type CaParams struct {
 func (kp *CaParams) Defaults() {
 	kp.Rule = SynSpkTheta
 	kp.SpikeG = 12
-	kp.NMDAG = 4
+	kp.NMDAG = 0.8
 	kp.MTau = 5
 	kp.PTau = 40
 	kp.DTau = 40
 	kp.UpdtThr = 0.01
 	kp.MaxISI = 100
+	kp.Decay = true
 	kp.Update()
 }
 

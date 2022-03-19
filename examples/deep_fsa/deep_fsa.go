@@ -124,18 +124,19 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar":      "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":           "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":               "0.0",
-					"Prjn.Learn.KinaseCa.SpikeG":   "12", // 12 good
-					"Prjn.Learn.KinaseCa.NMDAG":    "8",
+					"Prjn.Learn.KinaseCa.SpikeG":   "10", // 12 good
+					"Prjn.Learn.KinaseCa.NMDAG":    "1",
 					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta", // NeurSpkTheta, SynSpkTheta good, *Cont bad
 					"Prjn.Learn.KinaseCa.MTau":     "5",           // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":     "40",
 					"Prjn.Learn.KinaseCa.DTau":     "40",
 					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01", //
+					"Prjn.Learn.KinaseCa.Decay":    "true",
 					"Prjn.Learn.KinaseDWt.TWindow": "10",
 					"Prjn.Learn.KinaseDWt.DMaxPct": "0.5",
 					"Prjn.Learn.KinaseDWt.DScale":  "1",
 					"Prjn.Learn.XCal.On":           "true",
-					"Prjn.Learn.XCal.PThrMin":      "0.0", // 0.05 bad for neur spk
+					"Prjn.Learn.XCal.PThrMin":      "0.05", // 0.05 bad for neur spk
 					"Prjn.Learn.XCal.LrnThr":       "0.01",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
