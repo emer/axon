@@ -13,6 +13,7 @@ import (
 type Time struct {
 	Time       float32 `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	Cycle      int     `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
+	Phase      int     `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
 	PhaseCycle int     `desc:"cycle within current phase -- minus or plus"`
 	CycleTot   int     `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time"`
 	PlusPhase  bool    `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
@@ -37,6 +38,7 @@ func (tm *Time) Defaults() {
 func (tm *Time) Reset() {
 	tm.Time = 0
 	tm.Cycle = 0
+	tm.Phase = 0
 	tm.PhaseCycle = 0
 	tm.CycleTot = 0
 	tm.PlusPhase = false
@@ -50,6 +52,7 @@ func (tm *Time) Reset() {
 // Pass true if network is in training mode, and false if testing.
 func (tm *Time) NewState(train bool) {
 	tm.Cycle = 0
+	tm.Phase = 0
 	tm.PhaseCycle = 0
 	tm.PlusPhase = false
 	tm.Testing = !train
