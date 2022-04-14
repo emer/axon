@@ -23,6 +23,9 @@ func ConfigLoopsStdStack(st *looper.Stack, net *Network, ltime *Time, minusCyc, 
 	phs := st.Loop(etime.Phase)
 	cyc := st.Loop(etime.Cycle)
 
+	_, tm := st.Order[len(st.Order)-3].ModeAndTimeStr()
+	st.Step.Default = tm
+
 	st.Ctxt["Time"] = ltime // so its avail in other cases
 
 	train := st.Mode == "Train"
@@ -46,7 +49,7 @@ func ConfigLoopsStdStack(st *looper.Stack, net *Network, ltime *Time, minusCyc, 
 	})
 
 	// initialization must start on first cycle
-	// must insert ApplyInputs prior to this
+	// must insert ApplyInputs after this
 	cyc.Main.Add("Axon:Cycle:Cycle0", func() {
 		if ltime.PhaseCycle == 0 {
 			if ltime.Phase == 0 {
@@ -80,13 +83,14 @@ func ConfigLoopsStdStack(st *looper.Stack, net *Network, ltime *Time, minusCyc, 
 	})
 }
 
-// AddCycle0 adds given function (e.g., ApplyInputs) before Axon:Cycle:Cycle0
+// AddCycle0 adds given function (e.g., ApplyInputs) after Axon:Cycle:Cycle0
 // wrapped by a function that only runs on first cycle to prep for new ThetaCycle.
-// to all stacks in set.
+// to all stacks in set.  This is guaranteed to be run at the start of any new run
+// or trial, and thus gets around the absence of a Start function in looper.
 func AddCycle0(set *looper.Set, ltime *Time, name string, fun func()) {
 	for _, st := range set.Stacks {
 		cyc := st.Loop(etime.Cycle)
-		cyc.Main.InsertBefore("Axon:Cycle:Cycle0", "Cycle0:"+name, func() {
+		cyc.Main.InsertAfter("Axon:Cycle:Cycle0", "Cycle0:"+name, func() {
 			if ltime.Phase == 0 && ltime.Cycle == 0 {
 				fun()
 			}
