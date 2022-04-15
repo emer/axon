@@ -151,8 +151,8 @@ func (ss *Sim) ConfigEnv() {
 		trn = &envlp.FixedTable{}
 		tst = &envlp.FixedTable{}
 	} else {
-		trn = ss.Envs["Train"].(*envlp.FixedTable)
-		tst = ss.Envs["Test"].(*envlp.FixedTable)
+		trn = ss.Envs.ByMode(etime.Train).(*envlp.FixedTable)
+		tst = ss.Envs.ByMode(etime.Test).(*envlp.FixedTable)
 	}
 
 	trn.Nm = "TrainEnv"
@@ -250,7 +250,7 @@ func (ss *Sim) Init() {
 
 // InitRndSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRndSeed() {
-	run := ss.Envs["Train"].Counter(etime.Run).Cur
+	run := ss.Envs.ByMode(etime.Train).Counter(etime.Run).Cur
 	rand.Seed(ss.RndSeeds[run])
 }
 
@@ -292,8 +292,8 @@ func (ss *Sim) UpdateNetViewTime(time etime.Times) {
 
 // ConfigLoops configures the control loops
 func (ss *Sim) ConfigLoops() {
-	trn := looper.NewStackEnv(ss.Envs["Train"])
-	tst := looper.NewStackEnv(ss.Envs["Test"])
+	trn := looper.NewStackEnv(ss.Envs.ByMode(etime.Train))
+	tst := looper.NewStackEnv(ss.Envs.ByMode(etime.Test))
 	ss.Loops.AddStack(trn)
 	ss.Loops.AddStack(tst)
 	axon.ConfigLoopsStd(&ss.Loops, ss.Net, &ss.Time, 150, 50)
@@ -342,7 +342,7 @@ func (ss *Sim) ConfigLoops() {
 		ss.Log(etime.Train, etime.Trial)
 	})
 	trn.Loop(etime.Epoch).Main.Prepend("Log:Train:Epoch", func() {
-		epc := ss.Envs["Train"].Counter(etime.Epoch).Cur
+		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
 		if (ss.TestInterval > 0) && (epc%ss.TestInterval == 0) { // note: epc is *next* so won't trigger first time
 			ss.TestAll()
 		}
@@ -431,8 +431,8 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
-	ss.Envs["Train"].Init()
-	ss.Envs["Test"].Init()
+	ss.Envs.ByMode(etime.Train).Init()
+	ss.Envs.ByMode(etime.Test).Init()
 	ss.Time.Reset()
 	ss.Net.InitWts()
 	ss.InitStats()
@@ -462,7 +462,7 @@ func (ss *Sim) SaveWeights(filename gi.FileName) {
 
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
-	ss.Envs["Test"].Init()
+	ss.Envs.ByMode(etime.Test).Init()
 	tst := ss.Loops.Stack(etime.Test)
 	tst.Init()
 	tst.Run()
@@ -563,10 +563,10 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	row := dt.Rows
 	switch {
 	case mode == etime.Test && time == etime.Epoch:
-		ss.Stats.SetInt("Epoch", ss.Envs["Train"].Counter(etime.Epoch).Cur)
+		ss.Stats.SetInt("Epoch", ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur)
 		ss.LogTestErrors()
 	case mode == etime.Train && time == etime.Epoch:
-		epc := ss.Envs["Train"].Counter(etime.Epoch).Cur
+		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
 		if ss.PCAInterval > 0 && epc%ss.PCAInterval == 0 {
 			ss.PCAStats()
 		}
@@ -588,7 +588,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case mode == etime.Train && time == etime.Run:
 		ss.LogRunStats()
 	case mode == etime.Train && time == etime.Trial:
-		epc := ss.Envs["Train"].Counter(etime.Epoch).Cur
+		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
 		if (ss.PCAInterval > 0) && (epc%ss.PCAInterval == 0) {
 			ss.Log(etime.Analyze, etime.Trial)
 		}
@@ -657,7 +657,7 @@ func (ss *Sim) RunEpochName(run, epc int) string {
 
 // WeightsFileName returns default current weights file name
 func (ss *Sim) WeightsFileName() string {
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(ss.Envs["Train"].Counter(etime.Run).Cur, ss.Envs["Train"].Counter(etime.Epoch).Cur) + ".wts"
+	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(ss.Envs.ByMode(etime.Train).Counter(etime.Run).Cur, ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur) + ".wts"
 }
 
 // LogFileName returns default log file name
@@ -803,7 +803,7 @@ func (ss *Sim) CmdArgs() {
 		fmt.Printf("Saving final weights per run\n")
 	}
 	fmt.Printf("Running %d Runs starting at %d\n", ss.MaxRuns, ss.StartRun)
-	rc := ss.Envs["Train"].Counter(etime.Run)
+	rc := ss.Envs.ByMode(etime.Train).Counter(etime.Run)
 	rc.Set(ss.StartRun)
 	rc.Max = ss.StartRun + ss.MaxRuns
 	ss.NewRun()
