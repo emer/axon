@@ -2,6 +2,8 @@
 
 The new https://github.com/emer/emergent/tree/master/looper framework enables single-stepping at any level (including Cycles finally) and simplifies code management.  Here are the changes to incorporate it, in terms of an edited diff, skipping most of the brute force renaming of elog -> etime for all Times and Modes enum values.
 
+Also, the critical `ConfigLoops` function is not shown here -- see ra25.go, and in general, the latest ra25.go is the official source -- these diffs are just helpful hints as to what other changes were needed.
+
 ```Go
  type Sim struct {
 +	Loops        looper.Set       `desc:"contains looper control loops for running sim"`
