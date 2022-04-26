@@ -91,24 +91,18 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.KinaseCa.MTau":     "5", // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":     "40",
 					"Prjn.Learn.KinaseCa.DTau":     "40",
-					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01",
+					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01", // 0.01 here; 0.05 best for bigger nets
 					"Prjn.Learn.KinaseCa.Decay":    "true",
 					"Prjn.Learn.KinaseDWt.TWindow": "10",
 					"Prjn.Learn.KinaseDWt.DMaxPct": "0.5",
 					"Prjn.Learn.KinaseDWt.DScale":  "1",
 					"Prjn.Learn.XCal.On":           "true",
-					"Prjn.Learn.XCal.PThrMin":      "0.05", // 0.05 best for objrec, higher worse
-					"Prjn.Learn.XCal.LrnThr":       "0.01",
+					"Prjn.Learn.XCal.PThrMin":      "0.01", // 0.01 here; 0.05 best for bigger nets
+					"Prjn.Learn.XCal.LrnThr":       "0.01", // 0.01 here; 0.05 best for bigger nets
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
-				}},
-		},
-		"Sim": &params.Sheet{ // sim params apply to sim object
-			{Sel: "Sim", Desc: "best params always finish in this time",
-				Params: params.Params{
-					"Sim.MaxEpcs": "100",
 				}},
 		},
 	}},
@@ -348,12 +342,6 @@ var ParamSetsAlpha = params.Sets{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
 		},
-		"Sim": &params.Sheet{ // sim params apply to sim object
-			{Sel: "Sim", Desc: "best params always finish in this time",
-				Params: params.Params{
-					"Sim.MaxEpcs": "100",
-				}},
-		},
 	}},
 }
 
@@ -467,12 +455,6 @@ var ParamSetsAll = params.Sets{
 			// 	Params: params.Params{
 			// 	}},
 		},
-		"Sim": &params.Sheet{ // sim params apply to sim object
-			{Sel: "Sim", Desc: "best params always finish in this time",
-				Params: params.Params{
-					"Sim.MaxEpcs": "100",
-				}},
-		},
 	}},
 	{Name: "WtBalNoSubMean", Desc: "original config", Sheets: params.Sheets{
 		"Network": &params.Sheet{
@@ -484,12 +466,6 @@ var ParamSetsAll = params.Sets{
 			{Sel: "Layer", Desc: "go back to default",
 				Params: params.Params{
 					"Layer.Learn.TrgAvgAct.Rate": "0",
-				}},
-		},
-		"Sim": &params.Sheet{ // sim params apply to sim object
-			{Sel: "Sim", Desc: "takes longer -- generally doesn't finish..",
-				Params: params.Params{
-					"Sim.MaxEpcs": "100",
 				}},
 		},
 	}},

@@ -102,13 +102,14 @@ github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
 github.com/emer/emergent v1.1.26/go.mod h1:XhFMJgoZeOYplTDMDUcmGPuthfTqJPbBLmXEPN6uP8Y=
-github.com/emer/emergent v1.2.1 h1:8d1quFQ0rYmLmYiQeG7p2JmLm0cFOV+btcZtiROv1qo=
-github.com/emer/emergent v1.2.1/go.mod h1:ux6TbRYeV5LacrotL+SKzOWqJH9IkOD8/YlhwJRNJV4=
+github.com/emer/emergent v1.2.2 h1:/AxQkmIgzbMH5/mQm2Gk0ZUUXkW6ocyoP/ls9wNW8Kk=
+github.com/emer/emergent v1.2.2/go.mod h1:ux6TbRYeV5LacrotL+SKzOWqJH9IkOD8/YlhwJRNJV4=
 github.com/emer/empi v1.0.12 h1:rDOLjrtqr8FzreMtWyzyx0/6hIPlTpjv/LzRSFPEq7Y=
 github.com/emer/empi v1.0.12/go.mod h1:QJRkECkqMO3/UeuknKEzqH+oEf6MWogBeu5LPi+Y9mU=
 github.com/emer/etable v1.0.27/go.mod h1:JM0+fr/d33YNapi3hmKJ9lQPnaavT/4KimxBPnwxLsY=
-github.com/emer/etable v1.0.44 h1:ZmZ3XCow9ThHVVwHsSMQtVXa+fX7XvvSEWn8np6qykw=
 github.com/emer/etable v1.0.44/go.mod h1:XzGibHyeqvZwpS+BB87YvYnI0kT2556Z8SQ5zuNhEJE=
+github.com/emer/etable v1.0.45 h1:96Qk6XYf94LRmy+uTdrQQtNwDcnZbfsIAxERY2P9L3k=
+github.com/emer/etable v1.0.45/go.mod h1:XzGibHyeqvZwpS+BB87YvYnI0kT2556Z8SQ5zuNhEJE=
 github.com/envoyproxy/go-control-plane v0.6.9/go.mod h1:SBwIajubJHhxtWwsL9s8ss4safvEdbitLhGGK48rN6g=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
