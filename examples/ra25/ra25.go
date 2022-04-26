@@ -130,8 +130,8 @@ func (ss *Sim) New() {
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	//ss.ConfigPats()
-	ss.OpenPats()
+	ss.ConfigPats()
+	//ss.OpenPats()
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
