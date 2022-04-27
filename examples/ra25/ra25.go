@@ -122,8 +122,8 @@ func (ss *Sim) New() {
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	//ss.ConfigPats()
-	ss.OpenPats()
+	ss.ConfigPats()
+	//ss.OpenPats()
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
@@ -144,7 +144,7 @@ func (ss *Sim) ConfigEnv() {
 	trn.Nm = "TrainEnv"
 	trn.Dsc = "training params and state"
 	trn.Config(etable.NewIdxView(ss.Pats), etime.Train.String())
-	trn.Counter(etime.Run).Max = ss.Args.Int("runs")
+	trn.Counter(etime.Run).Max = ss.Args.Int("runs") // TODO Remove this and move logic to ConfigLoops
 	trn.Counter(etime.Epoch).Max = ss.Args.Int("epochs")
 	trn.Validate()
 
@@ -276,17 +276,79 @@ func (ss *Sim) UpdateNetViewTime(time etime.Times) {
 	}
 }
 
+func (ss *Sim) ConfigLoops2() {
+	// Things we want so specify here:
+	// x Both Train and Test
+	// x Timescales: Run, Epoch, Trial, Cycle
+	// x Phases: Plus and Minus
+	// x Length of each
+	// * Some special functions for logging and GUI
+
+	// Things we do NOT want to specify (should be inherent in looper):
+	// * Resetting timers
+	// * Incrementing timers
+	// * Logging that occurs predictably
+	// * Order (default should be in etime.Times order)
+	// * Default stepping behavior
+
+	// Other considerations:
+	// * Running code should be separate from logging and GUI code
+
+	manager := looper.LoopManager{}.Init()
+	manager.Stacks[etime.Train] = &looper.EvaluationModeLoops{}
+	manager.Stacks[etime.Test] = &looper.EvaluationModeLoops{}
+
+	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 10).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200)
+	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
+
+	for mode, _ := range manager.Stacks {
+		stack := manager.Stacks[mode]
+		stack.Loops[etime.Trial].AddPhases(looper.ThetaPhase{Name: "MinusPhase", Duration: 150}, looper.ThetaPhase{Name: "PlusPhase", Duration: 50})
+		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", ss.ApplyInputs)
+		stack.Loops[etime.Trial].Phases[0].OnMillisecondEnd.Add("Sim:SaveState", func() {
+			switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
+			case 75:
+				ss.Net.ActSt1(&ss.Time)
+			case 100:
+				ss.Net.ActSt2(&ss.Time)
+			}
+		})
+		stack.Loops[etime.Cycle].OnEnd.Add("Sim:StatCounters", ss.StatCounters)
+		stack.Loops[etime.Trial].Phases[1].PhaseEnd.Add("Sim:TrialStats", ss.TrialStats)
+	}
+	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", func() { ss.NewRun() })
+
+	if ss.Args.Bool("nogui") {
+		for mode, _ := range manager.Stacks {
+			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
+			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:RasterRec", ss.RasterRec)
+		}
+		for _, phase := range manager.GetLoop(etime.Train, etime.Trial).Phases {
+			phase.PhaseEnd.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
+			phase.PhaseEnd.Add("GUI:UpdatePlot", func() {
+				ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
+			})
+		}
+	}
+
+	fmt.Println(manager.DocString())
+}
+
 // ConfigLoops configures the control loops
 func (ss *Sim) ConfigLoops() {
+	ss.ConfigLoops2()
+
 	nogui := ss.Args.Bool("nogui")
 	trn := looper.NewStackEnv(ss.Envs.ByMode(etime.Train))
 	tst := looper.NewStackEnv(ss.Envs.ByMode(etime.Test))
+
 	ss.Loops.AddStack(trn)
 	ss.Loops.AddStack(tst)
 	axon.ConfigLoopsStd(&ss.Loops, ss.Net, &ss.Time, 150, 50)
 	// note: AddCycle0 adds in reverse order of where things end up!
 	axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:ApplyInputs", ss.ApplyInputs)
 	axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:NewRun", func() {
+		// TODO Is this supposed to be at Cycle0?
 		if ss.NeedsNewRun {
 			ss.NewRun()
 		}

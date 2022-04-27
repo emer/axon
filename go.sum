@@ -101,9 +101,6 @@ github.com/eapache/go-resiliency v1.1.0/go.mod h1:kFI+JgMyC7bLPUVY133qvEBtVayf5m
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21/go.mod h1:+020luEh2TKB4/GOp8oxxtq0Daoen/Cii55CzbTV6DU=
 github.com/eapache/queue v1.1.0/go.mod h1:6eCeP0CKFpHLu8blIFXhExK/dRa7WDZfr6jVFPTqq+I=
 github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaBNrHW5M=
-github.com/emer/emergent v1.1.26/go.mod h1:XhFMJgoZeOYplTDMDUcmGPuthfTqJPbBLmXEPN6uP8Y=
-github.com/emer/emergent v1.2.2 h1:/AxQkmIgzbMH5/mQm2Gk0ZUUXkW6ocyoP/ls9wNW8Kk=
-github.com/emer/emergent v1.2.2/go.mod h1:ux6TbRYeV5LacrotL+SKzOWqJH9IkOD8/YlhwJRNJV4=
 github.com/emer/empi v1.0.12 h1:rDOLjrtqr8FzreMtWyzyx0/6hIPlTpjv/LzRSFPEq7Y=
 github.com/emer/empi v1.0.12/go.mod h1:QJRkECkqMO3/UeuknKEzqH+oEf6MWogBeu5LPi+Y9mU=
 github.com/emer/etable v1.0.27/go.mod h1:JM0+fr/d33YNapi3hmKJ9lQPnaavT/4KimxBPnwxLsY=
@@ -485,7 +482,6 @@ golang.org/x/exp v0.0.0-20190125153040-c74c464bbbf2/go.mod h1:CJ0aWSM057203Lf6IL
 golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56/go.mod h1:JhuoJpWY28nO4Vef9tZUw9qufEGTyX1+7lmHxV5q5G4=
 golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3/go.mod h1:NOZ3BPKG0ec/BKJQgnvsSFpcKLM5xXVWnvZS97DWHgE=
-golang.org/x/exp v0.0.0-20210429022752-aa422307df1f/go.mod h1:aEe5w0RoDPBvbmSBqjk2mvaXGKLS8J007XU/fJMihiI=
 golang.org/x/exp v0.0.0-20211012155715-ffe10e552389 h1:qFfBYVpJAdBCk6Nmd7ZbcyhGmKmv8fps+OyoOfpjvu8=
 golang.org/x/exp v0.0.0-20211012155715-ffe10e552389/go.mod h1:a3o/VtDNHN+dCVLEpzjjUHOzR+Ln3DHX056ZPzoZGGA=
 golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86hEcLt0YII63i6oz57MZXIpbrjZUs=
