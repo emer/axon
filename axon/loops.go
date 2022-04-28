@@ -23,7 +23,7 @@ func ConfigLoopsStdStack(st *looper.Stack, net *Network, ltime *Time, minusCyc, 
 	phs := st.Loop(etime.Phase)
 	cyc := st.Loop(etime.Cycle)
 
-	_, tm := st.Order[len(st.Order)-3].ModeAndTimeStr() // TODO Clean up
+	_, tm := st.Order[len(st.Order)-3].ModeAndTimeStr()
 	st.Step.Default = tm
 
 	st.Ctxt["Time"] = ltime // so its avail in other cases
