@@ -67,20 +67,21 @@ const LogPrec = 4
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	Params       emer.Params   `view:"inline" desc:"all parameter management"`
-	Tag          string        `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	Loops        looper.Set    `view:"no-inline" desc:"contains looper control loops for running sim"`
-	Stats        estats.Stats  `desc:"contains computed statistic values"`
-	Logs         elog.Logs     `desc:"Contains all the logs and information about the logs.'"`
-	Pats         *etable.Table `view:"no-inline" desc:"the training patterns to use"`
-	Envs         envlp.Envs    `view:"no-inline" desc:"Environments"`
-	Time         axon.Time     `desc:"axon timing parameters and state"`
-	ViewOn       bool          `desc:"whether to update the network view while running"`
-	TrainUpdt    etime.Times   `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
-	TestUpdt     etime.Times   `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
-	TestInterval int           `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	PCAInterval  int           `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	Net          *axon.Network       `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Params       emer.Params         `view:"inline" desc:"all parameter management"`
+	Tag          string              `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
+	Loops        looper.Set          `view:"no-inline" desc:"contains looper control loops for running sim"` // DO NOT SUBMIT Delete
+	LoopXtreme   *looper.LoopManager `view:"no-inline" desc:"contains looper control loops for running sim"` // DO NOT SUBMIT Rename
+	Stats        estats.Stats        `desc:"contains computed statistic values"`
+	Logs         elog.Logs           `desc:"Contains all the logs and information about the logs.'"`
+	Pats         *etable.Table       `view:"no-inline" desc:"the training patterns to use"`
+	Envs         envlp.Envs          `view:"no-inline" desc:"Environments"`
+	Time         axon.Time           `desc:"axon timing parameters and state"`
+	ViewOn       bool                `desc:"whether to update the network view while running"`
+	TrainUpdt    etime.Times         `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
+	TestUpdt     etime.Times         `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
+	TestInterval int                 `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	PCAInterval  int                 `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
 	GUI         egui.GUI  `view:"-" desc:"manages all the gui elements"`
 	Args        ecmd.Args `view:"no-inline" desc:"command line args"`
@@ -278,9 +279,11 @@ func (ss *Sim) UpdateNetViewTime(time etime.Times) {
 
 func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 	for m, loops := range manager.Stacks {
+		curMode := m // For closures.
 		for t, loop := range loops.Loops {
-			loop.Main.Add(m.String()+":"+t.String()+":"+"Log", func() {
-				ss.Log(m, t)
+			curTime := t
+			loop.Main.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
+				ss.Log(curMode, curTime)
 			})
 		}
 	}
@@ -386,6 +389,9 @@ func (ss *Sim) ConfigLoops2() {
 	}
 
 	fmt.Println(manager.DocString())
+
+	manager.Steps.Init(manager)
+	ss.LoopXtreme = manager
 
 	set := manager.GetLooperStack()
 	for _, st := range set.Stacks {
@@ -822,8 +828,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 
-	ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Train))
-	ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Test))
+	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Train)) // DO NOT SUBMIT Delete
+	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Test))
+	ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Train], &ss.LoopXtreme.Steps)
+	ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Test], &ss.LoopXtreme.Steps)
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")
