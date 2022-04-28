@@ -283,7 +283,7 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 		for t, loop := range loops.Loops {
 			curTime := t
 			loop.Main.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
-				ss.Log(curMode, curTime)
+				ss.Log(curMode, curTime) //todo: put back in, causes to crash
 			})
 		}
 	}
@@ -291,9 +291,11 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 
 func (ss *Sim) AddDefaultGUICallbacks(manager *looper.LoopManager) {
 	for _, m := range []etime.Modes{etime.Train, etime.Test} {
+		curMode := m // For closures.
 		for _, t := range []etime.Times{etime.Trial, etime.Epoch} {
-			manager.GetLoop(m, t).Main.Add("GUI:UpdateNetView", func() {
-				ss.UpdateNetViewTime(t)
+			curTime := t
+			manager.GetLoop(curMode, curTime).Main.Add("GUI:UpdateNetView", func() {
+				ss.UpdateNetViewTime(curTime)
 			})
 		}
 	}
@@ -326,9 +328,10 @@ func (ss *Sim) ConfigLoops2() {
 
 	for mode, _ := range manager.Stacks {
 		stack := manager.Stacks[mode]
-		stack.Loops[etime.Trial].AddPhases(looper.ThetaPhase{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}, looper.ThetaPhase{Name: "PlusPhase", Duration: 50, IsPlusPhase: true})
+		stack.Loops[etime.Cycle].AddPhases(looper.Phase{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}, looper.Phase{Name: "PlusPhase", Duration: 50, IsPlusPhase: true})
 		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", ss.ApplyInputs)
-		stack.Loops[etime.Trial].Phases[0].OnMillisecondEnd.Add("Sim:SaveState", func() {
+
+		stack.Loops[etime.Cycle].Phases[0].OnMillisecondEnd.Add("Sim:SaveState", func() {
 			switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
 			case 75:
 				ss.Net.ActSt1(&ss.Time)
@@ -336,12 +339,20 @@ func (ss *Sim) ConfigLoops2() {
 				ss.Net.ActSt2(&ss.Time)
 			}
 		})
+
+		stack.Loops[etime.Cycle].Main.Add("Axon:Cycle:Run", func() {
+			ss.Net.Cycle(&ss.Time)
+		})
+		stack.Loops[etime.Cycle].Main.Add("Axon:Cycle:Incr", func() {
+			ss.Time.CycleInc()
+		})
+
 		stack.Loops[etime.Cycle].OnEnd.Add("Sim:StatCounters", ss.StatCounters)
-		stack.Loops[etime.Trial].Phases[1].PhaseEnd.Add("Sim:TrialStats", ss.TrialStats)
-		stack.Loops[etime.Trial].Phases[0].PhaseStart.Add("Sim:Phase:SetPlus", func() { ss.Time.PlusPhase = false })
-		stack.Loops[etime.Trial].Phases[0].PhaseEnd.Add("Sim:Phase:CallMinusPhase", func() { ss.Net.MinusPhase(&ss.Time) })
-		stack.Loops[etime.Trial].Phases[1].PhaseStart.Add("Sim:Phase:SetPlus", func() { ss.Time.PlusPhase = true })
-		stack.Loops[etime.Trial].Phases[1].PhaseEnd.Add("Sim:Phase:CallPlusPhase", func() { ss.Net.PlusPhase(&ss.Time) })
+		stack.Loops[etime.Cycle].Phases[0].PhaseStart.Add("Sim:Phase:SetPlus", func() { ss.Time.PlusPhase = false })
+		stack.Loops[etime.Cycle].Phases[0].PhaseEnd.Add("Sim:Phase:CallMinusPhase", func() { ss.Net.MinusPhase(&ss.Time) })
+		stack.Loops[etime.Cycle].Phases[1].PhaseStart.Add("Sim:Phase:SetPlus", func() { ss.Time.PlusPhase = true })
+		stack.Loops[etime.Cycle].Phases[1].PhaseEnd.Add("Sim:Phase:CallPlusPhase", func() { ss.Net.PlusPhase(&ss.Time) })
+		stack.Loops[etime.Cycle].Phases[1].PhaseEnd.Add("Sim:TrialStats", ss.TrialStats)
 	}
 	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", func() { ss.NewRun() })
 	manager.GetLoop(etime.Train, etime.Trial).OnStart.Add("Log:Train:Trial", func() {
@@ -358,7 +369,7 @@ func (ss *Sim) ConfigLoops2() {
 		nzero := ss.Args.Int("nzero")
 		return nzero > 0 && ss.Stats.Int("NZero") >= nzero
 	}
-	manager.GetLoop(etime.Train, etime.Run).Main.Add("Log:Train:SaveWeights nee Run", func() {
+	manager.GetLoop(etime.Train, etime.Run).Main.Add("Log:Train:SaveWeights", func() {
 		swts := ss.Args.Bool("wts")
 		if swts {
 			fnm := ss.WeightsFileName()
@@ -374,7 +385,7 @@ func (ss *Sim) ConfigLoops2() {
 	ss.AddDefaultLoggingCallbacks(manager)
 
 	// GUI Stuff
-	if ss.Args.Bool("nogui") {
+	if ss.Args.Bool("nogui") == false {
 		for mode, _ := range manager.Stacks {
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:RasterRec", ss.RasterRec)
@@ -403,108 +414,108 @@ func (ss *Sim) ConfigLoops2() {
 // ConfigLoops configures the control loops
 func (ss *Sim) ConfigLoops() {
 	ss.ConfigLoops2()
-
-	nogui := ss.Args.Bool("nogui")
-	trn := looper.NewStackEnv(ss.Envs.ByMode(etime.Train))
-	tst := looper.NewStackEnv(ss.Envs.ByMode(etime.Test))
-
-	ss.Loops.AddStack(trn)
-	ss.Loops.AddStack(tst)
+	//
+	//nogui := ss.Args.Bool("nogui")
+	//trn := looper.NewStackEnv(ss.Envs.ByMode(etime.Train))
+	//tst := looper.NewStackEnv(ss.Envs.ByMode(etime.Test))
+	//
+	//ss.Loops.AddStack(trn)
+	//ss.Loops.AddStack(tst)
 	axon.ConfigLoopsStd(&ss.Loops, ss.Net, &ss.Time, 150, 50)
-	// note: AddCycle0 adds in reverse order of where things end up!
-	axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:ApplyInputs", ss.ApplyInputs)
-	axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:NewRun", func() {
-		// TODO Is this supposed to be at Cycle0?
-		if ss.NeedsNewRun {
-			ss.NewRun()
-		}
-	})
-	// note: AddLoopCycle adds in reverse order of where things end up!
-	if !nogui { // todo: cmdline
-		axon.AddLoopCycle(&ss.Loops, "GUI:UpdateNetView", ss.UpdateNetViewCycle)
-		axon.AddLoopCycle(&ss.Loops, "GUI:RasterRec", ss.RasterRec)
-	}
-	tst.Loop(etime.Cycle).Main.InsertAfter("Axon:Cycle:Run", "Log:Test:Cycle", func() {
-		ss.Log(etime.Test, etime.Cycle)
-	})
-	axon.AddLoopCycle(&ss.Loops, "Sim:SaveState", func() {
-		if ss.Time.Phase == 0 {
-			switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
-			case 75:
-				ss.Net.ActSt1(&ss.Time)
-			case 100:
-				ss.Net.ActSt2(&ss.Time)
-			}
-		}
-	})
-	axon.AddLoopCycle(&ss.Loops, "Sim:StatCounters", ss.StatCounters) // add last so comes first!
-
-	axon.AddPhaseMain(&ss.Loops, "Sim:TrialStats", func() {
-		if ss.Time.Phase == 1 {
-			ss.TrialStats()
-		}
-	})
-	if !nogui {
-		// after dwt updated, grab it
-		trn.Loop(etime.Phase).End.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
-		tst.Loop(etime.Phase).End.Add("GUI:UpdatePlot", func() {
-			ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
-		})
-	}
-
-	// prepend = before counter is incremented
-	trn.Loop(etime.Trial).Main.Prepend("Log:Train:Trial", func() {
-		ss.Log(etime.Train, etime.Trial)
-	})
-	trn.Loop(etime.Epoch).Main.Prepend("Log:Train:Epoch", func() {
-		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
-		if (ss.TestInterval > 0) && (epc%ss.TestInterval == 0) { // note: epc is *next* so won't trigger first time
-			ss.TestAll()
-		}
-		ss.Log(etime.Train, etime.Epoch)
-	})
-
-	trn.Loop(etime.Epoch).Stop.Add("Epoch:NZeroStop", func() bool { // early stopping
-		nzero := ss.Args.Int("nzero")
-		return nzero > 0 && ss.Stats.Int("NZero") >= nzero
-	})
-
-	trn.Loop(etime.Run).Main.Prepend("Log:Train:Run", func() {
-		swts := ss.Args.Bool("wts")
-		ss.Log(etime.Train, etime.Run)
-		if swts {
-			fnm := ss.WeightsFileName()
-			fmt.Printf("Saving Weights to: %s\n", fnm)
-			ss.Net.SaveWtsJSON(gi.FileName(fnm))
-		}
-		ss.NeedsNewRun = true // next step will trigger new init
-	})
-
-	tst.Loop(etime.Trial).Main.Add("Log:Test:Trial", func() {
-		ss.Log(etime.Test, etime.Trial)
-		ss.GUI.NetDataRecord()
-	})
-	tst.Loop(etime.Epoch).Main.Add("Log:Test:Epoch", func() {
-		ss.Log(etime.Test, etime.Epoch)
-	})
-
-	if !nogui {
-		trn.Loop(etime.Trial).Main.Prepend("GUI:UpdateNetView", func() {
-			ss.UpdateNetViewTime(etime.Trial)
-		})
-		trn.Loop(etime.Epoch).Main.Prepend("GUI:UpdateNetView", func() {
-			ss.UpdateNetViewTime(etime.Epoch)
-		})
-		tst.Loop(etime.Trial).Main.Prepend("GUI:UpdateNetView", func() {
-			ss.UpdateNetViewTime(etime.Trial)
-		})
-		tst.Loop(etime.Epoch).Main.Prepend("GUI:UpdateNetView", func() {
-			ss.UpdateNetViewTime(etime.Epoch)
-		})
-	}
-
-	fmt.Println(trn.DocString())
-	fmt.Println(tst.DocString())
+	//// note: AddCycle0 adds in reverse order of where things end up!
+	//axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:ApplyInputs", ss.ApplyInputs)
+	//axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:NewRun", func() {
+	//	// TODO Is this supposed to be at Cycle0?
+	//	if ss.NeedsNewRun {
+	//		ss.NewRun()
+	//	}
+	//})
+	//// note: AddLoopCycle adds in reverse order of where things end up!
+	//if !nogui { // todo: cmdline
+	//	axon.AddLoopCycle(&ss.Loops, "GUI:UpdateNetView", ss.UpdateNetViewCycle)
+	//	axon.AddLoopCycle(&ss.Loops, "GUI:RasterRec", ss.RasterRec)
+	//}
+	//tst.Loop(etime.Cycle).Main.InsertAfter("Axon:Cycle:Run", "Log:Test:Cycle", func() {
+	//	ss.Log(etime.Test, etime.Cycle)
+	//})
+	//axon.AddLoopCycle(&ss.Loops, "Sim:SaveState", func() {
+	//	if ss.Time.Phase == 0 {
+	//		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
+	//		case 75:
+	//			ss.Net.ActSt1(&ss.Time)
+	//		case 100:
+	//			ss.Net.ActSt2(&ss.Time)
+	//		}
+	//	}
+	//})
+	//axon.AddLoopCycle(&ss.Loops, "Sim:StatCounters", ss.StatCounters) // add last so comes first!
+	//
+	//axon.AddPhaseMain(&ss.Loops, "Sim:TrialStats", func() {
+	//	if ss.Time.Phase == 1 {
+	//		ss.TrialStats()
+	//	}
+	//})
+	//if !nogui {
+	//	// after dwt updated, grab it
+	//	trn.Loop(etime.Phase).End.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
+	//	tst.Loop(etime.Phase).End.Add("GUI:UpdatePlot", func() {
+	//		ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
+	//	})
+	//}
+	//
+	//// prepend = before counter is incremented
+	//trn.Loop(etime.Trial).Main.Prepend("Log:Train:Trial", func() {
+	//	ss.Log(etime.Train, etime.Trial)
+	//})
+	//trn.Loop(etime.Epoch).Main.Prepend("Log:Train:Epoch", func() {
+	//	epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
+	//	if (ss.TestInterval > 0) && (epc%ss.TestInterval == 0) { // note: epc is *next* so won't trigger first time
+	//		ss.TestAll()
+	//	}
+	//	ss.Log(etime.Train, etime.Epoch)
+	//})
+	//
+	//trn.Loop(etime.Epoch).Stop.Add("Epoch:NZeroStop", func() bool { // early stopping
+	//	nzero := ss.Args.Int("nzero")
+	//	return nzero > 0 && ss.Stats.Int("NZero") >= nzero
+	//})
+	//
+	//trn.Loop(etime.Run).Main.Prepend("Log:Train:Run", func() {
+	//	swts := ss.Args.Bool("wts")
+	//	ss.Log(etime.Train, etime.Run)
+	//	if swts {
+	//		fnm := ss.WeightsFileName()
+	//		fmt.Printf("Saving Weights to: %s\n", fnm)
+	//		ss.Net.SaveWtsJSON(gi.FileName(fnm))
+	//	}
+	//	ss.NeedsNewRun = true // next step will trigger new init
+	//})
+	//
+	//tst.Loop(etime.Trial).Main.Add("Log:Test:Trial", func() {
+	//	ss.Log(etime.Test, etime.Trial)
+	//	ss.GUI.NetDataRecord()
+	//})
+	//tst.Loop(etime.Epoch).Main.Add("Log:Test:Epoch", func() {
+	//	ss.Log(etime.Test, etime.Epoch)
+	//})
+	//
+	//if !nogui {
+	//	trn.Loop(etime.Trial).Main.Prepend("GUI:UpdateNetView", func() {
+	//		ss.UpdateNetViewTime(etime.Trial)
+	//	})
+	//	trn.Loop(etime.Epoch).Main.Prepend("GUI:UpdateNetView", func() {
+	//		ss.UpdateNetViewTime(etime.Epoch)
+	//	})
+	//	tst.Loop(etime.Trial).Main.Prepend("GUI:UpdateNetView", func() {
+	//		ss.UpdateNetViewTime(etime.Trial)
+	//	})
+	//	tst.Loop(etime.Epoch).Main.Prepend("GUI:UpdateNetView", func() {
+	//		ss.UpdateNetViewTime(etime.Epoch)
+	//	})
+	//}
+	//
+	//fmt.Println(trn.DocString())
+	//fmt.Println(tst.DocString())
 }
 
 /*
@@ -559,13 +570,6 @@ func (ss *Sim) NewRun() {
 	ss.NeedsNewRun = false
 }
 
-// Stop tells the sim to stop running
-func (ss *Sim) Stop() {
-	ss.LoopXtreme.Steps.StopFlag = true
-	ss.GUI.StopNow = true
-	ss.Loops.StopFlag = true
-}
-
 // Stopped is called when a run method stops running
 // updates the IsRunning flag and toolbar
 func (ss *Sim) Stopped() {
@@ -579,11 +583,11 @@ func (ss *Sim) SaveWeights(filename gi.FileName) {
 }
 
 // TestAll runs through the full set of testing items
-func (ss *Sim) TestAll() {
-	ss.Envs.ByMode(etime.Test).Init()
-	tst := ss.Loops.Stack(etime.Test)
-	tst.Init()
-	tst.Run()
+func (ss *Sim) TestAll() { //todo: reference Xtreme
+	//ss.Envs.ByMode(etime.Test).Init()
+	//tst := ss.Loops.Stack(etime.Test)
+	//tst.Init()
+	//tst.Run()
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -820,19 +824,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Stop",
-		Icon:    "stop",
-		Tooltip: "Interrupts running.  running / stepping picks back up where it left off.",
-		Active:  egui.ActiveRunning,
-		Func: func() {
-			ss.Stop()
-		},
-	})
-
 	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Train)) // DO NOT SUBMIT Delete
 	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Test))
 	ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Train], &ss.LoopXtreme.Steps)
-	ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Test], &ss.LoopXtreme.Steps)
+	//ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Test], &ss.LoopXtreme.Steps)
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")
