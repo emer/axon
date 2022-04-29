@@ -283,7 +283,7 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 		for t, loop := range loops.Loops {
 			curTime := t
 			loop.Main.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
-				ss.Log(curMode, curTime) //todo: put back in, causes to crash
+				ss.Log(curMode, curTime)
 			})
 		}
 	}
@@ -328,6 +328,17 @@ func (ss *Sim) ConfigLoops() {
 
 	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 10).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200)
 	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
+
+	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
+	for m, loops := range manager.Stacks {
+		curMode := m // For closures.
+		for t, loop := range loops.Loops {
+			curTime := t
+			loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"SetTimeVal", func() {
+				ss.Time.Mode = curMode.String()
+			})
+		}
+	}
 
 	for m, _ := range manager.Stacks {
 		mode := m // For closures
@@ -389,7 +400,6 @@ func (ss *Sim) ConfigLoops() {
 		if (ss.TestInterval > 0) && (epc%ss.TestInterval == 0) { // note: epc is *next* so won't trigger first time
 			ss.TestAll()
 		}
-		ss.Log(etime.Train, etime.Epoch)
 	})
 	manager.GetLoop(etime.Train, etime.Epoch).IsDone["Epoch:NZeroStop"] = func() bool {
 		nzero := ss.Args.Int("nzero")
@@ -599,7 +609,7 @@ func (ss *Sim) ConfigLogs() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String()
+		ss.Time.Mode = mode.String() // TODO Can this be deleted?
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
