@@ -384,10 +384,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", func() { ss.NewRun() })
-	manager.GetLoop(etime.Train, etime.Trial).OnStart.Add("Log:Train:Trial", func() {
-		ss.Log(etime.Train, etime.Trial)
-	})
-	manager.GetLoop(etime.Train, etime.Epoch).OnStart.Add("Log:Train:Epoch", func() {
+	manager.GetLoop(etime.Train, etime.Epoch).OnStart.Add("Log:Train:TestAtInterval", func() {
 		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
 		if (ss.TestInterval > 0) && (epc%ss.TestInterval == 0) { // note: epc is *next* so won't trigger first time
 			ss.TestAll()
