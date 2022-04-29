@@ -396,7 +396,8 @@ func (ss *Sim) ConfigLoops() {
 	})
 	manager.GetLoop(etime.Train, etime.Epoch).IsDone["Epoch:NZeroStop"] = func() bool {
 		nzero := ss.Args.Int("nzero")
-		return nzero > 0 && ss.Stats.Int("NZero") >= nzero
+		curNZero := ss.Stats.Int("NZero")
+		return nzero > 0 && curNZero >= nzero
 	}
 	manager.GetLoop(etime.Train, etime.Run).Main.Add("Log:Train:SaveWeights", func() {
 		swts := ss.Args.Bool("wts")
@@ -802,7 +803,8 @@ var SimProps = ki.Props{
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.AddInt("nzero", 5, "number of zero error epochs in a row to count as full training")
+	// DO NOT SUBMIT Reset to 5
+	ss.Args.AddInt("nzero", 10, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
