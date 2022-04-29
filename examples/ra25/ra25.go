@@ -301,7 +301,9 @@ func (ss *Sim) AddDefaultGUICallbacks(manager *looper.LoopManager) {
 	}
 }
 
-func (ss *Sim) ConfigLoops2() {
+func (ss *Sim) ConfigLoops() {
+	// TODO Clean this function up with comments.
+
 	// Things we want so specify here:
 	// x Both Train and Test
 	// x Timescales: Run, Epoch, Trial, Cycle
@@ -315,6 +317,7 @@ func (ss *Sim) ConfigLoops2() {
 	// * Logging that occurs predictably
 	// * Order (default should be in etime.Times order)
 	// * Default stepping behavior
+	// TODO Pull out default logic into a separate function.
 
 	// Other considerations:
 	// * Running code should be separate from logging and GUI code
@@ -326,10 +329,16 @@ func (ss *Sim) ConfigLoops2() {
 	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 10).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200)
 	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
 
-	for mode, _ := range manager.Stacks {
+	for m, _ := range manager.Stacks {
+		mode := m // For closures
 		stack := manager.Stacks[mode]
 		stack.Loops[etime.Cycle].AddPhases(looper.Phase{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}, looper.Phase{Name: "PlusPhase", Duration: 50, IsPlusPhase: true})
 		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", ss.ApplyInputs)
+
+		// Step the environment
+		stack.Loops[etime.Trial].OnEnd.Add("Sim:Env:Step", func() {
+			ss.Envs[mode.String()].Step()
+		})
 
 		stack.Loops[etime.Cycle].Phases[0].OnMillisecondEnd.Add("Sim:SaveState", func() {
 			switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
@@ -353,7 +362,27 @@ func (ss *Sim) ConfigLoops2() {
 		stack.Loops[etime.Cycle].Phases[1].PhaseStart.Add("Sim:Phase:SetPlus", func() { ss.Time.PlusPhase = true })
 		stack.Loops[etime.Cycle].Phases[1].PhaseEnd.Add("Sim:Phase:CallPlusPhase", func() { ss.Net.PlusPhase(&ss.Time) })
 		stack.Loops[etime.Cycle].Phases[1].PhaseEnd.Add("Sim:TrialStats", ss.TrialStats)
+
+		// TODO Check meaning of "must insert ApplyInputs after this"
+		stack.Loops[etime.Cycle].Phases[0].PhaseStart.Add("Axon:Cycle:NewNetState", func() {
+			ss.Net.NewState()
+			ss.Time.NewState(mode.String())
+		})
+		stack.Loops[etime.Cycle].Phases[0].PhaseStart.Add("Axon:Cycle:NewPhase", func() {
+			ss.Time.NewPhase(true) // plusphase now
+		})
 	}
+
+	// Weight updates
+	for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Phases {
+		phase.PhaseEnd.Add("Axon:Phase:DWt", func() {
+			ss.Net.DWt(&ss.Time)
+		})
+	}
+	manager.GetLoop(etime.Train, etime.Cycle).Phases[0].PhaseStart.Add("Axon:Phase:WtFmDWt", func() {
+		ss.Net.WtFmDWtImpl(&ss.Time)
+	})
+
 	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", func() { ss.NewRun() })
 	manager.GetLoop(etime.Train, etime.Trial).OnStart.Add("Log:Train:Trial", func() {
 		ss.Log(etime.Train, etime.Trial)
@@ -390,7 +419,7 @@ func (ss *Sim) ConfigLoops2() {
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:RasterRec", ss.RasterRec)
 		}
-		for _, phase := range manager.GetLoop(etime.Train, etime.Trial).Phases {
+		for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Phases {
 			phase.PhaseEnd.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
 			phase.PhaseEnd.Add("GUI:UpdatePlot", func() {
 				ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
@@ -411,129 +440,22 @@ func (ss *Sim) ConfigLoops2() {
 	}
 }
 
-// ConfigLoops configures the control loops
-func (ss *Sim) ConfigLoops() {
-	ss.ConfigLoops2()
-	//
-	//nogui := ss.Args.Bool("nogui")
-	//trn := looper.NewStackEnv(ss.Envs.ByMode(etime.Train))
-	//tst := looper.NewStackEnv(ss.Envs.ByMode(etime.Test))
-	//
-	//ss.Loops.AddStack(trn)
-	//ss.Loops.AddStack(tst)
-	axon.ConfigLoopsStd(&ss.Loops, ss.Net, &ss.Time, 150, 50)
-	//// note: AddCycle0 adds in reverse order of where things end up!
-	//axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:ApplyInputs", ss.ApplyInputs)
-	//axon.AddCycle0(&ss.Loops, &ss.Time, "Sim:NewRun", func() {
-	//	// TODO Is this supposed to be at Cycle0?
-	//	if ss.NeedsNewRun {
-	//		ss.NewRun()
-	//	}
-	//})
-	//// note: AddLoopCycle adds in reverse order of where things end up!
-	//if !nogui { // todo: cmdline
-	//	axon.AddLoopCycle(&ss.Loops, "GUI:UpdateNetView", ss.UpdateNetViewCycle)
-	//	axon.AddLoopCycle(&ss.Loops, "GUI:RasterRec", ss.RasterRec)
-	//}
-	//tst.Loop(etime.Cycle).Main.InsertAfter("Axon:Cycle:Run", "Log:Test:Cycle", func() {
-	//	ss.Log(etime.Test, etime.Cycle)
-	//})
-	//axon.AddLoopCycle(&ss.Loops, "Sim:SaveState", func() {
-	//	if ss.Time.Phase == 0 {
-	//		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
-	//		case 75:
-	//			ss.Net.ActSt1(&ss.Time)
-	//		case 100:
-	//			ss.Net.ActSt2(&ss.Time)
-	//		}
-	//	}
-	//})
-	//axon.AddLoopCycle(&ss.Loops, "Sim:StatCounters", ss.StatCounters) // add last so comes first!
-	//
-	//axon.AddPhaseMain(&ss.Loops, "Sim:TrialStats", func() {
-	//	if ss.Time.Phase == 1 {
-	//		ss.TrialStats()
-	//	}
-	//})
-	//if !nogui {
-	//	// after dwt updated, grab it
-	//	trn.Loop(etime.Phase).End.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
-	//	tst.Loop(etime.Phase).End.Add("GUI:UpdatePlot", func() {
-	//		ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
-	//	})
-	//}
-	//
-	//// prepend = before counter is incremented
-	//trn.Loop(etime.Trial).Main.Prepend("Log:Train:Trial", func() {
-	//	ss.Log(etime.Train, etime.Trial)
-	//})
-	//trn.Loop(etime.Epoch).Main.Prepend("Log:Train:Epoch", func() {
-	//	epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
-	//	if (ss.TestInterval > 0) && (epc%ss.TestInterval == 0) { // note: epc is *next* so won't trigger first time
-	//		ss.TestAll()
-	//	}
-	//	ss.Log(etime.Train, etime.Epoch)
-	//})
-	//
-	//trn.Loop(etime.Epoch).Stop.Add("Epoch:NZeroStop", func() bool { // early stopping
-	//	nzero := ss.Args.Int("nzero")
-	//	return nzero > 0 && ss.Stats.Int("NZero") >= nzero
-	//})
-	//
-	//trn.Loop(etime.Run).Main.Prepend("Log:Train:Run", func() {
-	//	swts := ss.Args.Bool("wts")
-	//	ss.Log(etime.Train, etime.Run)
-	//	if swts {
-	//		fnm := ss.WeightsFileName()
-	//		fmt.Printf("Saving Weights to: %s\n", fnm)
-	//		ss.Net.SaveWtsJSON(gi.FileName(fnm))
-	//	}
-	//	ss.NeedsNewRun = true // next step will trigger new init
-	//})
-	//
-	//tst.Loop(etime.Trial).Main.Add("Log:Test:Trial", func() {
-	//	ss.Log(etime.Test, etime.Trial)
-	//	ss.GUI.NetDataRecord()
-	//})
-	//tst.Loop(etime.Epoch).Main.Add("Log:Test:Epoch", func() {
-	//	ss.Log(etime.Test, etime.Epoch)
-	//})
-	//
-	//if !nogui {
-	//	trn.Loop(etime.Trial).Main.Prepend("GUI:UpdateNetView", func() {
-	//		ss.UpdateNetViewTime(etime.Trial)
-	//	})
-	//	trn.Loop(etime.Epoch).Main.Prepend("GUI:UpdateNetView", func() {
-	//		ss.UpdateNetViewTime(etime.Epoch)
-	//	})
-	//	tst.Loop(etime.Trial).Main.Prepend("GUI:UpdateNetView", func() {
-	//		ss.UpdateNetViewTime(etime.Trial)
-	//	})
-	//	tst.Loop(etime.Epoch).Main.Prepend("GUI:UpdateNetView", func() {
-	//		ss.UpdateNetViewTime(etime.Epoch)
-	//	})
-	//}
-	//
-	//fmt.Println(trn.DocString())
-	//fmt.Println(tst.DocString())
-}
-
-/*
-	ss.Net.InitExt()
-	for cyc := 0; cyc < ss.ITICycles; cyc++ { // do the plus phase
-		ss.Net.Cycle(&ss.Time)
-		// ss.StatCounters(train)
-		if !train {
-			ss.Log(etime.Test, etime.Cycle)
-		}
-		if ss.GUI.Active {
-			ss.RasterRec()
-		}
-		ss.Time.CycleInc()
-		if ss.ViewOn {
-			ss.UpdateViewTime(train, viewUpdt)
-		}
+/* // DO NOT SUBMIT What is this?
+ss.Net.InitExt()
+for cyc := 0; cyc < ss.ITICycles; cyc++ { // do the plus phase
+	ss.Net.Cycle(&ss.Time)
+	// ss.StatCounters(train)
+	if !train {
+		ss.Log(etime.Test, etime.Cycle)
 	}
+	if ss.GUI.Active {
+		ss.RasterRec()
+	}
+	ss.Time.CycleInc()
+	if ss.ViewOn {
+		ss.UpdateViewTime(train, viewUpdt)
+	}
+}
 */
 
 // ApplyInputs applies input patterns from given environment.
