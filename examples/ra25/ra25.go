@@ -590,6 +590,11 @@ func (ss *Sim) StatCounters() {
 		return
 	}
 	ev.CtrsToStats(&ss.Stats)
+	// Set counters correctly, overwriting what CtrsToStats does
+	for t, l := range ss.LoopXtreme.Stacks[ss.LoopXtreme.Steps.Mode].Loops {
+		ss.Stats.SetInt(t.String(), l.Counter.Cur)
+	}
+
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
 	ss.GUI.NetViewText = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCosDiff"})
 }
