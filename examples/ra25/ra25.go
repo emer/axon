@@ -282,9 +282,27 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 		curMode := m // For closures.
 		for t, loop := range loops.Loops {
 			curTime := t
-			loop.Main.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
+
+			// Actual logging
+			loop.OnEnd.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
 				ss.Log(curMode, curTime)
 			})
+
+			// Reset logs at level one deeper
+			levelToReset := etime.AllTimes
+			for i, tt := range loops.Order {
+				if tt == t && i+1 < len(loops.Order) {
+					levelToReset = loops.Order[i+1]
+				}
+			}
+			if levelToReset != etime.AllTimes {
+				loop.OnEnd.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
+					if levelToReset == etime.Cycle {
+						return // DO NOT SUBMIT
+					}
+					ss.Logs.ResetLog(curMode, levelToReset)
+				})
+			}
 		}
 	}
 }
@@ -336,6 +354,7 @@ func (ss *Sim) ConfigLoops() {
 			curTime := t
 			loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"SetTimeVal", func() {
 				ss.Time.Mode = curMode.String()
+
 			})
 		}
 	}
@@ -810,8 +829,7 @@ var SimProps = ki.Props{
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	// DO NOT SUBMIT Reset to 5
-	ss.Args.AddInt("nzero", 10, "number of zero error epochs in a row to count as full training")
+	ss.Args.AddInt("nzero", 5, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
