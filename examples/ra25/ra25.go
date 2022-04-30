@@ -340,6 +340,7 @@ func (ss *Sim) ConfigLoops() {
 	manager.Stacks[etime.Train] = &looper.EvaluationModeLoops{}
 	manager.Stacks[etime.Test] = &looper.EvaluationModeLoops{}
 
+	// Define loops and their durations.
 	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 10).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200)
 	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
 
@@ -350,7 +351,6 @@ func (ss *Sim) ConfigLoops() {
 			curTime := t
 			loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"SetTimeVal", func() {
 				ss.Time.Mode = curMode.String()
-
 			})
 		}
 	}
