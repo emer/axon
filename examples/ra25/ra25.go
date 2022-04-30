@@ -70,8 +70,7 @@ type Sim struct {
 	Net          *axon.Network       `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params       emer.Params         `view:"inline" desc:"all parameter management"`
 	Tag          string              `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	Loops        looper.Set          `view:"no-inline" desc:"contains looper control loops for running sim"` // DO NOT SUBMIT Delete
-	LoopXtreme   *looper.LoopManager `view:"no-inline" desc:"contains looper control loops for running sim"` // DO NOT SUBMIT Rename
+	Loops        *looper.LoopManager `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats        estats.Stats        `desc:"contains computed statistic values"`
 	Logs         elog.Logs           `desc:"Contains all the logs and information about the logs.'"`
 	Pats         *etable.Table       `view:"no-inline" desc:"the training patterns to use"`
@@ -297,9 +296,6 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 			}
 			if levelToReset != etime.AllTimes {
 				loop.OnEnd.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
-					if levelToReset == etime.Cycle {
-						return // DO NOT SUBMIT
-					}
 					ss.Logs.ResetLog(curMode, levelToReset)
 				})
 			}
@@ -404,14 +400,15 @@ func (ss *Sim) ConfigLoops() {
 	}
 
 	// Weight updates
+	// DO NOT SUBMIT It seems that learning is not occurring.
+	manager.GetLoop(etime.Train, etime.Cycle).Phases[0].PhaseStart.Add("Axon:Phase:WtFmDWt", func() {
+		ss.Net.WtFmDWtImpl(&ss.Time)
+	})
 	for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Phases {
 		phase.PhaseEnd.Add("Axon:Phase:DWt", func() {
 			ss.Net.DWt(&ss.Time)
 		})
 	}
-	manager.GetLoop(etime.Train, etime.Cycle).Phases[0].PhaseStart.Add("Axon:Phase:WtFmDWt", func() {
-		ss.Net.WtFmDWtImpl(&ss.Time)
-	})
 
 	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", func() { ss.NewRun() })
 	manager.GetLoop(etime.Train, etime.Epoch).OnStart.Add("Log:Train:TestAtInterval", func() {
@@ -458,7 +455,7 @@ func (ss *Sim) ConfigLoops() {
 	fmt.Println(manager.DocString())
 
 	manager.Steps.Init(manager)
-	ss.LoopXtreme = manager
+	ss.Loops = manager
 
 	set := manager.GetLooperStack()
 	for _, st := range set.Stacks {
@@ -466,24 +463,6 @@ func (ss *Sim) ConfigLoops() {
 		fmt.Println(st.DocString()) // For Comparison
 	}
 }
-
-/* // DO NOT SUBMIT What is this?
-ss.Net.InitExt()
-for cyc := 0; cyc < ss.ITICycles; cyc++ { // do the plus phase
-	ss.Net.Cycle(&ss.Time)
-	// ss.StatCounters(train)
-	if !train {
-		ss.Log(etime.Test, etime.Cycle)
-	}
-	if ss.GUI.Active {
-		ss.RasterRec()
-	}
-	ss.Time.CycleInc()
-	if ss.ViewOn {
-		ss.UpdateViewTime(train, viewUpdt)
-	}
-}
-*/
 
 // ApplyInputs applies input patterns from given environment.
 // It is good practice to have this be a separate method with appropriate
@@ -591,7 +570,7 @@ func (ss *Sim) StatCounters() {
 	}
 	ev.CtrsToStats(&ss.Stats)
 	// Set counters correctly, overwriting what CtrsToStats does
-	for t, l := range ss.LoopXtreme.Stacks[ss.LoopXtreme.Steps.Mode].Loops {
+	for t, l := range ss.Loops.Stacks[ss.Loops.Steps.Mode].Loops {
 		ss.Stats.SetInt(t.String(), l.Counter.Cur)
 	}
 
@@ -780,7 +759,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Train)) // DO NOT SUBMIT Delete
 	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Test))
-	ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Train], &ss.LoopXtreme.Steps)
+	ss.GUI.AddLooperCtrl(ss.Loops.Stacks[etime.Train], &ss.Loops.Steps)
 	//ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Test], &ss.LoopXtreme.Steps)
 
 	////////////////////////////////////////////////
@@ -879,7 +858,7 @@ func (ss *Sim) CmdArgs() {
 	rc.Set(run)
 	rc.Max = run + runs
 	ss.NewRun()
-	ss.Loops.Run(etime.Train)
+	ss.Loops.Steps.Run()
 
 	ss.Logs.CloseLogFiles()
 
