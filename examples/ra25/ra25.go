@@ -308,7 +308,7 @@ func (ss *Sim) AddDefaultGUICallbacks(manager *looper.LoopManager) {
 		curMode := m // For closures.
 		for _, t := range []etime.Times{etime.Trial, etime.Epoch} {
 			curTime := t
-			manager.GetLoop(curMode, curTime).Main.Add("GUI:UpdateNetView", func() {
+			manager.GetLoop(curMode, curTime).OnEnd.Add("GUI:UpdateNetView", func() {
 				ss.UpdateNetViewTime(curTime)
 			})
 		}
@@ -422,7 +422,7 @@ func (ss *Sim) ConfigLoops() {
 		curNZero := ss.Stats.Int("NZero")
 		return nzero > 0 && curNZero >= nzero
 	}
-	manager.GetLoop(etime.Train, etime.Run).Main.Add("Log:Train:SaveWeights", func() {
+	manager.GetLoop(etime.Train, etime.Run).OnEnd.Add("Log:Train:SaveWeights", func() {
 		swts := ss.Args.Bool("wts")
 		if swts {
 			fnm := ss.WeightsFileName()
@@ -456,12 +456,6 @@ func (ss *Sim) ConfigLoops() {
 
 	manager.Steps.Init(manager)
 	ss.Loops = manager
-
-	set := manager.GetLooperStack()
-	for _, st := range set.Stacks {
-		st.Ctxt["Time"] = &ss.Time
-		fmt.Println(st.DocString()) // For Comparison
-	}
 }
 
 // ApplyInputs applies input patterns from given environment.
@@ -757,10 +751,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 
-	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Train)) // DO NOT SUBMIT Delete
-	//ss.GUI.AddLooperCtrl(ss.Loops.Stack(etime.Test))
-	ss.GUI.AddLooperCtrl(ss.Loops.Stacks[etime.Train], &ss.Loops.Steps)
-	//ss.GUI.AddLooperCtrl(ss.LoopXtreme.Stacks[etime.Test], &ss.LoopXtreme.Steps)
+	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")
