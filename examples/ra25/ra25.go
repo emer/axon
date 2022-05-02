@@ -305,8 +305,7 @@ func (ss *Sim) AddDefaultLoopSimLogic(manager *looper.LoopManager) {
 	}
 
 	// Weight updates.
-	// DO NOT SUBMIT It seems that learning is not occurring.
-	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:Phase:UpdateWeights", func() {
+	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:LoopSegment:UpdateWeights", func() {
 		ss.Net.DWt(&ss.Time)
 		// TODO Ensure GUI update here with call: ss.UpdateNetViewTime(curTime)
 		ss.Net.WtFmDWt(&ss.Time)
@@ -357,6 +356,9 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 				})
 			}
 		}
+
+		// Save State
+		manager.GetLoop(curMode, etime.Cycle).OnEnd.Add("Sim:SaveState", ss.SaveStateBeta)
 	}
 }
 
@@ -375,22 +377,21 @@ func (ss *Sim) AddDefaultGUICallbacks(manager *looper.LoopManager) {
 func (ss *Sim) ConfigLoops() {
 	// Add Train and Test
 	manager := looper.LoopManager{}.Init()
-	manager.Stacks[etime.Train] = &looper.EvaluationModeLoops{}
-	manager.Stacks[etime.Test] = &looper.EvaluationModeLoops{}
+	manager.Stacks[etime.Train] = &looper.LoopStack{}
+	manager.Stacks[etime.Test] = &looper.LoopStack{}
 
 	// Specify Timescales: Run, Epoch, Trial, Cycle along with durations
 	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 10).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200)
 	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
 
 	// Plus and Minus with Length of each, start and end logic
-	minusPhase := looper.Phase{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}
+	minusPhase := looper.LoopSegment{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}
 	minusPhase.PhaseStart.Add("Sim:MinusPhase:Start", func() {
 		ss.Time.PlusPhase = false
 		ss.Time.NewPhase(false)
 	})
 	minusPhase.PhaseEnd.Add("Sim:MinusPhase:End", func() { ss.Net.MinusPhase(&ss.Time) })
-	minusPhase.OnMillisecondEnd.Add("Sim:SaveState", ss.SaveStateBeta)
-	plusPhase := looper.Phase{Name: "PlusPhase", Duration: 50, IsPlusPhase: true}
+	plusPhase := looper.LoopSegment{Name: "PlusPhase", Duration: 50, IsPlusPhase: true}
 	plusPhase.PhaseStart.Add("Sim:PlusPhase:Start", func() {
 		ss.Time.PlusPhase = true
 		ss.Time.NewPhase(true)
@@ -417,10 +418,10 @@ func (ss *Sim) ConfigLoops() {
 	}
 
 	// Reinitialize Run
-	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", func() { ss.NewRun() })
+	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", ss.NewRun)
 
 	// Run end early condition
-	manager.GetLoop(etime.Train, etime.Epoch).IsDone["Epoch:NZeroStop"] = func() bool {
+	manager.GetLoop(etime.Train, etime.Run).IsDone["Epoch:NZeroStop"] = func() bool {
 		// This is calculated in TrialStats
 		nzero := ss.Args.Int("nzero")
 		curNZero := ss.Stats.Int("NZero")
