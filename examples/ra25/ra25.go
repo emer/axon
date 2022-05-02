@@ -276,6 +276,67 @@ func (ss *Sim) UpdateNetViewTime(time etime.Times) {
 	}
 }
 
+func (ss *Sim) SaveStateBeta() {
+	switch ss.Time.Cycle {
+	// save states at beta-frequency -- not used computationally
+	case 75:
+		ss.Net.ActSt1(&ss.Time)
+	case 100:
+		ss.Net.ActSt2(&ss.Time)
+	}
+}
+
+func (ss *Sim) SaveWeightsToJSON() {
+	swts := ss.Args.Bool("wts")
+	if swts {
+		fnm := ss.WeightsFileName()
+		fmt.Printf("Saving Weights to: %s\n", fnm)
+		ss.Net.SaveWtsJSON(gi.FileName(fnm))
+	}
+}
+
+func (ss *Sim) AddDefaultLoopSimLogic(manager *looper.LoopManager) {
+	// Net Cycle
+	for m, _ := range manager.Stacks {
+		manager.Stacks[m].Loops[etime.Cycle].Main.Add("Axon:Cycle:RunAndIncrement", func() {
+			ss.Net.Cycle(&ss.Time)
+			ss.Time.CycleInc()
+		})
+	}
+
+	// Weight updates.
+	// DO NOT SUBMIT It seems that learning is not occurring.
+	manager.GetLoop(etime.Train, etime.Cycle).Phases[0].PhaseStart.Add("Axon:Phase:WtFmDWt", func() {
+		ss.Net.WtFmDWtImpl(&ss.Time)
+	})
+	for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Phases {
+		phase.PhaseEnd.Add("Axon:Phase:DWt", func() {
+			ss.Net.DWt(&ss.Time)
+		})
+	}
+
+	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
+	for m, loops := range manager.Stacks {
+		curMode := m // For closures.
+		for t, loop := range loops.Loops {
+			curTime := t
+			loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"SetTimeVal", func() {
+				ss.Time.Mode = curMode.String()
+			})
+		}
+	}
+
+	// Add Testing
+	// TODO Library function
+	trainEpoch := manager.GetLoop(etime.Train, etime.Epoch)
+	trainEpoch.OnStart.Add("Log:Train:TestAtInterval", func() {
+		if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
+			// Note the +1 so that it doesn't occur at the 0th timestep.
+			ss.TestAll()
+		}
+	})
+}
+
 func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 	for m, loops := range manager.Stacks {
 		curMode := m // For closures.
@@ -295,7 +356,7 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.LoopManager) {
 				}
 			}
 			if levelToReset != etime.AllTimes {
-				loop.OnEnd.Add(curMode.String()+":"+curTime.String()+":"+"Log", func() {
+				loop.OnEnd.Add(curMode.String()+":"+curTime.String()+":"+"ResetLog"+levelToReset.String(), func() {
 					ss.Logs.ResetLog(curMode, levelToReset)
 				})
 			}
@@ -316,129 +377,77 @@ func (ss *Sim) AddDefaultGUICallbacks(manager *looper.LoopManager) {
 }
 
 func (ss *Sim) ConfigLoops() {
-	// TODO Clean this function up with comments.
-
-	// Things we want so specify here:
-	// x Both Train and Test
-	// x Timescales: Run, Epoch, Trial, Cycle
-	// x Phases: Plus and Minus
-	// x Length of each
-	// * Some special functions for logging and GUI
-
-	// Things we do NOT want to specify (should be inherent in looper):
-	// * Resetting timers
-	// * Incrementing timers
-	// * Logging that occurs predictably
-	// * Order (default should be in etime.Times order)
-	// * Default stepping behavior
-	// TODO Pull out default logic into a separate function.
-
-	// Other considerations:
-	// * Running code should be separate from logging and GUI code
-
+	// Add Train and Test
 	manager := looper.LoopManager{}.Init()
 	manager.Stacks[etime.Train] = &looper.EvaluationModeLoops{}
 	manager.Stacks[etime.Test] = &looper.EvaluationModeLoops{}
 
-	// Define loops and their durations.
+	// Specify Timescales: Run, Epoch, Trial, Cycle along with durations
 	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 10).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200)
 	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
 
-	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
-	for m, loops := range manager.Stacks {
-		curMode := m // For closures.
-		for t, loop := range loops.Loops {
-			curTime := t
-			loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"SetTimeVal", func() {
-				ss.Time.Mode = curMode.String()
-			})
-		}
-	}
+	// Plus and Minus with Length of each, start and end logic
+	minusPhase := looper.Phase{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}
+	minusPhase.PhaseStart.Add("Sim:MinusPhase:Start", func() {
+		ss.Time.PlusPhase = false
+		ss.Time.NewPhase(false)
+	})
+	minusPhase.PhaseEnd.Add("Sim:MinusPhase:End", func() { ss.Net.MinusPhase(&ss.Time) })
+	minusPhase.OnMillisecondEnd.Add("Sim:SaveState", ss.SaveStateBeta)
+	plusPhase := looper.Phase{Name: "PlusPhase", Duration: 50, IsPlusPhase: true}
+	plusPhase.PhaseStart.Add("Sim:PlusPhase:Start", func() {
+		ss.Time.PlusPhase = true
+		ss.Time.NewPhase(true)
+	})
+	plusPhase.PhaseEnd.Add("Sim:PlusPhase:End", func() { ss.Net.PlusPhase(&ss.Time) })
+	// Add both to train and test, by copy
+	manager.AddPhaseAllModes(etime.Cycle, minusPhase)
+	manager.AddPhaseAllModes(etime.Cycle, plusPhase)
 
+	// Trial Stats and Apply Input
 	for m, _ := range manager.Stacks {
 		mode := m // For closures
-		stack := manager.Stacks[mode]
-		stack.Loops[etime.Cycle].AddPhases(looper.Phase{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}, looper.Phase{Name: "PlusPhase", Duration: 50, IsPlusPhase: true})
-		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", ss.ApplyInputs)
-
-		// Step the environment
-		stack.Loops[etime.Trial].OnEnd.Add("Sim:Env:Step", func() {
-			ss.Envs[mode.String()].Step()
-		})
-
-		stack.Loops[etime.Cycle].Phases[0].OnMillisecondEnd.Add("Sim:SaveState", func() {
-			switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
-			case 75:
-				ss.Net.ActSt1(&ss.Time)
-			case 100:
-				ss.Net.ActSt2(&ss.Time)
-			}
-		})
-
-		stack.Loops[etime.Cycle].Main.Add("Axon:Cycle:Run", func() {
-			ss.Net.Cycle(&ss.Time)
-		})
-		stack.Loops[etime.Cycle].Main.Add("Axon:Cycle:Incr", func() {
-			ss.Time.CycleInc()
-		})
-
-		stack.Loops[etime.Cycle].OnEnd.Add("Sim:StatCounters", ss.StatCounters)
-		stack.Loops[etime.Cycle].Phases[0].PhaseStart.Add("Sim:Phase:SetPlus", func() { ss.Time.PlusPhase = false })
-		stack.Loops[etime.Cycle].Phases[0].PhaseEnd.Add("Sim:Phase:CallMinusPhase", func() { ss.Net.MinusPhase(&ss.Time) })
-		stack.Loops[etime.Cycle].Phases[1].PhaseStart.Add("Sim:Phase:SetPlus", func() { ss.Time.PlusPhase = true })
-		stack.Loops[etime.Cycle].Phases[1].PhaseEnd.Add("Sim:Phase:CallPlusPhase", func() { ss.Net.PlusPhase(&ss.Time) })
-		stack.Loops[etime.Cycle].Phases[1].PhaseEnd.Add("Sim:TrialStats", ss.TrialStats)
-
-		// TODO Check meaning of "must insert ApplyInputs after this"
-		stack.Loops[etime.Cycle].Phases[0].PhaseStart.Add("Axon:Cycle:NewNetState", func() {
+		stack := manager.Stacks[m]
+		// DO NOT SUBMIT Confirm: These are all Trial, right?
+		stack.Loops[etime.Trial].OnStart.Add("Sim:ResetState", func() {
 			ss.Net.NewState()
 			ss.Time.NewState(mode.String())
 		})
-		stack.Loops[etime.Cycle].Phases[0].PhaseStart.Add("Axon:Cycle:NewPhase", func() {
-			ss.Time.NewPhase(true) // plusphase now
+		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", ss.ApplyInputs)
+		stack.Loops[etime.Trial].OnEnd.Add("Sim:StatCounters", ss.StatCounters)
+		stack.Loops[etime.Trial].OnEnd.Add("Sim:TrialStats", ss.TrialStats)
+		stack.Loops[etime.Trial].OnEnd.Add("Sim:Env:Step", func() {
+			ss.Envs[mode.String()].Step()
 		})
 	}
 
-	// Weight updates
-	// DO NOT SUBMIT It seems that learning is not occurring.
-	manager.GetLoop(etime.Train, etime.Cycle).Phases[0].PhaseStart.Add("Axon:Phase:WtFmDWt", func() {
-		ss.Net.WtFmDWtImpl(&ss.Time)
-	})
-	for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Phases {
-		phase.PhaseEnd.Add("Axon:Phase:DWt", func() {
-			ss.Net.DWt(&ss.Time)
-		})
-	}
-
+	// Reinitialize Run
 	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", func() { ss.NewRun() })
-	manager.GetLoop(etime.Train, etime.Epoch).OnStart.Add("Log:Train:TestAtInterval", func() {
-		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
-		if (ss.TestInterval > 0) && (epc%ss.TestInterval == 0) { // note: epc is *next* so won't trigger first time
-			ss.TestAll()
-		}
-	})
+
+	// Run end early condition
 	manager.GetLoop(etime.Train, etime.Epoch).IsDone["Epoch:NZeroStop"] = func() bool {
+		// This is calculated in TrialStats
 		nzero := ss.Args.Int("nzero")
 		curNZero := ss.Stats.Int("NZero")
 		return nzero > 0 && curNZero >= nzero
 	}
-	manager.GetLoop(etime.Train, etime.Run).OnEnd.Add("Log:Train:SaveWeights", func() {
-		swts := ss.Args.Bool("wts")
-		if swts {
-			fnm := ss.WeightsFileName()
-			fmt.Printf("Saving Weights to: %s\n", fnm)
-			ss.Net.SaveWtsJSON(gi.FileName(fnm))
-		}
-	})
-	manager.GetLoop(etime.Test, etime.Trial).Main.Add("Log:Test:Trial", func() {
-		ss.GUI.NetDataRecord()
-	})
 
-	// Logging Stuff
+	// Add default Sim and network logic
+	ss.AddDefaultLoopSimLogic(manager)
+
+	//////////////////
+	// Logging stuff
+
 	ss.AddDefaultLoggingCallbacks(manager)
 
+	// Save weights to file, to look at later
+	manager.GetLoop(etime.Train, etime.Run).OnEnd.Add("Log:Train:SaveWeights", ss.SaveWeightsToJSON)
+
+	/////////////////
 	// GUI Stuff
 	if ss.Args.Bool("nogui") == false {
+		ss.AddDefaultGUICallbacks(manager)
+
 		for mode, _ := range manager.Stacks {
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:RasterRec", ss.RasterRec)
@@ -449,12 +458,14 @@ func (ss *Sim) ConfigLoops() {
 				ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
 			})
 		}
-		ss.AddDefaultGUICallbacks(manager)
+		manager.GetLoop(etime.Test, etime.Trial).Main.Add("Log:Test:Trial", func() {
+			ss.GUI.NetDataRecord()
+		})
 	}
 
-	fmt.Println(manager.DocString())
-
+	// Initialize and print loop structure, then add to Sim
 	manager.Steps.Init(manager)
+	fmt.Println(manager.DocString())
 	ss.Loops = manager
 }
 
