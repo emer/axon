@@ -306,14 +306,11 @@ func (ss *Sim) AddDefaultLoopSimLogic(manager *looper.LoopManager) {
 
 	// Weight updates.
 	// DO NOT SUBMIT It seems that learning is not occurring.
-	manager.GetLoop(etime.Train, etime.Cycle).Phases[0].PhaseStart.Add("Axon:Phase:WtFmDWt", func() {
-		ss.Net.WtFmDWtImpl(&ss.Time)
+	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:Phase:UpdateWeights", func() {
+		ss.Net.DWt(&ss.Time)
+		// TODO Ensure GUI update here with call: ss.UpdateNetViewTime(curTime)
+		ss.Net.WtFmDWt(&ss.Time)
 	})
-	for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Phases {
-		phase.PhaseEnd.Add("Axon:Phase:DWt", func() {
-			ss.Net.DWt(&ss.Time)
-		})
-	}
 
 	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
 	for m, loops := range manager.Stacks {
@@ -327,7 +324,6 @@ func (ss *Sim) AddDefaultLoopSimLogic(manager *looper.LoopManager) {
 	}
 
 	// Add Testing
-	// TODO Library function
 	trainEpoch := manager.GetLoop(etime.Train, etime.Epoch)
 	trainEpoch.OnStart.Add("Log:Train:TestAtInterval", func() {
 		if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
@@ -408,7 +404,6 @@ func (ss *Sim) ConfigLoops() {
 	for m, _ := range manager.Stacks {
 		mode := m // For closures
 		stack := manager.Stacks[m]
-		// DO NOT SUBMIT Confirm: These are all Trial, right?
 		stack.Loops[etime.Trial].OnStart.Add("Sim:ResetState", func() {
 			ss.Net.NewState()
 			ss.Time.NewState(mode.String())
