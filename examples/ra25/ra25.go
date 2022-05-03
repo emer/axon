@@ -144,8 +144,6 @@ func (ss *Sim) ConfigEnv() {
 	trn.Nm = "TrainEnv"
 	trn.Dsc = "training params and state"
 	trn.Config(etable.NewIdxView(ss.Pats), etime.Train.String())
-	trn.Counter(etime.Run).Max = ss.Args.Int("runs") // TODO Remove this and move logic to ConfigLoops
-	trn.Counter(etime.Epoch).Max = ss.Args.Int("epochs")
 	trn.Validate()
 
 	tst.Nm = "TestEnv"
@@ -614,7 +612,7 @@ func (ss *Sim) ConfigLogs() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // TODO Can this be deleted?
+		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
