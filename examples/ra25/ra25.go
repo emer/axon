@@ -512,11 +512,12 @@ func (ss *Sim) SaveWeights(filename gi.FileName) {
 }
 
 // TestAll runs through the full set of testing items
-func (ss *Sim) TestAll() { //todo: reference Xtreme
-	//ss.Envs.ByMode(etime.Test).Init()
-	//tst := ss.Loops.Stack(etime.Test)
-	//tst.Init()
-	//tst.Run()
+func (ss *Sim) TestAll() {
+	ss.Envs.ByMode(etime.Test).Init()
+	tst := ss.Loops.Stacks[etime.Test]
+	tst.Init()
+	ss.Loops.Steps.Mode = etime.Test
+	ss.Loops.Steps.Run()
 }
 
 /////////////////////////////////////////////////////////////////////////
