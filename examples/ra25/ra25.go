@@ -303,9 +303,13 @@ func (ss *Sim) AddDefaultLoopSimLogic(manager *looper.LoopManager) {
 	}
 
 	// Weight updates.
-	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:LoopSegment:UpdateWeights", func() {
+	// Note that the substring "UpdateNetView" in the name is important here, because it's checked in AddDefaultGUICallbacks.
+	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:LoopSegment:UpdateWeightsAndUpdateNetView" /*DO NOT CHANGE NAME*/, func() {
 		ss.Net.DWt(&ss.Time)
-		// TODO Ensure GUI update here with call: ss.UpdateNetViewTime(curTime)
+		// Need to update the GUI here because WtFmDWt clears some values as a side effect. This may seem like an unnecessary optimization, but clearing those values is expensive.
+		if ss.Args.Bool("nogui") == false {
+			ss.UpdateNetViewTime(etime.Trial)
+		}
 		ss.Net.WtFmDWt(&ss.Time)
 	})
 
@@ -365,6 +369,10 @@ func (ss *Sim) AddDefaultGUICallbacks(manager *looper.LoopManager) {
 		curMode := m // For closures.
 		for _, t := range []etime.Times{etime.Trial, etime.Epoch} {
 			curTime := t
+			if manager.GetLoop(curMode, curTime).OnEnd.HasNameLike("UpdateNetView") {
+				// There might be a case where another function also Updates the NetView, and we don't want to do it twice. In particular, Net.WtFmDWt clears some values at the end of Trial, and it wants to update the view before doing so.
+				continue
+			}
 			manager.GetLoop(curMode, curTime).OnEnd.Add("GUI:UpdateNetView", func() {
 				ss.UpdateNetViewTime(curTime)
 			})
