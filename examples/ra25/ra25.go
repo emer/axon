@@ -522,6 +522,7 @@ func (ss *Sim) TestAll() {
 	ss.Envs.ByMode(etime.Test).Init()
 	ss.Loops.Steps.Mode = etime.Test
 	ss.Loops.Steps.Run()
+	ss.Loops.Steps.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
 }
 
 /////////////////////////////////////////////////////////////////////////
