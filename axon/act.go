@@ -29,7 +29,6 @@ type ActParams struct {
 	Dt      DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
 	Gbar    chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
 	Erev    chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
-	GTarg   GTargParams       `view:"inline" desc:"target conductance levels for excitation and inhibition, driving adaptation of GScale.Scale conductance scaling"`
 	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
 	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
@@ -49,7 +48,6 @@ func (ac *ActParams) Defaults() {
 	ac.Dt.Defaults()
 	ac.Gbar.SetAll(1.0, 0.2, 1.0, 1.0) // E, L, I, K: gbar l = 0.2 > 0.1
 	ac.Erev.SetAll(1.0, 0.3, 0.1, 0.1) // E, L, I, K: K = hyperpolarized -90mv
-	ac.GTarg.Defaults()
 	ac.Clamp.Defaults()
 	ac.Noise.Defaults()
 	ac.VmRange.Set(0.1, 1.0)
@@ -73,7 +71,6 @@ func (ac *ActParams) Update() {
 	ac.Init.Update()
 	ac.Decay.Update()
 	ac.Dt.Update()
-	ac.GTarg.Update()
 	ac.Clamp.Update()
 	ac.Noise.Update()
 	ac.KNa.Update()
@@ -652,25 +649,6 @@ func (dp *DtParams) AvgVarUpdt(avg, vr *float32, val float32) {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-// GTargParams
-
-// GTargParams are target conductance levels for excitation and inhibition,
-// driving adaptation of GScale.Scale conductance scaling
-type GTargParams struct {
-	GeMax float32 `def:"1.2" min:"0" desc:"target maximum excitatory conductance in the minus phase: GeM"`
-	GiMax float32 `def:"1.2" min:"0" desc:"target maximum inhibitory conductance in the minus phase: GiM -- for actual synaptic inhibitory neuron inputs (GiSyn) not FFFB computed inhibition"`
-}
-
-func (gt *GTargParams) Update() {
-}
-
-func (gt *GTargParams) Defaults() {
-	gt.GeMax = 1.2
-	gt.GiMax = 1.2
-	gt.Update()
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
 //  Noise
 
 // SpikeNoiseParams parameterizes background spiking activity impinging on the neuron,
@@ -816,16 +794,10 @@ func (sc *SynComParams) Fail(wt *float32, swt float32) {
 
 // PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,
 // using both absolute and relative factors.
-// Also includes ability to adapt Scale factors to maintain AvgMaxGeM / GiM max conductances
-// according to Acts.GTarg target values.
 type PrjnScaleParams struct {
-	Rel        float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
-	Abs        float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
-	Adapt      bool    `def:"false" desc:"Adapt the 'GScale' scaling value so the ActAvg.AvgMaxGeM / GiM running-average value for this projections remains in the target range, specified in Acts.GTarg -- sometimes this is essential but often it is better to tune the Abs values manually, as the adaptation-based adjustments can disrupt things during learning"`
-	ScaleLrate float32 `viewif:"Adapt" def:"0.5" desc:"learning rate for adapting the GScale value, as function of target value -- lrate is also multiplied by the GScale.Orig to compensate for significant differences in overall scale of these scaling factors -- fastest value with some smoothing at .5 works well."`
-	HiTol      float32 `def:"0" viewif:"Adapt" desc:"tolerance for higher than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are scale values adapted"`
-	LoTol      float32 `def:"0.8" viewif:"Adapt" desc:"tolerance for lower than target AvgMaxGeM / GiM as a proportion of that target value (0 = exactly the target, 0.8 = 80% lower than target) -- only once activations move outside this tolerance are scale values adapted"`
-	AvgTau     float32 `def:"500" desc:"time constant for integrating projection-level averages for this scaling process: Prjn.GScale.AvgAvg, AvgMax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
+	Rel    float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
+	Abs    float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
+	AvgTau float32 `def:"500" desc:"time constant for integrating projection-level averages to track G scale: Prjn.GScale.AvgAvg, AvgMax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
 
 	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -833,10 +805,6 @@ type PrjnScaleParams struct {
 func (ws *PrjnScaleParams) Defaults() {
 	ws.Rel = 1
 	ws.Abs = 1
-	ws.Adapt = false
-	ws.ScaleLrate = 0.5
-	ws.HiTol = 0
-	ws.LoTol = 0.8
 	ws.AvgTau = 500
 	ws.Update()
 }

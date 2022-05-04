@@ -679,8 +679,8 @@ func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
 	ly.ActAvg.ActMAvg = ly.Inhib.ActAvg.Init
 	ly.ActAvg.ActPAvg = ly.Inhib.ActAvg.Init
-	ly.ActAvg.AvgMaxGeM = ly.Act.GTarg.GeMax
-	ly.ActAvg.AvgMaxGiM = ly.Act.GTarg.GiMax
+	ly.ActAvg.AvgMaxGeM = 1
+	ly.ActAvg.AvgMaxGiM = 1
 	ly.ActAvg.GiMult = 1
 	ly.AxonLay.InitActAvg()
 	ly.AxonLay.InitActs()
@@ -1719,9 +1719,9 @@ func (ly *Layer) WtFmDWt(ltime *Time) {
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
-// GScale conductance scaling, and adapting inhibition
+// and adapting inhibition
 func (ly *Layer) SlowAdapt(ltime *Time) {
-	ly.AdaptGScale(ltime)
+	ly.GScaleAvgs(ltime)
 	ly.AdaptInhib(ltime)
 	ly.SynScale()
 	for _, p := range ly.RcvPrjns {
@@ -1732,8 +1732,8 @@ func (ly *Layer) SlowAdapt(ltime *Time) {
 	}
 }
 
-// AdaptGScale adapts the conductance scale based on targets
-func (ly *Layer) AdaptGScale(ltime *Time) {
+// GScaleAvgs updates conductance scale averages
+func (ly *Layer) GScaleAvgs(ltime *Time) {
 	var sum float32
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
@@ -1745,37 +1745,12 @@ func (ly *Layer) AdaptGScale(ltime *Time) {
 	if sum == 0 {
 		return
 	}
-	geErr := ly.Act.GTarg.GeMax - ly.ActAvg.AvgMaxGeM
-	geNormErr := geErr / ly.Act.GTarg.GeMax
-	giErr := ly.Act.GTarg.GiMax - ly.ActAvg.AvgMaxGiM
-	giNormErr := giErr / ly.Act.GTarg.GiMax
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
 		pj := p.(AxonPrjn).AsAxon()
 		pj.GScale.AvgMaxRel = pj.GScale.AvgMax / sum
-
-		if !pj.Learn.Learn || !pj.PrjnScale.Adapt {
-			continue
-		}
-
-		var relErr, normErr float32
-		if pj.Typ == emer.Inhib {
-			relErr = pj.GScale.Rel * giErr
-			normErr = giNormErr
-		} else {
-			relErr = pj.GScale.Rel * geErr
-			normErr = geNormErr
-		}
-		pj.GScale.Err = relErr
-		if (normErr > 0 && normErr > pj.PrjnScale.LoTol) || (normErr < 0 && -normErr > pj.PrjnScale.HiTol) {
-			pj.GScale.Scale += pj.PrjnScale.ScaleLrate * pj.GScale.Orig * relErr
-			min := 0.1 * pj.GScale.Orig
-			if pj.GScale.Scale < min {
-				pj.GScale.Scale = min
-			}
-		}
 	}
 }
 

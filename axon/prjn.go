@@ -37,8 +37,8 @@ type Prjn struct {
 	Gidx     ringidx.FIx     `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
 	GBuf     []float32       `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
 	GnmdaBuf []float32       `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	AvgDWt   float32         `desc:"average DWt value across all synapses"`
-	DWtRaw   minmax.AvgMax32 `desc:"average, max DWtRaw value across all synapses"`
+	AvgDWt   float32         `inactive:"+" desc:"average DWt value across all synapses"`
+	DWtRaw   minmax.AvgMax32 `inactive:"+" desc:"average, max DWtRaw value across all synapses"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -73,19 +73,17 @@ type GScaleVals struct {
 	Scale     float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
 	Orig      float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
 	Rel       float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
-	AvgMaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on AvgMax values -- used for driving adaptation to maintain target relative values"`
-	Err       float32 `inactive:"+" desc:"error that drove last adjustment in scale"`
+	AvgMaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on AvgMax values"`
 	Avg       float32 `inactive:"+" desc:"average G value on this trial"`
 	Max       float32 `inactive:"+" desc:"maximum G value on this trial"`
 	AvgAvg    float32 `inactive:"+" desc:"running average of the Avg, integrated at ly.Act.Dt.LongAvgTau"`
-	AvgMax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.LongAvgTau -- used for computing AvgMaxRel, for adapting Scale"`
+	AvgMax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.LongAvgTau -- used for computing AvgMaxRel"`
 }
 
 // Init completes the initialization of values based on initially computed ones
 func (gs *GScaleVals) Init() {
 	gs.Orig = gs.Scale
 	gs.AvgMaxRel = gs.Rel
-	gs.Err = 0
 	gs.Avg = 0
 	gs.Max = 0
 	gs.AvgAvg = 0 // 0 = use first

@@ -20,6 +20,7 @@ import (
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/erand"
+	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
@@ -181,31 +182,31 @@ var InputNameMap map[string]int
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
-	TrnEpcLog    *etable.Table   `view:"no-inline" desc:"training epoch-level log data"`
-	TstEpcLog    *etable.Table   `view:"no-inline" desc:"testing epoch-level log data"`
-	TstTrlLog    *etable.Table   `view:"no-inline" desc:"testing trial-level log data"`
-	TstErrLog    *etable.Table   `view:"no-inline" desc:"log of all test trials where errors were made"`
-	TstErrStats  *etable.Table   `view:"no-inline" desc:"stats on test trials where errors were made"`
-	TstCycLog    *etable.Table   `view:"no-inline" desc:"testing cycle-level log data"`
-	RunLog       *etable.Table   `view:"no-inline" desc:"summary log of each run"`
-	RunStats     *etable.Table   `view:"no-inline" desc:"aggregate stats on all runs"`
-	ErrLrMod     axon.LrateMod   `view:"inline" desc:"learning rate modulation as function of error"`
-	PAlphaPlus   float32         `desc:"probability of an alpha-cycle plus phase (driver burst activation) within theta cycle -- like teacher forcing"`
-	Params       params.Sets     `view:"no-inline" desc:"full collection of param sets"`
-	ParamSet     string          `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
-	Tag          string          `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
-	MaxRuns      int             `desc:"maximum number of model runs to perform"`
-	MaxEpcs      int             `desc:"maximum number of epochs to run per model run"`
-	NZeroStop    int             `desc:"if a positive number, training will stop after this many epochs with zero UnitErr"`
-	TrainEnv     FSAEnv          `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
-	TestEnv      FSAEnv          `desc:"Testing environment -- manages iterating over testing"`
-	Time         axon.Time       `desc:"axon timing parameters and state"`
-	ViewOn       bool            `desc:"whether to update the network view while running"`
-	TrainUpdt    axon.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
-	TestUpdt     axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
-	TestInterval int             `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
-	LayStatNms   []string        `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
+	Net          *deep.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	TrnEpcLog    *etable.Table `view:"no-inline" desc:"training epoch-level log data"`
+	TstEpcLog    *etable.Table `view:"no-inline" desc:"testing epoch-level log data"`
+	TstTrlLog    *etable.Table `view:"no-inline" desc:"testing trial-level log data"`
+	TstErrLog    *etable.Table `view:"no-inline" desc:"log of all test trials where errors were made"`
+	TstErrStats  *etable.Table `view:"no-inline" desc:"stats on test trials where errors were made"`
+	TstCycLog    *etable.Table `view:"no-inline" desc:"testing cycle-level log data"`
+	RunLog       *etable.Table `view:"no-inline" desc:"summary log of each run"`
+	RunStats     *etable.Table `view:"no-inline" desc:"aggregate stats on all runs"`
+	ErrLrMod     axon.LrateMod `view:"inline" desc:"learning rate modulation as function of error"`
+	PAlphaPlus   float32       `desc:"probability of an alpha-cycle plus phase (driver burst activation) within theta cycle -- like teacher forcing"`
+	Params       params.Sets   `view:"no-inline" desc:"full collection of param sets"`
+	ParamSet     string        `desc:"which set of *additional* parameters to use -- always applies Base and optionaly this next if set"`
+	Tag          string        `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
+	MaxRuns      int           `desc:"maximum number of model runs to perform"`
+	MaxEpcs      int           `desc:"maximum number of epochs to run per model run"`
+	NZeroStop    int           `desc:"if a positive number, training will stop after this many epochs with zero UnitErr"`
+	TrainEnv     FSAEnv        `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
+	TestEnv      FSAEnv        `desc:"Testing environment -- manages iterating over testing"`
+	Time         axon.Time     `desc:"axon timing parameters and state"`
+	ViewOn       bool          `desc:"whether to update the network view while running"`
+	TrainUpdt    etime.Times   `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
+	TestUpdt     etime.Times   `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
+	TestInterval int           `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
+	LayStatNms   []string      `desc:"names of layers to collect more detailed stats on (avg act, etc)"`
 
 	// statistics: note use float64 as that is best for etable.Table
 	TrlErr        float64 `inactive:"+" desc:"1 if trial was error, 0 if correct -- based on correct output"`
@@ -267,8 +268,8 @@ func (ss *Sim) New() {
 	ss.Params = ParamSets
 	ss.RndSeed = 1
 	ss.ViewOn = true
-	ss.TrainUpdt = axon.AlphaCycle
-	ss.TestUpdt = axon.Cycle
+	ss.TrainUpdt = etime.AlphaCycle
+	ss.TestUpdt = etime.Cycle
 	ss.TestInterval = 500
 	ss.LayStatNms = []string{"InputP", "Hidden"}
 	if InputNameMap == nil {
@@ -401,19 +402,19 @@ func (ss *Sim) UpdateView(train bool) {
 	}
 }
 
-func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
+func (ss *Sim) UpdateViewTime(train bool, viewUpdt etime.Times) {
 	switch viewUpdt {
-	case axon.Cycle:
+	case etime.Cycle:
 		ss.UpdateView(train)
-	case axon.FastSpike:
+	case etime.FastSpike:
 		if ss.Time.Cycle%10 == 0 {
 			ss.UpdateView(train)
 		}
-	case axon.GammaCycle:
+	case etime.GammaCycle:
 		if ss.Time.Cycle%25 == 0 {
 			ss.UpdateView(train)
 		}
-	case axon.AlphaCycle:
+	case etime.AlphaCycle:
 		if ss.Time.Cycle%100 == 0 {
 			ss.UpdateView(train)
 		}
@@ -449,7 +450,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	_ = didAlphaPlus
 
 	ss.Net.NewState()
-	ss.Time.NewState(train)
+	ss.Time.NewState("Train")
 	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
 		ss.Net.Cycle(&ss.Time)
 		if !train {
@@ -479,8 +480,8 @@ func (ss *Sim) ThetaCyc(train bool) {
 			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
-	ss.Time.NewPhase()
-	if viewUpdt == axon.Phase {
+	ss.Time.NewPhase(true)
+	if viewUpdt == etime.Phase {
 		ss.UpdateView(train)
 	}
 	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
@@ -504,7 +505,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 		ss.Net.DWt(&ss.Time)
 	}
 
-	if viewUpdt == axon.Phase || viewUpdt == axon.AlphaCycle || viewUpdt == axon.ThetaCycle {
+	if viewUpdt == etime.Phase || viewUpdt == etime.AlphaCycle || viewUpdt == etime.ThetaCycle {
 		ss.UpdateView(train)
 	}
 
@@ -566,7 +567,7 @@ func (ss *Sim) TrainTrial() {
 	if chg {
 		ss.LogTrnEpc(ss.TrnEpcLog)
 		ss.TrainEnv.Trial.Cur = 0
-		if ss.ViewOn && ss.TrainUpdt > axon.AlphaCycle {
+		if ss.ViewOn && ss.TrainUpdt > etime.AlphaCycle {
 			ss.UpdateView(true)
 		}
 		if ss.TestInterval > 0 && epc%ss.TestInterval == 0 { // note: epc is *next* so won't trigger first time
@@ -745,7 +746,7 @@ func (ss *Sim) TestTrial(returnOnChg bool) {
 	// Query counters FIRST
 	_, _, chg := ss.TestEnv.Counter(env.Epoch)
 	if chg {
-		if ss.ViewOn && ss.TestUpdt > axon.AlphaCycle {
+		if ss.ViewOn && ss.TestUpdt > etime.AlphaCycle {
 			ss.UpdateView(false)
 		}
 		ss.LogTstEpc(ss.TstEpcLog)
