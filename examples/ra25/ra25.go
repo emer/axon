@@ -391,21 +391,21 @@ func (ss *Sim) ConfigLoops() {
 	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
 
 	// Plus and Minus with Length of each, start and end logic
-	minusPhase := looper.LoopSegment{Name: "MinusPhase", Duration: 150, IsPlusPhase: false}
-	minusPhase.PhaseStart.Add("Sim:MinusPhase:Start", func() {
+	minusPhase := looper.LoopSegment{Name: "MinusPhase", Duration: 150}
+	minusPhase.OnStart.Add("Sim:MinusPhase:Start", func() {
 		ss.Time.PlusPhase = false
 		ss.Time.NewPhase(false)
 	})
-	minusPhase.PhaseEnd.Add("Sim:MinusPhase:End", func() { ss.Net.MinusPhase(&ss.Time) })
-	plusPhase := looper.LoopSegment{Name: "PlusPhase", Duration: 50, IsPlusPhase: true}
-	plusPhase.PhaseStart.Add("Sim:PlusPhase:Start", func() {
+	minusPhase.OnEnd.Add("Sim:MinusPhase:End", func() { ss.Net.MinusPhase(&ss.Time) })
+	plusPhase := looper.LoopSegment{Name: "PlusPhase", Duration: 50}
+	plusPhase.OnStart.Add("Sim:PlusPhase:Start", func() {
 		ss.Time.PlusPhase = true
 		ss.Time.NewPhase(true)
 	})
-	plusPhase.PhaseEnd.Add("Sim:PlusPhase:End", func() { ss.Net.PlusPhase(&ss.Time) })
+	plusPhase.OnEnd.Add("Sim:PlusPhase:End", func() { ss.Net.PlusPhase(&ss.Time) })
 	// Add both to train and test, by copy
-	manager.AddPhaseAllModes(etime.Cycle, minusPhase)
-	manager.AddPhaseAllModes(etime.Cycle, plusPhase)
+	manager.AddSegmentAllModes(etime.Cycle, minusPhase)
+	manager.AddSegmentAllModes(etime.Cycle, plusPhase)
 
 	// Trial Stats and Apply Input
 	for m, _ := range manager.Stacks {
@@ -454,9 +454,9 @@ func (ss *Sim) ConfigLoops() {
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:RasterRec", ss.RasterRec)
 		}
-		for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Phases {
-			phase.PhaseEnd.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
-			phase.PhaseEnd.Add("GUI:UpdatePlot", func() {
+		for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Segments {
+			phase.OnEnd.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
+			phase.OnEnd.Add("GUI:UpdatePlot", func() {
 				ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
 			})
 		}
