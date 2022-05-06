@@ -404,8 +404,8 @@ func (ss *Sim) ConfigLoops() {
 	})
 	plusPhase.OnEnd.Add("Sim:PlusPhase:End", func() { ss.Net.PlusPhase(&ss.Time) })
 	// Add both to train and test, by copy
-	manager.AddSegmentAllModes(etime.Cycle, minusPhase)
-	manager.AddSegmentAllModes(etime.Cycle, plusPhase)
+	manager.AddSpanAllModes(etime.Cycle, minusPhase)
+	manager.AddSpanAllModes(etime.Cycle, plusPhase)
 
 	// Trial Stats and Apply Input
 	for m, _ := range manager.Stacks {
