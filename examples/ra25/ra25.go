@@ -304,7 +304,7 @@ func (ss *Sim) AddDefaultLoopSimLogic(manager *looper.DataManager) {
 
 	// Weight updates.
 	// Note that the substring "UpdateNetView" in the name is important here, because it's checked in AddDefaultGUICallbacks.
-	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:Span:UpdateWeightsAndUpdateNetView" /*DO NOT CHANGE NAME*/, func() {
+	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:Event:UpdateWeightsAndUpdateNetView" /*DO NOT CHANGE NAME*/, func() {
 		ss.Net.DWt(&ss.Time)
 		// Need to update the GUI here because WtFmDWt clears some values as a side effect. This may seem like an unnecessary optimization, but clearing those values is expensive.
 		if ss.Args.Bool("nogui") == false {
@@ -391,21 +391,22 @@ func (ss *Sim) ConfigLoops() {
 	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
 
 	// Plus and Minus with Length of each, start and end logic
-	minusPhase := looper.Span{Name: "MinusPhase", Duration: 150}
-	minusPhase.OnStart.Add("Sim:MinusPhase:Start", func() {
+	minusPhase := looper.Event{Name: "MinusPhase", OccurTime: 0}
+	minusPhase.OnOccur.Add("Sim:MinusPhase:Start", func() {
 		ss.Time.PlusPhase = false
 		ss.Time.NewPhase(false)
 	})
-	minusPhase.OnEnd.Add("Sim:MinusPhase:End", func() { ss.Net.MinusPhase(&ss.Time) })
-	plusPhase := looper.Span{Name: "PlusPhase", Duration: 50}
-	plusPhase.OnStart.Add("Sim:PlusPhase:Start", func() {
+	plusPhase := looper.Event{Name: "PlusPhase", OccurTime: 150}
+	plusPhase.OnOccur.Add("Sim:MinusPhase:End", func() { ss.Net.MinusPhase(&ss.Time) })
+	plusPhase.OnOccur.Add("Sim:PlusPhase:Start", func() {
 		ss.Time.PlusPhase = true
 		ss.Time.NewPhase(true)
 	})
-	plusPhase.OnEnd.Add("Sim:PlusPhase:End", func() { ss.Net.PlusPhase(&ss.Time) })
+	plusPhaseEnd := looper.Event{Name: "PlusPhase", OccurTime: 199}
+	plusPhaseEnd.OnOccur.Add("Sim:PlusPhase:End", func() { ss.Net.PlusPhase(&ss.Time) })
 	// Add both to train and test, by copy
-	manager.AddSpanAllModes(etime.Cycle, minusPhase)
-	manager.AddSpanAllModes(etime.Cycle, plusPhase)
+	manager.AddEventAllModes(etime.Cycle, minusPhase)
+	manager.AddEventAllModes(etime.Cycle, plusPhase)
 
 	// Trial Stats and Apply Input
 	for m, _ := range manager.Stacks {
@@ -454,9 +455,9 @@ func (ss *Sim) ConfigLoops() {
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
 			manager.GetLoop(mode, etime.Cycle).OnStart.Add("GUI:RasterRec", ss.RasterRec)
 		}
-		for _, phase := range manager.GetLoop(etime.Train, etime.Cycle).Spans {
-			phase.OnEnd.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
-			phase.OnEnd.Add("GUI:UpdatePlot", func() {
+		for _, event := range manager.GetLoop(etime.Train, etime.Cycle).Events {
+			event.OnOccur.Add("GUI:UpdateNetView", ss.UpdateNetViewCycle)
+			event.OnOccur.Add("GUI:UpdatePlot", func() {
 				ss.GUI.UpdatePlot(etime.Test, etime.Cycle) // make sure always updated at end
 			})
 		}
