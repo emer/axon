@@ -172,6 +172,10 @@ func (nt *NetworkStru) Layout() {
 			rp := ly.RelPos()
 			var oly emer.Layer
 			if lstly != nil && rp.Rel == relpos.NoRel {
+				if ly.Pos().X != 0 || ly.Pos().Y != 0 || ly.Pos().Z != 0 {
+					// Position has been modified, don't mess with it.
+					continue
+				}
 				oly = lstly
 				ly.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: lstly.Name(), XAlign: relpos.Middle, YAlign: relpos.Front})
 			} else {
