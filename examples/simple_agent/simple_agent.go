@@ -38,10 +38,9 @@ func main() {
 	}
 	userInterface.AddDefaultLogging()
 	userInterface.CreateAndRunGuiWithAdditionalConfig(func() {
-		sw, ok := sim.WorldEnv.(*agent.AgentProxyWithWorldCache) // See ConfigEnv()
-		if ok {
-			userInterface.AddServerButton(sw.GetServerFunc(sim.Loops))
-		}
+		//sw, ok := sim.WorldEnv.(agent.Serverable) // Use this if you don't want to serve over the network.
+		handler := agent.AgentHandler{Agent: sim.WorldEnv.(*agent.AgentProxyWithWorldCache)} // Use this if you do want to serve over the network.
+		userInterface.AddServerButton(handler.GetServerFunc(sim.Loops))
 	}) // CreateAndRunGui blocks, so don't put any code after this.
 }
 
