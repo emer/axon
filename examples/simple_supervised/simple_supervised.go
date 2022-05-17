@@ -18,9 +18,10 @@ import (
 	"log"
 )
 
-// TODO Comment
+// This file demonstrates how to do supervised learning with a simple axon network and a simple task. It creates an "RA 25 Env", which stands for "Random Associator 25 (5x5)", which provides random 5x5 patterns for the network to learn.
+// In addition to creating a simple environment and a simple network, it creates a looper.Manager to control the flow of time across Runs, Epochs, and Trials. It creates a GUI to control it.
 
-var numPatterns = 100
+var numPatterns = 30 // How many random patterns. Each pattern is one trial per epoch.
 
 func main() {
 	var sim Sim
@@ -34,7 +35,7 @@ func main() {
 		Network:                   sim.Net.EmerNet,
 		AppName:                   "Simple Supervised",
 		AppTitle:                  "Random Associator for Supervised Task",
-		AppAbout:                  `Learn to memorize random pairs presented as input/output.`,
+		AppAbout:                  `Learn to memorize random pattern pairs presented as input/output.`,
 		AddNetworkLoggingCallback: axon.AddCommonLogItemsForOutputLayers,
 	}
 	userInterface.AddDefaultLogging()
@@ -93,7 +94,6 @@ func (ss *Sim) ConfigLoops() *looper.Manager {
 	plusPhase.OnEvent.Add("Sim:PlusPhase:SendActionsThenStep", func() {
 		// Check the action at the beginning of the Plus phase, before the teaching signal is introduced.
 		axon.SendActionAndStep(ss.Net.AsAxon(), ss.WorldEnv)
-		// TODO Supervised learning here
 	})
 
 	// Trial Stats and Apply Input
@@ -107,7 +107,7 @@ func (ss *Sim) ConfigLoops() *looper.Manager {
 		axon.ApplyInputs(ss.Net.AsAxon(), ss.WorldEnv, "Input", func(spec agent.SpaceSpec) etensor.Tensor {
 			return ss.WorldEnv.Observe("Input")
 		})
-		// Although output is applied here, it won't actually be clamped until PlusPhase is called.
+		// Although output is applied here, it won't actually be clamped until PlusPhase is called, because it's a layer of type Target.
 		axon.ApplyInputs(ss.Net.AsAxon(), ss.WorldEnv, "Output", func(spec agent.SpaceSpec) etensor.Tensor {
 			return ss.WorldEnv.Observe("Output")
 		})
