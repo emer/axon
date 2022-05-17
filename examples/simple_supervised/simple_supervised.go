@@ -18,8 +18,9 @@ import (
 	"log"
 )
 
-// This file demonstrates the creation of a simple axon network connected to a simple world in a different file and potentially a different process. Although it is intended as a framework for creating an intelligent agent and embedding it in a challenging world, it does not actually implement any meaningful sort of intelligence, as the network receives no teaching signal of any kind. In addition to creating a simple environment and a simple network, it creates a looper.Manager to control the flow of time across Runs, Epochs, and Trials. It creates a GUI to control it.
-// Although this model does not learn or use a real environment, you may find it useful as a template for creating something more.
+// TODO Comment
+
+var numPatterns = 100
 
 func main() {
 	var sim Sim
@@ -31,17 +32,13 @@ func main() {
 		StructForView:             &sim,
 		Looper:                    sim.Loops,
 		Network:                   sim.Net.EmerNet,
-		AppName:                   "Agent",
-		AppTitle:                  "Simple Agent",
-		AppAbout:                  `A simple agent that can handle an arbitrary world.`,
+		AppName:                   "Simple Supervised",
+		AppTitle:                  "Random Associator for Supervised Task",
+		AppAbout:                  `Learn to memorize random pairs presented as input/output.`,
 		AddNetworkLoggingCallback: axon.AddCommonLogItemsForOutputLayers,
 	}
 	userInterface.AddDefaultLogging()
-	userInterface.CreateAndRunGuiWithAdditionalConfig(func() {
-		//sw, ok := sim.WorldEnv.(agent.Serverable) // Use this if you don't want to serve over the network.
-		handler := agent.AgentHandler{Agent: sim.WorldEnv.(*agent.AgentProxyWithWorldCache)} // Use this if you do want to serve over the network.
-		userInterface.AddServerButton(handler.GetServerFunc(sim.Loops))
-	}) // CreateAndRunGui blocks, so don't put any code after this.
+	userInterface.CreateAndRunGui() // CreateAndRunGui blocks, so don't put any code after this.
 }
 
 // Sim encapsulates working data for the simulation model, keeping all relevant state information organized and available without having to pass everything around.
@@ -54,13 +51,13 @@ type Sim struct {
 }
 
 func (ss *Sim) ConfigEnv() agent.WorldInterface {
-	return &agent.AgentProxyWithWorldCache{}
+	return &Ra25Env{PatternSize: 5, NumPatterns: numPatterns}
 }
 
 func (ss *Sim) ConfigNet() *deep.Network {
 	// A simple network for demonstration purposes.
 	net := &deep.Network{}
-	net.InitName(net, "Emery")
+	net.InitName(net, "RA25")
 	inp := net.AddLayer2D("Input", 5, 5, emer.Input)
 	hid1 := net.AddLayer2D("Hidden1", 10, 10, emer.Hidden)
 	hid2 := net.AddLayer2D("Hidden2", 10, 10, emer.Hidden)
@@ -89,13 +86,14 @@ func (ss *Sim) NewRun() {
 func (ss *Sim) ConfigLoops() *looper.Manager {
 	manager := looper.Manager{}.Init()
 	manager.Stacks[etime.Train] = &looper.Stack{}
-	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 1).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
+	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 1).AddTime(etime.Epoch, 100).AddTime(etime.Trial, numPatterns).AddTime(etime.Cycle, 200)
 
 	axon.AddPlusAndMinusPhases(manager, &ss.Time, ss.Net.AsAxon())
 	plusPhase := &manager.GetLoop(etime.Train, etime.Cycle).Events[1]
 	plusPhase.OnEvent.Add("Sim:PlusPhase:SendActionsThenStep", func() {
 		// Check the action at the beginning of the Plus phase, before the teaching signal is introduced.
 		axon.SendActionAndStep(ss.Net.AsAxon(), ss.WorldEnv)
+		// TODO Supervised learning here
 	})
 
 	// Trial Stats and Apply Input
@@ -107,12 +105,16 @@ func (ss *Sim) ConfigLoops() *looper.Manager {
 	})
 	stack.Loops[etime.Trial].OnStart.Add("Sim:Trial:Observe", func() {
 		axon.ApplyInputs(ss.Net.AsAxon(), ss.WorldEnv, "Input", func(spec agent.SpaceSpec) etensor.Tensor {
-			// Use ObserveWithShape on the AgentProxyWithWorldCache which just returns a random vector of the correct size.
-			return ss.WorldEnv.(*agent.AgentProxyWithWorldCache).ObserveWithShape("Input", spec)
+			return ss.WorldEnv.Observe("Input")
+		})
+		// Although output is applied here, it won't actually be clamped until PlusPhase is called.
+		axon.ApplyInputs(ss.Net.AsAxon(), ss.WorldEnv, "Output", func(spec agent.SpaceSpec) etensor.Tensor {
+			return ss.WorldEnv.Observe("Output")
 		})
 	})
 
 	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", ss.NewRun)
+	manager.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewPatterns", func() { ss.WorldEnv.InitWorld(nil) })
 	axon.AddDefaultLoopSimLogic(manager, &ss.Time, ss.Net.AsAxon())
 
 	// Initialize and print loop structure, then add to Sim

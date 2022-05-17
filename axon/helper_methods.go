@@ -160,7 +160,7 @@ func HogDead(net *Network, lnm string) (hog, dead float64) {
 }
 
 // AddPlusAndMinusPhases adds the minus and plus phases of the theta cycle, which help the network learn.
-func AddPlusAndMinusPhases(manager *looper.Manager, time *Time, net *Network) (looper.Event, looper.Event, looper.Event) {
+func AddPlusAndMinusPhases(manager *looper.Manager, time *Time, net *Network) {
 	// The minus and plus phases of the theta cycle, which help the network learn.
 	minusPhase := looper.Event{Name: "MinusPhase", AtCtr: 0}
 	minusPhase.OnEvent.Add("Sim:MinusPhase:Start", func() {
@@ -173,13 +173,12 @@ func AddPlusAndMinusPhases(manager *looper.Manager, time *Time, net *Network) (l
 		time.PlusPhase = true
 		time.NewPhase(true)
 	})
-	plusPhaseEnd := looper.Event{Name: "PlusPhase", AtCtr: 199}
+	plusPhaseEnd := looper.Event{Name: "PlusPhaseEnd", AtCtr: 199}
 	plusPhaseEnd.OnEvent.Add("Sim:PlusPhase:End", func() { net.PlusPhase(time) })
 	// Add both to train and test, by copy
 	manager.AddEventAllModes(etime.Cycle, minusPhase)
 	manager.AddEventAllModes(etime.Cycle, plusPhase)
 	manager.AddEventAllModes(etime.Cycle, plusPhaseEnd)
-	return minusPhase, plusPhase, plusPhaseEnd
 }
 
 // NewRndSeed gets a new random seed based on current time -- otherwise uses
