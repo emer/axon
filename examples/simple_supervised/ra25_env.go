@@ -22,7 +22,6 @@ type Ra25Env struct {
 
 // InitWorld creates and stores patterns.
 func (world *Ra25Env) InitWorld(details map[string]string) (actionSpace map[string]agent.SpaceSpec, observationSpace map[string]agent.SpaceSpec) {
-	// TODO Use details to fill in PatternSize and NumPatterns.
 	if world.PatternSize == 0 {
 		world.PatternSize = 5
 	}
