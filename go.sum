@@ -5,6 +5,8 @@ dmitri.shuralyov.com/gpu/mtl v0.0.0-20201218220906-28db891af037/go.mod h1:H6x//7
 gioui.org v0.0.0-20210308172011-57750fc8a0a6/go.mod h1:RSH6KIUZ0p2xy5zHDxgAM4zumjgTw83q2ge/PI+yyw8=
 github.com/Astera-org/worlds v0.0.0-20220513203205-17959e9bff37 h1:LZxxSw8vRDComA8tGoxr9iu/HizH9tJYgSH7cbI7VhQ=
 github.com/Astera-org/worlds v0.0.0-20220513203205-17959e9bff37/go.mod h1:Rtq5XvgbiXtMgfEf0wHFEk38JmsVeD6xE1mrCO6HFRY=
+github.com/Astera-org/worlds v0.0.0-20220518202412-c0d808c44c09 h1:atTyaeXNoGm/Py5LuOXJ2Y69yGY/FNkOqZTwv9kbnow=
+github.com/Astera-org/worlds v0.0.0-20220518202412-c0d808c44c09/go.mod h1:Rtq5XvgbiXtMgfEf0wHFEk38JmsVeD6xE1mrCO6HFRY=
 github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298 h1:1qlsVAQJXZHsaM8b6OLVo6muQUQd4CwkH/D3fnnbHXA=
 github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298/go.mod h1:D+QujdIlUNfa0igpNMk6UIvlb6C252URs4yupRUV4lQ=
 github.com/BurntSushi/graphics-go v0.0.0-20160129215708-b43f31a4a966 h1:lTG4HQym5oPKjL7nGs+csTgiDna685ZXjxijkne828g=
