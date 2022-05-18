@@ -110,6 +110,8 @@ github.com/edsrzf/mmap-go v1.0.0/go.mod h1:YO35OhQPt3KJa3ryjFM5Bs14WD66h8eGKpfaB
 github.com/emer/emergent v1.1.26/go.mod h1:XhFMJgoZeOYplTDMDUcmGPuthfTqJPbBLmXEPN6uP8Y=
 github.com/emer/emergent v1.2.3 h1:WcEydbkjqPOLOWIcCohy7On+vnrsgxeTF+9mWYTl1KY=
 github.com/emer/emergent v1.2.3/go.mod h1:ux6TbRYeV5LacrotL+SKzOWqJH9IkOD8/YlhwJRNJV4=
+github.com/emer/emergent v1.2.5 h1:CjyMZkBs1yl4veUXt4hmfMCYNUIMkliZATJnkTSayHI=
+github.com/emer/emergent v1.2.5/go.mod h1:LvOMlTYpG5QTnA0Ep/jk83NJQrjmedNDOAroMv6/B58=
 github.com/emer/empi v1.0.12 h1:rDOLjrtqr8FzreMtWyzyx0/6hIPlTpjv/LzRSFPEq7Y=
 github.com/emer/empi v1.0.12/go.mod h1:QJRkECkqMO3/UeuknKEzqH+oEf6MWogBeu5LPi+Y9mU=
 github.com/emer/etable v1.0.27/go.mod h1:JM0+fr/d33YNapi3hmKJ9lQPnaavT/4KimxBPnwxLsY=
