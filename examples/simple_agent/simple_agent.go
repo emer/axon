@@ -108,7 +108,7 @@ func (ss *Sim) ConfigLoops() *looper.Manager {
 	stack.Loops[etime.Trial].OnStart.Add("Sim:Trial:Observe", func() {
 		axon.ApplyInputs(ss.Net.AsAxon(), ss.WorldEnv, "Input", func(spec agent.SpaceSpec) etensor.Tensor {
 			// Use ObserveWithShape on the AgentProxyWithWorldCache which just returns a random vector of the correct size.
-			return ss.WorldEnv.(*agent.AgentProxyWithWorldCache).ObserveWithShape("Input", spec)
+			return ss.WorldEnv.Observe("Input")
 		})
 	})
 

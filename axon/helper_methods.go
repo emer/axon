@@ -53,7 +53,12 @@ func SendActionAndStep(net *Network, ev agent.WorldInterface) {
 		ly := net.LayerByName(lnm).(AxonLayer).AsAxon()
 		vt := &etensor.Float32{}
 		ly.UnitValsTensor(vt, "ActM")
-		actions[lnm] = agent.Action{Vector: vt}
+		actions[lnm] = agent.Action{Vector: vt, ActionShape: &agent.SpaceSpec{
+			ContinuousShape: vt.Shp,
+			Stride:          vt.Strd,
+			Min:             0,
+			Max:             1,
+		}}
 	}
 	_, debug := ev.StepWorld(actions, false)
 	if debug != "" {
