@@ -107,7 +107,7 @@ func (ss *Sim) ConfigLoops() *looper.Manager {
 		axon.ApplyInputs(ss.Net.AsAxon(), ss.WorldEnv, "Input", func(spec agent.SpaceSpec) etensor.Tensor {
 			return ss.WorldEnv.Observe("Input")
 		})
-		// Although output is applied here, it won't actually be clamped until PlusPhase is called, because it's a layer of type Target.
+		// Although ground truth output is applied here, it won't actually be clamped until PlusPhase is called, because it's a layer of type Target.
 		axon.ApplyInputs(ss.Net.AsAxon(), ss.WorldEnv, "Output", func(spec agent.SpaceSpec) etensor.Tensor {
 			return ss.WorldEnv.Observe("Output")
 		})

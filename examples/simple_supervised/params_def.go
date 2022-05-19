@@ -10,310 +10,90 @@ import "github.com/emer/emergent/params"
 // selected to apply on top of that
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
+		"NetSize": &params.Sheet{
+			{Sel: ".Hidden", Desc: "all hidden layers",
+				Params: params.Params{
+					"Layer.X":         "10", //todo layer size correspondence between areas that are connected upstream parameter - get there when we get there
+					"Layer.Y":         "10",
+					"NumHiddenLayers": "2", //todo not implemented
+				},
+				Hypers: params.Hypers{
+					//"Layer.X": {"StdDev": "0.3", "Min": "2", "Type": "Int"},
+					//"Layer.Y": {"StdDev": "0.3", "Min": "2", "Type": "Int"},
+				},
+			},
+		},
+		// Some network parameters chosen by WandB: https://wandb.ai/obelisk/models/reports/Good-Weights-for-RA25--VmlldzoxODMxODI1
 		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "using default 1 inhib for hidden layers",
+			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.06",
-					"Layer.Inhib.Layer.Gi":    "1.1",
-					"Layer.Inhib.Pool.FFEx0":  "0.15",
-					"Layer.Inhib.Pool.FFEx":   "0.02", // .05 for lvis
-					"Layer.Inhib.Layer.FFEx0": "0.15",
-					"Layer.Inhib.Layer.FFEx":  "0.02", //
-					"Layer.Act.Gbar.L":        "0.2",
-					"Layer.Act.Decay.Act":     "0.2", // todo: explore
-					"Layer.Act.Decay.Glong":   "0.6",
-					"Layer.Act.Clamp.Ge":      "1.0", // .6 was
-				}},
-			{Sel: ".Hidden", Desc: "noise? sub-pools",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init":    "0.06",
-					"Layer.Inhib.ActAvg.AdaptGi": "false", // no!
-					"Layer.Inhib.Layer.Gi":       "1.1",
-					"Layer.Inhib.Pool.Gi":        "1.1",
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Layer.On":       "true", // full layer
-				}},
-			{Sel: ".CT", Desc: "corticothalamic context",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.06",
-					"Layer.CtxtGeGain":        "0.2", // .2 > .1 > .3
-					"Layer.Inhib.Layer.Gi":    "1.1",
-					"Layer.Inhib.Pool.Gi":     "1.1",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Act.KNa.On":        "true",
-					"Layer.Act.NMDA.Gbar":     "0.03", // larger not better
-					"Layer.Act.GABAB.Gbar":    "0.2",
-					"Layer.Act.Decay.Act":     "0.0", // 0 best in other models
-					"Layer.Act.Decay.Glong":   "0.0",
-				}},
-			{Sel: "TRCLayer", Desc: "",
-				Params: params.Params{
-					"Layer.TRC.DriveScale":   "0.15", // .15 > .05 default
-					"Layer.Act.Decay.Act":    "0.5",
-					"Layer.Act.Decay.Glong":  "1", // clear long
-					"Layer.Inhib.Pool.FFEx":  "0.0",
-					"Layer.Inhib.Layer.FFEx": "0.0",
-				}},
-			{Sel: ".Depth", Desc: "depth layers use pool inhibition only",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.08",
-					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Pool.On":     "false",
-					"Layer.Inhib.Layer.Gi":    "0.8",
-					"Layer.Inhib.Pool.Gi":     "0.8",
-					"Layer.Inhib.Pool.FFEx":   "0.0",
-					"Layer.Inhib.Layer.FFEx":  "0.0",
-				}},
-			{Sel: ".Fovea", Desc: "fovea has both",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.Layer.On":    "true", // layer too
-					"Layer.Inhib.Layer.Gi":    "1",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "1",
-					"Layer.Inhib.Pool.FFEx":   "0.0",
-					"Layer.Inhib.Layer.FFEx":  "0.0",
-				}},
-			{Sel: ".S1S", Desc: "lower inhib, higher act",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1", // some weaker global inhib
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "0.8", // weaker
-					"Layer.Inhib.ActAvg.Init": "0.2",
-				}},
-			{Sel: ".S1V", Desc: "lower inhib, higher act",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Layer.Gi":    "1.1",
-					"Layer.Inhib.Pool.On":     "false",
-					"Layer.Inhib.ActAvg.Init": "0.1",
-				}},
-			{Sel: ".Ins", Desc: "pools",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.1",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "1.1",
-					"Layer.Inhib.ActAvg.Init": "0.1",
-				}},
-			{Sel: ".M1", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.Inhib.Layer.Gi":    "1.1",
-				}},
-			{Sel: ".MSTd", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.ActAvg.Init": "0.03",
-					"Layer.Inhib.Layer.Gi":    "1.1", // 1.1 > 1.0
-					"Layer.Inhib.Pool.Gi":     "1.1",
-					"Layer.Inhib.Pool.FFEx":   "0.02", //
-					"Layer.Inhib.Layer.FFEx":  "0.02",
-				}},
-			{Sel: "#MSTdCT", Desc: "",
-				Params: params.Params{
-					// "Layer.Inhib.Layer.Gi": "1.1",
-					// "Layer.Inhib.Pool.Gi":  "1.1",
-					// "Layer.Inhib.Pool.FFEx":   "0.08", // .05 for lvis
-					// "Layer.Inhib.Layer.FFEx":  "0.08", // .05 best so far
-				}},
-			{Sel: ".cIPL", Desc: "cIPL general",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Inhib.Pool.Gi":  "1.1",
-				}},
-			{Sel: ".PCC", Desc: "PCC general",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Layer.Gi": "1.1",
-				}},
-			{Sel: "#V2WdP", Desc: "weaker inhibition for pulvinar",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8",
-					"Layer.Inhib.Pool.Gi":  "0.8", // not used
-				}},
-			{Sel: "#MSTdP", Desc: "weaker inhibition for pulvinar",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9", // 0.8 > 0.9
-					"Layer.Inhib.Pool.Gi":  "0.9",
-				}},
-			{Sel: "#cIPLP", Desc: "weaker inhibition for pulvinar",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",
-					"Layer.Inhib.Pool.Gi":  "0.9",
-				}},
-			{Sel: ".SMA", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.Inhib.Pool.On":     "false",
-				}},
-			{Sel: "#SMA", Desc: "",
-				Params: params.Params{
-					"Layer.Act.Noise.Dist": "Gaussian",
-					"Layer.Act.Noise.Var":  "0.01", // 0.02 too high, 0.005 == 0.01 performance-wise
-					"Layer.Act.Noise.Type": "GeNoise",
-				}},
-			{Sel: "#SMAP", Desc: "pulv",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.1",
-					"Layer.Inhib.Pool.Gi":     "1.1",
-					"Layer.Inhib.Pool.On":     "true", // independent pathways
-					"Layer.Inhib.ActAvg.Init": "0.1",
-				}},
-			{Sel: "#Act", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-				}},
-			{Sel: "#VL", Desc: "VL regular inhib",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "0.8",
-					"Layer.Inhib.Pool.FFEx":  "0.0",
-					"Layer.Inhib.Layer.FFEx": "0.0",
-				}},
-			{Sel: "#M1", Desc: "noise!?",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.Inhib.Layer.Gi":    "1.1", // reg
-					"Layer.Act.Noise.Dist":    "Gaussian",
-					"Layer.Act.Noise.Var":     "0.01", // 0.01 orig -- some noise essential for 1 self
-					"Layer.Act.Noise.Type":    "NoNoise",
-				}},
-			{Sel: "#M1P", Desc: "m1 pulvinar",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.Inhib.Layer.Gi":    "1.0", // weaker pulv
-				}},
-			{Sel: ".IT", Desc: "reg",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.Inhib.Pool.On":     "false",
-					"Layer.Inhib.Layer.Gi":    "1.1",
-				}},
-			{Sel: "#ITCT", Desc: "reg",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Pool.On":  "true",
-				}},
-			{Sel: ".LIP", Desc: "reg",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.06",
-					"Layer.Inhib.Layer.Gi":    "1.1",
-					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "1.1",
-				}},
+					// All params with importance >=5 have hypers
+					"Layer.Inhib.Layer.Gi": "1.2", // 1.2 > 1.1     importance: 10
+					// TODO This param should vary with Gi it looks like
+					"Layer.Inhib.ActAvg.Init": "0.04",  // 0.04 for 1.2, 0.08 for 1.1  importance: 10
+					"Layer.Inhib.Layer.Bg":    "0.3",   // 0.3 > 0.0   importance: 2
+					"Layer.Act.Decay.Glong":   "0.6",   // 0.6   importance: 2
+					"Layer.Act.Dend.GbarExp":  "0.2",   // 0.2 > 0.1 > 0   importance: 5
+					"Layer.Act.Dend.GbarR":    "3",     // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels importance: 5
+					"Layer.Act.Dt.VmDendTau":  "5",     // 5 > 2.81 here but small effect importance: 1
+					"Layer.Act.Dt.VmSteps":    "2",     // 2 > 3 -- somehow works better importance: 1
+					"Layer.Act.Dt.GeTau":      "5",     // importance: 1
+					"Layer.Act.NMDA.Gbar":     "0.123", //  importance: 7 // From Wandb
+					"Layer.Act.NMDA.MgC":      "1.4",
+					"Layer.Act.NMDA.Voff":     "5",
+					"Layer.Act.GABAB.Gbar":    "0.124", // 0.2 > 0.15  importance: 7 // From Wandb
+				}, Hypers: params.Hypers{
+					// These shouldn't be set without also searching for the same value in specific layers like #Input, because it'll clobber them, since it's in a separate Params sheet.
+					//"Layer.Inhib.Layer.Gi":    {"StdDev": "0.15"},
+					//"Layer.Inhib.ActAvg.Init": {"StdDev": "0.02", "Min": "0.01"},
 
-			//////////////////////////////////////////////////////////
-			// Prjns
-
-			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
+					//"Layer.Act.Dend.GbarExp":  {"StdDev": "0.05"},
+					//"Layer.Act.Dend.GbarR":    {"StdDev": "1"},
+					"Layer.Act.NMDA.Gbar":  {"StdDev": "0.05"},
+					"Layer.Act.GABAB.Gbar": {"StdDev": "0.05"},
+				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.04", // .04 for SynSpkTheta
-					"Prjn.SWt.Adapt.Lrate":        "0.01", // 0.01 seems to work fine, but .1 maybe more reliable
-					"Prjn.SWt.Adapt.DreamVar":     "0.01", // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":          "1.0",  // .5 ok here, 1 best for larger nets: objrec, lvis
-					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 matches theta exactly, higher dwtavg but ok
-					"Prjn.Learn.KinaseCa.NMDAG":   "1",
-					"Prjn.Learn.KinaseCa.Rule":    "SynSpkTheta",
-					"Prjn.Learn.KinaseCa.MTau":    "5",    // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.UpdtThr": "0.05", // 0.05 -- was LrnThr
-					"Prjn.Learn.XCal.On":          "true",
-					"Prjn.Learn.XCal.PThrMin":     "0.05", // .05 > .01 for PCA for SynSpk, bad for NeurSpk
-					"Prjn.Learn.XCal.LrnThr":      "0.05", // .05 > .01 here but not smaller nets -- should match NeurCa.LrnThr 0.05 also good
+					"Layer.Inhib.Layer.Gi":    "0.827", // 0.9 > 1.0 // From Wandb
+					"Layer.Act.Clamp.Ge":      "1.26",  // 1.0 > 0.6 >= 0.7 == 0.5 // From Wandb
+					"Layer.Inhib.ActAvg.Init": "0.15",  // .24 nominal, lower to give higher excitation
+				},
+				Hypers: params.Hypers{
+					"Layer.Inhib.Layer.Gi": {"StdDev": ".1", "Min": "0", "Priority": "2", "Scale": "LogLinear"},
+					"Layer.Act.Clamp.Ge":   {"StdDev": ".2"},
+				}},
+			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum.
+					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					// "Layer.Act.NMDA.Gbar":     "0.3",  // higher not better
+				}},
+			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
+				Params: params.Params{
+					"Prjn.Learn.Lrate.Base":    "0.2",   // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close  //importance: 10 // From Wandb
+					"Prjn.SWt.Adapt.Lrate":     "0.08",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint //importance: 5
+					"Prjn.SWt.Init.SPct":       "0.432", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..  //importance: 7 // From Wandb
+					"Prjn.Learn.KinaseCa.Rule": "SynSpkTheta",
+				},
+				Hypers: params.Hypers{
+					"Prjn.Learn.Lrate.Base": {"StdDev": "0.1"},
+					//"Prjn.SWt.Adapt.Lrate":  {"StdDev": "0.025"},
+					"Prjn.SWt.Init.SPct": {"StdDev": "0.25", "Min": "0.1"},
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
+					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5 //importance: 9
+				},
+				Hypers: params.Hypers{
+					"Prjn.PrjnScale.Rel": {"StdDev": ".2", "Min": "0.01"},
 				}},
-			{Sel: ".CTBack", Desc: "deep top-down -- stronger",
+		},
+		"Sim": &params.Sheet{ // sim params apply to sim object
+			{Sel: "Sim", Desc: "best params always finish in this time",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.5
-				}},
-			{Sel: ".ActToCT", Desc: "weaker",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
-				}},
-			{Sel: ".Inhib", Desc: "inhibitory projection",
-				Params: params.Params{
-					"Prjn.Learn.Learn":      "true",  // learned decorrel is good
-					"Prjn.Learn.Lrate.Base": "0.001", // .0001 > .001 -- slower better!
-					"Prjn.SWt.Init.Var":     "0.0",
-					"Prjn.SWt.Init.Mean":    "0.1",
-					"Prjn.SWt.Init.Sym":     "false",
-					"Prjn.SWt.Adapt.On":     "false",
-					"Prjn.PrjnScale.Abs":    "0.3", // .1 = .2, slower blowup
-					"Prjn.PrjnScale.Adapt":  "false",
-					"Prjn.IncGain":          "1", // .5 def
-				}},
-			{Sel: ".Lateral", Desc: "default for lateral -- not using",
-				Params: params.Params{
-					"Prjn.SWt.Init.Sym":  "false",
-					"Prjn.SWt.Init.Var":  "0",
-					"Prjn.PrjnScale.Rel": "0.02", // .02 > .05 == .01 > .1  -- very minor diffs on TE cat
-				}},
-			{Sel: ".CTFmSuper", Desc: "CT from main super",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1", // 0.5 > 0.2
-				}},
-			{Sel: ".SuperFwd", Desc: "standard superficial forward prjns -- not to output",
-				Params: params.Params{
-					"Prjn.Com.PFail":    "0.2",   // 0.5 sig worse perf, 0.2 ~= 0.1
-					"Prjn.Com.PFailSWt": "false", // try
-				}},
-			{Sel: ".FmPulv", Desc: "default for pulvinar",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1", // .1 > .2
-				}},
-			{Sel: ".CTSelf", Desc: "CT to CT",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.5", // 0.5 > 0.2
-				}},
-			{Sel: ".CTToPulv", Desc: "basic main CT to pulivnar -- needs to be stronger -- cons are weak somehow",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
-					"Prjn.PrjnScale.Rel": "1",
-				}},
-			{Sel: ".CTToPulv3", Desc: "even stronger abs",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3",
-					"Prjn.PrjnScale.Rel": "1",
-				}},
-			{Sel: ".ToPulv1", Desc: "weaker higher-level pulvinar prjn",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
-					"Prjn.PrjnScale.Rel": "0.1",
-				}},
-			{Sel: ".ToPulv2", Desc: "weaker higher-level pulvinar prjn",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
-					"Prjn.PrjnScale.Rel": "0.2",
-				}},
-			{Sel: ".FwdToPulv", Desc: "feedforward to pulvinar directly",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
-				}},
-			{Sel: "#ITToITCT", Desc: "IT likes stronger FmSuper",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1", // 0.5 > 0.2
-				}},
-			{Sel: "#LIPToLIPCT", Desc: "LIP likes stronger FmSuper",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1", // 0.5 > 0.2
-				}},
-			{Sel: "#LIPCTToLIPCT", Desc: "LIP likes stronger CTSelf",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1", // 0.5 > 0.2
-				}},
-			{Sel: ".V1SC", Desc: "v1 shortcut",
-				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.001", //
-					"Prjn.PrjnScale.Rel":    "0.5",   // .5 lvis
-					"Prjn.SWt.Adapt.On":     "false", // seems better
+					"Sim.CmdArgs.MaxEpcs": "100",
 				}},
 		},
 	}},
