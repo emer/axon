@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/Astera-org/worlds/network_agent"
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/agent"
@@ -39,7 +40,7 @@ func main() {
 	userInterface.AddDefaultLogging()
 	userInterface.CreateAndRunGuiWithAdditionalConfig(func() {
 		//sw, ok := sim.WorldEnv.(agent.Serverable) // Use this if you don't want to serve over the network.
-		handler := agent.AgentHandler{Agent: sim.WorldEnv.(*agent.AgentProxyWithWorldCache)} // Use this if you do want to serve over the network.
+		handler := network_agent.AgentHandler{Agent: sim.WorldEnv.(*agent.AgentProxyWithWorldCache)} // Use this if you do want to serve over the network.
 		userInterface.AddServerButton(handler.GetServerFunc(sim.Loops))
 	}) // CreateAndRunGui blocks, so don't put any code after this.
 }
