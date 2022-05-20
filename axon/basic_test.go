@@ -101,7 +101,7 @@ func TestSynVals(t *testing.T) {
 	afWt := fmIn.SynVal("Wt", 1, 1)
 	afLWt := fmIn.SynVal("LWt", 1, 1)
 
-	CmprFloats([]float32{bfWt, bfLWt, afWt, afLWt}, []float32{0.5, 0.5, 0.15, 0.42822415}, "syn val setting test", t)
+	CompareFloats([]float32{bfWt, bfLWt, afWt, afLWt}, []float32{0.5, 0.5, 0.15, 0.42822415}, "syn val setting test", t)
 
 	// fmt.Printf("SynVals: before wt: %v, lwt: %v  after wt: %v, lwt: %v\n", bfWt, bfLWt, afWt, afLWt)
 }
@@ -113,10 +113,10 @@ func TestInPats(t *testing.T) {
 	}
 }
 
-func CmprFloats(out, cor []float32, msg string, t *testing.T) {
+func CompareFloats(out, cor []float32, msg string, t *testing.T) {
 	for i := range out {
 		dif := mat32.Abs(out[i] - cor[i])
-		if dif > difTol { // allow for small numerical diffs
+		if dif > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("%v err: out: %v, cor: %v, dif: %v\n", msg, out[i], cor[i], dif)
 		}
 	}
@@ -189,19 +189,19 @@ func TestNetAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.69444317, 0, 0, 0}
-	qtr0HidGes := []float32{0.49736744, 0, 0, 0}
-	qtr0HidGis := []float32{0.12770666, 0.12770666, 0.12770666, 0.12770666}
-	qtr0OutActs := []float32{0.6002374, 0, 0, 0}
-	qtr0OutGes := []float32{0.47270662, 0, 0, 0}
-	qtr0OutGis := []float32{0.08700732, 0.08700732, 0.08700732, 0.08700732}
+	qtr0HidActs := []float32{0.72367704, 0, 0, 0}
+	qtr0HidGes := []float32{0.57268536, 0, 0, 0}
+	qtr0HidGis := []float32{0.14899215, 0.14899215, 0.14899215, 0.14899215}
+	qtr0OutActs := []float32{0.64160156, 0, 0, 0}
+	qtr0OutGes := []float32{0.51757026, 0, 0, 0}
+	qtr0OutGis := []float32{0.1001857, 0.1001857, 0.1001857, 0.1001857}
 
-	qtr3HidActs := []float32{0.65811175, 0, 0, 0}
-	qtr3HidGes := []float32{0.8887471, 0, 0, 0}
-	qtr3HidGis := []float32{0.2869603, 0.2869603, 0.2869603, 0.2869603}
+	qtr3HidActs := []float32{0.6512225, 0, 0, 0}
+	qtr3HidGes := []float32{0.88013947, 0, 0, 0}
+	qtr3HidGis := []float32{0.2843189, 0.2843189, 0.2843189, 0.2843189}
 	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
-	qtr3OutGis := []float32{0.20013061, 0.20013061, 0.20013061, 0.20013061}
+	qtr3OutGis := []float32{0.20251861, 0.20251861, 0.20251861, 0.20251861}
 
 	inActs := []float32{}
 	hidActs := []float32{}
@@ -266,20 +266,20 @@ func TestNetAct(t *testing.T) {
 			}
 
 			if pi == 0 && qtr == 0 {
-				CmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
-				CmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
-				CmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
-				CmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
-				CmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
-				CmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
+				CompareFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
+				CompareFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
+				CompareFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
+				CompareFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
+				CompareFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
+				CompareFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
 			}
 			if pi == 0 && qtr == 3 {
-				CmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
-				CmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
-				CmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
-				CmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
-				CmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
-				CmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
+				CompareFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
+				CompareFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
+				CompareFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
+				CompareFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
+				CompareFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
+				CompareFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
 		TestNet.PlusPhase(ltime)
@@ -309,10 +309,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.0015839314, 0.0018261874, 0.0018425429, 0.0018425632}
-	outDwts := []float32{0.00233706, 0.0025052512, 0.0024995792, 0.0024995983}
+	hidDwts := []float32{0.003540163, 0.008597593, 0.0058499286, 0.0058499286}
+	outDwts := []float32{0.008264284, 0.013101129, 0.009027972, 0.009027972}
 	hidWts := []float32{0.5, 0.5, 0.5, 0.5} // todo: not clear why not updating..
-	outWts := []float32{0.5140186, 0.5150271, 0.51499313, 0.51499313}
+	outWts := []float32{0.54942834, 0.57798284, 0.55396265, 0.55396265}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -384,16 +384,16 @@ func TestNetLearn(t *testing.T) {
 				}
 
 				if pi == 0 && qtr == 0 {
-					CmprFloats(hidSpkCaP, qtr0HidSpkCaP, "qtr 0 hidSpkCaP", t)
-					CmprFloats(hidSpkCaD, qtr0HidSpkCaD, "qtr 0 hidSpkCaD", t)
-					CmprFloats(outSpkCaP, qtr0OutSpkCaP, "qtr 0 outSpkCaP", t)
-					CmprFloats(outSpkCaD, qtr0OutSpkCaD, "qtr 0 outSpkCaD", t)
+					CompareFloats(hidSpkCaP, qtr0HidSpkCaP, "qtr 0 hidSpkCaP", t)
+					CompareFloats(hidSpkCaD, qtr0HidSpkCaD, "qtr 0 hidSpkCaD", t)
+					CompareFloats(outSpkCaP, qtr0OutSpkCaP, "qtr 0 outSpkCaP", t)
+					CompareFloats(outSpkCaD, qtr0OutSpkCaD, "qtr 0 outSpkCaD", t)
 				}
 				if pi == 0 && qtr == 3 {
-					CmprFloats(hidSpkCaP, qtr3HidSpkCaP, "qtr 3 hidSpkCaP", t)
-					CmprFloats(hidSpkCaD, qtr3HidSpkCaD, "qtr 3 hidSpkCaD", t)
-					CmprFloats(outSpkCaP, qtr3OutSpkCaP, "qtr 3 outSpkCaP", t)
-					CmprFloats(outSpkCaD, qtr3OutSpkCaD, "qtr 3 outSpkCaD", t)
+					CompareFloats(hidSpkCaP, qtr3HidSpkCaP, "qtr 3 hidSpkCaP", t)
+					CompareFloats(hidSpkCaD, qtr3HidSpkCaD, "qtr 3 hidSpkCaD", t)
+					CompareFloats(outSpkCaP, qtr3OutSpkCaP, "qtr 3 outSpkCaP", t)
+					CompareFloats(outSpkCaD, qtr3OutSpkCaD, "qtr 3 outSpkCaD", t)
 				}
 			}
 			TestNet.PlusPhase(ltime)
@@ -421,10 +421,10 @@ func TestNetLearn(t *testing.T) {
 
 	//	fmt.Printf("hid dwt: %v\nout dwt: %v\nhid norm: %v\n hid moment: %v\nout norm: %v\nout moment: %v\nhid wt: %v\nout wt: %v\n", hiddwt, outdwt, hidnorm, hidmoment, outnorm, outmoment, hidwt, outwt)
 
-	CmprFloats(hiddwt, hidDwts, "hid DWt", t)
-	CmprFloats(outdwt, outDwts, "out DWt", t)
-	CmprFloats(hidwt, hidWts, "hid Wt", t)
-	CmprFloats(outwt, outWts, "out Wt", t)
+	CompareFloats(hiddwt, hidDwts, "hid DWt", t)
+	CompareFloats(outdwt, outDwts, "out DWt", t)
+	CompareFloats(hidwt, hidWts, "hid Wt", t)
+	CompareFloats(outwt, outWts, "out Wt", t)
 
 	// var buf bytes.Buffer
 	// TestNet.WriteWtsJSON(&buf)
@@ -467,15 +467,15 @@ func TestInhibAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.6019061, 0, 0, 0}
-	qtr0HidGes := []float32{0.6206174, 0, 0, 0}
+	qtr0HidActs := []float32{0.801611, 0, 0, 0}
+	qtr0HidGes := []float32{0.65507513, 0, 0, 0}
 	qtr0HidGis := []float32{0.06083918, 0, 0, 0}
-	qtr0OutActs := []float32{0.6408267, 0, 0, 0}
-	qtr0OutGes := []float32{0.2103362, 0, 0, 0}
+	qtr0OutActs := []float32{0.9217795, 0, 0, 0}
+	qtr0OutGes := []float32{0.609165, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.91008276, 0, 0, 0}
-	qtr3HidGes := []float32{0.8942689, 0, 0, 0}
+	qtr3HidActs := []float32{0.90765053, 0, 0, 0}
+	qtr3HidGes := []float32{0.7894032, 0, 0, 0}
 	qtr3HidGis := []float32{0.060876425, 0, 0, 0}
 	qtr3OutActs := []float32{0.7936507, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
@@ -543,20 +543,20 @@ func TestInhibAct(t *testing.T) {
 			}
 
 			if pi == 0 && qtr == 0 {
-				CmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
-				CmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
-				CmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
-				CmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
-				CmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
-				CmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
+				CompareFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
+				CompareFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
+				CompareFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
+				CompareFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
+				CompareFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
+				CompareFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
 			}
 			if pi == 0 && qtr == 3 {
-				CmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
-				CmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
-				CmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
-				CmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
-				CmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
-				CmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
+				CompareFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
+				CompareFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
+				CompareFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
+				CompareFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
+				CompareFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
+				CompareFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
 		TestNet.PlusPhase(ltime)
