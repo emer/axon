@@ -149,7 +149,7 @@ func TestSpikeProp(t *testing.T) {
 		inLay.ApplyExt(pat)
 
 		net.NewState()
-		ltime.NewState()
+		ltime.NewState("Train")
 
 		inCyc := 0
 		hidCyc := 0
@@ -223,7 +223,7 @@ func TestNetAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		TestNet.NewState()
-		ltime.NewState()
+		ltime.NewState("Train")
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
@@ -243,7 +243,7 @@ func TestNetAct(t *testing.T) {
 			}
 			if qtr == 2 {
 				TestNet.MinusPhase(ltime)
-				ltime.NewPhase()
+				ltime.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {
@@ -349,7 +349,7 @@ func TestNetLearn(t *testing.T) {
 			outLay.ApplyExt(inpat)
 
 			TestNet.NewState()
-			ltime.NewState()
+			ltime.NewState("Train")
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					TestNet.Cycle(ltime)
@@ -371,7 +371,7 @@ func TestNetLearn(t *testing.T) {
 				}
 				if qtr == 2 {
 					TestNet.MinusPhase(ltime)
-					ltime.NewPhase()
+					ltime.NewPhase(false)
 				}
 
 				hidLay.UnitVals(&hidSpkCaP, "SpkCaP")
@@ -406,14 +406,14 @@ func TestNetLearn(t *testing.T) {
 			// fmt.Printf("hid cosdif stats: %v\nhid avgl:   %v\nhid avgllrn: %v\n", hidLay.CosDiff, hidAvgL, hidAvgLLrn)
 			// fmt.Printf("out cosdif stats: %v\nout avgl:   %v\nout avgllrn: %v\n", outLay.CosDiff, outAvgL, outAvgLLrn)
 
-			TestNet.DWt()
+			TestNet.DWt(ltime)
 
 			didx := ti*4 + pi
 
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
-			TestNet.WtFmDWt()
+			TestNet.WtFmDWt(ltime)
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
@@ -501,7 +501,7 @@ func TestInhibAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		InhibNet.NewState()
-		ltime.NewState()
+		ltime.NewState("Train")
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				InhibNet.Cycle(ltime)
@@ -520,7 +520,7 @@ func TestInhibAct(t *testing.T) {
 			}
 			if qtr == 2 {
 				InhibNet.MinusPhase(ltime)
-				ltime.NewPhase()
+				ltime.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {

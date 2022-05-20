@@ -13,7 +13,7 @@ import (
 // difTol is the numerical difference tolerance for comparing vs. target values
 const difTol = float32(1.0e-8)
 
-func TestActUpdt(t *testing.T) {
+func TestActUpdate(t *testing.T) {
 	geinc := []float32{.01, .02, .03, .04, .05, .1, .2, .3, .2}
 	corge := []float32{0.01, 0.038, 0.090399995, 0.17232, 0.28785598, 0.48028478, 0.8342278, 1.4173822, 2.0839057}
 	ge := make([]float32, len(geinc))
