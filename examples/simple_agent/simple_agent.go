@@ -35,15 +35,11 @@ func main() {
 		AppTitle:                  "Simple Agent",
 		AppAbout:                  `A simple agent that can handle an arbitrary world.`,
 		AddNetworkLoggingCallback: axon.AddCommonLogItemsForOutputLayers,
+		DoLogging:                 true,
+		HaveGui:                   true,
+		StartAsServer:             false, // For an example with running as a server, look in https://github.com/Astera-org/models/blob/master/examples/simple_network_agent/simple_agent.go
 	}
-	userInterface.AddDefaultLogging()
-	userInterface.CreateAndRunGuiWithAdditionalConfig(func() {
-		sw, _ := sim.WorldEnv.(interface {
-			GetServerFunc(loops *looper.Manager) func()
-		})
-		//handler := network_agent.AgentHandler{Agent: sim.WorldEnv.(*agent.AgentProxyWithWorldCache)} // Use this if you do want to serve over the network.
-		userInterface.AddServerButton(sw.GetServerFunc(sim.Loops))
-	}) // CreateAndRunGui blocks, so don't put any code after this.
+	userInterface.Start() // Start blocks, so don't put any code after this.
 }
 
 // Sim encapsulates working data for the simulation model, keeping all relevant state information organized and available without having to pass everything around.
@@ -56,6 +52,7 @@ type Sim struct {
 }
 
 func (ss *Sim) ConfigEnv() agent.WorldInterface {
+	// This is just a placeholder for a world. Put your own world here.
 	return &agent.AgentProxyWithWorldCache{}
 }
 

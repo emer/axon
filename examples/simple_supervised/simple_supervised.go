@@ -37,9 +37,10 @@ func main() {
 		AppTitle:                  "Random Associator for Supervised Task",
 		AppAbout:                  `Learn to memorize random pattern pairs presented as input/output.`,
 		AddNetworkLoggingCallback: axon.AddCommonLogItemsForOutputLayers,
+		DoLogging:                 true,
+		HaveGui:                   true,
 	}
-	userInterface.AddDefaultLogging()
-	userInterface.CreateAndRunGui() // CreateAndRunGui blocks, so don't put any code after this.
+	userInterface.Start() // Start blocks, so don't put any code after this.
 }
 
 // Sim encapsulates working data for the simulation model, keeping all relevant state information organized and available without having to pass everything around.
