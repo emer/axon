@@ -16,8 +16,8 @@ import (
 	"github.com/goki/mat32"
 )
 
-// difTol is the numerical difference tolerance for comparing vs. target values
-const difTol = float32(1.0e-8)
+// TOLERANCE is the numerical difference tolerance for comparing vs. target values
+const TOLERANCE = float32(1.0e-8)
 
 var TestNet Network
 var InPats *etensor.Float32
@@ -117,7 +117,7 @@ func TestInPats(t *testing.T) {
 func CmprFloats(out, cor []float32, msg string, t *testing.T) {
 	for i := range out {
 		dif := mat32.Abs(out[i] - cor[i])
-		if dif > difTol { // allow for small numerical diffs
+		if dif > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("%v err: out: %v, cor: %v, dif: %v\n", msg, out[i], cor[i], dif)
 		}
 	}
@@ -149,7 +149,7 @@ func TestSpikeProp(t *testing.T) {
 		inLay.ApplyExt(pat)
 
 		net.NewState()
-		ltime.NewState()
+		ltime.NewState("Train")
 
 		inCyc := 0
 		hidCyc := 0
@@ -190,19 +190,19 @@ func TestNetAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.6291466, 0, 0, 0}
-	qtr0HidGes := []float32{0.5408259, 0, 0, 0}
-	qtr0HidGis := []float32{0.12581292, 0.12581292, 0.12581292, 0.12581292}
-	qtr0OutActs := []float32{0.5448547, 0, 0, 0}
-	qtr0OutGes := []float32{0.17616737, 0, 0, 0}
-	qtr0OutGis := []float32{0.056886084, 0.056886084, 0.056886084, 0.056886084}
+	qtr0HidActs := []float32{0.72367704, 0, 0, 0}
+	qtr0HidGes := []float32{0.57268536, 0, 0, 0}
+	qtr0HidGis := []float32{0.14899215, 0.14899215, 0.14899215, 0.14899215}
+	qtr0OutActs := []float32{0.64160156, 0, 0, 0}
+	qtr0OutGes := []float32{0.51757026, 0, 0, 0}
+	qtr0OutGis := []float32{0.1001857, 0.1001857, 0.1001857, 0.1001857}
 
-	qtr3HidActs := []float32{0.6275331, 0, 0, 0}
-	qtr3HidGes := []float32{0.50843596, 0, 0, 0}
-	qtr3HidGis := []float32{0.18011907, 0.18011907, 0.18011907, 0.18011907}
-	qtr3OutActs := []float32{0.66682786, 0, 0, 0}
+	qtr3HidActs := []float32{0.6512225, 0, 0, 0}
+	qtr3HidGes := []float32{0.88013947, 0, 0, 0}
+	qtr3HidGis := []float32{0.2843189, 0.2843189, 0.2843189, 0.2843189}
+	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
-	qtr3OutGis := []float32{0.19600207, 0.19600207, 0.19600207, 0.19600207}
+	qtr3OutGis := []float32{0.20251861, 0.20251861, 0.20251861, 0.20251861}
 
 	inActs := []float32{}
 	hidActs := []float32{}
@@ -223,7 +223,7 @@ func TestNetAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		TestNet.NewState()
-		ltime.NewState()
+		ltime.NewState("Train")
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
@@ -243,7 +243,7 @@ func TestNetAct(t *testing.T) {
 			}
 			if qtr == 2 {
 				TestNet.MinusPhase(ltime)
-				ltime.NewPhase()
+				ltime.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {
@@ -310,10 +310,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.0015839314, 0.0018261874, 0.0018425429, 0.0018425632}
-	outDwts := []float32{0.00233706, 0.0025052512, 0.0024995792, 0.0024995983}
+	hidDwts := []float32{0.003540163, 0.008597593, 0.0058499286, 0.0058499286}
+	outDwts := []float32{0.008264284, 0.013101129, 0.009027972, 0.009027972}
 	hidWts := []float32{0.5, 0.5, 0.5, 0.5} // todo: not clear why not updating..
-	outWts := []float32{0.5140186, 0.5150271, 0.51499313, 0.51499313}
+	outWts := []float32{0.54942834, 0.57798284, 0.55396265, 0.55396265}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -349,7 +349,7 @@ func TestNetLearn(t *testing.T) {
 			outLay.ApplyExt(inpat)
 
 			TestNet.NewState()
-			ltime.NewState()
+			ltime.NewState("Train")
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					TestNet.Cycle(ltime)
@@ -371,7 +371,7 @@ func TestNetLearn(t *testing.T) {
 				}
 				if qtr == 2 {
 					TestNet.MinusPhase(ltime)
-					ltime.NewPhase()
+					ltime.NewPhase(false)
 				}
 
 				hidLay.UnitVals(&hidSpkCaP, "SpkCaP")
@@ -406,14 +406,14 @@ func TestNetLearn(t *testing.T) {
 			// fmt.Printf("hid cosdif stats: %v\nhid avgl:   %v\nhid avgllrn: %v\n", hidLay.CosDiff, hidAvgL, hidAvgLLrn)
 			// fmt.Printf("out cosdif stats: %v\nout avgl:   %v\nout avgllrn: %v\n", outLay.CosDiff, outAvgL, outAvgLLrn)
 
-			TestNet.DWt()
+			TestNet.DWt(ltime)
 
 			didx := ti*4 + pi
 
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
-			TestNet.WtFmDWt()
+			TestNet.WtFmDWt(ltime)
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
@@ -468,15 +468,15 @@ func TestInhibAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.6019061, 0, 0, 0}
-	qtr0HidGes := []float32{0.6206174, 0, 0, 0}
+	qtr0HidActs := []float32{0.801611, 0, 0, 0}
+	qtr0HidGes := []float32{0.65507513, 0, 0, 0}
 	qtr0HidGis := []float32{0.06083918, 0, 0, 0}
-	qtr0OutActs := []float32{0.6408267, 0, 0, 0}
-	qtr0OutGes := []float32{0.2103362, 0, 0, 0}
+	qtr0OutActs := []float32{0.9217795, 0, 0, 0}
+	qtr0OutGes := []float32{0.609165, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.91008276, 0, 0, 0}
-	qtr3HidGes := []float32{0.8942689, 0, 0, 0}
+	qtr3HidActs := []float32{0.90765053, 0, 0, 0}
+	qtr3HidGes := []float32{0.7894032, 0, 0, 0}
 	qtr3HidGis := []float32{0.060876425, 0, 0, 0}
 	qtr3OutActs := []float32{0.7936507, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
@@ -501,7 +501,7 @@ func TestInhibAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		InhibNet.NewState()
-		ltime.NewState()
+		ltime.NewState("Train")
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				InhibNet.Cycle(ltime)
@@ -520,7 +520,7 @@ func TestInhibAct(t *testing.T) {
 			}
 			if qtr == 2 {
 				InhibNet.MinusPhase(ltime)
-				ltime.NewPhase()
+				ltime.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {
