@@ -11,6 +11,7 @@ import (
 	"github.com/emer/emergent/params"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/minmax"
 	"github.com/goki/gi/gi"
 	"time"
 )
@@ -47,12 +48,12 @@ func AddDefaultLoopSimLogic(manager *looper.Manager, time *Time, net *Network) {
 // SendActionAndStep takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
 func SendActionAndStep(net *Network, ev agent.WorldInterface) {
-	// Get the first Target (output) layer
+	// Iterate over all Target (output) layers
 	actions := map[string]agent.Action{}
 	for _, lnm := range net.LayersByClass(emer.Target.String()) {
 		ly := net.LayerByName(lnm).(AxonLayer).AsAxon()
-		vt := &etensor.Float32{}
-		ly.UnitValsTensor(vt, "ActM")
+		vt := &etensor.Float32{}      // TODO Maybe make this more efficient by holding a copy of the right size?
+		ly.UnitValsTensor(vt, "ActM") // ActM is neuron activity
 		actions[lnm] = agent.Action{Vector: vt, ActionShape: &agent.SpaceSpec{
 			ContinuousShape: vt.Shp,
 			Stride:          vt.Strd,
@@ -215,32 +216,35 @@ func AddCommonLogItemsForOutputLayers(ui *egui.UserInterface) {
 	for _, olnm := range ui.Network.LayersByClass(emer.Target.String()) {
 		out := ui.Network.LayerByName(olnm).(AxonLayer).AsAxon()
 
+		// TODO These should be computed at the Trial, not Cycle level
+		baseComputeLevel := etime.Trial
+		found := false
 		cosDiffMap := elog.WriteMap{}
-		pctErrDiffMap := elog.WriteMap{}
-		trlErrDiffMap := elog.WriteMap{}
+		pctErrMap := elog.WriteMap{}
+		trlCorrMap := elog.WriteMap{}
 		for m, st := range ui.Looper.Stacks {
 			for iter := len(st.Order) - 1; iter >= 0; iter-- {
 				i := iter // For closures
 				t := st.Order[i]
-				if i == len(st.Order)-1 {
-					// The finest timescale, such as Cycle
+				if st.Order[iter] == baseComputeLevel {
+					found = true // Subsequent layers can do aggregation.
 					cosDiffMap[etime.Scope(m, t)] = func(ctx *elog.Context) {
 						ctx.SetFloat32(out.CosDiff.Cos)
 					}
-					pctErrDiffMap[etime.Scope(m, t)] = func(ctx *elog.Context) {
+					pctErrMap[etime.Scope(m, t)] = func(ctx *elog.Context) {
 						ctx.SetFloat64(out.PctUnitErr())
 					}
-					trlErrDiffMap[etime.Scope(m, t)] = func(ctx *elog.Context) {
+					trlCorrMap[etime.Scope(m, t)] = func(ctx *elog.Context) {
 						pcterr := out.PctUnitErr()
-						trlerr := 0
+						trlCorr := 1
 						if pcterr > 0 {
-							trlerr = 1
+							trlCorr = 0
 						}
-						ctx.SetFloat64(float64(trlerr))
+						ctx.SetFloat64(float64(trlCorr))
 					}
-				} else {
+				} else if found {
 					// All other, less frequent, timescales are an aggregate
-					for _, wm := range []elog.WriteMap{cosDiffMap, pctErrDiffMap, trlErrDiffMap} {
+					for _, wm := range []elog.WriteMap{cosDiffMap, pctErrMap, trlCorrMap} {
 						wm[etime.Scope(m, t)] = func(ctx *elog.Context) {
 							ctx.SetAgg(ctx.Mode, st.Order[i+1], agg.AggMean)
 						}
@@ -251,19 +255,21 @@ func AddCommonLogItemsForOutputLayers(ui *egui.UserInterface) {
 
 		// Add it to the list.
 		ui.Logs.AddItem(&elog.Item{
-			Name:  "CosSim",
-			Type:  etensor.FLOAT64,
-			Plot:  elog.DTrue,
-			Write: cosDiffMap})
+			Name:   olnm + "CosSim",
+			Type:   etensor.FLOAT64,
+			Plot:   elog.DTrue,
+			Range:  minmax.F64{Min: 0, Max: 1},
+			FixMax: elog.DTrue,
+			Write:  cosDiffMap})
 		ui.Logs.AddItem(&elog.Item{
-			Name:  "PctErr",
+			Name:  olnm + "PctErr",
 			Type:  etensor.FLOAT64,
 			Plot:  elog.DTrue,
-			Write: pctErrDiffMap})
+			Write: pctErrMap})
 		ui.Logs.AddItem(&elog.Item{
-			Name:  "TrialErr",
+			Name:  olnm + "UnitCorr",
 			Type:  etensor.FLOAT64,
 			Plot:  elog.DTrue,
-			Write: trlErrDiffMap})
+			Write: trlCorrMap})
 	}
 }
