@@ -10,8 +10,8 @@ import (
 	"github.com/goki/mat32"
 )
 
-// difTol is the numerical difference tolerance for comparing vs. target values
-const difTol = float32(1.0e-10)
+// TOLERANCE is the numerical difference tolerance for comparing vs. target values
+const TOLERANCE = float32(1.0e-10)
 
 func TestXX1(t *testing.T) {
 	xx1 := Params{}
@@ -24,7 +24,7 @@ func TestXX1(t *testing.T) {
 	for i := range tstx {
 		ny[i] = xx1.NoisyXX1(tstx[i])
 		dif := mat32.Abs(ny[i] - cory[i])
-		if dif > difTol { // allow for small numerical diffs
+		if dif > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("XX1 err: dix: %v, x: %v, y: %v, cor y: %v, dif: %v\n", i, tstx[i], ny[i], cory[i], dif)
 		}
 	}
