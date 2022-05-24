@@ -2,8 +2,10 @@ module github.com/emer/axon
 
 go 1.15
 
+//// This file https://stackoverflow.com/questions/1274057/how-can-i-make-git-forget-about-a-file-that-was-tracked-but-is-now-in-gitign
+replace github.com/emer/emergent => ../emergent
+
 require (
-	github.com/Astera-org/worlds v0.0.2
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/emer/emergent v1.2.5
 	github.com/emer/empi v1.0.12
