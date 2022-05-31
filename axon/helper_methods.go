@@ -2,6 +2,8 @@ package axon
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/emer/emergent/agent"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -13,7 +15,6 @@ import (
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gi/gi"
-	"time"
 )
 
 // AddDefaultLoopSimLogic adds some sim related logic to looper.Manager. It makes some assumptions about how the loop stack is set up which may cause it to fail.
@@ -83,12 +84,13 @@ func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
-func ApplyInputs(net *Network, en agent.WorldInterface, layer string, patfunc func(spec agent.SpaceSpec) etensor.Tensor) {
-	lyi := net.LayerByName(layer)
-	lyi.(AxonLayer).InitExt() // Clear any existing inputs
+func ApplyInputs(net *Network, en agent.WorldInterface, layerName string, patfunc func(spec agent.SpaceSpec) etensor.Tensor) {
+	lyi := net.LayerByName(layerName)
 	if lyi == nil {
+		fmt.Printf("layer not found: %s\n", layerName)
 		return
 	}
+	lyi.(AxonLayer).InitExt() // Clear any existing inputs
 	ly := lyi.(AxonLayer).AsAxon()
 	ss := agent.SpaceSpec{ContinuousShape: lyi.Shape().Shp, Stride: lyi.Shape().Strd}
 	pats := patfunc(ss)
