@@ -30,7 +30,7 @@ var ParamSetsMin = params.Sets{
 
 					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
 					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
+					"Layer.Inhib.Layer.Bg":        "0.0",  // 0.0 > 0.3 key!
 					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
 					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
 					"Layer.Act.Dend.GbarR":        "3",    // 6 > 3 old def
@@ -46,8 +46,8 @@ var ParamSetsMin = params.Sets{
 					"Layer.Act.NMDA.Gbar":       "0.15", // 0.15 for !SnmdaDeplete, 1.4 for SnmdaDeplete, 7 for ITau = 100, Tau = 30, !SnmdaDeplete, still doesn't learn..
 					"Layer.Act.NMDA.ITau":       "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
 					"Layer.Act.NMDA.Tau":        "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":        "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":       "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Act.NMDA.MgC":        "1.2",  // 1.2 > 1.4 for SynSpkTheta
+					"Layer.Act.NMDA.Voff":       "0",    // 0 > 5 for SynSpkTheta
 					"Layer.Act.VGCC.Gbar":       "0.1",
 					"Layer.Act.AK.Gbar":         "1",    // 1 >= 0 > 2
 					"Layer.Learn.RLrate.On":     "true", // beneficial still
