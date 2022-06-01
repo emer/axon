@@ -37,6 +37,7 @@ func main() {
 		AppTitle:                  "Random Associator for Supervised Task",
 		AppAbout:                  `Learn to memorize random pattern pairs presented as input/output.`,
 		AddNetworkLoggingCallback: axon.AddCommonLogItemsForOutputLayers,
+		RasterLayers:              []string{"Input", "Hidden1", "Hidden2", "Output"}, // Same as from ConfigNet()
 		DoLogging:                 true,
 		HaveGui:                   true,
 	}
@@ -49,7 +50,6 @@ type Sim struct {
 	Loops    *looper.Manager      `view:"no-inline" desc:"contains looper control loops for running sim"`
 	WorldEnv agent.WorldInterface `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
 	Time     axon.Time            `desc:"axon timing parameters and state"`
-	LoopTime string               `desc:"Printout of the current time."`
 }
 
 func (ss *Sim) ConfigEnv() agent.WorldInterface {
@@ -61,8 +61,8 @@ func (ss *Sim) ConfigNet() *deep.Network {
 	net := &deep.Network{}
 	net.InitName(net, "RA25")
 	inp := net.AddLayer2D("Input", 5, 5, emer.Input)
-	hid1 := net.AddLayer2D("Hidden1", 10, 10, emer.Hidden)
-	hid2 := net.AddLayer2D("Hidden2", 10, 10, emer.Hidden)
+	hid1 := net.AddLayer2D("Hidden1", 8, 8, emer.Hidden)
+	hid2 := net.AddLayer2D("Hidden2", 8, 8, emer.Hidden)
 	out := net.AddLayer2D("Output", 5, 5, emer.Target)
 	full := prjn.NewFull()
 	net.ConnectLayers(inp, hid1, full, emer.Forward)
