@@ -7,7 +7,7 @@ replace github.com/emer/emergent => ../emergent
 
 require (
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
-	github.com/emer/emergent v1.3.0
+	github.com/emer/emergent v1.3.1
 	github.com/emer/empi v1.0.12
 	github.com/emer/etable v1.1.1
 	github.com/goki/gi v1.3.0
