@@ -6,6 +6,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/agent"
@@ -15,13 +17,12 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
-	"log"
 )
 
 // This file demonstrates how to do supervised learning with a simple axon network and a simple task. It creates an "RA 25 Env", which stands for "Random Associator 25 (5x5)", which provides random 5x5 patterns for the network to learn.
 // In addition to creating a simple environment and a simple network, it creates a looper.Manager to control the flow of time across Runs, Epochs, and Trials. It creates a GUI to control it.
 
-var numPatterns = 30 // How many random patterns. Each pattern is one trial per epoch.
+var numPatterns = 25 // How many random patterns. Each pattern is one trial per epoch.
 
 func main() {
 	var sim Sim
