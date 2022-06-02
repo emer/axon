@@ -400,7 +400,6 @@ func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.DWt = 0
 	sy.DSWt = 0
 	sy.TDWt = 0
-	sy.DWtRaw = 0
 	InitSynCa(sy)
 }
 
@@ -514,7 +513,6 @@ func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
 		return false
 	}
 	sy.CaDMax = 0
-	sy.DWtRaw = sy.TDWt
 	if sy.TDWt > 0 {
 		sy.TDWt *= (1 - sy.LWt)
 	} else {

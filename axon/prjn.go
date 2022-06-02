@@ -17,7 +17,6 @@ import (
 	"github.com/emer/emergent/ringidx"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -33,12 +32,11 @@ type Prjn struct {
 	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale   GScaleVals      `view:"inline" desc:"conductance scaling values"`
-	Gidx     ringidx.FIx     `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	GBuf     []float32       `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	GnmdaBuf []float32       `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	AvgDWt   float32         `inactive:"+" desc:"average DWt value across all synapses"`
-	DWtRaw   minmax.AvgMax32 `inactive:"+" desc:"average, max DWtRaw value across all synapses"`
+	GScale   GScaleVals  `view:"inline" desc:"conductance scaling values"`
+	Gidx     ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	GBuf     []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	GnmdaBuf []float32   `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	AvgDWt   float32     `inactive:"+" desc:"average DWt value across all synapses"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -991,7 +989,7 @@ func (pj *Prjn) DWt(ltime *Time) {
 	}
 }
 
-// DWtNeurSpkCa computes the weight change (learning) -- on sending projections
+// DWtNeurSpkTheta computes the weight change (learning) -- on sending projections
 // using the separately-integrated neuron-level spike-driven Ca values,
 // equivalent to the CHL plus - minus temporal derivative with
 // checkmark-based BCM-like XCal learning rule originally derived from
@@ -1020,7 +1018,6 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWtRaw = err
 			sy.DWt += rn.RLrate * lr * err
 		}
 	}
@@ -1066,7 +1063,6 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWtRaw = err
 			sy.DWt += rn.RLrate * lr * err
 		}
 	}
@@ -1127,7 +1123,6 @@ func (pj *Prjn) WtFmDWt(ltime *Time) {
 	if rlay.AxonLay.IsTarget() {
 		sm = 0
 	}
-	pj.DWtRaw.Init()
 	if sm > 0 {
 		var ssum float32
 		for ri := range rlay.Neurons {
@@ -1160,7 +1155,6 @@ func (pj *Prjn) WtFmDWt(ltime *Time) {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
-				pj.DWtRaw.UpdateVal(mat32.Abs(sy.DWtRaw), ri)
 			}
 		}
 		pj.AvgDWt = ssum / float32(len(rlay.Neurons))
@@ -1180,11 +1174,9 @@ func (pj *Prjn) WtFmDWt(ltime *Time) {
 				sy.DSWt += sy.DWt
 				pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
 				pj.Com.Fail(&sy.Wt, sy.SWt)
-				pj.DWtRaw.UpdateVal(mat32.Abs(sy.DWtRaw), ri)
 			}
 		}
 	}
-	pj.DWtRaw.CalcAvg()
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale

@@ -20,7 +20,6 @@ import (
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
-	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/bitflag"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
@@ -40,7 +39,6 @@ type Layer struct {
 	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
 	ActAvg  ActAvgVals      `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
 	CosDiff CosDiffStats    `desc:"cosine difference between ActM, ActP stats"`
-	DWtRaw  minmax.AvgMax32 `inactive:"+" desc:"average, max DWtRaw value across all synapses"`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
@@ -1706,16 +1704,12 @@ func (ly *Layer) DWt(ltime *Time) {
 // WtFmDWt updates the weights from delta-weight changes -- on the sending projections
 func (ly *Layer) WtFmDWt(ltime *Time) {
 	ly.TrgAvgFmD()
-	ly.DWtRaw.Init()
 	for _, p := range ly.RcvPrjns { // must be recv to do SubMean
 		if p.IsOff() {
 			continue
 		}
 		p.(AxonPrjn).WtFmDWt(ltime)
-		pj := p.(AxonPrjn).AsAxon()
-		ly.DWtRaw.UpdateFrom(&pj.DWtRaw)
 	}
-	ly.DWtRaw.CalcAvg()
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,

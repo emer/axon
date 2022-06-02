@@ -29,14 +29,13 @@ type Synapse struct {
 	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	CaDMax float32 `desc:"maximum CaD value since last DWt change -- DWt occurs when current CaD has decreased by a given proportion from this recent peak"`
-	DWtRaw float32 `desc:"raw change in synaptic weight, from learning -- temporary for Kinase analysis"`
 }
 
 func (sy *Synapse) VarNames() []string {
 	return SynapseVars
 }
 
-var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "TDWt", "Ca", "CaM", "CaP", "CaD", "CaDMax", "DWtRaw"}
+var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "TDWt", "Ca", "CaM", "CaP", "CaD", "CaDMax"}
 
 var SynapseVarProps = map[string]string{
 	"DWt":    `auto-scale:"+"`,
@@ -46,7 +45,6 @@ var SynapseVarProps = map[string]string{
 	"CaP":    `auto-scale:"+"`,
 	"CaD":    `auto-scale:"+"`,
 	"CaDMax": `auto-scale:"+"`,
-	"DWtRaw": `auto-scale:"+"`,
 }
 
 var SynapseVarsMap map[string]int

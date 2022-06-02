@@ -81,6 +81,8 @@ var ParamSets = params.Sets{
 					// "Layer.Act.NMDA.Voff":       "0",    // 5 > 0 but need to reduce gbar -- too much
 					"Layer.Act.VGCC.Gbar":       "0.02",
 					"Layer.Act.AK.Gbar":         "1.0",
+					"Layer.Act.NMDA.MgC":        "1.2",  // 1.2 > 1.4 for SynSpkTheta
+					"Layer.Act.NMDA.Voff":       "0",    // 0 > 5 for SynSpkTheta
 					"Layer.Learn.RLrate.On":     "true", // beneficial still
 					"Layer.Learn.NeurCa.SpikeG": "8",
 					"Layer.Learn.NeurCa.SynTau": "30", // 40 best in larger models
@@ -125,7 +127,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar":      "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":           "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":               "0.0",
-					"Prjn.Learn.KinaseCa.SpikeG":   "10", // 12 good
+					"Prjn.Learn.KinaseCa.SpikeG":   "12", // 12 good
 					"Prjn.Learn.KinaseCa.NMDAG":    "1",
 					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta", // NeurSpkTheta, SynSpkTheta good, *Cont bad
 					"Prjn.Learn.KinaseCa.MTau":     "5",           // 5 > 10 test more
@@ -137,7 +139,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.KinaseDWt.DMaxPct": "0.5",
 					"Prjn.Learn.KinaseDWt.DScale":  "1",
 					"Prjn.Learn.XCal.On":           "true",
-					"Prjn.Learn.XCal.PThrMin":      "0.05", // 0.05 bad for neur spk
+					"Prjn.Learn.XCal.PThrMin":      "0.01", // 0.01 > 0.05
 					"Prjn.Learn.XCal.LrnThr":       "0.01",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",

@@ -30,7 +30,7 @@ var ParamSetsMin = params.Sets{
 
 					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
 					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Inhib.Layer.Bg":        "0.0",  // 0.0 > 0.3 key!
+					"Layer.Inhib.Layer.Bg":        "0.0",  // 0.0 > 0.3 -- 0.3 much worse
 					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
 					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
 					"Layer.Act.Dend.GbarR":        "3",    // 6 > 3 old def
@@ -85,7 +85,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.Lrate.Base":        "0.1",  // 0.1 for SynSpkTheta even though dwt equated
 					"Prjn.SWt.Adapt.Lrate":         "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":           "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":   "10",   // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.SpikeG":   "12",   // keep at 12 standard, adjust other things
 					"Prjn.Learn.KinaseCa.NMDAG":    "2",    // 2 > 1
 					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta",
 					"Prjn.Learn.KinaseCa.MTau":     "5", // 5 > 10 test more
