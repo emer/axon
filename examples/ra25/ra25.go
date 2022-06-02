@@ -235,7 +235,7 @@ func (ss *Sim) Init() {
 
 // InitRndSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRndSeed() {
-	run := ss.Envs.ByMode(etime.Train).Counter(etime.Run).Cur
+	run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
 	rand.Seed(ss.RndSeeds[run])
 }
 
@@ -354,7 +354,7 @@ func (ss *Sim) AddDefaultLoggingCallbacks(manager *looper.Manager) {
 				}
 			}
 			if levelToReset != etime.AllTimes {
-				loop.OnEnd.Add(curMode.String()+":"+curTime.String()+":"+"ResetLog"+levelToReset.String(), func() {
+				loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"ResetLog"+levelToReset.String(), func() {
 					ss.Logs.ResetLog(curMode, levelToReset)
 				})
 			}
@@ -381,15 +381,13 @@ func (ss *Sim) AddDefaultGUICallbacks(manager *looper.Manager) {
 	}
 }
 
+// ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
-	// Add Train and Test
-	manager := looper.Manager{}.Init()
-	manager.Stacks[etime.Train] = &looper.Stack{}
-	manager.Stacks[etime.Test] = &looper.Stack{}
+	manager := looper.NewManager()
 
-	// Specify Timescales: Run, Epoch, Trial, Cycle along with durations
-	manager.Stacks[etime.Train].Init().AddTime(etime.Run, 10).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200)
-	manager.Stacks[etime.Test].Init().AddTime(etime.Epoch, 1).AddTime(etime.Trial, 30).AddTime(etime.Cycle, 200) // No Run
+	manager.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
+
+	manager.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
 	// Plus and Minus with Length of each, start and end logic
 	minusPhase := looper.Event{Name: "MinusPhase", AtCtr: 0}
@@ -469,7 +467,6 @@ func (ss *Sim) ConfigLoops() {
 	}
 
 	// Initialize and print loop structure, then add to Sim
-	manager.Init()
 	fmt.Println(manager.DocString())
 	ss.Loops = manager
 }
