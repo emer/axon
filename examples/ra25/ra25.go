@@ -11,16 +11,15 @@ package main
 import (
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
-	"time"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/envlp"
+	"github.com/emer/emergent/env"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
@@ -56,9 +55,6 @@ func guirun() {
 	win.StartEventLoop()
 }
 
-// LogPrec is precision for saving float values in logs
-const LogPrec = 4
-
 // see params.go for params
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -74,7 +70,7 @@ type Sim struct {
 	Stats        estats.Stats    `desc:"contains computed statistic values"`
 	Logs         elog.Logs       `desc:"Contains all the logs and information about the logs.'"`
 	Pats         *etable.Table   `view:"no-inline" desc:"the training patterns to use"`
-	Envs         envlp.Envs      `view:"no-inline" desc:"Environments"`
+	Envs         env.Envs        `view:"no-inline" desc:"Environments"`
 	Time         axon.Time       `desc:"axon timing parameters and state"`
 	ViewOn       bool            `desc:"whether to update the network view while running"`
 	TrainUpdt    etime.Times     `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
@@ -82,10 +78,9 @@ type Sim struct {
 	TestInterval int             `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int             `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
-	GUI         egui.GUI  `view:"-" desc:"manages all the gui elements"`
-	Args        ecmd.Args `view:"no-inline" desc:"command line args"`
-	NeedsNewRun bool      `view:"-" desc:"flag to initialize NewRun if last one finished"`
-	RndSeeds    []int64   `view:"-" desc:"a list of random seeds to use for each run"`
+	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
+	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
+	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
 }
 
 // this registers this Sim Type and gives it properties that e.g.,
@@ -104,10 +99,7 @@ func (ss *Sim) New() {
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
-	ss.RndSeeds = make([]int64, 100) // make enough for plenty of runs
-	for i := 0; i < 100; i++ {
-		ss.RndSeeds[i] = int64(i) + 1 // exclude 0
-	}
+	ss.RndSeeds.Init(100) // max 100 runs
 	ss.ViewOn = true
 	ss.TrainUpdt = etime.ThetaCycle
 	ss.TestUpdt = etime.ThetaCycle
@@ -132,25 +124,24 @@ func (ss *Sim) Config() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	var trn, tst *envlp.FixedTable
+	var trn, tst *env.FixedTable
 	if len(ss.Envs) == 0 {
-		trn = &envlp.FixedTable{}
-		tst = &envlp.FixedTable{}
+		trn = &env.FixedTable{}
+		tst = &env.FixedTable{}
 	} else {
-		trn = ss.Envs.ByMode(etime.Train).(*envlp.FixedTable)
-		tst = ss.Envs.ByMode(etime.Test).(*envlp.FixedTable)
+		trn = ss.Envs.ByMode(etime.Train).(*env.FixedTable)
+		tst = ss.Envs.ByMode(etime.Test).(*env.FixedTable)
 	}
 
-	trn.Nm = "TrainEnv"
+	trn.Nm = etime.Train.String()
 	trn.Dsc = "training params and state"
-	trn.Config(etable.NewIdxView(ss.Pats), etime.Train.String())
+	trn.Config(etable.NewIdxView(ss.Pats))
 	trn.Validate()
 
-	tst.Nm = "TestEnv"
+	tst.Nm = etime.Test.String()
 	tst.Dsc = "testing params and state"
-	tst.Config(etable.NewIdxView(ss.Pats), etime.Test.String())
+	tst.Config(etable.NewIdxView(ss.Pats))
 	tst.Sequential = true
-	tst.Counter(etime.Epoch).Max = 1
 	tst.Validate()
 
 	// note: to create a train / test split of pats, do this:
@@ -159,13 +150,13 @@ func (ss *Sim) ConfigEnv() {
 	// trn.Table = splits.Splits[0]
 	// tst.Table = splits.Splits[1]
 
-	trn.Init()
-	tst.Init()
+	trn.Init(0)
+	tst.Init(0)
 	ss.Envs.Add(trn, tst)
 }
 
 // Env returns the relevant environment based on Time Mode
-func (ss *Sim) Env() envlp.Env {
+func (ss *Sim) Env() env.Env {
 	return ss.Envs[ss.Time.Mode]
 }
 
@@ -236,16 +227,7 @@ func (ss *Sim) Init() {
 // InitRndSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRndSeed() {
 	run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
-	rand.Seed(ss.RndSeeds[run])
-}
-
-// NewRndSeed gets a new set of random seeds based on current time -- otherwise uses
-// the same random seeds for every run
-func (ss *Sim) NewRndSeed() {
-	rs := time.Now().UnixNano()
-	for i := 0; i < 100; i++ {
-		ss.RndSeeds[i] = rs + int64(i)
-	}
+	ss.RndSeeds.Set(run)
 }
 
 // UpdateNetViewCycle is updating within Cycle level
@@ -416,12 +398,12 @@ func (ss *Sim) ConfigLoops() {
 			ss.Net.NewState()
 			ss.Time.NewState(mode.String())
 		})
+		stack.Loops[etime.Trial].OnStart.Add("Sim:Env:Step", func() {
+			ss.Envs[mode.String()].Step()
+		})
 		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", ss.ApplyInputs)
 		stack.Loops[etime.Trial].OnEnd.Add("Sim:StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("Sim:TrialStats", ss.TrialStats)
-		stack.Loops[etime.Trial].OnEnd.Add("Sim:Env:Step", func() {
-			ss.Envs[mode.String()].Step()
-		})
 	}
 
 	// Reinitialize Run
@@ -494,15 +476,15 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
-	ss.Envs.ByMode(etime.Train).Init()
-	ss.Envs.ByMode(etime.Test).Init()
+	ss.Envs.ByMode(etime.Train).Init(0)
+	ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Time.Reset()
+	ss.Time.Mode = etime.Train.String()
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
 	ss.Logs.ResetLog(etime.Test, etime.Epoch)
-	ss.NeedsNewRun = false
 }
 
 // Stopped is called when a run method stops running
@@ -519,7 +501,7 @@ func (ss *Sim) SaveWeights(filename gi.FileName) {
 
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
-	ss.Envs.ByMode(etime.Test).Init()
+	ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Loops.Mode = etime.Test
 	ss.Loops.Run()
 	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
@@ -571,17 +553,12 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them to the GUI, if the GUI is active
 func (ss *Sim) StatCounters() {
-	ev := ss.Env()
-	if ev == nil {
-		return
-	}
-	ev.CtrsToStats(&ss.Stats)
-	// Set counters correctly, overwriting what CtrsToStats does
-	for t, l := range ss.Loops.Stacks[ss.Loops.Mode].Loops {
-		ss.Stats.SetInt(t.String(), l.Counter.Cur)
-	}
-
+	var mode etime.Modes
+	mode.FromString(ss.Time.Mode)
+	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
+	ev := ss.Env()
+	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
 	ss.GUI.NetViewText = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCosDiff"})
 }
 
@@ -624,13 +601,14 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
 	row := dt.Rows
+	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+
 	switch {
 	case mode == etime.Test && time == etime.Epoch:
-		ss.Stats.SetInt("Epoch", ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur)
+		ss.Stats.SetInt("Epoch", trnEpc)
 		ss.LogTestErrors()
 	case mode == etime.Train && time == etime.Epoch:
-		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
-		if ss.PCAInterval > 0 && epc%ss.PCAInterval == 0 {
+		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
 			ss.PCAStats()
 		}
 	case time == etime.Cycle:
@@ -651,8 +629,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case mode == etime.Train && time == etime.Run:
 		ss.LogRunStats()
 	case mode == etime.Train && time == etime.Trial:
-		epc := ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur
-		if (ss.PCAInterval > 0) && (epc%ss.PCAInterval == 0) {
+		if (ss.PCAInterval > 0) && (trnEpc%ss.PCAInterval == 0) {
 			ss.Log(etime.Analyze, etime.Trial)
 		}
 	}
@@ -722,7 +699,9 @@ func (ss *Sim) RunEpochName(run, epc int) string {
 
 // WeightsFileName returns default current weights file name
 func (ss *Sim) WeightsFileName() string {
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(ss.Envs.ByMode(etime.Train).Counter(etime.Run).Cur, ss.Envs.ByMode(etime.Train).Counter(etime.Epoch).Cur) + ".wts"
+	run := ss.Loops.Stacks[etime.Train].Loops[etime.Run].Counter.Cur
+	epc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(run, epc) + ".wts"
 }
 
 // LogFileName returns default log file name
@@ -784,7 +763,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Generate a new initial random seed to get different results.  By default, Init re-establishes the same initial seed every time.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			ss.NewRndSeed()
+			ss.RndSeeds.NewSeeds()
 		},
 	})
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
@@ -858,7 +837,7 @@ func (ss *Sim) CmdArgs() {
 	runs := ss.Args.Int("runs")
 	run := ss.Args.Int("run")
 	fmt.Printf("Running %d Runs starting at %d\n", runs, run)
-	rc := ss.Envs.ByMode(etime.Train).Counter(etime.Run)
+	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs
 	ss.NewRun()

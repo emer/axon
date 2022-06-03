@@ -1344,7 +1344,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 func (ly *Layer) PostAct(ltime *Time) {
 	ly.AvgMaxAct(ltime)
 	if !ltime.Testing {
-		ly.AxonLay.(AxonLayer).SynCa(ltime)
+		ly.AxonLay.SynCa(ltime)
 	}
 }
 
