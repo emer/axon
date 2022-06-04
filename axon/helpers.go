@@ -17,35 +17,6 @@ import (
 	"github.com/goki/gi/gi"
 )
 
-// AddDefaultLoopSimLogic adds some sim related logic to looper.Manager. It makes some assumptions about how the loop stack is set up which may cause it to fail.
-func AddDefaultLoopSimLogic(manager *looper.Manager, time *Time, net *Network) {
-	// Net Cycle
-	for m, _ := range manager.Stacks {
-		manager.Stacks[m].Loops[etime.Cycle].Main.Add("Axon:Cycle:RunAndIncrement", func() {
-			net.Cycle(time)
-			time.CycleInc()
-		})
-	}
-	// Weight updates.
-	// Note that the substring "UpdateNetView" in the name is important here, because it's checked in AddDefaultGUICallbacks.
-	manager.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:LoopSegment:UpdateWeights", func() {
-		net.DWt(time)
-		// TODO Need to update net view here to accurately display weight changes.
-		net.WtFmDWt(time)
-	})
-
-	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
-	for m, loops := range manager.Stacks {
-		curMode := m // For closures.
-		for t, loop := range loops.Loops {
-			curTime := t
-			loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"SetTimeVal", func() {
-				time.Mode = curMode.String()
-			})
-		}
-	}
-}
-
 // SendActionAndStep takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
 func SendActionAndStep(net *Network, ev agent.WorldInterface) {
