@@ -326,7 +326,7 @@ func (ss *Sim) ConfigLoops() {
 		}
 	})
 
-	man.AddTimeFuncOnEndToAll("Log", ss.Log)
+	man.AddOnEndToAll("Log", ss.Log)
 	axon.LooperResetLogBelow(man, &ss.Logs)
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Train:Trial:LogAnalyze", func() {
@@ -477,7 +477,7 @@ func (ss *Sim) TrialStats() {
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
 // 		Logging
 
 func (ss *Sim) ConfigLogs() {
