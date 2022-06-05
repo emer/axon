@@ -402,8 +402,8 @@ func TestNetLearn(t *testing.T) {
 				fmt.Printf("=============================\n")
 			}
 
-			// fmt.Printf("hid cosdif stats: %v\nhid avgl:   %v\nhid avgllrn: %v\n", hidLay.CosDiff, hidAvgL, hidAvgLLrn)
-			// fmt.Printf("out cosdif stats: %v\nout avgl:   %v\nout avgllrn: %v\n", outLay.CosDiff, outAvgL, outAvgLLrn)
+			// fmt.Printf("hid cosdif stats: %v\nhid avgl:   %v\nhid avgllrn: %v\n", hidLay.CorSim, hidAvgL, hidAvgLLrn)
+			// fmt.Printf("out cosdif stats: %v\nout avgl:   %v\nout avgllrn: %v\n", outLay.CorSim, outAvgL, outAvgLLrn)
 
 			TestNet.DWt(ltime)
 

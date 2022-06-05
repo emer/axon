@@ -38,7 +38,7 @@ type Layer struct {
 	Neurons []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
 	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
 	ActAvg  ActAvgVals      `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
-	CosDiff CosDiffStats    `desc:"cosine difference between ActM, ActP stats"`
+	CorSim  CorSimStats     `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
@@ -95,15 +95,16 @@ type ActAvgVals struct {
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
 }
 
-// CosDiffStats holds cosine-difference statistics at the layer level
-type CosDiffStats struct {
-	Cos float32 `inactive:"+" desc:"cosine (normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CosDiffFmActs called by PlusPhase"`
-	Avg float32 `inactive:"+" desc:"running average of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in PlusPhase"`
-	Var float32 `inactive:"+" desc:"running variance of cosine (normalized dot product) difference between ActP and ActM -- computed with CosDiff.Tau time constant in PlusPhase"`
+// CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
+// statistics at the layer level
+type CorSimStats struct {
+	Cor float32 `inactive:"+" desc:"correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFmActs called by PlusPhase"`
+	Avg float32 `inactive:"+" desc:"running average of correlation similaritybetween ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
+	Var float32 `inactive:"+" desc:"running variance of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
 }
 
-func (cd *CosDiffStats) Init() {
-	cd.Cos = 0
+func (cd *CorSimStats) Init() {
+	cd.Cor = 0
 	cd.Avg = 0
 }
 
@@ -682,7 +683,7 @@ func (ly *Layer) InitWts() {
 	ly.ActAvg.GiMult = 1
 	ly.AxonLay.InitActAvg()
 	ly.AxonLay.InitActs()
-	ly.CosDiff.Init()
+	ly.CorSim.Init()
 
 	ly.AxonLay.InitGScale()
 
@@ -1466,7 +1467,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		}
 		pl.ActP.CalcAvg()
 	}
-	ly.AxonLay.CosDiffFmActs()
+	ly.AxonLay.CorSimFmActs()
 }
 
 // TargToExt sets external input Ext from target values Targ
@@ -1526,8 +1527,10 @@ func (ly *Layer) ActSt2(ltime *Time) {
 	}
 }
 
-// CosDiffFmActs computes the cosine difference in activation state between minus and plus phases.
-func (ly *Layer) CosDiffFmActs() {
+// CorSimFmActs computes the correlation similarity
+// (centered cosine aka normalized dot product)
+// in activation state between minus and plus phases.
+func (ly *Layer) CorSimFmActs() {
 	lpl := &ly.Pools[0]
 	avgM := lpl.ActM.Avg
 	avgP := lpl.ActP.Avg
@@ -1539,7 +1542,7 @@ func (ly *Layer) CosDiffFmActs() {
 		if nrn.IsOff() {
 			continue
 		}
-		ap := nrn.ActP - avgP // zero mean
+		ap := nrn.ActP - avgP // zero mean = correl
 		am := nrn.ActM - avgM
 		cosv += ap * am
 		ssm += am * am
@@ -1550,9 +1553,9 @@ func (ly *Layer) CosDiffFmActs() {
 	if dist != 0 {
 		cosv /= dist
 	}
-	ly.CosDiff.Cos = cosv
+	ly.CorSim.Cor = cosv
 
-	ly.Act.Dt.AvgVarUpdt(&ly.CosDiff.Avg, &ly.CosDiff.Var, ly.CosDiff.Cos)
+	ly.Act.Dt.AvgVarUpdt(&ly.CorSim.Avg, &ly.CorSim.Var, ly.CorSim.Cor)
 }
 
 // IsTarget returns true if this layer is a Target layer.

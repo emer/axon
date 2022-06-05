@@ -191,9 +191,11 @@ type AxonLayer interface {
 	// ActSt2 saves current activations into ActSt2
 	ActSt2(ltime *Time)
 
-	// CosDiffFmActs computes the cosine difference in activation state
-	// between minus and plus phases.
-	CosDiffFmActs()
+	// CorSimFmActs computes the correlation similarity
+	// (centered cosine aka normalized dot product)
+	// in activation state between minus and plus phases
+	// (1 = identical, 0 = uncorrelated).
+	CorSimFmActs()
 
 	// DWt computes the weight change (learning) -- calls DWt method on sending projections
 	DWt(ltime *Time)

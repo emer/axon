@@ -31,7 +31,6 @@ import (
 	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
-	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -85,7 +84,7 @@ type Sim struct {
 
 // this registers this Sim Type and gives it properties that e.g.,
 // prompt for filename for save methods.
-var KiT_Sim = kit.Types.AddType(&Sim{}, SimProps)
+var KiT_Sim = kit.Types.AddType(&Sim{}, nil)
 
 // TheSim is the overall state for this simulation
 var TheSim Sim
@@ -150,11 +149,6 @@ func (ss *Sim) ConfigEnv() {
 	trn.Init(0)
 	tst.Init(0)
 	ss.Envs.Add(trn, tst)
-}
-
-// Env returns the relevant environment based on Time Mode
-func (ss *Sim) Env() env.Env {
-	return ss.Envs[ss.Time.Mode]
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -332,7 +326,7 @@ func (ss *Sim) ConfigLoops() {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
-	ev := ss.Env()
+	ev := ss.Envs[ss.Time.Mode]
 	// ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
@@ -359,12 +353,6 @@ func (ss *Sim) NewRun() {
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
 	ss.Logs.ResetLog(etime.Test, etime.Epoch)
-}
-
-// SaveWeights saves the network weights -- when called with giv.CallMethod
-// it will auto-prompt for filename
-func (ss *Sim) SaveWeights(filename gi.FileName) {
-	ss.Net.SaveWtsJSON(filename)
 }
 
 // TestAll runs through the full set of testing items
@@ -413,21 +401,21 @@ func (ss *Sim) InitStats() {
 	// clear rest just to make Sim look initialized
 	ss.Stats.SetFloat("TrlErr", 0.0)
 	ss.Stats.SetFloat("TrlUnitErr", 0.0)
-	ss.Stats.SetFloat("TrlCosDiff", 0.0)
+	ss.Stats.SetFloat("TrlCorSim", 0.0)
 	ss.Stats.SetInt("FirstZero", -1) // critical to reset to -1
 	ss.Stats.SetInt("NZero", 0)
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
-// Also saves a string rep of them to the GUI, if the GUI is active
+// Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
 	var mode etime.Modes
 	mode.FromString(ss.Time.Mode)
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ev := ss.Env()
+	ev := ss.Envs[ss.Time.Mode]
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCosDiff"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -435,7 +423,7 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
 
-	ss.Stats.SetFloat("TrlCosDiff", float64(out.CosDiff.Cos))
+	ss.Stats.SetFloat("TrlCorSim", float64(out.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
 
 	if ss.Stats.Float("TrlUnitErr") > 0 {
@@ -553,21 +541,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 	ss.GUI.FinalizeGUI(false)
 	return ss.GUI.Win
-}
-
-// These props register Save methods so they can be used
-var SimProps = ki.Props{
-	"CallMethods": ki.PropSlice{
-		{"SaveWeights", ki.Props{
-			"desc": "save network weights to file",
-			"icon": "file-save",
-			"Args": ki.PropSlice{
-				{"File Name", ki.Props{
-					"ext": ".wts,.wts.gz",
-				}},
-			},
-		}},
-	},
 }
 
 func (ss *Sim) ConfigArgs() {

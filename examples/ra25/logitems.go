@@ -119,14 +119,14 @@ func (ss *Sim) ConfigLogItems() {
 				ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 			}}})
 	ss.Logs.AddItem(&elog.Item{
-		Name:   "CosDiff",
+		Name:   "CorSim",
 		Type:   etensor.FLOAT64,
 		Plot:   elog.DTrue,
 		FixMax: elog.DTrue,
 		Range:  minmax.F64{Max: 1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
-				ctx.SetFloat64(ss.Stats.Float("TrlCosDiff"))
+				ctx.SetFloat64(ss.Stats.Float("TrlCorSim"))
 			}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
 				ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 			}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -230,14 +230,14 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat32(ly.Pools[0].AvgDif.Max)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
-			Name:  clnm + "_CosDiff",
+			Name:  clnm + "_CorSim",
 			Type:  etensor.FLOAT64,
 			Plot:  elog.DFalse,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(1 - ly.CosDiff.Cos)
+					ctx.SetFloat32(ly.CorSim.Cor)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}}})
