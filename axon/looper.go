@@ -14,7 +14,9 @@ import (
 
 // LooperStdPhases adds the minus and plus phases of the theta cycle,
 // along with embedded beta phases which just record St1 and St2 activity in this case.
-// plusStart is start of plus phase, typically 150, and plusEnd is end of plus phase, typically 199
+// plusStart is start of plus phase, typically 150,
+// and plusEnd is end of plus phase, typically 199
+// resets the state at start of trial
 func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, plusEnd int) {
 	minusPhase := looper.Event{Name: "MinusPhase", AtCtr: 0}
 	minusPhase.OnEvent.Add("Sim:MinusPhase:Start", func() {
@@ -39,6 +41,15 @@ func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, p
 	plusPhaseEnd.OnEvent.Add("Sim:PlusPhase:End", func() { net.PlusPhase(time) })
 
 	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase, plusPhaseEnd)
+
+	for m, _ := range man.Stacks {
+		mode := m // For closures
+		stack := man.Stacks[mode]
+		stack.Loops[etime.Trial].OnStart.Add("Sim:ResetState", func() {
+			net.NewState()
+			time.NewState(mode.String())
+		})
+	}
 }
 
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFmDWt functions to looper

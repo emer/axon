@@ -208,9 +208,7 @@ func (ss *Sim) Init() {
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
-	// ss.GUI.StopNow = true -- prints messages for params as set
 	ss.Params.SetAll()
-	// fmt.Println(ss.Params.NetHypers.JSONString())
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 }
@@ -229,16 +227,12 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net, 150, 199) // plus phase timing
+	axon.LooperStdPhases(man, &ss.Time, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Time, &ss.ViewUpdt) // std algo code
 
-	// Trial Stats and Apply Input
 	for m, _ := range man.Stacks {
 		mode := m // For closures
-		stack := man.Stacks[m]
-		stack.Loops[etime.Trial].OnStart.Add("Sim:ResetState", func() {
-			ss.Net.NewState()
-			ss.Time.NewState(mode.String())
-		})
+		stack := man.Stacks[mode]
 		stack.Loops[etime.Trial].OnStart.Add("Sim:Env:Step", func() {
 			// note: OnStart for env.Env, others may happen OnEnd
 			ss.Envs[mode.String()].Step()
@@ -257,9 +251,6 @@ func (ss *Sim) ConfigLoops() {
 		curNZero := ss.Stats.Int("NZero")
 		return nzero > 0 && curNZero >= nzero
 	}
-
-	// Add default Sim and network logic
-	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Time, &ss.ViewUpdt)
 
 	// Add Testing
 	trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
