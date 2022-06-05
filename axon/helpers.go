@@ -1,4 +1,4 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/emer/emergent/agent"
+	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
@@ -68,14 +69,6 @@ func ApplyInputs(net *Network, en agent.WorldInterface, layerName string, patfun
 	if pats != nil {
 		ly.ApplyExt(pats)
 	}
-}
-
-// SaveWeights saves the network weights -- when called with giv.CallMethod
-// it will auto-prompt for filename
-func SaveWeights(fileName string, net *Network) {
-	fnm := fileName
-	fmt.Printf("Saving Weights to: %v\n", fnm)
-	net.SaveWtsJSON(gi.FileName(fnm))
 }
 
 // SetParams sets the params for "Base" and then current ParamSet.
@@ -138,30 +131,32 @@ func HogDead(net *Network, lnm string) (hog, dead float64) {
 	return
 }
 
-// AddPlusAndMinusPhases adds the minus and plus phases of the theta cycle, which help the network learn.
-func AddPlusAndMinusPhases(manager *looper.Manager, time *Time, net *Network) {
-	// The minus and plus phases of the theta cycle, which help the network learn.
-	minusPhase := looper.Event{Name: "MinusPhase", AtCtr: 0}
-	minusPhase.OnEvent.Add("Sim:MinusPhase:Start", func() {
-		time.PlusPhase = false
-		time.NewPhase(false)
-	})
-	plusPhase := looper.Event{Name: "PlusPhase", AtCtr: 150}
-	plusPhase.OnEvent.Add("Sim:MinusPhase:End", func() { net.MinusPhase(time) })
-	plusPhase.OnEvent.Add("Sim:PlusPhase:Start", func() {
-		time.PlusPhase = true
-		time.NewPhase(true)
-	})
-	plusPhaseEnd := looper.Event{Name: "PlusPhaseEnd", AtCtr: 199}
-	plusPhaseEnd.OnEvent.Add("Sim:PlusPhase:End", func() { net.PlusPhase(time) })
-	// Add both to train and test, by copy
-	manager.AddEventAllModes(etime.Cycle, minusPhase)
-	manager.AddEventAllModes(etime.Cycle, plusPhase)
-	manager.AddEventAllModes(etime.Cycle, plusPhaseEnd)
-}
-
 // NewRndSeed gets a new random seed based on current time -- otherwise uses
 // the same random seed for every run.
 func NewRndSeed(randomSeed *int64) {
 	*randomSeed = time.Now().UnixNano()
+}
+
+// WeightsFileName returns default current weights file name
+func WeightsFileName(net *Network, man *looper.Manager, args *ecmd.Args, params *emer.Params) string {
+	run := man.Stacks[etime.Train].Loops[etime.Run].Counter.Cur
+	epc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	return net.Name() + "_" + RunName(args, params) + "_" + RunEpochName(run, epc) + ".wts"
+}
+
+// SaveWeights saves network weights to filename with WeightsFileName information
+// to identify the weights.
+func SaveWeights(net *Network, man *looper.Manager, args *ecmd.Args, params *emer.Params) {
+	fnm := WeightsFileName(net, man, args, params)
+	fmt.Printf("Saving Weights to: %s\n", fnm)
+	net.SaveWtsJSON(gi.FileName(fnm))
+}
+
+// SaveWeightsIfArgSet saves network weights if the "wts" arg has been set to true.
+// uses WeightsFileName information to identify the weights.
+func SaveWeightsIfArgSet(net *Network, man *looper.Manager, args *ecmd.Args, params *emer.Params) {
+	swts := args.Bool("wts")
+	if swts {
+		SaveWeights(net, man, args, params)
+	}
 }

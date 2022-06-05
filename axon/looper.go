@@ -1,4 +1,4 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -11,6 +11,35 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 )
+
+// LooperStdPhases adds the minus and plus phases of the theta cycle,
+// along with embedded beta phases which just record St1 and St2 activity in this case.
+// plusStart is start of plus phase, typically 150, and plusEnd is end of plus phase, typically 199
+func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, plusEnd int) {
+	minusPhase := looper.Event{Name: "MinusPhase", AtCtr: 0}
+	minusPhase.OnEvent.Add("Sim:MinusPhase:Start", func() {
+		time.PlusPhase = false
+		time.NewPhase(false)
+	})
+	beta1 := looper.Event{Name: "Beta1", AtCtr: 50}
+	beta1.OnEvent.Add("Sim:Beta1", func() {
+		net.ActSt1(time)
+	})
+	beta2 := looper.Event{Name: "Beta2", AtCtr: 100}
+	beta2.OnEvent.Add("Sim:Beta2", func() {
+		net.ActSt2(time)
+	})
+	plusPhase := looper.Event{Name: "PlusPhase", AtCtr: plusStart}
+	plusPhase.OnEvent.Add("Sim:MinusPhase:End", func() { net.MinusPhase(time) })
+	plusPhase.OnEvent.Add("Sim:PlusPhase:Start", func() {
+		time.PlusPhase = true
+		time.NewPhase(true)
+	})
+	plusPhaseEnd := looper.Event{Name: "PlusPhase", AtCtr: plusEnd}
+	plusPhaseEnd.OnEvent.Add("Sim:PlusPhase:End", func() { net.PlusPhase(time) })
+
+	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase, plusPhaseEnd)
+}
 
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFmDWt functions to looper
 // for given network, time, and netview update manager

@@ -28,7 +28,7 @@ func (ss *Sim) ConfigLogItems() {
 		Plot: elog.DFalse,
 		Write: elog.WriteMap{
 			etime.Scope(etime.AllModes, etime.AllTimes): func(ctx *elog.Context) {
-				ctx.SetString(ss.RunName())
+				ctx.SetString(axon.RunName(&ss.Args, &ss.Params))
 			}}})
 	ss.Logs.AddItem(&elog.Item{
 		Name: "Epoch",

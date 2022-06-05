@@ -26,11 +26,9 @@ import (
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/ki/ki"
@@ -229,15 +227,6 @@ func (ss *Sim) InitRndSeed() {
 	ss.RndSeeds.Set(run)
 }
 
-func (ss *Sim) SaveWeightsToJSON() {
-	swts := ss.Args.Bool("wts")
-	if swts {
-		fnm := ss.WeightsFileName()
-		fmt.Printf("Saving Weights to: %s\n", fnm)
-		ss.Net.SaveWtsJSON(gi.FileName(fnm))
-	}
-}
-
 // ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
@@ -246,30 +235,7 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
-	// Plus and Minus with Length of each, start and end logic
-	minusPhase := looper.Event{Name: "MinusPhase", AtCtr: 0}
-	minusPhase.OnEvent.Add("Sim:MinusPhase:Start", func() {
-		ss.Time.PlusPhase = false
-		ss.Time.NewPhase(false)
-	})
-	actSt1 := looper.Event{Name: "ActSt1", AtCtr: 50}
-	actSt1.OnEvent.Add("Sim:ActSt1", func() {
-		ss.Net.ActSt1(&ss.Time)
-	})
-	actSt2 := looper.Event{Name: "ActSt2", AtCtr: 100}
-	actSt2.OnEvent.Add("Sim:ActSt2", func() {
-		ss.Net.ActSt2(&ss.Time)
-	})
-	plusPhase := looper.Event{Name: "PlusPhase", AtCtr: 150}
-	plusPhase.OnEvent.Add("Sim:MinusPhase:End", func() { ss.Net.MinusPhase(&ss.Time) })
-	plusPhase.OnEvent.Add("Sim:PlusPhase:Start", func() {
-		ss.Time.PlusPhase = true
-		ss.Time.NewPhase(true)
-	})
-	plusPhaseEnd := looper.Event{Name: "PlusPhase", AtCtr: 199}
-	plusPhaseEnd.OnEvent.Add("Sim:PlusPhase:End", func() { ss.Net.PlusPhase(&ss.Time) })
-
-	man.AddEventAllModes(etime.Cycle, minusPhase, actSt1, actSt2, plusPhase, plusPhaseEnd)
+	axon.LooperStdPhases(man, &ss.Time, ss.Net, 150, 199) // plus phase timing
 
 	// Trial Stats and Apply Input
 	for m, _ := range man.Stacks {
@@ -317,12 +283,12 @@ func (ss *Sim) ConfigLoops() {
 		// todo: this is not working
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		ss.Stats.SetInt("Epoch", trnEpc)
-		ss.LogTestErrors()
+		axon.LogTestErrors(&ss.Logs)
 	})
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("Train:Epoch:PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
-			ss.PCAStats()
+			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 		}
 	})
 
@@ -337,11 +303,13 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("Train:Run:RunStats", func() {
-		ss.LogRunStats()
+		axon.LogRunStats(&ss.Logs)
 	})
 
 	// Save weights to file, to look at later
-	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("Log:Train:SaveWeights", ss.SaveWeightsToJSON)
+	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("Log:Train:SaveWeights", func() {
+		axon.SaveWeightsIfArgSet(ss.Net, man, &ss.Args, &ss.Params)
+	})
 
 	////////////////////////////////////////////
 	// GUI
@@ -512,78 +480,9 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
 }
 
-// LogTestErrors records all errors made across TestTrials, at Test Epoch scope
-func (ss *Sim) LogTestErrors() {
-	sk := etime.Scope(etime.Test, etime.Trial)
-	lt := ss.Logs.TableDetailsScope(sk)
-	ix, _ := lt.NamedIdxView("TestErrors")
-	ix.Filter(func(et *etable.Table, row int) bool {
-		return et.CellFloat("Err", row) > 0 // include error trials
-	})
-	ss.Logs.MiscTables["TestErrors"] = ix.NewTable()
-
-	allsp := split.All(ix)
-	split.Agg(allsp, "UnitErr", agg.AggSum)
-	// note: can add other stats to compute
-	ss.Logs.MiscTables["TestErrorStats"] = allsp.AggsToTable(etable.AddAggName)
-}
-
-// LogRunStats records stats across all runs, at Train Run scope
-func (ss *Sim) LogRunStats() {
-	sk := etime.Scope(etime.Train, etime.Run)
-	lt := ss.Logs.TableDetailsScope(sk)
-	ix, _ := lt.NamedIdxView("RunStats")
-
-	spl := split.GroupBy(ix, []string{"Params"})
-	split.Desc(spl, "FirstZero")
-	split.Desc(spl, "PctCor")
-	ss.Logs.MiscTables["RunStats"] = spl.AggsToTable(etable.AddAggName)
-}
-
-// PCAStats computes PCA statistics on recorded hidden activation patterns
-// from Analyze, Trial log data
-func (ss *Sim) PCAStats() {
-	ss.Stats.PCAStats(ss.Logs.IdxView(etime.Analyze, etime.Trial), "ActM", ss.Net.LayersByClass("Hidden", "Target"))
-	ss.Logs.ResetLog(etime.Analyze, etime.Trial)
-}
-
 // RasterRec updates spike raster record for current Time.Cycle
 func (ss *Sim) RasterRec() {
 	ss.Stats.RasterRec(ss.Net, ss.Time.Cycle, "Spike")
-}
-
-// RunName returns a name for this run that combines Tag and Params -- add this to
-// any file names that are saved.
-func (ss *Sim) RunName() string {
-	rn := ""
-	tag := ss.Args.String("tag")
-	if tag != "" {
-		rn += tag + "_"
-	}
-	rn += ss.Params.Name()
-	srun := ss.Args.Int("run")
-	if srun > 0 {
-		rn += fmt.Sprintf("_%03d", srun)
-	}
-	return rn
-}
-
-// RunEpochName returns a string with the run and epoch numbers with leading zeros, suitable
-// for using in weights file names.  Uses 3, 5 digits for each.
-func (ss *Sim) RunEpochName(run, epc int) string {
-	return fmt.Sprintf("%03d_%05d", run, epc)
-}
-
-// WeightsFileName returns default current weights file name
-func (ss *Sim) WeightsFileName() string {
-	run := ss.Loops.Stacks[etime.Train].Loops[etime.Run].Counter.Cur
-	epc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + ss.RunEpochName(run, epc) + ".wts"
-}
-
-// LogFileName returns default log file name
-func (ss *Sim) LogFileName(lognm string) string {
-	return ss.Net.Nm + "_" + ss.RunName() + "_" + lognm + ".tsv"
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -684,34 +583,15 @@ func (ss *Sim) ConfigArgs() {
 func (ss *Sim) CmdArgs() {
 	ss.Args.ProcStd()
 	ss.Args.SetBool("nogui", true)
-	if note := ss.Args.String("note"); note != "" {
-		fmt.Printf("note: %s\n", note)
-	}
-	ss.Tag = ss.Args.String("tag")
-	if params := ss.Args.String("params"); params != "" {
-		ss.Params.ExtraSets = params
-		fmt.Printf("Using ParamSet: %s\n", ss.Params.ExtraSets)
-	}
-	if ss.Args.Bool("epclog") {
-		fnm := ss.LogFileName("epc")
-		ss.Logs.SetLogFile(etime.Train, etime.Epoch, fnm)
-	}
-	if ss.Args.Bool("triallog") {
-		fnm := ss.LogFileName("trl")
-		ss.Logs.SetLogFile(etime.Train, etime.Trial, fnm)
-	}
-	if ss.Args.Bool("runlog") {
-		fnm := ss.LogFileName("run")
-		ss.Logs.SetLogFile(etime.Train, etime.Run, fnm)
-	}
+
+	axon.StdCmdArgs(ss.Net, &ss.Logs, &ss.Args, &ss.Params)
+
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
 		fmt.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
-	if ss.Args.Bool("wts") {
-		fmt.Printf("Saving final weights per run\n")
-	}
+
 	runs := ss.Args.Int("runs")
 	run := ss.Args.Int("run")
 	fmt.Printf("Running %d Runs starting at %d\n", runs, run)
@@ -724,6 +604,6 @@ func (ss *Sim) CmdArgs() {
 	ss.Logs.CloseLogFiles()
 
 	if netdata {
-		ss.GUI.SaveNetData(ss.RunName())
+		ss.GUI.SaveNetData(axon.RunName(&ss.Args, &ss.Params))
 	}
 }
