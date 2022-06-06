@@ -10,11 +10,15 @@ import (
 	"github.com/emer/emergent/agent"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/env"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/gi/gi"
 )
 
-// SendActionAndStep takes action for this step, using either decoded cortical
+/////////////////////////////////////////////////////
+// Agent
+
+// AgentSendActionAndStep takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
 func SendActionAndStep(net *Network, ev agent.WorldInterface) {
 	// Iterate over all Target (output) layers
@@ -36,23 +40,11 @@ func SendActionAndStep(net *Network, ev agent.WorldInterface) {
 	}
 }
 
-// ToggleLayersOff can be used to disable layers in a Network, for example if you are doing an ablation study.
-func ToggleLayersOff(net *Network, layerNames []string, off bool) {
-	for _, lnm := range layerNames {
-		lyi := net.LayerByName(lnm)
-		if lyi == nil {
-			fmt.Printf("layer not found: %s\n", lnm)
-			continue
-		}
-		lyi.SetOff(off)
-	}
-}
-
-// ApplyInputs applies input patterns from given environment.
+// AgentApplyInputs applies input patterns from given environment.
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
-func ApplyInputs(net *Network, en agent.WorldInterface, layerName string, patfunc func(spec agent.SpaceSpec) etensor.Tensor) {
+func AgentApplyInputs(net *Network, en agent.WorldInterface, layerName string, patfunc func(spec agent.SpaceSpec) etensor.Tensor) {
 	lyi := net.LayerByName(layerName)
 	if lyi == nil {
 		fmt.Printf("layer not found: %s\n", layerName)
@@ -67,11 +59,46 @@ func ApplyInputs(net *Network, en agent.WorldInterface, layerName string, patfun
 	}
 }
 
+////////////////////////////////////////////////////
+// Misc
+
+// ToggleLayersOff can be used to disable layers in a Network, for example if you are doing an ablation study.
+func ToggleLayersOff(net *Network, layerNames []string, off bool) {
+	for _, lnm := range layerNames {
+		lyi := net.LayerByName(lnm)
+		if lyi == nil {
+			fmt.Printf("layer not found: %s\n", lnm)
+			continue
+		}
+		lyi.SetOff(off)
+	}
+}
+
+// EnvApplyInputs applies input patterns from given env.Env environment
+// to Input and Target layer types, assuming that env provides State
+// with the same names as the layers.
+// If these assumptions don't fit, use a separate method.
+func EnvApplyInputs(net *Network, ev env.Env) {
+	net.InitExt() // clear any existing inputs -- not strictly necessary if always
+	// going to the same layers, but good practice and cheap anyway
+	lays := net.LayersByClass("Input", "Target")
+	for _, lnm := range lays {
+		ly := net.LayerByName(lnm).(AxonLayer).AsAxon()
+		pats := ev.State(ly.Nm)
+		if pats != nil {
+			ly.ApplyExt(pats)
+		}
+	}
+}
+
+/////////////////////////////////////////////
+// Weights files
+
 // WeightsFileName returns default current weights file name,
 // using train run and epoch counters from looper
 // and the RunName string identifying tag, parameters and starting run,
 func WeightsFileName(net *Network, ctrString, runName string) string {
-	return net.Name() + "_" + runName + "_" + ctrString + ".wts"
+	return net.Name() + "_" + runName + "_" + ctrString + ".wts.gz"
 }
 
 // SaveWeights saves network weights to filename with WeightsFileName information

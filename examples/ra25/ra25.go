@@ -236,7 +236,10 @@ func (ss *Sim) ConfigLoops() {
 			// note: OnStart for env.Env, others may happen OnEnd
 			ss.Envs[mode.String()].Step()
 		})
-		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", ss.ApplyInputs)
+		stack.Loops[etime.Trial].OnStart.Add("Sim:ApplyInputs", func() {
+			ss.ApplyInputs()
+			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Time.Mode])
+		})
 		stack.Loops[etime.Trial].OnEnd.Add("Sim:StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("Sim:TrialStats", ss.TrialStats)
 	}
@@ -318,11 +321,11 @@ func (ss *Sim) ConfigLoops() {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
+	net := ss.Net
 	ev := ss.Envs[ss.Time.Mode]
-	// ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
+	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
-
-	lays := []string{"Input", "Output"}
+	lays := net.LayersByClass("Input", "Target")
 	for _, lnm := range lays {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := ev.State(ly.Nm)
@@ -408,9 +411,6 @@ func (ss *Sim) StatCounters() {
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	if trnEpc == 0 {
-		fmt.Printf("epc = 0\n")
-	}
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
 	ev := ss.Envs[ss.Time.Mode]
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
