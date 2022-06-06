@@ -20,7 +20,7 @@ import (
 
 // AgentSendActionAndStep takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
-func SendActionAndStep(net *Network, ev agent.WorldInterface) {
+func AgentSendActionAndStep(net *Network, ev agent.WorldInterface) {
 	// Iterate over all Target (output) layers
 	actions := map[string]agent.Action{}
 	for _, lnm := range net.LayersByClass(emer.Target.String()) {
