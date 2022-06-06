@@ -66,7 +66,6 @@ func guirun() {
 type Sim struct {
 	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
-	Tag          string           `desc:"extra tag string to add to any file names output from sim (e.g., weights files, log files, params for run)"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats        estats.Stats     `desc:"contains computed statistic values"`
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
@@ -244,12 +243,16 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("Sim:NewRun", ss.NewRun)
 
-	// Run end early condition
-	man.GetLoop(etime.Train, etime.Run).IsDone["Epoch:NZeroStop"] = func() bool {
+	// Train stop early condition
+	man.GetLoop(etime.Train, etime.Epoch).IsDone["Epoch:NZeroStop"] = func() bool {
 		// This is calculated in TrialStats
-		nzero := ss.Args.Int("nzero")
+		stopNz := ss.Args.Int("nzero")
+		if stopNz <= 0 {
+			stopNz = 2
+		}
 		curNZero := ss.Stats.Int("NZero")
-		return nzero > 0 && curNZero >= nzero
+		stop := curNZero >= stopNz
+		return stop
 	}
 
 	// Add Testing
@@ -265,9 +268,6 @@ func (ss *Sim) ConfigLoops() {
 	// Logging
 
 	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("Test:Epoch:LogTestErrors", func() {
-		// todo: this is not working
-		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		ss.Stats.SetInt("Epoch", trnEpc)
 		axon.LogTestErrors(&ss.Logs)
 	})
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("Train:Epoch:PCAStats", func() {
@@ -288,12 +288,13 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("Train:Run:RunStats", func() {
-		axon.LogRunStats(&ss.Logs)
+		ss.Logs.RunStats("PctCor", "FirstZero", "LastZero")
 	})
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("Log:Train:SaveWeights", func() {
-		axon.SaveWeightsIfArgSet(ss.Net, man, &ss.Args, &ss.Params)
+		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	////////////////////////////////////////////
@@ -394,6 +395,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("TrlUnitErr", 0.0)
 	ss.Stats.SetFloat("TrlCorSim", 0.0)
 	ss.Stats.SetInt("FirstZero", -1) // critical to reset to -1
+	ss.Stats.SetInt("LastZero", -1)  // critical to reset to -1
 	ss.Stats.SetInt("NZero", 0)
 }
 
@@ -403,6 +405,12 @@ func (ss *Sim) StatCounters() {
 	var mode etime.Modes
 	mode.FromString(ss.Time.Mode)
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
+	// always use training epoch..
+	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	ss.Stats.SetInt("Epoch", trnEpc)
+	if trnEpc == 0 {
+		fmt.Printf("epc = 0\n")
+	}
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
 	ev := ss.Envs[ss.Time.Mode]
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
@@ -426,16 +434,29 @@ func (ss *Sim) TrialStats() {
 
 //////////////////////////////////////////////////////////////////////////////
 // 		Logging
-
 func (ss *Sim) ConfigLogs() {
-	ss.ConfigLogItems()
+	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
+
+	ss.Logs.AddCounterItems([]etime.Times{etime.Run, etime.Epoch, etime.Trial, etime.Cycle}, []string{"TrialName", "RunName"})
+
+	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", elog.DTrue, etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", elog.DFalse, etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
+
+	axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
+	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Run, etime.Epoch, etime.Trial)
+
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
+	axon.LogAddLayerActTensorItems(&ss.Logs, ss.Net, etime.Test, etime.Trial)
+
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
 	// note: Analyze not plotted by default
-	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "Params")
+	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	iticyc := ss.Args.Int("iticycles")
 	ss.Stats.ConfigRasters(ss.Net, 200+iticyc, ss.Net.LayersByClass())
 }
@@ -537,7 +558,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.AddInt("nzero", 5, "number of zero error epochs in a row to count as full training")
+	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
@@ -545,10 +566,9 @@ func (ss *Sim) ConfigArgs() {
 }
 
 func (ss *Sim) CmdArgs() {
-	ss.Args.ProcStd()
-	ss.Args.SetBool("nogui", true)
-
-	axon.StdCmdArgs(ss.Net, &ss.Logs, &ss.Args, &ss.Params)
+	ss.Args.ProcStd(&ss.Logs, &ss.Params, ss.Net.Name())
+	ss.Args.SetBool("nogui", true)                                       // by definition if here
+	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
 
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
@@ -568,6 +588,6 @@ func (ss *Sim) CmdArgs() {
 	ss.Logs.CloseLogFiles()
 
 	if netdata {
-		ss.GUI.SaveNetData(axon.RunName(&ss.Args, &ss.Params))
+		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
 }

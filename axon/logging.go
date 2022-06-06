@@ -5,15 +5,14 @@
 package axon
 
 import (
-	"fmt"
-
-	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/minmax"
 	"github.com/emer/etable/split"
 )
 
@@ -33,18 +32,6 @@ func LogTestErrors(logs *elog.Logs) {
 	logs.MiscTables["TestErrorStats"] = allsp.AggsToTable(etable.AddAggName)
 }
 
-// LogRunStats records stats across all runs, at Train Run scope
-func LogRunStats(logs *elog.Logs) {
-	sk := etime.Scope(etime.Train, etime.Run)
-	lt := logs.TableDetailsScope(sk)
-	ix, _ := lt.NamedIdxView("RunStats")
-
-	spl := split.GroupBy(ix, []string{"Params"})
-	split.Desc(spl, "FirstZero")
-	split.Desc(spl, "PctCor")
-	logs.MiscTables["RunStats"] = spl.AggsToTable(etable.AddAggName)
-}
-
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func PCAStats(net emer.Network, logs *elog.Logs, stats *estats.Stats) {
@@ -52,56 +39,207 @@ func PCAStats(net emer.Network, logs *elog.Logs, stats *estats.Stats) {
 	logs.ResetLog(etime.Analyze, etime.Trial)
 }
 
-// RunName returns a name for this run that combines Tag arg
-// and Params name -- add this to any file names that are saved.
-func RunName(args *ecmd.Args, params *emer.Params) string {
-	rn := ""
-	tag := args.String("tag")
-	if tag != "" {
-		rn += tag + "_"
+//////////////////////////////////////////////////////////////////////////////
+//  Log items
+
+// LogAddDiagnosticItems adds standard Axon diagnostic statistics to given logs,
+// across two given time levels, in higher to lower order, e.g., Epoch, Trial
+// These are useful for tuning and diagnosing the behavior of the network.
+func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) {
+	layers := net.LayersByClass("Hidden", "Target")
+	for _, lnm := range layers {
+		clnm := lnm
+		logs.AddItem(&elog.Item{
+			Name:   clnm + "_ActAvg",
+			Type:   etensor.FLOAT64,
+			Plot:   elog.DFalse,
+			FixMax: elog.DFalse,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+				}}})
+		logs.AddItem(&elog.Item{
+			Name:  clnm + "_MaxGeM",
+			Type:  etensor.FLOAT64,
+			Plot:  elog.DFalse,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].GeM.Max)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.ActAvg.AvgMaxGeM)
+				}}})
+		logs.AddItem(&elog.Item{
+			Name:  clnm + "_AvgDifAvg",
+			Type:  etensor.FLOAT64,
+			Plot:  elog.DFalse,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].AvgDif.Avg) // only updt w slow wts
+				}}})
+		logs.AddItem(&elog.Item{
+			Name:  clnm + "_AvgDifMax",
+			Type:  etensor.FLOAT64,
+			Plot:  elog.DFalse,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].AvgDif.Max)
+				}}})
+		logs.AddItem(&elog.Item{
+			Name:  clnm + "_CorSim",
+			Type:  etensor.FLOAT64,
+			Plot:  elog.DFalse,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.CorSim.Cor)
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
 	}
-	rn += params.Name()
-	srun := args.Int("run")
-	if srun > 0 {
-		rn += fmt.Sprintf("_%03d", srun)
+
+	// input layer average activity -- important for tuning
+	layers = net.LayersByClass("Input")
+	for _, lnm := range layers {
+		clnm := lnm
+		logs.AddItem(&elog.Item{
+			Name:   clnm + "_ActAvg",
+			Type:   etensor.FLOAT64,
+			Plot:   elog.DFalse,
+			FixMax: elog.DTrue,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+				}}})
 	}
-	return rn
 }
 
-// RunEpochName returns a string with the run and epoch numbers with leading zeros, suitable
-// for using in weights file names.  Uses 3, 5 digits for each.
-func RunEpochName(run, epc int) string {
-	return fmt.Sprintf("%03d_%05d", run, epc)
+// LogAddPCAItems adds PCA statistics to log for Hidden and Target layers
+// across 3 given time levels, in higher to lower order, e.g., Run, Epoch, Trial
+// These are useful for diagnosing the behavior of the network.
+func LogAddPCAItems(logs *elog.Logs, net *Network, times ...etime.Times) {
+	layers := net.LayersByClass("Hidden", "Target")
+	for _, lnm := range layers {
+		clnm := lnm
+		cly := net.LayerByName(clnm)
+		logs.AddItem(&elog.Item{
+			Name:      clnm + "_ActM",
+			Type:      etensor.FLOAT64,
+			CellShape: cly.Shape().Shp,
+			FixMax:    elog.DTrue,
+			Range:     minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Analyze, times[2]): func(ctx *elog.Context) {
+					ctx.SetLayerTensor(clnm, "ActM")
+				}, etime.Scope(etime.Test, times[2]): func(ctx *elog.Context) {
+					ctx.SetLayerTensor(clnm, "ActM")
+				}}})
+		logs.AddItem(&elog.Item{
+			Name: clnm + "_PCA_NStrong",
+			Type: etensor.FLOAT64,
+			Plot: elog.DFalse,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					ctx.SetStatFloat(ctx.Item.Name)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		logs.AddItem(&elog.Item{
+			Name: clnm + "_PCA_Top5",
+			Type: etensor.FLOAT64,
+			Plot: elog.DFalse,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					ctx.SetStatFloat(ctx.Item.Name)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		logs.AddItem(&elog.Item{
+			Name: clnm + "_PCA_Next5",
+			Type: etensor.FLOAT64,
+			Plot: elog.DFalse,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					ctx.SetStatFloat(ctx.Item.Name)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		logs.AddItem(&elog.Item{
+			Name: clnm + "_PCA_Rest",
+			Type: etensor.FLOAT64,
+			Plot: elog.DFalse,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					ctx.SetStatFloat(ctx.Item.Name)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+	}
 }
 
-// LogFileName returns default log file name
-func LogFileName(lognm string, net *Network, args *ecmd.Args, params *emer.Params) string {
-	return net.Name() + "_" + RunName(args, params) + "_" + lognm + ".tsv"
+// LogAddLayerGeActAvgItems adds Ge and Act average items for Hidden and Target layers
+// for given mode and time (e.g., Test, Cycle)
+// These are useful for monitoring layer activity during testing.
+func LogAddLayerGeActAvgItems(logs *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
+	layers := net.LayersByClass("Hidden", "Target")
+	for _, lnm := range layers {
+		clnm := lnm
+		logs.AddItem(&elog.Item{
+			Name:  clnm + "_Ge.Avg",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(mode, etm): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].Inhib.Ge.Avg)
+				}}})
+		logs.AddItem(&elog.Item{
+			Name:  clnm + "_Act.Avg",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(mode, etm): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
+				}}})
+	}
 }
 
-// StdCmdArgs does standard processing of command args, for setting
-// log files to be saved at different levels,
-func StdCmdArgs(net *Network, logs *elog.Logs, args *ecmd.Args, params *emer.Params) {
-	if note := args.String("note"); note != "" {
-		fmt.Printf("note: %s\n", note)
+// LogAddLayerActTensorItems adds Act tensor recording items for Input and Target layers
+// for given mode and time (e.g., Test, Trial)
+func LogAddLayerActTensorItems(logs *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
+	layers := net.LayersByClass("Input", "Target")
+	for _, lnm := range layers {
+		clnm := lnm
+		cly := net.LayerByName(clnm)
+		logs.AddItem(&elog.Item{
+			Name:      clnm + "_Act",
+			Type:      etensor.FLOAT64,
+			CellShape: cly.Shape().Shp,
+			FixMax:    elog.DTrue,
+			Range:     minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(mode, etm): func(ctx *elog.Context) {
+					ctx.SetLayerTensor(clnm, "Act")
+				}}})
 	}
-	if pars := args.String("params"); pars != "" {
-		params.ExtraSets = pars
-		fmt.Printf("Using ParamSet: %s\n", params.ExtraSets)
-	}
-	if args.Bool("epclog") {
-		fnm := LogFileName("epc", net, args, params)
-		logs.SetLogFile(etime.Train, etime.Epoch, fnm)
-	}
-	if args.Bool("triallog") {
-		fnm := LogFileName("trl", net, args, params)
-		logs.SetLogFile(etime.Train, etime.Trial, fnm)
-	}
-	if args.Bool("runlog") {
-		fnm := LogFileName("run", net, args, params)
-		logs.SetLogFile(etime.Train, etime.Run, fnm)
-	}
-	if args.Bool("wts") {
-		fmt.Printf("Saving final weights per run\n")
-	}
+
 }

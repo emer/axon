@@ -6,14 +6,10 @@ package axon
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/emer/emergent/agent"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/etime"
-	"github.com/emer/emergent/looper"
-	"github.com/emer/emergent/params"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/gi/gi"
 )
@@ -71,92 +67,26 @@ func ApplyInputs(net *Network, en agent.WorldInterface, layerName string, patfun
 	}
 }
 
-// SetParams sets the params for "Base" and then current ParamSet.
-// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
-// otherwise just the named sheet
-// if setMsg = true then we output a message for each param that was set.
-func SetParams(sheet string, setMsg bool, net *Network, params *params.Sets, paramName string, ss interface{}) error {
-	if sheet == "" {
-		// this is important for catching typos and ensuring that all sheets can be used
-		params.ValidateSheets([]string{"Network", "Sim"})
-	}
-	err := SetParamsSet("Base", sheet, setMsg, net, params, ss)
-	if paramName != "" && paramName != "Base" {
-		err = SetParamsSet(paramName, sheet, setMsg, net, params, ss)
-	}
-	return err
-}
-
-// SetParamsSet sets the params for given params.Set name.
-// If sheet is empty, then it applies all avail sheets (e.g., Network, Sim)
-// otherwise just the named sheet
-// if setMsg = true then we output a message for each param that was set.
-func SetParamsSet(setNm string, sheet string, setMsg bool, net *Network, params *params.Sets, ss interface{}) error {
-	pset, err := params.SetByNameTry(setNm)
-	if err != nil {
-		return err
-	}
-	if sheet == "" || sheet == "Network" {
-		netp, ok := pset.Sheets["Network"]
-		if ok {
-			net.ApplyParams(netp, setMsg)
-		}
-	}
-
-	if sheet == "" || sheet == "Sim" {
-		simp, ok := pset.Sheets["Sim"]
-		if ok {
-			simp.Apply(ss, setMsg)
-		}
-	}
-	// note: if you have more complex environments with parameters, definitely add
-	// sheets for them, e.g., "TrainEnv", "TestEnv" etc
-	return err
-}
-
-// HogDead computes the proportion of units in given layer name with ActAvg over hog thr and under dead threshold
-func HogDead(net *Network, lnm string) (hog, dead float64) {
-	ly := net.LayerByName(lnm).(AxonLayer).AsAxon()
-	n := len(ly.Neurons)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.ActAvg > 0.3 {
-			hog += 1
-		} else if nrn.ActAvg < 0.01 {
-			dead += 1
-		}
-	}
-	hog /= float64(n)
-	dead /= float64(n)
-	return
-}
-
-// NewRndSeed gets a new random seed based on current time -- otherwise uses
-// the same random seed for every run.
-func NewRndSeed(randomSeed *int64) {
-	*randomSeed = time.Now().UnixNano()
-}
-
-// WeightsFileName returns default current weights file name
-func WeightsFileName(net *Network, man *looper.Manager, args *ecmd.Args, params *emer.Params) string {
-	run := man.Stacks[etime.Train].Loops[etime.Run].Counter.Cur
-	epc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-	return net.Name() + "_" + RunName(args, params) + "_" + RunEpochName(run, epc) + ".wts"
+// WeightsFileName returns default current weights file name,
+// using train run and epoch counters from looper
+// and the RunName string identifying tag, parameters and starting run,
+func WeightsFileName(net *Network, ctrString, runName string) string {
+	return net.Name() + "_" + runName + "_" + ctrString + ".wts"
 }
 
 // SaveWeights saves network weights to filename with WeightsFileName information
 // to identify the weights.
-func SaveWeights(net *Network, man *looper.Manager, args *ecmd.Args, params *emer.Params) {
-	fnm := WeightsFileName(net, man, args, params)
+func SaveWeights(net *Network, ctrString, runName string) {
+	fnm := WeightsFileName(net, ctrString, runName)
 	fmt.Printf("Saving Weights to: %s\n", fnm)
 	net.SaveWtsJSON(gi.FileName(fnm))
 }
 
 // SaveWeightsIfArgSet saves network weights if the "wts" arg has been set to true.
 // uses WeightsFileName information to identify the weights.
-func SaveWeightsIfArgSet(net *Network, man *looper.Manager, args *ecmd.Args, params *emer.Params) {
+func SaveWeightsIfArgSet(net *Network, args *ecmd.Args, ctrString, runName string) {
 	swts := args.Bool("wts")
 	if swts {
-		SaveWeights(net, man, args, params)
+		SaveWeights(net, ctrString, runName)
 	}
 }
