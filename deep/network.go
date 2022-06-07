@@ -354,8 +354,8 @@ func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 //  Compute methods
 
 // PlusPhase does updating after end of plus phase
-func (nt *Network) PlusPhase(ltime *axon.Time) {
-	nt.EmerNet.(axon.AxonNetwork).PlusPhaseImpl(ltime)
+func (nt *Network) PlusPhaseImpl(ltime *axon.Time) {
+	nt.ThrLayFun(func(ly axon.AxonLayer) { ly.PlusPhase(ltime) }, "PlusPhase")
 	nt.CTCtxt(ltime)
 }
 

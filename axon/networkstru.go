@@ -27,6 +27,7 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
+	"github.com/goki/kigen/dedupe"
 	"github.com/goki/mat32"
 )
 
@@ -118,7 +119,7 @@ func (nt *NetworkStru) LayersByClass(classes ...string) []string {
 	for _, lc := range classes {
 		nms = append(nms, nt.LayClassMap[lc]...)
 	}
-	return nms
+	return dedupe.DeDupe(nms)
 }
 
 // BuildThreads constructs the layer thread allocation based on Thread setting in the layers

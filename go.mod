@@ -9,6 +9,7 @@ require (
 	github.com/emer/etable v1.1.2
 	github.com/goki/gi v1.3.1
 	github.com/goki/ki v1.1.8
+	github.com/goki/kigen v1.0.1
 	github.com/goki/mat32 v1.0.12
 )
 
@@ -36,7 +37,6 @@ require (
 	github.com/go-pdf/fpdf v0.6.0 // indirect
 	github.com/goki/freetype v0.0.0-20220119013949-7a161fd3728c // indirect
 	github.com/goki/go-difflib v1.2.1 // indirect
-	github.com/goki/kigen v1.0.0 // indirect
 	github.com/goki/pi v1.0.18 // indirect
 	github.com/goki/prof v0.0.0-20180502205428-54bc71b5d09b // indirect
 	github.com/goki/vci v1.0.1 // indirect

@@ -17,26 +17,26 @@ import (
 )
 
 // LogTestErrors records all errors made across TestTrials, at Test Epoch scope
-func LogTestErrors(logs *elog.Logs) {
+func LogTestErrors(lg *elog.Logs) {
 	sk := etime.Scope(etime.Test, etime.Trial)
-	lt := logs.TableDetailsScope(sk)
+	lt := lg.TableDetailsScope(sk)
 	ix, _ := lt.NamedIdxView("TestErrors")
 	ix.Filter(func(et *etable.Table, row int) bool {
 		return et.CellFloat("Err", row) > 0 // include error trials
 	})
-	logs.MiscTables["TestErrors"] = ix.NewTable()
+	lg.MiscTables["TestErrors"] = ix.NewTable()
 
 	allsp := split.All(ix)
 	split.Agg(allsp, "UnitErr", agg.AggSum)
 	// note: can add other stats to compute
-	logs.MiscTables["TestErrorStats"] = allsp.AggsToTable(etable.AddAggName)
+	lg.MiscTables["TestErrorStats"] = allsp.AggsToTable(etable.AddAggName)
 }
 
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
-func PCAStats(net emer.Network, logs *elog.Logs, stats *estats.Stats) {
-	stats.PCAStats(logs.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByClass("Hidden", "Target"))
-	logs.ResetLog(etime.Analyze, etime.Trial)
+func PCAStats(net emer.Network, lg *elog.Logs, stats *estats.Stats) {
+	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByClass("Hidden", "Target"))
+	lg.ResetLog(etime.Analyze, etime.Trial)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -45,11 +45,11 @@ func PCAStats(net emer.Network, logs *elog.Logs, stats *estats.Stats) {
 // LogAddDiagnosticItems adds standard Axon diagnostic statistics to given logs,
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
-func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) {
+func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 	layers := net.LayersByClass("Hidden", "Target")
 	for _, lnm := range layers {
 		clnm := lnm
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActAvg",
 			Type:   etensor.FLOAT64,
 			Plot:   elog.DFalse,
@@ -63,7 +63,7 @@ func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) 
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.ActAvg.ActMAvg)
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
 			Type:  etensor.FLOAT64,
 			Plot:  elog.DFalse,
@@ -76,7 +76,7 @@ func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) 
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.ActAvg.AvgMaxGeM)
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifAvg",
 			Type:  etensor.FLOAT64,
 			Plot:  elog.DFalse,
@@ -86,7 +86,7 @@ func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) 
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].AvgDif.Avg) // only updt w slow wts
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifMax",
 			Type:  etensor.FLOAT64,
 			Plot:  elog.DFalse,
@@ -96,7 +96,7 @@ func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) 
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].AvgDif.Max)
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:  clnm + "_CorSim",
 			Type:  etensor.FLOAT64,
 			Plot:  elog.DFalse,
@@ -114,7 +114,7 @@ func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) 
 	layers = net.LayersByClass("Input")
 	for _, lnm := range layers {
 		clnm := lnm
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActAvg",
 			Type:   etensor.FLOAT64,
 			Plot:   elog.DFalse,
@@ -131,12 +131,12 @@ func LogAddDiagnosticItems(logs *elog.Logs, net *Network, times ...etime.Times) 
 // LogAddPCAItems adds PCA statistics to log for Hidden and Target layers
 // across 3 given time levels, in higher to lower order, e.g., Run, Epoch, Trial
 // These are useful for diagnosing the behavior of the network.
-func LogAddPCAItems(logs *elog.Logs, net *Network, times ...etime.Times) {
+func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 	layers := net.LayersByClass("Hidden", "Target")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := net.LayerByName(clnm)
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:      clnm + "_ActM",
 			Type:      etensor.FLOAT64,
 			CellShape: cly.Shape().Shp,
@@ -148,7 +148,7 @@ func LogAddPCAItems(logs *elog.Logs, net *Network, times ...etime.Times) {
 				}, etime.Scope(etime.Test, times[2]): func(ctx *elog.Context) {
 					ctx.SetLayerTensor(clnm, "ActM")
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_NStrong",
 			Type: etensor.FLOAT64,
 			Plot: elog.DFalse,
@@ -159,7 +159,7 @@ func LogAddPCAItems(logs *elog.Logs, net *Network, times ...etime.Times) {
 					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Top5",
 			Type: etensor.FLOAT64,
 			Plot: elog.DFalse,
@@ -170,7 +170,7 @@ func LogAddPCAItems(logs *elog.Logs, net *Network, times ...etime.Times) {
 					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Next5",
 			Type: etensor.FLOAT64,
 			Plot: elog.DFalse,
@@ -181,7 +181,7 @@ func LogAddPCAItems(logs *elog.Logs, net *Network, times ...etime.Times) {
 					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Rest",
 			Type: etensor.FLOAT64,
 			Plot: elog.DFalse,
@@ -198,11 +198,11 @@ func LogAddPCAItems(logs *elog.Logs, net *Network, times ...etime.Times) {
 // LogAddLayerGeActAvgItems adds Ge and Act average items for Hidden and Target layers
 // for given mode and time (e.g., Test, Cycle)
 // These are useful for monitoring layer activity during testing.
-func LogAddLayerGeActAvgItems(logs *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
+func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
 	layers := net.LayersByClass("Hidden", "Target")
 	for _, lnm := range layers {
 		clnm := lnm
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:  clnm + "_Ge.Avg",
 			Type:  etensor.FLOAT64,
 			Range: minmax.F64{Max: 1},
@@ -211,7 +211,7 @@ func LogAddLayerGeActAvgItems(logs *elog.Logs, net *Network, mode etime.Modes, e
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].Inhib.Ge.Avg)
 				}}})
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:  clnm + "_Act.Avg",
 			Type:  etensor.FLOAT64,
 			Range: minmax.F64{Max: 1},
@@ -225,12 +225,12 @@ func LogAddLayerGeActAvgItems(logs *elog.Logs, net *Network, mode etime.Modes, e
 
 // LogAddLayerActTensorItems adds Act tensor recording items for Input and Target layers
 // for given mode and time (e.g., Test, Trial)
-func LogAddLayerActTensorItems(logs *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
+func LogAddLayerActTensorItems(lg *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
 	layers := net.LayersByClass("Input", "Target")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := net.LayerByName(clnm)
-		logs.AddItem(&elog.Item{
+		lg.AddItem(&elog.Item{
 			Name:      clnm + "_Act",
 			Type:      etensor.FLOAT64,
 			CellShape: cly.Shape().Shp,
