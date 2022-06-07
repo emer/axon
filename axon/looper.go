@@ -64,7 +64,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, netvi
 	}
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:Trial:UpdateWeights", func() {
 		net.DWt(time)
-		netview.UpdateTime(etime.Trial) // note: critical to update weights here so DWt is visible
+		netview.View.RecordSyns() // note: critical to update weights here so DWt is visible
 		net.WtFmDWt(time)
 	})
 
