@@ -524,6 +524,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 	ss.ConfigNetView(nv)
+	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

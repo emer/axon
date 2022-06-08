@@ -102,10 +102,6 @@ func LooperUpdtNetView(man *looper.Manager, netview *netview.ViewUpdt) {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
-			if curTime == etime.Cycle || (curMode == etime.Train && curTime == etime.Trial) {
-				// this is done in SimCycleAndLearn
-				continue
-			}
 			loop.OnEnd.Add("GUI:UpdateNetView", func() {
 				netview.UpdateTime(curTime)
 			})
