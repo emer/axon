@@ -54,7 +54,7 @@ func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, p
 
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFmDWt functions to looper
 // for given network, time, and netview update manager
-func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, netview *netview.ViewUpdt) {
+func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, viewupdt *netview.ViewUpdt) {
 	// Net Cycle
 	for m, _ := range man.Stacks {
 		man.Stacks[m].Loops[etime.Cycle].Main.Add("Axon:Cycle:Cycle", func() {
@@ -64,7 +64,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, netvi
 	}
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Axon:Trial:UpdateWeights", func() {
 		net.DWt(time)
-		netview.UpdateTime(etime.Trial) // note: critical to update weights here so DWt is visible
+		viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
 		net.WtFmDWt(time)
 	})
 
@@ -97,23 +97,21 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs) {
 }
 
 // LooperUpdtNetView adds netview update calls at each time level
-func LooperUpdtNetView(man *looper.Manager, netview *netview.ViewUpdt) {
+func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt) {
 	for m, stack := range man.Stacks {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
-			if curTime == etime.Cycle || (curMode == etime.Train && curTime == etime.Trial) {
-				// this is done in SimCycleAndLearn
-				continue
+			if curTime != etime.Cycle {
+				loop.OnEnd.Add("GUI:UpdateNetView", func() {
+					viewupdt.UpdateTime(curTime)
+				})
 			}
-			loop.OnEnd.Add("GUI:UpdateNetView", func() {
-				netview.UpdateTime(curTime)
-			})
 		}
 		cycLoop := man.GetLoop(curMode, etime.Cycle)
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
 			cyc := cycLoop.Counter.Cur
-			netview.UpdateCycle(cyc)
+			viewupdt.UpdateCycle(cyc)
 		})
 	}
 }

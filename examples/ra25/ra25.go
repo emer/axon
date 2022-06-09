@@ -35,7 +35,7 @@ import (
 )
 
 // Debug triggers various messages etc
-var Debug = true
+var Debug = false
 
 func main() {
 	TheSim.New()
@@ -71,7 +71,7 @@ type Sim struct {
 	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
-	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
+	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
@@ -388,13 +388,9 @@ func (ss *Sim) OpenPats() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	// clear rest just to make Sim look initialized
-	ss.Stats.SetFloat("TrlErr", 0.0)
 	ss.Stats.SetFloat("TrlUnitErr", 0.0)
 	ss.Stats.SetFloat("TrlCorSim", 0.0)
-	ss.Stats.SetInt("FirstZero", -1) // critical to reset to -1
-	ss.Stats.SetInt("LastZero", -1)  // critical to reset to -1
-	ss.Stats.SetInt("NZero", 0)
+	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -452,8 +448,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.NoPlot(etime.Test, etime.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
-	iticyc := ss.Args.Int("iticycles")
-	ss.Stats.ConfigRasters(ss.Net.AsAxon(), 200+iticyc, ss.Net.LayersByClass())
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -475,11 +469,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
 }
 
-// RasterRec updates spike raster record for current Time.Cycle
-func (ss *Sim) RasterRec() {
-	ss.Stats.RasterRec(ss.Net.AsAxon(), ss.Time.Cycle, "Spike")
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
@@ -493,18 +482,12 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
-	ss.GUI.NetView.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	ss.GUI.NetView.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+	nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
+	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+
 	ss.GUI.AddPlots(title, &ss.Logs)
-
-	stb := ss.GUI.TabView.AddNewTab(gi.KiT_Layout, "Spike Rasters").(*gi.Layout)
-	stb.Lay = gi.LayoutVert
-	stb.SetStretchMax()
-	for _, lnm := range ss.Stats.Rasters {
-		sr := ss.Stats.F32Tensor("Raster_" + lnm)
-		ss.GUI.ConfigRasterGrid(stb, lnm, sr)
-	}
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
