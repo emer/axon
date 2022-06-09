@@ -166,7 +166,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 	tmr.Start()
 	for epc := 0; epc < epcs; epc++ {
 		erand.PermuteInts(porder)
-		outCosDiff := float32(0)
+		outCorSim := float32(0)
 		cntErr := 0
 		sse := 0.0
 		for pi := 0; pi < np; pi++ {
@@ -178,7 +178,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 			outLay.ApplyExt(outp)
 
 			net.NewState()
-			ltime.NewState()
+			ltime.NewState("Train")
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					net.Cycle(ltime)
@@ -186,27 +186,27 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 				}
 				if qtr == 2 {
 					net.MinusPhase(ltime)
-					ltime.NewPhase()
+					ltime.NewPhase(true)
 				}
 			}
 			net.PlusPhase(ltime)
-			net.DWt()
-			net.WtFmDWt()
-			outCosDiff += outLay.CosDiff.Cos
+			net.DWt(ltime)
+			net.WtFmDWt(ltime)
+			outCorSim += outLay.CorSim.Cor
 			pSSE := outLay.PctUnitErr()
 			sse += pSSE
 			if pSSE != 0 {
 				cntErr++
 			}
 		}
-		outCosDiff /= float32(np)
+		outCorSim /= float32(np)
 		sse /= float64(np)
 		pctErr := float64(cntErr) / float64(np)
 		pctCor := 1 - pctErr
-		// fmt.Printf("epc: %v  \tCosDiff: %v \tAvgCosDif: %v\n", epc, outCosDiff, outLay.CosDiff.Avg)
+		// fmt.Printf("epc: %v  \tCosDiff: %v \tAvgCosDif: %v\n", epc, outCorSim, outLay.CosDiff.Avg)
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
-		epcLog.SetCellFloat("CosDiff", epc, float64(outCosDiff))
-		epcLog.SetCellFloat("AvgCosDiff", epc, float64(outLay.CosDiff.Avg))
+		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
+		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.CorSim.Avg))
 		epcLog.SetCellFloat("SSE", epc, sse)
 		epcLog.SetCellFloat("Count Err", epc, float64(cntErr))
 		epcLog.SetCellFloat("Pct Err", epc, pctErr)

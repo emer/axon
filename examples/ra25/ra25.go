@@ -123,6 +123,7 @@ func (ss *Sim) ConfigEnv() {
 		tst = ss.Envs.ByMode(etime.Test).(*env.FixedTable)
 	}
 
+	// note: names must be standard here!
 	trn.Nm = etime.Train.String()
 	trn.Dsc = "training params and state"
 	trn.Config(etable.NewIdxView(ss.Pats))
@@ -142,6 +143,8 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 	tst.Init(0)
+
+	// note: names must be in place when adding
 	ss.Envs.Add(trn, tst)
 }
 
