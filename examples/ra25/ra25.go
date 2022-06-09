@@ -35,7 +35,7 @@ import (
 )
 
 // Debug triggers various messages etc
-var Debug = true
+var Debug = false
 
 func main() {
 	TheSim.New()
@@ -388,13 +388,9 @@ func (ss *Sim) OpenPats() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	// clear rest just to make Sim look initialized
-	ss.Stats.SetFloat("TrlErr", 0.0)
 	ss.Stats.SetFloat("TrlUnitErr", 0.0)
 	ss.Stats.SetFloat("TrlCorSim", 0.0)
-	ss.Stats.SetInt("FirstZero", -1) // critical to reset to -1
-	ss.Stats.SetInt("LastZero", -1)  // critical to reset to -1
-	ss.Stats.SetInt("NZero", 0)
+	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -452,8 +448,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.NoPlot(etime.Test, etime.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
-	iticyc := ss.Args.Int("iticycles")
-	ss.Stats.ConfigRasters(ss.Net.AsAxon(), 200+iticyc, ss.Net.LayersByClass())
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -475,11 +469,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
 }
 
-// RasterRec updates spike raster record for current Time.Cycle
-func (ss *Sim) RasterRec() {
-	ss.Stats.RasterRec(ss.Net.AsAxon(), ss.Time.Cycle, "Spike")
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
@@ -499,14 +488,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.AddPlots(title, &ss.Logs)
-
-	stb := ss.GUI.TabView.AddNewTab(gi.KiT_Layout, "Spike Rasters").(*gi.Layout)
-	stb.Lay = gi.LayoutVert
-	stb.SetStretchMax()
-	for _, lnm := range ss.Stats.Rasters {
-		sr := ss.Stats.F32Tensor("Raster_" + lnm)
-		ss.GUI.ConfigRasterGrid(stb, lnm, sr)
-	}
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
