@@ -724,7 +724,7 @@ func (nt *NetworkStru) ThrLayFun(fun func(ly AxonLayer), funame string) {
 // TimerReport reports the amount of time spent in each function, and in each thread
 func (nt *NetworkStru) TimerReport() {
 	fmt.Printf("TimerReport: %v, NThreads: %v\n", nt.Nm, nt.NThreads)
-	fmt.Printf("\tFunction Name\tTotal Secs\tPct\n")
+	fmt.Printf("\t%13s \t%7s\t%7s\n", "Function Name", "Secs", "Pct")
 	nfn := len(nt.FunTimes)
 	fnms := make([]string, nfn)
 	idx := 0
@@ -740,14 +740,14 @@ func (nt *NetworkStru) TimerReport() {
 		tot += pcts[i]
 	}
 	for i, fn := range fnms {
-		fmt.Printf("\t%v \t%6.4g\t%6.4g\n", fn, pcts[i], 100*(pcts[i]/tot))
+		fmt.Printf("\t%13s \t%7.3f\t%7.1f\n", fn, pcts[i], 100*(pcts[i]/tot))
 	}
-	fmt.Printf("\tTotal   \t%6.4g\n", tot)
+	fmt.Printf("\t%13s \t%7.3f\n", "Total", tot)
 
 	if nt.NThreads <= 1 {
 		return
 	}
-	fmt.Printf("\n\tThr\tTotal Secs\tPct\n")
+	fmt.Printf("\n\tThr\tSecs\tPct\n")
 	pcts = make([]float64, nt.NThreads)
 	tot = 0.0
 	for th := 0; th < nt.NThreads; th++ {
@@ -755,7 +755,7 @@ func (nt *NetworkStru) TimerReport() {
 		tot += pcts[th]
 	}
 	for th := 0; th < nt.NThreads; th++ {
-		fmt.Printf("\t%v \t%6.4g\t%6.4g\n", th, pcts[th], 100*(pcts[th]/tot))
+		fmt.Printf("\t%v \t%7.3f\t%7.1f\n", th, pcts[th], 100*(pcts[th]/tot))
 	}
 }
 

@@ -346,7 +346,7 @@ func (nt *Network) CycleImpl(ltime *Time) {
 // and integrates sent deltas into GeRaw and time-integrated Ge values
 func (nt *Network) SendSpike(ltime *Time) {
 	nt.ThrLayFun(func(ly AxonLayer) { ly.SendSpike(ltime) }, "SendSpike")
-	nt.ThrLayFun(func(ly AxonLayer) { ly.GFmInc(ltime) }, "GFmInc   ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.GFmInc(ltime) }, "GFmInc")
 }
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
@@ -361,7 +361,7 @@ func (nt *Network) InhibFmGeAct(ltime *Time) {
 
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 func (nt *Network) ActFmG(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.ActFmG(ltime) }, "ActFmG   ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.ActFmG(ltime) }, "ActFmG")
 }
 
 // PostAct does updates after activation (spiking) updated for all neurons,
@@ -394,7 +394,7 @@ func (nt *Network) PlusPhaseImpl(ltime *Time) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt(ltime) }, "DWt     ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt(ltime) }, "DWt")
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
@@ -415,7 +415,7 @@ func (nt *Network) SlowAdapt(ltime *Time) {
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail(ltime) }, "SynFail   ")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail(ltime) }, "SynFail")
 }
 
 // LrateMod sets the Lrate modulation parameter for Prjns, which is

@@ -2,174 +2,265 @@
 
 5-layer networks, with same # of units per layer: SMALL = 25; MEDIUM = 100; LARGE = 625; HUGE = 1024; GINORM = 2048, doing full learning, with default params, including momentum, dwtnorm, and weight balance.
 
-Results are total time for 1, 2, 4 threads, on my macbook.
+Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
-## C++ Emergent
+# Axon 1.4.0 NeurSpkTheta  06/09/22
 
-```
-* Size     1 thr   2 thr    4 thr
----------------------------------
-* SMALL:   2.383   2.248    2.042
-* MEDIUM:  2.535   1.895    1.263
-* LARGE:  19.627   8.559    8.105
-* HUGE:   24.119  11.803   11.897
-* GINOR:  35.334  24.768   17.794
-```
+Top costs:
 
-## Go v1.15, 8/21/2020, leabra v1.1.5
+* WtFmDWt = 49% -- easy to GPU
+* SendSpike + GFmInc = ~20% -- hard to GPU
+* ActFmG = 19% -- easy to GPU
 
-Basically the same results as below, except a secs or so faster due to faster macbook pro. Layer.Act.Gbar.L = 0.2 instead of new default of 0.1 makes a *huge* difference!  
+Getting OK thread speedups..
+
+### 1 Thread
 
 ```
-* Size     1 thr  2 thr  4 thr
----------------------------------
-* SMALL:   1.27   3.53   3.64
-* MEDIUM:  1.61   2.31   2.09
-* LARGE:   9.56   7.48   5.44
-* HUGE:   19.17   13.3   9.62
-* GINOR:  23.61  17.94  13.24
-```
-
-```
-$ ./bench -epochs 5 -pats 20 -units 625 -threads=1
-Took  9.845 secs for 5 epochs, avg per epc:  1.969
+./bench -epochs 5 -pats 10 -units 1024 -threads=1
+Running bench with: 1 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 1	go max procs: 10	num cpu:10
+Took   15.3 secs for 5 epochs, avg per epc:  3.059
 TimerReport: BenchNet, NThreads: 1
-    Function Name Total Secs    Pct
-    ActFmG        1.824        18.59
-    AvgMaxAct     0.09018       0.919
-    AvgMaxGe      0.08463       0.8624
-    CyclePost     0.002069      0.02108
-    DWt           2.11         21.51
-    GFmInc        0.3974        4.05
-    InhibFmGeAct  0.107         1.091
-    QuarterFinal  0.004373      0.04457
-    SendGDelta    3.117        31.77
-    WtBalFmWt     1.285e-05     0.0001309
-    WtFmDWt       2.075        21.15
-    Total         9.813
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  2.923	   19.1
+	     AvgMaxGe 	  0.180	    1.2
+	    CyclePost 	  0.001	    0.0
+	          DWt 	  1.014	    6.6
+	       GFmInc 	  1.967	   12.9
+	 InhibFmGeAct 	  0.178	    1.2
+	   MinusPhase 	  0.002	    0.0
+	    PlusPhase 	  0.002	    0.0
+	      PostAct 	  0.077	    0.5
+	    SendSpike 	  1.458	    9.5
+	      WtFmDWt 	  7.476	   48.9
+	        Total 	 15.279
 ```
 
+### 2 Thread
+
 ```
-$ ./bench -epochs 5 -pats 10 -units 1024 -threads=1
-Took  19.34 secs for 5 epochs, avg per epc:  3.868
+./bench -epochs 5 -pats 10 -units 1024 -threads=2
+Running bench with: 2 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 2	go max procs: 10	num cpu:10
+Took  10.38 secs for 5 epochs, avg per epc:  2.076
+TimerReport: BenchNet, NThreads: 2
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  1.895	   18.3
+	     AvgMaxGe 	  0.263	    2.5
+	    CyclePost 	  0.069	    0.7
+	          DWt 	  0.559	    5.4
+	       GFmInc 	  1.301	   12.6
+	 InhibFmGeAct 	  0.213	    2.1
+	   MinusPhase 	  0.002	    0.0
+	    PlusPhase 	  0.002	    0.0
+	      PostAct 	  0.156	    1.5
+	    SendSpike 	  1.388	   13.4
+	      WtFmDWt 	  4.508	   43.5
+	        Total 	 10.354
+
+	Thr	Secs	Pct
+	0 	  9.302	   57.1
+	1 	  6.979	   42.9
+```
+
+### 4 Thread
+
+```
+./bench -epochs 5 -pats 10 -units 1024 -threads=4
+Running bench with: 4 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 4	go max procs: 10	num cpu:10
+Took  8.511 secs for 5 epochs, avg per epc:  1.702
+TimerReport: BenchNet, NThreads: 4
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  1.724	   20.3
+	     AvgMaxGe 	  0.327	    3.9
+	    CyclePost 	  0.126	    1.5
+	          DWt 	  0.385	    4.5
+	       GFmInc 	  1.263	   14.9
+	 InhibFmGeAct 	  0.341	    4.0
+	   MinusPhase 	  0.003	    0.0
+	    PlusPhase 	  0.002	    0.0
+	      PostAct 	  0.272	    3.2
+	    SendSpike 	  1.480	   17.5
+	      WtFmDWt 	  2.555	   30.1
+	        Total 	  8.478
+
+	Thr	Secs	Pct
+	0 	  5.416	   31.4
+	1 	  4.438	   25.7
+	2 	  4.518	   26.2
+	3 	  2.868	   16.6
+```
+
+
+# Axon 1.4.0 SynSpkTheta  06/09/22
+
+* Syn version MUCH slower esp in this benchmark -- using 1 epoch instead of 5 above
+
+* PostAct dominates @ 60% or more -- this is where the synapse-level Ca signals are integrated, so that makes sense.
+
+* DWt is also more expensive -- does additional Ca integ.
+
+* not great threading improvement.
+
+### 1 thread
+
+```
+./bench -epochs 1 -pats 10 -units 1024 -threads=1
+Running bench with: 1 threads, 1 epochs, 10 pats, 1024 units
+NThreads: 1	go max procs: 10	num cpu:10
+Took  34.48 secs for 1 epochs, avg per epc:  34.48
 TimerReport: BenchNet, NThreads: 1
-    Function Name Total Secs    Pct
-    ActFmG        1.639        8.483
-    AvgMaxAct     0.07904      0.4091
-    AvgMaxGe      0.07551      0.3909
-    CyclePost     0.001287     0.006663
-    DWt           3.669       18.99
-    GFmInc        0.3667       1.898
-    InhibFmGeAct  0.09876      0.5112
-    QuarterFinal  0.004008     0.02075
-    SendGDelta   10.21        52.87
-    WtBalFmWt     1.2e-05      6.211e-05
-    WtFmDWt       3.172       16.42
-    Total        19.32
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  0.587	    1.7
+	     AvgMaxGe 	  0.036	    0.1
+	    CyclePost 	  0.000	    0.0
+	          DWt 	 10.805	   31.3
+	       GFmInc 	  0.396	    1.1
+	 InhibFmGeAct 	  0.036	    0.1
+	   MinusPhase 	  0.001	    0.0
+	    PlusPhase 	  0.000	    0.0
+	      PostAct 	 20.822	   60.4
+	    SendSpike 	  0.280	    0.8
+	      WtFmDWt 	  1.515	    4.4
+	        Total 	 34.478
 ```
 
-## Go emergent 6/2019 after a few bugfixes, etc: significantly faster!
+### 2 threads
 
 ```
-* SMALL:   1.46   3.63   3.96
-* MEDIUM:  1.87   2.46   2.32
-* LARGE:  11.38   8.48   6.03
-* HUGE:   19.53   14.52   11.29
-* GINOR:  26.93   20.66   15.71
+./bench -epochs 1 -pats 10 -units 1024 -threads=2
+Running bench with: 2 threads, 1 epochs, 10 pats, 1024 units
+NThreads: 2	go max procs: 10	num cpu:10
+Took  28.23 secs for 1 epochs, avg per epc:  28.23
+TimerReport: BenchNet, NThreads: 2
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  0.380	    1.3
+	     AvgMaxGe 	  0.053	    0.2
+	    CyclePost 	  0.017	    0.1
+	          DWt 	  7.366	   26.1
+	       GFmInc 	  0.262	    0.9
+	 InhibFmGeAct 	  0.044	    0.2
+	   MinusPhase 	  0.000	    0.0
+	    PlusPhase 	  0.000	    0.0
+	      PostAct 	 18.911	   67.0
+	    SendSpike 	  0.273	    1.0
+	      WtFmDWt 	  0.922	    3.3
+	        Total 	 28.228
+
+	Thr	Secs	Pct
+	0 	 13.750	   39.5
+	1 	 21.057	   60.5
 ```
 
-now really just as fast overall, if not faster, than C++!
-
-note: only tiny changes after adding IsOff check for all neuron-level computation.
-
-## Go emergent, per-layer threads, thread pool, optimized range synapse code
+### 4 threads
 
 ```
-* SMALL:   1.486   4.297   4.644
-* MEDIUM:  2.864   3.312   3.037
-* LARGE:  25.09   20.06   16.88
-* HUGE:   31.39   23.85   19.53
-* GINOR:  42.18   31.29   26.06
+./bench -epochs 1 -pats 10 -units 1024 -threads=4
+Running bench with: 4 threads, 1 epochs, 10 pats, 1024 units
+NThreads: 4	go max procs: 10	num cpu:10
+Took  24.81 secs for 1 epochs, avg per epc:  24.81
+TimerReport: BenchNet, NThreads: 4
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  0.344	    1.4
+	     AvgMaxGe 	  0.054	    0.2
+	    CyclePost 	  0.019	    0.1
+	          DWt 	  4.824	   19.5
+	       GFmInc 	  0.251	    1.0
+	 InhibFmGeAct 	  0.042	    0.2
+	   MinusPhase 	  0.000	    0.0
+	    PlusPhase 	  0.000	    0.0
+	      PostAct 	 18.454	   74.4
+	    SendSpike 	  0.265	    1.1
+	      WtFmDWt 	  0.546	    2.2
+	        Total 	 24.800
+
+	Thr	Secs	Pct
+	0 	  3.850	   10.9
+	1 	 10.176	   28.7
+	2 	 12.762	   36.0
+	3 	  8.672	   24.5
 ```
 
-also: not too much diff for wt bal off!
+# Leabra rate code model: 06/09/22
 
-## Go emergent, per-layer threads, thread pool
-
-```
-* SMALL:  1.2180    4.25328  4.66991
-* MEDIUM: 3.392145  3.631261  3.38302
-* LARGE:  31.27893  20.91189 17.828935
-* HUGE:   42.0238   22.64010  18.838019
-* GINOR:  65.67025  35.54374  27.56567
-```
-
-## Go emergent, per-layer threads, no thread pool (de-novo threads)
+### 1 Thread
 
 ```
-* SMALL:  1.2180    3.548349  4.08908
-* MEDIUM: 3.392145  3.46302   3.187831
-* LARGE:  31.27893  22.20344  18.797924
-* HUGE:   42.0238   29.00472  24.53498
-* GINOR:  65.67025  45.09239  36.13568
-```
-
-# Per Function 
-
-Focusing on the LARGE case:
-
-C++: `emergent -nogui -ni -p leabra_bench.proj epochs=5 pats=20 units=625 n_threads=1`
-
-```
-BenchNet_5lay timing report:
-function      time     percent 
-Net_Input     8.91    43.1
-Net_InInteg       0.71     3.43
-Activation    1.95     9.43
-Weight_Change 4.3     20.8
-Weight_Updt       2.85    13.8
-Net_InStats       0.177    0.855
-Inhibition    0.00332  0.016
-Act_post      1.63     7.87
-Cycle_Stats       0.162    0.781
-    total:       20.7
-```
-
-Go: `./bench -epochs 5 -pats 20 -units 625 -threads=1`
-
-```
+./bench -epochs 5 -pats 10 -units 1024 -threads=1
+Running bench with: 1 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 1	go max procs: 10	num cpu:10
+Took  9.371 secs for 5 epochs, avg per epc:  1.874
 TimerReport: BenchNet, NThreads: 1
-    Function Name  Total Secs    Pct
-    ActFmG         2.121      8.223
-    AvgMaxAct      0.1003     0.389
-    AvgMaxGe       0.1012     0.3922
-    DWt            5.069     19.65
-    GeFmGeInc      0.3249     1.259
-    InhibFmGeAct   0.08498    0.3295
-    QuarterFinal   0.003773   0.01463
-    SendGeDelta   14.36      55.67
-    WtBalFmWt      0.1279     0.4957
-    WtFmDWt        3.501     13.58
-    Total         25.79
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  0.595	    6.4
+	    AvgMaxAct 	  0.090	    1.0
+	     AvgMaxGe 	  0.090	    1.0
+	    CyclePost 	  0.000	    0.0
+	          DWt 	  2.440	   26.1
+	       GFmInc 	  0.215	    2.3
+	 InhibFmGeAct 	  0.066	    0.7
+	 QuarterFinal 	  0.002	    0.0
+	   SendGDelta 	  4.077	   43.6
+	    WtBalFmWt 	  0.000	    0.0
+	      WtFmDWt 	  1.780	   19.0
+	        Total 	  9.356
 ```
 
+### 2 Threads
+
 ```
-TimerReport: BenchNet, NThreads: 1
-    Function Name    Total Secs    Pct
-    ActFmG           2.119     7.074
-    AvgMaxAct        0.1        0.3339
-    AvgMaxGe        0.102     0.3407
-    DWt             5.345     17.84
-    GeFmGeInc        0.3348     1.118
-    InhibFmGeAct     0.0842     0.2811
-    QuarterFinal     0.004    0.01351
-    SendGeDelta     17.93     59.87
-    WtBalFmWt        0.1701     0.568
-    WtFmDWt        3.763     12.56
-    Total         29.96
+./bench -epochs 5 -pats 10 -units 1024 -threads=2
+Running bench with: 2 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 2	go max procs: 10	num cpu:10
+Took   6.48 secs for 5 epochs, avg per epc:  1.296
+TimerReport: BenchNet, NThreads: 2
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  0.448	    6.9
+	    AvgMaxAct 	  0.110	    1.7
+	     AvgMaxGe 	  0.110	    1.7
+	    CyclePost 	  0.004	    0.1
+	          DWt 	  1.332	   20.6
+	       GFmInc 	  0.239	    3.7
+	 InhibFmGeAct 	  0.115	    1.8
+	 QuarterFinal 	  0.004	    0.1
+	   SendGDelta 	  3.108	   48.1
+	    WtBalFmWt 	  0.000	    0.0
+	      WtFmDWt 	  0.988	   15.3
+	        Total 	  6.459
+
+	Thr	Secs	Pct
+	0 	  5.330	   52.8
+	1 	  4.774	   47.2
 ```
 
-* trimmed 4+ sec from SendGeDelta by avoiding range checks using sub-slices
-* was very sensitive to size of Synapse struct
+### 4 Threads
 
+```
+./bench -epochs 5 -pats 10 -units 1024 -threads=4
+Running bench with: 4 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 4	go max procs: 10	num cpu:10
+Took  4.924 secs for 5 epochs, avg per epc: 0.9849
+TimerReport: BenchNet, NThreads: 4
+	Function Name 	   Secs	    Pct
+	       ActFmG 	  0.385	    7.8
+	    AvgMaxAct 	  0.101	    2.1
+	     AvgMaxGe 	  0.102	    2.1
+	    CyclePost 	  0.011	    0.2
+	          DWt 	  0.851	   17.4
+	       GFmInc 	  0.224	    4.6
+	 InhibFmGeAct 	  0.106	    2.2
+	 QuarterFinal 	  0.004	    0.1
+	   SendGDelta 	  2.533	   51.7
+	    WtBalFmWt 	  0.000	    0.0
+	      WtFmDWt 	  0.586	   12.0
+	        Total 	  4.902
+
+	Thr	Secs	Pct
+	0 	  2.576	   22.9
+	1 	  3.439	   30.6
+	2 	  3.359	   29.9
+	3 	  1.849	   16.5
+```
 

@@ -37,7 +37,10 @@ var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
-				Params: params.Params{}},
+				Params: params.Params{
+					"Prjn.Learn.KinaseCa.Rule": "SynSpkTheta",
+					// "Prjn.Learn.KinaseCa.Rule": "NeurSpkTheta",
+				}},
 			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.1",
@@ -45,11 +48,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "0.9",     // 0.9 > 1.0
-					"Layer.Act.Clamp.Type":  "GeClamp", // GeClamp is much more natural and better..
-					"Layer.Act.Clamp.Ge":    "1.0",     // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Act.Decay.Act":   "0.5",     // 0.5 > 1 > 0
-					"Layer.Act.Decay.Glong": "1",       // LVis .7 best?
+					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":   "1.0", // 1.0 > 0.6 >= 0.7 == 0.5
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
