@@ -144,9 +144,9 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Range:     minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Analyze, times[2]): func(ctx *elog.Context) {
-					ctx.SetLayerTensor(clnm, "ActM")
+					ctx.SetLayerRepTensor(clnm, "ActM")
 				}, etime.Scope(etime.Test, times[2]): func(ctx *elog.Context) {
-					ctx.SetLayerTensor(clnm, "ActM")
+					ctx.SetLayerRepTensor(clnm, "ActM")
 				}}})
 		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_NStrong",
@@ -238,7 +238,7 @@ func LogAddLayerActTensorItems(lg *elog.Logs, net *Network, mode etime.Modes, et
 			Range:     minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
-					ctx.SetLayerTensor(clnm, "Act")
+					ctx.SetLayerRepTensor(clnm, "Act")
 				}}})
 	}
 
