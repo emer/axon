@@ -221,7 +221,7 @@ func (ss *Sim) ConfigLoops() {
 
 	avgPerTrl := 8
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 50).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
@@ -570,7 +570,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddStd()
 	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
-	ss.Args.SetInt("epochs", 100)
+	ss.Args.SetInt("epochs", 50)
 	ss.Args.SetInt("runs", 5)
 	ss.Args.Parse() // always parse
 }
@@ -592,6 +592,9 @@ func (ss *Sim) CmdArgs() {
 	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs
+
+	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
+
 	ss.NewRun()
 	ss.Loops.Run()
 
