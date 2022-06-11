@@ -31,7 +31,7 @@ import (
 // axon.Layer implements the basic Axon spiking activation function,
 // and manages learning in the projections.
 type Layer struct {
-	LayerStru
+	LayerBase
 	Act     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
 	Inhib   InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
 	Learn   LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
@@ -1117,30 +1117,15 @@ func (ly *Layer) DecayStatePool(pool int, decay float32) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// SendSpike sends spike to receivers
-func (ly *Layer) SendSpike(ltime *Time) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() || nrn.Spike == 0 {
-			ly.Act.SenderGDecay(nrn)
-			continue
-		}
-		for _, sp := range ly.SndPrjns {
-			if sp.IsOff() {
-				continue
-			}
-			if sp.Type() == emer.Inhib {
-				sp.(AxonPrjn).SendISpike(ni, nrn.Si)
-			} else {
-				if ly.Act.Dend.SnmdaDeplete {
-					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda*(1.0-nrn.SnmdaI))
-				} else {
-					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda) // no I either
-				}
-			}
-		}
-		ly.Act.SenderGSpiked(nrn)
-	}
+// Cycle does one cycle of updating
+func (ly *Layer) Cycle(ltime *Time) {
+	ly.AxonLay.GFmInc(ltime)
+	ly.AxonLay.AvgMaxGe(ltime)
+	ly.AxonLay.InhibFmGeAct(ltime)
+	ly.AxonLay.ActFmG(ltime)
+	ly.AxonLay.PostAct(ltime)
+	ly.AxonLay.CyclePost(ltime)
+	ly.AxonLay.SendSpike(ltime)
 }
 
 // GFmInc integrates new synaptic conductances from increments sent during last Spike
@@ -1182,6 +1167,7 @@ func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 }
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
+// This operates at the pool level so does not make sense to combine with GFmInc
 func (ly *Layer) AvgMaxGe(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1402,12 +1388,39 @@ func (ly *Layer) AvgGeM(ltime *Time) {
 	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
 }
 
-// CyclePost is called after the standard Cycle update, as a separate
-// network layer loop.
-// This is reserved for any kind of special ad-hoc types that
-// need to do something special after Act is finally computed.
+// CyclePost is called after the standard Cycle update
+// still within layer Cycle call.
+// This is the hook for specialized algorithms (deep, hip, bg etc)
+// to do something special after Spike / Act is finally computed.
 // For example, sending a neuromodulatory signal such as dopamine.
 func (ly *Layer) CyclePost(ltime *Time) {
+}
+
+// SendSpike sends spike to receivers -- last step in Cycle, integrated
+// the next time around.
+func (ly *Layer) SendSpike(ltime *Time) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() || nrn.Spike == 0 {
+			ly.Act.SenderGDecay(nrn)
+			continue
+		}
+		for _, sp := range ly.SndPrjns {
+			if sp.IsOff() {
+				continue
+			}
+			if sp.Type() == emer.Inhib {
+				sp.(AxonPrjn).SendISpike(ni, nrn.Si)
+			} else {
+				if ly.Act.Dend.SnmdaDeplete {
+					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda*(1.0-nrn.SnmdaI))
+				} else {
+					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda) // no I either
+				}
+			}
+		}
+		ly.Act.SenderGSpiked(nrn)
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

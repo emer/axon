@@ -38,8 +38,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.KinaseCa.Rule": "SynSpkTheta",
-					// "Prjn.Learn.KinaseCa.Rule": "NeurSpkTheta",
+					// "Prjn.Learn.KinaseCa.Rule": "SynSpkTheta",
+					"Prjn.Learn.KinaseCa.Rule": "NeurSpkTheta",
 				}},
 			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
 				Params: params.Params{

@@ -13,16 +13,17 @@ import (
 // These are the methods that the user calls in their Sim code:
 // * NewState
 // * Cycle
-// * MinusPhase, PlusPhase
+// * NewPhase
 // * DWt
 // * WtFmDwt
 // Because we don't want to have to force the user to use the interface cast in calling
 // these methods, we provide Impl versions here that are the implementations
-// which the user-facing method calls.
+// which the user-facing method calls through the interface cast.
+// Specialized algorithms should thus only change the Impl version, which is what
+// is exposed here in this interface.
 //
-// Typically most changes in algorithm can be accomplished directly in the Layer
-// or Prjn level, but sometimes (e.g., in deep) additional full-network passes
-// are required.
+// There is now a strong constraint that all Cycle level computation takes place
+// in one pass at the Layer level, which greatly improves threading efficiency.
 //
 // All of the structural API is in emer.Network, which this interface also inherits for
 // convenience.
@@ -38,21 +39,16 @@ type AxonNetwork interface {
 	// input scaling from running average activation etc.
 	NewStateImpl()
 
-	// CycleImpl runs one cycle of activation updating:
-	// * Sends Ge increments from sending to receiving layers
+	// Cycle handles entire update for one cycle (msec) of neuron activity state,
+	// by calling layer.Cycle method which does everything at a per-layer level.
+	// * Increments Ge, Gi from spikes sent on previous cycle
 	// * Average and Max Ge stats
 	// * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
-	// * Activation from Ge, Gi, and Gl
+	// * Activation (Spiking) from Ge, Gi, and Gl
 	// * Average and Max Act stats
-	// This basic version doesn't use the time info, but more specialized types do, and we
-	// want to keep a consistent API for end-user code.
+	// * CyclePost which is the main hook for specialized algorithm-specific code (deep, hip, bg etc)
+	// * Send spikes
 	CycleImpl(ltime *Time)
-
-	// CyclePostImpl is called after the standard Cycle update, and calls CyclePost
-	// on Layers -- this is reserved for any kind of special ad-hoc types that
-	// need to do something special after Act is finally computed.
-	// For example, sending a neuromodulatory signal such as dopamine.
-	CyclePostImpl(ltime *Time)
 
 	// MinusPhaseImpl does updating after minus phase
 	MinusPhaseImpl(ltime *Time)
@@ -145,13 +141,25 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
 
-	// SendSpike sends spike to receivers
-	SendSpike(ltime *Time)
+	// Cycle handles entire update for one cycle (msec) of neuron activity state,
+	// calling the following methods in order:
+	//
+	// * GFmInc
+	// * AvgMaxGe
+	// * InhibFmGeAct
+	// * ActFmG
+	// * PostAct
+	// * CyclePost
+	// * SendSpike
+	//
+	// All methods are called through the AxonLay interface, so specialized algorithms
+	// can override those functions (preferred to overriding the main Cycle function).
+	Cycle(ltime *Time)
 
 	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
 	GFmInc(ltime *Time)
 
-	// AvgMaxGe computes the average and max Ge stats, used in inhibition
+	// AvgMaxGe computes the average and max Ge stats, used in inhibition.
 	AvgMaxGe(ltime *Time)
 
 	// InhibiFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
@@ -178,6 +186,9 @@ type AxonLayer interface {
 	// need to do something special after Act is finally computed.
 	// For example, sending a neuromodulatory signal such as dopamine.
 	CyclePost(ltime *Time)
+
+	// SendSpike sends spike to receivers -- last step in Cycle updating.
+	SendSpike(ltime *Time)
 
 	// MinusPhase does updating after end of minus phase
 	MinusPhase(ltime *Time)

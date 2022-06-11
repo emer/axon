@@ -433,8 +433,8 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCounterItems([]etime.Times{etime.Run, etime.Epoch, etime.Trial, etime.Cycle}, []string{"TrialName", "RunName"})
 
-	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", elog.DTrue, etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", elog.DFalse, etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", true, etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", false, etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 

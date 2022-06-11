@@ -46,12 +46,7 @@ func (nt *Network) InitActs() {
 	}
 }
 
-func (nt *Network) Cycle(ltime *axon.Time) {
-	nt.CycleImpl(ltime)
-	nt.EmerNet.(axon.AxonNetwork).CyclePostImpl(ltime) // always call this after std cycle..
-}
-
-//
+// todo: fixme
 func (nt *Network) CycleImpl(ltime *axon.Time) {
 	nt.QuarterInitPrvs(ltime)
 	nt.SendGDelta(ltime) // also does integ

@@ -4,6 +4,100 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.4.5 NeurSpkTheta  06/11/22: Everything in one pass!
+
+It was extremely simple to update code to reorganize the order of computation and do everything in one pass, and it doesn't even change the overall computation performed: https://github.com/emer/axon/issues/35
+
+This improves threading speedups significantly!  4 threads = 2.35x speedup, vs. 1.8x previously.
+
+However, it still does not allow the small or medium nets to benefit, but they are not nearly as  negatively impacted by threading.
+
+Threading summary:
+
+```
+Size     1 thr  2 thr  4 thr
+---------------------------------
+SMALL:    2.81   4.3  4.34
+MEDIUM:   3.43  3.91  3.06
+LARGE:    10.5  6.65  5.26
+HUGE:     15.2  9.53  6.42
+GINORM:   12.3  7.72  5.49
+```
+
+vs previous:
+
+```
+Size     1 thr  2 thr  4 thr
+---------------------------------
+SMALL:    2.98  13.1  13.5
+MEDIUM:   3.54   6.1  6.05
+LARGE:    10.6  8.21  7.36
+HUGE:     15.5  10.5  8.38
+GINORM:   12.2  8.35  6.68
+```
+
+
+### 1 Thread
+
+```
+./bench -epochs 5 -pats 10 -units 1024 -threads=1
+Running bench with: 1 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 1	go max procs: 10	num cpu:10
+Took  15.28 secs for 5 epochs, avg per epc:  3.056
+TimerReport: BenchNet, NThreads: 1
+	Function Name 	   Secs	    Pct
+	        Cycle 	  6.804	   44.6
+	          DWt 	  1.035	    6.8
+	   MinusPhase 	  0.002	    0.0
+	    PlusPhase 	  0.002	    0.0
+	      WtFmDWt 	  7.427	   48.6
+	        Total 	 15.271
+```
+
+### 2 Threads
+
+```
+./bench -epochs 5 -pats 10 -units 1024 -threads=2
+Running bench with: 2 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 2	go max procs: 10	num cpu:10
+Took  9.503 secs for 5 epochs, avg per epc:  1.901
+TimerReport: BenchNet, NThreads: 2
+	Function Name 	   Secs	    Pct
+	        Cycle 	  4.445	   46.8
+	          DWt 	  0.579	    6.1
+	   MinusPhase 	  0.003	    0.0
+	    PlusPhase 	  0.002	    0.0
+	      WtFmDWt 	  4.463	   47.0
+	        Total 	  9.492
+
+	Thr	Secs	Pct
+	0 	  9.145	   56.9
+	1 	  6.924	   43.1
+```    
+
+### 4 Threads
+
+```
+./bench -epochs 5 -pats 10 -units 1024 -threads=4
+Running bench with: 4 threads, 5 epochs, 10 pats, 1024 units
+NThreads: 4	go max procs: 10	num cpu:10
+Took  6.481 secs for 5 epochs, avg per epc:  1.296
+TimerReport: BenchNet, NThreads: 4
+	Function Name 	   Secs	    Pct
+	        Cycle 	  3.528	   54.5
+	          DWt 	  0.377	    5.8
+	   MinusPhase 	  0.003	    0.0
+	    PlusPhase 	  0.002	    0.0
+	      WtFmDWt 	  2.559	   39.6
+	        Total 	  6.468
+
+	Thr	Secs	Pct
+	0 	  5.217	   31.1
+	1 	  4.450	   26.6
+	2 	  4.315	   25.7
+	3 	  2.777	   16.6
+```    
+
 # Axon 1.4.0 NeurSpkTheta  06/09/22
 
 Top costs:

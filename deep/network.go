@@ -12,7 +12,11 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// deep.Network has parameters for running a DeepAxon network
+// deep.Network runs a Deep version of Axon network, for predictive learning
+// via deep cortical layers interconnected with the thalamus (Pulvinar).
+// It has special computational methods only for PlusPhase where deep layer
+// context updating happens, corresponding to the bursting of deep layer 5IB
+// neurons.  It also has methods for creating different specialized layer types.
 type Network struct {
 	axon.Network
 }
@@ -355,7 +359,7 @@ func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 
 // PlusPhase does updating after end of plus phase
 func (nt *Network) PlusPhaseImpl(ltime *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) { ly.PlusPhase(ltime) }, "PlusPhase")
+	nt.Network.PlusPhaseImpl(ltime) // call base
 	nt.CTCtxt(ltime)
 }
 

@@ -23,8 +23,8 @@ func LogAddTRCCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:   lnm + "_CorSim",
 			Type:   etensor.FLOAT64,
-			Plot:   elog.DFalse,
-			FixMax: elog.DTrue,
+			Plot:   false,
+			FixMax: true,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
@@ -39,8 +39,8 @@ func LogAddTRCCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActAvg",
 			Type:   etensor.FLOAT64,
-			Plot:   elog.DFalse,
-			FixMax: elog.DFalse,
+			Plot:   false,
+			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
@@ -53,7 +53,7 @@ func LogAddTRCCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
 			Type:  etensor.FLOAT64,
-			Plot:  elog.DFalse,
+			Plot:  false,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {

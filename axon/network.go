@@ -23,7 +23,7 @@ import (
 
 // axon.Network has parameters for running a basic rate-coded Axon network
 type Network struct {
-	NetworkStru
+	NetworkBase
 	SlowInterval int `def:"100" desc:"how frequently to perform slow adaptive processes such as synaptic scaling, inhibition adaptation -- in SlowAdapt method-- long enough for meaningful changes"`
 	SlowCtr      int `inactive:"+" desc:"counter for how long it has been since last SlowAdapt step"`
 }
@@ -111,25 +111,25 @@ func (nt *Network) NewState() {
 	nt.EmerNet.(AxonNetwork).NewStateImpl()
 }
 
-// Cycle runs one cycle of activation updating:
-// * Sends Ge increments from sending to receiving layers
-// * Average and Max Ge stats
-// * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
-// * Activation from Ge, Gi, and Gl
-// * Average and Max Act stats
-// This basic version doesn't use the time info, but more specialized types do, and we
-// want to keep a consistent API for end-user code.
+// Cycle runs one cycle of activation updating.  It just calls the CycleImpl
+// method through the AxonNetwork interface, thereby ensuring any specialized
+// algorithm-specific version is called as needed (in general, strongly prefer
+// updating the Layer specific version).
 func (nt *Network) Cycle(ltime *Time) {
 	nt.EmerNet.(AxonNetwork).CycleImpl(ltime)
-	nt.EmerNet.(AxonNetwork).CyclePostImpl(ltime) // always call this after std cycle..
 }
 
-// CyclePost is called after the standard Cycle update, and calls CyclePost
-// on Layers -- this is reserved for any kind of special ad-hoc types that
-// need to do something special after Act is finally computed.
-// For example, sending a neuromodulatory signal such as dopamine.
-func (nt *Network) CyclePost(ltime *Time) {
-	nt.EmerNet.(AxonNetwork).CyclePostImpl(ltime)
+// Cycle handles entire update for one cycle (msec) of neuron activity state,
+// by calling layer.Cycle method which does everything at a per-layer level.
+// * Increments Ge, Gi from spikes sent on previous cycle
+// * Average and Max Ge stats
+// * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
+// * Activation (Spiking) from Ge, Gi, and Gl
+// * Average and Max Act stats
+// * CyclePost: main hook for specialized algorithm-specific code (deep, hip, bg etc)
+// * Send spikes
+func (nt *Network) CycleImpl(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.Cycle(ltime) }, "Cycle")
 }
 
 // MinusPhase does updating after end of minus phase
@@ -321,62 +321,6 @@ func (nt *Network) NewStateImpl() {
 		}
 		ly.(AxonLayer).NewState()
 	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Act methods
-
-// CycleImpl runs one cycle of activation updating:
-// * Sends Ge increments from sending to receiving layers
-// * Average and Max Ge stats
-// * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
-// * Activation from Ge, Gi, and Gl
-// * Average and Max Act stats
-// This basic version doesn't use the time info, but more specialized types do, and we
-// want to keep a consistent API for end-user code.
-func (nt *Network) CycleImpl(ltime *Time) {
-	nt.SendSpike(ltime) // also does integ
-	nt.AvgMaxGe(ltime)
-	nt.InhibFmGeAct(ltime)
-	nt.ActFmG(ltime)
-	nt.PostAct(ltime)
-}
-
-// SendSpike sends change in activation since last sent, if above thresholds
-// and integrates sent deltas into GeRaw and time-integrated Ge values
-func (nt *Network) SendSpike(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.SendSpike(ltime) }, "SendSpike")
-	nt.ThrLayFun(func(ly AxonLayer) { ly.GFmInc(ltime) }, "GFmInc")
-}
-
-// AvgMaxGe computes the average and max Ge stats, used in inhibition
-func (nt *Network) AvgMaxGe(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.AvgMaxGe(ltime) }, "AvgMaxGe")
-}
-
-// InhibiFmGeAct computes inhibition Gi from Ge and Act stats within relevant Pools
-func (nt *Network) InhibFmGeAct(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.InhibFmGeAct(ltime) }, "InhibFmGeAct")
-}
-
-// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
-func (nt *Network) ActFmG(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.ActFmG(ltime) }, "ActFmG")
-}
-
-// PostAct does updates after activation (spiking) updated for all neurons,
-// including the running-average activation used in driving inhibition,
-// and synaptic-level calcium updates depending on spiking, NMDA
-func (nt *Network) PostAct(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.PostAct(ltime) }, "PostAct")
-}
-
-// CyclePostImpl is called after the standard Cycle update, and calls CyclePost
-// on Layers -- this is reserved for any kind of special ad-hoc types that
-// need to do something special after Act is finally computed.
-// For example, sending a neuromodulatory signal such as dopamine.
-func (nt *Network) CyclePostImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.CyclePost(ltime) }, "CyclePost")
 }
 
 // MinusPhaseImpl does updating after end of minus phase
