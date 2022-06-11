@@ -564,8 +564,7 @@ func (ss *Sim) CmdArgs() {
 	rc.Set(run)
 	rc.Max = run + runs
 
-	ec := &ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter
-	ec.Max = ss.Args.Int("epochs")
+	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
 
 	ss.NewRun()
 	ss.Loops.Run()
