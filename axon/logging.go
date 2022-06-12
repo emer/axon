@@ -222,24 +222,3 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 				}}})
 	}
 }
-
-// LogAddLayerActTensorItems adds Act tensor recording items for Input and Target layers
-// for given mode and time (e.g., Test, Trial)
-func LogAddLayerActTensorItems(lg *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
-	layers := net.LayersByClass("Input", "Target")
-	for _, lnm := range layers {
-		clnm := lnm
-		cly := net.LayerByName(clnm)
-		lg.AddItem(&elog.Item{
-			Name:      clnm + "_Act",
-			Type:      etensor.FLOAT64,
-			CellShape: cly.Shape().Shp,
-			FixMax:    true,
-			Range:     minmax.F64{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(mode, etm): func(ctx *elog.Context) {
-					ctx.SetLayerRepTensor(clnm, "Act")
-				}}})
-	}
-
-}
