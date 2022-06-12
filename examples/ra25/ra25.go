@@ -547,7 +547,8 @@ func (ss *Sim) ConfigArgs() {
 }
 
 func (ss *Sim) CmdArgs() {
-	ss.Args.ProcStd(&ss.Logs, &ss.Params, ss.Net.Name())
+	ss.Args.ProcStd(&ss.Params)
+	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
 	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
 
