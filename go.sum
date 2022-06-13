@@ -54,12 +54,12 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.4.0 h1:F1rxgk7p4uKjwIQxBs9oAXe5CqrXlCduYEJvrF4u93E=
 github.com/dlclark/regexp2 v1.4.0/go.mod h1:2pZnwuY/m+8K6iRw6wQdMtk+rH5tNGR1i55kozfMjCc=
-github.com/emer/emergent v1.3.13 h1:GhQ1ArpG3i4X2WKld5gkuyQRhCT6mmwOB2crXBSp2Z8=
-github.com/emer/emergent v1.3.13/go.mod h1:mH8Anz15ohliMvYD6+njtMVs92imTn5T8uMfasP4ZEA=
+github.com/emer/emergent v1.3.14 h1:C9slFSeh4LMWDI6wRAzmoosYEwLwSvXd0wrWD3Z1TIU=
+github.com/emer/emergent v1.3.14/go.mod h1:463S5oqhJKwehVTC0E4H4v5Y85UjEqBSw4k/zjBR0O8=
 github.com/emer/empi v1.0.13 h1:DVKu3zvqPL4vvw/XtijBnOIC3YcVcVpUTohGXhQnZyU=
 github.com/emer/empi v1.0.13/go.mod h1:2VX+8DvFQBYPCZB31C0sjkKPj2IVF/Ea5T44utZpHpU=
-github.com/emer/etable v1.1.6 h1:cXtesw7YRjcnppKzqnbValI9EYUP4nVla9AER9bTjPQ=
-github.com/emer/etable v1.1.6/go.mod h1:IP1kIRXNm2lDmHPaCFQBq7HGNEo/GZ5z+32A/IIz2cE=
+github.com/emer/etable v1.1.7 h1:xrndue6hIw1HBALClSc3WudvVNuDwMuEP3rOLHJl2tU=
+github.com/emer/etable v1.1.7/go.mod h1:IP1kIRXNm2lDmHPaCFQBq7HGNEo/GZ5z+32A/IIz2cE=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=

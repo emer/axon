@@ -36,7 +36,6 @@ func LogTestErrors(lg *elog.Logs) {
 // from Analyze, Trial log data
 func PCAStats(net emer.Network, lg *elog.Logs, stats *estats.Stats) {
 	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByClass("Hidden", "Target"))
-	lg.ResetLog(etime.Analyze, etime.Trial)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -60,8 +59,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
