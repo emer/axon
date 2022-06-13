@@ -7,7 +7,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -25,6 +24,7 @@ import (
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
+	"github.com/emer/empi/mpi"
 	_ "github.com/emer/etable/etview" // _ = include to get gui views
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -243,7 +243,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
 	// Train stop early condition
-	man.GetLoop(etime.Train, etime.Epoch).IsDone["Epoch:NZeroStop"] = func() bool {
+	man.GetLoop(etime.Train, etime.Epoch).IsDone["NZeroStop"] = func() bool {
 		// This is calculated in TrialStats
 		stopNz := ss.Args.Int("nzero")
 		if stopNz <= 0 {
@@ -256,7 +256,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// Add Testing
 	trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
-	trainEpoch.OnStart.Add("Train:TestAtInterval", func() {
+	trainEpoch.OnStart.Add("TestAtInterval", func() {
 		if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
 			// Note the +1 so that it doesn't occur at the 0th timestep.
 			ss.TestAll()
@@ -266,10 +266,10 @@ func (ss *Sim) ConfigLoops() {
 	/////////////////////////////////////////////
 	// Logging
 
-	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("Test:Epoch:LogTestErrors", func() {
+	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("LogTestErrors", func() {
 		axon.LogTestErrors(&ss.Logs)
 	})
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("Train:Epoch:PCAStats", func() {
+	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
 			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
@@ -279,35 +279,37 @@ func (ss *Sim) ConfigLoops() {
 	man.AddOnEndToAll("Log", ss.Log)
 	axon.LooperResetLogBelow(man, &ss.Logs)
 
-	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Train:Trial:LogAnalyze", func() {
+	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if (ss.PCAInterval > 0) && (trnEpc%ss.PCAInterval == 0) {
 			ss.Log(etime.Analyze, etime.Trial)
 		}
 	})
 
-	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("Train:Run:RunStats", func() {
+	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("RunStats", func() {
 		ss.Logs.RunStats("PctCor", "FirstZero", "LastZero")
 	})
 
 	// Save weights to file, to look at later
-	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("Train:SaveWeights", func() {
+	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
 		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	////////////////////////////////////////////
 	// GUI
-	if ss.Args.Bool("nogui") == false {
+
+	if ss.Args.Bool("nogui") {
+		man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
+			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+		})
+	} else {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
 		axon.LooperUpdtPlots(man, &ss.GUI)
-		// man.GetLoop(etime.Test, etime.Trial).Main.Add("Log:Test:Trial", func() {
-		// 	ss.GUI.NetDataRecord()
-		// })
 	}
 
 	if Debug {
-		fmt.Println(man.DocString())
+		mpi.Println(man.DocString())
 	}
 	ss.Loops = man
 }
@@ -581,13 +583,13 @@ func (ss *Sim) CmdArgs() {
 
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
-		fmt.Printf("Saving NetView data from testing\n")
+		mpi.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
 	runs := ss.Args.Int("runs")
 	run := ss.Args.Int("run")
-	fmt.Printf("Running %d Runs starting at %d\n", runs, run)
+	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
 	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs

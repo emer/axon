@@ -51,12 +51,12 @@ func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, p
 func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, viewupdt *netview.ViewUpdt) {
 
 	for m, _ := range man.Stacks {
-		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle:Cycle", func() {
+		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle", func() {
 			net.Cycle(time)
 			time.CycleInc()
 		})
 	}
-	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("Trial:UpdateWeights", func() {
+	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("UpdateWeights", func() {
 		net.DWt(time)
 		viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
 		net.WtFmDWt(time)
@@ -65,9 +65,8 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, viewu
 	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
 	for m, loops := range man.Stacks {
 		curMode := m // For closures.
-		for t, loop := range loops.Loops {
-			curTime := t
-			loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"SetTimeVal", func() {
+		for _, loop := range loops.Loops {
+			loop.OnStart.Add("SetTimeVal", func() {
 				time.Mode = curMode.String()
 			})
 		}
@@ -82,7 +81,7 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs) {
 		for t, loop := range stack.Loops {
 			curTime := t
 			if below := stack.TimeBelow(curTime); below != etime.NoTime {
-				loop.OnStart.Add(curMode.String()+":"+curTime.String()+":"+"ResetLog"+below.String(), func() {
+				loop.OnStart.Add("ResetLog"+below.String(), func() {
 					logs.ResetLog(curMode, below)
 				})
 			}
