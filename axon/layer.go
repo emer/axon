@@ -239,7 +239,7 @@ func (ly *Layer) UnitValsTensor(tsr etensor.Tensor, varNm string) error {
 // The set of representative units are defined by SetRepIdxs -- all units
 // are used if no such subset has been defined.
 // If tensor is not already big enough to hold the values, it is
-// set to a 1D shape to hold all the values if subset is defined,
+// set to RepShape to hold all the values if subset is defined,
 // otherwise it calls UnitValsTensor and is identical to that.
 // Returns error on invalid var name.
 func (ly *Layer) UnitValsRepTensor(tsr etensor.Tensor, varNm string) error {
@@ -253,7 +253,8 @@ func (ly *Layer) UnitValsRepTensor(tsr etensor.Tensor, varNm string) error {
 		return err
 	}
 	if tsr.Len() != nu {
-		tsr.SetShape([]int{nu}, nil, []string{"Units"})
+		rs := ly.RepShape()
+		tsr.SetShape(rs.Shp, rs.Strd, rs.Nms)
 	}
 	vidx, err := ly.AxonLay.UnitVarIdx(varNm)
 	if err != nil {
