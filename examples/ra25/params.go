@@ -20,14 +20,53 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					// resting = -65 vs. 70 -- not working -- debug later
-					// "Layer.Act.Spike.Thr": ".55", // also bump up
-					// "Layer.Act.Spike.VmR": ".35",
-					// "Layer.Act.Init.Vm":   ".35",
-					// "Layer.Act.Erev.L":    ".35",
-					// "Layer.Act.Erev.I":    ".15",
-					// "Layer.Act.Erev.K":    ".15",
-
+					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Act.NMDA.MgC":      "1.2",  // 1.2 > 1.4 for SynSpkTheta
+					"Layer.Act.NMDA.Voff":     "0",    // 0 > 5 for SynSpkTheta
+				},
+				Hypers: params.Hypers{
+					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
+					"Layer.Inhib.ActAvg.Init": {"StdDev": "0.01", "Min": "0.01"},
+				}},
+			{Sel: "#Input", Desc: "critical now to specify the activity level",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+				}},
+			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
+					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					// "Layer.Learn.NeurCa.CaMax": "120",
+				}},
+			{Sel: "Prjn", Desc: "basic prjn params",
+				Params: params.Params{
+					"Prjn.Learn.Lrate.Base":   "0.1",  // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.SWt.Adapt.Lrate":    "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":      "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.XCal.PThrMin": "0.01", // 0.01 here; 0.05 best for bigger nets
+				}},
+			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
+				}},
+		},
+	}},
+	{Name: "Expt", Desc: "experimental params", Sheets: params.Sheets{
+		"NetSize": &params.Sheet{
+			{Sel: "Layer", Desc: "all layers",
+				Params: params.Params{
+					"Layer.X": "8", // 10 orig, 8 is similar, faster
+					"Layer.Y": "8",
+				}},
+		},
+		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "all defaults",
+				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
 					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Inhib.Layer.Bg":        "0.0",  // 0.0 > 0.3 -- 0.3 much worse
@@ -82,11 +121,11 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":        "0.1",    // 0.1 learns fast but dies early, .02 is stable long term
-					"Prjn.SWt.Adapt.Lrate":         "0.0002", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":           "1",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":   "12",     // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.NMDAG":    "2",      // 2 > 1
+					"Prjn.Learn.Lrate.Base":        "0.1", // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.SWt.Adapt.Lrate":         "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":           "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":   "12",  // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.NMDAG":    "2",   // 2 > 1
 					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta",
 					"Prjn.Learn.KinaseCa.MTau":     "5", // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":     "40",

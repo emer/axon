@@ -220,7 +220,7 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 500).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
@@ -452,7 +452,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Input", "Target")
 
-	ss.Logs.PlotItems("CorSim", "PctCor")
+	ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -549,7 +549,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.AddInt("nzero", 1000, "number of zero error epochs in a row to count as full training")
+	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
