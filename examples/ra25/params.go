@@ -82,11 +82,11 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":        "0.1",  // 0.1 for SynSpkTheta even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":         "0.08", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
-					"Prjn.SWt.Init.SPct":           "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.KinaseCa.SpikeG":   "12",   // keep at 12 standard, adjust other things
-					"Prjn.Learn.KinaseCa.NMDAG":    "2",    // 2 > 1
+					"Prjn.Learn.Lrate.Base":        "0.1",    // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.SWt.Adapt.Lrate":         "0.0002", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.SWt.Init.SPct":           "1",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.KinaseCa.SpikeG":   "12",     // keep at 12 standard, adjust other things
+					"Prjn.Learn.KinaseCa.NMDAG":    "2",      // 2 > 1
 					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta",
 					"Prjn.Learn.KinaseCa.MTau":     "5", // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":     "40",

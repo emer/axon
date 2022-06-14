@@ -51,7 +51,6 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActAvg",
 			Type:   etensor.FLOAT64,
-			Plot:   false,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -64,7 +63,6 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
 			Type:  etensor.FLOAT64,
-			Plot:  false,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
@@ -77,7 +75,6 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifAvg",
 			Type:  etensor.FLOAT64,
-			Plot:  false,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
@@ -87,7 +84,6 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifMax",
 			Type:  etensor.FLOAT64,
-			Plot:  false,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
@@ -97,7 +93,6 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_CorSim",
 			Type:  etensor.FLOAT64,
-			Plot:  false,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
@@ -115,7 +110,6 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name:   clnm + "_ActAvg",
 			Type:   etensor.FLOAT64,
-			Plot:   false,
 			FixMax: true,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
@@ -149,7 +143,6 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_NStrong",
 			Type: etensor.FLOAT64,
-			Plot: false,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
@@ -160,7 +153,6 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Top5",
 			Type: etensor.FLOAT64,
-			Plot: false,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
@@ -171,7 +163,6 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Next5",
 			Type: etensor.FLOAT64,
-			Plot: false,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
@@ -182,7 +173,6 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 		lg.AddItem(&elog.Item{
 			Name: clnm + "_PCA_Rest",
 			Type: etensor.FLOAT64,
-			Plot: false,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
