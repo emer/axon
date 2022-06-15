@@ -354,9 +354,7 @@ func (ss *Sim) NewRun() {
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
 	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Loops.Mode = etime.Test
-	ss.Loops.ResetCountersByMode(etime.Test)
-	ss.Loops.Run()
+	ss.Loops.ResetAndRun(etime.Test)
 	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
 }
 
@@ -578,7 +576,7 @@ func (ss *Sim) CmdArgs() {
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
 
 	ss.NewRun()
-	ss.Loops.Run()
+	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()
 
