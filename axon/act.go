@@ -514,7 +514,7 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 type DendParams struct {
 	GbarExp      float32 `def:"0.2,0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
 	GbarR        float32 `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
-	SeiDeplete   bool    `desc:"When a sending spike occurs, deplete the Se and Si factors to track availability of each synapse's channels based on time since last spiking.  This introduces noise, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
+	SeiDeplete   bool    `desc:"When a sending spike occurs, deplete the Se and Si factors to track availability of each synapse's channels based on time since last spiking.  This introduces noise, similar to synaptic failure -- works well for larger nets but is detrimental to small ones."`
 	SnmdaDeplete bool    `desc:"When a sending spike occurs, deplete the Snmda factor to track availability of each synapse's channels based on time since last spiking.  This introduces significant noise in NMDA dynamics due to long time constant, similar to synaptic failure -- suitable for larger nets but likely detrimental to small ones."`
 }
 
