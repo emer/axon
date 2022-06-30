@@ -68,29 +68,31 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":        "0.03", // .03 std
-					"Prjn.SWt.Adapt.Lrate":         "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
-					"Prjn.SWt.Adapt.DreamVar":      "0.0",  // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":           "1.0",  // 1 works fine here -- .5 also ok
-					"Prjn.Com.PFail":               "0.0",
-					"Prjn.Learn.KinaseCa.SpikeG":   "12", // 12 good
-					"Prjn.Learn.KinaseCa.NMDAG":    "1",
-					"Prjn.Learn.KinaseCa.Rule":     "SynSpkTheta", // NeurSpkTheta, SynSpkTheta good, *Cont bad
-					"Prjn.Learn.KinaseCa.MTau":     "5",           // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.PTau":     "40",
-					"Prjn.Learn.KinaseCa.DTau":     "40",
-					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01", //
-					"Prjn.Learn.KinaseCa.Decay":    "true",
-					"Prjn.Learn.KinaseDWt.TWindow": "10",
-					"Prjn.Learn.KinaseDWt.DMaxPct": "0.5",
-					"Prjn.Learn.KinaseDWt.DScale":  "1",
-					"Prjn.Learn.XCal.On":           "true",
-					"Prjn.Learn.XCal.PThrMin":      "0.01", // 0.01 > 0.05
-					"Prjn.Learn.XCal.LrnThr":       "0.01",
+					"Prjn.Learn.Lrate.Base":       "0.05", // .03 std
+					"Prjn.SWt.Adapt.Lrate":        "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
+					"Prjn.SWt.Adapt.DreamVar":     "0.0",  // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":          "1.0",  // 1 works fine here -- .5 also ok
+					"Prjn.Com.PFail":              "0.0",
+					"Prjn.Learn.KinaseCa.SpikeG":  "12", // 12 good
+					"Prjn.Learn.KinaseCa.MTau":    "5",  // 5 > 10 test more
+					"Prjn.Learn.KinaseCa.PTau":    "40",
+					"Prjn.Learn.KinaseCa.DTau":    "40",
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", //
+					"Prjn.Learn.KinaseCa.Decay":   "true",
+					"Prjn.Learn.XCal.On":          "true",
+					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 > 0.05
+					"Prjn.Learn.XCal.LrnThr":      "0.01",
+					"Prjn.Learn.ETrace.On":        "true",
+					"Prjn.Learn.ETrace.Tau":       "5",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
+				}},
+			{Sel: ".CTCtxt", Desc: "expt",
+				Params: params.Params{
+					"Prjn.Learn.ETrace.On":  "false", // not good here
+					"Prjn.Learn.ETrace.Tau": "5",
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{

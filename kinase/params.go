@@ -8,9 +8,8 @@ package kinase
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
 type CaParams struct {
-	Rule    Rules   `desc:"selects the specific variant of the Kinase learning rule, determining the source of synaptic calcium and how it drives synaptic plasticity"`
-	SpikeG  float32 `def:"12" desc:"spiking gain factor for SynSpkCont and SynSpkTheta learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
-	NMDAG   float32 `def:"0.8" desc:"gain factor for SynNMDACont learning rule variant.  This factor is set to generally equate calcium levels and learning rate with SynSpk variants.  In some models, 2 is the best, while others require higher values."`
+	NeurCa  bool    `def:"false" desc:"if true, use calcium values integrated at the neuron-level instead of synaptically integrated Ca values -- the latter capture more fine-grained pre-post correlations and produces improved learning performance in at least some larger models"`
+	SpikeG  float32 `def:"12" desc:"spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
 	MTau    float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaSyn * ru->CaSyn with typical 20 msec Tau.`
 	PTau    float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau    float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
@@ -24,9 +23,8 @@ type CaParams struct {
 }
 
 func (kp *CaParams) Defaults() {
-	kp.Rule = SynSpkTheta
+	kp.NeurCa = false
 	kp.SpikeG = 12
-	kp.NMDAG = 0.8
 	kp.MTau = 5
 	kp.PTau = 40
 	kp.DTau = 40
@@ -59,12 +57,6 @@ func (kp *CaParams) FmCa(ca float32, caM, caP, caD *float32) {
 	*caD += kp.DDt * (*caP - *caD)
 }
 
-// SynNMDACa returns the synaptic Ca value for SynNMDACa rule
-// applying thresholding to rca value, and multiplying by SpikeG
-func (kp *CaParams) SynNMDACa(snmdao, rca float32) float32 {
-	return kp.NMDAG * snmdao * rca
-}
-
 // IntFmTime returns the interval from current time
 // and last update time, which is -1 if never updated
 // (in which case return is -1)
@@ -91,29 +83,4 @@ func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD float32) (cCaM, cCaP
 		kp.FmCa(0, &cCaM, &cCaP, &cCaD) // just decay to 0
 	}
 	return
-}
-
-// DWtParams has parameters controlling Kinase-based learning rules
-type DWtParams struct {
-	TWindow int     `desc:"number of msec (cycles) after either a pre or postsynaptic spike, when the competitive binding of CaMKII vs. DAPK1 to NMDA N2B takes place, generating the provisional weight change value that can then turn into the actual weight change DWt"`
-	DMaxPct float32 `def:"0.5" desc:"proportion of CaDMax below which DWt is updated -- when CaD (DAPK1) decreases this much off of its recent peak level, then the residual CaMKII relative balance (represented by TDWt) drives AMPAR trafficking and longer timescale synaptic plasticity changes"`
-	DScale  float32 `def:"1,0.93,1.05" desc:"scaling factor on CaD as it enters into the learning rule, to compensate for systematic differences in CaD vs. CaP levels (only potentially needed for SynNMDACa)"`
-}
-
-func (dp *DWtParams) Defaults() {
-	dp.TWindow = 10
-	dp.DMaxPct = 0.5
-	dp.DScale = 1 // 0.93, 1.05
-	dp.Update()
-}
-
-func (dp *DWtParams) Update() {
-}
-
-// TDWt computes the temporary weight change from CaP, CaD values, as the
-// simple substraction, while applying DScale to CaD,
-// only when CaM level is above the threshold.  returns true if updated
-func (dp *DWtParams) DWt(caM, caP, caD float32, tdwt *float32) bool {
-	*tdwt = caP - dp.DScale*caD
-	return true
 }

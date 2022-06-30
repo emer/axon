@@ -379,7 +379,6 @@ func InitSynCa(sy *Synapse) {
 	sy.CaM = 0
 	sy.CaP = 0
 	sy.CaD = 0
-	sy.CaDMax = 0
 }
 
 // DecaySynCa decays synaptic calcium by given factor (between trials)
@@ -399,7 +398,7 @@ func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.LWt = sp.LWtFmWts(sy.Wt, sy.SWt)
 	sy.DWt = 0
 	sy.DSWt = 0
-	sy.TDWt = 0
+	sy.ETr = 0
 	InitSynCa(sy)
 }
 
@@ -455,18 +454,18 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn     bool             `desc:"enable learning for this projection"`
-	Lrate     LrateParams      `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
-	KinaseCa  kinase.CaParams  `view:"inline" desc:"kinase calcium Ca integration parameters"`
-	KinaseDWt kinase.DWtParams `view:"inline" desc:"kinase weight change parameters"`
-	XCal      XCalParams       `view:"inline" desc:"parameters for the XCal learning rule"`
+	Learn    bool            `desc:"enable learning for this projection"`
+	Lrate    LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	KinaseCa kinase.CaParams `view:"inline" desc:"kinase calcium Ca integration parameters"`
+	XCal     XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
+	ETrace   ETraceParams    `view:"inline" desc:"parameters for eligibility trace"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.Lrate.Update()
 	ls.XCal.Update()
 	ls.KinaseCa.Update()
-	ls.KinaseDWt.Update()
+	ls.ETrace.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
@@ -474,8 +473,7 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
 	ls.KinaseCa.Defaults()
-	ls.KinaseDWt.Defaults()
-	ls.KinaseCa.Rule = kinase.SynSpkTheta
+	ls.ETrace.Defaults()
 }
 
 // CHLdWt returns the error-driven weight change component for the
@@ -487,41 +485,6 @@ func (ls *LearnSynParams) CHLdWt(suCaP, suCaD, ruCaP, ruCaD float32) float32 {
 		return ls.XCal.DWt(srp, srd)
 	}
 	return srp - srd
-}
-
-// KinaseTDWt updates the temporary weight change based on current Synapse
-// Ca values.
-func (ls *LearnSynParams) KinaseTDWt(sy *Synapse) {
-	if ls.XCal.On {
-		sy.TDWt = ls.XCal.DWt(sy.CaP, ls.KinaseDWt.DScale*sy.CaD)
-	} else {
-		sy.TDWt = sy.CaP - ls.KinaseDWt.DScale*sy.CaD
-	}
-}
-
-// CaDMax updates CaDMax from CaD
-func (ls *LearnSynParams) CaDMax(sy *Synapse) {
-	if sy.CaD > sy.CaDMax {
-		sy.CaDMax = sy.CaD
-	}
-}
-
-// DWtFmTDWt updates the DWt from the TDWt, checking the learning threshold
-// using given aggregate learning rate.  Returns true if updated DWt
-func (ls *LearnSynParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
-	if sy.CaD >= ls.KinaseDWt.DMaxPct*sy.CaDMax {
-		return false
-	}
-	sy.CaDMax = 0
-	if sy.TDWt > 0 {
-		sy.TDWt *= (1 - sy.LWt)
-	} else {
-		sy.TDWt *= sy.LWt
-	}
-	sy.DWt += lr * sy.TDWt
-	sy.TDWt = 0
-	InitSynCa(sy)
-	return true
 }
 
 // LrateParams manages learning rate parameters
@@ -649,4 +612,36 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 	mod := lr.Mod(fact)
 	net.LrateMod(mod)
 	return mod
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  ETraceParams
+
+// ETraceParams are parameters for eligibilty trace computation
+type ETraceParams struct {
+	On  bool    `desc:"if true, use eligibility trace for modulating DWt"`
+	Tau float32 `desc:"time constant for integrating eligibilty trace at the theta timescale (i.e., updated at end of theta cycle when DWt is computed)"`
+
+	Dt  float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	DtC float32 `view:"-" json:"-" xml:"-" desc:"1 - rate = 1 / tau"`
+}
+
+func (et *ETraceParams) Update() {
+	et.Dt = 1.0 / et.Tau
+	et.DtC = 1.0 - et.Dt
+}
+
+func (et *ETraceParams) Defaults() {
+	et.On = false
+	et.Tau = 10
+	et.Update()
+}
+
+// ETrFmCaP updates ETr trace from CaP
+func (et *ETraceParams) ETrFmCaP(etr *float32, caP float32) {
+	if *etr == 0 {
+		*etr = caP
+	} else {
+		*etr = et.DtC**etr + et.Dt*caP
+	}
 }

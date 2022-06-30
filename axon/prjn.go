@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emer/axon/kinase"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/ringidx"
@@ -791,7 +790,7 @@ func (pj *Prjn) RecvGIncNoStats() {
 // This pass goes through in sending order, filtering on sending spike.
 func (pj *Prjn) SendSynCa(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn || kp.Rule != kinase.SynSpkTheta {
+	if !pj.Learn.Learn || kp.NeurCa {
 		return
 	}
 	ctime := int32(ltime.CycleTot)
@@ -835,7 +834,7 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 // This pass goes through in recv order, filtering on recv spike.
 func (pj *Prjn) RecvSynCa(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn || kp.Rule != kinase.SynSpkTheta {
+	if !pj.Learn.Learn || kp.NeurCa {
 		return
 	}
 	ctime := int32(ltime.CycleTot)
@@ -874,76 +873,6 @@ func (pj *Prjn) RecvSynCa(ltime *Time) {
 	}
 }
 
-// SynCaCont does Kinase learning based on Ca driven from pre-post spiking,
-// for SynSpkCont and SynNMDACont learning variants.
-// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
-// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-// Within the window of elevated synaptic Ca, CaP - CaD computes a
-// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
-// at the NMDA N2B site.  When the synaptic activity has fallen from a
-// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
-// last TDWt value converts to an actual synaptic change: DWt
-func (pj *Prjn) SynCaCont(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn || (kp.Rule == kinase.NeurSpkTheta || kp.Rule == kinase.SynSpkTheta) {
-		return
-	}
-	lr := pj.Learn.Lrate.Eff
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	twin := pj.Learn.KinaseDWt.TWindow
-	np := &slay.Learn.NeurCa
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		sn.PctDWt = 0
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
-			continue
-		}
-		sndw := 0
-		sntot := 0
-		sisi := int(sn.ISI)
-		tdw := (sisi == twin || (sn.Spike > 0 && sisi < twin))
-
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
-				InitSynCa(sy) // make sure
-				continue
-			}
-			risi := int(rn.ISI)
-			tdw = tdw || (risi == twin || (rn.Spike > 0 && risi < twin))
-			switch kp.Rule {
-			case kinase.SynNMDACont:
-				sy.Ca = kp.SynNMDACa(sn.SnmdaO, rn.RCa)
-			case kinase.SynSpkCont:
-				if sn.Spike > 0 || rn.Spike > 0 {
-					sy.Ca = kp.SpikeG * np.SynSpkCa(sn.CaSyn, rn.CaSyn)
-				} else {
-					sy.Ca = 0
-				}
-			}
-			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-			if tdw {
-				pj.Learn.KinaseTDWt(sy)
-			}
-			pj.Learn.CaDMax(sy)
-			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
-				sndw++
-			}
-			sntot++
-		}
-		if sntot > 0 {
-			sn.PctDWt = float32(sndw) / float32(sntot)
-		}
-	}
-}
-
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
@@ -952,15 +881,10 @@ func (pj *Prjn) DWt(ltime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
-	switch pj.Learn.KinaseCa.Rule {
-	case kinase.NeurSpkTheta:
+	if pj.Learn.KinaseCa.NeurCa {
 		pj.DWtNeurSpkTheta(ltime)
-	case kinase.SynSpkTheta:
+	} else {
 		pj.DWtSynSpkTheta(ltime)
-	case kinase.SynSpkCont:
-		pj.DWtCont(ltime)
-	case kinase.SynNMDACont:
-		pj.DWtCont(ltime)
 	}
 }
 
@@ -975,7 +899,7 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+		if !pj.Learn.ETrace.On && (sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr) {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -986,6 +910,12 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			if pj.Learn.ETrace.On {
+				pj.Learn.ETrace.ETrFmCaP(&sy.ETr, sn.CaP*rn.CaP)
+			}
+			if sy.Wt == 0 { // failed con, no learn
+				continue // todo: should ETrace decay?
+			}
 			err := pj.Learn.CHLdWt(sn.CaP, sn.CaD, rn.CaP, rn.CaD)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
@@ -994,6 +924,9 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
+			if pj.Learn.ETrace.On {
+				sy.DWt *= sy.ETr
+			}
 		}
 	}
 }
@@ -1003,14 +936,13 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 // computed at the Theta cycle interval.
 func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	kd := &pj.Learn.KinaseDWt
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+		if !pj.Learn.ETrace.On && (sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr) {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -1020,17 +952,22 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+			if !pj.Learn.ETrace.On && (rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr) {
 				continue
 			}
 			sy := &syns[ci]
 			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-			ds := kd.DScale * caD
+			if pj.Learn.ETrace.On {
+				pj.Learn.ETrace.ETrFmCaP(&sy.ETr, caP)
+			}
+			if sy.Wt == 0 { // failed con, no learn
+				continue
+			}
 			var err float32
 			if pj.Learn.XCal.On {
-				err = pj.Learn.XCal.DWt(caP, ds)
+				err = pj.Learn.XCal.DWt(caP, caD)
 			} else {
-				err = caP - ds
+				err = caP - caD
 			}
 			// sb immediately -- enters into zero sum
 			if err > 0 {
@@ -1039,52 +976,9 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
-		}
-	}
-}
-
-// DWtCont computes the weight change (learning) for continuous
-// learning variants (SynSpkCont and SynNMDACont), which have
-// already continuously computed DWt from TDWt.
-// Applies post-trial decay to simulate time passage, and checks
-// for whether learning should occur.
-func (pj *Prjn) DWtCont(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	decay := rlay.Act.Decay.Glong
-	if !kp.Decay {
-		decay = 0
-	}
-	// twin := kd.TWindow
-	lr := pj.Learn.Lrate.Eff
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
-			continue
-		}
-		sndw := 0
-		sntot := 0
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
-				continue
+			if pj.Learn.ETrace.On {
+				sy.DWt *= sy.ETr
 			}
-			sy := &syns[ci]
-			DecaySynCa(sy, decay)
-			// above decay, representing time passing after discrete trials, can trigger learning
-			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
-				sndw++
-			}
-			sntot++
-		}
-		if sntot > 0 {
-			sn.PctDWt = float32(sndw) / float32(sntot)
 		}
 	}
 }

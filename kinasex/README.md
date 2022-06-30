@@ -1,23 +1,12 @@
-// Copyright (c) 2022, The Emergent Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+# KinasEx
 
-package kinase
+This package contains experimental Kinase-based learning rules.
 
-import "github.com/goki/ki/kit"
+See https://github.com/emer/axon/tree/master/examples/kinaseq for exploration of the implemented equations, and https://github.com/ccnlab/kinase/tree/main/sims/kinase for biophysical basis of the equations.
 
-// Rules are different options for Kinase-based learning rules
-// These are now implemented using separate Prjn types in kinasex
-type Rules int32
+In the initially-implemented nomenclature (early 2022), the space of algorithms was enumerated in `kinase/rules.go` as follows:
 
-//go:generate stringer -type=Rules
-
-var KiT_Rules = kit.Enums.AddEnum(RulesN, kit.NotBitFlag, nil)
-
-func (ev Rules) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *Rules) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-// The different versions of Kinase learning rules
+```Go
 const (
 	// SynSpkCont implements synaptic-level Ca signals at an abstract level,
 	// purely driven by spikes, not NMDA channel Ca, as a product of
@@ -54,6 +43,8 @@ const (
 	// It exhibits strong sensitivity to final spikes and thus
 	// high levels of variance.
 	NeurSpkTheta
-
-	RulesN
 )
+```
+
+This package contains implementations of `SynSpkCont` and `SynNMDACont`.
+

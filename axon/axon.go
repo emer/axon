@@ -267,17 +267,6 @@ type AxonPrjn interface {
 	// This pass goes through in recv order, filtering on recv spike.
 	RecvSynCa(ltime *Time)
 
-	// SynCaCont does Kinase learning based on Ca driven from pre-post spiking,
-	// for SynSpkCont and SynNMDACont learning variants.
-	// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
-	// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-	// Within the window of elevated synaptic Ca, CaP - CaD computes a
-	// temporary DWt (TDWt) reflecting the balance of CaMKII vs. DAPK1 binding
-	// at the NMDA N2B site.  When the synaptic activity has fallen from a
-	// local peak (CaDMax) by a threshold amount (CaDMaxPct) then the
-	// last TDWt value converts to an actual synaptic change: DWt
-	SynCaCont(ltime *Time)
-
 	// DWt computes the weight change (learning) -- on sending projections.
 	DWt(ltime *Time)
 

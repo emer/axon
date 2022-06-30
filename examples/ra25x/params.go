@@ -472,6 +472,7 @@ var ParamSetsAll = params.Sets{
 					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec
 					"Prjn.Learn.XCal.SubMean":   "1",      // 1 > 0.9 now..
 					"Prjn.Com.PFail":            "0.0",    // even .2 fails
+					"Prjn.Com.PFailSWt":         "true",   // not much diff here..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
