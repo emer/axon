@@ -72,10 +72,6 @@ type Neuron struct {
 	GiNoise  float32 `desc:"integrated noise inhibotyr conductance, added into Gi"`
 	GiSelf   float32 `desc:"total amount of self-inhibition -- time-integrated to avoid oscillations"`
 
-	Se    float32 `desc:"sending activity for Ge (AMPA) reflecting channel decay dynamics -- recovers from 0 back to 1 after each spike with GeTau rate constant (5 ms default) -- optionally could include spike history factors such as facilitation or depression"`
-	Si    float32 `desc:"sending activity for Gi (GABA) reflecting channel decay dynamics -- recovers from 0 back to 1 after each spike with GiTau rate constant (7 ms default)"`
-	Snmda float32 `desc:"sending activity for NMDA reflecting channel decay dynamics but NOT the allosteric open probability inhibition dynamics via SnmdaI (i.e., multiply by 1-nrn.SnmdaI too on spiking) -- this recovers from 0 back to 1 after each spike with NMDA.DecayTau rate constant (30-100 ms default)"`
-
 	GeM      float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
 	GiM      float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
 	GknaFast float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`

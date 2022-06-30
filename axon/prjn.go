@@ -24,7 +24,7 @@ import (
 
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
-	PrjnStru
+	PrjnBase
 	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
 	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting structural weight value parameters, which control initial weight values and slower outer-loop adjustments, to differentiate."`
@@ -32,11 +32,10 @@ type Prjn struct {
 	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
 	// misc state variables below:
-	GScale   GScaleVals  `view:"inline" desc:"conductance scaling values"`
-	Gidx     ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	GBuf     []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	GnmdaBuf []float32   `desc:"Gnmda NMDA conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	AvgDWt   float32     `inactive:"+" desc:"average DWt value across all synapses"`
+	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
+	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
+	GBuf   []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	AvgDWt float32     `inactive:"+" desc:"average DWt value across all synapses"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -371,9 +370,9 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 }
 
 // Build constructs the full connectivity among the layers as specified in this projection.
-// Calls PrjnStru.BuildStru and then allocates the synaptic values in Syns accordingly.
+// Calls PrjnBase.BuildBase and then allocates the synaptic values in Syns accordingly.
 func (pj *Prjn) Build() error {
-	if err := pj.BuildStru(); err != nil {
+	if err := pj.BuildBase(); err != nil {
 		return err
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
@@ -391,7 +390,6 @@ func (pj *Prjn) BuildGBufs() {
 	pj.Gidx.Len = dl
 	pj.Gidx.Zi = 0
 	pj.GBuf = make([]float32, dl*rlen)
-	pj.GnmdaBuf = make([]float32, dl*rlen)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -668,22 +666,15 @@ func (pj *Prjn) InitGBufs() {
 	for ri := range pj.GBuf {
 		pj.GBuf[ri] = 0
 	}
-	for ri := range pj.GnmdaBuf {
-		pj.GnmdaBuf[ri] = 0
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// SendESpike sends an excitatory spike from sending neuron index si,
+// SendSpike sends a spike from sending neuron index si,
 // to add to buffer on receivers.
-// Sends proportion of synaptic channels that remain open as function
-// of time since last spike, for Ge and Gnmda channels.
-func (pj *Prjn) SendESpike(si int, sge, snmda float32) {
+func (pj *Prjn) SendSpike(si int) {
 	sc := pj.GScale.Scale
-	sge *= sc
-	snmda *= sc
 	del := pj.Com.Delay
 	sz := del + 1
 	di := pj.Gidx.Idx(del) // index in buffer to put new values -- end of line
@@ -693,28 +684,7 @@ func (pj *Prjn) SendESpike(si int, sge, snmda float32) {
 	scons := pj.SConIdx[st : st+nc]
 	for ci := range syns {
 		ri := scons[ci]
-		pj.GBuf[int(ri)*sz+di] += sge * syns[ci].Wt
-		pj.GnmdaBuf[int(ri)*sz+di] += snmda * syns[ci].Wt
-	}
-}
-
-// SendISpike sends an inhibitory spike from sending neuron index si,
-// to add to buffer on receivers.
-// Sends proportion of synaptic channels that remain open as function
-// of time since last spike.
-func (pj *Prjn) SendISpike(si int, sgi float32) {
-	sc := pj.GScale.Scale
-	sgi *= sc
-	del := pj.Com.Delay
-	sz := del + 1
-	di := pj.Gidx.Idx(del) // index in buffer to put new values -- end of line
-	nc := pj.SConN[si]
-	st := pj.SConIdxSt[si]
-	syns := pj.Syns[st : st+nc]
-	scons := pj.SConIdx[st : st+nc]
-	for ci := range syns {
-		ri := scons[ci]
-		pj.GBuf[int(ri)*sz+di] += sgi * syns[ci].Wt
+		pj.GBuf[int(ri)*sz+di] += sc * syns[ci].Wt
 	}
 }
 
@@ -757,9 +727,8 @@ func (pj *Prjn) RecvGIncStats() {
 			rn := &rlay.Neurons[ri]
 			g := pj.GBuf[bi]
 			rn.GeRaw += g
-			rn.GnmdaRaw += pj.GnmdaBuf[bi]
+			rn.GnmdaRaw += g
 			pj.GBuf[bi] = 0
-			pj.GnmdaBuf[bi] = 0
 			if g > max {
 				max = g
 			}
@@ -805,10 +774,10 @@ func (pj *Prjn) RecvGIncNoStats() {
 		for ri := range rlay.Neurons {
 			bi := ri*sz + zi
 			rn := &rlay.Neurons[ri]
-			rn.GeRaw += pj.GBuf[bi]
-			rn.GnmdaRaw += pj.GnmdaBuf[bi]
+			g := pj.GBuf[bi]
+			rn.GeRaw += g
+			rn.GnmdaRaw += g
 			pj.GBuf[bi] = 0
-			pj.GnmdaBuf[bi] = 0
 		}
 	}
 	pj.Gidx.Shift(1) // rotate buffer

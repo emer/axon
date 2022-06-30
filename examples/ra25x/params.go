@@ -67,18 +67,16 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Inhib.Layer.Bg":        "0.0",  // 0.0 > 0.3 -- 0.3 much worse
-					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
-					"Layer.Act.Dend.GbarR":        "3",    // 6 > 3 old def
-					"Layer.Act.Dt.VmDendTau":      "5",    // 5 > 2.81 here but small effect
-					"Layer.Act.Dt.VmSteps":        "2",    // 2 > 3 -- somehow works better
-					"Layer.Act.Dt.GeTau":          "5",
-					"Layer.Act.Dend.SeiDeplete":   "false", // noisy!  try on larger models
-					"Layer.Act.Dend.SnmdaDeplete": "false",
-					"Layer.Act.GABAB.Gbar":        "0.2", // 0.2 > 0.15
+					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.Layer.Bg":    "0.0",  // 0.0 > 0.3 -- 0.3 much worse
+					"Layer.Act.Decay.Glong":   "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp":  "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
+					"Layer.Act.Dend.GbarR":    "3",    // 6 > 3 old def
+					"Layer.Act.Dt.VmDendTau":  "5",    // 5 > 2.81 here but small effect
+					"Layer.Act.Dt.VmSteps":    "2",    // 2 > 3 -- somehow works better
+					"Layer.Act.Dt.GeTau":      "5",
+					"Layer.Act.GABAB.Gbar":    "0.2", // 0.2 > 0.15
 
 					// Voff = 5, MgC = 1.4, CaMax = 90, VGCCCa = 20 is a reasonable "high voltage" config
 					// Voff = 0, MgC = 1, CaMax = 100, VGCCCa = 20 is a good "default" config
@@ -229,28 +227,26 @@ var ParamSetsMin = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
-					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp":      "0.5",  // 0.2 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":        "6",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
-					"Layer.Act.Dt.VmDendTau":      "5",    // 5 > 2.81 here but small effect
-					"Layer.Act.Dt.VmSteps":        "2",    // 2 > 3 -- somehow works better
-					"Layer.Act.Dt.GeTau":          "5",
-					"Layer.Act.Dend.SeiDeplete":   "false", // noisy!  try on larger models
-					"Layer.Act.Dend.SnmdaDeplete": "false",
-					"Layer.Act.GABAB.Gbar":        "0.2",  // 0.2 > 0.15
-					"Layer.Act.NMDA.Gbar":         "0.15", // 0.15
-					"Layer.Act.NMDA.ITau":         "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":          "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":          "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":         "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Learn.NeurCa.MTau":     "10",
-					"Layer.Learn.NeurCa.PTau":     "40",
-					"Layer.Learn.NeurCa.DTau":     "40",
-					"Layer.Learn.LrnNMDA.ITau":    "1",   // urak 100
-					"Layer.Learn.LrnNMDA.Tau":     "100", // urak 30
+					"Layer.Inhib.Layer.Gi":     "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init":  "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.Layer.Bg":     "0.3",  // 0.3 > 0.0
+					"Layer.Act.Decay.Glong":    "0.6",  // 0.6
+					"Layer.Act.Dend.GbarExp":   "0.5",  // 0.2 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":     "6",    // 3 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dt.VmDendTau":   "5",    // 5 > 2.81 here but small effect
+					"Layer.Act.Dt.VmSteps":     "2",    // 2 > 3 -- somehow works better
+					"Layer.Act.Dt.GeTau":       "5",
+					"Layer.Act.GABAB.Gbar":     "0.2",  // 0.2 > 0.15
+					"Layer.Act.NMDA.Gbar":      "0.15", // 0.15
+					"Layer.Act.NMDA.ITau":      "1",    // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Act.NMDA.Tau":       "100",  // 30 not good
+					"Layer.Act.NMDA.MgC":       "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Act.NMDA.Voff":      "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Learn.NeurCa.MTau":  "10",
+					"Layer.Learn.NeurCa.PTau":  "40",
+					"Layer.Learn.NeurCa.DTau":  "40",
+					"Layer.Learn.LrnNMDA.ITau": "1",   // urak 100
+					"Layer.Learn.LrnNMDA.Tau":  "100", // urak 30
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{

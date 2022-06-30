@@ -16,11 +16,11 @@ import (
 	"github.com/goki/gi/giv"
 )
 
-// PrjnStru contains the basic structural information for specifying a projection of synaptic
+// PrjnBase contains the basic structural information for specifying a projection of synaptic
 // connections between two layers, and maintaining all the synaptic connection-level data.
 // The exact same struct object is added to the Recv and Send layers, and it manages everything
 // about the connectivity, and methods on the Prjn handle all the relevant computation.
-type PrjnStru struct {
+type PrjnBase struct {
 	AxonPrj     AxonPrjn        `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Off         bool            `desc:"inactivate this projection -- allows for easy experimentation"`
 	Cls         string          `desc:"Class is for applying parameter styles, can be space separated multple tags"`
@@ -44,29 +44,29 @@ type PrjnStru struct {
 
 // Init MUST be called to initialize the prjn's pointer to itself as an emer.Prjn
 // which enables the proper interface methods to be called.
-func (ps *PrjnStru) Init(prjn emer.Prjn) {
+func (ps *PrjnBase) Init(prjn emer.Prjn) {
 	ps.AxonPrj = prjn.(AxonPrjn)
 }
 
-func (ps *PrjnStru) TypeName() string { return "Prjn" } // always, for params..
-func (ps *PrjnStru) Class() string    { return ps.AxonPrj.PrjnTypeName() + " " + ps.Cls }
-func (ps *PrjnStru) Name() string {
+func (ps *PrjnBase) TypeName() string { return "Prjn" } // always, for params..
+func (ps *PrjnBase) Class() string    { return ps.AxonPrj.PrjnTypeName() + " " + ps.Cls }
+func (ps *PrjnBase) Name() string {
 	return ps.Send.Name() + "To" + ps.Recv.Name()
 }
-func (ps *PrjnStru) Label() string         { return ps.Name() }
-func (ps *PrjnStru) RecvLay() emer.Layer   { return ps.Recv }
-func (ps *PrjnStru) SendLay() emer.Layer   { return ps.Send }
-func (ps *PrjnStru) Pattern() prjn.Pattern { return ps.Pat }
-func (ps *PrjnStru) Type() emer.PrjnType   { return ps.Typ }
-func (ps *PrjnStru) PrjnTypeName() string  { return ps.Typ.String() }
+func (ps *PrjnBase) Label() string         { return ps.Name() }
+func (ps *PrjnBase) RecvLay() emer.Layer   { return ps.Recv }
+func (ps *PrjnBase) SendLay() emer.Layer   { return ps.Send }
+func (ps *PrjnBase) Pattern() prjn.Pattern { return ps.Pat }
+func (ps *PrjnBase) Type() emer.PrjnType   { return ps.Typ }
+func (ps *PrjnBase) PrjnTypeName() string  { return ps.Typ.String() }
 
-func (ps *PrjnStru) IsOff() bool {
+func (ps *PrjnBase) IsOff() bool {
 	return ps.Off || ps.Recv.IsOff() || ps.Send.IsOff()
 }
-func (ps *PrjnStru) SetOff(off bool) { ps.Off = off }
+func (ps *PrjnBase) SetOff(off bool) { ps.Off = off }
 
 // Connect sets the connectivity between two layers and the pattern to use in interconnecting them
-func (ps *PrjnStru) Connect(slay, rlay emer.Layer, pat prjn.Pattern, typ emer.PrjnType) {
+func (ps *PrjnBase) Connect(slay, rlay emer.Layer, pat prjn.Pattern, typ emer.PrjnType) {
 	ps.Send = slay
 	ps.Recv = rlay
 	ps.Pat = pat
@@ -75,7 +75,7 @@ func (ps *PrjnStru) Connect(slay, rlay emer.Layer, pat prjn.Pattern, typ emer.Pr
 
 // Validate tests for non-nil settings for the projection -- returns error
 // message or nil if no problems (and logs them if logmsg = true)
-func (ps *PrjnStru) Validate(logmsg bool) error {
+func (ps *PrjnBase) Validate(logmsg bool) error {
 	emsg := ""
 	if ps.Pat == nil {
 		emsg += "Pat is nil; "
@@ -96,11 +96,11 @@ func (ps *PrjnStru) Validate(logmsg bool) error {
 	return nil
 }
 
-// BuildStru constructs the full connectivity among the layers as specified in this projection.
+// BuildBase constructs the full connectivity among the layers as specified in this projection.
 // Calls Validate and returns false if invalid.
 // Pat.Connect is called to get the pattern of the connection.
 // Then the connection indexes are configured according to that pattern.
-func (ps *PrjnStru) BuildStru() error {
+func (ps *PrjnBase) BuildBase() error {
 	if ps.Off {
 		return nil
 	}
@@ -158,7 +158,7 @@ func (ps *PrjnStru) BuildStru() error {
 
 // SetNIdxSt sets the *ConN and *ConIdxSt values given n tensor from Pat.
 // Returns total number of connections for this direction.
-func (ps *PrjnStru) SetNIdxSt(n *[]int32, avgmax *minmax.AvgMax32, idxst *[]int32, tn *etensor.Int32) int32 {
+func (ps *PrjnBase) SetNIdxSt(n *[]int32, avgmax *minmax.AvgMax32, idxst *[]int32, tn *etensor.Int32) int32 {
 	ln := tn.Len()
 	tnv := tn.Values
 	*n = make([]int32, ln)
@@ -177,7 +177,7 @@ func (ps *PrjnStru) SetNIdxSt(n *[]int32, avgmax *minmax.AvgMax32, idxst *[]int3
 }
 
 // String satisfies fmt.Stringer for prjn
-func (ps *PrjnStru) String() string {
+func (ps *PrjnBase) String() string {
 	str := ""
 	if ps.Recv == nil {
 		str += "recv=nil; "
@@ -202,7 +202,7 @@ func (ps *PrjnStru) String() string {
 // If setMsg is true, then a message is printed to confirm each parameter that is set.
 // it always prints a message if a parameter fails to be set.
 // returns true if any params were set, and error if there were any errors.
-func (ps *PrjnStru) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
+func (ps *PrjnBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 	app, err := pars.Apply(ps.AxonPrj, setMsg) // essential to go through AxonPrj
 	if app {
 		ps.AxonPrj.UpdateParams()
@@ -212,7 +212,7 @@ func (ps *PrjnStru) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
-func (ps *PrjnStru) NonDefaultParams() string {
+func (ps *PrjnBase) NonDefaultParams() string {
 	pth := ps.Recv.Name() + "." + ps.Name() // redundant but clearer..
 	nds := giv.StructNonDefFieldsStr(ps.AxonPrj, pth)
 	return nds

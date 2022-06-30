@@ -430,6 +430,7 @@ func (ss *Sim) TrialStats() {
 
 //////////////////////////////////////////////////////////////////////////////
 // 		Logging
+
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 

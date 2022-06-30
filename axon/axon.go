@@ -250,17 +250,9 @@ type AxonPrjn interface {
 	// but can be called when needed.
 	InitGBufs()
 
-	// SendESpike sends an excitatory spike from sending neuron index si,
+	// SendSpike sends a spike from sending neuron index si,
 	// to add to buffer on receivers.
-	// Sends proportion of synaptic channels that remain open as function
-	// of time since last spike, for Ge and Gnmda channels
-	SendESpike(si int, sge, snmda float32)
-
-	// SendISpike sends an inhibitory spike from sending neuron index si,
-	// to add to buffer on receivers.  For Prjn = Inhib type.
-	// Sends proportion of synaptic channels that remain open as function
-	// of time since last spike.
-	SendISpike(si int, sgi float32)
+	SendSpike(si int)
 
 	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
 	RecvGInc(ltime *Time)

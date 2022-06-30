@@ -1403,24 +1403,14 @@ func (ly *Layer) SendSpike(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() || nrn.Spike == 0 {
-			ly.Act.SenderGDecay(nrn)
 			continue
 		}
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue
 			}
-			if sp.Type() == emer.Inhib {
-				sp.(AxonPrjn).SendISpike(ni, nrn.Si)
-			} else {
-				if ly.Act.Dend.SnmdaDeplete {
-					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda*(1.0-nrn.SnmdaI))
-				} else {
-					sp.(AxonPrjn).SendESpike(ni, nrn.Se, nrn.Snmda) // no I either
-				}
-			}
+			sp.(AxonPrjn).SendSpike(ni)
 		}
-		ly.Act.SenderGSpiked(nrn)
 	}
 }
 
