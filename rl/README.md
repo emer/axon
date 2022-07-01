@@ -1,6 +1,6 @@
 # Reinforcement Learning and Dopamine
 
-[![GoDoc](https://godoc.org/github.com/emer/leabra/rl?status.svg)](https://godoc.org/github.com/emer/leabra/rl)
+[![GoDoc](https://godoc.org/github.com/emer/axon/rl?status.svg)](https://godoc.org/github.com/emer/axon/rl)
 
 The `rl` package provides core infrastructure for dopamine neuromodulation and reinforcement learning, including the Rescorla-Wagner learning algorithm (RW) and Temporal Differences (TD) learning, and a minimal `ClampDaLayer` that can be used to send an arbitrary DA signal.
 

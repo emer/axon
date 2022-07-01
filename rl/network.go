@@ -41,15 +41,15 @@ func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 	pj := nt.ConnectLayers(rew, ri, prjn.NewFull(), emer.Forward).(axon.AxonPrjn).AsAxon()
 	pj.SetClass("TDRewToInteg")
 	pj.Learn.Learn = false
-	pj.WtInit.Mean = 1
-	pj.WtInit.Var = 0
-	pj.WtInit.Sym = false
+	pj.SWt.Init.Mean = 1
+	pj.SWt.Init.Var = 0
+	pj.SWt.Init.Sym = false
 	// {Sel: ".TDRewToInteg", Desc: "rew to integ",
 	// 	Params: params.Params{
 	// 		"Prjn.Learn.Learn": "false",
-	// 		"Prjn.WtInit.Mean": "1",
-	// 		"Prjn.WtInit.Var":  "0",
-	// 		"Prjn.WtInit.Sym":  "false",
+	// 		"Prjn.SWt.Init.Mean": "1",
+	// 		"Prjn.SWt.Init.Var":  "0",
+	// 		"Prjn.SWt.Init.Sym":  "false",
 	// 	}},
 	return
 }

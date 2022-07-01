@@ -10,7 +10,6 @@ import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/deep"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
 )
 
 // TDRewPredLayer is the temporal differences reward prediction layer.
@@ -29,17 +28,17 @@ var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, axon.LayerProps)
 func (ly *TDRewPredLayer) GetDA() float32   { return ly.DA }
 func (ly *TDRewPredLayer) SetDA(da float32) { ly.DA = da }
 
-// ActFmG computes linear activation for TDRewPred
-func (ly *TDRewPredLayer) ActFmG(ltime *axon.Time) {
+func (ly *TDRewPredLayer) GeFmInc(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		if ltime.Quarter == 3 { // plus phase
-			nrn.Act = nrn.Ge // linear
+		if ltime.PlusPhase {
+			nrn.ClearFlag(axon.NeurHasExt)
 		} else {
-			nrn.Act = nrn.ActP // previous actP
+			nrn.SetFlag(axon.NeurHasExt)
+			nrn.Ext = nrn.ActP // previous actP
 		}
 	}
 }
@@ -102,7 +101,7 @@ func (ly *TDRewIntegLayer) Build() error {
 	return err
 }
 
-func (ly *TDRewIntegLayer) ActFmG(ltime *axon.Time) {
+func (ly *TDRewIntegLayer) GeFmInc(ltime *axon.Time) {
 	rply, _ := ly.RewPredLayer()
 	if rply == nil {
 		return
@@ -114,10 +113,12 @@ func (ly *TDRewIntegLayer) ActFmG(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		if ltime.Quarter == 3 { // plus phase
-			nrn.Act = nrn.Ge + ly.RewInteg.Discount*rpAct
+		if ltime.PlusPhase {
+			nrn.SetFlag(axon.NeurHasExt)
+			nrn.Ext = ly.RewInteg.Discount * rpAct
 		} else {
-			nrn.Act = rpActP // previous actP
+			nrn.SetFlag(axon.NeurHasExt)
+			nrn.Ext = rpActP // previous actP
 		}
 	}
 }
@@ -138,7 +139,6 @@ var KiT_TDDaLayer = kit.Types.AddType(&TDDaLayer{}, axon.LayerProps)
 
 func (ly *TDDaLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Clamp.Range.Set(-100, 100)
 	if ly.RewInteg == "" {
 		ly.RewInteg = "RewInteg"
 	}
@@ -185,7 +185,7 @@ func (ly *TDDaLayer) ActFmG(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		if ltime.Quarter == 3 { // plus phase
+		if ltime.PlusPhase {
 			nrn.Act = da
 		} else {
 			nrn.Act = 0
@@ -217,20 +217,18 @@ var KiT_TDRewPredPrjn = kit.Types.AddType(&TDRewPredPrjn{}, deep.PrjnProps)
 func (pj *TDRewPredPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	// no additional factors
-	pj.Learn.WtSig.Gain = 1
-	pj.Learn.Norm.On = false
-	pj.Learn.Momentum.On = false
-	pj.Learn.WtBal.On = false
+	pj.SWt.Adapt.SigGain = 1
 }
 
 // DWt computes the weight change (learning) -- on sending projections.
-func (pj *TDRewPredPrjn) DWt() {
+func (pj *TDRewPredPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	// rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	da := pj.Recv.(DALayer).GetDA()
+	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])
@@ -242,38 +240,14 @@ func (pj *TDRewPredPrjn) DWt() {
 			sy := &syns[ci]
 			// ri := scons[ci]
 
-			dwt := da * sn.ActQ0 // no recv unit activation, prior trial act
-
-			norm := float32(1)
-			if pj.Learn.Norm.On {
-				norm = pj.Learn.Norm.NormFmAbsDWt(&sy.Norm, mat32.Abs(dwt))
-			}
-			if pj.Learn.Momentum.On {
-				dwt = norm * pj.Learn.Momentum.MomentFmDWt(&sy.Moment, dwt)
-			} else {
-				dwt *= norm
-			}
-			sy.DWt += pj.Learn.Lrate * dwt
-		}
-		// aggregate max DWtNorm over sending synapses
-		if pj.Learn.Norm.On {
-			maxNorm := float32(0)
-			for ci := range syns {
-				sy := &syns[ci]
-				if sy.Norm > maxNorm {
-					maxNorm = sy.Norm
-				}
-			}
-			for ci := range syns {
-				sy := &syns[ci]
-				sy.Norm = maxNorm
-			}
+			dwt := da * sn.ActPrv // no recv unit activation, prior trial act
+			sy.DWt += lr * dwt
 		}
 	}
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-func (pj *TDRewPredPrjn) WtFmDWt() {
+func (pj *TDRewPredPrjn) WtFmDWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}

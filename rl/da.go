@@ -81,7 +81,6 @@ var KiT_ClampDaLayer = kit.Types.AddType(&ClampDaLayer{}, axon.LayerProps)
 
 func (ly *ClampDaLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Clamp.Range.Set(-1, 1)
 }
 
 // DALayer interface:

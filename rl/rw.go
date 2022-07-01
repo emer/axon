@@ -161,20 +161,18 @@ var KiT_RWPrjn = kit.Types.AddType(&RWPrjn{}, deep.PrjnProps)
 func (pj *RWPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	// no additional factors
-	pj.Learn.WtSig.Gain = 1
-	pj.Learn.Norm.On = false
-	pj.Learn.Momentum.On = false
-	pj.Learn.WtBal.On = false
+	pj.SWt.Adapt.SigGain = 1
 }
 
 // DWt computes the weight change (learning) -- on sending projections.
-func (pj *RWPrjn) DWt() {
+func (pj *RWPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	lda := pj.Recv.(DALayer).GetDA()
+	lr := pj.Learn.Lrate.Eff
 	if pj.DaTol > 0 {
 		if mat32.Abs(lda) <= pj.DaTol {
 			return // lda = 0 -- no learning
@@ -201,37 +199,13 @@ func (pj *RWPrjn) DWt() {
 			}
 
 			dwt := da * sn.Act // no recv unit activation
-
-			norm := float32(1)
-			if pj.Learn.Norm.On {
-				norm = pj.Learn.Norm.NormFmAbsDWt(&sy.Norm, mat32.Abs(dwt))
-			}
-			if pj.Learn.Momentum.On {
-				dwt = norm * pj.Learn.Momentum.MomentFmDWt(&sy.Moment, dwt)
-			} else {
-				dwt *= norm
-			}
-			sy.DWt += pj.Learn.Lrate * dwt
-		}
-		// aggregate max DWtNorm over sending synapses
-		if pj.Learn.Norm.On {
-			maxNorm := float32(0)
-			for ci := range syns {
-				sy := &syns[ci]
-				if sy.Norm > maxNorm {
-					maxNorm = sy.Norm
-				}
-			}
-			for ci := range syns {
-				sy := &syns[ci]
-				sy.Norm = maxNorm
-			}
+			sy.DWt += lr * dwt
 		}
 	}
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-func (pj *RWPrjn) WtFmDWt() {
+func (pj *RWPrjn) WtFmDWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
