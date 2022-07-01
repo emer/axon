@@ -398,7 +398,6 @@ func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	sy.LWt = sp.LWtFmWts(sy.Wt, sy.SWt)
 	sy.DWt = 0
 	sy.DSWt = 0
-	sy.ETr = 0
 	InitSynCa(sy)
 }
 
@@ -458,14 +457,12 @@ type LearnSynParams struct {
 	Lrate    LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
 	KinaseCa kinase.CaParams `view:"inline" desc:"kinase calcium Ca integration parameters"`
 	XCal     XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
-	ETrace   ETraceParams    `view:"inline" desc:"parameters for eligibility trace"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.Lrate.Update()
 	ls.XCal.Update()
 	ls.KinaseCa.Update()
-	ls.ETrace.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
@@ -473,7 +470,6 @@ func (ls *LearnSynParams) Defaults() {
 	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
 	ls.KinaseCa.Defaults()
-	ls.ETrace.Defaults()
 }
 
 // CHLdWt returns the error-driven weight change component for the
@@ -612,36 +608,4 @@ func (lr *LrateMod) LrateMod(net *Network, fact float32) float32 {
 	mod := lr.Mod(fact)
 	net.LrateMod(mod)
 	return mod
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  ETraceParams
-
-// ETraceParams are parameters for eligibilty trace computation
-type ETraceParams struct {
-	On  bool    `desc:"if true, use eligibility trace for modulating DWt"`
-	Tau float32 `desc:"time constant for integrating eligibilty trace at the theta timescale (i.e., updated at end of theta cycle when DWt is computed)"`
-
-	Dt  float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	DtC float32 `view:"-" json:"-" xml:"-" desc:"1 - rate = 1 / tau"`
-}
-
-func (et *ETraceParams) Update() {
-	et.Dt = 1.0 / et.Tau
-	et.DtC = 1.0 - et.Dt
-}
-
-func (et *ETraceParams) Defaults() {
-	et.On = false
-	et.Tau = 10
-	et.Update()
-}
-
-// ETrFmCaP updates ETr trace from CaP
-func (et *ETraceParams) ETrFmCaP(etr *float32, caP float32) {
-	if *etr == 0 {
-		*etr = caP
-	} else {
-		*etr = et.DtC**etr + et.Dt*caP
-	}
 }

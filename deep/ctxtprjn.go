@@ -149,9 +149,6 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if pj.Learn.ETrace.On {
-				pj.Learn.ETrace.ETrFmCaP(&sy.ETr, sact*rn.CaP)
-			}
 			// following line should be ONLY diff: sact for *both* short and medium *sender*
 			// activations, which are first two args:
 			err := pj.Learn.CHLdWt(sact, sact, rn.CaP, rn.CaD)
@@ -162,9 +159,6 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 				err *= sy.LWt
 			}
 			sy.DWt += lr * err
-			if pj.Learn.ETrace.On {
-				sy.DWt *= sy.ETr
-			}
 		}
 	}
 }

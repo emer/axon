@@ -82,18 +82,14 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.XCal.On":          "true",
 					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 > 0.05
 					"Prjn.Learn.XCal.LrnThr":      "0.01",
-					"Prjn.Learn.ETrace.On":        "true",
-					"Prjn.Learn.ETrace.Tau":       "5",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
 				}},
-			{Sel: ".CTCtxt", Desc: "expt",
-				Params: params.Params{
-					"Prjn.Learn.ETrace.On":  "false", // not good here
-					"Prjn.Learn.ETrace.Tau": "5",
-				}},
+			// {Sel: ".CTCtxt", Desc: "all CT context prjns",
+			// 	Params: params.Params{
+			// 	}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.5",

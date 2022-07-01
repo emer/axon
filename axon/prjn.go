@@ -899,7 +899,7 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if !pj.Learn.ETrace.On && (sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr) {
+		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -910,11 +910,8 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if pj.Learn.ETrace.On {
-				pj.Learn.ETrace.ETrFmCaP(&sy.ETr, sn.CaP*rn.CaP)
-			}
 			if sy.Wt == 0 { // failed con, no learn
-				continue // todo: should ETrace decay?
+				continue
 			}
 			err := pj.Learn.CHLdWt(sn.CaP, sn.CaD, rn.CaP, rn.CaD)
 			// sb immediately -- enters into zero sum
@@ -924,9 +921,6 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
-			if pj.Learn.ETrace.On {
-				sy.DWt *= sy.ETr
-			}
 		}
 	}
 }
@@ -942,7 +936,7 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if !pj.Learn.ETrace.On && (sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr) {
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -952,14 +946,11 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if !pj.Learn.ETrace.On && (rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr) {
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
 				continue
 			}
 			sy := &syns[ci]
 			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
-			if pj.Learn.ETrace.On {
-				pj.Learn.ETrace.ETrFmCaP(&sy.ETr, caP)
-			}
 			if sy.Wt == 0 { // failed con, no learn
 				continue
 			}
@@ -976,9 +967,6 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
-			if pj.Learn.ETrace.On {
-				sy.DWt *= sy.ETr
-			}
 		}
 	}
 }
