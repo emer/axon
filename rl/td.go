@@ -68,6 +68,8 @@ var KiT_TDRewIntegLayer = kit.Types.AddType(&TDRewIntegLayer{}, axon.LayerProps)
 func (ly *TDRewIntegLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.RewInteg.Defaults()
+	// ly.Inhib.Layer.Gi = 0.2
+	ly.Inhib.ActAvg.Init = .5
 }
 
 // DALayer interface:
@@ -131,6 +133,8 @@ func (ly *TDDaLayer) Defaults() {
 	if ly.RewInteg == "" {
 		ly.RewInteg = "RewInteg"
 	}
+	// ly.Inhib.Layer.Gi = 0.2
+	ly.Inhib.ActAvg.Init = .5
 }
 
 func (ly *TDDaLayer) RewIntegLayer() (*TDRewIntegLayer, error) {

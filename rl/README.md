@@ -10,4 +10,4 @@ The `rl` package provides core infrastructure for dopamine neuromodulation and r
 
 * See the separate `pvlv` package for the full biologically-based pvlv model on top of this basic DA infrastructure.
 
-
+* To encode positive and negative values using spiking, 2 units are used, one for positive and the other for negative.  The `Act` value always represents the (signed) computed value, not the spike rate, where applicable.

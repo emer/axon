@@ -72,10 +72,10 @@ func (ev *CondEnv) Desc() string { return ev.Dsc }
 
 func (ev *CondEnv) Defaults() {
 	ev.TotTime = 20
-	ev.CSA.Set(true, 10, 16)
+	ev.CSA.Set(true, 1, 6) // 10, 16
 	ev.CSB.Set(false, 2, 10)
 	ev.CSC.Set(false, 2, 5)
-	ev.US.Set(true, 15, 16)
+	ev.US.Set(true, 5, 6) // 15, 16
 }
 
 func (ev *CondEnv) Validate() error {

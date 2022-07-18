@@ -74,20 +74,21 @@ func AddClampDaLayer(nt *axon.Network, name string) *ClampDaLayer {
 // Projection from Rew to RewInteg is given class TDRewToInteg -- should
 // have no learning and 1 weight.
 func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, ri, td axon.AxonLayer) {
-	rew = nt.AddLayer2D(prefix+"Rew", 1, 1, emer.Input).(axon.AxonLayer)
+	rew = &RewLayer{}
+	nt.AddLayerInit(rew, prefix+"Rew", []int{1, 2}, emer.Input)
 	rp = &TDRewPredLayer{}
-	nt.AddLayerInit(rp, prefix+"RewPred", []int{1, 1}, emer.Hidden)
+	nt.AddLayerInit(rp, prefix+"RewPred", []int{1, 2}, emer.Hidden)
 	ri = &TDRewIntegLayer{}
-	nt.AddLayerInit(ri, prefix+"RewInteg", []int{1, 1}, emer.Hidden)
+	nt.AddLayerInit(ri, prefix+"RewInteg", []int{1, 2}, emer.Hidden)
 	td = &TDDaLayer{}
-	nt.AddLayerInit(td, prefix+"TD", []int{1, 1}, emer.Hidden)
+	nt.AddLayerInit(td, prefix+"TD", []int{1, 2}, emer.Hidden)
 	ri.(*TDRewIntegLayer).RewInteg.RewPred = rp.Name()
 	td.(*TDDaLayer).RewInteg = ri.Name()
 	rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
 	ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
 	td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), YAlign: relpos.Front, Space: space})
 
-	pj := nt.ConnectLayers(rew, ri, prjn.NewFull(), emer.Forward).(axon.AxonPrjn).AsAxon()
+	pj := nt.ConnectLayers(rew, ri, prjn.NewOneToOne(), emer.Forward).(axon.AxonPrjn).AsAxon()
 	pj.SetClass("TDRewToInteg")
 	pj.Learn.Learn = false
 	pj.SWt.Init.Mean = 1

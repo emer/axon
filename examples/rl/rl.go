@@ -68,6 +68,21 @@ var ParamSets = params.Sets{
 					// "Layer.Inhib.ActAvg.Fixed": "true", // critical for ensuring weights have same impact!
 					// "Layer.Inhib.ActAvg.Init":  "0.015",
 				}},
+			{Sel: "#Rew", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.2",
+					"Layer.Inhib.ActAvg.Init": "1",
+				}},
+			{Sel: "#RewPred", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.2",
+					"Layer.Inhib.ActAvg.Init": "1",
+				}},
+			{Sel: "TDRewIntegLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.2",
+					"Layer.Inhib.ActAvg.Init": "1",
+				}},
 			{Sel: "Prjn", Desc: "no extra learning factors",
 				Params: params.Params{}},
 			{Sel: ".TDRewToInteg", Desc: "rew to integ",
@@ -76,6 +91,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "1",
 					"Prjn.SWt.Init.Var":  "0",
 					"Prjn.SWt.Init.Sym":  "false",
+					// "Prjn.PrjnScale.Abs": "2.0",
 				}},
 			{Sel: "#InputToRewPred", Desc: "input to rewpred",
 				Params: params.Params{
@@ -83,11 +99,6 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":     "0",
 					"Prjn.SWt.Init.Sym":     "false",
 					"Prjn.Learn.Lrate.Base": "0.5", // 0.1 learns fast but dies early, .02 is stable long term
-				}},
-			{Sel: "#Rew", Desc: "allow negative",
-				Params: params.Params{
-					// "Layer.Inhib.ActAvg.Fixed": "true", // critical for ensuring weights have same impact!
-					// "Layer.Inhib.ActAvg.Init":  "1",
 				}},
 		},
 	}},
@@ -147,16 +158,15 @@ func (ss *Sim) ConfigEnv() {
 	var trn *CondEnv
 	if len(ss.Envs) == 0 {
 		trn = &CondEnv{}
+		trn.Nm = etime.Train.String()
+		trn.Dsc = "training params and state"
+		trn.Defaults()
+		trn.RewVal = -1
+		trn.NoRewVal = 0
+		trn.Validate()
 	} else {
 		trn = ss.Envs.ByMode(etime.Train).(*CondEnv)
 	}
-
-	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
-	trn.Defaults()
-	trn.RewVal = 1
-	trn.NoRewVal = 0
-	trn.Validate()
 
 	trn.Init(0)
 
@@ -195,7 +205,7 @@ func (ss *Sim) ConfigNet(net *rl.Network) {
 func (ss *Sim) Init() {
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed()
-	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
+	ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
