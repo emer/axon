@@ -17,16 +17,10 @@ import (
 // estimated V(t+1) based on its learned weights in plus phase.
 // Use TDRewPredPrjn for DA modulated learning.
 type TDRewPredLayer struct {
-	axon.Layer
-	DA float32 `inactive:"+" desc:"dopamine value for this layer"`
+	Layer
 }
 
 var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, axon.LayerProps)
-
-// DALayer interface:
-
-func (ly *TDRewPredLayer) GetDA() float32   { return ly.DA }
-func (ly *TDRewPredLayer) SetDA(da float32) { ly.DA = da }
 
 func (ly *TDRewPredLayer) GeFmInc(ltime *axon.Time) {
 	for ni := range ly.Neurons {
@@ -65,9 +59,8 @@ func (tp *TDRewIntegParams) Defaults() {
 // It computes r(t) from (typically fixed) weights from a reward layer,
 // and directly accesses values from RewPred layer.
 type TDRewIntegLayer struct {
-	axon.Layer
+	Layer
 	RewInteg TDRewIntegParams `desc:"parameters for reward integration"`
-	DA       float32          `desc:"dopamine value for this layer"`
 }
 
 var KiT_TDRewIntegLayer = kit.Types.AddType(&TDRewIntegLayer{}, axon.LayerProps)
@@ -78,9 +71,6 @@ func (ly *TDRewIntegLayer) Defaults() {
 }
 
 // DALayer interface:
-
-func (ly *TDRewIntegLayer) GetDA() float32   { return ly.DA }
-func (ly *TDRewIntegLayer) SetDA(da float32) { ly.DA = da }
 
 func (ly *TDRewIntegLayer) RewPredLayer() (*TDRewPredLayer, error) {
 	tly, err := ly.Network.LayerByNameTry(ly.RewInteg.RewPred)
@@ -129,10 +119,9 @@ func (ly *TDRewIntegLayer) GeFmInc(ltime *axon.Time) {
 // TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD)
 // between the TDRewIntegLayer activations in the minus and plus phase.
 type TDDaLayer struct {
-	axon.Layer
-	SendDA   SendDA  `desc:"list of layers to send dopamine to"`
-	RewInteg string  `desc:"name of TDRewIntegLayer from which this computes the temporal derivative"`
-	DA       float32 `desc:"dopamine value for this layer"`
+	Layer
+	SendDA   SendDA `desc:"list of layers to send dopamine to"`
+	RewInteg string `desc:"name of TDRewIntegLayer from which this computes the temporal derivative"`
 }
 
 var KiT_TDDaLayer = kit.Types.AddType(&TDDaLayer{}, axon.LayerProps)
@@ -143,11 +132,6 @@ func (ly *TDDaLayer) Defaults() {
 		ly.RewInteg = "RewInteg"
 	}
 }
-
-// DALayer interface:
-
-func (ly *TDDaLayer) GetDA() float32   { return ly.DA }
-func (ly *TDDaLayer) SetDA(da float32) { ly.DA = da }
 
 func (ly *TDDaLayer) RewIntegLayer() (*TDRewIntegLayer, error) {
 	tly, err := ly.Network.LayerByNameTry(ly.RewInteg)
@@ -172,7 +156,7 @@ func (ly *TDDaLayer) Build() error {
 	return err
 }
 
-func (ly *TDDaLayer) ActFmG(ltime *axon.Time) {
+func (ly *TDDaLayer) GeFmInc(ltime *axon.Time) {
 	rily, _ := ly.RewIntegLayer()
 	if rily == nil {
 		return
@@ -186,9 +170,11 @@ func (ly *TDDaLayer) ActFmG(ltime *axon.Time) {
 			continue
 		}
 		if ltime.PlusPhase {
-			nrn.Act = da
+			nrn.SetFlag(axon.NeurHasExt)
+			nrn.Ext = da
 		} else {
-			nrn.Act = 0
+			nrn.SetFlag(axon.NeurHasExt)
+			nrn.Ext = 0
 		}
 	}
 }

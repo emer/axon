@@ -20,7 +20,7 @@ import (
 // (which can be negative -- there are no constraints).
 // Use with RWPrjn which does simple delta-rule learning on minus-plus.
 type RWPredLayer struct {
-	axon.Layer
+	Layer
 	PredRange minmax.F32 `desc:"default 0.1..0.99 range of predictions that can be represented -- having a truncated range preserves some sensitivity in dopamine at the extremes of good or poor performance"`
 	DA        float32    `inactive:"+" desc:"dopamine value for this layer"`
 }
@@ -58,7 +58,7 @@ func (ly *RWPredLayer) ActFmG(ltime *axon.Time) {
 // DA is computed -- critical for effective use of RW only for PV cases.
 // RWPred prediction is also accessed directly from Rew layer to avoid any issues.
 type RWDaLayer struct {
-	axon.Layer
+	Layer
 	SendDA    SendDA  `desc:"list of layers to send dopamine to"`
 	RewLay    string  `desc:"name of Reward-representing layer from which this computes DA -- if nothing clamped, no dopamine computed"`
 	RWPredLay string  `desc:"name of RWPredLayer layer that is subtracted from the reward value"`

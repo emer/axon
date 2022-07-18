@@ -99,7 +99,7 @@ var ParamSets = params.Sets{
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Net      *rl.Network      `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params   emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
@@ -119,7 +119,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &axon.Network{}
+	ss.Net = &rl.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
@@ -164,10 +164,10 @@ func (ss *Sim) ConfigEnv() {
 	ss.Envs.Add(trn)
 }
 
-func (ss *Sim) ConfigNet(net *axon.Network) {
+func (ss *Sim) ConfigNet(net *rl.Network) {
 	net.InitName(net, "RLCond")
 
-	rew, rp, ri, td := rl.AddTDLayers(net, "", relpos.RightOf, 4)
+	rew, rp, ri, td := net.AddTDLayers("", relpos.RightOf, 4)
 	_ = rew
 	_ = ri
 	inp := net.AddLayer2D("Input", 3, 20, emer.Input)

@@ -9,10 +9,59 @@ import (
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
+	"github.com/goki/ki/kit"
 )
 
-// NOTE: rl layers are designed to be "mix-ins" with other networks so there is no
-// RL network type -- just routines to add layers of different types.
+// rl.Network enables display of the Da variable for pure rl models
+type Network struct {
+	axon.Network
+}
+
+var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
+
+var NetworkProps = axon.NetworkProps
+
+var (
+	// NeuronVars are extra neuron variables for pcore
+	NeuronVars = []string{"DA"}
+
+	// NeuronVarsAll is the pcore collection of all neuron-level vars
+	NeuronVarsAll []string
+)
+
+func init() {
+	ln := len(axon.NeuronVars)
+	NeuronVarsAll = make([]string, len(NeuronVars)+ln)
+	copy(NeuronVarsAll, axon.NeuronVars)
+	copy(NeuronVarsAll[ln:], NeuronVars)
+}
+
+// UnitVarNames returns a list of variable names available on the units in this layer
+func (nt *Network) UnitVarNames() []string {
+	return NeuronVarsAll
+}
+
+// AddClampDaLayer adds a ClampDaLayer of given name
+func (nt *Network) AddClampDaLayer(name string) *ClampDaLayer {
+	return AddClampDaLayer(nt.AsAxon(), name)
+}
+
+// AddTDLayers adds the standard TD temporal differences layers, generating a DA signal.
+// Projection from Rew to RewInteg is given class TDRewToInteg -- should
+// have no learning and 1 weight.
+func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float32) (rew, rp, ri, td axon.AxonLayer) {
+	return AddTDLayers(nt.AsAxon(), prefix, rel, space)
+}
+
+// AddRWLayers adds simple Rescorla-Wagner (PV only) dopamine system, with a primary
+// Reward layer, a RWPred prediction layer, and a dopamine layer that computes diff.
+// Only generates DA when Rew layer has external input -- otherwise zero.
+func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float32) (rew, rp, da axon.AxonLayer) {
+	return AddRWLayers(nt.AsAxon(), prefix, rel, space)
+}
+
+//////////////////////////////////////////////////////////////
+// Special layer types
 
 // AddClampDaLayer adds a ClampDaLayer of given name
 func AddClampDaLayer(nt *axon.Network, name string) *ClampDaLayer {
