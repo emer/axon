@@ -42,22 +42,25 @@ func (ly *TDRewPredLayer) GeFmInc(ltime *axon.Time) {
 
 // TDRewIntegParams are params for reward integrator layer
 type TDRewIntegParams struct {
-	Discount float32 `desc:"discount factor -- how much to discount the future prediction from RewPred"`
-	RewPred  string  `desc:"name of TDRewPredLayer to get reward prediction from "`
+	Discount    float32 `desc:"discount factor -- how much to discount the future prediction from RewPred"`
+	RewPredGain float32 `desc:"gain factor on rew pred activations"`
+	RewPred     string  `desc:"name of TDRewPredLayer to get reward prediction from "`
+	Rew         string  `desc:"name of RewLayer to get current reward from "`
 }
 
 func (tp *TDRewIntegParams) Defaults() {
 	tp.Discount = 0.9
+	tp.RewPredGain = 1
 	if tp.RewPred == "" {
 		tp.RewPred = "RewPred"
+		tp.Rew = "Rew"
 	}
 }
 
 // TDRewIntegLayer is the temporal differences reward integration layer.
 // It represents estimated value V(t) in the minus phase, and
 // estimated V(t+1) + r(t) in the plus phase.
-// It computes r(t) from (typically fixed) weights from a reward layer,
-// and directly accesses values from RewPred layer.
+// It directly accesses (t) from Rew layer, and V(t) from RewPred layer.
 type TDRewIntegLayer struct {
 	Layer
 	RewInteg TDRewIntegParams `desc:"parameters for reward integration"`
@@ -83,6 +86,38 @@ func (ly *TDRewIntegLayer) RewPredLayer() (*TDRewPredLayer, error) {
 	return tly.(*TDRewPredLayer), nil
 }
 
+func (ly *TDRewIntegLayer) RewLayer() (*RewLayer, error) {
+	tly, err := ly.Network.LayerByNameTry(ly.RewInteg.Rew)
+	if err != nil {
+		log.Printf("TDRewIntegLayer %s RewLayer: %v\n", ly.Name(), err)
+		return nil, err
+	}
+	return tly.(*RewLayer), nil
+}
+
+func (ly *TDRewIntegLayer) RewPredAct(ltime *axon.Time) float32 {
+	rply, _ := ly.RewPredLayer()
+	if rply == nil {
+		return 0
+	}
+	rly, _ := ly.RewLayer()
+	if rly == nil {
+		return 0
+	}
+	rew := rly.Neurons[0].Act
+	rpn0 := rply.Neurons[0]
+	rpn1 := rply.Neurons[1]
+	rpAct := rew + ly.RewInteg.RewPredGain*(rpn0.Act-rpn1.Act)
+	rpActP := ly.RewInteg.RewPredGain * (rpn0.ActP - rpn1.ActP)
+	var rpval float32
+	if ltime.PlusPhase {
+		rpval = ly.RewInteg.Discount * rpAct
+	} else {
+		rpval = rpActP
+	}
+	return rpval
+}
+
 // Build constructs the layer state, including calling Build on the projections.
 func (ly *TDRewIntegLayer) Build() error {
 	err := ly.Layer.Build()
@@ -93,25 +128,31 @@ func (ly *TDRewIntegLayer) Build() error {
 	return err
 }
 
-func (ly *TDRewIntegLayer) GeFmInc(ltime *axon.Time) {
-	rply, _ := ly.RewPredLayer()
-	if rply == nil {
-		return
-	}
-	rpActP := rply.Neurons[0].ActP
-	rpAct := rply.Neurons[0].Act
+func (ly *TDRewIntegLayer) GFmInc(ltime *axon.Time) {
+	ly.RecvGInc(ltime)
+	rpAct := ly.RewPredAct(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		if ltime.PlusPhase {
-			nrn.SetFlag(axon.NeurHasExt)
-			nrn.Ext = ly.RewInteg.Discount * rpAct
-		} else {
-			nrn.SetFlag(axon.NeurHasExt)
-			nrn.Ext = rpActP // previous actP
+		nrn.SetFlag(axon.NeurHasExt)
+		SetNeuronExtPosNeg(nrn, ni, rpAct)
+		ly.GFmIncNeur(ltime, nrn, 0) // no extra
+	}
+}
+
+// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
+// and updates learning running-average activations from that Act
+func (ly *TDRewIntegLayer) ActFmG(ltime *axon.Time) {
+	ly.Layer.ActFmG(ltime)
+	rpAct := ly.RewPredAct(ltime)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
 		}
+		nrn.Act = rpAct
 	}
 }
 
@@ -146,6 +187,20 @@ func (ly *TDDaLayer) RewIntegLayer() (*TDRewIntegLayer, error) {
 	return tly.(*TDRewIntegLayer), nil
 }
 
+func (ly *TDDaLayer) RewIntegDA(ltime *axon.Time) float32 {
+	rily, _ := ly.RewIntegLayer()
+	if rily == nil {
+		return 0
+	}
+	rpActP := rily.Neurons[0].Act
+	rpActM := rily.Neurons[0].ActM
+	da := rpActP - rpActM
+	if !ltime.PlusPhase {
+		da = 0
+	}
+	return da
+}
+
 // Build constructs the layer state, including calling Build on the projections.
 func (ly *TDDaLayer) Build() error {
 	err := ly.Layer.Build()
@@ -160,26 +215,29 @@ func (ly *TDDaLayer) Build() error {
 	return err
 }
 
-func (ly *TDDaLayer) GeFmInc(ltime *axon.Time) {
-	rily, _ := ly.RewIntegLayer()
-	if rily == nil {
-		return
-	}
-	rpActP := rily.Neurons[0].Act
-	rpActM := rily.Neurons[0].ActM
-	da := rpActP - rpActM
+func (ly *TDDaLayer) GFmInc(ltime *axon.Time) {
+	ly.RecvGInc(ltime)
+	da := ly.RewIntegDA(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		if ltime.PlusPhase {
-			nrn.SetFlag(axon.NeurHasExt)
-			nrn.Ext = da
-		} else {
-			nrn.SetFlag(axon.NeurHasExt)
-			nrn.Ext = 0
+		nrn.SetFlag(axon.NeurHasExt)
+		SetNeuronExtPosNeg(nrn, ni, da)
+		ly.GFmIncNeur(ltime, nrn, 0) // no extra
+	}
+}
+
+func (ly *TDDaLayer) ActFmG(ltime *axon.Time) {
+	ly.Layer.ActFmG(ltime)
+	da := ly.RewIntegDA(ltime)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
 		}
+		nrn.Act = da
 	}
 }
 

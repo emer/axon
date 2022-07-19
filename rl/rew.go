@@ -23,6 +23,25 @@ func (ly *RewLayer) Defaults() {
 	ly.Inhib.ActAvg.Init = 0.5
 }
 
+// SetNeuronExtPosNeg sets neuron Ext value based on neuron index
+// with positive values going in first unit, negative values rectified
+// to positive in 2nd unit
+func SetNeuronExtPosNeg(nrn *axon.Neuron, ni int, val float32) {
+	if ni == 0 {
+		if val >= 0 {
+			nrn.Ext = val
+		} else {
+			nrn.Ext = 0
+		}
+	} else {
+		if val >= 0 {
+			nrn.Ext = 0
+		} else {
+			nrn.Ext = -val
+		}
+	}
+}
+
 func (ly *RewLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
 	var ext0 float32
@@ -31,20 +50,12 @@ func (ly *RewLayer) GFmInc(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
+		nrn.SetFlag(axon.NeurHasExt)
 		extOrig := nrn.Ext
 		if ni == 0 {
 			ext0 = nrn.Ext
-			if ext0 < 0 {
-				nrn.Ext = 0
-			}
-		} else {
-			nrn.SetFlag(axon.NeurHasExt)
-			if ext0 >= 0 {
-				nrn.Ext = 0
-			} else {
-				nrn.Ext = -ext0
-			}
 		}
+		SetNeuronExtPosNeg(nrn, ni, ext0)
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 		nrn.Ext = extOrig
 	}
@@ -62,9 +73,7 @@ func (ly *RewLayer) ActFmG(ltime *axon.Time) {
 		}
 		if ni == 0 {
 			ext0 = nrn.Ext
-			nrn.Act = ext0
-		} else {
-			nrn.Act = ext0
 		}
+		nrn.Act = ext0
 	}
 }

@@ -7,7 +7,6 @@ package rl
 import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/goki/ki/kit"
 )
@@ -83,24 +82,11 @@ func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 	td = &TDDaLayer{}
 	nt.AddLayerInit(td, prefix+"TD", []int{1, 2}, emer.Hidden)
 	ri.(*TDRewIntegLayer).RewInteg.RewPred = rp.Name()
+	ri.(*TDRewIntegLayer).RewInteg.Rew = rew.Name()
 	td.(*TDDaLayer).RewInteg = ri.Name()
 	rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
 	ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
 	td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), YAlign: relpos.Front, Space: space})
-
-	pj := nt.ConnectLayers(rew, ri, prjn.NewOneToOne(), emer.Forward).(axon.AxonPrjn).AsAxon()
-	pj.SetClass("TDRewToInteg")
-	pj.Learn.Learn = false
-	pj.SWt.Init.Mean = 1
-	pj.SWt.Init.Var = 0
-	pj.SWt.Init.Sym = false
-	// {Sel: ".TDRewToInteg", Desc: "rew to integ",
-	// 	Params: params.Params{
-	// 		"Prjn.Learn.Learn": "false",
-	// 		"Prjn.SWt.Init.Mean": "1",
-	// 		"Prjn.SWt.Init.Var":  "0",
-	// 		"Prjn.SWt.Init.Sym":  "false",
-	// 	}},
 	return
 }
 
