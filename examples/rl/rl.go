@@ -98,7 +98,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean":    "0",
 					"Prjn.SWt.Init.Var":     "0",
 					"Prjn.SWt.Init.Sym":     "false",
-					"Prjn.Learn.Lrate.Base": "0.5", // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.Learn.Lrate.Base": "0.2",
 				}},
 		},
 	}},
@@ -249,7 +249,7 @@ func (ss *Sim) ConfigLoops() {
 	// Logging
 
 	man.AddOnEndToAll("Log", ss.Log)
-	axon.LooperResetLogBelow(man, &ss.Logs)
+	// axon.LooperResetLogBelow(man, &ss.Logs)
 
 	////////////////////////////////////////////
 	// GUI
@@ -304,7 +304,7 @@ func (ss *Sim) NewRun() {
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
-	// ss.Logs.ResetLog(etime.Train, etime.Epoch)
+	ss.Logs.ResetLog(etime.Train, etime.Trial)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -372,8 +372,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	switch {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
-	case time == etime.Trial:
-		row = ss.Stats.Int("Trial")
+		// case time == etime.Trial:
+		// 	row = ss.Stats.Int("Trial")
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -409,6 +409,14 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
+
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Reset Trial Log", Icon: "update",
+		Tooltip: "reset trial log .",
+		Func: func() {
+			ss.Logs.ResetLog(etime.Train, etime.Trial)
+			axon.LooperUpdtPlots(ss.Loops, &ss.GUI)
+		},
+	})
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
 		Icon:    "file-markdown",

@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/deep"
 	"github.com/goki/ki/kit"
 )
 
@@ -22,19 +21,8 @@ type TDRewPredLayer struct {
 
 var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, axon.LayerProps)
 
-func (ly *TDRewPredLayer) GeFmInc(ltime *axon.Time) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if ltime.PlusPhase {
-			nrn.ClearFlag(axon.NeurHasExt)
-		} else {
-			nrn.SetFlag(axon.NeurHasExt)
-			nrn.Ext = nrn.ActP // previous actP
-		}
-	}
+func (ly *TDRewPredLayer) Defaults() {
+	ly.Layer.Defaults()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -50,7 +38,7 @@ type TDRewIntegParams struct {
 
 func (tp *TDRewIntegParams) Defaults() {
 	tp.Discount = 0.9
-	tp.RewPredGain = 1
+	tp.RewPredGain = 5
 	if tp.RewPred == "" {
 		tp.RewPred = "RewPred"
 		tp.Rew = "Rew"
@@ -253,17 +241,21 @@ func (ly *TDDaLayer) CyclePost(ltime *axon.Time) {
 //  TDRewPredPrjn
 
 // TDRewPredPrjn does dopamine-modulated learning for reward prediction:
-// DWt = Da * Send.ActQ0 (activity on *previous* timestep)
+// DWt = Da * Send.ActPrv (activity on *previous* timestep)
 // Use in TDRewPredLayer typically to generate reward predictions.
-// Has no weight bounds or limits on sign etc.
+// If the Da sign is positive, the first recv unit learns fully;
+// for negative, second one learns fully.  Lower lrate applies for
+// opposite cases.  Weights are positive-only.
 type TDRewPredPrjn struct {
 	axon.Prjn
+	OppSignLRate float32 `desc:"how much to learn on opposite DA sign coding neuron (0..1)"`
 }
 
-var KiT_TDRewPredPrjn = kit.Types.AddType(&TDRewPredPrjn{}, deep.PrjnProps)
+var KiT_TDRewPredPrjn = kit.Types.AddType(&TDRewPredPrjn{}, axon.PrjnProps)
 
 func (pj *TDRewPredPrjn) Defaults() {
 	pj.Prjn.Defaults()
+	pj.OppSignLRate = 0
 	// no additional factors
 	pj.SWt.Adapt.SigGain = 1
 }
@@ -282,14 +274,25 @@ func (pj *TDRewPredPrjn) DWt(ltime *axon.Time) {
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
-		// scons := pj.SConIdx[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
 
 		for ci := range syns {
 			sy := &syns[ci]
-			// ri := scons[ci]
+			ri := scons[ci]
+			eff_lr := lr
+			if ri == 0 {
+				if da < 0 {
+					eff_lr *= pj.OppSignLRate
+				}
+			} else {
+				eff_lr = -eff_lr
+				if da >= 0 {
+					eff_lr *= pj.OppSignLRate
+				}
+			}
 
 			dwt := da * sn.ActPrv // no recv unit activation, prior trial act
-			sy.DWt += lr * dwt
+			sy.DWt += eff_lr * dwt
 		}
 	}
 }
@@ -302,7 +305,10 @@ func (pj *TDRewPredPrjn) WtFmDWt(ltime *axon.Time) {
 	for si := range pj.Syns {
 		sy := &pj.Syns[si]
 		if sy.DWt != 0 {
-			sy.Wt += sy.DWt // straight update, no limits or anything
+			sy.Wt += sy.DWt
+			if sy.Wt < 0 {
+				sy.Wt = 0
+			}
 			sy.LWt = sy.Wt
 			sy.DWt = 0
 		}
