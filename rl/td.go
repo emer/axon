@@ -23,6 +23,21 @@ var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, axon.LayerProps)
 
 func (ly *TDRewPredLayer) Defaults() {
 	ly.Layer.Defaults()
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
+	ly.Act.Dt.GeTau = 40
+}
+
+func (ly *TDRewPredLayer) ActFmG(ltime *axon.Time) {
+	ly.Layer.ActFmG(ltime)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.Act = nrn.Ge
+		nrn.ActInt = nrn.Act
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +53,7 @@ type TDRewIntegParams struct {
 
 func (tp *TDRewIntegParams) Defaults() {
 	tp.Discount = 0.9
-	tp.RewPredGain = 5
+	tp.RewPredGain = 1
 	if tp.RewPred == "" {
 		tp.RewPred = "RewPred"
 		tp.Rew = "Rew"
@@ -95,7 +110,7 @@ func (ly *TDRewIntegLayer) RewPredAct(ltime *axon.Time) float32 {
 	rew := rly.Neurons[0].Act
 	rpn0 := rply.Neurons[0]
 	rpn1 := rply.Neurons[1]
-	rpAct := rew + ly.RewInteg.RewPredGain*(rpn0.Act-rpn1.Act)
+	rpAct := rew + ly.RewInteg.RewPredGain*(rpn0.Ge-rpn1.Ge) // linear
 	rpActP := ly.RewInteg.RewPredGain * (rpn0.ActP - rpn1.ActP)
 	var rpval float32
 	if ltime.PlusPhase {
@@ -130,8 +145,6 @@ func (ly *TDRewIntegLayer) GFmInc(ltime *axon.Time) {
 	}
 }
 
-// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
-// and updates learning running-average activations from that Act
 func (ly *TDRewIntegLayer) ActFmG(ltime *axon.Time) {
 	ly.Layer.ActFmG(ltime)
 	rpAct := ly.RewPredAct(ltime)
@@ -141,6 +154,7 @@ func (ly *TDRewIntegLayer) ActFmG(ltime *axon.Time) {
 			continue
 		}
 		nrn.Act = rpAct
+		nrn.ActInt = nrn.Act
 	}
 }
 
@@ -226,6 +240,7 @@ func (ly *TDDaLayer) ActFmG(ltime *axon.Time) {
 			continue
 		}
 		nrn.Act = da
+		nrn.ActInt = nrn.Act
 	}
 }
 
@@ -255,7 +270,7 @@ var KiT_TDRewPredPrjn = kit.Types.AddType(&TDRewPredPrjn{}, axon.PrjnProps)
 
 func (pj *TDRewPredPrjn) Defaults() {
 	pj.Prjn.Defaults()
-	pj.OppSignLRate = 0
+	pj.OppSignLRate = 1.0
 	// no additional factors
 	pj.SWt.Adapt.SigGain = 1
 }

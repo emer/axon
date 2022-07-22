@@ -44,7 +44,7 @@ type Neuron struct {
 	CaM    float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
 	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
-	PctDWt float32 `desc:"percent of synapses that had DWt updated on the current cycle, for sending-neuron"`
+	PctDWt float32 `desc:"for experimental Kinase continuous learning algorithm: percent of synapses that had DWt updated on the current cycle, for sending-neuron"`
 
 	ActInt float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM)"`
 	ActSt1 float32 `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`

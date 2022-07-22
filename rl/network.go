@@ -80,7 +80,7 @@ func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 	ri = &TDRewIntegLayer{}
 	nt.AddLayerInit(ri, prefix+"RewInteg", []int{1, 2}, emer.Hidden)
 	td = &TDDaLayer{}
-	nt.AddLayerInit(td, prefix+"TD", []int{1, 2}, emer.Hidden)
+	nt.AddLayerInit(td, prefix+"TD", []int{1, 1}, emer.Hidden)
 	ri.(*TDRewIntegLayer).RewInteg.RewPred = rp.Name()
 	ri.(*TDRewIntegLayer).RewInteg.Rew = rew.Name()
 	td.(*TDDaLayer).RewInteg = ri.Name()

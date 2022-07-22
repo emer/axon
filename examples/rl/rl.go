@@ -65,8 +65,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "input fixed act",
 				Params: params.Params{
-					// "Layer.Inhib.ActAvg.Fixed": "true", // critical for ensuring weights have same impact!
-					// "Layer.Inhib.ActAvg.Init":  "0.015",
+					"Layer.Act.Decay.Act":     "1",
+					"Layer.Act.Decay.Glong":   "1",
+					"Layer.Inhib.ActAvg.Init": "0.05",
 				}},
 			{Sel: "#Rew", Desc: "",
 				Params: params.Params{
@@ -77,11 +78,14 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "0.2",
 					"Layer.Inhib.ActAvg.Init": "1",
+					"Layer.Act.Dt.GeTau":      "40",
 				}},
 			{Sel: "TDRewIntegLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.2",
-					"Layer.Inhib.ActAvg.Init": "1",
+					"Layer.Inhib.Layer.Gi":       "0.2",
+					"Layer.Inhib.ActAvg.Init":    "1",
+					"Layer.RewInteg.Discount":    "0.9",
+					"Layer.RewInteg.RewPredGain": "1.0",
 				}},
 			{Sel: "Prjn", Desc: "no extra learning factors",
 				Params: params.Params{}},
@@ -98,7 +102,8 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean":    "0",
 					"Prjn.SWt.Init.Var":     "0",
 					"Prjn.SWt.Init.Sym":     "false",
-					"Prjn.Learn.Lrate.Base": "0.2",
+					"Prjn.Learn.Lrate.Base": "0.1",
+					"Prjn.OppSignLRate":     "1.0",
 				}},
 		},
 	}},
@@ -223,7 +228,7 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 30).AddTime(etime.Trial, 20).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 300).AddTime(etime.Trial, 20).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
@@ -414,7 +419,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "reset trial log .",
 		Func: func() {
 			ss.Logs.ResetLog(etime.Train, etime.Trial)
-			axon.LooperUpdtPlots(ss.Loops, &ss.GUI)
+			ss.GUI.UpdatePlot(etime.Train, etime.Trial)
 		},
 	})
 
