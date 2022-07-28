@@ -271,7 +271,6 @@ var KiT_TDRewPredPrjn = kit.Types.AddType(&TDRewPredPrjn{}, axon.PrjnProps)
 func (pj *TDRewPredPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	pj.OppSignLRate = 1.0
-	// no additional factors
 	pj.SWt.Adapt.SigGain = 1
 }
 

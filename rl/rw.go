@@ -22,7 +22,6 @@ import (
 type RWPredLayer struct {
 	Layer
 	PredRange minmax.F32 `desc:"default 0.1..0.99 range of predictions that can be represented -- having a truncated range preserves some sensitivity in dopamine at the extremes of good or poor performance"`
-	DA        float32    `inactive:"+" desc:"dopamine value for this layer"`
 }
 
 var KiT_RWPredLayer = kit.Types.AddType(&RWPredLayer{}, axon.LayerProps)
@@ -30,21 +29,20 @@ var KiT_RWPredLayer = kit.Types.AddType(&RWPredLayer{}, axon.LayerProps)
 func (ly *RWPredLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.PredRange.Set(0.01, 0.99)
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
+	ly.Act.Dt.GeTau = 40
 }
 
-// DALayer interface:
-
-func (ly *RWPredLayer) GetDA() float32   { return ly.DA }
-func (ly *RWPredLayer) SetDA(da float32) { ly.DA = da }
-
-// ActFmG computes linear activation for RWPred
 func (ly *RWPredLayer) ActFmG(ltime *axon.Time) {
+	ly.Layer.ActFmG(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
 		nrn.Act = ly.PredRange.ClipVal(nrn.Ge) // clipped linear
+		nrn.ActInt = nrn.Act
 	}
 }
 
@@ -59,10 +57,9 @@ func (ly *RWPredLayer) ActFmG(ltime *axon.Time) {
 // RWPred prediction is also accessed directly from Rew layer to avoid any issues.
 type RWDaLayer struct {
 	Layer
-	SendDA    SendDA  `desc:"list of layers to send dopamine to"`
-	RewLay    string  `desc:"name of Reward-representing layer from which this computes DA -- if nothing clamped, no dopamine computed"`
-	RWPredLay string  `desc:"name of RWPredLayer layer that is subtracted from the reward value"`
-	DA        float32 `inactive:"+" desc:"dopamine value for this layer"`
+	SendDA    SendDA `desc:"list of layers to send dopamine to"`
+	RewLay    string `desc:"name of Reward-representing layer from which this computes DA -- if nothing clamped, no dopamine computed"`
+	RWPredLay string `desc:"name of RWPredLayer layer that is subtracted from the reward value"`
 }
 
 var KiT_RWDaLayer = kit.Types.AddType(&RWDaLayer{}, deep.LayerProps)
@@ -76,11 +73,6 @@ func (ly *RWDaLayer) Defaults() {
 		ly.RWPredLay = "RWPred"
 	}
 }
-
-// DALayer interface:
-
-func (ly *RWDaLayer) GetDA() float32   { return ly.DA }
-func (ly *RWDaLayer) SetDA(da float32) { ly.DA = da }
 
 // RWLayers returns the reward and RWPred layers based on names
 func (ly *RWDaLayer) RWLayers() (*axon.Layer, *RWPredLayer, error) {
@@ -112,6 +104,7 @@ func (ly *RWDaLayer) Build() error {
 }
 
 func (ly *RWDaLayer) ActFmG(ltime *axon.Time) {
+	ly.Layer.ActFmG(ltime)
 	rly, ply, _ := ly.RWLayers()
 	if rly == nil || ply == nil {
 		return
@@ -134,6 +127,7 @@ func (ly *RWDaLayer) ActFmG(ltime *axon.Time) {
 		} else {
 			nrn.Act = 0 // nothing
 		}
+		nrn.ActInt = nrn.Act
 	}
 }
 
@@ -153,14 +147,15 @@ func (ly *RWDaLayer) CyclePost(ltime *axon.Time) {
 // Has no weight bounds or limits on sign etc.
 type RWPrjn struct {
 	axon.Prjn
-	DaTol float32 `desc:"tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal"`
+	DaTol        float32 `desc:"tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal"`
+	OppSignLRate float32 `desc:"how much to learn on opposite DA sign coding neuron (0..1)"`
 }
 
 var KiT_RWPrjn = kit.Types.AddType(&RWPrjn{}, deep.PrjnProps)
 
 func (pj *RWPrjn) Defaults() {
 	pj.Prjn.Defaults()
-	// no additional factors
+	pj.OppSignLRate = 1.0
 	pj.SWt.Adapt.SigGain = 1
 }
 
@@ -197,9 +192,20 @@ func (pj *RWPrjn) DWt(ltime *axon.Time) {
 			if rn.Ge < rn.Act && da < 0 { // clipped at bottom, saturate down
 				da = 0
 			}
+			eff_lr := lr
+			if ri == 0 {
+				if da < 0 {
+					eff_lr *= pj.OppSignLRate
+				}
+			} else {
+				eff_lr = -eff_lr
+				if da >= 0 {
+					eff_lr *= pj.OppSignLRate
+				}
+			}
 
 			dwt := da * sn.Act // no recv unit activation
-			sy.DWt += lr * dwt
+			sy.DWt += eff_lr * dwt
 		}
 	}
 }
@@ -213,6 +219,9 @@ func (pj *RWPrjn) WtFmDWt(ltime *axon.Time) {
 		sy := &pj.Syns[si]
 		if sy.DWt != 0 {
 			sy.Wt += sy.DWt // straight update, no limits or anything
+			if sy.Wt < 0 {
+				sy.Wt = 0
+			}
 			sy.LWt = sy.Wt
 			sy.DWt = 0
 		}

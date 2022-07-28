@@ -97,6 +97,15 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Sym":  "false",
 					// "Prjn.PrjnScale.Abs": "2.0",
 				}},
+			{Sel: "RWPrjn", Desc: "RW pred",
+				Params: params.Params{
+					"Prjn.SWt.Init.Mean":    "0",
+					"Prjn.SWt.Init.Var":     "0",
+					"Prjn.SWt.Init.Sym":     "false",
+					"Prjn.Learn.Lrate.Base": "0.1",
+					"Prjn.OppSignLRate":     "1.0",
+					"Prjn.DaTol":            "0.0",
+				}},
 			{Sel: "#InputToRewPred", Desc: "input to rewpred",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean":    "0",
@@ -166,7 +175,7 @@ func (ss *Sim) ConfigEnv() {
 		trn.Nm = etime.Train.String()
 		trn.Dsc = "training params and state"
 		trn.Defaults()
-		trn.RewVal = -1
+		trn.RewVal = 1 // -1
 		trn.NoRewVal = 0
 		trn.Validate()
 	} else {
@@ -190,7 +199,18 @@ func (ss *Sim) ConfigNet(net *rl.Network) {
 
 	net.ConnectLayersPrjn(inp, rp, prjn.NewFull(), emer.Forward, &rl.TDRewPredPrjn{})
 
-	td.(*rl.TDDaLayer).SendDA.AddAllBut(net, nil) // send dopamine to all layers..
+	rwrp := &rl.RWPredLayer{}
+	net.AddLayerInit(rwrp, "RWPred", []int{1, 2}, emer.Hidden)
+	rwda := &rl.RWDaLayer{}
+	net.AddLayerInit(rwda, "RWDA", []int{1, 1}, emer.Hidden)
+	rwda.RewLay = rew.Name()
+	rwrp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: rp.Name(), XAlign: relpos.Left, Space: 2})
+	rwda.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rwrp.Name(), YAlign: relpos.Front, Space: 2})
+
+	net.ConnectLayersPrjn(inp, rwrp, prjn.NewFull(), emer.Forward, &rl.RWPrjn{})
+
+	td.(*rl.TDDaLayer).SendDA.Add(rp.Name(), ri.Name())
+	rwda.SendDA.Add(rwrp.Nm)
 
 	net.Defaults()
 	ss.Params.SetObject("Network")

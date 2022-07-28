@@ -94,12 +94,11 @@ func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 // Reward layer, a RWPred prediction layer, and a dopamine layer that computes diff.
 // Only generates DA when Rew layer has external input -- otherwise zero.
 func AddRWLayers(nt *axon.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, da axon.AxonLayer) {
-	rew = nt.AddLayer2D(prefix+"Rew", 1, 1, emer.Input).(axon.AxonLayer)
+	rew = nt.AddLayer2D(prefix+"Rew", 1, 2, emer.Input).(axon.AxonLayer)
 	rp = &RWPredLayer{}
-	nt.AddLayerInit(rp, prefix+"RWPred", []int{1, 1}, emer.Hidden)
+	nt.AddLayerInit(rp, prefix+"RWPred", []int{1, 2}, emer.Hidden)
 	da = &RWDaLayer{}
 	nt.AddLayerInit(da, prefix+"DA", []int{1, 1}, emer.Hidden)
-	da.(*RWDaLayer).RewLay = rew.Name()
 	da.(*RWDaLayer).RewLay = rew.Name()
 	rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
 	da.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
