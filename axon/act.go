@@ -140,7 +140,6 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
-	nrn.GnmdaRaw = 0
 }
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
@@ -196,7 +195,6 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
-	nrn.GnmdaRaw = 0
 
 	ac.InitLongActs(nrn)
 }
@@ -218,10 +216,10 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// NMDAFmRaw updates all the NMDA variables from GnmdaRaw and current Vm, Spiking
+// NMDAFmRaw updates all the NMDA variables from GeRaw and current Vm, Spiking
 func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	// important: add other sources of GeRaw here in NMDA driver
-	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GnmdaRaw+geExt)
+	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GeRaw+geExt)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 }
 

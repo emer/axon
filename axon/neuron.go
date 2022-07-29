@@ -86,16 +86,15 @@ type Neuron struct {
 	VgccCa   float32 `desc:"VGCC calcium flux"`
 	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 
-	GnmdaSyn float32 `desc:"integrated NMDA recv synaptic current -- adds GnmdaRaw and decays with time constant"`
+	GnmdaSyn float32 `desc:"integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant"`
 	Gnmda    float32 `desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`
 	RnmdaSyn float32 `desc:"recv-side NMDA for learning, vs activity: integrated NMDA recv synaptic current -- adds GnmdaRaw and decays with time constant"`
 	RCa      float32 `desc:"Receiver-based voltage-driven postsynaptic calcium current factor, reflecting Mg block and V-based current drive, both a function of VmDend: Mg * Vca -- RCa * SnmdaO = total synaptic Ca at each moment"`
 	SnmdaO   float32 `desc:"Sender-based number of open NMDA channels based on spiking activity and consequent glutamate release for all sending synapses -- this is the presynaptic component of NMDA activation that is used for computing Ca levels for learning -- increases by (1-SnmdaI)*(1-SnmdaO) with spiking and decays otherwise"`
 	SnmdaI   float32 `desc:"Sender-based inhibitory factor on NMDA as a function of sending (presynaptic) spiking history, capturing the allosteric dynamics from Urakubo et al (2008) model.  Increases to 1 with every spike, and decays back to 0 with its own longer decay rate."`
 
-	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
-	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
-	GnmdaRaw float32 `desc:"raw NMDA recv synaptic input aggregated across all synapses -- always 0 in display because it is reset during computation"`
+	GeRaw float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
+	GiRaw float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
 }
 
 var NeuronVars = []string{}

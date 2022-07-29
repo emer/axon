@@ -196,11 +196,9 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		mgg, cav := ac.NMDA.VFactors(rn.VmDend) // note: using Vm does NOT work well at all
 		nex.NMDAGmg = mgg
 		rn.RCa = rn.RnmdaSyn * mgg * cav
-		rn.GnmdaRaw = 0
 		rn.RCa = ly.Learn.NeurCa.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 	} else {
 		rn.GeRaw = ge
-		rn.GnmdaRaw = ge
 		ac.Dt.GeSynFmRaw(rn.GeRaw, &rn.GeSyn, ac.Init.Ge)
 		rn.Ge = rn.GeSyn
 		rn.Gi = gi

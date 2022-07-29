@@ -67,14 +67,13 @@ func (ln *LearnNeurParams) DecayNeurCa(nrn *Neuron, decay float32) {
 	nrn.SnmdaI -= decay * nrn.SnmdaI
 }
 
-// LrnNMDAFmRaw updates all the learning NMDA variables from GnmdaRaw and current Vm, Spiking
+// LrnNMDAFmRaw updates all the learning NMDA variables from GeRaw and current Vm, Spiking
 func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
-	nrn.RnmdaSyn = ln.LrnNMDA.NMDASyn(nrn.RnmdaSyn, nrn.GnmdaRaw+geExt)
+	nrn.RnmdaSyn = ln.LrnNMDA.NMDASyn(nrn.RnmdaSyn, nrn.GeRaw+geExt)
 	mgg, cav := ln.LrnNMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
 	nrn.RCa = nrn.RnmdaSyn * mgg * cav
 	nrn.RCa += nrn.VgccCa
 	nrn.RCa = ln.NeurCa.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
-	nrn.GnmdaRaw = 0                    // reset now
 }
 
 // CaFmSpike updates the simple spike-based calcium signaling vals.

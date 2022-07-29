@@ -726,7 +726,6 @@ func (pj *Prjn) RecvGIncStats() {
 			rn := &rlay.Neurons[ri]
 			g := pj.GBuf[bi]
 			rn.GeRaw += g
-			rn.GnmdaRaw += g
 			pj.GBuf[bi] = 0
 			if g > max {
 				max = g
@@ -775,7 +774,6 @@ func (pj *Prjn) RecvGIncNoStats() {
 			rn := &rlay.Neurons[ri]
 			g := pj.GBuf[bi]
 			rn.GeRaw += g
-			rn.GnmdaRaw += g
 			pj.GBuf[bi] = 0
 		}
 	}
