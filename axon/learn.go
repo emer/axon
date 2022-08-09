@@ -134,7 +134,7 @@ func (np *NeurCaParams) CaFmSpike(nrn *Neuron) {
 	nsp := np.SpikeG * nrn.Spike
 	nrn.CaSyn += np.SynDt * (nsp - nrn.CaSyn)
 	if np.Trace {
-		nrn.CaM += np.MDt * (np.TrGeG*nrn.Ge - nrn.CaM)
+		nrn.CaM += np.MDt * (np.TrGeG*nrn.RCa - nrn.CaM)
 		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
 		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
 	} else {
