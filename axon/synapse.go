@@ -27,13 +27,14 @@ type Synapse struct {
 	CaM   float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`
 	CaP   float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD   float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	Tr    float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning."`
 }
 
 func (sy *Synapse) VarNames() []string {
 	return SynapseVars
 }
 
-var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "Ca", "CaM", "CaP", "CaD"}
+var SynapseVars = []string{"Wt", "SWt", "LWt", "DWt", "DSWt", "Ca", "CaM", "CaP", "CaD", "Tr"}
 
 var SynapseVarProps = map[string]string{
 	"DWt":  `auto-scale:"+"`,
@@ -41,6 +42,7 @@ var SynapseVarProps = map[string]string{
 	"CaM":  `auto-scale:"+"`,
 	"CaP":  `auto-scale:"+"`,
 	"CaD":  `auto-scale:"+"`,
+	"Tr":   `auto-scale:"+"`,
 }
 
 var SynapseVarsMap map[string]int

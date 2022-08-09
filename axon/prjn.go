@@ -879,47 +879,16 @@ func (pj *Prjn) DWt(ltime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
-	if pj.Learn.KinaseCa.NeurCa {
+	if pj.Learn.Trace.On {
+		if pj.Learn.KinaseCa.NeurCa {
+			pj.DWtTraceNeurSpkTheta(ltime)
+		} else {
+			pj.DWtTraceSynSpkTheta(ltime)
+		}
+	} else if pj.Learn.KinaseCa.NeurCa {
 		pj.DWtNeurSpkTheta(ltime)
 	} else {
 		pj.DWtSynSpkTheta(ltime)
-	}
-}
-
-// DWtNeurSpkTheta computes the weight change (learning) -- on sending projections
-// using the separately-integrated neuron-level spike-driven Ca values,
-// equivalent to the CHL plus - minus temporal derivative with
-// checkmark-based BCM-like XCal learning rule originally derived from
-// Urakubo et al (2008)
-func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
-			continue
-		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if sy.Wt == 0 { // failed con, no learn
-				continue
-			}
-			err := pj.Learn.CHLdWt(sn.CaP, sn.CaD, rn.CaP, rn.CaD)
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLrate * lr * err
-		}
 	}
 }
 
@@ -948,16 +917,129 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 				continue
 			}
 			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD)
+			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			if sy.Wt == 0 {                                                  // failed con, no learn
+				continue
+			}
+			err := pj.Learn.DeltaDWt(caP, caD)
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtTraceSynSpkTheta computes the weight change (learning) based on
+// synaptically-integrated spiking, for the optimized version
+// computed at the Theta cycle interval.  Trace version.
+func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
+	kp := &pj.Learn.KinaseCa
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	ctime := int32(ltime.CycleTot)
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
+				continue
+			}
+			sy := &syns[ci]
+			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD is better: reflects entire window
+			if sy.Wt == 0 {                           // failed con, no learn
+				continue
+			}
+			err := sy.Tr * pj.Learn.DeltaDWt(rn.CaP, rn.CaD) // recv RCa drives error signal
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtNeurSpkTheta computes the weight change (learning) -- on sending projections
+// using the separately-integrated neuron-level spike-driven Ca values,
+// equivalent to the CHL plus - minus temporal derivative with
+// checkmark-based BCM-like XCal learning rule originally derived from
+// Urakubo et al (2008)
+func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			sy := &syns[ci]
 			if sy.Wt == 0 { // failed con, no learn
 				continue
 			}
-			var err float32
-			if pj.Learn.XCal.On {
-				err = pj.Learn.XCal.DWt(caP, caD)
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			err := pj.Learn.CHLdWt(sn.CaP, sn.CaD, rn.CaP, rn.CaD)
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
 			} else {
-				err = caP - caD
+				err *= sy.LWt
 			}
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtTraceNeurSpkTheta computes the weight change (learning) -- on sending projections
+// using the separately-integrated neuron-level spike-driven Ca values,
+// equivalent to the CHL plus - minus temporal derivative with
+// checkmark-based BCM-like XCal learning rule originally derived from
+// Urakubo et al (2008).  Trace version.
+func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+			continue
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			sy := &syns[ci]
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.CaD*rn.CaD)
+			if sy.Wt == 0 { // failed con, no learn
+				continue
+			}
+			err := sy.Tr * pj.Learn.DeltaDWt(rn.CaP, rn.CaD) // recv RCa drives error signal
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

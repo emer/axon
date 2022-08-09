@@ -49,6 +49,7 @@ func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
 	nrn.CaM = 0
 	nrn.CaP = 0
 	nrn.CaD = 0
+	nrn.CaDiff = 0
 }
 
 // DecayNeurCa decays neuron-level calcium by given factor (between trials)
@@ -89,7 +90,9 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // at multiple time scales, with P = LTP / plus-phase and D = LTD / minus phase
 // driving key subtraction for error-driven learning rule.
 type NeurCaParams struct {
+	Trace  bool    `desc:"use trace-based learning -- drives Neur CaM from RCa -- experimental!"`
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
+	TrGeG  float32 `def:"8" desc:"for Trace learning, gain for Ge / Ca which is starting point of averaging"`
 	SynTau float32 `def:"30" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
@@ -114,6 +117,7 @@ func (np *NeurCaParams) Update() {
 }
 
 func (np *NeurCaParams) Defaults() {
+	np.TrGeG = 10
 	np.SpikeG = 8
 	np.SynTau = 30
 	np.MTau = 10
@@ -127,10 +131,18 @@ func (np *NeurCaParams) Defaults() {
 
 // CaFmSpike computes Ca* calcium signals based on current spike, for NeurSpkCa
 func (np *NeurCaParams) CaFmSpike(nrn *Neuron) {
-	nrn.CaSyn += np.SynDt * (np.SpikeG*nrn.Spike - nrn.CaSyn)
-	nrn.CaM += np.MDt * (np.SpikeG*nrn.Spike - nrn.CaM)
-	nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
-	nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
+	nsp := np.SpikeG * nrn.Spike
+	nrn.CaSyn += np.SynDt * (nsp - nrn.CaSyn)
+	if np.Trace {
+		nrn.CaM += np.MDt * (np.TrGeG*nrn.Ge - nrn.CaM)
+		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
+		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
+	} else {
+		nrn.CaM += np.MDt * (nsp - nrn.CaM)
+		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
+		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
+	}
+	nrn.CaDiff = nrn.CaP - nrn.CaD
 }
 
 // CaNorm normalizes and thresholds the calcium level according to CaMax, CaThr
@@ -453,12 +465,14 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
 	Learn    bool            `desc:"enable learning for this projection"`
+	Trace    TraceParams     `desc:"trace-based learning parameters"`
 	Lrate    LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
 	KinaseCa kinase.CaParams `view:"inline" desc:"kinase calcium Ca integration parameters"`
 	XCal     XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
 }
 
 func (ls *LearnSynParams) Update() {
+	ls.Trace.Update()
 	ls.Lrate.Update()
 	ls.XCal.Update()
 	ls.KinaseCa.Update()
@@ -466,13 +480,15 @@ func (ls *LearnSynParams) Update() {
 
 func (ls *LearnSynParams) Defaults() {
 	ls.Learn = true
+	ls.Trace.Defaults()
 	ls.Lrate.Defaults()
 	ls.XCal.Defaults()
 	ls.KinaseCa.Defaults()
 }
 
-// CHLdWt returns the error-driven weight change component for the
-// temporally eXtended Contrastive Attractor Learning (XCAL), CHL version
+// CHLdWt returns the error-driven weight change component for a
+// CHL contrastive hebbian learning rule, optionally using the checkmark
+// temporally eXtended Contrastive Attractor Learning (XCAL) function
 func (ls *LearnSynParams) CHLdWt(suCaP, suCaD, ruCaP, ruCaD float32) float32 {
 	srp := suCaP * ruCaP
 	srd := suCaD * ruCaD
@@ -480,6 +496,16 @@ func (ls *LearnSynParams) CHLdWt(suCaP, suCaD, ruCaP, ruCaD float32) float32 {
 		return ls.XCal.DWt(srp, srd)
 	}
 	return srp - srd
+}
+
+// DeltaDWt returns the error-driven weight change component for a
+// simple delta between a minus and plus phase factor, optionally using the checkmark
+// temporally eXtended Contrastive Attractor Learning (XCAL) function
+func (ls *LearnSynParams) DeltaDWt(plus, minus float32) float32 {
+	if ls.XCal.On {
+		return ls.XCal.DWt(plus, minus)
+	}
+	return plus - minus
 }
 
 // LrateParams manages learning rate parameters
@@ -508,6 +534,28 @@ func (ls *LrateParams) Init() {
 	ls.Update()
 }
 
+// TraceParams manages learning rate parameters
+type TraceParams struct {
+	On  bool    `desc:"use trace-based learning algorithm -- otherwise defaults to the standard Axon learning"`
+	Tau float32 `desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
+	Dt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+}
+
+func (tp *TraceParams) Defaults() {
+	tp.Tau = 1
+	tp.Update()
+}
+
+func (tp *TraceParams) Update() {
+	tp.Dt = 1.0 / tp.Tau
+}
+
+// TrFmCa returns updated trace factor as function of a synaptic calcium factor
+func (tp *TraceParams) TrFmCa(tr float32, ca float32) float32 {
+	tr += tp.Dt * (ca - tr)
+	return tr
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  XCalParams
 
@@ -520,7 +568,7 @@ type XCalParams struct {
 	DWtThr  float32 `def:"0.0001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
 	DRev    float32 `def:"0.1" min:"0" max:"0.99" desc:"proportional point within LTD range where magnitude reverses to go back down to zero at zero -- err-driven svm component does better with smaller values"`
 	DThr    float32 `def:"0.0001,0.01" min:"0" desc:"minimum LTD threshold value below which no weight change occurs -- this is now *relative* to the threshold"`
-	LrnThr  float32 `def:"0.01" desc:"learning threshold on CaP and CaD (in their raw units) -- does not learn if both of these values are below this threshold -- this is purely a computational optimization."`
+	LrnThr  float32 `def:"0.01" desc:"IMPORTANT: only used for NeurSpkTheta learning mode: learning threshold on CaP and CaD (in their raw units) -- does not learn if both of these values are below this threshold -- this is purely a computational optimization. 0.05 works well on larger networks but not smaller, which require the .01 default."`
 
 	DRevRatio float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"-(1-DRev)/DRev -- multiplication factor in learning rule -- builds in the minus sign!"`
 }
