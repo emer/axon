@@ -20,16 +20,10 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":  "0.04", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Act.NMDA.MgC":       "1.2",  // 1.2 > 1.4 for SynSpkTheta
-					"Layer.Act.NMDA.Voff":      "0",    // 0 > 5 for SynSpkTheta
-					"Layer.Learn.NeurCa.Trace": "true",
-					"Layer.Learn.NeurCa.TrGeG": "4",
-					"Layer.Learn.NeurCa.MTau":  "10",
-					"Layer.Learn.NeurCa.PTau":  "40",
-					"Layer.Learn.NeurCa.DTau":  "40",
-					"Layer.Learn.TrgAvgAct.On": "true", // dies later if off
+					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Act.NMDA.MgC":      "1.2",  // 1.2 > 1.4 for SynSpkTheta
+					"Layer.Act.NMDA.Voff":     "0",    // 0 > 5 for SynSpkTheta
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
@@ -48,41 +42,15 @@ var ParamSets = params.Sets{
 					"Layer.Act.Spike.Tr":      "1",   // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":      "0.6", // .6 > .5 v94
 				}},
-			{Sel: "#Hidden1", Desc: "critical now to specify the activity level",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.02",
-				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.2",   // 0.1 is default
-					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
-					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.XCal.On":          "false", // no diff
-					"Prjn.Learn.XCal.PThrMin":     "0.01",  // 0.01 here; 0.05 best for bigger nets
-					"Prjn.Learn.Trace.On":         "true",
-					"Prjn.Learn.Trace.Tau":        "1",     // > 1 is very bad, as expected..
-					"Prjn.Learn.KinaseCa.NeurCa":  "false", // NeurCa is worse
-					"Prjn.Learn.KinaseCa.UpdtThr": "0",
+					"Prjn.Learn.Lrate.Base": "0.1", // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2,
+					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
-				}},
-		},
-	}},
-	{Name: "NoTrace", Desc: "non-trace values", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "all defaults",
-				Params: params.Params{
-					"Layer.Learn.NeurCa.Trace":  "false",
-					"Layer.Learn.NeurCa.SpikeG": "8", // note: makes a diff that can't be fixed by lrate..
-					"Layer.Act.Decay.Glong":     "0",
-				}},
-			{Sel: "Prjn", Desc: "basic prjn params",
-				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       ".1", // 0.1 is default
-					"Prjn.Learn.Trace.On":         "false",
-					"Prjn.Learn.KinaseCa.UpdtThr": "0",
 				}},
 		},
 	}},

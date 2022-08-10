@@ -86,7 +86,7 @@ var TheSim Sim
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
-	ss.Params.Params = ParamSetsMin // ParamSetsDefs
+	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -220,7 +220,7 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
