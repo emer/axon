@@ -954,14 +954,14 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
-				continue
-			}
 			sy := &syns[ci]
 			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
 
 			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD is better: reflects entire window
 			if sy.Wt == 0 {                           // failed con, no learn
+				continue
+			}
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
 				continue
 			}
 			err := sy.Tr * pj.Learn.DeltaDWt(rn.CaP, rn.CaD) // recv RCa drives error signal
@@ -1019,12 +1019,13 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 // checkmark-based BCM-like XCal learning rule originally derived from
 // Urakubo et al (2008).  Trace version.
 func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
+	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		if sn.CaP < pj.Learn.XCal.LrnThr && sn.CaD < pj.Learn.XCal.LrnThr {
+		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -1035,8 +1036,11 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.CaD*rn.CaD)
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.Act*rn.Act)
 			if sy.Wt == 0 { // failed con, no learn
+				continue
+			}
+			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
 				continue
 			}
 			err := sy.Tr * pj.Learn.DeltaDWt(rn.CaP, rn.CaD) // recv RCa drives error signal

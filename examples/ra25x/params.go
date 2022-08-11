@@ -20,17 +20,24 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":  "0.03", // 0.3 > 0.4 but kinda crazy high Ge -- need to figure out
-					"Layer.Act.NMDA.MgC":       "1.4",  // 1.4 > 1.2 for trace
-					"Layer.Act.NMDA.Voff":      "5",    // 5 > 0 for trace
-					"Layer.Learn.NeurCa.Trace": "true",
-					"Layer.Learn.NeurCa.TrGeG": "1",
-					"Layer.Learn.NeurCa.MTau":  "5",    // 5 > 10 > 2 for runs after first
-					"Layer.Learn.NeurCa.PTau":  "40",   // 40 > 30
-					"Layer.Learn.NeurCa.DTau":  "40",   // 40 > 30
-					"Layer.Learn.TrgAvgAct.On": "true", // not much diff
-					"Layer.Learn.RLrate.On":    "true", // beneficial
+					"Layer.Inhib.Layer.Gi":       "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init":    "0.04", // 0.03 > 0.04 but can replicate with Act.NMDA.Gbar
+					"Layer.Act.NMDA.MgC":         "1.4",  // 1.4 > 1.2 for trace
+					"Layer.Act.NMDA.Gbar":        "0.3",  // 0.3 > 0.25 > .15 default -- key!
+					"Layer.Learn.LrnNMDA.Gbar":   "0.15", // .15 default
+					"Layer.Act.NMDA.Voff":        "5",    // 5 > 0 for trace
+					"Layer.Act.GABAB.Gbar":       "0.2",  // 0.2 def > higher
+					"Layer.Learn.NeurCa.Trace":   "true",
+					"Layer.Learn.NeurCa.TrGeG":   "1",
+					"Layer.Learn.NeurCa.TrPlusG": "1",    // 1.2 corrects negative trend but doesn't improve learning
+					"Layer.Learn.NeurCa.CaMax":   "200",  // 200 def
+					"Layer.Learn.NeurCa.CaThr":   "0.05", // 0.05 def -- todo: test more
+					"Layer.Learn.NeurCa.MTau":    "5",    // 5 > 10 > 2 for runs after first
+					"Layer.Learn.NeurCa.PTau":    "40",   // 40 > 30
+					"Layer.Learn.NeurCa.DTau":    "40",   // 40 > 30
+					"Layer.Learn.NeurCa.SynTau":  "30",   // 30 > 20, 40
+					"Layer.Learn.TrgAvgAct.On":   "true", // not much diff
+					"Layer.Learn.RLrate.On":      "true", // beneficial
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -49,7 +56,7 @@ var ParamSets = params.Sets{
 			{Sel: "#Hidden1", Desc: "critical now to specify the activity level",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.1 > 1.2 -- otherwise 1.2 too inactive
-					"Layer.Inhib.ActAvg.Init": "0.02", // 0.02 > higher
+					"Layer.Inhib.ActAvg.Init": "0.03", // 0.02 > higher -- fixed by nmda gbar higher
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
@@ -57,11 +64,16 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.XCal.On":          "false", // no diff
-					"Prjn.Learn.XCal.PThrMin":     "0.01",  // 0.01 here; 0.05 best for bigger nets
+					"Prjn.Learn.XCal.LrnThr":      "0",
+					"Prjn.Learn.XCal.SubMean":     "0",    // no real diff -- amazing..
+					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 here; 0.05 best for bigger nets
 					"Prjn.Learn.Trace.On":         "true",
 					"Prjn.Learn.Trace.Tau":        "5",     // 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.KinaseCa.NeurCa":  "false", // NeurCa is worse
+					"Prjn.Learn.KinaseCa.NeurCa":  "false", // NeurCa is significantly worse!
 					"Prjn.Learn.KinaseCa.UpdtThr": "0",
+					"Prjn.Learn.KinaseCa.MTau":    "5", // 5 ==? 2 > 10
+					"Prjn.Learn.KinaseCa.PTau":    "40",
+					"Prjn.Learn.KinaseCa.DTau":    "40",
 				}},
 			{Sel: "#Hidden2ToOutput", Desc: "key to use activation-based learning for output layers",
 				Params: params.Params{

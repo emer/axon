@@ -1307,6 +1307,9 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		}
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
+		if ltime.PlusPhase {
+			nrn.RCa *= ly.Learn.NeurCa.TrPlusG
+		}
 		ly.Learn.CaFmSpike(nrn)
 		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaP, nrn.CaD)
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
