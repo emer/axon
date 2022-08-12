@@ -137,6 +137,7 @@ func (np *NeurCaParams) CaFmSpike(nrn *Neuron) {
 	nrn.CaSyn += np.SynDt * (nsp - nrn.CaSyn)
 	if np.Trace {
 		nrn.CaM += np.MDt * (np.TrGeG*nrn.RCa - nrn.CaM)
+		// nrn.CaM += np.MDt * (np.TrGeG*nrn.Ge - nrn.CaM)
 		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
 		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
 	} else {
@@ -196,10 +197,10 @@ func (ta *TrgAvgActParams) Defaults() {
 // RLrateParams recv neuron learning rate modulation parameters.
 // RLrate is computed as |CaP - CaD| / Max(CaP, CaD) subject to thresholding
 type RLrateParams struct {
-	On        bool    `def:"true" desc:"use learning rate modulation"`
-	ActThr    float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDifThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
-	Min       float32 `def:"0.001" desc:"minimum learning rate value when below ActDifThr"`
+	On         bool    `def:"true" desc:"use learning rate modulation"`
+	ActThr     float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	ActDiffThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
+	Min        float32 `def:"0.001" desc:"minimum learning rate value when below ActDiffThr"`
 }
 
 func (rl *RLrateParams) Update() {
@@ -208,7 +209,7 @@ func (rl *RLrateParams) Update() {
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
 	rl.ActThr = 0.1
-	rl.ActDifThr = 0.02
+	rl.ActDiffThr = 0.02
 	rl.Min = 0.001
 	rl.Update()
 }
@@ -221,7 +222,7 @@ func (rl *RLrateParams) RLrate(scap, scad float32) float32 {
 	max := mat32.Max(scap, scad)
 	if max > rl.ActThr { // avoid div by 0
 		dif := mat32.Abs(scap - scad)
-		if dif < rl.ActDifThr {
+		if dif < rl.ActDiffThr {
 			return rl.Min
 		}
 		return dif / max

@@ -1022,6 +1022,10 @@ func (ly *Layer) NewState() {
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.LongAvgDt)
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.LongAvgDt)
 
+	if ly.AxonLay.IsTarget() {
+		ly.Learn.NeurCa.Trace = false
+	}
+
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1312,6 +1316,8 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		}
 		ly.Learn.CaFmSpike(nrn)
 		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaP, nrn.CaD)
+		// note: RLrate is beneficial for IsTarget layers as well
+		// todo: test for deep TRCLayer
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
@@ -1459,7 +1465,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		nrn.ActDif = nrn.ActP - nrn.ActM
+		nrn.ActDiff = nrn.ActP - nrn.ActM
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 	}
 	for pi := range ly.Pools {

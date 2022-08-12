@@ -28,7 +28,7 @@ Inhib: {
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
   TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 /////////////////////////////////////////////////
 Layer: Hidden1
@@ -60,7 +60,7 @@ Inhib: {
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
   TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 ///////////////////////////////////////////////////
 Prjn: InputToHidden1
@@ -128,7 +128,7 @@ Inhib: {
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
   TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 ///////////////////////////////////////////////////
 Prjn: Hidden1ToHidden2
@@ -196,7 +196,7 @@ Inhib: {
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
   TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDifThr: 0.02  Min: 0.001 }
+  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 ///////////////////////////////////////////////////
 Prjn: Hidden2ToOutput

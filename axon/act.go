@@ -59,7 +59,7 @@ func (ac *ActParams) Defaults() {
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
 	ac.AK.Defaults()
-	ac.AK.Gbar = 1
+	ac.AK.Gbar = 0.1
 	ac.Attn.Defaults()
 	ac.Update()
 }
@@ -200,7 +200,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (ActPrv, ActSt*, ActM, ActP, ActDif)
+// (ActPrv, ActSt*, ActM, ActP, ActDiff)
 // Called from InitActs, which is called from InitWts, but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(nrn *Neuron) {
@@ -209,7 +209,7 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 	nrn.ActSt2 = 0
 	nrn.ActM = 0
 	nrn.ActP = 0
-	nrn.ActDif = 0
+	nrn.ActDiff = 0
 	nrn.GeM = 0
 }
 
