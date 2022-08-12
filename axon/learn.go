@@ -46,6 +46,9 @@ func (ln *LearnNeurParams) Defaults() {
 // Called by InitWts (at start of learning).
 func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
 	nrn.CaSyn = 0
+	nrn.CaSpkM = 0
+	nrn.CaSpkP = 0
+	nrn.CaSpkD = 0
 	nrn.CaM = 0
 	nrn.CaP = 0
 	nrn.CaD = 0
@@ -58,6 +61,10 @@ func (ln *LearnNeurParams) DecayNeurCa(nrn *Neuron, decay float32) {
 		return
 	}
 	nrn.CaSyn -= decay * nrn.CaSyn
+	nrn.CaSpkM -= decay * nrn.CaSpkM
+	nrn.CaSpkP -= decay * nrn.CaSpkP
+	nrn.CaSpkD -= decay * nrn.CaSpkD
+
 	nrn.CaM -= decay * nrn.CaM
 	nrn.CaP -= decay * nrn.CaP
 	nrn.CaD -= decay * nrn.CaD
@@ -135,15 +142,19 @@ func (np *NeurCaParams) Defaults() {
 func (np *NeurCaParams) CaFmSpike(nrn *Neuron) {
 	nsp := np.SpikeG * nrn.Spike
 	nrn.CaSyn += np.SynDt * (nsp - nrn.CaSyn)
+	nrn.CaSpkM += np.MDt * (nsp - nrn.CaSpkM)
+	nrn.CaSpkP += np.PDt * (nrn.CaSpkM - nrn.CaSpkP)
+	nrn.CaSpkD += np.DDt * (nrn.CaSpkP - nrn.CaSpkD)
 	if np.Trace {
-		nrn.CaM += np.MDt * (np.TrGeG*nrn.RCa - nrn.CaM)
+		// nrn.CaM += np.MDt * (nsp - nrn.CaM)
+		nrn.CaM += np.MDt * (np.TrGeG*nrn.RCa - nrn.CaM) // best
 		// nrn.CaM += np.MDt * (np.TrGeG*nrn.Ge - nrn.CaM)
 		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
 		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
 	} else {
-		nrn.CaM += np.MDt * (nsp - nrn.CaM)
-		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
-		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
+		nrn.CaM = nrn.CaSpkM
+		nrn.CaP = nrn.CaSpkP
+		nrn.CaD = nrn.CaSpkD
 	}
 	nrn.CaDiff = nrn.CaP - nrn.CaD
 }

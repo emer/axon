@@ -20,7 +20,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.2 > 1.1
 					"Layer.Inhib.ActAvg.Init":       "0.04", // 0.03 > 0.04 but can replicate with Act.NMDA.Gbar
 					"Layer.Act.NMDA.MgC":            "1.4",  // 1.4 > 1.2 for trace
 					"Layer.Act.NMDA.Gbar":           "0.15", // 0.3 > 0.25 > .15 default -- key!
@@ -59,17 +59,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Hidden1", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.1 > 1.2 -- otherwise 1.2 too inactive
-					"Layer.Inhib.ActAvg.Init": "0.03", // 0.02 > higher -- fixed by nmda gbar higher
+					"Layer.Inhib.Layer.Gi":    "1.0",  // 1.1 > 1.2 -- otherwise 1.2 too inactive
+					"Layer.Inhib.ActAvg.Init": "0.04", // 0.02 > higher -- fixed by nmda gbar higher
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.01",  // 0.1 is default
+					"Prjn.Learn.Lrate.Base":       "0.02",  // 0.1 is default
 					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.XCal.On":          "false", // no diff
 					"Prjn.Learn.XCal.LrnThr":      "0",
-					"Prjn.Learn.XCal.SubMean":     "1",    // no real diff -- amazing..
+					"Prjn.Learn.XCal.SubMean":     "0",    // no real diff -- amazing..
 					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 here; 0.05 best for bigger nets
 					"Prjn.Learn.Trace.On":         "true",
 					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed

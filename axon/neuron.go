@@ -41,9 +41,12 @@ type Neuron struct {
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 
 	CaSyn  float32 `desc:"spike-driven calcium trace for synapse-level Ca-driven learning rules: SynSpkCa"`
-	CaM    float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
-	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
-	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	CaSpkM float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
+	CaSpkP float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	CaSpkD float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	CaM    float32 `desc:"calcium integrated at first time scale, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
+	CaP    float32 `desc:"calcium integrated at next timescale, integrating over CaM, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	CaD    float32 `desc:"calcium integrated at next timescale, integrating over CaP, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	CaDiff float32 `desc:"difference between CaP - CaD -- basic error signal"`
 	PctDWt float32 `desc:"for experimental Kinase continuous learning algorithm: percent of synapses that had DWt updated on the current cycle, for sending-neuron"`
 

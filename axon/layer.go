@@ -1315,7 +1315,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 			nrn.RCa *= ly.Learn.NeurCa.TrPlusG
 		}
 		ly.Learn.CaFmSpike(nrn)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaP, nrn.CaD)
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD)
 		// note: RLrate is beneficial for IsTarget layers as well
 		// todo: test for deep TRCLayer
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
@@ -1525,7 +1525,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.CaP
+		nrn.ActSt1 = nrn.CaSpkP
 	}
 }
 
@@ -1536,7 +1536,7 @@ func (ly *Layer) ActSt2(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.CaP
+		nrn.ActSt2 = nrn.CaSpkP
 	}
 }
 
@@ -1611,7 +1611,7 @@ func (ly *Layer) DTrgAvgFmErr() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.DTrgAvg += lr * (nrn.CaP - nrn.CaD)
+		nrn.DTrgAvg += lr * (nrn.CaSpkP - nrn.CaSpkD)
 	}
 }
 
