@@ -1311,9 +1311,6 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		}
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
-		if ltime.PlusPhase {
-			nrn.RCa *= ly.Learn.NeurCa.TrPlusG
-		}
 		ly.Learn.CaFmSpike(nrn)
 		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD)
 		// note: RLrate is beneficial for IsTarget layers as well
