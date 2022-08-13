@@ -303,6 +303,17 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
+	// lrate schedule
+	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
+		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		switch trnEpc {
+		case 50:
+			ss.Net.LrateSched(0.2)
+		case 100:
+			ss.Net.LrateSched(0.1)
+		}
+	})
+
 	////////////////////////////////////////////
 	// GUI
 

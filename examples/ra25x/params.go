@@ -21,24 +21,24 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":       "0.04", // 0.03 > 0.04 but can replicate with Act.NMDA.Gbar
-					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 > 1.2 for trace
+					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 good
+					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
+					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Learn.LrnNMDA.Gbar":      "0.15", // .15 default
-					"Layer.Act.NMDA.Voff":           "0",    // 5 > 0 for trace -- not clear -- test!
 					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
 					"Layer.Act.AK.Gbar":             "0.1",  // 1 def -- too high probably -- .1 fine
 					"Layer.Act.VGCC.Gbar":           "0.02", // .02 def
 					"Layer.Learn.NeurCa.Trace":      "true",
-					"Layer.Learn.NeurCa.TrGeG":      "1", // can double this and halve lrate and get ~ same results
-					"Layer.Learn.NeurCa.TrSpk":      "0",
+					"Layer.Learn.NeurCa.TrGeG":      "1",    // can double this and halve lrate and get ~ same results
+					"Layer.Learn.NeurCa.TrSpk":      "0.5",  // 0.5 best -- requires lower .05 lrate
 					"Layer.Learn.NeurCa.CaMax":      "200",  // 200 def
-					"Layer.Learn.NeurCa.CaThr":      "0.05", // 0.05 def -- todo: test more
+					"Layer.Learn.NeurCa.CaThr":      "0.0",  // 0 > 0.05 def
 					"Layer.Learn.NeurCa.MTau":       "5",    // has an lrate-like effect: 1=slower than 5
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.DTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.SynTau":     "30",   // 30 > 20, 40
-					"Layer.Learn.TrgAvgAct.On":      "true", // not much diff
+					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.RLrate.On":         "true", // beneficial for NMDA = .3
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
@@ -59,18 +59,18 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1",   // 0.1 is default
-					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
-					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.XCal.On":          "false", // no diff
+					"Prjn.Learn.Lrate.Base":       "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":        "0.1",  // .1 >= .2,
+					"Prjn.SWt.Init.SPct":          "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.XCal.On":          "true", // no diff
 					"Prjn.Learn.XCal.LrnThr":      "0",
 					"Prjn.Learn.XCal.SubMean":     "0",    // no real diff -- amazing..
 					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 here; 0.05 best for bigger nets
 					"Prjn.Learn.Trace.On":         "true",
 					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
 					"Prjn.Learn.KinaseCa.NeurCa":  "false", // NeurCa is significantly worse!
-					"Prjn.Learn.KinaseCa.UpdtThr": "0",
-					"Prjn.Learn.KinaseCa.MTau":    "5", // 5 ==? 2 > 10
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.0",   // todo: test with new tag
+					"Prjn.Learn.KinaseCa.MTau":    "5",     // 5 ==? 2 > 10
 					"Prjn.Learn.KinaseCa.PTau":    "40",
 					"Prjn.Learn.KinaseCa.DTau":    "40",
 				}},
