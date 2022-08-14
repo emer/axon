@@ -230,8 +230,7 @@ func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
 	dm, dh := ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH)
 	nrn.VgccM += dm
 	nrn.VgccH += dh
-	vbio := chans.VToBio(nrn.VmDend)
-	nrn.VgccCa = -vbio * nrn.Gvgcc
+	nrn.VgccCa = ac.VGCC.CaFmG(nrn.VmDend, nrn.Gvgcc, nrn.VgccCa)
 }
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn

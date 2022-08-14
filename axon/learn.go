@@ -79,8 +79,7 @@ func (ln *LearnNeurParams) DecayNeurCa(nrn *Neuron, decay float32) {
 func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
 	nrn.RnmdaSyn = ln.LrnNMDA.NMDASyn(nrn.RnmdaSyn, nrn.GeRaw+geExt)
 	mgg, cav := ln.LrnNMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
-	nrn.RCa = nrn.RnmdaSyn * mgg * cav
-	nrn.RCa += nrn.VgccCa
+	nrn.RCa = nrn.RnmdaSyn*mgg*cav + nrn.VgccCa
 	nrn.RCa = ln.NeurCa.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 }
 
@@ -99,8 +98,6 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 type NeurCaParams struct {
 	Trace  bool    `desc:"use trace-based learning -- drives Neur CaM from RCa -- experimental!"`
 	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
-	TrGeG  float32 `def:"8" desc:"for Trace learning, gain for Ge / Ca which is starting point of averaging"`
-	TrSpk  float32 `desc:"proportion of spiking signal to mix into the RCa trace, to capture more of the spiking act"`
 	SynTau float32 `def:"30" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
 	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
 	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
@@ -125,8 +122,6 @@ func (np *NeurCaParams) Update() {
 }
 
 func (np *NeurCaParams) Defaults() {
-	np.TrGeG = 1
-	np.TrSpk = 0.0
 	np.SpikeG = 8
 	np.SynTau = 30
 	np.MTau = 10
@@ -146,8 +141,7 @@ func (np *NeurCaParams) CaFmSpike(nrn *Neuron) {
 	nrn.CaSpkP += np.PDt * (nrn.CaSpkM - nrn.CaSpkP)
 	nrn.CaSpkD += np.DDt * (nrn.CaSpkP - nrn.CaSpkD)
 	if np.Trace {
-		caDrv := (1.0-np.TrSpk)*np.TrGeG*nrn.RCa + np.TrSpk*nsp
-		nrn.CaM += np.MDt * (caDrv - nrn.CaM) // best
+		nrn.CaM += np.MDt * (nrn.RCa - nrn.CaM)
 		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
 		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
 	} else {

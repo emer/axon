@@ -21,18 +21,18 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 good
+					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Learn.LrnNMDA.Gbar":      "0.15", // .15 default
 					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
-					"Layer.Act.AK.Gbar":             "0.1",  // 1 def -- too high probably -- .1 fine
-					"Layer.Act.VGCC.Gbar":           "0.02", // .02 def
+					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo
+					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau
+					"Layer.Act.VGCC.Ca":             "100",
+					"Layer.Act.VGCC.CaTau":          "5",
 					"Layer.Learn.NeurCa.Trace":      "true",
-					"Layer.Learn.NeurCa.TrGeG":      "1",    // can double this and halve lrate and get ~ same results
-					"Layer.Learn.NeurCa.TrSpk":      "0.5",  // 0.5 best -- requires lower .05 lrate
-					"Layer.Learn.NeurCa.CaMax":      "200",  // 200 def
+					"Layer.Learn.NeurCa.CaMax":      "400",  // 200 def
 					"Layer.Learn.NeurCa.CaThr":      "0.0",  // 0 > 0.05 def
 					"Layer.Learn.NeurCa.MTau":       "5",    // has an lrate-like effect: 1=slower than 5
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
@@ -48,23 +48,25 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
 					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
 					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+					"Layer.Act.VGCC.Ca":       "1",    // otherwise dominates display
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
 					"Layer.Inhib.ActAvg.Init": "0.24",
-					"Layer.Act.Spike.Tr":      "1", // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":      "1", // .6 > .5 v94
+					"Layer.Act.Spike.Tr":      "1",   // 1 is new minimum.. > 3
+					"Layer.Act.Clamp.Ge":      "0.6", // .6 > .5 v94
+					"Layer.Act.VGCC.Ca":       "1",   // otherwise dominates display
 					// "Layer.Learn.NeurCa.Trace": "false", // auto excluded
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":        "0.1",  // .1 >= .2,
-					"Prjn.SWt.Init.SPct":          "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.XCal.On":          "true", // no diff
+					"Prjn.Learn.Lrate.Base":       "0.1",   // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
+					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.XCal.On":          "false", // slightly worse, makes no sense really in trace context
 					"Prjn.Learn.XCal.LrnThr":      "0",
-					"Prjn.Learn.XCal.SubMean":     "0",    // no real diff -- amazing..
+					"Prjn.Learn.XCal.SubMean":     "0",    // actually bad now
 					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 here; 0.05 best for bigger nets
 					"Prjn.Learn.Trace.On":         "true",
 					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
