@@ -79,7 +79,12 @@ func (ln *LearnNeurParams) DecayNeurCa(nrn *Neuron, decay float32) {
 func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
 	nrn.RnmdaSyn = ln.LrnNMDA.NMDASyn(nrn.RnmdaSyn, nrn.GeRaw+geExt)
 	mgg, cav := ln.LrnNMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
-	nrn.RCa = nrn.RnmdaSyn*mgg*cav + nrn.VgccCa
+	nrn.RCa = nrn.RnmdaSyn * mgg * cav
+	if ln.NeurCa.SpkVGCC {
+		nrn.RCa += ln.NeurCa.SpkVGCCa * nrn.Spike // note: not decaying or anything
+	} else {
+		nrn.RCa += nrn.VgccCa
+	}
 	nrn.RCa = ln.NeurCa.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 }
 
@@ -96,15 +101,17 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // at multiple time scales, with P = LTP / plus-phase and D = LTD / minus phase
 // driving key subtraction for error-driven learning rule.
 type NeurCaParams struct {
-	Trace  bool    `desc:"use trace-based learning -- drives Neur CaM from RCa -- experimental!"`
-	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
-	SynTau float32 `def:"30" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
-	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
-	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
-	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	CaMax  float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
-	CaThr  float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
-	Decay  bool    `def:"false" desc:"if true, decay Ca values along with other longer duration state variables at the ThetaCycle boundary"`
+	RCa      bool    `desc:"use RCa for calcium source -- NMDA plus VGCC -- works with Trace learning rule"`
+	SpkVGCC  bool    `desc:"use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution"`
+	SpkVGCCa float32 `desc:"gain factor for spikes in computing Ca contribution to RCa, for RCa mode"`
+	SpikeG   float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
+	SynTau   float32 `def:"30" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
+	MTau     float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
+	PTau     float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
+	DTau     float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
+	CaMax    float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
+	CaThr    float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
+	Decay    bool    `def:"false" desc:"if true, decay Ca values along with other longer duration state variables at the ThetaCycle boundary"`
 
 	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	MDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
@@ -140,7 +147,7 @@ func (np *NeurCaParams) CaFmSpike(nrn *Neuron) {
 	nrn.CaSpkM += np.MDt * (nsp - nrn.CaSpkM)
 	nrn.CaSpkP += np.PDt * (nrn.CaSpkM - nrn.CaSpkP)
 	nrn.CaSpkD += np.DDt * (nrn.CaSpkP - nrn.CaSpkD)
-	if np.Trace {
+	if np.RCa {
 		nrn.CaM += np.MDt * (nrn.RCa - nrn.CaM)
 		nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
 		nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)

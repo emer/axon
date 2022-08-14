@@ -1023,7 +1023,7 @@ func (ly *Layer) NewState() {
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.LongAvgDt)
 
 	if ly.AxonLay.IsTarget() {
-		ly.Learn.NeurCa.Trace = false
+		ly.Learn.NeurCa.RCa = false
 	}
 
 	for ni := range ly.Neurons {
