@@ -8,7 +8,7 @@ package kinase
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
 type CaParams struct {
-	SpikeG  float32 `def:"12" desc:"spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
+	SpikeG  float32 `def:"8" desc:"spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
 	MTau    float32 `def:"5" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec) -- for SynSpkCa this integrates on top of Ca signal from su->CaSyn * ru->CaSyn with typical 20 msec Tau.`
 	PTau    float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
 	DTau    float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
@@ -22,7 +22,7 @@ type CaParams struct {
 }
 
 func (kp *CaParams) Defaults() {
-	kp.SpikeG = 12
+	kp.SpikeG = 8
 	kp.MTau = 5
 	kp.PTau = 40
 	kp.DTau = 40
