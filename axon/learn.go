@@ -103,7 +103,7 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 type NeurCaParams struct {
 	RCa      bool    `desc:"use RCa for calcium source -- NMDA plus VGCC -- works with Trace learning rule"`
 	SpkVGCC  bool    `desc:"use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution"`
-	SpkVGCCa float32 `desc:"gain factor for spikes in computing Ca contribution to RCa, for RCa mode"`
+	SpkVGCCa float32 `def:"1200" desc:"gain factor for spikes in computing Ca contribution to RCa, for RCa mode"`
 	SpikeG   float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
 	SynTau   float32 `def:"30" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
 	MTau     float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
@@ -129,6 +129,7 @@ func (np *NeurCaParams) Update() {
 }
 
 func (np *NeurCaParams) Defaults() {
+	np.SpkVGCCa = 1200
 	np.SpikeG = 8
 	np.SynTau = 30
 	np.MTau = 10

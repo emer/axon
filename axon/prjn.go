@@ -965,7 +965,8 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
 				continue
 			}
-			err := sy.Tr * pj.Learn.DeltaDWt(rn.CaP, rn.CaD) // recv RCa drives error signal
+			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
@@ -1044,7 +1045,8 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
 			if rn.CaP < kp.UpdtThr && rn.CaD < kp.UpdtThr {
 				continue
 			}
-			err := sy.Tr * pj.Learn.DeltaDWt(rn.CaP, rn.CaD) // recv RCa drives error signal
+			err := sy.Tr * (rn.CaP, rn.CaD) // recv RCa drives error signal
+			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

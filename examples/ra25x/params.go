@@ -29,13 +29,13 @@ var ParamSets = params.Sets{
 					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
 					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo
 					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau
-					"Layer.Act.VGCC.Ca":             "800",
+					"Layer.Act.VGCC.Ca":             "500",  // 500 pretty close to SpkVGCC, but latter is better
 					"Layer.Learn.NeurCa.RCa":        "true",
-					"Layer.Learn.NeurCa.SpkVGCC":    "false",
-					"Layer.Learn.NeurCa.SpkVGCCa":   "1000",
+					"Layer.Learn.NeurCa.SpkVGCC":    "true", // much better
+					"Layer.Learn.NeurCa.SpkVGCCa":   "1200", // 1200 > lower, higher by 100's
 					"Layer.Learn.NeurCa.CaMax":      "250",  // 200 def -- 250 best with vgcc, tau 5 gain 100
 					"Layer.Learn.NeurCa.CaThr":      "0.0",  // 0 > 0.05 def
-					"Layer.Learn.NeurCa.MTau":       "5",    // has an lrate-like effect: 1=slower than 5
+					"Layer.Learn.NeurCa.MTau":       "10",   // has an lrate-like effect: 1=slower than 5
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.DTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.SynTau":     "30",   // 30 > 20, 40
