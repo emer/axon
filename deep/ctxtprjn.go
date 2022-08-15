@@ -130,38 +130,48 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
+	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
-	sslay, issuper := pj.Send.(*SuperLayer)
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
+	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
-		sact := float32(0)
-		if issuper {
-			sact = sslay.SuperNeurs[si].BurstPrv
-		} else {
-			sact = slay.Neurons[si].ActPrv
-		}
+		// sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
 		scons := pj.SConIdx[st : st+nc]
 		for ci := range syns {
-			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			// following line should be ONLY diff: sact for *both* short and medium *sender*
-			// activations, which are first two args:
-			err := pj.Learn.CHLdWt(sact, sact, rn.CaP, rn.CaD)
+			sy := &syns[ci]
+			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			// only difference from standard is that Tr updates *after* DWt instead of before!
+			err := sy.Tr * (rn.CaP - rn.CaD)          // recv RCa drives error signal
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD is better: reflects entire window
+			if sy.Wt == 0 {                           // failed con, no learn
+				continue
+			}
+			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += lr * err
+			sy.DWt += rn.RLrate * lr * err
 		}
 	}
 }
+
+// note: not using BurstPrv
+
+// sact := float32(0)
+// if issuper {
+// 	sact = sslay.SuperNeurs[si].BurstPrv
+// } else {
+// 	sact = slay.Neurons[si].ActPrv
+// }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  PrjnType

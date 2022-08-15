@@ -1022,10 +1022,6 @@ func (ly *Layer) NewState() {
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.LongAvgDt)
 	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.LongAvgDt)
 
-	if ly.AxonLay.IsTarget() {
-		ly.Learn.NeurCa.RCa = false
-	}
-
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1312,7 +1308,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD)
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD) // todo: Ca
 		// note: RLrate is beneficial for IsTarget layers as well
 		// todo: test for deep TRCLayer
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
@@ -1522,7 +1518,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.CaSpkP
+		nrn.ActSt1 = nrn.CaP
 	}
 }
 
@@ -1533,7 +1529,7 @@ func (ly *Layer) ActSt2(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.CaSpkP
+		nrn.ActSt2 = nrn.CaP
 	}
 }
 
@@ -1608,7 +1604,7 @@ func (ly *Layer) DTrgAvgFmErr() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.DTrgAvg += lr * (nrn.CaSpkP - nrn.CaSpkD)
+		nrn.DTrgAvg += lr * (nrn.CaP - nrn.CaD)
 	}
 }
 
@@ -1700,7 +1696,8 @@ func (ly *Layer) SynCa(ltime *Time) {
 	}
 }
 
-// DWt computes the weight change (learning) -- calls DWt method on sending projections
+// DWt computes the weight change (learning).
+// calls DWt method on sending projections
 func (ly *Layer) DWt(ltime *Time) {
 	ly.DTrgAvgFmErr()
 	for _, p := range ly.SndPrjns {
@@ -1711,10 +1708,11 @@ func (ly *Layer) DWt(ltime *Time) {
 	}
 }
 
-// WtFmDWt updates the weights from delta-weight changes -- on the sending projections
+// WtFmDWt updates the weights from delta-weight changes
+// calls WtFmDWt on the sending projections
 func (ly *Layer) WtFmDWt(ltime *Time) {
 	ly.TrgAvgFmD()
-	for _, p := range ly.RcvPrjns { // must be recv to do SubMean
+	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}

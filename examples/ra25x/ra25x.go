@@ -257,6 +257,9 @@ func (ss *Sim) ConfigLoops() {
 		}
 		curNZero := ss.Stats.Int("NZero")
 		stop := curNZero >= stopNz
+		if !stop {
+			ss.Stats.SetInt("LastZero", -1) // only counts if meet stop crit
+		}
 		return stop
 	}
 

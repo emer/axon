@@ -25,21 +25,24 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dt.VmDendTau":   "8",   // 8 > 5 >> 2.81 -- big diff
 					// "Layer.Act.NMDA.MgC":        "1.0",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
 					// "Layer.Act.NMDA.Voff":       "0",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.VGCC.Gbar":       "0.02",
-					"Layer.Act.AK.Gbar":         "1.0",
-					"Layer.Act.NMDA.MgC":        "1.2",  // 1.2 > 1.4 for SynSpkTheta
-					"Layer.Act.NMDA.Voff":       "0",    // 0 > 5 for SynSpkTheta
-					"Layer.Learn.RLrate.On":     "true", // beneficial still
-					"Layer.Learn.NeurCa.SpikeG": "8",
-					"Layer.Learn.NeurCa.SynTau": "30", // 40 best in larger models
-					"Layer.Learn.NeurCa.MTau":   "10",
-					"Layer.Learn.NeurCa.PTau":   "40",
-					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.CaMax":  "200",
-					"Layer.Learn.NeurCa.CaThr":  "0.05",
-					"Layer.Learn.NeurCa.Decay":  "false",
-					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
-					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
+					"Layer.Act.VGCC.Gbar":         "0.02",
+					"Layer.Act.AK.Gbar":           "1.0",
+					"Layer.Act.NMDA.MgC":          "1.2",  // 1.2 > 1.4 for SynSpkTheta
+					"Layer.Act.NMDA.Voff":         "0",    // 0 > 5 for SynSpkTheta
+					"Layer.Learn.RLrate.On":       "true", // beneficial still
+					"Layer.Learn.NeurCa.RCa":      "true",
+					"Layer.Learn.NeurCa.SpkVGCC":  "true", // much better
+					"Layer.Learn.NeurCa.SpkVGCCa": "1200", // 1200 > lower, higher by 100's
+					"Layer.Learn.NeurCa.SpikeG":   "8",
+					"Layer.Learn.NeurCa.SynTau":   "30", // 40 best in larger models
+					"Layer.Learn.NeurCa.MTau":     "5",
+					"Layer.Learn.NeurCa.PTau":     "40",
+					"Layer.Learn.NeurCa.DTau":     "40",
+					"Layer.Learn.NeurCa.CaMax":    "250",
+					"Layer.Learn.NeurCa.CaThr":    "0.0",
+					"Layer.Learn.NeurCa.Decay":    "false",
+					"Layer.Learn.LrnNMDA.ITau":    "1",  // urakubo = 100, does not work here..
+					"Layer.Learn.LrnNMDA.Tau":     "50", // urakubo = 30 > 20 but no major effect on PCA
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
@@ -73,6 +76,8 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar":     "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":          "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":              "0.0",
+					"Prjn.Learn.Trace.On":         "true",
+					"Prjn.Learn.Trace.Tau":        "1",  // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
 					"Prjn.Learn.KinaseCa.SpikeG":  "12", // 12 good
 					"Prjn.Learn.KinaseCa.MTau":    "5",  // 5 > 10 test more
 					"Prjn.Learn.KinaseCa.PTau":    "40",

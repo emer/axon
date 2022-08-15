@@ -20,28 +20,30 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.2 > 1.1
+					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 1.1 > 1.2 -- diff from orig
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Learn.LrnNMDA.Gbar":      "0.15", // .15 default
+					"Layer.Learn.LrnNMDA.MgC":       "1.4",  // todo
+					"Layer.Learn.LrnNMDA.Voff":      "5",    // todo
+					"Layer.Learn.LrnNMDA.Tau":       "50",   // todo: 100?
 					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
-					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo
-					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau
+					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
+					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Act.VGCC.Ca":             "500",  // 500 pretty close to SpkVGCC, but latter is better
-					"Layer.Learn.NeurCa.RCa":        "true",
-					"Layer.Learn.NeurCa.SpkVGCC":    "true", // much better
+					"Layer.Learn.NeurCa.SpkVGCC":    "true", // sig better..
+					"Layer.Learn.NeurCa.SpikeG":     "8",    // todo: try 12
 					"Layer.Learn.NeurCa.SpkVGCCa":   "1200", // 1200 > lower, higher by 100's
-					"Layer.Learn.NeurCa.CaMax":      "250",  // 200 def -- 250 best with vgcc, tau 5 gain 100
-					"Layer.Learn.NeurCa.CaThr":      "0.0",  // 0 > 0.05 def
-					"Layer.Learn.NeurCa.MTau":       "10",   // has an lrate-like effect: 1=slower than 5
+					"Layer.Learn.NeurCa.CaMax":      "250",  // 250 > 200, 300
+					"Layer.Learn.NeurCa.MTau":       "5",    // 5 > 10
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.DTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.SynTau":     "30",   // 30 > 20, 40
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
-					"Layer.Learn.RLrate.On":         "true", // beneficial for NMDA = .3
-					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def
+					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
@@ -62,24 +64,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1",   // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
-					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.XCal.On":          "false", // slightly worse, makes no sense really in trace context
-					"Prjn.Learn.XCal.LrnThr":      "0",
-					"Prjn.Learn.XCal.SubMean":     "0",    // actually bad now
-					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 here; 0.05 best for bigger nets
-					"Prjn.Learn.Trace.On":         "true",
-					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.KinaseCa.NeurCa":  "false", // NeurCa is significantly worse!
-					"Prjn.Learn.KinaseCa.UpdtThr": "0.0",   // todo: test with new tag
-					"Prjn.Learn.KinaseCa.MTau":    "5",     // 5 ==? 2 > 10
+					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
+					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.0", // todo: test .01 etc
+					"Prjn.Learn.KinaseCa.MTau":    "5",   // 5 ==? 2 > 10
 					"Prjn.Learn.KinaseCa.PTau":    "40",
 					"Prjn.Learn.KinaseCa.DTau":    "40",
 				}},
 			{Sel: "#Hidden2ToOutput", Desc: "key to use activation-based learning for output layers",
 				Params: params.Params{
-					// "Prjn.Learn.Trace.On":   "false", // auto
 					"Prjn.Learn.Lrate.Base": "0.1", // 0.1 is default
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
