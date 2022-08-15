@@ -68,6 +68,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
 					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.Learn.KinaseCa.SpikeG":  "12",  // todo: test .01 etc
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.0", // todo: test .01 etc
 					"Prjn.Learn.KinaseCa.MTau":    "5",   // 5 ==? 2 > 10
 					"Prjn.Learn.KinaseCa.PTau":    "40",
@@ -80,22 +81,6 @@ var ParamSets = params.Sets{
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
-				}},
-		},
-	}},
-	{Name: "NoTrace", Desc: "non-trace values", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "all defaults",
-				Params: params.Params{
-					"Layer.Learn.NeurCa.Trace":  "false",
-					"Layer.Learn.NeurCa.SpikeG": "8", // note: makes a diff that can't be fixed by lrate..
-					"Layer.Act.Decay.Glong":     "0",
-				}},
-			{Sel: "Prjn", Desc: "basic prjn params",
-				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       ".1", // 0.1 is default
-					"Prjn.Learn.Trace.On":         "false",
-					"Prjn.Learn.KinaseCa.UpdtThr": "0",
 				}},
 		},
 	}},

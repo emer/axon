@@ -794,9 +794,6 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
-		return
-	}
 	np := &slay.Learn.NeurCa
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
@@ -841,9 +838,6 @@ func (pj *Prjn) RecvSynCa(ltime *Time) {
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
-		return
-	}
 	np := &slay.Learn.NeurCa
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
@@ -887,7 +881,8 @@ func (pj *Prjn) DWt(ltime *Time) {
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
-		pj.DWtCHL(ltime)
+		// pj.DWtCHL(ltime)
+		pj.DWtSynSpkTheta(ltime)
 	} else {
 		pj.DWtTraceSynSpkTheta(ltime)
 	}
@@ -921,6 +916,41 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 			}
 			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
 			// note: trace ensures that nothing changes for inactive synapses..
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtSynSpkTheta computes the weight change (learning) based on
+// synaptically-integrated spiking, for the optimized version
+// computed at the Theta cycle interval.  Trace version.
+func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
+	kp := &pj.Learn.KinaseCa
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	ctime := int32(ltime.CycleTot)
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		// sn := &slay.Neurons[si]
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			sy := &syns[ci]
+			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			if sy.Wt == 0 {                                                  // failed con, no learn
+				continue
+			}
+			err := caP - caD
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

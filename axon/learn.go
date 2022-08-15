@@ -127,7 +127,7 @@ func (np *NeurCaParams) Update() {
 }
 
 func (np *NeurCaParams) Defaults() {
-	np.SpkVGCCa = 800
+	np.SpkVGCCa = 1200
 	np.SpikeG = 12
 	np.SynTau = 30
 	np.MTau = 5
