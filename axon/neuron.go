@@ -44,7 +44,7 @@ type Neuron struct {
 	CaSpkM float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
 	CaSpkP float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaSpkD float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
-	CaM    float32 `desc:"calcium integrated at first time scale, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
+	CaM    float32 `desc:"integrated calcium, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule -- combines NMDA and VGCC Ca, normalized, drives CaP, CaD for delta signal driving error-driven learning"`
 	CaP    float32 `desc:"calcium integrated at next timescale, integrating over CaM, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"calcium integrated at next timescale, integrating over CaP, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	CaDiff float32 `desc:"difference between CaP - CaD -- basic error signal"`
@@ -81,21 +81,22 @@ type Neuron struct {
 	GknaFast float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`
 	GknaMed  float32 `desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`
 	GknaSlow float32 `desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`
-	GgabaB   float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential."`
-	GABAB    float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
-	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
-	Gvgcc    float32 `desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`
-	VgccM    float32 `desc:"activation gate of VGCC channels"`
-	VgccH    float32 `desc:"inactivation gate of VGCC channels"`
-	VgccCa   float32 `desc:"VGCC calcium flux"`
-	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 
 	GnmdaSyn float32 `desc:"integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant"`
 	Gnmda    float32 `desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`
-	RnmdaSyn float32 `desc:"recv-side NMDA for learning, vs activity: integrated NMDA recv synaptic current -- adds GnmdaRaw and decays with time constant"`
-	RCa      float32 `desc:"Receiver-based voltage-driven postsynaptic calcium current factor, reflecting Mg block and V-based current drive, both a function of VmDend: Mg * Vca -- RCa * SnmdaO = total synaptic Ca at each moment"`
+	NmdaCa   float32 `desc:"NMDA calcium computed from Gnmda, drives learning"`
 	SnmdaO   float32 `desc:"Sender-based number of open NMDA channels based on spiking activity and consequent glutamate release for all sending synapses -- this is the presynaptic component of NMDA activation that is used for computing Ca levels for learning -- increases by (1-SnmdaI)*(1-SnmdaO) with spiking and decays otherwise"`
 	SnmdaI   float32 `desc:"Sender-based inhibitory factor on NMDA as a function of sending (presynaptic) spiking history, capturing the allosteric dynamics from Urakubo et al (2008) model.  Increases to 1 with every spike, and decays back to 0 with its own longer decay rate."`
+
+	GgabaB float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential."`
+	GABAB  float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
+	GABABx float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
+
+	Gvgcc  float32 `desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`
+	VgccM  float32 `desc:"activation gate of VGCC channels"`
+	VgccH  float32 `desc:"inactivation gate of VGCC channels"`
+	VgccCa float32 `desc:"VGCC calcium flux"`
+	Gak    float32 `desc:"conductance of A-type K potassium channels"`
 
 	GeRaw float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
 	GiRaw float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
@@ -124,11 +125,14 @@ var NeuronVarProps = map[string]string{
 	"GknaMed":  `auto-scale:"+"`,
 	"GknaSlow": `auto-scale:"+"`,
 	"Gnmda":    `auto-scale:"+"`,
+	"NmdaCa":   `auto-scale:"+"`,
 	"GnmdaSyn": `auto-scale:"+"`,
-	"RnmdaSyn": `auto-scale:"+"`,
 	"GgabaB":   `auto-scale:"+"`,
 	"GABAB":    `auto-scale:"+"`,
 	"GABABx":   `auto-scale:"+"`,
+	"Gvgcc":    `auto-scale:"+"`,
+	"VgccCa":   `auto-scale:"+"`,
+	"Gak":      `auto-scale:"+"`,
 }
 
 func init() {

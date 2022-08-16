@@ -133,6 +133,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
 	nrn.Gnmda -= glong * nrn.Gnmda
+	nrn.NmdaCa -= glong * nrn.NmdaCa
 
 	// learning-based NMDA, Ca values decayed in Learn.DecayNeurCa
 
@@ -188,10 +189,9 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.GnmdaSyn = 0
 	nrn.Gnmda = 0
-	nrn.RnmdaSyn = 0
+	nrn.NmdaCa = 0
 	nrn.SnmdaO = 0
 	nrn.SnmdaI = 0
-	nrn.RCa = 0
 
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
@@ -221,6 +221,8 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	// important: add other sources of GeRaw here in NMDA driver
 	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GeRaw+geExt)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
+	nrn.NmdaCa = nrn.Gnmda * ac.NMDA.CaFmV(nrn.VmDend)
+	ac.NMDA.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
 }
 
 // GvgccFmVm updates all the VGCC voltage-gated calcium channel variables

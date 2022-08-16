@@ -22,22 +22,19 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 1.1 > 1.2 -- diff from orig
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
+					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
-					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
-					"Layer.Learn.LrnNMDA.Gbar":      "0.15", // .15 default
-					"Layer.Learn.LrnNMDA.MgC":       "1.4",  // todo
-					"Layer.Learn.LrnNMDA.Voff":      "5",    // todo
-					"Layer.Learn.LrnNMDA.Tau":       "50",   // todo: 100?
+					"Layer.Act.NMDA.Tau":            "100",  // 100 def -- 50 is sig worse
 					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
 					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
 					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Act.VGCC.Ca":             "500",  // 500 pretty close to SpkVGCC, but latter is better
 					"Layer.Learn.NeurCa.SpkVGCC":    "true", // sig better..
-					"Layer.Learn.NeurCa.SpkVGCCa":   "1200", // 1200 > lower, higher by 100's
+					"Layer.Learn.NeurCa.SpkVGCCa":   "10",   //
 					"Layer.Learn.NeurCa.SpikeG":     "8",    // todo: try 12
-					"Layer.Learn.NeurCa.CaMax":      "250",  // 250 > 200, 300
-					"Layer.Learn.NeurCa.MTau":       "5",    // 5 > 10
+					"Layer.Learn.NeurCa.CaMax":      "50",   //
+					"Layer.Learn.NeurCa.MTau":       "5",    // now only affects CaSpk
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.DTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.SynTau":     "30",   // 30 > 20, 40
