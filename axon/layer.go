@@ -1027,7 +1027,7 @@ func (ly *Layer) NewState() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActPrv = nrn.CaD // nrn.ActP -- this is used in deep learning, makes big diff!
+		nrn.ActPrv = nrn.CaSpkD // nrn.ActP -- this is used in deep learning, makes big diff!
 	}
 	ly.AxonLay.DecayState(ly.Act.Decay.Act)
 }
@@ -1518,7 +1518,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.CaP
+		nrn.ActSt1 = nrn.CaSpkP
 	}
 }
 
@@ -1529,7 +1529,7 @@ func (ly *Layer) ActSt2(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.CaP
+		nrn.ActSt2 = nrn.CaSpkP
 	}
 }
 
@@ -1604,7 +1604,7 @@ func (ly *Layer) DTrgAvgFmErr() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.DTrgAvg += lr * (nrn.CaP - nrn.CaD)
+		nrn.DTrgAvg += lr * (nrn.CaSpkP - nrn.CaSpkD) // CaP - CaD almost as good in ra25 -- todo explore
 	}
 }
 

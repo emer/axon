@@ -34,8 +34,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Act.VGCC.Ca":             "500",  // 500 pretty close to SpkVGCC, but latter is better
 					"Layer.Learn.NeurCa.SpkVGCC":    "true", // sig better..
-					"Layer.Learn.NeurCa.SpikeG":     "8",    // todo: try 12
 					"Layer.Learn.NeurCa.SpkVGCCa":   "1200", // 1200 > lower, higher by 100's
+					"Layer.Learn.NeurCa.SpikeG":     "8",    // todo: try 12
 					"Layer.Learn.NeurCa.CaMax":      "250",  // 250 > 200, 300
 					"Layer.Learn.NeurCa.MTau":       "5",    // 5 > 10
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
