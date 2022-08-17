@@ -31,9 +31,9 @@ var ParamSets = params.Sets{
 					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Act.VGCC.Ca":             "500",  // 500 pretty close to SpkVGCC, but latter is better
 					"Layer.Learn.NeurCa.SpkVGCC":    "true", // sig better..
-					"Layer.Learn.NeurCa.SpkVGCCa":   "10",   //
+					"Layer.Learn.NeurCa.SpkVGCCa":   "10",   // 10 > 9, 11
 					"Layer.Learn.NeurCa.SpikeG":     "8",    // todo: try 12
-					"Layer.Learn.NeurCa.CaMax":      "50",   //
+					"Layer.Learn.NeurCa.CaMax":      "52",   // 52 > 50, 55
 					"Layer.Learn.NeurCa.MTau":       "5",    // now only affects CaSpk
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.DTau":       "40",   // 40 > 30
@@ -65,7 +65,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
 					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.KinaseCa.SpikeG":  "12",  // todo: test .01 etc
+					"Prjn.Learn.KinaseCa.SpikeG":  "12",  // 12 def
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.0", // todo: test .01 etc
 					"Prjn.Learn.KinaseCa.MTau":    "5",   // 5 ==? 2 > 10
 					"Prjn.Learn.KinaseCa.PTau":    "40",

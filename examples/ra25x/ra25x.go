@@ -32,6 +32,7 @@ import (
 	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/metric"
 	"github.com/emer/etable/minmax"
+	"github.com/emer/etable/norm"
 	"github.com/emer/etable/tsragg"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -487,6 +488,42 @@ func (ss *Sim) ConfigLogItems() {
 	layers := ss.Net.LayersByClass("Hidden", "Target")
 	for _, lnm := range layers {
 		clnm := lnm
+		ss.Logs.AddItem(&elog.Item{
+			Name:  clnm + "_AvgAbsCaDiff",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					tsr := ctx.Stats.F32Tensor(clnm)
+					ly.UnitValsRepTensor(tsr, "CaDiff")
+					norm.TensorAbs32(tsr)
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:  clnm + "_AvgAbsActDiff",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					tsr := ctx.Stats.F32Tensor(clnm)
+					ly.UnitValsRepTensor(tsr, "ActDiff")
+					norm.TensorAbs32(tsr)
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaD",
 			Type:  etensor.FLOAT64,
