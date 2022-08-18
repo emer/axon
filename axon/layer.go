@@ -99,7 +99,7 @@ type ActAvgVals struct {
 // statistics at the layer level
 type CorSimStats struct {
 	Cor float32 `inactive:"+" desc:"correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFmActs called by PlusPhase"`
-	Avg float32 `inactive:"+" desc:"running average of correlation similaritybetween ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
+	Avg float32 `inactive:"+" desc:"running average of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
 	Var float32 `inactive:"+" desc:"running variance of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
 }
 
@@ -1159,7 +1159,7 @@ func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 	ly.Act.NMDAFmRaw(nrn, geExt)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Learn.CaM(nrn)
+	ly.Learn.CaLrn(nrn, geExt)
 
 	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda+nrn.Gvgcc)
 	nrn.GeRaw = 0
@@ -1300,6 +1300,10 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	if ltime.PlusPhase {
 		intdt *= 3.0
 	}
+	corSimAvg := ly.CorSim.Avg
+	if ly.AxonLay.IsTarget() {
+		corSimAvg = 1
+	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1308,7 +1312,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD) // todo: Ca
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD, corSimAvg) // todo: Ca
 		// note: RLrate is beneficial for IsTarget layers as well
 		// todo: test for deep TRCLayer
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now

@@ -38,6 +38,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.DTau":       "40",   // 40 > 30
 					"Layer.Learn.NeurCa.SynTau":     "30",   // 30 > 20, 40
+					"Layer.Learn.LrnNMDA.Tau":       "50",   // back to 50..
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
@@ -61,13 +62,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
-					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.KinaseCa.SpikeG":  "12",  // 12 def
-					"Prjn.Learn.KinaseCa.UpdtThr": "0.0", // todo: test .01 etc
-					"Prjn.Learn.KinaseCa.MTau":    "5",   // 5 ==? 2 > 10
+					"Prjn.Learn.Lrate.Base":       "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":        "0.1",  // .1 >= .2,
+					"Prjn.SWt.Init.SPct":          "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Trace.Tau":        "1",    // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // todo: test .01 etc
+					"Prjn.Learn.KinaseCa.MTau":    "5",    // 5 ==? 2 > 10
 					"Prjn.Learn.KinaseCa.PTau":    "40",
 					"Prjn.Learn.KinaseCa.DTau":    "40",
 				}},

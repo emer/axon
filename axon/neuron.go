@@ -44,7 +44,8 @@ type Neuron struct {
 	CaSpkM float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
 	CaSpkP float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaSpkD float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
-	CaM    float32 `desc:"integrated calcium, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule -- combines NMDA and VGCC Ca, normalized, drives CaP, CaD for delta signal driving error-driven learning"`
+	CaLrn  float32 `desc:"total recv neuron calcium signal, combining NMDA (NmdaCa) and VGCC (VgccCa) calcium sources, and then integrated into CaM"`
+	CaM    float32 `desc:"integrated calcium, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule -- integrates over CaLrn (NMDA and VGCC Ca), drives CaP, CaD for delta signal driving error-driven learning"`
 	CaP    float32 `desc:"calcium integrated at next timescale, integrating over CaM, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"calcium integrated at next timescale, integrating over CaP, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	CaDiff float32 `desc:"difference between CaP - CaD -- basic error signal"`
@@ -84,8 +85,9 @@ type Neuron struct {
 
 	GnmdaSyn float32 `desc:"integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant"`
 	Gnmda    float32 `desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`
-	NmdaCa   float32 `desc:"NMDA calcium computed from Gnmda, drives learning"`
-	SnmdaO   float32 `desc:"Sender-based number of open NMDA channels based on spiking activity and consequent glutamate release for all sending synapses -- this is the presynaptic component of NMDA activation that is used for computing Ca levels for learning -- increases by (1-SnmdaI)*(1-SnmdaO) with spiking and decays otherwise"`
+	GnmdaLrn float32 `desc:"learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning"`
+	NmdaCa   float32 `desc:"NMDA calcium computed from GnmdaLrn, drives learning via CaM"`
+	SnmdaO   float32 `desc:"Sender-based number of open NMDA channels based on spiking activity and consequent glutamate release for all sending synapses -- this is the presynaptic component of NMDA activation that can be used for computing Ca levels for learning -- increases by (1-SnmdaI)*(1-SnmdaO) with spiking and decays otherwise"`
 	SnmdaI   float32 `desc:"Sender-based inhibitory factor on NMDA as a function of sending (presynaptic) spiking history, capturing the allosteric dynamics from Urakubo et al (2008) model.  Increases to 1 with every spike, and decays back to 0 with its own longer decay rate."`
 
 	GgabaB float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential."`
@@ -118,6 +120,7 @@ var NeuronVarProps = map[string]string{
 	"Gk":       `auto-scale:"+"`,
 	"ActDel":   `auto-scale:"+"`,
 	"ActDiff":  `auto-scale:"+"`,
+	"RLrate":   `auto-scale:"+"`,
 	"AvgPct":   `range:"2"`,
 	"TrgAvg":   `range:"2"`,
 	"DTrgAvg":  `auto-scale:"+"`,
@@ -125,8 +128,9 @@ var NeuronVarProps = map[string]string{
 	"GknaMed":  `auto-scale:"+"`,
 	"GknaSlow": `auto-scale:"+"`,
 	"Gnmda":    `auto-scale:"+"`,
-	"NmdaCa":   `auto-scale:"+"`,
 	"GnmdaSyn": `auto-scale:"+"`,
+	"GnmdaLrn": `auto-scale:"+"`,
+	"NmdaCa":   `auto-scale:"+"`,
 	"GgabaB":   `auto-scale:"+"`,
 	"GABAB":    `auto-scale:"+"`,
 	"GABABx":   `auto-scale:"+"`,
