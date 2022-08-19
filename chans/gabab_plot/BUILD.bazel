@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "gabab_plot_lib",
+    srcs = ["gabab_plot.go"],
+    importpath = "github.com/emer/axon/chans/gabab_plot",
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_github_emer_etable//eplot",
+        "@com_github_emer_etable//etable",
+        "@com_github_emer_etable//etensor",
+        "@com_github_emer_etable//etview",
+        "@com_github_goki_gi//gi",
+        "@com_github_goki_gi//gimain",
+        "@com_github_goki_gi//giv",
+        "@com_github_goki_ki//ki",
+        "@com_github_goki_mat32//:mat32",
+    ],
+)
+
+go_binary(
+    name = "gabab_plot",
+    embed = [":gabab_plot_lib"],
+    visibility = ["//visibility:public"],
+)
