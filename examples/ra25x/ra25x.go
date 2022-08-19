@@ -548,6 +548,23 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
 		ss.Logs.AddItem(&elog.Item{
+			Name:  clnm + "_AvgCaLrn",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					tsr := ctx.Stats.F32Tensor(clnm)
+					ly.UnitValsRepTensor(tsr, "CaLrn")
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaM",
 			Type:  etensor.FLOAT64,
 			Range: minmax.F64{Max: 1},

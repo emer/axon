@@ -31,14 +31,19 @@ var ParamSets = params.Sets{
 					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Act.VGCC.Ca":             "500",  // 500 pretty close to SpkVGCC, but latter is better
 					"Layer.Learn.NeurCa.SpkVGCC":    "true", // sig better..
-					"Layer.Learn.NeurCa.SpkVGCCa":   "10",   // 10 > 9, 11
-					"Layer.Learn.NeurCa.SpikeG":     "8",    // todo: try 12
-					"Layer.Learn.NeurCa.CaMax":      "52",   // 52 > 50, 55
-					"Layer.Learn.NeurCa.MTau":       "5",    // now only affects CaSpk
-					"Layer.Learn.NeurCa.PTau":       "40",   // 40 > 30
-					"Layer.Learn.NeurCa.DTau":       "40",   // 40 > 30
-					"Layer.Learn.NeurCa.SynTau":     "30",   // 30 > 20, 40
-					"Layer.Learn.LrnNMDA.Tau":       "50",   // back to 50..
+					"Layer.Learn.NeurCa.MTauCaLrn":  "false",
+					"Layer.Learn.NeurCa.SpkVGCCa":   "30", // 180 = equivalent of 1200 from v7; ~30 matches in !mtau
+					"Layer.Learn.NeurCa.SpikeG":     "8",  // todo: try 12
+					"Layer.Learn.NeurCa.CaMax":      "65", // 38 = 250 from v7; 65 matches in !mtau
+					"Layer.Learn.NeurCa.MTau":       "5",  // see MTauCaLrn
+					"Layer.Learn.NeurCa.PTau":       "40", // 40 > 30
+					"Layer.Learn.NeurCa.DTau":       "40", // 40 > 30
+					"Layer.Learn.NeurCa.SynTau":     "30", // 30 > 20, 40
+					"Layer.Learn.NeurCa.Decay":      "false",
+					"Layer.Learn.NeurCa.DecayCaLrn": "true",
+					"Layer.Learn.LrnNMDA.MgC":       "1.2",  // 1.2 for unified Act params, else 1.4
+					"Layer.Learn.LrnNMDA.Voff":      "0",    // 0 for unified Act params, else 5
+					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 else 50
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
