@@ -175,6 +175,15 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GknaMed = 0
 	nrn.GknaSlow = 0
 
+	nrn.CaLrn = 0
+
+	nrn.GnmdaSyn = 0
+	nrn.Gnmda = 0
+	nrn.GnmdaLrn = 0
+	nrn.NmdaCa = 0
+	nrn.SnmdaO = 0
+	nrn.SnmdaI = 0
+
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
 	nrn.GABABx = 0
@@ -184,12 +193,6 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.VgccH = 0
 	nrn.VgccCa = 0
 	nrn.Gak = 0
-
-	nrn.GnmdaSyn = 0
-	nrn.Gnmda = 0
-	nrn.NmdaCa = 0
-	nrn.SnmdaO = 0
-	nrn.SnmdaI = 0
 
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0

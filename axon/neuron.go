@@ -52,13 +52,13 @@ type Neuron struct {
 	PctDWt float32 `desc:"for experimental Kinase continuous learning algorithm: percent of synapses that had DWt updated on the current cycle, for sending-neuron"`
 
 	ActInt  float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM)"`
+	ActPrv  float32 `desc:"the final activation state at end of previous state"`
 	ActSt1  float32 `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
 	ActSt2  float32 `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by ActSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
 	ActM    float32 `desc:"the activation state at end of third quarter, which is the traditional posterior-cortical minus phase activation"`
 	ActP    float32 `desc:"the activation state at end of fourth quarter, which is the traditional posterior-cortical plus_phase activation"`
 	ActDiff float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
 	ActDel  float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
-	ActPrv  float32 `desc:"the final activation state at end of previous state"`
 	RLrate  float32 `desc:"recv-unit based learning rate computed from the activity dynamics of recv unit -- extra filtering when recv unit is likely close enough"`
 
 	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
