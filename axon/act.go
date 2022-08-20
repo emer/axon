@@ -58,6 +58,7 @@ func (ac *ActParams) Defaults() {
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
+	ac.VGCC.Ca = 20
 	ac.AK.Defaults()
 	ac.AK.Gbar = 0.1
 	ac.Attn.Defaults()
@@ -175,12 +176,8 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GknaMed = 0
 	nrn.GknaSlow = 0
 
-	nrn.CaLrn = 0
-
 	nrn.GnmdaSyn = 0
 	nrn.Gnmda = 0
-	nrn.GnmdaLrn = 0
-	nrn.NmdaCa = 0
 	nrn.SnmdaO = 0
 	nrn.SnmdaI = 0
 
@@ -191,7 +188,6 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Gvgcc = 0
 	nrn.VgccM = 0
 	nrn.VgccH = 0
-	nrn.VgccCa = 0
 	nrn.Gak = 0
 
 	nrn.GeRaw = 0
@@ -232,7 +228,7 @@ func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
 	dm, dh := ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH)
 	nrn.VgccM += dm
 	nrn.VgccH += dh
-	nrn.VgccCa = ac.VGCC.CaFmG(nrn.VmDend, nrn.Gvgcc, nrn.VgccCa)
+	nrn.VgccCa = ac.VGCC.CaFmG(nrn.VmDend, nrn.Gvgcc, nrn.VgccCa) // note: may be overwritten!
 }
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn

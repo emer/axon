@@ -29,21 +29,18 @@ var ParamSets = params.Sets{
 					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
 					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
 					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
-					"Layer.Act.VGCC.Ca":             "500",  // 500 pretty close to SpkVGCC, but latter is better
-					"Layer.Learn.NeurCa.SpkVGCC":    "true", // sig better..
-					"Layer.Learn.NeurCa.MTauCaLrn":  "true",
-					"Layer.Learn.NeurCa.SpkVGCCa":   "180", // 180 = equivalent of 1200 from v7; ~30 matches in !mtau
-					"Layer.Learn.NeurCa.SpikeG":     "8",   // todo: try 12
-					"Layer.Learn.NeurCa.CaMax":      "38",  // 38 = 250 from v7; 65 matches in !mtau
-					"Layer.Learn.NeurCa.MTau":       "5",   // see MTauCaLrn
-					"Layer.Learn.NeurCa.PTau":       "40",  // 40 > 30
-					"Layer.Learn.NeurCa.DTau":       "40",  // 40 > 30
-					"Layer.Learn.NeurCa.SynTau":     "30",  // 30 > 20, 40
-					"Layer.Learn.NeurCa.Decay":      "false",
-					"Layer.Learn.NeurCa.DecayCaLrn": "false",
-					"Layer.Learn.LrnNMDA.MgC":       "1.4",  // 1.2 for unified Act params, else 1.4
-					"Layer.Learn.LrnNMDA.Voff":      "5",    // 0 for unified Act params, else 5
-					"Layer.Learn.LrnNMDA.Tau":       "50",   // 100 else 50
+					"Layer.Act.VGCC.Ca":             "20",   // 20 / 10tau similar to spk
+					"Layer.Learn.CaLrn.Norm":        "80",   // 80 works
+					"Layer.Learn.CaLrn.SpkVGCC":     "true", // sig better..
+					"Layer.Learn.CaLrn.SpkVgccCa":   "35",   // 70 / 5 or 35 / 10 both work
+					"Layer.Learn.CaLrn.VgccTau":     "10",   // 10 > 5 ?
+					"Layer.Learn.CaLrn.Dt.MTau":     "2",    // 2 > 1 ?
+					"Layer.Learn.CaSpk.SpikeG":      "8",    // 8 produces reasonable 0-1 norm CaSpk levels?
+					"Layer.Learn.CaSpk.SynTau":      "30",   // 30 > 20, 40
+					"Layer.Learn.CaSpk.Dt.MTau":     "5",    // 5 > 10?
+					"Layer.Learn.LrnNMDA.MgC":       "1.2",  // 1.2 for unified Act params, else 1.4
+					"Layer.Learn.LrnNMDA.Voff":      "0",    // 0 for unified Act params, else 5
+					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 else 50
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
@@ -71,11 +68,11 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":        "0.1",  // .1 >= .2,
 					"Prjn.SWt.Init.SPct":          "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.Tau":        "1",    // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def
-					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // todo: test .01 etc
-					"Prjn.Learn.KinaseCa.MTau":    "5",    // 5 ==? 2 > 10
-					"Prjn.Learn.KinaseCa.PTau":    "40",
-					"Prjn.Learn.KinaseCa.DTau":    "40",
+					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
+					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10
+					"Prjn.Learn.KinaseCa.Dt.PTau": "40",
+					"Prjn.Learn.KinaseCa.Dt.DTau": "40",
 				}},
 			{Sel: "#Hidden2ToOutput", Desc: "key to use activation-based learning for output layers",
 				Params: params.Params{

@@ -44,11 +44,11 @@ type Neuron struct {
 	CaSpkM float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
 	CaSpkP float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaSpkD float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
-	CaLrn  float32 `desc:"total recv neuron calcium signal, combining NMDA (NmdaCa) and VGCC (VgccCa) calcium sources, and then integrated into CaM"`
+	CaLrn  float32 `desc:"total recv neuron calcium signal, combining NMDA (NmdaCa) and VGCC (VgccCaInt) calcium sources, and then integrated into CaM, which then drives receiver-based component of learning signal, which computes the error as a temporal derivative between CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor."`
 	CaM    float32 `desc:"integrated calcium, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule -- integrates over CaLrn (NMDA and VGCC Ca), drives CaP, CaD for delta signal driving error-driven learning"`
 	CaP    float32 `desc:"calcium integrated at next timescale, integrating over CaM, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD    float32 `desc:"calcium integrated at next timescale, integrating over CaP, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
-	CaDiff float32 `desc:"difference between CaP - CaD -- basic error signal"`
+	CaDiff float32 `desc:"difference between CaP - CaD -- this is the error signal that drives error-driven learning."`
 	PctDWt float32 `desc:"for experimental Kinase continuous learning algorithm: percent of synapses that had DWt updated on the current cycle, for sending-neuron"`
 
 	ActInt  float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM)"`
@@ -94,11 +94,13 @@ type Neuron struct {
 	GABAB  float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
 	GABABx float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
 
-	Gvgcc  float32 `desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`
-	VgccM  float32 `desc:"activation gate of VGCC channels"`
-	VgccH  float32 `desc:"inactivation gate of VGCC channels"`
-	VgccCa float32 `desc:"VGCC calcium flux"`
-	Gak    float32 `desc:"conductance of A-type K potassium channels"`
+	Gvgcc     float32 `desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`
+	VgccM     float32 `desc:"activation gate of VGCC channels"`
+	VgccH     float32 `desc:"inactivation gate of VGCC channels"`
+	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
+	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
+
+	Gak float32 `desc:"conductance of A-type K potassium channels"`
 
 	GeRaw float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
 	GiRaw float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
@@ -109,34 +111,35 @@ var NeuronVars = []string{}
 var NeuronVarsMap map[string]int
 
 var NeuronVarProps = map[string]string{
-	"GeSyn":    `range:"2"`,
-	"Ge":       `range:"2"`,
-	"GeM":      `range:"2"`,
-	"Vm":       `min:"0" max:"1"`,
-	"VmDend":   `min:"0" max:"1"`,
-	"ISI":      `auto-scale:"+"`,
-	"ISIAvg":   `auto-scale:"+"`,
-	"Gi":       `auto-scale:"+"`,
-	"Gk":       `auto-scale:"+"`,
-	"ActDel":   `auto-scale:"+"`,
-	"ActDiff":  `auto-scale:"+"`,
-	"RLrate":   `auto-scale:"+"`,
-	"AvgPct":   `range:"2"`,
-	"TrgAvg":   `range:"2"`,
-	"DTrgAvg":  `auto-scale:"+"`,
-	"GknaFast": `auto-scale:"+"`,
-	"GknaMed":  `auto-scale:"+"`,
-	"GknaSlow": `auto-scale:"+"`,
-	"Gnmda":    `auto-scale:"+"`,
-	"GnmdaSyn": `auto-scale:"+"`,
-	"GnmdaLrn": `auto-scale:"+"`,
-	"NmdaCa":   `auto-scale:"+"`,
-	"GgabaB":   `auto-scale:"+"`,
-	"GABAB":    `auto-scale:"+"`,
-	"GABABx":   `auto-scale:"+"`,
-	"Gvgcc":    `auto-scale:"+"`,
-	"VgccCa":   `auto-scale:"+"`,
-	"Gak":      `auto-scale:"+"`,
+	"GeSyn":     `range:"2"`,
+	"Ge":        `range:"2"`,
+	"GeM":       `range:"2"`,
+	"Vm":        `min:"0" max:"1"`,
+	"VmDend":    `min:"0" max:"1"`,
+	"ISI":       `auto-scale:"+"`,
+	"ISIAvg":    `auto-scale:"+"`,
+	"Gi":        `auto-scale:"+"`,
+	"Gk":        `auto-scale:"+"`,
+	"ActDel":    `auto-scale:"+"`,
+	"ActDiff":   `auto-scale:"+"`,
+	"RLrate":    `auto-scale:"+"`,
+	"AvgPct":    `range:"2"`,
+	"TrgAvg":    `range:"2"`,
+	"DTrgAvg":   `auto-scale:"+"`,
+	"GknaFast":  `auto-scale:"+"`,
+	"GknaMed":   `auto-scale:"+"`,
+	"GknaSlow":  `auto-scale:"+"`,
+	"Gnmda":     `auto-scale:"+"`,
+	"GnmdaSyn":  `auto-scale:"+"`,
+	"GnmdaLrn":  `auto-scale:"+"`,
+	"NmdaCa":    `auto-scale:"+"`,
+	"GgabaB":    `auto-scale:"+"`,
+	"GABAB":     `auto-scale:"+"`,
+	"GABABx":    `auto-scale:"+"`,
+	"Gvgcc":     `auto-scale:"+"`,
+	"VgccCa":    `auto-scale:"+"`,
+	"VgccCaInt": `auto-scale:"+"`,
+	"Gak":       `auto-scale:"+"`,
 }
 
 func init() {

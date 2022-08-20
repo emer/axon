@@ -1092,12 +1092,28 @@ func (ly *Layer) DecayState(decay float32) {
 			continue
 		}
 		ly.Act.DecayState(nrn, decay)
-		ly.Learn.DecayNeurCa(nrn, ly.Act.Decay.Glong)
+		// ly.Learn.DecayCaLrnSpk(nrn, ly.Act.Decay.Glong) // NOT called by default
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	for pi := range ly.Pools { // decaying average act is essential for inhib
 		pl := &ly.Pools[pi]
 		pl.Inhib.Decay(decay)
+	}
+}
+
+// DecayCaLrnSpk decays neuron-level calcium learning and spiking variables
+// by given factor, which is typically ly.Act.Decay.Glong.
+// Note: this is NOT called by default and is generally
+// not useful, causing variability in these learning factors as a function
+// of the decay parameter that then has impacts on learning rates etc.
+// It is only here for reference or optional testing.
+func (ly *Layer) DecayCaLrnSpk(decay float32) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Learn.DecayCaLrnSpk(nrn, decay)
 	}
 }
 
@@ -1158,8 +1174,8 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 	ly.Act.NMDAFmRaw(nrn, geExt)
+	ly.Learn.LrnNMDAFmRaw(nrn, geExt)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Learn.CaLrn(nrn, geExt)
 
 	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda+nrn.Gvgcc)
 	nrn.GeRaw = 0
@@ -1522,7 +1538,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.CaSpkP
+		nrn.ActSt1 = nrn.CaSpkP // todo: should be ActInt?  used in learning in hippo..
 	}
 }
 
@@ -1533,7 +1549,7 @@ func (ly *Layer) ActSt2(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.CaSpkP
+		nrn.ActSt2 = nrn.CaSpkP // todo: should be ActInt?  used in learning in hippo..
 	}
 }
 
