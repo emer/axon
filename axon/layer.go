@@ -1631,6 +1631,10 @@ func (ly *Layer) DTrgAvgFmErr() {
 // DTrgSpkCaPubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
 func (ly *Layer) DTrgSpkCaPubMean() {
+	submean := ly.Learn.TrgAvgAct.SubMean
+	if submean == 0 {
+		return
+	}
 	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
@@ -1649,6 +1653,7 @@ func (ly *Layer) DTrgSpkCaPubMean() {
 				continue
 			}
 			avg /= float32(nn)
+			avg *= submean
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.IsOff() {
@@ -1672,6 +1677,7 @@ func (ly *Layer) DTrgSpkCaPubMean() {
 			return
 		}
 		avg /= float32(nn)
+		avg *= submean
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {

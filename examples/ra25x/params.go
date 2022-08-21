@@ -40,8 +40,9 @@ var ParamSets = params.Sets{
 					"Layer.Learn.CaSpk.Dt.MTau":     "5",    // 5 > 10?
 					"Layer.Learn.LrnNMDA.MgC":       "1.2",  // 1.2 for unified Act params, else 1.4
 					"Layer.Learn.LrnNMDA.Voff":      "0",    // 0 for unified Act params, else 5
-					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 else 50
+					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 def
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
+					"Layer.Learn.TrgAvgAct.SubMean": "0",
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
