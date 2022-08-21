@@ -29,6 +29,7 @@ type CtxtSender interface {
 type CTCtxtPrjn struct {
 	axon.Prjn           // access as .Prjn
 	FmSuper   bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Learn = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
+	Trace     bool      `desc:"if true, use the trace-based learning rule"`
 	CtxtGeInc []float32 `desc:"local per-recv unit accumulator for Ctxt excitatory conductance from sending units -- not a delta -- the full value"`
 }
 
@@ -36,6 +37,7 @@ var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 
 func (pj *CTCtxtPrjn) Defaults() {
 	pj.Prjn.Defaults() // note: used to have other defaults
+	pj.Trace = true
 }
 
 func (pj *CTCtxtPrjn) UpdateParams() {
@@ -130,6 +132,16 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
+	if pj.Trace {
+		pj.DWtTrace(ltime)
+	} else {
+		pj.DWtNoTrace(ltime)
+	}
+}
+
+// DWtTrace computes the weight change (learning) for Ctxt projections
+// Version using the synaptic-level trace signal
+func (pj *CTCtxtPrjn) DWtTrace(ltime *axon.Time) {
 	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
@@ -147,7 +159,8 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 			sy := &syns[ci]
 			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
 			// only difference from standard is that Tr updates *after* DWt instead of before!
-			err := sy.Tr * (rn.CaP - rn.CaD)          // recv RCa drives error signal
+			// note: CaSpkP - CaSpkD works MUCH better than plain Ca
+			err := sy.Tr * (rn.CaSpkP - rn.CaSpkD)
 			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD is better: reflects entire window
 			if sy.Wt == 0 {                           // failed con, no learn
 				continue
@@ -160,6 +173,42 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtNoTrace computes the weight change (learning) for Ctxt projections.
+// Version without trace -- used previously.
+func (pj *CTCtxtPrjn) DWtNoTrace(ltime *axon.Time) {
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	sslay, issuper := pj.Send.(*SuperLayer)
+	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sact := float32(0)
+		if issuper {
+			sact = sslay.SuperNeurs[si].BurstPrv
+		} else {
+			sact = slay.Neurons[si].ActPrv
+		}
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			sy := &syns[ci]
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			// following line should be ONLY diff: sact for *both* short and medium *sender*
+			// activations, which are first two args:
+			err := pj.Learn.CHLdWt(sact, sact, rn.CaSpkP, rn.CaSpkD) // note: CaSpk MUCH better than Ca
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += lr * err
 		}
 	}
 }

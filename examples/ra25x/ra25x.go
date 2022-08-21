@@ -319,8 +319,10 @@ func (ss *Sim) ConfigLoops() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		switch trnEpc {
 		case 50:
+			mpi.Printf("learning rate drop at: %d\n", trnEpc)
 			ss.Net.LrateSched(0.2) // 0.2
 		case 100:
+			mpi.Printf("learning rate drop at: %d\n", trnEpc)
 			ss.Net.LrateSched(0.1) // 0.1
 		}
 	})

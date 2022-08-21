@@ -893,6 +893,7 @@ func (pj *Prjn) DWt(ltime *Time) {
 // computed at the Theta cycle interval.  Trace version.
 func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
+	spkErr := pj.Learn.Trace.SpkErr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
@@ -914,7 +915,12 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 			if sy.Wt == 0 {                           // failed con, no learn
 				continue
 			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			var err float32
+			if spkErr {
+				err = sy.Tr * (rn.CaSpkP - rn.CaSpkD) // comparison: spiking drives error
+			} else {
+				err = sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			}
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {

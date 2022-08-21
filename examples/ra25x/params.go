@@ -65,13 +65,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":        "0.1",  // .1 >= .2,
-					"Prjn.SWt.Init.SPct":          "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Trace.Tau":        "1",    // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
-					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
-					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10
+					"Prjn.Learn.Lrate.Base":       "0.1",   // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
+					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Trace.Tau":        "2",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.Learn.Trace.SpkErr":     "false", // comparison case: needs lrate = * .5
+					"Prjn.Learn.KinaseCa.SpikeG":  "12",    // 12 def -- produces reasonable ~1ish max vals
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.01",  // 0.01 def
+					"Prjn.Learn.KinaseCa.Dt.MTau": "5",     // 5 ==? 2 > 10
 					"Prjn.Learn.KinaseCa.Dt.PTau": "40",
 					"Prjn.Learn.KinaseCa.Dt.DTau": "40",
 				}},

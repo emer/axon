@@ -571,8 +571,9 @@ func (ls *LrateParams) Init() {
 
 // TraceParams manages learning rate parameters
 type TraceParams struct {
-	Tau float32 `desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
-	Dt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	Tau    float32 `desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
+	SpkErr bool    `desc:"use CaSpk instead of Ca for error signal"`
+	Dt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
 func (tp *TraceParams) Defaults() {
