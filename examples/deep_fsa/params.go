@@ -40,7 +40,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.LrnNMDA.Voff":      "5",
 					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 def
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
-					"Layer.Learn.TrgAvgAct.SubMean": "1",    // seems minorly beneficial for now..
+					"Layer.Learn.TrgAvgAct.SubMean": "1",    // 1 == 0
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
@@ -53,7 +53,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
-					"Layer.CtxtGeGain":      "0.3", // 0.3 > 0.2 (was .2)
+					"Layer.CtxtGeGain":      "0.25", // 0.25 > 0.3 (most blow up) > 0.2 (was .2)
 					"Layer.Act.KNa.On":      "true",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
@@ -61,17 +61,17 @@ var ParamSets = params.Sets{
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":   "1.0",  // 1.0 > 0.9 > 1.1
-					"Layer.TRC.DriveScale":   "0.05", // 0.05 > .1 > .15 for trace w/ gi1.0 -- was .15
+					"Layer.TRC.DriveScale":   "0.05", // 0.05 > .1 > .15 for trace w/ gi1.0 -- repl10
 					"Layer.TRC.FullDriveAct": "0.6",  // 0.6 def
 					"Layer.Act.Spike.Tr":     "3",    // 1 is best for ra25..
 					"Layer.Act.Decay.Act":    "0.5",
 					"Layer.Act.Decay.Glong":  "1",    // clear long
 					"Layer.Act.GABAB.Gbar":   "0.2",  // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":    "0.15", // now .15 fine?  was: .6 > .4 > .2 std -- strange but real!
+					"Layer.Act.NMDA.Gbar":    "0.15", // now .15 best, .4, .6 sig worse
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.02", // .02 > .03? .03 std
+					"Prjn.Learn.Lrate.Base":       "0.02", // .02 > .03 > .01 -- .03 std
 					"Prjn.SWt.Adapt.Lrate":        "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
 					"Prjn.SWt.Adapt.DreamVar":     "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":          "1.0",  // 1 works fine here -- .5 also ok

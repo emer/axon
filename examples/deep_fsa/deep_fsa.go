@@ -843,8 +843,8 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddStd()
 	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
-	ss.Args.SetInt("epochs", 50)
-	ss.Args.SetInt("runs", 5)
+	ss.Args.SetInt("epochs", 60)
+	ss.Args.SetInt("runs", 10)
 	ss.Args.Parse() // always parse
 }
 
