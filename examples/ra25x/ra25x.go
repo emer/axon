@@ -77,8 +77,8 @@ type Sim struct {
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
-	LrGain       float32          `desc:"gain factor on learning rate"`
-	LrMod        float32          `inactive:"+" desc:"gain factor on learning rate"`
+	Lr50         float32          `desc:"learning rate schedule value for 50 epcs"`
+	Lr100        float32          `desc:"learning rate schedule value for 100 epcs"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
@@ -100,7 +100,8 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.LrGain = 10
+	ss.Lr50 = 1.0
+	ss.Lr100 = 1.0
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
@@ -250,10 +251,6 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
-	// this does not work as well as schedule, b/c it drops too quickly
-	// need a lagging timescale for dropping relative to lrate scale
-	// man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LrateMod", ss.LrateMod)
-
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
 	// Train stop early condition
@@ -320,10 +317,10 @@ func (ss *Sim) ConfigLoops() {
 		switch trnEpc {
 		case 50:
 			mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			ss.Net.LrateSched(0.2) // 0.2
+			ss.Net.LrateSched(ss.Lr50) // 0.2
 		case 100:
 			mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			ss.Net.LrateSched(0.1) // 0.1
+			ss.Net.LrateSched(ss.Lr100) // 0.1
 		}
 	})
 
@@ -454,24 +451,6 @@ func (ss *Sim) TrialStats() {
 	} else {
 		ss.Stats.SetFloat("TrlErr", 0)
 	}
-}
-
-// LrateMod modulates learning rate
-func (ss *Sim) LrateMod() {
-	nt := ss.Net
-	minCorSim := float32(1)
-	for _, lyi := range nt.Layers {
-		ly := lyi.(axon.AxonLayer).AsAxon()
-		if ly.CorSim.Avg < minCorSim {
-			minCorSim = ly.CorSim.Avg
-		}
-	}
-	lrmod := ss.LrGain * (1.0 - minCorSim)
-	if lrmod < 1 {
-		lrmod = 1
-	}
-	nt.LrateMod(lrmod)
-	ss.LrMod = lrmod
 }
 
 //////////////////////////////////////////////////////////////////////////////

@@ -93,6 +93,7 @@ type ActAvgVals struct {
 	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
 	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	MaxCaSpkP float32 `inactive:"+" desc:"maximum CaSpkP value in layer -- for RLrate computation"`
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
@@ -1328,7 +1329,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD, corSimAvg) // todo: Ca
+		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaSpkP, nrn.CaSpkD, corSimAvg, ly.ActAvg.MaxCaSpkP)
 		// note: RLrate is beneficial for IsTarget layers as well
 		// todo: test for deep TRCLayer
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
@@ -1353,6 +1354,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 // and synaptic-level calcium updates depending on spiking, NMDA
 func (ly *Layer) PostAct(ltime *Time) {
 	ly.AvgMaxAct(ltime)
+	ly.MaxCaSpkP(ltime)
 	if !ltime.Testing {
 		ly.AxonLay.SynCa(ltime)
 	}
@@ -1387,6 +1389,21 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 		pl.Inhib.Act.Max = max
 		pl.Inhib.Act.MaxIdx = maxi
 	}
+}
+
+// MaxCaSpkP computes maximum CaSpkP
+func (ly *Layer) MaxCaSpkP(ltime *Time) {
+	var max float32
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		if nrn.CaSpkP > max {
+			max = nrn.CaSpkP
+		}
+	}
+	ly.ActAvg.MaxCaSpkP = max
 }
 
 // AvgGeM computes the average and max GeM stats

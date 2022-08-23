@@ -44,8 +44,12 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.TrgAvgAct.SubMean": "0",
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.MidRange":   "0.4",
+					"Layer.Learn.RLrate.NonMid":     "0.05",
+					"Layer.Learn.RLrate.DiffMod":    "true",
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
+					"Layer.Learn.RLrate.Min":        "0.001",
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -65,10 +69,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1",   // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
+					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":        "0.2", // .1 >= .2,
+					"Prjn.SWt.Adapt.SoftBound":    "false",
+					"Prjn.SWt.Adapt.SigGain":      "1",
+					"Prjn.SWt.Adapt.MaxWt":        "false",
+					"Prjn.SWt.Adapt.SubMean":      "0",
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Trace.Tau":        "2",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
 					"Prjn.Learn.Trace.SpkErr":     "false", // comparison case: needs lrate = * .5
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",    // 12 def -- produces reasonable ~1ish max vals
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.01",  // 0.01 def
