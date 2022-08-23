@@ -42,6 +42,9 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.TrgAvgAct.SubMean": "1",    // 1 == 0
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.MidRange":   "0.4",  // 0.4 > 0.35 > 0.45
+					"Layer.Learn.RLrate.NonMid":     "1",    // not useful in this model!
+					"Layer.Learn.RLrate.DiffMod":    "true",
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
 				}},
@@ -89,7 +92,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Trace": "true",
+					"Prjn.Trace": "false",
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{

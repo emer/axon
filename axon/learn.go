@@ -235,13 +235,15 @@ func (ta *TrgAvgActParams) Defaults() {
 // RLrateParams are recv neuron learning rate modulation parameters.
 // This is effectively the derivative of the activation function factor in backprop.
 type RLrateParams struct {
-	On         bool    `def:"true" desc:"use learning rate modulation"`
-	MidRange   float32 `def:"0.4" max:"0.5" desc:"range around 0.5 for normalized CaSpkP values where learning rate is normal -- attenuated outside of that in the extremes"`
-	NonMid     float32 `def:"0.05" desc:"scaling factor for extreme CaSpkP values outside of the MidRange"`
-	DiffMod    bool    `desc:"modulate learning rate as a function of plus - minus differences"`
-	ActThr     float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDiffThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
-	Min        float32 `def:"0.001" desc:"minimum learning rate value when below ActDiffThr"`
+	On         bool       `def:"true" desc:"use learning rate modulation"`
+	SigDeriv   bool       `desc:"use the actual derivative of a sigmoid function, with NonMid as the baseline -- otherwise use square wave MidRange with full learning rate"`
+	MidRange   minmax.F32 `desc:"range for normalized CaSpk values where learning rate is normal -- attenuated outside of that in the extremes"`
+	NonMid     float32    `def:"0.05" desc:"scaling factor for extreme CaSpk values outside of the MidRange"`
+	CaD        bool       `desc:"use CaSpkD instead of CaSpkP for mid range spiking"`
+	Diff       bool       `desc:"modulate learning rate as a function of plus - minus differences"`
+	ActThr     float32    `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	ActDiffThr float32    `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
+	Min        float32    `def:"0.001" desc:"minimum learning rate value when below ActDiffThr"`
 }
 
 func (rl *RLrateParams) Update() {
@@ -249,29 +251,51 @@ func (rl *RLrateParams) Update() {
 
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
-	rl.MidRange = 0.4
+	rl.MidRange.Set(0.1, 0.9)
 	rl.NonMid = 0.05
-	rl.DiffMod = true
+	rl.Diff = true
 	rl.ActThr = 0.1
 	rl.ActDiffThr = 0.02
 	rl.Min = 0.001
 	rl.Update()
 }
 
-// RLrate returns the learning rate as a function of CaP and CaD values
-func (rl *RLrateParams) RLrate(scap, scad, corSimAvg, maxcap float32) float32 {
+// RLrateMid returns the learning rate factor as a function of activity,
+// with mid-range values having full learning and extreme values a reduced learning rate.
+// This is a coarse, square-wave approximation to the derivative of a sigmoidal function.
+// Do not apply this to Target layers!
+func (rl *RLrateParams) RLrateMid(scap, scad, maxcap, maxcad float32) float32 {
 	if !rl.On {
 		return 1.0
 	}
-	lrf := float32(1)
-	if maxcap > 0 {
-		np := scap / maxcap
-		if np < 0.5-rl.MidRange || np > 0.5+rl.MidRange {
-			lrf = rl.NonMid
-		}
+	max := maxcap
+	ca := scap
+	if rl.CaD {
+		max = maxcad
+		ca = scad
 	}
-	if !rl.DiffMod {
-		return lrf
+	if max == 0 {
+		return rl.NonMid
+	}
+	ca /= max
+	if rl.SigDeriv {
+		lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
+		if lr < rl.NonMid {
+			lr = rl.NonMid
+		}
+		return lr
+	}
+	if ca < rl.MidRange.Min || ca > rl.MidRange.Max {
+		return rl.NonMid
+	}
+	return 1.0
+}
+
+// RLrateDiff returns the learning rate as a function of difference between
+// CaP and CaD values
+func (rl *RLrateParams) RLrateDiff(scap, scad float32) float32 {
+	if !rl.On || !rl.Diff {
+		return 1.0
 	}
 	max := mat32.Max(scap, scad)
 	if max > rl.ActThr { // avoid div by 0
@@ -279,9 +303,9 @@ func (rl *RLrateParams) RLrate(scap, scad, corSimAvg, maxcap float32) float32 {
 		if dif < rl.ActDiffThr {
 			return rl.Min
 		}
-		return lrf * (dif / max)
+		return (dif / max)
 	}
-	return lrf * rl.Min
+	return rl.Min
 }
 
 ///////////////////////////////////////////////////////////////////////
