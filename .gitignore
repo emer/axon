@@ -20,3 +20,5 @@
 
 /vendor/*
 
+# Bazel
+/bazel-*
