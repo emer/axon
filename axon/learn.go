@@ -236,6 +236,7 @@ func (ta *TrgAvgActParams) Defaults() {
 // This is effectively the derivative of the activation function factor in backprop.
 type RLrateParams struct {
 	On         bool       `def:"true" desc:"use learning rate modulation"`
+	NormLayer  bool       `desc:"use the layer-level max CaSpk value for normalizing values for mid lrate"`
 	MidRange   minmax.F32 `desc:"range for normalized CaSpk values where learning rate is normal -- attenuated outside of that in the extremes"`
 	NonMid     float32    `def:"0.05" desc:"scaling factor for extreme CaSpk values outside of the MidRange"`
 	Diff       bool       `desc:"modulate learning rate as a function of plus - minus differences"`
@@ -261,15 +262,21 @@ func (rl *RLrateParams) Defaults() {
 // RLrateMid returns the learning rate factor as a function of activity,
 // with mid-range values having full learning and extreme values a reduced learning rate.
 // This is a coarse, square-wave approximation to the derivative of a sigmoidal function.
-func (rl *RLrateParams) RLrateMid(scap, maxcap float32) float32 {
+func (rl *RLrateParams) RLrateMid(nrn *Neuron, laymax, poolmax float32) float32 {
 	if !rl.On {
 		return 1.0
 	}
-	if maxcap == 0 {
-		return rl.NonMid
+	var nrm float32
+	if rl.NormLayer {
+		nrm = laymax
+	} else {
+		nrm = poolmax
 	}
-	scap /= maxcap
-	if scap < rl.MidRange.Min || scap > rl.MidRange.Max {
+	ca := nrn.CaSpkP
+	if nrm > 0 {
+		ca /= nrm
+	}
+	if ca < rl.MidRange.Min || ca > rl.MidRange.Max {
 		return rl.NonMid
 	}
 	return 1.0

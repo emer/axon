@@ -44,6 +44,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.On":        "true", // critical!
 					"Layer.Learn.TrgAvgAct.SubMean":   "0",
 					"Layer.Learn.RLrate.On":           "true", // beneficial for trace
+					"Layer.Learn.RLrate.NormLayer":    "true",
 					"Layer.Learn.RLrate.MidRange.Min": "0.1",  // 0.1, 0.9 best
 					"Layer.Learn.RLrate.MidRange.Max": "0.9",  // 0.1, 0.9 best
 					"Layer.Learn.RLrate.NonMid":       "0.05", // 0.05 > .1 > .02
@@ -61,12 +62,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
-					"Layer.Inhib.ActAvg.Init": "0.24",
-					"Layer.Act.Spike.Tr":      "1",   // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":      "0.6", // .6 > .5 v94
-					"Layer.Act.VGCC.Ca":       "1",   // otherwise dominates display
-					// "Layer.Learn.NeurCa.RCa": "false", // auto excluded
+					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.ActAvg.Init":       "0.24",
+					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
+					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94
+					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.NonMid":     "0.05", //
 					"Layer.Learn.RLrate.Diff":       "true",

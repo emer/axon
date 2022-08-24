@@ -1316,10 +1316,6 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	if ltime.PlusPhase {
 		intdt *= 3.0
 	}
-	// isTarg := false
-	// if ly.AxonLay.IsTarget() {
-	// 	isTarg = true
-	// }
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1328,17 +1324,11 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
-		pl := &ly.Pools[nrn.SubPool]
-		// both of these are useful for target layers -- can adjust params for each
-		rlm := ly.Learn.RLrate.RLrateMid(nrn.CaSpkP, pl.CaSpkP.Max)
-		rld := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
-		nrn.RLrate = rlm * rld
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 		}
-
 		// note: this is here because it depends on Gi
 		nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 		nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
@@ -1478,6 +1468,7 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ltime *Time) {
+	pl0 := &ly.Pools[0]
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1485,6 +1476,10 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		}
 		nrn.ActP = nrn.ActInt
 		nrn.ActDiff = nrn.ActP - nrn.ActM
+		pl := &ly.Pools[nrn.SubPool]
+		mlr := ly.Learn.RLrate.RLrateMid(nrn, pl0.CaSpkP.Max, pl.CaSpkP.Max)
+		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
+		nrn.RLrate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 	}
 	for pi := range ly.Pools {
