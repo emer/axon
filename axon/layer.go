@@ -93,8 +93,6 @@ type ActAvgVals struct {
 	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
 	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
-	MaxCaSpkP float32 `inactive:"+" desc:"maximum CaSpkP value in layer -- for RLrate computation"`
-	MaxCaSpkD float32 `inactive:"+" desc:"maximum CaSpkD value in layer -- for RLrate computation"`
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
@@ -1318,7 +1316,10 @@ func (ly *Layer) ActFmG(ltime *Time) {
 	if ltime.PlusPhase {
 		intdt *= 3.0
 	}
-	// ly.AxonLay.IsTarget()
+	// isTarg := false
+	// if ly.AxonLay.IsTarget() {
+	// 	isTarg = true
+	// }
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1327,8 +1328,10 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
-		rlm := ly.Learn.RLrate.RLrateMid(nrn.CaSpkP, nrn.CaSpkD, ly.ActAvg.MaxCaSpkP, ly.ActAvg.MaxCaSpkD)
-		rld := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD) // Diff good for targets!
+		pl := &ly.Pools[nrn.SubPool]
+		// both of these are useful for target layers -- can adjust params for each
+		rlm := ly.Learn.RLrate.RLrateMid(nrn.CaSpkP, pl.CaSpkP.Max)
+		rld := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLrate = rlm * rld
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
@@ -1352,7 +1355,6 @@ func (ly *Layer) ActFmG(ltime *Time) {
 // and synaptic-level calcium updates depending on spiking, NMDA
 func (ly *Layer) PostAct(ltime *Time) {
 	ly.AvgMaxAct(ltime)
-	ly.MaxCaSpk(ltime)
 	if !ltime.Testing {
 		ly.AxonLay.SynCa(ltime)
 	}
@@ -1364,6 +1366,7 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 		pl := &ly.Pools[pi]
 		var avg, max float32
 		maxi := 0
+		pl.CaSpkP.Init()
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
@@ -1376,6 +1379,7 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 				max = nrn.Act
 				maxi = ni
 			}
+			pl.CaSpkP.UpdateVal(nrn.CaSpkP, ni)
 		}
 		nn := pl.EdIdx - pl.StIdx
 		pl.Inhib.Act.Sum = avg
@@ -1386,26 +1390,9 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 		ly.Inhib.Inhib.AvgAct(&pl.Inhib.Act.Avg, avg)
 		pl.Inhib.Act.Max = max
 		pl.Inhib.Act.MaxIdx = maxi
-	}
-}
 
-// MaxCaSpk computes maximum CaSpkP, CaSpkD values
-func (ly *Layer) MaxCaSpk(ltime *Time) {
-	var maxp, maxd float32
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if nrn.CaSpkP > maxp {
-			maxp = nrn.CaSpkP
-		}
-		if nrn.CaSpkD > maxd {
-			maxd = nrn.CaSpkD
-		}
+		pl.CaSpkP.CalcAvg()
 	}
-	ly.ActAvg.MaxCaSpkP = maxp
-	ly.ActAvg.MaxCaSpkD = maxd
 }
 
 // AvgGeM computes the average and max GeM stats

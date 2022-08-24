@@ -236,10 +236,8 @@ func (ta *TrgAvgActParams) Defaults() {
 // This is effectively the derivative of the activation function factor in backprop.
 type RLrateParams struct {
 	On         bool       `def:"true" desc:"use learning rate modulation"`
-	SigDeriv   bool       `desc:"use the actual derivative of a sigmoid function, with NonMid as the baseline -- otherwise use square wave MidRange with full learning rate"`
 	MidRange   minmax.F32 `desc:"range for normalized CaSpk values where learning rate is normal -- attenuated outside of that in the extremes"`
 	NonMid     float32    `def:"0.05" desc:"scaling factor for extreme CaSpk values outside of the MidRange"`
-	CaD        bool       `desc:"use CaSpkD instead of CaSpkP for mid range spiking"`
 	Diff       bool       `desc:"modulate learning rate as a function of plus - minus differences"`
 	ActThr     float32    `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
 	ActDiffThr float32    `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
@@ -263,29 +261,15 @@ func (rl *RLrateParams) Defaults() {
 // RLrateMid returns the learning rate factor as a function of activity,
 // with mid-range values having full learning and extreme values a reduced learning rate.
 // This is a coarse, square-wave approximation to the derivative of a sigmoidal function.
-// Do not apply this to Target layers!
-func (rl *RLrateParams) RLrateMid(scap, scad, maxcap, maxcad float32) float32 {
+func (rl *RLrateParams) RLrateMid(scap, maxcap float32) float32 {
 	if !rl.On {
 		return 1.0
 	}
-	max := maxcap
-	ca := scap
-	if rl.CaD {
-		max = maxcad
-		ca = scad
-	}
-	if max == 0 {
+	if maxcap == 0 {
 		return rl.NonMid
 	}
-	ca /= max
-	if rl.SigDeriv {
-		lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
-		if lr < rl.NonMid {
-			lr = rl.NonMid
-		}
-		return lr
-	}
-	if ca < rl.MidRange.Min || ca > rl.MidRange.Max {
+	scap /= maxcap
+	if scap < rl.MidRange.Min || scap > rl.MidRange.Max {
 		return rl.NonMid
 	}
 	return 1.0
@@ -459,7 +443,7 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 	*lwt += *dwt
 	if *lwt < 0 {
 		*lwt = 0
-	} else if sp.Adapt.MaxWt && *lwt > 1 {
+	} else if *lwt > 1 {
 		*lwt = 1
 	}
 	*wt = sp.WtVal(swt, *lwt)
@@ -521,20 +505,16 @@ func (sp *SWtInitParams) RndVar() float32 {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	On        bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated, in which case it is generally good to have Init.SPct=0 too."`
-	Lrate     float32 `viewif:"On" def:"0.1,0.01,0.001,0.0002" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
-	SoftBound bool    `desc:"do soft bounding on learned weights"`
-	MaxWt     bool    `desc:"limit maximum weight to 1"`
-	SubMean   float32 `desc:"amount of mean to subtract from SWt delta when updating"`
-	SigGain   float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
-	DreamVar  float32 `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
+	On       bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated, in which case it is generally good to have Init.SPct=0 too."`
+	Lrate    float32 `viewif:"On" def:"0.1,0.01,0.001,0.0002" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
+	SubMean  float32 `desc:"amount of mean to subtract from SWt delta when updating"`
+	SigGain  float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
+	DreamVar float32 `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
 	sp.On = true
 	sp.Lrate = 0.1
-	sp.SoftBound = true
-	sp.MaxWt = true
 	sp.SubMean = 1
 	sp.SigGain = 6
 	sp.DreamVar = 0.0

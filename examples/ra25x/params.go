@@ -46,8 +46,6 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.On":           "true", // beneficial for trace
 					"Layer.Learn.RLrate.MidRange.Min": "0.1",  // 0.1, 0.9 best
 					"Layer.Learn.RLrate.MidRange.Max": "0.9",  // 0.1, 0.9 best
-					"Layer.Learn.RLrate.SigDeriv":     "false",
-					"Layer.Learn.RLrate.CaD":          "false",
 					"Layer.Learn.RLrate.NonMid":       "0.05", // 0.05 > .1 > .02
 					"Layer.Learn.RLrate.Diff":         "true",
 					"Layer.Learn.RLrate.ActDiffThr":   "0.02", // 0.02 def - todo
@@ -70,7 +68,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.VGCC.Ca":       "1",   // otherwise dominates display
 					// "Layer.Learn.NeurCa.RCa": "false", // auto excluded
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.NonMid":     "0.05", // 0.05 > .1 > .02
+					"Layer.Learn.RLrate.NonMid":     "0.05", //
 					"Layer.Learn.RLrate.Diff":       "true",
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
@@ -80,9 +78,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
 					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
-					"Prjn.SWt.Adapt.SoftBound":    "true",
-					"Prjn.SWt.Adapt.SigGain":      "6",
-					"Prjn.SWt.Adapt.MaxWt":        "true",
 					"Prjn.SWt.Adapt.SubMean":      "1",
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed

@@ -898,7 +898,6 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
-	sb := pj.SWt.Adapt.SoftBound
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
@@ -924,12 +923,10 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 			}
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
-			if sb {
-				if err > 0 {
-					err *= (1 - sy.LWt)
-				} else {
-					err *= sy.LWt
-				}
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
 		}
@@ -945,7 +942,6 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
-	sb := pj.SWt.Adapt.SoftBound
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		nc := int(pj.SConN[si])
@@ -962,12 +958,10 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 			}
 			err := caP - caD
 			// sb immediately -- enters into zero sum
-			if sb {
-				if err > 0 {
-					err *= (1 - sy.LWt)
-				} else {
-					err *= sy.LWt
-				}
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
 		}
