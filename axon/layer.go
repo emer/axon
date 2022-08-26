@@ -94,6 +94,7 @@ type ActAvgVals struct {
 	AvgMaxGeM float32         `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
 	AvgMaxGiM float32         `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
 	GiMult    float32         `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	CaSpkPM   minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer in the minus phase -- for monitoring network activity levels"`
 	CaSpkP    minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer -- for RLrate computation"`
 }
 
@@ -1435,11 +1436,13 @@ func (ly *Layer) SendSpike(ltime *Time) {
 
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ltime *Time) {
+	ly.ActAvg.CaSpkPM.Init()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
+		ly.ActAvg.CaSpkPM.UpdateVal(nrn.CaSpkP, ni)
 		nrn.ActM = nrn.ActInt
 		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 			nrn.Ext = nrn.Targ
@@ -1449,6 +1452,7 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 			nrn.ActInt = ly.Act.Init.Act // reset for plus phase
 		}
 	}
+	ly.ActAvg.CaSpkPM.CalcAvg()
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.ActM.Init()

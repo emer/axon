@@ -68,7 +68,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94
 					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.NonMid":     "0.05", //
+					"Layer.Learn.RLrate.NonMid":     "0.05", // .05 > 1 -- in larger nets better to turn off with 1
 					"Layer.Learn.RLrate.Diff":       "true",
 					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
