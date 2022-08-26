@@ -119,8 +119,8 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // CaLrn is then integrated in a cascading manner at multiple time scales:
 // CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
 type CaLrnParams struct {
-	Norm      float32           `def:"70,80" desc:"denomenator used for normalizing CaLrn, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance"`
-	SpkVGCC   bool              `desc:"use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike"`
+	Norm      float32           `def:"80" desc:"denomenator used for normalizing CaLrn, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance"`
+	SpkVGCC   bool              `def:"true" desc:"use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike"`
 	SpkVgccCa float32           `def:"35" desc:"multiplier on spike for computing Ca contribution to CaLrn in SpkVGCC mode"`
 	VgccTau   float32           `def:"10" desc:"time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn"`
 	Dt        kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaLrn across M, P and D cascading levels"`
@@ -130,8 +130,8 @@ type CaLrnParams struct {
 func (np *CaLrnParams) Defaults() {
 	np.Norm = 80
 	np.SpkVGCC = true
-	np.SpkVgccCa = 70
-	np.VgccTau = 5
+	np.SpkVgccCa = 35
+	np.VgccTau = 10
 	np.Dt.Defaults()
 	np.Dt.MTau = 2
 	np.Update()
@@ -236,7 +236,7 @@ func (ta *TrgAvgActParams) Defaults() {
 // This is effectively the derivative of the activation function factor in backprop.
 type RLrateParams struct {
 	On         bool       `def:"true" desc:"use learning rate modulation"`
-	NormLayer  bool       `desc:"use the layer-level max CaSpk value for normalizing values for mid lrate"`
+	SigDeriv   bool       `desc:"use the derivative of a sigmoid function: act * (1-act), with NonMid as a minimum baseline -- otherwise use square wave MidRange with full learning rate"`
 	MidRange   minmax.F32 `desc:"range for normalized CaSpk values where learning rate is normal -- attenuated outside of that in the extremes"`
 	NonMid     float32    `def:"0.05" desc:"scaling factor for extreme CaSpk values outside of the MidRange"`
 	Diff       bool       `desc:"modulate learning rate as a function of plus - minus differences"`
@@ -262,20 +262,19 @@ func (rl *RLrateParams) Defaults() {
 // RLrateMid returns the learning rate factor as a function of activity,
 // with mid-range values having full learning and extreme values a reduced learning rate.
 // This is a coarse, square-wave approximation to the derivative of a sigmoidal function.
-func (rl *RLrateParams) RLrateMid(nrn *Neuron, laymax, poolmax float32) float32 {
-	if !rl.On {
+func (rl *RLrateParams) RLrateMid(nrn *Neuron, laymax float32) float32 {
+	if !rl.On || laymax == 0 {
 		return 1.0
 	}
-	var nrm float32
-	if rl.NormLayer {
-		nrm = laymax
-	} else {
-		nrm = poolmax
+	ca := nrn.CaSpkP / laymax
+	if rl.SigDeriv {
+		lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
+		if lr < rl.NonMid {
+			lr = rl.NonMid
+		}
+		return lr
 	}
-	ca := nrn.CaSpkP
-	if nrm > 0 {
-		ca /= nrm
-	}
+	// else square range
 	if ca < rl.MidRange.Min || ca > rl.MidRange.Max {
 		return rl.NonMid
 	}

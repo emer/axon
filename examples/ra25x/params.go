@@ -44,7 +44,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.On":        "true", // critical!
 					"Layer.Learn.TrgAvgAct.SubMean":   "0",
 					"Layer.Learn.RLrate.On":           "true", // beneficial for trace
-					"Layer.Learn.RLrate.NormLayer":    "true",
+					"Layer.Learn.RLrate.SigDeriv":     "true",
 					"Layer.Learn.RLrate.MidRange.Min": "0.1",  // 0.1, 0.9 best
 					"Layer.Learn.RLrate.MidRange.Max": "0.9",  // 0.1, 0.9 best
 					"Layer.Learn.RLrate.NonMid":       "0.05", // 0.05 > .1 > .02

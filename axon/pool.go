@@ -20,7 +20,6 @@ type Pool struct {
 	GeM          minmax.AvgMax32 `inactive:"+" desc:"stats for GeM minus phase averaged Ge values"`
 	GiM          minmax.AvgMax32 `inactive:"+" desc:"stats for GiM minus phase averaged Gi values"`
 	AvgDif       minmax.AvgMax32 `inactive:"+" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
-	CaSpkP       minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer -- for RLrate computation"`
 }
 
 func (pl *Pool) Init() {

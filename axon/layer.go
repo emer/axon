@@ -20,6 +20,7 @@ import (
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/bitflag"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
@@ -88,11 +89,12 @@ func (ly *Layer) HasPoolInhib() bool {
 
 // ActAvgVals are running-average activation levels used for Ge scaling and adaptive inhibition
 type ActAvgVals struct {
-	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
-	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
-	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	ActMAvg   float32         `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
+	ActPAvg   float32         `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
+	AvgMaxGeM float32         `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
+	AvgMaxGiM float32         `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
+	GiMult    float32         `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	CaSpkP    minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer -- for RLrate computation"`
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
@@ -1356,7 +1358,6 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 		pl := &ly.Pools[pi]
 		var avg, max float32
 		maxi := 0
-		pl.CaSpkP.Init()
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
@@ -1369,7 +1370,6 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 				max = nrn.Act
 				maxi = ni
 			}
-			pl.CaSpkP.UpdateVal(nrn.CaSpkP, ni)
 		}
 		nn := pl.EdIdx - pl.StIdx
 		pl.Inhib.Act.Sum = avg
@@ -1380,8 +1380,6 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 		ly.Inhib.Inhib.AvgAct(&pl.Inhib.Act.Avg, avg)
 		pl.Inhib.Act.Max = max
 		pl.Inhib.Act.MaxIdx = maxi
-
-		pl.CaSpkP.CalcAvg()
 	}
 }
 
@@ -1468,7 +1466,15 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ltime *Time) {
-	pl0 := &ly.Pools[0]
+	ly.ActAvg.CaSpkP.Init()
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.ActAvg.CaSpkP.UpdateVal(nrn.CaSpkP, ni)
+	}
+	ly.ActAvg.CaSpkP.CalcAvg()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1476,8 +1482,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		}
 		nrn.ActP = nrn.ActInt
 		nrn.ActDiff = nrn.ActP - nrn.ActM
-		pl := &ly.Pools[nrn.SubPool]
-		mlr := ly.Learn.RLrate.RLrateMid(nrn, pl0.CaSpkP.Max, pl.CaSpkP.Max)
+		mlr := ly.Learn.RLrate.RLrateMid(nrn, ly.ActAvg.CaSpkP.Max)
 		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLrate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)

@@ -13,40 +13,43 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.Inhib.AvgTau":      "30",
-					"Layer.Inhib.ActAvg.Init":       "0.15",
-					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1  trace
-					"Layer.Act.Gbar.L":              "0.2", // std
-					"Layer.Act.Decay.Act":           "0.2", // 0 == 0.2
-					"Layer.Act.Decay.Glong":         "0.6",
-					"Layer.Act.Dt.LongAvgTau":       "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":        "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":          "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":        "5",   // old: 8 > 5 >> 2.81 -- big diff
-					"Layer.Act.AK.Gbar":             "1.0",
-					"Layer.Act.NMDA.MgC":            "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":           "5",
-					"Layer.Act.VGCC.Gbar":           "0.02",
-					"Layer.Act.VGCC.Ca":             "20",   // 20 / 10tau similar to spk
-					"Layer.Learn.CaLrn.Norm":        "80",   // 80 works
-					"Layer.Learn.CaLrn.SpkVGCC":     "true", // sig better..
-					"Layer.Learn.CaLrn.SpkVgccCa":   "35",   // 20? or 35?
-					"Layer.Learn.CaLrn.VgccTau":     "10",   // 10 > 5 ?
-					"Layer.Learn.CaLrn.Dt.MTau":     "2",    // 2 > 1 ?
-					"Layer.Learn.CaSpk.SpikeG":      "8",    // 8 > 12 with CaSpk trace learning
-					"Layer.Learn.CaSpk.SynTau":      "30",   // 30 > 20, 40
-					"Layer.Learn.CaSpk.Dt.MTau":     "5",    // 5 > 10?
-					"Layer.Learn.LrnNMDA.MgC":       "1.4",  // copy act
-					"Layer.Learn.LrnNMDA.Voff":      "5",
-					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 def
-					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
-					"Layer.Learn.TrgAvgAct.SubMean": "1",    // 1 == 0
-					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.MidRange":   "0.4",  // 0.4 > 0.35 > 0.45
-					"Layer.Learn.RLrate.NonMid":     "1",    // not useful in this model!
-					"Layer.Learn.RLrate.DiffMod":    "true",
-					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
-					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
+					"Layer.Inhib.Inhib.AvgTau":        "30",
+					"Layer.Inhib.ActAvg.Init":         "0.15",
+					"Layer.Inhib.Layer.Gi":            "1.0", // 1.0 > 1.1  trace
+					"Layer.Act.Gbar.L":                "0.2", // std
+					"Layer.Act.Decay.Act":             "0.2", // 0 == 0.2
+					"Layer.Act.Decay.Glong":           "0.6",
+					"Layer.Act.Dt.LongAvgTau":         "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":          "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":            "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dt.VmDendTau":          "5",   // old: 8 > 5 >> 2.81 -- big diff
+					"Layer.Act.AK.Gbar":               "1.0",
+					"Layer.Act.NMDA.MgC":              "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":             "5",
+					"Layer.Act.VGCC.Gbar":             "0.02",
+					"Layer.Act.VGCC.Ca":               "20",   // 20 / 10tau similar to spk
+					"Layer.Learn.CaLrn.Norm":          "80",   // 80 works
+					"Layer.Learn.CaLrn.SpkVGCC":       "true", // sig better..
+					"Layer.Learn.CaLrn.SpkVgccCa":     "35",   // 20? or 35?
+					"Layer.Learn.CaLrn.VgccTau":       "10",   // 10 > 5 ?
+					"Layer.Learn.CaLrn.Dt.MTau":       "2",    // 2 > 1 ?
+					"Layer.Learn.CaSpk.SpikeG":        "8",    // 8 > 12 with CaSpk trace learning
+					"Layer.Learn.CaSpk.SynTau":        "30",   // 30 > 20, 40
+					"Layer.Learn.CaSpk.Dt.MTau":       "5",    // 5 > 10?
+					"Layer.Learn.LrnNMDA.MgC":         "1.4",  // copy act
+					"Layer.Learn.LrnNMDA.Voff":        "5",
+					"Layer.Learn.LrnNMDA.Tau":         "100",  // 100 def
+					"Layer.Learn.TrgAvgAct.On":        "true", // critical!
+					"Layer.Learn.TrgAvgAct.SubMean":   "1",    // 1 == 0
+					"Layer.Learn.RLrate.On":           "true", // beneficial for trace
+					"Layer.Learn.RLrate.SigDeriv":     "true",
+					"Layer.Learn.RLrate.MidRange.Min": "0.1",  // 0.1, 0.9 best
+					"Layer.Learn.RLrate.MidRange.Max": "0.9",  // 0.1, 0.9 best
+					"Layer.Learn.RLrate.NonMid":       "0.05", // 0.05 std
+					"Layer.Learn.RLrate.Diff":         "true",
+					"Layer.Learn.RLrate.ActDiffThr":   "0.02", // 0.02 def - todo
+					"Layer.Learn.RLrate.ActThr":       "0.1",  // 0.1 def
+					"Layer.Learn.RLrate.Min":          "0.001",
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
@@ -63,14 +66,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.0",  // 1.0 > 0.9 > 1.1
-					"Layer.TRC.DriveScale":   "0.05", // 0.05 > .1 > .15 for trace w/ gi1.0 -- repl10
-					"Layer.TRC.FullDriveAct": "0.6",  // 0.6 def
-					"Layer.Act.Spike.Tr":     "3",    // 1 is best for ra25..
-					"Layer.Act.Decay.Act":    "0.5",
-					"Layer.Act.Decay.Glong":  "1",    // clear long
-					"Layer.Act.GABAB.Gbar":   "0.2",  // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":    "0.15", // now .15 best, .4, .6 sig worse
+					"Layer.Inhib.Layer.Gi":      "1.0",  // 1.0 > 0.9 > 1.1
+					"Layer.TRC.DriveScale":      "0.05", // 0.05 > .1 > .15 for trace w/ gi1.0 -- repl10
+					"Layer.TRC.FullDriveAct":    "0.6",  // 0.6 def
+					"Layer.Act.Spike.Tr":        "3",    // 1 is best for ra25..
+					"Layer.Act.Decay.Act":       "0.5",
+					"Layer.Act.Decay.Glong":     "1",    // clear long
+					"Layer.Act.GABAB.Gbar":      "0.2",  // .2 > old: 0.005
+					"Layer.Act.NMDA.Gbar":       "0.15", // now .15 best, .4, .6 sig worse
+					"Layer.Learn.RLrate.NonMid": "1",    // not useful in output layer
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
