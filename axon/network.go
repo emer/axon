@@ -343,6 +343,7 @@ func (nt *Network) DWtImpl(ltime *Time) {
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ltime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean(ltime) }, "DWtSubMean")
 	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt(ltime) }, "WtFmDWt")
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ltime)
 }

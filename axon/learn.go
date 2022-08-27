@@ -603,13 +603,14 @@ func (ls *LrateParams) Init() {
 
 // TraceParams manages learning rate parameters
 type TraceParams struct {
-	Tau    float32 `desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
-	SpkErr bool    `desc:"use CaSpk instead of Ca for error signal"`
-	Dt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	Tau     float32 `desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
+	SubMean float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, but special types (e.g., Hebb or CaSpk) may benefit from it"`
+	Dt      float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
 func (tp *TraceParams) Defaults() {
 	tp.Tau = 1
+	tp.SubMean = 0
 	tp.Update()
 }
 

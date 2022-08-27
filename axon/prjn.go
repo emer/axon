@@ -893,7 +893,6 @@ func (pj *Prjn) DWt(ltime *Time) {
 // computed at the Theta cycle interval.  Trace version.
 func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	spkErr := pj.Learn.Trace.SpkErr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
@@ -916,11 +915,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 				continue
 			}
 			var err float32
-			if spkErr {
-				err = sy.Tr * (rn.CaSpkP - rn.CaSpkD) // comparison: spiking drives error
-			} else {
-				err = sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
-			}
+			err = sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {
@@ -995,6 +990,43 @@ func (pj *Prjn) DWtCHL(ltime *Time) {
 				err *= sy.LWt
 			}
 			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
+// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
+// This is called on *receiving* projections, prior to WtFmDwt.
+func (pj *Prjn) DWtSubMean(ltime *Time) {
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	sm := pj.Learn.Trace.SubMean
+	if sm == 0 || rlay.AxonLay.IsTarget() {
+		return
+	}
+	for ri := range rlay.Neurons {
+		nc := int(pj.RConN[ri])
+		if nc < 1 {
+			continue
+		}
+		st := int(pj.RConIdxSt[ri])
+		rsidxs := pj.RSynIdx[st : st+nc]
+		sumDWt := float32(0)
+		nnz := 0 // non-zero
+		for _, rsi := range rsidxs {
+			dw := pj.Syns[rsi].DWt
+			if dw != 0 {
+				sumDWt += dw
+				nnz++
+			}
+		}
+		if nnz <= 1 {
+			continue
+		}
+		sumDWt /= float32(nnz)
+		for _, rsi := range rsidxs {
+			sy := &pj.Syns[rsi]
+			if sy.DWt != 0 {
+				sy.DWt -= sm * sumDWt
+			}
 		}
 	}
 }

@@ -1744,6 +1744,17 @@ func (ly *Layer) DWt(ltime *Time) {
 	}
 }
 
+// DWtSubMean does mean subtraction for projections requiring it.
+// calls DWtSubMean on the recv projections
+func (ly *Layer) DWtSubMean(ltime *Time) {
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).DWtSubMean(ltime)
+	}
+}
+
 // WtFmDWt updates the weights from delta-weight changes
 // calls WtFmDWt on the sending projections
 func (ly *Layer) WtFmDWt(ltime *Time) {
