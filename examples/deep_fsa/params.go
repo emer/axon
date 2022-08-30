@@ -83,7 +83,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar":     "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":          "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":              "0.0",
-					"Prjn.Learn.Trace.Tau":        "2",    // 2 > 1?
+					"Prjn.Learn.Trace.Tau":        "2",    // 2 > 1 -- more-or-less a ceiling effect..
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
 					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10
@@ -96,7 +96,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Trace": "false",
+					"Prjn.Trace": "false", // not as good with Trace here..
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{

@@ -44,7 +44,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.On":        "true", // critical!
 					"Layer.Learn.TrgAvgAct.SubMean":   "0",
 					"Layer.Learn.RLrate.On":           "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigDeriv":     "true",
+					"Layer.Learn.RLrate.SigDeriv":     "false",
 					"Layer.Learn.RLrate.MidRange.Min": "0.1",  // 0.1, 0.9 best
 					"Layer.Learn.RLrate.MidRange.Max": "0.9",  // 0.1, 0.9 best
 					"Layer.Learn.RLrate.NonMid":       "0.05", // 0.05 > .1 > .02
@@ -81,7 +81,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.SubMean":      "1",
 					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.Trace.SubMean":    "0",
+					"Prjn.Learn.Trace.SubMean":    "1",
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
 					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10

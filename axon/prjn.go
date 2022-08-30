@@ -26,7 +26,7 @@ type Prjn struct {
 	PrjnBase
 	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
-	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting structural weight value parameters, which control initial weight values and slower outer-loop adjustments, to differentiate."`
+	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
 	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
 	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
 
@@ -34,7 +34,6 @@ type Prjn struct {
 	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
 	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
 	GBuf   []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
-	AvgDWt float32     `inactive:"+" desc:"average DWt value across all synapses"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)

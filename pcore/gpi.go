@@ -29,21 +29,19 @@ func (ly *GPiLayer) Defaults() {
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
-		pj.Learn.WtSig.Gain = 1
-		pj.WtInit.Mean = 0.5
-		pj.WtInit.Var = 0
-		pj.WtInit.Sym = false
+		pj.SWt.Adapt.SigGain = 1
+		pj.SWt.Init.Mean = 0.5
+		pj.SWt.Init.Var = 0
+		pj.SWt.Init.Sym = false
 		pj.Learn.Learn = false
-		pj.Learn.Norm.On = false
-		pj.Learn.Momentum.On = false
 		if _, ok := pj.Send.(*MatrixLayer); ok { // MtxGoToGPi
-			pj.WtScale.Abs = 0.8 // slightly weaker than GPeIn
+			pj.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
 		} else if _, ok := pj.Send.(*GPLayer); ok { // GPeInToGPi
-			pj.WtScale.Abs = 1 // stronger because integrated signal, also act can be weaker
+			pj.PrjnScale.Abs = 1 // stronger because integrated signal, also act can be weaker
 		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
-			pj.WtScale.Abs = 1
+			pj.PrjnScale.Abs = 1
 		} else if strings.HasSuffix(pj.Send.Name(), "STNs") { // STNsToGPi
-			pj.WtScale.Abs = 0.2
+			pj.PrjnScale.Abs = 0.2
 		}
 	}
 

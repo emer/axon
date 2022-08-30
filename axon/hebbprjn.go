@@ -4,7 +4,8 @@
 
 package axon
 
-// HebbPrjn is a simple hebbian learning projection, using the CPCA Hebbian rule
+// HebbPrjn is a simple hebbian learning projection, using the CPCA Hebbian rule.
+// Note: when used with inhibitory projections, requires Learn.Trace.SubMean = 1
 type HebbPrjn struct {
 	Prjn            // access as .Prjn
 	IncGain float32 `desc:"gain factor on increases relative to decreases -- lower = lower overall weights"`
@@ -13,6 +14,7 @@ type HebbPrjn struct {
 func (pj *HebbPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	pj.IncGain = 0.5
+	pj.Learn.Trace.SubMean = 1 // this is critical!
 }
 
 func (pj *HebbPrjn) UpdateParams() {

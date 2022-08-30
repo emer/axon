@@ -89,7 +89,6 @@ var KiT_STNLayer = kit.Types.AddType(&STNLayer{}, axon.LayerProps)
 func (ly *STNLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Ca.Defaults()
-	ly.DA = 0
 
 	// STN is tonically self-active and has no FFFB inhibition
 
@@ -102,12 +101,11 @@ func (ly *STNLayer) Defaults() {
 	ly.Inhib.Self.On = true
 	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
 	ly.Inhib.Self.Tau = 3.0
-	ly.Inhib.ActAvg.Fixed = true
 	ly.Inhib.ActAvg.Init = 0.25
-	ly.Act.XX1.Gain = 20 // more graded -- still works with 40 but less Rt distrib
-	ly.Act.Dt.VmTau = 3.3
-	ly.Act.Dt.GTau = 3 // fastest
-	ly.Act.Init.Decay = 0
+	// ly.Act.XX1.Gain = 20 // more graded -- still works with 40 but less Rt distrib
+	// ly.Act.Dt.VmTau = 3.3
+	// ly.Act.Dt.GTau = 3 // fastest
+	// ly.Act.Init.Decay = 0
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
 		ly.Act.Init.Act = 0.48
@@ -116,32 +114,25 @@ func (ly *STNLayer) Defaults() {
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.Learn.Learn = false
-		pj.Learn.Norm.On = false
-		pj.Learn.Momentum.On = false
-		pj.Learn.WtSig.Gain = 1
-		pj.WtInit.Mean = 0.9
-		pj.WtInit.Var = 0
-		pj.WtInit.Sym = false
+		pj.SWt.Adapt.SigGain = 1
+		pj.SWt.Init.Mean = 0.9
+		pj.SWt.Init.Var = 0
+		pj.SWt.Init.Sym = false
 		if strings.HasSuffix(ly.Nm, "STNp") {
 			if _, ok := pj.Send.(*GPLayer); ok { // GPeInToSTNp
-				pj.WtScale.Abs = 0.1
+				pj.PrjnScale.Abs = 0.1
 			}
 		} else { // STNs
 			if _, ok := pj.Send.(*GPLayer); ok { // GPeInToSTNs
-				pj.WtScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
+				pj.PrjnScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
 			} else {
-				pj.WtScale.Abs = 0.2 // weaker inputs
+				pj.PrjnScale.Abs = 0.2 // weaker inputs
 			}
 		}
 	}
 
 	ly.UpdateParams()
 }
-
-// DALayer interface:
-
-func (ly *STNLayer) GetDA() float32   { return ly.DA }
-func (ly *STNLayer) SetDA(da float32) { ly.DA = da }
 
 func (ly *STNLayer) InitActs() {
 	ly.Layer.InitActs()
@@ -152,11 +143,8 @@ func (ly *STNLayer) InitActs() {
 	}
 }
 
-// AlphaCycInit handles all initialization at start of new input pattern, including computing
-// input scaling from running average activation etc.
-// should already have presented the external input to the network at this point.
-func (ly *STNLayer) AlphaCycInit() {
-	ly.Layer.AlphaCycInit()
+func (ly *STNLayer) NewState() {
+	ly.Layer.NewState()
 	if !ly.Ca.AlphaInit {
 		return
 	}
@@ -173,6 +161,10 @@ func (ly *STNLayer) AlphaCycInit() {
 }
 
 func (ly *STNLayer) ActFmG(ltime *axon.Time) {
+	intdt := ly.Act.Dt.IntDt
+	if ltime.PlusPhase {
+		intdt *= 3.0
+	}
 	for ni := range ly.Neurons { // note: copied from axon ActFmG, not calling it..
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -180,6 +172,20 @@ func (ly *STNLayer) ActFmG(ltime *axon.Time) {
 		}
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
+		ly.Learn.CaFmSpike(nrn)
+		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
+		if !ltime.PlusPhase {
+			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
+			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
+		}
+		// note: this is here because it depends on Gi
+		nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+		nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
+		if ly.Act.KNa.On {
+			nrn.Gk += nrn.GgabaB // Gk was set by KNa
+		} else {
+			nrn.Gk = nrn.GgabaB
+		}
 
 		snr := &ly.STNNeurs[ni]
 		snr.KCa += (ly.Ca.KCaGFmCa(snr.Ca) - snr.KCa) / ly.Ca.KCaTau
@@ -193,7 +199,7 @@ func (ly *STNLayer) ActFmG(ltime *axon.Time) {
 		snr.Ca += dCa
 		nrn.Gk = ly.Ca.GbarKCa * snr.KCa
 
-		ly.Learn.AvgsFmAct(nrn)
+		// ly.Learn.AvgsFmAct(nrn)
 	}
 }
 

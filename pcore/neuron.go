@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	// NeuronVars are extra neuron variables for pcore
-	NeuronVars = []string{"DA", "DALrn", "ACh", "Ca", "KCa"}
+	// NeuronVars are extra neuron variables for pcore -- union across all types
+	NeuronVars = []string{"ActLrn", "PhasicMax", "DALrn", "ACh", "Ca", "KCa"}
 
 	// NeuronVarsAll is the pcore collection of all neuron-level vars
 	NeuronVarsAll []string
@@ -32,6 +32,54 @@ func init() {
 	SynVarsAll = make([]string, len(TraceSynVars)+ln)
 	copy(SynVarsAll, axon.SynapseVars)
 	copy(SynVarsAll[ln:], TraceSynVars)
+
+	STNNeuronVarsMap = make(map[string]int, len(STNNeuronVars))
+	for i, v := range STNNeuronVars {
+		STNNeuronVarsMap[v] = i
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// Base pcore neurons
+
+// PCoreNeuron holds the extra neuron (unit) level variables
+// for pcore computation.
+type PCoreNeuron struct {
+	ActLrn    float32 `desc:"learning activity value -- based on PhasicMax activation plus other potential factors depending on layer type."`
+	PhasicMax float32 `desc:"maximum phasic activation value during a gating window."`
+}
+
+var (
+	PCoreNeuronVars    = []string{"ActLrn", "PhasicMax"}
+	PCoreNeuronVarsMap map[string]int
+)
+
+func (nrn *PCoreNeuron) VarNames() []string {
+	return PCoreNeuronVars
+}
+
+// PCoreNeuronVarIdxByName returns the index of the variable in the PCoreNeuron, or error
+func PCoreNeuronVarIdxByName(varNm string) (int, error) {
+	i, ok := PCoreNeuronVarsMap[varNm]
+	if !ok {
+		return 0, fmt.Errorf("PCoreNeuron VarByName: variable name: %v not valid", varNm)
+	}
+	return i, nil
+}
+
+// VarByIndex returns variable using index (0 = first variable in PCoreNeuronVars list)
+func (nrn *PCoreNeuron) VarByIndex(idx int) float32 {
+	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(nrn)) + uintptr(4*idx)))
+	return *fv
+}
+
+// VarByName returns variable by name, or error
+func (nrn *PCoreNeuron) VarByName(varNm string) (float32, error) {
+	i, err := PCoreNeuronVarIdxByName(varNm)
+	if err != nil {
+		return 0, err
+	}
+	return nrn.VarByIndex(i), nil
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -47,13 +95,6 @@ var (
 	STNNeuronVars    = []string{"Ca", "KCa"}
 	STNNeuronVarsMap map[string]int
 )
-
-func init() {
-	STNNeuronVarsMap = make(map[string]int, len(STNNeuronVars))
-	for i, v := range STNNeuronVars {
-		STNNeuronVarsMap[v] = i
-	}
-}
 
 func (nrn *STNNeuron) VarNames() []string {
 	return STNNeuronVars

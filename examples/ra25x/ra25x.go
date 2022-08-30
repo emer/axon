@@ -229,7 +229,7 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 2000).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
