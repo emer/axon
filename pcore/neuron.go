@@ -37,6 +37,11 @@ func init() {
 	for i, v := range STNNeuronVars {
 		STNNeuronVarsMap[v] = i
 	}
+
+	PCoreNeuronVarsMap = make(map[string]int, len(PCoreNeuronVars))
+	for i, v := range PCoreNeuronVars {
+		PCoreNeuronVarsMap[v] = i
+	}
 }
 
 //////////////////////////////////////////////////////////////////////

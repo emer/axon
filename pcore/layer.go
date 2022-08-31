@@ -105,6 +105,12 @@ func (ly *Layer) MaxPhasicMax() float32 {
 	return mx
 }
 
+// UnitVarNum returns the number of Neuron-level variables
+// for this layer.  This is needed for extending indexes in derived types.
+func (ly *Layer) UnitVarNum() int {
+	return ly.Layer.UnitVarNum() + len(PCoreNeuronVars)
+}
+
 // UnitVarIdx returns the index of given variable within the Neuron,
 // according to UnitVarNames() list (using a map to lookup index),
 // or -1 and error message if not found.
@@ -136,12 +142,10 @@ func (ly *Layer) UnitVal1D(varIdx int, idx int) float32 {
 	if idx < 0 || idx >= len(ly.Neurons) {
 		return mat32.NaN()
 	}
+	varIdx -= nn
+	if varIdx > len(PCoreNeuronVars) {
+		return mat32.NaN()
+	}
 	pn := &ly.PCoreNeurs[idx]
 	return pn.VarByIndex(varIdx)
-}
-
-// UnitVarNum returns the number of Neuron-level variables
-// for this layer.  This is needed for extending indexes in derived types.
-func (ly *Layer) UnitVarNum() int {
-	return ly.Layer.UnitVarNum() + len(PCoreNeuronVars)
 }

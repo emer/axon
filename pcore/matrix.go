@@ -208,7 +208,8 @@ func (ly *MatrixLayer) UnitVarIdx(varNm string) (int, error) {
 	default:
 		return -1, fmt.Errorf("pcore.NeuronVars: variable named: %s not found", varNm)
 	}
-	return len(axon.NeuronVars) + nvi, nil
+	nn := ly.Layer.UnitVarNum()
+	return nn + nvi, nil
 }
 
 // UnitVal1D returns value of given variable index on given unit, using 1-dimensional index.
@@ -216,22 +217,24 @@ func (ly *MatrixLayer) UnitVarIdx(varNm string) (int, error) {
 // This is the core unit var access method used by other methods,
 // so it is the only one that needs to be updated for derived layer types.
 func (ly *MatrixLayer) UnitVal1D(varIdx int, idx int) float32 {
-	nn := len(axon.NeuronVars)
-	nv := 2
-	if varIdx < 0 || varIdx > nn+nv {
+	if varIdx < 0 {
 		return mat32.NaN()
 	}
-	if varIdx <= nn {
+	nn := ly.Layer.UnitVarNum()
+	if varIdx < nn {
 		return ly.Layer.UnitVal1D(varIdx, idx)
 	}
 	if idx < 0 || idx >= len(ly.Neurons) {
 		return mat32.NaN()
 	}
+	varIdx -= nn
 	switch varIdx {
 	case 0:
 		return ly.DALrn
 	case 1:
 		return ly.ACh
+	default:
+		return mat32.NaN()
 	}
 	return 0
 }

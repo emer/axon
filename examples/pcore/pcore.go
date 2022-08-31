@@ -313,6 +313,12 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 50).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
 
+	applyRew := looper.NewEvent("ApplyRew", 199, func() {
+		ss.ApplyRew()
+	})
+
+	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
+
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
 
@@ -403,17 +409,17 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1, n}, nil, nil)
 
-	lays := []string{"ACCPos", "ACCNeg", "PFC", "SNc"}
-	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1, ss.Sim.SNc}
+	lays := []string{"ACCPos", "ACCNeg", "PFC"}
+	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		if !zero {
 			itsr.Values[0] = vals[li]
 			for j := 1; j < n; j++ {
-				switch li {
-				case 0:
+				switch lnm {
+				case "ACCPos":
 					itsr.Values[j] = itsr.Values[j-1] * ss.Sim.ACCPosInc
-				case 1:
+				case "ACCNeg":
 					itsr.Values[j] = itsr.Values[j-1] * ss.Sim.ACCNegInc
 				default:
 					itsr.Values[j] = itsr.Values[j-1]
@@ -422,6 +428,36 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 		}
 		ly.ApplyExt(&itsr)
 	}
+}
+
+// ApplyRew applies reward input based on gating action and input
+func (ss *Sim) ApplyRew() {
+	net := ss.Net
+	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
+	// going to the same layers, but good practice and cheap anyway
+
+	vtly := net.LayerByName("VThal").(*pcore.VThalLayer)
+	gateAct := vtly.PCoreNeurs[0].PhasicMax
+	didGate := (gateAct > 0.01)
+	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
+
+	var rew float32
+	switch {
+	case shouldGate && didGate:
+		rew = 1
+	case shouldGate && !didGate:
+		rew = -1
+	case !shouldGate && didGate:
+		rew = -1
+	case !shouldGate && !didGate:
+		rew = 0
+	}
+
+	itsr := etensor.Float32{}
+	itsr.SetShape([]int{1}, nil, nil)
+	itsr.Values[0] = rew
+	sncly := net.LayerByName("SNc").(axon.AxonLayer).AsAxon()
+	sncly.ApplyExt(&itsr)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
