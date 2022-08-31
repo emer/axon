@@ -65,7 +65,7 @@ func (pj *MatrixPrjn) InitWts() {
 }
 
 // DWt computes the weight change (learning) -- on sending projections.
-func (pj *MatrixPrjn) DWt() {
+func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
@@ -132,8 +132,6 @@ func (pj *MatrixPrjn) SynVarIdx(varNm string) (int, error) {
 	switch varNm {
 	case "NTr":
 		return nn, nil
-	case "Tr":
-		return nn + 1, nil
 	}
 	return -1, fmt.Errorf("MatrixPrjn SynVarIdx: variable name: %v not valid", varNm)
 }
@@ -162,4 +160,8 @@ func (pj *MatrixPrjn) SynVal1D(varIdx int, synIdx int) float32 {
 // for this prjn.  This is needed for extending indexes in derived types.
 func (pj *MatrixPrjn) SynVarNum() int {
 	return pj.Prjn.SynVarNum() + len(TraceSynVars)
+}
+
+func (pj *MatrixPrjn) SynVarNames() []string {
+	return SynVarsAll
 }
