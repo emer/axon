@@ -9,6 +9,7 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"os"
 
 	"github.com/emer/axon/axon"
@@ -27,13 +28,8 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
-	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
-	"github.com/emer/etable/metric"
-	"github.com/emer/etable/minmax"
-	"github.com/emer/etable/norm"
-	"github.com/emer/etable/tsragg"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
@@ -333,7 +329,7 @@ func (ss *Sim) ConfigLoops() {
 				ss.Net.NewState()
 				ss.Time.NewState(mode.String())
 			}
-			ss.ApplyInputs(phs == 0) // zero on phase == 0
+			ss.ApplyInputs(mode, phs == 0) // zero on phase == 0
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
@@ -392,10 +388,16 @@ func (ss *Sim) ConfigLoops() {
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
-func (ss *Sim) ApplyInputs(zero bool) {
+func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	net := ss.Net
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
+
+	if mode == etime.Train && !zero {
+		ss.Sim.ACCPos = rand.Float32()
+		ss.Sim.ACCNeg = rand.Float32()
+		ss.Sim.SNc = ss.Sim.ACCPos - ss.Sim.ACCNeg
+	}
 
 	n := ss.Sim.NUnits
 	itsr := etensor.Float32{}
@@ -481,24 +483,18 @@ func (ss *Sim) TrialStats() {
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
-	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
+	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Phase, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
-
-	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
 	axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
-	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Cycle, "Hidden")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Cycle, "Hidden")
 
 	ss.Logs.PlotItems("MtxGo_Act", "VThal_Act")
@@ -506,7 +502,9 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
 	// don't plot certain combinations we don't use
-	ss.Logs.NoPlot(etime.Train, etime.Cycle)
+	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
+	ss.Logs.NoPlot(etime.Train, etime.Phase)
+	ss.Logs.NoPlot(etime.Test, etime.Phase)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
@@ -514,292 +512,10 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	layers := ss.Net.LayersByClass("Hidden", "Target")
-	for _, lnm := range layers {
-		clnm := lnm
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_AvgNmdaCa",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 20},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "NmdaCa")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_MaxNmdaCa",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 20},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "NmdaCa")
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_AvgVgccCa",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 20},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "VgccCaInt")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_MaxVgccCa",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 20},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "VgccCaInt")
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_AvgCaLrn",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaLrn")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_MaxCaLrn",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaLrn")
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_AvgAbsCaDiff",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaDiff")
-					norm.TensorAbs32(tsr)
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_MaxAbsCaDiff",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaDiff")
-					norm.TensorAbs32(tsr)
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_AvgAbsActDiff",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "ActDiff")
-					norm.TensorAbs32(tsr)
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_MaxAbsActDiff",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "ActDiff")
-					norm.TensorAbs32(tsr)
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_AvgCaD",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaD")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_AvgCaSpkD",
-			Type:   etensor.FLOAT64,
-			Range:  minmax.F64{Max: 1},
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaSpkD")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:  clnm + "_AvgActDiff",
-			Type:  etensor.FLOAT64,
-			Range: minmax.F64{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "ActDiff")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:  clnm + "_ActDiffCorrel",
-			Type:  etensor.FLOAT64,
-			Range: minmax.F64{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					outvals := ctx.ItemColTensor(etime.Train, etime.Trial, "Output_AvgActDiff").(*etensor.Float64)
-					lyval := ctx.ItemColTensor(etime.Train, etime.Trial, clnm+"_AvgActDiff").(*etensor.Float64)
-					cor := metric.Correlation64(outvals.Values, lyval.Values)
-					ctx.SetFloat64(cor)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:  clnm + "_AvgCaDiff",
-			Type:  etensor.FLOAT64,
-			Range: minmax.F64{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaDiff")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:  clnm + "_CaDiffCorrel",
-			Type:  etensor.FLOAT64,
-			Range: minmax.F64{Max: 1},
-			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
-					outvals := ctx.ItemColTensor(etime.Train, etime.Trial, "Output_AvgActDiff").(*etensor.Float64)
-					lyval := ctx.ItemColTensor(etime.Train, etime.Trial, clnm+"_AvgCaDiff").(*etensor.Float64)
-					cor := metric.Correlation64(outvals.Values, lyval.Values)
-					ctx.SetFloat64(cor)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-	}
+	// layers := ss.Net.LayersByClass("Hidden", "Target")
+	// for _, lnm := range layers {
+	// 	clnm := lnm
+	// }
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -808,6 +524,12 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
+
+	phs := ss.Loops.Stacks[mode].Loops[etime.Phase].Counter.Cur
+	if phs == 0 {
+		return // no logging on first phase
+	}
+
 	dt := ss.Logs.Table(mode, time)
 	if dt == nil {
 		return
@@ -831,7 +553,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) ConfigGui() *gi.Window {
 	title := "PCore Test"
 	ss.GUI.MakeWindow(ss, "pcore", title, `This project simulates the inhibitory dynamics in the STN and GPe leading to integration of Go vs. NoGo signal in the basal ganglia. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
-	ss.GUI.CycleUpdateInterval = 10
+	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
@@ -881,7 +603,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25x/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pcore/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
@@ -891,8 +613,6 @@ func (ss *Sim) ConfigGui() *gi.Window {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
-	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 200)
 	ss.Args.SetInt("runs", 10)
 	ss.Args.Parse() // always parse

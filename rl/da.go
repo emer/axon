@@ -72,9 +72,8 @@ func (sd *SendDA) AddAllBut(net emer.Network, excl ...string) {
 
 // ClampDaLayer is an Input layer that just sends its activity as the dopamine signal
 type ClampDaLayer struct {
-	axon.Layer
-	SendDA SendDA  `desc:"list of layers to send dopamine to"`
-	DA     float32 `desc:"dopamine value for this layer"`
+	Layer
+	SendDA SendDA `desc:"list of layers to send dopamine to"`
 }
 
 var KiT_ClampDaLayer = kit.Types.AddType(&ClampDaLayer{}, axon.LayerProps)
@@ -82,11 +81,6 @@ var KiT_ClampDaLayer = kit.Types.AddType(&ClampDaLayer{}, axon.LayerProps)
 func (ly *ClampDaLayer) Defaults() {
 	ly.Layer.Defaults()
 }
-
-// DALayer interface:
-
-func (ly *ClampDaLayer) GetDA() float32   { return ly.DA }
-func (ly *ClampDaLayer) SetDA(da float32) { ly.DA = da }
 
 // Build constructs the layer state, including calling Build on the projections.
 func (ly *ClampDaLayer) Build() error {
@@ -96,6 +90,18 @@ func (ly *ClampDaLayer) Build() error {
 	}
 	err = ly.SendDA.Validate(ly.Network, ly.Name()+" SendTo list")
 	return err
+}
+
+func (ly *ClampDaLayer) ActFmG(ltime *axon.Time) {
+	ly.Layer.ActFmG(ltime)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.Act = nrn.Ext
+		nrn.ActInt = nrn.Act
+	}
 }
 
 // CyclePost is called at end of Cycle

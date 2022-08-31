@@ -13,7 +13,7 @@ import (
 
 var (
 	// NeuronVars are extra neuron variables for pcore -- union across all types
-	NeuronVars = []string{"ActLrn", "PhasicMax", "DALrn", "ACh", "Ca", "KCa"}
+	NeuronVars = []string{"DA", "ActLrn", "PhasicMax", "DALrn", "ACh", "Ca", "KCa"}
 
 	// NeuronVarsAll is the pcore collection of all neuron-level vars
 	NeuronVarsAll []string

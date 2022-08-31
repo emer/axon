@@ -17,7 +17,7 @@ import (
 // and we use their logistic function for computing KCa conductance based on Ca,
 // but we use a simpler approximation with burst and act threshold.
 // KCa are Calcium-gated potassium channels that drive the long
-// afterhyperpolarization of STN neurons.  Auto reset at each AlphaCycle.
+// afterhyperpolarization of STN neurons.
 // The conductance is applied to KNa channels to take advantage
 // of the existing infrastructure.
 type CaParams struct {
@@ -28,7 +28,7 @@ type CaParams struct {
 	GbarKCa   float32 `def:"10" desc:"maximal KCa conductance (actual conductance is applied to KNa channels)"`
 	KCaTau    float32 `def:"20" desc:"KCa conductance time constant -- 40 from Gillies & Willshaw, 2006, but sped up here to fit in AlphaCyc"`
 	CaTau     float32 `def:"50" desc:"Ca time constant of decay to baseline -- 185.7 from Gillies & Willshaw, 2006, but sped up here to fit in AlphaCyc"`
-	AlphaInit bool    `desc:"initialize Ca, KCa values at start of every AlphaCycle"`
+	ThetaInit bool    `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
 }
 
 func (kc *CaParams) Defaults() {
@@ -145,7 +145,7 @@ func (ly *STNLayer) InitActs() {
 
 func (ly *STNLayer) NewState() {
 	ly.Layer.NewState()
-	if !ly.Ca.AlphaInit {
+	if !ly.Ca.ThetaInit {
 		return
 	}
 	for ni := range ly.Neurons {
@@ -161,32 +161,13 @@ func (ly *STNLayer) NewState() {
 }
 
 func (ly *STNLayer) ActFmG(ltime *axon.Time) {
-	intdt := ly.Act.Dt.IntDt
-	if ltime.PlusPhase {
-		intdt *= 3.0
-	}
+	ly.Layer.ActFmG(ltime)
 	for ni := range ly.Neurons { // note: copied from axon ActFmG, not calling it..
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Act.VmFmG(nrn)
-		ly.Act.ActFmG(nrn)
-		ly.Learn.CaFmSpike(nrn)
-		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-		if !ltime.PlusPhase {
-			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
-			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
-		}
-		// note: this is here because it depends on Gi
-		nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
-		nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
-		if ly.Act.KNa.On {
-			nrn.Gk += nrn.GgabaB // Gk was set by KNa
-		} else {
-			nrn.Gk = nrn.GgabaB
-		}
-
+		// todo: switch to using VGccCa instead!
 		snr := &ly.STNNeurs[ni]
 		snr.KCa += (ly.Ca.KCaGFmCa(snr.Ca) - snr.KCa) / ly.Ca.KCaTau
 		dCa := -snr.Ca / ly.Ca.CaTau
@@ -198,8 +179,6 @@ func (ly *STNLayer) ActFmG(ltime *axon.Time) {
 		}
 		snr.Ca += dCa
 		nrn.Gk = ly.Ca.GbarKCa * snr.KCa
-
-		// ly.Learn.AvgsFmAct(nrn)
 	}
 }
 
