@@ -32,11 +32,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					// "Layer.Act.Dt.GTau": "3", // 20 orig, 10 sufficient, faster RT's
 				}},
-			{Sel: "#SNc", Desc: "SNc -- no clamp limits",
-				Params: params.Params{
-					// "Layer.Act.Clamp.Range.Min": "-1",
-					// "Layer.Act.Clamp.Range.Max": "1",
-				}},
+			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
+			// 	Params: params.Params{
+			// 	}},
 			{Sel: "MatrixPrjn", Desc: "uniform weights in this simple test case",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "2.0", // stronger
@@ -310,11 +308,9 @@ var BGateParams = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2.5",
 				}},
-			{Sel: "#SNc", Desc: "SNc -- no clamp limits",
-				Params: params.Params{
-					// "Layer.Act.Clamp.Range.Min": "-1",
-					// "Layer.Act.Clamp.Range.Max": "1",
-				}},
+			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
+			// 	Params: params.Params{
+			// 	}},
 			// trained weights
 			{Sel: "#ACCPosToMtxGo", Desc: "trained wts",
 				Params: params.Params{

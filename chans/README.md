@@ -71,9 +71,23 @@ See the `nmda_plot` directory for a program that plots this function, which look
 
 # VGCC: Voltage-gated Calcium Channels
 
-VGCC implements an L-type Ca channel that opens as a function of membrane potential.  It tends to broaden the effect of action potential spikes in the dendrites.  See the `vgcc_plot` for more info.
+There are a large number of VGCC's (Dolphin, 2018; Cain & Snutch, 2012) denoted by letters in descending order of the voltage threshold for activation: L, PQ, N, R, T, which have corresponding Ca_v names: Ca_v1.1, 1.2, 1.3. 1.4 are all L type, 2.1, 2.2, 2.3 are PQ, N, and R, respectively, and T type (low threshold) comprise 3.1, 3.2, and 3.3.  Each channel is characterized by the voltage dependency and inactivation functions.  The table here summarizes the different types:
 
-# 
+| Letter | Ca_v    | V Threshold  | Inactivation | Location | Function              |
+| ------ | ------- | ------------ | ------------ | -------- | --------------------- |
+|  L     | 1.1-1.4 | high (-40mV) | fast         | Cortex + | closely tracks spikes |
+|  PQ    | 2.1     | high         | ?            | Cerebellum (Purk, Gran) | ?      |
+|  N     | 2.2     | high         | ?            | everywhere? | ?                  |
+|  R     | 2.3     | med          | ?            | Cerebellum Gran | ?              | 
+|  T     | 3.1-.3  | low          | ?            | 5IB, subcortical  | low-freq osc |
 
+
+* L type is the classic "VGCC" in dendritic spines in pyramidal cells, implemented in `VGCCParams` in `vgcc.go`.  See [vgcc_plot](https://github.com/emer/axon/tree/master/chans/vgcc_plot) for more info.  it 
+
+* PQ and R are specific to cerebellum.
+
+* The T type is the most important for low frequency oscillations, and is absent in pyramidal neurons outside of the 5IB layer 5 neurons, which are the primary bursting type.  It is most important for subcortical neurons, such as in TRN.
+
+* The `CaK` channel is a calcium-gated potassium channel that typically plays an important role along with these VGCC channels.  For example in the STN (subthalamic nucleus) in the BG `pcore` model, it plays a critical role in pausing neural activity after VGCC-induced Ca accumulation, as described in Gillies & Willshaw, 2006.
 
 

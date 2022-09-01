@@ -313,10 +313,10 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 50).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
 
-	applyRew := looper.NewEvent("ApplyRew", 199, func() {
+	// using 190 there to make it look better on raster view.. :)
+	applyRew := looper.NewEvent("ApplyRew", 190, func() {
 		ss.ApplyRew()
 	})
-
 	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
 
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing

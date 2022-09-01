@@ -162,7 +162,7 @@ func (ly *STNLayer) NewState() {
 
 func (ly *STNLayer) ActFmG(ltime *axon.Time) {
 	ly.Layer.ActFmG(ltime)
-	for ni := range ly.Neurons { // note: copied from axon ActFmG, not calling it..
+	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
