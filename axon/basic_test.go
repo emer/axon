@@ -18,9 +18,6 @@ import (
 // Note: this test project exactly reproduces the configuration and behavior of
 // C++ emergent/demo/axon/basic_axon_test.proj  in version 8.5.6 svn 11492
 
-var TestNet Network
-var InPats *etensor.Float32
-
 // number of distinct sets of learning parameters to test
 const NLrnPars = 1
 
@@ -56,26 +53,28 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func TestMakeNet(t *testing.T) {
-	TestNet.InitName(&TestNet, "TestNet")
-	inLay := TestNet.AddLayer("Input", []int{4, 1}, emer.Input)
-	hidLay := TestNet.AddLayer("Hidden", []int{4, 1}, emer.Hidden)
-	outLay := TestNet.AddLayer("Output", []int{4, 1}, emer.Target)
+func newTestNet() *Network {
+	var testNet Network
+	testNet.InitName(&testNet, "testNet")
+	inLay := testNet.AddLayer("Input", []int{4, 1}, emer.Input)
+	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, emer.Hidden)
+	outLay := testNet.AddLayer("Output", []int{4, 1}, emer.Target)
 
-	TestNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
-	TestNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
-	TestNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
+	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
+	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
+	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
 
-	TestNet.Defaults()
-	TestNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	TestNet.Build()
-	TestNet.InitWts()
-	TestNet.NewState() // get GScale
+	testNet.Defaults()
+	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
+	testNet.Build()
+	testNet.InitWts()
+	testNet.NewState() // get GScale
+	return &testNet
 
 	// var buf bytes.Buffer
-	// TestNet.WriteWtsJSON(&buf)
+	// testNet.WriteWtsJSON(&buf)
 	// wb := buf.Bytes()
-	// // fmt.Printf("TestNet Weights:\n\n%v\n", string(wb))
+	// fmt.Printf("testNet Weights:\n\n%v\n", string(wb))
 	//
 	// fp, err := os.Create("testdata/testnet.wts")
 	// defer fp.Close()
@@ -86,8 +85,8 @@ func TestMakeNet(t *testing.T) {
 }
 
 func TestSynVals(t *testing.T) {
-	TestNet.InitWts()
-	hidLay := TestNet.LayerByName("Hidden").(*Layer)
+	testNet := newTestNet()
+	hidLay := testNet.LayerByName("Hidden").(*Layer)
 	fmIn := hidLay.RcvPrjns.SendName("Input").(*Prjn)
 
 	bfWt := fmIn.SynVal("Wt", 1, 1)
@@ -101,19 +100,19 @@ func TestSynVals(t *testing.T) {
 	afWt := fmIn.SynVal("Wt", 1, 1)
 	afLWt := fmIn.SynVal("LWt", 1, 1)
 
-	CompareFloats([]float32{bfWt, bfLWt, afWt, afLWt}, []float32{0.5, 0.5, 0.15, 0.42822415}, "syn val setting test", t)
-
-	// fmt.Printf("SynVals: before wt: %v, lwt: %v  after wt: %v, lwt: %v\n", bfWt, bfLWt, afWt, afLWt)
+	cmprFloats([]float32{bfWt, bfLWt, afWt, afLWt}, []float32{0.5, 0.5, 0.15, 0.42822415}, "syn val setting test", t)
 }
 
-func TestInPats(t *testing.T) {
-	InPats = etensor.NewFloat32([]int{4, 4, 1}, nil, []string{"pat", "Y", "X"})
+func newInPats() *etensor.Float32 {
+	inPats := etensor.NewFloat32([]int{4, 4, 1}, nil, []string{"pat", "Y", "X"})
 	for pi := 0; pi < 4; pi++ {
-		InPats.Set([]int{pi, pi, 0}, 1)
+		inPats.Set([]int{pi, pi, 0}, 1)
 	}
+	return inPats
 }
 
-func CompareFloats(out, cor []float32, msg string, t *testing.T) {
+func cmprFloats(out, cor []float32, msg string, t *testing.T) {
+	t.Helper()
 	for i := range out {
 		dif := mat32.Abs(out[i] - cor[i])
 		if dif > TOLERANCE { // allow for small numerical diffs
@@ -160,16 +159,12 @@ func TestSpikeProp(t *testing.T) {
 				inCyc = cyc
 			}
 
-			// if inCyc > 0 {
-			// 	fmt.Printf("del: %d   cyc %d   inCyc: %d   Zi: %d  gbuf: %v\n", del, cyc, inCyc, prj.Gidx.Zi, prj.Gbuf)
-			// }
 			ge := hidLay.Neurons[0].Ge
 			if ge > 0 {
 				hidCyc = cyc
 				break
 			}
 		}
-		// fmt.Printf("del: %d   inCyc: %d   hidCyc: %d\n", del, inCyc, hidCyc)
 		if hidCyc-inCyc != del {
 			t.Errorf("SpikeProp error -- delay: %d  actual: %d\n", del, hidCyc-inCyc)
 		}
@@ -177,31 +172,32 @@ func TestSpikeProp(t *testing.T) {
 }
 
 func TestNetAct(t *testing.T) {
-	TestNet.InitWts()
-	TestNet.InitExt()
+	testNet := newTestNet()
+	testNet.InitExt()
+	inPats := newInPats()
 
-	inLay := TestNet.LayerByName("Input").(*Layer)
-	hidLay := TestNet.LayerByName("Hidden").(*Layer)
-	outLay := TestNet.LayerByName("Output").(*Layer)
+	inLay := testNet.LayerByName("Input").(*Layer)
+	hidLay := testNet.LayerByName("Hidden").(*Layer)
+	outLay := testNet.LayerByName("Output").(*Layer)
 
 	ltime := NewTime()
 
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.72367704, 0, 0, 0}
-	qtr0HidGes := []float32{0.57268536, 0, 0, 0}
-	qtr0HidGis := []float32{0.14899215, 0.14899215, 0.14899215, 0.14899215}
-	qtr0OutActs := []float32{0.64160156, 0, 0, 0}
-	qtr0OutGes := []float32{0.51757026, 0, 0, 0}
-	qtr0OutGis := []float32{0.1001857, 0.1001857, 0.1001857, 0.1001857}
+	qtr0HidActs := []float32{0.72165483, 0, 0, 0}
+	qtr0HidGes := []float32{0.49048427, 0, 0, 0}
+	qtr0HidGis := []float32{0.13094407, 0.13094407, 0.13094407, 0.13094407}
+	qtr0OutActs := []float32{0.63028616, 0, 0, 0}
+	qtr0OutGes := []float32{0.3984899, 0, 0, 0}
+	qtr0OutGis := []float32{0.07549549, 0.07549549, 0.07549549, 0.07549549}
 
-	qtr3HidActs := []float32{0.6512225, 0, 0, 0}
-	qtr3HidGes := []float32{0.88013947, 0, 0, 0}
-	qtr3HidGis := []float32{0.2843189, 0.2843189, 0.2843189, 0.2843189}
+	qtr3HidActs := []float32{0.6532401, 0, 0, 0}
+	qtr3HidGes := []float32{0.7066621, 0, 0, 0}
+	qtr3HidGis := []float32{0.24389985, 0.24389985, 0.24389985, 0.24389985}
 	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
-	qtr3OutGis := []float32{0.20251861, 0.20251861, 0.20251861, 0.20251861}
+	qtr3OutGis := []float32{0.20638072, 0.20638072, 0.20638072, 0.20638072}
 
 	inActs := []float32{}
 	hidActs := []float32{}
@@ -214,19 +210,19 @@ func TestNetAct(t *testing.T) {
 	cycPerQtr := 50
 
 	for pi := 0; pi < 4; pi++ {
-		inpat, err := InPats.SubSpaceTry([]int{pi})
+		inpat, err := inPats.SubSpaceTry([]int{pi})
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		inLay.ApplyExt(inpat)
 		outLay.ApplyExt(inpat)
 
-		TestNet.NewState()
+		testNet.NewState()
 		ltime.NewState("Train")
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				TestNet.Cycle(ltime)
+				testNet.Cycle(ltime)
 				ltime.CycleInc()
 
 				if printCycs {
@@ -241,7 +237,7 @@ func TestNetAct(t *testing.T) {
 				}
 			}
 			if qtr == 2 {
-				TestNet.MinusPhase(ltime)
+				testNet.MinusPhase(ltime)
 				ltime.NewPhase(false)
 			}
 
@@ -266,23 +262,23 @@ func TestNetAct(t *testing.T) {
 			}
 
 			if pi == 0 && qtr == 0 {
-				CompareFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
-				CompareFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
-				CompareFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
-				CompareFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
-				CompareFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
-				CompareFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
+				cmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
+				cmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
+				cmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
+				cmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
+				cmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
+				cmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
 			}
 			if pi == 0 && qtr == 3 {
-				CompareFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
-				CompareFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
-				CompareFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
-				CompareFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
-				CompareFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
-				CompareFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
+				cmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
+				cmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
+				cmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
+				cmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
+				cmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
+				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
-		TestNet.PlusPhase(ltime)
+		testNet.PlusPhase(ltime)
 
 		if printQtrs {
 			fmt.Printf("=============================\n")
@@ -291,9 +287,11 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestNetLearn(t *testing.T) {
-	inLay := TestNet.LayerByName("Input").(*Layer)
-	hidLay := TestNet.LayerByName("Hidden").(*Layer)
-	outLay := TestNet.LayerByName("Output").(*Layer)
+	testNet := newTestNet()
+	inPats := newInPats()
+	inLay := testNet.LayerByName("Input").(*Layer)
+	hidLay := testNet.LayerByName("Hidden").(*Layer)
+	outLay := testNet.LayerByName("Output").(*Layer)
 
 	printCycs := false
 	printQtrs := false
@@ -309,10 +307,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.003540163, 0.008597593, 0.0058499286, 0.0058499286}
-	outDwts := []float32{0.008264284, 0.013101129, 0.009027972, 0.009027972}
+	hidDwts := []float32{0.0036074303, 0.0068956804, 0.0009886026, 0.0009886026}
+	outDwts := []float32{0.009111724, 0.01502119, 0.007415774, 0.007415774}
 	hidWts := []float32{0.5, 0.5, 0.5, 0.5} // todo: not clear why not updating..
-	outWts := []float32{0.54942834, 0.57798284, 0.55396265, 0.55396265}
+	outWts := []float32{0.55445933, 0.5891899, 0.54438084, 0.54438084}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -331,27 +329,27 @@ func TestNetLearn(t *testing.T) {
 	cycPerQtr := 50
 
 	for ti := 0; ti < NLrnPars; ti++ {
-		TestNet.Defaults()
-		TestNet.ApplyParams(ParamSets[0].Sheets["Network"], false)  // always apply base
-		TestNet.ApplyParams(ParamSets[ti].Sheets["Network"], false) // then specific
-		TestNet.InitWts()
-		TestNet.InitExt()
+		testNet.Defaults()
+		testNet.ApplyParams(ParamSets[0].Sheets["Network"], false)  // always apply base
+		testNet.ApplyParams(ParamSets[ti].Sheets["Network"], false) // then specific
+		testNet.InitWts()
+		testNet.InitExt()
 
 		ltime := NewTime()
 
 		for pi := 0; pi < 4; pi++ {
-			inpat, err := InPats.SubSpaceTry([]int{pi})
+			inpat, err := inPats.SubSpaceTry([]int{pi})
 			if err != nil {
 				t.Error(err)
 			}
 			inLay.ApplyExt(inpat)
 			outLay.ApplyExt(inpat)
 
-			TestNet.NewState()
+			testNet.NewState()
 			ltime.NewState("Train")
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					TestNet.Cycle(ltime)
+					testNet.Cycle(ltime)
 					ltime.CycleInc()
 
 					hidLay.UnitVals(&hidAct, "Act")
@@ -369,7 +367,7 @@ func TestNetLearn(t *testing.T) {
 					}
 				}
 				if qtr == 2 {
-					TestNet.MinusPhase(ltime)
+					testNet.MinusPhase(ltime)
 					ltime.NewPhase(false)
 				}
 
@@ -384,52 +382,47 @@ func TestNetLearn(t *testing.T) {
 				}
 
 				if pi == 0 && qtr == 0 {
-					CompareFloats(hidSpkCaP, qtr0HidSpkCaP, "qtr 0 hidSpkCaP", t)
-					CompareFloats(hidSpkCaD, qtr0HidSpkCaD, "qtr 0 hidSpkCaD", t)
-					CompareFloats(outSpkCaP, qtr0OutSpkCaP, "qtr 0 outSpkCaP", t)
-					CompareFloats(outSpkCaD, qtr0OutSpkCaD, "qtr 0 outSpkCaD", t)
+					cmprFloats(hidSpkCaP, qtr0HidSpkCaP, "qtr 0 hidSpkCaP", t)
+					cmprFloats(hidSpkCaD, qtr0HidSpkCaD, "qtr 0 hidSpkCaD", t)
+					cmprFloats(outSpkCaP, qtr0OutSpkCaP, "qtr 0 outSpkCaP", t)
+					cmprFloats(outSpkCaD, qtr0OutSpkCaD, "qtr 0 outSpkCaD", t)
 				}
 				if pi == 0 && qtr == 3 {
-					CompareFloats(hidSpkCaP, qtr3HidSpkCaP, "qtr 3 hidSpkCaP", t)
-					CompareFloats(hidSpkCaD, qtr3HidSpkCaD, "qtr 3 hidSpkCaD", t)
-					CompareFloats(outSpkCaP, qtr3OutSpkCaP, "qtr 3 outSpkCaP", t)
-					CompareFloats(outSpkCaD, qtr3OutSpkCaD, "qtr 3 outSpkCaD", t)
+					cmprFloats(hidSpkCaP, qtr3HidSpkCaP, "qtr 3 hidSpkCaP", t)
+					cmprFloats(hidSpkCaD, qtr3HidSpkCaD, "qtr 3 hidSpkCaD", t)
+					cmprFloats(outSpkCaP, qtr3OutSpkCaP, "qtr 3 outSpkCaP", t)
+					cmprFloats(outSpkCaD, qtr3OutSpkCaD, "qtr 3 outSpkCaD", t)
 				}
 			}
-			TestNet.PlusPhase(ltime)
+			testNet.PlusPhase(ltime)
 
 			if printQtrs {
 				fmt.Printf("=============================\n")
 			}
 
-			// fmt.Printf("hid cosdif stats: %v\nhid avgl:   %v\nhid avgllrn: %v\n", hidLay.CorSim, hidAvgL, hidAvgLLrn)
-			// fmt.Printf("out cosdif stats: %v\nout avgl:   %v\nout avgllrn: %v\n", outLay.CorSim, outAvgL, outAvgLLrn)
-
-			TestNet.DWt(ltime)
+			testNet.DWt(ltime)
 
 			didx := ti*4 + pi
 
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
-			TestNet.WtFmDWt(ltime)
+			testNet.WtFmDWt(ltime)
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 		}
 	}
 
-	//	fmt.Printf("hid dwt: %v\nout dwt: %v\nhid norm: %v\n hid moment: %v\nout norm: %v\nout moment: %v\nhid wt: %v\nout wt: %v\n", hiddwt, outdwt, hidnorm, hidmoment, outnorm, outmoment, hidwt, outwt)
-
-	CompareFloats(hiddwt, hidDwts, "hid DWt", t)
-	CompareFloats(outdwt, outDwts, "out DWt", t)
-	CompareFloats(hidwt, hidWts, "hid Wt", t)
-	CompareFloats(outwt, outWts, "out Wt", t)
+	cmprFloats(hiddwt, hidDwts, "hid DWt", t)
+	cmprFloats(outdwt, outDwts, "out DWt", t)
+	cmprFloats(hidwt, hidWts, "hid Wt", t)
+	cmprFloats(outwt, outWts, "out Wt", t)
 
 	// var buf bytes.Buffer
-	// TestNet.WriteWtsJSON(&buf)
+	// testNet.WriteWtsJSON(&buf)
 	// wb := buf.Bytes()
-	// fmt.Printf("TestNet Trained Weights:\n\n%v\n", string(wb))
+	// fmt.Printf("testNet Trained Weights:\n\n%v\n", string(wb))
 
 	// fp, err := os.Create("testdata/testnet_train.wts")
 	// defer fp.Close()
@@ -440,6 +433,7 @@ func TestNetLearn(t *testing.T) {
 }
 
 func TestInhibAct(t *testing.T) {
+	inPats := newInPats()
 	var InhibNet Network
 	InhibNet.InitName(&InhibNet, "InhibNet")
 
@@ -467,16 +461,16 @@ func TestInhibAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.801611, 0, 0, 0}
-	qtr0HidGes := []float32{0.65507513, 0, 0, 0}
-	qtr0HidGis := []float32{0.06083918, 0, 0, 0}
-	qtr0OutActs := []float32{0.9217795, 0, 0, 0}
-	qtr0OutGes := []float32{0.609165, 0, 0, 0}
+	qtr0HidActs := []float32{0.80708516, 0, 0, 0}
+	qtr0HidGes := []float32{0.66517055, 0, 0, 0}
+	qtr0HidGis := []float32{0.05214787, 0, 0, 0}
+	qtr0OutActs := []float32{0.92420554, 0, 0, 0}
+	qtr0OutGes := []float32{0.4682724, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.90765053, 0, 0, 0}
-	qtr3HidGes := []float32{0.7894032, 0, 0, 0}
-	qtr3HidGis := []float32{0.060876425, 0, 0, 0}
+	qtr3HidActs := []float32{0.9086095, 0, 0, 0}
+	qtr3HidGes := []float32{0.9144331, 0, 0, 0}
+	qtr3HidGis := []float32{0.05217979, 0, 0, 0}
 	qtr3OutActs := []float32{0.7936507, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
 	qtr3OutGis := []float32{0, 0, 0, 0}
@@ -492,7 +486,7 @@ func TestInhibAct(t *testing.T) {
 	cycPerQtr := 50
 
 	for pi := 0; pi < 4; pi++ {
-		inpat, err := InPats.SubSpaceTry([]int{pi})
+		inpat, err := inPats.SubSpaceTry([]int{pi})
 		if err != nil {
 			t.Error(err)
 		}
@@ -543,23 +537,23 @@ func TestInhibAct(t *testing.T) {
 			}
 
 			if pi == 0 && qtr == 0 {
-				CompareFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
-				CompareFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
-				CompareFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
-				CompareFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
-				CompareFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
-				CompareFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
+				cmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
+				cmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
+				cmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
+				cmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
+				cmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
+				cmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
 			}
 			if pi == 0 && qtr == 3 {
-				CompareFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
-				CompareFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
-				CompareFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
-				CompareFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
-				CompareFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
-				CompareFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
+				cmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
+				cmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
+				cmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
+				cmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
+				cmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
+				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
-		TestNet.PlusPhase(ltime)
+		InhibNet.PlusPhase(ltime)
 
 		if printQtrs {
 			fmt.Printf("=============================\n")
