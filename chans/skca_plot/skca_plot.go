@@ -39,14 +39,16 @@ const LogPrec = 4
 // Sim holds the params, table, etc
 type Sim struct {
 	SKCa        chans.SKCaParams `desc:"SKCa function"`
-	Castart     float32          `def:"0.001" desc:"starting voltage"`
-	Caend       float32          `def:"2" desc:"ending voltage"`
-	Castep      float32          `def:"0.05" desc:"voltage increment"`
+	CaStart     float32          `def:"0.001" desc:"starting Ca conc"`
+	CaEnd       float32          `def:"2" desc:"ending Ca conc"`
+	CaStep      float32          `def:"0.05" desc:"Ca conc increment"`
 	TimeSteps   int              `desc:"number of time steps"`
-	TimeSpike   bool             `desc:"do spiking instead of voltage ramp"`
+	TimeSpike   bool             `desc:"do spiking instead of Ca conc ramp"`
 	SpikeFreq   float32          `desc:"spiking frequency"`
-	TimeCastart float32          `desc:"time-run starting membrane potential"`
-	TimeCaend   float32          `desc:"time-run ending membrane potential"`
+	SpikeCa     float32          `desc:"increment in Ca from spiking"`
+	CaDecayTau  float32          `desc:"time constant for Ca Decay"`
+	TimeCaStart float32          `desc:"time-run starting Ca conc"`
+	TimeCaEnd   float32          `desc:"time-run ending Ca conc / value during spiking"`
 	Table       *etable.Table    `view:"no-inline" desc:"table for plot"`
 	Plot        *eplot.Plot2D    `view:"-" desc:"the plot"`
 	TimeTable   *etable.Table    `view:"no-inline" desc:"table for plot"`
@@ -62,14 +64,18 @@ var TheSim Sim
 func (ss *Sim) Config() {
 	ss.SKCa.Defaults()
 	ss.SKCa.Gbar = 1
-	ss.Castart = 0.001
-	ss.Caend = 5
-	ss.Castep = .1
+	ss.CaStart = 0.001
+	ss.CaEnd = 5
+	ss.CaStep = .1
 	ss.TimeSteps = 200
 	ss.TimeSpike = true
 	ss.SpikeFreq = 50
-	ss.TimeCastart = 0
-	ss.TimeCaend = 5
+	ss.SpikeCa = 0.1
+	ss.CaDecayTau = 20 // .4ms in Fujita, 185.7 in Gillies & Willshaw;
+	// AnwarRoomeNedelescuEtAl14 is definitive study -- looks like ~10-20.
+	// old: HelmchenImotoSakmann96 -- says 100-ish
+	ss.TimeCaStart = 0
+	ss.TimeCaEnd = 1
 	ss.Update()
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
@@ -86,10 +92,10 @@ func (ss *Sim) CamRun() {
 	ss.Update()
 	dt := ss.Table
 
-	nv := int((ss.Caend - ss.Castart) / ss.Castep)
+	nv := int((ss.CaEnd - ss.CaStart) / ss.CaStep)
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
-		cai := ss.Castart + float32(vi)*ss.Castep
+		cai := ss.CaStart + float32(vi)*ss.CaStep
 		mh := ss.SKCa.MAsympHill(cai)
 		mg := ss.SKCa.MAsympGW06(cai)
 
@@ -129,49 +135,38 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 // TimeRun runs the equation over time.
 func (ss *Sim) TimeRun() {
 	ss.Update()
-	/*
-		dt := ss.TimeTable
+	dt := ss.TimeTable
 
-		m := float32(0)
-		h := float32(1)
-		msdt := float32(0.001)
-		v := ss.TimeCastart
-		vinc := float32(2) * (ss.TimeCaend - ss.TimeCastart) / float32(ss.TimeSteps)
+	ca := ss.TimeCaStart
+	cainc := (ss.TimeCaEnd - ss.TimeCaStart) / float32(ss.TimeSteps)
+	msdt := float32(0.001)
+	m := float32(0)
 
-		isi := int(1000 / ss.SpikeFreq)
+	isi := int(1000 / ss.SpikeFreq)
 
-		dt.SetNumRows(ss.TimeSteps)
-		var g float32
-		for ti := 0; ti < ss.TimeSteps; ti++ {
-			vnorm := chans.CaFmBio(v)
-			t := float32(ti) * msdt
-			g = ss.SKCa.Gvgcc(vnorm, m, h)
-			dm, dh := ss.SKCa.DMHFmCa(vnorm, m, h)
-			m += dm
-			h += dh
+	dt.SetNumRows(ss.TimeSteps)
+	for ti := 0; ti < ss.TimeSteps; ti++ {
+		t := float32(ti) * msdt
+		m = ss.SKCa.MFmCa(ca, m)
+		g := m * ss.SKCa.Gbar * m
 
-			dt.SetCellFloat("Time", ti, float64(t))
-			dt.SetCellFloat("Ca", ti, float64(v))
-			dt.SetCellFloat("Gvgcc", ti, float64(g))
-			dt.SetCellFloat("M", ti, float64(m))
-			dt.SetCellFloat("H", ti, float64(h))
-			dt.SetCellFloat("dM", ti, float64(dm))
-			dt.SetCellFloat("dH", ti, float64(dh))
+		dt.SetCellFloat("Time", ti, float64(t))
+		dt.SetCellFloat("Ca", ti, float64(ca))
+		dt.SetCellFloat("Gsk", ti, float64(g))
+		dt.SetCellFloat("M", ti, float64(m))
 
-			if ss.TimeSpike {
-				if ti%isi < 3 {
-					v = ss.TimeCaend
-				} else {
-					v = ss.TimeCastart
-				}
-			} else {
-				v += vinc
-				if v > ss.TimeCaend {
-					v = ss.TimeCaend
-				}
+		if ss.TimeSpike {
+			if ti%isi < 3 {
+				ca += ss.SpikeCa
+			}
+			ca -= ca / ss.CaDecayTau
+		} else {
+			ca += cainc
+			if ca > ss.TimeCaEnd {
+				ca = ss.TimeCaEnd
 			}
 		}
-	*/
+	}
 	ss.TimePlot.Update()
 }
 
@@ -183,11 +178,8 @@ func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
 	sch := etable.Schema{
 		{"Time", etensor.FLOAT64, nil, nil},
 		{"Ca", etensor.FLOAT64, nil, nil},
-		{"Gvgcc", etensor.FLOAT64, nil, nil},
+		{"Gsk", etensor.FLOAT64, nil, nil},
 		{"M", etensor.FLOAT64, nil, nil},
-		{"H", etensor.FLOAT64, nil, nil},
-		{"dM", etensor.FLOAT64, nil, nil},
-		{"dH", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -198,11 +190,8 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gvgcc", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("M", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("H", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dM", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dH", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Gsk", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 

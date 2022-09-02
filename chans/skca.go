@@ -7,20 +7,27 @@ package chans
 import "github.com/goki/mat32"
 
 // SKCaParams describes the small-conductance calcium-activated potassium channel
-// using the equations described in Fujita et al (2012) (also Muddapu & Chakravarthy, 2021)
+// using the equations described in Fujita et al (2012) based on Gunay et al (2008)
+// (also Muddapu & Chakravarthy, 2021)
 // There is a gating factor M that depends on the Ca concentration, modeled using
 // an X / (X + C50) form Hill equation
 type SKCaParams struct {
 	Gbar   float32 `desc:"strength of sKCa current"`
 	Coeff  float32 `def:"4.6" desc:"Hill coefficient for asymptotic level of the gating current m"`
-	C50    float32 `def:"0.35" desc:"50% Ca baseline value in Hill equation"`
+	C50    float32 `def:"0.35" desc:"50% Ca concentration baseline value in Hill equation"`
+	CFast  float32 `def:"5" desc:"concentration of Ca at and above which time constant is fastest (Tau1)"`
+	Tau0   float32 `def:"76" desc:"slow time constant, operative when no Ca is present"`
+	Tau1   float32 `def:"4" desc:"fast time constant achieved when Ca is >= CFast"`
 	C50Pow float32 `view:"-" desc:"C50 to the Coeff power"`
 }
 
 func (sp *SKCaParams) Defaults() {
-	sp.Gbar = .1
+	sp.Gbar = 0.1
 	sp.Coeff = 4.6
 	sp.C50 = 0.35
+	sp.CFast = 5
+	sp.Tau0 = 76
+	sp.Tau1 = 4
 	sp.Update()
 }
 
@@ -36,7 +43,7 @@ func (sp *SKCaParams) MAsympHill(cai float32) float32 {
 }
 
 // MAsympGW06 gives the asymptotic (driving) gating factor M as a function of CAi
-// for the GillesWillshaw06 equation version
+// for the GilliesWillshaw06 equation version
 // this is a log-saturating function
 func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
 	if cai < 0.001 {
@@ -49,10 +56,10 @@ func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
 func (sp *SKCaParams) MFmCa(cai, mcur float32) float32 {
 	mas := sp.MAsympHill(cai)
 	tau := float32(76.0)
-	if cai > 5 {
-		tau = 4
+	if cai >= sp.CFast {
+		tau = sp.Tau1
 	} else {
-		tau = 76.0 - 72.0*(cai/5.0)
+		tau = sp.Tau0 - (sp.Tau0-sp.Tau1)*(cai/sp.CFast)
 	}
 	return (mas - mcur) / tau
 }
