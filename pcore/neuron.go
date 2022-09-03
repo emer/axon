@@ -13,7 +13,7 @@ import (
 
 var (
 	// NeuronVars are extra neuron variables for pcore -- union across all types
-	NeuronVars = []string{"DA", "ActLrn", "PhasicMax", "DALrn", "ACh", "Ca", "KCa"}
+	NeuronVars = []string{"DA", "ActLrn", "PhasicMax", "DALrn", "ACh", "SKCai", "SKCaM", "Gsk"}
 
 	// NeuronVarsAll is the pcore collection of all neuron-level vars
 	NeuronVarsAll []string
@@ -92,12 +92,13 @@ func (nrn *PCoreNeuron) VarByName(varNm string) (float32, error) {
 
 // STNNeuron holds the extra neuron (unit) level variables for STN computation.
 type STNNeuron struct {
-	Ca  float32 `desc:"intracellular Calcium concentration -- increased by bursting and elevated levels of activation, drives KCa currents that result in hyperpolarization / inhibition."`
-	KCa float32 `desc:"Calcium-gated potassium channel conductance level, computed using function from gillies & Willshaw 2006 as function of Ca."`
+	SKCai float32 `desc:"intracellular Calcium concentration for activation of SKCa channels, driven by VGCC activation from spiking and decaying / buffererd relatively slowly."`
+	SKCaM float32 `desc:"Calcium-gated potassium channel gating factor, driven by SKCai via a Hill equation as in chans.SKPCaParams."`
+	Gsk   float32 `desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`
 }
 
 var (
-	STNNeuronVars    = []string{"Ca", "KCa"}
+	STNNeuronVars    = []string{"SKCai", "SKCaM", "Gsk"}
 	STNNeuronVarsMap map[string]int
 )
 

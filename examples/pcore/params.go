@@ -16,6 +16,16 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
 				}},
+			{Sel: "#STNp", Desc: "Pausing STN",
+				Params: params.Params{
+					"Layer.Ca.SKCa.Gbar":  "50",
+					"Layer.Ca.SKCa.C50":   ".01", // too low -- CaM never gets very high.
+					"Layer.Ca.SKCa.CFast": "5",
+					"Layer.Ca.SKCa.Tau0":  "76",
+					"Layer.Ca.SKCa.Tau1":  "4",
+					"Layer.Ca.CaScale":    ".01",
+					"Layer.Ca.CaTau":      "50",
+				}},
 			{Sel: "#ACCNeg", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9", // should be 8

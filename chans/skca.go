@@ -18,7 +18,7 @@ type SKCaParams struct {
 	CFast  float32 `def:"5" desc:"concentration of Ca at and above which time constant is fastest (Tau1)"`
 	Tau0   float32 `def:"76" desc:"slow time constant, operative when no Ca is present"`
 	Tau1   float32 `def:"4" desc:"fast time constant achieved when Ca is >= CFast"`
-	C50Pow float32 `view:"-" desc:"C50 to the Coeff power"`
+	C50Pow float32 `inactive:"+" desc:"C50 to the Coeff power"`
 }
 
 func (sp *SKCaParams) Defaults() {

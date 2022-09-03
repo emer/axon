@@ -8,43 +8,29 @@ import (
 	"strings"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/chans"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
 // CaParams control the calcium dynamics in STN neurons.
-// Gillies & Willshaw, 2006 provide a biophysically detailed simulation,
-// and we use their logistic function for computing KCa conductance based on Ca,
-// but we use a simpler approximation with burst and act threshold.
-// KCa are Calcium-gated potassium channels that drive the long
-// afterhyperpolarization of STN neurons.
-// The conductance is applied to KNa channels to take advantage
-// of the existing infrastructure.
+// The SKCa small-conductance calcium-gated potassium channel
+// produces the pausing function as a consequence of rapid bursting.
 type CaParams struct {
-	BurstThr  float32 `def:"0.9" desc:"activation threshold for bursting that drives strong influx of Ca to turn on KCa channels -- there is a complex de-inactivation dynamic involving the volley of excitation and inhibition from GPe, but we can just use a threshold"`
-	ActThr    float32 `def:"0.7" desc:"activation threshold for increment in activation above baseline that drives lower influx of Ca"`
-	BurstCa   float32 `def:"1" desc:"Ca level for burst level activation"`
-	ActCa     float32 `def:"0.2" desc:"Ca increment from regular sub-burst activation -- drives slower inhibition of firing over time -- for stop-type STN dynamics that initially put hold on GPi and then decay"`
-	GbarKCa   float32 `def:"10" desc:"maximal KCa conductance (actual conductance is applied to KNa channels)"`
-	KCaTau    float32 `def:"20" desc:"KCa conductance time constant -- 40 from Gillies & Willshaw, 2006, but sped up here to fit in AlphaCyc"`
-	CaTau     float32 `def:"50" desc:"Ca time constant of decay to baseline -- 185.7 from Gillies & Willshaw, 2006, but sped up here to fit in AlphaCyc"`
-	ThetaInit bool    `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
+	SKCa      chans.SKCaParams `view:"inline" desc:"small-conductance calcium-activated potassium channel"`
+	CaScale   float32          `desc:"scaling factor applied to input VgccCa to bring into proper range of these dynamics"`
+	CaTau     float32          `def:"50" desc:"Ca time constant of decay to baseline -- 185.7 in Gillies & Willshaw, 2006 -- other reports are more like 20 or 10"`
+	ThetaInit bool             `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
 }
 
 func (kc *CaParams) Defaults() {
-	kc.BurstThr = 0.9
-	kc.ActThr = 0.7
-	kc.BurstCa = 1 // just long enough for 100 msec alpha trial window
-	kc.ActCa = 0.2
-	kc.GbarKCa = 10 // 20
-	kc.KCaTau = 20  // 20
-	kc.CaTau = 50   // 185.7
+	kc.SKCa.Defaults()
+	kc.CaScale = 0.01
+	kc.CaTau = 50 // 185.7
 }
 
-// KCaGFmCa returns the driving conductance for KCa channels based on given Ca level.
-// This equation comes from Gillies & Willshaw, 2006.
-func (kc *CaParams) KCaGFmCa(ca float32) float32 {
-	return 0.81 / (1 + mat32.FastExp(-(mat32.Log(ca)+0.3))/0.46)
+func (kc *CaParams) Update() {
+	kc.SKCa.Update()
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -108,7 +94,10 @@ func (ly *STNLayer) Defaults() {
 	// ly.Act.Init.Decay = 0
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
-		ly.Act.Init.Act = 0.48
+		ly.Act.Init.Vm = 0.3
+		ly.Act.Init.Act = 0.0
+		ly.Act.Erev.L = 0.3
+		ly.Act.Gbar.L = 0.2
 	}
 
 	for _, pji := range ly.RcvPrjns {
@@ -134,12 +123,18 @@ func (ly *STNLayer) Defaults() {
 	ly.UpdateParams()
 }
 
+func (ly *STNLayer) UpdateParams() {
+	ly.Layer.UpdateParams()
+	ly.Ca.Update()
+}
+
 func (ly *STNLayer) InitActs() {
 	ly.Layer.InitActs()
 	for ni := range ly.STNNeurs {
-		nrn := &ly.STNNeurs[ni]
-		nrn.Ca = 0
-		nrn.KCa = 0
+		snr := &ly.STNNeurs[ni]
+		snr.SKCai = 0
+		snr.SKCaM = 0
+		snr.Gsk = 0
 	}
 }
 
@@ -153,10 +148,10 @@ func (ly *STNLayer) NewState() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.Gk = 0
 		snr := &ly.STNNeurs[ni]
-		snr.Ca = 0
-		snr.KCa = 0
+		snr.SKCai = 0
+		snr.SKCaM = 0
+		snr.Gsk = 0
 	}
 }
 
@@ -167,18 +162,11 @@ func (ly *STNLayer) ActFmG(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		// todo: switch to using VGccCa instead!
 		snr := &ly.STNNeurs[ni]
-		snr.KCa += (ly.Ca.KCaGFmCa(snr.Ca) - snr.KCa) / ly.Ca.KCaTau
-		dCa := -snr.Ca / ly.Ca.CaTau
-		if nrn.Act >= ly.Ca.BurstThr {
-			dCa += ly.Ca.BurstCa
-			snr.KCa = 1 // burst this too
-		} else if nrn.Act >= ly.Ca.ActThr {
-			dCa += (nrn.Act - ly.Ca.ActThr) * ly.Ca.ActCa
-		}
-		snr.Ca += dCa
-		nrn.Gk = ly.Ca.GbarKCa * snr.KCa
+		snr.SKCai += ly.Ca.CaScale*nrn.VgccCa - snr.SKCai/ly.Ca.CaTau
+		snr.SKCaM = ly.Ca.SKCa.MFmCa(snr.SKCai, snr.SKCaM)
+		snr.Gsk = ly.Ca.SKCa.Gbar * snr.SKCaM
+		nrn.Gk += snr.Gsk
 	}
 }
 
