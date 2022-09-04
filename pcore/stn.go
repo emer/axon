@@ -25,7 +25,7 @@ type CaParams struct {
 
 func (kc *CaParams) Defaults() {
 	kc.SKCa.Defaults()
-	kc.CaScale = 0.01
+	kc.CaScale = 0.05
 	kc.CaTau = 50 // 185.7
 }
 

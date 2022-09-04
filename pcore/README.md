@@ -58,6 +58,19 @@ Data from Dodson et al, 2015 and Mirzaei et al, 2017 shows brief increase then d
 
 ![RT](figs/fig_dodson_et_al_2015_gpe.png?raw=true "GPe recordings around movement from Dodson et al, 2015")
 
+## STNp pause mechanisms: SKCa channels
+
+The small-conductance calcium-activated potassium channel (SKCa) is widely distributed throughout the brain, and in general plays a role in medium-term after-hyper-polarization (mAHP) (Dwivedi & Bhalla, 2021), including most dramatically the full *pausing* of neural firing as observed in the STNp neurons.  The basic mechanism is straightforward: Ca++ influx from VGCC channels, opened via spiking, then activates SKCa channels in a briefly delayed manner (activation time constant of 5-15 msec), and the combined trace of Ca and relatively slow SKCa deactivation results in a window where the increased K+ conductance (leak) can prevent the cell from firing.  If insufficiently intense initial spiking occurs, then the resulting slow accumulation of Ca partially activates SKCa, slowing firing but not fully pausing it.  Thus, the STNp implements a critical switch between opening the BG gating window for strong, novel inputs, vs. keeping it closed for weak, familiar ones.
+
+These SKCa channels are not widely modeled, and existing models from **FujitaFukaiKitano12** (based on **GunayEdgertonJaeger08**), and **GilliesWillshaw06** have different implementations that diverge from some of the basic literature cited below.  Thus, we use a simple model based on the Hill activation curve and separate activation vs. deactivation time constants.
+
+* **XiaFaklerRivardEtAl98**: "Time constants for activation and deactivation, determined from mono-exponential fits, were 5.8, 6.3 and 12.9 ms for activation and 21.7, 29.6 and 38.1ms for deactivation of SK1, SK2 and SK3, respectively."  "... Ca2+ concentrations required for half-maximal activation (K_0.5) of 0.3 uM and a Hill coefficient of ~4 (Fig. 1a)."
+
+* **AdelmanMaylieSah12**: "Fast application of saturating Ca2+ (10 μM) to inside-out patches shows that SK channels have activation time constants of 5–15 ms and deactivation time constants of ∼50 ms (Xia et al, 1998)."  Mediates mAHP, which decays over "several hundred msec".
+
+* **DwivediBhalla21** "SK channels are voltage insensitive and are activated solely by an increase of 0.5–1 μM in intracellular calcium (Ca2+) levels (Blatz and Magleby, 1986; Köhler et al., 1996; Sah, 1996; Hirschberg et al., 1999). An individual channel has a conductance of 10 pS and achieves its half activation at an intracellular calcium level of approximately 0.6 μM (Hirschberg et al., 1999). The time constant of channel activation is 5–15 ms, and the deactivation time is 30 ms (Xia et al., 1998; Oliver et al., 2000)."  in PD: "while the symptoms were aggravated when the channels were blocked in the STN (Mourre et al., 2017)."
+
+
 # Learning logic
 
 For MSNs, the standard 3-factor matrix learning (with D1/D2 sign reversal) works well here, *without any extra need to propagate the gating signal from GPi back up to Striatum* -- the GPeTA projection inhibits the Matrix neurons naturally.
