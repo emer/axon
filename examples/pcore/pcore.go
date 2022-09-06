@@ -8,6 +8,7 @@ pcore: This project simulates the inhibitory dynamics in the STN and GPe leading
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"os"
@@ -60,7 +61,9 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	NUnits     int     `view:"-" desc:"number of units per go / nogo"`
+	NPools     int     `view:"-" desc:"number of pools"`
+	NUnits     int     `view:"-" desc:"number of units within each pool"`
+	NoInc      bool    `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
 	ACCPos     float32 `desc:"activation of ACC positive valence -- drives go"`
 	ACCNeg     float32 `desc:"activation of ACC neg valence -- drives nogo"`
 	ACCPosInc  float32 `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
@@ -75,7 +78,8 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NUnits = 4
+	ss.NPools = 4
+	ss.NUnits = 10
 	ss.ACCPos = 1
 	ss.ACCNeg = .2
 	ss.ACCPosInc = 0.8
@@ -176,11 +180,12 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.InitName(net, "PCore")
-	n := ss.Sim.NUnits
+	np := ss.Sim.NPools
+	nu := ss.Sim.NUnits
 
 	snc := rl.AddClampDaLayer(&net.Network, "SNc")
 
-	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, n, 1, 1, 2)
+	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, np, 1, nu, 1, nu, 2)
 	cin := cini.(*pcore.CINLayer)
 	cin.RewLays.Add(snc.Name())
 
@@ -188,10 +193,10 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = gpeIn
 	_ = gpeTA
 
-	accpos := net.AddLayer4D("ACCPos", 1, n, 1, 1, emer.Input)
-	accneg := net.AddLayer4D("ACCNeg", 1, n, 1, 1, emer.Input)
-	pfc := net.AddLayer4D("PFC", 1, n, 1, 1, emer.Input)
-	pfcd := net.AddLayer4D("PFCo", 1, n, 1, 1, emer.Hidden)
+	accpos := net.AddLayer4D("ACCPos", 1, np, 1, nu, emer.Input)
+	accneg := net.AddLayer4D("ACCNeg", 1, np, 1, nu, emer.Input)
+	pfc := net.AddLayer4D("PFC", 1, np, 1, nu, emer.Input)
+	pfcd := net.AddLayer4D("PFCo", 1, np, 1, nu, emer.Hidden)
 
 	snc.SendDA.AddAllBut(net)
 
@@ -213,7 +218,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(pfc, thal, one2one, emer.Forward)
 	net.ConnectLayers(pfcd, thal, one2one, emer.Forward)
 
-	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "SNc", YAlign: relpos.Front, Space: 2})
+	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "SNc", YAlign: relpos.Front, Space: 10})
 	accpos.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: mtxGo.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	accneg.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCPos", YAlign: relpos.Front, Space: 2})
 	pfc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCNeg", YAlign: relpos.Front, Space: 2})
@@ -311,7 +316,9 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 50).AddTime(etime.Trial, 50).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 50).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
+	nTestInc := int(1.0/ss.Sim.TestInc) + 1
+
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, nTestInc*nTestInc).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
 
 	// using 190 there to make it look better on raster view.. :)
 	applyRew := looper.NewEvent("ApplyRew", 190, func() {
@@ -321,6 +328,17 @@ func (ss *Sim) ConfigLoops() {
 
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
+
+	man.GetLoop(etime.Test, etime.Trial).OnStart.Add("TestInc", func() {
+		if ss.Sim.NoInc {
+			return
+		}
+		trl := man.Stacks[etime.Test].Loops[etime.Trial].Counter.Cur
+		pos := trl / nTestInc
+		neg := trl % nTestInc
+		ss.Sim.ACCPos = float32(pos) * ss.Sim.TestInc
+		ss.Sim.ACCNeg = float32(neg) * ss.Sim.TestInc
+	})
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -355,16 +373,8 @@ func (ss *Sim) ConfigLoops() {
 	/////////////////////////////////////////////
 	// Logging
 
-	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("LogTestErrors", func() {
-		axon.LogTestErrors(&ss.Logs)
-	})
-
 	man.AddOnEndToAll("Log", ss.Log)
 	axon.LooperResetLogBelow(man, &ss.Logs)
-
-	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("RunStats", func() {
-		ss.Logs.RunStats("PctCor")
-	})
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
@@ -405,24 +415,27 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 		ss.Sim.SNc = ss.Sim.ACCPos - ss.Sim.ACCNeg
 	}
 
-	n := ss.Sim.NUnits
+	np := ss.Sim.NPools
+	nu := ss.Sim.NUnits
 	itsr := etensor.Float32{}
-	itsr.SetShape([]int{1, n}, nil, nil)
+	itsr.SetShape([]int{1, np * nu}, nil, nil)
 
 	lays := []string{"ACCPos", "ACCNeg", "PFC"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		if !zero {
-			itsr.Values[0] = vals[li]
-			for j := 1; j < n; j++ {
-				switch lnm {
-				case "ACCPos":
-					itsr.Values[j] = itsr.Values[j-1] * ss.Sim.ACCPosInc
-				case "ACCNeg":
-					itsr.Values[j] = itsr.Values[j-1] * ss.Sim.ACCNegInc
-				default:
-					itsr.Values[j] = itsr.Values[j-1]
+			for j := 0; j < np; j++ {
+				io := j * nu
+				for i := 0; i < nu; i++ {
+					switch lnm {
+					case "ACCPos":
+						itsr.Values[io+i] = vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
+					case "ACCNeg":
+						itsr.Values[io+i] = vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
+					default:
+						itsr.Values[io+i] = vals[li]
+					}
 				}
 			}
 		}
@@ -503,14 +516,26 @@ func (ss *Sim) StatCounters() {
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	// ev := ss.Envs[ss.Time.Mode]
-	ss.Stats.SetString("TrialName", "trl") // ev.(*env.FixedTable).TrialName.Cur
+	ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
+	ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
+	trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
+	ss.Stats.SetString("TrialName", trlnm)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
+	trlog := ss.Logs.Log(etime.Test, etime.Cycle)
+	spkCyc := 0
+	for row := 0; row < trlog.Rows; row++ {
+		vts := trlog.CellTensorFloat1D("VThal_Spike", row, 0)
+		if vts > 0 {
+			spkCyc = row
+			break
+		}
+	}
+	ss.Stats.SetFloat("VThal_RT", float64(spkCyc))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -522,18 +547,24 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Phase, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
+	ss.Logs.AddStatFloatNoAggItem(etime.Test, etime.Trial, "VThal_RT")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
-	axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
+	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Cycle, "Hidden")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Cycle, "Hidden")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Spike", etime.Test, etime.Cycle, "Hidden")
+	ss.Logs.AddLayerTensorItems(ss.Net, "PhasicMax", etime.Test, etime.Trial, "Hidden")
+	ss.Logs.AddLayerTensorItems(ss.Net, "PhasicMax", etime.Train, etime.Trial, "Hidden")
 
-	ss.Logs.PlotItems("MtxGo_Act", "VThal_Act")
+	ss.Logs.PlotItems("MtxGo_Act", "VThal_Act", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -548,7 +579,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	// layers := ss.Net.LayersByClass("Hidden", "Target")
+	// layers := ss.Net.LayersByClass("Hidden")
 	// for _, lnm := range layers {
 	// 	clnm := lnm
 	// }
@@ -595,10 +626,11 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Params.MaxRecs = 300
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
-	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
-	nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
-	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+	nv.Scene().Camera.Pose.Pos.Set(-0.028028872, 2.1134117, 2.3178313)
+	nv.Scene().Camera.LookAt(mat32.Vec3{0.00030842167, 0.045156803, -0.039506555}, mat32.Vec3{0, 1, 0})
+
+	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
@@ -612,6 +644,26 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "TestInit", Icon: "update",
+		Tooltip: "reinitialize the testing control so it re-runs.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Loops.ResetCountersByMode(etime.Test)
+			ss.GUI.UpdateWindow()
+		},
+	})
+
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Test1", Icon: "play",
+		Tooltip: "run one test trial with current ACCPos, ACCNeg params.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Loops.ResetCountersByMode(etime.Test)
+			ss.Sim.NoInc = true
+			ss.Loops.Step(etime.Train, 1, etime.Trial)
+			ss.Sim.NoInc = false
+			ss.GUI.UpdateWindow()
+		},
+	})
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")

@@ -11,14 +11,34 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Dt.VmTau": "3.3", // 4 orig -- these are fastest
 					// "Layer.Act.Dt.GTau":  "3",   // 5 orig
+					"Layer.Act.Noise.On":    "true",
+					"Layer.Act.Noise.Ge":    "0.1",
+					"Layer.Act.Noise.Gi":    "0.1",
+					"Layer.Act.Decay.Act":   "0.0",
+					"Layer.Act.Decay.Glong": "0.0",
+					"Layer.Act.Clamp.Ge":    "0.6",
 				}},
 			{Sel: "#PFC", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
+					"Layer.Act.Clamp.Ge":   "0.6",
 				}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
+					"Layer.Inhib.Layer.On": "true",
+					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Ca.SKCa.Gbar":   "5",
+					"Layer.Ca.SKCa.C50":    "0.6",
+					"Layer.Ca.SKCa.ActTau": "10",
+					"Layer.Ca.SKCa.DeTau":  "50",
+					"Layer.Ca.CaScale":     "0.01",
+					"Layer.Ca.CaTau":       "30",
+				}},
+			{Sel: "#STNs", Desc: "Sustained STN",
+				Params: params.Params{
+					"Layer.Inhib.Layer.On": "true",
+					"Layer.Inhib.Layer.Gi": "0.6",
+					"Layer.Ca.SKCa.Gbar":   ".1",
 					"Layer.Ca.SKCa.C50":    "0.6",
 					"Layer.Ca.SKCa.ActTau": "10",
 					"Layer.Ca.SKCa.DeTau":  "50",

@@ -35,12 +35,12 @@ func (nt *Network) SynVarNames() []string {
 // AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi, and VThal layers,
 // with given optional prefix.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
-// Only Matrix has more than 1 unit per Pool by default.
+// All GP / STN layers have gpNeur neurons
 // Appropriate PoolOneToOne connections are made between layers,
 // using standard styles
 // space is the spacing between layers (2 typical)
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
-	return AddBG(&nt.Network, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
+func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
+	return AddBG(&nt.Network, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
 }
 
 // ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
@@ -115,24 +115,24 @@ func AddVThalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi, and VThal layers,
 // with given optional prefix.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
-// Only Matrix has more than 1 unit per Pool by default.
+// All GP / STN layers have gpNeur neurons
 // Appropriate PoolOneToOne connections are made between layers,
 // using standard styles.
 // space is the spacing between layers (2 typical)
-func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
-	gpi = AddGPiLayer(nt, prefix+"GPi", nPoolsY, nPoolsX, 1, 1)
-	vthal = AddVThalLayer(nt, prefix+"VThal", nPoolsY, nPoolsX, 1, 1)
-	gpeOuti := AddGPeLayer(nt, prefix+"GPeOut", nPoolsY, nPoolsX, 1, 1)
+func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
+	gpi = AddGPiLayer(nt, prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	vthal = AddVThalLayer(nt, prefix+"VThal", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpeOuti := AddGPeLayer(nt, prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti.GPLay = GPeOut
 	gpeOut = gpeOuti
-	gpeIni := AddGPeLayer(nt, prefix+"GPeIn", nPoolsY, nPoolsX, 1, 1)
+	gpeIni := AddGPeLayer(nt, prefix+"GPeIn", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeIni.GPLay = GPeIn
 	gpeIn = gpeIni
-	gpeTAi := AddGPeLayer(nt, prefix+"GPeTA", nPoolsY, nPoolsX, 1, 1)
+	gpeTAi := AddGPeLayer(nt, prefix+"GPeTA", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeTAi.GPLay = GPeTA
 	gpeTA = gpeTAi
-	stnp = AddSTNLayer(nt, prefix+"STNp", nPoolsY, nPoolsX, 1, 1)
-	stns = AddSTNLayer(nt, prefix+"STNs", nPoolsY, nPoolsX, 1, 1)
+	stnp = AddSTNLayer(nt, prefix+"STNp", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	stns = AddSTNLayer(nt, prefix+"STNs", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	mtxGo = AddMatrixLayer(nt, prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1R)
 	mtxNo = AddMatrixLayer(nt, prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2R)
 	cini := AddCINLayer(nt, prefix+"CIN")
@@ -209,7 +209,7 @@ func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int
 // using standard styles.
 // space is the spacing between layers (2 typical)
 // Py is Python version, returns layers as a slice
-func AddBGPy(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) []axon.AxonLayer {
-	mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal := AddBG(nt, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
+func AddBGPy(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) []axon.AxonLayer {
+	mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal := AddBG(nt, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
 	return []axon.AxonLayer{mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal}
 }
