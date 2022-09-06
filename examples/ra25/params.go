@@ -44,7 +44,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.1",  // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.Learn.Lrate.Base":   "0.9",  // 0.1 learns fast but dies early, .02 is stable long term
 					"Prjn.SWt.Adapt.Lrate":    "0.1",  // .1 >= .2,
 					"Prjn.SWt.Init.SPct":      "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.XCal.PThrMin": "0.01", // 0.01 here; 0.05 best for bigger nets

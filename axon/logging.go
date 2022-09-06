@@ -118,6 +118,19 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 					ctx.SetFloat32(ly.ActAvg.ActMAvg)
 				}}})
 	}
+
+	// add lrate
+	lg.AddItem(&elog.Item{
+		Name:   "LRate",
+		Type:   etensor.FLOAT64,
+		FixMax: true,
+		Range:  minmax.F64{Max: 1},
+		Write: elog.WriteMap{
+			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+				ly := net.LayerByName("Output").(AxonLayer)
+				pj := ly.RecvPrjn(0).(AxonPrjn).AsAxon()
+				ctx.SetFloat32(pj.Learn.Lrate.Eff)
+			}}})
 }
 
 // LogAddPCAItems adds PCA statistics to log for Hidden and Target layers

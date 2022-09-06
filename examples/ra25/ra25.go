@@ -10,6 +10,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"os"
 
 	"github.com/emer/axon/axon"
@@ -74,6 +75,7 @@ type Sim struct {
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	LRateMod     axon.LrateMod
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
@@ -93,7 +95,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.TestInterval = 5
+	ss.TestInterval = 0
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
@@ -110,6 +112,7 @@ func (ss *Sim) Config() {
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
 	ss.ConfigLoops()
+	ss.ConfigLrateMod()
 }
 
 func (ss *Sim) ConfigEnv() {
@@ -216,11 +219,18 @@ func (ss *Sim) InitRndSeed() {
 	ss.RndSeeds.Set(run)
 }
 
+func (ss *Sim) ConfigLrateMod() {
+	min := float32(0.0001)
+	ss.LRateMod = axon.LrateMod{On: true, Base: min}
+	//ss.LRateMod.Defaults()
+	ss.LRateMod.Range.Set(min, 1)
+}
+
 // ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 999999).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
@@ -246,6 +256,7 @@ func (ss *Sim) ConfigLoops() {
 
 	// Train stop early condition
 	man.GetLoop(etime.Train, etime.Epoch).IsDone["NZeroStop"] = func() bool {
+		return false
 		// This is calculated in TrialStats
 		stopNz := ss.Args.Int("nzero")
 		if stopNz <= 0 {
@@ -264,6 +275,119 @@ func (ss *Sim) ConfigLoops() {
 			ss.TestAll()
 		}
 	})
+
+	//lRateFunc1 := func() {
+	//	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	//	switch trnEpc {
+	//	case 50:
+	//		log.Println("learning rate drop at:", trnEpc)
+	//		ss.Net.LrateSched(0.2)
+	//	case 100:
+	//		log.Println("learning rate drop at:", trnEpc)
+	//		ss.Net.LrateSched(0.1)
+	//	}
+	//}
+
+	// as a function of the epoch
+	//lRateFunc2 := func() {
+	//	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	//	if trnEpc == 0 {
+	//		return
+	//	}
+	//	lrate := 1 / float32(trnEpc)
+	//	log.Println("new learning rate:", lrate)
+	//	ss.Net.LrateSched(lrate)
+	//}
+
+	// step decay every 10 epochs
+	//lRateFunc3 := func() {
+	//	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	//	drop := 0.85
+	//	epochsDrop := 10.0
+	//	exp := math.Floor(float64(1+trnEpc) / epochsDrop)
+	//	lrate := math.Pow(drop, exp)
+	//	log.Println("new learning rate:", lrate)
+	//	ss.Net.LrateSched(float32(lrate))
+	//}
+
+	//lRateFunc4 := func() {
+	//	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	//	drop := 0.95
+	//	epochsDrop := 10.0
+	//	exp := math.Floor(float64(1+trnEpc) / epochsDrop)
+	//	lrate := math.Pow(drop, exp)
+	//	log.Println("new learning rate:", lrate, "epoch:", trnEpc)
+	//	ss.Net.LrateSched(float32(lrate))
+	//}
+
+	// exponential decay
+	//lRateFunc5 := func() {
+	//	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	//	decayRate := 1.0
+	//	lrateSched := math.Pow(1.0-decayRate/100.0, float64(trnEpc))
+	//	log.Println("new learning rate:", lrateSched, "epoch:", trnEpc)
+	//	ss.Net.LrateSched(float32(lrateSched))
+	//
+	//	lrateMod := 0.1
+	//	ss.Net.LrateMod(float32(lrateMod))
+	//}
+
+	//// exponential decay + modulate as a function of error
+	//lRateFunc6 := func() {
+	//	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	//	decayRate := 1.0
+	//	epochsDrop := 10.0
+	//	exp := math.Floor(float64(1+trnEpc) / epochsDrop)
+	//	lrateSched := math.Pow(1.0-decayRate/100.0, exp)
+	//	ss.Net.LrateSched(float32(lrateSched))
+	//
+	//	// TODO: try average / stddev
+	//	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	//	pctUnitErr := out.PctUnitErr()
+	//	corsim := out.CorSim.Cor
+	//	avg := math.Max(0, float64(out.CorSim.Avg))
+	//	if avg == 0 {
+	//		return
+	//	}
+	//	log.Println("cor sim:", corsim, "pct unit err:", pctUnitErr)
+	//	stddev := math.Sqrt(float64(out.CorSim.Var))
+	//	mod := 1 / (avg / stddev)
+	//	m := ss.LRateMod.Mod(float32(mod))
+	//	log.Println("new learning rate sched:", lrateSched, "mod:", mod, "m:", m, "epoch:", trnEpc)
+	//	// ss.Net.LrateMod(float32())
+	//}
+
+	// exponential decay + modulate as a function of error
+	lRateFunc7 := func() {
+		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		log.Println("epoch:", trnEpc)
+
+		// set learn rate sched
+		decayRate := 5.0
+		epochsDrop := 10.0
+		exp := math.Floor(float64(1+trnEpc) / epochsDrop)
+		lrateSched := math.Pow(1.0-decayRate/100.0, exp)
+		if trnEpc > 100 {
+			ss.Net.LrateSched(float32(lrateSched))
+			log.Println("new learning rate sched:", lrateSched)
+		}
+
+		// set learn rate mod
+		out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+		pctUnitErr := out.PctUnitErr()
+		corsim := out.CorSim.Cor
+		corsimavg := math.Max(0, float64(out.CorSim.Avg)) + 0.0001
+		stddev := math.Sqrt(float64(out.CorSim.Var))
+		varcoef := stddev / corsimavg
+		log.Println("cor sim:", corsim, "corsimavg", corsimavg, "var", out.CorSim.Var, "std", stddev,
+			"pct unit err:", pctUnitErr)
+		mod := float32(varcoef)
+		m := ss.LRateMod.LrateMod(ss.Net, mod)
+		log.Println("mod:", mod, "m:", m)
+	}
+
+	// lrate schedule
+	trainEpoch.OnEnd.Add("LrateSched", lRateFunc7)
 
 	/////////////////////////////////////////////
 	// Logging
