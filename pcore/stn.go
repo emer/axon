@@ -17,16 +17,18 @@ import (
 // The SKCa small-conductance calcium-gated potassium channel
 // produces the pausing function as a consequence of rapid bursting.
 type CaParams struct {
-	SKCa      chans.SKCaParams `view:"inline" desc:"small-conductance calcium-activated potassium channel"`
-	CaScale   float32          `desc:"scaling factor applied to input VgccCa to bring into proper range of these dynamics"`
-	CaTau     float32          `def:"50" desc:"Ca time constant of decay to baseline -- 185.7 in Gillies & Willshaw, 2006 -- other reports are more like 20 or 10"`
-	ThetaInit bool             `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
+	SKCa       chans.SKCaParams `view:"inline" desc:"small-conductance calcium-activated potassium channel"`
+	CaScale    float32          `desc:"scaling factor applied to input VgccCa to bring into proper range of these dynamics"`
+	CaIncTau   float32          `def:"1,50" desc:"Ca increase time constant -- high for STNs -- delayed CaM / intracellular activation"`
+	CaDecayTau float32          `def:"30" desc:"Ca time constant of decay to baseline -- 185.7 in Gillies & Willshaw, 2006 -- other reports are lower -- in the range 10-50"`
+	ThetaInit  bool             `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
 }
 
 func (kc *CaParams) Defaults() {
 	kc.SKCa.Defaults()
 	kc.CaScale = 0.05
-	kc.CaTau = 50 // 185.7
+	kc.CaIncTau = 1
+	kc.CaDecayTau = 30
 }
 
 func (kc *CaParams) Update() {
@@ -80,9 +82,14 @@ func (ly *STNLayer) Defaults() {
 	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.25
 
-	if !strings.HasSuffix(ly.Nm, "STNp") {
+	if strings.HasSuffix(ly.Nm, "STNp") {
+		ly.Ca.CaIncTau = 1
+		ly.Ca.CaDecayTau = 30
+	} else {
 		ly.Act.Init.Ge = 0.4
 		ly.Act.Init.GeVar = 0.05
+		ly.Ca.CaIncTau = 50
+		ly.Ca.CaDecayTau = 30
 	}
 
 	for _, pji := range ly.RcvPrjns {
@@ -148,7 +155,7 @@ func (ly *STNLayer) ActFmG(ltime *axon.Time) {
 			continue
 		}
 		snr := &ly.STNNeurs[ni]
-		snr.SKCai += ly.Ca.CaScale*nrn.VgccCa - snr.SKCai/ly.Ca.CaTau
+		snr.SKCai += (ly.Ca.CaScale*nrn.VgccCa)/ly.Ca.CaIncTau - snr.SKCai/ly.Ca.CaDecayTau
 		snr.SKCaM = ly.Ca.SKCa.MFmCa(snr.SKCai, snr.SKCaM)
 		snr.Gsk = ly.Ca.SKCa.Gbar * snr.SKCaM
 		nrn.Gk += snr.Gsk

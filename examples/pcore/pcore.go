@@ -26,9 +26,11 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
+	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/goki/gi/gi"
@@ -102,6 +104,7 @@ type Sim struct {
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats        estats.Stats     `desc:"contains computed statistic values"`
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
+	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
@@ -124,6 +127,7 @@ func (ss *Sim) New() {
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
+	ss.Pats = &etable.Table{}
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
@@ -143,6 +147,16 @@ func (ss *Sim) Config() {
 }
 
 func (ss *Sim) ConfigEnv() {
+	dt := ss.Pats
+	dt.SetMetaData("name", "TrainPats")
+	dt.SetMetaData("desc", "Training patterns")
+	sch := etable.Schema{
+		{"Name", etensor.STRING, nil, nil},
+		{"Input", etensor.FLOAT32, []int{1, 10}, []string{"Y", "X"}},
+	}
+	dt.SetFromSchema(sch, 10)
+	patgen.PermutedBinaryMinDiff(dt.Cols[1].(*etensor.Float32), 3, 1, 0, 2)
+
 	// Can be called multiple times -- don't re-create
 	var trn, tst *env.FixedTable
 	if len(ss.Envs) == 0 {
@@ -410,8 +424,10 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	// going to the same layers, but good practice and cheap anyway
 
 	if mode == etime.Train && !zero {
-		ss.Sim.ACCPos = rand.Float32()
-		ss.Sim.ACCNeg = rand.Float32()
+		if !ss.Sim.NoInc {
+			ss.Sim.ACCPos = rand.Float32()
+			ss.Sim.ACCNeg = rand.Float32()
+		}
 		ss.Sim.SNc = ss.Sim.ACCPos - ss.Sim.ACCNeg
 	}
 
@@ -419,6 +435,8 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	nu := ss.Sim.NUnits
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1, np * nu}, nil, nil)
+
+	row := 0
 
 	lays := []string{"ACCPos", "ACCNeg", "PFC"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
@@ -428,13 +446,14 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 			for j := 0; j < np; j++ {
 				io := j * nu
 				for i := 0; i < nu; i++ {
+					pval := float32(ss.Pats.CellTensorFloat1D("Input", row, i))
 					switch lnm {
 					case "ACCPos":
-						itsr.Values[io+i] = vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
+						itsr.Values[io+i] = pval * vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
 					case "ACCNeg":
-						itsr.Values[io+i] = vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
+						itsr.Values[io+i] = pval * vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
 					default:
-						itsr.Values[io+i] = vals[li]
+						itsr.Values[io+i] = pval * vals[li]
 					}
 				}
 			}
