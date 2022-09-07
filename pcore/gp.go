@@ -22,21 +22,12 @@ var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, axon.LayerProps)
 // Defaults in param.Sheet format
 // Sel: "GPLayer", Desc: "defaults",
 // 	Params: params.Params{
-// 		"Layer.Act.Init.Vm":   "0.57",
-// 		"Layer.Act.Init.Act":  "0.65",
-// 		"Layer.Act.Erev.L":    "0.8",
-// 		"Layer.Act.Gbar.L":    "0.3",
 // 		"Layer.Inhib.Layer.On":     "false",
 // 		"Layer.Inhib.Pool.On":      "false",
 // 		"Layer.Inhib.Self.On":      "true",
 // 		"Layer.Inhib.Self.Gi":      "0.4",
 // 		"Layer.Inhib.Self.Tau":     "3.0",
-// 		"Layer.Inhib.ActAvg.Fixed": "true",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
-// 		"Layer.Act.XX1.Gain":       "20", // more graded -- still works with 40 but less Rt distrib
-// 		"Layer.Act.Dt.VmTau":       "3.3",
-// 		"Layer.Act.Dt.GTau":        "3", // 5 orig
-// 		"Layer.Act.Init.Decay":     "0",
 // }}
 
 func (ly *GPLayer) Defaults() {
@@ -45,20 +36,16 @@ func (ly *GPLayer) Defaults() {
 
 	// GP is tonically self-active and has no FFFB inhibition
 
-	ly.Act.Init.Vm = 0.57
-	ly.Act.Init.Act = 0.67
-	ly.Act.Erev.L = 0.8
-	ly.Act.Gbar.L = 0.3
+	ly.Act.Init.Ge = 0.3
+	ly.Act.Init.GeVar = 0.05
+	ly.Act.Decay.Act = 0
+	ly.Act.Decay.Glong = 0
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
 	ly.Inhib.Self.On = true
 	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
 	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.25
-	// ly.Act.XX1.Gain = 20  // more graded -- still works with 40 but less Rt distrib
-	// ly.Act.Dt.VmTau = 3.3 // fastest
-	// ly.Act.Dt.GTau = 3
-	// ly.Act.Init.Decay = 0
 
 	switch ly.GPLay {
 	case GPeIn:

@@ -66,12 +66,7 @@ var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, axon.LayerProps)
 // 		"Layer.Inhib.Self.On":      "true",
 // 		"Layer.Inhib.Self.Gi":      "0.3", // 0.6 in localist -- expt
 // 		"Layer.Inhib.Self.Tau":     "3.0",
-// 		"Layer.Inhib.ActAvg.Fixed": "true",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
-// 		"Layer.Act.XX1.Gain":       "20", // more graded -- still works with 40 but less Rt distrib
-// 		"Layer.Act.Dt.VmTau":       "3.3",
-// 		"Layer.Act.Dt.GTau":        "3",
-// 		"Layer.Act.Init.Decay":     "0",
 // 	}}
 
 func (ly *MatrixLayer) Defaults() {
@@ -79,6 +74,8 @@ func (ly *MatrixLayer) Defaults() {
 	ly.Matrix.Defaults()
 
 	// special inhib params
+	ly.Act.Decay.Act = 0
+	ly.Act.Decay.Glong = 0
 	ly.Inhib.Pool.On = false
 	ly.Inhib.Layer.On = true
 	ly.Inhib.Layer.Gi = 1.5
@@ -87,10 +84,6 @@ func (ly *MatrixLayer) Defaults() {
 	ly.Inhib.Self.Gi = 0.3 // 0.6 in localist one
 	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.25
-	// ly.Act.XX1.Gain = 20  // more graded -- still works with 40 but less Rt distrib
-	// ly.Act.Dt.VmTau = 3.3 // fastest
-	// ly.Act.Dt.GTau = 3
-	// ly.Act.Init.Decay = 0
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators

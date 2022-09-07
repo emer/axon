@@ -102,8 +102,10 @@ type Neuron struct {
 
 	Gak float32 `desc:"conductance of A-type K potassium channels"`
 
-	GeRaw float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
-	GiRaw float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
+	GeBase float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
+	GiBase float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
+	GeRaw  float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
+	GiRaw  float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
 }
 
 var NeuronVars = []string{}

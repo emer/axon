@@ -9,11 +9,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Dt.VmTau": "3.3", // 4 orig -- these are fastest
-					// "Layer.Act.Dt.GTau":  "3",   // 5 orig
-					"Layer.Act.Noise.On":    "true",
-					"Layer.Act.Noise.Ge":    "0.1",
-					"Layer.Act.Noise.Gi":    "0.1",
+					"Layer.Act.Init.GeVar":  "0.1", // use this instead of noise
+					"Layer.Act.Init.GiVar":  "0.1", // use this instead of noise
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.Clamp.Ge":    "0.6",
@@ -22,6 +19,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Act.Clamp.Ge":   "0.6",
+					"Layer.Act.Noise.On":   "true",
+					"Layer.Act.Noise.Ge":   "0.1",
+					"Layer.Act.Noise.Gi":   "0.1",
 				}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -36,6 +36,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#STNs", Desc: "Sustained STN",
 				Params: params.Params{
+					"Layer.Act.Init.Ge":    "0.4",
 					"Layer.Inhib.Layer.On": "true",
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Ca.SKCa.Gbar":   ".1",
@@ -48,18 +49,23 @@ var ParamSets = params.Sets{
 			{Sel: "#ACCNeg", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9", // should be 8
+					"Layer.Act.Noise.On":   "true",
+					"Layer.Act.Noise.Ge":   "0.1",
+					"Layer.Act.Noise.Gi":   "0.1",
 				}},
 			{Sel: "#ACCPos", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8",
+					"Layer.Act.Noise.On":   "true",
+					"Layer.Act.Noise.Ge":   "0.1",
+					"Layer.Act.Noise.Gi":   "0.1",
 				}},
 			{Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
+				Params: params.Params{}},
+			{Sel: "GPLayer", Desc: "all gp",
 				Params: params.Params{
-					"Layer.Inhib.Layer.FBTau": "3", // smoother
-				}},
-			{Sel: "#GPi", Desc: "slower dynamics in GPi, to allow GPe time to sort through",
-				Params: params.Params{
-					// "Layer.Act.Dt.GTau": "3", // 20 orig, 10 sufficient, faster RT's
+					"Layer.Act.Init.Ge":    "0.3",
+					"Layer.Act.Init.GeVar": "0.1",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
