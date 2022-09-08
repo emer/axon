@@ -27,15 +27,18 @@ type Neuron struct {
 	Flags   NeurFlags `desc:"bit flags for binary state variables"`
 	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
 	Spike   float32   `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
+	Spiked  float32   `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
+	Attn    float32   `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 	Act     float32   `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function, and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc."`
-	GeSyn   float32   `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
-	Ge      float32   `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
-	GiSyn   float32   `desc:"aggregated synaptic inhibition (from Inhib projections) -- time integral of GiRaw -- this is added with computed FFFB inhibition to get the full inhibition in Gi"`
-	Gi      float32   `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
-	Gk      float32   `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
-	Inet    float32   `desc:"net current produced by all channels -- drives update of Vm"`
-	Vm      float32   `desc:"membrane potential -- integrates Inet current over time"`
-	VmDend  float32   `desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`
+
+	GeSyn  float32 `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
+	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
+	GiSyn  float32 `desc:"aggregated synaptic inhibition (from Inhib projections) -- time integral of GiRaw -- this is added with computed FFFB inhibition to get the full inhibition in Gi"`
+	Gi     float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
+	Gk     float32 `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
+	Inet   float32 `desc:"net current produced by all channels -- drives update of Vm"`
+	Vm     float32 `desc:"membrane potential -- integrates Inet current over time"`
+	VmDend float32 `desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`
 
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
@@ -66,7 +69,6 @@ type Neuron struct {
 	TrgAvg  float32 `desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`
 	DTrgAvg float32 `desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`
 	AvgDif  float32 `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`
-	Attn    float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 
 	ISI    float32 `desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`
 	ISIAvg float32 `desc:"average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`
@@ -100,12 +102,12 @@ type Neuron struct {
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
 
-	Gak float32 `desc:"conductance of A-type K potassium channels"`
-
 	GeBase float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
 	GiBase float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
 	GeRaw  float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
 	GiRaw  float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
+
+	Gak float32 `desc:"conductance of A-type K potassium channels"`
 }
 
 var NeuronVars = []string{}

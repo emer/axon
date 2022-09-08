@@ -11,6 +11,21 @@ import (
 	"github.com/goki/mat32"
 )
 
+// PCoreLayer exposes PCoreNeuron access and PhaseMax values
+type PCoreLayer interface {
+	// PCoreNeuronByIdx returns neuron at given index
+	PCoreNeuronByIdx(idx int) *PCoreNeuron
+
+	//	PhasicMaxAvgByPool returns the average PhasicMax value by given pool index
+	PhasicMaxAvgByPool(pli int) float32
+
+	//	PhasicMaxMaxByPool returns the max PhasicMax value by given pool index
+	PhasicMaxMaxByPool(pli int) float32
+
+	//	PhasicMaxMax returns the max PhasicMax value across layer
+	PhasicMaxMax() float32
+}
+
 // Layer is the basic pcore layer, which has a DA dopamine value from rl.Layer
 // and tracks the phasic maximum activation during the gating window.
 type Layer struct {
@@ -104,6 +119,40 @@ func (ly *Layer) MaxPhasicMax() float32 {
 	}
 	return mx
 }
+
+// PCoreNeuronByIdx returns neuron at given index
+func (ly *Layer) PCoreNeuronByIdx(idx int) *PCoreNeuron {
+	return &ly.PCoreNeurs[idx]
+}
+
+// PhasicMaxAvgByPool returns the average PhasicMax value by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) PhasicMaxAvgByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	sum := float32(0)
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		pn := &ly.PCoreNeurs[ni]
+		sum += pn.PhasicMax
+	}
+	return sum / float32(pl.EdIdx-pl.StIdx)
+}
+
+// PhasicMaxMaxByPool returns the average PhasicMax value by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) PhasicMaxMaxByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	max := float32(0)
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		pn := &ly.PCoreNeurs[ni]
+		if pn.PhasicMax > max {
+			max = pn.PhasicMax
+		}
+	}
+	return max
+}
+
+/////////////////////////////////////////////////////
+// Var access boilerplate below
 
 // UnitVarNum returns the number of Neuron-level variables
 // for this layer.  This is needed for extending indexes in derived types.

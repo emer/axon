@@ -58,7 +58,7 @@ func (ac *ActParams) Defaults() {
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
-	ac.VGCC.Ca = 20
+	ac.VGCC.Ca = 25
 	ac.AK.Defaults()
 	ac.AK.Gbar = 0.1
 	ac.Attn.Defaults()
@@ -98,6 +98,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 	if decay > 0 { // no-op for most, but not all..
 		nrn.Spike = 0
+		nrn.Spiked = 0
 		nrn.Act -= decay * (nrn.Act - ac.Init.Act)
 		nrn.ActInt -= decay * (nrn.ActInt - ac.Init.Act)
 		nrn.GeSyn -= decay * (nrn.GeSyn - nrn.GeBase)
@@ -146,6 +147,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 // automatically called (DecayState is used instead)
 func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Spike = 0
+	nrn.Spiked = 0
 	nrn.ISI = -1
 	nrn.ISIAvg = -1
 	nrn.Act = ac.Init.Act
@@ -381,6 +383,13 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 		nrn.Spike = 0
 		if nrn.ISI >= 0 {
 			nrn.ISI += 1
+			if nrn.ISI < 10 {
+				nrn.Spiked = 1
+			} else {
+				nrn.Spiked = 0
+			}
+		} else {
+			nrn.Spiked = 0
 		}
 		if nrn.ISIAvg >= 0 && nrn.ISI > 0 && nrn.ISI > 1.2*nrn.ISIAvg {
 			ac.Spike.AvgFmISI(&nrn.ISIAvg, nrn.ISI)

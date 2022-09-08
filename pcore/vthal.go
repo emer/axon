@@ -55,8 +55,8 @@ func (ly *VThalLayer) Defaults() {
 		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
-		pj.SWt.Init.Mean = 0.9
-		pj.SWt.Init.Var = 0
+		pj.SWt.Init.Mean = 0.75
+		pj.SWt.Init.Var = 0.25
 		pj.SWt.Init.Sym = false
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToVThal
 			pj.PrjnScale.Abs = 2.5 // 2.5 needed for agate model..

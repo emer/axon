@@ -11,12 +11,12 @@ import (
 // VGCCParams control the standard L-type Ca channel
 type VGCCParams struct {
 	Gbar float32 `def:"0.02,0.12" desc:"strength of VGCC current -- 0.12 value is from Urakubo et al (2008) model -- best fits actual model behavior using axon equations (1.5 nominal in that model), 0.02 works better in practice for not getting stuck in high plateau firing"`
-	Ca   float32 `def:"20" desc:"calcium from conductance factor -- important for learning contribution of VGCC"`
+	Ca   float32 `def:"25" desc:"calcium from conductance factor -- important for learning contribution of VGCC"`
 }
 
 func (np *VGCCParams) Defaults() {
 	np.Gbar = 0.02
-	np.Ca = 20
+	np.Ca = 25
 }
 
 func (np *VGCCParams) Update() {

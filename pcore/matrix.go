@@ -94,8 +94,8 @@ func (ly *MatrixLayer) Defaults() {
 			pj.PrjnScale.Abs = 3
 			pj.Learn.Learn = false
 			pj.SWt.Adapt.SigGain = 1
-			pj.SWt.Init.Mean = 0.9
-			pj.SWt.Init.Var = 0
+			pj.SWt.Init.Mean = 0.75
+			pj.SWt.Init.Var = 0.25
 			pj.SWt.Init.Sym = false
 			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
 				pj.PrjnScale.Abs = 0.3 // counterbalance for GPeTA to reduce oscillations

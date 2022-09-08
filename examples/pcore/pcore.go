@@ -30,6 +30,7 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
@@ -64,7 +65,9 @@ func guirun() {
 // SimParams has all the custom params for this sim
 type SimParams struct {
 	NPools     int     `view:"-" desc:"number of pools"`
-	NUnits     int     `view:"-" desc:"number of units within each pool"`
+	NUnitsY    int     `view:"-" desc:"number of units within each pool, Y"`
+	NUnitsX    int     `view:"-" desc:"number of units within each pool, X"`
+	NUnits     int     `view:"-" desc:"total number of units within each pool"`
 	NoInc      bool    `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
 	ACCPos     float32 `desc:"activation of ACC positive valence -- drives go"`
 	ACCNeg     float32 `desc:"activation of ACC neg valence -- drives nogo"`
@@ -80,8 +83,11 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
+	ss.NoInc = true
 	ss.NPools = 4
-	ss.NUnits = 10
+	ss.NUnitsY = 10
+	ss.NUnitsX = 5
+	ss.NUnits = ss.NUnitsY * ss.NUnitsX
 	ss.ACCPos = 1
 	ss.ACCNeg = .2
 	ss.ACCPosInc = 0.8
@@ -123,7 +129,7 @@ func (ss *Sim) New() {
 	ss.Net = &pcore.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "LearnWts" // "WtScales"
+	ss.Params.ExtraSets = "WtScales LearnWts"
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -152,10 +158,11 @@ func (ss *Sim) ConfigEnv() {
 	dt.SetMetaData("desc", "Training patterns")
 	sch := etable.Schema{
 		{"Name", etensor.STRING, nil, nil},
-		{"Input", etensor.FLOAT32, []int{1, 10}, []string{"Y", "X"}},
+		{"Input", etensor.FLOAT32, []int{ss.Sim.NUnitsY, ss.Sim.NUnitsX}, []string{"Y", "X"}},
 	}
 	dt.SetFromSchema(sch, 10)
-	patgen.PermutedBinaryMinDiff(dt.Cols[1].(*etensor.Float32), 3, 1, 0, 2)
+	non := int(float32(ss.Sim.NUnits) * .15)
+	patgen.PermutedBinaryMinDiff(dt.Cols[1].(*etensor.Float32), non, 1, 0, non/2)
 
 	// Can be called multiple times -- don't re-create
 	var trn, tst *env.FixedTable
@@ -195,11 +202,12 @@ func (ss *Sim) ConfigEnv() {
 func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.InitName(net, "PCore")
 	np := ss.Sim.NPools
-	nu := ss.Sim.NUnits
+	nuY := ss.Sim.NUnitsY
+	nuX := ss.Sim.NUnitsX
 
 	snc := rl.AddClampDaLayer(&net.Network, "SNc")
 
-	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, np, 1, nu, 1, nu, 2)
+	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, 2)
 	cin := cini.(*pcore.CINLayer)
 	cin.RewLays.Add(snc.Name())
 
@@ -207,10 +215,10 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = gpeIn
 	_ = gpeTA
 
-	accpos := net.AddLayer4D("ACCPos", 1, np, 1, nu, emer.Input)
-	accneg := net.AddLayer4D("ACCNeg", 1, np, 1, nu, emer.Input)
-	pfc := net.AddLayer4D("PFC", 1, np, 1, nu, emer.Input)
-	pfcd := net.AddLayer4D("PFCo", 1, np, 1, nu, emer.Hidden)
+	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
+	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, emer.Input)
+	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, emer.Input)
+	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, emer.Hidden)
 
 	snc.SendDA.AddAllBut(net)
 
@@ -268,7 +276,7 @@ func (ss *Sim) InitWts(net *pcore.Network) {
 		}
 		sy := &pj.Syns[0]
 		if slay.Nm == "ACCPos" {
-			sy.Wt = 0.9
+			sy.Wt = float32(erand.UniformMeanRange(0.75, 0.25, -1))
 		} else {
 			sy.Wt = 0
 		}
@@ -283,7 +291,7 @@ func (ss *Sim) InitWts(net *pcore.Network) {
 		}
 		sy := &pj.Syns[0]
 		if slay.Nm == "ACCNeg" {
-			sy.Wt = 0.9
+			sy.Wt = float32(erand.UniformMeanRange(0.75, 0.25, -1))
 		} else {
 			sy.Wt = 0
 		}
@@ -434,7 +442,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	np := ss.Sim.NPools
 	nu := ss.Sim.NUnits
 	itsr := etensor.Float32{}
-	itsr.SetShape([]int{1, np * nu}, nil, nil)
+	itsr.SetShape([]int{np * nu}, nil, nil)
 
 	row := 0
 
@@ -520,9 +528,7 @@ func (ss *Sim) TestAll() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	ss.Stats.SetFloat("TrlUnitErr", 0.0)
-	ss.Stats.SetFloat("TrlCorSim", 0.0)
-	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
+	ss.Stats.SetFloat("VThal_RT", 0.0)
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -568,7 +574,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
-	ss.Logs.AddStatFloatNoAggItem(etime.Test, etime.Trial, "VThal_RT")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -577,13 +582,8 @@ func (ss *Sim) ConfigLogs() {
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Cycle, "Hidden")
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Cycle, "Hidden")
-	ss.Logs.AddLayerTensorItems(ss.Net, "Spike", etime.Test, etime.Cycle, "Hidden")
-	ss.Logs.AddLayerTensorItems(ss.Net, "PhasicMax", etime.Test, etime.Trial, "Hidden")
-	ss.Logs.AddLayerTensorItems(ss.Net, "PhasicMax", etime.Train, etime.Trial, "Hidden")
 
-	ss.Logs.PlotItems("MtxGo_Act", "VThal_Act", "VThal_RT")
+	ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -598,10 +598,79 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	// layers := ss.Net.LayersByClass("Hidden")
-	// for _, lnm := range layers {
-	// 	clnm := lnm
-	// }
+	ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
+	layers := ss.Net.LayersByClass("Hidden")
+	npools := []int{ss.Sim.NPools}
+	for _, lnm := range layers {
+		clnm := lnm
+		if clnm == "CIN" {
+			continue
+		}
+		ss.Logs.AddItem(&elog.Item{
+			Name:      clnm + "_ActAvg",
+			Type:      etensor.FLOAT64,
+			CellShape: npools,
+			// Range:  minmax.F64{Max: 20},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					npools := []int{ss.Sim.NPools}
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					tsr.SetShape(npools, nil, nil)
+					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
+					for pi := 0; pi < ss.Sim.NPools; pi++ {
+						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+					}
+					ctx.SetTensor(tsr)
+				}, etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					npools := []int{ss.Sim.NPools}
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					tsr.SetShape(npools, nil, nil)
+					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
+					for pi := 0; pi < ss.Sim.NPools; pi++ {
+						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+					}
+					ctx.SetTensor(tsr)
+				}, etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					lyi := ctx.Layer(clnm)
+					ly := lyi.(axon.AxonLayer).AsAxon()
+					if ply, ok := lyi.(pcore.PCoreLayer); ok {
+						for pi := 0; pi < ss.Sim.NPools; pi++ {
+							tsr.Values[pi] = float64(ply.PhasicMaxAvgByPool(pi + 1))
+						}
+					} else {
+						for pi := 0; pi < ss.Sim.NPools; pi++ {
+							tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+						}
+					}
+					ctx.SetTensor(tsr)
+				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:      clnm + "_Spike",
+			Type:      etensor.FLOAT64,
+			CellShape: npools,
+			FixMin:    true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, etime.Cycle): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					npools := []int{ss.Sim.NPools}
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					tsr.SetShape(npools, nil, nil)
+					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
+					for pi := 0; pi < ss.Sim.NPools; pi++ {
+						tsr.Values[pi] = float64(ly.SpikeAvgByPool(pi + 1))
+					}
+					ctx.SetTensor(tsr)
+				}}})
+	}
 }
 
 // Log is the main logging function, handles special things for different scopes

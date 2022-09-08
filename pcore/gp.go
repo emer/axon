@@ -47,22 +47,13 @@ func (ly *GPLayer) Defaults() {
 	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.25
 
-	switch ly.GPLay {
-	case GPeIn:
-		ly.Act.Init.Act = 0.81
-		ly.Act.Init.Vm = 0.60
-	case GPeTA:
-		ly.Act.Init.Act = 0.26
-		ly.Act.Init.Vm = 0.50
-	}
-
 	for _, pjii := range ly.RcvPrjns {
 		pji := pjii.(axon.AxonPrjn)
 		pj := pji.AsAxon()
 		pj.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
-		pj.SWt.Init.Mean = 0.9
-		pj.SWt.Init.Var = 0
+		pj.SWt.Init.Mean = 0.75
+		pj.SWt.Init.Var = 0.25
 		pj.SWt.Init.Sym = false
 		if _, ok := pj.Send.(*MatrixLayer); ok {
 			pj.PrjnScale.Abs = 0.5

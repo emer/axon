@@ -1384,6 +1384,36 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 	}
 }
 
+// SpikedAvgByPool returns the average across Spiked values by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) SpikedAvgByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	sum := float32(0)
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		sum += nrn.Spiked
+	}
+	return sum / float32(pl.EdIdx-pl.StIdx)
+}
+
+// SpikeAvgByPool returns the average across Spike values by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) SpikeAvgByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	sum := float32(0)
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		sum += nrn.Spike
+	}
+	return sum / float32(pl.EdIdx-pl.StIdx)
+}
+
 // AvgGeM computes the average and max GeM stats
 func (ly *Layer) AvgGeM(ltime *Time) {
 	for pi := range ly.Pools {

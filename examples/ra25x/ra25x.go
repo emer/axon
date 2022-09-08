@@ -495,17 +495,31 @@ func (ss *Sim) ConfigLogItems() {
 	for _, lnm := range layers {
 		clnm := lnm
 		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_AvgSpiked",
+			Type:   etensor.FLOAT64,
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
+					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.SpikedAvgByPool(0))
+				}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.SpikedAvgByPool(0))
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_AvgNmdaCa",
 			Type:   etensor.FLOAT64,
 			Range:  minmax.F64{Max: 20},
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "NmdaCa")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
+					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
+					ctx.SetFloat64(tsragg.Mean(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -519,11 +533,8 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "NmdaCa")
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
+					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
+					ctx.SetFloat64(tsragg.Mean(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -537,11 +548,8 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "VgccCaInt")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
+					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
+					ctx.SetFloat64(tsragg.Mean(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -555,11 +563,8 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "VgccCaInt")
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
+					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
+					ctx.SetFloat64(tsragg.Max(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -573,11 +578,8 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaLrn")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
+					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
+					ctx.SetFloat64(tsragg.Mean(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -591,11 +593,8 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaLrn")
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
+					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
+					ctx.SetFloat64(tsragg.Max(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -609,12 +608,9 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaDiff")
+					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
 					norm.TensorAbs32(tsr)
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
+					ctx.SetFloat64(tsragg.Mean(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -628,12 +624,9 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaDiff")
+					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
 					norm.TensorAbs32(tsr)
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
+					ctx.SetFloat64(tsragg.Max(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -647,12 +640,9 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "ActDiff")
+					tsr := ctx.GetLayerRepTensor(clnm, "ActDiff")
 					norm.TensorAbs32(tsr)
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
+					ctx.SetFloat64(tsragg.Mean(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -666,12 +656,9 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "ActDiff")
+					tsr := ctx.GetLayerRepTensor(clnm, "ActDiff")
 					norm.TensorAbs32(tsr)
-					avg := tsragg.Max(tsr)
-					ctx.SetFloat64(avg)
+					ctx.SetFloat64(tsragg.Max(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -685,11 +672,8 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaD")
-					avg := tsragg.Mean(tsr)
-					ctx.SetFloat64(avg)
+					tsr := ctx.GetLayerRepTensor(clnm, "CaD")
+					ctx.SetFloat64(tsragg.Mean(tsr))
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
@@ -703,9 +687,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaSpkD")
+					tsr := ctx.GetLayerRepTensor(clnm, "CaSpkD")
 					avg := tsragg.Mean(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
@@ -720,9 +702,7 @@ func (ss *Sim) ConfigLogItems() {
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "ActDiff")
+					tsr := ctx.GetLayerRepTensor(clnm, "ActDiff")
 					avg := tsragg.Mean(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
@@ -751,9 +731,7 @@ func (ss *Sim) ConfigLogItems() {
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ctx.Stats.F32Tensor(clnm)
-					ly.UnitValsRepTensor(tsr, "CaDiff")
+					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
 					avg := tsragg.Mean(tsr)
 					ctx.SetFloat64(avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
