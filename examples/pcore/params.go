@@ -41,17 +41,16 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "0.6",
-					"Layer.Ca.SKCa.Gbar":      "1",
+					"Layer.Ca.SKCa.Gbar":      "2",
 					"Layer.Ca.SKCa.C50":       "0.6",
 					"Layer.Ca.SKCa.ActTau":    "10",
 					"Layer.Ca.SKCa.DeTau":     "50",
-					"Layer.Ca.CaScale":        "0.2",
-					"Layer.Ca.CaIncTau":       "10",
-					"Layer.Ca.CaDecayTau":     "30",
+					"Layer.Ca.CaScale":        "4",
 				}},
 			{Sel: "#STNs", Desc: "Sustained STN",
 				Params: params.Params{
 					"Layer.Act.Init.Ge":       "0.2",
+					"Layer.Act.Init.GeVar":    "0.2",
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "0.2",
@@ -59,16 +58,14 @@ var ParamSets = params.Sets{
 					"Layer.Ca.SKCa.C50":       "0.6",
 					"Layer.Ca.SKCa.ActTau":    "10",
 					"Layer.Ca.SKCa.DeTau":     "50",
-					"Layer.Ca.CaScale":        "8",
-					"Layer.Ca.CaIncTau":       "1000",
-					"Layer.Ca.CaDecayTau":     "1000",
+					"Layer.Ca.CaScale":        "3",
 				}},
 			{Sel: "GPLayer", Desc: "all gp",
 				Params: params.Params{
 					"Layer.Act.Init.Ge":       "0.3",
 					"Layer.Act.Init.GeVar":    "0.1",
 					"Layer.Act.Init.GiVar":    "0.1",
-					"Layer.Inhib.ActAvg.Init": "0.5",
+					"Layer.Inhib.ActAvg.Init": "1",
 				}},
 			{Sel: "#GPi", Desc: "",
 				Params: params.Params{
@@ -78,13 +75,19 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Init.GeVar": "0.0",
 					"Layer.Act.Init.GiVar": "0.1",
+					"Layer.Inhib.Layer.On": "false",
+					"Layer.Inhib.Layer.Gi": "0.9",
+					"Layer.Inhib.Self.On":  "true",
+					"Layer.Inhib.Self.Gi":  "0.4",
+					"Layer.Inhib.Self.Tau": "3.0",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
 			{Sel: "MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "2.0", // stronger
+					"Prjn.PrjnScale.Abs":    "1.0", // stronger
+					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.SWt.Init.Mean":    "0.5",
 					"Prjn.SWt.Init.Var":     "0.25",
 					"Prjn.Trace.CurTrlDA":   "true",
@@ -98,22 +101,6 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Sym":  "false",
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": ".5", // modulatory
-				}},
-			{Sel: "#ACCPosToMtxGo", Desc: "strong",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3.0",
-				}},
-			{Sel: "#ACCNegToMtxGo", Desc: "strong",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3.0",
-				}},
-			{Sel: "#ACCPosToMtxNo", Desc: "strong",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3.0",
-				}},
-			{Sel: "#ACCNegToMtxNo", Desc: "strong",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3.0",
 				}},
 			{Sel: "#PFCToMtxGo", Desc: "weaker closed loop",
 				Params: params.Params{
@@ -135,7 +122,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#PFCToSTNs", Desc: "strong pfc to stn",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1",
+					"Prjn.PrjnScale.Abs": "0.3",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
@@ -157,15 +144,15 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "#ACCPosToMtxGo", Desc: "trained wts",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.99",
+					"Prjn.SWt.Init.Mean": "0.8",
 				}},
 			{Sel: "#ACCNegToMtxGo", Desc: "trained wts",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.41",
+					"Prjn.SWt.Init.Mean": "0.40",
 				}},
 			{Sel: "#PFCToMtxGo", Desc: "trained wts",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.99",
+					"Prjn.SWt.Init.Mean": "0.8",
 				}},
 			{Sel: "#ACCPosToMtxNo", Desc: "trained wts",
 				Params: params.Params{
@@ -173,7 +160,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ACCNegToMtxNo", Desc: "trained wts",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.90",
+					"Prjn.SWt.Init.Mean": "0.8",
 				}},
 			{Sel: "#PFCToMtxNo", Desc: "trained wts",
 				Params: params.Params{
@@ -185,11 +172,11 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".GPeTAToMtx", Desc: "nonspecific gating activity surround inhibition -- wta",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.8", // this is key param to control WTA selectivity!
+					"Prjn.PrjnScale.Abs": "2", // this is key param to control WTA selectivity!
 				}},
 			{Sel: "#GPeTAToMtxNo", Desc: "nonspecific gating activity surround inhibition -- wta",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.3", // must be relatively weak to prevent oscillations
+					"Prjn.PrjnScale.Abs": "1", // must be relatively weak to prevent oscillations
 				}},
 			{Sel: ".GPeInToMtx", Desc: "provides weak counterbalance for GPeTA -> Mtx to reduce oscillations",
 				Params: params.Params{
@@ -217,7 +204,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#STNpToGPeTA", Desc: "GPeTA reacts later to GPeIn disinhib, not this first STN wave",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1",
+					"Prjn.PrjnScale.Abs": "1", // was .1
 				}},
 			{Sel: "#MtxNoToGPeIn", Desc: "primary classical NoGo pathway",
 				Params: params.Params{
@@ -225,7 +212,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#GPeInToGPeTA", Desc: "just enough to knock down in baseline state",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.9",
+					"Prjn.PrjnScale.Abs": "0.7", // was .9
 				}},
 			{Sel: "#MtxGoToGPeOut", Desc: "This is key driver of Go threshold, along with to GPi",
 				Params: params.Params{

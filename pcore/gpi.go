@@ -30,6 +30,7 @@ func (ly *GPiLayer) Defaults() {
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.SWt.Adapt.SigGain = 1
+		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75
 		pj.SWt.Init.Var = 0.25
 		pj.SWt.Init.Sym = false

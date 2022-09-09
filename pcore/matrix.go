@@ -61,7 +61,7 @@ var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, axon.LayerProps)
 // 	Params: params.Params{
 // 		"Layer.Inhib.Pool.On":      "false",
 // 		"Layer.Inhib.Layer.On":     "true",
-// 		"Layer.Inhib.Layer.Gi":     "1.5",
+// 		"Layer.Inhib.Layer.Gi":     "0.9",
 // 		"Layer.Inhib.Layer.FB":     "0.0",
 // 		"Layer.Inhib.Self.On":      "true",
 // 		"Layer.Inhib.Self.Gi":      "0.3", // 0.6 in localist -- expt
@@ -78,7 +78,7 @@ func (ly *MatrixLayer) Defaults() {
 	ly.Act.Decay.Glong = 0
 	ly.Inhib.Pool.On = false
 	ly.Inhib.Layer.On = true
-	ly.Inhib.Layer.Gi = 1.5
+	ly.Inhib.Layer.Gi = 0.9
 	ly.Inhib.Layer.FB = 0
 	ly.Inhib.Self.On = true
 	ly.Inhib.Self.Gi = 0.3 // 0.6 in localist one
@@ -90,8 +90,9 @@ func (ly *MatrixLayer) Defaults() {
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
+		pj.SWt.Init.SPct = 0
 		if _, ok := pj.Send.(*GPLayer); ok { // From GPe TA or In
-			pj.PrjnScale.Abs = 3
+			pj.PrjnScale.Abs = 1
 			pj.Learn.Learn = false
 			pj.SWt.Adapt.SigGain = 1
 			pj.SWt.Init.Mean = 0.75
@@ -101,9 +102,9 @@ func (ly *MatrixLayer) Defaults() {
 				pj.PrjnScale.Abs = 0.3 // counterbalance for GPeTA to reduce oscillations
 			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
 				if strings.HasSuffix(ly.Nm, "MtxGo") {
-					pj.PrjnScale.Abs = 0.8
+					pj.PrjnScale.Abs = 1 // was .8
 				} else {
-					pj.PrjnScale.Abs = 0.3 // GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
+					pj.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
 				}
 			}
 		}

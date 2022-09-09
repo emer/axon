@@ -715,8 +715,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 
-	nv.Scene().Camera.Pose.Pos.Set(-0.028028872, 2.1134117, 2.3178313)
-	nv.Scene().Camera.LookAt(mat32.Vec3{0.00030842167, 0.045156803, -0.039506555}, mat32.Vec3{0, 1, 0})
+	// nv.Scene().Camera.Pose.Pos.Set(-0.028028872, 2.1134117, 2.3178313)
+	// nv.Scene().Camera.LookAt(mat32.Vec3{0.00030842167, 0.045156803, -0.039506555}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 

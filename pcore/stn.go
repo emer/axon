@@ -17,18 +17,15 @@ import (
 // The SKCa small-conductance calcium-gated potassium channel
 // produces the pausing function as a consequence of rapid bursting.
 type CaParams struct {
-	SKCa       chans.SKCaParams `view:"inline" desc:"small-conductance calcium-activated potassium channel"`
-	CaScale    float32          `desc:"scaling factor applied to input VgccCa to bring into proper range of these dynamics"`
-	CaIncTau   float32          `def:"1,50" desc:"Ca increase time constant -- high for STNs -- delayed CaM / intracellular activation"`
-	CaDecayTau float32          `def:"30" desc:"Ca time constant of decay to baseline -- 185.7 in Gillies & Willshaw, 2006 -- other reports are lower -- in the range 10-50"`
-	ThetaInit  bool             `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
+	SKCa      chans.SKCaParams `view:"inline" desc:"small-conductance calcium-activated potassium channel"`
+	CaD       bool             `desc:"use CaD timescale (delayed) calcium signal -- for STNs -- else use CaP (faster) for STNp"`
+	CaScale   float32          `desc:"scaling factor applied to input Ca to bring into proper range of these dynamics"`
+	ThetaInit bool             `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
 }
 
 func (kc *CaParams) Defaults() {
 	kc.SKCa.Defaults()
-	kc.CaScale = 0.05
-	kc.CaIncTau = 1
-	kc.CaDecayTau = 30
+	kc.CaScale = 0.5
 }
 
 func (kc *CaParams) Update() {
@@ -83,19 +80,18 @@ func (ly *STNLayer) Defaults() {
 	ly.Inhib.ActAvg.Init = 0.25
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
-		ly.Ca.CaIncTau = 1
-		ly.Ca.CaDecayTau = 30
+		ly.Ca.CaD = false
 	} else {
-		ly.Act.Init.Ge = 0.4
-		ly.Act.Init.GeVar = 0.05
-		ly.Ca.CaIncTau = 50
-		ly.Ca.CaDecayTau = 30
+		ly.Ca.CaD = true
+		ly.Act.Init.Ge = 0.2
+		ly.Act.Init.GeVar = 0.2
 	}
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
+		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75
 		pj.SWt.Init.Var = 0.25
 		pj.SWt.Init.Sym = false
@@ -155,7 +151,11 @@ func (ly *STNLayer) ActFmG(ltime *axon.Time) {
 			continue
 		}
 		snr := &ly.STNNeurs[ni]
-		snr.SKCai += (ly.Ca.CaScale*nrn.VgccCa)/ly.Ca.CaIncTau - snr.SKCai/ly.Ca.CaDecayTau
+		if ly.Ca.CaD {
+			snr.SKCai = ly.Ca.CaScale * nrn.CaSpkD // todo: CaD?
+		} else {
+			snr.SKCai = ly.Ca.CaScale * nrn.CaSpkP // todo: CaP?
+		}
 		snr.SKCaM = ly.Ca.SKCa.MFmCa(snr.SKCai, snr.SKCaM)
 		snr.Gsk = ly.Ca.SKCa.Gbar * snr.SKCaM
 		nrn.Gk += snr.Gsk

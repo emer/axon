@@ -52,6 +52,7 @@ func (ly *GPLayer) Defaults() {
 		pj := pji.AsAxon()
 		pj.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
+		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75
 		pj.SWt.Init.Var = 0.25
 		pj.SWt.Init.Sym = false
