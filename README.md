@@ -38,7 +38,7 @@ The concept of a `Quarter` is no longer as sensible, so it has been removed.  In
     + `AlphaCycleInit` -> `NewState`
     + `Time.AlphaCycStart` -> `NewState`
 
-* The standard `AlphaCyc` method in your simulation should be replaced with something like `ThetaCyc` from the `ra25` example, which contains all the new timing logic.  In general, see the `ra25` example for all the relevant updates.    
+* The standard `AlphaCyc` method in your simulation should be replaced with something like `ThetaCyc` from the `ra25` example, which contains all the new timing logic.  In general, see the `ra25` example for all the relevant updates.
 
 ## Params
 
@@ -66,7 +66,7 @@ Must call `ss.Net.CTCtxt()` explicitly to update the CT context reps -- generall
 
 * There are 3 main levels of structure: `Network`, `Layer` and `Prjn` (projection).  The network calls methods on its Layers, and Layers iterate over both `Neuron` data structures (which have only a minimal set of methods) and the `Prjn`s, to implement the relevant computations.  The `Prjn` fully manages everything about a projection of connectivity between two layers, including the full list of `Syanpse` elements in the connection.  There is no "ConGroup" or "ConState" level as was used in C++, which greatly simplifies many things.  The Layer also has a set of `Pool` elements, one for each level at which inhibition is computed (there is always one for the Layer, and then optionally one for each Sub-Pool of units (*Pool* is the new simpler term for "Unit Group" from C++ emergent).
 
-* The `NetworkBase` and `LayerBase` structs manage all the core structural aspects of things (data structures etc), and then the algorithm-specific versions (e.g., `axon.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while then directly implementing the algorithm code.  Almost every step of computation has an associated method in `axon.Layer`, so look first in [layer.go](https://github.com/emer/axon/blob/master/axon/layer.go) to see how something is implemented.  
+* The `NetworkBase` and `LayerBase` structs manage all the core structural aspects of things (data structures etc), and then the algorithm-specific versions (e.g., `axon.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while then directly implementing the algorithm code.  Almost every step of computation has an associated method in `axon.Layer`, so look first in [layer.go](https://github.com/emer/axon/blob/master/axon/layer.go) to see how something is implemented.
 
 * Each structural element directly has all the parameters controlling its behavior -- e.g., the `Layer` contains an `ActParams` field (named `Act`), etc, instead of using a separate `Spec` structure as in C++ emergent.  The Spec-like ability to share parameter settings across multiple layers etc is instead achieved through a **styling**-based paradigm -- you apply parameter "styles" to relevant layers instead of assigning different specs to them.  This paradigm should be less confusing and less likely to result in accidental or poorly-understood parameter applications.  We adopt the CSS (cascading-style-sheets) standard where parameters can be specifed in terms of the Name of an object (e.g., `#Hidden`), the *Class* of an object (e.g., `.TopDown` -- where the class name TopDown is manually assigned to relevant elements), and the *Type* of an object (e.g., `Layer` applies to all layers).  Multiple space-separated classes can be assigned to any given element, enabling a powerful combinatorial styling strategy to be used.
 
@@ -151,7 +151,7 @@ There are a number of other more minor but still quite important details that ma
 
 The only way to manage the complexity of large spiking nets is to develop advanced statistics that reveal what is going on, especially when things go wrong.  These include:
 
-* Basic "activation health": proper function depends on neurons remaining in a sensitive range of excitatory and inhibitory inputs, so these are monitored.  Each layer has `ActAvg` with `AvgMaxGeM` reporting average maximum minus-phase Ge values -- these are what is regulated relative to `Act.GTarg.GeMax`, but also must be examined early in training to ensure that initial excitation is not too weak.  The layer `Inhib.ActAvg.Init` can be set to adjust -- and unlike in Leabra, there is a separate `Targ` value that controls adaptation of layer-level inhibition. 
+* Basic "activation health": proper function depends on neurons remaining in a sensitive range of excitatory and inhibitory inputs, so these are monitored.  Each layer has `ActAvg` with `AvgMaxGeM` reporting average maximum minus-phase Ge values -- these are what is regulated relative to `Act.GTarg.GeMax`, but also must be examined early in training to ensure that initial excitation is not too weak.  The layer `Inhib.ActAvg.Init` can be set to adjust -- and unlike in Leabra, there is a separate `Targ` value that controls adaptation of layer-level inhibition.
 
 * Hogging and the flip-side: dead units.
 
@@ -175,12 +175,12 @@ Despite these advantages, the spiking networks still exhibit strong hog-unit ten
 
 Axonal conduction delays:
 
-* http://www.scholarpedia.org/article/Axonal_conduction_delay 
+* http://www.scholarpedia.org/article/Axonal_conduction_delay
     + thalamocortical is very fast: 1.2 ms
     + corticocortical axonal conduction delays in monkey average 2.3 ms (.5 to 8 range)
     + corpus callosum (long distance) average around 10 ms
     + Brunel00: 1.5 ms
-    
+
 AMPA rise, decay times:
 
 * SHN90: rise times 1-3ms -- recorded at soma -- reflect conductance delays
@@ -197,7 +197,7 @@ A series of models published around the year 2000 investigated the role of activ
 
 ![Differences between Soma vs. Dendrites](fig_dendrite_coinc_spruston08_fig5.png?raw=true "Figure 5 from Spruston (2008), showing mutual dependence on two dendritic compartments for synaptic integration in panel a, and also significant differences in temporal duration of elevated Vm in dendrites vs. soma.")
 
-The key question here is: to what extent do we need to account for these additional degrees of freedom in the model?  First, a key premise of the AdEx model is that anything taking place during the action potential (AP) is too fast and stereotyped to worry about.  Further, AdEx primarily accounts for soma-level spiking dynamics, and may not do a good job of reflecting what happens in the more distal dendrites -- as we can see in the above figure, membrane potential in the dendrites updates more slowly and is not reset as significantly after spiking.  This is captured in the use of separate Vm variables: `VmDend` for dendrites, and plain `Vm` for the somatic spiking potential.  The `VmDend` is what drives the NMDA and GABAB channels, and thus its ability to sustain a higher overall level of activation is critical for the stabilizing effects of these channels. 
+The key question here is: to what extent do we need to account for these additional degrees of freedom in the model?  First, a key premise of the AdEx model is that anything taking place during the action potential (AP) is too fast and stereotyped to worry about.  Further, AdEx primarily accounts for soma-level spiking dynamics, and may not do a good job of reflecting what happens in the more distal dendrites -- as we can see in the above figure, membrane potential in the dendrites updates more slowly and is not reset as significantly after spiking.  This is captured in the use of separate Vm variables: `VmDend` for dendrites, and plain `Vm` for the somatic spiking potential.  The `VmDend` is what drives the NMDA and GABAB channels, and thus its ability to sustain a higher overall level of activation is critical for the stabilizing effects of these channels.
 
 Here are some specific considerations and changes to address these issues:
 
@@ -209,7 +209,7 @@ Here are some specific considerations and changes to address these issues:
 
 * As for the broader question of more coincidence-driven dynamics in the dendrites, or an AND-like mutual interdependence among inputs to different branches, driven by A-type K channels, it is likely that in the awake behaving context (*in activo*) as compared to the slices where these original studies were done, there is always a reasonable background level of synaptic input such that these channels are largely inactivated anyway.  This corresponds to the important differences between upstate / downstate that also largely disappear in awake behaving vs. anesthetized or slice preps.  Nevertheless, it is worth continuing to investigate this issue and explore the potential implications of these mechanisms in actual running models.  TODO: create atype channels in glong (rename to something else, maybe just `chans` for channels)
 
-## Urakubo 
+## Urakubo
 
 See the `examples/urakubo` directory for a replication of the Urakubo et al (2008) Ca-driven signaling mechanisms involving CaMKII, PKA, CaN, PP1, and AMPAR trafficking under their influence.  This model replicates experimental results from a range of STDP paradigms, and can be used as a exploratory lab for investigating different learning possible mechanisms beyond the simple XCAL equation derived from the original Urakubo et al model.
 
@@ -228,8 +228,8 @@ There are various extensions to the algorithm that implement special neural mech
 * support background balanced G, I current on cell body to diminish sensitivity! Init
 
 * Detailed model of dendritic dynamics relative to cell body, with data -- dendrites a bit slower, don't reset after spiking?  GaoGrahamZhouEtAl20
-    
-    
+
+
 # Pseudocode as a LaTeX doc for Paper Appendix
 
 You can copy the mediawiki source of the following section into a file, and run [pandoc](https://pandoc.org/) on it to convert to LaTeX (or other formats) for inclusion in a paper.  As this wiki page is always kept updated, it is best to regenerate from this source -- very easy:
@@ -263,10 +263,10 @@ Axon is organized around the following timing, based on an internally-generated 
 
 * A **Trial** lasts 100 msec (10 Hz, alpha frequency), and comprises one sequence of expectation -- outcome learning, organized into 4 quarters.
     + Biologically, the deep neocortical layers (layers 5, 6) and the thalamus have a natural oscillatory rhythm at the alpha frequency.  Specific dynamics in these layers organize the cycle of expectation vs. outcome within the alpha cycle.
-    
+
 * A **Quarter** lasts 25 msec (40 Hz, gamma frequency) -- the first 3 quarters (75 msec) form the expectation / minus phase, and the final quarter are the outcome / plus phase.
     + Biologically, the superficial neocortical layers (layers 2, 3) have a gamma frequency oscillation, supporting the quarter-level organization.
-    
+
 * A **Cycle** represents 1 msec of processing, where each neuron updates its membrane potential etc according to the above equations.
 
 ## Variables
@@ -303,7 +303,7 @@ The following are more implementation-level variables used in integrating synapt
 * `GiRaw` = raw inhibitory conductance (net input) received from sending units (send delta's are added to this value)
 * `GiInc` = delta increment in GiRaw sent using SendGeDelta
 
-Neurons are connected via synapses parameterized with the following variables, contained in the `axon.Synapse` struct.  The `axon.Prjn` contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures in the Go version.  
+Neurons are connected via synapses parameterized with the following variables, contained in the `axon.Synapse` struct.  The `axon.Prjn` contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures in the Go version.
 
 * `Wt` = synaptic weight value -- sigmoid contrast-enhanced
 * `LWt` = linear (underlying) weight value -- learns according to the lrate specified in the connection spec -- this is converted into the effective weight value, Wt, via sigmoidal contrast enhancement (see `WtSigParams`)
@@ -412,14 +412,14 @@ Learning is based on running-averages of activation variables, parameterized in 
         + `Wb` is the `WtBalRecvPrjn` structure stored on the `axon.Prjn`, per each Recv neuron.  `Wb.Avg` = average of recv weights (computed separately and only every N = 10 weight updates, to minimize computational cost).  If this average is relatively low (compared to LoThr = .4) then there is a bias to increase more than decrease, in proportion to how much below this threshold they are (LoGain = 6).  If the average is relatively high (compared to HiThr = .4), then decreases are stronger than increases, HiGain = 4.
     + A key feature of this mechanism is that it does not change the sign of any weight changes, including not causing weights to change that are otherwise not changing due to the learning rule.  This is not true of an alternative mechanism that has been used in various models, which normalizes the total weight value by subtracting the average.  Overall this weight balance mechanism is important for larger networks on harder tasks, where the hogging problem can be a significant problem.
 
-* **Weight update equation** 
+* **Weight update equation**
     + The `LWt` value is the linear, non-contrast enhanced version of the weight value, and `Wt` is the sigmoidal contrast-enhanced version, which is used for sending netinput to other neurons.  One can compute LWt from Wt and vice-versa, but numerical errors can accumulate in going back-and forth more than necessary, and it is generally faster to just store these two weight values.
     + `DWt *= (DWt > 0) ? Wb.Inc * (1-LWt) : Wb.Dec * LWt`
         + soft weight bounding -- weight increases exponentially decelerate toward upper bound of 1, and decreases toward lower bound of 0, based on linear, non-contrast enhanced LWt weights.  The `Wb` factors are how the weight balance term shift the overall magnitude of weight increases and decreases.
     + `LWt += DWt`
         + increment the linear weights with the bounded DWt term
     + `Wt = SIG(LWt)`
-        + new weight value is sigmoidal contrast enhanced version of linear weight 
+        + new weight value is sigmoidal contrast enhanced version of linear weight
         + `SIG(w) = 1 / (1 + (Off * (1-w)/w)^Gain)`
     + `DWt = 0`
         + reset weight changes now that they have been applied.
@@ -478,3 +478,16 @@ This `sc` factor multiplies the `GScale` factor as computed above.
 
 * Urakubo, H., Honda, M., Froemke, R. C., & Kuroda, S. (2008). Requirement of an allosteric kinetics of NMDA receptors for spike timing-dependent plasticity. The Journal of Neuroscience, 28(13), 3310–3323. http://www.ncbi.nlm.nih.gov/pubmed/18367598
 
+# Bazel
+
+In addition to the go tool, we support [Bazel](https://bazel.build).
+
+After adding any new files or imports, please update the Bazel files automatically with:
+
+```sh
+# Updates BUILD.bazel files
+bazel run //:gazelle
+# Updates external repos in WORKSPACE.bazel
+bazel run //:gazelle -- update-repos -from_file=go.mod
+bazel test //...
+```

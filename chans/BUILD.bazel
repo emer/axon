@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "chans",
+    srcs = [
+        "ak.go",
+        "chans.go",
+        "gabab.go",
+        "nmda.go",
+        "vgcc.go",
+    ],
+    importpath = "github.com/emer/axon/chans",
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_goki_mat32//:mat32"],
+)
