@@ -82,6 +82,7 @@ func (ly *TRCLayer) Defaults() {
 	ly.Act.Decay.Act = 0.5
 	ly.Act.Decay.Glong = 1
 	ly.Act.Decay.KNa = 0
+	ly.Learn.RLrate.SigmoidMin = 1 // don't use!
 	ly.TRC.Defaults()
 	ly.Typ = TRC
 }

@@ -234,10 +234,10 @@ func (ta *TrgAvgActParams) Defaults() {
 
 // RLrateParams are recv neuron learning rate modulation parameters.
 // Has two factors: the derivative of the sigmoid based on CaSpk
-// activity levels, and based on the phase-wise differences in activity.
+// activity levels, and based on the phase-wise differences in activity (Diff).
 type RLrateParams struct {
 	On         bool    `def:"true" desc:"use learning rate modulation"`
-	SigmoidMin float32 `def:"0.05" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values"`
+	SigmoidMin float32 `def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
 	Diff       bool    `desc:"modulate learning rate as a function of plus - minus differences"`
 	ActThr     float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
 	ActDiffThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`

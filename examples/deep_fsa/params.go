@@ -70,7 +70,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":         "1",    // clear long
 					"Layer.Act.GABAB.Gbar":          "0.2",  // .2 > old: 0.005
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best, .4, .6 sig worse
-					"Layer.Learn.RLrate.SigmoidMin": "1",    // not useful in output layer
+					"Layer.Learn.RLrate.SigmoidMin": "1",    // auto = 1: not useful in output layer
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{

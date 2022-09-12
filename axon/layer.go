@@ -62,6 +62,7 @@ func (ly *Layer) Defaults() {
 		ly.Inhib.Pool.Gi = 0.9
 	case emer.Target:
 		ly.Act.Clamp.Ge = 0.6
+		ly.Learn.RLrate.SigmoidMin = 1
 	}
 }
 
