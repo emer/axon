@@ -211,8 +211,11 @@ type AxonLayer interface {
 	// DWt computes the weight change (learning) -- calls DWt method on sending projections
 	DWt(ltime *Time)
 
+	// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
+	// This is called on *receiving* projections, prior to WtFmDwt.
+	DWtSubMean(ltime *Time)
+
 	// WtFmDWt updates the weights from delta-weight changes.
-	// Computed from receiver perspective, does SubMean.
 	WtFmDWt(ltime *Time)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
@@ -270,7 +273,12 @@ type AxonPrjn interface {
 	// DWt computes the weight change (learning) -- on sending projections.
 	DWt(ltime *Time)
 
-	// WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
+	// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
+	// This is called on *receiving* projections, prior to WtFmDwt.
+	DWtSubMean(ltime *Time)
+
+	// WtFmDWt updates the synaptic weight values from delta-weight changes,
+	// on sending projections
 	WtFmDWt(ltime *Time)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,

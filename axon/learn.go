@@ -19,133 +19,184 @@ import (
 // axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
-	NeurCa    NeurCaParams     `view:"inline" desc:"parameters for computing simple spike-driven calcium signaling variables"`
-	LrnNMDA   chans.NMDAParams `view:"inline" desc:"Sending neuron NMDA channel parameters, for LrnNMDA values used in SynNMDACa learning rule"`
+	CaLrn CaLrnParams `view:"inline" desc:"parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales:
+CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase)."`
+	CaSpk     CaSpkParams      `view:"inline" desc:"parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdtThr and RLrate as a proxy for the activation (spiking) based learning signal."`
+	LrnNMDA   chans.NMDAParams `view:"inline" desc:"NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes"`
 	TrgAvgAct TrgAvgActParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
 	RLrate    RLrateParams     `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLrate = |SpkCaP - SpkCaD| / Max(SpkCaP, SpkCaD)"`
 }
 
 func (ln *LearnNeurParams) Update() {
-	ln.NeurCa.Update()
+	ln.CaLrn.Update()
+	ln.CaSpk.Update()
 	ln.LrnNMDA.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLrate.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
-	ln.NeurCa.Defaults()
+	ln.CaLrn.Defaults()
+	ln.CaSpk.Defaults()
 	ln.LrnNMDA.Defaults()
 	ln.LrnNMDA.ITau = 1
-	ln.LrnNMDA.Tau = 50 // 50 > 40 > 30
 	ln.LrnNMDA.Update()
 	ln.TrgAvgAct.Defaults()
 	ln.RLrate.Defaults()
 }
 
-// InitNeurCa initializes the running-average activation values that drive learning.
+// InitCaLrnSpk initializes the neuron-level calcium learning and spking variables.
 // Called by InitWts (at start of learning).
 func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
+	nrn.GnmdaLrn = 0
+	nrn.NmdaCa = 0
+	nrn.SnmdaO = 0
+	nrn.SnmdaI = 0
+
+	nrn.VgccCa = 0
+	nrn.VgccCaInt = 0
+
+	nrn.CaLrn = 0
+
 	nrn.CaSyn = 0
+	nrn.CaSpkM = 0
+	nrn.CaSpkP = 0
+	nrn.CaSpkD = 0
+
 	nrn.CaM = 0
 	nrn.CaP = 0
 	nrn.CaD = 0
+	nrn.CaDiff = 0
 }
 
-// DecayNeurCa decays neuron-level calcium by given factor (between trials)
-func (ln *LearnNeurParams) DecayNeurCa(nrn *Neuron, decay float32) {
-	if !ln.NeurCa.Decay {
-		return
-	}
+// DecayNeurCa decays neuron-level calcium learning and spiking variables
+// by given factor.  Note: this is NOT called by default and is generally
+// not useful, causing variability in these learning factors as a function
+// of the decay parameter that then has impacts on learning rates etc.
+// It is only here for reference or optional testing.
+func (ln *LearnNeurParams) DecayCaLrnSpk(nrn *Neuron, decay float32) {
+	nrn.GnmdaLrn -= decay * nrn.GnmdaLrn
+	nrn.NmdaCa -= decay * nrn.NmdaCa
+	nrn.SnmdaO -= decay * nrn.SnmdaO
+	nrn.SnmdaI -= decay * nrn.SnmdaI
+
+	nrn.VgccCa -= decay * nrn.VgccCa
+	nrn.VgccCaInt -= decay * nrn.VgccCaInt
+
+	nrn.CaLrn -= decay * nrn.CaLrn
+
 	nrn.CaSyn -= decay * nrn.CaSyn
+	nrn.CaSpkM -= decay * nrn.CaSpkM
+	nrn.CaSpkP -= decay * nrn.CaSpkP
+	nrn.CaSpkD -= decay * nrn.CaSpkD
+
 	nrn.CaM -= decay * nrn.CaM
 	nrn.CaP -= decay * nrn.CaP
 	nrn.CaD -= decay * nrn.CaD
-
-	nrn.RnmdaSyn -= decay * nrn.RnmdaSyn
-	nrn.RCa -= decay * nrn.RCa
-	nrn.SnmdaO -= decay * nrn.SnmdaO
-	nrn.SnmdaI -= decay * nrn.SnmdaI
 }
 
-// LrnNMDAFmRaw updates all the learning NMDA variables from GeRaw and current Vm, Spiking
+// LrnNMDAFmRaw updates the separate NMDA conductance and calcium values
+// based on GeRaw and any external ge conductance.  These are the variables
+// that drive learning -- can be the same as activation but also can be different
+// for testing learning Ca effects independent of activation effects.
 func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
-	nrn.RnmdaSyn = ln.LrnNMDA.NMDASyn(nrn.RnmdaSyn, nrn.GeRaw+geExt)
-	mgg, cav := ln.LrnNMDA.VFactors(nrn.VmDend) // note: using Vm does NOT work well at all
-	nrn.RCa = nrn.RnmdaSyn * mgg * cav
-	nrn.RCa += nrn.VgccCa
-	nrn.RCa = ln.NeurCa.CaNorm(nrn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
-}
-
-// CaFmSpike updates the simple spike-based calcium signaling vals.
-// Computed after new activation for current cycle is updated.
-func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
-	ln.NeurCa.CaFmSpike(nrn)
+	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, nrn.GeRaw+geExt)
+	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
+	nrn.NmdaCa = gnmda * ln.LrnNMDA.CaFmV(nrn.VmDend)
 	ln.LrnNMDA.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
 }
 
-// NeurCaParams parameterizes the neuron-level spike-triggered calcium
-// signals for the NeurSpkCa version of the Kinase learning rule.
-// Spikes trigger decaying traces of Ca integrated in a cascading fashion
-// at multiple time scales, with P = LTP / plus-phase and D = LTD / minus phase
-// driving key subtraction for error-driven learning rule.
-type NeurCaParams struct {
-	SpikeG float32 `def:"8" desc:"gain multiplier on spike: how much spike drives CaM value"`
-	SynTau float32 `def:"30" min:"1" desc:"spike-driven calcium trace at sender and recv neurons for synapse-level learning rules (CaSyn), time constant in cycles (msec)"`
-	MTau   float32 `def:"10" min:"1" desc:"spike-driven calcium CaM mean Ca (calmodulin) time constant in cycles (msec), with a value of 10 roughly tracking the biophysical dynamics of Ca.`
-	PTau   float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau = 10 roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information"`
-	DTau   float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)"`
-	CaMax  float32 `def:"200" desc:"for SynNMDASpk, maximum expected calcium level -- used for normalizing RCa, which then drives learning"`
-	CaThr  float32 `def:"0.05" desc:"threshold for overall calcium, post normalization, reflecting Ca buffering"`
-	Decay  bool    `def:"false" desc:"if true, decay Ca values along with other longer duration state variables at the ThetaCycle boundary"`
-
-	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	MDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	PDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	DDt     float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	SynSpkG float32 `view:"+" json:"-" xml:"-" inactive:"+" desc:"Ca gain factor for SynSpkCa learning rule, to compensate for the effect of SynTau, which increases Ca as it gets larger."`
+// CaFmSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
+// Computed after new activation for current cycle is updated.
+func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
+	ln.CaSpk.CaFmSpike(nrn)
+	ln.CaLrn.CaLrn(nrn)
 }
 
-func (np *NeurCaParams) Update() {
-	np.SynDt = 1 / np.SynTau
-	np.MDt = 1 / np.MTau
-	np.PDt = 1 / np.PTau
-	np.DDt = 1 / np.DTau
-	np.SynSpkG = mat32.Sqrt(30) / mat32.Sqrt(np.SynTau)
+// CaLrnParams parameterizes the neuron-level calcium signals driving learning:
+// CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or
+// use the more complex and dynamic VGCC channel directly.
+// CaLrn is then integrated in a cascading manner at multiple time scales:
+// CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
+type CaLrnParams struct {
+	Norm      float32           `def:"80" desc:"denomenator used for normalizing CaLrn, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance"`
+	SpkVGCC   bool              `def:"true" desc:"use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike"`
+	SpkVgccCa float32           `def:"35" desc:"multiplier on spike for computing Ca contribution to CaLrn in SpkVGCC mode"`
+	VgccTau   float32           `def:"10" desc:"time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn"`
+	Dt        kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaLrn across M, P and D cascading levels"`
+	VgccDt    float32           `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
-func (np *NeurCaParams) Defaults() {
-	np.SpikeG = 8
-	np.SynTau = 30
-	np.MTau = 10
-	np.PTau = 40
-	np.DTau = 40
-	np.CaMax = 200
-	np.CaThr = 0.05
-	np.Decay = false
+func (np *CaLrnParams) Defaults() {
+	np.Norm = 80
+	np.SpkVGCC = true
+	np.SpkVgccCa = 35
+	np.VgccTau = 10
+	np.Dt.Defaults()
+	np.Dt.MTau = 2
 	np.Update()
 }
 
-// CaFmSpike computes Ca* calcium signals based on current spike, for NeurSpkCa
-func (np *NeurCaParams) CaFmSpike(nrn *Neuron) {
-	nrn.CaSyn += np.SynDt * (np.SpikeG*nrn.Spike - nrn.CaSyn)
-	nrn.CaM += np.MDt * (np.SpikeG*nrn.Spike - nrn.CaM)
-	nrn.CaP += np.PDt * (nrn.CaM - nrn.CaP)
-	nrn.CaD += np.DDt * (nrn.CaP - nrn.CaD)
+func (np *CaLrnParams) Update() {
+	np.Dt.Update()
+	np.VgccDt = 1 / np.VgccTau
 }
 
-// CaNorm normalizes and thresholds the calcium level according to CaMax, CaThr
-func (np *NeurCaParams) CaNorm(ca float32) float32 {
-	ca /= np.CaMax
-	ca -= np.CaThr
-	if ca < 0 {
-		ca = 0
+// VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
+// and performs time-integration of VgccCa
+func (np *CaLrnParams) VgccCa(nrn *Neuron) {
+	if np.SpkVGCC {
+		nrn.VgccCa = np.SpkVgccCa * nrn.Spike
 	}
-	return ca
+	nrn.VgccCaInt = nrn.VgccCaInt + nrn.VgccCa - np.VgccDt*nrn.VgccCaInt // Dt only affects decay, not rise time
 }
 
-// SynSpkCa computes synaptic spiking Ca from send and recv neuron CaSyn vals
-func (np *NeurCaParams) SynSpkCa(snCaSyn, rnCaSyn float32) float32 {
-	return np.SynSpkG * snCaSyn * rnCaSyn
+// CaLrn updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
+// it first calls VgccCa to update the spike-driven version of that variable, and
+// perform its time-integration.
+func (np *CaLrnParams) CaLrn(nrn *Neuron) {
+	np.VgccCa(nrn)
+	nrn.CaLrn = (nrn.NmdaCa + nrn.VgccCaInt) / np.Norm
+	nrn.CaM += np.Dt.MDt * (nrn.CaLrn - nrn.CaM)
+	nrn.CaP += np.Dt.PDt * (nrn.CaM - nrn.CaP)
+	nrn.CaD += np.Dt.DDt * (nrn.CaP - nrn.CaD)
+	nrn.CaDiff = nrn.CaP - nrn.CaD
+}
+
+// CaSpkParams parameterizes the neuron-level spike-driven calcium
+// signals, starting with CaSyn that is integrated at the neuron level
+// and drives synapse-level, pre * post Ca integration, which provides the Tr
+// trace that multiplies error signals, and drives learning directly for Target layers.
+// CaSpk* values are integrated separately at the Neuron level and used for UpdtThr
+// and RLrate as a proxy for the activation (spiking) based learning signal.
+type CaSpkParams struct {
+	SpikeG float32           `def:"8,12" desc:"gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLrate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors -- 12, vs 8 for smaller."`
+	SynTau float32           `def:"30" min:"1" desc:"time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec)"`
+	Dt     kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Prjn level for synaptic integration, except for the M factor."`
+
+	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	SynSpkG float32 `view:"+" json:"-" xml:"-" inactive:"+" desc:"Ca gain factor for SynSpkCa learning rule, to compensate for the effect of SynTau, which increases Ca as it gets larger.  is 1 for SynTau = 30 -- todo: eliminate this at some point!"`
+}
+
+func (np *CaSpkParams) Defaults() {
+	np.SpikeG = 8
+	np.SynTau = 30
+	np.Dt.Defaults()
+	np.Update()
+}
+
+func (np *CaSpkParams) Update() {
+	np.SynDt = 1 / np.SynTau
+	np.SynSpkG = mat32.Sqrt(30) / mat32.Sqrt(np.SynTau)
+}
+
+// CaFmSpike computes CaSpk* and CaSyn calcium signals based on current spike.
+func (np *CaSpkParams) CaFmSpike(nrn *Neuron) {
+	nsp := np.SpikeG * nrn.Spike
+	nrn.CaSyn += np.SynDt * (nsp - nrn.CaSyn)
+	nrn.CaSpkM += np.Dt.MDt * (nsp - nrn.CaSpkM)
+	nrn.CaSpkP += np.Dt.PDt * (nrn.CaSpkM - nrn.CaSpkP)
+	nrn.CaSpkD += np.Dt.DDt * (nrn.CaSpkP - nrn.CaSpkD)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -158,6 +209,7 @@ type TrgAvgActParams struct {
 	On           bool       `desc:"whether to use target average activity mechanism to scale synaptic weights"`
 	ErrLrate     float32    `viewif:"On" def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
 	SynScaleRate float32    `viewif:"On" def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
+	SubMean      float32    `viewif:"On" desc:"amount of mean trg change to subtract -- 1 = full zero sum"`
 	TrgRange     minmax.F32 `viewif:"On" desc:"[default .5 to 2] range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      bool       `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Pool         bool       `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
@@ -170,6 +222,7 @@ func (ta *TrgAvgActParams) Defaults() {
 	ta.On = true
 	ta.ErrLrate = 0.02
 	ta.SynScaleRate = 0.01
+	ta.SubMean = 1
 	ta.TrgRange.Set(0.5, 2)
 	ta.Permute = true
 	ta.Pool = true
@@ -179,13 +232,17 @@ func (ta *TrgAvgActParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  RLrateParams
 
-// RLrateParams recv neuron learning rate modulation parameters.
-// RLrate is computed as |CaP - CaD| / Max(CaP, CaD) subject to thresholding
+// RLrateParams are recv neuron learning rate modulation parameters.
+// This is effectively the derivative of the activation function factor in backprop.
 type RLrateParams struct {
-	On        bool    `def:"true" desc:"use learning rate modulation"`
-	ActThr    float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDifThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
-	Min       float32 `def:"0.001" desc:"minimum learning rate value when below ActDifThr"`
+	On         bool       `def:"true" desc:"use learning rate modulation"`
+	SigDeriv   bool       `desc:"use the derivative of a sigmoid function: act * (1-act), with NonMid as a minimum baseline -- otherwise use square wave MidRange with full learning rate"`
+	MidRange   minmax.F32 `desc:"range for normalized CaSpk values where learning rate is normal -- attenuated outside of that in the extremes"`
+	NonMid     float32    `def:"0.05" desc:"scaling factor for extreme CaSpk values outside of the MidRange"`
+	Diff       bool       `desc:"modulate learning rate as a function of plus - minus differences"`
+	ActThr     float32    `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	ActDiffThr float32    `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
+	Min        float32    `def:"0.001" desc:"minimum learning rate value when below ActDiffThr"`
 }
 
 func (rl *RLrateParams) Update() {
@@ -193,24 +250,50 @@ func (rl *RLrateParams) Update() {
 
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
+	rl.MidRange.Set(0.1, 0.9)
+	rl.NonMid = 0.05
+	rl.Diff = true
 	rl.ActThr = 0.1
-	rl.ActDifThr = 0.02
+	rl.ActDiffThr = 0.02
 	rl.Min = 0.001
 	rl.Update()
 }
 
-// RLrate returns the learning rate as a function of CaP and CaD values
-func (rl *RLrateParams) RLrate(scap, scad float32) float32 {
-	if !rl.On {
+// RLrateMid returns the learning rate factor as a function of activity,
+// with mid-range values having full learning and extreme values a reduced learning rate.
+// This is a coarse, square-wave approximation to the derivative of a sigmoidal function.
+func (rl *RLrateParams) RLrateMid(nrn *Neuron, laymax float32) float32 {
+	if !rl.On || laymax == 0 {
+		return 1.0
+	}
+	ca := nrn.CaSpkP / laymax
+	if rl.SigDeriv {
+		lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
+		if lr < rl.NonMid {
+			lr = rl.NonMid
+		}
+		return lr
+	}
+	// else square range
+	if ca < rl.MidRange.Min || ca > rl.MidRange.Max {
+		return rl.NonMid
+	}
+	return 1.0
+}
+
+// RLrateDiff returns the learning rate as a function of difference between
+// CaP and CaD values
+func (rl *RLrateParams) RLrateDiff(scap, scad float32) float32 {
+	if !rl.On || !rl.Diff {
 		return 1.0
 	}
 	max := mat32.Max(scap, scad)
 	if max > rl.ActThr { // avoid div by 0
 		dif := mat32.Abs(scap - scad)
-		if dif < rl.ActDifThr {
+		if dif < rl.ActDiffThr {
 			return rl.Min
 		}
-		return dif / max
+		return (dif / max)
 	}
 	return rl.Min
 }
@@ -351,6 +434,8 @@ func (sp *SWtParams) LWtFmWts(wt, swt float32) float32 {
 	return sp.LinFmSigWt(rwt)
 }
 
+// todo: change below to not use pointers
+
 // WtFmDWt updates the synaptic weights from accumulated weight changes.
 // wt is the sigmoidal contrast-enhanced weight and lwt is the linear weight value.
 func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
@@ -381,6 +466,7 @@ func InitSynCa(sy *Synapse) {
 }
 
 // DecaySynCa decays synaptic calcium by given factor (between trials)
+// Not used by default.
 func DecaySynCa(sy *Synapse, decay float32) {
 	sy.CaM -= decay * sy.CaM
 	sy.CaP -= decay * sy.CaP
@@ -427,6 +513,7 @@ func (sp *SWtInitParams) RndVar() float32 {
 type SWtAdaptParams struct {
 	On       bool    `desc:"if true, adaptation is active -- if false, SWt values are not updated, in which case it is generally good to have Init.SPct=0 too."`
 	Lrate    float32 `viewif:"On" def:"0.1,0.01,0.001,0.0002" desc:"learning rate multiplier on the accumulated DWt values (which already have fast Lrate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
+	SubMean  float32 `desc:"amount of mean to subtract from SWt delta when updating"`
 	SigGain  float32 `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 	DreamVar float32 `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
 }
@@ -434,6 +521,7 @@ type SWtAdaptParams struct {
 func (sp *SWtAdaptParams) Defaults() {
 	sp.On = true
 	sp.Lrate = 0.1
+	sp.SubMean = 1
 	sp.SigGain = 6
 	sp.DreamVar = 0.0
 	sp.Update()
@@ -454,32 +542,37 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 type LearnSynParams struct {
 	Learn    bool            `desc:"enable learning for this projection"`
 	Lrate    LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	Trace    TraceParams     `desc:"trace-based learning parameters"`
 	KinaseCa kinase.CaParams `view:"inline" desc:"kinase calcium Ca integration parameters"`
-	XCal     XCalParams      `view:"inline" desc:"parameters for the XCal learning rule"`
 }
 
 func (ls *LearnSynParams) Update() {
 	ls.Lrate.Update()
-	ls.XCal.Update()
+	ls.Trace.Update()
 	ls.KinaseCa.Update()
 }
 
 func (ls *LearnSynParams) Defaults() {
 	ls.Learn = true
 	ls.Lrate.Defaults()
-	ls.XCal.Defaults()
+	ls.Trace.Defaults()
 	ls.KinaseCa.Defaults()
 }
 
-// CHLdWt returns the error-driven weight change component for the
-// temporally eXtended Contrastive Attractor Learning (XCAL), CHL version
+// CHLdWt returns the error-driven weight change component for a
+// CHL contrastive hebbian learning rule, optionally using the checkmark
+// temporally eXtended Contrastive Attractor Learning (XCAL) function
 func (ls *LearnSynParams) CHLdWt(suCaP, suCaD, ruCaP, ruCaD float32) float32 {
 	srp := suCaP * ruCaP
 	srd := suCaD * ruCaD
-	if ls.XCal.On {
-		return ls.XCal.DWt(srp, srd)
-	}
 	return srp - srd
+}
+
+// DeltaDWt returns the error-driven weight change component for a
+// simple delta between a minus and plus phase factor, optionally using the checkmark
+// temporally eXtended Contrastive Attractor Learning (XCAL) function
+func (ls *LearnSynParams) DeltaDWt(plus, minus float32) float32 {
+	return plus - minus
 }
 
 // LrateParams manages learning rate parameters
@@ -508,56 +601,27 @@ func (ls *LrateParams) Init() {
 	ls.Update()
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  XCalParams
-
-// XCalParams are parameters for temporally eXtended Contrastive Attractor Learning function (XCAL)
-// which is the standard learning equation for axon .
-type XCalParams struct {
-	On      bool    `desc:"if true, use XCal function -- otherwise just does a direct subtraction"`
-	SubMean float32 `def:"1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts (see DWtThr)"`
-	PThrMin float32 `def:"0.05" desc:"minimum LTP potentiation threshold in raw original units -- PThr = floating threshold crossover point between LTD and LTP, which is set to the LTD factor (CaD) -- this establishes a minimum value for the threshold"`
-	DWtThr  float32 `def:"0.0001" desc:"threshold on DWt to be included in SubMean process -- this is *prior* to lrate multiplier"`
-	DRev    float32 `def:"0.1" min:"0" max:"0.99" desc:"proportional point within LTD range where magnitude reverses to go back down to zero at zero -- err-driven svm component does better with smaller values"`
-	DThr    float32 `def:"0.0001,0.01" min:"0" desc:"minimum LTD threshold value below which no weight change occurs -- this is now *relative* to the threshold"`
-	LrnThr  float32 `def:"0.01" desc:"learning threshold on CaP and CaD (in their raw units) -- does not learn if both of these values are below this threshold -- this is purely a computational optimization."`
-
-	DRevRatio float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"-(1-DRev)/DRev -- multiplication factor in learning rule -- builds in the minus sign!"`
+// TraceParams manages learning rate parameters
+type TraceParams struct {
+	Tau     float32 `desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
+	SubMean float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, but special types (e.g., Hebb or CaSpk) may benefit from it"`
+	Dt      float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
-func (xc *XCalParams) Update() {
-	if xc.DRev > 0 {
-		xc.DRevRatio = -(1 - xc.DRev) / xc.DRev
-	} else {
-		xc.DRevRatio = -1
-	}
+func (tp *TraceParams) Defaults() {
+	tp.Tau = 1
+	tp.SubMean = 0
+	tp.Update()
 }
 
-func (xc *XCalParams) Defaults() {
-	xc.On = true
-	xc.SubMean = 1
-	xc.PThrMin = 0.05
-	xc.DWtThr = 0.0001
-	xc.DRev = 0.1
-	xc.DThr = 0.0001
-	xc.LrnThr = 0.01
-	xc.Update()
+func (tp *TraceParams) Update() {
+	tp.Dt = 1.0 / tp.Tau
 }
 
-// DWt is the XCAL function for weight change -- the "check mark" function
-func (xc *XCalParams) DWt(srval, thrP float32) float32 {
-	var dwt float32
-	if thrP < xc.PThrMin {
-		thrP = xc.PThrMin
-	}
-	if srval < xc.DThr {
-		dwt = 0
-	} else if srval > thrP*xc.DRev {
-		dwt = (srval - thrP)
-	} else {
-		dwt = srval * xc.DRevRatio
-	}
-	return dwt
+// TrFmCa returns updated trace factor as function of a synaptic calcium factor
+func (tp *TraceParams) TrFmCa(tr float32, ca float32) float32 {
+	tr += tp.Dt * (ca - tr)
+	return tr
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

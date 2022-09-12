@@ -13,33 +13,43 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.Inhib.AvgTau": "30",
-					"Layer.Inhib.ActAvg.Init":  "0.15",
-					"Layer.Inhib.Layer.Gi":     "1.1", // 1.1 > 1.2 > 1.0
-					"Layer.Act.Gbar.L":         "0.2", // std
-					"Layer.Act.Decay.Act":      "0.2", // lvis best = .2, .6 good here too
-					"Layer.Act.Decay.Glong":    "0.6",
-					"Layer.Act.Dt.LongAvgTau":  "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":     "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":   "8",   // 8 > 5 >> 2.81 -- big diff
-					// "Layer.Act.NMDA.MgC":        "1.0",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					// "Layer.Act.NMDA.Voff":       "0",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.VGCC.Gbar":       "0.02",
-					"Layer.Act.AK.Gbar":         "1.0",
-					"Layer.Act.NMDA.MgC":        "1.2",  // 1.2 > 1.4 for SynSpkTheta
-					"Layer.Act.NMDA.Voff":       "0",    // 0 > 5 for SynSpkTheta
-					"Layer.Learn.RLrate.On":     "true", // beneficial still
-					"Layer.Learn.NeurCa.SpikeG": "8",
-					"Layer.Learn.NeurCa.SynTau": "30", // 40 best in larger models
-					"Layer.Learn.NeurCa.MTau":   "10",
-					"Layer.Learn.NeurCa.PTau":   "40",
-					"Layer.Learn.NeurCa.DTau":   "40",
-					"Layer.Learn.NeurCa.CaMax":  "200",
-					"Layer.Learn.NeurCa.CaThr":  "0.05",
-					"Layer.Learn.NeurCa.Decay":  "false",
-					"Layer.Learn.LrnNMDA.ITau":  "1",  // urakubo = 100, does not work here..
-					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
+					"Layer.Inhib.Inhib.AvgTau":        "30",
+					"Layer.Inhib.ActAvg.Init":         "0.15",
+					"Layer.Inhib.Layer.Gi":            "1.0", // 1.0 > 1.1  trace
+					"Layer.Act.Gbar.L":                "0.2", // std
+					"Layer.Act.Decay.Act":             "0.2", // 0 == 0.2
+					"Layer.Act.Decay.Glong":           "0.6",
+					"Layer.Act.Dt.LongAvgTau":         "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":          "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":            "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dt.VmDendTau":          "5",   // old: 8 > 5 >> 2.81 -- big diff
+					"Layer.Act.AK.Gbar":               "1.0",
+					"Layer.Act.NMDA.MgC":              "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":             "5",
+					"Layer.Act.VGCC.Gbar":             "0.02",
+					"Layer.Act.VGCC.Ca":               "20",   // 20 / 10tau similar to spk
+					"Layer.Learn.CaLrn.Norm":          "80",   // 80 works
+					"Layer.Learn.CaLrn.SpkVGCC":       "true", // sig better..
+					"Layer.Learn.CaLrn.SpkVgccCa":     "35",   // 20? or 35?
+					"Layer.Learn.CaLrn.VgccTau":       "10",   // 10 > 5 ?
+					"Layer.Learn.CaLrn.Dt.MTau":       "2",    // 2 > 1 ?
+					"Layer.Learn.CaSpk.SpikeG":        "8",    // 8 > 12 with CaSpk trace learning
+					"Layer.Learn.CaSpk.SynTau":        "30",   // 30 > 20, 40
+					"Layer.Learn.CaSpk.Dt.MTau":       "5",    // 5 > 10?
+					"Layer.Learn.LrnNMDA.MgC":         "1.4",  // copy act
+					"Layer.Learn.LrnNMDA.Voff":        "5",
+					"Layer.Learn.LrnNMDA.Tau":         "100",  // 100 def
+					"Layer.Learn.TrgAvgAct.On":        "true", // critical!
+					"Layer.Learn.TrgAvgAct.SubMean":   "1",    // 1 == 0
+					"Layer.Learn.RLrate.On":           "true", // beneficial for trace
+					"Layer.Learn.RLrate.SigDeriv":     "true",
+					"Layer.Learn.RLrate.MidRange.Min": "0.1",  // 0.1, 0.9 best
+					"Layer.Learn.RLrate.MidRange.Max": "0.9",  // 0.1, 0.9 best
+					"Layer.Learn.RLrate.NonMid":       "0.05", // 0.05 std
+					"Layer.Learn.RLrate.Diff":         "true",
+					"Layer.Learn.RLrate.ActDiffThr":   "0.02", // 0.02 def - todo
+					"Layer.Learn.RLrate.ActThr":       "0.1",  // 0.1 def
+					"Layer.Learn.RLrate.Min":          "0.001",
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
@@ -49,47 +59,45 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
-					"Layer.CtxtGeGain":      "0.2", // 0.2 > 0.3 > 0.1
-					"Layer.Inhib.Layer.Gi":  "1.1", // 1.1 > 1.0
+					"Layer.CtxtGeGain":      "0.25", // 0.25 > 0.3 (most blow up) > 0.2 (was .2)
 					"Layer.Act.KNa.On":      "true",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.1",  // 1.1 > 1.2 with new GeSyn
-					"Layer.TRC.DriveScale":   "0.15", // .15 >= .1
-					"Layer.TRC.FullDriveAct": "0.6",  // 0.6 def
-					"Layer.Act.Spike.Tr":     "3",    // 1 is best for ra25..
-					"Layer.Act.Decay.Act":    "0.5",
-					"Layer.Act.Decay.Glong":  "1",   // clear long
-					"Layer.Act.GABAB.Gbar":   "0.2", // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":    "0.6", // .6 > .4 > .2 std -- strange but real!
+					"Layer.Inhib.Layer.Gi":      "1.0",  // 1.0 > 0.9 > 1.1
+					"Layer.TRC.DriveScale":      "0.05", // 0.05 > .1 > .15 for trace w/ gi1.0 -- repl10
+					"Layer.TRC.FullDriveAct":    "0.6",  // 0.6 def
+					"Layer.Act.Spike.Tr":        "3",    // 1 is best for ra25..
+					"Layer.Act.Decay.Act":       "0.5",
+					"Layer.Act.Decay.Glong":     "1",    // clear long
+					"Layer.Act.GABAB.Gbar":      "0.2",  // .2 > old: 0.005
+					"Layer.Act.NMDA.Gbar":       "0.15", // now .15 best, .4, .6 sig worse
+					"Layer.Learn.RLrate.NonMid": "1",    // not useful in output layer
 				}},
-			{Sel: "Prjn", Desc: "norm and momentum on is critical, wt bal not as much but fine",
+			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.05", // .03 std
+					"Prjn.Learn.Lrate.Base":       "0.02", // .02 > .03 > .01 -- .03 std
 					"Prjn.SWt.Adapt.Lrate":        "0.1",  // 0.01 seems to work fine, but .1 maybe more reliable
 					"Prjn.SWt.Adapt.DreamVar":     "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":          "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":              "0.0",
-					"Prjn.Learn.KinaseCa.SpikeG":  "12", // 12 good
-					"Prjn.Learn.KinaseCa.MTau":    "5",  // 5 > 10 test more
-					"Prjn.Learn.KinaseCa.PTau":    "40",
-					"Prjn.Learn.KinaseCa.DTau":    "40",
-					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", //
-					"Prjn.Learn.KinaseCa.Decay":   "true",
-					"Prjn.Learn.XCal.On":          "true",
-					"Prjn.Learn.XCal.PThrMin":     "0.01", // 0.01 > 0.05
-					"Prjn.Learn.XCal.LrnThr":      "0.01",
+					"Prjn.Learn.Trace.Tau":        "2",    // 2 > 1 -- more-or-less a ceiling effect..
+					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
+					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10
+					"Prjn.Learn.KinaseCa.Dt.PTau": "40",
+					"Prjn.Learn.KinaseCa.Dt.DTau": "40",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
 				}},
-			// {Sel: ".CTCtxt", Desc: "all CT context prjns",
-			// 	Params: params.Params{
-			// 	}},
+			{Sel: ".CTCtxt", Desc: "all CT context prjns",
+				Params: params.Params{
+					"Prjn.Trace": "false", // not as good with Trace here..
+				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.5",
@@ -104,13 +112,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1", // 1 > other
 				}},
-			// {Sel: "#HiddenCTToInputP", Desc: "no swt to output layers",
+			// {Sel: "#HiddenCTToInputP", Desc: "special",
 			// 	Params: params.Params{
-			// 		"Prjn.Com.PFail":          "0.0",
-			// 		"Prjn.Com.PFailWtMax":     "0.0",
-			// 		"Prjn.SWt.Adapt.DreamVar": "0.0",   // nope
-			// 		"Prjn.SWt.Adapt.On":       "false", // off > on
-			// 		"Prjn.SWt.Init.SPct":      "0",     // when off, 0
+			// 		"Prjn.Learn.Lrate.Base": "0.01", // .03 std
 			// 	}},
 		},
 	}},

@@ -58,8 +58,9 @@ func (ac *ActParams) Defaults() {
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
+	ac.VGCC.Ca = 25
 	ac.AK.Defaults()
-	ac.AK.Gbar = 1
+	ac.AK.Gbar = 0.1
 	ac.Attn.Defaults()
 	ac.Update()
 }
@@ -97,11 +98,12 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 
 	if decay > 0 { // no-op for most, but not all..
 		nrn.Spike = 0
+		nrn.Spiked = 0
 		nrn.Act -= decay * (nrn.Act - ac.Init.Act)
 		nrn.ActInt -= decay * (nrn.ActInt - ac.Init.Act)
-		nrn.GeSyn -= decay * (nrn.GeSyn - ac.Init.Ge)
-		nrn.Ge -= decay * (nrn.Ge - ac.Init.Ge)
-		nrn.Gi -= decay * (nrn.Gi - ac.Init.Gi)
+		nrn.GeSyn -= decay * (nrn.GeSyn - nrn.GeBase)
+		nrn.Ge -= decay * (nrn.Ge - nrn.GeBase)
+		nrn.Gi -= decay * (nrn.Gi - nrn.GiBase)
 		nrn.Gk -= decay * nrn.Gk
 
 		nrn.Vm -= decay * (nrn.Vm - ac.Init.Vm)
@@ -128,7 +130,6 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 	nrn.Gvgcc -= glong * nrn.Gvgcc
 	nrn.VgccM -= glong * nrn.VgccM
 	nrn.VgccH -= glong * nrn.VgccH
-	nrn.VgccCa -= glong * nrn.VgccCa
 	nrn.Gak -= glong * nrn.Gak
 
 	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
@@ -146,13 +147,16 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 // automatically called (DecayState is used instead)
 func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Spike = 0
+	nrn.Spiked = 0
 	nrn.ISI = -1
 	nrn.ISIAvg = -1
 	nrn.Act = ac.Init.Act
 	nrn.ActInt = ac.Init.Act
-	nrn.GeSyn = ac.Init.Ge
-	nrn.Ge = ac.Init.Ge
-	nrn.Gi = ac.Init.Gi
+	nrn.GeBase = ac.Init.GeBase()
+	nrn.GiBase = ac.Init.GiBase()
+	nrn.GeSyn = nrn.GeBase
+	nrn.Ge = nrn.GeBase
+	nrn.Gi = nrn.GiBase
 	nrn.Gk = 0
 	nrn.Inet = 0
 	nrn.Vm = ac.Init.Vm
@@ -176,6 +180,11 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GknaMed = 0
 	nrn.GknaSlow = 0
 
+	nrn.GnmdaSyn = 0
+	nrn.Gnmda = 0
+	nrn.SnmdaO = 0
+	nrn.SnmdaI = 0
+
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
 	nrn.GABABx = 0
@@ -183,15 +192,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Gvgcc = 0
 	nrn.VgccM = 0
 	nrn.VgccH = 0
-	nrn.VgccCa = 0
 	nrn.Gak = 0
-
-	nrn.GnmdaSyn = 0
-	nrn.Gnmda = 0
-	nrn.RnmdaSyn = 0
-	nrn.SnmdaO = 0
-	nrn.SnmdaI = 0
-	nrn.RCa = 0
 
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
@@ -200,7 +201,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (ActPrv, ActSt*, ActM, ActP, ActDif)
+// (ActPrv, ActSt*, ActM, ActP, ActDiff)
 // Called from InitActs, which is called from InitWts, but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(nrn *Neuron) {
@@ -209,7 +210,7 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 	nrn.ActSt2 = 0
 	nrn.ActM = 0
 	nrn.ActP = 0
-	nrn.ActDif = 0
+	nrn.ActDiff = 0
 	nrn.GeM = 0
 }
 
@@ -221,6 +222,7 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	// important: add other sources of GeRaw here in NMDA driver
 	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GeRaw+geExt)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
+	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
 
 // GvgccFmVm updates all the VGCC voltage-gated calcium channel variables
@@ -230,8 +232,7 @@ func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
 	dm, dh := ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH)
 	nrn.VgccM += dm
 	nrn.VgccH += dh
-	vbio := chans.VToBio(nrn.VmDend)
-	nrn.VgccCa = -vbio * nrn.Gvgcc
+	nrn.VgccCa = ac.VGCC.CaFmG(nrn.VmDend, nrn.Gvgcc, nrn.VgccCa) // note: may be overwritten!
 }
 
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
@@ -246,7 +247,7 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32) {
 		nrn.GeSyn = nrn.Ext * ac.Clamp.Ge
 		geExt = 0 // no extra in this case
 	} else {
-		ac.Dt.GeSynFmRaw(geRaw, &nrn.GeSyn, ac.Init.Ge)
+		ac.Dt.GeSynFmRaw(geRaw, &nrn.GeSyn, nrn.GeBase)
 	}
 
 	nrn.Ge = nrn.GeSyn + geExt
@@ -382,6 +383,13 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 		nrn.Spike = 0
 		if nrn.ISI >= 0 {
 			nrn.ISI += 1
+			if nrn.ISI < 10 {
+				nrn.Spiked = 1
+			} else {
+				nrn.Spiked = 0
+			}
+		} else {
+			nrn.Spiked = 0
 		}
 		if nrn.ISIAvg >= 0 && nrn.ISI > 0 && nrn.ISI > 1.2*nrn.ISIAvg {
 			ac.Spike.AvgFmISI(&nrn.ISIAvg, nrn.ISI)
@@ -499,10 +507,12 @@ func (dp *DendParams) Update() {
 // ActInitParams are initial values for key network state variables.
 // Initialized in InitActs called by InitWts, and provides target values for DecayState.
 type ActInitParams struct {
-	Vm  float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
-	Act float32 `def:"0" desc:"initial activation value -- typically 0"`
-	Ge  float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
-	Gi  float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
+	Vm    float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
+	Act   float32 `def:"0" desc:"initial activation value -- typically 0"`
+	Ge    float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
+	Gi    float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
+	GeVar float32 `def:"0" desc:"variance (sigma) of gaussian distribution around baseline Ge values, per unit, to establish variability in intrinsic excitability.  value never goes < 0"`
+	GiVar float32 `def:"0" desc:"variance (sigma) of gaussian distribution around baseline Gi values, per unit, to establish variability in intrinsic excitability.  value never goes < 0"`
 }
 
 func (ai *ActInitParams) Update() {
@@ -513,6 +523,32 @@ func (ai *ActInitParams) Defaults() {
 	ai.Act = 0
 	ai.Ge = 0
 	ai.Gi = 0
+	ai.GeVar = 0
+	ai.GiVar = 0
+}
+
+// GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
+func (ai *ActInitParams) GeBase() float32 {
+	ge := ai.Ge
+	if ai.GeVar > 0 {
+		ge += float32(erand.Gauss(float64(ai.GeVar), -1))
+		if ge < 0 {
+			ge = 0
+		}
+	}
+	return ge
+}
+
+// GiBase returns the baseline Gi value: Gi + rand(GiVar) > 0
+func (ai *ActInitParams) GiBase() float32 {
+	ge := ai.Gi
+	if ai.GiVar > 0 {
+		ge += float32(erand.Gauss(float64(ai.GiVar), -1))
+		if ge < 0 {
+			ge = 0
+		}
+	}
+	return ge
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

@@ -27,41 +27,48 @@ type Neuron struct {
 	Flags   NeurFlags `desc:"bit flags for binary state variables"`
 	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
 	Spike   float32   `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
+	Spiked  float32   `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
+	Attn    float32   `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 	Act     float32   `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function, and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc."`
-	GeSyn   float32   `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
-	Ge      float32   `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
-	GiSyn   float32   `desc:"aggregated synaptic inhibition (from Inhib projections) -- time integral of GiRaw -- this is added with computed FFFB inhibition to get the full inhibition in Gi"`
-	Gi      float32   `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
-	Gk      float32   `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
-	Inet    float32   `desc:"net current produced by all channels -- drives update of Vm"`
-	Vm      float32   `desc:"membrane potential -- integrates Inet current over time"`
-	VmDend  float32   `desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`
+
+	GeSyn  float32 `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
+	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
+	GiSyn  float32 `desc:"aggregated synaptic inhibition (from Inhib projections) -- time integral of GiRaw -- this is added with computed FFFB inhibition to get the full inhibition in Gi"`
+	Gi     float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
+	Gk     float32 `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
+	Inet   float32 `desc:"net current produced by all channels -- drives update of Vm"`
+	Vm     float32 `desc:"membrane potential -- integrates Inet current over time"`
+	VmDend float32 `desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`
 
 	Targ float32 `desc:"target value: drives learning to produce this activation value"`
 	Ext  float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 
 	CaSyn  float32 `desc:"spike-driven calcium trace for synapse-level Ca-driven learning rules: SynSpkCa"`
-	CaM    float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
-	CaP    float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
-	CaD    float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	CaSpkM float32 `desc:"simple spike-driven calcium signal, with immediate impulse rise and exponential decay, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule"`
+	CaSpkP float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	CaSpkD float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	CaLrn  float32 `desc:"total recv neuron calcium signal, combining NMDA (NmdaCa) and VGCC (VgccCaInt) calcium sources, and then integrated into CaM, which then drives receiver-based component of learning signal, which computes the error as a temporal derivative between CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor."`
+	CaM    float32 `desc:"integrated calcium, simulating a calmodulin (CaM) like signal at the most abstract level for the Kinase learning rule -- integrates over CaLrn (NMDA and VGCC Ca), drives CaP, CaD for delta signal driving error-driven learning"`
+	CaP    float32 `desc:"calcium integrated at next timescale, integrating over CaM, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	CaD    float32 `desc:"calcium integrated at next timescale, integrating over CaP, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	CaDiff float32 `desc:"difference between CaP - CaD -- this is the error signal that drives error-driven learning."`
 	PctDWt float32 `desc:"for experimental Kinase continuous learning algorithm: percent of synapses that had DWt updated on the current cycle, for sending-neuron"`
 
-	ActInt float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM)"`
-	ActSt1 float32 `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
-	ActSt2 float32 `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by ActSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
-	ActM   float32 `desc:"the activation state at end of third quarter, which is the traditional posterior-cortical minus phase activation"`
-	ActP   float32 `desc:"the activation state at end of fourth quarter, which is the traditional posterior-cortical plus_phase activation"`
-	ActDif float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
-	ActDel float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
-	ActPrv float32 `desc:"the final activation state at end of previous state"`
-	RLrate float32 `desc:"recv-unit based learning rate computed from the activity dynamics of recv unit -- extra filtering when recv unit is likely close enough"`
+	ActInt  float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM)"`
+	ActPrv  float32 `desc:"the final activation state at end of previous state"`
+	ActSt1  float32 `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by ActSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
+	ActSt2  float32 `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by ActSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
+	ActM    float32 `desc:"the activation state at end of third quarter, which is the traditional posterior-cortical minus phase activation"`
+	ActP    float32 `desc:"the activation state at end of fourth quarter, which is the traditional posterior-cortical plus_phase activation"`
+	ActDiff float32 `desc:"ActP - ActM -- difference between plus and minus phase acts -- reflects the individual error gradient for this neuron in standard error-driven learning terms"`
+	ActDel  float32 `desc:"delta activation: change in Act from one cycle to next -- can be useful to track where changes are taking place"`
+	RLrate  float32 `desc:"recv-unit based learning rate computed from the activity dynamics of recv unit -- extra filtering when recv unit is likely close enough"`
 
 	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
 	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`
 	TrgAvg  float32 `desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`
 	DTrgAvg float32 `desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`
 	AvgDif  float32 `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`
-	Attn    float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 
 	ISI    float32 `desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`
 	ISIAvg float32 `desc:"average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`
@@ -77,24 +84,30 @@ type Neuron struct {
 	GknaFast float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`
 	GknaMed  float32 `desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`
 	GknaSlow float32 `desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`
-	GgabaB   float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential."`
-	GABAB    float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
-	GABABx   float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
-	Gvgcc    float32 `desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`
-	VgccM    float32 `desc:"activation gate of VGCC channels"`
-	VgccH    float32 `desc:"inactivation gate of VGCC channels"`
-	VgccCa   float32 `desc:"VGCC calcium flux"`
-	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 
 	GnmdaSyn float32 `desc:"integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant"`
 	Gnmda    float32 `desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`
-	RnmdaSyn float32 `desc:"recv-side NMDA for learning, vs activity: integrated NMDA recv synaptic current -- adds GnmdaRaw and decays with time constant"`
-	RCa      float32 `desc:"Receiver-based voltage-driven postsynaptic calcium current factor, reflecting Mg block and V-based current drive, both a function of VmDend: Mg * Vca -- RCa * SnmdaO = total synaptic Ca at each moment"`
-	SnmdaO   float32 `desc:"Sender-based number of open NMDA channels based on spiking activity and consequent glutamate release for all sending synapses -- this is the presynaptic component of NMDA activation that is used for computing Ca levels for learning -- increases by (1-SnmdaI)*(1-SnmdaO) with spiking and decays otherwise"`
+	GnmdaLrn float32 `desc:"learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning"`
+	NmdaCa   float32 `desc:"NMDA calcium computed from GnmdaLrn, drives learning via CaM"`
+	SnmdaO   float32 `desc:"Sender-based number of open NMDA channels based on spiking activity and consequent glutamate release for all sending synapses -- this is the presynaptic component of NMDA activation that can be used for computing Ca levels for learning -- increases by (1-SnmdaI)*(1-SnmdaO) with spiking and decays otherwise"`
 	SnmdaI   float32 `desc:"Sender-based inhibitory factor on NMDA as a function of sending (presynaptic) spiking history, capturing the allosteric dynamics from Urakubo et al (2008) model.  Increases to 1 with every spike, and decays back to 0 with its own longer decay rate."`
 
-	GeRaw float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
-	GiRaw float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
+	GgabaB float32 `desc:"net GABA-B conductance, after Vm gating and Gbar + Gbase -- applies to Gk, not Gi, for GIRK, with .1 reversal potential."`
+	GABAB  float32 `desc:"GABA-B / GIRK activation -- time-integrated value with rise and decay time constants"`
+	GABABx float32 `desc:"GABA-B / GIRK internal drive variable -- gets the raw activation and decays"`
+
+	Gvgcc     float32 `desc:"conductance (via Ca) for VGCC voltage gated calcium channels"`
+	VgccM     float32 `desc:"activation gate of VGCC channels"`
+	VgccH     float32 `desc:"inactivation gate of VGCC channels"`
+	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
+	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
+
+	GeBase float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
+	GiBase float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
+	GeRaw  float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
+	GiRaw  float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
+
+	Gak float32 `desc:"conductance of A-type K potassium channels"`
 }
 
 var NeuronVars = []string{}
@@ -102,29 +115,35 @@ var NeuronVars = []string{}
 var NeuronVarsMap map[string]int
 
 var NeuronVarProps = map[string]string{
-	"GeSyn":    `range:"2"`,
-	"Ge":       `range:"2"`,
-	"GeM":      `range:"2"`,
-	"Vm":       `min:"0" max:"1"`,
-	"VmDend":   `min:"0" max:"1"`,
-	"ISI":      `auto-scale:"+"`,
-	"ISIAvg":   `auto-scale:"+"`,
-	"Gi":       `auto-scale:"+"`,
-	"Gk":       `auto-scale:"+"`,
-	"ActDel":   `auto-scale:"+"`,
-	"ActDif":   `auto-scale:"+"`,
-	"AvgPct":   `range:"2"`,
-	"TrgAvg":   `range:"2"`,
-	"DTrgAvg":  `auto-scale:"+"`,
-	"GknaFast": `auto-scale:"+"`,
-	"GknaMed":  `auto-scale:"+"`,
-	"GknaSlow": `auto-scale:"+"`,
-	"Gnmda":    `auto-scale:"+"`,
-	"GnmdaSyn": `auto-scale:"+"`,
-	"RnmdaSyn": `auto-scale:"+"`,
-	"GgabaB":   `auto-scale:"+"`,
-	"GABAB":    `auto-scale:"+"`,
-	"GABABx":   `auto-scale:"+"`,
+	"GeSyn":     `range:"2"`,
+	"Ge":        `range:"2"`,
+	"GeM":       `range:"2"`,
+	"Vm":        `min:"0" max:"1"`,
+	"VmDend":    `min:"0" max:"1"`,
+	"ISI":       `auto-scale:"+"`,
+	"ISIAvg":    `auto-scale:"+"`,
+	"Gi":        `auto-scale:"+"`,
+	"Gk":        `auto-scale:"+"`,
+	"ActDel":    `auto-scale:"+"`,
+	"ActDiff":   `auto-scale:"+"`,
+	"RLrate":    `auto-scale:"+"`,
+	"AvgPct":    `range:"2"`,
+	"TrgAvg":    `range:"2"`,
+	"DTrgAvg":   `auto-scale:"+"`,
+	"GknaFast":  `auto-scale:"+"`,
+	"GknaMed":   `auto-scale:"+"`,
+	"GknaSlow":  `auto-scale:"+"`,
+	"Gnmda":     `auto-scale:"+"`,
+	"GnmdaSyn":  `auto-scale:"+"`,
+	"GnmdaLrn":  `auto-scale:"+"`,
+	"NmdaCa":    `auto-scale:"+"`,
+	"GgabaB":    `auto-scale:"+"`,
+	"GABAB":     `auto-scale:"+"`,
+	"GABABx":    `auto-scale:"+"`,
+	"Gvgcc":     `auto-scale:"+"`,
+	"VgccCa":    `auto-scale:"+"`,
+	"VgccCaInt": `auto-scale:"+"`,
+	"Gak":       `auto-scale:"+"`,
 }
 
 func init() {

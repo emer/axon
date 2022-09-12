@@ -404,7 +404,7 @@ var ParamSetsAll = params.Sets{
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
 					"Layer.Learn.RLrate.On":              "true",
 					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 > others in larger models
-					"Layer.Learn.RLrate.ActDifThr":       "0.02",  // .02 > .05 best on lvis
+					"Layer.Learn.RLrate.ActDiffThr":      "0.02",  // .02 > .05 best on lvis
 					"Layer.Learn.RLrate.Min":             "0.001", // .01 > .001 best on lvis
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",

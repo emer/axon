@@ -22,21 +22,12 @@ var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, axon.LayerProps)
 // Defaults in param.Sheet format
 // Sel: "GPLayer", Desc: "defaults",
 // 	Params: params.Params{
-// 		"Layer.Act.Init.Vm":   "0.57",
-// 		"Layer.Act.Init.Act":  "0.65",
-// 		"Layer.Act.Erev.L":    "0.8",
-// 		"Layer.Act.Gbar.L":    "0.3",
 // 		"Layer.Inhib.Layer.On":     "false",
 // 		"Layer.Inhib.Pool.On":      "false",
 // 		"Layer.Inhib.Self.On":      "true",
 // 		"Layer.Inhib.Self.Gi":      "0.4",
 // 		"Layer.Inhib.Self.Tau":     "3.0",
-// 		"Layer.Inhib.ActAvg.Fixed": "true",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
-// 		"Layer.Act.XX1.Gain":       "20", // more graded -- still works with 40 but less Rt distrib
-// 		"Layer.Act.Dt.VmTau":       "3.3",
-// 		"Layer.Act.Dt.GTau":        "3", // 5 orig
-// 		"Layer.Act.Init.Decay":     "0",
 // }}
 
 func (ly *GPLayer) Defaults() {
@@ -45,60 +36,49 @@ func (ly *GPLayer) Defaults() {
 
 	// GP is tonically self-active and has no FFFB inhibition
 
-	ly.Act.Init.Vm = 0.57
-	ly.Act.Init.Act = 0.67
-	ly.Act.Erev.L = 0.8
-	ly.Act.Gbar.L = 0.3
+	ly.Act.Init.Ge = 0.3
+	ly.Act.Init.GeVar = 0.1
+	ly.Act.Init.GiVar = 0.1
+	ly.Act.Decay.Act = 0
+	ly.Act.Decay.Glong = 0
+	ly.Inhib.ActAvg.Init = 1 // very active!
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
 	ly.Inhib.Self.On = true
 	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
 	ly.Inhib.Self.Tau = 3.0
-	ly.Inhib.ActAvg.Fixed = true
-	ly.Inhib.ActAvg.Init = 0.25
-	ly.Act.XX1.Gain = 20  // more graded -- still works with 40 but less Rt distrib
-	ly.Act.Dt.VmTau = 3.3 // fastest
-	ly.Act.Dt.GTau = 3
-	ly.Act.Init.Decay = 0
-
-	switch ly.GPLay {
-	case GPeIn:
-		ly.Act.Init.Act = 0.81
-		ly.Act.Init.Vm = 0.60
-	case GPeTA:
-		ly.Act.Init.Act = 0.26
-		ly.Act.Init.Vm = 0.50
-	}
 
 	for _, pjii := range ly.RcvPrjns {
 		pji := pjii.(axon.AxonPrjn)
 		pj := pji.AsAxon()
 		pj.Learn.Learn = false
-		pj.Learn.Norm.On = false
-		pj.Learn.Momentum.On = false
-		pj.Learn.WtSig.Gain = 1
-		pj.WtInit.Mean = 0.9
-		pj.WtInit.Var = 0
-		pj.WtInit.Sym = false
+		pj.SWt.Adapt.SigGain = 1
+		pj.SWt.Init.SPct = 0
+		pj.SWt.Init.Mean = 0.75
+		pj.SWt.Init.Var = 0.25
+		pj.SWt.Init.Sym = false
 		if _, ok := pj.Send.(*MatrixLayer); ok {
-			pj.WtScale.Abs = 0.5
+			pj.PrjnScale.Abs = 0.5
 		} else if _, ok := pj.Send.(*STNLayer); ok {
-			pj.WtScale.Abs = 0.1 // default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
+			pj.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
 		}
 		switch ly.GPLay {
 		case GPeIn:
 			if _, ok := pj.Send.(*MatrixLayer); ok { // MtxNoToGPeIn -- primary NoGo pathway
-				pj.WtScale.Abs = 1
+				pj.PrjnScale.Abs = 1
 			} else if _, ok := pj.Send.(*GPLayer); ok { // GPeOutToGPeIn
-				pj.WtScale.Abs = 0.5
+				pj.PrjnScale.Abs = 0.3 // was 0.5
 			}
 			if _, ok := pj.Send.(*STNLayer); ok { // STNpToGPeIn -- stronger to drive burst of activity
-				pj.WtScale.Abs = 0.5
+				pj.PrjnScale.Abs = 1 // was 0.5
 			}
 		case GPeOut:
+			if _, ok := pj.Send.(*STNLayer); ok { // STNpToGPeOut
+				pj.PrjnScale.Abs = 0.1
+			}
 		case GPeTA:
 			if _, ok := pj.Send.(*GPLayer); ok { // GPeInToGPeTA
-				pj.WtScale.Abs = 0.9 // just enough to knock down to near-zero at baseline
+				pj.PrjnScale.Abs = 0.7 // was 0.9 -- just enough to knock down to near-zero at baseline
 			}
 		}
 	}

@@ -49,14 +49,50 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
-			Name:   clnm + "_ActAvg",
+			Name:   clnm + "_ActMAvg",
 			Type:   etensor.FLOAT64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
+					ctx.SetFloat32(ly.Pools[0].ActM.Avg)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_ActMMax",
+			Type:   etensor.FLOAT64,
+			FixMax: false,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].ActM.Max)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_CaSpkPMAvg",
+			Type:   etensor.FLOAT64,
+			FixMax: false,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.ActAvg.CaSpkPM.Avg)
+				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_CaSpkPMMax",
+			Type:   etensor.FLOAT64,
+			FixMax: false,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.ActAvg.CaSpkPM.Max)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})

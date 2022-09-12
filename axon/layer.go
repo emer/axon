@@ -20,6 +20,7 @@ import (
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/bitflag"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
@@ -88,18 +89,20 @@ func (ly *Layer) HasPoolInhib() bool {
 
 // ActAvgVals are running-average activation levels used for Ge scaling and adaptive inhibition
 type ActAvgVals struct {
-	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
-	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
-	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	ActMAvg   float32         `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
+	ActPAvg   float32         `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
+	AvgMaxGeM float32         `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
+	AvgMaxGiM float32         `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
+	GiMult    float32         `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
+	CaSpkPM   minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer in the minus phase -- for monitoring network activity levels"`
+	CaSpkP    minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer -- for RLrate computation"`
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
 // statistics at the layer level
 type CorSimStats struct {
 	Cor float32 `inactive:"+" desc:"correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFmActs called by PlusPhase"`
-	Avg float32 `inactive:"+" desc:"running average of correlation similaritybetween ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
+	Avg float32 `inactive:"+" desc:"running average of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
 	Var float32 `inactive:"+" desc:"running variance of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
 }
 
@@ -1027,7 +1030,7 @@ func (ly *Layer) NewState() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActPrv = nrn.CaD // nrn.ActP -- this is used in deep learning, makes big diff!
+		nrn.ActPrv = nrn.CaSpkD // nrn.ActP -- this is used in deep learning, makes big diff!
 	}
 	ly.AxonLay.DecayState(ly.Act.Decay.Act)
 }
@@ -1092,12 +1095,28 @@ func (ly *Layer) DecayState(decay float32) {
 			continue
 		}
 		ly.Act.DecayState(nrn, decay)
-		ly.Learn.DecayNeurCa(nrn, ly.Act.Decay.Glong)
+		// ly.Learn.DecayCaLrnSpk(nrn, ly.Act.Decay.Glong) // NOT called by default
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	for pi := range ly.Pools { // decaying average act is essential for inhib
 		pl := &ly.Pools[pi]
 		pl.Inhib.Decay(decay)
+	}
+}
+
+// DecayCaLrnSpk decays neuron-level calcium learning and spiking variables
+// by given factor, which is typically ly.Act.Decay.Glong.
+// Note: this is NOT called by default and is generally
+// not useful, causing variability in these learning factors as a function
+// of the decay parameter that then has impacts on learning rates etc.
+// It is only here for reference or optional testing.
+func (ly *Layer) DecayCaLrnSpk(decay float32) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Learn.DecayCaLrnSpk(nrn, decay)
 	}
 }
 
@@ -1158,8 +1177,8 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
 	ly.Act.NMDAFmRaw(nrn, geExt)
-	ly.Act.GvgccFmVm(nrn)
 	ly.Learn.LrnNMDAFmRaw(nrn, geExt)
+	ly.Act.GvgccFmVm(nrn)
 
 	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda+nrn.Gvgcc)
 	nrn.GeRaw = 0
@@ -1308,13 +1327,11 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
-		nrn.RLrate = ly.Learn.RLrate.RLrate(nrn.CaP, nrn.CaD)
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 		}
-
 		// note: this is here because it depends on Gi
 		nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 		nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
@@ -1365,6 +1382,36 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 		pl.Inhib.Act.Max = max
 		pl.Inhib.Act.MaxIdx = maxi
 	}
+}
+
+// SpikedAvgByPool returns the average across Spiked values by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) SpikedAvgByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	sum := float32(0)
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		sum += nrn.Spiked
+	}
+	return sum / float32(pl.EdIdx-pl.StIdx)
+}
+
+// SpikeAvgByPool returns the average across Spike values by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) SpikeAvgByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	sum := float32(0)
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		sum += nrn.Spike
+	}
+	return sum / float32(pl.EdIdx-pl.StIdx)
 }
 
 // AvgGeM computes the average and max GeM stats
@@ -1419,11 +1466,13 @@ func (ly *Layer) SendSpike(ltime *Time) {
 
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ltime *Time) {
+	ly.ActAvg.CaSpkPM.Init()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
+		ly.ActAvg.CaSpkPM.UpdateVal(nrn.CaSpkP, ni)
 		nrn.ActM = nrn.ActInt
 		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 			nrn.Ext = nrn.Targ
@@ -1433,6 +1482,7 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 			nrn.ActInt = ly.Act.Init.Act // reset for plus phase
 		}
 	}
+	ly.ActAvg.CaSpkPM.CalcAvg()
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.ActM.Init()
@@ -1450,13 +1500,25 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ltime *Time) {
+	ly.ActAvg.CaSpkP.Init()
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.ActAvg.CaSpkP.UpdateVal(nrn.CaSpkP, ni)
+	}
+	ly.ActAvg.CaSpkP.CalcAvg()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		nrn.ActDif = nrn.ActP - nrn.ActM
+		nrn.ActDiff = nrn.ActP - nrn.ActM
+		mlr := ly.Learn.RLrate.RLrateMid(nrn, ly.ActAvg.CaSpkP.Max)
+		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
+		nrn.RLrate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 	}
 	for pi := range ly.Pools {
@@ -1516,7 +1578,7 @@ func (ly *Layer) ActSt1(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.CaP
+		nrn.ActSt1 = nrn.CaSpkP // todo: should be ActInt?  used in learning in hippo..
 	}
 }
 
@@ -1527,7 +1589,7 @@ func (ly *Layer) ActSt2(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.CaP
+		nrn.ActSt2 = nrn.CaSpkP // todo: should be ActInt?  used in learning in hippo..
 	}
 }
 
@@ -1602,13 +1664,17 @@ func (ly *Layer) DTrgAvgFmErr() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.DTrgAvg += lr * (nrn.CaP - nrn.CaD)
+		nrn.DTrgAvg += lr * (nrn.CaSpkP - nrn.CaSpkD) // CaP - CaD almost as good in ra25 -- todo explore
 	}
 }
 
 // DTrgSpkCaPubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
 func (ly *Layer) DTrgSpkCaPubMean() {
+	submean := ly.Learn.TrgAvgAct.SubMean
+	if submean == 0 {
+		return
+	}
 	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
@@ -1627,6 +1693,7 @@ func (ly *Layer) DTrgSpkCaPubMean() {
 				continue
 			}
 			avg /= float32(nn)
+			avg *= submean
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
 				if nrn.IsOff() {
@@ -1650,6 +1717,7 @@ func (ly *Layer) DTrgSpkCaPubMean() {
 			return
 		}
 		avg /= float32(nn)
+		avg *= submean
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
@@ -1694,7 +1762,8 @@ func (ly *Layer) SynCa(ltime *Time) {
 	}
 }
 
-// DWt computes the weight change (learning) -- calls DWt method on sending projections
+// DWt computes the weight change (learning).
+// calls DWt method on sending projections
 func (ly *Layer) DWt(ltime *Time) {
 	ly.DTrgAvgFmErr()
 	for _, p := range ly.SndPrjns {
@@ -1705,10 +1774,22 @@ func (ly *Layer) DWt(ltime *Time) {
 	}
 }
 
-// WtFmDWt updates the weights from delta-weight changes -- on the sending projections
+// DWtSubMean does mean subtraction for projections requiring it.
+// calls DWtSubMean on the recv projections
+func (ly *Layer) DWtSubMean(ltime *Time) {
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).DWtSubMean(ltime)
+	}
+}
+
+// WtFmDWt updates the weights from delta-weight changes
+// calls WtFmDWt on the sending projections
 func (ly *Layer) WtFmDWt(ltime *Time) {
 	ly.TrgAvgFmD()
-	for _, p := range ly.RcvPrjns { // must be recv to do SubMean
+	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
