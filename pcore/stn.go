@@ -25,7 +25,8 @@ type CaParams struct {
 
 func (kc *CaParams) Defaults() {
 	kc.SKCa.Defaults()
-	kc.CaScale = 0.5
+	kc.SKCa.Gbar = 2
+	kc.CaScale = 3
 }
 
 func (kc *CaParams) Update() {
@@ -72,19 +73,23 @@ func (ly *STNLayer) Defaults() {
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
-	ly.Inhib.Layer.On = false
+	ly.Inhib.Layer.On = true // was false
+	ly.Inhib.Layer.Gi = 0.6
 	ly.Inhib.Pool.On = false
 	ly.Inhib.Self.On = true
 	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
 	ly.Inhib.Self.Tau = 3.0
-	ly.Inhib.ActAvg.Init = 0.25
+	ly.Inhib.ActAvg.Init = 0.15
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
 		ly.Ca.CaD = false
+		ly.Ca.CaScale = 4
 	} else {
 		ly.Ca.CaD = true
+		ly.Ca.CaScale = 3
 		ly.Act.Init.Ge = 0.2
 		ly.Act.Init.GeVar = 0.2
+		ly.Inhib.Layer.Gi = 0.2
 	}
 
 	for _, pji := range ly.RcvPrjns {

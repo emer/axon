@@ -37,15 +37,16 @@ func (ly *GPLayer) Defaults() {
 	// GP is tonically self-active and has no FFFB inhibition
 
 	ly.Act.Init.Ge = 0.3
-	ly.Act.Init.GeVar = 0.05
+	ly.Act.Init.GeVar = 0.1
+	ly.Act.Init.GiVar = 0.1
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
+	ly.Inhib.ActAvg.Init = 1 // very active!
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
 	ly.Inhib.Self.On = true
 	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
 	ly.Inhib.Self.Tau = 3.0
-	ly.Inhib.ActAvg.Init = 0.25
 
 	for _, pjii := range ly.RcvPrjns {
 		pji := pjii.(axon.AxonPrjn)
@@ -59,22 +60,25 @@ func (ly *GPLayer) Defaults() {
 		if _, ok := pj.Send.(*MatrixLayer); ok {
 			pj.PrjnScale.Abs = 0.5
 		} else if _, ok := pj.Send.(*STNLayer); ok {
-			pj.PrjnScale.Abs = 0.1 // default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
+			pj.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
 		}
 		switch ly.GPLay {
 		case GPeIn:
 			if _, ok := pj.Send.(*MatrixLayer); ok { // MtxNoToGPeIn -- primary NoGo pathway
 				pj.PrjnScale.Abs = 1
 			} else if _, ok := pj.Send.(*GPLayer); ok { // GPeOutToGPeIn
-				pj.PrjnScale.Abs = 0.5
+				pj.PrjnScale.Abs = 0.3 // was 0.5
 			}
 			if _, ok := pj.Send.(*STNLayer); ok { // STNpToGPeIn -- stronger to drive burst of activity
-				pj.PrjnScale.Abs = 0.5
+				pj.PrjnScale.Abs = 1 // was 0.5
 			}
 		case GPeOut:
+			if _, ok := pj.Send.(*STNLayer); ok { // STNpToGPeOut
+				pj.PrjnScale.Abs = 0.1
+			}
 		case GPeTA:
 			if _, ok := pj.Send.(*GPLayer); ok { // GPeInToGPeTA
-				pj.PrjnScale.Abs = 0.9 // just enough to knock down to near-zero at baseline
+				pj.PrjnScale.Abs = 0.7 // was 0.9 -- just enough to knock down to near-zero at baseline
 			}
 		}
 	}

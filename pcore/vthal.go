@@ -27,12 +27,7 @@ var KiT_VThalLayer = kit.Types.AddType(&VThalLayer{}, axon.LayerProps)
 // 		"Layer.Inhib.Self.On":      "true",
 // 		"Layer.Inhib.Self.Gi":      "0.4",
 // 		"Layer.Inhib.Self.Tau":     "3.0",
-// 		"Layer.Inhib.ActAvg.Fixed": "true",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
-// 		"Layer.Act.XX1.Gain":       "20", // more graded -- still works with 40 but less Rt distrib
-// 		"Layer.Act.Dt.VmTau":       "3.3",
-// 		"Layer.Act.Dt.GTau":        "3", // fastest
-// 		"Layer.Act.Init.Decay":     "0",
 // }}
 
 func (ly *VThalLayer) Defaults() {
@@ -46,10 +41,6 @@ func (ly *VThalLayer) Defaults() {
 	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
 	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.25
-	// ly.Act.XX1.Gain = 20 // more graded -- still works with 40 but less Rt distrib
-	// ly.Act.Dt.VmTau = 3.3
-	// ly.Act.Dt.GTau = 3 // fastest
-	// ly.Act.Init.Decay = 0
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
@@ -57,10 +48,10 @@ func (ly *VThalLayer) Defaults() {
 		pj.SWt.Adapt.SigGain = 1
 		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75
-		pj.SWt.Init.Var = 0.25
+		pj.SWt.Init.Var = 0.0
 		pj.SWt.Init.Sym = false
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToVThal
-			pj.PrjnScale.Abs = 2.5 // 2.5 needed for agate model..
+			pj.PrjnScale.Abs = 2 // was 2.5 for agate model..
 		}
 	}
 

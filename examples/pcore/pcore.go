@@ -84,7 +84,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.NoInc = true
-	ss.NPools = 4
+	ss.NPools = 1
 	ss.NUnitsY = 10
 	ss.NUnitsX = 5
 	ss.NUnits = ss.NUnitsY * ss.NUnitsX
@@ -129,7 +129,7 @@ func (ss *Sim) New() {
 	ss.Net = &pcore.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "WtScales LearnWts"
+	ss.Params.ExtraSets = "LearnWts WtScales"
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -560,7 +560,7 @@ func (ss *Sim) TrialStats() {
 			break
 		}
 	}
-	ss.Stats.SetFloat("VThal_RT", float64(spkCyc))
+	ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
 }
 
 //////////////////////////////////////////////////////////////////////////////

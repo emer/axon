@@ -16,7 +16,7 @@ type SKCaParams struct {
 	Hill   float32 `def:"4" desc:"Hill coefficient (exponent) for x^h / (x^h + c50^h) function describing the asymptotic gating factor m as a function of Ca -- there are 4 relevant states so a factor around 4 makes sense and is empirically observed"`
 	C50    float32 `def:"0.6" desc:"50% Ca concentration baseline value in Hill equation -- values from .3 to .6 are present in the literature"`
 	ActTau float32 `def:"10" desc:"activation time constant -- roughly 5-15 msec in literature"`
-	DeTau  float32 `def:"30" desc:"deactivation time constant -- roughly 30 msec in literature"`
+	DeTau  float32 `def:"30,50" desc:"deactivation time constant -- roughly 30-50 msec in literature"`
 
 	ActDt   float32 `view:"+" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	DeDt    float32 `view:"+" json:"-" xml:"-" desc:"rate = 1 / tau"`
@@ -28,7 +28,7 @@ func (sp *SKCaParams) Defaults() {
 	sp.Hill = 4
 	sp.C50 = 0.6
 	sp.ActTau = 10
-	sp.DeTau = 30
+	sp.DeTau = 50
 	sp.Update()
 }
 

@@ -76,12 +76,13 @@ func (ly *MatrixLayer) Defaults() {
 	// special inhib params
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
+	ly.Act.Init.GiVar = 0.1 // some noise
 	ly.Inhib.Pool.On = false
-	ly.Inhib.Layer.On = true
+	ly.Inhib.Layer.On = false // all inhib comes from GPeTA and self
 	ly.Inhib.Layer.Gi = 0.9
 	ly.Inhib.Layer.FB = 0
 	ly.Inhib.Self.On = true
-	ly.Inhib.Self.Gi = 0.3 // 0.6 in localist one
+	ly.Inhib.Self.Gi = 0.4 // 0.6 in localist one
 	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.25
 
@@ -96,13 +97,13 @@ func (ly *MatrixLayer) Defaults() {
 			pj.Learn.Learn = false
 			pj.SWt.Adapt.SigGain = 1
 			pj.SWt.Init.Mean = 0.75
-			pj.SWt.Init.Var = 0.25
+			pj.SWt.Init.Var = 0.0
 			pj.SWt.Init.Sym = false
 			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
-				pj.PrjnScale.Abs = 0.3 // counterbalance for GPeTA to reduce oscillations
+				pj.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
 			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
 				if strings.HasSuffix(ly.Nm, "MtxGo") {
-					pj.PrjnScale.Abs = 1 // was .8
+					pj.PrjnScale.Abs = 2 // was .8
 				} else {
 					pj.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
 				}

@@ -25,6 +25,7 @@ func (ly *GPiLayer) Defaults() {
 	ly.GPLayer.Defaults()
 	ly.GPLay = GPi
 
+	ly.Act.Init.Ge = 0.6
 	// note: GPLayer took care of STN input prjns
 
 	for _, pji := range ly.RcvPrjns {
@@ -42,7 +43,7 @@ func (ly *GPiLayer) Defaults() {
 		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
 			pj.PrjnScale.Abs = 1
 		} else if strings.HasSuffix(pj.Send.Name(), "STNs") { // STNsToGPi
-			pj.PrjnScale.Abs = 0.2
+			pj.PrjnScale.Abs = 0.3
 		}
 	}
 
