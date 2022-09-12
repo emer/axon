@@ -20,8 +20,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.Layer.Gi":    "1.0",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Init": "0.05", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Act.NMDA.MgC":      "1.2",  // 1.2 > 1.4 for SynSpkTheta
 					"Layer.Act.NMDA.Voff":     "0",    // 0 > 5 for SynSpkTheta
 				},

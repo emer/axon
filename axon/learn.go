@@ -233,16 +233,15 @@ func (ta *TrgAvgActParams) Defaults() {
 //  RLrateParams
 
 // RLrateParams are recv neuron learning rate modulation parameters.
-// This is effectively the derivative of the activation function factor in backprop.
+// Has two factors: the derivative of the sigmoid based on CaSpk
+// activity levels, and based on the phase-wise differences in activity.
 type RLrateParams struct {
-	On         bool       `def:"true" desc:"use learning rate modulation"`
-	SigDeriv   bool       `desc:"use the derivative of a sigmoid function: act * (1-act), with NonMid as a minimum baseline -- otherwise use square wave MidRange with full learning rate"`
-	MidRange   minmax.F32 `desc:"range for normalized CaSpk values where learning rate is normal -- attenuated outside of that in the extremes"`
-	NonMid     float32    `def:"0.05" desc:"scaling factor for extreme CaSpk values outside of the MidRange"`
-	Diff       bool       `desc:"modulate learning rate as a function of plus - minus differences"`
-	ActThr     float32    `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDiffThr float32    `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
-	Min        float32    `def:"0.001" desc:"minimum learning rate value when below ActDiffThr"`
+	On         bool    `def:"true" desc:"use learning rate modulation"`
+	SigmoidMin float32 `def:"0.05" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values"`
+	Diff       bool    `desc:"modulate learning rate as a function of plus - minus differences"`
+	ActThr     float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	ActDiffThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
+	Min        float32 `def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
 }
 
 func (rl *RLrateParams) Update() {
@@ -250,8 +249,7 @@ func (rl *RLrateParams) Update() {
 
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
-	rl.MidRange.Set(0.1, 0.9)
-	rl.NonMid = 0.05
+	rl.SigmoidMin = 0.05
 	rl.Diff = true
 	rl.ActThr = 0.1
 	rl.ActDiffThr = 0.02
@@ -267,18 +265,11 @@ func (rl *RLrateParams) RLrateMid(nrn *Neuron, laymax float32) float32 {
 		return 1.0
 	}
 	ca := nrn.CaSpkP / laymax
-	if rl.SigDeriv {
-		lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
-		if lr < rl.NonMid {
-			lr = rl.NonMid
-		}
-		return lr
+	lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
+	if lr < rl.SigmoidMin {
+		lr = rl.SigmoidMin
 	}
-	// else square range
-	if ca < rl.MidRange.Min || ca > rl.MidRange.Max {
-		return rl.NonMid
-	}
-	return 1.0
+	return lr
 }
 
 // RLrateDiff returns the learning rate as a function of difference between

@@ -20,38 +20,35 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":            "1.0",  // 1.0 > 1.1 > 1.2 -- diff from orig
-					"Layer.Inhib.ActAvg.Init":         "0.05", // 0.05 more sensible, same perf
-					"Layer.Act.NMDA.Gbar":             "0.15", // now .15 best
-					"Layer.Act.NMDA.MgC":              "1.2",  // 1.4 == 1.2 for trace
-					"Layer.Act.NMDA.Voff":             "0",    // 5 == 0 for trace
-					"Layer.Act.NMDA.Tau":              "100",  // 100 def -- 50 is sig worse
-					"Layer.Act.GABAB.Gbar":            "0.2",  // 0.2 def > higher
-					"Layer.Act.AK.Gbar":               "0.1",  // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
-					"Layer.Act.VGCC.Gbar":             "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
-					"Layer.Act.VGCC.Ca":               "20",   // 20 / 10tau similar to spk
-					"Layer.Learn.CaLrn.Norm":          "80",   // 80 works
-					"Layer.Learn.CaLrn.SpkVGCC":       "true", // sig better..
-					"Layer.Learn.CaLrn.SpkVgccCa":     "35",   // 70 / 5 or 35 / 10 both work
-					"Layer.Learn.CaLrn.VgccTau":       "10",   // 10 > 5 ?
-					"Layer.Learn.CaLrn.Dt.MTau":       "2",    // 2 > 1 ?
-					"Layer.Learn.CaSpk.SpikeG":        "8",    // 8 produces reasonable 0-1 norm CaSpk levels?
-					"Layer.Learn.CaSpk.SynTau":        "30",   // 30 > 20, 40
-					"Layer.Learn.CaSpk.Dt.MTau":       "5",    // 5 > 10?
-					"Layer.Learn.LrnNMDA.MgC":         "1.2",  // 1.2 for unified Act params, else 1.4
-					"Layer.Learn.LrnNMDA.Voff":        "0",    // 0 for unified Act params, else 5
-					"Layer.Learn.LrnNMDA.Tau":         "100",  // 100 def
-					"Layer.Learn.TrgAvgAct.On":        "true", // critical!
-					"Layer.Learn.TrgAvgAct.SubMean":   "0",
-					"Layer.Learn.RLrate.On":           "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigDeriv":     "false",
-					"Layer.Learn.RLrate.MidRange.Min": "0.1",  // 0.1, 0.9 best
-					"Layer.Learn.RLrate.MidRange.Max": "0.9",  // 0.1, 0.9 best
-					"Layer.Learn.RLrate.NonMid":       "0.05", // 0.05 > .1 > .02
-					"Layer.Learn.RLrate.Diff":         "true",
-					"Layer.Learn.RLrate.ActDiffThr":   "0.02", // 0.02 def - todo
-					"Layer.Learn.RLrate.ActThr":       "0.1",  // 0.1 def
-					"Layer.Learn.RLrate.Min":          "0.001",
+					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 1.1 > 1.2 -- diff from orig
+					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
+					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
+					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
+					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
+					"Layer.Act.NMDA.Tau":            "100",  // 100 def -- 50 is sig worse
+					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
+					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
+					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
+					"Layer.Act.VGCC.Ca":             "20",   // 20 / 10tau similar to spk
+					"Layer.Learn.CaLrn.Norm":        "80",   // 80 works
+					"Layer.Learn.CaLrn.SpkVGCC":     "true", // sig better..
+					"Layer.Learn.CaLrn.SpkVgccCa":   "35",   // 70 / 5 or 35 / 10 both work
+					"Layer.Learn.CaLrn.VgccTau":     "10",   // 10 > 5 ?
+					"Layer.Learn.CaLrn.Dt.MTau":     "2",    // 2 > 1 ?
+					"Layer.Learn.CaSpk.SpikeG":      "8",    // 8 produces reasonable 0-1 norm CaSpk levels?
+					"Layer.Learn.CaSpk.SynTau":      "30",   // 30 > 20, 40
+					"Layer.Learn.CaSpk.Dt.MTau":     "5",    // 5 > 10?
+					"Layer.Learn.LrnNMDA.MgC":       "1.2",  // 1.2 for unified Act params, else 1.4
+					"Layer.Learn.LrnNMDA.Voff":      "0",    // 0 for unified Act params, else 5
+					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 def
+					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
+					"Layer.Learn.TrgAvgAct.SubMean": "0",
+					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
+					"Layer.Learn.RLrate.Diff":       "true",
+					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
+					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
+					"Layer.Learn.RLrate.Min":        "0.001",
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -62,17 +59,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
-					"Layer.Inhib.ActAvg.Init":       "0.24",
-					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94
-					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
-					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.NonMid":     "0.05", // .05 > 1 -- in larger nets better to turn off with 1
-					"Layer.Learn.RLrate.Diff":       "true",
-					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
-					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
-					"Layer.Learn.RLrate.Min":        "0.001",
+					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.ActAvg.Init": "0.24",
+					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum.. > 3
+					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					"Layer.Act.VGCC.Ca":       "1",    // otherwise dominates display
+					"Layer.Learn.RLrate.On":   "true", // beneficial for trace
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
