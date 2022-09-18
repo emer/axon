@@ -84,9 +84,15 @@ func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 	ri.(*TDRewIntegLayer).RewInteg.RewPred = rp.Name()
 	ri.(*TDRewIntegLayer).RewInteg.Rew = rew.Name()
 	td.(*TDDaLayer).RewInteg = ri.Name()
-	rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
-	ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
-	td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), YAlign: relpos.Front, Space: space})
+	if rel == relpos.Behind {
+		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), XAlign: relpos.Left, Space: space})
+		ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), XAlign: relpos.Left, Space: space})
+		td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
+		ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
+		td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), YAlign: relpos.Front, Space: space})
+	}
 	return
 }
 
@@ -100,9 +106,13 @@ func AddRWLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 	da = &RWDaLayer{}
 	nt.AddLayerInit(da, prefix+"DA", []int{1, 1}, emer.Hidden)
 	da.(*RWDaLayer).RewLay = rew.Name()
-	rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
-	da.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
-
+	if rel == relpos.Behind {
+		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), XAlign: relpos.Left, Space: space})
+		da.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
+		da.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
+	}
 	return
 }
 

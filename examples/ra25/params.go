@@ -37,10 +37,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
-					"Layer.Inhib.ActAvg.Init": "0.24",
-					"Layer.Act.Spike.Tr":      "1",   // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":      "0.6", // .6 > .5 v94
+					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.ActAvg.Init":       "0.24",
+					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
+					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94
+					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{

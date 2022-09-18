@@ -178,13 +178,13 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
 	net.ConnectToTRC2D(hid, hidct, inp)
-	// hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // onetoone default, full not better
+	// hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // onetoone > full
 
 	// for this small localist model with longer-term dependencies,
 	// these additional context projections turn out to be essential!
 	// larger models in general do not require them, though it might be
 	// good to check
-	net.ConnectCtxtToCT(hidct, hidct, full)
+	net.ConnectCtxtToCT(hidct, hidct, full) // this is key
 	// net.LateralConnectLayer(hidct, full) // note: this does not work AT ALL -- essential to learn from t-1
 	// net.ConnectCtxtToCT(in, hidct, full)
 
