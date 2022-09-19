@@ -27,6 +27,7 @@ type Approach struct {
 	CSTot       int                         `desc:"total number of CS's = Drives * CSPerDrive"`
 	NYReps      int                         `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
 	PatSize     evec.Vec2i                  `desc:"size of CS patterns"`
+	Acts        []string                    `desc:"list of actions"`
 	ActMap      map[string]int              `desc:"action map of action names to indexes"`
 	States      map[string]*etensor.Float32 `desc:"named states -- e.g., USs, CSs, etc"`
 	TrgPos      int                         `desc:"target position where Drive US is"`
@@ -49,6 +50,7 @@ func (ev *Approach) Desc() string {
 
 // Defaults sets default params
 func (ev *Approach) Defaults() {
+	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
 	ev.Drives = 4
 	ev.CSPerDrive = 1
 	ev.Locations = 4 // <= drives always
@@ -65,10 +67,9 @@ func (ev *Approach) Defaults() {
 func (ev *Approach) Config() {
 	ev.CSTot = ev.Drives * ev.CSPerDrive
 	ev.ActMap = make(map[string]int)
-	ev.ActMap["Forward"] = 0
-	ev.ActMap["Left"] = 1
-	ev.ActMap["Right"] = 2
-	ev.ActMap["Consume"] = 3
+	for i, act := range ev.Acts {
+		ev.ActMap[act] = i
+	}
 	ev.States = make(map[string]*etensor.Float32)
 	ev.States["USs"] = etensor.NewFloat32([]int{ev.Locations}, nil, nil)
 	ev.States["CSs"] = etensor.NewFloat32([]int{ev.Locations}, nil, nil)
@@ -193,6 +194,18 @@ func (ev *Approach) Step() bool {
 	ev.US = -1
 	ev.RenderRewUS()
 	return true
+}
+
+func (ev *Approach) DecodeAct(vt *etensor.Float32) (int, string) {
+	var max float32
+	var mxi int
+	for i, vl := range vt.Values {
+		if vl > max {
+			max = vl
+			mxi = i
+		}
+	}
+	return mxi, ev.Acts[mxi]
 }
 
 func (ev *Approach) Action(action string, nop etensor.Tensor) {

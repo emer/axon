@@ -59,10 +59,14 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
+	TimePctFwd  float32 `desc:"proportion of actions that are chosen to be forward as a function of time steps -- i.e., there is an increasing tendency to move forward as time passes"`
+	PCAInterval int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
+	ss.TimePctFwd = 0.05
+	ss.PCAInterval = 10
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -96,7 +100,7 @@ func (ss *Sim) New() {
 	ss.Net = &pcore.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "LearnWts WtScales"
+	ss.Params.ExtraSets = "WtScales"
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -158,9 +162,10 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	nuCtxX := 7
 	nAct := len(ev.ActMap)
 
-	one2one := prjn.NewPoolOneToOne()
+	pone2one := prjn.NewPoolOneToOne()
+	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
-	_ = one2one
+	_ = pone2one
 
 	ny := ev.NYReps
 	nloc := ev.Locations
@@ -185,7 +190,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = gpeIn
 	_ = gpeTA
 
-	m1 := net.AddLayer2D("M1", 1, nAct, emer.Hidden)
+	// todo: need m1d, driven by smad -- output pathway
+
+	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
 	vl := net.AddLayer2D("VL", 1, nAct, emer.Target)  // Action
 	act := net.AddLayer2D("Act", 1, nAct, emer.Input) // Action
 	m1p := deep.AddTRCLayer2D(net.AsAxon(), "M1P", 1, nAct)
@@ -226,14 +233,17 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(sma, stnp, full, emer.Forward)
 	net.ConnectLayers(sma, stns, full, emer.Forward)
 
+	net.ConnectLayers(smad, m1, full, emer.Forward) //  action output
+	net.BidirConnectLayers(m1, vl, full)
+
 	net.ConnectToMatrix(acc, mtxGo, full)
 	net.ConnectToMatrix(acc, mtxNo, full)
 	net.ConnectToMatrix(sma, mtxGo, full)
 	net.ConnectToMatrix(sma, mtxNo, full)
 
-	net.ConnectLayers(thal, smad, full, emer.Forward)
-	net.ConnectLayers(sma, thal, full, emer.Forward)
-	net.ConnectLayers(smad, thal, full, emer.Forward)
+	net.ConnectLayers(thal, smad, one2one, emer.Forward)
+	net.ConnectLayers(sma, thal, one2one, emer.Forward)
+	net.ConnectLayers(smad, thal, one2one, emer.Forward)
 
 	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Rew", YAlign: relpos.Front, Space: 5})
 	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
@@ -298,11 +308,9 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 50).AddTime(etime.Trial, 100).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200) // AddTime(etime.Phase, 2).
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
-
-	// todo: need Action call here, and instinctual bootstrap..
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
 
 	// using 190 there to make it look better on raster view.. :)
 	applyRew := looper.NewEvent("ApplyRew", 190, func() {
@@ -313,41 +321,66 @@ func (ss *Sim) ConfigLoops() {
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
 
+	man.GetLoop(etime.Train, etime.Trial).OnEnd.Replace("UpdateWeights", func() {
+		ss.Net.DWt(&ss.Time)
+		ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
+		ss.Net.WtFmDWt(&ss.Time)
+	})
+
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		// stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
-		// 	// note: OnStart for env.Env, others may happen OnEnd
-		// 	ss.Envs[mode.String()].Step()
-		// })
-		stack.Loops[etime.Phase].OnStart.Add("ApplyInputs", func() {
-			phs := man.Stacks[mode].Loops[etime.Phase].Counter.Cur
-			if phs == 1 {
-				ss.Net.NewState()
-				ss.Time.NewState(mode.String())
-			}
-			ss.ApplyInputs(mode, phs == 0) // zero on phase == 0
+		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
+			// note: OnStart for env.Env, others may happen OnEnd
+			ss.Envs[mode.String()].Step()
+		})
+		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
+			ss.ApplyInputs()
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
+	// note: plusPhase is shared between all stacks!
+	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
+	plusPhase.OnEvent.Add("TakeAction", func() {
+		ss.TakeAction(ss.Net)
+	})
+
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
 	// Add Testing
-	trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
-	trainEpoch.OnStart.Add("TestAtInterval", func() {
-		if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
-			// Note the +1 so that it doesn't occur at the 0th timestep.
-			ss.TestAll()
-		}
-	})
+	// trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
+	// trainEpoch.OnStart.Add("TestAtInterval", func() {
+	// 	if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
+	// 		// Note the +1 so that it doesn't occur at the 0th timestep.
+	// 		ss.TestAll()
+	// 	}
+	// })
 
 	/////////////////////////////////////////////
 	// Logging
 
+	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
+		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if (ss.Sim.PCAInterval > 0) && (trnEpc%ss.Sim.PCAInterval == 0) {
+			// if ss.Args.Bool("mpi") {
+			// 	ss.Logs.MPIGatherTableRows(etime.Analyze, etime.Trial, ss.Comm)
+			// }
+			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
+		}
+	})
+
 	man.AddOnEndToAll("Log", ss.Log)
 	axon.LooperResetLogBelow(man, &ss.Logs)
+
+	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
+		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if (ss.Sim.PCAInterval > 0) && (trnEpc%ss.Sim.PCAInterval == 0) {
+			ss.Log(etime.Analyze, etime.Trial)
+		}
+	})
 
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
@@ -373,11 +406,54 @@ func (ss *Sim) ConfigLoops() {
 	ss.Loops = man
 }
 
+// TakeAction takes action for this step, using either decoded cortical
+// or reflexive subcortical action from env.
+func (ss *Sim) TakeAction(net *pcore.Network) {
+	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	nact, anm := ss.DecodeAct(ev)
+	gact := nact
+	ganm := anm
+	if anm != "Forward" {
+		tpctfwd := ss.Sim.TimePctFwd
+		pfwd := tpctfwd * float32(ev.Time)
+		dof := erand.BoolProb(float64(pfwd), -1)
+		if dof {
+			gact = 0
+			ganm = ev.Acts[gact]
+		}
+	}
+	ss.Stats.SetString("NetAction", anm)
+	ss.Stats.SetString("GenAction", ganm)
+	if nact == gact {
+		ss.Stats.SetFloat("ActMatch", 1)
+	} else {
+		ss.Stats.SetFloat("ActMatch", 0)
+	}
+	ss.Stats.SetString("ActAction", ganm)
+
+	ly := net.LayerByName("VL").(axon.AxonLayer).AsAxon()
+	ly.SetType(emer.Input)
+	vt := ss.Stats.F32Tensor("VL")
+	vt.SetZeros()
+	vt.Values[gact] = 1
+	ly.ApplyExt(vt)
+	ly.SetType(emer.Target)
+
+	ev.Action(ganm, vt)
+	// fmt.Printf("action: %s\n", ev.Acts[act])
+}
+
+// DecodeAct decodes the VL ActM state to find closest action pattern
+func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
+	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "ActM")
+	return ev.DecodeAct(vt)
+}
+
 // ApplyInputs applies input patterns from given environment.
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
-func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
+func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ev := ss.Envs[ss.Time.Mode]
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
@@ -465,7 +541,7 @@ func (ss *Sim) StatCounters() {
 	// ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
 	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", "trl")
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "NetAction", "GenAction", "Cycle"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -601,11 +677,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
-
-	phs := ss.Loops.Stacks[mode].Loops[etime.Phase].Counter.Cur
-	if phs == 0 {
-		return // no logging on first phase
-	}
 
 	dt := ss.Logs.Table(mode, time)
 	if dt == nil {

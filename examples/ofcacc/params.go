@@ -9,8 +9,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":   "0.0",
-					"Layer.Act.Decay.Glong": "0.0",
+					"Layer.Act.Decay.Act":   "0.2",
+					"Layer.Act.Decay.Glong": "0.6",
 					"Layer.Act.Clamp.Ge":    "0.6",
 				}},
 			{Sel: "#PFC", Desc: "",
@@ -38,6 +38,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
+					"Layer.Act.Decay.Act":     "1.0", // impose trial structure
+					"Layer.Act.Decay.Glong":   "1.0",
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "0.6",
@@ -51,6 +53,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Init.Ge":       "0.2",
 					"Layer.Act.Init.GeVar":    "0.2",
+					"Layer.Act.Decay.Act":     "1.0", // impose trial structure
+					"Layer.Act.Decay.Glong":   "1.0",
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "0.2",
@@ -94,7 +98,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Learn":      "true",
 					"Prjn.Learn.Lrate.Base": "0.1",
 				}},
-			{Sel: "#VThalToPFCo", Desc: "usually uniform weights",
+			{Sel: "#VThalToSMAd", Desc: "usually uniform weights",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -102,31 +106,31 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": ".5", // modulatory
 				}},
-			{Sel: "#PFCToMtxGo", Desc: "weaker closed loop",
+			{Sel: "#SMAToMtxGo", Desc: "weaker closed loop",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#PFCToMtxNo", Desc: "weaker closed loop",
+			{Sel: "#SMAToMtxNo", Desc: "weaker closed loop",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#PFCToSTNp", Desc: "strong pfc to stn",
+			{Sel: "#SMAToSTNp", Desc: "strong pfc to stn",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#PFCToSTNs", Desc: "strong pfc to stn",
+			{Sel: "#SMAToSTNs", Desc: "strong pfc to stn",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.3",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#PFCToVThal", Desc: "strong",
+			{Sel: "#SMAToVThal", Desc: "strong",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2.0",
 				}},
@@ -137,34 +141,6 @@ var ParamSets = params.Sets{
 			{Sel: "MatrixPrjn", Desc: "learning in mtx",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "false",
-				}},
-		}},
-	},
-	{Name: "LearnWts", Desc: "learned weights", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: "#ACCPosToMtxGo", Desc: "trained wts",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.8",
-				}},
-			{Sel: "#ACCNegToMtxGo", Desc: "trained wts",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.40",
-				}},
-			{Sel: "#PFCToMtxGo", Desc: "trained wts",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.8",
-				}},
-			{Sel: "#ACCPosToMtxNo", Desc: "trained wts",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.12",
-				}},
-			{Sel: "#ACCNegToMtxNo", Desc: "trained wts",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.8",
-				}},
-			{Sel: "#PFCToMtxNo", Desc: "trained wts",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.75",
 				}},
 		}},
 	},
