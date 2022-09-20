@@ -9,6 +9,7 @@ import (
 	"math/rand"
 
 	"github.com/emer/emergent/env"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/evec"
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/etable/etensor"
@@ -38,6 +39,7 @@ type Approach struct {
 	Rew         float32                     `desc:"reward"`
 	US          int                         `desc:"US is -1 unless consumed at Dist = 0"`
 	StateCtr    int                         `desc:"count up for generating a new state"`
+	LastAct     int                         `desc:"last action taken"`
 }
 
 func (ev *Approach) Name() string {
@@ -80,6 +82,7 @@ func (ev *Approach) Config() {
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
+	ev.States["Action"] = etensor.NewFloat32([]int{1, len(ev.Acts)}, nil, nil)
 
 	ev.ConfigPats()
 	ev.NewState()
@@ -184,6 +187,13 @@ func (ev *Approach) RenderRewUS() {
 	rew.Values[0] = ev.Rew
 }
 
+// RenderAction renders the action
+func (ev *Approach) RenderAction(act int) {
+	as := ev.States["Action"]
+	as.SetZeros()
+	as.Values[act] = 1
+}
+
 // Step does one step
 func (ev *Approach) Step() bool {
 	if ev.Dist < 0 || ev.Time >= ev.TimeMax {
@@ -209,11 +219,12 @@ func (ev *Approach) DecodeAct(vt *etensor.Float32) (int, string) {
 }
 
 func (ev *Approach) Action(action string, nop etensor.Tensor) {
-	_, ok := ev.ActMap[action]
+	act, ok := ev.ActMap[action]
 	if !ok {
 		fmt.Printf("Action not recognized: %s\n", action)
 		return
 	}
+	ev.RenderAction(act)
 	ev.Time++
 	uss := ev.States["USs"]
 	us := int(uss.Values[ev.Pos])
@@ -236,7 +247,30 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 				ev.Rew = 1
 			}
 			ev.US = us
+			ev.Dist--
 		}
 	}
+	ev.LastAct = act
 	ev.RenderRewUS()
+}
+
+// ActGen returns an "instinctive" action that implements a basic policy
+func (ev *Approach) ActGen() int {
+	uss := ev.States["USs"]
+	posUs := int(uss.Values[ev.Pos])
+	if posUs == ev.Drive {
+		if ev.Dist == 0 {
+			return ev.ActMap["Consume"]
+		}
+		return ev.ActMap["Forward"]
+	}
+	lt := ev.ActMap["Left"]
+	rt := ev.ActMap["Right"]
+	if ev.LastAct == lt || ev.LastAct == rt {
+		return ev.LastAct
+	}
+	if erand.BoolProb(.5, -1) {
+		return lt
+	}
+	return rt
 }

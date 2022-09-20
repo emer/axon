@@ -13,26 +13,22 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong": "0.6",
 					"Layer.Act.Clamp.Ge":    "0.6",
 				}},
-			{Sel: "#PFC", Desc: "",
+			{Sel: ".CT", Desc: "corticothalamic context",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":   "0.6",
-					"Layer.Act.Init.GeVar": "0.2",
-					"Layer.Act.Init.GiVar": "0.2",
+					"Layer.Inhib.ActAvg.Init": "0.06",
+					"Layer.CtxtGeGain":        "0.2", // .2 > .1 > .3
+					"Layer.Act.Decay.Act":     "0.0", // 0 best in other models
+					"Layer.Act.Decay.Glong":   "0.0",
 				}},
-			{Sel: "#ACCNeg", Desc: "",
+			{Sel: "TRCLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":   "0.6",
-					"Layer.Act.Init.GeVar": "0.2",
-					"Layer.Act.Init.GiVar": "0.2",
-				}},
-			{Sel: "#ACCPos", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":   "0.6",
-					"Layer.Act.Init.GeVar": "0.2",
-					"Layer.Act.Init.GiVar": "0.2",
+					"Layer.TRC.DriveScale":          "0.15", // .15 > .05 default
+					"Layer.Act.Decay.Act":           "0.5",
+					"Layer.Act.Decay.Glong":         "1", // clear long
+					"Layer.Inhib.Pool.FFEx":         "0.0",
+					"Layer.Inhib.Layer.FFEx":        "0.0",
+					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.SigmoidMin": "1",
 				}},
 			{Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
 				Params: params.Params{}},
@@ -133,6 +129,12 @@ var ParamSets = params.Sets{
 			{Sel: "#SMAToVThal", Desc: "strong",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2.0",
+				}},
+			{Sel: "RWPrjn", Desc: "to reward prediction",
+				Params: params.Params{
+					"Prjn.SWt.Init.Mean": "0.0",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.SWt.Init.Sym":  "false",
 				}},
 		}},
 	},

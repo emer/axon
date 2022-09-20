@@ -16,7 +16,7 @@ import (
 // LogAddTRCCorSimItems adds CorSim stats for TRC / Pulvinar layers
 // aggregated across three time scales, ordered from higher to lower,
 //  e.g., Run, Epoch, Trial.
-func LogAddTRCCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
+func LogAddTRCCorSimItems(lg *elog.Logs, net *axon.Network, times ...etime.Times) {
 	layers := net.LayersByClass("TRC")
 	for _, lnm := range layers {
 		clnm := lnm

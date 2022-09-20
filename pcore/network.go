@@ -66,6 +66,7 @@ func AddMatrixLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNe
 	ly := &MatrixLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	ly.DaR = da
+	ly.SetClass("BG Matrix")
 	return ly
 }
 
@@ -80,7 +81,7 @@ func ConnectToMatrix(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) 
 func AddGPeLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPLayer {
 	ly := &GPLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
-	ly.SetClass("GP")
+	ly.SetClass("BG GP")
 	return ly
 }
 
@@ -90,7 +91,7 @@ func AddGPeLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 func AddGPiLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPiLayer {
 	ly := &GPiLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
-	ly.SetClass("GP")
+	ly.SetClass("BG GP")
 	return ly
 }
 
@@ -100,6 +101,7 @@ func AddGPiLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 func AddSTNLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *STNLayer {
 	ly := &STNLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	ly.SetClass("BG STN")
 	return ly
 }
 
@@ -109,6 +111,7 @@ func AddSTNLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 func AddVThalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *VThalLayer {
 	ly := &VThalLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	ly.SetClass("BG VThal")
 	return ly
 }
 

@@ -16,5 +16,10 @@ The paradigm is a simple ecologically-inspired task (a simplified version of the
 
 Target behavior is to orient L / R until a CS sensory cue appears that is consistent with current body state, and then move Forward until the Distance = proximal, and you then Consume.
 
+# TODO
+
+* check acts on all layers
+
+* add act context for prediction?  m1p ok?
 
 

@@ -157,6 +157,9 @@ func (pj *RWPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	pj.OppSignLRate = 1.0
 	pj.SWt.Adapt.SigGain = 1
+	pj.SWt.Init.Mean = 0
+	pj.SWt.Init.Var = 0
+	pj.SWt.Init.Sym = false
 }
 
 // DWt computes the weight change (learning) -- on sending projections.

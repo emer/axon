@@ -28,7 +28,9 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -59,13 +61,16 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	TimePctFwd  float32 `desc:"proportion of actions that are chosen to be forward as a function of time steps -- i.e., there is an increasing tendency to move forward as time passes"`
-	PCAInterval int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	PctCortex       float32 `desc:"proportion of action driven by the cortex vs. hard-coded reflexive subcortical"`
+	PctCortexMax    float32 `desc:"maximum PctCortex, when running on the schedule"`
+	PctCortexMaxEpc int     `desc:"epoch when PctCortexMax is reached"`
+	PCAInterval     int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.TimePctFwd = 0.05
+	ss.PctCortexMax = 0.9
+	ss.PctCortexMaxEpc = 10000
 	ss.PCAInterval = 10
 }
 
@@ -211,6 +216,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	smad := net.AddLayer2D("SMAd", nuCtxY, nuCtxX, emer.Hidden)
 
+	// todo: ofcd deep gated layers here??
+
 	ofc, ofcct := deep.AddSuperCT2D(net.AsAxon(), "OFC", nuCtxY, nuCtxX)
 	// ofcct.RecvPrjns().SendName(ofc.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(ofcct, ofcct, parprjn).SetClass("CTSelf")
@@ -228,6 +235,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	deep.ConnectToTRC2D(net.AsAxon(), acc, accct, timep)
 	deep.ConnectToTRC2D(net.AsAxon(), acc, accct, csp)
 
+	// contextualization based on action
+	net.ConnectLayers(sma, ofc, full, emer.Back)
+	net.ConnectLayers(sma, acc, full, emer.Back)
+	deep.ConnectCtxtToCT(net.AsAxon(), m1p, smact, full).SetClass("FmPulv")
+	deep.ConnectCtxtToCT(net.AsAxon(), m1p, ofcct, full).SetClass("FmPulv")
+	deep.ConnectCtxtToCT(net.AsAxon(), m1p, accct, full).SetClass("FmPulv")
+
 	snc.SendDA.AddAllBut(net)
 
 	net.ConnectLayers(sma, stnp, full, emer.Forward)
@@ -244,6 +258,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(thal, smad, one2one, emer.Forward)
 	net.ConnectLayers(sma, thal, one2one, emer.Forward)
 	net.ConnectLayers(smad, thal, one2one, emer.Forward)
+
+	net.ConnectLayersPrjn(ofc, rp, full, emer.Forward, &rl.RWPrjn{})
+	net.ConnectLayersPrjn(ofcct, rp, full, emer.Forward, &rl.RWPrjn{})
 
 	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Rew", YAlign: relpos.Front, Space: 5})
 	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
@@ -311,12 +328,6 @@ func (ss *Sim) ConfigLoops() {
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200) // AddTime(etime.Phase, 2).
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
-
-	// using 190 there to make it look better on raster view.. :)
-	applyRew := looper.NewEvent("ApplyRew", 190, func() {
-		ss.ApplyRew()
-	})
-	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
 
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
@@ -388,6 +399,18 @@ func (ss *Sim) ConfigLoops() {
 		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
+	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
+		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if trnEpc > 1 && trnEpc%5 == 0 {
+			ss.Sim.PctCortex = float32(trnEpc) / float32(ss.Sim.PctCortexMaxEpc)
+			if ss.Sim.PctCortex > ss.Sim.PctCortexMax {
+				ss.Sim.PctCortex = ss.Sim.PctCortexMax
+			} else {
+				mpi.Printf("PctCortex updated to: %g at epoch: %d\n", ss.Sim.PctCortex, trnEpc)
+			}
+		}
+	})
+
 	////////////////////////////////////////////
 	// GUI
 
@@ -410,36 +433,29 @@ func (ss *Sim) ConfigLoops() {
 // or reflexive subcortical action from env.
 func (ss *Sim) TakeAction(net *pcore.Network) {
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
-	nact, anm := ss.DecodeAct(ev)
-	gact := nact
-	ganm := anm
-	if anm != "Forward" {
-		tpctfwd := ss.Sim.TimePctFwd
-		pfwd := tpctfwd * float32(ev.Time)
-		dof := erand.BoolProb(float64(pfwd), -1)
-		if dof {
-			gact = 0
-			ganm = ev.Acts[gact]
-		}
-	}
+
+	netAct, anm := ss.DecodeAct(ev)
+	genAct := ev.ActGen()
+	genActNm := ev.Acts[genAct]
 	ss.Stats.SetString("NetAction", anm)
-	ss.Stats.SetString("GenAction", ganm)
-	if nact == gact {
+	ss.Stats.SetString("GenAction", genActNm)
+	if netAct == genAct {
 		ss.Stats.SetFloat("ActMatch", 1)
 	} else {
 		ss.Stats.SetFloat("ActMatch", 0)
 	}
-	ss.Stats.SetString("ActAction", ganm)
 
-	ly := net.LayerByName("VL").(axon.AxonLayer).AsAxon()
-	ly.SetType(emer.Input)
-	vt := ss.Stats.F32Tensor("VL")
-	vt.SetZeros()
-	vt.Values[gact] = 1
-	ly.ApplyExt(vt)
-	ly.SetType(emer.Target)
+	actAct := genAct
+	if erand.BoolProb(float64(ss.Sim.PctCortex), -1) {
+		actAct = netAct
+	}
+	actActNm := ev.Acts[actAct]
+	ss.Stats.SetString("ActAction", actActNm)
 
-	ev.Action(ganm, vt)
+	ev.Action(actActNm, nil)
+
+	ss.ApplyRewUS()
+	ss.ApplyAction(genAct)
 	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
 
@@ -447,6 +463,28 @@ func (ss *Sim) TakeAction(net *pcore.Network) {
 func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
 	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "ActM")
 	return ev.DecodeAct(vt)
+}
+
+// ApplyRewUS applies updated reward and US -- done during TakeAct
+func (ss *Sim) ApplyRewUS() {
+	net := ss.Net
+	ev := ss.Envs[ss.Time.Mode]
+	lays := []string{"Rew", "US"}
+	for _, lnm := range lays {
+		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		itsr := ev.State(lnm)
+		ly.ApplyExt(itsr)
+	}
+}
+
+func (ss *Sim) ApplyAction(act int) {
+	net := ss.Net
+	ev := ss.Envs[ss.Time.Mode]
+	ly := net.LayerByName("VL").(axon.AxonLayer).AsAxon()
+	ly.SetType(emer.Input)
+	ap := ev.State("Action")
+	ly.ApplyExt(ap)
+	ly.SetType(emer.Target)
 }
 
 // ApplyInputs applies input patterns from given environment.
@@ -459,41 +497,12 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	lays := []string{"Pos", "Drives", "US", "CS", "Dist", "Time"}
+	lays := []string{"Pos", "Drives", "US", "CS", "Dist", "Time", "Rew"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
-}
-
-// ApplyRew applies reward input based on gating action and input
-func (ss *Sim) ApplyRew() {
-	// net := ss.Net
-	// ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
-	// going to the same layers, but good practice and cheap anyway
-
-	// vtly := net.LayerByName("VThal").(*pcore.VThalLayer)
-	// gateAct := vtly.PCoreNeurs[0].PhasicMax
-	// didGate := (gateAct > 0.01)
-	// // shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
-
-	// var rew float32
-	// switch {
-	// case shouldGate && didGate:
-	// 	rew = 1
-	// case shouldGate && !didGate:
-	// 	rew = -1
-	// case !shouldGate && didGate:
-	// 	rew = -1
-	// case !shouldGate && !didGate:
-	// 	rew = 0
-	// }
-	// itsr := etensor.Float32{}
-	// itsr.SetShape([]int{1}, nil, nil)
-	// itsr.Values[0] = rew
-	// sncly := net.LayerByName("SNc").(axon.AxonLayer).AsAxon()
-	// sncly.ApplyExt(&itsr)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -504,6 +513,7 @@ func (ss *Sim) NewRun() {
 	// ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Time.Reset()
 	ss.Time.Mode = etime.Train.String()
+	ss.Sim.PctCortex = 0
 	ss.InitWts(ss.Net)
 	ss.InitStats()
 	ss.StatCounters()
@@ -537,18 +547,20 @@ func (ss *Sim) StatCounters() {
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
+	ss.Stats.SetFloat("PctCortex", float64(ss.Sim.PctCortex))
 	// ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
 	// ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
 	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", "trl")
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "NetAction", "GenAction", "Cycle"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "NetAction", "GenAction", "ActAction", "ActMatch", "Cycle"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	return
-	trlog := ss.Logs.Log(etime.Test, etime.Cycle)
+	var mode etime.Modes
+	mode.FromString(ss.Time.Mode)
+	trlog := ss.Logs.Log(mode, etime.Cycle)
 	spkCyc := 0
 	for row := 0; row < trlog.Rows; row++ {
 		vts := trlog.CellTensorFloat1D("VThal_Spike", row, 0)
@@ -558,6 +570,11 @@ func (ss *Sim) TrialStats() {
 		}
 	}
 	ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
+	rew := ss.Net.LayerByName("Rew").(axon.AxonLayer).AsAxon()
+	ss.Stats.SetFloat("Rew", float64(rew.Neurons[0].Act))
+	da := ss.Net.LayerByName("DA").(axon.AxonLayer).AsAxon()
+	ss.Stats.SetFloat("DA", float64(da.Neurons[0].Act))
+
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -568,19 +585,34 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Phase, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
-	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
+	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "GenAction", "ActAction")
 	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
 	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
+
+	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
-	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
+	deep.LogAddTRCCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
-	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	// ss.ConfigActRFs()
 
-	// ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
+
+	// todo: PCA items should apply to CT layers too -- pass a type here.
+	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
+
+	ss.Logs.PlotItems("PctCortex", "ActMatch", "Rew", "DA") // "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -595,80 +627,77 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	/*
-		ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
-		layers := ss.Net.LayersByClass("Hidden")
-		for _, lnm := range layers {
-			clnm := lnm
-			if clnm == "CIN" {
-				continue
-			}
-			ss.Logs.AddItem(&elog.Item{
-				Name:      clnm + "_ActAvg",
-				Type:      etensor.FLOAT64,
-				CellShape: npools,
-				// Range:  minmax.F64{Max: 20},
-				FixMin: true,
-				Write: elog.WriteMap{
-					etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-						ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-						npools := []int{ss.Sim.NPools}
-						tsr := ss.Stats.F64Tensor("Log_ActAvg")
-						tsr.SetShape(npools, nil, nil)
-						ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
-						for pi := 0; pi < ss.Sim.NPools; pi++ {
-							tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
-						}
-						ctx.SetTensor(tsr)
-					}, etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-						ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-						npools := []int{ss.Sim.NPools}
-						tsr := ss.Stats.F64Tensor("Log_ActAvg")
-						tsr.SetShape(npools, nil, nil)
-						ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
-						for pi := 0; pi < ss.Sim.NPools; pi++ {
-							tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
-						}
-						ctx.SetTensor(tsr)
-					}, etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
-						tsr := ss.Stats.F64Tensor("Log_ActAvg")
-						lyi := ctx.Layer(clnm)
-						ly := lyi.(axon.AxonLayer).AsAxon()
-						if ply, ok := lyi.(pcore.PCoreLayer); ok {
-							for pi := 0; pi < ss.Sim.NPools; pi++ {
-								tsr.Values[pi] = float64(ply.PhasicMaxAvgByPool(pi + 1))
-							}
-						} else {
-							for pi := 0; pi < ss.Sim.NPools; pi++ {
-								tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
-							}
-						}
-						ctx.SetTensor(tsr)
-					}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
-						ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-					}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-						ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-						ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-					}}})
-			ss.Logs.AddItem(&elog.Item{
-				Name:      clnm + "_Spike",
-				Type:      etensor.FLOAT64,
-				CellShape: npools,
-				FixMin:    true,
-				Write: elog.WriteMap{
-					etime.Scope(etime.AllModes, etime.Cycle): func(ctx *elog.Context) {
-						ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-						npools := []int{ss.Sim.NPools}
-						tsr := ss.Stats.F64Tensor("Log_ActAvg")
-						tsr.SetShape(npools, nil, nil)
-						ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
-						for pi := 0; pi < ss.Sim.NPools; pi++ {
-							tsr.Values[pi] = float64(ly.SpikeAvgByPool(pi + 1))
-						}
-						ctx.SetTensor(tsr)
-					}}})
+	// ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
+	npools := 1
+	poolshape := []int{npools}
+	layers := ss.Net.LayersByClass("BG")
+	for _, lnm := range layers {
+		clnm := lnm
+		if clnm == "CIN" {
+			continue
 		}
-	*/
+		ss.Logs.AddItem(&elog.Item{
+			Name:      clnm + "_ActAvg",
+			Type:      etensor.FLOAT64,
+			CellShape: poolshape,
+			// Range:  minmax.F64{Max: 20},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					tsr.SetShape(poolshape, nil, nil)
+					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
+					for pi := 0; pi < npools; pi++ {
+						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+					}
+					ctx.SetTensor(tsr)
+				}, etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					tsr.SetShape(poolshape, nil, nil)
+					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
+					for pi := 0; pi < npools; pi++ {
+						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+					}
+					ctx.SetTensor(tsr)
+				}, etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					lyi := ctx.Layer(clnm)
+					ly := lyi.(axon.AxonLayer).AsAxon()
+					if ply, ok := lyi.(pcore.PCoreLayer); ok {
+						for pi := 0; pi < npools; pi++ {
+							tsr.Values[pi] = float64(ply.PhasicMaxAvgByPool(pi + 1))
+						}
+					} else {
+						for pi := 0; pi < npools; pi++ {
+							tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+						}
+					}
+					ctx.SetTensor(tsr)
+				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:      clnm + "_Spike",
+			Type:      etensor.FLOAT64,
+			CellShape: poolshape,
+			FixMin:    true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, etime.Cycle): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					tsr := ss.Stats.F64Tensor("Log_ActAvg")
+					tsr.SetShape(poolshape, nil, nil)
+					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
+					for pi := 0; pi < npools; pi++ {
+						tsr.Values[pi] = float64(ly.SpikeAvgByPool(pi + 1))
+					}
+					ctx.SetTensor(tsr)
+				}}})
+	}
 }
 
 // Log is the main logging function, handles special things for different scopes
