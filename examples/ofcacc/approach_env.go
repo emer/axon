@@ -19,6 +19,7 @@ import (
 // Each location contains a US which satisfies a different drive.
 type Approach struct {
 	Nm          string                      `desc:"name of environment -- Train or Test"`
+	TimeCost    float32                     `desc:"cost per unit time, subtracted from reward"`
 	Drives      int                         `desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
 	CSPerDrive  int                         `desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
 	Locations   int                         `desc:"number of different locations -- always <= number of drives -- drives have a unique location"`
@@ -52,6 +53,7 @@ func (ev *Approach) Desc() string {
 
 // Defaults sets default params
 func (ev *Approach) Defaults() {
+	ev.TimeCost = 0.05
 	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
 	ev.Drives = 4
 	ev.CSPerDrive = 1
@@ -231,6 +233,9 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 	switch action {
 	case "Forward":
 		ev.Dist--
+		if ev.Dist < 0 {
+			ev.Rew = -ev.TimeCost * float32(ev.Time)
+		}
 	case "Left":
 		ev.Pos--
 		if ev.Pos < 0 {
@@ -244,7 +249,7 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 	case "Consume":
 		if ev.Dist == 0 {
 			if us == ev.Drive {
-				ev.Rew = 1
+				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
 			}
 			ev.US = us
 			ev.Dist--

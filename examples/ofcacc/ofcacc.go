@@ -71,7 +71,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 0.9
-	ss.PctCortexMaxEpc = 10000
+	ss.PctCortexMaxEpc = 50
 	ss.PCAInterval = 10
 }
 
@@ -268,20 +268,26 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(sma, stnp, full, emer.Forward)
 	net.ConnectLayers(sma, stns, full, emer.Forward)
 
-	net.ConnectLayers(smad, m1, full, emer.Forward) //  action output
+	net.ConnectLayers(smad, m1, full, emer.Forward)     //  action output
+	net.ConnectLayers(sma, smad, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
+	// net.ConnectLayers(sma, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
 
 	net.ConnectToMatrix(acc, mtxGo, full)
 	net.ConnectToMatrix(acc, mtxNo, full)
 	net.ConnectToMatrix(sma, mtxGo, full)
 	net.ConnectToMatrix(sma, mtxNo, full)
+	net.ConnectToMatrix(ofc, mtxGo, full)
+	net.ConnectToMatrix(ofc, mtxNo, full)
 
-	net.ConnectLayers(thal, smad, one2one, emer.Forward)
+	net.ConnectLayers(thal, smad, full, emer.Forward)
 	net.ConnectLayers(sma, thal, one2one, emer.Forward)
 	net.ConnectLayers(smad, thal, one2one, emer.Forward)
 
 	net.ConnectLayersPrjn(ofc, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(ofcct, rp, full, emer.Forward, &rl.RWPrjn{})
+	net.ConnectLayersPrjn(acc, rp, full, emer.Forward, &rl.RWPrjn{})
+	net.ConnectLayersPrjn(accct, rp, full, emer.Forward, &rl.RWPrjn{})
 
 	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Rew", YAlign: relpos.Front, Space: 5})
 	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})

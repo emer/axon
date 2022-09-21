@@ -18,6 +18,8 @@ Target behavior is to orient L / R until a CS sensory cue appears that is consis
 
 # TODO
 
+* train a pure non-gated M1 -- how high does act match go?  Does OFC learn to represent match of US and CS? First focus on getting that aspect of task working b/c nothing else works unless it does.
+
 * maintain last action if not gated afresh -- how?  SMAd recurrents?  nmda higher?  M1?
 
 * add act context for prediction?  m1p ok?

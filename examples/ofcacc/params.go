@@ -102,6 +102,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
+			{Sel: "#SMAToSMAd", Desc: "selects action based on sma -- nominally weaker?",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1",
+				}},
 
 			// BG prjns
 			{Sel: "MatrixPrjn", Desc: "",
