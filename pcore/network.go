@@ -6,6 +6,7 @@ package pcore
 
 import (
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
@@ -15,7 +16,7 @@ import (
 // pcore.Network has methods for configuring specialized PCore network components
 // PCore = Pallidal Core mode of BG
 type Network struct {
-	axon.Network
+	deep.Network
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
@@ -40,12 +41,12 @@ func (nt *Network) SynVarNames() []string {
 // using standard styles
 // space is the spacing between layers (2 typical)
 func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
-	return AddBG(&nt.Network, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
+	return AddBG(nt.AsAxon(), prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
 }
 
 // ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
 func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return ConnectToMatrix(&nt.Network, send, recv, pat)
+	return ConnectToMatrix(nt.AsAxon(), send, recv, pat)
 }
 
 ////////////////////////////////////////////////////////////////////////

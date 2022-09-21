@@ -34,6 +34,7 @@ import (
 	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/mat32"
 )
 
 // Debug triggers various messages etc
@@ -161,8 +162,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ev := ss.Envs["Train"].(*Approach)
 	net.InitName(net, "OfcAcc")
 
-	nuBgY := 7
-	nuBgX := 7
+	nuBgY := 5
+	nuBgX := 5
 	nuCtxY := 7
 	nuCtxX := 7
 	nAct := len(ev.ActMap)
@@ -180,12 +181,12 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	pos, posp := deep.AddInputTRC2D(net.AsAxon(), "Pos", ny, nloc)
-	drives, drivesp := deep.AddInputTRC2D(net.AsAxon(), "Drives", ny, ev.Drives)
-	us, usp := deep.AddInputTRC2D(net.AsAxon(), "US", ny, ev.Drives+1)
-	cs, csp := deep.AddInputTRC2D(net.AsAxon(), "CS", ev.PatSize.Y, ev.PatSize.X)
-	dist, distp := deep.AddInputTRC2D(net.AsAxon(), "Dist", ny, ev.DistMax)
-	time, timep := deep.AddInputTRC2D(net.AsAxon(), "Time", ny, ev.TimeMax)
+	drives, drivesp := net.AddInputTRC2D("Drives", ny, ev.Drives)
+	us, usp := net.AddInputTRC2D("US", ny, ev.Drives+1)
+	cs, csp := net.AddInputTRC2D("CS", ev.PatSize.Y, ev.PatSize.X)
+	dist, distp := net.AddInputTRC2D("Dist", ny, ev.DistMax)
+	time, timep := net.AddInputTRC2D("Time", ny, ev.TimeMax)
+	pos, posp := net.AddInputTRC2D("Pos", ny, nloc)
 
 	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, 1, nuBgY, nuBgX, nuBgY, nuBgX, 2)
 	cin := cini.(*pcore.CINLayer)
@@ -200,48 +201,68 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
 	vl := net.AddLayer2D("VL", 1, nAct, emer.Target)  // Action
 	act := net.AddLayer2D("Act", 1, nAct, emer.Input) // Action
-	m1p := deep.AddTRCLayer2D(net.AsAxon(), "M1P", 1, nAct)
+	m1p := net.AddTRCLayer2D("M1P", nuCtxY, nuCtxX)
 	m1p.Driver = m1.Name()
 	_ = vl
 	_ = act
 
 	// todo: try full for CT prjn
 
-	sma, smact := deep.AddSuperCT2D(net.AsAxon(), "SMA", nuCtxY, nuCtxX)
+	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX)
 	// smact.RecvPrjns().SendName(sma.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(smact, smact, parprjn).SetClass("CTSelf")
-	deep.ConnectToTRC2D(net.AsAxon(), sma, smact, m1p)
-	deep.ConnectToTRC2D(net.AsAxon(), sma, smact, posp)
-	deep.ConnectToTRC2D(net.AsAxon(), sma, smact, distp)
+	net.ConnectToTRC2D(sma, smact, m1p)
+	net.ConnectToTRC2D(sma, smact, posp)
+	net.ConnectToTRC2D(sma, smact, distp)
 
 	smad := net.AddLayer2D("SMAd", nuCtxY, nuCtxX, emer.Hidden)
 
 	// todo: ofcd deep gated layers here??
 
-	ofc, ofcct := deep.AddSuperCT2D(net.AsAxon(), "OFC", nuCtxY, nuCtxX)
+	ofc, ofcct := net.AddSuperCT2D("OFC", nuCtxY, nuCtxX)
 	// ofcct.RecvPrjns().SendName(ofc.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(ofcct, ofcct, parprjn).SetClass("CTSelf")
-	deep.ConnectToTRC2D(net.AsAxon(), ofc, ofcct, drivesp)
-	deep.ConnectToTRC2D(net.AsAxon(), ofc, ofcct, usp)
-	deep.ConnectToTRC2D(net.AsAxon(), ofc, ofcct, csp)
+	net.ConnectToTRC2D(ofc, ofcct, csp)
+	net.ConnectToTRC2D(ofc, ofcct, usp)
+	net.ConnectToTRC2D(ofc, ofcct, drivesp)
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
-	acc, accct := deep.AddSuperCT2D(net.AsAxon(), "ACC", nuCtxY, nuCtxX)
+	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX)
 	// accct.RecvPrjns().SendName(acc.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(accct, accct, parprjn).SetClass("CTSelf")
-	deep.ConnectToTRC2D(net.AsAxon(), acc, accct, distp)
-	deep.ConnectToTRC2D(net.AsAxon(), acc, accct, timep)
-	deep.ConnectToTRC2D(net.AsAxon(), acc, accct, csp)
+	net.ConnectToTRC2D(acc, accct, distp)
+	net.ConnectToTRC2D(acc, accct, timep)
+
+	// m1p plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
 	// contextualization based on action
-	net.ConnectLayers(sma, ofc, full, emer.Back)
-	net.ConnectLayers(sma, acc, full, emer.Back)
-	deep.ConnectCtxtToCT(net.AsAxon(), m1p, smact, full).SetClass("FmPulv")
-	deep.ConnectCtxtToCT(net.AsAxon(), m1p, ofcct, full).SetClass("FmPulv")
-	deep.ConnectCtxtToCT(net.AsAxon(), m1p, accct, full).SetClass("FmPulv")
+	net.BidirConnectLayers(ofc, sma, full)
+	net.BidirConnectLayers(acc, sma, full)
+	net.ConnectCtxtToCT(m1p, smact, full).SetClass("FmPulv")
+	net.ConnectCtxtToCT(m1p, ofcct, full).SetClass("FmPulv")
+	net.ConnectCtxtToCT(m1p, accct, full).SetClass("FmPulv")
 
+	// temporary from act to make sure
+	net.ConnectCtxtToCT(act, smact, full).SetClass("FmPulv")
+	net.ConnectCtxtToCT(act, ofcct, full).SetClass("FmPulv")
+	net.ConnectCtxtToCT(act, accct, full).SetClass("FmPulv")
+
+	// Std corticocortical cons -- stim -> hid
+	net.ConnectLayers(cs, ofc, full, emer.Forward)
+	net.ConnectLayers(us, ofc, full, emer.Forward)
+	net.ConnectLayers(drives, ofc, full, emer.Forward)
+
+	net.ConnectLayers(dist, acc, full, emer.Forward)
+	net.ConnectLayers(time, acc, full, emer.Forward)
+
+	net.ConnectLayers(dist, sma, full, emer.Forward)
+	net.ConnectLayers(time, sma, full, emer.Forward)
+	net.ConnectLayers(pos, sma, full, emer.Forward)
+	// key point: cs does not project directly to sma -- no simple S -> R mappings!?
+
+	// BG / DA connections
 	snc.SendDA.AddAllBut(net)
 
 	net.ConnectLayers(sma, stnp, full, emer.Forward)
@@ -266,19 +287,19 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: 5})
 
-	pos.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpeOut.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	drives.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: posp.Name(), XAlign: relpos.Left, Space: 5})
-	us.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pos.Name(), YAlign: relpos.Front, Space: 5})
-	cs.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: usp.Name(), XAlign: relpos.Left, Space: 5})
-	dist.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: us.Name(), YAlign: relpos.Front, Space: 5})
+	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpeOut.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
+	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drivesp.Name(), XAlign: relpos.Left, Space: 5})
+	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: 5})
+	dist.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: 5})
 	time.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: distp.Name(), XAlign: relpos.Left, Space: 5})
+	pos.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dist.Name(), YAlign: relpos.Front, Space: 5})
 
-	m1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dist.Name(), YAlign: relpos.Front, Space: 5})
+	m1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pos.Name(), YAlign: relpos.Front, Space: 5})
 	m1p.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1.Name(), XAlign: relpos.Left, Space: 5})
 	vl.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1p.Name(), XAlign: relpos.Left, Space: 5})
 	act.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: vl.Name(), XAlign: relpos.Left, Space: 5})
 
-	ofc.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: pos.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
+	ofc.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ofc.Name(), YAlign: relpos.Front, Space: 5})
 	sma.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: 5})
 	smad.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: smact.Name(), XAlign: relpos.Left, Space: 5})
@@ -313,6 +334,7 @@ func (ss *Sim) Init() {
 	ss.Params.SetAll()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
+	ss.ViewUpdt.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
@@ -485,6 +507,8 @@ func (ss *Sim) ApplyAction(act int) {
 	ap := ev.State("Action")
 	ly.ApplyExt(ap)
 	ly.SetType(emer.Target)
+	ly = net.LayerByName("Act").(axon.AxonLayer).AsAxon()
+	ly.ApplyExt(ap)
 }
 
 // ApplyInputs applies input patterns from given environment.
@@ -737,8 +761,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 
-	// nv.Scene().Camera.Pose.Pos.Set(-0.028028872, 2.1134117, 2.3178313)
-	// nv.Scene().Camera.LookAt(mat32.Vec3{0.00030842167, 0.045156803, -0.039506555}, mat32.Vec3{0, 1, 0})
+	nv.Scene().Camera.Pose.Pos.Set(0, 1.14, 2.7)
+	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 

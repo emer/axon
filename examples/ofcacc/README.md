@@ -18,8 +18,15 @@ Target behavior is to orient L / R until a CS sensory cue appears that is consis
 
 # TODO
 
-* check acts on all layers
+* maintain last action if not gated afresh -- how?  SMAd recurrents?  nmda higher?  M1?
 
 * add act context for prediction?  m1p ok?
 
+* CS, Drives, US <-> OFC properly
+
+* time cost subtract from Rew
+
+* modulate OFC / ACC learning mainly at end / DA mod
+
+* later: gating signal to maintain selected goal in OFC, ACC -- for now, maybe don't need.
 

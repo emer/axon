@@ -205,7 +205,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	nuY := ss.Sim.NUnitsY
 	nuX := ss.Sim.NUnitsX
 
-	snc := rl.AddClampDaLayer(&net.Network, "SNc")
+	snc := rl.AddClampDaLayer(net.AsAxon(), "SNc")
 
 	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, 2)
 	cin := cini.(*pcore.CINLayer)
@@ -324,6 +324,7 @@ func (ss *Sim) Init() {
 	ss.Params.SetAll()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
+	ss.ViewUpdt.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number

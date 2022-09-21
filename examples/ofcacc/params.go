@@ -16,7 +16,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CT", Desc: "corticothalamic context",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.06",
-					"Layer.CtxtGeGain":        "0.2", // .2 > .1 > .3
+					"Layer.CtxtGeGain":        "0.3", // .2 > .1 > .3
 					"Layer.Act.Decay.Act":     "0.0", // 0 best in other models
 					"Layer.Act.Decay.Glong":   "0.0",
 				}},
@@ -34,8 +34,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":     "1.0", // impose trial structure
-					"Layer.Act.Decay.Glong":   "1.0",
+					"Layer.Act.Decay.Act":     "0.0", // impose trial structure
+					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "0.6",
@@ -49,8 +49,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Init.Ge":       "0.2",
 					"Layer.Act.Init.GeVar":    "0.2",
-					"Layer.Act.Decay.Act":     "1.0", // impose trial structure
-					"Layer.Act.Decay.Glong":   "1.0",
+					"Layer.Act.Decay.Act":     "0.0", // impose trial structure
+					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "0.2",
@@ -84,6 +84,26 @@ var ParamSets = params.Sets{
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
+
+			// cortical prjns
+			{Sel: "Prjn", Desc: "all prjns",
+				Params: params.Params{
+					"Prjn.Learn.Trace.Tau": "2",
+				}},
+			{Sel: ".Back", Desc: "back is weaker",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.2",
+				}},
+			{Sel: "#OFCToSMA", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.2",
+				}},
+			{Sel: "#ACCToSMA", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.2",
+				}},
+
+			// BG prjns
 			{Sel: "MatrixPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "1.0", // stronger
