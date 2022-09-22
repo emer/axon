@@ -84,7 +84,7 @@ func (ev *Approach) Config() {
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
-	ev.States["Action"] = etensor.NewFloat32([]int{1, len(ev.Acts)}, nil, nil)
+	ev.States["Action"] = etensor.NewFloat32([]int{ev.NYReps, len(ev.Acts)}, nil, nil)
 
 	ev.ConfigPats()
 	ev.NewState()
@@ -191,9 +191,7 @@ func (ev *Approach) RenderRewUS() {
 
 // RenderAction renders the action
 func (ev *Approach) RenderAction(act int) {
-	as := ev.States["Action"]
-	as.SetZeros()
-	as.Values[act] = 1
+	ev.RenderLocalist("Action", act)
 }
 
 // Step does one step
@@ -209,15 +207,25 @@ func (ev *Approach) Step() bool {
 }
 
 func (ev *Approach) DecodeAct(vt *etensor.Float32) (int, string) {
+	mxi := ev.DecodeLocalist(vt)
+	return mxi, ev.Acts[mxi]
+}
+
+func (ev *Approach) DecodeLocalist(vt *etensor.Float32) int {
+	dx := vt.Dim(1)
 	var max float32
 	var mxi int
-	for i, vl := range vt.Values {
-		if vl > max {
-			max = vl
+	for i := 0; i < dx; i++ {
+		var sum float32
+		for j := 0; j < ev.NYReps; j++ {
+			sum += vt.Value([]int{j, i})
+		}
+		if sum > max {
+			max = sum
 			mxi = i
 		}
 	}
-	return mxi, ev.Acts[mxi]
+	return mxi
 }
 
 func (ev *Approach) Action(action string, nop etensor.Tensor) {

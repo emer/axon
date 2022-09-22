@@ -199,8 +199,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// todo: need m1d, driven by smad -- output pathway
 
 	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
-	vl := net.AddLayer2D("VL", 1, nAct, emer.Target)  // Action
-	act := net.AddLayer2D("Act", 1, nAct, emer.Input) // Action
+	vl := net.AddLayer2D("VL", ny, nAct, emer.Target)  // Action
+	act := net.AddLayer2D("Act", ny, nAct, emer.Input) // Action
 	m1p := net.AddTRCLayer2D("M1P", nuCtxY, nuCtxX)
 	m1p.Driver = m1.Name()
 	_ = vl
