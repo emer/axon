@@ -38,9 +38,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On":   "true",
-					"Layer.DaMod.BurstGain": "0.1",
-					"Layer.DaMod.DipGain":   "0.1",
+					"Layer.Act.Gbar.L":              "0.3",
+					"Layer.Inhib.Pool.On":           "true",
+					"Layer.DaMod.BurstGain":         "0.1",
+					"Layer.DaMod.DipGain":           "0.1",
+					"Layer.Learn.RLrate.ActDiffThr": "0.1",
 				}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -123,7 +125,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.5",
+					"Prjn.Learn.Lrate.Base": "1",
 				}},
 			{Sel: "#OFCToBLAPosExtD2", Desc: "",
 				Params: params.Params{

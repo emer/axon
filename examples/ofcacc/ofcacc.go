@@ -168,6 +168,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	nuCtxY := 7
 	nuCtxX := 7
 	nAct := len(ev.ActMap)
+	space := float32(5)
 
 	pone2one := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
@@ -182,12 +183,14 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	drives, drivesp := net.AddInputTRC4D("Drives", 1, ev.Drives, ny, 1)
-	us, usp := net.AddInputTRC4D("US", 1, ev.Drives, ny, 1)
-	cs, csp := net.AddInputTRC2D("CS", ev.PatSize.Y, ev.PatSize.X)
-	dist, distp := net.AddInputTRC2D("Dist", ny, ev.DistMax)
-	time, timep := net.AddInputTRC2D("Time", ny, ev.TimeMax)
-	pos, posp := net.AddInputTRC2D("Pos", ny, nloc)
+	drives, drivesp := net.AddInputTRC4D("Drives", 1, ev.Drives, ny, 1, space)
+	us, usp := net.AddInputTRC4D("US", 1, ev.Drives, ny, 1, space)
+	// cs, csp := net.AddInputTRC2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
+	// localist, for now:
+	cs, csp := net.AddInputTRC2D("CS", ny, ev.Drives, space)
+	dist, distp := net.AddInputTRC2D("Dist", ny, ev.DistMax, space)
+	time, timep := net.AddInputTRC2D("Time", ny, ev.TimeMax, space)
+	pos, posp := net.AddInputTRC2D("Pos", ny, nloc, space)
 
 	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, 1, nuBgY, nuBgX, nuBgY, nuBgX, 2)
 	cin := cini.(*pcore.CINLayer)
@@ -209,7 +212,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	// todo: try full for CT prjn
 
-	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX)
+	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space)
 	// smact.RecvPrjns().SendName(sma.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(smact, smact, parprjn).SetClass("CTSelf")
 	net.ConnectToTRC2D(sma, smact, m1p)
@@ -220,9 +223,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	// todo: agate for sma, ofc, acc
 
-	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.Drives, nuCtxY, nuCtxX, relpos.Behind, 5)
+	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.Drives, nuCtxY, nuCtxX, relpos.Behind, space)
 
-	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX)
+	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space)
 	ofc.SetClass("OFC")
 	ofcct.SetClass("OFC")
 	// ofcct.RecvPrjns().SendName(ofc.Name()).SetPattern(full)
@@ -234,7 +237,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
-	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX)
+	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space)
 	acc.SetClass("ACC")
 	accct.SetClass("ACC")
 	// accct.RecvPrjns().SendName(acc.Name()).SetPattern(full)
@@ -304,27 +307,27 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayersPrjn(acc, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(accct, rp, full, emer.Forward, &rl.RWPrjn{})
 
-	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Rew", YAlign: relpos.Front, Space: 5})
+	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Rew", YAlign: relpos.Front, Space: space})
 	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: 5})
+	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
 
 	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpeOut.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drivesp.Name(), XAlign: relpos.Left, Space: 5})
-	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: 5})
-	dist.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: 5})
-	time.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: distp.Name(), XAlign: relpos.Left, Space: 5})
-	pos.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dist.Name(), YAlign: relpos.Front, Space: 5})
+	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drivesp.Name(), XAlign: relpos.Left, Space: space})
+	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
+	dist.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: space})
+	time.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: distp.Name(), XAlign: relpos.Left, Space: space})
+	pos.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dist.Name(), YAlign: relpos.Front, Space: space})
 
-	m1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pos.Name(), YAlign: relpos.Front, Space: 5})
-	m1p.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1.Name(), XAlign: relpos.Left, Space: 5})
-	vl.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1p.Name(), XAlign: relpos.Left, Space: 5})
-	act.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: vl.Name(), XAlign: relpos.Left, Space: 5})
+	m1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pos.Name(), YAlign: relpos.Front, Space: space})
+	m1p.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1.Name(), XAlign: relpos.Left, Space: space})
+	vl.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1p.Name(), XAlign: relpos.Left, Space: space})
+	act.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: vl.Name(), XAlign: relpos.Left, Space: space})
 
 	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	ofc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blae.Name(), XAlign: relpos.Left, Space: 5})
-	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: 5})
-	sma.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: 5})
-	smad.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: smact.Name(), XAlign: relpos.Left, Space: 5})
+	ofc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blae.Name(), XAlign: relpos.Left, Space: space})
+	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: space})
+	sma.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: space})
+	smad.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: smact.Name(), XAlign: relpos.Left, Space: space})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -775,11 +778,12 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
 	title := "OFC ACC Test"
-	ss.GUI.MakeWindow(ss, "pcore", title, `This project tests learning in the OFC and ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	ss.GUI.MakeWindow(ss, "ofcacc", title, `This project tests learning in the OFC and ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
+	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 

@@ -9,6 +9,8 @@ import "github.com/goki/ki/kit"
 // Dopamine receptor type, for D1R and D2R dopamine receptors
 type DARs int
 
+//go:generate stringer -type=DARs
+
 const (
 	// D1R: primarily expresses Dopamine D1 Receptors, which are excitatory from DA bursts
 	D1R DARs = iota

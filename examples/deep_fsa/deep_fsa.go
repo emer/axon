@@ -158,9 +158,9 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
-	in, inp := net.AddInputTRC2D("Input", 1, 7)
+	in, inp := net.AddInputTRC2D("Input", 1, 7, 2)
 
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10) // note: tried 4D 6,6,2,2 with pool 1to1 -- not better
+	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2) // note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
 
 	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -80,7 +80,9 @@ func (ev *Approach) Config() {
 	ev.States["Pos"] = etensor.NewFloat32([]int{ev.NYReps, ev.Locations}, nil, nil)
 	ev.States["Drives"] = etensor.NewFloat32([]int{1, ev.Drives, ev.NYReps, 1}, nil, nil)
 	ev.States["US"] = etensor.NewFloat32([]int{1, ev.Drives + 1, ev.NYReps, 1}, nil, nil)
-	ev.States["CS"] = etensor.NewFloat32([]int{ev.PatSize.Y, ev.PatSize.X}, nil, nil)
+	// ev.States["CS"] = etensor.NewFloat32([]int{ev.PatSize.Y, ev.PatSize.X}, nil, nil)
+	// localist CS for testing now:
+	ev.States["CS"] = etensor.NewFloat32([]int{ev.NYReps, ev.Drives}, nil, nil)
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
@@ -181,10 +183,13 @@ func (ev *Approach) RenderState() {
 
 	css := ev.States["CSs"]
 	patn := int(css.Values[ev.Pos])
-	pats := ev.States["Pats"]
-	pat := pats.SubSpace([]int{patn})
-	cs := ev.States["CS"]
-	cs.CopyFrom(pat)
+	/*
+		pats := ev.States["Pats"]
+		pat := pats.SubSpace([]int{patn})
+		cs := ev.States["CS"]
+		cs.CopyFrom(pat)
+	*/
+	ev.RenderLocalist("CS", patn)
 }
 
 // RenderRewUS renders reward and US
