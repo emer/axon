@@ -151,7 +151,7 @@ type RWPrjn struct {
 	OppSignLRate float32 `desc:"how much to learn on opposite DA sign coding neuron (0..1)"`
 }
 
-var KiT_RWPrjn = kit.Types.AddType(&RWPrjn{}, deep.PrjnProps)
+var KiT_RWPrjn = kit.Types.AddType(&RWPrjn{}, axon.PrjnProps)
 
 func (pj *RWPrjn) Defaults() {
 	pj.Prjn.Defaults()

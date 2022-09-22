@@ -1,177 +1,42 @@
-// Copyright (c) 2020, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package pvlv
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
-	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
+	"github.com/emer/emergent/relpos"
 )
 
-func TotalAct(ly emer.Layer) float32 {
-	lly := ly.(axon.AxonLayer).AsAxon()
-	pl := lly.Pools[0].Inhib.Act
-	res := pl.Avg * float32(pl.N)
-	if mat32.IsNaN(res) {
-		fmt.Println("NaN in TotalAct")
+// AddBLALayers adds two BLA layers, acquisition / extinction / D1 / D2, for positive or negative valence
+func AddBLALayers(nt *axon.Network, prefix string, pos bool, nUs, unY, unX int, rel relpos.Relations, space float32) (acq, ext axon.AxonLayer) {
+	if pos {
+		d1 := &BLALayer{}
+		nt.AddLayerInit(d1, prefix+"PosAcqD1", []int{1, nUs, unY, unX}, emer.Hidden)
+		d1.DaMod.DAR = D1R
+		d2 := &BLALayer{}
+		nt.AddLayerInit(d2, prefix+"PosExtD2", []int{1, nUs, unY, unX}, emer.Hidden)
+		d2.DaMod.DAR = D2R
+		acq = d1
+		ext = d2
+	} else {
+		d1 := &BLALayer{}
+		nt.AddLayerInit(d1, prefix+"NegExtD1", []int{1, nUs, unY, unX}, emer.Hidden)
+		d1.DaMod.DAR = D1R
+		d2 := &BLALayer{}
+		nt.AddLayerInit(d2, prefix+"NegAcqD2", []int{1, nUs, unY, unX}, emer.Hidden)
+		d2.DaMod.DAR = D2R
+		acq = d2
+		ext = d1
 	}
-	return res
-}
-
-type Network struct {
-	axon.Network
-}
-
-var NetworkProps = axon.NetworkProps
-var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
-
-type INetwork interface {
-	AsAxon() *axon.Network
-}
-
-func (nt *Network) AsAxon() *axon.Network {
-	return &nt.Network
-}
-
-func (nt *Network) InitActs() {
-	for li := range nt.Layers {
-		ly := nt.Layers[li]
-		ly.(axon.AxonLayer).InitActs()
+	if rel == relpos.Behind {
+		ext.SetRelPos(relpos.Rel{Rel: rel, Other: acq.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		ext.SetRelPos(relpos.Rel{Rel: rel, Other: acq.Name(), YAlign: relpos.Front, Space: space})
 	}
-}
-
-// todo: fixme
-func (nt *Network) CycleImpl(ltime *axon.Time) {
-	nt.QuarterInitPrvs(ltime)
-	nt.SendGDelta(ltime) // also does integ
-	nt.SendMods(ltime)
-	nt.RecvModInc(ltime)
-	nt.AvgMaxGe(ltime)
-	nt.AvgMaxMod(ltime)
-	nt.InhibFmGeAct(ltime)
-	nt.ActFmG(ltime)
-	nt.AvgMaxAct(ltime)
-}
-
-func (nt *Network) QuarterInitPrvs(ltime *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
-		if pl, ok := ly.(*MSNLayer); ok {
-			pl.QuarterInitPrvs(ltime)
-		}
-	}, "QuarterInitPrvs")
-}
-
-func (nt *Network) SendMods(ltime *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
-		if pl, ok := ly.(ModSender); ok {
-			pl.SendMods(ltime)
-		}
-	}, "SendMods")
-}
-
-func (nt *Network) RecvModInc(ltime *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
-		if pl, ok := ly.(ModReceiver); ok {
-			pl.ModsFmInc(ltime)
-		}
-	}, "RecvModInc")
-}
-
-func (nt *Network) ClearModActs(_ *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
-		if ml, ok := ly.(IModLayer); ok {
-			ml.AsMod().ClearModActs()
-		}
-	}, "ClearModActs")
-}
-
-func (nt *Network) ClearMSNTraces(_ *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
-		if msnly, ok := ly.(IMSNLayer); ok {
-			msnly.AsMSNLayer().ClearMSNTrace()
-		}
-	}, "ClearMSNTraces")
-}
-
-func (nt *Network) AvgMaxMod(ltime *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
-		if pl, ok := ly.(AvgMaxModLayer); ok {
-			pl.AvgMaxMod(ltime)
-		}
-	}, "AvgMaxMod")
-}
-
-// UnitVarNames returns a list of variable names available on the units in this layer
-func (nt *Network) UnitVarNames() []string {
-	return ModNeuronVarsAll
-}
-
-func (nt *Network) SynVarNames() []string {
-	return SynapseVarsAll
-}
-
-// SynVarProps returns properties for variables
-func (nt *Network) SynVarProps() map[string]string {
-	return SynapseVarProps
-}
-
-// For special layer types
-
-// AddVTALayer adds a positive or negative Valence VTA layer
-func (nt *Network) AddVTALayer(name string, val Valence) *VTALayer {
-	return AddVTALayer(nt, name, val)
-}
-
-// AddMatrixLayer adds a MSNLayer of given size, with given name.
-//
-// Geometry is 4D.
-//
-// nY = number of pools in Y dimension, nX is pools in X dimension,
-// and each pool has nNeurY * nNeurX neurons.
-//
-// cpmt specifies patch or matrix StriatalCompartment
-//
-//da parameter gives the DaReceptor type (DaRType) (D1R = Go, D2R = NoGo)
-func (nt *Network) AddMSNLayer(name string, nY, nX, nNeurY, nNeurX int, cpmt StriatalCompartment, da DaRType) *MSNLayer {
-	return AddMSNLayer(nt, name, nY, nX, nNeurY, nNeurX, cpmt, da)
-}
-
-// AddCElAmygLayer adds a CentroLateral Amygdala layer with specified 4D geometry, acquisition/extinction, valence, and DA receptor type
-//
-// Geometry is 4D.
-//
-// nY = number of pools in Y dimension, nX is pools in X dimension,
-// and each pool has nNeurY * nNeurX neurons.  da parameter gives the DaReceptor type (D1R = Go, D2R = NoGo).
-// acqExt (AcqExt) specifies whether this layer is involved with acquisition or extinction.
-// val is positive (appetitive) or negative (aversive) Valence.
-func (nt *Network) AddCElAmygLayer(name string, nY, nX, nNeurY, nNeurX int,
-	acqExt AcqExt, val Valence, dar DaRType) *CElAmygLayer {
-	ly := CElAmygLayer{CElTyp: CElAmygLayerType{AcqExt: acqExt, Valence: val}}
-	ly.DaMod.RecepType = dar
-	nt.AddLayerInit(&ly, name, []int{nY, nX, nNeurY, nNeurX}, emer.Hidden)
-	ly.ModLayer.Init()
-	class := "CEl" + acqExt.String() + strings.Title(strings.ToLower(val.String())) + dar.String()[0:2] + " CElAmyg"
-	ly.SetClass(class)
-	return &ly
-}
-
-// AddBlAmygLayer adds a Basolateral Amygdala layer with specified 4D geometry, acquisition/extinction, valence, and DA receptor type
-func (nt *Network) AddBlAmygLayer(name string, nY, nX, nNeurY, nNeurX int, val Valence, dar DaRType, lTyp emer.LayerType) *BlAmygLayer {
-	ly := BlAmygLayer{Valence: val}
-	ly.DaMod.RecepType = dar
-	nt.AddLayerInit(&ly, name, []int{nY, nX, nNeurY, nNeurX}, lTyp)
-	ly.ModLayer.Init()
-	class := "BlAmyg" + strings.Title(strings.ToLower(val.String())) + dar.String()[0:2] + " BlAmyg"
-	ly.SetClass(class)
-	return &ly
-}
-
-func (nt *Network) ConnectLayersActMod(sender ModSender, rcvr ModReceiver, scale float32) {
-	sender.(IModLayer).AsMod().AddModReceiver(rcvr, scale)
+	acq.SetClass("BLA")
+	ext.SetClass("BLA")
+	return
 }

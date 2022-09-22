@@ -14,6 +14,7 @@ import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/deep"
 	"github.com/emer/axon/pcore"
+	"github.com/emer/axon/pvlv"
 	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
@@ -71,7 +72,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 0.9
-	ss.PctCortexMaxEpc = 50
+	ss.PctCortexMaxEpc = 10000
 	ss.PCAInterval = 10
 }
 
@@ -181,8 +182,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	drives, drivesp := net.AddInputTRC2D("Drives", ny, ev.Drives)
-	us, usp := net.AddInputTRC2D("US", ny, ev.Drives+1)
+	drives, drivesp := net.AddInputTRC4D("Drives", 1, ev.Drives, ny, 1)
+	us, usp := net.AddInputTRC4D("US", 1, ev.Drives, ny, 1)
 	cs, csp := net.AddInputTRC2D("CS", ev.PatSize.Y, ev.PatSize.X)
 	dist, distp := net.AddInputTRC2D("Dist", ny, ev.DistMax)
 	time, timep := net.AddInputTRC2D("Time", ny, ev.TimeMax)
@@ -217,19 +218,25 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	smad := net.AddLayer2D("SMAd", nuCtxY, nuCtxX, emer.Hidden)
 
-	// todo: ofcd deep gated layers here??
+	// todo: agate for sma, ofc, acc
 
-	ofc, ofcct := net.AddSuperCT2D("OFC", nuCtxY, nuCtxX)
+	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.Drives, nuCtxY, nuCtxX, relpos.Behind, 5)
+
+	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX)
+	ofc.SetClass("OFC")
+	ofcct.SetClass("OFC")
 	// ofcct.RecvPrjns().SendName(ofc.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(ofcct, ofcct, parprjn).SetClass("CTSelf")
 	net.ConnectToTRC2D(ofc, ofcct, csp)
-	net.ConnectToTRC2D(ofc, ofcct, usp)
-	net.ConnectToTRC2D(ofc, ofcct, drivesp)
+	net.ConnectToTRC4D(ofc, ofcct, usp)
+	net.ConnectToTRC4D(ofc, ofcct, drivesp)
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX)
+	acc.SetClass("ACC")
+	accct.SetClass("ACC")
 	// accct.RecvPrjns().SendName(acc.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(accct, accct, parprjn).SetClass("CTSelf")
 	net.ConnectToTRC2D(acc, accct, distp)
@@ -251,8 +258,16 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	// Std corticocortical cons -- stim -> hid
 	net.ConnectLayers(cs, ofc, full, emer.Forward)
-	net.ConnectLayers(us, ofc, full, emer.Forward)
-	net.ConnectLayers(drives, ofc, full, emer.Forward)
+	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(drives, ofc, pone2one, emer.Forward)
+
+	// BLA
+	net.ConnectLayersPrjn(cs, blaa, full, emer.Forward, &pvlv.BLAPrjn{})
+	net.ConnectLayersPrjn(us, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{})
+	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
+	// todo: from deep maint layer
+	// net.ConnectLayersPrjn(ofc, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
+	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib)
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
@@ -305,8 +320,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	vl.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1p.Name(), XAlign: relpos.Left, Space: 5})
 	act.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: vl.Name(), XAlign: relpos.Left, Space: 5})
 
-	ofc.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ofc.Name(), YAlign: relpos.Front, Space: 5})
+	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
+	ofc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blae.Name(), XAlign: relpos.Left, Space: 5})
+	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: 5})
 	sma.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: 5})
 	smad.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: smact.Name(), XAlign: relpos.Left, Space: 5})
 

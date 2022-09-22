@@ -24,14 +24,24 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.TRC.DriveScale":          "0.15", // .15 > .05 default
 					"Layer.Act.Decay.Act":           "0.5",
-					"Layer.Act.Decay.Glong":         "1", // clear long
-					"Layer.Inhib.Pool.FFEx":         "0.0",
-					"Layer.Inhib.Layer.FFEx":        "0.0",
+					"Layer.Act.Decay.Glong":         "1",    // clear long
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "1",
 				}},
-			{Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
-				Params: params.Params{}},
+			{Sel: ".OFC", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Pool.On": "true",
+				}},
+			{Sel: ".ACC", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Pool.On": "true",
+				}},
+			{Sel: ".BLA", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Pool.On":   "true",
+					"Layer.DaMod.BurstGain": "0.1",
+					"Layer.DaMod.DipGain":   "0.1",
+				}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":     "0.0", // impose trial structure
@@ -105,6 +115,26 @@ var ParamSets = params.Sets{
 			{Sel: "#SMAToSMAd", Desc: "selects action based on sma -- nominally weaker?",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
+				}},
+			{Sel: "#USToBLAPosAcqD1", Desc: "",
+				Params: params.Params{
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.2",
+				}},
+			{Sel: "#CSToBLAPosAcqD1", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Lrate.Base": "0.5",
+				}},
+			{Sel: "#OFCToBLAPosExtD2", Desc: "",
+				Params: params.Params{
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.25",
+				}},
+			{Sel: "#BLAPosExtD2ToBLAPosAcqD1", Desc: "inhibition from extinction",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 
 			// BG prjns

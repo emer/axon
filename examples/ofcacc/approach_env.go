@@ -78,8 +78,8 @@ func (ev *Approach) Config() {
 	ev.States["USs"] = etensor.NewFloat32([]int{ev.Locations}, nil, nil)
 	ev.States["CSs"] = etensor.NewFloat32([]int{ev.Locations}, nil, nil)
 	ev.States["Pos"] = etensor.NewFloat32([]int{ev.NYReps, ev.Locations}, nil, nil)
-	ev.States["Drives"] = etensor.NewFloat32([]int{ev.NYReps, ev.Drives}, nil, nil)
-	ev.States["US"] = etensor.NewFloat32([]int{ev.NYReps, ev.Drives + 1}, nil, nil)
+	ev.States["Drives"] = etensor.NewFloat32([]int{1, ev.Drives, ev.NYReps, 1}, nil, nil)
+	ev.States["US"] = etensor.NewFloat32([]int{1, ev.Drives + 1, ev.NYReps, 1}, nil, nil)
 	ev.States["CS"] = etensor.NewFloat32([]int{ev.PatSize.Y, ev.PatSize.X}, nil, nil)
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
@@ -163,10 +163,19 @@ func (ev *Approach) RenderLocalist(name string, val int) {
 	}
 }
 
+// RenderLocalist4D renders one localist state in 4D
+func (ev *Approach) RenderLocalist4D(name string, val int) {
+	st := ev.States[name]
+	st.SetZeros()
+	for y := 0; y < ev.NYReps; y++ {
+		st.Set([]int{0, val, y, 0}, 1.0)
+	}
+}
+
 // RenderState renders the current state
 func (ev *Approach) RenderState() {
 	ev.RenderLocalist("Pos", ev.Pos)
-	ev.RenderLocalist("Drives", ev.Drive)
+	ev.RenderLocalist4D("Drives", ev.Drive)
 	ev.RenderLocalist("Dist", ev.Dist)
 	ev.RenderLocalist("Time", ev.Time)
 
@@ -181,9 +190,9 @@ func (ev *Approach) RenderState() {
 // RenderRewUS renders reward and US
 func (ev *Approach) RenderRewUS() {
 	if ev.US < 0 {
-		ev.RenderLocalist("US", ev.Drives)
+		ev.RenderLocalist4D("US", ev.Drives)
 	} else {
-		ev.RenderLocalist("US", ev.US)
+		ev.RenderLocalist4D("US", ev.US)
 	}
 	rew := ev.States["Rew"]
 	rew.Values[0] = ev.Rew

@@ -100,7 +100,11 @@ func (ln *LearnNeurParams) DecayCaLrnSpk(nrn *Neuron, decay float32) {
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
 func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
-	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, nrn.GeRaw+geExt)
+	ge := nrn.GeRaw + geExt
+	if ge < 0 {
+		ge = 0
+	}
+	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, ge)
 	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
 	nrn.NmdaCa = gnmda * ln.LrnNMDA.CaFmV(nrn.VmDend)
 	ln.LrnNMDA.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)

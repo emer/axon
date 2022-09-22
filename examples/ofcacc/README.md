@@ -54,3 +54,7 @@ The narrative story is that you have Drive state (bottom-up), learned CS -> US, 
 * During goal selection gating, BG looks for strong OFC US activation of any sort -- this could be an STN-level filter on enabling gating to take place in the first place -- when the OFC has a new strong US activation it triggers STNp -- otherwise not..
 
 
+# Note: could use topo STN / Thal pathways to select scope of gating
+
+don't need this now but could use later..
+

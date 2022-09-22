@@ -220,7 +220,11 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 // NMDAFmRaw updates all the NMDA variables from GeRaw and current Vm, Spiking
 func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
 	// important: add other sources of GeRaw here in NMDA driver
-	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, nrn.GeRaw+geExt)
+	ge := nrn.GeRaw + geExt
+	if ge < 0 {
+		ge = 0
+	}
+	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, ge)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
@@ -251,6 +255,9 @@ func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32) {
 	}
 
 	nrn.Ge = nrn.GeSyn + geExt
+	if nrn.Ge < 0 {
+		nrn.Ge = 0
+	}
 	ac.GeNoise(nrn)
 }
 
@@ -740,6 +747,9 @@ func (at *AttnParams) Update() {
 
 // ModVal returns the attn-modulated value -- attn must be between 1-0
 func (at *AttnParams) ModVal(val float32, attn float32) float32 {
+	if val < 0 {
+		val = 0
+	}
 	if !at.On {
 		return val
 	}
