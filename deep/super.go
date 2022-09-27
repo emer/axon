@@ -58,8 +58,8 @@ func (ly *SuperLayer) InitActs() {
 	}
 }
 
-func (ly *SuperLayer) DecayState(decay float32) {
-	ly.Layer.DecayState(decay)
+func (ly *SuperLayer) DecayState(decay, glong float32) {
+	ly.Layer.DecayState(decay, glong)
 	for ni := range ly.SuperNeurs {
 		snr := &ly.SuperNeurs[ni]
 		snr.Burst -= decay * (snr.Burst - ly.Act.Init.Act)

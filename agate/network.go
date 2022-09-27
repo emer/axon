@@ -6,86 +6,18 @@ package agate
 
 import (
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/chans"
 	"github.com/emer/axon/deep"
-	"github.com/emer/axon/pcore"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/goki/ki/kit"
 )
-
-// agate.Network has methods for configuring specialized AGate network components
-// for Attentional & adaptive Gating of Action and Thought for Executive function.
-type Network struct {
-	deep.Network
-}
-
-var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
-
-var NetworkProps = deep.NetworkProps
-
-// Defaults sets all the default parameters for all layers and projections
-func (nt *Network) Defaults() {
-	nt.Network.Defaults()
-}
-
-// UpdateParams updates all the derived parameters if any have changed, for all layers
-// and projections
-func (nt *Network) UpdateParams() {
-	nt.Network.UpdateParams()
-}
-
-// UnitVarNames returns a list of variable names available on the units in this layer
-func (nt *Network) UnitVarNames() []string {
-	return NeuronVarsAll
-}
-
-// UnitVarProps returns properties for variables
-func (nt *Network) UnitVarProps() map[string]string {
-	return chans.NeuronVarProps
-}
-
-// SynVarNames returns the names of all the variables on the synapses in this network.
-func (nt *Network) SynVarNames() []string {
-	return pcore.SynVarsAll
-}
-
-// AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi, and VThal layers,
-// with given optional prefix.
-// Assumes that a 4D structure will be used, with Pools representing separable gating domains.
-// Only Matrix has more than 1 unit per Pool by default.
-// Appropriate PoolOneToOne connections are made between layers,
-// using standard styles.
-// space is the spacing between layers (2 typical)
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
-	return pcore.AddBG(&nt.Network.Network, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
-}
-
-// ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
-func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return pcore.ConnectToMatrix(&nt.Network.Network, send, recv, pat)
-}
-
-// AddPFC adds a PFC system including SuperLayer, CT with CTCtxtPrjn, MaintLayer,
-// and OutLayer which is gated by BG.
-// Name is set to "PFC" if empty.  Other layers have appropriate suffixes.
-// Optionally creates a TRC Pulvinar for Super.
-// CT is placed Behind Super, then Out and Maint, and Pulvinar behind CT if created.
-func (nt *Network) AddPFC(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, pulvLay bool) (super, ct, maint, out, pulv emer.Layer) {
-	return AddPFC(&nt.Network.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX, pulvLay)
-}
-
-////////////////////////////////////////////////////////////////////////
-// Network functions available here as standalone functions
-//         for mixing in to other models
 
 // AddMaintLayer adds a MaintLayer using 4D shape with pools,
 // and lateral NMDAMaint PoolOneToOne connectivity.
 func AddMaintLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *MaintLayer {
 	ly := &MaintLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
-	chans.ConnectNMDA(nt, ly, ly, prjn.NewPoolOneToOne())
+	// chans.ConnectNMDA(nt, ly, ly, prjn.NewPoolOneToOne())
 	return ly
 }
 
@@ -126,7 +58,6 @@ func AddPFC(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int,
 	pj.SetClass("PFCFixed")
 	pj = nt.ConnectLayers(maint, out, one2one, emer.Forward)
 	pj.SetClass("PFCFixed")
-	mainti.InterInhib.Lays.Add(out.Name())
 
 	if pulvLay {
 		pulvi := deep.AddTRCLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)

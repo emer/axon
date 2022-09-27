@@ -136,7 +136,7 @@ type AxonLayer interface {
 	NewState()
 
 	// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay)
-	DecayState(decay float32)
+	DecayState(decay, glong float32)
 
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods

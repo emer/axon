@@ -269,15 +269,16 @@ func (nt *Network) InitGScale() {
 }
 
 // DecayState decays activation state by given proportion
-// e.g., 1 = decay completely, and 0 = decay not at all
+// e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g)
 // This is called automatically in NewState, but is avail
 // here for ad-hoc decay cases.
-func (nt *Network) DecayState(decay float32) {
+func (nt *Network) DecayState(decay, glong float32) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).DecayState(decay)
+		ly.(AxonLayer).DecayState(decay, glong)
 	}
 }
 

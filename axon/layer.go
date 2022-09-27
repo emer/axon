@@ -1033,7 +1033,7 @@ func (ly *Layer) NewState() {
 		}
 		nrn.ActPrv = nrn.CaSpkD // nrn.ActP -- this is used in deep learning, makes big diff!
 	}
-	ly.AxonLay.DecayState(ly.Act.Decay.Act)
+	ly.AxonLay.DecayState(ly.Act.Decay.Act, ly.Act.Decay.Glong)
 }
 
 // InitGScale computes the initial scaling factor for synaptic input conductances G,
@@ -1087,16 +1087,16 @@ func (ly *Layer) InitGScale() {
 	}
 }
 
-// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay).
-// This does *not* call InitGInc -- must call that separately at start of AlphaCyc
-func (ly *Layer) DecayState(decay float32) {
+// DecayState decays activation state by given proportion
+// (default decay values are ly.Act.Decay.Act, Glong)
+func (ly *Layer) DecayState(decay, glong float32) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Act.DecayState(nrn, decay)
-		// ly.Learn.DecayCaLrnSpk(nrn, ly.Act.Decay.Glong) // NOT called by default
+		ly.Act.DecayState(nrn, decay, glong)
+		// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	for pi := range ly.Pools { // decaying average act is essential for inhib
@@ -1122,7 +1122,7 @@ func (ly *Layer) DecayCaLrnSpk(decay float32) {
 }
 
 // DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)
-func (ly *Layer) DecayStatePool(pool int, decay float32) {
+func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 	pi := int32(pool + 1) // 1 based
 	pl := &ly.Pools[pi]
 	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
@@ -1130,7 +1130,7 @@ func (ly *Layer) DecayStatePool(pool int, decay float32) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Act.DecayState(nrn, decay)
+		ly.Act.DecayState(nrn, decay, glong)
 	}
 	pl.Inhib.Decay(decay)
 }

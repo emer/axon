@@ -6,10 +6,7 @@ package agate
 
 import (
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/chans"
-	"github.com/emer/axon/interinhib"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
 )
 
 // PulseClearParams are parameters for the synchronous pulse of activation /
@@ -22,74 +19,32 @@ func (pc *PulseClearParams) Defaults() {
 	pc.GABAB = 2
 }
 
-///////////////////////////////////////////////////////////////////////////
-// MaintLayer is a layer with NMDA channels that supports active maintenance
-// in frontal cortex, via NMDA channels (in an NMDAMaintPrjn).
+// MaintLayer is a standard axon layer with stronger NMDA and GABAB to drive
+// more robust active maintenance, simulating the special PFC layer 3 cells
+// with extensive excitatory collaterals.
 type MaintLayer struct {
-	chans.Layer
-	PulseClear PulseClearParams      `desc:"parameters for the synchronous pulse of activation / inhibition that clears NMDA maintenance."`
-	InterInhib interinhib.InterInhib `desc:"inhibition from output layer"`
+	axon.Layer
+	PulseClear PulseClearParams `desc:"parameters for the synchronous pulse of activation / inhibition that clears NMDA maintenance."`
 }
 
 var KiT_MaintLayer = kit.Types.AddType(&MaintLayer{}, axon.LayerProps)
 
 func (ly *MaintLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.NMDA.Gbar = 0.02
 	ly.PulseClear.Defaults()
-	ly.InterInhib.Defaults()
-	ly.InterInhib.Gi = 0.1
-	ly.InterInhib.Add = true
-	ly.Act.Init.Decay = 0
-	ly.Inhib.Pool.On = true
-}
-
-// InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-func (ly *MaintLayer) InhibFmGeAct(ltime *axon.Time) {
-	lpl := &ly.Pools[0]
-	mxact := ly.InterInhibMaxAct(ltime)
-	lpl.Inhib.Act.Avg = mat32.Max(ly.InterInhib.Gi*mxact, lpl.Inhib.Act.Avg)
-	ly.Inhib.Layer.Inhib(&lpl.Inhib)
-	ly.PoolInhibFmGeAct(ltime)
-	ly.InhibFmPool(ltime)
-}
-
-// InterInhibMaxAct returns the AlphaMax activation for source layers
-func (ly *MaintLayer) InterInhibMaxAct(ltime *axon.Time) float32 {
-	mxact := float32(0)
-	for _, lnm := range ly.InterInhib.Lays {
-		oli := ly.Network.LayerByName(lnm)
-		if oli == nil {
-			continue
-		}
-		ol, ok := oli.(*OutLayer)
-		if ok {
-			mxact = ol.MaxAlphaMax()
-		}
-		// todo: anything else?
-	}
-	return mxact
+	ly.Act.Decay.Act = 0
+	ly.Act.Decay.Glong = 0
+	ly.Act.NMDA.Gbar = 0.3 // todo
+	// ly.Inhib.Pool.On = true
 }
 
 // PulseClearNMDA simulates a synchronous pulse of activation that
 // clears the NMDA and puts the layer into a refractory state by
 // activating the GABAB currents.
 func (ly *MaintLayer) PulseClearNMDA() {
-	for ni := range ly.GlNeurs {
+	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		nrn.Act = ly.Act.Init.Act
-		nrn.ActLrn = nrn.Act
-		nrn.Ge = ly.Act.Init.Ge
-		nrn.GeRaw = 0
-		nrn.Vm = ly.Act.Init.Vm
-
-		gnr := &ly.GlNeurs[ni]
-		gnr.VmEff = nrn.Vm
-		gnr.Gnmda = 0
-		gnr.NMDA = 0
-		gnr.NMDASyn = 0
-		gnr.GABAB = ly.PulseClear.GABAB
-		gnr.GABABx = gnr.GABAB
+		ly.Act.DecayState(nrn, 1, 1)
 	}
 }
 

@@ -90,7 +90,7 @@ func (ac *ActParams) Update() {
 // such as Glong and KNa are also decayed with their
 // separately parameterized values.
 // Called with ac.Decay.Act by Layer during NewState
-func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
+func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
 	nrn.ISI = -1
 	nrn.ISIAvg = -1
@@ -114,8 +114,6 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay float32) {
 		nrn.GiSyn -= decay * nrn.GiSyn
 		nrn.GiSelf -= decay * nrn.GiSelf
 	}
-
-	glong := ac.Decay.Glong
 
 	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
 
