@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// vgcc_plot plots an equation updating over time in a etable.Table and Plot2D.
+// mahp_plot plots an equation updating over time in a etable.Table and Plot2D.
 package main
 
 import (
@@ -37,9 +37,9 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	VGCC       chans.VGCCParams `desc:"VGCC function"`
-	Vstart     float32          `def:"-90" desc:"starting voltage"`
-	Vend       float32          `def:"0" desc:"ending voltage"`
+	MAHP       chans.MAHPParams `desc:"mAHP function"`
+	Vstart     float32          `def:"-100" desc:"starting voltage"`
+	Vend       float32          `def:"100" desc:"ending voltage"`
 	Vstep      float32          `def:"1" desc:"voltage increment"`
 	TimeSteps  int              `desc:"number of time steps"`
 	TimeSpike  bool             `desc:"do spiking instead of voltage ramp"`
@@ -59,16 +59,16 @@ var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	ss.VGCC.Defaults()
-	ss.VGCC.Gbar = 1
-	ss.Vstart = -90
-	ss.Vend = 0
+	ss.MAHP.Defaults()
+	ss.MAHP.Gbar = 1
+	ss.Vstart = -100
+	ss.Vend = 100
 	ss.Vstep = 1
-	ss.TimeSteps = 200
+	ss.TimeSteps = 300
 	ss.TimeSpike = true
 	ss.SpikeFreq = 50
 	ss.TimeVstart = -70
-	ss.TimeVend = -20
+	ss.TimeVend = -50
 	ss.Update()
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
@@ -85,51 +85,42 @@ func (ss *Sim) VmRun() {
 	ss.Update()
 	dt := ss.Table
 
+	mp := &ss.MAHP
+
 	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
-		v := ss.Vstart + float32(vi)*ss.Vstep
-		vnorm := chans.VFmBio(v)
-		g := ss.VGCC.GFmV(vnorm)
-		m := ss.VGCC.MFmV(v)
-		h := ss.VGCC.HFmV(v)
-		dm, dh := ss.VGCC.DMHFmV(vnorm, m, h)
+		vbio := ss.Vstart + float32(vi)*ss.Vstep
+		ninf, tau := mp.NinfTauFmV(vbio)
 
-		dt.SetCellFloat("V", vi, float64(v))
-		dt.SetCellFloat("Gvgcc", vi, float64(g))
-		dt.SetCellFloat("M", vi, float64(m))
-		dt.SetCellFloat("H", vi, float64(h))
-		dt.SetCellFloat("dM", vi, float64(dm))
-		dt.SetCellFloat("dH", vi, float64(dh))
+		dt.SetCellFloat("V", vi, float64(vbio))
+		dt.SetCellFloat("Ninf", vi, float64(ninf))
+		dt.SetCellFloat("Tau", vi, float64(tau))
 	}
 	ss.Plot.Update()
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "VgCcplotTable")
+	dt.SetMetaData("name", "mAHPplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"V", etensor.FLOAT64, nil, nil},
-		{"Gvgcc", etensor.FLOAT64, nil, nil},
-		{"M", etensor.FLOAT64, nil, nil},
-		{"H", etensor.FLOAT64, nil, nil},
-		{"dM", etensor.FLOAT64, nil, nil},
-		{"dH", etensor.FLOAT64, nil, nil},
+		{"Ninf", etensor.FLOAT64, nil, nil},
+		{"Tau", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
 func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "VGCC V-G Function Plot"
+	plt.Params.Title = "mAHP V Function Plot"
 	plt.Params.XAxisCol = "V"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gvgcc", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("H", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Ninf", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Tau", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
 }
 
@@ -140,8 +131,10 @@ func (ss *Sim) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	m := float32(0)
-	h := float32(1)
+	mp := &ss.MAHP
+
+	n, _ := mp.NinfTauFmV(ss.TimeVstart)
+	kna := float32(0)
 	msdt := float32(0.001)
 	v := ss.TimeVstart
 	vinc := float32(2) * (ss.TimeVend - ss.TimeVstart) / float32(ss.TimeSteps)
@@ -149,28 +142,31 @@ func (ss *Sim) TimeRun() {
 	isi := int(1000 / ss.SpikeFreq)
 
 	dt.SetNumRows(ss.TimeSteps)
-	var g float32
-	for ti := 0; ti < ss.TimeSteps; ti++ {
+	for ti := 1; ti <= ss.TimeSteps; ti++ {
 		vnorm := chans.VFmBio(v)
 		t := float32(ti) * msdt
-		g = ss.VGCC.Gvgcc(vnorm, m, h)
-		dm, dh := ss.VGCC.DMHFmV(vnorm, m, h)
-		m += dm
-		h += dh
+
+		ninf, tau := mp.NinfTauFmV(v)
+		dn := mp.DNFmV(vnorm, n)
+		g := mp.GmAHP(n)
 
 		dt.SetCellFloat("Time", ti, float64(t))
 		dt.SetCellFloat("V", ti, float64(v))
-		dt.SetCellFloat("Gvgcc", ti, float64(g))
-		dt.SetCellFloat("M", ti, float64(m))
-		dt.SetCellFloat("H", ti, float64(h))
-		dt.SetCellFloat("dM", ti, float64(dm))
-		dt.SetCellFloat("dH", ti, float64(dh))
+		dt.SetCellFloat("GmAHP", ti, float64(g))
+		dt.SetCellFloat("N", ti, float64(n))
+		dt.SetCellFloat("dN", ti, float64(dn))
+		dt.SetCellFloat("Ninf", ti, float64(ninf))
+		dt.SetCellFloat("Tau", ti, float64(tau))
+		dt.SetCellFloat("Kna", ti, float64(kna))
 
 		if ss.TimeSpike {
-			if ti%isi < 3 {
+			si := ti % isi
+			if si == 0 {
 				v = ss.TimeVend
+				kna += 0.05 * (1 - kna)
 			} else {
-				v = ss.TimeVstart
+				v = ss.TimeVstart + (float32(si)/float32(isi))*(ss.TimeVend-ss.TimeVstart)
+				kna -= kna / 50
 			}
 		} else {
 			v += vinc
@@ -178,23 +174,25 @@ func (ss *Sim) TimeRun() {
 				v = ss.TimeVend
 			}
 		}
+		n += dn
 	}
 	ss.TimePlot.Update()
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
-	dt.SetMetaData("name", "VgCcplotTable")
+	dt.SetMetaData("name", "mAHPplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"Time", etensor.FLOAT64, nil, nil},
 		{"V", etensor.FLOAT64, nil, nil},
-		{"Gvgcc", etensor.FLOAT64, nil, nil},
-		{"M", etensor.FLOAT64, nil, nil},
-		{"H", etensor.FLOAT64, nil, nil},
-		{"dM", etensor.FLOAT64, nil, nil},
-		{"dH", etensor.FLOAT64, nil, nil},
+		{"GmAHP", etensor.FLOAT64, nil, nil},
+		{"N", etensor.FLOAT64, nil, nil},
+		{"dN", etensor.FLOAT64, nil, nil},
+		{"Ninf", etensor.FLOAT64, nil, nil},
+		{"Tau", etensor.FLOAT64, nil, nil},
+		{"Kna", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -205,11 +203,13 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gvgcc", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("M", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("H", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dM", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("dH", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GmAHP", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("N", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("dN", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Ninf", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Tau", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Kna", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
 }
 
@@ -220,10 +220,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	// gi.WinEventTrace = true
 
-	gi.SetAppName("vgcc_plot")
+	gi.SetAppName("mahp_plot")
 	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("vgcc_plot", "Plotting Equations", width, height)
+	win := gi.NewMainWindow("mahp_plot", "Plotting Equations", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -264,7 +264,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/vgcc_plot/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/mahp_plot/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

@@ -2,7 +2,7 @@
 
 `chans.go` contains `Chans` which defines the basic `E, L, I, K` channels.
 
-Other channels are described below.  There are various `_plot` directories with simple programs to plot the various functions and explore parameters.
+Other channels are described below.  There are various `_plot` directories with simple programs to plot the various functions and explore parameters.  The README files in these dirs contain more detailed info about the implementation of each channel type, etc.
 
 This package will eventually contain the whole vocabulary of channels known to exist in neurons. Not all are likely to be incorporated into the `axon` neuron types -- we are gradually including channels as needed based on well-defined functional understanding of their role.
 
@@ -128,7 +128,7 @@ See [Bhattacharjee & Kaczmarek (2005)](#references) and [Kaczmarek (2013)](#refe
 	if spike {
 		gKNa += Rise * (Max - gKNa)
 	} else {
-		gKNa -= 1/Tau * gKNa
+		gKNa -= gKNa / Tau
 	}
 ```
 
@@ -151,7 +151,17 @@ The SKCa channel is used in the basal ganglia `pcore` STN neuron, using the more
 
 ## M-type (KCNQ, Kv7): AcH modulated
 
-The M-type (muscarinic) channel is voltage sensitive, but opens fully at low voltages (-60 mV), and can be closed by acetylcholine (AcH) and many other things [(Greene & Hoshi, 2017)](#references).  There are many subtypes due to different constituents.  In general it takes a while to activate, around 100 msec or more, and deactivates on that same timescale.  Thus, it is an important contributor to the mAHP that can be modulated by various neuromodulators.  https://neuronaldynamics.epfl.ch/online/Ch2.S3.html describe it as having a higher activation potential (-40mV) and faster decay rate (50 ms) and thus being similar to KNa in being only activated by spikes and decaying at the faster rate, as shown above.  Thus, we subsume this "basic" version of M-type in our KNa dynamics.
+The M-type (muscarinic, mAHP) channel is voltage sensitive, but opens fully at low voltages (-60 mV), and can be closed by acetylcholine (AcH) and many other things [(Greene & Hoshi, 2017)](#references).  There are many subtypes due to different constituents.  In general it takes a while to activate, around 100 msec or more, and deactivates on that same timescale.  Thus, it is an important contributor to the mAHP that can be modulated by various neuromodulators.  https://neuronaldynamics.epfl.ch/online/Ch2.S3.html describe it as having a higher activation potential (-40mV) and faster decay rate (50 ms) and thus being similar to KNa in being only activated by spikes and decaying at the faster rate, as shown above.  Thus, we have subsumed this "basic" version of M-type in the KNa dynamics.
+
+The original characterization of the M-type current in most models derives from [Gutfreund et al (1995)](#references), as implemented in NEURON by [Mainen & Sejnowski (1996)](#references) -- see https://icg.neurotheory.ox.ac.uk/viewer/?family=1&channel=1706 for the geneology of this code!
+
+There is a voltage gating factor *n* (often labeled *m* for other channels) which has an asymptotic drive value as an exponential logistic function of Vm, and a variable tau that is also a function of Vm.
+
+
+*
+https://senselab.med.yale.edu/ModelDB/ShowModel?model=181967&file=/CutsuridisPoirazi2015/km.mod#tabs-2
+* https://senselab.med.yale.edu/ModelDB/ShowModel?model=231185&file=/orientation_preference/mod.files/km.mod#tabs-2
+* https://senselab.med.yale.edu/ModelDB/ShowModel?model=266901&file=/TomkoEtAl2021/Mods/kmb.mod#tabs-2
 
 ## sAHP: slow afterhyperpolarization
 
@@ -190,9 +200,13 @@ Magee98: Overall, Ih acts to dampen dendritic excitability, but its largest impa
 
 * Günay, C., Edgerton, J. R., & Jaeger, D. (2008). Channel Density Distributions Explain Spiking Variability in the Globus Pallidus: A Combined Physiology and Computer Simulation Database Approach. Journal of Neuroscience, 28(30), 7476–7491. https://doi.org/10.1523/JNEUROSCI.4198-07.2008
 
+* Gutfreund, Y., Yarom, Y., & Segev, I. (1995). Subthreshold oscillations and resonant frequency in guinea-pig cortical neurons: Physiology and modelling. The Journal of Physiology, 483(3), 621–640. https://doi.org/10.1113/jphysiol.1995.sp020611
+
 * Kaczmarek, L. K. (2013). Slack, Slick, and Sodium-Activated Potassium Channels. ISRN Neuroscience, 2013. https://doi.org/10.1155/2013/354262
 
 * Larsson, H. P. (2013). What Determines the Kinetics of the Slow Afterhyperpolarization (sAHP) in Neurons? Biophysical Journal, 104(2), 281–283. https://doi.org/10.1016/j.bpj.2012.11.3832
+
+* Mainen, Z. F., & Sejnowski, T. J. (1996). Influence of dendritic structure on firing pattern in model neocortical neurons. Nature, 382, 363. http://www.ncbi.nlm.nih.gov/pubmed/8684467
 
 * Migliore, M., Hoffman, D. A., Magee, J. C., & Johnston, D. (1999). Role of an A-Type K+ Conductance in the Back-Propagation of Action Potentials in the Dendrites of Hippocampal Pyramidal Neurons. *Journal of Computational Neuroscience, 7(1),* 5–15. https://doi.org/10.1023/A:1008906225285
 

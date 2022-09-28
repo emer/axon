@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// gababplot plots an equation updating over time in a etable.Table and Plot2D.
-// This is a good starting point for any plotting to explore specific equations.
-// This example plots a double exponential (biexponential) model of synaptic currents.
+// gabab_plot plots an equation updating over time in a etable.Table and Plot2D.
 package main
 
 import (
