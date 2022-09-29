@@ -26,10 +26,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
 					"Layer.Act.NMDA.Tau":            "100",  // 100 def -- 50 is sig worse
+					"Layer.Act.MAHP.Gbar":           "0.05", // 0.05 works..
 					"Layer.Act.GABAB.Gbar":          "0.2",  // 0.2 def > higher
 					"Layer.Act.AK.Gbar":             "0.1",  // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
 					"Layer.Act.VGCC.Gbar":           "0.02", // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
-					"Layer.Act.VGCC.Ca":             "20",   // 20 / 10tau similar to spk
+					"Layer.Act.VGCC.Ca":             "25",   // 25 / 10tau default
 					"Layer.Learn.CaLrn.Norm":        "80",   // 80 works
 					"Layer.Learn.CaLrn.SpkVGCC":     "true", // sig better..
 					"Layer.Learn.CaLrn.SpkVgccCa":   "35",   // 70 / 5 or 35 / 10 both work

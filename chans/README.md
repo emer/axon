@@ -8,7 +8,7 @@ This package will eventually contain the whole vocabulary of channels known to e
 
 The implementation of several of these channels comes from standard biophysically detailed models such as [Migliore et al. (1999)](#references) and [Poirazi et al. (2003)](#references), which were used in the [Urakubo et al (2008)](#references) model.  See also [Brette et al, 2007](#references) and [NEST model directory](https://nest-simulator.readthedocs.io/en/stable/models/index.html) for documented examples, including: [AdEx](https://nest-simulator.readthedocs.io/en/stable/models/aeif_cond_exp.html), [Traub HH](https://nest-simulator.readthedocs.io/en/stable/models/hh_cond_exp_traub.html).  The [Brian Examples](https://brian2.readthedocs.io/en/stable/examples/index.html) contain full easy-to-read equations for various standard models, including [Brunel & Wang, 2001](https://brian2.readthedocs.io/en/stable/examples/frompapers.Brunel_Wang_2001.html). Also see [Wikipedia: Biological neuron model](https://en.wikipedia.org/wiki/Biological_neuron_model) for a nice overview.
 
-See [ModelDB Currents](https://senselab.med.yale.edu/NeuronDB/NeuronalCurrents) and [ModelDB Current Search](https://senselab.med.yale.edu/ModelDB/FindByCurrent) for a standardized list of currents included in biophysical models made in NEURON and related software.  By far the most numerous category are the K+ potassium channels, which can be gated by voltage, sodium, calcium, and other factors, and modulate the excitability of the neuron.
+See [ModelDB Currents](https://senselab.med.yale.edu/NeuronDB/NeuronalCurrents) and [ModelDB Current Search](https://senselab.med.yale.edu/ModelDB/FindByCurrent) and [IonChannelGeneology](https://icg.neurotheory.ox.ac.uk) for standardized lists of currents included in biophysical models made in NEURON and related software.  By far the most numerous category are the K+ potassium channels, which can be gated by voltage, sodium, calcium, and other factors, and modulate the excitability of the neuron.
 
 # Basic E, L, I channels
 
@@ -110,7 +110,7 @@ AK (in `ak.go`) is voltage gated with maximal activation around -37 mV.  It is p
 
 It has two state variables, M (v-gated opening) and H (v-gated closing), which integrate with fast and slow time constants, respectively. H relatively quickly hits an asymptotic level of inactivation for sustained activity patterns. See AKsParams for a much simpler version that works fine when full AP-like spikes are not simulated, as in our standard axon models.
 
-# K+ channels that drive adaptation: KNa, CaK, sAHP
+# K+ channels that drive adaptation: KNa, M-type mAHP, CaK, sAHP
 
 There are multiple types of K+ channels that contribute to *adaptation* -- slowing of the rate of spiking over time for a constant excitatory input [(Dwivedi & Bhalla, 2021)](#references).  This is a critical property of neurons, to make them responsive to changes --- constants are filtered out.  Somehow, the computational modeling community, and perhaps the broader neuroscience world as well, has focused on calcium-gated K channels, and not the sodium-gated ones.  However, the Na+ gated ones are much simpler to implement, and have been clearly demonstrated to underlie a significant proportion of the observed adaptation dynamic, so they are the primary form of adaptation implemented in the axon base neuron.
 
@@ -122,7 +122,7 @@ Dwivedi & Bhalla (2021) define three broad timescales for AHP (afterhyperpolariz
 
 ## KNa
 
-See [Bhattacharjee & Kaczmarek (2005)](#references) and [Kaczmarek (2013)](#references) for reviews of the literature on various time-scales of KNa channels.  The dynamics are simple: the conductance rises with every spike-driven influx of Na, and it decays with a time-constant.
+See [Bhattacharjee & Kaczmarek (2005)](#references) and [Kaczmarek (2013)](#references) for reviews of the literature on various time-scales of KNa channels.  The dynamics implemented in `kna.go` are simple: the conductance rises with every spike-driven influx of Na, and it decays with a time-constant.
 
 ```Go
 	if spike {
@@ -136,36 +136,43 @@ The different types are:
 
 | Channel Type     | Tau (ms) | Rise  |  Max  |
 |------------------|----------|-------|-------|
-| Fast (pseudo-M-type) | 50       | 0.05  | 0.1   |
 | Medium (Slick)   | 200      | 0.02  | 0.1   |
 | Slow (Slack)     | 1000     | 0.001 | 1.0   |
 
+
+## M-type (KCNQ, Kv7): AcH modulated
+
+The M-type (muscarinic, mAHP) channel is voltage sensitive, but starts to open at low voltages (-60 mV), and can be closed by acetylcholine (AcH) and many other things [(Greene & Hoshi, 2017)](#references).  There are many subtypes due to different constituents.  In general it takes a while to activate, with a time constant of around 50 msec or so, and deactivates on that same timescale.  Thus, it is an important contributor to the mAHP that can be modulated by various neuromodulators.  [Gerstner et al](https://neuronaldynamics.epfl.ch/online/Ch2.S3.html) describe it as having a higher activation potential (-40mV) and faster decay rate (50 ms) and thus is primarily activated by spikes.  As such, it is similar to a KNa spike-driven channel as shown above.
+
+A more complex and widely used version is implemented in `MAHPParams` in `mahp.go`, which is now used in the base axon neuron type.  See [mahp_plot](https://github.com/emer/axon/tree/master/chans/mahp_plot) for more info, including a comparison against the simple KNa mechanism.  This comparison reveals that while these functions do have an overall similar conductance level in relation to basic spiking, the more realistic M-type channel has a stronger "anticipatory" conductance prior to the spike, due to it being directly based on membrane potential and not Na from spiking.  Also, its voltage gating profile is sufficiently broad that it does get engaged significantly prior to spiking.  Thus, it will "head off" incipient spikes in a way that the simple KNa function will not.
+
+The original characterization of the M-type current in most models derives from [Gutfreund et al (1995)](#references), as implemented in NEURON by [Mainen & Sejnowski (1996)](#references) -- [ModelDB entry](https://senselab.med.yale.edu/ModelDB/ShowModel?model=2488&file=/cells/km.mod#tabs-2) -- see [ICGeneology](https://icg.neurotheory.ox.ac.uk/viewer/?family=1&channel=1706) for the widespread use of this code.
+
+There is a voltage gating factor *n* (often labeled *m* for other channels) which has an asymptotic drive value (*ninf*) as an exponential logistic function of Vm (centered at -30 mV with a slope of 9 mV -- fairly broad), and a variable time constant *tau* that is also a function of Vm:
+```Go
+	vo = (V - Voff)
+	a = vo / TauMax * (1 - exp(-vo/Vslope))
+	b = -vo / TauMax * (1 - exp(vo/Vslope))
+
+   tau = 1 / (a + b)
+   ninf = a / (a + b)
+```
+
+A simpler, easy-to-read version is in the ModelDB for [Cutsuridis & Poirazi (2015)](https://senselab.med.yale.edu/ModelDB/ShowModel?model=181967&file=/CutsuridisPoirazi2015/km.mod#tabs-2) -- the Mainen version contains a few tricks to avoid singularities, which we use in our implementation.
 
 ## Calcium-gated Potassium Channels: SK and BK
 
 There are two major types of Ca-gated K channels: "small" K (SK, SKCa) and "big" K (BK, BKCa).  These channels are more complicated to simulate relative to KNa, because they depend on Ca dynamics which are much more complicated than just tracking spiking.  
 
-The SK channel (in `scka.go`) is based on the implementation by [Fujita et al (2012)](#references), in turn based on [Gunay et al (2008)](#references), using a simple Hill equation which takes the form of $X / (X + C_{50})$ where $C_{50}$ is the concentration at which the value is at 50%.  A different logistic exponential equation was given in [Gillies & Willshaw, 2006](#references), in a model of the subthalamic nucleus (STN) cell.  Dwivedi & Bhalla (2021) give an activation time constant of 5-15 ms and decay constant of around 30 ms for the SKCa.
+The SK channel (in `scka.go`, see [skca_plot](https://github.com/emer/axon/tree/master/chans/skca_plot)) is based on the implementation by [Fujita et al (2012)](#references), in turn based on [Gunay et al (2008)](#references), using a simple Hill equation which takes the form of $X / (X + C_{50})$ where $C_{50}$ is the concentration at which the value is at 50%.  A different logistic exponential equation was given in [Gillies & Willshaw, 2006](#references), in a model of the subthalamic nucleus (STN) cell.  Dwivedi & Bhalla (2021) give an activation time constant of 5-15 ms and decay constant of around 30 ms for the SKCa.
 
 The SKCa channel is used in the basal ganglia `pcore` STN neuron, using the more slowly integrated `CaD` calcium signal (which also drives Ca-based learning).  It plays a critical role in pausing neural activity after a brief bit of activity triggered by a new PFC input representation.
 
-## M-type (KCNQ, Kv7): AcH modulated
-
-The M-type (muscarinic, mAHP) channel is voltage sensitive, but opens fully at low voltages (-60 mV), and can be closed by acetylcholine (AcH) and many other things [(Greene & Hoshi, 2017)](#references).  There are many subtypes due to different constituents.  In general it takes a while to activate, around 100 msec or more, and deactivates on that same timescale.  Thus, it is an important contributor to the mAHP that can be modulated by various neuromodulators.  https://neuronaldynamics.epfl.ch/online/Ch2.S3.html describe it as having a higher activation potential (-40mV) and faster decay rate (50 ms) and thus being similar to KNa in being only activated by spikes and decaying at the faster rate, as shown above.  Thus, we have subsumed this "basic" version of M-type in the KNa dynamics.
-
-The original characterization of the M-type current in most models derives from [Gutfreund et al (1995)](#references), as implemented in NEURON by [Mainen & Sejnowski (1996)](#references) -- see https://icg.neurotheory.ox.ac.uk/viewer/?family=1&channel=1706 for the geneology of this code!
-
-There is a voltage gating factor *n* (often labeled *m* for other channels) which has an asymptotic drive value as an exponential logistic function of Vm, and a variable tau that is also a function of Vm.
-
-
-*
-https://senselab.med.yale.edu/ModelDB/ShowModel?model=181967&file=/CutsuridisPoirazi2015/km.mod#tabs-2
-* https://senselab.med.yale.edu/ModelDB/ShowModel?model=231185&file=/orientation_preference/mod.files/km.mod#tabs-2
-* https://senselab.med.yale.edu/ModelDB/ShowModel?model=266901&file=/TomkoEtAl2021/Mods/kmb.mod#tabs-2
+BK channels are very high conductance with very fast dynamics, and they play a role in shaping the action potential.  We are currently putting them on the "safe to ignore" list -- they are not widely implemented in biophysical models according to [ModelDB](https://senselab.med.yale.edu/ModelDB/ModelList?id=243504).
 
 ## sAHP: slow afterhyperpolarization
 
-[Larsson (2013)](#references) provides a nice narrative about the difficulty in tracking down the origin of a very slow, long-lasting sAHP current that has been observed in hippocampal and other neurons.  It appears to be yet another modulator on the M-type channels, that is driven by calcium sensor pathways that have longer time constants.  There is more work to be done here, but we can safely use a mechanism that takes a long time to build up before activating the K+ channels, and then takes a long time to decay as well.  This will provide appropriate dynamics for the CT neurons.
+[Larsson (2013)](#references) provides a nice narrative about the difficulty in tracking down the origin of a very slow, long-lasting sAHP current that has been observed in hippocampal and other neurons.  It appears to be yet another modulator on the M-type channels, that is driven by calcium sensor pathways that have longer time constants.  There is more research to be done here, but we can safely use a mechanism that takes a long time to build up before activating the K+ channels, and then takes a long time to decay as well.  This will provide appropriate dynamics for the CT neurons.
 
 # HCN channels: I_h
 
@@ -216,4 +223,5 @@ Magee98: Overall, Ih acts to dampen dendritic excitability, but its largest impa
 
 * Urakubo, H., Honda, M., Froemke, R. C., & Kuroda, S. (2008). Requirement of an allosteric kinetics of NMDA receptors for spike timing-dependent plasticity. *The Journal of Neuroscience, 28(13),* 3310–3323. http://www.ncbi.nlm.nih.gov/pubmed/18367598
 
+* Wang, B., Jaffe, D. B., & Brenner, R. (2014). Current understanding of iberiotoxin-resistant BK channels in the nervous system. Frontiers in Physiology, 5. https://www.frontiersin.org/articles/10.3389/fphys.2014.00382
 

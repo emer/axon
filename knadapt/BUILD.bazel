@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "knadapt",
-    srcs = ["knadapt.go"],
-    importpath = "github.com/emer/axon/knadapt",
-    visibility = ["//visibility:public"],
-)

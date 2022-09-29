@@ -81,7 +81,7 @@ type Neuron struct {
 
 	GeM      float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
 	GiM      float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
-	GknaFast float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`
+	MahpN    float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`
 	GknaMed  float32 `desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`
 	GknaSlow float32 `desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`
 
@@ -130,7 +130,7 @@ var NeuronVarProps = map[string]string{
 	"AvgPct":    `range:"2"`,
 	"TrgAvg":    `range:"2"`,
 	"DTrgAvg":   `auto-scale:"+"`,
-	"GknaFast":  `auto-scale:"+"`,
+	"MahpN":     `auto-scale:"+"`,
 	"GknaMed":   `auto-scale:"+"`,
 	"GknaSlow":  `auto-scale:"+"`,
 	"Gnmda":     `auto-scale:"+"`,

@@ -8,7 +8,6 @@ import (
 	"math/rand"
 
 	"github.com/emer/axon/chans"
-	"github.com/emer/axon/knadapt"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/ints"
@@ -32,7 +31,8 @@ type ActParams struct {
 	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
 	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
-	KNa     knadapt.Params    `view:"no-inline" desc:"sodium-gated potassium channel adaptation parameters -- activates an inhibitory leak-like current as a function of neural activity (firing = Na influx) at three different time-scales (M-type = fast, Slick = medium, Slack = slow)"`
+	MAHP    chans.MAHPParams  `view:"inline" desc:"M-type medium-time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
+	KNa     chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
 	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
 	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
 	VGCC    chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
@@ -51,8 +51,10 @@ func (ac *ActParams) Defaults() {
 	ac.Clamp.Defaults()
 	ac.Noise.Defaults()
 	ac.VmRange.Set(0.1, 1.0)
+	ac.MAHP.Defaults()
+	ac.MAHP.Gbar = 0.05
 	ac.KNa.Defaults()
-	ac.KNa.On = true // generally beneficial
+	ac.KNa.On = true
 	ac.NMDA.Defaults()
 	ac.NMDA.Gbar = 0.15 // .15 now -- was 0.3 best.
 	ac.GABAB.Defaults()
@@ -74,6 +76,7 @@ func (ac *ActParams) Update() {
 	ac.Dt.Update()
 	ac.Clamp.Update()
 	ac.Noise.Update()
+	ac.MAHP.Update()
 	ac.KNa.Update()
 	ac.NMDA.Update()
 	ac.GABAB.Update()
@@ -117,7 +120,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
 
-	nrn.GknaFast -= ac.Decay.KNa * nrn.GknaFast
+	nrn.MahpN -= ac.Decay.KNa * nrn.MahpN // TODO: change to MahpN
 	nrn.GknaMed -= ac.Decay.KNa * nrn.GknaMed
 	nrn.GknaSlow -= ac.Decay.KNa * nrn.GknaSlow
 
@@ -174,7 +177,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GiSyn = 0
 	nrn.GiSelf = 0
 
-	nrn.GknaFast = 0
+	nrn.MahpN = 0
 	nrn.GknaMed = 0
 	nrn.GknaSlow = 0
 
@@ -408,14 +411,14 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.ActDel = nwAct - nrn.Act
 	nrn.Act = nwAct
-	if ac.KNa.On {
-		ac.KNa.GcFmSpike(&nrn.GknaFast, &nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
-		nrn.Gk = nrn.GknaFast + nrn.GknaMed + nrn.GknaSlow
-	} else {
-		nrn.Gk = 0
-	}
+	dn := ac.MAHP.DNFmV(nrn.Vm, nrn.MahpN)
+	nrn.MahpN += dn
 	nrn.Gak = ac.AK.Gak(nrn.VmDend)
-	nrn.Gk += nrn.Gak
+	nrn.Gk = nrn.Gak + ac.MAHP.GmAHP(nrn.MahpN)
+	if ac.KNa.On {
+		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
+		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
