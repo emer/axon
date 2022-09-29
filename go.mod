@@ -41,7 +41,7 @@ require (
 	github.com/goki/prof v1.0.0 // indirect
 	github.com/goki/vci v1.0.1 // indirect
 	github.com/goki/vgpu v1.0.5 // indirect
-	github.com/goki/vulkan v0.0.0-20220826212136-256f2efb4961 // indirect
+	github.com/goki/vulkan v0.0.0-20220928215615-c67065a9cfc2
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
