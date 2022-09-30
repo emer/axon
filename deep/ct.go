@@ -28,7 +28,7 @@ func (ly *CTLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.KNa = 0
+	ly.Act.Decay.AHP = 0
 	ly.Typ = CT
 	ly.CtxtGeGain = 0.2
 }

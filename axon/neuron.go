@@ -81,7 +81,9 @@ type Neuron struct {
 
 	GeM      float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
 	GiM      float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
-	MahpN    float32 `desc:"conductance of sodium-gated potassium channel (KNa) fast dynamics (M-type) -- produces accommodation / adaptation of firing"`
+	MahpN    float32 `desc:"accumulating voltage-gated gating value for the medium time scale AHP"`
+	SahpCa   float32 `desc:"slowly accumulating calcium value that drives the slow AHP"`
+	SahpN    float32 `desc:"sAHP gating value"`
 	GknaMed  float32 `desc:"conductance of sodium-gated potassium channel (KNa) medium dynamics (Slick) -- produces accommodation / adaptation of firing"`
 	GknaSlow float32 `desc:"conductance of sodium-gated potassium channel (KNa) slow dynamics (Slack) -- produces accommodation / adaptation of firing"`
 

@@ -6,14 +6,14 @@ package chans
 
 import "github.com/goki/mat32"
 
-// MAHPParams implements an M-type medium afterhyperpolarizing (mAHP) channel,
+// MahpParams implements an M-type medium afterhyperpolarizing (mAHP) channel,
 // where m also stands for muscarinic due to the ACh inactivation of this channel.
 // It has a slow activation and deactivation time constant, and opens at a lowish
 // membrane potential.
 // There is one gating variable n updated over time with a tau that is also voltage dependent.
 // The infinite-time value of n is voltage dependent according to a logistic function
 // of the membrane potential, centered at Voff with slope Vslope.
-type MAHPParams struct {
+type MahpParams struct {
 	Gbar   float32 `def:"0.05" desc:"strength of mAHP current"`
 	Voff   float32 `def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
 	Vslope float32 `def:"9" desc:"slope of the arget (infinite time) gating function"`
@@ -23,7 +23,7 @@ type MAHPParams struct {
 }
 
 // Defaults sets the parameters
-func (mp *MAHPParams) Defaults() {
+func (mp *MahpParams) Defaults() {
 	mp.Gbar = 0.05
 	mp.Voff = -30
 	mp.Vslope = 9
@@ -32,12 +32,12 @@ func (mp *MAHPParams) Defaults() {
 	mp.Update()
 }
 
-func (mp *MAHPParams) Update() {
+func (mp *MahpParams) Update() {
 	mp.DtMax = 1.0 / mp.TauMax
 }
 
 // EFun handles singularities in an elegant way -- from Mainen impl
-func (mp *MAHPParams) EFun(z float32) float32 {
+func (mp *MahpParams) EFun(z float32) float32 {
 	if mat32.Abs(z) < 1.0e-4 {
 		return 1.0 - 0.5*z
 	}
@@ -46,7 +46,7 @@ func (mp *MAHPParams) EFun(z float32) float32 {
 
 // NinfTauFmV returns the target infinite-time N gate value and
 // voltage-dependent time constant tau, from vbio
-func (mp *MAHPParams) NinfTauFmV(vbio float32) (ninf, tau float32) {
+func (mp *MahpParams) NinfTauFmV(vbio float32) (ninf, tau float32) {
 	vo := vbio - mp.Voff
 
 	// logical functions, but have signularity at Voff (vo = 0)
@@ -64,12 +64,12 @@ func (mp *MAHPParams) NinfTauFmV(vbio float32) (ninf, tau float32) {
 
 // NinfTauFmV returns the target infinite-time N gate value and
 // voltage-dependent time constant tau, from normalized vm
-func (mp *MAHPParams) NinfTauFmVnorm(v float32) (ninf, tau float32) {
+func (mp *MahpParams) NinfTauFmVnorm(v float32) (ninf, tau float32) {
 	return mp.NinfTauFmV(VToBio(v))
 }
 
 // DNFmV returns the change in gating factor N based on normalized Vm
-func (mp *MAHPParams) DNFmV(v, n float32) float32 {
+func (mp *MahpParams) DNFmV(v, n float32) float32 {
 	ninf, tau := mp.NinfTauFmVnorm(v)
 	// dt := 1.0 - mat32.FastExp(-mp.Tadj/tau) // Mainen comments out this form; Poirazi uses
 	// dt := mp.Tadj / tau // simple linear fix
@@ -78,7 +78,6 @@ func (mp *MAHPParams) DNFmV(v, n float32) float32 {
 }
 
 // GmAHP returns the conductance as a function of n
-// GBar * MFmVnorm(v)
-func (mp *MAHPParams) GmAHP(n float32) float32 {
+func (mp *MahpParams) GmAHP(n float32) float32 {
 	return mp.Tadj * mp.Gbar * n
 }

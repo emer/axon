@@ -1,4 +1,4 @@
-# M-type voltage gated potassium channel
+# M-type voltage gated potassium channel: mAHP
 
 This voltage-gated K channel, which is also inactivated by ACh muscarinic receptor activation, plays a role in medium time-scale afterhyperpolarization (mAHP).
 

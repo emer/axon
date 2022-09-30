@@ -31,7 +31,8 @@ type ActParams struct {
 	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
 	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
-	MAHP    chans.MAHPParams  `view:"inline" desc:"M-type medium-time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
+	Mahp    chans.MahpParams  `view:"inline" desc:"M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
+	Sahp    chans.SahpParams  `view:"inline" desc:"slow time-scale afterhyperpolarization sAHP current -- integrates SpkCaD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron"`
 	KNa     chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
 	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
 	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
@@ -51,8 +52,10 @@ func (ac *ActParams) Defaults() {
 	ac.Clamp.Defaults()
 	ac.Noise.Defaults()
 	ac.VmRange.Set(0.1, 1.0)
-	ac.MAHP.Defaults()
-	ac.MAHP.Gbar = 0.05
+	ac.Mahp.Defaults()
+	ac.Mahp.Gbar = 0.02
+	ac.Sahp.Defaults()
+	ac.Sahp.Gbar = 0.05
 	ac.KNa.Defaults()
 	ac.KNa.On = true
 	ac.NMDA.Defaults()
@@ -76,7 +79,8 @@ func (ac *ActParams) Update() {
 	ac.Dt.Update()
 	ac.Clamp.Update()
 	ac.Noise.Update()
-	ac.MAHP.Update()
+	ac.Mahp.Update()
+	ac.Sahp.Update()
 	ac.KNa.Update()
 	ac.NMDA.Update()
 	ac.GABAB.Update()
@@ -120,9 +124,11 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
 
-	nrn.MahpN -= ac.Decay.KNa * nrn.MahpN // TODO: change to MahpN
-	nrn.GknaMed -= ac.Decay.KNa * nrn.GknaMed
-	nrn.GknaSlow -= ac.Decay.KNa * nrn.GknaSlow
+	nrn.MahpN -= ac.Decay.AHP * nrn.MahpN
+	nrn.SahpCa -= ac.Decay.AHP * nrn.SahpCa
+	nrn.SahpN -= ac.Decay.AHP * nrn.SahpN
+	nrn.GknaMed -= ac.Decay.AHP * nrn.GknaMed
+	nrn.GknaSlow -= ac.Decay.AHP * nrn.GknaSlow
 
 	nrn.GgabaB -= glong * nrn.GgabaB
 	nrn.GABAB -= glong * nrn.GABAB
@@ -178,6 +184,8 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GiSelf = 0
 
 	nrn.MahpN = 0
+	nrn.SahpCa = 0
+	nrn.SahpN = 0
 	nrn.GknaMed = 0
 	nrn.GknaSlow = 0
 
@@ -411,10 +419,10 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.ActDel = nwAct - nrn.Act
 	nrn.Act = nwAct
-	dn := ac.MAHP.DNFmV(nrn.Vm, nrn.MahpN)
+	dn := ac.Mahp.DNFmV(nrn.Vm, nrn.MahpN)
 	nrn.MahpN += dn
 	nrn.Gak = ac.AK.Gak(nrn.VmDend)
-	nrn.Gk = nrn.Gak + ac.MAHP.GmAHP(nrn.MahpN)
+	nrn.Gk = nrn.Gak + ac.Mahp.GmAHP(nrn.MahpN) + ac.Sahp.GsAHP(nrn.SahpN)
 	if ac.KNa.On {
 		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
@@ -567,7 +575,7 @@ func (ai *ActInitParams) GiBase() float32 {
 type DecayParams struct {
 	Act   float32 `def:"0,0.2,0.5,1" max:"1" min:"0" desc:"proportion to decay most activation state variables toward initial values at start of every ThetaCycle (except those controlled separately below) -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
 	Glong float32 `def:"0,0.6" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow a fresh start -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
-	KNa   float32 `max:"1" min:"0" desc:"decay of Kna adaptation values -- has a separate decay because often useful to have this not decay at all even if decay is on."`
+	AHP   float32 `def:"0" max:"1" min:"0" desc:"decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa -- has a separate decay because often useful to have this not decay at all even if decay is on."`
 }
 
 func (ai *DecayParams) Update() {
@@ -576,7 +584,7 @@ func (ai *DecayParams) Update() {
 func (ai *DecayParams) Defaults() {
 	ai.Act = 0.2
 	ai.Glong = 0.6
-	ai.KNa = 0
+	ai.AHP = 0
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

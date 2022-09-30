@@ -36,7 +36,7 @@ func (ly *SuperLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0.5
-	ly.Act.Decay.KNa = 0
+	ly.Act.Decay.AHP = 0
 	ly.Burst.Defaults()
 }
 

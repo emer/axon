@@ -28,6 +28,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Voff":           "5",
 					"Layer.Act.VGCC.Gbar":           "0.02",
 					"Layer.Act.VGCC.Ca":             "20",   // 20 / 10tau similar to spk
+					"Layer.Act.Sahp.Gbar":           "0.1",  //
+					"Layer.Act.Sahp.Off":            "0.8",  //
+					"Layer.Act.Sahp.Slope":          "0.02", //
+					"Layer.Act.Sahp.CaTau":          "5",    //
 					"Layer.Learn.CaLrn.Norm":        "80",   // 80 works
 					"Layer.Learn.CaLrn.SpkVGCC":     "true", // sig better..
 					"Layer.Learn.CaLrn.SpkVgccCa":   "35",   // 20? or 35?

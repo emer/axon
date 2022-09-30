@@ -37,21 +37,19 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	Mahp       chans.MahpParams `view:"inline" desc:"mAHP function"`
-	Vstart     float32          `def:"-100" desc:"starting voltage"`
-	Vend       float32          `def:"100" desc:"ending voltage"`
-	Vstep      float32          `def:"1" desc:"voltage increment"`
-	TimeSteps  int              `desc:"number of time steps"`
-	TimeSpike  bool             `desc:"do spiking instead of voltage ramp"`
-	SpikeFreq  float32          `desc:"spiking frequency"`
-	TimeVstart float32          `desc:"time-run starting membrane potential"`
-	TimeVend   float32          `desc:"time-run ending membrane potential"`
-	Table      *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot       *eplot.Plot2D    `view:"-" desc:"the plot"`
-	TimeTable  *etable.Table    `view:"no-inline" desc:"table for plot"`
-	TimePlot   *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win        *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+	Sahp        chans.SahpParams `view:"inline" desc:"sAHP function"`
+	CaStart     float32          `def:"0" desc:"starting calcium"`
+	CaEnd       float32          `def:"1.5" desc:"ending calcium"`
+	CaStep      float32          `def:"0.01" desc:"calcium increment"`
+	TimeSteps   int              `desc:"number of time steps"`
+	TimeCaStart float32          `desc:"time-run starting calcium"`
+	TimeCaD     float32          `desc:"time-run CaD value at end of each theta cycle"`
+	Table       *etable.Table    `view:"no-inline" desc:"table for plot"`
+	Plot        *eplot.Plot2D    `view:"-" desc:"the plot"`
+	TimeTable   *etable.Table    `view:"no-inline" desc:"table for plot"`
+	TimePlot    *eplot.Plot2D    `view:"-" desc:"the plot"`
+	Win         *gi.Window       `view:"-" desc:"main GUI window"`
+	ToolBar     *gi.ToolBar      `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation
@@ -59,16 +57,14 @@ var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	ss.Mahp.Defaults()
-	ss.Mahp.Gbar = 1
-	ss.Vstart = -100
-	ss.Vend = 100
-	ss.Vstep = 1
-	ss.TimeSteps = 300
-	ss.TimeSpike = true
-	ss.SpikeFreq = 50
-	ss.TimeVstart = -70
-	ss.TimeVend = -50
+	ss.Sahp.Defaults()
+	ss.Sahp.Gbar = 1
+	ss.CaStart = 0
+	ss.CaEnd = 1.5
+	ss.CaStep = 0.01
+	ss.TimeSteps = 30
+	ss.TimeCaStart = 0
+	ss.TimeCaD = 1
 	ss.Update()
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
@@ -80,20 +76,20 @@ func (ss *Sim) Config() {
 func (ss *Sim) Update() {
 }
 
-// VmRun plots the equation as a function of V
-func (ss *Sim) VmRun() {
+// CaRun plots the equation as a function of V
+func (ss *Sim) CaRun() {
 	ss.Update()
 	dt := ss.Table
 
-	mp := &ss.Mahp
+	mp := &ss.Sahp
 
-	nv := int((ss.Vend - ss.Vstart) / ss.Vstep)
+	nv := int((ss.CaEnd - ss.CaStart) / ss.CaStep)
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
-		vbio := ss.Vstart + float32(vi)*ss.Vstep
-		ninf, tau := mp.NinfTauFmV(vbio)
+		ca := ss.CaStart + float32(vi)*ss.CaStep
+		ninf, tau := mp.NinfTauFmCa(ca)
 
-		dt.SetCellFloat("V", vi, float64(vbio))
+		dt.SetCellFloat("Ca", vi, float64(ca))
 		dt.SetCellFloat("Ninf", vi, float64(ninf))
 		dt.SetCellFloat("Tau", vi, float64(tau))
 	}
@@ -101,12 +97,12 @@ func (ss *Sim) VmRun() {
 }
 
 func (ss *Sim) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "mAHPplotTable")
+	dt.SetMetaData("name", "sAHPplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
-		{"V", etensor.FLOAT64, nil, nil},
+		{"Ca", etensor.FLOAT64, nil, nil},
 		{"Ninf", etensor.FLOAT64, nil, nil},
 		{"Tau", etensor.FLOAT64, nil, nil},
 	}
@@ -114,11 +110,11 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "mAHP V Function Plot"
-	plt.Params.XAxisCol = "V"
+	plt.Params.Title = "sAHP Ca Function Plot"
+	plt.Params.XAxisCol = "Ca"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Ca", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Ninf", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Tau", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
@@ -131,63 +127,42 @@ func (ss *Sim) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	mp := &ss.Mahp
+	mp := &ss.Sahp
 
-	n, _ := mp.NinfTauFmV(ss.TimeVstart)
-	kna := float32(0)
-	msdt := float32(0.001)
-	v := ss.TimeVstart
-	vinc := float32(2) * (ss.TimeVend - ss.TimeVstart) / float32(ss.TimeSteps)
-
-	isi := int(1000 / ss.SpikeFreq)
+	n, _ := mp.NinfTauFmCa(ss.TimeCaStart)
+	ca := ss.TimeCaStart
 
 	dt.SetNumRows(ss.TimeSteps)
 	for ti := 1; ti <= ss.TimeSteps; ti++ {
-		vnorm := chans.VFmBio(v)
-		t := float32(ti) * msdt
+		t := float32(ti)
 
-		ninf, tau := mp.NinfTauFmV(v)
-		dn := mp.DNFmV(vnorm, n)
-		g := mp.GmAHP(n)
+		ninf, tau := mp.NinfTauFmCa(ca)
+		dn := mp.DNFmV(ca, n)
+		g := mp.GsAHP(n)
 
 		dt.SetCellFloat("Time", ti, float64(t))
-		dt.SetCellFloat("V", ti, float64(v))
-		dt.SetCellFloat("GmAHP", ti, float64(g))
+		dt.SetCellFloat("Ca", ti, float64(ca))
+		dt.SetCellFloat("GsAHP", ti, float64(g))
 		dt.SetCellFloat("N", ti, float64(n))
 		dt.SetCellFloat("dN", ti, float64(dn))
 		dt.SetCellFloat("Ninf", ti, float64(ninf))
 		dt.SetCellFloat("Tau", ti, float64(tau))
-		dt.SetCellFloat("Kna", ti, float64(kna))
 
-		if ss.TimeSpike {
-			si := ti % isi
-			if si == 0 {
-				v = ss.TimeVend
-				kna += 0.05 * (1 - kna)
-			} else {
-				v = ss.TimeVstart + (float32(si)/float32(isi))*(ss.TimeVend-ss.TimeVstart)
-				kna -= kna / 50
-			}
-		} else {
-			v += vinc
-			if v > ss.TimeVend {
-				v = ss.TimeVend
-			}
-		}
+		ca = mp.CaInt(ca, ss.TimeCaD)
 		n += dn
 	}
 	ss.TimePlot.Update()
 }
 
 func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
-	dt.SetMetaData("name", "mAHPplotTable")
+	dt.SetMetaData("name", "sAHPplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"Time", etensor.FLOAT64, nil, nil},
-		{"V", etensor.FLOAT64, nil, nil},
-		{"GmAHP", etensor.FLOAT64, nil, nil},
+		{"Ca", etensor.FLOAT64, nil, nil},
+		{"GsAHP", etensor.FLOAT64, nil, nil},
 		{"N", etensor.FLOAT64, nil, nil},
 		{"dN", etensor.FLOAT64, nil, nil},
 		{"Ninf", etensor.FLOAT64, nil, nil},
@@ -203,8 +178,8 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("GmAHP", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Ca", eplot.On, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GsAHP", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("N", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("dN", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Ninf", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
@@ -220,10 +195,10 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	// gi.WinEventTrace = true
 
-	gi.SetAppName("mahp_plot")
+	gi.SetAppName("sahp_plot")
 	gi.SetAppAbout(`This plots an equation. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 
-	win := gi.NewMainWindow("mahp_plot", "Plotting Equations", width, height)
+	win := gi.NewMainWindow("sahp_plot", "Plotting Equations", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -244,7 +219,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tv := gi.AddNewTabView(split, "tv")
 
-	plt := tv.AddNewTab(eplot.KiT_Plot2D, "V-G Plot").(*eplot.Plot2D)
+	plt := tv.AddNewTab(eplot.KiT_Plot2D, "Ca-G Plot").(*eplot.Plot2D)
 	ss.Plot = ss.ConfigPlot(plt, ss.Table)
 
 	plt = tv.AddNewTab(eplot.KiT_Plot2D, "TimePlot").(*eplot.Plot2D)
@@ -252,8 +227,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	split.SetSplits(.3, .7)
 
-	tbar.AddAction(gi.ActOpts{Label: "V-G Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
-		ss.VmRun()
+	tbar.AddAction(gi.ActOpts{Label: "Ca-G Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		ss.CaRun()
 		vp.SetNeedsFullRender()
 	})
 
@@ -264,7 +239,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/mahp_plot/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/sahp_plot/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)
