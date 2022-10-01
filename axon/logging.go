@@ -12,8 +12,11 @@ import (
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
+	"github.com/emer/etable/metric"
 	"github.com/emer/etable/minmax"
+	"github.com/emer/etable/norm"
 	"github.com/emer/etable/split"
+	"github.com/emer/etable/tsragg"
 )
 
 // LogTestErrors records all errors made across TestTrials, at Test Epoch scope
@@ -35,7 +38,7 @@ func LogTestErrors(lg *elog.Logs) {
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func PCAStats(net emer.Network, lg *elog.Logs, stats *estats.Stats) {
-	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByClass("Hidden", "Target"))
+	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByClass("Hidden", "Target", "CT"))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -45,7 +48,7 @@ func PCAStats(net emer.Network, lg *elog.Logs, stats *estats.Stats) {
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
 func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByClass("Hidden", "Target")
+	layers := net.LayersByClass("Hidden", "Target", "CT")
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
@@ -160,7 +163,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 // across 3 given time levels, in higher to lower order, e.g., Run, Epoch, Trial
 // These are useful for diagnosing the behavior of the network.
 func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByClass("Hidden", "Target")
+	layers := net.LayersByClass("Hidden", "Target", "CT")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := net.LayerByName(clnm)
@@ -243,6 +246,229 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
+				}}})
+	}
+}
+
+// LogAddCaLrnDiagnosticItems adds standard Axon diagnostic statistics to given logs,
+// across two given time levels, in higher to lower order, e.g., Epoch, Trial
+// These were useful for the development of the Ca-based "trace" learning rule
+// that directly uses NMDA and VGCC-like spiking Ca
+func LogAddCaLrnDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
+	layers := net.LayersByClass("Hidden", "Target")
+	for _, lnm := range layers {
+		clnm := lnm
+		// ss.Logs.AddItem(&elog.Item{
+		// 	Name:   clnm + "_AvgSpiked",
+		// 	Type:   etensor.FLOAT64,
+		// 	FixMin: true,
+		// 	Write: elog.WriteMap{
+		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
+		// 			ly := net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
+		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+		// 			ly := net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
+		// 		}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+		// 			ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+		// 		}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
+		// 			ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
+		// 			ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+		// 		}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_AvgNmdaCa",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 20},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
+					ctx.SetFloat64(tsragg.Mean(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_MaxNmdaCa",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 20},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "NmdaCa")
+					ctx.SetFloat64(tsragg.Mean(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_AvgVgccCa",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 20},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
+					ctx.SetFloat64(tsragg.Mean(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_MaxVgccCa",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 20},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "VgccCaInt")
+					ctx.SetFloat64(tsragg.Max(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_AvgCaLrn",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
+					ctx.SetFloat64(tsragg.Mean(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_MaxCaLrn",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaLrn")
+					ctx.SetFloat64(tsragg.Max(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_AvgAbsCaDiff",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					norm.TensorAbs32(tsr)
+					ctx.SetFloat64(tsragg.Mean(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_MaxAbsCaDiff",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					norm.TensorAbs32(tsr)
+					ctx.SetFloat64(tsragg.Max(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_AvgAbsActDiff",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "ActDiff")
+					norm.TensorAbs32(tsr)
+					ctx.SetFloat64(tsragg.Mean(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_MaxAbsActDiff",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "ActDiff")
+					norm.TensorAbs32(tsr)
+					ctx.SetFloat64(tsragg.Max(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_AvgCaD",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaD")
+					ctx.SetFloat64(tsragg.Mean(tsr))
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_AvgCaSpkD",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaSpkD")
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:  clnm + "_AvgActDiff",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "ActDiff")
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:  clnm + "_ActDiffCorrel",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					outvals := ctx.ItemColTensor(etime.Train, times[1], "Output_AvgActDiff").(*etensor.Float64)
+					lyval := ctx.ItemColTensor(etime.Train, times[1], clnm+"_AvgActDiff").(*etensor.Float64)
+					cor := metric.Correlation64(outvals.Values, lyval.Values)
+					ctx.SetFloat64(cor)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:  clnm + "_AvgCaDiff",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:  clnm + "_CaDiffCorrel",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					outvals := ctx.ItemColTensor(etime.Train, times[1], "Output_AvgActDiff").(*etensor.Float64)
+					lyval := ctx.ItemColTensor(etime.Train, times[1], clnm+"_AvgCaDiff").(*etensor.Float64)
+					cor := metric.Correlation64(outvals.Values, lyval.Values)
+					ctx.SetFloat64(cor)
 				}}})
 	}
 }

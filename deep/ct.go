@@ -12,13 +12,34 @@ import (
 	"github.com/goki/mat32"
 )
 
+// CTParams control the CT corticothalamic neuron special behavior
+type CTParams struct {
+	GeGain   float32 `def:"0.5" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
+	DecayTau float32 `def:"50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over"`
+	DecayDt  float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
+}
+
+func (cp *CTParams) Update() {
+	if cp.DecayTau > 0 {
+		cp.DecayDt = 1 / cp.DecayTau
+	} else {
+		cp.DecayDt = 0
+	}
+}
+
+func (cp *CTParams) Defaults() {
+	cp.GeGain = 0.5
+	cp.DecayTau = 50
+	cp.Update()
+}
+
 // CTLayer implements the corticothalamic projecting layer 6 deep neurons
 // that project to the TRC pulvinar neurons, to generate the predictions.
 // They receive phasic input representing 5IB bursting via CTCtxtPrjn inputs
 // from SuperLayer and also from self projections.
 type CTLayer struct {
 	axon.Layer           // access as .Layer
-	CtxtGeGain float32   `def:"0.2" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
+	CT         CTParams  `desc:"parameters for CT layer specific functions"`
 	CtxtGes    []float32 `desc:"slice of context (temporally delayed) excitatory conducances."`
 }
 
@@ -29,8 +50,16 @@ func (ly *CTLayer) Defaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
+	ly.Act.NMDA.Gbar = 0.4
+	ly.Act.NMDA.Tau = 300
+	ly.Act.GABAB.Gbar = 0.4
 	ly.Typ = CT
-	ly.CtxtGeGain = 0.2
+	ly.CT.Defaults()
+}
+
+func (ly *CTLayer) UpdateParams() {
+	ly.Layer.UpdateParams()
+	ly.CT.Update()
 }
 
 func (ly *CTLayer) Class() string {
@@ -54,7 +83,7 @@ func (ly *CTLayer) InitActs() {
 	}
 }
 
-// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
+// GFmInc integrates new synaptic conductances from increments sent during last Spike
 func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
 	for ni := range ly.Neurons {
@@ -62,7 +91,10 @@ func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmIncNeur(ltime, nrn, ly.CtxtGeGain*ly.CtxtGes[ni]) // extra context for ge
+		ly.GFmIncNeur(ltime, nrn, ly.CT.GeGain*ly.CtxtGes[ni]) // extra context for ge
+		if ly.CT.DecayDt > 0 {
+			ly.CtxtGes[ni] -= ly.CT.DecayDt * ly.CtxtGes[ni]
+		}
 	}
 }
 

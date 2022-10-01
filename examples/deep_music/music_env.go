@@ -22,6 +22,7 @@ type MusicEnv struct {
 	Nm        string          `desc:"name of this environment"`
 	Debug     bool            `desc:"emit debugging messages about the music file"`
 	Track     int             `desc:"which track to process"`
+	MaxSteps  int             `desc:"limit song length to given number of steps, if > 0"`
 	UnitsPer  int             `desc:"number of units per localist unit"`
 	NoteRange minmax.Int      `desc:"range of notes in given track"`
 	NNotes    int             `desc:"number of notes"`
@@ -97,6 +98,11 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 	}
 	tickPerRow := 120 // 1/16th note
 	nrows := ticks / tickPerRow
+
+	if ev.MaxSteps > 0 && nrows > ev.MaxSteps {
+		nrows = ev.MaxSteps
+	}
+
 	toggleOn := true
 	ev.NoteRange.SetInfinity()
 
@@ -114,6 +120,9 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 				continue
 			}
 			row := tick / tickPerRow
+			if row >= nrows {
+				break
+			}
 			var channel, key, vel uint8
 			switch {
 			case msg.GetNoteOff(&channel, &key, &vel):
@@ -161,8 +170,9 @@ func (ev *MusicEnv) String() string {
 	return ""
 }
 
-func (ev *MusicEnv) Config(fname string, unitsper int) {
+func (ev *MusicEnv) Config(fname string, maxRows, unitsper int) {
 	ev.UnitsPer = unitsper
+	ev.MaxSteps = maxRows
 	ev.LoadSong(fname)
 	ev.NNotes = ev.NoteRange.Range() + 1
 	ev.Note.SetShape([]int{ev.UnitsPer, ev.NNotes}, nil, nil)
