@@ -1999,6 +1999,62 @@ func (ly *Layer) PctUnitErr() float64 {
 	return 0
 }
 
+// LocalistErr2D decodes a 2D layer with Y axis = redundant units, X = localist units
+// returning the indexes of the max activated localist value in the minus and plus phase
+// activities, and whether these are the same or different (err = different)
+func (ly *Layer) LocalistErr2D() (err bool, minusIdx, plusIdx int) {
+	ydim := ly.Shp.Dim(0)
+	xdim := ly.Shp.Dim(1)
+	var maxM, maxP float32
+	for xi := 0; xi < xdim; xi++ {
+		var sumP, sumM float32
+		for yi := 0; yi < ydim; yi++ {
+			ni := yi*xdim + xi
+			nrn := &ly.Neurons[ni]
+			sumM += nrn.ActM
+			sumP += nrn.ActP
+		}
+		if sumM > maxM {
+			minusIdx = xi
+			maxM = sumM
+		}
+		if sumP > maxP {
+			plusIdx = xi
+			maxP = sumP
+		}
+	}
+	err = minusIdx != plusIdx
+	return
+}
+
+// LocalistErr4D decodes a 4D layer with each pool representing a localist value.
+// Returns the flat 1D indexes of the max activated localist value in the minus and plus phase
+// activities, and whether these are the same or different (err = different)
+func (ly *Layer) LocalistErr4D() (err bool, minusIdx, plusIdx int) {
+	npool := ly.Shp.Dim(0) * ly.Shp.Dim(1)
+	nun := ly.Shp.Dim(2) * ly.Shp.Dim(3)
+	var maxM, maxP float32
+	for xi := 0; xi < npool; xi++ {
+		var sumP, sumM float32
+		for yi := 0; yi < nun; yi++ {
+			ni := xi*nun + yi
+			nrn := &ly.Neurons[ni]
+			sumM += nrn.ActM
+			sumP += nrn.ActP
+		}
+		if sumM > maxM {
+			minusIdx = xi
+			maxM = sumM
+		}
+		if sumP > maxP {
+			plusIdx = xi
+			maxP = sumP
+		}
+	}
+	err = minusIdx != plusIdx
+	return
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  Lesion
 

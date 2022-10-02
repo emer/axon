@@ -25,7 +25,9 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/etable/etable"
 	_ "github.com/emer/etable/etview" // _ = include to get gui views
+	"github.com/emer/etable/metric"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 )
@@ -71,6 +73,8 @@ type Sim struct {
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
+	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
+	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
 	UnitsPer     int              `desc:"number of units per localist unit"`
 	ErrThr       float32          `def:"0.3" desc:"theshold for counting an output unit to be active"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
@@ -96,6 +100,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
+	ss.TestClamp = true
 	ss.ErrThr = 0.3
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
@@ -134,15 +139,23 @@ func (ss *Sim) ConfigEnv() {
 
 	song := "bach_goldberg.mid"
 	maxRows := 30 // 30 is good benchmark, 25 it almost fully solves
+	// maxRows = 0   // full thing
+	track := 0
+	wrapNotes := false // does a bit better with false for short lengths (30)
 
 	// note: names must be standard here!
+	trn.Defaults()
+	trn.WrapNotes = wrapNotes
 	trn.Nm = etime.Train.String()
 	trn.Debug = false
-	trn.Config(song, maxRows, ss.UnitsPer)
+	trn.Config(song, track, maxRows, ss.UnitsPer)
 	trn.Validate()
 
+	tst.Defaults()
+	tst.WrapNotes = wrapNotes
 	tst.Nm = etime.Test.String()
-	tst.Config(song, maxRows, ss.UnitsPer)
+	tst.Play = true // see notes in README for getting this to work
+	tst.Config(song, track, maxRows, ss.UnitsPer)
 	tst.Validate()
 
 	trn.Init(0)
@@ -157,13 +170,13 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	ev := ss.Envs[etime.Train.String()].(*MusicEnv)
 	nnotes := ev.NNotes
 
-	in, inp := net.AddInputTRC2D("Input", ss.UnitsPer, nnotes, 2)
+	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, 2)
 
 	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2)
 	// no advantage to 4D?
 	// hid, hidct := net.AddSuperCT4D("Hidden", 2, 2, 4, 4, 2)
 
-	trg := net.AddLayer2D("Targets", ss.UnitsPer, nnotes, emer.Input) // just for visualization
+	trg := net.AddLayer4D("Targets", 1, nnotes, ss.UnitsPer, 1, emer.Input) // just for visualization
 
 	in.SetClass("InLay")
 	inp.SetClass("InLay")
@@ -176,18 +189,15 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
 	net.ConnectToTRC2D(hid, hidct, inp)
-	hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // onetoone > full
+	hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // onetoone > full -- todo test again!
 
-	// for this small localist model with longer-term dependencies,
-	// these additional context projections turn out to be essential!
-	// larger models in general do not require them, though it might be
-	// good to check
 	// net.ConnectCtxtToCT(hidct, hidct, p1to1).SetClass("CTToCT")
 	// net.LateralConnectLayer(hidct, p1to1).SetClass("CTLateral")
 
 	net.ConnectCtxtToCT(hidct, hidct, full).SetClass("CTToCT")
 	net.LateralConnectLayer(hidct, full).SetClass("CTLateral")
 
+	// not necc:
 	// net.ConnectCtxtToCT(in, hidct, full)
 
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
@@ -234,7 +244,7 @@ func (ss *Sim) ConfigLoops() {
 
 	avgPerTrl := 8
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
@@ -276,6 +286,7 @@ func (ss *Sim) ConfigLoops() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
 			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			ss.SimMat()
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
 	})
@@ -301,17 +312,19 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	// lrate schedule
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		switch trnEpc {
-		case 40:
-			// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			// ss.Net.LrateSched(0.2) // 0.2
-		case 60:
-			// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			// ss.Net.LrateSched(0.1) // 0.1
-		}
-	})
+	/*
+		man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
+			trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+			switch trnEpc {
+			case 40:
+				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				// ss.Net.LrateSched(0.2) // 0.2
+			case 60:
+				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				// ss.Net.LrateSched(0.1) // 0.1
+			}
+		})
+	*/
 
 	////////////////////////////////////////////
 	// GUI
@@ -337,8 +350,13 @@ func (ss *Sim) ConfigLoops() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode]
+	ev := ss.Envs[ss.Time.Mode].(*MusicEnv)
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
+	if ss.Time.Mode == "Test" && !ss.TestClamp {
+		lastnote := ss.Stats.Int("OutNote") + ev.NoteRange.Min
+		ev.RenderNote(lastnote)
+		// net.SynFail(&ss.Time) // not actually such a generative source of noise..
+	}
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByClass("Input", "Target")
 	for _, lnm := range lays {
@@ -390,50 +408,61 @@ func (ss *Sim) StatCounters() {
 	mode.FromString(ss.Time.Mode)
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
+	ev := ss.Envs[ss.Time.Mode].(*MusicEnv)
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ev := ss.Envs[ss.Time.Mode]
-	ss.Stats.SetString("TrialName", ev.(*MusicEnv).String())
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "TargNote", "OutNote", "TrlErr", "TrlCorSim"})
+	ss.Stats.SetInt("Time", ev.Time.Cur)
+	ss.Stats.SetString("TrialName", ev.String())
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "Time", "TrialName", "TargNote", "OutNote", "TrlErr", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
 	out := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
-	var maxTi, maxOi int
-	var maxT, maxO float32
-	ev := ss.Envs[ss.Time.Mode].(*MusicEnv)
-	nnotes := ev.NNotes
-	for i := 0; i < nnotes; i++ {
-		var sumT, sumO float32
-		for yi := 0; yi < ev.UnitsPer; yi++ {
-			ni := yi*nnotes + i
-			nrn := &out.Neurons[ni]
-			sumO += nrn.ActM
-			sumT += nrn.ActP
-		}
-		if sumT > maxT {
-			maxTi = i
-			maxT = sumT
-		}
-		if sumO > maxO {
-			maxOi = i
-			maxO = sumO
-		}
-	}
-	err := maxTi != maxOi
-	ss.Stats.SetInt("TargNote", maxTi)
-	ss.Stats.SetInt("OutNote", maxOi)
+	err, minusIdx, plusIdx := out.LocalistErr4D()
+	ss.Stats.SetInt("TargNote", plusIdx)
+	ss.Stats.SetInt("OutNote", minusIdx)
 	if err {
 		ss.Stats.SetFloat("TrlErr", 1)
 	} else {
 		ss.Stats.SetFloat("TrlErr", 0)
 	}
-
 	ss.Stats.SetFloat("TrlCorSim", float64(out.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
+	ev := ss.Envs[ss.Time.Mode].(*MusicEnv)
+	if ev.Play {
+		if ss.PlayTarg {
+			ev.PlayNote(plusIdx)
+		} else {
+			ev.PlayNote(minusIdx)
+		}
+	}
+}
+
+// SimMat does similarity matrix analysis on Analyze trial data
+func (ss *Sim) SimMat() {
+	sk := etime.Scope(etime.Analyze, etime.Trial)
+	lt := ss.Logs.TableDetailsScope(sk)
+	ix, _ := lt.NamedIdxView("AnalyzeTimes")
+	timeMap := make(map[int]bool)
+	ix.Filter(func(et *etable.Table, row int) bool {
+		time := int(et.CellFloat("Time", row))
+		if _, has := timeMap[time]; has {
+			return false
+		}
+		timeMap[time] = true
+		return true
+	})
+	ix.SortCol(lt.Table.ColIdx("Time"), etable.Ascending)
+	times := ix.NewTable()
+	ss.Logs.MiscTables["AnalyzeTimes"] = times
+
+	sm := ss.Stats.SimMat("CTSim")
+	sm.TableCol(ix, "HiddenCT_ActM", "Time", true, metric.Correlation64)
+	// ss.HiddenRel.PCA.TableCol(rels, "Hidden", metric.Covariance64)
+	// ss.HiddenRel.PCA.ProjectColToTable(ss.HiddenRel.PCAPrjn, rels, "Hidden", "TrialName", []int{0, 1})
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -444,6 +473,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
+	ss.Logs.AddStatIntNoAggItem(etime.AllModes, etime.AllTimes, "Time")
 
 	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
@@ -541,6 +571,14 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Test Init",
+		Icon:    "reset",
+		Tooltip: "restart testing",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.Loops.ResetCountersByMode(etime.Test)
+		},
+	})
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")
@@ -579,8 +617,8 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
-	ss.Args.SetInt("epochs", 60)
-	ss.Args.SetInt("runs", 10)
+	ss.Args.SetInt("epochs", 200)
+	ss.Args.SetInt("runs", 1)
 	ss.Args.Parse() // always parse
 }
 

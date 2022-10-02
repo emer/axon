@@ -35,13 +35,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.05",
+					"Layer.Inhib.ActAvg.Init": "0.05", // 0.08 for 12 notes, 0.05 for 18
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.2", // 1.2 > 1.3 > 1.1
+					"Layer.Inhib.Pool.Gi":  "1.2", // 1.2 > 1.3 > 1.1
 					// "Layer.Inhib.Pool.On":   "true",
-					// "Layer.Inhib.Pool.Gi":   "1.2", // 1.2 > 1.3 > 1.1
 					"Layer.CT.GeGain":       "0.5", // 0.5 > 1 ok with stronger maint
 					"Layer.CT.DecayTau":     "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.KNa.On":      "true",
@@ -88,7 +88,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.5",
 					// "Prjn.Learn.Lrate.Base":   "0.03", // .04 for rlr too!
-					// "Prjn.Learn.XCal.PThrMin": "0.02", //
 				}},
 			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{

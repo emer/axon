@@ -8,31 +8,49 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/emer/emergent/env"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/ints"
+	"gitlab.com/gomidi/midi/v2"
+
+	// _ "gitlab.com/gomidi/midi/v2/drivers/rtmididrv"
+	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
 )
 
-// MusicEnv reads in a midi SMF file and presents it as notes
+// MusicEnv reads in a midi SMF file and presents it as a sequence of notes.
+// Songs with one note at a time per track are currently supported.
+// Renders note to a tensor with localist note coding with duplicate units for spiking.
 type MusicEnv struct {
-	Nm        string          `desc:"name of this environment"`
-	Debug     bool            `desc:"emit debugging messages about the music file"`
-	Track     int             `desc:"which track to process"`
-	MaxSteps  int             `desc:"limit song length to given number of steps, if > 0"`
-	UnitsPer  int             `desc:"number of units per localist unit"`
-	NoteRange minmax.Int      `desc:"range of notes in given track"`
-	NNotes    int             `desc:"number of notes"`
-	Song      etable.Table    `desc:"the song encoded into 200 msec increments, with columns as tracks"`
-	Time      env.Ctr         `view:"inline" desc:"current time step"`
-	Note      etensor.Float32 `desc:"current note"`
+	Nm             string                       `desc:"name of this environment"`
+	Debug          bool                         `desc:"emit debugging messages about the music file"`
+	WrapNotes      bool                         `desc:"use only 1 octave of 12 notes for everything -- keeps it consistent"`
+	TicksPer       int                          `def:"120" desc:"number of time ticks per row in table -- note transitions that are faster than this will be lost"`
+	Track          int                          `desc:"which track to process"`
+	Play           bool                         `desc:"play output as it steps"`
+	MaxSteps       int                          `desc:"limit song length to given number of steps, if > 0"`
+	UnitsPer       int                          `desc:"number of units per localist note value"`
+	NoteRange      minmax.Int                   `desc:"range of notes in given track"`
+	NNotes         int                          `desc:"number of notes"`
+	Song           etable.Table                 `desc:"the song encoded into 200 msec increments, with columns as tracks"`
+	Time           env.Ctr                      `view:"inline" desc:"current time step"`
+	Note           etensor.Float32              `desc:"current note, rendered as a 4D tensor with shape: [1, NNotes, UnitsPer, 1]"`
+	NoteIdx        int                          `desc:"current note index"`
+	Player         func(msg midi.Message) error `view:"-" desc:"the function for playing midi"`
+	LastNotePlayed int                          `view:"-" desc:"for playing notes"`
 }
 
 func (ev *MusicEnv) Name() string { return ev.Nm }
 func (ev *MusicEnv) Desc() string { return "" }
+
+func (ev *MusicEnv) Defaults() {
+	ev.TicksPer = 120
+	ev.WrapNotes = true
+}
 
 func (ev *MusicEnv) TrackInfo(track smf.Track) (name string, ticks int, bpm float64) {
 	for _, ev := range track {
@@ -96,8 +114,7 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 	if ev.Debug {
 		fmt.Printf("BPM: %g\n", bpm)
 	}
-	tickPerRow := 120 // 1/16th note
-	nrows := ticks / tickPerRow
+	nrows := ticks / ev.TicksPer
 
 	if ev.MaxSteps > 0 && nrows > ev.MaxSteps {
 		nrows = ev.MaxSteps
@@ -119,36 +136,36 @@ func (ev *MusicEnv) LoadSong(fname string) error {
 				// ignore
 				continue
 			}
-			row := tick / tickPerRow
+			row := tick / ev.TicksPer
 			if row >= nrows {
 				break
 			}
-			var channel, key, vel uint8
+			var channel, note, vel uint8
 			switch {
-			case msg.GetNoteOff(&channel, &key, &vel):
+			case msg.GetNoteOff(&channel, &note, &vel):
 				if ev.Debug && row < 20 {
-					fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, key)
+					fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 				}
 				for ri := lastOnRow + 1; ri <= row; ri++ {
-					ev.Song.SetCellFloatIdx(ti, ri, float64(key))
+					ev.Song.SetCellFloatIdx(ti, ri, float64(note))
 				}
-			case msg.GetNoteOn(&channel, &key, &vel):
+			case msg.GetNoteOn(&channel, &note, &vel):
 				if ti == ev.Track {
-					ev.NoteRange.FitValInRange(int(key))
+					ev.NoteRange.FitValInRange(int(note))
 				}
 				if toggleOn && lastOnRow >= 0 {
 					if ev.Debug && row < 20 {
-						fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, key)
+						fmt.Printf("%d\t%d\tnote off:\t%d\n", tick, row, note)
 					}
 					for ri := lastOnRow + 1; ri <= row; ri++ {
-						ev.Song.SetCellFloatIdx(ti, ri, float64(key))
+						ev.Song.SetCellFloatIdx(ti, ri, float64(note))
 					}
 					lastOnRow = -1
 				} else {
 					lastOnRow = row
-					ev.Song.SetCellFloatIdx(ti, row, float64(key))
+					ev.Song.SetCellFloatIdx(ti, row, float64(note))
 					if ev.Debug && row < 20 {
-						fmt.Printf("%d\t%d\tnote on:\t%d\n", tick, row, key)
+						fmt.Printf("%d\t%d\tnote on:\t%d\n", tick, row, note)
 					}
 				}
 			}
@@ -167,15 +184,40 @@ func (ev *MusicEnv) State(element string) etensor.Tensor {
 
 // String returns the current state as a string
 func (ev *MusicEnv) String() string {
-	return ""
+	return fmt.Sprintf("%d:%d", ev.Time.Cur, ev.NoteIdx)
 }
 
-func (ev *MusicEnv) Config(fname string, maxRows, unitsper int) {
+func (ev *MusicEnv) ConfigPlay() error {
+	fmt.Printf("outports:\n%s\n", midi.GetOutPorts())
+
+	portname := "IAC Driver Bus 1"
+
+	out, err := midi.FindOutPort(portname)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+	ev.Player, _ = midi.SendTo(out)
+	ev.Player(midi.ProgramChange(0, gm.Instr_Harpsichord.Value()))
+	return nil
+}
+
+func (ev *MusicEnv) Config(fname string, track, maxRows, unitsper int) {
+	if ev.TicksPer == 0 {
+		ev.Defaults()
+	}
+	ev.Track = track
 	ev.UnitsPer = unitsper
 	ev.MaxSteps = maxRows
 	ev.LoadSong(fname)
 	ev.NNotes = ev.NoteRange.Range() + 1
-	ev.Note.SetShape([]int{ev.UnitsPer, ev.NNotes}, nil, nil)
+	if ev.WrapNotes {
+		ev.NNotes = 12
+	}
+	ev.Note.SetShape([]int{1, ev.NNotes, ev.UnitsPer, 1}, nil, nil)
+	if ev.Play {
+		ev.ConfigPlay()
+	}
 }
 
 func (ev *MusicEnv) Init(run int) {
@@ -188,20 +230,48 @@ func (ev *MusicEnv) Validate() error {
 }
 
 func (ev *MusicEnv) Step() bool {
+	ev.Time.Incr()
 	tm := ev.Time.Cur
 	if tm > ev.Song.Rows {
 		ev.Time.Set(0)
 		tm = 0
 	}
-	key := int(ev.Song.CellFloatIdx(ev.Track, tm))
-	ev.Note.SetZeros()
-	if key > 0 {
-		for ni := 0; ni < ev.UnitsPer; ni++ {
-			ev.Note.Set([]int{ni, key - ev.NoteRange.Min}, 1)
-		}
-	}
-	ev.Time.Incr()
+	note := int(ev.Song.CellFloatIdx(ev.Track, tm))
+	ev.RenderNote(note)
 	return true
+}
+
+func (ev *MusicEnv) RenderNote(note int) {
+	ev.NoteIdx = note
+	ev.Note.SetZeros()
+	if note <= 0 {
+		return
+	}
+	noteidx := note - ev.NoteRange.Min
+	// ev.PlayNote(noteidx)
+	if ev.WrapNotes {
+		noteidx = (note - 9) % 12 // A = 0, etc.
+	}
+	for ni := 0; ni < ev.UnitsPer; ni++ {
+		ev.Note.Set([]int{0, noteidx, ni, 0}, 1)
+	}
+}
+
+// PlayNote actually plays a note (based on index) to the midi device, if Play is active and working
+func (ev *MusicEnv) PlayNote(noteIdx int) {
+	if !ev.Play || ev.Player == nil {
+		return
+	}
+	note := noteIdx + ev.NoteRange.Min
+	if ev.LastNotePlayed > 0 && note != ev.LastNotePlayed {
+		ev.Player(midi.NoteOff(0, uint8(ev.LastNotePlayed)))
+	}
+	if note != ev.LastNotePlayed {
+		ev.Player(midi.NoteOn(0, uint8(note), 100))
+	}
+	time.Sleep(time.Duration(ev.TicksPer) * time.Millisecond)
+	ev.LastNotePlayed = note
+
 }
 
 func (ev *MusicEnv) Action(element string, input etensor.Tensor) {
