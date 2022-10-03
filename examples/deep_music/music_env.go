@@ -16,8 +16,6 @@ import (
 	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/ints"
 	"gitlab.com/gomidi/midi/v2"
-
-	// _ "gitlab.com/gomidi/midi/v2/drivers/rtmididrv"
 	"gitlab.com/gomidi/midi/v2/gm"
 	"gitlab.com/gomidi/midi/v2/smf"
 )

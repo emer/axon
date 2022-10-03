@@ -459,10 +459,20 @@ func (ss *Sim) SimMat() {
 	times := ix.NewTable()
 	ss.Logs.MiscTables["AnalyzeTimes"] = times
 
-	sm := ss.Stats.SimMat("CTSim")
-	sm.TableCol(ix, "HiddenCT_ActM", "Time", true, metric.Correlation64)
-	// ss.HiddenRel.PCA.TableCol(rels, "Hidden", metric.Covariance64)
-	// ss.HiddenRel.PCA.ProjectColToTable(ss.HiddenRel.PCAPrjn, rels, "Hidden", "TrialName", []int{0, 1})
+	if !ss.Args.Bool("nogui") {
+		col := "HiddenCT_ActM"
+		lbls := "Time"
+		sm := ss.Stats.SimMat("CTSim")
+		sm.TableCol(ix, col, lbls, true, metric.Correlation64)
+		ss.Stats.PCA.TableCol(ix, col, metric.Covariance64)
+
+		pcaprjn := ss.Logs.MiscTable("PCAPrjn")
+		ss.Stats.PCA.ProjectColToTable(pcaprjn, ix, col, lbls, []int{0, 1}) // gets vectors
+		pcaplt := ss.Stats.Plot("PCAPrjn")
+		estats.ConfigPCAPlot(pcaplt, pcaprjn, "HiddenCT")
+		clplt := ss.Stats.Plot("ClustPlot")
+		estats.ClustPlot(clplt, ix, col, lbls)
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////

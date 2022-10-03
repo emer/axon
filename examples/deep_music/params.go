@@ -26,10 +26,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.AK.Gbar":        "1.0",
 					"Layer.Act.NMDA.MgC":       "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Act.NMDA.Voff":      "5",
-					"Layer.Act.Sahp.Gbar":      "0.1",  //
+					"Layer.Act.Mahp.Gbar":      "0.04", // 0.04 == 0.05+ > 0.02 -- just reduces hidden activity levels
+					"Layer.Act.Sahp.Gbar":      "0.1",  // 0.1 == 0.02 no real diff
 					"Layer.Act.Sahp.Off":       "0.8",  //
 					"Layer.Act.Sahp.Slope":     "0.02", //
-					"Layer.Act.Sahp.CaTau":     "10",   // 10 is reas
+					"Layer.Act.Sahp.CaTau":     "5",    // 5 > 10
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{}},
@@ -39,7 +40,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.2", // 1.2 > 1.3 > 1.1
+					"Layer.Inhib.Layer.Gi": "1.6", // 1.5 > 1.3 == 1.2
 					"Layer.Inhib.Pool.Gi":  "1.2", // 1.2 > 1.3 > 1.1
 					// "Layer.Inhib.Pool.On":   "true",
 					"Layer.CT.GeGain":       "0.5", // 0.5 > 1 ok with stronger maint
@@ -47,33 +48,33 @@ var ParamSets = params.Sets{
 					"Layer.Act.KNa.On":      "true",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.GABAB.Gbar":  "0.4",   // .4 gets a bit extreme behvaior: on or off
-					"Layer.Act.NMDA.Gbar":   "0.4",   // 0.3 > 0.25 -- 0.3 min required for robust act
-					"Layer.Act.NMDA.Tau":    "300",   // 300 > 200 -- longer
+					"Layer.Act.GABAB.Gbar":  "0.4",
+					"Layer.Act.NMDA.Gbar":   "0.35",  // 0.35 > 0.4 -- 0.3, 200 works but a bit worse
+					"Layer.Act.NMDA.Tau":    "300",   // 300 > 200
 					"Layer.Act.Noise.On":    "false", // todo?
 					"Layer.Act.Noise.Ge":    "0.005",
 					"Layer.Act.Noise.Gi":    "0.005",
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 0.9 > 1.1
-					"Layer.TRC.DriveScale":          "0.15", // 0.05 > .1 > .15 for trace w/ gi1.0 -- repl10
-					"Layer.TRC.FullDriveAct":        "0.6",  // 0.6 def
-					"Layer.Act.Spike.Tr":            "3",    // 1 is best for ra25..
+					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 0.9 > 1.1
+					"Layer.TRC.DriveScale":          "0.1", // 0.1 > 0.05 > 0.15
+					"Layer.TRC.FullDriveAct":        "0.6", // 0.6 def
+					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.GABAB.Gbar":          "0.2", // .2 > old: 0.005
 					"Layer.Act.NMDA.Gbar":           "0.1", // now .15 best, .4, .6 sig worse
-					"Layer.Learn.RLrate.SigmoidMin": "1",   // auto = 1: not useful in output layer
+					"Layer.Learn.RLrate.SigmoidMin": "1",   // 1 > .05
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.01", // .01 > .02
-					"Prjn.SWt.Adapt.Lrate":    "0.01", // 0.01 seems to work fine, but .1 maybe more reliable
-					"Prjn.SWt.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
+					"Prjn.Learn.Lrate.Base":   "0.002", // 0.002 > 0.001 > 0.005 higher
+					"Prjn.SWt.Adapt.Lrate":    "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
+					"Prjn.SWt.Adapt.DreamVar": "0.0",   // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":      "1.0",   // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "4", // 2 > 1 -- more-or-less a ceiling effect..
+					"Prjn.Learn.Trace.Tau":    "4", // 4 == 2 > 1
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -95,13 +96,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTToCT", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // 0.2 also good here -- adding this > not
+					"Prjn.PrjnScale.Rel": "0.5", // 0.5 > 0.2 > 0.8
 					"Prjn.Com.PFail":     "0.0",
+					"Prjn.SWt.Init.Sym":  "true", // true > false
 				}},
 			{Sel: ".CTLateral", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // lower = less hogging; 0.2 > 0.1 > 0.5 > 1
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1  >= 0.05 > 0.2
 					"Prjn.Com.PFail":     "0.0",
+					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
 				}},
 			// {Sel: "#HiddenCTToInputP", Desc: "special",
 			// 	Params: params.Params{

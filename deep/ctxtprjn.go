@@ -29,7 +29,7 @@ type CtxtSender interface {
 type CTCtxtPrjn struct {
 	axon.Prjn           // access as .Prjn
 	FmSuper   bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Learn = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
-	Trace     bool      `desc:"if true, use the trace-based learning rule"`
+	Trace     bool      `desc:"if true, use the trace-based learning rule -- does not work as well as the default which uses CHL and the prior sending activation state"`
 	CtxtGeInc []float32 `desc:"local per-recv unit accumulator for Ctxt excitatory conductance from sending units -- not a delta -- the full value"`
 }
 
@@ -37,7 +37,8 @@ var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 
 func (pj *CTCtxtPrjn) Defaults() {
 	pj.Prjn.Defaults() // note: used to have other defaults
-	pj.Trace = true
+	pj.Trace = false
+	pj.Learn.Lrate.Base = 0.002
 }
 
 func (pj *CTCtxtPrjn) UpdateParams() {
@@ -160,7 +161,7 @@ func (pj *CTCtxtPrjn) DWtTrace(ltime *axon.Time) {
 			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
 			// only difference from standard is that Tr updates *after* DWt instead of before!
 			// note: CaSpkP - CaSpkD works MUCH better than plain Ca
-			err := sy.Tr * (rn.CaSpkP - rn.CaSpkD)
+			err := sy.Tr * (rn.CaP - rn.CaD)          // (rn.CaSpkP - rn.CaSpkD)
 			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD is better: reflects entire window
 			if sy.Wt == 0 {                           // failed con, no learn
 				continue

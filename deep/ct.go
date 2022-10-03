@@ -50,7 +50,7 @@ func (ly *CTLayer) Defaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
-	ly.Act.NMDA.Gbar = 0.4
+	ly.Act.NMDA.Gbar = 0.35
 	ly.Act.NMDA.Tau = 300
 	ly.Act.GABAB.Gbar = 0.4
 	ly.Typ = CT

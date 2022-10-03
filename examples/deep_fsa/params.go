@@ -39,14 +39,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "1.1", // 1.2 > 1.3 > 1.1
+					"Layer.Inhib.Layer.Gi":  "1.4", // 1.2 > 1.3 > 1.1
 					"Layer.CT.GeGain":       "0.5", // 0.5 > 1 ok with stronger maint
 					"Layer.CT.DecayTau":     "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.KNa.On":      "true",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.GABAB.Gbar":  "0.4",   // .4 gets a bit extreme behvaior: on or off
-					"Layer.Act.NMDA.Gbar":   "0.4",   // 0.3 > 0.25 -- 0.3 min required for robust act
+					"Layer.Act.NMDA.Gbar":   "0.35",  // 0.3 > 0.25 -- 0.3 min required for robust act
 					"Layer.Act.NMDA.Tau":    "300",   // 300 > 200 -- longer
 					"Layer.Act.Noise.On":    "false", // todo?
 					"Layer.Act.Noise.Ge":    "0.005",
@@ -66,12 +66,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.02", // .02 > .03 > .01 -- .03 std
-					"Prjn.SWt.Adapt.Lrate":    "0.01", // 0.01 seems to work fine, but .1 maybe more reliable
-					"Prjn.SWt.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
+					"Prjn.Learn.Lrate.Base":   "0.02",   // .02 > .03 > .01 -- .03 std
+					"Prjn.SWt.Adapt.Lrate":    "0.0001", // 0.01 seems to work fine, but .1 maybe more reliable
+					"Prjn.SWt.Adapt.DreamVar": "0.0",    // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1 -- more-or-less a ceiling effect..
+					"Prjn.Learn.Trace.Tau":    "4", // 2 > 1 -- more-or-less a ceiling effect..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -92,10 +92,17 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > .05 lba
 				}},
-			{Sel: "#HiddenCTToHiddenCT", Desc: "testing",
+			{Sel: ".CTToCT", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // lower = less hogging; 0.2 > 0.5 > 1
+					"Prjn.PrjnScale.Rel": "0.5", // 0.5 > 0.2 > 0.8
 					"Prjn.Com.PFail":     "0.0",
+					"Prjn.SWt.Init.Sym":  "true", // true > false
+				}},
+			{Sel: ".CTLateral", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1  >= 0.05 > 0.2
+					"Prjn.Com.PFail":     "0.0",
+					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
 				}},
 			// {Sel: "#HiddenCTToInputP", Desc: "special",
 			// 	Params: params.Params{
