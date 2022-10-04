@@ -29,7 +29,7 @@ type CtxtSender interface {
 type CTCtxtPrjn struct {
 	axon.Prjn           // access as .Prjn
 	FmSuper   bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Learn = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
-	Trace     bool      `desc:"if true, use the trace-based learning rule -- does not work as well as the default which uses CHL and the prior sending activation state"`
+	Trace     bool      `def:"false" desc:"if true, use the trace-based learning rule -- does not work as well as the default which uses CHL and the prior sending activation state"`
 	CtxtGeInc []float32 `desc:"local per-recv unit accumulator for Ctxt excitatory conductance from sending units -- not a delta -- the full value"`
 }
 
@@ -38,7 +38,7 @@ var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 func (pj *CTCtxtPrjn) Defaults() {
 	pj.Prjn.Defaults() // note: used to have other defaults
 	pj.Trace = false
-	pj.Learn.Lrate.Base = 0.002
+	pj.Learn.Lrate.Base = 0.01 // note: this lrate may need to be much slower than others
 }
 
 func (pj *CTCtxtPrjn) UpdateParams() {

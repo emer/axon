@@ -72,7 +72,7 @@ type Sim struct {
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
-	ErrThr       float32          `def:"0.3" desc:"theshold for counting an output unit to be active"`
+	UnitsPer     int              `def:"1" desc:"number of units per localist unit -- 1 actually best"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
@@ -95,7 +95,7 @@ func (ss *Sim) New() {
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.ErrThr = 0.3
+	ss.UnitsPer = 1
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
@@ -153,7 +153,7 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
-	in, inp := net.AddInputTRC2D("Input", 1, 7, 2)
+	in, inp := net.AddInputTRC4D("Input", 1, 7, ss.UnitsPer, 1, 2)
 
 	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2) // note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
@@ -169,11 +169,11 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
 	net.ConnectToTRC2D(hid, hidct, inp)
-	hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // onetoone > full
+	hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // full > 1to1 -- this is *essential* here!
 
-	net.ConnectCtxtToCT(hidct, hidct, full).SetClass("CTToCT")
-	net.LateralConnectLayer(hidct, full).SetClass("CTLateral")
+	net.ConnectCTSelf(hidct, full)
 
+	// not useful:
 	// net.ConnectCtxtToCT(in, hidct, full)
 
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
@@ -220,7 +220,7 @@ func (ss *Sim) ConfigLoops() {
 
 	avgPerTrl := 8
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 60).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
@@ -242,18 +242,6 @@ func (ss *Sim) ConfigLoops() {
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
-
-	// Train stop early condition
-	man.GetLoop(etime.Train, etime.Epoch).IsDone["NZeroStop"] = func() bool {
-		// This is calculated in TrialStats
-		stopNz := ss.Args.Int("nzero")
-		if stopNz <= 0 {
-			stopNz = 2
-		}
-		curNZero := ss.Stats.Int("NZero")
-		stop := curNZero >= stopNz
-		return stop
-	}
 
 	// Add Testing
 	trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
@@ -357,10 +345,13 @@ func (ss *Sim) ApplyInputs() {
 			continue
 		}
 		if i == 0 {
-			inr := &in.Neurons[li]
-			inr.Ext = 1
-			inr.ClearMask(clrmsk)
-			inr.SetMask(setmsk)
+			for yi := 0; yi < ss.UnitsPer; yi++ {
+				idx := li*ss.UnitsPer + yi
+				inr := &in.Neurons[idx]
+				inr.Ext = 1
+				inr.ClearMask(clrmsk)
+				inr.SetMask(setmsk)
+			}
 		}
 		inr := &trg.Neurons[li]
 		inr.Ext = 1
@@ -397,6 +388,7 @@ func (ss *Sim) InitStats() {
 	// clear rest just to make Sim look initialized
 	ss.Stats.SetFloat("TrlUnitErr", 0.0)
 	ss.Stats.SetFloat("TrlCorSim", 0.0)
+	ss.Stats.SetInt("Output", 0)
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -412,7 +404,7 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
 	ev := ss.Envs[ss.Time.Mode]
 	ss.Stats.SetString("TrialName", ev.(*FSAEnv).String())
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "Output", "TrlErr", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -421,30 +413,16 @@ func (ss *Sim) TrialStats() {
 	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("TrlCorSim", float64(inp.CorSim.Cor))
-	err := 0.0
-	thr := ss.ErrThr
-	gotOne := false
-	for ni := range inp.Neurons {
-		inn := &inp.Neurons[ni]
-		if inn.IsOff() {
-			continue
-		}
-		tgn := &trg.Neurons[ni]
-		if tgn.Ext > 0.5 {
-			if inn.ActM > thr {
-				gotOne = true
-			}
-		} else {
-			if inn.ActM > thr {
-				err += float64(inn.ActM)
-			}
-		}
+	err, minusIdx, _ := inp.LocalistErr4D()
+	tgn := &trg.Neurons[minusIdx]
+	if tgn.Ext > 0.5 {
+		err = false
+	} else {
+		err = true
 	}
-	if !gotOne {
-		err += 1
-	}
-	ss.Stats.SetFloat("TrlUnitErr", err)
-	if err > 0 {
+	ss.Stats.SetInt("Output", minusIdx)
+	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr())
+	if err {
 		ss.Stats.SetFloat("TrlErr", 1)
 	} else {
 		ss.Stats.SetFloat("TrlErr", 0)
@@ -594,10 +572,9 @@ func (ss *Sim) ConfigGui() *gi.Window {
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
-	ss.Args.AddInt("nzero", 2, "number of zero error epochs in a row to count as full training")
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
-	ss.Args.SetInt("epochs", 60)
-	ss.Args.SetInt("runs", 10)
+	ss.Args.SetInt("epochs", 100)
+	ss.Args.SetInt("runs", 1)
 	ss.Args.Parse() // always parse
 }
 

@@ -75,7 +75,7 @@ type Sim struct {
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
 	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
 	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
-	UnitsPer     int              `desc:"number of units per localist unit"`
+	UnitsPer     int              `def:"4" desc:"number of units per localist unit"`
 	ErrThr       float32          `def:"0.3" desc:"theshold for counting an output unit to be active"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
@@ -176,26 +176,21 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	// no advantage to 4D?
 	// hid, hidct := net.AddSuperCT4D("Hidden", 2, 2, 4, 4, 2)
 
-	trg := net.AddLayer4D("Targets", 1, nnotes, ss.UnitsPer, 1, emer.Input) // just for visualization
-
 	in.SetClass("InLay")
 	inp.SetClass("InLay")
-	trg.SetClass("InLay")
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
+	one2one := prjn.NewOneToOne()
 	p1to1 := prjn.NewPoolOneToOne()
 	_ = p1to1
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
 	net.ConnectToTRC2D(hid, hidct, inp)
-	hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // onetoone > full -- todo test again!
+	hidct.RecvPrjns().SendName("Hidden").SetPattern(one2one) // 1to1 is faster early, same asymptote as full
 
-	// net.ConnectCtxtToCT(hidct, hidct, p1to1).SetClass("CTToCT")
-	// net.LateralConnectLayer(hidct, p1to1).SetClass("CTLateral")
-
-	net.ConnectCtxtToCT(hidct, hidct, full).SetClass("CTToCT")
-	net.LateralConnectLayer(hidct, full).SetClass("CTLateral")
+	net.ConnectCTSelf(hidct, full)
+	// net.ConnectCTSelf(hidct, p1to1)
 
 	// not necc:
 	// net.ConnectCtxtToCT(in, hidct, full)
@@ -203,7 +198,6 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
 	hidct.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
-	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -244,7 +238,7 @@ func (ss *Sim) ConfigLoops() {
 
 	avgPerTrl := 8
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 200).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
@@ -420,8 +414,8 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	out := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
-	err, minusIdx, plusIdx := out.LocalistErr4D()
+	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
+	err, minusIdx, plusIdx := inp.LocalistErr4D()
 	ss.Stats.SetInt("TargNote", plusIdx)
 	ss.Stats.SetInt("OutNote", minusIdx)
 	if err {
@@ -429,8 +423,8 @@ func (ss *Sim) TrialStats() {
 	} else {
 		ss.Stats.SetFloat("TrlErr", 0)
 	}
-	ss.Stats.SetFloat("TrlCorSim", float64(out.CorSim.Cor))
-	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
+	ss.Stats.SetFloat("TrlCorSim", float64(inp.CorSim.Cor))
+	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr())
 	ev := ss.Envs[ss.Time.Mode].(*MusicEnv)
 	if ev.Play {
 		if ss.PlayTarg {
@@ -627,7 +621,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
-	ss.Args.SetInt("epochs", 200)
+	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 1)
 	ss.Args.Parse() // always parse
 }

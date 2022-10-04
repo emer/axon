@@ -23,7 +23,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
 					"Layer.Act.Dend.GbarR":     "3",   // 3 / 0.2 > 6 / 0.5
 					"Layer.Act.Dt.VmDendTau":   "5",   // old: 8 > 5 >> 2.81 -- big diff
-					"Layer.Act.AK.Gbar":        "1.0",
+					"Layer.Act.AK.Gbar":        "0.1",
 					"Layer.Act.NMDA.MgC":       "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Act.NMDA.Voff":      "5",
 					"Layer.Act.Mahp.Gbar":      "0.04", // 0.04 == 0.05+ > 0.02 -- just reduces hidden activity levels
@@ -40,10 +40,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT gain factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.6", // 1.5 > 1.3 == 1.2
-					"Layer.Inhib.Pool.Gi":  "1.2", // 1.2 > 1.3 > 1.1
+					"Layer.Inhib.Layer.Gi": "1.4", // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
+					"Layer.Inhib.Pool.Gi":  "1.4",
 					// "Layer.Inhib.Pool.On":   "true",
-					"Layer.CT.GeGain":       "0.5", // 0.5 > 1 ok with stronger maint
+					"Layer.CT.GeGain":       "0.5", // 0.7 > 0.5 but blows up above 0.7 -- 0.5 is "safer"
 					"Layer.CT.DecayTau":     "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.KNa.On":      "true",
 					"Layer.Act.Decay.Act":   "0.0",
@@ -69,10 +69,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.002", // 0.002 > 0.001 > 0.005 higher
-					"Prjn.SWt.Adapt.Lrate":    "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
-					"Prjn.SWt.Adapt.DreamVar": "0.0",   // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":      "1.0",   // 1 works fine here -- .5 also ok
+					"Prjn.Learn.Lrate.Base":   "0.02", // if ctxt = 0.002 then .02 or .01 is best
+					"Prjn.SWt.Adapt.Lrate":    "0.01", // 0.01 == 0.0001 but 0.001 not as good..
+					"Prjn.SWt.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
 					"Prjn.Learn.Trace.Tau":    "4", // 4 == 2 > 1
 				}},
@@ -82,34 +82,30 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Trace":     "false", // not as good with Trace here..
-					"Prjn.Com.PFail": "0.0",   // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base": "0.002", // 0.002 > 0.001 > 0.005 higher
+					"Prjn.Trace":            "false", // not as good with Trace here..
+					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.5",
-					// "Prjn.Learn.Lrate.Base":   "0.03", // .04 for rlr too!
 				}},
 			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > .05 lba
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
 				}},
-			{Sel: ".CTToCT", Desc: "",
+			{Sel: ".CTSelfCtxt", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.5", // 0.5 > 0.2 > 0.8
-					"Prjn.Com.PFail":     "0.0",
+					"Prjn.PrjnScale.Rel": "0.5",  // 0.5 > 0.2 > 0.8
+					"Prjn.Com.PFail":     "0.0",  // never useful for random gen
 					"Prjn.SWt.Init.Sym":  "true", // true > false
 				}},
-			{Sel: ".CTLateral", Desc: "",
+			{Sel: ".CTSelfMaint", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1  >= 0.05 > 0.2
 					"Prjn.Com.PFail":     "0.0",
 					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
 				}},
-			// {Sel: "#HiddenCTToInputP", Desc: "special",
-			// 	Params: params.Params{
-			// 		"Prjn.Learn.Lrate.Base": "0.01", // .03 std
-			// 	}},
 		},
 	}},
 }

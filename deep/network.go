@@ -149,9 +149,10 @@ func ConnectToTRC4D(nt *axon.Network, super, ct, trc emer.Layer) {
 
 // ConnectSuperToCT adds a CTCtxtPrjn from given sending Super layer to a CT layer
 // This automatically sets the FmSuper flag to engage proper defaults,
-// uses a OneToOne prjn pattern, and sets the class to CTFmSuper
+// uses a Full prjn pattern, and sets the class to CTFmSuper.
+// Some models may work well with a OneToOne prjn instead of full.
 func ConnectSuperToCT(nt *axon.Network, send, recv emer.Layer) emer.Prjn {
-	pj := nt.ConnectLayersPrjn(send, recv, prjn.NewOneToOne(), CTCtxt, &CTCtxtPrjn{}).(*CTCtxtPrjn)
+	pj := nt.ConnectLayersPrjn(send, recv, prjn.NewFull(), CTCtxt, &CTCtxtPrjn{}).(*CTCtxtPrjn)
 	pj.SetClass("CTFmSuper")
 	pj.FmSuper = true
 	return pj
@@ -161,6 +162,15 @@ func ConnectSuperToCT(nt *axon.Network, send, recv emer.Layer) emer.Prjn {
 // Use ConnectSuperToCT for main projection from corresponding superficial layer.
 func ConnectCtxtToCT(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayersPrjn(send, recv, pat, CTCtxt, &CTCtxtPrjn{})
+}
+
+// ConnectCTSelf adds a Self (Lateral) CTCtxtPrjn projection within a CT layer,
+// in addition to a regular lateral projection, which supports active maintenance.
+// The CTCtxtPrjn has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
+func ConnectCTSelf(nt *axon.Network, ly emer.Layer, pat prjn.Pattern) (ctxt, maint emer.Prjn) {
+	ctxt = nt.ConnectLayersPrjn(ly, ly, pat, CTCtxt, &CTCtxtPrjn{}).SetClass("CTSelfCtxt")
+	maint = nt.LateralConnectLayer(ly, pat).SetClass("CTSelfMaint")
+	return
 }
 
 // AddSuperCTTRC2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
@@ -310,6 +320,13 @@ func (nt *Network) ConnectToTRC4D(super, ct, trc emer.Layer) {
 // ConnectCtxtToCT adds a CTCtxtPrjn from given sending layer to a CT layer
 func (nt *Network) ConnectCtxtToCT(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return ConnectCtxtToCT(&nt.Network, send, recv, pat)
+}
+
+// ConnectCTSelf adds a Self (Lateral) CTCtxtPrjn projection within a CT layer,
+// in addition to a regular lateral projection, which supports active maintenance.
+// The CTCtxtPrjn has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
+func (nt *Network) ConnectCTSelf(ly emer.Layer, pat prjn.Pattern) (ctxt, maint emer.Prjn) {
+	return ConnectCTSelf(&nt.Network, ly, pat)
 }
 
 // AddTRCLayer2D adds a TRCLayer of given size, with given name.
