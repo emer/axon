@@ -111,7 +111,7 @@ func (ly *RWDaLayer) ActFmG(ltime *axon.Time) {
 	}
 	rnrn := &(rly.Neurons[0])
 	hasRew := false
-	if rnrn.HasFlag(axon.NeurHasExt) {
+	if rnrn.HasFlag(axon.NeuronHasExt) {
 		hasRew = true
 	}
 	ract := rnrn.Act

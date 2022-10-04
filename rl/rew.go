@@ -50,7 +50,7 @@ func (ly *RewLayer) GFmInc(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.SetFlag(axon.NeurHasExt)
+		nrn.SetFlag(axon.NeuronHasExt)
 		extOrig := nrn.Ext
 		if ni == 0 {
 			ext0 = nrn.Ext

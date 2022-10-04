@@ -142,7 +142,7 @@ func (ly *TRCLayer) GeFmDriverNeuron(tni int, drvGe, drvInhib float32, cyc int) 
 	}
 	geRaw := (1-drvInhib)*nrn.GeRaw + drvGe
 
-	nrn.ClearFlag(axon.NeurHasExt)
+	nrn.ClearFlag(axon.NeuronHasExt)
 
 	ly.Act.NMDAFmRaw(nrn, 0) // note: could also do drv?
 	ly.Act.GvgccFmVm(nrn)
@@ -194,7 +194,7 @@ func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
 
 // InitExt initializes external input state -- called prior to apply ext
 func (ly *TRCLayer) InitExt() {
-	msk := bitflag.Mask32(int(axon.NeurHasExt), int(axon.NeurHasTarg), int(axon.NeurHasCmpr))
+	msk := bitflag.Mask32(int(axon.NeuronHasExt), int(axon.NeuronHasTarget), int(axon.NeuronHasComparison))
 	drvoff := ly.TRC.DriversOff
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -202,7 +202,7 @@ func (ly *TRCLayer) InitExt() {
 		nrn.Targ = 0
 		nrn.ClearMask(msk)
 		if !drvoff {
-			nrn.SetFlag(axon.NeurHasTarg)
+			nrn.SetFlag(axon.NeuronHasTarget)
 		}
 	}
 }

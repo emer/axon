@@ -139,7 +139,7 @@ func (ly *TDRewIntegLayer) GFmInc(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.SetFlag(axon.NeurHasExt)
+		nrn.SetFlag(axon.NeuronHasExt)
 		SetNeuronExtPosNeg(nrn, ni, rpAct)
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 	}
@@ -225,7 +225,7 @@ func (ly *TDDaLayer) GFmInc(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.SetFlag(axon.NeurHasExt)
+		nrn.SetFlag(axon.NeuronHasExt)
 		SetNeuronExtPosNeg(nrn, ni, da)
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 	}

@@ -251,12 +251,12 @@ func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
 // GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32) {
-	if ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
+	if ac.Clamp.Add && nrn.HasFlag(NeuronHasExt) {
 		geRaw += nrn.Ext * ac.Clamp.Ge
 	}
 	geRaw = ac.Attn.ModVal(geRaw, nrn.Attn)
 
-	if !ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
+	if !ac.Clamp.Add && nrn.HasFlag(NeuronHasExt) {
 		nrn.GeSyn = nrn.Ext * ac.Clamp.Ge
 		geExt = 0 // no extra in this case
 	} else {

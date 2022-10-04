@@ -24,12 +24,12 @@ const NeuronVarStart = 8
 // All variables accessible via Unit interface must be float32
 // and start at the top, in contiguous order
 type Neuron struct {
-	Flags   NeurFlags `desc:"bit flags for binary state variables"`
-	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
-	Spike   float32   `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
-	Spiked  float32   `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
-	Attn    float32   `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
-	Act     float32   `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function, and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc."`
+	Flags   NeuronFlags `desc:"bit flags for binary state variables"`
+	SubPool int32       `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
+	Spike   float32     `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
+	Spiked  float32     `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
+	Attn    float32     `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
+	Act     float32     `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function, and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc."`
 
 	GeSyn  float32 `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
 	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
@@ -196,15 +196,15 @@ func (nrn *Neuron) VarByName(varNm string) (float32, error) {
 	return nrn.VarByIndex(i), nil
 }
 
-func (nrn *Neuron) HasFlag(flag NeurFlags) bool {
+func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
 	return bitflag.Has32(int32(nrn.Flags), int(flag))
 }
 
-func (nrn *Neuron) SetFlag(flag NeurFlags) {
+func (nrn *Neuron) SetFlag(flag NeuronFlags) {
 	bitflag.Set32((*int32)(&nrn.Flags), int(flag))
 }
 
-func (nrn *Neuron) ClearFlag(flag NeurFlags) {
+func (nrn *Neuron) ClearFlag(flag NeuronFlags) {
 	bitflag.Clear32((*int32)(&nrn.Flags), int(flag))
 }
 
@@ -218,33 +218,33 @@ func (nrn *Neuron) ClearMask(mask int32) {
 
 // IsOff returns true if the neuron has been turned off (lesioned)
 func (nrn *Neuron) IsOff() bool {
-	return nrn.HasFlag(NeurOff)
+	return nrn.HasFlag(NeuronOff)
 }
 
-// NeurFlags are bit-flags encoding relevant binary state for neurons
-type NeurFlags int32
+// NeuronFlags are bit-flags encoding relevant binary state for neurons
+type NeuronFlags int32
 
-//go:generate stringer -type=NeurFlags
+//go:generate stringer -type=NeuronFlags
 
-var KiT_NeurFlags = kit.Enums.AddEnum(NeurFlagsN, kit.BitFlag, nil)
+var KiT_NeurFlags = kit.Enums.AddEnum(NeuronFlagsN, kit.BitFlag, nil)
 
-func (ev NeurFlags) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *NeurFlags) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+func (ev NeuronFlags) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *NeuronFlags) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 // The neuron flags
 const (
-	// NeurOff flag indicates that this neuron has been turned off (i.e., lesioned)
-	NeurOff NeurFlags = iota
+	// NeuronOff flag indicates that this neuron has been turned off (i.e., lesioned)
+	NeuronOff NeuronFlags = iota
 
-	// NeurHasExt means the neuron has external input in its Ext field
-	NeurHasExt
+	// NeuronHasExt means the neuron has external input in its Ext field
+	NeuronHasExt
 
-	// NeurHasTarg means the neuron has external target input in its Targ field
-	NeurHasTarg
+	// NeuronHasTarget means the neuron has external target input in its Targ field
+	NeuronHasTarget
 
-	// NeurHasCmpr means the neuron has external comparison input in its Targ field -- used for computing
+	// NeuronHasComparison means the neuron has external comparison input in its Targ field -- used for computing
 	// comparison statistics but does not drive neural activity ever
-	NeurHasCmpr
+	NeuronHasComparison
 
-	NeurFlagsN
+	NeuronFlagsN
 )
