@@ -2,8 +2,13 @@
 
 This example tests the `deep` predictive learning model on predicting longer sequences with some structure that is not fully regular, by trying to predict the next note in a musical track.  This requires representing longer-term sequences.
 
+# music
 
-# Mac playing the actual music as it goes
+Initially targeting simple one-note-at-a-time songs ("melodies").
+
+* `bach_goldberg.mid`: downloaded from http://www.jsbach.net/midi/midi_goldbergvariations.html -- v01
+
+# Mac playing the actual music from network
 
 * open `Apple MIDI Setup`
 * do `Window / Show MIDI Studio`

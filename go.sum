@@ -53,12 +53,12 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2 v1.4.0 h1:F1rxgk7p4uKjwIQxBs9oAXe5CqrXlCduYEJvrF4u93E=
 github.com/dlclark/regexp2 v1.4.0/go.mod h1:2pZnwuY/m+8K6iRw6wQdMtk+rH5tNGR1i55kozfMjCc=
-github.com/emer/emergent v1.3.23 h1:QYZmnAQDvBps8PaJQiKdatZBSUNO4Kwaxl6yLZtLMhc=
-github.com/emer/emergent v1.3.23/go.mod h1:IkgqAaRRxJnb5g71e6q6cSL+zrtS7jMyqD/SXjIQe20=
+github.com/emer/emergent v1.3.24 h1:16mgAOaM6oVhEIlHhBH8D3tIqBiJUtfXv8xtiAkPiiA=
+github.com/emer/emergent v1.3.24/go.mod h1:DZqYuRZrLLCv1GoSdFLLMLEaTv5v4OPfJKkr927wjCA=
 github.com/emer/empi v1.0.14 h1:OPZVHraAtrFNuWe2l0+mEDFNhPeg1g0hTleojSzJpis=
 github.com/emer/empi v1.0.14/go.mod h1:GEe7I3fZSsdQ1eRkjBYam0EYCjNTzADTmnMCeefUZe0=
-github.com/emer/etable v1.1.9 h1:e6E84CeQ3zN5+Q0X5QqUfMyDyuhKJVAXdOJVmUuxgxs=
-github.com/emer/etable v1.1.9/go.mod h1:tTainPCOrEm8d8xS2zq6y0aid/p/Eb08FyeYfvTa1A0=
+github.com/emer/etable v1.1.10 h1:ApYgX4rDcxtQtkvoLstsfrY//gIuYi/zJkKHoiwClqI=
+github.com/emer/etable v1.1.10/go.mod h1:tTainPCOrEm8d8xS2zq6y0aid/p/Eb08FyeYfvTa1A0=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.1-0.20191026205805-5f8ba28d4473/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
 github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1mIlRU8Am5FuJP05cCM98=
@@ -207,8 +207,6 @@ github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljT
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
-gitlab.com/gomidi/midi/v2 v2.0.25 h1:dkzVBqbaFHjyWwP71MrQNX7IeRUIDonddmHbPpO/Ucg=
-gitlab.com/gomidi/midi/v2 v2.0.25/go.mod h1:quTyMKSQ4Klevxu6gY4gy2USbeZra0fV5SalndmPfsY=
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
 golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

@@ -56,6 +56,7 @@ func (ac *ActParams) Defaults() {
 	ac.Mahp.Gbar = 0.02
 	ac.Sahp.Defaults()
 	ac.Sahp.Gbar = 0.05
+	ac.Sahp.CaTau = 5
 	ac.KNa.Defaults()
 	ac.KNa.On = true
 	ac.NMDA.Defaults()

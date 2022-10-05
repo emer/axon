@@ -14,7 +14,7 @@ import "github.com/goki/mat32"
 // The infinite-time value of n is voltage dependent according to a logistic function
 // of the membrane potential, centered at Voff with slope Vslope.
 type MahpParams struct {
-	Gbar   float32 `def:"0.05" desc:"strength of mAHP current"`
+	Gbar   float32 `desc:"strength of mAHP current"`
 	Voff   float32 `def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
 	Vslope float32 `def:"9" desc:"slope of the arget (infinite time) gating function"`
 	TauMax float32 `def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
@@ -24,7 +24,7 @@ type MahpParams struct {
 
 // Defaults sets the parameters
 func (mp *MahpParams) Defaults() {
-	mp.Gbar = 0.05
+	mp.Gbar = 0.02
 	mp.Voff = -30
 	mp.Vslope = 9
 	mp.TauMax = 1000
