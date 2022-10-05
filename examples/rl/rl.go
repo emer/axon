@@ -91,7 +91,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{}},
 			{Sel: ".TDRewToInteg", Desc: "rew to integ",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.SWt.Init.Mean": "1",
 					"Prjn.SWt.Init.Var":  "0",
 					"Prjn.SWt.Init.Sym":  "false",

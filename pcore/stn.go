@@ -94,7 +94,7 @@ func (ly *STNLayer) Defaults() {
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
-		pj.Learn.Learn = false
+		pj.Learn.Enabled = false
 		pj.SWt.Adapt.SigGain = 1
 		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75

@@ -18,10 +18,10 @@ var OrigParamSets = params.Sets{
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.Learn.Lrate":        "0.04",
-					"Prjn.Learn.Momentum.On":  "false",
-					"Prjn.Learn.Norm.On":      "false",
-					"Prjn.Learn.WtBal.On":     "true", // counteracting hogging
+					"Prjn.Learn.Lrate":       "0.04",
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.WtBal.On":    "true", // counteracting hogging
 					//"Prjn.Learn.XCal.SetLLrn": "true", // bcm now avail, comment out = default LLrn
 					//"Prjn.Learn.XCal.LLrn":    "0",    // 0 = turn off BCM, must with SetLLrn = true
 				}},
@@ -39,25 +39,25 @@ var OrigParamSets = params.Sets{
 				}},
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
-					"Prjn.WtInit.Mean": "0.8",
-					"Prjn.WtInit.Var":  "0.0",
+					"Prjn.Learn.Enabled": "false",
+					"Prjn.WtInit.Mean":   "0.8",
+					"Prjn.WtInit.Var":    "0.0",
 				}},
 			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
 				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
-					"Prjn.WtInit.Mean": "0.9",
-					"Prjn.WtInit.Var":  "0.01",
-					"Prjn.WtScale.Rel": "0.5",
+					"Prjn.Learn.Enabled": "false",
+					"Prjn.WtInit.Mean":   "0.9",
+					"Prjn.WtInit.Var":    "0.01",
+					"Prjn.WtScale.Rel":   "0.5",
 				}},
 			{Sel: "#DGToCA3", Desc: "Mossy fibers: strong, non-learning",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":    "0.001",
-					"Prjn.CHL.SAvgCor": "1",
-					"Prjn.Learn.Learn": "false",
-					"Prjn.WtInit.Mean": "0.9",
-					"Prjn.WtInit.Var":  "0.01",
-					"Prjn.WtScale.Rel": "8",
+					"Prjn.CHL.Hebb":      "0.001",
+					"Prjn.CHL.SAvgCor":   "1",
+					"Prjn.Learn.Enabled": "false",
+					"Prjn.WtInit.Mean":   "0.9",
+					"Prjn.WtInit.Var":    "0.01",
+					"Prjn.WtScale.Rel":   "8",
 				}},
 			{Sel: "#CA3ToCA3", Desc: "CA3 recurrent cons",
 				Params: params.Params{
@@ -67,9 +67,9 @@ var OrigParamSets = params.Sets{
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":    	  "0.005",
-					"Prjn.CHL.SAvgCor": 	  "0.4",
-					"Prjn.Learn.Lrate": 	  "0.1",
+					"Prjn.CHL.Hebb":    "0.005",
+					"Prjn.CHL.SAvgCor": "0.4",
+					"Prjn.Learn.Lrate": "0.1",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{

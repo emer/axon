@@ -50,7 +50,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
+					"Prjn.Learn.Enabled": "false",
 				}},
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{

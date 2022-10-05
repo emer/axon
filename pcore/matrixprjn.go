@@ -66,7 +66,7 @@ func (pj *MatrixPrjn) InitWts() {
 
 // DWt computes the weight change (learning) -- on sending projections.
 func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()

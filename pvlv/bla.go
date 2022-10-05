@@ -70,7 +70,7 @@ func (pj *BLAPrjn) Defaults() {
 
 // DWt computes the weight change (learning) -- on sending projections.
 func (pj *BLAPrjn) DWt(ltime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	kp := &pj.Learn.KinaseCa
@@ -110,7 +110,7 @@ func (pj *BLAPrjn) DWt(ltime *axon.Time) {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 func (pj *BLAPrjn) WtFmDWt(ltime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	for si := range pj.Syns {

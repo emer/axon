@@ -535,7 +535,7 @@ func (sp *SWtAdaptParams) RndVar() float32 {
 
 // LearnSynParams manages learning-related parameters at the synapse-level.
 type LearnSynParams struct {
-	Learn    bool            `desc:"enable learning for this projection"`
+	Enabled  bool            `desc:"enable learning for this projection"`
 	Lrate    LrateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
 	Trace    TraceParams     `desc:"trace-based learning parameters"`
 	KinaseCa kinase.CaParams `view:"inline" desc:"kinase calcium Ca integration parameters"`
@@ -548,7 +548,7 @@ func (ls *LearnSynParams) Update() {
 }
 
 func (ls *LearnSynParams) Defaults() {
-	ls.Learn = true
+	ls.Enabled = true
 	ls.Lrate.Defaults()
 	ls.Trace.Defaults()
 	ls.KinaseCa.Defaults()

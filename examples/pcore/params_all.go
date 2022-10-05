@@ -49,7 +49,7 @@ var BGateParams = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "defaults",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "true",
+					"Prjn.Learn.Enabled": "true",
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},

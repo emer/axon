@@ -35,7 +35,7 @@ func (ly *GPiLayer) Defaults() {
 		pj.SWt.Init.Mean = 0.75
 		pj.SWt.Init.Var = 0.25
 		pj.SWt.Init.Sym = false
-		pj.Learn.Learn = false
+		pj.Learn.Enabled = false
 		if _, ok := pj.Send.(*MatrixLayer); ok { // MtxGoToGPi
 			pj.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
 		} else if _, ok := pj.Send.(*GPLayer); ok { // GPeInToGPi

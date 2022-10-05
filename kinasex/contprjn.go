@@ -120,7 +120,7 @@ func (pj *MatrixPrjn) InitWts() {
 // last TDWt value converts to an actual synaptic change: DWt
 func (pj *ContPrjn) SendSynCa(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	switch pj.Rule {
@@ -194,7 +194,7 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 
 // DWt computes the weight change (learning) -- on sending projections
 func (pj *ContPrjn) DWt(ltime *Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	switch pj.Rule {

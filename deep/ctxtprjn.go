@@ -28,7 +28,7 @@ type CtxtSender interface {
 // Set FmSuper for the main projection from corresponding Super layer.
 type CTCtxtPrjn struct {
 	axon.Prjn           // access as .Prjn
-	FmSuper   bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Learn = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
+	FmSuper   bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Enabled = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
 	Trace     bool      `desc:"if true, use the trace-based learning rule"`
 	CtxtGeInc []float32 `desc:"local per-recv unit accumulator for Ctxt excitatory conductance from sending units -- not a delta -- the full value"`
 }
@@ -129,7 +129,7 @@ func (pj *CTCtxtPrjn) SynCa(ltime *axon.Time) {
 
 // DWt computes the weight change (learning) for Ctxt projections
 func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	if pj.Trace {

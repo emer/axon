@@ -51,7 +51,7 @@ func (ly *GPLayer) Defaults() {
 	for _, pjii := range ly.RcvPrjns {
 		pji := pjii.(axon.AxonPrjn)
 		pj := pji.AsAxon()
-		pj.Learn.Learn = false
+		pj.Learn.Enabled = false
 		pj.SWt.Adapt.SigGain = 1
 		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75

@@ -24,13 +24,13 @@ var SavedParamsSets = params.Sets{
 				}},
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
-					"Prjn.WtInit.Mean": "0.8",
-					"Prjn.WtInit.Var":  "0.0",
+					"Prjn.Learn.Enabled": "false",
+					"Prjn.WtInit.Mean":   "0.8",
+					"Prjn.WtInit.Var":    "0.0",
 				}},
 			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.WtInit.Mean":   "0.9",
 					"Prjn.WtInit.Var":    "0.01",
 					"Prjn.PrjnScale.Rel": "0.5",
@@ -39,7 +39,7 @@ var SavedParamsSets = params.Sets{
 				Params: params.Params{
 					"Prjn.CHL.Hebb":      "0.001",
 					"Prjn.CHL.SAvgCor":   "1",
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.WtInit.Mean":   "0.9",
 					"Prjn.WtInit.Var":    "0.01",
 					"Prjn.PrjnScale.Rel": "8",

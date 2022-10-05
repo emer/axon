@@ -32,7 +32,7 @@ func (pj *EcCa1Prjn) UpdateParams() {
 // DWt computes the weight change (learning) -- on sending projections
 // Delta version
 func (pj *EcCa1Prjn) DWt(ltime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()

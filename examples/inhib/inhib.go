@@ -96,7 +96,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
+					"Prjn.Learn.Enabled": "false",
 					// "Prjn.SWt.Init.Dist": "Uniform",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
@@ -121,7 +121,7 @@ var ParamSets = params.Sets{
 			{Sel: ".RndSc", Desc: "random shortcut",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base": "0.001", //
-					// "Prjn.Learn.Learn":      "false",
+					// "Prjn.Learn.Enabled":      "false",
 					"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
 					"Prjn.SWt.Adapt.On":  "false", // seems better
 					// "Prjn.SWt.Init.Var":  "0.05",

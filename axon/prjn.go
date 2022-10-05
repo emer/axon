@@ -786,10 +786,11 @@ func (pj *Prjn) RecvGIncNoStats() {
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 func (pj *Prjn) SendSynCa(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
+
+	kp := &pj.Learn.KinaseCa
 	ctime := int32(ltime.CycleTot)
 	sendLayer := pj.Send.(AxonLayer).AsAxon()
 	recvLayer := pj.Recv.(AxonLayer).AsAxon()
@@ -831,7 +832,7 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 // This pass goes through in recv order, filtering on recv spike.
 func (pj *Prjn) RecvSynCa(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	ctime := int32(ltime.CycleTot)
@@ -875,7 +876,7 @@ func (pj *Prjn) RecvSynCa(ltime *Time) {
 
 // DWt computes the weight change (learning) -- on sending projections
 func (pj *Prjn) DWt(ltime *Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
@@ -1057,7 +1058,7 @@ func (pj *Prjn) SlowAdapt(ltime *Time) {
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
 func (pj *Prjn) SWtFmWt() {
-	if !pj.Learn.Learn || !pj.SWt.Adapt.On {
+	if !pj.Learn.Enabled || !pj.SWt.Adapt.On {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
@@ -1115,7 +1116,7 @@ func (pj *Prjn) SWtFmWt() {
 
 // SynScale performs synaptic scaling based on running average activation vs. targets
 func (pj *Prjn) SynScale() {
-	if !pj.Learn.Learn || pj.Typ == emer.Inhib {
+	if !pj.Learn.Enabled || pj.Typ == emer.Inhib {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()

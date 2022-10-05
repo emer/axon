@@ -164,7 +164,7 @@ func (pj *RWPrjn) Defaults() {
 
 // DWt computes the weight change (learning) -- on sending projections.
 func (pj *RWPrjn) DWt(ltime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
@@ -215,7 +215,7 @@ func (pj *RWPrjn) DWt(ltime *axon.Time) {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 func (pj *RWPrjn) WtFmDWt(ltime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Enabled {
 		return
 	}
 	for si := range pj.Syns {

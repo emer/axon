@@ -147,7 +147,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean":    "0.5",
 					"Prjn.SWt.Init.Var":     "0.25",
 					"Prjn.Trace.CurTrlDA":   "true",
-					"Prjn.Learn.Learn":      "true",
+					"Prjn.Learn.Enabled":    "true",
 					"Prjn.Learn.Lrate.Base": "0.1",
 				}},
 			{Sel: "#VThalToSMAd", Desc: "usually uniform weights",
@@ -155,7 +155,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.SWt.Init.Sym":  "false",
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.PrjnScale.Abs": ".5", // modulatory
 				}},
 			{Sel: "#SMAToMtxGo", Desc: "weaker closed loop",
@@ -198,7 +198,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "MatrixPrjn", Desc: "learning in mtx",
 				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
+					"Prjn.Learn.Enabled": "false",
 				}},
 		}},
 	},

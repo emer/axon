@@ -85,7 +85,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ECinToDG", Desc: "DG learning is surprisingly critical: maxed out fast, hebbian works best",
 				Params: params.Params{
-					"Prjn.Learn.Learn":      "true", // absolutely essential to have on!
+					"Prjn.Learn.Enabled":    "true", // absolutely essential to have on!
 					"Prjn.CHL.Hebb":         "0.5",  // .5 > 1 overall
 					"Prjn.CHL.SAvgCor":      "0.1",  // .1 > .2 > .3 > .4 ?
 					"Prjn.CHL.MinusQ1":      "true", // dg self err?
@@ -93,21 +93,21 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#InputToECin", Desc: "one-to-one input to EC",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.PrjnScale.Abs": "1.0",
 				}},
 			{Sel: "#ECoutToECin", Desc: "one-to-one out to in",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.01",
 					"Prjn.PrjnScale.Rel": "0.5", // 0.5 > 1 (sig worse)
 				}},
 			{Sel: "#DGToCA3", Desc: "Mossy fibers: strong, non-learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.01",
 					"Prjn.PrjnScale.Rel": "3", // 4 def

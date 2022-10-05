@@ -94,7 +94,7 @@ func (ly *MatrixLayer) Defaults() {
 		pj.SWt.Init.SPct = 0
 		if _, ok := pj.Send.(*GPLayer); ok { // From GPe TA or In
 			pj.PrjnScale.Abs = 1
-			pj.Learn.Learn = false
+			pj.Learn.Enabled = false
 			pj.SWt.Adapt.SigGain = 1
 			pj.SWt.Init.Mean = 0.75
 			pj.SWt.Init.Var = 0.0

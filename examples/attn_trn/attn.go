@@ -80,7 +80,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "no learning",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
+					"Prjn.Learn.Enabled": "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0",
 					"Prjn.SWt.Init.Sym":  "false", // for lesions, just in case
