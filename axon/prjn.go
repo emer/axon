@@ -791,15 +791,15 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 		return
 	}
 	ctime := int32(ltime.CycleTot)
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := slay.Learn.CaSpk.SynSpkG
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.Spike == 0 {
+	sendLayer := pj.Send.(AxonLayer).AsAxon()
+	recvLayer := pj.Recv.(AxonLayer).AsAxon()
+	ssg := sendLayer.Learn.CaSpk.SynSpkG
+	for si := range sendLayer.Neurons {
+		sendNeuron := &sendLayer.Neurons[si]
+		if sendNeuron.Spike == 0 {
 			continue
 		}
-		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
+		if sendNeuron.CaSpkP < kp.UpdtThr && sendNeuron.CaSpkD < kp.UpdtThr {
 			continue
 		}
 		nc := int(pj.SConN[si])
@@ -808,8 +808,8 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 		scons := pj.SConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
+			recvNeuron := &recvLayer.Neurons[ri]
+			if recvNeuron.CaSpkP < kp.UpdtThr && recvNeuron.CaSpkD < kp.UpdtThr {
 				continue
 			}
 			sy := &syns[ci]
@@ -820,7 +820,7 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 			}
 			sy.CaUpT = ctime
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
+			sy.Ca = kp.SpikeG * ssg * sendNeuron.CaSyn * recvNeuron.CaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
 	}
