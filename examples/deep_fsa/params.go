@@ -85,7 +85,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{

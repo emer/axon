@@ -170,24 +170,23 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	ev := ss.Envs[etime.Train.String()].(*MusicEnv)
 	nnotes := ev.NNotes
 
-	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, 2)
-
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2)
-	// no advantage to 4D?
-	// hid, hidct := net.AddSuperCT4D("Hidden", 2, 2, 4, 4, 2)
-
-	in.SetClass("InLay")
-	inp.SetClass("InLay")
-
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
 	one2one := prjn.NewOneToOne()
 	p1to1 := prjn.NewPoolOneToOne()
 	_ = p1to1
 
+	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, 2)
+
+	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, one2one)
+	// no advantage to 4D..
+	// hid, hidct := net.AddSuperCT4D("Hidden", 2, 2, 4, 4, 2)
+
+	in.SetClass("InLay")
+	inp.SetClass("InLay")
+
 	net.ConnectLayers(in, hid, full, emer.Forward)
-	net.ConnectToTRC2D(hid, hidct, inp)
-	hidct.RecvPrjns().SendName("Hidden").SetPattern(one2one) // 1to1 is faster early, same asymptote as full
+	net.ConnectToTRC(hid, hidct, inp, full, full)
 
 	net.ConnectCTSelf(hidct, full)
 	// net.ConnectCTSelf(hidct, p1to1)

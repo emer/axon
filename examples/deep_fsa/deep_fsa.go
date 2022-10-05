@@ -155,7 +155,12 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
 	in, inp := net.AddInputTRC4D("Input", 1, 7, ss.UnitsPer, 1, 2)
 
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2) // note: tried 4D 6,6,2,2 with pool 1to1 -- not better
+	full := prjn.NewFull()
+	full.SelfCon = true // unclear if this makes a diff for self cons at all
+	one2one := prjn.NewOneToOne()
+
+	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, one2one)
+	// note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
 
 	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization
@@ -164,12 +169,8 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	inp.SetClass("InLay")
 	trg.SetClass("InLay")
 
-	full := prjn.NewFull()
-	full.SelfCon = true // unclear if this makes a diff for self cons at all
-
 	net.ConnectLayers(in, hid, full, emer.Forward)
-	net.ConnectToTRC2D(hid, hidct, inp)
-	hidct.RecvPrjns().SendName("Hidden").SetPattern(full) // full > 1to1 -- this is *essential* here!
+	net.ConnectToTRC(hid, hidct, inp, full, full) // full > 1to1 -- this is *essential* here!
 
 	net.ConnectCTSelf(hidct, full)
 
