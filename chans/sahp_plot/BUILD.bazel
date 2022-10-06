@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "sahp_plot_lib",
+    srcs = ["sahp_plot.go"],
+    importpath = "github.com/emer/axon/chans/sahp_plot",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//chans",
+        "@com_github_emer_etable//eplot",
+        "@com_github_emer_etable//etable",
+        "@com_github_emer_etable//etensor",
+        "@com_github_emer_etable//etview",
+        "@com_github_goki_gi//gi",
+        "@com_github_goki_gi//gimain",
+        "@com_github_goki_gi//giv",
+        "@com_github_goki_ki//ki",
+        "@com_github_goki_mat32//:mat32",
+    ],
+)
+
+go_binary(
+    name = "sahp_plot",
+    embed = [":sahp_plot_lib"],
+    visibility = ["//visibility:public"],
+)

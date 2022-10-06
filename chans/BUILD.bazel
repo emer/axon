@@ -5,8 +5,13 @@ go_library(
     srcs = [
         "ak.go",
         "chans.go",
+        "doc.go",
         "gabab.go",
+        "kna.go",
+        "mahp.go",
         "nmda.go",
+        "sahp.go",
+        "skca.go",
         "vgcc.go",
     ],
     importpath = "github.com/emer/axon/chans",

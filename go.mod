@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
-	github.com/emer/emergent v1.3.24
+	github.com/emer/emergent v1.3.26
 	github.com/emer/empi v1.0.14
 	github.com/emer/etable v1.1.10
 	github.com/goki/gi v1.3.7
@@ -50,6 +50,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220128185129-2efea2b9ea41 // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
+	gitlab.com/gomidi/midi/v2 v2.0.25 // indirect
 	golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf // indirect
 	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
