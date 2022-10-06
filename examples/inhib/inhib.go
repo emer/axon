@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build this_is_broken_we_should_fix_or_delete
+
 /*
 inhib: This simulation explores how inhibitory interneurons can dynamically
 control overall activity levels within the network, by providing both
