@@ -13,3 +13,20 @@ gazelle(
     name = "gazelle",
     gazelle = ":gazelle_binary",
 )
+
+genrule(
+    name = "gen_dummy_test",
+    outs = ["dummy_test.sh"],
+    cmd = "echo \"true\" > \"$@\"",
+    executable = True,
+)
+
+# This is here because currently no other tests
+# in the repo are passing. We want to keep the CI
+# running `bazel test //...`, so we need at least
+# one test that passes.
+sh_test(
+    name = "dummy_test",
+    timeout = "short",
+    srcs = ["dummy_test.sh"],
+)
