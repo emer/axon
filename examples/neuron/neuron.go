@@ -84,7 +84,7 @@ type Sim struct {
 	ErevI        float32       `min:"0" max:"1" step:"0.01" def:"0.3" desc:"leak reversal (driving) potential -- determines where excitation pulls Vm down to"`
 	Noise        float32       `min:"0" step:"0.01" desc:"the variance parameter for Gaussian noise added to unit activations on every cycle"`
 	KNaAdapt     bool          `desc:"apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time"`
-	MAHPGbar     float32       `def:"0.05" desc:"strength of mAHP M-type channel -- used to be implemented by KNa but now using the more standard M-type channel mechanism"`
+	MahpGbar     float32       `def:"0.05" desc:"strength of mAHP M-type channel -- used to be implemented by KNa but now using the more standard M-type channel mechanism"`
 	NMDAGbar     float32       `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
 	GABABGbar    float32       `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
 	VGCCGbar     float32       `def:"0.02" desc:"strength of VGCC voltage gated calcium current -- only activated during spikes -- this is now an essential part of Ca-driven learning to reflect recv spiking in the Ca signal -- but if too strong leads to runaway excitatory bursting."`
@@ -137,7 +137,7 @@ func (ss *Sim) Defaults() {
 	ss.ErevI = 0.3
 	ss.Noise = 0
 	ss.KNaAdapt = true
-	ss.MAHPGbar = 0.05
+	ss.MahpGbar = 0.05
 	ss.NMDAGbar = 0.15
 	ss.GABABGbar = 0.2
 	ss.VGCCGbar = 0.02
@@ -305,7 +305,7 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	ly.Act.Erev.I = float32(ss.ErevI)
 	// ly.Act.Noise.Var = float64(ss.Noise)
 	ly.Act.KNa.On = ss.KNaAdapt
-	ly.Act.MAHP.Gbar = ss.MAHPGbar
+	ly.Act.Mahp.Gbar = ss.MahpGbar
 	ly.Act.NMDA.Gbar = ss.NMDAGbar
 	ly.Act.GABAB.Gbar = ss.GABABGbar
 	ly.Act.VGCC.Gbar = ss.VGCCGbar

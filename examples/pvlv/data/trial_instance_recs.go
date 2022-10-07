@@ -1,3 +1,5 @@
+//go:build this_is_broken_we_should_fix_or_delete
+
 package data
 
 import "github.com/emer/axon/pvlv"

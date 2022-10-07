@@ -95,7 +95,7 @@ func (ss *Sim) New() {
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.UnitsPer = 4
+	ss.UnitsPer = 1       // 1 >> 4 for unknown reasons..
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()

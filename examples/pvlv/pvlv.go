@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build this_is_broken_we_should_fix_or_delete
+
 package main
 
 import (
@@ -273,7 +275,7 @@ const (
 	StopStepCondN
 )
 
-////go:generate stringer -type=StopStepCond -linecomment // moved to stringers.go
+// //go:generate stringer -type=StopStepCond -linecomment // moved to stringers.go
 var KiT_StopStepCond = kit.Enums.AddEnum(StopStepCondN, kit.NotBitFlag, nil)
 
 // Init restarts the run, and initializes everything, including network weights

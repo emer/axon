@@ -212,12 +212,11 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	// todo: try full for CT prjn
 
-	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space)
-	// smact.RecvPrjns().SendName(sma.Name()).SetPattern(full)
+	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, full)
 	// net.ConnectCtxtToCT(smact, smact, parprjn).SetClass("CTSelf")
-	net.ConnectToTRC2D(sma, smact, m1p)
-	net.ConnectToTRC2D(sma, smact, posp)
-	net.ConnectToTRC2D(sma, smact, distp)
+	net.ConnectToTRC(sma, smact, m1p, full, full)
+	net.ConnectToTRC(sma, smact, posp, full, full)
+	net.ConnectToTRC(sma, smact, distp, full, full)
 
 	smad := net.AddLayer2D("SMAd", nuCtxY, nuCtxX, emer.Hidden)
 
@@ -225,25 +224,25 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.Drives, nuCtxY, nuCtxX, relpos.Behind, space)
 
-	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space)
+	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space, pone2one)
 	ofc.SetClass("OFC")
 	ofcct.SetClass("OFC")
 	// ofcct.RecvPrjns().SendName(ofc.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(ofcct, ofcct, parprjn).SetClass("CTSelf")
-	net.ConnectToTRC2D(ofc, ofcct, csp)
-	net.ConnectToTRC4D(ofc, ofcct, usp)
-	net.ConnectToTRC4D(ofc, ofcct, drivesp)
+	net.ConnectToTRC(ofc, ofcct, csp, full, full)
+	net.ConnectToTRC(ofc, ofcct, usp, pone2one, pone2one)
+	net.ConnectToTRC(ofc, ofcct, drivesp, pone2one, pone2one)
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
-	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space)
+	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, full)
 	acc.SetClass("ACC")
 	accct.SetClass("ACC")
 	// accct.RecvPrjns().SendName(acc.Name()).SetPattern(full)
 	// net.ConnectCtxtToCT(accct, accct, parprjn).SetClass("CTSelf")
-	net.ConnectToTRC2D(acc, accct, distp)
-	net.ConnectToTRC2D(acc, accct, timep)
+	net.ConnectToTRC(acc, accct, distp, full, full)
+	net.ConnectToTRC(acc, accct, timep, full, full)
 
 	// m1p plus phase has action, Ctxt -> CT allows CT now to use that prev action
 

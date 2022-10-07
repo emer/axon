@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build this_is_broken_we_should_fix_or_delete
+
 package main
 
 import "github.com/emer/emergent/params"
@@ -18,10 +20,10 @@ var OrigParamSets = params.Sets{
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.Learn.Lrate":        "0.04",
-					"Prjn.Learn.Momentum.On":  "false",
-					"Prjn.Learn.Norm.On":      "false",
-					"Prjn.Learn.WtBal.On":     "true", // counteracting hogging
+					"Prjn.Learn.Lrate":       "0.04",
+					"Prjn.Learn.Momentum.On": "false",
+					"Prjn.Learn.Norm.On":     "false",
+					"Prjn.Learn.WtBal.On":    "true", // counteracting hogging
 					//"Prjn.Learn.XCal.SetLLrn": "true", // bcm now avail, comment out = default LLrn
 					//"Prjn.Learn.XCal.LLrn":    "0",    // 0 = turn off BCM, must with SetLLrn = true
 				}},
@@ -67,9 +69,9 @@ var OrigParamSets = params.Sets{
 				}},
 			{Sel: "#CA3ToCA1", Desc: "Schaffer collaterals -- slower, less hebb",
 				Params: params.Params{
-					"Prjn.CHL.Hebb":    	  "0.005",
-					"Prjn.CHL.SAvgCor": 	  "0.4",
-					"Prjn.Learn.Lrate": 	  "0.1",
+					"Prjn.CHL.Hebb":    "0.005",
+					"Prjn.CHL.SAvgCor": "0.4",
+					"Prjn.Learn.Lrate": "0.1",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
