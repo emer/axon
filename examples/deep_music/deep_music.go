@@ -129,10 +129,10 @@ func (ss *Sim) ConfigEnv() {
 	}
 
 	song := "bach_goldberg.mid"
-	maxRows := 30 // 30 is good benchmark, 25 it almost fully solves
+	maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
 	// maxRows = 0   // full thing
 	track := 0
-	wrapNotes := false // does a bit better with false for short lengths (30)
+	wrapNotes := true // does a bit better with false for short lengths (30)
 
 	// note: names must be standard here!
 	trn.Defaults()
