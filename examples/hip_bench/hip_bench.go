@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build this_is_broken_we_should_fix_or_delete
+
 // hip_bench runs a hippocampus model for testing parameters and new learning ideas
 package main
 
@@ -2401,7 +2403,7 @@ var SimProps = ki.Props{
 
 // zycyc
 // OuterLoopParams are the parameters to run for outer crossed factor testing
-//var OuterLoopParams = []string{"BigHip"}
+// var OuterLoopParams = []string{"BigHip"}
 // var OuterLoopParams = []string{"MedHip", "BigHip"}
 var OuterLoopParams = []string{"MedHip"}
 

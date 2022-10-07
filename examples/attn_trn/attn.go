@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build this_is_broken_we_should_fix_or_delete
+
 /*
 attn_trn: test of trn-based attention in basic V1, V2, LIP localist network with gabor inputs.
 
