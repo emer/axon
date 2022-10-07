@@ -17,8 +17,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init":  "0.15",
 					"Layer.Inhib.Layer.Gi":     "1.0", // 1.0 > 1.1  trace
 					"Layer.Act.Gbar.L":         "0.2", // std
-					"Layer.Act.Decay.Act":      "0.2", // 0 == 0.2
-					"Layer.Act.Decay.Glong":    "0.6",
+					"Layer.Act.Decay.Act":      "0.0", // 0 == 0.2
+					"Layer.Act.Decay.Glong":    "0.0",
 					"Layer.Act.Dt.LongAvgTau":  "20",  // 20 > higher for objrec, lvis
 					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
 					"Layer.Act.Dend.GbarR":     "3",   // 3 / 0.2 > 6 / 0.5
@@ -37,20 +37,21 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
 				}},
-			{Sel: ".CT", Desc: "CT gain factor is key",
+			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "1.4", // 1.2 > 1.3 > 1.1
-					"Layer.CT.GeGain":       "0.5", // 0.5 > 1 ok with stronger maint
-					"Layer.CT.DecayTau":     "50",  // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.KNa.On":      "true",
-					"Layer.Act.Decay.Act":   "0.0",
-					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.GABAB.Gbar":  "0.4",   // .4 gets a bit extreme behvaior: on or off
-					"Layer.Act.NMDA.Gbar":   "0.35",  // 0.35 music
-					"Layer.Act.NMDA.Tau":    "300",   // 300 > 200 music
-					"Layer.Act.Noise.On":    "false", // todo?
-					"Layer.Act.Noise.Ge":    "0.005",
-					"Layer.Act.Noise.Gi":    "0.005",
+					"Layer.Inhib.Layer.Gi":   "1.4", // 1.2 > 1.3 > 1.1
+					"Layer.CT.GeGain":        "0.5", // 0.5 > 1 ok with stronger maint
+					"Layer.CT.DecayTau":      "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Decay.Act":    "0.0",
+					"Layer.Act.Decay.Glong":  "0.0",
+					"Layer.Act.Dt.VmDendTau": "5",
+					"Layer.Act.Dt.GeTau":     "5",
+					"Layer.Act.GABAB.Gbar":   "0.25",  //
+					"Layer.Act.NMDA.Gbar":    "0.25",  // 0.25+ > .2, .15 only at start -- others catch up
+					"Layer.Act.NMDA.Tau":     "200",   // 200 slightly better than 300 early, same later; 100 fails
+					"Layer.Act.Noise.On":     "false", // todo?
+					"Layer.Act.Noise.Ge":     "0.005",
+					"Layer.Act.Noise.Gi":     "0.005",
 				}},
 			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
 				Params: params.Params{
@@ -83,11 +84,11 @@ var ParamSets = params.Sets{
 					"Prjn.Trace":            "false", // not as good with Trace here..
 					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
 				}},
-			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
+			{Sel: ".CTFmSuper", Desc: "full > 1to1",
 				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Learn.Learn":   "true",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.25",
 				}},
 			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
 				Params: params.Params{

@@ -13,60 +13,71 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.Inhib.AvgTau": "30",
-					"Layer.Inhib.ActAvg.Init":  "0.15",
-					"Layer.Inhib.Layer.Gi":     "1.0", // 1.0 > 1.1  trace
-					"Layer.Act.Gbar.L":         "0.2", // std
-					"Layer.Act.Decay.Act":      "0.2", // 0 == 0.2
-					"Layer.Act.Decay.Glong":    "0.6",
-					"Layer.Act.Dt.LongAvgTau":  "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":     "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":   "5",   // old: 8 > 5 >> 2.81 -- big diff
-					"Layer.Act.AK.Gbar":        "0.1",
-					"Layer.Act.NMDA.MgC":       "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":      "5",
-					"Layer.Act.Mahp.Gbar":      "0.04", // 0.04 == 0.05+ > 0.02 -- just reduces hidden activity levels
-					"Layer.Act.Sahp.Gbar":      "0.1",  // 0.1 == 0.02 no real diff
-					"Layer.Act.Sahp.Off":       "0.8",  //
-					"Layer.Act.Sahp.Slope":     "0.02", //
-					"Layer.Act.Sahp.CaTau":     "5",    // 5 > 10
+					"Layer.Inhib.ActAvg.Init": "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+					"Layer.Inhib.Layer.Gi":    "1.0", // 1.0 > 1.1  trace
+					"Layer.Act.Gbar.L":        "0.2", // std
+					"Layer.Act.Decay.Act":     "0.0", // 0 == 0.2
+					"Layer.Act.Decay.Glong":   "0.0",
+					"Layer.Act.NMDA.MgC":      "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":     "5",
+					"Layer.Act.Mahp.Gbar":     "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+					"Layer.Act.Sahp.Gbar":     "0.1",  // 0.1 == 0.02 no real diff
+					"Layer.Act.Sahp.Off":      "0.8",  //
+					"Layer.Act.Sahp.Slope":    "0.02", //
+					"Layer.Act.Sahp.CaTau":    "5",    // 5 > 10
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
-				Params: params.Params{}},
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.1",
+				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.05", // 0.08 for 12 notes, 0.05 for 18
+					"Layer.Inhib.ActAvg.Init": "0.08", // 0.08 for 12 notes, 0.05 for 18
 				}},
-			{Sel: ".CT", Desc: "CT gain factor is key",
+			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.4", // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
-					"Layer.Inhib.Pool.Gi":  "1.4",
-					// "Layer.Inhib.Pool.On":   "true",
-					"Layer.CT.GeGain":       "0.5", // 0.7 > 0.5 but blows up above 0.7 -- 0.5 is "safer"
-					"Layer.CT.DecayTau":     "50",  // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.KNa.On":      "true",
-					"Layer.Act.Decay.Act":   "0.0",
-					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.GABAB.Gbar":  "0.4",
-					"Layer.Act.NMDA.Gbar":   "0.35",  // 0.35 > 0.4 -- 0.3, 200 works but a bit worse
-					"Layer.Act.NMDA.Tau":    "300",   // 300 > 200
-					"Layer.Act.Noise.On":    "false", // todo?
-					"Layer.Act.Noise.Ge":    "0.005",
-					"Layer.Act.Noise.Gi":    "0.005",
+					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
+					"Layer.Inhib.Layer.Gi":    "1.4",  // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
+					"Layer.Inhib.Pool.Gi":     "1.4",
+					"Layer.CT.GeGain":         "0.5", // 0.7 > 0.5 but blows up above 0.7 -- 0.5 is "safer"
+					"Layer.CT.DecayTau":       "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Decay.Act":     "0.0",
+					"Layer.Act.Decay.Glong":   "0.0",
+					"Layer.Act.GABAB.Gbar":    "0.3",
+					"Layer.Act.NMDA.Gbar":     "0.3",   // .3 is min -- .25 fails, even with .35 in hidden2!
+					"Layer.Act.NMDA.Tau":      "300",   // 300 >> 200, even with 300 in hidden2
+					"Layer.Act.Noise.On":      "false", // todo?
+					"Layer.Act.Noise.Ge":      "0.005",
+					"Layer.Act.Noise.Gi":      "0.005",
 				}},
-			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
+			{Sel: "#Hidden2CT", Desc: "CT NMDA gbar factor is key",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.12", // 2 even more active -- maybe try higher inhib
+					"Layer.Inhib.Layer.Gi":    "1.4",  // todo
+					"Layer.Act.GABAB.Gbar":    "0.3",
+					"Layer.Act.NMDA.Gbar":     "0.3", // higher layer has more nmda..
+					"Layer.Act.NMDA.Tau":      "300", // 300 > 200
+					"Layer.Act.Sahp.CaTau":    "10",  // todo
+				}},
+			{Sel: "TRCLayer", Desc: "TRC = Pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 0.9 > 1.1
 					"Layer.TRC.DriveScale":          "0.1", // 0.1 > 0.05 > 0.15
 					"Layer.TRC.FullDriveAct":        "0.6", // 0.6 def
-					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
-					"Layer.Act.GABAB.Gbar":          "0.2", // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":           "0.1", // now .15 best, .4, .6 sig worse
+					"Layer.Act.GABAB.Gbar":          "0.2",
+					"Layer.Act.NMDA.Gbar":           "0.1", // .1 was important
 					"Layer.Learn.RLrate.SigmoidMin": "1",   // 1 > .05
 				}},
+			{Sel: "#HiddenP", Desc: "distributed hidden-layer pulvinar",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.9",  // 0.9 > 0.8 > 1
+					"Layer.TRC.DriveScale": "0.05", // 0.05 > .1
+					"Layer.Act.NMDA.Gbar":  "0.1",
+				}},
+
+			// Projections below
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base":   "0.02", // if ctxt = 0.002 then .02 or .01 is best
@@ -78,7 +89,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
+					"Prjn.PrjnScale.Rel": "0.2",
+				}},
+			{Sel: "#Hidden2CTToHiddenCT", Desc: "ct top-down",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.2", // not much diff here
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
@@ -86,11 +101,13 @@ var ParamSets = params.Sets{
 					"Prjn.Trace":            "false", // not as good with Trace here..
 					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
 				}},
-			{Sel: ".CTFmSuper", Desc: "initial weight = 0.5 much better than 0.8",
+			{Sel: ".CTFmSuper", Desc: "1to1 > full",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.Learn.Learn":   "true", // learning > fixed 1to1
+					"Prjn.SWt.Init.Mean": "0.5",  // if fixed, 0.8 > 0.5, var = 0
+					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
+			{Sel: ".FmPulv", Desc: "defaults to .Back but generally weaker is better",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
 				}},
@@ -105,6 +122,18 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1  >= 0.05 > 0.2
 					"Prjn.Com.PFail":     "0.0",
 					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
+				}},
+			{Sel: "#HiddenToHidden2", Desc: "jack up fwd pathway",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0", // this mostly serves to get Hidden2 active -- but why is it so low?
+				}},
+			{Sel: "#HiddenCTToInputP", Desc: "differential contributions",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1.0", // .5 is almost as good as 1, .1 is a bit worse
+				}},
+			{Sel: "#Hidden2CTToInputP", Desc: "differential contributions",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.0", // 1 is best..
 				}},
 		},
 	}},

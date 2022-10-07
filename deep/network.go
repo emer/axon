@@ -128,8 +128,10 @@ func AddInputTRC4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 }
 
 // ConnectToTRC connects Super and CT with given TRC: CT -> TRC is class CTToPulv,
-// From TRC = type = Back, class = FmPulv
-// toTrcPat is the prjn.Pattern CT -> TRC and fmTrcPat is TRC -> CT, Super
+// From TRC = type = Back, class = FmPulv.
+// toTrcPat is the prjn.Pattern CT -> TRC and fmTrcPat is TRC -> CT, Super.
+// Typically TRC is a different shape than Super and CT, so use Full or appropriate
+// topological pattern
 func ConnectToTRC(nt *axon.Network, super, ct, trc emer.Layer, toTrcPat, fmTrcPat prjn.Pattern) {
 	nt.ConnectLayers(ct, trc, toTrcPat, emer.Forward).SetClass("CTToPulv")
 	nt.ConnectLayers(trc, super, fmTrcPat, emer.Back).SetClass("FmPulv")
@@ -259,6 +261,8 @@ func (nt *Network) AddSuperCT4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX in
 // ConnectToTRC connects Super and CT with given TRC: CT -> TRC is class CTToPulv,
 // From TRC = type = Back, class = FmPulv
 // toTrcPat is the prjn.Pattern CT -> TRC and fmTrcPat is TRC -> CT, Super
+// Typically TRC is a different shape than Super and CT, so use Full or appropriate
+// topological pattern
 func (nt *Network) ConnectToTRC(super, ct, trc emer.Layer, toTrcPat, fmTrcPat prjn.Pattern) {
 	ConnectToTRC(&nt.Network, super, ct, trc, toTrcPat, fmTrcPat)
 }

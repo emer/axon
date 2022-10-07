@@ -95,7 +95,7 @@ func (ss *Sim) New() {
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.UnitsPer = 1
+	ss.UnitsPer = 4
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
@@ -157,9 +157,11 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
-	one2one := prjn.NewOneToOne()
+	// one2one := prjn.NewOneToOne()
+	// _ = one2one
 
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, one2one)
+	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, full) // full > one2one
+	hidct.Shape().SetShape([]int{10, 20}, nil, nil)           // 200 == 500 == 1000 >> 100 here!
 	// note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
 

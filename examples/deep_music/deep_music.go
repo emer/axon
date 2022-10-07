@@ -30,6 +30,7 @@ import (
 	"github.com/emer/etable/metric"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/mat32"
 )
 
 // Debug triggers various messages etc
@@ -53,12 +54,6 @@ func guirun() {
 	win.StartEventLoop()
 }
 
-// InputNames are names of input letters
-var InputNames = []string{"B", "T", "S", "X", "V", "P", "E"}
-
-// InputNameMap has indexes of InputNames
-var InputNameMap map[string]int
-
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
@@ -73,6 +68,7 @@ type Sim struct {
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
+	Hid2         bool             `desc:"use Hidden2"`
 	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
 	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
 	UnitsPer     int              `def:"4" desc:"number of units per localist unit"`
@@ -100,6 +96,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
+	ss.Hid2 = true
 	ss.TestClamp = true
 	ss.ErrThr = 0.3
 	ss.TestInterval = 500
@@ -107,12 +104,6 @@ func (ss *Sim) New() {
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 	ss.PAlphaPlus = 0
-	if InputNameMap == nil {
-		InputNameMap = make(map[string]int, len(InputNames))
-		for i, nm := range InputNames {
-			InputNameMap[nm] = i
-		}
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,29 +164,44 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
 	one2one := prjn.NewOneToOne()
-	p1to1 := prjn.NewPoolOneToOne()
-	_ = p1to1
+	_ = one2one
 
-	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, 2)
+	space := float32(5)
 
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, one2one)
-	// no advantage to 4D..
-	// hid, hidct := net.AddSuperCT4D("Hidden", 2, 2, 4, 4, 2)
+	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
+
+	var hid, hidct, hidp, hid2, hid2ct emer.Layer
+	if ss.Hid2 {
+		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 10, 10, space, one2one) // one2one learn > full
+	} else {
+		hid, hidct = net.AddSuperCT2D("Hidden", 10, 10, space, one2one) // one2one learn > full
+		// hidct.Shape().SetShape([]int{25, 20}, nil, nil) // larger CT does NOT help with lower NMDA gbar
+	}
+	net.ConnectCTSelf(hidct, full)
+	net.ConnectToTRC(hid, hidct, inp, full, full)
+
+	if ss.Hid2 {
+		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 10, 10, space, one2one) // one2one learn > full
+		net.ConnectCTSelf(hid2ct, full)
+		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
+		// inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
+		net.ConnectToTRC(hid2, hid2ct, hidp, full, full) // predict layer below
+	}
 
 	in.SetClass("InLay")
 	inp.SetClass("InLay")
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
-	net.ConnectToTRC(hid, hidct, inp, full, full)
 
-	net.ConnectCTSelf(hidct, full)
-	// net.ConnectCTSelf(hidct, p1to1)
-
-	// not necc:
-	// net.ConnectCtxtToCT(in, hidct, full)
+	if ss.Hid2 {
+		net.BidirConnectLayers(hid, hid2, full)
+		net.ConnectLayers(hid2ct, hidct, full, emer.Back)
+	}
 
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
-	hidct.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
+	if ss.Hid2 {
+		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
+	}
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
 
 	net.Defaults()
@@ -534,19 +540,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
-	// nv.Scene().Camera.Pose.Pos.Set(0, 1.5, 3.0) // more "head on" than default which is more "top down"
-	// nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
-
-	// nv.ConfigLabels(InputNames)
-	// ly := nv.LayerByName("Targets")
-	// for li, lnm := range InputNames {
-	// 	lbl := nv.LabelByName(lnm)
-	// 	lbl.Pose = ly.Pose
-	// 	lbl.Pose.Pos.Y += .2
-	// 	lbl.Pose.Pos.Z += .02
-	// 	lbl.Pose.Pos.X += 0.05 + float32(li)*.06
-	// 	lbl.Pose.Scale.SetMul(mat32.Vec3{0.6, 0.4, 0.5})
-	// }
+	nv.Scene().Camera.Pose.Pos.Set(0, 2.1, 2.0)
+	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 }
 
 // ConfigGui configures the GoGi gui interface for this simulation,
