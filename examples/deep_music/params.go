@@ -85,7 +85,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "1", // 4 == 2 > 1
+					"Prjn.Learn.Trace.Tau":    "4", // 4 == 2 > 1
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
