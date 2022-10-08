@@ -59,7 +59,7 @@ func (ev *MoveEnv) Defaults() {
 	ev.Size.Set(30, 30)
 	ev.AngInc = 15
 	ev.UnitsPer = 4
-	ev.FOV = 180
+	ev.FOV = 90 // 180
 	popSigma := float32(0.1)
 	ev.DepthSize = 16
 	ev.DepthCode.Defaults()

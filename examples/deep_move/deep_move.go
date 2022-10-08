@@ -164,7 +164,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	var hid, hidct, hidp, hid2, hid2ct emer.Layer
 	if ss.Hid2 {
-		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 10, space, one2one) // one2one learn > full
+		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 10, space, full) // one2one learn > full
 	} else {
 		hid, hidct = net.AddSuperCT2D("Hidden", 10, 10, space, one2one) // one2one learn > full
 		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
@@ -176,7 +176,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.ConnectLayers(act, hid, full, emer.Forward)
 
 	if ss.Hid2 {
-		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, one2one) // one2one learn > full
+		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, full) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
 		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
 		net.ConnectToTRC(hid2, hid2ct, hdp, full, full) // shortcut top-down
