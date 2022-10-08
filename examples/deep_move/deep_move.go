@@ -1,9 +1,9 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// deep_fsa runs a DeepAxon network on the classic Reber grammar
-// finite state automaton problem.
+// deep_move runs a DeepAxon network predicting the effects of movement
+// on visual inputs.
 package main
 
 import (
@@ -25,7 +25,9 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/etable/etable"
 	_ "github.com/emer/etable/etview" // _ = include to get gui views
+	"github.com/emer/etable/metric"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
@@ -52,12 +54,6 @@ func guirun() {
 	win.StartEventLoop()
 }
 
-// InputNames are names of input letters
-var InputNames = []string{"B", "T", "S", "X", "V", "P", "E"}
-
-// InputNameMap has indexes of InputNames
-var InputNameMap map[string]int
-
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
@@ -72,7 +68,11 @@ type Sim struct {
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
-	UnitsPer     int              `def:"1" desc:"number of units per localist unit -- 1 actually best"`
+	Hid2         bool             `desc:"use Hidden2"`
+	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
+	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
+	UnitsPer     int              `def:"4" desc:"number of units per localist unit"`
+	ErrThr       float32          `def:"0.3" desc:"theshold for counting an output unit to be active"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
@@ -95,18 +95,15 @@ func (ss *Sim) New() {
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.UnitsPer = 1       // 1 >> 4 for unknown reasons..
+	ss.UnitsPer = 4
+	ss.Hid2 = true
+	ss.TestClamp = true
+	ss.ErrThr = 0.3
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 	ss.PAlphaPlus = 0
-	if InputNameMap == nil {
-		InputNameMap = make(map[string]int, len(InputNames))
-		for i, nm := range InputNames {
-			InputNameMap[nm] = i
-		}
-	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,26 +119,25 @@ func (ss *Sim) Config() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	var trn, tst *FSAEnv
+	var trn, tst *MoveEnv
 	if len(ss.Envs) == 0 {
-		trn = &FSAEnv{}
-		tst = &FSAEnv{}
+		trn = &MoveEnv{}
+		tst = &MoveEnv{}
 	} else {
-		trn = ss.Envs.ByMode(etime.Train).(*FSAEnv)
-		tst = ss.Envs.ByMode(etime.Test).(*FSAEnv)
+		trn = ss.Envs.ByMode(etime.Train).(*MoveEnv)
+		tst = ss.Envs.ByMode(etime.Test).(*MoveEnv)
 	}
 
 	// note: names must be standard here!
+	trn.Defaults()
 	trn.Nm = etime.Train.String()
-	trn.Dsc = "training params and state"
-	trn.Seq.Max = 25 // 25 sequences per epoch training
-	trn.TMatReber()
+	trn.Debug = false
+	trn.Config(ss.UnitsPer)
 	trn.Validate()
 
+	tst.Defaults()
 	tst.Nm = etime.Test.String()
-	tst.Dsc = "testing params and state"
-	tst.Seq.Max = 10
-	tst.TMatReber() // todo: random
+	tst.Config(ss.UnitsPer)
 	tst.Validate()
 
 	trn.Init(0)
@@ -152,38 +148,62 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigNet(net *deep.Network) {
-	net.InitName(net, "DeepFSA")
-	in, inp := net.AddInputTRC4D("Input", 1, 7, ss.UnitsPer, 1, 2)
+	net.InitName(net, "DeepMove")
+	ev := ss.Envs[etime.Train.String()].(*MoveEnv)
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
-	// one2one := prjn.NewOneToOne()
-	// _ = one2one
+	one2one := prjn.NewOneToOne()
+	_ = one2one
 
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, full)
-	// full > one2one -- one2one weights go to 0 -- this is key for more posterior-cortical CT
-	// hidct.Shape().SetShape([]int{10, 20}, nil, nil) // 200 == 500 == 1000 >> 100 here!
-	// note: tried 4D 6,6,2,2 with pool 1to1 -- not better
-	// also 12,12 not better than 10,10
+	space := float32(5)
 
-	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization
+	in, inp := net.AddInputTRC4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, space)
+	hd, hdp := net.AddInputTRC2D("HeadDir", 1, ev.DepthSize, space)
+	act := net.AddLayer2D("Action", ev.UnitsPer, len(ev.Acts), emer.Input)
+
+	var hid, hidct, hidp, hid2, hid2ct emer.Layer
+	if ss.Hid2 {
+		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 10, space, one2one) // one2one learn > full
+	} else {
+		hid, hidct = net.AddSuperCT2D("Hidden", 10, 10, space, one2one) // one2one learn > full
+		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
+		// hidct.Shape().SetShape([]int{25, 20}, nil, nil) // larger CT does NOT help with lower NMDA gbar
+	}
+	net.ConnectCTSelf(hidct, full)
+	net.ConnectToTRC(hid, hidct, inp, full, full)
+	net.ConnectToTRC(hid, hidct, hdp, full, full)
+	net.ConnectLayers(act, hid, full, emer.Forward)
+
+	if ss.Hid2 {
+		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, one2one) // one2one learn > full
+		net.ConnectCTSelf(hid2ct, full)
+		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
+		net.ConnectToTRC(hid2, hid2ct, hdp, full, full) // shortcut top-down
+		// inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
+		net.ConnectToTRC(hid2, hid2ct, hidp, full, full) // predict layer below
+	}
 
 	in.SetClass("InLay")
 	inp.SetClass("InLay")
-	trg.SetClass("InLay")
+	hd.SetClass("InLay")
+	hdp.SetClass("InLay")
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
-	net.ConnectToTRC(hid, hidct, inp, full, full) // full > 1to1 -- this is *essential* here!
+	net.ConnectLayers(hd, hid, full, emer.Forward)
 
-	net.ConnectCTSelf(hidct, full)
+	if ss.Hid2 {
+		net.BidirConnectLayers(hid, hid2, full)
+		net.ConnectLayers(hid2ct, hidct, full, emer.Back)
+		net.ConnectLayers(act, hid2, full, emer.Forward)
+	}
 
-	// not useful:
-	// net.ConnectCtxtToCT(in, hidct, full)
-
-	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
-	hidct.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
-	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
-	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
+	act.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: in.Name(), YAlign: relpos.Front, Space: 2})
+	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
+	if ss.Hid2 {
+		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
+	}
+	hd.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: inp.Name(), XAlign: relpos.Left, Space: space})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -266,6 +286,7 @@ func (ss *Sim) ConfigLoops() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
 			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			// ss.SimMat()
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
 	})
@@ -281,7 +302,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("RunStats", func() {
-		ss.Logs.RunStats("PctCor", "FirstZero", "LastZero")
+		ss.Logs.RunStats("PctCor")
 	})
 
 	// Save weights to file, to look at later
@@ -291,17 +312,19 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	// lrate schedule
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		switch trnEpc {
-		case 40:
-			// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			// ss.Net.LrateSched(0.2) // 0.2
-		case 60:
-			// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			// ss.Net.LrateSched(0.1) // 0.1
-		}
-	})
+	/*
+		man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
+			trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+			switch trnEpc {
+			case 40:
+				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				// ss.Net.LrateSched(0.2) // 0.2
+			case 60:
+				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				// ss.Net.LrateSched(0.1) // 0.1
+			}
+		})
+	*/
 
 	////////////////////////////////////////////
 	// GUI
@@ -321,46 +344,22 @@ func (ss *Sim) ConfigLoops() {
 	ss.Loops = man
 }
 
-// ApplyInputs applies input patterns from given envirbonment.
+// ApplyInputs applies input patterns from given environment.
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	fsenv := ss.Envs[ss.Time.Mode].(*FSAEnv)
+	ev := ss.Envs[ss.Time.Mode].(*MoveEnv)
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
-
-	// just using direct access to state here
-	in := net.LayerByName("Input").(axon.AxonLayer).AsAxon()
-	trg := net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
-	clrmsk, setmsk, _ := in.ApplyExtFlags()
-	ns := fsenv.NNext.Values[0]
-	for ni := range in.Neurons {
-		inr := &in.Neurons[ni]
-		inr.ClearMask(clrmsk)
-		inr.SetMask(setmsk)
-	}
-	for i := 0; i < ns; i++ {
-		lbl := fsenv.NextLabels.Values[i]
-		li, ok := InputNameMap[lbl]
-		if !ok {
-			log.Printf("Input label: %v not found in InputNames list of labels\n", lbl)
-			continue
+	lays := net.LayersByClass("Input", "Target")
+	for _, lnm := range lays {
+		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		pats := ev.State(lnm)
+		if pats != nil {
+			ly.ApplyExt(pats)
 		}
-		if i == 0 {
-			for yi := 0; yi < ss.UnitsPer; yi++ {
-				idx := li*ss.UnitsPer + yi
-				inr := &in.Neurons[idx]
-				inr.Ext = 1
-				inr.ClearMask(clrmsk)
-				inr.SetMask(setmsk)
-			}
-		}
-		inr := &trg.Neurons[li]
-		inr.Ext = 1
-		inr.ClearMask(clrmsk)
-		inr.SetMask(setmsk)
 	}
 }
 
@@ -392,7 +391,8 @@ func (ss *Sim) InitStats() {
 	// clear rest just to make Sim look initialized
 	ss.Stats.SetFloat("TrlUnitErr", 0.0)
 	ss.Stats.SetFloat("TrlCorSim", 0.0)
-	ss.Stats.SetInt("Output", 0)
+	ss.Stats.SetInt("TargNote", 0)
+	ss.Stats.SetInt("OutNote", 0)
 	ss.Logs.InitErrStats() // inits TrlErr, FirstZero, LastZero, NZero
 }
 
@@ -403,33 +403,54 @@ func (ss *Sim) StatCounters() {
 	mode.FromString(ss.Time.Mode)
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
+	ev := ss.Envs[ss.Time.Mode].(*MoveEnv)
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ev := ss.Envs[ss.Time.Mode]
-	ss.Stats.SetString("TrialName", ev.(*FSAEnv).String())
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "Output", "TrlErr", "TrlCorSim"})
+	ss.Stats.SetString("TrialName", ev.String())
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "TrialName", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
-	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.LayerByName("DepthP").(axon.AxonLayer).AsAxon()
+	ss.Stats.SetFloat("TrlErr", 1)
 	ss.Stats.SetFloat("TrlCorSim", float64(inp.CorSim.Cor))
-	err, minusIdx, _ := inp.LocalistErr4D()
-	tgn := &trg.Neurons[minusIdx]
-	if tgn.Ext > 0.5 {
-		err = false
-	} else {
-		err = true
-	}
-	ss.Stats.SetInt("Output", minusIdx)
 	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr())
-	if err {
-		ss.Stats.SetFloat("TrlErr", 1)
-	} else {
-		ss.Stats.SetFloat("TrlErr", 0)
+}
+
+// SimMat does similarity matrix analysis on Analyze trial data
+func (ss *Sim) SimMat() {
+	sk := etime.Scope(etime.Analyze, etime.Trial)
+	lt := ss.Logs.TableDetailsScope(sk)
+	ix, _ := lt.NamedIdxView("AnalyzeTimes")
+	timeMap := make(map[int]bool)
+	ix.Filter(func(et *etable.Table, row int) bool {
+		time := int(et.CellFloat("Time", row))
+		if _, has := timeMap[time]; has {
+			return false
+		}
+		timeMap[time] = true
+		return true
+	})
+	ix.SortCol(lt.Table.ColIdx("Time"), etable.Ascending)
+	times := ix.NewTable()
+	ss.Logs.MiscTables["AnalyzeTimes"] = times
+
+	if !ss.Args.Bool("nogui") {
+		col := "HiddenCT_ActM"
+		lbls := "Time"
+		sm := ss.Stats.SimMat("CTSim")
+		sm.TableCol(ix, col, lbls, true, metric.Correlation64)
+		ss.Stats.PCA.TableCol(ix, col, metric.Covariance64)
+
+		pcaprjn := ss.Logs.MiscTable("PCAPrjn")
+		ss.Stats.PCA.ProjectColToTable(pcaprjn, ix, col, lbls, []int{0, 1}) // gets vectors
+		pcaplt := ss.Stats.Plot("PCAPrjn")
+		estats.ConfigPCAPlot(pcaplt, pcaprjn, "HiddenCT")
+		clplt := ss.Stats.Plot("ClustPlot")
+		estats.ClustPlot(clplt, ix, col, lbls)
 	}
 }
 
@@ -446,7 +467,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
-	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
+	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr")
 
 	deep.LogAddTRCCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
@@ -498,26 +519,14 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 func (ss *Sim) ConfigNetView(nv *netview.NetView) {
 	nv.ViewDefaults()
-	// nv.Scene().Camera.Pose.Pos.Set(0, 1.5, 3.0) // more "head on" than default which is more "top down"
-	// nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
-
-	nv.ConfigLabels(InputNames)
-
-	ly := nv.LayerByName("Targets")
-	for li, lnm := range InputNames {
-		lbl := nv.LabelByName(lnm)
-		lbl.Pose = ly.Pose
-		lbl.Pose.Pos.Y += .2
-		lbl.Pose.Pos.Z += .02
-		lbl.Pose.Pos.X += 0.05 + float32(li)*.06
-		lbl.Pose.Scale.SetMul(mat32.Vec3{0.6, 0.4, 0.5})
-	}
+	nv.Scene().Camera.Pose.Pos.Set(0, 2.1, 2.0)
+	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 }
 
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
-	title := "DeepAxon Finite State Automaton"
-	ss.GUI.MakeWindow(ss, "DeepFSA", title, `This demonstrates a basic DeepAxon model on the Finite State Automaton problem (e.g., the Reber grammar). See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	title := "DeepAxon Move Prediction"
+	ss.GUI.MakeWindow(ss, "DeepMove", title, `This demonstrates a basic DeepAxon model on move prediction. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -539,6 +548,14 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Test Init",
+		Icon:    "reset",
+		Tooltip: "restart testing",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			ss.Loops.ResetCountersByMode(etime.Test)
+		},
+	})
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")
@@ -566,7 +583,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/deep_fsa/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/deep_move/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)

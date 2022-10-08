@@ -11,7 +11,7 @@ import (
 // GABABParams control the GABAB dynamics in PFC Maint neurons,
 // based on Brunel & Wang (2001) parameters.
 type GABABParams struct {
-	Gbar     float32 `def:"0,0.2,0.4" desc:"overall strength multiplier of GABA-B current"`
+	Gbar     float32 `def:"0,0.2,0.3,0.4" desc:"overall strength multiplier of GABA-B current"`
 	RiseTau  float32 `def:"45" desc:"rise time for bi-exponential time dynamics of GABA-B"`
 	DecayTau float32 `def:"50" desc:"decay time for bi-exponential time dynamics of GABA-B"`
 	Gbase    float32 `def:"0.2" desc:"baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)"`

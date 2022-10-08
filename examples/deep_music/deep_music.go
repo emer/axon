@@ -1,9 +1,9 @@
-// Copyright (c) 2019, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// deep_music runs a DeepAxon network on the classic Reber grammar
-// finite state automaton problem.
+// deep_music runs a DeepAxon network on predicting the next note
+// in a musical sequence of notes.
 package main
 
 import (
@@ -129,10 +129,11 @@ func (ss *Sim) ConfigEnv() {
 	}
 
 	song := "bach_goldberg.mid"
-	maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
-	// maxRows = 0   // full thing
+	// maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
+	// have to push it to 60 to get an effect of Tau=4 vs. 1
+	maxRows := 0 // full thing
 	track := 0
-	wrapNotes := true // does a bit better with false for short lengths (30)
+	wrapNotes := false // does a bit better with false for short lengths (30)
 
 	// note: names must be standard here!
 	trn.Defaults()
@@ -172,16 +173,17 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	var hid, hidct, hidp, hid2, hid2ct emer.Layer
 	if ss.Hid2 {
-		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 10, 10, space, one2one) // one2one learn > full
+		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 10, space, one2one) // one2one learn > full
 	} else {
 		hid, hidct = net.AddSuperCT2D("Hidden", 10, 10, space, one2one) // one2one learn > full
+		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
 		// hidct.Shape().SetShape([]int{25, 20}, nil, nil) // larger CT does NOT help with lower NMDA gbar
 	}
 	net.ConnectCTSelf(hidct, full)
 	net.ConnectToTRC(hid, hidct, inp, full, full)
 
 	if ss.Hid2 {
-		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 10, 10, space, one2one) // one2one learn > full
+		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
 		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
 		// inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
@@ -604,7 +606,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/deep_music/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)

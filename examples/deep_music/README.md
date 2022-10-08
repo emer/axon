@@ -8,6 +8,10 @@ Initially targeting simple one-note-at-a-time songs ("melodies").
 
 * `bach_goldberg.mid`: downloaded from http://www.jsbach.net/midi/midi_goldbergvariations.html -- v01
 
+# Performance
+
+The model with 2 hidden + CT layers can learn 30 note steps to a high level of predictive accuracy -- near perfect for a spiking net.  When trained on the whole song, it does not do as well, but improvisation testing reveals that it has absorbed a significant amount of song structure.
+
 # Mac playing the actual music from network
 
 * open `Apple MIDI Setup`

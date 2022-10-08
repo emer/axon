@@ -40,7 +40,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":   "1.4", // 1.2 > 1.3 > 1.1
-					"Layer.CT.GeGain":        "0.5", // 0.5 > 1 ok with stronger maint
+					"Layer.CT.GeGain":        "0.8", // 0.8 > 0.5 > 1
 					"Layer.CT.DecayTau":      "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
@@ -53,14 +53,15 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Ge":     "0.005",
 					"Layer.Act.Noise.Gi":     "0.005",
 				}},
-			{Sel: "TRCLayer", Desc: "standard weight is .3 here for larger distributed reps. no learn",
+			{Sel: "TRCLayer", Desc: "pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 0.9 > 1.1
 					"Layer.TRC.DriveScale":          "0.1", // 0.1 music
 					"Layer.TRC.FullDriveAct":        "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0",   // clear long
+					"Layer.Act.Decay.Glong":         "0.0", // clear long
+					"Layer.Act.Decay.AHP":           "0.0", // clear ahp
 					"Layer.Act.GABAB.Gbar":          "0.2", // .2 > old: 0.005
 					"Layer.Act.NMDA.Gbar":           "0.1", // .1 music
 					"Layer.Learn.RLrate.SigmoidMin": "1",   // auto = 1: not useful in output layer

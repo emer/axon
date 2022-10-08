@@ -1,3 +1,4 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
 
 gazelle_binary(
@@ -29,4 +30,11 @@ sh_test(
     name = "dummy_test",
     timeout = "short",
     srcs = ["dummy_test.sh"],
+)
+
+go_library(
+    name = "axon",
+    srcs = ["doc.go"],
+    importpath = "github.com/emer/axon",
+    visibility = ["//visibility:public"],
 )

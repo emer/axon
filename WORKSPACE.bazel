@@ -619,11 +619,9 @@ go_repository(
 
 go_repository(
     name = "com_github_go_gl_glfw",
-    commit = "0b4652f",
     importpath = "github.com/go-gl/glfw",
-    # TODO: switch to official release if / when merged.
-    remote = "https://github.com/garymm/glfw",
-    vcs = "git",
+    sum = "h1:QbL/5oDUmRBzO9/Z7Seo6zf912W/a6Sr4Eu0G/3Jho0=",
+    version = "v0.0.0-20190409004039-e6da0acd62b1",
 )
 
 go_repository(
@@ -2298,6 +2296,20 @@ go_repository(
     importpath = "go.uber.org/zap",
     sum = "h1:uFRZXykJGK9lLY4HtgSw44DnIcAM+kRBP7x5m+NpAOM=",
     version = "v1.16.0",
+)
+
+go_repository(
+    name = "com_github_go_gl_glfw_v3_3_glfw",
+    importpath = "github.com/go-gl/glfw/v3.3/glfw",
+    sum = "h1:1bpooddSK2996NWM/1TW59cchQOm9MkoV9DkhSJH1BI=",
+    version = "v0.0.0-20220516021902-eb3e265c7661",
+)
+
+go_repository(
+    name = "com_gitlab_gomidi_midi_v2",
+    importpath = "gitlab.com/gomidi/midi/v2",
+    sum = "h1:dkzVBqbaFHjyWwP71MrQNX7IeRUIDonddmHbPpO/Ucg=",
+    version = "v2.0.25",
 )
 
 go_rules_dependencies()

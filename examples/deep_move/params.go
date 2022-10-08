@@ -32,7 +32,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.025", // 0.08 for 12 notes, 0.05 for 18
+					"Layer.Inhib.ActAvg.Init": "0.13",
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
@@ -75,6 +75,10 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "0.9",  // 0.9 > 0.8 > 1
 					"Layer.TRC.DriveScale": "0.05", // 0.05 > .1
 					"Layer.Act.NMDA.Gbar":  "0.1",
+				}},
+			{Sel: "#Act", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.33",
 				}},
 
 			// Projections below

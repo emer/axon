@@ -1,6 +1,6 @@
 // note: go mod tidy gets confused about this somehow -- so excluding when doing it.
 
-//go:build not_darwin
+//go:build darwin
 
 package main
 
