@@ -30,28 +30,44 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.1",
 				}},
-			{Sel: ".InLay", Desc: "input layers need more inhibition",
+			{Sel: ".DepthIn", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.13",
+					"Layer.Inhib.ActAvg.Init": "0.2", // was .13 -- Ge very high b/c of topo prjn
+				}},
+			{Sel: ".HeadDirIn", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.13", // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
 					"Layer.Inhib.Layer.Gi":    "1.4",  // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
 					"Layer.Inhib.Pool.Gi":     "1.4",
-					"Layer.CT.GeGain":         "0.5", // 0.7 > 0.5 but blows up above 0.7 -- 0.5 is "safer"
-					"Layer.CT.DecayTau":       "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.CT.GeGain":         "1", //
+					"Layer.CT.DecayTau":       "0", // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
-					"Layer.Act.GABAB.Gbar":    "0.3",
-					"Layer.Act.NMDA.Gbar":     "0.3",   // .3 is min -- .25 fails, even with .35 in hidden2!
-					"Layer.Act.NMDA.Tau":      "300",   // 300 >> 200, even with 300 in hidden2
+					"Layer.Act.GABAB.Gbar":    "0.15",
+					"Layer.Act.NMDA.Gbar":     "0.15",  // .3 is min -- .25 fails, even with .35 in hidden2!
+					"Layer.Act.NMDA.Tau":      "100",   // 300 >> 200, even with 300 in hidden2
 					"Layer.Act.Noise.On":      "false", // todo?
 					"Layer.Act.Noise.Ge":      "0.005",
 					"Layer.Act.Noise.Gi":      "0.005",
 				}},
-			{Sel: "#Hidden2CT", Desc: "CT NMDA gbar factor is key",
+			{Sel: "#DepthHid", Desc: "",
 				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 tiny bit > 1.4
+					"Layer.Inhib.ActAvg.Init": "0.05", // 0.05 > 1. even though wrong -- @1.4 = ~0.05 actual, @1.2 = .1 actual
+				}},
+			{Sel: "#DepthHidCT", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "2.0",
+					"Layer.Inhib.ActAvg.Init": "0.05", // 0.05 > .1 even though wrong
+				}},
+			{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
+				Params: params.Params{
+					"Layer.CT.GeGain":         "0.8",  // 0.8, 50 small benefit
+					"Layer.CT.DecayTau":       "50",   // 50 > 0
 					"Layer.Inhib.ActAvg.Init": "0.12", // 2 even more active -- maybe try higher inhib
 					"Layer.Inhib.Layer.Gi":    "1.4",  // todo
 					"Layer.Act.GABAB.Gbar":    "0.3",
@@ -61,47 +77,48 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "TRCLayer", Desc: "TRC = Pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 0.9 > 1.1
+					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 > 1.0
 					"Layer.TRC.DriveScale":          "0.1", // 0.1 > 0.05 > 0.15
 					"Layer.TRC.FullDriveAct":        "0.6", // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
+					"Layer.Act.Decay.AHP":           "0.0", // clear long
 					"Layer.Act.GABAB.Gbar":          "0.2",
 					"Layer.Act.NMDA.Gbar":           "0.1", // .1 was important
 					"Layer.Learn.RLrate.SigmoidMin": "1",   // 1 > .05
 				}},
-			{Sel: "#HiddenP", Desc: "distributed hidden-layer pulvinar",
+			{Sel: "#DepthHidP", Desc: "distributed hidden-layer pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9",  // 0.9 > 0.8 > 1
 					"Layer.TRC.DriveScale": "0.05", // 0.05 > .1
 					"Layer.Act.NMDA.Gbar":  "0.1",
 				}},
-			{Sel: "#Act", Desc: "",
+			{Sel: "#Action", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.33",
+					"Layer.Inhib.ActAvg.Init": "0.15",
 				}},
 
 			// Projections below
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.005", // if ctxt = 0.002 then .02 or .01 is best
+					"Prjn.Learn.Lrate.Base":   "0.005", // 0.005 > 0.002 > 0.01
 					"Prjn.SWt.Adapt.Lrate":    "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
 					"Prjn.SWt.Adapt.DreamVar": "0.0",   // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",   // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "4", // 4 == 2 > 1
+					"Prjn.Learn.Trace.Tau":    "2", // 4 == 2 > 1
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
-			{Sel: "#Hidden2CTToHiddenCT", Desc: "ct top-down",
+			{Sel: "#HeadDirHidCTToDepthHidCT", Desc: "ct top-down",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2", // not much diff here
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.001", // 0.002 > 0.001 > 0.005 higher
+					"Prjn.Learn.Lrate.Base": "0.002", // has almost no effect in 1to1
 					"Prjn.Trace":            "false", // not as good with Trace here..
 					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
 				}},
@@ -127,17 +144,13 @@ var ParamSets = params.Sets{
 					"Prjn.Com.PFail":     "0.0",
 					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
 				}},
-			{Sel: "#HiddenToHidden2", Desc: "jack up fwd pathway",
+			{Sel: "#ActionToDepthHidCT", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0", // this mostly serves to get Hidden2 active -- but why is it so low?
+					"Prjn.PrjnScale.Rel": "0.2", // 0.5 is not better
 				}},
-			{Sel: "#HiddenCTToInputP", Desc: "differential contributions",
+			{Sel: "#DepthHid2CTToDepthP", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1.0", // .5 is almost as good as 1, .1 is a bit worse
-				}},
-			{Sel: "#Hidden2CTToInputP", Desc: "differential contributions",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.0", // 1 is best..
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1 == 0.15 > 0.05
 				}},
 		},
 	}},

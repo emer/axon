@@ -57,9 +57,9 @@ func (ev *MoveEnv) Desc() string { return "" }
 // Defaults sets default values
 func (ev *MoveEnv) Defaults() {
 	ev.Size.Set(30, 30)
-	ev.AngInc = 15
+	ev.AngInc = 45 // 45 makes a much lower trial-to-trial baseline correlation -- better test of learning
 	ev.UnitsPer = 4
-	ev.FOV = 90 // 180
+	ev.FOV = 180 // 180
 	popSigma := float32(0.1)
 	ev.DepthSize = 16
 	ev.DepthCode.Defaults()

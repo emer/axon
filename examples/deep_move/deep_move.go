@@ -20,6 +20,7 @@ import (
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
+	"github.com/emer/emergent/evec"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/prjn"
@@ -69,10 +70,8 @@ type Sim struct {
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
 	Hid2         bool             `desc:"use Hidden2"`
-	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
 	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
 	UnitsPer     int              `def:"4" desc:"number of units per localist unit"`
-	ErrThr       float32          `def:"0.3" desc:"theshold for counting an output unit to be active"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
@@ -96,9 +95,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
-	ss.Hid2 = true
-	ss.TestClamp = true
-	ss.ErrThr = 0.3
+	ss.Hid2 = false
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
@@ -156,54 +153,84 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	one2one := prjn.NewOneToOne()
 	_ = one2one
 
+	nPerAng := 10 // 30 total > 20 -- small improvement
+	nPerDepth := 2
+	rfDepth := 6
+	rfWidth := 3
+
+	rect := prjn.NewRect()
+	rect.Size.Set(rfWidth, rfDepth) // 6 > 8 > smaller
+	rect.Scale.Set(1.0/float32(nPerAng), 1.0/float32(nPerDepth))
+	_ = rect
+
+	rectRecip := prjn.NewRectRecip(rect)
+	_ = rectRecip
+
 	space := float32(5)
 
-	in, inp := net.AddInputTRC4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, space)
+	dpIn, dpInp := net.AddInputTRC4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, 2*space)
 	hd, hdp := net.AddInputTRC2D("HeadDir", 1, ev.DepthSize, space)
 	act := net.AddLayer2D("Action", ev.UnitsPer, len(ev.Acts), emer.Input)
 
-	var hid, hidct, hidp, hid2, hid2ct emer.Layer
+	dpHidSz := evec.Vec2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
+	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
+	// net.ConnectCTSelf(dpHidct, full) // self definitely doesn't make sense -- no need for 2-back ct
+	// net.LateralConnectLayer(dpHidct, full).SetClass("CTSelfMaint") // no diff
+	net.ConnectToTRC(dpHid, dpHidct, dpInp, full, rect) // fmPulv: rect == full
+	net.ConnectLayers(act, dpHid, full, emer.Forward)
+	net.ConnectLayers(dpIn, dpHid, rect, emer.Forward)
+	net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
+
+	// net.ConnectLayers(dpHidct, dpHid, full, emer.Back)
+
+	var dpHid2, dpHid2ct emer.Layer
 	if ss.Hid2 {
-		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 10, space, full) // one2one learn > full
-	} else {
-		hid, hidct = net.AddSuperCT2D("Hidden", 10, 10, space, one2one) // one2one learn > full
-		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
-		// hidct.Shape().SetShape([]int{25, 20}, nil, nil) // larger CT does NOT help with lower NMDA gbar
-	}
-	net.ConnectCTSelf(hidct, full)
-	net.ConnectToTRC(hid, hidct, inp, full, full)
-	net.ConnectToTRC(hid, hidct, hdp, full, full)
-	net.ConnectLayers(act, hid, full, emer.Forward)
+		// attempt at topo in 2nd hidden -- didn't work -- needs pools basically
+		// rfWidth2 := rfWidth * nPerAng
+		// rfDepth2 := rfDepth * nPerDepth
+		// rect2 := prjn.NewRect()
+		// rect2.Size.Set(rfWidth2, rfDepth2)
+		// rect2.Scale.Set(0.5*float32(rfWidth2), 0.5*float32(rfDepth2))
+		// _ = rect2
+		// rect2Recip := prjn.NewRectRecip(rect2)
+		// _ = rect2Recip
 
+		// dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", (2*dpHidSz.Y)/rfDepth2*nPerDepth, (2*dpHidSz.X)/rfWidth2*nPerAng, 2*space, one2one) // one2one learn > full
+		dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", 10, 20, 2*space, one2one) // one2one learn > full
+
+		net.ConnectCTSelf(dpHid2ct, full)
+		net.ConnectToTRC(dpHid2, dpHid2ct, dpInp, full, full)
+		net.ConnectLayers(act, dpHid2, full, emer.Forward)
+
+		// net.ConnectLayers(dpHid, dpHid2, rect2, emer.Forward)
+		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, emer.Back)
+
+		net.BidirConnectLayers(dpHid, dpHid2, full)
+		net.ConnectLayers(dpHid2ct, dpHidct, full, emer.Back)
+	}
+
+	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", 10, 10, 2*space, one2one)
+	// net.ConnectCTSelf(hdHidct, full)
+	net.ConnectToTRC(hdHid, hdHidct, hdp, full, full) // shortcut top-down
+	net.ConnectLayers(act, hdHid, full, emer.Forward)
+	net.ConnectLayers(hd, hdHid, full, emer.Forward)
+
+	dpIn.SetClass("DepthIn")
+	dpInp.SetClass("DepthIn")
+	hd.SetClass("HeadDirIn")
+	hdp.SetClass("HeadDirIn")
+
+	// no benefit from these:
+	// net.ConnectLayers(hdHid, dpHid, full, emer.Back)
+	// net.ConnectLayers(hdHidct, dpHidct, full, emer.Back)
+
+	hd.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: act.Name(), XAlign: relpos.Left, Space: 2 * space})
+	act.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpIn.Name(), YAlign: relpos.Front, Space: 2})
+	dpHid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: dpIn.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
+	hdHid.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dpHid.Name(), YAlign: relpos.Front, Space: 2})
 	if ss.Hid2 {
-		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, full) // one2one learn > full
-		net.ConnectCTSelf(hid2ct, full)
-		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
-		net.ConnectToTRC(hid2, hid2ct, hdp, full, full) // shortcut top-down
-		// inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
-		net.ConnectToTRC(hid2, hid2ct, hidp, full, full) // predict layer below
+		dpHid2.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: hdHidct.Name(), XAlign: relpos.Left, Space: 2 * space})
 	}
-
-	in.SetClass("InLay")
-	inp.SetClass("InLay")
-	hd.SetClass("InLay")
-	hdp.SetClass("InLay")
-
-	net.ConnectLayers(in, hid, full, emer.Forward)
-	net.ConnectLayers(hd, hid, full, emer.Forward)
-
-	if ss.Hid2 {
-		net.BidirConnectLayers(hid, hid2, full)
-		net.ConnectLayers(hid2ct, hidct, full, emer.Back)
-		net.ConnectLayers(act, hid2, full, emer.Forward)
-	}
-
-	act.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: in.Name(), YAlign: relpos.Front, Space: 2})
-	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
-	if ss.Hid2 {
-		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
-	}
-	hd.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: inp.Name(), XAlign: relpos.Left, Space: space})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -414,6 +441,11 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
+	ss.Stats.SetFloat32("DepthP_PrvMCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "DepthP", "ActPrv", "ActM"))
+	ss.Stats.SetFloat32("DepthP_PrvPCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "DepthP", "ActPrv", "ActP"))
+	ss.Stats.SetFloat32("HeadDirP_PrvMCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "ActPrv", "ActM"))
+	ss.Stats.SetFloat32("HeadDirP_PrvPCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "ActPrv", "ActP"))
+
 	inp := ss.Net.LayerByName("DepthP").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("TrlErr", 1)
 	ss.Stats.SetFloat("TrlCorSim", float64(inp.CorSim.Cor))
@@ -464,6 +496,10 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
 	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("DepthP_PrvMCorSim", "DepthP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("DepthP_PrvPCorSim", "DepthP_PrvPCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("HeadDirP_PrvMCorSim", "HeadDirP_PrvMCorSim", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("HeadDirP_PrvPCorSim", "HeadDirP_PrvPCorSim", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
 
@@ -481,7 +517,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Input", "Target")
 
-	ss.Logs.PlotItems("CorSim", "PctErr")
+	ss.Logs.PlotItems("DepthP_CorSim", "DepthP_PrvMCorSim", "HeadDirP_CorSim", "HeadDirP_PrvMCorSim")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)

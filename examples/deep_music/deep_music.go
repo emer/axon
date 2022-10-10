@@ -72,7 +72,6 @@ type Sim struct {
 	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
 	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
 	UnitsPer     int              `def:"4" desc:"number of units per localist unit"`
-	ErrThr       float32          `def:"0.3" desc:"theshold for counting an output unit to be active"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 
@@ -96,9 +95,8 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
-	ss.Hid2 = true
+	ss.Hid2 = false
 	ss.TestClamp = true
-	ss.ErrThr = 0.3
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
@@ -170,41 +168,43 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	space := float32(5)
 
 	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
+	in.SetClass("InLay")
+	inp.SetClass("InLay")
 
 	var hid, hidct, hidp, hid2, hid2ct emer.Layer
+	_ = hidp
 	if ss.Hid2 {
+		// hidp -> hid2 doesn't actually help at all..
 		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 10, space, one2one) // one2one learn > full
+		// hid, hidct = net.AddSuperCT2D("Hidden", 20, 10, space, one2one) // one2one learn > full
 	} else {
-		hid, hidct = net.AddSuperCT2D("Hidden", 10, 10, space, one2one) // one2one learn > full
+		hid, hidct = net.AddSuperCT2D("Hidden", 20, 20, space, one2one) // one2one learn > full
 		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
 		// hidct.Shape().SetShape([]int{25, 20}, nil, nil) // larger CT does NOT help with lower NMDA gbar
 	}
 	net.ConnectCTSelf(hidct, full)
 	net.ConnectToTRC(hid, hidct, inp, full, full)
+	net.ConnectLayers(in, hid, full, emer.Forward)
+	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Hid2 {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
-		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
+		// net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
 		// inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
 		net.ConnectToTRC(hid2, hid2ct, hidp, full, full) // predict layer below
 	}
 
-	in.SetClass("InLay")
-	inp.SetClass("InLay")
-
-	net.ConnectLayers(in, hid, full, emer.Forward)
-
 	if ss.Hid2 {
 		net.BidirConnectLayers(hid, hid2, full)
 		net.ConnectLayers(hid2ct, hidct, full, emer.Back)
+		// net.ConnectLayers(hid2ct, hid, full, emer.Back)
 	}
 
-	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Input", XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
+	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
 	if ss.Hid2 {
-		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
+		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: hid.Name(), YAlign: relpos.Front, Space: 2})
 	}
-	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -243,11 +243,11 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	avgPerTrl := 8
+	ntrls := 800
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, ntrls).AddTime(etime.Cycle, 200)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, ntrls).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
