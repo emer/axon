@@ -599,6 +599,7 @@ func (ls *LrateParams) Init() {
 // TraceParams manages learning rate parameters
 type TraceParams struct {
 	Tau     float32 `desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
+	NoExp2  bool    `desc:"if Tau == 2, then trace = average of current and previous, then current -> previous without any exponential integration on previous"`
 	SubMean float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, but special types (e.g., Hebb or CaSpk) may benefit from it"`
 	Dt      float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
@@ -613,10 +614,17 @@ func (tp *TraceParams) Update() {
 	tp.Dt = 1.0 / tp.Tau
 }
 
-// TrFmCa returns updated trace factor as function of a synaptic calcium factor
-func (tp *TraceParams) TrFmCa(tr float32, ca float32) float32 {
+// TrFmCa returns updated and effective trace factors
+// as function of a synaptic calcium update factor and current trace
+func (tp *TraceParams) TrFmCa(tr float32, ca float32) (newTr, effTr float32) {
+	if tp.Tau == 2 && tp.NoExp2 {
+		newTr = ca
+		effTr = 0.5 * (ca + tr)
+		return
+	}
 	tr += tp.Dt * (ca - tr)
-	return tr
+	newTr, effTr = tr, tr
+	return
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

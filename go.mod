@@ -11,6 +11,7 @@ require (
 	github.com/goki/ki v1.1.8
 	github.com/goki/kigen v1.0.1
 	github.com/goki/mat32 v1.0.12
+	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
 require (

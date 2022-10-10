@@ -39,19 +39,25 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.4", // 1.2 > 1.3 > 1.1
-					"Layer.CT.GeGain":        "0.8", // 0.8 > 0.5 > 1
-					"Layer.CT.DecayTau":      "50",  // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.Decay.Act":    "0.0",
-					"Layer.Act.Decay.Glong":  "0.0",
-					"Layer.Act.Dt.VmDendTau": "5",
-					"Layer.Act.Dt.GeTau":     "5",
-					"Layer.Act.GABAB.Gbar":   "0.25",  //
-					"Layer.Act.NMDA.Gbar":    "0.25",  // 0.25+ > .2, .15 only at start -- others catch up
-					"Layer.Act.NMDA.Tau":     "200",   // 200 slightly better than 300 early, same later; 100 fails
-					"Layer.Act.Noise.On":     "false", // todo?
-					"Layer.Act.Noise.Ge":     "0.005",
-					"Layer.Act.Noise.Gi":     "0.005",
+					"Layer.Inhib.Layer.Gi":          "1.4", // 1.2 > 1.3 > 1.1
+					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1
+					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Decay.Act":           "0.0",
+					"Layer.Act.Decay.Glong":         "0.0",
+					"Layer.Act.Dt.VmDendTau":        "5",
+					"Layer.Act.Dt.GeTau":            "5",
+					"Layer.Act.GABAB.Gbar":          "0.25",  //
+					"Layer.Act.NMDA.Gbar":           "0.25",  // 0.25+ > .2, .15 only at start -- others catch up
+					"Layer.Act.NMDA.Tau":            "200",   // 200 slightly better than 300 early, same later; 100 fails
+					"Layer.Act.Noise.On":            "false", // todo?
+					"Layer.Act.Noise.Ge":            "0.005",
+					"Layer.Act.Noise.Gi":            "0.005",
+					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
+					"Layer.Learn.RLrate.Diff":       "true",
+					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
+					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
+					"Layer.Learn.RLrate.Min":        "0.001",
 				}},
 			{Sel: "TRCLayer", Desc: "pulvinar",
 				Params: params.Params{
@@ -74,6 +80,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
 					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1 -- more-or-less a ceiling effect..
+					"Prjn.Learn.Trace.NoExp2": "true",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -81,9 +88,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.03",  // .03 > .02 > .01 -- .03 std
-					"Prjn.Trace":            "false", // not as good with Trace here..
-					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base":   "0.01", // .03 > .02 > .01 -- .03 std
+					"Prjn.Trace":              "true",
+					"Prjn.Learn.Trace.Tau":    "1",
+					"Prjn.Learn.Trace.NoExp2": "true",
+					"Prjn.Com.PFail":          "0.0", // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "full > 1to1",
 				Params: params.Params{

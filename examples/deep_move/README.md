@@ -6,11 +6,13 @@ The parameters that work well for `deep_music` don't work here at all, for reaso
 
 # Connectivity and Computational Logic
 
-The essential computational solution in the Depth prediction network is that the Hidden layer encodes the current pattern of depths using topographically-organized connectivity, so each neuron is constrained to process a limited range of depths and angles, with the action input modulating this activity to indicate which direction it will move on the next timestep.  Note that the action reflects what will happen *next*, not what happened to create the current visual input.
+The essential computational solution in the Depth prediction network is that the Hidden layer encodes the current pattern of depths using topographically-organized connectivity, so each neuron is constrained to process a limited range of depths and angles, with the `Action` input modulating this activity to indicate which direction it will move on the next timestep.  Note that the action reflects what will happen *next*, not what happened to create the current visual input.
 
 This information is captured in the CT layer and maintained in an essentially static, one-to-one copy that then drives projections into the Pulvinar layer that decode the Action x Depth signal into the predicted next activity pattern.  The error signals coming from the pulvinar back to the superficial layer are sufficient to shape the learning to properly encode the relevant action and depth information.
 
-* Interestingly, the predictive error at time t is about the encoding that took place at time t-1 in the hidden layer -- that is not right!  This is where the trace mechanism should be particularly helpful, by retaining some trace of the prior state.  Adding direct contextual input from Action -> CT makes no difference.
+* Interestingly, the predictive error at time t is about the encoding that took place at time t-1 in the hidden layer.  Without resorting to backprop through time, it is not possible to push these errors backward in time.  Thus, the primary locus of error-driven learning is at the TRC (Pulvinar) synapse.  In this case the CT representation just needs to contain all the information, and the TRC decodes it --- similar to a reservoir computing model where all the learning is on the decoder, and the reservoir itself does not learn, and is just configured to provide a sufficiently pattern-separated, time-evolving representation.
+
+* The presence of the trace mechanism, which uses prior time activity for the credit assignment factor, provides an important additional way for errors at time t to reshape learning on states from t-1.  However, the receiving activations are still from the wrong time.
 
 # Performance
 

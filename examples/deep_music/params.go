@@ -80,7 +80,7 @@ var ParamSets = params.Sets{
 			// Projections below
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.001",  // full song, 0.002 > 0.005 in the end
+					"Prjn.Learn.Lrate.Base":   "0.002",  // full song, 0.002 > 0.005 in the end
 					"Prjn.SWt.Adapt.Lrate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
 					"Prjn.SWt.Adapt.DreamVar": "0.0",    // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok

@@ -123,8 +123,11 @@ func (pj *CTCtxtPrjn) RecvCtxtGeInc() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
-// SynCa does Kinase learning based on Ca -- doesn't do
-func (pj *CTCtxtPrjn) SynCa(ltime *axon.Time) {
+func (pj *CTCtxtPrjn) SendSynCa(ltime *axon.Time) {
+	return
+}
+
+func (pj *CTCtxtPrjn) RecvSynCa(ltime *axon.Time) {
 	return
 }
 
@@ -143,13 +146,18 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 // DWtTrace computes the weight change (learning) for Ctxt projections
 // Version using the synaptic-level trace signal
 func (pj *CTCtxtPrjn) DWtTrace(ltime *axon.Time) {
-	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	sslay, issuper := pj.Send.(*SuperLayer)
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
+	var effTr float32
 	for si := range slay.Neurons {
-		// sn := &slay.Neurons[si]
+		sact := float32(0)
+		if issuper {
+			sact = sslay.SuperNeurs[si].BurstPrv
+		} else {
+			sact = slay.Neurons[si].ActPrv
+		}
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -158,22 +166,20 @@ func (pj *CTCtxtPrjn) DWtTrace(ltime *axon.Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			// only difference from standard is that Tr updates *after* DWt instead of before!
-			// note: CaSpkP - CaSpkD works MUCH better than plain Ca
-			err := sy.Tr * (rn.CaP - rn.CaD)          // (rn.CaSpkP - rn.CaSpkD)
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD is better: reflects entire window
-			if sy.Wt == 0 {                           // failed con, no learn
+			// not using the synaptic trace -- doesn't work at all -- just use sending act
+			// kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			sy.Tr, effTr = pj.Learn.Trace.TrFmCa(sy.Tr, sact)
+			err := effTr * (rn.CaP - rn.CaD) // (rn.CaSpkP - rn.CaSpkD)
+			if sy.Wt == 0 {                  // failed con, no learn
 				continue
 			}
-			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += rn.RLrate * lr * err
+			sy.DWt += lr * err // note: critical that we don't have * rn.RLrate here!
 		}
 	}
 }
@@ -204,6 +210,9 @@ func (pj *CTCtxtPrjn) DWtNoTrace(ltime *axon.Time) {
 			// activations, which are first two args:
 			err := pj.Learn.CHLdWt(sact, sact, rn.CaSpkP, rn.CaSpkD) // note: CaSpk MUCH better than Ca
 			// sb immediately -- enters into zero sum
+			if sy.Wt == 0 { // failed con, no learn
+				continue
+			}
 			if err > 0 {
 				err *= (1 - sy.LWt)
 			} else {

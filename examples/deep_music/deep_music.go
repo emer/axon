@@ -243,7 +243,11 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	ntrls := 800
+	ev := ss.Envs["Train"].(*MusicEnv)
+	ntrls := ev.Song.Rows
+	if ev.MaxSteps > 0 {
+		ntrls = ev.MaxSteps
+	}
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, ntrls).AddTime(etime.Cycle, 200)
 
