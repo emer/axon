@@ -32,7 +32,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.025", // 0.08 for 12 notes, 0.05 for 18
+					"Layer.Inhib.ActAvg.Init": "0.025", // 0.025 for full song
+					// "Layer.Inhib.ActAvg.Init": "0.05", // 0.08 for 18 notes -- 30 rows
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
@@ -80,12 +81,13 @@ var ParamSets = params.Sets{
 			// Projections below
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.002",  // full song, 0.002 > 0.005 in the end
+					"Prjn.Learn.Lrate.Base":   "0.002",  // full song, 0.002 > 0.005 in the end; 30 notes: .02
 					"Prjn.SWt.Adapt.Lrate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
 					"Prjn.SWt.Adapt.DreamVar": "0.0",    // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "4", // 4 == 2 > 1
+					"Prjn.Learn.Trace.Tau":    "2",     // 4 == 2 > 1
+					"Prjn.Learn.Trace.NoExp2": "false", // false > true
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -97,9 +99,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.001", // 0.002 > 0.001 > 0.005 higher
-					"Prjn.Trace":            "false", // not as good with Trace here..
-					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base":   "0.0005", // 0.002 > 0.001 > 0.005 higher
+					"Prjn.Trace":              "true",
+					"Prjn.Learn.Trace.Tau":    "2",     // late in learning 2 does best
+					"Prjn.Learn.Trace.NoExp2": "false", // false > true
+					"Prjn.Com.PFail":          "0.0",   // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "1to1 > full",
 				Params: params.Params{

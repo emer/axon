@@ -29,15 +29,13 @@ type CtxtSender interface {
 type CTCtxtPrjn struct {
 	axon.Prjn           // access as .Prjn
 	FmSuper   bool      `desc:"if true, this is the projection from corresponding Superficial layer -- should be OneToOne prjn, with Learn.Learn = false, WtInit.Var = 0, Mean = 0.8 -- these defaults are set if FmSuper = true"`
-	Trace     bool      `def:"false" desc:"if true, use the trace-based learning rule -- does not work as well as the default which uses CHL and the prior sending activation state"`
 	CtxtGeInc []float32 `desc:"local per-recv unit accumulator for Ctxt excitatory conductance from sending units -- not a delta -- the full value"`
 }
 
 var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 
 func (pj *CTCtxtPrjn) Defaults() {
-	pj.Prjn.Defaults() // note: used to have other defaults
-	pj.Trace = false
+	pj.Prjn.Defaults()         // note: used to have other defaults
 	pj.Learn.Lrate.Base = 0.01 // note: this lrate may need to be much slower than others
 }
 
@@ -136,21 +134,10 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
-	if pj.Trace {
-		pj.DWtTrace(ltime)
-	} else {
-		pj.DWtNoTrace(ltime)
-	}
-}
-
-// DWtTrace computes the weight change (learning) for Ctxt projections
-// Version using the synaptic-level trace signal
-func (pj *CTCtxtPrjn) DWtTrace(ltime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	sslay, issuper := pj.Send.(*SuperLayer)
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
-	var effTr float32
 	for si := range slay.Neurons {
 		sact := float32(0)
 		if issuper {
@@ -168,11 +155,11 @@ func (pj *CTCtxtPrjn) DWtTrace(ltime *axon.Time) {
 			sy := &syns[ci]
 			// not using the synaptic trace -- doesn't work at all -- just use sending act
 			// kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr, effTr = pj.Learn.Trace.TrFmCa(sy.Tr, sact)
-			err := effTr * (rn.CaP - rn.CaD) // (rn.CaSpkP - rn.CaSpkD)
-			if sy.Wt == 0 {                  // failed con, no learn
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sact)
+			if sy.Wt == 0 { // failed con, no learn
 				continue
 			}
+			err := sy.Tr * (rn.CaP - rn.CaD)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
@@ -183,54 +170,6 @@ func (pj *CTCtxtPrjn) DWtTrace(ltime *axon.Time) {
 		}
 	}
 }
-
-// DWtNoTrace computes the weight change (learning) for Ctxt projections.
-// Version without trace -- used previously.
-func (pj *CTCtxtPrjn) DWtNoTrace(ltime *axon.Time) {
-	slay := pj.Send.(axon.AxonLayer).AsAxon()
-	sslay, issuper := pj.Send.(*SuperLayer)
-	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
-	for si := range slay.Neurons {
-		sact := float32(0)
-		if issuper {
-			sact = sslay.SuperNeurs[si].BurstPrv
-		} else {
-			sact = slay.Neurons[si].ActPrv
-		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			// following line should be ONLY diff: sact for *both* short and medium *sender*
-			// activations, which are first two args:
-			err := pj.Learn.CHLdWt(sact, sact, rn.CaSpkP, rn.CaSpkD) // note: CaSpk MUCH better than Ca
-			// sb immediately -- enters into zero sum
-			if sy.Wt == 0 { // failed con, no learn
-				continue
-			}
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += lr * err
-		}
-	}
-}
-
-// note: not using BurstPrv
-
-// sact := float32(0)
-// if issuper {
-// 	sact = sslay.SuperNeurs[si].BurstPrv
-// } else {
-// 	sact = slay.Neurons[si].ActPrv
-// }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  PrjnType

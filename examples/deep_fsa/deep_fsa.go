@@ -79,8 +79,6 @@ type Sim struct {
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
-
-	PAlphaPlus float32 `desc:"probability of an alpha-cycle plus phase (driver burst activation) within theta cycle -- like teacher forcing"`
 }
 
 // TheSim is the overall state for this simulation
@@ -100,7 +98,6 @@ func (ss *Sim) New() {
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
-	ss.PAlphaPlus = 0
 	if InputNameMap == nil {
 		InputNameMap = make(map[string]int, len(InputNames))
 		for i, nm := range InputNames {
@@ -153,29 +150,29 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.InitName(net, "DeepFSA")
-	in, inp := net.AddInputTRC4D("Input", 1, 7, ss.UnitsPer, 1, 2)
 
 	full := prjn.NewFull()
 	full.SelfCon = true // unclear if this makes a diff for self cons at all
 	// one2one := prjn.NewOneToOne()
 	// _ = one2one
 
+	in, inp := net.AddInputTRC4D("Input", 1, 7, ss.UnitsPer, 1, 2)
+	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization
+	in.SetClass("InLay")
+	inp.SetClass("InLay")
+	trg.SetClass("InLay")
+
 	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, full)
 	// full > one2one -- one2one weights go to 0 -- this is key for more posterior-cortical CT
 	// hidct.Shape().SetShape([]int{10, 20}, nil, nil) // 200 == 500 == 1000 >> 100 here!
 	// note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
-
-	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization
-
-	in.SetClass("InLay")
-	inp.SetClass("InLay")
-	trg.SetClass("InLay")
+	net.ConnectCTSelf(hidct, full)
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
-	net.ConnectToTRC(hid, hidct, inp, full, full) // full > 1to1 -- this is *essential* here!
-
-	net.ConnectCTSelf(hidct, full)
+	net.ConnectToTRC(hid, hidct, inp, full, full) // inp -> hid is *essential*
+	// net.ConnectLayers(inp, hidct, full, emer.Back).SetClass("FmPvlv")
+	// net.ConnectLayers(hidct, hid, full, emer.Back)
 
 	// not useful:
 	// net.ConnectCtxtToCT(in, hidct, full)

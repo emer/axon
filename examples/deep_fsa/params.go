@@ -80,7 +80,6 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
 					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1 -- more-or-less a ceiling effect..
-					"Prjn.Learn.Trace.NoExp2": "true",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -88,21 +87,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.01", // .03 > .02 > .01 -- .03 std
-					"Prjn.Trace":              "true",
-					"Prjn.Learn.Trace.Tau":    "1",
-					"Prjn.Learn.Trace.NoExp2": "true",
-					"Prjn.Com.PFail":          "0.0", // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base": "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
+					"Prjn.Learn.Trace.Tau":  "2",    // late in learning 2 does best
+					"Prjn.Com.PFail":        "0.0",  // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "full > 1to1",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "true",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
-				}},
-			{Sel: "#InputPToHiddenCT", Desc: "critical to make this small so deep context dominates",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > .05 lba
 				}},
 			{Sel: ".CTSelfCtxt", Desc: "",
 				Params: params.Params{
@@ -113,6 +106,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",  // 0.1  >= 0.05 > 0.2
 					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
+				}},
+			{Sel: ".FmPulv", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
 				}},
 		},
 	}},

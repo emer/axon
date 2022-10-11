@@ -78,8 +78,6 @@ type Sim struct {
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
-
-	PAlphaPlus float32 `desc:"probability of an alpha-cycle plus phase (driver burst activation) within theta cycle -- like teacher forcing"`
 }
 
 // TheSim is the overall state for this simulation
@@ -100,7 +98,6 @@ func (ss *Sim) New() {
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
-	ss.PAlphaPlus = 0
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -179,7 +176,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.ConnectToTRC(dpHid, dpHidct, dpInp, full, rect) // fmPulv: rect == full
 	net.ConnectLayers(act, dpHid, full, emer.Forward)
 	net.ConnectLayers(dpIn, dpHid, rect, emer.Forward)
-	net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
+	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
 
 	// net.ConnectLayers(dpHidct, dpHid, full, emer.Back)
 

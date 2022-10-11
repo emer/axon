@@ -896,7 +896,6 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
-	var effTr float32
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
@@ -909,11 +908,11 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
 			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr, effTr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)               // caD reflects entire window
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                      // caD reflects entire window
 			if sy.Wt == 0 {                                                // failed con, no learn
 				continue
 			}
-			err := effTr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {

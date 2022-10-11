@@ -14,8 +14,8 @@ import (
 
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
-	GeGain   float32 `def:"0.5" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
-	DecayTau float32 `def:"50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over"`
+	GeGain   float32 `def:"0.5,0.8" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
+	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over"`
 	DecayDt  float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
 }
 

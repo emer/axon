@@ -61,7 +61,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#DepthHidCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "2.0",
+					"Layer.Inhib.Layer.Gi":    "2.0",  // 2.0 > lower
 					"Layer.Inhib.ActAvg.Init": "0.05", // 0.05 > .1 even though wrong
 				}},
 			{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
@@ -95,7 +95,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Action", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Inhib.ActAvg.Init": "0.25",
 				}},
 
 			// Projections below
@@ -106,7 +106,8 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar": "0.0",   // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",   // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "2", // 4 == 2 > 1
+					"Prjn.Learn.Trace.Tau":    "2",     // 4 == 2 > 1
+					"Prjn.Learn.Trace.NoExp2": "false", // false > true
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -118,9 +119,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.002", // has almost no effect in 1to1
-					"Prjn.Trace":            "false", // not as good with Trace here..
-					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base":   "0.002", // has almost no effect in 1to1
+					"Prjn.Trace":              "true",  // not as good with Trace here..
+					"Prjn.Learn.Trace.Tau":    "2",     // late in learning 2 does best
+					"Prjn.Learn.Trace.NoExp2": "false", // false > true
+					"Prjn.Com.PFail":          "0.0",   // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "1to1 > full",
 				Params: params.Params{

@@ -15,7 +15,7 @@ import "github.com/goki/mat32"
 // the scope of a single theta cycle, so we just omit the time integration
 // of the n gating value, but tau is computed in any case.
 type SahpParams struct {
-	Gbar   float32 `def:"0.05" desc:"strength of sAHP current"`
+	Gbar   float32 `def:"0.05,0.1" desc:"strength of sAHP current"`
 	CaTau  float32 `def:"5,10" desc:"time constant for integrating Ca across theta cycles"`
 	Off    float32 `def:"0.8" desc:"integrated Ca offset (threshold) for infinite time N gating function -- where the gate is at 50% strength"`
 	Slope  float32 `def:"0.02" desc:"slope of the infinite time logistic gating function"`

@@ -78,8 +78,6 @@ type Sim struct {
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
-
-	PAlphaPlus float32 `desc:"probability of an alpha-cycle plus phase (driver burst activation) within theta cycle -- like teacher forcing"`
 }
 
 // TheSim is the overall state for this simulation
@@ -101,7 +99,6 @@ func (ss *Sim) New() {
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
-	ss.PAlphaPlus = 0
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,6 +127,7 @@ func (ss *Sim) ConfigEnv() {
 	// maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
 	// have to push it to 60 to get an effect of Tau=4 vs. 1
 	maxRows := 0 // full thing
+	// maxRows := 30
 	track := 0
 	wrapNotes := false // does a bit better with false for short lengths (30)
 
@@ -246,7 +244,7 @@ func (ss *Sim) ConfigLoops() {
 	ev := ss.Envs["Train"].(*MusicEnv)
 	ntrls := ev.Song.Rows
 	if ev.MaxSteps > 0 {
-		ntrls = ev.MaxSteps
+		ntrls = 4 * ev.MaxSteps
 	}
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, ntrls).AddTime(etime.Cycle, 200)
