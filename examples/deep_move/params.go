@@ -106,8 +106,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar": "0.0",   // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",   // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "2",     // 4 == 2 > 1
-					"Prjn.Learn.Trace.NoExp2": "false", // false > true
+					"Prjn.Learn.Trace.Tau":    "2", // 4 == 2 > 1
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -119,11 +118,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.002", // has almost no effect in 1to1
-					"Prjn.Trace":              "true",  // not as good with Trace here..
-					"Prjn.Learn.Trace.Tau":    "2",     // late in learning 2 does best
-					"Prjn.Learn.Trace.NoExp2": "false", // false > true
-					"Prjn.Com.PFail":          "0.0",   // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base": "0.002", // has almost no effect in 1to1
+					"Prjn.Learn.Trace.Tau":  "2",     // late in learning 2 does best
+					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "1to1 > full",
 				Params: params.Params{
@@ -150,6 +147,10 @@ var ParamSets = params.Sets{
 			{Sel: "#ActionToDepthHidCT", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2", // 0.5 is not better
+				}},
+			{Sel: "#ActionToDepthHid", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "2.0", //
 				}},
 			{Sel: "#DepthHid2CTToDepthP", Desc: "",
 				Params: params.Params{
