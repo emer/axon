@@ -11,21 +11,21 @@ DIRS=`go list ./... | grep -v python`
 
 all: build
 
-build: 
+build:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOBUILD) -v $(DIRS)
 
-test: 
+test:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOTEST) -v $(DIRS)
 
-clean: 
+clean:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOCLEAN) ./...
 
 fmts:
 	gofmt -s -w .
-	
+
 vet:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	$(GOCMD) vet $(DIRS) | grep -v unkeyed
@@ -36,10 +36,10 @@ tidy:
 	go mod tidy
 
 bazel-update:
-	bazel run //:gazelle
-	bazel run //:gazelle -- update-repos -from_file=go.mod
+	bazel run //:gazelle -- fix axon chans deep fffb kinase
+	bazel run //:gazelle -- update-repos -from_file=go.mod -to_macro gazelle_repositories.bzl%go_repositories -prune
 	bazel test //...
-	
+
 # updates go.mod to master for all of the goki dependencies
 # note: must somehow remember to do this for any other depend
 # that we need to update at any point!
@@ -51,11 +51,11 @@ master:
 	go get -u github.com/emer/empi@master
 	go list -m all | grep emer
 	go mod tidy
-	
+
 old:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	go list -u -m all | grep '\['
-	
+
 mod-update: export GO111MODULE = on
 mod-update:
 	@echo "GO111MODULE = $(value GO111MODULE)"
@@ -68,7 +68,7 @@ gopath-update: export GO111MODULE = off
 gopath-update:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	cd examples/ra25; go get -u ./...
-	
+
 release:
 	$(MAKE) -C axon release
 
