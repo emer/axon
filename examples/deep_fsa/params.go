@@ -31,8 +31,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Slope":     "0.02", //
 					"Layer.Act.Sahp.CaTau":     "10",   //
 				}},
-			{Sel: ".Hidden", Desc: "fix avg act",
-				Params: params.Params{}},
+			{Sel: "SuperLayer", Desc: "super layer params",
+				Params: params.Params{
+					"Layer.Burst.ThrRel": "0.1",
+					"Layer.Burst.ThrAbs": "0.1",
+				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
@@ -61,10 +64,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "TRCLayer", Desc: "pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 0.9 > 1.1
-					"Layer.TRC.DriveScale":          "0.1", // 0.1 music
-					"Layer.TRC.FullDriveAct":        "0.6", // 0.6 def
-					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
+					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 0.9 > 1.1
+					"Layer.TRC.DriveScale":          "0.05", // 0.1 orig
+					"Layer.TRC.FullDriveAct":        "0.6",  // 0.6 def
+					"Layer.Act.Spike.Tr":            "3",    // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.Decay.AHP":           "0.0", // clear ahp
