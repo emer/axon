@@ -93,7 +93,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
-	ss.Hid2 = false
+	ss.Hid2 = false // useful only if primary hidden layer is smaller
 	ss.TestClamp = true
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
@@ -173,8 +173,8 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	_ = hidp
 	if ss.Hid2 {
 		// hidp -> hid2 doesn't actually help at all..
-		hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 10, space, one2one) // one2one learn > full
-		// hid, hidct = net.AddSuperCT2D("Hidden", 20, 10, space, one2one) // one2one learn > full
+		// hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 20, space, one2one) // one2one learn > full
+		hid, hidct = net.AddSuperCT2D("Hidden", 20, 20, space, one2one) // one2one learn > full
 	} else {
 		hid, hidct = net.AddSuperCT2D("Hidden", 20, 20, space, one2one) // one2one learn > full
 		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
@@ -188,9 +188,9 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	if ss.Hid2 {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
-		// net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
-		// inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
-		net.ConnectToTRC(hid2, hid2ct, hidp, full, full) // predict layer below
+		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
+		inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
+		// net.ConnectToTRC(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 
 	if ss.Hid2 {

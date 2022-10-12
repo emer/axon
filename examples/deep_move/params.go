@@ -95,7 +95,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Action", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.25",
+					"Layer.Inhib.ActAvg.Init": "0.25", // 0.25 is accurate -- good MaxGe levels
 				}},
 
 			// Projections below
@@ -150,7 +150,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ActionToDepthHid", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "2.0", //
+					"Prjn.PrjnScale.Rel": "2.0", // 2.0 > 3.0 > 1.0
 				}},
 			{Sel: "#DepthHid2CTToDepthP", Desc: "",
 				Params: params.Params{

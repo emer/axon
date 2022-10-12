@@ -40,7 +40,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
 					"Layer.Inhib.Layer.Gi":    "1.4",  // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
 					"Layer.Inhib.Pool.Gi":     "1.4",
-					"Layer.CT.GeGain":         "0.5", // 0.7 > 0.5 but blows up above 0.7 -- 0.5 is "safer"
+					"Layer.CT.GeGain":         "1.0", // 0.8 > 0.5
 					"Layer.CT.DecayTau":       "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
@@ -81,26 +81,26 @@ var ParamSets = params.Sets{
 			// Projections below
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.002",  // full song, 0.002 > 0.005 in the end; 30 notes: .02
+					"Prjn.Learn.Lrate.Base":   "0.002",  // full song: 0.002 > 0.005, 0.001 in the end; 30 notes: .02
 					"Prjn.SWt.Adapt.Lrate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
 					"Prjn.SWt.Adapt.DreamVar": "0.0",    // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "2", // 4 == 2 > 1
+					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1 (small bene) > 4 (worse at end on full)
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
 				}},
 			{Sel: "#Hidden2CTToHiddenCT", Desc: "ct top-down",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2", // not much diff here
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.0005", // 0.002 > 0.001 > 0.005 higher
-					"Prjn.Learn.Trace.Tau":  "2",      // late in learning 2 does best
-					"Prjn.Com.PFail":        "0.0",    // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base": "0.001", // 0.001 >> 0.002 for full
+					"Prjn.Learn.Trace.Tau":  "4",     // 4 > 2?
+					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "1to1 > full",
 				Params: params.Params{

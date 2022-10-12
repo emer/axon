@@ -40,7 +40,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.4", // 1.2 > 1.3 > 1.1
-					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1
+					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1 -- none are catestrophic
 					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0",
@@ -79,7 +79,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1 -- more-or-less a ceiling effect..
+					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -88,8 +88,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base": "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
-					"Prjn.Learn.Trace.Tau":  "2",    // late in learning 2 does best
-					"Prjn.Com.PFail":        "0.0",  // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Trace.Tau":  "2",    // 2 > 1
 				}},
 			{Sel: ".CTFmSuper", Desc: "full > 1to1",
 				Params: params.Params{

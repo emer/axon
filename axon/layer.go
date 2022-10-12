@@ -1349,6 +1349,7 @@ func (ly *Layer) ActFmG(ltime *Time) {
 // and synaptic-level calcium updates depending on spiking, NMDA
 func (ly *Layer) PostAct(ltime *Time) {
 	ly.AvgMaxAct(ltime)
+	ly.AvgMaxCaSpkP(ltime)
 	if !ltime.Testing {
 		ly.AxonLay.SynCa(ltime)
 	}
@@ -1367,6 +1368,10 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 			}
 			// in theory having quicker activation than Act will be useful, but maybe the delay is
 			// not such a big deal, and otherwise it tracks pretty smoothly and closely
+			// todo: need to come back and fix this with a combination of PV and SST inhibitory
+			// neurons: general story that PV is fast onset but depleting, targets axon initial,
+			// SST is slower and faciltating / not depleting, hits dendrites.
+			// https://github.com/emer/axon/discussions/64
 			avg += nrn.Act // SpkCaM, SpkCaP not clearly better, nor is spike..
 			if nrn.Act > max {
 				max = nrn.Act
@@ -1383,6 +1388,22 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 		pl.Inhib.Act.Max = max
 		pl.Inhib.Act.MaxIdx = maxi
 	}
+}
+
+// AvgMaxCaSpkP computes the average and max CaSpkP in the layer.
+// This is a useful direct measure of time-integrated neural activity
+// used for learning and other functions, instead of Act, which is
+// purely for visualization.
+func (ly *Layer) AvgMaxCaSpkP(ltime *Time) {
+	ly.ActAvg.CaSpkP.Init()
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.ActAvg.CaSpkP.UpdateVal(nrn.CaSpkP, ni)
+	}
+	ly.ActAvg.CaSpkP.CalcAvg()
 }
 
 // SpikedAvgByPool returns the average across Spiked values by given pool index
@@ -1501,15 +1522,6 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ltime *Time) {
-	ly.ActAvg.CaSpkP.Init()
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.ActAvg.CaSpkP.UpdateVal(nrn.CaSpkP, ni)
-	}
-	ly.ActAvg.CaSpkP.CalcAvg()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

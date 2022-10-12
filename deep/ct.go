@@ -14,7 +14,7 @@ import (
 
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
-	GeGain   float32 `def:"0.5,0.8" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
+	GeGain   float32 `def:"0.5,0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
 	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over"`
 	DecayDt  float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
 }
@@ -28,7 +28,7 @@ func (cp *CTParams) Update() {
 }
 
 func (cp *CTParams) Defaults() {
-	cp.GeGain = 0.5
+	cp.GeGain = 0.8
 	cp.DecayTau = 50
 	cp.Update()
 }
@@ -98,31 +98,29 @@ func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 	}
 }
 
-// SendCtxtGe sends activation over CTCtxtPrjn projections to integrate
+// SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
 // CtxtGe excitatory conductance on CT layers.
 // This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
 // Satisfies the CtxtSender interface.
 func (ly *CTLayer) SendCtxtGe(ltime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
+		if nrn.IsOff() || nrn.CaSpkP < 0.1 {
 			continue
 		}
-		if nrn.Act > 0.1 {
-			for _, sp := range ly.SndPrjns {
-				if sp.IsOff() {
-					continue
-				}
-				ptyp := sp.Type()
-				if ptyp != CTCtxt {
-					continue
-				}
-				pj, ok := sp.(*CTCtxtPrjn)
-				if !ok {
-					continue
-				}
-				pj.SendCtxtGe(ni, nrn.Act)
+		for _, sp := range ly.SndPrjns {
+			if sp.IsOff() {
+				continue
 			}
+			ptyp := sp.Type()
+			if ptyp != CTCtxt {
+				continue
+			}
+			pj, ok := sp.(*CTCtxtPrjn)
+			if !ok {
+				continue
+			}
+			pj.SendCtxtGe(ni, nrn.CaSpkP)
 		}
 	}
 }

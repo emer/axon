@@ -94,8 +94,8 @@ func (pj *CTCtxtPrjn) RecvGInc(ltime *axon.Time) {
 
 // SendCtxtGe sends the full Burst activation from sending neuron index si,
 // to integrate CtxtGe excitatory conductance on receivers
-func (pj *CTCtxtPrjn) SendCtxtGe(si int, dburst float32) {
-	scdb := dburst * pj.GScale.Scale
+func (pj *CTCtxtPrjn) SendCtxtGe(si int, burst float32) {
+	scdb := burst * pj.GScale.Scale
 	nc := pj.SConN[si]
 	st := pj.SConIdxSt[si]
 	syns := pj.Syns[st : st+nc]

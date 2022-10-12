@@ -34,8 +34,8 @@ var KiT_SuperLayer = kit.Types.AddType(&SuperLayer{}, LayerProps)
 
 func (ly *SuperLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Decay.Act = 0 // deep doesn't decay!
-	ly.Act.Decay.Glong = 0.5
+	ly.Act.Decay.Act = 0
+	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
 	ly.Burst.Defaults()
 }
@@ -69,9 +69,8 @@ func (ly *SuperLayer) DecayState(decay, glong float32) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Burst -- computed in CyclePost
 
-// MinusPhase does updating after end of minus phase
-func (ly *SuperLayer) MinusPhase(ltime *axon.Time) {
-	ly.Layer.MinusPhase(ltime)
+func (ly *SuperLayer) NewState() {
+	ly.Layer.NewState()
 	ly.BurstPrv()
 }
 
@@ -83,22 +82,21 @@ func (ly *SuperLayer) BurstPrv() {
 	}
 }
 
-// CyclePost calls BurstFmAct
+// CyclePost calls BurstFmCaSpkP
 func (ly *SuperLayer) CyclePost(ltime *axon.Time) {
 	ly.Layer.CyclePost(ltime)
-	ly.BurstFmAct(ltime)
+	ly.BurstFmCaSpkP(ltime)
 }
 
-// BurstFmAct updates Burst layer 5IB bursting value from current Act
-// (superficial activation), subject to thresholding.
-// Updated during Time.PlusPhase
-func (ly *SuperLayer) BurstFmAct(ltime *axon.Time) {
+// BurstFmCaSpkP updates Burst layer 5IB bursting value from current CaSpkP
+// reflecting a time-integrated spiking value useful in learning,
+// subject to thresholding.  Only updated during plus phase.
+func (ly *SuperLayer) BurstFmCaSpkP(ltime *axon.Time) {
 	if !ltime.PlusPhase {
 		return
 	}
-	lpl := &ly.Pools[0]
-	actMax := lpl.Inhib.Act.Max
-	actAvg := lpl.Inhib.Act.Avg
+	actMax := ly.ActAvg.CaSpkP.Max
+	actAvg := ly.ActAvg.CaSpkP.Avg
 	thr := actAvg + ly.Burst.ThrRel*(actMax-actAvg)
 	thr = mat32.Max(thr, ly.Burst.ThrAbs)
 	for ni := range ly.Neurons {
@@ -108,8 +106,8 @@ func (ly *SuperLayer) BurstFmAct(ltime *axon.Time) {
 		}
 		snr := &ly.SuperNeurs[ni]
 		burst := float32(0)
-		if nrn.Act > thr {
-			burst = nrn.Act
+		if nrn.CaSpkP > thr {
+			burst = nrn.CaSpkP
 		}
 		snr.Burst = burst
 	}
@@ -129,21 +127,22 @@ func (ly *SuperLayer) SendCtxtGe(ltime *axon.Time) {
 			continue
 		}
 		snr := &ly.SuperNeurs[ni]
-		if snr.Burst > 0.1 {
-			for _, sp := range ly.SndPrjns {
-				if sp.IsOff() {
-					continue
-				}
-				ptyp := sp.Type()
-				if ptyp != CTCtxt {
-					continue
-				}
-				pj, ok := sp.(*CTCtxtPrjn)
-				if !ok {
-					continue
-				}
-				pj.SendCtxtGe(ni, snr.Burst)
+		if snr.Burst == 0 {
+			continue
+		}
+		for _, sp := range ly.SndPrjns {
+			if sp.IsOff() {
+				continue
 			}
+			ptyp := sp.Type()
+			if ptyp != CTCtxt {
+				continue
+			}
+			pj, ok := sp.(*CTCtxtPrjn)
+			if !ok {
+				continue
+			}
+			pj.SendCtxtGe(ni, snr.Burst)
 		}
 	}
 }
