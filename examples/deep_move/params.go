@@ -28,7 +28,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
-					"Layer.Burst.ThrRel": "0.1",
+					"Layer.Burst.ThrRel": "0.1", // no diffs here -- music makes a diff
 					"Layer.Burst.ThrAbs": "0.1",
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
@@ -52,22 +52,19 @@ var ParamSets = params.Sets{
 					"Layer.CT.DecayTau":       "0", // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
-					"Layer.Act.GABAB.Gbar":    "0.15",
-					"Layer.Act.NMDA.Gbar":     "0.15",  // .3 is min -- .25 fails, even with .35 in hidden2!
-					"Layer.Act.NMDA.Tau":      "100",   // 300 >> 200, even with 300 in hidden2
-					"Layer.Act.Noise.On":      "false", // todo?
-					"Layer.Act.Noise.Ge":      "0.005",
-					"Layer.Act.Noise.Gi":      "0.005",
+					"Layer.Act.GABAB.Gbar":    "0.2",  // standard gaba
+					"Layer.Act.NMDA.Gbar":     "0.15", // .15 for copy mode
+					"Layer.Act.NMDA.Tau":      "100",  // 100 best here
 				}},
 			{Sel: "#DepthHid", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 tiny bit > 1.4
-					"Layer.Inhib.ActAvg.Init": "0.05", // 0.05 > 1. even though wrong -- @1.4 = ~0.05 actual, @1.2 = .1 actual
+					"Layer.Inhib.ActAvg.Init": "0.07", // 0.07 actual
 				}},
 			{Sel: "#DepthHidCT", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "2.0",  // 2.0 > lower
-					"Layer.Inhib.ActAvg.Init": "0.05", // 0.05 > .1 even though wrong
+					"Layer.Inhib.ActAvg.Init": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
 				}},
 			{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{

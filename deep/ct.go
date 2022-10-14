@@ -14,8 +14,8 @@ import (
 
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
-	GeGain   float32 `def:"0.5,0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly"`
-	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over"`
+	GeGain   float32 `def:"0.5,0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
+	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50"`
 	DecayDt  float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
 }
 
@@ -37,6 +37,18 @@ func (cp *CTParams) Defaults() {
 // that project to the TRC pulvinar neurons, to generate the predictions.
 // They receive phasic input representing 5IB bursting via CTCtxtPrjn inputs
 // from SuperLayer and also from self projections.
+//
+// There are two primary modes of behavior: single-step copy and
+// multi-step temporal integration, each of which requires different
+// parmeterization:
+// * single-step copy requires NMDA, GABAB Gbar = .15, Tau = 100,
+//   (i.e. std defaults) and CT.Decay = 0, with one-to-one projection
+//   from Super, and no CT self connections.  See examples/deep_move
+//   for a working example.
+// * Temporal integration requires NMDA, GABAB Gbar = .3, Tau = 300,
+//   CT.Decay = 50, with self connections of both CTCtxtPrjn and standard
+//   that support NMDA active maintenance.  See examples/deep_fsa and
+//   examples/deep_move for working examples.
 type CTLayer struct {
 	axon.Layer           // access as .Layer
 	CT         CTParams  `desc:"parameters for CT layer specific functions"`
@@ -50,9 +62,10 @@ func (ly *CTLayer) Defaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
-	ly.Act.NMDA.Gbar = 0.3
-	ly.Act.NMDA.Tau = 300
-	ly.Act.GABAB.Gbar = 0.3
+	// these are for longer temporal integration:
+	// ly.Act.NMDA.Gbar = 0.3
+	// ly.Act.NMDA.Tau = 300
+	// ly.Act.GABAB.Gbar = 0.3
 	ly.Typ = CT
 	ly.CT.Defaults()
 }

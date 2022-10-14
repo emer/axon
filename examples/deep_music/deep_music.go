@@ -68,6 +68,7 @@ type Sim struct {
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Time         axon.Time        `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
+	FullSong     bool             `desc:"train the full song -- else 30 notes"`
 	Hid2         bool             `desc:"use Hidden2"`
 	TestClamp    bool             `desc:"drive inputs from the training sequence during testing -- otherwise use network's own output"`
 	PlayTarg     bool             `desc:"during testing, play the target note instead of the actual network output"`
@@ -93,6 +94,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
+	ss.FullSong = false
 	ss.Hid2 = false // useful only if primary hidden layer is smaller
 	ss.TestClamp = true
 	ss.TestInterval = 500
@@ -126,8 +128,12 @@ func (ss *Sim) ConfigEnv() {
 	song := "bach_goldberg.mid"
 	// maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
 	// have to push it to 60 to get an effect of Tau=4 vs. 1
-	maxRows := 0 // full thing
-	// maxRows := 30
+	maxRows := 30
+	ss.Params.ExtraSets = "30Notes"
+	if ss.FullSong {
+		maxRows = 0 // full thing
+		ss.Params.ExtraSets = "FullSong"
+	}
 	track := 0
 	wrapNotes := false // does a bit better with false for short lengths (30)
 
@@ -165,6 +171,11 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	space := float32(5)
 
+	nUnits := 10
+	if ev.MaxSteps == 0 {
+		nUnits = 20
+	}
+
 	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
 	in.SetClass("InLay")
 	inp.SetClass("InLay")
@@ -176,7 +187,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		// hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 20, space, one2one) // one2one learn > full
 		hid, hidct = net.AddSuperCT2D("Hidden", 20, 20, space, one2one) // one2one learn > full
 	} else {
-		hid, hidct = net.AddSuperCT2D("Hidden", 20, 20, space, one2one) // one2one learn > full
+		hid, hidct = net.AddSuperCT2D("Hidden", 20, nUnits, space, one2one) // one2one learn > full
 		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
 		// hidct.Shape().SetShape([]int{25, 20}, nil, nil) // larger CT does NOT help with lower NMDA gbar
 	}
@@ -186,7 +197,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Hid2 {
-		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, 10, space, one2one) // one2one learn > full
+		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
 		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
 		inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")

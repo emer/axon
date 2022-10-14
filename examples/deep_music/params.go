@@ -28,7 +28,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
-					"Layer.Burst.ThrRel": "0.1",
+					"Layer.Burst.ThrRel": "0.1", // 0.1 > 0.2 > 0
 					"Layer.Burst.ThrAbs": "0.1",
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
@@ -45,7 +45,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
 					"Layer.Inhib.Layer.Gi":    "1.4",  // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
 					"Layer.Inhib.Pool.Gi":     "1.4",
-					"Layer.CT.GeGain":         "1.0", // 0.8 > 0.5
+					"Layer.CT.GeGain":         "1.0", // 1.0 > 0.8 > 0.5
 					"Layer.CT.DecayTau":       "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
@@ -67,8 +67,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "TRCLayer", Desc: "TRC = Pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 0.9 > 1.1
-					"Layer.TRC.DriveScale":          "0.05", // 0.1 > 0.05 > 0.15
+					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 1.1 >> 1.2
+					"Layer.TRC.DriveScale":          "0.02", // 0.02 > higher in the end; 0.01 is too weak
 					"Layer.TRC.FullDriveAct":        "0.6",  // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
@@ -140,6 +140,22 @@ var ParamSets = params.Sets{
 			{Sel: "#Hidden2CTToInputP", Desc: "differential contributions",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.0", // 1 is best..
+				}},
+		},
+	}},
+	{Name: "30Notes", Desc: "for the small 30 note test case", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: ".InLay", Desc: "input layers need more inhibition",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.05", // 0.08 for 18 notes -- 30 rows
+				}},
+		},
+	}},
+	{Name: "FullSong", Desc: "for the full song", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: ".InLay", Desc: "input layers need more inhibition",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.025", // 0.025 for full song
 				}},
 		},
 	}},
