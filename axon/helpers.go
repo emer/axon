@@ -9,6 +9,7 @@ import (
 
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/env"
+	"github.com/emer/empi/mpi"
 	"github.com/goki/gi/gi"
 )
 
@@ -56,7 +57,11 @@ func WeightsFileName(net *Network, ctrString, runName string) string {
 
 // SaveWeights saves network weights to filename with WeightsFileName information
 // to identify the weights.
+// only for 0 rank MPI if running mpi
 func SaveWeights(net *Network, ctrString, runName string) {
+	if mpi.WorldRank() > 0 {
+		return
+	}
 	fnm := WeightsFileName(net, ctrString, runName)
 	fmt.Printf("Saving Weights to: %s\n", fnm)
 	net.SaveWtsJSON(gi.FileName(fnm))
@@ -64,9 +69,9 @@ func SaveWeights(net *Network, ctrString, runName string) {
 
 // SaveWeightsIfArgSet saves network weights if the "wts" arg has been set to true.
 // uses WeightsFileName information to identify the weights.
+// only for 0 rank MPI if running mpi
 func SaveWeightsIfArgSet(net *Network, args *ecmd.Args, ctrString, runName string) {
-	swts := args.Bool("wts")
-	if swts {
+	if args.Bool("wts") {
 		SaveWeights(net, ctrString, runName)
 	}
 }
