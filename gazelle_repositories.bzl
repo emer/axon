@@ -186,14 +186,14 @@ def go_repositories():
     go_repository(
         name = "com_github_emer_emergent",
         importpath = "github.com/emer/emergent",
-        sum = "h1:MLIU6QLcb2I+gkl7QcCPEtNcHfvzZ1oD4L0jQbTiGoU=",
-        version = "v1.3.27",
+        sum = "h1:aQkzg2g8wA7dsZ12tjPqiza8RAG9F01NzuMda9YYabc=",
+        version = "v1.3.29",
     )
     go_repository(
         name = "com_github_emer_empi",
         importpath = "github.com/emer/empi",
-        sum = "h1:OPZVHraAtrFNuWe2l0+mEDFNhPeg1g0hTleojSzJpis=",
-        version = "v1.0.14",
+        sum = "h1:PLI0RN0ivkrOOYYoMTpXXWlQb7ai+CyM8QLKd7kuZko=",
+        version = "v1.0.15",
     )
     go_repository(
         name = "com_github_emer_etable",
@@ -651,6 +651,13 @@ def go_repositories():
         sum = "h1:/vn0k+RBvwlxEmP5E7SZMqNxPhfMVFEJiykr15/0XKM=",
         version = "v1.4.1",
     )
+    go_repository(
+        name = "com_gitlab_gomidi_midi_v2",
+        importpath = "gitlab.com/gomidi/midi/v2",
+        sum = "h1:dkzVBqbaFHjyWwP71MrQNX7IeRUIDonddmHbPpO/Ucg=",
+        version = "v2.0.25",
+    )
+
     go_repository(
         name = "com_google_cloud_go",
         importpath = "cloud.google.com/go",

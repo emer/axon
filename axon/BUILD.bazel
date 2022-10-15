@@ -51,6 +51,7 @@ go_library(
         "@com_github_emer_emergent//ringidx",
         "@com_github_emer_emergent//timer",
         "@com_github_emer_emergent//weights",
+        "@com_github_emer_empi//mpi",
         "@com_github_emer_etable//agg",
         "@com_github_emer_etable//etable",
         "@com_github_emer_etable//etensor",
