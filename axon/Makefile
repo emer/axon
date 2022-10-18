@@ -8,19 +8,19 @@ GOGET=$(GOCMD) get
 
 all: build
 
-build: 
+build:
 	$(GOBUILD) -v
-test: 
+test:
 	$(GOTEST) -v ./...
-clean: 
+clean:
 	$(GOCLEAN)
 
 # NOTE: MUST update version number here prior to running 'make release'
-VERS=v1.5.8
+VERS=v1.5.9
 PACKAGE=axon
-GIT_COMMIT=`git rev-parse --short HEAD`
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
-VERS_FILE=version.go
+GIT_COMMIT=`git rev-parse --short HEAD`
+VERS_FILE=$(shell echo `git rev-parse --show-toplevel`/version.go)
 
 release:
 	/bin/rm -f $(VERS_FILE)
