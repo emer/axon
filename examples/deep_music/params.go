@@ -65,11 +65,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Tau":      "300", // 300 > 200
 					"Layer.Act.Sahp.CaTau":    "10",  // todo
 				}},
-			{Sel: "TRCLayer", Desc: "TRC = Pulvinar",
+			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 1.1 >> 1.2
-					"Layer.TRC.DriveScale":          "0.02", // 0.02 > higher in the end; 0.01 is too weak
-					"Layer.TRC.FullDriveAct":        "0.6",  // 0.6 def
+					"Layer.Pulv.DriveScale":         "0.02", // 0.02 > higher in the end; 0.01 is too weak
+					"Layer.Pulv.FullDriveAct":       "0.6",  // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.GABAB.Gbar":          "0.2",
@@ -78,9 +78,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#HiddenP", Desc: "distributed hidden-layer pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",  // 0.9 > 0.8 > 1
-					"Layer.TRC.DriveScale": "0.05", // 0.05 > .1
-					"Layer.Act.NMDA.Gbar":  "0.1",
+					"Layer.Inhib.Layer.Gi":  "0.9",  // 0.9 > 0.8 > 1
+					"Layer.Pulv.DriveScale": "0.05", // 0.05 > .1
+					"Layer.Act.NMDA.Gbar":   "0.1",
 				}},
 
 			// Projections below

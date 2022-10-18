@@ -150,7 +150,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	one2one := prjn.NewOneToOne()
 	_ = one2one
 
-	nPerAng := 10 // 30 total > 20 -- small improvement
+	nPerAng := 5 // 30 total > 20 -- small improvement
 	nPerDepth := 2
 	rfDepth := 6
 	rfWidth := 3
@@ -165,15 +165,15 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	space := float32(5)
 
-	dpIn, dpInp := net.AddInputTRC4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, 2*space)
-	hd, hdp := net.AddInputTRC2D("HeadDir", 1, ev.DepthSize, space)
+	dpIn, dpInp := net.AddInputPulv4D("Depth", 1, ev.NFOVRays, ev.DepthSize, 1, 2*space)
+	hd, hdp := net.AddInputPulv2D("HeadDir", 1, ev.DepthSize, space)
 	act := net.AddLayer2D("Action", ev.UnitsPer, len(ev.Acts), emer.Input)
 
 	dpHidSz := evec.Vec2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
 	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
 	// net.ConnectCTSelf(dpHidct, full) // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(dpHidct, full).SetClass("CTSelfMaint") // no diff
-	net.ConnectToTRC(dpHid, dpHidct, dpInp, full, rect) // fmPulv: rect == full
+	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect) // fmPulv: rect == full
 	net.ConnectLayers(act, dpHid, full, emer.Forward)
 	net.ConnectLayers(dpIn, dpHid, rect, emer.Forward)
 	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
@@ -196,7 +196,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", 10, 20, 2*space, one2one) // one2one learn > full
 
 		net.ConnectCTSelf(dpHid2ct, full)
-		net.ConnectToTRC(dpHid2, dpHid2ct, dpInp, full, full)
+		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full)
 		net.ConnectLayers(act, dpHid2, full, emer.Forward)
 
 		// net.ConnectLayers(dpHid, dpHid2, rect2, emer.Forward)
@@ -208,7 +208,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 
 	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", 10, 10, 2*space, one2one)
 	// net.ConnectCTSelf(hdHidct, full)
-	net.ConnectToTRC(hdHid, hdHidct, hdp, full, full) // shortcut top-down
+	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full) // shortcut top-down
 	net.ConnectLayers(act, hdHid, full, emer.Forward)
 	net.ConnectLayers(hd, hdHid, full, emer.Forward)
 
@@ -502,7 +502,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr")
 
-	deep.LogAddTRCCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	deep.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 

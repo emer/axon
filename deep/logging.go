@@ -13,11 +13,11 @@ import (
 	"github.com/emer/etable/minmax"
 )
 
-// LogAddTRCCorSimItems adds CorSim stats for TRC / Pulvinar layers
+// LogAddPulvCorSimItems adds CorSim stats for Pulv / Pulvinar layers
 // aggregated across three time scales, ordered from higher to lower,
 // e.g., Run, Epoch, Trial.
-func LogAddTRCCorSimItems(lg *elog.Logs, net *axon.Network, times ...etime.Times) {
-	layers := net.LayersByClass("TRC")
+func LogAddPulvCorSimItems(lg *elog.Logs, net *axon.Network, times ...etime.Times) {
+	layers := net.LayersByClass("Pulv")
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{

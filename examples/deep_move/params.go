@@ -63,7 +63,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#DepthHidCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "2.0",  // 2.0 > lower
+					"Layer.Inhib.Layer.Gi":    "2.8",  // 2.0 > lower
 					"Layer.Inhib.ActAvg.Init": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
 				}},
 			{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
@@ -77,11 +77,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Tau":      "300", // 300 > 200
 					"Layer.Act.Sahp.CaTau":    "10",  // todo
 				}},
-			{Sel: "TRCLayer", Desc: "TRC = Pulvinar",
+			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
-					"Layer.TRC.DriveScale":          "0.05", // 0.1 > 0.05 > 0.15
-					"Layer.TRC.FullDriveAct":        "0.6",  // 0.6 def
+					"Layer.Pulv.DriveScale":         "0.05", // 0.1 > 0.05 > 0.15
+					"Layer.Pulv.FullDriveAct":       "0.6",  // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.Decay.AHP":           "0.0", // clear long
@@ -91,9 +91,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#DepthHidP", Desc: "distributed hidden-layer pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",  // 0.9 > 0.8 > 1
-					"Layer.TRC.DriveScale": "0.05", // 0.05 > .1
-					"Layer.Act.NMDA.Gbar":  "0.1",
+					"Layer.Inhib.Layer.Gi":  "0.9",  // 0.9 > 0.8 > 1
+					"Layer.Pulv.DriveScale": "0.05", // 0.05 > .1
+					"Layer.Act.NMDA.Gbar":   "0.1",
 				}},
 			{Sel: "#Action", Desc: "",
 				Params: params.Params{

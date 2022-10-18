@@ -62,11 +62,11 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
 					"Layer.Learn.RLrate.Min":        "0.001",
 				}},
-			{Sel: "TRCLayer", Desc: "pulvinar",
+			{Sel: "PulvLayer", Desc: "pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 0.9 > 1.1
-					"Layer.TRC.DriveScale":          "0.05", // 0.1 orig
-					"Layer.TRC.FullDriveAct":        "0.6",  // 0.6 def
+					"Layer.Pulv.DriveScale":         "0.05", // 0.1 orig
+					"Layer.Pulv.FullDriveAct":       "0.6",  // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",    // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long

@@ -13,61 +13,63 @@ import (
 	"github.com/goki/mat32"
 )
 
-// TRCParams provides parameters for how the plus-phase (outcome) state of thalamic relay cell
-// (e.g., Pulvinar) neurons is computed from the corresponding driver neuron Burst activation.
+// PulvParams provides parameters for how the plus-phase (outcome)
+// state of Pulvinar thalamic relay cell neurons is computed from
+// the corresponding driver neuron Burst activation.
 // Drivers are hard clamped using Clamp.Rate.
-type TRCParams struct {
+type PulvParams struct {
 	DriversOff   bool    `def:"false" desc:"Turn off the driver inputs, in which case this layer behaves like a standard layer"`
-	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to TRC unit."`
+	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit."`
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
 }
 
-func (tp *TRCParams) Update() {
+func (tp *PulvParams) Update() {
 }
 
-func (tp *TRCParams) Defaults() {
+func (tp *PulvParams) Defaults() {
 	tp.DriveScale = 0.05
 	tp.FullDriveAct = 0.6
 }
 
-// DriveGe returns effective excitatory conductance to use for given driver input Burst activation
-func (tp *TRCParams) DriveGe(act float32) float32 {
+// DriveGe returns effective excitatory conductance
+// to use for given driver input Burst activation
+func (tp *PulvParams) DriveGe(act float32) float32 {
 	return tp.DriveScale * act
 }
 
-// TRCLayer is the thalamic relay cell layer for DeepAxon.
+// PulvLayer is the Pulvinar thalamic relay cell layer for DeepAxon.
 // It has normal activity during the minus phase, as activated by CT etc inputs,
 // and is then driven by strong 5IB driver inputs in the plus phase.
-type TRCLayer struct {
-	axon.Layer           // access as .Layer
-	TRC        TRCParams `view:"inline" desc:"parameters for computing TRC plus-phase (outcome) activations based on activation from corresponding driver neuron"`
-	Driver     string    `desc:"name of SuperLayer that sends 5IB Burst driver inputs to this layer"`
+type PulvLayer struct {
+	axon.Layer            // access as .Layer
+	Pulv       PulvParams `view:"inline" desc:"parameters for computing Pulv plus-phase (outcome) activations based on activation from corresponding driver neuron"`
+	Driver     string     `desc:"name of SuperLayer that sends 5IB Burst driver inputs to this layer"`
 }
 
-var KiT_TRCLayer = kit.Types.AddType(&TRCLayer{}, LayerProps)
+var KiT_PulvLayer = kit.Types.AddType(&PulvLayer{}, LayerProps)
 
-func (ly *TRCLayer) Defaults() {
+func (ly *PulvLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Decay.Act = 0.5
-	ly.Act.Decay.Glong = 1
+	ly.Act.Decay.Act = 0
+	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
 	ly.Learn.RLrate.SigmoidMin = 1 // don't use!
-	ly.TRC.Defaults()
-	ly.Typ = TRC
+	ly.Pulv.Defaults()
+	ly.Typ = Pulv
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
 // including those in the receiving projections of this layer
-func (ly *TRCLayer) UpdateParams() {
+func (ly *PulvLayer) UpdateParams() {
 	ly.Layer.UpdateParams()
-	ly.TRC.Update()
+	ly.Pulv.Update()
 }
 
-func (ly *TRCLayer) Class() string {
-	return "TRC " + ly.Cls
+func (ly *PulvLayer) Class() string {
+	return "Pulv " + ly.Cls
 }
 
-func (ly *TRCLayer) IsTarget() bool {
+func (ly *PulvLayer) IsTarget() bool {
 	return true // We are a Target-like layer: don't do various adaptive steps
 }
 
@@ -75,10 +77,10 @@ func (ly *TRCLayer) IsTarget() bool {
 // Drivers
 
 // DriverLayer returns the driver layer for given Driver
-func (ly *TRCLayer) DriverLayer(drv string) (*axon.Layer, error) {
+func (ly *PulvLayer) DriverLayer(drv string) (*axon.Layer, error) {
 	tly, err := ly.Network.LayerByNameTry(drv)
 	if err != nil {
-		err = fmt.Errorf("TRCLayer %s: Driver Layer: %v", ly.Name(), err)
+		err = fmt.Errorf("PulvLayer %s: Driver Layer: %v", ly.Name(), err)
 		log.Println(err)
 		return nil, err
 	}
@@ -98,7 +100,7 @@ func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 
 // GeFmDriverNeuron sets the driver activation for given Neuron,
 // based on given Ge driving value (use DriveFmMaxAvg) from driver layer (Burst or Act)
-func (ly *TRCLayer) GeFmDriverNeuron(nrn *axon.Neuron, drvGe, drvInhib float32) {
+func (ly *PulvLayer) GeFmDriverNeuron(nrn *axon.Neuron, drvGe, drvInhib float32) {
 	nrn.GeRaw = (1-drvInhib)*nrn.GeRaw + drvGe
 	ly.Act.NMDAFmRaw(nrn, 0)
 	ly.Learn.LrnNMDAFmRaw(nrn, 0)
@@ -111,28 +113,28 @@ func (ly *TRCLayer) GeFmDriverNeuron(nrn *axon.Neuron, drvGe, drvInhib float32) 
 }
 
 // GeFmDrivers computes excitatory conductance from driver neurons
-func (ly *TRCLayer) GeFmDrivers(ltime *axon.Time) {
+func (ly *PulvLayer) GeFmDrivers(ltime *axon.Time) {
 	dly, err := ly.DriverLayer(ly.Driver)
 	if err != nil {
 		return
 	}
 	sly, issuper := dly.AxonLay.(*SuperLayer)
 	drvMax := dly.ActAvg.CaSpkP.Max
-	drvInhib := mat32.Min(1, drvMax/ly.TRC.FullDriveAct)
+	drvInhib := mat32.Min(1, drvMax/ly.Pulv.FullDriveAct)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			return
 		}
 		drvAct := DriveAct(ni, dly, sly, issuper)
-		ly.GeFmDriverNeuron(nrn, ly.TRC.DriveGe(drvAct), drvInhib)
+		ly.GeFmDriverNeuron(nrn, ly.Pulv.DriveGe(drvAct), drvInhib)
 	}
 }
 
 // GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *TRCLayer) GFmInc(ltime *axon.Time) {
+func (ly *PulvLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
-	if ly.TRC.DriversOff || !ltime.PlusPhase {
+	if ly.Pulv.DriversOff || !ltime.PlusPhase {
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {

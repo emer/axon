@@ -13,22 +13,55 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":   "0.2",
-					"Layer.Act.Decay.Glong": "0.6",
+					"Layer.Act.Decay.Act":   "0.0",
+					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.Clamp.Ge":    "0.6",
 				}},
-			{Sel: ".CT", Desc: "corticothalamic context",
+			{Sel: ".CT", Desc: "corticothalamic context -- using markovian copy params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.06",
-					"Layer.CtxtGeGain":        "0.3", // .2 > .1 > .3
-					"Layer.Act.Decay.Act":     "0.0", // 0 best in other models
+					"Layer.Inhib.ActAvg.Init": "0.12",
+					"Layer.CT.GeGain":         "1.0",
+					"Layer.CT.DecayTau":       "0",
+					"Layer.Inhib.Layer.Gi":    "1.4",
+					"Layer.Inhib.Pool.Gi":     "1.4",
+					"Layer.Act.GABAB.Gbar":    "0.2",
+					"Layer.Act.NMDA.Gbar":     "0.15",
+					"Layer.Act.NMDA.Tau":      "100",
+					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
 				}},
-			{Sel: "TRCLayer", Desc: "",
+			{Sel: ".CTCopy", Desc: "single-step copy params",
 				Params: params.Params{
-					"Layer.TRC.DriveScale":          "0.15", // .15 > .05 default
-					"Layer.Act.Decay.Act":           "0.5",
-					"Layer.Act.Decay.Glong":         "1",    // clear long
+					"Layer.Inhib.ActAvg.Init": "0.12",
+					"Layer.CT.GeGain":         "1.0",
+					"Layer.CT.DecayTau":       "0",
+					"Layer.Inhib.Layer.Gi":    "1.8",
+					"Layer.Act.GABAB.Gbar":    "0.2",
+					"Layer.Act.NMDA.Gbar":     "0.15",
+					"Layer.Act.NMDA.Tau":      "100",
+					"Layer.Act.Decay.Act":     "0.0",
+					"Layer.Act.Decay.Glong":   "0.0",
+				}},
+			{Sel: ".CTInteg", Desc: "time integration params",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.12",
+					"Layer.CT.GeGain":         "1.0",
+					"Layer.CT.DecayTau":       "50",
+					"Layer.Inhib.Layer.Gi":    "1.8",
+					"Layer.Act.GABAB.Gbar":    "0.3",
+					"Layer.Act.NMDA.Gbar":     "0.3",
+					"Layer.Act.NMDA.Tau":      "300",
+					"Layer.Act.Decay.Act":     "0.0",
+					"Layer.Act.Decay.Glong":   "0.0",
+				}},
+			{Sel: "PulvLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
+					"Layer.Pulv.DriveScale":         "0.05", // 0.05 now default
+					"Layer.Act.Decay.Act":           "0.0",  // clear
+					"Layer.Act.Decay.Glong":         "0.0",  //
+					"Layer.Act.Decay.AHP":           "0.0",  //
+					"Layer.Act.NMDA.Gbar":           "0.1",  // .1 music
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "1",
 				}},
@@ -108,7 +141,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
+					"Prjn.PrjnScale.Rel": "0.1",
 				}},
 			{Sel: "#OFCToSMA", Desc: "",
 				Params: params.Params{

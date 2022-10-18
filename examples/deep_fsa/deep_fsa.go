@@ -156,7 +156,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	// one2one := prjn.NewOneToOne()
 	// _ = one2one
 
-	in, inp := net.AddInputTRC4D("Input", 1, 7, ss.UnitsPer, 1, 2)
+	in, inp := net.AddInputPulv4D("Input", 1, 7, ss.UnitsPer, 1, 2)
 	trg := net.AddLayer2D("Targets", 1, 7, emer.Input) // just for visualization
 	in.SetClass("InLay")
 	inp.SetClass("InLay")
@@ -170,7 +170,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.ConnectCTSelf(hidct, full)
 
 	net.ConnectLayers(in, hid, full, emer.Forward)
-	net.ConnectToTRC(hid, hidct, inp, full, full) // inp -> hid and inp -> hidct is *essential*
+	net.ConnectToPulv(hid, hidct, inp, full, full) // inp -> hid and inp -> hidct is *essential*
 	// net.ConnectLayers(inp, hid, full, emer.Back).SetClass("FmPvlv")
 	// net.ConnectLayers(hidct, hid, full, emer.Back)
 
@@ -445,7 +445,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
 
-	deep.LogAddTRCCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	deep.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 

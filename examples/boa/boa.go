@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-ofcacc: This project tests OFC and ACC learning in a CS-driven approach task.
+boa: This project tests BG, OFC & ACC learning in a CS-driven approach task.
 */
 package main
 
@@ -161,14 +161,14 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ev := ss.Envs["Train"].(*Approach)
-	net.InitName(net, "OfcAcc")
+	net.InitName(net, "Boa")
 
 	nuBgY := 5
 	nuBgX := 5
-	nuCtxY := 7
-	nuCtxX := 7
+	nuCtxY := 6
+	nuCtxX := 6
 	nAct := len(ev.ActMap)
-	space := float32(5)
+	space := float32(2)
 
 	pone2one := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
@@ -183,14 +183,14 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	drives, drivesp := net.AddInputTRC4D("Drives", 1, ev.Drives, ny, 1, space)
-	us, usp := net.AddInputTRC4D("US", 1, ev.Drives, ny, 1, space)
-	// cs, csp := net.AddInputTRC2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
+	drives, drivesp := net.AddInputPulv4D("Drives", 1, ev.Drives, ny, 1, space)
+	us, usp := net.AddInputPulv4D("US", 1, ev.Drives, ny, 1, space)
+	// cs, csp := net.AddInputPulv2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
 	// localist, for now:
-	cs, csp := net.AddInputTRC2D("CS", ny, ev.Drives, space)
-	dist, distp := net.AddInputTRC2D("Dist", ny, ev.DistMax, space)
-	time, timep := net.AddInputTRC2D("Time", ny, ev.TimeMax, space)
-	pos, posp := net.AddInputTRC2D("Pos", ny, nloc, space)
+	cs, csp := net.AddInputPulv2D("CS", ny, ev.Drives, space)
+	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
+	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
+	pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
 
 	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, 1, nuBgY, nuBgX, nuBgY, nuBgX, 2)
 	cin := cini.(*pcore.CINLayer)
@@ -205,58 +205,50 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
 	vl := net.AddLayer2D("VL", ny, nAct, emer.Target)  // Action
 	act := net.AddLayer2D("Act", ny, nAct, emer.Input) // Action
-	m1p := net.AddTRCLayer2D("M1P", nuCtxY, nuCtxX)
+	m1p := deep.AddPulvLayer2D(net.AsAxon(), "M1P", nuCtxY, nuCtxX)
 	m1p.Driver = m1.Name()
 	_ = vl
 	_ = act
 
-	// todo: try full for CT prjn
-
-	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, full)
-	// net.ConnectCtxtToCT(smact, smact, parprjn).SetClass("CTSelf")
-	net.ConnectToTRC(sma, smact, m1p, full, full)
-	net.ConnectToTRC(sma, smact, posp, full, full)
-	net.ConnectToTRC(sma, smact, distp, full, full)
-
-	smad := net.AddLayer2D("SMAd", nuCtxY, nuCtxX, emer.Hidden)
-
-	// todo: agate for sma, ofc, acc
+	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, one2one)
+	smapt, smathal := net.AddPTThalForSuper(sma, "MD", space)
+	_ = smapt
+	_ = smathal
+	// net.ConnectCTSelf(ofcct, full)
+	net.ConnectToPulv(sma, smact, m1p, full, full)
+	net.ConnectToPulv(sma, smact, posp, full, full)
+	net.ConnectToPulv(sma, smact, distp, full, full)
 
 	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.Drives, nuCtxY, nuCtxX, relpos.Behind, space)
 
-	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space, pone2one)
-	ofc.SetClass("OFC")
-	ofcct.SetClass("OFC")
-	// ofcct.RecvPrjns().SendName(ofc.Name()).SetPattern(full)
-	// net.ConnectCtxtToCT(ofcct, ofcct, parprjn).SetClass("CTSelf")
-	net.ConnectToTRC(ofc, ofcct, csp, full, full)
-	net.ConnectToTRC(ofc, ofcct, usp, pone2one, pone2one)
-	net.ConnectToTRC(ofc, ofcct, drivesp, pone2one, pone2one)
+	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space, one2one)
+	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, "MD", space)
+	_ = ofcpt
+	_ = ofcthal
+	net.ConnectCTSelf(ofcct, full)
+	net.ConnectToPulv(ofc, ofcct, csp, full, full)
+	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcct, drivesp, pone2one, pone2one)
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
-	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, full)
-	acc.SetClass("ACC")
-	accct.SetClass("ACC")
-	// accct.RecvPrjns().SendName(acc.Name()).SetPattern(full)
-	// net.ConnectCtxtToCT(accct, accct, parprjn).SetClass("CTSelf")
-	net.ConnectToTRC(acc, accct, distp, full, full)
-	net.ConnectToTRC(acc, accct, timep, full, full)
+	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, one2one)
+	accpt, accthal := net.AddPTThalForSuper(acc, "MD", space)
+	_ = accpt
+	_ = accthal
+	net.ConnectCTSelf(accct, full)
+	net.ConnectToPulv(acc, accct, distp, full, full)
+	net.ConnectToPulv(acc, accct, timep, full, full)
+
+	net.ConnectLayers(dist, acc, full, emer.Forward)
+	net.ConnectLayers(time, acc, full, emer.Forward)
 
 	// m1p plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
 	// contextualization based on action
 	net.BidirConnectLayers(ofc, sma, full)
 	net.BidirConnectLayers(acc, sma, full)
-	net.ConnectCtxtToCT(m1p, smact, full).SetClass("FmPulv")
-	net.ConnectCtxtToCT(m1p, ofcct, full).SetClass("FmPulv")
-	net.ConnectCtxtToCT(m1p, accct, full).SetClass("FmPulv")
-
-	// temporary from act to make sure
-	net.ConnectCtxtToCT(act, smact, full).SetClass("FmPulv")
-	net.ConnectCtxtToCT(act, ofcct, full).SetClass("FmPulv")
-	net.ConnectCtxtToCT(act, accct, full).SetClass("FmPulv")
 
 	// Std corticocortical cons -- stim -> hid
 	net.ConnectLayers(cs, ofc, full, emer.Forward)
@@ -271,40 +263,41 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectLayersPrjn(ofc, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib)
 
-	net.ConnectLayers(dist, acc, full, emer.Forward)
-	net.ConnectLayers(time, acc, full, emer.Forward)
-
 	net.ConnectLayers(dist, sma, full, emer.Forward)
 	net.ConnectLayers(time, sma, full, emer.Forward)
 	net.ConnectLayers(pos, sma, full, emer.Forward)
 	// key point: cs does not project directly to sma -- no simple S -> R mappings!?
 
+	////////////////////////////////////////////////
 	// BG / DA connections
 	snc.SendDA.AddAllBut(net)
 
 	net.ConnectLayers(sma, stnp, full, emer.Forward)
 	net.ConnectLayers(sma, stns, full, emer.Forward)
 
-	net.ConnectLayers(smad, m1, full, emer.Forward)     //  action output
-	net.ConnectLayers(sma, smad, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
+	net.ConnectLayers(smapt, m1, full, emer.Forward)     //  action output
+	net.ConnectLayers(sma, smapt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(sma, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
 
+	net.ConnectToMatrix(ofc, mtxGo, full)
+	net.ConnectToMatrix(ofc, mtxNo, full)
 	net.ConnectToMatrix(acc, mtxGo, full)
 	net.ConnectToMatrix(acc, mtxNo, full)
 	net.ConnectToMatrix(sma, mtxGo, full)
 	net.ConnectToMatrix(sma, mtxNo, full)
-	net.ConnectToMatrix(ofc, mtxGo, full)
-	net.ConnectToMatrix(ofc, mtxNo, full)
 
-	net.ConnectLayers(thal, smad, full, emer.Forward)
+	net.ConnectLayers(thal, smapt, full, emer.Forward)
 	net.ConnectLayers(sma, thal, one2one, emer.Forward)
-	net.ConnectLayers(smad, thal, one2one, emer.Forward)
+	net.ConnectLayers(smapt, thal, one2one, emer.Forward)
 
 	net.ConnectLayersPrjn(ofc, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(ofcct, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(acc, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(accct, rp, full, emer.Forward, &rl.RWPrjn{})
+
+	////////////////////////////////////////////////
+	// position
 
 	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rew.Name(), YAlign: relpos.Front, Space: space})
 	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpi.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
@@ -326,7 +319,6 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ofc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blae.Name(), XAlign: relpos.Left, Space: space})
 	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: space})
 	sma.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: space})
-	smad.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: smact.Name(), XAlign: relpos.Left, Space: space})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -647,7 +639,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	deep.LogAddTRCCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	deep.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	// ss.ConfigActRFs()
 
@@ -776,8 +768,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
-	title := "OFC ACC Test"
-	ss.GUI.MakeWindow(ss, "ofcacc", title, `This project tests learning in the OFC and ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	title := "BOA = BG, OFC ACC Test"
+	ss.GUI.MakeWindow(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -786,7 +778,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 
-	nv.Scene().Camera.Pose.Pos.Set(0, 1.14, 2.7)
+	nv.Scene().Camera.Pose.Pos.Set(0, 1.4, 2.6)
 	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
@@ -838,7 +830,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ofcacc/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/boa/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)

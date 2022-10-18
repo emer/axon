@@ -34,7 +34,7 @@ func (cp *CTParams) Defaults() {
 }
 
 // CTLayer implements the corticothalamic projecting layer 6 deep neurons
-// that project to the TRC pulvinar neurons, to generate the predictions.
+// that project to the Pulv pulvinar neurons, to generate the predictions.
 // They receive phasic input representing 5IB bursting via CTCtxtPrjn inputs
 // from SuperLayer and also from self projections.
 //

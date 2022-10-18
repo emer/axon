@@ -176,32 +176,28 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		nUnits = 20
 	}
 
-	in, inp := net.AddInputTRC4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
+	in, inp := net.AddInputPulv4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
 	in.SetClass("InLay")
 	inp.SetClass("InLay")
 
-	var hid, hidct, hidp, hid2, hid2ct emer.Layer
+	var hidp, hid2, hid2ct emer.Layer
+	hid, hidct := net.AddSuperCT2D("Hidden", 20, nUnits, space, one2one) // one2one learn > full
 	_ = hidp
 	if ss.Hid2 {
 		// hidp -> hid2 doesn't actually help at all..
-		// hid, hidct, hidp = net.AddSuperCTTRC2D("Hidden", 20, 20, space, one2one) // one2one learn > full
-		hid, hidct = net.AddSuperCT2D("Hidden", 20, 20, space, one2one) // one2one learn > full
-	} else {
-		hid, hidct = net.AddSuperCT2D("Hidden", 20, nUnits, space, one2one) // one2one learn > full
-		// note: below only makes sense if you change one2one -> full above!!  didn't do that before..
-		// hidct.Shape().SetShape([]int{25, 20}, nil, nil) // larger CT does NOT help with lower NMDA gbar
+		hidp = net.AddPulvForSuper(hid, space)
 	}
 	net.ConnectCTSelf(hidct, full)
-	net.ConnectToTRC(hid, hidct, inp, full, full)
+	net.ConnectToPulv(hid, hidct, inp, full, full)
 	net.ConnectLayers(in, hid, full, emer.Forward)
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Hid2 {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
-		net.ConnectToTRC(hid2, hid2ct, inp, full, full) // shortcut top-down
+		net.ConnectToPulv(hid2, hid2ct, inp, full, full) // shortcut top-down
 		inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
-		// net.ConnectToTRC(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
+		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 
 	if ss.Hid2 {
@@ -505,7 +501,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
 
-	deep.LogAddTRCCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	deep.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 

@@ -11,7 +11,7 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// TRNLayer copies inhibition from pools in CT and TRC layers, and from other
+// TRNLayer copies inhibition from pools in CT and Pulv layers, and from other
 // TRNLayers, and pools this inhibition using the Max operation
 type TRNLayer struct {
 	axon.Layer
@@ -30,7 +30,7 @@ func (ly *TRNLayer) InitActs() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////
-// TRCALayer -- attention TRC
+// PulvALayer -- attention Pulv
 
 // SendAttnParams parameters for sending attention
 type SendAttnParams struct {
@@ -45,15 +45,15 @@ func (ti *SendAttnParams) Defaults() {
 func (ti *SendAttnParams) Update() {
 }
 
-// TRCALayer is the thalamic relay cell layer for Attention in DeepAxon.
-type TRCALayer struct {
+// PulvAttnLayer is the thalamic relay cell layer for Attention in DeepAxon.
+type PulvAttnLayer struct {
 	axon.Layer                // access as .Layer
 	SendAttn   SendAttnParams `view:"inline" desc:"sending attention parameters"`
 }
 
-var KiT_TRCALayer = kit.Types.AddType(&TRCALayer{}, LayerProps)
+var KiT_PulvAttnLayer = kit.Types.AddType(&PulvAttnLayer{}, LayerProps)
 
-func (ly *TRCALayer) Defaults() {
+func (ly *PulvAttnLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Act.Decay.Act = 0.5
 	ly.Act.Decay.Glong = 1
@@ -61,33 +61,33 @@ func (ly *TRCALayer) Defaults() {
 	ly.Act.GABAB.Gbar = 0.005 // output layer settings
 	ly.Act.NMDA.Gbar = 0.01
 	ly.SendAttn.Defaults()
-	ly.Typ = TRC
+	ly.Typ = Pulv
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
 // including those in the receiving projections of this layer
-func (ly *TRCALayer) UpdateParams() {
+func (ly *PulvAttnLayer) UpdateParams() {
 	ly.Layer.UpdateParams()
 	ly.SendAttn.Update()
 }
 
-func (ly *TRCALayer) Class() string {
-	return "TRCA " + ly.Cls
+func (ly *PulvAttnLayer) Class() string {
+	return "PulvA " + ly.Cls
 }
 
-func (ly *TRCALayer) IsTarget() bool {
+func (ly *PulvAttnLayer) IsTarget() bool {
 	return false // We are not
 }
 
 // CyclePost is called at end of Cycle
 // We use it to send Attn
-func (ly *TRCALayer) CyclePost(ltime *axon.Time) {
+func (ly *PulvAttnLayer) CyclePost(ltime *axon.Time) {
 	ly.AttnFmAct(ltime)
 	ly.SendAttnLays(ltime)
 }
 
 // AttnFmAct computes our attention signal from activations
-func (ly *TRCALayer) AttnFmAct(ltime *axon.Time) {
+func (ly *PulvAttnLayer) AttnFmAct(ltime *axon.Time) {
 	pyn := ly.Shp.Dim(0)
 	pxn := ly.Shp.Dim(1)
 
@@ -137,7 +137,7 @@ func (ly *TRCALayer) AttnFmAct(ltime *axon.Time) {
 }
 
 // SendAttnLays sends attention signal to all layers
-func (ly *TRCALayer) SendAttnLays(ltime *axon.Time) {
+func (ly *PulvAttnLayer) SendAttnLays(ltime *axon.Time) {
 	for _, nm := range ly.SendAttn.ToLays {
 		tlyi := ly.Network.LayerByName(nm)
 		if tlyi == nil {
@@ -149,7 +149,7 @@ func (ly *TRCALayer) SendAttnLays(ltime *axon.Time) {
 }
 
 // SendAttnLay sends attention signal to given layer
-func (ly *TRCALayer) SendAttnLay(tly *axon.Layer, ltime *axon.Time) {
+func (ly *PulvAttnLayer) SendAttnLay(tly *axon.Layer, ltime *axon.Time) {
 	yn := ly.Shp.Dim(0)
 	xn := ly.Shp.Dim(1)
 

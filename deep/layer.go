@@ -26,20 +26,29 @@ var KiT_LayerType = kit.Enums.AddEnumExt(emer.KiT_LayerType, LayerTypeN, kit.Not
 
 const (
 	// CT are layer 6 corticothalamic projecting neurons, which drive predictions
-	// in TRC (Pulvinar) via standard projections.
+	// in Pulv (Pulvinar) via standard projections.
 	CT emer.LayerType = emer.LayerTypeN + iota
 
-	// TRC are thalamic relay cell neurons in the Pulvinar / MD thalamus,
+	// PT are layer 5IB intrinsic bursting pyramidal tract neurons.
+	PT
+
+	// Pulv are thalamic relay cell neurons in the Pulvinar thalamus,
 	// which alternately reflect predictions driven by Deep layer projections,
 	// and actual outcomes driven by Burst activity from corresponding
-	// Super layer neurons that provide strong driving inputs to TRC neurons.
-	TRC
+	// Super layer neurons that provide strong driving inputs to Pulv neurons.
+	Pulv
+
+	// Thal is a thalamic layer, used for MD mediodorsal thalamus and
+	// VM / VL / VA ventral thalamic nuclei.
+	Thal
 )
 
 // gui versions
 const (
 	CT_ LayerType = LayerType(emer.LayerTypeN) + iota
-	TRC_
+	PT_
+	Pulv_
+	Thal_
 	LayerTypeN
 )
 

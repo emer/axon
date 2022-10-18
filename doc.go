@@ -17,7 +17,7 @@ so that is now separated out into a different package.
 learning by attempting to predict the activation states over the Pulvinar nucleus
 of the thalamus (in posterior sensory cortex), which are driven phasically every
 100 msec by deep layer 5 intrinsic bursting (5IB) neurons that have strong focal
-(essentially 1-to-1) connections onto the Pulvinar Thalamic Relay Cell (TRC)
+(essentially 1-to-1) connections onto the Pulvinar Thalamic Relay Cell (Pulv)
 neurons.
 
 * examples: these actually compile into runnable programs and provide the starting

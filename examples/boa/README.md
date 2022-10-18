@@ -16,7 +16,16 @@ The paradigm is a simple ecologically-inspired task (a simplified version of the
 
 Target behavior is to orient L / R until a CS sensory cue appears that is consistent with current body state, and then move Forward until the Distance = proximal, and you then Consume.
 
-Mechanistically, this means that once it identifies a suitable CS, a *single* gating event locks in OFC, ACC, SMA deep layers until an outcome occurs -- need to get agate running for this!  Mnt -> Out -- see ccnsims/pfc/agate/cpt model for reference.  Good news: simpler, just one BG still.
+Anatomically, there are distinct circuits connecting through OFC, ACC and dlPFC (ADS '86):
+
+* OFC -> VM Str / NAcc -> VP / mdm-GP -> mVA, MDmc
+* ACC -> VM Str -> VP / rl-GP -> pm-MD (no VA?)
+* SMA -> Putamen / DL Str -> vl-GP -> VL thal
+* dlPFC -> dm Caudate -> mdm-GP -> VApc, MDpc
+
+Thus, in principle each area can gate separately presumably, although our simplified model assumes that bidirectional cortical coordination causes them to typically all gate together.  OFC level gating may make parallel go / no choices about which outcome to pursue?
+
+This gets into PVLV-level model issues about how these circuits are also involved in DA regulation...
 
 The SMA action correlate is effectively "approach then consume" -- without an additional gating step required at the point of consumption -- use instinct to learn this sequence under guidance of SMAOut and current pos etc.
 
@@ -57,4 +66,7 @@ The narrative story is that you have Drive state (bottom-up), learned CS -> US, 
 # Note: could use topo STN / Thal pathways to select scope of gating
 
 don't need this now but could use later..
+
+# todo:
+
 
