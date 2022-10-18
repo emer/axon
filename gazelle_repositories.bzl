@@ -192,8 +192,8 @@ def go_repositories():
     go_repository(
         name = "com_github_emer_empi",
         importpath = "github.com/emer/empi",
-        sum = "h1:PLI0RN0ivkrOOYYoMTpXXWlQb7ai+CyM8QLKd7kuZko=",
-        version = "v1.0.15",
+        sum = "h1:HHZgbDWlSUErpAeN4MZrx88Yg+BSDzogQcuA+KANu6I=",
+        version = "v1.0.16",
     )
     go_repository(
         name = "com_github_emer_etable",
