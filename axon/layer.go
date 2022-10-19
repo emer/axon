@@ -1529,7 +1529,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 		}
 		nrn.ActP = nrn.ActInt
 		nrn.ActDiff = nrn.ActP - nrn.ActM
-		mlr := ly.Learn.RLrate.RLrateMid(nrn, ly.ActAvg.CaSpkP.Max)
+		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
 		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLrate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)

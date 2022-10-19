@@ -493,11 +493,7 @@ func (ss *Sim) ApplyRew() {
 	mtxGo.SetGated(vtly.Gated)
 	mtxNo.SetGated(vtly.Gated)
 
-	pi := 1
-	if len(vtly.Gated) == 1 {
-		pi = 0
-	}
-	didGate := mtxGo.Gated[pi]
+	didGate := vtly.AnyGated()
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
 	switch {
@@ -583,7 +579,15 @@ func (ss *Sim) StatCounters() {
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
+// ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
+	net := ss.Net
+	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
+	gated := vtly.AnyGated()
+	if !gated {
+		ss.Stats.SetFloat("VThal_RT", 0)
+		return
+	}
 	mode := etime.ModeFromString(ss.Time.Mode)
 	trlog := ss.Logs.Log(mode, etime.Cycle)
 	spkCyc := 0

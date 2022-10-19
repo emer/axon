@@ -122,13 +122,47 @@ func (ly *MatrixLayer) InitActs() {
 	}
 }
 
+// PlusPhase does updating at end of the plus phase
+// calls DAActLrn
+func (ly *MatrixLayer) PlusPhase(ltime *axon.Time) {
+	ly.Layer.PlusPhase(ltime)
+	ly.DAActLrn()
+
+	pmax := ly.PhasicMaxMaxByPool(0)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		pn := &ly.PCoreNeurs[ni]
+		mlr := ly.Learn.RLrate.RLrateSigDeriv(pn.PhasicMax, pmax)
+		// dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD) // not useful
+		nrn.RLrate = mlr
+	}
+}
+
+// DAActLrn sets effective learning dopamine value from given raw DA value,
+// applying Burst and Dip Gain factors, and then reversing sign for D2R.
+// Also sets ActLrn based on whether corresponding VThal stripe fired
+// above ThalThr -- flips sign of learning for stripe firing vs. not.
+func (ly *MatrixLayer) DAActLrn() {
+	da := ly.DA
+	if da > 0 {
+		da *= ly.Matrix.BurstGain
+	} else {
+		da *= ly.Matrix.DipGain
+	}
+	if ly.DaR == D2R {
+		da *= -1
+	}
+	ly.DALrn = da
+}
+
 // SetGated sets gating status of each pool, and updates the ActLrn
 // variable based on gating status (flips sign of DA effects).
 // len(gated) should be number of sub-pools, including full-layer pool,
 // even though that is not used unless it is a 2D layer.
-// Also calls DAActLrn.
 func (ly *MatrixLayer) SetGated(gated []bool) {
-	ly.DAActLrn()
 	ngate := len(gated)
 	npl := len(ly.Gated)
 	spi := 1
@@ -158,22 +192,8 @@ func (ly *MatrixLayer) SetGated(gated []bool) {
 	}
 }
 
-// DAActLrn sets effective learning dopamine value from given raw DA value,
-// applying Burst and Dip Gain factors, and then reversing sign for D2R.
-// Also sets ActLrn based on whether corresponding VThal stripe fired
-// above ThalThr -- flips sign of learning for stripe firing vs. not.
-func (ly *MatrixLayer) DAActLrn() {
-	da := ly.DA
-	if da > 0 {
-		da *= ly.Matrix.BurstGain
-	} else {
-		da *= ly.Matrix.DipGain
-	}
-	if ly.DaR == D2R {
-		da *= -1
-	}
-	ly.DALrn = da
-}
+///////////////////////////////////////////////////////////////////
+// Unit var access
 
 // UnitVarNum returns the number of Neuron-level variables
 // for this layer.  This is needed for extending indexes in derived types.

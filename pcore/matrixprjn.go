@@ -120,7 +120,7 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 			}
 			sy.Tr = tr
 			trsy.NTr = ntr
-			sy.DWt += rlay.Neurons[ri].RLrate * lr * dwt // note: missing rn.RLrate *
+			sy.DWt += rlay.Neurons[ri].RLrate * lr * dwt
 		}
 	}
 }

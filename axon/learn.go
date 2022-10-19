@@ -261,14 +261,17 @@ func (rl *RLrateParams) Defaults() {
 	rl.Update()
 }
 
-// RLrateMid returns the learning rate factor as a function of activity,
-// with mid-range values having full learning and extreme values a reduced learning rate.
-// This is a coarse, square-wave approximation to the derivative of a sigmoidal function.
-func (rl *RLrateParams) RLrateMid(nrn *Neuron, laymax float32) float32 {
+// RLrateSigDeriv returns the sigmoid derivative learning rate
+// factor as a function of spiking activity, with mid-range values having
+// full learning and extreme values a reduced learning rate:
+// deriv = act * (1 - act)
+// The activity should be CaSpkP and the layer maximum is used
+// to normalize that to a 0-1 range.
+func (rl *RLrateParams) RLrateSigDeriv(act float32, laymax float32) float32 {
 	if !rl.On || laymax == 0 {
 		return 1.0
 	}
-	ca := nrn.CaSpkP / laymax
+	ca := act / laymax
 	lr := 4.0 * ca * (1 - ca) // .5 * .5 = .25 = peak
 	if lr < rl.SigmoidMin {
 		lr = rl.SigmoidMin
