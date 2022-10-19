@@ -8,6 +8,9 @@ import (
 	"fmt"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/bazel-axon/external/com_github_goki_ki/ki"
+	"github.com/emer/axon/deep"
+	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -19,12 +22,21 @@ type Layer struct {
 	DA float32 `inactive:"+" desc:"dopamine value for this layer"`
 }
 
-var KiT_Layer = kit.Types.AddType(&Layer{}, axon.LayerProps)
+var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
 // DALayer interface:
 
 func (ly *Layer) GetDA() float32   { return ly.DA }
 func (ly *Layer) SetDA(da float32) { ly.DA = da }
+
+func (ly *Layer) Defaults() {
+	ly.Layer.Defaults()
+	ly.Typ = RL
+}
+
+func (ly *Layer) Class() string {
+	return "RL " + ly.Cls
+}
 
 // UnitVarIdx returns the index of given variable within the Neuron,
 // according to UnitVarNames() list (using a map to lookup index),
@@ -68,4 +80,62 @@ func (ly *Layer) UnitVarNum() int {
 func (ly *Layer) InitActs() {
 	ly.Layer.InitActs()
 	ly.DA = 0
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  LayerType
+
+// note: need to define a new type for these extensions for the GUI interface,
+// but need to use the *old type* in the code, so we have this unfortunate
+// redundancy here.
+
+// LayerType has the extensions to the emer.LayerType types, for gui
+type LayerType deep.LayerType
+
+//go:generate stringer -type=LayerType
+
+var KiT_LayerType = kit.Enums.AddEnumExt(deep.KiT_LayerType, LayerTypeN, kit.NotBitFlag, nil)
+
+const (
+	// RL is a reinforcement learning layer of any sort
+	RL emer.LayerType = emer.LayerType(deep.LayerTypeN) + iota
+)
+
+// gui versions
+const (
+	RL_ LayerType = LayerType(deep.LayerTypeN) + iota
+	LayerTypeN
+)
+
+// LayerProps are required to get the extended EnumType
+var LayerProps = ki.Props{
+	"EnumType:Typ": KiT_LayerType,
+	"ToolBar": ki.PropSlice{
+		{"Defaults", ki.Props{
+			"icon": "reset",
+			"desc": "return all parameters to their intial default values",
+		}},
+		{"InitWts", ki.Props{
+			"icon": "update",
+			"desc": "initialize the layer's weight values according to prjn parameters, for all *sending* projections out of this layer",
+		}},
+		{"InitActs", ki.Props{
+			"icon": "update",
+			"desc": "initialize the layer's activation values",
+		}},
+		{"sep-act", ki.BlankProp{}},
+		{"LesionNeurons", ki.Props{
+			"icon": "close",
+			"desc": "Lesion (set the Off flag) for given proportion of neurons in the layer (number must be 0 -- 1, NOT percent!)",
+			"Args": ki.PropSlice{
+				{"Proportion", ki.Props{
+					"desc": "proportion (0 -- 1) of neurons to lesion",
+				}},
+			},
+		}},
+		{"UnLesionNeurons", ki.Props{
+			"icon": "reset",
+			"desc": "Un-Lesion (reset the Off flag) for all neurons in the layer",
+		}},
+	},
 }

@@ -15,7 +15,7 @@ type RewLayer struct {
 	Layer
 }
 
-var KiT_RewLayer = kit.Types.AddType(&RewLayer{}, axon.LayerProps)
+var KiT_RewLayer = kit.Types.AddType(&RewLayer{}, LayerProps)
 
 func (ly *RewLayer) Defaults() {
 	ly.Layer.Defaults()

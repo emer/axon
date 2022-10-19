@@ -220,7 +220,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = gpeIn
 	_ = gpeTA
 
-	thal := net.AddThalLayer("VThal", 1, np, nuY, nuX)
+	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
 	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
 
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
@@ -640,7 +640,7 @@ func (ss *Sim) ConfigLogs() {
 
 func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
-	layers := ss.Net.LayersByClass("Hidden")
+	layers := ss.Net.LayersByClass("Matrix", "Thal")
 	npools := []int{ss.Sim.NPools}
 	for _, lnm := range layers {
 		clnm := lnm

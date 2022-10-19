@@ -19,7 +19,7 @@ type TDRewPredLayer struct {
 	Layer
 }
 
-var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, axon.LayerProps)
+var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, LayerProps)
 
 func (ly *TDRewPredLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -69,7 +69,7 @@ type TDRewIntegLayer struct {
 	RewInteg TDRewIntegParams `desc:"parameters for reward integration"`
 }
 
-var KiT_TDRewIntegLayer = kit.Types.AddType(&TDRewIntegLayer{}, axon.LayerProps)
+var KiT_TDRewIntegLayer = kit.Types.AddType(&TDRewIntegLayer{}, LayerProps)
 
 func (ly *TDRewIntegLayer) Defaults() {
 	ly.Layer.Defaults()
@@ -169,7 +169,7 @@ type TDDaLayer struct {
 	RewInteg string `desc:"name of TDRewIntegLayer from which this computes the temporal derivative"`
 }
 
-var KiT_TDDaLayer = kit.Types.AddType(&TDDaLayer{}, axon.LayerProps)
+var KiT_TDDaLayer = kit.Types.AddType(&TDDaLayer{}, LayerProps)
 
 func (ly *TDDaLayer) Defaults() {
 	ly.Layer.Defaults()

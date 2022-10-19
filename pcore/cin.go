@@ -28,10 +28,11 @@ type CINLayer struct {
 	ACh     float32       `desc:"acetylcholine value for this layer"`
 }
 
-var KiT_CINLayer = kit.Types.AddType(&CINLayer{}, axon.LayerProps)
+var KiT_CINLayer = kit.Types.AddType(&CINLayer{}, LayerProps)
 
 func (ly *CINLayer) Defaults() {
 	ly.Layer.Defaults()
+	ly.Typ = CIN
 	ly.RewThr = 0.1
 }
 

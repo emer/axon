@@ -14,7 +14,7 @@ import (
 )
 
 // ThalLayer represents a BG gated thalamic layer,
-// e.g., the Ventral thalamus: VA / VM / VL,
+// e.g., the Ventral thalamus: VA / VM / VL or MD mediodorsal thalamus,
 // which receives BG gating in the form of an inhibitory projection from GPi.
 type ThalLayer struct {
 	Layer
@@ -22,7 +22,7 @@ type ThalLayer struct {
 	Gated   []bool  `inactive:"+" desc:"set to true / false for whether each pool gated, based on PhasicMax -- same size as Pools"`
 }
 
-var KiT_ThalLayer = kit.Types.AddType(&ThalLayer{}, axon.LayerProps)
+var KiT_ThalLayer = kit.Types.AddType(&ThalLayer{}, LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "ThalLayer", Desc: "defaults",
@@ -37,6 +37,7 @@ var KiT_ThalLayer = kit.Types.AddType(&ThalLayer{}, axon.LayerProps)
 
 func (ly *ThalLayer) Defaults() {
 	ly.Layer.Defaults()
+	ly.Typ = Thal
 	ly.GateThr = 0.1
 
 	// note: not tonically active
@@ -62,6 +63,10 @@ func (ly *ThalLayer) Defaults() {
 	}
 
 	ly.UpdateParams()
+}
+
+func (ly *ThalLayer) Class() string {
+	return "Thal " + ly.Cls
 }
 
 func (ly *ThalLayer) Build() error {

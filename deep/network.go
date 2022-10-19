@@ -79,20 +79,6 @@ func AddCTLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeur
 	return ly
 }
 
-// AddPTLayer2D adds a PTLayer of given size, with given name.
-func AddPTLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *PTLayer {
-	ly := &PTLayer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, PT)
-	return ly
-}
-
-// AddPTLayer4D adds a PTLayer of given size, with given name.
-func AddPTLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *PTLayer {
-	ly := &PTLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, PT)
-	return ly
-}
-
 // AddPulvLayer2D adds a PulvLayer of given size, with given name.
 func AddPulvLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *PulvLayer {
 	ly := &PulvLayer{}
@@ -118,20 +104,6 @@ func AddPulvAttnLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *Pulv
 func AddPulvAttnLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *PulvAttnLayer {
 	ly := &PulvAttnLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Pulv)
-	return ly
-}
-
-// AddThalLayer2D adds a ThalLayer of given size, with given name.
-func AddThalLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *ThalLayer {
-	ly := &ThalLayer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, Thal)
-	return ly
-}
-
-// AddThalLayer4D adds a ThalLayer of given size, with given name.
-func AddThalLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
-	ly := &ThalLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Thal)
 	return ly
 }
 
@@ -191,12 +163,6 @@ func ConnectCTSelf(nt *axon.Network, ly emer.Layer, pat prjn.Pattern) (ctxt, mai
 	return
 }
 
-// ConnectPTSelf adds a Self (Lateral) projection within a PT layer,
-// which supports active maintenance, with a class of PTSelfMaint
-func ConnectPTSelf(nt *axon.Network, ly emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
-}
-
 // AddSuperCT2D adds a superficial (SuperLayer) and corresponding CT (CT suffix) layer
 // with CTCtxtPrjn projection from Super to CT using given projection pattern,
 // super and ct have SetClass(name) called to allow shared params.
@@ -241,30 +207,6 @@ func AddPulvForSuper(nt *axon.Network, super emer.Layer, space float32) emer.Lay
 	plv.Driver = name
 	plv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: space})
 	return plv
-}
-
-// AddPTThalForSuper adds a PT pyramidal tract layer and a
-// Thalamus layer for given superficial layer (SuperLayer)
-// with given suffix (e.g., MD, VM).
-// The PT and Thal layers are positioned behind the CT layer.
-func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
-	name := super.Name()
-	shp := super.Shape()
-	if shp.NumDims() == 2 {
-		pt = AddPTLayer2D(nt, name+"PT", shp.Dim(0), shp.Dim(1))
-		thal = AddThalLayer2D(nt, name+suffix, shp.Dim(0), shp.Dim(1))
-	} else {
-		pt = AddPTLayer4D(nt, name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
-		thal = AddThalLayer4D(nt, name+suffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
-	}
-	pt.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: ct.Name(), XAlign: relpos.Left, Space: space})
-	thal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pt.Name(), XAlign: relpos.Left, Space: space})
-	one2one := prjn.NewOneToOne()
-	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
-	pthal.SetClass("PTtoThal")
-	thalpt.SetClass("ThalToPT")
-	nt.ConnectLayers(ct, thal, one2one, emer.Forward).SetClass("CTtoThal")
-	return
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -313,14 +255,6 @@ func (nt *Network) ConnectCtxtToCT(send, recv emer.Layer, pat prjn.Pattern) emer
 // The CTCtxtPrjn has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
 func (nt *Network) ConnectCTSelf(ly emer.Layer, pat prjn.Pattern) (ctxt, maint emer.Prjn) {
 	return ConnectCTSelf(&nt.Network, ly, pat)
-}
-
-// AddPTThalForSuper adds a PT pyramidal tract layer and a
-// Thalamus layer for given superficial layer (SuperLayer)
-// with given suffix (e.g., MD, VM).
-// The PT and Thal layers are positioned behind the CT layer.
-func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, space float32) (thal, pt emer.Layer) {
-	return AddPTThalForSuper(&nt.Network, super, ct, suffix, space)
 }
 
 // AddPulvAttnLayer2D adds a PulvAttnLayer of given size, with given name.

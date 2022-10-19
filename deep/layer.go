@@ -29,26 +29,22 @@ const (
 	// in Pulv (Pulvinar) via standard projections.
 	CT emer.LayerType = emer.LayerTypeN + iota
 
-	// PT are layer 5IB intrinsic bursting pyramidal tract neurons.
-	PT
-
 	// Pulv are thalamic relay cell neurons in the Pulvinar thalamus,
 	// which alternately reflect predictions driven by Deep layer projections,
 	// and actual outcomes driven by Burst activity from corresponding
 	// Super layer neurons that provide strong driving inputs to Pulv neurons.
 	Pulv
 
-	// Thal is a thalamic layer, used for MD mediodorsal thalamus and
-	// VM / VL / VA ventral thalamic nuclei.
-	Thal
+	// TRN is thalamic reticular nucleus layer for inhibitory competition
+	// within the thalamus.
+	TRN
 )
 
 // gui versions
 const (
 	CT_ LayerType = LayerType(emer.LayerTypeN) + iota
-	PT_
 	Pulv_
-	Thal_
+	TRN_
 	LayerTypeN
 )
 

@@ -17,7 +17,7 @@ type GPLayer struct {
 	GPLay GPLays `desc:"type of GP layer"`
 }
 
-var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, axon.LayerProps)
+var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "GPLayer", Desc: "defaults",
@@ -32,6 +32,7 @@ var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, axon.LayerProps)
 
 func (ly *GPLayer) Defaults() {
 	ly.Layer.Defaults()
+	ly.Typ = GP
 	ly.DA = 0
 
 	// GP is tonically self-active and has no FFFB inhibition

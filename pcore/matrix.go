@@ -25,8 +25,8 @@ func (mp *MatrixParams) Defaults() {
 	mp.DipGain = 1
 }
 
-// MatrixLayer represents the dorsal matrisome MSN's that are the main
-// Go / NoGo gating units in BG.  D1R = Go, D2R = NoGo.
+// MatrixLayer represents the matrisome medium spiny neurons (MSNs)
+// that are the main Go / NoGo gating units in BG.  D1R = Go, D2R = NoGo.
 // The Gated value for each pool must be set by calling SetGated --
 // this changes the sign of the learning function in relation to DA.
 type MatrixLayer struct {
@@ -38,7 +38,7 @@ type MatrixLayer struct {
 	ACh    float32      `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons reflecting the absolute value of reward or CS predictions thereof -- used for resetting the trace of matrix learning"`
 }
 
-var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, axon.LayerProps)
+var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "MatrixLayer", Desc: "defaults",
@@ -56,6 +56,7 @@ var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, axon.LayerProps)
 func (ly *MatrixLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Matrix.Defaults()
+	ly.Typ = Matrix
 
 	// special inhib params
 	ly.Act.Decay.Act = 0
@@ -102,6 +103,10 @@ func (ly *MatrixLayer) Defaults() {
 
 func (ly *MatrixLayer) GetACh() float32    { return ly.ACh }
 func (ly *MatrixLayer) SetACh(ach float32) { ly.ACh = ach }
+
+func (ly *MatrixLayer) Class() string {
+	return "Matrix " + ly.Cls
+}
 
 func (ly *MatrixLayer) Build() error {
 	err := ly.Layer.Build()

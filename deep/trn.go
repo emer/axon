@@ -18,10 +18,11 @@ type TRNLayer struct {
 	ILayers emer.LayNames `desc:"layers that we receive inhibition from"`
 }
 
-var KiT_TRNLayer = kit.Types.AddType(&TRNLayer{}, axon.LayerProps)
+var KiT_TRNLayer = kit.Types.AddType(&TRNLayer{}, LayerProps)
 
 func (ly *TRNLayer) Defaults() {
 	ly.Layer.Defaults()
+	ly.Typ = TRN
 }
 
 // InitActs fully initializes activation state -- only called automatically during InitWts

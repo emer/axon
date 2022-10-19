@@ -19,7 +19,7 @@ type GPiLayer struct {
 	GPLayer
 }
 
-var KiT_GPiLayer = kit.Types.AddType(&GPiLayer{}, axon.LayerProps)
+var KiT_GPiLayer = kit.Types.AddType(&GPiLayer{}, LayerProps)
 
 func (ly *GPiLayer) Defaults() {
 	ly.GPLayer.Defaults()

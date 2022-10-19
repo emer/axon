@@ -43,11 +43,26 @@ func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeur
 	return AddBG(nt.AsAxon(), prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
 }
 
-// AddThalLayer adds a ventral thalamus (VA/VL/VM) Layer of given size, with given name.
-// Assumes that a 4D structure will be used, with Pools representing separable gating domains.
-// Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
-func (nt *Network) AddThalLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
-	return AddThalLayer(nt.AsAxon(), name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+// AddThalLayer4D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
+// of given size, with given name.
+// This version has a 4D structure, with Pools representing separable gating domains.
+func (nt *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
+	return AddThalLayer4D(nt.AsAxon(), name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+}
+
+// AddThalLayer2D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
+// of given size, with given name.
+// This version has a 2D structure
+func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *ThalLayer {
+	return AddThalLayer2D(nt.AsAxon(), name, nNeurY, nNeurX)
+}
+
+// AddPTThalForSuper adds a PT pyramidal tract layer and a
+// Thalamus layer for given superficial layer (SuperLayer)
+// with given suffix (e.g., MD, VM).
+// The PT and Thal layers are positioned behind the CT layer.
+func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
+	return AddPTThalForSuper(nt.AsAxon(), super, ct, suffix, space)
 }
 
 // ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
@@ -112,13 +127,23 @@ func AddSTNLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	return ly
 }
 
-// AddThalLayer adds a ventral thalamus (VA/VL/VM) Layer of given size, with given name.
-// Assumes that a 4D structure will be used, with Pools representing separable gating domains.
-// Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
-func AddThalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
+// AddThalLayer2D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
+// of given size, with given name.
+// This version has a 2D structure
+func AddThalLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *ThalLayer {
+	ly := &ThalLayer{}
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, Thal)
+	ly.SetClass("BG Thal")
+	return ly
+}
+
+// AddThalLayer4D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
+// of given size, with given name.
+// This version has a 4D structure, with Pools representing separable gating domains.
+func AddThalLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
 	ly := &ThalLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
-	ly.SetClass("BG VThal")
+	ly.SetClass("BG Thal")
 	return ly
 }
 
@@ -188,5 +213,49 @@ func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gp
 	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
 	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo.Name(), YAlign: relpos.Front, Space: space})
 
+	return
+}
+
+// AddPTLayer2D adds a PTLayer of given size, with given name.
+func AddPTLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *PTLayer {
+	ly := &PTLayer{}
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, PT)
+	return ly
+}
+
+// AddPTLayer4D adds a PTLayer of given size, with given name.
+func AddPTLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *PTLayer {
+	ly := &PTLayer{}
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, PT)
+	return ly
+}
+
+// ConnectPTSelf adds a Self (Lateral) projection within a PT layer,
+// which supports active maintenance, with a class of PTSelfMaint
+func ConnectPTSelf(nt *axon.Network, ly emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
+}
+
+// AddPTThalForSuper adds a PT pyramidal tract layer and a
+// Thalamus layer for given superficial layer (deep.SuperLayer) and associated CT
+// with given suffix (e.g., MD, VM).
+// The PT and Thal layers are positioned behind the CT layer.
+func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
+	name := super.Name()
+	shp := super.Shape()
+	if shp.NumDims() == 2 {
+		pt = AddPTLayer2D(nt, name+"PT", shp.Dim(0), shp.Dim(1))
+		thal = AddThalLayer2D(nt, name+suffix, shp.Dim(0), shp.Dim(1))
+	} else {
+		pt = AddPTLayer4D(nt, name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		thal = AddThalLayer4D(nt, name+suffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+	}
+	pt.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: ct.Name(), XAlign: relpos.Left, Space: space})
+	thal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pt.Name(), XAlign: relpos.Left, Space: space})
+	one2one := prjn.NewOneToOne()
+	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
+	pthal.SetClass("PTtoThal")
+	thalpt.SetClass("ThalToPT")
+	nt.ConnectLayers(ct, thal, one2one, emer.Forward).SetClass("CTtoThal")
 	return
 }

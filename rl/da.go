@@ -76,7 +76,7 @@ type ClampDaLayer struct {
 	SendDA SendDA `desc:"list of layers to send dopamine to"`
 }
 
-var KiT_ClampDaLayer = kit.Types.AddType(&ClampDaLayer{}, axon.LayerProps)
+var KiT_ClampDaLayer = kit.Types.AddType(&ClampDaLayer{}, LayerProps)
 
 func (ly *ClampDaLayer) Defaults() {
 	ly.Layer.Defaults()

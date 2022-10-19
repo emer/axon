@@ -77,7 +77,7 @@ type ClampAChLayer struct {
 	ACh     float32 `desc:"acetylcholine value for this layer"`
 }
 
-var KiT_ClampAChLayer = kit.Types.AddType(&ClampAChLayer{}, axon.LayerProps)
+var KiT_ClampAChLayer = kit.Types.AddType(&ClampAChLayer{}, LayerProps)
 
 // AChLayer interface:
 

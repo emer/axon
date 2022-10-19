@@ -50,7 +50,7 @@ type STNLayer struct {
 	STNNeurs []STNNeuron `desc:"slice of extra STNNeuron state for this layer -- flat list of len = Shape.Len(). You must iterate over index and use pointer to modify values."`
 }
 
-var KiT_STNLayer = kit.Types.AddType(&STNLayer{}, axon.LayerProps)
+var KiT_STNLayer = kit.Types.AddType(&STNLayer{}, LayerProps)
 
 // Defaults in param.Sheet format
 // Sel: "STNLayer", Desc: "defaults",
@@ -66,6 +66,7 @@ var KiT_STNLayer = kit.Types.AddType(&STNLayer{}, axon.LayerProps)
 func (ly *STNLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Ca.Defaults()
+	ly.Typ = STN
 
 	// STN is tonically self-active and has no FFFB inhibition
 
@@ -119,6 +120,10 @@ func (ly *STNLayer) Defaults() {
 func (ly *STNLayer) UpdateParams() {
 	ly.Layer.UpdateParams()
 	ly.Ca.Update()
+}
+
+func (ly *STNLayer) Class() string {
+	return "STN " + ly.Cls
 }
 
 func (ly *STNLayer) InitActs() {

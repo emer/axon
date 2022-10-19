@@ -24,7 +24,7 @@ type RWPredLayer struct {
 	PredRange minmax.F32 `desc:"default 0.1..0.99 range of predictions that can be represented -- having a truncated range preserves some sensitivity in dopamine at the extremes of good or poor performance"`
 }
 
-var KiT_RWPredLayer = kit.Types.AddType(&RWPredLayer{}, axon.LayerProps)
+var KiT_RWPredLayer = kit.Types.AddType(&RWPredLayer{}, LayerProps)
 
 func (ly *RWPredLayer) Defaults() {
 	ly.Layer.Defaults()
