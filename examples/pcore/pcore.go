@@ -83,9 +83,9 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.NoInc = true
+	ss.NoInc = false
 	ss.NPools = 1
-	ss.NUnitsY = 10
+	ss.NUnitsY = 5
 	ss.NUnitsX = 5
 	ss.NUnits = ss.NUnitsY * ss.NUnitsX
 	ss.ACCPos = 1
@@ -204,16 +204,24 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	np := ss.Sim.NPools
 	nuY := ss.Sim.NUnitsY
 	nuX := ss.Sim.NUnitsX
+	space := float32(2)
+
+	pone2one := prjn.NewPoolOneToOne()
+	one2one := prjn.NewOneToOne()
+	full := prjn.NewFull()
+	_ = full
 
 	snc := rl.AddClampDaLayer(net.AsAxon(), "SNc")
 
-	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, 2)
+	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	cin := cini.(*pcore.CINLayer)
 	cin.RewLays.Add(snc.Name())
-
 	_ = gpeOut
 	_ = gpeIn
 	_ = gpeTA
+
+	thal := net.AddThalLayer("VThal", 1, np, nuY, nuX)
+	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
 
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
 	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, emer.Input)
@@ -222,29 +230,29 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	snc.SendDA.AddAllBut(net)
 
-	one2one := prjn.NewPoolOneToOne()
-	full := prjn.NewFull()
-	_ = full
+	net.ConnectLayers(pfc, stnp, pone2one, emer.Forward)
+	net.ConnectLayers(pfc, stns, pone2one, emer.Forward)
 
-	net.ConnectLayers(pfc, stnp, one2one, emer.Forward)
-	net.ConnectLayers(pfc, stns, one2one, emer.Forward)
-
-	net.ConnectToMatrix(accpos, mtxGo, one2one)
-	net.ConnectToMatrix(accpos, mtxNo, one2one)
-	net.ConnectToMatrix(accneg, mtxNo, one2one)
-	net.ConnectToMatrix(accneg, mtxGo, one2one)
-	net.ConnectToMatrix(pfc, mtxGo, one2one)
-	net.ConnectToMatrix(pfc, mtxNo, one2one)
+	net.ConnectToMatrix(accpos, mtxGo, pone2one)
+	net.ConnectToMatrix(accpos, mtxNo, pone2one)
+	net.ConnectToMatrix(accneg, mtxNo, pone2one)
+	net.ConnectToMatrix(accneg, mtxGo, pone2one)
+	net.ConnectToMatrix(pfc, mtxGo, pone2one)
+	net.ConnectToMatrix(pfc, mtxNo, pone2one)
 
 	net.ConnectLayers(thal, pfcd, one2one, emer.Forward)
 	net.ConnectLayers(pfc, thal, one2one, emer.Forward)
 	net.ConnectLayers(pfcd, thal, one2one, emer.Forward)
 
-	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "SNc", YAlign: relpos.Front, Space: 10})
+	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "SNc", YAlign: relpos.Front, Space: space})
+	thal.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
+	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpi.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
+	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeTA.Name(), YAlign: relpos.Front, Space: space})
+	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpeOut.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	accpos.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: mtxGo.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	accneg.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCPos", YAlign: relpos.Front, Space: 2})
-	pfc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCNeg", YAlign: relpos.Front, Space: 2})
-	pfcd.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "PFC", YAlign: relpos.Front, Space: 2})
+	accneg.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCPos", YAlign: relpos.Front, Space: space})
+	pfc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCNeg", YAlign: relpos.Front, Space: space})
+	pfcd.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "PFC", YAlign: relpos.Front, Space: space})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -348,6 +356,7 @@ func (ss *Sim) ConfigLoops() {
 		ss.ApplyRew()
 	})
 	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
+	man.GetLoop(etime.Test, etime.Cycle).AddEvents(applyRew)
 
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
@@ -477,11 +486,19 @@ func (ss *Sim) ApplyRew() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	vtly := net.LayerByName("VThal").(*pcore.VThalLayer)
-	gateAct := vtly.PCoreNeurs[0].PhasicMax
-	didGate := (gateAct > 0.01)
-	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
+	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
+	vtly.GatedFmPhasicMax()
+	mtxGo := net.LayerByName("MtxGo").(*pcore.MatrixLayer)
+	mtxNo := net.LayerByName("MtxNo").(*pcore.MatrixLayer)
+	mtxGo.SetGated(vtly.Gated)
+	mtxNo.SetGated(vtly.Gated)
 
+	pi := 1
+	if len(vtly.Gated) == 1 {
+		pi = 0
+	}
+	didGate := mtxGo.Gated[pi]
+	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
 	switch {
 	case shouldGate && didGate:
@@ -493,6 +510,18 @@ func (ss *Sim) ApplyRew() {
 	case !shouldGate && !didGate:
 		rew = 0
 	}
+
+	gated := float32(0)
+	if didGate {
+		gated = 1
+	}
+	shld := float32(0)
+	if shouldGate {
+		shld = 1
+	}
+	ss.Stats.SetFloat32("Gated", gated)
+	ss.Stats.SetFloat32("Should", shld)
+	ss.Stats.SetFloat32("Rew", rew)
 
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
@@ -530,6 +559,9 @@ func (ss *Sim) TestAll() {
 // called at start of new run
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("VThal_RT", 0.0)
+	ss.Stats.SetFloat("Gated", 0)
+	ss.Stats.SetFloat("Should", 0)
+	ss.Stats.SetFloat("Rew", 0)
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -546,13 +578,14 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
 	trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", trlnm)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle", "Gated", "Should", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	trlog := ss.Logs.Log(etime.Test, etime.Cycle)
+	mode := etime.ModeFromString(ss.Time.Mode)
+	trlog := ss.Logs.Log(mode, etime.Cycle)
 	spkCyc := 0
 	for row := 0; row < trlog.Rows; row++ {
 		vts := trlog.CellTensorFloat1D("VThal_Spike", row, 0)
@@ -576,15 +609,18 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
 
+	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
+
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
-
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT", "Gated", "Should", "Rew")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -682,7 +718,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	ss.StatCounters()
 
 	phs := ss.Loops.Stacks[mode].Loops[etime.Phase].Counter.Cur
-	if phs == 0 {
+	if phs == 0 && time <= etime.Trial {
 		return // no logging on first phase
 	}
 
@@ -713,6 +749,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
+	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 

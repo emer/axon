@@ -6,7 +6,6 @@ package pcore
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/emer/axon/axon"
@@ -17,39 +16,24 @@ import (
 // MatrixParams has parameters for Dorsal Striatum Matrix computation
 // These are the main Go / NoGo gating units in BG driving updating of PFC WM in PBWM
 type MatrixParams struct {
-	ThalLay   string  `desc:"name of VThal layer -- needed to get overall gating output action"`
-	ThalThr   float32 `def:"0.25" desc:"threshold for thal max activation (in pool) to be gated -- typically .25 or so to accurately reflect PFC output gating -- may need to adjust based on actual behavior"`
-	Deriv     bool    `def:"true" desc:"use the sigmoid derivative factor 2 * Act * (1-Act) for matrix (recv) activity in modulating learning -- otherwise just multiply by activation directly -- this is generally beneficial for learning to prevent weights from continuing to increase when activations are already strong (and vice-versa for decreases)"`
 	BurstGain float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 	DipGain   float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 }
 
 func (mp *MatrixParams) Defaults() {
-	if mp.ThalLay == "" {
-		mp.ThalLay = "VThal"
-	}
-	mp.ThalThr = 0.25
-	mp.Deriv = true
 	mp.BurstGain = 1
 	mp.DipGain = 1
 }
 
-// LrnFactor returns multiplicative factor for level of msn activation.  If Deriv
-// is 2 * act * (1-act) -- the factor of 2 compensates for otherwise reduction in
-// learning from these factors.  Otherwise is just act.
-func (mp *MatrixParams) LrnFactor(act float32) float32 {
-	if !mp.Deriv {
-		return act
-	}
-	return 2 * act * (1 - act)
-}
-
 // MatrixLayer represents the dorsal matrisome MSN's that are the main
 // Go / NoGo gating units in BG.  D1R = Go, D2R = NoGo.
+// The Gated value for each pool must be set by calling SetGated --
+// this changes the sign of the learning function in relation to DA.
 type MatrixLayer struct {
 	Layer
 	DaR    DaReceptors  `desc:"dominant type of dopamine receptor -- D1R for Go pathway, D2R for NoGo"`
 	Matrix MatrixParams `view:"inline" desc:"matrix parameters"`
+	Gated  []bool       `inactive:"+" desc:"must set to true / false for whether each pool gated, via SetGated method"`
 	DALrn  float32      `inactive:"+" desc:"effective learning dopamine value for this layer: reflects DaR and Gains"`
 	ACh    float32      `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons reflecting the absolute value of reward or CS predictions thereof -- used for resetting the trace of matrix learning"`
 }
@@ -119,34 +103,66 @@ func (ly *MatrixLayer) Defaults() {
 func (ly *MatrixLayer) GetACh() float32    { return ly.ACh }
 func (ly *MatrixLayer) SetACh(ach float32) { ly.ACh = ach }
 
-func (ly *MatrixLayer) ThalLayer() (*VThalLayer, error) {
-	tly, err := ly.Network.LayerByNameTry(ly.Matrix.ThalLay)
+func (ly *MatrixLayer) Build() error {
+	err := ly.Layer.Build()
 	if err != nil {
-		log.Printf("MatrixLayer %s ThalLayer: %v\n", ly.Name(), err)
-		return nil, err
+		return err
 	}
-	return tly.(*VThalLayer), nil
+	np := len(ly.Pools)
+	ly.Gated = make([]bool, np)
+	return nil
 }
 
 func (ly *MatrixLayer) InitActs() {
 	ly.Layer.InitActs()
 	ly.DALrn = 0
 	ly.ACh = 0
+	for i := range ly.Gated {
+		ly.Gated[i] = false
+	}
 }
 
-// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
-// and updates learning running-average activations from that Act.
-// Matrix extends to call DALrnFmDA and updates PhasicMax -> ActLrn
-func (ly *MatrixLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
-	ly.DAActLrn(ltime)
+// SetGated sets gating status of each pool, and updates the ActLrn
+// variable based on gating status (flips sign of DA effects).
+// len(gated) should be number of sub-pools, including full-layer pool,
+// even though that is not used unless it is a 2D layer.
+// Also calls DAActLrn.
+func (ly *MatrixLayer) SetGated(gated []bool) {
+	ly.DAActLrn()
+	ngate := len(gated)
+	npl := len(ly.Gated)
+	spi := 1
+	if npl == 1 {
+		spi = 0
+	}
+	for pi := spi; pi < npl; pi++ {
+		gt := false
+		if pi < ngate {
+			gt = gated[pi]
+		}
+		ly.Gated[pi] = gt
+		pl := &ly.Pools[pi]
+		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			pn := &ly.PCoreNeurs[ni]
+			pmax := pn.PhasicMax
+			if !gt {
+				pn.ActLrn = -pmax
+			} else {
+				pn.ActLrn = pmax
+			}
+		}
+	}
 }
 
 // DAActLrn sets effective learning dopamine value from given raw DA value,
 // applying Burst and Dip Gain factors, and then reversing sign for D2R.
 // Also sets ActLrn based on whether corresponding VThal stripe fired
 // above ThalThr -- flips sign of learning for stripe firing vs. not.
-func (ly *MatrixLayer) DAActLrn(ltime *axon.Time) {
+func (ly *MatrixLayer) DAActLrn() {
 	da := ly.DA
 	if da > 0 {
 		da *= ly.Matrix.BurstGain
@@ -157,33 +173,12 @@ func (ly *MatrixLayer) DAActLrn(ltime *axon.Time) {
 		da *= -1
 	}
 	ly.DALrn = da
-	if ltime.Cycle < ly.PhasicMaxCycMin {
-		return
-	}
-	tly, err := ly.ThalLayer()
-	if err != nil {
-		return
-	}
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		pn := &ly.PCoreNeurs[ni]
-		amax := ly.Matrix.LrnFactor(pn.PhasicMax)
-		tact := tly.PCoreNeurs[nrn.SubPool-1].PhasicMax
-		if tact > ly.Matrix.ThalThr {
-			pn.ActLrn = amax
-		} else {
-			pn.ActLrn = -amax
-		}
-	}
 }
 
 // UnitVarNum returns the number of Neuron-level variables
 // for this layer.  This is needed for extending indexes in derived types.
 func (ly *MatrixLayer) UnitVarNum() int {
-	return ly.Layer.UnitVarNum() + 2
+	return ly.Layer.UnitVarNum() + 3
 }
 
 // UnitVarIdx returns the index of given variable within the Neuron,
@@ -198,8 +193,10 @@ func (ly *MatrixLayer) UnitVarIdx(varNm string) (int, error) {
 	switch varNm {
 	case "DALrn":
 		nvi = 0
-	case "ACh":
+	case "Gated":
 		nvi = 1
+	case "ACh":
+		nvi = 2
 	default:
 		return -1, fmt.Errorf("pcore.NeuronVars: variable named: %s not found", varNm)
 	}
@@ -227,6 +224,12 @@ func (ly *MatrixLayer) UnitVal1D(varIdx int, idx int) float32 {
 	case 0:
 		return ly.DALrn
 	case 1:
+		gt := ly.Gated[ly.Neurons[idx].SubPool]
+		if gt {
+			return 1.0
+		}
+		return 0
+	case 2:
 		return ly.ACh
 	default:
 		return mat32.NaN()

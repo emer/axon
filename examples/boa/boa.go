@@ -192,13 +192,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
 	pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
 
-	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, thal := net.AddBG("", 1, 1, nuBgY, nuBgX, nuBgY, nuBgX, 2)
-	cin := cini.(*pcore.CINLayer)
+	vPmtxGo, vPmtxNo, vPcini, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, 1, nuBgY, nuBgX, nuBgY, nuBgX, space)
+	cin := vPcini.(*pcore.CINLayer)
 	cin.RewLays.Add(snc.Name())
-
-	_ = gpeOut
-	_ = gpeIn
-	_ = gpeTA
 
 	// todo: need m1d, driven by smad -- output pathway
 
@@ -211,35 +207,38 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = act
 
 	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, one2one)
-	smapt, smathal := net.AddPTThalForSuper(sma, "MD", space)
+	smapt, smathal := net.AddPTThalForSuper(sma, smact, "MD", space)
 	_ = smapt
 	_ = smathal
 	// net.ConnectCTSelf(ofcct, full)
 	net.ConnectToPulv(sma, smact, m1p, full, full)
 	net.ConnectToPulv(sma, smact, posp, full, full)
 	net.ConnectToPulv(sma, smact, distp, full, full)
+	net.ConnectLayers(vPgpi, smathal, full, emer.Inhib).SetClass("BgFixed")
 
 	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.Drives, nuCtxY, nuCtxX, relpos.Behind, space)
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space, one2one)
-	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, "MD", space)
+	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", space)
 	_ = ofcpt
 	_ = ofcthal
 	net.ConnectCTSelf(ofcct, full)
 	net.ConnectToPulv(ofc, ofcct, csp, full, full)
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcct, drivesp, pone2one, pone2one)
+	net.ConnectLayers(vPgpi, ofcthal, full, emer.Inhib).SetClass("BgFixed")
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, one2one)
-	accpt, accthal := net.AddPTThalForSuper(acc, "MD", space)
+	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", space)
 	_ = accpt
 	_ = accthal
 	net.ConnectCTSelf(accct, full)
 	net.ConnectToPulv(acc, accct, distp, full, full)
 	net.ConnectToPulv(acc, accct, timep, full, full)
+	net.ConnectLayers(vPgpi, accthal, full, emer.Inhib).SetClass("BgFixed")
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
@@ -272,24 +271,20 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// BG / DA connections
 	snc.SendDA.AddAllBut(net)
 
-	net.ConnectLayers(sma, stnp, full, emer.Forward)
-	net.ConnectLayers(sma, stns, full, emer.Forward)
+	net.ConnectLayers(sma, vPstnp, full, emer.Forward)
+	net.ConnectLayers(sma, vPstns, full, emer.Forward)
 
 	net.ConnectLayers(smapt, m1, full, emer.Forward)     //  action output
 	net.ConnectLayers(sma, smapt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(sma, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
 
-	net.ConnectToMatrix(ofc, mtxGo, full)
-	net.ConnectToMatrix(ofc, mtxNo, full)
-	net.ConnectToMatrix(acc, mtxGo, full)
-	net.ConnectToMatrix(acc, mtxNo, full)
-	net.ConnectToMatrix(sma, mtxGo, full)
-	net.ConnectToMatrix(sma, mtxNo, full)
-
-	net.ConnectLayers(thal, smapt, full, emer.Forward)
-	net.ConnectLayers(sma, thal, one2one, emer.Forward)
-	net.ConnectLayers(smapt, thal, one2one, emer.Forward)
+	net.ConnectToMatrix(ofc, vPmtxGo, full)
+	net.ConnectToMatrix(ofc, vPmtxNo, full)
+	net.ConnectToMatrix(acc, vPmtxGo, full)
+	net.ConnectToMatrix(acc, vPmtxNo, full)
+	net.ConnectToMatrix(sma, vPmtxGo, full)
+	net.ConnectToMatrix(sma, vPmtxNo, full)
 
 	net.ConnectLayersPrjn(ofc, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(ofcct, rp, full, emer.Forward, &rl.RWPrjn{})
@@ -299,9 +294,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	////////////////////////////////////////////////
 	// position
 
-	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rew.Name(), YAlign: relpos.Front, Space: space})
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpi.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
+	vPgpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rew.Name(), YAlign: relpos.Front, Space: space})
 
 	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: rew.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drivesp.Name(), XAlign: relpos.Left, Space: space})
@@ -598,18 +591,19 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
-	trlog := ss.Logs.Log(mode, etime.Cycle)
-	spkCyc := 0
-	for row := 0; row < trlog.Rows; row++ {
-		vts := trlog.CellTensorFloat1D("VThal_Spike", row, 0)
-		if vts > 0 {
-			spkCyc = row
-			break
+	/*
+		mode := etime.ModeFromString(ss.Time.Mode)
+		trlog := ss.Logs.Log(mode, etime.Cycle)
+		spkCyc := 0
+		for row := 0; row < trlog.Rows; row++ {
+			vts := trlog.CellTensorFloat1D("VThal_Spike", row, 0)
+			if vts > 0 {
+				spkCyc = row
+				break
+			}
 		}
-	}
-	ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
+		ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
+	*/
 	rew := ss.Net.LayerByName("Rew").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("Rew", float64(rew.Neurons[0].Act))
 	da := ss.Net.LayerByName("DA").(axon.AxonLayer).AsAxon()

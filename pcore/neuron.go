@@ -13,7 +13,7 @@ import (
 
 var (
 	// NeuronVars are extra neuron variables for pcore -- union across all types
-	NeuronVars = []string{"DA", "ActLrn", "PhasicMax", "DALrn", "ACh", "SKCai", "SKCaM", "Gsk"}
+	NeuronVars = []string{"DA", "DALrn", "ACh", "Gated", "ActLrn", "PhasicMax", "SKCai", "SKCaM", "Gsk"}
 
 	// NeuronVarsAll is the pcore collection of all neuron-level vars
 	NeuronVarsAll []string
@@ -51,7 +51,7 @@ func init() {
 // for pcore computation.
 type PCoreNeuron struct {
 	ActLrn    float32 `desc:"learning activity value -- based on PhasicMax activation plus other potential factors depending on layer type."`
-	PhasicMax float32 `desc:"maximum phasic activation value during a gating window."`
+	PhasicMax float32 `desc:"maximum phasic activation (CaSpkP) value during a gating window."`
 }
 
 var (

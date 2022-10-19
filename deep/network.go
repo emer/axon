@@ -121,6 +121,20 @@ func AddPulvAttnLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY,
 	return ly
 }
 
+// AddThalLayer2D adds a ThalLayer of given size, with given name.
+func AddThalLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *ThalLayer {
+	ly := &ThalLayer{}
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, Thal)
+	return ly
+}
+
+// AddThalLayer4D adds a ThalLayer of given size, with given name.
+func AddThalLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
+	ly := &ThalLayer{}
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Thal)
+	return ly
+}
+
 // AddInputPulv2D adds an Input and PulvLayer of given size, with given name.
 // The Input layer is set as the Driver of the PulvLayer
 func AddInputPulv2D(nt *axon.Network, name string, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
@@ -233,21 +247,23 @@ func AddPulvForSuper(nt *axon.Network, super emer.Layer, space float32) emer.Lay
 // Thalamus layer for given superficial layer (SuperLayer)
 // with given suffix (e.g., MD, VM).
 // The PT and Thal layers are positioned behind the CT layer.
-func AddPTThalForSuper(nt *axon.Network, super emer.Layer, suffix string, space float32) (thal, pt emer.Layer) {
+func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
 	name := super.Name()
 	shp := super.Shape()
 	if shp.NumDims() == 2 {
 		pt = AddPTLayer2D(nt, name+"PT", shp.Dim(0), shp.Dim(1))
-		thal = AddPulvLayer2D(nt, name+suffix, shp.Dim(0), shp.Dim(1))
+		thal = AddThalLayer2D(nt, name+suffix, shp.Dim(0), shp.Dim(1))
 	} else {
 		pt = AddPTLayer4D(nt, name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
-		thal = AddPulvLayer4D(nt, name+suffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		thal = AddThalLayer4D(nt, name+suffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
-	pt.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: space})
+	pt.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: ct.Name(), XAlign: relpos.Left, Space: space})
 	thal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pt.Name(), XAlign: relpos.Left, Space: space})
 	one2one := prjn.NewOneToOne()
-	nt.ConnectLayers(super, thal, one2one, emer.Forward)
-	nt.ConnectLayers(pt, thal, one2one, emer.Forward)
+	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
+	pthal.SetClass("PTtoThal")
+	thalpt.SetClass("ThalToPT")
+	nt.ConnectLayers(ct, thal, one2one, emer.Forward).SetClass("CTtoThal")
 	return
 }
 
@@ -303,8 +319,8 @@ func (nt *Network) ConnectCTSelf(ly emer.Layer, pat prjn.Pattern) (ctxt, maint e
 // Thalamus layer for given superficial layer (SuperLayer)
 // with given suffix (e.g., MD, VM).
 // The PT and Thal layers are positioned behind the CT layer.
-func (nt *Network) AddPTThalForSuper(super emer.Layer, suffix string, space float32) (thal, pt emer.Layer) {
-	return AddPTThalForSuper(&nt.Network, super, suffix, space)
+func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, space float32) (thal, pt emer.Layer) {
+	return AddPTThalForSuper(&nt.Network, super, ct, suffix, space)
 }
 
 // AddPulvAttnLayer2D adds a PulvAttnLayer of given size, with given name.

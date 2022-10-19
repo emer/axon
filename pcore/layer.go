@@ -83,7 +83,7 @@ func (ly *Layer) ActFmG(ltime *axon.Time) {
 	ly.PhasicMaxFmAct(ltime)
 }
 
-// PhasicMaxFmAct computes PhasicMax from Activation
+// PhasicMaxFmAct computes PhasicMax from Activation (CaSpkP)
 func (ly *Layer) PhasicMaxFmAct(ltime *axon.Time) {
 	if ltime.Cycle < ly.PhasicMaxCycMin {
 		return
@@ -95,7 +95,7 @@ func (ly *Layer) PhasicMaxFmAct(ltime *axon.Time) {
 		}
 		pn := &ly.PCoreNeurs[ni]
 		if nrn.Act > pn.PhasicMax {
-			pn.PhasicMax = nrn.Act
+			pn.PhasicMax = nrn.CaSpkP
 		}
 	}
 }

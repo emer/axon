@@ -55,9 +55,9 @@ func (ev *Approach) Desc() string {
 func (ev *Approach) Defaults() {
 	ev.TimeCost = 0.05
 	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
-	ev.Drives = 4
+	ev.Drives = 2
 	ev.CSPerDrive = 1
-	ev.Locations = 4 // <= drives always
+	ev.Locations = 2 // <= drives always
 	ev.DistMax = 4
 	ev.TimeMax = 10
 	ev.NewStateInt = -1
@@ -121,7 +121,7 @@ func (ev *Approach) NewState() {
 	css := ev.States["CSs"]
 	drives := rand.Perm(ev.Drives)
 	for l := 0; l < ev.Locations; l++ {
-		us := drives[l]
+		us := drives[l%ev.Drives]
 		cs := rand.Intn(ev.CSPerDrive)
 		pat := us*ev.CSPerDrive + cs
 		uss.Values[l] = float32(us)

@@ -33,15 +33,21 @@ func (nt *Network) SynVarNames() []string {
 	return SynVarsAll
 }
 
-// AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi, and VThal layers,
+// AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // All GP / STN layers have gpNeur neurons
-// Appropriate PoolOneToOne connections are made between layers,
-// using standard styles
+// Appropriate PoolOneToOne connections are made between layers, using standard styles
 // space is the spacing between layers (2 typical)
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
+func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
 	return AddBG(nt.AsAxon(), prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
+}
+
+// AddThalLayer adds a ventral thalamus (VA/VL/VM) Layer of given size, with given name.
+// Assumes that a 4D structure will be used, with Pools representing separable gating domains.
+// Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
+func (nt *Network) AddThalLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
+	return AddThalLayer(nt.AsAxon(), name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 }
 
 // ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
@@ -106,26 +112,24 @@ func AddSTNLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 	return ly
 }
 
-// AddVThalLayer adds a ventral thalamus (VA/VL/VM) Layer of given size, with given name.
+// AddThalLayer adds a ventral thalamus (VA/VL/VM) Layer of given size, with given name.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // Typically nNeurY, nNeurX will both be 1, but could have more for noise etc.
-func AddVThalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *VThalLayer {
-	ly := &VThalLayer{}
+func AddThalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
+	ly := &ThalLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
 	ly.SetClass("BG VThal")
 	return ly
 }
 
-// AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi, and VThal layers,
+// AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // All GP / STN layers have gpNeur neurons
-// Appropriate PoolOneToOne connections are made between layers,
-// using standard styles.
+// Appropriate PoolOneToOne connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
-func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal axon.AxonLayer) {
+func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
 	gpi = AddGPiLayer(nt, prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	vthal = AddVThalLayer(nt, prefix+"VThal", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti := AddGPeLayer(nt, prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti.GPLay = GPeOut
 	gpeOut = gpeOuti
@@ -144,76 +148,45 @@ func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gp
 
 	cini.SendACh.Add(mtxGo.Name(), mtxNo.Name())
 
-	vthal.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
-
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpi.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	gpeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeOut.Name(), YAlign: relpos.Front, Space: space})
-	gpeTA.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeIn.Name(), YAlign: relpos.Front, Space: space})
-	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeTA.Name(), YAlign: relpos.Front, Space: space})
-	stns.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: stnp.Name(), YAlign: relpos.Front, Space: space})
-
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpeOut.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
-	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo.Name(), YAlign: relpos.Front, Space: space})
-
 	one2one := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
 
-	pj := nt.ConnectLayers(mtxGo, gpeOut, one2one, emer.Inhib)
-	pj.SetClass("BgFixed")
+	nt.ConnectLayers(mtxGo, gpeOut, one2one, emer.Inhib).SetClass("BgFixed")
 
 	nt.ConnectLayers(mtxNo, gpeIn, one2one, emer.Inhib)
 	nt.ConnectLayers(gpeOut, gpeIn, one2one, emer.Inhib)
 
-	pj = nt.ConnectLayers(gpeIn, gpeTA, one2one, emer.Inhib)
-	pj.SetClass("BgFixed")
-	pj = nt.ConnectLayers(gpeIn, stnp, one2one, emer.Inhib)
-	pj.SetClass("BgFixed")
+	nt.ConnectLayers(gpeIn, gpeTA, one2one, emer.Inhib).SetClass("BgFixed")
+	nt.ConnectLayers(gpeIn, stnp, one2one, emer.Inhib).SetClass("BgFixed")
 
 	// note: this projection exists in bio, but does weird things with Ca dynamics in STNs..
-	// pj = nt.ConnectLayers(gpeIn, stns, one2one, emer.Inhib)
-	// pj.SetClass("BgFixed")
+	// nt.ConnectLayers(gpeIn, stns, one2one, emer.Inhib).SetClass("BgFixed")
 
 	nt.ConnectLayers(gpeIn, gpi, one2one, emer.Inhib)
 	nt.ConnectLayers(mtxGo, gpi, one2one, emer.Inhib)
 
-	pj = nt.ConnectLayers(stnp, gpeOut, one2one, emer.Forward)
-	pj.SetClass("FmSTNp")
-	pj = nt.ConnectLayers(stnp, gpeIn, one2one, emer.Forward)
-	pj.SetClass("FmSTNp")
-	pj = nt.ConnectLayers(stnp, gpeTA, full, emer.Forward)
-	pj.SetClass("FmSTNp")
-	pj = nt.ConnectLayers(stnp, gpi, one2one, emer.Forward)
-	pj.SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeOut, one2one, emer.Forward).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeIn, one2one, emer.Forward).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeTA, full, emer.Forward).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpi, one2one, emer.Forward).SetClass("FmSTNp")
 
-	pj = nt.ConnectLayers(stns, gpi, one2one, emer.Forward)
-	pj.SetClass("FmSTNs")
+	nt.ConnectLayers(stns, gpi, one2one, emer.Forward).SetClass("FmSTNs")
 
-	pj = nt.ConnectLayers(gpeTA, mtxGo, full, emer.Inhib)
-	pj.SetClass("GPeTAToMtx")
-	pj = nt.ConnectLayers(gpeTA, mtxNo, full, emer.Inhib)
-	pj.SetClass("GPeTAToMtx")
+	nt.ConnectLayers(gpeTA, mtxGo, full, emer.Inhib).SetClass("GPeTAToMtx")
+	nt.ConnectLayers(gpeTA, mtxNo, full, emer.Inhib).SetClass("GPeTAToMtx")
 
-	pj = nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib)
-	pj.SetClass("GPeInToMtx")
-	pj = nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib)
-	pj.SetClass("GPeInToMtx")
+	nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib).SetClass("GPeInToMtx")
+	nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib).SetClass("GPeInToMtx")
 
-	pj = nt.ConnectLayers(gpi, vthal, one2one, emer.Inhib)
-	pj.SetClass("BgFixed")
+	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpi.Name(), XAlign: relpos.Left, Space: space})
+	gpeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeOut.Name(), YAlign: relpos.Front, Space: space})
+	gpeTA.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeIn.Name(), YAlign: relpos.Front, Space: space})
+	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
+	stns.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: stnp.Name(), YAlign: relpos.Front, Space: space})
+
+	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
+	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
+	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo.Name(), YAlign: relpos.Front, Space: space})
 
 	return
-}
-
-// AddBGPy adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi, and VThal layers,
-// with given optional prefix.
-// Assumes that a 4D structure will be used, with Pools representing separable gating domains.
-// Only Matrix has more than 1 unit per Pool by default.
-// Appropriate PoolOneToOne connections are made between layers,
-// using standard styles.
-// space is the spacing between layers (2 typical)
-// Py is Python version, returns layers as a slice
-func AddBGPy(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) []axon.AxonLayer {
-	mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal := AddBG(nt, prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
-	return []axon.AxonLayer{mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi, vthal}
 }
