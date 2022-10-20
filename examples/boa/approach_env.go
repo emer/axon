@@ -55,9 +55,9 @@ func (ev *Approach) Desc() string {
 func (ev *Approach) Defaults() {
 	ev.TimeCost = 0.05
 	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
-	ev.Drives = 2
+	ev.Drives = 4
 	ev.CSPerDrive = 1
-	ev.Locations = 2 // <= drives always
+	ev.Locations = 4 // <= drives always
 	ev.DistMax = 4
 	ev.TimeMax = 10
 	ev.NewStateInt = -1

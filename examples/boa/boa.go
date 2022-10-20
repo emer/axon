@@ -222,7 +222,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", space)
 	_ = ofcpt
 	_ = ofcthal
-	net.ConnectCTSelf(ofcct, full)
+	net.ConnectCTSelf(ofcct, pone2one)
 	net.ConnectToPulv(ofc, ofcct, csp, full, full)
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcct, drivesp, pone2one, pone2one)
@@ -235,7 +235,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", space)
 	_ = accpt
 	_ = accthal
-	net.ConnectCTSelf(accct, full)
+	net.ConnectCTSelf(accct, pone2one)
 	net.ConnectToPulv(acc, accct, distp, full, full)
 	net.ConnectToPulv(acc, accct, timep, full, full)
 	net.ConnectLayers(vPgpi, accthal, full, emer.Inhib).SetClass("BgFixed")
@@ -309,8 +309,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	act.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: vl.Name(), XAlign: relpos.Left, Space: space})
 
 	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	ofc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blae.Name(), XAlign: relpos.Left, Space: space})
-	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: space})
+	ofc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: space})
+	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ofc.Name(), YAlign: relpos.Front, Space: space})
 	sma.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: space})
 
 	net.Defaults()
@@ -661,10 +661,11 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
+	return
 	// ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
 	npools := 1
 	poolshape := []int{npools}
-	layers := ss.Net.LayersByClass("BG")
+	layers := ss.Net.LayersByClass("Matrix Thal")
 	for _, lnm := range layers {
 		clnm := lnm
 		if clnm == "CIN" {
