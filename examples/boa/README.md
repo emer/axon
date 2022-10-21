@@ -36,6 +36,11 @@ Need a clear signal for when you are looking at a good CS: this is the activatio
 
 # TODO
 
+* need actual BG gated maint dynamics -- do it in PT or a separate maint layer?
+
+* not clear if Matrix can detect body state * US conjunction -- need some special match case for that?
+
+
 Steps:
 
 1. add BLA, OFC with pool-based drive separations -- and OFC has high inhibition, requiring both drive and BLA input to get over threshold..

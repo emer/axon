@@ -65,9 +65,15 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "1",
 				}},
+			{Sel: "#TimeP", Desc: "more inhib",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.08",
+					"Layer.Inhib.Layer.Gi":    "1.1",
+				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On": "true",
+					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.ActAvg.Init": "0.025",
 				}},
 			{Sel: ".ACC", Desc: "",
 				Params: params.Params{
@@ -75,11 +81,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":              "0.3",
+					"Layer.Inhib.ActAvg.Init":       "0.025",
+					"Layer.Act.Gbar.L":              "0.2",
 					"Layer.Inhib.Pool.On":           "true",
 					"Layer.DaMod.BurstGain":         "0.1",
 					"Layer.DaMod.DipGain":           "0.1",
 					"Layer.Learn.RLrate.ActDiffThr": "0.1",
+				}},
+			{Sel: "#BLAPosExt2D", Desc: "",
+				Params: params.Params{
+					"Layer.Act.Gbar.L": "0.3",
 				}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{

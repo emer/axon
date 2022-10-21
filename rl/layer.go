@@ -8,9 +8,9 @@ import (
 	"fmt"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/bazel-axon/external/com_github_goki_ki/ki"
 	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
+	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )

@@ -41,6 +41,7 @@ type Approach struct {
 	US          int                         `desc:"US is -1 unless consumed at Dist = 0"`
 	StateCtr    int                         `desc:"count up for generating a new state"`
 	LastAct     int                         `desc:"last action taken"`
+	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
 }
 
 func (ev *Approach) Name() string {
@@ -285,11 +286,14 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 func (ev *Approach) ActGen() int {
 	uss := ev.States["USs"]
 	posUs := int(uss.Values[ev.Pos])
+	fwd := ev.ActMap["Forward"]
+	ev.ShouldGate = false
 	if posUs == ev.Drive {
 		if ev.Dist == 0 {
 			return ev.ActMap["Consume"]
 		}
-		return ev.ActMap["Forward"]
+		ev.ShouldGate = (ev.LastAct != fwd) // first time looking at correct one
+		return fwd
 	}
 	lt := ev.ActMap["Left"]
 	rt := ev.ActMap["Right"]

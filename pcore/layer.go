@@ -6,9 +6,9 @@ package pcore
 
 import (
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/bazel-axon/external/com_github_goki_ki/ki"
 	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/emer"
+	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )

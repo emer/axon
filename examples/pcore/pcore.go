@@ -480,19 +480,24 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	}
 }
 
+// BoolToFloat32 -- the lack of ternary conditional expressions
+// is *only* Go decision I disagree about
+func BoolToFloat32(b bool) float32 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 // ApplyRew applies reward input based on gating action and input
 func (ss *Sim) ApplyRew() {
 	net := ss.Net
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
-	vtly.GatedFmPhasicMax()
-	mtxGo := net.LayerByName("MtxGo").(*pcore.MatrixLayer)
-	mtxNo := net.LayerByName("MtxNo").(*pcore.MatrixLayer)
-	mtxGo.SetGated(vtly.Gated)
-	mtxNo.SetGated(vtly.Gated)
+	net.ThalMatrixGated("VThal") // critical updating of gated status -- must be called in plus phase!
 
+	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
 	didGate := vtly.AnyGated()
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
@@ -507,16 +512,8 @@ func (ss *Sim) ApplyRew() {
 		rew = 0
 	}
 
-	gated := float32(0)
-	if didGate {
-		gated = 1
-	}
-	shld := float32(0)
-	if shouldGate {
-		shld = 1
-	}
-	ss.Stats.SetFloat32("Gated", gated)
-	ss.Stats.SetFloat32("Should", shld)
+	ss.Stats.SetFloat32("Gated", BoolToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", BoolToFloat32(shouldGate))
 	ss.Stats.SetFloat32("Rew", rew)
 
 	itsr := etensor.Float32{}
@@ -615,8 +612,8 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
-
+	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()

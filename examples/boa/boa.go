@@ -208,8 +208,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, one2one)
 	smapt, smathal := net.AddPTThalForSuper(sma, smact, "MD", space)
+	smact.SetClass("SMA CTCopy")
 	_ = smapt
-	_ = smathal
 	// net.ConnectCTSelf(ofcct, full)
 	net.ConnectToPulv(sma, smact, m1p, full, full)
 	net.ConnectToPulv(sma, smact, posp, full, full)
@@ -221,7 +221,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space, one2one)
 	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", space)
 	_ = ofcpt
-	_ = ofcthal
+	ofcct.SetClass("OFC CTInteg")
 	net.ConnectCTSelf(ofcct, pone2one)
 	net.ConnectToPulv(ofc, ofcct, csp, full, full)
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
@@ -234,8 +234,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, one2one)
 	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", space)
 	_ = accpt
-	_ = accthal
-	net.ConnectCTSelf(accct, pone2one)
+	accct.SetClass("ACC CTInteg")
+	net.ConnectCTSelf(accct, full)
 	net.ConnectToPulv(acc, accct, distp, full, full)
 	net.ConnectToPulv(acc, accct, timep, full, full)
 	net.ConnectLayers(vPgpi, accthal, full, emer.Inhib).SetClass("BgFixed")
@@ -259,7 +259,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayersPrjn(us, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
-	// net.ConnectLayersPrjn(ofc, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
+	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib)
 
 	net.ConnectLayers(dist, sma, full, emer.Forward)
@@ -279,12 +279,18 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectLayers(sma, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
 
+	net.ConnectToMatrix(blaa, vPmtxGo, full)
+	net.ConnectToMatrix(blae, vPmtxNo, full)
+	net.ConnectToMatrix(drives, vPmtxGo, full) // todo: hard for matrix do to "match" of drive with bla / ofc
+	net.ConnectToMatrix(drives, vPmtxNo, full)
 	net.ConnectToMatrix(ofc, vPmtxGo, full)
 	net.ConnectToMatrix(ofc, vPmtxNo, full)
+	net.ConnectToMatrix(ofcpt, vPmtxNo, full) // if currently maintaining, no gate
 	net.ConnectToMatrix(acc, vPmtxGo, full)
 	net.ConnectToMatrix(acc, vPmtxNo, full)
-	net.ConnectToMatrix(sma, vPmtxGo, full)
-	net.ConnectToMatrix(sma, vPmtxNo, full)
+	net.ConnectToMatrix(accpt, vPmtxNo, full) // if currently maintaining, no gate
+	// net.ConnectToMatrix(sma, vPmtxGo, full) // not to MD
+	// net.ConnectToMatrix(sma, vPmtxNo, full)
 
 	net.ConnectLayersPrjn(ofc, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(ofcct, rp, full, emer.Forward, &rl.RWPrjn{})
@@ -486,7 +492,7 @@ func (ss *Sim) TakeAction(net *pcore.Network) {
 	ev.Action(actActNm, nil)
 
 	ss.ApplyRewUS()
-	ss.ApplyAction(genAct)
+	ss.ApplyAction(actAct)
 	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
 
@@ -496,16 +502,32 @@ func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
 	return ev.DecodeAct(vt)
 }
 
+// BoolToFloat32 -- the lack of ternary conditional expressions
+// is *only* Go decision I disagree about
+func BoolToFloat32(b bool) float32 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
 // ApplyRewUS applies updated reward and US -- done during TakeAct
 func (ss *Sim) ApplyRewUS() {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode]
+	ev := ss.Envs[ss.Time.Mode].(*Approach)
 	lays := []string{"Rew", "US"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
+	net.ThalMatrixGated("ACCMD") // critical updating of gated status -- use ACC as most reliable?
+	mdly := net.LayerByName("ACCMD").(*pcore.ThalLayer)
+	didGate := mdly.AnyGated()
+	ss.Stats.SetFloat32("Gated", BoolToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", BoolToFloat32(ev.ShouldGate))
+	ss.Stats.SetFloat32("GatedCor", BoolToFloat32(ev.ShouldGate == didGate))
+	ss.Stats.SetFloat32("Rew", ev.Rew)
 }
 
 func (ss *Sim) ApplyAction(act int) {
@@ -567,7 +589,10 @@ func (ss *Sim) TestAll() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	ss.Stats.SetFloat("VThal_RT", 0.0)
+	ss.Stats.SetFloat("Gated", 0)
+	ss.Stats.SetFloat("Should", 0)
+	ss.Stats.SetFloat("GatedCor", 0)
+	ss.Stats.SetFloat("Rew", 0)
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -585,7 +610,7 @@ func (ss *Sim) StatCounters() {
 	// ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
 	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", "trl")
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "NetAction", "GenAction", "ActAction", "ActMatch", "Cycle"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "GenAction", "ActAction", "ActMatch", "Gated", "Should", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -604,8 +629,6 @@ func (ss *Sim) TrialStats() {
 		}
 		ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
 	*/
-	rew := ss.Net.LayerByName("Rew").(axon.AxonLayer).AsAxon()
-	ss.Stats.SetFloat("Rew", float64(rew.Neurons[0].Act))
 	da := ss.Net.LayerByName("DA").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("DA", float64(da.Neurons[0].Act))
 
@@ -626,8 +649,13 @@ func (ss *Sim) ConfigLogs() {
 	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
 
 	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GatedCor", "GatedCor", etime.Run, etime.Epoch, etime.Trial)
+	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -646,7 +674,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("PctCortex", "ActMatch", "Rew", "DA") // "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("PctCortex", "ActMatch", "GatedCor") // "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
