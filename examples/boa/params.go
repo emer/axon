@@ -29,6 +29,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Tau":      "100",
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
+					"Layer.Act.Sahp.Gbar":     "1.0",
 				}},
 			{Sel: ".CTCopy", Desc: "single-step copy params",
 				Params: params.Params{
@@ -45,7 +46,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CTInteg", Desc: "time integration params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.CT.GeGain":         "1.0",
+					"Layer.CT.GeGain":         "4.0",
 					"Layer.CT.DecayTau":       "50",
 					"Layer.Inhib.Layer.Gi":    "1.8",
 					"Layer.Act.GABAB.Gbar":    "0.3",
@@ -53,6 +54,16 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.Tau":      "300",
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
+				}},
+			{Sel: "PTLayer", Desc: "time integration params",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":  "1.8",
+					"Layer.Act.GABAB.Gbar":  "0.3",
+					"Layer.Act.NMDA.Gbar":   "0.3",
+					"Layer.Act.NMDA.Tau":    "300",
+					"Layer.Act.Decay.Act":   "0.0",
+					"Layer.Act.Decay.Glong": "0.0",
+					"Layer.Act.Sahp.Gbar":   "0.01", // not much pressure -- long maint
 				}},
 			{Sel: "PulvLayer", Desc: "",
 				Params: params.Params{
@@ -65,19 +76,41 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "1",
 				}},
+			{Sel: ".Drives", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.25", // 1 / ndrives
+				}},
+			{Sel: ".US", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.25", // 1 / ndrives
+				}},
+			{Sel: ".CS", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.25", // 1 / css
+				}},
+			{Sel: ".Dist", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.25", // 1 / maxdist
+				}},
+			{Sel: ".Time", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.08", // 1 / maxtime
+				}},
 			{Sel: "#TimeP", Desc: "more inhib",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.08",
-					"Layer.Inhib.Layer.Gi":    "1.1",
+					"Layer.Inhib.Layer.Gi": "1.1",
 				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On":     "true",
 					"Layer.Inhib.ActAvg.Init": "0.025",
+					"Layer.Inhib.Layer.Gi":    "1.1",
+					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.Gi":     "1.0",
 				}},
-			{Sel: ".ACC", Desc: "",
+			{Sel: "#OFCCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.On": "true",
+					"Layer.Inhib.Layer.Gi": "2.8",
+					"Layer.Inhib.Pool.Gi":  "1.4",
 				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
@@ -133,18 +166,23 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Act.Init.GeVar": "0.0",
-					"Layer.Act.Init.GiVar": "0.1",
-					"Layer.Inhib.Layer.On": "false",
-					"Layer.Inhib.Layer.Gi": "0.9",
-					"Layer.Inhib.Self.On":  "true",
-					"Layer.Inhib.Self.Gi":  "0.4",
-					"Layer.Inhib.Self.Tau": "3.0",
+					"Layer.Inhib.ActAvg.Init": ".03",
+					"Layer.Act.Init.GeVar":    "0.0",
+					"Layer.Act.Init.GiVar":    "0.1",
+					"Layer.Inhib.Layer.On":    "false",
+					"Layer.Inhib.Layer.Gi":    "0.9",
+					"Layer.Inhib.Self.On":     "true",
+					"Layer.Inhib.Self.Gi":     "0.4",
+					"Layer.Inhib.Self.Tau":    "3.0",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
-
+			{Sel: "ThalLayer", Desc: "",
+				Params: params.Params{
+					"Layer.PhasicMaxCycMin": "50", // critical param
+					"Layer.GateThr":         ".2", // critical param
+				}},
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
@@ -174,11 +212,16 @@ var ParamSets = params.Sets{
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base": "1",
+					"Prjn.PrjnScale.Abs":    "2",
 				}},
 			{Sel: "#OFCToBLAPosExtD2", Desc: "",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
+				}},
+			{Sel: "#BLAPosAcqD1ToOFC", Desc: "strong",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 				}},
 			{Sel: "#BLAPosExtD2ToBLAPosAcqD1", Desc: "inhibition from extinction",
 				Params: params.Params{

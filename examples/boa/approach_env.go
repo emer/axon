@@ -20,13 +20,13 @@ import (
 type Approach struct {
 	Nm          string                      `desc:"name of environment -- Train or Test"`
 	TimeCost    float32                     `desc:"cost per unit time, subtracted from reward"`
-	Drives      int                         `desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
+	NDrives     int                         `desc:"number of different drive-like body states (hunger, thirst, etc), that are satisfied by a corresponding US outcome"`
 	CSPerDrive  int                         `desc:"number of different CS sensory cues associated with each US (simplest case is 1 -- one-to-one mapping), presented on a fovea input layer"`
 	Locations   int                         `desc:"number of different locations -- always <= number of drives -- drives have a unique location"`
 	DistMax     int                         `desc:"maximum distance in time steps to reach the US"`
 	TimeMax     int                         `desc:"maximum number of time steps before resetting"`
 	NewStateInt int                         `desc:"interval in trials for generating a new state, only if > 0"`
-	CSTot       int                         `desc:"total number of CS's = Drives * CSPerDrive"`
+	CSTot       int                         `desc:"total number of CS's = NDrives * CSPerDrive"`
 	NYReps      int                         `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
 	PatSize     evec.Vec2i                  `desc:"size of CS patterns"`
 	Acts        []string                    `desc:"list of actions"`
@@ -56,7 +56,7 @@ func (ev *Approach) Desc() string {
 func (ev *Approach) Defaults() {
 	ev.TimeCost = 0.05
 	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
-	ev.Drives = 4
+	ev.NDrives = 4
 	ev.CSPerDrive = 1
 	ev.Locations = 4 // <= drives always
 	ev.DistMax = 4
@@ -70,7 +70,7 @@ func (ev *Approach) Defaults() {
 
 // Config configures the world
 func (ev *Approach) Config() {
-	ev.CSTot = ev.Drives * ev.CSPerDrive
+	ev.CSTot = ev.NDrives * ev.CSPerDrive
 	ev.ActMap = make(map[string]int)
 	for i, act := range ev.Acts {
 		ev.ActMap[act] = i
@@ -79,11 +79,11 @@ func (ev *Approach) Config() {
 	ev.States["USs"] = etensor.NewFloat32([]int{ev.Locations}, nil, nil)
 	ev.States["CSs"] = etensor.NewFloat32([]int{ev.Locations}, nil, nil)
 	ev.States["Pos"] = etensor.NewFloat32([]int{ev.NYReps, ev.Locations}, nil, nil)
-	ev.States["Drives"] = etensor.NewFloat32([]int{1, ev.Drives, ev.NYReps, 1}, nil, nil)
-	ev.States["US"] = etensor.NewFloat32([]int{1, ev.Drives + 1, ev.NYReps, 1}, nil, nil)
+	ev.States["Drives"] = etensor.NewFloat32([]int{1, ev.NDrives, ev.NYReps, 1}, nil, nil)
+	ev.States["US"] = etensor.NewFloat32([]int{1, ev.NDrives + 1, ev.NYReps, 1}, nil, nil)
 	// ev.States["CS"] = etensor.NewFloat32([]int{ev.PatSize.Y, ev.PatSize.X}, nil, nil)
 	// localist CS for testing now:
-	ev.States["CS"] = etensor.NewFloat32([]int{ev.NYReps, ev.Drives}, nil, nil)
+	ev.States["CS"] = etensor.NewFloat32([]int{ev.NYReps, ev.NDrives}, nil, nil)
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
@@ -120,9 +120,9 @@ func (ev *Approach) State(el string) etensor.Tensor {
 func (ev *Approach) NewState() {
 	uss := ev.States["USs"]
 	css := ev.States["CSs"]
-	drives := rand.Perm(ev.Drives)
+	drives := rand.Perm(ev.NDrives)
 	for l := 0; l < ev.Locations; l++ {
-		us := drives[l%ev.Drives]
+		us := drives[l%ev.NDrives]
 		cs := rand.Intn(ev.CSPerDrive)
 		pat := us*ev.CSPerDrive + cs
 		uss.Values[l] = float32(us)
@@ -196,7 +196,7 @@ func (ev *Approach) RenderState() {
 // RenderRewUS renders reward and US
 func (ev *Approach) RenderRewUS() {
 	if ev.US < 0 {
-		ev.RenderLocalist4D("US", ev.Drives)
+		ev.RenderLocalist4D("US", ev.NDrives)
 	} else {
 		ev.RenderLocalist4D("US", ev.US)
 	}

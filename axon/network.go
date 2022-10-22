@@ -282,6 +282,20 @@ func (nt *Network) DecayState(decay, glong float32) {
 	}
 }
 
+// DecayStateByClass decays activation state for given class name(s)
+// by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g)
+func (nt *Network) DecayStateByClass(decay, glong float32, class ...string) {
+	lnms := nt.LayersByClass(class...)
+	for _, lynm := range lnms {
+		ly := nt.LayerByName(lynm).(AxonLayer)
+		if ly.IsOff() {
+			continue
+		}
+		ly.DecayState(decay, glong)
+	}
+}
+
 // InitActs fully initializes activation state -- not automatically called
 func (nt *Network) InitActs() {
 	for _, ly := range nt.Layers {

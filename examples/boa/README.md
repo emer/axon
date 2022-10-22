@@ -33,15 +33,23 @@ The default non-gated state is exploration.  You could have a goal-engaged versi
 
 Need a clear signal for when you are looking at a good CS: this is the activation of US in OFC based on BLA input?
 
+# Specific model properties
+
+## Vs / Vp Drive * CS match detection
+
+See https://github.com/emer/axon/discussions/56#discussioncomment-3939045 for rationale for how it computes alignment between drive and CS.
 
 # TODO
 
-* need actual BG gated maint dynamics -- do it in PT or a separate maint layer?
+* ACC is not gating as much as OFC
 
-* not clear if Matrix can detect body state * US conjunction -- need some special match case for that?
+* Matrix is getting blasted with too strong of input -- increase leak?  other params?  drive needs to be stronger?  but needs to activate a feedforward inhib -- no ff inhib present?  maybe switch all to ff?  yes!!  update pcore to better test this case.
+
+* There is no negative feedback on gating -- maybe because action is following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.
 
 
-Steps:
+
+# Steps to building model (old):
 
 1. add BLA, OFC with pool-based drive separations -- and OFC has high inhibition, requiring both drive and BLA input to get over threshold..
 

@@ -40,7 +40,7 @@ var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
 func (ly *Layer) Defaults() {
 	ly.Layer.Defaults()
-	ly.PhasicMaxCycMin = 30
+	ly.PhasicMaxCycMin = 50
 }
 
 func (ly *Layer) Build() error {
@@ -96,7 +96,7 @@ func (ly *Layer) PhasicMaxFmAct(ltime *axon.Time) {
 			continue
 		}
 		pn := &ly.PCoreNeurs[ni]
-		if nrn.Act > pn.PhasicMax {
+		if nrn.CaSpkP > pn.PhasicMax {
 			pn.PhasicMax = nrn.CaSpkP
 		}
 	}

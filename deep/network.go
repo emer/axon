@@ -108,22 +108,28 @@ func AddPulvAttnLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY,
 }
 
 // AddInputPulv2D adds an Input and PulvLayer of given size, with given name.
-// The Input layer is set as the Driver of the PulvLayer
+// The Input layer is set as the Driver of the PulvLayer.
+// Both layers have SetClass(name) called to allow shared params.
 func AddInputPulv2D(nt *axon.Network, name string, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	in := nt.AddLayer2D(name, nNeurY, nNeurX, emer.Input)
 	trc := AddPulvLayer2D(nt, name+"P", nNeurY, nNeurX)
 	trc.Driver = name
+	in.SetClass(name)
+	trc.SetClass(name)
 	trc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
 	return in, trc
 }
 
 // AddInputPulv4D adds an Input and PulvLayer of given size, with given name.
-// The Input layer is set as the Driver of the PulvLayer
+// The Input layer is set as the Driver of the PulvLayer.
+// Both layers have SetClass(name) called to allow shared params.
 func AddInputPulv4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, emer.Input)
 	trc := AddPulvLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
-	trc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
 	trc.Driver = name
+	in.SetClass(name)
+	trc.SetClass(name)
+	trc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
 	return in, trc
 }
 
@@ -268,13 +274,15 @@ func (nt *Network) AddPulvAttnLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNe
 }
 
 // AddInputPulv2D adds an Input and PulvLayer of given size, with given name.
-// The Input layer is set as the Driver of the PulvLayer
+// The Input layer is set as the Driver of the PulvLayer.
+// Both layers have SetClass(name) called to allow shared params.
 func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	return AddInputPulv2D(&nt.Network, name, nNeurY, nNeurX, space)
 }
 
 // AddInputPulv4D adds an Input and PulvLayer of given size, with given name.
-// The Input layer is set as the Driver of the PulvLayer
+// The Input layer is set as the Driver of the PulvLayer.
+// Both layers have SetClass(name) called to allow shared params.
 func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	return AddInputPulv4D(&nt.Network, name, nPoolsY, nPoolsX, nNeurY, nNeurX, space)
 }

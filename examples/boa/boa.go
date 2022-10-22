@@ -71,8 +71,8 @@ type SimParams struct {
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.PctCortexMax = 0.9
-	ss.PctCortexMaxEpc = 10000
+	ss.PctCortexMax = 0.0
+	ss.PctCortexMaxEpc = 100
 	ss.PCAInterval = 10
 }
 
@@ -183,16 +183,17 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	drives, drivesp := net.AddInputPulv4D("Drives", 1, ev.Drives, ny, 1, space)
-	us, usp := net.AddInputPulv4D("US", 1, ev.Drives, ny, 1, space)
+	drives, drivesp := net.AddInputPulv4D("Drives", 1, ev.NDrives, ny, 1, space)
+	us, usp := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
 	// cs, csp := net.AddInputPulv2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
 	// localist, for now:
-	cs, csp := net.AddInputPulv2D("CS", ny, ev.Drives, space)
+	cs, csp := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
+	_ = csp
 	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
 	pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
 
-	vPmtxGo, vPmtxNo, vPcini, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, 1, nuBgY, nuBgX, nuBgY, nuBgX, space)
+	vPmtxGo, vPmtxNo, vPcini, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
 	cin := vPcini.(*pcore.CINLayer)
 	cin.RewLays.Add(snc.Name())
 
@@ -206,6 +207,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = vl
 	_ = act
 
+	// todo: rename sma -> ALM
+
 	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, one2one)
 	smapt, smathal := net.AddPTThalForSuper(sma, smact, "MD", space)
 	smact.SetClass("SMA CTCopy")
@@ -216,14 +219,17 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectToPulv(sma, smact, distp, full, full)
 	net.ConnectLayers(vPgpi, smathal, full, emer.Inhib).SetClass("BgFixed")
 
-	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.Drives, nuCtxY, nuCtxX, relpos.Behind, space)
+	//	todo: add a PL layer, with Integ maint
 
-	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.Drives, nuCtxY, nuCtxX, space, one2one)
+	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.NDrives, nuCtxY, nuCtxX, relpos.Behind, space)
+
+	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", space)
-	_ = ofcpt
 	ofcct.SetClass("OFC CTInteg")
 	net.ConnectCTSelf(ofcct, pone2one)
-	net.ConnectToPulv(ofc, ofcct, csp, full, full)
+	net.ConnectLayers(ofc, ofcpt, one2one, emer.Forward).SetClass("SuperToPT") // todo: make in ptthal
+	net.LateralConnectLayer(ofcpt, pone2one).SetClass("PTSelfMaint")           // todo: prob move into AddPTThal
+	// net.ConnectToPulv(ofc, ofcct, csp, full, full)
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcct, drivesp, pone2one, pone2one)
 	net.ConnectLayers(vPgpi, ofcthal, full, emer.Inhib).SetClass("BgFixed")
@@ -233,8 +239,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, one2one)
 	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", space)
-	_ = accpt
 	accct.SetClass("ACC CTInteg")
+	net.ConnectLayers(acc, accpt, one2one, emer.Forward).SetClass("SuperToPT") // todo: make in ptthal
+	net.LateralConnectLayer(accpt, full).SetClass("PTSelfMaint")
 	net.ConnectCTSelf(accct, full)
 	net.ConnectToPulv(acc, accct, distp, full, full)
 	net.ConnectToPulv(acc, accct, timep, full, full)
@@ -279,13 +286,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectLayers(sma, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
 
-	net.ConnectToMatrix(blaa, vPmtxGo, full)
-	net.ConnectToMatrix(blae, vPmtxNo, full)
-	net.ConnectToMatrix(drives, vPmtxGo, full) // todo: hard for matrix do to "match" of drive with bla / ofc
-	net.ConnectToMatrix(drives, vPmtxNo, full)
-	net.ConnectToMatrix(ofc, vPmtxGo, full)
-	net.ConnectToMatrix(ofc, vPmtxNo, full)
-	net.ConnectToMatrix(ofcpt, vPmtxNo, full) // if currently maintaining, no gate
+	net.ConnectToMatrix(blaa, vPmtxGo, pone2one)
+	net.ConnectToMatrix(blae, vPmtxNo, pone2one)
+	net.ConnectToMatrix(drives, vPmtxGo, pone2one)
+	net.ConnectToMatrix(drives, vPmtxNo, pone2one)
+	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
+	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
+	net.ConnectToMatrix(ofcpt, vPmtxNo, pone2one) // if currently maintaining, no gate
 	net.ConnectToMatrix(acc, vPmtxGo, full)
 	net.ConnectToMatrix(acc, vPmtxNo, full)
 	net.ConnectToMatrix(accpt, vPmtxNo, full) // if currently maintaining, no gate
@@ -521,8 +528,9 @@ func (ss *Sim) ApplyRewUS() {
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
-	net.ThalMatrixGated("ACCMD") // critical updating of gated status -- use ACC as most reliable?
-	mdly := net.LayerByName("ACCMD").(*pcore.ThalLayer)
+	// todo: ACC not gating very reliably
+	net.ThalMatrixGated("OFCMD") // critical updating of gated status -- use ACC as most reliable?
+	mdly := net.LayerByName("OFCMD").(*pcore.ThalLayer)
 	didGate := mdly.AnyGated()
 	ss.Stats.SetFloat32("Gated", BoolToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", BoolToFloat32(ev.ShouldGate))
@@ -548,7 +556,12 @@ func (ss *Sim) ApplyAction(act int) {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode]
+	ev := ss.Envs[ss.Time.Mode].(*Approach)
+
+	if ev.LastAct == ev.ActMap["Consume"] {
+		net.DecayStateByClass(0, 1, "PT", "CT") // US action gating
+	}
+
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
@@ -674,7 +687,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("PctCortex", "ActMatch", "GatedCor") // "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("ActMatch", "Gated", "GatedCor") // "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
