@@ -45,11 +45,8 @@ var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, LayerProps)
 // 	Params: params.Params{
 // 		"Layer.Inhib.Pool.On":      "false",
 // 		"Layer.Inhib.Layer.On":     "true",
-// 		"Layer.Inhib.Layer.Gi":     "0.9",
+// 		"Layer.Inhib.Layer.Gi":     "0.5",
 // 		"Layer.Inhib.Layer.FB":     "0.0",
-// 		"Layer.Inhib.Self.On":      "true",
-// 		"Layer.Inhib.Self.Gi":      "0.3", // 0.6 in localist -- expt
-// 		"Layer.Inhib.Self.Tau":     "3.0",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
 // 	}}
 
@@ -61,14 +58,12 @@ func (ly *MatrixLayer) Defaults() {
 	// special inhib params
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
-	ly.Act.Init.GiVar = 0.1 // some noise
 	ly.Inhib.Pool.On = false
-	ly.Inhib.Layer.On = false // all inhib comes from GPeTA and self
-	ly.Inhib.Layer.Gi = 0.9
+	ly.Inhib.Layer.On = true
+	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Layer.FB = 0
-	ly.Inhib.Self.On = true
-	ly.Inhib.Self.Gi = 0.4 // 0.6 in localist one
-	ly.Inhib.Self.Tau = 3.0
+	ly.Inhib.Pool.FB = 0
+	ly.Inhib.Pool.Gi = 0.5
 	ly.Inhib.ActAvg.Init = 0.25
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:

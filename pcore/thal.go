@@ -29,9 +29,6 @@ var KiT_ThalLayer = kit.Types.AddType(&ThalLayer{}, LayerProps)
 // 	Params: params.Params{
 // 		"Layer.Inhib.Layer.On":     "false",
 // 		"Layer.Inhib.Pool.On":     "false",
-// 		"Layer.Inhib.Self.On":      "true",
-// 		"Layer.Inhib.Self.Gi":      "0.4",
-// 		"Layer.Inhib.Self.Tau":     "3.0",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
 // }}
 
@@ -44,9 +41,6 @@ func (ly *ThalLayer) Defaults() {
 
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
-	ly.Inhib.Self.On = true
-	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
-	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.25
 
 	for _, pji := range ly.RcvPrjns {

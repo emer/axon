@@ -77,7 +77,6 @@ type Neuron struct {
 	GeNoise  float32 `desc:"integrated noise excitatory conductance, added into Ge"`
 	GiNoiseP float32 `desc:"accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda."`
 	GiNoise  float32 `desc:"integrated noise inhibotyr conductance, added into Gi"`
-	GiSelf   float32 `desc:"total amount of self-inhibition -- time-integrated to avoid oscillations"`
 
 	GeM      float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
 	GiM      float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`

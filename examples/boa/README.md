@@ -41,11 +41,13 @@ See https://github.com/emer/axon/discussions/56#discussioncomment-3939045 for ra
 
 # TODO
 
+* Need Go to gate when US is present -- US only active in plus phase contingent on action -- make a whole separate trial where US is activated instead of doing in plus phase..
+
 * ACC is not gating as much as OFC
 
 * Matrix is getting blasted with too strong of input -- increase leak?  other params?  drive needs to be stronger?  but needs to activate a feedforward inhib -- no ff inhib present?  maybe switch all to ff?  yes!!  update pcore to better test this case.
 
-* There is no negative feedback on gating -- maybe because action is following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.
+* There is no negative feedback on gating -- because action is always correct following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.
 
 
 

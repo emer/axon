@@ -167,13 +167,10 @@ var ParamSets = params.Sets{
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": ".03",
-					"Layer.Act.Init.GeVar":    "0.0",
-					"Layer.Act.Init.GiVar":    "0.1",
-					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.Layer.Gi":    "0.9",
-					"Layer.Inhib.Self.On":     "true",
-					"Layer.Inhib.Self.Gi":     "0.4",
-					"Layer.Inhib.Self.Tau":    "3.0",
+					"Layer.Inhib.Layer.On":    "true",
+					"Layer.Inhib.Layer.Gi":    "0.5",
+					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.Gi":     "0.3",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
@@ -240,6 +237,11 @@ var ParamSets = params.Sets{
 					"Prjn.Trace.CurTrlDA":   "true",
 					"Prjn.Learn.Learn":      "true",
 					"Prjn.Learn.Lrate.Base": "0.1",
+				}},
+			{Sel: "#USToVpMtxGo", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "10",
+					"Prjn.PrjnScale.Rel": ".2",
 				}},
 			{Sel: "#VThalToSMAd", Desc: "usually uniform weights",
 				Params: params.Params{

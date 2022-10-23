@@ -21,22 +21,16 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.1",
 					"Layer.Act.Clamp.Ge":   "0.6",
-					"Layer.Act.Init.GeVar": "0.2",
-					"Layer.Act.Init.GiVar": "0.2",
 				}},
 			{Sel: "#ACCNeg", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.1",
 					"Layer.Act.Clamp.Ge":   "0.6",
-					"Layer.Act.Init.GeVar": "0.2",
-					"Layer.Act.Init.GiVar": "0.2",
 				}},
 			{Sel: "#ACCPos", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.1",
 					"Layer.Act.Clamp.Ge":   "0.6",
-					"Layer.Act.Init.GeVar": "0.2",
-					"Layer.Act.Init.GiVar": "0.2",
 				}},
 			{Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
 				Params: params.Params{}},
@@ -73,17 +67,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#GPi", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Init.Ge": "0.6",
+					"Layer.Act.Init.Ge": "0.5",
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Act.Init.GeVar": "0.0",
-					"Layer.Act.Init.GiVar": "0.1",
-					"Layer.Inhib.Layer.On": "false",
-					"Layer.Inhib.Layer.Gi": "0.9",
-					"Layer.Inhib.Self.On":  "true",
-					"Layer.Inhib.Self.Gi":  "0.4",
-					"Layer.Inhib.Self.Tau": "3.0",
+					"Layer.Inhib.Layer.On": "true",
+					"Layer.Inhib.Layer.Gi": "0.5", // 0.5 > 0.4
+					"Layer.Inhib.Layer.FB": "0.0",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{

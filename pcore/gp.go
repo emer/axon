@@ -24,9 +24,6 @@ var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, LayerProps)
 // 	Params: params.Params{
 // 		"Layer.Inhib.Layer.On":     "false",
 // 		"Layer.Inhib.Pool.On":      "false",
-// 		"Layer.Inhib.Self.On":      "true",
-// 		"Layer.Inhib.Self.Gi":      "0.4",
-// 		"Layer.Inhib.Self.Tau":     "3.0",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
 // }}
 
@@ -45,9 +42,6 @@ func (ly *GPLayer) Defaults() {
 	ly.Inhib.ActAvg.Init = 1 // very active!
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
-	ly.Inhib.Self.On = true
-	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
-	ly.Inhib.Self.Tau = 3.0
 
 	for _, pjii := range ly.RcvPrjns {
 		pji := pjii.(axon.AxonPrjn)

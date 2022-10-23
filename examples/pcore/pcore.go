@@ -31,9 +31,11 @@ import (
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
+	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
+	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
@@ -75,9 +77,7 @@ type SimParams struct {
 	ACCNegInc  float32 `desc:"across-units multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
 	SNc        float32 `desc:"dopamine level - computed for learning"`
 	TestInc    float32 `desc:"increment in testing activation for test all"`
-	ThalThr    float32 `desc:"threshold for VThal activity to count as gating"`
-	PFCThr     float32 `desc:"threshold for PFCo activity to count as gating"`
-	GPeOthWt   float32 `desc:"weight from non-self projection"`
+	TestReps   int     `desc:"number of repetitions per testing level"`
 	InitMtxWts bool    `desc:"initialize matrix Go / No weights to follow Pos / Neg inputs -- else .5 even and must be learned"`
 }
 
@@ -93,9 +93,7 @@ func (ss *SimParams) Defaults() {
 	ss.ACCPosInc = 0.8
 	ss.ACCNegInc = 1
 	ss.TestInc = 0.1
-	ss.ThalThr = 0.6
-	ss.PFCThr = 0.6
-	ss.GPeOthWt = 0.5
+	ss.TestReps = 25
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -349,7 +347,7 @@ func (ss *Sim) ConfigLoops() {
 
 	nTestInc := int(1.0/ss.Sim.TestInc) + 1
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, nTestInc*nTestInc).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, ss.Sim.TestReps*nTestInc*nTestInc).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
 
 	// using 190 there to make it look better on raster view.. :)
 	applyRew := looper.NewEvent("ApplyRew", 190, func() {
@@ -366,8 +364,9 @@ func (ss *Sim) ConfigLoops() {
 			return
 		}
 		trl := man.Stacks[etime.Test].Loops[etime.Trial].Counter.Cur
-		pos := trl / nTestInc
-		neg := trl % nTestInc
+		repn := trl / ss.Sim.TestReps
+		pos := repn / nTestInc
+		neg := repn % nTestInc
 		ss.Sim.ACCPos = float32(pos) * ss.Sim.TestInc
 		ss.Sim.ACCNeg = float32(neg) * ss.Sim.TestInc
 	})
@@ -541,6 +540,7 @@ func (ss *Sim) NewRun() {
 // TestAll runs through the full set of testing items
 func (ss *Sim) TestAll() {
 	// ss.Envs.ByMode(etime.Test).Init(0)
+	ss.Sim.NoInc = false
 	ss.Loops.ResetAndRun(etime.Test)
 	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
 }
@@ -569,7 +569,7 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
 	ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
 	ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
-	trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
+	trlnm := fmt.Sprintf("%4f_%4f", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", trlnm)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle", "Gated", "Should", "Rew"})
 }
@@ -624,6 +624,11 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT", "Gated", "Should", "Rew")
 
 	ss.Logs.CreateTables()
+
+	tsttrl := ss.Logs.Table(etime.Test, etime.Trial)
+	tstst := tsttrl.Clone()
+	ss.Logs.MiscTables["TestTrialStats"] = tstst
+
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
@@ -734,9 +739,28 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		row = ss.Stats.Int("Cycle")
 	case time == etime.Trial:
 		row = ss.Stats.Int("Trial")
+	case time == etime.Epoch && mode == etime.Test:
+		ss.TestStats()
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
+}
+
+func (ss *Sim) TestStats() {
+	tststnm := "TestTrialStats"
+	plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
+
+	ix := ss.Logs.IdxView(etime.Test, etime.Trial)
+	spl := split.GroupBy(ix, []string{"TrialName"})
+	for _, ts := range ix.Table.ColNames {
+		if ts == "TrialName" {
+			continue
+		}
+		split.Agg(spl, ts, agg.AggMean)
+	}
+	tstst := spl.AggsToTable(etable.ColNameOnly)
+	ss.Logs.MiscTables[tststnm] = tstst
+	plt.SetTable(tstst)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -760,6 +784,14 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
 	ss.GUI.AddPlots(title, &ss.Logs)
+
+	tststnm := "TestTrialStats"
+	tstst := ss.Logs.MiscTable(tststnm)
+	plt := ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, tststnm+" Plot").(*eplot.Plot2D)
+	ss.GUI.Plots[etime.ScopeKey(tststnm)] = plt
+	plt.Params.Title = tststnm
+	plt.Params.XAxisCol = "Trial"
+	plt.SetTable(tstst)
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",

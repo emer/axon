@@ -286,16 +286,19 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectLayers(sma, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
 
+	net.ConnectToMatrix(us, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blaa, vPmtxGo, pone2one)
+	net.ConnectToMatrix(blaa, vPmtxNo, pone2one)
+	net.ConnectToMatrix(blae, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blae, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
-	net.ConnectToMatrix(ofcpt, vPmtxNo, pone2one) // if currently maintaining, no gate
+	// net.ConnectToMatrix(ofcpt, vPmtxNo, pone2one) // if currently maintaining, no gate
 	net.ConnectToMatrix(acc, vPmtxGo, full)
 	net.ConnectToMatrix(acc, vPmtxNo, full)
-	net.ConnectToMatrix(accpt, vPmtxNo, full) // if currently maintaining, no gate
+	// net.ConnectToMatrix(accpt, vPmtxNo, full) // if currently maintaining, no gate
 	// net.ConnectToMatrix(sma, vPmtxGo, full) // not to MD
 	// net.ConnectToMatrix(sma, vPmtxNo, full)
 

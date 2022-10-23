@@ -18,7 +18,6 @@ type InhibParams struct {
 	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
 	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
 	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
-	Self   SelfInhibParams `view:"inline" desc:"neuron self-inhibition parameters -- can be beneficial for producing more graded, linear response -- not typically used in cortical networks"`
 	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
 }
 
@@ -27,7 +26,6 @@ func (ip *InhibParams) Update() {
 	ip.Layer.Update()
 	ip.Pool.Update()
 	ip.Topo.Update()
-	ip.Self.Update()
 	ip.ActAvg.Update()
 }
 
@@ -36,7 +34,6 @@ func (ip *InhibParams) Defaults() {
 	ip.Layer.Defaults()
 	ip.Pool.Defaults()
 	ip.Topo.Defaults()
-	ip.Self.Defaults()
 	ip.ActAvg.Defaults()
 	ip.Layer.Gi = 1.1
 	ip.Pool.Gi = 1.1

@@ -1237,6 +1237,7 @@ func (ly *Layer) PoolInhibFmGeAct(ltime *Time) {
 }
 
 // TopoGi computes topographic Gi inhibition
+// todo: this does not work for 2D layers, and in general needs more testing
 func (ly *Layer) TopoGi(ltime *Time) {
 	if !ly.Inhib.Topo.On {
 		return
@@ -1292,9 +1293,9 @@ func (ly *Layer) TopoGi(ltime *Time) {
 			if l4d {
 				pl := &ly.Pools[pi+1]
 				pl.Inhib.Gi += gi
-			} else {
-				nrn := &ly.Neurons[pi]
-				nrn.GiSelf = gi
+				// } else {
+				// 	nrn := &ly.Neurons[pi]
+				// 	nrn.GiSelf = gi
 			}
 		}
 	}
@@ -1308,8 +1309,7 @@ func (ly *Layer) InhibFmPool(ltime *Time) {
 			continue
 		}
 		pl := &ly.Pools[nrn.SubPool]
-		ly.Inhib.Self.Inhib(&nrn.GiSelf, nrn.Act)
-		nrn.Gi = pl.Inhib.Gi + nrn.GiSelf + ly.Inhib.Inhib.GiSyn(nrn.GiSyn+nrn.GiNoise)
+		nrn.Gi = pl.Inhib.Gi + ly.Inhib.Inhib.GiSyn(nrn.GiSyn+nrn.GiNoise)
 	}
 }
 

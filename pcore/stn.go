@@ -57,9 +57,6 @@ var KiT_STNLayer = kit.Types.AddType(&STNLayer{}, LayerProps)
 // 	Params: params.Params{
 // 		"Layer.Inhib.Layer.On":     "false",
 // 		"Layer.Inhib.Pool.On":      "false",
-// 		"Layer.Inhib.Self.On":      "true",
-// 		"Layer.Inhib.Self.Gi":      "0.4",
-// 		"Layer.Inhib.Self.Tau":     "3.0",
 // 		"Layer.Inhib.ActAvg.Init":  "0.25",
 // }}
 
@@ -77,9 +74,6 @@ func (ly *STNLayer) Defaults() {
 	ly.Inhib.Layer.On = true // was false
 	ly.Inhib.Layer.Gi = 0.6
 	ly.Inhib.Pool.On = false
-	ly.Inhib.Self.On = true
-	ly.Inhib.Self.Gi = 0.4 // 0.4 in localist one
-	ly.Inhib.Self.Tau = 3.0
 	ly.Inhib.ActAvg.Init = 0.15
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
