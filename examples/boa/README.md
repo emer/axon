@@ -41,6 +41,7 @@ See https://github.com/emer/axon/discussions/56#discussioncomment-3939045 for ra
 
 # TODO
 
+
 * Need Go to gate when US is present -- US only active in plus phase contingent on action -- make a whole separate trial where US is activated instead of doing in plus phase..
 
 * ACC is not gating as much as OFC
