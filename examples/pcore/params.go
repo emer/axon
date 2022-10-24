@@ -71,9 +71,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "0.5", // 0.5 > 0.4
-					"Layer.Inhib.Layer.FB": "0.0",
+					"Layer.Matrix.UseThalGated": "true", // todo: fixme
+					"Layer.Inhib.Layer.On":      "true",
+					"Layer.Inhib.Layer.Gi":      "0.5", // 0.5 > 0.4
+					"Layer.Inhib.Layer.FB":      "0.0",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{

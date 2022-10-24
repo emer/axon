@@ -494,7 +494,7 @@ func (ss *Sim) ApplyRew() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	net.ThalMatrixGated("VThal") // critical updating of gated status -- must be called in plus phase!
+	net.ThalMatrixGated() // critical updating of gated status -- must be called in plus phase!
 
 	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
 	didGate := vtly.AnyGated()
