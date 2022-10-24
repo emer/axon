@@ -39,6 +39,7 @@ type Approach struct {
 	Pos         int                         `desc:"current position being looked at"`
 	Rew         float32                     `desc:"reward"`
 	US          int                         `desc:"US is -1 unless consumed at Dist = 0"`
+	LastUS      int                         `desc:"previous US state"`
 	StateCtr    int                         `desc:"count up for generating a new state"`
 	LastAct     int                         `desc:"last action taken"`
 	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
@@ -55,7 +56,7 @@ func (ev *Approach) Desc() string {
 // Defaults sets default params
 func (ev *Approach) Defaults() {
 	ev.TimeCost = 0.05
-	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
+	ev.Acts = []string{"Forward", "Left", "Right", "Consume", "Reset"}
 	ev.NDrives = 4
 	ev.CSPerDrive = 1
 	ev.Locations = 4 // <= drives always
@@ -145,13 +146,15 @@ func (ev *Approach) NewStart() {
 	if ev.NewStateInt > 0 && ev.StateCtr >= ev.NewStateInt {
 		ev.NewState()
 	}
-	ev.Dist = 1 + rand.Intn(ev.DistMax-1)
+	// ev.Dist = 1 + rand.Intn(ev.DistMax-1)
+	ev.Dist = ev.DistMax - 1
 	ev.Time = 0
 	ev.Pos = rand.Intn(ev.Locations)
 	ev.TrgPos = rand.Intn(ev.Locations)
 	uss := ev.States["USs"]
 	ev.Drive = int(uss.Values[ev.TrgPos])
 	ev.US = -1
+	ev.LastUS = -1
 	ev.Rew = 0
 	ev.RenderState()
 	ev.RenderRewUS()
@@ -211,12 +214,10 @@ func (ev *Approach) RenderAction(act int) {
 
 // Step does one step
 func (ev *Approach) Step() bool {
-	if ev.Dist < 0 || ev.Time >= ev.TimeMax {
+	if ev.LastAct == ev.ActMap["Reset"] || ev.Time >= ev.TimeMax || ev.LastUS != -1 {
 		ev.NewStart()
 	}
 	ev.RenderState()
-	ev.Rew = 0
-	ev.US = -1
 	ev.RenderRewUS()
 	return true
 }
@@ -249,15 +250,18 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		fmt.Printf("Action not recognized: %s\n", action)
 		return
 	}
+	ev.LastUS = ev.US
 	ev.RenderAction(act)
 	ev.Time++
 	uss := ev.States["USs"]
 	us := int(uss.Values[ev.Pos])
 	switch action {
 	case "Forward":
-		ev.Dist--
-		if ev.Dist < 0 {
+		if ev.Dist == 0 {
+			// todo: make a BumpPain US -- apply it
 			ev.Rew = -ev.TimeCost * float32(ev.Time)
+		} else {
+			ev.Dist--
 		}
 	case "Left":
 		ev.Pos--
@@ -271,11 +275,11 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			if us == ev.Drive {
-				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
-			}
 			ev.US = us
-			ev.Dist--
+		}
+	case "Reset":
+		if ev.US == ev.Drive {
+			ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
 		}
 	}
 	ev.LastAct = act
@@ -287,10 +291,15 @@ func (ev *Approach) ActGen() int {
 	uss := ev.States["USs"]
 	posUs := int(uss.Values[ev.Pos])
 	fwd := ev.ActMap["Forward"]
+	cons := ev.ActMap["Consume"]
 	ev.ShouldGate = false
 	if posUs == ev.Drive {
 		if ev.Dist == 0 {
-			return ev.ActMap["Consume"]
+			if ev.LastAct == cons {
+				ev.ShouldGate = true
+				return ev.ActMap["Reset"]
+			}
+			return cons
 		}
 		ev.ShouldGate = (ev.LastAct != fwd) // first time looking at correct one
 		return fwd

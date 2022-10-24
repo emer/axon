@@ -12,7 +12,7 @@ The paradigm is a simple ecologically-inspired task (a simplified version of the
 
 * Distance layer with distance from locations where stuff actually is.  This can be represented as a popcode.  Start at random distances.
 
-* Actions are: Forward, Left, Right, Consume.
+* Actions are: Forward, Left, Right, Consume.  Consume happens at Dist = 0, Dist stays at 0 for a trial while consuming happens and the US is presented.
 
 Target behavior is to orient L / R until a CS sensory cue appears that is consistent with current body state, and then move Forward until the Distance = proximal, and you then Consume.
 

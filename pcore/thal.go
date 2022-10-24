@@ -74,11 +74,18 @@ func (ly *ThalLayer) Build() error {
 }
 
 // GatedFmPhasicMax updates the Gated values based on MaxPhasicMax
-func (ly *ThalLayer) GatedFmPhasicMax() {
+// returns true if any gated.
+func (ly *ThalLayer) GatedFmPhasicMax() bool {
+	anyGt := false
 	for pi := range ly.Gated {
 		pmax := ly.PhasicMaxMaxByPool(pi)
-		ly.Gated[pi] = (pmax > ly.GateThr)
+		gt := (pmax > ly.GateThr)
+		ly.Gated[pi] = gt
+		if gt {
+			anyGt = true
+		}
 	}
+	return anyGt
 }
 
 // AnyGated returns true if any of the pools gated

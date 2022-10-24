@@ -501,8 +501,9 @@ func (ss *Sim) TakeAction(net *pcore.Network) {
 
 	ev.Action(actActNm, nil)
 
-	ss.ApplyRewUS()
+	ss.GatedStats()
 	ss.ApplyAction(actAct)
+	ss.ApplyRew()
 	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
 
@@ -521,23 +522,45 @@ func BoolToFloat32(b bool) float32 {
 	return 0
 }
 
-// ApplyRewUS applies updated reward and US -- done during TakeAct
-func (ss *Sim) ApplyRewUS() {
+// ApplyRew applies updated reward
+func (ss *Sim) ApplyRew() {
 	net := ss.Net
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
-	lays := []string{"Rew", "US"}
+	lays := []string{"Rew"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
-	// todo: ACC not gating very reliably
-	net.ThalMatrixGated("OFCMD") // critical updating of gated status -- use ACC as most reliable?
-	mdly := net.LayerByName("OFCMD").(*pcore.ThalLayer)
-	didGate := mdly.AnyGated()
+}
+
+// ApplyUS applies US
+func (ss *Sim) ApplyUS() {
+	net := ss.Net
+	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	lays := []string{"US"}
+	for _, lnm := range lays {
+		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		itsr := ev.State(lnm)
+		ly.ApplyExt(itsr)
+	}
+}
+
+// GatedStats updates the gated states based on gating -- when action is taken
+func (ss *Sim) GatedStats() {
+	// todo: fix ThalMatrixGated to work with pooled matrix and one thal, etc
+	net := ss.Net
+	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	didGate := net.ThalMatrixGated()
 	ss.Stats.SetFloat32("Gated", BoolToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", BoolToFloat32(ev.ShouldGate))
-	ss.Stats.SetFloat32("GatedCor", BoolToFloat32(ev.ShouldGate == didGate))
+	ss.Stats.SetFloat32("ShouldDid", mat32.NaN())
+	ss.Stats.SetFloat32("ShouldntDidnt", mat32.NaN())
+	if ev.ShouldGate {
+		ss.Stats.SetFloat32("ShouldDid", BoolToFloat32(didGate))
+	} else {
+		ss.Stats.SetFloat32("ShouldntDidnt", BoolToFloat32(!didGate))
+	}
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 }
 
@@ -574,6 +597,7 @@ func (ss *Sim) ApplyInputs() {
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
+	ss.ApplyUS() // now full trial
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -607,7 +631,8 @@ func (ss *Sim) TestAll() {
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Gated", 0)
 	ss.Stats.SetFloat("Should", 0)
-	ss.Stats.SetFloat("GatedCor", 0)
+	ss.Stats.SetFloat("ShouldDid", 0)
+	ss.Stats.SetFloat("ShouldntDidnt", 0)
 	ss.Stats.SetFloat("Rew", 0)
 }
 
@@ -667,7 +692,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GatedCor", "GatedCor", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ShouldDid", "ShouldDid", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("ShouldntDidnt", "ShouldntDidnt", etime.Run, etime.Epoch, etime.Trial)
 	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
@@ -690,7 +716,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("ActMatch", "Gated", "GatedCor") // "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("ActMatch", "Gated", "ShouldDid", "ShouldntDidnt") // "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())

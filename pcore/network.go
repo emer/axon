@@ -5,8 +5,6 @@
 package pcore
 
 import (
-	"log"
-
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
@@ -37,11 +35,10 @@ func (nt *Network) SynVarNames() []string {
 
 // ThalMatrixGated updates Thalamus and Matrix Gated status
 // for all Thal and Matrix layer types in the network,
-// using the given thalamus layer name as the source for Matrix gating
-// signal (in case multiple Thalamus layers are present).
+// returning true if any Thal layer gated.
 // This should be called in the Plus phase or thereabouts.
-func (nt *Network) ThalMatrixGated(thalName string) {
-	ThalMatrixGated(nt.AsAxon(), thalName)
+func (nt *Network) ThalMatrixGated() bool {
+	return ThalMatrixGated(nt.AsAxon())
 }
 
 // AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
@@ -99,28 +96,47 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 
 // ThalMatrixGated updates Thalamus and Matrix Gated status
 // for all Thal and Matrix layer types in the network,
-// using the given thalamus layer name as the source for Matrix gating
-// signal (in case multiple Thalamus layers are present).
+// returning true if any Thal layer gated.
 // This should be called in the Plus phase or thereabouts.
-func ThalMatrixGated(nt *axon.Network, thalName string) {
-	thals := nt.LayersByClass("Thal")
-	var theThal *ThalLayer
-	for _, thnm := range thals {
+func ThalMatrixGated(nt *axon.Network) bool {
+	thNms := nt.LayersByClass("Thal")
+	gpiThals := make(map[emer.Layer][]*ThalLayer)
+	anyGt := false
+	for _, thnm := range thNms {
 		ly := nt.LayerByName(thnm).(*ThalLayer)
-		ly.GatedFmPhasicMax()
-		if thnm == thalName {
-			theThal = ly
+		gt := ly.GatedFmPhasicMax()
+		if gt {
+			anyGt = true
+		}
+		for _, pj := range *ly.RecvPrjns() {
+			sp := pj.SendLay()
+			if _, isa := sp.(*GPiLayer); isa {
+				gpiThals[sp] = append(gpiThals[sp], ly)
+			}
 		}
 	}
-	if theThal == nil {
-		log.Printf("ThalMatrixGating: Thalamus layer named: %s not found -- Matrix gating not updated\n", thalName)
-		return
-	}
 	mtx := nt.LayersByClass("Matrix")
+	var lastGo *MatrixLayer
 	for _, mxnm := range mtx {
 		ly := nt.LayerByName(mxnm).(*MatrixLayer)
-		ly.SetGated(theThal.Gated)
+		if ly.DaR == D1R {
+			lastGo = ly
+		}
+		for _, pj := range *lastGo.SendPrjns() {
+			rp := pj.RecvLay()
+			if _, isa := rp.(*GPiLayer); isa {
+				thals := gpiThals[rp]
+				agt := false
+				for _, thl := range thals {
+					if thl.AnyGated() {
+						agt = true
+					}
+				}
+				ly.SetGated([]bool{agt}) // todo: doesn't work for pooled!
+			}
+		}
 	}
+	return anyGt
 }
 
 // AddCINLayer adds a CINLayer, with a single neuron.

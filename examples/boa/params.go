@@ -166,11 +166,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": ".03",
-					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Layer.Gi":    "0.5",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "0.3",
+					"Layer.Matrix.UseThalGated": "false", // not for vs
+					"Layer.Inhib.ActAvg.Init":   ".03",
+					"Layer.Inhib.Layer.On":      "true",
+					"Layer.Inhib.Layer.Gi":      "0.5",
+					"Layer.Inhib.Pool.On":       "true",
+					"Layer.Inhib.Pool.Gi":       "0.3",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
@@ -180,6 +181,12 @@ var ParamSets = params.Sets{
 					"Layer.PhasicMaxCycMin": "50", // critical param
 					"Layer.GateThr":         ".2", // critical param
 				}},
+			{Sel: "#RWPred", Desc: "",
+				Params: params.Params{
+					"Layer.PredRange.Min": "0.01",
+					"Layer.PredRange.Max": "0.99",
+				}},
+			////////////////////////////////////////////////////////////////
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
@@ -281,9 +288,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.0",
-					"Prjn.SWt.Init.Var":  "0.0",
-					"Prjn.SWt.Init.Sym":  "false",
+					"Prjn.Learn.Lrate.Base": "0.001", // very slow!
+					"Prjn.SWt.Init.Mean":    "0.0",
+					"Prjn.SWt.Init.Var":     "0.0",
+					"Prjn.SWt.Init.Sym":     "false",
 				}},
 		}},
 	},
