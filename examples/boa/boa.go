@@ -250,6 +250,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
 
+	vPmtxGo.(*pcore.MatrixLayer).MtxThals.Add(accthal.Name(), ofcthal.Name())
+	vPmtxNo.(*pcore.MatrixLayer).MtxThals.Add(accthal.Name(), ofcthal.Name())
+
 	// m1p plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
 	// contextualization based on action
@@ -257,13 +260,14 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.BidirConnectLayers(acc, sma, full)
 
 	// Std corticocortical cons -- stim -> hid
-	net.ConnectLayers(cs, ofc, full, emer.Forward)
+	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
 	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward)
 
 	// BLA
 	net.ConnectLayersPrjn(cs, blaa, full, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayersPrjn(us, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{})
+	net.ConnectLayersPrjn(usp, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
 	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
@@ -513,15 +517,6 @@ func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
 	return ev.DecodeAct(vt)
 }
 
-// BoolToFloat32 -- the lack of ternary conditional expressions
-// is *only* Go decision I disagree about
-func BoolToFloat32(b bool) float32 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
 // ApplyRew applies updated reward
 func (ss *Sim) ApplyRew() {
 	net := ss.Net
@@ -548,18 +543,19 @@ func (ss *Sim) ApplyUS() {
 
 // GatedStats updates the gated states based on gating -- when action is taken
 func (ss *Sim) GatedStats() {
-	// todo: fix ThalMatrixGated to work with pooled matrix and one thal, etc
 	net := ss.Net
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
-	didGate := net.ThalMatrixGated()
-	ss.Stats.SetFloat32("Gated", BoolToFloat32(didGate))
-	ss.Stats.SetFloat32("Should", BoolToFloat32(ev.ShouldGate))
+	mtxLy := net.LayerByName("VpMtxGo").(*pcore.MatrixLayer)
+	mtxLy.GatedFmAvgSpk()
+	didGate := mtxLy.AnyGated()
+	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(ev.ShouldGate))
 	ss.Stats.SetFloat32("ShouldDid", mat32.NaN())
 	ss.Stats.SetFloat32("ShouldntDidnt", mat32.NaN())
 	if ev.ShouldGate {
-		ss.Stats.SetFloat32("ShouldDid", BoolToFloat32(didGate))
+		ss.Stats.SetFloat32("ShouldDid", pcore.BoolToFloat32(didGate))
 	} else {
-		ss.Stats.SetFloat32("ShouldntDidnt", BoolToFloat32(!didGate))
+		ss.Stats.SetFloat32("ShouldntDidnt", pcore.BoolToFloat32(!didGate))
 	}
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 }
@@ -584,8 +580,9 @@ func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
 
-	if ev.LastAct == ev.ActMap["Consume"] {
-		net.DecayStateByClass(0, 1, "PT", "CT") // US action gating
+	if ev.LastUS != -1 {
+		net.InitActs()
+		// net.DecayStateByClass(0, 1, "PT", "CT") // US action gating
 	}
 
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
@@ -770,14 +767,8 @@ func (ss *Sim) ConfigLogItems() {
 					tsr := ss.Stats.F64Tensor("Log_ActAvg")
 					lyi := ctx.Layer(clnm)
 					ly := lyi.(axon.AxonLayer).AsAxon()
-					if ply, ok := lyi.(pcore.PCoreLayer); ok {
-						for pi := 0; pi < npools; pi++ {
-							tsr.Values[pi] = float64(ply.PhasicMaxAvgByPool(pi + 1))
-						}
-					} else {
-						for pi := 0; pi < npools; pi++ {
-							tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
-						}
+					for pi := 0; pi < npools; pi++ {
+						tsr.Values[pi] = float64(ly.SpkMaxAvgByPool(pi + 1))
 					}
 					ctx.SetTensor(tsr)
 				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {

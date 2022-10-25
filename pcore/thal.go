@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/rl"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -17,9 +18,8 @@ import (
 // e.g., the Ventral thalamus: VA / VM / VL or MD mediodorsal thalamus,
 // which receives BG gating in the form of an inhibitory projection from GPi.
 type ThalLayer struct {
-	Layer
-	GateThr float32 `desc:"threshold on max PhasicMax to count as gating"`
-	Gated   []bool  `inactive:"+" desc:"set to true / false for whether each pool gated, based on PhasicMax -- same size as Pools"`
+	rl.Layer
+	Gated []bool `inactive:"+" desc:"indicates whether each pool gated, based on Avg SpkMax being above threshold for Go Matrix and this thalamus -- computed by Matrix -- same size as Pools"`
 }
 
 var KiT_ThalLayer = kit.Types.AddType(&ThalLayer{}, LayerProps)
@@ -35,7 +35,6 @@ var KiT_ThalLayer = kit.Types.AddType(&ThalLayer{}, LayerProps)
 func (ly *ThalLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Typ = Thal
-	ly.GateThr = 0.1
 
 	// note: not tonically active
 
@@ -68,18 +67,18 @@ func (ly *ThalLayer) Build() error {
 	if err != nil {
 		return err
 	}
-	np := len(ly.Pools)
-	ly.Gated = make([]bool, np)
+	ly.Gated = make([]bool, len(ly.Pools))
 	return nil
 }
 
-// GatedFmPhasicMax updates the Gated values based on MaxPhasicMax
+// GatedFmAvgSpk updates the Gated values based on Avg SpkMax
+// using given threshold.  Called by Go Matrix layer.
 // returns true if any gated.
-func (ly *ThalLayer) GatedFmPhasicMax() bool {
+func (ly *ThalLayer) GatedFmAvgSpk(thr float32) bool {
 	anyGt := false
 	for pi := range ly.Gated {
-		pmax := ly.PhasicMaxMaxByPool(pi)
-		gt := (pmax > ly.GateThr)
+		smax := ly.SpkMaxAvgByPool(pi)
+		gt := (smax > thr)
 		ly.Gated[pi] = gt
 		if gt {
 			anyGt = true

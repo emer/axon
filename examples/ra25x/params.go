@@ -51,8 +51,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
 					"Layer.Learn.RLrate.Diff":       "true",
-					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
-					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
+					"Layer.Learn.RLrate.DiffThr":    "0.02", // 0.02 def - todo
+					"Layer.Learn.RLrate.SpkThr":     "0.1",  // 0.1 def
 					"Layer.Learn.RLrate.Min":        "0.001",
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",

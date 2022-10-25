@@ -221,6 +221,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
 	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
 
+	mtxGo.(*pcore.MatrixLayer).MtxThals.Add(thal.Name())
+	mtxNo.(*pcore.MatrixLayer).MtxThals.Add(thal.Name())
+
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
 	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, emer.Input)
 	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, emer.Input)
@@ -479,25 +482,15 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	}
 }
 
-// BoolToFloat32 -- the lack of ternary conditional expressions
-// is *only* Go decision I disagree about
-func BoolToFloat32(b bool) float32 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
 // ApplyRew applies reward input based on gating action and input
 func (ss *Sim) ApplyRew() {
 	net := ss.Net
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	net.ThalMatrixGated() // critical updating of gated status -- must be called in plus phase!
-
-	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
-	didGate := vtly.AnyGated()
+	mtxly := net.LayerByName("MtxGo").(*pcore.MatrixLayer)
+	mtxly.GatedFmAvgSpk() // will also be called later
+	didGate := mtxly.AnyGated()
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
 	switch {
@@ -511,8 +504,8 @@ func (ss *Sim) ApplyRew() {
 		rew = 0
 	}
 
-	ss.Stats.SetFloat32("Gated", BoolToFloat32(didGate))
-	ss.Stats.SetFloat32("Should", BoolToFloat32(shouldGate))
+	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(shouldGate))
 	ss.Stats.SetFloat32("Rew", rew)
 
 	itsr := etensor.Float32{}
@@ -680,14 +673,8 @@ func (ss *Sim) ConfigLogItems() {
 					tsr := ss.Stats.F64Tensor("Log_ActAvg")
 					lyi := ctx.Layer(clnm)
 					ly := lyi.(axon.AxonLayer).AsAxon()
-					if ply, ok := lyi.(pcore.PCoreLayer); ok {
-						for pi := 0; pi < ss.Sim.NPools; pi++ {
-							tsr.Values[pi] = float64(ply.PhasicMaxAvgByPool(pi + 1))
-						}
-					} else {
-						for pi := 0; pi < ss.Sim.NPools; pi++ {
-							tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
-						}
+					for pi := 0; pi < ss.Sim.NPools; pi++ {
+						tsr.Values[pi] = float64(ly.SpkMaxAvgByPool(pi + 1))
 					}
 					ctx.SetTensor(tsr)
 				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {

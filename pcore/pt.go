@@ -5,12 +5,13 @@
 package pcore
 
 import (
+	"github.com/emer/axon/rl"
 	"github.com/goki/ki/kit"
 )
 
 // PTLayer implements the pyramidal tract layer 5 intrinsic bursting deep neurons.
 type PTLayer struct {
-	Layer // access as .Layer
+	rl.Layer // access as .Layer
 }
 
 var KiT_PTLayer = kit.Types.AddType(&PTLayer{}, LayerProps)

@@ -114,12 +114,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init":       "0.025",
-					"Layer.Act.Gbar.L":              "0.2",
-					"Layer.Inhib.Pool.On":           "true",
-					"Layer.DaMod.BurstGain":         "0.1",
-					"Layer.DaMod.DipGain":           "0.1",
-					"Layer.Learn.RLrate.ActDiffThr": "0.1",
+					"Layer.Inhib.ActAvg.Init":    "0.025",
+					"Layer.Inhib.Layer.Gi":       "1.1",
+					"Layer.Act.Gbar.L":           "0.2",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.DaMod.BurstGain":      "0.1",
+					"Layer.DaMod.DipGain":        "0.1",
+					"Layer.NoDALrate":            "0.0",   // todo: explore
+					"Layer.Learn.RLrate.Diff":    "false", // can turn off if NoDALrate is 0
+					"Layer.Learn.RLrate.DiffThr": "0.1",   // based on cur - prv
 				}},
 			{Sel: "#BLAPosExt2D", Desc: "",
 				Params: params.Params{
@@ -166,20 +169,21 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Matrix.UseThalGated": "false", // not for vs
+					"Layer.Matrix.GPHasPools":   "false",
+					"Layer.Matrix.InvertNoGate": "false",
+					"Layer.Matrix.GateThr":      "0.02", // 0.02 pretty good..
 					"Layer.Inhib.ActAvg.Init":   ".03",
 					"Layer.Inhib.Layer.On":      "true",
-					"Layer.Inhib.Layer.Gi":      "0.5",
+					"Layer.Inhib.Layer.Gi":      "0.8",
 					"Layer.Inhib.Pool.On":       "true",
-					"Layer.Inhib.Pool.Gi":       "0.3",
+					"Layer.Inhib.Pool.Gi":       "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
 			{Sel: "ThalLayer", Desc: "",
 				Params: params.Params{
-					"Layer.PhasicMaxCycMin": "50", // critical param
-					"Layer.GateThr":         ".2", // critical param
+					"Layer.Act.Dt.MaxCycStart": "50", // critical param
 				}},
 			{Sel: "#RWPred", Desc: "",
 				Params: params.Params{
@@ -288,7 +292,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.001", // very slow!
+					"Prjn.Learn.Lrate.Base": "0.01", // very slow!
 					"Prjn.SWt.Init.Mean":    "0.0",
 					"Prjn.SWt.Init.Var":     "0.0",
 					"Prjn.SWt.Init.Sym":     "false",

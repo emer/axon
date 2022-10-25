@@ -71,7 +71,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Matrix.UseThalGated": "true", // todo: fixme
+					"Layer.Matrix.GPHasPools":   "false",
+					"Layer.Matrix.InvertNoGate": "true",
+					"Layer.Matrix.GateThr":      "0.01",
 					"Layer.Inhib.Layer.On":      "true",
 					"Layer.Inhib.Layer.Gi":      "0.5", // 0.5 > 0.4
 					"Layer.Inhib.Layer.FB":      "0.0",

@@ -243,8 +243,8 @@ type RLrateParams struct {
 	On         bool    `def:"true" desc:"use learning rate modulation"`
 	SigmoidMin float32 `def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
 	Diff       bool    `desc:"modulate learning rate as a function of plus - minus differences"`
-	ActThr     float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDiffThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
+	SpkThr     float32 `def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	DiffThr    float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
 	Min        float32 `def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
 }
 
@@ -255,8 +255,8 @@ func (rl *RLrateParams) Defaults() {
 	rl.On = true
 	rl.SigmoidMin = 0.05
 	rl.Diff = true
-	rl.ActThr = 0.1
-	rl.ActDiffThr = 0.02
+	rl.SpkThr = 0.1
+	rl.DiffThr = 0.02
 	rl.Min = 0.001
 	rl.Update()
 }
@@ -280,15 +280,15 @@ func (rl *RLrateParams) RLrateSigDeriv(act float32, laymax float32) float32 {
 }
 
 // RLrateDiff returns the learning rate as a function of difference between
-// CaP and CaD values
+// CaSpkP and CaSpkD values
 func (rl *RLrateParams) RLrateDiff(scap, scad float32) float32 {
 	if !rl.On || !rl.Diff {
 		return 1.0
 	}
 	max := mat32.Max(scap, scad)
-	if max > rl.ActThr { // avoid div by 0
+	if max > rl.SpkThr { // avoid div by 0
 		dif := mat32.Abs(scap - scad)
-		if dif < rl.ActDiffThr {
+		if dif < rl.DiffThr {
 			return rl.Min
 		}
 		return (dif / max)

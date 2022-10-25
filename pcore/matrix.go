@@ -9,19 +9,24 @@ import (
 	"strings"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/rl"
+	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
 // MatrixParams has parameters for Dorsal Striatum Matrix computation
-// These are the main Go / NoGo gating units in BG driving updating of PFC WM in PBWM
+// These are the main Go / NoGo gating units in BG.
 type MatrixParams struct {
-	UseThalGated bool    `desc:"use thalamic gating status to change sign of learning for nongated pools -- TODO: fix this situation!"`
+	GPHasPools   bool    `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false)"`
+	InvertNoGate bool    `desc:"invert the direction of learning if not gated -- allows negative DA to increase gating when gating didn't happen.  Does not work with GPHasPools at present."`
+	GateThr      float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and Thal layers to count as having gated"`
 	BurstGain    float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 	DipGain      float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 }
 
 func (mp *MatrixParams) Defaults() {
+	mp.GateThr = 0.01
 	mp.BurstGain = 1
 	mp.DipGain = 1
 }
@@ -31,12 +36,13 @@ func (mp *MatrixParams) Defaults() {
 // The Gated value for each pool must be set by calling SetGated --
 // this changes the sign of the learning function in relation to DA.
 type MatrixLayer struct {
-	Layer
-	DaR    DaReceptors  `desc:"dominant type of dopamine receptor -- D1R for Go pathway, D2R for NoGo"`
-	Matrix MatrixParams `view:"inline" desc:"matrix parameters"`
-	Gated  []bool       `inactive:"+" desc:"must set to true / false for whether each pool gated, via SetGated method"`
-	DALrn  float32      `inactive:"+" desc:"effective learning dopamine value for this layer: reflects DaR and Gains"`
-	ACh    float32      `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons reflecting the absolute value of reward or CS predictions thereof -- used for resetting the trace of matrix learning"`
+	rl.Layer
+	DaR      DaReceptors   `desc:"dominant type of dopamine receptor -- D1R for Go pathway, D2R for NoGo"`
+	Matrix   MatrixParams  `view:"inline" desc:"matrix parameters"`
+	MtxThals emer.LayNames `desc:"first layer here is other corresponding MatrixLayer (Go vs. NoGo), and rest are thalamus layers that are affected by this layer"`
+	Gated    []bool        `inactive:"+" desc:"indicates whether gated, based on both Go Matrix Avg SpkMax values and thalamic activity -- is a single bool value unless GpHasPools is true"`
+	DALrn    float32       `inactive:"+" desc:"effective learning dopamine value for this layer: reflects DaR and Gains"`
+	ACh      float32       `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons reflecting the absolute value of reward or CS predictions thereof -- used for resetting the trace of matrix learning"`
 }
 
 var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, LayerProps)
@@ -109,9 +115,13 @@ func (ly *MatrixLayer) Build() error {
 	if err != nil {
 		return err
 	}
-	np := len(ly.Pools)
-	ly.Gated = make([]bool, np)
-	return nil
+	if ly.Matrix.GPHasPools {
+		ly.Gated = make([]bool, len(ly.Pools))
+	} else {
+		ly.Gated = make([]bool, 1)
+	}
+	err = ly.MtxThals.Validate(ly.Network, "MatrixLayer:Build")
+	return err
 }
 
 func (ly *MatrixLayer) InitActs() {
@@ -123,29 +133,103 @@ func (ly *MatrixLayer) InitActs() {
 	}
 }
 
+// BoolToFloat32 -- the lack of ternary conditional expressions
+// is *only* Go decision I disagree about
+func BoolToFloat32(b bool) float32 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// AnyGated returns true if any of the pools gated
+func (ly *MatrixLayer) AnyGated() bool {
+	for _, gt := range ly.Gated {
+		if gt {
+			return true
+		}
+	}
+	return false
+}
+
 // PlusPhase does updating at end of the plus phase
 // calls DAActLrn
 func (ly *MatrixLayer) PlusPhase(ltime *axon.Time) {
 	ly.Layer.PlusPhase(ltime)
+	ly.GatedFmAvgSpk()
 	ly.DAActLrn()
 
-	pmax := ly.PhasicMaxMaxByPool(0)
+	smax := ly.SpkMaxMaxByPool(0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		pn := &ly.PCoreNeurs[ni]
-		mlr := ly.Learn.RLrate.RLrateSigDeriv(pn.PhasicMax, pmax)
+		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.SpkMax, smax)
 		// dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD) // not useful
 		nrn.RLrate = mlr
 	}
 }
 
+// GatedFmAvgSpk updates Gated based on Avg SpkMax activity in Go Matrix and
+// ThalLayers listed in MtxThals
+func (ly *MatrixLayer) GatedFmAvgSpk() {
+	lays, _ := ly.MtxThals.Layers(ly.Network)
+	if ly.DaR != D1R { // copy from go
+		goMtx := lays[0].(*MatrixLayer)
+		for i := range ly.Gated {
+			ly.Gated[i] = goMtx.Gated[i]
+		}
+		return
+	}
+	mtxGated := false
+	if ly.Is4D() {
+		for pi := 1; pi < len(ly.Pools); pi++ {
+			spkavg := ly.SpkMaxAvgByPool(pi)
+			gthr := spkavg > ly.Matrix.GateThr
+			if gthr {
+				mtxGated = true
+			}
+			if ly.Matrix.GPHasPools {
+				ly.Gated[pi] = gthr
+			}
+		}
+		if ly.Matrix.GPHasPools {
+			ly.Gated[0] = mtxGated
+		}
+	} else {
+		spkavg := ly.SpkMaxAvgByPool(0)
+		if spkavg > ly.Matrix.GateThr {
+			mtxGated = true
+		}
+	}
+
+	lays = lays[1:]
+	thalGated := false
+	for _, tly := range lays {
+		thLy := tly.(*ThalLayer)
+		lgt := thLy.GatedFmAvgSpk(ly.Matrix.GateThr)
+		if lgt {
+			thalGated = true
+		}
+	}
+
+	mtxGated = mtxGated && thalGated
+
+	if ly.Matrix.GPHasPools {
+		if !thalGated {
+			for i := range ly.Gated {
+				ly.Gated[i] = false // veto
+			}
+		}
+	} else {
+		ly.Gated[0] = mtxGated
+	}
+}
+
 // DAActLrn sets effective learning dopamine value from given raw DA value,
-// applying Burst and Dip Gain factors, and then reversing sign for D2R.
-// Also sets ActLrn based on whether corresponding VThal stripe fired
-// above ThalThr -- flips sign of learning for stripe firing vs. not.
+// applying Burst and Dip Gain factors, and then reversing sign for D2R
+// and also for InvertNoGate -- must have done GatedFmThal before this.
 func (ly *MatrixLayer) DAActLrn() {
 	da := ly.DA
 	if da > 0 {
@@ -157,40 +241,6 @@ func (ly *MatrixLayer) DAActLrn() {
 		da *= -1
 	}
 	ly.DALrn = da
-}
-
-// SetGated sets gating status of each pool, and updates the ActLrn
-// variable based on gating status (flips sign of DA effects).
-// len(gated) should be number of sub-pools, including full-layer pool,
-// even though that is not used unless it is a 2D layer.
-func (ly *MatrixLayer) SetGated(gated []bool) {
-	ngate := len(gated)
-	npl := len(ly.Gated)
-	spi := 1
-	if npl == 1 {
-		spi = 0
-	}
-	for pi := spi; pi < npl; pi++ {
-		gt := false
-		if pi < ngate {
-			gt = gated[pi]
-		}
-		ly.Gated[pi] = gt
-		pl := &ly.Pools[pi]
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			pn := &ly.PCoreNeurs[ni]
-			pmax := pn.PhasicMax
-			if !gt && ly.Matrix.UseThalGated {
-				pn.ActLrn = -pmax
-			} else {
-				pn.ActLrn = pmax
-			}
-		}
-	}
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -245,11 +295,11 @@ func (ly *MatrixLayer) UnitVal1D(varIdx int, idx int) float32 {
 	case 0:
 		return ly.DALrn
 	case 1:
-		gt := ly.Gated[ly.Neurons[idx].SubPool]
-		if gt {
-			return 1.0
+		gt := ly.Gated[0]
+		if len(ly.Gated) == len(ly.Pools) {
+			gt = ly.Gated[ly.Neurons[idx].SubPool]
 		}
-		return 0
+		return BoolToFloat32(gt)
 	case 2:
 		return ly.ACh
 	default:

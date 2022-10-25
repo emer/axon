@@ -33,14 +33,6 @@ func (nt *Network) SynVarNames() []string {
 	return SynVarsAll
 }
 
-// ThalMatrixGated updates Thalamus and Matrix Gated status
-// for all Thal and Matrix layer types in the network,
-// returning true if any Thal layer gated.
-// This should be called in the Plus phase or thereabouts.
-func (nt *Network) ThalMatrixGated() bool {
-	return ThalMatrixGated(nt.AsAxon())
-}
-
 // AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // Only the Matrix has pool-based 4D shape by default -- use pool for "role" like
@@ -93,51 +85,6 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 ////////////////////////////////////////////////////////////////////////
 // Network functions available here as standalone functions
 //         for mixing in to other models
-
-// ThalMatrixGated updates Thalamus and Matrix Gated status
-// for all Thal and Matrix layer types in the network,
-// returning true if any Thal layer gated.
-// This should be called in the Plus phase or thereabouts.
-func ThalMatrixGated(nt *axon.Network) bool {
-	thNms := nt.LayersByClass("Thal")
-	gpiThals := make(map[emer.Layer][]*ThalLayer)
-	anyGt := false
-	for _, thnm := range thNms {
-		ly := nt.LayerByName(thnm).(*ThalLayer)
-		gt := ly.GatedFmPhasicMax()
-		if gt {
-			anyGt = true
-		}
-		for _, pj := range *ly.RecvPrjns() {
-			sp := pj.SendLay()
-			if _, isa := sp.(*GPiLayer); isa {
-				gpiThals[sp] = append(gpiThals[sp], ly)
-			}
-		}
-	}
-	mtx := nt.LayersByClass("Matrix")
-	var lastGo *MatrixLayer
-	for _, mxnm := range mtx {
-		ly := nt.LayerByName(mxnm).(*MatrixLayer)
-		if ly.DaR == D1R {
-			lastGo = ly
-		}
-		for _, pj := range *lastGo.SendPrjns() {
-			rp := pj.RecvLay()
-			if _, isa := rp.(*GPiLayer); isa {
-				thals := gpiThals[rp]
-				agt := false
-				for _, thl := range thals {
-					if thl.AnyGated() {
-						agt = true
-					}
-				}
-				ly.SetGated([]bool{agt}) // todo: doesn't work for pooled!
-			}
-		}
-	}
-	return anyGt
-}
 
 // AddCINLayer adds a CINLayer, with a single neuron.
 func AddCINLayer(nt *axon.Network, name string) *CINLayer {
@@ -259,6 +206,9 @@ func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gp
 	cin = cini
 
 	cini.SendACh.Add(mtxGo.Name(), mtxNo.Name())
+
+	mtxGo.(*MatrixLayer).MtxThals.Add(mtxNo.Name())
+	mtxNo.(*MatrixLayer).MtxThals.Add(mtxGo.Name())
 
 	full := prjn.NewFull()
 

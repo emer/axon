@@ -1031,7 +1031,8 @@ func (ly *Layer) NewState() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActPrv = nrn.CaSpkD // nrn.ActP -- this is used in deep learning, makes big diff!
+		nrn.SpkPrv = nrn.CaSpkD
+		nrn.SpkMax = 0
 	}
 	ly.AxonLay.DecayState(ly.Act.Decay.Act, ly.Act.Decay.Glong)
 }
@@ -1328,6 +1329,9 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
+		if ltime.Cycle >= ly.Act.Dt.MaxCycStart && nrn.CaSpkP > nrn.SpkMax {
+			nrn.SpkMax = nrn.CaSpkP
+		}
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {
 			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
@@ -1436,6 +1440,58 @@ func (ly *Layer) SpikeAvgByPool(pli int) float32 {
 	return sum / float32(pl.EdIdx-pl.StIdx)
 }
 
+// MaxSpkMax returns the maximum SpkMax across the layer
+func (ly *Layer) MaxSpkMax() float32 {
+	mx := float32(0)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		if nrn.SpkMax > mx {
+			mx = nrn.SpkMax
+		}
+	}
+	return mx
+}
+
+// SpkMaxAvgByPool returns the average SpkMax value by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) SpkMaxAvgByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	sum := float32(0)
+	cnt := 0
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		sum += nrn.SpkMax
+		cnt++
+	}
+	if cnt > 0 {
+		sum /= float32(cnt)
+	}
+	return sum
+}
+
+// SpkMaxMaxByPool returns the average SpkMax value by given pool index
+// Pool index 0 is whole layer, 1 is first sub-pool, etc
+func (ly *Layer) SpkMaxMaxByPool(pli int) float32 {
+	pl := &ly.Pools[pli]
+	max := float32(0)
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		if nrn.SpkMax > max {
+			max = nrn.SpkMax
+		}
+	}
+	return max
+}
+
 // AvgGeM computes the average and max GeM stats
 func (ly *Layer) AvgGeM(ltime *Time) {
 	for pi := range ly.Pools {
@@ -1528,7 +1584,6 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		nrn.ActDiff = nrn.ActP - nrn.ActM
 		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
 		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLrate = mlr * dlr
@@ -1586,25 +1641,25 @@ func (ly *Layer) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current activation state in ActSt1 variables (using CaP)
-func (ly *Layer) ActSt1(ltime *Time) {
+// SpkSt1 saves current activation state in SpkSt1 variables (using CaP)
+func (ly *Layer) SpkSt1(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt1 = nrn.CaSpkP // todo: should be ActInt?  used in learning in hippo..
+		nrn.SpkSt1 = nrn.CaSpkP
 	}
 }
 
-// ActSt2 saves current activation state in ActSt2 variables (using CaP)
-func (ly *Layer) ActSt2(ltime *Time) {
+// SpkSt2 saves current activation state in SpkSt2 variables (using CaP)
+func (ly *Layer) SpkSt2(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ActSt2 = nrn.CaSpkP // todo: should be ActInt?  used in learning in hippo..
+		nrn.SpkSt2 = nrn.CaSpkP
 	}
 }
 

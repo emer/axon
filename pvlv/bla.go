@@ -14,7 +14,8 @@ import (
 // BLALayer represents a basolateral amygdala layer
 type BLALayer struct {
 	rl.Layer
-	DaMod DaModParams `view:"inline" desc:"dopamine modulation parameters"`
+	DaMod     DaModParams `view:"inline" desc:"dopamine modulation parameters"`
+	NoDALrate float32     `desc:"baseline learning rate without any dopamine"`
 }
 
 var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, axon.LayerProps)
@@ -22,6 +23,7 @@ var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, axon.LayerProps)
 func (ly *BLALayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.DaMod.Defaults()
+	ly.NoDALrate = 0.0 // todo: explore
 }
 
 func (ly *BLALayer) GFmInc(ltime *axon.Time) {
@@ -38,26 +40,27 @@ func (ly *BLALayer) GFmInc(ltime *axon.Time) {
 
 func (ly *BLALayer) PlusPhase(ltime *axon.Time) {
 	ly.Layer.PlusPhase(ltime)
-	lrmod := 1 + mat32.Abs(ly.DA)
+	lrmod := ly.NoDALrate + mat32.Abs(ly.DA)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.RLrate *= lrmod
+		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
+		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous
+		nrn.RLrate = mlr * dlr * lrmod
 	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  BLAPrjn
 
-// TODO: switching to a minus-plus dynamic, not prior timestep -- so fix this
-// to use minus phase act only (test diff options).  Also, CtxtPrjn found that
-// rn.RLrate was problematic -- investigate for BLA
-
-// BLAPrjn does standard trace learning using phase differences modulated by DA,
-// and US modulation, using prior time sending activation to capture temporal
-// asymmetry in sending activity.
+// BLAPrjn implements the PVLV BLA learning rule:
+// dW = X_t-1 * (Y_t - Y_t-1)
+// The recv delta is across trials, where the US should activate on trial
+// boundary, to enable sufficient time for gating through to OFC, so
+// BLA initially learns based on US present - US absent.
+// It can also learn based on CS onset if there is a prior CS that predicts that.
 type BLAPrjn struct {
 	axon.Prjn
 }
@@ -70,6 +73,44 @@ func (pj *BLAPrjn) Defaults() {
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0
 	pj.SWt.Init.Sym = false
+	pj.Learn.Trace.Tau = 1
+	pj.Learn.Trace.Update()
+}
+
+// DWt computes the weight change (learning) for Ctxt projections
+func (pj *BLAPrjn) DWt(ltime *axon.Time) {
+	if !pj.Learn.Learn {
+		return
+	}
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sact := slay.Neurons[si].SpkPrv
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			sy := &syns[ci]
+			// not using the synaptic trace -- doesn't work at all -- just use sending act
+			// kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sact)
+			if sy.Wt == 0 { // failed con, no learn
+				continue
+			}
+			err := sy.Tr * (rn.CaP - rn.SpkPrv)
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections

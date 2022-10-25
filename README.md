@@ -32,7 +32,7 @@ The first step is to do a global replace of `leabra` -> `axon` and `Leabra` -> `
 
 The notion of the AlphaCycle as a basic unit of processing in Leabra does not quite work in Axon: it typically takes 200 msec (cycles) for a full learning cycle, corresponding to a ThetaCycle.  This was actually the original idea for predictive learning, where the full processing of a given input state was supposed to take two alpha cycles = 1 theta cycle, which corresponds to the strongly-peaked duration of a single fixation in humans.  In Axon, the processing of time has been generalized, so it isn't tied so specifically to a particular cycle.
 
-The concept of a `Quarter` is no longer as sensible, so it has been removed.  In the `TimeScales` enum, it is replaced with `GammaCycle`. There are now two more generic `ActSt1` and `ActSt2` activation state variables that can be captured at any point by calling methods of the corresponding name.  `ActPrv` is the new name for `ActQ0` and it is captured in the `NewState` method.
+The concept of a `Quarter` is no longer as sensible, so it has been removed.  In the `TimeScales` enum, it is replaced with `GammaCycle`. There are now two more generic `SpkSt1` and `SpkSt2` activation state variables that can be captured at any point by calling methods of the corresponding name.  `ActPrv` is the new name for `ActQ0` and it is captured in the `NewState` method.
 
 * `NewState` methods are called when starting to process a new "state", which corresponds to a new fixation, a new sniff, and generally a new "trial" in standard neural network terminology.
     + `AlphaCycleInit` -> `NewState`

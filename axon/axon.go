@@ -196,11 +196,11 @@ type AxonLayer interface {
 	// PlusPhase does updating after end of plus phase
 	PlusPhase(ltime *Time)
 
-	// ActSt1 saves current activations into ActSt1
-	ActSt1(ltime *Time)
+	// SpkSt1 saves current activations into SpkSt1
+	SpkSt1(ltime *Time)
 
-	// ActSt2 saves current activations into ActSt2
-	ActSt2(ltime *Time)
+	// SpkSt2 saves current activations into SpkSt2
+	SpkSt2(ltime *Time)
 
 	// CorSimFmActs computes the correlation similarity
 	// (centered cosine aka normalized dot product)
