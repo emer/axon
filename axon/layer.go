@@ -779,6 +779,17 @@ func (ly *Layer) InitActs() {
 		pl.ActM.Init()
 		pl.ActP.Init()
 	}
+	ly.InitRecvGBuffs()
+}
+
+// InitRecvGBuffs initializes the receiving layer conductance buffers
+func (ly *Layer) InitRecvGBuffs() {
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		p.(AxonPrjn).InitGBuffs()
+	}
 }
 
 // InitWtsSym initializes the weight symmetry -- higher layers copy weights from lower layers
@@ -1103,6 +1114,9 @@ func (ly *Layer) DecayState(decay, glong float32) {
 	for pi := range ly.Pools { // decaying average act is essential for inhib
 		pl := &ly.Pools[pi]
 		pl.Inhib.Decay(decay)
+	}
+	if glong == 1 {
+		ly.InitRecvGBuffs()
 	}
 }
 

@@ -74,8 +74,8 @@ func (pj *CTCtxtPrjn) Build() error {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
-func (pj *CTCtxtPrjn) InitGbuf() {
-	pj.Prjn.InitGBufs()
+func (pj *CTCtxtPrjn) InitGBuffs() {
+	pj.Prjn.InitGBuffs()
 	for ri := range pj.CtxtGeInc {
 		pj.CtxtGeInc[ri] = 0
 	}

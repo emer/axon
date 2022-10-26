@@ -374,12 +374,12 @@ func (pj *Prjn) Build() error {
 		return err
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
-	pj.BuildGBufs()
+	pj.BuildGBuffs()
 	return nil
 }
 
 // BuildGBuf builds GBuf with current Com Delay values, if not correct size
-func (pj *Prjn) BuildGBufs() {
+func (pj *Prjn) BuildGBuffs() {
 	rlen := pj.Recv.Shape().Len()
 	dl := pj.Com.Delay + 1
 	if pj.Gidx.Len == dl && len(pj.GBuf) == dl {
@@ -497,7 +497,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
 	pj.Learn.Lrate.Init()
-	pj.AxonPrj.InitGBufs()
+	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.SWt.Init.SPct
 	if rlay.AxonLay.IsTarget() {
@@ -657,10 +657,12 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	}
 }
 
-// InitGBufs initializes the G buffer values to 0
-// and insures that G*Buf are properly allocated
-func (pj *Prjn) InitGBufs() {
-	pj.BuildGBufs() // make sure correct size based on Com.Delay setting
+// InitGBuffs initializes the per-projection synaptic conductance buffers.
+// This is not typically needed (called during InitWts, InitActs)
+// but can be called when needed.  Must be called to completely initialize
+// prior activity, e.g., full Glong clearing.
+func (pj *Prjn) InitGBuffs() {
+	pj.BuildGBuffs() // make sure correct size based on Com.Delay setting
 	for ri := range pj.GBuf {
 		pj.GBuf[ri] = 0
 	}

@@ -580,9 +580,8 @@ func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
 
-	if ev.LastUS != -1 {
-		net.InitActs()
-		// net.DecayStateByClass(0, 1, "PT", "CT") // US action gating
+	if ev.Time == 0 {
+		net.DecayStateByClass(1, 1, "PT", "CT") // US action gating
 	}
 
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
