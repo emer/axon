@@ -207,10 +207,12 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = vl
 	_ = act
 
+	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.NDrives, nuCtxY, nuCtxX, relpos.Behind, space)
+
 	// todo: rename sma -> ALM
 
 	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, one2one)
-	smapt, smathal := net.AddPTThalForSuper(sma, smact, "MD", space)
+	smapt, smathal := net.AddPTThalForSuper(sma, smact, "MD", one2one, full, full, space)
 	smact.SetClass("SMA CTCopy")
 	_ = smapt
 	// net.ConnectCTSelf(ofcct, full)
@@ -221,14 +223,12 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	//	todo: add a PL layer, with Integ maint
 
-	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.NDrives, nuCtxY, nuCtxX, relpos.Behind, space)
-
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
-	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", space)
+	// prjns are: super->PT, PT self, CT-> thal
+	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", pone2one, pone2one, pone2one, space)
+	_ = ofcpt
 	ofcct.SetClass("OFC CTInteg")
 	net.ConnectCTSelf(ofcct, pone2one)
-	net.ConnectLayers(ofc, ofcpt, one2one, emer.Forward).SetClass("SuperToPT") // todo: make in ptthal
-	net.LateralConnectLayer(ofcpt, pone2one).SetClass("PTSelfMaint")           // todo: prob move into AddPTThal
 	// net.ConnectToPulv(ofc, ofcct, csp, full, full)
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcct, drivesp, pone2one, pone2one)
@@ -238,10 +238,10 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, one2one)
-	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", space)
+	// prjns are: super->PT, PT self, CT->thal
+	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", one2one, full, full, space)
+	_ = accpt
 	accct.SetClass("ACC CTInteg")
-	net.ConnectLayers(acc, accpt, one2one, emer.Forward).SetClass("SuperToPT") // todo: make in ptthal
-	net.LateralConnectLayer(accpt, full).SetClass("PTSelfMaint")
 	net.ConnectCTSelf(accct, full)
 	net.ConnectToPulv(acc, accct, distp, full, full)
 	net.ConnectToPulv(acc, accct, timep, full, full)
@@ -264,14 +264,18 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward)
 
+	// todo: blae is not connected properly at all yet
+
 	// BLA
 	net.ConnectLayersPrjn(cs, blaa, full, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayersPrjn(us, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayersPrjn(usp, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{})
+	net.ConnectLayersPrjn(drives, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
 	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib)
+	// net.ConnectLayers(drives, blae, pone2one, emer.Forward)
 
 	net.ConnectLayers(dist, sma, full, emer.Forward)
 	net.ConnectLayers(time, sma, full, emer.Forward)
@@ -299,10 +303,16 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
-	// net.ConnectToMatrix(ofcpt, vPmtxNo, pone2one) // if currently maintaining, no gate
+	// net.ConnectToMatrix(ofcct, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(ofcct, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(ofcpt, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(ofcpt, vPmtxNo, pone2one)
 	net.ConnectToMatrix(acc, vPmtxGo, full)
 	net.ConnectToMatrix(acc, vPmtxNo, full)
-	// net.ConnectToMatrix(accpt, vPmtxNo, full) // if currently maintaining, no gate
+	// net.ConnectToMatrix(accct, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(accct, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(accpt, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(accpt, vPmtxNo, pone2one)
 	// net.ConnectToMatrix(sma, vPmtxGo, full) // not to MD
 	// net.ConnectToMatrix(sma, vPmtxNo, full)
 

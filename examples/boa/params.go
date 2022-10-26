@@ -115,9 +115,10 @@ var ParamSets = params.Sets{
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":    "0.025",
-					"Layer.Inhib.Layer.Gi":       "1.1",
-					"Layer.Act.Gbar.L":           "0.2",
+					"Layer.Inhib.Layer.Gi":       "1.0",
 					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "1.0",
+					"Layer.Act.Gbar.L":           "0.2",
 					"Layer.DaMod.BurstGain":      "0.1",
 					"Layer.DaMod.DipGain":        "0.1",
 					"Layer.NoDALrate":            "0.0",   // todo: explore
@@ -200,6 +201,19 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 				}},
+			{Sel: "BLAPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Trace.Tau": "1",
+				}},
+			{Sel: ".SuperToPT", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.2",
+				}},
+			{Sel: ".CTtoThal", Desc: "",
+				Params: params.Params{
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.25",
+				}},
 			{Sel: "#OFCToSMA", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
@@ -213,6 +227,12 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Rel": "1",
 				}},
 			{Sel: "#USToBLAPosAcqD1", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.5", // boom
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.2",
+				}},
+			{Sel: "#DrivesToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.2",
@@ -292,7 +312,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.01", // very slow!
+					"Prjn.Learn.Lrate.Base": "0.001", // 0.001 > 0.01 -- even 0.01 learns fastish..
 					"Prjn.SWt.Init.Mean":    "0.0",
 					"Prjn.SWt.Init.Var":     "0.0",
 					"Prjn.SWt.Init.Sym":     "false",

@@ -72,9 +72,10 @@ func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *ThalLayer {
 // AddPTThalForSuper adds a PT pyramidal tract layer and a
 // Thalamus layer for given superficial layer (SuperLayer)
 // with given suffix (e.g., MD, VM).
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal.
 // The PT and Thal layers are positioned behind the CT layer.
-func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
-	return AddPTThalForSuper(nt.AsAxon(), super, ct, suffix, space)
+func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
+	return AddPTThalForSuper(nt.AsAxon(), super, ct, suffix, superToPT, ptSelf, ctToThal, space)
 }
 
 // ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
@@ -346,8 +347,9 @@ func ConnectPTSelf(nt *axon.Network, ly emer.Layer, pat prjn.Pattern) emer.Prjn 
 // Thalamus layer for given superficial layer (deep.SuperLayer) and associated CT
 // with given suffix (e.g., MD, VM).
 // PT and Thal have SetClass(super.Name()) called to allow shared params.
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal.
 // The PT and Thal layers are positioned behind the CT layer.
-func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
+func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
 	name := super.Name()
 	shp := super.Shape()
 	if shp.NumDims() == 2 {
@@ -365,6 +367,8 @@ func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, sp
 	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal")
 	thalpt.SetClass("ThalToPT")
-	nt.ConnectLayers(ct, thal, one2one, emer.Forward).SetClass("CTtoThal")
+	nt.ConnectLayers(super, pt, superToPT, emer.Forward).SetClass("SuperToPT")
+	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
+	nt.ConnectLayers(ct, thal, ctToThal, emer.Forward).SetClass("CTtoThal")
 	return
 }

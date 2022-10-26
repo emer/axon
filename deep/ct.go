@@ -96,6 +96,13 @@ func (ly *CTLayer) InitActs() {
 	}
 }
 
+func (ly *CTLayer) DecayState(decay, glong float32) {
+	ly.Layer.DecayState(decay, glong)
+	for ni := range ly.CtxtGes {
+		ly.CtxtGes[ni] -= glong * ly.CtxtGes[ni]
+	}
+}
+
 // GFmInc integrates new synaptic conductances from increments sent during last Spike
 func (ly *CTLayer) GFmInc(ltime *axon.Time) {
 	ly.RecvGInc(ltime)
