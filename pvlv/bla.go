@@ -71,13 +71,21 @@ func (pj *BLAPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.Mean = 0.1
-	pj.SWt.Init.Var = 0
+	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym = false
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
 }
 
-// DWt computes the weight change (learning) for Ctxt projections
+func (pj *BLAPrjn) SendSynCa(ltime *axon.Time) {
+	return
+}
+
+func (pj *BLAPrjn) RecvSynCa(ltime *axon.Time) {
+	return
+}
+
+// DWt computes the weight change (learning) for BLA projections
 func (pj *BLAPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
@@ -95,13 +103,13 @@ func (pj *BLAPrjn) DWt(ltime *axon.Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			// not using the synaptic trace -- doesn't work at all -- just use sending act
+			// not using the synaptic trace (yet)
 			// kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
 			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sact)
 			if sy.Wt == 0 { // failed con, no learn
 				continue
 			}
-			err := sy.Tr * (rn.CaP - rn.SpkPrv)
+			err := sy.Tr * (rn.CaSpkP - rn.SpkPrv)
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)

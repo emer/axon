@@ -115,7 +115,7 @@ var ParamSets = params.Sets{
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":    "0.025",
-					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Layer.Gi":       "1.2",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.0",
 					"Layer.Act.Gbar.L":           "0.2",
@@ -172,7 +172,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Matrix.GPHasPools":   "false",
 					"Layer.Matrix.InvertNoGate": "false",
-					"Layer.Matrix.GateThr":      "0.02", // 0.02 pretty good..
+					"Layer.Matrix.GateThr":      "0.05", // 0.05 > 0.08 maybe
 					"Layer.Inhib.ActAvg.Init":   ".03",
 					"Layer.Inhib.Layer.On":      "true",
 					"Layer.Inhib.Layer.Gi":      "0.8",
@@ -201,10 +201,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 				}},
-			{Sel: "BLAPrjn", Desc: "",
-				Params: params.Params{
-					"Prjn.Learn.Trace.Tau": "1",
-				}},
 			{Sel: ".SuperToPT", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
@@ -226,21 +222,27 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
 				}},
+			//////////////////////////////////////////////
+			// To BLA
+			{Sel: "BLAPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Trace.Tau": "1",
+				}},
+			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
+				Params: params.Params{
+					"Prjn.SWt.Init.SPct":    "0",
+					"Prjn.SWt.Init.Mean":    "0.5",
+					"Prjn.SWt.Init.Var":     "0.25",
+					"Prjn.Learn.Lrate.Base": "0.001",
+					"Prjn.PrjnScale.Rel":    "0.5",
+				}},
 			{Sel: "#USToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5", // boom
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.2",
-				}},
-			{Sel: "#DrivesToBLAPosAcqD1", Desc: "",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.2",
+					"Prjn.PrjnScale.Abs": "5.0",
 				}},
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "1",
-					"Prjn.PrjnScale.Abs":    "2",
+					"Prjn.Learn.Lrate.Base": "0.5",
 				}},
 			{Sel: "#OFCToBLAPosExtD2", Desc: "",
 				Params: params.Params{
@@ -268,6 +270,13 @@ var ParamSets = params.Sets{
 					"Prjn.Trace.CurTrlDA":   "true",
 					"Prjn.Learn.Learn":      "true",
 					"Prjn.Learn.Lrate.Base": "0.1",
+				}},
+			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
+				Params: params.Params{
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Learn.Learn":   "false",
 				}},
 			{Sel: "#USToVpMtxGo", Desc: "",
 				Params: params.Params{
@@ -309,6 +318,10 @@ var ParamSets = params.Sets{
 			{Sel: "#SMAToVThal", Desc: "strong",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2.0",
+				}},
+			{Sel: ".FmSTNp", Desc: "increase to prevent repeated gating",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.2", // 1.2 > 1.0 > 1.5 (too high)
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{

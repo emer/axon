@@ -91,7 +91,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Learn":      "true",
 					"Prjn.Learn.Lrate.Base": "0.1",
 				}},
-			{Sel: ".BGFixed", Desc: "fixed, non-learning params",
+			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",

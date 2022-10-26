@@ -13,7 +13,7 @@ import (
 
 var (
 	// NeuronVars are extra neuron variables for pcore -- union across all types
-	NeuronVars = []string{"DA", "DALrn", "ACh", "Gated", "SKCai", "SKCaM", "Gsk"}
+	NeuronVars = []string{"Burst", "BurstPrv", "CtxtGe", "DA", "DALrn", "ACh", "Gated", "SKCai", "SKCaM", "Gsk"}
 
 	// NeuronVarsAll is the pcore collection of all neuron-level vars
 	NeuronVarsAll []string
@@ -37,6 +37,48 @@ func init() {
 	for i, v := range STNNeuronVars {
 		STNNeuronVarsMap[v] = i
 	}
+}
+
+//////////////////////////////////////////////////////////////////////
+// Base pcore neurons
+
+// PCoreNeuron holds the extra neuron (unit) level variables
+// for pcore computation.
+type PCoreNeuron struct {
+	ActLrn float32 `desc:"learning activity value -- based on PhasicMax activation plus other potential factors depending on layer type."`
+}
+
+var (
+	PCoreNeuronVars    = []string{"ActLrn"}
+	PCoreNeuronVarsMap map[string]int
+)
+
+func (nrn *PCoreNeuron) VarNames() []string {
+	return PCoreNeuronVars
+}
+
+// PCoreNeuronVarIdxByName returns the index of the variable in the PCoreNeuron, or error
+func PCoreNeuronVarIdxByName(varNm string) (int, error) {
+	i, ok := PCoreNeuronVarsMap[varNm]
+	if !ok {
+		return 0, fmt.Errorf("PCoreNeuron VarByName: variable name: %v not valid", varNm)
+	}
+	return i, nil
+}
+
+// VarByIndex returns variable using index (0 = first variable in PCoreNeuronVars list)
+func (nrn *PCoreNeuron) VarByIndex(idx int) float32 {
+	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(nrn)) + uintptr(4*idx)))
+	return *fv
+}
+
+// VarByName returns variable by name, or error
+func (nrn *PCoreNeuron) VarByName(varNm string) (float32, error) {
+	i, err := PCoreNeuronVarIdxByName(varNm)
+	if err != nil {
+		return 0, err
+	}
+	return nrn.VarByIndex(i), nil
 }
 
 //////////////////////////////////////////////////////////////////////

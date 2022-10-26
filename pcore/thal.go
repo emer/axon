@@ -81,6 +81,7 @@ func (ly *ThalLayer) GatedFmAvgSpk(thr float32) bool {
 		gt := (smax > thr)
 		ly.Gated[pi] = gt
 		if gt {
+			// fmt.Printf("thl %s gated spkavg: %g pool: %d\n", ly.Name(), smax, pi)
 			anyGt = true
 		}
 	}

@@ -188,6 +188,7 @@ func (ly *MatrixLayer) GatedFmAvgSpk() {
 			spkavg := ly.SpkMaxAvgByPool(pi)
 			gthr := spkavg > ly.Matrix.GateThr
 			if gthr {
+				// fmt.Printf("mtx %s gated spkavg: %g pool: %d\n", ly.Name(), spkavg, pi)
 				mtxGated = true
 			}
 			if ly.Matrix.GPHasPools {

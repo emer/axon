@@ -39,16 +39,29 @@ Need a clear signal for when you are looking at a good CS: this is the activatio
 
 See https://github.com/emer/axon/discussions/56#discussioncomment-3939045 for rationale for how it computes alignment between drive and CS.
 
+Note that BLA does not have to do the same thing -- it should follow the CS wherever it goes.
+
+## MatrixLayer GateThr
+
+This is a key parameter for stats and can affect learning in certain parameterizations but not what is being used.  In any case, the stats are important and the param is a bit sensitive -- .05 seems pretty good.
+
+## .FmSTNp
+
+This needs to be higher to prevent redundant gating.  1.2 seems good -- but need to increase STNp firing rate also.
+
+
 # TODO
-
-
-* Need Go to gate when US is present -- US only active in plus phase contingent on action -- make a whole separate trial where US is activated instead of doing in plus phase..
-
-* ACC is not gating as much as OFC
 
 * Matrix is getting blasted with too strong of input -- increase leak?  other params?  drive needs to be stronger?  but needs to activate a feedforward inhib -- no ff inhib present?  maybe switch all to ff?  yes!!  update pcore to better test this case.
 
 * There is no negative feedback on gating -- because action is always correct following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.
+
+
+# DONE
+
+* Need Go to gate when US is present -- US only active in plus phase contingent on action -- make a whole separate trial where US is activated instead of doing in plus phase..
+
+
 
 
 
