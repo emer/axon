@@ -12,9 +12,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"os"
+	"runtime/pprof"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
@@ -129,15 +131,15 @@ func ConfigPats(dt *etable.Table, pats, units int) {
 func ConfigEpcLog(dt *etable.Table) {
 	dt.SetFromSchema(etable.Schema{
 		{"Epoch", etensor.INT64, nil, nil},
-		{"CosDiff", etensor.FLOAT32, nil, nil},
-		{"AvgCosDiff", etensor.FLOAT32, nil, nil},
+		{"CorSim", etensor.FLOAT32, nil, nil},
+		{"AvgCorSim", etensor.FLOAT32, nil, nil},
 		{"SSE", etensor.FLOAT32, nil, nil},
-		{"Count Err", etensor.FLOAT32, nil, nil},
-		{"Pct Err", etensor.FLOAT32, nil, nil},
-		{"Pct Cor", etensor.FLOAT32, nil, nil},
-		{"Hid1 ActAvg", etensor.FLOAT32, nil, nil},
-		{"Hid2 ActAvg", etensor.FLOAT32, nil, nil},
-		{"Out ActAvg", etensor.FLOAT32, nil, nil},
+		{"CountErr", etensor.FLOAT32, nil, nil},
+		{"PctErr", etensor.FLOAT32, nil, nil},
+		{"PctCor", etensor.FLOAT32, nil, nil},
+		{"Hid1ActAvg", etensor.FLOAT32, nil, nil},
+		{"Hid2ActAvg", etensor.FLOAT32, nil, nil},
+		{"OutActAvg", etensor.FLOAT32, nil, nil},
 	}, 0)
 }
 
@@ -203,17 +205,19 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 		sse /= float64(np)
 		pctErr := float64(cntErr) / float64(np)
 		pctCor := 1 - pctErr
-		// fmt.Printf("epc: %v  \tCosDiff: %v \tAvgCosDif: %v\n", epc, outCorSim, outLay.CosDiff.Avg)
+		fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v\n", epc, outCorSim, outLay.CorSim.Avg)
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
 		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
 		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.CorSim.Avg))
 		epcLog.SetCellFloat("SSE", epc, sse)
-		epcLog.SetCellFloat("Count Err", epc, float64(cntErr))
-		epcLog.SetCellFloat("Pct Err", epc, pctErr)
-		epcLog.SetCellFloat("Pct Cor", epc, pctCor)
-		epcLog.SetCellFloat("Hid1 ActAvg", epc, float64(hid1Lay.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("Hid2 ActAvg", epc, float64(hid2Lay.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("Out ActAvg", epc, float64(outLay.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
+		epcLog.SetCellFloat("PctErr", epc, pctErr)
+		epcLog.SetCellFloat("PctCor", epc, pctCor)
+		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.ActAvg.ActMAvg))
+
+		EpcLog.SaveCSV("bench_epc.dat", ',', etable.Headers)
 	}
 	tmr.Stop()
 	if Silent {
@@ -229,6 +233,8 @@ func main() {
 	var epochs int
 	var pats int
 	var units int
+	// profiling flags
+	var cpuprofile string
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
@@ -241,10 +247,22 @@ func main() {
 	flag.IntVar(&pats, "pats", 10, "number of patterns per epoch")
 	flag.IntVar(&units, "units", 100, "number of units per layer -- uses NxN where N = sqrt(units)")
 	flag.BoolVar(&Silent, "silent", false, "only report the final time")
+	flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
 
 	if !Silent {
 		fmt.Printf("Running bench with: %v threads, %v epochs, %v pats, %v units\n", threads, epochs, pats, units)
+	}
+
+	log.Println("cpuprofile: ", cpuprofile)
+
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
 	}
 
 	Net = &axon.Network{}

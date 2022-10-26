@@ -790,10 +790,10 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
+
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := slay.Learn.CaSpk.SynSpkG
+
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
@@ -802,34 +802,96 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
 			continue
 		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
-				continue
-			}
-			sy := &syns[ci]
-			// todo: use atomic?
-			supt := sy.CaUpT
-			if supt == ctime { // already updated in sender pass
-				continue
-			}
-			sy.CaUpT = ctime
-			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
-			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+
+		go UpdateSendSyn(pj, si, sn, ctime)
+	}
+}
+
+func UpdateSendSyn(pj *Prjn, si int, sn *Neuron, ctime int32) {
+	nc := int(pj.SConN[si])
+	st := int(pj.SConIdxSt[si])
+	syns := pj.Syns[st : st+nc]
+	scons := pj.SConIdx[st : st+nc]
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	ssg := slay.Learn.CaSpk.SynSpkG
+	kp := &pj.Learn.KinaseCa
+
+	for ci := range syns {
+		ri := scons[ci]
+		rn := &rlay.Neurons[ri]
+		if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
+			continue
 		}
+
+		sy := &syns[ci]
+		// todo: use atomic?
+		supt := sy.CaUpT
+		if supt == ctime { // already updated in sender pass
+			continue
+		}
+		sy.CaUpT = ctime
+		sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
+		sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
+		kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+	}
+}
+
+// Same as above but using goroutines instead of for loops
+func (pj *Prjn) RecvSynCa(ltime *Time) {
+	kp := &pj.Learn.KinaseCa
+	if !pj.Learn.Learn {
+		return
+	}
+
+	ctime := int32(ltime.CycleTot)
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+
+	for ri := range rlay.Neurons {
+		rn := &rlay.Neurons[ri]
+		if rn.Spike == 0 {
+			continue
+		}
+		if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
+			continue
+		}
+
+		go UpdateRecvSyn(pj, ri, rn, ctime)
+	}
+}
+
+func UpdateRecvSyn(pj *Prjn, ri int, rn *Neuron, ctime int32) {
+	nc := int(pj.RConN[ri])
+	st := int(pj.RConIdxSt[ri])
+	rsidxs := pj.RSynIdx[st : st+nc]
+	rcons := pj.RConIdx[st : st+nc]
+	slay := pj.Send.(AxonLayer).AsAxon()
+	ssg := slay.Learn.CaSpk.SynSpkG
+	kp := &pj.Learn.KinaseCa
+
+	for ci, rsi := range rsidxs {
+		si := rcons[ci]
+		sn := &slay.Neurons[si]
+		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
+			continue
+		}
+		sy := &pj.Syns[rsi]
+		// todo: use atomic
+		supt := sy.CaUpT
+		if supt == ctime { // already updated in sender pass
+			continue
+		}
+		sy.CaUpT = ctime
+		sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
+		sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
+		kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 	}
 }
 
 // RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
-func (pj *Prjn) RecvSynCa(ltime *Time) {
+func (pj *Prjn) RecvSynCaSerial(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
 	if !pj.Learn.Learn {
 		return
