@@ -71,6 +71,17 @@ func (ly *ThalLayer) Build() error {
 	return nil
 }
 
+func (ly *ThalLayer) DecayState(decay, glong float32) {
+	ly.Layer.DecayState(decay, glong)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Learn.DecayCaLrnSpk(nrn, glong)
+	}
+}
+
 // GatedFmAvgSpk updates the Gated values based on Avg SpkMax
 // using given threshold.  Called by Go Matrix layer.
 // returns true if any gated.

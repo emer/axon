@@ -13,8 +13,9 @@ import (
 
 // PTLayer implements the pyramidal tract layer 5 intrinsic bursting deep neurons.
 type PTLayer struct {
-	rl.Layer           // access as .Layer
-	SupGeRaw []float32 `desc:"slice of raw Ge from superficial layer projections, which do NOT drive NMDA channels vs thal, self prjns."`
+	rl.Layer               // access as .Layer
+	ThalNMDAGain float32   `def:"200" desc:"extra multiplier on Thalamic NMDA Ge conductance to drive NMDA -- requires extra strong input because it is very brief in general"`
+	ThalGeRaw    []float32 `desc:"slice of raw Ge from thalamus layer projections, which uniquely drive NMDA channels to support active maintenance."`
 }
 
 var KiT_PTLayer = kit.Types.AddType(&PTLayer{}, LayerProps)
@@ -22,6 +23,8 @@ var KiT_PTLayer = kit.Types.AddType(&PTLayer{}, LayerProps)
 func (ly *PTLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.Typ = PT
+
+	ly.ThalNMDAGain = 200
 
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
@@ -45,21 +48,21 @@ func (ly *PTLayer) Build() error {
 	if err != nil {
 		return err
 	}
-	ly.SupGeRaw = make([]float32, len(ly.Neurons))
+	ly.ThalGeRaw = make([]float32, len(ly.Neurons))
 	return nil
 }
 
 func (ly *PTLayer) InitActs() {
 	ly.Layer.InitActs()
-	for ni := range ly.SupGeRaw {
-		ly.SupGeRaw[ni] = 0
+	for ni := range ly.ThalGeRaw {
+		ly.ThalGeRaw[ni] = 0
 	}
 }
 
 func (ly *PTLayer) DecayState(decay, glong float32) {
 	ly.Layer.DecayState(decay, glong)
-	for ni := range ly.SupGeRaw {
-		ly.SupGeRaw[ni] = 0
+	for ni := range ly.ThalGeRaw {
+		ly.ThalGeRaw[ni] = 0
 	}
 }
 
@@ -93,11 +96,11 @@ func (ly *PTLayer) RecvGInc(ltime *axon.Time) {
 				rn.GiRaw += g
 				pj.GBuf[bi] = 0
 			}
-		case slay.Typ == emer.Hidden: // super
+		case slay.Typ == Thal:
 			for ri := range ly.Neurons {
 				bi := ri*sz + zi
 				g := pj.GBuf[bi]
-				ly.SupGeRaw[ri] += g
+				ly.ThalGeRaw[ri] += g
 				pj.GBuf[bi] = 0
 			}
 		default:
@@ -115,15 +118,14 @@ func (ly *PTLayer) RecvGInc(ltime *axon.Time) {
 
 func (ly *PTLayer) GFmIncNeur(ni int, ltime *axon.Time, nrn *axon.Neuron, geExt float32) {
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
-	geNMDA := nrn.GeRaw + geExt
-	geTot := geNMDA + ly.SupGeRaw[ni]
-	ly.Act.NMDAFmRaw(nrn, geNMDA)
-	ly.Learn.LrnNMDAFmRaw(nrn, geNMDA) // todo: could be geTot?
+	geTot := nrn.GeRaw + geExt + ly.ThalNMDAGain*ly.ThalGeRaw[ni]
+	ly.Act.NMDAFmRaw(nrn, ly.ThalNMDAGain*ly.ThalGeRaw[ni])
+	ly.Learn.LrnNMDAFmRaw(nrn, geTot) // todo
 	ly.Act.GvgccFmVm(nrn)
 
 	ly.Act.GeFmRaw(nrn, geTot, nrn.Gnmda+nrn.Gvgcc)
 	nrn.GeRaw = 0
-	ly.SupGeRaw[ni] = 0
+	ly.ThalGeRaw[ni] = 0
 	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 	nrn.GiRaw = 0
 }

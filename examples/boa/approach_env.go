@@ -149,10 +149,15 @@ func (ev *Approach) NewStart() {
 	// ev.Dist = 1 + rand.Intn(ev.DistMax-1)
 	ev.Dist = ev.DistMax - 1
 	ev.Time = 0
-	ev.Pos = rand.Intn(ev.Locations)
 	ev.TrgPos = rand.Intn(ev.Locations)
 	uss := ev.States["USs"]
 	ev.Drive = int(uss.Values[ev.TrgPos])
+	for {
+		ev.Pos = rand.Intn(ev.Locations)
+		if ev.Pos != ev.TrgPos { // do not start facing target b/c clearing zaps everything
+			break
+		}
+	}
 	ev.US = -1
 	ev.LastUS = -1
 	ev.Rew = 0

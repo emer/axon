@@ -133,6 +133,17 @@ func (ly *MatrixLayer) InitActs() {
 	}
 }
 
+func (ly *MatrixLayer) DecayState(decay, glong float32) {
+	ly.Layer.DecayState(decay, glong)
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Learn.DecayCaLrnSpk(nrn, glong)
+	}
+}
+
 // BoolToFloat32 -- the lack of ternary conditional expressions
 // is *only* Go decision I disagree about
 func BoolToFloat32(b bool) float32 {

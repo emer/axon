@@ -788,22 +788,13 @@ func (pj *Prjn) RecvGIncNoStats() {
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 func (pj *Prjn) SendSynCa(ltime *Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
-	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
-		if pj.Learn.Trace.TrgNeuronCa {
-			return
-		}
-	} else {
-		if pj.Learn.Trace.NeuronCa {
-			return
-		}
 	}
 	kp := &pj.Learn.KinaseCa
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := slay.Learn.CaSpk.SynSpkG
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
@@ -841,22 +832,13 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
 func (pj *Prjn) RecvSynCa(ltime *Time) {
-	if !pj.Learn.Learn {
+	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
-	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
-		if pj.Learn.Trace.TrgNeuronCa {
-			return
-		}
-	} else {
-		if pj.Learn.Trace.NeuronCa {
-			return
-		}
 	}
 	kp := &pj.Learn.KinaseCa
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := slay.Learn.CaSpk.SynSpkG
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
@@ -900,7 +882,7 @@ func (pj *Prjn) DWt(ltime *Time) {
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
-		if pj.Learn.Trace.TrgNeuronCa {
+		if pj.Learn.Trace.NeuronCa {
 			pj.DWtNeurSpkTheta(ltime)
 		} else {
 			pj.DWtSynSpkTheta(ltime)

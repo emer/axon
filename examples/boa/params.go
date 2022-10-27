@@ -57,13 +57,18 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PTLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "1.8",
-					"Layer.Act.GABAB.Gbar":  "0.3",
-					"Layer.Act.NMDA.Gbar":   "0.3",
+					"Layer.Inhib.Layer.Gi":  "1.1",
+					"Layer.Act.GABAB.Gbar":  "0.2",
+					"Layer.Act.NMDA.Gbar":   "0.4",
 					"Layer.Act.NMDA.Tau":    "300",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.Sahp.Gbar":   "0.01", // not much pressure -- long maint
+					"Layer.ThalNMDAGain":    "300",
+				}},
+			{Sel: "#ACCPT", Desc: "",
+				Params: params.Params{
+					"Layer.ThalNMDAGain": "300", // needs more than OFC apparently
 				}},
 			{Sel: "PulvLayer", Desc: "",
 				Params: params.Params{
@@ -183,9 +188,7 @@ var ParamSets = params.Sets{
 			// 	Params: params.Params{
 			// 	}},
 			{Sel: "ThalLayer", Desc: "",
-				Params: params.Params{
-					"Layer.Act.Dt.MaxCycStart": "50", // critical param
-				}},
+				Params: params.Params{}},
 			{Sel: "#RWPred", Desc: "",
 				Params: params.Params{
 					"Layer.PredRange.Min": "0.01",
@@ -195,7 +198,8 @@ var ParamSets = params.Sets{
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
-					"Prjn.Learn.Trace.Tau": "2",
+					"Prjn.Learn.Trace.Tau":      "2",
+					"Prjn.Learn.Trace.NeuronCa": "true", // faster and no diff here
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
@@ -203,12 +207,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperToPT", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.2",
+					"Prjn.PrjnScale.Rel": "0.5",
 				}},
 			{Sel: ".CTtoThal", Desc: "",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
+				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 				}},
 			{Sel: "#OFCToSMA", Desc: "",
 				Params: params.Params{
@@ -221,6 +229,14 @@ var ParamSets = params.Sets{
 			{Sel: "#SMAToSMAd", Desc: "selects action based on sma -- nominally weaker?",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
+				}},
+			{Sel: "#ACCToACCPT", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.5",
+				}},
+			{Sel: "#ACCPTToACCMD", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.5",
 				}},
 			//////////////////////////////////////////////
 			// To BLA
