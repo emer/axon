@@ -1192,11 +1192,12 @@ func (ly *Layer) RecvGInc(ltime *Time) {
 // from their G*Raw accumulators.  Takes an extra increment to add to geRaw
 func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
 	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
-	ly.Act.NMDAFmRaw(nrn, geExt)
-	ly.Learn.LrnNMDAFmRaw(nrn, geExt)
+	geTot := nrn.GeRaw + geExt
+	ly.Act.NMDAFmRaw(nrn, geTot)
+	ly.Learn.LrnNMDAFmRaw(nrn, geTot)
 	ly.Act.GvgccFmVm(nrn)
 
-	ly.Act.GeFmRaw(nrn, nrn.GeRaw+geExt, nrn.Gnmda+nrn.Gvgcc)
+	ly.Act.GeFmRaw(nrn, geTot, nrn.Gnmda+nrn.Gvgcc)
 	nrn.GeRaw = 0
 	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 	nrn.GiRaw = 0

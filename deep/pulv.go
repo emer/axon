@@ -101,9 +101,9 @@ func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 // GeFmDriverNeuron sets the driver activation for given Neuron,
 // based on given Ge driving value (use DriveFmMaxAvg) from driver layer (Burst or Act)
 func (ly *PulvLayer) GeFmDriverNeuron(nrn *axon.Neuron, drvGe, drvInhib float32) {
-	nrn.GeRaw = (1-drvInhib)*nrn.GeRaw + drvGe
-	ly.Act.NMDAFmRaw(nrn, 0)
-	ly.Learn.LrnNMDAFmRaw(nrn, 0)
+	geTot := (1-drvInhib)*nrn.GeRaw + drvGe
+	ly.Act.NMDAFmRaw(nrn, geTot)
+	ly.Learn.LrnNMDAFmRaw(nrn, geTot)
 	ly.Act.GvgccFmVm(nrn)
 
 	ly.Act.GeFmRaw(nrn, nrn.GeRaw, nrn.Gnmda+nrn.Gvgcc)

@@ -924,7 +924,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 	ctime := int32(ltime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
+		// sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
@@ -935,9 +935,8 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
 			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			caD = rn.CaSpkD * sn.CaSpkD
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
-			if sy.Wt == 0 {                           // failed con, no learn
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                      // caD reflects entire window
+			if sy.Wt == 0 {                                                // failed con, no learn
 				continue
 			}
 			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal

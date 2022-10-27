@@ -79,7 +79,6 @@ func (ly *CTLayer) Class() string {
 	return "CT " + ly.Cls
 }
 
-// Build constructs the layer state, including calling Build on the projections.
 func (ly *CTLayer) Build() error {
 	err := ly.Layer.Build()
 	if err != nil {

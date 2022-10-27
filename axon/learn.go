@@ -96,15 +96,14 @@ func (ln *LearnNeurParams) DecayCaLrnSpk(nrn *Neuron, decay float32) {
 }
 
 // LrnNMDAFmRaw updates the separate NMDA conductance and calcium values
-// based on GeRaw and any external ge conductance.  These are the variables
+// based on GeTot = GeRaw + external ge conductance.  These are the variables
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
-func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
-	ge := nrn.GeRaw + geExt
-	if ge < 0 {
-		ge = 0
+func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geTot float32) {
+	if geTot < 0 {
+		geTot = 0
 	}
-	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, ge)
+	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot)
 	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
 	nrn.NmdaCa = gnmda * ln.LrnNMDA.CaFmV(nrn.VmDend)
 	ln.LrnNMDA.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
@@ -190,6 +189,7 @@ func (np *CaSpkParams) Defaults() {
 }
 
 func (np *CaSpkParams) Update() {
+	np.Dt.Update()
 	np.SynDt = 1 / np.SynTau
 	np.SynSpkG = mat32.Sqrt(30) / mat32.Sqrt(np.SynTau)
 }

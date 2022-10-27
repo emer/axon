@@ -224,14 +224,13 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// NMDAFmRaw updates all the NMDA variables from GeRaw and current Vm, Spiking
-func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
-	// important: add other sources of GeRaw here in NMDA driver
-	ge := nrn.GeRaw + geExt
-	if ge < 0 {
-		ge = 0
+// NMDAFmRaw updates all the NMDA variables from
+// total Ge (GeRaw + Ext) and current Vm, Spiking
+func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geTot float32) {
+	if geTot < 0 {
+		geTot = 0
 	}
-	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, ge)
+	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, geTot)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
