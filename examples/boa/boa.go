@@ -567,17 +567,22 @@ func (ss *Sim) GatedStats() {
 	didGate := mtxLy.AnyGated()
 	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(ev.ShouldGate))
-	ss.Stats.SetFloat32("ShouldDidUS", mat32.NaN())
-	ss.Stats.SetFloat32("ShouldDidCS", mat32.NaN())
-	ss.Stats.SetFloat32("ShouldntDidnt", mat32.NaN())
+	ss.Stats.SetFloat32("GateUS", mat32.NaN())
+	ss.Stats.SetFloat32("GateCS", mat32.NaN())
+	ss.Stats.SetFloat32("NoGatePre", mat32.NaN())
+	ss.Stats.SetFloat32("NoGatePost", mat32.NaN())
 	if ev.ShouldGate {
 		if ev.US != -1 {
-			ss.Stats.SetFloat32("ShouldDidUS", pcore.BoolToFloat32(didGate))
+			ss.Stats.SetFloat32("GateUS", pcore.BoolToFloat32(didGate))
 		} else {
-			ss.Stats.SetFloat32("ShouldDidCS", pcore.BoolToFloat32(didGate))
+			ss.Stats.SetFloat32("GateCS", pcore.BoolToFloat32(didGate))
 		}
 	} else {
-		ss.Stats.SetFloat32("ShouldntDidnt", pcore.BoolToFloat32(!didGate))
+		if ev.Dist < ev.DistMax-1 { // todo: not very robust
+			ss.Stats.SetFloat32("NoGatePost", pcore.BoolToFloat32(!didGate))
+		} else {
+			ss.Stats.SetFloat32("NoGatePre", pcore.BoolToFloat32(!didGate))
+		}
 	}
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 }
@@ -650,9 +655,10 @@ func (ss *Sim) TestAll() {
 func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Gated", 0)
 	ss.Stats.SetFloat("Should", 0)
-	ss.Stats.SetFloat("ShouldDidUS", 0)
-	ss.Stats.SetFloat("ShouldDidCS", 0)
-	ss.Stats.SetFloat("ShouldntDidnt", 0)
+	ss.Stats.SetFloat("GateUS", 0)
+	ss.Stats.SetFloat("GateCS", 0)
+	ss.Stats.SetFloat("NoGatePre", 0)
+	ss.Stats.SetFloat("NoGatePost", 0)
 	ss.Stats.SetFloat("Rew", 0)
 }
 
@@ -712,9 +718,10 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ShouldDidUS", "ShouldDidUS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ShouldDidCS", "ShouldDidCS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("ShouldntDidnt", "ShouldntDidnt", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("NoGatePre", "NoGatePre", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("NoGatePost", "NoGatePost", etime.Run, etime.Epoch, etime.Trial)
 	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
@@ -737,7 +744,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("ActMatch", "Gated", "ShouldDidUS", "ShouldDidCS", "ShouldntDidnt") // "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("ActMatch", "Gated", "GateUS", "GateCS", "NoGatePre", "NoGatePost") // "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())

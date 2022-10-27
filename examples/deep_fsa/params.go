@@ -77,12 +77,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.03", // .03 > others -- same as CtCtxt
-					"Prjn.SWt.Adapt.Lrate":    "0.01", // 0.01 or 0.0001 music
-					"Prjn.SWt.Adapt.DreamVar": "0.0",  // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":      "1.0",  // 1 works fine here -- .5 also ok
-					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1
+					"Prjn.Learn.Lrate.Base":        "0.03", // .03 > others -- same as CtCtxt
+					"Prjn.SWt.Adapt.Lrate":         "0.01", // 0.01 or 0.0001 music
+					"Prjn.SWt.Adapt.DreamVar":      "0.0",  // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":           "1.0",  // 1 works fine here -- .5 also ok
+					"Prjn.Com.PFail":               "0.0",
+					"Prjn.Learn.Trace.NeuronCa":    "true",
+					"Prjn.Learn.Trace.TrgNeuronCa": "true",
+					"Prjn.Learn.Trace.Tau":         "2", // 2 > 1
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
