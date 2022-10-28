@@ -33,14 +33,6 @@ func (nt *Network) SynVarNames() []string {
 	return SynVarsAll
 }
 
-// ThalMatrixGated updates Thalamus and Matrix Gated status
-// for all Thal and Matrix layer types in the network,
-// returning true if any Thal layer gated.
-// This should be called in the Plus phase or thereabouts.
-func (nt *Network) ThalMatrixGated() bool {
-	return ThalMatrixGated(nt.AsAxon())
-}
-
 // AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // Only the Matrix has pool-based 4D shape by default -- use pool for "role" like
@@ -80,9 +72,10 @@ func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *ThalLayer {
 // AddPTThalForSuper adds a PT pyramidal tract layer and a
 // Thalamus layer for given superficial layer (SuperLayer)
 // with given suffix (e.g., MD, VM).
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal.
 // The PT and Thal layers are positioned behind the CT layer.
-func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
-	return AddPTThalForSuper(nt.AsAxon(), super, ct, suffix, space)
+func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
+	return AddPTThalForSuper(nt.AsAxon(), super, ct, suffix, superToPT, ptSelf, ctToThal, space)
 }
 
 // ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
@@ -93,51 +86,6 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 ////////////////////////////////////////////////////////////////////////
 // Network functions available here as standalone functions
 //         for mixing in to other models
-
-// ThalMatrixGated updates Thalamus and Matrix Gated status
-// for all Thal and Matrix layer types in the network,
-// returning true if any Thal layer gated.
-// This should be called in the Plus phase or thereabouts.
-func ThalMatrixGated(nt *axon.Network) bool {
-	thNms := nt.LayersByClass("Thal")
-	gpiThals := make(map[emer.Layer][]*ThalLayer)
-	anyGt := false
-	for _, thnm := range thNms {
-		ly := nt.LayerByName(thnm).(*ThalLayer)
-		gt := ly.GatedFmPhasicMax()
-		if gt {
-			anyGt = true
-		}
-		for _, pj := range *ly.RecvPrjns() {
-			sp := pj.SendLay()
-			if _, isa := sp.(*GPiLayer); isa {
-				gpiThals[sp] = append(gpiThals[sp], ly)
-			}
-		}
-	}
-	mtx := nt.LayersByClass("Matrix")
-	var lastGo *MatrixLayer
-	for _, mxnm := range mtx {
-		ly := nt.LayerByName(mxnm).(*MatrixLayer)
-		if ly.DaR == D1R {
-			lastGo = ly
-		}
-		for _, pj := range *lastGo.SendPrjns() {
-			rp := pj.RecvLay()
-			if _, isa := rp.(*GPiLayer); isa {
-				thals := gpiThals[rp]
-				agt := false
-				for _, thl := range thals {
-					if thl.AnyGated() {
-						agt = true
-					}
-				}
-				ly.SetGated([]bool{agt}) // todo: doesn't work for pooled!
-			}
-		}
-	}
-	return anyGt
-}
 
 // AddCINLayer adds a CINLayer, with a single neuron.
 func AddCINLayer(nt *axon.Network, name string) *CINLayer {
@@ -259,6 +207,9 @@ func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gp
 	cin = cini
 
 	cini.SendACh.Add(mtxGo.Name(), mtxNo.Name())
+
+	mtxGo.(*MatrixLayer).MtxThals.Add(mtxNo.Name())
+	mtxNo.(*MatrixLayer).MtxThals.Add(mtxGo.Name())
 
 	full := prjn.NewFull()
 
@@ -396,8 +347,9 @@ func ConnectPTSelf(nt *axon.Network, ly emer.Layer, pat prjn.Pattern) emer.Prjn 
 // Thalamus layer for given superficial layer (deep.SuperLayer) and associated CT
 // with given suffix (e.g., MD, VM).
 // PT and Thal have SetClass(super.Name()) called to allow shared params.
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal.
 // The PT and Thal layers are positioned behind the CT layer.
-func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, space float32) (pt, thal emer.Layer) {
+func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
 	name := super.Name()
 	shp := super.Shape()
 	if shp.NumDims() == 2 {
@@ -415,6 +367,8 @@ func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, sp
 	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal")
 	thalpt.SetClass("ThalToPT")
-	nt.ConnectLayers(ct, thal, one2one, emer.Forward).SetClass("CTtoThal")
+	nt.ConnectLayers(super, pt, superToPT, emer.Forward).SetClass("SuperToPT")
+	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
+	nt.ConnectLayers(ct, thal, ctToThal, emer.Forward).SetClass("CTtoThal")
 	return
 }

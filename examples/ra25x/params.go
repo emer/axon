@@ -51,8 +51,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
 					"Layer.Learn.RLrate.Diff":       "true",
-					"Layer.Learn.RLrate.ActDiffThr": "0.02", // 0.02 def - todo
-					"Layer.Learn.RLrate.ActThr":     "0.1",  // 0.1 def
+					"Layer.Learn.RLrate.DiffThr":    "0.02", // 0.02 def - todo
+					"Layer.Learn.RLrate.SpkThr":     "0.1",  // 0.1 def
 					"Layer.Learn.RLrate.Min":        "0.001",
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
@@ -74,17 +74,19 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
-					"Prjn.SWt.Adapt.SubMean":      "1",
-					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Trace.Tau":        "1",   // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.Trace.SubMean":    "1",
-					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
-					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
-					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10
-					"Prjn.Learn.KinaseCa.Dt.PTau": "40",
-					"Prjn.Learn.KinaseCa.Dt.DTau": "40",
+					"Prjn.Learn.Lrate.Base":        "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":         "0.1", // .1 >= .2,
+					"Prjn.SWt.Adapt.SubMean":       "1",
+					"Prjn.SWt.Init.SPct":           "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Trace.NeuronCa":    "true",
+					"Prjn.Learn.Trace.TrgNeuronCa": "true",
+					"Prjn.Learn.Trace.Tau":         "1", // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.Learn.Trace.SubMean":     "0",
+					"Prjn.Learn.KinaseCa.SpikeG":   "12",   // 12 def -- produces reasonable ~1ish max vals
+					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01", // 0.01 def
+					"Prjn.Learn.KinaseCa.Dt.MTau":  "5",    // 5 ==? 2 > 10
+					"Prjn.Learn.KinaseCa.Dt.PTau":  "40",
+					"Prjn.Learn.KinaseCa.Dt.DTau":  "40",
 				}},
 			{Sel: "#Hidden2ToOutput", Desc: "key to use activation-based learning for output layers",
 				Params: params.Params{

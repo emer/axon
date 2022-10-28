@@ -371,7 +371,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "Hidden")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RL")
 
 	ss.Logs.PlotItems("TD_Act")
 

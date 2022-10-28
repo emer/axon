@@ -10,8 +10,8 @@ import (
 
 // hip.EcCa1Prjn is for EC <-> CA1 projections, to perform error-driven
 // learning of this encoder pathway according to the ThetaPhase algorithm
-// uses Contrastive Hebbian Learning (CHL) on ActP - ActSt1
-// Q1: ECin -> CA1 -> ECout       : ActSt1 = minus phase for auto-encoder
+// uses Contrastive Hebbian Learning (CHL) on ActP - SpkSt1
+// Q1: ECin -> CA1 -> ECout       : SpkSt1 = minus phase for auto-encoder
 // Q2, 3: CA3 -> CA1 -> ECout     : ActM = minus phase for recall
 // Q4: ECin -> CA1, ECin -> ECout : ActP = plus phase for everything
 type EcCa1Prjn struct {
@@ -49,8 +49,8 @@ func (pj *EcCa1Prjn) DWt(ltime *axon.Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			err := pj.Learn.CHLdWt(sn.CaP, sn.ActSt1, rn.CaP, rn.ActSt1)
-			// err := (sn.ActP * rn.ActP) - (sn.ActSt1 * rn.ActSt1)
+			err := pj.Learn.CHLdWt(sn.CaP, sn.SpkSt1, rn.CaP, rn.SpkSt1)
+			// err := (sn.ActP * rn.ActP) - (sn.SpkSt1 * rn.SpkSt1)
 			if err > 0 {
 				err *= (1 - sy.LWt)
 			} else {

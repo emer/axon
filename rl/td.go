@@ -256,7 +256,7 @@ func (ly *TDDaLayer) CyclePost(ltime *axon.Time) {
 //  TDRewPredPrjn
 
 // TDRewPredPrjn does dopamine-modulated learning for reward prediction:
-// DWt = Da * Send.ActPrv (activity on *previous* timestep)
+// DWt = Da * Send.SpkPrv (activity on *previous* timestep)
 // Use in TDRewPredLayer typically to generate reward predictions.
 // If the Da sign is positive, the first recv unit learns fully;
 // for negative, second one learns fully.  Lower lrate applies for
@@ -305,7 +305,7 @@ func (pj *TDRewPredPrjn) DWt(ltime *axon.Time) {
 				}
 			}
 
-			dwt := da * sn.ActPrv // no recv unit activation, prior trial act
+			dwt := da * sn.SpkPrv // no recv unit activation, prior trial act
 			sy.DWt += eff_lr * dwt
 		}
 	}

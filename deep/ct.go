@@ -79,7 +79,6 @@ func (ly *CTLayer) Class() string {
 	return "CT " + ly.Cls
 }
 
-// Build constructs the layer state, including calling Build on the projections.
 func (ly *CTLayer) Build() error {
 	err := ly.Layer.Build()
 	if err != nil {
@@ -93,6 +92,13 @@ func (ly *CTLayer) InitActs() {
 	ly.Layer.InitActs()
 	for ni := range ly.CtxtGes {
 		ly.CtxtGes[ni] = 0
+	}
+}
+
+func (ly *CTLayer) DecayState(decay, glong float32) {
+	ly.Layer.DecayState(decay, glong)
+	for ni := range ly.CtxtGes {
+		ly.CtxtGes[ni] -= glong * ly.CtxtGes[ni]
 	}
 }
 

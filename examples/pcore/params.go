@@ -71,7 +71,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Matrix.UseThalGated": "true", // todo: fixme
+					"Layer.Matrix.GPHasPools":   "false",
+					"Layer.Matrix.InvertNoGate": "true",
+					"Layer.Matrix.GateThr":      "0.01",
 					"Layer.Inhib.Layer.On":      "true",
 					"Layer.Inhib.Layer.Gi":      "0.5", // 0.5 > 0.4
 					"Layer.Inhib.Layer.FB":      "0.0",
@@ -89,7 +91,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Learn":      "true",
 					"Prjn.Learn.Lrate.Base": "0.1",
 				}},
-			{Sel: ".BGFixed", Desc: "fixed, non-learning params",
+			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",

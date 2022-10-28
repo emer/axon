@@ -6,6 +6,7 @@ package pcore
 
 import (
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/rl"
 	"github.com/goki/ki/kit"
 )
 
@@ -13,7 +14,7 @@ import (
 // GPeOut, GPeIn, GPeTA (arkypallidal), and GPi (see GPLay for type).
 // Typically just a single unit per Pool representing a given stripe.
 type GPLayer struct {
-	Layer
+	rl.Layer
 	GPLay GPLays `desc:"type of GP layer"`
 }
 

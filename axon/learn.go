@@ -96,15 +96,14 @@ func (ln *LearnNeurParams) DecayCaLrnSpk(nrn *Neuron, decay float32) {
 }
 
 // LrnNMDAFmRaw updates the separate NMDA conductance and calcium values
-// based on GeRaw and any external ge conductance.  These are the variables
+// based on GeTot = GeRaw + external ge conductance.  These are the variables
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
-func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geExt float32) {
-	ge := nrn.GeRaw + geExt
-	if ge < 0 {
-		ge = 0
+func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geTot float32) {
+	if geTot < 0 {
+		geTot = 0
 	}
-	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, ge)
+	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot)
 	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
 	nrn.NmdaCa = gnmda * ln.LrnNMDA.CaFmV(nrn.VmDend)
 	ln.LrnNMDA.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
@@ -190,6 +189,7 @@ func (np *CaSpkParams) Defaults() {
 }
 
 func (np *CaSpkParams) Update() {
+	np.Dt.Update()
 	np.SynDt = 1 / np.SynTau
 	np.SynSpkG = mat32.Sqrt(30) / mat32.Sqrt(np.SynTau)
 }
@@ -243,8 +243,8 @@ type RLrateParams struct {
 	On         bool    `def:"true" desc:"use learning rate modulation"`
 	SigmoidMin float32 `def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
 	Diff       bool    `desc:"modulate learning rate as a function of plus - minus differences"`
-	ActThr     float32 `def:"0.1" desc:"threshold on Max(CaP, CaD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	ActDiffThr float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaP - CaD| below which lrate is at Min value"`
+	SpkThr     float32 `def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	DiffThr    float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
 	Min        float32 `def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
 }
 
@@ -255,8 +255,8 @@ func (rl *RLrateParams) Defaults() {
 	rl.On = true
 	rl.SigmoidMin = 0.05
 	rl.Diff = true
-	rl.ActThr = 0.1
-	rl.ActDiffThr = 0.02
+	rl.SpkThr = 0.1
+	rl.DiffThr = 0.02
 	rl.Min = 0.001
 	rl.Update()
 }
@@ -280,15 +280,15 @@ func (rl *RLrateParams) RLrateSigDeriv(act float32, laymax float32) float32 {
 }
 
 // RLrateDiff returns the learning rate as a function of difference between
-// CaP and CaD values
+// CaSpkP and CaSpkD values
 func (rl *RLrateParams) RLrateDiff(scap, scad float32) float32 {
 	if !rl.On || !rl.Diff {
 		return 1.0
 	}
 	max := mat32.Max(scap, scad)
-	if max > rl.ActThr { // avoid div by 0
+	if max > rl.SpkThr { // avoid div by 0
 		dif := mat32.Abs(scap - scad)
-		if dif < rl.ActDiffThr {
+		if dif < rl.DiffThr {
 			return rl.Min
 		}
 		return (dif / max)
@@ -601,9 +601,10 @@ func (ls *LrateParams) Init() {
 
 // TraceParams manages learning rate parameters
 type TraceParams struct {
-	Tau     float32 `def:"1,2,4" desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
-	SubMean float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, but special types (e.g., Hebb or CaSpk) may benefit from it"`
-	Dt      float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	NeuronCa bool    `def:"false" desc:"use separate neuron-level Ca calcium signals for the trace credit assignment factor, instead of using synaptically-integrated Ca signals -- this is about 2x faster, but can result in worse learning in larger networks -- you may also need to increase the learning rate with this selected."`
+	Tau      float32 `def:"1,2,4" desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
+	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, but special types (e.g., Hebb or CaSpk) may benefit from it"`
+	Dt       float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
 func (tp *TraceParams) Defaults() {

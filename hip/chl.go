@@ -14,7 +14,7 @@ type CHLParams struct {
 	On      bool    `desc:"if true, use CHL learning instead of standard XCAL learning -- allows easy exploration of CHL vs. XCAL"`
 	Hebb    float32 `def:"0.001" min:"0" max:"1" desc:"amount of hebbian learning (should be relatively small, can be effective at .0001)"`
 	Err     float32 `def:"0.999" min:"0" max:"1" inactive:"+" desc:"amount of error driven learning, automatically computed to be 1-Hebb"`
-	MinusQ1 bool    `desc:"if true, use ActSt1 as the minus phase -- otherwise ActM"`
+	MinusQ1 bool    `desc:"if true, use SpkSt1 as the minus phase -- otherwise ActM"`
 	SAvgCor float32 `def:"0.4:0.8" min:"0" max:"1" desc:"proportion of correction to apply to sending average activation for hebbian learning component (0=none, 1=all, .5=half, etc)"`
 	SAvgThr float32 `def:"0.001" min:"0" desc:"threshold of sending average activation below which learning does not occur (prevents learning when there is no input)"`
 }
@@ -31,7 +31,7 @@ func (ch *CHLParams) Update() {
 	ch.Err = 1 - ch.Hebb
 }
 
-// MinusAct returns the minus-phase activation to use based on settings (ActM vs. ActSt1)
+// MinusAct returns the minus-phase activation to use based on settings (ActM vs. SpkSt1)
 func (ch *CHLParams) MinusAct(actM, actQ1 float32) float32 {
 	if ch.MinusQ1 {
 		return actQ1
@@ -128,7 +128,7 @@ func (pj *CHLPrjn) DWtCHL(ltime *axon.Time) {
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
 		scons := pj.SConIdx[st : st+nc]
-		snActM := pj.CHL.MinusAct(sn.ActM, sn.ActSt1)
+		snActM := pj.CHL.MinusAct(sn.ActM, sn.SpkSt1)
 
 		savgCor := pj.SAvgCor(slay)
 
@@ -136,7 +136,7 @@ func (pj *CHLPrjn) DWtCHL(ltime *axon.Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			rnActM := pj.CHL.MinusAct(rn.ActM, rn.ActSt1)
+			rnActM := pj.CHL.MinusAct(rn.ActM, rn.SpkSt1)
 
 			hebb := pj.CHL.HebbDWt(sn.ActP, rn.ActP, savgCor, sy.LWt)
 			err := pj.CHL.ErrDWt(sn.ActP, snActM, rn.ActP, rnActM, sy.LWt)

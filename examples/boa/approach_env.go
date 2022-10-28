@@ -56,7 +56,7 @@ func (ev *Approach) Desc() string {
 // Defaults sets default params
 func (ev *Approach) Defaults() {
 	ev.TimeCost = 0.05
-	ev.Acts = []string{"Forward", "Left", "Right", "Consume", "Reset"}
+	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
 	ev.NDrives = 4
 	ev.CSPerDrive = 1
 	ev.Locations = 4 // <= drives always
@@ -149,10 +149,15 @@ func (ev *Approach) NewStart() {
 	// ev.Dist = 1 + rand.Intn(ev.DistMax-1)
 	ev.Dist = ev.DistMax - 1
 	ev.Time = 0
-	ev.Pos = rand.Intn(ev.Locations)
 	ev.TrgPos = rand.Intn(ev.Locations)
 	uss := ev.States["USs"]
 	ev.Drive = int(uss.Values[ev.TrgPos])
+	for {
+		ev.Pos = rand.Intn(ev.Locations)
+		if ev.Pos != ev.TrgPos { // do not start facing target b/c clearing zaps everything
+			break
+		}
+	}
 	ev.US = -1
 	ev.LastUS = -1
 	ev.Rew = 0
@@ -214,7 +219,7 @@ func (ev *Approach) RenderAction(act int) {
 
 // Step does one step
 func (ev *Approach) Step() bool {
-	if ev.LastAct == ev.ActMap["Reset"] || ev.Time >= ev.TimeMax || ev.LastUS != -1 {
+	if ev.LastUS != -1 || ev.Time >= ev.TimeMax {
 		ev.NewStart()
 	}
 	ev.RenderState()
@@ -258,8 +263,11 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 	switch action {
 	case "Forward":
 		if ev.Dist == 0 {
-			// todo: make a BumpPain US -- apply it
-			ev.Rew = -ev.TimeCost * float32(ev.Time)
+			if ev.US == ev.Drive {
+				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
+			} else {
+				ev.Rew = -ev.TimeCost * float32(ev.Time)
+			}
 		} else {
 			ev.Dist--
 		}
@@ -275,11 +283,11 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			ev.US = us
-		}
-	case "Reset":
-		if ev.US == ev.Drive {
-			ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
+			if ev.US == ev.Drive { // double consume
+				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
+			} else {
+				ev.US = us
+			}
 		}
 	}
 	ev.LastAct = act
@@ -297,7 +305,7 @@ func (ev *Approach) ActGen() int {
 		if ev.Dist == 0 {
 			if ev.LastAct == cons {
 				ev.ShouldGate = true
-				return ev.ActMap["Reset"]
+				return cons
 			}
 			return cons
 		}

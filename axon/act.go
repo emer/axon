@@ -144,7 +144,6 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 	// learning-based NMDA, Ca values decayed in Learn.DecayNeurCa
 
-	nrn.ActDel = 0
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
@@ -171,8 +170,8 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Targ = 0
 	nrn.Ext = 0
 
+	nrn.SpkMax = 0
 	nrn.Attn = 1
-	nrn.ActDel = 0
 	nrn.RLrate = 1
 
 	nrn.GeNoiseP = 1
@@ -209,30 +208,29 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (ActPrv, ActSt*, ActM, ActP, ActDiff)
-// Called from InitActs, which is called from InitWts, but otherwise not automatically called
+// (SpkPrv, SpkSt*, ActM, ActP, GeM)
+// Called from InitActs, which is called from InitWts,
+// but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(nrn *Neuron) {
-	nrn.ActPrv = 0
-	nrn.ActSt1 = 0
-	nrn.ActSt2 = 0
+	nrn.SpkPrv = 0
+	nrn.SpkSt1 = 0
+	nrn.SpkSt2 = 0
 	nrn.ActM = 0
 	nrn.ActP = 0
-	nrn.ActDiff = 0
 	nrn.GeM = 0
 }
 
 ///////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// NMDAFmRaw updates all the NMDA variables from GeRaw and current Vm, Spiking
-func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geExt float32) {
-	// important: add other sources of GeRaw here in NMDA driver
-	ge := nrn.GeRaw + geExt
-	if ge < 0 {
-		ge = 0
+// NMDAFmRaw updates all the NMDA variables from
+// total Ge (GeRaw + Ext) and current Vm, Spiking
+func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geTot float32) {
+	if geTot < 0 {
+		geTot = 0
 	}
-	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, ge)
+	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, geTot)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
@@ -416,7 +414,6 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 		nwAct = 1
 	}
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
-	nrn.ActDel = nwAct - nrn.Act
 	nrn.Act = nwAct
 	dn := ac.Mahp.DNFmV(nrn.Vm, nrn.MahpN)
 	nrn.MahpN += dn
@@ -591,14 +588,15 @@ func (ai *DecayParams) Defaults() {
 
 // DtParams are time and rate constants for temporal derivatives in Axon (Vm, G)
 type DtParams struct {
-	Integ      float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
-	VmTau      float32 `def:"2.81" min:"1" desc:"membrane potential time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
-	VmDendTau  float32 `def:"5" min:"1" desc:"dendritic membrane potential time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
-	VmSteps    int     `def:"2" min:"1" desc:"number of integration steps to take in computing new Vm value -- this is the one computation that can be most numerically unstable so taking multiple steps with proportionally smaller dt is beneficial"`
-	GeTau      float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
-	GiTau      float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
-	IntTau     float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
-	LongAvgTau float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
+	Integ       float32 `def:"1,0.5" min:"0" desc:"overall rate constant for numerical integration, for all equations at the unit level -- all time constants are specified in millisecond units, with one cycle = 1 msec -- if you instead want to make one cycle = 2 msec, you can do this globally by setting this integ value to 2 (etc).  However, stability issues will likely arise if you go too high.  For improved numerical stability, you may even need to reduce this value to 0.5 or possibly even lower (typically however this is not necessary).  MUST also coordinate this with network.time_inc variable to ensure that global network.time reflects simulated time accurately"`
+	VmTau       float32 `def:"2.81" min:"1" desc:"membrane potential time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
+	VmDendTau   float32 `def:"5" min:"1" desc:"dendritic membrane potential time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- reflects the capacitance of the neuron in principle -- biological default for AdEx spiking model C = 281 pF = 2.81 normalized"`
+	VmSteps     int     `def:"2" min:"1" desc:"number of integration steps to take in computing new Vm value -- this is the one computation that can be most numerically unstable so taking multiple steps with proportionally smaller dt is beneficial"`
+	GeTau       float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
+	GiTau       float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
+	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
+	LongAvgTau  float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
+	MaxCycStart int     `def:"50" min:"0" desc:"cycle to start updating the SpkMax value within a theta cycle -- early cycles often reflect prior state"`
 
 	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
@@ -631,6 +629,7 @@ func (dp *DtParams) Defaults() {
 	dp.GiTau = 7
 	dp.IntTau = 40
 	dp.LongAvgTau = 20
+	dp.MaxCycStart = 50
 	dp.Update()
 }
 

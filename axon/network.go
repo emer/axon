@@ -165,23 +165,23 @@ func (nt *Network) ClearTargExt() {
 	}
 }
 
-// ActSt1 saves current acts into ActSt1 (using SpkCaP)
-func (nt *Network) ActSt1(ltime *Time) {
+// SpkSt1 saves current acts into SpkSt1 (using SpkCaP)
+func (nt *Network) SpkSt1(ltime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).ActSt1(ltime)
+		ly.(AxonLayer).SpkSt1(ltime)
 	}
 }
 
-// ActSt2 saves current acts into ActSt2 (using SpkCaP)
-func (nt *Network) ActSt2(ltime *Time) {
+// SpkSt2 saves current acts into SpkSt2 (using SpkCaP)
+func (nt *Network) SpkSt2(ltime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).ActSt2(ltime)
+		ly.(AxonLayer).SpkSt2(ltime)
 	}
 }
 

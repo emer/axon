@@ -72,10 +72,15 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*MatrixLayer)
 
-	pslay, ispcore := pj.Send.(PCoreLayer)
-
 	da := rlay.DA
 	daLrn := rlay.DALrn // includes d2 reversal etc
+
+	noGate := float32(1)
+	if rlay.Matrix.InvertNoGate && !rlay.Matrix.GPHasPools {
+		if !rlay.Gated[0] {
+			noGate = -1
+		}
+	}
 
 	ach := rlay.ACh
 	achDk := mat32.Min(1, ach*pj.Trace.Decay)
@@ -83,13 +88,7 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 	lr := pj.Learn.Lrate.Eff
 
 	for si := range slay.Neurons {
-		var snAct float32
-		if ispcore {
-			snAct = pslay.PCoreNeuronByIdx(si).ActLrn
-		} else {
-			snAct = slay.Neurons[si].CaSpkP
-		}
-
+		snAct := noGate * slay.Neurons[si].CaSpkP
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -100,10 +99,10 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 			sy := &syns[ci]
 			trsy := &trsyns[ci]
 			ri := scons[ci]
-			rn := &rlay.PCoreNeurs[ri]
+			rn := &rlay.Neurons[ri]
 			tr := sy.Tr
 
-			ntr := rn.ActLrn * snAct
+			ntr := rn.SpkMax * snAct
 			dwt := float32(0)
 
 			if pj.Trace.CurTrlDA {

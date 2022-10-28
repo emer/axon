@@ -374,12 +374,12 @@ func (pj *Prjn) Build() error {
 		return err
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
-	pj.BuildGBufs()
+	pj.BuildGBuffs()
 	return nil
 }
 
 // BuildGBuf builds GBuf with current Com Delay values, if not correct size
-func (pj *Prjn) BuildGBufs() {
+func (pj *Prjn) BuildGBuffs() {
 	rlen := pj.Recv.Shape().Len()
 	dl := pj.Com.Delay + 1
 	if pj.Gidx.Len == dl && len(pj.GBuf) == dl {
@@ -497,7 +497,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
 	pj.Learn.Lrate.Init()
-	pj.AxonPrj.InitGBufs()
+	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.SWt.Init.SPct
 	if rlay.AxonLay.IsTarget() {
@@ -657,10 +657,12 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	}
 }
 
-// InitGBufs initializes the G buffer values to 0
-// and insures that G*Buf are properly allocated
-func (pj *Prjn) InitGBufs() {
-	pj.BuildGBufs() // make sure correct size based on Com.Delay setting
+// InitGBuffs initializes the per-projection synaptic conductance buffers.
+// This is not typically needed (called during InitWts, InitActs)
+// but can be called when needed.  Must be called to completely initialize
+// prior activity, e.g., full Glong clearing.
+func (pj *Prjn) InitGBuffs() {
+	pj.BuildGBuffs() // make sure correct size based on Com.Delay setting
 	for ri := range pj.GBuf {
 		pj.GBuf[ri] = 0
 	}
@@ -786,11 +788,11 @@ func (pj *Prjn) RecvGIncNoStats() {
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 func (pj *Prjn) SendSynCa(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn {
+	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
 	}
 
+	kp := &pj.Learn.KinaseCa
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 
@@ -839,11 +841,11 @@ func UpdateSendSyn(pj *Prjn, si int, sn *Neuron, ctime int32) {
 
 // Same as above but using goroutines instead of for loops
 func (pj *Prjn) RecvSynCa(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn {
+	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
 	}
 
+	kp := &pj.Learn.KinaseCa
 	ctime := int32(ltime.CycleTot)
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 
@@ -892,10 +894,10 @@ func UpdateRecvSyn(pj *Prjn, ri int, rn *Neuron, ctime int32) {
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
 func (pj *Prjn) RecvSynCaSerial(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
-	if !pj.Learn.Learn {
+	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
 	}
+	kp := &pj.Learn.KinaseCa
 	ctime := int32(ltime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
@@ -942,10 +944,17 @@ func (pj *Prjn) DWt(ltime *Time) {
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
-		// pj.DWtCHL(ltime)
-		pj.DWtSynSpkTheta(ltime)
+		if pj.Learn.Trace.NeuronCa {
+			pj.DWtNeurSpkTheta(ltime)
+		} else {
+			pj.DWtSynSpkTheta(ltime)
+		}
 	} else {
-		pj.DWtTraceSynSpkTheta(ltime)
+		if pj.Learn.Trace.NeuronCa {
+			pj.DWtTraceNeurSpkTheta(ltime)
+		} else {
+			pj.DWtTraceSynSpkTheta(ltime)
+		}
 	}
 }
 
@@ -987,9 +996,45 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 	}
 }
 
+// DWtTraceNeurSpkTheta computes the weight change (learning) based on
+// separate neurally-integrated spiking, for the optimized version
+// computed at the Theta cycle interval.  Trace version.
+func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
+	slay := pj.Send.(AxonLayer).AsAxon()
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	for si := range slay.Neurons {
+		sn := &slay.Neurons[si]
+		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			sy := &syns[ci]
+			caD := rn.CaSpkD * sn.CaSpkD
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
+			if sy.Wt == 0 {                           // failed con, no learn
+				continue
+			}
+			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			// note: trace ensures that nothing changes for inactive synapses..
+			// sb immediately -- enters into zero sum
+			if err > 0 {
+				err *= (1 - sy.LWt)
+			} else {
+				err *= sy.LWt
+			}
+			sy.DWt += rn.RLrate * lr * err
+		}
+	}
+}
+
 // DWtSynSpkTheta computes the weight change (learning) based on
 // synaptically-integrated spiking, for the optimized version
-// computed at the Theta cycle interval.  Trace version.
+// computed at the Theta cycle interval.  Non-Trace version for target layers.
 func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
@@ -1022,9 +1067,10 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 	}
 }
 
-// DWtCHL computes the weight change (learning) -- on sending projections
-// using the CHL rule -- used for target output layers.
-func (pj *Prjn) DWtCHL(ltime *Time) {
+// DWtNeurSpkTheta computes the weight change (learning) based on
+// separate neurally-integrated spiking, for the optimized version
+// computed at the Theta cycle interval.  non-Trace version for Target layers.
+func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -1035,14 +1081,14 @@ func (pj *Prjn) DWtCHL(ltime *Time) {
 		syns := pj.Syns[st : st+nc]
 		scons := pj.SConIdx[st : st+nc]
 		for ci := range syns {
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
 			if sy.Wt == 0 { // failed con, no learn
 				continue
 			}
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			err := pj.Learn.CHLdWt(sn.CaSpkP, sn.CaSpkD, rn.CaSpkP, rn.CaSpkD)
-			// todo: no sb here??
+			err := sn.CaSpkP*rn.CaSpkP - sn.CaSpkD*rn.CaSpkD
+			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
 			} else {

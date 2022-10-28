@@ -74,8 +74,8 @@ func (pj *CTCtxtPrjn) Build() error {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
 
-func (pj *CTCtxtPrjn) InitGbuf() {
-	pj.Prjn.InitGBufs()
+func (pj *CTCtxtPrjn) InitGBuffs() {
+	pj.Prjn.InitGBuffs()
 	for ri := range pj.CtxtGeInc {
 		pj.CtxtGeInc[ri] = 0
 	}
@@ -143,7 +143,7 @@ func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
 		if issuper {
 			sact = sslay.SuperNeurs[si].BurstPrv
 		} else {
-			sact = slay.Neurons[si].ActPrv
+			sact = slay.Neurons[si].SpkPrv
 		}
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])

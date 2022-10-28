@@ -9,6 +9,7 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/chans"
+	"github.com/emer/axon/rl"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -45,7 +46,7 @@ func (kc *CaParams) Update() {
 // premature gating based only MtxGo inhibition -- gating only occurs when
 // GPeIn signal has had a chance to integrate its MtxNo inputs.
 type STNLayer struct {
-	Layer
+	rl.Layer
 	Ca       CaParams    `view:"inline" desc:"parameters for calcium and calcium-gated potassium channels that drive the afterhyperpolarization that open the gating window in STN neurons (Hallworth et al., 2003)"`
 	STNNeurs []STNNeuron `desc:"slice of extra STNNeuron state for this layer -- flat list of len = Shape.Len(). You must iterate over index and use pointer to modify values."`
 }
