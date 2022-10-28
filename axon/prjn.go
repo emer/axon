@@ -962,37 +962,41 @@ func (pj *Prjn) DWt(ltime *Time) {
 // synaptically-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Trace version.
 func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
-	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
-		// sn := &slay.Neurons[si]
-		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                      // caD reflects entire window
-			if sy.Wt == 0 {                                                // failed con, no learn
-				continue
-			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
-			// note: trace ensures that nothing changes for inactive synapses..
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLrate * lr * err
+		go UpdateDWtTraceSynSpkTheta(si, pj, ctime)
+	}
+}
+
+func UpdateDWtTraceSynSpkTheta(si int, pj *Prjn, ctime int32) {
+	// sn := &slay.Neurons[si]
+	// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
+	nc := int(pj.SConN[si])
+	st := int(pj.SConIdxSt[si])
+	syns := pj.Syns[st : st+nc]
+	scons := pj.SConIdx[st : st+nc]
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	kp := &pj.Learn.KinaseCa
+	for ci := range syns {
+		ri := scons[ci]
+		rn := &rlay.Neurons[ri]
+		sy := &syns[ci]
+		_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                      // caD reflects entire window
+		if sy.Wt == 0 {                                                // failed con, no learn
+			continue
 		}
+		err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+		// note: trace ensures that nothing changes for inactive synapses..
+		// sb immediately -- enters into zero sum
+		if err > 0 {
+			err *= (1 - sy.LWt)
+		} else {
+			err *= sy.LWt
+		}
+		sy.DWt += rn.RLrate * lr * err
 	}
 }
 
