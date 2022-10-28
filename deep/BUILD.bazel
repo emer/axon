@@ -13,7 +13,6 @@ go_library(
         "neuron.go",
         "pools.go",
         "prjntype_string.go",
-        "pt.go",
         "pulv.go",
         "super.go",
         "trn.go",
