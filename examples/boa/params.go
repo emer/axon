@@ -117,6 +117,19 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "2.8",
 					"Layer.Inhib.Pool.Gi":  "1.4",
 				}},
+			{Sel: "#OFC", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "1.1",
+					"Layer.Inhib.Pool.Gi":  "0.9", // makes a big diff on gating
+				}},
+			{Sel: ".ALM", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.9",
+				}},
+			{Sel: "#M1", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.9",
+				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":    "0.025",
@@ -199,7 +212,7 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau":      "2",
-					"Prjn.Learn.Trace.NeuronCa": "true", // faster and no diff here
+					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
@@ -218,15 +231,15 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2",
 				}},
-			{Sel: "#OFCToSMA", Desc: "",
+			{Sel: "#OFCToALM", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
-			{Sel: "#ACCToSMA", Desc: "",
+			{Sel: "#ACCToALM", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
-			{Sel: "#SMAToSMAd", Desc: "selects action based on sma -- nominally weaker?",
+			{Sel: "#ALMToALMd", Desc: "selects action based on alm -- nominally weaker?",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
 				}},
@@ -299,7 +312,7 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs": "10",
 					"Prjn.PrjnScale.Rel": ".2",
 				}},
-			{Sel: "#VThalToSMAd", Desc: "usually uniform weights",
+			{Sel: "#VThalToALMd", Desc: "usually uniform weights",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -307,31 +320,31 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": ".5", // modulatory
 				}},
-			{Sel: "#SMAToMtxGo", Desc: "weaker closed loop",
+			{Sel: "#ALMToMtxGo", Desc: "weaker closed loop",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#SMAToMtxNo", Desc: "weaker closed loop",
+			{Sel: "#ALMToMtxNo", Desc: "weaker closed loop",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#SMAToSTNp", Desc: "strong pfc to stn",
+			{Sel: "#ALMToSTNp", Desc: "strong pfc to stn",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#SMAToSTNs", Desc: "strong pfc to stn",
+			{Sel: "#ALMToSTNs", Desc: "strong pfc to stn",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.3",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#SMAToVThal", Desc: "strong",
+			{Sel: "#ALMToVThal", Desc: "strong",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2.0",
 				}},

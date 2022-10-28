@@ -33,6 +33,8 @@ import (
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // include to get gui views
+	"github.com/emer/etable/minmax"
+	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
@@ -191,7 +193,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = csp
 	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
-	pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
+	// pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
+	pos := net.AddLayer2D("Pos", ny, nloc, emer.Input)
 
 	vPmtxGo, vPmtxNo, vPcini, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
 	cin := vPcini.(*pcore.CINLayer)
@@ -208,20 +211,6 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = act
 
 	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.NDrives, nuCtxY, nuCtxX, relpos.Behind, space)
-
-	// todo: rename sma -> ALM
-
-	sma, smact := net.AddSuperCT2D("SMA", nuCtxY, nuCtxX, space, one2one)
-	smapt, smathal := net.AddPTThalForSuper(sma, smact, "MD", one2one, full, full, space)
-	smact.SetClass("SMA CTCopy")
-	_ = smapt
-	// net.ConnectCTSelf(smact, full)
-	net.ConnectToPulv(sma, smact, m1p, full, full)
-	net.ConnectToPulv(sma, smact, posp, full, full)
-	net.ConnectToPulv(sma, smact, distp, full, full)
-	net.ConnectLayers(vPgpi, smathal, full, emer.Inhib).SetClass("BgFixed")
-
-	//	todo: add a PL layer, with Integ maint
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
@@ -255,9 +244,23 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	// m1p plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
+	alm, almct := net.AddSuperCT2D("ALM", nuCtxY+2, nuCtxX+2, space, one2one)
+	// almpt, almthal := net.AddPTThalForSuper(alm, almct, "MD", one2one, full, full, space)
+	almct.SetClass("ALM CTCopy")
+	// _ = almpt
+	// net.ConnectCTSelf(almct, full)
+	net.ConnectToPulv(alm, almct, m1p, full, full)
+	// net.ConnectToPulv(alm, almct, posp, full, full)
+	// net.ConnectToPulv(alm, almct, distp, full, full)
+	// net.ConnectLayers(vPgpi, almthal, full, emer.Inhib).SetClass("BgFixed")
+
+	//	todo: add a PL layer, with Integ maint
+
 	// contextualization based on action
-	net.BidirConnectLayers(ofc, sma, full)
-	net.BidirConnectLayers(acc, sma, full)
+	// net.BidirConnectLayers(ofc, alm, full)
+	// net.BidirConnectLayers(acc, alm, full)
+	// net.ConnectLayers(ofcpt, alm, full, emer.Forward)
+	// net.ConnectLayers(accpt, alm, full, emer.Forward)
 
 	// Std corticocortical cons -- stim -> hid
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
@@ -277,19 +280,23 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(drives, blae, pone2one, emer.Forward)
 
-	net.ConnectLayers(dist, sma, full, emer.Forward)
-	net.ConnectLayers(time, sma, full, emer.Forward)
-	net.ConnectLayers(pos, sma, full, emer.Forward)
-	// key point: cs does not project directly to sma -- no simple S -> R mappings!?
+	net.ConnectLayers(dist, alm, full, emer.Forward)
+	net.ConnectLayers(time, alm, full, emer.Forward)
+	// net.ConnectLayers(pos, alm, full, emer.Forward)
+	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
 	////////////////////////////////////////////////
 	// BG / DA connections
 	snc.SendDA.AddAllBut(net)
 
-	net.ConnectLayers(smapt, m1, full, emer.Forward)     //  action output
-	net.ConnectLayers(sma, smapt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
-	// net.ConnectLayers(sma, m1, full, emer.Forward)  //  note: non-gated!
+	net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
+	net.BidirConnectLayers(alm, m1, full)            // todo: alm weaker?
+	// net.ConnectLayers(alm, almpt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
+	// net.ConnectLayers(alm, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
+
+	net.ConnectLayers(vl, alm, full, emer.Back)
+	net.ConnectLayers(vl, almct, full, emer.Back)
 
 	// same prjns to stn as mtxgo
 	net.ConnectToMatrix(us, vPmtxGo, pone2one)
@@ -320,8 +327,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectToMatrix(accct, vPmtxNo, pone2one)
 	// net.ConnectToMatrix(accpt, vPmtxGo, pone2one)
 	// net.ConnectToMatrix(accpt, vPmtxNo, pone2one)
-	// net.ConnectToMatrix(sma, vPmtxGo, full) // not to MD
-	// net.ConnectToMatrix(sma, vPmtxNo, full)
+	// net.ConnectToMatrix(alm, vPmtxGo, full) // not to MD
+	// net.ConnectToMatrix(alm, vPmtxNo, full)
 
 	net.ConnectLayersPrjn(ofc, rp, full, emer.Forward, &rl.RWPrjn{})
 	net.ConnectLayersPrjn(ofcct, rp, full, emer.Forward, &rl.RWPrjn{})
@@ -348,7 +355,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	ofc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: space})
 	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ofc.Name(), YAlign: relpos.Front, Space: space})
-	sma.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: space})
+	alm.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: space})
 
 	net.Defaults()
 	ss.Params.SetObject("Network")
@@ -744,7 +751,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("ActMatch", "Gated", "GateUS", "GateCS", "NoGatePre", "NoGatePost") // "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "NoGatePre", "NoGatePost") // "Gated", "GateUS", "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -759,70 +766,38 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	return
-	// ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
-	npools := 1
-	poolshape := []int{npools}
-	layers := ss.Net.LayersByClass("Matrix Thal")
-	for _, lnm := range layers {
-		clnm := lnm
-		if clnm == "CIN" {
-			continue
-		}
+	ev := TheSim.Envs[etime.Train.String()].(*Approach)
+	ss.Logs.AddItem(&elog.Item{
+		Name:      "ActCor",
+		Type:      etensor.FLOAT64,
+		CellShape: []int{len(ev.Acts)},
+		DimNames:  []string{"Acts"},
+		// Plot:      true,
+		Range:     minmax.F64{Min: 0},
+		TensorIdx: -1, // plot all values
+		Write: elog.WriteMap{
+			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+				ix := ctx.Logs.IdxView(ctx.Mode, etime.Trial)
+				spl := split.GroupBy(ix, []string{"GenAction"})
+				split.AggTry(spl, "ActMatch", agg.AggMean)
+				ags := spl.AggsToTable(etable.ColNameOnly)
+				ss.Logs.MiscTables["ActCor"] = ags
+				ctx.SetTensor(ags.Cols[0]) // cors
+			}}})
+	for _, nm := range ev.Acts { // per-action % correct
+		anm := nm // closure
 		ss.Logs.AddItem(&elog.Item{
-			Name:      clnm + "_ActAvg",
-			Type:      etensor.FLOAT64,
-			CellShape: poolshape,
-			// Range:  minmax.F64{Max: 20},
-			FixMin: true,
+			Name:  anm + "Cor",
+			Type:  etensor.FLOAT64,
+			Plot:  true,
+			Range: minmax.F64{Min: 0},
 			Write: elog.WriteMap{
-				etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ss.Stats.F64Tensor("Log_ActAvg")
-					tsr.SetShape(poolshape, nil, nil)
-					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
-					for pi := 0; pi < npools; pi++ {
-						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ags := ss.Logs.MiscTables["ActCor"]
+					rw := ags.RowsByString("GenAction", anm, etable.Equals, etable.UseCase)
+					if len(rw) > 0 {
+						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
 					}
-					ctx.SetTensor(tsr)
-				}, etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ss.Stats.F64Tensor("Log_ActAvg")
-					tsr.SetShape(poolshape, nil, nil)
-					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
-					for pi := 0; pi < npools; pi++ {
-						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
-					}
-					ctx.SetTensor(tsr)
-				}, etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
-					tsr := ss.Stats.F64Tensor("Log_ActAvg")
-					lyi := ctx.Layer(clnm)
-					ly := lyi.(axon.AxonLayer).AsAxon()
-					for pi := 0; pi < npools; pi++ {
-						tsr.Values[pi] = float64(ly.SpkMaxAvgByPool(pi + 1))
-					}
-					ctx.SetTensor(tsr)
-				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
-					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
-				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
-					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
-					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:      clnm + "_Spike",
-			Type:      etensor.FLOAT64,
-			CellShape: poolshape,
-			FixMin:    true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, etime.Cycle): func(ctx *elog.Context) {
-					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					tsr := ss.Stats.F64Tensor("Log_ActAvg")
-					tsr.SetShape(poolshape, nil, nil)
-					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
-					for pi := 0; pi < npools; pi++ {
-						tsr.Values[pi] = float64(ly.SpikeAvgByPool(pi + 1))
-					}
-					ctx.SetTensor(tsr)
 				}}})
 	}
 }

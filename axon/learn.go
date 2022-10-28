@@ -601,7 +601,7 @@ func (ls *LrateParams) Init() {
 
 // TraceParams manages learning rate parameters
 type TraceParams struct {
-	NeuronCa bool    `def:"false" desc:"use separate neuron-level Ca calcium signals for the trace credit assignment factor, instead of using synaptically-integrated Ca signals -- this is about 2x faster, but results in significantly worse learning in larger networks"`
+	NeuronCa bool    `def:"false" desc:"use separate neuron-level Ca calcium signals for the trace credit assignment factor, instead of using synaptically-integrated Ca signals -- this is about 2x faster, but can result in worse learning in larger networks -- you may also need to increase the learning rate with this selected."`
 	Tau      float32 `def:"1,2,4" desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
 	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, but special types (e.g., Hebb or CaSpk) may benefit from it"`
 	Dt       float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
