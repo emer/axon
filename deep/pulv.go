@@ -106,7 +106,7 @@ func (ly *PulvLayer) GeFmDriverNeuron(nrn *axon.Neuron, drvGe, drvInhib float32)
 	ly.Learn.LrnNMDAFmRaw(nrn, geTot)
 	ly.Act.GvgccFmVm(nrn)
 
-	ly.Act.GeFmRaw(nrn, nrn.GeRaw, nrn.Gnmda+nrn.Gvgcc)
+	ly.Act.GeFmRaw(nrn, geTot, nrn.Gnmda+nrn.Gvgcc)
 	nrn.GeRaw = 0
 	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
 	nrn.GiRaw = 0

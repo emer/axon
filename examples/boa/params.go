@@ -15,7 +15,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Clamp.Ge":    "0.6",
+					"Layer.Act.Clamp.Ge":    "1.0",
 				}},
 			{Sel: ".CT", Desc: "corticothalamic context -- using markovian copy params",
 				Params: params.Params{
@@ -64,7 +64,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.Sahp.Gbar":   "0.01", // not much pressure -- long maint
-					"Layer.ThalNMDAGain":    "300",
+					"Layer.ThalNMDAGain":    "200",
 				}},
 			{Sel: "#ACCPT", Desc: "",
 				Params: params.Params{
@@ -130,6 +130,11 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9",
 				}},
+			{Sel: "#VL", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.9",
+					"Layer.Act.Clamp.Ge":   "0.4",
+				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":    "0.025",
@@ -137,11 +142,12 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.0",
 					"Layer.Act.Gbar.L":           "0.2",
-					"Layer.DaMod.BurstGain":      "0.1",
-					"Layer.DaMod.DipGain":        "0.1",
-					"Layer.NoDALrate":            "0.0",   // todo: explore
-					"Layer.Learn.RLrate.Diff":    "false", // can turn off if NoDALrate is 0
-					"Layer.Learn.RLrate.DiffThr": "0.1",   // based on cur - prv
+					"Layer.DaMod.BurstGain":      ".1",
+					"Layer.DaMod.DipGain":        ".1",
+					"Layer.BLA.NoDALrate":        "0.0",  // todo: explore
+					"Layer.BLA.NegLrate":         "0.1",  // todo: explore
+					"Layer.Learn.RLrate.Diff":    "true", // can turn off if NoDALrate is 0
+					"Layer.Learn.RLrate.DiffThr": "0.1",  // based on cur - prv
 				}},
 			{Sel: "#BLAPosExt2D", Desc: "",
 				Params: params.Params{
@@ -251,6 +257,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5",
 				}},
+			{Sel: "#USPToOFCCT", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.01",
+				}},
 			//////////////////////////////////////////////
 			// To BLA
 			{Sel: "BLAPrjn", Desc: "",
@@ -311,14 +321,25 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "10",
 					"Prjn.PrjnScale.Rel": ".2",
+					// "Prjn.Learn.Learn":   "false",
+					// "Prjn.SWt.Init.Mean": "0.8",
+					// "Prjn.SWt.Init.Var":  "0.0",
 				}},
-			{Sel: "#VThalToALMd", Desc: "usually uniform weights",
+			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.9",
-					"Prjn.SWt.Init.Var":  "0.0",
-					"Prjn.SWt.Init.Sym":  "false",
+					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Rel": ".5",
 					"Prjn.Learn.Learn":   "false",
-					"Prjn.PrjnScale.Abs": ".5", // modulatory
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".DrivesToOFC", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Rel": ".5",
+					// "Prjn.Learn.Learn":   "false",
+					// "Prjn.SWt.Init.Mean": "0.8",
+					// "Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: "#ALMToMtxGo", Desc: "weaker closed loop",
 				Params: params.Params{
@@ -354,7 +375,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.001", // 0.001 > 0.01 -- even 0.01 learns fastish..
+					"Prjn.Learn.Lrate.Base": "0.005", // 0.001 > 0.01 -- even 0.01 learns fastish..
 					"Prjn.SWt.Init.Mean":    "0.0",
 					"Prjn.SWt.Init.Var":     "0.0",
 					"Prjn.SWt.Init.Sym":     "false",

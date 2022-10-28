@@ -112,12 +112,12 @@ func AddPulvAttnLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY,
 // Both layers have SetClass(name) called to allow shared params.
 func AddInputPulv2D(nt *axon.Network, name string, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	in := nt.AddLayer2D(name, nNeurY, nNeurX, emer.Input)
-	trc := AddPulvLayer2D(nt, name+"P", nNeurY, nNeurX)
-	trc.Driver = name
+	pulv := AddPulvLayer2D(nt, name+"P", nNeurY, nNeurX)
+	pulv.Driver = name
 	in.SetClass(name)
-	trc.SetClass(name)
-	trc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
-	return in, trc
+	pulv.SetClass(name)
+	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	return in, pulv
 }
 
 // AddInputPulv4D adds an Input and PulvLayer of given size, with given name.
@@ -125,23 +125,24 @@ func AddInputPulv2D(nt *axon.Network, name string, nNeurY, nNeurX int, space flo
 // Both layers have SetClass(name) called to allow shared params.
 func AddInputPulv4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, emer.Input)
-	trc := AddPulvLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
-	trc.Driver = name
+	pulv := AddPulvLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
+	pulv.Driver = name
 	in.SetClass(name)
-	trc.SetClass(name)
-	trc.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
-	return in, trc
+	pulv.SetClass(name)
+	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	return in, pulv
 }
 
 // ConnectToPulv connects Super and CT with given Pulv: CT -> Pulv is class CTToPulv,
 // From Pulv = type = Back, class = FmPulv.
-// toTrcPat is the prjn.Pattern CT -> Pulv and fmTrcPat is Pulv -> CT, Super.
+// toPulvPat is the prjn.Pattern CT -> Pulv and fmPulvPat is Pulv -> CT, Super.
 // Typically Pulv is a different shape than Super and CT, so use Full or appropriate
 // topological pattern
-func ConnectToPulv(nt *axon.Network, super, ct, trc emer.Layer, toTrcPat, fmTrcPat prjn.Pattern) {
-	nt.ConnectLayers(ct, trc, toTrcPat, emer.Forward).SetClass("CTToPulv")
-	nt.ConnectLayers(trc, super, fmTrcPat, emer.Back).SetClass("FmPulv")
-	nt.ConnectLayers(trc, ct, fmTrcPat, emer.Back).SetClass("FmPulv")
+func ConnectToPulv(nt *axon.Network, super, ct, pulv emer.Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toSuper, toCT emer.Prjn) {
+	toPulv = nt.ConnectLayers(ct, pulv, toPulvPat, emer.Forward).SetClass("CTToPulv")
+	toSuper = nt.ConnectLayers(pulv, super, fmPulvPat, emer.Back).SetClass("FmPulv")
+	toCT = nt.ConnectLayers(pulv, ct, fmPulvPat, emer.Back).SetClass("FmPulv")
+	return
 }
 
 // ConnectSuperToCT adds a CTCtxtPrjn from given sending Super layer to a CT layer
@@ -244,11 +245,11 @@ func (nt *Network) AddPulvForSuper(super emer.Layer, space float32) emer.Layer {
 
 // ConnectToPulv connects Super and CT with given Pulv: CT -> Pulv is class CTToPulv,
 // From Pulv = type = Back, class = FmPulv
-// toTrcPat is the prjn.Pattern CT -> Pulv and fmTrcPat is Pulv -> CT, Super
+// toPulvPat is the prjn.Pattern CT -> Pulv and fmPulvPat is Pulv -> CT, Super
 // Typically Pulv is a different shape than Super and CT, so use Full or appropriate
 // topological pattern
-func (nt *Network) ConnectToPulv(super, ct, trc emer.Layer, toTrcPat, fmTrcPat prjn.Pattern) {
-	ConnectToPulv(&nt.Network, super, ct, trc, toTrcPat, fmTrcPat)
+func (nt *Network) ConnectToPulv(super, ct, pulv emer.Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toSuper, toCT emer.Prjn) {
+	return ConnectToPulv(&nt.Network, super, ct, pulv, toPulvPat, fmPulvPat)
 }
 
 // ConnectCtxtToCT adds a CTCtxtPrjn from given sending layer to a CT layer

@@ -67,14 +67,16 @@ func guirun() {
 type SimParams struct {
 	PctCortex       float32 `desc:"proportion of action driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax    float32 `desc:"maximum PctCortex, when running on the schedule"`
+	PctCortexStEpc  int     `desc:"epoch when PctCortex starts increasing"`
 	PctCortexMaxEpc int     `desc:"epoch when PctCortexMax is reached"`
 	PCAInterval     int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.PctCortexMax = 0.0
-	ss.PctCortexMaxEpc = 100
+	ss.PctCortexMax = 1.0
+	ss.PctCortexStEpc = 10
+	ss.PctCortexMaxEpc = 50
 	ss.PCAInterval = 10
 }
 
@@ -185,12 +187,12 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	drives, drivesp := net.AddInputPulv4D("Drives", 1, ev.NDrives, ny, 1, space)
+	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, emer.Input)
 	us, usp := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
 	// cs, csp := net.AddInputPulv2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
 	// localist, for now:
-	cs, csp := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
-	_ = csp
+	// cs, csp := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
+	cs := net.AddLayer2D("CS", ny, ev.NDrives, emer.Input)
 	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
 	// pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
@@ -216,21 +218,22 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// prjns are: super->PT, PT self, CT-> thal
 	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", pone2one, pone2one, pone2one, space)
 	_ = ofcpt
-	ofcct.SetClass("OFC CTInteg")
+	ofcct.SetClass("OFC CTCopy")
 	// net.ConnectCTSelf(ofcct, pone2one) // much better for ofc not to have self prjns..
 	// net.ConnectToPulv(ofc, ofcct, csp, full, full)
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcct, drivesp, pone2one, pone2one)
+	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
+	net.ConnectLayers(drives, ofcct, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	net.ConnectLayers(vPgpi, ofcthal, full, emer.Inhib).SetClass("BgFixed")
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
-	acc, accct := net.AddSuperCT2D("ACC", nuCtxY, nuCtxX, space, one2one)
+	acc, accct := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
 	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", one2one, full, full, space)
 	_ = accpt
-	accct.SetClass("ACC CTInteg")
+	accct.SetClass("ACC CTCopy")
 	net.ConnectCTSelf(accct, full)
 	net.ConnectToPulv(acc, accct, distp, full, full)
 	net.ConnectToPulv(acc, accct, timep, full, full)
@@ -265,7 +268,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// Std corticocortical cons -- stim -> hid
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
 	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
-	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("BgFixed")
+	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
 
 	// todo: blae is not connected properly at all yet
 
@@ -283,6 +286,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(dist, alm, full, emer.Forward)
 	net.ConnectLayers(time, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
+	net.ConnectLayers(dist, m1, full, emer.Forward)
+	net.ConnectLayers(time, m1, full, emer.Forward)
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
 	////////////////////////////////////////////////
@@ -294,6 +299,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectLayers(alm, almpt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(alm, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
+	net.BidirConnectLayers(alm, vl, full)
+	net.BidirConnectLayers(almct, vl, full)
 
 	net.ConnectLayers(vl, alm, full, emer.Back)
 	net.ConnectLayers(vl, almct, full, emer.Back)
@@ -307,8 +314,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	net.ConnectToMatrix(blae, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blae, vPmtxNo, pone2one)
-	net.ConnectToMatrix(drives, vPmtxGo, pone2one)
-	net.ConnectToMatrix(drives, vPmtxNo, pone2one)
+	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
+	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectLayers(drives, vPstnp, full, emer.Forward)
 	net.ConnectLayers(drives, vPstns, full, emer.Forward)
 	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
@@ -341,7 +348,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	vPgpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rew.Name(), YAlign: relpos.Front, Space: space})
 
 	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: rew.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drivesp.Name(), XAlign: relpos.Left, Space: space})
+	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
 	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
 	dist.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: space})
 	time.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: distp.Name(), XAlign: relpos.Left, Space: space})
@@ -476,8 +483,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if trnEpc > 1 && trnEpc%5 == 0 {
-			ss.Sim.PctCortex = float32(trnEpc) / float32(ss.Sim.PctCortexMaxEpc)
+		if trnEpc >= ss.Sim.PctCortexStEpc && trnEpc%5 == 0 {
+			ss.Sim.PctCortex = ss.Sim.PctCortexMax * float32(trnEpc-ss.Sim.PctCortexStEpc) / float32(ss.Sim.PctCortexMaxEpc-ss.Sim.PctCortexStEpc)
 			if ss.Sim.PctCortex > ss.Sim.PctCortexMax {
 				ss.Sim.PctCortex = ss.Sim.PctCortexMax
 			} else {

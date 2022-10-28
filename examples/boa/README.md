@@ -52,12 +52,18 @@ This needs to be higher to prevent redundant gating.  1.2 seems good -- but need
 
 # TODO
 
-* Matrix is getting blasted with too strong of input -- increase leak?  other params?  drive needs to be stronger?  but needs to activate a feedforward inhib -- no ff inhib present?  maybe switch all to ff?  yes!!  update pcore to better test this case.
+* In general, the drive modulation is awkward and not very effective, and it is not clear how it will generalize when multiple drives are present.  If drive -> OFC restricts all consideration of other drives, then it is a foregone conclusion, and OFC is just a dummy.  Maybe get rid of pools and allow all drives to intermingle in OFC, so it has to learn that?  then it can't represent multiple anyway and has to make more of a choice?   cortex should not be quite so topographic?   In any case, having it naturally be mutex and considering the current option is good.
 
-* There is no negative feedback on gating -- because action is always correct following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.
+* OFCCT has nothing to predict -- USP?  it is predetermined by drive.  Just ends up being a loop that supports the wrong CT activation.  better if it is doing the CS and the US together?
+
+* The PT gating catch-22 is a problem: no positive signal for when to move forward -- need different explore vs. engaged reps in PT -- can't be the same.. diff populations of PT that are transient vs. what is engaged.  still how does that work?  argh.
 
 
 # DONE
+
+* There is no negative feedback on gating -- because action is always correct following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.  This works as expected.
+
+* Matrix is getting blasted with too strong of input -- increase leak?  other params?  drive needs to be stronger?  but needs to activate a feedforward inhib -- no ff inhib present?  maybe switch all to ff?  yes!!  update pcore to better test this case.
 
 * Need Go to gate when US is present -- US only active in plus phase contingent on action -- make a whole separate trial where US is activated instead of doing in plus phase..
 

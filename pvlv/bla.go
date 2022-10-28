@@ -11,11 +11,22 @@ import (
 	"github.com/goki/mat32"
 )
 
+// BLAParams has parameters for basolateral amygdala
+type BLAParams struct {
+	NoDALrate float32 `desc:"baseline learning rate without any dopamine"`
+	NegLrate  float32 `desc:"negative DWt learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
+}
+
+func (bp *BLAParams) Defaults() {
+	bp.NoDALrate = 0.0
+	bp.NegLrate = 0.1
+}
+
 // BLALayer represents a basolateral amygdala layer
 type BLALayer struct {
 	rl.Layer
-	DaMod     DaModParams `view:"inline" desc:"dopamine modulation parameters"`
-	NoDALrate float32     `desc:"baseline learning rate without any dopamine"`
+	DaMod DaModParams `view:"inline" desc:"dopamine modulation parameters"`
+	BLA   BLAParams   `view:"inline" desc:"special BLA parameters"`
 }
 
 var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, axon.LayerProps)
@@ -23,7 +34,7 @@ var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, axon.LayerProps)
 func (ly *BLALayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.DaMod.Defaults()
-	ly.NoDALrate = 0.0 // todo: explore
+	ly.BLA.Defaults()
 }
 
 func (ly *BLALayer) GFmInc(ltime *axon.Time) {
@@ -34,13 +45,13 @@ func (ly *BLALayer) GFmInc(ltime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmIncNeur(ltime, nrn, da) // extra da for ge
+		ly.GFmIncNeur(ltime, nrn, da*nrn.CaSpkM) // extra da for ge
 	}
 }
 
 func (ly *BLALayer) PlusPhase(ltime *axon.Time) {
 	ly.Layer.PlusPhase(ltime)
-	lrmod := ly.NoDALrate + mat32.Abs(ly.DA)
+	lrmod := ly.BLA.NoDALrate + mat32.Abs(ly.DA)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -48,6 +59,9 @@ func (ly *BLALayer) PlusPhase(ltime *axon.Time) {
 		}
 		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
 		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous
+		if nrn.CaSpkP-nrn.SpkPrv < 0 {
+			dlr *= ly.BLA.NegLrate
+		}
 		nrn.RLrate = mlr * dlr * lrmod
 	}
 }
