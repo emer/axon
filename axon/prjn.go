@@ -1040,34 +1040,38 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
 // synaptically-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Non-Trace version for target layers.
 func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
-	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ctime := int32(ltime.CycleTot)
-	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
-		// sn := &slay.Neurons[si]
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			if sy.Wt == 0 {                                                  // failed con, no learn
-				continue
-			}
-			err := caP - caD
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLrate * lr * err
+		go UpdateDWtSynSpkTheta(si, pj, ctime)
+	}
+}
+
+func UpdateDWtSynSpkTheta(si int, pj *Prjn, ctime int32) {
+	// sn := &slay.Neurons[si]
+	nc := int(pj.SConN[si])
+	st := int(pj.SConIdxSt[si])
+	syns := pj.Syns[st : st+nc]
+	scons := pj.SConIdx[st : st+nc]
+	kp := &pj.Learn.KinaseCa
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+	for ci := range syns {
+		ri := scons[ci]
+		rn := &rlay.Neurons[ri]
+		sy := &syns[ci]
+		_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+		if sy.Wt == 0 {                                                  // failed con, no learn
+			continue
 		}
+		err := caP - caD
+		// sb immediately -- enters into zero sum
+		if err > 0 {
+			err *= (1 - sy.LWt)
+		} else {
+			err *= sy.LWt
+		}
+		sy.DWt += rn.RLrate * lr * err
 	}
 }
 
