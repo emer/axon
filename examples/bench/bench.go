@@ -205,7 +205,9 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 		sse /= float64(np)
 		pctErr := float64(cntErr) / float64(np)
 		pctCor := 1 - pctErr
-		fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v\n", epc, outCorSim, outLay.CorSim.Avg)
+		t := tmr.Stop()
+		tmr.Start()
+		fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime: %v\n", epc, outCorSim, outLay.CorSim.Avg, t)
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
 		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
 		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.CorSim.Avg))
@@ -267,6 +269,7 @@ func main() {
 
 	Net = &axon.Network{}
 	ConfigNet(Net, threads, units)
+	log.Println(Net.SizeReport())
 
 	Pats = &etable.Table{}
 	ConfigPats(Pats, pats, units)
