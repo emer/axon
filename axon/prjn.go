@@ -805,11 +805,11 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 			continue
 		}
 
-		go UpdateSendSyn(pj, si, sn, ctime)
+		go UpdateSendSyn(si, pj, sn, ctime)
 	}
 }
 
-func UpdateSendSyn(pj *Prjn, si int, sn *Neuron, ctime int32) {
+func UpdateSendSyn(si int, pj *Prjn, sn *Neuron, ctime int32) {
 	nc := int(pj.SConN[si])
 	st := int(pj.SConIdxSt[si])
 	syns := pj.Syns[st : st+nc]
@@ -858,11 +858,11 @@ func (pj *Prjn) RecvSynCa(ltime *Time) {
 			continue
 		}
 
-		go UpdateRecvSyn(pj, ri, rn, ctime)
+		go UpdateRecvSyn(ri, pj, rn, ctime)
 	}
 }
 
-func UpdateRecvSyn(pj *Prjn, ri int, rn *Neuron, ctime int32) {
+func UpdateRecvSyn(ri int, pj *Prjn, rn *Neuron, ctime int32) {
 	nc := int(pj.RConN[ri])
 	st := int(pj.RConIdxSt[ri])
 	rsidxs := pj.RSynIdx[st : st+nc]
@@ -979,6 +979,7 @@ func UpdateDWtTraceSynSpkTheta(si int, pj *Prjn, ctime int32) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
 	kp := &pj.Learn.KinaseCa
+
 	for ci := range syns {
 		ri := scons[ci]
 		rn := &rlay.Neurons[ri]
@@ -1005,34 +1006,39 @@ func UpdateDWtTraceSynSpkTheta(si int, pj *Prjn, ctime int32) {
 // computed at the Theta cycle interval.  Trace version.
 func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			caD := rn.CaSpkD * sn.CaSpkD
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
-			if sy.Wt == 0 {                           // failed con, no learn
-				continue
-			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
-			// note: trace ensures that nothing changes for inactive synapses..
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLrate * lr * err
+		go UpdateDWtTraceNeurSpkTheta(si, pj, sn)
+	}
+}
+
+func UpdateDWtTraceNeurSpkTheta(si int, pj *Prjn, sn *Neuron) {
+	// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
+	nc := int(pj.SConN[si])
+	st := int(pj.SConIdxSt[si])
+	syns := pj.Syns[st : st+nc]
+	scons := pj.SConIdx[st : st+nc]
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+
+	for ci := range syns {
+		ri := scons[ci]
+		rn := &rlay.Neurons[ri]
+		sy := &syns[ci]
+		caD := rn.CaSpkD * sn.CaSpkD
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
+		if sy.Wt == 0 {                           // failed con, no learn
+			continue
 		}
+		err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+		// note: trace ensures that nothing changes for inactive synapses..
+		// sb immediately -- enters into zero sum
+		if err > 0 {
+			err *= (1 - sy.LWt)
+		} else {
+			err *= sy.LWt
+		}
+		sy.DWt += rn.RLrate * lr * err
 	}
 }
 
@@ -1056,6 +1062,7 @@ func UpdateDWtSynSpkTheta(si int, pj *Prjn, ctime int32) {
 	kp := &pj.Learn.KinaseCa
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
+
 	for ci := range syns {
 		ri := scons[ci]
 		rn := &rlay.Neurons[ri]
@@ -1080,30 +1087,35 @@ func UpdateDWtSynSpkTheta(si int, pj *Prjn, ctime int32) {
 // computed at the Theta cycle interval.  non-Trace version for Target layers.
 func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			if sy.Wt == 0 { // failed con, no learn
-				continue
-			}
-			err := sn.CaSpkP*rn.CaSpkP - sn.CaSpkD*rn.CaSpkD
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLrate * lr * err
+		go UpdateDWtNeurSpkTheta(si, pj, sn)
+	}
+}
+
+func UpdateDWtNeurSpkTheta(si int, pj *Prjn, sn *Neuron) {
+	nc := int(pj.SConN[si])
+	st := int(pj.SConIdxSt[si])
+	syns := pj.Syns[st : st+nc]
+	scons := pj.SConIdx[st : st+nc]
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	lr := pj.Learn.Lrate.Eff
+
+	for ci := range syns {
+		ri := scons[ci]
+		rn := &rlay.Neurons[ri]
+		sy := &syns[ci]
+		if sy.Wt == 0 { // failed con, no learn
+			continue
 		}
+		err := sn.CaSpkP*rn.CaSpkP - sn.CaSpkD*rn.CaSpkD
+		// sb immediately -- enters into zero sum
+		if err > 0 {
+			err *= (1 - sy.LWt)
+		} else {
+			err *= sy.LWt
+		}
+		sy.DWt += rn.RLrate * lr * err
 	}
 }
 
