@@ -18,11 +18,13 @@ import (
 // MatrixParams has parameters for Dorsal Striatum Matrix computation
 // These are the main Go / NoGo gating units in BG.
 type MatrixParams struct {
-	GPHasPools   bool    `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false)"`
-	InvertNoGate bool    `desc:"invert the direction of learning if not gated -- allows negative DA to increase gating when gating didn't happen.  Does not work with GPHasPools at present."`
-	GateThr      float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and Thal layers to count as having gated"`
-	BurstGain    float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
-	DipGain      float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
+	GPHasPools      bool    `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false)"`
+	InvertNoGate    bool    `desc:"invert the direction of learning if not gated -- allows negative DA to increase gating when gating didn't happen.  Does not work with GPHasPools at present."`
+	GateThr         float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and Thal layers to count as having gated"`
+	BurstGain       float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
+	DipGain         float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
+	HasHypothal     bool    `inactive:"+" desc:"there is a hypothalamus input to this layer of the same pool-wise dimension -- auto-detected during build"`
+	HypothalLayName string  `inactive:"+" desc:"name of hypothalamus layer"`
 }
 
 func (mp *MatrixParams) Defaults() {
@@ -33,8 +35,10 @@ func (mp *MatrixParams) Defaults() {
 
 // MatrixLayer represents the matrisome medium spiny neurons (MSNs)
 // that are the main Go / NoGo gating units in BG.  D1R = Go, D2R = NoGo.
-// The Gated value for each pool must be set by calling SetGated --
-// this changes the sign of the learning function in relation to DA.
+// The Gated value for each pool is updated in the PlusPhase and can be
+// called separately too.
+// Also, if one projection is from a Hypothal layer, with the same pool-wise
+// dimension as this layer, then the activity of that layer gates all other input.
 type MatrixLayer struct {
 	rl.Layer
 	DaR      DaReceptors   `desc:"dominant type of dopamine receptor -- D1R for Go pathway, D2R for NoGo"`
@@ -121,6 +125,27 @@ func (ly *MatrixLayer) Build() error {
 		ly.Gated = make([]bool, 1)
 	}
 	err = ly.MtxThals.Validate(ly.Network, "MatrixLayer:Build")
+
+	ly.Matrix.HasHypothal = false
+	ly.Matrix.HypothalLayName = ""
+	if ly.Is4D() {
+		for _, p := range ly.RcvPrjns {
+			if p.IsOff() {
+				continue
+			}
+			if p.SendLay().Type() == Hypothal {
+				slay := p.SendLay().(axon.AxonLayer).AsAxon()
+				if !slay.Is4D() {
+					continue
+				}
+				if len(slay.Pools) == len(ly.Pools) {
+					ly.Matrix.HasHypothal = true
+					ly.Matrix.HypothalLayName = slay.Name()
+					break
+				}
+			}
+		}
+	}
 	return err
 }
 
@@ -141,6 +166,29 @@ func (ly *MatrixLayer) DecayState(decay, glong float32) {
 			continue
 		}
 		ly.Learn.DecayCaLrnSpk(nrn, glong)
+	}
+}
+
+func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
+	if !ly.Matrix.HasHypothal {
+		ly.Layer.GFmSpike(ltime)
+		return
+	}
+	ly.GFmSpikePrjn(ltime)
+
+	// todo: get the hypothal layer, compute normalized activity, then weight Ge* by that.
+	hly := ly.Network.LayerByName(ly.Matrix.HypothalLayName).(*HypothalLayer)
+
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		mod := hly.Mods[nrn.SubPool]
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		nrn.GeRaw *= mod
+		nrn.GeSyn *= mod
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
 }
 

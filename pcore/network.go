@@ -83,6 +83,12 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 	return ConnectToMatrix(nt.AsAxon(), send, recv, pat)
 }
 
+// AddHypothalLayer adds a HypothalLayer of given size, with given name.
+// Assumes that a 4D structure will be used, with Pools representing separate body states / drives.
+func (nt *Network) AddHypothalLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *HypothalLayer {
+	return AddHypothalLayer(nt.AsAxon(), name, nPoolsY, nPoolsX, nNeurY, nNeurX)
+}
+
 ////////////////////////////////////////////////////////////////////////
 // Network functions available here as standalone functions
 //         for mixing in to other models
@@ -90,7 +96,7 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 // AddCINLayer adds a CINLayer, with a single neuron.
 func AddCINLayer(nt *axon.Network, name string) *CINLayer {
 	ly := &CINLayer{}
-	nt.AddLayerInit(ly, name, []int{1, 1}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{1, 1}, CIN)
 	return ly
 }
 
@@ -99,7 +105,7 @@ func AddCINLayer(nt *axon.Network, name string) *CINLayer {
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
 func AddMatrixLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DaReceptors) *MatrixLayer {
 	ly := &MatrixLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Matrix)
 	ly.DaR = da
 	ly.SetClass("BG Matrix")
 	return ly
@@ -113,7 +119,7 @@ func ConnectToMatrix(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) 
 // AddGPLayer2D adds a GPLayer of given size, with given name.
 func AddGPeLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *GPLayer {
 	ly := &GPLayer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, GP)
 	ly.SetClass("BG")
 	return ly
 }
@@ -121,7 +127,7 @@ func AddGPeLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *GPLayer {
 // AddGPiLayer2D adds a GPiLayer of given size, with given name.
 func AddGPiLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *GPiLayer {
 	ly := &GPiLayer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, GP)
 	ly.SetClass("BG")
 	return ly
 }
@@ -129,7 +135,7 @@ func AddGPiLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *GPiLayer 
 // AddSTNLayer2D adds a subthalamic nucleus Layer of given size, with given name.
 func AddSTNLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *STNLayer {
 	ly := &STNLayer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, STN)
 	ly.SetClass("BG")
 	return ly
 }
@@ -138,7 +144,7 @@ func AddSTNLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *STNLayer 
 // Makes a 4D structure with Pools representing separable gating domains.
 func AddGPeLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPLayer {
 	ly := &GPLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, GP)
 	ly.SetClass("BG")
 	return ly
 }
@@ -147,7 +153,7 @@ func AddGPeLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // Makes a 4D structure with Pools representing separable gating domains.
 func AddGPiLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *GPiLayer {
 	ly := &GPiLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, GP)
 	ly.SetClass("BG")
 	return ly
 }
@@ -156,7 +162,7 @@ func AddGPiLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeu
 // Makes a 4D structure with Pools representing separable gating domains.
 func AddSTNLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *STNLayer {
 	ly := &STNLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, STN)
 	ly.SetClass("BG")
 	return ly
 }
@@ -176,7 +182,16 @@ func AddThalLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *ThalLaye
 // This version has a 4D structure, with Pools representing separable gating domains.
 func AddThalLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
 	ly := &ThalLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Thal)
+	ly.SetClass("BG")
+	return ly
+}
+
+// AddHypothalLayer adds a HypothalLayer of given size, with given name.
+// Assumes that a 4D structure will be used, with Pools representing separate body states / drives.
+func AddHypothalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *HypothalLayer {
+	ly := &HypothalLayer{}
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Hypothal)
 	ly.SetClass("BG")
 	return ly
 }

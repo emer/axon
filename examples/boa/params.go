@@ -199,9 +199,9 @@ var ParamSets = params.Sets{
 					"Layer.Matrix.GateThr":      "0.05", // 0.05 > 0.08 maybe
 					"Layer.Inhib.ActAvg.Init":   ".03",
 					"Layer.Inhib.Layer.On":      "true",
-					"Layer.Inhib.Layer.Gi":      "1.0", // was 8
+					"Layer.Inhib.Layer.Gi":      "0.8", // was 8
 					"Layer.Inhib.Pool.On":       "true",
-					"Layer.Inhib.Pool.Gi":       "0.7", // 0.6 > 0.5 -- 0.8 too high
+					"Layer.Inhib.Pool.Gi":       "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{

@@ -36,13 +36,16 @@ const (
 	// GP is a globus pallidus layer: GPe or GPi
 	GP
 
-	// CIN is a cholinergic interneuron layer: sends
+	// CIN is a cholinergic interneuron layer (TAN -- tonically active neuron): sends
 	// non-prediction-discounted reward signal as ACh
 	CIN
 
 	// Thal is a thalamic layer, used for MD mediodorsal thalamus and
 	// VM / VL / VA ventral thalamic nuclei.
 	Thal
+
+	// Hypothal is a hypothalamic layer, representing core body state: thirst, hunger etc
+	Hypothal
 
 	// PT are layer 5IB intrinsic bursting pyramidal tract neocortical neurons.
 	// These are bidirectionally interconnected with BG-gated thalamus in PFC.
@@ -56,6 +59,7 @@ const (
 	GP_
 	CIN_
 	Thal_
+	Hypothal_
 	PT_
 	LayerTypeN
 )

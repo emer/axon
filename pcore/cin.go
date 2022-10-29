@@ -20,6 +20,7 @@ import (
 // an acetylcholine (ACh) signal.
 // To handle positive-only reward signals, need to include both a reward prediction
 // and reward outcome layer.
+// Used to be called a TAN: tonically active neuron, to contrast with quiet MSNs
 type CINLayer struct {
 	axon.Layer
 	RewThr  float32       `desc:"threshold on reward values from RewLays, to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`

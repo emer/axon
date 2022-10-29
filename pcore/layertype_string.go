@@ -18,13 +18,14 @@ func _() {
 	_ = x[GP_-10]
 	_ = x[CIN_-11]
 	_ = x[Thal_-12]
-	_ = x[PT_-13]
-	_ = x[LayerTypeN-14]
+	_ = x[Hypothal_-13]
+	_ = x[PT_-14]
+	_ = x[LayerTypeN-15]
 }
 
-const _LayerType_name = "Matrix_STN_GP_CIN_Thal_PT_LayerTypeN"
+const _LayerType_name = "Matrix_STN_GP_CIN_Thal_Hypothal_PT_LayerTypeN"
 
-var _LayerType_index = [...]uint8{0, 7, 11, 14, 18, 23, 26, 36}
+var _LayerType_index = [...]uint8{0, 7, 11, 14, 18, 23, 32, 35, 45}
 
 func (i LayerType) String() string {
 	i -= 8

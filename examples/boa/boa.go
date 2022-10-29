@@ -187,7 +187,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, emer.Input)
+	drives := net.AddHypothalLayer("Drives", 1, ev.NDrives, ny, 1)
 	us, usp := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
 	// cs, csp := net.AddInputPulv2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
 	// localist, for now:
