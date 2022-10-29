@@ -779,11 +779,12 @@ func (ly *Layer) InitActs() {
 		pl.ActM.Init()
 		pl.ActP.Init()
 	}
-	ly.InitRecvGBuffs()
+	ly.InitPrjnGBuffs()
 }
 
-// InitRecvGBuffs initializes the receiving layer conductance buffers
-func (ly *Layer) InitRecvGBuffs() {
+// InitPrjnGBuffs initializes the projection-level conductance buffers and
+// conductance integration values for receiving projections in this layer.
+func (ly *Layer) InitPrjnGBuffs() {
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
@@ -1095,7 +1096,6 @@ func (ly *Layer) InitGScale() {
 				pj.GScale.Scale = 0
 			}
 		}
-		pj.GScale.Init()
 	}
 }
 
@@ -1116,7 +1116,7 @@ func (ly *Layer) DecayState(decay, glong float32) {
 		pl.Inhib.Decay(decay)
 	}
 	if glong == 1 {
-		ly.InitRecvGBuffs()
+		ly.InitPrjnGBuffs()
 	}
 }
 
@@ -1155,7 +1155,7 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 
 // Cycle does one cycle of updating
 func (ly *Layer) Cycle(ltime *Time) {
-	ly.AxonLay.GFmInc(ltime)
+	ly.AxonLay.GFmSpike(ltime)
 	ly.AxonLay.AvgMaxGe(ltime)
 	ly.AxonLay.InhibFmGeAct(ltime)
 	ly.AxonLay.ActFmG(ltime)
@@ -1164,47 +1164,67 @@ func (ly *Layer) Cycle(ltime *Time) {
 	ly.AxonLay.SendSpike(ltime)
 }
 
-// GFmInc integrates new synaptic conductances from increments sent during last Spike
-func (ly *Layer) GFmInc(ltime *Time) {
-	ly.RecvGInc(ltime)
+// GFmSpike integrates new synaptic conductances from Spikes
+func (ly *Layer) GFmSpike(ltime *Time) {
+	ly.GFmSpikePrjn(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmIncNeur(ltime, nrn, 0) // no extra
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		// note: can add extra values to GeRaw and GeSyn here
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
 }
 
-// RecvGInc calls RecvGInc on receiving projections to collect Neuron-level G*Inc values.
-// This is called by GFmInc overall method, but separated out for cases that need to
-// do something different.
-func (ly *Layer) RecvGInc(ltime *Time) {
+// GFmSpikePrjn calls GFmSpike on receiving projections
+// to integrate conductances from Spikes
+func (ly *Layer) GFmSpikePrjn(ltime *Time) {
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).RecvGInc(ltime)
+		p.(AxonPrjn).GFmSpike(ltime)
 	}
 }
 
-// GFmIncNeur is the neuron-level code for GFmInc that integrates overall Ge, Gi values
-// from their G*Raw accumulators.  Takes an extra increment to add to geRaw
-func (ly *Layer) GFmIncNeur(ltime *Time, nrn *Neuron, geExt float32) {
-	// note: GABAB integrated in ActFmG one timestep behind, b/c depends on integrated Gi inhib
-	geTot := nrn.GeRaw + geExt
-	ly.Act.NMDAFmRaw(nrn, geTot)
-	ly.Learn.LrnNMDAFmRaw(nrn, geTot)
+// GFmSpikeNeuron integrates G*Raw and G*Syn values for given neuron
+// from the Prjn-level GSyn integrated values.
+func (ly *Layer) GFmSpikeNeuron(ltime *Time, ni int, nrn *Neuron) {
+	nrn.GeRaw = 0
+	nrn.GiRaw = 0
+	nrn.GeSyn = nrn.GeBase
+	nrn.GiSyn = nrn.GiBase
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		pj := p.(AxonPrjn).AsAxon()
+		gv := pj.GVals[ni]
+		if pj.Typ == emer.Inhib {
+			nrn.GiRaw += gv.GRaw
+			nrn.GiSyn += gv.GSyn
+		} else {
+			nrn.GeRaw += gv.GRaw
+			nrn.GeSyn += gv.GSyn
+		}
+	}
+}
+
+// GFmRawSynNeuron computes overall Ge and GiSyn conductances for neuron
+// from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
+func (ly *Layer) GFmRawSynNeuron(ltime *Time, ni int, nrn *Neuron) {
+	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
+	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
 
-	ly.Act.GeFmRaw(nrn, geTot, nrn.Gnmda+nrn.Gvgcc)
-	nrn.GeRaw = 0
-	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
-	nrn.GiRaw = 0
+	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc)
+	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
 
 // AvgMaxGe computes the average and max Ge stats, used in inhibition
-// This operates at the pool level so does not make sense to combine with GFmInc
+// This operates at the pool level so does not make sense to combine with GFmSpike
 func (ly *Layer) AvgMaxGe(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1885,7 +1905,6 @@ func (ly *Layer) WtFmDWt(ltime *Time) {
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // and adapting inhibition
 func (ly *Layer) SlowAdapt(ltime *Time) {
-	ly.GScaleAvgs(ltime)
 	ly.AdaptInhib(ltime)
 	ly.SynScale()
 	for _, p := range ly.RcvPrjns {
@@ -1893,28 +1912,6 @@ func (ly *Layer) SlowAdapt(ltime *Time) {
 			continue
 		}
 		p.(AxonPrjn).SlowAdapt(ltime)
-	}
-}
-
-// GScaleAvgs updates conductance scale averages
-func (ly *Layer) GScaleAvgs(ltime *Time) {
-	var sum float32
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		pj := p.(AxonPrjn).AsAxon()
-		sum += pj.GScale.AvgMax
-	}
-	if sum == 0 {
-		return
-	}
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		pj := p.(AxonPrjn).AsAxon()
-		pj.GScale.AvgMaxRel = pj.GScale.AvgMax / sum
 	}
 }
 

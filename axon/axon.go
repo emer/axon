@@ -144,7 +144,7 @@ type AxonLayer interface {
 	// Cycle handles entire update for one cycle (msec) of neuron activity state,
 	// calling the following methods in order:
 	//
-	// * GFmInc
+	// * GFmSpike
 	// * AvgMaxGe
 	// * InhibFmGeAct
 	// * ActFmG
@@ -156,8 +156,8 @@ type AxonLayer interface {
 	// can override those functions (preferred to overriding the main Cycle function).
 	Cycle(ltime *Time)
 
-	// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta
-	GFmInc(ltime *Time)
+	// GFmSpike integrates new synaptic conductances from increments sent during last SendGDelta
+	GFmSpike(ltime *Time)
 
 	// AvgMaxGe computes the average and max Ge stats, used in inhibition.
 	AvgMaxGe(ltime *Time)
@@ -258,8 +258,8 @@ type AxonPrjn interface {
 	// to add to buffer on receivers.
 	SendSpike(si int)
 
-	// RecvGInc increments the receiver's synaptic conductances from those of all the projections.
-	RecvGInc(ltime *Time)
+	// GFmSpike increments synaptic conductances from Spikes
+	GFmSpike(ltime *Time)
 
 	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.

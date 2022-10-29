@@ -42,8 +42,8 @@ func SetNeuronExtPosNeg(nrn *axon.Neuron, ni int, val float32) {
 	}
 }
 
-func (ly *RewLayer) GFmInc(ltime *axon.Time) {
-	ly.RecvGInc(ltime)
+func (ly *RewLayer) GFmSpike(ltime *axon.Time) {
+	ly.GFmSpikePrjn(ltime)
 	var ext0 float32
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -56,7 +56,8 @@ func (ly *RewLayer) GFmInc(ltime *axon.Time) {
 			ext0 = nrn.Ext
 		}
 		SetNeuronExtPosNeg(nrn, ni, ext0)
-		ly.GFmIncNeur(ltime, nrn, 0) // no extra
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 		nrn.Ext = extOrig
 	}
 }

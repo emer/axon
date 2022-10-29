@@ -76,6 +76,25 @@ func (ly *PulvLayer) IsTarget() bool {
 ///////////////////////////////////////////////////////////////////////////////////////
 // Drivers
 
+// GFmSpike integrates new synaptic conductances from updated Spiking inputs
+func (ly *PulvLayer) GFmSpike(ltime *axon.Time) {
+	ly.GFmSpikePrjn(ltime)
+	if ly.Pulv.DriversOff || !ltime.PlusPhase {
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			if nrn.IsOff() {
+				continue
+			}
+			ly.GFmSpikeNeuron(ltime, ni, nrn)
+			// note: can add extra values to GeRaw and GeSyn here
+			ly.GFmRawSynNeuron(ltime, ni, nrn)
+		}
+		return
+	}
+	// for plus phase from drivers:
+	ly.GeFmDrivers(ltime)
+}
+
 // DriverLayer returns the driver layer for given Driver
 func (ly *PulvLayer) DriverLayer(drv string) (*axon.Layer, error) {
 	tly, err := ly.Network.LayerByNameTry(drv)
@@ -98,20 +117,6 @@ func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 	return act
 }
 
-// GeFmDriverNeuron sets the driver activation for given Neuron,
-// based on given Ge driving value (use DriveFmMaxAvg) from driver layer (Burst or Act)
-func (ly *PulvLayer) GeFmDriverNeuron(nrn *axon.Neuron, drvGe, drvInhib float32) {
-	geTot := (1-drvInhib)*nrn.GeRaw + drvGe
-	ly.Act.NMDAFmRaw(nrn, geTot)
-	ly.Learn.LrnNMDAFmRaw(nrn, geTot)
-	ly.Act.GvgccFmVm(nrn)
-
-	ly.Act.GeFmRaw(nrn, geTot, nrn.Gnmda+nrn.Gvgcc)
-	nrn.GeRaw = 0
-	ly.Act.GiFmRaw(nrn, nrn.GiRaw)
-	nrn.GiRaw = 0
-}
-
 // GeFmDrivers computes excitatory conductance from driver neurons
 func (ly *PulvLayer) GeFmDrivers(ltime *axon.Time) {
 	dly, err := ly.DriverLayer(ly.Driver)
@@ -120,29 +125,18 @@ func (ly *PulvLayer) GeFmDrivers(ltime *axon.Time) {
 	}
 	sly, issuper := dly.AxonLay.(*SuperLayer)
 	drvMax := dly.ActAvg.CaSpkP.Max
-	drvInhib := mat32.Min(1, drvMax/ly.Pulv.FullDriveAct)
+	nonDriverPct := 1.0 - mat32.Min(1, drvMax/ly.Pulv.FullDriveAct) // how much non-driver to keep
+	// above FullDriveAct, only driver Ge is present, non-driver is 0
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			return
 		}
 		drvAct := DriveAct(ni, dly, sly, issuper)
-		ly.GeFmDriverNeuron(nrn, ly.Pulv.DriveGe(drvAct), drvInhib)
+		drvGe := ly.Pulv.DriveGe(drvAct)
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		nrn.GeRaw = nonDriverPct*nrn.GeRaw + drvGe
+		nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Act.Dt.GeSynFmRawSteady(drvGe)
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
-}
-
-// GFmInc integrates new synaptic conductances from increments sent during last SendGDelta.
-func (ly *PulvLayer) GFmInc(ltime *axon.Time) {
-	ly.RecvGInc(ltime)
-	if ly.Pulv.DriversOff || !ltime.PlusPhase {
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			ly.GFmIncNeur(ltime, nrn, 0) // regular
-		}
-		return
-	}
-	ly.GeFmDrivers(ltime)
 }

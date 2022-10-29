@@ -367,6 +367,9 @@ func AddPTThalForSuper(nt *axon.Network, super, ct emer.Layer, suffix string, su
 	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal")
 	thalpt.SetClass("ThalToPT")
+	sthal, thals := nt.BidirConnectLayers(super, thal, superToPT) // shortcuts
+	sthal.SetClass("SuperToThal")
+	thals.SetClass("ThalToSuper")
 	nt.ConnectLayers(super, pt, superToPT, emer.Forward).SetClass("SuperToPT")
 	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
 	nt.ConnectLayers(ct, thal, ctToThal, emer.Forward).SetClass("CTtoThal")

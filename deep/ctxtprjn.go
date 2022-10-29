@@ -18,7 +18,7 @@ type CtxtSender interface {
 
 	// SendCtxtGe sends activation over CTCtxtPrjn projections to integrate
 	// CtxtGe excitatory conductance on CT layers.
-	// This must be called at the end of the Burst quarter for this layer.
+	// This must be called at the end of the Burst quarter (plus phase)
 	SendCtxtGe(ltime *axon.Time)
 }
 
@@ -88,8 +88,8 @@ func (pj *CTCtxtPrjn) InitGBuffs() {
 func (pj *CTCtxtPrjn) SendSpike(si int) {
 }
 
-// RecvGInc: disabled for this type
-func (pj *CTCtxtPrjn) RecvGInc(ltime *axon.Time) {
+// GFmSpike: disabled for this type
+func (pj *CTCtxtPrjn) GFmSpike(ltime *axon.Time) {
 }
 
 // SendCtxtGe sends the full Burst activation from sending neuron index si,

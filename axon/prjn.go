@@ -21,6 +21,19 @@ import (
 	"github.com/goki/mat32"
 )
 
+// PrjnGVals contains projection-level conductance values,
+// integrated by prjn before being integrated at the neuron level,
+// which enables the neuron to perform non-linear integration as needed.
+type PrjnGVals struct {
+	GRaw float32 `desc:"raw conductance received from senders = current raw spiking drive"`
+	GSyn float32 `desc:"time-integrated total synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay"`
+}
+
+func (pv *PrjnGVals) Init() {
+	pv.GRaw = 0
+	pv.GSyn = 0
+}
+
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnBase
@@ -34,6 +47,7 @@ type Prjn struct {
 	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
 	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
 	GBuf   []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	GVals  []PrjnGVals `desc:"projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed."`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -65,24 +79,8 @@ func (pj *Prjn) UpdateParams() {
 
 // GScaleVals holds the conductance scaling and associated values needed for adapting scale
 type GScaleVals struct {
-	Scale     float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
-	Orig      float32 `inactive:"+" desc:"original scaling factor computed based on initial layer activity, without any subsequent adaptation"`
-	Rel       float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
-	AvgMaxRel float32 `inactive:"+" desc:"actual relative contribution of this projection based on AvgMax values"`
-	Avg       float32 `inactive:"+" desc:"average G value on this trial"`
-	Max       float32 `inactive:"+" desc:"maximum G value on this trial"`
-	AvgAvg    float32 `inactive:"+" desc:"running average of the Avg, integrated at ly.Act.Dt.LongAvgTau"`
-	AvgMax    float32 `inactive:"+" desc:"running average of the Max, integrated at ly.Act.Dt.LongAvgTau -- used for computing AvgMaxRel"`
-}
-
-// Init completes the initialization of values based on initially computed ones
-func (gs *GScaleVals) Init() {
-	gs.Orig = gs.Scale
-	gs.AvgMaxRel = gs.Rel
-	gs.Avg = 0
-	gs.Max = 0
-	gs.AvgAvg = 0 // 0 = use first
-	gs.AvgMax = 0
+	Scale float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
+	Rel   float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
 }
 
 func (pj *Prjn) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj }
@@ -374,6 +372,7 @@ func (pj *Prjn) Build() error {
 		return err
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
+	pj.GVals = make([]PrjnGVals, pj.Recv.Shape().Len())
 	pj.BuildGBuffs()
 	return nil
 }
@@ -666,6 +665,9 @@ func (pj *Prjn) InitGBuffs() {
 	for ri := range pj.GBuf {
 		pj.GBuf[ri] = 0
 	}
+	for ri := range pj.GVals {
+		pj.GVals[ri].Init()
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -688,94 +690,27 @@ func (pj *Prjn) SendSpike(si int) {
 	}
 }
 
-// RecvGInc increments the receiver's GeRaw or GiRaw from that of all the projections.
-func (pj *Prjn) RecvGInc(ltime *Time) {
-	if ltime.PlusPhase {
-		pj.RecvGIncNoStats()
-	} else {
-		pj.RecvGIncStats()
-	}
-}
-
-// RecvGIncStats is called every cycle during minus phase,
-// to increment GeRaw or GiRaw, and also collect stats about conductances.
-func (pj *Prjn) RecvGIncStats() {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	del := pj.Com.Delay
-	sz := del + 1
-	zi := pj.Gidx.Zi
-	var max, avg float32
-	var n int
-	if pj.Typ == emer.Inhib {
-		for ri := range rlay.Neurons {
-			bi := ri*sz + zi
-			rn := &rlay.Neurons[ri]
-			g := pj.GBuf[bi]
-			rn.GiRaw += g
-			pj.GBuf[bi] = 0
-			if g > max {
-				max = g
-			}
-			if g > 0 {
-				avg += g
-				n++
-			}
-		}
-	} else {
-		for ri := range rlay.Neurons {
-			bi := ri*sz + zi
-			rn := &rlay.Neurons[ri]
-			g := pj.GBuf[bi]
-			rn.GeRaw += g
-			pj.GBuf[bi] = 0
-			if g > max {
-				max = g
-			}
-			if g > 0 {
-				avg += g
-				n++
-			}
-		}
-	}
-	if n > 0 {
-		avg /= float32(n)
-		pj.GScale.Avg = avg
-		if pj.GScale.AvgAvg == 0 {
-			pj.GScale.AvgAvg = avg
-		} else {
-			pj.GScale.AvgAvg += pj.PrjnScale.AvgDt * (avg - pj.GScale.AvgAvg)
-		}
-		pj.GScale.Max = max
-		if pj.GScale.AvgMax == 0 {
-			pj.GScale.AvgMax = max
-		} else {
-			pj.GScale.AvgMax += pj.PrjnScale.AvgDt * (max - pj.GScale.AvgMax)
-		}
-	}
-	pj.Gidx.Shift(1) // rotate buffer
-}
-
-// RecvGIncNoStats is plus-phase version without stats
-func (pj *Prjn) RecvGIncNoStats() {
+// GFmSpike increments synaptic conductances from Spikes
+func (pj *Prjn) GFmSpike(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Com.Delay
 	sz := del + 1
 	zi := pj.Gidx.Zi
 	if pj.Typ == emer.Inhib {
-		for ri := range rlay.Neurons {
+		for ri := range pj.GVals {
+			gv := &pj.GVals[ri]
 			bi := ri*sz + zi
-			rn := &rlay.Neurons[ri]
-			g := pj.GBuf[bi]
-			rn.GiRaw += g
+			gv.GRaw = pj.GBuf[bi]
 			pj.GBuf[bi] = 0
+			gv.GSyn = rlay.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
 		}
 	} else {
-		for ri := range rlay.Neurons {
+		for ri := range pj.GVals {
+			gv := &pj.GVals[ri]
 			bi := ri*sz + zi
-			rn := &rlay.Neurons[ri]
-			g := pj.GBuf[bi]
-			rn.GeRaw += g
+			gv.GRaw = pj.GBuf[bi]
 			pj.GBuf[bi] = 0
+			gv.GSyn = rlay.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
 		}
 	}
 	pj.Gidx.Shift(1) // rotate buffer

@@ -131,8 +131,8 @@ func (ly *TDRewIntegLayer) Build() error {
 	return err
 }
 
-func (ly *TDRewIntegLayer) GFmInc(ltime *axon.Time) {
-	ly.RecvGInc(ltime)
+func (ly *TDRewIntegLayer) GFmSpike(ltime *axon.Time) {
+	ly.GFmSpikePrjn(ltime)
 	rpAct := ly.RewPredAct(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -141,7 +141,8 @@ func (ly *TDRewIntegLayer) GFmInc(ltime *axon.Time) {
 		}
 		nrn.SetFlag(axon.NeurHasExt)
 		SetNeuronExtPosNeg(nrn, ni, rpAct)
-		ly.GFmIncNeur(ltime, nrn, 0) // no extra
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
 }
 
@@ -217,8 +218,8 @@ func (ly *TDDaLayer) Build() error {
 	return err
 }
 
-func (ly *TDDaLayer) GFmInc(ltime *axon.Time) {
-	ly.RecvGInc(ltime)
+func (ly *TDDaLayer) GFmSpike(ltime *axon.Time) {
+	ly.GFmSpikePrjn(ltime)
 	da := ly.RewIntegDA(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -227,7 +228,8 @@ func (ly *TDDaLayer) GFmInc(ltime *axon.Time) {
 		}
 		nrn.SetFlag(axon.NeurHasExt)
 		SetNeuronExtPosNeg(nrn, ni, da)
-		ly.GFmIncNeur(ltime, nrn, 0) // no extra
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
 }
 

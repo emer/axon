@@ -216,7 +216,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", pone2one, pone2one, pone2one, space)
+	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
 	_ = ofcpt
 	ofcct.SetClass("OFC CTCopy")
 	// net.ConnectCTSelf(ofcct, pone2one) // much better for ofc not to have self prjns..

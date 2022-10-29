@@ -102,18 +102,23 @@ func (ly *CTLayer) DecayState(decay, glong float32) {
 	}
 }
 
-// GFmInc integrates new synaptic conductances from increments sent during last Spike
-func (ly *CTLayer) GFmInc(ltime *axon.Time) {
-	ly.RecvGInc(ltime)
+// GFmSpike integrates new synaptic conductances from increments sent during last Spike
+func (ly *CTLayer) GFmSpike(ltime *axon.Time) {
+	ly.GFmSpikePrjn(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmIncNeur(ltime, nrn, ly.CT.GeGain*ly.CtxtGes[ni]) // extra context for ge
+		// note: can add extra values to GeRaw and GeSyn here
+		geCtxt := ly.CT.GeGain * ly.CtxtGes[ni]
 		if ly.CT.DecayDt > 0 {
 			ly.CtxtGes[ni] -= ly.CT.DecayDt * ly.CtxtGes[ni]
 		}
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		nrn.GeRaw += geCtxt
+		nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
 }
 

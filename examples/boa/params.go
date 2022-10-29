@@ -199,9 +199,9 @@ var ParamSets = params.Sets{
 					"Layer.Matrix.GateThr":      "0.05", // 0.05 > 0.08 maybe
 					"Layer.Inhib.ActAvg.Init":   ".03",
 					"Layer.Inhib.Layer.On":      "true",
-					"Layer.Inhib.Layer.Gi":      "0.8",
+					"Layer.Inhib.Layer.Gi":      "1.0", // was 8
 					"Layer.Inhib.Pool.On":       "true",
-					"Layer.Inhib.Pool.Gi":       "0.6", // 0.6 > 0.5 -- 0.8 too high
+					"Layer.Inhib.Pool.Gi":       "0.7", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
@@ -217,8 +217,8 @@ var ParamSets = params.Sets{
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
-					"Prjn.Learn.Trace.Tau":      "2",
-					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here
+					"Prjn.Learn.Trace.Tau":      "1",
+					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
@@ -226,7 +226,20 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperToPT", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.5",
+					"Prjn.PrjnScale.Rel": "0.1",
+				}},
+			{Sel: ".SuperToThal", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1.0",
+					"Prjn.PrjnScale.Abs": "2.0",
+				}},
+			{Sel: ".ThalToSuper", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.1",
+				}},
+			{Sel: ".ThalToPT", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1.0",
 				}},
 			{Sel: ".CTtoThal", Desc: "",
 				Params: params.Params{
@@ -327,8 +340,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
-					"Prjn.PrjnScale.Rel": ".5",
+					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Rel": "2", // make this higher to make BLA weaker
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -341,41 +354,13 @@ var ParamSets = params.Sets{
 					// "Prjn.SWt.Init.Mean": "0.8",
 					// "Prjn.SWt.Init.Var":  "0.0",
 				}},
-			{Sel: "#ALMToMtxGo", Desc: "weaker closed loop",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
-				}},
-			{Sel: "#ALMToMtxNo", Desc: "weaker closed loop",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
-				}},
-			{Sel: "#ALMToSTNp", Desc: "strong pfc to stn",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
-				}},
-			{Sel: "#ALMToSTNs", Desc: "strong pfc to stn",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.3",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.25",
-				}},
-			{Sel: "#ALMToVThal", Desc: "strong",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
-				}},
 			{Sel: ".FmSTNp", Desc: "increase to prevent repeated gating",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.2", // 1.2 > 1.0 > 1.5 (too high)
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.005", // 0.001 > 0.01 -- even 0.01 learns fastish..
+					"Prjn.Learn.Lrate.Base": "0.005", // this is key param for how much BG learning happens!
 					"Prjn.SWt.Init.Mean":    "0.0",
 					"Prjn.SWt.Init.Var":     "0.0",
 					"Prjn.SWt.Init.Sym":     "false",

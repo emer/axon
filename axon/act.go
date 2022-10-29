@@ -245,22 +245,20 @@ func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
 	nrn.VgccCa = ac.VGCC.CaFmG(nrn.VmDend, nrn.Gvgcc, nrn.VgccCa) // note: may be overwritten!
 }
 
-// GeFmRaw integrates Ge excitatory conductance from GeRaw value into GeSyn
+// GeFmSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
-func (ac *ActParams) GeFmRaw(nrn *Neuron, geRaw, geExt float32) {
+func (ac *ActParams) GeFmSyn(nrn *Neuron, geSyn, geExt float32) {
 	if ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
-		geRaw += nrn.Ext * ac.Clamp.Ge
+		geSyn += nrn.Ext * ac.Clamp.Ge
 	}
-	geRaw = ac.Attn.ModVal(geRaw, nrn.Attn)
+	geSyn = ac.Attn.ModVal(geSyn, nrn.Attn)
 
 	if !ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
-		nrn.GeSyn = nrn.Ext * ac.Clamp.Ge
+		geSyn = nrn.Ext * ac.Clamp.Ge
 		geExt = 0 // no extra in this case
-	} else {
-		ac.Dt.GeSynFmRaw(geRaw, &nrn.GeSyn, nrn.GeBase)
 	}
 
-	nrn.Ge = nrn.GeSyn + geExt
+	nrn.Ge = geSyn + geExt
 	if nrn.Ge < 0 {
 		nrn.Ge = 0
 	}
@@ -273,7 +271,7 @@ func (ac *ActParams) GeNoise(nrn *Neuron) {
 		return
 	}
 	ge := ac.Noise.PGe(&nrn.GeNoiseP)
-	ac.Dt.GeSynFmRaw(ge, &nrn.GeNoise, 0)
+	nrn.GeNoise = ac.Dt.GeSynFmRaw(nrn.GeNoise, ge)
 	nrn.Ge += nrn.GeNoise
 }
 
@@ -283,17 +281,17 @@ func (ac *ActParams) GiNoise(nrn *Neuron) {
 		return
 	}
 	gi := ac.Noise.PGi(&nrn.GiNoiseP)
-	ac.Dt.GiSynFmRaw(gi, &nrn.GiNoise, 0)
+	nrn.GiNoise = ac.Dt.GiSynFmRaw(nrn.GiNoise, gi)
 }
 
-// GiFmRaw integrates GiSyn inhibitory synaptic conductance from GiRaw value
+// GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
-func (ac *ActParams) GiFmRaw(nrn *Neuron, giRaw float32) {
-	ac.Dt.GiSynFmRaw(giRaw, &nrn.GiSyn, ac.Init.Gi)
+func (ac *ActParams) GiFmSyn(nrn *Neuron, giSyn float32) float32 {
 	ac.GiNoise(nrn)
-	if nrn.GiSyn < 0 { // negative inhib G doesn't make any sense
-		nrn.GiSyn = 0
+	if giSyn < 0 { // negative inhib G doesn't make any sense
+		giSyn = 0
 	}
+	return giSyn
 }
 
 // InetFmG computes net current from conductances and Vm
@@ -633,16 +631,30 @@ func (dp *DtParams) Defaults() {
 	dp.Update()
 }
 
-// GeSynFmRaw updates GeSyn from raw input, decaying with time constant,
-// back to min baseline value
-func (dp *DtParams) GeSynFmRaw(geRaw float32, geSyn *float32, min float32) {
-	*geSyn += geRaw - dp.GeDt*(*geSyn-min)
+// GeSynFmRaw integrates a synaptic conductance from raw spiking using GeTau
+func (dp *DtParams) GeSynFmRaw(geSyn, geRaw float32) float32 {
+	return geSyn + geRaw - dp.GeDt*geSyn
 }
 
-// GiSynFmRaw updates GiSyn from raw input, decaying with time constant,
-// back to min baseline value
-func (dp *DtParams) GiSynFmRaw(giRaw float32, giSyn *float32, min float32) {
-	*giSyn += giRaw - dp.GiDt*(*giSyn-min)
+// GeSynFmRawSteady returns the steady-state GeSyn that would result from
+// receiving a steady increment of GeRaw every time step = raw * GeTau.
+// dSyn = Raw - dt*Syn; solve for dSyn = 0 to get steady state:
+// dt*Syn = Raw; Syn = Raw / dt = Raw * Tau
+func (dp *DtParams) GeSynFmRawSteady(geRaw float32) float32 {
+	return geRaw * dp.GeTau
+}
+
+// GiSynFmRaw integrates a synaptic conductance from raw spiking using GiTau
+func (dp *DtParams) GiSynFmRaw(giSyn, giRaw float32) float32 {
+	return giSyn + giRaw - dp.GiDt*giSyn
+}
+
+// GiSynFmRawSteady returns the steady-state GiSyn that would result from
+// receiving a steady increment of GiRaw every time step = raw * GiTau.
+// dSyn = Raw - dt*Syn; solve for dSyn = 0 to get steady state:
+// dt*Syn = Raw; Syn = Raw / dt = Raw * Tau
+func (dp *DtParams) GiSynFmRawSteady(giRaw float32) float32 {
+	return giRaw * dp.GiTau
 }
 
 // AvgVarUpdt updates the average and variance from current value, using LongAvgDt

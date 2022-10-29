@@ -37,15 +37,19 @@ func (ly *BLALayer) Defaults() {
 	ly.BLA.Defaults()
 }
 
-func (ly *BLALayer) GFmInc(ltime *axon.Time) {
-	ly.RecvGInc(ltime)
+func (ly *BLALayer) GFmSpike(ltime *axon.Time) {
+	ly.GFmSpikePrjn(ltime)
 	da := ly.DaMod.Gain(ly.DA)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmIncNeur(ltime, nrn, da*nrn.CaSpkM) // extra da for ge
+		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		daEff := da * nrn.CaSpkM // da effect interacts with spiking
+		nrn.GeRaw += daEff
+		nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)
+		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
 }
 

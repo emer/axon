@@ -35,9 +35,9 @@ type Neuron struct {
 	Ext     float32   `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 	Targ    float32   `desc:"target value: drives learning to produce this activation value"`
 
-	GeSyn  float32 `desc:"total excitatory synaptic conductance -- the net excitatory input to the neuron -- does *not* include Gbar.E"`
+	GeSyn  float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
 	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
-	GiSyn  float32 `desc:"aggregated synaptic inhibition (from Inhib projections) -- time integral of GiRaw -- this is added with computed FFFB inhibition to get the full inhibition in Gi"`
+	GiSyn  float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
 	Gi     float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
 	Gk     float32 `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
 	Inet   float32 `desc:"net current produced by all channels -- drives update of Vm"`
@@ -102,8 +102,8 @@ type Neuron struct {
 
 	GeBase float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
 	GiBase float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
-	GeRaw  float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive -- always 0 in display because it is reset during computation"`
-	GiRaw  float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive -- always 0 in display because it is reset during computation"`
+	GeRaw  float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
+	GiRaw  float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
 
 	Gak float32 `desc:"conductance of A-type K potassium channels"`
 }
