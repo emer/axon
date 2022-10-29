@@ -131,8 +131,8 @@ func (ss *Sim) Defaults() {
 	ss.GeClamp = true
 	ss.Cycle = 0
 	ss.SpikeHz = 50
-	ss.Ge = 0.5
-	ss.Gi = 0.0
+	ss.Ge = 0.05
+	ss.Gi = 0.1
 	ss.ErevE = 1
 	ss.ErevI = 0.3
 	ss.Noise = 0
@@ -250,7 +250,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	if inputOn {
 		if ss.GeClamp {
 			nrn.GeRaw = ss.Ge
-			nrn.GeSyn = nrn.GeRaw
+			nrn.GeSyn = ac.Dt.GeSynFmRawSteady(nrn.GeRaw)
 		} else {
 			nex.InISI += 1
 			if nex.InISI > 1000/ss.SpikeHz {
@@ -259,7 +259,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 			} else {
 				nrn.GeRaw = 0
 			}
-			ac.Dt.GeSynFmRaw(nrn.GeRaw, &nrn.GeSyn, ac.Init.Ge)
+			nrn.GeSyn = ac.Dt.GeSynFmRaw(nrn.GeSyn, nrn.GeRaw)
 		}
 	} else {
 		nrn.GeRaw = 0
