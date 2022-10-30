@@ -78,15 +78,9 @@ func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, superT
 	return AddPTThalForSuper(nt.AsAxon(), super, ct, suffix, superToPT, ptSelf, ctToThal, space)
 }
 
-// ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
+// ConnectToMatrix adds a MatrixPrjn from given sending layer to a matrix layer
 func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return ConnectToMatrix(nt.AsAxon(), send, recv, pat)
-}
-
-// AddHypothalLayer adds a HypothalLayer of given size, with given name.
-// Assumes that a 4D structure will be used, with Pools representing separate body states / drives.
-func (nt *Network) AddHypothalLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *HypothalLayer {
-	return AddHypothalLayer(nt.AsAxon(), name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -111,7 +105,7 @@ func AddMatrixLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNe
 	return ly
 }
 
-// ConnectToMatrix adds a MatrixTracePrjn from given sending layer to a matrix layer
+// ConnectToMatrix adds a MatrixPrjn from given sending layer to a matrix layer
 func ConnectToMatrix(nt *axon.Network, send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayersPrjn(send, recv, pat, emer.Forward, &MatrixPrjn{})
 }
@@ -183,15 +177,6 @@ func AddThalLayer2D(nt *axon.Network, name string, nNeurY, nNeurX int) *ThalLaye
 func AddThalLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *ThalLayer {
 	ly := &ThalLayer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Thal)
-	ly.SetClass("BG")
-	return ly
-}
-
-// AddHypothalLayer adds a HypothalLayer of given size, with given name.
-// Assumes that a 4D structure will be used, with Pools representing separate body states / drives.
-func AddHypothalLayer(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *HypothalLayer {
-	ly := &HypothalLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Hypothal)
 	ly.SetClass("BG")
 	return ly
 }

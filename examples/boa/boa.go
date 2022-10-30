@@ -187,7 +187,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 
-	drives := net.AddHypothalLayer("Drives", 1, ev.NDrives, ny, 1)
+	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, emer.Input)
 	us, usp := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
 	// cs, csp := net.AddInputPulv2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
 	// localist, for now:
@@ -712,6 +712,8 @@ func (ss *Sim) TrialStats() {
 	*/
 	da := ss.Net.LayerByName("DA").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("DA", float64(da.Neurons[0].Act))
+	rp := ss.Net.LayerByName("RWPred").(axon.AxonLayer).AsAxon()
+	ss.Stats.SetFloat("RewPred", float64(rp.Neurons[0].Act))
 
 }
 
@@ -739,6 +741,8 @@ func (ss *Sim) ConfigLogs() {
 	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("RewPred", "RewPred", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)

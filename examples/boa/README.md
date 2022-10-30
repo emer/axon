@@ -52,6 +52,8 @@ This needs to be higher to prevent redundant gating.  1.2 seems good -- but need
 
 # TODO
 
+* small negative DA is happening all the time -- causing unlearning in matrix -- ACh modulation should help here but is not.. looks like da mod learning is happening without ACh -- those should be coordinated.
+
 * In general, the drive modulation is awkward and not very effective, and it is not clear how it will generalize when multiple drives are present.  If drive -> OFC restricts all consideration of other drives, then it is a foregone conclusion, and OFC is just a dummy.  Maybe get rid of pools and allow all drives to intermingle in OFC, so it has to learn that?  then it can't represent multiple anyway and has to make more of a choice?   cortex should not be quite so topographic?   In any case, having it naturally be mutex and considering the current option is good.
 
 * OFCCT has nothing to predict -- USP?  it is predetermined by drive.  Just ends up being a loop that supports the wrong CT activation.  better if it is doing the CS and the US together?

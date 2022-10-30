@@ -44,9 +44,6 @@ const (
 	// VM / VL / VA ventral thalamic nuclei.
 	Thal
 
-	// Hypothal is a hypothalamic layer, representing core body state: thirst, hunger etc
-	Hypothal
-
 	// PT are layer 5IB intrinsic bursting pyramidal tract neocortical neurons.
 	// These are bidirectionally interconnected with BG-gated thalamus in PFC.
 	PT
@@ -59,7 +56,6 @@ const (
 	GP_
 	CIN_
 	Thal_
-	Hypothal_
 	PT_
 	LayerTypeN
 )

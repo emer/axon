@@ -18,8 +18,9 @@ import (
 // and subsequent activity, and is based biologically on synaptic tags.
 // Trace is reset at time of reward based on ACh level from CINs.
 type MatrixTraceParams struct {
-	CurTrlDA bool    `def:"true" desc:"if true, current trial DA dopamine can drive learning (i.e., synaptic co-activity trace is updated prior to DA-driven dWt), otherwise DA is applied to existing trace before trace is updated, meaning that at least one trial must separate gating activity and DA"`
-	Decay    float32 `def:"2" min:"0" desc:"multiplier on CIN ACh level for decaying prior traces -- decay never exceeds 1.  larger values drive strong credit assignment for any US outcome."`
+	CurTrlDA  bool    `def:"true" desc:"if true, current trial DA dopamine can drive learning (i.e., synaptic co-activity trace is updated prior to DA-driven dWt), otherwise DA is applied to existing trace before trace is updated, meaning that at least one trial must separate gating activity and DA"`
+	Decay     float32 `def:"2" min:"0" desc:"multiplier on CIN ACh level for decaying prior traces -- decay never exceeds 1.  larger values drive strong credit assignment for any US outcome."`
+	Modulator bool    `desc:"this projection is a modulator -- the conductance here multiplies other inputs -- it must be active for anything else to activate"`
 }
 
 func (tp *MatrixTraceParams) Defaults() {

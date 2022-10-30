@@ -142,8 +142,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.0",
 					"Layer.Act.Gbar.L":           "0.2",
-					"Layer.DaMod.BurstGain":      ".1",
-					"Layer.DaMod.DipGain":        ".1",
+					"Layer.DaMod.BurstGain":      "0.2",
+					"Layer.DaMod.DipGain":        "0",    // ignore small negative DA
 					"Layer.BLA.NoDALrate":        "0.0",  // todo: explore
 					"Layer.BLA.NegLrate":         "0.1",  // todo: explore
 					"Layer.Learn.RLrate.Diff":    "true", // can turn off if NoDALrate is 0
@@ -197,6 +197,7 @@ var ParamSets = params.Sets{
 					"Layer.Matrix.GPHasPools":   "false",
 					"Layer.Matrix.InvertNoGate": "false",
 					"Layer.Matrix.GateThr":      "0.05", // 0.05 > 0.08 maybe
+					"Layer.Matrix.ModGain":      "5",
 					"Layer.Inhib.ActAvg.Init":   ".03",
 					"Layer.Inhib.Layer.On":      "true",
 					"Layer.Inhib.Layer.Gi":      "0.8", // was 8
@@ -218,7 +219,7 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau":      "1",
-					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
+					"Prjn.Learn.Trace.NeuronCa": "true", // faster and no diff here?
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
@@ -332,19 +333,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USToVpMtxGo", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "10",
+					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.PrjnScale.Rel": ".2",
-					// "Prjn.Learn.Learn":   "false",
-					// "Prjn.SWt.Init.Mean": "0.8",
-					// "Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
-					"Prjn.PrjnScale.Rel": "2", // make this higher to make BLA weaker
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.PrjnScale.Rel":   "0.2",
+					"Prjn.Trace.Modulator": "true",
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
@@ -360,7 +355,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.005", // this is key param for how much BG learning happens!
+					"Prjn.Learn.Lrate.Base": "0.002", // this is key param for how much BG learning happens!
 					"Prjn.SWt.Init.Mean":    "0.0",
 					"Prjn.SWt.Init.Var":     "0.0",
 					"Prjn.SWt.Init.Sym":     "false",
