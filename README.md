@@ -477,15 +477,3 @@ This `sc` factor multiplies the `GScale` factor as computed above.
 * Spruston, N. (2008). Pyramidal neurons: Dendritic structure and synaptic integration. Nature Reviews. Neuroscience, 9(3), 201–221. http://www.ncbi.nlm.nih.gov/pubmed/18270515
 
 * Urakubo, H., Honda, M., Froemke, R. C., & Kuroda, S. (2008). Requirement of an allosteric kinetics of NMDA receptors for spike timing-dependent plasticity. The Journal of Neuroscience, 28(13), 3310–3323. http://www.ncbi.nlm.nih.gov/pubmed/18367598
-
-# Bazel
-
-In addition to the go tool, we support [Bazel](https://bazel.build).
-
-After adding any new files or imports, please update the Bazel files automatically with:
-
-```sh
-# Updates BUILD.bazel files
-make bazel-update
-```
-
