@@ -35,11 +35,6 @@ tidy:
 	@echo "GO111MODULE = $(value GO111MODULE)"
 	go mod tidy
 
-bazel-update:
-	bazel run //:gazelle -- fix axon chans deep fffb kinase
-	bazel run //:gazelle -- update-repos -from_file=go.mod -to_macro gazelle_repositories.bzl%go_repositories -prune
-	bazel test //...
-
 # updates go.mod to master for all of the goki dependencies
 # note: must somehow remember to do this for any other depend
 # that we need to update at any point!
