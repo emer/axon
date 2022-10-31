@@ -10,25 +10,6 @@ on: # yamllint disable-line rule:truthy
   workflow_dispatch:
 
 jobs:
-  bazel:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-      - name: apt-get
-        run: |
-          sudo apt-get update
-          sudo apt-get install libgl1-mesa-dev xorg-dev
-      - name: Mount bazel caches
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/bazel
-            ~/.cache/bazel-repo
-          key: bazel-ubuntu-latest
-      - name: bazel test //...
-        run: bazel --bazelrc=.github/workflows/workflows.bazelrc test //...
   go:
     runs-on: ubuntu-latest
     steps:
