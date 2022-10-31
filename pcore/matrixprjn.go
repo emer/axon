@@ -20,6 +20,7 @@ import (
 type MatrixTraceParams struct {
 	CurTrlDA  bool    `def:"true" desc:"if true, current trial DA dopamine can drive learning (i.e., synaptic co-activity trace is updated prior to DA-driven dWt), otherwise DA is applied to existing trace before trace is updated, meaning that at least one trial must separate gating activity and DA"`
 	Decay     float32 `def:"2" min:"0" desc:"multiplier on CIN ACh level for decaying prior traces -- decay never exceeds 1.  larger values drive strong credit assignment for any US outcome."`
+	NoACh     bool    `desc:"ignore ACh for learning modulation -- only used for reset if so -- otherwise ACh directly multiplies dWt"`
 	Modulator bool    `desc:"this projection is a modulator -- the conductance here multiplies other inputs -- it must be active for anything else to activate"`
 }
 
@@ -73,9 +74,6 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*MatrixLayer)
 
-	da := rlay.DA
-	daLrn := rlay.DALrn // includes d2 reversal etc
-
 	noGate := float32(1)
 	if rlay.Matrix.InvertNoGate && !rlay.Matrix.GPHasPools {
 		if !rlay.Gated[0] {
@@ -85,7 +83,10 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 
 	ach := rlay.ACh
 	achDk := mat32.Min(1, ach*pj.Trace.Decay)
-
+	daLrn := rlay.DALrn // includes d2 reversal etc
+	if !pj.Trace.NoACh {
+		daLrn *= ach
+	}
 	lr := pj.Learn.Lrate.Eff
 
 	for si := range slay.Neurons {
@@ -104,15 +105,11 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 			tr := sy.Tr
 
 			ntr := rn.SpkMax * snAct
-			dwt := float32(0)
-
 			if pj.Trace.CurTrlDA {
 				tr += ntr
 			}
 
-			if da != 0 {
-				dwt = daLrn * tr
-			}
+			dwt := daLrn * tr
 			tr -= achDk * tr // decay trace that drove dwt
 
 			if !pj.Trace.CurTrlDA {

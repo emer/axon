@@ -211,8 +211,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	snc := rl.AddClampDaLayer(net.AsAxon(), "SNc")
 
-	mtxGo, mtxNo, cini, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
-	cin := cini.(*pcore.CINLayer)
+	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
+	cin := net.AddCINLayer("CIN", mtxGo.Name(), mtxNo.Name(), space)
 	cin.RewLays.Add(snc.Name())
 	_ = gpeOut
 	_ = gpeIn

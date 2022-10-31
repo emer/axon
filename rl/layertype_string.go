@@ -14,12 +14,13 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[RL_-7]
-	_ = x[LayerTypeN-8]
+	_ = x[RSalience_-8]
+	_ = x[LayerTypeN-9]
 }
 
-const _LayerType_name = "RL_LayerTypeN"
+const _LayerType_name = "RL_RSalience_LayerTypeN"
 
-var _LayerType_index = [...]uint8{0, 3, 13}
+var _LayerType_index = [...]uint8{0, 3, 13, 23}
 
 func (i LayerType) String() string {
 	i -= 7

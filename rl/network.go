@@ -6,6 +6,7 @@ package rl
 
 import (
 	"github.com/emer/axon/axon"
+	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/relpos"
 	"github.com/goki/ki/kit"
@@ -13,7 +14,7 @@ import (
 
 // rl.Network enables display of the Da variable for pure rl models
 type Network struct {
-	axon.Network
+	deep.Network
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
@@ -57,6 +58,13 @@ func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float3
 // Only generates DA when Rew layer has external input -- otherwise zero.
 func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float32) (rew, rp, da axon.AxonLayer) {
 	return AddRWLayers(nt.AsAxon(), prefix, rel, space)
+}
+
+// AddRSalienceLayer adds a rl.RSalienceLayer unsigned reward salience coding ACh layer.
+func (nt *Network) AddRSalienceLayer(name string) *RSalienceLayer {
+	ly := &RSalienceLayer{}
+	nt.AddLayerInit(ly, name, []int{1, 1}, RSalience)
+	return ly
 }
 
 //////////////////////////////////////////////////////////////
@@ -116,20 +124,9 @@ func AddRWLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 	return
 }
 
-// AddTDLayersPy adds the standard TD temporal differences layers, generating a DA signal.
-// Projection from Rew to RewInteg is given class TDRewToInteg -- should
-// have no learning and 1 weight.
-// Py is Python version, returns layers as a slice
-func AddTDLayersPy(nt *axon.Network, prefix string, rel relpos.Relations, space float32) []axon.AxonLayer {
-	rew, rp, ri, td := AddTDLayers(nt, prefix, rel, space)
-	return []axon.AxonLayer{rew, rp, ri, td}
-}
-
-// AddRWLayersPy adds simple Rescorla-Wagner (PV only) dopamine system, with a primary
-// Reward layer, a RWPred prediction layer, and a dopamine layer that computes diff.
-// Only generates DA when Rew layer has external input -- otherwise zero.
-// Py is Python version, returns layers as a slice
-func AddRWLayersPy(nt *axon.Network, prefix string, rel relpos.Relations, space float32) []axon.AxonLayer {
-	rew, rp, da := AddRWLayers(nt, prefix, rel, space)
-	return []axon.AxonLayer{rew, rp, da}
+// AddRSalienceLayer adds a RSalienceLayer unsigned reward salience coding ACh layer.
+func AddRSalienceLayer(nt *axon.Network, name string) *RSalienceLayer {
+	ly := &RSalienceLayer{}
+	nt.AddLayerInit(ly, name, []int{1, 1}, RSalience)
+	return ly
 }

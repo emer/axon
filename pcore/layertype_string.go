@@ -13,23 +13,22 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Matrix_-8]
-	_ = x[STN_-9]
-	_ = x[GP_-10]
-	_ = x[CIN_-11]
+	_ = x[Matrix_-9]
+	_ = x[STN_-10]
+	_ = x[GP_-11]
 	_ = x[Thal_-12]
 	_ = x[PT_-13]
 	_ = x[LayerTypeN-14]
 }
 
-const _LayerType_name = "Matrix_STN_GP_CIN_Thal_PT_LayerTypeN"
+const _LayerType_name = "Matrix_STN_GP_Thal_PT_LayerTypeN"
 
-var _LayerType_index = [...]uint8{0, 7, 11, 14, 18, 23, 26, 36}
+var _LayerType_index = [...]uint8{0, 7, 11, 14, 19, 22, 32}
 
 func (i LayerType) String() string {
-	i -= 8
+	i -= 9
 	if i < 0 || i >= LayerType(len(_LayerType_index)-1) {
-		return "LayerType(" + strconv.FormatInt(int64(i+8), 10) + ")"
+		return "LayerType(" + strconv.FormatInt(int64(i+9), 10) + ")"
 	}
 	return _LayerType_name[_LayerType_index[i]:_LayerType_index[i+1]]
 }
@@ -37,7 +36,7 @@ func (i LayerType) String() string {
 func StringToLayerType(s string) (LayerType, error) {
 	for i := 0; i < len(_LayerType_index)-1; i++ {
 		if s == _LayerType_name[_LayerType_index[i]:_LayerType_index[i+1]] {
-			return LayerType(i + 8), nil
+			return LayerType(i + 9), nil
 		}
 	}
 	return 0, errors.New("String: " + s + " is not a valid option for type: LayerType")

@@ -4,7 +4,7 @@ This model builds on the basic [pcore](https://github.com/emer/axon/tree/master/
 
 The paradigm is a simple ecologically-inspired task (a simplified version of the map-nav Fworld flat-world model), where there are:
 
-* B different body states (hunger, thirst, etc), satisfied by a corresponding US outcome.
+* B different body states (hunger, thirst, etc), satisfied by a corresponding US outcome.  These are detected and managed primarily in the hypothalamus and other such brainstem nuclei (PBN etc) and represented cortically in the insula (in posterior medial frontal cortex) as a primary interoceptive sensory area, with more anterior areas of medial frontal cortex going into OFC representing the "PFC" for interoceptive states (for higher level control and active maintenance).
 
 * C_B different CS sensory cues associated with each US (simplest case is C_B = 1 -- one-to-one mapping), presented on a "fovea" input layer.
 
@@ -52,18 +52,21 @@ This needs to be higher to prevent redundant gating.  1.2 seems good -- but need
 
 # TODO
 
-* small negative DA is happening all the time -- causing unlearning in matrix -- ACh modulation should help here but is not.. looks like da mod learning is happening without ACh -- those should be coordinated.
+* BLA needs the cholinergic guy -- put in rl and not in BG!
+
+* MD / PT is not sufficiently active -- over sparse
 
 * In general, the drive modulation is awkward and not very effective, and it is not clear how it will generalize when multiple drives are present.  If drive -> OFC restricts all consideration of other drives, then it is a foregone conclusion, and OFC is just a dummy.  Maybe get rid of pools and allow all drives to intermingle in OFC, so it has to learn that?  then it can't represent multiple anyway and has to make more of a choice?   cortex should not be quite so topographic?   In any case, having it naturally be mutex and considering the current option is good.
 
 * OFCCT has nothing to predict -- USP?  it is predetermined by drive.  Just ends up being a loop that supports the wrong CT activation.  better if it is doing the CS and the US together?
 
-* The PT gating catch-22 is a problem: no positive signal for when to move forward -- need different explore vs. engaged reps in PT -- can't be the same.. diff populations of PT that are transient vs. what is engaged.  still how does that work?  argh.
-
-
 # DONE
 
+* small negative DA is happening all the time -- causing unlearning in matrix -- ACh modulation should help here but is not.. looks like da mod learning is happening without ACh -- those should be coordinated.
+
 * There is no negative feedback on gating -- because action is always correct following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.  This works as expected.
+
+* The PT gating catch-22 is a problem: no positive signal for when to move forward -- need different explore vs. engaged reps in PT -- can't be the same.. diff populations of PT that are transient vs. what is engaged.  fixed by having super project directly to MD -- 
 
 * Matrix is getting blasted with too strong of input -- increase leak?  other params?  drive needs to be stronger?  but needs to activate a feedforward inhib -- no ff inhib present?  maybe switch all to ff?  yes!!  update pcore to better test this case.
 

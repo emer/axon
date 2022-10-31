@@ -5,6 +5,8 @@
 package pvlv
 
 import (
+	"fmt"
+
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/rl"
 	"github.com/goki/ki/kit"
@@ -27,6 +29,7 @@ type BLALayer struct {
 	rl.Layer
 	DaMod DaModParams `view:"inline" desc:"dopamine modulation parameters"`
 	BLA   BLAParams   `view:"inline" desc:"special BLA parameters"`
+	ACh   float32     `inactive:"+" desc:"acetylcholine value from rl.RSalience cholinergic layer reflecting the absolute value of reward or CS predictions thereof -- modulates BLA learning to restrict to US and CS times"`
 }
 
 var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, axon.LayerProps)
@@ -35,6 +38,16 @@ func (ly *BLALayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.DaMod.Defaults()
 	ly.BLA.Defaults()
+}
+
+// AChLayer interface:
+
+func (ly *BLALayer) GetACh() float32    { return ly.ACh }
+func (ly *BLALayer) SetACh(ach float32) { ly.ACh = ach }
+
+func (ly *BLALayer) InitActs() {
+	ly.Layer.InitActs()
+	ly.ACh = 0
 }
 
 func (ly *BLALayer) GFmSpike(ltime *axon.Time) {
@@ -74,7 +87,7 @@ func (ly *BLALayer) PlusPhase(ltime *axon.Time) {
 //  BLAPrjn
 
 // BLAPrjn implements the PVLV BLA learning rule:
-// dW = X_t-1 * (Y_t - Y_t-1)
+// dW = Ach * X_t-1 * (Y_t - Y_t-1)
 // The recv delta is across trials, where the US should activate on trial
 // boundary, to enable sufficient time for gating through to OFC, so
 // BLA initially learns based on US present - US absent.
@@ -109,8 +122,9 @@ func (pj *BLAPrjn) DWt(ltime *axon.Time) {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
-	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
+	rlay := pj.Recv.(*BLALayer)
+	ach := rlay.ACh
+	lr := ach * pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sact := slay.Neurons[si].SpkPrv
 		nc := int(pj.SConN[si])
@@ -155,4 +169,48 @@ func (pj *BLAPrjn) WtFmDWt(ltime *axon.Time) {
 			sy.DWt = 0
 		}
 	}
+}
+
+///////////////////////////////////////////////////////////////////
+// Unit var access
+
+func (ly *BLALayer) UnitVarNum() int {
+	return ly.Layer.UnitVarNum() + 1
+}
+
+func (ly *BLALayer) UnitVarIdx(varNm string) (int, error) {
+	vidx, err := ly.Layer.UnitVarIdx(varNm)
+	if err == nil {
+		return vidx, err
+	}
+	nvi := 0
+	switch varNm {
+	case "ACh":
+		nvi = 0
+	default:
+		return -1, fmt.Errorf("pvlv.BLALayer: variable named: %s not found", varNm)
+	}
+	nn := ly.Layer.UnitVarNum()
+	return nn + nvi, nil
+}
+
+func (ly *BLALayer) UnitVal1D(varIdx int, idx int) float32 {
+	if varIdx < 0 {
+		return mat32.NaN()
+	}
+	nn := ly.Layer.UnitVarNum()
+	if varIdx < nn {
+		return ly.Layer.UnitVal1D(varIdx, idx)
+	}
+	if idx < 0 || idx >= len(ly.Neurons) {
+		return mat32.NaN()
+	}
+	varIdx -= nn
+	switch varIdx {
+	case 0:
+		return ly.ACh
+	default:
+		return mat32.NaN()
+	}
+	return 0
 }

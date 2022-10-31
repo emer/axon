@@ -6,7 +6,7 @@ package pcore
 
 import (
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/deep"
+	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
@@ -16,7 +16,7 @@ import (
 // pcore.Network has methods for configuring specialized PCore network components
 // PCore = Pallidal Core mode of BG
 type Network struct {
-	deep.Network
+	rl.Network
 }
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
@@ -33,26 +33,40 @@ func (nt *Network) SynVarNames() []string {
 	return SynVarsAll
 }
 
-// AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
+// AddBG adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // Only the Matrix has pool-based 4D shape by default -- use pool for "role" like
 // elements where matches need to be detected.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate connections are made between layers, using standard styles.
-// space is the spacing between layers (2 typical)
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
+// space is the spacing between layers (2 typical).
+// A CIN or more widely used rl.RSalienceLayer should be added and
+// project ACh to the MtxGo, No layers.
+func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
 	return AddBG(nt.AsAxon(), prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
 }
 
-// AddBG4D adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
+// AddBG4D adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // This version makes 4D pools throughout the GP layers,
 // with Pools representing separable gating domains.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate PoolOneToOne connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
-func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
+// A CIN or more widely used rl.RSalienceLayer should be added and
+// project ACh to the MtxGo, No layers.
+func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
 	return AddBG4D(nt.AsAxon(), prefix, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX, space)
+}
+
+// AddCINLayer adds a rl.RSalienceLayer unsigned reward salience coding ACh layer
+// which sends ACh to given Matrix Go and No layers (names), and is default located
+// to the right of the MtxNo layer with given spacing.
+// CIN is a cholinergic interneuron interspersed in the striatum that shows these
+// response properties and modulates learning in the striatum around US and CS events.
+// If other ACh modulation is needed, a global RSalienceLayer can be used.
+func (nt *Network) AddCINLayer(name, mtxGo, mtxNo string, space float32) *rl.RSalienceLayer {
+	return AddCINLayer(nt.AsAxon(), name, mtxGo, mtxNo, space)
 }
 
 // AddThalLayer4D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
@@ -87,11 +101,17 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 // Network functions available here as standalone functions
 //         for mixing in to other models
 
-// AddCINLayer adds a CINLayer, with a single neuron.
-func AddCINLayer(nt *axon.Network, name string) *CINLayer {
-	ly := &CINLayer{}
-	nt.AddLayerInit(ly, name, []int{1, 1}, CIN)
-	return ly
+// AddCINLayer adds a rl.RSalienceLayer unsigned reward salience coding ACh layer
+// which sends ACh to given Matrix Go and No layers (names), and is default located
+// to the right of the MtxNo layer with given spacing.
+// CIN is a cholinergic interneuron interspersed in the striatum that shows these
+// response properties and modulates learning in the striatum around US and CS events.
+// If other ACh modulation is needed, a global RSalienceLayer can be used.
+func AddCINLayer(nt *axon.Network, name, mtxGo, mtxNo string, space float32) *rl.RSalienceLayer {
+	cin := rl.AddRSalienceLayer(nt, name)
+	cin.SendACh.Add(mtxGo, mtxNo)
+	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo, YAlign: relpos.Front, Space: space})
+	return cin
 }
 
 // AddMatrixLayer adds a MatrixLayer of given size, with given name.
@@ -181,14 +201,16 @@ func AddThalLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNe
 	return ly
 }
 
-// AddBG adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
+// AddBG adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // Only the Matrix has pool-based 4D shape by default -- use pool for "role" like
 // elements where matches need to be detected.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
-func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
+// A CIN or more widely used rl.RSalienceLayer should be added and
+// project ACh to the MtxGo, No layers.
+func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
 	gpi = AddGPiLayer2D(nt, prefix+"GPi", gpNeurY, gpNeurX)
 	gpeOuti := AddGPeLayer2D(nt, prefix+"GPeOut", gpNeurY, gpNeurX)
 	gpeOuti.GPLay = GPeOut
@@ -203,10 +225,6 @@ func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gp
 	stns = AddSTNLayer2D(nt, prefix+"STNs", gpNeurY, gpNeurX)
 	mtxGo = AddMatrixLayer(nt, prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1R)
 	mtxNo = AddMatrixLayer(nt, prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2R)
-	cini := AddCINLayer(nt, prefix+"CIN")
-	cin = cini
-
-	cini.SendACh.Add(mtxGo.Name(), mtxNo.Name())
 
 	mtxGo.(*MatrixLayer).MtxThals.Add(mtxNo.Name())
 	mtxNo.(*MatrixLayer).MtxThals.Add(mtxGo.Name())
@@ -248,19 +266,20 @@ func AddBG(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gp
 
 	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
 	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
-	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo.Name(), YAlign: relpos.Front, Space: space})
 
 	return
 }
 
-// AddBG4D adds MtxGo, No, CIN, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
+// AddBG4D adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
 // with given optional prefix.
 // This version makes 4D pools throughout the GP layers,
 // with Pools representing separable gating domains.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate PoolOneToOne connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical)
-func AddBG4D(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, cin, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
+// A CIN or more widely used rl.RSalienceLayer should be added and
+// project ACh to the MtxGo, No layers.
+func AddBG4D(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi axon.AxonLayer) {
 	gpi = AddGPiLayer4D(nt, prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti := AddGPeLayer4D(nt, prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti.GPLay = GPeOut
@@ -275,10 +294,6 @@ func AddBG4D(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, 
 	stns = AddSTNLayer4D(nt, prefix+"STNs", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	mtxGo = AddMatrixLayer(nt, prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1R)
 	mtxNo = AddMatrixLayer(nt, prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2R)
-	cini := AddCINLayer(nt, prefix+"CIN")
-	cin = cini
-
-	cini.SendACh.Add(mtxGo.Name(), mtxNo.Name())
 
 	one2one := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
@@ -318,7 +333,6 @@ func AddBG4D(nt *axon.Network, prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, 
 
 	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
 	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
-	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo.Name(), YAlign: relpos.Front, Space: space})
 
 	return
 }

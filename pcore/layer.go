@@ -36,10 +36,6 @@ const (
 	// GP is a globus pallidus layer: GPe or GPi
 	GP
 
-	// CIN is a cholinergic interneuron layer (TAN -- tonically active neuron): sends
-	// non-prediction-discounted reward signal as ACh
-	CIN
-
 	// Thal is a thalamic layer, used for MD mediodorsal thalamus and
 	// VM / VL / VA ventral thalamic nuclei.
 	Thal
@@ -54,7 +50,6 @@ const (
 	Matrix_ LayerType = LayerType(rl.LayerTypeN) + iota
 	STN_
 	GP_
-	CIN_
 	Thal_
 	PT_
 	LayerTypeN

@@ -182,10 +182,12 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	rew, rp, snci := rl.AddRWLayers(net.AsAxon(), "", relpos.Behind, 2)
+	rew, rp, snci := rl.AddRWLayers(net.AsAxon(), "", relpos.Behind, space)
 	_ = rew
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
+	ach := net.AddRSalienceLayer("ACh")
+	ach.RewLays.Add(snc.Name())
 
 	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, emer.Input)
 	us, usp := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
@@ -198,9 +200,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
 	pos := net.AddLayer2D("Pos", ny, nloc, emer.Input)
 
-	vPmtxGo, vPmtxNo, vPcini, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
-	cin := vPcini.(*pcore.CINLayer)
-	cin.RewLays.Add(snc.Name())
+	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
 	// todo: need m1d, driven by smad -- output pathway
 
@@ -269,6 +269,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
 	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
+
+	ach.SendACh.Add(vPmtxGo.Name(), vPmtxNo.Name(), blaa.Name(), blae.Name())
 
 	// todo: blae is not connected properly at all yet
 
@@ -346,6 +348,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// position
 
 	vPgpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rew.Name(), YAlign: relpos.Front, Space: space})
+	ach.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: snc.Name(), XAlign: relpos.Left, Space: space})
 
 	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: rew.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})

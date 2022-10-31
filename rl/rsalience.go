@@ -1,49 +1,47 @@
-// Copyright (c) 2020, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package pcore
+package rl
 
 import (
 	"fmt"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
-// CINLayer (cholinergic interneuron) reads reward signals from named source layer(s)
+// RSalienceLayer reads reward signals from named source layer(s)
 // and sends the Max absolute value of that activity as the positively-rectified
-// non-prediction-discounted reward signal computed by CINs, and sent as
+// non-prediction-discounted reward salience signal, and sent as
 // an acetylcholine (ACh) signal.
 // To handle positive-only reward signals, need to include both a reward prediction
 // and reward outcome layer.
-// Used to be called a TAN: tonically active neuron, to contrast with quiet MSNs
-type CINLayer struct {
+type RSalienceLayer struct {
 	axon.Layer
 	RewThr  float32       `desc:"threshold on reward values from RewLays, to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
 	RewLays emer.LayNames `desc:"Reward-representing layer(s) from which this computes ACh as Max absolute value"`
-	SendACh rl.SendACh    `desc:"list of layers to send acetylcholine to"`
+	SendACh SendACh       `desc:"list of layers to send acetylcholine to"`
 	ACh     float32       `desc:"acetylcholine value for this layer"`
 }
 
-var KiT_CINLayer = kit.Types.AddType(&CINLayer{}, LayerProps)
+var KiT_RSalienceLayer = kit.Types.AddType(&RSalienceLayer{}, LayerProps)
 
-func (ly *CINLayer) Defaults() {
+func (ly *RSalienceLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Typ = CIN
+	ly.Typ = RSalience
 	ly.RewThr = 0.1
 }
 
 // AChLayer interface:
 
-func (ly *CINLayer) GetACh() float32    { return ly.ACh }
-func (ly *CINLayer) SetACh(ach float32) { ly.ACh = ach }
+func (ly *RSalienceLayer) GetACh() float32    { return ly.ACh }
+func (ly *RSalienceLayer) SetACh(ach float32) { ly.ACh = ach }
 
 // Build constructs the layer state, including calling Build on the projections.
-func (ly *CINLayer) Build() error {
+func (ly *RSalienceLayer) Build() error {
 	err := ly.Layer.Build()
 	if err != nil {
 		return err
@@ -54,7 +52,7 @@ func (ly *CINLayer) Build() error {
 }
 
 // MaxAbsRew returns the maximum absolute value of reward layer activations
-func (ly *CINLayer) MaxAbsRew() float32 {
+func (ly *RSalienceLayer) MaxAbsRew() float32 {
 	mx := float32(0)
 	for _, nm := range ly.RewLays {
 		lyi := ly.Network.LayerByName(nm)
@@ -68,7 +66,7 @@ func (ly *CINLayer) MaxAbsRew() float32 {
 	return mx
 }
 
-func (ly *CINLayer) ActFmG(ltime *axon.Time) {
+func (ly *RSalienceLayer) ActFmG(ltime *axon.Time) {
 	ract := ly.MaxAbsRew()
 	if ly.RewThr > 0 {
 		if ract > ly.RewThr {
@@ -86,7 +84,7 @@ func (ly *CINLayer) ActFmG(ltime *axon.Time) {
 
 // CyclePost is called at end of Cycle
 // We use it to send ACh, which will then be active for the next cycle of processing.
-func (ly *CINLayer) CyclePost(ltime *axon.Time) {
+func (ly *RSalienceLayer) CyclePost(ltime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.ACh = act
 	ly.SendACh.SendACh(ly.Network, act)
@@ -95,13 +93,13 @@ func (ly *CINLayer) CyclePost(ltime *axon.Time) {
 // UnitVarIdx returns the index of given variable within the Neuron,
 // according to UnitVarNames() list (using a map to lookup index),
 // or -1 and error message if not found.
-func (ly *CINLayer) UnitVarIdx(varNm string) (int, error) {
+func (ly *RSalienceLayer) UnitVarIdx(varNm string) (int, error) {
 	vidx, err := ly.Layer.UnitVarIdx(varNm)
 	if err == nil {
 		return vidx, err
 	}
 	if varNm != "ACh" {
-		return -1, fmt.Errorf("pcore.CINLayer: variable named: %s not found", varNm)
+		return -1, fmt.Errorf("pcore.RSalienceLayer: variable named: %s not found", varNm)
 	}
 	nn := ly.Layer.UnitVarNum()
 	return nn, nil
@@ -111,7 +109,7 @@ func (ly *CINLayer) UnitVarIdx(varNm string) (int, error) {
 // returns NaN on invalid index.
 // This is the core unit var access method used by other methods,
 // so it is the only one that needs to be updated for derived layer types.
-func (ly *CINLayer) UnitVal1D(varIdx int, idx int) float32 {
+func (ly *RSalienceLayer) UnitVal1D(varIdx int, idx int) float32 {
 	nn := ly.Layer.UnitVarNum()
 	if varIdx < 0 || varIdx > nn { // nn = ACh
 		return mat32.NaN()
@@ -127,6 +125,6 @@ func (ly *CINLayer) UnitVal1D(varIdx int, idx int) float32 {
 
 // UnitVarNum returns the number of Neuron-level variables
 // for this layer.  This is needed for extending indexes in derived types.
-func (ly *CINLayer) UnitVarNum() int {
+func (ly *RSalienceLayer) UnitVarNum() int {
 	return ly.Layer.UnitVarNum() + 1
 }

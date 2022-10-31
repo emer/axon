@@ -88,6 +88,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean":    "0.5",
 					"Prjn.SWt.Init.Var":     "0.25",
 					"Prjn.Trace.CurTrlDA":   "true",
+					"Prjn.Trace.NoACh":      "true", // not for this demo, but should be off in general
 					"Prjn.Learn.Learn":      "true",
 					"Prjn.Learn.Lrate.Base": "0.1",
 				}},

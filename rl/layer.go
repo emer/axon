@@ -99,11 +99,15 @@ var KiT_LayerType = kit.Enums.AddEnumExt(deep.KiT_LayerType, LayerTypeN, kit.Not
 const (
 	// RL is a reinforcement learning layer of any sort
 	RL emer.LayerType = emer.LayerType(deep.LayerTypeN) + iota
+
+	// RSalience is a reward salience coding layer sending ACh
+	RSalience
 )
 
 // gui versions
 const (
 	RL_ LayerType = LayerType(deep.LayerTypeN) + iota
+	RSalience_
 	LayerTypeN
 )
 
