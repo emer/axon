@@ -40,10 +40,17 @@ func (ly *SuperLayer) Defaults() {
 	ly.Burst.Defaults()
 }
 
-// UpdateParams updates all params given any changes that might have been made to individual values
-// including those in the receiving projections of this layer
 func (ly *SuperLayer) UpdateParams() {
 	ly.Layer.UpdateParams()
+}
+
+func (ly *SuperLayer) Build() error {
+	err := ly.Layer.Build()
+	if err != nil {
+		return err
+	}
+	ly.SuperNeurs = make([]SuperNeuron, len(ly.Neurons))
+	return err
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -149,16 +156,6 @@ func (ly *SuperLayer) SendCtxtGe(ltime *axon.Time) {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Unit Vars
-
-// Build constructs the layer state, including calling Build on the projections.
-func (ly *SuperLayer) Build() error {
-	err := ly.Layer.Build()
-	if err != nil {
-		return err
-	}
-	ly.SuperNeurs = make([]SuperNeuron, len(ly.Neurons))
-	return err
-}
 
 // UnitVarNames returns a list of variable names available on the units in this layer
 func (ly *SuperLayer) UnitVarNames() []string {

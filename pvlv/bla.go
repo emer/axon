@@ -32,12 +32,25 @@ type BLALayer struct {
 	ACh   float32     `inactive:"+" desc:"acetylcholine value from rl.RSalience cholinergic layer reflecting the absolute value of reward or CS predictions thereof -- modulates BLA learning to restrict to US and CS times"`
 }
 
-var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, axon.LayerProps)
+var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, LayerProps)
 
 func (ly *BLALayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.DaMod.Defaults()
 	ly.BLA.Defaults()
+	ly.Typ = BLA
+
+	// special inhib params
+	ly.Act.Decay.Act = 0
+	ly.Act.Decay.Glong = 0
+	ly.Inhib.Layer.On = true
+	ly.Inhib.Layer.Gi = 1.2
+	ly.Inhib.Pool.On = true
+	ly.Inhib.Pool.Gi = 1.0
+	// ly.Inhib.Layer.FB = 0
+	// ly.Inhib.Pool.FB = 0
+	ly.Inhib.ActAvg.Init = 0.025
+
 }
 
 // AChLayer interface:

@@ -1,11 +1,11 @@
-// Copyright (c) 2020, The Emergent Authors. All rights reserved.
+// Copyright (c) 2022, The Emergent Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package pcore
+package pvlv
 
 import (
-	"github.com/emer/axon/pvlv"
+	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
@@ -18,40 +18,31 @@ import (
 // but need to use the *old type* in the code, so we have this unfortunate
 // redundancy here.
 
-// LayerType has the DeepAxon extensions to the emer.LayerType types, for gui
-type LayerType pvlv.LayerType
+// LayerType has the extensions to the emer.LayerType types, for gui
+type LayerType rl.LayerType
 
 //go:generate stringer -type=LayerType
 
-var KiT_LayerType = kit.Enums.AddEnumExt(pvlv.KiT_LayerType, LayerTypeN, kit.NotBitFlag, nil)
+var KiT_LayerType = kit.Enums.AddEnumExt(rl.KiT_LayerType, LayerTypeN, kit.NotBitFlag, nil)
 
 const (
-	// Matrix are the matrisome medium spiny neurons (MSNs) that are the main
-	// Go / NoGo gating units in BG.
-	Matrix emer.LayerType = emer.LayerType(pvlv.LayerTypeN) + iota
+	// BLA is a basolateral amygdala layer
+	BLA emer.LayerType = emer.LayerType(rl.LayerTypeN) + iota
 
-	// STN is a subthalamic nucleus layer: STNp or STNs
-	STN
+	// CeM is a central nucleus of the amygdala layer
+	// integrating Acq - Ext for a tet value response.
+	CeM
 
-	// GP is a globus pallidus layer: GPe or GPi
-	GP
-
-	// Thal is a thalamic layer, used for MD mediodorsal thalamus and
-	// VM / VL / VA ventral thalamic nuclei.
-	Thal
-
-	// PT are layer 5IB intrinsic bursting pyramidal tract neocortical neurons.
-	// These are bidirectionally interconnected with BG-gated thalamus in PFC.
-	PT
+	// PPTg is a pedunculopontine tegmental gyrus layer
+	// computing a deporalerivative if that is what happens
+	PPTg
 )
 
 // gui versions
 const (
-	Matrix_ LayerType = LayerType(pvlv.LayerTypeN) + iota
-	STN_
-	GP_
-	Thal_
-	PT_
+	BLA_ LayerType = LayerType(rl.LayerTypeN) + iota
+	CeM_
+	PPTg_
 	LayerTypeN
 )
 

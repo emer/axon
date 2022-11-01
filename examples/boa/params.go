@@ -153,6 +153,20 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Gbar.L": "0.3",
 				}},
+			{Sel: "#CeMPos", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Inhib.Layer.Gi":    "1.0",
+					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.Gi":     "0.5",
+				}},
+			{Sel: ".PPTg", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Inhib.Layer.Gi":    "1.0",
+					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Inhib.Pool.Gi":     "0.5",
+				}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":     "0.0", // impose trial structure
@@ -310,6 +324,22 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".BLAToCeM_Excite", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".BLAToCeM_Inhib", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 

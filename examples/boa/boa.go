@@ -187,7 +187,6 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = rp
 	snc := snci.(*rl.RWDaLayer)
 	ach := net.AddRSalienceLayer("ACh")
-	ach.RewLays.Add(snc.Name())
 
 	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, emer.Input)
 	us, usp := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
@@ -212,7 +211,9 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	_ = vl
 	_ = act
 
-	blaa, blae := pvlv.AddBLALayers(net.AsAxon(), "BLA", true, ev.NDrives, nuCtxY, nuCtxX, relpos.Behind, space)
+	blaa, blae, _, _, cemPos, _, pptg := pvlv.AddAmygdala(net.AsAxon(), "", false, ev.NDrives, nuCtxY, nuCtxX, space)
+	_ = cemPos
+	ach.RewLays.Add(snc.Name(), pptg.Name())
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal

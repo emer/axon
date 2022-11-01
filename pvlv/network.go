@@ -7,26 +7,28 @@ package pvlv
 import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
 
-// AddBLALayers adds two BLA layers, acquisition / extinction / D1 / D2, for positive or negative valence
+// AddBLALayers adds two BLA layers, acquisition / extinction / D1 / D2,
+// for positive or negative valence
 func AddBLALayers(nt *axon.Network, prefix string, pos bool, nUs, unY, unX int, rel relpos.Relations, space float32) (acq, ext axon.AxonLayer) {
 	if pos {
 		d1 := &BLALayer{}
-		nt.AddLayerInit(d1, prefix+"PosAcqD1", []int{1, nUs, unY, unX}, emer.Hidden)
+		nt.AddLayerInit(d1, prefix+"BLAPosAcqD1", []int{1, nUs, unY, unX}, BLA)
 		d1.DaMod.DAR = D1R
 		d2 := &BLALayer{}
-		nt.AddLayerInit(d2, prefix+"PosExtD2", []int{1, nUs, unY, unX}, emer.Hidden)
+		nt.AddLayerInit(d2, prefix+"BLAPosExtD2", []int{1, nUs, unY, unX}, BLA)
 		d2.DaMod.DAR = D2R
 		acq = d1
 		ext = d2
 	} else {
 		d1 := &BLALayer{}
-		nt.AddLayerInit(d1, prefix+"NegExtD1", []int{1, nUs, unY, unX}, emer.Hidden)
+		nt.AddLayerInit(d1, prefix+"BLANegExtD1", []int{1, nUs, unY, unX}, BLA)
 		d1.DaMod.DAR = D1R
 		d2 := &BLALayer{}
-		nt.AddLayerInit(d2, prefix+"NegAcqD2", []int{1, nUs, unY, unX}, emer.Hidden)
+		nt.AddLayerInit(d2, prefix+"BLANegAcqD2", []int{1, nUs, unY, unX}, BLA)
 		d2.DaMod.DAR = D2R
 		acq = d2
 		ext = d1
@@ -38,5 +40,32 @@ func AddBLALayers(nt *axon.Network, prefix string, pos bool, nUs, unY, unX int, 
 	}
 	acq.SetClass("BLA")
 	ext.SetClass("BLA")
+	return
+}
+
+// AddAmygdala adds a full amygdala complex including BLA,
+// CeM, and PPTg.  Inclusion of negative valence is optional with neg
+// arg -- neg* layers are nil if not included.
+func AddAmygdala(nt *axon.Network, prefix string, neg bool, nUs, unY, unX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, pptg axon.AxonLayer) {
+	blaPosAcq, blaPosExt = AddBLALayers(nt, prefix, true, nUs, unY, unX, relpos.Behind, space)
+	if neg {
+		blaNegAcq, blaNegExt = AddBLALayers(nt, prefix, false, nUs, unY, unX, relpos.Behind, space)
+	}
+	cemPos = nt.AddLayer4D(prefix+"CeMPos", 1, nUs, 1, unX, CeM).(axon.AxonLayer)
+	if neg {
+		cemNeg = nt.AddLayer4D(prefix+"CeMNeg", 1, nUs, 1, unX, CeM).(axon.AxonLayer)
+	}
+	pptg = &PPTgLayer{}
+	nt.AddLayerInit(pptg, prefix+"PPTg", []int{1, nUs, 1, unX}, PPTg)
+
+	p1to1 := prjn.NewPoolOneToOne()
+
+	nt.ConnectLayers(blaPosAcq, cemPos, p1to1, emer.Forward).SetClass("BLAToCeM_Excite")
+	nt.ConnectLayers(blaPosExt, cemPos, p1to1, emer.Inhib).SetClass("BLAToCeM_Inhib")
+	nt.ConnectLayers(cemPos, pptg, p1to1, emer.Forward).SetClass("CeMToPPTg")
+
+	cemPos.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blaPosExt.Name(), XAlign: relpos.Left, Space: space})
+	pptg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: cemPos.Name(), XAlign: relpos.Left, Space: space})
+
 	return
 }
