@@ -1153,14 +1153,45 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
+// things to try
+// Neuron level parallel everything except SendSpike
+//   tweak go max procs
+// figure out how to profile once it's parallel
+// try this on ra25 and objrec
+// run bench with 2 hidden layers
+
+// implementation
+// CycleNeurons at the network level where we do all the neuron level stuff on standard neurons
+// then come back and do send spike at the layer / projection level
+// Projection level DWt: keep a big list of projections at network level and try to paralellize there add a goroutine there
+
+// TODO: add a flag for parallel or not
+// TODO: make parallel the rest of the functions: GFmInc, etc
+
+// questions: inhibition? when does it run? how is it affected by neuron parallel?
+//            what and how many pools do we have?
+
+// note: not all functions are worth parallelizing
+// if they don't do enough work (how much is enough?) it actually slows things down
+
 // Cycle does one cycle of updating
 func (ly *Layer) Cycle(ltime *Time) {
+	// fully parallel
 	ly.AxonLay.GFmInc(ltime)
+	// goes over the units in the layer (required for inhib)
+	// find a way to do this work at the same time with spikes
 	ly.AxonLay.AvgMaxGe(ltime)
+	// ===========================
+	// once above is done
+	// fully parallel
 	ly.AxonLay.InhibFmGeAct(ltime)
 	ly.AxonLay.ActFmG(ltime)
 	ly.AxonLay.PostAct(ltime)
 	ly.AxonLay.CyclePost(ltime)
+
+	// try to combine this with AvgMaxGe
+	// try to do the Ca update in SendSpike
+	// that allows every other function be neural level parallel
 	ly.AxonLay.SendSpike(ltime)
 }
 
@@ -1172,6 +1203,7 @@ func (ly *Layer) GFmInc(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
+		// TODO: go parallel
 		ly.GFmIncNeur(ltime, nrn, 0) // no extra
 	}
 }
