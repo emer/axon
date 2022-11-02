@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build this_is_broken_we_should_fix_or_delete
-
 package axon
 
 import (
@@ -114,6 +112,9 @@ func newInPats() *etensor.Float32 {
 }
 
 func cmprFloats(out, cor []float32, msg string, t *testing.T) {
+	// TOLERANCE is the numerical difference tolerance for comparing vs. target values
+	const TOLERANCE = float32(1.0e-8)
+
 	t.Helper()
 	for i := range out {
 		dif := mat32.Abs(out[i] - cor[i])
