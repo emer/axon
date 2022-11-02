@@ -77,12 +77,18 @@ func AddClampDaLayer(nt *axon.Network, name string) *ClampDaLayer {
 	return da
 }
 
+// AddRewLayer adds a RewLayer of given name
+func AddRewLayer(nt *axon.Network, name string) *RewLayer {
+	ly := &RewLayer{}
+	nt.AddLayerInit(ly, name, []int{1, 2}, emer.Input)
+	return ly
+}
+
 // AddTDLayers adds the standard TD temporal differences layers, generating a DA signal.
 // Projection from Rew to RewInteg is given class TDRewToInteg -- should
 // have no learning and 1 weight.
 func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, ri, td axon.AxonLayer) {
-	rew = &RewLayer{}
-	nt.AddLayerInit(rew, prefix+"Rew", []int{1, 2}, emer.Input)
+	rew = AddRewLayer(nt, prefix+"Rew")
 	rp = &TDRewPredLayer{}
 	nt.AddLayerInit(rp, prefix+"RewPred", []int{1, 2}, emer.Hidden)
 	ri = &TDRewIntegLayer{}
@@ -108,7 +114,7 @@ func AddTDLayers(nt *axon.Network, prefix string, rel relpos.Relations, space fl
 // Reward layer, a RWPred prediction layer, and a dopamine layer that computes diff.
 // Only generates DA when Rew layer has external input -- otherwise zero.
 func AddRWLayers(nt *axon.Network, prefix string, rel relpos.Relations, space float32) (rew, rp, da axon.AxonLayer) {
-	rew = nt.AddLayer2D(prefix+"Rew", 1, 2, emer.Input).(axon.AxonLayer)
+	rew = AddRewLayer(nt, prefix+"Rew")
 	rp = &RWPredLayer{}
 	nt.AddLayerInit(rp, prefix+"RWPred", []int{1, 2}, emer.Hidden)
 	da = &RWDaLayer{}

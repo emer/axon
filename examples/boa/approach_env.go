@@ -263,11 +263,7 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 	switch action {
 	case "Forward":
 		if ev.Dist == 0 {
-			if ev.US == ev.Drive {
-				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
-			} else {
-				ev.Rew = -ev.TimeCost * float32(ev.Time)
-			}
+			ev.SetRewFmUS()
 		} else {
 			ev.Dist--
 		}
@@ -283,15 +279,26 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			if ev.US == ev.Drive { // double consume
-				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
+			if ev.US > -1 {
+				ev.SetRewFmUS()
 			} else {
 				ev.US = us
+				ev.SetRewFmUS()
 			}
 		}
 	}
 	ev.LastAct = act
 	ev.RenderRewUS()
+	// fmt.Printf("ev Rew: %g\n", ev.Rew)
+}
+
+// SetRewFmUS set reward from US
+func (ev *Approach) SetRewFmUS() {
+	if ev.US == ev.Drive {
+		ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
+	} else {
+		ev.Rew = -ev.TimeCost * float32(ev.Time)
+	}
 }
 
 // ActGen returns an "instinctive" action that implements a basic policy

@@ -60,7 +60,15 @@ func (ly *RSalienceLayer) MaxAbsRew() float32 {
 			continue
 		}
 		ly := lyi.(axon.AxonLayer).AsAxon()
-		act := mat32.Abs(ly.Pools[0].Inhib.Act.Max)
+		var act float32
+		if rew, ok := lyi.(*RewLayer); ok {
+			for ni := range rew.Neurons {
+				nrn := &rew.Neurons[ni]
+				act = mat32.Max(act, mat32.Abs(nrn.Act))
+			}
+		} else {
+			act = mat32.Abs(ly.Pools[0].Inhib.Act.Max)
+		}
 		mx = mat32.Max(mx, act)
 	}
 	return mx

@@ -213,7 +213,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	blaa, blae, _, _, cemPos, _, pptg := pvlv.AddAmygdala(net.AsAxon(), "", false, ev.NDrives, nuCtxY, nuCtxX, space)
 	_ = cemPos
-	ach.RewLays.Add(snc.Name(), pptg.Name())
+	ach.RewLays.Add(rew.Name(), pptg.Name())
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
@@ -279,7 +279,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayersPrjn(cs, blaa, full, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayersPrjn(us, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
 	// net.ConnectLayersPrjn(usp, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
-	net.ConnectLayersPrjn(drives, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
+	// net.ConnectLayersPrjn(drives, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
 	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
 	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
@@ -288,9 +288,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	net.ConnectLayers(dist, alm, full, emer.Forward)
 	net.ConnectLayers(time, alm, full, emer.Forward)
+	net.ConnectLayers(ofcpt, alm, full, emer.Forward)
+	net.ConnectLayers(accpt, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
 	net.ConnectLayers(dist, m1, full, emer.Forward)
 	net.ConnectLayers(time, m1, full, emer.Forward)
+	net.ConnectLayers(ofcpt, m1, full, emer.Forward)
+	net.ConnectLayers(accpt, m1, full, emer.Forward)
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
 	////////////////////////////////////////////////
@@ -539,10 +543,8 @@ func (ss *Sim) TakeAction(net *pcore.Network) {
 	ss.Stats.SetString("ActAction", actActNm)
 
 	ev.Action(actActNm, nil)
-
-	ss.GatedStats()
 	ss.ApplyAction(actAct)
-	ss.ApplyRew()
+	// ss.ApplyRew()
 	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
 
@@ -639,7 +641,15 @@ func (ss *Sim) ApplyInputs() {
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
-	ss.ApplyUS() // now full trial
+	bla := net.LayerByName("BLAPosAcqD1").(*pvlv.BLALayer)
+	if ev.US != -1 {
+		bla.USInput = true
+	} else {
+		bla.USInput = false
+	}
+	// fmt.Printf("Rew: %g\n", ev.Rew)
+	// ss.ApplyUS() // now full trial
+	// ss.ApplyRew()
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -714,6 +724,7 @@ func (ss *Sim) TrialStats() {
 		}
 		ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
 	*/
+	ss.GatedStats()
 	da := ss.Net.LayerByName("DA").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("DA", float64(da.Neurons[0].Act))
 	rp := ss.Net.LayerByName("RWPred").(axon.AxonLayer).AsAxon()
@@ -766,7 +777,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "NoGatePre", "NoGatePost") // "Gated", "GateUS", "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("ActMatch", "GateUS", "GateCS", "NoGatePre", "NoGatePost") // "Gated", "GateUS", "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())

@@ -24,6 +24,8 @@ type MatrixParams struct {
 	BurstGain    float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 	DipGain      float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 	ModGain      float32 `desc:"gain factor multiplying the modulator input GeSyn conductances -- total modulation has a maximum of 1"`
+	AChInhib     float32 `desc:"strength of extra Gi current multiplied by MaxACh-ACh (ACh > Max = 0) -- ACh is disinhibitory on striatal firing"`
+	MaxACh       float32 `desc:"level of ACh at or above which AChInhib goes to 0 -- ACh typically ranges between 0-1"`
 }
 
 func (mp *MatrixParams) Defaults() {
@@ -31,6 +33,18 @@ func (mp *MatrixParams) Defaults() {
 	mp.BurstGain = 1
 	mp.DipGain = 1
 	mp.ModGain = 1
+	mp.AChInhib = 0
+	mp.MaxACh = 0.5
+}
+
+// GiFmACh returns inhibitory conductance from ach value, where ACh is 0 at baseline
+// and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
+func (mp *MatrixParams) GiFmACh(ach float32) float32 {
+	ai := mp.MaxACh - ach
+	if ai < 0 {
+		ai = 0
+	}
+	return mp.AChInhib * ai
 }
 
 // MatrixLayer represents the matrisome medium spiny neurons (MSNs)
@@ -45,7 +59,7 @@ type MatrixLayer struct {
 	HasMod   bool          `inactive:"+" desc:"has modulatory projections, flagged with Modulator setting"`
 	Gated    []bool        `inactive:"+" desc:"indicates whether gated, based on both Go Matrix Avg SpkMax values and thalamic activity -- is a single bool value unless GpHasPools is true"`
 	DALrn    float32       `inactive:"+" desc:"effective learning dopamine value for this layer: reflects DaR and Gains"`
-	ACh      float32       `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons reflecting the absolute value of reward or CS predictions thereof -- used for resetting the trace of matrix learning"`
+	ACh      float32       `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons (or shared sources depending on configuration) reflecting unsinged reward salience -- non-prediction-discounted absolute value of US or CS predictions thereof -- used for modulating inhibition and learning, and resetting trace.  Unlike actual CIN (TAN = tonically active neurons) ACh is 0 at baseline and goes up (to 1 max) for salient events -- we invert for inhibition effects."`
 }
 
 var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, LayerProps)
@@ -157,9 +171,26 @@ func (ly *MatrixLayer) DecayState(decay, glong float32) {
 	}
 }
 
+// GiFmACh returns inhibitory conductance from ach value, where ACh is 0 at baseline
+// and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
+func (ly *MatrixLayer) GiFmACh(ltime *axon.Time) {
+	gi := ly.Matrix.GiFmACh(ly.ACh)
+	if gi == 0 {
+		return
+	}
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.GiSyn += gi
+	}
+}
+
 func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
 	if !ly.HasMod {
 		ly.Layer.GFmSpike(ltime)
+		ly.GiFmACh(ltime)
 		return
 	}
 	ly.GFmSpikePrjn(ltime)
@@ -184,6 +215,7 @@ func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
 		nrn.GeSyn *= mod
 		ly.GFmRawSynNeuron(ltime, ni, nrn)
 	}
+	ly.GiFmACh(ltime)
 }
 
 // BoolToFloat32 -- the lack of ternary conditional expressions

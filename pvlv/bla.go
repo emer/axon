@@ -27,9 +27,10 @@ func (bp *BLAParams) Defaults() {
 // BLALayer represents a basolateral amygdala layer
 type BLALayer struct {
 	rl.Layer
-	DaMod DaModParams `view:"inline" desc:"dopamine modulation parameters"`
-	BLA   BLAParams   `view:"inline" desc:"special BLA parameters"`
-	ACh   float32     `inactive:"+" desc:"acetylcholine value from rl.RSalience cholinergic layer reflecting the absolute value of reward or CS predictions thereof -- modulates BLA learning to restrict to US and CS times"`
+	DaMod   DaModParams `view:"inline" desc:"dopamine modulation parameters"`
+	BLA     BLAParams   `view:"inline" desc:"special BLA parameters"`
+	ACh     float32     `inactive:"+" desc:"acetylcholine value from rl.RSalience cholinergic layer reflecting the absolute value of reward or CS predictions thereof -- modulates BLA learning to restrict to US and CS times"`
+	USInput bool        `desc:"flag marks presence of US -- for learning"`
 }
 
 var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, LayerProps)
@@ -61,6 +62,7 @@ func (ly *BLALayer) SetACh(ach float32) { ly.ACh = ach }
 func (ly *BLALayer) InitActs() {
 	ly.Layer.InitActs()
 	ly.ACh = 0
+	ly.USInput = false
 }
 
 func (ly *BLALayer) GFmSpike(ltime *axon.Time) {
@@ -134,8 +136,11 @@ func (pj *BLAPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
-	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*BLALayer)
+	if !rlay.USInput {
+		return
+	}
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	ach := rlay.ACh
 	lr := ach * pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
