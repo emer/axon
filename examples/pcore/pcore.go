@@ -213,7 +213,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	cin := net.AddCINLayer("CIN", mtxGo.Name(), mtxNo.Name(), space)
-	cin.RewLays.Add(snc.Name())
+	cin.RewLayers.Add(snc.Name())
 	_ = gpeOut
 	_ = gpeIn
 	_ = gpeTA
