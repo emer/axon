@@ -119,7 +119,7 @@ func cmprFloats(out, cor []float32, msg string, t *testing.T) {
 	for i := range out {
 		dif := mat32.Abs(out[i] - cor[i])
 		if dif > TOLERANCE { // allow for small numerical diffs
-			t.Errorf("%v err: out: %v, cor: %v, dif: %v\n", msg, out[i], cor[i], dif)
+			t.Errorf("%v err: out: %v, cor: %v, dif: %v index: %v\n", msg, out[i], cor[i], dif, i)
 		}
 	}
 }
@@ -189,18 +189,18 @@ func TestNetAct(t *testing.T) {
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.72165483, 0, 0, 0}
-	qtr0HidGes := []float32{0.49048427, 0, 0, 0}
-	qtr0HidGis := []float32{0.13094407, 0.13094407, 0.13094407, 0.13094407}
+	qtr0HidGes := []float32{0.49949664, 0, 0, 0}
+	qtr0HidGis := []float32{0.13319717, 0.13319717, 0.13319717, 0.13319717}
 	qtr0OutActs := []float32{0.63028616, 0, 0, 0}
-	qtr0OutGes := []float32{0.3984899, 0, 0, 0}
-	qtr0OutGis := []float32{0.07549549, 0.07549549, 0.07549549, 0.07549549}
+	qtr0OutGes := []float32{0.40031016, 0, 0, 0}
+	qtr0OutGis := []float32{0.07557303, 0.07557303, 0.07557303, 0.07557303}
 
-	qtr3HidActs := []float32{0.6532401, 0, 0, 0}
-	qtr3HidGes := []float32{0.7066621, 0, 0, 0}
-	qtr3HidGis := []float32{0.24389985, 0.24389985, 0.24389985, 0.24389985}
+	qtr3HidActs := []float32{0.689808, 0, 0, 0}
+	qtr3HidGes := []float32{0.64131236, 0, 0, 0}
+	qtr3HidGis := []float32{0.23083496, 0.23083496, 0.23083496, 0.23083496}
 	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
-	qtr3OutGis := []float32{0.20638072, 0.20638072, 0.20638072, 0.20638072}
+	qtr3OutGis := []float32{0.2053869, 0.2053869, 0.2053869, 0.2053869}
 
 	inActs := []float32{}
 	hidActs := []float32{}
