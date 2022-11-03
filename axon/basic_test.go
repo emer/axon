@@ -5,7 +5,9 @@
 package axon
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/emer/emergent/emer"
@@ -70,18 +72,6 @@ func newTestNet() *Network {
 	testNet.InitWts()
 	testNet.NewState() // get GScale
 	return &testNet
-
-	// var buf bytes.Buffer
-	// testNet.WriteWtsJSON(&buf)
-	// wb := buf.Bytes()
-	// fmt.Printf("testNet Weights:\n\n%v\n", string(wb))
-	//
-	// fp, err := os.Create("testdata/testnet.wts")
-	// defer fp.Close()
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-	// fp.Write(wb)
 }
 
 func TestSynVals(t *testing.T) {
@@ -310,10 +300,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.0036074303, 0.0068956804, 0.0009886026, 0.0009886026}
-	outDwts := []float32{0.009111724, 0.01502119, 0.007415774, 0.007415774}
-	hidWts := []float32{0.5, 0.5, 0.5, 0.5} // todo: not clear why not updating..
-	outWts := []float32{0.55445933, 0.5891899, 0.54438084, 0.54438084}
+	hidDwts := []float32{0.003973441, 0.0036865456, 0.0036952894, 0.003696907}
+	outDwts := []float32{0.0075946045, 0.009589076, 0.0106454035, 0.010701117}
+	hidWts := []float32{0.523823, 0.5221053, 0.5221578, 0.5221673} // todo: not clear why not updating..
+	outWts := []float32{0.5454452, 0.5572888, 0.5635367, 0.5638657}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -421,18 +411,6 @@ func TestNetLearn(t *testing.T) {
 	cmprFloats(outdwt, outDwts, "out DWt", t)
 	cmprFloats(hidwt, hidWts, "hid Wt", t)
 	cmprFloats(outwt, outWts, "out Wt", t)
-
-	// var buf bytes.Buffer
-	// testNet.WriteWtsJSON(&buf)
-	// wb := buf.Bytes()
-	// fmt.Printf("testNet Trained Weights:\n\n%v\n", string(wb))
-
-	// fp, err := os.Create("testdata/testnet_train.wts")
-	// defer fp.Close()
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-	// fp.Write(wb)
 }
 
 func TestInhibAct(t *testing.T) {
@@ -562,4 +540,18 @@ func TestInhibAct(t *testing.T) {
 			fmt.Printf("=============================\n")
 		}
 	}
+}
+
+func saveToFile(net *Network, t *testing.T) {
+	var buf bytes.Buffer
+	net.WriteWtsJSON(&buf)
+	wb := buf.Bytes()
+	fmt.Printf("testNet Trained Weights:\n\n%v\n", string(wb))
+
+	fp, err := os.Create("testdata/testnet_train.wts")
+	defer fp.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	fp.Write(wb)
 }
