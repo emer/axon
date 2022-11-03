@@ -213,7 +213,11 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	blaa, blae, _, _, cemPos, _, pptg := pvlv.AddAmygdala(net.AsAxon(), "", false, ev.NDrives, nuCtxY, nuCtxX, space)
 	_ = cemPos
-	ach.RewLays.Add(rew.Name(), pptg.Name())
+	ach.RewLayers.Add(rew.Name(), pptg.Name())
+	blaa.(*pvlv.BLALayer).USLayers.Add(us.Name())
+	blae.(*pvlv.BLALayer).USLayers.Add(us.Name())
+	vPmtxGo.(*pcore.MatrixLayer).USLayers.Add(us.Name())
+	vPmtxNo.(*pcore.MatrixLayer).USLayers.Add(us.Name())
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
@@ -628,8 +632,9 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
 
 	if ev.Time == 0 {
-		net.InitActs()                                            // this is still essential even with fully functioning decay below:
-		net.DecayStateByClass(1, 1, "Hidden", "PT", "CT", "Thal") // US action gating
+		net.InitActs() // this is still essential even with fully functioning decay below:
+		// todo: need a more selective US gating mechanism!
+		net.DecayStateByClass(1, 1, "Hidden", "PT", "CT", "Thal")
 	}
 
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
@@ -641,12 +646,7 @@ func (ss *Sim) ApplyInputs() {
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
-	bla := net.LayerByName("BLAPosAcqD1").(*pvlv.BLALayer)
-	if ev.US != -1 {
-		bla.USInput = true
-	} else {
-		bla.USInput = false
-	}
+
 	// fmt.Printf("Rew: %g\n", ev.Rew)
 	// ss.ApplyUS() // now full trial
 	// ss.ApplyRew()
@@ -813,9 +813,9 @@ func (ss *Sim) ConfigLogItems() {
 	for _, nm := range ev.Acts { // per-action % correct
 		anm := nm // closure
 		ss.Logs.AddItem(&elog.Item{
-			Name:  anm + "Cor",
-			Type:  etensor.FLOAT64,
-			Plot:  true,
+			Name: anm + "Cor",
+			Type: etensor.FLOAT64,
+			// Plot:  true,
 			Range: minmax.F64{Min: 0},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {

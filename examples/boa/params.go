@@ -144,7 +144,7 @@ var ParamSets = params.Sets{
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":    "0.025",
-					"Layer.Inhib.Layer.Gi":       "1.2",
+					"Layer.Inhib.Layer.Gi":       "2.0", // needs to be strong to prevent random off-US act
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.0",
 					"Layer.Act.Gbar.L":           "0.2",
@@ -155,7 +155,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLrate.Diff":    "true", // can turn off if NoDALrate is 0
 					"Layer.Learn.RLrate.DiffThr": "0.1",  // based on cur - prv
 				}},
-			{Sel: "#BLAPosExt2D", Desc: "",
+			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Gbar.L": "0.3",
 				}},
@@ -215,16 +215,16 @@ var ParamSets = params.Sets{
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GPHasPools":   "false",
-					"Layer.Matrix.InvertNoGate": "false",
-					"Layer.Matrix.GateThr":      "0.05", // 0.05 > 0.08 maybe
+					"Layer.Matrix.InvertNoGate": "false", // false > true -- doesn't work
+					"Layer.Matrix.GateThr":      "0.05",  // 0.05 > 0.08 maybe
 					"Layer.Matrix.ModGain":      "5",
 					"Layer.Matrix.AChInhib":     "5",
 					"Layer.Matrix.MaxACh":       "0.5",
 					"Layer.Inhib.ActAvg.Init":   ".03",
 					"Layer.Inhib.Layer.On":      "true",
-					"Layer.Inhib.Layer.Gi":      "0.8", // was 8
+					"Layer.Inhib.Layer.Gi":      "0.0", // was .8
 					"Layer.Inhib.Pool.On":       "true",
-					"Layer.Inhib.Pool.Gi":       "0.7", // 0.7 > 0.6 more sparse
+					"Layer.Inhib.Pool.Gi":       "0.5", // 0.7 > 0.6 more sparse
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
@@ -383,7 +383,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USToVpMtxGo", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Abs": "5",
 					"Prjn.PrjnScale.Rel": ".2",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "",

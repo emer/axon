@@ -1045,6 +1045,7 @@ func (ly *Layer) NewState() {
 		}
 		nrn.SpkPrv = nrn.CaSpkD
 		nrn.SpkMax = 0
+		nrn.SpkMaxCa = 0
 	}
 	ly.AxonLay.DecayState(ly.Act.Decay.Act, ly.Act.Decay.Glong)
 }
@@ -1364,8 +1365,11 @@ func (ly *Layer) ActFmG(ltime *Time) {
 		ly.Act.VmFmG(nrn)
 		ly.Act.ActFmG(nrn)
 		ly.Learn.CaFmSpike(nrn)
-		if ltime.Cycle >= ly.Act.Dt.MaxCycStart && nrn.CaSpkP > nrn.SpkMax {
-			nrn.SpkMax = nrn.CaSpkP
+		if ltime.Cycle >= ly.Act.Dt.MaxCycStart {
+			nrn.SpkMaxCa += ly.Learn.CaSpk.Dt.PDt * (nrn.CaSpkM - nrn.SpkMaxCa)
+			if nrn.SpkMaxCa > nrn.SpkMax {
+				nrn.SpkMax = nrn.SpkMaxCa
+			}
 		}
 		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
 		if !ltime.PlusPhase {

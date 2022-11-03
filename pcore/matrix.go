@@ -56,10 +56,13 @@ type MatrixLayer struct {
 	DaR      DaReceptors   `desc:"dominant type of dopamine receptor -- D1R for Go pathway, D2R for NoGo"`
 	Matrix   MatrixParams  `view:"inline" desc:"matrix parameters"`
 	MtxThals emer.LayNames `desc:"first layer here is other corresponding MatrixLayer (Go vs. NoGo), and rest are thalamus layers that are affected by this layer"`
-	HasMod   bool          `inactive:"+" desc:"has modulatory projections, flagged with Modulator setting"`
+	USLayers emer.LayNames `desc:"layer(s) that represent the presence of a US -- if the Max act of these layers is above .1, then USActive flag is set, which conditions learning behavior: weight changes are updated only at time of US based on current DA * trace of current and prior gating activity.  If this list is empty, then a US-independent form of learning is used."`
+	HasMod   bool          `inactive:"+" desc:"has modulatory projections, flagged with Modulator setting -- automatically detected"`
 	Gated    []bool        `inactive:"+" desc:"indicates whether gated, based on both Go Matrix Avg SpkMax values and thalamic activity -- is a single bool value unless GpHasPools is true"`
 	DALrn    float32       `inactive:"+" desc:"effective learning dopamine value for this layer: reflects DaR and Gains"`
-	ACh      float32       `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons (or shared sources depending on configuration) reflecting unsinged reward salience -- non-prediction-discounted absolute value of US or CS predictions thereof -- used for modulating inhibition and learning, and resetting trace.  Unlike actual CIN (TAN = tonically active neurons) ACh is 0 at baseline and goes up (to 1 max) for salient events -- we invert for inhibition effects."`
+	ACh      float32       `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons (or shared sources depending on configuration) reflecting unsigned reward salience -- non-prediction-discounted absolute value of US or CS predictions thereof -- used for modulating inhibition and learning, and resetting trace in US-independent version.  Unlike actual CIN (TAN = tonically active neurons) ACh is 0 at baseline and goes up (to 1 max) for salient events -- we invert for inhibition effects."`
+	USActive bool          `inactive:"+" desc:"marks presence of US as a function of activity over USLayers -- controls learning logic as described there"`
+	Mods     []float32     `desc:"modulatory values from Modulator projection(s) for each neuron"`
 }
 
 var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, LayerProps)
@@ -137,7 +140,8 @@ func (ly *MatrixLayer) Build() error {
 	} else {
 		ly.Gated = make([]bool, 1)
 	}
-	err = ly.MtxThals.Validate(ly.Network, "MatrixLayer:Build")
+	err = ly.MtxThals.Validate(ly.Network, "MatrixLayer.MtxThals")
+	err = ly.USLayers.Validate(ly.Network, "MatrixLayer.USLayers")
 
 	ly.HasMod = false
 	for _, p := range ly.RcvPrjns {
@@ -147,17 +151,30 @@ func (ly *MatrixLayer) Build() error {
 			break
 		}
 	}
+	ly.Mods = make([]float32, len(ly.Neurons))
 
 	return err
+}
+
+// InitMods initializes the Mods modulator values
+func (ly *MatrixLayer) InitMods() {
+	if !ly.HasMod {
+		return
+	}
+	for ni := range ly.Mods {
+		ly.Mods[ni] = 0
+	}
 }
 
 func (ly *MatrixLayer) InitActs() {
 	ly.Layer.InitActs()
 	ly.DALrn = 0
 	ly.ACh = 0
+	ly.USActive = false
 	for i := range ly.Gated {
 		ly.Gated[i] = false
 	}
+	ly.InitMods()
 }
 
 func (ly *MatrixLayer) DecayState(decay, glong float32) {
@@ -167,11 +184,24 @@ func (ly *MatrixLayer) DecayState(decay, glong float32) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Learn.DecayCaLrnSpk(nrn, glong)
+		ly.Learn.DecayCaLrnSpk(nrn, glong) // ?
+	}
+	ly.InitMods()
+}
+
+// USActiveFmUS updates the USActive flag based on USLayers state
+func (ly *MatrixLayer) USActiveFmUS(ltime *axon.Time) {
+	ly.USActive = false
+	if len(ly.USLayers) == 0 {
+		return
+	}
+	mx := rl.MaxAbsActFmLayers(ly.Network, ly.USLayers)
+	if mx > 0.1 {
+		ly.USActive = true
 	}
 }
 
-// GiFmACh returns inhibitory conductance from ach value, where ACh is 0 at baseline
+// GiFmACh sets inhibitory conductance from ACh value, where ACh is 0 at baseline
 // and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
 func (ly *MatrixLayer) GiFmACh(ltime *axon.Time) {
 	gi := ly.Matrix.GiFmACh(ly.ACh)
@@ -211,6 +241,7 @@ func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
 		if mod > 0 {
 			mod = 1
 		}
+		ly.Mods[ni] = mod
 		nrn.GeRaw *= mod
 		nrn.GeSyn *= mod
 		ly.GFmRawSynNeuron(ltime, ni, nrn)
@@ -241,6 +272,7 @@ func (ly *MatrixLayer) AnyGated() bool {
 // calls DAActLrn
 func (ly *MatrixLayer) PlusPhase(ltime *axon.Time) {
 	ly.Layer.PlusPhase(ltime)
+	ly.USActiveFmUS(ltime)
 	ly.GatedFmAvgSpk()
 	ly.DAActLrn()
 

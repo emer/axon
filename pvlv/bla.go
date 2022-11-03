@@ -9,6 +9,7 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/rl"
+	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -16,21 +17,24 @@ import (
 // BLAParams has parameters for basolateral amygdala
 type BLAParams struct {
 	NoDALrate float32 `desc:"baseline learning rate without any dopamine"`
+	NoUSLrate float32 `desc:"learning rate outside of US active time window (i.e. for CSs)"`
 	NegLrate  float32 `desc:"negative DWt learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
 }
 
 func (bp *BLAParams) Defaults() {
 	bp.NoDALrate = 0.0
+	bp.NoUSLrate = 0.0
 	bp.NegLrate = 0.1
 }
 
 // BLALayer represents a basolateral amygdala layer
 type BLALayer struct {
 	rl.Layer
-	DaMod   DaModParams `view:"inline" desc:"dopamine modulation parameters"`
-	BLA     BLAParams   `view:"inline" desc:"special BLA parameters"`
-	ACh     float32     `inactive:"+" desc:"acetylcholine value from rl.RSalience cholinergic layer reflecting the absolute value of reward or CS predictions thereof -- modulates BLA learning to restrict to US and CS times"`
-	USInput bool        `desc:"flag marks presence of US -- for learning"`
+	DaMod    DaModParams   `view:"inline" desc:"dopamine modulation parameters"`
+	BLA      BLAParams     `view:"inline" desc:"special BLA parameters"`
+	USLayers emer.LayNames `desc:"layer(s) that represent the presence of a US -- if the Max act of these layers is above .1, then USActive flag is set, which affects learning rate."`
+	ACh      float32       `inactive:"+" desc:"acetylcholine value from rl.RSalience cholinergic layer reflecting the absolute value of reward or CS predictions thereof -- modulates BLA learning to restrict to US and CS times"`
+	USActive bool          `inactive:"+" desc:"marks presence of US as a function of activity over USLayers -- affects learning rate."`
 }
 
 var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, LayerProps)
@@ -62,7 +66,28 @@ func (ly *BLALayer) SetACh(ach float32) { ly.ACh = ach }
 func (ly *BLALayer) InitActs() {
 	ly.Layer.InitActs()
 	ly.ACh = 0
-	ly.USInput = false
+	ly.USActive = false
+}
+
+func (ly *BLALayer) Build() error {
+	err := ly.Layer.Build()
+	if err != nil {
+		return err
+	}
+	err = ly.USLayers.Validate(ly.Network, "BLALayer.USLayers")
+	return err
+}
+
+// USActiveFmUS updates the USActive flag based on USLayers state
+func (ly *BLALayer) USActiveFmUS(ltime *axon.Time) {
+	ly.USActive = false
+	if len(ly.USLayers) == 0 {
+		return
+	}
+	mx := rl.MaxAbsActFmLayers(ly.Network, ly.USLayers)
+	if mx > 0.1 {
+		ly.USActive = true
+	}
 }
 
 func (ly *BLALayer) GFmSpike(ltime *axon.Time) {
@@ -83,7 +108,11 @@ func (ly *BLALayer) GFmSpike(ltime *axon.Time) {
 
 func (ly *BLALayer) PlusPhase(ltime *axon.Time) {
 	ly.Layer.PlusPhase(ltime)
+	ly.USActiveFmUS(ltime)
 	lrmod := ly.BLA.NoDALrate + mat32.Abs(ly.DA)
+	if !ly.USActive {
+		lrmod *= ly.BLA.NoUSLrate
+	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -137,9 +166,6 @@ func (pj *BLAPrjn) DWt(ltime *axon.Time) {
 		return
 	}
 	rlay := pj.Recv.(*BLALayer)
-	if !rlay.USInput {
-		return
-	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	ach := rlay.ACh
 	lr := ach * pj.Learn.Lrate.Eff

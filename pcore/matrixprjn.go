@@ -55,7 +55,7 @@ func (pj *MatrixPrjn) Build() error {
 func (pj *MatrixPrjn) ClearTrace() {
 	for si := range pj.TrSyns {
 		tsy := &pj.TrSyns[si]
-		tsy.NTr = 0
+		tsy.DTr = 0
 		sy := &pj.Syns[si]
 		sy.Tr = 0
 	}
@@ -66,11 +66,21 @@ func (pj *MatrixPrjn) InitWts() {
 	pj.ClearTrace()
 }
 
-// DWt computes the weight change (learning) -- on sending projections.
 func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
+	rlay := pj.Recv.(*MatrixLayer)
+	if len(rlay.USLayers) > 0 {
+		pj.DWtUS(ltime)
+	} else {
+		pj.DWtNoUS(ltime)
+	}
+}
+
+// DWtNoUS computes the weight change (learning) -- on sending projections.
+// for non-USActive special case
+func (pj *MatrixPrjn) DWtNoUS(ltime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*MatrixLayer)
 
@@ -104,19 +114,72 @@ func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
 			rn := &rlay.Neurons[ri]
 			tr := sy.Tr
 
-			ntr := rn.SpkMax * snAct
+			dtr := rn.SpkMax * snAct
 			if pj.Trace.CurTrlDA {
-				tr += ntr
+				tr += dtr
 			}
 
 			dwt := daLrn * tr
 			tr -= achDk * tr // decay trace that drove dwt
 
 			if !pj.Trace.CurTrlDA {
-				tr += ntr
+				tr += dtr
 			}
 			sy.Tr = tr
-			trsy.NTr = ntr
+			trsy.DTr = dtr
+			sy.DWt += rlay.Neurons[ri].RLrate * lr * dwt
+		}
+	}
+}
+
+// DWtUS computes the weight change (learning) -- on sending projections.
+// case with USActive flag available to condition learning on US.
+func (pj *MatrixPrjn) DWtUS(ltime *axon.Time) {
+	slay := pj.Send.(axon.AxonLayer).AsAxon()
+	rlay := pj.Recv.(*MatrixLayer)
+
+	usActive := rlay.USActive
+
+	ach := rlay.ACh
+	daLrn := rlay.DALrn // includes d2 reversal etc
+	if !pj.Trace.NoACh {
+		daLrn *= ach
+	}
+	lr := pj.Learn.Lrate.Eff
+
+	snMod := ach
+	if rlay.Matrix.InvertNoGate && !rlay.Matrix.GPHasPools {
+		if usActive && !rlay.Gated[0] {
+			snMod *= -1 // note: critical that this affects DTr and not DWt!
+		}
+	}
+
+	for si := range slay.Neurons {
+		snAct := snMod * slay.Neurons[si].CaSpkP
+		nc := int(pj.SConN[si])
+		st := int(pj.SConIdxSt[si])
+		syns := pj.Syns[st : st+nc]
+		trsyns := pj.TrSyns[st : st+nc]
+		scons := pj.SConIdx[st : st+nc]
+
+		for ci := range syns {
+			sy := &syns[ci]
+			trsy := &trsyns[ci]
+			ri := scons[ci]
+			rn := &rlay.Neurons[ri]
+			tr := sy.Tr
+
+			dtr := rn.SpkMax * snAct
+			dwt := float32(0)
+			if usActive { // determines when learning from trace happens
+				tr += dtr
+				dwt = daLrn * tr
+				tr = 0
+			} else {
+				tr += dtr
+			}
+			sy.Tr = tr
+			trsy.DTr = dtr
 			sy.DWt += rlay.Neurons[ri].RLrate * lr * dwt
 		}
 	}
@@ -135,7 +198,7 @@ func (pj *MatrixPrjn) SynVarIdx(varNm string) (int, error) {
 	}
 	nn := pj.Prjn.SynVarNum()
 	switch varNm {
-	case "NTr":
+	case "DTr":
 		return nn, nil
 	}
 	return -1, fmt.Errorf("MatrixPrjn SynVarIdx: variable name: %v not valid", varNm)

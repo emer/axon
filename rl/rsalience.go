@@ -21,10 +21,10 @@ import (
 // and reward outcome layer.
 type RSalienceLayer struct {
 	axon.Layer
-	RewThr  float32       `desc:"threshold on reward values from RewLays, to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
-	RewLays emer.LayNames `desc:"Reward-representing layer(s) from which this computes ACh as Max absolute value"`
-	SendACh SendACh       `desc:"list of layers to send acetylcholine to"`
-	ACh     float32       `desc:"acetylcholine value for this layer"`
+	RewThr    float32       `desc:"threshold on reward values from RewLayers, to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
+	RewLayers emer.LayNames `desc:"Reward-representing layer(s) from which this computes ACh as Max absolute value"`
+	SendACh   SendACh       `desc:"list of layers to send acetylcholine to"`
+	ACh       float32       `desc:"acetylcholine value for this layer"`
 }
 
 var KiT_RSalienceLayer = kit.Types.AddType(&RSalienceLayer{}, LayerProps)
@@ -47,15 +47,17 @@ func (ly *RSalienceLayer) Build() error {
 		return err
 	}
 	err = ly.SendACh.Validate(ly.Network, ly.Name()+" SendTo list")
-	err = ly.RewLays.Validate(ly.Network, ly.Name()+" RewLays list")
+	err = ly.RewLayers.Validate(ly.Network, ly.Name()+" RewLayers list")
 	return err
 }
 
-// MaxAbsRew returns the maximum absolute value of reward layer activations
-func (ly *RSalienceLayer) MaxAbsRew() float32 {
+// MaxAbsActFmLayers returns the maximum absolute value of layer activations
+// from an emer.LayNames list of layers.  Iterates over neurons in RewLayer
+// because Inhib.Act.Max does not deal with negative numbers.
+func MaxAbsActFmLayers(net emer.Network, lnms emer.LayNames) float32 {
 	mx := float32(0)
-	for _, nm := range ly.RewLays {
-		lyi := ly.Network.LayerByName(nm)
+	for _, lnm := range lnms {
+		lyi := net.LayerByName(lnm)
 		if lyi == nil {
 			continue
 		}
@@ -67,11 +69,16 @@ func (ly *RSalienceLayer) MaxAbsRew() float32 {
 				act = mat32.Max(act, mat32.Abs(nrn.Act))
 			}
 		} else {
-			act = mat32.Abs(ly.Pools[0].Inhib.Act.Max)
+			act = ly.Pools[0].Inhib.Act.Max // this is always > 0 -- doesn't code neg Act
 		}
 		mx = mat32.Max(mx, act)
 	}
 	return mx
+}
+
+// MaxAbsRew returns the maximum absolute value of reward layer activations
+func (ly *RSalienceLayer) MaxAbsRew() float32 {
+	return MaxAbsActFmLayers(ly.Network, ly.RewLayers)
 }
 
 func (ly *RSalienceLayer) ActFmG(ltime *axon.Time) {
