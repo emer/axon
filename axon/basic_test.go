@@ -443,14 +443,14 @@ func TestInhibAct(t *testing.T) {
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.80708516, 0, 0, 0}
-	qtr0HidGes := []float32{0.66517055, 0, 0, 0}
+	qtr0HidGes := []float32{0.6713579, 0, 0, 0}
 	qtr0HidGis := []float32{0.05214787, 0, 0, 0}
 	qtr0OutActs := []float32{0.92420554, 0, 0, 0}
-	qtr0OutGes := []float32{0.4682724, 0, 0, 0}
+	qtr0OutGes := []float32{0.46887589, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.9086095, 0, 0, 0}
-	qtr3HidGes := []float32{0.9144331, 0, 0, 0}
+	qtr3HidActs := []float32{0.9217259, 0, 0, 0}
+	qtr3HidGes := []float32{0.96113765, 0, 0, 0}
 	qtr3HidGis := []float32{0.05217979, 0, 0, 0}
 	qtr3OutActs := []float32{0.7936507, 0, 0, 0}
 	qtr3OutGes := []float32{0.6, 0, 0, 0}
