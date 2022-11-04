@@ -60,17 +60,16 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":  "1.0",
 					"Layer.Inhib.Pool.Gi":   "0.8",
 					"Layer.Act.GABAB.Gbar":  "0.2",
-					"Layer.Act.NMDA.Gbar":   "0.5", // 0.5 > 0.4?
+					"Layer.Act.NMDA.Gbar":   "0.3", // 0.3 enough..
 					"Layer.Act.NMDA.Tau":    "300",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.Sahp.Gbar":   "0.01", // not much pressure -- long maint
-					"Layer.ThalNMDAGain":    "300",
+					"Layer.ThalNMDAGain":    "150",  // 150 > 100? enough it seems
 				}},
 			{Sel: "#ACCPT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.7",
-					"Layer.ThalNMDAGain":   "300", // needs more than OFC apparently
+					"Layer.Inhib.Layer.Gi": "0.6",
 				}},
 			{Sel: "PulvLayer", Desc: "",
 				Params: params.Params{
@@ -126,8 +125,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCPT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.4",
-					"Layer.Inhib.Pool.Gi":  "0.7",
+					"Layer.Inhib.Layer.Gi": "1.3",
+					"Layer.Inhib.Pool.Gi":  "0.6",
 				}},
 			{Sel: ".ALM", Desc: "",
 				Params: params.Params{
@@ -246,7 +245,8 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau":      "1",
-					"Prjn.Learn.Trace.NeuronCa": "true", // faster and no diff here?
+					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
+					"Prjn.Learn.Lrate.Base":     "0.01",
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
@@ -276,7 +276,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
+					"Prjn.Learn.Lrate.Base": "0.0001", // slower > faster
 				}},
 			{Sel: "#OFCToALM", Desc: "",
 				Params: params.Params{
