@@ -306,13 +306,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// BG / DA connections
 	snc.SendDA.AddAllBut(net)
 
-	net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
-	net.BidirConnectLayers(alm, m1, full)            // todo: alm weaker?
+	// net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
+	// net.BidirConnectLayers(alm, m1, full)            // todo: alm weaker?
 	// net.ConnectLayers(alm, almpt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(alm, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
-	net.BidirConnectLayers(alm, vl, full)
-	net.BidirConnectLayers(almct, vl, full)
+	// net.BidirConnectLayers(alm, vl, full)
+	// net.BidirConnectLayers(almct, vl, full)
 
 	net.ConnectLayers(vl, alm, full, emer.Back)
 	net.ConnectLayers(vl, almct, full, emer.Back)
@@ -660,6 +660,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("GateCS", 0)
 	ss.Stats.SetFloat("NoGatePre", 0)
 	ss.Stats.SetFloat("NoGatePost", 0)
+	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("Rew", 0)
 	lays := ss.Net.LayersByClass("PT")
 	for _, lnm := range lays {
@@ -710,6 +711,10 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("GateCS", mat32.NaN())
 	ss.Stats.SetFloat32("NoGatePre", mat32.NaN())
 	ss.Stats.SetFloat32("NoGatePost", mat32.NaN())
+	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
+	if didGate {
+		ss.Stats.SetFloat32("WrongCSGate", pcore.BoolToFloat32(ev.Drive != ev.USForPos()))
+	}
 	if ev.ShouldGate {
 		if ev.US != -1 {
 			ss.Stats.SetFloat32("GateUS", pcore.BoolToFloat32(didGate))
@@ -791,7 +796,10 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT") // "GateUS", "NoGatePre", "NoGatePost", "Gated", "GateUS", "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "WrongCSGate")
+	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
+	// "GateUS", "NoGatePre", "NoGatePost", "Gated", "PctCortex",
+	// "Rew", "DA", "MtxGo_ActAvg"
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -813,6 +821,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("NoGatePre", "NoGatePre", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("NoGatePost", "NoGatePost", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 
 	lays := ss.Net.LayersByClass("PT")
 	for _, lnm := range lays {

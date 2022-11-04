@@ -25,6 +25,7 @@ type Approach struct {
 	Locations   int                         `desc:"number of different locations -- always <= number of drives -- drives have a unique location"`
 	DistMax     int                         `desc:"maximum distance in time steps to reach the US"`
 	TimeMax     int                         `desc:"maximum number of time steps before resetting"`
+	AlwaysLeft  bool                        `desc:"always turn left -- zoolander style"`
 	NewStateInt int                         `desc:"interval in trials for generating a new state, only if > 0"`
 	CSTot       int                         `desc:"total number of CS's = NDrives * CSPerDrive"`
 	NYReps      int                         `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
@@ -62,6 +63,7 @@ func (ev *Approach) Defaults() {
 	ev.Locations = 4 // <= drives always
 	ev.DistMax = 4
 	ev.TimeMax = 10
+	ev.AlwaysLeft = true
 	ev.NewStateInt = -1
 	ev.NYReps = 4
 	ev.PatSize.Set(6, 6)
@@ -301,10 +303,15 @@ func (ev *Approach) SetRewFmUS() {
 	}
 }
 
+// USForPos returns the US at given position
+func (ev *Approach) USForPos() int {
+	uss := ev.States["USs"]
+	return int(uss.Values[ev.Pos])
+}
+
 // ActGen returns an "instinctive" action that implements a basic policy
 func (ev *Approach) ActGen() int {
-	uss := ev.States["USs"]
-	posUs := int(uss.Values[ev.Pos])
+	posUs := ev.USForPos()
 	fwd := ev.ActMap["Forward"]
 	cons := ev.ActMap["Consume"]
 	ev.ShouldGate = false
@@ -324,7 +331,7 @@ func (ev *Approach) ActGen() int {
 	if ev.LastAct == lt || ev.LastAct == rt {
 		return ev.LastAct
 	}
-	if erand.BoolProb(.5, -1) {
+	if ev.AlwaysLeft || erand.BoolProb(.5, -1) {
 		return lt
 	}
 	return rt

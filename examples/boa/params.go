@@ -138,8 +138,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VL", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",
-					"Layer.Act.Clamp.Ge":   "0.4",
+					"Layer.Inhib.Layer.Gi": "0.8",
+					"Layer.Act.Clamp.Ge":   "0.6",
 				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
@@ -246,7 +246,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau":      "1",
 					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
-					"Prjn.Learn.Lrate.Base":     "0.01",
+					"Prjn.Learn.Lrate.Base":     "0.04",
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
@@ -310,6 +310,18 @@ var ParamSets = params.Sets{
 			{Sel: "#USPToOFCCT", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.01",
+				}},
+			{Sel: "#DistToM1", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0",
+				}},
+			{Sel: "#TimeToM1", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0",
+				}},
+			{Sel: "#VLToM1", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0",
 				}},
 			//////////////////////////////////////////////
 			// To BLA
@@ -390,7 +402,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel":   "0.2",
+					"Prjn.PrjnScale.Rel":   "0.02", // even .1 does gating without CS
 					"Prjn.Trace.Modulator": "true",
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
@@ -408,9 +420,10 @@ var ParamSets = params.Sets{
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base": "0.002", // this is key param for how much BG learning happens!
-					"Prjn.SWt.Init.Mean":    "0.0",
-					"Prjn.SWt.Init.Var":     "0.0",
-					"Prjn.SWt.Init.Sym":     "false",
+					// does not affect too much..
+					"Prjn.SWt.Init.Mean": "0.0",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.SWt.Init.Sym":  "false",
 				}},
 		}},
 	},
