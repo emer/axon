@@ -60,7 +60,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":  "1.0",
 					"Layer.Inhib.Pool.Gi":   "0.8",
 					"Layer.Act.GABAB.Gbar":  "0.2",
-					"Layer.Act.NMDA.Gbar":   "0.4",
+					"Layer.Act.NMDA.Gbar":   "0.5", // 0.5 > 0.4?
 					"Layer.Act.NMDA.Tau":    "300",
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
@@ -69,7 +69,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ACCPT", Desc: "",
 				Params: params.Params{
-					"Layer.ThalNMDAGain": "300", // needs more than OFC apparently
+					"Layer.Inhib.Layer.Gi": "0.7",
+					"Layer.ThalNMDAGain":   "300", // needs more than OFC apparently
 				}},
 			{Sel: "PulvLayer", Desc: "",
 				Params: params.Params{
@@ -125,8 +126,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCPT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.0",
-					"Layer.Inhib.Pool.Gi":  "0.8",
+					"Layer.Inhib.Layer.Gi": "1.4",
+					"Layer.Inhib.Pool.Gi":  "0.7",
 				}},
 			{Sel: ".ALM", Desc: "",
 				Params: params.Params{
@@ -144,16 +145,16 @@ var ParamSets = params.Sets{
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":    "0.025",
-					"Layer.Inhib.Layer.Gi":       "2.0", // needs to be strong to prevent random off-US act
+					"Layer.Inhib.Layer.Gi":       "1.8", // needs to be strong to prevent random off-US act
 					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "1.0",
+					"Layer.Inhib.Pool.Gi":        "0.9",
 					"Layer.Act.Gbar.L":           "0.2",
 					"Layer.DaMod.BurstGain":      "0.2",
 					"Layer.DaMod.DipGain":        "0",    // ignore small negative DA
 					"Layer.BLA.NoDALrate":        "0.0",  // todo: explore
 					"Layer.BLA.NegLrate":         "0.1",  // todo: explore
 					"Layer.Learn.RLrate.Diff":    "true", // can turn off if NoDALrate is 0
-					"Layer.Learn.RLrate.DiffThr": "0.1",  // based on cur - prv
+					"Layer.Learn.RLrate.DiffThr": "0.01", // based on cur - prv
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{

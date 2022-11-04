@@ -249,6 +249,7 @@ func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
 	ly.GiFmACh(ltime)
 }
 
+// todo: replace with ki/bools.ToFloat32
 // BoolToFloat32 -- the lack of ternary conditional expressions
 // is *only* Go decision I disagree about
 func BoolToFloat32(b bool) float32 {
