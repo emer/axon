@@ -4,14 +4,13 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAddLayer(t *testing.T) {
-	net := axon.NewNetwork("testNet")
+	net := NewNetwork("testNet")
 	shape := []int{5, 5}
 	layer := net.AddLayer("Input", shape, emer.Input)
 	assert.Equal(t, 1, net.NLayers())
@@ -19,7 +18,7 @@ func TestAddLayer(t *testing.T) {
 }
 
 func TestDefaults(t *testing.T) {
-	net := axon.NewNetwork("testNet")
+	net := NewNetwork("testNet")
 	net.Defaults()
 	net.Build()
 	net.InitWts()
@@ -32,7 +31,7 @@ func TestDefaults(t *testing.T) {
 // TODO: test initial weights somehow
 
 func TestConnectLayers(t *testing.T) {
-	net := axon.NewNetwork("testNet")
+	net := NewNetwork("testNet")
 	shape := []int{5, 5}
 	input := net.AddLayer("Input", shape, emer.Input)
 	output := net.AddLayer("Output", shape, emer.Target)
@@ -44,7 +43,7 @@ func TestConnectLayers(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	net := axon.NewNetwork("testNet")
+	net := NewNetwork("testNet")
 	shape := []int{5, 5}
 	net.AddLayer("Input", shape, emer.Input)
 	assert.Equal(t, 1, net.NLayers())
