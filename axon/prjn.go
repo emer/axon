@@ -21,6 +21,8 @@ import (
 	"github.com/goki/mat32"
 )
 
+// https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
+
 // PrjnGVals contains projection-level conductance values,
 // integrated by prjn before being integrated at the neuron level,
 // which enables the neuron to perform non-linear integration as needed.
@@ -46,7 +48,9 @@ type Prjn struct {
 	// misc state variables below:
 	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
 	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	GBuf   []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- weights are added with conductance delay offsets."`
+	GBuf   []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- scale * weight is added with Com delay offset."`
+	PIBuf  []float32   `desc:"pooled inhibition ring buffer for each pool * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per pool in receiving layer."`
+	PIdxs  []int32     `desc:"indexes of subpool for each receiving neuron, for aggregating PIBuf -- this is redundant with Neuron.Subpool but provides faster local access in SendSpike."`
 	GVals  []PrjnGVals `desc:"projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed."`
 }
 
@@ -372,7 +376,13 @@ func (pj *Prjn) Build() error {
 		return err
 	}
 	pj.Syns = make([]Synapse, len(pj.SConIdx))
-	pj.GVals = make([]PrjnGVals, pj.Recv.Shape().Len())
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlen := rlay.Shape().Len()
+	pj.GVals = make([]PrjnGVals, rlen)
+	pj.PIdxs = make([]int32, rlen)
+	for ni := range rlay.Neurons {
+		pj.PIdxs[ni] = rlay.Neurons[ni].SubPool
+	}
 	pj.BuildGBuffs()
 	return nil
 }
@@ -381,12 +391,16 @@ func (pj *Prjn) Build() error {
 func (pj *Prjn) BuildGBuffs() {
 	rlen := pj.Recv.Shape().Len()
 	dl := pj.Com.Delay + 1
-	if pj.Gidx.Len == dl && len(pj.GBuf) == dl {
+	gblen := dl * rlen
+	if pj.Gidx.Len == dl && len(pj.GBuf) == gblen {
 		return
 	}
 	pj.Gidx.Len = dl
 	pj.Gidx.Zi = 0
-	pj.GBuf = make([]float32, dl*rlen)
+	pj.GBuf = make([]float32, gblen)
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	npools := len(rlay.Pools)
+	pj.PIBuf = make([]float32, dl*npools)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -684,9 +698,14 @@ func (pj *Prjn) SendSpike(si int) {
 	st := pj.SConIdxSt[si]
 	syns := pj.Syns[st : st+nc]
 	scons := pj.SConIdx[st : st+nc]
+	inhib := pj.Typ == emer.Inhib
 	for ci := range syns {
 		ri := scons[ci]
-		pj.GBuf[int(ri)*sz+di] += sc * syns[ci].Wt
+		sv := sc * syns[ci].Wt
+		pj.GBuf[int(ri)*sz+di] += sv
+		if !inhib {
+			pj.PIBuf[int(pj.PIdxs[ri])*sz+di] += sv
+		}
 	}
 }
 
@@ -704,14 +723,29 @@ func (pj *Prjn) GFmSpike(ltime *Time) {
 			pj.GBuf[bi] = 0
 			gv.GSyn = rlay.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
 		}
+		pj.Gidx.Shift(1) // rotate buffer
+		return
+	}
+	lpl := &rlay.Pools[0]
+	if len(rlay.Pools) == 1 {
+		lpl.Inhib.FFsRaw += pj.PIBuf[zi]
+		pj.PIBuf[zi] = 0
 	} else {
-		for ri := range pj.GVals {
-			gv := &pj.GVals[ri]
-			bi := ri*sz + zi
-			gv.GRaw = pj.GBuf[bi]
-			pj.GBuf[bi] = 0
-			gv.GSyn = rlay.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
+		for pi := range rlay.Pools {
+			pl := &rlay.Pools[pi]
+			bi := pi*sz + zi
+			sv := pj.PIBuf[bi]
+			pl.Inhib.FFsRaw += sv
+			lpl.Inhib.FFsRaw += sv
+			pj.PIBuf[bi] = 0
 		}
+	}
+	for ri := range pj.GVals {
+		gv := &pj.GVals[ri]
+		bi := ri*sz + zi
+		gv.GRaw = pj.GBuf[bi]
+		pj.GBuf[bi] = 0
+		gv.GSyn = rlay.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
 	}
 	pj.Gidx.Shift(1) // rotate buffer
 }

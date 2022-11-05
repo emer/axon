@@ -20,8 +20,15 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 1.1 > 1.2 -- diff from orig
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
+					"Layer.Inhib.Layer.Gi":          "1.8",
+					"Layer.Inhib.Layer.FF":          "1.0",
+					"Layer.Inhib.Layer.FB":          "2.0",
+					"Layer.Inhib.Layer.SS":          "2.0",
+					"Layer.Inhib.Layer.FSTau":       "2.0",  // 2 > 3
+					"Layer.Inhib.Layer.SSTau":       "10.0", // 10 > 5 > 20
+					"Layer.Inhib.Layer.FSd":         "0",
+					"Layer.Inhib.Layer.FSdTau":      "20",
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
@@ -64,7 +71,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.Layer.Gi":          "1.8", // 0.9 >= 0.8 > 1.0 > 0.7
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94
@@ -74,19 +81,18 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":        "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":         "0.1", // .1 >= .2,
-					"Prjn.SWt.Adapt.SubMean":       "1",
-					"Prjn.SWt.Init.SPct":           "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Trace.NeuronCa":    "true",
-					"Prjn.Learn.Trace.TrgNeuronCa": "true",
-					"Prjn.Learn.Trace.Tau":         "1", // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.Trace.SubMean":     "0",
-					"Prjn.Learn.KinaseCa.SpikeG":   "12",   // 12 def -- produces reasonable ~1ish max vals
-					"Prjn.Learn.KinaseCa.UpdtThr":  "0.01", // 0.01 def
-					"Prjn.Learn.KinaseCa.Dt.MTau":  "5",    // 5 ==? 2 > 10
-					"Prjn.Learn.KinaseCa.Dt.PTau":  "40",
-					"Prjn.Learn.KinaseCa.Dt.DTau":  "40",
+					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
+					"Prjn.SWt.Adapt.SubMean":      "1",
+					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Trace.NeuronCa":   "true",
+					"Prjn.Learn.Trace.Tau":        "1", // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.Learn.Trace.SubMean":    "0",
+					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
+					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
+					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10
+					"Prjn.Learn.KinaseCa.Dt.PTau": "40",
+					"Prjn.Learn.KinaseCa.Dt.DTau": "40",
 				}},
 			{Sel: "#Hidden2ToOutput", Desc: "key to use activation-based learning for output layers",
 				Params: params.Params{

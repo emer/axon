@@ -1168,6 +1168,7 @@ func (ly *Layer) Cycle(ltime *Time) {
 // GFmSpike integrates new synaptic conductances from Spikes
 func (ly *Layer) GFmSpike(ltime *Time) {
 	ly.GFmSpikePrjn(ltime)
+	ly.GiFmSpikes(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1176,6 +1177,7 @@ func (ly *Layer) GFmSpike(ltime *Time) {
 		ly.GFmSpikeNeuron(ltime, ni, nrn)
 		// note: can add extra values to GeRaw and GeSyn here
 		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		// todo: update Gi above
 	}
 }
 
@@ -1187,6 +1189,38 @@ func (ly *Layer) GFmSpikePrjn(ltime *Time) {
 			continue
 		}
 		p.(AxonPrjn).GFmSpike(ltime)
+	}
+}
+
+// GiFmSpikes integrates new inhibitory conductances from Spikes
+// using the FSFFFB inhibition function
+func (ly *Layer) GiFmSpikes(ltime *Time) {
+	lpl := &ly.Pools[0]
+	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
+	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
+	ly.PoolGiFmSpikes(ltime)
+}
+
+// PoolGiFmSpikes computes inhibition Gi from Spikes within relevant Pools
+func (ly *Layer) PoolGiFmSpikes(ltime *Time) {
+	np := len(ly.Pools)
+	if np == 1 {
+		return
+	}
+	lpl := &ly.Pools[0]
+	lyInhib := ly.Inhib.Layer.On
+	for pi := 1; pi < np; pi++ {
+		pl := &ly.Pools[pi]
+		pl.Inhib.SpikesFmRaw(pl.NNeurons())
+		ly.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
+		if lyInhib {
+			pl.Inhib.LayerMax(&lpl.Inhib)
+		} else {
+			lpl.Inhib.PoolMax(&pl.Inhib)
+		}
+	}
+	if !lyInhib {
+		lpl.Inhib.SaveOrig() // effective GiOrig
 	}
 }
 
@@ -1229,22 +1263,22 @@ func (ly *Layer) GFmRawSynNeuron(ltime *Time, ni int, nrn *Neuron) {
 func (ly *Layer) AvgMaxGe(ltime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		pl.Inhib.Ge.Init()
+		pl.OldInhib.Ge.Init()
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			pl.Inhib.Ge.UpdateVal(nrn.Ge, ni)
+			pl.OldInhib.Ge.UpdateVal(nrn.Ge, ni)
 		}
-		pl.Inhib.Ge.CalcAvg()
+		pl.OldInhib.Ge.CalcAvg()
 	}
 }
 
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
 func (ly *Layer) InhibFmGeAct(ltime *Time) {
 	lpl := &ly.Pools[0]
-	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
+	ly.Inhib.OldLayer.Inhib(&lpl.OldInhib, ly.ActAvg.GiMult)
 	ly.PoolInhibFmGeAct(ltime)
 	ly.TopoGi(ltime)
 	ly.InhibFmPool(ltime)
@@ -1257,19 +1291,19 @@ func (ly *Layer) PoolInhibFmGeAct(ltime *Time) {
 		return
 	}
 	lpl := &ly.Pools[0]
-	lyInhib := ly.Inhib.Layer.On
+	lyInhib := ly.Inhib.OldLayer.On
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
-		ly.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
+		ly.Inhib.OldPool.Inhib(&pl.OldInhib, ly.ActAvg.GiMult)
 		if lyInhib {
-			pl.Inhib.LayGi = lpl.Inhib.Gi
-			pl.Inhib.Gi = mat32.Max(pl.Inhib.Gi, lpl.Inhib.Gi) // pool is max of layer
+			pl.OldInhib.LayGi = lpl.OldInhib.Gi
+			pl.OldInhib.Gi = mat32.Max(pl.OldInhib.Gi, lpl.OldInhib.Gi) // pool is max of layer
 		} else {
-			lpl.Inhib.Gi = mat32.Max(pl.Inhib.Gi, lpl.Inhib.Gi) // update layer from pool
+			lpl.OldInhib.Gi = mat32.Max(pl.OldInhib.Gi, lpl.OldInhib.Gi) // update layer from pool
 		}
 	}
 	if !lyInhib {
-		lpl.Inhib.GiOrig = lpl.Inhib.Gi // effective GiOrig
+		lpl.OldInhib.GiOrig = lpl.OldInhib.Gi // effective GiOrig
 	}
 }
 
@@ -1315,8 +1349,8 @@ func (ly *Layer) TopoGi(ltime *Time) {
 					ti := ty*pxn + tx
 					if l4d {
 						pl := &ly.Pools[ti+1]
-						tge += wt * pl.Inhib.Ge.Avg
-						tact += wt * pl.Inhib.Act.Avg
+						tge += wt * pl.OldInhib.Ge.Avg
+						tact += wt * pl.OldInhib.Act.Avg
 					} else {
 						nrn := &ly.Neurons[ti]
 						tge += wt * nrn.Ge
@@ -1329,7 +1363,7 @@ func (ly *Layer) TopoGi(ltime *Time) {
 			pi := py*pxn + px
 			if l4d {
 				pl := &ly.Pools[pi+1]
-				pl.Inhib.Gi += gi
+				pl.OldInhib.Gi += gi
 				// } else {
 				// 	nrn := &ly.Neurons[pi]
 				// 	nrn.GiSelf = gi
@@ -1338,7 +1372,9 @@ func (ly *Layer) TopoGi(ltime *Time) {
 	}
 }
 
-// InhibFmPool computes inhibition Gi from Pool-level aggregated inhibition, including self and syn
+// todo: replace this with neuron level integration above
+
+// InhibFmPool computes inhibition Gi from Pool-level aggregated inhibition, including syn
 func (ly *Layer) InhibFmPool(ltime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1346,7 +1382,11 @@ func (ly *Layer) InhibFmPool(ltime *Time) {
 			continue
 		}
 		pl := &ly.Pools[nrn.SubPool]
-		nrn.Gi = pl.Inhib.Gi + ly.Inhib.Inhib.GiSyn(nrn.GiSyn+nrn.GiNoise)
+		if ly.Inhib.Inhib.Old {
+			nrn.Gi = pl.OldInhib.Gi + nrn.GiSyn + nrn.GiNoise
+		} else {
+			nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+		}
 	}
 }
 
@@ -1421,15 +1461,15 @@ func (ly *Layer) AvgMaxAct(ltime *Time) {
 				maxi = ni
 			}
 		}
-		nn := pl.EdIdx - pl.StIdx
-		pl.Inhib.Act.Sum = avg
-		pl.Inhib.Act.N = nn
+		nn := pl.NNeurons()
+		pl.OldInhib.Act.Sum = avg
+		pl.OldInhib.Act.N = nn
 		if nn > 1 {
 			avg /= float32(nn)
 		}
-		ly.Inhib.Inhib.AvgAct(&pl.Inhib.Act.Avg, avg)
-		pl.Inhib.Act.Max = max
-		pl.Inhib.Act.MaxIdx = maxi
+		ly.Inhib.Inhib.AvgAct(&pl.OldInhib.Act.Avg, avg)
+		pl.OldInhib.Act.Max = max
+		pl.OldInhib.Act.MaxIdx = maxi
 	}
 }
 
@@ -1569,6 +1609,8 @@ func (ly *Layer) SendSpike(ltime *Time) {
 		if nrn.IsOff() || nrn.Spike == 0 {
 			continue
 		}
+		ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0
+		ly.Pools[0].Inhib.FBsRaw += 1.0
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue

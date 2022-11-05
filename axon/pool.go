@@ -6,6 +6,7 @@ package axon
 
 import (
 	"github.com/emer/axon/fffb"
+	"github.com/emer/axon/fsfffb"
 	"github.com/emer/etable/minmax"
 )
 
@@ -14,7 +15,8 @@ import (
 // * average / max stats on Ge and Act that drive inhibition
 type Pool struct {
 	StIdx, EdIdx int             `inactive:"+" desc:"starting and ending (exlusive) indexes for the list of neurons in this pool"`
-	Inhib        fffb.Inhib      `inactive:"+" desc:"FFFB inhibition computed values, including Ge and Act AvgMax which drive inhibition"`
+	Inhib        fsfffb.Inhib    `inactive:"+" desc:"fast-slow FFFB inhibition values"`
+	OldInhib     fffb.Inhib      `inactive:"+" desc:"FFFB inhibition computed values, including Ge and Act AvgMax which drive inhibition"`
 	ActM         minmax.AvgMax32 `inactive:"+" desc:"minus phase average and max Act activation values, for ActAvg updt"`
 	ActP         minmax.AvgMax32 `inactive:"+" desc:"plus phase average and max Act activation values, for ActAvg updt"`
 	GeM          minmax.AvgMax32 `inactive:"+" desc:"stats for GeM minus phase averaged Ge values"`
@@ -24,4 +26,10 @@ type Pool struct {
 
 func (pl *Pool) Init() {
 	pl.Inhib.Init()
+	pl.OldInhib.Init()
+}
+
+// NNeurons returns the number of neurons in the pool: EdIdx - StIdx
+func (pl *Pool) NNeurons() int {
+	return pl.EdIdx - pl.StIdx
 }

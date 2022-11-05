@@ -6,37 +6,46 @@ package axon
 
 import (
 	"github.com/emer/axon/fffb"
+	"github.com/emer/axon/fsfffb"
 	"github.com/goki/mat32"
 )
 
 // axon.InhibParams contains all the inhibition computation params and functions for basic Axon
 // This is included in axon.Layer to support computation.
-// This also includes other misc layer-level params such as running-average activation in the layer
+// This also includes other misc layer-level params such as expected average activation in the layer
 // which is used for Ge rescaling and potentially for adapting inhibition over time
 type InhibParams struct {
-	Inhib  InhibMiscParams `view:"inline" desc:"misc inhibition computation parameters, including feedback activation "`
-	Layer  fffb.Params     `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
-	Pool   fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
-	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
-	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
+	ActAvg   ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
+	Layer    fsfffb.Params   `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
+	Pool     fsfffb.Params   `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
+	OldLayer fffb.Params     `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
+	OldPool  fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
+	Inhib    InhibMiscParams `view:"inline" desc:"misc inhibition computation parameters, including feedback activation "`
+	Topo     TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
 }
 
 func (ip *InhibParams) Update() {
-	ip.Inhib.Update()
+	ip.ActAvg.Update()
 	ip.Layer.Update()
 	ip.Pool.Update()
+	ip.OldLayer.Update()
+	ip.OldPool.Update()
+	ip.Inhib.Update()
 	ip.Topo.Update()
-	ip.ActAvg.Update()
 }
 
 func (ip *InhibParams) Defaults() {
-	ip.Inhib.Defaults()
+	ip.ActAvg.Defaults()
 	ip.Layer.Defaults()
 	ip.Pool.Defaults()
+	ip.OldLayer.Defaults()
+	ip.OldPool.Defaults()
+	ip.Inhib.Defaults()
 	ip.Topo.Defaults()
-	ip.ActAvg.Defaults()
 	ip.Layer.Gi = 1.1
 	ip.Pool.Gi = 1.1
+	ip.OldLayer.Gi = 1.1
+	ip.OldPool.Gi = 1.1
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -45,8 +54,8 @@ func (ip *InhibParams) Defaults() {
 // InhibMiscParams defines parameters for average activation value in pool
 // that drives feedback inhibition in the FFFB inhibition function.
 type InhibMiscParams struct {
-	AvgTau   float32 `def:"30" desc:"time constant for integrating pool-level average activation driven by current instantaneous activation across the pool"`
-	GiSynThr float32 `desc:"threshold for synaptic inhibition -- setting a non-zero threshold results in a nonlinear effect of inhibition -- actual inhibition is amount above this threshold"`
+	Old    bool    `desc:"if true, use old inhibition function"`
+	AvgTau float32 `def:"30" desc:"time constant for integrating pool-level average activation driven by current instantaneous activation across the pool"`
 
 	AvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -57,7 +66,6 @@ func (fb *InhibMiscParams) Update() {
 
 func (fb *InhibMiscParams) Defaults() {
 	fb.AvgTau = 30
-	fb.GiSynThr = 0
 	fb.Update()
 }
 
@@ -66,54 +74,13 @@ func (fb *InhibMiscParams) AvgAct(avg *float32, act float32) {
 	*avg += fb.AvgDt * (act - *avg)
 }
 
-// GiSyn computes the effective GiSyn value relative to the threshold
-func (fb *InhibMiscParams) GiSyn(gisyn float32) float32 {
-	if gisyn > fb.GiSynThr {
-		return gisyn - fb.GiSynThr
-	}
-	return 0
-}
-
-///////////////////////////////////////////////////////////////////////
-//  SelfInhibParams
-
-// SelfInhibParams defines parameters for Neuron self-inhibition
-// activation of the neuron directly feeds back
-// to produce a proportional additional contribution to Gi
-type SelfInhibParams struct {
-	On  bool    `desc:"enable neuron self-inhibition"`
-	Gi  float32 `viewif:"On" def:"0.4" desc:"strength of individual neuron self feedback inhibition -- can produce proportional activation behavior in individual units for specialized cases (e.g., scalar val or BG units), but not so good for typical hidden layers"`
-	Tau float32 `viewif:"On" def:"1.4" desc:"time constant in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) for integrating unit self feedback inhibitory values -- prevents oscillations that otherwise occur -- relatively rapid 1.4 typically works, but may need to go longer if oscillations are a problem"`
-	Dt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-}
-
-func (si *SelfInhibParams) Update() {
-	si.Dt = 1 / si.Tau
-}
-
-func (si *SelfInhibParams) Defaults() {
-	si.On = false
-	si.Gi = 0.4
-	si.Tau = 1.4
-	si.Update()
-}
-
-// Inhib updates the self inhibition value based on current unit activation
-func (si *SelfInhibParams) Inhib(self *float32, act float32) {
-	if si.On {
-		*self += si.Dt * (si.Gi*act - *self)
-	} else {
-		*self = 0
-	}
-}
-
 ///////////////////////////////////////////////////////////////////////
 //  ActAvgParams
 
 // ActAvgParams represents expected average activity levels in the layer.
-// Used for computing running-average computation that is then used for G scaling.
-// Also specifies time constant for updating average
-// and for the target value for adapting inhibition in inhib_adapt.
+// Specifies the expected average activity used for G scaling.
+// Also specifies time constant for updating a longer-term running average
+// and for adapting inhibition levels dynamically over time.
 type ActAvgParams struct {
 	Init      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] initial estimated average activity level in the layer -- see Targ for target value which can be different from this."`
 	InhTau    float32 `min:"1" desc:"inhibition average activation time constant (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- integrates spiking activity across pools with this time constant for driving feedback inhibition"`
