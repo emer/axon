@@ -357,7 +357,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	ss.Logs.PlotItems("Layer1_Act.Avg", "Layer1_Gi", "Layer1_SGi", "Layer1_OGi")
+	ss.Logs.PlotItems("Layer1_Act.Avg", "Layer1_SGi", "Layer1_OGi") // "Layer1_Gi",
 
 	ss.Logs.CreateTables()
 
@@ -370,9 +370,27 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
+	ss.Logs.AddItem(&elog.Item{
+		Name:   "Layer0_Spikes",
+		Type:   etensor.FLOAT64,
+		FixMin: true,
+		Write: elog.WriteMap{
+			etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+				ly := ss.Net.LayerByName("Layer0").(axon.AxonLayer).AsAxon()
+				ctx.SetFloat32(ly.SpikeAvgByPool(0))
+			}}})
 	layers := ss.Net.LayersByClass("Hidden")
 	for _, lnm := range layers {
 		clnm := lnm
+		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_Spikes",
+			Type:   etensor.FLOAT64,
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.SpikeAvgByPool(0))
+				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gi",
 			Type:   etensor.FLOAT64,
@@ -437,6 +455,15 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSi)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_SSf",
+			Type:   etensor.FLOAT64,
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].Inhib.SSf)
+				}}})
+		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FSd",
 			Type:   etensor.FLOAT64,
 			FixMin: true,
@@ -462,6 +489,24 @@ func (ss *Sim) ConfigLogItems() {
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSGi)
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_OFFi",
+			Type:   etensor.FLOAT64,
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].OldInhib.FFi)
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_OFBi",
+			Type:   etensor.FLOAT64,
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
+					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].OldInhib.FBi)
 				}}})
 	}
 }
@@ -493,7 +538,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
-	title := "Leabra Inhibition Test"
+	title := "Axon Inhibition Test"
 	ss.GUI.MakeWindow(ss, "inhib", title, `This tests inhibition based on interneurons and inhibition functions. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 

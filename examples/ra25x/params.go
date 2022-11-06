@@ -21,14 +21,21 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
-					"Layer.Inhib.Layer.Gi":          "1.8",
-					"Layer.Inhib.Layer.FF":          "1.0",
-					"Layer.Inhib.Layer.FB":          "2.0",
-					"Layer.Inhib.Layer.SS":          "2.0",
-					"Layer.Inhib.Layer.FSTau":       "2.0",  // 2 > 3
-					"Layer.Inhib.Layer.SSTau":       "10.0", // 10 > 5 > 20
+					"Layer.Inhib.Layer.Gi":          "1.5",
+					"Layer.Inhib.Layer.SS":          "30",
+					"Layer.Inhib.Layer.FF0":         "0.1",
+					"Layer.Inhib.Layer.FSTau":       "5.0",
+					"Layer.Inhib.Layer.SSfInc":      "1",
+					"Layer.Inhib.Layer.SSfdTau":     "20.0",
+					"Layer.Inhib.Layer.SSiTau":      "100.0",
 					"Layer.Inhib.Layer.FSd":         "0",
 					"Layer.Inhib.Layer.FSdTau":      "20",
+					"Layer.Inhib.Inhib.Old":         "true",
+					"Layer.Inhib.OldLayer.On":       "true",
+					"Layer.Inhib.OldLayer.Gi":       "1.0",
+					"Layer.Inhib.OldLayer.FF0":      "0.1",
+					"Layer.Inhib.OldLayer.FF":       "1.0",
+					"Layer.Inhib.OldLayer.FB":       "1.0",
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
@@ -71,7 +78,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.8", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.Layer.Gi":          "1.2", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.OldLayer.Gi":       "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94

@@ -105,6 +105,7 @@ type Neuron struct {
 	GiBase float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
 	GeRaw  float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
 	GiRaw  float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
+	GeExt  float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
 
 	Gak float32 `desc:"conductance of A-type K potassium channels"`
 }

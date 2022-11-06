@@ -117,8 +117,10 @@ func (ly *CTLayer) GFmSpike(ltime *axon.Time) {
 		}
 		ly.GFmSpikeNeuron(ltime, ni, nrn)
 		nrn.GeRaw += geCtxt
-		nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+		ctxtExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+		nrn.GeSyn += ctxtExt
 		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		nrn.GeExt = ctxtExt
 	}
 }
 

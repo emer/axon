@@ -8,18 +8,21 @@ import mat32 "github.com/emer/axon/bazel-axon/external/com_github_goki_mat32"
 
 // Inhib contains state values for computed FFFB inhibition
 type Inhib struct {
-	FFsRaw float32 `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
-	FBsRaw float32 `desc:"all feedback outgoing spikes generated from neurons in this pool -- raw aggregation"`
-	FFs    float32 `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
-	FBs    float32 `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
-	FSi    float32 `desc:"fast spiking PV+ fast integration of spikes"`
-	SSi    float32 `desc:"slow spiking SST+ integration of spikes"`
-	FSd    float32 `desc:"fast spiking depression integrated over time"`
-	FSGi   float32 `desc:"overall fast-spiking inhibitory conductance"`
-	SSGi   float32 `desc:"overall slow-spiking inhibitory conductance"`
-	Gi     float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
-	GiOrig float32 `desc:"original value of the FS inhibition (before pool or other effects)"`
-	LayGi  float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
+	FFsRaw   float32 `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
+	FBsRaw   float32 `desc:"all feedback outgoing spikes generated from neurons in this pool -- raw aggregation"`
+	GeExtRaw float32 `desc:"all extra GeExt conductances added to neurons"`
+	FFs      float32 `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
+	FBs      float32 `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
+	GeExts   float32 `desc:"all extra GeExt conductances added to neurons, normalized by pool size"`
+	FSi      float32 `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
+	SSi      float32 `desc:"slow spiking SST+ integration of FBs feedback spikes"`
+	SSf      float32 `desc:"slow spiking facilitation factor"`
+	FSd      float32 `desc:"fast spiking depression integrated over time"`
+	FSGi     float32 `desc:"overall fast-spiking inhibitory conductance"`
+	SSGi     float32 `desc:"overall slow-spiking inhibitory conductance"`
+	Gi       float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
+	GiOrig   float32 `desc:"original value of the FS inhibition (before pool or other effects)"`
+	LayGi    float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
 }
 
 func (fi *Inhib) Init() {
@@ -31,6 +34,7 @@ func (fi *Inhib) Init() {
 func (fi *Inhib) InitRaw() {
 	fi.FFsRaw = 0
 	fi.FBsRaw = 0
+	fi.GeExtRaw = 0
 }
 
 // Zero resets all accumulating inhibition factors to 0
@@ -39,6 +43,7 @@ func (fi *Inhib) Zero() {
 	fi.FBs = 0
 	fi.FSi = 0
 	fi.SSi = 0
+	fi.SSf = 0
 	fi.FSd = 0
 	fi.FSGi = 0
 	fi.SSGi = 0
@@ -53,6 +58,7 @@ func (fi *Inhib) Decay(decay float32) {
 	fi.FBs -= decay * fi.FBs
 	fi.FSi -= decay * fi.FSi
 	fi.SSi -= decay * fi.SSi
+	fi.SSf -= decay * fi.SSf
 	fi.FSd -= decay * fi.FSd
 	fi.FSGi -= decay * fi.FSGi
 	fi.SSGi -= decay * fi.SSGi
@@ -63,6 +69,7 @@ func (fi *Inhib) Decay(decay float32) {
 func (fi *Inhib) SpikesFmRaw(npool int) {
 	fi.FFs = fi.FFsRaw / float32(npool)
 	fi.FBs = fi.FBsRaw / float32(npool)
+	fi.GeExts = fi.GeExtRaw / float32(npool)
 	fi.InitRaw()
 }
 

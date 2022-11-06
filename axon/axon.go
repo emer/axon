@@ -144,7 +144,8 @@ type AxonLayer interface {
 	// Cycle handles entire update for one cycle (msec) of neuron activity state,
 	// calling the following methods in order:
 	//
-	// * GFmSpike
+	// * GFmPrjns
+	// * GInteg
 	// * AvgMaxGe
 	// * InhibFmGeAct
 	// * ActFmG
@@ -156,8 +157,15 @@ type AxonLayer interface {
 	// can override those functions (preferred to overriding the main Cycle function).
 	Cycle(ltime *Time)
 
-	// GFmSpike integrates new synaptic conductances from increments sent during last SendGDelta
-	GFmSpike(ltime *Time)
+	// GFmSpikesPrjn gathers new synaptic conductances G from projections
+	GFmSpikesPrjn(ltime *Time)
+
+	// GiFmSpikes integrates new inhibitory conductances from Spikes
+	// at the layer and pool level
+	GiFmSpikes(ltime *Time)
+
+	// GInteg integrates conductances G over time (Ge, NMDA, etc)
+	GInteg(ltime *Time)
 
 	// AvgMaxGe computes the average and max Ge stats, used in inhibition.
 	AvgMaxGe(ltime *Time)

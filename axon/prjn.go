@@ -710,6 +710,7 @@ func (pj *Prjn) SendSpike(si int) {
 }
 
 // GFmSpike increments synaptic conductances from Spikes
+// including pooled aggregation of spikes
 func (pj *Prjn) GFmSpike(ltime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Com.Delay

@@ -13,33 +13,37 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Inhib.Layer.On":     "true",
-					"Layer.Inhib.Layer.Gi":     "1.5",
-					"Layer.Inhib.Layer.FF":     "1.0",
-					"Layer.Inhib.Layer.FB":     "1.0",
-					"Layer.Inhib.Layer.SS":     "1",
-					"Layer.Inhib.Layer.FSTau":  "3.0",
-					"Layer.Inhib.Layer.SSTau":  "20.0",
-					"Layer.Inhib.Layer.FSd":    "0",
-					"Layer.Inhib.Layer.FSdTau": "20",
-					"Layer.Inhib.OldLayer.On":  "true",
-					"Layer.Inhib.OldLayer.Gi":  "1.0",
-					"Layer.Inhib.ActAvg.Init":  "0.1",
-					"Layer.Inhib.Inhib.Old":    "false",
-					"Layer.Inhib.Inhib.AvgTau": "30", // 20 > 30 ?
-					"Layer.Act.Dt.GeTau":       "5",
-					"Layer.Act.Dt.GiTau":       "7",
-					"Layer.Act.Gbar.I":         "1.0",
-					"Layer.Act.Gbar.L":         "0.2",
-					"Layer.Act.GABAB.Gbar":     "0.2",
-					"Layer.Act.NMDA.Gbar":      "0.15",
-					"Layer.Act.Decay.Act":      "0.0", // 0.2 def
-					"Layer.Act.Decay.Glong":    "0.0", // 0.6 def
-					"Layer.Act.Noise.On":       "false",
-					"Layer.Act.Noise.GeHz":     "100",
-					"Layer.Act.Noise.Ge":       "0.002", // 0.001 min
-					"Layer.Act.Noise.GiHz":     "200",
-					"Layer.Act.Noise.Gi":       "0.002", // 0.001 min
+					"Layer.Inhib.Layer.On":      "true",
+					"Layer.Inhib.Layer.Gi":      "1.0",
+					"Layer.Inhib.Layer.SS":      "0", // 30?
+					"Layer.Inhib.Layer.FF0":     "0.1",
+					"Layer.Inhib.Layer.FSTau":   "5.0",
+					"Layer.Inhib.Layer.SSfInc":  "1",
+					"Layer.Inhib.Layer.SSfdTau": "20.0",
+					"Layer.Inhib.Layer.SSiTau":  "100.0",
+					"Layer.Inhib.Layer.FSd":     "0",
+					"Layer.Inhib.Layer.FSdTau":  "20",
+					"Layer.Inhib.OldLayer.On":   "true",
+					"Layer.Inhib.OldLayer.Gi":   "1.0",
+					"Layer.Inhib.OldLayer.FF0":  "0.1",
+					"Layer.Inhib.OldLayer.FF":   "1.0",
+					"Layer.Inhib.OldLayer.FB":   "1.0",
+					"Layer.Inhib.ActAvg.Init":   "0.1",
+					"Layer.Inhib.Inhib.Old":     "false",
+					"Layer.Inhib.Inhib.AvgTau":  "30", // 20 > 30 ?
+					"Layer.Act.Dt.GeTau":        "5",
+					"Layer.Act.Dt.GiTau":        "7",
+					"Layer.Act.Gbar.I":          "1.0",
+					"Layer.Act.Gbar.L":          "0.2",
+					"Layer.Act.GABAB.Gbar":      "0.2",
+					"Layer.Act.NMDA.Gbar":       "0.15",
+					"Layer.Act.Decay.Act":       "0.0", // 0.2 def
+					"Layer.Act.Decay.Glong":     "0.0", // 0.6 def
+					"Layer.Act.Noise.On":        "false",
+					"Layer.Act.Noise.GeHz":      "100",
+					"Layer.Act.Noise.Ge":        "0.002", // 0.001 min
+					"Layer.Act.Noise.GiHz":      "200",
+					"Layer.Act.Noise.Gi":        "0.002", // 0.001 min
 				}},
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
