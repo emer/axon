@@ -20,7 +20,7 @@ package fsfffb
 type Params struct {
 	On     bool    `desc:"enable this level of inhibition"`
 	Gi     float32 `viewif:"On" min:"0" def:"1" desc:"[0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly"`
-	FB     float32 `viewif:"On" min:"0" def:"0.2" desc:"amount of FB spikes included in FF for driving FS"`
+	FB     float32 `viewif:"On" min:"0" def:"0.5" desc:"amount of FB spikes included in FF for driving FS"`
 	FSTau  float32 `viewif:"On" min:"0" def:"6" desc:"fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
 	SS     float32 `viewif:"On" min:"0" def:"30" desc:"multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1"`
 	SSfTau float32 `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
@@ -44,7 +44,7 @@ func (fb *Params) Update() {
 
 func (fb *Params) Defaults() {
 	fb.Gi = 1.1
-	fb.FB = 0.2
+	fb.FB = 0.5
 	fb.SS = 30
 	fb.FSTau = 6
 	fb.SSfTau = 20
@@ -66,7 +66,7 @@ func (fb *Params) FSdFmFSi(fsd *float32, fsi float32) {
 }
 
 // FS returns the current effective FS value based on fsi and fsd
-func (fb *Params) FS(fsi, fsd float32) float32 {
+func (fb *Params) FS(fsi, gext, fsd float32) float32 {
 	fsi -= fb.FS0
 	if fsi < 0 {
 		fsi = 0
@@ -75,7 +75,7 @@ func (fb *Params) FS(fsi, fsd float32) float32 {
 	if df > 1 {
 		df = 1
 	}
-	return fsi * (1 - df)
+	return (fsi + gext) * (1 - df)
 }
 
 // SSFmFBs updates slow-spiking inhibition from FBs
@@ -98,7 +98,7 @@ func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 	}
 	fb.FSdFmFSi(&inh.FSd, inh.FSi)
 	fb.FSiFmFFs(&inh.FSi, inh.FFs, inh.FBs)
-	inh.FSGi = fb.FS(inh.FSi+inh.GeExts, inh.FSd)
+	inh.FSGi = fb.FS(inh.FSi, inh.GeExts, inh.FSd)
 
 	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
 	inh.SSGi = fb.SS * inh.SSi

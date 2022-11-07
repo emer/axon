@@ -57,11 +57,11 @@ func (ly *Layer) Defaults() {
 	}
 	switch ly.Typ {
 	case emer.Input:
-		ly.Act.Clamp.Ge = 1.0
+		ly.Act.Clamp.Ge = 1.5
 		ly.Inhib.Layer.Gi = 0.9
 		ly.Inhib.Pool.Gi = 0.9
 	case emer.Target:
-		ly.Act.Clamp.Ge = 0.6
+		ly.Act.Clamp.Ge = 0.8
 		ly.Learn.RLrate.SigmoidMin = 1
 	}
 }

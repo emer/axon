@@ -14,14 +14,14 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Inhib.Layer.On":     "true",
-					"Layer.Inhib.Layer.Gi":     "1.1",
-					"Layer.Inhib.Layer.SS":     "30",  // 30
-					"Layer.Inhib.Layer.FB":     "0.2", // 0.2 > 0.1 > 0.5 > 1.0
+					"Layer.Inhib.Layer.Gi":     "1.0",
+					"Layer.Inhib.Layer.SS":     "30", // 30
+					"Layer.Inhib.Layer.FB":     "1",
 					"Layer.Inhib.Layer.FS0":    "0.1",
 					"Layer.Inhib.Layer.FSTau":  "6",
 					"Layer.Inhib.Layer.SSfTau": "20",
 					"Layer.Inhib.Layer.SSiTau": "50",
-					"Layer.Inhib.Layer.FSd":    "0",
+					"Layer.Inhib.Layer.FSd":    "0", // 0.1 or so here creates stronger synchrony at tau hz
 					"Layer.Inhib.Layer.FSdTau": "20",
 					"Layer.Inhib.OldLayer.On":  "true",
 					"Layer.Inhib.OldLayer.Gi":  "1.0",
