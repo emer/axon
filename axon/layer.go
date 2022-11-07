@@ -15,7 +15,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emer/emergent/edge"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/weights"
@@ -86,30 +85,6 @@ func (ly *Layer) UpdateParams() {
 // This is the proper check for using pool-level target average activations, for example.
 func (ly *Layer) HasPoolInhib() bool {
 	return ly.Inhib.Pool.On
-}
-
-// ActAvgVals are running-average activation levels used for Ge scaling and adaptive inhibition
-type ActAvgVals struct {
-	ActMAvg   float32         `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
-	ActPAvg   float32         `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
-	AvgMaxGeM float32         `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGe value -- see Prjn PrjnScale"`
-	AvgMaxGiM float32         `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- used for adjusting the GScale.Scale relative to the GTarg.MaxGi value -- see Prjn PrjnScale"`
-	GiMult    float32         `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
-	CaSpkPM   minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer in the minus phase -- for monitoring network activity levels"`
-	CaSpkP    minmax.AvgMax32 `inactive:"+" desc:"maximum CaSpkP value in layer -- for RLrate computation"`
-}
-
-// CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
-// statistics at the layer level
-type CorSimStats struct {
-	Cor float32 `inactive:"+" desc:"correlation (centered cosine aka normalized dot product) activation difference between ActP and ActM on this alpha-cycle for this layer -- computed by CorSimFmActs called by PlusPhase"`
-	Avg float32 `inactive:"+" desc:"running average of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
-	Var float32 `inactive:"+" desc:"running variance of correlation similarity between ActP and ActM -- computed with CorSim.Tau time constant in PlusPhase"`
-}
-
-func (cd *CorSimStats) Init() {
-	cd.Cor = 0
-	cd.Avg = 0
 }
 
 // AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
@@ -487,10 +462,6 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"AvgMaxGeM\": \"%g\",\n", ly.ActAvg.AvgMaxGeM)))
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"AvgMaxGiM\": \"%g\",\n", ly.ActAvg.AvgMaxGiM)))
-	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.ActAvg.GiMult)))
 	depth--
 	w.Write(indent.TabBytes(depth))
@@ -583,14 +554,6 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 		if ap, ok := lw.MetaData["ActPAvg"]; ok {
 			pv, _ := strconv.ParseFloat(ap, 32)
 			ly.ActAvg.ActPAvg = float32(pv)
-		}
-		if ap, ok := lw.MetaData["AvgMaxGeM"]; ok {
-			pv, _ := strconv.ParseFloat(ap, 32)
-			ly.ActAvg.AvgMaxGeM = float32(pv)
-		}
-		if ap, ok := lw.MetaData["AvgMaxGiM"]; ok {
-			pv, _ := strconv.ParseFloat(ap, 32)
-			ly.ActAvg.AvgMaxGiM = float32(pv)
 		}
 		if gi, ok := lw.MetaData["GiMult"]; ok {
 			pv, _ := strconv.ParseFloat(gi, 32)
@@ -776,7 +739,6 @@ func (ly *Layer) InitActs() {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Init()
-		pl.OldInhib.Init()
 		pl.ActM.Init()
 		pl.ActP.Init()
 	}
@@ -1116,7 +1078,6 @@ func (ly *Layer) DecayState(decay, glong float32) {
 	for pi := range ly.Pools { // decaying average act is essential for inhib
 		pl := &ly.Pools[pi]
 		pl.Inhib.Decay(decay)
-		pl.OldInhib.Decay(decay)
 	}
 	if glong == 1 {
 		ly.InitPrjnGBuffs()
@@ -1151,7 +1112,6 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 		ly.Act.DecayState(nrn, decay, glong)
 	}
 	pl.Inhib.Decay(decay)
-	pl.OldInhib.Decay(decay)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -1173,10 +1133,8 @@ func (ly *Layer) Cycle(ltime *Time) {
 // Cycle does one cycle of updating
 func (ly *Layer) Cycle(ltime *Time) {
 	ly.AxonLay.GFmSpikesPrjn(ltime) // prjn-level
-	ly.AxonLay.GiFmSpikes(ltime)
+	ly.AxonLay.GiFmSpikes(ltime)    // layer level
 	ly.AxonLay.GInteg(ltime)
-	ly.AxonLay.AvgMaxGe(ltime)
-	ly.AxonLay.InhibFmGeAct(ltime)
 	ly.AxonLay.ActFmG(ltime)
 	ly.AxonLay.PostAct(ltime)
 	ly.AxonLay.CyclePost(ltime)
@@ -1254,7 +1212,8 @@ func (ly *Layer) GInteg(ltime *Time) {
 		ly.GFmSpikeNeuron(ltime, ni, nrn)
 		// note: can add extra values to GeRaw and GeSyn here
 		ly.GFmRawSynNeuron(ltime, ni, nrn)
-		// todo: update Gi above
+		pl := &ly.Pools[nrn.SubPool]
+		nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	}
 }
 
@@ -1292,54 +1251,7 @@ func (ly *Layer) GFmRawSynNeuron(ltime *Time, ni int, nrn *Neuron) {
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
 
-// AvgMaxGe computes the average and max Ge stats, used in inhibition
-// This operates at the pool level so does not make sense to combine with GFmSpike
-func (ly *Layer) AvgMaxGe(ltime *Time) {
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		pl.OldInhib.Ge.Init()
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			pl.OldInhib.Ge.UpdateVal(nrn.Ge, ni)
-		}
-		pl.OldInhib.Ge.CalcAvg()
-	}
-}
-
-// InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-func (ly *Layer) InhibFmGeAct(ltime *Time) {
-	lpl := &ly.Pools[0]
-	ly.Inhib.OldLayer.Inhib(&lpl.OldInhib, ly.ActAvg.GiMult)
-	ly.PoolInhibFmGeAct(ltime)
-	ly.TopoGi(ltime)
-	ly.InhibFmPool(ltime)
-}
-
-// PoolInhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-func (ly *Layer) PoolInhibFmGeAct(ltime *Time) {
-	np := len(ly.Pools)
-	if np == 1 {
-		return
-	}
-	lpl := &ly.Pools[0]
-	lyInhib := ly.Inhib.OldLayer.On
-	for pi := 1; pi < np; pi++ {
-		pl := &ly.Pools[pi]
-		ly.Inhib.OldPool.Inhib(&pl.OldInhib, ly.ActAvg.GiMult)
-		if lyInhib {
-			pl.OldInhib.LayGi = lpl.OldInhib.Gi
-			pl.OldInhib.Gi = mat32.Max(pl.OldInhib.Gi, lpl.OldInhib.Gi) // pool is max of layer
-		} else {
-			lpl.OldInhib.Gi = mat32.Max(pl.OldInhib.Gi, lpl.OldInhib.Gi) // update layer from pool
-		}
-	}
-	if !lyInhib {
-		lpl.OldInhib.GiOrig = lpl.OldInhib.Gi // effective GiOrig
-	}
-}
+/* todo: fixme below
 
 // TopoGi computes topographic Gi inhibition
 // todo: this does not work for 2D layers, and in general needs more testing
@@ -1405,24 +1317,7 @@ func (ly *Layer) TopoGi(ltime *Time) {
 		}
 	}
 }
-
-// todo: replace this with neuron level integration above
-
-// InhibFmPool computes inhibition Gi from Pool-level aggregated inhibition, including syn
-func (ly *Layer) InhibFmPool(ltime *Time) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		pl := &ly.Pools[nrn.SubPool]
-		if ly.Inhib.Inhib.Old {
-			nrn.Gi = pl.OldInhib.Gi + nrn.GiSyn + nrn.GiNoise
-		} else {
-			nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
-		}
-	}
-}
+*/
 
 // ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act
@@ -1462,169 +1357,11 @@ func (ly *Layer) ActFmG(ltime *Time) {
 }
 
 // PostAct does updates after activation (spiking) updated for all neurons,
-// including the running-average activation used in driving inhibition,
 // and synaptic-level calcium updates depending on spiking, NMDA
 func (ly *Layer) PostAct(ltime *Time) {
-	ly.AvgMaxAct(ltime)
-	ly.AvgMaxCaSpkP(ltime)
 	if !ltime.Testing {
 		ly.AxonLay.SynCa(ltime)
 	}
-}
-
-// AvgMaxAct updates the running-average activation used in driving inhibition
-func (ly *Layer) AvgMaxAct(ltime *Time) {
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		var avg, max float32
-		maxi := 0
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			// in theory having quicker activation than Act will be useful, but maybe the delay is
-			// not such a big deal, and otherwise it tracks pretty smoothly and closely
-			// todo: need to come back and fix this with a combination of PV and SST inhibitory
-			// neurons: general story that PV is fast onset but depleting, targets axon initial,
-			// SST is slower and faciltating / not depleting, hits dendrites.
-			// https://github.com/emer/axon/discussions/64
-			avg += nrn.Act // SpkCaM, SpkCaP not clearly better, nor is spike..
-			if nrn.Act > max {
-				max = nrn.Act
-				maxi = ni
-			}
-		}
-		nn := pl.NNeurons()
-		pl.OldInhib.Act.Sum = avg
-		pl.OldInhib.Act.N = nn
-		if nn > 1 {
-			avg /= float32(nn)
-		}
-		ly.Inhib.Inhib.AvgAct(&pl.OldInhib.Act.Avg, avg)
-		pl.OldInhib.Act.Max = max
-		pl.OldInhib.Act.MaxIdx = maxi
-	}
-}
-
-// AvgMaxCaSpkP computes the average and max CaSpkP in the layer.
-// This is a useful direct measure of time-integrated neural activity
-// used for learning and other functions, instead of Act, which is
-// purely for visualization.
-func (ly *Layer) AvgMaxCaSpkP(ltime *Time) {
-	ly.ActAvg.CaSpkP.Init()
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.ActAvg.CaSpkP.UpdateVal(nrn.CaSpkP, ni)
-	}
-	ly.ActAvg.CaSpkP.CalcAvg()
-}
-
-// SpikedAvgByPool returns the average across Spiked values by given pool index
-// Pool index 0 is whole layer, 1 is first sub-pool, etc
-func (ly *Layer) SpikedAvgByPool(pli int) float32 {
-	pl := &ly.Pools[pli]
-	sum := float32(0)
-	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		sum += nrn.Spiked
-	}
-	return sum / float32(pl.EdIdx-pl.StIdx)
-}
-
-// SpikeAvgByPool returns the average across Spike values by given pool index
-// Pool index 0 is whole layer, 1 is first sub-pool, etc
-func (ly *Layer) SpikeAvgByPool(pli int) float32 {
-	pl := &ly.Pools[pli]
-	sum := float32(0)
-	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		sum += nrn.Spike
-	}
-	return sum / float32(pl.EdIdx-pl.StIdx)
-}
-
-// MaxSpkMax returns the maximum SpkMax across the layer
-func (ly *Layer) MaxSpkMax() float32 {
-	mx := float32(0)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if nrn.SpkMax > mx {
-			mx = nrn.SpkMax
-		}
-	}
-	return mx
-}
-
-// SpkMaxAvgByPool returns the average SpkMax value by given pool index
-// Pool index 0 is whole layer, 1 is first sub-pool, etc
-func (ly *Layer) SpkMaxAvgByPool(pli int) float32 {
-	pl := &ly.Pools[pli]
-	sum := float32(0)
-	cnt := 0
-	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		sum += nrn.SpkMax
-		cnt++
-	}
-	if cnt > 0 {
-		sum /= float32(cnt)
-	}
-	return sum
-}
-
-// SpkMaxMaxByPool returns the average SpkMax value by given pool index
-// Pool index 0 is whole layer, 1 is first sub-pool, etc
-func (ly *Layer) SpkMaxMaxByPool(pli int) float32 {
-	pl := &ly.Pools[pli]
-	max := float32(0)
-	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if nrn.SpkMax > max {
-			max = nrn.SpkMax
-		}
-	}
-	return max
-}
-
-// AvgGeM computes the average and max GeM stats
-func (ly *Layer) AvgGeM(ltime *Time) {
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		pl.GeM.Init()
-		pl.GiM.Init()
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			pl.GeM.UpdateVal(nrn.GeM, ni)
-			pl.GiM.UpdateVal(nrn.GiM, ni)
-		}
-		pl.GeM.CalcAvg()
-		pl.GiM.CalcAvg()
-	}
-	lpl := &ly.Pools[0]
-	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
-	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
 }
 
 // CyclePost is called after the standard Cycle update
@@ -1659,15 +1396,51 @@ func (ly *Layer) SendSpike(ltime *Time) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Phase-level
 
+// AvgMaxVarByPool returns the average and maximum value of given variable
+// for given pool index (0 = entire layer, 1.. are subpools for 4D only).
+// Uses fast index-based variable access.
+func (ly *Layer) AvgMaxVarByPool(varNm string, poolIdx int) minmax.AvgMax32 {
+	var am minmax.AvgMax32
+	vidx, err := ly.AxonLay.UnitVarIdx(varNm)
+	if err != nil {
+		log.Printf("axon.Layer.AvgMaxVar: %s\n", err)
+		return am
+	}
+	pl := &ly.Pools[poolIdx]
+	am.Init()
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		vl := ly.UnitVal1D(vidx, ni)
+		am.UpdateVal(vl, ni)
+	}
+	am.CalcAvg()
+	return am
+}
+
+// AvgGeM computes the average and max GeM stats, updated in MinusPhase
+func (ly *Layer) AvgGeM(ltime *Time) {
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.ActM = ly.AvgMaxVarByPool("ActM", pi)
+		pl.GeM = ly.AvgMaxVarByPool("GeM", pi)
+		pl.GiM = ly.AvgMaxVarByPool("GiM", pi)
+	}
+	lpl := &ly.Pools[0]
+	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
+	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
+}
+
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ltime *Time) {
-	ly.ActAvg.CaSpkPM.Init()
+	ly.ActAvg.CaSpkPM = ly.AvgMaxVarByPool("CaSpkP", 0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.ActAvg.CaSpkPM.UpdateVal(nrn.CaSpkP, ni)
 		nrn.ActM = nrn.ActInt
 		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
 			nrn.Ext = nrn.Targ
@@ -1677,24 +1450,12 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 			nrn.ActInt = ly.Act.Init.Act // reset for plus phase
 		}
 	}
-	ly.ActAvg.CaSpkPM.CalcAvg()
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		pl.ActM.Init()
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			pl.ActM.UpdateVal(nrn.ActM, ni)
-		}
-		pl.ActM.CalcAvg()
-	}
 	ly.AvgGeM(ltime)
 }
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ltime *Time) {
+	ly.ActAvg.CaSpkP = ly.AvgMaxVarByPool("CaSpkP", 0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1710,15 +1471,7 @@ func (ly *Layer) PlusPhase(ltime *Time) {
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		pl.ActP.Init()
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			pl.ActP.UpdateVal(nrn.ActP, ni)
-		}
-		pl.ActP.CalcAvg()
+		pl.ActP = ly.AvgMaxVarByPool("ActP", pi)
 	}
 	ly.AxonLay.CorSimFmActs()
 }

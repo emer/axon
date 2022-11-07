@@ -167,12 +167,6 @@ type AxonLayer interface {
 	// GInteg integrates conductances G over time (Ge, NMDA, etc)
 	GInteg(ltime *Time)
 
-	// AvgMaxGe computes the average and max Ge stats, used in inhibition.
-	AvgMaxGe(ltime *Time)
-
-	// InhibiFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-	InhibFmGeAct(ltime *Time)
-
 	// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
 	// and updates learning running-average activations from that Act
 	ActFmG(ltime *Time)

@@ -17,7 +17,6 @@ type Inhib struct {
 	FSi      float32 `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
 	SSi      float32 `desc:"slow spiking SST+ integration of FBs feedback spikes"`
 	SSf      float32 `desc:"slow spiking facilitation factor"`
-	FSd      float32 `desc:"fast spiking depression integrated over time"`
 	FSGi     float32 `desc:"overall fast-spiking inhibitory conductance"`
 	SSGi     float32 `desc:"overall slow-spiking inhibitory conductance"`
 	Gi       float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
@@ -44,7 +43,6 @@ func (fi *Inhib) Zero() {
 	fi.FSi = 0
 	fi.SSi = 0
 	fi.SSf = 0
-	fi.FSd = 0
 	fi.FSGi = 0
 	fi.SSGi = 0
 	fi.Gi = 0
@@ -59,7 +57,6 @@ func (fi *Inhib) Decay(decay float32) {
 	fi.FSi -= decay * fi.FSi
 	fi.SSi -= decay * fi.SSi
 	fi.SSf -= decay * fi.SSf
-	fi.FSd -= decay * fi.FSd
 	fi.FSGi -= decay * fi.FSGi
 	fi.SSGi -= decay * fi.SSGi
 	fi.Gi -= decay * fi.Gi

@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"github.com/emer/axon/fffb"
 	"github.com/emer/axon/fsfffb"
 	"github.com/goki/mat32"
 )
@@ -15,21 +14,17 @@ import (
 // This also includes other misc layer-level params such as expected average activation in the layer
 // which is used for Ge rescaling and potentially for adapting inhibition over time
 type InhibParams struct {
-	ActAvg   ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
-	Layer    fsfffb.Params   `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
-	Pool     fsfffb.Params   `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
-	OldLayer fffb.Params     `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
-	OldPool  fffb.Params     `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
-	Inhib    InhibMiscParams `view:"inline" desc:"misc inhibition computation parameters, including feedback activation "`
-	Topo     TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
+	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
+	Layer  fsfffb.Params   `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
+	Pool   fsfffb.Params   `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
+	Inhib  InhibMiscParams `view:"inline" desc:"misc inhibition computation parameters, including feedback activation "`
+	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
 }
 
 func (ip *InhibParams) Update() {
 	ip.ActAvg.Update()
 	ip.Layer.Update()
 	ip.Pool.Update()
-	ip.OldLayer.Update()
-	ip.OldPool.Update()
 	ip.Inhib.Update()
 	ip.Topo.Update()
 }
@@ -38,14 +33,10 @@ func (ip *InhibParams) Defaults() {
 	ip.ActAvg.Defaults()
 	ip.Layer.Defaults()
 	ip.Pool.Defaults()
-	ip.OldLayer.Defaults()
-	ip.OldPool.Defaults()
 	ip.Inhib.Defaults()
 	ip.Topo.Defaults()
 	ip.Layer.Gi = 1.1
 	ip.Pool.Gi = 1.1
-	ip.OldLayer.Gi = 1.1
-	ip.OldPool.Gi = 1.1
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -54,7 +45,6 @@ func (ip *InhibParams) Defaults() {
 // InhibMiscParams defines parameters for average activation value in pool
 // that drives feedback inhibition in the FFFB inhibition function.
 type InhibMiscParams struct {
-	Old    bool    `desc:"if true, use old inhibition function"`
 	AvgTau float32 `def:"30" desc:"time constant for integrating pool-level average activation driven by current instantaneous activation across the pool"`
 
 	AvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`

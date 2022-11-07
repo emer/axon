@@ -504,10 +504,12 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.SpikedAvgByPool(0))
+					am := ly.AvgMaxVarByPool("Spiked", 0)
+					ctx.SetFloat32(am.Avg)
 				}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.SpikedAvgByPool(0))
+					am := ly.AvgMaxVarByPool("Spiked", 0)
+					ctx.SetFloat32(am.Avg)
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {

@@ -30,12 +30,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.SSiTau":      "50",  // 50 > 40 -- try 40, 60 @ gi= 1.1?
 					"Layer.Inhib.Layer.FSd":         "0",   // 0.01 only tolerable
 					"Layer.Inhib.Layer.FSdTau":      "20",
-					"Layer.Inhib.Inhib.Old":         "false",
-					"Layer.Inhib.OldLayer.On":       "true",
-					"Layer.Inhib.OldLayer.Gi":       "1.0",
-					"Layer.Inhib.OldLayer.FF0":      "0.1",
-					"Layer.Inhib.OldLayer.FF":       "1.0",
-					"Layer.Inhib.OldLayer.FB":       "1.0",
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace

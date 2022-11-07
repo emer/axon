@@ -25,21 +25,17 @@ type Params struct {
 	SS     float32 `viewif:"On" min:"0" def:"30" desc:"multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1"`
 	SSfTau float32 `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
 	SSiTau float32 `viewif:"On" min:"0" def:"50" desc:"slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
-	FSd    float32 `viewif:"On" min:"0" def:"0" desc:"multiplier on depression of fast spiking -- multiplies time-integrated FSi value and resulting net is FSi * (1-FSd) where depression factor > 0"`
-	FSdTau float32 `viewif:"On" min:"0" def:"20" desc:"depression time constant for fast spiking (PV+) in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life.  FS gets weaker over time."`
 	FS0    float32 `viewif:"On" def:"0.1" desc:"fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi"`
 
 	FSDt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	SSfDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	SSiDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	FSdDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
 
 func (fb *Params) Update() {
 	fb.FSDt = 1 / fb.FSTau
 	fb.SSfDt = 1 / fb.SSfTau
 	fb.SSiDt = 1 / fb.SSiTau
-	fb.FSdDt = 1 / fb.FSdTau
 }
 
 func (fb *Params) Defaults() {
@@ -49,8 +45,6 @@ func (fb *Params) Defaults() {
 	fb.FSTau = 6
 	fb.SSfTau = 20
 	fb.SSiTau = 50
-	fb.FSdTau = 20
-	fb.FSd = 0.0
 	fb.FS0 = 0.1
 	fb.Update()
 }
@@ -60,22 +54,13 @@ func (fb *Params) FSiFmFFs(fsi *float32, ffs, fbs float32) {
 	*fsi += (ffs + fb.FB*fbs) - fb.FSDt**fsi // immediate up, slow down
 }
 
-// FSdFmFSi updates fast-spiking depression from FSi
-func (fb *Params) FSdFmFSi(fsd *float32, fsi float32) {
-	*fsd += fb.FSdDt * (fsi - *fsd)
-}
-
 // FS returns the current effective FS value based on fsi and fsd
-func (fb *Params) FS(fsi, gext, fsd float32) float32 {
+func (fb *Params) FS(fsi, gext float32) float32 {
 	fsi -= fb.FS0
 	if fsi < 0 {
 		fsi = 0
 	}
-	df := fb.FSd * fsd
-	if df > 1 {
-		df = 1
-	}
-	return (fsi + gext) * (1 - df)
+	return fsi + gext
 }
 
 // SSFmFBs updates slow-spiking inhibition from FBs
@@ -96,9 +81,8 @@ func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 		inh.Zero()
 		return
 	}
-	fb.FSdFmFSi(&inh.FSd, inh.FSi)
 	fb.FSiFmFFs(&inh.FSi, inh.FFs, inh.FBs)
-	inh.FSGi = fb.FS(inh.FSi, inh.GeExts, inh.FSd)
+	inh.FSGi = fb.FS(inh.FSi, inh.GeExts)
 
 	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
 	inh.SSGi = fb.SS * inh.SSi
