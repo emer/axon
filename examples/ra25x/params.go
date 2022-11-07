@@ -21,16 +21,16 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
-					"Layer.Inhib.Layer.Gi":          "1.5",
-					"Layer.Inhib.Layer.SS":          "30",
-					"Layer.Inhib.Layer.FF0":         "0.1",
-					"Layer.Inhib.Layer.FSTau":       "5.0",
-					"Layer.Inhib.Layer.SSfInc":      "1",
-					"Layer.Inhib.Layer.SSfdTau":     "20.0",
-					"Layer.Inhib.Layer.SSiTau":      "100.0",
-					"Layer.Inhib.Layer.FSd":         "0",
+					"Layer.Inhib.Layer.Gi":          "1.1",  // 1.1
+					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
+					"Layer.Inhib.Layer.FS0":         "0.1",
+					"Layer.Inhib.Layer.FSTau":       "6",
+					"Layer.Inhib.Layer.FB":          "0.2", // 0.2 > 0.1 > 0.5 > 1.0
+					"Layer.Inhib.Layer.SSfTau":      "20",  // 20 > 30  > 15
+					"Layer.Inhib.Layer.SSiTau":      "50",  // 50 > 40 -- try 40, 60 @ gi= 1.1?
+					"Layer.Inhib.Layer.FSd":         "0",   // 0.01 only tolerable
 					"Layer.Inhib.Layer.FSdTau":      "20",
-					"Layer.Inhib.Inhib.Old":         "true",
+					"Layer.Inhib.Inhib.Old":         "false",
 					"Layer.Inhib.OldLayer.On":       "true",
 					"Layer.Inhib.OldLayer.Gi":       "1.0",
 					"Layer.Inhib.OldLayer.FF0":      "0.1",
@@ -78,11 +78,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.2", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.Layer.Gi":          "0.7", // 0.9 >= 0.8 > 1.0 > 0.7
 					"Layer.Inhib.OldLayer.Gi":       "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94
+					"Layer.Act.Clamp.Ge":            "1",    //?  .6 > .5 v94
 					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
@@ -93,7 +93,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
 					"Prjn.SWt.Adapt.SubMean":      "1",
 					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Trace.NeuronCa":   "true",
+					"Prjn.Learn.Trace.NeuronCa":   "false",
 					"Prjn.Learn.Trace.Tau":        "1", // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
 					"Prjn.Learn.Trace.SubMean":    "0",
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals

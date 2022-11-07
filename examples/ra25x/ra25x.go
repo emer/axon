@@ -309,17 +309,19 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	// lrate schedule
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		switch trnEpc {
-		case 50:
-			mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			ss.Net.LrateSched(ss.Lr50) // 0.2
-		case 100:
-			mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			ss.Net.LrateSched(ss.Lr100) // 0.1
-		}
-	})
+	/*
+		man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
+			trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+			switch trnEpc {
+			case 50:
+				mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				ss.Net.LrateSched(ss.Lr50) // 0.2
+			case 100:
+				mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				ss.Net.LrateSched(ss.Lr100) // 0.1
+			}
+		})
+	*/
 
 	////////////////////////////////////////////
 	// GUI

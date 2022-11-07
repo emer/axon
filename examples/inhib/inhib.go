@@ -370,16 +370,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	ss.Logs.AddItem(&elog.Item{
-		Name:   "Layer0_Spikes",
-		Type:   etensor.FLOAT64,
-		FixMin: true,
-		Write: elog.WriteMap{
-			etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-				ly := ss.Net.LayerByName("Layer0").(axon.AxonLayer).AsAxon()
-				ctx.SetFloat32(ly.SpikeAvgByPool(0))
-			}}})
-	layers := ss.Net.LayersByClass("Hidden")
+	layers := ss.Net.LayersByClass("Input", "Hidden")
 	for _, lnm := range layers {
 		clnm := lnm
 		ss.Logs.AddItem(&elog.Item{

@@ -1204,10 +1204,9 @@ func (ly *Layer) GiFmSpikes(ltime *Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		geraw := ly.Act.Dt.GeDt * nrn.GeExt
-		ly.Pools[nrn.SubPool].Inhib.GeExtRaw += geraw // note: from previous cycle..
+		ly.Pools[nrn.SubPool].Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
 		if subPools {
-			lpl.Inhib.GeExtRaw += geraw
+			lpl.Inhib.GeExtRaw += nrn.GeExt
 		}
 	}
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
