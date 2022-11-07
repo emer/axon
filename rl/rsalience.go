@@ -81,7 +81,7 @@ func (ly *RSalienceLayer) MaxAbsRew() float32 {
 	return MaxAbsActFmLayers(ly.Network, ly.RewLayers)
 }
 
-func (ly *RSalienceLayer) ActFmG(ltime *axon.Time) {
+func (ly *RSalienceLayer) SpikeFmG(ctime *axon.Time) {
 	ract := ly.MaxAbsRew()
 	if ly.RewThr > 0 {
 		if ract > ly.RewThr {
@@ -99,7 +99,7 @@ func (ly *RSalienceLayer) ActFmG(ltime *axon.Time) {
 
 // CyclePost is called at end of Cycle
 // We use it to send ACh, which will then be active for the next cycle of processing.
-func (ly *RSalienceLayer) CyclePost(ltime *axon.Time) {
+func (ly *RSalienceLayer) CyclePost(ctime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.ACh = act
 	ly.SendACh.SendACh(ly.Network, act)

@@ -1117,44 +1117,36 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// TODO: future optimized version should look like this:
-
-/*
-// Cycle does one cycle of updating
-func (ly *Layer) Cycle(ltime *Time) {
-	// layer / prjn level computation
-	ly.AxonLay.GFmSpikesPrjns(ltime)   // could be run on all prjns in parallel
-	ly.AxonLay.GiFmSpikes(ltime) // could be run on all layers in parallel
-	// all neuron-level computation -- parallel over neurons:
-	ly.AxonLay.NeuronUpdt(ltime) // includes GFmSpike, ActFmG, SendSpike
-}
-*/
-
-// Cycle does one cycle of updating
-func (ly *Layer) Cycle(ltime *Time) {
-	ly.AxonLay.GFmSpikesPrjn(ltime) // prjn-level
-	ly.AxonLay.GiFmSpikes(ltime)    // layer level
-	ly.AxonLay.GInteg(ltime)
-	ly.AxonLay.ActFmG(ltime)
-	ly.AxonLay.PostAct(ltime)
-	ly.AxonLay.CyclePost(ltime)
-	ly.AxonLay.SendSpike(ltime) // prjn-level
+// Cycle does one cycle (msec) of updating
+func (ly *Layer) Cycle(ctime *Time) {
+	ly.AxonLay.GFmSpikesPrjn(ctime) // prjn-level
+	ly.AxonLay.GiFmSpikes(ctime)    // layer level
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.AxonLay.CycleNeuron(ni, nrn, ctime)
+	}
+	ly.AxonLay.CyclePost(ctime)
+	ly.AxonLay.SynCaPrjn(ctime)
 }
 
-// GFmSpikesPrjn calls GFmSpike on receiving projections
+// GFmSpikesPrjn calls GFmSpikes on receiving projections
 // to integrate conductances from Spikes
-func (ly *Layer) GFmSpikesPrjn(ltime *Time) {
+// Also updates Layer.Pool.Inhib spike values
+func (ly *Layer) GFmSpikesPrjn(ctime *Time) {
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).GFmSpike(ltime) // does Inhib.Pool Raw updates too
+		p.(AxonPrjn).GFmSpikes(ctime) // does Inhib.Pool Raw updates too
 	}
 }
 
 // GiFmSpikes integrates new inhibitory conductances from Spikes
 // at the layer and pool level
-func (ly *Layer) GiFmSpikes(ltime *Time) {
+func (ly *Layer) GiFmSpikes(ctime *Time) {
 	lpl := &ly.Pools[0]
 	subPools := (len(ly.Pools) > 1)
 	for ni := range ly.Neurons { // note: layer-level iterating across neurons
@@ -1172,11 +1164,11 @@ func (ly *Layer) GiFmSpikes(ltime *Time) {
 		lpl.Inhib.FFs = 0 // only use GeExt
 	}
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
-	ly.PoolGiFmSpikes(ltime)
+	ly.PoolGiFmSpikes(ctime)
 }
 
 // PoolGiFmSpikes computes inhibition Gi from Spikes within relevant Pools
-func (ly *Layer) PoolGiFmSpikes(ltime *Time) {
+func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 	np := len(ly.Pools)
 	if np == 1 {
 		return
@@ -1201,25 +1193,27 @@ func (ly *Layer) PoolGiFmSpikes(ltime *Time) {
 	}
 }
 
-// GInteg integrates conductances G over time (Ge, NMDA, etc)
-// purely neuron-level computatation
-func (ly *Layer) GInteg(ltime *Time) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
-		// note: can add extra values to GeRaw and GeSyn here
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
-		pl := &ly.Pools[nrn.SubPool]
-		nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
-	}
+// CycleNeuron does one cycle (msec) of updating at the neuron level
+func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
+	ly.AxonLay.GInteg(ni, nrn, ctime)
+	ly.AxonLay.SpikeFmG(ni, nrn, ctime)
+	ly.AxonLay.PostAct(ni, nrn, ctime)
+	ly.AxonLay.SendSpike(ni, nrn, ctime) // prjn-level
 }
 
-// GFmSpikeNeuron integrates G*Raw and G*Syn values for given neuron
+// GInteg integrates conductances G over time (Ge, NMDA, etc).
+// reads pool Gi values
+func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	// note: can add extra values to GeRaw and GeSyn here
+	ly.GFmRawSyn(ni, nrn, ctime)
+	pl := &ly.Pools[nrn.SubPool]
+	nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+}
+
+// GFmSpikeRaw integrates G*Raw and G*Syn values for given neuron
 // from the Prjn-level GSyn integrated values.
-func (ly *Layer) GFmSpikeNeuron(ltime *Time, ni int, nrn *Neuron) {
+func (ly *Layer) GFmSpikeRaw(ni int, nrn *Neuron, ctime *Time) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GeSyn = nrn.GeBase
@@ -1240,9 +1234,9 @@ func (ly *Layer) GFmSpikeNeuron(ltime *Time, ni int, nrn *Neuron) {
 	}
 }
 
-// GFmRawSynNeuron computes overall Ge and GiSyn conductances for neuron
+// GFmRawSyn computes overall Ge and GiSyn conductances for neuron
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
-func (ly *Layer) GFmRawSynNeuron(ltime *Time, ni int, nrn *Neuron) {
+func (ly *Layer) GFmRawSyn(ni int, nrn *Neuron, ctime *Time) {
 	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
@@ -1251,116 +1245,58 @@ func (ly *Layer) GFmRawSynNeuron(ltime *Time, ni int, nrn *Neuron) {
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
 
-/* todo: fixme below
-
-// TopoGi computes topographic Gi inhibition
-// todo: this does not work for 2D layers, and in general needs more testing
-func (ly *Layer) TopoGi(ltime *Time) {
-	if !ly.Inhib.Topo.On {
-		return
-	}
-	pyn := ly.Shp.Dim(0)
-	pxn := ly.Shp.Dim(1)
-	wd := ly.Inhib.Topo.Width
-	wrap := ly.Inhib.Topo.Wrap
-
-	ssq := ly.Inhib.Topo.Sigma * float32(wd)
-	ssq *= ssq
-	ff0 := ly.Inhib.Topo.FF0
-
-	l4d := ly.Is4D()
-
-	var clip bool
-	for py := 0; py < pyn; py++ {
-		for px := 0; px < pxn; px++ {
-			var tge, tact, twt float32
-			for iy := -wd; iy <= wd; iy++ {
-				ty := py + iy
-				if ty, clip = edge.Edge(ty, pyn, wrap); clip {
-					continue
-				}
-				for ix := -wd; ix <= wd; ix++ {
-					tx := px + ix
-					if tx, clip = edge.Edge(tx, pxn, wrap); clip {
-						continue
-					}
-					ds := float32(iy*iy + ix*ix)
-					df := mat32.Sqrt(ds)
-					di := int(mat32.Round(df))
-					if di > wd {
-						continue
-					}
-					wt := mat32.FastExp(-0.5 * ds / ssq)
-					twt += wt
-					ti := ty*pxn + tx
-					if l4d {
-						pl := &ly.Pools[ti+1]
-						tge += wt * pl.OldInhib.Ge.Avg
-						tact += wt * pl.OldInhib.Act.Avg
-					} else {
-						nrn := &ly.Neurons[ti]
-						tge += wt * nrn.Ge
-						tact += wt * nrn.Act
-					}
-				}
-			}
-
-			gi := ly.Inhib.Topo.GiFmGeAct(tge, tact, ff0*twt)
-			pi := py*pxn + px
-			if l4d {
-				pl := &ly.Pools[pi+1]
-				pl.OldInhib.Gi += gi
-				// } else {
-				// 	nrn := &ly.Neurons[pi]
-				// 	nrn.GiSelf = gi
-			}
-		}
-	}
-}
-*/
-
-// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
-// and updates learning running-average activations from that Act
-func (ly *Layer) ActFmG(ltime *Time) {
+// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
+func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 	intdt := ly.Act.Dt.IntDt
-	if ltime.PlusPhase {
+	if ctime.PlusPhase {
 		intdt *= 3.0
 	}
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
+	ly.Act.VmFmG(nrn)
+	ly.Act.SpikeFmG(nrn)
+	ly.Learn.CaFmSpike(nrn)
+	if ctime.Cycle >= ly.Act.Dt.MaxCycStart {
+		nrn.SpkMaxCa += ly.Learn.CaSpk.Dt.PDt * (nrn.CaSpkM - nrn.SpkMaxCa)
+		if nrn.SpkMaxCa > nrn.SpkMax {
+			nrn.SpkMax = nrn.SpkMaxCa
 		}
-		ly.Act.VmFmG(nrn)
-		ly.Act.ActFmG(nrn)
-		ly.Learn.CaFmSpike(nrn)
-		if ltime.Cycle >= ly.Act.Dt.MaxCycStart {
-			nrn.SpkMaxCa += ly.Learn.CaSpk.Dt.PDt * (nrn.CaSpkM - nrn.SpkMaxCa)
-			if nrn.SpkMaxCa > nrn.SpkMax {
-				nrn.SpkMax = nrn.SpkMaxCa
-			}
-		}
-		nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-		if !ltime.PlusPhase {
-			nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
-			nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
-		}
-		// note: this is here because it depends on Gi
-		nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
-		nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
-		if ly.Act.KNa.On {
-			nrn.Gk += nrn.GgabaB // Gk was set by KNa
-		} else {
-			nrn.Gk = nrn.GgabaB
-		}
+	}
+	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
+	if !ctime.PlusPhase {
+		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
+		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
+	}
+	// note: this is here because it depends on Gi
+	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
+	if ly.Act.KNa.On {
+		nrn.Gk += nrn.GgabaB // Gk was set by KNa
+	} else {
+		nrn.Gk = nrn.GgabaB
 	}
 }
 
-// PostAct does updates after activation (spiking) updated for all neurons,
-// and synaptic-level calcium updates depending on spiking, NMDA
-func (ly *Layer) PostAct(ltime *Time) {
-	if !ltime.Testing {
-		ly.AxonLay.SynCa(ltime)
+// PostAct does updates at neuron level after activation (spiking)
+// updated for all neurons.
+// It is a hook for specialized algorithms -- empty at Axon base level
+func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
+}
+
+// SendSpike sends spike to receivers -- last step in Cycle, integrated
+// the next time around.
+// Writes to sending projections for this neuron.
+func (ly *Layer) SendSpike(ni int, nrn *Neuron, ctime *Time) {
+	if nrn.Spike == 0 {
+		return
+	}
+	ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0 // note: this is immediate..
+	if nrn.SubPool > 0 {
+		ly.Pools[0].Inhib.FBsRaw += 1.0
+	}
+	for _, sp := range ly.SndPrjns {
+		if sp.IsOff() {
+			continue
+		}
+		sp.(AxonPrjn).SendSpike(ni)
 	}
 }
 
@@ -1369,27 +1305,29 @@ func (ly *Layer) PostAct(ltime *Time) {
 // This is the hook for specialized algorithms (deep, hip, bg etc)
 // to do something special after Spike / Act is finally computed.
 // For example, sending a neuromodulatory signal such as dopamine.
-func (ly *Layer) CyclePost(ltime *Time) {
+func (ly *Layer) CyclePost(ctime *Time) {
 }
 
-// SendSpike sends spike to receivers -- last step in Cycle, integrated
-// the next time around.
-func (ly *Layer) SendSpike(ltime *Time) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() || nrn.Spike == 0 {
+// SynCaPrjn does cycle-level synaptic Ca updating for the Kinase learning mechanisms.
+// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
+// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
+// iterates over sending projections then receiving projections -- can be
+// computed at the projection level entirely.
+func (ly *Layer) SynCaPrjn(ctime *Time) {
+	if ctime.Testing {
+		return
+	}
+	for _, p := range ly.SndPrjns {
+		if p.IsOff() {
 			continue
 		}
-		ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0 // note: this is immediate..
-		if nrn.SubPool > 0 {
-			ly.Pools[0].Inhib.FBsRaw += 1.0
+		p.(AxonPrjn).SendSynCa(ctime)
+	}
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
 		}
-		for _, sp := range ly.SndPrjns {
-			if sp.IsOff() {
-				continue
-			}
-			sp.(AxonPrjn).SendSpike(ni)
-		}
+		p.(AxonPrjn).RecvSynCa(ctime)
 	}
 }
 
@@ -1421,7 +1359,7 @@ func (ly *Layer) AvgMaxVarByPool(varNm string, poolIdx int) minmax.AvgMax32 {
 }
 
 // AvgGeM computes the average and max GeM stats, updated in MinusPhase
-func (ly *Layer) AvgGeM(ltime *Time) {
+func (ly *Layer) AvgGeM(ctime *Time) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.ActM = ly.AvgMaxVarByPool("ActM", pi)
@@ -1434,7 +1372,7 @@ func (ly *Layer) AvgGeM(ltime *Time) {
 }
 
 // MinusPhase does updating at end of the minus phase
-func (ly *Layer) MinusPhase(ltime *Time) {
+func (ly *Layer) MinusPhase(ctime *Time) {
 	ly.ActAvg.CaSpkPM = ly.AvgMaxVarByPool("CaSpkP", 0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1450,11 +1388,11 @@ func (ly *Layer) MinusPhase(ltime *Time) {
 			nrn.ActInt = ly.Act.Init.Act // reset for plus phase
 		}
 	}
-	ly.AvgGeM(ltime)
+	ly.AvgGeM(ctime)
 }
 
 // PlusPhase does updating at end of the plus phase
-func (ly *Layer) PlusPhase(ltime *Time) {
+func (ly *Layer) PlusPhase(ctime *Time) {
 	ly.ActAvg.CaSpkP = ly.AvgMaxVarByPool("CaSpkP", 0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1512,7 +1450,7 @@ func (ly *Layer) ClearTargExt() {
 }
 
 // SpkSt1 saves current activation state in SpkSt1 variables (using CaP)
-func (ly *Layer) SpkSt1(ltime *Time) {
+func (ly *Layer) SpkSt1(ctime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1523,7 +1461,7 @@ func (ly *Layer) SpkSt1(ltime *Time) {
 }
 
 // SpkSt2 saves current activation state in SpkSt2 variables (using CaP)
-func (ly *Layer) SpkSt2(ltime *Time) {
+func (ly *Layer) SpkSt2(ctime *Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1684,74 +1622,56 @@ func (ly *Layer) TrgAvgFmD() {
 	}
 }
 
-// SynCa does cycle-level synaptic Ca updating for the Kinase learning mechanisms.
-// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
-// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-func (ly *Layer) SynCa(ltime *Time) {
-	for _, p := range ly.SndPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).SendSynCa(ltime)
-	}
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).RecvSynCa(ltime)
-	}
-}
-
 // DWt computes the weight change (learning).
 // calls DWt method on sending projections
-func (ly *Layer) DWt(ltime *Time) {
+func (ly *Layer) DWt(ctime *Time) {
 	ly.DTrgAvgFmErr()
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).DWt(ltime)
+		p.(AxonPrjn).DWt(ctime)
 	}
 }
 
 // DWtSubMean does mean subtraction for projections requiring it.
 // calls DWtSubMean on the recv projections
-func (ly *Layer) DWtSubMean(ltime *Time) {
+func (ly *Layer) DWtSubMean(ctime *Time) {
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).DWtSubMean(ltime)
+		p.(AxonPrjn).DWtSubMean(ctime)
 	}
 }
 
 // WtFmDWt updates the weights from delta-weight changes
 // calls WtFmDWt on the sending projections
-func (ly *Layer) WtFmDWt(ltime *Time) {
+func (ly *Layer) WtFmDWt(ctime *Time) {
 	ly.TrgAvgFmD()
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).WtFmDWt(ltime)
+		p.(AxonPrjn).WtFmDWt(ctime)
 	}
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // and adapting inhibition
-func (ly *Layer) SlowAdapt(ltime *Time) {
-	ly.AdaptInhib(ltime)
+func (ly *Layer) SlowAdapt(ctime *Time) {
+	ly.AdaptInhib(ctime)
 	ly.SynScale()
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).SlowAdapt(ltime)
+		p.(AxonPrjn).SlowAdapt(ctime)
 	}
 }
 
 // AdaptInhib adapts inhibition
-func (ly *Layer) AdaptInhib(ltime *Time) {
+func (ly *Layer) AdaptInhib(ctime *Time) {
 	if !ly.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
 		return
 	}
@@ -1809,12 +1729,12 @@ func (ly *Layer) SynScale() {
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
-func (ly *Layer) SynFail(ltime *Time) {
+func (ly *Layer) SynFail(ctime *Time) {
 	for _, p := range ly.SndPrjns {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).SynFail(ltime)
+		p.(AxonPrjn).SynFail(ctime)
 	}
 }
 

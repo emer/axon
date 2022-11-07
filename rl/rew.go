@@ -42,8 +42,8 @@ func SetNeuronExtPosNeg(nrn *axon.Neuron, ni int, val float32) {
 	}
 }
 
-func (ly *RewLayer) GFmSpike(ltime *axon.Time) {
-	ly.GFmSpikePrjn(ltime)
+func (ly *RewLayer) GFmSpike(ctime *axon.Time) {
+	ly.GFmSpikePrjn(ctime)
 	var ext0 float32
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -56,16 +56,16 @@ func (ly *RewLayer) GFmSpike(ltime *axon.Time) {
 			ext0 = nrn.Ext
 		}
 		SetNeuronExtPosNeg(nrn, ni, ext0)
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		ly.GFmSpikeNeuron(ctime, ni, nrn)
+		ly.GFmRawSynNeuron(ctime, ni, nrn)
 		nrn.Ext = extOrig
 	}
 }
 
-// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
+// SpikeFmG computes rate-code activation from Ge, Gi, Gl conductances
 // and updates learning running-average activations from that Act
-func (ly *RewLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
+func (ly *RewLayer) SpikeFmG(ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ctime)
 	var ext0 float32
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]

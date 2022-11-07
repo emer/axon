@@ -66,21 +66,21 @@ func (pj *MatrixPrjn) InitWts() {
 	pj.ClearTrace()
 }
 
-func (pj *MatrixPrjn) DWt(ltime *axon.Time) {
+func (pj *MatrixPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	rlay := pj.Recv.(*MatrixLayer)
 	if len(rlay.USLayers) > 0 {
-		pj.DWtUS(ltime)
+		pj.DWtUS(ctime)
 	} else {
-		pj.DWtNoUS(ltime)
+		pj.DWtNoUS(ctime)
 	}
 }
 
 // DWtNoUS computes the weight change (learning) -- on sending projections.
 // for non-USActive special case
-func (pj *MatrixPrjn) DWtNoUS(ltime *axon.Time) {
+func (pj *MatrixPrjn) DWtNoUS(ctime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*MatrixLayer)
 
@@ -134,7 +134,7 @@ func (pj *MatrixPrjn) DWtNoUS(ltime *axon.Time) {
 
 // DWtUS computes the weight change (learning) -- on sending projections.
 // case with USActive flag available to condition learning on US.
-func (pj *MatrixPrjn) DWtUS(ltime *axon.Time) {
+func (pj *MatrixPrjn) DWtUS(ctime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(*MatrixLayer)
 

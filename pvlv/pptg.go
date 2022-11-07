@@ -74,15 +74,15 @@ func (ly *PPTgLayer) NewState() {
 	ly.Layer.NewState()
 }
 
-func (ly *PPTgLayer) GFmSpike(ltime *axon.Time) {
-	ly.GFmSpikePrjn(ltime)
+func (ly *PPTgLayer) GFmSpike(ctime *axon.Time) {
+	ly.GFmSpikePrjn(ctime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		ly.GFmSpikeNeuron(ctime, ni, nrn)
+		ly.GFmRawSynNeuron(ctime, ni, nrn)
 		pnr := &ly.PPTgNeurs[ni]
 		if nrn.GeSyn > pnr.GeSynMax {
 			pnr.GeSynMax = nrn.GeSyn
@@ -90,7 +90,7 @@ func (ly *PPTgLayer) GFmSpike(ltime *axon.Time) {
 	}
 }
 
-func (ly *PPTgLayer) GFmRawSynNeuron(ltime *axon.Time, ni int, nrn *axon.Neuron) {
+func (ly *PPTgLayer) GFmRawSynNeuron(ctime *axon.Time, ni int, nrn *axon.Neuron) {
 	pnr := &ly.PPTgNeurs[ni]
 	geSyn := (nrn.GeSyn - pnr.GeSynPrev)
 	if geSyn < 0 {
@@ -110,8 +110,8 @@ func (ly *PPTgLayer) GFmRawSynNeuron(ltime *axon.Time, ni int, nrn *axon.Neuron)
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
 
-func (ly *PPTgLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
+func (ly *PPTgLayer) SpikeFmG(ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ctime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

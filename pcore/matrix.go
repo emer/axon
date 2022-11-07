@@ -190,7 +190,7 @@ func (ly *MatrixLayer) DecayState(decay, glong float32) {
 }
 
 // USActiveFmUS updates the USActive flag based on USLayers state
-func (ly *MatrixLayer) USActiveFmUS(ltime *axon.Time) {
+func (ly *MatrixLayer) USActiveFmUS(ctime *axon.Time) {
 	ly.USActive = false
 	if len(ly.USLayers) == 0 {
 		return
@@ -203,7 +203,7 @@ func (ly *MatrixLayer) USActiveFmUS(ltime *axon.Time) {
 
 // GiFmACh sets inhibitory conductance from ACh value, where ACh is 0 at baseline
 // and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
-func (ly *MatrixLayer) GiFmACh(ltime *axon.Time) {
+func (ly *MatrixLayer) GiFmACh(ctime *axon.Time) {
 	gi := ly.Matrix.GiFmACh(ly.ACh)
 	if gi == 0 {
 		return
@@ -217,19 +217,19 @@ func (ly *MatrixLayer) GiFmACh(ltime *axon.Time) {
 	}
 }
 
-func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
+func (ly *MatrixLayer) GFmSpike(ctime *axon.Time) {
 	if !ly.HasMod {
-		ly.Layer.GFmSpike(ltime)
-		ly.GiFmACh(ltime)
+		ly.Layer.GFmSpike(ctime)
+		ly.GiFmACh(ctime)
 		return
 	}
-	ly.GFmSpikePrjn(ltime)
+	ly.GFmSpikePrjn(ctime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		ly.GFmSpikeNeuron(ctime, ni, nrn)
 		var mod float32
 		for _, p := range ly.RcvPrjns {
 			pj, ok := p.(*MatrixPrjn)
@@ -244,9 +244,9 @@ func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
 		ly.Mods[ni] = mod
 		nrn.GeRaw *= mod
 		nrn.GeSyn *= mod
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		ly.GFmRawSynNeuron(ctime, ni, nrn)
 	}
-	ly.GiFmACh(ltime)
+	ly.GiFmACh(ctime)
 }
 
 // todo: replace with ki/bools.ToFloat32
@@ -271,9 +271,9 @@ func (ly *MatrixLayer) AnyGated() bool {
 
 // PlusPhase does updating at end of the plus phase
 // calls DAActLrn
-func (ly *MatrixLayer) PlusPhase(ltime *axon.Time) {
-	ly.Layer.PlusPhase(ltime)
-	ly.USActiveFmUS(ltime)
+func (ly *MatrixLayer) PlusPhase(ctime *axon.Time) {
+	ly.Layer.PlusPhase(ctime)
+	ly.USActiveFmUS(ctime)
 	ly.GatedFmAvgSpk()
 	ly.DAActLrn()
 

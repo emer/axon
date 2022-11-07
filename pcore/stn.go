@@ -148,8 +148,8 @@ func (ly *STNLayer) NewState() {
 	}
 }
 
-func (ly *STNLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
+func (ly *STNLayer) SpikeFmG(ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ctime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

@@ -277,7 +277,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	nrn.Gi += nrn.GgabaB
 
 	ac.VmFmG(nrn)
-	ac.ActFmG(nrn)
+	ac.SpikeFmG(nrn)
 }
 
 // Stop tells the sim to stop running

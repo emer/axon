@@ -92,14 +92,14 @@ func (pj *CHLPrjn) UpdateParams() {
 
 // DWt computes the weight change (learning) -- on sending projections
 // CHL version supported if On
-func (pj *CHLPrjn) DWt(ltime *axon.Time) {
+func (pj *CHLPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	if pj.CHL.On {
-		pj.DWtCHL(ltime)
+		pj.DWtCHL(ctime)
 	} else {
-		pj.Prjn.DWt(ltime)
+		pj.Prjn.DWt(ctime)
 	}
 }
 
@@ -112,7 +112,7 @@ func (pj *CHLPrjn) SAvgCor(slay *axon.Layer) float32 {
 }
 
 // DWtCHL computes the weight change (learning) for CHL
-func (pj *CHLPrjn) DWtCHL(ltime *axon.Time) {
+func (pj *CHLPrjn) DWtCHL(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}

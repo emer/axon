@@ -79,7 +79,7 @@ func (ly *BLALayer) Build() error {
 }
 
 // USActiveFmUS updates the USActive flag based on USLayers state
-func (ly *BLALayer) USActiveFmUS(ltime *axon.Time) {
+func (ly *BLALayer) USActiveFmUS(ctime *axon.Time) {
 	ly.USActive = false
 	if len(ly.USLayers) == 0 {
 		return
@@ -90,25 +90,25 @@ func (ly *BLALayer) USActiveFmUS(ltime *axon.Time) {
 	}
 }
 
-func (ly *BLALayer) GFmSpike(ltime *axon.Time) {
-	ly.GFmSpikePrjn(ltime)
+func (ly *BLALayer) GFmSpike(ctime *axon.Time) {
+	ly.GFmSpikePrjn(ctime)
 	da := ly.DaMod.Gain(ly.DA)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		ly.GFmSpikeNeuron(ctime, ni, nrn)
 		daEff := da * nrn.CaSpkM // da effect interacts with spiking
 		nrn.GeRaw += daEff
 		nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		ly.GFmRawSynNeuron(ctime, ni, nrn)
 	}
 }
 
-func (ly *BLALayer) PlusPhase(ltime *axon.Time) {
-	ly.Layer.PlusPhase(ltime)
-	ly.USActiveFmUS(ltime)
+func (ly *BLALayer) PlusPhase(ctime *axon.Time) {
+	ly.Layer.PlusPhase(ctime)
+	ly.USActiveFmUS(ctime)
 	lrmod := ly.BLA.NoDALrate + mat32.Abs(ly.DA)
 	if !ly.USActive {
 		lrmod *= ly.BLA.NoUSLrate
@@ -152,16 +152,16 @@ func (pj *BLAPrjn) Defaults() {
 	pj.Learn.Trace.Update()
 }
 
-func (pj *BLAPrjn) SendSynCa(ltime *axon.Time) {
+func (pj *BLAPrjn) SendSynCa(ctime *axon.Time) {
 	return
 }
 
-func (pj *BLAPrjn) RecvSynCa(ltime *axon.Time) {
+func (pj *BLAPrjn) RecvSynCa(ctime *axon.Time) {
 	return
 }
 
 // DWt computes the weight change (learning) for BLA projections
-func (pj *BLAPrjn) DWt(ltime *axon.Time) {
+func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
@@ -198,7 +198,7 @@ func (pj *BLAPrjn) DWt(ltime *axon.Time) {
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-func (pj *BLAPrjn) WtFmDWt(ltime *axon.Time) {
+func (pj *BLAPrjn) WtFmDWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}

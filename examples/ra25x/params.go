@@ -25,11 +25,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FS0":         "0.1",
 					"Layer.Inhib.Layer.FSTau":       "6",
-					"Layer.Inhib.Layer.FB":          "0.5", // 0.5 > 0.2 > 0.1 > 1.0
-					"Layer.Inhib.Layer.SSfTau":      "20",  // 20 > 30  > 15
-					"Layer.Inhib.Layer.SSiTau":      "50",  // 50 > 40 -- try 40, 60 @ gi= 1.1?
-					"Layer.Inhib.Layer.FSd":         "0",   // 0.01 only tolerable
-					"Layer.Inhib.Layer.FSdTau":      "20",
+					"Layer.Inhib.Layer.FB":          "0.5",  // 0.5 > 0.2 > 0.1 > 1.0
+					"Layer.Inhib.Layer.SSfTau":      "20",   // 20 > 30  > 15
+					"Layer.Inhib.Layer.SSiTau":      "50",   // 50 > 40 -- try 40, 60 @ gi= 1.1?
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
@@ -73,7 +71,6 @@ var ParamSets = params.Sets{
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > 0.8
-					"Layer.Inhib.OldLayer.Gi":       "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 1.0

@@ -709,9 +709,9 @@ func (pj *Prjn) SendSpike(si int) {
 	}
 }
 
-// GFmSpike increments synaptic conductances from Spikes
-// including pooled aggregation of spikes
-func (pj *Prjn) GFmSpike(ltime *Time) {
+// GFmSpikes increments synaptic conductances from Spikes
+// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
+func (pj *Prjn) GFmSpikes(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Com.Delay
 	sz := del + 1
@@ -757,12 +757,12 @@ func (pj *Prjn) GFmSpike(ltime *Time) {
 // SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
-func (pj *Prjn) SendSynCa(ltime *Time) {
+func (pj *Prjn) SendSynCa(ctime *Time) {
 	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
 	}
 	kp := &pj.Learn.KinaseCa
-	ctime := int32(ltime.CycleTot)
+	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := slay.Learn.CaSpk.SynSpkG
@@ -787,11 +787,11 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 			sy := &syns[ci]
 			// todo: use atomic?
 			supt := sy.CaUpT
-			if supt == ctime { // already updated in sender pass
+			if supt == cycTot { // already updated in sender pass
 				continue
 			}
-			sy.CaUpT = ctime
-			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
+			sy.CaUpT = cycTot
+			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
 			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
@@ -801,12 +801,12 @@ func (pj *Prjn) SendSynCa(ltime *Time) {
 // RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
-func (pj *Prjn) RecvSynCa(ltime *Time) {
+func (pj *Prjn) RecvSynCa(ctime *Time) {
 	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
 	}
 	kp := &pj.Learn.KinaseCa
-	ctime := int32(ltime.CycleTot)
+	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := slay.Learn.CaSpk.SynSpkG
@@ -831,11 +831,11 @@ func (pj *Prjn) RecvSynCa(ltime *Time) {
 			sy := &pj.Syns[rsi]
 			// todo: use atomic
 			supt := sy.CaUpT
-			if supt == ctime { // already updated in sender pass
+			if supt == cycTot { // already updated in sender pass
 				continue
 			}
-			sy.CaUpT = ctime
-			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(ctime-1, supt, sy.CaM, sy.CaP, sy.CaD)
+			sy.CaUpT = cycTot
+			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
 			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
@@ -846,22 +846,22 @@ func (pj *Prjn) RecvSynCa(ltime *Time) {
 //  Learn methods
 
 // DWt computes the weight change (learning) -- on sending projections
-func (pj *Prjn) DWt(ltime *Time) {
+func (pj *Prjn) DWt(ctime *Time) {
 	if !pj.Learn.Learn {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
 		if pj.Learn.Trace.NeuronCa {
-			pj.DWtNeurSpkTheta(ltime)
+			pj.DWtNeurSpkTheta(ctime)
 		} else {
-			pj.DWtSynSpkTheta(ltime)
+			pj.DWtSynSpkTheta(ctime)
 		}
 	} else {
 		if pj.Learn.Trace.NeuronCa {
-			pj.DWtTraceNeurSpkTheta(ltime)
+			pj.DWtTraceNeurSpkTheta(ctime)
 		} else {
-			pj.DWtTraceSynSpkTheta(ltime)
+			pj.DWtTraceSynSpkTheta(ctime)
 		}
 	}
 }
@@ -869,11 +869,11 @@ func (pj *Prjn) DWt(ltime *Time) {
 // DWtTraceSynSpkTheta computes the weight change (learning) based on
 // synaptically-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Trace version.
-func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
+func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ctime := int32(ltime.CycleTot)
+	cycTot := int32(ctime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
@@ -886,9 +886,9 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, _, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                      // caD reflects entire window
-			if sy.Wt == 0 {                                                // failed con, no learn
+			_, _, caD := kp.CurCa(cycTot, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                       // caD reflects entire window
+			if sy.Wt == 0 {                                                 // failed con, no learn
 				continue
 			}
 			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
@@ -907,7 +907,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ltime *Time) {
 // DWtTraceNeurSpkTheta computes the weight change (learning) based on
 // separate neurally-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Trace version.
-func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
+func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -943,11 +943,11 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ltime *Time) {
 // DWtSynSpkTheta computes the weight change (learning) based on
 // synaptically-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Non-Trace version for target layers.
-func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
+func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ctime := int32(ltime.CycleTot)
+	cycTot := int32(ctime.CycleTot)
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
@@ -959,8 +959,8 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			if sy.Wt == 0 {                                                  // failed con, no learn
+			_, caP, caD := kp.CurCa(cycTot, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			if sy.Wt == 0 {                                                   // failed con, no learn
 				continue
 			}
 			err := caP - caD
@@ -978,7 +978,7 @@ func (pj *Prjn) DWtSynSpkTheta(ltime *Time) {
 // DWtNeurSpkTheta computes the weight change (learning) based on
 // separate neurally-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  non-Trace version for Target layers.
-func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
+func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	lr := pj.Learn.Lrate.Eff
@@ -1009,7 +1009,7 @@ func (pj *Prjn) DWtNeurSpkTheta(ltime *Time) {
 
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 // This is called on *receiving* projections, prior to WtFmDwt.
-func (pj *Prjn) DWtSubMean(ltime *Time) {
+func (pj *Prjn) DWtSubMean(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	sm := pj.Learn.Trace.SubMean
 	if sm == 0 || rlay.AxonLay.IsTarget() {
@@ -1046,7 +1046,7 @@ func (pj *Prjn) DWtSubMean(ltime *Time) {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes.
 // called on the *sending* projections.
-func (pj *Prjn) WtFmDWt(ltime *Time) {
+func (pj *Prjn) WtFmDWt(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		nc := int(pj.SConN[si])
@@ -1062,7 +1062,7 @@ func (pj *Prjn) WtFmDWt(ltime *Time) {
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
-func (pj *Prjn) SlowAdapt(ltime *Time) {
+func (pj *Prjn) SlowAdapt(ctime *Time) {
 	pj.SWtFmWt()
 	pj.SynScale()
 }
@@ -1160,7 +1160,7 @@ func (pj *Prjn) SynScale() {
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
-func (pj *Prjn) SynFail(ltime *Time) {
+func (pj *Prjn) SynFail(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		nc := int(pj.SConN[si])

@@ -77,22 +77,22 @@ func (ly *PulvLayer) IsTarget() bool {
 // Drivers
 
 // GFmSpike integrates new synaptic conductances from updated Spiking inputs
-func (ly *PulvLayer) GFmSpike(ltime *axon.Time) {
-	ly.GFmSpikePrjn(ltime)
-	if ly.Pulv.DriversOff || !ltime.PlusPhase {
+func (ly *PulvLayer) GFmSpike(ctime *axon.Time) {
+	ly.GFmSpikePrjn(ctime)
+	if ly.Pulv.DriversOff || !ctime.PlusPhase {
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			ly.GFmSpikeNeuron(ltime, ni, nrn)
+			ly.GFmSpikeNeuron(ctime, ni, nrn)
 			// note: can add extra values to GeRaw and GeSyn here
-			ly.GFmRawSynNeuron(ltime, ni, nrn)
+			ly.GFmRawSynNeuron(ctime, ni, nrn)
 		}
 		return
 	}
 	// for plus phase from drivers:
-	ly.GeFmDrivers(ltime)
+	ly.GeFmDrivers(ctime)
 }
 
 // DriverLayer returns the driver layer for given Driver
@@ -118,7 +118,7 @@ func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 }
 
 // GeFmDrivers computes excitatory conductance from driver neurons
-func (ly *PulvLayer) GeFmDrivers(ltime *axon.Time) {
+func (ly *PulvLayer) GeFmDrivers(ctime *axon.Time) {
 	dly, err := ly.DriverLayer(ly.Driver)
 	if err != nil {
 		return
@@ -134,9 +134,9 @@ func (ly *PulvLayer) GeFmDrivers(ltime *axon.Time) {
 		}
 		drvAct := DriveAct(ni, dly, sly, issuper)
 		drvGe := ly.Pulv.DriveGe(drvAct)
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
+		ly.GFmSpikeNeuron(ctime, ni, nrn)
 		nrn.GeRaw = nonDriverPct*nrn.GeRaw + drvGe
 		nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Act.Dt.GeSynFmRawSteady(drvGe)
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		ly.GFmRawSynNeuron(ctime, ni, nrn)
 	}
 }

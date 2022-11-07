@@ -92,8 +92,8 @@ func (ly *ClampDaLayer) Build() error {
 	return err
 }
 
-func (ly *ClampDaLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
+func (ly *ClampDaLayer) SpikeFmG(ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ctime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -106,7 +106,7 @@ func (ly *ClampDaLayer) ActFmG(ltime *axon.Time) {
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *ClampDaLayer) CyclePost(ltime *axon.Time) {
+func (ly *ClampDaLayer) CyclePost(ctime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)

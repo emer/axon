@@ -115,8 +115,8 @@ func (nt *Network) NewState() {
 // method through the AxonNetwork interface, thereby ensuring any specialized
 // algorithm-specific version is called as needed (in general, strongly prefer
 // updating the Layer specific version).
-func (nt *Network) Cycle(ltime *Time) {
-	nt.EmerNet.(AxonNetwork).CycleImpl(ltime)
+func (nt *Network) Cycle(ctime *Time) {
+	nt.EmerNet.(AxonNetwork).CycleImpl(ctime)
 }
 
 // Cycle handles entire update for one cycle (msec) of neuron activity state,
@@ -128,18 +128,18 @@ func (nt *Network) Cycle(ltime *Time) {
 // * Average and Max Act stats
 // * CyclePost: main hook for specialized algorithm-specific code (deep, hip, bg etc)
 // * Send spikes
-func (nt *Network) CycleImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.Cycle(ltime) }, "Cycle")
+func (nt *Network) CycleImpl(ctime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.Cycle(ctime) }, "Cycle")
 }
 
 // MinusPhase does updating after end of minus phase
-func (nt *Network) MinusPhase(ltime *Time) {
-	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ltime)
+func (nt *Network) MinusPhase(ctime *Time) {
+	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctime)
 }
 
 // PlusPhase does updating after end of plus phase
-func (nt *Network) PlusPhase(ltime *Time) {
-	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ltime)
+func (nt *Network) PlusPhase(ctime *Time) {
+	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctime)
 }
 
 // TargToExt sets external input Ext from target values Targ
@@ -166,34 +166,34 @@ func (nt *Network) ClearTargExt() {
 }
 
 // SpkSt1 saves current acts into SpkSt1 (using SpkCaP)
-func (nt *Network) SpkSt1(ltime *Time) {
+func (nt *Network) SpkSt1(ctime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt1(ltime)
+		ly.(AxonLayer).SpkSt1(ctime)
 	}
 }
 
 // SpkSt2 saves current acts into SpkSt2 (using SpkCaP)
-func (nt *Network) SpkSt2(ltime *Time) {
+func (nt *Network) SpkSt2(ctime *Time) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt2(ltime)
+		ly.(AxonLayer).SpkSt2(ctime)
 	}
 }
 
 // DWt computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWt(ltime *Time) {
-	nt.EmerNet.(AxonNetwork).DWtImpl(ltime)
+func (nt *Network) DWt(ctime *Time) {
+	nt.EmerNet.(AxonNetwork).DWtImpl(ctime)
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
 // Also calls SynScale every Interval times
-func (nt *Network) WtFmDWt(ltime *Time) {
-	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ltime)
+func (nt *Network) WtFmDWt(ctime *Time) {
+	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ctime)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -339,43 +339,43 @@ func (nt *Network) NewStateImpl() {
 }
 
 // MinusPhaseImpl does updating after end of minus phase
-func (nt *Network) MinusPhaseImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.MinusPhase(ltime) }, "MinusPhase")
+func (nt *Network) MinusPhaseImpl(ctime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.MinusPhase(ctime) }, "MinusPhase")
 }
 
 // PlusPhaseImpl does updating after end of plus phase
-func (nt *Network) PlusPhaseImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.PlusPhase(ltime) }, "PlusPhase")
+func (nt *Network) PlusPhaseImpl(ctime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.PlusPhase(ctime) }, "PlusPhase")
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWtImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt(ltime) }, "DWt")
+func (nt *Network) DWtImpl(ctime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt(ctime) }, "DWt")
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
-func (nt *Network) WtFmDWtImpl(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean(ltime) }, "DWtSubMean")
-	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt(ltime) }, "WtFmDWt")
-	nt.EmerNet.(AxonNetwork).SlowAdapt(ltime)
+func (nt *Network) WtFmDWtImpl(ctime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean(ctime) }, "DWtSubMean")
+	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt(ctime) }, "WtFmDWt")
+	nt.EmerNet.(AxonNetwork).SlowAdapt(ctime)
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // GScale conductance scaling, and adapting inhibition
-func (nt *Network) SlowAdapt(ltime *Time) {
+func (nt *Network) SlowAdapt(ctime *Time) {
 	nt.SlowCtr++
 	if nt.SlowCtr >= nt.SlowInterval {
 		nt.SlowCtr = 0
-		nt.ThrLayFun(func(ly AxonLayer) { ly.SlowAdapt(ltime) }, "SlowAdapt")
+		nt.ThrLayFun(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt")
 	}
 }
 
 // SynFail updates synaptic failure
-func (nt *Network) SynFail(ltime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail(ltime) }, "SynFail")
+func (nt *Network) SynFail(ctime *Time) {
+	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail(ctime) }, "SynFail")
 }
 
 // LrateMod sets the Lrate modulation parameter for Prjns, which is
