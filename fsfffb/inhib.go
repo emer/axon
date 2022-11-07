@@ -4,7 +4,7 @@
 
 package fsfffb
 
-import mat32 "github.com/emer/axon/bazel-axon/external/com_github_goki_mat32"
+import "github.com/goki/mat32"
 
 // Inhib contains state values for computed FFFB inhibition
 type Inhib struct {
