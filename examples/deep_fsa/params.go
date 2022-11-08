@@ -15,9 +15,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Inhib.AvgTau": "30",
 					"Layer.Inhib.ActAvg.Init":  "0.15",
-					"Layer.Inhib.Layer.Gi":     "1.0", // 1.0 > 1.1  trace
-					"Layer.Act.Gbar.L":         "0.2", // std
-					"Layer.Act.Decay.Act":      "0.0", // 0 == 0.2
+					"Layer.Inhib.Layer.Gi":     "1.05", // 1.0 > 1.1  trace
+					"Layer.Act.Gbar.L":         "0.2",  // std
+					"Layer.Act.Decay.Act":      "0.0",  // 0 == 0.2
 					"Layer.Act.Decay.Glong":    "0.0",
 					"Layer.Act.Dt.LongAvgTau":  "20",  // 20 > higher for objrec, lvis
 					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
@@ -33,7 +33,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
-					"Layer.Burst.ThrRel": "-1.0",
+					"Layer.Burst.ThrRel": "0.1", // 0.1, 0.1 best
 					"Layer.Burst.ThrAbs": "0.1",
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
@@ -43,7 +43,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.4", // 1.2 > 1.3 > 1.1
-					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1 -- none are catestrophic
+					"Layer.CT.GeGain":               "1.2", // 0.8 > 0.5 > 1 -- none are catastrophic
 					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0",
@@ -64,10 +64,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PulvLayer", Desc: "pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 0.9 > 1.1
-					"Layer.Pulv.DriveScale":         "0.05", // 0.1 orig
-					"Layer.Pulv.FullDriveAct":       "0.6",  // 0.6 def
-					"Layer.Act.Spike.Tr":            "3",    // 1 is best for ra25..
+					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 0.9 > 1.1
+					"Layer.Pulv.DriveScale":         "0.1", // 0.05 fffb -- test 0.1
+					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
+					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.Decay.AHP":           "0.0", // clear ahp

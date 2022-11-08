@@ -63,13 +63,9 @@ func MaxAbsActFmLayers(net emer.Network, lnms emer.LayNames) float32 {
 		}
 		ly := lyi.(axon.AxonLayer).AsAxon()
 		var act float32
-		if rew, ok := lyi.(*RewLayer); ok {
-			for ni := range rew.Neurons {
-				nrn := &rew.Neurons[ni]
-				act = mat32.Max(act, mat32.Abs(nrn.Act))
-			}
-		} else {
-			act = ly.Pools[0].Inhib.Act.Max // this is always > 0 -- doesn't code neg Act
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			act = mat32.Max(act, mat32.Abs(nrn.Act))
 		}
 		mx = mat32.Max(mx, act)
 	}
@@ -81,28 +77,28 @@ func (ly *RSalienceLayer) MaxAbsRew() float32 {
 	return MaxAbsActFmLayers(ly.Network, ly.RewLayers)
 }
 
-func (ly *RSalienceLayer) SpikeFmG(ctime *axon.Time) {
+func (ly *RSalienceLayer) GiFmSpikes(ctime *axon.Time) {
+	// this is layer-level call prior to GInteg
 	ract := ly.MaxAbsRew()
 	if ly.RewThr > 0 {
 		if ract > ly.RewThr {
 			ract = 1
 		}
 	}
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.Act = ract
-	}
+	ly.ACh = ract
+}
+
+func (ly *RSalienceLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+}
+
+func (ly *RSalienceLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	nrn.Act = ly.ACh
 }
 
 // CyclePost is called at end of Cycle
 // We use it to send ACh, which will then be active for the next cycle of processing.
 func (ly *RSalienceLayer) CyclePost(ctime *axon.Time) {
-	act := ly.Neurons[0].Act
-	ly.ACh = act
-	ly.SendACh.SendACh(ly.Network, act)
+	ly.SendACh.SendACh(ly.Network, ly.ACh)
 }
 
 // UnitVarIdx returns the index of given variable within the Neuron,

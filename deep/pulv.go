@@ -76,23 +76,27 @@ func (ly *PulvLayer) IsTarget() bool {
 ///////////////////////////////////////////////////////////////////////////////////////
 // Drivers
 
-// GFmSpike integrates new synaptic conductances from updated Spiking inputs
-func (ly *PulvLayer) GFmSpike(ctime *axon.Time) {
-	ly.GFmSpikePrjn(ctime)
+// GInteg integrates conductances G over time (Ge, NMDA, etc).
+// reads pool Gi values
+func (ly *PulvLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	if ly.Pulv.DriversOff || !ctime.PlusPhase {
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			if nrn.IsOff() {
-				continue
-			}
-			ly.GFmSpikeNeuron(ctime, ni, nrn)
-			// note: can add extra values to GeRaw and GeSyn here
-			ly.GFmRawSynNeuron(ctime, ni, nrn)
-		}
+		ly.Layer.GInteg(ni, nrn, ctime)
 		return
 	}
-	// for plus phase from drivers:
-	ly.GeFmDrivers(ctime)
+	dly, err := ly.DriverLayer(ly.Driver)
+	if err != nil {
+		return
+	}
+	sly, issuper := dly.AxonLay.(*SuperLayer)
+	drvMax := dly.ActAvg.CaSpkP.Max
+	nonDriverPct := 1.0 - mat32.Min(1, drvMax/ly.Pulv.FullDriveAct) // how much non-driver to keep
+	drvAct := DriveAct(ni, dly, sly, issuper)
+	drvGe := ly.Pulv.DriveGe(drvAct)
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	nrn.GeRaw = nonDriverPct*nrn.GeRaw + drvGe
+	nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Act.Dt.GeSynFmRawSteady(drvGe)
+	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
 }
 
 // DriverLayer returns the driver layer for given Driver
@@ -115,28 +119,4 @@ func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 		act = dly.Neurons[dni].CaSpkP
 	}
 	return act
-}
-
-// GeFmDrivers computes excitatory conductance from driver neurons
-func (ly *PulvLayer) GeFmDrivers(ctime *axon.Time) {
-	dly, err := ly.DriverLayer(ly.Driver)
-	if err != nil {
-		return
-	}
-	sly, issuper := dly.AxonLay.(*SuperLayer)
-	drvMax := dly.ActAvg.CaSpkP.Max
-	nonDriverPct := 1.0 - mat32.Min(1, drvMax/ly.Pulv.FullDriveAct) // how much non-driver to keep
-	// above FullDriveAct, only driver Ge is present, non-driver is 0
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			return
-		}
-		drvAct := DriveAct(ni, dly, sly, issuper)
-		drvGe := ly.Pulv.DriveGe(drvAct)
-		ly.GFmSpikeNeuron(ctime, ni, nrn)
-		nrn.GeRaw = nonDriverPct*nrn.GeRaw + drvGe
-		nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Act.Dt.GeSynFmRawSteady(drvGe)
-		ly.GFmRawSynNeuron(ctime, ni, nrn)
-	}
 }

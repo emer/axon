@@ -34,16 +34,10 @@ func (ly *RWPredLayer) Defaults() {
 	ly.Act.Dt.GeTau = 40
 }
 
-func (ly *RWPredLayer) SpikeFmG(ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.Act = ly.PredRange.ClipVal(nrn.Ge) // clipped linear
-		nrn.ActInt = nrn.Act
-	}
+func (ly *RWPredLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
+	nrn.Act = ly.PredRange.ClipVal(nrn.Ge) // clipped linear
+	nrn.ActInt = nrn.Act
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -103,8 +97,8 @@ func (ly *RWDaLayer) Build() error {
 	return err
 }
 
-func (ly *RWDaLayer) SpikeFmG(ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ctime)
+func (ly *RWDaLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	rly, ply, _ := ly.RWLayers()
 	if rly == nil || ply == nil {
 		return
@@ -117,18 +111,12 @@ func (ly *RWDaLayer) SpikeFmG(ctime *axon.Time) {
 	ract := rnrn.Act
 	pnrn := &(ply.Neurons[0])
 	pact := pnrn.Act
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if hasRew {
-			nrn.Act = ract - pact
-		} else {
-			nrn.Act = 0 // nothing
-		}
-		nrn.ActInt = nrn.Act
+	if hasRew {
+		nrn.Act = ract - pact
+	} else {
+		nrn.Act = 0 // nothing
 	}
+	nrn.ActInt = nrn.Act
 }
 
 // CyclePost is called at end of Cycle

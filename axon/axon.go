@@ -39,15 +39,7 @@ type AxonNetwork interface {
 	// input scaling from running average activation etc.
 	NewStateImpl()
 
-	// Cycle handles entire update for one cycle (msec) of neuron activity state,
-	// by calling layer.Cycle method which does everything at a per-layer level.
-	// * Increments Ge, Gi from spikes sent on previous cycle
-	// * Average and Max Ge stats
-	// * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
-	// * Activation (Spiking) from Ge, Gi, and Gl
-	// * Average and Max Act stats
-	// * CyclePost which is the main hook for specialized algorithm-specific code (deep, hip, bg etc)
-	// * Send spikes
+	// Cycle handles entire update for one cycle (msec) of neuron activity state.
 	CycleImpl(ctime *Time)
 
 	// MinusPhaseImpl does updating after minus phase
@@ -145,24 +137,6 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
 
-	// Cycle handles entire update for one cycle (msec) of neuron activity state,
-	// calling the following methods in order:
-	//
-	// * GFmSpikesPrjn -- recv projection level
-	// * GiFmSpikes -- layer level
-	// * CycleNeuron -- pure loop over neurons in layer
-	// * CyclePost -- optional hook for special algorithms
-	// * SynCaPrjn -- send then recv projection integration of synaptic ca
-	//
-	// All methods are called through the AxonLay interface, so specialized algorithms
-	// can override those functions (preferred to overriding the main Cycle function).
-	Cycle(ctime *Time)
-
-	// GFmSpikesPrjn calls GFmSpikes on receiving projections
-	// to integrate conductances from Spikes
-	// Also updates Layer.Pool.Inhib spike values
-	GFmSpikesPrjn(ctime *Time)
-
 	// GiFmSpikes integrates new inhibitory conductances from Spikes
 	// at the layer and pool level
 	GiFmSpikes(ctime *Time)
@@ -199,13 +173,6 @@ type AxonLayer interface {
 	// For example, sending a neuromodulatory signal such as dopamine.
 	CyclePost(ctime *Time)
 
-	// SynCaPrjn does cycle-level synaptic Ca updating for the Kinase learning mechanisms.
-	// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
-	// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-	// iterates over sending projections then receiving projections -- can be
-	// computed at the projection level entirely.
-	SynCaPrjn(ctime *Time)
-
 	// MinusPhase does updating after end of minus phase
 	MinusPhase(ctime *Time)
 
@@ -224,18 +191,19 @@ type AxonLayer interface {
 	// (1 = identical, 0 = uncorrelated).
 	CorSimFmActs()
 
-	// DWt computes the weight change (learning) -- calls DWt method on sending projections
-	DWt(ctime *Time)
+	// DWtLayer does weight change at the layer level.
+	// does NOT call main projection-level DWt method.
+	// in base, only calls DTrgAvgFmErr
+	DWtLayer(ctime *Time)
 
-	// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
-	// This is called on *receiving* projections, prior to WtFmDwt.
-	DWtSubMean(ctime *Time)
+	// WtFmDWtLayer does weight update at the layer level.
+	// does NOT call main projection-level WtFmDWt method.
+	// in base, only calls TrgAvgFmD
+	WtFmDWtLayer(ctime *Time)
 
-	// WtFmDWt updates the weights from delta-weight changes.
-	WtFmDWt(ctime *Time)
-
-	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
-	// GScale conductance scaling, SWt updating, and adapting inhibition
+	// SlowAdapt is the layer-level slow adaptation functions.
+	// Calls AdaptInhib and AvgDifFmTrgAvg for Synaptic Scaling.
+	// Does NOT call projection-level methods.
 	SlowAdapt(ctime *Time)
 
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt

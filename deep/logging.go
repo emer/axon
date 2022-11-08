@@ -45,7 +45,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *axon.Network, times ...etime.Time
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
+					ctx.SetFloat32(ly.Pools[0].ActM.Avg)
 				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.ActAvg.ActMAvg)

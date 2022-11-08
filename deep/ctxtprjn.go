@@ -88,8 +88,8 @@ func (pj *CTCtxtPrjn) InitGBuffs() {
 func (pj *CTCtxtPrjn) SendSpike(si int) {
 }
 
-// GFmSpike: disabled for this type
-func (pj *CTCtxtPrjn) GFmSpike(ctime *axon.Time) {
+// GFmSpikes: disabled for this type
+func (pj *CTCtxtPrjn) GFmSpikes(ctime *axon.Time) {
 }
 
 // SendCtxtGe sends the full Burst activation from sending neuron index si,

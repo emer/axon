@@ -90,20 +90,14 @@ func (ly *BLALayer) USActiveFmUS(ctime *axon.Time) {
 	}
 }
 
-func (ly *BLALayer) GFmSpike(ctime *axon.Time) {
-	ly.GFmSpikePrjn(ctime)
+func (ly *BLALayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	da := ly.DaMod.Gain(ly.DA)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.GFmSpikeNeuron(ctime, ni, nrn)
-		daEff := da * nrn.CaSpkM // da effect interacts with spiking
-		nrn.GeRaw += daEff
-		nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)
-		ly.GFmRawSynNeuron(ctime, ni, nrn)
-	}
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	daEff := da * nrn.CaSpkM // da effect interacts with spiking
+	nrn.GeRaw += daEff
+	nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)
+	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
 }
 
 func (ly *BLALayer) PlusPhase(ctime *axon.Time) {

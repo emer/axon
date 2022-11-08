@@ -89,52 +89,54 @@ func (ly *PulvAttnLayer) CyclePost(ctime *axon.Time) {
 
 // AttnFmAct computes our attention signal from activations
 func (ly *PulvAttnLayer) AttnFmAct(ctime *axon.Time) {
-	pyn := ly.Shp.Dim(0)
-	pxn := ly.Shp.Dim(1)
+	/*
+		pyn := ly.Shp.Dim(0)
+		pxn := ly.Shp.Dim(1)
 
-	if ly.Is4D() {
-		var amax float32
-		for py := 0; py < pyn; py++ {
-			for px := 0; px < pxn; px++ {
-				pi := py*pxn + px
-				pl := &ly.Pools[pi+1]
-				act := pl.Inhib.Act.Avg
-				if act > amax {
-					amax = act
+		if ly.Is4D() {
+			var amax float32
+			for py := 0; py < pyn; py++ {
+				for px := 0; px < pxn; px++ {
+					pi := py*pxn + px
+					pl := &ly.Pools[pi+1]
+					act := pl.Inhib.Act.Avg
+					if act > amax {
+						amax = act
+					}
 				}
 			}
-		}
-		for py := 0; py < pyn; py++ {
-			for px := 0; px < pxn; px++ {
-				pi := py*pxn + px
-				pl := &ly.Pools[pi+1]
-				act := pl.Inhib.Act.Avg
-				attn := float32(1)
-				if amax >= ly.SendAttn.Thr {
-					attn = act / amax
+			for py := 0; py < pyn; py++ {
+				for px := 0; px < pxn; px++ {
+					pi := py*pxn + px
+					pl := &ly.Pools[pi+1]
+					act := pl.Inhib.Act.Avg
+					attn := float32(1)
+					if amax >= ly.SendAttn.Thr {
+						attn = act / amax
+					}
+					for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+						nrn := &ly.Neurons[ni]
+						nrn.Attn = attn
+					}
 				}
-				for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			}
+		} else { // 2D
+			lpl := &ly.Pools[0]
+			amax := lpl.Inhib.Act.Max
+			for py := 0; py < pyn; py++ {
+				for px := 0; px < pxn; px++ {
+					ni := py*pxn + px
 					nrn := &ly.Neurons[ni]
+					act := nrn.Act
+					attn := float32(1)
+					if amax >= ly.SendAttn.Thr {
+						attn = act / amax
+					}
 					nrn.Attn = attn
 				}
 			}
 		}
-	} else { // 2D
-		lpl := &ly.Pools[0]
-		amax := lpl.Inhib.Act.Max
-		for py := 0; py < pyn; py++ {
-			for px := 0; px < pxn; px++ {
-				ni := py*pxn + px
-				nrn := &ly.Neurons[ni]
-				act := nrn.Act
-				attn := float32(1)
-				if amax >= ly.SendAttn.Thr {
-					attn = act / amax
-				}
-				nrn.Attn = attn
-			}
-		}
-	}
+	*/
 }
 
 // SendAttnLays sends attention signal to all layers

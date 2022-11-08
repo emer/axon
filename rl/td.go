@@ -28,16 +28,10 @@ func (ly *TDRewPredLayer) Defaults() {
 	ly.Act.Dt.GeTau = 40
 }
 
-func (ly *TDRewPredLayer) SpikeFmG(ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.Act = nrn.Ge
-		nrn.ActInt = nrn.Act
-	}
+func (ly *TDRewPredLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
+	nrn.Act = nrn.Ge
+	nrn.ActInt = nrn.Act
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -131,32 +125,20 @@ func (ly *TDRewIntegLayer) Build() error {
 	return err
 }
 
-func (ly *TDRewIntegLayer) GFmSpike(ctime *axon.Time) {
-	ly.GFmSpikePrjn(ctime)
+func (ly *TDRewIntegLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	rpAct := ly.RewPredAct(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.SetFlag(axon.NeurHasExt)
-		SetNeuronExtPosNeg(nrn, ni, rpAct)
-		ly.GFmSpikeNeuron(ctime, ni, nrn)
-		ly.GFmRawSynNeuron(ctime, ni, nrn)
-	}
+	nrn.SetFlag(axon.NeurHasExt)
+	SetNeuronExtPosNeg(ni, nrn, rpAct)
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
 }
 
-func (ly *TDRewIntegLayer) SpikeFmG(ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ctime)
+func (ly *TDRewIntegLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	rpAct := ly.RewPredAct(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.Act = rpAct
-		nrn.ActInt = nrn.Act
-	}
+	nrn.Act = rpAct
+	nrn.ActInt = nrn.Act
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -218,32 +200,20 @@ func (ly *TDDaLayer) Build() error {
 	return err
 }
 
-func (ly *TDDaLayer) GFmSpike(ctime *axon.Time) {
-	ly.GFmSpikePrjn(ctime)
+func (ly *TDDaLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	da := ly.RewIntegDA(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.SetFlag(axon.NeurHasExt)
-		SetNeuronExtPosNeg(nrn, ni, da)
-		ly.GFmSpikeNeuron(ctime, ni, nrn)
-		ly.GFmRawSynNeuron(ctime, ni, nrn)
-	}
+	nrn.SetFlag(axon.NeurHasExt)
+	SetNeuronExtPosNeg(ni, nrn, da)
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
 }
 
-func (ly *TDDaLayer) SpikeFmG(ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ctime)
+func (ly *TDDaLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	da := ly.RewIntegDA(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.Act = da
-		nrn.ActInt = nrn.Act
-	}
+	nrn.Act = da
+	nrn.ActInt = nrn.Act
 }
 
 // CyclePost is called at end of Cycle

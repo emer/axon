@@ -309,19 +309,19 @@ func (nt *Network) PlusPhaseImpl(ctime *axon.Time) {
 
 // CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
 func (nt *Network) CTCtxt(ctime *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
+	nt.LayerFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(CtxtSender); ok {
 			dl.SendCtxtGe(ctime)
 		} else {
 			LayerSendCtxtGe(ly.AsAxon(), ctime)
 		}
-	}, "SendCtxtGe")
+	}, "SendCtxtGe", axon.Thread, axon.Wait)
 
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
+	nt.LayerFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(*CTLayer); ok {
 			dl.CtxtFmGe(ctime)
 		}
-	}, "CtxtFmGe")
+	}, "CtxtFmGe", axon.NoThread, axon.Wait)
 }
 
 // LayerSendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate

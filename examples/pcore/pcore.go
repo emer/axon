@@ -656,7 +656,7 @@ func (ss *Sim) ConfigLogItems() {
 					tsr.SetShape(npools, nil, nil)
 					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
 					for pi := 0; pi < ss.Sim.NPools; pi++ {
-						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+						tsr.Values[pi] = float64(ly.AvgMaxVarByPool("Act", pi+1).Avg)
 					}
 					ctx.SetTensor(tsr)
 				}, etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
@@ -666,7 +666,7 @@ func (ss *Sim) ConfigLogItems() {
 					tsr.SetShape(npools, nil, nil)
 					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
 					for pi := 0; pi < ss.Sim.NPools; pi++ {
-						tsr.Values[pi] = float64(ly.Pools[pi+1].Inhib.Act.Avg)
+						tsr.Values[pi] = float64(ly.AvgMaxVarByPool("Act", pi+1).Avg)
 					}
 					ctx.SetTensor(tsr)
 				}, etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
@@ -674,7 +674,7 @@ func (ss *Sim) ConfigLogItems() {
 					lyi := ctx.Layer(clnm)
 					ly := lyi.(axon.AxonLayer).AsAxon()
 					for pi := 0; pi < ss.Sim.NPools; pi++ {
-						tsr.Values[pi] = float64(ly.SpkMaxAvgByPool(pi + 1))
+						tsr.Values[pi] = float64(ly.AvgMaxVarByPool("SpkMax", pi+1).Avg)
 					}
 					ctx.SetTensor(tsr)
 				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
@@ -696,7 +696,7 @@ func (ss *Sim) ConfigLogItems() {
 					tsr.SetShape(npools, nil, nil)
 					ss.Stats.SetF64Tensor("Log_ActAvg", tsr)
 					for pi := 0; pi < ss.Sim.NPools; pi++ {
-						tsr.Values[pi] = float64(ly.SpikeAvgByPool(pi + 1))
+						tsr.Values[pi] = float64(ly.AvgMaxVarByPool("SpkMax", pi+1).Avg)
 					}
 					ctx.SetTensor(tsr)
 				}}})

@@ -774,13 +774,13 @@ func (ss *Sim) MaintStats() {
 		var mact float32
 		if ptly.Is4D() {
 			for pi := 1; pi < len(ptly.Pools); pi++ {
-				avg := ptly.Pools[pi].Inhib.Act.Avg
+				avg := ptly.Pools[pi].ActP.Avg
 				if avg > mact {
 					mact = avg
 				}
 			}
 		} else {
-			mact = ptly.Pools[0].Inhib.Act.Avg
+			mact = ptly.Pools[0].ActP.Avg
 		}
 		overThr := mact > actThr
 		if overThr {

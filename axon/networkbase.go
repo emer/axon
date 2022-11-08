@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -24,7 +23,6 @@ import (
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/emergent/timer"
 	"github.com/emer/emergent/weights"
-	"github.com/emer/empi/mpi"
 	"github.com/goki/gi/gi"
 	"github.com/goki/ki/indent"
 	"github.com/goki/kigen/dedupe"
@@ -37,7 +35,7 @@ type NetworkBase struct {
 	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
 	Layers      emer.Layers           `desc:"list of layers"`
-	NThreads    int                   `desc:"number of threads to use for neuron-level updates"`
+	NThreads    int                   `desc:"number of threads to use for neuron-level updates -- if set to 1 then nothing is updated in parallel -- if > 1, Prjns and Layers are fully parallelized using goroutines (set GOMAXPROCS to constrain number of those) while neurons are updated in NThreads chunks."`
 	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
 	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
 	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
@@ -394,12 +392,14 @@ func (nt *NetworkBase) LateralConnectLayerPrjn(lay emer.Layer, pat prjn.Pattern,
 // Build constructs the layer and projection state based on the layer shapes
 // and patterns of interconnectivity
 func (nt *NetworkBase) Build() error {
-	maxp := runtime.GOMAXPROCS(0)
-	if maxp > 4 {
-		maxp = 4
-		runtime.GOMAXPROCS(maxp)
-	}
-	mpi.Printf("Running on: %d GOMAXPROCS\n", maxp)
+	// maxp := runtime.GOMAXPROCS(0)
+	// if maxp > 4 {
+	// 	maxp = 4
+	// 	runtime.GOMAXPROCS(maxp)
+	// }
+	// mpi.Printf("Running on: %d GOMAXPROCS\n", maxp)
+
+	nt.FunTimes = make(map[string]*timer.Time)
 
 	nt.LayClassMap = make(map[string][]string)
 	emsg := ""

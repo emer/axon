@@ -102,26 +102,21 @@ func (ly *CTLayer) DecayState(decay, glong float32) {
 	}
 }
 
-// GFmSpike integrates new synaptic conductances from increments sent during last Spike
-func (ly *CTLayer) GFmSpike(ctime *axon.Time) {
-	ly.GFmSpikePrjn(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		// note: can add extra values to GeRaw and GeSyn here
-		geCtxt := ly.CT.GeGain * ly.CtxtGes[ni]
-		if ly.CT.DecayDt > 0 {
-			ly.CtxtGes[ni] -= ly.CT.DecayDt * ly.CtxtGes[ni]
-		}
-		ly.GFmSpikeNeuron(ctime, ni, nrn)
-		nrn.GeRaw += geCtxt
-		ctxtExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
-		nrn.GeSyn += ctxtExt
-		ly.GFmRawSynNeuron(ctime, ni, nrn)
-		nrn.GeExt = ctxtExt
+// GInteg integrates conductances G over time (Ge, NMDA, etc).
+// reads pool Gi values
+func (ly *CTLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	// note: can add extra values to GeRaw and GeSyn here
+	geCtxt := ly.CT.GeGain * ly.CtxtGes[ni]
+	if ly.CT.DecayDt > 0 {
+		ly.CtxtGes[ni] -= ly.CT.DecayDt * ly.CtxtGes[ni]
 	}
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	nrn.GeRaw += geCtxt
+	ctxtExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+	nrn.GeSyn += ctxtExt
+	ly.GFmRawSyn(ni, nrn, ctime)
+	nrn.GeExt = ctxtExt // needed for inhibition
+	ly.GiInteg(ni, nrn, ctime)
 }
 
 // SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate

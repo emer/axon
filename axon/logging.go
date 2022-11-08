@@ -194,8 +194,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					am := ly.AvgMaxVarByPool("Ge", 0)
-					ctx.SetFloat32(am.Avg)
+					ctx.SetFloat32(ly.AvgMaxVarByPool("Ge", 0).Avg)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_Act.Avg",
@@ -204,8 +203,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 			Write: elog.WriteMap{
 				etime.Scope(mode, etm): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					am := ly.AvgMaxVarByPool("Act", 0)
-					ctx.SetFloat32(am.Avg)
+					ctx.SetFloat32(ly.AvgMaxVarByPool("Act", 0).Avg)
 				}}})
 	}
 }

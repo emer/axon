@@ -217,36 +217,33 @@ func (ly *MatrixLayer) GiFmACh(ctime *axon.Time) {
 	}
 }
 
-func (ly *MatrixLayer) GFmSpike(ctime *axon.Time) {
+func (ly *MatrixLayer) GiFmSpikes(ctime *axon.Time) {
+	ly.Layer.GiFmSpikes(ctime)
+	ly.GiFmACh(ctime)
+}
+
+func (ly *MatrixLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	if !ly.HasMod {
-		ly.Layer.GFmSpike(ctime)
-		ly.GiFmACh(ctime)
+		ly.Layer.GInteg(ni, nrn, ctime)
 		return
 	}
-	ly.GFmSpikePrjn(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	var mod float32
+	for _, p := range ly.RcvPrjns {
+		pj, ok := p.(*MatrixPrjn)
+		if ok && pj.Trace.Modulator {
+			mod += pj.GVals[ni].GSyn
 		}
-		ly.GFmSpikeNeuron(ctime, ni, nrn)
-		var mod float32
-		for _, p := range ly.RcvPrjns {
-			pj, ok := p.(*MatrixPrjn)
-			if ok && pj.Trace.Modulator {
-				mod += pj.GVals[ni].GSyn
-			}
-		}
-		mod *= ly.Matrix.ModGain
-		if mod > 0 {
-			mod = 1
-		}
-		ly.Mods[ni] = mod
-		nrn.GeRaw *= mod
-		nrn.GeSyn *= mod
-		ly.GFmRawSynNeuron(ctime, ni, nrn)
 	}
-	ly.GiFmACh(ctime)
+	mod *= ly.Matrix.ModGain
+	if mod > 0 {
+		mod = 1
+	}
+	ly.Mods[ni] = mod
+	nrn.GeRaw *= mod
+	nrn.GeSyn *= mod
+	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
 }
 
 // todo: replace with ki/bools.ToFloat32
@@ -277,7 +274,7 @@ func (ly *MatrixLayer) PlusPhase(ctime *axon.Time) {
 	ly.GatedFmAvgSpk()
 	ly.DAActLrn()
 
-	smax := ly.SpkMaxMaxByPool(0)
+	smax := ly.AvgMaxVarByPool("SpkMax", 0).Max
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -303,7 +300,7 @@ func (ly *MatrixLayer) GatedFmAvgSpk() {
 	mtxGated := false
 	if ly.Is4D() {
 		for pi := 1; pi < len(ly.Pools); pi++ {
-			spkavg := ly.SpkMaxAvgByPool(pi)
+			spkavg := ly.AvgMaxVarByPool("SpkMax", pi).Avg
 			gthr := spkavg > ly.Matrix.GateThr
 			if gthr {
 				// fmt.Printf("mtx %s gated spkavg: %g pool: %d\n", ly.Name(), spkavg, pi)
@@ -317,7 +314,7 @@ func (ly *MatrixLayer) GatedFmAvgSpk() {
 			ly.Gated[0] = mtxGated
 		}
 	} else {
-		spkavg := ly.SpkMaxAvgByPool(0)
+		spkavg := ly.AvgMaxVarByPool("SpkMax", 0).Avg
 		if spkavg > ly.Matrix.GateThr {
 			mtxGated = true
 		}

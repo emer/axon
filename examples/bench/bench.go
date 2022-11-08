@@ -33,37 +33,39 @@ var EpcLog *etable.Table
 var Thread = false // much slower for small net
 var Silent = false // non-verbose mode -- just reports result
 
+// note: with 2 hidden layers, this simple test case converges to perfect performance:
+// ./bench -epochs 100 -pats 10 -units 100 -threads=1
+// so these params below are reasonable for actually learning (eventually)
+
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
+			{Sel: "Prjn", Desc: "",
 				Params: params.Params{
-					// "Prjn.Learn.KinaseCa.Rule": "SynSpkTheta",
-					"Prjn.Learn.KinaseCa.Rule": "NeurSpkTheta",
+					"Prjn.Learn.Trace.NeuronCa": "true", // true = much faster
+					"Prjn.Learn.Lrate.Base":     "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .1 >= .2,
+					"Prjn.SWt.Init.SPct":        "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
-			{Sel: "Layer", Desc: "using default 1.8 inhib for all of network -- can explore",
+			{Sel: "Layer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Act.Gbar.L":     "0.2",
+					"Layer.Inhib.ActAvg.Init": "0.08",
+					"Layer.Inhib.Layer.Gi":    "1.05",
+					"Layer.Act.Gbar.L":        "0.2",
 				}},
-			{Sel: "#Input", Desc: "critical now to specify the activity level",
+			{Sel: "#Input", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":   "1.0", // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Act.Clamp.Ge":   "1.5",
 				}},
-			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
+			{Sel: "#Output", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
+					"Layer.Inhib.Layer.Gi": "0.75",
+					"Layer.Act.Clamp.Ge":   "0.8",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
-				}},
-		},
-		"Sim": &params.Sheet{ // sim params apply to sim object
-			{Sel: "Sim", Desc: "best params always finish in this time",
-				Params: params.Params{
-					"Sim.MaxEpcs": "50",
 				}},
 		},
 	}},
@@ -84,23 +86,12 @@ func ConfigNet(net *axon.Network, threads, units int) {
 	full := prjn.NewFull()
 
 	net.ConnectLayers(inLay, hid1Lay, full, emer.Forward)
-	net.ConnectLayers(hid1Lay, hid2Lay, full, emer.Forward)
-	net.ConnectLayers(hid2Lay, hid3Lay, full, emer.Forward)
-	net.ConnectLayers(hid3Lay, outLay, full, emer.Forward)
+	net.BidirConnectLayers(hid1Lay, hid2Lay, full)
+	net.BidirConnectLayers(hid2Lay, hid3Lay, full)
+	net.BidirConnectLayers(hid3Lay, outLay, full)
 
-	net.ConnectLayers(outLay, hid3Lay, full, emer.Back)
-	net.ConnectLayers(hid3Lay, hid2Lay, full, emer.Back)
-	net.ConnectLayers(hid2Lay, hid1Lay, full, emer.Back)
-
-	switch threads {
-	case 2:
-		hid3Lay.SetThread(1)
-		outLay.SetThread(1)
-	case 4:
-		hid2Lay.SetThread(1)
-		hid3Lay.SetThread(2)
-		outLay.SetThread(3)
-	}
+	net.NThreads = threads
+	net.RecFunTimes = !Silent
 
 	net.Defaults()
 	net.ApplyParams(ParamSets[0].Sheets["Network"], false) // no msg
@@ -129,8 +120,8 @@ func ConfigPats(dt *etable.Table, pats, units int) {
 func ConfigEpcLog(dt *etable.Table) {
 	dt.SetFromSchema(etable.Schema{
 		{"Epoch", etensor.INT64, nil, nil},
-		{"CosDiff", etensor.FLOAT32, nil, nil},
-		{"AvgCosDiff", etensor.FLOAT32, nil, nil},
+		{"CorSim", etensor.FLOAT32, nil, nil},
+		{"AvgCorSim", etensor.FLOAT32, nil, nil},
 		{"SSE", etensor.FLOAT32, nil, nil},
 		{"Count Err", etensor.FLOAT32, nil, nil},
 		{"Pct Err", etensor.FLOAT32, nil, nil},

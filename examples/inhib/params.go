@@ -21,15 +21,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.FSTau":  "6",
 					"Layer.Inhib.Layer.SSfTau": "20",
 					"Layer.Inhib.Layer.SSiTau": "50",
-					"Layer.Inhib.Layer.FSd":    "0", // 0.1 or so here creates stronger synchrony at tau hz
-					"Layer.Inhib.Layer.FSdTau": "20",
-					"Layer.Inhib.OldLayer.On":  "true",
-					"Layer.Inhib.OldLayer.Gi":  "1.0",
-					"Layer.Inhib.OldLayer.FF0": "0.1",
-					"Layer.Inhib.OldLayer.FF":  "1.0",
-					"Layer.Inhib.OldLayer.FB":  "1.0",
 					"Layer.Inhib.ActAvg.Init":  "0.1",
-					"Layer.Inhib.Inhib.Old":    "false",
 					"Layer.Inhib.Inhib.AvgTau": "30", // 20 > 30 ?
 					"Layer.Act.Dt.GeTau":       "5",
 					"Layer.Act.Dt.GiTau":       "7",

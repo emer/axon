@@ -92,16 +92,10 @@ func (ly *ClampDaLayer) Build() error {
 	return err
 }
 
-func (ly *ClampDaLayer) SpikeFmG(ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.Act = nrn.Ext
-		nrn.ActInt = nrn.Act
-	}
+func (ly *ClampDaLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.GInteg(ni, nrn, ctime)
+	nrn.Act = nrn.Ext
+	nrn.ActInt = nrn.Act
 }
 
 // CyclePost is called at end of Cycle

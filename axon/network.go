@@ -363,16 +363,14 @@ func (nt *Network) PlusPhaseImpl(ctime *Time) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctime *Time) {
-	for _, ly := range nt.Layers {
-		ly.(AxonLayer).AsAxon().DTrgAvgFmErr() // light weight -- not worth parallelizing
-	}
-	nt.PrjnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt", Thread, Wait) // def thread
+	nt.LayerFun(func(ly AxonLayer) { ly.DWtLayer(ctime) }, "DWtLayer", NoThread, Wait) // def no thr
+	nt.PrjnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt", Thread, Wait)               // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctime *Time) {
 	nt.PrjnFun(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean", Thread, Wait)
-	nt.LayerFun(func(ly AxonLayer) { ly.AsAxon().TrgAvgFmD() }, "TrgAvgFmD", NoThread, Wait)
+	nt.LayerFun(func(ly AxonLayer) { ly.WtFmDWtLayer(ctime) }, "WtFmDWtLayer", NoThread, Wait) // def no
 	nt.PrjnFun(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt", Thread, Wait)
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ctime)
 }

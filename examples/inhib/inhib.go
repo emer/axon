@@ -357,7 +357,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	ss.Logs.PlotItems("Layer1_Act.Avg", "Layer1_SGi", "Layer1_OGi") // "Layer1_Gi",
+	ss.Logs.PlotItems("Layer1_Act.Avg", "Layer1_SGi") // "Layer1_Gi",
 
 	ss.Logs.CreateTables()
 
@@ -380,7 +380,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.SpikeAvgByPool(0))
+					ctx.SetFloat32(ly.AvgMaxVarByPool("Spike", 0).Avg)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_Gi",
@@ -399,15 +399,6 @@ func (ss *Sim) ConfigLogItems() {
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].Inhib.Gi)
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_OGi",
-			Type:   etensor.FLOAT64,
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].OldInhib.Gi)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FFs",
@@ -455,15 +446,6 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSf)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_FSd",
-			Type:   etensor.FLOAT64,
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].Inhib.FSd)
-				}}})
-		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FSGi",
 			Type:   etensor.FLOAT64,
 			FixMin: true,
@@ -480,24 +462,6 @@ func (ss *Sim) ConfigLogItems() {
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSGi)
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_OFFi",
-			Type:   etensor.FLOAT64,
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].OldInhib.FFi)
-				}}})
-		ss.Logs.AddItem(&elog.Item{
-			Name:   clnm + "_OFBi",
-			Type:   etensor.FLOAT64,
-			FixMin: true,
-			Write: elog.WriteMap{
-				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].OldInhib.FBi)
 				}}})
 	}
 }

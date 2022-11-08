@@ -97,7 +97,7 @@ func (ss *Sim) New() {
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
-	ss.Defaults()
+	// ss.Defaults()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,12 +173,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
 
-	// note: can set these to do parallel threaded computation across multiple cpus
-	// not worth it for this small of a model, but definitely helps for larger ones
-	// if Thread {
-	// 	hid2.SetThread(1)
-	// 	out.SetThread(1)
-	// }
+	net.NThreads = 1 // small networks don't benefit from threading
 
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)

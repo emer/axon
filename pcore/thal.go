@@ -88,7 +88,7 @@ func (ly *ThalLayer) DecayState(decay, glong float32) {
 func (ly *ThalLayer) GatedFmAvgSpk(thr float32) bool {
 	anyGt := false
 	for pi := range ly.Gated {
-		smax := ly.SpkMaxAvgByPool(pi)
+		smax := ly.AvgMaxVarByPool("SpkMax", pi).Avg
 		gt := (smax > thr)
 		ly.Gated[pi] = gt
 		if gt {

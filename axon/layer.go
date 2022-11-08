@@ -607,7 +607,7 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			}
 		}
 	}
-	ly.SynScale() // update AvgPct based on loaded ActAvg values
+	ly.AvgDifFmTrgAvg() // update AvgPct based on loaded ActAvg values
 	return err
 }
 
@@ -1121,33 +1121,6 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// Cycle does one cycle (msec) of updating
-func (ly *Layer) Cycle(ctime *Time) {
-	ly.AxonLay.GFmSpikesPrjn(ctime) // prjn-level
-	ly.AxonLay.GiFmSpikes(ctime)    // layer level
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.AxonLay.CycleNeuron(ni, nrn, ctime)
-	}
-	ly.AxonLay.CyclePost(ctime)
-	ly.AxonLay.SynCaPrjn(ctime)
-}
-
-// GFmSpikesPrjn calls GFmSpikes on receiving projections
-// to integrate conductances from Spikes
-// Also updates Layer.Pool.Inhib spike values
-func (ly *Layer) GFmSpikesPrjn(ctime *Time) {
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).GFmSpikes(ctime) // does Inhib.Pool Raw updates too
-	}
-}
-
 // GiFmSpikes integrates new inhibitory conductances from Spikes
 // at the layer and pool level
 func (ly *Layer) GiFmSpikes(ctime *Time) {
@@ -1211,6 +1184,11 @@ func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
 	ly.GFmSpikeRaw(ni, nrn, ctime)
 	// note: can add extra values to GeRaw and GeSyn here
 	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
+}
+
+// GiInteg adds Gi values from all sources including Pool computed inhib
+func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	pl := &ly.Pools[nrn.SubPool]
 	nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 }
@@ -1310,29 +1288,6 @@ func (ly *Layer) SendSpike(ni int, nrn *Neuron, ctime *Time) {
 // to do something special after Spike / Act is finally computed.
 // For example, sending a neuromodulatory signal such as dopamine.
 func (ly *Layer) CyclePost(ctime *Time) {
-}
-
-// SynCaPrjn does cycle-level synaptic Ca updating for the Kinase learning mechanisms.
-// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
-// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-// iterates over sending projections then receiving projections -- can be
-// computed at the projection level entirely.
-func (ly *Layer) SynCaPrjn(ctime *Time) {
-	if ctime.Testing {
-		return
-	}
-	for _, p := range ly.SndPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).SendSynCa(ctime)
-	}
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).RecvSynCa(ctime)
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -1532,7 +1487,15 @@ func (ly *Layer) IsLearnTrgAvg() bool {
 	return true
 }
 
+// DWtLayer does weight change at the layer level.
+// does NOT call main projection-level DWt method.
+// in base, only calls DTrgAvgFmErr
+func (ly *Layer) DWtLayer(ctime *Time) {
+	ly.DTrgAvgFmErr()
+}
+
 // DTrgAvgFmErr computes change in TrgAvg based on unit-wise error signal
+// Called by DWtLayer at the layer level
 func (ly *Layer) DTrgAvgFmErr() {
 	if !ly.IsLearnTrgAvg() {
 		return
@@ -1550,9 +1513,9 @@ func (ly *Layer) DTrgAvgFmErr() {
 	}
 }
 
-// DTrgSpkCaPubMean subtracts the mean from DTrgAvg values
+// DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
-func (ly *Layer) DTrgSpkCaPubMean() {
+func (ly *Layer) DTrgSubMean() {
 	submean := ly.Learn.TrgAvgAct.SubMean
 	if submean == 0 {
 		return
@@ -1611,11 +1574,12 @@ func (ly *Layer) DTrgSpkCaPubMean() {
 }
 
 // TrgAvgFmD updates TrgAvg from DTrgAvg
+// it is called by WtFmDWtLayer
 func (ly *Layer) TrgAvgFmD() {
 	if !ly.IsLearnTrgAvg() || ly.Learn.TrgAvgAct.ErrLrate == 0 {
 		return
 	}
-	ly.DTrgSpkCaPubMean()
+	ly.DTrgSubMean()
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1626,46 +1590,19 @@ func (ly *Layer) TrgAvgFmD() {
 	}
 }
 
-// DWt computes the weight change (learning).
-// calls DWt method on sending projections
-func (ly *Layer) DWt(ctime *Time) {
-	ly.DTrgAvgFmErr()
-	for _, p := range ly.SndPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).DWt(ctime)
-	}
-}
-
-// DWtSubMean does mean subtraction for projections requiring it.
-// calls DWtSubMean on the recv projections
-func (ly *Layer) DWtSubMean(ctime *Time) {
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).DWtSubMean(ctime)
-	}
-}
-
-// WtFmDWt updates the weights from delta-weight changes
-// calls WtFmDWt on the sending projections
-func (ly *Layer) WtFmDWt(ctime *Time) {
+// WtFmDWtLayer does weight update at the layer level.
+// does NOT call main projection-level WtFmDWt method.
+// in base, only calls TrgAvgFmD
+func (ly *Layer) WtFmDWtLayer(ctime *Time) {
 	ly.TrgAvgFmD()
-	for _, p := range ly.SndPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).WtFmDWt(ctime)
-	}
 }
 
-// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
-// and adapting inhibition
+// SlowAdapt is the layer-level slow adaptation functions.
+// Calls AdaptInhib and AvgDifFmTrgAvg for Synaptic Scaling.
+// Does NOT call projection-level methods.
 func (ly *Layer) SlowAdapt(ctime *Time) {
 	ly.AdaptInhib(ctime)
-	ly.SynScale()
+	ly.AvgDifFmTrgAvg()
 	// note: prjn level call happens at network level
 }
 
@@ -1677,8 +1614,9 @@ func (ly *Layer) AdaptInhib(ctime *Time) {
 	ly.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.Inhib.ActAvg.Targ, ly.ActAvg.ActMAvg)
 }
 
-// SynScale performs synaptic scaling based on running average activation vs. targets
-func (ly *Layer) SynScale() {
+// AvgDifFmTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
+// which is then used for synaptic scaling of LWt values in Prjn SynScale.
+func (ly *Layer) AvgDifFmTrgAvg() {
 	sp := 0
 	if len(ly.Pools) > 1 {
 		sp = 1

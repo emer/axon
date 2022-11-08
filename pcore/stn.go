@@ -148,23 +148,19 @@ func (ly *STNLayer) NewState() {
 	}
 }
 
-func (ly *STNLayer) SpikeFmG(ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ctime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		snr := &ly.STNNeurs[ni]
-		if ly.Ca.CaD {
-			snr.SKCai = ly.Ca.CaScale * nrn.CaSpkD // todo: CaD?
-		} else {
-			snr.SKCai = ly.Ca.CaScale * nrn.CaSpkP // todo: CaP?
-		}
-		snr.SKCaM = ly.Ca.SKCa.MFmCa(snr.SKCai, snr.SKCaM)
-		snr.Gsk = ly.Ca.SKCa.Gbar * snr.SKCaM
-		nrn.Gk += snr.Gsk
+// todo: move this to GInteg when Gk moves there.
+
+func (ly *STNLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
+	snr := &ly.STNNeurs[ni]
+	if ly.Ca.CaD {
+		snr.SKCai = ly.Ca.CaScale * nrn.CaSpkD // todo: CaD?
+	} else {
+		snr.SKCai = ly.Ca.CaScale * nrn.CaSpkP // todo: CaP?
 	}
+	snr.SKCaM = ly.Ca.SKCa.MFmCa(snr.SKCai, snr.SKCaM)
+	snr.Gsk = ly.Ca.SKCa.Gbar * snr.SKCaM
+	nrn.Gk += snr.Gsk
 }
 
 // Build constructs the layer state, including calling Build on the projections.

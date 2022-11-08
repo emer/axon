@@ -1127,7 +1127,8 @@ func (pj *Prjn) SWtFmWt() {
 	}
 }
 
-// SynScale performs synaptic scaling based on running average activation vs. targets
+// SynScale performs synaptic scaling based on running average activation vs. targets.
+// Layer-level AvgDifFmTrgAvg function must be called first.
 func (pj *Prjn) SynScale() {
 	if !pj.Learn.Learn || pj.Typ == emer.Inhib {
 		return
