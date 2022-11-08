@@ -16,21 +16,21 @@ import (
 // LayerBase manages the structural elements of the layer, which are common
 // to any Layer type. The main Layer then can just have the algorithm-specific code.
 type LayerBase struct {
-	AxonLay  AxonLayer      `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Network  emer.Network   `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
-	Nm       string         `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
-	Cls      string         `desc:"Class is for applying parameter styles, can be space separated multple tags"`
-	Off      bool           `desc:"inactivate this layer -- allows for easy experimentation"`
-	Shp      etensor.Shape  `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
-	Typ      emer.LayerType `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
-	Thr      int            `desc:"the thread number (go routine) to use in updating this layer. The user is responsible for allocating layers to threads, trying to maintain an even distribution across layers and establishing good break-points."`
-	Rel      relpos.Rel     `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
-	Ps       mat32.Vec3     `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
-	Idx      int            `desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
-	RepIxs   []int          `desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
-	RepShp   etensor.Shape  `desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
-	RcvPrjns emer.Prjns     `desc:"list of receiving projections into this layer from other layers"`
-	SndPrjns emer.Prjns     `desc:"list of sending projections from this layer to other layers"`
+	AxonLay   AxonLayer      `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Network   emer.Network   `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
+	Nm        string         `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
+	Cls       string         `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Off       bool           `desc:"inactivate this layer -- allows for easy experimentation"`
+	Shp       etensor.Shape  `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
+	Typ       emer.LayerType `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
+	Rel       relpos.Rel     `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
+	Ps        mat32.Vec3     `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
+	Idx       int            `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
+	NeurStIdx int            `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
+	RepIxs    []int          `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
+	RepShp    etensor.Shape  `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
+	RcvPrjns  emer.Prjns     `desc:"list of receiving projections into this layer from other layers"`
+	SndPrjns  emer.Prjns     `desc:"list of sending projections from this layer to other layers"`
 }
 
 // emer.Layer interface methods
@@ -43,6 +43,10 @@ func (ls *LayerBase) InitName(lay emer.Layer, name string, net emer.Network) {
 	ls.Nm = name
 	ls.Network = net
 }
+
+// todo: remove from emer.Layer api
+func (ls *LayerBase) Thread() int       { return 0 }
+func (ls *LayerBase) SetThread(thr int) {}
 
 func (ls *LayerBase) Name() string               { return ls.Nm }
 func (ls *LayerBase) SetName(nm string)          { ls.Nm = nm }
@@ -57,8 +61,6 @@ func (ls *LayerBase) SetOff(off bool)            { ls.Off = off }
 func (ls *LayerBase) Shape() *etensor.Shape      { return &ls.Shp }
 func (ls *LayerBase) Is2D() bool                 { return ls.Shp.NumDims() == 2 }
 func (ls *LayerBase) Is4D() bool                 { return ls.Shp.NumDims() == 4 }
-func (ls *LayerBase) Thread() int                { return ls.Thr }
-func (ls *LayerBase) SetThread(thr int)          { ls.Thr = thr }
 func (ls *LayerBase) RelPos() relpos.Rel         { return ls.Rel }
 func (ls *LayerBase) Pos() mat32.Vec3            { return ls.Ps }
 func (ls *LayerBase) SetPos(pos mat32.Vec3)      { ls.Ps = pos }
@@ -71,6 +73,7 @@ func (ls *LayerBase) SendPrjns() *emer.Prjns     { return &ls.SndPrjns }
 func (ls *LayerBase) NSendPrjns() int            { return len(ls.SndPrjns) }
 func (ls *LayerBase) SendPrjn(idx int) emer.Prjn { return ls.SndPrjns[idx] }
 func (ls *LayerBase) RepIdxs() []int             { return ls.RepIxs }
+func (ls *LayerBase) NeurStartIdx() int          { return ls.NeurStIdx }
 
 func (ls *LayerBase) Idx4DFrom2D(x, y int) ([]int, bool) {
 	lshp := ls.Shape()

@@ -436,7 +436,11 @@ func (ly *Layer) Build() error {
 	if nu == 0 {
 		return fmt.Errorf("Build Layer %v: no units specified in Shape", ly.Nm)
 	}
-	ly.Neurons = make([]Neuron, nu)
+	// note: ly.Neurons are allocated by Network from global network pool
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		nrn.LayIdx = int32(ly.Idx)
+	}
 	err := ly.BuildPools(nu)
 	if err != nil {
 		return err
@@ -1662,12 +1666,7 @@ func (ly *Layer) WtFmDWt(ctime *Time) {
 func (ly *Layer) SlowAdapt(ctime *Time) {
 	ly.AdaptInhib(ctime)
 	ly.SynScale()
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		p.(AxonPrjn).SlowAdapt(ctime)
-	}
+	// note: prjn level call happens at network level
 }
 
 // AdaptInhib adapts inhibition

@@ -6,19 +6,15 @@ package axon
 
 import (
 	"fmt"
-	"math"
-	"math/rand"
 	"strings"
 	"unsafe"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
 )
 
 // axon.Network has parameters for running a basic rate-coded Axon network
@@ -119,17 +115,19 @@ func (nt *Network) Cycle(ctime *Time) {
 	nt.EmerNet.(AxonNetwork).CycleImpl(ctime)
 }
 
-// Cycle handles entire update for one cycle (msec) of neuron activity state,
-// by calling layer.Cycle method which does everything at a per-layer level.
-// * Increments Ge, Gi from spikes sent on previous cycle
-// * Average and Max Ge stats
-// * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
-// * Activation (Spiking) from Ge, Gi, and Gl
-// * Average and Max Act stats
-// * CyclePost: main hook for specialized algorithm-specific code (deep, hip, bg etc)
-// * Send spikes
+// CycleImpl handles entire update for one cycle (msec) of neuron activity
 func (nt *Network) CycleImpl(ctime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.Cycle(ctime) }, "Cycle")
+	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
+	nt.PrjnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes", Thread, Wait)
+	nt.LayerFun(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes", NoThread, Wait)
+	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron", Thread, Wait)
+	nt.LayerFun(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost", NoThread, Wait) // def NoThread
+	if !ctime.Testing {
+		// todo: if use atomic in these functions, can avoid Wait
+		// and these are definitely thread!
+		nt.PrjnFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa", Thread, Wait)
+		nt.PrjnFun(func(pj AxonPrjn) { pj.RecvSynCa(ctime) }, "RecvSynCa", Thread, Wait)
+	}
 }
 
 // MinusPhase does updating after end of minus phase
@@ -340,12 +338,24 @@ func (nt *Network) NewStateImpl() {
 
 // MinusPhaseImpl does updating after end of minus phase
 func (nt *Network) MinusPhaseImpl(ctime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.MinusPhase(ctime) }, "MinusPhase")
+	// not worth threading this probably
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(AxonLayer).MinusPhase(ctime)
+	}
 }
 
 // PlusPhaseImpl does updating after end of plus phase
 func (nt *Network) PlusPhaseImpl(ctime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.PlusPhase(ctime) }, "PlusPhase")
+	// not worth threading this probably
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
+			continue
+		}
+		ly.(AxonLayer).PlusPhase(ctime)
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -353,13 +363,17 @@ func (nt *Network) PlusPhaseImpl(ctime *Time) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWt(ctime) }, "DWt")
+	for _, ly := range nt.Layers {
+		ly.(AxonLayer).AsAxon().DTrgAvgFmErr() // light weight -- not worth parallelizing
+	}
+	nt.PrjnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt", Thread, Wait) // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.DWtSubMean(ctime) }, "DWtSubMean")
-	nt.ThrLayFun(func(ly AxonLayer) { ly.WtFmDWt(ctime) }, "WtFmDWt")
+	nt.PrjnFun(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean", Thread, Wait)
+	nt.LayerFun(func(ly AxonLayer) { ly.AsAxon().TrgAvgFmD() }, "TrgAvgFmD", NoThread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt", Thread, Wait)
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ctime)
 }
 
@@ -367,15 +381,17 @@ func (nt *Network) WtFmDWtImpl(ctime *Time) {
 // GScale conductance scaling, and adapting inhibition
 func (nt *Network) SlowAdapt(ctime *Time) {
 	nt.SlowCtr++
-	if nt.SlowCtr >= nt.SlowInterval {
-		nt.SlowCtr = 0
-		nt.ThrLayFun(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt")
+	if nt.SlowCtr < nt.SlowInterval {
+		return
 	}
+	nt.SlowCtr = 0
+	nt.LayerFun(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt", NoThread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt", Thread, Wait)
 }
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctime *Time) {
-	nt.ThrLayFun(func(ly AxonLayer) { ly.SynFail(ctime) }, "SynFail")
+	nt.PrjnFun(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail", Thread, Wait)
 }
 
 // LrateMod sets the Lrate modulation parameter for Prjns, which is
@@ -553,130 +569,6 @@ func (nt *Network) SizeReport() string {
 		}
 	}
 	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynMem: %v\n", nt.Nm, neur, (datasize.ByteSize)(neurMem).HumanReadable(), syn, (datasize.ByteSize)(synMem).HumanReadable())
-	return b.String()
-}
-
-// ThreadAlloc allocates layers to given number of threads,
-// attempting to evenly divide computation.  Returns report
-// of thread allocations and estimated computational cost per thread.
-func (nt *Network) ThreadAlloc(nThread int) string {
-	nl := len(nt.Layers)
-	if nl < nThread {
-		return fmt.Sprintf("Number of threads: %d > number of layers: %d -- must be less\n", nThread, nl)
-	}
-	if nl == nThread {
-		for li, lyi := range nt.Layers {
-			ly := lyi.(AxonLayer).AsAxon()
-			ly.SetThread(li)
-		}
-		return fmt.Sprintf("Number of threads: %d == number of layers: %d\n", nThread, nl)
-	}
-
-	type td struct {
-		Lays []int
-		Neur int // neur cost
-		Syn  int // send syn cost
-		Tot  int // total cost
-	}
-
-	avgFunc := func(thds []td) float32 {
-		avg := 0
-		for i := range thds {
-			avg += thds[i].Tot
-		}
-		return float32(avg) / float32(len(thds))
-	}
-
-	devFunc := func(thds []td) float32 {
-		avg := avgFunc(thds)
-		dev := float32(0)
-		for i := range thds {
-			dev += mat32.Abs(float32(thds[i].Tot) - avg)
-		}
-		return float32(dev) / float32(len(thds))
-	}
-
-	// cache per-layer data first
-	ld := make([]td, nl)
-	for li, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
-		ld[li].Neur, ld[li].Syn, ld[li].Tot = ly.CostEst()
-	}
-
-	// number of initial random permutations to create
-	initN := 100
-	pth := float64(nl) / float64(nThread)
-	if pth < 2 {
-		initN = 10
-	} else if pth > 3 {
-		initN = 500
-	}
-	thrs := make([][]td, initN)
-	devs := make([]float32, initN)
-	ord := rand.Perm(nl)
-	minDev := float32(1.0e20)
-	minDevIdx := -1
-	for ti := 0; ti < initN; ti++ {
-		thds := &thrs[ti]
-		*thds = make([]td, nThread)
-		for t := 0; t < nThread; t++ {
-			thd := &(*thds)[t]
-			ist := int(math.Round(float64(t) * pth))
-			ied := int(math.Round(float64(t+1) * pth))
-			thd.Neur = 0
-			thd.Syn = 0
-			for i := ist; i < ied; i++ {
-				li := ord[i]
-				thd.Neur += ld[li].Neur
-				thd.Syn += ld[li].Syn
-				thd.Tot += ld[li].Tot
-				thd.Lays = append(thd.Lays, ord[i])
-			}
-		}
-		dev := devFunc(*thds)
-		if dev < minDev {
-			minDev = dev
-			minDevIdx = ti
-		}
-		devs[ti] = dev
-		erand.PermuteInts(ord)
-	}
-
-	// todo: could optimize best case further by trying to switch one layer at random with each other
-	// thread, and seeing if that is faster..  but probably not worth it given inaccuracy of estimate.
-
-	var b strings.Builder
-	b.WriteString(nt.ThreadReport())
-
-	fmt.Fprintf(&b, "Deviation: %s \t Idx: %d\n", (datasize.ByteSize)(minDev).HumanReadable(), minDevIdx)
-
-	nt.StopThreads()
-	nt.BuildThreads()
-	nt.StartThreads()
-
-	return b.String()
-}
-
-// ThreadReport returns report of thread allocations and
-// estimated computational cost per thread.
-func (nt *Network) ThreadReport() string {
-	var b strings.Builder
-	// p := message.NewPrinter(language.English)
-	fmt.Fprintf(&b, "Network: %s Auto Thread Allocation for %d threads:\n", nt.Nm, nt.NThreads)
-	for th := 0; th < nt.NThreads; th++ {
-		tneur := 0
-		tsyn := 0
-		ttot := 0
-		for _, lyi := range nt.ThrLay[th] {
-			ly := lyi.(AxonLayer).AsAxon()
-			neur, syn, tot := ly.CostEst()
-			tneur += neur
-			tsyn += syn
-			ttot += tot
-			fmt.Fprintf(&b, "\t%14s: cost: %d K \t neur: %d K \t syn: %d K\n", ly.Nm, tot/1000, neur/1000, syn/1000)
-		}
-		fmt.Fprintf(&b, "Thread: %d \t cost: %d K \t neur: %d K \t syn: %d K\n", th, ttot/1000, tneur/1000, tsyn/1000)
-	}
 	return b.String()
 }
 

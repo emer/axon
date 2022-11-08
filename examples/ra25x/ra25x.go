@@ -177,18 +177,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
 
-	// note: can set these to do parallel threaded computation across multiple cpus
-	// not worth it for this small of a model, but definitely helps for larger ones
-	// if Thread {
-	// 	hid2.SetThread(1)
-	// 	out.SetThread(1)
-	// }
-
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
+	net.NThreads = 1
 	net.Defaults()
 	ss.Params.SetObject("Network")
 	err := net.Build()

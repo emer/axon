@@ -14,10 +14,10 @@ import (
 	"github.com/goki/mat32"
 )
 
-// NeuronVarStart is the byte offset of fields in the Neuron structure
-// where the float32 named variables start.
+// NeuronVarStart is the starting field where float32 variables start
+// all variables prior must be 32 bit (int32)
 // Note: all non-float32 infrastructure variables must be at the start!
-const NeuronVarStart = 8
+const NeuronVarStart = 3
 
 // axon.Neuron holds all of the neuron (unit) level variables.
 // This is the most basic version, without any optional features.
@@ -25,6 +25,7 @@ const NeuronVarStart = 8
 // and start at the top, in contiguous order
 type Neuron struct {
 	Flags   NeurFlags `desc:"bit flags for binary state variables"`
+	LayIdx  int32     `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
 	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
 	Spike   float32   `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
 	Spiked  float32   `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
@@ -150,7 +151,7 @@ func init() {
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	typ := reflect.TypeOf((*Neuron)(nil)).Elem()
 	nf := typ.NumField()
-	starti := 2
+	starti := NeuronVarStart
 	for i := starti; i < nf; i++ {
 		fs := typ.FieldByIndex([]int{i})
 		v := fs.Name
@@ -181,7 +182,7 @@ func NeuronVarIdxByName(varNm string) (int, error) {
 
 // VarByIndex returns variable using index (0 = first variable in NeuronVars list)
 func (nrn *Neuron) VarByIndex(idx int) float32 {
-	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(nrn)) + uintptr(NeuronVarStart+4*idx)))
+	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(nrn)) + uintptr(NeuronVarStart*4+4*idx)))
 	return *fv
 }
 

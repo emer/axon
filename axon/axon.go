@@ -83,6 +83,10 @@ type AxonLayer interface {
 	// interface does not need to include accessors to all the basic stuff
 	AsAxon() *Layer
 
+	// NeurStartIdx is the starting index in global network slice of neurons for
+	// neurons in this layer
+	NeurStartIdx() int
+
 	// InitWts initializes the weight values in the network, i.e., resetting learning
 	// Also calls InitActs
 	InitWts()
