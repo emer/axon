@@ -110,6 +110,7 @@ func cmprFloats(out, cor []float32, msg string, t *testing.T) {
 		dif := mat32.Abs(out[i] - cor[i])
 		if dif > TOLERANCE { // allow for small numerical diffs
 			t.Errorf("%v err: out: %v, cor: %v, dif: %v index: %v\n", msg, out[i], cor[i], dif, i)
+			t.Errorf("%v out: %v, cor: %v", msg, out, cor)
 		}
 	}
 }
@@ -178,19 +179,19 @@ func TestNetAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.72165483, 0, 0, 0}
-	qtr0HidGes := []float32{0.49949664, 0, 0, 0}
-	qtr0HidGis := []float32{0.13319717, 0.13319717, 0.13319717, 0.13319717}
-	qtr0OutActs := []float32{0.63028616, 0, 0, 0}
-	qtr0OutGes := []float32{0.40031016, 0, 0, 0}
-	qtr0OutGis := []float32{0.07557303, 0.07557303, 0.07557303, 0.07557303}
+	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
+	qtr0HidGes := []float32{0.3717118, 0, 0, 0}
+	qtr0HidGis := []float32{0.1547833, 0.1547833, 0.1547833, 0.1547833}
+	qtr0OutActs := []float32{0.55552065, 0, 0, 0}
+	qtr0OutGes := []float32{0.3789059, 0, 0, 0}
+	qtr0OutGis := []float32{0.20974194, 0.20974194, 0.20974194, 0.20974194}
 
-	qtr3HidActs := []float32{0.689808, 0, 0, 0}
-	qtr3HidGes := []float32{0.64131236, 0, 0, 0}
-	qtr3HidGis := []float32{0.23083496, 0.23083496, 0.23083496, 0.23083496}
+	qtr3HidActs := []float32{0.60769576, 0, 0, 0}
+	qtr3HidGes := []float32{0.46021092, 0, 0, 0}
+	qtr3HidGis := []float32{0.2902269, 0.2902269, 0.2902269, 0.2902269}
 	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
-	qtr3OutGes := []float32{0.6, 0, 0, 0}
-	qtr3OutGis := []float32{0.2053869, 0.2053869, 0.2053869, 0.2053869}
+	qtr3OutGes := []float32{0.8, 0, 0, 0}
+	qtr3OutGis := []float32{0.45443797, 0.45443797, 0.45443797, 0.45443797}
 
 	inActs := []float32{}
 	hidActs := []float32{}
@@ -300,10 +301,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.003973441, 0.0036865456, 0.0036952894, 0.003696907}
-	outDwts := []float32{0.0075946045, 0.009589076, 0.0106454035, 0.010701117}
-	hidWts := []float32{0.523823, 0.5221053, 0.5221578, 0.5221673} // todo: not clear why not updating..
-	outWts := []float32{0.5454452, 0.5572888, 0.5635367, 0.5638657}
+	hidDwts := []float32{0.0028504508, 0.0032695134, 0.0032438203, 0.0027064427}
+	outDwts := []float32{0.0037635611, 0.011575086, 0.008515934, 0.009580414}
+	hidWts := []float32{0.5170964, 0.51960725, 0.51945335, 0.51623327} // todo: not clear why not updating..
+	outWts := []float32{0.5225664, 0.56901956, 0.5509234, 0.5572376}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -442,18 +443,18 @@ func TestInhibAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.80708516, 0, 0, 0}
-	qtr0HidGes := []float32{0.6713579, 0, 0, 0}
-	qtr0HidGis := []float32{0.05214787, 0, 0, 0}
-	qtr0OutActs := []float32{0.92420554, 0, 0, 0}
-	qtr0OutGes := []float32{0.46887589, 0, 0, 0}
+	qtr0HidActs := []float32{0.8761159, 0, 0, 0}
+	qtr0HidGes := []float32{0.91799927, 0, 0, 0}
+	qtr0HidGis := []float32{0.09300988, 0, 0, 0}
+	qtr0OutActs := []float32{0.793471, 0, 0, 0}
+	qtr0OutGes := []float32{0.81241286, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.9217259, 0, 0, 0}
-	qtr3HidGes := []float32{0.96113765, 0, 0, 0}
-	qtr3HidGis := []float32{0.05217979, 0, 0, 0}
-	qtr3OutActs := []float32{0.7936507, 0, 0, 0}
-	qtr3OutGes := []float32{0.6, 0, 0, 0}
+	qtr3HidActs := []float32{0.91901356, 0, 0, 0}
+	qtr3HidGes := []float32{1.1383185, 0, 0, 0}
+	qtr3HidGis := []float32{0.09305171, 0, 0, 0}
+	qtr3OutActs := []float32{0.92592585, 0, 0, 0}
+	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0, 0, 0, 0}
 
 	inActs := []float32{}
