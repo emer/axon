@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build this_is_broken_we_should_fix_or_delete
-
 package axon
 
 import (
+	"bytes"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/emer/emergent/emer"
@@ -72,18 +72,6 @@ func newTestNet() *Network {
 	testNet.InitWts()
 	testNet.NewState() // get GScale
 	return &testNet
-
-	// var buf bytes.Buffer
-	// testNet.WriteWtsJSON(&buf)
-	// wb := buf.Bytes()
-	// fmt.Printf("testNet Weights:\n\n%v\n", string(wb))
-	//
-	// fp, err := os.Create("testdata/testnet.wts")
-	// defer fp.Close()
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-	// fp.Write(wb)
 }
 
 func TestSynVals(t *testing.T) {
@@ -114,11 +102,15 @@ func newInPats() *etensor.Float32 {
 }
 
 func cmprFloats(out, cor []float32, msg string, t *testing.T) {
+	// TOLERANCE is the numerical difference tolerance for comparing vs. target values
+	const TOLERANCE = float32(1.0e-8)
+
 	t.Helper()
 	for i := range out {
 		dif := mat32.Abs(out[i] - cor[i])
 		if dif > TOLERANCE { // allow for small numerical diffs
-			t.Errorf("%v err: out: %v, cor: %v, dif: %v\n", msg, out[i], cor[i], dif)
+			t.Errorf("%v err: out: %v, cor: %v, dif: %v index: %v\n", msg, out[i], cor[i], dif, i)
+			t.Errorf("%v out: %v, cor: %v", msg, out, cor)
 		}
 	}
 }
@@ -167,7 +159,7 @@ func TestSpikeProp(t *testing.T) {
 				break
 			}
 		}
-		if hidCyc-inCyc != del {
+		if hidCyc-inCyc != del+1 {
 			t.Errorf("SpikeProp error -- delay: %d  actual: %d\n", del, hidCyc-inCyc)
 		}
 	}
@@ -187,19 +179,19 @@ func TestNetAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.72165483, 0, 0, 0}
-	qtr0HidGes := []float32{0.49048427, 0, 0, 0}
-	qtr0HidGis := []float32{0.13094407, 0.13094407, 0.13094407, 0.13094407}
-	qtr0OutActs := []float32{0.63028616, 0, 0, 0}
-	qtr0OutGes := []float32{0.3984899, 0, 0, 0}
-	qtr0OutGis := []float32{0.07549549, 0.07549549, 0.07549549, 0.07549549}
+	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
+	qtr0HidGes := []float32{0.3717118, 0, 0, 0}
+	qtr0HidGis := []float32{0.1547833, 0.1547833, 0.1547833, 0.1547833}
+	qtr0OutActs := []float32{0.55552065, 0, 0, 0}
+	qtr0OutGes := []float32{0.3789059, 0, 0, 0}
+	qtr0OutGis := []float32{0.20974194, 0.20974194, 0.20974194, 0.20974194}
 
-	qtr3HidActs := []float32{0.6532401, 0, 0, 0}
-	qtr3HidGes := []float32{0.7066621, 0, 0, 0}
-	qtr3HidGis := []float32{0.24389985, 0.24389985, 0.24389985, 0.24389985}
+	qtr3HidActs := []float32{0.60769576, 0, 0, 0}
+	qtr3HidGes := []float32{0.46021092, 0, 0, 0}
+	qtr3HidGis := []float32{0.2902269, 0.2902269, 0.2902269, 0.2902269}
 	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
-	qtr3OutGes := []float32{0.6, 0, 0, 0}
-	qtr3OutGis := []float32{0.20638072, 0.20638072, 0.20638072, 0.20638072}
+	qtr3OutGes := []float32{0.8, 0, 0, 0}
+	qtr3OutGis := []float32{0.45443797, 0.45443797, 0.45443797, 0.45443797}
 
 	inActs := []float32{}
 	hidActs := []float32{}
@@ -309,10 +301,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.0036074303, 0.0068956804, 0.0009886026, 0.0009886026}
-	outDwts := []float32{0.009111724, 0.01502119, 0.007415774, 0.007415774}
-	hidWts := []float32{0.5, 0.5, 0.5, 0.5} // todo: not clear why not updating..
-	outWts := []float32{0.55445933, 0.5891899, 0.54438084, 0.54438084}
+	hidDwts := []float32{0.0028504508, 0.0032695134, 0.0032438203, 0.0027064427}
+	outDwts := []float32{0.0037635611, 0.011575086, 0.008515934, 0.009580414}
+	hidWts := []float32{0.5170964, 0.51960725, 0.51945335, 0.51623327} // todo: not clear why not updating..
+	outWts := []float32{0.5225664, 0.56901956, 0.5509234, 0.5572376}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -420,18 +412,6 @@ func TestNetLearn(t *testing.T) {
 	cmprFloats(outdwt, outDwts, "out DWt", t)
 	cmprFloats(hidwt, hidWts, "hid Wt", t)
 	cmprFloats(outwt, outWts, "out Wt", t)
-
-	// var buf bytes.Buffer
-	// testNet.WriteWtsJSON(&buf)
-	// wb := buf.Bytes()
-	// fmt.Printf("testNet Trained Weights:\n\n%v\n", string(wb))
-
-	// fp, err := os.Create("testdata/testnet_train.wts")
-	// defer fp.Close()
-	// if err != nil {
-	// 	t.Error(err)
-	// }
-	// fp.Write(wb)
 }
 
 func TestInhibAct(t *testing.T) {
@@ -463,18 +443,18 @@ func TestInhibAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.80708516, 0, 0, 0}
-	qtr0HidGes := []float32{0.66517055, 0, 0, 0}
-	qtr0HidGis := []float32{0.05214787, 0, 0, 0}
-	qtr0OutActs := []float32{0.92420554, 0, 0, 0}
-	qtr0OutGes := []float32{0.4682724, 0, 0, 0}
+	qtr0HidActs := []float32{0.8761159, 0, 0, 0}
+	qtr0HidGes := []float32{0.91799927, 0, 0, 0}
+	qtr0HidGis := []float32{0.09300988, 0, 0, 0}
+	qtr0OutActs := []float32{0.793471, 0, 0, 0}
+	qtr0OutGes := []float32{0.81241286, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.9086095, 0, 0, 0}
-	qtr3HidGes := []float32{0.9144331, 0, 0, 0}
-	qtr3HidGis := []float32{0.05217979, 0, 0, 0}
-	qtr3OutActs := []float32{0.7936507, 0, 0, 0}
-	qtr3OutGes := []float32{0.6, 0, 0, 0}
+	qtr3HidActs := []float32{0.91901356, 0, 0, 0}
+	qtr3HidGes := []float32{1.1383185, 0, 0, 0}
+	qtr3HidGis := []float32{0.09305171, 0, 0, 0}
+	qtr3OutActs := []float32{0.92592585, 0, 0, 0}
+	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0, 0, 0, 0}
 
 	inActs := []float32{}
@@ -561,4 +541,18 @@ func TestInhibAct(t *testing.T) {
 			fmt.Printf("=============================\n")
 		}
 	}
+}
+
+func saveToFile(net *Network, t *testing.T) {
+	var buf bytes.Buffer
+	net.WriteWtsJSON(&buf)
+	wb := buf.Bytes()
+	fmt.Printf("testNet Trained Weights:\n\n%v\n", string(wb))
+
+	fp, err := os.Create("testdata/testnet_train.wts")
+	defer fp.Close()
+	if err != nil {
+		t.Error(err)
+	}
+	fp.Write(wb)
 }
