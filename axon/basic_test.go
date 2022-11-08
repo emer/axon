@@ -158,7 +158,7 @@ func TestSpikeProp(t *testing.T) {
 				break
 			}
 		}
-		if hidCyc-inCyc != del {
+		if hidCyc-inCyc != del+1 {
 			t.Errorf("SpikeProp error -- delay: %d  actual: %d\n", del, hidCyc-inCyc)
 		}
 	}
