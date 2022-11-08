@@ -148,10 +148,8 @@ func (ly *STNLayer) NewState() {
 	}
 }
 
-// todo: move this to GInteg when Gk moves there.
-
-func (ly *STNLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
+func (ly *STNLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.GInteg(ni, nrn, ctime)
 	snr := &ly.STNNeurs[ni]
 	if ly.Ca.CaD {
 		snr.SKCai = ly.Ca.CaScale * nrn.CaSpkD // todo: CaD?

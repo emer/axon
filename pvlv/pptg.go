@@ -99,8 +99,8 @@ func (ly *PPTgLayer) GFmRawSyn(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Act.NMDAFmRaw(nrn, geRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
-
 	ly.Act.GeFmSyn(nrn, geSyn, nrn.Gnmda+nrn.Gvgcc)
+	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
 

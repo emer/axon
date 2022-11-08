@@ -1188,9 +1188,13 @@ func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
 }
 
 // GiInteg adds Gi values from all sources including Pool computed inhib
+// and updates GABAB as well
 func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	pl := &ly.Pools[nrn.SubPool]
 	nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
+	nrn.Gk += nrn.GgabaB // Gk was already init
 }
 
 // GFmSpikeRaw integrates G*Raw and G*Syn values for given neuron
@@ -1222,8 +1226,8 @@ func (ly *Layer) GFmRawSyn(ni int, nrn *Neuron, ctime *Time) {
 	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
-
 	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc) // sets nrn.GeExt too
+	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
 
@@ -1246,14 +1250,6 @@ func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 	if !ctime.PlusPhase {
 		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
-	}
-	// note: this is here because it depends on Gi
-	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
-	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
-	if ly.Act.KNa.On {
-		nrn.Gk += nrn.GgabaB // Gk was set by KNa
-	} else {
-		nrn.Gk = nrn.GgabaB
 	}
 }
 

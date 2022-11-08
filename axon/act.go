@@ -246,6 +246,18 @@ func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
 	nrn.VgccCa = ac.VGCC.CaFmG(nrn.VmDend, nrn.Gvgcc, nrn.VgccCa) // note: may be overwritten!
 }
 
+// GkFmVm updates all the Gk-based conductances: Mahp, KNa, Gak
+func (ac *ActParams) GkFmVm(nrn *Neuron) {
+	dn := ac.Mahp.DNFmV(nrn.Vm, nrn.MahpN)
+	nrn.MahpN += dn
+	nrn.Gak = ac.AK.Gak(nrn.VmDend)
+	nrn.Gk = nrn.Gak + ac.Mahp.GmAHP(nrn.MahpN) + ac.Sahp.GsAHP(nrn.SahpN)
+	if ac.KNa.On {
+		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
+		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
+	}
+}
+
 // GeFmSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmSyn(nrn *Neuron, geSyn, geExt float32) {
@@ -417,14 +429,6 @@ func (ac *ActParams) SpikeFmG(nrn *Neuron) {
 	}
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.Act = nwAct
-	dn := ac.Mahp.DNFmV(nrn.Vm, nrn.MahpN)
-	nrn.MahpN += dn
-	nrn.Gak = ac.AK.Gak(nrn.VmDend)
-	nrn.Gk = nrn.Gak + ac.Mahp.GmAHP(nrn.MahpN) + ac.Sahp.GsAHP(nrn.SahpN)
-	if ac.KNa.On {
-		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
-		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
