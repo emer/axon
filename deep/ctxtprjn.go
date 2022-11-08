@@ -19,7 +19,7 @@ type CtxtSender interface {
 	// SendCtxtGe sends activation over CTCtxtPrjn projections to integrate
 	// CtxtGe excitatory conductance on CT layers.
 	// This must be called at the end of the Burst quarter (plus phase)
-	SendCtxtGe(ltime *axon.Time)
+	SendCtxtGe(ctime *axon.Time)
 }
 
 // CTCtxtPrjn is the "context" temporally-delayed projection into CTLayer,
@@ -88,8 +88,8 @@ func (pj *CTCtxtPrjn) InitGBuffs() {
 func (pj *CTCtxtPrjn) SendSpike(si int) {
 }
 
-// GFmSpike: disabled for this type
-func (pj *CTCtxtPrjn) GFmSpike(ltime *axon.Time) {
+// GFmSpikes: disabled for this type
+func (pj *CTCtxtPrjn) GFmSpikes(ctime *axon.Time) {
 }
 
 // SendCtxtGe sends the full Burst activation from sending neuron index si,
@@ -121,16 +121,16 @@ func (pj *CTCtxtPrjn) RecvCtxtGeInc() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
-func (pj *CTCtxtPrjn) SendSynCa(ltime *axon.Time) {
+func (pj *CTCtxtPrjn) SendSynCa(ctime *axon.Time) {
 	return
 }
 
-func (pj *CTCtxtPrjn) RecvSynCa(ltime *axon.Time) {
+func (pj *CTCtxtPrjn) RecvSynCa(ctime *axon.Time) {
 	return
 }
 
 // DWt computes the weight change (learning) for Ctxt projections
-func (pj *CTCtxtPrjn) DWt(ltime *axon.Time) {
+func (pj *CTCtxtPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}

@@ -39,34 +39,26 @@ type AxonNetwork interface {
 	// input scaling from running average activation etc.
 	NewStateImpl()
 
-	// Cycle handles entire update for one cycle (msec) of neuron activity state,
-	// by calling layer.Cycle method which does everything at a per-layer level.
-	// * Increments Ge, Gi from spikes sent on previous cycle
-	// * Average and Max Ge stats
-	// * Inhibition based on Ge stats and Act Stats (computed at end of Cycle)
-	// * Activation (Spiking) from Ge, Gi, and Gl
-	// * Average and Max Act stats
-	// * CyclePost which is the main hook for specialized algorithm-specific code (deep, hip, bg etc)
-	// * Send spikes
-	CycleImpl(ltime *Time)
+	// Cycle handles entire update for one cycle (msec) of neuron activity state.
+	CycleImpl(ctime *Time)
 
 	// MinusPhaseImpl does updating after minus phase
-	MinusPhaseImpl(ltime *Time)
+	MinusPhaseImpl(ctime *Time)
 
 	// PlusPhaseImpl does updating after plus phase
-	PlusPhaseImpl(ltime *Time)
+	PlusPhaseImpl(ctime *Time)
 
 	// DWtImpl computes the weight change (learning) based on current
 	// running-average activation values
-	DWtImpl(ltime *Time)
+	DWtImpl(ctime *Time)
 
 	// WtFmDWtImpl updates the weights from delta-weight changes.
 	// Also calls SynScale every Interval times
-	WtFmDWtImpl(ltime *Time)
+	WtFmDWtImpl(ctime *Time)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, and adapting inhibition
-	SlowAdapt(ltime *Time)
+	SlowAdapt(ctime *Time)
 }
 
 // AxonLayer defines the essential algorithmic API for Axon, at the layer level.
@@ -82,6 +74,10 @@ type AxonLayer interface {
 	// AsAxon returns this layer as a axon.Layer -- so that the AxonLayer
 	// interface does not need to include accessors to all the basic stuff
 	AsAxon() *Layer
+
+	// NeurStartIdx is the starting index in global network slice of neurons for
+	// neurons in this layer
+	NeurStartIdx() int
 
 	// InitWts initializes the weight values in the network, i.e., resetting learning
 	// Also calls InitActs
@@ -141,66 +137,53 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
 
-	// Cycle handles entire update for one cycle (msec) of neuron activity state,
-	// calling the following methods in order:
-	//
-	// * GFmSpike
-	// * AvgMaxGe
-	// * InhibFmGeAct
-	// * ActFmG
+	// GiFmSpikes integrates new inhibitory conductances from Spikes
+	// at the layer and pool level
+	GiFmSpikes(ctime *Time)
+
+	// CycleNeuron does one cycle (msec) of updating at the neuron level
+	// calls the following via this AxonLay interface:
+	// * Ginteg
+	// * SpikeFmG
 	// * PostAct
-	// * CyclePost
 	// * SendSpike
-	//
-	// All methods are called through the AxonLay interface, so specialized algorithms
-	// can override those functions (preferred to overriding the main Cycle function).
-	Cycle(ltime *Time)
+	CycleNeuron(ni int, nrn *Neuron, ctime *Time)
 
-	// GFmSpike integrates new synaptic conductances from increments sent during last SendGDelta
-	GFmSpike(ltime *Time)
+	// GInteg integrates conductances G over time (Ge, NMDA, etc).
+	// reads pool Gi values
+	GInteg(ni int, nrn *Neuron, ctime *Time)
 
-	// AvgMaxGe computes the average and max Ge stats, used in inhibition.
-	AvgMaxGe(ltime *Time)
+	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
+	SpikeFmG(ni int, nrn *Neuron, ctime *Time)
 
-	// InhibiFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
-	InhibFmGeAct(ltime *Time)
+	// PostAct does updates at neuron level after activation (spiking)
+	// updated for all neurons.
+	// It is a hook for specialized algorithms -- empty at Axon base level
+	PostAct(ni int, nrn *Neuron, ctime *Time)
 
-	// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
-	// and updates learning running-average activations from that Act
-	ActFmG(ltime *Time)
-
-	// PostAct does updates after activation (spiking) updated for all neurons,
-	// including the running-average activation used in driving inhibition,
-	// and synaptic-level calcium updates depending on spiking, NMDA
-	PostAct(ltime *Time)
-
-	// SynCa does Kinase learning based on Ca driven from pre-post spiking.
-	// Updates Ca, CaM, CaP, CaD cascaded at longer time scales, with CaP
-	// representing CaMKII LTP activity and CaD representing DAPK1 LTD activity.
-	// Continuous variants do weight updates (DWt), while SynSpkTheta just updates Ca.
-	SynCa(ltime *Time)
+	// SendSpike sends spike to receivers -- last step in Cycle, integrated
+	// the next time around.
+	// Writes to sending projections for this neuron.
+	SendSpike(ni int, nrn *Neuron, ctime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate
 	// network layer loop.
 	// This is reserved for any kind of special ad-hoc types that
 	// need to do something special after Act is finally computed.
 	// For example, sending a neuromodulatory signal such as dopamine.
-	CyclePost(ltime *Time)
-
-	// SendSpike sends spike to receivers -- last step in Cycle updating.
-	SendSpike(ltime *Time)
+	CyclePost(ctime *Time)
 
 	// MinusPhase does updating after end of minus phase
-	MinusPhase(ltime *Time)
+	MinusPhase(ctime *Time)
 
 	// PlusPhase does updating after end of plus phase
-	PlusPhase(ltime *Time)
+	PlusPhase(ctime *Time)
 
 	// SpkSt1 saves current activations into SpkSt1
-	SpkSt1(ltime *Time)
+	SpkSt1(ctime *Time)
 
 	// SpkSt2 saves current activations into SpkSt2
-	SpkSt2(ltime *Time)
+	SpkSt2(ctime *Time)
 
 	// CorSimFmActs computes the correlation similarity
 	// (centered cosine aka normalized dot product)
@@ -208,23 +191,24 @@ type AxonLayer interface {
 	// (1 = identical, 0 = uncorrelated).
 	CorSimFmActs()
 
-	// DWt computes the weight change (learning) -- calls DWt method on sending projections
-	DWt(ltime *Time)
+	// DWtLayer does weight change at the layer level.
+	// does NOT call main projection-level DWt method.
+	// in base, only calls DTrgAvgFmErr
+	DWtLayer(ctime *Time)
 
-	// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
-	// This is called on *receiving* projections, prior to WtFmDwt.
-	DWtSubMean(ltime *Time)
+	// WtFmDWtLayer does weight update at the layer level.
+	// does NOT call main projection-level WtFmDWt method.
+	// in base, only calls TrgAvgFmD
+	WtFmDWtLayer(ctime *Time)
 
-	// WtFmDWt updates the weights from delta-weight changes.
-	WtFmDWt(ltime *Time)
-
-	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
-	// GScale conductance scaling, SWt updating, and adapting inhibition
-	SlowAdapt(ltime *Time)
+	// SlowAdapt is the layer-level slow adaptation functions.
+	// Calls AdaptInhib and AvgDifFmTrgAvg for Synaptic Scaling.
+	// Does NOT call projection-level methods.
+	SlowAdapt(ctime *Time)
 
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
-	SynFail(ltime *Time)
+	SynFail(ctime *Time)
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
@@ -258,35 +242,36 @@ type AxonPrjn interface {
 	// to add to buffer on receivers.
 	SendSpike(si int)
 
-	// GFmSpike increments synaptic conductances from Spikes
-	GFmSpike(ltime *Time)
+	// GFmSpikes increments synaptic conductances from Spikes
+	// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
+	GFmSpikes(ctime *Time)
 
 	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in sending order, filtering on sending spike.
-	SendSynCa(ltime *Time)
+	SendSynCa(ctime *Time)
 
 	// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in recv order, filtering on recv spike.
-	RecvSynCa(ltime *Time)
+	RecvSynCa(ctime *Time)
 
 	// DWt computes the weight change (learning) -- on sending projections.
-	DWt(ltime *Time)
+	DWt(ctime *Time)
 
 	// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 	// This is called on *receiving* projections, prior to WtFmDwt.
-	DWtSubMean(ltime *Time)
+	DWtSubMean(ctime *Time)
 
 	// WtFmDWt updates the synaptic weight values from delta-weight changes,
 	// on sending projections
-	WtFmDWt(ltime *Time)
+	WtFmDWt(ctime *Time)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, and adapting inhibition
-	SlowAdapt(ltime *Time)
+	SlowAdapt(ctime *Time)
 
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
-	SynFail(ltime *Time)
+	SynFail(ctime *Time)
 }

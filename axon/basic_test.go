@@ -127,7 +127,7 @@ func TestSpikeProp(t *testing.T) {
 
 	net.InitExt()
 
-	ltime := NewTime()
+	ctime := NewTime()
 
 	pat := etensor.NewFloat32([]int{1, 1}, nil, []string{"Y", "X"})
 	pat.Set([]int{0, 0}, 1)
@@ -140,13 +140,13 @@ func TestSpikeProp(t *testing.T) {
 		inLay.ApplyExt(pat)
 
 		net.NewState()
-		ltime.NewState("Train")
+		ctime.NewState("Train")
 
 		inCyc := 0
 		hidCyc := 0
 		for cyc := 0; cyc < 100; cyc++ {
-			net.Cycle(ltime)
-			ltime.CycleInc()
+			net.Cycle(ctime)
+			ctime.CycleInc()
 
 			if inLay.Neurons[0].Spike > 0 {
 				inCyc = cyc
@@ -173,7 +173,7 @@ func TestNetAct(t *testing.T) {
 	hidLay := testNet.LayerByName("Hidden").(*Layer)
 	outLay := testNet.LayerByName("Output").(*Layer)
 
-	ltime := NewTime()
+	ctime := NewTime()
 
 	printCycs := false
 	printQtrs := false
@@ -211,12 +211,12 @@ func TestNetAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		testNet.NewState()
-		ltime.NewState("Train")
+		ctime.NewState("Train")
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				testNet.Cycle(ltime)
-				ltime.CycleInc()
+				testNet.Cycle(ctime)
+				ctime.CycleInc()
 
 				if printCycs {
 					inLay.UnitVals(&inActs, "Act")
@@ -230,8 +230,8 @@ func TestNetAct(t *testing.T) {
 				}
 			}
 			if qtr == 2 {
-				testNet.MinusPhase(ltime)
-				ltime.NewPhase(false)
+				testNet.MinusPhase(ctime)
+				ctime.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {
@@ -247,7 +247,7 @@ func TestNetAct(t *testing.T) {
 			outLay.UnitVals(&outGis, "Gi")
 
 			if printQtrs {
-				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ltime.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
+				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctime.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 			}
 
 			if printCycs && printQtrs {
@@ -271,7 +271,7 @@ func TestNetAct(t *testing.T) {
 				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
-		testNet.PlusPhase(ltime)
+		testNet.PlusPhase(ctime)
 
 		if printQtrs {
 			fmt.Printf("=============================\n")
@@ -328,7 +328,7 @@ func TestNetLearn(t *testing.T) {
 		testNet.InitWts()
 		testNet.InitExt()
 
-		ltime := NewTime()
+		ctime := NewTime()
 
 		for pi := 0; pi < 4; pi++ {
 			inpat, err := inPats.SubSpaceTry([]int{pi})
@@ -339,11 +339,11 @@ func TestNetLearn(t *testing.T) {
 			outLay.ApplyExt(inpat)
 
 			testNet.NewState()
-			ltime.NewState("Train")
+			ctime.NewState("Train")
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					testNet.Cycle(ltime)
-					ltime.CycleInc()
+					testNet.Cycle(ctime)
+					ctime.CycleInc()
 
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
@@ -356,12 +356,12 @@ func TestNetLearn(t *testing.T) {
 					outLay.UnitVals(&outSpkCaD, "SpkCaD")
 
 					if printCycs {
-						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ltime.Cycle, hidAct, hidGes, hidGis, hidSpkCaM, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
+						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctime.Cycle, hidAct, hidGes, hidGis, hidSpkCaM, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
 					}
 				}
 				if qtr == 2 {
-					testNet.MinusPhase(ltime)
-					ltime.NewPhase(false)
+					testNet.MinusPhase(ctime)
+					ctime.NewPhase(false)
 				}
 
 				hidLay.UnitVals(&hidSpkCaP, "SpkCaP")
@@ -371,7 +371,7 @@ func TestNetLearn(t *testing.T) {
 				outLay.UnitVals(&outSpkCaD, "SpkCaD")
 
 				if printQtrs {
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ltime.Cycle, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctime.Cycle, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
 				}
 
 				if pi == 0 && qtr == 0 {
@@ -387,20 +387,20 @@ func TestNetLearn(t *testing.T) {
 					cmprFloats(outSpkCaD, qtr3OutSpkCaD, "qtr 3 outSpkCaD", t)
 				}
 			}
-			testNet.PlusPhase(ltime)
+			testNet.PlusPhase(ctime)
 
 			if printQtrs {
 				fmt.Printf("=============================\n")
 			}
 
-			testNet.DWt(ltime)
+			testNet.DWt(ctime)
 
 			didx := ti*4 + pi
 
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
-			testNet.WtFmDWt(ltime)
+			testNet.WtFmDWt(ctime)
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
@@ -437,7 +437,7 @@ func TestInhibAct(t *testing.T) {
 	InhibNet.InitWts()
 	InhibNet.InitExt()
 
-	ltime := NewTime()
+	ctime := NewTime()
 
 	printCycs := false
 	printQtrs := false
@@ -475,11 +475,11 @@ func TestInhibAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		InhibNet.NewState()
-		ltime.NewState("Train")
+		ctime.NewState("Train")
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				InhibNet.Cycle(ltime)
-				ltime.CycleInc()
+				InhibNet.Cycle(ctime)
+				ctime.CycleInc()
 
 				if printCycs {
 					inLay.UnitVals(&inActs, "Act")
@@ -493,8 +493,8 @@ func TestInhibAct(t *testing.T) {
 				}
 			}
 			if qtr == 2 {
-				InhibNet.MinusPhase(ltime)
-				ltime.NewPhase(false)
+				InhibNet.MinusPhase(ctime)
+				ctime.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {
@@ -510,7 +510,7 @@ func TestInhibAct(t *testing.T) {
 			outLay.UnitVals(&outGis, "Gi")
 
 			if printQtrs {
-				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ltime.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
+				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctime.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 			}
 
 			if printCycs && printQtrs {
@@ -534,7 +534,7 @@ func TestInhibAct(t *testing.T) {
 				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
-		InhibNet.PlusPhase(ltime)
+		InhibNet.PlusPhase(ctime)
 
 		if printQtrs {
 			fmt.Printf("=============================\n")

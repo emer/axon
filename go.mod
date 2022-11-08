@@ -11,6 +11,7 @@ require (
 	github.com/goki/ki v1.1.8
 	github.com/goki/kigen v1.0.1
 	github.com/goki/mat32 v1.0.12
+	github.com/stretchr/testify v1.7.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
@@ -27,12 +28,13 @@ require (
 	github.com/anthonynsimon/bild v0.13.0 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.0 // indirect
 	github.com/go-fonts/liberation v0.2.0 // indirect
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220516021902-eb3e265c7661 // indirect
+	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20221017161538-93cebf72946b // indirect
 	github.com/go-gl/mathgl v1.0.0 // indirect
 	github.com/go-latex/latex v0.0.0-20210823091927-c0d11ff05a81 // indirect
 	github.com/go-pdf/fpdf v0.6.0 // indirect
@@ -49,6 +51,7 @@ require (
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/srwiley/rasterx v0.0.0-20220128185129-2efea2b9ea41 // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf // indirect
@@ -61,4 +64,5 @@ require (
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	gonum.org/v1/gonum v0.11.0 // indirect
 	gonum.org/v1/plot v0.11.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )

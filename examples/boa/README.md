@@ -1,20 +1,51 @@
-# OFC / ACC
+# BOA = BG, OFC, ACC
 
-This model builds on the basic [pcore](https://github.com/emer/axon/tree/master/pcore) mechanisms to include temporal integration and prediction of salient outcomes in the OFC and ACC.
+This model implements the `Rubicon` model for goal-driven motivated behavior, which posits distinct  **goal-selection** vs. **goal-engaged** states of the brain [O'Reilly, 2020](https://ccnlab.org/papers/OReilly20.pdf); Heckhausen & Gollwitzer, 1987.  In the goal selection phase, different options are considered (explored) and evaluated according to learned cost-benefit *utilities* (represented in the *ACC* = anterior cingulate cortex), and one is selected via BG (basal ganglia, implemented via [pcore](https://github.com/emer/axon/tree/master/pcore)) *gating* that drives stable active maintenance of a *goal state* which is a distributed representation across the *ACC*, *OFC* = orbital frontal cortex and *dlPFC* = dorsolateral prefrontal cortex).
 
-The paradigm is a simple ecologically-inspired task (a simplified version of the map-nav Fworld flat-world model), where there are:
+![BOA Areas](figs/fig_bg_loops_spiral_goals.png?raw=true "BOA Brain areas representing different aspect of a Goal")
 
-* B different body states (hunger, thirst, etc), satisfied by a corresponding US outcome.  These are detected and managed primarily in the hypothalamus and other such brainstem nuclei (PBN etc) and represented cortically in the insula (in posterior medial frontal cortex) as a primary interoceptive sensory area, with more anterior areas of medial frontal cortex going into OFC representing the "PFC" for interoceptive states (for higher level control and active maintenance).
+* **OFC** encodes predictions of the *outcome* of an action plan -- i.e., the **US** = unconditioned stimulus (food, water, etc).
 
-* C_B different CS sensory cues associated with each US (simplest case is C_B = 1 -- one-to-one mapping), presented on a "fovea" input layer.
+* **ACC** encodes predictions of the overall *utility* of an action plan: benefits of obtaining the US minus the costs entailed in doing so, which is learned by predicting the time and effort involved in the action plan.
 
-* L different locations where you can be currently looking, each of which can hold a different CS sensory cue.  Current location is an input, and determines contents of the fovea.  wraps around.
+* **dlPFC** encodes an overall *policy* or *plan of action* for achieving the desired outcome, which is learned by predicting the sequence of actions performed.
 
-* Distance layer with distance from locations where stuff actually is.  This can be represented as a popcode.  Start at random distances.
+See [O'Reilly, 2020](https://ccnlab.org/papers/OReilly20.pdf) for more info about data and theory.
 
-* Actions are: Forward, Left, Right, Consume.  Consume happens at Dist = 0, Dist stays at 0 for a trial while consuming happens and the US is presented.
+The task paradigm is a simple ecologically-inspired task (a simplified version of the map-nav Fworld flat-world model), where there are:
 
-Target behavior is to orient L / R until a CS sensory cue appears that is consistent with current body state, and then move Forward until the Distance = proximal, and you then Consume.
+* `Drives` = different body states (hunger, thirst, etc), satisfied by a corresponding US outcome.  These are detected and managed primarily in the hypothalamus and other such brainstem nuclei (PBN etc) and represented cortically in the insula (in posterior medial frontal cortex) as a primary interoceptive sensory area, with more anterior areas of medial frontal cortex going into OFC representing the "PFC" for interoceptive states (for higher level control and active maintenance).
+
+* `CS` = different initially arbitrary sensory cues that are located by each US (simplest case is `CSPerDRive` = 1 -- one-to-one mapping), presented on a "fovea" input layer reflecting where the agent is looking.
+
+* `Pos` = which of different locations where agent is currently looking, each of which can hold a different CS sensory cue.  Current location is an input, and determines contents of the fovea.  wraps around.
+
+* `Dist` = distance to currently foveated CS
+
+* `Time` = incrementing representation of time from last US received.
+
+* Actions are: `Forward, Left, Right, Consume`.  Consume happens at Dist = 0, Dist stays at 0 for a trial while consuming happens and the US is presented.
+
+The target behavior is to orient L / R until a CS sensory cue appears that is consistent with current Drive, and then move Forward until the Distance = proximal, and you then Consume.
+
+# Stats
+
+* There is a subcortical instinct, which is just heuristic code for action policy: explore then approach once desired CS is seen
+
+* `ActMatch` = match between network's action and the instinct-driven "correct" action
+
+* `PctCortex` = % of approach trials (entire sequence of explore then approach) driven by the cortex instead of the instinct.
+
+* `MaintFail*` are loss of active maintenance of goal reps in PT layer (pyramidal tract, layer 5)
+
+* `WrongCSGate` is gating to approach the wrong CS (one that does not satisfy the current drive)
+
+
+# Overview of Model
+
+![BOA Bridging Logic](figs/fig_boa_rubicon_logic.png?raw=true "Overall Time Bridging Logic")
+
+TODO: describe, update figure
 
 Anatomically, there are distinct circuits connecting through OFC, ACC and dlPFC (ADS '86):
 
@@ -41,74 +72,6 @@ See https://github.com/emer/axon/discussions/56#discussioncomment-3939045 for ra
 
 Note that BLA does not have to do the same thing -- it should follow the CS wherever it goes.
 
-## MatrixLayer GateThr
 
-This is a key parameter for stats and can affect learning in certain parameterizations but not what is being used.  In any case, the stats are important and the param is a bit sensitive -- .05 seems pretty good.
-
-## .FmSTNp
-
-This needs to be higher to prevent redundant gating.  1.2 seems good -- but need to increase STNp firing rate also.
-
-
-# TODO
-
-* VS / VP gating should be strongly ACh modulated to only happen at US and CS.  Need CS -> ACh then.  Also, now that OFC PT is uniquely engaged for active maintenance, send strong prjn to NoGo to prevent updating of maintained -- US gating turns off, or some TBD "give up" action..  Don't rely on STNp for preventing repeat gating (though it would be good to get that working better anyway).
-
-* MD / PT is not sufficiently active -- over sparse
-
-* In general, the drive modulation is awkward and not very effective, and it is not clear how it will generalize when multiple drives are present.  If drive -> OFC restricts all consideration of other drives, then it is a foregone conclusion, and OFC is just a dummy.  Maybe get rid of pools and allow all drives to intermingle in OFC, so it has to learn that?  then it can't represent multiple anyway and has to make more of a choice?   cortex should not be quite so topographic?   In any case, having it naturally be mutex and considering the current option is good.
-
-* OFCCT has nothing to predict -- USP?  rename Drives -> Insula predict InsulaP? It is predetermined by drive anyway.  Just ends up being a loop that supports the wrong CT activation.  better if it is doing the CS and the US together?
-
-# DONE
-
-* BLA needs the cholinergic guy -- put in rl and not in BG!
-
-* small negative DA is happening all the time -- causing unlearning in matrix -- ACh modulation should help here but is not.. looks like da mod learning is happening without ACh -- those should be coordinated.
-
-* There is no negative feedback on gating -- because action is always correct following GenAct -- but in general it would be good to have stronger biases than just getting punished for behaving randomly initially.  This works as expected.
-
-* The PT gating catch-22 is a problem: no positive signal for when to move forward -- need different explore vs. engaged reps in PT -- can't be the same.. diff populations of PT that are transient vs. what is engaged.  fixed by having super project directly to MD -- 
-
-* Matrix is getting blasted with too strong of input -- increase leak?  other params?  drive needs to be stronger?  but needs to activate a feedforward inhib -- no ff inhib present?  maybe switch all to ff?  yes!!  update pcore to better test this case.
-
-* Need Go to gate when US is present -- US only active in plus phase contingent on action -- make a whole separate trial where US is activated instead of doing in plus phase..
-
-
-
-
-
-# Steps to building model (old):
-
-1. add BLA, OFC with pool-based drive separations -- and OFC has high inhibition, requiring both drive and BLA input to get over threshold..
-
-2. VThal gating drives all *Out deep layers.
-
-
-* train a pure non-gated M1 -- how high does act match go?  Does OFC learn to represent match of US and CS? First focus on getting that aspect of task working b/c nothing else works unless it does.
-
-* maintain last action if not gated afresh -- how?  SMAd recurrents?  nmda higher?  M1?
-
-* add act context for prediction?  m1p ok?
-
-* modulate OFC / ACC learning mainly at end / DA mod
-
-
-# Connecting CS and US modulated by Drive
-
-The narrative story is that you have Drive state (bottom-up), learned CS -> US, and you need to decide whether the current CS is something to approach or not.
-
-* First, BLA learns CS -> US and the output is US -> OFC US
-
-* OFC US reps require an AND on BLA and Drive inputs -- matching in general is an AND operation -- do we need a subset of OFC with higher inhibitory threshold to drive this AND, or is regular learning enough?  Maybe start with that to get it working.
-
-* During goal selection gating, BG looks for strong OFC US activation of any sort -- this could be an STN-level filter on enabling gating to take place in the first place -- when the OFC has a new strong US activation it triggers STNp -- otherwise not..
-
-
-# Note: could use topo STN / Thal pathways to select scope of gating
-
-don't need this now but could use later..
-
-# todo:
 
 

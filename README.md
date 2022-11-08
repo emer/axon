@@ -2,6 +2,7 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/emer/axon)](https://goreportcard.com/report/github.com/emer/axon)
 [![GoDoc](https://godoc.org/github.com/emer/axon?status.svg)](https://godoc.org/github.com/emer/axon)
+[![codecov](https://codecov.io/gh/emer/axon/branch/master/graph/badge.svg)](https://codecov.io/gh/codecov/emer/axon)
 [![Travis](https://travis-ci.com/emer/axon.svg?branch=master)](https://travis-ci.com/emer/axon)
 
 This is the Go implementation of the Axon algorithm for spiking, biologically-based models of cognition, based on the [Go emergent](https://github.com/emer/emergent) framework (with optional Python interface), and the  [leabra](https://github.com/emer/leabra) framework for rate-code models.
@@ -324,12 +325,12 @@ The `axon.Network` `Cycle` method in `axon/network.go` looks like this:
 // * PostAct: Average and Max Act stats, Synaptic Ca updates
 // This basic version doesn't use the time info, but more specialized types do, and we
 // want to keep a consistent API for end-user code.
-func (nt *Network) Cycle(ltime *Time) {
-	nt.SendGDelta(ltime) // also does integ
-	nt.AvgMaxGe(ltime)
-	nt.InhibFmGeAct(ltime)
-	nt.ActFmG(ltime)
-	nt.PostAct(ltime)
+func (nt *Network) Cycle(ctime *Time) {
+	nt.SendGDelta(ctime) // also does integ
+	nt.AvgMaxGe(ctime)
+	nt.InhibFmGeAct(ctime)
+	nt.SpikeFmG(ctime)
+	nt.PostAct(ctime)
 }
 ```
 
@@ -351,7 +352,7 @@ For every cycle of activation updating, we compute the excitatory input conducta
     + `Gi = FFFBParams.Gi * (ffi + fbi)`
         + total inhibitory conductance, with global Gi multiplier -- default of 1.8 typically produces good sparse distributed representations in reasonably large layers (25 units or more).
 
-* `Act` activation from Ge, Gi, Gl (most of code is in `axon/act.go`, e.g., `ActParams.ActFmG` method).  When neurons are above thresholds in subsequent condition, they obey the "geLin" function which is linear in Ge:
+* `Act` activation from Ge, Gi, Gl (most of code is in `axon/act.go`, e.g., `ActParams.SpikeFmG` method).  When neurons are above thresholds in subsequent condition, they obey the "geLin" function which is linear in Ge:
     + `geThr = (Gi * (Erev.I - Thr) + Gbar.L * (Erev.L - Thr) / (Thr - Erev.E)`
     + `nwAct = NoisyXX1(Ge * Gbar.E - geThr)`
         + geThr = amount of excitatory conductance required to put the neuron exactly at the firing threshold, `XX1Params.Thr` = .5 default, and NoisyXX1 is the x / (x+1) function convolved with gaussian noise kernel, where x = `XX1Parms.Gain` * Ge - geThr) and Gain is 100 by default

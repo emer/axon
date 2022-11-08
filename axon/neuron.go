@@ -14,10 +14,10 @@ import (
 	"github.com/goki/mat32"
 )
 
-// NeuronVarStart is the byte offset of fields in the Neuron structure
-// where the float32 named variables start.
+// NeuronVarStart is the starting field where float32 variables start
+// all variables prior must be 32 bit (int32)
 // Note: all non-float32 infrastructure variables must be at the start!
-const NeuronVarStart = 8
+const NeuronVarStart = 3
 
 // axon.Neuron holds all of the neuron (unit) level variables.
 // This is the most basic version, without any optional features.
@@ -25,6 +25,7 @@ const NeuronVarStart = 8
 // and start at the top, in contiguous order
 type Neuron struct {
 	Flags   NeurFlags `desc:"bit flags for binary state variables"`
+	LayIdx  int32     `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
 	SubPool int32     `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
 	Spike   float32   `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
 	Spiked  float32   `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
@@ -54,18 +55,18 @@ type Neuron struct {
 	CaD    float32 `desc:"cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule."`
 	CaDiff float32 `desc:"difference between CaP - CaD -- this is the error signal that drives error-driven learning."`
 
-	SpkMax float32 `desc:"maximum CaSpkP across one theta cycle time window -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons."`
-	SpkPrv float32 `desc:"final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations."`
-	SpkSt1 float32 `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
-	SpkSt2 float32 `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
-	RLrate float32 `desc:"recv-unit based learning rate computed from the activity dynamics of recv unit -- extra filtering when recv unit is likely close enough"`
+	SpkMaxCa float32 `desc:"Ca integrated like CaSpkP but only starting at MacCycStart cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the PTau time constant otherwise results in significant carryover."`
+	SpkMax   float32 `desc:"maximum CaSpkP across one theta cycle time window -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., BG Matrix layer gating.  Also useful for visualization of peak activity of neurons."`
+	SpkPrv   float32 `desc:"final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations."`
+	SpkSt1   float32 `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
+	SpkSt2   float32 `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
+	RLrate   float32 `desc:"recv-unit based learning rate computed from the activity dynamics of recv unit -- extra filtering when recv unit is likely close enough"`
 
 	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
 	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`
 	TrgAvg  float32 `desc:"neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct"`
 	DTrgAvg float32 `desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`
 	AvgDif  float32 `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`
-	Attn    float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 
 	ISI    float32 `desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`
 	ISIAvg float32 `desc:"average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`
@@ -99,11 +100,13 @@ type Neuron struct {
 	VgccH     float32 `desc:"inactivation gate of VGCC channels"`
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
+	Attn      float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 
 	GeBase float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
 	GiBase float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
 	GeRaw  float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
 	GiRaw  float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
+	GeExt  float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
 
 	Gak float32 `desc:"conductance of A-type K potassium channels"`
 }
@@ -148,7 +151,7 @@ func init() {
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	typ := reflect.TypeOf((*Neuron)(nil)).Elem()
 	nf := typ.NumField()
-	starti := 2
+	starti := NeuronVarStart
 	for i := starti; i < nf; i++ {
 		fs := typ.FieldByIndex([]int{i})
 		v := fs.Name
@@ -179,7 +182,7 @@ func NeuronVarIdxByName(varNm string) (int, error) {
 
 // VarByIndex returns variable using index (0 = first variable in NeuronVars list)
 func (nrn *Neuron) VarByIndex(idx int) float32 {
-	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(nrn)) + uintptr(NeuronVarStart+4*idx)))
+	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(nrn)) + uintptr(NeuronVarStart*4+4*idx)))
 	return *fv
 }
 

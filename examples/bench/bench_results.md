@@ -4,6 +4,54 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.5.15 NeuronCa = true, 11/8/22: FS-FFFB inhib and network-level compute
+
+For the key HUGE and GINORM cases, we are getting major speedups with threads, but it is about the same as before overall.  Interestingly, GOMAXPROCS, which should determine how the prjn and layer goroutines are deployed, doesn't make any difference.
+
+```
+Size     1 thr  2 thr  4 thr
+---------------------------------
+SMALL:    3.97  9.76  9.55
+MEDIUM:   4.93  5.38  4.91
+LARGE:    13.2  8.02  5.84
+HUGE:     12.6  7.13  5.84
+GINORM:   13.5  7.19  7.03
+```
+
+If you compare running -threads=1 vs. -threads=4 without the -silent flag, it is clear that there is about a 2% overhead for running go routines over the prjns:
+
+```
+$ ./bench -epochs 5 -pats 10 -units 1024 -threads=4
+Running bench with: 4 threads, 5 epochs, 10 pats, 1024 units
+Took  5.871 secs for 5 epochs, avg per epc:  1.174
+TimerReport: BenchNet
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  4.548	   81.3
+	          DWt 	  0.233	    4.2
+	   DWtSubMean 	  0.001	    0.0
+	    GFmSpikes 	  0.215	    3.8
+	    RecvSynCa 	  0.132	    2.4   <- should be 0
+	    SendSynCa 	  0.142	    2.5
+	      WtFmDWt 	  0.326	    5.8
+	        Total 	  5.597
+```
+
+```
+$ ./bench -epochs 5 -pats 10 -units 1024 -threads=1
+Running bench with: 1 threads, 5 epochs, 10 pats, 1024 units
+Took  12.76 secs for 5 epochs, avg per epc:  2.553
+TimerReport: BenchNet
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  9.677	   77.1
+	          DWt 	  1.079	    8.6
+	   DWtSubMean 	  0.000	    0.0
+	    GFmSpikes 	  0.096	    0.8
+	    RecvSynCa 	  0.001	    0.0 <- is 0
+	    SendSynCa 	  0.001	    0.0
+	      WtFmDWt 	  1.692	   13.5
+	        Total 	 12.548
+```
+
 # Axon 1.4.5 NeurSpkTheta  06/11/22: Everything in one pass!
 
 It was extremely simple to update code to reorganize the order of computation and do everything in one pass, and it doesn't even change the overall computation performed: https://github.com/emer/axon/issues/35

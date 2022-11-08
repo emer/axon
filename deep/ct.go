@@ -102,31 +102,28 @@ func (ly *CTLayer) DecayState(decay, glong float32) {
 	}
 }
 
-// GFmSpike integrates new synaptic conductances from increments sent during last Spike
-func (ly *CTLayer) GFmSpike(ltime *axon.Time) {
-	ly.GFmSpikePrjn(ltime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		// note: can add extra values to GeRaw and GeSyn here
-		geCtxt := ly.CT.GeGain * ly.CtxtGes[ni]
-		if ly.CT.DecayDt > 0 {
-			ly.CtxtGes[ni] -= ly.CT.DecayDt * ly.CtxtGes[ni]
-		}
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
-		nrn.GeRaw += geCtxt
-		nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(geCtxt)
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
+// GInteg integrates conductances G over time (Ge, NMDA, etc).
+// reads pool Gi values
+func (ly *CTLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	// note: can add extra values to GeRaw and GeSyn here
+	geCtxt := ly.CT.GeGain * ly.CtxtGes[ni]
+	if ly.CT.DecayDt > 0 {
+		ly.CtxtGes[ni] -= ly.CT.DecayDt * ly.CtxtGes[ni]
 	}
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	nrn.GeRaw += geCtxt
+	ctxtExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+	nrn.GeSyn += ctxtExt
+	ly.GFmRawSyn(ni, nrn, ctime)
+	nrn.GeExt = ctxtExt // needed for inhibition
+	ly.GiInteg(ni, nrn, ctime)
 }
 
 // SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
 // CtxtGe excitatory conductance on CT layers.
 // This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
 // Satisfies the CtxtSender interface.
-func (ly *CTLayer) SendCtxtGe(ltime *axon.Time) {
+func (ly *CTLayer) SendCtxtGe(ctime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() || nrn.CaSpkP < 0.1 {
@@ -152,7 +149,7 @@ func (ly *CTLayer) SendCtxtGe(ltime *axon.Time) {
 // CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
 // overall Ctxt value, only on Deep layers.
 // This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
-func (ly *CTLayer) CtxtFmGe(ltime *axon.Time) {
+func (ly *CTLayer) CtxtFmGe(ctime *axon.Time) {
 	for ni := range ly.CtxtGes {
 		ly.CtxtGes[ni] = 0
 	}

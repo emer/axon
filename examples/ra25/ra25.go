@@ -97,6 +97,7 @@ func (ss *Sim) New() {
 	ss.PCAInterval = 5
 	ss.Time.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
+	// ss.Defaults()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,12 +173,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
 
-	// note: can set these to do parallel threaded computation across multiple cpus
-	// not worth it for this small of a model, but definitely helps for larger ones
-	// if Thread {
-	// 	hid2.SetThread(1)
-	// 	out.SetThread(1)
-	// }
+	net.NThreads = 1 // small networks don't benefit from threading
 
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
@@ -488,8 +484,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
-	title := "Leabra Random Associator"
-	ss.GUI.MakeWindow(ss, "ra25", title, `This demonstrates a basic Leabra model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	title := "Axon Random Associator"
+	ss.GUI.MakeWindow(ss, "ra25", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")

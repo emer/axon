@@ -170,6 +170,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Targ = 0
 	nrn.Ext = 0
 
+	nrn.SpkMaxCa = 0
 	nrn.SpkMax = 0
 	nrn.Attn = 1
 	nrn.RLrate = 1
@@ -245,16 +246,31 @@ func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
 	nrn.VgccCa = ac.VGCC.CaFmG(nrn.VmDend, nrn.Gvgcc, nrn.VgccCa) // note: may be overwritten!
 }
 
+// GkFmVm updates all the Gk-based conductances: Mahp, KNa, Gak
+func (ac *ActParams) GkFmVm(nrn *Neuron) {
+	dn := ac.Mahp.DNFmV(nrn.Vm, nrn.MahpN)
+	nrn.MahpN += dn
+	nrn.Gak = ac.AK.Gak(nrn.VmDend)
+	nrn.Gk = nrn.Gak + ac.Mahp.GmAHP(nrn.MahpN) + ac.Sahp.GsAHP(nrn.SahpN)
+	if ac.KNa.On {
+		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
+		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
+	}
+}
+
 // GeFmSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmSyn(nrn *Neuron, geSyn, geExt float32) {
+	nrn.GeExt = 0
 	if ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
-		geSyn += nrn.Ext * ac.Clamp.Ge
+		nrn.GeExt = nrn.Ext * ac.Clamp.Ge
+		geSyn += nrn.GeExt
 	}
 	geSyn = ac.Attn.ModVal(geSyn, nrn.Attn)
 
 	if !ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
 		geSyn = nrn.Ext * ac.Clamp.Ge
+		nrn.GeExt = geSyn
 		geExt = 0 // no extra in this case
 	}
 
@@ -374,8 +390,8 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	}
 }
 
-// ActFmG computes Spike from Vm and ISI-based activation
-func (ac *ActParams) ActFmG(nrn *Neuron) {
+// SpikeFmG computes Spike from Vm and ISI-based activation
+func (ac *ActParams) SpikeFmG(nrn *Neuron) {
 	var thr float32
 	if ac.Spike.Exp {
 		thr = ac.Spike.ExpThr
@@ -413,14 +429,6 @@ func (ac *ActParams) ActFmG(nrn *Neuron) {
 	}
 	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
 	nrn.Act = nwAct
-	dn := ac.Mahp.DNFmV(nrn.Vm, nrn.MahpN)
-	nrn.MahpN += dn
-	nrn.Gak = ac.AK.Gak(nrn.VmDend)
-	nrn.Gk = nrn.Gak + ac.Mahp.GmAHP(nrn.MahpN) + ac.Sahp.GsAHP(nrn.SahpN)
-	if ac.KNa.On {
-		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
-		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -593,8 +601,8 @@ type DtParams struct {
 	GeTau       float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau       float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
-	LongAvgTau  float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, ly.ActAvg.AvgMaxGeM, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
-	MaxCycStart int     `def:"50" min:"0" desc:"cycle to start updating the SpkMax value within a theta cycle -- early cycles often reflect prior state"`
+	LongAvgTau  float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
+	MaxCycStart int     `def:"50" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state"`
 
 	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`

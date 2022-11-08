@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -26,13 +25,9 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/goki/gi/gi"
 	"github.com/goki/ki/indent"
-	"github.com/goki/ki/ints"
 	"github.com/goki/kigen/dedupe"
 	"github.com/goki/mat32"
 )
-
-// LayFunChan is a channel that runs AxonLayer functions
-type LayFunChan chan func(ly AxonLayer)
 
 // NetworkBase manages the basic structural components of a network (layers).
 // The main Network then can just have the algorithm-specific code.
@@ -40,6 +35,7 @@ type NetworkBase struct {
 	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
 	Layers      emer.Layers           `desc:"list of layers"`
+	NThreads    int                   `desc:"number of threads to use for neuron-level updates -- if set to 1 then nothing is updated in parallel -- if > 1, Prjns and Layers are fully parallelized using goroutines (set GOMAXPROCS to constrain number of those) while neurons are updated in NThreads chunks."`
 	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
 	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
 	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
@@ -47,11 +43,10 @@ type NetworkBase struct {
 	MaxPos      mat32.Vec3            `view:"-" desc:"maximum display position in network"`
 	MetaData    map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
 
-	NThreads    int                    `inactive:"+" desc:"number of parallel threads (go routines) to use -- this is computed directly from the Layers which you must explicitly allocate to different threads -- updated during Build of network"`
-	LockThreads bool                   `desc:"if set, runtime.LockOSThread() is called on the compute threads, which can be faster on large networks on some architectures -- experimentation is recommended"`
-	ThrLay      [][]emer.Layer         `view:"-" inactive:"+" desc:"layers per thread -- outer group is threads and inner is layers operated on by that thread -- based on user-assigned threads, initialized during Build"`
-	ThrChans    []LayFunChan           `view:"-" desc:"layer function channels, per thread"`
-	ThrTimes    []timer.Time           `view:"-" desc:"timers for each thread, so you can see how evenly the workload is being distributed"`
+	// Implementation level code below:
+	Neurons     []Neuron               `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
+	Prjns       []AxonPrjn             `view:"-" desc:"pointers to all projections in the network, via the AxonPrjn interface"`
+	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
 	WaitGp      sync.WaitGroup         `view:"-" desc:"network-level wait group for synchronizing threaded layer calls"`
 }
@@ -61,6 +56,7 @@ type NetworkBase struct {
 func (nt *NetworkBase) InitName(net emer.Network, name string) {
 	nt.EmerNet = net
 	nt.Nm = name
+	nt.NThreads = 1
 }
 
 // emer.Network interface methods:
@@ -121,35 +117,6 @@ func (nt *NetworkBase) LayersByClass(classes ...string) []string {
 		nms = append(nms, nt.LayClassMap[lc]...)
 	}
 	return dedupe.DeDupe(nms)
-}
-
-// BuildThreads constructs the layer thread allocation based on Thread setting in the layers
-func (nt *NetworkBase) BuildThreads() {
-	nthr := 0
-	for _, ly := range nt.Layers {
-		if ly.IsOff() {
-			continue
-		}
-		nthr = ints.MaxInt(nthr, ly.Thread())
-	}
-	nt.NThreads = nthr + 1
-	nt.ThrLay = make([][]emer.Layer, nt.NThreads)
-	nt.ThrChans = make([]LayFunChan, nt.NThreads)
-	nt.ThrTimes = make([]timer.Time, nt.NThreads)
-	nt.FunTimes = make(map[string]*timer.Time)
-	for _, ly := range nt.Layers {
-		if ly.IsOff() {
-			continue
-		}
-		th := ly.Thread()
-		nt.ThrLay[th] = append(nt.ThrLay[th], ly)
-	}
-	for th := 0; th < nt.NThreads; th++ {
-		if len(nt.ThrLay[th]) == 0 {
-			log.Printf("Network BuildThreads: Network %v has no layers for thread: %v\n", nt.Nm, th)
-		}
-		nt.ThrChans[th] = make(LayFunChan)
-	}
 }
 
 // StdVertLayout arranges layers in a standard vertical (z axis stack) layout, by setting
@@ -425,18 +392,26 @@ func (nt *NetworkBase) LateralConnectLayerPrjn(lay emer.Layer, pat prjn.Pattern,
 // Build constructs the layer and projection state based on the layer shapes
 // and patterns of interconnectivity
 func (nt *NetworkBase) Build() error {
-	nt.StopThreads() // any existing..
+	// maxp := runtime.GOMAXPROCS(0)
+	// if maxp > 4 {
+	// 	maxp = 4
+	// 	runtime.GOMAXPROCS(maxp)
+	// }
+	// mpi.Printf("Running on: %d GOMAXPROCS\n", maxp)
+
+	nt.FunTimes = make(map[string]*timer.Time)
+
 	nt.LayClassMap = make(map[string][]string)
 	emsg := ""
+	totNeurons := 0
+	totPrjns := 0
 	for li, ly := range nt.Layers {
 		ly.SetIndex(li)
 		if ly.IsOff() {
 			continue
 		}
-		err := ly.Build()
-		if err != nil {
-			emsg += err.Error() + "\n"
-		}
+		totNeurons += ly.Shape().Len()
+		totPrjns += len(*ly.SendPrjns())
 		cls := strings.Split(ly.Class(), " ")
 		for _, cl := range cls {
 			ll := nt.LayClassMap[cl]
@@ -444,9 +419,31 @@ func (nt *NetworkBase) Build() error {
 			nt.LayClassMap[cl] = ll
 		}
 	}
+	nt.Neurons = make([]Neuron, totNeurons, totNeurons) // never grows
+	nt.Prjns = make([]AxonPrjn, totPrjns, totPrjns)
+	nidx := 0
+	pidx := 0
+	for li, ly := range nt.Layers {
+		ly.SetIndex(li)
+		if ly.IsOff() {
+			continue
+		}
+		nn := ly.Shape().Len()
+		aly := ly.(AxonLayer).AsAxon()
+		aly.Neurons = nt.Neurons[nidx : nidx+nn]
+		aly.NeurStIdx = nidx
+		err := ly.Build()
+		if err != nil {
+			emsg += err.Error() + "\n"
+		}
+		sprjns := *ly.SendPrjns()
+		for pi, spj := range sprjns {
+			nt.Prjns[pidx+pi] = spj.(AxonPrjn)
+		}
+		nidx += nn
+		pidx += len(sprjns)
+	}
 	nt.Layout()
-	nt.BuildThreads()
-	nt.StartThreads()
 	if emsg != "" {
 		return errors.New(emsg)
 	}
@@ -455,13 +452,8 @@ func (nt *NetworkBase) Build() error {
 
 // DeleteAll deletes all layers, prepares network for re-configuring and building
 func (nt *NetworkBase) DeleteAll() {
-	nt.StopThreads() // any existing..
-	nt.NThreads = 0
 	nt.Layers = nil
 	nt.LayMap = nil
-	nt.ThrLay = nil
-	nt.ThrChans = nil
-	nt.ThrTimes = nil
 	nt.FunTimes = nil
 }
 
@@ -661,70 +653,134 @@ func (nt *NetworkBase) VarRange(varNm string) (min, max float32, err error) {
 	return
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Threading infrastructure
+///////////////////////////////////////////////////////////////////////////
+//  Compute Function Calling (threading)
 
-// StartThreads starts up the computation threads, which monitor the channels for work
-func (nt *NetworkBase) StartThreads() {
-	fmt.Printf("NThreads: %d\tgo max procs: %d\tnum cpu:%d\n", nt.NThreads, runtime.GOMAXPROCS(0), runtime.NumCPU())
-	for th := 0; th < nt.NThreads; th++ {
-		go nt.ThrWorker(th) // start the worker thread for this channel
-	}
-}
+const (
+	// Thread is named const for actually using threads
+	Thread = true
+	// NoThread is named const for not using threads
+	NoThread = false
+	// Wait is named const for waiting for all go routines
+	Wait = true
+	// NoWait is named const for NOT waiting for all go routines
+	NoWait = false
+)
 
-// StopThreads stops the computation threads
-func (nt *NetworkBase) StopThreads() {
-	for th := 0; th < nt.NThreads; th++ {
-		close(nt.ThrChans[th])
+// PrjnFun applies function of given name to all projections
+// using threading (go routines) if thread is true and NThreads > 1.
+// if wait is true, then it waits until all procs have completed.
+func (nt *NetworkBase) PrjnFun(fun func(pj AxonPrjn), funame string, thread, wait bool) {
+	if thread { // don't bother if not significant to thread
+		nt.FunTimerStart(funame)
 	}
-}
-
-// ThrWorker is the worker function run by the worker threads
-func (nt *NetworkBase) ThrWorker(tt int) {
-	if nt.LockThreads {
-		runtime.LockOSThread()
-	}
-	for fun := range nt.ThrChans[tt] {
-		thly := nt.ThrLay[tt]
-		nt.ThrTimes[tt].Start()
-		for _, ly := range thly {
-			if ly.IsOff() {
-				continue
-			}
-			fun(ly.(AxonLayer))
+	if !thread || nt.NThreads <= 1 {
+		for _, pj := range nt.Prjns {
+			fun(pj)
 		}
-		nt.ThrTimes[tt].Stop()
-		nt.WaitGp.Done()
+	} else {
+		for _, pjr := range nt.Prjns {
+			pj := pjr
+			nt.WaitGp.Add(1)
+			go func() {
+				fun(pj)
+				nt.WaitGp.Done()
+			}()
+		}
+		if wait {
+			nt.WaitGp.Wait()
+		}
 	}
-	if nt.LockThreads {
-		runtime.UnlockOSThread()
+	if thread {
+		nt.FunTimerStop(funame)
 	}
 }
 
-// ThrLayFun calls function on layer, using threaded (go routine worker) computation if NThreads > 1
-// and otherwise just iterates over layers in the current thread.
-func (nt *NetworkBase) ThrLayFun(fun func(ly AxonLayer), funame string) {
-	nt.FunTimerStart(funame)
-	if nt.NThreads <= 1 {
+// LayerFun applies function of given name to all layers
+// using threading (go routines) if thread is true and NThreads > 1.
+// if wait is true, then it waits until all procs have completed.
+// many layer-level functions are not actually worth threading overhead
+// so this should be benchmarked for each case.
+func (nt *NetworkBase) LayerFun(fun func(ly AxonLayer), funame string, thread, wait bool) {
+	if thread { // don't bother if not significant to thread
+		nt.FunTimerStart(funame)
+	}
+	if !thread || nt.NThreads <= 1 {
 		for _, ly := range nt.Layers {
-			if ly.IsOff() {
-				continue
-			}
 			fun(ly.(AxonLayer))
 		}
 	} else {
-		for th := 0; th < nt.NThreads; th++ {
+		for _, lyr := range nt.Layers {
+			ly := lyr
 			nt.WaitGp.Add(1)
-			nt.ThrChans[th] <- fun
+			go func() {
+				fun(ly.(AxonLayer))
+				nt.WaitGp.Done()
+			}()
 		}
+		if wait {
+			nt.WaitGp.Wait()
+		}
+	}
+	if thread {
+		nt.FunTimerStop(funame)
+	}
+}
+
+// NeuronFun applies function of given name to all neurons
+// using threading (go routines) if thread is true and NThreads > 1.
+// if wait is true, then it waits until all procs have completed.
+// Does neurons in chunks per NThreads
+func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, thread, wait bool) {
+	if thread { // don't bother if not significant to thread
+		nt.FunTimerStart(funame)
+	}
+	if !thread || nt.NThreads <= 1 {
+		for ni := range nt.Neurons {
+			nrn := &nt.Neurons[ni]
+			ly := nt.Layers[nrn.LayIdx].(AxonLayer)
+			fun(ly, ni-ly.NeurStartIdx(), nrn)
+		}
+		if thread {
+			nt.FunTimerStop(funame)
+		}
+		return
+	}
+	np := nt.NThreads
+	nn := len(nt.Neurons)
+	nPer := nn / np // todo: can try reducing nPer to add a bit of extra load here..
+	nThr := len(nt.Neurons) / nPer
+	if nThr*nPer < nn {
+		nThr++
+	}
+	for thr := 0; thr < nThr; thr++ {
+		th := thr
+		nt.WaitGp.Add(1)
+		go func() {
+			st := th * nPer
+			ed := (th + 1) * nPer
+			if ed > nn {
+				ed = nn
+			}
+			for ni := st; ni < ed; ni++ {
+				nrn := &nt.Neurons[ni]
+				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
+				fun(ly, ni-ly.NeurStartIdx(), nrn)
+			}
+			nt.WaitGp.Done()
+		}()
+	}
+	if wait {
 		nt.WaitGp.Wait()
 	}
-	nt.FunTimerStop(funame)
+	if thread {
+		nt.FunTimerStop(funame)
+	}
 }
 
 // TimerReport reports the amount of time spent in each function, and in each thread
 func (nt *NetworkBase) TimerReport() {
-	fmt.Printf("TimerReport: %v, NThreads: %v\n", nt.Nm, nt.NThreads)
+	fmt.Printf("TimerReport: %v\n", nt.Nm)
 	fmt.Printf("\t%13s \t%7s\t%7s\n", "Function Name", "Secs", "Pct")
 	nfn := len(nt.FunTimes)
 	fnms := make([]string, nfn)
@@ -744,31 +800,13 @@ func (nt *NetworkBase) TimerReport() {
 		fmt.Printf("\t%13s \t%7.3f\t%7.1f\n", fn, pcts[i], 100*(pcts[i]/tot))
 	}
 	fmt.Printf("\t%13s \t%7.3f\n", "Total", tot)
-
-	if nt.NThreads <= 1 {
-		return
-	}
-	fmt.Printf("\n\tThr\tSecs\tPct\n")
-	pcts = make([]float64, nt.NThreads)
-	tot = 0.0
-	for th := 0; th < nt.NThreads; th++ {
-		pcts[th] = nt.ThrTimes[th].TotalSecs()
-		tot += pcts[th]
-	}
-	for th := 0; th < nt.NThreads; th++ {
-		fmt.Printf("\t%v \t%7.3f\t%7.1f\n", th, pcts[th], 100*(pcts[th]/tot))
-	}
-}
-
-// ThrTimerReset resets the per-thread timers
-func (nt *NetworkBase) ThrTimerReset() {
-	for th := 0; th < nt.NThreads; th++ {
-		nt.ThrTimes[th].Reset()
-	}
 }
 
 // FunTimerStart starts function timer for given function name -- ensures creation of timer
 func (nt *NetworkBase) FunTimerStart(fun string) {
+	if !nt.RecFunTimes {
+		return
+	}
 	ft, ok := nt.FunTimes[fun]
 	if !ok {
 		ft = &timer.Time{}
@@ -779,6 +817,9 @@ func (nt *NetworkBase) FunTimerStart(fun string) {
 
 // FunTimerStop stops function timer -- timer must already exist
 func (nt *NetworkBase) FunTimerStop(fun string) {
+	if !nt.RecFunTimes {
+		return
+	}
 	ft := nt.FunTimes[fun]
 	ft.Stop()
 }

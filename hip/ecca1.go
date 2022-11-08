@@ -31,7 +31,7 @@ func (pj *EcCa1Prjn) UpdateParams() {
 
 // DWt computes the weight change (learning) -- on sending projections
 // Delta version
-func (pj *EcCa1Prjn) DWt(ltime *axon.Time) {
+func (pj *EcCa1Prjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}

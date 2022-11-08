@@ -34,16 +34,10 @@ func (ly *RWPredLayer) Defaults() {
 	ly.Act.Dt.GeTau = 40
 }
 
-func (ly *RWPredLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.Act = ly.PredRange.ClipVal(nrn.Ge) // clipped linear
-		nrn.ActInt = nrn.Act
-	}
+func (ly *RWPredLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
+	nrn.Act = ly.PredRange.ClipVal(nrn.Ge) // clipped linear
+	nrn.ActInt = nrn.Act
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -103,8 +97,8 @@ func (ly *RWDaLayer) Build() error {
 	return err
 }
 
-func (ly *RWDaLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
+func (ly *RWDaLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	rly, ply, _ := ly.RWLayers()
 	if rly == nil || ply == nil {
 		return
@@ -117,23 +111,17 @@ func (ly *RWDaLayer) ActFmG(ltime *axon.Time) {
 	ract := rnrn.Act
 	pnrn := &(ply.Neurons[0])
 	pact := pnrn.Act
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if hasRew {
-			nrn.Act = ract - pact
-		} else {
-			nrn.Act = 0 // nothing
-		}
-		nrn.ActInt = nrn.Act
+	if hasRew {
+		nrn.Act = ract - pact
+	} else {
+		nrn.Act = 0 // nothing
 	}
+	nrn.ActInt = nrn.Act
 }
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *RWDaLayer) CyclePost(ltime *axon.Time) {
+func (ly *RWDaLayer) CyclePost(ctime *axon.Time) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)
@@ -163,7 +151,7 @@ func (pj *RWPrjn) Defaults() {
 }
 
 // DWt computes the weight change (learning) -- on sending projections.
-func (pj *RWPrjn) DWt(ltime *axon.Time) {
+func (pj *RWPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}
@@ -214,7 +202,7 @@ func (pj *RWPrjn) DWt(ltime *axon.Time) {
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-func (pj *RWPrjn) WtFmDWt(ltime *axon.Time) {
+func (pj *RWPrjn) WtFmDWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return
 	}

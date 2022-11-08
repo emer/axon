@@ -40,7 +40,7 @@ func TestActUpdate(t *testing.T) {
 		ac.GeFmRaw(neuron, neuron.GeRaw, 0)
 		ac.GiFmRaw(neuron, neuron.GiRaw)
 		ac.VmFmG(neuron)
-		ac.ActFmG(neuron)
+		ac.SpikeFmG(neuron)
 		ge[i] = neuron.Ge
 		inet[i] = neuron.Inet
 		vm[i] = neuron.Vm

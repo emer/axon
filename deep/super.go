@@ -90,16 +90,16 @@ func (ly *SuperLayer) BurstPrv() {
 }
 
 // CyclePost calls BurstFmCaSpkP
-func (ly *SuperLayer) CyclePost(ltime *axon.Time) {
-	ly.Layer.CyclePost(ltime)
-	ly.BurstFmCaSpkP(ltime)
+func (ly *SuperLayer) CyclePost(ctime *axon.Time) {
+	ly.Layer.CyclePost(ctime)
+	ly.BurstFmCaSpkP(ctime)
 }
 
 // BurstFmCaSpkP updates Burst layer 5IB bursting value from current CaSpkP
 // reflecting a time-integrated spiking value useful in learning,
 // subject to thresholding.  Only updated during plus phase.
-func (ly *SuperLayer) BurstFmCaSpkP(ltime *axon.Time) {
-	if !ltime.PlusPhase {
+func (ly *SuperLayer) BurstFmCaSpkP(ctime *axon.Time) {
+	if !ctime.PlusPhase {
 		return
 	}
 	actMax := ly.ActAvg.CaSpkP.Max
@@ -127,7 +127,7 @@ func (ly *SuperLayer) BurstFmCaSpkP(ltime *axon.Time) {
 // CtxtGe excitatory conductance on CT layers.
 // This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
 // Satisfies the CtxtSender interface.
-func (ly *SuperLayer) SendCtxtGe(ltime *axon.Time) {
+func (ly *SuperLayer) SendCtxtGe(ctime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

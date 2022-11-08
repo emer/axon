@@ -302,33 +302,33 @@ func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 //  Compute methods
 
 // PlusPhase does updating after end of plus phase
-func (nt *Network) PlusPhaseImpl(ltime *axon.Time) {
-	nt.Network.PlusPhaseImpl(ltime) // call base
-	nt.CTCtxt(ltime)
+func (nt *Network) PlusPhaseImpl(ctime *axon.Time) {
+	nt.Network.PlusPhaseImpl(ctime) // call base
+	nt.CTCtxt(ctime)
 }
 
 // CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
-func (nt *Network) CTCtxt(ltime *axon.Time) {
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
+func (nt *Network) CTCtxt(ctime *axon.Time) {
+	nt.LayerFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(CtxtSender); ok {
-			dl.SendCtxtGe(ltime)
+			dl.SendCtxtGe(ctime)
 		} else {
-			LayerSendCtxtGe(ly.AsAxon(), ltime)
+			LayerSendCtxtGe(ly.AsAxon(), ctime)
 		}
-	}, "SendCtxtGe")
+	}, "SendCtxtGe", axon.Thread, axon.Wait)
 
-	nt.ThrLayFun(func(ly axon.AxonLayer) {
+	nt.LayerFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(*CTLayer); ok {
-			dl.CtxtFmGe(ltime)
+			dl.CtxtFmGe(ctime)
 		}
-	}, "CtxtFmGe")
+	}, "CtxtFmGe", axon.NoThread, axon.Wait)
 }
 
 // LayerSendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
 // CtxtGe excitatory conductance on CT layers.
 // This should be called at the end of the 5IB Bursting phase via Network.CTCtxt
 // Satisfies the CtxtSender interface.
-func LayerSendCtxtGe(ly *axon.Layer, ltime *axon.Time) {
+func LayerSendCtxtGe(ly *axon.Layer, ctime *axon.Time) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

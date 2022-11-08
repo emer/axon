@@ -177,18 +177,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
 
-	// note: can set these to do parallel threaded computation across multiple cpus
-	// not worth it for this small of a model, but definitely helps for larger ones
-	// if Thread {
-	// 	hid2.SetThread(1)
-	// 	out.SetThread(1)
-	// }
-
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
+	net.NThreads = 1
 	net.Defaults()
 	ss.Params.SetObject("Network")
 	err := net.Build()
@@ -309,17 +303,19 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	// lrate schedule
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		switch trnEpc {
-		case 50:
-			mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			ss.Net.LrateSched(ss.Lr50) // 0.2
-		case 100:
-			mpi.Printf("learning rate drop at: %d\n", trnEpc)
-			ss.Net.LrateSched(ss.Lr100) // 0.1
-		}
-	})
+	/*
+		man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
+			trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+			switch trnEpc {
+			case 50:
+				mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				ss.Net.LrateSched(ss.Lr50) // 0.2
+			case 100:
+				mpi.Printf("learning rate drop at: %d\n", trnEpc)
+				ss.Net.LrateSched(ss.Lr100) // 0.1
+			}
+		})
+	*/
 
 	////////////////////////////////////////////
 	// GUI
@@ -502,11 +498,12 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.SpikedAvgByPool(0))
+					ctx.SetFloat32(ly.AvgMaxVarByPool("Spiked", 0).Avg)
 				}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.SpikedAvgByPool(0))
-				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetFloat32(ly.AvgMaxVarByPool("Spiked", 0).Avg)
+				}, etime.Scope(etime.Train, etime.Epoch): func(
+					ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)

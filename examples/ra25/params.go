@@ -20,7 +20,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.0",  // 1.2 > 1.1
+					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.05 vs 1.0 prev
 					"Layer.Inhib.ActAvg.Init": "0.05", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Act.NMDA.MgC":      "1.2",  // 1.2 > 1.4 for SynSpkTheta
 					"Layer.Act.NMDA.Voff":     "0",    // 0 > 5 for SynSpkTheta
@@ -32,15 +32,15 @@ var ParamSets = params.Sets{
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Act.Clamp.Ge":      "1.5",  // 1.0 > 0.6 >= 0.7 == 0.5
 					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 >= 0.8 > 1.0 > 0.7
+					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 for FS-FFFB vs 0.9 prev
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.6",  // .6 > .5 v94
+					"Layer.Act.Clamp.Ge":            "0.8",  // .6 > .5 v94
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",

@@ -65,19 +65,24 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	PctCortex       float32 `desc:"proportion of action driven by the cortex vs. hard-coded reflexive subcortical"`
+	TwoThetas       bool    `desc:"if true, do 2 theta trials per action"`
+	PctCortex       float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax    float32 `desc:"maximum PctCortex, when running on the schedule"`
 	PctCortexStEpc  int     `desc:"epoch when PctCortex starts increasing"`
 	PctCortexMaxEpc int     `desc:"epoch when PctCortexMax is reached"`
 	PCAInterval     int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	CortexDriving   bool    `desc:"true if cortex is driving this behavioral approach sequence"`
+	ThetaStep       int     `desc:"theta counter -- only take an action every 2 trials"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
+	ss.TwoThetas = true
 	ss.PctCortexMax = 1.0
 	ss.PctCortexStEpc = 10
 	ss.PctCortexMaxEpc = 50
 	ss.PCAInterval = 10
+	ss.ThetaStep = 0
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -197,7 +202,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
 	// pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
-	pos := net.AddLayer2D("Pos", ny, nloc, emer.Input)
+	pos := net.AddLayer2D("Pos", ny, nloc, emer.Input) // irrelevant here
+	gate := net.AddLayer2D("Gate", ny, 2, emer.Input)  // signals gated or not
 
 	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
@@ -213,7 +219,11 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	blaa, blae, _, _, cemPos, _, pptg := pvlv.AddAmygdala(net.AsAxon(), "", false, ev.NDrives, nuCtxY, nuCtxX, space)
 	_ = cemPos
-	ach.RewLays.Add(snc.Name(), pptg.Name())
+	ach.RewLayers.Add(rew.Name(), pptg.Name())
+	blaa.(*pvlv.BLALayer).USLayers.Add(us.Name())
+	blae.(*pvlv.BLALayer).USLayers.Add(us.Name())
+	vPmtxGo.(*pcore.MatrixLayer).USLayers.Add(us.Name())
+	vPmtxNo.(*pcore.MatrixLayer).USLayers.Add(us.Name())
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
@@ -279,7 +289,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayersPrjn(cs, blaa, full, emer.Forward, &pvlv.BLAPrjn{})
 	net.ConnectLayersPrjn(us, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
 	// net.ConnectLayersPrjn(usp, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
-	net.ConnectLayersPrjn(drives, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
+	// net.ConnectLayersPrjn(drives, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
 	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
 	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
@@ -288,22 +298,27 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	net.ConnectLayers(dist, alm, full, emer.Forward)
 	net.ConnectLayers(time, alm, full, emer.Forward)
+	net.ConnectLayers(ofcpt, alm, full, emer.Forward)
+	net.ConnectLayers(accpt, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
 	net.ConnectLayers(dist, m1, full, emer.Forward)
 	net.ConnectLayers(time, m1, full, emer.Forward)
+	net.ConnectLayers(gate, m1, full, emer.Forward) // this is key!
+	// net.ConnectLayers(ofcpt, m1, full, emer.Forward)
+	// net.ConnectLayers(accpt, m1, full, emer.Forward)
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
 	////////////////////////////////////////////////
 	// BG / DA connections
 	snc.SendDA.AddAllBut(net)
 
-	net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
-	net.BidirConnectLayers(alm, m1, full)            // todo: alm weaker?
+	// net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
+	// net.BidirConnectLayers(alm, m1, full)            // todo: alm weaker?
 	// net.ConnectLayers(alm, almpt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(alm, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
-	net.BidirConnectLayers(alm, vl, full)
-	net.BidirConnectLayers(almct, vl, full)
+	// net.BidirConnectLayers(alm, vl, full)
+	// net.BidirConnectLayers(almct, vl, full)
 
 	net.ConnectLayers(vl, alm, full, emer.Back)
 	net.ConnectLayers(vl, almct, full, emer.Back)
@@ -357,6 +372,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	dist.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: space})
 	time.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: distp.Name(), XAlign: relpos.Left, Space: space})
 	pos.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dist.Name(), YAlign: relpos.Front, Space: space})
+	gate.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pos.Name(), XAlign: relpos.Left, Space: space})
 
 	m1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pos.Name(), YAlign: relpos.Front, Space: space})
 	m1p.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1.Name(), XAlign: relpos.Left, Space: space})
@@ -518,6 +534,13 @@ func (ss *Sim) ConfigLoops() {
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
 func (ss *Sim) TakeAction(net *pcore.Network) {
+	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
+		ss.Sim.ThetaStep++
+		return
+	}
+	// fmt.Printf("Take Action\n")
+	ss.Sim.ThetaStep = 0 // reset for next time
+
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
 
 	netAct, anm := ss.DecodeAct(ev)
@@ -532,17 +555,15 @@ func (ss *Sim) TakeAction(net *pcore.Network) {
 	}
 
 	actAct := genAct
-	if erand.BoolProb(float64(ss.Sim.PctCortex), -1) {
+	if ss.Sim.CortexDriving {
 		actAct = netAct
 	}
 	actActNm := ev.Acts[actAct]
 	ss.Stats.SetString("ActAction", actActNm)
 
 	ev.Action(actActNm, nil)
-
-	ss.GatedStats()
 	ss.ApplyAction(actAct)
-	ss.ApplyRew()
+	// ss.ApplyRew()
 	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
 
@@ -576,35 +597,6 @@ func (ss *Sim) ApplyUS() {
 	}
 }
 
-// GatedStats updates the gated states based on gating -- when action is taken
-func (ss *Sim) GatedStats() {
-	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode].(*Approach)
-	mtxLy := net.LayerByName("VpMtxGo").(*pcore.MatrixLayer)
-	mtxLy.GatedFmAvgSpk()
-	didGate := mtxLy.AnyGated()
-	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
-	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(ev.ShouldGate))
-	ss.Stats.SetFloat32("GateUS", mat32.NaN())
-	ss.Stats.SetFloat32("GateCS", mat32.NaN())
-	ss.Stats.SetFloat32("NoGatePre", mat32.NaN())
-	ss.Stats.SetFloat32("NoGatePost", mat32.NaN())
-	if ev.ShouldGate {
-		if ev.US != -1 {
-			ss.Stats.SetFloat32("GateUS", pcore.BoolToFloat32(didGate))
-		} else {
-			ss.Stats.SetFloat32("GateCS", pcore.BoolToFloat32(didGate))
-		}
-	} else {
-		if ev.Dist < ev.DistMax-1 { // todo: not very robust
-			ss.Stats.SetFloat32("NoGatePost", pcore.BoolToFloat32(!didGate))
-		} else {
-			ss.Stats.SetFloat32("NoGatePre", pcore.BoolToFloat32(!didGate))
-		}
-	}
-	ss.Stats.SetFloat32("Rew", ev.Rew)
-}
-
 func (ss *Sim) ApplyAction(act int) {
 	net := ss.Net
 	ev := ss.Envs[ss.Time.Mode]
@@ -626,20 +618,26 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs[ss.Time.Mode].(*Approach)
 
 	if ev.Time == 0 {
-		net.InitActs()                                            // this is still essential even with fully functioning decay below:
-		net.DecayStateByClass(1, 1, "Hidden", "PT", "CT", "Thal") // US action gating
+		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
+		net.InitActs() // this is still essential even with fully functioning decay below:
+		// todo: need a more selective US gating mechanism!
+		net.DecayStateByClass(1, 1, "Hidden", "PT", "CT", "Thal")
+		ev.RenderLocalist("Gate", 0)
 	}
 
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	lays := []string{"Pos", "Drives", "US", "CS", "Dist", "Time", "Rew"}
+	lays := []string{"Pos", "Drives", "US", "CS", "Dist", "Time", "Rew", "Gate"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
-	ss.ApplyUS() // now full trial
+
+	// fmt.Printf("Rew: %g\n", ev.Rew)
+	// ss.ApplyUS() // now full trial
+	// ss.ApplyRew()
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -650,6 +648,7 @@ func (ss *Sim) NewRun() {
 	// ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Time.Reset()
 	ss.Time.Mode = etime.Train.String()
+	ss.Sim.ThetaStep = 0
 	ss.Sim.PctCortex = 0
 	ss.InitWts(ss.Net)
 	ss.InitStats()
@@ -677,7 +676,14 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("GateCS", 0)
 	ss.Stats.SetFloat("NoGatePre", 0)
 	ss.Stats.SetFloat("NoGatePost", 0)
+	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("Rew", 0)
+	lays := ss.Net.LayersByClass("PT")
+	for _, lnm := range lays {
+		ss.Stats.SetFloat("Maint"+lnm, 0)
+		ss.Stats.SetFloat("MaintFail"+lnm, 0)
+		ss.Stats.SetFloat("PreAct"+lnm, 0)
+	}
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -701,24 +707,100 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	/*
-		mode := etime.ModeFromString(ss.Time.Mode)
-		trlog := ss.Logs.Log(mode, etime.Cycle)
-		spkCyc := 0
-		for row := 0; row < trlog.Rows; row++ {
-			vts := trlog.CellTensorFloat1D("VThal_Spike", row, 0)
-			if vts > 0 {
-				spkCyc = row
-				break
-			}
-		}
-		ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
-	*/
+	ss.GatedStats()
+	ss.MaintStats()
 	da := ss.Net.LayerByName("DA").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("DA", float64(da.Neurons[0].Act))
 	rp := ss.Net.LayerByName("RWPred").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("RewPred", float64(rp.Neurons[0].Act))
 
+}
+
+// GatedStats updates the gated states
+func (ss *Sim) GatedStats() {
+	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
+		return
+	}
+	// fmt.Printf("Gate Stats\n")
+	net := ss.Net
+	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	mtxLy := net.LayerByName("VpMtxGo").(*pcore.MatrixLayer)
+	didGate := mtxLy.AnyGated()
+	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(ev.ShouldGate))
+	ss.Stats.SetFloat32("GateUS", mat32.NaN())
+	ss.Stats.SetFloat32("GateCS", mat32.NaN())
+	ss.Stats.SetFloat32("NoGatePre", mat32.NaN())
+	ss.Stats.SetFloat32("NoGatePost", mat32.NaN())
+	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
+	if didGate {
+		ss.Stats.SetFloat32("WrongCSGate", pcore.BoolToFloat32(ev.Drive != ev.USForPos()))
+	}
+	if ev.ShouldGate {
+		if ev.US != -1 {
+			ss.Stats.SetFloat32("GateUS", pcore.BoolToFloat32(didGate))
+		} else {
+			ss.Stats.SetFloat32("GateCS", pcore.BoolToFloat32(didGate))
+		}
+	} else {
+		if ev.Dist < ev.DistMax-1 { // todo: not very robust
+			ss.Stats.SetFloat32("NoGatePost", pcore.BoolToFloat32(!didGate))
+		} else {
+			ss.Stats.SetFloat32("NoGatePre", pcore.BoolToFloat32(!didGate))
+		}
+	}
+	ss.Stats.SetFloat32("Rew", ev.Rew)
+}
+
+// MaintStats updates the PFC maint stats
+func (ss *Sim) MaintStats() {
+	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
+		return
+	}
+	// fmt.Printf("Maint Stats\n")
+	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	// should be maintaining while going forward
+	isFwd := ev.LastAct == ev.ActMap["Forward"]
+	isCons := ev.LastAct == ev.ActMap["Consume"]
+	actThr := float32(0.05) // 0.1 too high
+	net := ss.Net
+	lays := net.LayersByClass("PT")
+	hasMaint := false
+	for _, lnm := range lays {
+		mnm := "Maint" + lnm
+		fnm := "MaintFail" + lnm
+		pnm := "PreAct" + lnm
+		ptly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		var mact float32
+		if ptly.Is4D() {
+			for pi := 1; pi < len(ptly.Pools); pi++ {
+				avg := ptly.Pools[pi].ActP.Avg
+				if avg > mact {
+					mact = avg
+				}
+			}
+		} else {
+			mact = ptly.Pools[0].ActP.Avg
+		}
+		overThr := mact > actThr
+		if overThr {
+			hasMaint = true
+		}
+		ss.Stats.SetFloat32(pnm, mat32.NaN())
+		ss.Stats.SetFloat32(mnm, mat32.NaN())
+		ss.Stats.SetFloat32(fnm, mat32.NaN())
+		if isFwd {
+			ss.Stats.SetFloat32(mnm, mact)
+			ss.Stats.SetFloat32(fnm, pcore.BoolToFloat32(!overThr))
+		} else if !isCons {
+			ss.Stats.SetFloat32(pnm, pcore.BoolToFloat32(overThr))
+		}
+	}
+	if hasMaint {
+		ev.RenderLocalist("Gate", 1)
+	} else {
+		ev.RenderLocalist("Gate", 0)
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -734,20 +816,6 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "GenAction", "ActAction")
 	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
 	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
-
-	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("NoGatePre", "NoGatePre", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("NoGatePost", "NoGatePost", etime.Run, etime.Epoch, etime.Trial)
-	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
-	li = ss.Logs.AddStatAggItem("RewPred", "RewPred", etime.Run, etime.Epoch, etime.Trial)
-	li.FixMin = false
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -766,7 +834,10 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "NoGatePre", "NoGatePost") // "Gated", "GateUS", "PctCortex", "Rew", "DA",  "MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "WrongCSGate")
+	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
+	// "GateUS", "NoGatePre", "NoGatePost", "Gated", "PctCortex",
+	// "Rew", "DA", "MtxGo_ActAvg"
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -781,6 +852,31 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
+	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("NoGatePre", "NoGatePre", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("NoGatePost", "NoGatePost", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
+
+	lays := ss.Net.LayersByClass("PT")
+	for _, lnm := range lays {
+		nm := "Maint" + lnm
+		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
+		nm = "MaintFail" + lnm
+		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
+		nm = "PreAct" + lnm
+		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
+	}
+	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("RewPred", "RewPred", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
+
 	ev := TheSim.Envs[etime.Train.String()].(*Approach)
 	ss.Logs.AddItem(&elog.Item{
 		Name:      "ActCor",
@@ -802,9 +898,9 @@ func (ss *Sim) ConfigLogItems() {
 	for _, nm := range ev.Acts { // per-action % correct
 		anm := nm // closure
 		ss.Logs.AddItem(&elog.Item{
-			Name:  anm + "Cor",
-			Type:  etensor.FLOAT64,
-			Plot:  true,
+			Name: anm + "Cor",
+			Type: etensor.FLOAT64,
+			// Plot:  true,
 			Range: minmax.F64{Min: 0},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {

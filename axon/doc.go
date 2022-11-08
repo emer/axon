@@ -65,7 +65,7 @@ you may need to the refer to act.go, learn.go etc to see the relevant details bu
 least the overall organization should be clear in layer.go.
 
 Computational methods are generally named: VarFmVar to specifically name what variable
-is being computed from what other input variables.  e.g., ActFmG computes activation from
+is being computed from what other input variables.  e.g., SpikeFmG computes activation from
 conductances G.
 
 The Pools (type Pool, in pool.go) hold state used for computing pooled inhibition, but also are

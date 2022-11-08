@@ -25,6 +25,7 @@ type Approach struct {
 	Locations   int                         `desc:"number of different locations -- always <= number of drives -- drives have a unique location"`
 	DistMax     int                         `desc:"maximum distance in time steps to reach the US"`
 	TimeMax     int                         `desc:"maximum number of time steps before resetting"`
+	AlwaysLeft  bool                        `desc:"always turn left -- zoolander style"`
 	NewStateInt int                         `desc:"interval in trials for generating a new state, only if > 0"`
 	CSTot       int                         `desc:"total number of CS's = NDrives * CSPerDrive"`
 	NYReps      int                         `desc:"number of Y-axis repetitions of localist stimuli -- for redundancy in spiking nets"`
@@ -62,6 +63,7 @@ func (ev *Approach) Defaults() {
 	ev.Locations = 4 // <= drives always
 	ev.DistMax = 4
 	ev.TimeMax = 10
+	ev.AlwaysLeft = true
 	ev.NewStateInt = -1
 	ev.NYReps = 4
 	ev.PatSize.Set(6, 6)
@@ -87,6 +89,7 @@ func (ev *Approach) Config() {
 	ev.States["CS"] = etensor.NewFloat32([]int{ev.NYReps, ev.NDrives}, nil, nil)
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
+	ev.States["Gate"] = etensor.NewFloat32([]int{ev.NYReps, 2}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
 	ev.States["Action"] = etensor.NewFloat32([]int{ev.NYReps, len(ev.Acts)}, nil, nil)
 
@@ -263,11 +266,7 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 	switch action {
 	case "Forward":
 		if ev.Dist == 0 {
-			if ev.US == ev.Drive {
-				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
-			} else {
-				ev.Rew = -ev.TimeCost * float32(ev.Time)
-			}
+			ev.SetRewFmUS()
 		} else {
 			ev.Dist--
 		}
@@ -283,21 +282,37 @@ func (ev *Approach) Action(action string, nop etensor.Tensor) {
 		}
 	case "Consume":
 		if ev.Dist == 0 {
-			if ev.US == ev.Drive { // double consume
-				ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
+			if ev.US > -1 {
+				ev.SetRewFmUS()
 			} else {
 				ev.US = us
+				ev.SetRewFmUS()
 			}
 		}
 	}
 	ev.LastAct = act
 	ev.RenderRewUS()
+	// fmt.Printf("ev Rew: %g\n", ev.Rew)
+}
+
+// SetRewFmUS set reward from US
+func (ev *Approach) SetRewFmUS() {
+	if ev.US == ev.Drive {
+		ev.Rew = 1 - ev.TimeCost*float32(ev.Time)
+	} else {
+		ev.Rew = -ev.TimeCost * float32(ev.Time)
+	}
+}
+
+// USForPos returns the US at given position
+func (ev *Approach) USForPos() int {
+	uss := ev.States["USs"]
+	return int(uss.Values[ev.Pos])
 }
 
 // ActGen returns an "instinctive" action that implements a basic policy
 func (ev *Approach) ActGen() int {
-	uss := ev.States["USs"]
-	posUs := int(uss.Values[ev.Pos])
+	posUs := ev.USForPos()
 	fwd := ev.ActMap["Forward"]
 	cons := ev.ActMap["Consume"]
 	ev.ShouldGate = false
@@ -317,7 +332,7 @@ func (ev *Approach) ActGen() int {
 	if ev.LastAct == lt || ev.LastAct == rt {
 		return ev.LastAct
 	}
-	if erand.BoolProb(.5, -1) {
+	if ev.AlwaysLeft || erand.BoolProb(.5, -1) {
 		return lt
 	}
 	return rt

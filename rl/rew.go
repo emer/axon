@@ -26,7 +26,7 @@ func (ly *RewLayer) Defaults() {
 // SetNeuronExtPosNeg sets neuron Ext value based on neuron index
 // with positive values going in first unit, negative values rectified
 // to positive in 2nd unit
-func SetNeuronExtPosNeg(nrn *axon.Neuron, ni int, val float32) {
+func SetNeuronExtPosNeg(ni int, nrn *axon.Neuron, val float32) {
 	if ni == 0 {
 		if val >= 0 {
 			nrn.Ext = val
@@ -42,39 +42,19 @@ func SetNeuronExtPosNeg(nrn *axon.Neuron, ni int, val float32) {
 	}
 }
 
-func (ly *RewLayer) GFmSpike(ltime *axon.Time) {
-	ly.GFmSpikePrjn(ltime)
-	var ext0 float32
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.SetFlag(axon.NeurHasExt)
-		extOrig := nrn.Ext
-		if ni == 0 {
-			ext0 = nrn.Ext
-		}
-		SetNeuronExtPosNeg(nrn, ni, ext0)
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
-		nrn.Ext = extOrig
-	}
+func (ly *RewLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ext0 := ly.Neurons[0].Ext
+	nrn.SetFlag(axon.NeurHasExt)
+	extOrig := nrn.Ext
+	SetNeuronExtPosNeg(ni, nrn, ext0)
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
+	nrn.Ext = extOrig
 }
 
-// ActFmG computes rate-code activation from Ge, Gi, Gl conductances
-// and updates learning running-average activations from that Act
-func (ly *RewLayer) ActFmG(ltime *axon.Time) {
-	ly.Layer.ActFmG(ltime)
-	var ext0 float32
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		if ni == 0 {
-			ext0 = nrn.Ext
-		}
-		nrn.Act = ext0
-	}
+func (ly *RewLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
+	ext0 := ly.Neurons[0].Ext
+	nrn.Act = ext0
 }

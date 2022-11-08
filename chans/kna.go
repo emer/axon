@@ -11,7 +11,7 @@ package chans
 // potential back down toward rest (or even below).
 type KNaParams struct {
 	On   bool    `desc:"if On, use this component of K-Na adaptation"`
-	Rise float32 `viewif:"On" desc:"Rise rate of fast time-scale adaptation as function of Na concentration -- directly multiplies -- 1/rise = tau for rise rate"`
+	Rise float32 `viewif:"On" desc:"Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate"`
 	Max  float32 `viewif:"On" desc:"Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here"`
 	Tau  float32 `viewif:"On" desc:"time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)"`
 	Dt   float32 `view:"-" desc:"1/Tau rate constant"`

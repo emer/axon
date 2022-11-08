@@ -42,19 +42,13 @@ func (ly *PTLayer) Class() string {
 	return "PT " + ly.Cls
 }
 
-func (ly *PTLayer) GFmSpike(ltime *axon.Time) {
-	ly.GFmSpikePrjn(ltime)
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		thalGeRaw, thalGeSyn := ly.GFmSpikeNeuron(ltime, ni, nrn)
-		ly.GFmRawSynNeuron(ltime, ni, nrn, thalGeRaw, thalGeSyn)
-	}
+func (ly *PTLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	thalGeRaw, thalGeSyn := ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.GFmRawSyn(ni, nrn, ctime, thalGeRaw, thalGeSyn)
+	ly.GiInteg(ni, nrn, ctime)
 }
 
-func (ly *PTLayer) GFmSpikeNeuron(ltime *axon.Time, ni int, nrn *axon.Neuron) (thalGeRaw, thalGeSyn float32) {
+func (ly *PTLayer) GFmSpikeRaw(ni int, nrn *axon.Neuron, ctime *axon.Time) (thalGeRaw, thalGeSyn float32) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GeSyn = nrn.GeBase
@@ -81,13 +75,11 @@ func (ly *PTLayer) GFmSpikeNeuron(ltime *axon.Time, ni int, nrn *axon.Neuron) (t
 	return
 }
 
-// GFmRawSynNeuron computes overall Ge and GiSyn conductances for neuron
-// from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
-func (ly *PTLayer) GFmRawSynNeuron(ltime *axon.Time, ni int, nrn *axon.Neuron, thalGeRaw, thalGeSyn float32) {
+func (ly *PTLayer) GFmRawSyn(ni int, nrn *axon.Neuron, ctime *axon.Time, thalGeRaw, thalGeSyn float32) {
 	ly.Act.NMDAFmRaw(nrn, ly.ThalNMDAGain*thalGeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw) // exclude thal?
 	ly.Act.GvgccFmVm(nrn)
-
 	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc+ly.ThalNMDAGain*thalGeSyn)
+	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }

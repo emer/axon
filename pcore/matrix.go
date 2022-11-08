@@ -24,6 +24,8 @@ type MatrixParams struct {
 	BurstGain    float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 	DipGain      float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 	ModGain      float32 `desc:"gain factor multiplying the modulator input GeSyn conductances -- total modulation has a maximum of 1"`
+	AChInhib     float32 `desc:"strength of extra Gi current multiplied by MaxACh-ACh (ACh > Max = 0) -- ACh is disinhibitory on striatal firing"`
+	MaxACh       float32 `desc:"level of ACh at or above which AChInhib goes to 0 -- ACh typically ranges between 0-1"`
 }
 
 func (mp *MatrixParams) Defaults() {
@@ -31,6 +33,18 @@ func (mp *MatrixParams) Defaults() {
 	mp.BurstGain = 1
 	mp.DipGain = 1
 	mp.ModGain = 1
+	mp.AChInhib = 0
+	mp.MaxACh = 0.5
+}
+
+// GiFmACh returns inhibitory conductance from ach value, where ACh is 0 at baseline
+// and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
+func (mp *MatrixParams) GiFmACh(ach float32) float32 {
+	ai := mp.MaxACh - ach
+	if ai < 0 {
+		ai = 0
+	}
+	return mp.AChInhib * ai
 }
 
 // MatrixLayer represents the matrisome medium spiny neurons (MSNs)
@@ -42,10 +56,13 @@ type MatrixLayer struct {
 	DaR      DaReceptors   `desc:"dominant type of dopamine receptor -- D1R for Go pathway, D2R for NoGo"`
 	Matrix   MatrixParams  `view:"inline" desc:"matrix parameters"`
 	MtxThals emer.LayNames `desc:"first layer here is other corresponding MatrixLayer (Go vs. NoGo), and rest are thalamus layers that are affected by this layer"`
-	HasMod   bool          `inactive:"+" desc:"has modulatory projections, flagged with Modulator setting"`
+	USLayers emer.LayNames `desc:"layer(s) that represent the presence of a US -- if the Max act of these layers is above .1, then USActive flag is set, which conditions learning behavior: weight changes are updated only at time of US based on current DA * trace of current and prior gating activity.  If this list is empty, then a US-independent form of learning is used."`
+	HasMod   bool          `inactive:"+" desc:"has modulatory projections, flagged with Modulator setting -- automatically detected"`
 	Gated    []bool        `inactive:"+" desc:"indicates whether gated, based on both Go Matrix Avg SpkMax values and thalamic activity -- is a single bool value unless GpHasPools is true"`
 	DALrn    float32       `inactive:"+" desc:"effective learning dopamine value for this layer: reflects DaR and Gains"`
-	ACh      float32       `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons reflecting the absolute value of reward or CS predictions thereof -- used for resetting the trace of matrix learning"`
+	ACh      float32       `inactive:"+" desc:"acetylcholine value from CIN cholinergic interneurons (or shared sources depending on configuration) reflecting unsigned reward salience -- non-prediction-discounted absolute value of US or CS predictions thereof -- used for modulating inhibition and learning, and resetting trace in US-independent version.  Unlike actual CIN (TAN = tonically active neurons) ACh is 0 at baseline and goes up (to 1 max) for salient events -- we invert for inhibition effects."`
+	USActive bool          `inactive:"+" desc:"marks presence of US as a function of activity over USLayers -- controls learning logic as described there"`
+	Mods     []float32     `desc:"modulatory values from Modulator projection(s) for each neuron"`
 }
 
 var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, LayerProps)
@@ -123,7 +140,8 @@ func (ly *MatrixLayer) Build() error {
 	} else {
 		ly.Gated = make([]bool, 1)
 	}
-	err = ly.MtxThals.Validate(ly.Network, "MatrixLayer:Build")
+	err = ly.MtxThals.Validate(ly.Network, "MatrixLayer.MtxThals")
+	err = ly.USLayers.Validate(ly.Network, "MatrixLayer.USLayers")
 
 	ly.HasMod = false
 	for _, p := range ly.RcvPrjns {
@@ -133,17 +151,30 @@ func (ly *MatrixLayer) Build() error {
 			break
 		}
 	}
+	ly.Mods = make([]float32, len(ly.Neurons))
 
 	return err
+}
+
+// InitMods initializes the Mods modulator values
+func (ly *MatrixLayer) InitMods() {
+	if !ly.HasMod {
+		return
+	}
+	for ni := range ly.Mods {
+		ly.Mods[ni] = 0
+	}
 }
 
 func (ly *MatrixLayer) InitActs() {
 	ly.Layer.InitActs()
 	ly.DALrn = 0
 	ly.ACh = 0
+	ly.USActive = false
 	for i := range ly.Gated {
 		ly.Gated[i] = false
 	}
+	ly.InitMods()
 }
 
 func (ly *MatrixLayer) DecayState(decay, glong float32) {
@@ -153,39 +184,69 @@ func (ly *MatrixLayer) DecayState(decay, glong float32) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Learn.DecayCaLrnSpk(nrn, glong)
+		ly.Learn.DecayCaLrnSpk(nrn, glong) // ?
+	}
+	ly.InitMods()
+}
+
+// USActiveFmUS updates the USActive flag based on USLayers state
+func (ly *MatrixLayer) USActiveFmUS(ctime *axon.Time) {
+	ly.USActive = false
+	if len(ly.USLayers) == 0 {
+		return
+	}
+	mx := rl.MaxAbsActFmLayers(ly.Network, ly.USLayers)
+	if mx > 0.1 {
+		ly.USActive = true
 	}
 }
 
-func (ly *MatrixLayer) GFmSpike(ltime *axon.Time) {
-	if !ly.HasMod {
-		ly.Layer.GFmSpike(ltime)
+// GiFmACh sets inhibitory conductance from ACh value, where ACh is 0 at baseline
+// and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
+func (ly *MatrixLayer) GiFmACh(ctime *axon.Time) {
+	gi := ly.Matrix.GiFmACh(ly.ACh)
+	if gi == 0 {
 		return
 	}
-	ly.GFmSpikePrjn(ltime)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.GFmSpikeNeuron(ltime, ni, nrn)
-		var mod float32
-		for _, p := range ly.RcvPrjns {
-			pj, ok := p.(*MatrixPrjn)
-			if ok && pj.Trace.Modulator {
-				mod += pj.GVals[ni].GSyn
-			}
-		}
-		mod *= ly.Matrix.ModGain
-		if mod > 0 {
-			mod = 1
-		}
-		nrn.GeRaw *= mod
-		nrn.GeSyn *= mod
-		ly.GFmRawSynNeuron(ltime, ni, nrn)
+		nrn.GiSyn += gi
 	}
 }
 
+func (ly *MatrixLayer) GiFmSpikes(ctime *axon.Time) {
+	ly.Layer.GiFmSpikes(ctime)
+	ly.GiFmACh(ctime)
+}
+
+func (ly *MatrixLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	if !ly.HasMod {
+		ly.Layer.GInteg(ni, nrn, ctime)
+		return
+	}
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	var mod float32
+	for _, p := range ly.RcvPrjns {
+		pj, ok := p.(*MatrixPrjn)
+		if ok && pj.Trace.Modulator {
+			mod += pj.GVals[ni].GSyn
+		}
+	}
+	mod *= ly.Matrix.ModGain
+	if mod > 0 {
+		mod = 1
+	}
+	ly.Mods[ni] = mod
+	nrn.GeRaw *= mod
+	nrn.GeSyn *= mod
+	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.GiInteg(ni, nrn, ctime)
+}
+
+// todo: replace with ki/bools.ToFloat32
 // BoolToFloat32 -- the lack of ternary conditional expressions
 // is *only* Go decision I disagree about
 func BoolToFloat32(b bool) float32 {
@@ -207,12 +268,13 @@ func (ly *MatrixLayer) AnyGated() bool {
 
 // PlusPhase does updating at end of the plus phase
 // calls DAActLrn
-func (ly *MatrixLayer) PlusPhase(ltime *axon.Time) {
-	ly.Layer.PlusPhase(ltime)
+func (ly *MatrixLayer) PlusPhase(ctime *axon.Time) {
+	ly.Layer.PlusPhase(ctime)
+	ly.USActiveFmUS(ctime)
 	ly.GatedFmAvgSpk()
 	ly.DAActLrn()
 
-	smax := ly.SpkMaxMaxByPool(0)
+	smax := ly.AvgMaxVarByPool("SpkMax", 0).Max
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -238,7 +300,7 @@ func (ly *MatrixLayer) GatedFmAvgSpk() {
 	mtxGated := false
 	if ly.Is4D() {
 		for pi := 1; pi < len(ly.Pools); pi++ {
-			spkavg := ly.SpkMaxAvgByPool(pi)
+			spkavg := ly.AvgMaxVarByPool("SpkMax", pi).Avg
 			gthr := spkavg > ly.Matrix.GateThr
 			if gthr {
 				// fmt.Printf("mtx %s gated spkavg: %g pool: %d\n", ly.Name(), spkavg, pi)
@@ -252,7 +314,7 @@ func (ly *MatrixLayer) GatedFmAvgSpk() {
 			ly.Gated[0] = mtxGated
 		}
 	} else {
-		spkavg := ly.SpkMaxAvgByPool(0)
+		spkavg := ly.AvgMaxVarByPool("SpkMax", 0).Avg
 		if spkavg > ly.Matrix.GateThr {
 			mtxGated = true
 		}
