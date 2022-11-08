@@ -12,9 +12,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
 	"os"
+	"runtime/pprof"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
@@ -220,6 +222,7 @@ func main() {
 	var epochs int
 	var pats int
 	var units int
+	var cpuprofile string
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
@@ -232,14 +235,26 @@ func main() {
 	flag.IntVar(&pats, "pats", 10, "number of patterns per epoch")
 	flag.IntVar(&units, "units", 100, "number of units per layer -- uses NxN where N = sqrt(units)")
 	flag.BoolVar(&Silent, "silent", false, "only report the final time")
+	flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
 
 	if !Silent {
 		fmt.Printf("Running bench with: %v threads, %v epochs, %v pats, %v units\n", threads, epochs, pats, units)
 	}
 
+	if cpuprofile != "" {
+		f, err := os.Create(cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+		log.Println("cpuprofile: ", cpuprofile)
+	}
+
 	Net = &axon.Network{}
 	ConfigNet(Net, threads, units)
+	log.Println(Net.SizeReport())
 
 	Pats = &etable.Table{}
 	ConfigPats(Pats, pats, units)
