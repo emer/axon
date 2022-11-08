@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/emer"
@@ -407,7 +407,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	gi.SetAppAbout(`This simulation illustrates the basic properties of neural spiking and
 rate-code activation, reflecting a balance of excitatory and inhibitory
 influences (including leak and synaptic inhibition).
-See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
+See <a href="https://github.com/Astera-org/axon/blob/master/examples/neuron/README.md">README.md on GitHub</a>.</p>`)
 
 	win := gi.NewMainWindow("neuron", "Neuron", width, height)
 	ss.Win = win
@@ -489,7 +489,7 @@ See <a href="https://github.com/emer/axon/blob/master/examples/neuron/README.md"
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/neuron/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/examples/neuron/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

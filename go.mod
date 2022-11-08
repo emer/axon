@@ -1,8 +1,10 @@
-module github.com/emer/axon
+module github.com/Astera-org/axon
 
 go 1.18
 
 require (
+	github.com/Astera-org/easylog v0.3.0
+	github.com/BurntSushi/toml v0.3.1
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/emer/emergent v1.3.31
 	github.com/emer/empi v1.0.17

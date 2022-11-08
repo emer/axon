@@ -5,7 +5,7 @@
 package deep
 
 import (
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/kit"

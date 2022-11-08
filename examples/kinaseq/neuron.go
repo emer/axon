@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"

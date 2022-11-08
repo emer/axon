@@ -5,7 +5,7 @@
 package pcore
 
 import (
-	"github.com/emer/axon/pvlv"
+	"github.com/Astera-org/axon/pvlv"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"

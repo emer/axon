@@ -7,8 +7,8 @@
 package kinasex
 
 import (
-	"github.com/emer/axon/axon"
-	"github.com/emer/axon/kinase"
+	"github.com/Astera-org/axon/axon"
+	"github.com/Astera-org/axon/kinase"
 )
 
 // KinContParams has parameters controlling Kinase-based learning rules

@@ -1,6 +1,6 @@
 # BOA = BG, OFC, ACC
 
-This model implements the `Rubicon` model for goal-driven motivated behavior, which posits distinct  **goal-selection** vs. **goal-engaged** states of the brain [O'Reilly, 2020](https://ccnlab.org/papers/OReilly20.pdf); Heckhausen & Gollwitzer, 1987.  In the goal selection phase, different options are considered (explored) and evaluated according to learned cost-benefit *utilities* (represented in the *ACC* = anterior cingulate cortex), and one is selected via BG (basal ganglia, implemented via [pcore](https://github.com/emer/axon/tree/master/pcore)) *gating* that drives stable active maintenance of a *goal state* which is a distributed representation across the *ACC*, *OFC* = orbital frontal cortex and *dlPFC* = dorsolateral prefrontal cortex).
+This model implements the `Rubicon` model for goal-driven motivated behavior, which posits distinct  **goal-selection** vs. **goal-engaged** states of the brain [O'Reilly, 2020](https://ccnlab.org/papers/OReilly20.pdf); Heckhausen & Gollwitzer, 1987.  In the goal selection phase, different options are considered (explored) and evaluated according to learned cost-benefit *utilities* (represented in the *ACC* = anterior cingulate cortex), and one is selected via BG (basal ganglia, implemented via [pcore](https://github.com/Astera-org/axon/tree/master/pcore)) *gating* that drives stable active maintenance of a *goal state* which is a distributed representation across the *ACC*, *OFC* = orbital frontal cortex and *dlPFC* = dorsolateral prefrontal cortex).
 
 ![BOA Areas](figs/fig_bg_loops_spiral_goals.png?raw=true "BOA Brain areas representing different aspect of a Goal")
 
@@ -68,7 +68,7 @@ Need a clear signal for when you are looking at a good CS: this is the activatio
 
 ## Vs / Vp Drive * CS match detection
 
-See https://github.com/emer/axon/discussions/56#discussioncomment-3939045 for rationale for how it computes alignment between drive and CS.
+See https://github.com/Astera-org/axon/discussions/56#discussioncomment-3939045 for rationale for how it computes alignment between drive and CS.
 
 Note that BLA does not have to do the same thing -- it should follow the CS wherever it goes.
 

@@ -9,8 +9,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/emer/axon/axon"
-	"github.com/emer/axon/examples/pvlv/data"
+	"github.com/Astera-org/axon/axon"
+	"github.com/Astera-org/axon/examples/pvlv/data"
 	"github.com/goki/ki/kit"
 )
 

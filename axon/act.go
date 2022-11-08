@@ -7,7 +7,7 @@ package axon
 import (
 	"math/rand"
 
-	"github.com/emer/axon/chans"
+	"github.com/Astera-org/axon/chans"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/ki/ints"

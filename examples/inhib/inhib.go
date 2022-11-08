@@ -15,7 +15,7 @@ import (
 	"math/rand"
 	"os"
 
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -545,7 +545,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/inhib/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/examples/inhib/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)

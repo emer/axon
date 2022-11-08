@@ -11,8 +11,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/emer/axon/axon"
-	"github.com/emer/axon/rl"
+	"github.com/Astera-org/axon/axon"
+	"github.com/Astera-org/axon/rl"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -411,7 +411,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
 	title := "Reinforcement Learning"
-	ss.GUI.MakeWindow(ss, "rl", title, `rl_cond explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	ss.GUI.MakeWindow(ss, "rl", title, `rl_cond explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments. See <a href="https://github.com/Astera-org/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -449,7 +449,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/rl/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/examples/rl/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)

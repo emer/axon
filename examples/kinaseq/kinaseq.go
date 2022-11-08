@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"math/rand"
 
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
@@ -287,7 +287,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	// gi.WinEventTrace = true
 
 	gi.SetAppName("kinaseq")
-	gi.SetAppAbout(`Exploration of kinase equations. See <a href="https://github.com/emer/axon/blob/master/examples/kinaseq"> GitHub</a>.</p>`)
+	gi.SetAppAbout(`Exploration of kinase equations. See <a href="https://github.com/Astera-org/axon/blob/master/examples/kinaseq"> GitHub</a>.</p>`)
 
 	win := gi.NewMainWindow("kinaseq", "Kinase Equation Exploration", width, height)
 	ss.Win = win
@@ -346,7 +346,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/kinaseq/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/examples/kinaseq/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

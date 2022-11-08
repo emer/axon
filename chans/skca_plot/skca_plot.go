@@ -8,7 +8,7 @@ package main
 import (
 	"strconv"
 
-	"github.com/emer/axon/chans"
+	"github.com/Astera-org/axon/chans"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -245,7 +245,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/chans/skca_plot/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/chans/skca_plot/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

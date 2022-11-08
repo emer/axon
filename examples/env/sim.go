@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/netview"
@@ -1243,7 +1243,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/exenv/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/examples/exenv/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

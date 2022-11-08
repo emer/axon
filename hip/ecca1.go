@@ -5,7 +5,7 @@
 package hip
 
 import (
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 )
 
 // hip.EcCa1Prjn is for EC <-> CA1 projections, to perform error-driven

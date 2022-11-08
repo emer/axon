@@ -1,6 +1,6 @@
 # PVLV: Primary Value, Learned Value
 
-[![GoDoc](https://godoc.org/github.com/emer/axon/pvlv?status.svg)](https://godoc.org/github.com/emer/axon/pvlv)
+[![GoDoc](https://godoc.org/github.com/Astera-org/axon/pvlv?status.svg)](https://godoc.org/github.com/Astera-org/axon/pvlv)
 
 This is a ground-up rewrite of PVLV [Mollick et al, 2020](#references) for axon, designed to capture the essential properties of the [Go leabra version](https://github.com/emer/leabra/tree/master/pvlv) in a yet simpler and cleaner way.  Each layer type is implemented in a more self-contained manner using the axon trace-based learning rule, which has better natural affordances for DA modulation.  Thus, these can be used in a more mix-and-match manner (e.g., the BLA can be used to train OFC, independent of its phasic dopamine role).
 

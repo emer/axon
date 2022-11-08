@@ -5,7 +5,7 @@
 package axon
 
 import (
-	"github.com/emer/axon/fsfffb"
+	"github.com/Astera-org/axon/fsfffb"
 	"github.com/goki/mat32"
 )
 

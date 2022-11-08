@@ -10,7 +10,7 @@ require (
 	github.com/emer/emergent v1.1.27
 	github.com/emer/etable v1.0.27
 	github.com/emer/etorch v1.0.6
-	github.com/emer/axon v1.2.17
+	github.com/Astera-org/axon v1.2.17
 	github.com/emer/vision v1.1.6
 	github.com/go-gl/mathgl v1.0.0
 	github.com/go-python/gopy v0.3.4

@@ -5,7 +5,7 @@
 package deep
 
 import (
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/etable/agg"

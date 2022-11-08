@@ -54,7 +54,7 @@ TimerReport: BenchNet
 
 # Axon 1.4.5 NeurSpkTheta  06/11/22: Everything in one pass!
 
-It was extremely simple to update code to reorganize the order of computation and do everything in one pass, and it doesn't even change the overall computation performed: https://github.com/emer/axon/issues/35
+It was extremely simple to update code to reorganize the order of computation and do everything in one pass, and it doesn't even change the overall computation performed: https://github.com/Astera-org/axon/issues/35
 
 This improves threading speedups significantly!  4 threads = 2.35x speedup, vs. 1.8x previously.
 

@@ -7,8 +7,8 @@ package rl
 import (
 	"fmt"
 
-	"github.com/emer/axon/axon"
-	"github.com/emer/axon/deep"
+	"github.com/Astera-org/axon/axon"
+	"github.com/Astera-org/axon/deep"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"

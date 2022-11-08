@@ -35,14 +35,14 @@ import (
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 
-	"github.com/emer/axon/axon"
-	"github.com/emer/axon/pvlv"
+	"github.com/Astera-org/axon/axon"
+	"github.com/Astera-org/axon/pvlv"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/params"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 
-	"github.com/emer/axon/examples/pvlv/data"
+	"github.com/Astera-org/axon/examples/pvlv/data"
 )
 
 var TheSim Sim // this is in a global mainly for debugging--otherwise it can be impossible to find
@@ -594,7 +594,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	width := 1600
 	height := 1600
 	gi.SetAppName("pvlv")
-	gi.SetAppAbout(`Current version of the Primary Value Learned Value model of the phasic dopamine signaling system. See <a href="https://github.com/emer/axon/blob/master/examples/pvlv/README.md">README.md on GitHub</a>.</p>`)
+	gi.SetAppAbout(`Current version of the Primary Value Learned Value model of the phasic dopamine signaling system. See <a href="https://github.com/Astera-org/axon/blob/master/examples/pvlv/README.md">README.md on GitHub</a>.</p>`)
 
 	win := gi.NewMainWindow("pvlv", "PVLV", width, height)
 	ss.Win = win
@@ -819,7 +819,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	tbar.AddAction(gi.ActOpts{Label: "README", Icon: "file-markdown", Tooltip: "Opens your browser on the README file that contains instructions for how to run this model."}, win.This(),
 		func(recv, send ki.Ki, sig int64, data interface{}) {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/examples/pvlv/README.md")
 		})
 
 	vp.UpdateEndNoSig(updt)

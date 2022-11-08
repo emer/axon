@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/emer/axon/axon"
-	"github.com/emer/axon/rl"
+	"github.com/Astera-org/axon/axon"
+	"github.com/Astera-org/axon/rl"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )

@@ -9,7 +9,7 @@ package main
 import (
 	"log"
 
-	"github.com/emer/axon/pvlv"
+	"github.com/Astera-org/axon/pvlv"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"

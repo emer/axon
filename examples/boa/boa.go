@@ -8,14 +8,14 @@ boa: This project tests BG, OFC & ACC learning in a CS-driven approach task.
 package main
 
 import (
-	"log"
 	"os"
 
-	"github.com/emer/axon/axon"
-	"github.com/emer/axon/deep"
-	"github.com/emer/axon/pcore"
-	"github.com/emer/axon/pvlv"
-	"github.com/emer/axon/rl"
+	"github.com/Astera-org/axon/axon"
+	"github.com/Astera-org/axon/deep"
+	"github.com/Astera-org/axon/pcore"
+	"github.com/Astera-org/axon/pvlv"
+	"github.com/Astera-org/axon/rl"
+	log "github.com/Astera-org/easylog"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -43,7 +43,25 @@ import (
 // Debug triggers various messages etc
 var Debug = false
 
+var gConfig Config
+
 func main() {
+	configPath := ""
+	if len(os.Args) > 1 {
+		configPath = os.Args[1]
+	}
+	gConfig.Load("package/default.toml", configPath)
+
+	err := log.Init(
+		log.SetLevel(log.INFO),
+		log.SetFileName("boa.log"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Info("Starting Boa ==========")
+
 	TheSim.New()
 	TheSim.Config()
 	if len(os.Args) > 1 {
@@ -388,7 +406,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 		return
 	}
 	ss.InitWts(net)
@@ -942,7 +960,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
 	title := "BOA = BG, OFC ACC Test"
-	ss.GUI.MakeWindow(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
+	ss.GUI.MakeWindow(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/Astera-org/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -1003,7 +1021,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/boa/README.md")
+			gi.OpenURL("https://github.com/Astera-org/axon/blob/master/examples/boa/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)

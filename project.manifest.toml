@@ -1,0 +1,17 @@
+# if you have a new project you want to be run on the cluster please add it here
+# it will be picked up by ODPW and added to the DB
+# to build go projects use: "go build -ldflags=-buildid="  
+# need this flag or succesive builds will have different hashes
+
+[PROJECTS.boa]
+name="boa"
+path="examples/boa"
+packagePath="examples/boa/package"
+binType=0
+regressionBinName=""
+targetScore=5.2
+scoreTolerance=0.1
+targetCycles=100.2
+cycleTolerance=0.1
+buildOperation="go build -ldflags=-buildid="  #need this flag or succesive builds will have different hashes
+

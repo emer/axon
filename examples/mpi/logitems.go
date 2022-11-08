@@ -7,7 +7,7 @@
 package main
 
 import (
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etensor"

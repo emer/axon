@@ -2,7 +2,7 @@
 
 package data
 
-import "github.com/emer/axon/pvlv"
+import "github.com/Astera-org/axon/pvlv"
 
 // A set of trial groups, sourced from an TrialParams list, instantiated according to the
 // PercentOfTotal field in the source list.

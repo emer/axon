@@ -18,7 +18,7 @@ func (ly *Layer) InhibFmGeAct(ltime *Time) {
 package interinhib
 
 import (
-	"github.com/emer/axon/axon"
+	"github.com/Astera-org/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/goki/mat32"
 )

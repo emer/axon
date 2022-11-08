@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/emer/axon/examples/pvlv/data"
-	"github.com/emer/axon/pvlv"
+	"github.com/Astera-org/axon/examples/pvlv/data"
+	"github.com/Astera-org/axon/pvlv"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/params"
 	"github.com/emer/etable/etable"
