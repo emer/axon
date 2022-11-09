@@ -4,6 +4,10 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.6.1 NeuronCa = true, 11/9/22: WorkMgr
+
+
+
 # Axon 1.5.15 NeuronCa = true, 11/8/22: FS-FFFB inhib and network-level compute
 
 For the key HUGE and GINORM cases, we are getting major speedups with threads, but it is about the same as before overall.  Interestingly, GOMAXPROCS, which should determine how the prjn and layer goroutines are deployed, doesn't make any difference.
