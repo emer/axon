@@ -1160,13 +1160,9 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 		}
 		ly.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
 		if lyInhib {
-			if ly.Inhib.Inhib.PoolMaxFS {
-				pl.Inhib.LayerMaxFS(&lpl.Inhib)
-			}
-			pl.Inhib.LayerMaxSS(&lpl.Inhib)
+			pl.Inhib.LayerMax(&lpl.Inhib)
 		} else {
-			lpl.Inhib.PoolMaxFS(&pl.Inhib) // display only
-			lpl.Inhib.PoolMaxSS(&pl.Inhib)
+			lpl.Inhib.PoolMax(&pl.Inhib) // display only
 		}
 	}
 	if !lyInhib {
@@ -1195,7 +1191,7 @@ func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
 // and updates GABAB as well
 func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	pl := &ly.Pools[nrn.SubPool]
-	nrn.Gi = pl.Inhib.Gi() + nrn.GiSyn + nrn.GiNoise
+	nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init

@@ -13,23 +13,23 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.Inhib.AvgTau": "30",
-					"Layer.Inhib.ActAvg.Init":  "0.15",
-					"Layer.Inhib.Layer.Gi":     "1.05", // 1.0 > 1.1  trace
-					"Layer.Act.Gbar.L":         "0.2",  // std
-					"Layer.Act.Decay.Act":      "0.0",  // 0 == 0.2
-					"Layer.Act.Decay.Glong":    "0.0",
-					"Layer.Act.Dt.LongAvgTau":  "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":     "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":   "5",   // old: 8 > 5 >> 2.81 -- big diff
-					"Layer.Act.AK.Gbar":        "0.1",
-					"Layer.Act.NMDA.MgC":       "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":      "5",
-					"Layer.Act.Sahp.Gbar":      "0.1",  //
-					"Layer.Act.Sahp.Off":       "0.8",  //
-					"Layer.Act.Sahp.Slope":     "0.02", //
-					"Layer.Act.Sahp.CaTau":     "10",   //
+					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Inhib.Layer.Gi":    "1.05", // 1.0 > 1.1  trace
+					"Layer.Inhib.Layer.FB":    "1",    // 1.0 > 0.5
+					"Layer.Act.Gbar.L":        "0.2",  // std
+					"Layer.Act.Decay.Act":     "0.0",  // 0 == 0.2
+					"Layer.Act.Decay.Glong":   "0.0",
+					"Layer.Act.Dt.LongAvgTau": "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":  "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":    "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dt.VmDendTau":  "5",   // old: 8 > 5 >> 2.81 -- big diff
+					"Layer.Act.AK.Gbar":       "0.1",
+					"Layer.Act.NMDA.MgC":      "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":     "5",
+					"Layer.Act.Sahp.Gbar":     "0.1",  //
+					"Layer.Act.Sahp.Off":      "0.8",  //
+					"Layer.Act.Sahp.Slope":    "0.02", //
+					"Layer.Act.Sahp.CaTau":    "10",   //
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -39,11 +39,13 @@ var ParamSets = params.Sets{
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Act.Clamp.Ge":      "1.5",
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.4", // 1.2 > 1.3 > 1.1
-					"Layer.CT.GeGain":               "1.2", // 0.8 > 0.5 > 1 -- none are catastrophic
+					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 > lower
+					"Layer.Inhib.Layer.FB":          "1",
+					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1.2
 					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0",
@@ -64,8 +66,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PulvLayer", Desc: "pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 0.9 > 1.1
-					"Layer.Pulv.DriveScale":         "0.1", // 0.05 fffb -- test 0.1
+					"Layer.Inhib.Layer.Gi":          "0.8", // 1.0 > 0.9 > 1.1
+					"Layer.Inhib.Layer.FB":          "1",
+					"Layer.Pulv.DriveScale":         "0.1", // 1 > 1.5; 0.05 fffb
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",

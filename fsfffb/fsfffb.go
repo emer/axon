@@ -69,11 +69,6 @@ func (fb *Params) SSFmFBs(ssf, ssi *float32, fbs float32) {
 	*ssf += fbs*(1-*ssf) - fb.SSfDt**ssf
 }
 
-// GiFmFSSS returns the overall inhibitory conductance from FS and SS components
-func (fb *Params) GiFmFFSS(fs, ss float32) float32 {
-	return fb.Gi * (fs + ss)
-}
-
 // Inhib is full inhibition computation for given inhib state
 // which has aggregated FFs and FBs spiking values
 func (fb *Params) Inhib(inh *Inhib, gimult float32) {
@@ -86,5 +81,7 @@ func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 
 	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
 	inh.SSGi = fb.Gi * fb.SS * inh.SSi
+
+	inh.Gi = inh.GiFmFSSS()
 	inh.SaveOrig()
 }

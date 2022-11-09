@@ -19,10 +19,9 @@ type Inhib struct {
 	SSf      float32 `desc:"slow spiking facilitation factor"`
 	FSGi     float32 `desc:"overall fast-spiking inhibitory conductance"`
 	SSGi     float32 `desc:"overall slow-spiking inhibitory conductance"`
-	FSGiOrig float32 `desc:"original value of the FS inhibition (before pool or other effects)"`
-	LayFSGi  float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
-	SSGiOrig float32 `desc:"original value of the FS inhibition (before pool or other effects)"`
-	LaySSGi  float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
+	Gi       float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
+	GiOrig   float32 `desc:"original value of the inhibition (before pool or other effects)"`
+	LayGi    float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
 }
 
 func (fi *Inhib) Init() {
@@ -46,10 +45,9 @@ func (fi *Inhib) Zero() {
 	fi.SSf = 0
 	fi.FSGi = 0
 	fi.SSGi = 0
-	fi.FSGiOrig = 0
-	fi.LayFSGi = 0
-	fi.SSGiOrig = 0
-	fi.LaySSGi = 0
+	fi.Gi = 0
+	fi.GiOrig = 0
+	fi.LayGi = 0
 }
 
 // Decay reduces inhibition values by given decay proportion
@@ -61,6 +59,7 @@ func (fi *Inhib) Decay(decay float32) {
 	fi.SSf -= decay * fi.SSf
 	fi.FSGi -= decay * fi.FSGi
 	fi.SSGi -= decay * fi.SSGi
+	fi.Gi -= decay * fi.Gi
 }
 
 // SpikesFmRaw updates spike values from raw, dividing by given number in pool
@@ -73,38 +72,24 @@ func (fi *Inhib) SpikesFmRaw(npool int) {
 
 // SaveOrig saves the current Gi values as original values
 func (fi *Inhib) SaveOrig() {
-	fi.FSGiOrig = fi.FSGi
-	fi.SSGiOrig = fi.SSGi
+	fi.GiOrig = fi.Gi
 }
 
-// LayerMaxFS updates given pool-level inhib values from given layer-level
+// LayerMax updates given pool-level inhib values from given layer-level
 // with resulting value being the Max of either
-func (fi *Inhib) LayerMaxFS(li *Inhib) {
-	fi.LayFSGi = li.FSGi
-	fi.FSGi = mat32.Max(fi.FSGi, li.FSGi)
+func (fi *Inhib) LayerMax(li *Inhib) {
+	fi.LayGi = li.Gi
+	fi.Gi = mat32.Max(fi.Gi, li.Gi)
 }
 
-// LayerMaxSS updates given pool-level inhib values from given layer-level
+// PoolMax updates given layer-level inhib values from given pool-level
 // with resulting value being the Max of either
-func (fi *Inhib) LayerMaxSS(li *Inhib) {
-	fi.LaySSGi = li.SSGi
-	fi.SSGi = mat32.Max(fi.SSGi, li.SSGi)
+func (fi *Inhib) PoolMax(pi *Inhib) {
+	fi.Gi = mat32.Max(fi.Gi, pi.Gi)
 }
 
-// PoolMaxFS updates given layer-level inhib values from given pool-level
-// with resulting value being the Max of either
-func (fi *Inhib) PoolMaxFS(pi *Inhib) {
-	fi.FSGi = mat32.Max(fi.FSGi, pi.FSGi)
-}
-
-// PoolMaxSS updates given layer-level inhib values from given pool-level
-// with resulting value being the Max of either
-func (fi *Inhib) PoolMaxSS(pi *Inhib) {
-	fi.SSGi = mat32.Max(fi.SSGi, pi.SSGi)
-}
-
-// Gi returns the sum of FSGi and SSGi as overall inhibition
-func (fi *Inhib) Gi() float32 {
+// GiFmFSSS returns the sum of FSGi and SSGi as overall inhibition
+func (fi *Inhib) GiFmFSSS() float32 {
 	return fi.FSGi + fi.SSGi
 }
 

@@ -17,7 +17,6 @@ type InhibParams struct {
 	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
 	Layer  fsfffb.Params   `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
 	Pool   fsfffb.Params   `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
-	Inhib  InhibMiscParams `view:"inline" desc:"misc inhibition computation parameters, including feedback activation "`
 	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
 }
 
@@ -25,7 +24,6 @@ func (ip *InhibParams) Update() {
 	ip.ActAvg.Update()
 	ip.Layer.Update()
 	ip.Pool.Update()
-	ip.Inhib.Update()
 	ip.Topo.Update()
 }
 
@@ -33,25 +31,9 @@ func (ip *InhibParams) Defaults() {
 	ip.ActAvg.Defaults()
 	ip.Layer.Defaults()
 	ip.Pool.Defaults()
-	ip.Inhib.Defaults()
 	ip.Topo.Defaults()
 	ip.Layer.Gi = 1.1
 	ip.Pool.Gi = 1.1
-}
-
-///////////////////////////////////////////////////////////////////////
-//  InhibMiscParams
-
-// InhibMiscParams defines misc inhibition parameters.
-type InhibMiscParams struct {
-	PoolMaxFS bool `desc:"for 4D layers with pools, pool-level FS inhibition is the Max of layer and pool -- otherwise FS is purely local and only SS is Max'd"`
-}
-
-func (fb *InhibMiscParams) Defaults() {
-	fb.PoolMaxFS = true
-}
-
-func (fb *InhibMiscParams) Update() {
 }
 
 ///////////////////////////////////////////////////////////////////////

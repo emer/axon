@@ -6,7 +6,6 @@
 Package interinhib provides inter-layer inhibition params,
 which can be added to Layer types.  Call at the start of the
 Layer InhibFmGeAct method like this:
-
 // InhibFmGeAct computes inhibition Gi from Ge and Act averages within relevant Pools
 func (ly *Layer) InhibFmGeAct(ltime *Time) {
 	lpl := &ly.Pools[0]
@@ -38,34 +37,31 @@ func (il *InterInhib) Defaults() {
 
 // Inhib updates layer inhibition based on other layer inhibition
 func (il *InterInhib) Inhib(ly *axon.Layer) {
-	ofsgi, ossgi := il.OtherGi(ly.Network)
+	ogi := il.Gi * il.OtherGi(ly.Network)
 	lpl := &ly.Pools[0]
 	if il.Add {
-		lpl.Inhib.FSGi += ofsgi
-		lpl.Inhib.SSGi += ossgi
+		lpl.Inhib.Gi += ogi
 	} else {
-		lpl.Inhib.FSGi = mat32.Max(ofsgi, lpl.Inhib.FSGi)
-		lpl.Inhib.SSGi = mat32.Max(ossgi, lpl.Inhib.SSGi)
+		lpl.Inhib.Gi = mat32.Max(ogi, lpl.Inhib.Gi)
 	}
 }
 
 // OtherGi returns either the Sum (for Add) or Max of other layer Gi values.
-func (il *InterInhib) OtherGi(net emer.Network) (fsgi, ssgi float32) {
+// These are the raw values, not multiplied by Gi factor.
+func (il *InterInhib) OtherGi(net emer.Network) float32 {
+	gi := float32(0)
 	for _, lnm := range il.Lays {
 		oli := net.LayerByName(lnm)
 		if oli == nil {
 			continue
 		}
 		ol := oli.(axon.AxonLayer).AsAxon()
-		ofsgi := ol.Pools[0].Inhib.FSGi
-		ossgi := ol.Pools[0].Inhib.SSGi
+		ogi := ol.Pools[0].Inhib.GiOrig
 		if il.Add {
-			fsgi += ofsgi
-			ssgi += ossgi
+			gi += ogi
 		} else {
-			fsgi = mat32.Max(fsgi, ofsgi)
-			ssgi = mat32.Max(ssgi, ossgi)
+			gi = mat32.Max(gi, ogi)
 		}
 	}
-	return
+	return gi
 }
