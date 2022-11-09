@@ -21,8 +21,6 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
-					"Layer.Inhib.Inhib.SomaSS":      "0.5",
-					"Layer.Inhib.Inhib.DendSS":      "0.5",
 					"Layer.Inhib.Layer.Gi":          "1.05", // 1.05 > 1.1, 1.0
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FS0":         "0.1",

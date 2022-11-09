@@ -38,31 +38,34 @@ func (il *InterInhib) Defaults() {
 
 // Inhib updates layer inhibition based on other layer inhibition
 func (il *InterInhib) Inhib(ly *axon.Layer) {
-	ogi := il.Gi * il.OtherGi(ly.Network)
+	ofsgi, ossgi := il.OtherGi(ly.Network)
 	lpl := &ly.Pools[0]
 	if il.Add {
-		lpl.Inhib.Gi += ogi
+		lpl.Inhib.FSGi += ofsgi
+		lpl.Inhib.SSGi += ossgi
 	} else {
-		lpl.Inhib.Gi = mat32.Max(ogi, lpl.Inhib.Gi)
+		lpl.Inhib.FSGi = mat32.Max(ofsgi, lpl.Inhib.FSGi)
+		lpl.Inhib.SSGi = mat32.Max(ossgi, lpl.Inhib.SSGi)
 	}
 }
 
 // OtherGi returns either the Sum (for Add) or Max of other layer Gi values.
-// These are the raw values, not multiplied by Gi factor.
-func (il *InterInhib) OtherGi(net emer.Network) float32 {
-	gi := float32(0)
+func (il *InterInhib) OtherGi(net emer.Network) (fsgi, ssgi float32) {
 	for _, lnm := range il.Lays {
 		oli := net.LayerByName(lnm)
 		if oli == nil {
 			continue
 		}
 		ol := oli.(axon.AxonLayer).AsAxon()
-		ogi := ol.Pools[0].Inhib.GiOrig
+		ofsgi := ol.Pools[0].Inhib.FSGi
+		ossgi := ol.Pools[0].Inhib.SSGi
 		if il.Add {
-			gi += ogi
+			fsgi += ofsgi
+			ssgi += ossgi
 		} else {
-			gi = mat32.Max(gi, ogi)
+			fsgi = mat32.Max(fsgi, ofsgi)
+			ssgi = mat32.Max(ssgi, ossgi)
 		}
 	}
-	return gi
+	return
 }

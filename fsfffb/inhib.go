@@ -103,5 +103,10 @@ func (fi *Inhib) PoolMaxSS(pi *Inhib) {
 	fi.SSGi = mat32.Max(fi.SSGi, pi.SSGi)
 }
 
+// Gi returns the sum of FSGi and SSGi as overall inhibition
+func (fi *Inhib) Gi() float32 {
+	return fi.FSGi + fi.SSGi
+}
+
 // Inhibs is a slice of Inhib records
 type Inhibs []Inhib

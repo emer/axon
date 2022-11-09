@@ -112,7 +112,6 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 		nrn.GeSyn -= decay * (nrn.GeSyn - nrn.GeBase)
 		nrn.Ge -= decay * (nrn.Ge - nrn.GeBase)
 		nrn.Gi -= decay * (nrn.Gi - nrn.GiBase)
-		nrn.GiDend -= decay * (nrn.GiDend - nrn.GiBase)
 		nrn.Gk -= decay * nrn.Gk
 
 		nrn.Vm -= decay * (nrn.Vm - ac.Init.Vm)
@@ -164,7 +163,6 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GeSyn = nrn.GeBase
 	nrn.Ge = nrn.GeBase
 	nrn.Gi = nrn.GiBase
-	nrn.GiDend = nrn.GiBase
 	nrn.Gk = 0
 	nrn.Inet = 0
 	nrn.Vm = ac.Init.Vm
@@ -380,7 +378,6 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	}
 
 	{ // always update VmDend
-		gi = nrn.GiDend * ac.Gbar.I
 		glEff := float32(1)
 		if !updtVm {
 			glEff += ac.Dend.GbarR

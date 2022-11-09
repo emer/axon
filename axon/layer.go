@@ -1163,9 +1163,9 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 			if ly.Inhib.Inhib.PoolMaxFS {
 				pl.Inhib.LayerMaxFS(&lpl.Inhib)
 			}
-			pl.Inhib.LayerMaxSS(&lpl.Inhib) // always ss
+			pl.Inhib.LayerMaxSS(&lpl.Inhib)
 		} else {
-			lpl.Inhib.PoolMaxFS(&pl.Inhib)
+			lpl.Inhib.PoolMaxFS(&pl.Inhib) // display only
 			lpl.Inhib.PoolMaxSS(&pl.Inhib)
 		}
 	}
@@ -1194,10 +1194,9 @@ func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
 // GiInteg adds Gi values from all sources including Pool computed inhib
 // and updates GABAB as well
 func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
-	pli := &ly.Pools[nrn.SubPool].Inhib
-	nrn.Gi = ly.Inhib.Inhib.SomaGi(pli.FSGi, pli.SSGi) + nrn.GiSyn + nrn.GiNoise
-	nrn.GiDend = ly.Inhib.Inhib.DendGi(pli.FSGi, pli.SSGi) + nrn.GiSyn + nrn.GiNoise
-	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.GiDend) // note dend
+	pl := &ly.Pools[nrn.SubPool]
+	nrn.Gi = pl.Inhib.Gi() + nrn.GiSyn + nrn.GiNoise
+	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
 }

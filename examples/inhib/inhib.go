@@ -398,7 +398,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
 					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].Inhib.Gi)
+					ctx.SetFloat32(ly.Pools[0].Inhib.Gi())
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:   clnm + "_FFs",
