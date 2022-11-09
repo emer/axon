@@ -14,10 +14,10 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.Layer.Gi":    "1.05", // 1.0 > 1.1  trace
-					"Layer.Inhib.Layer.FB":    "1",    // 1.0 > 0.5
-					"Layer.Act.Gbar.L":        "0.2",  // std
-					"Layer.Act.Decay.Act":     "0.0",  // 0 == 0.2
+					"Layer.Inhib.Layer.Gi":    "1.0", // 1.0 > 1.1 v1.6.1
+					"Layer.Inhib.Layer.FB":    "1",   // 1.0 > 0.5
+					"Layer.Act.Gbar.L":        "0.2", // std
+					"Layer.Act.Decay.Act":     "0.0", // 0 == 0.2
 					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Act.Dt.LongAvgTau": "20",  // 20 > higher for objrec, lvis
 					"Layer.Act.Dend.GbarExp":  "0.2", // 0.2 > 0.5 > 0.1 > 0
@@ -66,9 +66,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PulvLayer", Desc: "pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.8", // 1.0 > 0.9 > 1.1
+					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > higher v1.6.1
 					"Layer.Inhib.Layer.FB":          "1",
-					"Layer.Pulv.DriveScale":         "0.1", // 1 > 1.5; 0.05 fffb
+					"Layer.Pulv.DriveScale":         "0.1", // 1 > 0.05 > 1.5 (0.05 better cor sim)
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
