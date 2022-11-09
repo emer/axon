@@ -42,26 +42,30 @@ func (ip *InhibParams) Defaults() {
 ///////////////////////////////////////////////////////////////////////
 //  InhibMiscParams
 
-// InhibMiscParams defines parameters for average activation value in pool
-// that drives feedback inhibition in the FFFB inhibition function.
+// InhibMiscParams defines misc inhibition parameters.
 type InhibMiscParams struct {
-	AvgTau float32 `def:"30" desc:"time constant for integrating pool-level average activation driven by current instantaneous activation across the pool"`
-
-	AvgDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-}
-
-func (fb *InhibMiscParams) Update() {
-	fb.AvgDt = 1 / fb.AvgTau
+	SomaSS    float32 `desc:"proportion of SS slow spiking impacting somatic Vm -- 0.5 = even (1-SS for FS)"`
+	DendSS    float32 `desc:"proportion of SS slow spiking impacting dendritic Vm -- 0.5 = even (1-SS for FS)"`
+	PoolMaxFS bool    `desc:"for 4D layers with pools, pool-level FS inhibition is the Max of layer and pool -- otherwise FS is purely local and only SS is Max'd"`
 }
 
 func (fb *InhibMiscParams) Defaults() {
-	fb.AvgTau = 30
-	fb.Update()
+	fb.SomaSS = 0.5
+	fb.DendSS = 0.5
+	fb.PoolMaxFS = true
 }
 
-// AvgAct updates the average activation from new average act
-func (fb *InhibMiscParams) AvgAct(avg *float32, act float32) {
-	*avg += fb.AvgDt * (act - *avg)
+func (fb *InhibMiscParams) Update() {
+}
+
+// SomaGi returns combination of fs and ss gi values for soma
+func (fb *InhibMiscParams) SomaGi(fs, ss float32) float32 {
+	return 2.0 * (fb.SomaSS*ss + (1.0-fb.SomaSS)*fs)
+}
+
+// DendGi returns combination of fs and ss gi values for dend
+func (fb *InhibMiscParams) DendGi(fs, ss float32) float32 {
+	return 2.0 * (fb.DendSS*ss + (1.0-fb.DendSS)*fs)
 }
 
 ///////////////////////////////////////////////////////////////////////

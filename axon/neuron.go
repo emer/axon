@@ -39,11 +39,13 @@ type Neuron struct {
 	GeSyn  float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
 	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
 	GiSyn  float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
-	Gi     float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
 	Gk     float32 `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
+	Gi     float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I -- for soma"`
+	GiDend float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I -- for dendrites"`
 	Inet   float32 `desc:"net current produced by all channels -- drives update of Vm"`
 	Vm     float32 `desc:"membrane potential -- integrates Inet current over time"`
 	VmDend float32 `desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`
+	Attn   float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 
 	CaSyn  float32 `desc:"spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning."`
 	CaSpkM float32 `desc:"spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5).  Simulates a calmodulin (CaM) like signal at the most abstract level."`
@@ -100,7 +102,6 @@ type Neuron struct {
 	VgccH     float32 `desc:"inactivation gate of VGCC channels"`
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
-	Attn      float32 `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`
 
 	GeBase float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
 	GiBase float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`

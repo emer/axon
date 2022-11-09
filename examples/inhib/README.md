@@ -2,6 +2,8 @@
 
 This is adapted from [CCN Sims](https://github.com/CompCogNeuro/sims).
 
+NOTE: currently this model is used for testing the FS-FFFB inhibition function -- interneurons aspect is not yet enabled.
+
 This simulation explores how inhibitory interneurons can dynamically control overall activity levels within the network, by providing both feedforward and feedback inhibition to excitatory pyramidal neurons.  This inhibition is critical when neurons have bidirectional excitatory connections, as otherwise the positive feedback loops will result in the equivalent of epileptic seizures -- runaway excitatory activity.
 
 In the `axon` framework, it is also critical for exploring basic properties of spiking dynamics and especially the importance of GABA-B and NMDA channels for establishing a clearer, more stable separation between the most strongly activated neurons and the rest, which in turn is essential for enabling credit assignment during learning, causing neurons to become relatively specialized and differentiated from each other.

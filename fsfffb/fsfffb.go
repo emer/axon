@@ -82,11 +82,9 @@ func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 		return
 	}
 	fb.FSiFmFFs(&inh.FSi, inh.FFs, inh.FBs)
-	inh.FSGi = fb.FS(inh.FSi, inh.GeExts)
+	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts)
 
 	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
-	inh.SSGi = fb.SS * inh.SSi
-
-	inh.Gi = fb.GiFmFFSS(inh.FSGi, inh.SSGi)
+	inh.SSGi = fb.Gi * fb.SS * inh.SSi
 	inh.SaveOrig()
 }
