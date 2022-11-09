@@ -9,6 +9,9 @@ package main
 
 import (
 	"os"
+	"time"
+
+	"github.com/Astera-org/obelisk/infra/infraUtil"
 
 	"github.com/Astera-org/axon/axon"
 	"github.com/Astera-org/axon/deep"
@@ -64,12 +67,12 @@ func main() {
 
 	TheSim.New()
 	TheSim.Config()
-	if len(os.Args) > 1 {
-		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
-	} else {
+	if gConfig.GUI {
 		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
 			guirun()
 		})
+	} else {
+		TheSim.CmdArgs()
 	}
 }
 
@@ -441,6 +444,14 @@ func (ss *Sim) InitRndSeed() {
 	ss.RndSeeds.Set(run)
 }
 
+func (ss *Sim) EndTest() {
+	// get time since start
+	etime := time.Since(gConfig.StartTime)
+
+	infraUtil.WriteResults(true, ss.Stats.Float("ActMatch"), 100, int32(etime.Seconds()), 100)
+
+}
+
 // ConfigLoops configures the control loops: Training, Testing
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
@@ -479,6 +490,7 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
+	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("EndTest", ss.EndTest)
 
 	// Add Testing
 	// trainEpoch := man.GetLoop(etime.Train, etime.Epoch)

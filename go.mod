@@ -17,6 +17,8 @@ require (
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
+require github.com/Astera-org/obelisk v0.1.1-0.20221013201850-9e9e351ff2cf // indirect
+
 require (
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
 	github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298 // indirect
