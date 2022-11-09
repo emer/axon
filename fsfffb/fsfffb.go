@@ -19,8 +19,8 @@ package fsfffb
 // FF -> PV -> FS fast spikes, FB -> SST -> SS slow spikes (slow to get going)
 type Params struct {
 	On     bool    `desc:"enable this level of inhibition"`
-	Gi     float32 `viewif:"On" min:"0" def:"1" desc:"[0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly"`
-	FB     float32 `viewif:"On" min:"0" def:"0.5" desc:"amount of FB spikes included in FF for driving FS"`
+	Gi     float32 `viewif:"On" min:"0" def:"1,1.1,0.75,0.9" desc:"[0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly"`
+	FB     float32 `viewif:"On" min:"0" def:"1" desc:"amount of FB spikes included in FF for driving FS"`
 	FSTau  float32 `viewif:"On" min:"0" def:"6" desc:"fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
 	SS     float32 `viewif:"On" min:"0" def:"30" desc:"multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1"`
 	SSfTau float32 `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
@@ -40,7 +40,7 @@ func (fb *Params) Update() {
 
 func (fb *Params) Defaults() {
 	fb.Gi = 1.1
-	fb.FB = 0.5
+	fb.FB = 1
 	fb.SS = 30
 	fb.FSTau = 6
 	fb.SSfTau = 20
@@ -69,11 +69,6 @@ func (fb *Params) SSFmFBs(ssf, ssi *float32, fbs float32) {
 	*ssf += fbs*(1-*ssf) - fb.SSfDt**ssf
 }
 
-// GiFmFSSS returns the overall inhibitory conductance from FS and SS components
-func (fb *Params) GiFmFFSS(fs, ss float32) float32 {
-	return fb.Gi * (fs + ss)
-}
-
 // Inhib is full inhibition computation for given inhib state
 // which has aggregated FFs and FBs spiking values
 func (fb *Params) Inhib(inh *Inhib, gimult float32) {
@@ -82,11 +77,11 @@ func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 		return
 	}
 	fb.FSiFmFFs(&inh.FSi, inh.FFs, inh.FBs)
-	inh.FSGi = fb.FS(inh.FSi, inh.GeExts)
+	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts)
 
 	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
-	inh.SSGi = fb.SS * inh.SSi
+	inh.SSGi = fb.Gi * fb.SS * inh.SSi
 
-	inh.Gi = fb.GiFmFFSS(inh.FSGi, inh.SSGi)
+	inh.Gi = inh.GiFmFSSS()
 	inh.SaveOrig()
 }

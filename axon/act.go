@@ -559,14 +559,14 @@ func (ai *ActInitParams) GeBase() float32 {
 
 // GiBase returns the baseline Gi value: Gi + rand(GiVar) > 0
 func (ai *ActInitParams) GiBase() float32 {
-	ge := ai.Gi
+	gi := ai.Gi
 	if ai.GiVar > 0 {
-		ge += float32(erand.Gauss(float64(ai.GiVar), -1))
-		if ge < 0 {
-			ge = 0
+		gi += float32(erand.Gauss(float64(ai.GiVar), -1))
+		if gi < 0 {
+			gi = 0
 		}
 	}
-	return ge
+	return gi
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

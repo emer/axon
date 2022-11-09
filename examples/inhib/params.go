@@ -22,7 +22,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.SSfTau": "20",
 					"Layer.Inhib.Layer.SSiTau": "50",
 					"Layer.Inhib.ActAvg.Init":  "0.1",
-					"Layer.Inhib.Inhib.AvgTau": "30", // 20 > 30 ?
 					"Layer.Act.Dt.GeTau":       "5",
 					"Layer.Act.Dt.GiTau":       "7",
 					"Layer.Act.Gbar.I":         "1.0",

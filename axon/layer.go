@@ -1162,7 +1162,7 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 		if lyInhib {
 			pl.Inhib.LayerMax(&lpl.Inhib)
 		} else {
-			lpl.Inhib.PoolMax(&pl.Inhib)
+			lpl.Inhib.PoolMax(&pl.Inhib) // display only
 		}
 	}
 	if !lyInhib {

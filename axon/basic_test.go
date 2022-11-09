@@ -103,7 +103,7 @@ func newInPats() *etensor.Float32 {
 
 func cmprFloats(out, cor []float32, msg string, t *testing.T) {
 	// TOLERANCE is the numerical difference tolerance for comparing vs. target values
-	const TOLERANCE = float32(1.0e-8)
+	const TOLERANCE = float32(1.0e-6)
 
 	t.Helper()
 	for i := range out {

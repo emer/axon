@@ -20,7 +20,7 @@ type Inhib struct {
 	FSGi     float32 `desc:"overall fast-spiking inhibitory conductance"`
 	SSGi     float32 `desc:"overall slow-spiking inhibitory conductance"`
 	Gi       float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
-	GiOrig   float32 `desc:"original value of the FS inhibition (before pool or other effects)"`
+	GiOrig   float32 `desc:"original value of the inhibition (before pool or other effects)"`
 	LayGi    float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
 }
 
@@ -86,6 +86,11 @@ func (fi *Inhib) LayerMax(li *Inhib) {
 // with resulting value being the Max of either
 func (fi *Inhib) PoolMax(pi *Inhib) {
 	fi.Gi = mat32.Max(fi.Gi, pi.Gi)
+}
+
+// GiFmFSSS returns the sum of FSGi and SSGi as overall inhibition
+func (fi *Inhib) GiFmFSSS() float32 {
+	return fi.FSGi + fi.SSGi
 }
 
 // Inhibs is a slice of Inhib records

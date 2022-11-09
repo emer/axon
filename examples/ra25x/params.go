@@ -70,7 +70,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > 0.8
+					"Layer.Inhib.Layer.Gi":          "0.85", // 0.85 for FB = 0, 0.75 for FB = 1
+					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
+					"Layer.Inhib.Layer.FB":          "0",    // 0 > 1 here in output
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 1.0
@@ -83,9 +85,9 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
 					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
 					"Prjn.SWt.Adapt.SubMean":      "1",
-					"Prjn.SWt.Init.SPct":          "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
-					"Prjn.Learn.Trace.NeuronCa":   "false",
-					"Prjn.Learn.Trace.Tau":        "1", // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
+					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Trace.NeuronCa":   "false", // significantly worse
+					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
 					"Prjn.Learn.Trace.SubMean":    "0",
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
