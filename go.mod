@@ -4,7 +4,8 @@ go 1.18
 
 require (
 	github.com/Astera-org/easylog v0.3.0
-	github.com/BurntSushi/toml v0.3.1
+	github.com/Astera-org/obelisk v0.1.1-0.20221110171047-ce81b025d545
+	github.com/BurntSushi/toml v1.2.0
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/emer/emergent v1.3.31
 	github.com/emer/empi v1.0.17
@@ -13,11 +14,9 @@ require (
 	github.com/goki/ki v1.1.8
 	github.com/goki/kigen v1.0.1
 	github.com/goki/mat32 v1.0.12
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )
-
-require github.com/Astera-org/obelisk v0.1.1-0.20221013201850-9e9e351ff2cf // indirect
 
 require (
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
@@ -31,6 +30,7 @@ require (
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/anthonynsimon/bild v0.13.0 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
+	github.com/apache/thrift v0.17.0 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.4.0 // indirect
@@ -59,14 +59,15 @@ require (
 	github.com/srwiley/rasterx v0.0.0-20220128185129-2efea2b9ea41 // indirect
 	github.com/srwiley/scanx v0.0.0-20190309010443-e94503791388 // indirect
 	golang.org/x/exp v0.0.0-20220518171630-0b5c67f07fdf // indirect
-	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
+	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/net v0.0.0-20220531201128-c960675eff93 // indirect
+	golang.org/x/sync v0.0.0-20220929204114-8fcdb60fdcc0 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.11 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
-	gonum.org/v1/gonum v0.11.0 // indirect
+	gonum.org/v1/gonum v0.12.0 // indirect
 	gonum.org/v1/plot v0.11.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
