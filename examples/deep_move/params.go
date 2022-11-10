@@ -38,18 +38,19 @@ var ParamSets = params.Sets{
 			{Sel: ".DepthIn", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.2", // was .13 -- Ge very high b/c of topo prjn
+					"Layer.Inhib.Layer.Gi":    "0.9", //
 				}},
 			{Sel: ".HeadDirIn", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.13", // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
+					"Layer.Inhib.Layer.Gi":    "0.9",  //
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
-					"Layer.Inhib.Layer.Gi":    "1.4",  // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
-					"Layer.Inhib.Pool.Gi":     "1.4",
-					"Layer.CT.GeGain":         "1", //
-					"Layer.CT.DecayTau":       "0", // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Inhib.Layer.Gi":    "2.0",  // 2.0 is fine -- was 1.4
+					"Layer.CT.GeGain":         "1",    //
+					"Layer.CT.DecayTau":       "0",    // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Act.GABAB.Gbar":    "0.2",  // standard gaba
@@ -63,7 +64,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#DepthHidCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "2.8",  // 2.0 > lower
+					"Layer.Inhib.Layer.Gi":    "2.8",  // 2.8 is reasonable; was 2.0
 					"Layer.Inhib.ActAvg.Init": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
 				}},
 			{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
@@ -79,9 +80,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
-					"Layer.Pulv.DriveScale":         "0.05", // 0.1 > 0.05 > 0.15
-					"Layer.Pulv.FullDriveAct":       "0.6",  // 0.6 def
+					"Layer.Inhib.Layer.Gi":          "0.8", // was 0.9
+					"Layer.Pulv.DriveScale":         "0.1", // 0.1 -- does not work with 0.05 -- no plus
+					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.Decay.AHP":           "0.0", // clear long
@@ -98,6 +99,7 @@ var ParamSets = params.Sets{
 			{Sel: "#Action", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.25", // 0.25 is accurate -- good MaxGe levels
+					"Layer.Inhib.Layer.Gi":    "0.9",  //
 				}},
 
 			// Projections below

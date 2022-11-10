@@ -51,6 +51,8 @@ type NetThreads struct {
 
 // SetDefaults sets default allocation of threads based on number of neurons
 // and projections.
+// According to tests on the LVis model, basically only CycleNeuron scales
+// beyond 4 threads..  ChunksPer = 2 is much better than 1, but 3 == 2
 func (nt *NetThreads) SetDefaults(nNeurons, nPrjns int) {
 	chk := 2
 	nt.Neurons.Set(nNeurons/500, chk) // todo: this is all heuristic -- needs tuning!
@@ -74,8 +76,8 @@ func (nt *NetThreads) Alloc(nNeurons, nPrjns int) {
 	nt.SendSpike.Alloc(nNeurons)
 	nt.SynCa.Alloc(nPrjns)
 	nt.Learn.Alloc(nPrjns)
-	maxP := runtime.GOMAXPROCS(0)
-	fmt.Printf("Threading: GOMAXPROCS: %d  Chunks: %d  Neurons: %d  SendSpike: %d  SynCa: %d  Learn: %d\n", maxP, nt.Neurons.ChunksPer, nt.Neurons.NThreads, nt.SendSpike.NThreads, nt.SynCa.NThreads, nt.Learn.NThreads)
+	// maxP := runtime.GOMAXPROCS(0)
+	// mpi.Printf("Threading: GOMAXPROCS: %d  Chunks: %d  Neurons: %d  SendSpike: %d  SynCa: %d  Learn: %d\n", maxP, nt.Neurons.ChunksPer, nt.Neurons.NThreads, nt.SendSpike.NThreads, nt.SynCa.NThreads, nt.Learn.NThreads)
 }
 
 // ThreadsAlloc allocates threads if thread numbers have been updated

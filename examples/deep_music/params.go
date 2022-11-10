@@ -43,10 +43,9 @@ var ParamSets = params.Sets{
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
-					"Layer.Inhib.Layer.Gi":    "1.4",  // 1.4 > 1.6 with 1to1 super -> CT; 1.6 needed for full
-					"Layer.Inhib.Pool.Gi":     "1.4",
-					"Layer.CT.GeGain":         "1.0", // 1.0 > 0.8 > 0.5
-					"Layer.CT.DecayTau":       "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Inhib.Layer.Gi":    "2.8",  // 2.8 best -- 1.4 prev
+					"Layer.CT.GeGain":         "1.0",  // 1.0 > 0.8 > 0.5
+					"Layer.CT.DecayTau":       "50",   // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Act.GABAB.Gbar":    "0.3",
@@ -59,7 +58,6 @@ var ParamSets = params.Sets{
 			{Sel: "#Hidden2CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.12", // 2 even more active -- maybe try higher inhib
-					"Layer.Inhib.Layer.Gi":    "1.4",  // todo
 					"Layer.Act.GABAB.Gbar":    "0.3",
 					"Layer.Act.NMDA.Gbar":     "0.3", // higher layer has more nmda..
 					"Layer.Act.NMDA.Tau":      "300", // 300 > 200
@@ -67,9 +65,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "1.0",  // 1.0 > 1.1 >> 1.2
-					"Layer.Pulv.DriveScale":         "0.02", // 0.02 > higher in the end; 0.01 is too weak
-					"Layer.Pulv.FullDriveAct":       "0.6",  // 0.6 def
+					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1 >> 1.2
+					"Layer.Pulv.DriveScale":         "0.1", // 0.1 shows up -- was 0.02
+					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.GABAB.Gbar":          "0.2",

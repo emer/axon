@@ -34,7 +34,7 @@ type NetworkBase struct {
 	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
 	Layers      emer.Layers           `desc:"list of layers"`
-	NThreads    int                   `desc:"number of threads to use for neuron-level updates -- if set to 1 then nothing is updated in parallel -- if > 1, Prjns and Layers are fully parallelized using goroutines (set GOMAXPROCS to constrain number of those) while neurons are updated in NThreads chunks."`
+	NThreads    int                   `desc:"number of threads to use for parallel threading -- typically only up to 4 is worthwile for large networks, with diminishing returns beyond 2, and 1 is best for small networks."`
 	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
 	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
 	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
@@ -422,7 +422,12 @@ func (nt *NetworkBase) Build() error {
 	nt.Neurons = make([]Neuron, totNeurons, totNeurons) // never grows
 	nt.Prjns = make([]AxonPrjn, totPrjns, totPrjns)
 
-	nt.Threads.SetDefaults(totNeurons, totPrjns)
+	// todo: not currently useful:
+	// nt.Threads.SetDefaults(totNeurons, totPrjns)
+	// just use nthreads -- LVis testing shows similar scaling for all funs
+	// except CycleNeuron which does keep scaling but in clusters you typically
+	// can't actually steal more threads anyway, so just go with simple:
+	nt.Threads.Set(2, nt.NThreads, nt.NThreads, nt.NThreads, nt.NThreads)
 	nt.ThreadsAlloc()
 
 	nidx := 0
