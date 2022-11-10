@@ -94,12 +94,18 @@ func ConfigNet(net *axon.Network, threads, units int) {
 	net.BidirConnectLayers(hid2Lay, hid3Lay, full)
 	net.BidirConnectLayers(hid3Lay, outLay, full)
 
-	net.NThreads = threads
+	net.NThreads = threads // 1 overrides all
+
 	net.RecFunTimes = !Silent
 
 	net.Defaults()
 	net.ApplyParams(ParamSets[0].Sheets["Network"], false) // no msg
-	net.Build()
+	net.Build()                                            // builds with default threads
+
+	// override defaults: neurons, sendSpike, synCa, learn
+	net.Threads.Set(2, 2*threads, 1, threads, threads)
+	net.ThreadsAlloc() // re-update
+
 	net.InitWts()
 }
 
@@ -201,7 +207,9 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 
 		t := tmr.Stop()
 		tmr.Start()
-		fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.CorSim.Avg, t)
+		if !Silent {
+			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.CorSim.Avg, t)
+		}
 
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
 		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
@@ -262,7 +270,9 @@ func main() {
 
 	Net = &axon.Network{}
 	ConfigNet(Net, threads, units)
-	log.Println(Net.SizeReport())
+	if !Silent {
+		log.Println(Net.SizeReport())
+	}
 
 	Pats = &etable.Table{}
 	ConfigPats(Pats, pats, units)

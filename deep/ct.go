@@ -62,6 +62,8 @@ func (ly *CTLayer) Defaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
+	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
+	ly.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:
 	// ly.Act.NMDA.Gbar = 0.3
 	// ly.Act.NMDA.Tau = 300

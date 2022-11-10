@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 
@@ -35,7 +34,7 @@ type NetworkBase struct {
 	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
 	Layers      emer.Layers           `desc:"list of layers"`
-	NThreads    int                   `desc:"number of threads to use for neuron-level updates -- if set to 1 then nothing is updated in parallel -- if > 1, Prjns and Layers are fully parallelized using goroutines (set GOMAXPROCS to constrain number of those) while neurons are updated in NThreads chunks."`
+	NThreads    int                   `desc:"number of threads to use for parallel threading -- typically only up to 4 is worthwile for large networks, with diminishing returns beyond 2, and 1 is best for small networks."`
 	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
 	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
 	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
@@ -46,6 +45,7 @@ type NetworkBase struct {
 	// Implementation level code below:
 	Neurons     []Neuron               `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
 	Prjns       []AxonPrjn             `view:"-" desc:"pointers to all projections in the network, via the AxonPrjn interface"`
+	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
 	WaitGp      sync.WaitGroup         `view:"-" desc:"network-level wait group for synchronizing threaded layer calls"`
@@ -421,6 +421,15 @@ func (nt *NetworkBase) Build() error {
 	}
 	nt.Neurons = make([]Neuron, totNeurons, totNeurons) // never grows
 	nt.Prjns = make([]AxonPrjn, totPrjns, totPrjns)
+
+	// todo: not currently useful:
+	// nt.Threads.SetDefaults(totNeurons, totPrjns)
+	// just use nthreads -- LVis testing shows similar scaling for all funs
+	// except CycleNeuron which does keep scaling but in clusters you typically
+	// can't actually steal more threads anyway, so just go with simple:
+	nt.Threads.Set(2, nt.NThreads, nt.NThreads, nt.NThreads, nt.NThreads)
+	nt.ThreadsAlloc()
+
 	nidx := 0
 	pidx := 0
 	for li, ly := range nt.Layers {
@@ -651,175 +660,4 @@ func (nt *NetworkBase) VarRange(varNm string) (min, max float32, err error) {
 		}
 	}
 	return
-}
-
-///////////////////////////////////////////////////////////////////////////
-//  Compute Function Calling (threading)
-
-const (
-	// Thread is named const for actually using threads
-	Thread = true
-	// NoThread is named const for not using threads
-	NoThread = false
-	// Wait is named const for waiting for all go routines
-	Wait = true
-	// NoWait is named const for NOT waiting for all go routines
-	NoWait = false
-)
-
-// PrjnFun applies function of given name to all projections
-// using threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-func (nt *NetworkBase) PrjnFun(fun func(pj AxonPrjn), funame string, thread, wait bool) {
-	if thread { // don't bother if not significant to thread
-		nt.FunTimerStart(funame)
-	}
-	if !thread || nt.NThreads <= 1 {
-		for _, pj := range nt.Prjns {
-			fun(pj)
-		}
-	} else {
-		for _, pjr := range nt.Prjns {
-			pj := pjr
-			nt.WaitGp.Add(1)
-			go func() {
-				fun(pj)
-				nt.WaitGp.Done()
-			}()
-		}
-		if wait {
-			nt.WaitGp.Wait()
-		}
-	}
-	if thread {
-		nt.FunTimerStop(funame)
-	}
-}
-
-// LayerFun applies function of given name to all layers
-// using threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-// many layer-level functions are not actually worth threading overhead
-// so this should be benchmarked for each case.
-func (nt *NetworkBase) LayerFun(fun func(ly AxonLayer), funame string, thread, wait bool) {
-	if thread { // don't bother if not significant to thread
-		nt.FunTimerStart(funame)
-	}
-	if !thread || nt.NThreads <= 1 {
-		for _, ly := range nt.Layers {
-			fun(ly.(AxonLayer))
-		}
-	} else {
-		for _, lyr := range nt.Layers {
-			ly := lyr
-			nt.WaitGp.Add(1)
-			go func() {
-				fun(ly.(AxonLayer))
-				nt.WaitGp.Done()
-			}()
-		}
-		if wait {
-			nt.WaitGp.Wait()
-		}
-	}
-	if thread {
-		nt.FunTimerStop(funame)
-	}
-}
-
-// NeuronFun applies function of given name to all neurons
-// using threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-// Does neurons in chunks per NThreads
-func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, thread, wait bool) {
-	if thread { // don't bother if not significant to thread
-		nt.FunTimerStart(funame)
-	}
-	if !thread || nt.NThreads <= 1 {
-		for ni := range nt.Neurons {
-			nrn := &nt.Neurons[ni]
-			ly := nt.Layers[nrn.LayIdx].(AxonLayer)
-			fun(ly, ni-ly.NeurStartIdx(), nrn)
-		}
-		if thread {
-			nt.FunTimerStop(funame)
-		}
-		return
-	}
-	np := nt.NThreads
-	nn := len(nt.Neurons)
-	nPer := nn / np // todo: can try reducing nPer to add a bit of extra load here..
-	nThr := len(nt.Neurons) / nPer
-	if nThr*nPer < nn {
-		nThr++
-	}
-	for thr := 0; thr < nThr; thr++ {
-		th := thr
-		nt.WaitGp.Add(1)
-		go func() {
-			st := th * nPer
-			ed := (th + 1) * nPer
-			if ed > nn {
-				ed = nn
-			}
-			for ni := st; ni < ed; ni++ {
-				nrn := &nt.Neurons[ni]
-				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
-				fun(ly, ni-ly.NeurStartIdx(), nrn)
-			}
-			nt.WaitGp.Done()
-		}()
-	}
-	if wait {
-		nt.WaitGp.Wait()
-	}
-	if thread {
-		nt.FunTimerStop(funame)
-	}
-}
-
-// TimerReport reports the amount of time spent in each function, and in each thread
-func (nt *NetworkBase) TimerReport() {
-	fmt.Printf("TimerReport: %v\n", nt.Nm)
-	fmt.Printf("\t%13s \t%7s\t%7s\n", "Function Name", "Secs", "Pct")
-	nfn := len(nt.FunTimes)
-	fnms := make([]string, nfn)
-	idx := 0
-	for k := range nt.FunTimes {
-		fnms[idx] = k
-		idx++
-	}
-	sort.StringSlice(fnms).Sort()
-	pcts := make([]float64, nfn)
-	tot := 0.0
-	for i, fn := range fnms {
-		pcts[i] = nt.FunTimes[fn].TotalSecs()
-		tot += pcts[i]
-	}
-	for i, fn := range fnms {
-		fmt.Printf("\t%13s \t%7.3f\t%7.1f\n", fn, pcts[i], 100*(pcts[i]/tot))
-	}
-	fmt.Printf("\t%13s \t%7.3f\n", "Total", tot)
-}
-
-// FunTimerStart starts function timer for given function name -- ensures creation of timer
-func (nt *NetworkBase) FunTimerStart(fun string) {
-	if !nt.RecFunTimes {
-		return
-	}
-	ft, ok := nt.FunTimes[fun]
-	if !ok {
-		ft = &timer.Time{}
-		nt.FunTimes[fun] = ft
-	}
-	ft.Start()
-}
-
-// FunTimerStop stops function timer -- timer must already exist
-func (nt *NetworkBase) FunTimerStop(fun string) {
-	if !nt.RecFunTimes {
-		return
-	}
-	ft := nt.FunTimes[fun]
-	ft.Stop()
 }

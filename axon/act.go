@@ -742,7 +742,7 @@ func (an *SpikeNoiseParams) PGi(p *float32) float32 {
 // (like a current clamp) -- either adds or overwrites existing conductances.
 // Noise is added in either case.
 type ClampParams struct {
-	Ge     float32 `def:"0.6,1" desc:"amount of Ge driven for clamping -- generally use 0.6 for Target layers, 1.0 for Input layers"`
+	Ge     float32 `def:"0.8,1.5" desc:"amount of Ge driven for clamping -- generally use 0.8 for Target layers, 1.5 for Input layers"`
 	Add    bool    `def:"false" view:"add external conductance on top of any existing -- generally this is not a good idea for target layers (creates a main effect that learning can never match), but may be ok for input layers"`
 	ErrThr float32 `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
 }
@@ -751,7 +751,7 @@ func (cp *ClampParams) Update() {
 }
 
 func (cp *ClampParams) Defaults() {
-	cp.Ge = 0.6
+	cp.Ge = 0.8
 	cp.ErrThr = 0.5
 }
 

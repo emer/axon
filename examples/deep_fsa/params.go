@@ -43,7 +43,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 > lower
+					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 == 2.4 > lower
 					"Layer.Inhib.Layer.FB":          "1",
 					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1.2
 					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going

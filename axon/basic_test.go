@@ -31,6 +31,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Gbar.L":      "0.2",
 					"Layer.Learn.RLrate.On": "false",
+					"Layer.Inhib.Layer.FB":  "0.5",
 				}},
 			{Sel: "Prjn", Desc: "for reproducibility, identical weights",
 				Params: params.Params{

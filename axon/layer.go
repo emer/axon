@@ -1175,7 +1175,7 @@ func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
 	ly.AxonLay.GInteg(ni, nrn, ctime)
 	ly.AxonLay.SpikeFmG(ni, nrn, ctime)
 	ly.AxonLay.PostAct(ni, nrn, ctime)
-	ly.AxonLay.SendSpike(ni, nrn, ctime) // prjn-level
+	// ly.AxonLay.SendSpike(ni, nrn, ctime)
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
