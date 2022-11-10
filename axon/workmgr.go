@@ -25,6 +25,12 @@ type WorkMgr struct {
 }
 
 func (wm *WorkMgr) Alloc(tot, nThr, chunksPer int) {
+	if nThr < 1 {
+		nThr = 1
+	}
+	if tot <= 0 {
+		tot = 1
+	}
 	nc := nThr * chunksPer
 	if nc > tot {
 		nc = tot
