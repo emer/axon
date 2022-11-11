@@ -1175,6 +1175,7 @@ func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
 	ly.AxonLay.GInteg(ni, nrn, ctime)
 	ly.AxonLay.SpikeFmG(ni, nrn, ctime)
 	ly.AxonLay.PostAct(ni, nrn, ctime)
+	// note: this is now done separately to allow differential optimization:
 	// ly.AxonLay.SendSpike(ni, nrn, ctime)
 }
 
@@ -1191,7 +1192,7 @@ func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
 // and updates GABAB as well
 func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	pl := &ly.Pools[nrn.SubPool]
-	nrn.Gi = pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+	nrn.Gi = ly.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
