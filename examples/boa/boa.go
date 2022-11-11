@@ -448,8 +448,9 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) EndTest() {
 	// get time since start
 	etime := time.Since(gConfig.StartTime)
+	steps := int32(gConfig.TRAIN_EPOCHS * gConfig.TRAIN_TRIALS)
 
-	infraUtil.WriteResults(true, ss.Stats.Float("ActMatch"), 100, int32(etime.Seconds()), 100)
+	infraUtil.WriteResults(true, ss.Stats.Float("AllGood"), steps, int32(etime.Seconds()), steps)
 
 }
 
@@ -457,9 +458,9 @@ func (ss *Sim) EndTest() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200) // AddTime(etime.Phase, 2).
+	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, gConfig.TRAIN_EPOCHS).AddTime(etime.Trial, gConfig.TRAIN_TRIALS).AddTime(etime.Cycle, 200) // AddTime(etime.Phase, 2).
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
+	// man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200) why test?
 
 	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
@@ -491,7 +492,9 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
-	man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("EndTest", ss.EndTest)
+	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("EndTest", ss.EndTest)
+
+	// man.GetLoop(etime.Test, etime.Epoch).OnEnd.Add("EndTest", ss.EndTest) TEMP if we need this test run
 
 	// Add Testing
 	// trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
@@ -506,8 +509,10 @@ func (ss *Sim) ConfigLoops() {
 	// Logging
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
-		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if (ss.Sim.PCAInterval > 0) && (trnEpc%ss.Sim.PCAInterval == 0) {
+		epicNum := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		log.Info("Epoch:", epicNum, " score:", ss.Stats.Float("AllGood"))
+
+		if (ss.Sim.PCAInterval > 0) && (epicNum%ss.Sim.PCAInterval == 0) {
 			// if ss.Args.Bool("mpi") {
 			// 	ss.Logs.MPIGatherTableRows(etime.Analyze, etime.Trial, ss.Comm)
 			// }
@@ -520,8 +525,8 @@ func (ss *Sim) ConfigLoops() {
 	axon.LooperResetLogBelow(man, &ss.Logs)
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
-		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if (ss.Sim.PCAInterval > 0) && (trnEpc%ss.Sim.PCAInterval == 0) {
+		epicNum := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if (ss.Sim.PCAInterval > 0) && (epicNum%ss.Sim.PCAInterval == 0) {
 			ss.Log(etime.Analyze, etime.Trial)
 		}
 	})
@@ -533,13 +538,13 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if trnEpc >= ss.Sim.PctCortexStEpc && trnEpc%5 == 0 {
-			ss.Sim.PctCortex = ss.Sim.PctCortexMax * float32(trnEpc-ss.Sim.PctCortexStEpc) / float32(ss.Sim.PctCortexMaxEpc-ss.Sim.PctCortexStEpc)
+		epicNum := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if epicNum >= ss.Sim.PctCortexStEpc && epicNum%5 == 0 {
+			ss.Sim.PctCortex = ss.Sim.PctCortexMax * float32(epicNum-ss.Sim.PctCortexStEpc) / float32(ss.Sim.PctCortexMaxEpc-ss.Sim.PctCortexStEpc)
 			if ss.Sim.PctCortex > ss.Sim.PctCortexMax {
 				ss.Sim.PctCortex = ss.Sim.PctCortexMax
 			} else {
-				mpi.Printf("PctCortex updated to: %g at epoch: %d\n", ss.Sim.PctCortex, trnEpc)
+				mpi.Printf("PctCortex updated to: %g at epoch: %d\n", ss.Sim.PctCortex, epicNum)
 			}
 		}
 	})
@@ -1096,15 +1101,6 @@ func (ss *Sim) CmdArgs() {
 		mpi.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
-
-	runs := ss.Args.Int("runs")
-	run := ss.Args.Int("run")
-	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
-	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
-	rc.Set(run)
-	rc.Max = run + runs
-
-	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
 
 	ss.NewRun()
 	ss.Loops.Run(etime.Train)

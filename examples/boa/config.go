@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	GUI      bool
-	PROFILE  bool
-	LIFETIME int32 // how many times the world will call step before we exit
+	GUI          bool
+	PROFILE      bool
+	TRAIN_TRIALS int // how many Trials per Epoch
+	TRAIN_EPOCHS int // how many Epochs before we exit
 
 	StartTime time.Time
 }
@@ -33,5 +34,6 @@ func (config *Config) Load(paths ...string) {
 func (config *Config) setDefaults() {
 	config.GUI = true
 	config.PROFILE = false
-	config.LIFETIME = 999999999
+	config.TRAIN_TRIALS = 100
+	config.TRAIN_EPOCHS = 100
 }
