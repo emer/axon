@@ -229,12 +229,17 @@ func (ly *MatrixLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	}
 	ly.GFmSpikeRaw(ni, nrn, ctime)
 	var mod float32
+	var modRaw float32
 	for _, p := range ly.RcvPrjns {
 		pj, ok := p.(*MatrixPrjn)
 		if ok && pj.Trace.Modulator {
-			mod += pj.GVals[ni].GSyn
+			gv := pj.GVals[ni]
+			mod += gv.GSyn
+			modRaw += gv.GRaw
 		}
 	}
+	nrn.GeRaw -= modRaw // don't include in gating signal -- pure modulator
+	nrn.GeSyn -= mod
 	mod *= ly.Matrix.ModGain
 	if mod > 0 {
 		mod = 1

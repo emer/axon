@@ -15,7 +15,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Clamp.Ge":    "1.0",
+					"Layer.Act.Clamp.Ge":    "1.5",
 				}},
 			{Sel: ".CT", Desc: "corticothalamic context -- using markovian copy params",
 				Params: params.Params{
@@ -36,7 +36,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.12",
 					"Layer.CT.GeGain":         "1.0",
 					"Layer.CT.DecayTau":       "0",
-					"Layer.Inhib.Layer.Gi":    "1.8",
+					"Layer.Inhib.Layer.Gi":    "2.4", // was 1.8
 					"Layer.Act.GABAB.Gbar":    "0.2",
 					"Layer.Act.NMDA.Gbar":     "0.15",
 					"Layer.Act.NMDA.Tau":      "100",
@@ -48,7 +48,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.12",
 					"Layer.CT.GeGain":         "4.0",
 					"Layer.CT.DecayTau":       "50",
-					"Layer.Inhib.Layer.Gi":    "1.8",
+					"Layer.Inhib.Layer.Gi":    "2.8", // was 1.8
 					"Layer.Act.GABAB.Gbar":    "0.3",
 					"Layer.Act.NMDA.Gbar":     "0.3",
 					"Layer.Act.NMDA.Tau":      "300",
@@ -57,8 +57,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PTLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "1.0",
-					"Layer.Inhib.Pool.Gi":   "0.8",
+					"Layer.Inhib.Layer.Gi":  "1.8", // was 1.0
+					"Layer.Inhib.Pool.Gi":   "1.8", // was 1.8
 					"Layer.Act.GABAB.Gbar":  "0.2",
 					"Layer.Act.NMDA.Gbar":   "0.3", // 0.3 enough..
 					"Layer.Act.NMDA.Tau":    "300",
@@ -67,14 +67,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Gbar":   "0.01", // not much pressure -- long maint
 					"Layer.ThalNMDAGain":    "150",  // 150 > 100? enough it seems
 				}},
-			{Sel: "#ACCPT", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6",
-				}},
 			{Sel: "PulvLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
-					"Layer.Pulv.DriveScale":         "0.05", // 0.05 now default
+					"Layer.Pulv.DriveScale":         "0.1",  // 0.1 now default
 					"Layer.Act.Decay.Act":           "0.0",  // clear
 					"Layer.Act.Decay.Glong":         "0.0",  //
 					"Layer.Act.Decay.AHP":           "0.0",  //
@@ -111,26 +107,34 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.025",
 					"Layer.Inhib.Layer.Gi":    "1.1",
 					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "1.0",
+					"Layer.Inhib.Pool.Gi":     "0.9",
 				}},
 			{Sel: "#OFCCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "2.8",
-					"Layer.Inhib.Pool.Gi":  "1.4",
+					"Layer.Inhib.Layer.Gi": "2.6", // was 2.8
+					"Layer.Inhib.Pool.Gi":  "1.6", // was 1.4
 				}},
 			{Sel: "#OFC", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Inhib.Pool.Gi":  "0.9", // makes a big diff on gating
+					"Layer.Inhib.Layer.Gi": "1.1", // was 1.1
+					"Layer.Inhib.Pool.Gi":  "0.9", // was 0.9 -- makes a big diff on gating
 				}},
 			{Sel: "#OFCPT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.3",
-					"Layer.Inhib.Pool.Gi":  "0.6",
+					"Layer.Inhib.Layer.Gi": "1.8", // was 1.3
+					"Layer.Inhib.Pool.Gi":  "2.0", // was 0.6
+				}},
+			{Sel: "#ACCPT", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "3.0",
 				}},
 			{Sel: ".ALM", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9",
+				}},
+			{Sel: "#ALMCT", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "2.4",
 				}},
 			{Sel: "#M1", Desc: "",
 				Params: params.Params{
@@ -138,8 +142,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VL", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8",
-					"Layer.Act.Clamp.Ge":   "0.6",
+					"Layer.Inhib.Layer.Gi": "0.8", // was 0.8
+					"Layer.Act.Clamp.Ge":   "0.6", // was 0.6
 				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
@@ -233,7 +237,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.On": "false",
 					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Pool.Gi":  "0.5", // 0.6 > 0.5 -- 0.8 too high
+					"Layer.Inhib.Pool.Gi":  "0.7", // 0.6 > 0.5 -- 0.8 too high
+				}},
+			{Sel: "#ACCMD", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.On": "true",
+					"Layer.Inhib.Pool.On":  "false",
+					"Layer.Inhib.Layer.Gi": "0.7", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			{Sel: "#RWPred", Desc: "",
 				Params: params.Params{
@@ -245,7 +255,7 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau":      "1",
-					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
+					"Prjn.Learn.Trace.NeuronCa": "true", // faster and no diff here?
 					"Prjn.Learn.Lrate.Base":     "0.04",
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
@@ -259,7 +269,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0",
+					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
 				}},
 			{Sel: ".ThalToSuper", Desc: "",
 				Params: params.Params{
@@ -419,7 +429,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.002", // this is key param for how much BG learning happens!
+					"Prjn.Learn.Lrate.Base": "0.0001", // 0.002 -- this is key param for how much BG learning happens!
 					// does not affect too much..
 					"Prjn.SWt.Init.Mean": "0.0",
 					"Prjn.SWt.Init.Var":  "0.0",
