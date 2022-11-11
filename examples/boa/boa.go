@@ -54,7 +54,8 @@ func main() {
 	if len(os.Args) > 1 {
 		configPath = os.Args[1]
 	}
-	gConfig.Load("default.toml", configPath)
+	// "package" is where the workers will look for this config
+	gConfig.Load("package/default.toml", "boa.toml", configPath)
 
 	err := log.Init(
 		log.SetLevel(log.INFO),
