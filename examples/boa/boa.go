@@ -54,7 +54,7 @@ func main() {
 	if len(os.Args) > 1 {
 		configPath = os.Args[1]
 	}
-	gConfig.Load("package/default.toml", configPath)
+	gConfig.Load("default.toml", configPath)
 
 	err := log.Init(
 		log.SetLevel(log.INFO),
