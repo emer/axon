@@ -49,7 +49,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
 					"Layer.Inhib.Layer.Gi":    "2.0",  // 2.0 is fine -- was 1.4
-					"Layer.CT.GeGain":         "1",    //
+					"Layer.CT.GeGain":         "1",    // 1
 					"Layer.CT.DecayTau":       "0",    // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
