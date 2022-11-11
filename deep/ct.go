@@ -14,7 +14,7 @@ import (
 
 // CTParams control the CT corticothalamic neuron special behavior
 type CTParams struct {
-	GeGain   float32 `def:"0.5,0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
+	GeGain   float32 `def:"0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
 	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50"`
 	DecayDt  float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
 }
@@ -43,12 +43,12 @@ func (cp *CTParams) Defaults() {
 // parmeterization:
 // * single-step copy requires NMDA, GABAB Gbar = .15, Tau = 100,
 //   (i.e. std defaults) and CT.Decay = 0, with one-to-one projection
-//   from Super, and no CT self connections.  See examples/deep_move
-//   for a working example.
-// * Temporal integration requires NMDA, GABAB Gbar = .3, Tau = 300,
+//   from Super, and no CT self connections. Gi must be increased to ~2.0
+//   to compensate for CtxtGe.  See examples/deep_move for a working example.
+// * Temporal integration requires NMDA, GABAB Gbar = .25 - .3, Tau = 200-300,
 //   CT.Decay = 50, with self connections of both CTCtxtPrjn and standard
-//   that support NMDA active maintenance.  See examples/deep_fsa and
-//   examples/deep_move for working examples.
+//   that support NMDA active maintenance. Increase Gi to 2.2 - 2.8 or so.
+//   See examples/deep_fsa and examples/deep_move for working examples.
 type CTLayer struct {
 	axon.Layer           // access as .Layer
 	CT         CTParams  `desc:"parameters for CT layer specific functions"`

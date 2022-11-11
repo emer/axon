@@ -9,6 +9,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"os"
 
 	"github.com/emer/axon/axon"
@@ -678,6 +679,11 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("NoGatePost", 0)
 	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("Rew", 0)
+	ss.Stats.SetString("NetAction", "")
+	ss.Stats.SetString("GenAction", "")
+	ss.Stats.SetString("ActAction", "")
+	ss.Stats.SetFloat("ActMatch", 0)
+	ss.Stats.SetFloat("AllGood", 0)
 	lays := ss.Net.LayersByClass("PT")
 	for _, lnm := range lays {
 		ss.Stats.SetFloat("Maint"+lnm, 0)
@@ -714,11 +720,41 @@ func (ss *Sim) TrialStats() {
 	rp := ss.Net.LayerByName("RWPred").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("RewPred", float64(rp.Neurons[0].Act))
 
+	var allGood float64
+	agN := 0
+	if fv := ss.Stats.Float("GateUS"); !math.IsNaN(fv) {
+		allGood += fv
+		agN++
+	}
+	if fv := ss.Stats.Float("GateCS"); !math.IsNaN(fv) {
+		allGood += fv
+		agN++
+	}
+	if fv := ss.Stats.Float("ActMatch"); !math.IsNaN(fv) {
+		allGood += fv
+		agN++
+	}
+	if fv := ss.Stats.Float("NoGatePre"); !math.IsNaN(fv) {
+		allGood += 1
+		agN++
+	}
+	if fv := ss.Stats.Float("NoGatePost"); !math.IsNaN(fv) {
+		allGood += 1 - fv // why is this invert
+		agN++
+	}
+	if fv := ss.Stats.Float("WrongCSGate"); !math.IsNaN(fv) {
+		allGood += 1 - fv
+		agN++
+	}
+	if agN > 0 {
+		allGood /= float64(agN)
+	}
+	ss.Stats.SetFloat("AllGood", allGood)
 }
 
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats() {
-	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
+	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 1 {
 		return
 	}
 	// fmt.Printf("Gate Stats\n")
@@ -834,7 +870,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "WrongCSGate")
+	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "WrongCSGate")
 	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
 	// "GateUS", "NoGatePre", "NoGatePost", "Gated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
@@ -852,6 +888,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
+	ss.Logs.AddStatAggItem("AllGood", "AllGood", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
