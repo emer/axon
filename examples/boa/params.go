@@ -116,8 +116,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFC", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1", // was 1.1
-					"Layer.Inhib.Pool.Gi":  "0.9", // was 0.9 -- makes a big diff on gating
+					"Layer.Inhib.Layer.Gi": "1.2", // was 1.1
+					"Layer.Inhib.Pool.Gi":  "0.9", // 0.9 > 0.8
 				}},
 			{Sel: "#OFCPT", Desc: "",
 				Params: params.Params{
