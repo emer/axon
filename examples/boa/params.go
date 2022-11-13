@@ -429,7 +429,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.0001", // 0.002 -- this is key param for how much BG learning happens!
+					"Prjn.Learn.Lrate.Base": "0.002", // 0.002 -- this is key param for how much BG learning happens!
 					// does not affect too much..
 					"Prjn.SWt.Init.Mean": "0.0",
 					"Prjn.SWt.Init.Var":  "0.0",
