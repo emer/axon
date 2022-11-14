@@ -72,6 +72,24 @@ See https://github.com/Astera-org/axon/discussions/56#discussioncomment-3939045 
 
 Note that BLA does not have to do the same thing -- it should follow the CS wherever it goes.
 
+# TODO:
+
+## current limitations:
+
+* Only goes left
+* explicit gating input layer
+
+## After CS gating, what happens for US gating?
+
+If BG gates to wrong CS, then US reinforces negative DA for *right* CS.
+
+In general, US gating should update CS-level gating but not continue to reinforce US?  Errors and blame are all about the CS-time gating event, so US-time is just confusing the matter.  Should be pure clear / toggle basically.
+
+# DONE:
+
+## Why is WrongCS gating happening?
+
+OFC is active for drive, other CS is active.  OFC+drive is enough.  remove drive -> OFC -- ofc needs to be a clean representation of the CS-side of things, not the drive side -- can't contaminate "desires" with "reality"!
 
 
 

@@ -251,6 +251,23 @@ func (ly *MatrixLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.GiInteg(ni, nrn, ctime)
 }
 
+func (ly *MatrixLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+	ly.Layer.SpikeFmG(ni, nrn, ctime)
+	if ly.DaR == D1R {
+		return
+	}
+	// for NoGo layer, if Go has spiked, then need NoGo too
+	// if nrn.SpkMax > 0 {
+	// 	return
+	// }
+
+	if ctime.Cycle >= ly.Act.Dt.MaxCycStart {
+		if nrn.Ge > nrn.SpkMax {
+			nrn.SpkMax = nrn.Ge
+		}
+	}
+}
+
 // todo: replace with ki/bools.ToFloat32
 // BoolToFloat32 -- the lack of ternary conditional expressions
 // is *only* Go decision I disagree about
