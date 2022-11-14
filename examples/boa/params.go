@@ -94,13 +94,17 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.1", // 1 / maxdist -- low to jack up Ge
 				}},
+			{Sel: "#DistP", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.6",
+				}},
 			{Sel: ".Time", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.04", // 1 / maxtime -- low to jack up Ge
+					"Layer.Inhib.ActAvg.Init": "0.1", // 1 / maxtime -- low to jack up Ge
 				}},
-			{Sel: "#TimeP", Desc: "more inhib",
+			{Sel: "#TimeP", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
+					"Layer.Inhib.Layer.Gi": "0.8",
 				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
@@ -130,7 +134,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".ALM", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",
+					"Layer.Inhib.Layer.Gi": "1.0",
 				}},
 			{Sel: "#ALMCT", Desc: "",
 				Params: params.Params{
@@ -138,7 +142,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#M1", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",
+					"Layer.Inhib.Layer.Gi": "1.0",
+				}},
+			{Sel: "#M1P", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.6",
 				}},
 			{Sel: "#VL", Desc: "",
 				Params: params.Params{
