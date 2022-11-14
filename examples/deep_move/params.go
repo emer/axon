@@ -81,7 +81,7 @@ var ParamSets = params.Sets{
 			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.8", // was 0.9
-					"Layer.Pulv.DriveScale":         "0.1", // 0.1 -- does not work with 0.05 -- no plus
+					"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.15 -- does not work with 0.05
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
@@ -92,8 +92,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#DepthHidP", Desc: "distributed hidden-layer pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "0.9",  // 0.9 > 0.8 > 1
-					"Layer.Pulv.DriveScale": "0.05", // 0.05 > .1
+					"Layer.Inhib.Layer.Gi":  "0.9", // 0.9 > 0.8 > 1
+					"Layer.Pulv.DriveScale": "0.1", // 0.05 > .1
 					"Layer.Act.NMDA.Gbar":   "0.1",
 				}},
 			{Sel: "#Action", Desc: "",

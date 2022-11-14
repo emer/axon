@@ -20,7 +20,7 @@ package fsfffb
 type Params struct {
 	On     bool    `desc:"enable this level of inhibition"`
 	Gi     float32 `viewif:"On" min:"0" def:"1,1.1,0.75,0.9" desc:"[0.8-1.5 typical, can go lower or higher as needed] overall inhibition gain -- this is main parameter to adjust to change overall activation levels -- it scales both the the FS and SS factors uniformly"`
-	FB     float32 `viewif:"On" min:"0" def:"1" desc:"amount of FB spikes included in FF for driving FS"`
+	FB     float32 `viewif:"On" min:"0" def:"0.5,1,4" desc:"amount of FB spikes included in FF for driving FS -- for small networks, 0.5 or 1 works best; larger networks and more demanding inhibition requires higher levels."`
 	FSTau  float32 `viewif:"On" min:"0" def:"6" desc:"fast spiking (PV+) intgration time constant in cycles (msec) -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
 	SS     float32 `viewif:"On" min:"0" def:"30" desc:"multiplier on SS slow-spiking (SST+) in contributing to the overall Gi inhibition -- FS contributes at a factor of 1"`
 	SSfTau float32 `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`

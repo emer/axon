@@ -228,34 +228,36 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcpt, ofcthal := net.AddPTThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
+	ofcpt, ofcmd := net.AddPTThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
 	_ = ofcpt
 	ofcct.SetClass("OFC CTCopy")
 	// net.ConnectCTSelf(ofcct, pone2one) // much better for ofc not to have self prjns..
 	// net.ConnectToPulv(ofc, ofcct, csp, full, full)
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
-	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	net.ConnectLayers(drives, ofcct, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	net.ConnectLayers(vPgpi, ofcthal, full, emer.Inhib).SetClass("BgFixed")
+	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
+	// to reflect either current CS or maintained CS but not just echoing drive state.
+	// net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
+	// net.ConnectLayers(drives, ofcct, pone2one, emer.Forward).SetClass("DrivesToOFC")
+	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
-	accpt, accthal := net.AddPTThalForSuper(acc, accct, "MD", one2one, full, full, space)
+	accpt, accmd := net.AddPTThalForSuper(acc, accct, "MD", one2one, full, full, space)
 	_ = accpt
 	accct.SetClass("ACC CTCopy")
 	net.ConnectCTSelf(accct, full)
 	net.ConnectToPulv(acc, accct, distp, full, full)
 	net.ConnectToPulv(acc, accct, timep, full, full)
-	net.ConnectLayers(vPgpi, accthal, full, emer.Inhib).SetClass("BgFixed")
+	net.ConnectLayers(vPgpi, accmd, full, emer.Inhib).SetClass("BgFixed")
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
 
-	vPmtxGo.(*pcore.MatrixLayer).MtxThals.Add(accthal.Name(), ofcthal.Name())
-	vPmtxNo.(*pcore.MatrixLayer).MtxThals.Add(accthal.Name(), ofcthal.Name())
+	vPmtxGo.(*pcore.MatrixLayer).MtxThals.Add(accmd.Name(), ofcmd.Name())
+	vPmtxNo.(*pcore.MatrixLayer).MtxThals.Add(accmd.Name(), ofcmd.Name())
 
 	// m1p plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
@@ -301,12 +303,16 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(time, alm, full, emer.Forward)
 	net.ConnectLayers(ofcpt, alm, full, emer.Forward)
 	net.ConnectLayers(accpt, alm, full, emer.Forward)
+	net.ConnectLayers(gate, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
 	net.ConnectLayers(dist, m1, full, emer.Forward)
 	net.ConnectLayers(time, m1, full, emer.Forward)
-	net.ConnectLayers(gate, m1, full, emer.Forward) // this is key!
+	net.ConnectLayers(gate, m1, full, emer.Forward) // this is key: direct to M1
+	// neither of these other connections work nearly as well as explicit gate
 	// net.ConnectLayers(ofcpt, m1, full, emer.Forward)
 	// net.ConnectLayers(accpt, m1, full, emer.Forward)
+	// net.ConnectLayers(ofcmd, m1, full, emer.Forward)
+	// net.ConnectLayers(accmd, m1, full, emer.Forward)
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
 	////////////////////////////////////////////////
@@ -314,7 +320,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	snc.SendDA.AddAllBut(net)
 
 	// net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
-	// net.BidirConnectLayers(alm, m1, full)            // todo: alm weaker?
+	net.BidirConnectLayers(alm, m1, full) // todo: alm weaker?
 	// net.ConnectLayers(alm, almpt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(alm, m1, full, emer.Forward)  //  note: non-gated!
 	net.BidirConnectLayers(m1, vl, full)
