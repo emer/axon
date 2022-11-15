@@ -34,7 +34,7 @@ type Neuron struct {
 	ActM    float32   `desc:"ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations."`
 	ActP    float32   `desc:"ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations."`
 	Ext     float32   `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
-	Targ    float32   `desc:"target value: drives learning to produce this activation value"`
+	Target  float32   `desc:"target value: drives learning to produce this activation value"`
 
 	GeSyn  float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
 	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
@@ -238,10 +238,10 @@ const (
 	// NeurHasExt means the neuron has external input in its Ext field
 	NeurHasExt
 
-	// NeurHasTarg means the neuron has external target input in its Targ field
+	// NeurHasTarg means the neuron has external target input in its Target field
 	NeurHasTarg
 
-	// NeurHasCmpr means the neuron has external comparison input in its Targ field -- used for computing
+	// NeurHasCmpr means the neuron has external comparison input in its Target field -- used for computing
 	// comparison statistics but does not drive neural activity ever
 	NeurHasCmpr
 

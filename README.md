@@ -152,7 +152,7 @@ There are a number of other more minor but still quite important details that ma
 
 The only way to manage the complexity of large spiking nets is to develop advanced statistics that reveal what is going on, especially when things go wrong.  These include:
 
-* Basic "activation health": proper function depends on neurons remaining in a sensitive range of excitatory and inhibitory inputs, so these are monitored.  Each layer has `ActAvg` with `AvgMaxGeM` reporting average maximum minus-phase Ge values -- these are what is regulated relative to `Act.GTarg.GeMax`, but also must be examined early in training to ensure that initial excitation is not too weak.  The layer `Inhib.ActAvg.Init` can be set to adjust -- and unlike in Leabra, there is a separate `Targ` value that controls adaptation of layer-level inhibition.
+* Basic "activation health": proper function depends on neurons remaining in a sensitive range of excitatory and inhibitory inputs, so these are monitored.  Each layer has `ActAvg` with `AvgMaxGeM` reporting average maximum minus-phase Ge values -- these are what is regulated relative to `Act.GTarg.GeMax`, but also must be examined early in training to ensure that initial excitation is not too weak.  The layer `Inhib.ActAvg.Init` can be set to adjust -- and unlike in Leabra, there is a separate `Target` value that controls adaptation of layer-level inhibition.
 
 * Hogging and the flip-side: dead units.
 
@@ -279,7 +279,7 @@ The `axon.Neuron` struct contains all the neuron (unit) level variables, and the
 * `Gi` = total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I
 * `Inet` = net current produced by all channels -- drives update of Vm
 * `Vm` = membrane potential -- integrates Inet current over time
-* `Targ` = target value: drives learning to produce this activation value
+* `Target` = target value: drives learning to produce this activation value
 * `Ext` = external input: drives activation of unit from outside influences (e.g., sensory input)
 * `AvgSS` = super-short time-scale activation average -- provides the lowest-level time integration -- for spiking this integrates over spikes before subsequent averaging, and it is also useful for rate-code to provide a longer time integral overall
 * `AvgS` = short time-scale activation average -- tracks the most recent activation states (integrates over AvgSS values), and represents the plus phase for learning in XCAL algorithms

@@ -792,13 +792,13 @@ func (ly *Layer) InitExt() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		nrn.Ext = 0
-		nrn.Targ = 0
+		nrn.Target = 0
 		nrn.ClearMask(msk)
 	}
 }
 
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
-// based on layer type, and whether input should be applied to Targ (else Ext)
+// based on layer type, and whether input should be applied to Target (else Ext)
 func (ly *Layer) ApplyExtFlags() (clrmsk, setmsk int32, toTarg bool) {
 	clrmsk = bitflag.Mask32(int(NeurHasExt), int(NeurHasTarg), int(NeurHasCmpr))
 	toTarg = false
@@ -818,7 +818,7 @@ func (ly *Layer) ApplyExtFlags() (clrmsk, setmsk int32, toTarg bool) {
 // dimensionality of tensor matches that of layer, and is 2D or 4D, then each dimension
 // is iterated separately, so any mismatch preserves dimensional structure.
 // Otherwise, the flat 1D view of the tensor is used.
-// If the layer is a Target or Compare layer type, then it goes in Targ
+// If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt(ext etensor.Tensor) {
 	switch {
@@ -848,7 +848,7 @@ func (ly *Layer) ApplyExt2D(ext etensor.Tensor) {
 				continue
 			}
 			if toTarg {
-				nrn.Targ = vl
+				nrn.Target = vl
 			} else {
 				nrn.Ext = vl
 			}
@@ -875,7 +875,7 @@ func (ly *Layer) ApplyExt2Dto4D(ext etensor.Tensor) {
 				continue
 			}
 			if toTarg {
-				nrn.Targ = vl
+				nrn.Target = vl
 			} else {
 				nrn.Ext = vl
 			}
@@ -904,7 +904,7 @@ func (ly *Layer) ApplyExt4D(ext etensor.Tensor) {
 						continue
 					}
 					if toTarg {
-						nrn.Targ = vl
+						nrn.Target = vl
 					} else {
 						nrn.Ext = vl
 					}
@@ -917,7 +917,7 @@ func (ly *Layer) ApplyExt4D(ext etensor.Tensor) {
 }
 
 // ApplyExt1DTsr applies external input using 1D flat interface into tensor.
-// If the layer is a Target or Compare layer type, then it goes in Targ
+// If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1DTsr(ext etensor.Tensor) {
 	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
@@ -929,7 +929,7 @@ func (ly *Layer) ApplyExt1DTsr(ext etensor.Tensor) {
 		}
 		vl := float32(ext.FloatVal1D(i))
 		if toTarg {
-			nrn.Targ = vl
+			nrn.Target = vl
 		} else {
 			nrn.Ext = vl
 		}
@@ -939,7 +939,7 @@ func (ly *Layer) ApplyExt1DTsr(ext etensor.Tensor) {
 }
 
 // ApplyExt1D applies external input in the form of a flat 1-dimensional slice of floats
-// If the layer is a Target or Compare layer type, then it goes in Targ
+// If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1D(ext []float64) {
 	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
@@ -951,7 +951,7 @@ func (ly *Layer) ApplyExt1D(ext []float64) {
 		}
 		vl := float32(ext[i])
 		if toTarg {
-			nrn.Targ = vl
+			nrn.Target = vl
 		} else {
 			nrn.Ext = vl
 		}
@@ -961,7 +961,7 @@ func (ly *Layer) ApplyExt1D(ext []float64) {
 }
 
 // ApplyExt1D32 applies external input in the form of a flat 1-dimensional slice of float32s.
-// If the layer is a Target or Compare layer type, then it goes in Targ
+// If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1D32(ext []float32) {
 	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
@@ -973,7 +973,7 @@ func (ly *Layer) ApplyExt1D32(ext []float32) {
 		}
 		vl := ext[i]
 		if toTarg {
-			nrn.Targ = vl
+			nrn.Target = vl
 		} else {
 			nrn.Ext = vl
 		}
@@ -1337,7 +1337,7 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 		}
 		nrn.ActM = nrn.ActInt
 		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
-			nrn.Ext = nrn.Targ
+			nrn.Ext = nrn.Target
 			nrn.SetFlag(NeurHasExt)
 			nrn.ISI = -1 // get fresh update on plus phase output acts
 			nrn.ISIAvg = -1
@@ -1370,7 +1370,7 @@ func (ly *Layer) PlusPhase(ctime *Time) {
 	ly.AxonLay.CorSimFmActs()
 }
 
-// TargToExt sets external input Ext from target values Targ
+// TargToExt sets external input Ext from target values Target
 // This is done at end of MinusPhase to allow targets to drive activity in plus phase.
 // This can be called separately to simulate alpha cycles within theta cycles, for example.
 func (ly *Layer) TargToExt() {
@@ -1380,7 +1380,7 @@ func (ly *Layer) TargToExt() {
 			continue
 		}
 		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
-			nrn.Ext = nrn.Targ
+			nrn.Ext = nrn.Target
 			nrn.SetFlag(NeurHasExt)
 			nrn.ISI = -1 // get fresh update on plus phase output acts
 			nrn.ISIAvg = -1
@@ -1388,7 +1388,7 @@ func (ly *Layer) TargToExt() {
 	}
 }
 
-// ClearTargExt clears external inputs Ext that were set from target values Targ.
+// ClearTargExt clears external inputs Ext that were set from target values Target.
 // This can be called to simulate alpha cycles within theta cycles, for example.
 func (ly *Layer) ClearTargExt() {
 	for ni := range ly.Neurons {
@@ -1608,7 +1608,7 @@ func (ly *Layer) AdaptInhib(ctime *Time) {
 	if !ly.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
 		return
 	}
-	ly.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.Inhib.ActAvg.Targ, ly.ActAvg.ActMAvg)
+	ly.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.Inhib.ActAvg.Target, ly.ActAvg.ActMAvg)
 }
 
 // AvgDifFmTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
@@ -1724,7 +1724,7 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 // note: use float64 for stats as that is best for logging
 
 // PctUnitErr returns the proportion of units where the thresholded value of
-// Targ (Target or Compare types) or ActP does not match that of ActM.
+// Target (Target or Compare types) or ActP does not match that of ActM.
 // If Act > ly.Act.Clamp.ErrThr, effective activity = 1 else 0
 // robust to noisy activations.
 func (ly *Layer) PctUnitErr() float64 {
@@ -1742,7 +1742,7 @@ func (ly *Layer) PctUnitErr() float64 {
 		}
 		trg := false
 		if ly.Typ == emer.Compare || ly.Typ == emer.Target {
-			if nrn.Targ > thr {
+			if nrn.Target > thr {
 				trg = true
 			}
 		} else {

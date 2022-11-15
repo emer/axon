@@ -100,12 +100,12 @@ type AxonLayer interface {
 	InitExt()
 
 	// ApplyExt applies external input in the form of an etensor.Tensor
-	// If the layer is a Target or Compare layer type, then it goes in Targ
+	// If the layer is a Target or Compare layer type, then it goes in Target
 	// otherwise it goes in Ext.
 	ApplyExt(ext etensor.Tensor)
 
 	// ApplyExt1D applies external input in the form of a flat 1-dimensional slice of floats
-	// If the layer is a Target or Compare layer type, then it goes in Targ
+	// If the layer is a Target or Compare layer type, then it goes in Target
 	// otherwise it goes in Ext
 	ApplyExt1D(ext []float64)
 

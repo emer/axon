@@ -23,7 +23,7 @@ Inhib: {
   Pool: {  On: false  Gi: 0.9  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
   Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
   Self: {  On: false  Gi: 0.4  Tau: 1.4 }
-  ActAvg: {  InhTau: 1  Init: 0.15  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+  ActAvg: {  InhTau: 1  Init: 0.15  AdaptGi: false  Target: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
@@ -55,7 +55,7 @@ Inhib: {
   Pool: {  On: false  Gi: 1  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
   Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
   Self: {  On: false  Gi: 0.4  Tau: 1.4 }
-  ActAvg: {  InhTau: 1  Init: 0.04  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+  ActAvg: {  InhTau: 1  Init: 0.04  AdaptGi: false  Target: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
@@ -123,7 +123,7 @@ Inhib: {
   Pool: {  On: false  Gi: 1  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
   Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
   Self: {  On: false  Gi: 0.4  Tau: 1.4 }
-  ActAvg: {  InhTau: 1  Init: 0.04  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+  ActAvg: {  InhTau: 1  Init: 0.04  AdaptGi: false  Target: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
@@ -191,7 +191,7 @@ Inhib: {
   Pool: {  On: false  Gi: 1  Bg: 0  FF: 1  FB: 1  FBTau: 1.4  MaxVsAvg: 0  FF0: 0.1  FFEx: 0  FFEx0: 0.15 }
   Topo: {  On: false  Width: 4  Sigma: 1  Wrap: true  Gi: 0.05  FF: 1  FB: 0  FF0: 0.15  WidthWt: 0.882496 }
   Self: {  On: false  Gi: 0.4  Tau: 1.4 }
-  ActAvg: {  InhTau: 1  Init: 0.24  AdaptGi: false  Targ: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
+  ActAvg: {  InhTau: 1  Init: 0.24  AdaptGi: false  Target: 0.1  HiTol: 0  LoTol: 0.8  AdaptRate: 0.5 }
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }

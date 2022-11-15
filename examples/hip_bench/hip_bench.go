@@ -867,7 +867,7 @@ func (ss *Sim) InitStats() {
 }
 
 // MemStats computes ActM vs. Target on ECout with binary counts
-// must be called at end of 3rd quarter so that Targ values are
+// must be called at end of 3rd quarter so that Target values are
 // for the entire full pattern as opposed to the plus-phase target
 // values clamped from ECin activations
 func (ss *Sim) MemStats(train bool) {
@@ -882,7 +882,7 @@ func (ss *Sim) MemStats(train bool) {
 	trgOnN := 0.0
 	trgOffN := 0.0
 	actMi, _ := ecout.UnitVarIdx("ActM")
-	targi, _ := ecout.UnitVarIdx("Targ")
+	targi, _ := ecout.UnitVarIdx("Target")
 	actQ1i, _ := ecout.UnitVarIdx("ActSt1")
 	for ni := 0; ni < nn; ni++ {
 		actm := ecout.UnitVal1D(actMi, ni)
