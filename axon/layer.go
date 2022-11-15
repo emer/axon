@@ -788,7 +788,7 @@ func (ly *Layer) InitWtSym() {
 
 // InitExt initializes external input state -- called prior to apply ext
 func (ly *Layer) InitExt() {
-	msk := bitflag.Mask32(int(NeurHasExt), int(NeurHasTarg), int(NeurHasCmpr))
+	msk := bitflag.Mask32(int(NeuronHasExt), int(NeuronHasTarg), int(NeuronHasCmpr))
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		nrn.Ext = 0
@@ -800,16 +800,16 @@ func (ly *Layer) InitExt() {
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
 // based on layer type, and whether input should be applied to Target (else Ext)
 func (ly *Layer) ApplyExtFlags() (clrmsk, setmsk int32, toTarg bool) {
-	clrmsk = bitflag.Mask32(int(NeurHasExt), int(NeurHasTarg), int(NeurHasCmpr))
+	clrmsk = bitflag.Mask32(int(NeuronHasExt), int(NeuronHasTarg), int(NeuronHasCmpr))
 	toTarg = false
 	if ly.Typ == emer.Target {
-		setmsk = bitflag.Mask32(int(NeurHasTarg))
+		setmsk = bitflag.Mask32(int(NeuronHasTarg))
 		toTarg = true
 	} else if ly.Typ == emer.Compare {
-		setmsk = bitflag.Mask32(int(NeurHasCmpr))
+		setmsk = bitflag.Mask32(int(NeuronHasCmpr))
 		toTarg = true
 	} else {
-		setmsk = bitflag.Mask32(int(NeurHasExt))
+		setmsk = bitflag.Mask32(int(NeuronHasExt))
 	}
 	return
 }
@@ -1137,7 +1137,7 @@ func (ly *Layer) GiFmSpikes(ctime *Time) {
 		}
 	}
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
-	if !ly.Act.Clamp.Add && ly.Neurons[0].HasFlag(NeurHasExt) { // todo: only using 1st neuron
+	if !ly.Act.Clamp.Add && ly.Neurons[0].HasFlag(NeuronHasExt) { // todo: only using 1st neuron
 		lpl.Inhib.FFs = 0 // only use GeExt
 	}
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
@@ -1155,7 +1155,7 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
 		pl.Inhib.SpikesFmRaw(pl.NNeurons())
-		if !ly.Act.Clamp.Add && ly.Neurons[0].HasFlag(NeurHasExt) { // todo: only using 1st neuron
+		if !ly.Act.Clamp.Add && ly.Neurons[0].HasFlag(NeuronHasExt) { // todo: only using 1st neuron
 			pl.Inhib.FFs = 0 // only use GeExt
 		}
 		ly.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
@@ -1336,9 +1336,9 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 			continue
 		}
 		nrn.ActM = nrn.ActInt
-		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
+		if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
 			nrn.Ext = nrn.Target
-			nrn.SetFlag(NeurHasExt)
+			nrn.SetFlag(NeuronHasExt)
 			nrn.ISI = -1 // get fresh update on plus phase output acts
 			nrn.ISIAvg = -1
 			nrn.ActInt = ly.Act.Init.Act // reset for plus phase
@@ -1379,9 +1379,9 @@ func (ly *Layer) TargToExt() {
 		if nrn.IsOff() {
 			continue
 		}
-		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
+		if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
 			nrn.Ext = nrn.Target
-			nrn.SetFlag(NeurHasExt)
+			nrn.SetFlag(NeuronHasExt)
 			nrn.ISI = -1 // get fresh update on plus phase output acts
 			nrn.ISIAvg = -1
 		}
@@ -1396,9 +1396,9 @@ func (ly *Layer) ClearTargExt() {
 		if nrn.IsOff() {
 			continue
 		}
-		if nrn.HasFlag(NeurHasTarg) { // will be clamped in plus phase
+		if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
 			nrn.Ext = 0
-			nrn.ClearFlag(NeurHasExt)
+			nrn.ClearFlag(NeuronHasExt)
 			nrn.ISI = -1 // get fresh update on plus phase output acts
 			nrn.ISIAvg = -1
 		}
@@ -1830,7 +1830,7 @@ func (ly *Layer) LocalistErr4D() (err bool, minusIdx, plusIdx int) {
 func (ly *Layer) UnLesionNeurons() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		nrn.ClearFlag(NeurOff)
+		nrn.ClearFlag(NeuronOff)
 	}
 }
 
@@ -1851,7 +1851,7 @@ func (ly *Layer) LesionNeurons(prop float32) int {
 	nl := int(prop * float32(nn))
 	for i := 0; i < nl; i++ {
 		nrn := &ly.Neurons[p[i]]
-		nrn.SetFlag(NeurOff)
+		nrn.SetFlag(NeuronOff)
 	}
 	return nl
 }
