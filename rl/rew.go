@@ -44,7 +44,7 @@ func SetNeuronExtPosNeg(ni int, nrn *axon.Neuron, val float32) {
 
 func (ly *RewLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	ext0 := ly.Neurons[0].Ext
-	nrn.SetFlag(axon.NeurHasExt)
+	nrn.SetFlag(axon.NeuronHasExt)
 	extOrig := nrn.Ext
 	SetNeuronExtPosNeg(ni, nrn, ext0)
 	ly.GFmSpikeRaw(ni, nrn, ctime)

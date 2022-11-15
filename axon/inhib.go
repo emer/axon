@@ -44,13 +44,13 @@ func (ip *InhibParams) Defaults() {
 // Also specifies time constant for updating a longer-term running average
 // and for adapting inhibition levels dynamically over time.
 type ActAvgParams struct {
-	Init      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] initial estimated average activity level in the layer -- see Targ for target value which can be different from this."`
+	Init      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] initial estimated average activity level in the layer -- see Target for target value which can be different from this."`
 	InhTau    float32 `min:"1" desc:"inhibition average activation time constant (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life) -- integrates spiking activity across pools with this time constant for driving feedback inhibition"`
-	AdaptGi   bool    `def:"false" desc:"enable adapting of layer inhibition Gi factor (stored in layer GiCur value) based on Targ - layer level ActAvg.ActsMAvg.  In general it is better to avoid doing this if at all possible, but some cases with particularly challenging inhibitory dynamics require it (e.g., large sparse output layers)."`
-	Targ      float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] target average activity for this layer -- used if if AdaptGi is on to drive adaptation of inhibition."`
-	HiTol     float32 `def:"0" viewif:"AdaptGi" desc:"tolerance for higher than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
-	LoTol     float32 `def:"0.8" viewif:"AdaptGi" desc:"tolerance for lower than Targ target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
-	AdaptRate float32 `def:"0.5,0.01" viewif:"AdaptGi" desc:"rate of Gi adaptation as function of AdaptRate * (Targ - ActMAvg) / Targ -- occurs at spaced intervals determined by Network.SlowInterval value -- 0.01 needed for large networks and sparse layers"`
+	AdaptGi   bool    `def:"false" desc:"enable adapting of layer inhibition Gi factor (stored in layer GiCur value) based on Target - layer level ActAvg.ActsMAvg.  In general it is better to avoid doing this if at all possible, but some cases with particularly challenging inhibitory dynamics require it (e.g., large sparse output layers)."`
+	Target    float32 `min:"0" step:"0.01" desc:"[typically 0.01 - 0.2] target average activity for this layer -- used if if AdaptGi is on to drive adaptation of inhibition."`
+	HiTol     float32 `def:"0" viewif:"AdaptGi" desc:"tolerance for higher than Target target average activation as a proportion of that target value (0 = exactly the target, 0.2 = 20% higher than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
+	LoTol     float32 `def:"0.8" viewif:"AdaptGi" desc:"tolerance for lower than Target target average activation as a proportion of that target value (0 = exactly the target, 0.5 = 50% lower than target) -- only once activations move outside this tolerance are inhibitory values adapted"`
+	AdaptRate float32 `def:"0.5,0.01" viewif:"AdaptGi" desc:"rate of Gi adaptation as function of AdaptRate * (Target - ActMAvg) / Target -- occurs at spaced intervals determined by Network.SlowInterval value -- 0.01 needed for large networks and sparse layers"`
 
 	InhDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 }
@@ -62,7 +62,7 @@ func (aa *ActAvgParams) Update() {
 func (aa *ActAvgParams) Defaults() {
 	aa.Init = 0.1
 	aa.InhTau = 1
-	aa.Targ = 0.1
+	aa.Target = 0.1
 	aa.HiTol = 0
 	aa.LoTol = 0.8
 	aa.AdaptRate = 0.5

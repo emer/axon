@@ -838,7 +838,7 @@ class Sim(pygiv.ClassViewObj):
     def MemStats(ss, train):
         """
         MemStats computes ActM vs. Target on ECout with binary counts
-        must be called at end of 3rd quarter so that Targ values are
+        must be called at end of 3rd quarter so that Target values are
         for the entire full pattern as opposed to the plus-phase target
         values clamped from ECin activations
         """
@@ -852,7 +852,7 @@ class Sim(pygiv.ClassViewObj):
         trgOnN = 0.0
         trgOffN = 0.0
         actMi = ecout.UnitVarIdx("ActM")
-        targi = ecout.UnitVarIdx("Targ")
+        targi = ecout.UnitVarIdx("Target")
         actQ1i = ecout.UnitVarIdx("ActQ1")
         for ni in range(nn):
             actm = ecout.UnitVal1D(actMi, ni)

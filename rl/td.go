@@ -127,7 +127,7 @@ func (ly *TDRewIntegLayer) Build() error {
 
 func (ly *TDRewIntegLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	rpAct := ly.RewPredAct(ctime)
-	nrn.SetFlag(axon.NeurHasExt)
+	nrn.SetFlag(axon.NeuronHasExt)
 	SetNeuronExtPosNeg(ni, nrn, rpAct)
 	ly.GFmSpikeRaw(ni, nrn, ctime)
 	ly.GFmRawSyn(ni, nrn, ctime)
@@ -202,7 +202,7 @@ func (ly *TDDaLayer) Build() error {
 
 func (ly *TDDaLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	da := ly.RewIntegDA(ctime)
-	nrn.SetFlag(axon.NeurHasExt)
+	nrn.SetFlag(axon.NeuronHasExt)
 	SetNeuronExtPosNeg(ni, nrn, da)
 	ly.GFmSpikeRaw(ni, nrn, ctime)
 	ly.GFmRawSyn(ni, nrn, ctime)

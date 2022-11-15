@@ -368,7 +368,7 @@ var ParamSetsAll = params.Sets{
 					"Layer.Inhib.Layer.FFEx":             "0.0",   // .05
 					"Layer.Inhib.Inhib.AvgTau":           "30",    // 20 > 30 (small)
 					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
-					"Layer.Inhib.ActAvg.Targ":            "0.05",  // for adapt, important for this to be accurate
+					"Layer.Inhib.ActAvg.Target":          "0.05",  // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "false", // false == true
 					"Layer.Act.Dt.IntTau":                "40",    // 40 > 20 in larger nets
 					"Layer.Act.Spike.Tr":                 "3",     // 3 def
@@ -411,20 +411,20 @@ var ParamSetsAll = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9", // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "1.0", // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.ActAvg.Targ": "0.24",
-					"Layer.Act.Decay.Act":     "0.5", // 0.5 > 1 > 0
-					"Layer.Act.Decay.Glong":   "1",   // LVis .7 best?
+					"Layer.Inhib.Layer.Gi":      "0.9", // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":        "1.0", // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Init":   "0.15",
+					"Layer.Inhib.ActAvg.Target": "0.24",
+					"Layer.Act.Decay.Act":       "0.5", // 0.5 > 1 > 0
+					"Layer.Act.Decay.Glong":     "1",   // LVis .7 best?
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Inhib.ActAvg.Targ": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "0",    // 0 is essential here!
-					"Layer.Act.Clamp.Ge":      "0.6",  // .5 >= .4 > .6 > 1.0
+					"Layer.Inhib.Layer.Gi":      "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Init":   "0.24", // this has to be exact for adapt
+					"Layer.Inhib.ActAvg.Target": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":        "0",    // 0 is essential here!
+					"Layer.Act.Clamp.Ge":        "0.6",  // .5 >= .4 > .6 > 1.0
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
