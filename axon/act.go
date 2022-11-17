@@ -167,7 +167,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.Inet = 0
 	nrn.Vm = ac.Init.Vm
 	nrn.VmDend = ac.Init.Vm
-	nrn.Targ = 0
+	nrn.Target = 0
 	nrn.Ext = 0
 
 	nrn.SpkMaxCa = 0
@@ -262,13 +262,13 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmSyn(nrn *Neuron, geSyn, geExt float32) {
 	nrn.GeExt = 0
-	if ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
+	if ac.Clamp.Add && nrn.HasFlag(NeuronHasExt) {
 		nrn.GeExt = nrn.Ext * ac.Clamp.Ge
 		geSyn += nrn.GeExt
 	}
 	geSyn = ac.Attn.ModVal(geSyn, nrn.Attn)
 
-	if !ac.Clamp.Add && nrn.HasFlag(NeurHasExt) {
+	if !ac.Clamp.Add && nrn.HasFlag(NeuronHasExt) {
 		geSyn = nrn.Ext * ac.Clamp.Ge
 		nrn.GeExt = geSyn
 		geExt = 0 // no extra in this case
@@ -834,7 +834,7 @@ func (sc *SynComParams) Fail(wt *float32, swt float32) {
 // PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,
 // using both absolute and relative factors.
 type PrjnScaleParams struct {
-	Rel    float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Targ for adapting scaling"`
+	Rel    float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling"`
 	Abs    float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
 	AvgTau float32 `def:"500" desc:"time constant for integrating projection-level averages to track G scale: Prjn.GScale.AvgAvg, AvgMax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
 

@@ -105,7 +105,7 @@ func (ly *RWDaLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	}
 	rnrn := &(rly.Neurons[0])
 	hasRew := false
-	if rnrn.HasFlag(axon.NeurHasExt) {
+	if rnrn.HasFlag(axon.NeuronHasExt) {
 		hasRew = true
 	}
 	ract := rnrn.Act
