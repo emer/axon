@@ -263,7 +263,7 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau":      "1",
-					"Prjn.Learn.Trace.NeuronCa": "true", // faster and no diff here?
+					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
 					"Prjn.Learn.Lrate.Base":     "0.04",
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
