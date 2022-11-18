@@ -38,6 +38,12 @@ func TestDefaults(t *testing.T) {
 
 	for layerIdx, layer := range net.Layers {
 		assert.Equal(t, layerIdx, layer.Index())
+
+		lyr := layer.(AxonLayer).AsAxon()
+		for neuronIdx := range lyr.Neurons {
+			neuron := &lyr.Neurons[neuronIdx]
+			assert.Equal(t, int32(lyr.Index()), neuron.LayIdx)
+		}
 	}
 }
 
