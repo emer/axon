@@ -23,7 +23,7 @@ If we had these things it might be easier to figure out what can be parallelized
 ## Experiments
 Running the code:
 ```
-go build . && /usr/bin/time -v ./run_bench.sh -epochs=10
+go build . && /usr/bin/time -v ./run_bench.sh -epochs=10 -threads=4
 ```
 
 Use /usr/bin/time -v because it prints out more info. One interesting field is the cpu usage.

@@ -17,6 +17,9 @@
 # No GoLand files
 /.idea/*
 
+# VSCode
+.vscode/
+
 
 /vendor/*
 
