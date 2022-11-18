@@ -20,6 +20,8 @@
 # VSCode
 .vscode/
 
+# pprof files
+*.prof
 
 /vendor/*
 
