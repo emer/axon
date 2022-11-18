@@ -195,30 +195,25 @@ func (nt *NetworkBase) LayerFun(fun func(ly AxonLayer), funame string, thread, w
 // using Neurons threading (go routines) if thread is true and NThreads > 1.
 // if wait is true, then it waits until all procs have completed.
 func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, thread, wait bool) {
-	if thread { // don't bother if not significant to thread
-		nt.FunTimerStart(funame)
-	}
 	if !thread || nt.NThreads <= 1 {
-		for ni := range nt.Neurons {
-			nrn := &nt.Neurons[ni]
-			ly := nt.Layers[nrn.LayIdx].(AxonLayer)
-			fun(ly, ni-ly.NeurStartIdx(), nrn)
+		for _, layer := range nt.Layers {
+			lyr := layer.(AxonLayer)
+			lyrNeurons := lyr.AsAxon().Neurons
+			for nrnIdx := range lyrNeurons {
+				nrn := &lyr.AsAxon().Neurons[nrnIdx]
+				fun(lyr, nrnIdx, nrn)
+			}
 		}
-		if thread {
-			nt.FunTimerStop(funame)
-		}
-		return
-	}
-
-	// todo: ignoring wait for now..
-	nt.Threads.Neurons.Run(func(st, ed int) {
-		for ni := st; ni < ed; ni++ {
-			nrn := &nt.Neurons[ni]
-			ly := nt.Layers[nrn.LayIdx].(AxonLayer)
-			fun(ly, ni-ly.NeurStartIdx(), nrn)
-		}
-	})
-	if thread {
+	} else {
+		nt.FunTimerStart(funame)
+		// todo: ignoring wait for now..
+		nt.Threads.Neurons.Run(func(st, ed int) {
+			for ni := st; ni < ed; ni++ {
+				nrn := &nt.Neurons[ni]
+				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
+				fun(ly, ni-ly.NeurStartIdx(), nrn)
+			}
+		})
 		nt.FunTimerStop(funame)
 	}
 }

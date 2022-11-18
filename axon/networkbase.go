@@ -260,6 +260,7 @@ func (nt *NetworkBase) AddLayerInit(ly emer.Layer, name string, shape []int, typ
 	ly.InitName(ly, name, nt.EmerNet)
 	ly.Config(shape, typ)
 	nt.Layers = append(nt.Layers, ly)
+	ly.SetIndex(len(nt.Layers) - 1)
 	nt.MakeLayMap()
 }
 
@@ -405,8 +406,7 @@ func (nt *NetworkBase) Build() error {
 	emsg := ""
 	totNeurons := 0
 	totPrjns := 0
-	for li, ly := range nt.Layers {
-		ly.SetIndex(li)
+	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
@@ -419,8 +419,8 @@ func (nt *NetworkBase) Build() error {
 			nt.LayClassMap[cl] = ll
 		}
 	}
-	nt.Neurons = make([]Neuron, totNeurons, totNeurons) // never grows
-	nt.Prjns = make([]AxonPrjn, totPrjns, totPrjns)
+	nt.Neurons = make([]Neuron, totNeurons) // never grows
+	nt.Prjns = make([]AxonPrjn, totPrjns)
 
 	// todo: not currently useful:
 	// nt.Threads.SetDefaults(totNeurons, totPrjns)
@@ -432,8 +432,7 @@ func (nt *NetworkBase) Build() error {
 
 	nidx := 0
 	pidx := 0
-	for li, ly := range nt.Layers {
-		ly.SetIndex(li)
+	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
