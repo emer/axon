@@ -38,11 +38,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.85", // 0.85 for FS-FFFB vs 0.9 prev
-					"Layer.Inhib.Layer.FB":          "0",    // 0, gi 0.85 better
+					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 FB0.5
+					"Layer.Inhib.Layer.FB":          "0.5",  // 0.5
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.8",  // .6 > .5 v94
+					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.6
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",

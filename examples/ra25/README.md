@@ -1,16 +1,16 @@
-# Leabra Random Associator 25 Example
+# Axon Random Associator 25 Example
 
-This example project serves as a demo and basic template for Leabra models -- you can use this as a starting point for creating your own models.  It has been constructed to illustrate the most common types of functionality needed across models, to facilitate copy-paste programming.
+This example project serves as a demo and basic template for Axon models -- you can use this as a starting point for creating your own models.  It has been constructed to illustrate the most common types of functionality needed across models, to facilitate copy-paste programming.
 
 # Running the model
 
-First, see [Wiki Install](https://github.com/emer/emergent/wiki/Install) for installation instructions, which includes how to build the model code in this directory, which will make an executable named `ra25` that you run from a terminal command line:
+First, see [Wiki Install](https://github.com/emer/axon/wiki/Install) for installation instructions, which includes how to build the model code in this directory, which will make an executable named `ra25` that you run from a terminal command line:
 
 ```bash
 ./ra25
 ```
 
-You can also run the [Python](https://github.com/emer/leabra/blob/master/python/README.md) version of the model by following those instructions.
+You can also run the [Python](https://github.com/emer/axon/blob/master/python/README.md) version of the model by following those instructions.
 
 ## Basic running and graphing
 
