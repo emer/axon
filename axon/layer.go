@@ -1126,20 +1126,26 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 func (ly *Layer) GiFmSpikes(ctime *Time) {
 	lpl := &ly.Pools[0]
 	subPools := (len(ly.Pools) > 1)
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.Inhib.Clamped = false
+	}
 	for ni := range ly.Neurons { // note: layer-level iterating across neurons
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Pools[nrn.SubPool].Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
+		pl := &ly.Pools[nrn.SubPool]
+		pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
 		if subPools {
 			lpl.Inhib.GeExtRaw += nrn.GeExt
 		}
+		if !ly.Act.Clamp.Add && nrn.HasFlag(NeuronHasExt) {
+			pl.Inhib.Clamped = true
+			lpl.Inhib.Clamped = true
+		}
 	}
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
-	if !ly.Act.Clamp.Add && ly.Neurons[0].HasFlag(NeuronHasExt) { // todo: only using 1st neuron
-		lpl.Inhib.FFs = 0 // only use GeExt
-	}
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
 	ly.PoolGiFmSpikes(ctime)
 }
@@ -1155,9 +1161,6 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
 		pl.Inhib.SpikesFmRaw(pl.NNeurons())
-		if !ly.Act.Clamp.Add && ly.Neurons[0].HasFlag(NeuronHasExt) { // todo: only using 1st neuron
-			pl.Inhib.FFs = 0 // only use GeExt
-		}
 		ly.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
 		if lyInhib {
 			pl.Inhib.LayerMax(&lpl.Inhib)

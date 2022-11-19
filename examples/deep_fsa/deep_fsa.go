@@ -198,6 +198,9 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	if !ss.Args.Bool("nogui") {
+		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
+	}
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed()
 	ss.ConfigEnv() // re-config env just in case a different set of patterns was
@@ -430,8 +433,9 @@ func (ss *Sim) TrialStats() {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// 		Logging
+// ////////////////////////////////////////////////////////////////////////////
+//
+//	Logging
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 

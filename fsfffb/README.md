@@ -12,7 +12,7 @@ This new FS -- fast and slow -- version of FFFB starts directly with spike input
 
 Remarkably, the parameters that work to enable successful error-driven learning in axon using the new FS-FFFB equations end up very closely reproducing the net inhibition produced by the original FFFB model, as shown in the following figure.
 
-![FS-FFFB vs original FFFB](figs/fig_bg_loops_spiral_goals.png?raw=true "FS-FFFB vs original FFFB")
+![FS-FFFB vs original FFFB](fig_fs_vs_orig_fffb_layer2.png?raw=true "FS-FFFB vs original FFFB")
 
 **Figure 1:** Comparison of original FFFB inhibition (`OGi`) vs. new FS-FFFB inhibition (`SGi`) from the [inhib](https://github.com/emer/axon/tree/examples/inhib) example simulation, showing that the FS-FFFB parameters that enable successful learning produce nearly identical overall levels of inhibition compared to the original.  `Act.Avg` shows the time-averaged activity in the lower layer that feeds into the one shown, and resembles the slow SST response, while the jagged ups and downs are due to the fast PV component.
 
