@@ -20,7 +20,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.05 vs 1.0 prev
+					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.1 for fs-fffb
+					"Layer.Inhib.Layer.FB":    "0.5",  // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
 					"Layer.Inhib.ActAvg.Init": "0.05", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Act.NMDA.MgC":      "1.2",  // 1.2 > 1.4 for SynSpkTheta
 					"Layer.Act.NMDA.Voff":     "0",    // 0 > 5 for SynSpkTheta
@@ -37,7 +38,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 for FS-FFFB vs 0.9 prev
+					"Layer.Inhib.Layer.Gi":          "0.85", // 0.85 for FS-FFFB vs 0.9 prev
+					"Layer.Inhib.Layer.FB":          "0",    // 0, gi 0.85 better
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.8",  // .6 > .5 v94

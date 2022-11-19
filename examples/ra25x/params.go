@@ -21,13 +21,15 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
-					"Layer.Inhib.Layer.Gi":          "1.05", // 1.05 > 1.1, 1.0
+					"Layer.Inhib.Layer.Gi":          "1.1",  // 1.1 > 1.05 for 1.6.4
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FS0":         "0.1",
 					"Layer.Inhib.Layer.FSTau":       "6",
-					"Layer.Inhib.Layer.FB":          "0.5",  // 0.5 > 0.2 > 0.1 > 1.0
-					"Layer.Inhib.Layer.SSfTau":      "20",   // 20 > 30  > 15
-					"Layer.Inhib.Layer.SSiTau":      "50",   // 50 > 40 -- try 40, 60 @ gi= 1.1?
+					"Layer.Inhib.Layer.FB":          "0.5", // 0.5 > 0.2 > 0.1 > 1.0
+					"Layer.Inhib.Layer.SSfTau":      "20",  // 20 > 30  > 15
+					"Layer.Inhib.Layer.SSiTau":      "50",  // 50 > 40 -- try 40, 60 @ gi= 1.1?
+					"Layer.Act.Decay.Act":           "0.2",
+					"Layer.Act.Decay.Glong":         "0.6",
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
 					"Layer.Act.NMDA.MgC":            "1.2",  // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":           "0",    // 5 == 0 for trace
@@ -70,12 +72,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.85", // 0.85 for FB = 0, 0.75 for FB = 1
+					"Layer.Inhib.Layer.Gi":          "0.85", // test 0.8 -- 0.85 for FB = 0, 0.75 for FB = 1
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FB":          "0",    // 0 > 1 here in output
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 1.0
+					"Layer.Act.Clamp.Ge":            "0.6",  // 0.8 > 1.0
 					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
