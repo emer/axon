@@ -21,6 +21,8 @@ PACKAGE=axon
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
 GIT_COMMIT=`git rev-parse --short HEAD`
 # VERS_FILE=$(shell echo `git rev-parse --show-toplevel`/version.go)
+# note: version file is here in main axon dir within package
+# nothing is built at the top level so not useful to put there
 VERS_FILE=version.go
 
 version:
