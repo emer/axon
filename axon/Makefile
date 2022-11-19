@@ -20,7 +20,8 @@ VERS=v1.6.4
 PACKAGE=axon
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
 GIT_COMMIT=`git rev-parse --short HEAD`
-VERS_FILE=$(shell echo `git rev-parse --show-toplevel`/version.go)
+# VERS_FILE=$(shell echo `git rev-parse --show-toplevel`/version.go)
+VERS_FILE=version.go
 
 version:
 	/bin/rm -f $(VERS_FILE)
