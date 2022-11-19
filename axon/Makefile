@@ -39,7 +39,6 @@ version:
 	@echo "" >> $(VERS_FILE)
 	goimports -w $(VERS_FILE)
 	/bin/cat $(VERS_FILE)
-	git commit -am "$(VERS) release -- version.go updated"
 
 release:	
 	git tag -a $(VERS) -m "$(VERS) release"
