@@ -682,6 +682,9 @@ func (pj *Prjn) InitGBuffs() {
 	for ri := range pj.GVals {
 		pj.GVals[ri].Init()
 	}
+	for pi := range pj.PIBuf {
+		pj.PIBuf[pi] = 0
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

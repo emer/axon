@@ -147,6 +147,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.GeExt = 0
 }
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
@@ -786,7 +787,7 @@ func (at *AttnParams) ModVal(val float32, attn float32) float32 {
 //////////////////////////////////////////////////////////////////////////////////////
 //  SynComParams
 
-/// SynComParams are synaptic communication parameters: delay and probability of failure
+// / SynComParams are synaptic communication parameters: delay and probability of failure
 type SynComParams struct {
 	Delay    int     `min:"0" def:"2" desc:"additional synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must call InitWts() on Network!  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time.  Biologically, subtract 1 from synaptic delay values to set corresponding Delay value."`
 	PFail    float32 `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
