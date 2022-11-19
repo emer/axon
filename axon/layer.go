@@ -1079,11 +1079,11 @@ func (ly *Layer) DecayState(decay, glong float32) {
 		// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
 		// Note: synapse-level Ca decay happens in DWt
 	}
-	for pi := range ly.Pools { // decaying average act is essential for inhib
+	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Decay(decay)
 	}
-	if glong == 1 {
+	if glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
 		ly.InitPrjnGBuffs()
 	}
 }
