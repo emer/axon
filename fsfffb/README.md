@@ -2,7 +2,7 @@
 
 [FFFB](https://github.com/emer/axon/tree/master/fffb) is the feedforward (FF) and feedback (FB) inhibition mechanism, originally developed for the Leabra model.  It applies inhibition as a function of the average `Ge` (excitatory conductance) of units in the layer (FF = reflecting all the excitatory input to a layer) and average `Act` rate-code-like activation within the layer (FB = reflecting the activity level within the layer itself), which is slowly integrated over time as a function of the ISI (inter-spike-interval).
 
-This new FS -- fast and slow -- version of FFFB starts directly with spike input signals instead of using "internal" variables like Ge and Act, and uses time dynamics based on an emerging consensus about the differences between three major classes of inhibitory interneurons, and their functional properties, e.g., **Cardin18**:
+This new FS -- fast and slow -- version of FFFB starts directly with spike input signals instead of using "internal" variables like Ge and Act, and uses time dynamics based on an emerging consensus about the differences between three major classes of inhibitory interneurons, and their functional properties, e.g., [Cardin, 2018](#references).
 
 * **PV:** fast-spiking basket cells that target the cell bodies of excitatory neurons and coexpress the calcium-binding protein parvalbumin (PV). These are the "first responders", and are also rapidly depressing -- they provide quick control of activity, responding to FF new input and FB drive, allowing the first spiking pyramidal neurons to quickly shut off other competitors.
 
@@ -63,4 +63,9 @@ where:
 * `SSi` = slow-spiking inhibition per above.
 * `FS0` = threshold for FSi, default .1 as in the original FFFB, below which it contributes 0.  This factor is important for filtering out small levels of incoming spikes and produces an observed nonlinearity in the Gi response.
 * `SS` = multiplier for SSi, which is 30 by default: SSi is relatively weak so this needs to be a strong multiplier to get into the range of FSi.
+
+# References
+
+* Cardin, J. A. (2018). Inhibitory interneurons regulate temporal precision and correlations in cortical circuits. Trends in Neurosciences, 41(10), 689–700. https://doi.org/10.1016/j.tins.2018.07.015
+
 
