@@ -26,7 +26,6 @@ type Params struct {
 	SSfTau float32 `viewif:"On" min:"0" def:"20" desc:"slow-spiking (SST+) facilitation decay time constant in cycles (msec) -- facilication factor SSf determines impact of FB spikes as a function of spike input-- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
 	SSiTau float32 `viewif:"On" min:"0" def:"50" desc:"slow-spiking (SST+) intgration time constant in cycles (msec) cascaded on top of FSTau -- tau is roughly how long it takes for value to change significantly -- 1.4x the half-life."`
 	FS0    float32 `viewif:"On" def:"0.1" desc:"fast spiking zero point -- below this level, no FS inhibition is computed, and this value is subtracted from the FSi"`
-	FS0Ext bool    `viewif:"On" desc:"apply FS0 to GeExt external excitatory input"`
 
 	FSDt  float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	SSfDt float32 `inactive:"+" view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
@@ -68,13 +67,7 @@ func (fb *Params) FS0Thr(val float32) float32 {
 // if clamped, then only use gext, without applying FS0
 func (fb *Params) FS(fsi, gext float32, clamped bool) float32 {
 	if clamped {
-		if fb.FS0Ext {
-			return fb.FS0Thr(gext)
-		}
 		return gext
-	}
-	if fb.FS0Ext {
-		return fb.FS0Thr(fsi + gext)
 	}
 	return fb.FS0Thr(fsi) + gext
 }

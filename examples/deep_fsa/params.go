@@ -13,24 +13,23 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init":  "0.15",
-					"Layer.Inhib.Layer.Gi":     "1.0", // 1.0 > 1.1 v1.6.1
-					"Layer.Inhib.Layer.FB":     "1",   // 1.0 > 0.5
-					"Layer.Inhib.Layer.FS0Ext": "false",
-					"Layer.Act.Gbar.L":         "0.2", // std
-					"Layer.Act.Decay.Act":      "0.0", // 0 == 0.2
-					"Layer.Act.Decay.Glong":    "0.0",
-					"Layer.Act.Dt.LongAvgTau":  "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":   "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":     "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":   "5",   // old: 8 > 5 >> 2.81 -- big diff
-					"Layer.Act.AK.Gbar":        "0.1",
-					"Layer.Act.NMDA.MgC":       "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":      "5",
-					"Layer.Act.Sahp.Gbar":      "0.1",  //
-					"Layer.Act.Sahp.Off":       "0.8",  //
-					"Layer.Act.Sahp.Slope":     "0.02", //
-					"Layer.Act.Sahp.CaTau":     "10",   //
+					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Inhib.Layer.Gi":    "1.0", // 1.0 > 1.1 v1.6.1
+					"Layer.Inhib.Layer.FB":    "1",   // 1.0 > 0.5
+					"Layer.Act.Gbar.L":        "0.2", // std
+					"Layer.Act.Decay.Act":     "0.0", // 0 == 0.2
+					"Layer.Act.Decay.Glong":   "0.0",
+					"Layer.Act.Dt.LongAvgTau": "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":  "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":    "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dt.VmDendTau":  "5",   // old: 8 > 5 >> 2.81 -- big diff
+					"Layer.Act.AK.Gbar":       "0.1",
+					"Layer.Act.NMDA.MgC":      "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":     "5",
+					"Layer.Act.Sahp.Gbar":     "0.1",  //
+					"Layer.Act.Sahp.Off":      "0.8",  //
+					"Layer.Act.Sahp.Slope":    "0.02", //
+					"Layer.Act.Sahp.CaTau":    "10",   //
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -117,6 +116,11 @@ var ParamSets = params.Sets{
 			{Sel: ".FmPulv", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
+				}},
+			{Sel: ".CTToPulv", Desc: "",
+				Params: params.Params{
+					// "Prjn.Learn.Lrate.Base":  "0.1",
+					// "Prjn.SWt.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
 				}},
 		},
 	}},
