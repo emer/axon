@@ -72,13 +72,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 FB0.5
+					"Layer.Inhib.Layer.Gi":          "0.65", // 0.65 FB0.5 best
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FB":          "0.5",  // 0 > 1 here in output
-					"Layer.Inhib.Layer.FS0Ext":      "true", // 0.75 FB0.5
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 1.0 > 0.6
+					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
 					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
@@ -100,8 +99,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Hidden2ToOutput", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":  "0.1", // 0.1 is default
-					"Prjn.SWt.Adapt.SigGain": "6",   // 1 does not work
+					// "Prjn.Learn.Lrate.Base":  "0.1", // 0.1 is default
+					"Prjn.SWt.Adapt.SigGain":   "6", // 1 does not work
+					"Prjn.Learn.Trace.SubMean": "0",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
