@@ -53,7 +53,7 @@ func (ly *PulvLayer) Defaults() {
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
-	ly.Learn.RLrate.SigmoidMin = 1 // don't use!
+	ly.Learn.RLrate.SigmoidMin = 0.05 // do use -- actually really important for target layers!  but only when fixed to use minus phase
 	ly.Pulv.Defaults()
 	ly.Typ = Pulv
 }
