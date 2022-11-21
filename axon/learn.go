@@ -62,6 +62,7 @@ func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
 	nrn.CaSpkM = 0
 	nrn.CaSpkP = 0
 	nrn.CaSpkD = 0
+	nrn.CaSpkPM = 0
 
 	nrn.CaM = 0
 	nrn.CaP = 0

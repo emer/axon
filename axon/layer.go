@@ -61,7 +61,7 @@ func (ly *Layer) Defaults() {
 		ly.Inhib.Pool.Gi = 0.9
 	case emer.Target:
 		ly.Act.Clamp.Ge = 0.8
-		ly.Learn.RLrate.SigmoidMin = 1
+		// ly.Learn.RLrate.SigmoidMin = 1
 	}
 }
 
@@ -1339,6 +1339,7 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 			continue
 		}
 		nrn.ActM = nrn.ActInt
+		nrn.CaSpkPM = nrn.CaSpkP
 		if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
 			nrn.Ext = nrn.Target
 			nrn.SetFlag(NeuronHasExt)
@@ -1359,7 +1360,7 @@ func (ly *Layer) PlusPhase(ctime *Time) {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
+		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkPM, ly.ActAvg.CaSpkPM.Max) // minus phase!
 		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLrate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)

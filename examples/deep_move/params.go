@@ -87,8 +87,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.Decay.AHP":           "0.0", // clear long
 					"Layer.Act.GABAB.Gbar":          "0.2",
-					"Layer.Act.NMDA.Gbar":           "0.1", // .1 was important
-					"Layer.Learn.RLrate.SigmoidMin": "1",   // 1 > .05
+					"Layer.Act.NMDA.Gbar":           "0.1",  // .1 was important
+					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 1 > .05
 				}},
 			{Sel: "#DepthHidP", Desc: "distributed hidden-layer pulvinar",
 				Params: params.Params{

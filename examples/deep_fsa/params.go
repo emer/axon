@@ -72,11 +72,11 @@ var ParamSets = params.Sets{
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0", // clear long
-					"Layer.Act.Decay.AHP":           "0.0", // clear ahp
-					"Layer.Act.GABAB.Gbar":          "0.2", // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":           "0.1", // .1 music
-					"Layer.Learn.RLrate.SigmoidMin": "1",   // auto = 1: not useful in output layer
+					"Layer.Act.Decay.Glong":         "0.0",  // clear long
+					"Layer.Act.Decay.AHP":           "0.0",  // clear ahp
+					"Layer.Act.GABAB.Gbar":          "0.2",  // .2 > old: 0.005
+					"Layer.Act.NMDA.Gbar":           "0.1",  // .1 music
+					"Layer.Learn.RLrate.SigmoidMin": "0.05", // actually useful in output layer
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
