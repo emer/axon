@@ -25,8 +25,8 @@ echo " "
 echo "=============================================================="
 echo "GINORMOUS Network (5 x 2048 units)"
 $exe -epochs 2 -pats 10 -units 2048 $*
-echo " "
-echo "=============================================================="
-echo "GAZILIOUS Network (5 x 4096 units)"
-$exe -nogui -ni -p leabra_bench.proj epochs=1 pats=10 units=4096 $*
+# echo " "
+# echo "=============================================================="
+# echo "GAZILIOUS Network (5 x 4096 units)"
+# $exe -nogui -ni -p leabra_bench.proj epochs=1 pats=10 units=4096 $*
 
