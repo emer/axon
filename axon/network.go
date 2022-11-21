@@ -51,9 +51,8 @@ func (nt *Network) NewPrjn() emer.Prjn {
 func (nt *Network) Defaults() {
 	nt.SlowInterval = 100
 	nt.SlowCtr = 0
-	for li, ly := range nt.Layers {
+	for _, ly := range nt.Layers {
 		ly.Defaults()
-		ly.SetIndex(li)
 	}
 }
 

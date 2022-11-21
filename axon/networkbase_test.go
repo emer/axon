@@ -19,6 +19,15 @@ func TestAddLayer(t *testing.T) {
 
 func TestDefaults(t *testing.T) {
 	net := NewNetwork("testNet")
+	shape := []int{2, 2}
+	input := net.AddLayer("Input", shape, emer.Input)
+	hidden := net.AddLayer("Hidden", shape, emer.Hidden)
+	output := net.AddLayer("Output", shape, emer.Target)
+
+	full := prjn.NewFull()
+	net.ConnectLayers(input, hidden, full, emer.Forward)
+	net.BidirConnectLayers(hidden, output, full)
+
 	net.Defaults()
 	net.Build()
 	net.InitWts()
@@ -26,6 +35,16 @@ func TestDefaults(t *testing.T) {
 
 	assert.Equal(t, 100, net.SlowInterval)
 	assert.Equal(t, 0, net.SlowCtr)
+
+	for layerIdx, layer := range net.Layers {
+		assert.Equal(t, layerIdx, layer.Index())
+
+		lyr := layer.(AxonLayer).AsAxon()
+		for neuronIdx := range lyr.Neurons {
+			neuron := &lyr.Neurons[neuronIdx]
+			assert.Equal(t, int32(lyr.Index()), neuron.LayIdx)
+		}
+	}
 }
 
 // TODO: test initial weights somehow

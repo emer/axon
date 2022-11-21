@@ -17,6 +17,11 @@
 # No GoLand files
 /.idea/*
 
+# VSCode
+.vscode/
+
+# pprof files
+*.prof
 
 /vendor/*
 
