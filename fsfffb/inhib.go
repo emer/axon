@@ -14,6 +14,7 @@ type Inhib struct {
 	FFs      float32 `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
 	FBs      float32 `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
 	GeExts   float32 `desc:"all extra GeExt conductances added to neurons, normalized by pool size"`
+	Clamped  bool    `desc:"if true, this layer is hard-clamped and should use GeExts exclusively for PV"`
 	FSi      float32 `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
 	SSi      float32 `desc:"slow spiking SST+ integration of FBs feedback spikes"`
 	SSf      float32 `desc:"slow spiking facilitation factor"`

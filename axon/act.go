@@ -147,6 +147,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.GeExt = 0
 }
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not

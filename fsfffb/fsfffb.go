@@ -54,13 +54,22 @@ func (fb *Params) FSiFmFFs(fsi *float32, ffs, fbs float32) {
 	*fsi += (ffs + fb.FB*fbs) - fb.FSDt**fsi // immediate up, slow down
 }
 
-// FS returns the current effective FS value based on fsi and fsd
-func (fb *Params) FS(fsi, gext float32) float32 {
-	fsi -= fb.FS0
-	if fsi < 0 {
-		fsi = 0
+// FS0Thr applies FS0 threshold to given value
+func (fb *Params) FS0Thr(val float32) float32 {
+	val -= fb.FS0
+	if val < 0 {
+		val = 0
 	}
-	return fsi + gext
+	return val
+}
+
+// FS returns the current effective FS value based on fsi and fsd
+// if clamped, then only use gext, without applying FS0
+func (fb *Params) FS(fsi, gext float32, clamped bool) float32 {
+	if clamped {
+		return gext
+	}
+	return fb.FS0Thr(fsi) + gext
 }
 
 // SSFmFBs updates slow-spiking inhibition from FBs
@@ -77,7 +86,7 @@ func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 		return
 	}
 	fb.FSiFmFFs(&inh.FSi, inh.FFs, inh.FBs)
-	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts)
+	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts, inh.Clamped)
 
 	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
 	inh.SSGi = fb.Gi * fb.SS * inh.SSi

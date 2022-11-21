@@ -682,6 +682,9 @@ func (pj *Prjn) InitGBuffs() {
 	for ri := range pj.GVals {
 		pj.GVals[ri].Init()
 	}
+	for pi := range pj.PIBuf {
+		pj.PIBuf[pi] = 0
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -1012,7 +1015,7 @@ func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
 func (pj *Prjn) DWtSubMean(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	sm := pj.Learn.Trace.SubMean
-	if sm == 0 || rlay.AxonLay.IsTarget() {
+	if sm == 0 { // || rlay.AxonLay.IsTarget() { // sm default is now 0, so don't exclude
 		return
 	}
 	for ri := range rlay.Neurons {
