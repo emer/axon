@@ -200,7 +200,7 @@ func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), fu
 			lyr := layer.(AxonLayer)
 			lyrNeurons := lyr.AsAxon().Neurons
 			for nrnIdx := range lyrNeurons {
-				nrn := &lyr.AsAxon().Neurons[nrnIdx]
+				nrn := &lyrNeurons[nrnIdx]
 				fun(lyr, nrnIdx, nrn)
 			}
 		}
