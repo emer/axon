@@ -10,6 +10,7 @@ import (
 	"github.com/emer/axon/chans"
 	"github.com/emer/axon/kinase"
 	"github.com/emer/etable/minmax"
+	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -237,16 +238,41 @@ func (ta *TrgAvgActParams) Defaults() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  RLrateParams
 
+// SigDerivVars determines the variable used in computing
+// the derivative of the sigmoid function.
+type SigDerivVars int
+
+//go:generate stringer -type=SigDerivVars
+
+var KiT_SigDerivVars = kit.Enums.AddEnum(SigDerivVarsN, kit.NotBitFlag, nil)
+
+func (ev SigDerivVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *SigDerivVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+const (
+	// SigDerivM uses the minus phase CaSpkPM value
+	SigDerivM SigDerivVars = iota
+
+	// SigDerivP uses the plus phase CaSpkP value
+	SigDerivP
+
+	// SigDerivD uses the plus phase CaSpkD value
+	SigDerivD
+
+	SigDerivVarsN
+)
+
 // RLrateParams are recv neuron learning rate modulation parameters.
 // Has two factors: the derivative of the sigmoid based on CaSpk
 // activity levels, and based on the phase-wise differences in activity (Diff).
 type RLrateParams struct {
-	On         bool    `def:"true" desc:"use learning rate modulation"`
-	SigmoidMin float32 `def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
-	Diff       bool    `desc:"modulate learning rate as a function of plus - minus differences"`
-	SpkThr     float32 `def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	DiffThr    float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
-	Min        float32 `def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
+	On         bool         `def:"true" desc:"use learning rate modulation"`
+	SigVar     SigDerivVars `desc:"variable used in computing the derivative of the sigmoid function"`
+	SigmoidMin float32      `def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
+	Diff       bool         `desc:"modulate learning rate as a function of plus - minus differences"`
+	SpkThr     float32      `def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	DiffThr    float32      `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
+	Min        float32      `def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
 }
 
 func (rl *RLrateParams) Update() {
@@ -254,6 +280,7 @@ func (rl *RLrateParams) Update() {
 
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
+	rl.SigVar = SigDerivD
 	rl.SigmoidMin = 0.05
 	rl.Diff = true
 	rl.SpkThr = 0.1
