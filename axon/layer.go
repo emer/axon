@@ -1354,13 +1354,22 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ctime *Time) {
 	ly.ActAvg.CaSpkP = ly.AvgMaxVarByPool("CaSpkP", 0)
+	ly.ActAvg.CaSpkD = ly.AvgMaxVarByPool("CaSpkD", 0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkPM, ly.ActAvg.CaSpkPM.Max) // minus phase!
+		var mlr float32
+		switch ly.Learn.RLrate.SigVar {
+		case SigDerivM:
+			mlr = ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkPM, ly.ActAvg.CaSpkPM.Max)
+		case SigDerivP:
+			mlr = ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkPM, ly.ActAvg.CaSpkPM.Max)
+		case SigDerivD:
+			mlr = ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
+		}
 		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLrate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)

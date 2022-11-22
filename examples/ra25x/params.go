@@ -57,6 +57,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.TrgAvgAct.SubMean": "0",
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.SigVar":     "SigDerivD",
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
 					"Layer.Learn.RLrate.Diff":       "true",
 					"Layer.Learn.RLrate.DiffThr":    "0.02", // 0.02 def - todo
@@ -80,6 +81,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
 					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLrate.SigVar":     "SigDerivD",
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",

@@ -20,20 +20,20 @@ func _() {
 	_ = x[NeuronFlagsNum-4]
 }
 
-const _NeurFlags_name = "NeurOffNeurHasExtNeurHasTargNeurHasCmprNeurFlagsN"
+const _NeuronFlags_name = "NeuronOffNeuronHasExtNeuronHasTargNeuronHasCmprNeuronFlagsNum"
 
-var _NeurFlags_index = [...]uint8{0, 7, 17, 28, 39, 49}
+var _NeuronFlags_index = [...]uint8{0, 9, 21, 34, 47, 61}
 
 func (i NeuronFlags) String() string {
-	if i < 0 || i >= NeuronFlags(len(_NeurFlags_index)-1) {
+	if i < 0 || i >= NeuronFlags(len(_NeuronFlags_index)-1) {
 		return "NeuronFlags(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _NeurFlags_name[_NeurFlags_index[i]:_NeurFlags_index[i+1]]
+	return _NeuronFlags_name[_NeuronFlags_index[i]:_NeuronFlags_index[i+1]]
 }
 
 func (i *NeuronFlags) FromString(s string) error {
-	for j := 0; j < len(_NeurFlags_index)-1; j++ {
-		if s == _NeurFlags_name[_NeurFlags_index[j]:_NeurFlags_index[j+1]] {
+	for j := 0; j < len(_NeuronFlags_index)-1; j++ {
+		if s == _NeuronFlags_name[_NeuronFlags_index[j]:_NeuronFlags_index[j+1]] {
 			*i = NeuronFlags(j)
 			return nil
 		}
