@@ -29,17 +29,27 @@ func TestDefaults(t *testing.T) {
 	net.BidirConnectLayers(hidden, output, full)
 
 	net.Defaults()
-	net.Build()
+	assert.Nil(t, net.Build())
 	net.InitWts()
 	fmt.Println(net)
 
 	assert.Equal(t, 100, net.SlowInterval)
 	assert.Equal(t, 0, net.SlowCtr)
+	assert.Equal(t, 12, len(net.Neurons))
+
+	// test layer access
+	assert.Equal(t, net.Layers[0], net.LayerByName("Input"))
+	assert.Equal(t, net.Layers[1], net.LayerByName("Hidden"))
+	assert.Equal(t, net.Layers[2], net.LayerByName("Output"))
+	assert.Nil(t, net.LayerByName("DoesNotExist"))
+	_, err := net.LayerByNameTry("DoesNotExist")
+	assert.Error(t, err)
 
 	for layerIdx, layer := range net.Layers {
 		assert.Equal(t, layerIdx, layer.Index())
 
 		lyr := layer.(AxonLayer).AsAxon()
+		assert.Equal(t, 4, len(lyr.Neurons))
 		for neuronIdx := range lyr.Neurons {
 			neuron := &lyr.Neurons[neuronIdx]
 			assert.Equal(t, int32(lyr.Index()), neuron.LayIdx)
