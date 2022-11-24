@@ -84,6 +84,102 @@ See the `examples/inhib` model (from the CCN textbook originally) for an explora
 
 ### Kinase-based Trace-enabled Error-backpropagation Learning
 
+A defining feature of Leabra, and Axon, is that learning is **error driven**, using a *temporal difference* to represent the error signal as a difference in two states of activity over time: *minus* (prediction) then *plus* (outcome).  This form of error-driven learning is biologically plausible, by virtue of the use of bidirectional connectivity to convey error signals throughout the network.  Any temporal difference arising anywhere in the network can propagate differences throughout the network -- mathematically approximating error backpropagation error gradients [(O'Reilly, 1996)](#references).  The `deep` package implements the extra anatomically-motivated mechanisms for *predictive* error-driven learning  [OReilly et al., 2021](https://ccnlab.org/papers/OReillyRussinZolfagharEtAl21.pdf), where the minus phase represents a prediction and the plus phase represents the actual outcome.  Biologically, we hypothesize that the two pathways of connectivity into the Pulvinar nucleus of the thalamus convey a top-down prediction and a bottom-up ground-truth outcome, providing an abundant source of error signals without requiring an explicit teacher.
+
+Mathematically, error-driven learning has two components: the **error signal** and the **credit assignment** factor.
+
+```
+dW = Err * Credit
+```
+
+In the simple delta rule equation, these two terms are:
+
+$$ dW = (y^+ - y^-) x $$
+
+where $y^+$ is the activity of the receiving neuron in the plus phase vs. its actual activity $y^-$ in the minus phase (this difference representing the *Err* signal), and $x$ is the sending neuron activity, which serves as the credit assignment.
+
+In the mathematics of backpropagation, the Err factor is actually computed as a function of the difference between *net input* terms which are the dot product of sending activations times the weights:
+
+$$ g = \sum_i w_i x_i $$
+
+as:
+
+$$ Err = (g^+ - g^-) $$
+
+while the credit assignment factor is the sending activation times the derivative of the receiving activation:
+
+$$ Credit = x_i y' $$
+
+As is explained in [trace derivation](#trace-variation) below, the actual form of the error term used in axon is:
+
+$$ Err = (g^+ + \gamma y^+) - (g^- + \gamma y^-) $$
+
+where $\gamma$ (about .3 in effect by default) weights the contribution of receiving activity to the error term, relative to the net input.  The inclusion of the receiving activation, in deivation from the standard error backpropagation equations, is necessary for learning to work in the context of inhibitory competition and sparse distributed representations.  Interestingly, the standard backpropagation equations do not include a contribution of the receiving activity and thus drive every unit to learn highly similar gradient.  
+
+In practice, about 2/3 or 3/4 of calcium from net input, and the remainder from VGCC / receiving activity works best, i.e., gamma = .25 or so.  In addition, the NMDA channels have a postsynaptic activation factor via their Mg blocking mechanism, so it isn't purely additive as in the above equation.  In practice, the direct NMDA conductance computed using standard equations works
+
+For the *Credit* side, the synapse-level integration of pre * post spiking works well, as used for the axon kinase synapse-level learning rule, integrated as a running-average integrated signal over trials:
+
+$$ Credit = < x y > $$
+
+
+
+These end up being mixed together in the CHL contrastive hebbian learning learning rule:
+
+```
+dW = (x+ y+) - (x- y-)
+```
+
+Which clearly does not have these two separable factors.
+
+The key point of this new learning rule is to unmix these factors, so that we can use a **trace** factor for credit assignment, which integrates activity over time, as in the **BellecScherrSubramoneyEtAl20** paper showing that backprop through time (BPTT) can be approximated using such a learning trace.  Also, the unmixed error signal factor gives us more control over the vanishing gradient issues that otherwise arise from using only activation-based terms.
+
+To begin, the original GeneRec (**OReilly96**) derivation of backprop -> CHL goes like this:
+
+$$ \frac{\partial E}{\partial w}=  \frac{\partial E}{\partial y} \frac{\partial y}{\partial g}  \frac{\partial g}{\partial w}$$
+
+where *E* is overall error, *w* is the weight, *y* is recv unit activity, *g* is recv conductance (net input), and *x* is sending activity.  
+
+$$ g = \sum x w $$
+
+$$ y = f(g) $$
+
+This chain rule turns into:
+
+$$ dW = \frac{\partial E}{\partial w} =  \left[ \left( \sum_i x_i^+ - \sum_i x_i^- \right )w \right] y' x = (g^+ - g^-) y' x$$
+
+Thus, the *Err* factor is $(g^+ - g^-)$ and $y' x$ is the *Credit* factor.  In words, the error signal is received by each unit in the form of their weighted net input from all other neurons -- the error is the temporal difference in this net input signal between the plus and minus phases.  And the credit assignment factor is the sending unit activity *x* times the derivative of activation function.
+
+The presence of this derivative is critical -- and has many tradeoffs embedded within it, as discussed later (e.g., the ReLU eliminates the derivative by using a mostly linear function, and thereby eliminates the *vanishing gradient* problem that otherwise occurs in sigmoidal activation functions).
+
+The original GeneRec derivation of CHL mixes these factors by approximating the derivative of the activation function using the discrete difference in receiving activation state, such that:
+
+$$ (g^+ - g^-) y' \approx y^+ - y^- $$
+
+In the GeneRec derivation, the approximate midpoint integration method, and symmetry preservation, cause the terms to get mixed together with the sending activations, producing the CHL algorithm.
+
+To derive the new trace-enabling rule, we avoid this mixing, and explore learning using the more separable Err * Credit form.  In practice, the key issue is *on what variable is the temporal difference computed*: just using raw net input turns out to be too diffuse -- the units end up computing too similar of error gradients, and the credit assignment is not quite sufficient to separate them out.
+
+In the axon framework in particular, the weights are constrained to be positive, and especially at the start of learning, the net input terms are all fairly close in values across units.  The lateral inhibition provides the critical differentiation so that only a subset of neurons are active, and thus having some contribution of the actual recv activity is critical for a learning rule that ends up having different neurons specializing on different aspects of the problem.  The relative lack of this kind of differential receiver-based credit assignment in backprop nets is a critical difference from the CHL learning rule -- in the GeneRec derivation, it arises from making the learning rule symmetric, so that the credit assignment factor includes both sides of the synapse.
+
+In short, backprop is at one end of a continuum where the only credit assignment factor is presynaptic activity, and existing weights provide a "filter" through which the Err term is processed.  At the other end is the symmetric CHL equation where pre * post (*xy*) is the credit assignment factor in effect, and this new "trace" equation is somewhere in between..
+
+The biology is a useful guide here: the relevant calcium signals driving learning represent a combination of a netin-like term via the NMDA channels which are opened by sending activity, and, via VGCC's, some of the receiving unit activation.  These calcium signals activate the CaMKII and DAPK1 kinases, via which the temporal-difference error signal is computed:
+
+$$ Err = (g^+ + \gamma y^+) - (g^- + \gamma y^-) $$
+
+In practice, about 2/3 or 3/4 of calcium from net input, and the remainder from VGCC / receiving activity works best, i.e., gamma = .25 or so.  In addition, the NMDA channels have a postsynaptic activation factor via their Mg blocking mechanism, so it isn't purely additive as in the above equation.  In practice, the direct NMDA conductance computed using standard equations works
+
+For the *Credit* side, the synapse-level integration of pre * post spiking works well, as used for the axon kinase synapse-level learning rule, integrated as a running-average integrated signal over trials:
+
+$$ Credit = < x y > $$
+
+In practice, this works well, and provides a better fit overall to the biology in terms of the nature of the Ca signals at play.
+
+
+
+
+
 TODO: new Kinase mechanism.
 
 * **Temporal-difference activation states drive approximate backpropagation learning:** Axon also uses the same learning equation as in Leabra, derived from a highly detailed model of spike timing dependent plasticity (STDP) by Urakubo, Honda, Froemke, et al (2008), that produces a combination of Hebbian associative and error-driven learning.  For historical reasons, we call this the *XCAL* equation (*eXtended Contrastive Attractor Learning*), and it is functionally very similar to the *BCM* learning rule developed by Bienenstock, Cooper, and Munro (1982).  The essential learning dynamic involves a Hebbian-like co-product of sending neuron activation times receiving neuron activation, which biologically reflects the amount of calcium entering through NMDA channels, and this co-product is then compared against a floating threshold value.
@@ -448,6 +544,10 @@ This `sc` factor multiplies the `GScale` factor as computed above.
 * Kaczmarek, L. K. (2013). Slack, Slick, and Sodium-Activated Potassium Channels. ISRN Neuroscience, 2013. https://doi.org/10.1155/2013/354262
 
 * Migliore, M., Hoffman, D. A., Magee, J. C., & Johnston, D. (1999). Role of an A-Type K+ Conductance in the Back-Propagation of Action Potentials in the Dendrites of Hippocampal Pyramidal Neurons. Journal of Computational Neuroscience, 7(1), 5–15. https://doi.org/10.1023/A:1008906225285
+
+* O’Reilly, R. C. (1996). Biologically plausible error-driven learning using local activation differences: The generalized recirculation algorithm. Neural Computation, 8(5), 895–938. https://doi.org/10.1162/neco.1996.8.5.895
+
+* O’Reilly, R. C., Russin, J. L., Zolfaghar, M., & Rohrlich, J. (2020). Deep Predictive Learning in Neocortex and Pulvinar. ArXiv:2006.14800 [q-Bio]. http://arxiv.org/abs/2006.14800
 
 * Poirazi, P., Brannon, T., & Mel, B. W. (2003). Arithmetic of Subthreshold Synaptic Summation in a Model CA1 Pyramidal Cell. Neuron, 37(6), 977–987. https://doi.org/10.1016/S0896-6273(03)00148-X
 
