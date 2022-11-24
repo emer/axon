@@ -546,27 +546,38 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 // in the network, and total memory footprint.
 func (nt *Network) SizeReport() string {
 	var b strings.Builder
-	neur := 0
-	neurMem := 0
-	syn := 0
-	synMem := 0
+	globaNumNeurons := 0
+	globalMemNeurons := 0
+	globalNumSynapses := 0
+	globalMemSynapses := 0
+
+	memNeuron := int(unsafe.Sizeof(Neuron{}))
+	memSynapse := int(unsafe.Sizeof(Synapse{}))
+
 	for _, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
-		nn := len(ly.Neurons)
-		nmem := nn * int(unsafe.Sizeof(Neuron{}))
-		neur += nn
-		neurMem += nmem
-		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, nn, (datasize.ByteSize)(nmem).HumanReadable())
-		for _, pji := range ly.SndPrjns {
-			pj := pji.(AxonPrjn).AsAxon()
-			ns := len(pj.Syns)
-			syn += ns
-			pmem := 2*ns*int(unsafe.Sizeof(Synapse{})) + len(pj.GBuf)*4
-			synMem += pmem
-			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(), ns, (datasize.ByteSize)(pmem).HumanReadable())
+		layer := lyi.(AxonLayer).AsAxon()
+		layerNumNeurons := len(layer.Neurons)
+		// Sizeof returns size of struct in bytes
+		layerMemNeurons := layerNumNeurons * memNeuron
+		globaNumNeurons += layerNumNeurons
+		globalMemNeurons += layerMemNeurons
+		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", layer.Nm, layerNumNeurons,
+			(datasize.ByteSize)(layerMemNeurons).HumanReadable())
+		for _, pji := range layer.SndPrjns {
+			projection := pji.(AxonPrjn).AsAxon()
+			projNumSynapses := len(projection.Syns)
+			// We only calculate the size of the important parts of the projection struct (synapse and G ring buffer)
+			// GBuf is a slice -> Sizeof(slice) returns 3*8B (ptr, len, cap), which is not what we care about
+			projMemSynapses := 2*projNumSynapses*memSynapse + len(projection.GBuf)*int(unsafe.Sizeof(projection.GBuf[0]))
+			globalNumSynapses += projNumSynapses
+			globalMemSynapses += projMemSynapses
+			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", projection.Recv.Name(),
+				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())
 		}
 	}
-	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynMem: %v\n", nt.Nm, neur, (datasize.ByteSize)(neurMem).HumanReadable(), syn, (datasize.ByteSize)(synMem).HumanReadable())
+	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynMem: %v\n",
+		nt.Nm, globaNumNeurons, (datasize.ByteSize)(globalMemNeurons).HumanReadable(), globalNumSynapses,
+		(datasize.ByteSize)(globalMemSynapses).HumanReadable())
 	return b.String()
 }
 
