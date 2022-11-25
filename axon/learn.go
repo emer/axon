@@ -215,7 +215,7 @@ type TrgAvgActParams struct {
 	GeBase       float32    `viewif:"On" desc:"multiplier on normalized TrgAvg value (within TrgRange) to apply to GeBase as a baseline activity level"`
 	ErrLrate     float32    `viewif:"On" def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
 	SynScaleRate float32    `viewif:"On" def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
-	SubMean      float32    `viewif:"On" def:"1" desc:"amount of mean trg change to subtract -- 1 = full zero sum"`
+	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  0 better on smaller models?"`
 	TrgRange     minmax.F32 `viewif:"On" def:"{0.5 2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      bool       `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Pool         bool       `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
@@ -243,7 +243,7 @@ func (ta *TrgAvgActParams) GeBaseFmTrg(trg float32) float32 {
 //  RLrateParams
 
 // RLrateParams are recv neuron learning rate modulation parameters.
-// Has two factors: the derivative of the sigmoid based on CaSpk
+// Has two factors: the derivative of the sigmoid based on CaSpkD
 // activity levels, and based on the phase-wise differences in activity (Diff).
 type RLrateParams struct {
 	On         bool    `def:"true" desc:"use learning rate modulation"`
