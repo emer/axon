@@ -5,6 +5,14 @@
 *.so
 *.dylib
 
+# model binaries
+examples/bench/bench
+examples/boa/boa
+examples/ra25/ra25
+
+# benchmarking output
+examples/bench/bench_*.csv
+
 # Test binary, build with `go test -c`
 *.test
 

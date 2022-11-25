@@ -152,12 +152,12 @@ func init() {
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	typ := reflect.TypeOf((*Neuron)(nil)).Elem()
 	nf := typ.NumField()
-	starti := NeuronVarStart
-	for i := starti; i < nf; i++ {
+	startIdx := NeuronVarStart
+	for i := startIdx; i < nf; i++ {
 		fs := typ.FieldByIndex([]int{i})
 		v := fs.Name
 		NeuronVars = append(NeuronVars, v)
-		NeuronVarsMap[v] = i - starti
+		NeuronVarsMap[v] = i - startIdx
 		pstr := NeuronVarProps[v]
 		if fld, has := typ.FieldByName(v); has {
 			if desc, ok := fld.Tag.Lookup("desc"); ok {
