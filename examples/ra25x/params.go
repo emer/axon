@@ -55,9 +55,9 @@ var ParamSets = params.Sets{
 					"Layer.Learn.LrnNMDA.Voff":      "0",    // 0 for unified Act params, else 5
 					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 def
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
-					"Layer.Learn.TrgAvgAct.SubMean": "0",
+					"Layer.Learn.TrgAvgAct.SubMean": "0",    // 0 > 1?
+					"Layer.Learn.TrgAvgAct.GeBase":  "0.1",  // 0.1 > 0?
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigVar":     "SigDerivD",
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
 					"Layer.Learn.RLrate.Diff":       "true",
 					"Layer.Learn.RLrate.DiffThr":    "0.02", // 0.02 def - todo
@@ -81,13 +81,12 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
 					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigVar":     "SigDerivD",
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
+					"Prjn.Learn.Lrate.Base":       "0.08", // 0.1 is default
+					"Prjn.SWt.Adapt.Lrate":        "0.1",  // .1 >= .2,
 					"Prjn.SWt.Adapt.SubMean":      "1",
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.NeuronCa":   "false", // significantly worse

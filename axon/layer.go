@@ -739,6 +739,7 @@ func (ly *Layer) InitActs() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		ly.Act.InitActs(nrn)
+		nrn.GeBase += ly.Learn.TrgAvgAct.GeBaseFmTrg(nrn.TrgAvg)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1361,15 +1362,7 @@ func (ly *Layer) PlusPhase(ctime *Time) {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		var mlr float32
-		switch ly.Learn.RLrate.SigVar {
-		case SigDerivM:
-			mlr = ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkPM, ly.ActAvg.CaSpkPM.Max)
-		case SigDerivP:
-			mlr = ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkPM, ly.ActAvg.CaSpkPM.Max)
-		case SigDerivD:
-			mlr = ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
-		}
+		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
 		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLrate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)

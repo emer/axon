@@ -10,7 +10,6 @@ import (
 	"github.com/emer/axon/chans"
 	"github.com/emer/axon/kinase"
 	"github.com/emer/etable/minmax"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -209,14 +208,15 @@ func (np *CaSpkParams) CaFmSpike(nrn *Neuron) {
 //  TrgAvgActParams
 
 // TrgAvgActParams govern the target and actual long-term average activity in neurons.
-// Target value is adapted by unit-wise error and difference in actual vs. target
-// drives synaptic scaling.
+// Target value is adapted by unit-wise error and difference in actual vs. target.
+// drives synaptic scaling and baseline excitatory drive.
 type TrgAvgActParams struct {
 	On           bool       `desc:"whether to use target average activity mechanism to scale synaptic weights"`
+	GeBase       float32    `viewif:"On" desc:"multiplier on normalized TrgAvg value (within TrgRange) to apply to GeBase as a baseline activity level"`
 	ErrLrate     float32    `viewif:"On" def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
 	SynScaleRate float32    `viewif:"On" def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
-	SubMean      float32    `viewif:"On" desc:"amount of mean trg change to subtract -- 1 = full zero sum"`
-	TrgRange     minmax.F32 `viewif:"On" desc:"[default .5 to 2] range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
+	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  0 better on smaller models?"`
+	TrgRange     minmax.F32 `viewif:"On" def:"{0.5 2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      bool       `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Pool         bool       `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
 }
@@ -235,44 +235,23 @@ func (ta *TrgAvgActParams) Defaults() {
 	ta.Update()
 }
 
+func (ta *TrgAvgActParams) GeBaseFmTrg(trg float32) float32 {
+	return ta.GeBase * ta.TrgRange.NormVal(trg)
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  RLrateParams
 
-// SigDerivVars determines the variable used in computing
-// the derivative of the sigmoid function.
-type SigDerivVars int
-
-//go:generate stringer -type=SigDerivVars
-
-var KiT_SigDerivVars = kit.Enums.AddEnum(SigDerivVarsN, kit.NotBitFlag, nil)
-
-func (ev SigDerivVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *SigDerivVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-const (
-	// SigDerivM uses the minus phase CaSpkPM value
-	SigDerivM SigDerivVars = iota
-
-	// SigDerivP uses the plus phase CaSpkP value
-	SigDerivP
-
-	// SigDerivD uses the plus phase CaSpkD value
-	SigDerivD
-
-	SigDerivVarsN
-)
-
 // RLrateParams are recv neuron learning rate modulation parameters.
-// Has two factors: the derivative of the sigmoid based on CaSpk
+// Has two factors: the derivative of the sigmoid based on CaSpkD
 // activity levels, and based on the phase-wise differences in activity (Diff).
 type RLrateParams struct {
-	On         bool         `def:"true" desc:"use learning rate modulation"`
-	SigVar     SigDerivVars `desc:"variable used in computing the derivative of the sigmoid function"`
-	SigmoidMin float32      `def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
-	Diff       bool         `desc:"modulate learning rate as a function of plus - minus differences"`
-	SpkThr     float32      `def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	DiffThr    float32      `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
-	Min        float32      `def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
+	On         bool    `def:"true" desc:"use learning rate modulation"`
+	SigmoidMin float32 `def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
+	Diff       bool    `desc:"modulate learning rate as a function of plus - minus differences"`
+	SpkThr     float32 `def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	DiffThr    float32 `def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
+	Min        float32 `def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
 }
 
 func (rl *RLrateParams) Update() {
@@ -280,7 +259,6 @@ func (rl *RLrateParams) Update() {
 
 func (rl *RLrateParams) Defaults() {
 	rl.On = true
-	rl.SigVar = SigDerivD
 	rl.SigmoidMin = 0.05
 	rl.Diff = true
 	rl.SpkThr = 0.1
