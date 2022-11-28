@@ -59,8 +59,10 @@ func (ly *Layer) Defaults() {
 		ly.Act.Clamp.Ge = 1.5
 		ly.Inhib.Layer.Gi = 0.9
 		ly.Inhib.Pool.Gi = 0.9
+		ly.Learn.TrgAvgAct.GeBase = 0
 	case emer.Target:
 		ly.Act.Clamp.Ge = 0.8
+		ly.Learn.TrgAvgAct.GeBase = 0
 		// ly.Learn.RLrate.SigmoidMin = 1
 	}
 }
@@ -739,7 +741,6 @@ func (ly *Layer) InitActs() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		ly.Act.InitActs(nrn)
-		nrn.GeBase += ly.Learn.TrgAvgAct.GeBaseFmTrg(nrn.TrgAvg)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1197,6 +1198,11 @@ func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
 func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	pl := &ly.Pools[nrn.SubPool]
 	nrn.Gi = ly.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+	nrn.SSGi = pl.Inhib.SSGi
+	nrn.SSGiDend = 0
+	if pl.Inhib.SSGi > ly.Act.Dend.SSGi0 {
+		nrn.SSGiDend = ly.Act.Dend.SSGi * (pl.Inhib.SSGi - ly.Act.Dend.SSGi0)
+	}
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
@@ -1228,10 +1234,14 @@ func (ly *Layer) GFmSpikeRaw(ni int, nrn *Neuron, ctime *Time) {
 // GFmRawSyn computes overall Ge and GiSyn conductances for neuron
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 func (ly *Layer) GFmRawSyn(ni int, nrn *Neuron, ctime *Time) {
+	lrnTrg := ly.IsLearnTrgAvg()
 	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc) // sets nrn.GeExt too
+	if lrnTrg {
+		nrn.GeTrgAvg = ly.Learn.TrgAvgAct.GeBaseFmTrg(nrn.TrgAvg)
+	}
+	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc+nrn.GeTrgAvg) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
