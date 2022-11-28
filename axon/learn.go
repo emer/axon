@@ -212,7 +212,7 @@ func (np *CaSpkParams) CaFmSpike(nrn *Neuron) {
 // drives synaptic scaling and baseline excitatory drive.
 type TrgAvgActParams struct {
 	On           bool       `desc:"whether to use target average activity mechanism to scale synaptic weights"`
-	GeBase       float32    `viewif:"On" desc:"multiplier on normalized TrgAvg value (within TrgRange) to apply to GeBase as a baseline activity level"`
+	GeBase       float32    `viewif:"On" def:"0,0.05" desc:"multiplier on normalized TrgAvg value (within TrgRange) to apply to GeBase as a baseline activity level -- typically 0 for input or output layers"`
 	ErrLrate     float32    `viewif:"On" def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
 	SynScaleRate float32    `viewif:"On" def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
 	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  0 better on smaller models?"`
@@ -226,6 +226,7 @@ func (ta *TrgAvgActParams) Update() {
 
 func (ta *TrgAvgActParams) Defaults() {
 	ta.On = true
+	ta.GeBase = 0.05
 	ta.ErrLrate = 0.02
 	ta.SynScaleRate = 0.01
 	ta.SubMean = 1

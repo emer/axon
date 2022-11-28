@@ -147,7 +147,10 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.SSGi = 0
+	nrn.SSGiDend = 0
 	nrn.GeExt = 0
+	nrn.GeTrgAvg = 0
 }
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
@@ -205,6 +208,10 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.SSGi = 0
+	nrn.SSGiDend = 0
+	nrn.GeExt = 0
+	nrn.GeTrgAvg = 0
 
 	ac.InitLongActs(nrn)
 }
@@ -383,7 +390,8 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 		if !updtVm {
 			glEff += ac.Dend.GbarR
 		}
-		nvm, _ := ac.VmInteg(nrn.VmDend, ac.Dt.VmDendDt, ge, glEff, gi, gk)
+		giEff := gi + ac.Gbar.I*nrn.SSGiDend
+		nvm, _ := ac.VmInteg(nrn.VmDend, ac.Dt.VmDendDt, ge, glEff, giEff, gk)
 		if updtVm {
 			nvm = ac.VmFmInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
 		}
@@ -509,6 +517,8 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 type DendParams struct {
 	GbarExp float32 `def:"0.2,0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
 	GbarR   float32 `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	SSGi    float32 `desc:"SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend)"`
+	SSGi0   float32 `desc:"SST+ somatostatin positive slow spiking inhibition threshold for affecting VmDend in addition to general overall effects"`
 }
 
 func (dp *DendParams) Defaults() {

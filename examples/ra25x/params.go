@@ -28,6 +28,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.FB":          "0.5", // 0.5 > 0.2 > 0.1 > 1.0
 					"Layer.Inhib.Layer.SSfTau":      "20",  // 20 > 30  > 15
 					"Layer.Inhib.Layer.SSiTau":      "50",  // 50 > 40 -- try 40, 60 @ gi= 1.1?
+					"Layer.Act.Dend.SSGi":           "4",
+					"Layer.Act.Dend.SSGi0":          "0.05",
 					"Layer.Act.Decay.Act":           "0.2",
 					"Layer.Act.Decay.Glong":         "0.6",
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
@@ -55,8 +57,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.LrnNMDA.Voff":      "0",    // 0 for unified Act params, else 5
 					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 def
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
-					"Layer.Learn.TrgAvgAct.SubMean": "0",    // 0 > 1?
-					"Layer.Learn.TrgAvgAct.GeBase":  "0.1",  // 0.1 > 0?
+					"Layer.Learn.TrgAvgAct.SubMean": "1",    // 1 > 0 necc.
+					"Layer.Learn.TrgAvgAct.GeBase":  "0.05", // 0.05 > 0.02 > 0.1
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
 					"Layer.Learn.RLrate.Diff":       "true",
@@ -77,21 +79,22 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FB":          "0.5",  // 0 > 1 here in output
 					"Layer.Inhib.ActAvg.Init":       "0.24",
-					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
-					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
+					"Layer.Act.Spike.Tr":            "1",   // 1 is new minimum.. > 3
+					"Layer.Act.Clamp.Ge":            "0.8", // 0.8 > 0.7 > 1.0 > 0.6
+					"Layer.Act.VGCC.Ca":             "1",   // otherwise dominates display
+					"Layer.Act.Dend.SSGi":           "0",
 					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.08", // 0.1 is default
-					"Prjn.SWt.Adapt.Lrate":        "0.1",  // .1 >= .2,
-					"Prjn.SWt.Adapt.SubMean":      "1",
+					"Prjn.Learn.Lrate.Base":       "0.1", // .1 def
+					"Prjn.SWt.Adapt.Lrate":        "0.1", // .1 >= .2,
+					"Prjn.SWt.Adapt.SubMean":      "0",
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.NeuronCa":   "false", // significantly worse
 					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.Trace.SubMean":    "0",
+					"Prjn.Learn.Trace.SubMean":    "1",
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",   // 12 def -- produces reasonable ~1ish max vals
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 def
 					"Prjn.Learn.KinaseCa.Dt.MTau": "5",    // 5 ==? 2 > 10
