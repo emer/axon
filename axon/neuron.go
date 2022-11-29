@@ -103,15 +103,14 @@ type Neuron struct {
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
 
+	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
 	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
 	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
-	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
-	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
-	GeTrgAvg float32 `desc:"extra excitatory conductance added to Ge -- from Learn.TrgAvgAct.GeBase * TrgAvg"`
-	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
+	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
 	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
 	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
+	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 }
 
 var NeuronVars = []string{}

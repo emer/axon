@@ -425,7 +425,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Abs": "2", // 2 > 1
 					"Prjn.PrjnScale.Rel": ".5",
 					// "Prjn.Learn.Learn":   "false",
 					// "Prjn.SWt.Init.Mean": "0.8",

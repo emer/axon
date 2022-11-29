@@ -236,9 +236,11 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectToPulv(ofc, ofcct, usp, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
-	// net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
+	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	// net.ConnectLayers(drives, ofcct, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
+	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
+	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
@@ -278,11 +280,6 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.BidirConnectLayers(acc, alm, full)
 	// net.ConnectLayers(ofcpt, alm, full, emer.Forward)
 	// net.ConnectLayers(accpt, alm, full, emer.Forward)
-
-	// Std corticocortical cons -- stim -> hid
-	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
-	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
-	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
 
 	ach.SendACh.Add(vPmtxGo.Name(), vPmtxNo.Name(), blaa.Name(), blae.Name())
 
