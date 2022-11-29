@@ -7,16 +7,12 @@
 // models for actual applications (e.g., large models tend to have much more topographic
 // patterns of connectivity and larger layers with fewer connections), but they are
 // easy to run..
-package main
+package bench
 
 import (
-	"flag"
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
-	"os"
-	"runtime/pprof"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
@@ -27,15 +23,7 @@ import (
 	"github.com/emer/emergent/timer"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	"github.com/goki/gi/gi"
 )
-
-var Net *axon.Network
-var Pats *etable.Table
-var Filename string
-var EpcLog *etable.Table
-var Thread = false // much slower for small net
-var Silent = false // non-verbose mode -- just reports result
 
 // note: with 2 hidden layers, this simple test case converges to perfect performance:
 // ./bench -epochs 100 -pats 10 -units 100 -threads=1
@@ -75,7 +63,7 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(net *axon.Network, threads, units int) {
+func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
 	net.InitName(net, "BenchNet")
 
 	squn := int(math.Sqrt(float64(units)))
@@ -96,11 +84,16 @@ func ConfigNet(net *axon.Network, threads, units int) {
 
 	net.NThreads = threads // 1 overrides all
 
-	net.RecFunTimes = !Silent
+	net.RecFunTimes = verbose
 
 	net.Defaults()
-	net.ApplyParams(ParamSets[0].Sheets["Network"], false) // no msg
-	net.Build()                                            // builds with default threads
+	if _, err := net.ApplyParams(ParamSets[0].Sheets["Network"], false); err != nil {
+		panic(err)
+	}
+	// builds with default threads
+	if err := net.Build(); err != nil {
+		panic(err)
+	}
 
 	// override defaults: neurons, sendSpike, synCa, learn
 	net.Threads.Set(2, 2*threads, 1, threads, threads)
@@ -142,7 +135,7 @@ func ConfigEpcLog(dt *etable.Table) {
 	}, 0)
 }
 
-func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
+func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose bool) {
 	ltime := axon.NewTime()
 	net.InitWts()
 	np := pats.NumRows()
@@ -154,9 +147,6 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 	hid1Lay := net.LayerByName("Hidden1").(*axon.Layer)
 	hid2Lay := net.LayerByName("Hidden2").(*axon.Layer)
 	outLay := net.LayerByName("Output").(*axon.Layer)
-
-	_ = hid1Lay
-	_ = hid2Lay
 
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
@@ -207,7 +197,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 
 		t := tmr.Stop()
 		tmr.Start()
-		if !Silent {
+		if verbose {
 			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.CorSim.Avg, t)
 		}
 
@@ -221,68 +211,12 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int) {
 		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.ActAvg.ActMAvg))
 		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.ActAvg.ActMAvg))
 		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.ActAvg.ActMAvg))
-
-		EpcLog.SaveCSV(gi.FileName(Filename), ',', etable.Headers)
 	}
 	tmr.Stop()
-	if Silent {
-		fmt.Printf("%6.3g\n", tmr.TotalSecs())
-	} else {
+	if verbose {
 		fmt.Printf("Took %6.4g secs for %v epochs, avg per epc: %6.4g\n", tmr.TotalSecs(), epcs, tmr.TotalSecs()/float64(epcs))
 		net.TimerReport()
+	} else {
+		fmt.Printf("%6.3g\n", tmr.TotalSecs())
 	}
-}
-
-func main() {
-	var threads int
-	var epochs int
-	var pats int
-	var units int
-	var cpuprofile string
-
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
-		flag.PrintDefaults()
-	}
-
-	// process command args
-	flag.IntVar(&threads, "threads", 1, "number of threads (goroutines) to use")
-	flag.IntVar(&epochs, "epochs", 2, "number of epochs to run")
-	flag.IntVar(&pats, "pats", 10, "number of patterns per epoch")
-	flag.IntVar(&units, "units", 100, "number of units per layer -- uses NxN where N = sqrt(units)")
-	flag.BoolVar(&Silent, "silent", false, "only report the final time")
-	flag.StringVar(&cpuprofile, "cpuprofile", "", "write cpu profile to file")
-	flag.Parse()
-
-	if !Silent {
-		fmt.Printf("Running bench with: %v threads, %v epochs, %v pats, %v units\n", threads, epochs, pats, units)
-	}
-
-	if cpuprofile != "" {
-		f, err := os.Create(cpuprofile)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-		log.Println("cpuprofile: ", cpuprofile)
-	}
-
-	Net = &axon.Network{}
-	ConfigNet(Net, threads, units)
-	if !Silent {
-		log.Println(Net.SizeReport())
-	}
-
-	Pats = &etable.Table{}
-	ConfigPats(Pats, pats, units)
-
-	EpcLog = &etable.Table{}
-	ConfigEpcLog(EpcLog)
-
-	Filename = fmt.Sprintf("bench_%d_units.csv", units)
-
-	TrainNet(Net, Pats, EpcLog, epochs)
-
-	EpcLog.SaveCSV(gi.FileName(Filename), ',', etable.Headers)
 }
