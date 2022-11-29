@@ -416,6 +416,20 @@ func (nt *Network) LrateSched(sched float32) {
 	}
 }
 
+// SetSubMean sets the SubMean parameters in all the layers in the network
+// trgAvg is for Learn.TrgAvgAct.SubMean
+// prjn is for the prjns Learn.Trace.SubMean
+// in both cases, it is generally best to have both parameters set to 0
+// at the start of learning
+func (nt *Network) SetSubMean(trgAvg, prjn float32) {
+	for _, ly := range nt.Layers {
+		// if ly.IsOff() { // keep all sync'd
+		// 	continue
+		// }
+		ly.(AxonLayer).AsAxon().SetSubMean(trgAvg, prjn)
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  Lesion methods
 

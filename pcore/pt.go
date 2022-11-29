@@ -76,14 +76,10 @@ func (ly *PTLayer) GFmSpikeRaw(ni int, nrn *axon.Neuron, ctime *axon.Time) (thal
 }
 
 func (ly *PTLayer) GFmRawSyn(ni int, nrn *axon.Neuron, ctime *axon.Time, thalGeRaw, thalGeSyn float32) {
-	lrnTrg := ly.IsLearnTrgAvg()
 	ly.Act.NMDAFmRaw(nrn, ly.ThalNMDAGain*thalGeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw) // exclude thal?
 	ly.Act.GvgccFmVm(nrn)
-	if lrnTrg {
-		nrn.GeTrgAvg = ly.Learn.TrgAvgAct.GeBaseFmTrg(nrn.TrgAvg)
-	}
-	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc+nrn.GeTrgAvg+ly.ThalNMDAGain*thalGeSyn)
+	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc+ly.ThalNMDAGain*thalGeSyn)
 	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }

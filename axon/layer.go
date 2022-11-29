@@ -59,10 +59,10 @@ func (ly *Layer) Defaults() {
 		ly.Act.Clamp.Ge = 1.5
 		ly.Inhib.Layer.Gi = 0.9
 		ly.Inhib.Pool.Gi = 0.9
-		ly.Learn.TrgAvgAct.GeBase = 0
+		ly.Learn.TrgAvgAct.SubMean = 0
 	case emer.Target:
 		ly.Act.Clamp.Ge = 0.8
-		ly.Learn.TrgAvgAct.GeBase = 0
+		ly.Learn.TrgAvgAct.SubMean = 0
 		// ly.Learn.RLrate.SigmoidMin = 1
 	}
 }
@@ -1200,8 +1200,8 @@ func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	nrn.Gi = ly.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	nrn.SSGi = pl.Inhib.SSGi
 	nrn.SSGiDend = 0
-	if pl.Inhib.SSGi > ly.Act.Dend.SSGi0 {
-		nrn.SSGiDend = ly.Act.Dend.SSGi * (pl.Inhib.SSGi - ly.Act.Dend.SSGi0)
+	if !ly.IsInputOrTarget() {
+		nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
 	}
 	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
@@ -1234,14 +1234,10 @@ func (ly *Layer) GFmSpikeRaw(ni int, nrn *Neuron, ctime *Time) {
 // GFmRawSyn computes overall Ge and GiSyn conductances for neuron
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 func (ly *Layer) GFmRawSyn(ni int, nrn *Neuron, ctime *Time) {
-	lrnTrg := ly.IsLearnTrgAvg()
 	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
-	if lrnTrg {
-		nrn.GeTrgAvg = ly.Learn.TrgAvgAct.GeBaseFmTrg(nrn.TrgAvg)
-	}
-	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc+nrn.GeTrgAvg) // sets nrn.GeExt too
+	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
@@ -1490,6 +1486,12 @@ func (ly *Layer) IsInput() bool {
 	return ly.Typ == emer.Input
 }
 
+// IsInputOrTarget returns true if this layer is either an Input
+// or a Target layer.
+func (ly *Layer) IsInputOrTarget() bool {
+	return (ly.AxonLay.IsTarget() || ly.AxonLay.IsInput())
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
 
@@ -1709,6 +1711,21 @@ func (ly *Layer) LrateSched(sched float32) {
 		// 	continue
 		// }
 		p.(AxonPrjn).AsAxon().LrateSched(sched)
+	}
+}
+
+// SetSubMean sets the SubMean parameters in all the layers in the network
+// trgAvg is for Learn.TrgAvgAct.SubMean
+// prjn is for the prjns Learn.Trace.SubMean
+// in both cases, it is generally best to have both parameters set to 0
+// at the start of learning
+func (ly *Layer) SetSubMean(trgAvg, prjn float32) {
+	ly.Learn.TrgAvgAct.SubMean = trgAvg
+	for _, p := range ly.RcvPrjns {
+		// if p.IsOff() { // keep all sync'd
+		// 	continue
+		// }
+		p.(AxonPrjn).AsAxon().Learn.Trace.SubMean = prjn
 	}
 }
 
