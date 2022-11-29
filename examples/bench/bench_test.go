@@ -13,12 +13,12 @@ import (
 )
 
 const (
-	// Number of epochs to average the CorSim over to evaluate network performance.
-	finalEpochs = 10
+	convergenceTestEpochs = 10
+	defaultNumEpochs      = 350
 )
 
 var numThreads = flag.Int("threads", 1, "number of threads (goroutines) to use")
-var numEpochs = flag.Int("epochs", 350, "number of epochs to run")
+var numEpochs = flag.Int("epochs", defaultNumEpochs, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
 var numUnits = flag.Int("units", 100, "number of units per layer -- uses NxN where N = sqrt(units)")
 var verbose = flag.Bool("verbose", true, "if false, only report the final time")
@@ -48,18 +48,19 @@ func BenchmarkAxon(b *testing.B) {
 		epcLog.SaveCSV(gi.FileName(filename), ',', etable.Headers)
 	}
 
-	if *numEpochs < 350 {
+	if *numEpochs < defaultNumEpochs {
+		b.Logf("skipping convergence test because numEpochs < %d", defaultNumEpochs)
 		return
 	}
 	corSimSum := 0.0
-	for epoch := *numEpochs - finalEpochs; epoch < *numEpochs; epoch++ {
+	for epoch := *numEpochs - convergenceTestEpochs; epoch < *numEpochs; epoch++ {
 		corSimSum += epcLog.CellFloat("CorSim", epoch)
 		if math.IsNaN(corSimSum) {
 			b.Errorf("CorSim for epoch %d is NaN", epoch)
 		}
 	}
-	corSimAvg := corSimSum / float64(finalEpochs)
+	corSimAvg := corSimSum / float64(convergenceTestEpochs)
 	if corSimAvg < 0.95 {
-		b.Errorf("average of CorSim for last %d epochs too low. Want %v, got %v", finalEpochs, 0.95, corSimAvg)
+		b.Errorf("average of CorSim for last %d epochs too low. Want %v, got %v", convergenceTestEpochs, 0.95, corSimAvg)
 	}
 }
