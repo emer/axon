@@ -37,6 +37,37 @@ func TestLayer(t *testing.T) {
 	assert.Equal(t, []int{2, 2}, tensor.Shape.Shp)
 }
 
+func TestLayer_SendSpike(t *testing.T) {
+	net := NewNetwork("LayerTest")
+	shape := []int{2, 2}
+	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
+	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
+	net.ConnectLayers(inputLayer, outputLayer, prjn.NewFull(), emer.Forward)
+	net.Defaults()
+
+	assert.NoError(t, net.Build())
+	net.InitWts()
+
+	net.NewState()
+	ltime := NewTime()
+
+	// spike the first neuron. Do this after NewState(), so that the spike is not decay'ed away
+	inputLayer.AsAxon().Neurons[0].Spike = 1.0
+	net.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ltime) },
+		"SendSpike", NoThread, Wait)
+
+	// the neuron we spiked is connected to 4 neurons in the output layer
+	// make sure they all received the spike
+	conductBuf := inputLayer.AsAxon().SndPrjns[0].(*Prjn).GBuf
+	count := 0
+	for _, g := range conductBuf {
+		if g > 0.0 {
+			count++
+		}
+	}
+	assert.Equal(t, 4, count)
+}
+
 func TestLayerToJson(t *testing.T) {
 	shape := []int{2, 2}
 
