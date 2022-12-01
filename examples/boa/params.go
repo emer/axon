@@ -431,6 +431,10 @@ var ParamSets = params.Sets{
 					// "Prjn.SWt.Init.Mean": "0.8",
 					// "Prjn.SWt.Init.Var":  "0.0",
 				}},
+			{Sel: ".DrivesToVp", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Learn": "false",
+				}},
 			{Sel: ".FmSTNp", Desc: "increase to prevent repeated gating",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.2", // 1.2 > 1.0 > 1.5 (too high)
