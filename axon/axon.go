@@ -146,7 +146,6 @@ type AxonLayer interface {
 	// * Ginteg
 	// * SpikeFmG
 	// * PostAct
-	// * SendSpike
 	CycleNeuron(ni int, nrn *Neuron, ctime *Time)
 
 	// GInteg integrates conductances G over time (Ge, NMDA, etc).
