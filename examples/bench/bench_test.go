@@ -85,10 +85,12 @@ func benchmarkNeuronFunMultiThread(numThread int, b *testing.B) {
 	}
 }
 
+// Get a profile with `go test -bench=".*Thread.*" . -test.cpuprofile=neuronFun_T1.prof`
 func BenchmarkNeuronFun1Threads(b *testing.B) {
 	benchmarkNeuronFunMultiThread(1, b)
 }
 
+// Currently, this scales well to 4 threads, but not to 8
 func BenchmarkNeuronFun4Threads(b *testing.B) {
 	benchmarkNeuronFunMultiThread(4, b)
 }

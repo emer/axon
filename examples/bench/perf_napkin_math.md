@@ -28,3 +28,4 @@ Total time:  21s out of 70s total
 - We're far away from saturating the memory bandwidth. Why is it still sort-of slow?
   - Could be that we're doing a lot of computation
   - Our memory access is sort-of random (most of the struct members are fairly spread out)
+
