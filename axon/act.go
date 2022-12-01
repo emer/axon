@@ -515,10 +515,11 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 type DendParams struct {
 	GbarExp float32 `def:"0.2,0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
 	GbarR   float32 `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
-	SSGi    float32 `def:"0,1,3" desc:"SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend)"`
+	SSGi    float32 `def:"0,2" desc:"SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend) -- this is important for countering a positive feedback loop from NMDA getting stronger over the course of learning -- also typically requires SubMean = 1 for TrgAvgAct and learning to fully counter this feedback loop."`
 }
 
 func (dp *DendParams) Defaults() {
+	dp.SSGi = 2
 	dp.GbarExp = 0.2
 	dp.GbarR = 3
 }

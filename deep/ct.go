@@ -41,14 +41,14 @@ func (cp *CTParams) Defaults() {
 // There are two primary modes of behavior: single-step copy and
 // multi-step temporal integration, each of which requires different
 // parmeterization:
-// * single-step copy requires NMDA, GABAB Gbar = .15, Tau = 100,
-//   (i.e. std defaults) and CT.Decay = 0, with one-to-one projection
-//   from Super, and no CT self connections. Gi must be increased to ~2.0
-//   to compensate for CtxtGe.  See examples/deep_move for a working example.
-// * Temporal integration requires NMDA, GABAB Gbar = .25 - .3, Tau = 200-300,
-//   CT.Decay = 50, with self connections of both CTCtxtPrjn and standard
-//   that support NMDA active maintenance. Increase Gi to 2.2 - 2.8 or so.
-//   See examples/deep_fsa and examples/deep_move for working examples.
+//   - single-step copy requires NMDA, GABAB Gbar = .15, Tau = 100,
+//     (i.e. std defaults) and CT.Decay = 0, with one-to-one projection
+//     from Super, and no CT self connections. Gi must be increased to ~2.0
+//     to compensate for CtxtGe.  See examples/deep_move for a working example.
+//   - Temporal integration requires NMDA, GABAB Gbar = .25 - .3, Tau = 200-300,
+//     CT.Decay = 50, with self connections of both CTCtxtPrjn and standard
+//     that support NMDA active maintenance. Increase Gi to 2.2 - 2.8 or so.
+//     See examples/deep_fsa and examples/deep_move for working examples.
 type CTLayer struct {
 	axon.Layer           // access as .Layer
 	CT         CTParams  `desc:"parameters for CT layer specific functions"`
@@ -62,6 +62,7 @@ func (ly *CTLayer) Defaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
+	ly.Act.Dend.SSGi = 0    // key: otherwise interferes with NMDA maint!
 	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
 	ly.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:

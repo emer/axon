@@ -13,23 +13,25 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.Layer.Gi":    "1.0", // 1.0 > 1.1 v1.6.1
-					"Layer.Inhib.Layer.FB":    "1",   // 1.0 > 0.5
-					"Layer.Act.Gbar.L":        "0.2", // std
-					"Layer.Act.Decay.Act":     "0.0", // 0 == 0.2
-					"Layer.Act.Decay.Glong":   "0.0",
-					"Layer.Act.Dt.LongAvgTau": "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":  "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":    "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dt.VmDendTau":  "5",   // old: 8 > 5 >> 2.81 -- big diff
-					"Layer.Act.AK.Gbar":       "0.1",
-					"Layer.Act.NMDA.MgC":      "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":     "5",
-					"Layer.Act.Sahp.Gbar":     "0.1",  //
-					"Layer.Act.Sahp.Off":      "0.8",  //
-					"Layer.Act.Sahp.Slope":    "0.02", //
-					"Layer.Act.Sahp.CaTau":    "10",   //
+					"Layer.Inhib.ActAvg.Init":       "0.15",
+					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1 v1.6.1
+					"Layer.Inhib.Layer.FB":          "1",   // 1.0 > 0.5
+					"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
+					"Layer.Act.Gbar.L":              "0.2", // std
+					"Layer.Act.Decay.Act":           "0.0", // 0 == 0.2
+					"Layer.Act.Decay.Glong":         "0.0",
+					"Layer.Act.Dt.LongAvgTau":       "20",  // 20 > higher for objrec, lvis
+					"Layer.Act.Dend.GbarExp":        "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":          "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Act.Dend.SSGi":           "2",   // 2 > 3
+					"Layer.Act.Dt.VmDendTau":        "5",   // old: 8 > 5 >> 2.81 -- big diff
+					"Layer.Act.AK.Gbar":             "0.1",
+					"Layer.Act.NMDA.MgC":            "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":           "5",
+					"Layer.Act.Sahp.Gbar":           "0.1",  //
+					"Layer.Act.Sahp.Off":            "0.8",  //
+					"Layer.Act.Sahp.Slope":          "0.02", //
+					"Layer.Act.Sahp.CaTau":          "10",   //
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -38,6 +40,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":    "0.9", // makes no diff
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Act.Clamp.Ge":      "1.5",
 				}},
@@ -45,6 +48,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 == 2.4 > lower
 					"Layer.Inhib.Layer.FB":          "1",
+					"Layer.Act.Dend.SSGi":           "0",   // 0 > higher -- kills nmda maint!
 					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1.2
 					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":           "0.0",
@@ -75,11 +79,12 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":         "0.0",  // clear long
 					"Layer.Act.Decay.AHP":           "0.0",  // clear ahp
 					"Layer.Act.GABAB.Gbar":          "0.2",  // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":           "0.1",  // .1 music
-					"Layer.Learn.RLrate.SigmoidMin": "0.05", // actually useful in output layer
+					"Layer.Act.NMDA.Gbar":           "0.15", // .15 > .1
+					"Layer.Learn.RLrate.SigmoidMin": "1.0",  // 1 > 0.05 with CaSpkD as var
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
+					"Prjn.Learn.Trace.SubMean":  "0",    // 0 > 1 -- even with CTCtxt = 0
 					"Prjn.Learn.Lrate.Base":     "0.03", // .03 > others -- same as CtCtxt
 					"Prjn.SWt.Adapt.Lrate":      "0.01", // 0.01 or 0.0001 music
 					"Prjn.SWt.Adapt.DreamVar":   "0.0",  // 0.01 is just tolerable
@@ -94,8 +99,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
-					"Prjn.Learn.Trace.Tau":  "2",    // 2 > 1
+					"Prjn.Learn.Lrate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
+					"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1
+					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
 			{Sel: ".CTFmSuper", Desc: "full > 1to1",
 				Params: params.Params{

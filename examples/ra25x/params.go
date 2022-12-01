@@ -21,14 +21,14 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":       "0.05", // 0.05 more sensible, same perf
-					"Layer.Inhib.Layer.Gi":          "1.1",  // 1.1 > 1.05 for 1.6.4
+					"Layer.Inhib.Layer.Gi":          "1.1",  // 1.1 > 1.05 even for SSGi=2
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FS0":         "0.1",
 					"Layer.Inhib.Layer.FSTau":       "6",
 					"Layer.Inhib.Layer.FB":          "0.5", // 0.5 > 0.2 > 0.1 > 1.0
 					"Layer.Inhib.Layer.SSfTau":      "20",  // 20 > 30  > 15
 					"Layer.Inhib.Layer.SSiTau":      "50",  // 50 > 40 -- try 40, 60 @ gi= 1.1?
-					"Layer.Act.Dend.SSGi":           "1.5", // 1.5 best
+					"Layer.Act.Dend.SSGi":           "2.0", // 2.0 > 1.5 more reliable
 					"Layer.Act.Decay.Act":           "0.2",
 					"Layer.Act.Decay.Glong":         "0.6",
 					"Layer.Act.NMDA.Gbar":           "0.15", // now .15 best
@@ -70,6 +70,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.Clamp.Ge":      "1.5",  // 1.5 matches old fffb for gex (v13)
 					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
 					"Layer.Act.VGCC.Ca":       "1",    // otherwise dominates display
+					"Layer.Act.Decay.Act":     "1",    // this is subtly beneficial
+					"Layer.Act.Decay.Glong":   "1",
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
@@ -91,7 +93,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.NeuronCa":   "false", // significantly worse
 					"Prjn.Learn.Trace.Tau":        "1",     // no longer: 5-10 >> 1 -- longer tau, lower lrate needed
-					"Prjn.Learn.Trace.SubMean":    "1",     // 1 > 0 from start; can use SetSubMean to set to 1 later
+					"Prjn.Learn.Trace.SubMean":    "1",     // 1 > 0 for long-term stability
 					"Prjn.Learn.KinaseCa.SpikeG":  "12",    // 12 def -- produces reasonable ~1ish max vals
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.01",  // 0.01 def
 					"Prjn.Learn.KinaseCa.Dt.MTau": "5",     // 5 ==? 2 > 10

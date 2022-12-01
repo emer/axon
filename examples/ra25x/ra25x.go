@@ -261,8 +261,8 @@ func (ss *Sim) ConfigLoops() {
 		if !stop {
 			ss.Stats.SetInt("LastZero", -1) // only counts if meet stop crit
 		}
-		// return stop
-		return false
+		return stop
+		// return false // uncomment to run forever
 	}
 
 	// Add Testing
@@ -313,8 +313,8 @@ func (ss *Sim) ConfigLoops() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		switch trnEpc {
 		case 100:
-			mpi.Printf("setting SubMean = 1 at: %d\n", trnEpc)
-			ss.Net.SetSubMean(1, 1)
+			// mpi.Printf("setting SubMean = 1 at: %d\n", trnEpc)
+			// ss.Net.SetSubMean(1, 1)
 			// ss.Net.LrateSched(0.1) // not beneficial
 		}
 	})

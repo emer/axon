@@ -214,7 +214,7 @@ type TrgAvgActParams struct {
 	On           bool       `desc:"whether to use target average activity mechanism to scale synaptic weights"`
 	ErrLrate     float32    `viewif:"On" def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
 	SynScaleRate float32    `viewif:"On" def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
-	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  In general it works best to start with 0 and then set to 1 after the network has successfully done most of its initial learning -- this allows more degrees of freedom in initial learning, while constraining later stages.  Use network SetSubMean to set at an appropriate point."`
+	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point."`
 	TrgRange     minmax.F32 `viewif:"On" def:"{0.5 2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      bool       `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Pool         bool       `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
@@ -227,7 +227,7 @@ func (ta *TrgAvgActParams) Defaults() {
 	ta.On = true
 	ta.ErrLrate = 0.02
 	ta.SynScaleRate = 0.01
-	ta.SubMean = 0 // start at 0, set 1 after some learning
+	ta.SubMean = 1 // 1 in general beneficial
 	ta.TrgRange.Set(0.5, 2)
 	ta.Permute = true
 	ta.Pool = true
@@ -604,7 +604,7 @@ func (ls *LrateParams) Init() {
 type TraceParams struct {
 	NeuronCa bool    `def:"false" desc:"use separate neuron-level Ca calcium signals for the trace credit assignment factor, instead of using synaptically-integrated Ca signals -- this is about 2x faster, but can result in worse learning in larger networks -- you may also need to increase the learning rate with this selected."`
 	Tau      float32 `def:"1,2,4" desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
-	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, especially at the start -- can use SetSubMean to set to 1 after significant early learning has occurred.  Special prjn types (e.g., Hebb) benefit from SubMean = 1"`
+	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always"`
 	Dt       float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
