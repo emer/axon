@@ -690,24 +690,26 @@ func (pj *Prjn) InitGBuffs() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// SendSpike sends a spike from sending neuron index si,
-// to add to buffer on receivers.
-func (pj *Prjn) SendSpike(si int) {
-	sc := pj.GScale.Scale
-	del := pj.Com.Delay
-	sz := del + 1
-	di := pj.Gidx.Idx(del) // index in buffer to put new values -- end of line
-	nc := pj.SConN[si]
-	st := pj.SConIdxSt[si]
-	syns := pj.Syns[st : st+nc]
-	scons := pj.SConIdx[st : st+nc]
+// SendSpike sends a spike from the sending neuron at index sendIdx
+// into the buffer on the receiver side. The buffer on the receiver side
+// is a ring buffer, which is used for modelling the time delay between
+// sending and receiving spikes.
+func (pj *Prjn) SendSpike(sendIdx int) {
+	scale := pj.GScale.Scale
+	maxDelay := pj.Com.Delay
+	delayBufSize := maxDelay + 1
+	currDelayIdx := pj.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
+	numCons := pj.SConN[sendIdx]
+	startIdx := pj.SConIdxSt[sendIdx]
+	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
+	synConIdxs := pj.SConIdx[startIdx : startIdx+numCons]
 	inhib := pj.Typ == emer.Inhib
-	for ci := range syns {
-		ri := scons[ci]
-		sv := sc * syns[ci].Wt
-		pj.GBuf[int(ri)*sz+di] += sv
+	for i := range syns {
+		recvIdx := synConIdxs[i]
+		sv := scale * syns[i].Wt
+		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
 		if !inhib {
-			pj.PIBuf[int(pj.PIdxs[ri])*sz+di] += sv
+			pj.PIBuf[int(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
 		}
 	}
 }
