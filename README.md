@@ -99,7 +99,7 @@ Meanwhile, based on extensive experience with Axon and Leabra, here are some lik
 
 A key dividing line in biological realism of neural models concerns the inclusion of separate dynamics for dendrites versus the soma, with a considerable literature arguing that significant computational functionality arises from nonlinear dynamics in the dendritic integration process.  AdEx is a single compartment "point neuron" model (soma only), and obviously there is a major tradeoff in computational cost associated with modeling dendritic dynamics within individual neurons in any detail.  In Axon, we have taken a middle ground (as usual), by including a separate dendritic membrane potential `VmDend` that better reflects the dynamics of depolarization in the dendrites, relative to the standard AdEx `Vm` which reflects full integration in the soma.  Voltage-gated channels localized in the dendrites, including NMDA and GABA-B, are driven by this VmDend, and doing so results in significantly better performance vs. using the somatic Vm.
 
-Furthermore, synaptic inputs are integrated first by separate projections, and then integrated into the full somatic conductances, and thus it is possible to implement nonlinear interactions among the different dendritic branches where these different projections may be organized.  This is done specifically in the MSN (medium spiny neurons) of the basal ganglia in the `pcore` algorithm, and in the `PT` (pyramidal tract, layer 5IB intrinsic bursting) neurons also implemented in `pcore`.  As noted above, each projection is also subject to different scaling factors, which while still linear, is critical for enabling models to function properly (e.g., top-down projections must in general be significantly weaker than bottom-up projections, to keep the models from hallucinating).  These ways of capturing dendritic dynamics probably capture a reasonable proportion of the relevant functional properties in the biology, but more work with direct comparisons with fully detailed compartmental models is necessary to understand these issues better.  See the [Appendix: Dendritic Dynamics](appendix:-dendritic-dynamics) for more discussion.
+Furthermore, synaptic inputs are integrated first by separate projections, and then integrated into the full somatic conductances, and thus it is possible to implement nonlinear interactions among the different dendritic branches where these different projections may be organized.  This is done specifically in the MSN (medium spiny neurons) of the basal ganglia in the `pcore` algorithm, and in the `PT` (pyramidal tract, layer 5IB intrinsic bursting) neurons also implemented in `pcore`.  As noted above, each projection is also subject to different scaling factors, which while still linear, is critical for enabling models to function properly (e.g., top-down projections must in general be significantly weaker than bottom-up projections, to keep the models from hallucinating).  These ways of capturing dendritic dynamics probably capture a reasonable proportion of the relevant functional properties in the biology, but more work with direct comparisons with fully detailed compartmental models is necessary to understand these issues better.  See the [Appendix: Dendritic Dynamics](appendix-dendritic-dynamics) for more discussion.
 
 ## Inhibitory Competition Function Simulating Effects of Interneurons
 
@@ -231,6 +231,8 @@ Axon is organized around a 200 msec *theta* cycle (5 Hz), which is perhaps not c
 
 ## Variables
 
+### Neuron 
+
 The [`axon.Neuron`](https://github.com/emer/axon/blob/master/axon/neuron.go) struct contains all the neuron (unit) level variables, and the [`axon.Layer`](https://github.com/emer/axon/blob/master/axon/layer.go) contains a simple Go slice of these variables.  Optionally, there can be [`axon.Pool`](https://github.com/emer/axon/blob/master/axon/pool.go) pools of subsets of neurons that correspond to hypercolumns, and support more local inhibitory dynamics.
 
 * `Spike` = whether neuron has spiked or not on this cycle (0 or 1)
@@ -306,6 +308,8 @@ The [`axon.Neuron`](https://github.com/emer/axon/blob/master/axon/neuron.go) str
 * `SSGi` = SST+ somatostatin positive slow spiking inhibition.
 * `SSGiDend` = amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend).
 * `Gak` = conductance of A-type K potassium channels.
+
+### Synapse
 
 Neurons are connected via synapses parameterized with the following variables, contained in the [`axon.Synapse`](https://github.com/emer/axon/blob/master/axon/synapse.go) struct.  The [`axon.Prjn`](https://github.com/emer/axon/blob/master/axon/prjn.go) contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures in the Go version.
 
