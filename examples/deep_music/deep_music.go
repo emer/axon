@@ -94,7 +94,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
-	ss.FullSong = false
+	ss.FullSong = true
 	ss.Hid2 = false // useful only if primary hidden layer is smaller
 	ss.TestClamp = true
 	ss.TestInterval = 500

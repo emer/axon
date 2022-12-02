@@ -83,7 +83,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.8", // was 0.9
+					"Layer.Inhib.Layer.Gi":          "0.8", // 0.8 good -- was 0.9
 					"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.15 -- does not work with 0.05
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Decay.Act":           "0.0",

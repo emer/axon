@@ -14,7 +14,7 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init":       "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
-					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1  trace
+					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 > 0.95 > 1.0 > 1.1  SSGi = 2
 					"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
 					"Layer.Act.Dend.SSGi":           "2",
 					"Layer.Act.Gbar.L":              "0.2", // std
@@ -88,7 +88,7 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
 					"Prjn.Learn.Lrate.Base":    "0.002",  // full song: 0.002 > 0.005, 0.001 in the end; 30 notes: .02
-					"Prjn.Learn.Trace.SubMean": "1",      //
+					"Prjn.Learn.Trace.SubMean": "0",      //
 					"Prjn.SWt.Adapt.Lrate":     "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
 					"Prjn.SWt.Adapt.DreamVar":  "0.0",    // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":       "1.0",    // 1 works fine here -- .5 also ok

@@ -1,12 +1,12 @@
 # FS (Fast & Slow) FFFB Inhibition
 
-[FFFB](https://github.com/emer/axon/tree/master/fffb) is the feedforward (FF) and feedback (FB) inhibition mechanism, originally developed for the Leabra model.  It applies inhibition as a function of the average `Ge` (excitatory conductance) of units in the layer (FF = reflecting all the excitatory input to a layer) and average `Act` rate-code-like activation within the layer (FB = reflecting the activity level within the layer itself), which is slowly integrated over time as a function of the ISI (inter-spike-interval).
+[FFFB](https://github.com/emer/axon/tree/master/fffb) is the feedforward (FF) and feedback (FB) inhibition mechanism, originally developed for the Leabra model.  It applies inhibition as a function of the average `Ge` (excitatory conductance) of units in the layer (this is FF = reflecting all the excitatory input to a layer) and average `Act` rate-code-like activation within the layer (which is FB = reflecting the activity level within the layer itself).  Act is slowly integrated over time as a function of the ISI (inter-spike-interval).
 
-This new FS -- fast and slow -- version of FFFB starts directly with spike input signals instead of using "internal" variables like Ge and Act, and uses time dynamics based on an emerging consensus about the differences between three major classes of inhibitory interneurons, and their functional properties, e.g., [Cardin, 2018](#references).
+FS-FFFB is a *fast and slow* (FS) version of FFFB that works directly with spike input signals instead of using "internal" variables like Ge and Act, and uses time dynamics based on an emerging consensus about the differences between three major classes of inhibitory interneurons, and their functional properties, e.g., [Cardin, 2018](#references).
 
-* **PV:** fast-spiking basket cells that target the cell bodies of excitatory neurons and coexpress the calcium-binding protein parvalbumin (PV). These are the "first responders", and are also rapidly depressing -- they provide quick control of activity, responding to FF new input and FB drive, allowing the first spiking pyramidal neurons to quickly shut off other competitors.
+* **PV:** fast-spiking basket cells that target the cell bodies of excitatory neurons and coexpress the calcium-binding protein parvalbumin (PV). These are the "first responders", and are also rapidly depressing -- they provide quick control of activity, responding to FF new input and FB drive, allowing the first spiking pyramidal neurons to quickly shut off other competitors, and maintain a sparse overall level of activity.  The PV activity level (and consequent inhibitory conductance into pyramidal cells, `Gi`) closely tracks the incoming excitatory conductance Ge, which keeps neurons in their sensitive dynamic range [e.g., Shadlen & Newsome, 1994](#references).
 
-* **SST:** more slowly-responding, low-threshold spiking cells that target the distal dendrites of excitatory neurons and coexpress the peptide somatostatin (SST). These require repetitive, facilitating, afferent input to be activated, and may regulate the dendritic integration of synaptic inputs over a longer timescale. The dependence in the original FFFB of FB on the slower integrated Act variable, which only comes on after the first spike (in order to compute the ISI), is consistent with these slower SST dynamics.
+* **SST:** more slowly-responding, higher-threshold spiking cells that target the distal dendrites of excitatory neurons and coexpress the peptide somatostatin (SST). These require repetitive, facilitating, afferent input to be activated, and may regulate the dendritic integration of synaptic inputs over a longer timescale. The dependence in the original FFFB of FB on the slower integrated Act variable, which only comes on after the first spike (in order to compute the ISI), is consistent with these slower SST dynamics.
 
 * **VIP:** sparse dendrite-targeting cells that synapse onto SST interneurons and the dendrites of pyramidal neurons, and coexpress vasoactive intestinal peptide (VIP). VIP interneurons are a subset of the larger 5HT3aR-expressing interneuron class. These can provide disinhibition of SST inhibition.  These are targeted by thalamic projections into layer 1 of cortex, and may be responsible for arousal and gating-like modulation from the thalamus.  We do not directly implement them in axon, but do indirectly capture their effects in the gating dynamics of the `pcore` model.
 
@@ -64,8 +64,15 @@ where:
 * `FS0` = threshold for FSi, default .1 as in the original FFFB, below which it contributes 0.  This factor is important for filtering out small levels of incoming spikes and produces an observed nonlinearity in the Gi response.
 * `SS` = multiplier for SSi, which is 30 by default: SSi is relatively weak so this needs to be a strong multiplier to get into the range of FSi.
 
+# Additional SSGi -> VmDend
+
+In addition to the pooled `Gi` inhibition value described above, the slow inhibition value `SSi` is applied with a separate weighting factor to the dendritic membrane potential update, as an additional inhibitory component, weighted by the `Act.Dend.SSGi` parameter (default = 2).  This is important for specifically balancing the positive feedback loop in increasing NMDA channel activation, which is voltage gated as a function of VmDend.  Over the course of learning VmDend tends to increase for the most active neurons, and this additional SSGi factor balances that and prevents it from entering into a runaway positive feedback loop.
+
+Biologically, the idea is that SSi inhibition affects the overall cellular Vm, but because it comes directly into the distal dendrites, it has an extra impact there.
+
 # References
 
 * Cardin, J. A. (2018). Inhibitory interneurons regulate temporal precision and correlations in cortical circuits. Trends in Neurosciences, 41(10), 689–700. https://doi.org/10.1016/j.tins.2018.07.015
 
+* Shadlen, M. N., & Newsome, W. T. (1994). Noise, neural codes and cortical organization. Current Opinion in Neurobiology, 4, 569–579. http://www.ncbi.nlm.nih.gov/pubmed/7812147
 
