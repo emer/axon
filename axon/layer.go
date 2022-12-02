@@ -1032,7 +1032,7 @@ func (ly *Layer) InitGScale() {
 		slay := p.SendLay().(AxonLayer).AsAxon()
 		savg := slay.Inhib.ActAvg.Init
 		snu := len(slay.Neurons)
-		ncon := pj.RConNAvgMax.Avg
+		ncon := pj.RecvConNAvgMax.Avg
 		pj.GScale.Scale = pj.PrjnScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a prjn, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator

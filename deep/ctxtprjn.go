@@ -96,10 +96,10 @@ func (pj *CTCtxtPrjn) GFmSpikes(ctime *axon.Time) {
 // to integrate CtxtGe excitatory conductance on receivers
 func (pj *CTCtxtPrjn) SendCtxtGe(si int, burst float32) {
 	scdb := burst * pj.GScale.Scale
-	nc := pj.SConN[si]
-	st := pj.SConIdxSt[si]
+	nc := pj.SendConN[si]
+	st := pj.SendConIdxStart[si]
 	syns := pj.Syns[st : st+nc]
-	scons := pj.SConIdx[st : st+nc]
+	scons := pj.SendConIdx[st : st+nc]
 	for ci := range syns {
 		ri := scons[ci]
 		pj.CtxtGeInc[ri] += scdb * syns[ci].Wt
@@ -145,10 +145,10 @@ func (pj *CTCtxtPrjn) DWt(ctime *axon.Time) {
 		} else {
 			sact = slay.Neurons[si].SpkPrv
 		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
