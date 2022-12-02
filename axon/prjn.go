@@ -43,7 +43,7 @@ type Prjn struct {
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
 	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
 	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
-	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
+	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
 
 	// misc state variables below:
 	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
@@ -118,13 +118,13 @@ func (pj *Prjn) SynVarProps() map[string]string {
 // (1D, flat indexes). Returns -1 if synapse not found between these two neurons.
 // Requires searching within connections for receiving unit.
 func (pj *Prjn) SynIdx(sidx, ridx int) int {
-	if sidx >= len(pj.SConN) {
+	if sidx >= len(pj.SendConN) {
 		return -1
 	}
-	nc := int(pj.SConN[sidx])
-	st := int(pj.SConIdxSt[sidx])
+	nc := int(pj.SendConN[sidx])
+	st := int(pj.SendConIdxStart[sidx])
 	for ci := 0; ci < nc; ci++ {
-		ri := int(pj.SConIdx[st+ci])
+		ri := int(pj.SendConIdx[st+ci])
 		if ri != ridx {
 			continue
 		}
@@ -266,8 +266,8 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte(fmt.Sprintf("\"Rs\": [\n")))
 	depth++
 	for ri := 0; ri < nr; ri++ {
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
+		nc := int(pj.RecvConN[ri])
+		st := int(pj.RecvConIdxStart[ri])
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("{\n"))
 		depth++
@@ -278,7 +278,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Si\": [ "))
 		for ci := 0; ci < nc; ci++ {
-			si := pj.RConIdx[st+ci]
+			si := pj.RecvConIdx[st+ci]
 			w.Write([]byte(fmt.Sprintf("%v", si)))
 			if ci == nc-1 {
 				w.Write([]byte(" "))
@@ -290,7 +290,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Wt\": [ "))
 		for ci := 0; ci < nc; ci++ {
-			rsi := pj.RSynIdx[st+ci]
+			rsi := pj.RecvSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			w.Write([]byte(strconv.FormatFloat(float64(sy.Wt), 'g', weights.Prec, 32)))
 			if ci == nc-1 {
@@ -303,7 +303,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
 		for ci := 0; ci < nc; ci++ {
-			rsi := pj.RSynIdx[st+ci]
+			rsi := pj.RecvSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			w.Write([]byte(strconv.FormatFloat(float64(sy.SWt), 'g', weights.Prec, 32)))
 			if ci == nc-1 {
@@ -375,7 +375,8 @@ func (pj *Prjn) Build() error {
 	if err := pj.BuildBase(); err != nil {
 		return err
 	}
-	pj.Syns = make([]Synapse, len(pj.SConIdx))
+	// this is a large alloc, as number of syns is typically large
+	pj.Syns = make([]Synapse, len(pj.SendConIdx))
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	rlen := rlay.Shape().Len()
 	pj.GVals = make([]PrjnGVals, rlen)
@@ -437,11 +438,11 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 						ri = rsh.Offset([]int{rpy, rpx, ruy, rux})
 					}
 					scst := (ruy*rNuX + rux) * rfsz
-					nc := int(pj.RConN[ri])
-					st := int(pj.RConIdxSt[ri])
+					nc := int(pj.RecvConN[ri])
+					st := int(pj.RecvConIdxStart[ri])
 					for ci := 0; ci < nc; ci++ {
-						// si := int(pj.RConIdx[st+ci]) // could verify coords etc
-						rsi := pj.RSynIdx[st+ci]
+						// si := int(pj.RecvConIdx[st+ci]) // could verify coords etc
+						rsi := pj.RecvSynIdx[st+ci]
 						sy := &pj.Syns[rsi]
 						swt := swts.FloatVal1D((scst + ci) % wsz)
 						sy.SWt = float32(swt)
@@ -463,11 +464,11 @@ func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) flo
 	ssh := pj.Send.Shape()
 
 	for ri := 0; ri < rn; ri++ {
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
+		nc := int(pj.RecvConN[ri])
+		st := int(pj.RecvConIdxStart[ri])
 		for ci := 0; ci < nc; ci++ {
-			si := int(pj.RConIdx[st+ci])
-			rsi := pj.RSynIdx[st+ci]
+			si := int(pj.RecvConIdx[st+ci])
+			rsi := pj.RecvSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			wt := wtFun(si, ri, ssh, rsh)
 			sy.SWt = wt
@@ -485,12 +486,12 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 	ssh := pj.Send.Shape()
 
 	for ri := 0; ri < rn; ri++ {
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
+		nc := int(pj.RecvConN[ri])
+		st := int(pj.RecvConIdxStart[ri])
 		for ci := 0; ci < nc; ci++ {
-			si := int(pj.RConIdx[st+ci])
+			si := int(pj.RecvConIdx[st+ci])
 			swt := swtFun(si, ri, ssh, rsh)
-			rsi := pj.RSynIdx[st+ci]
+			rsi := pj.RecvSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			sy.SWt = swt
 			sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
@@ -523,9 +524,9 @@ func (pj *Prjn) InitWts() {
 		if nrn.IsOff() {
 			continue
 		}
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
+		nc := int(pj.RecvConN[ri])
+		st := int(pj.RecvConIdxStart[ri])
+		rsidxs := pj.RecvSynIdx[st : st+nc]
 		for _, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
 			pj.InitWtsSyn(sy, smn, spct)
@@ -546,9 +547,9 @@ func (pj *Prjn) SWtRescale() {
 		if nrn.IsOff() {
 			continue
 		}
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
+		nc := int(pj.RecvConN[ri])
+		st := int(pj.RecvConIdxStart[ri])
+		rsidxs := pj.RecvSynIdx[st : st+nc]
 
 		var nmin, nmax int
 		var sum float32
@@ -604,25 +605,25 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	ns := int32(len(slay.Neurons))
 	for si := int32(0); si < ns; si++ {
-		nc := pj.SConN[si]
-		st := pj.SConIdxSt[si]
+		nc := pj.SendConN[si]
+		st := pj.SendConIdxStart[si]
 		for ci := int32(0); ci < nc; ci++ {
 			sy := &pj.Syns[st+ci]
-			ri := pj.SConIdx[st+ci]
+			ri := pj.SendConIdx[st+ci]
 			// now we need to find the reciprocal synapse on rpj!
 			// look in ri for sending connections
 			rsi := ri
-			if len(rpj.SConN) == 0 {
+			if len(rpj.SendConN) == 0 {
 				continue
 			}
-			rsnc := rpj.SConN[rsi]
+			rsnc := rpj.SendConN[rsi]
 			if rsnc == 0 {
 				continue
 			}
-			rsst := rpj.SConIdxSt[rsi]
-			rist := rpj.SConIdx[rsst]        // starting index in recv prjn
-			ried := rpj.SConIdx[rsst+rsnc-1] // ending index
-			if si < rist || si > ried {      // fast reject -- prjns are always in order!
+			rsst := rpj.SendConIdxStart[rsi]
+			rist := rpj.SendConIdx[rsst]        // starting index in recv prjn
+			ried := rpj.SendConIdx[rsst+rsnc-1] // ending index
+			if si < rist || si > ried {         // fast reject -- prjns are always in order!
 				continue
 			}
 			// start at index proportional to si relative to rist
@@ -637,7 +638,7 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 				if up < rsnc {
 					doing = true
 					rrii := rsst + up
-					rri := rpj.SConIdx[rrii]
+					rri := rpj.SendConIdx[rrii]
 					if rri == si {
 						rsy := &rpj.Syns[rrii]
 						rsy.Wt = sy.Wt
@@ -651,7 +652,7 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 				if dn >= 0 {
 					doing = true
 					rrii := rsst + dn
-					rri := rpj.SConIdx[rrii]
+					rri := rpj.SendConIdx[rrii]
 					if rri == si {
 						rsy := &rpj.Syns[rrii]
 						rsy.Wt = sy.Wt
@@ -699,13 +700,13 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	maxDelay := pj.Com.Delay
 	delayBufSize := maxDelay + 1
 	currDelayIdx := pj.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
-	numCons := pj.SConN[sendIdx]
-	startIdx := pj.SConIdxSt[sendIdx]
+	numCons := pj.SendConN[sendIdx]
+	startIdx := pj.SendConIdxStart[sendIdx]
 	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
-	synConIdxs := pj.SConIdx[startIdx : startIdx+numCons]
+	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
 	inhib := pj.Typ == emer.Inhib
 	for i := range syns {
-		recvIdx := synConIdxs[i]
+		recvIdx := synConIdxs[i] // looks like this is fully sequential
 		sv := scale * syns[i].Wt
 		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
 		if !inhib {
@@ -779,10 +780,10 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
 			continue
 		}
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
@@ -823,10 +824,10 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 		if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
 			continue
 		}
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
-		rcons := pj.RConIdx[st : st+nc]
+		nc := int(pj.RecvConN[ri])
+		st := int(pj.RecvConIdxStart[ri])
+		rsidxs := pj.RecvSynIdx[st : st+nc]
+		rcons := pj.RecvConIdx[st : st+nc]
 		for ci, rsi := range rsidxs {
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
@@ -883,10 +884,10 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
@@ -919,10 +920,10 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
@@ -956,10 +957,10 @@ func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
@@ -989,10 +990,10 @@ func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
 	lr := pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
@@ -1021,12 +1022,12 @@ func (pj *Prjn) DWtSubMean(ctime *Time) {
 		return
 	}
 	for ri := range rlay.Neurons {
-		nc := int(pj.RConN[ri])
+		nc := int(pj.RecvConN[ri])
 		if nc < 1 {
 			continue
 		}
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
+		st := int(pj.RecvConIdxStart[ri])
+		rsidxs := pj.RecvSynIdx[st : st+nc]
 		sumDWt := float32(0)
 		nnz := 0 // non-zero
 		for _, rsi := range rsidxs {
@@ -1054,8 +1055,8 @@ func (pj *Prjn) DWtSubMean(ctime *Time) {
 func (pj *Prjn) WtFmDWt(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
 		for ci := range syns {
 			sy := &syns[ci]
@@ -1088,12 +1089,12 @@ func (pj *Prjn) SWtFmWt() {
 	lr := pj.SWt.Adapt.Lrate
 	dvar := pj.SWt.Adapt.DreamVar
 	for ri := range rlay.Neurons {
-		nc := int(pj.RConN[ri])
+		nc := int(pj.RecvConN[ri])
 		if nc < 1 {
 			continue
 		}
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
+		st := int(pj.RecvConIdxStart[ri])
+		rsidxs := pj.RecvSynIdx[st : st+nc]
 		avgDWt := float32(0)
 		for _, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
@@ -1149,9 +1150,9 @@ func (pj *Prjn) SynScale() {
 			continue
 		}
 		adif := -lr * nrn.AvgDif
-		nc := int(pj.RConN[ri])
-		st := int(pj.RConIdxSt[ri])
-		rsidxs := pj.RSynIdx[st : st+nc]
+		nc := int(pj.RecvConN[ri])
+		st := int(pj.RecvConIdxStart[ri])
+		rsidxs := pj.RecvSynIdx[st : st+nc]
 		for _, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
 			if adif >= 0 { // key to have soft bounding on lwt here!
@@ -1169,8 +1170,8 @@ func (pj *Prjn) SynScale() {
 func (pj *Prjn) SynFail(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
 		for ci := range syns {
 			sy := &syns[ci]

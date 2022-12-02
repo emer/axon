@@ -580,14 +580,19 @@ func (nt *Network) SizeReport() string {
 		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", layer.Nm, layerNumNeurons,
 			(datasize.ByteSize)(layerMemNeurons).HumanReadable())
 		for _, pji := range layer.SndPrjns {
-			projection := pji.(AxonPrjn).AsAxon()
-			projNumSynapses := len(projection.Syns)
-			// We only calculate the size of the important parts of the projection struct (synapse and G ring buffer)
-			// GBuf is a slice -> Sizeof(slice) returns 3*8B (ptr, len, cap), which is not what we care about
-			projMemSynapses := 2*projNumSynapses*memSynapse + len(projection.GBuf)*int(unsafe.Sizeof(projection.GBuf[0]))
+			proj := pji.(AxonPrjn).AsAxon()
+			projNumSynapses := len(proj.Syns)
 			globalNumSynapses += projNumSynapses
-			globalMemSynapses += projMemSynapses
-			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", projection.Recv.Name(),
+			// We only calculate the size of the important parts of the proj struct:
+			//  1. Synapse slice (consists of Synapse struct)
+			//  2. RecvConIdx + RecvSynIdx + SendConIdx (consists of int32 indices = 4B)
+			// Everything else (like eg the GBuf) is not included in the size calculation, as their size
+			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
+			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
+			projMemSynapses := projNumSynapses * memSynapse
+			projMemIdxs := len(proj.RecvConIdx)*4 + len(proj.RecvSynIdx)*4 + len(proj.SendConIdx)*4
+			globalMemSynapses += projMemSynapses + projMemIdxs
+			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", proj.Recv.Name(),
 				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())
 		}
 	}

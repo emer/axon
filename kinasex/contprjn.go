@@ -77,7 +77,7 @@ func (kp *KinContParams) DWtFmTDWt(sy *Synapse, lr float32) bool {
 type ContPrjn struct {
 	axon.Prjn               // access as .Prjn
 	Cont      KinContParams `view:"inline" desc:"kinase continuous learning rule params"`
-	ContSyns  []ContSyn     `desc:"continuous synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
+	ContSyns  []ContSyn     `desc:"continuous synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
 }
 
 func (pj *ContPrjn) Defaults() {
