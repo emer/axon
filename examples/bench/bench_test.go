@@ -98,3 +98,49 @@ func BenchmarkNeuronFun4Threads(b *testing.B) {
 func BenchmarkNeuronFun8Threads(b *testing.B) {
 	benchmarkNeuronFunMultiThread(8, b)
 }
+
+var Result float32
+
+// Benchmark the cost of doing a type assert on a layer
+// DISCLAIMER: I haven't checked yet in-depth whether this actually benchmarks what I think it does
+// TODO: @siboehm
+func BenchmarkLayerTypeAssert(b *testing.B) {
+	net := &axon.Network{}
+	ConfigNet(net, 1, 2048, false)
+
+	b.ResetTimer()
+
+	tmp := float32(0.0)
+	for i := 0; i < b.N; i++ {
+		for _, ly := range net.Layers {
+			lyr := ly.(axon.AxonLayer)
+			tmp += lyr.AsAxon().Neurons[0].Spike
+		}
+	}
+	// avoid compiler optimization
+	Result = tmp
+}
+
+// Benchmark the cost of doing a type assert on a layer
+// DISCLAIMER: I haven't checked yet in-depth whether this actually benchmarks what I think it does
+// TODO: @siboehm
+func BenchmarkLayerTypeAssertBaseline(b *testing.B) {
+	net := &axon.Network{}
+	ConfigNet(net, 1, 2048, false)
+
+	b.ResetTimer()
+
+	tmp := float32(0.0)
+	layers := make([]axon.AxonLayer, len(net.Layers))
+	for i, ly := range net.Layers {
+		layers[i] = ly.(axon.AxonLayer)
+	}
+
+	for i := 0; i < b.N; i++ {
+		for _, ly := range layers {
+			tmp += ly.AsAxon().Neurons[0].Spike
+		}
+	}
+	// avoid compiler optimization
+	Result = tmp
+}
