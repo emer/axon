@@ -692,7 +692,7 @@ func (pj *Prjn) InitGBuffs() {
 
 // SendSpike sends a spike from sending neuron index si,
 // to add to buffer on receivers.
-func (pj *Prjn) SendSpike(si int) {
+func (pj *Prjn) SendSpikes(si int) {
 	sc := pj.GScale.Scale
 	del := pj.Com.Delay
 	sz := del + 1

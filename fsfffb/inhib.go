@@ -17,7 +17,7 @@ type Inhib struct {
 	Clamped  bool    `desc:"if true, this layer is hard-clamped and should use GeExts exclusively for PV"`
 	FSi      float32 `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
 	SSi      float32 `desc:"slow spiking SST+ integration of FBs feedback spikes"`
-	SSf      float32 `desc:"slow spiking facilitation factor"`
+	SSf      float32 `desc:"slow spiking facilitation factor, representing facilitating effects of recent activity"`
 	FSGi     float32 `desc:"overall fast-spiking inhibitory conductance"`
 	SSGi     float32 `desc:"overall slow-spiking inhibitory conductance"`
 	Gi       float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`

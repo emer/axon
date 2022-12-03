@@ -99,7 +99,7 @@ Meanwhile, based on extensive experience with Axon and Leabra, here are some lik
 
 A key dividing line in biological realism of neural models concerns the inclusion of separate dynamics for dendrites versus the soma, with a considerable literature arguing that significant computational functionality arises from nonlinear dynamics in the dendritic integration process.  AdEx is a single compartment "point neuron" model (soma only), and obviously there is a major tradeoff in computational cost associated with modeling dendritic dynamics within individual neurons in any detail.  In Axon, we have taken a middle ground (as usual), by including a separate dendritic membrane potential `VmDend` that better reflects the dynamics of depolarization in the dendrites, relative to the standard AdEx `Vm` which reflects full integration in the soma.  Voltage-gated channels localized in the dendrites, including NMDA and GABA-B, are driven by this VmDend, and doing so results in significantly better performance vs. using the somatic Vm.
 
-Furthermore, synaptic inputs are integrated first by separate projections, and then integrated into the full somatic conductances, and thus it is possible to implement nonlinear interactions among the different dendritic branches where these different projections may be organized.  This is done specifically in the MSN (medium spiny neurons) of the basal ganglia in the `pcore` algorithm, and in the `PT` (pyramidal tract, layer 5IB intrinsic bursting) neurons also implemented in `pcore`.  As noted above, each projection is also subject to different scaling factors, which while still linear, is critical for enabling models to function properly (e.g., top-down projections must in general be significantly weaker than bottom-up projections, to keep the models from hallucinating).  These ways of capturing dendritic dynamics probably capture a reasonable proportion of the relevant functional properties in the biology, but more work with direct comparisons with fully detailed compartmental models is necessary to understand these issues better.  See the [Appendix: Dendritic Dynamics](appendix-dendritic-dynamics) for more discussion.
+Furthermore, synaptic inputs are integrated first by separate projections, and then integrated into the full somatic conductances, and thus it is possible to implement nonlinear interactions among the different dendritic branches where these different projections may be organized.  This is done specifically in the MSN (medium spiny neurons) of the basal ganglia in the `pcore` algorithm, and in the `PT` (pyramidal tract, layer 5IB intrinsic bursting) neurons also implemented in `pcore`.  As noted above, each projection is also subject to different scaling factors, which while still linear, is critical for enabling models to function properly (e.g., top-down projections must in general be significantly weaker than bottom-up projections, to keep the models from hallucinating).  These ways of capturing dendritic dynamics probably capture a reasonable proportion of the relevant functional properties in the biology, but more work with direct comparisons with fully detailed compartmental models is necessary to understand these issues better.  See the [Appendix: Dendritic Dynamics](#appendix-dendritic-dynamics) for more discussion.
 
 ## Inhibitory Competition Function Simulating Effects of Interneurons
 
@@ -126,9 +126,9 @@ Axon now uses a different formulation of error-driven learning, that accomplishe
 2. Supporting a temporally-extended *eligibility trace* factor that provides a biologically-plausible way of approximating the computationally-powerful backprop-through-time (BPTT) algorithm [(Bellec et al, 2020)](#references).
 3. More directly connecting to the underlying biochemical mechanisms that drive synaptic changes, in terms of calcium-activated *kinases*, as explored in the more biophysically detailed [kinase](https://github.com/ccnlab/kinase/tree/main/sims/kinase) model.
 
-The detailed derivation of this *kinase trace* learning mechanism is provided below: [Appendix: Kinase-Trace Learning Rule Derivation](#appendix:-kinase-trace-learning-rule-derivation), and summarized here.
+The detailed derivation of this *kinase trace* learning mechanism is provided below: [Appendix: Kinase-Trace Learning Rule Derivation](#appendix-kinase-trace-learning-rule-derivation), and summarized here.  The algorithm is presented first at an abstract mathematical level, and then in terms of the underlying biological mechanisms that actually implement it.
 
-Also, as originally developed in Leabra, the `deep` package implements the extra anatomically-motivated mechanisms for *predictive* error-driven learning [OReilly et al., 2021](https://ccnlab.org/papers/OReillyRussinZolfagharEtAl21.pdf), where the minus phase represents a prediction and the plus phase represents the actual outcome.  Biologically, we hypothesize that the two pathways of connectivity into the Pulvinar nucleus of the thalamus convey a top-down prediction and a bottom-up ground-truth outcome, providing an abundant source of error signals without requiring an explicit teacher.
+Also, as originally developed in Leabra, the [deep](https://github.com/emer/axon/blob/master/deep) package implements the extra anatomically-motivated mechanisms for *predictive* error-driven learning [OReilly et al., 2021](https://ccnlab.org/papers/OReillyRussinZolfagharEtAl21.pdf), where the minus phase represents a prediction and the plus phase represents the actual outcome.  Biologically, we hypothesize that the two pathways of connectivity into the Pulvinar nucleus of the thalamus convey a top-down prediction and a bottom-up ground-truth outcome, respectively, providing an abundant source of error signals without requiring an explicit teacher.
 
 ### Error Gradient and Credit Assignment
 
@@ -142,7 +142,7 @@ In the simplest form of error-driven learning, the *delta rule*, these two terms
 
 $$ dW = (y^+ - y^-) x $$
 
-where $y^+$ is the *target* activity of the receiving neuron in the plus phase vs. its *actual* activity $y^-$ in the minus phase (this difference representing the *Err* gradient), and $x$ is the sending neuron activity, which serves as the credit assignment.  Thus, more active senders get more of the credit / blame (and completely inactive neurons escape any).
+where $y^+$ is the *target* activity of the receiving neuron in the plus phase vs. its *actual* activity $y^-$ in the minus phase (this difference representing the *Error* gradient), and $x$ is the sending neuron activity, which serves as the credit assignment.  Thus, more active senders get more of the credit / blame (and completely inactive neurons escape any).
 
 In the mathematics of backpropagation, with a rearrangement of terms as in [(O'Reilly, 1996)](#references), the Error gradient factor in a bidirectionally-connected network can be computed as a function of the difference between *net input* like terms in the plus and minus phases, which are the dot product of sending activations times the weights:
 
@@ -168,7 +168,15 @@ The inclusion of the receiving activation, in deviation from the standard error 
 
 It is notable that the standard backpropagation equations do *not* include a contribution of the receiving activity in the error signal factor, and thus drive every unit to learn based on linearly re-weighted versions of the same overall error gradient signal.  However, a critical difference between backprop and Axon is that backprop nets rely extensively on negative synaptic weight values, which can thus change the sign of the error-gradient factor.  By contrast, the positive-only weights in Axon mean that the net-input factor is monotonically and positively related to the strength of the sending activations, resulting in much more homogenous error signals across the layer.  Thus, the inclusion of the activation term in the error-signal computation can also be seen as a way of producing greater neural differentiation in the context of this positive-only weight constraint.
 
-From a biological perspective, the combination of net-input and receiving activity terms captures the two main sources of Ca in the receiving neuron's dendritic spines: NMDA and VGCCs (voltage-gated calcium channels).  NMDA channels are driven by sending-neuron glutamate release as in the net-input factor, and VGCCs are driven exclusively by receiving neuron spiking activity.  Although the NMDA channel also reflects receiving neuron membrane depolarization due to the need for Mg (magnesium) ion unblocking, in practice there is often sufficient depolarization in the dendritic compartments, such that Ca influx is mostly a function of sending activity.  Furthermore, the receiving depolarization factor in NMDA is also captured by the receiving activity term, which thus reflects both VGCC and the receiving activity dependent aspect of the NMDA channel.  See below for more details, along with the [kinase](https://github.com/ccnlab/kinase/tree/main/sims/kinase) info.
+#### Biological basis
+
+From a biological perspective, the combination of net-input and receiving activity terms reflects the two main sources of Ca in the receiving neuron's dendritic spines: NMDA and VGCCs (voltage-gated calcium channels).  NMDA channels are driven by sending-neuron glutamate release as in the net-input factor, and VGCCs are driven exclusively by receiving neuron spiking activity.  Although the NMDA channel also reflects receiving neuron membrane depolarization due to the need for Mg (magnesium) ion unblocking, in practice there is often sufficient depolarization in the dendritic compartments, such that Ca influx is mostly a function of sending activity.  Furthermore, the receiving depolarization factor in NMDA is also captured by the receiving activity term, which thus reflects both VGCC and the receiving activity dependent aspect of the NMDA channel.
+
+In the Axon implementation, the NMDA and VGCC Ca influx is directly used, instead of the abstract equation above, providing an entirely biologically-grounded basis for the learning mechanism.  This Ca influx is integrated over multiple cascaded variables that reflect the biochemical steps from Ca to calcium calmodulin (CaM) to CaMKII (CaM kinase II), which is a central kinase involved in controlling synaptic plasticity bidirectionally (LTP = long-term potentiation and LTD = long-term depression; [Coultrap & Bayer, 2012](#references)).
+
+The critical subtraction necessary to extract the *Error* gradient from the temporal difference in this Ca signal over time is hypothesized to arise from the competitive binding dynamics between CaMKII and another kinase called DAPK1 (death-associated protein kinase 1), which has been shown to drive LTD when it out-competes CaMKII for binding to a particular location (N2B) on the NMDA receptor [(Goodell et al., 2017)](#references).  Mathematically, if DAPK1 integrates at a slower rate than CaMKII, this competitive dynamic computes a temporal derivative exactly as required for the *Error* gradient equation.  For example, when Ca increases in the later plus phase relative to the earlier minus phase, then the faster CaMKII responds more quickly, and thus out-competes DAPK1 and drives LTP (i.e., the temporal derivative is positive).  Conversely, if Ca decreases in the plus vs. minus phase, DAPK1 remains more activated than CaMKII, and LTD ensues.  When Ca is consistent over time, the two play to a draw, and the synaptic weight remains the same.  For more details, see the biophysically detailed [kinase](https://github.com/ccnlab/kinase/tree/main/sims/kinase) model.  This model also shows how a fully continuous-time mechanism with no artificial knowledge of the theta cycle can drive appropriate error-driven learning.
+
+Critically, there is now direct evidence supporting the idea that pyramidal neuron synapses actually follow this temporal difference dynamic [(Jang et al., 2023](#references).  In this experiment, neurons were driven pre and postsynaptically with patterns of minus -- plus phase activity (e.g., 25 Hz then 50 Hz) and changes in synaptic efficacy recorded.  The results showed all of the qualitative patterns for the temporal difference mechanism: LTP for increasing minus-plus, LTD for decreasing, and no change for consistent activity across a 200 msec theta cycle.  These results hold despite differences in overall firing rates.
 
 ### Credit Assignment: Temporal Eligibility Trace
 
@@ -204,36 +212,23 @@ Metaphorically, various forms of equalizing taxation and wealth redistribution a
 
 4. **Soft bounding and contrast enhancement:** To keep individual weight magnitudes bounded, we use a standard exponential-approach "soft bounding" dynamic (increases are multiplied by $1-w$; decreases by $w$).  In addition, as developed in the Leabra model, it is useful to add a *contrast enhancement* mechanism to counteract the compressive effects of this soft bounding, so that effective weights span the full range of weight values.
 
-# Implementation strategy
-
-* Prjn integrates conductances for each recv prjn
-* Send spike adds wt to ring buff at given offset
-* For all the spikes that arrive that timestep, increment G += wts
-* build in psyn with probability of failure -- needs to be sensitive to wt
-* then decay with tau
-* integrate all the G's in to cell body
-* support background balanced G, I current on cell body to diminish sensitivity! Init
-
-* Detailed model of dendritic dynamics relative to cell body, with data -- dendrites a bit slower, don't reset after spiking?  GaoGrahamZhouEtAl20
-
-
 # Axon Algorithm Equations
 
-The pseudocode for Axon is given here, showing exactly how the pieces of the algorithm fit together, using the equations and variables from the actual code.
+The pseudocode for Axon is given here, showing exactly how the pieces of the algorithm fit together, using the equations and variables from the actual code.  Optimizations and special cases are omitted -- for that level of detail, the actual code is the definitive reference.  For example, the time constants `Tau` are shown using division but in the code a pre-computed `Dt = 1/Tau` is used because multiplication is generally significantly faster than division.
 
-## Timing
+## Timing and Organization of Computation
 
-Axon is organized around a 200 msec *theta* cycle (5 Hz), which is perhaps not coincidently the modal peak for the duration of an eye fixation, and can be thought of as two 100 msec *alpha* cycles, which together comprise the minimal unit for predictive error driven learning according to the [deep](https://github.com/emer/axon/blob/master/deep) predictive learning framework.  Note that Leabra worked well with just a 100 msec alpha cycle, but it has not been possible to get the temporal difference error-driven learning mechanism to work at that scale, while it works very well at 200 msec.  The following terms are used:
-
-* A **Theta Cycle** or **Trial** or lasts 200 msec (5 Hz, theta frequency), and comprises one sequence of expectation -- outcome learning, with the final 50 msec comprising the *plus* phase when the outcome is active, while the preceding 150 msec is the *minus* phase when the network generates its own prediction or expectation.
+Axon is organized around a 200 msec *theta* cycle (5 Hz), which is perhaps not coincidently the modal peak for the duration of an eye fixation, and can be thought of as two 100 msec *alpha* cycles, which together comprise the minimal unit for predictive error driven learning according to the [deep](https://github.com/emer/axon/blob/master/deep) predictive learning framework.  Note that Leabra worked well with just a 100 msec alpha cycle, but it has not been possible to get the temporal difference error-driven learning mechanism to work at that scale with spiking in Axon, while it works very well at 200 msec.  The time scales are:
 
 * A **Cycle** represents 1 msec of processing, where each neuron is fully updated including all the conductances, integrated into the `Vm` membrane potential, which can then drive a `Spike` if it gets over threshold.
+
+* A **Theta Cycle** or **Trial** or lasts 200 msec (200 Cycles; 5 Hz, theta frequency), and comprises one sequence of expectation -- outcome learning, with the final 50 msec comprising the *plus* phase when the outcome is active, while the preceding 150 msec is the *minus* phase when the network generates its own prediction or expectation.  Ca influx from NMDA, VGCC are integrated continuously throughout this time, and drive learning at the end of the theta cycle.  Ca at the synapse level is also integrated over time, reflecting intersection of pre and post activity, for the trace credit assignment factor in learning.
 
 ## Variables
 
 ### Neuron 
 
-The [`axon.Neuron`](https://github.com/emer/axon/blob/master/axon/neuron.go) struct contains all the neuron (unit) level variables, and the [`axon.Layer`](https://github.com/emer/axon/blob/master/axon/layer.go) contains a simple Go slice of these variables.  Optionally, there can be [`axon.Pool`](https://github.com/emer/axon/blob/master/axon/pool.go) pools of subsets of neurons that correspond to hypercolumns, and support more local inhibitory dynamics.
+The [`axon.Neuron`](https://github.com/emer/axon/blob/master/axon/neuron.go) struct contains all the neuron (unit) level variables, and the [`axon.Layer`](https://github.com/emer/axon/blob/master/axon/layer.go) contains a simple Go slice of these variables.
 
 * `Spike` = whether neuron has spiked or not on this cycle (0 or 1)
 * `Spiked` = 1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels
@@ -309,6 +304,21 @@ The [`axon.Neuron`](https://github.com/emer/axon/blob/master/axon/neuron.go) str
 * `SSGiDend` = amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend).
 * `Gak` = conductance of A-type K potassium channels.
 
+### Inhib Pools
+
+There is always at least one [`axon.Pool`](https://github.com/emer/axon/blob/master/axon/pool.go) pool of neurons over which inhibition is computed, and there can also be pools for subsets of neurons that correspond to hypercolumns (or max pooling in a convolutional neural network), and support more local inhibitory dynamics.
+
+* `FFsRaw`  = all feedforward incoming spikes into neurons in this pool -- raw aggregation.
+* `FBsRaw` = all feedback outgoing spikes generated from neurons in this pool -- raw aggregation.
+* `FFs`    = all feedforward incoming spikes into neurons in this pool, normalized by pool size.
+* `FBs`    = all feedback outgoing spikes generated from neurons in this pool, normalized by pool size.
+* `FSi`    = fast spiking PV+ fast integration of FFs feedforward spikes.
+* `SSi`    = slow spiking SST+ integration of FBs feedback spikes.
+* `SSf`    = slow spiking facilitation factor, representing facilitating effects of recent activity.
+* `FSGi`   = overall fast-spiking inhibitory conductance.
+* `SSGi`   = overall slow-spiking inhibitory conductance.
+* `Gi`     = overall inhibitory conductance = FSGi + SSGi.
+
 ### Synapse
 
 Neurons are connected via synapses parameterized with the following variables, contained in the [`axon.Synapse`](https://github.com/emer/axon/blob/master/axon/synapse.go) struct.  The [`axon.Prjn`](https://github.com/emer/axon/blob/master/axon/prjn.go) contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures in the Go version.
@@ -334,107 +344,69 @@ The `axon.Network` `CycleImpl` method in [`axon/network.go`](https://github.com/
 
 * `CycleNeuron` on all `Neuron`s: integrates the Ge and Gi conductances from above, updates all the other channel conductances as described in [chans](https://github.com/emer/axon/tree/master/chans), and then computes `Inet` as the net current from all these conductances, which then drives updates to `Vm` and `VmDend`.  If `Vm` exceeds threshold then `Spike` = 1.
 
-* `SendSpike` on all `Neuron`s: for each neuron with `Spike` = 1, adds scaled synaptic weight value to `GBuf` ring buffer for efficiently delaying receipt of the spike per parametrized `Com.Delay` cycles.  This is what the `GFmSpikes` then integrates.  This is very expensive computationally because it goes through synapses on each msec Cycle.
+* `SendSpikes` on all `Neuron`s: for each neuron with `Spike` = 1, adds scaled synaptic weight value to `GBuf` ring buffer for efficiently delaying receipt of the spike per parametrized `Com.Delay` cycles.  This is what the `GFmSpikes` then integrates.  This is very expensive computationally because it goes through synapses on each msec Cycle.
 
 * `CyclePost` on all `Layer`s: a hook for specialized algorithms to do something special.
 
 * `SendSynCa` and `RecvSynCa` on all `Prjn`s: update synapse-level calcium (Ca) for any neurons that spiked (on either the send or recv side).  This is very expensive computationally because it goes through synapses on each msec Cycle.
 
-### Cycle Equations
+All of the relevant parameters and most of the equations are in the [`axon/act.go`](https://github.com/emer/axon/blob/master/axon/act.go),  [`axon/inhib.go`](https://github.com/emer/axon/blob/master/axon/inhib.go), and [`axon/learn.go`](https://github.com/emer/axon/blob/master/axon/learn.go) which correspond to the `Act`, `Inhib` and `Learn` fields in the `Layer` struct.  Default values of parameters are shown in comments below.
 
-All of the relevant parameters are in the `axon.Layer.Act` and `Inhib` fields, which are of type `ActParams` and `InhibParams` -- in this Go version, the parameters have been organized functionally, not structurally, into three categories.
+### GFmSpikes: for each Prjn
 
-* `Ge` excitatory conductance is actually computed using a highly efficient delta-sender-activation based algorithm, which only does the expensive multiplication of activations * weights when the sending activation changes by a given amount (`OptThreshParams.Delta`).  However, conceptually, the conductance is given by this equation:
-    + `GeRaw += Sum_(recv) Prjn.GScale * Send.Act * Wt`
-        + `Prjn.GScale` is the [Input Scaling](#input-scaling) factor that includes 1/N to compute an average, and the `WtScaleParams` `Abs` absolute scaling and `Rel` relative scaling, which allow one to easily modulate the overall strength of different input projections.
-    + `Ge += DtParams.Integ * (1/ DtParams.GTau) * (GeRaw - Ge)`
-        + This does a time integration of excitatory conductance, `GTau = 1.4` default, and global integration time constant, `Integ = 1` for 1 msec default.
+`Prjn.GVals` integrates two synaptic conductance values `G` per receiving neuron index, using Ge time constants for excitatory synapses, and Gi for inhibitory.  These values were sent before in `SendSpikes` and stored in the `Prjn.GBuf` slice (see below).  In principle synaptic conductance is computed using a standard *alpha function* double-exponential with one time constant for the rise and another for the decay.  In practice, the rise time is < 1 msec and thus it is simpler to just add the new raw and decay (decay tau = 5 msec):
+* `GRaw = GBuf` at the `Com.Delay` index (e.g., 2 msec)
+* `GSyn += GRaw - Act.Dt.GeDt * GSyn  // GeSynFmRaw or GiSynFmRaw`
 
-* `Gi` inhibtory conductance combines computed and synaptic-level inhibition (if present) -- most of code is in `axon/inhib.go`
-    + `ffNetin = avgGe + FFFBParams.MaxVsAvg * (maxGe - avgGe)`
-    + `ffi = FFFBParams.FF * MAX(ffNetin - FFBParams.FF0, 0)`
-        + feedforward component of inhibition with FF multiplier (1 by default) -- has FF0 offset and can't be negative (that's what the MAX(.. ,0) part does).
-        + `avgGe` is average of Ge variable across relevant Pool of neurons, depending on what level this is being computed at, and `maxGe` is max of Ge across Pool
-    + `fbi += (1 / FFFBParams.FBTau) * (FFFBParams.FB * avgAct - fbi`
-        + feedback component of inhibition with FB multiplier (1 by default) -- requires time integration to dampen oscillations that otherwise occur -- FBTau = 1.4 default.
-    + `Gi = FFFBParams.Gi * (ffi + fbi)`
-        + total inhibitory conductance, with global Gi multiplier -- default of 1.8 typically produces good sparse distributed representations in reasonably large layers (25 units or more).
+    
+### GiFmSpikes: for each Layer
 
-* `Act` activation from Ge, Gi, Gl (most of code is in `axon/act.go`, e.g., `ActParams.SpikeFmG` method).  When neurons are above thresholds in subsequent condition, they obey the "geLin" function which is linear in Ge:
-    + `geThr = (Gi * (Erev.I - Thr) + Gbar.L * (Erev.L - Thr) / (Thr - Erev.E)`
-    + `nwAct = NoisyXX1(Ge * Gbar.E - geThr)`
-        + geThr = amount of excitatory conductance required to put the neuron exactly at the firing threshold, `XX1Params.Thr` = .5 default, and NoisyXX1 is the x / (x+1) function convolved with gaussian noise kernel, where x = `XX1Parms.Gain` * Ge - geThr) and Gain is 100 by default
-    + `if Act < XX1Params.VmActThr && Vm <= X11Params.Thr: nwAct = NoisyXX1(Vm - Thr)`
-        + it is important that the time to first "spike" (above-threshold activation) be governed by membrane potential Vm integration dynamics, but after that point, it is essential that activation drive directly from the excitatory conductance Ge relative to the geThr threshold.
-    + `Act += (1 / DTParams.VmTau) * (nwAct - Act)`
-        + time-integration of the activation, using same time constant as Vm integration (VmTau = 3.3 default)
-    + `Vm += (1 / DTParams.VmTau) * Inet`
-    + `Inet = Ge * (Erev.E - Vm) + Gbar.L * (Erev.L - Vm) + Gi * (Erev.I - Vm) + Noise`
-        + Membrane potential computed from net current via standard RC model of membrane potential integration.  In practice we use normalized Erev reversal potentials and Gbar max conductances, derived from biophysical values: Erev.E = 1, .L = 0.3, .I = 0.25, Gbar's are all 1 except Gbar.L = .2 default.
+`Layer.Pool[*].Inhib` pools are updated based on `FFsRaw` and `FBsRaw` which are accumulated during `SendSpikes`
 
-## Learning
+Normalize raw values:
+* `FFs = FFsRaw / Npool    // Npool = number of neurons in pool`  
+* `FBs = FBsRaw / Npool`
 
-![XCAL DWt Function](fig_xcal_dwt_fun.png?raw=true "The XCAL dWt function, showing direction and magnitude of synaptic weight changes dWt as a function of the short-term average activity of the sending neuron *x* times the receiving neuron *y*.  This quantity is a simple mathematical approximation to the level of postsynaptic Ca++, reflecting the dependence of the NMDA channel on both sending and receiving neural activity.  This function was extracted directly from the detailed biophysical Urakubo et al. 2008 model, by fitting a piecewise linear function to the synaptic weight change behavior that emerges from it as a function of a wide range of sending and receiving spiking patterns.")
+Fast spiking (FS) PV from FFs and FBs, with decay:
+* `FSi = FFs + FB * FBs - FSi / FSTau   // FB = feedback weight, 1; FSTau = decay, 6 msec`
+* `FSGi = Gi * (|FSi - FS0|>0)  // |x|>0 = only above 0; FS0 = 0.1`
 
-Learning is based on running-averages of activation variables, parameterized in the `axon.Layer.Learn` `LearnParams` field, mostly implemented in the `axon/learn.go` file.
+Slow spiking (SS) SST from FBs only, with facilitation factor SSf:
+* `SSi += (SSf * FBs - SSi) / SSiTau      // SSiTau = 50 msec`
+* `SSf += FBs * (1 - SSf) - SSf / SSfTau  // SSfTau = 20 msec`
+* `SSGi = Gi * SS * SSi  // Gi = overall scaling, 1; SS = extra SS factor, 30`
 
-* **Running averages** computed continuously every cycle, and note the compounding form.  Tau params in `LrnActAvgParams`:
-    + `AvgSS += (1 / SSTau) * (Act - AvgSS)`
-        + super-short time scale running average, SSTau = 2 default -- this was introduced to smooth out discrete spiking signal, but is also useful for rate code.
-    + `AvgS += (1 / STau) * (AvgSS - AvgS)`
-        + short time scale running average, STau = 2 default -- this represents the *plus phase* or actual outcome signal in comparison to AvgM
-    + `AvgM += (1 / MTau) * (AvgS - AvgM)`
-        + medium time-scale running average, MTau = 10 -- this represents the *minus phase* or expectation signal in comparison to AvgS
-    + `AvgL += (1 / Tau) * (Gain * AvgM - AvgL); AvgL = MAX(AvgL, Min)`
-        + long-term running average -- this is computed just once per learning trial, *not every cycle* like the ones above -- params on `AvgLParams`: Tau = 10, Gain = 2.5 (this is a key param -- best value can be lower or higher) Min = .2
-    + `AvgLLrn = ((Max - Min) / (Gain - Min)) * (AvgL - Min)`
-        + learning strength factor for how much to learn based on AvgL floating threshold -- this is dynamically modulated by strength of AvgL itself, and this turns out to be critical -- the amount of this learning increases as units are more consistently active all the time (i.e., "hog" units).  Params on `AvgLParams`, Min = 0.0001, Max = 0.5. Note that this depends on having a clear max to AvgL, which is an advantage of the exponential running-average form above.
-    + `AvgLLrn *= MAX(1 - layCosDiffAvg, ModMin)`
-        + also modulate by time-averaged cosine (normalized dot product) between minus and plus phase activation states in given receiving layer (layCosDiffAvg), (time constant 100) -- if error signals are small in a given layer, then Hebbian learning should also be relatively weak so that it doesn't overpower it -- and conversely, layers with higher levels of error signals can handle (and benefit from) more Hebbian learning.  The MAX(ModMin) (ModMin = .01) factor ensures that there is a minimum level of .01 Hebbian (multiplying the previously-computed factor above).  The .01 * .05 factors give an upper-level value of .0005 to use for a fixed constant AvgLLrn value -- just slightly less than this (.0004) seems to work best if not using these adaptive factors.
-    + `AvgSLrn = (1-LrnM) * AvgS + LrnM * AvgM`
-        + mix in some of the medium-term factor into the short-term factor -- this is important for ensuring that when neuron turns off in the plus phase (short term), that enough trace of earlier minus-phase activation remains to drive it into the LTD weight decrease region -- LrnM = .1 default.
+Overall inhibition:
+* `Gi = FSGi + SSGi`
 
-* **Learning equation**:
-    + `srs = Send.AvgSLrn * Recv.AvgSLrn`
-    + `srm = Send.AvgM * Recv.AvgM`
-    + `dwt = XCAL(srs, srm) + Recv.AvgLLrn * XCAL(srs, Recv.AvgL)`
-        + weight change is sum of two factors: error-driven based on medium-term threshold (srm), and BCM Hebbian based on long-term threshold of the recv unit (Recv.AvgL)
-    + XCAL is the "check mark" linearized BCM-style learning function (see figure) that was derived from the Urakubo Et Al (2008) STDP model, as described in more detail in the [CCN textbook](https://CompCogNeuro.org)
-        + `XCAL(x, th) = (x < DThr) ? 0 : (x > th * DRev) ? (x - th) : (-x * ((1-DRev)/DRev))`
-        + DThr = 0.0001, DRev = 0.1 defaults, and x ? y : z terminology is C syntax for: if x is true, then y, else z
+### CycleNeuron
 
-    + **DWtNorm** -- normalizing the DWt weight changes is standard in current backprop, using the AdamMax version of the original RMS normalization idea, and benefits Axon as well, and is On by default, params on `DwtNormParams`:
-        + `Norm = MAX((1 - (1 / DecayTau)) * Norm, ABS(dwt))`
-            + increment the Norm normalization using abs (L1 norm) instead of squaring (L2 norm), and with a small amount of decay: DecayTau = 1000.
-        + `dwt *= LrComp / MAX(Norm, NormMin)`
-            + normalize dwt weight change by the normalization factor, but with a minimum to prevent dividing by 0 -- LrComp compensates overall learning rate for this normalization (.15 default) so a consistent learning rate can be used, and NormMin = .001 default.
-    + **Momentum** -- momentum is turned On by default, and has significant benefits for preventing hog units by driving more rapid specialization and convergence on promising error gradients.  Parameters on `MomentumParams`:
-        + `Moment = (1 - (1 / MTau)) * Moment + dwt`
-        + `dwt = LrComp * Moment`
-            + increment momentum from new weight change, MTau = 10, corresponding to standard .9 momentum factor (sometimes 20 = .95 is better), with LrComp = .1 comp compensating for increased effective learning rate.
-    + `DWt = Lrate * dwt`
-        + final effective weight change includes overall learning rate multiplier.  For learning rate schedules, just directly manipulate the learning rate parameter -- not using any kind of builtin schedule mechanism.
+#### GInteg: Integrate G*Raw and G*Syn from Recv Prjns, other G*s
 
-* **Weight Balance** -- this option (off by default but recommended for larger models) attempts to maintain more balanced weights across units, to prevent some units from hogging the representational space, by changing the rates of weight increase and decrease in the soft weight bounding function, as a function of the average receiving weights.  All params in `WtBalParams`:
-    + `if (Wb.Avg < LoThr): Wb.Fact = LoGain * (LoThr - MAX(Wb.Avg, AvgThr)); Wb.Dec = 1 / (1 + Wb.Fact); Wb.Inc = 2 - Wb.Dec`
-    + `else: Wb.Fact = HiGain * (Wb.Avg - HiThr); Wb.Inc = 1 / (1 + Wb.Fact); Wb.Dec = 2 - Wb.Inc`
-        + `Wb` is the `WtBalRecvPrjn` structure stored on the `axon.Prjn`, per each Recv neuron.  `Wb.Avg` = average of recv weights (computed separately and only every N = 10 weight updates, to minimize computational cost).  If this average is relatively low (compared to LoThr = .4) then there is a bias to increase more than decrease, in proportion to how much below this threshold they are (LoGain = 6).  If the average is relatively high (compared to HiThr = .4), then decreases are stronger than increases, HiGain = 4.
-    + A key feature of this mechanism is that it does not change the sign of any weight changes, including not causing weights to change that are otherwise not changing due to the learning rule.  This is not true of an alternative mechanism that has been used in various models, which normalizes the total weight value by subtracting the average.  Overall this weight balance mechanism is important for larger networks on harder tasks, where the hogging problem can be a significant problem.
+Iterates over Recv Prjns:
+* `GeRaw += prjn.GRaw // if excitatory`
+* `GeSyn += prjn.Gsyn`
+* or Gi* if inhibitory
 
-* **Weight update equation**
-    + The `LWt` value is the linear, non-contrast enhanced version of the weight value, and `Wt` is the sigmoidal contrast-enhanced version, which is used for sending netinput to other neurons.  One can compute LWt from Wt and vice-versa, but numerical errors can accumulate in going back-and forth more than necessary, and it is generally faster to just store these two weight values.
-    + `DWt *= (DWt > 0) ? Wb.Inc * (1-LWt) : Wb.Dec * LWt`
-        + soft weight bounding -- weight increases exponentially decelerate toward upper bound of 1, and decreases toward lower bound of 0, based on linear, non-contrast enhanced LWt weights.  The `Wb` factors are how the weight balance term shift the overall magnitude of weight increases and decreases.
-    + `LWt += DWt`
-        + increment the linear weights with the bounded DWt term
-    + `Wt = SIG(LWt)`
-        + new weight value is sigmoidal contrast enhanced version of linear weight
-        + `SIG(w) = 1 / (1 + (Off * (1-w)/w)^Gain)`
-    + `DWt = 0`
-        + reset weight changes now that they have been applied.
+Then all the special conductances:
+* NMDA, VGCC, GABAB, Gk -- see [chans](https://github.com/emer/axon/tree/master/chans) for equations.  These contribute to overall `Ge` excitatory conductance and `Gi` inhibition.
 
-        
+And add in the pool inhib `Gi` computed above.
 
+#### SpikeFmG: Compute Vm and Spikes from all the G's
+
+* `Inet = Gbar.E * Ge + Gbar.I * Gi + Gbar.L + Gbar.K * Gk`
+* todo: exp etc
+* `Vm += Inet / VmTau  // VmTau = 2.81'
+
+### SendSpikes
+
+### SendSynCa, RecvSynCa
+
+## Learning: DWt, WtFmDWt
+
+
+## Slow
 
 * **SWt: structural, slowly-adapting weights:** Biologically, the overall synaptic efficacy is determined by two major factors: the number of excitatory AMPA receptors (which adapt rapidly in learning), and size, number, and shape of the dendritic spines (which adapt more slowly, requiring protein synthesis, typically during sleep).  It was useful to introduce a slowly-adapting structural component to the weight, `SWt`, to complement the rapidly adapting `LWt` value (reflecting AMPA receptor expression), which has a multiplicative relationship with `LWt` in determining the effective `Wt` value.  The `SWt` value is typically initialized with all of the initial random variance across synapses, and it learns on the `SlowInterval` (100 iterations of faster learning) on the zero-sum accumulated `DWt` changes since the last such update, with a slow learning rate (e.g., 0.001) on top of the existing faster learning rate applied to each accumulated `DWt` value.  This slowly-changing SWt value is critical for preserving a background level of synaptic variability, even as faster weights change.  This synaptic variability is essential for prevent degenerate hog-unit representations from taking over, while learning slowly accumulates effective new weight configurations.  In addition, a small additional element of random variability, colorfully named `DreamVar`, can be injected into the active `LWt` values after each `SWt` update, which further preserves this critical resource of variability driving exploration of the space during learning.
 
@@ -601,6 +573,7 @@ Here are some specific considerations and changes to capture some of these dynam
 
 * As for the broader question of more coincidence-driven dynamics in the dendrites, or an AND-like mutual interdependence among inputs to different branches, driven by A-type K channels, it is likely that in the awake behaving context (*in activo*) as compared to the slices where these original studies were done, there is always a reasonable background level of synaptic input such that these channels are largely inactivated anyway.  This corresponds to the important differences between upstate / downstate that also largely disappear in awake behaving vs. anesthetized or slice preps.  Nevertheless, it is worth continuing to investigate this issue and explore the potential implications of these mechanisms in actual running models.  TODO: create atype channels in glong (rename to something else, maybe just `chans` for channels)
 
+TODO: GaoGrahamZhouEtAl20
 
 # References
 
@@ -608,7 +581,13 @@ Here are some specific considerations and changes to capture some of these dynam
 
 * Cardin, J. A. (2018). Inhibitory interneurons regulate temporal precision and correlations in cortical circuits. Trends in Neurosciences, 41(10), 689–700. https://doi.org/10.1016/j.tins.2018.07.015
 
+* Coultrap, S. J., & Bayer, K. U. (2012). CaMKII regulation in information processing and storage. *Trends in Neurosciences, 35(10),* 607–618. https://doi.org/10.1016/j.tins.2012.05.003
+
+* Goodell, D. J., Zaegel, V., Coultrap, S. J., Hell, J. W., & Bayer, K. U. (2017). DAPK1 mediates LTD by making CaMKII/GluN2B binding LTP specific. *Cell Reports, 19(11),* 2231–2243. https://doi.org/10.1016/j.celrep.2017.05.068
+
 * Hodgkin, A. L., & Huxley, A. F. (1952). A quantitative description of membrane current and its application to conduction and excitation in nerve. The Journal of Physiology, 117(4), 500–544. https://doi.org/10.1113/jphysiol.1952.sp004764
+
+* Jang, J., Zito, K., & O'Reilly, R. C. (2023).  Direct evidence of error-driven synaptic plasticity via temporal differences in pyramidal neurons.  Manuscript in preparation.
 
 * Jarsky, T., Roxin, A., Kath, W. L., & Spruston, N. (2005). Conditional dendritic spike propagation following distal synaptic activation of hippocampal CA1 pyramidal neurons. Nat Neurosci, 8, 1667–1676. http://dx.doi.org/10.1038/nn1599
 
