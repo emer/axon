@@ -1249,7 +1249,7 @@ func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 		intdt *= 3.0
 	}
 	ly.Act.VmFmG(nrn)
-	ly.Act.SpikeFmG(nrn)
+	ly.Act.SpikeFmVm(nrn)
 	ly.Learn.CaFmSpike(nrn)
 	if ctime.Cycle >= ly.Act.Dt.MaxCycStart {
 		nrn.SpkMaxCa += ly.Learn.CaSpk.Dt.PDt * (nrn.CaSpkM - nrn.SpkMaxCa)
@@ -1270,7 +1270,7 @@ func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
 }
 
-// SendSpike sends spike to receivers -- last step in Cycle, integrated
+// SendSpikes sends spike to receivers -- last step in Cycle, integrated
 // the next time around.
 // Writes to sending projections for this neuron.
 func (ly *Layer) SendSpikes(ni int, nrn *Neuron, ctime *Time) {

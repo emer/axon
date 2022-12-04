@@ -93,7 +93,7 @@ Meanwhile, based on extensive experience with Axon and Leabra, here are some lik
 
 * **Longer-acting, bistable NMDA and GABA-B currents:** An essential step for enabling spiking neurons to form suitably stable, selective representations for learning was the inclusion of both NMDA and GABA-B channels, which are voltage dependent in a complementary manner as captured in the [Sanders et al, 2013](#References) model (which provided the basis for the implementation here).  These channels have long time constants and the voltage dependence causes them to promote a bistable activation state, with a smaller subset of neurons that have extra excitatory drive from the NMDA and avoid extra inhibition from GABA-B, while a majority of neurons have the opposite profile: extra inhibition from GABA-B and no additional excitation from NMDA.  With stronger conductance levels, these channels can produce robust active maintenance dynamics characteristic of layer 3 in the prefrontal cortex (PFC), but for posterior cortex, we use lower values that produce a weaker, but still essential, form of bistability.  Without these channels, neurons all just "take turns" firing at different points in time, and there is no sense in which a small subset are engaged to represent a specific input pattern -- that had been a blocking failure in all prior attempts to use spiking in Leabra models.    
     
-* **Auto-normalized, relatively scaled Excitatory Conductances:** As in Leabra, the excitatory synaptic input conductance (`Ge` in the code, known as *net input* in artificial neural networks) is computed as an average, not a sum, over connections, based on normalized weight values, which are subject to scaling on a projection level to alter relative contributions.  Automatic scaling is performed to compensate for differences in expected activity level in the different projections.  See section on [Input Scaling](#input-scaling) for details.  All of this makes it much easier to create models of different sizes and configurations with minimal (though still non-zero) need for additional parameter tweaking.
+* **Auto-normalized, relatively scaled Excitatory Conductances:** As in Leabra, the excitatory synaptic input conductance (`Ge` in the code, known as *net input* in artificial neural networks) is computed as an average, not a sum, over connections, based on normalized weight values, which are subject to scaling on a projection level to alter relative contributions.  Automatic scaling is performed to compensate for differences in expected activity level in the different projections.  See section on [Projection scaling](#projection-scaling) for details.  All of this makes it much easier to create models of different sizes and configurations with minimal (though still non-zero) need for additional parameter tweaking.
 
 ## Temporal and Spatial Dynamics of Dendritic Integration
 
@@ -342,7 +342,7 @@ The `axon.Network` `CycleImpl` method in [`axon/network.go`](https://github.com/
 
 * `GiFmSpikes` on all `Layer`s: computes inhibitory conductances based on total incoming FF and FB spikes into the layer, using the [FS-FFFB](https://github.com/emer/axon/tree/master/fsfffb) summary functions.
 
-* `CycleNeuron` on all `Neuron`s: integrates the Ge and Gi conductances from above, updates all the other channel conductances as described in [chans](https://github.com/emer/axon/tree/master/chans), and then computes `Inet` as the net current from all these conductances, which then drives updates to `Vm` and `VmDend`.  If `Vm` exceeds threshold then `Spike` = 1.
+* `CycleNeuron` on all `Neuron`s: integrates the Ge and Gi conductances from above, updates all the other channel conductances as described in [chans](https://github.com/emer/axon/tree/master/chans), and then computes `Inet` as the net current from all these conductances, which then drives updates to `Vm` and `VmDend`.  If `Vm` exceeds threshold then `Spike` = 1.  It also updates the neuron-level calcium variables that drive learning (`CaLrn`, `CaM`, `CaP`, `CaD` and `CaSpk` versions of these).
 
 * `SendSpikes` on all `Neuron`s: for each neuron with `Spike` = 1, adds scaled synaptic weight value to `GBuf` ring buffer for efficiently delaying receipt of the spike per parametrized `Com.Delay` cycles.  This is what the `GFmSpikes` then integrates.  This is very expensive computationally because it goes through synapses on each msec Cycle.
 
@@ -381,6 +381,8 @@ Overall inhibition:
 
 ### CycleNeuron
 
+There are three major steps here: `GInteg`, `SpikeFmG`, and `CaFmSpike`, the last of which updates Ca values used in learning.
+
 #### GInteg: Integrate G*Raw and G*Syn from Recv Prjns, other G*s
 
 Iterates over Recv Prjns:
@@ -389,24 +391,134 @@ Iterates over Recv Prjns:
 * or Gi* if inhibitory
 
 Then all the special conductances:
-* NMDA, VGCC, GABAB, Gk -- see [chans](https://github.com/emer/axon/tree/master/chans) for equations.  These contribute to overall `Ge` excitatory conductance and `Gi` inhibition.
+* NMDA, VGCC, GABAB, Gk -- see [chans](https://github.com/emer/axon/tree/master/chans) for equations, which operate on `VmDend` instead of `Vm`, as these channels are primarily located in the dendrites.  These contribute to overall `Ge` excitatory conductance and `Gi` inhibition.  
 
 And add in the pool inhib `Gi` computed above.
 
 #### SpikeFmG: Compute Vm and Spikes from all the G's
 
-* `Inet = Gbar.E * Ge + Gbar.I * Gi + Gbar.L + Gbar.K * Gk`
-* todo: exp etc
-* `Vm += Inet / VmTau  // VmTau = 2.81'
+`Vm` is incremented by the net current `Inet` summing all the conductances and an exponential factor capturing the Hodgkin Huxley spiking dynamics:
+* `Inet = Gbar.E * Ge * (Erev.E - Vm) + Gbar.I * Gi * (Erev.I - Vm) + ` `Gbar.L * (Erev.L - Vm) + Gbar.K * Gk * (Erev.K - Vm)
+    + `// Gbar.E = 1, I = 1, L = 0.2, K = 1; Erev.E = 1, L = 0.3, I = 0.1, K = 0.1`
+    + See [google sheet](https://docs.google.com/spreadsheets/d/1jn-NcXY4-y3pOw6inFOgPYlaQodrGIjcsAWkiD9f1FQ/edit?usp=sharing) for conversions from biological values to normalized units used in model.
+* `Vm += (Inet + Gbar.L * ExpSlope * Exp((Vm-Thr) / ExpSlope)) / VmTau`
+    + `// VmTau = 2.81 (capacitance); ExpSlope = 0.02 (2 mV biological)`
+
+In the Axon implementation, 2 smaller steps are taken in integrating the Vm (i.e., .5 msec resolution), and a midpoint value is used in computing the exponential factor, to avoid numerical instability while maintaining a 1 msec overall update rate.
+
+If the neuron has just spiked within the `Tr` refractory time window (3 msec default), then `Vm` juust decays toward a refractory potential `VmR` (0.3 = rest potential) with a time constant of `RTau` (1.6667 msec), with the last step constrained to reach `VmR` exactly.
+
+`VmDend` is updated in the same way as `Vm`, except that the exponential term is muted by an additional factor of `GbarExp` (0.2), and it is still updated by conductances during the refractory period, with an additional leak conductance of `GbarR` (3) added to drive the potential downward toward the resting potential.  Thus, consistent with detailed compartmental models and electrophysiological data, `VmDend` exhibits more sustained depolarization, which keeps the NMDA and GABA-B currents more stabily activated, as shown in the [Appendix: Dendritic Dynamics](#appendix-dendritic-dynamics).
+
+`VmDend` also has an additional contribution from the `SSGi` slow-spiking inhibition (2 * SSGi by default), reflecting the fact that the SST+ neurons target the distal dendrites.  This is important functionally to counter a positive feedback loop from NMDA channels, as discussed here: [FS-FFFB](https://github.com/emer/axon/tree/master/fsfffb).
+
+`Spike` is set to 1 when `Vm > ExpThr` (0.9, for default case where Exp function is being used), and the `ISI` (inter-spike-interval) counter, and time-averaged `ISIAvg` are updated:
+* `if ISIAvg <= 0 then ISIAvg = ISI;` `else if ISI < 0.8 * ISIAvg then ISIAvg = ISI;` `else ISIAvg += (ISI - ISIAvg) / ISITau`
+
+If the neuron did not spike, then `ISI++` is incremented.
+
+#### CaFmSpike: CaLrn (NMDA + VGCC) and Simple Spike-driven Ca Signals
+
+The core Ca calcium value that drives the *trace - kinase* learning rule is stored in the `CaLrn` neuron variable, as a sum of NMDA and VGCC calcium influx:
+
+* `CaLrn = (NmdaCa + VgccCaInt) / Norm`
+
+Where `Norm` (80) renormalizes the concentration-based factors to a range that works well for learning.
+
+In larger networks, directly using the calcium flux from the `VGCC` channel (`VgccCa`) works well, but in smaller networks it typically works better to use a simpler approximation to the VGCC Ca that purely reflects spiking rate and not the other voltage-related factors that affect Ca in the actual channels.  In either case, the VgccCa is integrated over time with a decay constant reflecting buffering and diffusion of these highly transient Ca signals driven by spiking:
+
+```Go
+	if SpkVGCC {
+		VgccCa = SpkVgccCa * Spike   // SpkVgccCa = 35
+	}
+	VgccCaInt += VgccCa - VgccCaInt / VgccTau  // VgccTau = 10 msec
+```
+
+This immediate `CaLrn` value is then subject to multiple levels of additional integration processes, reflecting the CaM calmodulin ->  CaMKII -> DAPK1 cascades, into the `CaM`, `CaP` and `CaD` variables.  The same time constants are used for these processes across various different variables, and are defined in the [kinase](https://github.com/emer/axon/tree/master/kinase) package, as follows:
+
+* `MTau` (2 or 5 msec) for `CaM` or `CaSpkM` = calmodulin time constant in cycles (msec) -- for synaptic-level integration this integrates on top of Ca signal from send->CaSyn * recv->CaSyn, each of which are typically integrated with a 30 msec Tau.
+
+* `PTau` (40 msec) for `CaP` or `CaSpkP` = LTP spike-driven Ca factor time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information.
+
+* `DTau` (40 msec) for `CaD` or `CaSpkD` = LTD spike-driven Ca factor time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome).
+
+The cascading update looks like this:
+```Go
+	CaM += (CaLrn - CaM) / MTau
+	CaP += (CaM - CaP) / PTau
+	CaD += (CaP - CaD) / DTau
+```
+
+As shown below for the `DWt` function, the *Error* gradient is:
+* `Error = CaP - CaD`
+
+In addition, the Ca trace used for synaptic-level integration for the trace-based *Credit* assignment factor (see `SendSynCa` and `RecvSynCa` below) is updated with a time constant of `SynTau` (30 msec) which defines the time window over which pre * post synaptic activity interacts in updating the synaptic-level trace:
+
+* `CaSyn += (SpikeG * Spike - CaSyn) / SynTau`
+
+Finally, various peripheral aspects of learning (learning rate modulation, thresholds, etc) and some performance statistics use simple cascaded time-integrals of spike-driven Ca at the Neuron level, in the `CaSpk` variables.  The initial Ca level from spiking is just multiplied by a gain factor:
+
+* `SpikeG` (8 or 12) = gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLrate, UpdtThr.  `Prjn.KinaseCa.SpikeG` provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
+
+The cascaded integration of these variables is:
+```Go
+	CaSpkM += (SpikeG * Spike - CaSpkM) / MTau
+	CaSpkP += (CaSpkM - CaSpkP) / PTau
+	CaSpkD += (CaSpkP - CaSpkD) / DTau
+```
 
 ### SendSpikes
 
+For each Neuron, if `Spike != 0`, then iterate over `SendPrjns` for that layer, and for each sending Synapse, `Prjn.GScale.Scale` (computed projection scaling, see [Projection scaling](#projection-scaling)) is multiplied by the synaptic weight `Wt`, and added into the `GBuf` buffer for each receiving neuron, at the ring index for `Com.Delay` (such that it will be added that many cycles later in `GFmSpikes`).  The `PIBuf` for the inhibitory pool of each receiving neuron is also incremented.
+
+This is expensive computationally because it requires traversing all of the synapses for each sending neuron, in a sparse manner due to the fact that few neurons are typically spiking at any given cycle.  
+
 ### SendSynCa, RecvSynCa
+
+If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SendSynCa`) and then any receiving neurons that spiked (`RecvSynCa`) -- Ca only needs to be updated in one of these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdtThr` = 0.01.
+
+After filtering, the basic cascaded integration shown above is performed on synapse-level variables where the immediate driving Ca value is the product of `CaSyn` on the recv and send neurons times a `SpikeG` gain factor:
+* `CaM += (SpikeG * send.CaSyn * recv.CaSyn - CaM) / MTau`
+
+The cascading is optimized to occur only at the time of spiking by looping over intervening time steps since last spike-driven update.
 
 ## Learning: DWt, WtFmDWt
 
+### DWt
 
-## Slow
+After 200 cycles of neuron updating per above, the synaptic weight changes `DWt` are computed according to the trace-kinase learning algorithm:
+* `DWt = Error * Credit`
+
+The *Error* gradient component of this weight change was shown above, in terms of the receiving neuron's `CaP` (CaMKII LTP) and `CaD` (DAPK1 LTD) kinase activity:
+* `Error = CaP - CaD`
+
+The *Credit* assignment component is the *trace*, based on the longest time-scale cascaded synaptic Ca value, `CaD` as updated in the above functions:
+* `Tr += (CaD - Tr) / Tau   // Tau = 1 or 2+ trials`
+Along with a `RLrate` factor that represents the derivative of the receiving activation, which is updated for each neuron at the end of the *plus* phase prior to doing `DWt`:
+* `RLrate = CaSpkD * (Max - CaSpkD) * (ABS(CaSpkP - CaSpkD) / MAX(CaSpkP - CaSpkD))`
+    + `Max` = maximum CaSpkD value across the layer
+
+Thus, the complete learning function is:
+* `DWt = (recv.CaP - recv.CaD) * Tr * recv.RLrate`
+
+The soft weight bounding is applied at the time of computing the DWt, as a function of the Linear weight value LWt (explained below in WtFmDWt) as follows:
+```Go
+    if DWt > 0 {
+        DWt *= (1 - LWt)
+    } else {
+        DWt *= LWt
+    }
+```
+
+There are also alternative learning functions supported, that use neuron-level Ca instead of synaptic Ca (selected by the `NeuronCa` option) for the trace factor, and are thus significantly faster, but do not work as well in general, especially in large networks on challenging tasks.
+
+### WtFmDWt
+
+Synaptic weights `Wt` are typically updated after every weight change, but multiple `DWt` changes can be added up in a mini-batch (often when doing data-parallel learning across multiple processors).
+
+TODO!
+
+## SlowInterval Updates: SWt, 
 
 * **SWt: structural, slowly-adapting weights:** Biologically, the overall synaptic efficacy is determined by two major factors: the number of excitatory AMPA receptors (which adapt rapidly in learning), and size, number, and shape of the dendritic spines (which adapt more slowly, requiring protein synthesis, typically during sleep).  It was useful to introduce a slowly-adapting structural component to the weight, `SWt`, to complement the rapidly adapting `LWt` value (reflecting AMPA receptor expression), which has a multiplicative relationship with `LWt` in determining the effective `Wt` value.  The `SWt` value is typically initialized with all of the initial random variance across synapses, and it learns on the `SlowInterval` (100 iterations of faster learning) on the zero-sum accumulated `DWt` changes since the last such update, with a slow learning rate (e.g., 0.001) on top of the existing faster learning rate applied to each accumulated `DWt` value.  This slowly-changing SWt value is critical for preserving a background level of synaptic variability, even as faster weights change.  This synaptic variability is essential for prevent degenerate hog-unit representations from taking over, while learning slowly accumulates effective new weight configurations.  In addition, a small additional element of random variability, colorfully named `DreamVar`, can be injected into the active `LWt` values after each `SWt` update, which further preserves this critical resource of variability driving exploration of the space during learning.
 
@@ -421,7 +533,7 @@ And add in the pool inhib `Gi` computed above.
     This is similar to a major function performed by the BCM learning algorithm in the Leabra framework, but we found that by moving this mechanism into a longer time-scale outer-loop mechanism (consistent with Turigiano's data), it worked much more effectively.  By contrast, the BCM learning ended up interfering with the error-driven learning signal, and required relatively quick time-constants to adapt responsively as a neuron's activity started to change.  To allow this target activity signal to adapt in response to the DC component of a neuron's error signal, the local plus - minus phase difference (`ActDiff`) drives (in a zero-sum manner) changes in `TrgAvg`, subject also to Min / Max bounds.  These params are on the `Layer` in `Learn.SynScale`.
         
         
-## Input Scaling
+## Projection scaling
 
 The `Ge` and `Gi` synaptic conductances computed from a given projection from one layer to the next reflect the number of receptors currently open and capable of passing current, which is a function of the activity of the sending layer, and total number of synapses.  We use a set of equations to automatically normalize (rescale) these factors across different projections, so that each projection has roughly an equal influence on the receiving neuron, by default.
 

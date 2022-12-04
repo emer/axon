@@ -768,7 +768,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := slay.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
@@ -777,6 +777,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
 			continue
 		}
+		snCaSyn := ssg * sn.CaSyn
 		nc := int(pj.SConN[si])
 		st := int(pj.SConIdxSt[si])
 		syns := pj.Syns[st : st+nc]
@@ -795,7 +796,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 			}
 			sy.CaUpT = cycTot
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
+			sy.Ca = snCaSyn * rn.CaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
 	}
@@ -812,7 +813,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := slay.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
 		if rn.Spike == 0 {
@@ -821,6 +822,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 		if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
 			continue
 		}
+		rnCaSyn := ssg * rn.CaSyn
 		nc := int(pj.RConN[ri])
 		st := int(pj.RConIdxSt[ri])
 		rsidxs := pj.RSynIdx[st : st+nc]
@@ -839,7 +841,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 			}
 			sy.CaUpT = cycTot
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
+			sy.Ca = sn.CaSyn * rnCaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
 	}
@@ -894,7 +896,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 			if sy.Wt == 0 {                                                 // failed con, no learn
 				continue
 			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {
@@ -930,7 +932,7 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 			if sy.Wt == 0 {                           // failed con, no learn
 				continue
 			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {

@@ -398,7 +398,7 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 }
 
 // SpikeFmG computes Spike from Vm and ISI-based activation
-func (ac *ActParams) SpikeFmG(nrn *Neuron) {
+func (ac *ActParams) SpikeFmVm(nrn *Neuron) {
 	var thr float32
 	if ac.Spike.Exp {
 		thr = ac.Spike.ExpThr

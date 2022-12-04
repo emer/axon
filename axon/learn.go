@@ -152,7 +152,7 @@ func (np *CaLrnParams) VgccCa(nrn *Neuron) {
 	if np.SpkVGCC {
 		nrn.VgccCa = np.SpkVgccCa * nrn.Spike
 	}
-	nrn.VgccCaInt = nrn.VgccCaInt + nrn.VgccCa - np.VgccDt*nrn.VgccCaInt // Dt only affects decay, not rise time
+	nrn.VgccCaInt += nrn.VgccCa - np.VgccDt*nrn.VgccCaInt // Dt only affects decay, not rise time
 }
 
 // CaLrn updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
@@ -174,7 +174,7 @@ func (np *CaLrnParams) CaLrn(nrn *Neuron) {
 // CaSpk* values are integrated separately at the Neuron level and used for UpdtThr
 // and RLrate as a proxy for the activation (spiking) based learning signal.
 type CaSpkParams struct {
-	SpikeG float32           `def:"8,12" desc:"gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLrate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors -- 12, vs 8 for smaller."`
+	SpikeG float32           `def:"8,12" desc:"gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLrate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller."`
 	SynTau float32           `def:"30" min:"1" desc:"time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec)"`
 	Dt     kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Prjn level for synaptic integration, except for the M factor."`
 
