@@ -516,7 +516,7 @@ There are also alternative learning functions supported, that use neuron-level C
 
 Synaptic weights `Wt` are typically updated after every weight change, but multiple `DWt` changes can be added up in a mini-batch (often when doing data-parallel learning across multiple processors).
 
-TODO!
+ TODO!
 
 ## SlowInterval Updates: SWt, 
 
