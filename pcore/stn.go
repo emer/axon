@@ -72,6 +72,7 @@ func (ly *STNLayer) Defaults() {
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
+	ly.Act.Dend.SSGi = 0
 	ly.Inhib.Layer.On = true // was false
 	ly.Inhib.Layer.Gi = 0.6
 	ly.Inhib.Pool.On = false
