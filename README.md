@@ -432,10 +432,10 @@ Where `Norm` (80) renormalizes the concentration-based factors to a range that w
 In larger networks, directly using the calcium flux from the `VGCC` channel (`VgccCa`) works well, but in smaller networks it typically works better to use a simpler approximation to the VGCC Ca that purely reflects spiking rate and not the other voltage-related factors that affect Ca in the actual channels.  In either case, the VgccCa is integrated over time with a decay constant reflecting buffering and diffusion of these highly transient Ca signals driven by spiking:
 
 ```Go
-	if SpkVGCC {
-		VgccCa = SpkVgccCa * Spike   // SpkVgccCa = 35
-	}
-	VgccCaInt += VgccCa - VgccCaInt / VgccTau  // VgccTau = 10 msec
+    if SpkVGCC {
+        VgccCa = SpkVgccCa * Spike   // SpkVgccCa = 35
+    }
+    VgccCaInt += VgccCa - VgccCaInt / VgccTau  // VgccTau = 10 msec
 ```
 
 This immediate `CaLrn` value is then subject to multiple levels of additional integration processes, reflecting the CaM calmodulin ->  CaMKII -> DAPK1 cascades, into the `CaM`, `CaP` and `CaD` variables.  The same time constants are used for these processes across various different variables, and are defined in the [kinase](https://github.com/emer/axon/tree/master/kinase) package, as follows:
@@ -448,9 +448,9 @@ This immediate `CaLrn` value is then subject to multiple levels of additional in
 
 The cascading update looks like this:
 ```Go
-	CaM += (CaLrn - CaM) / MTau
-	CaP += (CaM - CaP) / PTau
-	CaD += (CaP - CaD) / DTau
+    CaM += (CaLrn - CaM) / MTau
+    CaP += (CaM - CaP) / PTau
+    CaD += (CaP - CaD) / DTau
 ```
 
 As shown below for the `DWt` function, the *Error* gradient is:
@@ -466,9 +466,9 @@ Finally, various peripheral aspects of learning (learning rate modulation, thres
 
 The cascaded integration of these variables is:
 ```Go
-	CaSpkM += (SpikeG * Spike - CaSpkM) / MTau
-	CaSpkP += (CaSpkM - CaSpkP) / PTau
-	CaSpkD += (CaSpkP - CaSpkD) / DTau
+    CaSpkM += (SpikeG * Spike - CaSpkM) / MTau
+    CaSpkP += (CaSpkM - CaSpkP) / PTau
+    CaSpkD += (CaSpkP - CaSpkD) / DTau
 ```
 
 ### SendSpikes
