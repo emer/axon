@@ -204,9 +204,13 @@ A collection of biologically-motivated mechanisms are used to provide a stronger
 
 Metaphorically, various forms of equalizing taxation and wealth redistribution are required to level the playing field.  The set of stabilizing, anti-hog mechanisms in Axon include:
 
-1. **SWt:** structural, slowly-adapting weights.  In addition to the usual learning weights driven by the above equations, we introduce a much more slowly-adapting, multiplicative `SWt` that represents the biological properties of the dendritic *spine* -- these SWts "literally" give the model a spine!  Spines are structural complexes where all the synaptic machinery is organized, and they slowly grow and shrink via genetically-controlled, activity-dependent protein remodeling processes, primarily involving the *actin* fibers also found in muscles.  The SWt is multiplicative in the sense that larger vs. smaller spines provide more or less room for the AMPA receptors that constitute the adaptive weight value.  The net effect is that the more rapid trial-by-trial weight changes are constrained by this more slowly-adapting multiplicative factor, preventing more extreme changes.  Furthermore, the SWt values are constrained by a zero-sum dynamic relative to the set of receiving connections into a given neuron, preventing the neuron from increasing all of its weights higher and hogging the space.
+1. **SWt:** structural, slowly-adapting weights.  In addition to the usual learning weights driven by the above equations, we introduce a much more slowly-adapting, multiplicative `SWt` that represents the biological properties of the dendritic *spine* -- these SWts "literally" give the model a spine!  Spines are structural complexes where all the synaptic machinery is organized, and they slowly grow and shrink via genetically-controlled, activity-dependent protein remodeling processes, primarily involving the *actin* fibers also found in muscles.  A significant amount of spine remodeling takes place during sleep -- so the SWt updating represents a simple model of sleep effects.
 
-2. **Target activity levels:** There is extensive evidence from Gina Turrigiano and collaborators, among others, that synapses are homeostatically rescaled to maintain target levels of overall activity, which vary across individual neurons (e.g., [Torrado Pacheco et al., 2021](#references)).  Axon simulates this process, at the same slower timescale as updating the SWts, which are also involved in the rescaling process.  The target activity levels can also slowly adapt over time, but this adaptation is typically subject to a zero-sum constraint, so any increase in activity in one neuron must be compensated for by reductions elsewhere.
+    The SWt is multiplicative in the sense that larger vs. smaller spines provide more or less room for the AMPA receptors that constitute the adaptive weight value.  The net effect is that the more rapid trial-by-trial weight changes are constrained by this more slowly-adapting multiplicative factor, preventing more extreme changes.  Furthermore, the SWt values are constrained by a zero-sum dynamic relative to the set of receiving connections into a given neuron, preventing the neuron from increasing all of its weights higher and hogging the space.  The SWt is also initialized with all of the randomness associated with the initial weights, and preserving this source of random variation, preventing weights from becoming too self-similar, is another important function.
+
+2. **Target activity levels:** There is extensive evidence from Gina Turrigiano and collaborators, among others, that synapses are homeostatically rescaled to maintain target levels of overall activity, which vary across individual neurons (e.g., [Torrado Pacheco et al., 2021](#references)).  Axon simulates this process, at the same slower timescale as updating the SWts (likewise associated with sleep), which are also involved in the rescaling process.  The target activity levels can also slowly adapt over time, similar to an adaptive bias weight that absorbs the "DC" component of the learning signal [Schraudolph (1998)](#references), but this adaptation is typically subject to a zero-sum constraint, so any increase in activity in one neuron must be compensated for by reductions elsewhere.
+
+    This is similar to a major function performed by the BCM learning algorithm in the Leabra framework -- by moving this mechanism into a longer time-scale outer-loop mechanism (consistent with Turigiano's data), it worked much more effectively.  By contrast, the BCM learning ended up interfering with the error-driven learning signal, and required relatively quick time-constants to adapt responsively as a neuron's activity started to change.
 
 3. **Zero-sum weight changes:** In some cases it can also be useful to constrain the faster error-driven weight changes to be zero-sum, which is supported by an optional parameter.  This zero-sum logic was nicely articulated by [Schraudolph (1998)](#references), and is implemented in the widely-used ResNet models.
 
@@ -323,10 +327,10 @@ There is always at least one [`axon.Pool`](https://github.com/emer/axon/blob/mas
 
 Neurons are connected via synapses parameterized with the following variables, contained in the [`axon.Synapse`](https://github.com/emer/axon/blob/master/axon/synapse.go) struct.  The [`axon.Prjn`](https://github.com/emer/axon/blob/master/axon/prjn.go) contains all of the synaptic connections for all the neurons across a given layer -- there are no Neuron-level data structures in the Go version.
 
-* `Wt` = effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1
-* `SWt` = slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine, while the LWt reflects the AMPA receptor efficacy and number.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
-* `LWt` = rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Initially all LWt are .5, which gives 1 from WtSig function, 
-* `DWt` = change in synaptic weight, from learning
+* `Wt` = effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
+* `LWt` = rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
+* `SWt` = slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
+* `DWt` = change in synaptic weight, from learning -- updates LWt which then updates Wt.
 * `DSWt` = change in SWt slow synaptic weight -- accumulates DWt
 * `Ca` = Raw calcium singal for Kinase learning: SpikeG * (send.CaSyn * recv.CaSyn)
 * `CaM` = first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
@@ -515,24 +519,72 @@ There are also alternative learning functions supported, that use neuron-level C
 
 ### WtFmDWt
 
-Synaptic weights `Wt` are typically updated after every weight change, but multiple `DWt` changes can be added up in a mini-batch (often when doing data-parallel learning across multiple processors).
+Synaptic weights `Wt` are typically updated after every weight change, but multiple `DWt` changes can be added up in a mini-batch (often when doing data-parallel learning across multiple processors).  With the `SWt` and contrast enhancement required to compensate for the soft weight bounding (which was also a long-time part of the Leabra algorithm), there are *three* different weight values at each synapse:
 
- TODO!
+* `Wt` = effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
+* `LWt` = rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
+* `SWt` = slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
 
-## SlowInterval Updates: SWt, 
+First, the `LWt` is updated from the `DWt`:
 
-* **SWt: structural, slowly-adapting weights:** Biologically, the overall synaptic efficacy is determined by two major factors: the number of excitatory AMPA receptors (which adapt rapidly in learning), and size, number, and shape of the dendritic spines (which adapt more slowly, requiring protein synthesis, typically during sleep).  It was useful to introduce a slowly-adapting structural component to the weight, `SWt`, to complement the rapidly adapting `LWt` value (reflecting AMPA receptor expression), which has a multiplicative relationship with `LWt` in determining the effective `Wt` value.  The `SWt` value is typically initialized with all of the initial random variance across synapses, and it learns on the `SlowInterval` (100 iterations of faster learning) on the zero-sum accumulated `DWt` changes since the last such update, with a slow learning rate (e.g., 0.001) on top of the existing faster learning rate applied to each accumulated `DWt` value.  This slowly-changing SWt value is critical for preserving a background level of synaptic variability, even as faster weights change.  This synaptic variability is essential for prevent degenerate hog-unit representations from taking over, while learning slowly accumulates effective new weight configurations.  In addition, a small additional element of random variability, colorfully named `DreamVar`, can be injected into the active `LWt` values after each `SWt` update, which further preserves this critical resource of variability driving exploration of the space during learning.
+* `LWt += DWt`
 
-* **Soft weight bounding and contrast enhancement:**  Weights are subject to a contrast enhancement function, which compensates for the soft (exponential) weight bounding that keeps weights within the normalized 0-1 range.  Contrast enhancement is important for enhancing the selectivity of learning, and generally results in faster learning with better overall results.  Learning operates on the underlying internal linear weight value, `LWt`, while the effective overall `Wt` driving excitatory conductances is the contrast-enhanced version.  Biologically, we associate the underlying linear weight value with internal synaptic factors such as actin scaffolding, CaMKII phosphorlation level, etc, while the contrast enhancement operates at the level of AMPA receptor expression.
+Then `Wt` is updated therefrom:
+
+* `Wt = SWt * Sigmoid(LWt)`
+* `Sigmoid(W) = 1 / (1 + ((1-W)/W)^6)`
+
+Thus, the `SWt` provides a multiplicative constraint on the weights, and the `LWt` drives a more extreme, contrast-enhanced value on the weights, which counteracts the compression created by the soft weight bounding.
+
+## SlowAdapt Updates: Target Activity Rescaling, SWt
+
+Every `SlowInterval` (100) Trials, the `SlowAdapt` methods are called on all Layers and then Projections, which perform the following.  These are essential constraints on learning that break the positive feedback loops while preserving effective error-driven learning.
+
+### Target vs. Average Activity
+
+First, when the network is initialized, a `TrgAvg` value is assigned to each neuron by uniformly sampling within a range of target values (0.5 - 2.0) and permuting the values among the set of neurons.  This target is then updated as a function of the receiving unit error-gradient, subject to a zero-sum constraint across the relevant Pool of neurons:
+* `DTrgAvg += ErrLrate * (CaSpkP - CaSpkD) // ErrLrate = .02`
+* `TrgAvg += DTrgAvg - AVG(DTrgAvg)   // zero-sum` 
 
 
+After every Trial, the neuron's actual average activation `ActAvg` is updated in a running-average manner:
+* `ActAvg += (ActM - ActAvg) / LongAvgTau   //  LongAvgTau = 20 trials`
 
-* **Zero-sum weight changes:** In Axon, we enforce zero-sum synaptic weight changes, such that the mean synaptic weight change across the synapses in a given neuron's receiving projection is subtracted from all such computed weight changes.  The `Prjn.Learn.XCal.SubMean` parameter controls how much of the mean `DWt` value is subtracted: 1 = full zero sum, which works the best.  There is significant biological data in support of such a zero-sum nature to synaptic plasticity (cites).  Functionally, it is a key weapon against the positive-feedback loop "hog unit" problems.
+Then, in SlowAdapt, the `ActAvg` values are normalized into a proportion relative to the averages within the Pool a neuron belongs to, and the difference between this and the `TrgAvg` recorded:
+* `AvgPct = ActAvg / SUM(ActAvg)`
+* `AvgDif = AvgPct - TrgAvg`
 
-* **Target intrinsic activity levels:** Schraudolph notes that a *bias weight* is ideal for absorbing all of the DC or main effect signal for a neuron.  Biologically, Gina Turrigiano has discovered extensive evidence for *synaptic scaling* mechanisms that dynamically adjust for changes in overall excitability or mean activity of a neuron across longer time scales (e.g., as a result of monocular depravation experiments).  Furthermore, she found that there is a range of different target activity levels across neurons, and that each neuron has a tendency to maintain its own target level.   In Axon, we implemented a simple form of this mechanism by: 1. giving each neuron its own target average activity level (`TrgAvg`); 2. monitoring its activity over longer time scales (`ActAvg` and `AvgPct` as a normalized value); and 3. scaling the overall synaptic weights (`LWt`) to maintain this level by adapting in a soft-bounded way as a function of `TrgAvg - AvgPct`.
+This `AvgDif` value then drives synaptic rescaling per below.
 
-    This is similar to a major function performed by the BCM learning algorithm in the Leabra framework, but we found that by moving this mechanism into a longer time-scale outer-loop mechanism (consistent with Turigiano's data), it worked much more effectively.  By contrast, the BCM learning ended up interfering with the error-driven learning signal, and required relatively quick time-constants to adapt responsively as a neuron's activity started to change.  To allow this target activity signal to adapt in response to the DC component of a neuron's error signal, the local plus - minus phase difference (`ActDiff`) drives (in a zero-sum manner) changes in `TrgAvg`, subject also to Min / Max bounds.  These params are on the `Layer` in `Learn.SynScale`.
-        
+### SWt Update
+
+The `SWt` is updated from `DSWt` which is accumulated from all the ensuing `DWt` values, with soft bounding applied and zero-sum:
+```Go
+	if DSWt >= 0 {
+		DSWt *= (SWt.Limit.Max - SWt)
+	} else {
+		DSWt *= (SWt - SWt.Limit.Min)
+	}
+    SWt += SWt.Adapt.Lrate * (DSWt - AVG(DSWt) // AVG over Recv synapses per Prjn
+    LWt = SigInverse(Wt / SWt)   // inverse of sigmoid
+```
+The learning rate here is typically slow, on the order 0.001 or even lower in large networks.
+
+The updating of `LWt` in this way preserves the current `Wt` value despite changes in the `SWt` multiplier -- in effect the `LWt` absorbs the changes in SWt to preserve the current `Wt` value.
+
+### Synaptic Rescaling
+
+Finally, the `LWt` values are rescaled as a function of the `AvgDif` values reflecting the deviation in average activity relative to the target as computed above, using a soft-bounding update:
+```Go
+    if AvgDif > 0 {
+        LWt += SynScaleRate * (1 - LWt) * AvgDif * SWt
+    } else {
+        LWt += SynScaleRate * LWt * AvgDif * SWt
+    }
+    Wt = SWt * Sigmoid(LWt)
+```
+This updates all the learned weights, and consequently the effective weights, moving in the direction to reduce the difference between the actual average activation and the target.
+ 
         
 ## Projection scaling
 
@@ -572,35 +624,13 @@ Here are the relevant factors that are used to compute the automatic rescaling t
 
 This `sc` factor multiplies the `GScale` factor as computed above.
 
-# clippings
-
-
-
-
-* **Dopamine-like neuromodulation of learning rate:** The plus phase pattern can be fairly different from minus phase, even when there is no error.  This erodes the signal-to-noise-ratio of learning.  Dopamine-like neuromodulatory control over the learning rate can compensate, by ramping up learning when an overall behavioral error is present, while ramping it down when it is not.  The mechanism is simple: there is a baseline learning rate, on top of which the error-modulated portion is added.
-
-* **Shortcut connections.**  These are ubiquitous in the brain, and in deep spiking networks, they are essential for moderating the tendency of the network to have wildly oscillatory waves of activity and silence in response to new inputs.  Weaker, random short-cuts allow a kind warning signal for impending inputs, diffusely ramping up excitatory and inhibitory activity.  It is possible that the *Claustrum* and other nonspecific thalamic areas provide some of this effect in the brain, by driving diffuse broad activation in the awake state, to overcome excessive oscillatory entrainment.
-
-## Minor but Important
-
-There are a number of other more minor but still quite important details that make the models work.
-
-* *Current clamping the inputs.* Initially, inputs were driven with a uniform Poisson spike train based on their external clamped activity level.  However, this prevents the emergence of more natural timing dynamics including the critical "time to first spike" for new inputs, which is proportional to the excitatory drive, and gives an important first-wave signal through the network.  Thus, especially for complex distributed activity patterns, using the `GeClamp` where the input directly drives Ge in the input neurons, is best.
-
-* *Direct adaptation of projection scaling.*  This is very technical, but important, to maintain neural signaling in the sensitive, functional range, despite major changes taking place over the course of learning.  In Leabra, each projection was scaled by the average activity of the sending layer, to achieve a uniform contribution of each pathway (subject to further parameterized re-weighting), and these scalings were updated continuously *as a function of running-average activity in the layers*.  However, the mapping between average activity and scaling is not perfect, and it works much better to just directly adapt the scaling factors themselves.  There is a target `Act.GTarg.GeMax` value on the layer, and excitatory projections are scaled to keep the actual max Ge excitation in that target range, with tolerances for being under or over.  In general, activity is low early in learning, and adapting scales to make this input stronger is not beneficial.  Thus, the default low-side tolerance is quite wide, while the upper-side is tight and any deviation above the target results in reducing the overall scaling factor.  Note that this is quite distinct from the synaptic scaling described above, because it operates across the entire projection, not per-neuron, and operates on a very slow time scale, akin to developmental time in an organism.
-
-* *Adaptation of layer inhibition.*  This is similar to projection scaling, but for overall layer inhibition.  TODO: revisit again in context of scaling adaptation.
-
 ## Important Stats
 
 The only way to manage the complexity of large spiking nets is to develop advanced statistics that reveal what is going on, especially when things go wrong.  These include:
 
 * Basic "activation health": proper function depends on neurons remaining in a sensitive range of excitatory and inhibitory inputs, so these are monitored.  Each layer has `ActAvg` with `AvgMaxGeM` reporting average maximum minus-phase Ge values -- these are what is regulated relative to `Act.GTarg.GeMax`, but also must be examined early in training to ensure that initial excitation is not too weak.  The layer `Inhib.ActAvg.Init` can be set to adjust -- and unlike in Leabra, there is a separate `Target` value that controls adaptation of layer-level inhibition.
 
-* Hogging and the flip-side: dead units.
-
 * PCA of overall representational complexity.  Even if individual neurons are not hogging the space, the overall compelxity of representations can be reduced through a more distributed form of hogging.  PCA provides a good measure of that.
-
 
 # Appendix: Specialized BG / PFC / DA / Etc Algorithms
 
@@ -611,8 +641,6 @@ This repository contains specialized additions to the core algorithm described h
 * [pbwm](https://github.com/emer/axon/blob/master/rl) has basic reinforcement learning models such as Rescorla-Wagner and TD (temporal differences).
 * [pbwm](https://github.com/emer/axon/blob/master/pbwm1) has the prefrontal-cortex basal ganglia working memory model (PBWM).
 * [hip](https://github.com/emer/axon/blob/master/hip) has the hippocampus specific learning mechanisms.
-
-
 
 # Appendix: Kinase-Trace Learning Rule Derivation
 
@@ -648,6 +676,8 @@ In short, backprop is at one end of a continuum where the only credit assignment
 
 # Appendix: Neural data for parameters
 
+See [chans](https://github.com/emer/axon/tree/master/chans) for good sources for many constants and equations.
+
 * Brunel00: https://nest-simulator.readthedocs.io/en/nest-2.20.1/auto_examples/brunel_alpha_nest.html
 * SahHestrinNicoll90 -- actual data for AMPA, NMDA
 * XiangHuguenardPrince98a -- actual data for GABAa
@@ -667,7 +697,6 @@ AMPA rise, decay times:
 * Brunel00: 0.5 ms -- too short!
 
 GABAa rise, decay times:
-
 * XHP98a: 0.5ms rise, 6-7ms decay
 
 # Appendix: Dendritic Dynamics

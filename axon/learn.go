@@ -129,6 +129,7 @@ type CaLrnParams struct {
 	VgccTau   float32           `def:"10" desc:"time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn"`
 	Dt        kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaLrn across M, P and D cascading levels"`
 	VgccDt    float32           `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	NormInv   float32           `view:"-" json:"-" xml:"-" inactive:"+" desc:"= 1 / Norm"`
 }
 
 func (np *CaLrnParams) Defaults() {
@@ -144,6 +145,7 @@ func (np *CaLrnParams) Defaults() {
 func (np *CaLrnParams) Update() {
 	np.Dt.Update()
 	np.VgccDt = 1 / np.VgccTau
+	np.NormInv = 1 / np.Norm
 }
 
 // VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
@@ -160,7 +162,7 @@ func (np *CaLrnParams) VgccCa(nrn *Neuron) {
 // perform its time-integration.
 func (np *CaLrnParams) CaLrn(nrn *Neuron) {
 	np.VgccCa(nrn)
-	nrn.CaLrn = (nrn.NmdaCa + nrn.VgccCaInt) / np.Norm
+	nrn.CaLrn = np.NormInv * (nrn.NmdaCa + nrn.VgccCaInt)
 	nrn.CaM += np.Dt.MDt * (nrn.CaLrn - nrn.CaM)
 	nrn.CaP += np.Dt.PDt * (nrn.CaM - nrn.CaP)
 	nrn.CaD += np.Dt.DDt * (nrn.CaP - nrn.CaD)
