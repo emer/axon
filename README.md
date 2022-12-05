@@ -402,7 +402,7 @@ And add in the pool inhib `Gi` computed above.
 #### SpikeFmG: Compute Vm and Spikes from all the G's
 
 `Vm` is incremented by the net current `Inet` summing all the conductances and an exponential factor capturing the Hodgkin Huxley spiking dynamics:
-* `Inet = Gbar.E * Ge * (Erev.E - Vm) + Gbar.I * Gi * (Erev.I - Vm) + ` `Gbar.L * (Erev.L - Vm) + Gbar.K * Gk * (Erev.K - Vm)
+* `Inet = Gbar.E * Ge * (Erev.E - Vm) + ` `Gbar.I * Gi * (Erev.I - Vm) + ` `Gbar.L * (Erev.L - Vm) + ` `Gbar.K * Gk * (Erev.K - Vm)`
     + `// Gbar.E = 1, I = 1, L = 0.2, K = 1; Erev.E = 1, L = 0.3, I = 0.1, K = 0.1`
     + See [google sheet](https://docs.google.com/spreadsheets/d/1jn-NcXY4-y3pOw6inFOgPYlaQodrGIjcsAWkiD9f1FQ/edit?usp=sharing) for conversions from biological values to normalized units used in model.
 * `Vm += (Inet + Gbar.L * ExpSlope * Exp((Vm-Thr) / ExpSlope)) / VmTau`
@@ -560,11 +560,11 @@ This `AvgDif` value then drives synaptic rescaling per below.
 
 The `SWt` is updated from `DSWt` which is accumulated from all the ensuing `DWt` values, with soft bounding applied and zero-sum:
 ```Go
-	if DSWt >= 0 {
-		DSWt *= (SWt.Limit.Max - SWt)
-	} else {
-		DSWt *= (SWt - SWt.Limit.Min)
-	}
+    if DSWt >= 0 {
+    	DSWt *= (SWt.Limit.Max - SWt)
+    } else {
+    	DSWt *= (SWt - SWt.Limit.Min)
+    }
     SWt += SWt.Adapt.Lrate * (DSWt - AVG(DSWt) // AVG over Recv synapses per Prjn
     LWt = SigInverse(Wt / SWt)   // inverse of sigmoid
 ```
