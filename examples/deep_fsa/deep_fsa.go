@@ -25,7 +25,11 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/etable/agg"
+	"github.com/emer/etable/etensor"
 	_ "github.com/emer/etable/etview" // _ = include to get gui views
+	"github.com/emer/etable/minmax"
+	"github.com/emer/etable/tsragg"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
@@ -473,6 +477,60 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
+	layers := ss.Net.LayersByClass("Hidden", "Target", "CT", "Pulv")
+	for _, lnm := range layers {
+		clnm := lnm
+		ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		ss.Logs.AddItem(&elog.Item{
+			Name:  clnm + "_AvgCaDiff",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "CaDiff")
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_Gnmda",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "Gnmda")
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_GgabaB",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					tsr := ctx.GetLayerRepTensor(clnm, "GgabaB")
+					avg := tsragg.Mean(tsr)
+					ctx.SetFloat64(avg)
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_SSGi",
+			Type:   etensor.FLOAT64,
+			Range:  minmax.F64{Max: 1},
+			FixMin: true,
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
+					ctx.SetFloat32(ly.Pools[0].Inhib.SSGi)
+				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}}})
+	}
 }
 
 // Log is the main logging function, handles special things for different scopes

@@ -13,18 +13,20 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
-					"Layer.Inhib.Layer.Gi":    "1.0", // 1.0 > 1.1  trace
-					"Layer.Act.Gbar.L":        "0.2", // std
-					"Layer.Act.Decay.Act":     "0.0", // 0 == 0.2
-					"Layer.Act.Decay.Glong":   "0.0",
-					"Layer.Act.NMDA.MgC":      "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":     "5",
-					"Layer.Act.Mahp.Gbar":     "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-					"Layer.Act.Sahp.Gbar":     "0.1",  // 0.1 == 0.02 no real diff
-					"Layer.Act.Sahp.Off":      "0.8",  //
-					"Layer.Act.Sahp.Slope":    "0.02", //
-					"Layer.Act.Sahp.CaTau":    "5",    // 5 > 10
+					"Layer.Inhib.ActAvg.Init":       "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 > 0.95 > 1.0 > 1.1  SSGi = 2
+					"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
+					"Layer.Act.Dend.SSGi":           "2",
+					"Layer.Act.Gbar.L":              "0.2", // std
+					"Layer.Act.Decay.Act":           "0.0", // 0 == 0.2
+					"Layer.Act.Decay.Glong":         "0.0",
+					"Layer.Act.NMDA.MgC":            "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":           "5",
+					"Layer.Act.Mahp.Gbar":           "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+					"Layer.Act.Sahp.Gbar":           "0.1",  // 0.1 == 0.02 no real diff
+					"Layer.Act.Sahp.Off":            "0.8",  //
+					"Layer.Act.Sahp.Slope":          "0.02", //
+					"Layer.Act.Sahp.CaTau":          "5",    // 5 > 10
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -46,6 +48,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":    "2.8",  // 2.8 best -- 1.4 prev
 					"Layer.CT.GeGain":         "1.0",  // 1.0 > 0.8 > 0.5
 					"Layer.CT.DecayTau":       "50",   // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Dend.SSGi":     "0",    // 0 > higher -- kills nmda maint!
 					"Layer.Act.Decay.Act":     "0.0",
 					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Act.GABAB.Gbar":    "0.3",
@@ -84,12 +87,13 @@ var ParamSets = params.Sets{
 			// Projections below
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":   "0.002",  // full song: 0.002 > 0.005, 0.001 in the end; 30 notes: .02
-					"Prjn.SWt.Adapt.Lrate":    "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
-					"Prjn.SWt.Adapt.DreamVar": "0.0",    // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":      "1.0",    // 1 works fine here -- .5 also ok
-					"Prjn.Com.PFail":          "0.0",
-					"Prjn.Learn.Trace.Tau":    "2", // 2 > 1 (small bene) > 4 (worse at end on full)
+					"Prjn.Learn.Lrate.Base":    "0.002",  // full song: 0.002 > 0.005, 0.001 in the end; 30 notes: .02
+					"Prjn.Learn.Trace.SubMean": "0",      //
+					"Prjn.SWt.Adapt.Lrate":     "0.0001", // 0.01 == 0.0001 but 0.001 not as good..
+					"Prjn.SWt.Adapt.DreamVar":  "0.0",    // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":       "1.0",    // 1 works fine here -- .5 also ok
+					"Prjn.Com.PFail":           "0.0",
+					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 (small bene) > 4 (worse at end on full)
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -101,9 +105,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.001", // 0.001 >> 0.002 for full
-					"Prjn.Learn.Trace.Tau":  "4",     // 4 > 2?
-					"Prjn.Com.PFail":        "0.0",   // .2, .3 too high -- very slow learning
+					"Prjn.Learn.Lrate.Base":    "0.001", // 0.001 >> 0.002 for full
+					"Prjn.Learn.Trace.Tau":     "4",     // 4 > 2?
+					"Prjn.Learn.Trace.SubMean": "0",     // 0 > 1 -- 1 is especially bad
+					"Prjn.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning
 				}},
 			{Sel: ".CTFmSuper", Desc: "1to1 > full",
 				Params: params.Params{

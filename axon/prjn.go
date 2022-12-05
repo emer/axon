@@ -691,11 +691,11 @@ func (pj *Prjn) InitGBuffs() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// SendSpike sends a spike from the sending neuron at index sendIdx
+// SendSpikes sends a spike from the sending neuron at index sendIdx
 // into the buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpike(sendIdx int) {
+func (pj *Prjn) SendSpikes(sendIdx int) {
 	scale := pj.GScale.Scale
 	maxDelay := pj.Com.Delay
 	delayBufSize := maxDelay + 1
@@ -771,7 +771,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := slay.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
@@ -780,6 +780,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
 			continue
 		}
+		snCaSyn := ssg * sn.CaSyn
 		nc := int(pj.SendConN[si])
 		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
@@ -798,7 +799,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 			}
 			sy.CaUpT = cycTot
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
+			sy.Ca = snCaSyn * rn.CaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
 	}
@@ -815,7 +816,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := slay.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
 		if rn.Spike == 0 {
@@ -824,6 +825,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 		if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
 			continue
 		}
+		rnCaSyn := ssg * rn.CaSyn
 		nc := int(pj.RecvConN[ri])
 		st := int(pj.RecvConIdxStart[ri])
 		rsidxs := pj.RecvSynIdx[st : st+nc]
@@ -842,7 +844,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 			}
 			sy.CaUpT = cycTot
 			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = kp.SpikeG * ssg * sn.CaSyn * rn.CaSyn
+			sy.Ca = sn.CaSyn * rnCaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
 	}
@@ -897,7 +899,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 			if sy.Wt == 0 {                                                 // failed con, no learn
 				continue
 			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {
@@ -933,7 +935,7 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 			if sy.Wt == 0 {                           // failed con, no learn
 				continue
 			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv RCa drives error signal
+			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
 			// note: trace ensures that nothing changes for inactive synapses..
 			// sb immediately -- enters into zero sum
 			if err > 0 {

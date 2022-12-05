@@ -20,7 +20,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.1",  // 1.1 for fs-fffb
+					"Layer.Inhib.Layer.Gi":    "1.05", // 1.05 > 1.1 for short-term; 1.1 better long-run stability
 					"Layer.Inhib.Layer.FB":    "0.5",  // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
 					"Layer.Inhib.ActAvg.Init": "0.05", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Act.NMDA.MgC":      "1.2",  // 1.2 > 1.4 for SynSpkTheta
@@ -38,8 +38,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 FB0.5
-					"Layer.Inhib.Layer.FB":          "0.5",  // 0.5
+					"Layer.Inhib.Layer.Gi":          "0.65", // 0.65
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.6
@@ -47,9 +46,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.1", // 0.1 learns fast but dies early, .02 is stable long term
-					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2,
-					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Lrate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.SWt.Adapt.Lrate":     "0.1", // .1 >= .2,
+					"Prjn.SWt.Init.SPct":       "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.Trace.SubMean": "1",   // 1 > 0 for long run stability
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

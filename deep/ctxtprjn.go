@@ -37,6 +37,7 @@ var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 func (pj *CTCtxtPrjn) Defaults() {
 	pj.Prjn.Defaults()         // note: used to have other defaults
 	pj.Learn.Lrate.Base = 0.01 // note: this lrate may need to be much slower than others
+	pj.Learn.Trace.SubMean = 0 // 1 is not good!
 }
 
 func (pj *CTCtxtPrjn) UpdateParams() {
@@ -85,7 +86,7 @@ func (pj *CTCtxtPrjn) InitGBuffs() {
 //  Act methods
 
 // SendSpike: disabled for this type
-func (pj *CTCtxtPrjn) SendSpike(si int) {
+func (pj *CTCtxtPrjn) SendSpikes(si int) {
 }
 
 // GFmSpikes: disabled for this type
