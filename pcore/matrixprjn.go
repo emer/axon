@@ -34,7 +34,7 @@ func (tp *MatrixTraceParams) Defaults() {
 type MatrixPrjn struct {
 	axon.Prjn
 	Trace  MatrixTraceParams `view:"inline" desc:"special parameters for matrix trace learning"`
-	TrSyns []TraceSyn        `desc:"trace synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SConIdx array"`
+	TrSyns []TraceSyn        `desc:"trace synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
 }
 
 var KiT_MatrixPrjn = kit.Types.AddType(&MatrixPrjn{}, axon.PrjnProps)
@@ -48,7 +48,7 @@ func (pj *MatrixPrjn) Defaults() {
 
 func (pj *MatrixPrjn) Build() error {
 	err := pj.Prjn.Build()
-	pj.TrSyns = make([]TraceSyn, len(pj.SConIdx))
+	pj.TrSyns = make([]TraceSyn, len(pj.SendConIdx))
 	return err
 }
 
@@ -101,11 +101,11 @@ func (pj *MatrixPrjn) DWtNoUS(ctime *axon.Time) {
 
 	for si := range slay.Neurons {
 		snAct := noGate * slay.Neurons[si].CaSpkP
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
 		trsyns := pj.TrSyns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 
 		for ci := range syns {
 			sy := &syns[ci]
@@ -156,11 +156,11 @@ func (pj *MatrixPrjn) DWtUS(ctime *axon.Time) {
 
 	for si := range slay.Neurons {
 		snAct := snMod * slay.Neurons[si].CaSpkP
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
 		trsyns := pj.TrSyns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 
 		for ci := range syns {
 			sy := &syns[ci]

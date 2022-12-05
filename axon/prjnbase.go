@@ -21,23 +21,23 @@ import (
 // The exact same struct object is added to the Recv and Send layers, and it manages everything
 // about the connectivity, and methods on the Prjn handle all the relevant computation.
 type PrjnBase struct {
-	AxonPrj     AxonPrjn        `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Off         bool            `desc:"inactivate this projection -- allows for easy experimentation"`
-	Cls         string          `desc:"Class is for applying parameter styles, can be space separated multple tags"`
-	Notes       string          `desc:"can record notes about this projection here"`
-	Send        emer.Layer      `desc:"sending layer for this projection"`
-	Recv        emer.Layer      `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*axon.Layer)"`
-	Pat         prjn.Pattern    `desc:"pattern of connectivity"`
-	Typ         emer.PrjnType   `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
-	RConN       []int32         `view:"-" desc:"number of recv connections for each neuron in the receiving layer, as a flat list"`
-	RConNAvgMax minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of recv connections in the receiving layer"`
-	RConIdxSt   []int32         `view:"-" desc:"starting index into ConIdx list for each neuron in receiving layer -- just a list incremented by ConN"`
-	RConIdx     []int32         `view:"-" desc:"index of other neuron on sending side of projection, ordered by the receiving layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
-	RSynIdx     []int32         `view:"-" desc:"index of synaptic state values for each recv unit x connection, for the receiver projection which does not own the synapses, and instead indexes into sender-ordered list"`
-	SConN       []int32         `view:"-" desc:"number of sending connections for each neuron in the sending layer, as a flat list"`
-	SConNAvgMax minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of sending connections in the sending layer"`
-	SConIdxSt   []int32         `view:"-" desc:"starting index into ConIdx list for each neuron in sending layer -- just a list incremented by ConN"`
-	SConIdx     []int32         `view:"-" desc:"index of other neuron on receiving side of projection, ordered by the sending layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
+	AxonPrj         AxonPrjn        `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Off             bool            `desc:"inactivate this projection -- allows for easy experimentation"`
+	Cls             string          `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Notes           string          `desc:"can record notes about this projection here"`
+	Send            emer.Layer      `desc:"sending layer for this projection"`
+	Recv            emer.Layer      `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*axon.Layer)"`
+	Pat             prjn.Pattern    `desc:"pattern of connectivity"`
+	Typ             emer.PrjnType   `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
+	RecvConN        []int32         `view:"-" desc:"number of recv connections for each neuron in the receiving layer, as a flat list"`
+	RecvConNAvgMax  minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of recv connections in the receiving layer"`
+	RecvConIdxStart []int32         `view:"-" desc:"starting index into ConIdx list for each neuron in receiving layer -- just a list incremented by ConN"`
+	RecvConIdx      []int32         `view:"-" desc:"index of other neuron on sending side of projection, ordered by the receiving layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
+	RecvSynIdx      []int32         `view:"-" desc:"index of synaptic state values for each recv unit x connection, for the receiver projection which does not own the synapses, and instead indexes into sender-ordered list"`
+	SendConN        []int32         `view:"-" desc:"number of sending connections for each neuron in the sending layer, as a flat list"`
+	SendConNAvgMax  minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of sending connections in the sending layer"`
+	SendConIdxStart []int32         `view:"-" desc:"starting index into ConIdx list for each neuron in sending layer -- just a list incremented by ConN"`
+	SendConIdx      []int32         `view:"-" desc:"index of other neuron on receiving side of projection, ordered by the sending layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
 }
 
 // emer.Prjn interface
@@ -113,42 +113,43 @@ func (ps *PrjnBase) BuildBase() error {
 	sendn, recvn, cons := ps.Pat.Connect(ssh, rsh, ps.Recv == ps.Send)
 	slen := ssh.Len()
 	rlen := rsh.Len()
-	tcons := ps.SetNIdxSt(&ps.SConN, &ps.SConNAvgMax, &ps.SConIdxSt, sendn)
-	tconr := ps.SetNIdxSt(&ps.RConN, &ps.RConNAvgMax, &ps.RConIdxSt, recvn)
+	tcons := ps.SetNIdxSt(&ps.SendConN, &ps.SendConNAvgMax, &ps.SendConIdxStart, sendn)
+	tconr := ps.SetNIdxSt(&ps.RecvConN, &ps.RecvConNAvgMax, &ps.RecvConIdxStart, recvn)
 	if tconr != tcons {
 		log.Printf("%v programmer error: total recv cons %v != total send cons %v\n", ps.String(), tconr, tcons)
 	}
-	ps.RConIdx = make([]int32, tconr)
-	ps.RSynIdx = make([]int32, tconr)
-	ps.SConIdx = make([]int32, tcons)
+	// these are large allocs, as number of connections tends to be quadratic
+	ps.RecvConIdx = make([]int32, tconr)
+	ps.RecvSynIdx = make([]int32, tconr)
+	ps.SendConIdx = make([]int32, tcons)
 
 	sconN := make([]int32, slen) // temporary mem needed to tracks cur n of sending cons
 
 	cbits := cons.Values
 	for ri := 0; ri < rlen; ri++ {
-		rbi := ri * slen     // recv bit index
-		rtcn := ps.RConN[ri] // number of cons
-		rst := ps.RConIdxSt[ri]
+		rbi := ri * slen        // recv bit index
+		rtcn := ps.RecvConN[ri] // number of cons
+		rst := ps.RecvConIdxStart[ri]
 		rci := int32(0)
 		for si := 0; si < slen; si++ {
 			if !cbits.Index(rbi + si) { // no connection
 				continue
 			}
-			sst := ps.SConIdxSt[si]
+			sst := ps.SendConIdxStart[si]
 			if rci >= rtcn {
 				log.Printf("%v programmer error: recv target total con number: %v exceeded at recv idx: %v, send idx: %v\n", ps.String(), rtcn, ri, si)
 				break
 			}
-			ps.RConIdx[rst+rci] = int32(si)
+			ps.RecvConIdx[rst+rci] = int32(si)
 
 			sci := sconN[si]
-			stcn := ps.SConN[si]
+			stcn := ps.SendConN[si]
 			if sci >= stcn {
 				log.Printf("%v programmer error: send target total con number: %v exceeded at recv idx: %v, send idx: %v\n", ps.String(), stcn, ri, si)
 				break
 			}
-			ps.SConIdx[sst+sci] = int32(ri)
-			ps.RSynIdx[rst+rci] = sst + sci
+			ps.SendConIdx[sst+sci] = int32(ri)
+			ps.RecvSynIdx[rst+rci] = sst + sci
 			(sconN[si])++
 			rci++
 		}

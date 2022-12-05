@@ -166,10 +166,10 @@ func (pj *RWPrjn) DWt(ctime *axon.Time) {
 	}
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 
 		for ci := range syns {
 			sy := &syns[ci]

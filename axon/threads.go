@@ -100,10 +100,10 @@ const (
 	NoWait = false
 )
 
-// LearnFun applies function of given name to all projections
+// PrjnFun applies function of given name to all projections
 // using Learn threads (go routines) if thread is true and NThreads > 1.
 // if wait is true, then it waits until all procs have completed.
-func (nt *NetworkBase) LearnFun(fun func(pj AxonPrjn), funame string, thread, wait bool) {
+func (nt *NetworkBase) PrjnFun(fun func(pj AxonPrjn), funame string, thread, wait bool) {
 	if thread { // don't bother if not significant to thread
 		nt.FunTimerStart(funame)
 	}

@@ -117,7 +117,8 @@ func (nt *Network) Cycle(ctime *Time) {
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
 func (nt *Network) CycleImpl(ctime *Time) {
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
-	nt.LearnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes", Thread, Wait)
+	// GFmSpikes has to wait for the output of the SendSpikeFun
+	nt.PrjnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes", Thread, Wait)
 	nt.LayerFun(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes", NoThread, Wait)
 	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron", Thread, Wait)
 	nt.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpikes(ni, nrn, ctime) }, "SendSpike", Thread, Wait)
@@ -125,6 +126,7 @@ func (nt *Network) CycleImpl(ctime *Time) {
 	if !ctime.Testing {
 		// todo: if use atomic in these functions, can avoid Wait
 		// and these are definitely thread!
+		// these functions set up the calcium that drives the learning
 		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa", Thread, Wait)
 		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctime) }, "RecvSynCa", Thread, Wait)
 	}
@@ -364,14 +366,14 @@ func (nt *Network) PlusPhaseImpl(ctime *Time) {
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctime *Time) {
 	nt.LayerFun(func(ly AxonLayer) { ly.DWtLayer(ctime) }, "DWtLayer", NoThread, Wait) // def no thr
-	nt.LearnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt", Thread, Wait)              // def thread
+	nt.PrjnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt", Thread, Wait)               // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctime *Time) {
-	nt.LearnFun(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean", Thread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean", Thread, Wait)
 	nt.LayerFun(func(ly AxonLayer) { ly.WtFmDWtLayer(ctime) }, "WtFmDWtLayer", NoThread, Wait) // def no
-	nt.LearnFun(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt", Thread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt", Thread, Wait)
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ctime)
 }
 
@@ -384,12 +386,12 @@ func (nt *Network) SlowAdapt(ctime *Time) {
 	}
 	nt.SlowCtr = 0
 	nt.LayerFun(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt", NoThread, Wait)
-	nt.LearnFun(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt", Thread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt", Thread, Wait)
 }
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctime *Time) {
-	nt.LearnFun(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail", Thread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail", Thread, Wait)
 }
 
 // LrateMod sets the Lrate modulation parameter for Prjns, which is
@@ -578,14 +580,19 @@ func (nt *Network) SizeReport() string {
 		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", layer.Nm, layerNumNeurons,
 			(datasize.ByteSize)(layerMemNeurons).HumanReadable())
 		for _, pji := range layer.SndPrjns {
-			projection := pji.(AxonPrjn).AsAxon()
-			projNumSynapses := len(projection.Syns)
-			// We only calculate the size of the important parts of the projection struct (synapse and G ring buffer)
-			// GBuf is a slice -> Sizeof(slice) returns 3*8B (ptr, len, cap), which is not what we care about
-			projMemSynapses := 2*projNumSynapses*memSynapse + len(projection.GBuf)*int(unsafe.Sizeof(projection.GBuf[0]))
+			proj := pji.(AxonPrjn).AsAxon()
+			projNumSynapses := len(proj.Syns)
 			globalNumSynapses += projNumSynapses
-			globalMemSynapses += projMemSynapses
-			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", projection.Recv.Name(),
+			// We only calculate the size of the important parts of the proj struct:
+			//  1. Synapse slice (consists of Synapse struct)
+			//  2. RecvConIdx + RecvSynIdx + SendConIdx (consists of int32 indices = 4B)
+			// Everything else (like eg the GBuf) is not included in the size calculation, as their size
+			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
+			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
+			projMemSynapses := projNumSynapses * memSynapse
+			projMemIdxs := len(proj.RecvConIdx)*4 + len(proj.RecvSynIdx)*4 + len(proj.SendConIdx)*4
+			globalMemSynapses += projMemSynapses + projMemIdxs
+			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", proj.Recv.Name(),
 				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())
 		}
 	}
