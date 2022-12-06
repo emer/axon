@@ -66,6 +66,18 @@ func (pj *MatrixPrjn) InitWts() {
 	pj.ClearTrace()
 }
 
+func (pj *MatrixPrjn) SendSynCa(ctime *axon.Time) {
+	return
+}
+
+func (pj *MatrixPrjn) RecvSynCa(ctime *axon.Time) {
+	return
+}
+
+func (pj *MatrixPrjn) SlowAdapt(ctime *axon.Time) {
+	return
+}
+
 func (pj *MatrixPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
 		return

@@ -48,6 +48,7 @@ func (ly *BLALayer) Defaults() {
 	// special inhib params
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
+	ly.Act.Dend.SSGi = 0
 	ly.Inhib.Layer.On = true
 	ly.Inhib.Layer.Gi = 1.2
 	ly.Inhib.Pool.On = true
