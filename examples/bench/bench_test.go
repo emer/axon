@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/etable"
 	"github.com/goki/gi/gi"
 )
@@ -45,7 +46,10 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	if *writeStats {
 		filename := fmt.Sprintf("bench_%d_units.csv", *numUnits)
-		epcLog.SaveCSV(gi.FileName(filename), ',', etable.Headers)
+		err := epcLog.SaveCSV(gi.FileName(filename), ',', etable.Headers)
+		if err != nil {
+			b.Log(err)
+		}
 	}
 
 	if *numEpochs < defaultNumEpochs {
@@ -67,8 +71,40 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 // Run just the threading benchmarks with `go test -bench=".*Thread.*" .`
 func benchmarkNeuronFunMultiThread(numThread int, b *testing.B) {
+	// this benchmark constructs the network just like `bench.go`, but without
+	// setting up the projections (not needed for benching NeuronFun) -> Test setup is much quicker.
+	units := 800 * 2048
+	threads := numThread
+
 	net := &axon.Network{}
-	ConfigNet(net, numThread, 2048, false)
+	net.InitName(net, "BenchNet")
+
+	squn := int(math.Sqrt(float64(units)))
+	shp := []int{squn, squn}
+
+	net.AddLayer("Input", shp, emer.Input)
+	net.AddLayer("Hidden1", shp, emer.Hidden)
+	net.AddLayer("Hidden2", shp, emer.Hidden)
+	net.AddLayer("Hidden3", shp, emer.Hidden)
+	net.AddLayer("Output", shp, emer.Target)
+
+	net.NThreads = threads // 1 overrides all
+
+	net.RecFunTimes = true
+
+	net.Defaults()
+	if _, err := net.ApplyParams(ParamSets[0].Sheets["Network"], false); err != nil {
+		panic(err)
+	}
+	// builds with default threads
+	if err := net.Build(); err != nil {
+		panic(err)
+	}
+
+	// override defaults: neurons, sendSpike, synCa, learn
+	net.Threads.Set(2, threads, threads, threads, threads)
+	net.ThreadsAlloc() // re-update
+
 	net.InitWts()
 	ltime := axon.NewTime()
 
@@ -90,6 +126,10 @@ func BenchmarkNeuronFun1Threads(b *testing.B) {
 	benchmarkNeuronFunMultiThread(1, b)
 }
 
+func BenchmarkNeuronFun2Threads(b *testing.B) {
+	benchmarkNeuronFunMultiThread(2, b)
+}
+
 // Currently, this scales well to 4 threads, but not to 8
 func BenchmarkNeuronFun4Threads(b *testing.B) {
 	benchmarkNeuronFunMultiThread(4, b)
@@ -99,7 +139,8 @@ func BenchmarkNeuronFun8Threads(b *testing.B) {
 	benchmarkNeuronFunMultiThread(8, b)
 }
 
-var Result float32
+// store to global to avoid compiler optimization
+var fp32Result float32
 
 // Benchmark the cost of doing a type assert on a layer
 // DISCLAIMER: I haven't checked yet in-depth whether this actually benchmarks what I think it does
@@ -118,7 +159,7 @@ func BenchmarkLayerTypeAssert(b *testing.B) {
 		}
 	}
 	// avoid compiler optimization
-	Result = tmp
+	fp32Result = tmp
 }
 
 // Benchmark the cost of doing a type assert on a layer
@@ -142,5 +183,5 @@ func BenchmarkLayerTypeAssertBaseline(b *testing.B) {
 		}
 	}
 	// avoid compiler optimization
-	Result = tmp
+	fp32Result = tmp
 }
