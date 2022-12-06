@@ -70,16 +70,13 @@ func BenchmarkBenchNetFull(b *testing.B) {
 }
 
 // Run just the threading benchmarks with `go test -bench=".*Thread.*" .`
-func benchmarkNeuronFunMultiThread(numThread int, b *testing.B) {
+func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// this benchmark constructs the network just like `bench.go`, but without
 	// setting up the projections (not needed for benching NeuronFun) -> Test setup is much quicker.
-	units := 800 * 2048
-	threads := numThread
-
 	net := &axon.Network{}
 	net.InitName(net, "BenchNet")
 
-	squn := int(math.Sqrt(float64(units)))
+	squn := int(math.Sqrt(float64(numUnits)))
 	shp := []int{squn, squn}
 
 	net.AddLayer("Input", shp, emer.Input)
@@ -88,7 +85,7 @@ func benchmarkNeuronFunMultiThread(numThread int, b *testing.B) {
 	net.AddLayer("Hidden3", shp, emer.Hidden)
 	net.AddLayer("Output", shp, emer.Target)
 
-	net.NThreads = threads // 1 overrides all
+	net.NThreads = numThread
 
 	net.RecFunTimes = true
 
@@ -102,8 +99,8 @@ func benchmarkNeuronFunMultiThread(numThread int, b *testing.B) {
 	}
 
 	// override defaults: neurons, sendSpike, synCa, learn
-	net.Threads.Set(2, threads, threads, threads, threads)
-	net.ThreadsAlloc() // re-update
+	net.Threads.Set(2, numThread, numThread, numThread, numThread)
+	net.ThreadsAlloc() // re-update thread numbers after build
 
 	net.InitWts()
 	ltime := axon.NewTime()
@@ -121,22 +118,40 @@ func benchmarkNeuronFunMultiThread(numThread int, b *testing.B) {
 	}
 }
 
+const (
+	smallNumUnits = 2048
+	hugeNumUnits  = 256 * 2048
+)
+
 // Get a profile with `go test -bench=".*Thread.*" . -test.cpuprofile=neuronFun_T1.prof`
-func BenchmarkNeuronFun1Threads(b *testing.B) {
-	benchmarkNeuronFunMultiThread(1, b)
+func BenchmarkNeuronFun1ThreadsSmall(b *testing.B) {
+	benchmarkNeuronFunMultiThread(1, smallNumUnits, b)
 }
 
-func BenchmarkNeuronFun2Threads(b *testing.B) {
-	benchmarkNeuronFunMultiThread(2, b)
+func BenchmarkNeuronFun2ThreadsSmall(b *testing.B) {
+	benchmarkNeuronFunMultiThread(2, smallNumUnits, b)
+}
+func BenchmarkNeuronFun4ThreadsSmall(b *testing.B) {
+	benchmarkNeuronFunMultiThread(4, smallNumUnits, b)
+}
+func BenchmarkNeuronFun8ThreadsSmall(b *testing.B) {
+	benchmarkNeuronFunMultiThread(8, smallNumUnits, b)
 }
 
-// Currently, this scales well to 4 threads, but not to 8
-func BenchmarkNeuronFun4Threads(b *testing.B) {
-	benchmarkNeuronFunMultiThread(4, b)
+func BenchmarkNeuronFun1ThreadsBig(b *testing.B) {
+	benchmarkNeuronFunMultiThread(1, hugeNumUnits, b)
 }
 
-func BenchmarkNeuronFun8Threads(b *testing.B) {
-	benchmarkNeuronFunMultiThread(8, b)
+func BenchmarkNeuronFun2ThreadsBig(b *testing.B) {
+	benchmarkNeuronFunMultiThread(2, hugeNumUnits, b)
+}
+
+func BenchmarkNeuronFun4ThreadsBig(b *testing.B) {
+	benchmarkNeuronFunMultiThread(4, hugeNumUnits, b)
+}
+
+func BenchmarkNeuronFun8ThreadsBig(b *testing.B) {
+	benchmarkNeuronFunMultiThread(8, hugeNumUnits, b)
 }
 
 // store to global to avoid compiler optimization
