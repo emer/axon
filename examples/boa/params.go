@@ -67,6 +67,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Gbar":   "0.01", // not much pressure -- long maint
 					"Layer.ThalNMDAGain":    "150",  // 150 > 100? enough it seems
 				}},
+			{Sel: "ThalLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.6",
+					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
+				}},
 			{Sel: "PulvLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
@@ -111,7 +116,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init": "0.025",
 					"Layer.Inhib.Layer.Gi":    "1.1",
 					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "0.9",
+					"Layer.Inhib.Pool.Gi":     "0.8",
+					"Layer.Act.Dend.SSGi":     "0",
 				}},
 			{Sel: "#OFCCT", Desc: "",
 				Params: params.Params{
@@ -121,20 +127,38 @@ var ParamSets = params.Sets{
 			{Sel: "#OFC", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.2", // was 1.1
-					"Layer.Inhib.Pool.Gi":  "0.9", // 0.9 > 0.8
 				}},
 			{Sel: "#OFCPT", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.8", // was 1.3
 					"Layer.Inhib.Pool.Gi":  "2.0", // was 0.6
 				}},
+			{Sel: "#OFCMD", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Pool.Gi": "0.6",
+				}},
+			{Sel: ".ACC", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.On": "true",
+					"Layer.Inhib.Layer.Gi": "0.9",
+					"Layer.Inhib.Pool.On":  "false",
+					"Layer.Act.Dend.SSGi":  "0",
+				}},
+			{Sel: "#ACCCT", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "1.6",
+				}},
 			{Sel: "#ACCPT", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "3.0",
 				}},
+			{Sel: "#ACCMD", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.6", // 0.6 > 0.5 -- 0.8 too high
+				}},
 			{Sel: ".ALM", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.0",
+					"Layer.Inhib.Layer.Gi": "0.9",
 				}},
 			{Sel: "#ALMCT", Desc: "",
 				Params: params.Params{
@@ -142,11 +166,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#M1", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.0",
+					"Layer.Inhib.Layer.Gi": "0.9",
 				}},
 			{Sel: "#M1P", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6",
+					"Layer.Inhib.Layer.Gi": "0.5",
 				}},
 			{Sel: "#VL", Desc: "",
 				Params: params.Params{
@@ -174,6 +198,7 @@ var ParamSets = params.Sets{
 			{Sel: "#CeMPos", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
+					"Layer.Act.Dend.SSGi":     "0",
 					"Layer.Inhib.Layer.Gi":    "1.0",
 					"Layer.Inhib.Pool.On":     "true",
 					"Layer.Inhib.Pool.Gi":     "0.5",
@@ -185,33 +210,19 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":     "true",
 					"Layer.Inhib.Pool.Gi":     "0.5",
 				}},
-			{Sel: "#STNp", Desc: "Pausing STN",
+			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":     "0.0", // impose trial structure
-					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.Layer.On":    "true",
+					"Layer.Inhib.Layer.On":    "true", // this is critical, else too active
 					"Layer.Inhib.Layer.Gi":    "0.6",
-					"Layer.Ca.SKCa.Gbar":      "2",
-					"Layer.Ca.SKCa.C50":       "0.6",
-					"Layer.Ca.SKCa.ActTau":    "10",
-					"Layer.Ca.SKCa.DeTau":     "50",
-					"Layer.Ca.CaScale":        "4",
 				}},
-			{Sel: "#STNs", Desc: "Sustained STN",
+			{Sel: "#VpSTNs", Desc: "Sustained STN",
 				Params: params.Params{
 					"Layer.Act.Init.Ge":       "0.2",
 					"Layer.Act.Init.GeVar":    "0.2",
-					"Layer.Act.Decay.Act":     "0.0", // impose trial structure
-					"Layer.Act.Decay.Glong":   "0.0",
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
 					"Layer.Inhib.Layer.Gi":    "0.2",
-					"Layer.Ca.SKCa.Gbar":      "2",
-					"Layer.Ca.SKCa.C50":       "0.6",
-					"Layer.Ca.SKCa.ActTau":    "10",
-					"Layer.Ca.SKCa.DeTau":     "50",
-					"Layer.Ca.CaScale":        "3",
 				}},
 			{Sel: "GPLayer", Desc: "all gp",
 				Params: params.Params{
@@ -220,7 +231,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Init.GiVar":    "0.1",
 					"Layer.Inhib.ActAvg.Init": "1",
 				}},
-			{Sel: "#GPi", Desc: "",
+			{Sel: "#VpGPi", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Init.Ge": "0.6",
 				}},
@@ -241,18 +252,6 @@ var ParamSets = params.Sets{
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
-			{Sel: "ThalLayer", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "false",
-					"Layer.Inhib.Pool.On":  "true",
-					"Layer.Inhib.Pool.Gi":  "0.7", // 0.6 > 0.5 -- 0.8 too high
-				}},
-			{Sel: "#ACCMD", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Pool.On":  "false",
-					"Layer.Inhib.Layer.Gi": "0.7", // 0.6 > 0.5 -- 0.8 too high
-				}},
 			{Sel: "#RWPred", Desc: "",
 				Params: params.Params{
 					"Layer.PredRange.Min": "0.01",
@@ -277,7 +276,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "1.5", // if this is too strong, it gates to the wrong CS
 				}},
 			{Sel: ".ThalToSuper", Desc: "",
 				Params: params.Params{
@@ -525,7 +524,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#GPiToVThal", Desc: "final inhibition",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 2 orig
+					"Prjn.PrjnScale.Abs": "1.5", // 2 orig
 				}},
 		}},
 	},

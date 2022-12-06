@@ -36,6 +36,7 @@ func (ly *PPTgLayer) Defaults() {
 	ly.Act.Decay.Glong = 0
 	ly.Act.NMDA.Gbar = 0
 	ly.Act.GABAB.Gbar = 0
+	ly.Act.Dend.SSGi = 0
 	ly.Inhib.Layer.On = true
 	ly.Inhib.Layer.Gi = 1.0
 	ly.Inhib.Pool.On = true

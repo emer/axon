@@ -246,6 +246,18 @@ func (pj *TDRewPredPrjn) Defaults() {
 	pj.SWt.Adapt.SigGain = 1
 }
 
+func (pj *TDRewPredPrjn) SendSynCa(ctime *axon.Time) {
+	return
+}
+
+func (pj *TDRewPredPrjn) RecvSynCa(ctime *axon.Time) {
+	return
+}
+
+func (pj *TDRewPredPrjn) SlowAdapt(ctime *axon.Time) {
+	return
+}
+
 // DWt computes the weight change (learning) -- on sending projections.
 func (pj *TDRewPredPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {

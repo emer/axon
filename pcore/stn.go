@@ -73,8 +73,8 @@ func (ly *STNLayer) Defaults() {
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
 	ly.Act.Dend.SSGi = 0
-	ly.Inhib.Layer.On = true // was false
-	ly.Inhib.Layer.Gi = 0.6
+	ly.Inhib.Layer.On = true // true = important for real-world cases
+	ly.Inhib.Layer.Gi = 0.2
 	ly.Inhib.Pool.On = false
 	ly.Inhib.ActAvg.Init = 0.15
 
@@ -86,7 +86,6 @@ func (ly *STNLayer) Defaults() {
 		ly.Ca.CaScale = 3
 		ly.Act.Init.Ge = 0.2
 		ly.Act.Init.GeVar = 0.2
-		ly.Inhib.Layer.Gi = 0.2
 	}
 
 	for _, pji := range ly.RcvPrjns {
