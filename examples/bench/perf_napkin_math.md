@@ -15,7 +15,7 @@ Network:
 
 ## NeuronFun
 This function updates the neuron state.
-It's called once for every millisecond.
+It's called once for every cycle (simulated millisecond).
 
 Total time:  21s out of 70s total
 
@@ -37,7 +37,7 @@ Total time:  21s out of 70s total
 
 ## SendSpikeFun
 This function sends a spike to receiving projections, if the neuron has spiked.
-It's called once for every millisecond, just like NeuronFun.
+It's called once for every cycle (simulated millisecond), just like NeuronFun.
 
 Total time: 26s out of 70s total, almost all of it spent in Axon.SendSpike
 
