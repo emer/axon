@@ -53,7 +53,7 @@ func TestLayer_SendSpike(t *testing.T) {
 
 	// spike the first neuron. Do this after NewState(), so that the spike is not decay'ed away
 	inputLayer.AsAxon().Neurons[0].Spike = 1.0
-	net.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ltime) },
+	net.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpikes(ni, nrn, ltime) },
 		"SendSpike", NoThread, Wait)
 
 	// the neuron we spiked is connected to 4 neurons in the output layer

@@ -160,7 +160,7 @@ type AxonLayer interface {
 	// It is a hook for specialized algorithms -- empty at Axon base level
 	PostAct(ni int, nrn *Neuron, ctime *Time)
 
-	// SendSpike sends spike to receivers -- last step in Cycle, integrated
+	// SendSpikes sends spike to receivers -- last step in Cycle, integrated
 	// the next time around.
 	// Writes to sending projections for this neuron.
 	SendSpikes(ni int, nrn *Neuron, ctime *Time)
