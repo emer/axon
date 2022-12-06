@@ -52,7 +52,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Output", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.75",
+					"Layer.Inhib.Layer.Gi": "0.70",
 					"Layer.Act.Clamp.Ge":   "0.8",
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",

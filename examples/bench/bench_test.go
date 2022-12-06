@@ -64,7 +64,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 		}
 	}
 	corSimAvg := corSimSum / float64(convergenceTestEpochs)
-	if corSimAvg < 0.95 {
+	if corSimAvg < 0.90 {
 		b.Errorf("average of CorSim for last %d epochs too low. Want %v, got %v", convergenceTestEpochs, 0.95, corSimAvg)
 	}
 }

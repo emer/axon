@@ -38,6 +38,7 @@ func (ly *ThalLayer) Defaults() {
 
 	// note: not tonically active
 
+	ly.Act.Dend.SSGi = 0
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
 	ly.Inhib.ActAvg.Init = 0.25

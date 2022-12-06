@@ -38,7 +38,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
 					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Layer.Gi":    "0.6",
+					"Layer.Inhib.Layer.Gi":    "0.2",
 					"Layer.Ca.SKCa.Gbar":      "2",
 					"Layer.Ca.SKCa.C50":       "0.6",
 					"Layer.Ca.SKCa.ActTau":    "10",

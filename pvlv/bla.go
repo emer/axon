@@ -48,6 +48,7 @@ func (ly *BLALayer) Defaults() {
 	// special inhib params
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
+	ly.Act.Dend.SSGi = 0
 	ly.Inhib.Layer.On = true
 	ly.Inhib.Layer.Gi = 1.2
 	ly.Inhib.Pool.On = true
@@ -165,10 +166,10 @@ func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 	lr := ach * pj.Learn.Lrate.Eff
 	for si := range slay.Neurons {
 		sact := slay.Neurons[si].SpkPrv
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]

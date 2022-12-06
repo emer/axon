@@ -163,7 +163,7 @@ type AxonLayer interface {
 	// SendSpike sends spike to receivers -- last step in Cycle, integrated
 	// the next time around.
 	// Writes to sending projections for this neuron.
-	SendSpike(ni int, nrn *Neuron, ctime *Time)
+	SendSpikes(ni int, nrn *Neuron, ctime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate
 	// network layer loop.
@@ -239,7 +239,7 @@ type AxonPrjn interface {
 
 	// SendSpike sends a spike from sending neuron index si,
 	// to add to buffer on receivers.
-	SendSpike(si int)
+	SendSpikes(si int)
 
 	// GFmSpikes increments synaptic conductances from Spikes
 	// including pooled aggregation of spikes into Pools for FS-FFFB inhib.

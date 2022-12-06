@@ -25,6 +25,7 @@ func (ly *PTLayer) Defaults() {
 
 	ly.ThalNMDAGain = 200
 
+	ly.Act.Dend.SSGi = 0
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0

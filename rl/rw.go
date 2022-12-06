@@ -150,6 +150,18 @@ func (pj *RWPrjn) Defaults() {
 	pj.SWt.Init.Sym = false
 }
 
+func (pj *RWPrjn) SendSynCa(ctime *axon.Time) {
+	return
+}
+
+func (pj *RWPrjn) RecvSynCa(ctime *axon.Time) {
+	return
+}
+
+func (pj *RWPrjn) SlowAdapt(ctime *axon.Time) {
+	return
+}
+
 // DWt computes the weight change (learning) -- on sending projections.
 func (pj *RWPrjn) DWt(ctime *axon.Time) {
 	if !pj.Learn.Learn {
@@ -166,10 +178,10 @@ func (pj *RWPrjn) DWt(ctime *axon.Time) {
 	}
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
-		nc := int(pj.SConN[si])
-		st := int(pj.SConIdxSt[si])
+		nc := int(pj.SendConN[si])
+		st := int(pj.SendConIdxStart[si])
 		syns := pj.Syns[st : st+nc]
-		scons := pj.SConIdx[st : st+nc]
+		scons := pj.SendConIdx[st : st+nc]
 
 		for ci := range syns {
 			sy := &syns[ci]

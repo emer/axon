@@ -129,6 +129,7 @@ type CaLrnParams struct {
 	VgccTau   float32           `def:"10" desc:"time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn"`
 	Dt        kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaLrn across M, P and D cascading levels"`
 	VgccDt    float32           `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	NormInv   float32           `view:"-" json:"-" xml:"-" inactive:"+" desc:"= 1 / Norm"`
 }
 
 func (np *CaLrnParams) Defaults() {
@@ -144,6 +145,7 @@ func (np *CaLrnParams) Defaults() {
 func (np *CaLrnParams) Update() {
 	np.Dt.Update()
 	np.VgccDt = 1 / np.VgccTau
+	np.NormInv = 1 / np.Norm
 }
 
 // VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
@@ -152,7 +154,7 @@ func (np *CaLrnParams) VgccCa(nrn *Neuron) {
 	if np.SpkVGCC {
 		nrn.VgccCa = np.SpkVgccCa * nrn.Spike
 	}
-	nrn.VgccCaInt = nrn.VgccCaInt + nrn.VgccCa - np.VgccDt*nrn.VgccCaInt // Dt only affects decay, not rise time
+	nrn.VgccCaInt += nrn.VgccCa - np.VgccDt*nrn.VgccCaInt // Dt only affects decay, not rise time
 }
 
 // CaLrn updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
@@ -160,7 +162,7 @@ func (np *CaLrnParams) VgccCa(nrn *Neuron) {
 // perform its time-integration.
 func (np *CaLrnParams) CaLrn(nrn *Neuron) {
 	np.VgccCa(nrn)
-	nrn.CaLrn = (nrn.NmdaCa + nrn.VgccCaInt) / np.Norm
+	nrn.CaLrn = np.NormInv * (nrn.NmdaCa + nrn.VgccCaInt)
 	nrn.CaM += np.Dt.MDt * (nrn.CaLrn - nrn.CaM)
 	nrn.CaP += np.Dt.PDt * (nrn.CaM - nrn.CaP)
 	nrn.CaD += np.Dt.DDt * (nrn.CaP - nrn.CaD)
@@ -174,7 +176,7 @@ func (np *CaLrnParams) CaLrn(nrn *Neuron) {
 // CaSpk* values are integrated separately at the Neuron level and used for UpdtThr
 // and RLrate as a proxy for the activation (spiking) based learning signal.
 type CaSpkParams struct {
-	SpikeG float32           `def:"8,12" desc:"gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLrate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors -- 12, vs 8 for smaller."`
+	SpikeG float32           `def:"8,12" desc:"gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLrate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller."`
 	SynTau float32           `def:"30" min:"1" desc:"time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec)"`
 	Dt     kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Prjn level for synaptic integration, except for the M factor."`
 
@@ -214,7 +216,7 @@ type TrgAvgActParams struct {
 	On           bool       `desc:"whether to use target average activity mechanism to scale synaptic weights"`
 	ErrLrate     float32    `viewif:"On" def:"0.02,0.01" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange.  Generally use .02 for smaller networks, and 0.01 for larger networks."`
 	SynScaleRate float32    `viewif:"On" def:"0.01,0.005" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity.  Use faster 0.01 rate for smaller models, 0.005 for larger models."`
-	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  In general it works best to start with 0 and then set to 1 after the network has successfully done most of its initial learning -- this allows more degrees of freedom in initial learning, while constraining later stages.  Use network SetSubMean to set at an appropriate point."`
+	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point."`
 	TrgRange     minmax.F32 `viewif:"On" def:"{0.5 2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      bool       `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
 	Pool         bool       `viewif:"On" desc:"use pool-level target values if pool-level inhibition and 4D pooled layers are present -- if pool sizes are relatively small, then may not be useful to distribute targets just within pool"`
@@ -227,7 +229,7 @@ func (ta *TrgAvgActParams) Defaults() {
 	ta.On = true
 	ta.ErrLrate = 0.02
 	ta.SynScaleRate = 0.01
-	ta.SubMean = 0 // start at 0, set 1 after some learning
+	ta.SubMean = 1 // 1 in general beneficial
 	ta.TrgRange.Set(0.5, 2)
 	ta.Permute = true
 	ta.Pool = true
@@ -604,7 +606,7 @@ func (ls *LrateParams) Init() {
 type TraceParams struct {
 	NeuronCa bool    `def:"false" desc:"use separate neuron-level Ca calcium signals for the trace credit assignment factor, instead of using synaptically-integrated Ca signals -- this is about 2x faster, but can result in worse learning in larger networks -- you may also need to increase the learning rate with this selected."`
 	Tau      float32 `def:"1,2,4" desc:"time constant for integrating trace over theta cycle timescales -- governs the decay rate of syanptic trace"`
-	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, especially at the start -- can use SetSubMean to set to 1 after significant early learning has occurred.  Special prjn types (e.g., Hebb) benefit from SubMean = 1"`
+	SubMean  float32 `def:"0,1" desc:"amount of the mean dWt to subtract, producing a zero-sum effect -- 1.0 = full zero-sum dWt -- only on non-zero DWts.  typically set to 0 for standard trace learning projections, although some require it for stability over the long haul.  can use SetSubMean to set to 1 after significant early learning has occurred with 0.  Some special prjn types (e.g., Hebb) benefit from SubMean = 1 always"`
 	Dt       float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 }
 
