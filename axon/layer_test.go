@@ -2,13 +2,14 @@ package axon
 
 import (
 	"bufio"
+	"os"
+	"testing"
+
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
 )
 
 func TestLayer(t *testing.T) {
@@ -53,7 +54,7 @@ func TestLayer_SendSpike(t *testing.T) {
 
 	// spike the first neuron. Do this after NewState(), so that the spike is not decayed away
 	inputLayer.AsAxon().Neurons[0].Spike = 1.0
-	net.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpikes(ni, nrn, ltime) },
+	net.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ltime) },
 		"SendSpike", NoThread, Wait)
 
 	// the neuron we spiked is connected to 4 neurons in the output layer

@@ -691,11 +691,11 @@ func (pj *Prjn) InitGBuffs() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// SendSpikes sends a spike from the sending neuron at index sendIdx
+// SendSpike sends a spike from the sending neuron at index sendIdx
 // into the buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpikes(sendIdx int) {
+func (pj *Prjn) SendSpike(sendIdx int) {
 	scale := pj.GScale.Scale
 	maxDelay := pj.Com.Delay
 	delayBufSize := maxDelay + 1

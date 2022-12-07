@@ -86,7 +86,7 @@ func (pj *CTCtxtPrjn) InitGBuffs() {
 //  Act methods
 
 // SendSpike: disabled for this type
-func (pj *CTCtxtPrjn) SendSpikes(si int) {
+func (pj *CTCtxtPrjn) SendSpike(si int) {
 }
 
 // GFmSpikes: disabled for this type

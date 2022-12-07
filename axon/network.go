@@ -121,7 +121,7 @@ func (nt *Network) CycleImpl(ctime *Time) {
 	nt.PrjnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes", Thread, Wait)
 	nt.LayerFun(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes", NoThread, Wait)
 	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron", Thread, Wait)
-	nt.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpikes(ni, nrn, ctime) }, "SendSpike", Thread, Wait)
+	nt.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ctime) }, "SendSpike", Thread, Wait)
 	nt.LayerFun(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost", NoThread, Wait) // def NoThread
 	if !ctime.Testing {
 		// todo: if use atomic in these functions, can avoid Wait
