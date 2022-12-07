@@ -59,10 +59,10 @@ func (ps *PrjnBase) SendLay() emer.Layer   { return ps.Send }
 func (ps *PrjnBase) Pattern() prjn.Pattern { return ps.Pat }
 func (ps *PrjnBase) Type() emer.PrjnType   { return ps.Typ }
 func (ps *PrjnBase) PrjnTypeName() string  { return ps.Typ.String() }
+func (ps *PrjnBase) IsOff() bool           { return ps.Off }
 
-func (ps *PrjnBase) IsOff() bool {
-	return ps.Off || ps.Recv.IsOff() || ps.Send.IsOff()
-}
+// SetOff individual projection. Careful: Layer.SetOff(true) will reactivate all prjns of that layer,
+// so prjn-level lesioning should always be done last.
 func (ps *PrjnBase) SetOff(off bool) { ps.Off = off }
 
 // Connect sets the connectivity between two layers and the pattern to use in interconnecting them

@@ -121,3 +121,45 @@ func TestLayerToJson(t *testing.T) {
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
 	}
 }
+
+func TestLayerBase_IsOff(t *testing.T) {
+	net := NewNetwork("LayerTest")
+	shape := []int{2, 2}
+	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
+	inputLayer2 := net.AddLayer("Input2", shape, emer.Input).(AxonLayer)
+	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer)
+	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
+
+	full := prjn.NewFull()
+	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
+	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, emer.Forward)
+	hidToOut, outToHid := net.BidirConnectLayers(hiddenLayer, outputLayer, full)
+	net.Defaults()
+
+	assert.NoError(t, net.Build())
+
+	assert.False(t, inputLayer.IsOff())
+
+	inputLayer.SetOff(true)
+	assert.True(t, inputLayer.IsOff())
+	assert.False(t, hiddenLayer.IsOff())
+	assert.True(t, inToHid.IsOff())
+	assert.False(t, in2ToHid.IsOff())
+
+	inputLayer2.SetOff(true)
+	assert.True(t, inputLayer2.IsOff())
+	assert.False(t, hiddenLayer.IsOff())
+	assert.True(t, in2ToHid.IsOff())
+
+	hiddenLayer.SetOff(true)
+	assert.True(t, hiddenLayer.IsOff())
+	assert.True(t, hidToOut.IsOff())
+	assert.True(t, outToHid.IsOff())
+
+	hiddenLayer.SetOff(false)
+	assert.False(t, hiddenLayer.IsOff())
+	assert.False(t, hidToOut.IsOff())
+	assert.False(t, outToHid.IsOff())
+	assert.True(t, inToHid.IsOff())
+	assert.True(t, in2ToHid.IsOff())
+}
