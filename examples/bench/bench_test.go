@@ -119,8 +119,8 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 }
 
 const (
-	smallNumUnits = 2048
-	hugeNumUnits  = 256 * 2048
+	smallNumUnits = 2048       // 5 * 2048 * 80 * 4B = 3MB (should fit in the cache)
+	hugeNumUnits  = 256 * 2048 // 5 * 256 * 2048 * 80 * 4B = 786MB (should not fit in the cache)
 )
 
 // Get a profile with `go test -bench=".*Thread.*" . -test.cpuprofile=neuronFun_T1.prof`
