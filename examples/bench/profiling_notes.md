@@ -40,7 +40,7 @@ This runs much slower but prints out warnings when 2 goroutines try to read/writ
 To profile use the cpuprofile command line flag:
 
 ```bash
-go build . && /usr/bin/time -v ./run_bench.sh -epochs=10 -cpuprofile=bench1024.prof
+go build . && /usr/bin/time -v ./run_bench.sh -epochs=10 -test.cpuprofile=bench1024.prof
 ```
 
 This save a file called bench1024.prof.

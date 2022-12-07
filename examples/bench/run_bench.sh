@@ -12,9 +12,9 @@ exe=${TMPDIR}/bench
 go test -c -o ${exe} .
 
 # typically run with -threads=N arg as follows:
-# $./run_bench.sh -threads=2
+# $./run_bench.sh -threads=2 -test.cpuprofile=cpu.prof
 
-CMD=(${exe} -test.bench=. -writestats)
+CMD=(${exe} -test.bench=BenchmarkBenchNetFull -writestats)
 
 echo " "
 echo "=============================================================="
