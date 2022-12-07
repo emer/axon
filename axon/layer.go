@@ -1181,7 +1181,7 @@ func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
 	ly.AxonLay.SpikeFmG(ni, nrn, ctime)
 	ly.AxonLay.PostAct(ni, nrn, ctime)
 	// note: this is now done separately to allow differential optimization:
-	// ly.AxonLay.SendSpikes(ni, nrn, ctime)
+	// ly.AxonLay.SendSpike(ni, nrn, ctime)
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
@@ -1270,10 +1270,10 @@ func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
 }
 
-// SendSpikes sends spike to receivers -- last step in Cycle, integrated
+// SendSpike sends spike to receivers -- last step in Cycle, integrated
 // the next time around.
 // Writes to sending projections for this neuron.
-func (ly *Layer) SendSpikes(ni int, nrn *Neuron, ctime *Time) {
+func (ly *Layer) SendSpike(ni int, nrn *Neuron, ctime *Time) {
 	if nrn.Spike == 0 {
 		return
 	}
@@ -1285,7 +1285,7 @@ func (ly *Layer) SendSpikes(ni int, nrn *Neuron, ctime *Time) {
 		if sp.IsOff() {
 			continue
 		}
-		sp.(AxonPrjn).SendSpikes(ni)
+		sp.(AxonPrjn).SendSpike(ni)
 	}
 }
 
