@@ -61,7 +61,7 @@ type Neuron struct {
 	SpkPrv   float32 `desc:"final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations."`
 	SpkSt1   float32 `desc:"the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning"`
 	SpkSt2   float32 `desc:"the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning"`
-	RLrate   float32 `desc:"recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD)."`
+	RLRate   float32 `desc:"recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD)."`
 
 	ActAvg  float32 `desc:"average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation"`
 	AvgPct  float32 `desc:"ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals"`
@@ -129,7 +129,7 @@ var NeuronVarProps = map[string]string{
 	"Gk":        `auto-scale:"+"`,
 	"ActDel":    `auto-scale:"+"`,
 	"ActDiff":   `auto-scale:"+"`,
-	"RLrate":    `auto-scale:"+"`,
+	"RLRate":    `auto-scale:"+"`,
 	"AvgPct":    `range:"2"`,
 	"TrgAvg":    `range:"2"`,
 	"DTrgAvg":   `auto-scale:"+"`,

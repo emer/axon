@@ -121,7 +121,7 @@ func (pj *CHLPrjn) DWtCHL(ctime *axon.Time) {
 	if slay.Pools[0].ActP.Avg < pj.CHL.SAvgThr { // inactive, no learn
 		return
 	}
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -142,7 +142,7 @@ func (pj *CHLPrjn) DWtCHL(ctime *axon.Time) {
 			err := pj.CHL.ErrDWt(sn.ActP, snActM, rn.ActP, rnActM, sy.LWt)
 
 			dwt := pj.CHL.DWt(hebb, err)
-			sy.DWt += rn.RLrate * lr * dwt
+			sy.DWt += rn.RLRate * lr * dwt
 		}
 	}
 }

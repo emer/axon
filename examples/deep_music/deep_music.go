@@ -176,9 +176,9 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		nUnits = 20
 	}
 
-	in, inp := net.AddInputPulv4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
+	in, inPulv := net.AddInputPulv4D("Input", 1, nnotes, ss.UnitsPer, 1, space)
 	in.SetClass("InLay")
-	inp.SetClass("InLay")
+	inPulv.SetClass("InLay")
 
 	var hidp, hid2, hid2ct emer.Layer
 	hid, hidct := net.AddSuperCT2D("Hidden", 20, nUnits, space, one2one) // one2one learn > full
@@ -188,15 +188,15 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		hidp = net.AddPulvForSuper(hid, space)
 	}
 	net.ConnectCTSelf(hidct, full)
-	net.ConnectToPulv(hid, hidct, inp, full, full)
+	net.ConnectToPulv(hid, hidct, inPulv, full, full)
 	net.ConnectLayers(in, hid, full, emer.Forward)
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Hid2 {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
-		net.ConnectToPulv(hid2, hid2ct, inp, full, full) // shortcut top-down
-		inp.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
+		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full) // shortcut top-down
+		inPulv.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 
@@ -323,15 +323,15 @@ func (ss *Sim) ConfigLoops() {
 
 	// lrate schedule
 	/*
-		man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
+		man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LRateSched", func() {
 			trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 			switch trnEpc {
 			case 40:
 				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-				// ss.Net.LrateSched(0.2) // 0.2
+				// ss.Net.LRateSched(0.2) // 0.2
 			case 60:
 				// mpi.Printf("learning rate drop at: %d\n", trnEpc)
-				// ss.Net.LrateSched(0.1) // 0.1
+				// ss.Net.LRateSched(0.1) // 0.1
 			}
 		})
 	*/
@@ -430,7 +430,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.LayerByName("InputPulv").(axon.AxonLayer).AsAxon()
 	err, minusIdx, plusIdx := inp.LocalistErr4D()
 	ss.Stats.SetInt("TargNote", plusIdx)
 	ss.Stats.SetInt("OutNote", minusIdx)

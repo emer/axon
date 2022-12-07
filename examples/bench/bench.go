@@ -35,8 +35,8 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.Trace.NeuronCa": "true", // true = much faster
-					"Prjn.Learn.Lrate.Base":     "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.Lrate":      "0.1",  // .1 >= .2,
+					"Prjn.Learn.LRate.Base":     "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.LRate":      "0.1",  // .1 >= .2,
 					"Prjn.SWt.Init.SPct":        "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: "Layer", Desc: "",

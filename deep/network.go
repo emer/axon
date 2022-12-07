@@ -112,7 +112,7 @@ func AddPulvAttnLayer4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY,
 // Both layers have SetClass(name) called to allow shared params.
 func AddInputPulv2D(nt *axon.Network, name string, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	in := nt.AddLayer2D(name, nNeurY, nNeurX, emer.Input)
-	pulv := AddPulvLayer2D(nt, name+"P", nNeurY, nNeurX)
+	pulv := AddPulvLayer2D(nt, name+"Pulv", nNeurY, nNeurX)
 	pulv.Driver = name
 	in.SetClass(name)
 	pulv.SetClass(name)
@@ -125,7 +125,7 @@ func AddInputPulv2D(nt *axon.Network, name string, nNeurY, nNeurX int, space flo
 // Both layers have SetClass(name) called to allow shared params.
 func AddInputPulv4D(nt *axon.Network, name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (emer.Layer, *PulvLayer) {
 	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, emer.Input)
-	pulv := AddPulvLayer4D(nt, name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
+	pulv := AddPulvLayer4D(nt, name+"Pulv", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	pulv.Driver = name
 	in.SetClass(name)
 	pulv.SetClass(name)
@@ -207,9 +207,9 @@ func AddPulvForSuper(nt *axon.Network, super emer.Layer, space float32) emer.Lay
 	shp := super.Shape()
 	var plv *PulvLayer
 	if shp.NumDims() == 2 {
-		plv = AddPulvLayer2D(nt, name+"P", shp.Dim(0), shp.Dim(1))
+		plv = AddPulvLayer2D(nt, name+"Pulv", shp.Dim(0), shp.Dim(1))
 	} else {
-		plv = AddPulvLayer4D(nt, name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		plv = AddPulvLayer4D(nt, name+"Pulv", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
 	plv.Driver = name
 	plv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: space})

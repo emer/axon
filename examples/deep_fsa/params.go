@@ -61,12 +61,12 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.On":            "false", // todo?
 					"Layer.Act.Noise.Ge":            "0.005",
 					"Layer.Act.Noise.Gi":            "0.005",
-					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
-					"Layer.Learn.RLrate.Diff":       "true",
-					"Layer.Learn.RLrate.DiffThr":    "0.02", // 0.02 def - todo
-					"Layer.Learn.RLrate.SpkThr":     "0.1",  // 0.1 def
-					"Layer.Learn.RLrate.Min":        "0.001",
+					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLRate.SigmoidMin": "0.05", // 0.05 > .1 > .02
+					"Layer.Learn.RLRate.Diff":       "true",
+					"Layer.Learn.RLRate.DiffThr":    "0.02", // 0.02 def - todo
+					"Layer.Learn.RLRate.SpkThr":     "0.1",  // 0.1 def
+					"Layer.Learn.RLRate.Min":        "0.001",
 				}},
 			{Sel: "PulvLayer", Desc: "pulvinar",
 				Params: params.Params{
@@ -80,13 +80,13 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.AHP":           "0.0",  // clear ahp
 					"Layer.Act.GABAB.Gbar":          "0.2",  // .2 > old: 0.005
 					"Layer.Act.NMDA.Gbar":           "0.15", // .15 > .1
-					"Layer.Learn.RLrate.SigmoidMin": "1.0",  // 1 > 0.05 with CaSpkD as var
+					"Layer.Learn.RLRate.SigmoidMin": "1.0",  // 1 > 0.05 with CaSpkD as var
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
 					"Prjn.Learn.Trace.SubMean":  "0",    // 0 > 1 -- even with CTCtxt = 0
-					"Prjn.Learn.Lrate.Base":     "0.03", // .03 > others -- same as CtCtxt
-					"Prjn.SWt.Adapt.Lrate":      "0.01", // 0.01 or 0.0001 music
+					"Prjn.Learn.LRate.Base":     "0.03", // .03 > others -- same as CtCtxt
+					"Prjn.SWt.Adapt.LRate":      "0.01", // 0.01 or 0.0001 music
 					"Prjn.SWt.Adapt.DreamVar":   "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":        "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":            "0.0",
@@ -99,7 +99,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
+					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
 					"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
@@ -125,7 +125,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTToPulv", Desc: "",
 				Params: params.Params{
-					// "Prjn.Learn.Lrate.Base":  "0.1",
+					// "Prjn.Learn.LRate.Base":  "0.1",
 					// "Prjn.SWt.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
 				}},
 		},

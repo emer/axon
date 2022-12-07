@@ -63,7 +63,7 @@ func (ly *Layer) Defaults() {
 	case emer.Target:
 		ly.Act.Clamp.Ge = 0.8
 		ly.Learn.TrgAvgAct.SubMean = 0
-		// ly.Learn.RLrate.SigmoidMin = 1
+		// ly.Learn.RLRate.SigmoidMin = 1
 	}
 }
 
@@ -1368,9 +1368,9 @@ func (ly *Layer) PlusPhase(ctime *Time) {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
-		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD)
-		nrn.RLrate = mlr * dlr
+		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
+		dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
+		nrn.RLRate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 		nrn.SahpN, _ = ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa)
 		nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
@@ -1515,7 +1515,7 @@ func (ly *Layer) DTrgAvgFmErr() {
 	if !ly.IsLearnTrgAvg() {
 		return
 	}
-	lr := ly.Learn.TrgAvgAct.ErrLrate
+	lr := ly.Learn.TrgAvgAct.ErrLRate
 	if lr == 0 {
 		return
 	}
@@ -1591,7 +1591,7 @@ func (ly *Layer) DTrgSubMean() {
 // TrgAvgFmD updates TrgAvg from DTrgAvg
 // it is called by WtFmDWtLayer
 func (ly *Layer) TrgAvgFmD() {
-	if !ly.IsLearnTrgAvg() || ly.Learn.TrgAvgAct.ErrLrate == 0 {
+	if !ly.IsLearnTrgAvg() || ly.Learn.TrgAvgAct.ErrLRate == 0 {
 		return
 	}
 	ly.DTrgSubMean()
@@ -1690,27 +1690,27 @@ func (ly *Layer) SynFail(ctime *Time) {
 	}
 }
 
-// LrateMod sets the Lrate modulation parameter for Prjns, which is
-// for dynamic modulation of learning rate (see also LrateSched).
+// LRateMod sets the LRate modulation parameter for Prjns, which is
+// for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
-func (ly *Layer) LrateMod(mod float32) {
+func (ly *Layer) LRateMod(mod float32) {
 	for _, p := range ly.RcvPrjns {
 		// if p.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).AsAxon().LrateMod(mod)
+		p.(AxonPrjn).AsAxon().LRateMod(mod)
 	}
 }
 
-// LrateSched sets the schedule-based learning rate multiplier.
-// See also LrateMod.
+// LRateSched sets the schedule-based learning rate multiplier.
+// See also LRateMod.
 // Updates the effective learning rate factor accordingly.
-func (ly *Layer) LrateSched(sched float32) {
+func (ly *Layer) LRateSched(sched float32) {
 	for _, p := range ly.RcvPrjns {
 		// if p.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).AsAxon().LrateSched(sched)
+		p.(AxonPrjn).AsAxon().LRateSched(sched)
 	}
 }
 

@@ -80,8 +80,8 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":         "0.0",  //
 					"Layer.Act.Decay.AHP":           "0.0",  //
 					"Layer.Act.NMDA.Gbar":           "0.1",  // .1 music
-					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigmoidMin": "1",
+					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLRate.SigmoidMin": "1",
 				}},
 			{Sel: ".Drives", Desc: "expect act",
 				Params: params.Params{
@@ -186,10 +186,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.Gbar.L":           "0.2",
 					"Layer.DaMod.BurstGain":      "0.2",
 					"Layer.DaMod.DipGain":        "0",    // ignore small negative DA
-					"Layer.BLA.NoDALrate":        "0.0",  // todo: explore
-					"Layer.BLA.NegLrate":         "0.1",  // todo: explore
-					"Layer.Learn.RLrate.Diff":    "true", // can turn off if NoDALrate is 0
-					"Layer.Learn.RLrate.DiffThr": "0.01", // based on cur - prv
+					"Layer.BLA.NoDALRate":        "0.0",  // todo: explore
+					"Layer.BLA.NegLRate":         "0.1",  // todo: explore
+					"Layer.Learn.RLRate.Diff":    "true", // can turn off if NoDALRate is 0
+					"Layer.Learn.RLRate.DiffThr": "0.01", // based on cur - prv
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
@@ -263,7 +263,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau":      "1",
 					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
-					"Prjn.Learn.Lrate.Base":     "0.04",
+					"Prjn.Learn.LRate.Base":     "0.04",
 				}},
 			{Sel: ".Back", Desc: "back is weaker",
 				Params: params.Params{
@@ -294,7 +294,7 @@ var ParamSets = params.Sets{
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
-					"Prjn.Learn.Lrate.Base": "0.0001", // slower > faster
+					"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
 				}},
 			{Sel: "#OFCToALM", Desc: "",
 				Params: params.Params{
@@ -351,7 +351,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.SWt.Init.Mean":    "0.5",
 					"Prjn.SWt.Init.Var":     "0.25",
-					"Prjn.Learn.Lrate.Base": "0.001",
+					"Prjn.Learn.LRate.Base": "0.001",
 					"Prjn.PrjnScale.Rel":    "0.5",
 				}},
 			{Sel: "#USToBLAPosAcqD1", Desc: "",
@@ -360,7 +360,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.5",
+					"Prjn.Learn.LRate.Base": "0.5",
 				}},
 			{Sel: "#OFCToBLAPosExtD2", Desc: "",
 				Params: params.Params{
@@ -403,7 +403,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":     "0.25",
 					"Prjn.Trace.CurTrlDA":   "true",
 					"Prjn.Learn.Learn":      "true",
-					"Prjn.Learn.Lrate.Base": "0.1",
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -440,7 +440,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.002", // 0.002 -- this is key param for how much BG learning happens!
+					"Prjn.Learn.LRate.Base": "0.002", // 0.002 -- this is key param for how much BG learning happens!
 					// does not affect too much..
 					"Prjn.SWt.Init.Mean": "0.0",
 					"Prjn.SWt.Init.Var":  "0.0",

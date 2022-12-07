@@ -17,7 +17,7 @@ var SavedParamsSets = params.Sets{
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.Learn.Lrate":       "0.04",
+					"Prjn.Learn.LRate":       "0.04",
 					"Prjn.Learn.Momentum.On": "false",
 					"Prjn.Learn.Norm.On":     "false",
 					"Prjn.Learn.WtBal.On":    "false",
@@ -25,7 +25,7 @@ var SavedParamsSets = params.Sets{
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
 					"Prjn.CHL.Hebb":          "0.05",
-					"Prjn.Learn.Lrate":       "0.4",
+					"Prjn.Learn.LRate":       "0.4",
 					"Prjn.Learn.Momentum.On": "false",
 					"Prjn.Learn.Norm.On":     "false",
 					"Prjn.Learn.WtBal.On":    "true",
@@ -66,7 +66,7 @@ var SavedParamsSets = params.Sets{
 				Params: params.Params{
 					"Prjn.CHL.Hebb":    "0.005",
 					"Prjn.CHL.SAvgCor": "0.4",
-					"Prjn.Learn.Lrate": "0.1",
+					"Prjn.Learn.LRate": "0.1",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
@@ -99,7 +99,7 @@ var SavedParamsSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".HippoCHL", Desc: "no learning",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0",
+					"Prjn.Learn.LRate": "0",
 				}},
 		},
 		"Sim": &params.Sheet{},

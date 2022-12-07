@@ -101,7 +101,7 @@ func (pj *Prjn) AllParams() string {
 	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
 	str += "SWt: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
-	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " Lrate: {", "\n  Lrate: {", -1)
+	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
 	return str
 }
 
@@ -510,7 +510,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
-	pj.Learn.Lrate.Init()
+	pj.Learn.LRate.Init()
 	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.SWt.Init.SPct
@@ -882,7 +882,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	cycTot := int32(ctime.CycleTot)
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
@@ -907,7 +907,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += rn.RLrate * lr * err
+			sy.DWt += rn.RLRate * lr * err
 		}
 	}
 }
@@ -918,7 +918,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
@@ -943,7 +943,7 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += rn.RLrate * lr * err
+			sy.DWt += rn.RLRate * lr * err
 		}
 	}
 }
@@ -956,7 +956,7 @@ func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	cycTot := int32(ctime.CycleTot)
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -978,7 +978,7 @@ func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += rn.RLrate * lr * err
+			sy.DWt += rn.RLRate * lr * err
 		}
 	}
 }
@@ -989,7 +989,7 @@ func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -1010,7 +1010,7 @@ func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += rn.RLrate * lr * err
+			sy.DWt += rn.RLRate * lr * err
 		}
 	}
 }
@@ -1088,7 +1088,7 @@ func (pj *Prjn) SWtFmWt() {
 	}
 	max := pj.SWt.Limit.Max
 	min := pj.SWt.Limit.Min
-	lr := pj.SWt.Adapt.Lrate
+	lr := pj.SWt.Adapt.LRate
 	dvar := pj.SWt.Adapt.DreamVar
 	for ri := range rlay.Neurons {
 		nc := int(pj.RecvConN[ri])
@@ -1185,18 +1185,18 @@ func (pj *Prjn) SynFail(ctime *Time) {
 	}
 }
 
-// LrateMod sets the Lrate modulation parameter for Prjns, which is
-// for dynamic modulation of learning rate (see also LrateSched).
+// LRateMod sets the LRate modulation parameter for Prjns, which is
+// for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
-func (pj *Prjn) LrateMod(mod float32) {
-	pj.Learn.Lrate.Mod = mod
-	pj.Learn.Lrate.Update()
+func (pj *Prjn) LRateMod(mod float32) {
+	pj.Learn.LRate.Mod = mod
+	pj.Learn.LRate.Update()
 }
 
-// LrateSched sets the schedule-based learning rate multiplier.
-// See also LrateMod.
+// LRateSched sets the schedule-based learning rate multiplier.
+// See also LRateMod.
 // Updates the effective learning rate factor accordingly.
-func (pj *Prjn) LrateSched(sched float32) {
-	pj.Learn.Lrate.Sched = sched
-	pj.Learn.Lrate.Update()
+func (pj *Prjn) LRateSched(sched float32) {
+	pj.Learn.LRate.Sched = sched
+	pj.Learn.LRate.Update()
 }

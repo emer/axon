@@ -27,8 +27,8 @@ Inhib: {
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
-  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
+  TrgAvgAct: {  On: true  ErrLRate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLRate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 /////////////////////////////////////////////////
 Layer: Hidden1
@@ -59,8 +59,8 @@ Inhib: {
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
-  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
+  TrgAvgAct: {  On: true  ErrLRate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLRate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 ///////////////////////////////////////////////////
 Prjn: InputToHidden1
@@ -68,16 +68,16 @@ Com: {
   Delay: 2 PFail: 0 PFailSWt: false
 }
 PrjnScale: {
-  Rel: 1 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+  Rel: 1 Abs: 1 Adapt: false ScaleLRate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Adapt: {  On: true  LRate: 0.1  SigGain: 6  DreamVar: 0 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
   Learn: true
-  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  LRate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
   XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
 }
 ///////////////////////////////////////////////////
@@ -86,16 +86,16 @@ Com: {
   Delay: 2 PFail: 0 PFailSWt: false
 }
 PrjnScale: {
-  Rel: 0.3 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+  Rel: 0.3 Abs: 1 Adapt: false ScaleLRate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Adapt: {  On: true  LRate: 0.1  SigGain: 6  DreamVar: 0 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
   Learn: true
-  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  LRate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
   XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
 }
 /////////////////////////////////////////////////
@@ -127,8 +127,8 @@ Inhib: {
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
-  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
+  TrgAvgAct: {  On: true  ErrLRate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLRate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 ///////////////////////////////////////////////////
 Prjn: Hidden1ToHidden2
@@ -136,16 +136,16 @@ Com: {
   Delay: 2 PFail: 0 PFailSWt: false
 }
 PrjnScale: {
-  Rel: 1 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+  Rel: 1 Abs: 1 Adapt: false ScaleLRate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Adapt: {  On: true  LRate: 0.1  SigGain: 6  DreamVar: 0 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
   Learn: true
-  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  LRate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
   XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
 }
 ///////////////////////////////////////////////////
@@ -154,16 +154,16 @@ Com: {
   Delay: 2 PFail: 0 PFailSWt: false
 }
 PrjnScale: {
-  Rel: 0.3 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+  Rel: 0.3 Abs: 1 Adapt: false ScaleLRate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
 }
 SWt: {
   Init: {  SPct: 0.5  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Adapt: {  On: true  LRate: 0.1  SigGain: 6  DreamVar: 0 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
   Learn: true
-  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  LRate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
   XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
 }
 /////////////////////////////////////////////////
@@ -195,8 +195,8 @@ Inhib: {
 }
 Learn: {
   ActAvg: {  SpikeG: 8  MinLrn: 0.02  SSTau: 40  STau: 10  MTau: 40  LrnM: 0.1  Init: 0.15 }
-  TrgAvgAct: {  On: true  ErrLrate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
-  RLrate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
+  TrgAvgAct: {  On: true  ErrLRate: 0.02  SynScaleRate: 0.01  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
+  RLRate: {  On: true  ActThr: 0.1  ActDiffThr: 0.02  Min: 0.001 }
 }
 ///////////////////////////////////////////////////
 Prjn: Hidden2ToOutput
@@ -204,16 +204,16 @@ Com: {
   Delay: 2 PFail: 0 PFailSWt: false
 }
 PrjnScale: {
-  Rel: 1 Abs: 1 Adapt: false ScaleLrate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
+  Rel: 1 Abs: 1 Adapt: false ScaleLRate: 0.5 HiTol: 0 LoTol: 0.8 AvgTau: 500
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.25  Sym: true }
-  Adapt: {  On: true  Lrate: 0.1  SigGain: 6  DreamVar: 0 }
+  Adapt: {  On: true  LRate: 0.1  SigGain: 6  DreamVar: 0 }
   Limit: {  Min: 0.2  Max: 0.8 }
 }
 Learn: {
   Learn: true
-  Lrate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
+  LRate: {  Base: 0.2  Sched: 1  Mod: 1  Eff: 0.2 }
   XCal: {  SubMean: 1  DWtThr: 0.0001  DRev: 0.1  DThr: 0.0001  LrnThr: 0.01 }
 }
 

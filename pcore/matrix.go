@@ -302,9 +302,9 @@ func (ly *MatrixLayer) PlusPhase(ctime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.SpkMax, smax)
-		// dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.CaSpkD) // not useful
-		nrn.RLrate = mlr
+		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.SpkMax, smax)
+		// dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD) // not useful
+		nrn.RLRate = mlr
 	}
 }
 

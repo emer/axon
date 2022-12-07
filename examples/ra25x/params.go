@@ -57,12 +57,12 @@ var ParamSets = params.Sets{
 					"Layer.Learn.LrnNMDA.Tau":       "100",  // 100 def
 					"Layer.Learn.TrgAvgAct.On":      "true", // critical!
 					"Layer.Learn.TrgAvgAct.SubMean": "1",    // 1 > 0 from start; else use SetSubMean to set to 1 later
-					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigmoidMin": "0.05", // 0.05 > .1 > .02
-					"Layer.Learn.RLrate.Diff":       "true",
-					"Layer.Learn.RLrate.DiffThr":    "0.02", // 0.02 def - todo
-					"Layer.Learn.RLrate.SpkThr":     "0.1",  // 0.1 def
-					"Layer.Learn.RLrate.Min":        "0.001",
+					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLRate.SigmoidMin": "0.05", // 0.05 > .1 > .02
+					"Layer.Learn.RLRate.Diff":       "true",
+					"Layer.Learn.RLRate.DiffThr":    "0.02", // 0.02 def - todo
+					"Layer.Learn.RLRate.SpkThr":     "0.1",  // 0.1 def
+					"Layer.Learn.RLRate.Min":        "0.001",
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -82,13 +82,13 @@ var ParamSets = params.Sets{
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
 					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
-					"Layer.Learn.RLrate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
+					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
+					"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":       "0.1",   // .1 def
-					"Prjn.SWt.Adapt.Lrate":        "0.1",   // .1 >= .2,
+					"Prjn.Learn.LRate.Base":       "0.1",   // .1 def
+					"Prjn.SWt.Adapt.LRate":        "0.1",   // .1 >= .2,
 					"Prjn.SWt.Adapt.SubMean":      "1",     // key for stability
 					"Prjn.SWt.Init.SPct":          "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.NeuronCa":   "false", // significantly worse
@@ -102,7 +102,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Hidden2ToOutput", Desc: "",
 				Params: params.Params{
-					// "Prjn.Learn.Lrate.Base":  "0.1", // 0.1 is default
+					// "Prjn.Learn.LRate.Base":  "0.1", // 0.1 is default
 					"Prjn.SWt.Adapt.SigGain": "6", // 1 does not work
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",

@@ -394,27 +394,27 @@ func (nt *Network) SynFail(ctime *Time) {
 	nt.PrjnFun(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail", Thread, Wait)
 }
 
-// LrateMod sets the Lrate modulation parameter for Prjns, which is
-// for dynamic modulation of learning rate (see also LrateSched).
+// LRateMod sets the LRate modulation parameter for Prjns, which is
+// for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
-func (nt *Network) LrateMod(mod float32) {
+func (nt *Network) LRateMod(mod float32) {
 	for _, ly := range nt.Layers {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).AsAxon().LrateMod(mod)
+		ly.(AxonLayer).AsAxon().LRateMod(mod)
 	}
 }
 
-// LrateSched sets the schedule-based learning rate multiplier.
-// See also LrateMod.
+// LRateSched sets the schedule-based learning rate multiplier.
+// See also LRateMod.
 // Updates the effective learning rate factor accordingly.
-func (nt *Network) LrateSched(sched float32) {
+func (nt *Network) LRateSched(sched float32) {
 	for _, ly := range nt.Layers {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).AsAxon().LrateSched(sched)
+		ly.(AxonLayer).AsAxon().LRateSched(sched)
 	}
 }
 

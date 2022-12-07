@@ -42,12 +42,12 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Init":       "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.6
-					"Layer.Learn.RLrate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
+					"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
 			{Sel: "Prjn", Desc: "basic prjn params",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
-					"Prjn.SWt.Adapt.Lrate":     "0.1", // .1 >= .2,
+					"Prjn.Learn.LRate.Base":    "0.1", // 0.1 learns fast but dies early, .02 is stable long term
+					"Prjn.SWt.Adapt.LRate":     "0.1", // .1 >= .2,
 					"Prjn.SWt.Init.SPct":       "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.SubMean": "1",   // 1 > 0 for long run stability
 				}},

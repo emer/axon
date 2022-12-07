@@ -36,7 +36,7 @@ var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 
 func (pj *CTCtxtPrjn) Defaults() {
 	pj.Prjn.Defaults()         // note: used to have other defaults
-	pj.Learn.Lrate.Base = 0.01 // note: this lrate may need to be much slower than others
+	pj.Learn.LRate.Base = 0.01 // note: this lrate may need to be much slower than others
 	pj.Learn.Trace.SubMean = 0 // 1 is not good!
 }
 
@@ -138,7 +138,7 @@ func (pj *CTCtxtPrjn) DWt(ctime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	sslay, issuper := pj.Send.(*SuperLayer)
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sact := float32(0)
 		if issuper {
@@ -167,7 +167,7 @@ func (pj *CTCtxtPrjn) DWt(ctime *axon.Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += lr * err // note: critical that we don't have * rn.RLrate here!
+			sy.DWt += lr * err // note: critical that we don't have * rn.RLRate here!
 		}
 	}
 }

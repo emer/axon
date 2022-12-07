@@ -30,7 +30,7 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
 					"Layer.Act.Gbar.L":      "0.2",
-					"Layer.Learn.RLrate.On": "false",
+					"Layer.Learn.RLRate.On": "false",
 					"Layer.Inhib.Layer.FB":  "0.5",
 				}},
 			{Sel: "Prjn", Desc: "for reproducibility, identical weights",
