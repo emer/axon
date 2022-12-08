@@ -213,8 +213,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
 	vl := net.AddLayer2D("VL", ny, nAct, emer.Target)  // Action
 	act := net.AddLayer2D("Act", ny, nAct, emer.Input) // Action
-	m1Pulv := deep.AddPulvLayer2D(net.AsAxon(), "M1Pulv", nuCtxY, nuCtxX)
-	m1Pulv.Driver = m1.Name()
+	m1P := deep.AddPulvLayer2D(net.AsAxon(), "M1P", nuCtxY, nuCtxX)
+	m1P.Driver = m1.Name()
 	_ = vl
 	_ = act
 
@@ -261,14 +261,14 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	vPmtxGo.(*pcore.MatrixLayer).MtxThals.Add(accmd.Name(), ofcmd.Name())
 	vPmtxNo.(*pcore.MatrixLayer).MtxThals.Add(accmd.Name(), ofcmd.Name())
 
-	// m1Pulv plus phase has action, Ctxt -> CT allows CT now to use that prev action
+	// m1P plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
 	alm, almct := net.AddSuperCT2D("ALM", nuCtxY+2, nuCtxX+2, space, one2one)
 	// almpt, almthal := net.AddPTThalForSuper(alm, almct, "MD", one2one, full, full, space)
 	almct.SetClass("ALM CTCopy")
 	// _ = almpt
 	// net.ConnectCTSelf(almct, full)
-	net.ConnectToPulv(alm, almct, m1Pulv, full, full)
+	net.ConnectToPulv(alm, almct, m1P, full, full)
 	// net.ConnectToPulv(alm, almct, posp, full, full)
 	// net.ConnectToPulv(alm, almct, distp, full, full)
 	// net.ConnectLayers(vPgpi, almthal, full, emer.Inhib).SetClass("BgFixed")
@@ -379,8 +379,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	gate.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pos.Name(), XAlign: relpos.Left, Space: space})
 
 	m1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pos.Name(), YAlign: relpos.Front, Space: space})
-	m1Pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1.Name(), XAlign: relpos.Left, Space: space})
-	vl.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1Pulv.Name(), XAlign: relpos.Left, Space: space})
+	m1P.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1.Name(), XAlign: relpos.Left, Space: space})
+	vl.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1P.Name(), XAlign: relpos.Left, Space: space})
 	act.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: vl.Name(), XAlign: relpos.Left, Space: space})
 
 	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
