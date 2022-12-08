@@ -39,8 +39,8 @@ type ActAvgVals struct {
 	AvgMaxGiM float32         `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- for monitoring and adjusting Prjn scaling factors: Prjn PrjnScale"`
 	GiMult    float32         `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
 	CaSpkPM   minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkP value in layer in the minus phase -- for monitoring network activity levels"`
-	CaSpkP    minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkP value in layer, updated in plus phase and used for normalizing CaSpkP values in RLrate sigmoid derivative computation"`
-	CaSpkD    minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkD value in layer, updated in plus phase and used for normalizing CaSpkD values in RLrate sigmoid derivative computation"`
+	CaSpkP    minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkP value in layer, updated in plus phase and used for normalizing CaSpkP values in RLRate sigmoid derivative computation"`
+	CaSpkD    minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkD value in layer, updated in plus phase and used for normalizing CaSpkD values in RLRate sigmoid derivative computation"`
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)

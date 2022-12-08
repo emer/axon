@@ -91,7 +91,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.AHP":           "0.0", // clear long
 					"Layer.Act.GABAB.Gbar":          "0.2",
 					"Layer.Act.NMDA.Gbar":           "0.1", // .1 was important
-					"Layer.Learn.RLrate.SigmoidMin": "1.0", // 1 > .05
+					"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > .05
 				}},
 			{Sel: "#DepthHidP", Desc: "distributed hidden-layer pulvinar",
 				Params: params.Params{
@@ -108,9 +108,9 @@ var ParamSets = params.Sets{
 			// Projections below
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":    "0.005", // 0.005 > 0.002 > 0.01
+					"Prjn.Learn.LRate.Base":    "0.005", // 0.005 > 0.002 > 0.01
 					"Prjn.Learn.Trace.SubMean": "0",     //
-					"Prjn.SWt.Adapt.Lrate":     "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
+					"Prjn.SWt.Adapt.LRate":     "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
 					"Prjn.SWt.Adapt.DreamVar":  "0.0",   // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":       "1.0",   // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":           "0.0",
@@ -126,7 +126,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxt", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":    "0.002", // has almost no effect in 1to1
+					"Prjn.Learn.LRate.Base":    "0.002", // has almost no effect in 1to1
 					"Prjn.Learn.Trace.Tau":     "2",     // late in learning 2 does best
 					"Prjn.Learn.Trace.SubMean": "0",     //
 					"Prjn.Com.PFail":           "0.0",   // .2, .3 too high -- very slow learning

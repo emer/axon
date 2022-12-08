@@ -53,7 +53,7 @@ func (ly *PulvLayer) Defaults() {
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
-	ly.Learn.RLrate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
+	ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
 	ly.Pulv.Defaults()
 	ly.Typ = Pulv
 }

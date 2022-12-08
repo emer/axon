@@ -37,7 +37,7 @@ func (pj *EcCa1Prjn) DWt(ctime *axon.Time) {
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -56,7 +56,7 @@ func (pj *EcCa1Prjn) DWt(ctime *axon.Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += lr * err // rn.RLrate -- doesn't make sense here, b/c St1
+			sy.DWt += lr * err // rn.RLRate -- doesn't make sense here, b/c St1
 		}
 	}
 }

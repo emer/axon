@@ -309,13 +309,13 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	// lrate schedule
-	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LrateSched", func() {
+	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LRateSched", func() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		switch trnEpc {
 		case 100:
 			// mpi.Printf("setting SubMean = 1 at: %d\n", trnEpc)
 			// ss.Net.SetSubMean(1, 1)
-			// ss.Net.LrateSched(0.1) // not beneficial
+			// ss.Net.LRateSched(0.1) // not beneficial
 		}
 	})
 

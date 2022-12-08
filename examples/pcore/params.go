@@ -90,7 +90,7 @@ var ParamSets = params.Sets{
 					"Prjn.Trace.CurTrlDA":   "true",
 					"Prjn.Trace.NoACh":      "true", // not for this demo, but should be off in general
 					"Prjn.Learn.Learn":      "true",
-					"Prjn.Learn.Lrate.Base": "0.1",
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{

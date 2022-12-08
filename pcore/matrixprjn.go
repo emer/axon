@@ -109,7 +109,7 @@ func (pj *MatrixPrjn) DWtNoUS(ctime *axon.Time) {
 	if !pj.Trace.NoACh {
 		daLrn *= ach
 	}
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 
 	for si := range slay.Neurons {
 		snAct := noGate * slay.Neurons[si].CaSpkP
@@ -139,7 +139,7 @@ func (pj *MatrixPrjn) DWtNoUS(ctime *axon.Time) {
 			}
 			sy.Tr = tr
 			trsy.DTr = dtr
-			sy.DWt += rlay.Neurons[ri].RLrate * lr * dwt
+			sy.DWt += rlay.Neurons[ri].RLRate * lr * dwt
 		}
 	}
 }
@@ -157,7 +157,7 @@ func (pj *MatrixPrjn) DWtUS(ctime *axon.Time) {
 	if !pj.Trace.NoACh {
 		daLrn *= ach
 	}
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 
 	snMod := ach
 	if rlay.Matrix.InvertNoGate && !rlay.Matrix.GPHasPools {
@@ -192,7 +192,7 @@ func (pj *MatrixPrjn) DWtUS(ctime *axon.Time) {
 			}
 			sy.Tr = tr
 			trsy.DTr = dtr
-			sy.DWt += rlay.Neurons[ri].RLrate * lr * dwt
+			sy.DWt += rlay.Neurons[ri].RLRate * lr * dwt
 		}
 	}
 }

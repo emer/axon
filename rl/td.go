@@ -266,7 +266,7 @@ func (pj *TDRewPredPrjn) DWt(ctime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	// rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	da := pj.Recv.(DALayer).GetDA()
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])

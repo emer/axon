@@ -17,7 +17,7 @@
           "Sel": ".EcCa1Prjn",
           "Desc": "encoder projections -- no norm, moment",
           "Params": {
-            "Prjn.Learn.Lrate": "0.04",
+            "Prjn.Learn.LRate": "0.04",
             "Prjn.Learn.Momentum.On": "false",
             "Prjn.Learn.Norm.On": "false",
             "Prjn.Learn.WtBal.On": "true",
@@ -29,7 +29,7 @@
           "Desc": "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
           "Params": {
             "Prjn.CHL.Hebb": "0.05",
-            "Prjn.Learn.Lrate": "0.2",
+            "Prjn.Learn.LRate": "0.2",
             "Prjn.Learn.Momentum.On": "false",
             "Prjn.Learn.Norm.On": "false",
             "Prjn.Learn.WtBal.On": "true"
@@ -39,7 +39,7 @@
           "Sel": ".PPath",
           "Desc": "perforant path, new Dg error-driven EcCa1Prjn prjns",
           "Params": {
-            "Prjn.Learn.Lrate": "0.15",
+            "Prjn.Learn.LRate": "0.15",
             "Prjn.Learn.Momentum.On": "false",
             "Prjn.Learn.Norm.On": "false",
             "Prjn.Learn.WtBal.On": "true"
@@ -86,7 +86,7 @@
           "Sel": "#CA3ToCA3",
           "Desc": "CA3 recurrent cons: rel=1 slightly better than 2",
           "Params": {
-            "Prjn.Learn.Lrate": "0.1",
+            "Prjn.Learn.LRate": "0.1",
             "Prjn.WtScale.Rel": "0.1"
           }
         },
@@ -98,7 +98,7 @@
             "Prjn.CHL.MinusQ1": "true",
             "Prjn.CHL.SAvgCor": "0.1",
             "Prjn.Learn.Learn": "true",
-            "Prjn.Learn.Lrate": "0.4",
+            "Prjn.Learn.LRate": "0.4",
             "Prjn.Learn.Momentum.On": "false",
             "Prjn.Learn.Norm.On": "false",
             "Prjn.Learn.WtBal.On": "true"
@@ -110,7 +110,7 @@
           "Params": {
             "Prjn.CHL.Hebb": "0.01",
             "Prjn.CHL.SAvgCor": "0.4",
-            "Prjn.Learn.Lrate": "0.1",
+            "Prjn.Learn.LRate": "0.1",
             "Prjn.Learn.Momentum.On": "false",
             "Prjn.Learn.Norm.On": "false",
             "Prjn.Learn.WtBal.On": "true"

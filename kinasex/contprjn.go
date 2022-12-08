@@ -132,7 +132,7 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 	case kinase.NeurSpkTheta:
 		return
 	}
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	twin := pj.Learn.KinaseDWt.TWindow
@@ -183,7 +183,7 @@ func (pj *ContPrjn) SendSynCa(ltime *Time) {
 			if sy.CaD > sy.CaDMax {
 				sy.CaDMax = sy.CaD
 			}
-			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
+			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLRate) {
 				sndw++
 			}
 			sntot++
@@ -223,7 +223,7 @@ func (pj *ContPrjn) DWtCont(ltime *axon.Time) {
 		decay = 0
 	}
 	// twin := kd.TWindow
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.CaP < kp.UpdtThr && sn.CaD < kp.UpdtThr {
@@ -247,7 +247,7 @@ func (pj *ContPrjn) DWtCont(ltime *axon.Time) {
 			}
 			DecaySynCa(sy, decay)
 			// above decay, representing time passing after discrete trials, can trigger learning
-			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLrate) {
+			if pj.Learn.DWtFmTDWt(sy, lr*rn.RLRate) {
 				sndw++
 			}
 			sntot++

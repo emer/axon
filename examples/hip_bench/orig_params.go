@@ -20,7 +20,7 @@ var OrigParamSets = params.Sets{
 				}},
 			{Sel: ".EcCa1Prjn", Desc: "encoder projections -- no norm, moment",
 				Params: params.Params{
-					"Prjn.Learn.Lrate":       "0.04",
+					"Prjn.Learn.LRate":       "0.04",
 					"Prjn.Learn.Momentum.On": "false",
 					"Prjn.Learn.Norm.On":     "false",
 					"Prjn.Learn.WtBal.On":    "true", // counteracting hogging
@@ -30,7 +30,7 @@ var OrigParamSets = params.Sets{
 			{Sel: ".HippoCHL", Desc: "hippo CHL projections -- no norm, moment, but YES wtbal = sig better",
 				Params: params.Params{
 					"Prjn.CHL.Hebb":          "0.05",
-					"Prjn.Learn.Lrate":       "0.2", // note: 0.2 can sometimes take a really long time to learn
+					"Prjn.Learn.LRate":       "0.2", // note: 0.2 can sometimes take a really long time to learn
 					"Prjn.Learn.Momentum.On": "false",
 					"Prjn.Learn.Norm.On":     "false",
 					"Prjn.Learn.WtBal.On":    "true",
@@ -71,7 +71,7 @@ var OrigParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.CHL.Hebb":    "0.005",
 					"Prjn.CHL.SAvgCor": "0.4",
-					"Prjn.Learn.Lrate": "0.1",
+					"Prjn.Learn.LRate": "0.1",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{

@@ -39,7 +39,7 @@ var ParamSets = params.Sets{
 			{Sel: ".PVLVLrnCons", Desc: "Base for most projections",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "true",
-					"Prjn.Learn.Lrate": "0.02",
+					"Prjn.Learn.LRate": "0.02",
 					"Prjn.WtInit.Mean": "0.01",
 					"Prjn.WtInit.Var":  "0",
 					"Prjn.WtInit.Sym":  "false",
@@ -47,7 +47,7 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAmygConsStim", Desc: "StimIn to BLA",
 				Params: params.Params{
 					"Prjn.Learn.Learn":      "true",
-					"Prjn.Learn.Lrate":      "0.2",
+					"Prjn.Learn.LRate":      "0.2",
 					"Prjn.Learn.WtSig.Gain": "1",
 					"Prjn.WtInit.Dist":      "Gaussian",
 					"Prjn.WtInit.Mean":      "0",
@@ -70,7 +70,7 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAmygConsCntxtExt", Desc: "ContextIn to BLA projections",
 				Params: params.Params{
 					"Prjn.WtScale.Abs":      "0.75",
-					"Prjn.Learn.Lrate":      "0.5",
+					"Prjn.Learn.LRate":      "0.5",
 					"Prjn.Learn.WtSig.Gain": "1",
 					"Prjn.DALRBase":         "0",
 					"Prjn.DALrnThr":         "0.01",
@@ -94,55 +94,55 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.WtInit.Mean": "0.02",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.015",
-					//"Prjn.Learn.Lrate": "0.005",
+					"Prjn.Learn.LRate": "0.015",
+					//"Prjn.Learn.LRate": "0.005",
 				}},
 			{Sel: ".VSPatchConsToPosD2", Desc: "To VSPatchPosD2",
 				Params: params.Params{
 					"Prjn.WtInit.Mean": "0.02",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.012",
+					"Prjn.Learn.LRate": "0.012",
 				}},
 			{Sel: ".VSPatchConsToNegD1", Desc: "To VSPatchNegD1",
 				Params: params.Params{
 					"Prjn.WtInit.Mean": "0.02",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.01",
+					"Prjn.Learn.LRate": "0.01",
 				}},
 			{Sel: ".VSPatchConsToNegD2", Desc: "To VSPatchNegD2",
 				Params: params.Params{
 					"Prjn.WtInit.Mean": "0.02",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.01",
+					"Prjn.Learn.LRate": "0.01",
 				}},
 			{Sel: ".VSMatrixConsToPosD1", Desc: "To VSMatrixPosD1",
 				Params: params.Params{
 					"Prjn.WtScale.Abs": "0.25",
 					"Prjn.WtInit.Mean": "0.01",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.03",
-					//"Prjn.Learn.Lrate": "0.02",
+					"Prjn.Learn.LRate": "0.03",
+					//"Prjn.Learn.LRate": "0.02",
 				}},
 			{Sel: ".VSMatrixConsToPosD2", Desc: "To VSMatrixPosD2",
 				Params: params.Params{
 					"Prjn.WtScale.Abs": "0.25",
 					"Prjn.WtInit.Mean": "0.01",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.06",
+					"Prjn.Learn.LRate": "0.06",
 				}},
 			{Sel: ".VSMatrixConsToNegD1", Desc: "To VSMatrixPosD1",
 				Params: params.Params{
 					"Prjn.WtScale.Abs": "0.25",
 					"Prjn.WtInit.Mean": "0.01",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.06",
+					"Prjn.Learn.LRate": "0.06",
 				}},
 			{Sel: ".VSMatrixConsToNegD2", Desc: "To VSMatrixNegD2",
 				Params: params.Params{
 					"Prjn.WtScale.Abs": "0.25",
 					"Prjn.WtInit.Mean": "0.01",
 					"Prjn.WtInit.Var":  "0",
-					"Prjn.Learn.Lrate": "0.03",
+					"Prjn.Learn.LRate": "0.03",
 				}},
 			{Sel: ".CElExtToAcqInhib", Desc: "CElAmyg lateral",
 				Params: params.Params{
@@ -168,7 +168,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".StimToBLAmyg", Desc: "StimIn to BLAmyg",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0.2",
+					"Prjn.Learn.LRate": "0.2",
 				}},
 			{Sel: ".PVToCElPVAct", Desc: "Clamp from PV to CEl",
 				Params: params.Params{
@@ -191,15 +191,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CtxtToBLAmyg", Desc: "ContextIn to BLAmyg",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0.5",
+					"Prjn.Learn.LRate": "0.5",
 				}},
 			{Sel: ".StimExtToBLAmyg", Desc: "StimInExt to BLAmyg",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0.5",
+					"Prjn.Learn.LRate": "0.5",
 				}},
 			{Sel: ".CElAmygCons", Desc: "CElAmyg",
 				Params: params.Params{
-					"Prjn.Learn.Lrate":      "0.2",
+					"Prjn.Learn.LRate":      "0.2",
 					"Prjn.WtScale.Abs":      "2.5",
 					"Prjn.Learn.WtSig.Gain": "1",
 					"Prjn.WtInit.Mean":      "0.02",
@@ -211,7 +211,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CElAmygConsFmBLA", Desc: "CElAmyg",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0.05",
+					"Prjn.Learn.LRate": "0.05",
 					"Prjn.WtInit.Mean": "0.1",
 					"Prjn.WtInit.Var":  "0",
 					"Prjn.DALRBase":    "0",
@@ -220,7 +220,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CElAmygConsExtFmBLA", Desc: "CElAmyg",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0",
+					"Prjn.Learn.LRate": "0",
 					"Prjn.WtInit.Mean": "0.9",
 					"Prjn.WtInit.Var":  "0",
 					"Prjn.DALrnThr":    "0.01",
@@ -228,11 +228,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAToCElA", Desc: "BL to CEl",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0.05",
+					"Prjn.Learn.LRate": "0.05",
 				}},
 			{Sel: ".BLAToCElAExt", Desc: "BL to CEl ext",
 				Params: params.Params{
-					"Prjn.Learn.Lrate": "0.0",
+					"Prjn.Learn.LRate": "0.0",
 				}},
 			{Sel: ".BLAToVSDeepMod", Desc: "BLA to VS, also lateral within BLA",
 				Params: params.Params{

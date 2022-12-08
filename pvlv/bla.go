@@ -16,15 +16,15 @@ import (
 
 // BLAParams has parameters for basolateral amygdala
 type BLAParams struct {
-	NoDALrate float32 `desc:"baseline learning rate without any dopamine"`
-	NoUSLrate float32 `desc:"learning rate outside of US active time window (i.e. for CSs)"`
-	NegLrate  float32 `desc:"negative DWt learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
+	NoDALRate float32 `desc:"baseline learning rate without any dopamine"`
+	NoUSLRate float32 `desc:"learning rate outside of US active time window (i.e. for CSs)"`
+	NegLRate  float32 `desc:"negative DWt learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
 }
 
 func (bp *BLAParams) Defaults() {
-	bp.NoDALrate = 0.0
-	bp.NoUSLrate = 0.0
-	bp.NegLrate = 0.1
+	bp.NoDALRate = 0.0
+	bp.NoUSLRate = 0.0
+	bp.NegLRate = 0.1
 }
 
 // BLALayer represents a basolateral amygdala layer
@@ -104,21 +104,21 @@ func (ly *BLALayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 func (ly *BLALayer) PlusPhase(ctime *axon.Time) {
 	ly.Layer.PlusPhase(ctime)
 	ly.USActiveFmUS(ctime)
-	lrmod := ly.BLA.NoDALrate + mat32.Abs(ly.DA)
+	lrmod := ly.BLA.NoDALRate + mat32.Abs(ly.DA)
 	if !ly.USActive {
-		lrmod *= ly.BLA.NoUSLrate
+		lrmod *= ly.BLA.NoUSLRate
 	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		mlr := ly.Learn.RLrate.RLrateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
-		dlr := ly.Learn.RLrate.RLrateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous
+		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
+		dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous
 		if nrn.CaSpkP-nrn.SpkPrv < 0 {
-			dlr *= ly.BLA.NegLrate
+			dlr *= ly.BLA.NegLRate
 		}
-		nrn.RLrate = mlr * dlr * lrmod
+		nrn.RLRate = mlr * dlr * lrmod
 	}
 }
 
@@ -163,7 +163,7 @@ func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 	rlay := pj.Recv.(*BLALayer)
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	ach := rlay.ACh
-	lr := ach * pj.Learn.Lrate.Eff
+	lr := ach * pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sact := slay.Neurons[si].SpkPrv
 		nc := int(pj.SendConN[si])
@@ -187,7 +187,7 @@ func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 			} else {
 				err *= sy.LWt
 			}
-			sy.DWt += rn.RLrate * lr * err
+			sy.DWt += rn.RLRate * lr * err
 		}
 	}
 }

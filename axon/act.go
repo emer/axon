@@ -176,7 +176,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.SpkMaxCa = 0
 	nrn.SpkMax = 0
 	nrn.Attn = 1
-	nrn.RLrate = 1
+	nrn.RLRate = 1
 
 	nrn.GeNoiseP = 1
 	nrn.GeNoise = 0

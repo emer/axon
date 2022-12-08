@@ -81,8 +81,8 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1",      // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":       "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.Learn.LRate.Base":      "0.1",      // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.LRate":       "0.08",     // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5",      // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Kinase.SpikeG":   "4",        // keep at 12 standard, adjust other things
 					"Prjn.Learn.Kinase.Rule":     "SynSpkCa", // "SynNMDACa",
@@ -114,8 +114,8 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1", // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.Learn.LRate.Base":      "0.1", // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.LRate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Kinase.SpikeG":   "8",   // 42 nominal for spkca, but 8 is reliable
 					"Prjn.Learn.Kinase.Rule":     "SynSpkCa",
@@ -168,8 +168,8 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.1", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
-					"Prjn.SWt.Adapt.Lrate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.Learn.LRate.Base":      "0.1", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
+					"Prjn.SWt.Adapt.LRate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Kinase.Rule":     "SynNMDACa",
 					"Prjn.Learn.Kinase.OptInteg": "false",
@@ -229,8 +229,8 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base":      "0.2", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
-					"Prjn.SWt.Adapt.Lrate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.Learn.LRate.Base":      "0.2", // 0.2 std; kinase: 0.08 - 0.1 with RCa normalized
+					"Prjn.SWt.Adapt.LRate":       "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":         "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Kinase.Rule":     "NeurSpkCa",
 					"Prjn.Learn.Kinase.OptInteg": "false",
@@ -282,8 +282,8 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.15", // 0.1 for SynSpkCa even though dwt equated
-					"Prjn.SWt.Adapt.Lrate":  "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
+					"Prjn.Learn.LRate.Base": "0.15", // 0.1 for SynSpkCa even though dwt equated
+					"Prjn.SWt.Adapt.LRate":  "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":    "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
@@ -333,8 +333,8 @@ var ParamSetsAlpha = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.Learn.LRate.Base": "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.LRate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Init.SPct":    "0.5", // .5 > 1 here, 1 best for larger nets: objrec, lvis
 				}},
 			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
@@ -400,14 +400,14 @@ var ParamSetsAll = params.Sets{
 					"Layer.Act.Noise.GiHz":               "200",
 					"Layer.Act.Noise.Gi":                 "0.005",
 					"Layer.Act.Dt.LongAvgTau":            "20",   // 20 > higher for objrec, lvis
-					"Layer.Learn.TrgAvgAct.ErrLrate":     "0.02", // 0.01 for lvis, needs faster here
+					"Layer.Learn.TrgAvgAct.ErrLRate":     "0.02", // 0.01 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.01", // 0.005 for lvis, needs faster here
 					"Layer.Learn.TrgAvgAct.TrgRange.Min": "0.5",  // .5 best for Lvis, .2 - 2.0 best for objrec
 					"Layer.Learn.TrgAvgAct.TrgRange.Max": "2.0",  // 2.0
-					"Layer.Learn.RLrate.On":              "true",
-					"Layer.Learn.RLrate.ActThr":          "0.1",   // 0.1 > others in larger models
-					"Layer.Learn.RLrate.ActDiffThr":      "0.02",  // .02 > .05 best on lvis
-					"Layer.Learn.RLrate.Min":             "0.001", // .01 > .001 best on lvis
+					"Layer.Learn.RLRate.On":              "true",
+					"Layer.Learn.RLRate.ActThr":          "0.1",   // 0.1 > others in larger models
+					"Layer.Learn.RLRate.ActDiffThr":      "0.02",  // .02 > .05 best on lvis
+					"Layer.Learn.RLRate.Min":             "0.001", // .01 > .001 best on lvis
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
@@ -429,15 +429,15 @@ var ParamSetsAll = params.Sets{
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
 					"Prjn.Com.Delay":            "2",   // 1 == 2 = 3
-					"Prjn.Learn.Lrate.Base":     "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
-					"Prjn.SWt.Adapt.Lrate":      "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
+					"Prjn.Learn.LRate.Base":     "0.2", // 0.04 no rlr, 0.2 rlr; .3, WtSig.Gain = 1 is pretty close
+					"Prjn.SWt.Adapt.LRate":      "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Adapt.SigGain":    "6",
 					"Prjn.SWt.Adapt.DreamVar":   "0.0", // 0.01 is just tolerable -- better with .2 adapt lrate
 					"Prjn.SWt.Init.SPct":        "0.5", // .5 > 1 here, 1 best for larger nets: objrec, lvis
 					"Prjn.SWt.Init.Mean":        "0.5", // 0.5 generally good
 					"Prjn.SWt.Limit.Min":        "0.2",
 					"Prjn.SWt.Limit.Max":        "0.8",
-					"Prjn.PrjnScale.ScaleLrate": "0.5",    // lvis best with .5
+					"Prjn.PrjnScale.ScaleLRate": "0.5",    // lvis best with .5
 					"Prjn.Learn.XCal.DThr":      "0.0001", // local opt
 					"Prjn.Learn.XCal.DRev":      "0.1",    // local opt
 					"Prjn.Learn.XCal.DWtThr":    "0.0001", // 0.0001 > 0.001 in objrec

@@ -88,11 +88,11 @@ Meanwhile, based on extensive experience with Axon and Leabra, here are some lik
 * **Spiking AdEx Neurons:** Axon uses the full conductance-based *AdEx* (adapting exponential) discrete spiking model of Gerstner and colleagues ([Wikipedia on  AdEx](https://en.wikipedia.org/wiki/Exponential_integrate-and-fire)), using normalized units as shown here: [google sheet](https://docs.google.com/spreadsheets/d/1jn-NcXY4-y3pOw6inFOgPYlaQodrGIjcsAWkiD9f1FQ/edit?usp=sharing).  Parameterizable synaptic communication delays are also supported, with biologically-based defaults.  Adaptation is implemented in a more realistic manner compared to standard AdEx, using the M-type medium time-scale m-AHP (afterhyperpolarizing) channel, and two longer time scales of sodium-gated potassium channels: `KNa` [(Kaczmarek, 2013)](#references).  Leabra implemented a close rate-code approximation to AdEx.
 
     AdEx elides the very fast sodium-potassium channels that drive the action potential spiking, as captured in the seminal [Hodgkin & Huxley (1952)](#references) (HH) equations, which are 4th order polynomials, and thus require a very fine-grained time scale below 1 msec and / or more computationally expensive integration methods.  The qualitative properties of these dynamics are instead captured using an exponential function in AdEx, which can be updated at the time scale of 1 msec.
-    
+
     Despite this simplification, AdEx supports neurophysiologically-based conductance equations so that any number of standard channel types can be added to the model, each with their own conductance function.  See [chans](https://github.com/emer/axon/tree/master/chans) for a description of the channel types supported, and the code implementing them, including NMDA and GABA-B as described next.
 
-* **Longer-acting, bistable NMDA and GABA-B currents:** An essential step for enabling spiking neurons to form suitably stable, selective representations for learning was the inclusion of both NMDA and GABA-B channels, which are voltage dependent in a complementary manner as captured in the [Sanders et al, 2013](#References) model (which provided the basis for the implementation here).  These channels have long time constants and the voltage dependence causes them to promote a bistable activation state, with a smaller subset of neurons that have extra excitatory drive from the NMDA and avoid extra inhibition from GABA-B, while a majority of neurons have the opposite profile: extra inhibition from GABA-B and no additional excitation from NMDA.  With stronger conductance levels, these channels can produce robust active maintenance dynamics characteristic of layer 3 in the prefrontal cortex (PFC), but for posterior cortex, we use lower values that produce a weaker, but still essential, form of bistability.  Without these channels, neurons all just "take turns" firing at different points in time, and there is no sense in which a small subset are engaged to represent a specific input pattern -- that had been a blocking failure in all prior attempts to use spiking in Leabra models.    
-    
+* **Longer-acting, bistable NMDA and GABA-B currents:** An essential step for enabling spiking neurons to form suitably stable, selective representations for learning was the inclusion of both NMDA and GABA-B channels, which are voltage dependent in a complementary manner as captured in the [Sanders et al, 2013](#References) model (which provided the basis for the implementation here).  These channels have long time constants and the voltage dependence causes them to promote a bistable activation state, with a smaller subset of neurons that have extra excitatory drive from the NMDA and avoid extra inhibition from GABA-B, while a majority of neurons have the opposite profile: extra inhibition from GABA-B and no additional excitation from NMDA.  With stronger conductance levels, these channels can produce robust active maintenance dynamics characteristic of layer 3 in the prefrontal cortex (PFC), but for posterior cortex, we use lower values that produce a weaker, but still essential, form of bistability.  Without these channels, neurons all just "take turns" firing at different points in time, and there is no sense in which a small subset are engaged to represent a specific input pattern -- that had been a blocking failure in all prior attempts to use spiking in Leabra models.
+
 * **Auto-normalized, relatively scaled Excitatory Conductances:** As in Leabra, the excitatory synaptic input conductance (`Ge` in the code, known as *net input* in artificial neural networks) is computed as an average, not a sum, over connections, based on normalized weight values, which are subject to scaling on a projection level to alter relative contributions.  Automatic scaling is performed to compensate for differences in expected activity level in the different projections.  See section on [Projection scaling](#projection-scaling) for details.  All of this makes it much easier to create models of different sizes and configurations with minimal (though still non-zero) need for additional parameter tweaking.
 
 ## Temporal and Spatial Dynamics of Dendritic Integration
@@ -200,7 +200,7 @@ $$ y' = y (1-y) \frac{y^+ - y^-}{MAX(y^+, y^-)} $$
 
 ## Stabilization and Rescaling Mechanisms
 
-A collection of biologically-motivated mechanisms are used to provide a stronger "backbone" or "spine" for the otherwise somewhat "squishy" learning that emerges from the above error-driven learning mechanisms, serving to stabilize learning over longer time scales, and prevent parasitic positive feedback loops that otherwise plague these bidirectionally-connected networks.  These positive feedback loops emerge because the networks tend to settle into stable attractor states due to the bidirectional, generally symmetric connectivity, and there is a tendency for a few such states to get broader and broader, capturing more and more of the "representational space".  The credit assignment process, which is based on activation, contributes to this "rich get richer" dynamic where the most active neurons experience the greatest weight changes.  We colloquially refer to this as the "hog unit" problem, where a small number of units start to hog the representational space, and it represents a major practical barrier to effective learning if not managed properly.  Note that this problem does not arise in the vast majority of purely feedforward networks used in the broader neural network field, which do not exhibit attractor dynamics.  However, this kind of phenomenon is problematic in other frameworks with the potential for such positive feedback loops, such as on-policy reinforcement learning or generative adversarial networks. 
+A collection of biologically-motivated mechanisms are used to provide a stronger "backbone" or "spine" for the otherwise somewhat "squishy" learning that emerges from the above error-driven learning mechanisms, serving to stabilize learning over longer time scales, and prevent parasitic positive feedback loops that otherwise plague these bidirectionally-connected networks.  These positive feedback loops emerge because the networks tend to settle into stable attractor states due to the bidirectional, generally symmetric connectivity, and there is a tendency for a few such states to get broader and broader, capturing more and more of the "representational space".  The credit assignment process, which is based on activation, contributes to this "rich get richer" dynamic where the most active neurons experience the greatest weight changes.  We colloquially refer to this as the "hog unit" problem, where a small number of units start to hog the representational space, and it represents a major practical barrier to effective learning if not managed properly.  Note that this problem does not arise in the vast majority of purely feedforward networks used in the broader neural network field, which do not exhibit attractor dynamics.  However, this kind of phenomenon is problematic in other frameworks with the potential for such positive feedback loops, such as on-policy reinforcement learning or generative adversarial networks.
 
 Metaphorically, various forms of equalizing taxation and wealth redistribution are required to level the playing field.  The set of stabilizing, anti-hog mechanisms in Axon include:
 
@@ -230,7 +230,7 @@ Axon is organized around a 200 msec *theta* cycle (5 Hz), which is perhaps not c
 
 ## Variables
 
-### Neuron 
+### Neuron
 
 The [`axon.Neuron`](https://github.com/emer/axon/blob/master/axon/neuron.go) struct contains all the neuron (unit) level variables, and the [`axon.Layer`](https://github.com/emer/axon/blob/master/axon/layer.go) contains a simple Go slice of these variables.
 
@@ -265,7 +265,7 @@ The [`axon.Neuron`](https://github.com/emer/axon/blob/master/axon/neuron.go) str
 * `SpkPrv` = final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations.
 * `SpkSt1` = the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning.
 * `SpkSt2` = the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning.
-* `RLrate` = recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).
+* `RLRate` = recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).
 * `ActAvg` = average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation.
 * `AvgPct`= ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
 * `TrgAvg` = neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct.
@@ -362,13 +362,13 @@ All of the relevant parameters and most of the equations are in the [`axon/act.g
 * `GRaw = GBuf` at the `Com.Delay` index (e.g., 2 msec)
 * `GSyn += GRaw - Act.Dt.GeDt * GSyn  // GeSynFmRaw or GiSynFmRaw`
 
-    
+
 ### GiFmSpikes: for each Layer
 
 `Layer.Pool[*].Inhib` pools are updated based on `FFsRaw` and `FBsRaw` which are accumulated during `SendSpike`
 
 Normalize raw values:
-* `FFs = FFsRaw / Npool    // Npool = number of neurons in pool`  
+* `FFs = FFsRaw / Npool    // Npool = number of neurons in pool`
 * `FBs = FBsRaw / Npool`
 
 Fast spiking (FS) PV from FFs and FBs, with decay:
@@ -395,7 +395,7 @@ Iterates over Recv Prjns:
 * or Gi* if inhibitory
 
 Then all the special conductances:
-* NMDA, VGCC, GABAB, Gk -- see [chans](https://github.com/emer/axon/tree/master/chans) for equations, which operate on `VmDend` instead of `Vm`, as these channels are primarily located in the dendrites.  These contribute to overall `Ge` excitatory conductance and `Gi` inhibition.  
+* NMDA, VGCC, GABAB, Gk -- see [chans](https://github.com/emer/axon/tree/master/chans) for equations, which operate on `VmDend` instead of `Vm`, as these channels are primarily located in the dendrites.  These contribute to overall `Ge` excitatory conductance and `Gi` inhibition.
 
 And add in the pool inhib `Gi` computed above.
 
@@ -462,7 +462,7 @@ In addition, the Ca trace used for synaptic-level integration for the trace-base
 
 Finally, various peripheral aspects of learning (learning rate modulation, thresholds, etc) and some performance statistics use simple cascaded time-integrals of spike-driven Ca at the Neuron level, in the `CaSpk` variables.  The initial Ca level from spiking is just multiplied by a gain factor:
 
-* `SpikeG` (8 or 12) = gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLrate, UpdtThr.  `Prjn.KinaseCa.SpikeG` provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
+* `SpikeG` (8 or 12) = gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdtThr.  `Prjn.KinaseCa.SpikeG` provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller.
 
 The cascaded integration of these variables is:
 ```Go
@@ -475,7 +475,7 @@ The cascaded integration of these variables is:
 
 For each Neuron, if `Spike != 0`, then iterate over `SendPrjns` for that layer, and for each sending Synapse, `Prjn.GScale.Scale` (computed projection scaling, see [Projection scaling](#projection-scaling)) is multiplied by the synaptic weight `Wt`, and added into the `GBuf` buffer for each receiving neuron, at the ring index for `Com.Delay` (such that it will be added that many cycles later in `GFmSpikes`).  The `PIBuf` for the inhibitory pool of each receiving neuron is also incremented.
 
-This is expensive computationally because it requires traversing all of the synapses for each sending neuron, in a sparse manner due to the fact that few neurons are typically spiking at any given cycle.  
+This is expensive computationally because it requires traversing all of the synapses for each sending neuron, in a sparse manner due to the fact that few neurons are typically spiking at any given cycle.
 
 ### SendSynCa, RecvSynCa
 
@@ -499,12 +499,12 @@ The *Error* gradient component of this weight change was shown above, in terms o
 The *Credit* assignment component is the *trace*, based on the longest time-scale cascaded synaptic Ca value, `CaD` as updated in the above functions:
 * `Tr += (CaD - Tr) / Tau   // Tau = 1 or 2+ trials`
 
-Along with a `RLrate` factor that represents the derivative of the receiving activation, which is updated for each neuron at the end of the *plus* phase prior to doing `DWt`:
-* `RLrate = CaSpkD * (Max - CaSpkD) * (ABS(CaSpkP - CaSpkD) / MAX(CaSpkP - CaSpkD))`
+Along with a `RLRate` factor that represents the derivative of the receiving activation, which is updated for each neuron at the end of the *plus* phase prior to doing `DWt`:
+* `RLRate = CaSpkD * (Max - CaSpkD) * (ABS(CaSpkP - CaSpkD) / MAX(CaSpkP - CaSpkD))`
     + `Max` = maximum CaSpkD value across the layer
 
 Thus, the complete learning function is:
-* `DWt = (recv.CaP - recv.CaD) * Tr * recv.RLrate`
+* `DWt = (recv.CaP - recv.CaD) * Tr * recv.RLRate`
 
 The soft weight bounding is applied at the time of computing the DWt, as a function of the Linear weight value LWt (explained below in WtFmDWt) as follows:
 ```Go
@@ -543,8 +543,8 @@ Every `SlowInterval` (100) Trials, the `SlowAdapt` methods are called on all Lay
 ### Target vs. Average Activity
 
 First, when the network is initialized, a `TrgAvg` value is assigned to each neuron by uniformly sampling within a range of target values (0.5 - 2.0) and permuting the values among the set of neurons.  This target is then updated as a function of the receiving unit error-gradient, subject to a zero-sum constraint across the relevant Pool of neurons:
-* `DTrgAvg += ErrLrate * (CaSpkP - CaSpkD) // ErrLrate = .02`
-* `TrgAvg += DTrgAvg - AVG(DTrgAvg)   // zero-sum` 
+* `DTrgAvg += ErrLRate * (CaSpkP - CaSpkD) // ErrLRate = .02`
+* `TrgAvg += DTrgAvg - AVG(DTrgAvg)   // zero-sum`
 
 
 After every Trial, the neuron's actual average activation `ActAvg` is updated in a running-average manner:
@@ -565,7 +565,7 @@ The `SWt` is updated from `DSWt` which is accumulated from all the ensuing `DWt`
     } else {
     	DSWt *= (SWt - SWt.Limit.Min)
     }
-    SWt += SWt.Adapt.Lrate * (DSWt - AVG(DSWt) // AVG over Recv synapses per Prjn
+    SWt += SWt.Adapt.LRate * (DSWt - AVG(DSWt) // AVG over Recv synapses per Prjn
     LWt = SigInverse(Wt / SWt)   // inverse of sigmoid
 ```
 The learning rate here is typically slow, on the order 0.001 or even lower in large networks.
@@ -584,8 +584,8 @@ Finally, the `LWt` values are rescaled as a function of the `AvgDif` values refl
     Wt = SWt * Sigmoid(LWt)
 ```
 This updates all the learned weights, and consequently the effective weights, moving in the direction to reduce the difference between the actual average activation and the target.
- 
-        
+
+
 ## Projection scaling
 
 The `Ge` and `Gi` synaptic conductances computed from a given projection from one layer to the next reflect the number of receptors currently open and capable of passing current, which is a function of the activity of the sending layer, and total number of synapses.  We use a set of equations to automatically normalize (rescale) these factors across different projections, so that each projection has roughly an equal influence on the receiving neuron, by default.

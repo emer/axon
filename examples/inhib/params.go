@@ -85,7 +85,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".RndSc", Desc: "random shortcut",
 				Params: params.Params{
-					"Prjn.Learn.Lrate.Base": "0.001", //
+					"Prjn.Learn.LRate.Base": "0.001", //
 					// "Prjn.Learn.Learn":      "false",
 					"Prjn.PrjnScale.Rel": "0.5",   // .5 > .8 > 1 > .4 > .3 etc
 					"Prjn.SWt.Adapt.On":  "false", // seems better

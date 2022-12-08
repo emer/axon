@@ -170,7 +170,7 @@ func (pj *RWPrjn) DWt(ctime *axon.Time) {
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	lda := pj.Recv.(DALayer).GetDA()
-	lr := pj.Learn.Lrate.Eff
+	lr := pj.Learn.LRate.Eff
 	if pj.DaTol > 0 {
 		if mat32.Abs(lda) <= pj.DaTol {
 			return // lda = 0 -- no learning
