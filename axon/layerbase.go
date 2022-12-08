@@ -57,7 +57,17 @@ func (ls *LayerBase) TypeName() string           { return "Layer" } // type cate
 func (ls *LayerBase) Type() emer.LayerType       { return ls.Typ }
 func (ls *LayerBase) SetType(typ emer.LayerType) { ls.Typ = typ }
 func (ls *LayerBase) IsOff() bool                { return ls.Off }
-func (ls *LayerBase) SetOff(off bool)            { ls.Off = off }
+func (ls *LayerBase) SetOff(off bool) {
+	ls.Off = off
+	// a Prjn is off if either the sending or the receiving layer is off
+	// or if the prjn has been set to Off directly
+	for _, pj := range ls.RcvPrjns {
+		pj.SetOff(pj.SendLay().IsOff() || off)
+	}
+	for _, pj := range ls.SndPrjns {
+		pj.SetOff(pj.RecvLay().IsOff() || off)
+	}
+}
 func (ls *LayerBase) Shape() *etensor.Shape      { return &ls.Shp }
 func (ls *LayerBase) Is2D() bool                 { return ls.Shp.NumDims() == 2 }
 func (ls *LayerBase) Is4D() bool                 { return ls.Shp.NumDims() == 4 }
@@ -161,7 +171,9 @@ func (ls *LayerBase) NPools() int {
 
 // RecipToSendPrjn finds the reciprocal projection relative to the given sending projection
 // found within the SendPrjns of this layer.  This is then a recv prjn within this layer:
-//  S=A -> R=B recip: R=A <- S=B -- ly = A -- we are the sender of srj and recv of rpj.
+//
+//	S=A -> R=B recip: R=A <- S=B -- ly = A -- we are the sender of srj and recv of rpj.
+//
 // returns false if not found.
 func (ls *LayerBase) RecipToSendPrjn(spj emer.Prjn) (emer.Prjn, bool) {
 	for _, rpj := range ls.RcvPrjns {
