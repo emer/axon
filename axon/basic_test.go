@@ -78,7 +78,11 @@ func newTestNet() *Network {
 func TestSynVals(t *testing.T) {
 	testNet := newTestNet()
 	hidLay := testNet.LayerByName("Hidden").(*Layer)
-	fmIn := hidLay.RcvPrjns.SendName("Input").(*Prjn)
+	p, err := hidLay.SendNameTry("Input")
+	if err != nil {
+		t.Error(err)
+	}
+	fmIn := p.(*Prjn)
 
 	bfWt := fmIn.SynVal("Wt", 1, 1)
 	if mat32.IsNaN(bfWt) {

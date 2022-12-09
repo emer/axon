@@ -134,6 +134,12 @@ type AxonLayer interface {
 	// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay)
 	DecayState(decay, glong float32)
 
+	// RecvPrjns returns the slice of receiving projections for this layer
+	RecvPrjns() *AxonPrjns
+
+	// SendPrjns returns the slice of sending projections for this layer
+	SendPrjns() *AxonPrjns
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
 
@@ -273,4 +279,10 @@ type AxonPrjn interface {
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
 	SynFail(ctime *Time)
+}
+
+type AxonPrjns []AxonPrjn
+
+func (pl *AxonPrjns) Add(p AxonPrjn) {
+	(*pl) = append(*pl, p)
 }

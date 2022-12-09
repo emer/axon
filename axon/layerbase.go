@@ -29,8 +29,8 @@ type LayerBase struct {
 	NeurStIdx int            `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
 	RepIxs    []int          `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
 	RepShp    etensor.Shape  `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
-	RcvPrjns  emer.Prjns     `desc:"list of receiving projections into this layer from other layers"`
-	SndPrjns  emer.Prjns     `desc:"list of sending projections from this layer to other layers"`
+	RcvPrjns  AxonPrjns      `desc:"list of receiving projections into this layer from other layers"`
+	SndPrjns  AxonPrjns      `desc:"list of sending projections from this layer to other layers"`
 }
 
 // emer.Layer interface methods
@@ -76,10 +76,10 @@ func (ls *LayerBase) Pos() mat32.Vec3            { return ls.Ps }
 func (ls *LayerBase) SetPos(pos mat32.Vec3)      { ls.Ps = pos }
 func (ls *LayerBase) Index() int                 { return ls.Idx }
 func (ls *LayerBase) SetIndex(idx int)           { ls.Idx = idx }
-func (ls *LayerBase) RecvPrjns() *emer.Prjns     { return &ls.RcvPrjns }
+func (ls *LayerBase) RecvPrjns() *AxonPrjns      { return &ls.RcvPrjns }
 func (ls *LayerBase) NRecvPrjns() int            { return len(ls.RcvPrjns) }
 func (ls *LayerBase) RecvPrjn(idx int) emer.Prjn { return ls.RcvPrjns[idx] }
-func (ls *LayerBase) SendPrjns() *emer.Prjns     { return &ls.SndPrjns }
+func (ls *LayerBase) SendPrjns() *AxonPrjns      { return &ls.SndPrjns }
 func (ls *LayerBase) NSendPrjns() int            { return len(ls.SndPrjns) }
 func (ls *LayerBase) SendPrjn(idx int) emer.Prjn { return ls.SndPrjns[idx] }
 func (ls *LayerBase) RepIdxs() []int             { return ls.RepIxs }
