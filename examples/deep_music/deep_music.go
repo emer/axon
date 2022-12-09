@@ -196,7 +196,8 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, nUnits, space, one2one) // one2one learn > full
 		net.ConnectCTSelf(hid2ct, full)
 		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full) // shortcut top-down
-		inPulv.RecvPrjns().SendName(hid2ct.Name()).SetClass("CTToPulvHigher")
+		projection, _ := inPulv.SendNameTry(hid2ct.Name())
+		projection.SetClass("CTToPulvHigher")
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
 	}
 
