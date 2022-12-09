@@ -238,12 +238,12 @@ func (nt *NetworkBase) AllPrjnScales() string {
 			continue
 		}
 		str += "\nLayer: " + ly.Name() + "\n"
-		rpjn := ly.RecvPrjns()
-		for _, p := range *rpjn {
-			if p.IsOff() {
+		for i := 0; i < ly.NRecvPrjns(); i++ {
+			recvPrjn := ly.RecvPrjn(i)
+			if recvPrjn.IsOff() {
 				continue
 			}
-			pj := p.(AxonPrjn).AsAxon()
+			pj := recvPrjn.(AxonPrjn).AsAxon()
 			str += fmt.Sprintf("\t%23s\t\tAbs:\t%g\tRel:\t%g\n", pj.Name(), pj.PrjnScale.Abs, pj.PrjnScale.Rel)
 		}
 	}
@@ -325,8 +325,8 @@ func (nt *NetworkBase) ConnectLayers(send, recv emer.Layer, pat prjn.Pattern, ty
 func (nt *NetworkBase) ConnectLayersPrjn(send, recv emer.Layer, pat prjn.Pattern, typ emer.PrjnType, pj emer.Prjn) emer.Prjn {
 	pj.Init(pj)
 	pj.Connect(send, recv, pat, typ)
-	recv.RecvPrjns().Add(pj)
-	send.SendPrjns().Add(pj)
+	recv.(AxonLayer).RecvPrjns().Add(pj.(AxonPrjn))
+	send.(AxonLayer).SendPrjns().Add(pj.(AxonPrjn))
 	return pj
 }
 
@@ -385,8 +385,8 @@ func (nt *NetworkBase) LateralConnectLayer(lay emer.Layer, pat prjn.Pattern) eme
 func (nt *NetworkBase) LateralConnectLayerPrjn(lay emer.Layer, pat prjn.Pattern, pj emer.Prjn) emer.Prjn {
 	pj.Init(pj)
 	pj.Connect(lay, lay, pat, emer.Lateral)
-	lay.RecvPrjns().Add(pj)
-	lay.SendPrjns().Add(pj)
+	lay.(AxonLayer).RecvPrjns().Add(pj.(AxonPrjn))
+	lay.(AxonLayer).SendPrjns().Add(pj.(AxonPrjn))
 	return pj
 }
 
@@ -411,7 +411,7 @@ func (nt *NetworkBase) Build() error {
 			continue
 		}
 		totNeurons += ly.Shape().Len()
-		totPrjns += len(*ly.SendPrjns())
+		totPrjns += ly.NSendPrjns()
 		cls := strings.Split(ly.Class(), " ")
 		for _, cl := range cls {
 			ll := nt.LayClassMap[cl]
@@ -432,12 +432,13 @@ func (nt *NetworkBase) Build() error {
 
 	nidx := 0
 	pidx := 0
-	for _, ly := range nt.Layers {
+	for _, l := range nt.Layers {
+		ly := l.(AxonLayer)
 		if ly.IsOff() {
 			continue
 		}
 		nn := ly.Shape().Len()
-		aly := ly.(AxonLayer).AsAxon()
+		aly := ly.AsAxon()
 		aly.Neurons = nt.Neurons[nidx : nidx+nn]
 		aly.NeurStIdx = nidx
 		err := ly.Build()

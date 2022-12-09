@@ -231,26 +231,26 @@ func (nt *Network) InitTopoSWts() {
 		if ly.IsOff() {
 			continue
 		}
-		rpjn := ly.RecvPrjns()
-		for _, p := range *rpjn {
-			if p.IsOff() {
+		for i := 0; i < ly.NRecvPrjns(); i++ {
+			recvPrjn := ly.RecvPrjn(i)
+			if recvPrjn.IsOff() {
 				continue
 			}
-			pat := p.Pattern()
+			pat := recvPrjn.Pattern()
 			switch pt := pat.(type) {
 			case *prjn.PoolTile:
 				if !pt.HasTopoWts() {
 					continue
 				}
-				pj := p.(AxonPrjn).AsAxon()
-				slay := p.SendLay()
+				pj := recvPrjn.(AxonPrjn).AsAxon()
+				slay := recvPrjn.SendLay()
 				pt.TopoWts(slay.Shape(), ly.Shape(), swts)
 				pj.SetSWtsRPool(swts)
 			case *prjn.Circle:
 				if !pt.TopoWts {
 					continue
 				}
-				pj := p.(AxonPrjn).AsAxon()
+				pj := recvPrjn.(AxonPrjn).AsAxon()
 				pj.SetSWtsFunc(pt.GaussWts)
 			}
 		}
