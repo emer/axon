@@ -12,6 +12,7 @@ require (
 	github.com/goki/kigen v1.0.1
 	github.com/goki/mat32 v1.0.12
 	github.com/stretchr/testify v1.7.0
+	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
 require (
