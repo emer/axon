@@ -91,11 +91,11 @@ func (ss *Sim) New() {
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
+	ss.Hid2 = true // useful only if primary hidden layer is smaller
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
 	ss.FullSong = true
-	ss.Hid2 = false // useful only if primary hidden layer is smaller
 	ss.TestClamp = true
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
@@ -129,10 +129,16 @@ func (ss *Sim) ConfigEnv() {
 	// maxRows := 60 // 30 is good benchmark, 25 it almost fully solves
 	// have to push it to 60 to get an effect of Tau=4 vs. 1
 	maxRows := 30
-	ss.Params.ExtraSets = "30Notes"
+	if ss.Hid2 {
+		ss.Params.ExtraSets = "Hid2 "
+	} else {
+		ss.Params.ExtraSets = ""
+	}
 	if ss.FullSong {
 		maxRows = 0 // full thing
-		ss.Params.ExtraSets = "FullSong"
+		ss.Params.ExtraSets += "FullSong"
+	} else {
+		ss.Params.ExtraSets += "30Notes"
 	}
 	track := 0
 	wrapNotes := false // does a bit better with false for short lengths (30)
@@ -185,7 +191,7 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	_ = hidp
 	if ss.Hid2 {
 		// hidp -> hid2 doesn't actually help at all..
-		hidp = net.AddPulvForSuper(hid, space)
+		// hidp = net.AddPulvForSuper(hid, space)
 	}
 	net.ConnectCTSelf(hidct, full)
 	net.ConnectToPulv(hid, hidct, inPulv, full, full)
@@ -431,7 +437,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	inp := ss.Net.LayerByName("InputPulv").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
 	err, minusIdx, plusIdx := inp.LocalistErr4D()
 	ss.Stats.SetInt("TargNote", plusIdx)
 	ss.Stats.SetInt("OutNote", minusIdx)
