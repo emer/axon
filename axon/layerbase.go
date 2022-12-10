@@ -198,7 +198,7 @@ func (ls *LayerBase) Config(shape []int, typ emer.LayerType) {
 func (ls *LayerBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 	applied := false
 	var rerr error
-	app, err := pars.Apply(ls.AxonLay, setMsg) // essential to go through AxonPrj
+	app, err := pars.Apply(ls.AxonLay, setMsg) // essential to go through AxonLay
 	if app {
 		ls.AxonLay.UpdateParams()
 		applied = true

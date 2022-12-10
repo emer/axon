@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
-	github.com/emer/emergent v1.3.32
+	github.com/emer/emergent v1.3.33
 	github.com/emer/empi v1.0.17
 	github.com/emer/etable v1.1.11
 	github.com/goki/gi v1.3.7
@@ -12,7 +12,6 @@ require (
 	github.com/goki/kigen v1.0.1
 	github.com/goki/mat32 v1.0.12
 	github.com/stretchr/testify v1.7.0
-	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
 require (

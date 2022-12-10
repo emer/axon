@@ -171,7 +171,7 @@ func TestSpikeProp(t *testing.T) {
 }
 
 func TestNetAct(t *testing.T) {
-	t.Skip("Skipping TestNetAct for now until stable")
+	// t.Skip("Skipping TestNetAct for now until stable")
 	testNet := newTestNet()
 	testNet.InitExt()
 	inPats := newInPats()
@@ -186,18 +186,18 @@ func TestNetAct(t *testing.T) {
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
-	qtr0HidGes := []float32{0.3717118, 0, 0, 0}
+	qtr0HidGes := []float32{0.31093338, 0, 0, 0}
 	qtr0HidGis := []float32{0.1547833, 0.1547833, 0.1547833, 0.1547833}
 	qtr0OutActs := []float32{0.55552065, 0, 0, 0}
 	qtr0OutGes := []float32{0.3789059, 0, 0, 0}
 	qtr0OutGis := []float32{0.20974194, 0.20974194, 0.20974194, 0.20974194}
 
-	qtr3HidActs := []float32{0.60769576, 0, 0, 0}
-	qtr3HidGes := []float32{0.46021092, 0, 0, 0}
-	qtr3HidGis := []float32{0.2902269, 0.2902269, 0.2902269, 0.2902269}
-	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
+	qtr3HidActs := []float32{0.53240955, 0, 0, 0}
+	qtr3HidGes := []float32{0.36792937, 0, 0, 0}
+	qtr3HidGis := []float32{0.21772972, 0.21772972, 0.21772972, 0.21772972}
+	qtr3OutActs := []float32{0.7293362, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
-	qtr3OutGis := []float32{0.45443797, 0.45443797, 0.45443797, 0.45443797}
+	qtr3OutGis := []float32{0.42606226, 0.42606226, 0.42606226, 0.4260622}
 
 	inActs := []float32{}
 	hidActs := []float32{}
@@ -287,7 +287,7 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestNetLearn(t *testing.T) {
-	t.Skip("Skipping TestNetLearn for now until stable")
+	// t.Skip("Skipping TestNetLearn for now until stable")
 	testNet := newTestNet()
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input").(*Layer)
@@ -308,10 +308,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutSpkCaD := []float32{0.7841259, 0.0070280116, 0.0070280116, 0.0070280116}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.0028504506, 0.0028113255, 0.0030769987, 0.0024911282}
-	outDwts := []float32{0.0037635588, 0.007653439, 0.011969609, 0.01056802}
-	hidWts := []float32{0.5170964, 0.5168616, 0.51845366, 0.51494235}
-	outWts := []float32{0.5225664, 0.5457954, 0.57134134, 0.56307966}
+	hidDwts := []float32{0.0017427707, 0.001458157, 0.0023176437, 0.0016285274}
+	outDwts := []float32{0.0076494003, 0.010328078, 0.0077902386, 0.008364963}
+	hidWts := []float32{0.5104552, 0.5087481, 0.5139025, 0.50976986}
+	outWts := []float32{0.5457716, 0.56166166, 0.5466097, 0.5500266}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -422,7 +422,7 @@ func TestNetLearn(t *testing.T) {
 }
 
 func TestInhibAct(t *testing.T) {
-	t.Skip("Skipping TestInhibAct for now until stable")
+	// t.Skip("Skipping TestInhibAct for now until stable")
 	inPats := newInPats()
 	var InhibNet Network
 	InhibNet.InitName(&InhibNet, "InhibNet")
