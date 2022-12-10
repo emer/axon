@@ -117,7 +117,7 @@ func (ss *Sim) New() {
 	ss.Net = &pcore.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "WtScales"
+	// ss.Params.ExtraSets = "WtScales"
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -338,7 +338,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectToMatrix(blae, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
-	net.ConnectLayers(drives, vPstnp, full, emer.Forward)
+	net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
 	net.ConnectLayers(drives, vPstns, full, emer.Forward)
 	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)

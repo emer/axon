@@ -90,10 +90,13 @@ func (ss *Sim) New() {
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
+	ss.Hid2 = false
+	if ss.Hid2 {
+		ss.Params.ExtraSets = "Hid2"
+	}
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
-	ss.Hid2 = false
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
 	ss.Time.Defaults()

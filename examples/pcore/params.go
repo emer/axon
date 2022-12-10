@@ -32,8 +32,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "1.1",
 					"Layer.Act.Clamp.Ge":   "0.6",
 				}},
-			{Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
-				Params: params.Params{}},
+			// {Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
+			// 	Params: params.Params{}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Init": "0.15",
@@ -195,10 +195,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.1",
 				}},
-			{Sel: "#GPeInToSTNs", Desc: "NOT currently used -- interferes with threshold-based Ca self-inhib dynamics",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1",
-				}},
+			// {Sel: "#GPeInToSTNs", Desc: "NOT currently used -- interferes with threshold-based Ca self-inhib dynamics",
+			// 	Params: params.Params{
+			// 		"Prjn.PrjnScale.Abs": "0.1",
+			// 	}},
 			{Sel: "#STNpToGPeIn", Desc: "stronger STN -> GPeIn to kick it high at start",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1", // was 0.5

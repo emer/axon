@@ -123,11 +123,11 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
 				}},
-			{Sel: ".CTToPulv", Desc: "",
-				Params: params.Params{
-					// "Prjn.Learn.LRate.Base":  "0.1",
-					// "Prjn.SWt.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
-				}},
+			// {Sel: ".CTToPulv", Desc: "",
+			// 	Params: params.Params{
+			// 		// "Prjn.Learn.LRate.Base":  "0.1",
+			// 		// "Prjn.SWt.Adapt.SigGain": "1", // 1 does not work as well with any tested lrates
+			// 	}},
 		},
 	}},
 }

@@ -59,10 +59,10 @@ func guirun() {
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "faster average",
-				Params: params.Params{
-					// "Layer.Act.Dt.AvgTau": "200",
-				}},
+			// {Sel: "Layer", Desc: "faster average",
+			// 	Params: params.Params{
+			// 		// "Layer.Act.Dt.AvgTau": "200",
+			// 	}},
 			{Sel: "#Input", Desc: "input fixed act",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":     "1",
@@ -87,16 +87,8 @@ var ParamSets = params.Sets{
 					"Layer.RewInteg.Discount":    "0.9",
 					"Layer.RewInteg.RewPredGain": "1.0",
 				}},
-			{Sel: "Prjn", Desc: "no extra learning factors",
-				Params: params.Params{}},
-			{Sel: ".TDRewToInteg", Desc: "rew to integ",
-				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.SWt.Init.Mean": "1",
-					"Prjn.SWt.Init.Var":  "0",
-					"Prjn.SWt.Init.Sym":  "false",
-					// "Prjn.PrjnScale.Abs": "2.0",
-				}},
+			// {Sel: "Prjn", Desc: "no extra learning factors",
+			// 	Params: params.Params{}},
 			{Sel: "RWPrjn", Desc: "RW pred",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean":    "0",
