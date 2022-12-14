@@ -1145,20 +1145,26 @@ func (pj *Prjn) SynScale() {
 	if !rlay.IsLearnTrgAvg() {
 		return
 	}
-	lr := rlay.Learn.TrgAvgAct.SynScaleRate
+	tp := &rlay.Learn.TrgAvgAct
+	lr := tp.SynScaleRate
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
 			continue
 		}
 		adif := -lr * nrn.AvgDif
+		if tp.TrgMult {
+			adif *= tp.TrgRange.NormVal(nrn.TrgAvg)
+		}
 		nc := int(pj.RecvConN[ri])
 		st := int(pj.RecvConIdxStart[ri])
 		rsidxs := pj.RecvSynIdx[st : st+nc]
 		for _, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
 			if adif >= 0 { // key to have soft bounding on lwt here!
-				sy.LWt += (1 - sy.LWt) * adif * sy.SWt
+				if !tp.DownOnly {
+					sy.LWt += (1 - sy.LWt) * adif * sy.SWt
+				}
 			} else {
 				sy.LWt += sy.LWt * adif * sy.SWt
 			}
