@@ -20,12 +20,12 @@ func TestMultithreadingNeuronFun(t *testing.T) {
 	shape := []int{8, 8}
 	nPats := 100
 
-	netS := buildNet(shape, 1, t)
-	netM := buildNet(shape, 5, t)
+	netS := buildNet(shape, 1, 1, t)
+	netM := buildNet(shape, 3, 2, t)
 
 	// sync the randomly initialized weights
 	// filename := t.TempDir() + "/netS.json"
-	filename := "netS.json"
+	filename := t.TempDir() + "/netS.json"
 	// write Synapse weights to file
 	fh, err := os.Create(filename)
 	require.NoError(t, err)
@@ -82,7 +82,7 @@ func TestMultithreadingNeuronFun(t *testing.T) {
 	}
 }
 
-func buildNet(shape []int, nThreads int, t *testing.T) *Network {
+func buildNet(shape []int, nThreads, nChunks int, t *testing.T) *Network {
 	net := NewNetwork(fmt.Sprint("MTTest", nThreads))
 	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
 	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer)
@@ -98,7 +98,7 @@ func buildNet(shape []int, nThreads int, t *testing.T) *Network {
 	net.InitWts()
 
 	// override again, just to be safe
-	net.Threads.Set(2, nThreads, nThreads, nThreads, nThreads)
+	net.Threads.Set(nChunks, nThreads, nThreads, nThreads, nThreads)
 	net.ThreadsAlloc()
 	return net
 }
