@@ -678,7 +678,7 @@ func (ly *Layer) InitWts() {
 		if p.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).InitWts()
+		p.InitWts()
 	}
 }
 

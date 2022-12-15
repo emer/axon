@@ -72,54 +72,68 @@ func TestLayer_SendSpike(t *testing.T) {
 func TestLayerToJson(t *testing.T) {
 	shape := []int{2, 2}
 
-	origNet := NewNetwork("LayerTest")
-	inputLayer := origNet.AddLayer("Input", shape, emer.Input).(AxonLayer)
-	hiddenLayer := origNet.AddLayer("Hidden", shape, emer.Hidden)
-	outputLayer := origNet.AddLayer("Output", shape, emer.Target)
-	full := prjn.NewFull()
-	origNet.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
-	origNet.BidirConnectLayers(hiddenLayer, outputLayer, full)
-	origNet.Defaults()
-	assert.NoError(t, origNet.Build())
-	origNet.InitWts()
+	// create network has internal calls to Random number generators.
+	// We test the JSON import and export by creating two networks (initally different)
+	// and syncing them by dumping the weights from net A and loading the weights
+	// from net B.
+	net := createNetwork(shape, t)
+	hiddenLayer := net.LayerByName("Hidden").(AxonLayer)
+	ltime := NewTime()
+	net.Cycle(ltime)
 
-	// save to json
-	filename := "layer.json"
+	netC := createNetwork(shape, t)
+	hiddenLayerC := netC.LayerByName("Hidden").(AxonLayer)
+
+	// save to JSON
+	filename := t.TempDir() + "/layer.json"
 	fh, err := os.Create(filename)
 	require.NoError(t, err)
 	bw := bufio.NewWriter(fh)
 	hiddenLayer.WriteWtsJSON(bw, 0)
-	t.Log(filename)
+	// t.Log(filename)
 	assert.NoError(t, bw.Flush())
 	assert.NoError(t, fh.Close())
 
-	copyNet := NewNetwork("LayerTest")
-	inputLayerC := copyNet.AddLayer("Input", shape, emer.Input).(AxonLayer)
-	hiddenLayerC := copyNet.AddLayer("Hidden", shape, emer.Hidden)
-	outputLayerC := copyNet.AddLayer("Output", shape, emer.Target)
-	copyNet.ConnectLayers(inputLayerC, hiddenLayerC, full, emer.Forward)
-	copyNet.BidirConnectLayers(hiddenLayerC, outputLayerC, full)
-	copyNet.Defaults()
-	assert.NoError(t, copyNet.Build())
-	copyNet.InitWts()
-
-	// load from json
+	// load from JSON
 	fh, err = os.Open(filename)
 	require.NoError(t, err)
 	br := bufio.NewReader(fh)
 	assert.NoError(t, hiddenLayerC.ReadWtsJSON(br))
 	assert.NoError(t, fh.Close())
 
-	// make sure the syn weights are the same
-	origProj := hiddenLayer.(AxonLayer).AsAxon().RcvPrjns[0]
-	copyProj := hiddenLayerC.(AxonLayer).AsAxon().RcvPrjns[0]
-	varIdx, err := origProj.SynVarIdx("Wt")
+	// make sure the synapse weights are the same
+	origProj := hiddenLayer.AsAxon().RcvPrjns[0]
+	copyProj := hiddenLayerC.AsAxon().RcvPrjns[0]
+	varIdx, _ := origProj.SynVarIdx("Wt")
 	assert.Equal(t, origProj.Syn1DNum(), copyProj.Syn1DNum())
 	for idx := 0; idx < origProj.Syn1DNum(); idx++ {
 		origWeight := origProj.SynVal1D(varIdx, idx)
 		copyWeight := copyProj.SynVal1D(varIdx, idx)
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
 	}
+
+	nrns := hiddenLayer.AsAxon().Neurons
+	nrnsC := hiddenLayerC.AsAxon().Neurons
+	// right now only two of the Neuron variables are exported
+	for i := range nrns {
+		assert.Equal(t, nrns[i].TrgAvg, nrnsC[i].TrgAvg)
+		assert.Equal(t, nrns[i].ActAvg, nrnsC[i].ActAvg)
+	}
+
+}
+
+func createNetwork(shape []int, t *testing.T) *Network {
+	net := NewNetwork("LayerTest")
+	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
+	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden)
+	outputLayer := net.AddLayer("Output", shape, emer.Target)
+	full := prjn.NewFull()
+	net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
+	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
+	net.Defaults()
+	assert.NoError(t, net.Build())
+	net.InitWts()
+	return net
 }
 
 func TestLayerBase_IsOff(t *testing.T) {
