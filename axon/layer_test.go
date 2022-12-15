@@ -79,7 +79,7 @@ func TestLayerToJson(t *testing.T) {
 	net := createNetwork(shape, t)
 	hiddenLayer := net.LayerByName("Hidden").(AxonLayer)
 	ltime := NewTime()
-	net.Cycle(ltime)
+	net.Cycle(ltime) // run one cycle to make the weights more different
 
 	netC := createNetwork(shape, t)
 	hiddenLayerC := netC.LayerByName("Hidden").(AxonLayer)
