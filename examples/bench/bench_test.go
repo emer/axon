@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"testing"
 
 	"github.com/emer/axon/axon"
@@ -29,6 +30,8 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	if *verbose {
 		fmt.Printf("Running bench with: %d threads, %d epochs, %d pats, %d units\n", *numThreads, *numEpochs, *numPats, *numUnits)
 	}
+
+	rand.Seed(42)
 
 	net := &axon.Network{}
 	ConfigNet(net, *numThreads, *numUnits, *verbose)
@@ -114,7 +117,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ltime.NewState("Train")
 		net.NeuronFun(func(ly axon.AxonLayer, ni int, nrn *axon.Neuron) { ly.CycleNeuron(ni, nrn, ltime) },
-			"CycleNeuron", numThread > 1, false)
+			"CycleNeuron", numThread > 1, true)
 	}
 }
 
