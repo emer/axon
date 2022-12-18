@@ -1,11 +1,9 @@
 package axon
 
 import (
-	"bufio"
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
 	"reflect"
 	"testing"
 
@@ -32,15 +30,42 @@ func TestMultithreadingCycleFun(t *testing.T) {
 		net.Cycle(ltime)
 	}
 
-	runFunCycles(pats, netS, fun, 250)
-	runFunCycles(pats, netM, fun, 250)
+	runFunEpochs(pats, netS, fun, 2)
+	runFunEpochs(pats, netM, fun, 2)
 
 	// compare the resulting networks
 	assertNeuronsEqual(t, netS, netM)
 	// sanity check
 	assert.True(t, neuronsAreEqual(netS, netM))
-	runFunCycles(pats, netS, fun, 2)
+	runFunEpochs(pats, netS, fun, 1)
 	assert.False(t, neuronsAreEqual(netS, netM))
+}
+
+// Make sure that training is deterministic, as long as the network is the same
+// at the beginning of the test.
+func TestDeterministicSingleThreadedTraining(t *testing.T) {
+	pats := generateRandomPatterns(10)
+	netA, netB := buildIdenticalNetworks(t, pats, 1, 1, 1, 1, 1, 1)
+
+	fun := func(net *Network, ltime *Time) {
+		net.Cycle(ltime)
+	}
+
+	// by splitting the epochs into two parts for netB, we make sure that the
+	// training is fully deterministic and not dependent on the `rand` package,
+	// as we re-set the seed at the beginning of runFunEpochs.
+	runFunEpochs(pats, netB, fun, 1)
+	runFunEpochs(pats, netB, fun, 2)
+	runFunEpochs(pats, netA, fun, 10)
+	runFunEpochs(pats, netB, fun, 7)
+
+	// compare the resulting networks
+	assertNeuronsEqual(t, netA, netB)
+
+	// sanity check, to make sure we're not accidentally sharing pointers etc.
+	assert.True(t, neuronsAreEqual(netA, netB))
+	runFunEpochs(pats, netA, fun, 1)
+	assert.False(t, neuronsAreEqual(netA, netB))
 }
 
 // assert that neuron fields are equal. We could also check for Synapse equality,
@@ -145,40 +170,43 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, nThreads, nChunks,
 	rand.Seed(1337)
 	netM := buildNet(t, shape, nThreads, nChunks, tNeuron, tSendSpike, tSynCa, tPrjn)
 
+	// The below code doesn't work, because we have no clean way of storing and restoring
+	// the full state of a network.
+	//
 	// run for a few cycles to get more interesting state on the single-threaded net
-	rand.Seed(1337)
-	inPats := pats.ColByName("Input").(*etensor.Float32)
-	outPats := pats.ColByName("Output").(*etensor.Float32)
-	inputLayer := netS.LayerByName("Input").(*Layer)
-	outputLayer := netS.LayerByName("Output").(*Layer)
-	input := inPats.SubSpace([]int{0})
-	output := outPats.SubSpace([]int{0})
-	inputLayer.ApplyExt(input)
-	outputLayer.ApplyExt(output)
-	netS.NewState()
-	ltime := NewTime()
-	ltime.NewState("train")
-	for i := 0; i < 150; i++ {
-		netS.Cycle(ltime)
-	}
+	// rand.Seed(1337)
+	// inPats := pats.ColByName("Input").(*etensor.Float32)
+	// outPats := pats.ColByName("Output").(*etensor.Float32)
+	// inputLayer := netS.LayerByName("Input").(*Layer)
+	// outputLayer := netS.LayerByName("Output").(*Layer)
+	// input := inPats.SubSpace([]int{0})
+	// output := outPats.SubSpace([]int{0})
+	// inputLayer.ApplyExt(input)
+	// outputLayer.ApplyExt(output)
+	// netS.NewState()
+	// ltime := NewTime()
+	// ltime.NewState("train")
+	// for i := 0; i < 150; i++ {
+	// 	netS.Cycle(ltime)
+	// }
 
-	// sync the weights
-	filename := t.TempDir() + "/netS.json"
-	// write Synapse weights to file
-	fh, err := os.Create(filename)
-	require.NoError(t, err)
-	bw := bufio.NewWriter(fh)
-	require.NoError(t, netS.WriteWtsJSON(bw))
-	require.NoError(t, bw.Flush())
-	require.NoError(t, fh.Close())
-	// read Synapse weights from file
-	fh, err = os.Open(filename)
-	require.NoError(t, err)
-	br := bufio.NewReader(fh)
-	require.NoError(t, netM.ReadWtsJSON(br))
-	require.NoError(t, fh.Close())
-	// sync Neuron weights as well (TODO: we need a better way to do this)
-	copy(netM.Neurons, netS.Neurons)
+	// // sync the weights
+	// filename := t.TempDir() + "/netS.json"
+	// // write Synapse weights to file
+	// fh, err := os.Create(filename)
+	// require.NoError(t, err)
+	// bw := bufio.NewWriter(fh)
+	// require.NoError(t, netS.WriteWtsJSON(bw))
+	// require.NoError(t, bw.Flush())
+	// require.NoError(t, fh.Close())
+	// // read Synapse weights from file
+	// fh, err = os.Open(filename)
+	// require.NoError(t, err)
+	// br := bufio.NewReader(fh)
+	// require.NoError(t, netM.ReadWtsJSON(br))
+	// require.NoError(t, fh.Close())
+	// // sync Neuron weights as well (TODO: we need a better way to do this)
+	// copy(netM.Neurons, netS.Neurons)
 
 	assert.True(t, neuronsAreEqual(netS, netM))
 
@@ -207,24 +235,30 @@ func buildNet(t *testing.T, shape []int, nThreads, nChunks, tNeuron, tSendSpike,
 	return net
 }
 
-func runFunCycles(pats *etable.Table, net *Network, fun func(*Network, *Time), cycles int) {
+// runFunEpochs runs the given function for the given number of iterations over the
+// dataset. The random seed is set once at the beginning of the function.
+func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Time), epochs int) {
 	rand.Seed(42)
+	nCycles := 150
+
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
 	inputLayer := net.LayerByName("Input").(*Layer)
 	outputLayer := net.LayerByName("Output").(*Layer)
 	ltime := NewTime()
-	for pi := 0; pi < pats.NumRows(); pi++ {
-		input := inPats.SubSpace([]int{pi})
-		output := outPats.SubSpace([]int{pi})
+	for epoch := 0; epoch < epochs; epoch++ {
+		for pi := 0; pi < pats.NumRows(); pi++ {
+			input := inPats.SubSpace([]int{pi})
+			output := outPats.SubSpace([]int{pi})
 
-		inputLayer.ApplyExt(input)
-		outputLayer.ApplyExt(output)
+			inputLayer.ApplyExt(input)
+			outputLayer.ApplyExt(output)
 
-		net.NewState()
-		ltime.NewState("train")
-		for cycle := 0; cycle < cycles; cycle++ {
-			fun(net, ltime)
+			net.NewState()
+			ltime.NewState("train")
+			for cycle := 0; cycle < nCycles; cycle++ {
+				fun(net, ltime)
+			}
 		}
 	}
 }
