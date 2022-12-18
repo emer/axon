@@ -22,12 +22,14 @@ type NetThread struct {
 }
 
 func (th *NetThread) Set(nthr, chk int) {
+	// query the setting of GOMAXPROCS (defaults to # of virtual cores)
 	maxP := runtime.GOMAXPROCS(0)
 	th.NThreads = nthr
 	if th.NThreads < 1 {
 		th.NThreads = 1
 	}
 	if th.NThreads > maxP {
+		fmt.Printf("Warning: NetThread.NThreads: %d > GOMAXPROCS: %d -- setting to GOMAXPROCS\n", th.NThreads, maxP)
 		th.NThreads = maxP
 	}
 	th.ChunksPer = chk
@@ -46,7 +48,7 @@ type NetThreads struct {
 	Neurons   NetThread `desc:"for basic neuron-level computation -- highly parallel and linear in memory -- should be able to use a lot of threads"`
 	SendSpike NetThread `desc:"for sending spikes per neuron -- very large memory footprint through synapses and is very sparse -- suffers from significant bandwidth limitations -- use fewer threads"`
 	SynCa     NetThread `desc:"for synaptic-level calcium updating -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
-	Learn     NetThread `desc:"for learning: DWt and WtFmDWt -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
+	Prjn      NetThread `desc:"for projection-level learning: DWt and WtFmDWt -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
 }
 
 // SetDefaults sets default allocation of threads based on number of neurons
@@ -59,15 +61,15 @@ func (nt *NetThreads) SetDefaults(nNeurons, nPrjns int) {
 	nt.SendSpike.Set(nNeurons/10000, chk)
 	mxpj := ints.MinInt(nPrjns, 4) // > 4 generally not useful?
 	nt.SynCa.Set(mxpj, chk)
-	nt.Learn.Set(mxpj, chk)
+	nt.Prjn.Set(mxpj, chk)
 }
 
 // Set sets allocation of threads manually
-func (nt *NetThreads) Set(chk, neurons, sendSpike, synCa, learn int) {
+func (nt *NetThreads) Set(chk, neurons, sendSpike, synCa, prjn int) {
 	nt.Neurons.Set(neurons, chk)
 	nt.SendSpike.Set(sendSpike, chk)
 	nt.SynCa.Set(synCa, chk)
-	nt.Learn.Set(learn, chk)
+	nt.Prjn.Set(prjn, chk)
 }
 
 // Alloc allocates work managers -- at Build
@@ -75,9 +77,9 @@ func (nt *NetThreads) Alloc(nNeurons, nPrjns int) {
 	nt.Neurons.Alloc(nNeurons)
 	nt.SendSpike.Alloc(nNeurons)
 	nt.SynCa.Alloc(nPrjns)
-	nt.Learn.Alloc(nPrjns)
+	nt.Prjn.Alloc(nPrjns)
 	// maxP := runtime.GOMAXPROCS(0)
-	// mpi.Printf("Threading: GOMAXPROCS: %d  Chunks: %d  Neurons: %d  SendSpike: %d  SynCa: %d  Learn: %d\n", maxP, nt.Neurons.ChunksPer, nt.Neurons.NThreads, nt.SendSpike.NThreads, nt.SynCa.NThreads, nt.Learn.NThreads)
+	// mpi.Printf("Threading: GOMAXPROCS: %d  Chunks: %d  Neurons: %d  SendSpike: %d  SynCa: %d  Prjn: %d\n", maxP, nt.Neurons.ChunksPer, nt.Neurons.NThreads, nt.SendSpike.NThreads, nt.SynCa.NThreads, nt.Prjn.NThreads)
 }
 
 // ThreadsAlloc allocates threads if thread numbers have been updated
@@ -101,7 +103,7 @@ const (
 )
 
 // PrjnFun applies function of given name to all projections
-// using Learn threads (go routines) if thread is true and NThreads > 1.
+// using Prjn threads (go routines) if thread is true and NThreads > 1.
 // if wait is true, then it waits until all procs have completed.
 func (nt *NetworkBase) PrjnFun(fun func(pj AxonPrjn), funame string, thread, wait bool) {
 	if thread { // don't bother if not significant to thread
@@ -117,7 +119,7 @@ func (nt *NetworkBase) PrjnFun(fun func(pj AxonPrjn), funame string, thread, wai
 		return
 	}
 	// todo: ignoring wait for now..
-	nt.Threads.Learn.Run(func(st, ed int) {
+	nt.Threads.Prjn.Run(func(st, ed int) {
 		for pi := st; pi < ed; pi++ {
 			pj := nt.Prjns[pi]
 			fun(pj)
@@ -193,7 +195,7 @@ func (nt *NetworkBase) LayerFun(fun func(ly AxonLayer), funame string, thread, w
 
 // NeuronFun applies function of given name to all neurons
 // using Neurons threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
+// wait is currently ignored. (TODO what's the default behaviour?)
 func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, thread, wait bool) {
 	if !thread || nt.NThreads <= 1 {
 		for _, layer := range nt.Layers {

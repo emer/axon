@@ -75,7 +75,7 @@ func TestLayerToJson(t *testing.T) {
 	// create network has internal calls to Random number generators.
 	// We test the JSON import and export by creating two networks (initally different)
 	// and syncing them by dumping the weights from net A and loading the weights
-	// from net B.
+	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
 	net := createNetwork(shape, t)
 	hiddenLayer := net.LayerByName("Hidden").(AxonLayer)
 	ltime := NewTime()
@@ -85,7 +85,7 @@ func TestLayerToJson(t *testing.T) {
 	hiddenLayerC := netC.LayerByName("Hidden").(AxonLayer)
 
 	// save to JSON
-	filename := t.TempDir() + "/layer.json"
+	filename := "layer.json"
 	fh, err := os.Create(filename)
 	require.NoError(t, err)
 	bw := bufio.NewWriter(fh)
