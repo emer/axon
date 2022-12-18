@@ -85,7 +85,7 @@ func TestLayerToJson(t *testing.T) {
 	hiddenLayerC := netC.LayerByName("Hidden").(AxonLayer)
 
 	// save to JSON
-	filename := "layer.json"
+	filename := t.TempDir() + "/layer.json"
 	fh, err := os.Create(filename)
 	require.NoError(t, err)
 	bw := bufio.NewWriter(fh)
