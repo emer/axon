@@ -65,9 +65,13 @@ type NetThreads struct {
 func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
 	maxProcs := runtime.GOMAXPROCS(0)      // query GOMAXPROCS
 	prjnMinThr := ints.MinInt(maxProcs, 4) // heuristic
+
+	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
+	synHeur := math.Ceil(float64(nNeurons) / float64(1000))
+
 	if err := nt.Set(
-		ints.MinInt(maxProcs, nNeurons/500),
-		ints.MinInt(maxProcs, nNeurons/1000),
+		ints.MinInt(maxProcs, int(neuronHeur)),
+		ints.MinInt(maxProcs, int(synHeur)),
 		ints.MinInt(nPrjns, prjnMinThr),
 		ints.MinInt(nPrjns, prjnMinThr),
 		1,

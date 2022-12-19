@@ -317,7 +317,9 @@ func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa, tPrjn, tLa
 	}
 	net.InitWts()
 
-	net.Threads.Set(tNeuron, tSendSpike, tSynCa, tPrjn, tLayer)
+	if err := net.Threads.Set(tNeuron, tSendSpike, tSynCa, tPrjn, tLayer); err != nil {
+		t.Error(err)
+	}
 	return net
 }
 

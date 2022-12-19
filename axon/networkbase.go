@@ -413,6 +413,9 @@ func (nt *NetworkBase) Build() error {
 	nt.Neurons = make([]Neuron, totNeurons) // never grows
 	nt.Prjns = make([]AxonPrjn, totPrjns)
 
+	// we can't do this in Defaults(), since we need to know the number of neurons etc.
+	nt.Threads.SetDefaults(len(nt.Neurons), len(nt.Prjns), len(nt.Layers))
+
 	nidx := 0
 	pidx := 0
 	for _, l := range nt.Layers {
