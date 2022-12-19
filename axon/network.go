@@ -54,6 +54,7 @@ func (nt *Network) Defaults() {
 	for _, ly := range nt.Layers {
 		ly.Defaults()
 	}
+	nt.Threads.SetDefaults(len(nt.Neurons), len(nt.Prjns), len(nt.Layers))
 }
 
 // UpdateParams updates all the derived parameters if any have changed, for all layers
@@ -118,17 +119,14 @@ func (nt *Network) Cycle(ctime *Time) {
 func (nt *Network) CycleImpl(ctime *Time) {
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
 	// GFmSpikes has to wait for the output of the SendSpikeFun
-	nt.PrjnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes", Thread, Wait)
-	nt.LayerFun(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes", NoThread, Wait)
-	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron", Thread, Wait)
-	nt.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ctime) }, "SendSpike", Thread, Wait)
-	nt.LayerFun(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost", NoThread, Wait) // def NoThread
+	nt.PrjnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes")
+	nt.LayerFun(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes")
+	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron")
+	nt.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ctime) }, "SendSpike")
+	nt.LayerFun(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost") // def NoThread
 	if !ctime.Testing {
-		// todo: if use atomic in these functions, can avoid Wait
-		// and these are definitely thread!
-		// these functions set up the calcium that drives the learning
-		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa", Thread, Wait)
-		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctime) }, "RecvSynCa", Thread, Wait)
+		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa")
+		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctime) }, "RecvSynCa")
 	}
 }
 
@@ -365,15 +363,15 @@ func (nt *Network) PlusPhaseImpl(ctime *Time) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctime *Time) {
-	nt.LayerFun(func(ly AxonLayer) { ly.DWtLayer(ctime) }, "DWtLayer", NoThread, Wait) // def no thr
-	nt.PrjnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt", Thread, Wait)               // def thread
+	nt.LayerFun(func(ly AxonLayer) { ly.DWtLayer(ctime) }, "DWtLayer") // def no thr
+	nt.PrjnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt")             // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctime *Time) {
-	nt.PrjnFun(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean", Thread, Wait)
-	nt.LayerFun(func(ly AxonLayer) { ly.WtFmDWtLayer(ctime) }, "WtFmDWtLayer", NoThread, Wait) // def no
-	nt.PrjnFun(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt", Thread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean")
+	nt.LayerFun(func(ly AxonLayer) { ly.WtFmDWtLayer(ctime) }, "WtFmDWtLayer") // def no
+	nt.PrjnFun(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt")
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ctime)
 }
 
@@ -385,13 +383,13 @@ func (nt *Network) SlowAdapt(ctime *Time) {
 		return
 	}
 	nt.SlowCtr = 0
-	nt.LayerFun(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt", NoThread, Wait)
-	nt.PrjnFun(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt", Thread, Wait)
+	nt.LayerFun(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt")
+	nt.PrjnFun(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt")
 }
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctime *Time) {
-	nt.PrjnFun(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail", Thread, Wait)
+	nt.PrjnFun(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail")
 }
 
 // LRateMod sets the LRate modulation parameter for Prjns, which is
