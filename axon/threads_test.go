@@ -24,7 +24,7 @@ const (
 func TestMultithreadingCycleFun(t *testing.T) {
 	t.Skip("Race Condition, working on fix")
 	pats := generateRandomPatterns(100)
-	netS, netM := buildIdenticalNetworks(t, pats, 4, 4, 4, 4, 1)
+	netS, netM := buildIdenticalNetworks(t, pats, 16, 16, 16, 16, 1)
 
 	fun := func(net *Network, ltime *Time) {
 		net.Cycle(ltime)
@@ -69,15 +69,17 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 }
 
 func TestMultithreadedSendSpike(t *testing.T) {
-	pats := generateRandomPatterns(100)
-	netS, netM := buildIdenticalNetworks(t, pats, 1, 4, 1, 1, 1)
+	pats := generateRandomPatterns(10)
+	// run an absurd amount of threads, to make sure we encounter race conditions
+	// goroutines are cheap, they barely cost any memory
+	netS, netM := buildIdenticalNetworks(t, pats, 1, 16, 1, 1, 1)
 
 	fun := func(net *Network, ltime *Time) {
 		net.Cycle(ltime)
 	}
 
-	runFunEpochs(pats, netM, fun, 10)
-	runFunEpochs(pats, netS, fun, 10)
+	runFunEpochs(pats, netM, fun, 2)
+	runFunEpochs(pats, netS, fun, 2)
 
 	// compare the resulting networks
 	assertNeuronsEqual(t, netS, netM)
@@ -89,15 +91,15 @@ func TestMultithreadedSendSpike(t *testing.T) {
 }
 
 func TestMultithreadedNeuronFun(t *testing.T) {
-	pats := generateRandomPatterns(100)
-	netS, netM := buildIdenticalNetworks(t, pats, 4, 1, 1, 1, 1)
+	pats := generateRandomPatterns(10)
+	netS, netM := buildIdenticalNetworks(t, pats, 16, 1, 1, 1, 1)
 
 	fun := func(net *Network, ctime *Time) {
 		net.Cycle(ctime)
 	}
 
-	runFunEpochs(pats, netM, fun, 10)
-	runFunEpochs(pats, netS, fun, 10)
+	runFunEpochs(pats, netM, fun, 3)
+	runFunEpochs(pats, netS, fun, 3)
 
 	// compare the resulting networks
 	assertNeuronsEqual(t, netS, netM)
@@ -109,15 +111,15 @@ func TestMultithreadedNeuronFun(t *testing.T) {
 }
 
 func TestMultithreadedSynCa(t *testing.T) {
-	pats := generateRandomPatterns(100)
-	netS, netM := buildIdenticalNetworks(t, pats, 4, 1, 4, 1, 1)
+	pats := generateRandomPatterns(10)
+	netS, netM := buildIdenticalNetworks(t, pats, 16, 1, 16, 1, 1)
 
 	fun := func(net *Network, ltime *Time) {
 		net.Cycle(ltime)
 	}
 
-	runFunEpochs(pats, netM, fun, 10)
-	runFunEpochs(pats, netS, fun, 10)
+	runFunEpochs(pats, netM, fun, 3)
+	runFunEpochs(pats, netS, fun, 3)
 
 	// compare the resulting networks
 	assertNeuronsEqual(t, netS, netM)
