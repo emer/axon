@@ -706,8 +706,11 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
 	inhib := pj.Typ == emer.Inhib
 	for i := range syns {
-		recvIdx := synConIdxs[i] // looks like this is fully sequential
+		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
+		// TODO: race condition, multiple threads will write into the same recv neuron buffer
+		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
+		// better to re-write as matmul, or to re-write from recv neuron side.
 		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
 		if !inhib {
 			pj.PIBuf[int(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
@@ -733,6 +736,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 		pj.Gidx.Shift(1) // rotate buffer
 		return
 	}
+	// TODO: Race condition if one layer has multiple incoming prjns (common)
 	lpl := &rlay.Pools[0]
 	if len(rlay.Pools) == 1 {
 		lpl.Inhib.FFsRaw += pj.PIBuf[zi]

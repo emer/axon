@@ -1290,15 +1290,17 @@ func (ly *Layer) SendSpike(ni int, nrn *Neuron, ctime *Time) {
 	if nrn.Spike == 0 {
 		return
 	}
+	// TODO: race condition. Could pool these per layer, and atomic add at the end
 	ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0 // note: this is immediate..
 	if nrn.SubPool > 0 {
+		// TODO: race condition
 		ly.Pools[0].Inhib.FBsRaw += 1.0
 	}
 	for _, sp := range ly.SndPrjns {
 		if sp.IsOff() {
 			continue
 		}
-		sp.(AxonPrjn).SendSpike(ni)
+		sp.SendSpike(ni)
 	}
 }
 
