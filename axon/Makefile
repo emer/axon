@@ -16,7 +16,7 @@ clean:
 	$(GOCLEAN)
 
 # NOTE: MUST update version number here prior to running 'make release'
-VERS=v1.6.15
+VERS=v1.6.16
 PACKAGE=axon
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
 GIT_COMMIT=`git rev-parse --short HEAD`
@@ -39,6 +39,7 @@ version:
 	@echo "" >> $(VERS_FILE)
 	goimports -w $(VERS_FILE)
 	/bin/cat $(VERS_FILE)
+	git commit -am "$(VERS) release -- $(VERS_FILE) updated"
 
 release:	
 	git tag -a $(VERS) -m "$(VERS) release"
