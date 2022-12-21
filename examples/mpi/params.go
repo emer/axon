@@ -31,7 +31,7 @@ var ParamSetsMin = params.Sets{
 					// "Layer.Act.Erev.K":    ".15",
 
 					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.ActAvg.Nominal":  "0.04", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
 					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
 					"Layer.Act.Dend.GbarExp":      "0.2",  // 0.5 > 0.2 old def but not in larger or fsa
@@ -62,21 +62,21 @@ var ParamSetsMin = params.Sets{
 					"Layer.Learn.LrnNMDA.Tau":   "50", // urakubo = 30 > 20 but no major effect on PCA
 				},
 				Hypers: params.Hypers{
-					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
-					"Layer.Inhib.ActAvg.Init": {"StdDev": "0.01", "Min": "0.01"},
+					"Layer.Inhib.Layer.Gi":       {"StdDev": "0.1", "Min": "0.5"},
+					"Layer.Inhib.ActAvg.Nominal": {"StdDev": "0.01", "Min": "0.01"},
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":         "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
-					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Nominal": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":         "1",    // 1 is new minimum..
+					"Layer.Act.Clamp.Ge":         "0.6",  // .6 > .5 v94
 					// "Layer.Learn.NeurCa.CaMax": "120",
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
@@ -154,16 +154,16 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":         "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
-					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Nominal": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":         "1",    // 1 is new minimum..
+					"Layer.Act.Clamp.Ge":         "0.6",  // .6 > .5 v94
 					// "Layer.Act.NMDA.Gbar":     "0.3",  // higher not better
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
@@ -191,7 +191,7 @@ var ParamSetsMin = params.Sets{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":        "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init":     "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.ActAvg.Nominal":  "0.04", // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Inhib.Layer.Bg":        "0.3",  // 0.3 > 0.0
 					"Layer.Act.Decay.Glong":       "0.6",  // 0.6
 					"Layer.Act.Dend.GbarExp":      "0.5",  // 0.2 > 0.1 > 0
@@ -215,16 +215,16 @@ var ParamSetsMin = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":         "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
-					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Nominal": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":         "1",    // 1 is new minimum..
+					"Layer.Act.Clamp.Ge":         "0.6",  // .6 > .5 v94
 					// "Layer.Act.NMDA.Gbar":     "0.3",  // higher not better
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
@@ -262,22 +262,22 @@ var ParamSetsDefs = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 > 1.1
-					"Layer.Inhib.ActAvg.Init": "0.04", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Inhib.Layer.Bg":    "0.3",  // 0.3 > 0.0
+					"Layer.Inhib.Layer.Gi":       "1.2",  // 1.2 > 1.1
+					"Layer.Inhib.ActAvg.Nominal": "0.04", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Inhib.Layer.Bg":       "0.3",  // 0.3 > 0.0
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":         "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "1",    // 1 is new minimum..
-					"Layer.Act.Clamp.Ge":      "0.6",  // .6 > .5 v94
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 >= 0.8 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Nominal": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":         "1",    // 1 is new minimum..
+					"Layer.Act.Clamp.Ge":         "0.6",  // .6 > .5 v94
 					// "Layer.Act.NMDA.Gbar":     "0.3",  // higher not better
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
@@ -301,35 +301,35 @@ var ParamSetsAlpha = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
-					"Layer.Inhib.ActAvg.Init":  "0.04", // start lower -- 0.04 more reliable than .03
-					"Layer.Inhib.Inhib.AvgTau": "30",   // no diff
-					"Layer.Act.Spike.Tr":       "1",    // no benefit
-					"Layer.Act.Dt.IntTau":      "20",   // no benefit
-					"Layer.Act.Decay.Act":      "0.5",  // more decay is better
-					"Layer.Act.Decay.Glong":    "0.8",  // 0.6
-					"Layer.Act.NMDA.Tau":       "100",  // 100, 50 no diff
-					"Layer.Act.GABAB.RiseTau":  "45",   // 45 def
-					"Layer.Act.GABAB.DecayTau": "50",   // 50 def
-					"Layer.Learn.ActAvg.SSTau": "20",   // 40
-					"Layer.Learn.ActAvg.STau":  "5",    // 10
-					"Layer.Learn.ActAvg.MTau":  "20",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
+					"Layer.Inhib.Layer.Gi":       "1.2",  // 1.2 > 1.3 > (1.1 used in larger models)
+					"Layer.Inhib.ActAvg.Nominal": "0.04", // start lower -- 0.04 more reliable than .03
+					"Layer.Inhib.Inhib.AvgTau":   "30",   // no diff
+					"Layer.Act.Spike.Tr":         "1",    // no benefit
+					"Layer.Act.Dt.IntTau":        "20",   // no benefit
+					"Layer.Act.Decay.Act":        "0.5",  // more decay is better
+					"Layer.Act.Decay.Glong":      "0.8",  // 0.6
+					"Layer.Act.NMDA.Tau":         "100",  // 100, 50 no diff
+					"Layer.Act.GABAB.RiseTau":    "45",   // 45 def
+					"Layer.Act.GABAB.DecayTau":   "50",   // 50 def
+					"Layer.Learn.ActAvg.SSTau":   "20",   // 40
+					"Layer.Learn.ActAvg.STau":    "5",    // 10
+					"Layer.Learn.ActAvg.MTau":    "20",   // for 50 cyc qtr, SS = 4, 40 > 50 > 30
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Act.Spike.Tr":      "3",    // 3 def
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "0.6",  // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+					"Layer.Act.Spike.Tr":         "3",    // 3 def
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":         "0.6",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":      "0",    // 0 is essential here!
-					"Layer.Act.Clamp.Ge":      "0.5",  // .6 > .5 v94
-					"Layer.Act.Decay.Act":     "1",    //
-					"Layer.Act.Decay.Glong":   "1",    //
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Nominal": "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":         "0",    // 0 is essential here!
+					"Layer.Act.Clamp.Ge":         "0.5",  // .6 > .5 v94
+					"Layer.Act.Decay.Act":        "1",    //
+					"Layer.Act.Decay.Glong":      "1",    //
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{
@@ -367,7 +367,7 @@ var ParamSetsAll = params.Sets{
 					"Layer.Inhib.Layer.FFEx0":            "0.15",
 					"Layer.Inhib.Layer.FFEx":             "0.0",   // .05
 					"Layer.Inhib.Inhib.AvgTau":           "30",    // 20 > 30 (small)
-					"Layer.Inhib.ActAvg.Init":            "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
+					"Layer.Inhib.ActAvg.Nominal":         "0.04",  // start lower -- 0.04 more reliable than .03, faster than .05
 					"Layer.Inhib.ActAvg.Target":          "0.05",  // for adapt, important for this to be accurate
 					"Layer.Inhib.ActAvg.AdaptGi":         "false", // false == true
 					"Layer.Act.Dt.IntTau":                "40",    // 40 > 20 in larger nets
@@ -411,20 +411,20 @@ var ParamSetsAll = params.Sets{
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":      "0.9", // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":        "1.0", // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init":   "0.15",
-					"Layer.Inhib.ActAvg.Target": "0.24",
-					"Layer.Act.Decay.Act":       "0.5", // 0.5 > 1 > 0
-					"Layer.Act.Decay.Glong":     "1",   // LVis .7 best?
+					"Layer.Inhib.Layer.Gi":       "0.9", // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":         "1.0", // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Nominal": "0.15",
+					"Layer.Inhib.ActAvg.Target":  "0.24",
+					"Layer.Act.Decay.Act":        "0.5", // 0.5 > 1 > 0
+					"Layer.Act.Decay.Glong":      "1",   // LVis .7 best?
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":      "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
-					"Layer.Inhib.ActAvg.Init":   "0.24", // this has to be exact for adapt
-					"Layer.Inhib.ActAvg.Target": "0.24", // this has to be exact for adapt
-					"Layer.Act.Spike.Tr":        "0",    // 0 is essential here!
-					"Layer.Act.Clamp.Ge":        "0.6",  // .5 >= .4 > .6 > 1.0
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0 > 0.7 even with adapt -- not beneficial to start low
+					"Layer.Inhib.ActAvg.Nominal": "0.24", // this has to be exact for adapt
+					"Layer.Inhib.ActAvg.Target":  "0.24", // this has to be exact for adapt
+					"Layer.Act.Spike.Tr":         "0",    // 0 is essential here!
+					"Layer.Act.Clamp.Ge":         "0.6",  // .5 >= .4 > .6 > 1.0
 				}},
 			{Sel: "Prjn", Desc: "norm and momentum on works better, but wt bal is not better for smaller nets",
 				Params: params.Params{

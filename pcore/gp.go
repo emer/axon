@@ -25,7 +25,7 @@ var KiT_GPLayer = kit.Types.AddType(&GPLayer{}, LayerProps)
 // 	Params: params.Params{
 // 		"Layer.Inhib.Layer.On":     "false",
 // 		"Layer.Inhib.Pool.On":      "false",
-// 		"Layer.Inhib.ActAvg.Init":  "0.25",
+// 		"Layer.Inhib.ActAvg.Nominal":  "0.25",
 // }}
 
 func (ly *GPLayer) Defaults() {
@@ -40,7 +40,7 @@ func (ly *GPLayer) Defaults() {
 	ly.Act.Init.GiVar = 0.1
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
-	ly.Inhib.ActAvg.Init = 1 // very active!
+	ly.Inhib.ActAvg.Nominal = 1 // very active!
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
 

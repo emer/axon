@@ -78,13 +78,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
-					"Layer.Act.KNa.On":         "false", // on > off
-					"Layer.Learn.TrgAvgAct.On": "true",  // def true, not rel?
-					"Layer.Learn.RLRate.On":    "false", // def true, too slow?
-					"Layer.Inhib.ActAvg.Init":  "0.05",
-					"Layer.Inhib.Layer.On":     "false",
-					"Layer.Inhib.Pool.Gi":      "1.1",
-					"Layer.Inhib.Pool.On":      "true",
+					"Layer.Act.KNa.On":           "false", // on > off
+					"Layer.Learn.TrgAvgAct.On":   "true",  // def true, not rel?
+					"Layer.Learn.RLRate.On":      "false", // def true, too slow?
+					"Layer.Inhib.ActAvg.Nominal": "0.05",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.Gi":        "1.1",
+					"Layer.Inhib.Pool.On":        "true",
 				}},
 			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
@@ -93,26 +93,26 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
-					"Layer.Act.KNa.On":         "false", // on > off
-					"Layer.Learn.TrgAvgAct.On": "false", // def true, not rel?
-					"Layer.Learn.RLRate.On":    "false", // def true, too slow?
-					"Layer.Inhib.ActAvg.Init":  "0.1",
-					"Layer.Inhib.Layer.On":     "false",
-					"Layer.Inhib.Pool.Gi":      "1.1",
-					"Layer.Inhib.Pool.FF":      "1.0",
-					"Layer.Inhib.Pool.On":      "true",
-					"Layer.Inhib.Pool.FFEx":    "0.02",
+					"Layer.Act.KNa.On":           "false", // on > off
+					"Layer.Learn.TrgAvgAct.On":   "false", // def true, not rel?
+					"Layer.Learn.RLRate.On":      "false", // def true, too slow?
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.Gi":        "1.1",
+					"Layer.Inhib.Pool.FF":        "1.0",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.FFEx":      "0.02",
 				}},
 			{Sel: "#DG", Desc: "very sparse = high inibhition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.01",
-					"Layer.Inhib.Layer.Gi":    "2.3",
+					"Layer.Inhib.ActAvg.Nominal": "0.01",
+					"Layer.Inhib.Layer.Gi":       "2.3",
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inibhition",
 				Params: params.Params{
-					"Layer.Act.KNa.On":        "false", // on > off
-					"Layer.Inhib.ActAvg.Init": "0.02",
-					"Layer.Inhib.Layer.Gi":    "1.4",
+					"Layer.Act.KNa.On":           "false", // on > off
+					"Layer.Inhib.ActAvg.Nominal": "0.02",
+					"Layer.Inhib.Layer.Gi":       "1.4",
 				}},
 			{Sel: "Prjn", Desc: "keeping default params for generic prjns",
 				Params: params.Params{

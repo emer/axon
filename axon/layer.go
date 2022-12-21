@@ -663,8 +663,8 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 // Also calls InitActs
 func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
-	ly.ActAvg.ActMAvg = ly.Inhib.ActAvg.Init
-	ly.ActAvg.ActPAvg = ly.Inhib.ActAvg.Init
+	ly.ActAvg.ActMAvg = ly.Inhib.ActAvg.Nominal
+	ly.ActAvg.ActPAvg = ly.Inhib.ActAvg.Nominal
 	ly.ActAvg.AvgMaxGeM = 1
 	ly.ActAvg.AvgMaxGiM = 1
 	ly.ActAvg.GiMult = 1
@@ -717,7 +717,7 @@ func (ly *Layer) InitActAvg() {
 				vi := porder[ni-pl.StIdx]
 				nrn.TrgAvg = strg + inc*float32(vi)
 				nrn.AvgPct = nrn.TrgAvg
-				nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
+				nrn.ActAvg = ly.Inhib.ActAvg.Nominal * nrn.TrgAvg
 				nrn.AvgDif = 0
 				nrn.DTrgAvg = 0
 			}
@@ -742,7 +742,7 @@ func (ly *Layer) InitActAvg() {
 			vi := porder[ni]
 			nrn.TrgAvg = strg + inc*float32(vi)
 			nrn.AvgPct = nrn.TrgAvg
-			nrn.ActAvg = ly.Inhib.ActAvg.Init * nrn.TrgAvg
+			nrn.ActAvg = ly.Inhib.ActAvg.Nominal * nrn.TrgAvg
 			nrn.AvgDif = 0
 			nrn.DTrgAvg = 0
 		}
@@ -1043,7 +1043,7 @@ func (ly *Layer) InitGScale() {
 		}
 		pj := p.(AxonPrjn).AsAxon()
 		slay := p.SendLay().(AxonLayer).AsAxon()
-		savg := slay.Inhib.ActAvg.Init
+		savg := slay.Inhib.ActAvg.Nominal
 		snu := len(slay.Neurons)
 		ncon := pj.RecvConNAvgMax.Avg
 		pj.GScale.Scale = pj.PrjnScale.FullScale(savg, float32(snu), ncon)
@@ -1639,7 +1639,7 @@ func (ly *Layer) AdaptInhib(ctime *Time) {
 	if !ly.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
 		return
 	}
-	ly.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.Inhib.ActAvg.Target, ly.ActAvg.ActMAvg)
+	ly.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.ActAvg.ActMAvg)
 }
 
 // AvgDifFmTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg

@@ -13,20 +13,21 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init":       "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
-					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 > 0.95 > 1.0 > 1.1  SSGi = 2
-					"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
-					"Layer.Act.Dend.SSGi":           "2",
-					"Layer.Act.Gbar.L":              "0.2", // std
-					"Layer.Act.Decay.Act":           "0.0", // 0 == 0.2
-					"Layer.Act.Decay.Glong":         "0.0",
-					"Layer.Act.NMDA.MgC":            "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":           "5",
-					"Layer.Act.Mahp.Gbar":           "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-					"Layer.Act.Sahp.Gbar":           "0.1",  // 0.1 == 0.02 no real diff
-					"Layer.Act.Sahp.Off":            "0.8",  //
-					"Layer.Act.Sahp.Slope":          "0.02", //
-					"Layer.Act.Sahp.CaTau":          "5",    // 5 > 10
+					"Layer.Inhib.ActAvg.Nominal":         "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+					"Layer.Inhib.Layer.Gi":               "0.9", // 0.9 > 0.95 > 1.0 > 1.1  SSGi = 2
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002",
+					"Layer.Learn.TrgAvgAct.SubMean":      "1", // 1 > 0
+					"Layer.Act.Dend.SSGi":                "2",
+					"Layer.Act.Gbar.L":                   "0.2", // std
+					"Layer.Act.Decay.Act":                "0.0", // 0 == 0.2
+					"Layer.Act.Decay.Glong":              "0.0",
+					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":                "5",
+					"Layer.Act.Mahp.Gbar":                "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+					"Layer.Act.Sahp.Gbar":                "0.1",  // 0.1 == 0.02 no real diff
+					"Layer.Act.Sahp.Off":                 "0.8",  //
+					"Layer.Act.Sahp.Slope":               "0.02", //
+					"Layer.Act.Sahp.CaTau":               "5",    // 5 > 10
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -35,28 +36,28 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.025", // 0.025 for full song
-					// "Layer.Inhib.ActAvg.Init": "0.05", // 0.08 for 18 notes -- 30 rows
+					"Layer.Inhib.ActAvg.Nominal": "0.025", // 0.025 for full song
+					// "Layer.Inhib.ActAvg.Nominal": "0.05", // 0.08 for 18 notes -- 30 rows
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
-					"Layer.Inhib.Layer.Gi":    "2.8",  // 2.8 best -- 1.4 prev
-					"Layer.CT.GeGain":         "1.0",  // 1.0 > 0.8 > 0.5
-					"Layer.CT.DecayTau":       "50",   // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.Dend.SSGi":     "0",    // 0 > higher -- kills nmda maint!
-					"Layer.Act.Decay.Act":     "0.0",
-					"Layer.Act.Decay.Glong":   "0.0",
-					"Layer.Act.GABAB.Gbar":    "0.3",
-					"Layer.Act.NMDA.Gbar":     "0.3",   // .3 is min -- .25 fails, even with .35 in hidden2!
-					"Layer.Act.NMDA.Tau":      "300",   // 300 >> 200, even with 300 in hidden2
-					"Layer.Act.Noise.On":      "false", // todo?
-					"Layer.Act.Noise.Ge":      "0.005",
-					"Layer.Act.Noise.Gi":      "0.005",
+					"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
+					"Layer.Inhib.Layer.Gi":       "2.8",  // 2.8 best -- 1.4 prev
+					"Layer.CT.GeGain":            "1.0",  // 1.0 > 0.8 > 0.5
+					"Layer.CT.DecayTau":          "50",   // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Dend.SSGi":        "0",    // 0 > higher -- kills nmda maint!
+					"Layer.Act.Decay.Act":        "0.0",
+					"Layer.Act.Decay.Glong":      "0.0",
+					"Layer.Act.GABAB.Gbar":       "0.3",
+					"Layer.Act.NMDA.Gbar":        "0.3",   // .3 is min -- .25 fails, even with .35 in hidden2!
+					"Layer.Act.NMDA.Tau":         "300",   // 300 >> 200, even with 300 in hidden2
+					"Layer.Act.Noise.On":         "false", // todo?
+					"Layer.Act.Noise.Ge":         "0.005",
+					"Layer.Act.Noise.Gi":         "0.005",
 				}},
 			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
@@ -124,11 +125,11 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "#Hidden2CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12", // 2 even more active -- maybe try higher inhib
-					"Layer.Act.GABAB.Gbar":    "0.3",
-					"Layer.Act.NMDA.Gbar":     "0.3", // higher layer has more nmda..
-					"Layer.Act.NMDA.Tau":      "300", // 300 > 200
-					"Layer.Act.Sahp.CaTau":    "10",  // todo
+					"Layer.Inhib.ActAvg.Nominal": "0.12", // 2 even more active -- maybe try higher inhib
+					"Layer.Act.GABAB.Gbar":       "0.3",
+					"Layer.Act.NMDA.Gbar":        "0.3", // higher layer has more nmda..
+					"Layer.Act.NMDA.Tau":         "300", // 300 > 200
+					"Layer.Act.Sahp.CaTau":       "10",  // todo
 				}},
 			// {Sel: "#HiddenP", Desc: "distributed hidden-layer pulvinar",
 			// 	Params: params.Params{
@@ -154,7 +155,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.05", // 0.08 for 18 notes -- 30 rows
+					"Layer.Inhib.ActAvg.Nominal": "0.05", // 0.08 for 18 notes -- 30 rows
 				}},
 		},
 	}},
@@ -162,7 +163,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.025", // 0.025 for full song
+					"Layer.Inhib.ActAvg.Nominal": "0.025", // 0.025 for full song
 				}},
 		},
 	}},

@@ -261,8 +261,8 @@ func (ss *Sim) ConfigLoops() {
 		if !stop {
 			ss.Stats.SetInt("LastZero", -1) // only counts if meet stop crit
 		}
-		return stop
-		// return false // uncomment to run forever
+		// return stop
+		return false // uncomment to run forever
 	}
 
 	// Add Testing
@@ -543,6 +543,18 @@ func (ss *Sim) ConfigLogItems() {
 				}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
 				}}})
+		ss.Logs.AddItem(&elog.Item{
+			Name:   clnm + "_GiMult",
+			Type:   etensor.FLOAT64,
+			Plot:   elog.DFalse,
+			FixMax: elog.DFalse,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.ActAvg.GiMult)
+				}}})
+
 		// ss.Logs.AddItem(&elog.Item{
 		// 	Name:   clnm + "_AvgSpiked",
 		// 	Type:   etensor.FLOAT64,

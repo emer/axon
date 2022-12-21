@@ -43,7 +43,7 @@ func (ly *PPTgLayer) Defaults() {
 	ly.Inhib.Pool.Gi = 0.5
 	// ly.Inhib.Layer.FB = 0
 	// ly.Inhib.Pool.FB = 0
-	ly.Inhib.ActAvg.Init = 0.1
+	ly.Inhib.ActAvg.Nominal = 0.1
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()

@@ -69,7 +69,7 @@ func (ly *TDRewIntegLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.RewInteg.Defaults()
 	// ly.Inhib.Layer.Gi = 0.2
-	ly.Inhib.ActAvg.Init = .5
+	ly.Inhib.ActAvg.Nominal = .5
 }
 
 // DALayer interface:
@@ -160,7 +160,7 @@ func (ly *TDDaLayer) Defaults() {
 		ly.RewInteg = "RewInteg"
 	}
 	// ly.Inhib.Layer.Gi = 0.2
-	ly.Inhib.ActAvg.Init = .5
+	ly.Inhib.ActAvg.Nominal = .5
 }
 
 func (ly *TDDaLayer) RewIntegLayer() (*TDRewIntegLayer, error) {
