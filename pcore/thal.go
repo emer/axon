@@ -29,7 +29,7 @@ var KiT_ThalLayer = kit.Types.AddType(&ThalLayer{}, LayerProps)
 // 	Params: params.Params{
 // 		"Layer.Inhib.Layer.On":     "false",
 // 		"Layer.Inhib.Pool.On":     "false",
-// 		"Layer.Inhib.ActAvg.Init":  "0.25",
+// 		"Layer.Inhib.ActAvg.Nominal":  "0.25",
 // }}
 
 func (ly *ThalLayer) Defaults() {
@@ -41,7 +41,7 @@ func (ly *ThalLayer) Defaults() {
 	ly.Act.Dend.SSGi = 0
 	ly.Inhib.Layer.On = false
 	ly.Inhib.Pool.On = false
-	ly.Inhib.ActAvg.Init = 0.25
+	ly.Inhib.ActAvg.Nominal = 0.25
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()

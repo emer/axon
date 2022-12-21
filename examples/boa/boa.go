@@ -388,6 +388,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ofc.Name(), YAlign: relpos.Front, Space: space})
 	alm.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: space})
 
+	// net.NThreads = 2
+
 	net.Defaults()
 	ss.Params.SetObject("Network")
 	err := net.Build()

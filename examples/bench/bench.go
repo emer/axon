@@ -41,9 +41,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.08",
-					"Layer.Inhib.Layer.Gi":    "1.05",
-					"Layer.Act.Gbar.L":        "0.2",
+					"Layer.Inhib.ActAvg.Nominal": "0.08",
+					"Layer.Inhib.Layer.Gi":       "1.05",
+					"Layer.Act.Gbar.L":           "0.2",
 				}},
 			{Sel: "#Input", Desc: "",
 				Params: params.Params{

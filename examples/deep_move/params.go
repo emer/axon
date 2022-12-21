@@ -13,7 +13,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init":       "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+					"Layer.Inhib.ActAvg.Nominal":    "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
 					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1  trace
 					"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
 					"Layer.Act.Dend.SSGi":           "2",   //
@@ -35,40 +35,40 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Hidden", Desc: "fix avg act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
 				}},
 			{Sel: ".DepthIn", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.2", // was .13 -- Ge very high b/c of topo prjn
-					"Layer.Inhib.Layer.Gi":    "0.9", //
+					"Layer.Inhib.ActAvg.Nominal": "0.2", // was .13 -- Ge very high b/c of topo prjn
+					"Layer.Inhib.Layer.Gi":       "0.9", //
 				}},
 			{Sel: ".HeadDirIn", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.13", // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
-					"Layer.Inhib.Layer.Gi":    "0.9",  //
+					"Layer.Inhib.ActAvg.Nominal": "0.13", // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
+					"Layer.Inhib.Layer.Gi":       "0.9",  //
 				}},
 			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12", // CT in general more active
-					"Layer.Inhib.Layer.Gi":    "2.0",  // 2.0 is fine -- was 1.4
-					"Layer.CT.GeGain":         "1",    // 1
-					"Layer.CT.DecayTau":       "0",    // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.Dend.SSGi":     "0",    // 0 > higher -- kills nmda maint!
-					"Layer.Act.Decay.Act":     "0.0",
-					"Layer.Act.Decay.Glong":   "0.0",
-					"Layer.Act.GABAB.Gbar":    "0.2",  // standard gaba
-					"Layer.Act.NMDA.Gbar":     "0.15", // .15 for copy mode
-					"Layer.Act.NMDA.Tau":      "100",  // 100 best here
+					"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
+					"Layer.Inhib.Layer.Gi":       "2.0",  // 2.0 is fine -- was 1.4
+					"Layer.CT.GeGain":            "1",    // 1
+					"Layer.CT.DecayTau":          "0",    // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Dend.SSGi":        "0",    // 0 > higher -- kills nmda maint!
+					"Layer.Act.Decay.Act":        "0.0",
+					"Layer.Act.Decay.Glong":      "0.0",
+					"Layer.Act.GABAB.Gbar":       "0.2",  // standard gaba
+					"Layer.Act.NMDA.Gbar":        "0.15", // .15 for copy mode
+					"Layer.Act.NMDA.Tau":         "100",  // 100 best here
 				}},
 			{Sel: "#DepthHid", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.2",  // 1.2 tiny bit > 1.4
-					"Layer.Inhib.ActAvg.Init": "0.07", // 0.07 actual
+					"Layer.Inhib.Layer.Gi":       "1.2",  // 1.2 tiny bit > 1.4
+					"Layer.Inhib.ActAvg.Nominal": "0.07", // 0.07 actual
 				}},
 			{Sel: "#DepthHidCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "2.8",  // 2.8 is reasonable; was 2.0
-					"Layer.Inhib.ActAvg.Init": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
+					"Layer.Inhib.Layer.Gi":       "2.8",  // 2.8 is reasonable; was 2.0
+					"Layer.Inhib.ActAvg.Nominal": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
 				}},
 			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
@@ -84,8 +84,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Action", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.25", // 0.25 is accurate -- good MaxGe levels
-					"Layer.Inhib.Layer.Gi":    "0.9",  //
+					"Layer.Inhib.ActAvg.Nominal": "0.25", // 0.25 is accurate -- good MaxGe levels
+					"Layer.Inhib.Layer.Gi":       "0.9",  //
 				}},
 
 			// Projections below
@@ -162,14 +162,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.CT.GeGain":         "0.8",  // 0.8, 50 small benefit
-					"Layer.CT.DecayTau":       "50",   // 50 > 0
-					"Layer.Inhib.ActAvg.Init": "0.12", // 2 even more active -- maybe try higher inhib
-					"Layer.Inhib.Layer.Gi":    "1.4",  // todo
-					"Layer.Act.GABAB.Gbar":    "0.3",
-					"Layer.Act.NMDA.Gbar":     "0.3", // higher layer has more nmda..
-					"Layer.Act.NMDA.Tau":      "300", // 300 > 200
-					"Layer.Act.Sahp.CaTau":    "10",  // todo
+					"Layer.CT.GeGain":            "0.8",  // 0.8, 50 small benefit
+					"Layer.CT.DecayTau":          "50",   // 50 > 0
+					"Layer.Inhib.ActAvg.Nominal": "0.12", // 2 even more active -- maybe try higher inhib
+					"Layer.Inhib.Layer.Gi":       "1.4",  // todo
+					"Layer.Act.GABAB.Gbar":       "0.3",
+					"Layer.Act.NMDA.Gbar":        "0.3", // higher layer has more nmda..
+					"Layer.Act.NMDA.Tau":         "300", // 300 > 200
+					"Layer.Act.Sahp.CaTau":       "10",  // todo
 				}},
 		},
 	}},

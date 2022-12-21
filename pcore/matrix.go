@@ -74,7 +74,7 @@ var KiT_MatrixLayer = kit.Types.AddType(&MatrixLayer{}, LayerProps)
 // 		"Layer.Inhib.Layer.On":     "true",
 // 		"Layer.Inhib.Layer.Gi":     "0.5",
 // 		"Layer.Inhib.Layer.FB":     "0.0",
-// 		"Layer.Inhib.ActAvg.Init":  "0.25",
+// 		"Layer.Inhib.ActAvg.Nominal":  "0.25",
 // 	}}
 
 func (ly *MatrixLayer) Defaults() {
@@ -91,7 +91,7 @@ func (ly *MatrixLayer) Defaults() {
 	ly.Inhib.Layer.FB = 0
 	ly.Inhib.Pool.FB = 0
 	ly.Inhib.Pool.Gi = 0.5
-	ly.Inhib.ActAvg.Init = 0.25
+	ly.Inhib.ActAvg.Nominal = 0.25
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators

@@ -55,7 +55,7 @@ func (ly *BLALayer) Defaults() {
 	ly.Inhib.Pool.Gi = 1.0
 	// ly.Inhib.Layer.FB = 0
 	// ly.Inhib.Pool.FB = 0
-	ly.Inhib.ActAvg.Init = 0.025
+	ly.Inhib.ActAvg.Nominal = 0.025
 
 }
 

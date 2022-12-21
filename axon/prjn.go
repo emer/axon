@@ -1153,18 +1153,13 @@ func (pj *Prjn) SynScale() {
 			continue
 		}
 		adif := -lr * nrn.AvgDif
-		if tp.TrgMult {
-			adif *= tp.TrgRange.NormVal(nrn.TrgAvg)
-		}
 		nc := int(pj.RecvConN[ri])
 		st := int(pj.RecvConIdxStart[ri])
 		rsidxs := pj.RecvSynIdx[st : st+nc]
 		for _, rsi := range rsidxs {
 			sy := &pj.Syns[rsi]
 			if adif >= 0 { // key to have soft bounding on lwt here!
-				if !tp.DownOnly {
-					sy.LWt += (1 - sy.LWt) * adif * sy.SWt
-				}
+				sy.LWt += (1 - sy.LWt) * adif * sy.SWt
 			} else {
 				sy.LWt += sy.LWt * adif * sy.SWt
 			}

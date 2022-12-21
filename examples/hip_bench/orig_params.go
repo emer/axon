@@ -75,30 +75,30 @@ var OrigParamSets = params.Sets{
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":        "0.1",
-					"Layer.Inhib.ActAvg.Init": "0.2",
-					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.Pool.Gi":     "2.0",
-					"Layer.Inhib.Pool.On":     "true",
+					"Layer.Act.Gbar.L":           "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.2",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.Gi":        "2.0",
+					"Layer.Inhib.Pool.On":        "true",
 				}},
 			{Sel: "#DG", Desc: "very sparse = high inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.01",
-					"Layer.Inhib.Layer.Gi":    "3.6", // 3.8 > 3.6 > 4.0 (too far -- tanks);
+					"Layer.Inhib.ActAvg.Nominal": "0.01",
+					"Layer.Inhib.Layer.Gi":       "3.6", // 3.8 > 3.6 > 4.0 (too far -- tanks);
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inhibition",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.02",
-					"Layer.Inhib.Layer.Gi":    "2.8", // 2.8 = 3.0 really -- some better, some worse
-					"Layer.Learn.AvgL.Gain":   "2.5", // stick with 2.5
+					"Layer.Inhib.ActAvg.Nominal": "0.02",
+					"Layer.Inhib.Layer.Gi":       "2.8", // 2.8 = 3.0 really -- some better, some worse
+					"Layer.Learn.AvgL.Gain":      "2.5", // stick with 2.5
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1",
-					"Layer.Inhib.Layer.On":    "false",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "2.2", // 2.4 > 2.2 > 2.6 > 2.8 -- 2.4 better *for small net* but not for larger!;
-					"Layer.Learn.AvgL.Gain":   "2.5", // 2.5 > 2 > 3
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "2.2", // 2.4 > 2.2 > 2.6 > 2.8 -- 2.4 better *for small net* but not for larger!;
+					"Layer.Learn.AvgL.Gain":      "2.5", // 2.5 > 2 > 3
 				}},
 		},
 		// NOTE: it is essential not to put Pat / Hip params here, as we have to use Base

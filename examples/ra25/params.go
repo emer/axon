@@ -20,26 +20,26 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "1.05", // 1.05 > 1.1 for short-term; 1.1 better long-run stability
-					"Layer.Inhib.Layer.FB":    "0.5",  // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
-					"Layer.Inhib.ActAvg.Init": "0.05", // 0.4 for 1.2, 0.3 for 1.1
-					"Layer.Act.NMDA.MgC":      "1.2",  // 1.2 > 1.4 for SynSpkTheta
-					"Layer.Act.NMDA.Voff":     "0",    // 0 > 5 for SynSpkTheta
+					"Layer.Inhib.Layer.Gi":       "1.05", // 1.05 > 1.1 for short-term; 1.1 better long-run stability
+					"Layer.Inhib.Layer.FB":       "0.5",  // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
+					"Layer.Inhib.ActAvg.Nominal": "0.05", // 0.4 for 1.2, 0.3 for 1.1
+					"Layer.Act.NMDA.MgC":         "1.2",  // 1.2 > 1.4 for SynSpkTheta
+					"Layer.Act.NMDA.Voff":        "0",    // 0 > 5 for SynSpkTheta
 				},
 				Hypers: params.Hypers{
-					"Layer.Inhib.Layer.Gi":    {"StdDev": "0.1", "Min": "0.5"},
-					"Layer.Inhib.ActAvg.Init": {"StdDev": "0.01", "Min": "0.01"},
+					"Layer.Inhib.Layer.Gi":       {"StdDev": "0.1", "Min": "0.5"},
+					"Layer.Inhib.ActAvg.Nominal": {"StdDev": "0.01", "Min": "0.01"},
 				}},
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":    "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":      "1.5",  // 1.0 > 0.6 >= 0.7 == 0.5
-					"Layer.Inhib.ActAvg.Init": "0.15", // .24 nominal, lower to give higher excitation
+					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
+					"Layer.Act.Clamp.Ge":         "1.5",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.65", // 0.65
-					"Layer.Inhib.ActAvg.Init":       "0.24",
+					"Layer.Inhib.ActAvg.Nominal":    "0.24",
 					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
 					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.6
 					"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!

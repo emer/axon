@@ -19,34 +19,34 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CT", Desc: "corticothalamic context -- using markovian copy params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.CT.GeGain":         "1.0",
-					"Layer.CT.DecayTau":       "0",
-					"Layer.Inhib.Layer.Gi":    "1.4",
-					"Layer.Inhib.Pool.Gi":     "1.4",
-					"Layer.Act.GABAB.Gbar":    "0.2",
-					"Layer.Act.NMDA.Gbar":     "0.15",
-					"Layer.Act.NMDA.Tau":      "100",
-					"Layer.Act.Decay.Act":     "0.0",
-					"Layer.Act.Decay.Glong":   "0.0",
-					"Layer.Act.Sahp.Gbar":     "1.0",
+					"Layer.Inhib.ActAvg.Nominal": "0.12",
+					"Layer.CT.GeGain":            "1.0",
+					"Layer.CT.DecayTau":          "0",
+					"Layer.Inhib.Layer.Gi":       "1.4",
+					"Layer.Inhib.Pool.Gi":        "1.4",
+					"Layer.Act.GABAB.Gbar":       "0.2",
+					"Layer.Act.NMDA.Gbar":        "0.15",
+					"Layer.Act.NMDA.Tau":         "100",
+					"Layer.Act.Decay.Act":        "0.0",
+					"Layer.Act.Decay.Glong":      "0.0",
+					"Layer.Act.Sahp.Gbar":        "1.0",
 				}},
 			{Sel: ".CTCopy", Desc: "single-step copy params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.12",
-					"Layer.CT.GeGain":         "1.0",
-					"Layer.CT.DecayTau":       "0",
-					"Layer.Inhib.Layer.Gi":    "2.4", // was 1.8
-					"Layer.Act.GABAB.Gbar":    "0.2",
-					"Layer.Act.NMDA.Gbar":     "0.15",
-					"Layer.Act.NMDA.Tau":      "100",
-					"Layer.Act.Decay.Act":     "0.0",
-					"Layer.Act.Decay.Glong":   "0.0",
+					"Layer.Inhib.ActAvg.Nominal": "0.12",
+					"Layer.CT.GeGain":            "1.0",
+					"Layer.CT.DecayTau":          "0",
+					"Layer.Inhib.Layer.Gi":       "2.4", // was 1.8
+					"Layer.Act.GABAB.Gbar":       "0.2",
+					"Layer.Act.NMDA.Gbar":        "0.15",
+					"Layer.Act.NMDA.Tau":         "100",
+					"Layer.Act.Decay.Act":        "0.0",
+					"Layer.Act.Decay.Glong":      "0.0",
 				}},
 			/*
 				{Sel: ".CTInteg", Desc: "time integration params",
 					Params: params.Params{
-						"Layer.Inhib.ActAvg.Init": "0.12",
+						"Layer.Inhib.ActAvg.Nominal": "0.12",
 						"Layer.CT.GeGain":         "4.0",
 						"Layer.CT.DecayTau":       "50",
 						"Layer.Inhib.Layer.Gi":    "2.8", // was 1.8
@@ -87,19 +87,19 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Drives", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1", // 1 / ndrives
+					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / ndrives
 				}},
 			{Sel: ".US", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.25", // 1 / ndrives
+					"Layer.Inhib.ActAvg.Nominal": "0.25", // 1 / ndrives
 				}},
 			{Sel: "#CS", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1", // 1 / css
+					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / css
 				}},
 			{Sel: ".Dist", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1", // 1 / maxdist -- low to jack up Ge
+					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / maxdist -- low to jack up Ge
 				}},
 			{Sel: "#DistP", Desc: "",
 				Params: params.Params{
@@ -107,7 +107,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".Time", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1", // 1 / maxtime -- low to jack up Ge
+					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / maxtime -- low to jack up Ge
 				}},
 			{Sel: "#TimeP", Desc: "",
 				Params: params.Params{
@@ -115,11 +115,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.025",
-					"Layer.Inhib.Layer.Gi":    "1.1",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "0.8",
-					"Layer.Act.Dend.SSGi":     "0",
+					"Layer.Inhib.ActAvg.Nominal": "0.025",
+					"Layer.Inhib.Layer.Gi":       "1.1",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "0.8",
+					"Layer.Act.Dend.SSGi":        "0",
 				}},
 			{Sel: "#OFCCT", Desc: "",
 				Params: params.Params{
@@ -181,7 +181,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLA", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init":    "0.025",
+					"Layer.Inhib.ActAvg.Nominal": "0.025",
 					"Layer.Inhib.Layer.Gi":       "1.8", // needs to be strong to prevent random off-US act
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.9",
@@ -199,39 +199,39 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CeMPos", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Act.Dend.SSGi":     "0",
-					"Layer.Inhib.Layer.Gi":    "1.0",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "0.5",
+					"Layer.Inhib.ActAvg.Nominal": "0.15",
+					"Layer.Act.Dend.SSGi":        "0",
+					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "0.5",
 				}},
 			{Sel: "PPTgLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.1",
-					"Layer.Inhib.Layer.Gi":    "1.0",
-					"Layer.Inhib.Pool.On":     "true",
-					"Layer.Inhib.Pool.Gi":     "0.5",
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "0.5",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.Layer.On":    "true", // this is critical, else too active
-					"Layer.Inhib.Layer.Gi":    "0.6",
+					"Layer.Inhib.ActAvg.Nominal": "0.15",
+					"Layer.Inhib.Layer.On":       "true", // this is critical, else too active
+					"Layer.Inhib.Layer.Gi":       "0.6",
 				}},
 			{Sel: "#VpSTNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.Ge":       "0.2",
-					"Layer.Act.Init.GeVar":    "0.2",
-					"Layer.Inhib.ActAvg.Init": "0.15",
-					"Layer.Inhib.Layer.On":    "true",
-					"Layer.Inhib.Layer.Gi":    "0.2",
+					"Layer.Act.Init.Ge":          "0.2",
+					"Layer.Act.Init.GeVar":       "0.2",
+					"Layer.Inhib.ActAvg.Nominal": "0.15",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Layer.Gi":       "0.2",
 				}},
 			{Sel: "GPLayer", Desc: "all gp",
 				Params: params.Params{
-					"Layer.Act.Init.Ge":       "0.3",
-					"Layer.Act.Init.GeVar":    "0.1",
-					"Layer.Act.Init.GiVar":    "0.1",
-					"Layer.Inhib.ActAvg.Init": "1",
+					"Layer.Act.Init.Ge":          "0.3",
+					"Layer.Act.Init.GeVar":       "0.1",
+					"Layer.Act.Init.GiVar":       "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
 			{Sel: "#VpGPi", Desc: "",
 				Params: params.Params{
@@ -239,17 +239,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Matrix.GPHasPools":   "false",
-					"Layer.Matrix.InvertNoGate": "false", // false > true -- doesn't work
-					"Layer.Matrix.GateThr":      "0.05",  // 0.05 > 0.08 maybe
-					"Layer.Matrix.ModGain":      "5",
-					"Layer.Matrix.AChInhib":     "5",
-					"Layer.Matrix.MaxACh":       "0.5",
-					"Layer.Inhib.ActAvg.Init":   ".03",
-					"Layer.Inhib.Layer.On":      "true",
-					"Layer.Inhib.Layer.Gi":      "0.0", // was .8
-					"Layer.Inhib.Pool.On":       "true",
-					"Layer.Inhib.Pool.Gi":       "0.5", // 0.7 > 0.6 more sparse
+					"Layer.Matrix.GPHasPools":    "false",
+					"Layer.Matrix.InvertNoGate":  "false", // false > true -- doesn't work
+					"Layer.Matrix.GateThr":       "0.05",  // 0.05 > 0.08 maybe
+					"Layer.Matrix.ModGain":       "5",
+					"Layer.Matrix.AChInhib":      "5",
+					"Layer.Matrix.MaxACh":        "0.5",
+					"Layer.Inhib.ActAvg.Nominal": ".03",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Layer.Gi":       "0.0", // was .8
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "0.5", // 0.7 > 0.6 more sparse
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
