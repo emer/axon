@@ -106,7 +106,7 @@ func (pj *CHLPrjn) DWt(ctime *axon.Time) {
 // SAvgCor computes the sending average activation, corrected according to the SAvgCor
 // correction factor (typically makes layer appear more sparse than it is)
 func (pj *CHLPrjn) SAvgCor(slay *axon.Layer) float32 {
-	savg := .5 + pj.CHL.SAvgCor*(slay.Inhib.ActAvg.Init-0.5)
+	savg := .5 + pj.CHL.SAvgCor*(slay.Inhib.ActAvg.Nominal-0.5)
 	savg = mat32.Max(pj.CHL.SAvgThr, savg) // keep this computed value within bounds
 	return 0.5 / savg
 }

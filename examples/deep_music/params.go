@@ -13,20 +13,21 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal":    "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
-					"Layer.Inhib.Layer.Gi":          "0.9", // 0.9 > 0.95 > 1.0 > 1.1  SSGi = 2
-					"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
-					"Layer.Act.Dend.SSGi":           "2",
-					"Layer.Act.Gbar.L":              "0.2", // std
-					"Layer.Act.Decay.Act":           "0.0", // 0 == 0.2
-					"Layer.Act.Decay.Glong":         "0.0",
-					"Layer.Act.NMDA.MgC":            "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":           "5",
-					"Layer.Act.Mahp.Gbar":           "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-					"Layer.Act.Sahp.Gbar":           "0.1",  // 0.1 == 0.02 no real diff
-					"Layer.Act.Sahp.Off":            "0.8",  //
-					"Layer.Act.Sahp.Slope":          "0.02", //
-					"Layer.Act.Sahp.CaTau":          "5",    // 5 > 10
+					"Layer.Inhib.ActAvg.Nominal":         "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
+					"Layer.Inhib.Layer.Gi":               "0.9", // 0.9 > 0.95 > 1.0 > 1.1  SSGi = 2
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002",
+					"Layer.Learn.TrgAvgAct.SubMean":      "1", // 1 > 0
+					"Layer.Act.Dend.SSGi":                "2",
+					"Layer.Act.Gbar.L":                   "0.2", // std
+					"Layer.Act.Decay.Act":                "0.0", // 0 == 0.2
+					"Layer.Act.Decay.Glong":              "0.0",
+					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Act.NMDA.Voff":                "5",
+					"Layer.Act.Mahp.Gbar":                "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+					"Layer.Act.Sahp.Gbar":                "0.1",  // 0.1 == 0.02 no real diff
+					"Layer.Act.Sahp.Off":                 "0.8",  //
+					"Layer.Act.Sahp.Slope":               "0.02", //
+					"Layer.Act.Sahp.CaTau":               "5",    // 5 > 10
 				}},
 			{Sel: "SuperLayer", Desc: "super layer params",
 				Params: params.Params{

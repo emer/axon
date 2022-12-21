@@ -13,13 +13,13 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal":         "0.15",
+					"Layer.Inhib.ActAvg.Nominal":         "0.15",  // 0.15 best
 					"Layer.Inhib.Layer.Gi":               "1.0",   // 1.0 > 1.1 v1.6.1
 					"Layer.Inhib.Layer.FB":               "1",     // 1.0 > 0.5
-					"Layer.Learn.TrgAvgAct.SubMean":      "0",     // 1 > 0
+					"Layer.Inhib.ActAvg.AdaptGi":         "false", // not needed; doesn't engage
+					"Layer.Learn.TrgAvgAct.SubMean":      "1",     // 1 > 0
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005", // 0.005 > others
 					"Layer.Learn.TrgAvgAct.ErrLRate":     "0.02",  // 0.02 def
-					"Layer.Learn.TrgAvgAct.DownOnly":     "false", // true < worse significantly
 					"Layer.Act.Gbar.L":                   "0.2",   // std
 					"Layer.Act.Decay.Act":                "0.0",   // 0 == 0.2
 					"Layer.Act.Decay.Glong":              "0.0",
