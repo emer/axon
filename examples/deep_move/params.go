@@ -92,7 +92,7 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.005", // 0.005 > 0.002 > 0.01
-					"Prjn.Learn.Trace.SubMean": "0",     //
+					"Prjn.Learn.Trace.SubMean": "0",     // 0 > 1 even with CTCtxt = 0
 					"Prjn.SWt.Adapt.LRate":     "0.01",  // 0.01 == 0.0001 but 0.001 not as good..
 					"Prjn.SWt.Adapt.DreamVar":  "0.0",   // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":       "1.0",   // 1 works fine here -- .5 also ok

@@ -215,7 +215,7 @@ func (np *CaSpkParams) CaFmSpike(nrn *Neuron) {
 type TrgAvgActParams struct {
 	On           bool       `desc:"whether to use target average activity mechanism to scale synaptic weights"`
 	ErrLRate     float32    `viewif:"On" def:"0.02" desc:"learning rate for adjustments to Trg value based on unit-level error signal.  Population TrgAvg values are renormalized to fixed overall average in TrgRange. Generally, deviating from the default doesn't make much difference."`
-	SynScaleRate float32    `viewif:"On" def:"0.002,0.0002" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity -- this determines the effective strength of the constraint, and larger models may need more than the weaker default value."`
+	SynScaleRate float32    `viewif:"On" def:"0.005,0.0002" desc:"rate parameter for how much to scale synaptic weights in proportion to the AvgDif between target and actual proportion activity -- this determines the effective strength of the constraint, and larger models may need more than the weaker default value."`
 	SubMean      float32    `viewif:"On" def:"0,1" desc:"amount of mean trg change to subtract -- 1 = full zero sum.  1 works best in general -- but in some cases it may be better to start with 0 and then increase using network SetSubMean method at a later point."`
 	TrgRange     minmax.F32 `viewif:"On" def:"{0.5 2}" desc:"range of target normalized average activations -- individual neurons are assigned values within this range to TrgAvg, and clamped within this range."`
 	Permute      bool       `viewif:"On" def:"true" desc:"permute the order of TrgAvg values within layer -- otherwise they are just assigned in order from highest to lowest for easy visualization -- generally must be true if any topographic weights are being used"`
@@ -228,7 +228,7 @@ func (ta *TrgAvgActParams) Update() {
 func (ta *TrgAvgActParams) Defaults() {
 	ta.On = true
 	ta.ErrLRate = 0.02
-	ta.SynScaleRate = 0.0002
+	ta.SynScaleRate = 0.005
 	ta.SubMean = 1 // 1 in general beneficial
 	ta.TrgRange.Set(0.5, 2)
 	ta.Permute = true
