@@ -15,7 +15,7 @@ type PPTgNeuron struct {
 	GeSynPrev float32 `desc:"previous max excitatory synaptic inputs"`
 }
 
-// PPTgLayer represents a pedunculopontine nucleus layer
+// PPTgLayer represents a pedunculopontine tegmental nucleus layer.
 // it subtracts prior trial's excitatory conductance to
 // compute the temporal derivative over time, with a positive
 // rectification.
