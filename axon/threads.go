@@ -72,16 +72,15 @@ func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
 	if err := nt.Set(
 		ints.MinInt(maxProcs, int(neuronHeur)),
 		ints.MinInt(maxProcs, int(synHeur)),
-		ints.MinInt(nPrjns, prjnMinThr),
-		ints.MinInt(nPrjns, prjnMinThr),
-		1,
+		ints.MinInt(ints.MaxInt(nPrjns, 1), prjnMinThr),
+		ints.MinInt(ints.MaxInt(nPrjns, 1), prjnMinThr),
 	); err != nil {
 		log.Fatal(err)
 	}
 }
 
 // Set sets number of goroutines manually for each task
-func (nt *NetThreads) Set(neurons, sendSpike, synCa, prjn, layer int) error {
+func (nt *NetThreads) Set(neurons, sendSpike, synCa, prjn int) error {
 	if err := nt.Neurons.Set(neurons); err != nil {
 		return fmt.Errorf("NetThreads.Neurons: %v", err)
 	}
@@ -94,9 +93,9 @@ func (nt *NetThreads) Set(neurons, sendSpike, synCa, prjn, layer int) error {
 	if err := nt.Prjn.Set(prjn); err != nil {
 		return fmt.Errorf("NetThreads.Prjn: %v", err)
 	}
-	if err := nt.Layer.Set(layer); err != nil {
-		return fmt.Errorf("NetThreads.Layer: %v", err)
-	}
+	// if err := nt.Layer.Set(layer); err != nil {
+	// 	return fmt.Errorf("NetThreads.Layer: %v", err)
+	// }
 	return nil
 }
 

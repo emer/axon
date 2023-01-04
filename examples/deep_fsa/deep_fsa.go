@@ -186,8 +186,6 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
 	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
 
-	net.NThreads = 2
-
 	net.Defaults()
 	ss.Params.SetObject("Network")
 	err := net.Build()

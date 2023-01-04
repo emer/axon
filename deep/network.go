@@ -315,13 +315,13 @@ func (nt *Network) CTCtxt(ctime *axon.Time) {
 		} else {
 			LayerSendCtxtGe(ly.AsAxon(), ctime)
 		}
-	}, "SendCtxtGe", axon.Thread, axon.Wait)
+	}, "SendCtxtGe")
 
 	nt.LayerFun(func(ly axon.AxonLayer) {
 		if dl, ok := ly.(*CTLayer); ok {
 			dl.CtxtFmGe(ctime)
 		}
-	}, "CtxtFmGe", axon.NoThread, axon.Wait)
+	}, "CtxtFmGe")
 }
 
 // LayerSendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate

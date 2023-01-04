@@ -88,8 +88,6 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	net.AddLayer("Hidden3", shp, emer.Hidden)
 	net.AddLayer("Output", shp, emer.Target)
 
-	net.NThreads = numThread
-
 	net.RecFunTimes = true
 
 	net.Defaults()
@@ -102,8 +100,9 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	}
 
 	// override defaults: neurons, sendSpike, synCa, learn
-	net.Threads.Set(2, numThread, numThread, numThread, numThread)
-	net.ThreadsAlloc() // re-update thread numbers after build
+	if err := net.Threads.Set(numThread, 1, 1, 1); err != nil {
+		b.Error(err)
+	}
 
 	net.InitWts()
 	ltime := axon.NewTime()
@@ -117,7 +116,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ltime.NewState("Train")
 		net.NeuronFun(func(ly axon.AxonLayer, ni int, nrn *axon.Neuron) { ly.CycleNeuron(ni, nrn, ltime) },
-			"CycleNeuron", numThread > 1, true)
+			"CycleNeuron")
 	}
 }
 
