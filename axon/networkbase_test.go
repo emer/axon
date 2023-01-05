@@ -1,7 +1,6 @@
 package axon
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/emer/emergent/emer"
@@ -31,7 +30,6 @@ func TestDefaults(t *testing.T) {
 	net.Defaults()
 	assert.Nil(t, net.Build())
 	net.InitWts()
-	fmt.Println(net)
 
 	assert.Equal(t, 100, net.SlowInterval)
 	assert.Equal(t, 0, net.SlowCtr)
