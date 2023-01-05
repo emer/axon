@@ -67,13 +67,12 @@ func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
 	prjnMinThr := ints.MinInt(maxProcs, 4) // heuristic
 
 	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
-	synHeur := math.Ceil(float64(nNeurons) / float64(1000))
 
 	if err := nt.Set(
 		ints.MinInt(maxProcs, int(neuronHeur)),
-		ints.MinInt(maxProcs, int(synHeur)),
+		1, // TODO fix race conditions
 		ints.MinInt(ints.MaxInt(nPrjns, 1), prjnMinThr),
-		ints.MinInt(ints.MaxInt(nPrjns, 1), prjnMinThr),
+		1, // TODO fix race conditions
 	); err != nil {
 		log.Fatal(err)
 	}
