@@ -22,7 +22,7 @@ jobs:
           sudo apt-get install libgl1-mesa-dev xorg-dev
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.18"
+          go-version: "1.19"
       - run: go build ./...
       - run: go test ./...
 
@@ -38,7 +38,7 @@ jobs:
           sudo apt-get install libgl1-mesa-dev xorg-dev
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.18"
+          go-version: "1.19"
       - name: benchmark
         run: go test -bench=. ./...
 
@@ -54,7 +54,7 @@ jobs:
           sudo apt-get install libgl1-mesa-dev xorg-dev
       - uses: actions/setup-go@v3
         with:
-          go-version: "1.18"
+          go-version: "1.19"
       - name: Generate coverage report
         run: go test -race ./... -coverprofile=coverage.txt -covermode=atomic -timeout=20m
       - name: Upload coverage report
