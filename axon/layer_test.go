@@ -40,11 +40,18 @@ func TestLayer(t *testing.T) {
 
 func TestLayer_SendSpike(t *testing.T) {
 	net := NewNetwork("LayerTest")
-	shape := []int{2, 2}
-	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
+	shape := []int{3, 3}
+	inputLayer1 := net.AddLayer("Input1", shape, emer.Input).(AxonLayer)
+	inputLayer2 := net.AddLayer("Input2", shape, emer.Input).(AxonLayer)
 	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
-	net.ConnectLayers(inputLayer, outputLayer, prjn.NewFull(), emer.Forward)
+	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), emer.Forward)
+	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), emer.Forward)
 	net.Defaults()
+
+	/*
+	 * Input1 -> Output
+	 * Input2 -^
+	 */
 
 	assert.NoError(t, net.Build())
 	net.InitWts()
@@ -53,20 +60,43 @@ func TestLayer_SendSpike(t *testing.T) {
 	ltime := NewTime()
 
 	// spike the first neuron. Do this after NewState(), so that the spike is not decayed away
-	inputLayer.AsAxon().Neurons[0].Spike = 1.0
-	net.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ltime) },
+	inputLayer1.AsAxon().Neurons[1].Spike = 1.0
+	inputLayer2.AsAxon().Neurons[0].Spike = 1.0
+
+	// set some of the weights
+	in1pj0 := inputLayer1.SendPrjn(0).(*Prjn)
+	in1pj0.Syns[in1pj0.SendConIdxStart[1]].Wt = 0.1
+	in1pj0.GScale.Scale = 6.6
+
+	in2pj0 := inputLayer2.SendPrjn(0).(*Prjn)
+	in2pj0.Syns[in2pj0.SendConIdxStart[0]+4].Wt = 3.0
+	in2pj0.GScale.Scale = 0.4
+
+	net.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ltime) },
 		"SendSpike")
 
-	// the neuron we spiked is connected to 4 neurons in the output layer
+	// the neuron we spiked is connected to 9 neurons in the output layer
 	// make sure they all received the spike
-	conductBuf := inputLayer.AsAxon().SndPrjns[0].(*Prjn).GBuf
-	count := 0
-	for _, g := range conductBuf {
-		if g > 0.0 {
-			count++
-		}
+	recvBuffs := [][]float32{
+		inputLayer1.AsAxon().SndPrjns[0].(*Prjn).GBuf,
+		inputLayer2.AsAxon().SndPrjns[0].(*Prjn).GBuf,
 	}
-	assert.Equal(t, 4, count)
+	for _, recvBuf := range recvBuffs {
+		count := 0
+		for _, g := range recvBuf {
+			if g > 0.0 {
+				count++
+			}
+		}
+		assert.Equal(t, 9, count)
+	}
+
+	// spot-check two of the conductances
+	delay := 3
+	l1contrib := 6.6 * 0.1
+	l2contrib := 3.0 * 0.4
+	assert.Equal(t, float32(l1contrib), recvBuffs[0][0*delay+(delay-1)])
+	assert.Equal(t, float32(l2contrib), recvBuffs[1][4*delay+(delay-1)])
 }
 
 func TestLayerToJson(t *testing.T) {
