@@ -10,7 +10,7 @@ on: # yamllint disable-line rule:truthy
   workflow_dispatch:
 
 jobs:
-  go:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -25,8 +25,36 @@ jobs:
           go-version: "1.18"
       - run: go build ./...
       - run: go test ./...
+
+  test-bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: apt-get
+        run: |
+          sudo apt-get update
+          sudo apt-get install libgl1-mesa-dev xorg-dev
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.18"
       - name: benchmark
         run: go test -bench=. ./...
+
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: apt-get
+        run: |
+          sudo apt-get update
+          sudo apt-get install libgl1-mesa-dev xorg-dev
+      - uses: actions/setup-go@v3
+        with:
+          go-version: "1.18"
       - name: Generate coverage report
         run: go test -race ./... -coverprofile=coverage.txt -covermode=atomic
       - name: Upload coverage report
