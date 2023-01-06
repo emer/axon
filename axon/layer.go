@@ -1283,24 +1283,24 @@ func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
 }
 
-// SendSpike sends spike to receivers -- last step in Cycle, integrated
-// the next time around.
-// Writes to sending projections for this neuron.
-func (ly *Layer) SendSpike(ni int, nrn *Neuron, ctime *Time) {
-	if nrn.Spike == 0 {
-		return
-	}
-	// TODO: race condition. Could pool these per layer, and atomic add at the end
-	ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0 // note: this is immediate..
-	if nrn.SubPool > 0 {
-		// TODO: race condition
-		ly.Pools[0].Inhib.FBsRaw += 1.0
-	}
-	for _, sp := range ly.SndPrjns {
-		if sp.IsOff() {
+// SendSpike sends spike to receivers for all neurons that spiked
+// last step in Cycle, integrated the next time around.
+func (ly *Layer) SendSpike(ctime *Time) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.Spike == 0 {
 			continue
 		}
-		sp.SendSpike(ni)
+		ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0 // note: this is immediate..
+		if nrn.SubPool > 0 {
+			ly.Pools[0].Inhib.FBsRaw += 1.0
+		}
+		for _, sp := range ly.SndPrjns {
+			if sp.IsOff() {
+				continue
+			}
+			sp.SendSpike(ni)
+		}
 	}
 }
 

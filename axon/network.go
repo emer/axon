@@ -121,7 +121,7 @@ func (nt *Network) CycleImpl(ctime *Time) {
 	nt.PrjnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes")
 	nt.LayerFun(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes")
 	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron")
-	nt.SendSpikeFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.SendSpike(ni, nrn, ctime) }, "SendSpike")
+	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctime) }, "SendSpike")
 	nt.LayerFun(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost") // def NoThread
 	if !ctime.Testing {
 		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa")

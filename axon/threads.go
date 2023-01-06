@@ -194,27 +194,20 @@ func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), fu
 // using SendSpike threading (go routines) if thread is true and NThreads > 1.
 // if wait is true, then it waits until all procs have completed.
 // todo: merge with NeuronFun
-func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string) {
+func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer), funame string) {
 	nt.FunTimerStart(funame)
-	if nt.Threads.SendSpike.nThreads <= 1 {
-		for _, layer := range nt.Layers {
-			lyr := layer.(AxonLayer)
-			lyrNeurons := lyr.AsAxon().Neurons
-			for nrnIdx := range lyrNeurons {
-				nrn := &lyrNeurons[nrnIdx] // loops over all neurons, same as NeuronFun
-				fun(lyr, nrnIdx, nrn)
-			}
+	if nt.Threads.Layer.nThreads <= 1 {
+		for _, ly := range nt.Layers {
+			fun(ly.(AxonLayer))
 		}
 	} else {
 		nt.Threads.SendSpike.Run(func(st, ed int) {
-			for ni := st; ni < ed; ni++ {
-				nrn := &nt.Neurons[ni]
-				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
-				fun(ly, ni-ly.NeurStartIdx(), nrn)
+			for li := st; li < ed; li++ {
+				ly := nt.Layers[li].(AxonLayer)
+				fun(ly)
 			}
-		}, len(nt.Neurons))
+		}, len(nt.Layers))
 	}
-	nt.FunTimerStop(funame)
 }
 
 //////////////////////////////////////////////////////////////
