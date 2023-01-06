@@ -22,7 +22,6 @@ const (
 // TestMultithreadingCycleFun tests the whole net.Cycle() function, turning on
 // multithreading for all functions.
 func TestMultithreadingCycleFun(t *testing.T) {
-	t.Skip("Race Condition, working on fix")
 	pats := generateRandomPatterns(100)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 16, 16, 16)
 
@@ -69,7 +68,6 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 }
 
 func TestMultithreadedSendSpike(t *testing.T) {
-	t.Skip("Race Condition, working on fix")
 	pats := generateRandomPatterns(10)
 	// run an absurd amount of threads, to make sure we encounter race conditions
 	// goroutines are cheap, they barely cost any memory
