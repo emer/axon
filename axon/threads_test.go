@@ -344,7 +344,6 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Time), e
 			outputLayer.ApplyExt(output)
 
 			net.NewState()
-			// TODO FIXXX, calling with "train" should fail
 			ltime.NewState("Train")
 			for cycle := 0; cycle < nCycles; cycle++ {
 				fun(net, ltime)

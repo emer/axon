@@ -49,6 +49,10 @@ func (tm *Time) Reset() {
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (tm *Time) NewState(mode string) {
+	if mode != "Train" && mode != "Test" {
+		panic("axon.Time.NewState: mode must be Train or Test")
+	}
+
 	tm.Phase = 0
 	tm.PlusPhase = false
 	tm.PhaseCycle = 0
