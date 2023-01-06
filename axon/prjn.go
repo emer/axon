@@ -767,6 +767,8 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 // SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
+// Threading: Can be called concurrently for all prjns, since it updates synapses
+// (which are local to a single prjn).
 func (pj *Prjn) SendSynCa(ctime *Time) {
 	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
@@ -812,6 +814,8 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 // RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
+// Threading: Can be called concurrently for all prjns, since it updates synapses
+// (which are local to a single prjn).
 func (pj *Prjn) RecvSynCa(ctime *Time) {
 	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return

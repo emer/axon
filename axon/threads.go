@@ -81,6 +81,8 @@ func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
 }
 
 // Set sets number of goroutines manually for each task
+// This exists mainly for testing, just use SetDefaults in normal use,
+// and GOMAXPROCS=1 to force single-threaded operation.
 func (nt *NetThreads) Set(neurons, sendSpike, synCa, prjn int) error {
 	if err := nt.Neurons.Set(neurons); err != nil {
 		return fmt.Errorf("NetThreads.Neurons: %v", err)
@@ -168,7 +170,7 @@ func (nt *NetworkBase) LayerFun(fun func(ly AxonLayer), funame string) {
 }
 
 // NeuronFun applies function of given name to all neurons
-// using Neurons threading (go routines) if thread is true and NThreads > 1.
+// using as many go routines as configured in NetThreads.Neurons.
 func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string) {
 	nt.FunTimerStart(funame)
 	if nt.Threads.Neurons.nThreads <= 1 {
@@ -192,13 +194,11 @@ func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), fu
 	nt.FunTimerStop(funame)
 }
 
-// SendSpikeFun applies function of given name to all neurons
-// using SendSpike threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-// todo: merge with NeuronFun
+// SendSpikeFun applies function of given name to all layers
+// using as many goroutines as configured in NetThreads.SendSpike
 func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer), funame string) {
 	nt.FunTimerStart(funame)
-	if nt.Threads.Layer.nThreads <= 1 {
+	if nt.Threads.SendSpike.nThreads <= 1 {
 		for _, ly := range nt.Layers {
 			fun(ly.(AxonLayer))
 		}
