@@ -100,7 +100,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	}
 
 	// override defaults: neurons, sendSpike, synCa, learn
-	if err := net.Threads.Set(numThread, 1, 1, 1); err != nil {
+	if err := net.Threads.Set(numThread, 1, 1); err != nil {
 		b.Error(err)
 	}
 

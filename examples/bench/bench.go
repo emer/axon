@@ -95,7 +95,7 @@ func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
 
 	// override defaults: neurons, sendSpike, synCa, learn
 	// TODO: Adjust these
-	net.Threads.Set(threads, threads, threads, threads)
+	net.Threads.Set(threads, threads, threads)
 
 	net.InitWts()
 }

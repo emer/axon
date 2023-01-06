@@ -118,11 +118,11 @@ func (nt *Network) Cycle(ctime *Time) {
 func (nt *Network) CycleImpl(ctime *Time) {
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
 	// GFmSpikes has to wait for the output of the SendSpikeFun
-	nt.PrjnFun(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes")
-	nt.LayerFun(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes")
 	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron")
 	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctime) }, "SendSpike")
-	nt.LayerFun(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost") // def NoThread
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost") // def NoThread
 	if !ctime.Testing {
 		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa")
 		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctime) }, "RecvSynCa")
@@ -362,15 +362,15 @@ func (nt *Network) PlusPhaseImpl(ctime *Time) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctime *Time) {
-	nt.LayerFun(func(ly AxonLayer) { ly.DWtLayer(ctime) }, "DWtLayer") // def no thr
-	nt.PrjnFun(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt")             // def thread
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctime) }, "DWtLayer") // def no thr
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt")             // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctime *Time) {
-	nt.PrjnFun(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean")
-	nt.LayerFun(func(ly AxonLayer) { ly.WtFmDWtLayer(ctime) }, "WtFmDWtLayer") // def no
-	nt.PrjnFun(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctime) }, "WtFmDWtLayer") // def no
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt")
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ctime)
 }
 
@@ -382,13 +382,13 @@ func (nt *Network) SlowAdapt(ctime *Time) {
 		return
 	}
 	nt.SlowCtr = 0
-	nt.LayerFun(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt")
-	nt.PrjnFun(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt")
 }
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctime *Time) {
-	nt.PrjnFun(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail")
 }
 
 // LRateMod sets the LRate modulation parameter for Prjns, which is
