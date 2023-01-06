@@ -91,11 +91,11 @@ func (ss *Sim) New() {
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
-	ss.Hid2 = true // useful only if primary hidden layer is smaller
+	ss.Hid2 = false // useful only if primary hidden layer is smaller
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.UnitsPer = 4
-	ss.FullSong = true
+	ss.FullSong = false
 	ss.TestClamp = true
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
