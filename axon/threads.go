@@ -63,14 +63,16 @@ type NetThreads struct {
 // According to tests on the LVis model, basically only CycleNeuron scales
 // beyond 4 threads..
 func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
-	maxProcs := runtime.GOMAXPROCS(0)      // query GOMAXPROCS
-	prjnMinThr := ints.MinInt(maxProcs, 4) // heuristic
+	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
 
+	// heuristics
+	prjnMinThr := ints.MinInt(maxProcs, 4)
+	synHeur := math.Ceil(float64(nNeurons) / float64(1000))
 	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
 
 	if err := nt.Set(
 		ints.MinInt(maxProcs, int(neuronHeur)),
-		1, // TODO fix race conditions
+		ints.MinInt(maxProcs, int(synHeur)),
 		ints.MinInt(ints.MaxInt(nPrjns, 1), prjnMinThr),
 		1, // TODO fix race conditions
 	); err != nil {
