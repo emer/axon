@@ -60,7 +60,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.LrnNMDA.Tau":            "100",    // 100 def
 					"Layer.Learn.TrgAvgAct.On":           "true",   // true > false even with adapt gi
 					"Layer.Learn.TrgAvgAct.SubMean":      "1",      // 1 > 0 essential
-					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // 0.0002 > others
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // 0.0002 > others; 0.005 not as good
 					"Layer.Learn.RLRate.On":              "true",   // beneficial for trace
 					"Layer.Learn.RLRate.SigmoidMin":      "0.05",   // 0.05 > .1 > .02
 					"Layer.Learn.RLRate.Diff":            "true",

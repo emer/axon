@@ -390,10 +390,10 @@ func (pj *Prjn) Build() error {
 
 // BuildGBuf builds GBuf with current Com Delay values, if not correct size
 func (pj *Prjn) BuildGBuffs() {
-	rlen := pj.Recv.Shape().Len()
-	dl := pj.Com.Delay + 1
+	rlen := int32(pj.Recv.Shape().Len())
+	dl := int32(pj.Com.Delay + 1)
 	gblen := dl * rlen
-	if pj.Gidx.Len == dl && len(pj.GBuf) == gblen {
+	if pj.Gidx.Len == dl && int32(len(pj.GBuf)) == gblen {
 		return
 	}
 	pj.Gidx.Len = dl
@@ -401,7 +401,7 @@ func (pj *Prjn) BuildGBuffs() {
 	pj.GBuf = make([]float32, gblen)
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	npools := len(rlay.Pools)
-	pj.PIBuf = make([]float32, dl*npools)
+	pj.PIBuf = make([]float32, int(dl)*npools)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -721,7 +721,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Com.Delay
 	sz := del + 1
-	zi := pj.Gidx.Zi
+	zi := int(pj.Gidx.Zi)
 	if pj.Typ == emer.Inhib {
 		for ri := range pj.GVals {
 			gv := &pj.GVals[ri]
