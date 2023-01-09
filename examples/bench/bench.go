@@ -82,8 +82,6 @@ func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
 	net.BidirConnectLayers(hid2Lay, hid3Lay, full)
 	net.BidirConnectLayers(hid3Lay, outLay, full)
 
-	net.NThreads = threads // 1 overrides all
-
 	net.RecFunTimes = verbose
 
 	net.Defaults()
@@ -96,8 +94,8 @@ func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
 	}
 
 	// override defaults: neurons, sendSpike, synCa, learn
-	net.Threads.Set(2, 2*threads, 1, threads, threads)
-	net.ThreadsAlloc() // re-update
+	// TODO: Adjust these
+	net.Threads.Set(threads, threads, threads)
 
 	net.InitWts()
 }

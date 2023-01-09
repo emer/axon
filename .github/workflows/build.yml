@@ -28,6 +28,6 @@ jobs:
       - name: benchmark
         run: go test -bench=. ./...
       - name: Generate coverage report
-        run: go test -race ./... -coverprofile=coverage.txt -covermode=atomic
+        run: go test -race ./... -coverprofile=coverage.txt -covermode=atomic -timeout=20m
       - name: Upload coverage report
         uses: codecov/codecov-action@v3

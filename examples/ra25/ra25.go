@@ -173,8 +173,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
 
-	net.NThreads = 1 // small networks don't benefit from threading
-
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
 	// that would mean that the output layer doesn't reflect target values in plus phase

@@ -6,247 +6,183 @@ package axon
 
 import (
 	"fmt"
+	"log"
+	"math"
 	"runtime"
 	"sort"
+	"sync"
 
 	"github.com/emer/emergent/timer"
 	"github.com/goki/ki/ints"
 )
 
-// NetThread specifies how to allocate threads & chunks to each task, and
-// manages running those threads (goroutines)
-type NetThread struct {
-	NThreads  int     `desc:"number of parallel threads to deploy"`
-	ChunksPer int     `desc:"number of chunks per thread to use -- each thread greedily grabs chunks"`
-	Work      WorkMgr `view:"-" desc:"work manager"`
-}
-
-func (th *NetThread) Set(nthr, chk int) {
-	maxP := runtime.GOMAXPROCS(0)
-	th.NThreads = nthr
-	if th.NThreads < 1 {
-		th.NThreads = 1
+// Maps the given function across the [0, total) range of items, using
+// nThreads goroutines.
+func parallelRun(fun func(st, ed int), total int, nThreads int) {
+	itemsPerThr := int(math.Ceil(float64(total) / float64(nThreads)))
+	waitGroup := sync.WaitGroup{}
+	for start := 0; start < total; start += itemsPerThr {
+		start := start // be extra sure with closure
+		end := ints.MinInt(start+itemsPerThr, total)
+		waitGroup.Add(1) // todo: move out of loop
+		go func(st, ed int) {
+			fun(st, ed)
+			waitGroup.Done()
+		}(start, end)
 	}
-	if th.NThreads > maxP {
-		th.NThreads = maxP
-	}
-	th.ChunksPer = chk
+	waitGroup.Wait()
 }
 
-func (th *NetThread) Alloc(tot int) {
-	th.Work.Alloc(tot, th.NThreads, th.ChunksPer)
-}
-
-func (th *NetThread) Run(fun func(st, ed int)) {
-	th.Work.Run(th.NThreads, fun)
-}
-
-// NetThreads parameterizes how many threads to use for each task
+// NetThreads parameterizes how many goroutines to use for each task
 type NetThreads struct {
-	Neurons   NetThread `desc:"for basic neuron-level computation -- highly parallel and linear in memory -- should be able to use a lot of threads"`
-	SendSpike NetThread `desc:"for sending spikes per neuron -- very large memory footprint through synapses and is very sparse -- suffers from significant bandwidth limitations -- use fewer threads"`
-	SynCa     NetThread `desc:"for synaptic-level calcium updating -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
-	Learn     NetThread `desc:"for learning: DWt and WtFmDWt -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
+	Neurons   int `desc:"for basic neuron-level computation -- highly parallel and linear in memory -- should be able to use a lot of threads"`
+	SendSpike int `desc:"for sending spikes per neuron -- very large memory footprint through synapses and is very sparse -- suffers from significant bandwidth limitations -- use fewer threads"`
+	SynCa     int `desc:"for synaptic-level calcium updating -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
 }
 
-// SetDefaults sets default allocation of threads based on number of neurons
-// and projections.
-// According to tests on the LVis model, basically only CycleNeuron scales
-// beyond 4 threads..  ChunksPer = 2 is much better than 1, but 3 == 2
-func (nt *NetThreads) SetDefaults(nNeurons, nPrjns int) {
-	chk := 2
-	nt.Neurons.Set(nNeurons/500, chk) // todo: this is all heuristic -- needs tuning!
-	nt.SendSpike.Set(nNeurons/10000, chk)
-	mxpj := ints.MinInt(nPrjns, 4) // > 4 generally not useful?
-	nt.SynCa.Set(mxpj, chk)
-	nt.Learn.Set(mxpj, chk)
-}
+// SetDefaults uses heuristics to determine the number of goroutines to use
+// for each task: Neurons, SendSpike, SynCa.
+func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
+	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
 
-// Set sets allocation of threads manually
-func (nt *NetThreads) Set(chk, neurons, sendSpike, synCa, learn int) {
-	nt.Neurons.Set(neurons, chk)
-	nt.SendSpike.Set(sendSpike, chk)
-	nt.SynCa.Set(synCa, chk)
-	nt.Learn.Set(learn, chk)
-}
+	// heuristics
+	prjnMinThr := ints.MinInt(maxProcs, 4)
+	synHeur := math.Ceil(float64(nNeurons) / float64(1000))
+	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
 
-// Alloc allocates work managers -- at Build
-func (nt *NetThreads) Alloc(nNeurons, nPrjns int) {
-	nt.Neurons.Alloc(nNeurons)
-	nt.SendSpike.Alloc(nNeurons)
-	nt.SynCa.Alloc(nPrjns)
-	nt.Learn.Alloc(nPrjns)
-	// maxP := runtime.GOMAXPROCS(0)
-	// mpi.Printf("Threading: GOMAXPROCS: %d  Chunks: %d  Neurons: %d  SendSpike: %d  SynCa: %d  Learn: %d\n", maxP, nt.Neurons.ChunksPer, nt.Neurons.NThreads, nt.SendSpike.NThreads, nt.SynCa.NThreads, nt.Learn.NThreads)
-}
-
-// ThreadsAlloc allocates threads if thread numbers have been updated
-// must be called *after* Build
-func (nt *NetworkBase) ThreadsAlloc() {
-	nt.Threads.Alloc(len(nt.Neurons), len(nt.Prjns))
-}
-
-///////////////////////////////////////////////////////////////////////////
-//  Compute Function Calling (threading)
-
-const (
-	// Thread is named const for actually using threads
-	Thread = true
-	// NoThread is named const for not using threads
-	NoThread = false
-	// Wait is named const for waiting for all go routines
-	Wait = true
-	// NoWait is named const for NOT waiting for all go routines
-	NoWait = false
-)
-
-// PrjnFun applies function of given name to all projections
-// using Learn threads (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-func (nt *NetworkBase) PrjnFun(fun func(pj AxonPrjn), funame string, thread, wait bool) {
-	if thread { // don't bother if not significant to thread
-		nt.FunTimerStart(funame)
-	}
-	if !thread || nt.NThreads <= 1 {
-		for _, pj := range nt.Prjns {
-			fun(pj)
-		}
-		if thread {
-			nt.FunTimerStop(funame)
-		}
-		return
-	}
-	// todo: ignoring wait for now..
-	nt.Threads.Learn.Run(func(st, ed int) {
-		for pi := st; pi < ed; pi++ {
-			pj := nt.Prjns[pi]
-			fun(pj)
-		}
-	})
-
-	if thread {
-		nt.FunTimerStop(funame)
+	if err := nt.Set(
+		ints.MinInt(maxProcs, int(neuronHeur)),
+		ints.MinInt(maxProcs, int(synHeur)),
+		ints.MinInt(ints.MaxInt(nPrjns, 1), prjnMinThr),
+	); err != nil {
+		log.Fatal(err)
 	}
 }
 
-// SynCaFun applies function of given name to all projections
-// using SynCa threads (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-func (nt *NetworkBase) SynCaFun(fun func(pj AxonPrjn), funame string, thread, wait bool) {
-	if thread { // don't bother if not significant to thread
-		nt.FunTimerStart(funame)
+// Set sets number of goroutines manually for each task
+// This exists mainly for testing, just use SetDefaults in normal use,
+// and GOMAXPROCS=1 to force single-threaded operation.
+func (nt *NetThreads) Set(neurons, sendSpike, synCa int) error {
+	if neurons < 1 || sendSpike < 1 || synCa < 1 {
+		return fmt.Errorf("NetThreads: all values must be >= 1, got: %v, %v, %v", neurons, sendSpike, synCa)
 	}
-	if !thread || nt.NThreads <= 1 {
-		for _, pj := range nt.Prjns {
-			fun(pj)
-		}
-		if thread {
-			nt.FunTimerStop(funame)
-		}
-		return
-	}
-	// todo: ignoring wait for now..
-	nt.Threads.SynCa.Run(func(st, ed int) {
-		for pi := st; pi < ed; pi++ {
-			pj := nt.Prjns[pi]
-			fun(pj)
-		}
-	})
-
-	if thread {
-		nt.FunTimerStop(funame)
-	}
+	nt.Neurons = neurons
+	nt.SendSpike = sendSpike
+	nt.SynCa = synCa
+	return nil
 }
 
-// note: in practice, all LayerFun are called as NoThread -- probably can get rid of this..
+//////////////////////////////////////////////////////////////////////////////////////
+//  Specialized parallel map functions, for where we can guess parallelism using heuristics
 
-// LayerFun applies function of given name to all layers
-// using threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-// many layer-level functions are not actually worth threading overhead
-// so this should be benchmarked for each case.
-func (nt *NetworkBase) LayerFun(fun func(ly AxonLayer), funame string, thread, wait bool) {
-	if thread { // don't bother if not significant to thread
-		nt.FunTimerStart(funame)
-	}
-	if !thread || nt.NThreads <= 1 {
-		for _, ly := range nt.Layers {
-			fun(ly.(AxonLayer))
-		}
+// SynCaFun applies function of given name to all projections, using
+// NetThreads.SynCa number of goroutines.
+func (nt *NetworkBase) SynCaFun(fun func(pj AxonPrjn), funame string) {
+	nt.PrjnMapParallel(fun, funame, nt.Threads.SynCa)
+}
+
+// NeuronFun applies function of given name to all neurons, using
+// NetThreads.Neurons number of goroutines.
+func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string) {
+	nt.NeuronMapParallel(fun, funame, nt.Threads.Neurons)
+}
+
+// SendSpikeFun applies function of given name to all layers
+// using as many goroutines as configured in NetThreads.SendSpike
+func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer), funame string) {
+	nt.LayerMapParallel(fun, funame, nt.Threads.SendSpike)
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  Generic parallel map functions
+
+// PrjnMapParallel applies function of given name to all projections
+// using nThreads go routines if nThreads > 1, otherwise runs sequentially.
+func (nt *NetworkBase) PrjnMapParallel(fun func(pj AxonPrjn), funame string, nThreads int) {
+	// run single-threaded, skipping the overhead of goroutines
+	if nThreads <= 1 {
+		nt.PrjnMapSeq(fun, funame)
 	} else {
-		for _, lyr := range nt.Layers {
-			ly := lyr
-			nt.WaitGp.Add(1)
-			go func() {
-				fun(ly.(AxonLayer))
-				nt.WaitGp.Done()
-			}()
-		}
-		if wait {
-			nt.WaitGp.Wait()
-		}
-	}
-	if thread {
-		nt.FunTimerStop(funame)
-	}
-}
-
-// NeuronFun applies function of given name to all neurons
-// using Neurons threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, thread, wait bool) {
-	if !thread || nt.NThreads <= 1 {
-		for _, layer := range nt.Layers {
-			lyr := layer.(AxonLayer)
-			lyrNeurons := lyr.AsAxon().Neurons
-			for nrnIdx := range lyrNeurons {
-				nrn := &lyrNeurons[nrnIdx]
-				fun(lyr, nrnIdx, nrn)
+		nt.FunTimerStart(funame)
+		parallelRun(func(st, ed int) {
+			for pi := st; pi < ed; pi++ {
+				pj := nt.Prjns[pi]
+				fun(pj)
 			}
-		}
+		}, len(nt.Prjns), nThreads)
+		nt.FunTimerStop(funame)
+	}
+}
+
+// PrjnApplySeq applies function of given name to all projections sequentially.
+func (nt *NetworkBase) PrjnMapSeq(fun func(pj AxonPrjn), funame string) {
+	nt.FunTimerStart(funame)
+	for _, pj := range nt.Prjns {
+		fun(pj)
+	}
+	nt.FunTimerStop(funame)
+}
+
+// LayerMapParallel applies function of given name to all layers
+// using nThreads go routines if nThreads > 1, otherwise runs sequentially.
+func (nt *NetworkBase) LayerMapParallel(fun func(ly AxonLayer), funame string, nThreads int) {
+	if nThreads <= 1 {
+		nt.LayerMapSeq(fun, funame)
 	} else {
 		nt.FunTimerStart(funame)
-		// todo: ignoring wait for now..
-		nt.Threads.Neurons.Run(func(st, ed int) {
+		parallelRun(func(st, ed int) {
+			for li := st; li < ed; li++ {
+				ly := nt.Layers[li].(AxonLayer)
+				fun(ly)
+			}
+		}, len(nt.Layers), nThreads)
+		nt.FunTimerStop(funame)
+	}
+}
+
+// LayerMapSeq applies function of given name to all layers sequentially.
+func (nt *NetworkBase) LayerMapSeq(fun func(ly AxonLayer), funame string) {
+	nt.FunTimerStart(funame)
+	for _, ly := range nt.Layers {
+		fun(ly.(AxonLayer))
+	}
+	nt.FunTimerStop(funame)
+}
+
+// NeuronMapParallel applies function of given name to all neurons
+// using as many go routines as configured in NetThreads.Neurons.
+func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, nThreads int) {
+	nt.FunTimerStart(funame)
+	if nThreads <= 1 {
+		nt.NeuronMapSequential(fun, funame)
+	} else {
+		parallelRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
 				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
 				fun(ly, ni-ly.NeurStartIdx(), nrn)
 			}
-		})
+		}, len(nt.Neurons), nThreads)
 		nt.FunTimerStop(funame)
 	}
 }
 
-// SendSpikeFun applies function of given name to all neurons
-// using SendSpike threading (go routines) if thread is true and NThreads > 1.
-// if wait is true, then it waits until all procs have completed.
-func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, thread, wait bool) {
-	if !thread || nt.NThreads <= 1 {
-		for _, layer := range nt.Layers {
-			lyr := layer.(AxonLayer)
-			lyrNeurons := lyr.AsAxon().Neurons
-			for nrnIdx := range lyrNeurons {
-				nrn := &lyrNeurons[nrnIdx] // loops over all neurons, same as NeuronFun
-				fun(lyr, nrnIdx, nrn)
-			}
+// NeuronMapSequential applies function of given name to all neurons sequentially.
+func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string) {
+	nt.FunTimerStart(funame)
+	for _, layer := range nt.Layers {
+		lyr := layer.(AxonLayer)
+		lyrNeurons := lyr.AsAxon().Neurons
+		for nrnIdx := range lyrNeurons {
+			nrn := &lyrNeurons[nrnIdx]
+			fun(lyr, nrnIdx, nrn)
 		}
-	} else {
-		nt.FunTimerStart(funame)
-		// todo: ignoring wait for now..
-		nt.Threads.SendSpike.Run(func(st, ed int) {
-			for ni := st; ni < ed; ni++ {
-				nrn := &nt.Neurons[ni]
-				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
-				fun(ly, ni-ly.NeurStartIdx(), nrn)
-			}
-		})
-		nt.FunTimerStop(funame)
 	}
+	nt.FunTimerStop(funame)
 }
 
 //////////////////////////////////////////////////////////////
-// Timing reports -- could move all this to NetThreads
+// Timing reports
 
 // TimerReport reports the amount of time spent in each function, and in each thread
 func (nt *NetworkBase) TimerReport() {

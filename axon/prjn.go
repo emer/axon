@@ -706,8 +706,11 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
 	inhib := pj.Typ == emer.Inhib
 	for i := range syns {
-		recvIdx := synConIdxs[i] // looks like this is fully sequential
+		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
+		// TODO: race condition, multiple threads will write into the same recv neuron buffer
+		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
+		// better to re-write as matmul, or to re-write from recv neuron side.
 		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
 		if !inhib {
 			pj.PIBuf[int(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
@@ -733,6 +736,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 		pj.Gidx.Shift(1) // rotate buffer
 		return
 	}
+	// TODO: Race condition if one layer has multiple incoming prjns (common)
 	lpl := &rlay.Pools[0]
 	if len(rlay.Pools) == 1 {
 		lpl.Inhib.FFsRaw += pj.PIBuf[zi]
@@ -763,6 +767,8 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 // SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
+// Threading: Can be called concurrently for all prjns, since it updates synapses
+// (which are local to a single prjn).
 func (pj *Prjn) SendSynCa(ctime *Time) {
 	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return
@@ -808,6 +814,8 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 // RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
+// Threading: Can be called concurrently for all prjns, since it updates synapses
+// (which are local to a single prjn).
 func (pj *Prjn) RecvSynCa(ctime *Time) {
 	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
 		return

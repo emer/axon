@@ -169,7 +169,7 @@ type AxonLayer interface {
 	// SendSpike sends spike to receivers -- last step in Cycle, integrated
 	// the next time around.
 	// Writes to sending projections for this neuron.
-	SendSpike(ni int, nrn *Neuron, ctime *Time)
+	SendSpike(ctime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate
 	// network layer loop.

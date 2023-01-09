@@ -34,7 +34,6 @@ type NetworkBase struct {
 	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
 	Layers      emer.Layers           `desc:"list of layers"`
-	NThreads    int                   `desc:"number of threads to use for parallel threading -- typically only up to 4 is worthwile for large networks, with diminishing returns beyond 2, and 1 is best for small networks."`
 	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
 	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
 	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
@@ -56,7 +55,6 @@ type NetworkBase struct {
 func (nt *NetworkBase) InitName(net emer.Network, name string) {
 	nt.EmerNet = net
 	nt.Nm = name
-	nt.NThreads = 1
 }
 
 // emer.Network interface methods:
@@ -393,13 +391,6 @@ func (nt *NetworkBase) LateralConnectLayerPrjn(lay emer.Layer, pat prjn.Pattern,
 // Build constructs the layer and projection state based on the layer shapes
 // and patterns of interconnectivity
 func (nt *NetworkBase) Build() error {
-	// maxp := runtime.GOMAXPROCS(0)
-	// if maxp > 4 {
-	// 	maxp = 4
-	// 	runtime.GOMAXPROCS(maxp)
-	// }
-	// mpi.Printf("Running on: %d GOMAXPROCS\n", maxp)
-
 	nt.FunTimes = make(map[string]*timer.Time)
 
 	nt.LayClassMap = make(map[string][]string)
@@ -422,13 +413,8 @@ func (nt *NetworkBase) Build() error {
 	nt.Neurons = make([]Neuron, totNeurons) // never grows
 	nt.Prjns = make([]AxonPrjn, totPrjns)
 
-	// todo: not currently useful:
-	// nt.Threads.SetDefaults(totNeurons, totPrjns)
-	// just use nthreads -- LVis testing shows similar scaling for all funs
-	// except CycleNeuron which does keep scaling but in clusters you typically
-	// can't actually steal more threads anyway, so just go with simple:
-	nt.Threads.Set(2, nt.NThreads, nt.NThreads, nt.NThreads, nt.NThreads)
-	nt.ThreadsAlloc()
+	// we can't do this in Defaults(), since we need to know the number of neurons etc.
+	nt.Threads.SetDefaults(len(nt.Neurons), len(nt.Prjns), len(nt.Layers))
 
 	nidx := 0
 	pidx := 0
