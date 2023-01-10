@@ -304,13 +304,21 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 
 func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa int) *Network {
 	net := NewNetwork("MTTest")
+
+	/*
+	 * Input -> Hidden -> Hidden3 -> Output
+	 *       -> Hidden2 -^
+	 */
 	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
 	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer)
 	hiddenLayer2 := net.AddLayer("Hidden2", shape, emer.Hidden).(AxonLayer)
+	hiddenLayer3 := net.AddLayer("Hidden3", shape, emer.Hidden).(AxonLayer)
 	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
 	net.ConnectLayers(inputLayer, hiddenLayer, prjn.NewFull(), emer.Forward)
-	net.BidirConnectLayers(hiddenLayer, hiddenLayer2, prjn.NewFull())
-	net.BidirConnectLayers(hiddenLayer2, outputLayer, prjn.NewFull())
+	net.ConnectLayers(inputLayer, hiddenLayer2, prjn.NewFull(), emer.Forward)
+	net.BidirConnectLayers(hiddenLayer, hiddenLayer3, prjn.NewFull())
+	net.BidirConnectLayers(hiddenLayer2, hiddenLayer3, prjn.NewFull())
+	net.BidirConnectLayers(hiddenLayer3, outputLayer, prjn.NewFull())
 
 	net.Defaults() // Initializes threading defaults, but we override below
 	if err := net.Build(); err != nil {
