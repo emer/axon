@@ -63,7 +63,8 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
+func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
+	units int, verbose bool) {
 	net.InitName(net, "BenchNet")
 
 	squn := int(math.Sqrt(float64(units)))
@@ -93,9 +94,12 @@ func ConfigNet(net *axon.Network, threads, units int, verbose bool) {
 		panic(err)
 	}
 
-	// override defaults: neurons, sendSpike, synCa, learn
-	// TODO: Adjust these
-	net.Threads.Set(threads, threads, threads)
+	if threadNeuron == 0 && threadSendSpike == 0 && threadSynCa == 0 {
+		fmt.Print("Threading: using default values\n")
+	} else {
+		// override defaults: neurons, sendSpike, synCa
+		net.Threads.Set(threadNeuron, threadSendSpike, threadSynCa)
+	}
 
 	net.InitWts()
 }
