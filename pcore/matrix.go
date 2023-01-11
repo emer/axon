@@ -217,17 +217,15 @@ func (ly *MatrixLayer) GiFmACh(ctime *axon.Time) {
 	}
 }
 
-func (ly *MatrixLayer) GiFmSpikes(ctime *axon.Time) {
-	ly.Layer.GiFmSpikes(ctime)
-	ly.GiFmACh(ctime)
-}
-
 func (ly *MatrixLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	if !ly.HasMod {
 		ly.Layer.GInteg(ni, nrn, ctime)
+		// ly.GiFmACh(ctime) // todo: no place to hook this into base as of yet -- need to refactor the base impl and / or add a method to the AxonLayer interface
+		// however, HasMod is almost always true for any case where using GiFmACh
 		return
 	}
 	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.GiFmACh(ctime)
 	var mod float32
 	var modRaw float32
 	for _, p := range ly.RcvPrjns {
