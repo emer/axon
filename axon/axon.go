@@ -166,9 +166,9 @@ type AxonLayer interface {
 	// It is a hook for specialized algorithms -- empty at Axon base level
 	PostAct(ni int, nrn *Neuron, ctime *Time)
 
-	// SendSpike sends spike to receivers -- last step in Cycle, integrated
-	// the next time around.
-	// Writes to sending projections for this neuron.
+	// SendSpike transmits spikes from sending neurons to receivers.
+	// For each projection, we write into the receiver's spike buffer.
+	// -- last step in Cycle, integrated the next time around.
 	SendSpike(ctime *Time)
 
 	// CyclePost is called after the standard Cycle update, as a separate

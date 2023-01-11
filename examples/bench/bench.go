@@ -98,8 +98,12 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 		fmt.Print("Threading: using default values\n")
 	} else {
 		// override defaults: neurons, sendSpike, synCa
-		net.Threads.Set(threadNeuron, threadSendSpike, threadSynCa)
+		err := net.Threads.Set(threadNeuron, threadSendSpike, threadSynCa)
+		if err != nil {
+			panic(err)
+		}
 	}
+	// override defaults: neurons, sendSpike, synCa, learn
 
 	net.InitWts()
 }
@@ -217,7 +221,6 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 	tmr.Stop()
 	if verbose {
 		fmt.Printf("Took %6.4g secs for %v epochs, avg per epc: %6.4g\n", tmr.TotalSecs(), epcs, tmr.TotalSecs()/float64(epcs))
-		net.TimerReport()
 	} else {
 		fmt.Printf("%6.3g\n", tmr.TotalSecs())
 	}

@@ -708,9 +708,6 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	for i := range syns {
 		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
-		// TODO: race condition, multiple threads will write into the same recv neuron buffer
-		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
-		// better to re-write as matmul, or to re-write from recv neuron side.
 		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
 		if !inhib {
 			pj.PIBuf[int(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
