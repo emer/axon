@@ -1,18 +1,23 @@
 #!/bin/bash
 
 set -o errexit
-set -o nounset
 set -o pipefail
+set -o nounset
 
 # cd to the directory that contains this file
 cd "$(dirname "$0")"
+
+# if TMPDIR is not set, create a temp dir and use that
+if [[ -z "${TMPDIR:-}" ]]; then
+    TMPDIR=$(mktemp -d)
+fi
 
 exe=${TMPDIR}/bench
 
 go test -c -o ${exe} .
 
 # typically run with -threads=N arg as follows:
-# $./run_bench.sh -threads=2 -test.cpuprofile=cpu.prof
+# $./run_bench.sh -thrNeuron=4 -thrSendSpike=4 -thrSynCa=4 -test.cpuprofile=cpu.prof
 
 CMD=(${exe} -test.bench=BenchmarkBenchNetFull -writestats)
 
