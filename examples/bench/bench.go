@@ -221,6 +221,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 	tmr.Stop()
 	if verbose {
 		fmt.Printf("Took %6.4g secs for %v epochs, avg per epc: %6.4g\n", tmr.TotalSecs(), epcs, tmr.TotalSecs()/float64(epcs))
+		net.TimerReport()
 	} else {
 		fmt.Printf("%6.3g\n", tmr.TotalSecs())
 	}

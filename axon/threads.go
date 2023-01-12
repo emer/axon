@@ -9,8 +9,10 @@ import (
 	"log"
 	"math"
 	"runtime"
+	"sort"
 	"sync"
 
+	"github.com/emer/emergent/timer"
 	"github.com/goki/ki/ints"
 )
 
@@ -97,6 +99,7 @@ func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer), funame string) {
 // PrjnMapParallel applies function of given name to all projections
 // using nThreads go routines if nThreads > 1, otherwise runs sequentially.
 func (nt *NetworkBase) PrjnMapParallel(fun func(prjn AxonPrjn), funame string, nThreads int) {
+	nt.FunTimerStart(funame)
 	// run single-threaded, skipping the overhead of goroutines
 	if nThreads <= 1 {
 		nt.PrjnMapSeq(fun, funame)
@@ -107,18 +110,22 @@ func (nt *NetworkBase) PrjnMapParallel(fun func(prjn AxonPrjn), funame string, n
 			}
 		}, len(nt.Prjns), nThreads)
 	}
+	nt.FunTimerStop(funame)
 }
 
 // PrjnMapSeq applies function of given name to all projections sequentially.
 func (nt *NetworkBase) PrjnMapSeq(fun func(pj AxonPrjn), funame string) {
+	nt.FunTimerStart(funame)
 	for _, pj := range nt.Prjns {
 		fun(pj)
 	}
+	nt.FunTimerStop(funame)
 }
 
 // LayerMapParallel applies function of given name to all layers
 // using nThreads go routines if nThreads > 1, otherwise runs sequentially.
 func (nt *NetworkBase) LayerMapParallel(fun func(ly AxonLayer), funame string, nThreads int) {
+	nt.FunTimerStart(funame)
 	if nThreads <= 1 {
 		nt.LayerMapSeq(fun, funame)
 	} else {
@@ -128,18 +135,22 @@ func (nt *NetworkBase) LayerMapParallel(fun func(ly AxonLayer), funame string, n
 			}
 		}, len(nt.Layers), nThreads)
 	}
+	nt.FunTimerStop(funame)
 }
 
 // LayerMapSeq applies function of given name to all layers sequentially.
 func (nt *NetworkBase) LayerMapSeq(fun func(ly AxonLayer), funame string) {
+	nt.FunTimerStart(funame)
 	for _, ly := range nt.Layers {
 		fun(ly.(AxonLayer))
 	}
+	nt.FunTimerStop(funame)
 }
 
 // NeuronMapParallel applies function of given name to all neurons
 // using as many go routines as configured in NetThreads.Neurons.
 func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, nThreads int) {
+	nt.FunTimerStart(funame)
 	if nThreads <= 1 {
 		nt.NeuronMapSequential(fun, funame)
 	} else {
@@ -151,10 +162,12 @@ func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni int, nrn *Neu
 			}
 		}, len(nt.Neurons), nThreads)
 	}
+	nt.FunTimerStop(funame)
 }
 
 // NeuronMapSequential applies function of given name to all neurons sequentially.
 func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string) {
+	nt.FunTimerStart(funame)
 	for _, layer := range nt.Layers {
 		lyr := layer.(AxonLayer)
 		lyrNeurons := lyr.AsAxon().Neurons
@@ -163,4 +176,54 @@ func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni int, nrn *N
 			fun(lyr, nrnIdx, nrn)
 		}
 	}
+	nt.FunTimerStop(funame)
+}
+
+//////////////////////////////////////////////////////////////
+// Timing reports
+
+// TimerReport reports the amount of time spent in each function, and in each thread
+func (nt *NetworkBase) TimerReport() {
+	fmt.Printf("TimerReport: %v\n", nt.Nm)
+	fmt.Printf("\t%13s \t%7s\t%7s\n", "Function Name", "Secs", "Pct")
+	nfn := len(nt.FunTimes)
+	fnms := make([]string, nfn)
+	idx := 0
+	for k := range nt.FunTimes {
+		fnms[idx] = k
+		idx++
+	}
+	sort.StringSlice(fnms).Sort()
+	pcts := make([]float64, nfn)
+	tot := 0.0
+	for i, fn := range fnms {
+		pcts[i] = nt.FunTimes[fn].TotalSecs()
+		tot += pcts[i]
+	}
+	for i, fn := range fnms {
+		fmt.Printf("\t%13s \t%7.3f\t%7.1f\n", fn, pcts[i], 100*(pcts[i]/tot))
+	}
+	fmt.Printf("\t%13s \t%7.3f\n", "Total", tot)
+}
+
+// FunTimerStart starts function timer for given function name -- ensures creation of timer
+func (nt *NetworkBase) FunTimerStart(fun string) {
+	if !nt.RecFunTimes {
+		return
+	}
+	ft, ok := nt.FunTimes[fun]
+	if !ok {
+		ft = &timer.Time{}
+		nt.FunTimes[fun] = ft
+	}
+	ft.Start()
+}
+
+// FunTimerStop stops function timer -- timer must already exist
+func (nt *NetworkBase) FunTimerStop(fun string) {
+	if !nt.RecFunTimes {
+		return
+	}
+	ft := nt.FunTimes[fun]
+	ft.Stop()
 }
