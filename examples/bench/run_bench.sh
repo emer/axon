@@ -4,11 +4,6 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-# if TMPDIR is not set, call `mkdtemp` to create a temp dir
-if [[ -z "${TMPDIR:-}" ]]; then
-  TMPDIR=$(mktemp -d)
-fi
-
 # cd to the directory that contains this file
 cd "$(dirname "$0")"
 

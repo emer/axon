@@ -709,6 +709,7 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
 		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
+		// inhibitory neurons directly drive GiSyn, so we skip them for FS-FFFB calc
 		if !inhib {
 			pj.PIBuf[int(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
 		}

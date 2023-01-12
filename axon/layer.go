@@ -1293,6 +1293,7 @@ func (ly *Layer) SendSpike(ctime *Time) {
 		}
 		ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0 // note: this is immediate..
 		if nrn.SubPool > 0 {
+			// if nrn is in a subpool, we nevertheless also update the layer-level pool
 			ly.Pools[0].Inhib.FBsRaw += 1.0
 		}
 		for _, sp := range ly.SndPrjns {
