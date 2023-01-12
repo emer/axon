@@ -23,6 +23,7 @@ type MatrixParams struct {
 	GateThr      float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and Thal layers to count as having gated"`
 	BurstGain    float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
 	DipGain      float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
+	NoGoGeLrn    float32 `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
 	ModGain      float32 `desc:"gain factor multiplying the modulator input GeSyn conductances -- total modulation has a maximum of 1"`
 	AChInhib     float32 `desc:"strength of extra Gi current multiplied by MaxACh-ACh (ACh > Max = 0) -- ACh is disinhibitory on striatal firing"`
 	MaxACh       float32 `desc:"level of ACh at or above which AChInhib goes to 0 -- ACh typically ranges between 0-1"`
@@ -32,6 +33,7 @@ func (mp *MatrixParams) Defaults() {
 	mp.GateThr = 0.01
 	mp.BurstGain = 1
 	mp.DipGain = 1
+	mp.NoGoGeLrn = 1
 	mp.ModGain = 1
 	mp.AChInhib = 0
 	mp.MaxACh = 0.5
@@ -251,17 +253,20 @@ func (ly *MatrixLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 
 func (ly *MatrixLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.SpikeFmG(ni, nrn, ctime)
-	if ly.DaR == D1R {
+	// below achieves key learning requirement that NoGo neurons have some learning
+	// activity at time of Go gating, so if a negative dopamine signal happens,
+	// it will reinforce the NoGo pathway.
+
+	if ly.DaR == D1R { // Go neurons don't do this
 		return
 	}
-	// for NoGo layer, if Go has spiked, then need NoGo too
-	// if nrn.SpkMax > 0 {
-	// 	return
-	// }
+	if ly.Matrix.AChInhib > 0 && ly.ACh < 0.5*ly.Matrix.MaxACh { // don't do inhibited anyway
+		return
+	}
 
 	if ctime.Cycle >= ly.Act.Dt.MaxCycStart {
 		if nrn.Ge > nrn.SpkMax {
-			nrn.SpkMax = nrn.Ge
+			nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
 		}
 	}
 }
