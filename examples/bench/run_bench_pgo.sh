@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# This script runs the benchmark with and without PGO, to 
+# compare their runtimes
+
 set -o errexit
 set -o pipefail
 set -o nounset
@@ -21,7 +24,7 @@ fi
 exe=${TMPDIR}/bench
 CMD=("${exe}" -test.bench=BenchmarkBenchNetFull -writestats)
 go1.20rc2 clean -cache # no idea if this is necessary or not
-go1.20rc2 test -c -o "${exe}" -pgo=off -gcflags=-m . &> no_pgo.txt
+go1.20rc2 test -c -o "${exe}" -pgo=off -gcflags="all=-m -m" . &> no_pgo.txt
 
 ${CMD[@]} -epochs 10 -pats 10 -units 2048 -test.cpuprofile=no_pgo.pprof $*
 
@@ -30,7 +33,7 @@ ${CMD[@]} -epochs 10 -pats 10 -units 2048 -test.cpuprofile=no_pgo.pprof $*
 exe=${TMPDIR}/benchpgo
 CMD=("${exe}" -test.bench=BenchmarkBenchNetFull -writestats)
 go1.20rc2 clean -cache # no idea if this is necessary or not
-go1.20rc2 test -c -o "${exe}" -pgo no_pgo.pprof -gcflags=-m . &> pgo.txt
+go1.20rc2 test -c -o "${exe}" -pgo no_pgo.pprof -gcflags="all=-m -m" . &> pgo.txt
 
 ${CMD[@]} -epochs 10 -pats 10 -units 2048 -test.cpuprofile=pgo.pprof $*
 
