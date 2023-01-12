@@ -30,6 +30,8 @@ type Synapse struct {
 	CaP   float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD   float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	Tr    float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning."`
+
+	pad int32
 }
 
 //gosl: end synapse

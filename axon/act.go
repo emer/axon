@@ -147,8 +147,6 @@ func (ai *ActInitParams) Defaults() {
 	ai.GiVar = 0
 }
 
-//gosl: end act
-
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
 func (ai *ActInitParams) GeBase() float32 {
 	ge := ai.Ge
@@ -172,8 +170,6 @@ func (ai *ActInitParams) GiBase() float32 {
 	}
 	return gi
 }
-
-//gosl: start act
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  DecayParams
