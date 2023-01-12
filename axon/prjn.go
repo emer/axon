@@ -16,6 +16,7 @@ import (
 	"github.com/emer/emergent/ringidx"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
+	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -69,7 +70,7 @@ func (pj *Prjn) Defaults() {
 	pj.PrjnScale.Defaults()
 	pj.Learn.Defaults()
 	if pj.Typ == emer.Inhib {
-		pj.SWt.Adapt.On = false
+		pj.SWt.Adapt.On = slbool.False
 	}
 }
 
@@ -532,7 +533,7 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
-	if pj.SWt.Adapt.On && !rlay.AxonLay.IsTarget() {
+	if slbool.IsTrue(pj.SWt.Adapt.On) && !rlay.AxonLay.IsTarget() {
 		pj.SWtRescale()
 	}
 }
@@ -711,9 +712,9 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 		// TODO: race condition, multiple threads will write into the same recv neuron buffer
 		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
 		// better to re-write as matmul, or to re-write from recv neuron side.
-		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
+		pj.GBuf[recvIdx*delayBufSize+currDelayIdx] += sv
 		if !inhib {
-			pj.PIBuf[int(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
+			pj.PIBuf[pj.PIdxs[recvIdx]*delayBufSize+currDelayIdx] += sv
 		}
 	}
 }
@@ -724,11 +725,11 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Com.Delay
 	sz := del + 1
-	zi := int(pj.Gidx.Zi)
+	zi := pj.Gidx.Zi
 	if pj.Typ == emer.Inhib {
 		for ri := range pj.GVals {
 			gv := &pj.GVals[ri]
-			bi := ri*sz + zi
+			bi := int32(ri)*sz + zi
 			gv.GRaw = pj.GBuf[bi]
 			pj.GBuf[bi] = 0
 			gv.GSyn = rlay.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
@@ -744,7 +745,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 	} else {
 		for pi := range rlay.Pools {
 			pl := &rlay.Pools[pi]
-			bi := pi*sz + zi
+			bi := int32(pi)*sz + zi
 			sv := pj.PIBuf[bi]
 			pl.Inhib.FFsRaw += sv
 			lpl.Inhib.FFsRaw += sv
@@ -753,7 +754,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 	}
 	for ri := range pj.GVals {
 		gv := &pj.GVals[ri]
-		bi := ri*sz + zi
+		bi := int32(ri)*sz + zi
 		gv.GRaw = pj.GBuf[bi]
 		pj.GBuf[bi] = 0
 		gv.GSyn = rlay.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
@@ -770,7 +771,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
 func (pj *Prjn) SendSynCa(ctime *Time) {
-	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
+	if slbool.IsFalse(pj.Learn.Learn) || slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
 		return
 	}
 	kp := &pj.Learn.KinaseCa
@@ -804,7 +805,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 				continue
 			}
 			sy.CaUpT = cycTot
-			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
+			kp.CurCa(cycTot-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
 			sy.Ca = snCaSyn * rn.CaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
@@ -817,7 +818,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
 func (pj *Prjn) RecvSynCa(ctime *Time) {
-	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
+	if slbool.IsFalse(pj.Learn.Learn) || slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
 		return
 	}
 	kp := &pj.Learn.KinaseCa
@@ -851,7 +852,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 				continue
 			}
 			sy.CaUpT = cycTot
-			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
+			kp.CurCa(cycTot-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
 			sy.Ca = sn.CaSyn * rnCaSyn
 			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 		}
@@ -863,18 +864,18 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 
 // DWt computes the weight change (learning) -- on sending projections
 func (pj *Prjn) DWt(ctime *Time) {
-	if !pj.Learn.Learn {
+	if slbool.IsFalse(pj.Learn.Learn) {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
-		if pj.Learn.Trace.NeuronCa {
+		if slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
 			pj.DWtNeurSpkTheta(ctime)
 		} else {
 			pj.DWtSynSpkTheta(ctime)
 		}
 	} else {
-		if pj.Learn.Trace.NeuronCa {
+		if slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
 			pj.DWtTraceNeurSpkTheta(ctime)
 		} else {
 			pj.DWtTraceSynSpkTheta(ctime)
@@ -902,9 +903,9 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, _, caD := kp.CurCa(cycTot, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                       // caD reflects entire window
-			if sy.Wt == 0 {                                                 // failed con, no learn
+			kp.CurCa(cycTot, sy.CaUpT, &sy.CaM, &sy.CaP, &sy.CaD) // always update
+			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sy.CaD)          // caD reflects entire window
+			if sy.Wt == 0 {                                       // failed con, no learn
 				continue
 			}
 			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
@@ -975,11 +976,11 @@ func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(cycTot, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			if sy.Wt == 0 {                                                   // failed con, no learn
+			kp.CurCa(cycTot, sy.CaUpT, &sy.CaM, &sy.CaP, &sy.CaD) // always update
+			if sy.Wt == 0 {                                       // failed con, no learn
 				continue
 			}
-			err := caP - caD
+			err := sy.CaP - sy.CaD
 			// sb immediately -- enters into zero sum
 			if err > 0 {
 				err *= (1 - sy.LWt)
@@ -1087,7 +1088,7 @@ func (pj *Prjn) SlowAdapt(ctime *Time) {
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
 func (pj *Prjn) SWtFmWt() {
-	if !pj.Learn.Learn || !pj.SWt.Adapt.On {
+	if slbool.IsFalse(pj.Learn.Learn) || slbool.IsFalse(pj.SWt.Adapt.On) {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
@@ -1146,7 +1147,7 @@ func (pj *Prjn) SWtFmWt() {
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFmTrgAvg function must be called first.
 func (pj *Prjn) SynScale() {
-	if !pj.Learn.Learn || pj.Typ == emer.Inhib {
+	if slbool.IsFalse(pj.Learn.Learn) || pj.Typ == emer.Inhib {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()

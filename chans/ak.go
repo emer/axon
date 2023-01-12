@@ -115,6 +115,8 @@ func (ap *AKParams) Gak(m, h float32) float32 {
 //////////////////////////////////////////////////////////////////////
 //  Simplified AK
 
+//gosl: start chans
+
 // AKsParams provides a highly simplified stateless A-type K channel
 // that only has the voltage-gated activation (M) dynamic with a cutoff
 // that ends up capturing a close approximation to the much more complex AK function.
@@ -127,6 +129,8 @@ type AKsParams struct {
 	Mf   float32 `def:"0.075" desc:"multiplier for M -- determines slope of function"`
 	Voff float32 `def:"2" desc:"voltage offset in biological units for M function"`
 	Vmax float32 `def:-37" desc:"voltage level of maximum channel opening -- stays flat above that"`
+
+	pad, pad1, pad2 int32
 }
 
 // Defaults sets the parameters for distal dendrites
@@ -159,3 +163,5 @@ func (ap *AKsParams) MFmVnorm(v float32) float32 {
 func (ap *AKsParams) Gak(v float32) float32 {
 	return ap.Gbar * ap.MFmVnorm(v)
 }
+
+//gosl: end chans

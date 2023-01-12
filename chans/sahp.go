@@ -6,6 +6,8 @@ package chans
 
 import "github.com/goki/mat32"
 
+//gosl: start chans
+
 // SahpParams implements a slow afterhyperpolarizing (sAHP) channel,
 // It has a slowly accumulating calcium value, aggregated at the
 // theta cycle level, that then drives the logistic gating function,
@@ -22,6 +24,8 @@ type SahpParams struct {
 	TauMax float32 `def:"1" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
 	CaDt   float32 `view:"-" inactive:"+" desc:"1/Tau"`
 	DtMax  float32 `view:"-" inactive:"+" desc:"1/Tau"`
+
+	pad int32
 }
 
 // Defaults sets the parameters
@@ -49,7 +53,7 @@ func (mp *SahpParams) EFun(z float32) float32 {
 
 // NinfTauFmCa returns the target infinite-time N gate value and
 // time constant tau, from integrated Ca value
-func (mp *SahpParams) NinfTauFmCa(ca float32) (ninf, tau float32) {
+func (mp *SahpParams) NinfTauFmCa(ca float32, ninf, tau *float32) {
 	co := ca - mp.Off
 
 	// logical functions, but have signularity at Voff (vo = 0)
@@ -58,8 +62,8 @@ func (mp *SahpParams) NinfTauFmCa(ca float32) (ninf, tau float32) {
 
 	a := mp.DtMax * mp.Slope * mp.EFun(-co/mp.Slope)
 	b := mp.DtMax * mp.Slope * mp.EFun(co/mp.Slope)
-	tau = 1.0 / (a + b)
-	ninf = a * tau // a / (a+b)
+	*tau = 1.0 / (a + b)
+	*ninf = a * *tau // a / (a+b)
 	return
 }
 
@@ -72,7 +76,8 @@ func (mp *SahpParams) CaInt(caInt, ca float32) float32 {
 // DNFmCa returns the change in gating factor N based on integrated Ca
 // Omit this and just use ninf directly for theta-cycle updating.
 func (mp *SahpParams) DNFmV(ca, n float32) float32 {
-	ninf, tau := mp.NinfTauFmCa(ca)
+	var ninf, tau float32
+	mp.NinfTauFmCa(ca, &ninf, &tau)
 	dn := (ninf - n) / tau
 	return dn
 }
@@ -81,3 +86,5 @@ func (mp *SahpParams) DNFmV(ca, n float32) float32 {
 func (mp *SahpParams) GsAHP(n float32) float32 {
 	return mp.Gbar * n
 }
+
+//gosl: end chans

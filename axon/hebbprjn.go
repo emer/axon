@@ -4,6 +4,8 @@
 
 package axon
 
+import "github.com/goki/gosl/slbool"
+
 // HebbPrjn is a simple hebbian learning projection, using the CPCA Hebbian rule.
 // Note: when used with inhibitory projections, requires Learn.Trace.SubMean = 1
 type HebbPrjn struct {
@@ -23,7 +25,7 @@ func (pj *HebbPrjn) UpdateParams() {
 
 // DWt computes the hebbian weight change
 func (pj *HebbPrjn) DWt(ctime *Time) {
-	if !pj.Learn.Learn {
+	if slbool.IsFalse(pj.Learn.Learn) {
 		return
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()

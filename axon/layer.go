@@ -20,7 +20,7 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
-	"github.com/goki/ki/bitflag"
+	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/ki"
@@ -692,7 +692,7 @@ func (ly *Layer) InitActAvg() {
 	strg := ly.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Learn.TrgAvgAct.TrgRange.Range()
 	inc := float32(0)
-	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool {
+	if ly.HasPoolInhib() && slbool.IsTrue(ly.Learn.TrgAvgAct.Pool) {
 		nNy := ly.Shp.Dim(2)
 		nNx := ly.Shp.Dim(3)
 		nn := nNy * nNx
@@ -706,7 +706,7 @@ func (ly *Layer) InitActAvg() {
 		}
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
-			if ly.Learn.TrgAvgAct.Permute {
+			if slbool.IsTrue(ly.Learn.TrgAvgAct.Permute) {
 				erand.PermuteInts(porder)
 			}
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
@@ -731,7 +731,7 @@ func (ly *Layer) InitActAvg() {
 		for i := range porder {
 			porder[i] = i
 		}
-		if ly.Learn.TrgAvgAct.Permute {
+		if slbool.IsTrue(ly.Learn.TrgAvgAct.Permute) {
 			erand.PermuteInts(porder)
 		}
 		for ni := range ly.Neurons {
@@ -782,7 +782,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		plp := p.(AxonPrjn)
-		if !(plp.AsAxon().SWt.Init.Sym) {
+		if slbool.IsFalse(plp.AsAxon().SWt.Init.Sym) {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
@@ -794,7 +794,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		rlp := rpj.(AxonPrjn)
-		if !(rlp.AsAxon().SWt.Init.Sym) {
+		if slbool.IsFalse(rlp.AsAxon().SWt.Init.Sym) {
 			continue
 		}
 		plp.InitWtSym(rlp)
@@ -803,28 +803,28 @@ func (ly *Layer) InitWtSym() {
 
 // InitExt initializes external input state -- called prior to apply ext
 func (ly *Layer) InitExt() {
-	msk := bitflag.Mask32(int(NeuronHasExt), int(NeuronHasTarg), int(NeuronHasCmpr))
+	msk := NeuronHasExt | NeuronHasTarg | NeuronHasCmpr
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		nrn.Ext = 0
 		nrn.Target = 0
-		nrn.ClearMask(msk)
+		nrn.ClearFlag(msk)
 	}
 }
 
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
 // based on layer type, and whether input should be applied to Target (else Ext)
 func (ly *Layer) ApplyExtFlags() (clrmsk, setmsk int32, toTarg bool) {
-	clrmsk = bitflag.Mask32(int(NeuronHasExt), int(NeuronHasTarg), int(NeuronHasCmpr))
+	clrmsk = int32(NeuronHasExt | NeuronHasTarg | NeuronHasCmpr)
 	toTarg = false
 	if ly.Typ == emer.Target {
-		setmsk = bitflag.Mask32(int(NeuronHasTarg))
+		setmsk = int32(NeuronHasTarg)
 		toTarg = true
 	} else if ly.Typ == emer.Compare {
-		setmsk = bitflag.Mask32(int(NeuronHasCmpr))
+		setmsk = int32(NeuronHasCmpr)
 		toTarg = true
 	} else {
-		setmsk = bitflag.Mask32(int(NeuronHasExt))
+		setmsk = int32(NeuronHasExt)
 	}
 	return
 }
@@ -867,8 +867,8 @@ func (ly *Layer) ApplyExt2D(ext etensor.Tensor) {
 			} else {
 				nrn.Ext = vl
 			}
-			nrn.ClearMask(clrmsk)
-			nrn.SetMask(setmsk)
+			nrn.ClearFlag(NeuronFlags(clrmsk))
+			nrn.SetFlag(NeuronFlags(setmsk))
 		}
 	}
 }
@@ -894,8 +894,8 @@ func (ly *Layer) ApplyExt2Dto4D(ext etensor.Tensor) {
 			} else {
 				nrn.Ext = vl
 			}
-			nrn.ClearMask(clrmsk)
-			nrn.SetMask(setmsk)
+			nrn.ClearFlag(NeuronFlags(clrmsk))
+			nrn.SetFlag(NeuronFlags(setmsk))
 		}
 	}
 }
@@ -923,8 +923,8 @@ func (ly *Layer) ApplyExt4D(ext etensor.Tensor) {
 					} else {
 						nrn.Ext = vl
 					}
-					nrn.ClearMask(clrmsk)
-					nrn.SetMask(setmsk)
+					nrn.ClearFlag(NeuronFlags(clrmsk))
+					nrn.SetFlag(NeuronFlags(setmsk))
 				}
 			}
 		}
@@ -948,8 +948,8 @@ func (ly *Layer) ApplyExt1DTsr(ext etensor.Tensor) {
 		} else {
 			nrn.Ext = vl
 		}
-		nrn.ClearMask(clrmsk)
-		nrn.SetMask(setmsk)
+		nrn.ClearFlag(NeuronFlags(clrmsk))
+		nrn.SetFlag(NeuronFlags(setmsk))
 	}
 }
 
@@ -970,8 +970,8 @@ func (ly *Layer) ApplyExt1D(ext []float64) {
 		} else {
 			nrn.Ext = vl
 		}
-		nrn.ClearMask(clrmsk)
-		nrn.SetMask(setmsk)
+		nrn.ClearFlag(NeuronFlags(clrmsk))
+		nrn.SetFlag(NeuronFlags(setmsk))
 	}
 }
 
@@ -992,8 +992,8 @@ func (ly *Layer) ApplyExt1D32(ext []float32) {
 		} else {
 			nrn.Ext = vl
 		}
-		nrn.ClearMask(clrmsk)
-		nrn.SetMask(setmsk)
+		nrn.ClearFlag(NeuronFlags(clrmsk))
+		nrn.SetFlag(NeuronFlags(setmsk))
 	}
 }
 
@@ -1007,8 +1007,8 @@ func (ly *Layer) UpdateExtFlags() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ClearMask(clrmsk)
-		nrn.SetMask(setmsk)
+		nrn.ClearFlag(NeuronFlags(clrmsk))
+		nrn.SetFlag(NeuronFlags(setmsk))
 	}
 }
 
@@ -1155,7 +1155,7 @@ func (ly *Layer) GiFmSpikes(ctime *Time) {
 		if subPools {
 			lpl.Inhib.GeExtRaw += nrn.GeExt
 		}
-		if !ly.Act.Clamp.Add && nrn.HasFlag(NeuronHasExt) {
+		if slbool.IsFalse(ly.Act.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
 			pl.Inhib.Clamped = true
 			lpl.Inhib.Clamped = true
 		}
@@ -1216,7 +1216,7 @@ func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	if !ly.IsInputOrTarget() {
 		nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
 	}
-	nrn.GABAB, nrn.GABABx = ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+	ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
 }
@@ -1258,7 +1258,7 @@ func (ly *Layer) GFmRawSyn(ni int, nrn *Neuron, ctime *Time) {
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 	intdt := ly.Act.Dt.IntDt
-	if ctime.PlusPhase {
+	if slbool.IsTrue(ctime.PlusPhase) {
 		intdt *= 3.0
 	}
 	ly.Act.VmFmG(nrn)
@@ -1271,7 +1271,7 @@ func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 		}
 	}
 	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-	if !ctime.PlusPhase {
+	if slbool.IsFalse(ctime.PlusPhase) {
 		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 	}
@@ -1387,7 +1387,8 @@ func (ly *Layer) PlusPhase(ctime *Time) {
 		dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLRate = mlr * dlr
 		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
-		nrn.SahpN, _ = ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa)
+		var tau float32
+		ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
 		nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
 	}
 	for pi := range ly.Pools {
@@ -1511,7 +1512,7 @@ func (ly *Layer) IsInputOrTarget() bool {
 //  Learning
 
 func (ly *Layer) IsLearnTrgAvg() bool {
-	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || !ly.Learn.TrgAvgAct.On {
+	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || slbool.IsFalse(ly.Learn.TrgAvgAct.On) {
 		return false
 	}
 	return true
@@ -1550,7 +1551,7 @@ func (ly *Layer) DTrgSubMean() {
 	if submean == 0 {
 		return
 	}
-	if ly.HasPoolInhib() && ly.Learn.TrgAvgAct.Pool {
+	if ly.HasPoolInhib() && slbool.IsTrue(ly.Learn.TrgAvgAct.Pool) {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]

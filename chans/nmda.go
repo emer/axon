@@ -6,6 +6,8 @@ package chans
 
 import "github.com/goki/mat32"
 
+//gosl: start chans
+
 // NMDAParams control the NMDA dynamics, based on Jahr & Stevens (1990) equations
 // which are widely used in models, from Brunel & Wang (2001) to Sanders et al. (2013).
 // The overall conductance is a function of a voltage-dependent postsynaptic factor based
@@ -73,9 +75,10 @@ func (np *NMDAParams) CaFmV(v float32) float32 {
 
 // VFactors returns MgGFmV and CaFmV based on normalized membrane potential.
 // Just does the voltage conversion once.
-func (np *NMDAParams) VFactors(v float32) (mgg, cav float32) {
+func (np *NMDAParams) VFactors(v float32, mgg, cav *float32) {
 	vbio := VToBio(v)
-	return np.MgGFmVbio(vbio), np.CaFmVbio(vbio)
+	*mgg = np.MgGFmVbio(vbio)
+	*cav = np.CaFmVbio(vbio)
 }
 
 // NMDASyn returns the updated synaptic NMDA Glu binding
@@ -103,3 +106,5 @@ func (np *NMDAParams) SnmdaFmSpike(spike float32, snmdaO, snmdaI *float32) {
 		*snmdaI -= np.IDt * *snmdaI
 	}
 }
+
+//gosl: end chans

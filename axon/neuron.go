@@ -9,8 +9,6 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goki/ki/bitflag"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -18,6 +16,33 @@ import (
 // all variables prior must be 32 bit (int32)
 // Note: all non-float32 infrastructure variables must be at the start!
 const NeuronVarStart = 3
+
+//go:generate stringer -type=NeuronFlags
+
+// var KiT_NeurFlags = kit.Enums.AddEnum(NeuronFlagsNum, kit.BitFlag, nil)
+// func (ev NeuronFlags) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+// func (ev *NeuronFlags) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+//gosl: start neuron
+
+// NeuronFlags are bit-flags encoding relevant binary state for neurons
+type NeuronFlags int32
+
+// The neuron flags
+const (
+	// NeuronOff flag indicates that this neuron has been turned off (i.e., lesioned)
+	NeuronOff NeuronFlags = 1
+
+	// NeuronHasExt means the neuron has external input in its Ext field
+	NeuronHasExt NeuronFlags = 1 << 2
+
+	// NeuronHasTarg means the neuron has external target input in its Target field
+	NeuronHasTarg NeuronFlags = 1 << 3
+
+	// NeuronHasCmpr means the neuron has external comparison input in its Target field -- used for computing
+	// comparison statistics but does not drive neural activity ever
+	NeuronHasCmpr NeuronFlags = 1 << 4
+)
 
 // axon.Neuron holds all of the neuron (unit) level variables.
 // This is the most basic version, without any optional features.
@@ -113,6 +138,25 @@ type Neuron struct {
 	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 }
 
+func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
+	return nrn.Flags&flag != 0
+}
+
+func (nrn *Neuron) SetFlag(flag NeuronFlags) {
+	nrn.Flags |= flag
+}
+
+func (nrn *Neuron) ClearFlag(flag NeuronFlags) {
+	nrn.Flags &^= flag
+}
+
+// IsOff returns true if the neuron has been turned off (lesioned)
+func (nrn *Neuron) IsOff() bool {
+	return nrn.HasFlag(NeuronOff)
+}
+
+//gosl: end neuron
+
 var NeuronVars = []string{}
 
 var NeuronVarsMap map[string]int
@@ -198,56 +242,3 @@ func (nrn *Neuron) VarByName(varNm string) (float32, error) {
 	}
 	return nrn.VarByIndex(i), nil
 }
-
-func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
-	return bitflag.Has32(int32(nrn.Flags), int(flag))
-}
-
-func (nrn *Neuron) SetFlag(flag NeuronFlags) {
-	bitflag.Set32((*int32)(&nrn.Flags), int(flag))
-}
-
-func (nrn *Neuron) ClearFlag(flag NeuronFlags) {
-	bitflag.Clear32((*int32)(&nrn.Flags), int(flag))
-}
-
-func (nrn *Neuron) SetMask(mask int32) {
-	bitflag.SetMask32((*int32)(&nrn.Flags), mask)
-}
-
-func (nrn *Neuron) ClearMask(mask int32) {
-	bitflag.ClearMask32((*int32)(&nrn.Flags), mask)
-}
-
-// IsOff returns true if the neuron has been turned off (lesioned)
-func (nrn *Neuron) IsOff() bool {
-	return nrn.HasFlag(NeuronOff)
-}
-
-// NeuronFlags are bit-flags encoding relevant binary state for neurons
-type NeuronFlags int32
-
-//go:generate stringer -type=NeuronFlags
-
-var KiT_NeurFlags = kit.Enums.AddEnum(NeuronFlagsNum, kit.BitFlag, nil)
-
-func (ev NeuronFlags) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *NeuronFlags) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-// The neuron flags
-const (
-	// NeuronOff flag indicates that this neuron has been turned off (i.e., lesioned)
-	NeuronOff NeuronFlags = iota
-
-	// NeuronHasExt means the neuron has external input in its Ext field
-	NeuronHasExt
-
-	// NeuronHasTarg means the neuron has external target input in its Target field
-	NeuronHasTarg
-
-	// NeuronHasCmpr means the neuron has external comparison input in its Target field -- used for computing
-	// comparison statistics but does not drive neural activity ever
-	NeuronHasCmpr
-
-	NeuronFlagsNum
-)

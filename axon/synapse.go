@@ -15,6 +15,8 @@ import (
 // Note: all non-float32 infrastructure variables must be at the start!
 const SynapseVarStart = 4
 
+//gosl: start synapse
+
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
 	CaUpT int32   `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
@@ -29,6 +31,8 @@ type Synapse struct {
 	CaD   float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	Tr    float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning."`
 }
+
+//gosl: end synapse
 
 func (sy *Synapse) VarNames() []string {
 	return SynapseVars

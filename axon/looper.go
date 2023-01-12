@@ -10,6 +10,7 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
+	"github.com/goki/gosl/slbool"
 )
 
 // LooperStdPhases adds the minus and plus phases of the theta cycle,
@@ -19,7 +20,7 @@ import (
 // resets the state at start of trial
 func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, plusEnd int) {
 	minusPhase := looper.NewEvent("MinusPhase:Start", 0, func() {
-		time.PlusPhase = false
+		time.PlusPhase = slbool.False
 		time.NewPhase(false)
 	})
 	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1(time) })
@@ -27,7 +28,7 @@ func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, p
 	plusPhase := &looper.Event{Name: "PlusPhase", AtCtr: plusStart}
 	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase(time) })
 	plusPhase.OnEvent.Add("PlusPhase:Start", func() {
-		time.PlusPhase = true
+		time.PlusPhase = slbool.True
 		time.NewPhase(true)
 	})
 	plusPhaseEnd := looper.NewEvent("PlusPhase:End", plusEnd, func() {
@@ -41,7 +42,7 @@ func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, p
 		stack := man.Stacks[mode]
 		stack.Loops[etime.Trial].OnStart.Add("ResetState", func() {
 			net.NewState()
-			time.NewState(mode.String())
+			time.NewState(mode)
 		})
 	}
 }
@@ -67,7 +68,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, viewu
 		curMode := m // For closures.
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetTimeVal", func() {
-				time.Mode = curMode.String()
+				time.Mode = curMode
 			})
 		}
 	}

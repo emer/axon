@@ -6,6 +6,8 @@ package chans
 
 import "github.com/goki/mat32"
 
+//gosl: start chans
+
 // SKCaParams describes the small-conductance calcium-activated potassium channel
 // using the equations described in Fujita et al (2012) based on Gunay et al (2008)
 // (also Muddapu & Chakravarthy, 2021)
@@ -64,3 +66,5 @@ func (sp *SKCaParams) MFmCa(cai, mcur float32) float32 {
 	}
 	return mcur + sp.DeDt*(mas-mcur)
 }
+
+//gosl: end chans

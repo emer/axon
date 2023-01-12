@@ -13,30 +13,30 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[NeuronOff-0]
-	_ = x[NeuronHasExt-1]
-	_ = x[NeuronHasTarg-2]
-	_ = x[NeuronHasCmpr-3]
-	_ = x[NeuronFlagsNum-4]
+	_ = x[NeuronOff-1]
+	_ = x[NeuronHasExt-4]
+	_ = x[NeuronHasTarg-8]
+	_ = x[NeuronHasCmpr-16]
 }
 
-const _NeuronFlags_name = "NeuronOffNeuronHasExtNeuronHasTargNeuronHasCmprNeuronFlagsNum"
-
-var _NeuronFlags_index = [...]uint8{0, 9, 21, 34, 47, 61}
+const (
+	_NeuronFlags_name_0 = "NeuronOff"
+	_NeuronFlags_name_1 = "NeuronHasExt"
+	_NeuronFlags_name_2 = "NeuronHasTarg"
+	_NeuronFlags_name_3 = "NeuronHasCmpr"
+)
 
 func (i NeuronFlags) String() string {
-	if i < 0 || i >= NeuronFlags(len(_NeuronFlags_index)-1) {
+	switch {
+	case i == 1:
+		return _NeuronFlags_name_0
+	case i == 4:
+		return _NeuronFlags_name_1
+	case i == 8:
+		return _NeuronFlags_name_2
+	case i == 16:
+		return _NeuronFlags_name_3
+	default:
 		return "NeuronFlags(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _NeuronFlags_name[_NeuronFlags_index[i]:_NeuronFlags_index[i+1]]
-}
-
-func (i *NeuronFlags) FromString(s string) error {
-	for j := 0; j < len(_NeuronFlags_index)-1; j++ {
-		if s == _NeuronFlags_name[_NeuronFlags_index[j]:_NeuronFlags_index[j+1]] {
-			*i = NeuronFlags(j)
-			return nil
-		}
-	}
-	return errors.New("String: " + s + " is not a valid option for type: NeuronFlags")
 }

@@ -8,10 +8,14 @@ import (
 	"github.com/goki/mat32"
 )
 
+//gosl: start chans
+
 // VGCCParams control the standard L-type Ca channel
 type VGCCParams struct {
 	Gbar float32 `def:"0.02,0.12" desc:"strength of VGCC current -- 0.12 value is from Urakubo et al (2008) model -- best fits actual model behavior using axon equations (1.5 nominal in that model), 0.02 works better in practice for not getting stuck in high plateau firing"`
 	Ca   float32 `def:"25" desc:"calcium from conductance factor -- important for learning contribution of VGCC"`
+
+	pad, pad1 int32
 }
 
 func (np *VGCCParams) Defaults() {
@@ -55,14 +59,13 @@ func (np *VGCCParams) HFmV(vbio float32) float32 {
 
 // DMHFmV returns the change at msec update scale in M, H factors
 // as a function of V normalized (0-1)
-func (np *VGCCParams) DMHFmV(v, m, h float32) (float32, float32) {
+func (np *VGCCParams) DMHFmV(v, m, h float32, dm, dh *float32) {
 	vbio := VToBio(v)
 	if vbio > 0 {
 		vbio = 0
 	}
-	dm := (np.MFmV(vbio) - m) / 3.6
-	dh := (np.HFmV(vbio) - h) / 29.0
-	return dm, dh
+	*dm = (np.MFmV(vbio) - m) / 3.6
+	*dh = (np.HFmV(vbio) - h) / 29.0
 }
 
 // Gvgcc returns the VGCC net conductance from m, h activation and vm
@@ -76,3 +79,5 @@ func (np *VGCCParams) CaFmG(v, g, ca float32) float32 {
 	vbio := VToBio(v)
 	return -vbio * np.Ca * g
 }
+
+//gosl: end chans
