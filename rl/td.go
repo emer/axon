@@ -148,8 +148,8 @@ func (ly *TDRewIntegLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) 
 // between the TDRewIntegLayer activations in the minus and plus phase.
 type TDDaLayer struct {
 	Layer
-	SendDA   SendDA `desc:"list of layers to send dopamine to"`
-	RewInteg string `desc:"name of TDRewIntegLayer from which this computes the temporal derivative"`
+	SendDA   axon.SendDA `desc:"list of layers to send dopamine to"`
+	RewInteg string      `desc:"name of TDRewIntegLayer from which this computes the temporal derivative"`
 }
 
 var KiT_TDDaLayer = kit.Types.AddType(&TDDaLayer{}, LayerProps)

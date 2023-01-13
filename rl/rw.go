@@ -51,9 +51,9 @@ func (ly *RWPredLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 // RWPred prediction is also accessed directly from Rew layer to avoid any issues.
 type RWDaLayer struct {
 	Layer
-	SendDA    SendDA `desc:"list of layers to send dopamine to"`
-	RewLay    string `desc:"name of Reward-representing layer from which this computes DA -- if nothing clamped, no dopamine computed"`
-	RWPredLay string `desc:"name of RWPredLayer layer that is subtracted from the reward value"`
+	SendDA    axon.SendDA `desc:"list of layers to send dopamine to"`
+	RewLay    string      `desc:"name of Reward-representing layer from which this computes DA -- if nothing clamped, no dopamine computed"`
+	RWPredLay string      `desc:"name of RWPredLayer layer that is subtracted from the reward value"`
 }
 
 var KiT_RWDaLayer = kit.Types.AddType(&RWDaLayer{}, deep.LayerProps)
