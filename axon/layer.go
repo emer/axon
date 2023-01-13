@@ -35,7 +35,7 @@ type Layer struct {
 	Act     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
 	Inhib   InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
 	Learn   LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
-	DaMod   DaModParams     `view:"inline" desc:"dopamine modulation parameters"`
+	DaMod   DAModParams     `view:"inline" desc:"dopamine modulation parameters"`
 	DA      float32         `inactive:"+" desc:"dopamine value for this layer"`
 	Neurons []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
 	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`

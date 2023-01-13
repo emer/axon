@@ -26,22 +26,22 @@ const (
 
 var KiT_DARs = kit.Enums.AddEnum(DARsN, kit.NotBitFlag, nil)
 
-// DaModParams specifies parameters shared by all layers that receive dopaminergic modulatory input.
-type DaModParams struct {
+// DAModParams specifies parameters shared by all layers that receive dopaminergic modulatory input.
+type DAModParams struct {
 	On        bool    `desc:"whether to use dopamine modulation"`
 	DAR       DARs    `desc:"dopamine receptor type, D1 or D2"`
 	BurstGain float32 `desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
 	DipGain   float32 `desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
 }
 
-func (dp *DaModParams) Defaults() {
+func (dp *DAModParams) Defaults() {
 	dp.On = true
 	dp.BurstGain = 1
 	dp.DipGain = 1
 }
 
 // Gain returns effective DA gain factor given raw da +/- burst / dip value
-func (dp *DaModParams) Gain(da float32) float32 {
+func (dp *DAModParams) Gain(da float32) float32 {
 	if !dp.On {
 		return 0
 	}
