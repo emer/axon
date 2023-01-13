@@ -17,19 +17,19 @@ func AddBLALayers(nt *axon.Network, prefix string, pos bool, nUs, unY, unX int, 
 	if pos {
 		d1 := &BLALayer{}
 		nt.AddLayerInit(d1, prefix+"BLAPosAcqD1", []int{1, nUs, unY, unX}, BLA)
-		d1.DaMod.DAR = D1R
+		d1.DaMod.DAR = axon.D1R
 		d2 := &BLALayer{}
 		nt.AddLayerInit(d2, prefix+"BLAPosExtD2", []int{1, nUs, unY, unX}, BLA)
-		d2.DaMod.DAR = D2R
+		d2.DaMod.DAR = axon.D2R
 		acq = d1
 		ext = d2
 	} else {
 		d1 := &BLALayer{}
 		nt.AddLayerInit(d1, prefix+"BLANegExtD1", []int{1, nUs, unY, unX}, BLA)
-		d1.DaMod.DAR = D1R
+		d1.DaMod.DAR = axon.D1R
 		d2 := &BLALayer{}
 		nt.AddLayerInit(d2, prefix+"BLANegAcqD2", []int{1, nUs, unY, unX}, BLA)
-		d2.DaMod.DAR = D2R
+		d2.DaMod.DAR = axon.D2R
 		acq = d2
 		ext = d1
 	}

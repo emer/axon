@@ -35,6 +35,8 @@ type Layer struct {
 	Act     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
 	Inhib   InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
 	Learn   LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
+	DaMod   DaModParams     `view:"inline" desc:"dopamine modulation parameters"`
+	DA      float32         `inactive:"+" desc:"dopamine value for this layer"`
 	Neurons []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
 	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
 	ActAvg  ActAvgVals      `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
@@ -47,6 +49,7 @@ func (ly *Layer) Defaults() {
 	ly.Act.Defaults()
 	ly.Inhib.Defaults()
 	ly.Learn.Defaults()
+	ly.DaMod.Defaults()
 	ly.Inhib.Layer.On = true
 	ly.Inhib.Layer.Gi = 1.0
 	ly.Inhib.Pool.Gi = 1.0
@@ -751,6 +754,7 @@ func (ly *Layer) InitActAvg() {
 
 // InitActs fully initializes activation state -- only called automatically during InitWts
 func (ly *Layer) InitActs() {
+	ly.DA = 0
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		ly.Act.InitActs(nrn)
@@ -1200,7 +1204,11 @@ func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // reads pool Gi values
 func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
+	da := ly.DaMod.Gain(ly.DA)
 	ly.GFmSpikeRaw(ni, nrn, ctime)
+	daEff := da * nrn.CaSpkM // da effect interacts with spiking
+	nrn.GeRaw += daEff
+	nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)
 	// note: can add extra values to GeRaw and GeSyn here
 	ly.GFmRawSyn(ni, nrn, ctime)
 	ly.GiInteg(ni, nrn, ctime)

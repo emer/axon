@@ -30,7 +30,6 @@ func (bp *BLAParams) Defaults() {
 // BLALayer represents a basolateral amygdala layer
 type BLALayer struct {
 	rl.Layer
-	DaMod    DaModParams   `view:"inline" desc:"dopamine modulation parameters"`
 	BLA      BLAParams     `view:"inline" desc:"special BLA parameters"`
 	USLayers emer.LayNames `desc:"layer(s) that represent the presence of a US -- if the Max act of these layers is above .1, then USActive flag is set, which affects learning rate."`
 	ACh      float32       `inactive:"+" desc:"acetylcholine value from rl.RSalience cholinergic layer reflecting the absolute value of reward or CS predictions thereof -- modulates BLA learning to restrict to US and CS times"`
@@ -41,7 +40,6 @@ var KiT_BLALayer = kit.Types.AddType(&BLALayer{}, LayerProps)
 
 func (ly *BLALayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.DaMod.Defaults()
 	ly.BLA.Defaults()
 	ly.Typ = BLA
 
@@ -89,16 +87,6 @@ func (ly *BLALayer) USActiveFmUS(ctime *axon.Time) {
 	if mx > 0.1 {
 		ly.USActive = true
 	}
-}
-
-func (ly *BLALayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
-	da := ly.DaMod.Gain(ly.DA)
-	ly.GFmSpikeRaw(ni, nrn, ctime)
-	daEff := da * nrn.CaSpkM // da effect interacts with spiking
-	nrn.GeRaw += daEff
-	nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
 }
 
 func (ly *BLALayer) PlusPhase(ctime *axon.Time) {
