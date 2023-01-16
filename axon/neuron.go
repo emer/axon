@@ -15,7 +15,7 @@ import (
 // NeuronVarStart is the starting field where float32 variables start
 // all variables prior must be 32 bit (int32)
 // Note: all non-float32 infrastructure variables must be at the start!
-const NeuronVarStart = 3
+const NeuronVarStart = 4
 
 //go:generate stringer -type=NeuronFlags
 
@@ -49,17 +49,19 @@ const (
 // All variables accessible via Unit interface must be float32
 // and start at the top, in contiguous order
 type Neuron struct {
-	Flags   NeuronFlags `desc:"bit flags for binary state variables"`
-	LayIdx  int32       `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
-	SubPool int32       `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
-	Spike   float32     `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
-	Spiked  float32     `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
-	Act     float32     `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations."`
-	ActInt  float32     `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations."`
-	ActM    float32     `desc:"ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations."`
-	ActP    float32     `desc:"ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations."`
-	Ext     float32     `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
-	Target  float32     `desc:"target value: drives learning to produce this activation value"`
+	Flags      NeuronFlags `desc:"bit flags for binary state variables"`
+	LayIdx     uint32      `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
+	SubPool    uint32      `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
+	SubPoolAll uint32      `desc:"index in list of all pools"`
+
+	Spike  float32 `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
+	Spiked float32 `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
+	Act    float32 `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations."`
+	ActInt float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations."`
+	ActM   float32 `desc:"ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations."`
+	ActP   float32 `desc:"ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations."`
+	Ext    float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
+	Target float32 `desc:"target value: drives learning to produce this activation value"`
 
 	GeSyn  float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
 	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
@@ -136,6 +138,8 @@ type Neuron struct {
 	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
 	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
 	Gak      float32 `desc:"conductance of A-type K potassium channels"`
+
+	pad, pad1, pad2 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

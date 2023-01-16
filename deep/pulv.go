@@ -88,7 +88,7 @@ func (ly *PulvLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 		return
 	}
 	sly, issuper := dly.AxonLay.(*SuperLayer)
-	drvMax := dly.ActAvg.CaSpkP.Max
+	drvMax := dly.Vals.ActAvg.CaSpkP.Max
 	nonDriverPct := 1.0 - mat32.Min(1, drvMax/ly.Pulv.FullDriveAct) // how much non-driver to keep
 	drvAct := DriveAct(ni, dly, sly, issuper)
 	drvGe := ly.Pulv.DriveGe(drvAct)

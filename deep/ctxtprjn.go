@@ -96,7 +96,7 @@ func (pj *CTCtxtPrjn) GFmSpikes(ctime *axon.Time) {
 // SendCtxtGe sends the full Burst activation from sending neuron index si,
 // to integrate CtxtGe excitatory conductance on receivers
 func (pj *CTCtxtPrjn) SendCtxtGe(si int, burst float32) {
-	scdb := burst * pj.GScale.Scale
+	scdb := burst * pj.Params.GScale.Scale
 	nc := pj.SendConN[si]
 	st := pj.SendConIdxStart[si]
 	syns := pj.Syns[st : st+nc]

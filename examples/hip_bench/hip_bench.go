@@ -1441,8 +1441,8 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 
 	for _, lnm := range ss.LayStatNms {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
-		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.Vals.ActAvg.AvgMaxGeM))
+		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.Vals.ActAvg.ActMAvg))
 	}
 
 	// note: essential to use Go version of update when called from another goroutine
@@ -1730,8 +1730,8 @@ func (ss *Sim) LogTstEpc(dt *etable.Table) {
 			}
 		}
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.ActAvg.AvgMaxGeM))
-		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.ActAvg.ActMAvg))
+		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.Vals.ActAvg.AvgMaxGeM))
+		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.Vals.ActAvg.ActMAvg))
 	}
 
 	// base zero on testing performance!

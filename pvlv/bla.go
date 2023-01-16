@@ -113,7 +113,7 @@ func (ly *BLALayer) PlusPhase(ctime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkP, ly.ActAvg.CaSpkP.Max)
+		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkP, ly.Vals.ActAvg.CaSpkP.Max)
 		dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous
 		if nrn.CaSpkP-nrn.SpkPrv < 0 {
 			dlr *= ly.BLA.NegLRate

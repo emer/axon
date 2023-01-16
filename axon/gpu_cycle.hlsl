@@ -18,10 +18,21 @@
 [[vk::binding(0, 2)]] StructuredBuffer<Time> CTime;
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons;
 // [[vk::binding(2, 2)]] RWStructuredBuffer<Synapse> Synapses;
-// todo: pools, etc
+[[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools;
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals;
+
+void CycleNeuron(int ni, inout Neuron nrn, in Time ctime) {
+	Layers[nrn.LayIdx].CycleNeuron(ni, nrn, Pools[nrn.SubPoolAll], LayVals[nrn.LayIdx].ActAvg.GiMult, ctime);
+}
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) {
+	uint ns;
+	uint st;
+	Neurons.GetDimensions(ns, st);
+	if(idx.x < ns) {
+	
+	}
 	// Lay.CycleNeuron(idx.x, Neurons[idx.x], time[0], time[0].RandCtr.Uint2());
 	// if(idx.x == 0) {
 	// 	Lay.CycleTimeInc(time[0]);

@@ -481,11 +481,11 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	}
 	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
-		(*dwts)[idx+0] = ly.ActAvg.ActMAvg
-		(*dwts)[idx+1] = ly.ActAvg.ActPAvg
-		(*dwts)[idx+2] = ly.ActAvg.AvgMaxGeM
-		(*dwts)[idx+3] = ly.ActAvg.AvgMaxGiM
-		(*dwts)[idx+4] = ly.ActAvg.GiMult
+		(*dwts)[idx+0] = ly.Vals.ActAvg.ActMAvg
+		(*dwts)[idx+1] = ly.Vals.ActAvg.ActPAvg
+		(*dwts)[idx+2] = ly.Vals.ActAvg.AvgMaxGeM
+		(*dwts)[idx+3] = ly.Vals.ActAvg.AvgMaxGiM
+		(*dwts)[idx+4] = ly.Vals.ActAvg.GiMult
 		idx += 5
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
@@ -501,7 +501,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
-			(*dwts)[idx] = pj.GScale.Scale
+			(*dwts)[idx] = pj.Params.GScale.Scale
 			idx++
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
@@ -521,11 +521,11 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 	davg := 1 / float32(navg)
 	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
-		ly.ActAvg.ActMAvg = davg * dwts[idx+0]
-		ly.ActAvg.ActPAvg = davg * dwts[idx+1]
-		ly.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
-		ly.ActAvg.AvgMaxGiM = davg * dwts[idx+3]
-		ly.ActAvg.GiMult = davg * dwts[idx+4]
+		ly.Vals.ActAvg.ActMAvg = davg * dwts[idx+0]
+		ly.Vals.ActAvg.ActPAvg = davg * dwts[idx+1]
+		ly.Vals.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
+		ly.Vals.ActAvg.AvgMaxGiM = davg * dwts[idx+3]
+		ly.Vals.ActAvg.GiMult = davg * dwts[idx+4]
 		idx += 5
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
@@ -541,7 +541,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
-			pj.GScale.Scale = davg * dwts[idx]
+			pj.Params.GScale.Scale = davg * dwts[idx]
 			idx++
 			ns := len(pj.Syns)
 			for j := range pj.Syns {

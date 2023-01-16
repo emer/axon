@@ -24,23 +24,25 @@ import (
 // var SendPrjnPars []PrjnParams // Prjn params organized by Layer..SendPrjns
 // var RecvPrjnPars []PrjnParams // Prjn params organized by Layer..RecvPrjns
 
-// LayerPrjnIdxs contains index access into global arrays of PrjnParams
-// which are organized by layer and then by either sending or recv prjns
-type LayerPrjnIdxs struct {
+// LayerIdxs contains index access into global arrays for GPU.
+type LayerIdxs struct {
+	Pool   uint32 // start of pools for this layer -- first one is always the layer-wide pool
 	RecvSt uint32 // start index into RecvPrjnPars global array
 	RecvN  uint32 // number of recv projections
 	SendSt uint32 // start index into SendPrjnPars global array
 	SendN  uint32 // number of send projections
+
+	pad, pad1, pad2 uint32
 }
 
 // LayerParams contains all of the layer parameters.
 // These values must remain constant over the course of computation.
 // On the GPU, they are loaded into a uniform.
 type LayerParams struct {
-	Act      ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
-	Inhib    InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
-	Learn    LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
-	PrjnIdxs LayerPrjnIdxs   `view:"-" desc:"recv and send projection array access info"`
+	Act   ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
+	Inhib InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
+	Learn LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
+	Idxs  LayerIdxs       `view:"-" desc:"recv and send projection array access info"`
 }
 
 func (ly *LayerParams) Update() {
@@ -53,7 +55,7 @@ func (ly *LayerParams) Defaults() {
 	ly.Act.Defaults()
 	ly.Inhib.Defaults()
 	ly.Learn.Defaults()
-	ly.Inhib.Layer.On = true
+	ly.Inhib.Layer.On = slbool.True
 	ly.Inhib.Layer.Gi = 1.0
 	ly.Inhib.Pool.Gi = 1.0
 }

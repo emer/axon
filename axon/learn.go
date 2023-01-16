@@ -545,7 +545,7 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 
 // InitSynCa initializes synaptic calcium state, including CaUpT
 func InitSynCa(sy *Synapse) {
-	sy.CaUpT = -1
+	sy.CaUpT = 0
 	sy.Ca = 0
 	sy.CaM = 0
 	sy.CaP = 0

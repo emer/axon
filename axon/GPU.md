@@ -23,13 +23,16 @@ Set 2:  Storage
     
 TODO:
 
+* Neuron.SubPoolAll
+* Layer.LayerIdxs
+
 * Figure out global vars per above
-* Breakout prjn integration functions
+* Breakout prjn integration functions -- currently not working in Go mode because of this.
 * IsInputOrTarget needs to be compiled into layer params
 * Params need to apply directly to Params field
 * Params support for slbool
 * GUI support for slbool
-* slbool has string conversion methods
+* slbool needs string conversion methods
 * Build all cortical variants into base type
 
 

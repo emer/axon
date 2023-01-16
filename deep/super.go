@@ -102,8 +102,8 @@ func (ly *SuperLayer) BurstFmCaSpkP(ctime *axon.Time) {
 	if !ctime.PlusPhase {
 		return
 	}
-	actMax := ly.ActAvg.CaSpkP.Max
-	actAvg := ly.ActAvg.CaSpkP.Avg
+	actMax := ly.Vals.ActAvg.CaSpkP.Max
+	actAvg := ly.Vals.ActAvg.CaSpkP.Avg
 	thr := actAvg + ly.Burst.ThrRel*(actMax-actAvg)
 	thr = mat32.Max(thr, ly.Burst.ThrAbs)
 	for ni := range ly.Neurons {

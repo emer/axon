@@ -182,7 +182,7 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
 				}, elog.Scope(elog.AllModes, elog.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
@@ -195,7 +195,7 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat32(ly.Pools[0].GeM.Max)
 				}, elog.Scope(elog.AllModes, elog.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.AvgMaxGeM)
+					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
 				}}})
 		// ss.Logs.AddItem(&elog.Item{
 		// 	Name:  clnm + "_MaxGiM",
@@ -208,7 +208,7 @@ func (ss *Sim) ConfigLogItems() {
 		// 			ctx.SetFloat32(ly.Pools[0].GiM.Max)
 		// 		}, elog.Scope(elog.AllModes, elog.Epoch): func(ctx *elog.Context) {
 		// 			ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-		// 			ctx.SetFloat32(ly.ActAvg.AvgMaxGiM)
+		// 			ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGiM)
 		// 		}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifAvg",
@@ -350,7 +350,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				elog.Scope(elog.Train, elog.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
 				}}})
 	}
 

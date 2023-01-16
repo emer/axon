@@ -35,15 +35,14 @@ type Layer struct {
 	Params  LayerParams `desc:"all layer-level parameters -- these must remain constant once configured"`
 	Neurons []Neuron    `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
 	Pools   []Pool      `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
-	ActAvg  ActAvgVals  `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
-	CorSim  CorSimStats `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
+	Vals    LayerVals   `desc:"layer-level state values that are updated during computation"`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
 func (ly *Layer) Defaults() {
 	ly.Params.Defaults()
-	ly.ActAvg.GiMult = 1
+	ly.Vals.ActAvg.GiMult = 1
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
@@ -66,8 +65,8 @@ func (ly *Layer) Defaults() {
 // This is not called Update because it is not just about the
 // local values in the struct.
 func (ly *Layer) UpdateParams() {
-	if !ly.Is4D() && ly.Params.Inhib.Pool.On {
-		ly.Params.Inhib.Pool.On = false
+	if !ly.Is4D() && slbool.IsTrue(ly.Params.Inhib.Pool.On) {
+		ly.Params.Inhib.Pool.On = slbool.False
 	}
 	ly.Params.Update()
 	for _, pj := range ly.RcvPrjns {
@@ -78,7 +77,7 @@ func (ly *Layer) UpdateParams() {
 // HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
 // This is the proper check for using pool-level target average activations, for example.
 func (ly *Layer) HasPoolInhib() bool {
-	return ly.Params.Inhib.Pool.On
+	return slbool.IsTrue(ly.Params.Inhib.Pool.On)
 }
 
 // AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
@@ -385,14 +384,14 @@ func (ly *Layer) BuildSubPools() {
 	pi := 1
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
-			soff := ly.Shp.Offset([]int{py, px, 0, 0})
-			eoff := ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1
+			soff := int32(ly.Shp.Offset([]int{py, px, 0, 0}))
+			eoff := int32(ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
 			pl := &ly.Pools[pi]
 			pl.StIdx = soff
 			pl.EdIdx = eoff
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
-				nrn.SubPool = int32(pi)
+				nrn.SubPool = uint32(pi)
 			}
 			pi++
 		}
@@ -405,7 +404,7 @@ func (ly *Layer) BuildPools(nu int) error {
 	ly.Pools = make([]Pool, np)
 	lpl := &ly.Pools[0]
 	lpl.StIdx = 0
-	lpl.EdIdx = nu
+	lpl.EdIdx = int32(nu)
 	if np > 1 {
 		ly.BuildSubPools()
 	}
@@ -439,7 +438,7 @@ func (ly *Layer) Build() error {
 	// note: ly.Neurons are allocated by Network from global network pool
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		nrn.LayIdx = int32(ly.Idx)
+		nrn.LayIdx = uint32(ly.Idx)
 	}
 	err := ly.BuildPools(nu)
 	if err != nil {
@@ -462,11 +461,11 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte(fmt.Sprintf("\"MetaData\": {\n")))
 	depth++
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"ActMAvg\": \"%g\",\n", ly.ActAvg.ActMAvg)))
+	w.Write([]byte(fmt.Sprintf("\"ActMAvg\": \"%g\",\n", ly.Vals.ActAvg.ActMAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.ActAvg.ActPAvg)))
+	w.Write([]byte(fmt.Sprintf("\"ActPAvg\": \"%g\",\n", ly.Vals.ActAvg.ActPAvg)))
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.ActAvg.GiMult)))
+	w.Write([]byte(fmt.Sprintf("\"GiMult\": \"%g\"\n", ly.Vals.ActAvg.GiMult)))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
@@ -553,15 +552,15 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 	if lw.MetaData != nil {
 		if am, ok := lw.MetaData["ActMAvg"]; ok {
 			pv, _ := strconv.ParseFloat(am, 32)
-			ly.ActAvg.ActMAvg = float32(pv)
+			ly.Vals.ActAvg.ActMAvg = float32(pv)
 		}
 		if ap, ok := lw.MetaData["ActPAvg"]; ok {
 			pv, _ := strconv.ParseFloat(ap, 32)
-			ly.ActAvg.ActPAvg = float32(pv)
+			ly.Vals.ActAvg.ActPAvg = float32(pv)
 		}
 		if gi, ok := lw.MetaData["GiMult"]; ok {
 			pv, _ := strconv.ParseFloat(gi, 32)
-			ly.ActAvg.GiMult = float32(pv)
+			ly.Vals.ActAvg.GiMult = float32(pv)
 		}
 	}
 	if lw.Units != nil {
@@ -648,14 +647,14 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 // Also calls InitActs
 func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
-	ly.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
-	ly.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
-	ly.ActAvg.AvgMaxGeM = 1
-	ly.ActAvg.AvgMaxGiM = 1
-	ly.ActAvg.GiMult = 1
+	ly.Vals.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
+	ly.Vals.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
+	ly.Vals.ActAvg.AvgMaxGeM = 1
+	ly.Vals.ActAvg.AvgMaxGiM = 1
+	ly.Vals.ActAvg.GiMult = 1
 	ly.AxonLay.InitActAvg()
 	ly.AxonLay.InitActs()
-	ly.CorSim.Init()
+	ly.Vals.CorSim.Init()
 
 	ly.AxonLay.InitGScale()
 
@@ -1002,8 +1001,8 @@ func (ly *Layer) UpdateExtFlags() {
 // Does NOT call InitGScale()
 func (ly *Layer) NewState() {
 	pl := &ly.Pools[0]
-	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Params.Act.Dt.LongAvgDt)
-	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Params.Act.Dt.LongAvgDt)
+	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActMAvg, pl.ActM.Avg, ly.Params.Act.Dt.LongAvgDt)
+	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActPAvg, pl.ActP.Avg, ly.Params.Act.Dt.LongAvgDt)
 
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1031,11 +1030,11 @@ func (ly *Layer) InitGScale() {
 		savg := slay.Params.Inhib.ActAvg.Nominal
 		snu := len(slay.Neurons)
 		ncon := pj.RecvConNAvgMax.Avg
-		pj.GScale.Scale = pj.Params.PrjnScale.FullScale(savg, float32(snu), ncon)
+		pj.Params.GScale.Scale = pj.Params.PrjnScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a prjn, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
 		// then set the scale to 0.
-		// if pj.GScale == 0 {
+		// if pj.Params.GScale == 0 {
 		// 	continue
 		// }
 		if pj.Typ == emer.Inhib {
@@ -1049,19 +1048,19 @@ func (ly *Layer) InitGScale() {
 		pj := p.(AxonPrjn).AsAxon()
 		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
-				pj.GScale.Rel = pj.Params.PrjnScale.Rel / totGiRel
-				pj.GScale.Scale /= totGiRel
+				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGiRel
+				pj.Params.GScale.Scale /= totGiRel
 			} else {
-				pj.GScale.Rel = 0
-				pj.GScale.Scale = 0
+				pj.Params.GScale.Rel = 0
+				pj.Params.GScale.Scale = 0
 			}
 		} else {
 			if totGeRel > 0 {
-				pj.GScale.Rel = pj.Params.PrjnScale.Rel / totGeRel
-				pj.GScale.Scale /= totGeRel
+				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGeRel
+				pj.Params.GScale.Scale /= totGeRel
 			} else {
-				pj.GScale.Rel = 0
-				pj.GScale.Scale = 0
+				pj.Params.GScale.Rel = 0
+				pj.Params.GScale.Scale = 0
 			}
 		}
 	}
@@ -1129,7 +1128,7 @@ func (ly *Layer) GiFmSpikes(ctime *Time) {
 	subPools := (len(ly.Pools) > 1)
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		pl.Inhib.Clamped = false
+		pl.Inhib.Clamped = slbool.False
 	}
 	for ni := range ly.Neurons { // note: layer-level iterating across neurons
 		nrn := &ly.Neurons[ni]
@@ -1142,12 +1141,12 @@ func (ly *Layer) GiFmSpikes(ctime *Time) {
 			lpl.Inhib.GeExtRaw += nrn.GeExt
 		}
 		if slbool.IsFalse(ly.Params.Act.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
-			pl.Inhib.Clamped = true
-			lpl.Inhib.Clamped = true
+			pl.Inhib.Clamped = slbool.True
+			lpl.Inhib.Clamped = slbool.True
 		}
 	}
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
-	ly.Params.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
+	ly.Params.Inhib.Layer.Inhib(&lpl.Inhib, ly.Vals.ActAvg.GiMult)
 	ly.PoolGiFmSpikes(ctime)
 }
 
@@ -1158,11 +1157,11 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 		return
 	}
 	lpl := &ly.Pools[0]
-	lyInhib := ly.Params.Inhib.Layer.On
+	lyInhib := slbool.IsTrue(ly.Params.Inhib.Layer.On)
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
 		pl.Inhib.SpikesFmRaw(pl.NNeurons())
-		ly.Params.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
+		ly.Params.Inhib.Pool.Inhib(&pl.Inhib, ly.Vals.ActAvg.GiMult)
 		if lyInhib {
 			pl.Inhib.LayerMax(&lpl.Inhib)
 		} else {
@@ -1211,7 +1210,7 @@ func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time, randctr *sltype.Uint2)
 // and updates GABAB as well
 func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	pl := &ly.Pools[nrn.SubPool]
-	nrn.Gi = ly.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+	nrn.Gi = ly.Vals.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	nrn.SSGi = pl.Inhib.SSGi
 	nrn.SSGiDend = 0
 	if !ly.IsInputOrTarget() {
@@ -1233,7 +1232,7 @@ func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
 func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
 	// todo: do pjrn-specific versions then params versions
 	// ly.AxonLay.GInteg(ni, nrn, ctime)
-	ly.Params.CycleNeuron(ni, nrn, &ly.Pools[nrn.SubPool], ly.ActAvg.GiMult, ctime)
+	ly.Params.CycleNeuron(ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, ctime)
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -1285,8 +1284,8 @@ func (ly *Layer) AvgMaxVarByPool(varNm string, poolIdx int) minmax.AvgMax32 {
 		if nrn.IsOff() {
 			continue
 		}
-		vl := ly.UnitVal1D(vidx, ni)
-		am.UpdateVal(vl, ni)
+		vl := ly.UnitVal1D(vidx, int(ni))
+		am.UpdateVal(vl, int(ni))
 	}
 	am.CalcAvg()
 	return am
@@ -1301,13 +1300,13 @@ func (ly *Layer) AvgGeM(ctime *Time) {
 		pl.GiM = ly.AvgMaxVarByPool("GiM", pi)
 	}
 	lpl := &ly.Pools[0]
-	ly.ActAvg.AvgMaxGeM += ly.Params.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
-	ly.ActAvg.AvgMaxGiM += ly.Params.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
+	ly.Vals.ActAvg.AvgMaxGeM += ly.Params.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.Vals.ActAvg.AvgMaxGeM)
+	ly.Vals.ActAvg.AvgMaxGiM += ly.Params.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.Vals.ActAvg.AvgMaxGiM)
 }
 
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ctime *Time) {
-	ly.ActAvg.CaSpkPM = ly.AvgMaxVarByPool("CaSpkP", 0)
+	ly.Vals.ActAvg.CaSpkPM = ly.AvgMaxVarByPool("CaSpkP", 0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1328,15 +1327,15 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ctime *Time) {
-	ly.ActAvg.CaSpkP = ly.AvgMaxVarByPool("CaSpkP", 0)
-	ly.ActAvg.CaSpkD = ly.AvgMaxVarByPool("CaSpkD", 0)
+	ly.Vals.ActAvg.CaSpkP = ly.AvgMaxVarByPool("CaSpkP", 0)
+	ly.Vals.ActAvg.CaSpkD = ly.AvgMaxVarByPool("CaSpkD", 0)
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		mlr := ly.Params.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
+		mlr := ly.Params.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, ly.Vals.ActAvg.CaSpkD.Max)
 		dlr := ly.Params.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLRate = mlr * dlr
 		nrn.ActAvg += ly.Params.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
@@ -1434,9 +1433,9 @@ func (ly *Layer) CorSimFmActs() {
 	if dist != 0 {
 		cosv /= dist
 	}
-	ly.CorSim.Cor = cosv
+	ly.Vals.CorSim.Cor = cosv
 
-	ly.Params.Act.Dt.AvgVarUpdt(&ly.CorSim.Avg, &ly.CorSim.Var, ly.CorSim.Cor)
+	ly.Params.Act.Dt.AvgVarUpdt(&ly.Vals.CorSim.Avg, &ly.Vals.CorSim.Var, ly.Vals.CorSim.Cor)
 }
 
 // IsTarget returns true if this layer is a Target layer.
@@ -1592,10 +1591,10 @@ func (ly *Layer) SlowAdapt(ctime *Time) {
 
 // AdaptInhib adapts inhibition
 func (ly *Layer) AdaptInhib(ctime *Time) {
-	if !ly.Params.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
+	if slbool.IsFalse(ly.Params.Inhib.ActAvg.AdaptGi) || ly.AxonLay.IsInput() {
 		return
 	}
-	ly.Params.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.ActAvg.ActMAvg)
+	ly.Params.Inhib.ActAvg.Adapt(&ly.Vals.ActAvg.GiMult, ly.Vals.ActAvg.ActMAvg)
 }
 
 // AvgDifFmTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
@@ -1630,7 +1629,7 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 			}
 			nrn.AvgPct = nrn.ActAvg / plavg
 			nrn.AvgDif = nrn.AvgPct - nrn.TrgAvg
-			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), ni)
+			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), int(ni))
 		}
 		pl.AvgDif.CalcAvg()
 	}
@@ -1642,7 +1641,7 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 			if nrn.IsOff() {
 				continue
 			}
-			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), ni)
+			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), int(ni))
 		}
 		pl.AvgDif.CalcAvg()
 	}

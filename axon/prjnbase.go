@@ -29,15 +29,15 @@ type PrjnBase struct {
 	Recv            emer.Layer      `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*axon.Layer)"`
 	Pat             prjn.Pattern    `desc:"pattern of connectivity"`
 	Typ             emer.PrjnType   `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
-	RecvConN        []int32         `view:"-" desc:"number of recv connections for each neuron in the receiving layer, as a flat list"`
+	RecvConN        []uint32        `view:"-" desc:"number of recv connections for each neuron in the receiving layer, as a flat list"`
 	RecvConNAvgMax  minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of recv connections in the receiving layer"`
-	RecvConIdxStart []int32         `view:"-" desc:"starting index into ConIdx list for each neuron in receiving layer -- just a list incremented by ConN"`
-	RecvConIdx      []int32         `view:"-" desc:"index of other neuron on sending side of projection, ordered by the receiving layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
-	RecvSynIdx      []int32         `view:"-" desc:"index of synaptic state values for each recv unit x connection, for the receiver projection which does not own the synapses, and instead indexes into sender-ordered list"`
-	SendConN        []int32         `view:"-" desc:"number of sending connections for each neuron in the sending layer, as a flat list"`
+	RecvConIdxStart []uint32        `view:"-" desc:"starting index into ConIdx list for each neuron in receiving layer -- just a list incremented by ConN"`
+	RecvConIdx      []uint32        `view:"-" desc:"index of other neuron on sending side of projection, ordered by the receiving layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
+	RecvSynIdx      []uint32        `view:"-" desc:"index of synaptic state values for each recv unit x connection, for the receiver projection which does not own the synapses, and instead indexes into sender-ordered list"`
+	SendConN        []uint32        `view:"-" desc:"number of sending connections for each neuron in the sending layer, as a flat list"`
 	SendConNAvgMax  minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of sending connections in the sending layer"`
-	SendConIdxStart []int32         `view:"-" desc:"starting index into ConIdx list for each neuron in sending layer -- just a list incremented by ConN"`
-	SendConIdx      []int32         `view:"-" desc:"index of other neuron on receiving side of projection, ordered by the sending layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
+	SendConIdxStart []uint32        `view:"-" desc:"starting index into ConIdx list for each neuron in sending layer -- just a list incremented by ConN"`
+	SendConIdx      []uint32        `view:"-" desc:"index of other neuron on receiving side of projection, ordered by the sending layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
 }
 
 // emer.Prjn interface
@@ -119,18 +119,18 @@ func (ps *PrjnBase) BuildBase() error {
 		log.Printf("%v programmer error: total recv cons %v != total send cons %v\n", ps.String(), tconr, tcons)
 	}
 	// these are large allocs, as number of connections tends to be quadratic
-	ps.RecvConIdx = make([]int32, tconr)
-	ps.RecvSynIdx = make([]int32, tconr)
-	ps.SendConIdx = make([]int32, tcons)
+	ps.RecvConIdx = make([]uint32, tconr)
+	ps.RecvSynIdx = make([]uint32, tconr)
+	ps.SendConIdx = make([]uint32, tcons)
 
-	sconN := make([]int32, slen) // temporary mem needed to tracks cur n of sending cons
+	sconN := make([]uint32, slen) // temporary mem needed to tracks cur n of sending cons
 
 	cbits := cons.Values
 	for ri := 0; ri < rlen; ri++ {
 		rbi := ri * slen        // recv bit index
 		rtcn := ps.RecvConN[ri] // number of cons
 		rst := ps.RecvConIdxStart[ri]
-		rci := int32(0)
+		rci := uint32(0)
 		for si := 0; si < slen; si++ {
 			if !cbits.Index(rbi + si) { // no connection
 				continue
@@ -140,7 +140,7 @@ func (ps *PrjnBase) BuildBase() error {
 				log.Printf("%v programmer error: recv target total con number: %v exceeded at recv idx: %v, send idx: %v\n", ps.String(), rtcn, ri, si)
 				break
 			}
-			ps.RecvConIdx[rst+rci] = int32(si)
+			ps.RecvConIdx[rst+rci] = uint32(si)
 
 			sci := sconN[si]
 			stcn := ps.SendConN[si]
@@ -148,7 +148,7 @@ func (ps *PrjnBase) BuildBase() error {
 				log.Printf("%v programmer error: send target total con number: %v exceeded at recv idx: %v, send idx: %v\n", ps.String(), stcn, ri, si)
 				break
 			}
-			ps.SendConIdx[sst+sci] = int32(ri)
+			ps.SendConIdx[sst+sci] = uint32(ri)
 			ps.RecvSynIdx[rst+rci] = sst + sci
 			(sconN[si])++
 			rci++
@@ -159,15 +159,15 @@ func (ps *PrjnBase) BuildBase() error {
 
 // SetNIdxSt sets the *ConN and *ConIdxSt values given n tensor from Pat.
 // Returns total number of connections for this direction.
-func (ps *PrjnBase) SetNIdxSt(n *[]int32, avgmax *minmax.AvgMax32, idxst *[]int32, tn *etensor.Int32) int32 {
+func (ps *PrjnBase) SetNIdxSt(n *[]uint32, avgmax *minmax.AvgMax32, idxst *[]uint32, tn *etensor.Int32) uint32 {
 	ln := tn.Len()
 	tnv := tn.Values
-	*n = make([]int32, ln)
-	*idxst = make([]int32, ln)
-	idx := int32(0)
+	*n = make([]uint32, ln)
+	*idxst = make([]uint32, ln)
+	idx := uint32(0)
 	avgmax.Init()
 	for i := 0; i < ln; i++ {
-		nv := tnv[i]
+		nv := uint32(tnv[i])
 		(*n)[i] = nv
 		(*idxst)[i] = idx
 		idx += nv

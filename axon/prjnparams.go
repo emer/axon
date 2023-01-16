@@ -52,6 +52,15 @@ type PrjnIdxs struct {
 	pad, pad1 uint32
 }
 
+// GScaleVals holds the conductance scaling values.
+// These are computed once at start and remain constant thereafter.
+type GScaleVals struct {
+	Scale float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
+	Rel   float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
+
+	pad, pad1 float32
+}
+
 // PrjnParams contains all of the prjn parameters.
 // These values must remain constant over the course of computation.
 // On the GPU, they are loaded into a uniform.
@@ -60,6 +69,7 @@ type PrjnParams struct {
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
 	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
 	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
+	GScale    GScaleVals      `view:"inline" desc:"conductance scaling values"`
 	Idxs      PrjnIdxs        `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
 

@@ -85,7 +85,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 					ctx.SetFloat32(ly.Pools[0].GeM.Max)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.AvgMaxGeM)
+					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
 				}}})
 		lg.AddItem(&elog.Item{
 			Name:  clnm + "_CorDiff",
@@ -94,7 +94,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(1.0 - ly.CorSim.Cor)
+					ctx.SetFloat32(1.0 - ly.Vals.CorSim.Cor)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -112,7 +112,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
 				}}})
 	}
 }
@@ -223,7 +223,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.CaSpkPM.Avg)
+					ctx.SetFloat32(ly.Vals.ActAvg.CaSpkPM.Avg)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
@@ -235,7 +235,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.CaSpkPM.Max)
+					ctx.SetFloat32(ly.Vals.ActAvg.CaSpkPM.Max)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})

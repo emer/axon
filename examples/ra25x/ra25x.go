@@ -551,7 +551,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.GiMult)
+					ctx.SetFloat32(ly.Vals.ActAvg.GiMult)
 				}}})
 
 		// ss.Logs.AddItem(&elog.Item{

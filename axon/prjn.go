@@ -11,7 +11,6 @@ import (
 
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/ringidx"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/gosl/slbool"
@@ -42,12 +41,11 @@ type Prjn struct {
 	Syns   []Synapse  `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
 
 	// misc state variables below:
-	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
-	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	GBuf   []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- scale * weight is added with Com delay offset."`
-	PIBuf  []float32   `desc:"pooled inhibition ring buffer for each pool * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per pool in receiving layer."`
-	PIdxs  []int32     `desc:"indexes of subpool for each receiving neuron, for aggregating PIBuf -- this is redundant with Neuron.Subpool but provides faster local access in SendSpike."`
-	GVals  []PrjnGVals `desc:"projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed."`
+	Vals  PrjnVals    `view:"-" desc:"projection state values updated during computation"`
+	GBuf  []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- scale * weight is added with Com delay offset."`
+	PIBuf []float32   `desc:"pooled inhibition ring buffer for each pool * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per pool in receiving layer."`
+	PIdxs []uint32    `desc:"indexes of subpool for each receiving neuron, for aggregating PIBuf -- this is redundant with Neuron.Subpool but provides faster local access in SendSpike."`
+	GVals []PrjnGVals `desc:"projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed."`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -69,12 +67,6 @@ func (pj *Prjn) Defaults() {
 // UpdateParams updates all params given any changes that might have been made to individual values
 func (pj *Prjn) UpdateParams() {
 	pj.Params.Update()
-}
-
-// GScaleVals holds the conductance scaling and associated values needed for adapting scale
-type GScaleVals struct {
-	Scale float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
-	Rel   float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
 }
 
 func (pj *Prjn) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj }
@@ -224,7 +216,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte(fmt.Sprintf("\"MetaData\": {\n")))
 	depth++
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.GScale.Scale)))
+	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.Params.GScale.Scale)))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
@@ -328,7 +320,7 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 	if pw.MetaData != nil {
 		if gs, ok := pw.MetaData["GScale"]; ok {
 			pv, _ := strconv.ParseFloat(gs, 32)
-			pj.GScale.Scale = float32(pv)
+			pj.Params.GScale.Scale = float32(pv)
 		}
 	}
 	var err error
@@ -362,7 +354,7 @@ func (pj *Prjn) Build() error {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	rlen := rlay.Shape().Len()
 	pj.GVals = make([]PrjnGVals, rlen)
-	pj.PIdxs = make([]int32, rlen)
+	pj.PIdxs = make([]uint32, rlen)
 	for ni := range rlay.Neurons {
 		pj.PIdxs[ni] = rlay.Neurons[ni].SubPool
 	}
@@ -372,14 +364,14 @@ func (pj *Prjn) Build() error {
 
 // BuildGBuf builds GBuf with current Com Delay values, if not correct size
 func (pj *Prjn) BuildGBuffs() {
-	rlen := int32(pj.Recv.Shape().Len())
-	dl := int32(pj.Params.Com.Delay + 1)
+	rlen := uint32(pj.Recv.Shape().Len())
+	dl := pj.Params.Com.Delay + 1
 	gblen := dl * rlen
-	if pj.Gidx.Len == dl && int32(len(pj.GBuf)) == gblen {
+	if pj.Vals.Gidx.Len == dl && uint32(len(pj.GBuf)) == gblen {
 		return
 	}
-	pj.Gidx.Len = dl
-	pj.Gidx.Zi = 0
+	pj.Vals.Gidx.Len = dl
+	pj.Vals.Gidx.Zi = 0
 	pj.GBuf = make([]float32, gblen)
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	npools := len(rlay.Pools)
@@ -585,11 +577,11 @@ func (pj *Prjn) SWtRescale() {
 func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	rpj := rpjp.AsAxon()
 	slay := pj.Send.(AxonLayer).AsAxon()
-	ns := int32(len(slay.Neurons))
-	for si := int32(0); si < ns; si++ {
+	ns := uint32(len(slay.Neurons))
+	for si := uint32(0); si < ns; si++ {
 		nc := pj.SendConN[si]
 		st := pj.SendConIdxStart[si]
-		for ci := int32(0); ci < nc; ci++ {
+		for ci := uint32(0); ci < nc; ci++ {
 			sy := &pj.Syns[st+ci]
 			ri := pj.SendConIdx[st+ci]
 			// now we need to find the reciprocal synapse on rpj!
@@ -609,9 +601,9 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 				continue
 			}
 			// start at index proportional to si relative to rist
-			up := int32(0)
+			up := uint32(0)
 			if ried > rist {
-				up = int32(float32(rsnc) * float32(si-rist) / float32(ried-rist))
+				up = uint32(float32(rsnc) * float32(si-rist) / float32(ried-rist))
 			}
 			dn := up - 1
 
@@ -678,10 +670,10 @@ func (pj *Prjn) InitGBuffs() {
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
 func (pj *Prjn) SendSpike(sendIdx int) {
-	scale := pj.GScale.Scale
+	scale := pj.Params.GScale.Scale
 	maxDelay := pj.Params.Com.Delay
 	delayBufSize := maxDelay + 1
-	currDelayIdx := pj.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
+	currDelayIdx := uint32(pj.Vals.Gidx.Idx(maxDelay)) // index in ringbuffer to put new values -- end of line.
 	numCons := pj.SendConN[sendIdx]
 	startIdx := pj.SendConIdxStart[sendIdx]
 	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
@@ -706,16 +698,16 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Params.Com.Delay
 	sz := del + 1
-	zi := pj.Gidx.Zi
+	zi := pj.Vals.Gidx.Zi
 	if pj.Typ == emer.Inhib {
 		for ri := range pj.GVals {
 			gv := &pj.GVals[ri]
-			bi := int32(ri)*sz + zi
+			bi := uint32(ri)*sz + zi
 			gv.GRaw = pj.GBuf[bi]
 			pj.GBuf[bi] = 0
 			gv.GSyn = rlay.Params.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
 		}
-		pj.Gidx.Shift(1) // rotate buffer
+		pj.Vals.Gidx.Shift(1) // rotate buffer
 		return
 	}
 	// TODO: Race condition if one layer has multiple incoming prjns (common)
@@ -726,7 +718,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 	} else {
 		for pi := range rlay.Pools {
 			pl := &rlay.Pools[pi]
-			bi := int32(pi)*sz + zi
+			bi := uint32(pi)*sz + zi
 			sv := pj.PIBuf[bi]
 			pl.Inhib.FFsRaw += sv
 			lpl.Inhib.FFsRaw += sv
@@ -735,12 +727,12 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 	}
 	for ri := range pj.GVals {
 		gv := &pj.GVals[ri]
-		bi := int32(ri)*sz + zi
+		bi := uint32(ri)*sz + zi
 		gv.GRaw = pj.GBuf[bi]
 		pj.GBuf[bi] = 0
 		gv.GSyn = rlay.Params.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
 	}
-	pj.Gidx.Shift(1) // rotate buffer
+	pj.Vals.Gidx.Shift(1) // rotate buffer
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -756,7 +748,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
-	cycTot := int32(ctime.CycleTot)
+	cycTot := uint32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
@@ -803,7 +795,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
-	cycTot := int32(ctime.CycleTot)
+	cycTot := uint32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
@@ -929,7 +921,7 @@ func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 	kp := &pj.Params.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	cycTot := int32(ctime.CycleTot)
+	cycTot := uint32(ctime.CycleTot)
 	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]

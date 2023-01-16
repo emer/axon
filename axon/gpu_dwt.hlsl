@@ -35,7 +35,12 @@ void DWtSendNeurSyn(int snsi, in NeurSynIdx nsi, in Time ctime) {
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over SendNeurSynIdxs
-	DWtSendNeurSyn(idx.s, SendNeurSynIdxs[idx.x], CTime[0]);
+	uint ns;
+	uint st;
+	SendNeurSynIdxs.GetDimensions(ns, st);
+	if(idx.x < ns) {
+		DWtSendNeurSyn(idx.x, SendNeurSynIdxs[idx.x], CTime[0]);
+	}
 }
 
 

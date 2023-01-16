@@ -39,7 +39,7 @@ func (kp *CaDtParams) Update() {
 type CaParams struct {
 	SpikeG  float32 `def:"12" desc:"spiking gain factor for SynSpk learning rule variants.  This alters the overall range of values, keeping them in roughly the unit scale, and affects effective learning rate."`
 	UpdtThr float32 `def:"0.01,0.02,0.5" desc:"IMPORTANT: only used for SynSpkTheta learning mode: threshold on Act value for updating synapse-level Ca values -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default."`
-	MaxISI  int32   `def:"100" desc:"maximum ISI for integrating in Opt mode -- above that just set to 0"`
+	MaxISI  uint32  `def:"100" desc:"maximum ISI for integrating in Opt mode -- above that just set to 0"`
 
 	pad int32
 
@@ -76,11 +76,11 @@ func (kp *CaParams) FmCa(ca float32, caM, caP, caD *float32) {
 }
 
 // IntFmTime returns the interval from current time
-// and last update time, which is -1 if never updated
-// (in which case return is -1)
-func (kp *CaParams) IntFmTime(ctime, utime int32) int32 {
-	if utime < 0 {
-		return -1
+// and last update time, which is 0 if never updated
+// (in which case return is 0)
+func (kp *CaParams) IntFmTime(ctime, utime uint32) uint32 {
+	if utime == 0 {
+		return 0
 	}
 	return ctime - utime
 }
@@ -88,15 +88,15 @@ func (kp *CaParams) IntFmTime(ctime, utime int32) int32 {
 // CurCa returns the current Ca* values, dealing with updating for
 // optimized spike-time update versions.
 // ctime is current time in msec, and utime is last update time (-1 if never)
-func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD *float32) {
+func (kp *CaParams) CurCa(ctime, utime uint32, caM, caP, caD *float32) {
 	isi := kp.IntFmTime(ctime, utime)
-	if isi <= 0 {
+	if isi == 0 {
 		return
 	}
 	if isi > kp.MaxISI {
 		return
 	}
-	for i := int32(0); i < isi; i++ {
+	for i := uint32(0); i < isi; i++ {
 		kp.FmCa(0, caM, caP, caD) // just decay to 0
 	}
 	return
