@@ -9,6 +9,8 @@ import (
 	"github.com/emer/etable/minmax"
 )
 
+//gosl: start pool
+
 // Pool contains computed values for FS-FFFB inhibition,
 // and various other state values for layers
 // and pools (unit groups) that can be subject to inhibition
@@ -55,6 +57,8 @@ func (cd *CorSimStats) Init() {
 	cd.Cor = 0
 	cd.Avg = 0
 }
+
+//gosl: end pool
 
 /* todo: fixme below -- dumping this here so layer is clean
 

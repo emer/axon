@@ -9,32 +9,11 @@ import (
 	"github.com/goki/mat32"
 )
 
-// axon.InhibParams contains all the inhibition computation params and functions for basic Axon
-// This is included in axon.Layer to support computation.
-// This also includes other misc layer-level params such as expected average activation in the layer
-// which is used for Ge rescaling and potentially for adapting inhibition over time
-type InhibParams struct {
-	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
-	Layer  fsfffb.Params   `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
-	Pool   fsfffb.Params   `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
-	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
-}
+//gosl: hlsl inhib
+// #include "fsfffb.hlsl"
+//gosl: end inhib
 
-func (ip *InhibParams) Update() {
-	ip.ActAvg.Update()
-	ip.Layer.Update()
-	ip.Pool.Update()
-	ip.Topo.Update()
-}
-
-func (ip *InhibParams) Defaults() {
-	ip.ActAvg.Defaults()
-	ip.Layer.Defaults()
-	ip.Pool.Defaults()
-	ip.Topo.Defaults()
-	ip.Layer.Gi = 1.1
-	ip.Pool.Gi = 1.1
-}
+//gosl: start inhib
 
 ///////////////////////////////////////////////////////////////////////
 //  ActAvgParams
@@ -124,3 +103,32 @@ func (ti *TopoInhibParams) GiFmGeAct(ge, act, ff0 float32) float32 {
 	}
 	return ti.Gi * (ti.FF*ge + ti.FB*act)
 }
+
+// axon.InhibParams contains all the inhibition computation params and functions for basic Axon
+// This is included in axon.Layer to support computation.
+// This also includes other misc layer-level params such as expected average activation in the layer
+// which is used for Ge rescaling and potentially for adapting inhibition over time
+type InhibParams struct {
+	ActAvg ActAvgParams    `view:"inline" desc:"layer-level and pool-level average activation initial values and updating / adaptation thereof -- initial values help determine initial scaling factors."`
+	Layer  fsfffb.Params   `view:"inline" desc:"inhibition across the entire layer -- inputs generally use Gi = 0.8 or 0.9, 1.3 or higher for sparse layers"`
+	Pool   fsfffb.Params   `view:"inline" desc:"inhibition across sub-pools of units, for layers with 4D shape"`
+	Topo   TopoInhibParams `view:"inline" desc:"topographic inhibition computed from a gaussian-weighted circle -- over pools for 4D layers, or units for 2D layers"`
+}
+
+func (ip *InhibParams) Update() {
+	ip.ActAvg.Update()
+	ip.Layer.Update()
+	ip.Pool.Update()
+	ip.Topo.Update()
+}
+
+func (ip *InhibParams) Defaults() {
+	ip.ActAvg.Defaults()
+	ip.Layer.Defaults()
+	ip.Pool.Defaults()
+	ip.Topo.Defaults()
+	ip.Layer.Gi = 1.1
+	ip.Pool.Gi = 1.1
+}
+
+//gosl: end inhib

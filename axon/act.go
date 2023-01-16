@@ -5,12 +5,12 @@
 package axon
 
 import (
-	"math/rand"
-
 	"github.com/emer/axon/chans"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gosl/slbool"
+	"github.com/goki/gosl/slrand"
+	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/ints"
 	"github.com/goki/mat32"
 )
@@ -147,6 +147,8 @@ func (ai *ActInitParams) Defaults() {
 	ai.GiVar = 0
 }
 
+//gosl: end act
+
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
 func (ai *ActInitParams) GeBase() float32 {
 	ge := ai.Ge
@@ -170,6 +172,8 @@ func (ai *ActInitParams) GiBase() float32 {
 	}
 	return gi
 }
+
+//gosl: start act
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  DecayParams
@@ -319,12 +323,10 @@ func (an *SpikeNoiseParams) Defaults() {
 	an.Update()
 }
 
-//gosl: end act
-
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGe(p *float32) float32 {
-	*p *= rand.Float32()
+func (an *SpikeNoiseParams) PGe(p *float32, ni int, randctr *sltype.Uint2) float32 {
+	*p *= slrand.Float(randctr, uint32(ni))
 	if *p <= an.GeExpInt {
 		*p = 1
 		return an.Ge
@@ -334,16 +336,14 @@ func (an *SpikeNoiseParams) PGe(p *float32) float32 {
 
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGi(p *float32) float32 {
-	*p *= rand.Float32()
+func (an *SpikeNoiseParams) PGi(p *float32, ni int, randctr *sltype.Uint2) float32 {
+	*p *= slrand.Float(randctr, uint32(ni))
 	if *p <= an.GiExpInt {
 		*p = 1
 		return an.Gi
 	}
 	return 0
 }
-
-//gosl: start act
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  ClampParams
@@ -651,7 +651,7 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 
 // GeFmSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
-func (ac *ActParams) GeFmSyn(nrn *Neuron, geSyn, geExt float32) {
+func (ac *ActParams) GeFmSyn(ni int, nrn *Neuron, geSyn, geExt float32, randctr *sltype.Uint2) {
 	nrn.GeExt = 0
 	if slbool.IsTrue(ac.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
 		nrn.GeExt = nrn.Ext * ac.Clamp.Ge
@@ -669,32 +669,32 @@ func (ac *ActParams) GeFmSyn(nrn *Neuron, geSyn, geExt float32) {
 	if nrn.Ge < 0 {
 		nrn.Ge = 0
 	}
-	ac.GeNoise(nrn)
+	ac.GeNoise(ni, nrn, randctr)
 }
 
 // GeNoise updates nrn.GeNoise if active
-func (ac *ActParams) GeNoise(nrn *Neuron) {
+func (ac *ActParams) GeNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
 	if slbool.IsFalse(ac.Noise.On) || ac.Noise.Ge == 0 {
 		return
 	}
-	ge := ac.Noise.PGe(&nrn.GeNoiseP)
+	ge := ac.Noise.PGe(&nrn.GeNoiseP, ni, randctr)
 	nrn.GeNoise = ac.Dt.GeSynFmRaw(nrn.GeNoise, ge)
 	nrn.Ge += nrn.GeNoise
 }
 
 // GiNoise updates nrn.GiNoise if active
-func (ac *ActParams) GiNoise(nrn *Neuron) {
+func (ac *ActParams) GiNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
 	if slbool.IsFalse(ac.Noise.On) || ac.Noise.Gi == 0 {
 		return
 	}
-	gi := ac.Noise.PGi(&nrn.GiNoiseP)
+	gi := ac.Noise.PGi(&nrn.GiNoiseP, ni, randctr)
 	nrn.GiNoise = ac.Dt.GiSynFmRaw(nrn.GiNoise, gi)
 }
 
 // GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
-func (ac *ActParams) GiFmSyn(nrn *Neuron, giSyn float32) float32 {
-	ac.GiNoise(nrn)
+func (ac *ActParams) GiFmSyn(ni int, nrn *Neuron, giSyn float32, randctr *sltype.Uint2) float32 {
+	ac.GiNoise(ni, nrn, randctr)
 	if giSyn < 0 { // negative inhib G doesn't make any sense
 		giSyn = 0
 	}
@@ -857,7 +857,7 @@ func (sc *SynComParams) WtFailP(swt float32) float32 {
 	return sc.PFail * (1 - swt)
 }
 
-//gosl: end act
+//gosl: end act_prjn
 
 // WtFail returns true if synapse should fail, as function of SWt value (optionally)
 func (sc *SynComParams) WtFail(swt float32) bool {
@@ -868,8 +868,6 @@ func (sc *SynComParams) WtFail(swt float32) bool {
 	return erand.BoolP(fp)
 }
 
-//gosl: start act
-
 // Fail updates failure status of given weight, given SWt value
 func (sc *SynComParams) Fail(wt *float32, swt float32) {
 	if sc.PFail > 0 {
@@ -878,6 +876,8 @@ func (sc *SynComParams) Fail(wt *float32, swt float32) {
 		}
 	}
 }
+
+//gosl: start act_prjn
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  PrjnScaleParams

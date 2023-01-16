@@ -19,7 +19,6 @@ import (
 
 //gosl: hlsl learn_neur
 // #include "kinase.hlsl"
-// #include "neuron.hlsl"
 //gosl: end learn_neur
 
 //gosl: start learn_neur
@@ -327,6 +326,7 @@ func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
 // #include "minmax.hlsl"
 // #include "kinase.hlsl"
 // #include "synapse.hlsl"
+// #include "neuron.hlsl"
 //gosl: end learn
 
 //gosl: start learn
@@ -593,6 +593,10 @@ func (ls *LRateParams) Defaults() {
 }
 
 func (ls *LRateParams) Update() {
+	ls.UpdateEff()
+}
+
+func (ls *LRateParams) UpdateEff() {
 	ls.Eff = ls.Mod * ls.Sched * ls.Base
 }
 
@@ -600,7 +604,7 @@ func (ls *LRateParams) Update() {
 func (ls *LRateParams) Init() {
 	ls.Sched = 1
 	ls.Mod = 1
-	ls.Update()
+	ls.UpdateEff()
 }
 
 // TraceParams manages learning rate parameters

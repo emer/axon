@@ -5,11 +5,9 @@
 package axon
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
 
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
@@ -40,11 +38,8 @@ func (pv *PrjnGVals) Init() {
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnBase
-	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
-	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
-	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
-	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
-	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
+	Params PrjnParams `desc:"all prjn-level parameters -- these must remain constant once configured"`
+	Syns   []Synapse  `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
 
 	// misc state variables below:
 	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
@@ -65,21 +60,15 @@ func (pj *Prjn) AsAxon() *Prjn {
 }
 
 func (pj *Prjn) Defaults() {
-	pj.Com.Defaults()
-	pj.SWt.Defaults()
-	pj.PrjnScale.Defaults()
-	pj.Learn.Defaults()
+	pj.Params.Defaults()
 	if pj.Typ == emer.Inhib {
-		pj.SWt.Adapt.On = slbool.False
+		pj.Params.SWt.Adapt.On = slbool.False
 	}
 }
 
 // UpdateParams updates all params given any changes that might have been made to individual values
 func (pj *Prjn) UpdateParams() {
-	pj.Com.Update()
-	pj.PrjnScale.Update()
-	pj.SWt.Update()
-	pj.Learn.Update()
+	pj.Params.Update()
 }
 
 // GScaleVals holds the conductance scaling and associated values needed for adapting scale
@@ -94,15 +83,7 @@ func (pj *Prjn) SetType(typ emer.PrjnType) emer.Prjn   { pj.Typ = typ; return pj
 
 // AllParams returns a listing of all parameters in the Layer
 func (pj *Prjn) AllParams() string {
-	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n"
-	b, _ := json.MarshalIndent(&pj.Com, "", " ")
-	str += "Com: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.PrjnScale, "", " ")
-	str += "PrjnScale: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
-	str += "SWt: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
-	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
+	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n" + pj.Params.AllParams()
 	return str
 }
 
@@ -219,7 +200,7 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 		if sy.SWt == 0 {
 			sy.SWt = sy.Wt
 		}
-		sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 	return nil
 }
@@ -252,9 +233,9 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	// depth++
 	// w.Write(indent.TabBytes(depth))
 	// w.Write([]byte(fmt.Sprintf("\"SWtMeans\": [ ")))
-	// nn := len(pj.SWtMeans)
-	// for ni := range pj.SWtMeans {
-	// 	w.Write([]byte(fmt.Sprintf("%g", pj.SWtMeans[ni])))
+	// nn := len(pj.Params.SWtMeans)
+	// for ni := range pj.Params.SWtMeans {
+	// 	w.Write([]byte(fmt.Sprintf("%g", pj.Params.SWtMeans[ni])))
 	// 	if ni < nn-1 {
 	// 		w.Write([]byte(", "))
 	// 	}
@@ -392,7 +373,7 @@ func (pj *Prjn) Build() error {
 // BuildGBuf builds GBuf with current Com Delay values, if not correct size
 func (pj *Prjn) BuildGBuffs() {
 	rlen := int32(pj.Recv.Shape().Len())
-	dl := int32(pj.Com.Delay + 1)
+	dl := int32(pj.Params.Com.Delay + 1)
 	gblen := dl * rlen
 	if pj.Gidx.Len == dl && int32(len(pj.GBuf)) == gblen {
 		return
@@ -447,8 +428,8 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 						sy := &pj.Syns[rsi]
 						swt := swts.FloatVal1D((scst + ci) % wsz)
 						sy.SWt = float32(swt)
-						sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
-						sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+						sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
+						sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 					}
 				}
 			}
@@ -495,8 +476,8 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 			rsi := pj.RecvSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			sy.SWt = swt
-			sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
-			sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+			sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
+			sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 		}
 	}
 }
@@ -505,21 +486,21 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
 func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
-	pj.SWt.InitWtsSyn(sy, mean, spct)
+	pj.Params.SWt.InitWtsSyn(sy, mean, spct)
 }
 
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
-	pj.Learn.LRate.Init()
+	pj.Params.Learn.LRate.Init()
 	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	spct := pj.SWt.Init.SPct
+	spct := pj.Params.SWt.Init.SPct
 	if rlay.AxonLay.IsTarget() {
-		pj.SWt.Init.SPct = 0
+		pj.Params.SWt.Init.SPct = 0
 		spct = 0
 	}
-	smn := pj.SWt.Init.Mean
+	smn := pj.Params.SWt.Init.Mean
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
@@ -533,7 +514,7 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
-	if slbool.IsTrue(pj.SWt.Adapt.On) && !rlay.AxonLay.IsTarget() {
+	if slbool.IsTrue(pj.Params.SWt.Adapt.On) && !rlay.AxonLay.IsTarget() {
 		pj.SWtRescale()
 	}
 }
@@ -542,7 +523,7 @@ func (pj *Prjn) InitWts() {
 // using subtractive normalization.
 func (pj *Prjn) SWtRescale() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	smn := pj.SWt.Init.Mean
+	smn := pj.Params.SWt.Init.Mean
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
@@ -557,9 +538,9 @@ func (pj *Prjn) SWtRescale() {
 		for _, rsi := range rsidxs {
 			swt := pj.Syns[rsi].SWt
 			sum += swt
-			if swt <= pj.SWt.Limit.Min {
+			if swt <= pj.Params.SWt.Limit.Min {
 				nmin++
-			} else if swt >= pj.SWt.Limit.Max {
+			} else if swt >= pj.Params.SWt.Limit.Max {
 				nmax++
 			}
 		}
@@ -578,9 +559,9 @@ func (pj *Prjn) SWtRescale() {
 			}
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
-				if sy.SWt <= pj.SWt.Limit.Max {
-					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				if sy.SWt <= pj.Params.SWt.Limit.Max {
+					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
+					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		} else {
@@ -590,9 +571,9 @@ func (pj *Prjn) SWtRescale() {
 			}
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
-				if sy.SWt >= pj.SWt.Limit.Min {
-					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				if sy.SWt >= pj.Params.SWt.Limit.Min {
+					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
+					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		}
@@ -698,7 +679,7 @@ func (pj *Prjn) InitGBuffs() {
 // sending and receiving spikes.
 func (pj *Prjn) SendSpike(sendIdx int) {
 	scale := pj.GScale.Scale
-	maxDelay := pj.Com.Delay
+	maxDelay := pj.Params.Com.Delay
 	delayBufSize := maxDelay + 1
 	currDelayIdx := pj.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
 	numCons := pj.SendConN[sendIdx]
@@ -723,7 +704,7 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 // including pooled aggregation of spikes into Pools for FS-FFFB inhib.
 func (pj *Prjn) GFmSpikes(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	del := pj.Com.Delay
+	del := pj.Params.Com.Delay
 	sz := del + 1
 	zi := pj.Gidx.Zi
 	if pj.Typ == emer.Inhib {
@@ -732,7 +713,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 			bi := int32(ri)*sz + zi
 			gv.GRaw = pj.GBuf[bi]
 			pj.GBuf[bi] = 0
-			gv.GSyn = rlay.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
+			gv.GSyn = rlay.Params.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
 		}
 		pj.Gidx.Shift(1) // rotate buffer
 		return
@@ -757,7 +738,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 		bi := int32(ri)*sz + zi
 		gv.GRaw = pj.GBuf[bi]
 		pj.GBuf[bi] = 0
-		gv.GSyn = rlay.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
+		gv.GSyn = rlay.Params.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
 	}
 	pj.Gidx.Shift(1) // rotate buffer
 }
@@ -771,14 +752,14 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
 func (pj *Prjn) SendSynCa(ctime *Time) {
-	if slbool.IsFalse(pj.Learn.Learn) || slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
+	if slbool.IsFalse(pj.Params.Learn.Learn) || slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
 		return
 	}
-	kp := &pj.Learn.KinaseCa
+	kp := &pj.Params.Learn.KinaseCa
 	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
@@ -818,14 +799,14 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
 func (pj *Prjn) RecvSynCa(ctime *Time) {
-	if slbool.IsFalse(pj.Learn.Learn) || slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
+	if slbool.IsFalse(pj.Params.Learn.Learn) || slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
 		return
 	}
-	kp := &pj.Learn.KinaseCa
+	kp := &pj.Params.Learn.KinaseCa
 	cycTot := int32(ctime.CycleTot)
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
 		if rn.Spike == 0 {
@@ -864,18 +845,18 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 
 // DWt computes the weight change (learning) -- on sending projections
 func (pj *Prjn) DWt(ctime *Time) {
-	if slbool.IsFalse(pj.Learn.Learn) {
+	if slbool.IsFalse(pj.Params.Learn.Learn) {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
-		if slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
+		if slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
 			pj.DWtNeurSpkTheta(ctime)
 		} else {
 			pj.DWtSynSpkTheta(ctime)
 		}
 	} else {
-		if slbool.IsTrue(pj.Learn.Trace.NeuronCa) {
+		if slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
 			pj.DWtTraceNeurSpkTheta(ctime)
 		} else {
 			pj.DWtTraceSynSpkTheta(ctime)
@@ -887,13 +868,10 @@ func (pj *Prjn) DWt(ctime *Time) {
 // synaptically-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Trace version.
 func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
-	kp := &pj.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	cycTot := int32(ctime.CycleTot)
-	lr := pj.Learn.LRate.Eff
 	for si := range slay.Neurons {
-		// sn := &slay.Neurons[si]
+		sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
 		nc := int(pj.SendConN[si])
 		st := int(pj.SendConIdxStart[si])
@@ -903,20 +881,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			kp.CurCa(cycTot, sy.CaUpT, &sy.CaM, &sy.CaP, &sy.CaD) // always update
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sy.CaD)          // caD reflects entire window
-			if sy.Wt == 0 {                                       // failed con, no learn
-				continue
-			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
-			// note: trace ensures that nothing changes for inactive synapses..
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLRate * lr * err
+			pj.Params.DWtTraceSynSpkThetaSyn(sy, sn, rn, ctime)
 		}
 	}
 }
@@ -927,7 +892,7 @@ func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
 func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
@@ -940,8 +905,8 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
 			caD := rn.CaSpkD * sn.CaSpkD
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
-			if sy.Wt == 0 {                           // failed con, no learn
+			sy.Tr = pj.Params.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
+			if sy.Wt == 0 {                                  // failed con, no learn
 				continue
 			}
 			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
@@ -961,11 +926,11 @@ func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
 // synaptically-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Non-Trace version for target layers.
 func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
-	kp := &pj.Learn.KinaseCa
+	kp := &pj.Params.Learn.KinaseCa
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	cycTot := int32(ctime.CycleTot)
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		// sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -998,7 +963,7 @@ func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
 func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -1028,7 +993,7 @@ func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
 // This is called on *receiving* projections, prior to WtFmDwt.
 func (pj *Prjn) DWtSubMean(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	sm := pj.Learn.Trace.SubMean
+	sm := pj.Params.Learn.Trace.SubMean
 	if sm == 0 { // || rlay.AxonLay.IsTarget() { // sm default is now 0, so don't exclude
 		return
 	}
@@ -1072,8 +1037,8 @@ func (pj *Prjn) WtFmDWt(ctime *Time) {
 		for ci := range syns {
 			sy := &syns[ci]
 			sy.DSWt += sy.DWt
-			pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
-			pj.Com.Fail(&sy.Wt, sy.SWt)
+			pj.Params.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
+			pj.Params.Com.Fail(&sy.Wt, sy.SWt)
 		}
 	}
 }
@@ -1088,17 +1053,17 @@ func (pj *Prjn) SlowAdapt(ctime *Time) {
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
 func (pj *Prjn) SWtFmWt() {
-	if slbool.IsFalse(pj.Learn.Learn) || slbool.IsFalse(pj.SWt.Adapt.On) {
+	if slbool.IsFalse(pj.Params.Learn.Learn) || slbool.IsFalse(pj.Params.SWt.Adapt.On) {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
 		return
 	}
-	max := pj.SWt.Limit.Max
-	min := pj.SWt.Limit.Min
-	lr := pj.SWt.Adapt.LRate
-	dvar := pj.SWt.Adapt.DreamVar
+	max := pj.Params.SWt.Limit.Max
+	min := pj.Params.SWt.Limit.Min
+	lr := pj.Params.SWt.Adapt.LRate
+	dvar := pj.Params.SWt.Adapt.DreamVar
 	for ri := range rlay.Neurons {
 		nc := int(pj.RecvConN[ri])
 		if nc < 1 {
@@ -1117,17 +1082,17 @@ func (pj *Prjn) SWtFmWt() {
 			avgDWt += sy.DSWt
 		}
 		avgDWt /= float32(nc)
-		avgDWt *= pj.SWt.Adapt.SubMean
+		avgDWt *= pj.Params.SWt.Adapt.SubMean
 		if dvar > 0 {
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				if sy.Wt == 0 { // restore failed wts
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
-				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.SWt.Adapt.RndVar()
-				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.Params.SWt.Adapt.RndVar()
+				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 			}
 		} else {
 			for _, rsi := range rsidxs {
@@ -1135,10 +1100,10 @@ func (pj *Prjn) SWtFmWt() {
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				if sy.Wt == 0 { // restore failed wts
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
-				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
-				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
+				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 			}
 		}
 	}
@@ -1147,14 +1112,14 @@ func (pj *Prjn) SWtFmWt() {
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFmTrgAvg function must be called first.
 func (pj *Prjn) SynScale() {
-	if slbool.IsFalse(pj.Learn.Learn) || pj.Typ == emer.Inhib {
+	if slbool.IsFalse(pj.Params.Learn.Learn) || pj.Typ == emer.Inhib {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if !rlay.IsLearnTrgAvg() {
 		return
 	}
-	tp := &rlay.Learn.TrgAvgAct
+	tp := &rlay.Params.Learn.TrgAvgAct
 	lr := tp.SynScaleRate
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
@@ -1172,7 +1137,7 @@ func (pj *Prjn) SynScale() {
 			} else {
 				sy.LWt += sy.LWt * adif * sy.SWt
 			}
-			sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+			sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 		}
 	}
 }
@@ -1188,9 +1153,9 @@ func (pj *Prjn) SynFail(ctime *Time) {
 		for ci := range syns {
 			sy := &syns[ci]
 			if sy.Wt == 0 { // restore failed wts
-				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 			}
-			pj.Com.Fail(&sy.Wt, sy.SWt)
+			pj.Params.Com.Fail(&sy.Wt, sy.SWt)
 		}
 	}
 }
@@ -1199,14 +1164,14 @@ func (pj *Prjn) SynFail(ctime *Time) {
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
 func (pj *Prjn) LRateMod(mod float32) {
-	pj.Learn.LRate.Mod = mod
-	pj.Learn.LRate.Update()
+	pj.Params.Learn.LRate.Mod = mod
+	pj.Params.Learn.LRate.Update()
 }
 
 // LRateSched sets the schedule-based learning rate multiplier.
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
 func (pj *Prjn) LRateSched(sched float32) {
-	pj.Learn.LRate.Sched = sched
-	pj.Learn.LRate.Update()
+	pj.Params.Learn.LRate.Sched = sched
+	pj.Params.Learn.LRate.Update()
 }

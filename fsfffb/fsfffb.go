@@ -13,6 +13,8 @@ active at any time, where k is typically 10-20 percent of N.
 */
 package fsfffb
 
+//gosl: start fsfffb
+
 // Params parameterizes feedforward (FF) and feedback (FB) inhibition (FFFB)
 // based on incoming spikes (FF) and outgoing spikes (FB)
 // across Fast (PV+) and Slow (SST+) timescales.
@@ -94,3 +96,5 @@ func (fb *Params) Inhib(inh *Inhib, gimult float32) {
 	inh.Gi = inh.GiFmFSSS()
 	inh.SaveOrig()
 }
+
+//gosl: end fsfffb

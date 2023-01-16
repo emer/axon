@@ -13,12 +13,14 @@ import (
 // SynapseVarStart is the byte offset of fields in the Synapse structure
 // where the float32 named variables start.
 // Note: all non-float32 infrastructure variables must be at the start!
-const SynapseVarStart = 4
+const SynapseVarStart = 8
 
 //gosl: start synapse
 
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
+	RecvNeurIdx uint32 `desc:"receiving neuron index in global list of neurons"`
+
 	CaUpT int32   `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
 	Wt    float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`
 	LWt   float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`
@@ -30,8 +32,6 @@ type Synapse struct {
 	CaP   float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD   float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	Tr    float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning."`
-
-	pad int32
 }
 
 //gosl: end synapse

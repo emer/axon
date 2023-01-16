@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -21,6 +20,7 @@ import (
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gosl/slbool"
+	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/ki"
@@ -32,52 +32,44 @@ import (
 // and manages learning in the projections.
 type Layer struct {
 	LayerBase
-	Act     ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
-	Inhib   InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
-	Learn   LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
-	Neurons []Neuron        `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
-	Pools   []Pool          `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
-	ActAvg  ActAvgVals      `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
-	CorSim  CorSimStats     `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
+	Params  LayerParams `desc:"all layer-level parameters -- these must remain constant once configured"`
+	Neurons []Neuron    `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
+	Pools   []Pool      `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
+	ActAvg  ActAvgVals  `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
+	CorSim  CorSimStats `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
 
 func (ly *Layer) Defaults() {
-	ly.Act.Defaults()
-	ly.Inhib.Defaults()
-	ly.Learn.Defaults()
-	ly.Inhib.Layer.On = true
-	ly.Inhib.Layer.Gi = 1.0
-	ly.Inhib.Pool.Gi = 1.0
+	ly.Params.Defaults()
 	ly.ActAvg.GiMult = 1
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
 	switch ly.Typ {
 	case emer.Input:
-		ly.Act.Clamp.Ge = 1.5
-		ly.Inhib.Layer.Gi = 0.9
-		ly.Inhib.Pool.Gi = 0.9
-		ly.Learn.TrgAvgAct.SubMean = 0
+		ly.Params.Act.Clamp.Ge = 1.5
+		ly.Params.Inhib.Layer.Gi = 0.9
+		ly.Params.Inhib.Pool.Gi = 0.9
+		ly.Params.Learn.TrgAvgAct.SubMean = 0
 	case emer.Target:
-		ly.Act.Clamp.Ge = 0.8
-		ly.Learn.TrgAvgAct.SubMean = 0
-		// ly.Learn.RLRate.SigmoidMin = 1
+		ly.Params.Act.Clamp.Ge = 0.8
+		ly.Params.Learn.TrgAvgAct.SubMean = 0
+		// ly.Params.Learn.RLRate.SigmoidMin = 1
 	}
 }
 
-// todo: why is this UpdateParams and not just Update()?
-
-// UpdateParams updates all params given any changes that might have been made to individual values
-// including those in the receiving projections of this layer
+// UpdateParams updates all params given any changes that might
+// have been made to individual values including those in the
+// receiving projections of this layer.
+// This is not called Update because it is not just about the
+// local values in the struct.
 func (ly *Layer) UpdateParams() {
-	if !ly.Is4D() && ly.Inhib.Pool.On {
-		ly.Inhib.Pool.On = false
+	if !ly.Is4D() && ly.Params.Inhib.Pool.On {
+		ly.Params.Inhib.Pool.On = false
 	}
-	ly.Act.Update()
-	ly.Inhib.Update()
-	ly.Learn.Update()
+	ly.Params.Update()
 	for _, pj := range ly.RcvPrjns {
 		pj.UpdateParams()
 	}
@@ -86,7 +78,7 @@ func (ly *Layer) UpdateParams() {
 // HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
 // This is the proper check for using pool-level target average activations, for example.
 func (ly *Layer) HasPoolInhib() bool {
-	return ly.Inhib.Pool.On
+	return ly.Params.Inhib.Pool.On
 }
 
 // AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
@@ -109,16 +101,9 @@ func JsonToParams(b []byte) string {
 
 // AllParams returns a listing of all parameters in the Layer
 func (ly *Layer) AllParams() string {
-	str := "/////////////////////////////////////////////////\nLayer: " + ly.Nm + "\n"
-	b, _ := json.MarshalIndent(&ly.Act, "", " ")
-	str += "Act: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&ly.Inhib, "", " ")
-	str += "Inhib: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&ly.Learn, "", " ")
-	str += "Learn: {\n " + JsonToParams(b)
+	str := "/////////////////////////////////////////////////\nLayer: " + ly.Nm + "\n" + ly.Params.AllParams()
 	for _, pj := range ly.RcvPrjns {
-		pstr := pj.AllParams()
-		str += pstr
+		str += pj.AllParams()
 	}
 	return str
 }
@@ -663,8 +648,8 @@ func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
 // Also calls InitActs
 func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
-	ly.ActAvg.ActMAvg = ly.Inhib.ActAvg.Nominal
-	ly.ActAvg.ActPAvg = ly.Inhib.ActAvg.Nominal
+	ly.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
+	ly.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
 	ly.ActAvg.AvgMaxGeM = 1
 	ly.ActAvg.AvgMaxGiM = 1
 	ly.ActAvg.GiMult = 1
@@ -687,12 +672,12 @@ func (ly *Layer) InitWts() {
 func (ly *Layer) InitActAvg() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Learn.InitNeurCa(nrn)
+		ly.Params.Learn.InitNeurCa(nrn)
 	}
-	strg := ly.Learn.TrgAvgAct.TrgRange.Min
-	rng := ly.Learn.TrgAvgAct.TrgRange.Range()
+	strg := ly.Params.Learn.TrgAvgAct.TrgRange.Min
+	rng := ly.Params.Learn.TrgAvgAct.TrgRange.Range()
 	inc := float32(0)
-	if ly.HasPoolInhib() && slbool.IsTrue(ly.Learn.TrgAvgAct.Pool) {
+	if ly.HasPoolInhib() && slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Pool) {
 		nNy := ly.Shp.Dim(2)
 		nNx := ly.Shp.Dim(3)
 		nn := nNy * nNx
@@ -706,7 +691,7 @@ func (ly *Layer) InitActAvg() {
 		}
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
-			if slbool.IsTrue(ly.Learn.TrgAvgAct.Permute) {
+			if slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Permute) {
 				erand.PermuteInts(porder)
 			}
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
@@ -717,7 +702,7 @@ func (ly *Layer) InitActAvg() {
 				vi := porder[ni-pl.StIdx]
 				nrn.TrgAvg = strg + inc*float32(vi)
 				nrn.AvgPct = nrn.TrgAvg
-				nrn.ActAvg = ly.Inhib.ActAvg.Nominal * nrn.TrgAvg
+				nrn.ActAvg = ly.Params.Inhib.ActAvg.Nominal * nrn.TrgAvg
 				nrn.AvgDif = 0
 				nrn.DTrgAvg = 0
 			}
@@ -731,7 +716,7 @@ func (ly *Layer) InitActAvg() {
 		for i := range porder {
 			porder[i] = i
 		}
-		if slbool.IsTrue(ly.Learn.TrgAvgAct.Permute) {
+		if slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Permute) {
 			erand.PermuteInts(porder)
 		}
 		for ni := range ly.Neurons {
@@ -742,7 +727,7 @@ func (ly *Layer) InitActAvg() {
 			vi := porder[ni]
 			nrn.TrgAvg = strg + inc*float32(vi)
 			nrn.AvgPct = nrn.TrgAvg
-			nrn.ActAvg = ly.Inhib.ActAvg.Nominal * nrn.TrgAvg
+			nrn.ActAvg = ly.Params.Inhib.ActAvg.Nominal * nrn.TrgAvg
 			nrn.AvgDif = 0
 			nrn.DTrgAvg = 0
 		}
@@ -753,7 +738,7 @@ func (ly *Layer) InitActAvg() {
 func (ly *Layer) InitActs() {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Act.InitActs(nrn)
+		ly.Params.Act.InitActs(nrn)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -782,7 +767,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		plp := p.(AxonPrjn)
-		if slbool.IsFalse(plp.AsAxon().SWt.Init.Sym) {
+		if slbool.IsFalse(plp.AsAxon().Params.SWt.Init.Sym) {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
@@ -794,7 +779,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		rlp := rpj.(AxonPrjn)
-		if slbool.IsFalse(rlp.AsAxon().SWt.Init.Sym) {
+		if slbool.IsFalse(rlp.AsAxon().Params.SWt.Init.Sym) {
 			continue
 		}
 		plp.InitWtSym(rlp)
@@ -1017,8 +1002,8 @@ func (ly *Layer) UpdateExtFlags() {
 // Does NOT call InitGScale()
 func (ly *Layer) NewState() {
 	pl := &ly.Pools[0]
-	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Act.Dt.LongAvgDt)
-	ly.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Act.Dt.LongAvgDt)
+	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActMAvg, pl.ActM.Avg, ly.Params.Act.Dt.LongAvgDt)
+	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.ActAvg.ActPAvg, pl.ActP.Avg, ly.Params.Act.Dt.LongAvgDt)
 
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
@@ -1029,7 +1014,7 @@ func (ly *Layer) NewState() {
 		nrn.SpkMax = 0
 		nrn.SpkMaxCa = 0
 	}
-	ly.AxonLay.DecayState(ly.Act.Decay.Act, ly.Act.Decay.Glong)
+	ly.AxonLay.DecayState(ly.Params.Act.Decay.Act, ly.Params.Act.Decay.Glong)
 }
 
 // InitGScale computes the initial scaling factor for synaptic input conductances G,
@@ -1043,10 +1028,10 @@ func (ly *Layer) InitGScale() {
 		}
 		pj := p.(AxonPrjn).AsAxon()
 		slay := p.SendLay().(AxonLayer).AsAxon()
-		savg := slay.Inhib.ActAvg.Nominal
+		savg := slay.Params.Inhib.ActAvg.Nominal
 		snu := len(slay.Neurons)
 		ncon := pj.RecvConNAvgMax.Avg
-		pj.GScale.Scale = pj.PrjnScale.FullScale(savg, float32(snu), ncon)
+		pj.GScale.Scale = pj.Params.PrjnScale.FullScale(savg, float32(snu), ncon)
 		// reverting this change: if you want to eliminate a prjn, set the Off flag
 		// if you want to negate it but keep the relative factor in the denominator
 		// then set the scale to 0.
@@ -1054,9 +1039,9 @@ func (ly *Layer) InitGScale() {
 		// 	continue
 		// }
 		if pj.Typ == emer.Inhib {
-			totGiRel += pj.PrjnScale.Rel
+			totGiRel += pj.Params.PrjnScale.Rel
 		} else {
-			totGeRel += pj.PrjnScale.Rel
+			totGeRel += pj.Params.PrjnScale.Rel
 		}
 	}
 
@@ -1064,7 +1049,7 @@ func (ly *Layer) InitGScale() {
 		pj := p.(AxonPrjn).AsAxon()
 		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
-				pj.GScale.Rel = pj.PrjnScale.Rel / totGiRel
+				pj.GScale.Rel = pj.Params.PrjnScale.Rel / totGiRel
 				pj.GScale.Scale /= totGiRel
 			} else {
 				pj.GScale.Rel = 0
@@ -1072,7 +1057,7 @@ func (ly *Layer) InitGScale() {
 			}
 		} else {
 			if totGeRel > 0 {
-				pj.GScale.Rel = pj.PrjnScale.Rel / totGeRel
+				pj.GScale.Rel = pj.Params.PrjnScale.Rel / totGeRel
 				pj.GScale.Scale /= totGeRel
 			} else {
 				pj.GScale.Rel = 0
@@ -1083,15 +1068,15 @@ func (ly *Layer) InitGScale() {
 }
 
 // DecayState decays activation state by given proportion
-// (default decay values are ly.Act.Decay.Act, Glong)
+// (default decay values are ly.Params.Act.Decay.Act, Glong)
 func (ly *Layer) DecayState(decay, glong float32) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Act.DecayState(nrn, decay, glong)
-		// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
+		ly.Params.Act.DecayState(nrn, decay, glong)
+		// ly.Params.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	for pi := range ly.Pools {
@@ -1104,7 +1089,7 @@ func (ly *Layer) DecayState(decay, glong float32) {
 }
 
 // DecayCaLrnSpk decays neuron-level calcium learning and spiking variables
-// by given factor, which is typically ly.Act.Decay.Glong.
+// by given factor, which is typically ly.Params.Act.Decay.Glong.
 // Note: this is NOT called by default and is generally
 // not useful, causing variability in these learning factors as a function
 // of the decay parameter that then has impacts on learning rates etc.
@@ -1115,7 +1100,7 @@ func (ly *Layer) DecayCaLrnSpk(decay float32) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Learn.DecayCaLrnSpk(nrn, decay)
+		ly.Params.Learn.DecayCaLrnSpk(nrn, decay)
 	}
 }
 
@@ -1128,13 +1113,14 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Act.DecayState(nrn, decay, glong)
+		ly.Params.Act.DecayState(nrn, decay, glong)
 	}
 	pl.Inhib.Decay(decay)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
+//  note: most cycle-level code happens in LayerParams
 
 // GiFmSpikes integrates new inhibitory conductances from Spikes
 // at the layer and pool level
@@ -1155,13 +1141,13 @@ func (ly *Layer) GiFmSpikes(ctime *Time) {
 		if subPools {
 			lpl.Inhib.GeExtRaw += nrn.GeExt
 		}
-		if slbool.IsFalse(ly.Act.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
+		if slbool.IsFalse(ly.Params.Act.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
 			pl.Inhib.Clamped = true
 			lpl.Inhib.Clamped = true
 		}
 	}
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
-	ly.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
+	ly.Params.Inhib.Layer.Inhib(&lpl.Inhib, ly.ActAvg.GiMult)
 	ly.PoolGiFmSpikes(ctime)
 }
 
@@ -1172,11 +1158,11 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 		return
 	}
 	lpl := &ly.Pools[0]
-	lyInhib := ly.Inhib.Layer.On
+	lyInhib := ly.Params.Inhib.Layer.On
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
 		pl.Inhib.SpikesFmRaw(pl.NNeurons())
-		ly.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
+		ly.Params.Inhib.Pool.Inhib(&pl.Inhib, ly.ActAvg.GiMult)
 		if lyInhib {
 			pl.Inhib.LayerMax(&lpl.Inhib)
 		} else {
@@ -1186,39 +1172,6 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 	if !lyInhib {
 		lpl.Inhib.SaveOrig() // effective GiOrig
 	}
-}
-
-// CycleNeuron does one cycle (msec) of updating at the neuron level
-func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
-	ly.AxonLay.GInteg(ni, nrn, ctime)
-	ly.AxonLay.SpikeFmG(ni, nrn, ctime)
-	ly.AxonLay.PostAct(ni, nrn, ctime)
-	// note: this is now done separately to allow differential optimization:
-	// ly.AxonLay.SendSpike(ni, nrn, ctime)
-}
-
-// GInteg integrates conductances G over time (Ge, NMDA, etc).
-// reads pool Gi values
-func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time) {
-	ly.GFmSpikeRaw(ni, nrn, ctime)
-	// note: can add extra values to GeRaw and GeSyn here
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
-}
-
-// GiInteg adds Gi values from all sources including Pool computed inhib
-// and updates GABAB as well
-func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
-	pl := &ly.Pools[nrn.SubPool]
-	nrn.Gi = ly.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
-	nrn.SSGi = pl.Inhib.SSGi
-	nrn.SSGiDend = 0
-	if !ly.IsInputOrTarget() {
-		nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
-	}
-	ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
-	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
-	nrn.Gk += nrn.GgabaB // Gk was already init
 }
 
 // GFmSpikeRaw integrates G*Raw and G*Syn values for given neuron
@@ -1244,43 +1197,43 @@ func (ly *Layer) GFmSpikeRaw(ni int, nrn *Neuron, ctime *Time) {
 	}
 }
 
-// GFmRawSyn computes overall Ge and GiSyn conductances for neuron
-// from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
-func (ly *Layer) GFmRawSyn(ni int, nrn *Neuron, ctime *Time) {
-	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
-	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
-	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc) // sets nrn.GeExt too
-	ly.Act.GkFmVm(nrn)
-	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
+// GInteg integrates conductances G over time (Ge, NMDA, etc).
+// reads pool Gi values
+func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time, randctr *sltype.Uint2) {
+	ly.GFmSpikeRaw(ni, nrn, ctime)
+	// note: can add extra values to GeRaw and GeSyn here
+	// these are now in Params:
+	// ly.GFmRawSyn(ni, nrn, ctime, randctr)
+	// ly.GiInteg(ni, nrn, ctime)
 }
 
-// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-func (ly *Layer) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
-	intdt := ly.Act.Dt.IntDt
-	if slbool.IsTrue(ctime.PlusPhase) {
-		intdt *= 3.0
+// GiInteg adds Gi values from all sources including Pool computed inhib
+// and updates GABAB as well
+func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
+	pl := &ly.Pools[nrn.SubPool]
+	nrn.Gi = ly.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+	nrn.SSGi = pl.Inhib.SSGi
+	nrn.SSGiDend = 0
+	if !ly.IsInputOrTarget() {
+		nrn.SSGiDend = ly.Params.Act.Dend.SSGi * pl.Inhib.SSGi
 	}
-	ly.Act.VmFmG(nrn)
-	ly.Act.SpikeFmVm(nrn)
-	ly.Learn.CaFmSpike(nrn)
-	if ctime.Cycle >= ly.Act.Dt.MaxCycStart {
-		nrn.SpkMaxCa += ly.Learn.CaSpk.Dt.PDt * (nrn.CaSpkM - nrn.SpkMaxCa)
-		if nrn.SpkMaxCa > nrn.SpkMax {
-			nrn.SpkMax = nrn.SpkMaxCa
-		}
-	}
-	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-	if slbool.IsFalse(ctime.PlusPhase) {
-		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
-		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
-	}
+	ly.Params.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
+	nrn.GgabaB = ly.Params.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
+	nrn.Gk += nrn.GgabaB // Gk was already init
 }
 
 // PostAct does updates at neuron level after activation (spiking)
 // updated for all neurons.
 // It is a hook for specialized algorithms -- empty at Axon base level
 func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
+}
+
+// CycleNeuron does one cycle (msec) of updating at the neuron level
+// this is
+func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
+	// todo: do pjrn-specific versions then params versions
+	// ly.AxonLay.GInteg(ni, nrn, ctime)
+	ly.Params.CycleNeuron(ni, nrn, &ly.Pools[nrn.SubPool], ly.ActAvg.GiMult, ctime)
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -1348,8 +1301,8 @@ func (ly *Layer) AvgGeM(ctime *Time) {
 		pl.GiM = ly.AvgMaxVarByPool("GiM", pi)
 	}
 	lpl := &ly.Pools[0]
-	ly.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
-	ly.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
+	ly.ActAvg.AvgMaxGeM += ly.Params.Act.Dt.LongAvgDt * (lpl.GeM.Max - ly.ActAvg.AvgMaxGeM)
+	ly.ActAvg.AvgMaxGiM += ly.Params.Act.Dt.LongAvgDt * (lpl.GiM.Max - ly.ActAvg.AvgMaxGiM)
 }
 
 // MinusPhase does updating at end of the minus phase
@@ -1367,7 +1320,7 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 			nrn.SetFlag(NeuronHasExt)
 			nrn.ISI = -1 // get fresh update on plus phase output acts
 			nrn.ISIAvg = -1
-			nrn.ActInt = ly.Act.Init.Act // reset for plus phase
+			nrn.ActInt = ly.Params.Act.Init.Act // reset for plus phase
 		}
 	}
 	ly.AvgGeM(ctime)
@@ -1383,13 +1336,13 @@ func (ly *Layer) PlusPhase(ctime *Time) {
 			continue
 		}
 		nrn.ActP = nrn.ActInt
-		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
-		dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
+		mlr := ly.Params.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, ly.ActAvg.CaSpkD.Max)
+		dlr := ly.Params.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		nrn.RLRate = mlr * dlr
-		nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
+		nrn.ActAvg += ly.Params.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 		var tau float32
-		ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
-		nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
+		ly.Params.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
+		nrn.SahpCa = ly.Params.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -1483,7 +1436,7 @@ func (ly *Layer) CorSimFmActs() {
 	}
 	ly.CorSim.Cor = cosv
 
-	ly.Act.Dt.AvgVarUpdt(&ly.CorSim.Avg, &ly.CorSim.Var, ly.CorSim.Cor)
+	ly.Params.Act.Dt.AvgVarUpdt(&ly.CorSim.Avg, &ly.CorSim.Var, ly.CorSim.Cor)
 }
 
 // IsTarget returns true if this layer is a Target layer.
@@ -1512,7 +1465,7 @@ func (ly *Layer) IsInputOrTarget() bool {
 //  Learning
 
 func (ly *Layer) IsLearnTrgAvg() bool {
-	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || slbool.IsFalse(ly.Learn.TrgAvgAct.On) {
+	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || slbool.IsFalse(ly.Params.Learn.TrgAvgAct.On) {
 		return false
 	}
 	return true
@@ -1531,7 +1484,7 @@ func (ly *Layer) DTrgAvgFmErr() {
 	if !ly.IsLearnTrgAvg() {
 		return
 	}
-	lr := ly.Learn.TrgAvgAct.ErrLRate
+	lr := ly.Params.Learn.TrgAvgAct.ErrLRate
 	if lr == 0 {
 		return
 	}
@@ -1547,11 +1500,11 @@ func (ly *Layer) DTrgAvgFmErr() {
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
 func (ly *Layer) DTrgSubMean() {
-	submean := ly.Learn.TrgAvgAct.SubMean
+	submean := ly.Params.Learn.TrgAvgAct.SubMean
 	if submean == 0 {
 		return
 	}
-	if ly.HasPoolInhib() && slbool.IsTrue(ly.Learn.TrgAvgAct.Pool) {
+	if ly.HasPoolInhib() && slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Pool) {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
@@ -1607,7 +1560,7 @@ func (ly *Layer) DTrgSubMean() {
 // TrgAvgFmD updates TrgAvg from DTrgAvg
 // it is called by WtFmDWtLayer
 func (ly *Layer) TrgAvgFmD() {
-	if !ly.IsLearnTrgAvg() || ly.Learn.TrgAvgAct.ErrLRate == 0 {
+	if !ly.IsLearnTrgAvg() || ly.Params.Learn.TrgAvgAct.ErrLRate == 0 {
 		return
 	}
 	ly.DTrgSubMean()
@@ -1616,7 +1569,7 @@ func (ly *Layer) TrgAvgFmD() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.TrgAvg = ly.Learn.TrgAvgAct.TrgRange.ClipVal(nrn.TrgAvg + nrn.DTrgAvg)
+		nrn.TrgAvg = ly.Params.Learn.TrgAvgAct.TrgRange.ClipVal(nrn.TrgAvg + nrn.DTrgAvg)
 		nrn.DTrgAvg = 0
 	}
 }
@@ -1639,10 +1592,10 @@ func (ly *Layer) SlowAdapt(ctime *Time) {
 
 // AdaptInhib adapts inhibition
 func (ly *Layer) AdaptInhib(ctime *Time) {
-	if !ly.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
+	if !ly.Params.Inhib.ActAvg.AdaptGi || ly.AxonLay.IsInput() {
 		return
 	}
-	ly.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.ActAvg.ActMAvg)
+	ly.Params.Inhib.ActAvg.Adapt(&ly.ActAvg.GiMult, ly.ActAvg.ActMAvg)
 }
 
 // AvgDifFmTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
@@ -1736,12 +1689,12 @@ func (ly *Layer) LRateSched(sched float32) {
 // in both cases, it is generally best to have both parameters set to 0
 // at the start of learning
 func (ly *Layer) SetSubMean(trgAvg, prjn float32) {
-	ly.Learn.TrgAvgAct.SubMean = trgAvg
+	ly.Params.Learn.TrgAvgAct.SubMean = trgAvg
 	for _, p := range ly.RcvPrjns {
 		// if p.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).AsAxon().Learn.Trace.SubMean = prjn
+		p.(AxonPrjn).AsAxon().Params.Learn.Trace.SubMean = prjn
 	}
 }
 
@@ -1774,14 +1727,14 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 
 // PctUnitErr returns the proportion of units where the thresholded value of
 // Target (Target or Compare types) or ActP does not match that of ActM.
-// If Act > ly.Act.Clamp.ErrThr, effective activity = 1 else 0
+// If Act > ly.Params.Act.Clamp.ErrThr, effective activity = 1 else 0
 // robust to noisy activations.
 func (ly *Layer) PctUnitErr() float64 {
 	nn := len(ly.Neurons)
 	if nn == 0 {
 		return 0
 	}
-	thr := ly.Act.Clamp.ErrThr
+	thr := ly.Params.Act.Clamp.ErrThr
 	wrong := 0
 	n := 0
 	for ni := range ly.Neurons {

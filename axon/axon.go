@@ -156,10 +156,10 @@ type AxonLayer interface {
 
 	// GInteg integrates conductances G over time (Ge, NMDA, etc).
 	// reads pool Gi values
-	GInteg(ni int, nrn *Neuron, ctime *Time)
+	// GInteg(ni int, nrn *Neuron, ctime *Time)
 
 	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-	SpikeFmG(ni int, nrn *Neuron, ctime *Time)
+	// SpikeFmG(ni int, nrn *Neuron, ctime *Time)
 
 	// PostAct does updates at neuron level after activation (spiking)
 	// updated for all neurons.

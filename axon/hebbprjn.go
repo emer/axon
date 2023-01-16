@@ -4,6 +4,10 @@
 
 package axon
 
+/*
+
+todo: for GPU, must have this in base case
+
 import "github.com/goki/gosl/slbool"
 
 // HebbPrjn is a simple hebbian learning projection, using the CPCA Hebbian rule.
@@ -16,7 +20,7 @@ type HebbPrjn struct {
 func (pj *HebbPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	pj.IncGain = 0.5
-	pj.Learn.Trace.SubMean = 1 // this is critical!
+	pj.Params.Learn.Trace.SubMean = 1 // this is critical!
 }
 
 func (pj *HebbPrjn) UpdateParams() {
@@ -49,3 +53,5 @@ func (pj *HebbPrjn) DWt(ctime *Time) {
 		}
 	}
 }
+
+*/

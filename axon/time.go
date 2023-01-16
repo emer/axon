@@ -7,7 +7,15 @@ package axon
 import (
 	"github.com/emer/emergent/etime"
 	"github.com/goki/gosl/slbool"
+	"github.com/goki/gosl/slrand"
 )
+
+//gosl: hlsl time
+// #include "slrand.hlsl"
+// #include "etime.hlsl"
+//gosl: end time
+
+//gosl: start time
 
 // axon.Time contains all the timing state and parameter information for running a model.
 // Can also include other relevant state context, e.g., Testing vs. Training modes.
@@ -23,13 +31,8 @@ type Time struct {
 	TimePerCyc float32     `def:"0.001" desc:"amount of time to increment per cycle"`
 
 	pad, pad1, pad2 int32
-}
 
-// NewTime returns a new Time struct with default parameters
-func NewTime() *Time {
-	tm := &Time{}
-	tm.Defaults()
-	return tm
+	RandCtr slrand.Counter `desc:"random counter"`
 }
 
 // Defaults sets default values
@@ -37,28 +40,10 @@ func (tm *Time) Defaults() {
 	tm.TimePerCyc = 0.001
 }
 
-// Reset resets the counters all back to zero
-func (tm *Time) Reset() {
-	tm.Phase = 0
-	tm.PlusPhase = slbool.False
-	tm.PhaseCycle = 0
-	tm.Cycle = 0
-	tm.CycleTot = 0
-	tm.Time = 0
-	tm.Testing = slbool.False
-	if tm.TimePerCyc == 0 {
-		tm.Defaults()
-	}
-}
-
 // NewState resets counters at start of new state (trial) of processing.
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (tm *Time) NewState(mode etime.Modes) {
-	// not sure this is necessary
-	// if mode != etime.Train && mode != etime.Test {
-	// 	panic("axon.Time.NewState: mode must be Train or Test")
-	// }
 	tm.Phase = 0
 	tm.PlusPhase = slbool.False
 	tm.PhaseCycle = 0
@@ -79,4 +64,28 @@ func (tm *Time) CycleInc() {
 	tm.Cycle++
 	tm.CycleTot++
 	tm.Time += tm.TimePerCyc
+}
+
+//gosl: end time
+
+// Reset resets the counters all back to zero
+func (tm *Time) Reset() {
+	tm.Phase = 0
+	tm.PlusPhase = slbool.False
+	tm.PhaseCycle = 0
+	tm.Cycle = 0
+	tm.CycleTot = 0
+	tm.Time = 0
+	tm.Testing = slbool.False
+	if tm.TimePerCyc == 0 {
+		tm.Defaults()
+	}
+	tm.RandCtr.Reset()
+}
+
+// NewTime returns a new Time struct with default parameters
+func NewTime() *Time {
+	tm := &Time{}
+	tm.Defaults()
+	return tm
 }

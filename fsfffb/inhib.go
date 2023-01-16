@@ -6,6 +6,8 @@ package fsfffb
 
 import "github.com/goki/mat32"
 
+//gosl: start fsfffb
+
 // Inhib contains state values for computed FFFB inhibition
 type Inhib struct {
 	FFsRaw   float32 `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
@@ -76,6 +78,13 @@ func (fi *Inhib) SaveOrig() {
 	fi.GiOrig = fi.Gi
 }
 
+// GiFmFSSS returns the sum of FSGi and SSGi as overall inhibition
+func (fi *Inhib) GiFmFSSS() float32 {
+	return fi.FSGi + fi.SSGi
+}
+
+//gosl: end fsfffb
+
 // LayerMax updates given pool-level inhib values from given layer-level
 // with resulting value being the Max of either
 func (fi *Inhib) LayerMax(li *Inhib) {
@@ -87,11 +96,6 @@ func (fi *Inhib) LayerMax(li *Inhib) {
 // with resulting value being the Max of either
 func (fi *Inhib) PoolMax(pi *Inhib) {
 	fi.Gi = mat32.Max(fi.Gi, pi.Gi)
-}
-
-// GiFmFSSS returns the sum of FSGi and SSGi as overall inhibition
-func (fi *Inhib) GiFmFSSS() float32 {
-	return fi.FSGi + fi.SSGi
 }
 
 // Inhibs is a slice of Inhib records

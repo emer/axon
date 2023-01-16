@@ -8,6 +8,7 @@ require (
 	github.com/emer/empi v1.0.17
 	github.com/emer/etable v1.1.12
 	github.com/goki/gi v1.3.9
+	github.com/goki/gosl v1.0.4
 	github.com/goki/ki v1.1.9
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.13
@@ -43,7 +44,7 @@ require (
 	github.com/goki/pi v1.0.21 // indirect
 	github.com/goki/prof v1.0.0 // indirect
 	github.com/goki/vci v1.0.1 // indirect
-	github.com/goki/vgpu v1.0.7 // indirect
+	github.com/goki/vgpu v1.0.10 // indirect
 	github.com/goki/vulkan v0.0.0-20220928215615-c67065a9cfc2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
