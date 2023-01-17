@@ -87,12 +87,12 @@ func (fb *GiParams) SSFmFBs(ssf, ssi *float32, fbs float32) {
 // Inhib is full inhibition computation for given inhib state
 // which has aggregated FFs and FBs spiking values
 func (fb *GiParams) Inhib(inh *Inhib, gimult float32) {
-	if slbool.IsFalse(fb.On) {
+	if fb.On.IsFalse() {
 		inh.Zero()
 		return
 	}
 	fb.FSiFmFFs(&inh.FSi, inh.FFs, inh.FBs)
-	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts, slbool.IsTrue(inh.Clamped))
+	inh.FSGi = fb.Gi * fb.FS(inh.FSi, inh.GeExts, inh.Clamped.IsTrue())
 
 	fb.SSFmFBs(&inh.SSf, &inh.SSi, inh.FBs)
 	inh.SSGi = fb.Gi * fb.SS * inh.SSi

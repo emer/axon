@@ -13,7 +13,6 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
-	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
@@ -60,7 +59,7 @@ func (pj *Prjn) AsAxon() *Prjn {
 func (pj *Prjn) Defaults() {
 	pj.Params.Defaults()
 	if pj.Typ == emer.Inhib {
-		pj.Params.SWt.Adapt.On = slbool.False
+		pj.Params.SWt.Adapt.On.SetBool(false)
 	}
 }
 
@@ -506,7 +505,7 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
-	if slbool.IsTrue(pj.Params.SWt.Adapt.On) && !rlay.AxonLay.IsTarget() {
+	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.AxonLay.IsTarget() {
 		pj.SWtRescale()
 	}
 }
@@ -744,7 +743,7 @@ func (pj *Prjn) GFmSpikes(ctime *Time) {
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
 func (pj *Prjn) SendSynCa(ctime *Time) {
-	if slbool.IsFalse(pj.Params.Learn.Learn) || slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.Learn.Trace.NeuronCa.IsTrue() {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
@@ -791,7 +790,7 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
 func (pj *Prjn) RecvSynCa(ctime *Time) {
-	if slbool.IsFalse(pj.Params.Learn.Learn) || slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.Learn.Trace.NeuronCa.IsTrue() {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
@@ -837,18 +836,18 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 
 // DWt computes the weight change (learning) -- on sending projections
 func (pj *Prjn) DWt(ctime *Time) {
-	if slbool.IsFalse(pj.Params.Learn.Learn) {
+	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	if rlay.AxonLay.IsTarget() {
-		if slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
+		if pj.Params.Learn.Trace.NeuronCa.IsTrue() {
 			pj.DWtNeurSpkTheta(ctime)
 		} else {
 			pj.DWtSynSpkTheta(ctime)
 		}
 	} else {
-		if slbool.IsTrue(pj.Params.Learn.Trace.NeuronCa) {
+		if pj.Params.Learn.Trace.NeuronCa.IsTrue() {
 			pj.DWtTraceNeurSpkTheta(ctime)
 		} else {
 			pj.DWtTraceSynSpkTheta(ctime)
@@ -1045,7 +1044,7 @@ func (pj *Prjn) SlowAdapt(ctime *Time) {
 // accumulated DSWt values, which are zero-summed with additional soft bounding
 // relative to SWt limits.
 func (pj *Prjn) SWtFmWt() {
-	if slbool.IsFalse(pj.Params.Learn.Learn) || slbool.IsFalse(pj.Params.SWt.Adapt.On) {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWt.Adapt.On.IsFalse() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
@@ -1104,7 +1103,7 @@ func (pj *Prjn) SWtFmWt() {
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFmTrgAvg function must be called first.
 func (pj *Prjn) SynScale() {
-	if slbool.IsFalse(pj.Params.Learn.Learn) || pj.Typ == emer.Inhib {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Typ == emer.Inhib {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()

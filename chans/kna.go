@@ -24,7 +24,7 @@ type KNaParams struct {
 }
 
 func (ka *KNaParams) Defaults() {
-	ka.On = slbool.True
+	ka.On.SetBool(true)
 	ka.Rise = 0.01
 	ka.Max = 0.1
 	ka.Tau = 100
@@ -37,7 +37,7 @@ func (ka *KNaParams) Update() {
 
 // GcFmSpike updates the KNa conductance based on spike or not
 func (ka *KNaParams) GcFmSpike(gKNa *float32, spike bool) {
-	if slbool.IsTrue(ka.On) {
+	if ka.On.IsTrue() {
 		if spike {
 			*gKNa += ka.Rise * (ka.Max - *gKNa)
 		} else {

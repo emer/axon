@@ -29,7 +29,7 @@ func (pj *HebbPrjn) UpdateParams() {
 
 // DWt computes the hebbian weight change
 func (pj *HebbPrjn) DWt(ctime *Time) {
-	if slbool.IsFalse(pj.Learn.Learn) {
+	if pj.Learn.Learn.IsFalse() {
 		return
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()

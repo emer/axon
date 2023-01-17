@@ -42,7 +42,7 @@ type CaLrnParams struct {
 
 func (np *CaLrnParams) Defaults() {
 	np.Norm = 80
-	np.SpkVGCC = slbool.True
+	np.SpkVGCC.SetBool(true)
 	np.SpkVgccCa = 35
 	np.VgccTau = 10
 	np.Dt.Defaults()
@@ -59,7 +59,7 @@ func (np *CaLrnParams) Update() {
 // VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
 // and performs time-integration of VgccCa
 func (np *CaLrnParams) VgccCa(nrn *Neuron) {
-	if slbool.IsTrue(np.SpkVGCC) {
+	if np.SpkVGCC.IsTrue() {
 		nrn.VgccCa = np.SpkVgccCa * nrn.Spike
 	}
 	nrn.VgccCaInt += nrn.VgccCa - np.VgccDt*nrn.VgccCaInt // Dt only affects decay, not rise time
@@ -141,13 +141,13 @@ func (ta *TrgAvgActParams) Update() {
 }
 
 func (ta *TrgAvgActParams) Defaults() {
-	ta.On = slbool.True
+	ta.On.SetBool(true)
 	ta.ErrLRate = 0.02
 	ta.SynScaleRate = 0.005
 	ta.SubMean = 1 // 1 in general beneficial
 	ta.TrgRange.Set(0.5, 2)
-	ta.Permute = slbool.True
-	ta.Pool = slbool.True
+	ta.Permute.SetBool(true)
+	ta.Pool.SetBool(true)
 	ta.Update()
 }
 
@@ -172,9 +172,9 @@ func (rl *RLRateParams) Update() {
 }
 
 func (rl *RLRateParams) Defaults() {
-	rl.On = slbool.True
+	rl.On.SetBool(true)
 	rl.SigmoidMin = 0.05
-	rl.Diff = slbool.True
+	rl.Diff.SetBool(true)
 	rl.SpkThr = 0.1
 	rl.DiffThr = 0.02
 	rl.Min = 0.001
@@ -188,7 +188,7 @@ func (rl *RLRateParams) Defaults() {
 // The activity should be CaSpkP and the layer maximum is used
 // to normalize that to a 0-1 range.
 func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
-	if slbool.IsFalse(rl.On) || laymax == 0 {
+	if rl.On.IsFalse() || laymax == 0 {
 		return 1.0
 	}
 	ca := act / laymax
@@ -202,7 +202,7 @@ func (rl *RLRateParams) RLRateSigDeriv(act float32, laymax float32) float32 {
 // RLRateDiff returns the learning rate as a function of difference between
 // CaSpkP and CaSpkD values
 func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
-	if slbool.IsFalse(rl.On) || slbool.IsFalse(rl.Diff) {
+	if rl.On.IsFalse() || rl.Diff.IsFalse() {
 		return 1.0
 	}
 	max := mat32.Max(scap, scad)
@@ -392,7 +392,7 @@ func (sp *SWtInitParams) Defaults() {
 	sp.SPct = 0.5
 	sp.Mean = 0.5
 	sp.Var = 0.25
-	sp.Sym = slbool.True
+	sp.Sym.SetBool(true)
 }
 
 func (sp *SWtInitParams) Update() {
@@ -410,7 +410,7 @@ type SWtAdaptParams struct {
 }
 
 func (sp *SWtAdaptParams) Defaults() {
-	sp.On = slbool.True
+	sp.On.SetBool(true)
 	sp.LRate = 0.1
 	sp.SubMean = 1
 	sp.SigGain = 6
@@ -649,7 +649,7 @@ type LRateMod struct {
 }
 
 func (lr *LRateMod) Defaults() {
-	lr.On = slbool.True
+	lr.On.SetBool(true)
 	lr.Base = 0.2
 	lr.Range.Set(0.2, 0.8)
 }
@@ -678,7 +678,7 @@ func (lr *LRateMod) LRateMod(net *Network, fact float32) float32 {
 	if lr.Range.Max == 0 {
 		lr.Defaults()
 	}
-	if slbool.IsFalse(lr.On) {
+	if lr.On.IsFalse() {
 		return 1
 	}
 	mod := lr.Mod(fact)
@@ -709,7 +709,7 @@ func (ls *LearnSynParams) Update() {
 }
 
 func (ls *LearnSynParams) Defaults() {
-	ls.Learn = slbool.True
+	ls.Learn.SetBool(true)
 	ls.LRate.Defaults()
 	ls.Trace.Defaults()
 	ls.KinaseCa.Defaults()

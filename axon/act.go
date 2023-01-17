@@ -53,7 +53,7 @@ func (sk *SpikeParams) Defaults() {
 	sk.VmR = 0.3
 	sk.Tr = 3
 	sk.RTau = 1.6667
-	sk.Exp = slbool.True
+	sk.Exp.SetBool(true)
 	sk.ExpSlope = 0.02
 	sk.ExpThr = 0.9
 	sk.MaxHz = 180
@@ -352,11 +352,13 @@ func (an *SpikeNoiseParams) PGi(p *float32, ni int, randctr *sltype.Uint2) float
 // (like a current clamp) -- either adds or overwrites existing conductances.
 // Noise is added in either case.
 type ClampParams struct {
-	Ge     float32     `def:"0.8,1.5" desc:"amount of Ge driven for clamping -- generally use 0.8 for Target layers, 1.5 for Input layers"`
-	Add    slbool.Bool `def:"false" view:"add external conductance on top of any existing -- generally this is not a good idea for target layers (creates a main effect that learning can never match), but may be ok for input layers"`
-	ErrThr float32     `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
+	IsInput  slbool.Bool `view:"-" desc:"is this a clamped input layer?  set automatically based on layer type at initialization"`
+	IsTarget slbool.Bool `view:"-" desc:"is this a target layer?  set automatically based on layer type at initialization"`
+	Ge       float32     `def:"0.8,1.5" desc:"amount of Ge driven for clamping -- generally use 0.8 for Target layers, 1.5 for Input layers"`
+	Add      slbool.Bool `def:"false" view:"add external conductance on top of any existing -- generally this is not a good idea for target layers (creates a main effect that learning can never match), but may be ok for input layers"`
+	ErrThr   float32     `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
 
-	pad int32
+	pad, pad1, pad2 float32
 }
 
 func (cp *ClampParams) Update() {
@@ -379,7 +381,7 @@ type AttnParams struct {
 }
 
 func (at *AttnParams) Defaults() {
-	at.On = slbool.True
+	at.On.SetBool(true)
 	at.Min = 0.8
 }
 
@@ -391,7 +393,7 @@ func (at *AttnParams) ModVal(val float32, attn float32) float32 {
 	if val < 0 {
 		val = 0
 	}
-	if slbool.IsFalse(at.On) {
+	if at.On.IsFalse() {
 		return val
 	}
 	return val * (at.Min + (1-at.Min)*attn)
@@ -438,7 +440,7 @@ func (ac *ActParams) Defaults() {
 	ac.Sahp.Gbar = 0.05
 	ac.Sahp.CaTau = 5
 	ac.KNa.Defaults()
-	ac.KNa.On = slbool.True
+	ac.KNa.On.SetBool(true)
 	ac.NMDA.Defaults()
 	ac.NMDA.Gbar = 0.15 // .15 now -- was 0.3 best.
 	ac.GABAB.Defaults()
@@ -643,7 +645,7 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 	nrn.MahpN += dn
 	nrn.Gak = ac.AK.Gak(nrn.VmDend)
 	nrn.Gk = nrn.Gak + ac.Mahp.GmAHP(nrn.MahpN) + ac.Sahp.GsAHP(nrn.SahpN)
-	if slbool.IsTrue(ac.KNa.On) {
+	if ac.KNa.On.IsTrue() {
 		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
 	}
@@ -653,13 +655,13 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmSyn(ni int, nrn *Neuron, geSyn, geExt float32, randctr *sltype.Uint2) {
 	nrn.GeExt = 0
-	if slbool.IsTrue(ac.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
+	if ac.Clamp.Add.IsTrue() && nrn.HasFlag(NeuronHasExt) {
 		nrn.GeExt = nrn.Ext * ac.Clamp.Ge
 		geSyn += nrn.GeExt
 	}
 	geSyn = ac.Attn.ModVal(geSyn, nrn.Attn)
 
-	if slbool.IsFalse(ac.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
+	if ac.Clamp.Add.IsFalse() && nrn.HasFlag(NeuronHasExt) {
 		geSyn = nrn.Ext * ac.Clamp.Ge
 		nrn.GeExt = geSyn
 		geExt = 0 // no extra in this case
@@ -674,7 +676,7 @@ func (ac *ActParams) GeFmSyn(ni int, nrn *Neuron, geSyn, geExt float32, randctr 
 
 // GeNoise updates nrn.GeNoise if active
 func (ac *ActParams) GeNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
-	if slbool.IsFalse(ac.Noise.On) || ac.Noise.Ge == 0 {
+	if ac.Noise.On.IsFalse() || ac.Noise.Ge == 0 {
 		return
 	}
 	ge := ac.Noise.PGe(&nrn.GeNoiseP, ni, randctr)
@@ -684,7 +686,7 @@ func (ac *ActParams) GeNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
 
 // GiNoise updates nrn.GiNoise if active
 func (ac *ActParams) GiNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
-	if slbool.IsFalse(ac.Noise.On) || ac.Noise.Gi == 0 {
+	if ac.Noise.On.IsFalse() || ac.Noise.Gi == 0 {
 		return
 	}
 	gi := ac.Noise.PGi(&nrn.GiNoiseP, ni, randctr)
@@ -743,7 +745,7 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 	var nvm, inet, expi float32
 	if updtVm {
 		ac.VmInteg(nrn.Vm, ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
-		if updtVm && slbool.IsTrue(ac.Spike.Exp) { // add spike current if relevant
+		if updtVm && ac.Spike.Exp.IsTrue() { // add spike current if relevant
 			exVm := 0.5 * (nvm + nrn.Vm) // midpoint for this
 			expi = ac.Gbar.L * ac.Spike.ExpSlope *
 				mat32.FastExp((exVm-ac.Spike.Thr)/ac.Spike.ExpSlope)
@@ -783,7 +785,7 @@ func (ac *ActParams) VmFmG(nrn *Neuron) {
 // SpikeFmG computes Spike from Vm and ISI-based activation
 func (ac *ActParams) SpikeFmVm(nrn *Neuron) {
 	var thr float32
-	if slbool.IsTrue(ac.Spike.Exp) {
+	if ac.Spike.Exp.IsTrue() {
 		thr = ac.Spike.ExpThr
 	} else {
 		thr = ac.Spike.Thr
@@ -843,7 +845,7 @@ type SynComParams struct {
 func (sc *SynComParams) Defaults() {
 	sc.Delay = 2
 	sc.PFail = 0 // 0.5 works?
-	sc.PFailSWt = slbool.False
+	sc.PFailSWt.SetBool(false)
 }
 
 func (sc *SynComParams) Update() {
@@ -851,7 +853,7 @@ func (sc *SynComParams) Update() {
 
 // WtFailP returns probability of weight (synapse) failure given current SWt value
 func (sc *SynComParams) WtFailP(swt float32) float32 {
-	if slbool.IsFalse(sc.PFailSWt) {
+	if sc.PFailSWt.IsFalse() {
 		return sc.PFail
 	}
 	return sc.PFail * (1 - swt)

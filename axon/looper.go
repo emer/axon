@@ -10,7 +10,6 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
-	"github.com/goki/gosl/slbool"
 )
 
 // LooperStdPhases adds the minus and plus phases of the theta cycle,
@@ -20,7 +19,7 @@ import (
 // resets the state at start of trial
 func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, plusEnd int) {
 	minusPhase := looper.NewEvent("MinusPhase:Start", 0, func() {
-		time.PlusPhase = slbool.False
+		time.PlusPhase.SetBool(false)
 		time.NewPhase(false)
 	})
 	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1(time) })
@@ -28,7 +27,7 @@ func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, p
 	plusPhase := &looper.Event{Name: "PlusPhase", AtCtr: plusStart}
 	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase(time) })
 	plusPhase.OnEvent.Add("PlusPhase:Start", func() {
-		time.PlusPhase = slbool.True
+		time.PlusPhase.SetBool(true)
 		time.NewPhase(true)
 	})
 	plusPhaseEnd := looper.NewEvent("PlusPhase:End", plusEnd, func() {

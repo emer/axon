@@ -13,7 +13,6 @@ import (
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
-	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 )
@@ -124,7 +123,7 @@ func (nt *Network) CycleImpl(ctime *Time) {
 	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron")
 	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctime) }, "SendSpike")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost") // def NoThread
-	if slbool.IsFalse(ctime.Testing) {
+	if ctime.Testing.IsFalse() {
 		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa")
 		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctime) }, "RecvSynCa")
 	}

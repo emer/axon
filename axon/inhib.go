@@ -87,7 +87,7 @@ type TopoInhibParams struct {
 func (ti *TopoInhibParams) Defaults() {
 	ti.Width = 4
 	ti.Sigma = 1
-	ti.Wrap = slbool.True
+	ti.Wrap.SetBool(true)
 	ti.Gi = 0.05
 	ti.FF = 1
 	ti.FB = 0

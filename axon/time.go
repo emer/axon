@@ -45,17 +45,17 @@ func (tm *Time) Defaults() {
 // if !Train then testing will be set to true.
 func (tm *Time) NewState(mode etime.Modes) {
 	tm.Phase = 0
-	tm.PlusPhase = slbool.False
+	tm.PlusPhase.SetBool(false)
 	tm.PhaseCycle = 0
 	tm.Cycle = 0
 	tm.Mode = mode
-	tm.Testing = slbool.FromBool(mode != etime.Train)
+	tm.Testing.SetBool(mode != etime.Train)
 }
 
 // NewPhase resets PhaseCycle = 0 and sets the plus phase as specified
 func (tm *Time) NewPhase(plusPhase bool) {
 	tm.PhaseCycle = 0
-	tm.PlusPhase = slbool.FromBool(plusPhase)
+	tm.PlusPhase.SetBool(plusPhase)
 }
 
 // CycleInc increments at the cycle level
@@ -71,12 +71,12 @@ func (tm *Time) CycleInc() {
 // Reset resets the counters all back to zero
 func (tm *Time) Reset() {
 	tm.Phase = 0
-	tm.PlusPhase = slbool.False
+	tm.PlusPhase.SetBool(false)
 	tm.PhaseCycle = 0
 	tm.Cycle = 0
 	tm.CycleTot = 0
 	tm.Time = 0
-	tm.Testing = slbool.False
+	tm.Testing.SetBool(false)
 	if tm.TimePerCyc == 0 {
 		tm.Defaults()
 	}

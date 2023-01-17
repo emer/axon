@@ -19,7 +19,6 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
-	"github.com/goki/gosl/slbool"
 	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
@@ -65,8 +64,8 @@ func (ly *Layer) Defaults() {
 // This is not called Update because it is not just about the
 // local values in the struct.
 func (ly *Layer) UpdateParams() {
-	if !ly.Is4D() && slbool.IsTrue(ly.Params.Inhib.Pool.On) {
-		ly.Params.Inhib.Pool.On = slbool.False
+	if !ly.Is4D() && ly.Params.Inhib.Pool.On.IsTrue() {
+		ly.Params.Inhib.Pool.On.SetBool(false)
 	}
 	ly.Params.Update()
 	for _, pj := range ly.RcvPrjns {
@@ -77,7 +76,7 @@ func (ly *Layer) UpdateParams() {
 // HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
 // This is the proper check for using pool-level target average activations, for example.
 func (ly *Layer) HasPoolInhib() bool {
-	return slbool.IsTrue(ly.Params.Inhib.Pool.On)
+	return ly.Params.Inhib.Pool.On.IsTrue()
 }
 
 // AsAxon returns this layer as a axon.Layer -- all derived layers must redefine
@@ -676,7 +675,7 @@ func (ly *Layer) InitActAvg() {
 	strg := ly.Params.Learn.TrgAvgAct.TrgRange.Min
 	rng := ly.Params.Learn.TrgAvgAct.TrgRange.Range()
 	inc := float32(0)
-	if ly.HasPoolInhib() && slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Pool) {
+	if ly.HasPoolInhib() && ly.Params.Learn.TrgAvgAct.Pool.IsTrue() {
 		nNy := ly.Shp.Dim(2)
 		nNx := ly.Shp.Dim(3)
 		nn := nNy * nNx
@@ -690,7 +689,7 @@ func (ly *Layer) InitActAvg() {
 		}
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
-			if slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Permute) {
+			if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
 				erand.PermuteInts(porder)
 			}
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
@@ -715,7 +714,7 @@ func (ly *Layer) InitActAvg() {
 		for i := range porder {
 			porder[i] = i
 		}
-		if slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Permute) {
+		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
 			erand.PermuteInts(porder)
 		}
 		for ni := range ly.Neurons {
@@ -735,6 +734,8 @@ func (ly *Layer) InitActAvg() {
 
 // InitActs fully initializes activation state -- only called automatically during InitWts
 func (ly *Layer) InitActs() {
+	ly.Params.Act.Clamp.IsInput.SetBool(ly.AxonLay.IsInput())
+	ly.Params.Act.Clamp.IsTarget.SetBool(ly.AxonLay.IsTarget())
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		ly.Params.Act.InitActs(nrn)
@@ -766,7 +767,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		plp := p.(AxonPrjn)
-		if slbool.IsFalse(plp.AsAxon().Params.SWt.Init.Sym) {
+		if plp.AsAxon().Params.SWt.Init.Sym.IsFalse() {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
@@ -778,7 +779,7 @@ func (ly *Layer) InitWtSym() {
 			continue
 		}
 		rlp := rpj.(AxonPrjn)
-		if slbool.IsFalse(rlp.AsAxon().Params.SWt.Init.Sym) {
+		if rlp.AsAxon().Params.SWt.Init.Sym.IsFalse() {
 			continue
 		}
 		plp.InitWtSym(rlp)
@@ -1128,7 +1129,7 @@ func (ly *Layer) GiFmSpikes(ctime *Time) {
 	subPools := (len(ly.Pools) > 1)
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		pl.Inhib.Clamped = slbool.False
+		pl.Inhib.Clamped.SetBool(false)
 	}
 	for ni := range ly.Neurons { // note: layer-level iterating across neurons
 		nrn := &ly.Neurons[ni]
@@ -1140,9 +1141,9 @@ func (ly *Layer) GiFmSpikes(ctime *Time) {
 		if subPools {
 			lpl.Inhib.GeExtRaw += nrn.GeExt
 		}
-		if slbool.IsFalse(ly.Params.Act.Clamp.Add) && nrn.HasFlag(NeuronHasExt) {
-			pl.Inhib.Clamped = slbool.True
-			lpl.Inhib.Clamped = slbool.True
+		if ly.Params.Act.Clamp.Add.IsFalse() && nrn.HasFlag(NeuronHasExt) {
+			pl.Inhib.Clamped.SetBool(true)
+			lpl.Inhib.Clamped.SetBool(true)
 		}
 	}
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
@@ -1157,7 +1158,7 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 		return
 	}
 	lpl := &ly.Pools[0]
-	lyInhib := slbool.IsTrue(ly.Params.Inhib.Layer.On)
+	lyInhib := ly.Params.Inhib.Layer.On.IsTrue()
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
 		pl.Inhib.SpikesFmRaw(pl.NNeurons())
@@ -1221,18 +1222,18 @@ func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
 	nrn.Gk += nrn.GgabaB // Gk was already init
 }
 
-// PostAct does updates at neuron level after activation (spiking)
-// updated for all neurons.
-// It is a hook for specialized algorithms -- empty at Axon base level
-func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
-}
-
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 // this is
 func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
 	// todo: do pjrn-specific versions then params versions
 	// ly.AxonLay.GInteg(ni, nrn, ctime)
 	ly.Params.CycleNeuron(ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, ctime)
+}
+
+// PostAct does updates at neuron level after activation (spiking)
+// updated for all neurons.
+// It is a hook for specialized algorithms -- empty at Axon base level
+func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -1464,7 +1465,7 @@ func (ly *Layer) IsInputOrTarget() bool {
 //  Learning
 
 func (ly *Layer) IsLearnTrgAvg() bool {
-	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || slbool.IsFalse(ly.Params.Learn.TrgAvgAct.On) {
+	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || ly.Params.Learn.TrgAvgAct.On.IsFalse() {
 		return false
 	}
 	return true
@@ -1503,7 +1504,7 @@ func (ly *Layer) DTrgSubMean() {
 	if submean == 0 {
 		return
 	}
-	if ly.HasPoolInhib() && slbool.IsTrue(ly.Params.Learn.TrgAvgAct.Pool) {
+	if ly.HasPoolInhib() && ly.Params.Learn.TrgAvgAct.Pool.IsTrue() {
 		np := len(ly.Pools)
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
@@ -1591,7 +1592,7 @@ func (ly *Layer) SlowAdapt(ctime *Time) {
 
 // AdaptInhib adapts inhibition
 func (ly *Layer) AdaptInhib(ctime *Time) {
-	if slbool.IsFalse(ly.Params.Inhib.ActAvg.AdaptGi) || ly.AxonLay.IsInput() {
+	if ly.Params.Inhib.ActAvg.AdaptGi.IsFalse() || ly.AxonLay.IsInput() {
 		return
 	}
 	ly.Params.Inhib.ActAvg.Adapt(&ly.Vals.ActAvg.GiMult, ly.Vals.ActAvg.ActMAvg)

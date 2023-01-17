@@ -7,7 +7,6 @@ package axon
 import (
 	"encoding/json"
 
-	"github.com/goki/gosl/slbool"
 	"github.com/goki/gosl/sltype"
 )
 
@@ -55,7 +54,7 @@ func (ly *LayerParams) Defaults() {
 	ly.Act.Defaults()
 	ly.Inhib.Defaults()
 	ly.Learn.Defaults()
-	ly.Inhib.Layer.On = slbool.True
+	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 1.0
 	ly.Inhib.Pool.Gi = 1.0
 }
@@ -86,16 +85,16 @@ func (ly *LayerParams) GFmRawSyn(ni int, nrn *Neuron, ctime *Time, randctr *slty
 	nrn.GiSyn = ly.Act.GiFmSyn(ni, nrn, nrn.GiSyn, randctr)
 }
 
-// GiInteg adds Gi values from all sources including Pool computed inhib
+// GiInteg adds Gi values from all sources including SubPool computed inhib
 // and updates GABAB as well
 func (ly *LayerParams) GiInteg(ni int, nrn *Neuron, pl *Pool, giMult float32, ctime *Time) {
 	// pl := &ly.Pools[nrn.SubPool]
 	nrn.Gi = giMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	nrn.SSGi = pl.Inhib.SSGi
 	nrn.SSGiDend = 0
-	// if !ly.IsInputOrTarget() { // todo: need to cache this at start -- cannot be dynamic!
-	// 	nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
-	// }
+	if ly.Act.Clamp.IsInput.IsTrue() || ly.Act.Clamp.IsTarget.IsTrue() {
+		nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
+	}
 	ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
@@ -113,7 +112,7 @@ func (ly *LayerParams) GInteg(ni int, nrn *Neuron, pl *Pool, giMult float32, cti
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 func (ly *LayerParams) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 	intdt := ly.Act.Dt.IntDt
-	if slbool.IsTrue(ctime.PlusPhase) {
+	if ctime.PlusPhase.IsTrue() {
 		intdt *= 3.0
 	}
 	ly.Act.VmFmG(nrn)
@@ -126,7 +125,7 @@ func (ly *LayerParams) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 		}
 	}
 	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-	if slbool.IsFalse(ctime.PlusPhase) {
+	if ctime.PlusPhase.IsFalse() {
 		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 	}
