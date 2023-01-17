@@ -21,7 +21,7 @@ const SynapseVarStart = 8
 type Synapse struct {
 	RecvNeurIdx uint32 `desc:"receiving neuron index in global list of neurons"`
 
-	CaUpT uint32  `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
+	CaUpT int32   `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
 	Wt    float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`
 	LWt   float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`
 	SWt   float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`

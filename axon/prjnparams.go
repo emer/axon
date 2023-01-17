@@ -10,11 +10,11 @@ import (
 )
 
 // these are global arrays:
-// var SendNeurSynIdxs []NeurSynIdx // Prjn Idxs organized by Layer..SendPrjns..Send.Neurons
-// var RecvNeurSynIdxs []NeurSynIdx // Prjn Idxs organized by Layer..RecvPrjns..Recv.Neurons
+// var SendNeurSynIdxs []NeurSynIdx // [Layer][SendPrjns][SendNeurons]
+// var RecvNeurSynIdxs []NeurSynIdx // [Layer][RecvPrjns][RecvNeurons]
 
-// var SendSynapses []Synapse // Synapses organized by Layer..SendPrjns..Send.Neurons..Send.Syns
-// var RecvSynIdxs []SynIdx // Prjn Idxs organized by Layer..RecvPrjns..Recv.Neurons..Recv.Syns
+// var SendSynapses []Synapse // [Layer][SendPrjns][SendNeurons][SendSyns]
+// var RecvSynIdxs []SynIdx // [Layer][RecvPrjns][RecvNeurons][RecvSyns]
 
 //gosl: hlsl prjnparams
 // #include "act_prjn.hlsl"
@@ -118,14 +118,37 @@ func (pj *PrjnParams) NeuronGatherSpikesPrjn(gv PrjnGVals, ni uint32, nrn *Neuro
 // synaptically-integrated spiking, for the optimized version
 // computed at the Theta cycle interval.  Trace version.
 func (pj *PrjnParams) DWtTraceSynSpkThetaSyn(sy *Synapse, sn, rn *Neuron, ctime *Time) {
-	pj.Learn.KinaseCa.CurCa(ctime.CycleTot, sy.CaUpT, &sy.CaM, &sy.CaP, &sy.CaD) // always update
-	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sy.CaD)                                 // caD reflects entire window
-	if sy.Wt == 0 {                                                              // failed con, no learn
+	caM := sy.CaM
+	caP := sy.CaP
+	caD := sy.CaD
+	pj.Learn.KinaseCa.CurCa(ctime.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
+	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                           // caD reflects entire window
+	if sy.Wt == 0 {                                                     // failed con, no learn
 		return
 	}
-	var err float32
-	err = sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
+	err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
 	// note: trace ensures that nothing changes for inactive synapses..
+	// sb immediately -- enters into zero sum
+	if err > 0 {
+		err *= (1 - sy.LWt)
+	} else {
+		err *= sy.LWt
+	}
+	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
+}
+
+// DWtSynSpkTheta computes the weight change (learning) based on
+// synaptically-integrated spiking, for the optimized version
+// computed at the Theta cycle interval.  Non-Trace version for target layers.
+func (pj *PrjnParams) DWtSynSpkThetaSyn(sy *Synapse, sn, rn *Neuron, ctime *Time) {
+	if sy.Wt == 0 { // failed con, no learn
+		return
+	}
+	caM := sy.CaM
+	caP := sy.CaP
+	caD := sy.CaD
+	pj.Learn.KinaseCa.CurCa(ctime.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
+	err := caP - caD                                                    // syn Ca drives error signal
 	// sb immediately -- enters into zero sum
 	if err > 0 {
 		err *= (1 - sy.LWt)
