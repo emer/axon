@@ -1053,7 +1053,7 @@ func (ly *Layer) InitGScale() {
 		// if pj.Params.GScale == 0 {
 		// 	continue
 		// }
-		if pj.Params.Com.Inhib.IsTrue() {
+		if pj.Typ == emer.Inhib {
 			totGiRel += pj.Params.PrjnScale.Rel
 		} else {
 			totGeRel += pj.Params.PrjnScale.Rel
@@ -1062,7 +1062,7 @@ func (ly *Layer) InitGScale() {
 
 	for _, p := range ly.RcvPrjns {
 		pj := p.(AxonPrjn).AsAxon()
-		if pj.Params.Com.Inhib.IsTrue() {
+		if pj.Typ == emer.Inhib {
 			if totGiRel > 0 {
 				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGiRel
 				pj.Params.GScale.Scale /= totGiRel

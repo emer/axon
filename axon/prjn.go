@@ -50,7 +50,7 @@ func (pj *Prjn) AsAxon() *Prjn {
 
 func (pj *Prjn) Defaults() {
 	pj.Params.Defaults()
-	if pj.Params.Com.Inhib.IsTrue() {
+	if pj.Typ == emer.Inhib {
 		pj.Params.SWt.Adapt.On.SetBool(false)
 	}
 }
@@ -475,7 +475,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
-	pj.Params.Com.Inhib.SetBool(pj.Params.Com.Inhib.IsTrue())
+	pj.Params.Com.Inhib.SetBool(pj.Typ == emer.Inhib)
 	pj.Params.Learn.LRate.Init()
 	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
