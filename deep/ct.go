@@ -107,13 +107,13 @@ func (ly *CTLayer) DecayState(decay, glong float32) {
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // reads pool Gi values
-func (ly *CTLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *CTLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	// note: can add extra values to GeRaw and GeSyn here
 	geCtxt := ly.CT.GeGain * ly.CtxtGes[ni]
 	if ly.CT.DecayDt > 0 {
 		ly.CtxtGes[ni] -= ly.CT.DecayDt * ly.CtxtGes[ni]
 	}
-	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	nrn.GeRaw += geCtxt
 	ctxtExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
 	nrn.GeSyn += ctxtExt

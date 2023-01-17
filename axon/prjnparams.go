@@ -19,6 +19,7 @@ import (
 //gosl: hlsl prjnparams
 // #include "act_prjn.hlsl"
 // #include "learn.hlsl"
+// #include "prjnvals.hlsl"
 //gosl: end prjnparams
 
 //gosl: start prjnparams
@@ -42,14 +43,15 @@ type NeurSynIdx struct {
 
 // PrjnIdxs contains prjn-level index information into global memory arrays
 type PrjnIdxs struct {
-	RecvLay   uint32 // index of the receiving layer in global list of layers
-	RecvLayN  uint32 // number of neurons in recv layer
-	SendLay   uint32 // index of the sending layer in global list of layers
-	SendLayN  uint32 // number of neurons in send layer
-	RecvSynSt uint32 // start index into RecvNeurSynIdxs global array
-	SendSynSt uint32 // start index into SendNeurSynIdxs global array
-
-	pad, pad1 uint32
+	PrjnIdx      uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
+	RecvLay      uint32 // index of the receiving layer in global list of layers
+	RecvLayN     uint32 // number of neurons in recv layer
+	SendLay      uint32 // index of the sending layer in global list of layers
+	SendLayN     uint32 // number of neurons in send layer
+	RecvSynSt    uint32 // start index into RecvNeurSynIdxs global array: [Layer][RecvPrjns][RecvNeurs]
+	SendSynSt    uint32 // start index into SendNeurSynIdxs global array: [Layer][SendPrjns][SendNeurs]
+	RecvPrjnGVSt uint32 // start index into RecvPrjnGVals global array: [Layer][RecvPrjns][RecvNeurs]
+	// todo: RecvPrjnGVSt == RecvSynSt ??
 }
 
 // GScaleVals holds the conductance scaling values.
@@ -98,6 +100,18 @@ func (pj *PrjnParams) AllParams() string {
 	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
 	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
 	return str
+}
+
+// NeuronGatherSpikesPrjn integrates G*Raw and G*Syn values for given neuron
+// from the given Prjn-level GSyn integrated values.
+func (pj *PrjnParams) NeuronGatherSpikesPrjn(gv PrjnGVals, ni uint32, nrn *Neuron, ctime *Time) {
+	if pj.Com.Inhib.IsTrue() {
+		nrn.GiRaw += gv.GRaw
+		nrn.GiSyn += gv.GSyn
+	} else {
+		nrn.GeRaw += gv.GRaw
+		nrn.GeSyn += gv.GSyn
+	}
 }
 
 // DWtTraceSynSpkThetaSyn computes the weight change (learning) based on

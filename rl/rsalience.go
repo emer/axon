@@ -88,10 +88,10 @@ func (ly *RSalienceLayer) GiFmSpikes(ctime *axon.Time) {
 	ly.ACh = ract
 }
 
-func (ly *RSalienceLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *RSalienceLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 }
 
-func (ly *RSalienceLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *RSalienceLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	nrn.Act = ly.ACh
 }
 

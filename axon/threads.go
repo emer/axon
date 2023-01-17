@@ -83,7 +83,7 @@ func (nt *NetworkBase) SynCaFun(fun func(pj AxonPrjn), funame string) {
 
 // NeuronFun applies function of given name to all neurons, using
 // NetThreads.Neurons number of goroutines.
-func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string) {
+func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string) {
 	nt.NeuronMapParallel(fun, funame, nt.Threads.Neurons)
 }
 
@@ -151,7 +151,7 @@ func (nt *NetworkBase) LayerMapSeq(fun func(ly AxonLayer), funame string) {
 
 // NeuronMapParallel applies function of given name to all neurons
 // using as many go routines as configured in NetThreads.Neurons.
-func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string, nThreads int) {
+func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string, nThreads int) {
 	nt.FunTimerStart(funame)
 	if nThreads <= 1 {
 		nt.NeuronMapSequential(fun, funame)
@@ -160,7 +160,7 @@ func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni int, nrn *Neu
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
 				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
-				fun(ly, ni-ly.NeurStartIdx(), nrn)
+				fun(ly, uint32(ni-ly.NeurStartIdx()), nrn)
 			}
 		}, len(nt.Neurons), nThreads)
 		nt.FunTimerStop(funame)
@@ -168,14 +168,14 @@ func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni int, nrn *Neu
 }
 
 // NeuronMapSequential applies function of given name to all neurons sequentially.
-func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni int, nrn *Neuron), funame string) {
+func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string) {
 	nt.FunTimerStart(funame)
 	for _, layer := range nt.Layers {
 		lyr := layer.(AxonLayer)
 		lyrNeurons := lyr.AsAxon().Neurons
 		for nrnIdx := range lyrNeurons {
 			nrn := &lyrNeurons[nrnIdx]
-			fun(lyr, nrnIdx, nrn)
+			fun(lyr, uint32(nrnIdx), nrn)
 		}
 	}
 	nt.FunTimerStop(funame)

@@ -34,7 +34,7 @@ func (ly *RWPredLayer) Defaults() {
 	ly.Act.Dt.GeTau = 40
 }
 
-func (ly *RWPredLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *RWPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	nrn.Act = ly.PredRange.ClipVal(nrn.Ge) // clipped linear
 	nrn.ActInt = nrn.Act
@@ -97,7 +97,7 @@ func (ly *RWDaLayer) Build() error {
 	return err
 }
 
-func (ly *RWDaLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *RWDaLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	rly, ply, _ := ly.RWLayers()
 	if rly == nil || ply == nil {

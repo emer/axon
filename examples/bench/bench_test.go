@@ -115,7 +115,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// NeuronFun and divide that by (epochs * pats * quarters * cycles)
 	for i := 0; i < b.N; i++ {
 		ltime.NewState("Train")
-		net.NeuronFun(func(ly axon.AxonLayer, ni int, nrn *axon.Neuron) { ly.CycleNeuron(ni, nrn, ltime) },
+		net.NeuronFun(func(ly axon.AxonLayer, ni uint32, nrn *axon.Neuron) { ly.CycleNeuron(ni, nrn, ltime) },
 			"CycleNeuron")
 	}
 }

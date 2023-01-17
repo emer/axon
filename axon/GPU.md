@@ -23,8 +23,15 @@ Set 2:  Storage
     
 TODO:
 
-* Neuron.SubPoolAll
+* build WarpSize = 64 default into vgpu compute command
+
+* pass n layers, n prjns as fast buffer thing to shader
+
+* Neuron.SubPoolG
 * Layer.LayerIdxs
+* Prjn.Idxs
+
+* NewState and PlusPhase need to update pool.Inhib.Clamped state -- input is now set up front.
 
 * Figure out global vars per above
 * Breakout prjn integration functions -- currently not working in Go mode because of this.

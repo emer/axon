@@ -91,9 +91,9 @@ func (ly *BLALayer) USActiveFmUS(ctime *axon.Time) {
 	}
 }
 
-func (ly *BLALayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *BLALayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	da := ly.DaMod.Gain(ly.DA)
-	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	daEff := da * nrn.CaSpkM // da effect interacts with spiking
 	nrn.GeRaw += daEff
 	nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)

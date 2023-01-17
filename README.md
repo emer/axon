@@ -342,13 +342,13 @@ Neurons are connected via synapses parameterized with the following variables, c
 
 The `axon.Network` `CycleImpl` method in [`axon/network.go`](https://github.com/emer/axon/blob/master/axon/network.go) calls the following functions in order:
 
-* `GFmSpikes` on all `Prjn`s: integrates Raw and Syn conductances for each Prjn from spikes sent previously, into `GVals` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
+* `PrjnGatherSpikes` on all `Prjn`s: integrates Raw and Syn conductances for each Prjn from spikes sent previously, into `GVals` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
 
 * `GiFmSpikes` on all `Layer`s: computes inhibitory conductances based on total incoming FF and FB spikes into the layer, using the [FS-FFFB](https://github.com/emer/axon/tree/master/fsfffb) summary functions.
 
 * `CycleNeuron` on all `Neuron`s: integrates the Ge and Gi conductances from above, updates all the other channel conductances as described in [chans](https://github.com/emer/axon/tree/master/chans), and then computes `Inet` as the net current from all these conductances, which then drives updates to `Vm` and `VmDend`.  If `Vm` exceeds threshold then `Spike` = 1.  It also updates the neuron-level calcium variables that drive learning (`CaLrn`, `CaM`, `CaP`, `CaD` and `CaSpk` versions of these).
 
-* `SendSpike` on all `Neuron`s: for each neuron with `Spike` = 1, adds scaled synaptic weight value to `GBuf` ring buffer for efficiently delaying receipt of the spike per parametrized `Com.Delay` cycles.  This is what the `GFmSpikes` then integrates.  This is very expensive computationally because it goes through synapses on a msec Cycle scale.
+* `SendSpike` on all `Neuron`s: for each neuron with `Spike` = 1, adds scaled synaptic weight value to `GBuf` ring buffer for efficiently delaying receipt of the spike per parametrized `Com.Delay` cycles.  This is what the `PrjnGatherSpikes` then integrates.  This is very expensive computationally because it goes through synapses on a msec Cycle scale.
 
 * `CyclePost` on all `Layer`s: a hook for specialized algorithms to do something special.
 
@@ -356,7 +356,7 @@ The `axon.Network` `CycleImpl` method in [`axon/network.go`](https://github.com/
 
 All of the relevant parameters and most of the equations are in the [`axon/act.go`](https://github.com/emer/axon/blob/master/axon/act.go),  [`axon/inhib.go`](https://github.com/emer/axon/blob/master/axon/inhib.go), and [`axon/learn.go`](https://github.com/emer/axon/blob/master/axon/learn.go) which correspond to the `Act`, `Inhib` and `Learn` fields in the `Layer` struct.  Default values of parameters are shown in comments below.
 
-### GFmSpikes: for each Prjn
+### PrjnGatherSpikes: for each Prjn
 
 `Prjn.GVals` integrates two synaptic conductance values `G` per receiving neuron index, using Ge time constants for excitatory synapses, and Gi for inhibitory.  These values were sent before in `SendSpike` and stored in the `Prjn.GBuf` slice (see below).  In principle synaptic conductance is computed using a standard *alpha function* double-exponential with one time constant for the rise and another for the decay.  In practice, the rise time is < 1 msec and thus it is simpler to just add the new raw and decay (decay tau = 5 msec):
 * `GRaw = GBuf` at the `Com.Delay` index (e.g., 2 msec)
@@ -473,7 +473,7 @@ The cascaded integration of these variables is:
 
 ### SendSpike
 
-For each Neuron, if `Spike != 0`, then iterate over `SendPrjns` for that layer, and for each sending Synapse, `Prjn.GScale.Scale` (computed projection scaling, see [Projection scaling](#projection-scaling)) is multiplied by the synaptic weight `Wt`, and added into the `GBuf` buffer for each receiving neuron, at the ring index for `Com.Delay` (such that it will be added that many cycles later in `GFmSpikes`).  The `PIBuf` for the inhibitory pool of each receiving neuron is also incremented.
+For each Neuron, if `Spike != 0`, then iterate over `SendPrjns` for that layer, and for each sending Synapse, `Prjn.GScale.Scale` (computed projection scaling, see [Projection scaling](#projection-scaling)) is multiplied by the synaptic weight `Wt`, and added into the `GBuf` buffer for each receiving neuron, at the ring index for `Com.Delay` (such that it will be added that many cycles later in `PrjnGatherSpikes`).  The `PIBuf` for the inhibitory pool of each receiving neuron is also incremented.
 
 This is expensive computationally because it requires traversing all of the synapses for each sending neuron, in a sparse manner due to the fact that few neurons are typically spiking at any given cycle.
 

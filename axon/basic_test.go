@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
@@ -139,14 +140,14 @@ func TestSpikeProp(t *testing.T) {
 	pat.Set([]int{0, 0}, 1)
 
 	for del := 0; del <= 4; del++ {
-		prj.Com.Delay = del
+		prj.Params.Com.Delay = uint32(del)
 		net.InitWts()  // resets Gbuf
 		net.NewState() // get GScale
 
 		inLay.ApplyExt(pat)
 
 		net.NewState()
-		ctime.NewState("Train")
+		ctime.NewState(etime.Train)
 
 		inCyc := 0
 		hidCyc := 0
@@ -218,7 +219,7 @@ func TestNetAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		testNet.NewState()
-		ctime.NewState("Train")
+		ctime.NewState(etime.Train)
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
@@ -347,7 +348,7 @@ func TestNetLearn(t *testing.T) {
 			outLay.ApplyExt(inpat)
 
 			testNet.NewState()
-			ctime.NewState("Train")
+			ctime.NewState(etime.Train)
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					testNet.Cycle(ctime)
@@ -447,6 +448,7 @@ func TestInhibAct(t *testing.T) {
 	InhibNet.InitExt()
 
 	ctime := NewTime()
+	ctime.Defaults()
 
 	printCycs := false
 	printQtrs := false
@@ -484,7 +486,7 @@ func TestInhibAct(t *testing.T) {
 		outLay.ApplyExt(inpat)
 
 		InhibNet.NewState()
-		ctime.NewState("Train")
+		ctime.NewState(etime.Train)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				InhibNet.Cycle(ctime)

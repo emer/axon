@@ -117,10 +117,9 @@ func (nt *Network) Cycle(ctime *Time) {
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
 func (nt *Network) CycleImpl(ctime *Time) {
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
-	// GFmSpikes has to wait for the output of the SendSpikeFun
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.PrjnGatherSpikes(ctime) }, "PrjnGatherSpikes")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes")
-	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron")
+	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron")
 	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctime) }, "SendSpike")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost") // def NoThread
 	if ctime.Testing.IsFalse() {

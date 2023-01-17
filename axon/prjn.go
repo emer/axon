@@ -20,19 +20,6 @@ import (
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
 
-// PrjnGVals contains projection-level conductance values,
-// integrated by prjn before being integrated at the neuron level,
-// which enables the neuron to perform non-linear integration as needed.
-type PrjnGVals struct {
-	GRaw float32 `desc:"raw conductance received from senders = current raw spiking drive"`
-	GSyn float32 `desc:"time-integrated total synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay"`
-}
-
-func (pv *PrjnGVals) Init() {
-	pv.GRaw = 0
-	pv.GSyn = 0
-}
-
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnBase
@@ -44,10 +31,15 @@ type Prjn struct {
 	GBuf  []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- scale * weight is added with Com delay offset."`
 	PIBuf []float32   `desc:"pooled inhibition ring buffer for each pool * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per pool in receiving layer."`
 	PIdxs []uint32    `desc:"indexes of subpool for each receiving neuron, for aggregating PIBuf -- this is redundant with Neuron.Subpool but provides faster local access in SendSpike."`
-	GVals []PrjnGVals `desc:"projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed."`
+	GVals []PrjnGVals `desc:"[recv neurons] projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed."`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
+
+// Object returns the object with parameters to be set by emer.Params
+func (pj *Prjn) Object() interface{} {
+	return &pj.Params
+}
 
 // AsAxon returns this prjn as a axon.Prjn -- all derived prjns must redefine
 // this to return the base Prjn type, so that the AxonPrjn interface does not
@@ -58,7 +50,7 @@ func (pj *Prjn) AsAxon() *Prjn {
 
 func (pj *Prjn) Defaults() {
 	pj.Params.Defaults()
-	if pj.Typ == emer.Inhib {
+	if pj.Params.Com.Inhib.IsTrue() {
 		pj.Params.SWt.Adapt.On.SetBool(false)
 	}
 }
@@ -483,6 +475,7 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
+	pj.Params.Com.Inhib.SetBool(pj.Params.Com.Inhib.IsTrue())
 	pj.Params.Learn.LRate.Init()
 	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
@@ -677,7 +670,7 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	startIdx := pj.SendConIdxStart[sendIdx]
 	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
 	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
-	inhib := pj.Typ == emer.Inhib
+	inhib := pj.Params.Com.Inhib.IsTrue()
 	for i := range syns {
 		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
@@ -691,14 +684,14 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	}
 }
 
-// GFmSpikes increments synaptic conductances from Spikes
+// PrjnGatherSpikes increments synaptic conductances from Spikes
 // including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-func (pj *Prjn) GFmSpikes(ctime *Time) {
+func (pj *Prjn) PrjnGatherSpikes(ctime *Time) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Params.Com.Delay
 	sz := del + 1
 	zi := pj.Vals.Gidx.Zi
-	if pj.Typ == emer.Inhib {
+	if pj.Params.Com.Inhib.IsTrue() {
 		for ri := range pj.GVals {
 			gv := &pj.GVals[ri]
 			bi := uint32(ri)*sz + zi
@@ -1103,7 +1096,7 @@ func (pj *Prjn) SWtFmWt() {
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFmTrgAvg function must be called first.
 func (pj *Prjn) SynScale() {
-	if pj.Params.Learn.Learn.IsFalse() || pj.Typ == emer.Inhib {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.Com.Inhib.IsTrue() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()

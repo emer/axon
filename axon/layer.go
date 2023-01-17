@@ -19,7 +19,6 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
-	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/ki"
@@ -38,6 +37,11 @@ type Layer struct {
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
+
+// Object returns the object with parameters to be set by emer.Params
+func (ly *Layer) Object() interface{} {
+	return &ly.Params
+}
 
 func (ly *Layer) Defaults() {
 	ly.Params.Defaults()
@@ -383,8 +387,8 @@ func (ly *Layer) BuildSubPools() {
 	pi := 1
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
-			soff := int32(ly.Shp.Offset([]int{py, px, 0, 0}))
-			eoff := int32(ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
+			soff := uint32(ly.Shp.Offset([]int{py, px, 0, 0}))
+			eoff := uint32(ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
 			pl := &ly.Pools[pi]
 			pl.StIdx = soff
 			pl.EdIdx = eoff
@@ -403,7 +407,7 @@ func (ly *Layer) BuildPools(nu int) error {
 	ly.Pools = make([]Pool, np)
 	lpl := &ly.Pools[0]
 	lpl.StIdx = 0
-	lpl.EdIdx = int32(nu)
+	lpl.EdIdx = uint32(nu)
 	if np > 1 {
 		ly.BuildSubPools()
 	}
@@ -745,6 +749,10 @@ func (ly *Layer) InitActs() {
 		pl.Inhib.Init()
 		pl.ActM.Init()
 		pl.ActP.Init()
+		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsInput.IsTrue() {
+			pl.Inhib.Clamped.SetBool(true)
+		}
+		// todo: need to dynamically update Target layers!
 	}
 	ly.InitPrjnGBuffs()
 }
@@ -1005,6 +1013,13 @@ func (ly *Layer) NewState() {
 	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActMAvg, pl.ActM.Avg, ly.Params.Act.Dt.LongAvgDt)
 	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActPAvg, pl.ActP.Avg, ly.Params.Act.Dt.LongAvgDt)
 
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsTarget.IsTrue() {
+			pl.Inhib.Clamped.SetBool(false)
+		}
+	}
+
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
@@ -1038,7 +1053,7 @@ func (ly *Layer) InitGScale() {
 		// if pj.Params.GScale == 0 {
 		// 	continue
 		// }
-		if pj.Typ == emer.Inhib {
+		if pj.Params.Com.Inhib.IsTrue() {
 			totGiRel += pj.Params.PrjnScale.Rel
 		} else {
 			totGeRel += pj.Params.PrjnScale.Rel
@@ -1047,7 +1062,7 @@ func (ly *Layer) InitGScale() {
 
 	for _, p := range ly.RcvPrjns {
 		pj := p.(AxonPrjn).AsAxon()
-		if pj.Typ == emer.Inhib {
+		if pj.Params.Com.Inhib.IsTrue() {
 			if totGiRel > 0 {
 				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGiRel
 				pj.Params.GScale.Scale /= totGiRel
@@ -1120,34 +1135,30 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
-//  note: most cycle-level code happens in LayerParams
+//  note: these are calls to LayerParams methods that have the core computation
+
+// Prjns.PrjnGatherSpikes called first, at Network level for all prjns
 
 // GiFmSpikes integrates new inhibitory conductances from Spikes
-// at the layer and pool level
+// at the layer and pool level.
+// Called separately by Network.CycleImpl on all Layers
 func (ly *Layer) GiFmSpikes(ctime *Time) {
 	lpl := &ly.Pools[0]
 	subPools := (len(ly.Pools) > 1)
-	for pi := range ly.Pools {
-		pl := &ly.Pools[pi]
-		pl.Inhib.Clamped.SetBool(false)
-	}
 	for ni := range ly.Neurons { // note: layer-level iterating across neurons
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
 		pl := &ly.Pools[nrn.SubPool]
-		pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
-		if subPools {
-			lpl.Inhib.GeExtRaw += nrn.GeExt
-		}
-		if ly.Params.Act.Clamp.Add.IsFalse() && nrn.HasFlag(NeuronHasExt) {
-			pl.Inhib.Clamped.SetBool(true)
-			lpl.Inhib.Clamped.SetBool(true)
-		}
+		ly.Params.GeExtToPool(uint32(ni), nrn, pl, lpl, subPools, ctime) // todo: can this be done in send spike?
+		// todo: deal with this in plus phase and new state methods.
+		// if ly.Params.Act.Clamp.Add.IsFalse() && nrn.HasFlag(NeuronHasExt) {
+		// 	pl.Inhib.Clamped.SetBool(true)
+		// 	lpl.Inhib.Clamped.SetBool(true)
+		// }
 	}
-	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
-	ly.Params.Inhib.Layer.Inhib(&lpl.Inhib, ly.Vals.ActAvg.GiMult)
+	ly.Params.LayPoolGiFmSpikes(lpl, ly.Vals.ActAvg.GiMult, ctime)
 	ly.PoolGiFmSpikes(ctime)
 }
 
@@ -1161,79 +1172,34 @@ func (ly *Layer) PoolGiFmSpikes(ctime *Time) {
 	lyInhib := ly.Params.Inhib.Layer.On.IsTrue()
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
-		pl.Inhib.SpikesFmRaw(pl.NNeurons())
-		ly.Params.Inhib.Pool.Inhib(&pl.Inhib, ly.Vals.ActAvg.GiMult)
-		if lyInhib {
-			pl.Inhib.LayerMax(&lpl.Inhib)
-		} else {
-			lpl.Inhib.PoolMax(&pl.Inhib) // display only
-		}
-	}
-	if !lyInhib {
-		lpl.Inhib.SaveOrig() // effective GiOrig
+		ly.Params.SubPoolGiFmSpikes(pl, lpl, lyInhib, ly.Vals.ActAvg.GiMult, ctime)
 	}
 }
 
-// GFmSpikeRaw integrates G*Raw and G*Syn values for given neuron
+// NeuronGatherSpikes integrates G*Raw and G*Syn values for given neuron
 // from the Prjn-level GSyn integrated values.
-func (ly *Layer) GFmSpikeRaw(ni int, nrn *Neuron, ctime *Time) {
-	nrn.GeRaw = 0
-	nrn.GiRaw = 0
-	nrn.GeSyn = nrn.GeBase
-	nrn.GiSyn = nrn.GiBase
+func (ly *Layer) NeuronGatherSpikes(ni uint32, nrn *Neuron, ctime *Time) {
+	ly.Params.NeuronGatherSpikesInit(ni, nrn, ctime)
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
 		pj := p.AsAxon()
 		gv := pj.GVals[ni]
-		if pj.Typ == emer.Inhib {
-			nrn.GiRaw += gv.GRaw
-			nrn.GiSyn += gv.GSyn
-		} else {
-			nrn.GeRaw += gv.GRaw
-			nrn.GeSyn += gv.GSyn
-		}
+		pj.Params.NeuronGatherSpikesPrjn(gv, ni, nrn, ctime)
 	}
-}
-
-// GInteg integrates conductances G over time (Ge, NMDA, etc).
-// reads pool Gi values
-func (ly *Layer) GInteg(ni int, nrn *Neuron, ctime *Time, randctr *sltype.Uint2) {
-	ly.GFmSpikeRaw(ni, nrn, ctime)
-	// note: can add extra values to GeRaw and GeSyn here
-	// these are now in Params:
-	// ly.GFmRawSyn(ni, nrn, ctime, randctr)
-	// ly.GiInteg(ni, nrn, ctime)
-}
-
-// GiInteg adds Gi values from all sources including Pool computed inhib
-// and updates GABAB as well
-func (ly *Layer) GiInteg(ni int, nrn *Neuron, ctime *Time) {
-	pl := &ly.Pools[nrn.SubPool]
-	nrn.Gi = ly.Vals.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
-	nrn.SSGi = pl.Inhib.SSGi
-	nrn.SSGiDend = 0
-	if !ly.IsInputOrTarget() {
-		nrn.SSGiDend = ly.Params.Act.Dend.SSGi * pl.Inhib.SSGi
-	}
-	ly.Params.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
-	nrn.GgabaB = ly.Params.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
-	nrn.Gk += nrn.GgabaB // Gk was already init
 }
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
-// this is
-func (ly *Layer) CycleNeuron(ni int, nrn *Neuron, ctime *Time) {
-	// todo: do pjrn-specific versions then params versions
-	// ly.AxonLay.GInteg(ni, nrn, ctime)
+func (ly *Layer) CycleNeuron(ni uint32, nrn *Neuron, ctime *Time) {
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	ly.Params.CycleNeuron(ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, ctime)
 }
 
 // PostAct does updates at neuron level after activation (spiking)
 // updated for all neurons.
 // It is a hook for specialized algorithms -- empty at Axon base level
-func (ly *Layer) PostAct(ni int, nrn *Neuron, ctime *Time) {
+func (ly *Layer) PostAct(ni uint32, nrn *Neuron, ctime *Time) {
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -1323,6 +1289,12 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 			nrn.ActInt = ly.Params.Act.Init.Act // reset for plus phase
 		}
 	}
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsTarget.IsTrue() {
+			pl.Inhib.Clamped.SetBool(true)
+		}
+	}
 	ly.AvgGeM(ctime)
 }
 
@@ -1330,6 +1302,7 @@ func (ly *Layer) MinusPhase(ctime *Time) {
 func (ly *Layer) PlusPhase(ctime *Time) {
 	ly.Vals.ActAvg.CaSpkP = ly.AvgMaxVarByPool("CaSpkP", 0)
 	ly.Vals.ActAvg.CaSpkD = ly.AvgMaxVarByPool("CaSpkD", 0)
+
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {

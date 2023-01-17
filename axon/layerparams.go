@@ -20,18 +20,19 @@ import (
 //gosl: start layerparams
 
 // global projection param arrays
-// var SendPrjnPars []PrjnParams // Prjn params organized by Layer..SendPrjns
-// var RecvPrjnPars []PrjnParams // Prjn params organized by Layer..RecvPrjns
+// var SendPrjns []PrjnParams // [Layer][SendPrjns]
+// var RecvPrjns []PrjnParams // [Layer][RecvPrjns]
 
 // LayerIdxs contains index access into global arrays for GPU.
 type LayerIdxs struct {
 	Pool   uint32 // start of pools for this layer -- first one is always the layer-wide pool
-	RecvSt uint32 // start index into RecvPrjnPars global array
+	NeurSt uint32 // start of neurons for this layer in global array
+	RecvSt uint32 // start index into RecvPrjns global array
 	RecvN  uint32 // number of recv projections
-	SendSt uint32 // start index into SendPrjnPars global array
+	SendSt uint32 // start index into SendPrjns global array
 	SendN  uint32 // number of send projections
 
-	pad, pad1, pad2 uint32
+	pad, pad1 uint32
 }
 
 // LayerParams contains all of the layer parameters.
@@ -72,11 +73,51 @@ func (ly *LayerParams) AllParams() string {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  Cycle
+//  GeExtToPool
+
+// GeExtToPool adds GeExt from each neuron into the Pools
+func (ly *LayerParams) GeExtToPool(ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool, ctime *Time) {
+	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
+	if subPool {
+		lpl.Inhib.GeExtRaw += nrn.GeExt
+	}
+}
+
+// LayPoolGiFmSpikes computes inhibition Gi from Spikes for layer-level pool
+func (ly *LayerParams) LayPoolGiFmSpikes(lpl *Pool, giMult float32, ctime *Time) {
+	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
+	ly.Inhib.Layer.Inhib(&lpl.Inhib, giMult)
+}
+
+// SubPoolGiFmSpikes computes inhibition Gi from Spikes within a sub-pool
+func (ly *LayerParams) SubPoolGiFmSpikes(pl *Pool, lpl *Pool, lyInhib bool, giMult float32, ctime *Time) {
+	pl.Inhib.SpikesFmRaw(pl.NNeurons())
+	ly.Inhib.Pool.Inhib(&pl.Inhib, giMult)
+	if lyInhib {
+		pl.Inhib.LayerMax(lpl.Inhib.Gi) // note: this requires lpl inhib to have been computed before!
+	} else {
+		lpl.Inhib.PoolMax(pl.Inhib.Gi) // display only
+		lpl.Inhib.SaveOrig()           // effective GiOrig
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  CycleNeuron
+
+// NeuronGatherSpikesInit initializes G*Raw and G*Syn values for given neuron
+// prior to integration
+func (ly *LayerParams) NeuronGatherSpikesInit(ni uint32, nrn *Neuron, ctime *Time) {
+	nrn.GeRaw = 0
+	nrn.GiRaw = 0
+	nrn.GeSyn = nrn.GeBase
+	nrn.GiSyn = nrn.GiBase
+}
+
+// See prjnparams for NeuronGatherSpikesPrjn
 
 // GFmRawSyn computes overall Ge and GiSyn conductances for neuron
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
-func (ly *LayerParams) GFmRawSyn(ni int, nrn *Neuron, ctime *Time, randctr *sltype.Uint2) {
+func (ly *LayerParams) GFmRawSyn(ni uint32, nrn *Neuron, ctime *Time, randctr *sltype.Uint2) {
 	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
@@ -87,12 +128,12 @@ func (ly *LayerParams) GFmRawSyn(ni int, nrn *Neuron, ctime *Time, randctr *slty
 
 // GiInteg adds Gi values from all sources including SubPool computed inhib
 // and updates GABAB as well
-func (ly *LayerParams) GiInteg(ni int, nrn *Neuron, pl *Pool, giMult float32, ctime *Time) {
+func (ly *LayerParams) GiInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time) {
 	// pl := &ly.Pools[nrn.SubPool]
 	nrn.Gi = giMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	nrn.SSGi = pl.Inhib.SSGi
 	nrn.SSGiDend = 0
-	if ly.Act.Clamp.IsInput.IsTrue() || ly.Act.Clamp.IsTarget.IsTrue() {
+	if !(ly.Act.Clamp.IsInput.IsTrue() || ly.Act.Clamp.IsTarget.IsTrue()) {
 		nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
 	}
 	ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
@@ -102,15 +143,14 @@ func (ly *LayerParams) GiInteg(ni int, nrn *Neuron, pl *Pool, giMult float32, ct
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // reads pool Gi values
-func (ly *LayerParams) GInteg(ni int, nrn *Neuron, pl *Pool, giMult float32, ctime *Time, randctr *sltype.Uint2) {
-	// ly.GFmSpikeRaw(ni, nrn, ctime)
+func (ly *LayerParams) GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time, randctr *sltype.Uint2) {
 	// note: can add extra values to GeRaw and GeSyn here
 	ly.GFmRawSyn(ni, nrn, ctime, randctr)
 	ly.GiInteg(ni, nrn, pl, giMult, ctime)
 }
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-func (ly *LayerParams) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
+func (ly *LayerParams) SpikeFmG(ni uint32, nrn *Neuron, ctime *Time) {
 	intdt := ly.Act.Dt.IntDt
 	if ctime.PlusPhase.IsTrue() {
 		intdt *= 3.0
@@ -132,7 +172,7 @@ func (ly *LayerParams) SpikeFmG(ni int, nrn *Neuron, ctime *Time) {
 }
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
-func (ly *LayerParams) CycleNeuron(ni int, nrn *Neuron, pl *Pool, giMult float32, ctime *Time) {
+func (ly *LayerParams) CycleNeuron(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time) {
 	var randctr sltype.Uint2
 	randctr = ctime.RandCtr.Uint2() // use local var
 	ly.GInteg(ni, nrn, pl, giMult, ctime, &randctr)

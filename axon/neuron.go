@@ -49,10 +49,10 @@ const (
 // All variables accessible via Unit interface must be float32
 // and start at the top, in contiguous order
 type Neuron struct {
-	Flags      NeuronFlags `desc:"bit flags for binary state variables"`
-	LayIdx     uint32      `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
-	SubPool    uint32      `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
-	SubPoolAll uint32      `desc:"index in list of all pools"`
+	Flags    NeuronFlags `desc:"bit flags for binary state variables"`
+	LayIdx   uint32      `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
+	SubPool  uint32      `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
+	SubPoolG uint32      `desc:"index in global network-wide list of pools"`
 
 	Spike  float32 `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
 	Spiked float32 `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`

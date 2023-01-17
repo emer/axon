@@ -92,7 +92,7 @@ func (ly *ClampDaLayer) Build() error {
 	return err
 }
 
-func (ly *ClampDaLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *ClampDaLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.GInteg(ni, nrn, ctime)
 	nrn.Act = nrn.Ext
 	nrn.ActInt = nrn.Act

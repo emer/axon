@@ -437,7 +437,7 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
 
-	ss.Stats.SetFloat("TrlCorSim", float64(out.CorSim.Cor))
+	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
 
 	if ss.Stats.Float("TrlUnitErr") > 0 {

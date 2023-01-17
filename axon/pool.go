@@ -7,6 +7,7 @@ package axon
 import (
 	"github.com/emer/axon/fsfffb"
 	"github.com/emer/etable/minmax"
+	"github.com/goki/gosl/slbool"
 )
 
 //gosl: start pool
@@ -15,16 +16,19 @@ import (
 // and various other state values for layers
 // and pools (unit groups) that can be subject to inhibition
 type Pool struct {
-	StIdx, EdIdx int32 `inactive:"+" desc:"starting and ending (exlusive) indexes for the list of neurons in this pool"`
-
-	pad, pad1 uint32
+	StIdx, EdIdx   uint32      `inactive:"+" desc:"starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool"`
+	StIdxG, EdIdxG uint32      `view:"-" desc:"starting and ending (exlusive) global network-wide indexes for the list of neurons in this pool"`
+	LayIdx         uint32      `view:"-" desc:"layer index in global layer list"`
+	PoolIdx        uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool]"`
+	LayPoolIdx     uint32      `view:"-" desc:"pool index for layer-wide pool, only if this is not a LayPool"`
+	IsLayPool      slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
 
 	Inhib  fsfffb.Inhib    `inactive:"+" desc:"fast-slow FFFB inhibition values"`
-	ActM   minmax.AvgMax32 `inactive:"+" desc:"minus phase average and max Act activation values, for ActAvg updt"`
-	ActP   minmax.AvgMax32 `inactive:"+" desc:"plus phase average and max Act activation values, for ActAvg updt"`
-	GeM    minmax.AvgMax32 `inactive:"+" desc:"stats for GeM minus phase averaged Ge values"`
-	GiM    minmax.AvgMax32 `inactive:"+" desc:"stats for GiM minus phase averaged Gi values"`
-	AvgDif minmax.AvgMax32 `inactive:"+" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
+	ActM   minmax.AvgMax32 `inactive:"+" view:"inline" desc:"minus phase average and max Act activation values, for ActAvg updt"`
+	ActP   minmax.AvgMax32 `inactive:"+" view:"inline" desc:"plus phase average and max Act activation values, for ActAvg updt"`
+	GeM    minmax.AvgMax32 `inactive:"+" view:"inline" desc:"stats for GeM minus phase averaged Ge values"`
+	GiM    minmax.AvgMax32 `inactive:"+" view:"inline" desc:"stats for GiM minus phase averaged Gi values"`
+	AvgDif minmax.AvgMax32 `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
 }
 
 func (pl *Pool) Init() {

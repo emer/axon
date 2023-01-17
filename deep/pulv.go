@@ -78,7 +78,7 @@ func (ly *PulvLayer) IsTarget() bool {
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // reads pool Gi values
-func (ly *PulvLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *PulvLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	if ly.Pulv.DriversOff || !ctime.PlusPhase {
 		ly.Layer.GInteg(ni, nrn, ctime)
 		return
@@ -92,7 +92,7 @@ func (ly *PulvLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
 	nonDriverPct := 1.0 - mat32.Min(1, drvMax/ly.Pulv.FullDriveAct) // how much non-driver to keep
 	drvAct := DriveAct(ni, dly, sly, issuper)
 	drvGe := ly.Pulv.DriveGe(drvAct)
-	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	nrn.GeRaw = nonDriverPct*nrn.GeRaw + drvGe
 	nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Act.Dt.GeSynFmRawSteady(drvGe)
 	ly.GFmRawSyn(ni, nrn, ctime)
@@ -111,7 +111,7 @@ func (ly *PulvLayer) DriverLayer(drv string) (*axon.Layer, error) {
 }
 
 // DriveAct returns the driver activation -- Burst for Super, else CaSpkP
-func DriveAct(dni int, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
+func DriveAct(dni uint32, dly *axon.Layer, sly *SuperLayer, issuper bool) float32 {
 	act := float32(0)
 	if issuper {
 		act = sly.SuperNeurs[dni].Burst

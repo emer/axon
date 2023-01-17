@@ -7,7 +7,6 @@ package pcore
 import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/axon/rl"
-	"github.com/emer/emergent/emer"
 	"github.com/goki/ki/kit"
 )
 
@@ -43,13 +42,13 @@ func (ly *PTLayer) Class() string {
 	return "PT " + ly.Cls
 }
 
-func (ly *PTLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
-	thalGeRaw, thalGeSyn := ly.GFmSpikeRaw(ni, nrn, ctime)
+func (ly *PTLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
+	thalGeRaw, thalGeSyn := ly.NeuronGatherSpikes(ni, nrn, ctime)
 	ly.GFmRawSyn(ni, nrn, ctime, thalGeRaw, thalGeSyn)
 	ly.GiInteg(ni, nrn, ctime)
 }
 
-func (ly *PTLayer) GFmSpikeRaw(ni int, nrn *axon.Neuron, ctime *axon.Time) (thalGeRaw, thalGeSyn float32) {
+func (ly *PTLayer) NeuronGatherSpikes(ni uint32, nrn *axon.Neuron, ctime *axon.Time) (thalGeRaw, thalGeSyn float32) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GeSyn = nrn.GeBase
@@ -62,7 +61,7 @@ func (ly *PTLayer) GFmSpikeRaw(ni int, nrn *axon.Neuron, ctime *axon.Time) (thal
 		slay := pj.Send.(axon.AxonLayer).AsAxon()
 		gv := pj.GVals[ni]
 		switch {
-		case pj.Typ == emer.Inhib:
+		case pj.Params.Com.Inhib.IsTrue():
 			nrn.GiRaw += gv.GRaw
 			nrn.GiSyn += gv.GSyn
 		case slay.Typ == Thal:
@@ -76,7 +75,7 @@ func (ly *PTLayer) GFmSpikeRaw(ni int, nrn *axon.Neuron, ctime *axon.Time) (thal
 	return
 }
 
-func (ly *PTLayer) GFmRawSyn(ni int, nrn *axon.Neuron, ctime *axon.Time, thalGeRaw, thalGeSyn float32) {
+func (ly *PTLayer) GFmRawSyn(ni uint32, nrn *axon.Neuron, ctime *axon.Time, thalGeRaw, thalGeSyn float32) {
 	ly.Act.NMDAFmRaw(nrn, ly.ThalNMDAGain*thalGeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw) // exclude thal?
 	ly.Act.GvgccFmVm(nrn)

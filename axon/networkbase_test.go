@@ -50,7 +50,7 @@ func TestDefaults(t *testing.T) {
 		assert.Equal(t, 4, len(lyr.Neurons))
 		for neuronIdx := range lyr.Neurons {
 			neuron := &lyr.Neurons[neuronIdx]
-			assert.Equal(t, int32(lyr.Index()), neuron.LayIdx)
+			assert.Equal(t, uint32(lyr.Index()), neuron.LayIdx)
 		}
 	}
 }

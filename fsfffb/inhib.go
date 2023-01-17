@@ -88,20 +88,20 @@ func (fi *Inhib) GiFmFSSS() float32 {
 	return fi.FSGi + fi.SSGi
 }
 
-//gosl: end fsfffb
-
-// LayerMax updates given pool-level inhib values from given layer-level
+// LayerMax updates given pool-level inhib values from given layer-level Gi
 // with resulting value being the Max of either
-func (fi *Inhib) LayerMax(li *Inhib) {
-	fi.LayGi = li.Gi
-	fi.Gi = mat32.Max(fi.Gi, li.Gi)
+func (fi *Inhib) LayerMax(liGi float32) {
+	fi.LayGi = liGi
+	fi.Gi = mat32.Max(fi.Gi, liGi)
 }
 
 // PoolMax updates given layer-level inhib values from given pool-level
 // with resulting value being the Max of either
-func (fi *Inhib) PoolMax(pi *Inhib) {
-	fi.Gi = mat32.Max(fi.Gi, pi.Gi)
+func (fi *Inhib) PoolMax(piGi float32) {
+	fi.Gi = mat32.Max(fi.Gi, piGi)
 }
+
+//gosl: end fsfffb
 
 // Inhibs is a slice of Inhib records
 type Inhibs []Inhib

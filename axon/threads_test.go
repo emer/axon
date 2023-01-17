@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etable"
@@ -344,7 +345,7 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Time), e
 			outputLayer.ApplyExt(output)
 
 			net.NewState()
-			ltime.NewState("Train")
+			ltime.NewState(etime.Train)
 			for cycle := 0; cycle < nCycles; cycle++ {
 				fun(net, ltime)
 			}

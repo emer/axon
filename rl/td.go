@@ -28,7 +28,7 @@ func (ly *TDRewPredLayer) Defaults() {
 	ly.Act.Dt.GeTau = 40
 }
 
-func (ly *TDRewPredLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *TDRewPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	nrn.Act = nrn.Ge
 	nrn.ActInt = nrn.Act
@@ -125,16 +125,16 @@ func (ly *TDRewIntegLayer) Build() error {
 	return err
 }
 
-func (ly *TDRewIntegLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *TDRewIntegLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	rpAct := ly.RewPredAct(ctime)
 	nrn.SetFlag(axon.NeuronHasExt)
 	SetNeuronExtPosNeg(ni, nrn, rpAct)
-	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	ly.GFmRawSyn(ni, nrn, ctime)
 	ly.GiInteg(ni, nrn, ctime)
 }
 
-func (ly *TDRewIntegLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *TDRewIntegLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	rpAct := ly.RewPredAct(ctime)
 	nrn.Act = rpAct
@@ -200,16 +200,16 @@ func (ly *TDDaLayer) Build() error {
 	return err
 }
 
-func (ly *TDDaLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *TDDaLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	da := ly.RewIntegDA(ctime)
 	nrn.SetFlag(axon.NeuronHasExt)
 	SetNeuronExtPosNeg(ni, nrn, da)
-	ly.GFmSpikeRaw(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	ly.GFmRawSyn(ni, nrn, ctime)
 	ly.GiInteg(ni, nrn, ctime)
 }
 
-func (ly *TDDaLayer) SpikeFmG(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *TDDaLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.SpikeFmG(ni, nrn, ctime)
 	da := ly.RewIntegDA(ctime)
 	nrn.Act = da

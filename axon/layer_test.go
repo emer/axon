@@ -66,11 +66,11 @@ func TestLayer_SendSpike(t *testing.T) {
 	// set some of the weights
 	in1pj0 := inputLayer1.SendPrjn(0).(*Prjn)
 	in1pj0.Syns[in1pj0.SendConIdxStart[1]].Wt = 0.1
-	in1pj0.GScale.Scale = 6.6
+	in1pj0.Params.GScale.Scale = 6.6
 
 	in2pj0 := inputLayer2.SendPrjn(0).(*Prjn)
 	in2pj0.Syns[in2pj0.SendConIdxStart[0]+4].Wt = 3.0
-	in2pj0.GScale.Scale = 0.4
+	in2pj0.Params.GScale.Scale = 0.4
 
 	net.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ltime) },
 		"SendSpike")

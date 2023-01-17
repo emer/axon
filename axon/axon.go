@@ -152,19 +152,19 @@ type AxonLayer interface {
 	// * Ginteg
 	// * SpikeFmG
 	// * PostAct
-	CycleNeuron(ni int, nrn *Neuron, ctime *Time)
+	CycleNeuron(ni uint32, nrn *Neuron, ctime *Time)
 
 	// GInteg integrates conductances G over time (Ge, NMDA, etc).
 	// reads pool Gi values
-	// GInteg(ni int, nrn *Neuron, ctime *Time)
+	// GInteg(ni uint32, nrn *Neuron, ctime *Time)
 
 	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-	// SpikeFmG(ni int, nrn *Neuron, ctime *Time)
+	// SpikeFmG(ni uint32, nrn *Neuron, ctime *Time)
 
 	// PostAct does updates at neuron level after activation (spiking)
 	// updated for all neurons.
 	// It is a hook for specialized algorithms -- empty at Axon base level
-	PostAct(ni int, nrn *Neuron, ctime *Time)
+	PostAct(ni uint32, nrn *Neuron, ctime *Time)
 
 	// SendSpike sends spike to receivers -- last step in Cycle, integrated
 	// the next time around.
@@ -247,9 +247,9 @@ type AxonPrjn interface {
 	// to add to buffer on receivers.
 	SendSpike(si int)
 
-	// GFmSpikes increments synaptic conductances from Spikes
+	// PrjnGatherSpikes increments synaptic conductances from Spikes
 	// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-	GFmSpikes(ctime *Time)
+	PrjnGatherSpikes(ctime *Time)
 
 	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.

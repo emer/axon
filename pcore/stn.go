@@ -148,7 +148,7 @@ func (ly *STNLayer) NewState() {
 	}
 }
 
-func (ly *STNLayer) GInteg(ni int, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *STNLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Layer.GInteg(ni, nrn, ctime)
 	snr := &ly.STNNeurs[ni]
 	if ly.Ca.CaD {

@@ -325,7 +325,7 @@ func (an *SpikeNoiseParams) Defaults() {
 
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGe(p *float32, ni int, randctr *sltype.Uint2) float32 {
+func (an *SpikeNoiseParams) PGe(p *float32, ni uint32, randctr *sltype.Uint2) float32 {
 	*p *= slrand.Float(randctr, uint32(ni))
 	if *p <= an.GeExpInt {
 		*p = 1
@@ -336,7 +336,7 @@ func (an *SpikeNoiseParams) PGe(p *float32, ni int, randctr *sltype.Uint2) float
 
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGi(p *float32, ni int, randctr *sltype.Uint2) float32 {
+func (an *SpikeNoiseParams) PGi(p *float32, ni uint32, randctr *sltype.Uint2) float32 {
 	*p *= slrand.Float(randctr, uint32(ni))
 	if *p <= an.GiExpInt {
 		*p = 1
@@ -352,8 +352,8 @@ func (an *SpikeNoiseParams) PGi(p *float32, ni int, randctr *sltype.Uint2) float
 // (like a current clamp) -- either adds or overwrites existing conductances.
 // Noise is added in either case.
 type ClampParams struct {
-	IsInput  slbool.Bool `view:"-" desc:"is this a clamped input layer?  set automatically based on layer type at initialization"`
-	IsTarget slbool.Bool `view:"-" desc:"is this a target layer?  set automatically based on layer type at initialization"`
+	IsInput  slbool.Bool `inactive:"+" desc:"is this a clamped input layer?  set automatically based on layer type at initialization"`
+	IsTarget slbool.Bool `inactive:"+" desc:"is this a target layer?  set automatically based on layer type at initialization"`
 	Ge       float32     `def:"0.8,1.5" desc:"amount of Ge driven for clamping -- generally use 0.8 for Target layers, 1.5 for Input layers"`
 	Add      slbool.Bool `def:"false" view:"add external conductance on top of any existing -- generally this is not a good idea for target layers (creates a main effect that learning can never match), but may be ok for input layers"`
 	ErrThr   float32     `def:"0.5" desc:"threshold on neuron Act activity to count as active for computing error relative to target in PctErr method"`
@@ -653,7 +653,7 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 
 // GeFmSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
-func (ac *ActParams) GeFmSyn(ni int, nrn *Neuron, geSyn, geExt float32, randctr *sltype.Uint2) {
+func (ac *ActParams) GeFmSyn(ni uint32, nrn *Neuron, geSyn, geExt float32, randctr *sltype.Uint2) {
 	nrn.GeExt = 0
 	if ac.Clamp.Add.IsTrue() && nrn.HasFlag(NeuronHasExt) {
 		nrn.GeExt = nrn.Ext * ac.Clamp.Ge
@@ -675,7 +675,7 @@ func (ac *ActParams) GeFmSyn(ni int, nrn *Neuron, geSyn, geExt float32, randctr 
 }
 
 // GeNoise updates nrn.GeNoise if active
-func (ac *ActParams) GeNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
+func (ac *ActParams) GeNoise(ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Ge == 0 {
 		return
 	}
@@ -685,7 +685,7 @@ func (ac *ActParams) GeNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
 }
 
 // GiNoise updates nrn.GiNoise if active
-func (ac *ActParams) GiNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
+func (ac *ActParams) GiNoise(ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Gi == 0 {
 		return
 	}
@@ -695,7 +695,7 @@ func (ac *ActParams) GiNoise(ni int, nrn *Neuron, randctr *sltype.Uint2) {
 
 // GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
-func (ac *ActParams) GiFmSyn(ni int, nrn *Neuron, giSyn float32, randctr *sltype.Uint2) float32 {
+func (ac *ActParams) GiFmSyn(ni uint32, nrn *Neuron, giSyn float32, randctr *sltype.Uint2) float32 {
 	ac.GiNoise(ni, nrn, randctr)
 	if giSyn < 0 { // negative inhib G doesn't make any sense
 		giSyn = 0
@@ -835,11 +835,10 @@ func (ac *ActParams) SpikeFmVm(nrn *Neuron) {
 
 // SynComParams are synaptic communication parameters: delay and probability of failure
 type SynComParams struct {
+	Inhib    slbool.Bool `inactive:"+" desc:"true if this is an inhibitory projection -- automatically set if Type == Inhib."`
 	Delay    uint32      `min:"0" def:"2" desc:"additional synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must call InitWts() on Network!  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time.  Biologically, subtract 1 from synaptic delay values to set corresponding Delay value."`
 	PFail    float32     `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
 	PFailSWt slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
-
-	pad int32
 }
 
 func (sc *SynComParams) Defaults() {
