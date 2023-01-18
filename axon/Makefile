@@ -16,7 +16,7 @@ clean:
 	$(GOCLEAN)
 
 # NOTE: MUST update version number here prior to running 'make release'
-VERS=v1.6.19
+VERS=v1.6.20
 PACKAGE=axon
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
 GIT_COMMIT=`git rev-parse --short HEAD`
@@ -41,7 +41,7 @@ version:
 	/bin/cat $(VERS_FILE)
 	git commit -am "$(VERS) release -- $(VERS_FILE) updated"
 
-release:	
+release:
 	git tag -a $(VERS) -m "$(VERS) release"
 	git push origin --tags
-	
+
