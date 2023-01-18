@@ -3,9 +3,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/emer/axon)](https://goreportcard.com/report/github.com/emer/axon)
 [![GoDoc](https://godoc.org/github.com/emer/axon?status.svg)](https://godoc.org/github.com/emer/axon)
 [![codecov](https://codecov.io/gh/emer/axon/branch/master/graph/badge.svg)](https://codecov.io/gh/emer/axon)
-[![Travis](https://travis-ci.com/emer/axon.svg?branch=master)](https://travis-ci.com/emer/axon)
+![CI](https://github.com/emer/axon/actions/workflows/build.yml/badge.svg?branch=master)
 
-This is the Go implementation of the Axon algorithm for spiking, biologically-based models of cognition, based on the [Go emergent](https://github.com/emer/emergent) framework (with optional Python interface), and the  [leabra](https://github.com/emer/leabra) framework for rate-code models.
+This is the Go implementation of the Axon algorithm for spiking, biologically-based models of cognition, based on the [Go emergent](https://github.com/emer/emergent) framework (with optional Python interface), and the  [Leabra](https://github.com/emer/leabra) framework for rate-code models.
 
 Axon is the spiking version of [Leabra](https://github.com/emer/leabra), with several advances.  As an acronym, *axon* could stand for *Adaptive eXcitation Of Noise*, reflecting the ability to learn using the power of error-backpropagation in the context of noisy spiking activation.  The spiking function of the axon is what was previously missing from Leabra.
 
@@ -22,6 +22,27 @@ See [python README](https://github.com/emer/axon/blob/master/python/README.md) a
 * Dec 2022: **v1.6.12** represents the start of an anticipated stable plateau in development, with this README fully updated to describe the current algorithm, and well-tested and biologically-based implementations of all the major elements of the core algorithm, and initial steps on specialized PFC / BG / RL algorithms as integrated in the `examples/boa` model.
 
 * May-July 2021: Initial implementation and significant experimentation.  The fully spiking-based Axon framework is capable of learning to categorize rendered 3D object images based on the deep, bidirectionally-connected LVis model originally reported in O'Reilly et al. (2013).  Given the noisy, complex nature of the spiking dynamics, getting this level of functionality out of a large, deep network architecture was not easy, and it drove a number of critical additional mechanisms that are necessary for this model to work.
+
+# Development
+
+## Release
+
+There are a few main parts to releasing a new version.
+
+### Update version.go
+
+1. Increment the `VERS` string in [axon/Makefile](axon/Makefile).
+1. Make sure `goimports` is on your `$PATH`. If you don't have it, you can run: `go install golang.org/x/tools/cmd/goimports@latest`
+1. Run `make -C axon version`. This will modify [axon/version.go](axon/version.go) and commit it.
+1. Open a pull request with this change and get it merged into master.
+
+### Tag the commit
+
+```sh
+git switch master
+git fetch origin master && git reset --hard FETCH_HEAD
+make -C axon release
+```
 
 # Design and Organization
 
