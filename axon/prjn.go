@@ -390,10 +390,10 @@ func (pj *Prjn) Build() error {
 
 // BuildGBuf builds GBuf with current Com Delay values, if not correct size
 func (pj *Prjn) BuildGBuffs() {
-	rlen := int32(pj.Recv.Shape().Len())
-	dl := int32(pj.Com.Delay + 1)
+	rlen := uint32(pj.Recv.Shape().Len())
+	dl := uint32(pj.Com.Delay + 1)
 	gblen := dl * rlen
-	if pj.Gidx.Len == dl && int32(len(pj.GBuf)) == gblen {
+	if pj.Gidx.Len == dl && uint32(len(pj.GBuf)) == gblen {
 		return
 	}
 	pj.Gidx.Len = dl
@@ -697,7 +697,7 @@ func (pj *Prjn) InitGBuffs() {
 // sending and receiving spikes.
 func (pj *Prjn) SendSpike(sendIdx int) {
 	scale := pj.GScale.Scale
-	maxDelay := pj.Com.Delay
+	maxDelay := uint32(pj.Com.Delay)
 	delayBufSize := maxDelay + 1
 	currDelayIdx := pj.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
 	numCons := pj.SendConN[sendIdx]
@@ -708,10 +708,10 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	for i := range syns {
 		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
-		pj.GBuf[int(recvIdx)*delayBufSize+currDelayIdx] += sv
+		pj.GBuf[uint32(recvIdx)*delayBufSize+currDelayIdx] += sv
 		// inhibitory neurons directly drive GiSyn, so we skip them for FS-FFFB calc
 		if !inhib {
-			pj.PIBuf[int(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
+			pj.PIBuf[uint32(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
 		}
 	}
 }
