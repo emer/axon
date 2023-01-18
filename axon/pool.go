@@ -70,7 +70,7 @@ func (cd *CorSimStats) Init() {
 	cd.Avg = 0
 }
 
-// LayerVals holds extra layer state that is updated
+// LayerVals holds extra layer state that is updated per layer
 type LayerVals struct {
 	ActAvg ActAvgVals  `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
 	CorSim CorSimStats `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`

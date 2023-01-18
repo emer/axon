@@ -49,7 +49,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Gbar.L":     "0.2",
 					"Layer.Inhib.Layer.On": "false",
 				}},
-			{Sel: ".Inhib", Desc: "weaker inhib",
+			{Sel: ".Inhibitory", Desc: "weaker inhib",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.1",
 				}},

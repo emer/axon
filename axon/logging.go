@@ -274,10 +274,10 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-		// 			ly := net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		// 			ly := net.LayerByName(clnm).(AxonLayer).AsAxon()
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-		// 			ly := net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		// 			ly := net.LayerByName(clnm).(AxonLayer).AsAxon()
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 		// 			ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
@@ -430,6 +430,59 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 					lyval := ctx.ItemColTensor(etime.Train, times[1], clnm+"_AvgCaDiff").(*etensor.Float64)
 					cor := metric.Correlation64(outvals.Values, lyval.Values)
 					ctx.SetFloat64(cor)
+				}}})
+	}
+}
+
+// LogAddPulvCorSimItems adds CorSim stats for Pulv / Pulvinar layers
+// aggregated across three time scales, ordered from higher to lower,
+// e.g., Run, Epoch, Trial.
+func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
+	layers := net.LayersByClass("Pulvinar")
+	for _, lnm := range layers {
+		clnm := lnm
+		lg.AddItem(&elog.Item{
+			Name:   lnm + "_CorSim",
+			Type:   etensor.FLOAT64,
+			Plot:   false,
+			FixMax: true,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Vals.CorSim.Cor)
+				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[2], agg.AggMean)
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ix := ctx.LastNRows(etime.Train, times[1], 5) // cached
+					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:   clnm + "_ActAvg",
+			Type:   etensor.FLOAT64,
+			Plot:   false,
+			FixMax: false,
+			Range:  minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].ActM.Avg)
+				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
+				}}})
+		lg.AddItem(&elog.Item{
+			Name:  clnm + "_MaxGeM",
+			Type:  etensor.FLOAT64,
+			Plot:  false,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].GeM.Max)
+				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
 				}}})
 	}
 }

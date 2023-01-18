@@ -36,7 +36,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Slope":               "0.02", //
 					"Layer.Act.Sahp.CaTau":               "10",   //
 				}},
-			{Sel: "SuperLayer", Desc: "super layer params",
+			{Sel: ".Super", Desc: "super layer params",
 				Params: params.Params{
 					"Layer.Burst.ThrRel": "0.1", // 0.1, 0.1 best
 					"Layer.Burst.ThrAbs": "0.1",
@@ -71,7 +71,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLRate.SpkThr":     "0.1",  // 0.1 def
 					"Layer.Learn.RLRate.Min":        "0.001",
 				}},
-			{Sel: "PulvLayer", Desc: "pulvinar",
+			{Sel: ".Pulvinar", Desc: "pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > higher v1.6.1
 					"Layer.Inhib.Layer.FB":          "1",

@@ -13,27 +13,6 @@ import (
 	"github.com/goki/mat32"
 )
 
-// CTParams control the CT corticothalamic neuron special behavior
-type CTParams struct {
-	GeGain   float32 `def:"0.8,1" desc:"gain factor for context excitatory input, which is constant as compared to the spiking input from other projections, so it must be downscaled accordingly.  This can make a difference and may need to be scaled up or down."`
-	DecayTau float32 `def:"0,50" desc:"decay time constant for context Ge input -- if > 0, decays over time so intrinsic circuit dynamics have to take over.  For single-step copy-based cases, set to 0, while longer-time-scale dynamics should use 50"`
-	DecayDt  float32 `view:"-" json:"-" xml:"-" desc:"1 / tau"`
-}
-
-func (cp *CTParams) Update() {
-	if cp.DecayTau > 0 {
-		cp.DecayDt = 1 / cp.DecayTau
-	} else {
-		cp.DecayDt = 0
-	}
-}
-
-func (cp *CTParams) Defaults() {
-	cp.GeGain = 0.8
-	cp.DecayTau = 50
-	cp.Update()
-}
-
 // CTLayer implements the corticothalamic projecting layer 6 deep neurons
 // that project to the Pulv pulvinar neurons, to generate the predictions.
 // They receive phasic input representing 5IB bursting via CTCtxtPrjn inputs

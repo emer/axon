@@ -45,22 +45,35 @@ func (ly *Layer) Object() interface{} {
 }
 
 func (ly *Layer) Defaults() {
+	ly.Params.LayType = ly.LayerType()
 	ly.Params.Defaults()
 	ly.Vals.ActAvg.GiMult = 1
 	for _, pj := range ly.RcvPrjns {
 		pj.Defaults()
 	}
-	switch ly.Typ {
-	case emer.Input:
+	switch ly.LayerType() {
+	case Input:
 		ly.Params.Act.Clamp.Ge = 1.5
 		ly.Params.Inhib.Layer.Gi = 0.9
 		ly.Params.Inhib.Pool.Gi = 0.9
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
-	case emer.Target:
+	case Target:
 		ly.Params.Act.Clamp.Ge = 0.8
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
 		// ly.Params.Learn.RLRate.SigmoidMin = 1
+	case CT:
+		ly.Params.CTLayerDefaults()
 	}
+}
+
+// Update is an interface for generically updating after edits
+// this should be used only for the values on the struct itself.
+// UpdateParams is used to update all parameters, including Prjn.
+func (ly *Layer) Update() {
+	if !ly.Is4D() && ly.Params.Inhib.Pool.On.IsTrue() {
+		ly.Params.Inhib.Pool.On.SetBool(false)
+	}
+	ly.Params.Update()
 }
 
 // UpdateParams updates all params given any changes that might
@@ -69,10 +82,7 @@ func (ly *Layer) Defaults() {
 // This is not called Update because it is not just about the
 // local values in the struct.
 func (ly *Layer) UpdateParams() {
-	if !ly.Is4D() && ly.Params.Inhib.Pool.On.IsTrue() {
-		ly.Params.Inhib.Pool.On.SetBool(false)
-	}
-	ly.Params.Update()
+	ly.Update()
 	for _, pj := range ly.RcvPrjns {
 		pj.UpdateParams()
 	}
@@ -89,6 +99,15 @@ func (ly *Layer) HasPoolInhib() bool {
 // need to include accessors to all the basic stuff
 func (ly *Layer) AsAxon() *Layer {
 	return ly
+}
+
+// LayerType returns axon specific cast of ly.Typ layer type
+func (ly *Layer) LayerType() LayerTypes {
+	return LayerTypes(ly.Typ)
+}
+
+func (ly *Layer) Class() string {
+	return ly.LayerType().String() + " " + ly.Cls
 }
 
 // JsonToParams reformates json output to suitable params display output
@@ -1194,8 +1213,21 @@ func (ly *Layer) NeuronGatherSpikes(ni uint32, nrn *Neuron, ctime *Time) {
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls NeuronGatherSpikes, GFmRawSyn, GiInteg
 func (ly *Layer) GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time, randctr *sltype.Uint2) {
+	drvGe := float32(0)
+	nonDrvPct := float32(0)
+	if ly.LayerType() == Pulvinar {
+		dly := ly.Network.Layer(int(ly.Params.Pulv.DriveLayIdx)).(AxonLayer).AsAxon()
+		drvMax := dly.Vals.ActAvg.CaSpkP.Max
+		nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
+		dneur := dly.Neurons[ni]
+		if dly.LayerType() == Super {
+			drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
+		} else {
+			drvGe = ly.Params.Pulv.DriveGe(dneur.CaSpkP)
+		}
+	}
 	ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.Params.GFmRawSyn(ni, nrn, ctime, randctr)
+	ly.Params.GFmRawSyn(ni, nrn, drvGe, nonDrvPct, ctime, randctr)
 	ly.Params.GiInteg(ni, nrn, pl, giMult, ctime)
 }
 
@@ -1209,13 +1241,13 @@ func (ly *Layer) CycleNeuron(ni uint32, nrn *Neuron, ctime *Time) {
 	randctr := ctime.RandCtr.Uint2() // use local var so updates are local
 	ly.AxonLay.GInteg(ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, ctime, &randctr)
 	ly.AxonLay.SpikeFmG(ni, nrn, ctime)
-	ly.AxonLay.PostAct(ni, nrn, ctime)
+	ly.AxonLay.PostSpike(ni, nrn, ctime)
 }
 
-// PostAct does updates at neuron level after activation (spiking)
-// updated for all neurons.
-// It is a hook for specialized algorithms -- empty at Axon base level
-func (ly *Layer) PostAct(ni uint32, nrn *Neuron, ctime *Time) {
+// PostSpike does updates at neuron level after spiking has been computed.
+// This is where special layer types add extra code.
+func (ly *Layer) PostSpike(ni uint32, nrn *Neuron, ctime *Time) {
+	ly.Params.PostSpike(ni, nrn, &ly.Vals, ctime)
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
@@ -1434,14 +1466,26 @@ func (ly *Layer) CorSimFmActs() {
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
 func (ly *Layer) IsTarget() bool {
-	return ly.Typ == emer.Target
+	switch ly.LayerType() {
+	case Target:
+		return true
+	case Pulvinar:
+		return true
+	default:
+		return false
+	}
 }
 
 // IsInput returns true if this layer is an Input layer.
 // By default, returns true for layers of Type == emer.Input
 // Used to prevent adapting of inhibition or TrgAvg values.
 func (ly *Layer) IsInput() bool {
-	return ly.Typ == emer.Input
+	switch ly.LayerType() {
+	case Input:
+		return true
+	default:
+		return false
+	}
 }
 
 // IsInputOrTarget returns true if this layer is either an Input
@@ -1851,6 +1895,7 @@ func (ly *Layer) LesionNeurons(prop float32) int {
 //  Layer props for gui
 
 var LayerProps = ki.Props{
+	"EnumType:Typ": KiT_LayerTypes, // uses our LayerTypes for GUI
 	"ToolBar": ki.PropSlice{
 		{"Defaults", ki.Props{
 			"icon": "reset",

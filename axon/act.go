@@ -532,6 +532,8 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
+
+	nrn.CtxtGe -= glong * nrn.CtxtGe
 }
 
 //gosl: end act
@@ -594,6 +596,8 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
+
+	nrn.CtxtGe = 0
 
 	ac.InitLongActs(nrn)
 }

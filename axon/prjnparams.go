@@ -17,8 +17,10 @@ import (
 // var RecvSynIdxs []SynIdx // [Layer][RecvPrjns][RecvNeurons][RecvSyns]
 
 //gosl: hlsl prjnparams
+// #include "prjntypes.hlsl"
 // #include "act_prjn.hlsl"
 // #include "learn.hlsl"
+// #include "deep_prjns.hlsl"
 // #include "prjnvals.hlsl"
 //gosl: end prjnparams
 
@@ -55,7 +57,8 @@ type PrjnIdxs struct {
 }
 
 // GScaleVals holds the conductance scaling values.
-// These are computed once at start and remain constant thereafter.
+// These are computed once at start and remain constant thereafter,
+// and therefore belong on Params and not on PrjnVals.
 type GScaleVals struct {
 	Scale float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
 	Rel   float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
@@ -67,12 +70,22 @@ type GScaleVals struct {
 // These values must remain constant over the course of computation.
 // On the GPU, they are loaded into a uniform.
 type PrjnParams struct {
+	PrjnType PrjnTypes `desc:"functional type of prjn -- determines functional code path for specialized layer types, and is synchronized with the Prjn.Typ value"`
+
+	pad, pad1, pad2 int32
+
 	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
 	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
 	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
 	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
 	GScale    GScaleVals      `view:"inline" desc:"conductance scaling values"`
-	Idxs      PrjnIdxs        `view:"-" desc:"recv and send neuron-level projection index array access info"`
+
+	//////////////////////////////////////////
+	//  Specialized prjn type parameters
+	//     each applies to a specific prjn type.
+	//     use the `viewif` field tag to condition on PrjnType.
+
+	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
 
 func (pj *PrjnParams) Defaults() {
@@ -122,8 +135,12 @@ func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctime *
 	caP := sy.CaP
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctime.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
-	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                           // caD reflects entire window
-	if sy.Wt == 0 {                                                     // failed con, no learn
+	if pj.PrjnType == CTCtxt {
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.SpkPrv)
+	} else {
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
+	}
+	if sy.Wt == 0 { // failed con, no learn
 		return
 	}
 	var err float32
@@ -139,7 +156,11 @@ func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctime *
 	} else {
 		err *= sy.LWt
 	}
-	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
+	if pj.PrjnType == CTCtxt { // rn.RLRate IS needed for other projections, just not the context one
+		sy.DWt += pj.Learn.LRate.Eff * err
+	} else {
+		sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
+	}
 }
 
 //gosl: end prjnparams

@@ -14,6 +14,7 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/indent"
+	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -48,16 +49,32 @@ func (pj *Prjn) AsAxon() *Prjn {
 	return pj
 }
 
+// PrjnType returns axon specific cast of pj.Typ prjn type
+func (pj *Prjn) PrjnType() PrjnTypes {
+	return PrjnTypes(pj.Typ)
+}
+
+func (pj *Prjn) Class() string {
+	return pj.PrjnType().String() + " " + pj.Cls
+}
+
 func (pj *Prjn) Defaults() {
+	pj.Params.PrjnType = pj.PrjnType()
 	pj.Params.Defaults()
 	if pj.Typ == emer.Inhib {
 		pj.Params.SWt.Adapt.On.SetBool(false)
 	}
 }
 
-// UpdateParams updates all params given any changes that might have been made to individual values
-func (pj *Prjn) UpdateParams() {
+// Update is interface that does local update of struct vals
+func (pj *Prjn) Update() {
 	pj.Params.Update()
+}
+
+// UpdateParams updates all params given any changes
+// that might have been made to individual values
+func (pj *Prjn) UpdateParams() {
+	pj.Update()
 }
 
 func (pj *Prjn) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj }
@@ -662,6 +679,10 @@ func (pj *Prjn) InitGBuffs() {
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
 func (pj *Prjn) SendSpike(sendIdx int) {
+	if PrjnTypes(pj.Typ) == CTCtxt { // skip regular
+		return
+	}
+
 	scale := pj.Params.GScale.Scale
 	maxDelay := pj.Params.Com.Delay
 	delayBufSize := maxDelay + 1
@@ -1038,4 +1059,8 @@ func (pj *Prjn) LRateMod(mod float32) {
 func (pj *Prjn) LRateSched(sched float32) {
 	pj.Params.Learn.LRate.Sched = sched
 	pj.Params.Learn.LRate.Update()
+}
+
+var PrjnProps = ki.Props{
+	"EnumType:Typ": KiT_PrjnTypes, // uses our PrjnTypes for GUI
 }

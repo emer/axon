@@ -51,7 +51,6 @@ func (ls *LayerBase) SetThread(thr int) {}
 func (ls *LayerBase) Name() string               { return ls.Nm }
 func (ls *LayerBase) SetName(nm string)          { ls.Nm = nm }
 func (ls *LayerBase) Label() string              { return ls.Nm }
-func (ls *LayerBase) Class() string              { return ls.Typ.String() + " " + ls.Cls }
 func (ls *LayerBase) SetClass(cls string)        { ls.Cls = cls }
 func (ls *LayerBase) TypeName() string           { return "Layer" } // type category, for params..
 func (ls *LayerBase) Type() emer.LayerType       { return ls.Typ }

@@ -12,8 +12,8 @@ import (
 	"github.com/goki/mat32"
 )
 
-// NeuronVarStart is the starting field where float32 variables start
-// all variables prior must be 32 bit (int32)
+// NeuronVarStart is the starting *field* index (not byte count!)
+// where float32 variables start -- all prior must be 32 bit (uint32, int32),
 // Note: all non-float32 infrastructure variables must be at the start!
 const NeuronVarStart = 4
 
@@ -139,7 +139,14 @@ type Neuron struct {
 	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
 	Gak      float32 `desc:"conductance of A-type K potassium channels"`
 
-	pad, pad1, pad2 float32
+	/////////////////////////////////////////
+	//  Special Layer Vars Below
+
+	Burst    float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
+	BurstPrv float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
+	CtxtGe   float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
+
+	pad, pad1 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

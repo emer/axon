@@ -162,10 +162,9 @@ type AxonLayer interface {
 	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 	SpikeFmG(ni uint32, nrn *Neuron, ctime *Time)
 
-	// PostAct does updates at neuron level after activation (spiking)
-	// updated for all neurons.
-	// It is a hook for specialized algorithms -- empty at Axon base level
-	PostAct(ni uint32, nrn *Neuron, ctime *Time)
+	// PostSpike does updates at neuron level after spiking has been computed.
+	// This is where special layer types add extra code.
+	PostSpike(ni uint32, nrn *Neuron, ctime *Time)
 
 	// SendSpike sends spike to receivers -- last step in Cycle, integrated
 	// the next time around.
@@ -215,6 +214,16 @@ type AxonLayer interface {
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
 	SynFail(ctime *Time)
+
+	// SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
+	// CtxtGe excitatory conductance on CT layers.
+	// This should be called at the end of the Plus (5IB Burst) phase via Network.CTCtxt
+	SendCtxtGe(ctime *Time)
+
+	// CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
+	// overall Ctxt value, only on CT layers.
+	// This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
+	CtxtFmGe(ctime *Time)
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
