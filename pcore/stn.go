@@ -68,15 +68,15 @@ func (ly *STNLayer) Defaults() {
 
 	// STN is tonically self-active and has no FFFB inhibition
 
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Act.Dend.SSGi = 0
-	ly.Inhib.Layer.On = true // true = important for real-world cases
-	ly.Inhib.Layer.Gi = 0.2
-	ly.Inhib.Pool.On = false
-	ly.Inhib.ActAvg.Nominal = 0.15
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Inhib.Layer.On = true // true = important for real-world cases
+	ly.Params.Inhib.Layer.Gi = 0.2
+	ly.Params.Inhib.Pool.On = false
+	ly.Params.Inhib.ActAvg.Nominal = 0.15
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
 		ly.Ca.CaD = false
@@ -84,13 +84,13 @@ func (ly *STNLayer) Defaults() {
 	} else {
 		ly.Ca.CaD = true
 		ly.Ca.CaScale = 3
-		ly.Act.Init.Ge = 0.2
-		ly.Act.Init.GeVar = 0.2
+		ly.Params.Act.Init.Ge = 0.2
+		ly.Params.Act.Init.GeVar = 0.2
 	}
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
-		pj.Learn.Learn = false
+		pj.Params.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
 		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75

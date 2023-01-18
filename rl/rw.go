@@ -29,9 +29,9 @@ var KiT_RWPredLayer = kit.Types.AddType(&RWPredLayer{}, LayerProps)
 func (ly *RWPredLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.PredRange.Set(0.01, 0.99)
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Act.Dt.GeTau = 40
+	ly.Params.Act.Decay.Act = 1
+	ly.Params.Act.Decay.Glong = 1
+	ly.Params.Act.Dt.GeTau = 40
 }
 
 func (ly *RWPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
@@ -164,13 +164,13 @@ func (pj *RWPrjn) SlowAdapt(ctime *axon.Time) {
 
 // DWt computes the weight change (learning) -- on sending projections.
 func (pj *RWPrjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	lda := pj.Recv.(DALayer).GetDA()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	if pj.DaTol > 0 {
 		if mat32.Abs(lda) <= pj.DaTol {
 			return // lda = 0 -- no learning
@@ -215,7 +215,7 @@ func (pj *RWPrjn) DWt(ctime *axon.Time) {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 func (pj *RWPrjn) WtFmDWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	for si := range pj.Syns {

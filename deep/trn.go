@@ -56,11 +56,11 @@ var KiT_PulvAttnLayer = kit.Types.AddType(&PulvAttnLayer{}, LayerProps)
 
 func (ly *PulvAttnLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Decay.Act = 0.5
-	ly.Act.Decay.Glong = 1
-	ly.Act.Decay.AHP = 0
-	ly.Act.GABAB.Gbar = 0.005 // output layer settings
-	ly.Act.NMDA.Gbar = 0.01
+	ly.Params.Act.Decay.Act = 0.5
+	ly.Params.Act.Decay.Glong = 1
+	ly.Params.Act.Decay.AHP = 0
+	ly.Params.Act.GABAB.Gbar = 0.005 // output layer settings
+	ly.Params.Act.NMDA.Gbar = 0.01
 	ly.SendAttn.Defaults()
 	ly.Typ = Pulv
 }

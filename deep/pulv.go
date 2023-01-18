@@ -50,10 +50,10 @@ var KiT_PulvLayer = kit.Types.AddType(&PulvLayer{}, LayerProps)
 
 func (ly *PulvLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.AHP = 0
-	ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.AHP = 0
+	ly.Params.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
 	ly.Pulv.Defaults()
 	ly.Typ = Pulv
 }
@@ -94,7 +94,7 @@ func (ly *PulvLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	drvGe := ly.Pulv.DriveGe(drvAct)
 	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	nrn.GeRaw = nonDriverPct*nrn.GeRaw + drvGe
-	nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Act.Dt.GeSynFmRawSteady(drvGe)
+	nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Params.Act.Dt.GeSynFmRawSteady(drvGe)
 	ly.GFmRawSyn(ni, nrn, ctime)
 	ly.GiInteg(ni, nrn, ctime)
 }

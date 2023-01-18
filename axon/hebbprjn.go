@@ -29,12 +29,12 @@ func (pj *HebbPrjn) UpdateParams() {
 
 // DWt computes the hebbian weight change
 func (pj *HebbPrjn) DWt(ctime *Time) {
-	if pj.Learn.Learn.IsFalse() {
+	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])

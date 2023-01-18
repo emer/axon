@@ -19,6 +19,7 @@ import (
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
+	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/indent"
 	"github.com/goki/ki/ints"
 	"github.com/goki/ki/ki"
@@ -1190,10 +1191,25 @@ func (ly *Layer) NeuronGatherSpikes(ni uint32, nrn *Neuron, ctime *Time) {
 	}
 }
 
+// GInteg integrates conductances G over time (Ge, NMDA, etc).
+// calls NeuronGatherSpikes, GFmRawSyn, GiInteg
+func (ly *Layer) GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time, randctr *sltype.Uint2) {
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
+	ly.Params.GFmRawSyn(ni, nrn, ctime, randctr)
+	ly.Params.GiInteg(ni, nrn, pl, giMult, ctime)
+}
+
+// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
+func (ly *Layer) SpikeFmG(ni uint32, nrn *Neuron, ctime *Time) {
+	ly.Params.SpikeFmG(ni, nrn, ctime)
+}
+
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 func (ly *Layer) CycleNeuron(ni uint32, nrn *Neuron, ctime *Time) {
-	ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.Params.CycleNeuron(ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, ctime)
+	randctr := ctime.RandCtr.Uint2() // use local var so updates are local
+	ly.AxonLay.GInteg(ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, ctime, &randctr)
+	ly.AxonLay.SpikeFmG(ni, nrn, ctime)
+	ly.AxonLay.PostAct(ni, nrn, ctime)
 }
 
 // PostAct does updates at neuron level after activation (spiking)

@@ -85,15 +85,15 @@ func (ly *MatrixLayer) Defaults() {
 	ly.Typ = Matrix
 
 	// special inhib params
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Inhib.Pool.On = false
-	ly.Inhib.Layer.On = true
-	ly.Inhib.Layer.Gi = 0.5
-	ly.Inhib.Layer.FB = 0
-	ly.Inhib.Pool.FB = 0
-	ly.Inhib.Pool.Gi = 0.5
-	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Inhib.Pool.On = false
+	ly.Params.Inhib.Layer.On = true
+	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Layer.FB = 0
+	ly.Params.Inhib.Pool.FB = 0
+	ly.Params.Inhib.Pool.Gi = 0.5
+	ly.Params.Inhib.ActAvg.Nominal = 0.25
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
@@ -103,7 +103,7 @@ func (ly *MatrixLayer) Defaults() {
 		pj.SWt.Init.SPct = 0
 		if _, ok := pj.Send.(*GPLayer); ok { // From GPe TA or In
 			pj.PrjnScale.Abs = 1
-			pj.Learn.Learn = false
+			pj.Params.Learn.Learn = false
 			pj.SWt.Adapt.SigGain = 1
 			pj.SWt.Init.Mean = 0.75
 			pj.SWt.Init.Var = 0.0
@@ -186,7 +186,7 @@ func (ly *MatrixLayer) DecayState(decay, glong float32) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Learn.DecayCaLrnSpk(nrn, glong) // ?
+		ly.Params.Learn.DecayCaLrnSpk(nrn, glong) // ?
 	}
 	ly.InitMods()
 }
@@ -264,7 +264,7 @@ func (ly *MatrixLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 		return
 	}
 
-	if ctime.Cycle >= ly.Act.Dt.MaxCycStart {
+	if ctime.Cycle >= ly.Params.Act.Dt.MaxCycStart {
 		if nrn.Ge > nrn.SpkMax {
 			nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
 		}
@@ -305,8 +305,8 @@ func (ly *MatrixLayer) PlusPhase(ctime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.SpkMax, smax)
-		// dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD) // not useful
+		mlr := ly.Params.Learn.RLRate.RLRateSigDeriv(nrn.SpkMax, smax)
+		// dlr := ly.Params.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD) // not useful
 		nrn.RLRate = mlr
 	}
 }

@@ -24,13 +24,13 @@ func (ly *PTLayer) Defaults() {
 
 	ly.ThalNMDAGain = 200
 
-	ly.Act.Dend.SSGi = 0
-	ly.Act.Decay.Act = 0 // deep doesn't decay!
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.AHP = 0
-	ly.Act.NMDA.Gbar = 0.3
-	ly.Act.NMDA.Tau = 300
-	ly.Act.GABAB.Gbar = 0.3
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Act.Decay.Act = 0 // deep doesn't decay!
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.AHP = 0
+	ly.Params.Act.NMDA.Gbar = 0.3
+	ly.Params.Act.NMDA.Tau = 300
+	ly.Params.Act.GABAB.Gbar = 0.3
 	// ly.CT.Defaults()
 }
 
@@ -76,10 +76,10 @@ func (ly *PTLayer) NeuronGatherSpikes(ni uint32, nrn *axon.Neuron, ctime *axon.T
 }
 
 func (ly *PTLayer) GFmRawSyn(ni uint32, nrn *axon.Neuron, ctime *axon.Time, thalGeRaw, thalGeSyn float32) {
-	ly.Act.NMDAFmRaw(nrn, ly.ThalNMDAGain*thalGeRaw)
-	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw) // exclude thal?
-	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc+ly.ThalNMDAGain*thalGeSyn)
-	ly.Act.GkFmVm(nrn)
-	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
+	ly.Params.Act.NMDAFmRaw(nrn, ly.ThalNMDAGain*thalGeRaw)
+	ly.Params.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw) // exclude thal?
+	ly.Params.Act.GvgccFmVm(nrn)
+	ly.Params.Act.GeFmSyn(nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc+ly.ThalNMDAGain*thalGeSyn)
+	ly.Params.Act.GkFmVm(nrn)
+	nrn.GiSyn = ly.Params.Act.GiFmSyn(nrn, nrn.GiSyn)
 }

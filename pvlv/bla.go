@@ -46,16 +46,16 @@ func (ly *BLALayer) Defaults() {
 	ly.Typ = BLA
 
 	// special inhib params
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Act.Dend.SSGi = 0
-	ly.Inhib.Layer.On = true
-	ly.Inhib.Layer.Gi = 1.2
-	ly.Inhib.Pool.On = true
-	ly.Inhib.Pool.Gi = 1.0
-	// ly.Inhib.Layer.FB = 0
-	// ly.Inhib.Pool.FB = 0
-	ly.Inhib.ActAvg.Nominal = 0.025
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Inhib.Layer.On = true
+	ly.Params.Inhib.Layer.Gi = 1.2
+	ly.Params.Inhib.Pool.On = true
+	ly.Params.Inhib.Pool.Gi = 1.0
+	// ly.Params.Inhib.Layer.FB = 0
+	// ly.Params.Inhib.Pool.FB = 0
+	ly.Params.Inhib.ActAvg.Nominal = 0.025
 
 }
 
@@ -96,7 +96,7 @@ func (ly *BLALayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	daEff := da * nrn.CaSpkM // da effect interacts with spiking
 	nrn.GeRaw += daEff
-	nrn.GeSyn += ly.Act.Dt.GeSynFmRawSteady(daEff)
+	nrn.GeSyn += ly.Params.Act.Dt.GeSynFmRawSteady(daEff)
 	ly.GFmRawSyn(ni, nrn, ctime)
 	ly.GiInteg(ni, nrn, ctime)
 }
@@ -113,8 +113,8 @@ func (ly *BLALayer) PlusPhase(ctime *axon.Time) {
 		if nrn.IsOff() {
 			continue
 		}
-		mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkP, ly.Vals.ActAvg.CaSpkP.Max)
-		dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous
+		mlr := ly.Params.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkP, ly.Vals.ActAvg.CaSpkP.Max)
+		dlr := ly.Params.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous
 		if nrn.CaSpkP-nrn.SpkPrv < 0 {
 			dlr *= ly.BLA.NegLRate
 		}
@@ -143,8 +143,8 @@ func (pj *BLAPrjn) Defaults() {
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym = false
-	pj.Learn.Trace.Tau = 1
-	pj.Learn.Trace.Update()
+	pj.Params.Learn.Trace.Tau = 1
+	pj.Params.Learn.Trace.Update()
 }
 
 func (pj *BLAPrjn) SendSynCa(ctime *axon.Time) {
@@ -157,13 +157,13 @@ func (pj *BLAPrjn) RecvSynCa(ctime *axon.Time) {
 
 // DWt computes the weight change (learning) for BLA projections
 func (pj *BLAPrjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	rlay := pj.Recv.(*BLALayer)
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	ach := rlay.ACh
-	lr := ach * pj.Learn.LRate.Eff
+	lr := ach * pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sact := slay.Neurons[si].SpkPrv
 		nc := int(pj.SendConN[si])
@@ -176,7 +176,7 @@ func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 			sy := &syns[ci]
 			// not using the synaptic trace (yet)
 			// kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sact)
+			sy.Tr = pj.Params.Learn.Trace.TrFmCa(sy.Tr, sact)
 			if sy.Wt == 0 { // failed con, no learn
 				continue
 			}
@@ -194,7 +194,7 @@ func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 func (pj *BLAPrjn) WtFmDWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	for si := range pj.Syns {

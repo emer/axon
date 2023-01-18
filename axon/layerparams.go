@@ -26,7 +26,7 @@ import (
 // LayerIdxs contains index access into global arrays for GPU.
 type LayerIdxs struct {
 	Pool   uint32 // start of pools for this layer -- first one is always the layer-wide pool
-	NeurSt uint32 // start of neurons for this layer in global array
+	NeurSt uint32 // start of neurons for this layer in global array (same as Layer.NeurStIdx)
 	RecvSt uint32 // start index into RecvPrjns global array
 	RecvN  uint32 // number of recv projections
 	SendSt uint32 // start index into SendPrjns global array
@@ -102,7 +102,10 @@ func (ly *LayerParams) SubPoolGiFmSpikes(pl *Pool, lpl *Pool, lyInhib bool, giMu
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  CycleNeuron
+//  CycleNeuron methods
+
+////////////////////////
+//  GInteg
 
 // NeuronGatherSpikesInit initializes G*Raw and G*Syn values for given neuron
 // prior to integration
@@ -141,13 +144,8 @@ func (ly *LayerParams) GiInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32,
 	nrn.Gk += nrn.GgabaB // Gk was already init
 }
 
-// GInteg integrates conductances G over time (Ge, NMDA, etc).
-// reads pool Gi values
-func (ly *LayerParams) GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time, randctr *sltype.Uint2) {
-	// note: can add extra values to GeRaw and GeSyn here
-	ly.GFmRawSyn(ni, nrn, ctime, randctr)
-	ly.GiInteg(ni, nrn, pl, giMult, ctime)
-}
+////////////////////////
+//  SpikeFmG
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 func (ly *LayerParams) SpikeFmG(ni uint32, nrn *Neuron, ctime *Time) {
@@ -169,14 +167,6 @@ func (ly *LayerParams) SpikeFmG(ni uint32, nrn *Neuron, ctime *Time) {
 		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 	}
-}
-
-// CycleNeuron does one cycle (msec) of updating at the neuron level
-func (ly *LayerParams) CycleNeuron(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time) {
-	var randctr sltype.Uint2
-	randctr = ctime.RandCtr.Uint2() // use local var
-	ly.GInteg(ni, nrn, pl, giMult, ctime, &randctr)
-	ly.SpikeFmG(ni, nrn, ctime)
 }
 
 //gosl: end layerparams

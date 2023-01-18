@@ -21,11 +21,12 @@
 // [[vk::binding(5, 2)]] RWStructuredBuffer<PrjnVals> PrjnVals; // [Layer][SendPrjns]
 
 void GeExtToPool2(in LayerParams ly, inout Pool pl, uint ni, in Neuron nrn, in Time ctime) {
+	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
 	bool subPool = (pl.IsLayPool==0);
 	if(subPool) {
-		ly.GeExtToPool(ni, nrn, pl, Pools[pl.LayPoolIdx], subPool, ctime);
+		ly.GeExtToPool(lni, nrn, pl, Pools[pl.LayPoolIdx], subPool, ctime);
 	} else {
-		ly.GeExtToPool(ni, nrn, pl, pl, subPool, ctime);
+		ly.GeExtToPool(lni, nrn, pl, pl, subPool, ctime);
 	}
 }
 

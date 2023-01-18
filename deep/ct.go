@@ -59,16 +59,16 @@ var KiT_CTLayer = kit.Types.AddType(&CTLayer{}, LayerProps)
 
 func (ly *CTLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Decay.Act = 0 // deep doesn't decay!
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.AHP = 0
-	ly.Act.Dend.SSGi = 0    // key: otherwise interferes with NMDA maint!
-	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
-	ly.Inhib.Pool.Gi = 2.2
+	ly.Params.Act.Decay.Act = 0 // deep doesn't decay!
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.AHP = 0
+	ly.Params.Act.Dend.SSGi = 0    // key: otherwise interferes with NMDA maint!
+	ly.Params.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
+	ly.Params.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:
-	// ly.Act.NMDA.Gbar = 0.3
-	// ly.Act.NMDA.Tau = 300
-	// ly.Act.GABAB.Gbar = 0.3
+	// ly.Params.Act.NMDA.Gbar = 0.3
+	// ly.Params.Act.NMDA.Tau = 300
+	// ly.Params.Act.GABAB.Gbar = 0.3
 	ly.Typ = CT
 	ly.CT.Defaults()
 }
@@ -115,7 +115,7 @@ func (ly *CTLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	}
 	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	nrn.GeRaw += geCtxt
-	ctxtExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+	ctxtExt := ly.Params.Act.Dt.GeSynFmRawSteady(geCtxt)
 	nrn.GeSyn += ctxtExt
 	ly.GFmRawSyn(ni, nrn, ctime)
 	nrn.GeExt = ctxtExt // needed for inhibition

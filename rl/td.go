@@ -23,9 +23,9 @@ var KiT_TDRewPredLayer = kit.Types.AddType(&TDRewPredLayer{}, LayerProps)
 
 func (ly *TDRewPredLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Act.Dt.GeTau = 40
+	ly.Params.Act.Decay.Act = 1
+	ly.Params.Act.Decay.Glong = 1
+	ly.Params.Act.Dt.GeTau = 40
 }
 
 func (ly *TDRewPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
@@ -68,8 +68,8 @@ var KiT_TDRewIntegLayer = kit.Types.AddType(&TDRewIntegLayer{}, LayerProps)
 func (ly *TDRewIntegLayer) Defaults() {
 	ly.Layer.Defaults()
 	ly.RewInteg.Defaults()
-	// ly.Inhib.Layer.Gi = 0.2
-	ly.Inhib.ActAvg.Nominal = .5
+	// ly.Params.Inhib.Layer.Gi = 0.2
+	ly.Params.Inhib.ActAvg.Nominal = .5
 }
 
 // DALayer interface:
@@ -159,8 +159,8 @@ func (ly *TDDaLayer) Defaults() {
 	if ly.RewInteg == "" {
 		ly.RewInteg = "RewInteg"
 	}
-	// ly.Inhib.Layer.Gi = 0.2
-	ly.Inhib.ActAvg.Nominal = .5
+	// ly.Params.Inhib.Layer.Gi = 0.2
+	ly.Params.Inhib.ActAvg.Nominal = .5
 }
 
 func (ly *TDDaLayer) RewIntegLayer() (*TDRewIntegLayer, error) {
@@ -260,13 +260,13 @@ func (pj *TDRewPredPrjn) SlowAdapt(ctime *axon.Time) {
 
 // DWt computes the weight change (learning) -- on sending projections.
 func (pj *TDRewPredPrjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	// rlay := pj.Recv.(axon.AxonLayer).AsAxon()
 	da := pj.Recv.(DALayer).GetDA()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -297,7 +297,7 @@ func (pj *TDRewPredPrjn) DWt(ctime *axon.Time) {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
 func (pj *TDRewPredPrjn) WtFmDWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	for si := range pj.Syns {

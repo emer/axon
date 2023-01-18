@@ -93,7 +93,7 @@ func (pj *CHLPrjn) UpdateParams() {
 // DWt computes the weight change (learning) -- on sending projections
 // CHL version supported if On
 func (pj *CHLPrjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	if pj.CHL.On {
@@ -113,7 +113,7 @@ func (pj *CHLPrjn) SAvgCor(slay *axon.Layer) float32 {
 
 // DWtCHL computes the weight change (learning) for CHL
 func (pj *CHLPrjn) DWtCHL(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
@@ -121,7 +121,7 @@ func (pj *CHLPrjn) DWtCHL(ctime *axon.Time) {
 	if slay.Pools[0].ActP.Avg < pj.CHL.SAvgThr { // inactive, no learn
 		return
 	}
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])

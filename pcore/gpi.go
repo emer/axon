@@ -25,7 +25,7 @@ func (ly *GPiLayer) Defaults() {
 	ly.GPLayer.Defaults()
 	ly.GPLay = GPi
 
-	ly.Act.Init.Ge = 0.6
+	ly.Params.Act.Init.Ge = 0.6
 	// note: GPLayer took care of STN input prjns
 
 	for _, pji := range ly.RcvPrjns {
@@ -35,7 +35,7 @@ func (ly *GPiLayer) Defaults() {
 		pj.SWt.Init.Mean = 0.75
 		pj.SWt.Init.Var = 0.25
 		pj.SWt.Init.Sym = false
-		pj.Learn.Learn = false
+		pj.Params.Learn.Learn = false
 		if _, ok := pj.Send.(*MatrixLayer); ok { // MtxGoToGPi
 			pj.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
 		} else if _, ok := pj.Send.(*GPLayer); ok { // GPeInToGPi

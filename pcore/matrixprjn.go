@@ -79,7 +79,7 @@ func (pj *MatrixPrjn) SlowAdapt(ctime *axon.Time) {
 }
 
 func (pj *MatrixPrjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	rlay := pj.Recv.(*MatrixLayer)
@@ -109,7 +109,7 @@ func (pj *MatrixPrjn) DWtNoUS(ctime *axon.Time) {
 	if !pj.Trace.NoACh {
 		daLrn *= ach
 	}
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 
 	for si := range slay.Neurons {
 		snAct := noGate * slay.Neurons[si].CaSpkP
@@ -157,7 +157,7 @@ func (pj *MatrixPrjn) DWtUS(ctime *axon.Time) {
 	if !pj.Trace.NoACh {
 		daLrn *= ach
 	}
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 
 	snMod := ach
 	if rlay.Matrix.InvertNoGate && !rlay.Matrix.GPHasPools {

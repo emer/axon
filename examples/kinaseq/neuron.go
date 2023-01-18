@@ -158,7 +158,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 // NeuronUpdt updates the neuron with whether send or recv spiked
 func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 	ly := ss.Net.LayerByName("Recv").(axon.AxonLayer).AsAxon()
-	ac := &ly.Act
+	ac := &ly.Params.Act
 	sn := ss.SendNeur
 	rn := ss.RecvNeur
 	nex := &ss.NeuronEx
@@ -171,7 +171,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		sn.Spike = 0
 		sn.ISI += 1
 	}
-	ly.Learn.LrnNMDA.SnmdaFmSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
+	ly.Params.Learn.LrnNMDA.SnmdaFmSpike(sn.Spike, &sn.SnmdaO, &sn.SnmdaI)
 
 	//	Recv
 
@@ -198,7 +198,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		mgg, cav := ac.NMDA.VFactors(rn.VmDend) // note: using Vm does NOT work well at all
 		nex.NMDAGmg = mgg
 		rn.RCa = rn.RnmdaSyn * mgg * cav
-		rn.RCa = ly.Learn.NeurCa.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
+		rn.RCa = ly.Params.Learn.NeurCa.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 	} else {
 		rn.GeRaw = ge
 		ac.Dt.GeSynFmRaw(rn.GeRaw, &rn.GeSyn, ac.Init.Ge)
@@ -217,10 +217,10 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 	if ss.RGeClamp {
 		ac.ActFmG(rn)
 	}
-	ly.Learn.LrnNMDAFmRaw(rn, 0)
+	ly.Params.Learn.LrnNMDAFmRaw(rn, 0)
 
-	ly.Learn.CaFmSpike(rn)
-	ly.Learn.CaFmSpike(sn)
+	ly.Params.Learn.CaFmSpike(rn)
+	ly.Params.Learn.CaFmSpike(sn)
 
 	ss.SynUpdt()
 }
@@ -229,8 +229,8 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 func (ss *Sim) SynUpdt() {
 	// ly := ss.Net.LayerByName("Recv").(axon.AxonLayer).AsAxon()
 	pj := ss.Prjn
-	kp := &pj.Learn.KinaseCa
-	twin := pj.Learn.KinaseDWt.TWindow
+	kp := &pj.Params.Learn.KinaseCa
+	twin := pj.Params.Learn.KinaseDWt.TWindow
 	ctime := int32(ss.Time.CycleTot)
 
 	pmsec := ss.MinusMsec + ss.PlusMsec
@@ -265,9 +265,9 @@ func (ss *Sim) SynUpdt() {
 	}
 
 	if ss.Time.Cycle == pmsec {
-		if pj.Learn.XCal.On {
-			nst.DWt = pj.Learn.XCal.DWt(nst.CaP, nst.CaD)
-			sst.DWt = pj.Learn.XCal.DWt(sst.CaP, sst.CaD)
+		if pj.Params.Learn.XCal.On {
+			nst.DWt = pj.Params.Learn.XCal.DWt(nst.CaP, nst.CaD)
+			sst.DWt = pj.Params.Learn.XCal.DWt(sst.CaP, sst.CaD)
 		} else {
 			nst.DWt = nst.CaP - nst.CaD
 			sst.DWt = sst.CaP - sst.CaD
@@ -296,19 +296,19 @@ func (ss *Sim) SynUpdt() {
 	kp.FmCa(snc.Ca, &snc.CaM, &snc.CaP, &snc.CaD)
 
 	if tdw {
-		pj.Learn.KinaseTDWt(ssc)
-		pj.Learn.KinaseTDWt(snc)
+		pj.Params.Learn.KinaseTDWt(ssc)
+		pj.Params.Learn.KinaseTDWt(snc)
 	}
-	pj.Learn.CaDMax(ssc)
-	pj.Learn.CaDMax(snc)
+	pj.Params.Learn.CaDMax(ssc)
+	pj.Params.Learn.CaDMax(snc)
 
 	if ss.Time.Cycle == pmsec {
-		axon.DecaySynCa(ssc, pj.Learn.KinaseDWt.TrlDecay)
-		axon.DecaySynCa(snc, pj.Learn.KinaseDWt.TrlDecay)
+		axon.DecaySynCa(ssc, pj.Params.Learn.KinaseDWt.TrlDecay)
+		axon.DecaySynCa(snc, pj.Params.Learn.KinaseDWt.TrlDecay)
 	}
 
-	pj.Learn.DWtFmTDWt(ssc, 1)
-	pj.Learn.DWtFmTDWt(snc, 1)
+	pj.Params.Learn.DWtFmTDWt(ssc, 1)
+	pj.Params.Learn.DWtFmTDWt(snc, 1)
 }
 
 func (ss *Sim) InitWts() {

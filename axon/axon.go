@@ -7,6 +7,7 @@ package axon
 import (
 	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/etensor"
+	"github.com/goki/gosl/sltype"
 )
 
 // AxonNetwork defines the essential algorithmic API for Axon, at the network level.
@@ -131,7 +132,7 @@ type AxonLayer interface {
 	// should already have presented the external input to the network at this point.
 	NewState()
 
-	// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay)
+	// DecayState decays activation state by given proportion (default is on ly.Params.Act.Init.Decay)
 	DecayState(decay, glong float32)
 
 	// RecvPrjns returns the slice of receiving projections for this layer
@@ -149,17 +150,17 @@ type AxonLayer interface {
 
 	// CycleNeuron does one cycle (msec) of updating at the neuron level
 	// calls the following via this AxonLay interface:
-	// * Ginteg
+	// * GInteg
 	// * SpikeFmG
 	// * PostAct
 	CycleNeuron(ni uint32, nrn *Neuron, ctime *Time)
 
 	// GInteg integrates conductances G over time (Ge, NMDA, etc).
 	// reads pool Gi values
-	// GInteg(ni uint32, nrn *Neuron, ctime *Time)
+	GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time, randctr *sltype.Uint2)
 
 	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-	// SpikeFmG(ni uint32, nrn *Neuron, ctime *Time)
+	SpikeFmG(ni uint32, nrn *Neuron, ctime *Time)
 
 	// PostAct does updates at neuron level after activation (spiking)
 	// updated for all neurons.

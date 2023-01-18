@@ -83,17 +83,17 @@ type LayerVals struct {
 // TopoGi computes topographic Gi inhibition
 // todo: this does not work for 2D layers, and in general needs more testing
 func (ly *Layer) TopoGi(ctime *Time) {
-	if !ly.Inhib.Topo.On {
+	if !ly.Params.Inhib.Topo.On {
 		return
 	}
 	pyn := ly.Shp.Dim(0)
 	pxn := ly.Shp.Dim(1)
-	wd := ly.Inhib.Topo.Width
-	wrap := ly.Inhib.Topo.Wrap
+	wd := ly.Params.Inhib.Topo.Width
+	wrap := ly.Params.Inhib.Topo.Wrap
 
-	ssq := ly.Inhib.Topo.Sigma * float32(wd)
+	ssq := ly.Params.Inhib.Topo.Sigma * float32(wd)
 	ssq *= ssq
-	ff0 := ly.Inhib.Topo.FF0
+	ff0 := ly.Params.Inhib.Topo.FF0
 
 	l4d := ly.Is4D()
 
@@ -132,7 +132,7 @@ func (ly *Layer) TopoGi(ctime *Time) {
 				}
 			}
 
-			gi := ly.Inhib.Topo.GiFmGeAct(tge, tact, ff0*twt)
+			gi := ly.Params.Inhib.Topo.GiFmGeAct(tge, tact, ff0*twt)
 			pi := py*pxn + px
 			if l4d {
 				pl := &ly.Pools[pi+1]

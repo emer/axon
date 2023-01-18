@@ -34,9 +34,9 @@ var KiT_SuperLayer = kit.Types.AddType(&SuperLayer{}, LayerProps)
 
 func (ly *SuperLayer) Defaults() {
 	ly.Layer.Defaults()
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.AHP = 0
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.AHP = 0
 	ly.Burst.Defaults()
 }
 
@@ -69,7 +69,7 @@ func (ly *SuperLayer) DecayState(decay, glong float32) {
 	ly.Layer.DecayState(decay, glong)
 	for ni := range ly.SuperNeurs {
 		snr := &ly.SuperNeurs[ni]
-		snr.Burst -= decay * (snr.Burst - ly.Act.Init.Act)
+		snr.Burst -= decay * (snr.Burst - ly.Params.Act.Init.Act)
 	}
 }
 

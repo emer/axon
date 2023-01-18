@@ -32,12 +32,12 @@ func (pj *EcCa1Prjn) UpdateParams() {
 // DWt computes the weight change (learning) -- on sending projections
 // Delta version
 func (pj *EcCa1Prjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -49,7 +49,7 @@ func (pj *EcCa1Prjn) DWt(ctime *axon.Time) {
 			sy := &syns[ci]
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			err := pj.Learn.CHLdWt(sn.CaP, sn.SpkSt1, rn.CaP, rn.SpkSt1)
+			err := pj.Params.Learn.CHLdWt(sn.CaP, sn.SpkSt1, rn.CaP, rn.SpkSt1)
 			// err := (sn.ActP * rn.ActP) - (sn.SpkSt1 * rn.SpkSt1)
 			if err > 0 {
 				err *= (1 - sy.LWt)

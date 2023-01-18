@@ -114,10 +114,10 @@ func (pj *PrjnParams) NeuronGatherSpikesPrjn(gv PrjnGVals, ni uint32, nrn *Neuro
 	}
 }
 
-// DWtTraceSynSpkThetaSyn computes the weight change (learning) based on
-// synaptically-integrated spiking, for the optimized version
-// computed at the Theta cycle interval.  Trace version.
-func (pj *PrjnParams) DWtTraceSynSpkThetaSyn(sy *Synapse, sn, rn *Neuron, ctime *Time) {
+// DWtSyn computes the weight change (learning) at given synapse, based on
+// synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctime *Time) {
 	caM := sy.CaM
 	caP := sy.CaP
 	caD := sy.CaD
@@ -126,29 +126,13 @@ func (pj *PrjnParams) DWtTraceSynSpkThetaSyn(sy *Synapse, sn, rn *Neuron, ctime 
 	if sy.Wt == 0 {                                                     // failed con, no learn
 		return
 	}
-	err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
-	// note: trace ensures that nothing changes for inactive synapses..
-	// sb immediately -- enters into zero sum
-	if err > 0 {
-		err *= (1 - sy.LWt)
+	var err float32
+	if isTarget {
+		err = caP - caD // for target layers, syn Ca drives error signal directly
 	} else {
-		err *= sy.LWt
+		err = sy.Tr * (rn.CaP - rn.CaD) // hiddens: recv Ca drives error signal w/ trace credit
 	}
-	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
-}
-
-// DWtSynSpkTheta computes the weight change (learning) based on
-// synaptically-integrated spiking, for the optimized version
-// computed at the Theta cycle interval.  Non-Trace version for target layers.
-func (pj *PrjnParams) DWtSynSpkThetaSyn(sy *Synapse, sn, rn *Neuron, ctime *Time) {
-	if sy.Wt == 0 { // failed con, no learn
-		return
-	}
-	caM := sy.CaM
-	caP := sy.CaP
-	caD := sy.CaD
-	pj.Learn.KinaseCa.CurCa(ctime.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
-	err := caP - caD                                                    // syn Ca drives error signal
+	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum
 	if err > 0 {
 		err *= (1 - sy.LWt)

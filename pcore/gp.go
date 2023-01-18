@@ -35,19 +35,19 @@ func (ly *GPLayer) Defaults() {
 
 	// GP is tonically self-active and has no FFFB inhibition
 
-	ly.Act.Init.Ge = 0.3
-	ly.Act.Init.GeVar = 0.1
-	ly.Act.Init.GiVar = 0.1
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Inhib.ActAvg.Nominal = 1 // very active!
-	ly.Inhib.Layer.On = false
-	ly.Inhib.Pool.On = false
+	ly.Params.Act.Init.Ge = 0.3
+	ly.Params.Act.Init.GeVar = 0.1
+	ly.Params.Act.Init.GiVar = 0.1
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
+	ly.Params.Inhib.Layer.On = false
+	ly.Params.Inhib.Pool.On = false
 
 	for _, pjii := range ly.RcvPrjns {
 		pji := pjii.(axon.AxonPrjn)
 		pj := pji.AsAxon()
-		pj.Learn.Learn = false
+		pj.Params.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
 		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75

@@ -26,8 +26,7 @@
 [[vk::binding(6, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
 void NeuronGatherSpikesPrjn(in LayerParams ly, in PrjnParams pj, uint ni, inout Neuron nrn, in Time ctime) {
-	uint lni = ni - ly.Idxs.NeurSt;
-	pj.NeuronGatherSpikesPrjn(RecvPrjnGVals[pj.Idxs.RecvPrjnGVSt + lni], ni, nrn, ctime);
+	pj.NeuronGatherSpikesPrjn(RecvPrjnGVals[pj.Idxs.RecvPrjnGVSt + ni], ni, nrn, ctime);
 }
 
 void NeuronGatherSpikes(in LayerParams ly, uint ni, inout Neuron nrn, in Time ctime) {
@@ -38,8 +37,15 @@ void NeuronGatherSpikes(in LayerParams ly, uint ni, inout Neuron nrn, in Time ct
 }
 
 void CycleNeuron2(in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, float giMult, in Time ctime) {
-	NeuronGatherSpikes(ly, ni, nrn, ctime);
-	ly.CycleNeuron(ni, nrn, pl, giMult, ctime);
+	// Note: following is same as Layer.GInteg
+	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
+	NeuronGatherSpikes(ly, lni, nrn, ctime);
+	uint2 randctr = ctime.RandCtr.Uint2();
+	ly.GFmRawSyn(lni, nrn, ctime, randctr);
+	ly.GiInteg(lni, nrn, pl, giMult, ctime);
+	// end GInteg
+	ly.SpikeFmG(lni, nrn, ctime);
+	// note: Not calling PostAct!
 }
 
 void CycleNeuron(uint ni, inout Neuron nrn, in Time ctime) {

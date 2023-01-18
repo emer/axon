@@ -38,14 +38,14 @@ func (ly *ThalLayer) Defaults() {
 
 	// note: not tonically active
 
-	ly.Act.Dend.SSGi = 0
-	ly.Inhib.Layer.On = false
-	ly.Inhib.Pool.On = false
-	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Inhib.Layer.On = false
+	ly.Params.Inhib.Pool.On = false
+	ly.Params.Inhib.ActAvg.Nominal = 0.25
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
-		pj.Learn.Learn = false
+		pj.Params.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
 		pj.SWt.Init.SPct = 0
 		pj.SWt.Init.Mean = 0.75
@@ -79,7 +79,7 @@ func (ly *ThalLayer) DecayState(decay, glong float32) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Learn.DecayCaLrnSpk(nrn, glong)
+		ly.Params.Learn.DecayCaLrnSpk(nrn, glong)
 	}
 }
 

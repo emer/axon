@@ -19,8 +19,8 @@ var KiT_RewLayer = kit.Types.AddType(&RewLayer{}, LayerProps)
 
 func (ly *RewLayer) Defaults() {
 	ly.Layer.Defaults()
-	// ly.Inhib.Layer.Gi = 0.9
-	ly.Inhib.ActAvg.Nominal = 0.5
+	// ly.Params.Inhib.Layer.Gi = 0.9
+	ly.Params.Inhib.ActAvg.Nominal = 0.5
 }
 
 // SetNeuronExtPosNeg sets neuron Ext value based on neuron index

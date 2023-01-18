@@ -35,9 +35,9 @@ type CTCtxtPrjn struct {
 var KiT_CTCtxtPrjn = kit.Types.AddType(&CTCtxtPrjn{}, PrjnProps)
 
 func (pj *CTCtxtPrjn) Defaults() {
-	pj.Prjn.Defaults()         // note: used to have other defaults
-	pj.Learn.LRate.Base = 0.01 // note: this lrate may need to be much slower than others
-	pj.Learn.Trace.SubMean = 0 // 1 is not good!
+	pj.Prjn.Defaults()                // note: used to have other defaults
+	pj.Params.Learn.LRate.Base = 0.01 // note: this lrate may need to be much slower than others
+	pj.Params.Learn.Trace.SubMean = 0 // 1 is not good!
 }
 
 func (pj *CTCtxtPrjn) UpdateParams() {
@@ -132,13 +132,13 @@ func (pj *CTCtxtPrjn) RecvSynCa(ctime *axon.Time) {
 
 // DWt computes the weight change (learning) for Ctxt projections
 func (pj *CTCtxtPrjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
 	sslay, issuper := pj.Send.(*SuperLayer)
 	rlay := pj.Recv.(axon.AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sact := float32(0)
 		if issuper {
@@ -156,7 +156,7 @@ func (pj *CTCtxtPrjn) DWt(ctime *axon.Time) {
 			sy := &syns[ci]
 			// not using the synaptic trace -- doesn't work at all -- just use sending act
 			// kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sact)
+			sy.Tr = pj.Params.Learn.Trace.TrFmCa(sy.Tr, sact)
 			if sy.Wt == 0 { // failed con, no learn
 				continue
 			}

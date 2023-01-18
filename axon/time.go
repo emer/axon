@@ -20,17 +20,18 @@ import (
 // axon.Time contains all the timing state and parameter information for running a model.
 // Can also include other relevant state context, e.g., Testing vs. Training modes.
 type Time struct {
-	Mode       etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
-	Phase      int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
-	PlusPhase  slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
-	PhaseCycle int32       `desc:"cycle within current phase -- minus or plus"`
-	Cycle      int32       `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
-	CycleTot   int32       `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time"`
-	Time       float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
-	Testing    slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
-	TimePerCyc float32     `def:"0.001" desc:"amount of time to increment per cycle"`
+	Mode        etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
+	Phase       int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
+	PlusPhase   slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
+	PhaseCycle  int32       `desc:"cycle within current phase -- minus or plus"`
+	Cycle       int32       `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
+	CycleTot    int32       `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time"`
+	Time        float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
+	Testing     slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
+	TimePerCyc  float32     `def:"0.001" desc:"amount of time to increment per cycle"`
+	RandsPerCyc int32       `def:"2" desc:"maximum number of random numbers used per cycle, if noise is active -- we always just increase the random counter by this amount to maintain consistency"`
 
-	pad, pad1, pad2 int32
+	pad, pad1 int32
 
 	RandCtr slrand.Counter `desc:"random counter"`
 }
@@ -38,6 +39,7 @@ type Time struct {
 // Defaults sets default values
 func (tm *Time) Defaults() {
 	tm.TimePerCyc = 0.001
+	tm.RandsPerCyc = 2
 }
 
 // NewState resets counters at start of new state (trial) of processing.
@@ -64,6 +66,7 @@ func (tm *Time) CycleInc() {
 	tm.Cycle++
 	tm.CycleTot++
 	tm.Time += tm.TimePerCyc
+	tm.RandCtr.Add(int(tm.RandsPerCyc)) // todo: will be uint32
 }
 
 //gosl: end time

@@ -32,24 +32,24 @@ func (ly *PPTgLayer) Defaults() {
 	ly.Typ = PPTg
 
 	// special inhib params
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
-	ly.Act.NMDA.Gbar = 0
-	ly.Act.GABAB.Gbar = 0
-	ly.Act.Dend.SSGi = 0
-	ly.Inhib.Layer.On = true
-	ly.Inhib.Layer.Gi = 1.0
-	ly.Inhib.Pool.On = true
-	ly.Inhib.Pool.Gi = 0.5
-	// ly.Inhib.Layer.FB = 0
-	// ly.Inhib.Pool.FB = 0
-	ly.Inhib.ActAvg.Nominal = 0.1
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.NMDA.Gbar = 0
+	ly.Params.Act.GABAB.Gbar = 0
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Inhib.Layer.On = true
+	ly.Params.Inhib.Layer.Gi = 1.0
+	ly.Params.Inhib.Pool.On = true
+	ly.Params.Inhib.Pool.Gi = 0.5
+	// ly.Params.Inhib.Layer.FB = 0
+	// ly.Params.Inhib.Pool.FB = 0
+	ly.Params.Inhib.ActAvg.Nominal = 0.1
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(axon.AxonPrjn).AsAxon()
 		pj.SWt.Init.SPct = 0
 		pj.PrjnScale.Abs = 1
-		pj.Learn.Learn = false
+		pj.Params.Learn.Learn = false
 		pj.SWt.Adapt.SigGain = 1
 		pj.SWt.Init.Mean = 0.75
 		pj.SWt.Init.Var = 0.0
@@ -91,18 +91,18 @@ func (ly *PPTgLayer) GFmRawSyn(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	if geSyn < 0 {
 		geSyn = 0
 	}
-	geRawPrev := pnr.GeSynPrev * ly.Act.Dt.GeDt
+	geRawPrev := pnr.GeSynPrev * ly.Params.Act.Dt.GeDt
 	geRaw := (nrn.GeRaw - geRawPrev)
 	if geRaw < 0 {
 		geRaw = 0
 	}
 
-	ly.Act.NMDAFmRaw(nrn, geRaw)
-	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
-	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(nrn, geSyn, nrn.Gnmda+nrn.Gvgcc)
-	ly.Act.GkFmVm(nrn)
-	nrn.GiSyn = ly.Act.GiFmSyn(nrn, nrn.GiSyn)
+	ly.Params.Act.NMDAFmRaw(nrn, geRaw)
+	ly.Params.Learn.LrnNMDAFmRaw(nrn, geRaw)
+	ly.Params.Act.GvgccFmVm(nrn)
+	ly.Params.Act.GeFmSyn(nrn, geSyn, nrn.Gnmda+nrn.Gvgcc)
+	ly.Params.Act.GkFmVm(nrn)
+	nrn.GiSyn = ly.Params.Act.GiFmSyn(nrn, nrn.GiSyn)
 }
 
 func (ly *PPTgLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
