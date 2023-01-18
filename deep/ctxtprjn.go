@@ -132,7 +132,7 @@ func (pj *CTCtxtPrjn) RecvSynCa(ctime *axon.Time) {
 
 // DWt computes the weight change (learning) for Ctxt projections
 func (pj *CTCtxtPrjn) DWt(ctime *axon.Time) {
-	if !pj.Params.Learn.Learn {
+	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()

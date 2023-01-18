@@ -9,6 +9,7 @@ import (
 	"log"
 
 	"github.com/emer/axon/axon"
+	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -77,10 +78,10 @@ func (ly *PulvLayer) IsTarget() bool {
 // Drivers
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
-// reads pool Gi values
-func (ly *PulvLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	if ly.Pulv.DriversOff || !ctime.PlusPhase {
-		ly.Layer.GInteg(ni, nrn, ctime)
+// calls NeuronGatherSpikes, GFmRawSyn, GiInteg
+func (ly *PulvLayer) GInteg(ni uint32, nrn *axon.Neuron, pl *axon.Pool, giMult float32, ctime *axon.Time, randctr *sltype.Uint2) {
+	if ly.Pulv.DriversOff || ctime.PlusPhase.IsFalse() {
+		ly.Layer.GInteg(ni, nrn, pl, giMult, ctime, randctr)
 		return
 	}
 	dly, err := ly.DriverLayer(ly.Driver)
@@ -95,8 +96,8 @@ func (ly *PulvLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.NeuronGatherSpikes(ni, nrn, ctime)
 	nrn.GeRaw = nonDriverPct*nrn.GeRaw + drvGe
 	nrn.GeSyn = nonDriverPct*nrn.GeSyn + ly.Params.Act.Dt.GeSynFmRawSteady(drvGe)
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
+	ly.Params.GFmRawSyn(ni, nrn, ctime, randctr)
+	ly.Params.GiInteg(ni, nrn, pl, giMult, ctime)
 }
 
 // DriverLayer returns the driver layer for given Driver

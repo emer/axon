@@ -99,7 +99,7 @@ func (ly *SuperLayer) CyclePost(ctime *axon.Time) {
 // reflecting a time-integrated spiking value useful in learning,
 // subject to thresholding.  Only updated during plus phase.
 func (ly *SuperLayer) BurstFmCaSpkP(ctime *axon.Time) {
-	if !ctime.PlusPhase {
+	if ctime.PlusPhase.IsFalse() {
 		return
 	}
 	actMax := ly.Vals.ActAvg.CaSpkP.Max

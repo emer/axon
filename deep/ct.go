@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/emer/axon/axon"
+	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
@@ -106,8 +107,8 @@ func (ly *CTLayer) DecayState(decay, glong float32) {
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
-// reads pool Gi values
-func (ly *CTLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
+// calls NeuronGatherSpikes, GFmRawSyn, GiInteg
+func (ly *CTLayer) GInteg(ni uint32, nrn *axon.Neuron, pl *axon.Pool, giMult float32, ctime *axon.Time, randctr *sltype.Uint2) {
 	// note: can add extra values to GeRaw and GeSyn here
 	geCtxt := ly.CT.GeGain * ly.CtxtGes[ni]
 	if ly.CT.DecayDt > 0 {
@@ -117,9 +118,9 @@ func (ly *CTLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	nrn.GeRaw += geCtxt
 	ctxtExt := ly.Params.Act.Dt.GeSynFmRawSteady(geCtxt)
 	nrn.GeSyn += ctxtExt
-	ly.GFmRawSyn(ni, nrn, ctime)
+	ly.Params.GFmRawSyn(ni, nrn, ctime, randctr)
 	nrn.GeExt = ctxtExt // needed for inhibition
-	ly.GiInteg(ni, nrn, ctime)
+	ly.Params.GiInteg(ni, nrn, pl, giMult, ctime)
 }
 
 // SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate

@@ -331,7 +331,7 @@ func (ss *Sim) ConfigLoops() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	fsenv := ss.Envs[ss.Time.Mode].(*FSAEnv)
+	fsenv := ss.Envs[ss.Time.Mode.String()].(*FSAEnv)
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
@@ -342,8 +342,8 @@ func (ss *Sim) ApplyInputs() {
 	ns := fsenv.NNext.Values[0]
 	for ni := range in.Neurons {
 		inr := &in.Neurons[ni]
-		inr.ClearMask(clrmsk)
-		inr.SetMask(setmsk)
+		inr.ClearFlag(clrmsk)
+		inr.SetFlag(setmsk)
 	}
 	for i := 0; i < ns; i++ {
 		lbl := fsenv.NextLabels.Values[i]
@@ -357,14 +357,14 @@ func (ss *Sim) ApplyInputs() {
 				idx := li*ss.UnitsPer + yi
 				inr := &in.Neurons[idx]
 				inr.Ext = 1
-				inr.ClearMask(clrmsk)
-				inr.SetMask(setmsk)
+				inr.ClearFlag(clrmsk)
+				inr.SetFlag(setmsk)
 			}
 		}
 		inr := &trg.Neurons[li]
 		inr.Ext = 1
-		inr.ClearMask(clrmsk)
-		inr.SetMask(setmsk)
+		inr.ClearFlag(clrmsk)
+		inr.SetFlag(setmsk)
 	}
 }
 
@@ -375,7 +375,7 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Time.Reset()
-	ss.Time.Mode = etime.Train.String()
+	ss.Time.Mode = etime.Train
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
@@ -403,14 +403,13 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode := ss.Time.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ev := ss.Envs[ss.Time.Mode]
+	ss.Stats.SetInt("Cycle", int(ss.Time.Cycle))
+	ev := ss.Envs[ss.Time.Mode.String()]
 	ss.Stats.SetString("TrialName", ev.(*FSAEnv).String())
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "Output", "TrlErr", "TrlCorSim"})
 }
@@ -420,7 +419,7 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
-	ss.Stats.SetFloat("TrlCorSim", float64(inp.CorSim.Cor))
+	ss.Stats.SetFloat("TrlCorSim", float64(inp.Vals.CorSim.Cor))
 	err, minusIdx, _ := inp.LocalistErr4D()
 	tgn := &trg.Neurons[minusIdx]
 	if tgn.Ext > 0.5 {
@@ -535,8 +534,8 @@ func (ss *Sim) ConfigLogItems() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+	if mode != etime.Analyze {
+		ss.Time.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)

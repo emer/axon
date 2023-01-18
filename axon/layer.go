@@ -808,17 +808,17 @@ func (ly *Layer) InitExt() {
 
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
 // based on layer type, and whether input should be applied to Target (else Ext)
-func (ly *Layer) ApplyExtFlags() (clrmsk, setmsk int32, toTarg bool) {
-	clrmsk = int32(NeuronHasExt | NeuronHasTarg | NeuronHasCmpr)
+func (ly *Layer) ApplyExtFlags() (clrmsk, setmsk NeuronFlags, toTarg bool) {
+	clrmsk = NeuronHasExt | NeuronHasTarg | NeuronHasCmpr
 	toTarg = false
 	if ly.Typ == emer.Target {
-		setmsk = int32(NeuronHasTarg)
+		setmsk = NeuronHasTarg
 		toTarg = true
 	} else if ly.Typ == emer.Compare {
-		setmsk = int32(NeuronHasCmpr)
+		setmsk = NeuronHasCmpr
 		toTarg = true
 	} else {
-		setmsk = int32(NeuronHasExt)
+		setmsk = NeuronHasExt
 	}
 	return
 }
@@ -861,8 +861,8 @@ func (ly *Layer) ApplyExt2D(ext etensor.Tensor) {
 			} else {
 				nrn.Ext = vl
 			}
-			nrn.ClearFlag(NeuronFlags(clrmsk))
-			nrn.SetFlag(NeuronFlags(setmsk))
+			nrn.ClearFlag(clrmsk)
+			nrn.SetFlag(setmsk)
 		}
 	}
 }
@@ -888,8 +888,8 @@ func (ly *Layer) ApplyExt2Dto4D(ext etensor.Tensor) {
 			} else {
 				nrn.Ext = vl
 			}
-			nrn.ClearFlag(NeuronFlags(clrmsk))
-			nrn.SetFlag(NeuronFlags(setmsk))
+			nrn.ClearFlag(clrmsk)
+			nrn.SetFlag(setmsk)
 		}
 	}
 }
@@ -917,8 +917,8 @@ func (ly *Layer) ApplyExt4D(ext etensor.Tensor) {
 					} else {
 						nrn.Ext = vl
 					}
-					nrn.ClearFlag(NeuronFlags(clrmsk))
-					nrn.SetFlag(NeuronFlags(setmsk))
+					nrn.ClearFlag(clrmsk)
+					nrn.SetFlag(setmsk)
 				}
 			}
 		}
@@ -942,8 +942,8 @@ func (ly *Layer) ApplyExt1DTsr(ext etensor.Tensor) {
 		} else {
 			nrn.Ext = vl
 		}
-		nrn.ClearFlag(NeuronFlags(clrmsk))
-		nrn.SetFlag(NeuronFlags(setmsk))
+		nrn.ClearFlag(clrmsk)
+		nrn.SetFlag(setmsk)
 	}
 }
 
@@ -964,8 +964,8 @@ func (ly *Layer) ApplyExt1D(ext []float64) {
 		} else {
 			nrn.Ext = vl
 		}
-		nrn.ClearFlag(NeuronFlags(clrmsk))
-		nrn.SetFlag(NeuronFlags(setmsk))
+		nrn.ClearFlag(clrmsk)
+		nrn.SetFlag(setmsk)
 	}
 }
 
@@ -986,8 +986,8 @@ func (ly *Layer) ApplyExt1D32(ext []float32) {
 		} else {
 			nrn.Ext = vl
 		}
-		nrn.ClearFlag(NeuronFlags(clrmsk))
-		nrn.SetFlag(NeuronFlags(setmsk))
+		nrn.ClearFlag(clrmsk)
+		nrn.SetFlag(setmsk)
 	}
 }
 
@@ -1001,8 +1001,8 @@ func (ly *Layer) UpdateExtFlags() {
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ClearFlag(NeuronFlags(clrmsk))
-		nrn.SetFlag(NeuronFlags(setmsk))
+		nrn.ClearFlag(clrmsk)
+		nrn.SetFlag(setmsk)
 	}
 }
 

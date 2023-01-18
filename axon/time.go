@@ -29,7 +29,7 @@ type Time struct {
 	Time        float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	Testing     slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCyc  float32     `def:"0.001" desc:"amount of time to increment per cycle"`
-	RandsPerCyc int32       `def:"2" desc:"maximum number of random numbers used per cycle, if noise is active -- we always just increase the random counter by this amount to maintain consistency"`
+	RandsPerCyc uint32      `def:"2" desc:"maximum number of random numbers used per cycle, if noise is active -- we always just increase the random counter by this amount to maintain consistency"`
 
 	pad, pad1 int32
 
@@ -66,7 +66,7 @@ func (tm *Time) CycleInc() {
 	tm.Cycle++
 	tm.CycleTot++
 	tm.Time += tm.TimePerCyc
-	tm.RandCtr.Add(int(tm.RandsPerCyc)) // todo: will be uint32
+	tm.RandCtr.Add(tm.RandsPerCyc) // todo: will be uint32
 }
 
 //gosl: end time
