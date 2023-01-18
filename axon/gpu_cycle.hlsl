@@ -36,16 +36,39 @@ void NeuronGatherSpikes(in LayerParams ly, uint ni, inout Neuron nrn, in Time ct
 	}
 }
 
+void PulvinarDriver(in LayerParams ly, in LayerParams dly, in LayVals vals, uint ni, out float drvGe, out float nonDrvPct) {
+	drvMax := vals.ActAvg.CaSpkP.Max;
+	nonDrvPct = ly.Pulv.NonDrivePct(drvMax); // how much non-driver to keep
+	uint gni = ni + ly.Idxs.NeurSt;
+	if dly.LayerType() == Super {
+		drvGe = ly.Pulv.DriveGe(Neurons[gni].Burst);
+	} else {
+		drvGe = ly.Params.Pulv.DriveGe(Neurons[gni].CaSpkP);
+	}
+}
+
 void CycleNeuron2(in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, float giMult, in Time ctime) {
 	// Note: following is same as Layer.GInteg
 	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
-	NeuronGatherSpikes(ly, lni, nrn, ctime);
 	uint2 randctr = ctime.RandCtr.Uint2();
+	
+	NeuronGatherSpikes(ly, lni, nrn, ctime);
+	
+	float drvGe = 0;
+	float nonDrvPct 0;
+	if(ly.LayerType == Pulvinar {
+		PulvinarDriver(ly, Layers[ly.Pulv.DriveLayIdx], LayVals[ly.Pulv.DriveLayIdx], ni, drvGe, nonDrvPct);
+	}
+	
+	saveVal := ly.SpecialPreGs(ni, nrn, drvGe, nonDrvPct, ctime, randctr)
+	
 	ly.GFmRawSyn(lni, nrn, ctime, randctr);
 	ly.GiInteg(lni, nrn, pl, giMult, ctime);
+	
+	ly.SpecialPostGs(ni, nrn, ctime, randctr, saveVal);
 	// end GInteg
+	
 	ly.SpikeFmG(lni, nrn, ctime);
-	// note: Not calling PostAct!
 }
 
 void CycleNeuron(uint ni, inout Neuron nrn, in Time ctime) {

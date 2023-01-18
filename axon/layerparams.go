@@ -193,15 +193,13 @@ func (ly *LayerParams) SpecialPostGs(ni uint32, nrn *Neuron, ctime *Time, randct
 // GFmRawSyn computes overall Ge and GiSyn conductances for neuron
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) GFmRawSyn(ni uint32, nrn *Neuron, drvGe, nonDrvPct float32, ctime *Time, randctr *sltype.Uint2) {
-	saveVal := ly.SpecialPreGs(ni, nrn, drvGe, nonDrvPct, ctime, randctr)
+func (ly *LayerParams) GFmRawSyn(ni uint32, nrn *Neuron, ctime *Time, randctr *sltype.Uint2) {
 	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
 	ly.Act.GeFmSyn(ni, nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc, randctr) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(ni, nrn, nrn.GiSyn, randctr)
-	ly.SpecialPostGs(ni, nrn, ctime, randctr, saveVal)
 }
 
 // GiInteg adds Gi values from all sources including SubPool computed inhib

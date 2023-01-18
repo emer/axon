@@ -63,6 +63,8 @@ func (ly *Layer) Defaults() {
 		// ly.Params.Learn.RLRate.SigmoidMin = 1
 	case CT:
 		ly.Params.CTLayerDefaults()
+	case Pulvinar:
+		ly.Params.PulvLayerDefaults()
 	}
 }
 
@@ -1213,6 +1215,8 @@ func (ly *Layer) NeuronGatherSpikes(ni uint32, nrn *Neuron, ctime *Time) {
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls NeuronGatherSpikes, GFmRawSyn, GiInteg
 func (ly *Layer) GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time, randctr *sltype.Uint2) {
+	ly.NeuronGatherSpikes(ni, nrn, ctime)
+
 	drvGe := float32(0)
 	nonDrvPct := float32(0)
 	if ly.LayerType() == Pulvinar {
@@ -1226,9 +1230,13 @@ func (ly *Layer) GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime 
 			drvGe = ly.Params.Pulv.DriveGe(dneur.CaSpkP)
 		}
 	}
-	ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.Params.GFmRawSyn(ni, nrn, drvGe, nonDrvPct, ctime, randctr)
+
+	saveVal := ly.Params.SpecialPreGs(ni, nrn, drvGe, nonDrvPct, ctime, randctr)
+
+	ly.Params.GFmRawSyn(ni, nrn, ctime, randctr)
 	ly.Params.GiInteg(ni, nrn, pl, giMult, ctime)
+
+	ly.Params.SpecialPostGs(ni, nrn, ctime, randctr, saveVal)
 }
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that

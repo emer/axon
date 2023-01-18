@@ -30,6 +30,8 @@ TODO:
     * CTLayer -> .CT
     * PulvLayer -> .Pulvinar
 
+* HebbPrjn type
+    
 * gosl reformat switch statements
 
 * build WarpSize = 64 default into vgpu compute command
