@@ -23,6 +23,15 @@ Set 2:  Storage
     
 TODO:
 
+* general renaming for params selectors:
+    * .Hidden -> .Super
+    * Inhib -> Inhibitory
+    * SuperLayer -> .Super
+    * CTLayer -> .CT
+    * PulvLayer -> .Pulvinar
+
+* gosl reformat switch statements
+
 * build WarpSize = 64 default into vgpu compute command
 
 * pass n layers, n prjns as fast buffer thing to shader
@@ -35,9 +44,8 @@ TODO:
 * TEST more: NewState and PlusPhase need to update pool.Inhib.Clamped state -- input is now set up front.
 
 * Figure out global vars per above
-* Breakout prjn integration functions -- currently not working in Go mode because of this.
 
 * Build all cortical variants into base type
-
+    + Deep worked well -- keep going!
 
 
