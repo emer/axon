@@ -36,7 +36,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Slope":               "0.02", //
 					"Layer.Act.Sahp.CaTau":               "10",   //
 				}},
-			{Sel: ".Super", Desc: "super layer params",
+			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
 					"Layer.Burst.ThrRel": "0.1", // 0.1, 0.1 best
 					"Layer.Burst.ThrAbs": "0.1",
@@ -47,7 +47,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.15",
 					"Layer.Act.Clamp.Ge":         "1.5",
 				}},
-			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
+			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 == 2.4 > lower
 					"Layer.Inhib.Layer.FB":          "1",
@@ -71,7 +71,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLRate.SpkThr":     "0.1",  // 0.1 def
 					"Layer.Learn.RLRate.Min":        "0.001",
 				}},
-			{Sel: ".Pulvinar", Desc: "pulvinar",
+			{Sel: ".PulvinarLayer", Desc: "pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > higher v1.6.1
 					"Layer.Inhib.Layer.FB":          "1",
@@ -95,11 +95,11 @@ var ParamSets = params.Sets{
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
 				}},
-			{Sel: ".CTCtxt", Desc: "all CT context prjns",
+			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
 					"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1

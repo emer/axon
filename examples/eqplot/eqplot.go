@@ -60,8 +60,8 @@ func (ss *Sim) Config() {
 	ss.RiseTau = 10
 	ss.DecayTau = 100
 	ss.GsXInit = 1
-	ss.TimeSteps = 1000
-	ss.TimeInc = .001
+	ss.ContextSteps = 1000
+	ss.ContextInc = .001
 	ss.Update()
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
@@ -80,11 +80,11 @@ func (ss *Sim) Update() {
 func (ss *Sim) Run() {
 	ss.Update()
 	dt := ss.Table
-	dt.SetNumRows(ss.TimeSteps)
+	dt.SetNumRows(ss.ContextSteps)
 	time := 0.0
 	gs := 0.0
 	x := ss.GsXInit
-	for t := 0; t < ss.TimeSteps; t++ {
+	for t := 0; t < ss.ContextSteps; t++ {
 		// record starting state first, then update
 		dt.SetCellFloat("Time", t, time)
 		dt.SetCellFloat("Gs", t, gs)
@@ -94,7 +94,7 @@ func (ss *Sim) Run() {
 		dX := -x / ss.DecayTau
 		gs += dGs
 		x += dX
-		time += ss.TimeInc
+		time += ss.ContextInc
 	}
 	ss.Plot.Update()
 }

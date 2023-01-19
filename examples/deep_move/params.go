@@ -28,14 +28,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Slope":          "0.02", //
 					"Layer.Act.Sahp.CaTau":          "5",    // 5 > 10
 				}},
-			{Sel: "SuperLayer", Desc: "super layer params",
-				Params: params.Params{
-					"Layer.Burst.ThrRel": "0.1", // no diffs here -- music makes a diff
-					"Layer.Burst.ThrAbs": "0.1",
-				}},
-			{Sel: ".Hidden", Desc: "fix avg act",
+			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Burst.ThrRel":         "0.1", // no diffs here -- music makes a diff
+					"Layer.Burst.ThrAbs":         "0.1",
 				}},
 			{Sel: ".DepthIn", Desc: "",
 				Params: params.Params{
@@ -47,7 +44,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.13", // 0.13 > 0.2 -- 0.13 is accurate but Ge is high..
 					"Layer.Inhib.Layer.Gi":       "0.9",  //
 				}},
-			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
+			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
 					"Layer.Inhib.Layer.Gi":       "2.0",  // 2.0 is fine -- was 1.4
@@ -70,7 +67,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":       "2.8",  // 2.8 is reasonable; was 2.0
 					"Layer.Inhib.ActAvg.Nominal": "0.07", // 0.07 reasonable -- actual is closer to .15 but this produces stronger drive on Pulvinar which produces *slightly* better performance.
 				}},
-			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
+			{Sel: ".PulvinarLayer", Desc: "Pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.8", // 0.8 good -- was 0.9
 					"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.15 -- does not work with 0.05
@@ -99,7 +96,7 @@ var ParamSets = params.Sets{
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 4 == 2 > 1
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
@@ -107,7 +104,7 @@ var ParamSets = params.Sets{
 			// 	Params: params.Params{
 			// 		"Prjn.PrjnScale.Rel": "0.2", // not much diff here
 			// 	}},
-			{Sel: ".CTCtxt", Desc: "all CT context prjns",
+			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.002", // has almost no effect in 1to1
 					"Prjn.Learn.Trace.Tau":     "2",     // late in learning 2 does best

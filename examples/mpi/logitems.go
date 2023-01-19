@@ -166,7 +166,7 @@ func (ss *Sim) ConfigLogItems() {
 			}}})
 
 	// Standard stats for Ge and AvgAct tuning -- for all hidden, output layers
-	layers := ss.Net.LayersByClass("Hidden", "Target")
+	layers := ss.Net.LayersByClass("HiddenLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := ss.Net.LayerByName(clnm)
@@ -338,7 +338,7 @@ func (ss *Sim) ConfigLogItems() {
 	}
 
 	// input layer average activity -- important for tuning
-	layers = ss.Net.LayersByClass("Input")
+	layers = ss.Net.LayersByClass("InputLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		ss.Logs.AddItem(&elog.Item{
@@ -355,7 +355,7 @@ func (ss *Sim) ConfigLogItems() {
 	}
 
 	// input / output layer activity patterns during testing
-	layers = ss.Net.LayersByClass("Input", "Target")
+	layers = ss.Net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := ss.Net.LayerByName(clnm)

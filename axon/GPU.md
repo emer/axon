@@ -42,6 +42,8 @@ Set 2:  Storage
     * CTLayer -> .CTLayer
     * PulvLayer -> .PulvinarLayer
 
+    * LayersByClass needs all fixed!
+    
 * HebbPrjn type
     
 * build WarpSize = 64 default into vgpu compute command

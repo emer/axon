@@ -66,7 +66,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.25",
 					"Prjn.Com.Delay":     "2",
 				}},
-			{Sel: ".Back", Desc: "feedback excitatory",
+			{Sel: ".BackPrjn", Desc: "feedback excitatory",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},

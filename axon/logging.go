@@ -38,7 +38,7 @@ func LogTestErrors(lg *elog.Logs) {
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func PCAStats(net emer.Network, lg *elog.Logs, stats *estats.Stats) {
-	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByClass("Hidden", "Target", "CT"))
+	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByClass("HiddenLayer", "TargetLayer", "CTLayer"))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -101,7 +101,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 	}
 
 	// input layer average activity -- important for tuning
-	layers = net.LayersByClass("Input")
+	layers = net.LayersByClass("InputLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
@@ -121,7 +121,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 // across 3 given time levels, in higher to lower order, e.g., Run, Epoch, Trial
 // These are useful for diagnosing the behavior of the network.
 func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByClass("Hidden", "Target", "CT")
+	layers := net.LayersByClass("HiddenLayer", "TargetLayer", "CTLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := net.LayerByName(clnm)
@@ -184,7 +184,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 // for given mode and time (e.g., Test, Cycle)
 // These are useful for monitoring layer activity during testing.
 func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm etime.Times) {
-	layers := net.LayersByClass("Hidden", "Target")
+	layers := net.LayersByClass("HiddenLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
@@ -212,7 +212,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
 func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByClass("Hidden", "CT", "Target")
+	layers := net.LayersByClass("HiddenLayer", "CTLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
@@ -265,7 +265,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 // These were useful for the development of the Ca-based "trace" learning rule
 // that directly uses NMDA and VGCC-like spiking Ca
 func LogAddCaLrnDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByClass("Hidden", "Target")
+	layers := net.LayersByClass("HiddenLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		// ss.Logs.AddItem(&elog.Item{

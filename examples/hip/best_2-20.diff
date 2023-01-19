@@ -237,7 +237,7 @@ index 0e622a4..acac8c5 100644
 -	ca1FmCa3.WtScale.Abs = 0
 -
  	ss.Net.AlphaCycInit()
- 	ss.Time.AlphaCycStart()
+ 	ss.Context.AlphaCycStart()
  	for qtr := 0; qtr < 4; qtr++ {
 @@ -498,6 +531,11 @@ func (ss *Sim) AlphaCyc(train bool) {
  		case 1: // Second, Third Quarters: CA1 is driven by CA3 recall

@@ -36,7 +36,7 @@ type Approach struct {
 	TrgPos      int                         `desc:"target position where Drive US is"`
 	Drive       int                         `desc:"current drive state"`
 	Dist        int                         `desc:"current distance"`
-	Time        int                         `desc:"current time, counting up until starting over"`
+	Context     int                         `desc:"current time, counting up until starting over"`
 	Pos         int                         `desc:"current position being looked at"`
 	Rew         float32                     `desc:"reward"`
 	US          int                         `desc:"US is -1 unless consumed at Dist = 0"`

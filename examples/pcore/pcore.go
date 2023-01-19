@@ -110,7 +110,7 @@ type Sim struct {
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Time         axon.Time        `desc:"axon timing parameters and state"`
+	Context      axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 
@@ -135,7 +135,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -359,8 +359,8 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
 	man.GetLoop(etime.Test, etime.Cycle).AddEvents(applyRew)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
 
 	man.GetLoop(etime.Test, etime.Trial).OnStart.Add("TestInc", func() {
 		if ss.Sim.NoInc {
@@ -385,7 +385,7 @@ func (ss *Sim) ConfigLoops() {
 			phs := man.Stacks[mode].Loops[etime.Phase].Counter.Cur
 			if phs == 1 {
 				ss.Net.NewState()
-				ss.Time.NewState(mode.String())
+				ss.Context.NewState(mode.String())
 			}
 			ss.ApplyInputs(mode, phs == 0) // zero on phase == 0
 		})
@@ -521,8 +521,8 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Time.Reset()
-	ss.Time.Mode = etime.Train.String()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Train.String()
 	ss.InitWts(ss.Net)
 	ss.InitStats()
 	ss.StatCounters()
@@ -554,12 +554,12 @@ func (ss *Sim) InitStats() {
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
 	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode.FromString(ss.Context.Mode)
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
+	ss.Stats.SetInt("Cycle", ss.Context.Cycle)
 	ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
 	ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
 	trlnm := fmt.Sprintf("%4f_%4f", ss.Sim.ACCPos, ss.Sim.ACCNeg)
@@ -578,7 +578,7 @@ func (ss *Sim) TrialStats() {
 		ss.Stats.SetFloat("VThal_RT", 0)
 		return
 	}
-	mode := etime.ModeFromString(ss.Time.Mode)
+	mode := etime.ModeFromString(ss.Context.Mode)
 	trlog := ss.Logs.Log(mode, etime.Cycle)
 	spkCyc := 0
 	for row := 0; row < trlog.Rows; row++ {
@@ -706,7 +706,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode.String() // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 

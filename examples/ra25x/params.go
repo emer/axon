@@ -77,7 +77,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":        "1",    // this is subtly beneficial
 					"Layer.Act.Decay.Glong":      "1",
 				}},
-			{Sel: ".Hidden", Desc: "",
+			{Sel: ".SuperLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":       "1.1",  // 0.9 > 1.0
 					"Layer.Inhib.ActAvg.Nominal": "0.05", // 0.05 more sensible, same perf
@@ -115,7 +115,7 @@ var ParamSets = params.Sets{
 					// "Prjn.Learn.LRate.Base":  "0.1", // 0.1 is default
 					"Prjn.SWt.Adapt.SigGain": "6", // 1 does not work
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},

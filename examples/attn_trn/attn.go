@@ -167,7 +167,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": ".03",
 					"Layer.Act.Dt.GTau":          "3",
 				}},
-			{Sel: ".Back", Desc: "weaker output",
+			{Sel: ".BackPrjn", Desc: "weaker output",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 				}},
@@ -229,7 +229,7 @@ type Sim struct {
 	TstStats    *etable.Table   `view:"no-inline" desc:"aggregate stats on testing data"`
 	Params      params.Sets     `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
 	TestEnv     AttnEnv         `desc:"Testing environment -- manages iterating over testing"`
-	Time        axon.Time       `desc:"axon timing parameters and state"`
+	Context     axon.Context    `desc:"axon timing parameters and state"`
 	ViewOn      bool            `desc:"whether to update the network view while running"`
 	ViewUpdt    axon.TimeScales `desc:"at what time scale to update the display during testing?  Change to AlphaCyc to make display updating go faster"`
 	AttnLay     string          `desc:"layer to measure attentional effects on"`
@@ -391,8 +391,8 @@ func (ss *Sim) InitWts() {
 func (ss *Sim) Init() {
 	ss.UpdateEnv()
 	ss.TestEnv.Init(0)
-	ss.Time.Reset()
-	// ss.Time.CycPerQtr = 55 // 220 total
+	ss.Context.Reset()
+	// ss.Context.CycPerQtr = 55 // 220 total
 	ss.InitWts()
 	ss.StopNow = false
 	ss.SetParams("", false) // all sheets
@@ -405,7 +405,7 @@ func (ss *Sim) Init() {
 // and add a few tabs at the end to allow for expansion..
 func (ss *Sim) Counters() string {
 	nm := ss.TestEnv.String()
-	return fmt.Sprintf("Trial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TestEnv.Trial.Cur, ss.Time.Cycle, nm)
+	return fmt.Sprintf("Trial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TestEnv.Trial.Cur, ss.Context.Cycle, nm)
 }
 
 func (ss *Sim) UpdateView(train bool) {
@@ -421,15 +421,15 @@ func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
 	case axon.Cycle:
 		ss.UpdateView(train)
 	case axon.FastSpike:
-		if ss.Time.Cycle%10 == 0 {
+		if ss.Context.Cycle%10 == 0 {
 			ss.UpdateView(train)
 		}
 	case axon.GammaCycle:
-		if ss.Time.Cycle%25 == 0 {
+		if ss.Context.Cycle%25 == 0 {
 			ss.UpdateView(train)
 		}
 	case axon.AlphaCycle:
-		if ss.Time.Cycle%100 == 0 {
+		if ss.Context.Cycle%100 == 0 {
 			ss.UpdateView(train)
 		}
 	}
@@ -451,35 +451,35 @@ func (ss *Sim) ThetaCyc(train bool) {
 	minusCyc := ss.Cycles - plusCyc
 
 	ss.Net.NewState()
-	ss.Time.NewState()
+	ss.Context.NewState()
 	for cyc := 0; cyc < minusCyc; cyc++ { // do the minus phase
-		ss.Net.Cycle(&ss.Time)
-		// ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
-		ss.Time.CycleInc()
-		switch ss.Time.Cycle { // save states at beta-frequency -- not used computationally
+		ss.Net.Cycle(&ss.Context)
+		// ss.LogTstCyc(ss.TstCycLog, ss.Context.Cycle)
+		ss.Context.CycleInc()
+		switch ss.Context.Cycle { // save states at beta-frequency -- not used computationally
 		case 75:
-			ss.Net.ActSt1(&ss.Time)
+			ss.Net.ActSt1(&ss.Context)
 		case 100:
-			ss.Net.ActSt2(&ss.Time)
+			ss.Net.ActSt2(&ss.Context)
 		}
 		if cyc == minusCyc-1 { // do before view update
-			ss.Net.MinusPhase(&ss.Time)
+			ss.Net.MinusPhase(&ss.Context)
 		}
 		if ss.ViewOn {
 			ss.UpdateViewTime(train, viewUpdt)
 		}
 	}
-	ss.Time.NewPhase()
+	ss.Context.NewPhase()
 	if viewUpdt == axon.Phase {
 		ss.UpdateView(train)
 	}
 	for cyc := 0; cyc < plusCyc; cyc++ { // do the plus phase
-		ss.Net.Cycle(&ss.Time)
-		// ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
-		ss.Time.CycleInc()
+		ss.Net.Cycle(&ss.Context)
+		// ss.LogTstCyc(ss.TstCycLog, ss.Context.Cycle)
+		ss.Context.CycleInc()
 		if cyc == plusCyc-1 { // do before view update
-			ss.Net.PlusPhase(&ss.Time)
-			// ss.Net.CTCtxt(&ss.Time) // update context at end
+			ss.Net.PlusPhase(&ss.Context)
+			// ss.Net.CTCtxt(&ss.Context) // update context at end
 		}
 		if ss.ViewOn {
 			ss.UpdateViewTime(train, viewUpdt)
@@ -774,7 +774,7 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 	dt.SetCellFloat("Run", row, float64(rn))
 	dt.SetCellFloat("Trial", row, float64(trl))
 	dt.SetCellString("TrialName", row, ss.TestEnv.String())
-	dt.SetCellFloat("Cycle", row, float64(ss.Time.Cycle))
+	dt.SetCellFloat("Cycle", row, float64(ss.Context.Cycle))
 	dt.SetCellFloat("S1Act", row, float64(ss.S1Act))
 	dt.SetCellFloat("S2Act", row, float64(ss.S2Act))
 	dt.SetCellFloat("PctMod", row, float64(ss.PctMod))

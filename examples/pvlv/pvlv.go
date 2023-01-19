@@ -109,7 +109,7 @@ type Sim struct {
 	CycleOutputMetadata          map[string][]string `view:"-"`
 	TimeLogBlock                 int                 `desc:"current block within current run phase"`
 	TimeLogBlockAll              int                 `desc:"current block across all phases of the run"`
-	Time                         axon.Time           `desc:"axon timing parameters and state"`
+	Context                      axon.Context        `desc:"axon timing parameters and state"`
 	ViewOn                       bool                `desc:"whether to update the network view while running"`
 	TrainUpdt                    axon.TimeScales     `desc:"at what time scale to update the display during training?  Anything longer than TrialGp updates at TrialGp in this model"`
 	TestUpdt                     axon.TimeScales     `desc:"at what time scale to update the display during testing?  Anything longer than TrialGp updates at TrialGp in this model"`
@@ -311,7 +311,7 @@ func (ss *Sim) Counters() string {
 	ev := &ss.Env
 	return fmt.Sprintf("Condition:\t%d(%s)\tBlock:\t%03d\tTrial:\t%02d\tAlpha:\t%01d\tCycle:\t%03d\t\tName:\t%12v\t\t\t",
 		ev.ConditionCt.Cur, ev.CurConditionParams.TrialBlkNm, ev.TrialBlockCt.Cur, ev.TrialCt.Cur, ev.AlphaCycle.Cur,
-		ss.Time.Cycle, ev.AlphaTrialName) //, ev.USTimeInStr)
+		ss.Context.Cycle, ev.AlphaTrialName) //, ev.USTimeInStr)
 }
 
 func (ss *Sim) UpdateView() {
@@ -1115,9 +1115,9 @@ func (ss *Sim) InitCondition(firstInSeq bool) (err error) {
 	if err != nil {
 		return err
 	}
-	ss.Time.Reset()
+	ss.Context.Reset()
 	ss.Net.InitActs()
-	ss.TimeLogBlock = 0
+	ss.ContextLogBlock = 0
 	ev.Init(ss, firstInSeq)
 	if firstInSeq || ss.TrialTypeDataPerBlock {
 		_ = ss.SetTrialTypeDataXLabels()
@@ -1170,7 +1170,7 @@ func (ss *Sim) ExecuteRun() bool {
 		}
 		ss.Win.WinViewport2D().SetNeedsFullRender()
 	}
-	ss.TimeLogBlockAll = 0
+	ss.ContextLogBlockAll = 0
 	for i, condition := range conditions {
 		if condition.Nm == "NullStep" {
 			allDone = true
@@ -1407,7 +1407,7 @@ func (ss *Sim) LogTrialTypeData() {
 			if !ss.TrialTypeBlockFirstLogged[ev.AlphaTrialName] {
 				ss.TrialTypeBlockFirstLogged[ev.AlphaTrialName] = true
 				vtaCol := ss.GlobalTrialTypeSet[ev.AlphaTrialName]
-				efRow := ss.TimeLogBlockAll
+				efRow := ss.ContextLogBlockAll
 				val := float64(tsr.Values[0])
 				if efdt.Rows <= efRow {
 					efdt.SetNumRows(efRow + 1)
@@ -1456,7 +1456,7 @@ func (ss *Sim) LogCycleData() {
 	var val float64
 	dt := ss.CycleOutputData
 	row := ev.GlobalStep
-	alphaStep := ss.Time.Cycle + ev.AlphaCycle.Cur*100
+	alphaStep := ss.Context.Cycle + ev.AlphaCycle.Cur*100
 	for _, colNm := range dt.ColNames {
 		if colNm == "GlobalStep" {
 			dt.SetCellFloat("GlobalStep", row, float64(ev.GlobalStep))
@@ -1487,8 +1487,8 @@ func (ss *Sim) LogCycleData() {
 
 func (ss *Sim) BlockMonitor() {
 	ss.LogTrnBlk()
-	ss.TimeLogBlock += 1
-	ss.TimeLogBlockAll += 1
+	ss.ContextLogBlock += 1
+	ss.ContextLogBlockAll += 1
 }
 
 // CmdArgs processes command-line parameters.

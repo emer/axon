@@ -105,7 +105,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	}
 
 	net.InitWts()
-	ltime := axon.NewTime()
+	ltime := axon.NewContext()
 
 	// reset timer to avoid counting setup time
 	b.ResetTimer()

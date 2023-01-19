@@ -55,7 +55,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "0.70",
 					"Layer.Act.Clamp.Ge":   "0.8",
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
@@ -134,7 +134,7 @@ func ConfigEpcLog(dt *etable.Table) {
 }
 
 func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose bool) {
-	ltime := axon.NewTime()
+	ltime := axon.NewContext()
 	net.InitWts()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints

@@ -166,7 +166,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 	if sSpk {
 		sn.Spike = 1
 		sn.ISI = 0
-		nex.SCaUpT = ss.Time.CycleTot
+		nex.SCaUpT = ss.Context.CycleTot
 	} else {
 		sn.Spike = 0
 		sn.ISI += 1
@@ -184,7 +184,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		if rSpk {
 			rn.Spike = 1
 			rn.ISI = 0
-			nex.RCaUpT = ss.Time.CycleTot
+			nex.RCaUpT = ss.Context.CycleTot
 		} else {
 			rn.Spike = 0
 			rn.ISI += 1
@@ -231,7 +231,7 @@ func (ss *Sim) SynUpdt() {
 	pj := ss.Prjn
 	kp := &pj.Params.Learn.KinaseCa
 	twin := pj.Params.Learn.KinaseDWt.TWindow
-	ctime := int32(ss.Time.CycleTot)
+	ctime := int32(ss.Context.CycleTot)
 
 	pmsec := ss.MinusMsec + ss.PlusMsec
 
@@ -264,7 +264,7 @@ func (ss *Sim) SynUpdt() {
 		sst.CaUpT = ctime
 	}
 
-	if ss.Time.Cycle == pmsec {
+	if ss.Context.Cycle == pmsec {
 		if pj.Params.Learn.XCal.On {
 			nst.DWt = pj.Params.Learn.XCal.DWt(nst.CaP, nst.CaD)
 			sst.DWt = pj.Params.Learn.XCal.DWt(sst.CaP, sst.CaD)
@@ -302,7 +302,7 @@ func (ss *Sim) SynUpdt() {
 	pj.Params.Learn.CaDMax(ssc)
 	pj.Params.Learn.CaDMax(snc)
 
-	if ss.Time.Cycle == pmsec {
+	if ss.Context.Cycle == pmsec {
 		axon.DecaySynCa(ssc, pj.Params.Learn.KinaseDWt.TrlDecay)
 		axon.DecaySynCa(snc, pj.Params.Learn.KinaseDWt.TrlDecay)
 	}

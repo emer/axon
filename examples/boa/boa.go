@@ -100,7 +100,7 @@ type Sim struct {
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Time         axon.Time        `desc:"axon timing parameters and state"`
+	Context      axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 
@@ -125,7 +125,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -437,13 +437,13 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Replace("UpdateWeights", func() {
-		ss.Net.DWt(&ss.Time)
+		ss.Net.DWt(&ss.Context)
 		ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
-		ss.Net.WtFmDWt(&ss.Time)
+		ss.Net.WtFmDWt(&ss.Context)
 	})
 
 	for m, _ := range man.Stacks {
@@ -547,7 +547,7 @@ func (ss *Sim) TakeAction(net *pcore.Network) {
 	// fmt.Printf("Take Action\n")
 	ss.Sim.ThetaStep = 0 // reset for next time
 
-	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode].(*Approach)
 
 	netAct, anm := ss.DecodeAct(ev)
 	genAct := ev.ActGen()
@@ -582,7 +582,7 @@ func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
 // ApplyRew applies updated reward
 func (ss *Sim) ApplyRew() {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode].(*Approach)
 	lays := []string{"Rew"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
@@ -594,7 +594,7 @@ func (ss *Sim) ApplyRew() {
 // ApplyUS applies US
 func (ss *Sim) ApplyUS() {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode].(*Approach)
 	lays := []string{"US"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
@@ -605,7 +605,7 @@ func (ss *Sim) ApplyUS() {
 
 func (ss *Sim) ApplyAction(act int) {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode]
+	ev := ss.Envs[ss.Context.Mode]
 	ly := net.LayerByName("VL").(axon.AxonLayer).AsAxon()
 	ly.SetType(emer.Input)
 	ap := ev.State("Action")
@@ -621,7 +621,7 @@ func (ss *Sim) ApplyAction(act int) {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode].(*Approach)
 
 	if ev.Time == 0 {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
@@ -652,8 +652,8 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Time.Reset()
-	ss.Time.Mode = etime.Train.String()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Train.String()
 	ss.Sim.ThetaStep = 0
 	ss.Sim.PctCortex = 0
 	ss.InitWts(ss.Net)
@@ -689,7 +689,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetString("ActAction", "")
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
-	lays := ss.Net.LayersByClass("PT")
+	lays := ss.Net.LayersByClass("PTLayer")
 	for _, lnm := range lays {
 		ss.Stats.SetFloat("Maint"+lnm, 0)
 		ss.Stats.SetFloat("MaintFail"+lnm, 0)
@@ -701,12 +701,12 @@ func (ss *Sim) InitStats() {
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
 	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode.FromString(ss.Context.Mode)
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
+	ss.Stats.SetInt("Cycle", ss.Context.Cycle)
 	ss.Stats.SetFloat("PctCortex", float64(ss.Sim.PctCortex))
 	// ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
 	// ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
@@ -764,7 +764,7 @@ func (ss *Sim) GatedStats() {
 	}
 	// fmt.Printf("Gate Stats\n")
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode].(*Approach)
 	mtxLy := net.LayerByName("VpMtxGo").(*pcore.MatrixLayer)
 	didGate := mtxLy.AnyGated()
 	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
@@ -799,13 +799,13 @@ func (ss *Sim) MaintStats() {
 		return
 	}
 	// fmt.Printf("Maint Stats\n")
-	ev := ss.Envs[ss.Time.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode].(*Approach)
 	// should be maintaining while going forward
 	isFwd := ev.LastAct == ev.ActMap["Forward"]
 	isCons := ev.LastAct == ev.ActMap["Consume"]
 	actThr := float32(0.05) // 0.1 too high
 	net := ss.Net
-	lays := net.LayersByClass("PT")
+	lays := net.LayersByClass("PTLayer")
 	hasMaint := false
 	for _, lnm := range lays {
 		mnm := "Maint" + lnm
@@ -903,7 +903,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("NoGatePost", "NoGatePost", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 
-	lays := ss.Net.LayersByClass("PT")
+	lays := ss.Net.LayersByClass("PTLayer")
 	for _, lnm := range lays {
 		nm := "Maint" + lnm
 		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
@@ -958,7 +958,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode.String() // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 

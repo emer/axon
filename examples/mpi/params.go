@@ -94,7 +94,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.XCal.On":         "true",
 					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 best for objrec, higher worse
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
@@ -180,7 +180,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.XCal.On":         "false", // no diff
 					"Prjn.Learn.XCal.PThrMin":    "0.05",  // can handle this -- todo: try bigger, test more
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
@@ -241,7 +241,7 @@ var ParamSetsMin = params.Sets{
 					"Prjn.Learn.XCal.On":         "true",
 					"Prjn.Learn.XCal.PThrMin":    "0.05", // 0.05 max for objrec
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
@@ -286,7 +286,7 @@ var ParamSetsDefs = params.Sets{
 					"Prjn.SWt.Adapt.LRate":  "0.1",  // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more minconstraint
 					"Prjn.SWt.Init.SPct":    "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
@@ -337,7 +337,7 @@ var ParamSetsAlpha = params.Sets{
 					"Prjn.SWt.Adapt.LRate":  "0.1", // .1 >= .2, but .2 is fast enough for DreamVar .01..  .1 = more constraint
 					"Prjn.SWt.Init.SPct":    "0.5", // .5 > 1 here, 1 best for larger nets: objrec, lvis
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},
@@ -444,7 +444,7 @@ var ParamSetsAll = params.Sets{
 					"Prjn.Learn.XCal.SubMean":   "1",      // 1 > 0.9 now..
 					"Prjn.Com.PFail":            "0.0",    // even .2 fails
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},

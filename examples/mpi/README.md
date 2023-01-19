@@ -176,7 +176,7 @@ func (ss *Sim) MPIWtFmDWt() {
 		ss.Comm.AllReduceF32(mpi.OpSum, ss.SumDWts, ss.AllDWts)
 		ss.Net.SetDWts(ss.SumDWts, mpi.WorldSize())
 	}
-	ss.Net.WtFmDWt(&ss.Time)
+	ss.Net.WtFmDWt(&ss.Context)
 }
 ```
 

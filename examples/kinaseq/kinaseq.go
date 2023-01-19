@@ -65,7 +65,7 @@ type Sim struct {
 	SynSpkTheta  axon.Synapse             `view:"no-inline" desc:"synapse state values, SST_ in log"`
 	SynSpkCont   axon.Synapse             `view:"no-inline" desc:"synapse state values, SSC_ in log"`
 	SynNMDACont  axon.Synapse             `view:"no-inline" desc:"synapse state values, SNC_ in log"`
-	Time         axon.Time                `desc:"axon time recording"`
+	Context      axon.Context             `desc:"axon time recording"`
 	Logs         map[string]*etable.Table `view:"no-inline" desc:"all logs"`
 	Plots        map[string]*eplot.Plot2D `view:"-" desc:"all plots"`
 	Win          *gi.Window               `view:"-" desc:"main GUI window"`
@@ -81,7 +81,7 @@ func (ss *Sim) Config() {
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.PGain = 1
 	ss.SpikeDisp = 0.1
 	ss.RGeClamp = true
@@ -111,7 +111,7 @@ func (ss *Sim) Update() {
 // Init restarts the run and applies current parameters
 func (ss *Sim) Init() {
 	ss.Params.SetAll()
-	ss.Time.Reset()
+	ss.Context.Reset()
 	ss.Net.InitWts()
 	ss.NeuronEx.Init()
 	ss.InitSyn(&ss.SynNeurTheta)
@@ -198,7 +198,7 @@ func (ss *Sim) Run() {
 func (ss *Sim) RunImpl(minusHz, plusHz, ntrials int) {
 	dt := ss.Log("RunLog")
 	dt.SetNumRows(ntrials)
-	ss.Time.Reset()
+	ss.Context.Reset()
 	for nr := 0; nr < ntrials; nr++ {
 		ss.TrialImpl(minusHz, plusHz)
 		ss.LogState(dt, nr, nr, 0)
@@ -222,7 +222,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 
 	ss.InitWts()
 
-	ss.Time.NewState(true)
+	ss.Context.NewState(true)
 	for phs := 0; phs < 3; phs++ {
 		var maxms, rhz int
 		switch phs {
@@ -251,7 +251,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 			Sint = mat32.Exp(-1000.0 / float32(shz))
 		}
 		for t := 0; t < maxms; t++ {
-			cyc := ss.Time.Cycle
+			cyc := ss.Context.Cycle
 
 			sSpk := false
 			if Sint > 0 {
@@ -274,7 +274,7 @@ func (ss *Sim) TrialImpl(minusHz, plusHz int) {
 			ss.NeuronUpdt(sSpk, rSpk, ge, gi)
 
 			ss.LogState(dt, cyc, 0, cyc)
-			ss.Time.CycleInc()
+			ss.Context.CycleInc()
 		}
 	}
 }

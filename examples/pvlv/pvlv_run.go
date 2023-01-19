@@ -39,13 +39,13 @@ func (ss *Sim) SettleMinus(train bool) {
 		viewUpdt = ss.TestUpdt
 	}
 	for qtr := 0; qtr < 3; qtr++ {
-		for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
-			ss.Net.Cycle(&ss.Time)
+		for cyc := 0; cyc < ss.Context.CycPerQtr; cyc++ {
+			ss.Net.Cycle(&ss.Context)
 			if ss.CycleLogUpdt == axon.Cycle {
 				ev.GlobalStep++
 				ss.LogCycleData()
 			}
-			ss.Time.CycleInc()
+			ss.Context.CycleInc()
 			if ss.Stepper.StepPoint(int(Cycle)) {
 				return
 			}
@@ -53,7 +53,7 @@ func (ss *Sim) SettleMinus(train bool) {
 			if ss.ViewOn {
 				switch viewUpdt {
 				case axon.Cycle:
-					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
+					if cyc != ss.Context.CycPerQtr-1 { // will be updated by quarter
 						ss.UpdateView()
 					}
 				case axon.FastSpike: // every 10 cycles
@@ -63,7 +63,7 @@ func (ss *Sim) SettleMinus(train bool) {
 				}
 			}
 		}
-		ss.Net.QuarterFinal(&ss.Time)
+		ss.Net.QuarterFinal(&ss.Context)
 		if ss.ViewOn {
 			switch viewUpdt {
 			case axon.Quarter:
@@ -74,7 +74,7 @@ func (ss *Sim) SettleMinus(train bool) {
 				}
 			}
 		}
-		ss.Time.QuarterInc()
+		ss.Context.QuarterInc()
 		if ss.CycleLogUpdt == axon.Quarter {
 			ev.GlobalStep++
 			ss.LogCycleData()
@@ -91,20 +91,20 @@ func (ss *Sim) SettlePlus(train bool) {
 	if !train {
 		viewUpdt = ss.TestUpdt
 	}
-	for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
-		ss.Net.Cycle(&ss.Time)
+	for cyc := 0; cyc < ss.Context.CycPerQtr; cyc++ {
+		ss.Net.Cycle(&ss.Context)
 		if ss.CycleLogUpdt == axon.Cycle {
 			ev.GlobalStep++
 			ss.LogCycleData()
 		}
-		ss.Time.CycleInc()
+		ss.Context.CycleInc()
 		if ss.Stepper.StepPoint(int(Cycle)) {
 			return
 		}
 		if ss.ViewOn {
 			switch viewUpdt {
 			case axon.Cycle:
-				if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
+				if cyc != ss.Context.CycPerQtr-1 { // will be updated by quarter
 					ss.UpdateView()
 				}
 			case axon.FastSpike:
@@ -114,14 +114,14 @@ func (ss *Sim) SettlePlus(train bool) {
 			}
 		}
 	}
-	ss.Net.QuarterFinal(&ss.Time)
+	ss.Net.QuarterFinal(&ss.Context)
 	if ss.ViewOn {
 		switch viewUpdt {
 		case axon.Quarter, axon.Phase:
 			ss.UpdateView()
 		}
 	}
-	ss.Time.QuarterInc()
+	ss.Context.QuarterInc()
 	if ss.CycleLogUpdt == axon.Quarter {
 		ev.GlobalStep++
 		ss.LogCycleData()
@@ -140,7 +140,7 @@ func (ss *Sim) TrialStart(train bool) {
 		ss.Net.WtFmDWt()
 	}
 	ss.Net.AlphaCycInit()
-	ss.Time.AlphaCycStart()
+	ss.Context.AlphaCycStart()
 }
 
 func (ss *Sim) TrialEnd(_ *PVLVEnv, train bool) {
@@ -223,7 +223,7 @@ func (ev *PVLVEnv) RunOneTrialBlk(ss *Sim) {
 func (ev *PVLVEnv) RunOneTrial(ss *Sim, curTrial *data.TrialInstance) (blockDone bool) {
 	var train bool
 	trialDone := false
-	ss.Net.ClearModActs(&ss.Time)
+	ss.Net.ClearModActs(&ss.Context)
 	for !trialDone {
 		ev.SetupOneAlphaTrial(curTrial, 0)
 		train = !ev.IsTestTrial(curTrial)
@@ -236,7 +236,7 @@ func (ev *PVLVEnv) RunOneTrial(ss *Sim, curTrial *data.TrialInstance) (blockDone
 			ss.UpdateView()
 		}
 	}
-	ss.Net.ClearMSNTraces(&ss.Time)
+	ss.Net.ClearMSNTraces(&ss.Context)
 	blockDone = ev.TrialCt.Incr()
 	ss.TrialEnd(ev, train)
 	//ss.LogTrialData(ev) // accumulate

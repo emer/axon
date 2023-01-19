@@ -168,9 +168,9 @@ func (ly *Layer) UnitVal1D(varIdx int, idx int) float32 {
 	if varIdx < 0 || varIdx >= ly.UnitVarNum() {
 		return mat32.NaN()
 	}
-	if idx >= ly.UnitVarNum()-NNeuronLayerVars {
-		li := idx - (ly.UnitVarNum() - NNeuronLayerVars)
-		switch li {
+	if varIdx >= ly.UnitVarNum()-NNeuronLayerVars {
+		lvi := varIdx - (ly.UnitVarNum() - NNeuronLayerVars)
+		switch lvi {
 		case 0:
 			return ly.Vals.NeuroMod.DA
 		case 1:
