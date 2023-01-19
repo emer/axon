@@ -679,7 +679,7 @@ func (pj *Prjn) InitGBuffs() {
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
 func (pj *Prjn) SendSpike(sendIdx int) {
-	if PrjnTypes(pj.Typ) == CTCtxt { // skip regular
+	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
 		return
 	}
 

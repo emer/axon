@@ -145,8 +145,6 @@ type Neuron struct {
 	Burst    float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
 	BurstPrv float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
 	CtxtGe   float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
-
-	pad, pad1 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
@@ -206,6 +204,12 @@ var NeuronVarProps = map[string]string{
 	"SSGiDend":  `auto-scale:"+"`,
 }
 
+// NeuronLayerVars are layer-level variables displayed as neuron layers.
+var (
+	NeuronLayerVars  = []string{"DA", "ACh", "NE"}
+	NNeuronLayerVars = len(NeuronLayerVars)
+)
+
 func init() {
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	typ := reflect.TypeOf((*Neuron)(nil)).Elem()
@@ -223,6 +227,10 @@ func init() {
 				NeuronVarProps[v] = pstr
 			}
 		}
+	}
+	for _, v := range NeuronLayerVars {
+		NeuronVarsMap[v] = len(NeuronVars)
+		NeuronVars = append(NeuronVars, v)
 	}
 }
 

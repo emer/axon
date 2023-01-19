@@ -49,6 +49,7 @@ func (ly *RWPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 // r(t) is accessed directly from a Rew layer -- if no external input then no
 // DA is computed -- critical for effective use of RW only for PV cases.
 // RWPred prediction is also accessed directly from Rew layer to avoid any issues.
+// DA is sent to all layers.
 type RWDaLayer struct {
 	Layer
 	SendDA    SendDA `desc:"list of layers to send dopamine to"`

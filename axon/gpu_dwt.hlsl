@@ -10,7 +10,8 @@
 
 // note: binding is var, set
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
-[[vk::binding(1, 0)]] uniform PrjnParams Prjns[]; // [Layer][SendPrjns]
+[[vk::binding(1, 0)]] uniform PrjnParams SendPrjns[]; // [Layer][SendPrjns]
+[[vk::binding(2, 0)]] uniform PrjnParams RecvPrjns[]; // [Layer][RecvPrjns]
 
 [[vk::binding(0, 1)]] StructuredBuffer<NeurSynIdx> SendNeurSynIdxs; // [Layer][SendPrjns][SendNeurs]
 // [[vk::binding(1, 1)]] StructuredBuffer<NeurSynIdx> RecvNeurSynIdxs; // [Layer][RecvPrjns][RecvNeurs]
@@ -41,7 +42,7 @@ void DWtSendNeurSyn2(uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnPar
 }
 
 void DWtSendNeurSyn(uint snsi, in NeurSynIdx nsi, in Time ctime) {
-	DWtSendNeurSyn2(snsi, nsi, Layers[Prjns[nsi.PrjnIdx].Idxs.RecvLay], Prjns[nsi.PrjnIdx], ctime);
+	DWtSendNeurSyn2(snsi, nsi, Layers[SendPrjns[nsi.PrjnIdx].Idxs.RecvLay], SendPrjns[nsi.PrjnIdx], ctime);
 }
 
 

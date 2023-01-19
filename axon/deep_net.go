@@ -27,28 +27,28 @@ func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX
 // AddCTLayer2D adds a CT Layer of given size, with given name.
 func (nt *Network) AddCTLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(CT))
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(CTLayer))
 	return ly
 }
 
 // AddCTLayer4D adds a CT Layer of given size, with given name.
 func (nt *Network) AddCTLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(CT))
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(CTLayer))
 	return ly
 }
 
 // AddPulvLayer2D adds a Pulvinar Layer of given size, with given name.
 func (nt *Network) AddPulvLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(Pulvinar))
+	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(PulvinarLayer))
 	return ly
 }
 
 // AddPulvLayer4D adds a Pulvinar Layer of given size, with given name.
 func (nt *Network) AddPulvLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(Pulvinar))
+	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(PulvinarLayer))
 	return ly
 }
 
@@ -112,14 +112,14 @@ func (nt *Network) ConnectToPulv(super, ct, pulv emer.Layer, toPulvPat, fmPulvPa
 
 // ConnectCtxtToCT adds a CTCtxtPrjn from given sending layer to a CT layer
 func (nt *Network) ConnectCtxtToCT(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(CTCtxt))
+	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(CTCtxtPrjn))
 }
 
 // ConnectCTSelf adds a Self (Lateral) CTCtxtPrjn projection within a CT layer,
 // in addition to a regular lateral projection, which supports active maintenance.
 // The CTCtxtPrjn has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
 func (nt *Network) ConnectCTSelf(ly emer.Layer, pat prjn.Pattern) (ctxt, maint emer.Prjn) {
-	ctxt = nt.ConnectLayers(ly, ly, pat, emer.PrjnType(CTCtxt)).SetClass("CTSelfCtxt")
+	ctxt = nt.ConnectLayers(ly, ly, pat, emer.PrjnType(CTCtxtPrjn)).SetClass("CTSelfCtxt")
 	maint = nt.LateralConnectLayer(ly, pat).SetClass("CTSelfMaint")
 	return
 }
@@ -128,7 +128,7 @@ func (nt *Network) ConnectCTSelf(ly emer.Layer, pat prjn.Pattern) (ctxt, maint e
 // This automatically sets the FmSuper flag to engage proper defaults,
 // Uses given projection pattern -- e.g., Full, OneToOne, or PoolOneToOne
 func (nt *Network) ConnectSuperToCT(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	pj := nt.ConnectLayers(send, recv, pat, emer.PrjnType(CTCtxt))
+	pj := nt.ConnectLayers(send, recv, pat, emer.PrjnType(CTCtxtPrjn))
 	pj.SetClass("CTFmSuper")
 	return pj
 }

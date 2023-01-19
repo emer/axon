@@ -17,17 +17,17 @@ type PrjnTypes int32
 // The projection types
 const (
 	// Forward is a feedforward, bottom-up projection from sensory inputs to higher layers
-	Forward PrjnTypes = iota
+	ForwardPrj PrjnTypes = iota
 
 	// Back is a feedback, top-down projection from higher layers back to lower layers
-	Back
+	BackPrjn
 
 	// Lateral is a lateral projection within the same layer / area
-	Lateral
+	LateralPrjn
 
-	// Inhibitory is an inhibitory projection that drives inhibitory
+	// Inhib is an inhibitory projection that drives inhibitory
 	// synaptic conductances instead of the default excitatory ones.
-	Inhibitory
+	InhibPrjn
 
 	// CTCtxt are projections from Superficial layers to CT layers that
 	// send Burst activations drive updating of CtxtGe excitatory conductance,
@@ -37,7 +37,12 @@ const (
 	// These projections also use a special learning rule that
 	// takes into account the temporal delays in the activation states.
 	// Can also add self context from CT for deeper temporal context.
-	CTCtxt
+	CTCtxtPrjn
+
+	// RWPrjn does dopamine-modulated learning for reward prediction: Da * Send.Act
+	// Use in RWPredLayer typically to generate reward predictions.
+	// Has no weight bounds or limits on sign etc.
+	RWPrjn
 
 	PrjnTypesN
 )

@@ -54,9 +54,11 @@ type LayerParams struct {
 	//     each applies to a specific layer type.
 	//     use the `viewif` field tag to condition on LayType.
 
-	Burst BurstParams `viewif:"LayType=Super" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT    CTParams    `viewif:"LayType=CT" desc:"params for the CT corticothalamic layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
-	Pulv  PulvParams  `viewif:"LayType=Pulvinar" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
+	Burst  BurstParams  `viewif:"LayType=SuperLayer" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
+	CT     CTParams     `viewif:"LayType=CTLayer" desc:"params for the CT corticothalamic layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+	Pulv   PulvParams   `viewif:"LayType=PulvinarLayer" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
+	RWPred RWPredParams `viewif:"LayType=RWPredLayer" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
+	RWDa   RWDaParams   `viewif:"LayType=RWDaLayer" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
 }
@@ -68,6 +70,8 @@ func (ly *LayerParams) Update() {
 	ly.Burst.Update()
 	ly.CT.Update()
 	ly.Pulv.Update()
+	ly.RWPred.Update()
+	ly.RWDa.Update()
 }
 
 func (ly *LayerParams) Defaults() {
@@ -80,6 +84,8 @@ func (ly *LayerParams) Defaults() {
 	ly.Burst.Defaults()
 	ly.CT.Defaults()
 	ly.Pulv.Defaults()
+	ly.RWPred.Defaults()
+	ly.RWDa.Defaults()
 }
 
 // AllParams returns a listing of all parameters in the Layer
@@ -96,13 +102,13 @@ func (ly *LayerParams) AllParams() string {
 	str += "Learn: {\n " + JsonToParams(b)
 
 	switch ly.LayType {
-	case Super:
+	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Burst, "", " ")
 		str += "Burst: {\n " + JsonToParams(b)
-	case CT:
+	case CTLayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
 		str += "CT:   {\n " + JsonToParams(b)
-	case Pulvinar:
+	case PulvinarLayer:
 		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
 		str += "Pulv: {\n " + JsonToParams(b)
 	}
@@ -158,10 +164,10 @@ func (ly *LayerParams) NeuronGatherSpikesInit(ni uint32, nrn *Neuron, ctime *Tim
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe, nonDrvPct float32, ctime *Time, randctr *sltype.Uint2) float32 {
+func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe float32, nonDrvPct float32, ctime *Time, randctr *sltype.Uint2) float32 {
 	var saveVal float32 // sometimes we need to use a value computed here, for the post Gs step
 	switch ly.LayType {
-	case CT:
+	case CTLayer:
 		geCtxt := ly.CT.GeGain * nrn.CtxtGe
 		nrn.GeRaw += geCtxt
 		if ly.CT.DecayDt > 0 {
@@ -170,7 +176,7 @@ func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe, nonDrvPct flo
 			nrn.GeSyn += ctxtExt
 			saveVal = ctxtExt // used In PostGs to set nrn.GeExt
 		}
-	case Pulvinar:
+	case PulvinarLayer:
 		if ctime.PlusPhase.IsFalse() {
 			break
 		}
@@ -185,7 +191,7 @@ func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe, nonDrvPct flo
 // It is passed the saveVal from SpecialPreGs
 func (ly *LayerParams) SpecialPostGs(ni uint32, nrn *Neuron, ctime *Time, randctr *sltype.Uint2, saveVal float32) {
 	switch ly.LayType {
-	case CT:
+	case CTLayer:
 		nrn.GeExt = saveVal // todo: it is not clear if this really does anything?  next time around?
 	}
 }
@@ -246,7 +252,7 @@ func (ly *LayerParams) SpikeFmG(ni uint32, nrn *Neuron, ctime *Time) {
 // This is where special layer types add extra code.
 func (ly *LayerParams) PostSpike(ni uint32, nrn *Neuron, vals *LayerVals, ctime *Time) {
 	switch ly.LayType {
-	case Super:
+	case SuperLayer:
 		if ctime.PlusPhase.IsTrue() {
 			actMax := vals.ActAvg.CaSpkP.Max
 			actAvg := vals.ActAvg.CaSpkP.Avg
@@ -257,6 +263,12 @@ func (ly *LayerParams) PostSpike(ni uint32, nrn *Neuron, vals *LayerVals, ctime 
 			}
 			nrn.Burst = burst
 		}
+	case RWPredLayer:
+		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
+		nrn.ActInt = nrn.Act
+	case RWDaLayer:
+		// already set: ly.DA = vals.NeuroMod.DA
+		// todo: ly.SendDA.SendDA(ly.Network, act)
 	}
 }
 

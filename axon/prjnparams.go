@@ -85,6 +85,8 @@ type PrjnParams struct {
 	//     each applies to a specific prjn type.
 	//     use the `viewif` field tag to condition on PrjnType.
 
+	RWPrjn RWPrjnParams `viewif:"PrjnType=RWPrjn" desc:"RWPrjn does dopamine-modulated learning for reward prediction: Da * Send.Act. Use in RWPredLayer typically to generate reward predictions. Has no weight bounds or limits on sign etc."`
+
 	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
 
@@ -93,6 +95,7 @@ func (pj *PrjnParams) Defaults() {
 	pj.SWt.Defaults()
 	pj.PrjnScale.Defaults()
 	pj.Learn.Defaults()
+	pj.RWPrjn.Defaults()
 }
 
 func (pj *PrjnParams) Update() {
@@ -100,6 +103,7 @@ func (pj *PrjnParams) Update() {
 	pj.PrjnScale.Update()
 	pj.SWt.Update()
 	pj.Learn.Update()
+	pj.RWPrjn.Update()
 }
 
 func (pj *PrjnParams) AllParams() string {
@@ -135,7 +139,7 @@ func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctime *
 	caP := sy.CaP
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctime.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
-	if pj.PrjnType == CTCtxt {
+	if pj.PrjnType == CTCtxtPrjn {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.SpkPrv)
 	} else {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
@@ -156,11 +160,39 @@ func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctime *
 	} else {
 		err *= sy.LWt
 	}
-	if pj.PrjnType == CTCtxt { // rn.RLRate IS needed for other projections, just not the context one
+	if pj.PrjnType == CTCtxtPrjn { // rn.RLRate IS needed for other projections, just not the context one
 		sy.DWt += pj.Learn.LRate.Eff * err
 	} else {
 		sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
 	}
+}
+
+// DWtSynRWPred computes the weight change (learning) at given synapse,
+// for the RWPredPrjn type
+func (pj *PrjnParams) DWtSynRWPred(sy *Synapse, sn, rn *Neuron, rlvals *LayerVals, ctime *Time) {
+	lda := rlvals.NeuroMod.DA
+	da := lda
+	lr := pj.Learn.LRate.Eff
+	if rn.Ge > rn.Act && da > 0 { // clipped at top, saturate up
+		da = 0
+	}
+	if rn.Ge < rn.Act && da < 0 { // clipped at bottom, saturate down
+		da = 0
+	}
+	eff_lr := lr
+	// if ri == 0 { // todo: need
+	if da < 0 {
+		eff_lr *= pj.RWPrjn.OppSignLRate
+	}
+	// } else {
+	eff_lr = -eff_lr
+	if da >= 0 {
+		eff_lr *= pj.RWPrjn.OppSignLRate
+	}
+	// }
+
+	dwt := da * sn.Act // no recv unit activation
+	sy.DWt += eff_lr * dwt
 }
 
 //gosl: end prjnparams

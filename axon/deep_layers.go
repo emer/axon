@@ -28,8 +28,8 @@ func (bp *BurstParams) Defaults() {
 }
 
 // ThrFmAvgMax returns threshold from average and maximum values
-func (bp *BurstParams) ThrFmAvgMax(avg, max float32) float32 {
-	thr := avg + bp.ThrRel*(max-avg)
+func (bp *BurstParams) ThrFmAvgMax(avg, mx float32) float32 {
+	thr := avg + bp.ThrRel*(mx-avg)
 	thr = mat32.Max(thr, bp.ThrAbs)
 	return thr
 }
@@ -132,7 +132,7 @@ func (ly *Layer) SendCtxtGe(ctime *Time) {
 				continue
 			}
 			ptyp := PrjnTypes(sp.Type())
-			if ptyp != CTCtxt {
+			if ptyp != CTCtxtPrjn {
 				continue
 			}
 			pj := sp.AsAxon()
@@ -145,7 +145,7 @@ func (ly *Layer) SendCtxtGe(ctime *Time) {
 // overall Ctxt value, only on CT layers.
 // This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
 func (ly *Layer) CtxtFmGe(ctime *Time) {
-	if ly.LayerType() != CT {
+	if ly.LayerType() != CTLayer {
 		return
 	}
 	for ni := range ly.Neurons {
@@ -157,7 +157,7 @@ func (ly *Layer) CtxtFmGe(ctime *Time) {
 			continue
 		}
 		ptyp := PrjnTypes(rp.Type())
-		if ptyp != CTCtxt {
+		if ptyp != CTCtxtPrjn {
 			continue
 		}
 		pj := rp.AsAxon()

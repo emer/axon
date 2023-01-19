@@ -13,19 +13,24 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[Super-0]
-	_ = x[Input-1]
-	_ = x[Target-2]
-	_ = x[Compare-3]
-	_ = x[CT-4]
-	_ = x[Pulvinar-5]
-	_ = x[TRN-6]
-	_ = x[LayerTypesN-7]
+	_ = x[SuperLayer-0]
+	_ = x[InputLayer-1]
+	_ = x[TargetLayer-2]
+	_ = x[CompareLayer-3]
+	_ = x[CTLayer-4]
+	_ = x[PulvinarLayer-5]
+	_ = x[TRNLayer-6]
+	_ = x[RewLayer-7]
+	_ = x[RWPredLayer-8]
+	_ = x[RWDaLayer-9]
+	_ = x[TDRewPredLayer-10]
+	_ = x[TDRewIntegLayer-11]
+	_ = x[LayerTypesN-12]
 }
 
-const _LayerTypes_name = "SuperInputTargetCompareCTPulvinarTRNLayerTypesN"
+const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerRewLayerRWPredLayerRWDaLayerTDRewPredLayerTDRewIntegLayerLayerTypesN"
 
-var _LayerTypes_index = [...]uint8{0, 5, 10, 16, 23, 25, 33, 36, 47}
+var _LayerTypes_index = [...]uint8{0, 10, 20, 31, 43, 50, 63, 71, 79, 90, 99, 113, 128, 139}
 
 func (i LayerTypes) String() string {
 	if i < 0 || i >= LayerTypes(len(_LayerTypes_index)-1) {

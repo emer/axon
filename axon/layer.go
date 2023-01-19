@@ -52,19 +52,21 @@ func (ly *Layer) Defaults() {
 		pj.Defaults()
 	}
 	switch ly.LayerType() {
-	case Input:
+	case InputLayer:
 		ly.Params.Act.Clamp.Ge = 1.5
 		ly.Params.Inhib.Layer.Gi = 0.9
 		ly.Params.Inhib.Pool.Gi = 0.9
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
-	case Target:
+	case TargetLayer:
 		ly.Params.Act.Clamp.Ge = 0.8
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
 		// ly.Params.Learn.RLRate.SigmoidMin = 1
-	case CT:
+	case CTLayer:
 		ly.Params.CTLayerDefaults()
-	case Pulvinar:
+	case PulvinarLayer:
 		ly.Params.PulvLayerDefaults()
+	case RWPredLayer:
+		ly.Params.RWPredLayerDefaults()
 	}
 }
 
@@ -166,8 +168,21 @@ func (ly *Layer) UnitVal1D(varIdx int, idx int) float32 {
 	if varIdx < 0 || varIdx >= ly.UnitVarNum() {
 		return mat32.NaN()
 	}
-	nrn := &ly.Neurons[idx]
-	return nrn.VarByIndex(varIdx)
+	if idx >= ly.UnitVarNum()-NNeuronLayerVars {
+		li := idx - (ly.UnitVarNum() - NNeuronLayerVars)
+		switch li {
+		case 0:
+			return ly.Vals.NeuroMod.DA
+		case 1:
+			return ly.Vals.NeuroMod.ACh
+		case 2:
+			return ly.Vals.NeuroMod.NE
+		}
+	} else {
+		nrn := &ly.Neurons[idx]
+		return nrn.VarByIndex(varIdx)
+	}
+	return mat32.NaN()
 }
 
 // UnitVals fills in values of given variable name on unit,
@@ -1219,12 +1234,12 @@ func (ly *Layer) GInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime 
 
 	drvGe := float32(0)
 	nonDrvPct := float32(0)
-	if ly.LayerType() == Pulvinar {
+	if ly.LayerType() == PulvinarLayer {
 		dly := ly.Network.Layer(int(ly.Params.Pulv.DriveLayIdx)).(AxonLayer).AsAxon()
 		drvMax := dly.Vals.ActAvg.CaSpkP.Max
 		nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 		dneur := dly.Neurons[ni]
-		if dly.LayerType() == Super {
+		if dly.LayerType() == SuperLayer {
 			drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
 		} else {
 			drvGe = ly.Params.Pulv.DriveGe(dneur.CaSpkP)
@@ -1255,6 +1270,25 @@ func (ly *Layer) CycleNeuron(ni uint32, nrn *Neuron, ctime *Time) {
 // PostSpike does updates at neuron level after spiking has been computed.
 // This is where special layer types add extra code.
 func (ly *Layer) PostSpike(ni uint32, nrn *Neuron, ctime *Time) {
+	switch ly.LayerType() {
+	case RWDaLayer:
+		rly := ly.Network.Layer(int(ly.Params.RWDa.RewLayIdx)).(AxonLayer).AsAxon()
+		ply := ly.Network.Layer(int(ly.Params.RWDa.RWPredLayIdx)).(AxonLayer).AsAxon()
+		rnrn := &(rly.Neurons[0])
+		hasRew := false
+		if rnrn.HasFlag(NeuronHasExt) {
+			hasRew = true
+		}
+		ract := rnrn.Act
+		pnrn := &(ply.Neurons[0])
+		pact := pnrn.Act
+		if hasRew {
+			ly.Vals.NeuroMod.DA = ract - pact
+		} else {
+			ly.Vals.NeuroMod.DA = 0 // nothing
+		}
+	}
+
 	ly.Params.PostSpike(ni, nrn, &ly.Vals, ctime)
 }
 
@@ -1475,9 +1509,9 @@ func (ly *Layer) CorSimFmActs() {
 // In both cases, Target layers are purely error-driven.
 func (ly *Layer) IsTarget() bool {
 	switch ly.LayerType() {
-	case Target:
+	case TargetLayer:
 		return true
-	case Pulvinar:
+	case PulvinarLayer:
 		return true
 	default:
 		return false
@@ -1489,7 +1523,7 @@ func (ly *Layer) IsTarget() bool {
 // Used to prevent adapting of inhibition or TrgAvg values.
 func (ly *Layer) IsInput() bool {
 	switch ly.LayerType() {
-	case Input:
+	case InputLayer:
 		return true
 	default:
 		return false

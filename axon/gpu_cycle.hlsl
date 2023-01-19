@@ -31,19 +31,19 @@ void NeuronGatherSpikesPrjn(in LayerParams ly, in PrjnParams pj, uint ni, inout 
 
 void NeuronGatherSpikes(in LayerParams ly, uint ni, inout Neuron nrn, in Time ctime) {
 	ly.NeuronGatherSpikesInit(ni, nrn, ctime);
-	for(uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
+	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
 		NeuronGatherSpikesPrjn(ly, RecvPrjns[ly.Idxs.RecvSt + pi], ni, nrn, ctime);
 	}
 }
 
-void PulvinarDriver(in LayerParams ly, in LayerParams dly, in LayVals vals, uint ni, out float drvGe, out float nonDrvPct) {
-	drvMax := vals.ActAvg.CaSpkP.Max;
+void PulvinarDriver(in LayerParams ly, in LayerParams dly, in LayerVals vals, uint ni, out float drvGe, out float nonDrvPct) {
+	float drvMax = vals.ActAvg.CaSpkP.Max;
 	nonDrvPct = ly.Pulv.NonDrivePct(drvMax); // how much non-driver to keep
 	uint gni = ni + ly.Idxs.NeurSt;
-	if dly.LayerType() == Super {
+	if (dly.LayType == Super) {
 		drvGe = ly.Pulv.DriveGe(Neurons[gni].Burst);
 	} else {
-		drvGe = ly.Params.Pulv.DriveGe(Neurons[gni].CaSpkP);
+		drvGe = ly.Pulv.DriveGe(Neurons[gni].CaSpkP);
 	}
 }
 
@@ -55,17 +55,17 @@ void CycleNeuron2(in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, floa
 	NeuronGatherSpikes(ly, lni, nrn, ctime);
 	
 	float drvGe = 0;
-	float nonDrvPct 0;
-	if(ly.LayerType == Pulvinar {
+	float nonDrvPct = 0;
+	if (ly.LayType == Pulvinar) {
 		PulvinarDriver(ly, Layers[ly.Pulv.DriveLayIdx], LayVals[ly.Pulv.DriveLayIdx], ni, drvGe, nonDrvPct);
 	}
-	
-	saveVal := ly.SpecialPreGs(ni, nrn, drvGe, nonDrvPct, ctime, randctr)
+
+	float saveVal = ly.SpecialPreGs(ni, nrn, drvGe, nonDrvPct, ctime, randctr);
 	
 	ly.GFmRawSyn(lni, nrn, ctime, randctr);
 	ly.GiInteg(lni, nrn, pl, giMult, ctime);
 	
-	ly.SpecialPostGs(ni, nrn, ctime, randctr, saveVal);
+	ly.SpecialPostGs(ni, nrn, ctime, randctr, 0);
 	// end GInteg
 	
 	ly.SpikeFmG(lni, nrn, ctime);
@@ -80,7 +80,7 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	uint ns;
 	uint st;
 	Neurons.GetDimensions(ns, st);
-	if(idx.x < ns) {
+	if (idx.x < ns) {
 		CycleNeuron(idx.x, Neurons[idx.x], CTime[0]);
 	}
 }
