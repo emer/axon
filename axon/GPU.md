@@ -37,7 +37,7 @@ Set 2:  Storage
 
 * general renaming for params selectors:
     * .Hidden -> .SuperLayer
-    * Inhib -> InhibLayer
+    * .Inhib -> .InhibPrjn
     * SuperLayer -> .SuperLayer
     * CTLayer -> .CTLayer
     * PulvLayer -> .PulvinarLayer

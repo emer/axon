@@ -13,12 +13,18 @@ import (
 //gosl: hlsl context
 // #include "slrand.hlsl"
 // #include "etime.hlsl"
+// #include "neuromod.hlsl"
 //gosl: end context
 
 //gosl: start context
 
-// axon.Context contains all the timing state and parameter information for running a model.
-// Can also include other relevant state context, e.g., Testing vs. Training modes.
+// Context contains all of the global context state info
+// that is shared across every step of the computation.
+// It is passed around to all relevant computational functions,
+// and is updated on the CPU and synced to the GPU after every cycle.
+// It is the *only* mechanism for communication from CPU to GPU.
+// It contains timing, Testing vs. Training mode, random number context,
+// global neuromodulation, etc.
 type Context struct {
 	Mode        etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
 	Phase       int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
@@ -33,7 +39,8 @@ type Context struct {
 
 	pad, pad1 int32
 
-	RandCtr slrand.Counter `desc:"random counter"`
+	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
+	NeuroMod NeuroModVals   `desc:"neuromodulatory state values -- these are computed separately on the CPU at end of each Cycle."`
 }
 
 // Defaults sets default values

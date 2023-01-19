@@ -129,9 +129,10 @@ func (ly *LayerParams) GeExtToPool(ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, 
 }
 
 // LayPoolGiFmSpikes computes inhibition Gi from Spikes for layer-level pool
-func (ly *LayerParams) LayPoolGiFmSpikes(lpl *Pool, giMult float32, ctxt *Context) {
+func (ly *LayerParams) LayPoolGiFmSpikes(lpl *Pool, vals *LayerVals, ctxt *Context) {
+	vals.NeuroMod = ctxt.NeuroMod
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
-	ly.Inhib.Layer.Inhib(&lpl.Inhib, giMult)
+	ly.Inhib.Layer.Inhib(&lpl.Inhib, vals.ActAvg.GiMult)
 }
 
 // SubPoolGiFmSpikes computes inhibition Gi from Spikes within a sub-pool

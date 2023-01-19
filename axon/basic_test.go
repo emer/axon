@@ -38,7 +38,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.SWt.Init.Var": "0",
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
@@ -49,7 +49,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Gbar.L":     "0.2",
 					"Layer.Inhib.Layer.On": "false",
 				}},
-			{Sel: ".InhibLayer", Desc: "weaker inhib",
+			{Sel: ".InhibPrjn", Desc: "weaker inhib",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.1",
 				}},

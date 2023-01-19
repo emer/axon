@@ -26,8 +26,8 @@ func TestMultithreadingCycleFun(t *testing.T) {
 	pats := generateRandomPatterns(100)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 16, 16)
 
-	fun := func(net *Network, lctxt *Context) {
-		net.Cycle(ltime)
+	fun := func(net *Network, ctxt *Context) {
+		net.Cycle(ctxt)
 	}
 
 	runFunEpochs(pats, netS, fun, 2)
@@ -47,8 +47,8 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netA, netB := buildIdenticalNetworks(t, pats, 1, 1, 1)
 
-	fun := func(net *Network, lctxt *Context) {
-		net.Cycle(ltime)
+	fun := func(net *Network, ctxt *Context) {
+		net.Cycle(ctxt)
 	}
 
 	// by splitting the epochs into three parts for netB, we make sure that the
@@ -74,8 +74,8 @@ func TestMultithreadedSendSpike(t *testing.T) {
 	// goroutines are cheap, they barely cost any memory
 	netS, netM := buildIdenticalNetworks(t, pats, 1, 16, 1)
 
-	fun := func(net *Network, lctxt *Context) {
-		net.Cycle(ltime)
+	fun := func(net *Network, ctxt *Context) {
+		net.Cycle(ctxt)
 	}
 
 	runFunEpochs(pats, netM, fun, 2)
@@ -114,8 +114,8 @@ func TestMultithreadedSynCa(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 1, 16)
 
-	fun := func(net *Network, lctxt *Context) {
-		net.Cycle(ltime)
+	fun := func(net *Network, ctxt *Context) {
+		net.Cycle(ctxt)
 	}
 
 	runFunEpochs(pats, netM, fun, 3)
@@ -274,10 +274,10 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 	// inputLayer.ApplyExt(input)
 	// outputLayer.ApplyExt(output)
 	// netS.NewState()
-	// ltime := NewContext()
-	// ltime.NewState("train")
+	// ctxt := NewContext()
+	// ctxt.NewState("train")
 	// for i := 0; i < 150; i++ {
-	// 	netS.Cycle(ltime)
+	// 	netS.Cycle(ctxt)
 	// }
 
 	// // sync the weights
@@ -327,7 +327,7 @@ func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa int) *Netwo
 
 // runFunEpochs runs the given function for the given number of iterations over the
 // dataset. The random seed is set once at the beginning of the function.
-func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Time), epochs int) {
+func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Context), epochs int) {
 	rand.Seed(42)
 	nCycles := 150
 
@@ -335,7 +335,7 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Time), e
 	outPats := pats.ColByName("Output").(*etensor.Float32)
 	inputLayer := net.LayerByName("Input").(*Layer)
 	outputLayer := net.LayerByName("Output").(*Layer)
-	ltime := NewContext()
+	ctxt := NewContext()
 	for epoch := 0; epoch < epochs; epoch++ {
 		for pi := 0; pi < pats.NumRows(); pi++ {
 			input := inPats.SubSpace([]int{pi})
@@ -345,9 +345,9 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Time), e
 			outputLayer.ApplyExt(output)
 
 			net.NewState()
-			ltime.NewState(etime.Train)
+			ctxt.NewState(etime.Train)
 			for cycle := 0; cycle < nCycles; cycle++ {
-				fun(net, ltime)
+				fun(net, ctxt)
 			}
 		}
 	}

@@ -1195,7 +1195,7 @@ func (ly *Layer) GiFmSpikes(ctxt *Context) {
 		// 	lpl.Inhib.Clamped.SetBool(true)
 		// }
 	}
-	ly.Params.LayPoolGiFmSpikes(lpl, ly.Vals.ActAvg.GiMult, ctxt)
+	ly.Params.LayPoolGiFmSpikes(lpl, &ly.Vals, ctxt)
 	ly.PoolGiFmSpikes(ctxt)
 }
 
