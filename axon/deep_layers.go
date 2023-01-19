@@ -89,7 +89,7 @@ func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
 
 //gosl: end deep_layers
 
-//gosl: start layerparams
+// note: Defaults not called on GPU
 
 // called in Defaults for CT layer type
 func (ly *LayerParams) CTLayerDefaults() {
@@ -113,15 +113,13 @@ func (ly *LayerParams) PulvLayerDefaults() {
 	ly.Learn.RLRate.SigmoidMin = 1.0 // 1.0 generally better but worth trying 0.05 too
 }
 
-//gosl: end layerparams
-
 // GPU TODO: this code needs to be performed in GPU-land somehow!
 // for now it is being done separately by the layer, CPU only.
 
 // SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
 // CtxtGe excitatory conductance on CT layers.
 // This should be called at the end of the Plus (5IB Burst) phase via Network.CTCtxt
-func (ly *Layer) SendCtxtGe(ctime *Time) {
+func (ly *Layer) SendCtxtGe(ctxt *Context) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() || nrn.CaSpkP < 0.1 {
@@ -144,7 +142,7 @@ func (ly *Layer) SendCtxtGe(ctime *Time) {
 // CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
 // overall Ctxt value, only on CT layers.
 // This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
-func (ly *Layer) CtxtFmGe(ctime *Time) {
+func (ly *Layer) CtxtFmGe(ctxt *Context) {
 	if ly.LayerType() != CTLayer {
 		return
 	}

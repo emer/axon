@@ -61,8 +61,11 @@ func (pj *Prjn) Class() string {
 func (pj *Prjn) Defaults() {
 	pj.Params.PrjnType = pj.PrjnType()
 	pj.Params.Defaults()
-	if pj.Typ == emer.Inhib {
+	switch pj.PrjnType() {
+	case InhibPrjn:
 		pj.Params.SWt.Adapt.On.SetBool(false)
+	case RWPrjn:
+		pj.Params.RWPrjnDefaults()
 	}
 }
 
@@ -707,7 +710,7 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 
 // PrjnGatherSpikes increments synaptic conductances from Spikes
 // including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-func (pj *Prjn) PrjnGatherSpikes(ctime *Time) {
+func (pj *Prjn) PrjnGatherSpikes(ctxt *Context) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	del := pj.Params.Com.Delay
 	sz := del + 1
@@ -756,12 +759,12 @@ func (pj *Prjn) PrjnGatherSpikes(ctime *Time) {
 // This pass goes through in sending order, filtering on sending spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *Prjn) SendSynCa(ctime *Time) {
+func (pj *Prjn) SendSynCa(ctxt *Context) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
-	cycTot := ctime.CycleTot
+	cycTot := ctxt.CycleTot
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
@@ -803,12 +806,12 @@ func (pj *Prjn) SendSynCa(ctime *Time) {
 // This pass goes through in recv order, filtering on recv spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *Prjn) RecvSynCa(ctime *Time) {
+func (pj *Prjn) RecvSynCa(ctxt *Context) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
-	cycTot := ctime.CycleTot
+	cycTot := ctxt.CycleTot
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
@@ -851,7 +854,7 @@ func (pj *Prjn) RecvSynCa(ctime *Time) {
 // DWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) DWt(ctime *Time) {
+func (pj *Prjn) DWt(ctxt *Context) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -869,14 +872,14 @@ func (pj *Prjn) DWt(ctime *Time) {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
-			pj.Params.DWtSyn(sy, sn, rn, isTarget, ctime)
+			pj.Params.DWtSyn(sy, sn, rn, isTarget, ctxt)
 		}
 	}
 }
 
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 // This is called on *receiving* projections, prior to WtFmDwt.
-func (pj *Prjn) DWtSubMean(ctime *Time) {
+func (pj *Prjn) DWtSubMean(ctxt *Context) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	sm := pj.Params.Learn.Trace.SubMean
 	if sm == 0 { // || rlay.AxonLay.IsTarget() { // sm default is now 0, so don't exclude
@@ -913,7 +916,7 @@ func (pj *Prjn) DWtSubMean(ctime *Time) {
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes.
 // called on the *sending* projections.
-func (pj *Prjn) WtFmDWt(ctime *Time) {
+func (pj *Prjn) WtFmDWt(ctxt *Context) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		nc := int(pj.SendConN[si])
@@ -929,7 +932,7 @@ func (pj *Prjn) WtFmDWt(ctime *Time) {
 }
 
 // SlowAdapt does the slow adaptation: SWt learning and SynScale
-func (pj *Prjn) SlowAdapt(ctime *Time) {
+func (pj *Prjn) SlowAdapt(ctxt *Context) {
 	pj.SWtFmWt()
 	pj.SynScale()
 }
@@ -1029,7 +1032,7 @@ func (pj *Prjn) SynScale() {
 
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
-func (pj *Prjn) SynFail(ctime *Time) {
+func (pj *Prjn) SynFail(ctxt *Context) {
 	slay := pj.Send.(AxonLayer).AsAxon()
 	for si := range slay.Neurons {
 		nc := int(pj.SendConN[si])

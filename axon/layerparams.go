@@ -16,7 +16,9 @@ import (
 // #include "inhib.hlsl"
 // #include "learn_neur.hlsl"
 // #include "deep_layers.hlsl"
+// #include "rl_layers.hlsl"
 // #include "pool.hlsl"
+// #include "layervals.hlsl"
 //gosl: end layerparams
 
 //gosl: start layerparams
@@ -119,7 +121,7 @@ func (ly *LayerParams) AllParams() string {
 //  GeExtToPool
 
 // GeExtToPool adds GeExt from each neuron into the Pools
-func (ly *LayerParams) GeExtToPool(ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool, ctime *Time) {
+func (ly *LayerParams) GeExtToPool(ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool, ctxt *Context) {
 	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
 	if subPool {
 		lpl.Inhib.GeExtRaw += nrn.GeExt
@@ -127,13 +129,13 @@ func (ly *LayerParams) GeExtToPool(ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, 
 }
 
 // LayPoolGiFmSpikes computes inhibition Gi from Spikes for layer-level pool
-func (ly *LayerParams) LayPoolGiFmSpikes(lpl *Pool, giMult float32, ctime *Time) {
+func (ly *LayerParams) LayPoolGiFmSpikes(lpl *Pool, giMult float32, ctxt *Context) {
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, giMult)
 }
 
 // SubPoolGiFmSpikes computes inhibition Gi from Spikes within a sub-pool
-func (ly *LayerParams) SubPoolGiFmSpikes(pl *Pool, lpl *Pool, lyInhib bool, giMult float32, ctime *Time) {
+func (ly *LayerParams) SubPoolGiFmSpikes(pl *Pool, lpl *Pool, lyInhib bool, giMult float32, ctxt *Context) {
 	pl.Inhib.SpikesFmRaw(pl.NNeurons())
 	ly.Inhib.Pool.Inhib(&pl.Inhib, giMult)
 	if lyInhib {
@@ -152,7 +154,7 @@ func (ly *LayerParams) SubPoolGiFmSpikes(pl *Pool, lpl *Pool, lyInhib bool, giMu
 
 // NeuronGatherSpikesInit initializes G*Raw and G*Syn values for given neuron
 // prior to integration
-func (ly *LayerParams) NeuronGatherSpikesInit(ni uint32, nrn *Neuron, ctime *Time) {
+func (ly *LayerParams) NeuronGatherSpikesInit(ni uint32, nrn *Neuron, ctxt *Context) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GeSyn = nrn.GeBase
@@ -164,7 +166,7 @@ func (ly *LayerParams) NeuronGatherSpikesInit(ni uint32, nrn *Neuron, ctime *Tim
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe float32, nonDrvPct float32, ctime *Time, randctr *sltype.Uint2) float32 {
+func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe float32, nonDrvPct float32, ctxt *Context, randctr *sltype.Uint2) float32 {
 	var saveVal float32 // sometimes we need to use a value computed here, for the post Gs step
 	switch ly.LayType {
 	case CTLayer:
@@ -177,7 +179,7 @@ func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe float32, nonDr
 			saveVal = ctxtExt // used In PostGs to set nrn.GeExt
 		}
 	case PulvinarLayer:
-		if ctime.PlusPhase.IsFalse() {
+		if ctxt.PlusPhase.IsFalse() {
 			break
 		}
 		nrn.GeRaw = nonDrvPct*nrn.GeRaw + drvGe
@@ -189,7 +191,7 @@ func (ly *LayerParams) SpecialPreGs(ni uint32, nrn *Neuron, drvGe float32, nonDr
 // SpecialPostGs is used for special layer types to do things
 // after the standard updates in GFmRawSyn.
 // It is passed the saveVal from SpecialPreGs
-func (ly *LayerParams) SpecialPostGs(ni uint32, nrn *Neuron, ctime *Time, randctr *sltype.Uint2, saveVal float32) {
+func (ly *LayerParams) SpecialPostGs(ni uint32, nrn *Neuron, ctxt *Context, randctr *sltype.Uint2, saveVal float32) {
 	switch ly.LayType {
 	case CTLayer:
 		nrn.GeExt = saveVal // todo: it is not clear if this really does anything?  next time around?
@@ -199,7 +201,7 @@ func (ly *LayerParams) SpecialPostGs(ni uint32, nrn *Neuron, ctime *Time, randct
 // GFmRawSyn computes overall Ge and GiSyn conductances for neuron
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) GFmRawSyn(ni uint32, nrn *Neuron, ctime *Time, randctr *sltype.Uint2) {
+func (ly *LayerParams) GFmRawSyn(ni uint32, nrn *Neuron, ctxt *Context, randctr *sltype.Uint2) {
 	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
 	ly.Act.GvgccFmVm(nrn)
@@ -210,7 +212,7 @@ func (ly *LayerParams) GFmRawSyn(ni uint32, nrn *Neuron, ctime *Time, randctr *s
 
 // GiInteg adds Gi values from all sources including SubPool computed inhib
 // and updates GABAB as well
-func (ly *LayerParams) GiInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctime *Time) {
+func (ly *LayerParams) GiInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32, ctxt *Context) {
 	// pl := &ly.Pools[nrn.SubPool]
 	nrn.Gi = giMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
 	nrn.SSGi = pl.Inhib.SSGi
@@ -227,22 +229,22 @@ func (ly *LayerParams) GiInteg(ni uint32, nrn *Neuron, pl *Pool, giMult float32,
 //  SpikeFmG
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-func (ly *LayerParams) SpikeFmG(ni uint32, nrn *Neuron, ctime *Time) {
+func (ly *LayerParams) SpikeFmG(ni uint32, nrn *Neuron, ctxt *Context) {
 	intdt := ly.Act.Dt.IntDt
-	if ctime.PlusPhase.IsTrue() {
+	if ctxt.PlusPhase.IsTrue() {
 		intdt *= 3.0
 	}
 	ly.Act.VmFmG(nrn)
 	ly.Act.SpikeFmVm(nrn)
 	ly.Learn.CaFmSpike(nrn)
-	if ctime.Cycle >= ly.Act.Dt.MaxCycStart {
+	if ctxt.Cycle >= ly.Act.Dt.MaxCycStart {
 		nrn.SpkMaxCa += ly.Learn.CaSpk.Dt.PDt * (nrn.CaSpkM - nrn.SpkMaxCa)
 		if nrn.SpkMaxCa > nrn.SpkMax {
 			nrn.SpkMax = nrn.SpkMaxCa
 		}
 	}
 	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-	if ctime.PlusPhase.IsFalse() {
+	if ctxt.PlusPhase.IsFalse() {
 		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 	}
@@ -250,10 +252,10 @@ func (ly *LayerParams) SpikeFmG(ni uint32, nrn *Neuron, ctime *Time) {
 
 // PostSpike does updates at neuron level after spiking has been computed.
 // This is where special layer types add extra code.
-func (ly *LayerParams) PostSpike(ni uint32, nrn *Neuron, vals *LayerVals, ctime *Time) {
+func (ly *LayerParams) PostSpike(ni uint32, nrn *Neuron, vals *LayerVals, ctxt *Context) {
 	switch ly.LayType {
 	case SuperLayer:
-		if ctime.PlusPhase.IsTrue() {
+		if ctxt.PlusPhase.IsTrue() {
 			actMax := vals.ActAvg.CaSpkP.Max
 			actAvg := vals.ActAvg.CaSpkP.Avg
 			thr := ly.Burst.ThrFmAvgMax(actAvg, actMax)

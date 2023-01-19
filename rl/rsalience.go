@@ -77,7 +77,7 @@ func (ly *RSalienceLayer) MaxAbsRew() float32 {
 	return MaxAbsActFmLayers(ly.Network, ly.RewLayers)
 }
 
-func (ly *RSalienceLayer) GiFmSpikes(ctime *axon.Time) {
+func (ly *RSalienceLayer) GiFmSpikes(ctxt *axon.Context) {
 	// this is layer-level call prior to GInteg
 	ract := ly.MaxAbsRew()
 	if ly.RewThr > 0 {
@@ -88,16 +88,16 @@ func (ly *RSalienceLayer) GiFmSpikes(ctime *axon.Time) {
 	ly.ACh = ract
 }
 
-func (ly *RSalienceLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *RSalienceLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
 }
 
-func (ly *RSalienceLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *RSalienceLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
 	nrn.Act = ly.ACh
 }
 
 // CyclePost is called at end of Cycle
 // We use it to send ACh, which will then be active for the next cycle of processing.
-func (ly *RSalienceLayer) CyclePost(ctime *axon.Time) {
+func (ly *RSalienceLayer) CyclePost(ctxt *axon.Context) {
 	ly.SendACh.SendACh(ly.Network, ly.ACh)
 }
 

@@ -34,8 +34,8 @@ func (ly *RWPredLayer) Defaults() {
 	ly.Params.Act.Dt.GeTau = 40
 }
 
-func (ly *RWPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
+func (ly *RWPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.SpikeFmG(ni, nrn, ctxt)
 	nrn.Act = ly.PredRange.ClipVal(nrn.Ge) // clipped linear
 	nrn.ActInt = nrn.Act
 }
@@ -98,8 +98,8 @@ func (ly *RWDaLayer) Build() error {
 	return err
 }
 
-func (ly *RWDaLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
+func (ly *RWDaLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.SpikeFmG(ni, nrn, ctxt)
 	rly, ply, _ := ly.RWLayers()
 	if rly == nil || ply == nil {
 		return
@@ -122,7 +122,7 @@ func (ly *RWDaLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *RWDaLayer) CyclePost(ctime *axon.Time) {
+func (ly *RWDaLayer) CyclePost(ctxt *axon.Context) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)
@@ -151,20 +151,20 @@ func (pj *RWPrjn) Defaults() {
 	pj.SWt.Init.Sym = false
 }
 
-func (pj *RWPrjn) SendSynCa(ctime *axon.Time) {
+func (pj *RWPrjn) SendSynCa(ctxt *axon.Context) {
 	return
 }
 
-func (pj *RWPrjn) RecvSynCa(ctime *axon.Time) {
+func (pj *RWPrjn) RecvSynCa(ctxt *axon.Context) {
 	return
 }
 
-func (pj *RWPrjn) SlowAdapt(ctime *axon.Time) {
+func (pj *RWPrjn) SlowAdapt(ctxt *axon.Context) {
 	return
 }
 
 // DWt computes the weight change (learning) -- on sending projections.
-func (pj *RWPrjn) DWt(ctime *axon.Time) {
+func (pj *RWPrjn) DWt(ctxt *axon.Context) {
 	if !pj.Params.Learn.Learn {
 		return
 	}
@@ -215,7 +215,7 @@ func (pj *RWPrjn) DWt(ctime *axon.Time) {
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-func (pj *RWPrjn) WtFmDWt(ctime *axon.Time) {
+func (pj *RWPrjn) WtFmDWt(ctxt *axon.Context) {
 	if !pj.Params.Learn.Learn {
 		return
 	}

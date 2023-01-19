@@ -26,7 +26,7 @@ func TestMultithreadingCycleFun(t *testing.T) {
 	pats := generateRandomPatterns(100)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 16, 16)
 
-	fun := func(net *Network, ltime *Time) {
+	fun := func(net *Network, lctxt *Context) {
 		net.Cycle(ltime)
 	}
 
@@ -47,7 +47,7 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netA, netB := buildIdenticalNetworks(t, pats, 1, 1, 1)
 
-	fun := func(net *Network, ltime *Time) {
+	fun := func(net *Network, lctxt *Context) {
 		net.Cycle(ltime)
 	}
 
@@ -74,7 +74,7 @@ func TestMultithreadedSendSpike(t *testing.T) {
 	// goroutines are cheap, they barely cost any memory
 	netS, netM := buildIdenticalNetworks(t, pats, 1, 16, 1)
 
-	fun := func(net *Network, ltime *Time) {
+	fun := func(net *Network, lctxt *Context) {
 		net.Cycle(ltime)
 	}
 
@@ -94,8 +94,8 @@ func TestMultithreadedNeuronFun(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 1, 1)
 
-	fun := func(net *Network, ctime *Time) {
-		net.Cycle(ctime)
+	fun := func(net *Network, ctxt *Context) {
+		net.Cycle(ctxt)
 	}
 
 	runFunEpochs(pats, netM, fun, 3)
@@ -114,7 +114,7 @@ func TestMultithreadedSynCa(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 1, 16)
 
-	fun := func(net *Network, ltime *Time) {
+	fun := func(net *Network, lctxt *Context) {
 		net.Cycle(ltime)
 	}
 
@@ -274,7 +274,7 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 	// inputLayer.ApplyExt(input)
 	// outputLayer.ApplyExt(output)
 	// netS.NewState()
-	// ltime := NewTime()
+	// ltime := NewContext()
 	// ltime.NewState("train")
 	// for i := 0; i < 150; i++ {
 	// 	netS.Cycle(ltime)
@@ -335,7 +335,7 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Time), e
 	outPats := pats.ColByName("Output").(*etensor.Float32)
 	inputLayer := net.LayerByName("Input").(*Layer)
 	outputLayer := net.LayerByName("Output").(*Layer)
-	ltime := NewTime()
+	ltime := NewContext()
 	for epoch := 0; epoch < epochs; epoch++ {
 		for pi := 0; pi < pats.NumRows(); pi++ {
 			input := inPats.SubSpace([]int{pi})

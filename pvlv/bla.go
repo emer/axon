@@ -80,7 +80,7 @@ func (ly *BLALayer) Build() error {
 }
 
 // USActiveFmUS updates the USActive flag based on USLayers state
-func (ly *BLALayer) USActiveFmUS(ctime *axon.Time) {
+func (ly *BLALayer) USActiveFmUS(ctxt *axon.Context) {
 	ly.USActive = false
 	if len(ly.USLayers) == 0 {
 		return
@@ -91,19 +91,19 @@ func (ly *BLALayer) USActiveFmUS(ctime *axon.Time) {
 	}
 }
 
-func (ly *BLALayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *BLALayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
 	da := ly.DaMod.Gain(ly.DA)
-	ly.NeuronGatherSpikes(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctxt)
 	daEff := da * nrn.CaSpkM // da effect interacts with spiking
 	nrn.GeRaw += daEff
 	nrn.GeSyn += ly.Params.Act.Dt.GeSynFmRawSteady(daEff)
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
+	ly.GFmRawSyn(ni, nrn, ctxt)
+	ly.GiInteg(ni, nrn, ctxt)
 }
 
-func (ly *BLALayer) PlusPhase(ctime *axon.Time) {
-	ly.Layer.PlusPhase(ctime)
-	ly.USActiveFmUS(ctime)
+func (ly *BLALayer) PlusPhase(ctxt *axon.Context) {
+	ly.Layer.PlusPhase(ctxt)
+	ly.USActiveFmUS(ctxt)
 	lrmod := ly.BLA.NoDALRate + mat32.Abs(ly.DA)
 	if !ly.USActive {
 		lrmod *= ly.BLA.NoUSLRate
@@ -147,16 +147,16 @@ func (pj *BLAPrjn) Defaults() {
 	pj.Params.Learn.Trace.Update()
 }
 
-func (pj *BLAPrjn) SendSynCa(ctime *axon.Time) {
+func (pj *BLAPrjn) SendSynCa(ctxt *axon.Context) {
 	return
 }
 
-func (pj *BLAPrjn) RecvSynCa(ctime *axon.Time) {
+func (pj *BLAPrjn) RecvSynCa(ctxt *axon.Context) {
 	return
 }
 
 // DWt computes the weight change (learning) for BLA projections
-func (pj *BLAPrjn) DWt(ctime *axon.Time) {
+func (pj *BLAPrjn) DWt(ctxt *axon.Context) {
 	if !pj.Params.Learn.Learn {
 		return
 	}
@@ -175,7 +175,7 @@ func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 			rn := &rlay.Neurons[ri]
 			sy := &syns[ci]
 			// not using the synaptic trace (yet)
-			// kp.CurCa(ctime, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
+			// kp.CurCa(ctxt, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
 			sy.Tr = pj.Params.Learn.Trace.TrFmCa(sy.Tr, sact)
 			if sy.Wt == 0 { // failed con, no learn
 				continue
@@ -193,7 +193,7 @@ func (pj *BLAPrjn) DWt(ctime *axon.Time) {
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-func (pj *BLAPrjn) WtFmDWt(ctime *axon.Time) {
+func (pj *BLAPrjn) WtFmDWt(ctxt *axon.Context) {
 	if !pj.Params.Learn.Learn {
 		return
 	}

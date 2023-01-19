@@ -42,13 +42,13 @@ func (ly *PTLayer) Class() string {
 	return "PT " + ly.Cls
 }
 
-func (ly *PTLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	thalGeRaw, thalGeSyn := ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.GFmRawSyn(ni, nrn, ctime, thalGeRaw, thalGeSyn)
-	ly.GiInteg(ni, nrn, ctime)
+func (ly *PTLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	thalGeRaw, thalGeSyn := ly.NeuronGatherSpikes(ni, nrn, ctxt)
+	ly.GFmRawSyn(ni, nrn, ctxt, thalGeRaw, thalGeSyn)
+	ly.GiInteg(ni, nrn, ctxt)
 }
 
-func (ly *PTLayer) NeuronGatherSpikes(ni uint32, nrn *axon.Neuron, ctime *axon.Time) (thalGeRaw, thalGeSyn float32) {
+func (ly *PTLayer) NeuronGatherSpikes(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) (thalGeRaw, thalGeSyn float32) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GeSyn = nrn.GeBase
@@ -75,7 +75,7 @@ func (ly *PTLayer) NeuronGatherSpikes(ni uint32, nrn *axon.Neuron, ctime *axon.T
 	return
 }
 
-func (ly *PTLayer) GFmRawSyn(ni uint32, nrn *axon.Neuron, ctime *axon.Time, thalGeRaw, thalGeSyn float32) {
+func (ly *PTLayer) GFmRawSyn(ni uint32, nrn *axon.Neuron, ctxt *axon.Context, thalGeRaw, thalGeSyn float32) {
 	ly.Params.Act.NMDAFmRaw(nrn, ly.ThalNMDAGain*thalGeRaw)
 	ly.Params.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw) // exclude thal?
 	ly.Params.Act.GvgccFmVm(nrn)

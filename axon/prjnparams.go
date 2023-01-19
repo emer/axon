@@ -21,6 +21,7 @@ import (
 // #include "act_prjn.hlsl"
 // #include "learn.hlsl"
 // #include "deep_prjns.hlsl"
+// #include "rl_prjns.hlsl"
 // #include "prjnvals.hlsl"
 //gosl: end prjnparams
 
@@ -121,7 +122,7 @@ func (pj *PrjnParams) AllParams() string {
 
 // NeuronGatherSpikesPrjn integrates G*Raw and G*Syn values for given neuron
 // from the given Prjn-level GSyn integrated values.
-func (pj *PrjnParams) NeuronGatherSpikesPrjn(gv PrjnGVals, ni uint32, nrn *Neuron, ctime *Time) {
+func (pj *PrjnParams) NeuronGatherSpikesPrjn(gv PrjnGVals, ni uint32, nrn *Neuron, ctxt *Context) {
 	if pj.Com.Inhib.IsTrue() {
 		nrn.GiRaw += gv.GRaw
 		nrn.GiSyn += gv.GSyn
@@ -134,11 +135,11 @@ func (pj *PrjnParams) NeuronGatherSpikesPrjn(gv PrjnGVals, ni uint32, nrn *Neuro
 // DWtSyn computes the weight change (learning) at given synapse, based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctime *Time) {
+func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctxt *Context) {
 	caM := sy.CaM
 	caP := sy.CaP
 	caD := sy.CaD
-	pj.Learn.KinaseCa.CurCa(ctime.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
+	pj.Learn.KinaseCa.CurCa(ctxt.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
 	if pj.PrjnType == CTCtxtPrjn {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.SpkPrv)
 	} else {
@@ -169,7 +170,7 @@ func (pj *PrjnParams) DWtSyn(sy *Synapse, sn, rn *Neuron, isTarget bool, ctime *
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
 // for the RWPredPrjn type
-func (pj *PrjnParams) DWtSynRWPred(sy *Synapse, sn, rn *Neuron, rlvals *LayerVals, ctime *Time) {
+func (pj *PrjnParams) DWtSynRWPred(sy *Synapse, sn, rn *Neuron, rlvals *LayerVals, ctxt *Context) {
 	lda := rlvals.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff

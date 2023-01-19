@@ -23,6 +23,8 @@ func (pj *RWPrjnParams) Defaults() {
 func (pj *RWPrjnParams) Update() {
 }
 
+//gosl: end rl_prjns
+
 func (pj *PrjnParams) RWPrjnDefaults() {
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.Mean = 0

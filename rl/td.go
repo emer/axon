@@ -28,8 +28,8 @@ func (ly *TDRewPredLayer) Defaults() {
 	ly.Params.Act.Dt.GeTau = 40
 }
 
-func (ly *TDRewPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
+func (ly *TDRewPredLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.SpikeFmG(ni, nrn, ctxt)
 	nrn.Act = nrn.Ge
 	nrn.ActInt = nrn.Act
 }
@@ -92,7 +92,7 @@ func (ly *TDRewIntegLayer) RewLayer() (*RewLayer, error) {
 	return tly.(*RewLayer), nil
 }
 
-func (ly *TDRewIntegLayer) RewPredAct(ctime *axon.Time) float32 {
+func (ly *TDRewIntegLayer) RewPredAct(ctxt *axon.Context) float32 {
 	rply, _ := ly.RewPredLayer()
 	if rply == nil {
 		return 0
@@ -107,7 +107,7 @@ func (ly *TDRewIntegLayer) RewPredAct(ctime *axon.Time) float32 {
 	rpAct := rew + ly.RewInteg.RewPredGain*(rpn0.Ge-rpn1.Ge) // linear
 	rpActP := ly.RewInteg.RewPredGain * (rpn0.ActP - rpn1.ActP)
 	var rpval float32
-	if ctime.PlusPhase {
+	if ctxt.PlusPhase {
 		rpval = ly.RewInteg.Discount * rpAct
 	} else {
 		rpval = rpActP
@@ -125,18 +125,18 @@ func (ly *TDRewIntegLayer) Build() error {
 	return err
 }
 
-func (ly *TDRewIntegLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	rpAct := ly.RewPredAct(ctime)
+func (ly *TDRewIntegLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	rpAct := ly.RewPredAct(ctxt)
 	nrn.SetFlag(axon.NeuronHasExt)
 	SetNeuronExtPosNeg(ni, nrn, rpAct)
-	ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctxt)
+	ly.GFmRawSyn(ni, nrn, ctxt)
+	ly.GiInteg(ni, nrn, ctxt)
 }
 
-func (ly *TDRewIntegLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
-	rpAct := ly.RewPredAct(ctime)
+func (ly *TDRewIntegLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.SpikeFmG(ni, nrn, ctxt)
+	rpAct := ly.RewPredAct(ctxt)
 	nrn.Act = rpAct
 	nrn.ActInt = nrn.Act
 }
@@ -172,7 +172,7 @@ func (ly *TDDaLayer) RewIntegLayer() (*TDRewIntegLayer, error) {
 	return tly.(*TDRewIntegLayer), nil
 }
 
-func (ly *TDDaLayer) RewIntegDA(ctime *axon.Time) float32 {
+func (ly *TDDaLayer) RewIntegDA(ctxt *axon.Context) float32 {
 	rily, _ := ly.RewIntegLayer()
 	if rily == nil {
 		return 0
@@ -180,7 +180,7 @@ func (ly *TDDaLayer) RewIntegDA(ctime *axon.Time) float32 {
 	rpActP := rily.Neurons[0].Act
 	rpActM := rily.Neurons[0].ActM
 	da := rpActP - rpActM
-	if !ctime.PlusPhase {
+	if !ctxt.PlusPhase {
 		da = 0
 	}
 	return da
@@ -200,25 +200,25 @@ func (ly *TDDaLayer) Build() error {
 	return err
 }
 
-func (ly *TDDaLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	da := ly.RewIntegDA(ctime)
+func (ly *TDDaLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	da := ly.RewIntegDA(ctxt)
 	nrn.SetFlag(axon.NeuronHasExt)
 	SetNeuronExtPosNeg(ni, nrn, da)
-	ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctxt)
+	ly.GFmRawSyn(ni, nrn, ctxt)
+	ly.GiInteg(ni, nrn, ctxt)
 }
 
-func (ly *TDDaLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
-	da := ly.RewIntegDA(ctime)
+func (ly *TDDaLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.SpikeFmG(ni, nrn, ctxt)
+	da := ly.RewIntegDA(ctxt)
 	nrn.Act = da
 	nrn.ActInt = nrn.Act
 }
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *TDDaLayer) CyclePost(ctime *axon.Time) {
+func (ly *TDDaLayer) CyclePost(ctxt *axon.Context) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)
@@ -246,20 +246,20 @@ func (pj *TDRewPredPrjn) Defaults() {
 	pj.SWt.Adapt.SigGain = 1
 }
 
-func (pj *TDRewPredPrjn) SendSynCa(ctime *axon.Time) {
+func (pj *TDRewPredPrjn) SendSynCa(ctxt *axon.Context) {
 	return
 }
 
-func (pj *TDRewPredPrjn) RecvSynCa(ctime *axon.Time) {
+func (pj *TDRewPredPrjn) RecvSynCa(ctxt *axon.Context) {
 	return
 }
 
-func (pj *TDRewPredPrjn) SlowAdapt(ctime *axon.Time) {
+func (pj *TDRewPredPrjn) SlowAdapt(ctxt *axon.Context) {
 	return
 }
 
 // DWt computes the weight change (learning) -- on sending projections.
-func (pj *TDRewPredPrjn) DWt(ctime *axon.Time) {
+func (pj *TDRewPredPrjn) DWt(ctxt *axon.Context) {
 	if !pj.Params.Learn.Learn {
 		return
 	}
@@ -296,7 +296,7 @@ func (pj *TDRewPredPrjn) DWt(ctime *axon.Time) {
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes -- on sending projections
-func (pj *TDRewPredPrjn) WtFmDWt(ctime *axon.Time) {
+func (pj *TDRewPredPrjn) WtFmDWt(ctxt *axon.Context) {
 	if !pj.Params.Learn.Learn {
 		return
 	}

@@ -148,8 +148,8 @@ func (ly *STNLayer) NewState() {
 	}
 }
 
-func (ly *STNLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.GInteg(ni, nrn, ctime)
+func (ly *STNLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.GInteg(ni, nrn, ctxt)
 	snr := &ly.STNNeurs[ni]
 	if ly.Ca.CaD {
 		snr.SKCai = ly.Ca.CaScale * nrn.CaSpkD // todo: CaD?

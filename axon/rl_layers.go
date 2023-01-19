@@ -22,25 +22,13 @@ func (rp *RWPredParams) Update() {
 
 }
 
-//gosl: end rl_layers
-
-//gosl: start layerparams
-
-func (ly *LayerParams) RWPredLayerDefaults() {
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Act.Dt.GeTau = 40
-}
-
-//gosl: end layerparams
-
-//gosl: start rl_layers
-
-// RWDaParams computes a dopamine (DA) signal based on a simple Rescorla-Wagner
+// RWDaParams computes a dopamine (DA) signal using simple Rescorla-Wagner
 // learning dynamic (i.e., PV learning in the PVLV framework).
 type RWDaParams struct {
 	RewLayIdx    uint32 `desc:"reward layer index"`
 	RWPredLayIdx uint32 `desc:"RWPredLayer layer index"`
+
+	pad, pad1 uint32
 }
 
 func (rp *RWDaParams) Defaults() {
@@ -51,4 +39,21 @@ func (rp *RWDaParams) Update() {
 
 }
 
+// RWDaVals are values computed in CPU and available to
+// the GPU during update of RWDaLayer in the Time struct
+type RWDaVals struct {
+	RewLayIdx    uint32 `desc:"reward layer index"`
+	RWPredLayIdx uint32 `desc:"RWPredLayer layer index"`
+
+	pad, pad1 uint32
+}
+
 //gosl: end rl_layers
+
+// note: Defaults not called on GPU
+
+func (ly *LayerParams) RWPredLayerDefaults() {
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
+	ly.Act.Dt.GeTau = 40
+}

@@ -192,7 +192,7 @@ func (ly *MatrixLayer) DecayState(decay, glong float32) {
 }
 
 // USActiveFmUS updates the USActive flag based on USLayers state
-func (ly *MatrixLayer) USActiveFmUS(ctime *axon.Time) {
+func (ly *MatrixLayer) USActiveFmUS(ctxt *axon.Context) {
 	ly.USActive = false
 	if len(ly.USLayers) == 0 {
 		return
@@ -205,7 +205,7 @@ func (ly *MatrixLayer) USActiveFmUS(ctime *axon.Time) {
 
 // GiFmACh sets inhibitory conductance from ACh value, where ACh is 0 at baseline
 // and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
-func (ly *MatrixLayer) GiFmACh(ctime *axon.Time) {
+func (ly *MatrixLayer) GiFmACh(ctxt *axon.Context) {
 	gi := ly.Matrix.GiFmACh(ly.ACh)
 	if gi == 0 {
 		return
@@ -219,15 +219,15 @@ func (ly *MatrixLayer) GiFmACh(ctime *axon.Time) {
 	}
 }
 
-func (ly *MatrixLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *MatrixLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
 	if !ly.HasMod {
-		ly.Layer.GInteg(ni, nrn, ctime)
-		// ly.GiFmACh(ctime) // todo: no place to hook this into base as of yet -- need to refactor the base impl and / or add a method to the AxonLayer interface
+		ly.Layer.GInteg(ni, nrn, ctxt)
+		// ly.GiFmACh(ctxt) // todo: no place to hook this into base as of yet -- need to refactor the base impl and / or add a method to the AxonLayer interface
 		// however, HasMod is almost always true for any case where using GiFmACh
 		return
 	}
-	ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.GiFmACh(ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctxt)
+	ly.GiFmACh(ctxt)
 	var mod float32
 	var modRaw float32
 	for _, p := range ly.RcvPrjns {
@@ -247,12 +247,12 @@ func (ly *MatrixLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 	ly.Mods[ni] = mod
 	nrn.GeRaw *= mod
 	nrn.GeSyn *= mod
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
+	ly.GFmRawSyn(ni, nrn, ctxt)
+	ly.GiInteg(ni, nrn, ctxt)
 }
 
-func (ly *MatrixLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
+func (ly *MatrixLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.SpikeFmG(ni, nrn, ctxt)
 	// below achieves key learning requirement that NoGo neurons have some learning
 	// activity at time of Go gating, so if a negative dopamine signal happens,
 	// it will reinforce the NoGo pathway.
@@ -264,7 +264,7 @@ func (ly *MatrixLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
 		return
 	}
 
-	if ctime.Cycle >= ly.Params.Act.Dt.MaxCycStart {
+	if ctxt.Cycle >= ly.Params.Act.Dt.MaxCycStart {
 		if nrn.Ge > nrn.SpkMax {
 			nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
 		}
@@ -293,9 +293,9 @@ func (ly *MatrixLayer) AnyGated() bool {
 
 // PlusPhase does updating at end of the plus phase
 // calls DAActLrn
-func (ly *MatrixLayer) PlusPhase(ctime *axon.Time) {
-	ly.Layer.PlusPhase(ctime)
-	ly.USActiveFmUS(ctime)
+func (ly *MatrixLayer) PlusPhase(ctxt *axon.Context) {
+	ly.Layer.PlusPhase(ctxt)
+	ly.USActiveFmUS(ctxt)
 	ly.GatedFmAvgSpk()
 	ly.DAActLrn()
 

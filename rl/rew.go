@@ -42,19 +42,19 @@ func SetNeuronExtPosNeg(ni uint32, nrn *axon.Neuron, val float32) {
 	}
 }
 
-func (ly *RewLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
+func (ly *RewLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
 	ext0 := ly.Neurons[0].Ext
 	nrn.SetFlag(axon.NeuronHasExt)
 	extOrig := nrn.Ext
 	SetNeuronExtPosNeg(ni, nrn, ext0)
-	ly.NeuronGatherSpikes(ni, nrn, ctime)
-	ly.GFmRawSyn(ni, nrn, ctime)
-	ly.GiInteg(ni, nrn, ctime)
+	ly.NeuronGatherSpikes(ni, nrn, ctxt)
+	ly.GFmRawSyn(ni, nrn, ctxt)
+	ly.GiInteg(ni, nrn, ctxt)
 	nrn.Ext = extOrig
 }
 
-func (ly *RewLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.SpikeFmG(ni, nrn, ctime)
+func (ly *RewLayer) SpikeFmG(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.SpikeFmG(ni, nrn, ctxt)
 	ext0 := ly.Neurons[0].Ext
 	nrn.Act = ext0
 }

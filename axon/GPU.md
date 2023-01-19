@@ -1,6 +1,6 @@
 # GPU: gpu strategy notes
 
-GPU variable layout:
+# GPU variable layout:
 
 Set 0:  Uniforms
     0. LayerParams -- array by layer index
@@ -20,20 +20,30 @@ Set 2:  Storage
     5. PrjnVals -- array by prjn index
 
 
+# General issues and strategies
+
+* Everything must be stored in top-level arrays of structs as shown above -- these are the only variable length data structures.
+
+* Efficient access requires Start, N indexes in data structs and there must be a contiguous layout for each different way of iterating over the data (otherwise require a singleton index array to indirect through, which is not efficient) -- this means both recv and send versions of the PrjnParams, which are constant and not a big deal to duplicate.
+
+* Context (was Time) is the *only* state that is copied from CPU to GPU every cycle.  At end of ThetaCycle, Neurons are grabbed back from GPU -> CPU.
+
+* Anything involving direct copying of values between different layers, as happens especially in RL algorithms, should be done in the CPU and copied into Context.  There will be a 1 cycle delay but that is fine.
+
+
     
-TODO:
+    
+# TODO:
 
 * general renaming for params selectors:
-    * .Hidden -> .Super
-    * Inhib -> Inhibitory
-    * SuperLayer -> .Super
-    * CTLayer -> .CT
-    * PulvLayer -> .Pulvinar
+    * .Hidden -> .SuperLayer
+    * Inhib -> InhibLayer
+    * SuperLayer -> .SuperLayer
+    * CTLayer -> .CTLayer
+    * PulvLayer -> .PulvinarLayer
 
 * HebbPrjn type
     
-* gosl reformat switch statements
-
 * build WarpSize = 64 default into vgpu compute command
 
 * pass n layers, n prjns as fast buffer thing to shader
@@ -49,5 +59,5 @@ TODO:
 
 * Build all cortical variants into base type
     + Deep worked well -- keep going!
-
+    + SendCtxtGe, RecvCtxtGe in GPU
 

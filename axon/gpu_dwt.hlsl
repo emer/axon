@@ -4,7 +4,7 @@
 
 // performs the DWt function on all sending projections
 
-#include "time.hlsl"
+#include "context.hlsl"
 #include "layerparams.hlsl"
 #include "prjnparams.hlsl"
 
@@ -17,18 +17,18 @@
 // [[vk::binding(1, 1)]] StructuredBuffer<NeurSynIdx> RecvNeurSynIdxs; // [Layer][RecvPrjns][RecvNeurs]
 // [[vk::binding(2, 1)]] StructuredBuffer<SynIdx> RecvSynIdxs; // [Layer][RecvPrjns][Recv Neurs][Syns]
 
-[[vk::binding(0, 2)]] StructuredBuffer<Time> CTime; // [0]
+[[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 [[vk::binding(2, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurs][Syns]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 // [[vk::binding(5, 2)]] RWStructuredBuffer<PrjnVals> PrjnVals; // [Layer][SendPrjns]
 
-void DWtSyn(uint si, in PrjnParams pj, inout Synapse sy, in Neuron sn, in Neuron rn, bool isTarget, in Time ctime) {
-	pj.DWtSyn(sy, sn, rn, isTarget, ctime);
+void DWtSyn(uint si, in PrjnParams pj, inout Synapse sy, in Neuron sn, in Neuron rn, bool isTarget, in Context ctxt) {
+	pj.DWtSyn(sy, sn, rn, isTarget, ctxt);
 }
 
-void DWtSendNeurSyn2(uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnParams pj, in Time ctime) {
+void DWtSendNeurSyn2(uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnParams pj, in Context ctxt) {
 	if(pj.Learn.Learn == 0) {
 		return;
 	}
@@ -37,12 +37,12 @@ void DWtSendNeurSyn2(uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnPar
 	uint st = nsi.SynSt;
 	for(uint si = 0; si < nc; si++) {
 		uint sia = si + st;
-		DWtSyn(sia, pj, Synapses[sia], Neurons[nsi.NeurIdx], Neurons[Synapses[sia].RecvNeurIdx], isTarget, ctime);
+		DWtSyn(sia, pj, Synapses[sia], Neurons[nsi.NeurIdx], Neurons[Synapses[sia].RecvNeurIdx], isTarget, ctxt);
 	}
 }
 
-void DWtSendNeurSyn(uint snsi, in NeurSynIdx nsi, in Time ctime) {
-	DWtSendNeurSyn2(snsi, nsi, Layers[SendPrjns[nsi.PrjnIdx].Idxs.RecvLay], SendPrjns[nsi.PrjnIdx], ctime);
+void DWtSendNeurSyn(uint snsi, in NeurSynIdx nsi, in Context ctxt) {
+	DWtSendNeurSyn2(snsi, nsi, Layers[SendPrjns[nsi.PrjnIdx].Idxs.RecvLay], SendPrjns[nsi.PrjnIdx], ctxt);
 }
 
 
@@ -52,7 +52,7 @@ void main(uint3 idx : SV_DispatchThreadID) { // over SendNeurSynIdxs
 	uint st;
 	SendNeurSynIdxs.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		DWtSendNeurSyn(idx.x, SendNeurSynIdxs[idx.x], CTime[0]);
+		DWtSendNeurSyn(idx.x, SendNeurSynIdxs[idx.x], Ctxt[0]);
 	}
 }
 

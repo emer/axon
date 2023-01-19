@@ -92,15 +92,15 @@ func (ly *ClampDaLayer) Build() error {
 	return err
 }
 
-func (ly *ClampDaLayer) GInteg(ni uint32, nrn *axon.Neuron, ctime *axon.Time) {
-	ly.Layer.GInteg(ni, nrn, ctime)
+func (ly *ClampDaLayer) GInteg(ni uint32, nrn *axon.Neuron, ctxt *axon.Context) {
+	ly.Layer.GInteg(ni, nrn, ctxt)
 	nrn.Act = nrn.Ext
 	nrn.ActInt = nrn.Act
 }
 
 // CyclePost is called at end of Cycle
 // We use it to send DA, which will then be active for the next cycle of processing.
-func (ly *ClampDaLayer) CyclePost(ctime *axon.Time) {
+func (ly *ClampDaLayer) CyclePost(ctxt *axon.Context) {
 	act := ly.Neurons[0].Act
 	ly.DA = act
 	ly.SendDA.SendDA(ly.Network, act)
