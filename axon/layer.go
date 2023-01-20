@@ -484,6 +484,7 @@ func (ly *Layer) Build() error {
 	// note: ly.Neurons are allocated by Network from global network pool
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
+		nrn.NeurIdx = uint32(ni)
 		nrn.LayIdx = uint32(ly.Idx)
 	}
 	err := ly.BuildPools(nu)
@@ -513,6 +514,8 @@ func (ly *Layer) PostBuild() {
 	switch ly.LayerType() {
 	case PulvinarLayer:
 		ly.PulvPostBuild()
+	case RWDaLayer:
+		ly.RWDaPostBuild()
 	}
 }
 

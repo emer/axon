@@ -4,9 +4,15 @@
 
 package axon
 
-import "github.com/emer/etable/minmax"
+import (
+	"log"
+
+	"github.com/emer/etable/minmax"
+)
 
 //gosl: start rl_layers
+
+// note: RewLayer gets Rew value from Context
 
 // RWPredParams parameterizes reward prediction for a simple Rescorla-Wagner
 // learning dynamic (i.e., PV learning in the PVLV framework).
@@ -27,10 +33,9 @@ func (rp *RWPredParams) Update() {
 // This entire computation happens CPU-side in Layer.PostCycle, via
 // direct access to other layer state.
 type RWDaParams struct {
-	RewLayIdx    uint32 `desc:"reward layer index"`
 	RWPredLayIdx uint32 `desc:"RWPredLayer layer index"`
 
-	pad, pad1 uint32
+	pad, pad1, pad2 uint32
 }
 
 func (rp *RWDaParams) Defaults() {
@@ -41,6 +46,23 @@ func (rp *RWDaParams) Update() {
 
 }
 
+// TDIntegParams are params for reward integrator layer
+type TDIntegParams struct {
+	Discount     float32 `desc:"discount factor -- how much to discount the future prediction from RewPred"`
+	PredGain     float32 `desc:"gain factor on rew pred activations"`
+	TDPredLayIdx uint32  `desc:"idx of TDPredLayer to get reward prediction from "`
+
+	pad uint32
+}
+
+func (tp *TDIntegParams) Defaults() {
+	tp.Discount = 0.9
+	tp.PredGain = 1
+}
+
+func (tp *TDIntegParams) Update() {
+}
+
 //gosl: end rl_layers
 
 // note: Defaults not called on GPU
@@ -49,4 +71,22 @@ func (ly *LayerParams) RWPredLayerDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Act.Dt.GeTau = 40
+}
+
+// RWDaPostBuild does post-Build config of Pulvinar based on BuildConfig options
+func (ly *Layer) RWDaPostBuild() {
+	rnm, err := ly.BuildConfigByName("RWPredLayName")
+	if err != nil {
+		return
+	}
+	dly, err := ly.Network.LayerByNameTry(rnm)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	ly.Params.RWDa.RWPredLayIdx = uint32(dly.Index())
+}
+
+func (ly *LayerParams) TDIntegLayerDefaults() {
+	ly.Inhib.ActAvg.Nominal = .5
 }

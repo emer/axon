@@ -136,6 +136,9 @@ func (pj *PrjnParams) NeuronGatherSpikesPrjn(ctx *Context, gv PrjnGVals, ni uint
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, isTarget bool) {
+	if pj.PrjnType == RWPrjn {
+		pj.DWtSynRWPred(ctx, sy, sn, rn)
+	}
 	caM := sy.CaM
 	caP := sy.CaP
 	caD := sy.CaD
@@ -170,27 +173,33 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, isTarget
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
 // for the RWPredPrjn type
-func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron, rlvals *LayerVals) {
-	lda := rlvals.NeuroMod.DA
+func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+	lda := ctx.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff
-	if rn.Ge > rn.Act && da > 0 { // clipped at top, saturate up
-		da = 0
-	}
-	if rn.Ge < rn.Act && da < 0 { // clipped at bottom, saturate down
-		da = 0
-	}
 	eff_lr := lr
-	// if ri == 0 { // todo: need
-	if da < 0 {
-		eff_lr *= pj.RWPrjn.OppSignLRate
+	if rn.NeurIdx == 0 {
+		if rn.Ge > rn.Act && da > 0 { // clipped at top, saturate up
+			da = 0
+		}
+		if rn.Ge < rn.Act && da < 0 { // clipped at bottom, saturate down
+			da = 0
+		}
+		if da < 0 {
+			eff_lr *= pj.RWPrjn.OppSignLRate
+		}
+	} else {
+		eff_lr = -eff_lr
+		if rn.Ge > rn.Act && da < 0 { // clipped at top, saturate up
+			da = 0
+		}
+		if rn.Ge < rn.Act && da > 0 { // clipped at bottom, saturate down
+			da = 0
+		}
+		if da >= 0 {
+			eff_lr *= pj.RWPrjn.OppSignLRate
+		}
 	}
-	// } else {
-	eff_lr = -eff_lr
-	if da >= 0 {
-		eff_lr *= pj.RWPrjn.OppSignLRate
-	}
-	// }
 
 	dwt := da * sn.Act // no recv unit activation
 	sy.DWt += eff_lr * dwt

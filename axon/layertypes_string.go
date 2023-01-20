@@ -21,16 +21,18 @@ func _() {
 	_ = x[PulvinarLayer-5]
 	_ = x[TRNLayer-6]
 	_ = x[RewLayer-7]
-	_ = x[RWPredLayer-8]
-	_ = x[RWDaLayer-9]
-	_ = x[TDRewPredLayer-10]
-	_ = x[TDRewIntegLayer-11]
-	_ = x[LayerTypesN-12]
+	_ = x[RSalienceLayer-8]
+	_ = x[RWPredLayer-9]
+	_ = x[RWDaLayer-10]
+	_ = x[TDPredLayer-11]
+	_ = x[TDIntegLayer-12]
+	_ = x[TDDaLayer-13]
+	_ = x[LayerTypesN-14]
 }
 
-const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerRewLayerRWPredLayerRWDaLayerTDRewPredLayerTDRewIntegLayerLayerTypesN"
+const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerRewLayerRSalienceLayerRWPredLayerRWDaLayerTDPredLayerTDIntegLayerTDDaLayerLayerTypesN"
 
-var _LayerTypes_index = [...]uint8{0, 10, 20, 31, 43, 50, 63, 71, 79, 90, 99, 113, 128, 139}
+var _LayerTypes_index = [...]uint8{0, 10, 20, 31, 43, 50, 63, 71, 79, 93, 104, 113, 124, 136, 145, 156}
 
 func (i LayerTypes) String() string {
 	if i < 0 || i >= LayerTypes(len(_LayerTypes_index)-1) {

@@ -44,6 +44,14 @@ const (
 	// Has no weight bounds or limits on sign etc.
 	RWPrjn
 
+	// TDRewPredPrjn does dopamine-modulated learning for reward prediction:
+	// DWt = Da * Send.SpkPrv (activity on *previous* timestep)
+	// Use in TDPredLayer typically to generate reward predictions.
+	// If the Da sign is positive, the first recv unit learns fully;
+	// for negative, second one learns fully.  Lower lrate applies for
+	// opposite cases.  Weights are positive-only.
+	TDRewPredPrjn
+
 	PrjnTypesN
 )
 

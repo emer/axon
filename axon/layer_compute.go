@@ -117,18 +117,11 @@ func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
 func (ly *Layer) PostSpike(ctx *Context, ni uint32, nrn *Neuron) {
 	switch ly.LayerType() {
 	case RWDaLayer:
-		rly := ly.Network.Layer(int(ly.Params.RWDa.RewLayIdx)).(AxonLayer).AsAxon()
 		ply := ly.Network.Layer(int(ly.Params.RWDa.RWPredLayIdx)).(AxonLayer).AsAxon()
-		rnrn := &(rly.Neurons[0])
-		hasRew := false
-		if rnrn.HasFlag(NeuronHasExt) {
-			hasRew = true
-		}
-		ract := rnrn.Act
 		pnrn := &(ply.Neurons[0])
 		pact := pnrn.Act
-		if hasRew {
-			ly.Vals.NeuroMod.DA = ract - pact
+		if ctx.NeuroMod.HasRew.IsTrue() {
+			ly.Vals.NeuroMod.DA = ctx.NeuroMod.Rew - pact
 		} else {
 			ly.Vals.NeuroMod.DA = 0 // nothing
 		}
@@ -170,21 +163,29 @@ func (ly *Layer) SendSpike(ctx *Context) {
 func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
 	case RWDaLayer:
-		rly := ly.Network.Layer(int(ly.Params.RWDa.RewLayIdx)).(AxonLayer).AsAxon()
-		ply := ly.Network.Layer(int(ly.Params.RWDa.RWPredLayIdx)).(AxonLayer).AsAxon()
-		rnrn := &(rly.Neurons[0])
-		hasRew := false
-		if rnrn.HasFlag(NeuronHasExt) {
-			hasRew = true
-		}
-		ract := rnrn.Act
-		pnrn := &(ply.Neurons[0])
-		pact := pnrn.Act
+		net := ly.Network.(AxonNetwork).AsAxon()
+		pvals := net.LayVals[ly.Params.RWDa.RWPredLayIdx]
+		pred := pvals.Special.V1 - pvals.Special.V2
 		da := float32(0)
-		if hasRew {
-			da = ract - pact
+		if ctx.NeuroMod.HasRew.IsTrue() {
+			da = ctx.NeuroMod.Rew - pred
 		}
 		ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
+		ly.Vals.NeuroMod.DA = da
+	case TDIntegLayer:
+		net := ly.Network.(AxonNetwork).AsAxon()
+		pvals := net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
+		pred := pvals.Special.V1 - pvals.Special.V2
+		rew := float32(0)
+		if ctx.NeuroMod.HasRew.IsTrue() {
+			rew = ctx.NeuroMod.Rew
+		}
+		rg := ly.Params.TDInteg.PredGain * pred
+		rpval := rg
+		if !ctx.PlusPhase.IsTrue() {
+			rpval += rew
+		}
+		// ok, now what to do with rpval??
 	}
 }
 

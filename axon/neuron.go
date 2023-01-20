@@ -15,7 +15,7 @@ import (
 // NeuronVarStart is the starting *field* index (not byte count!)
 // where float32 variables start -- all prior must be 32 bit (uint32, int32),
 // Note: all non-float32 infrastructure variables must be at the start!
-const NeuronVarStart = 4
+const NeuronVarStart = 5
 
 //go:generate stringer -type=NeuronFlags
 
@@ -50,6 +50,7 @@ const (
 // and start at the top, in contiguous order
 type Neuron struct {
 	Flags    NeuronFlags `desc:"bit flags for binary state variables"`
+	NeurIdx  uint32      `desc:"index of this neuron within its owning layer"`
 	LayIdx   uint32      `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
 	SubPool  uint32      `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
 	SubPoolG uint32      `desc:"index in global network-wide list of pools"`

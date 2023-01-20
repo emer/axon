@@ -76,6 +76,14 @@ const (
 	// showing spiking rates for each, and Act always represents signed value.
 	RewLayer
 
+	// RSalienceLayer reads reward signals from specified source layer(s)
+	// and sends the Max absolute value of that activity as the positively-rectified
+	// non-prediction-discounted reward salience signal, and sent as
+	// an acetylcholine (ACh) signal.
+	// To handle positive-only reward signals, need to include both a reward prediction
+	// and reward outcome layer.
+	RSalienceLayer
+
 	// RWPred computes reward prediction for a simple Rescorla-Wagner
 	// learning dynamic (i.e., PV learning in the PVLV framework).
 	// Activity is computed as linear function of excitatory conductance
@@ -95,13 +103,17 @@ const (
 	// It represents estimated value V(t) in the minus phase, and computes
 	// estimated V(t+1) based on its learned weights in plus phase.
 	// Use TDRewPred Prjn for DA modulated learning.
-	TDRewPredLayer
+	TDPredLayer
 
-	// TDRewIntegLayer is the temporal differences reward integration layer.
+	// TDIntegLayer is the temporal differences reward integration layer.
 	// It represents estimated value V(t) in the minus phase, and
 	// estimated V(t+1) + r(t) in the plus phase.
 	// It directly accesses (t) from Rew layer, and V(t) from RewPred layer.
-	TDRewIntegLayer
+	TDIntegLayer
+
+	// TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD)
+	// between the TDIntegLayer activations in the minus and plus phase.
+	TDDaLayer
 
 	LayerTypesN
 )
