@@ -86,7 +86,7 @@ type PrjnParams struct {
 	//     each applies to a specific prjn type.
 	//     use the `viewif` field tag to condition on PrjnType.
 
-	RWPrjn RWPrjnParams `viewif:"PrjnType=RWPrjn" desc:"RWPrjn does dopamine-modulated learning for reward prediction: Da * Send.Act. Use in RWPredLayer typically to generate reward predictions. Has no weight bounds or limits on sign etc."`
+	RLPred RLPredPrjnParams `viewif:"PrjnType=RWPrjn|TDPredPrjn" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
 
 	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
@@ -96,7 +96,7 @@ func (pj *PrjnParams) Defaults() {
 	pj.SWt.Defaults()
 	pj.PrjnScale.Defaults()
 	pj.Learn.Defaults()
-	pj.RWPrjn.Defaults()
+	pj.RLPred.Defaults()
 }
 
 func (pj *PrjnParams) Update() {
@@ -104,7 +104,7 @@ func (pj *PrjnParams) Update() {
 	pj.PrjnScale.Update()
 	pj.SWt.Update()
 	pj.Learn.Update()
-	pj.RWPrjn.Update()
+	pj.RLPred.Update()
 }
 
 func (pj *PrjnParams) AllParams() string {
@@ -117,6 +117,12 @@ func (pj *PrjnParams) AllParams() string {
 	str += "SWt: {\n " + JsonToParams(b)
 	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
 	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
+
+	switch pj.PrjnType {
+	case RWPrjn, TDPredPrjn:
+		b, _ = json.MarshalIndent(&pj.RLPred, "", " ")
+		str += "RLPred: {\n " + JsonToParams(b)
+	}
 	return str
 }
 
@@ -132,13 +138,26 @@ func (pj *PrjnParams) NeuronGatherSpikesPrjn(ctx *Context, gv PrjnGVals, ni uint
 	}
 }
 
-// DWtSyn computes the weight change (learning) at given synapse, based on
-// synaptically-integrated spiking, computed at the Theta cycle interval.
-// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+///////////////////////////////////////////////////
+// DWt
+
+// DWtSyn is the overall entry point for weight change (learning) at given synapse.
+// It selects appropriate function based on projection type.
 func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, isTarget bool) {
-	if pj.PrjnType == RWPrjn {
+	switch pj.PrjnType {
+	case RWPrjn:
 		pj.DWtSynRWPred(ctx, sy, sn, rn)
+	case TDPredPrjn:
+		pj.DWtSynTDPred(ctx, sy, sn, rn)
+	default:
+		pj.DWtSynCortex(ctx, sy, sn, rn, isTarget)
 	}
+}
+
+// DWtSynCortex computes the weight change (learning) at given synapse for cortex.
+// Uses synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, isTarget bool) {
 	caM := sy.CaM
 	caP := sy.CaP
 	caD := sy.CaD
@@ -186,7 +205,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 			da = 0
 		}
 		if da < 0 {
-			eff_lr *= pj.RWPrjn.OppSignLRate
+			eff_lr *= pj.RLPred.OppSignLRate
 		}
 	} else {
 		eff_lr = -eff_lr
@@ -197,12 +216,69 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 			da = 0
 		}
 		if da >= 0 {
-			eff_lr *= pj.RWPrjn.OppSignLRate
+			eff_lr *= pj.RLPred.OppSignLRate
 		}
 	}
 
-	dwt := da * sn.Act // no recv unit activation
+	dwt := da * sn.CaSpkP // no recv unit activation
 	sy.DWt += eff_lr * dwt
+}
+
+// DWtSynTDPred computes the weight change (learning) at given synapse,
+// for the TDRewPredPrjn type
+func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+	lda := ctx.NeuroMod.DA
+	da := lda
+	lr := pj.Learn.LRate.Eff
+	eff_lr := lr
+	if rn.NeurIdx == 0 {
+		if da < 0 {
+			eff_lr *= pj.RLPred.OppSignLRate
+		}
+	} else {
+		eff_lr = -eff_lr
+		if da >= 0 {
+			eff_lr *= pj.RLPred.OppSignLRate
+		}
+	}
+
+	dwt := da * sn.SpkPrv // no recv unit activation, prior trial act
+	sy.DWt += eff_lr * dwt
+}
+
+///////////////////////////////////////////////////
+// WtFmDWt
+
+// WtFmDWtSyn is the overall entry point for updating weights from weight changes.
+func (pj *PrjnParams) WtFmDWtSyn(ctx *Context, sy *Synapse) {
+	switch pj.PrjnType {
+	case RWPrjn:
+		pj.WtFmDWtSynRLPred(ctx, sy)
+	case TDPredPrjn:
+		pj.WtFmDWtSynRLPred(ctx, sy)
+	default:
+		pj.WtFmDWtSynCortex(ctx, sy)
+	}
+}
+
+// WtFmDWtSynCortex updates weights from dwt changes
+func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, sy *Synapse) {
+	sy.DSWt += sy.DWt
+	pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
+	pj.Com.Fail(&sy.Wt, sy.SWt)
+}
+
+// WtFmDWtSynRLPred updates weights from dwt changes
+func (pj *PrjnParams) WtFmDWtSynRLPred(ctx *Context, sy *Synapse) {
+	if sy.DWt == 0 {
+		return
+	}
+	sy.Wt += sy.DWt
+	if sy.Wt < 0 {
+		sy.Wt = 0
+	}
+	sy.LWt = sy.Wt
+	sy.DWt = 0
 }
 
 //gosl: end prjnparams

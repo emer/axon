@@ -165,33 +165,41 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := net.LayVals[ly.Params.RWDa.RWPredLayIdx]
 		pred := pvals.Special.V1 - pvals.Special.V2
+		ctx.NeuroMod.RewPred = pred // record
 		da := float32(0)
 		if ctx.NeuroMod.HasRew.IsTrue() {
 			da = ctx.NeuroMod.Rew - pred
 		}
 		ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
 		ly.Vals.NeuroMod.DA = da
+	case TDPredLayer:
+		if ctx.PlusPhase.IsTrue() {
+			pred := ly.Vals.Special.V1 - ly.Vals.Special.V2
+			ctx.NeuroMod.PrevPred = pred
+		}
 	case TDIntegLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
-		pred := pvals.Special.V1 - pvals.Special.V2 // neuron0 (pos) - neuron1 (neg)
 		rew := float32(0)
 		if ctx.NeuroMod.HasRew.IsTrue() {
 			rew = ctx.NeuroMod.Rew
 		}
-		rg := ly.Params.TDInteg.PredGain * pred
-		rpval := rg
+		rpval := float32(0)
 		if ctx.PlusPhase.IsTrue() {
-			rpval = ly.Params.TDInteg.Discount * (rew + pred)
+			pred := pvals.Special.V1 - pvals.Special.V2 // neuron0 (pos) - neuron1 (neg)
+			rpval = rew + ly.Params.TDInteg.Discount*ly.Params.TDInteg.PredGain*pred
+			ly.Vals.Special.V2 = rpval // plus phase
+		} else {
+			rpval = ly.Params.TDInteg.PredGain * ctx.NeuroMod.PrevPred
+			ly.Vals.Special.V1 = rpval // minus phase is *previous trial*
 		}
 		ctx.NeuroMod.RewPred = rpval // global value will be copied to layers next cycle
 	case TDDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
-		pvals := net.LayVals[ly.Params.RWDa.RWPredLayIdx]
-		pred := pvals.Special.V1 - pvals.Special.V2
-		da := float32(0)
-		if ctx.NeuroMod.HasRew.IsTrue() {
-			da = ctx.NeuroMod.Rew - pred
+		ivals := net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
+		da := ivals.Special.V2 - ivals.Special.V1
+		if ctx.PlusPhase.IsFalse() {
+			da = 0
 		}
 		ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
 		ly.Vals.NeuroMod.DA = da

@@ -78,7 +78,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.RW = true
+	ss.RW = false
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	if ss.RW {
@@ -115,7 +115,7 @@ func (ss *Sim) ConfigEnv() {
 		trn.Nm = etime.Train.String()
 		trn.Dsc = "training params and state"
 		trn.Defaults()
-		trn.RewVal = -1 // -1
+		trn.RewVal = 1 // -1
 		trn.NoRewVal = 0
 		trn.Validate()
 	} else {
@@ -144,7 +144,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	} else {
 		_, rp, _, _ := net.AddTDLayers("", relpos.RightOf, space)
 		rplay = rp
-		ptype = axon.TDRewPredPrjn
+		ptype = axon.TDPredPrjn
 	}
 	inp := net.AddLayer2D("Input", 3, 20, emer.Input)
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left})
@@ -309,9 +309,15 @@ func (ss *Sim) ConfigLogs() {
 	if ss.RW {
 		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RWDaLayer")
 		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RWPredLayer")
+		if li, ok := ss.Logs.ItemByName("DA_Act"); ok {
+			li.FixMin = false
+		}
 		ss.Logs.PlotItems("DA_Act")
 	} else {
 		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "TDDaLayer")
+		if li, ok := ss.Logs.ItemByName("TD_Act"); ok {
+			li.FixMin = false
+		}
 		ss.Logs.PlotItems("TD_Act")
 	}
 

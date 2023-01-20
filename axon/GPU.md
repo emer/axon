@@ -52,6 +52,9 @@ Set 2:  Storage
 
 * `Prjn` in `prjn_compute.go` pulls out core algorithm-specific code that is also run on the GPU, making calls into the `PrjnParams` methods.
 
+`Network`: likewise has `NetworkBase` etc.
+
+
 ### GPU-side 
 
 The following Layer and Prjn level types contain most of the core algorithm specific code, and are used as a `uniform` constant data structure in the GPU shader code:
@@ -67,7 +70,13 @@ The following Layer and Prjn level types contain most of the core algorithm spec
     + `SWtParams` in `learn.go` -- for initializing the slow and regular weight values -- most of the initial weight variation goes into SWt.
     + `LearnSynParams` in `learn.go` -- core learning algorithm at the synapse level.
     + `GScaleVals` -- these are computed from `PrjnScaleParams` and not user-set directly, but remain constant so are put here.
-    
+
+Each class of special algorithms has its own set of mostly GPU-side code:
+
+* `deep` predictive learning in pulvinar and cortical deep layers: `deep_layers.go, deep_prjns.go, deep_net.go`
+
+* `rl` reinforcement learning (TD and Rescorla Wagner): `rl_layers.go, rl_prjns.go, rl_net.go`
+
 # TODO:
 
 * general renaming for params selectors:

@@ -6,26 +6,27 @@ package axon
 
 //gosl: start rl_prjns
 
-// RWPrjnParams does dopamine-modulated learning for reward prediction: Da * Send.Act
-// Use in RWPredLayer typically to generate reward predictions.
-// Has no weight bounds or limits on sign etc.
-type RWPrjnParams struct {
-	DaTol        float32 `desc:"tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal"`
+// RLPredPrjnParams does dopamine-modulated learning for reward prediction: Da * Send.Act
+// Used by RWPrjn and TDPredPrjn within corresponding RWPredLayer or TDPredLayer
+// to generate reward predictions based on its incoming weights, using linear activation
+// function. Has no weight bounds or limits on sign etc.
+type RLPredPrjnParams struct {
 	OppSignLRate float32 `desc:"how much to learn on opposite DA sign coding neuron (0..1)"`
+	DaTol        float32 `desc:"tolerance on DA -- if below this abs value, then DA goes to zero and there is no learning -- prevents prediction from exactly learning to cancel out reward value, retaining a residual valence of signal"`
 
 	pad, pad1 float32
 }
 
-func (pj *RWPrjnParams) Defaults() {
+func (pj *RLPredPrjnParams) Defaults() {
 	pj.OppSignLRate = 1.0
 }
 
-func (pj *RWPrjnParams) Update() {
+func (pj *RLPredPrjnParams) Update() {
 }
 
 //gosl: end rl_prjns
 
-func (pj *PrjnParams) RWPrjnDefaults() {
+func (pj *PrjnParams) RLPredPrjnDefaults() {
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.Mean = 0
 	pj.SWt.Init.Var = 0

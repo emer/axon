@@ -282,10 +282,6 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, g
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
-	intdt := ly.Act.Dt.IntDt
-	if ctx.PlusPhase.IsTrue() {
-		intdt *= 3.0
-	}
 	ly.Act.VmFmG(nrn)
 	ly.Act.SpikeFmVm(nrn)
 	ly.Learn.CaFmSpike(nrn)
@@ -294,11 +290,6 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 		if nrn.SpkMaxCa > nrn.SpkMax {
 			nrn.SpkMax = nrn.SpkMaxCa
 		}
-	}
-	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-	if ctx.PlusPhase.IsFalse() {
-		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
-		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 	}
 }
 
@@ -319,30 +310,35 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, vals *Lay
 		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
-		nrn.ActInt = nrn.Act
 	case RWPredLayer:
 		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
-		nrn.ActInt = nrn.Act
 		if ni == 0 {
-			vals.Special.V1 = nrn.Act
+			vals.Special.V1 = nrn.ActInt
 		} else {
-			vals.Special.V2 = nrn.Act
+			vals.Special.V2 = nrn.ActInt
 		}
 	case RWDaLayer:
 		nrn.Act = ctx.NeuroMod.DA // I presumably set this last time..
-		nrn.ActInt = nrn.Act
 	case TDPredLayer:
 		nrn.Act = nrn.Ge // linear
-		nrn.ActInt = nrn.Act
 		if ni == 0 {
-			vals.Special.V1 = nrn.Act
+			vals.Special.V1 = nrn.ActInt
 		} else {
-			vals.Special.V2 = nrn.Act
+			vals.Special.V2 = nrn.ActInt
 		}
 	case TDIntegLayer:
+		nrn.Act = ctx.NeuroMod.RewPred
 	case TDDaLayer:
 		nrn.Act = ctx.NeuroMod.DA // I presumably set this last time..
-		nrn.ActInt = nrn.Act
+	}
+	intdt := ly.Act.Dt.IntDt
+	if ctx.PlusPhase.IsTrue() {
+		intdt *= 3.0
+	}
+	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
+	if ctx.PlusPhase.IsFalse() {
+		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
+		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 	}
 }
 

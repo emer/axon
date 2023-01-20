@@ -39,18 +39,23 @@ const (
 	// Can also add self context from CT for deeper temporal context.
 	CTCtxtPrjn
 
-	// RWPrjn does dopamine-modulated learning for reward prediction: Da * Send.Act
+	// RWPrjn does dopamine-modulated learning for reward prediction:
+	// Da * Send.CaSpkP (integrated current spiking activity).
+	// Uses RLPredPrjn parameters.
 	// Use in RWPredLayer typically to generate reward predictions.
-	// Has no weight bounds or limits on sign etc.
+	// If the Da sign is positive, the first recv unit learns fully;
+	// for negative, second one learns fully.  Lower lrate applies for
+	// opposite cases.  Weights are positive-only.
 	RWPrjn
 
-	// TDRewPredPrjn does dopamine-modulated learning for reward prediction:
+	// TDPredPrjn does dopamine-modulated learning for reward prediction:
 	// DWt = Da * Send.SpkPrv (activity on *previous* timestep)
+	// Uses RLPredPrjn parameters.
 	// Use in TDPredLayer typically to generate reward predictions.
 	// If the Da sign is positive, the first recv unit learns fully;
 	// for negative, second one learns fully.  Lower lrate applies for
 	// opposite cases.  Weights are positive-only.
-	TDRewPredPrjn
+	TDPredPrjn
 
 	PrjnTypesN
 )

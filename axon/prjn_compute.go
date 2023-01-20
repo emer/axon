@@ -256,9 +256,7 @@ func (pj *Prjn) WtFmDWt(ctx *Context) {
 		syns := pj.Syns[st : st+nc]
 		for ci := range syns {
 			sy := &syns[ci]
-			sy.DSWt += sy.DWt
-			pj.Params.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
-			pj.Params.Com.Fail(&sy.Wt, sy.SWt)
+			pj.Params.WtFmDWtSyn(ctx, sy)
 		}
 	}
 }

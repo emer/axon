@@ -58,8 +58,8 @@ func (pj *Prjn) Defaults() {
 	switch pj.PrjnType() {
 	case InhibPrjn:
 		pj.Params.SWt.Adapt.On.SetBool(false)
-	case RWPrjn:
-		pj.Params.RWPrjnDefaults()
+	case RWPrjn, TDPredPrjn:
+		pj.Params.RLPredPrjnDefaults()
 	}
 }
 
