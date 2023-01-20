@@ -26,14 +26,14 @@ Set 2:  Storage
 
 * Efficient access requires Start, N indexes in data structs and there must be a contiguous layout for each different way of iterating over the data (otherwise require a singleton index array to indirect through, which is not efficient) -- this means both recv and send versions of the PrjnParams, which are constant and not a big deal to duplicate.
 
-* Context (was Time) is the *only* state that is copied from CPU to GPU every cycle.  At end of ThetaCycle, Neurons are grabbed back from GPU -> CPU.
+* Context (was Time) is the *only* state that is copied from CPU to GPU every cycle.  At end of ThetaCycle, Neurons are grabbed back from GPU -> CPU.  Also, LayerVals are copied down from GPU -> CPU, so anything that a layer computes that needs to be accessed in the CPU must be in LayerVals.
 
 * Anything involving direct copying of values between different layers, as happens especially in RL algorithms, should be done in the CPU and copied into Context.  There will be a 1 cycle delay but that is fine.
 
-
-    
     
 # TODO:
+
+* move LayerVals, PrjnVals to separate arrays!
 
 * general renaming for params selectors:
     * .Hidden -> .SuperLayer

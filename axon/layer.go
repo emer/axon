@@ -1260,7 +1260,7 @@ func (ly *Layer) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 }
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
-func (ly *Layer) CycleNeuron(ni uint32, nrn *Neuron, ctx *Context) {
+func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
 	randctr := ctx.RandCtr.Uint2() // use local var so updates are local
 	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, &randctr)
 	ly.AxonLay.SpikeFmG(ctx, ni, nrn)

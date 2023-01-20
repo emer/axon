@@ -34,7 +34,7 @@ import (
 )
 
 // Debug triggers various messages etc
-var Debug = true
+var Debug = false
 
 func main() {
 	TheSim.New()

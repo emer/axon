@@ -17,6 +17,7 @@ import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
+	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/prjn"
@@ -167,7 +168,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 			outLay.ApplyExt(outp)
 
 			net.NewState()
-			ltime.NewState("Train")
+			ltime.NewState(etime.Train)
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					net.Cycle(ltime)
@@ -181,7 +182,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 			net.PlusPhase(ltime)
 			net.DWt(ltime)
 			net.WtFmDWt(ltime)
-			outCorSim += outLay.CorSim.Cor
+			outCorSim += outLay.Vals.CorSim.Cor
 			pSSE := outLay.PctUnitErr()
 			sse += pSSE
 			if pSSE != 0 {
@@ -196,19 +197,19 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 		t := tmr.Stop()
 		tmr.Start()
 		if verbose {
-			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.CorSim.Avg, t)
+			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Vals.CorSim.Avg, t)
 		}
 
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
 		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
-		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.CorSim.Avg))
+		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Vals.CorSim.Avg))
 		epcLog.SetCellFloat("SSE", epc, sse)
 		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
 		epcLog.SetCellFloat("PctErr", epc, pctErr)
 		epcLog.SetCellFloat("PctCor", epc, pctCor)
-		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.Vals.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.Vals.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Vals.ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if verbose {
