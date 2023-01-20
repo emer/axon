@@ -265,7 +265,7 @@ func (pj *PrjnParams) WtFmDWtSyn(ctx *Context, sy *Synapse) {
 func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, sy *Synapse) {
 	sy.DSWt += sy.DWt
 	pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
-	pj.Com.Fail(&sy.Wt, sy.SWt)
+	// pj.Com.Fail(&sy.Wt, sy.SWt) // skipping for now -- not useful actually
 }
 
 // WtFmDWtSynRLPred updates weights from dwt changes

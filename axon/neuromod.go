@@ -19,8 +19,6 @@ type NeuroModVals struct {
 	ACh      float32     `inactive:"+" desc:"acetylcholine -- activated by salient events, particularly at the onset of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS).  Driven by BLA -> PPtg that detects changes in BLA activity"`
 	NE       float32     `inactive:"+" desc:"norepinepherine -- not yet in use"`
 	Ser      float32     `inactive:"+" desc:"serotonin -- not yet in use"`
-
-	pad float32
 }
 
 func (nm *NeuroModVals) Reset() {

@@ -33,7 +33,7 @@ type RWDaParams struct {
 	TonicGe      float32 `desc:"tonic baseline Ge level for DA = 0 -- +/- are between 0 and 2*TonicGe -- just for spiking display of computed DA value"`
 	RWPredLayIdx uint32  `inactive:"+" desc:"idx of RWPredLayer to get reward prediction from -- set during Build from BuildConfig RWPredLayName"`
 
-	pad, pad1, pad2 uint32
+	pad, pad1 uint32
 }
 
 func (rp *RWDaParams) Defaults() {

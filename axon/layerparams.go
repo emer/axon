@@ -39,6 +39,25 @@ type LayerIdxs struct {
 	pad, pad1 uint32
 }
 
+// SetNeuronExtPosNeg sets neuron Ext value based on neuron index
+// with positive values going in first unit, negative values rectified
+// to positive in 2nd unit
+func SetNeuronExtPosNeg(ni uint32, nrn *Neuron, val float32) {
+	if ni == 0 {
+		if val >= 0 {
+			nrn.Ext = val
+		} else {
+			nrn.Ext = 0
+		}
+	} else {
+		if val >= 0 {
+			nrn.Ext = 0
+		} else {
+			nrn.Ext = -val
+		}
+	}
+}
+
 // LayerParams contains all of the layer parameters.
 // These values must remain constant over the course of computation.
 // On the GPU, they are loaded into a uniform.
@@ -182,25 +201,6 @@ func (ly *LayerParams) NeuronGatherSpikesInit(ctx *Context, ni uint32, nrn *Neur
 
 // See prjnparams for NeuronGatherSpikesPrjn
 
-// SetNeuronExtPosNeg sets neuron Ext value based on neuron index
-// with positive values going in first unit, negative values rectified
-// to positive in 2nd unit
-func SetNeuronExtPosNeg(ni uint32, nrn *Neuron, val float32) {
-	if ni == 0 {
-		if val >= 0 {
-			nrn.Ext = val
-		} else {
-			nrn.Ext = 0
-		}
-	} else {
-		if val >= 0 {
-			nrn.Ext = 0
-		} else {
-			nrn.Ext = -val
-		}
-	}
-}
-
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
@@ -226,12 +226,10 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.Rew) // Rew must be set in Context!
 	case RWDaLayer:
-		da := ctx.NeuroMod.DA
-		nrn.GeRaw = ly.RWDa.GeFmDA(da)
+		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.NeuroMod.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case TDDaLayer:
-		da := ctx.NeuroMod.DA
-		nrn.GeRaw = ly.TDDa.GeFmDA(da)
+		nrn.GeRaw = ly.TDDa.GeFmDA(ctx.NeuroMod.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case TDIntegLayer:
 		nrn.SetFlag(NeuronHasExt)
