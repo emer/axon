@@ -29,11 +29,11 @@
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
 
-void DWtSyn(uint si, in PrjnParams pj, inout Synapse sy, in Neuron sn, in Neuron rn, bool isTarget, in Context ctxt) {
-	pj.DWtSyn(sy, sn, rn, isTarget, ctxt);
+void DWtSyn(in Context ctx, uint si, in PrjnParams pj, inout Synapse sy, in Neuron sn, in Neuron rn, bool isTarget) {
+	pj.DWtSyn(ctx, sy, sn, rn, isTarget);
 }
 
-void DWtSendNeurSyn2(uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnParams pj, in Context ctxt) {
+void DWtSendNeurSyn2(in Context ctx, uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnParams pj) {
 	if(pj.Learn.Learn == 0) {
 		return;
 	}
@@ -42,12 +42,12 @@ void DWtSendNeurSyn2(uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnPar
 	uint st = nsi.SynSt;
 	for(uint si = 0; si < nc; si++) {
 		uint sia = si + st;
-		DWtSyn(sia, pj, Synapses[sia], Neurons[nsi.NeurIdx], Neurons[Synapses[sia].RecvNeurIdx], isTarget, ctxt);
+		DWtSyn(ctx, sia, pj, Synapses[sia], Neurons[nsi.NeurIdx], Neurons[Synapses[sia].RecvNeurIdx], isTarget);
 	}
 }
 
-void DWtSendNeurSyn(uint snsi, in NeurSynIdx nsi, in Context ctxt) {
-	DWtSendNeurSyn2(snsi, nsi, Layers[SendPrjns[nsi.PrjnIdx].Idxs.RecvLay], SendPrjns[nsi.PrjnIdx], ctxt);
+void DWtSendNeurSyn(in Context ctx, uint snsi, in NeurSynIdx nsi) {
+	DWtSendNeurSyn2(ctx, snsi, nsi, Layers[SendPrjns[nsi.PrjnIdx].Idxs.RecvLay], SendPrjns[nsi.PrjnIdx]);
 }
 
 
@@ -57,7 +57,7 @@ void main(uint3 idx : SV_DispatchThreadID) { // over SendNeurSynIdxs
 	uint st;
 	SendNeurSynIdxs.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		DWtSendNeurSyn(idx.x, SendNeurSynIdxs[idx.x], Ctxt[0]);
+		DWtSendNeurSyn(Ctxt[0], idx.x, SendNeurSynIdxs[idx.x]);
 	}
 }
 

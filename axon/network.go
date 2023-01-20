@@ -110,32 +110,32 @@ func (nt *Network) NewState() {
 // method through the AxonNetwork interface, thereby ensuring any specialized
 // algorithm-specific version is called as needed (in general, strongly prefer
 // updating the Layer specific version).
-func (nt *Network) Cycle(ctxt *Context) {
-	nt.EmerNet.(AxonNetwork).CycleImpl(ctxt)
+func (nt *Network) Cycle(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).CycleImpl(ctx)
 }
 
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
-func (nt *Network) CycleImpl(ctxt *Context) {
+func (nt *Network) CycleImpl(ctx *Context) {
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.PrjnGatherSpikes(ctxt) }, "PrjnGatherSpikes")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctxt) }, "GiFmSpikes")
-	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctxt) }, "CycleNeuron")
-	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctxt) }, "SendSpike")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctxt) }, "CyclePost") // def NoThread
-	if ctxt.Testing.IsFalse() {
-		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctxt) }, "SendSynCa")
-		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctxt) }, "RecvSynCa")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.PrjnGatherSpikes(ctx) }, "PrjnGatherSpikes")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
+	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
+	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) }, "SendSpike")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
+	if ctx.Testing.IsFalse() {
+		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctx) }, "SendSynCa")
+		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctx) }, "RecvSynCa")
 	}
 }
 
 // MinusPhase does updating after end of minus phase
-func (nt *Network) MinusPhase(ctxt *Context) {
-	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctxt)
+func (nt *Network) MinusPhase(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctx)
 }
 
 // PlusPhase does updating after end of plus phase
-func (nt *Network) PlusPhase(ctxt *Context) {
-	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctxt)
+func (nt *Network) PlusPhase(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctx)
 }
 
 // TargToExt sets external input Ext from target values Target
@@ -162,34 +162,34 @@ func (nt *Network) ClearTargExt() {
 }
 
 // SpkSt1 saves current acts into SpkSt1 (using SpkCaP)
-func (nt *Network) SpkSt1(ctxt *Context) {
+func (nt *Network) SpkSt1(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt1(ctxt)
+		ly.(AxonLayer).SpkSt1(ctx)
 	}
 }
 
 // SpkSt2 saves current acts into SpkSt2 (using SpkCaP)
-func (nt *Network) SpkSt2(ctxt *Context) {
+func (nt *Network) SpkSt2(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt2(ctxt)
+		ly.(AxonLayer).SpkSt2(ctx)
 	}
 }
 
 // DWt computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWt(ctxt *Context) {
-	nt.EmerNet.(AxonNetwork).DWtImpl(ctxt)
+func (nt *Network) DWt(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).DWtImpl(ctx)
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
 // Also calls SynScale every Interval times
-func (nt *Network) WtFmDWt(ctxt *Context) {
-	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ctxt)
+func (nt *Network) WtFmDWt(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ctx)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -335,36 +335,36 @@ func (nt *Network) NewStateImpl() {
 }
 
 // MinusPhaseImpl does updating after end of minus phase
-func (nt *Network) MinusPhaseImpl(ctxt *Context) {
+func (nt *Network) MinusPhaseImpl(ctx *Context) {
 	// not worth threading this probably
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).MinusPhase(ctxt)
+		ly.(AxonLayer).MinusPhase(ctx)
 	}
 }
 
 // PlusPhaseImpl does updating after end of plus phase
-func (nt *Network) PlusPhaseImpl(ctxt *Context) {
+func (nt *Network) PlusPhaseImpl(ctx *Context) {
 	// not worth threading this probably
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).PlusPhase(ctxt)
+		ly.(AxonLayer).PlusPhase(ctx)
 	}
-	nt.CTCtxt(ctxt)
+	nt.CTCtxt(ctx)
 }
 
 // CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
-func (nt *Network) CTCtxt(ctxt *Context) {
+func (nt *Network) CTCtxt(ctx *Context) {
 	nt.LayerMapSeq(func(ly AxonLayer) {
-		ly.SendCtxtGe(ctxt)
+		ly.SendCtxtGe(ctx)
 	}, "SendCtxtGe")
 
 	nt.LayerMapSeq(func(ly AxonLayer) {
-		ly.CtxtFmGe(ctxt)
+		ly.CtxtFmGe(ctx)
 	}, "CtxtFmGe")
 }
 
@@ -372,34 +372,34 @@ func (nt *Network) CTCtxt(ctxt *Context) {
 //  Learn methods
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWtImpl(ctxt *Context) {
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctxt) }, "DWtLayer") // def no thr
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctxt) }, "DWt")             // def thread
+func (nt *Network) DWtImpl(ctx *Context) {
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt")             // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
-func (nt *Network) WtFmDWtImpl(ctxt *Context) {
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctxt) }, "DWtSubMean")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctxt) }, "WtFmDWtLayer") // def no
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctxt) }, "WtFmDWt")
-	nt.EmerNet.(AxonNetwork).SlowAdapt(ctxt)
+func (nt *Network) WtFmDWtImpl(ctx *Context) {
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // def no
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+	nt.EmerNet.(AxonNetwork).SlowAdapt(ctx)
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // GScale conductance scaling, and adapting inhibition
-func (nt *Network) SlowAdapt(ctxt *Context) {
+func (nt *Network) SlowAdapt(ctx *Context) {
 	nt.SlowCtr++
 	if nt.SlowCtr < nt.SlowInterval {
 		return
 	}
 	nt.SlowCtr = 0
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctxt) }, "SlowAdapt")
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctxt) }, "SlowAdapt")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
 }
 
 // SynFail updates synaptic failure
-func (nt *Network) SynFail(ctxt *Context) {
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SynFail(ctxt) }, "SynFail")
+func (nt *Network) SynFail(ctx *Context) {
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SynFail(ctx) }, "SynFail")
 }
 
 // LRateMod sets the LRate modulation parameter for Prjns, which is

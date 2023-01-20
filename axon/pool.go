@@ -46,7 +46,7 @@ func (pl *Pool) NNeurons() int {
 
 // TopoGi computes topographic Gi inhibition
 // todo: this does not work for 2D layers, and in general needs more testing
-func (ly *Layer) TopoGi(ctxt *Context) {
+func (ly *Layer) TopoGi(ctx *Context) {
 	if !ly.Params.Inhib.Topo.On {
 		return
 	}

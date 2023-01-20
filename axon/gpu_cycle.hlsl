@@ -29,14 +29,14 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<SynIdx> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurs][Syns]
 [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
-void NeuronGatherSpikesPrjn(in LayerParams ly, in PrjnParams pj, uint ni, inout Neuron nrn, in Context ctxt) {
-	pj.NeuronGatherSpikesPrjn(RecvPrjnGVals[pj.Idxs.RecvPrjnGVSt + ni], ni, nrn, ctxt);
+void NeuronGatherSpikesPrjn(in Context ctx, in LayerParams ly, in PrjnParams pj, uint ni, inout Neuron nrn) {
+	pj.NeuronGatherSpikesPrjn(ctx, RecvPrjnGVals[pj.Idxs.RecvPrjnGVSt + ni], ni, nrn);
 }
 
-void NeuronGatherSpikes(in LayerParams ly, uint ni, inout Neuron nrn, in Context ctxt) {
-	ly.NeuronGatherSpikesInit(ni, nrn, ctxt);
+void NeuronGatherSpikes(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn) {
+	ly.NeuronGatherSpikesInit(ctx, ni, nrn);
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		NeuronGatherSpikesPrjn(ly, RecvPrjns[ly.Idxs.RecvSt + pi], ni, nrn, ctxt);
+		NeuronGatherSpikesPrjn(ctx, ly, RecvPrjns[ly.Idxs.RecvSt + pi], ni, nrn);
 	}
 }
 
@@ -51,12 +51,12 @@ void PulvinarDriver(in LayerParams ly, in LayerParams dly, in LayerVals vals, ui
 	}
 }
 
-void CycleNeuron2(in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, float giMult, in Context ctxt) {
+void CycleNeuron2(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, float giMult) {
 	// Note: following is same as Layer.GInteg
 	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
-	uint2 randctr = ctxt.RandCtr.Uint2();
+	uint2 randctr = ctx.RandCtr.Uint2();
 	
-	NeuronGatherSpikes(ly, lni, nrn, ctxt);
+	NeuronGatherSpikes(ctx, ly, lni, nrn);
 	
 	float drvGe = 0;
 	float nonDrvPct = 0;
@@ -64,19 +64,19 @@ void CycleNeuron2(in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, floa
 		PulvinarDriver(ly, Layers[ly.Pulv.DriveLayIdx], LayVals[ly.Pulv.DriveLayIdx], ni, drvGe, nonDrvPct);
 	}
 
-	float saveVal = ly.SpecialPreGs(ni, nrn, drvGe, nonDrvPct, ctxt, randctr);
+	float saveVal = ly.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct, randctr);
 	
-	ly.GFmRawSyn(lni, nrn, ctxt, randctr);
-	ly.GiInteg(lni, nrn, pl, giMult, ctxt);
+	ly.GFmRawSyn(ctx, lni, nrn, randctr);
+	ly.GiInteg(ctx, lni, nrn, pl, giMult);
 	
-	ly.SpecialPostGs(ni, nrn, ctxt, randctr, 0);
+	ly.SpecialPostGs(ctx, ni, nrn, randctr, 0);
 	// end GInteg
 	
-	ly.SpikeFmG(lni, nrn, ctxt);
+	ly.SpikeFmG(ctx, lni, nrn);
 }
 
-void CycleNeuron(uint ni, inout Neuron nrn, in Context ctxt) {
-	CycleNeuron2(Layers[nrn.LayIdx], ni, nrn, Pools[nrn.SubPoolG], LayVals[nrn.LayIdx].ActAvg.GiMult, ctxt);
+void CycleNeuron(in Context ctx, uint ni, inout Neuron nrn) {
+	CycleNeuron2(ctx, Layers[nrn.LayIdx], ni, nrn, Pools[nrn.SubPoolG], LayVals[nrn.LayIdx].ActAvg.GiMult);
 }
 
 [numthreads(64, 1, 1)]
@@ -85,7 +85,7 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	uint st;
 	Neurons.GetDimensions(ns, st);
 	if (idx.x < ns) {
-		CycleNeuron(idx.x, Neurons[idx.x], Ctxt[0]);
+		CycleNeuron(Ctxt[0], idx.x, Neurons[idx.x]);
 	}
 }
 

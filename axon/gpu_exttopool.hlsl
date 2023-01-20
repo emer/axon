@@ -27,18 +27,18 @@
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
 
-void GeExtToPool2(in LayerParams ly, inout Pool pl, uint ni, in Neuron nrn, in Context ctxt) {
+void GeExtToPool2(in Context ctx, in LayerParams ly, inout Pool pl, uint ni, in Neuron nrn) {
 	uint lni = ni - ly.Idxs.NeurSt; // layer-based as in Go
 	bool subPool = (pl.IsLayPool==0);
 	if(subPool) {
-		ly.GeExtToPool(lni, nrn, pl, Pools[pl.LayPoolIdx], subPool, ctxt);
+		ly.GeExtToPool(ctx, lni, nrn, pl, Pools[pl.LayPoolIdx], subPool);
 	} else {
-		ly.GeExtToPool(lni, nrn, pl, pl, subPool, ctxt);
+		ly.GeExtToPool(ctx, lni, nrn, pl, pl, subPool);
 	}
 }
 
-void GeExtToPool(uint ni, inout Neuron nrn, in Context ctxt) {
-	GeExtToPool2(Layers[nrn.LayIdx], Pools[nrn.SubPoolG], ni, nrn, ctxt);
+void GeExtToPool(in Context ctx, uint ni, inout Neuron nrn) {
+	GeExtToPool2(ctx, Layers[nrn.LayIdx], Pools[nrn.SubPoolG], ni, nrn);
 }
 
 [numthreads(64, 1, 1)]
@@ -47,7 +47,7 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	uint st;
 	Neurons.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		GeExtToPool(idx.x, Neurons[idx.x], Ctxt[0]);
+		GeExtToPool(Ctxt[0], idx.x, Neurons[idx.x]);
 	}
 }
 

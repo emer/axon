@@ -15,4 +15,11 @@ type NeuroModVals struct {
 	Ser float32 `inactive:"+" desc:"serotonin -- not yet in use"`
 }
 
+func (nm *NeuroModVals) Reset() {
+	nm.DA = 0
+	nm.ACh = 0
+	nm.NE = 0
+	nm.Ser = 0
+}
+
 //gosl: end neuromod

@@ -40,7 +40,7 @@ type Context struct {
 	pad, pad1 int32
 
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-	NeuroMod NeuroModVals   `desc:"neuromodulatory state values -- these are computed separately on the CPU at end of each Cycle."`
+	NeuroMod NeuroModVals   `desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
 }
 
 // Defaults sets default values
@@ -73,7 +73,7 @@ func (tm *Context) CycleInc() {
 	tm.Cycle++
 	tm.CycleTot++
 	tm.Time += tm.TimePerCyc
-	tm.RandCtr.Add(tm.RandsPerCyc) // todo: will be uint32
+	tm.RandCtr.Add(tm.RandsPerCyc)
 }
 
 //gosl: end time
@@ -91,6 +91,7 @@ func (tm *Context) Reset() {
 		tm.Defaults()
 	}
 	tm.RandCtr.Reset()
+	tm.NeuroMod.Reset()
 }
 
 // NewContext returns a new Time struct with default parameters

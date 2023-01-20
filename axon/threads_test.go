@@ -26,8 +26,8 @@ func TestMultithreadingCycleFun(t *testing.T) {
 	pats := generateRandomPatterns(100)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 16, 16)
 
-	fun := func(net *Network, ctxt *Context) {
-		net.Cycle(ctxt)
+	fun := func(net *Network, ctx *Context) {
+		net.Cycle(ctx)
 	}
 
 	runFunEpochs(pats, netS, fun, 2)
@@ -47,8 +47,8 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netA, netB := buildIdenticalNetworks(t, pats, 1, 1, 1)
 
-	fun := func(net *Network, ctxt *Context) {
-		net.Cycle(ctxt)
+	fun := func(net *Network, ctx *Context) {
+		net.Cycle(ctx)
 	}
 
 	// by splitting the epochs into three parts for netB, we make sure that the
@@ -74,8 +74,8 @@ func TestMultithreadedSendSpike(t *testing.T) {
 	// goroutines are cheap, they barely cost any memory
 	netS, netM := buildIdenticalNetworks(t, pats, 1, 16, 1)
 
-	fun := func(net *Network, ctxt *Context) {
-		net.Cycle(ctxt)
+	fun := func(net *Network, ctx *Context) {
+		net.Cycle(ctx)
 	}
 
 	runFunEpochs(pats, netM, fun, 2)
@@ -94,8 +94,8 @@ func TestMultithreadedNeuronFun(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 1, 1)
 
-	fun := func(net *Network, ctxt *Context) {
-		net.Cycle(ctxt)
+	fun := func(net *Network, ctx *Context) {
+		net.Cycle(ctx)
 	}
 
 	runFunEpochs(pats, netM, fun, 3)
@@ -114,8 +114,8 @@ func TestMultithreadedSynCa(t *testing.T) {
 	pats := generateRandomPatterns(10)
 	netS, netM := buildIdenticalNetworks(t, pats, 16, 1, 16)
 
-	fun := func(net *Network, ctxt *Context) {
-		net.Cycle(ctxt)
+	fun := func(net *Network, ctx *Context) {
+		net.Cycle(ctx)
 	}
 
 	runFunEpochs(pats, netM, fun, 3)
@@ -274,10 +274,10 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 	// inputLayer.ApplyExt(input)
 	// outputLayer.ApplyExt(output)
 	// netS.NewState()
-	// ctxt := NewContext()
-	// ctxt.NewState("train")
+	// ctx := NewContext()
+	// ctx.NewState("train")
 	// for i := 0; i < 150; i++ {
-	// 	netS.Cycle(ctxt)
+	// 	netS.Cycle(ctx)
 	// }
 
 	// // sync the weights
@@ -335,7 +335,7 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Context)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
 	inputLayer := net.LayerByName("Input").(*Layer)
 	outputLayer := net.LayerByName("Output").(*Layer)
-	ctxt := NewContext()
+	ctx := NewContext()
 	for epoch := 0; epoch < epochs; epoch++ {
 		for pi := 0; pi < pats.NumRows(); pi++ {
 			input := inPats.SubSpace([]int{pi})
@@ -345,9 +345,9 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Context)
 			outputLayer.ApplyExt(output)
 
 			net.NewState()
-			ctxt.NewState(etime.Train)
+			ctx.NewState(etime.Train)
 			for cycle := 0; cycle < nCycles; cycle++ {
-				fun(net, ctxt)
+				fun(net, ctx)
 			}
 		}
 	}

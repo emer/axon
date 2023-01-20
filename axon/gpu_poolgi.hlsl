@@ -28,14 +28,14 @@
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
 
-void PoolGi2(uint pi, inout Pool pl, in LayerParams ly, float giMult, in Context ctxt) {
+void PoolGi2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, float giMult) {
 	if(pl.IsLayPool == 0) {
-		ly.SubPoolGiFmSpikes(pl, Pools[pl.LayPoolIdx], ly.Inhib.Layer.On == 1, giMult, ctxt);
+		ly.SubPoolGiFmSpikes(ctx, pl, Pools[pl.LayPoolIdx], ly.Inhib.Layer.On == 1, giMult);
 	}
 }
 
-void PoolGi(uint pi, inout Pool pl, in Context ctxt) {
-	PoolGi2(pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx].ActAvg.GiMult, ctxt);
+void PoolGi(in Context ctx, uint pi, inout Pool pl) {
+	PoolGi2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx].ActAvg.GiMult);
 }
 
 [numthreads(64, 1, 1)]
@@ -44,7 +44,7 @@ void main(uint3 idx : SV_DispatchThreadID) {
 	uint st;
 	Pools.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		PoolGi(idx.x, Pools[idx.x], Ctxt[0]);
+		PoolGi(Ctxt[0], idx.x, Pools[idx.x]);
 	}
 }
 

@@ -24,6 +24,8 @@ func (rp *RWPredParams) Update() {
 
 // RWDaParams computes a dopamine (DA) signal using simple Rescorla-Wagner
 // learning dynamic (i.e., PV learning in the PVLV framework).
+// This entire computation happens CPU-side in PostCycle, via
+// direct access to other layer state.
 type RWDaParams struct {
 	RewLayIdx    uint32 `desc:"reward layer index"`
 	RWPredLayIdx uint32 `desc:"RWPredLayer layer index"`
@@ -37,15 +39,6 @@ func (rp *RWDaParams) Defaults() {
 
 func (rp *RWDaParams) Update() {
 
-}
-
-// RWDaVals are values computed in CPU and available to
-// the GPU during update of RWDaLayer in the Time struct
-type RWDaVals struct {
-	RewLayIdx    uint32 `desc:"reward layer index"`
-	RWPredLayIdx uint32 `desc:"RWPredLayer layer index"`
-
-	pad, pad1 uint32
 }
 
 //gosl: end rl_layers

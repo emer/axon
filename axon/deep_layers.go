@@ -119,7 +119,7 @@ func (ly *LayerParams) PulvLayerDefaults() {
 // SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
 // CtxtGe excitatory conductance on CT layers.
 // This should be called at the end of the Plus (5IB Burst) phase via Network.CTCtxt
-func (ly *Layer) SendCtxtGe(ctxt *Context) {
+func (ly *Layer) SendCtxtGe(ctx *Context) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() || nrn.CaSpkP < 0.1 {
@@ -142,7 +142,7 @@ func (ly *Layer) SendCtxtGe(ctxt *Context) {
 // CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
 // overall Ctxt value, only on CT layers.
 // This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
-func (ly *Layer) CtxtFmGe(ctxt *Context) {
+func (ly *Layer) CtxtFmGe(ctx *Context) {
 	if ly.LayerType() != CTLayer {
 		return
 	}

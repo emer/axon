@@ -26,15 +26,15 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<SynIdx> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurs][Syns]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
-void LayGi(uint li, in LayerParams ly, in Context ctxt) {
-	ly.LayPoolGiFmSpikes(Pools[ly.Idxs.Pool], LayVals[li], ctxt);
+void LayGi(in Context ctx, uint li, in LayerParams ly) {
+	ly.LayPoolGiFmSpikes(ctx, Pools[ly.Idxs.Pool], LayVals[li]);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) {
 	// todo: need NLayers, NPrjns as fast params
 	// if(idx.x < ns) {
-	LayGi(idx.x, Layers[idx.x], Ctxt[0]);
+	LayGi(Ctxt[0], idx.x, Layers[idx.x]);
 	// }
 }
 
