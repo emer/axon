@@ -16,21 +16,22 @@ import (
 // LayerBase manages the structural elements of the layer, which are common
 // to any Layer type. The main Layer then can just have the algorithm-specific code.
 type LayerBase struct {
-	AxonLay   AxonLayer      `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Network   emer.Network   `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
-	Nm        string         `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
-	Cls       string         `desc:"Class is for applying parameter styles, can be space separated multple tags"`
-	Off       bool           `desc:"inactivate this layer -- allows for easy experimentation"`
-	Shp       etensor.Shape  `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
-	Typ       emer.LayerType `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
-	Rel       relpos.Rel     `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
-	Ps        mat32.Vec3     `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
-	Idx       int            `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
-	NeurStIdx int            `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
-	RepIxs    []int          `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
-	RepShp    etensor.Shape  `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
-	RcvPrjns  AxonPrjns      `desc:"list of receiving projections into this layer from other layers"`
-	SndPrjns  AxonPrjns      `desc:"list of sending projections from this layer to other layers"`
+	AxonLay     AxonLayer         `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Network     emer.Network      `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
+	Nm          string            `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
+	Cls         string            `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Off         bool              `desc:"inactivate this layer -- allows for easy experimentation"`
+	Shp         etensor.Shape     `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
+	Typ         emer.LayerType    `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
+	Rel         relpos.Rel        `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
+	Ps          mat32.Vec3        `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
+	Idx         int               `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
+	NeurStIdx   int               `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
+	RepIxs      []int             `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
+	RepShp      etensor.Shape     `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
+	RcvPrjns    AxonPrjns         `desc:"list of receiving projections into this layer from other layers"`
+	SndPrjns    AxonPrjns         `desc:"list of sending projections from this layer to other layers"`
+	BuildConfig map[string]string `desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
 }
 
 // emer.Layer interface methods
@@ -42,6 +43,7 @@ func (ls *LayerBase) InitName(lay emer.Layer, name string, net emer.Network) {
 	ls.AxonLay = lay.(AxonLayer)
 	ls.Nm = name
 	ls.Network = net
+	ls.BuildConfig = make(map[string]string)
 }
 
 // todo: remove from emer.Layer api

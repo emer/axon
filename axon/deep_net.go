@@ -93,7 +93,7 @@ func (nt *Network) AddPulvForSuper(super emer.Layer, space float32) emer.Layer {
 	} else {
 		plv = nt.AddPulvLayer4D(name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
-	plv.(AxonLayer).AsAxon().Params.Pulv.DriveLayIdx = uint32(super.Index())
+	plv.(AxonLayer).AsAxon().BuildConfig["DriveLayName"] = name
 	plv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: space})
 	return plv
 }
@@ -139,7 +139,7 @@ func (nt *Network) ConnectSuperToCT(send, recv emer.Layer, pat prjn.Pattern) eme
 func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32) (emer.Layer, *Layer) {
 	in := nt.AddLayer2D(name, nNeurY, nNeurX, emer.Input)
 	pulv := nt.AddPulvLayer2D(name+"P", nNeurY, nNeurX)
-	pulv.Params.Pulv.DriveLayIdx = uint32(in.Index())
+	pulv.BuildConfig["DriveLayName"] = name
 	in.SetClass(name)
 	pulv.SetClass(name)
 	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
@@ -152,7 +152,7 @@ func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32
 func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (emer.Layer, *Layer) {
 	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, emer.Input)
 	pulv := nt.AddPulvLayer4D(name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
-	pulv.Params.Pulv.DriveLayIdx = uint32(in.Index())
+	pulv.BuildConfig["DriveLayName"] = name
 	in.SetClass(name)
 	pulv.SetClass(name)
 	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})

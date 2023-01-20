@@ -77,8 +77,12 @@ type AxonLayer interface {
 	AsAxon() *Layer
 
 	// NeurStartIdx is the starting index in global network slice of neurons for
-	// neurons in this layer
+	// neurons in this layer -- convenience interface method for threading dispatch.
 	NeurStartIdx() int
+
+	// PostBuild performs special post-Build() configuration steps for specific algorithms,
+	// using configuration data set in BuildConfig during the ConfigNet process.
+	PostBuild()
 
 	// InitWts initializes the weight values in the network, i.e., resetting learning
 	// Also calls InitActs

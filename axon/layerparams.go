@@ -266,9 +266,9 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, vals *Lay
 			}
 			nrn.Burst = burst
 		}
-	// case RewLayer:
-	// 	nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
-	// 	nrn.ActInt = nrn.Act
+	case RewLayer:
+		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
+		nrn.ActInt = nrn.Act
 	case RWPredLayer:
 		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
 		nrn.ActInt = nrn.Act

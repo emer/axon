@@ -491,7 +491,29 @@ func (ly *Layer) Build() error {
 		return err
 	}
 	err = ly.BuildPrjns()
+	ly.AxonLay.PostBuild()
 	return err
+}
+
+// BuildConfigByName looks for given BuildConfig option by name,
+// and reports & returns an error if not found.
+func (ly *Layer) BuildConfigByName(nm string) (string, error) {
+	cfg, ok := ly.BuildConfig[nm]
+	if !ok {
+		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
+		log.Println(err)
+		return cfg, err
+	}
+	return cfg, nil
+}
+
+// PostBuild performs special post-Build() configuration steps for specific algorithms,
+// using configuration data set in BuildConfig during the ConfigNet process.
+func (ly *Layer) PostBuild() {
+	switch ly.LayerType() {
+	case PulvinarLayer:
+		ly.PulvPostBuild()
+	}
 }
 
 // WriteWtsJSON writes the weights from this layer from the receiver-side perspective
