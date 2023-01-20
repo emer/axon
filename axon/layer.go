@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -29,10 +28,8 @@ import (
 // and manages learning in the projections.
 type Layer struct {
 	LayerBase
-	Params  *LayerParams `desc:"all layer-level parameters -- these must remain constant once configured"`
-	Vals    *LayerVals   `desc:"layer-level state values that are updated during computation"`
-	Neurons []Neuron     `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
-	Pools   []Pool       `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
+	Params *LayerParams `desc:"all layer-level parameters -- these must remain constant once configured"`
+	Vals   *LayerVals   `desc:"layer-level state values that are updated during computation"`
 }
 
 var KiT_Layer = kit.Types.AddType(&Layer{}, LayerProps)
@@ -68,8 +65,18 @@ func (ly *Layer) Defaults() {
 		ly.Params.CTLayerDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvLayerDefaults()
+	case RewLayer:
+		ly.Params.RWLayerDefaults()
 	case RWPredLayer:
+		ly.Params.RWLayerDefaults()
 		ly.Params.RWPredLayerDefaults()
+	case RWDaLayer:
+		ly.Params.RWLayerDefaults()
+	case TDPredLayer:
+		ly.Params.TDLayerDefaults()
+		ly.Params.TDPredLayerDefaults()
+	case TDIntegLayer, TDDaLayer:
+		ly.Params.TDLayerDefaults()
 	}
 }
 
@@ -98,6 +105,21 @@ func (ly *Layer) UpdateParams() {
 	}
 }
 
+// PostBuild performs special post-Build() configuration steps for specific algorithms,
+// using configuration data set in BuildConfig during the ConfigNet process.
+func (ly *Layer) PostBuild() {
+	switch ly.LayerType() {
+	case PulvinarLayer:
+		ly.PulvPostBuild()
+	case RWDaLayer:
+		ly.RWDaPostBuild()
+	case TDIntegLayer:
+		ly.TDIntegPostBuild()
+	case TDDaLayer:
+		ly.TDDaPostBuild()
+	}
+}
+
 // HasPoolInhib returns true if the layer is using pool-level inhibition (implies 4D too).
 // This is the proper check for using pool-level target average activations, for example.
 func (ly *Layer) HasPoolInhib() bool {
@@ -109,15 +131,6 @@ func (ly *Layer) HasPoolInhib() bool {
 // need to include accessors to all the basic stuff
 func (ly *Layer) AsAxon() *Layer {
 	return ly
-}
-
-// LayerType returns axon specific cast of ly.Typ layer type
-func (ly *Layer) LayerType() LayerTypes {
-	return LayerTypes(ly.Typ)
-}
-
-func (ly *Layer) Class() string {
-	return ly.LayerType().String() + " " + ly.Cls
 }
 
 // JsonToParams reformates json output to suitable params display output
@@ -389,136 +402,6 @@ func (ly *Layer) SendPrjnVals(vals *[]float32, varNm string, recvLay emer.Layer,
 	return nil
 }
 
-// Pool returns pool at given index
-func (ly *Layer) Pool(idx int) *Pool {
-	return &(ly.Pools[idx])
-}
-
-// PoolTry returns pool at given index, returns error if index is out of range
-func (ly *Layer) PoolTry(idx int) (*Pool, error) {
-	np := len(ly.Pools)
-	if idx < 0 || idx >= np {
-		return nil, fmt.Errorf("Layer Pool index: %v out of range, N = %v", idx, np)
-	}
-	return &(ly.Pools[idx]), nil
-}
-
-func (ly *Layer) SendNameTry(sender string) (emer.Prjn, error) {
-	return emer.SendNameTry(ly, sender)
-}
-func (ly *Layer) SendNameTypeTry(sender, typ string) (emer.Prjn, error) {
-	return emer.SendNameTypeTry(ly, sender, typ)
-}
-func (ly *Layer) RecvNameTry(receiver string) (emer.Prjn, error) {
-	return emer.RecvNameTry(ly, receiver)
-}
-func (ly *Layer) RecvNameTypeTry(receiver, typ string) (emer.Prjn, error) {
-	return emer.RecvNameTypeTry(ly, receiver, typ)
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Build
-
-// BuildSubPools initializes neuron start / end indexes for sub-pools
-func (ly *Layer) BuildSubPools() {
-	if !ly.Is4D() {
-		return
-	}
-	sh := ly.Shp.Shapes()
-	spy := sh[0]
-	spx := sh[1]
-	pi := 1
-	for py := 0; py < spy; py++ {
-		for px := 0; px < spx; px++ {
-			soff := uint32(ly.Shp.Offset([]int{py, px, 0, 0}))
-			eoff := uint32(ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
-			pl := &ly.Pools[pi]
-			pl.StIdx = soff
-			pl.EdIdx = eoff
-			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-				nrn := &ly.Neurons[ni]
-				nrn.SubPool = uint32(pi)
-			}
-			pi++
-		}
-	}
-}
-
-// BuildPools builds the inhibitory pools structures -- nu = number of units in layer
-func (ly *Layer) BuildPools(nu int) error {
-	np := 1 + ly.NPools()
-	ly.Pools = make([]Pool, np)
-	lpl := &ly.Pools[0]
-	lpl.StIdx = 0
-	lpl.EdIdx = uint32(nu)
-	if np > 1 {
-		ly.BuildSubPools()
-	}
-	return nil
-}
-
-// BuildPrjns builds the projections, recv-side
-func (ly *Layer) BuildPrjns() error {
-	emsg := ""
-	for _, pj := range ly.RcvPrjns {
-		if pj.IsOff() {
-			continue
-		}
-		err := pj.Build()
-		if err != nil {
-			emsg += err.Error() + "\n"
-		}
-	}
-	if emsg != "" {
-		return errors.New(emsg)
-	}
-	return nil
-}
-
-// Build constructs the layer state, including calling Build on the projections
-func (ly *Layer) Build() error {
-	nu := ly.Shp.Len()
-	if nu == 0 {
-		return fmt.Errorf("Build Layer %v: no units specified in Shape", ly.Nm)
-	}
-	// note: ly.Neurons are allocated by Network from global network pool
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		nrn.NeurIdx = uint32(ni)
-		nrn.LayIdx = uint32(ly.Idx)
-	}
-	err := ly.BuildPools(nu)
-	if err != nil {
-		return err
-	}
-	err = ly.BuildPrjns()
-	ly.AxonLay.PostBuild()
-	return err
-}
-
-// BuildConfigByName looks for given BuildConfig option by name,
-// and reports & returns an error if not found.
-func (ly *Layer) BuildConfigByName(nm string) (string, error) {
-	cfg, ok := ly.BuildConfig[nm]
-	if !ok {
-		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
-		log.Println(err)
-		return cfg, err
-	}
-	return cfg, nil
-}
-
-// PostBuild performs special post-Build() configuration steps for specific algorithms,
-// using configuration data set in BuildConfig during the ConfigNet process.
-func (ly *Layer) PostBuild() {
-	switch ly.LayerType() {
-	case PulvinarLayer:
-		ly.PulvPostBuild()
-	case RWDaLayer:
-		ly.RWDaPostBuild()
-	}
-}
-
 // WriteWtsJSON writes the weights from this layer from the receiver-side perspective
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
@@ -679,34 +562,6 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 	}
 	ly.AvgDifFmTrgAvg() // update AvgPct based on loaded ActAvg values
 	return err
-}
-
-// VarRange returns the min / max values for given variable
-// todo: support r. s. projection values
-func (ly *Layer) VarRange(varNm string) (min, max float32, err error) {
-	sz := len(ly.Neurons)
-	if sz == 0 {
-		return
-	}
-	vidx := 0
-	vidx, err = NeuronVarIdxByName(varNm)
-	if err != nil {
-		return
-	}
-
-	v0 := ly.Neurons[0].VarByIndex(vidx)
-	min = v0
-	max = v0
-	for i := 1; i < sz; i++ {
-		vl := ly.Neurons[i].VarByIndex(vidx)
-		if vl < min {
-			min = vl
-		}
-		if vl > max {
-			max = vl
-		}
-	}
-	return
 }
 
 // note: all basic computation can be performed on layer-level and prjn level

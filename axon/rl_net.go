@@ -34,8 +34,8 @@ func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float3
 	nt.AddLayerInit(ri, prefix+"RewInteg", []int{1, 2}, emer.LayerType(TDIntegLayer))
 	td = &Layer{}
 	nt.AddLayerInit(td, prefix+"TD", []int{1, 1}, emer.LayerType(TDDaLayer))
-	ri.(*Layer).BuildConfig["RewPredLayName"] = rp.Name()
-	td.(*Layer).BuildConfig["RewIntegLayName"] = ri.Name()
+	ri.(*Layer).BuildConfig["TDPredLayName"] = rp.Name()
+	td.(*Layer).BuildConfig["TDIntegLayName"] = ri.Name()
 	if rel == relpos.Behind {
 		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), XAlign: relpos.Left, Space: space})
 		ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), XAlign: relpos.Left, Space: space})

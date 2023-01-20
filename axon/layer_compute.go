@@ -12,8 +12,7 @@ import (
 	"github.com/goki/mat32"
 )
 
-// layer_compute.go
-// this file has the subset of
+// layer_compute.go has the core computational methods, which are also called by GPU
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
@@ -175,17 +174,27 @@ func (ly *Layer) CyclePost(ctx *Context) {
 	case TDIntegLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
-		pred := pvals.Special.V1 - pvals.Special.V2
+		pred := pvals.Special.V1 - pvals.Special.V2 // neuron0 (pos) - neuron1 (neg)
 		rew := float32(0)
 		if ctx.NeuroMod.HasRew.IsTrue() {
 			rew = ctx.NeuroMod.Rew
 		}
 		rg := ly.Params.TDInteg.PredGain * pred
 		rpval := rg
-		if !ctx.PlusPhase.IsTrue() {
-			rpval += rew
+		if ctx.PlusPhase.IsTrue() {
+			rpval = ly.Params.TDInteg.Discount * (rew + pred)
 		}
-		// ok, now what to do with rpval??
+		ctx.NeuroMod.RewPred = rpval // global value will be copied to layers next cycle
+	case TDDaLayer:
+		net := ly.Network.(AxonNetwork).AsAxon()
+		pvals := net.LayVals[ly.Params.RWDa.RWPredLayIdx]
+		pred := pvals.Special.V1 - pvals.Special.V2
+		da := float32(0)
+		if ctx.NeuroMod.HasRew.IsTrue() {
+			da = ctx.NeuroMod.Rew - pred
+		}
+		ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
+		ly.Vals.NeuroMod.DA = da
 	}
 }
 

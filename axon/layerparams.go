@@ -61,7 +61,8 @@ type LayerParams struct {
 	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
 	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
-	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" desc:"parameterizes reward integration layer"`
+	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" desc:"parameterizes TD reward integration layer"`
+	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
 }
@@ -76,6 +77,7 @@ func (ly *LayerParams) Update() {
 	ly.RWPred.Update()
 	ly.RWDa.Update()
 	ly.TDInteg.Update()
+	ly.TDDa.Update()
 }
 
 func (ly *LayerParams) Defaults() {
@@ -91,6 +93,7 @@ func (ly *LayerParams) Defaults() {
 	ly.RWPred.Defaults()
 	ly.RWDa.Defaults()
 	ly.TDInteg.Defaults()
+	ly.TDDa.Defaults()
 }
 
 // AllParams returns a listing of all parameters in the Layer
@@ -122,9 +125,12 @@ func (ly *LayerParams) AllParams() string {
 	case RWDaLayer:
 		b, _ = json.MarshalIndent(&ly.RWDa, "", " ")
 		str += "RWDa:   {\n " + JsonToParams(b)
-	case TDPredLayer:
+	case TDIntegLayer:
 		b, _ = json.MarshalIndent(&ly.TDInteg, "", " ")
 		str += "TDInteg: {\n " + JsonToParams(b)
+	case TDDaLayer:
+		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
+		str += "TDDa: {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -221,15 +227,15 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.Rew) // Rew must be set in Context!
 	case RWDaLayer:
 		da := ctx.NeuroMod.DA
-		nrn.GeRaw = 0.3 + 0.3*da
+		nrn.GeRaw = ly.RWDa.GeFmDA(da)
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case TDDaLayer:
+		da := ctx.NeuroMod.DA
+		nrn.GeRaw = ly.TDDa.GeFmDA(da)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case TDIntegLayer:
 		nrn.SetFlag(NeuronHasExt)
-		SetNeuronExtPosNeg(ni, nrn, .5) // todo: need rpAct
-	case TDDaLayer:
-		da := ctx.NeuroMod.DA
-		nrn.GeRaw = 0.3 + 0.3*da
-		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
 	}
 	return saveVal
 }

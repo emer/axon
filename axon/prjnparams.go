@@ -76,7 +76,7 @@ type PrjnParams struct {
 	pad, pad1, pad2 int32
 
 	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
-	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
+	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters for computing GScale: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
 	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
 	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
 	GScale    GScaleVals      `view:"inline" desc:"conductance scaling values"`

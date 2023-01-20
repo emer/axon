@@ -38,10 +38,10 @@ func (cd *CorSimStats) Init() {
 	cd.Avg = 0
 }
 
-// LaySpecVals holds special values used to communicate to other layers
+// LaySpecialVals holds special values used to communicate to other layers
 // based on neural values, used for special algorithms such as RL where
 // some of the computation is done algorithmically.
-type LaySpecVals struct {
+type LaySpecialVals struct {
 	V1 float32 `inactive:"+" desc:"one value"`
 	V2 float32 `inactive:"+" desc:"one value"`
 	V3 float32 `inactive:"+" desc:"one value"`
@@ -51,10 +51,10 @@ type LaySpecVals struct {
 // LayerVals holds extra layer state that is updated per layer.
 // It is sync'd down from the GPU to the CPU after every Cycle.
 type LayerVals struct {
-	ActAvg   ActAvgVals   `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
-	CorSim   CorSimStats  `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
-	NeuroMod NeuroModVals `view:"inline" desc:"neuromodulatory values: global to the layer, copied from Context"`
-	Special  LaySpecVals  `view:"inline" desc:"special values used to communicate to other layers based on neural values, used for special algorithms such as RL"`
+	ActAvg   ActAvgVals     `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
+	CorSim   CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
+	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory values: global to the layer, copied from Context"`
+	Special  LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
 }
 
 //gosl: end layervals

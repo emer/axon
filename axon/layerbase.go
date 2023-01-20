@@ -5,6 +5,10 @@
 package axon
 
 import (
+	"errors"
+	"fmt"
+	"log"
+
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/relpos"
@@ -31,6 +35,8 @@ type LayerBase struct {
 	RepShp      etensor.Shape     `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
 	RcvPrjns    AxonPrjns         `desc:"list of receiving projections into this layer from other layers"`
 	SndPrjns    AxonPrjns         `desc:"list of sending projections from this layer to other layers"`
+	Neurons     []Neuron          `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
+	Pools       []Pool            `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
 	BuildConfig map[string]string `desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
 }
 
@@ -39,55 +45,70 @@ type LayerBase struct {
 // InitName MUST be called to initialize the layer's pointer to itself as an emer.Layer
 // which enables the proper interface methods to be called.  Also sets the name, and
 // the parent network that this layer belongs to (which layers may want to retain).
-func (ls *LayerBase) InitName(lay emer.Layer, name string, net emer.Network) {
-	ls.AxonLay = lay.(AxonLayer)
-	ls.Nm = name
-	ls.Network = net
-	ls.BuildConfig = make(map[string]string)
+func (ly *LayerBase) InitName(lay emer.Layer, name string, net emer.Network) {
+	ly.AxonLay = lay.(AxonLayer)
+	ly.Nm = name
+	ly.Network = net
+	ly.BuildConfig = make(map[string]string)
 }
 
 // todo: remove from emer.Layer api
-func (ls *LayerBase) Thread() int       { return 0 }
-func (ls *LayerBase) SetThread(thr int) {}
+func (ly *LayerBase) Thread() int       { return 0 }
+func (ly *LayerBase) SetThread(thr int) {}
 
-func (ls *LayerBase) Name() string               { return ls.Nm }
-func (ls *LayerBase) SetName(nm string)          { ls.Nm = nm }
-func (ls *LayerBase) Label() string              { return ls.Nm }
-func (ls *LayerBase) SetClass(cls string)        { ls.Cls = cls }
-func (ls *LayerBase) TypeName() string           { return "Layer" } // type category, for params..
-func (ls *LayerBase) Type() emer.LayerType       { return ls.Typ }
-func (ls *LayerBase) SetType(typ emer.LayerType) { ls.Typ = typ }
-func (ls *LayerBase) IsOff() bool                { return ls.Off }
-func (ls *LayerBase) SetOff(off bool) {
-	ls.Off = off
+func (ly *LayerBase) Name() string               { return ly.Nm }
+func (ly *LayerBase) SetName(nm string)          { ly.Nm = nm }
+func (ly *LayerBase) Label() string              { return ly.Nm }
+func (ly *LayerBase) SetClass(cls string)        { ly.Cls = cls }
+func (ly *LayerBase) LayerType() LayerTypes      { return LayerTypes(ly.Typ) }
+func (ly *LayerBase) Class() string              { return ly.LayerType().String() + " " + ly.Cls }
+func (ly *LayerBase) TypeName() string           { return "Layer" } // type category, for params..
+func (ly *LayerBase) Type() emer.LayerType       { return ly.Typ }
+func (ly *LayerBase) SetType(typ emer.LayerType) { ly.Typ = typ }
+func (ly *LayerBase) IsOff() bool                { return ly.Off }
+func (ly *LayerBase) SetOff(off bool) {
+	ly.Off = off
 	// a Prjn is off if either the sending or the receiving layer is off
 	// or if the prjn has been set to Off directly
-	for _, pj := range ls.RcvPrjns {
+	for _, pj := range ly.RcvPrjns {
 		pj.SetOff(pj.SendLay().IsOff() || off)
 	}
-	for _, pj := range ls.SndPrjns {
+	for _, pj := range ly.SndPrjns {
 		pj.SetOff(pj.RecvLay().IsOff() || off)
 	}
 }
-func (ls *LayerBase) Shape() *etensor.Shape      { return &ls.Shp }
-func (ls *LayerBase) Is2D() bool                 { return ls.Shp.NumDims() == 2 }
-func (ls *LayerBase) Is4D() bool                 { return ls.Shp.NumDims() == 4 }
-func (ls *LayerBase) RelPos() relpos.Rel         { return ls.Rel }
-func (ls *LayerBase) Pos() mat32.Vec3            { return ls.Ps }
-func (ls *LayerBase) SetPos(pos mat32.Vec3)      { ls.Ps = pos }
-func (ls *LayerBase) Index() int                 { return ls.Idx }
-func (ls *LayerBase) SetIndex(idx int)           { ls.Idx = idx }
-func (ls *LayerBase) RecvPrjns() *AxonPrjns      { return &ls.RcvPrjns }
-func (ls *LayerBase) NRecvPrjns() int            { return len(ls.RcvPrjns) }
-func (ls *LayerBase) RecvPrjn(idx int) emer.Prjn { return ls.RcvPrjns[idx] }
-func (ls *LayerBase) SendPrjns() *AxonPrjns      { return &ls.SndPrjns }
-func (ls *LayerBase) NSendPrjns() int            { return len(ls.SndPrjns) }
-func (ls *LayerBase) SendPrjn(idx int) emer.Prjn { return ls.SndPrjns[idx] }
-func (ls *LayerBase) RepIdxs() []int             { return ls.RepIxs }
-func (ls *LayerBase) NeurStartIdx() int          { return ls.NeurStIdx }
+func (ly *LayerBase) Shape() *etensor.Shape      { return &ly.Shp }
+func (ly *LayerBase) Is2D() bool                 { return ly.Shp.NumDims() == 2 }
+func (ly *LayerBase) Is4D() bool                 { return ly.Shp.NumDims() == 4 }
+func (ly *LayerBase) RelPos() relpos.Rel         { return ly.Rel }
+func (ly *LayerBase) Pos() mat32.Vec3            { return ly.Ps }
+func (ly *LayerBase) SetPos(pos mat32.Vec3)      { ly.Ps = pos }
+func (ly *LayerBase) Index() int                 { return ly.Idx }
+func (ly *LayerBase) SetIndex(idx int)           { ly.Idx = idx }
+func (ly *LayerBase) RecvPrjns() *AxonPrjns      { return &ly.RcvPrjns }
+func (ly *LayerBase) NRecvPrjns() int            { return len(ly.RcvPrjns) }
+func (ly *LayerBase) RecvPrjn(idx int) emer.Prjn { return ly.RcvPrjns[idx] }
+func (ly *LayerBase) SendPrjns() *AxonPrjns      { return &ly.SndPrjns }
+func (ly *LayerBase) NSendPrjns() int            { return len(ly.SndPrjns) }
+func (ly *LayerBase) SendPrjn(idx int) emer.Prjn { return ly.SndPrjns[idx] }
+func (ly *LayerBase) RepIdxs() []int             { return ly.RepIxs }
+func (ly *LayerBase) NeurStartIdx() int          { return ly.NeurStIdx }
 
-func (ls *LayerBase) Idx4DFrom2D(x, y int) ([]int, bool) {
-	lshp := ls.Shape()
+func (ly *LayerBase) SendNameTry(sender string) (emer.Prjn, error) {
+	return emer.SendNameTry(ly.AxonLay, sender)
+}
+func (ly *LayerBase) SendNameTypeTry(sender, typ string) (emer.Prjn, error) {
+	return emer.SendNameTypeTry(ly.AxonLay, sender, typ)
+}
+func (ly *LayerBase) RecvNameTry(receiver string) (emer.Prjn, error) {
+	return emer.RecvNameTry(ly.AxonLay, receiver)
+}
+func (ly *LayerBase) RecvNameTypeTry(receiver, typ string) (emer.Prjn, error) {
+	return emer.RecvNameTypeTry(ly.AxonLay, receiver, typ)
+}
+
+func (ly *LayerBase) Idx4DFrom2D(x, y int) ([]int, bool) {
+	lshp := ly.Shape()
 	nux := lshp.Dim(3)
 	nuy := lshp.Dim(2)
 	ux := x % nux
@@ -101,73 +122,87 @@ func (ls *LayerBase) Idx4DFrom2D(x, y int) ([]int, bool) {
 	return idx, true
 }
 
-func (ls *LayerBase) SetRelPos(rel relpos.Rel) {
-	ls.Rel = rel
-	if ls.Rel.Scale == 0 {
-		ls.Rel.Defaults()
+func (ly *LayerBase) SetRelPos(rel relpos.Rel) {
+	ly.Rel = rel
+	if ly.Rel.Scale == 0 {
+		ly.Rel.Defaults()
 	}
 }
 
-func (ls *LayerBase) Size() mat32.Vec2 {
-	if ls.Rel.Scale == 0 {
-		ls.Rel.Defaults()
+func (ly *LayerBase) Size() mat32.Vec2 {
+	if ly.Rel.Scale == 0 {
+		ly.Rel.Defaults()
 	}
 	var sz mat32.Vec2
 	switch {
-	case ls.Is2D():
-		sz = mat32.Vec2{float32(ls.Shp.Dim(1)), float32(ls.Shp.Dim(0))} // Y, X
-	case ls.Is4D():
+	case ly.Is2D():
+		sz = mat32.Vec2{float32(ly.Shp.Dim(1)), float32(ly.Shp.Dim(0))} // Y, X
+	case ly.Is4D():
 		// note: pool spacing is handled internally in display and does not affect overall size
-		sz = mat32.Vec2{float32(ls.Shp.Dim(1) * ls.Shp.Dim(3)), float32(ls.Shp.Dim(0) * ls.Shp.Dim(2))} // Y, X
+		sz = mat32.Vec2{float32(ly.Shp.Dim(1) * ly.Shp.Dim(3)), float32(ly.Shp.Dim(0) * ly.Shp.Dim(2))} // Y, X
 	default:
-		sz = mat32.Vec2{float32(ls.Shp.Len()), 1}
+		sz = mat32.Vec2{float32(ly.Shp.Len()), 1}
 	}
-	return sz.MulScalar(ls.Rel.Scale)
+	return sz.MulScalar(ly.Rel.Scale)
 }
 
 // SetShape sets the layer shape and also uses default dim names
-func (ls *LayerBase) SetShape(shape []int) {
+func (ly *LayerBase) SetShape(shape []int) {
 	var dnms []string
 	if len(shape) == 2 {
 		dnms = emer.LayerDimNames2D
 	} else if len(shape) == 4 {
 		dnms = emer.LayerDimNames4D
 	}
-	ls.Shp.SetShape(shape, nil, dnms) // row major default
+	ly.Shp.SetShape(shape, nil, dnms) // row major default
 }
 
 // SetRepIdxsShape sets the RepIdxs, and RepShape and as list of dimension sizes
-func (ls *LayerBase) SetRepIdxsShape(idxs, shape []int) {
-	ls.RepIxs = idxs
+func (ly *LayerBase) SetRepIdxsShape(idxs, shape []int) {
+	ly.RepIxs = idxs
 	var dnms []string
 	if len(shape) == 2 {
 		dnms = emer.LayerDimNames2D
 	} else if len(shape) == 4 {
 		dnms = emer.LayerDimNames4D
 	}
-	ls.RepShp.SetShape(shape, nil, dnms) // row major default
+	ly.RepShp.SetShape(shape, nil, dnms) // row major default
 }
 
 // RepShape returns the shape to use for representative units
-func (ls *LayerBase) RepShape() *etensor.Shape {
-	sz := len(ls.RepIxs)
+func (ly *LayerBase) RepShape() *etensor.Shape {
+	sz := len(ly.RepIxs)
 	if sz == 0 {
-		return &ls.Shp
+		return &ly.Shp
 	}
-	if ls.RepShp.Len() < sz {
-		ls.RepShp.SetShape([]int{sz}, nil, nil) // row major default
+	if ly.RepShp.Len() < sz {
+		ly.RepShp.SetShape([]int{sz}, nil, nil) // row major default
 	}
-	return &ls.RepShp
+	return &ly.RepShp
 }
 
 // NPools returns the number of unit sub-pools according to the shape parameters.
 // Currently supported for a 4D shape, where the unit pools are the first 2 Y,X dims
 // and then the units within the pools are the 2nd 2 Y,X dims
-func (ls *LayerBase) NPools() int {
-	if ls.Shp.NumDims() != 4 {
+func (ly *LayerBase) NPools() int {
+	if ly.Shp.NumDims() != 4 {
 		return 0
 	}
-	return ls.Shp.Dim(0) * ls.Shp.Dim(1)
+	return ly.Shp.Dim(0) * ly.Shp.Dim(1)
+}
+
+// Pool returns pool at given index
+func (ly *LayerBase) Pool(idx int) *Pool {
+	return &(ly.Pools[idx])
+}
+
+// PoolTry returns pool at given index, returns error if index is out of range
+func (ly *LayerBase) PoolTry(idx int) (*Pool, error) {
+	np := len(ly.Pools)
+	if idx < 0 || idx >= np {
+		return nil, fmt.Errorf("Layer Pool index: %v out of range, N = %v", idx, np)
+	}
+	return &(ly.Pools[idx]), nil
 }
 
 // RecipToSendPrjn finds the reciprocal projection relative to the given sending projection
@@ -176,8 +211,8 @@ func (ls *LayerBase) NPools() int {
 //	S=A -> R=B recip: R=A <- S=B -- ly = A -- we are the sender of srj and recv of rpj.
 //
 // returns false if not found.
-func (ls *LayerBase) RecipToSendPrjn(spj emer.Prjn) (emer.Prjn, bool) {
-	for _, rpj := range ls.RcvPrjns {
+func (ly *LayerBase) RecipToSendPrjn(spj emer.Prjn) (emer.Prjn, bool) {
+	for _, rpj := range ly.RcvPrjns {
 		if rpj.SendLay() == spj.RecvLay() {
 			return rpj, true
 		}
@@ -186,9 +221,9 @@ func (ls *LayerBase) RecipToSendPrjn(spj emer.Prjn) (emer.Prjn, bool) {
 }
 
 // Config configures the basic properties of the layer
-func (ls *LayerBase) Config(shape []int, typ emer.LayerType) {
-	ls.SetShape(shape)
-	ls.Typ = typ
+func (ly *LayerBase) Config(shape []int, typ emer.LayerType) {
+	ly.SetShape(shape)
+	ly.Typ = typ
 }
 
 // ApplyParams applies given parameter style Sheet to this layer and its recv projections.
@@ -196,18 +231,18 @@ func (ls *LayerBase) Config(shape []int, typ emer.LayerType) {
 // If setMsg is true, then a message is printed to confirm each parameter that is set.
 // it always prints a message if a parameter fails to be set.
 // returns true if any params were set, and error if there were any errors.
-func (ls *LayerBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
+func (ly *LayerBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 	applied := false
 	var rerr error
-	app, err := pars.Apply(ls.AxonLay, setMsg) // essential to go through AxonLay
+	app, err := pars.Apply(ly.AxonLay, setMsg) // essential to go through AxonLay
 	if app {
-		ls.AxonLay.UpdateParams()
+		ly.AxonLay.UpdateParams()
 		applied = true
 	}
 	if err != nil {
 		rerr = err
 	}
-	for _, pj := range ls.RcvPrjns {
+	for _, pj := range ly.RcvPrjns {
 		app, err = pj.ApplyParams(pars, setMsg)
 		if app {
 			applied = true
@@ -221,11 +256,131 @@ func (ls *LayerBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) 
 
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
-func (ls *LayerBase) NonDefaultParams() string {
-	nds := giv.StructNonDefFieldsStr(ls.AxonLay, ls.Nm)
-	for _, pj := range ls.RcvPrjns {
+func (ly *LayerBase) NonDefaultParams() string {
+	nds := giv.StructNonDefFieldsStr(ly.AxonLay, ly.Nm)
+	for _, pj := range ly.RcvPrjns {
 		pnd := pj.NonDefaultParams()
 		nds += pnd
 	}
 	return nds
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  Build
+
+// BuildSubPools initializes neuron start / end indexes for sub-pools
+func (ly *LayerBase) BuildSubPools() {
+	if !ly.Is4D() {
+		return
+	}
+	sh := ly.Shp.Shapes()
+	spy := sh[0]
+	spx := sh[1]
+	pi := 1
+	for py := 0; py < spy; py++ {
+		for px := 0; px < spx; px++ {
+			soff := uint32(ly.Shp.Offset([]int{py, px, 0, 0}))
+			eoff := uint32(ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
+			pl := &ly.Pools[pi]
+			pl.StIdx = soff
+			pl.EdIdx = eoff
+			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+				nrn := &ly.Neurons[ni]
+				nrn.SubPool = uint32(pi)
+			}
+			pi++
+		}
+	}
+}
+
+// BuildPools builds the inhibitory pools structures -- nu = number of units in layer
+func (ly *LayerBase) BuildPools(nu int) error {
+	np := 1 + ly.NPools()
+	ly.Pools = make([]Pool, np)
+	lpl := &ly.Pools[0]
+	lpl.StIdx = 0
+	lpl.EdIdx = uint32(nu)
+	if np > 1 {
+		ly.BuildSubPools()
+	}
+	return nil
+}
+
+// BuildPrjns builds the projections, recv-side
+func (ly *LayerBase) BuildPrjns() error {
+	emsg := ""
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		err := pj.Build()
+		if err != nil {
+			emsg += err.Error() + "\n"
+		}
+	}
+	if emsg != "" {
+		return errors.New(emsg)
+	}
+	return nil
+}
+
+// Build constructs the layer state, including calling Build on the projections
+func (ly *LayerBase) Build() error {
+	nu := ly.Shp.Len()
+	if nu == 0 {
+		return fmt.Errorf("Build Layer %v: no units specified in Shape", ly.Nm)
+	}
+	// note: ly.Neurons are allocated by Network from global network pool
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		nrn.NeurIdx = uint32(ni)
+		nrn.LayIdx = uint32(ly.Idx)
+	}
+	err := ly.BuildPools(nu)
+	if err != nil {
+		return err
+	}
+	err = ly.BuildPrjns()
+	ly.AxonLay.PostBuild()
+	return err
+}
+
+// BuildConfigByName looks for given BuildConfig option by name,
+// and reports & returns an error if not found.
+func (ly *LayerBase) BuildConfigByName(nm string) (string, error) {
+	cfg, ok := ly.BuildConfig[nm]
+	if !ok {
+		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
+		log.Println(err)
+		return cfg, err
+	}
+	return cfg, nil
+}
+
+// VarRange returns the min / max values for given variable
+// todo: support r. s. projection values
+func (ly *LayerBase) VarRange(varNm string) (min, max float32, err error) {
+	sz := len(ly.Neurons)
+	if sz == 0 {
+		return
+	}
+	vidx := 0
+	vidx, err = NeuronVarIdxByName(varNm)
+	if err != nil {
+		return
+	}
+
+	v0 := ly.Neurons[0].VarByIndex(vidx)
+	min = v0
+	max = v0
+	for i := 1; i < sz; i++ {
+		vl := ly.Neurons[i].VarByIndex(vidx)
+		if vl < min {
+			min = vl
+		}
+		if vl > max {
+			max = vl
+		}
+	}
+	return
 }
