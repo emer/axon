@@ -390,13 +390,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	// net.NThreads = 2
 
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	ss.InitWts(net)
 }
 

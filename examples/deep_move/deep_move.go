@@ -232,13 +232,13 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		dpHid2.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: hdHidct.Name(), XAlign: relpos.Left, Space: 2 * space})
 	}
 
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	net.InitWts()
 }
 

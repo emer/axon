@@ -313,10 +313,10 @@ func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa int) *Netwo
 	net.BidirConnectLayers(hiddenLayer, hiddenLayer2, prjn.NewFull())
 	net.BidirConnectLayers(hiddenLayer2, outputLayer, prjn.NewFull())
 
-	net.Defaults() // Initializes threading defaults, but we override below
 	if err := net.Build(); err != nil {
 		t.Error(err)
 	}
+	net.Defaults() // Initializes threading defaults, but we override below
 	net.InitWts()
 
 	if err := net.Threads.Set(tNeuron, tSendSpike, tSynCa); err != nil {

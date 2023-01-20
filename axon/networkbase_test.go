@@ -27,8 +27,8 @@ func TestDefaults(t *testing.T) {
 	net.ConnectLayers(input, hidden, full, emer.Forward)
 	net.BidirConnectLayers(hidden, output, full)
 
-	net.Defaults()
 	assert.Nil(t, net.Build())
+	net.Defaults()
 	net.InitWts()
 
 	assert.Equal(t, 100, net.SlowInterval)

@@ -69,6 +69,9 @@ const (
 	// within the thalamus.
 	TRNLayer
 
+	/////////////
+	// RL
+
 	// Rew represents positive or negative reward values across 2 units,
 	// showing spiking rates for each, and Act always represents signed value.
 	RewLayer

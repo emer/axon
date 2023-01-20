@@ -144,12 +144,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sly := net.AddLayer2D("Send", 1, 1, emer.Hidden).(*axon.Layer)
 	rly := net.AddLayer2D("Recv", 1, 1, emer.Hidden).(*axon.Layer)
 	pj := net.ConnectLayers(sly, rly, prjn.NewFull(), emer.Forward)
-	net.Defaults()
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
 	ss.SendNeur = &sly.Neurons[0]
 	ss.RecvNeur = &rly.Neurons[0]
 	ss.Prjn = pj.(*axon.Prjn)

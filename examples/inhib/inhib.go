@@ -197,13 +197,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 			net.ConnectLayers(nl, tl, full, emer.Back).SetClass("Excite")
 		}
 	}
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	ss.InitWts(net)
 }
 

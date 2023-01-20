@@ -90,12 +90,12 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 
 	net.RecFunTimes = true
 
-	net.Defaults()
-	if _, err := net.ApplyParams(ParamSets[0].Sheets["Network"], false); err != nil {
-		panic(err)
-	}
 	// builds with default threads
 	if err := net.Build(); err != nil {
+		panic(err)
+	}
+	net.Defaults()
+	if _, err := net.ApplyParams(ParamSets[0].Sheets["Network"], false); err != nil {
 		panic(err)
 	}
 

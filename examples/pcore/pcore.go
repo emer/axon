@@ -255,13 +255,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	pfc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCNeg", YAlign: relpos.Front, Space: space})
 	pfcd.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "PFC", YAlign: relpos.Front, Space: space})
 
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	ss.InitWts(net)
 }
 

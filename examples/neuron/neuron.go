@@ -160,13 +160,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Neuron")
 	net.AddLayer2D("Neuron", 1, 1, emer.Hidden)
 
-	net.Defaults()
-	ss.SetParams("Network", false) // only set Network params
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.SetParams("Network", false) // only set Network params
 	ss.InitWts(net)
 }
 

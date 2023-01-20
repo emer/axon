@@ -33,8 +33,6 @@ Set 2:  Storage
     
 # TODO:
 
-* move LayerVals, PrjnVals to separate arrays!
-
 * general renaming for params selectors:
     * .Hidden -> .SuperLayer
     * .Inhib -> .InhibPrjn
@@ -42,7 +40,8 @@ Set 2:  Storage
     * CTLayer -> .CTLayer
     * PulvLayer -> .PulvinarLayer
 
-    * LayersByClass needs all fixed!
+    * LayersByClass needs fixed if in sim
+    * MUST move Defaults, Params.SetObject *after* Build()!
     
 * HebbPrjn type
     

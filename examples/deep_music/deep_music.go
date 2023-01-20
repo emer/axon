@@ -218,13 +218,13 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 		hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: hid.Name(), YAlign: relpos.Front, Space: 2})
 	}
 
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	net.InitWts()
 }
 

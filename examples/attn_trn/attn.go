@@ -366,13 +366,13 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	net.ConnectLayers(lip, v2cta, pone2one, emer.Back) // ss.Prjn5x5Skp1
 	net.ConnectLayers(lip, v2ta, pone2one, emer.Back)  // ss.Prjn5x5Skp1 was ponetoone
 
-	net.Defaults()
-	ss.SetParams("Network", false) // only set Network params
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.SetParams("Network", false) // only set Network params
 	ss.InitWts()
 }
 

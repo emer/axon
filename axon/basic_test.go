@@ -68,9 +68,9 @@ func newTestNet() *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
 
+	testNet.Build()
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	testNet.Build()
 	testNet.InitWts()
 	testNet.NewState() // get GScale
 	return &testNet
@@ -128,9 +128,9 @@ func TestSpikeProp(t *testing.T) {
 
 	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward).(*Prjn)
 
+	net.Build()
 	net.Defaults()
 	net.ApplyParams(ParamSets[0].Sheets["Network"], false)
-	net.Build()
 
 	net.InitExt()
 
@@ -437,10 +437,10 @@ func TestInhibAct(t *testing.T) {
 	InhibNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
 	InhibNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
 
+	InhibNet.Build()
 	InhibNet.Defaults()
 	InhibNet.ApplyParams(ParamSets[0].Sheets["Network"], false)
 	InhibNet.ApplyParams(ParamSets[0].Sheets["InhibOff"], false)
-	InhibNet.Build()
 	InhibNet.InitWts()
 	InhibNet.NewState() // get GScale
 

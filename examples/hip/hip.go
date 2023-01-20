@@ -423,13 +423,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	net.Defaults()
-	ss.SetParams("Network", ss.LogSetParams) // only set Network params
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.SetParams("Network", ss.LogSetParams) // only set Network params
 	net.InitWts()
 }
 

@@ -320,13 +320,12 @@ func (ss *Sim) ConfigNet(net *pvlv.Network) {
 	if err != nil {
 		log.Println(err)
 	}
-	net.Defaults()
-	err = net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
-
+	net.Defaults()
+	err = net.Build()
 	net.InitWts()
 
 	//lowerLayers := []emer.Layer{negPV, posPV, pptg, vtaP, lhbRmtG, vtaN, cEmPos, cEmNeg, celAcqPosD1, celExtPosD2,

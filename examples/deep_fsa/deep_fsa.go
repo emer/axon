@@ -185,9 +185,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
 	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
 
+	err := net.Build()
 	net.Defaults()
 	ss.Params.SetObject("Network")
-	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return

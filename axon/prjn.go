@@ -24,11 +24,11 @@ import (
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnBase
-	Params PrjnParams `desc:"all prjn-level parameters -- these must remain constant once configured"`
-	Syns   []Synapse  `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
+	Params *PrjnParams `desc:"all prjn-level parameters -- these must remain constant once configured"`
+	Vals   *PrjnVals   `view:"-" desc:"projection state values updated during computation"`
+	Syns   []Synapse   `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
 
 	// misc state variables below:
-	Vals  PrjnVals    `view:"-" desc:"projection state values updated during computation"`
 	GBuf  []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- scale * weight is added with Com delay offset."`
 	PIBuf []float32   `desc:"pooled inhibition ring buffer for each pool * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per pool in receiving layer."`
 	PIdxs []uint32    `desc:"indexes of subpool for each receiving neuron, for aggregating PIBuf -- this is redundant with Neuron.Subpool but provides faster local access in SendSpike."`
@@ -39,7 +39,7 @@ var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
 
 // Object returns the object with parameters to be set by emer.Params
 func (pj *Prjn) Object() interface{} {
-	return &pj.Params
+	return pj.Params
 }
 
 // AsAxon returns this prjn as a axon.Prjn -- all derived prjns must redefine
@@ -59,6 +59,9 @@ func (pj *Prjn) Class() string {
 }
 
 func (pj *Prjn) Defaults() {
+	if pj.Params == nil {
+		return
+	}
 	pj.Params.PrjnType = pj.PrjnType()
 	pj.Params.Defaults()
 	switch pj.PrjnType() {
@@ -71,6 +74,9 @@ func (pj *Prjn) Defaults() {
 
 // Update is interface that does local update of struct vals
 func (pj *Prjn) Update() {
+	if pj.Params == nil {
+		return
+	}
 	pj.Params.Update()
 }
 
@@ -369,7 +375,6 @@ func (pj *Prjn) Build() error {
 	for ni := range rlay.Neurons {
 		pj.PIdxs[ni] = rlay.Neurons[ni].SubPool
 	}
-	pj.BuildGBuffs()
 	return nil
 }
 

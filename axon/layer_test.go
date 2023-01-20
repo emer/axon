@@ -46,7 +46,6 @@ func TestLayer_SendSpike(t *testing.T) {
 	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
 	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), emer.Forward)
 	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), emer.Forward)
-	net.Defaults()
 
 	/*
 	 * Input1 -> Output
@@ -54,6 +53,7 @@ func TestLayer_SendSpike(t *testing.T) {
 	 */
 
 	assert.NoError(t, net.Build())
+	net.Defaults()
 	net.InitWts()
 
 	net.NewState()
@@ -160,8 +160,8 @@ func createNetwork(shape []int, t *testing.T) *Network {
 	full := prjn.NewFull()
 	net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
-	net.Defaults()
 	assert.NoError(t, net.Build())
+	net.Defaults()
 	net.InitWts()
 	return net
 }
@@ -178,9 +178,9 @@ func TestLayerBase_IsOff(t *testing.T) {
 	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
 	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, emer.Forward)
 	hidToOut, outToHid := net.BidirConnectLayers(hiddenLayer, outputLayer, full)
-	net.Defaults()
 
 	assert.NoError(t, net.Build())
+	net.Defaults()
 
 	assert.False(t, inputLayer.IsOff())
 

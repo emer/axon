@@ -204,13 +204,13 @@ func (ss *Sim) ConfigNet(net *rl.Network) {
 	td.(*rl.TDDaLayer).SendDA.Add(rp.Name(), ri.Name())
 	rwda.SendDA.Add(rwrp.Nm)
 
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	net.InitWts()
 }
 
