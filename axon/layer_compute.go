@@ -71,29 +71,35 @@ func (ly *Layer) NeuronGatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 	}
 }
 
+func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
+	dly := ly.Network.Layer(int(ly.Params.Pulv.DriveLayIdx)).(AxonLayer).AsAxon()
+	drvMax := dly.Vals.ActAvg.CaSpkP.Max
+	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
+	dneur := dly.Neurons[ni]
+	if dly.LayerType() == SuperLayer {
+		drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
+	} else {
+		drvGe = ly.Params.Pulv.DriveGe(dneur.CaSpkP)
+	}
+	return
+}
+
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls NeuronGatherSpikes, GFmRawSyn, GiInteg
-func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, giMult float32, randctr *sltype.Uint2) {
+func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, randctr *sltype.Uint2) {
 	ly.NeuronGatherSpikes(ctx, ni, nrn)
 
 	drvGe := float32(0)
 	nonDrvPct := float32(0)
 	if ly.LayerType() == PulvinarLayer {
-		dly := ly.Network.Layer(int(ly.Params.Pulv.DriveLayIdx)).(AxonLayer).AsAxon()
-		drvMax := dly.Vals.ActAvg.CaSpkP.Max
-		nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
-		dneur := dly.Neurons[ni]
-		if dly.LayerType() == SuperLayer {
-			drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
-		} else {
-			drvGe = ly.Params.Pulv.DriveGe(dneur.CaSpkP)
-		}
+		drvGe, nonDrvPct = ly.PulvinarDriver(ni)
 	}
 
 	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct, randctr)
 
 	ly.Params.GFmRawSyn(ctx, ni, nrn, randctr)
-	ly.Params.GiInteg(ctx, ni, nrn, pl, giMult)
+	ly.Params.GiInteg(ctx, ni, nrn, pl, vals.ActAvg.GiMult)
+	ly.Params.GNeuroMod(ctx, ni, nrn, vals)
 
 	ly.Params.SpecialPostGs(ctx, ni, nrn, randctr, saveVal)
 }
@@ -106,7 +112,7 @@ func (ly *Layer) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
 	randctr := ctx.RandCtr.Uint2() // use local var so updates are local
-	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals.ActAvg.GiMult, &randctr)
+	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals, &randctr)
 	ly.AxonLay.SpikeFmG(ctx, ni, nrn)
 	ly.AxonLay.PostSpike(ctx, ni, nrn)
 }
@@ -114,18 +120,6 @@ func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
 // PostSpike does updates at neuron level after spiking has been computed.
 // This is where special layer types add extra code.
 func (ly *Layer) PostSpike(ctx *Context, ni uint32, nrn *Neuron) {
-	switch ly.LayerType() {
-	case RWDaLayer:
-		ply := ly.Network.Layer(int(ly.Params.RWDa.RWPredLayIdx)).(AxonLayer).AsAxon()
-		pnrn := &(ply.Neurons[0])
-		pact := pnrn.Act
-		if ctx.NeuroMod.HasRew.IsTrue() {
-			ly.Vals.NeuroMod.DA = ctx.NeuroMod.Rew - pact
-		} else {
-			ly.Vals.NeuroMod.DA = 0 // nothing
-		}
-	}
-
 	ly.Params.PostSpike(ctx, ni, nrn, ly.Vals)
 }
 
@@ -192,7 +186,6 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay3Idx)
 		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay4Idx)
 		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay5Idx)
-		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay6Idx)
 		ctx.NeuroMod.ACh = maxAct
 	case RWDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()

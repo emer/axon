@@ -60,6 +60,8 @@ func (pj *Prjn) Defaults() {
 		pj.Params.SWt.Adapt.On.SetBool(false)
 	case RWPrjn, TDPredPrjn:
 		pj.Params.RLPredPrjnDefaults()
+	case BLAPrjn:
+		pj.Params.BLAPrjnDefaults()
 	}
 }
 

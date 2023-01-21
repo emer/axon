@@ -57,6 +57,14 @@ const (
 	// opposite cases.  Weights are positive-only.
 	TDPredPrjn
 
+	// BLAPrjn implements the PVLV BLA learning rule:
+	// dW = Ach * X_t-1 * (Y_t - Y_t-1)
+	// The recv delta is across trials, where the US should activate on trial
+	// boundary, to enable sufficient time for gating through to OFC, so
+	// BLA initially learns based on US present - US absent.
+	// It can also learn based on CS onset if there is a prior CS that predicts that.
+	BLAPrjn
+
 	PrjnTypesN
 )
 

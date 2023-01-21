@@ -24,7 +24,6 @@ type RSalAChParams struct {
 	SrcLay3Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
 	SrcLay4Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
 	SrcLay5Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay5Name if present -- -1 if not used"`
-	SrcLay6Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay6Name if present -- -1 if not used"`
 }
 
 func (rp *RSalAChParams) Defaults() {
@@ -173,7 +172,6 @@ func (ly *Layer) RSalAChPostBuild() {
 	ly.RSalAChPostBuildFind("SrcLay3Name", &ly.Params.RSalACh.SrcLay3Idx)
 	ly.RSalAChPostBuildFind("SrcLay4Name", &ly.Params.RSalACh.SrcLay4Idx)
 	ly.RSalAChPostBuildFind("SrcLay5Name", &ly.Params.RSalACh.SrcLay5Idx)
-	ly.RSalAChPostBuildFind("SrcLay6Name", &ly.Params.RSalACh.SrcLay6Idx)
 }
 
 // TDIntegPostBuild does post-Build config

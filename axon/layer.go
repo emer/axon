@@ -77,6 +77,8 @@ func (ly *Layer) Defaults() {
 		ly.Params.TDPredLayerDefaults()
 	case TDIntegLayer, TDDaLayer:
 		ly.Params.TDLayerDefaults()
+	case BLALayer:
+		ly.Params.BLALayerDefaults()
 	}
 }
 

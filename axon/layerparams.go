@@ -266,10 +266,26 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, randc
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
-	ly.Act.NMDAFmRaw(nrn, nrn.GeRaw)
-	ly.Learn.LrnNMDAFmRaw(nrn, nrn.GeRaw)
+	if nrn.GeSyn > nrn.GeSynMax {
+		nrn.GeSynMax = nrn.GeSyn
+	}
+	geRaw := nrn.GeRaw
+	geSyn := nrn.GeSyn
+	if ly.LayType == PPTgLayer {
+		geSyn = (nrn.GeSyn - nrn.GeSynPrev)
+		if geSyn < 0 {
+			geSyn = 0
+		}
+		geRawPrev := nrn.GeSynPrev * ly.Act.Dt.GeDt
+		geRaw = (nrn.GeRaw - geRawPrev)
+		if geRaw < 0 {
+			geRaw = 0
+		}
+	}
+	ly.Act.NMDAFmRaw(nrn, geRaw)
+	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(ni, nrn, nrn.GeSyn, nrn.Gnmda+nrn.Gvgcc, randctr) // sets nrn.GeExt too
+	ly.Act.GeFmSyn(ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc, randctr) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(ni, nrn, nrn.GiSyn, randctr)
 }
@@ -287,6 +303,13 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, g
 	ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
+}
+
+// GNeuroMod does neuromodulation of conductances
+func (ly *LayerParams) GNeuroMod(ctx *Context, ni uint32, nrn *Neuron, vals *LayerVals) {
+	ggain := ly.Learn.NeuroMod.GGain(vals.NeuroMod.DA)
+	nrn.Ge *= ggain
+	nrn.Gi *= ggain
 }
 
 ////////////////////////
@@ -344,6 +367,11 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, vals *Lay
 		nrn.Act = ctx.NeuroMod.RewPred
 	case TDDaLayer:
 		nrn.Act = ctx.NeuroMod.DA // I presumably set this last time..
+	case PPTgLayer:
+		nrn.Act = nrn.CaSpkP - nrn.SpkPrv
+		if nrn.Act < 0 {
+			nrn.Act = 0
+		}
 	}
 	intdt := ly.Act.Dt.IntDt
 	if ctx.PlusPhase.IsTrue() {

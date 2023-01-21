@@ -160,8 +160,8 @@ type AxonLayer interface {
 	CycleNeuron(ctx *Context, ni uint32, nrn *Neuron)
 
 	// GInteg integrates conductances G over time (Ge, NMDA, etc).
-	// reads pool Gi values
-	GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, giMult float32, randctr *sltype.Uint2)
+	// reads pool Gi values.
+	GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, randctr *sltype.Uint2)
 
 	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 	SpikeFmG(ctx *Context, ni uint32, nrn *Neuron)

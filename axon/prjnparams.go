@@ -174,7 +174,11 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, is
 	if isTarget {
 		err = caP - caD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = sy.Tr * (rn.CaP - rn.CaD) // hiddens: recv Ca drives error signal w/ trace credit
+		if pj.PrjnType == BLAPrjn {
+			err = sy.Tr * (rn.CaSpkP - rn.SpkPrv)
+		} else {
+			err = sy.Tr * (rn.CaP - rn.CaD) // hiddens: recv Ca drives error signal w/ trace credit
+		}
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum
@@ -253,9 +257,11 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 func (pj *PrjnParams) WtFmDWtSyn(ctx *Context, sy *Synapse) {
 	switch pj.PrjnType {
 	case RWPrjn:
-		pj.WtFmDWtSynRLPred(ctx, sy)
+		pj.WtFmDWtSynNoLimits(ctx, sy)
 	case TDPredPrjn:
-		pj.WtFmDWtSynRLPred(ctx, sy)
+		pj.WtFmDWtSynNoLimits(ctx, sy)
+	case BLAPrjn:
+		pj.WtFmDWtSynNoLimits(ctx, sy)
 	default:
 		pj.WtFmDWtSynCortex(ctx, sy)
 	}
@@ -268,8 +274,8 @@ func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, sy *Synapse) {
 	// pj.Com.Fail(&sy.Wt, sy.SWt) // skipping for now -- not useful actually
 }
 
-// WtFmDWtSynRLPred updates weights from dwt changes
-func (pj *PrjnParams) WtFmDWtSynRLPred(ctx *Context, sy *Synapse) {
+// WtFmDWtSynNoLimits -- weight update without limits
+func (pj *PrjnParams) WtFmDWtSynNoLimits(ctx *Context, sy *Synapse) {
 	if sy.DWt == 0 {
 		return
 	}

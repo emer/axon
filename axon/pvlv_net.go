@@ -2,34 +2,40 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package pvlv
+package axon
 
 import (
-	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
 
+// AddPPTgLayer adds a PPTgLayer
+func (nt *Network) AddPPTgLayer(prefix string, nUs, unY, unX int) AxonLayer {
+	pptg := &Layer{}
+	nt.AddLayerInit(pptg, prefix+"PPTg", []int{1, nUs, unY, unX}, emer.LayerType(PPTgLayer))
+	return pptg
+}
+
 // AddBLALayers adds two BLA layers, acquisition / extinction / D1 / D2,
 // for positive or negative valence
-func AddBLALayers(nt *axon.Network, prefix string, pos bool, nUs, unY, unX int, rel relpos.Relations, space float32) (acq, ext axon.AxonLayer) {
+func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, unY, unX int, rel relpos.Relations, space float32) (acq, ext AxonLayer) {
 	if pos {
-		d1 := &BLALayer{}
-		nt.AddLayerInit(d1, prefix+"BLAPosAcqD1", []int{1, nUs, unY, unX}, BLA)
-		d1.DaMod.DAR = D1R
-		d2 := &BLALayer{}
-		nt.AddLayerInit(d2, prefix+"BLAPosExtD2", []int{1, nUs, unY, unX}, BLA)
-		d2.DaMod.DAR = D2R
+		d1 := &Layer{}
+		nt.AddLayerInit(d1, prefix+"BLAPosAcqD1", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
+		d1.Params.Learn.NeuroMod.DAMod = D1Mod
+		d2 := &Layer{}
+		nt.AddLayerInit(d2, prefix+"BLAPosExtD2", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
+		d2.Params.Learn.NeuroMod.DAMod = D2Mod
 		acq = d1
 		ext = d2
 	} else {
-		d1 := &BLALayer{}
-		nt.AddLayerInit(d1, prefix+"BLANegExtD1", []int{1, nUs, unY, unX}, BLA)
-		d1.DaMod.DAR = D1R
-		d2 := &BLALayer{}
-		nt.AddLayerInit(d2, prefix+"BLANegAcqD2", []int{1, nUs, unY, unX}, BLA)
-		d2.DaMod.DAR = D2R
+		d1 := &Layer{}
+		nt.AddLayerInit(d1, prefix+"BLANegExtD1", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
+		d1.Params.Learn.NeuroMod.DAMod = D1Mod
+		d2 := &Layer{}
+		nt.AddLayerInit(d2, prefix+"BLANegAcqD2", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
+		d2.Params.Learn.NeuroMod.DAMod = D2Mod
 		acq = d2
 		ext = d1
 	}
@@ -49,17 +55,17 @@ func AddBLALayers(nt *axon.Network, prefix string, pos bool, nUs, unY, unX int, 
 // AddAmygdala adds a full amygdala complex including BLA,
 // CeM, and PPTg.  Inclusion of negative valence is optional with neg
 // arg -- neg* layers are nil if not included.
-func AddAmygdala(nt *axon.Network, prefix string, neg bool, nUs, unY, unX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, pptg axon.AxonLayer) {
-	blaPosAcq, blaPosExt = AddBLALayers(nt, prefix, true, nUs, unY, unX, relpos.Behind, space)
+func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, pptg AxonLayer) {
+	blaPosAcq, blaPosExt = nt.AddBLALayers(prefix, true, nUs, unY, unX, relpos.Behind, space)
 	if neg {
-		blaNegAcq, blaNegExt = AddBLALayers(nt, prefix, false, nUs, unY, unX, relpos.Behind, space)
+		blaNegAcq, blaNegExt = nt.AddBLALayers(prefix, false, nUs, unY, unX, relpos.Behind, space)
 	}
-	cemPos = nt.AddLayer4D(prefix+"CeMPos", 1, nUs, 1, unX, CeM).(axon.AxonLayer)
+	cemPos = nt.AddLayer4D(prefix+"CeMPos", 1, nUs, 1, unX, emer.LayerType(CeMLayer)).(AxonLayer)
 	if neg {
-		cemNeg = nt.AddLayer4D(prefix+"CeMNeg", 1, nUs, 1, unX, CeM).(axon.AxonLayer)
+		cemNeg = nt.AddLayer4D(prefix+"CeMNeg", 1, nUs, 1, unX, emer.LayerType(CeMLayer)).(AxonLayer)
 	}
-	pptg = &PPTgLayer{}
-	nt.AddLayerInit(pptg, prefix+"PPTg", []int{1, nUs, 1, unX}, PPTg)
+
+	pptg = nt.AddPPTgLayer(prefix, nUs, 1, unX)
 
 	p1to1 := prjn.NewPoolOneToOne()
 

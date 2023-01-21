@@ -19,6 +19,7 @@ import (
 
 //gosl: hlsl learn_neur
 // #include "kinase.hlsl"
+// #include "neuromod.hlsl"
 //gosl: end learn_neur
 
 //gosl: start learn_neur
@@ -225,6 +226,7 @@ CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus ph
 	LrnNMDA   chans.NMDAParams `view:"inline" desc:"NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes"`
 	TrgAvgAct TrgAvgActParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
 	RLRate    RLRateParams     `view:"inline" desc:"recv neuron learning rate modulation params -- an additional error-based modulation of learning for receiver side: RLRate = |SpkCaP - SpkCaD| / Max(SpkCaP, SpkCaD)"`
+	NeuroMod  NeuroModParams   `view:"inline" desc:"neuromodulation effects on learning rate and activity, as a function of layer-level DA and ACh values, which are updated from global Context values, and computed from reinforcement learning algorithms"`
 }
 
 func (ln *LearnNeurParams) Update() {
@@ -233,6 +235,7 @@ func (ln *LearnNeurParams) Update() {
 	ln.LrnNMDA.Update()
 	ln.TrgAvgAct.Update()
 	ln.RLRate.Update()
+	ln.NeuroMod.Update()
 }
 
 func (ln *LearnNeurParams) Defaults() {
@@ -243,6 +246,7 @@ func (ln *LearnNeurParams) Defaults() {
 	ln.LrnNMDA.Update()
 	ln.TrgAvgAct.Defaults()
 	ln.RLRate.Defaults()
+	ln.NeuroMod.Defaults()
 }
 
 // InitCaLrnSpk initializes the neuron-level calcium learning and spking variables.

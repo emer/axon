@@ -116,6 +116,24 @@ const (
 	// These are retrieved from Special LayerVals.
 	TDDaLayer
 
+	/////////////
+	// PVLV
+
+	// BLALayer represents a basolateral amygdala layer
+	// which learns to associate arbitrary stimuli (CSs)
+	// with behaviorally salient outcomes (USs)
+	BLALayer
+
+	// CeMLayer represents a central nucleus of the amygdala layer.
+	CeMLayer
+
+	// PPTgLayer represents a pedunculopontine tegmental nucleus layer.
+	// it subtracts prior trial's excitatory conductance to
+	// compute the temporal derivative over time, with a positive
+	// rectification.
+	// also sets Act to the exact differenence.
+	PPTgLayer
+
 	LayerTypesN
 )
 

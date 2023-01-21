@@ -78,7 +78,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.RW = false
+	ss.RW = true
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	if ss.RW {
