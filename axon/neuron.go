@@ -64,9 +64,7 @@ type Neuron struct {
 	Ext    float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
 	Target float32 `desc:"target value: drives learning to produce this activation value"`
 
-	GeSyn  float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
 	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
-	GiSyn  float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
 	Gi     float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
 	Gk     float32 `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
 	Inet   float32 `desc:"net current produced by all channels -- drives update of Vm"`
@@ -131,13 +129,17 @@ type Neuron struct {
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
 
-	GeExt     float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
-	GeRaw     float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
-	GeBase    float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
-	GiRaw     float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
-	GiBase    float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
-	GeSynMax  float32 `desc:"maximum GeSyn value across the ThetaCycle"`
-	GeSynPrev float32 `desc:"previous GeSynMax value from the previous ThetaCycle"`
+	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
+	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
+	GeSyn    float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
+	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
+	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
+	GiSyn    float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
+	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
+	GModRaw  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GModSyn  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GeSynMax float32 `desc:"maximum GeSyn value across the ThetaCycle"`
+	GeSynPrv float32 `desc:"previous GeSynMax value from the previous ThetaCycle"`
 
 	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
 	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
@@ -150,7 +152,7 @@ type Neuron struct {
 	BurstPrv float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
 	CtxtGe   float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
 
-	pad float32
+	pad, pad1, pad2 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

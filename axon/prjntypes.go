@@ -65,6 +65,14 @@ const (
 	// It can also learn based on CS onset if there is a prior CS that predicts that.
 	BLAPrjn
 
+	// MatrixPrjn supports trace-based learning, where an initial
+	// trace of synaptic co-activity is formed, and then modulated
+	// by subsequent phasic dopamine & ACh when an outcome occurs.
+	// This bridges the temporal gap between gating activity
+	// and subsequent outcomes, and is based biologically on synaptic tags.
+	// Trace is reset at time of reward based on ACh level (from CINs in biology).
+	MatrixPrjn
+
 	PrjnTypesN
 )
 

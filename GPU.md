@@ -81,6 +81,8 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 # TODO:
 
+* How to apply inputs?? need to sync full neuron state bidirectionally at that point, unless we manage fixed set of external input values.. second pass on that..
+
 * general renaming for params selectors:
     * .Hidden -> .SuperLayer
     * .Inhib -> .InhibPrjn
@@ -107,6 +109,10 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 * Figure out global vars per above
 
 * Build all cortical variants into base type
-    + Deep worked well -- keep going!
-    + SendCtxtGe, RecvCtxtGe in GPU
+
+* CaLrnSyn methods -- easy.
+
+* SendSpike!
+
+* Add SendCtxtGe, RecvCtxtGe in GPU
 

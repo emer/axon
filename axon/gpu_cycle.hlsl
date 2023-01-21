@@ -41,6 +41,7 @@ void NeuronGatherSpikes(in Context ctx, in LayerParams ly, uint ni, uint gni, in
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
 		NeuronGatherSpikesPrjn(ctx, ly, RecvPrjns[ly.Idxs.RecvSt + pi], ni, gni, nrn);
 	}
+	
 }
 
 void PulvinarDriver(in LayerParams ly, in LayerParams dly, in LayerVals vals, uint ni, uint gni, out float drvGe, out float nonDrvPct) {

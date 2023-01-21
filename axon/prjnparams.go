@@ -129,12 +129,16 @@ func (pj *PrjnParams) AllParams() string {
 // NeuronGatherSpikesPrjn integrates G*Raw and G*Syn values for given neuron
 // from the given Prjn-level GSyn integrated values.
 func (pj *PrjnParams) NeuronGatherSpikesPrjn(ctx *Context, gv PrjnGVals, ni uint32, nrn *Neuron) {
-	if pj.Com.Inhib.IsTrue() {
-		nrn.GiRaw += gv.GRaw
-		nrn.GiSyn += gv.GSyn
-	} else {
+	switch pj.Com.GType {
+	case ExcitatoryG:
 		nrn.GeRaw += gv.GRaw
 		nrn.GeSyn += gv.GSyn
+	case InhibitoryG:
+		nrn.GiRaw += gv.GRaw
+		nrn.GiSyn += gv.GSyn
+	case ModulatoryG:
+		nrn.GModRaw += gv.GRaw
+		nrn.GModSyn += gv.GSyn
 	}
 }
 

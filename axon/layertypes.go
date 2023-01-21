@@ -69,6 +69,12 @@ const (
 	// within the thalamus.
 	TRNLayer
 
+	// PTMaintLayer implements the pyramidal tract layer 5 intrinsic bursting
+	// (5IB) deep neurons, which provide the main output signal from cortex,
+	// specifically the subset of PT neurons that are gated by the BG to
+	// drive sustained active maintenance, via strong NMDA channels.
+	PTMaintLayer
+
 	/////////////
 	// RL
 
@@ -133,6 +139,36 @@ const (
 	// rectification.
 	// also sets Act to the exact differenence.
 	PPTgLayer
+
+	/////////////////////////////
+	// PCORE Basal Ganglia (BG)
+
+	// MatrixLayer represents the matrisome medium spiny neurons (MSNs)
+	// that are the main Go / NoGo gating units in BG.
+	// These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.
+	MatrixLayer
+
+	// STNLayer represents subthalamic nucleus neurons, with two subtypes:
+	// STNp are more strongly driven and get over bursting threshold, driving strong,
+	// rapid activation of the KCa channels, causing a long pause in firing, which
+	// creates a window during which GPe dynamics resolve Go vs. No balance.
+	// STNs are more weakly driven and thus more slowly activate KCa, resulting in
+	// a longer period of activation, during which the GPi is inhibited to prevent
+	// premature gating based only MtxGo inhibition -- gating only occurs when
+	// GPeIn signal has had a chance to integrate its MtxNo inputs.
+	STNLayer
+
+	// GPLayer represents a globus pallidus layer in the BG, including:
+	// GPeOut, GPeIn, GPeTA (arkypallidal), and GPi.
+	// Typically just a single unit per Pool representing a given stripe.
+	GPLayer
+
+	// VThalLayer represents a BG gated thalamic layer,
+	// which receives BG gating in the form of an
+	// inhibitory projection from GPi.  Located
+	// mainly in the Ventral thalamus: VA / VM / VL,
+	// and also parts of MD mediodorsal thalamus.
+	VThalLayer
 
 	LayerTypesN
 )

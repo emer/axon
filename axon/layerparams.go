@@ -206,6 +206,8 @@ func (ly *LayerParams) SubPoolGiFmSpikes(ctx *Context, pl *Pool, lpl *Pool, lyIn
 func (ly *LayerParams) NeuronGatherSpikesInit(ctx *Context, ni uint32, nrn *Neuron) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.GModRaw = 0
+	nrn.GModSyn = 0
 	nrn.GeSyn = nrn.GeBase
 	nrn.GiSyn = nrn.GiBase
 }
@@ -266,17 +268,26 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, randc
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
+	if ly.Act.Dend.HasMod.IsTrue() {
+		mod := ly.Act.Dend.ModGain * nrn.GeModSyn
+		if mod > 1 {
+			mod = 1
+		}
+		nrn.GeRaw *= mod
+		nrn.GeSyn *= mod
+	}
+
 	if nrn.GeSyn > nrn.GeSynMax {
 		nrn.GeSynMax = nrn.GeSyn
 	}
 	geRaw := nrn.GeRaw
 	geSyn := nrn.GeSyn
 	if ly.LayType == PPTgLayer {
-		geSyn = (nrn.GeSyn - nrn.GeSynPrev)
+		geSyn = (nrn.GeSyn - nrn.GeSynPrv)
 		if geSyn < 0 {
 			geSyn = 0
 		}
-		geRawPrev := nrn.GeSynPrev * ly.Act.Dt.GeDt
+		geRawPrev := nrn.GeSynPrv * ly.Act.Dt.GeDt
 		geRaw = (nrn.GeRaw - geRawPrev)
 		if geRaw < 0 {
 			geRaw = 0

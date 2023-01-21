@@ -235,6 +235,86 @@ func (ly *Layer) CyclePost(ctx *Context) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Phase-level
 
+// NewState handles all initialization at start of new input pattern.
+// Should already have presented the external input to the network at this point.
+// Does NOT call InitGScale()
+func (ly *Layer) NewState() {
+	pl := &ly.Pools[0]
+	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActMAvg, pl.ActM.Avg, ly.Params.Act.Dt.LongAvgDt)
+	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActPAvg, pl.ActP.Avg, ly.Params.Act.Dt.LongAvgDt)
+
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsTarget.IsTrue() {
+			pl.Inhib.Clamped.SetBool(false)
+		}
+	}
+
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		nrn.SpkPrv = nrn.CaSpkD
+		nrn.GeSynPrv = nrn.GeSynMax
+		nrn.SpkMax = 0
+		nrn.SpkMaxCa = 0
+		nrn.GeSynPrv = 0
+	}
+	ly.AxonLay.DecayState(ly.Params.Act.Decay.Act, ly.Params.Act.Decay.Glong)
+}
+
+// DecayState decays activation state by given proportion
+// (default decay values are ly.Params.Act.Decay.Act, Glong)
+func (ly *Layer) DecayState(decay, glong float32) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Params.Act.DecayState(nrn, decay, glong)
+		// ly.Params.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
+		// Note: synapse-level Ca decay happens in DWt
+	}
+	for pi := range ly.Pools {
+		pl := &ly.Pools[pi]
+		pl.Inhib.Decay(decay)
+	}
+	if glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
+		ly.InitPrjnGBuffs()
+	}
+}
+
+// DecayCaLrnSpk decays neuron-level calcium learning and spiking variables
+// by given factor, which is typically ly.Params.Act.Decay.Glong.
+// Note: this is NOT called by default and is generally
+// not useful, causing variability in these learning factors as a function
+// of the decay parameter that then has impacts on learning rates etc.
+// It is only here for reference or optional testing.
+func (ly *Layer) DecayCaLrnSpk(decay float32) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Params.Learn.DecayCaLrnSpk(nrn, decay)
+	}
+}
+
+// DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)
+func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
+	pi := int32(pool + 1) // 1 based
+	pl := &ly.Pools[pi]
+	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Params.Act.DecayState(nrn, decay, glong)
+	}
+	pl.Inhib.Decay(decay)
+}
+
 // AvgMaxVarByPool returns the average and maximum value of given variable
 // for given pool index (0 = entire layer, 1.. are subpools for 4D only).
 // Uses fast index-based variable access.
@@ -312,7 +392,8 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 		nrn.ActP = nrn.ActInt
 		mlr := ly.Params.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, ly.Vals.ActAvg.CaSpkD.Max)
 		dlr := ly.Params.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
-		nrn.RLRate = mlr * dlr
+		modlr := ly.Params.Learn.NeuroMod.LRMod(ly.Vals.NeuroMod.DA, ly.Vals.NeuroMod.ACh)
+		nrn.RLRate = mlr * dlr * modlr
 		nrn.ActAvg += ly.Params.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 		var tau float32
 		ly.Params.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)

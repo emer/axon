@@ -12,6 +12,7 @@ import (
 	"github.com/goki/gosl/slrand"
 	"github.com/goki/gosl/sltype"
 	"github.com/goki/ki/ints"
+	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -103,17 +104,20 @@ func (sk *SpikeParams) AvgFmISI(avg *float32, isi float32) {
 
 // DendParams are the parameters for updating dendrite-specific dynamics
 type DendParams struct {
-	GbarExp float32 `def:"0.2,0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
-	GbarR   float32 `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
-	SSGi    float32 `def:"0,2" desc:"SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend) -- this is important for countering a positive feedback loop from NMDA getting stronger over the course of learning -- also typically requires SubMean = 1 for TrgAvgAct and learning to fully counter this feedback loop."`
+	GbarExp float32     `def:"0.2,0.5" desc:"dendrite-specific strength multiplier of the exponential spiking drive on Vm -- e.g., .5 makes it half as strong as at the soma (which uses Gbar.L as a strength multiplier per the AdEx standard model)"`
+	GbarR   float32     `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
+	SSGi    float32     `def:"0,2" desc:"SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend) -- this is important for countering a positive feedback loop from NMDA getting stronger over the course of learning -- also typically requires SubMean = 1 for TrgAvgAct and learning to fully counter this feedback loop."`
+	HasMod  slbool.Bool `inactive:"+" desc:"set automatically based on whether this layer has any recv projections that have a GType conductance type of Modulatory -- if so, then multiply GeSyn etc by GModSyn"`
+	ModGain float32     `desc:"gain factor on the total modulatory input  -- modulation can never go > 1 so increasing this gain can help ensure that full excitatory conductance comes in"`
 
-	pad int32
+	pad, pad1, pad2 int32
 }
 
 func (dp *DendParams) Defaults() {
 	dp.SSGi = 2
 	dp.GbarExp = 0.2
 	dp.GbarR = 3
+	dp.ModGain = 1
 }
 
 func (dp *DendParams) Update() {
@@ -502,6 +506,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 		nrn.GiNoise -= decay * nrn.GiNoise
 
 		nrn.GiSyn -= decay * nrn.GiSyn
+		nrn.GModSyn -= decay * nrn.GModSyn
 	}
 
 	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
@@ -529,6 +534,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.Inet = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.GModRaw = 0
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
@@ -832,14 +838,42 @@ func (ac *ActParams) SpikeFmVm(nrn *Neuron) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Projection-level activation params
 
+//go:generate stringer -type=PrjnGTypes
+
+var KiT_PrjnGTypes = kit.Enums.AddEnum(PrjnGTypesN, kit.NotBitFlag, nil)
+
+func (ev PrjnGTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *PrjnGTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
 //gosl: start act_prjn
+
+// PrjnGTypes represents the conductance (G) effects of a given projection,
+// including excitatory, inhibitory, and modulatory.
+type PrjnGTypes int32
+
+// The projection conductance types
+const (
+	// Excitatory projections drive Ge conductance on receiving neurons.
+	ExcitatoryG PrjnGTypes = iota
+
+	// Inhibitory projections drive Gi inhibitory conductance.
+	InhibitoryG
+
+	// Modulatory projections have a multiplicative effect on other inputs.
+	ModulatoryG
+
+	PrjnGTypesN
+)
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  SynComParams
 
-// SynComParams are synaptic communication parameters: delay and probability of failure
+// SynComParams are synaptic communication parameters:
+// used in the Prjn parameters.  Includes delay and
+// probability of failure, and Inhib for inhibitory connections,
+// and modulatory projections that have multiplicative-like effects.
 type SynComParams struct {
-	Inhib    slbool.Bool `inactive:"+" desc:"true if this is an inhibitory projection -- automatically set if Type == Inhib."`
+	GType    PrjnGTypes  `desc:"type of conductance (G) communicated by this projection"`
 	Delay    uint32      `min:"0" def:"2" desc:"additional synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must call InitWts() on Network!  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time.  Biologically, subtract 1 from synaptic delay values to set corresponding Delay value."`
 	PFail    float32     `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
 	PFailSWt slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
