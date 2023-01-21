@@ -69,9 +69,9 @@ func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float3
 	return
 }
 
-// AddRSalienceLayer adds a rl.RSalienceLayer unsigned reward salience coding ACh layer.
-func (nt *Network) AddRSalienceLayer(name string) *Layer {
+// AddRSalienceAChLayer adds an RSalienceAChLayer unsigned reward salience coding ACh layer.
+func (nt *Network) AddRSalienceAChLayer(name string) *Layer {
 	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{1, 1}, emer.LayerType(RSalienceLayer))
+	nt.AddLayerInit(ly, name, []int{1, 1}, emer.LayerType(RSalienceAChLayer))
 	return ly
 }

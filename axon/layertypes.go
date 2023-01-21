@@ -65,33 +65,32 @@ const (
 	// PT or Super layer neurons that provide strong driving inputs.
 	PulvinarLayer
 
-	// TRN is thalamic reticular nucleus layer for inhibitory competition
+	// TRNLayer is thalamic reticular nucleus layer for inhibitory competition
 	// within the thalamus.
 	TRNLayer
 
 	/////////////
 	// RL
 
-	// Rew represents positive or negative reward values across 2 units,
+	// RewLayer represents positive or negative reward values across 2 units,
 	// showing spiking rates for each, and Act always represents signed value.
 	RewLayer
 
-	// RSalienceLayer reads reward signals from specified source layer(s)
-	// and sends the Max absolute value of that activity as the positively-rectified
-	// non-prediction-discounted reward salience signal, and sent as
-	// an acetylcholine (ACh) signal.
-	// To handle positive-only reward signals, need to include both a reward prediction
-	// and reward outcome layer.
-	RSalienceLayer
+	// RSalienceAChLayer reads Max layer activity from specified source layer(s)
+	// and optionally the global Context.NeuroMod.Rew or RewPred state variables,
+	// and updates the global ACh = Max of all as the positively-rectified,
+	// non-prediction-discounted reward salience signal.
+	// Acetylcholine (ACh) is known to represent something like this signal.
+	RSalienceAChLayer
 
-	// RWPred computes reward prediction for a simple Rescorla-Wagner
+	// RWPredLayer computes reward prediction for a simple Rescorla-Wagner
 	// learning dynamic (i.e., PV learning in the PVLV framework).
 	// Activity is computed as linear function of excitatory conductance
 	// (which can be negative -- there are no constraints).
 	// Use with RWPrjn which does simple delta-rule learning on minus-plus.
 	RWPredLayer
 
-	// RWDa computes a dopamine (DA) signal based on a simple Rescorla-Wagner
+	// RWDaLayer computes a dopamine (DA) signal based on a simple Rescorla-Wagner
 	// learning dynamic (i.e., PV learning in the PVLV framework).
 	// It computes difference between r(t) and RWPred values.
 	// r(t) is accessed directly from a Rew layer -- if no external input then no
@@ -99,20 +98,22 @@ const (
 	// RWPred prediction is also accessed directly from Rew layer to avoid any issues.
 	RWDaLayer
 
-	// TDRewPred is the temporal differences reward prediction layer.
+	// TDPredLayer is the temporal differences reward prediction layer.
 	// It represents estimated value V(t) in the minus phase, and computes
-	// estimated V(t+1) based on its learned weights in plus phase.
-	// Use TDRewPred Prjn for DA modulated learning.
+	// estimated V(t+1) based on its learned weights in plus phase,
+	// using the TDPredPrjn projection type for DA modulated learning.
 	TDPredLayer
 
 	// TDIntegLayer is the temporal differences reward integration layer.
-	// It represents estimated value V(t) in the minus phase, and
-	// estimated V(t+1) + r(t) in the plus phase.
-	// It directly accesses (t) from Rew layer, and V(t) from RewPred layer.
+	// It represents estimated value V(t) from prior time step in the minus phase,
+	// and estimated discount * V(t+1) + r(t) in the plus phase.
+	// It gets Rew, PrevPred from Context.NeuroMod, and Special
+	// LayerVals from TDPredLayer.
 	TDIntegLayer
 
 	// TDDaLayer computes a dopamine (DA) signal as the temporal difference (TD)
 	// between the TDIntegLayer activations in the minus and plus phase.
+	// These are retrieved from Special LayerVals.
 	TDDaLayer
 
 	LayerTypesN

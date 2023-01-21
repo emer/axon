@@ -75,13 +75,14 @@ type LayerParams struct {
 	//     each applies to a specific layer type.
 	//     use the `viewif` field tag to condition on LayType.
 
-	Burst   BurstParams   `viewif:"LayType=SuperLayer" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT      CTParams      `viewif:"LayType=CTLayer" desc:"params for the CT corticothalamic layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
-	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
-	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
-	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
-	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" desc:"parameterizes TD reward integration layer"`
-	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
+	Burst   BurstParams   `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
+	CT      CTParams      `viewif:"LayType=CTLayer" view:"inline" desc:"params for the CT corticothalamic layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
+	RSalACh RSalAChParams `viewif:"LayType=RSalienceAChLayer" view:"inline" desc:"parameterizes reward salience as ACh global neuromodulatory signal as a function of the MAX activation of its inputs."`
+	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
+	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
+	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
+	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
 }
@@ -90,9 +91,12 @@ func (ly *LayerParams) Update() {
 	ly.Act.Update()
 	ly.Inhib.Update()
 	ly.Learn.Update()
+
 	ly.Burst.Update()
 	ly.CT.Update()
 	ly.Pulv.Update()
+
+	ly.RSalACh.Update()
 	ly.RWPred.Update()
 	ly.RWDa.Update()
 	ly.TDInteg.Update()
@@ -106,9 +110,12 @@ func (ly *LayerParams) Defaults() {
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 1.0
 	ly.Inhib.Pool.Gi = 1.0
+
 	ly.Burst.Defaults()
 	ly.CT.Defaults()
 	ly.Pulv.Defaults()
+
+	ly.RSalACh.Defaults()
 	ly.RWPred.Defaults()
 	ly.RWDa.Defaults()
 	ly.TDInteg.Defaults()
@@ -138,6 +145,10 @@ func (ly *LayerParams) AllParams() string {
 	case PulvinarLayer:
 		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
 		str += "Pulv: {\n " + JsonToParams(b)
+
+	case RSalienceAChLayer:
+		b, _ = json.MarshalIndent(&ly.RSalACh, "", " ")
+		str += "RSalACh: {\n " + JsonToParams(b)
 	case RWPredLayer:
 		b, _ = json.MarshalIndent(&ly.RWPred, "", " ")
 		str += "RWPred: {\n " + JsonToParams(b)
@@ -225,6 +236,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 	case RewLayer:
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.Rew) // Rew must be set in Context!
+	case RSalienceAChLayer:
+		nrn.GeRaw = ctx.NeuroMod.ACh // straight up
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case RWDaLayer:
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.NeuroMod.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
@@ -308,6 +322,8 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, vals *Lay
 		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
+	case RSalienceAChLayer:
+		nrn.Act = ctx.NeuroMod.ACh
 	case RWPredLayer:
 		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
 		if ni == 0 {

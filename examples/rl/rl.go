@@ -146,6 +146,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		rplay = rp
 		ptype = axon.TDPredPrjn
 	}
+	sal := net.AddRSalienceAChLayer("ACh")
+	sal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Rew", XAlign: relpos.Left, Space: 1})
 	inp := net.AddLayer2D("Input", 3, 20, emer.Input)
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left})
 	net.ConnectLayers(inp, rplay, full, emer.PrjnType(ptype))
@@ -306,19 +308,19 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RSalienceAChLayer")
 	if ss.RW {
-		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RWDaLayer")
-		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RWPredLayer")
+		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RWDaLayer", "RWPredLayer")
 		if li, ok := ss.Logs.ItemByName("DA_Act"); ok {
 			li.FixMin = false
 		}
-		ss.Logs.PlotItems("DA_Act")
+		ss.Logs.PlotItems("DA_Act", "ACh_Act")
 	} else {
-		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "TDDaLayer")
+		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "TDDaLayer", "TDPredLayer", "TDIntegLayer")
 		if li, ok := ss.Logs.ItemByName("TD_Act"); ok {
 			li.FixMin = false
 		}
-		ss.Logs.PlotItems("TD_Act")
+		ss.Logs.PlotItems("TD_Act", "ACh_Act")
 	}
 
 	ss.Logs.CreateTables()

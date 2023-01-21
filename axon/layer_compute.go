@@ -150,6 +150,20 @@ func (ly *Layer) SendSpike(ctx *Context) {
 	}
 }
 
+// RSalAChMaxLayAct returns the updated maxAct value using
+// LayVals.ActAvg.CaSpkP.Max from given layer index,
+// subject to any relevant RewThr thresholding.
+func (ly *Layer) RSalAChMaxLayAct(maxAct float32, net *Network, layIdx int32) float32 {
+	if layIdx < 0 {
+		return maxAct
+	}
+	act := ly.Params.RSalACh.Thr(net.LayVals[layIdx].ActAvg.CaSpkP.Max)
+	if act > maxAct {
+		maxAct = act
+	}
+	return act
+}
+
 // CyclePost is called after the standard Cycle update, as a separate
 // network layer loop.
 // This is reserved for any kind of special ad-hoc types that
@@ -161,6 +175,25 @@ func (ly *Layer) SendSpike(ctx *Context) {
 // For example, updating a neuromodulatory signal such as dopamine.
 func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
+	case RSalienceAChLayer:
+		net := ly.Network.(AxonNetwork).AsAxon()
+		maxAct := float32(0)
+		if ly.Params.RSalACh.Rew.IsTrue() {
+			maxAct = ly.Params.RSalACh.Thr(ctx.NeuroMod.Rew)
+		}
+		if ly.Params.RSalACh.RewPred.IsTrue() {
+			rpAct := ly.Params.RSalACh.Thr(ctx.NeuroMod.RewPred)
+			if rpAct > maxAct {
+				maxAct = rpAct
+			}
+		}
+		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay1Idx)
+		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay2Idx)
+		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay3Idx)
+		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay4Idx)
+		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay5Idx)
+		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay6Idx)
+		ctx.NeuroMod.ACh = maxAct
 	case RWDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := net.LayVals[ly.Params.RWDa.RWPredLayIdx]

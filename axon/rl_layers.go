@@ -8,11 +8,42 @@ import (
 	"log"
 
 	"github.com/emer/etable/minmax"
+	"github.com/goki/gosl/slbool"
 )
 
 //gosl: start rl_layers
 
-// note: RewLayer gets Rew value from Context
+// RSalAChParams compute reward salience as ACh global neuromodulatory signal
+// as a function of the MAX activation of its inputs.
+type RSalAChParams struct {
+	RewThr     float32     `desc:"threshold per input source, to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
+	Rew        slbool.Bool `desc:"use the global Context.NeuroMod.Rew value, sensitive to the HasRew flag"`
+	RewPred    slbool.Bool `desc:"use the global Context.NeuroMod.RewPred value"`
+	SrcLay1Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
+	SrcLay2Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
+	SrcLay3Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
+	SrcLay4Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
+	SrcLay5Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay5Name if present -- -1 if not used"`
+	SrcLay6Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay6Name if present -- -1 if not used"`
+}
+
+func (rp *RSalAChParams) Defaults() {
+	rp.RewThr = 0.1
+	rp.Rew.SetBool(true)
+}
+
+func (rp *RSalAChParams) Update() {
+}
+
+func (rp *RSalAChParams) Thr(val float32) float32 {
+	if rp.RewThr <= 0 {
+		return val
+	}
+	if val < rp.RewThr {
+		return 0
+	}
+	return 1
+}
 
 // RWPredParams parameterizes reward prediction for a simple Rescorla-Wagner
 // learning dynamic (i.e., PV learning in the PVLV framework).
@@ -122,6 +153,27 @@ func (ly *LayerParams) TDPredLayerDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Act.Dt.GeTau = 40
+}
+
+func (ly *Layer) RSalAChPostBuildFind(nm string, dest *int32) {
+	*dest = -1
+	if rnm, ok := ly.BuildConfig[nm]; ok {
+		dly, err := ly.Network.LayerByNameTry(rnm)
+		if err != nil {
+			log.Println(err)
+		} else {
+			*dest = int32(dly.Index())
+		}
+	}
+}
+
+func (ly *Layer) RSalAChPostBuild() {
+	ly.RSalAChPostBuildFind("SrcLay1Name", &ly.Params.RSalACh.SrcLay1Idx)
+	ly.RSalAChPostBuildFind("SrcLay2Name", &ly.Params.RSalACh.SrcLay2Idx)
+	ly.RSalAChPostBuildFind("SrcLay3Name", &ly.Params.RSalACh.SrcLay3Idx)
+	ly.RSalAChPostBuildFind("SrcLay4Name", &ly.Params.RSalACh.SrcLay4Idx)
+	ly.RSalAChPostBuildFind("SrcLay5Name", &ly.Params.RSalACh.SrcLay5Idx)
+	ly.RSalAChPostBuildFind("SrcLay6Name", &ly.Params.RSalACh.SrcLay6Idx)
 }
 
 // TDIntegPostBuild does post-Build config

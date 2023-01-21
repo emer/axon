@@ -111,6 +111,8 @@ func (ly *Layer) PostBuild() {
 	switch ly.LayerType() {
 	case PulvinarLayer:
 		ly.PulvPostBuild()
+	case RSalienceAChLayer:
+		ly.RSalAChPostBuild()
 	case RWDaLayer:
 		ly.RWDaPostBuild()
 	case TDIntegLayer:

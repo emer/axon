@@ -1,6 +1,8 @@
-# GPU: gpu strategy notes
+# GPU: graphical processing unit implementation
 
-# GPU variable layout:
+This document provides detailed info about the GPU implementation of axon, using [gosl](https://github.com/goki/gosl) to convert the existing Go code into HLSL shader code, in the `shaders` directory, which is then compiled and loaded by the [vgpu](https://github.com/goki/vgpu) Vulkan GPU framework.  This allows the same Go codebase to run on CPU and GPU.
+
+# GPU Variable layout:
 
 Set 0:  Uniforms
     0. LayerParams -- array by layer index
