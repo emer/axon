@@ -44,11 +44,10 @@ func (ly *Layer) Defaults() {
 		ly.Params.LayType = ly.LayerType()
 		ly.Params.Defaults()
 		ly.Vals.ActAvg.GiMult = 1
-	}
-	for _, pj := range ly.RcvPrjns {
-		pj.Defaults()
-	}
-	if ly.Params == nil {
+	} else {
+		for _, pj := range ly.RcvPrjns {
+			pj.Defaults()
+		}
 		return
 	}
 	switch ly.LayerType() {
@@ -61,10 +60,12 @@ func (ly *Layer) Defaults() {
 		ly.Params.Act.Clamp.Ge = 0.8
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
 		// ly.Params.Learn.RLRate.SigmoidMin = 1
+
 	case CTLayer:
 		ly.Params.CTDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
+
 	case RewLayer:
 		ly.Params.RWDefaults()
 	case RWPredLayer:
@@ -77,8 +78,10 @@ func (ly *Layer) Defaults() {
 		ly.Params.TDPredDefaults()
 	case TDIntegLayer, TDDaLayer:
 		ly.Params.TDDefaults()
+
 	case BLALayer:
 		ly.Params.BLADefaults()
+
 	case MatrixLayer:
 		ly.MatrixDefaults()
 	case GPLayer:
@@ -87,6 +90,9 @@ func (ly *Layer) Defaults() {
 		ly.STNDefaults()
 	case VThalLayer:
 		ly.VThalDefaults()
+	}
+	for _, pj := range ly.RcvPrjns {
+		pj.Defaults()
 	}
 	ly.UpdateParams()
 }
@@ -116,47 +122,13 @@ func (ly *Layer) UpdateParams() {
 	}
 }
 
-// BuildConfigByName looks for given BuildConfig option by name,
-// and reports & returns an error if not found.
-func (ly *LayerBase) BuildConfigByName(nm string) (string, error) {
-	cfg, ok := ly.BuildConfig[nm]
-	if !ok {
-		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
-		log.Println(err)
-		return cfg, err
-	}
-	return cfg, nil
-}
-
-// BuildConfigFindLayer looks for BuildConfig of given name
-// and if found, looks for layer with corresponding name.
-// if mustName is true, then an error is logged if the BuildConfig
-// name does not exist.  An error is always logged if the layer name
-// is not found.  -1 is returned in any case of not found.
-func (ly *Layer) BuildConfigFindLayer(nm string, mustName bool) int32 {
-	idx := int32(-1)
-	if rnm, ok := ly.BuildConfig[nm]; ok {
-		dly, err := ly.Network.LayerByNameTry(rnm)
-		if err != nil {
-			log.Println(err)
-		} else {
-			idx = int32(dly.Index())
-		}
-	} else {
-		if mustName {
-			err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
-			log.Println(err)
-		}
-	}
-	return idx
-}
-
 // PostBuild performs special post-Build() configuration steps for specific algorithms,
 // using configuration data set in BuildConfig during the ConfigNet process.
 func (ly *Layer) PostBuild() {
 	switch ly.LayerType() {
 	case PulvinarLayer:
 		ly.PulvPostBuild()
+
 	case RSalienceAChLayer:
 		ly.RSalAChPostBuild()
 	case RWDaLayer:
@@ -165,8 +137,14 @@ func (ly *Layer) PostBuild() {
 		ly.TDIntegPostBuild()
 	case TDDaLayer:
 		ly.TDDaPostBuild()
+
+	case BLALayer:
+		ly.BLAPostBuild()
+
 	case MatrixLayer:
 		ly.MatrixPostBuild()
+	case GPLayer:
+		ly.GPPostBuild()
 	}
 }
 

@@ -17,6 +17,7 @@ import (
 // #include "learn_neur.hlsl"
 // #include "deep_layers.hlsl"
 // #include "rl_layers.hlsl"
+// #include "pvlv_layers.hlsl"
 // #include "pcore_layers.hlsl"
 // #include "pool.hlsl"
 // #include "layervals.hlsl"
@@ -85,9 +86,9 @@ type LayerParams struct {
 	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
+	BLA     BLAParams     `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes basolateral amygdala -- most of which is implemented by the NeuroMod settings for DA and ACh modulation."`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
-	STN     STNParams     `viewif:"LayType=STNLayer" view:"inline" desc:"subthalamic nucleus parameters."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
 }
@@ -106,9 +107,11 @@ func (ly *LayerParams) Update() {
 	ly.RWDa.Update()
 	ly.TDInteg.Update()
 	ly.TDDa.Update()
+
+	ly.BLA.Update()
+
 	ly.Matrix.Update()
 	ly.GP.Update()
-	ly.STN.Update()
 }
 
 func (ly *LayerParams) Defaults() {
@@ -128,9 +131,11 @@ func (ly *LayerParams) Defaults() {
 	ly.RWDa.Defaults()
 	ly.TDInteg.Defaults()
 	ly.TDDa.Defaults()
+
+	ly.BLA.Defaults()
+
 	ly.Matrix.Defaults()
 	ly.GP.Defaults()
-	ly.STN.Defaults()
 }
 
 // AllParams returns a listing of all parameters in the Layer
@@ -152,10 +157,10 @@ func (ly *LayerParams) AllParams() string {
 		str += "Burst: {\n " + JsonToParams(b)
 	case CTLayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
-		str += "CT:   {\n " + JsonToParams(b)
+		str += "CT:    {\n " + JsonToParams(b)
 	case PulvinarLayer:
 		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
-		str += "Pulv: {\n " + JsonToParams(b)
+		str += "Pulv:  {\n " + JsonToParams(b)
 
 	case RSalienceAChLayer:
 		b, _ = json.MarshalIndent(&ly.RSalACh, "", " ")
@@ -171,16 +176,18 @@ func (ly *LayerParams) AllParams() string {
 		str += "TDInteg: {\n " + JsonToParams(b)
 	case TDDaLayer:
 		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
-		str += "TDDa: {\n " + JsonToParams(b)
+		str += "TDDa:   {\n " + JsonToParams(b)
+
+	case BLALayer:
+		b, _ = json.MarshalIndent(&ly.BLA, "", " ")
+		str += "BLA:    {\n " + JsonToParams(b)
+
 	case MatrixLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
 		str += "Matrix: {\n " + JsonToParams(b)
 	case GPLayer:
 		b, _ = json.MarshalIndent(&ly.GP, "", " ")
 		str += "GP:     {\n " + JsonToParams(b)
-	case STNLayer:
-		b, _ = json.MarshalIndent(&ly.STN, "", " ")
-		str += "STN:    {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -321,6 +328,7 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *
 	ly.Act.GvgccFmVm(nrn)
 	ly.Act.GeFmSyn(ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc, randctr) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
+	ly.Act.GSkCaFmCa(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(ni, nrn, nrn.GiSyn, randctr)
 }
 

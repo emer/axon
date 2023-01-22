@@ -7,6 +7,7 @@ package axon
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
@@ -266,6 +267,48 @@ func (ly *LayerBase) NonDefaultParams() string {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Build
+
+// SetBuildConfig sets named configuration parameter to given string value
+// to be used in the PostBuild stage -- mainly for layer names that need to be
+// looked up and turned into indexes, after entire network is built.
+func (ly *LayerBase) SetBuildConfig(param, val string) {
+	ly.BuildConfig[param] = val
+}
+
+// BuildConfigByName looks for given BuildConfig option by name,
+// and reports & returns an error if not found.
+func (ly *LayerBase) BuildConfigByName(nm string) (string, error) {
+	cfg, ok := ly.BuildConfig[nm]
+	if !ok {
+		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
+		log.Println(err)
+		return cfg, err
+	}
+	return cfg, nil
+}
+
+// BuildConfigFindLayer looks for BuildConfig of given name
+// and if found, looks for layer with corresponding name.
+// if mustName is true, then an error is logged if the BuildConfig
+// name does not exist.  An error is always logged if the layer name
+// is not found.  -1 is returned in any case of not found.
+func (ly *LayerBase) BuildConfigFindLayer(nm string, mustName bool) int32 {
+	idx := int32(-1)
+	if rnm, ok := ly.BuildConfig[nm]; ok {
+		dly, err := ly.Network.LayerByNameTry(rnm)
+		if err != nil {
+			log.Println(err)
+		} else {
+			idx = int32(dly.Index())
+		}
+	} else {
+		if mustName {
+			err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
+			log.Println(err)
+		}
+	}
+	return idx
+}
 
 // BuildSubPools initializes neuron start / end indexes for sub-pools
 func (ly *LayerBase) BuildSubPools() {

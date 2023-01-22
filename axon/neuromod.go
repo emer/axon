@@ -89,7 +89,7 @@ type NeuroModParams struct {
 }
 
 func (nm *NeuroModParams) Defaults() {
-	nm.DAMod = NoDAMod
+	// nm.DAMod is typically set by BuildConfig -- don't reset here
 	nm.DAModGain = 0.5
 	nm.DALrateMod.SetBool(false)
 	nm.AChLrateMod.SetBool(false)
@@ -104,18 +104,29 @@ func (nm *NeuroModParams) Update() {
 	mat32.Clamp(nm.AChLratePct, 0, 1)
 }
 
-// LRModFact returns learning rate modulation factor for given inputs
+// LRModFact returns learning rate modulation factor for given inputs.
 func (nm *NeuroModParams) LRModFact(on bool, pct, val float32) float32 {
 	if !on {
 		return 1
 	}
+	val = mat32.Clamp(mat32.Abs(val), 0, 1)
 	return 1.0 - pct*(1.0-val)
 }
 
 // LRMod returns overall learning rate modulation factor due to neuromodulation
-// from given dopamine and ACh inputs
+// from given dopamine (DA) and ACh inputs.
+// If DALrateMod is true and DAMod == D1Mod or D2Mod, then the sign is a function
+// of the DA
 func (nm *NeuroModParams) LRMod(da, ach float32) float32 {
-	return nm.LRModFact(nm.DALrateMod.IsTrue(), nm.DALratePct, da) * nm.LRModFact(nm.AChLrateMod.IsTrue(), nm.AChLratePct, ach)
+	mod := nm.LRModFact(nm.DALrateMod.IsTrue(), nm.DALratePct, da) * nm.LRModFact(nm.AChLrateMod.IsTrue(), nm.AChLratePct, ach)
+	if nm.DALrateMod.IsTrue() {
+		if nm.DAMod == D1Mod {
+			mod *= mat32.Sign(da)
+		} else if nm.DAMod == D2Mod {
+			mod *= -mat32.Sign(da)
+		}
+	}
+	return mod
 }
 
 // GGain returns effective Ge and Gi gain factor given

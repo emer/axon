@@ -524,13 +524,17 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.GABAB -= glong * nrn.GABAB
 	nrn.GABABx -= glong * nrn.GABABx
 
+	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
+	nrn.Gnmda -= glong * nrn.Gnmda
+
 	nrn.Gvgcc -= glong * nrn.Gvgcc
 	nrn.VgccM -= glong * nrn.VgccM
 	nrn.VgccH -= glong * nrn.VgccH
 	nrn.Gak -= glong * nrn.Gak
 
-	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
-	nrn.Gnmda -= glong * nrn.Gnmda
+	nrn.SKCai -= glong * nrn.SKCai
+	nrn.SKCaM -= glong * nrn.SKCaM
+	nrn.Gsk -= glong * nrn.Gsk
 
 	// learning-based NMDA, Ca values decayed in Learn.DecayNeurCa
 
@@ -601,6 +605,10 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.VgccH = 0
 	nrn.Gak = 0
 
+	nrn.SKCai = 0
+	nrn.SKCaM = 0
+	nrn.Gsk = 0
+
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.SSGi = 0
@@ -634,6 +642,9 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 // NMDAFmRaw updates all the NMDA variables from
 // total Ge (GeRaw + Ext) and current Vm, Spiking
 func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geTot float32) {
+	if ac.NMDA.Gbar == 0 {
+		return
+	}
 	if geTot < 0 {
 		geTot = 0
 	}
@@ -645,6 +656,9 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geTot float32) {
 // GvgccFmVm updates all the VGCC voltage-gated calcium channel variables
 // from VmDend
 func (ac *ActParams) GvgccFmVm(nrn *Neuron) {
+	if ac.VGCC.Gbar == 0 {
+		return
+	}
 	nrn.Gvgcc = ac.VGCC.Gvgcc(nrn.VmDend, nrn.VgccM, nrn.VgccH)
 	var dm, dh float32
 	ac.VGCC.DMHFmV(nrn.VmDend, nrn.VgccM, nrn.VgccH, &dm, &dh)
@@ -663,6 +677,21 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
 	}
+}
+
+// GSkCaFmCa updates the SKCa channel if used
+func (ac *ActParams) GSkCaFmCa(nrn *Neuron) {
+	if ac.SKCa.Gbar == 0 {
+		return
+	}
+	if ac.SKCa.CaD.IsTrue() {
+		nrn.SKCai = ac.SKCa.CaScale * nrn.CaSpkD // todo: CaD?
+	} else {
+		nrn.SKCai = ac.SKCa.CaScale * nrn.CaSpkP // todo: CaP?
+	}
+	nrn.SKCaM = ac.SKCa.MFmCa(nrn.SKCai, nrn.SKCaM)
+	nrn.Gsk = ac.SKCa.Gbar * nrn.SKCaM
+	nrn.Gk += nrn.Gsk
 }
 
 // GeFmSyn integrates Ge excitatory conductance from GeSyn.

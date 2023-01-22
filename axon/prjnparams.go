@@ -22,6 +22,7 @@ import (
 // #include "learn.hlsl"
 // #include "deep_prjns.hlsl"
 // #include "rl_prjns.hlsl"
+// #include "pvlv_prjns.hlsl"
 // #include "pcore_prjns.hlsl"
 // #include "prjnvals.hlsl"
 //gosl: end prjnparams
@@ -233,7 +234,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron, rp
 			eff_lr *= pj.RLPred.OppSignLRate
 		}
 	} else {
-		eff_lr = -eff_lr
+		eff_lr = -eff_lr              // negative case
 		if rn.Ge > rn.Act && da < 0 { // clipped at top, saturate up
 			da = 0
 		}

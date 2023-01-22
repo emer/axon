@@ -14,12 +14,13 @@ import (
 // based on Brunel & Wang (2001) parameters.
 type GABABParams struct {
 	Gbar     float32 `def:"0,0.2,0.25,0.3,0.4" desc:"overall strength multiplier of GABA-B current"`
-	RiseTau  float32 `def:"45" desc:"rise time for bi-exponential time dynamics of GABA-B"`
-	DecayTau float32 `def:"50" desc:"decay time for bi-exponential time dynamics of GABA-B"`
-	Gbase    float32 `def:"0.2" desc:"baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)"`
-	GiSpike  float32 `def:"10" desc:"multiplier for converting Gi to equivalent GABA spikes"`
-	MaxTime  float32 `inactive:"+" desc:"time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau"`
-	TauFact  float32 `view:"-" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
+	RiseTau  float32 `viewif:"Gbar>0" def:"45" desc:"rise time for bi-exponential time dynamics of GABA-B"`
+	DecayTau float32 `viewif:"Gbar>0" def:"50" desc:"decay time for bi-exponential time dynamics of GABA-B"`
+	Gbase    float32 `viewif:"Gbar>0" def:"0.2" desc:"baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)"`
+	GiSpike  float32 `viewif:"Gbar>0" def:"10" desc:"multiplier for converting Gi to equivalent GABA spikes"`
+	MaxTime  float32 `viewif:"Gbar>0" inactive:"+" desc:"time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau"`
+
+	TauFact float32 `view:"-" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
 
 	pad int32
 }

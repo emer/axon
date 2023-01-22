@@ -22,21 +22,21 @@ import (
 func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi AxonLayer) {
 	gpi = nt.AddGPiLayer2D(prefix+"GPi", gpNeurY, gpNeurX)
 	gpeOuti := nt.AddGPeLayer2D(prefix+"GPeOut", gpNeurY, gpNeurX)
-	gpeOuti.Params.GP.GPType = GPeOut
+	gpeOuti.SetBuildConfig("GPType", "GPeOut")
 	gpeOut = gpeOuti
 	gpeIni := nt.AddGPeLayer2D(prefix+"GPeIn", gpNeurY, gpNeurX)
-	gpeIni.Params.GP.GPType = GPeIn
+	gpeIni.SetBuildConfig("GPType", "GPeIn")
 	gpeIn = gpeIni
 	gpeTAi := nt.AddGPeLayer2D(prefix+"GPeTA", gpNeurY, gpNeurX)
-	gpeTAi.Params.GP.GPType = GPeTA
+	gpeTAi.SetBuildConfig("GPType", "GPeTA")
 	gpeTA = gpeTAi
 	stnp = nt.AddSTNLayer2D(prefix+"STNp", gpNeurY, gpNeurX)
 	stns = nt.AddSTNLayer2D(prefix+"STNs", gpNeurY, gpNeurX)
 	mtxGo = nt.AddMatrixLayer(prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	mtxNo = nt.AddMatrixLayer(prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
-	mtxGo.(AxonLayer).AsAxon().BuildConfig["OtherMatrixName"] = mtxNo.Name()
-	mtxNo.(AxonLayer).AsAxon().BuildConfig["OtherMatrixName"] = mtxGo.Name()
+	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
+	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
 
 	full := prjn.NewFull()
 
@@ -91,21 +91,21 @@ func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeur
 func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi AxonLayer) {
 	gpi = nt.AddGPiLayer4D(prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti := nt.AddGPeLayer4D(prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeOuti.Params.GP.GPType = GPeOut
+	gpeOuti.SetBuildConfig("GPType", "GPeOut")
 	gpeOut = gpeOuti
 	gpeIni := nt.AddGPeLayer4D(prefix+"GPeIn", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeIni.Params.GP.GPType = GPeIn
+	gpeIni.SetBuildConfig("GPType", "GPeIn")
 	gpeIn = gpeIni
 	gpeTAi := nt.AddGPeLayer4D(prefix+"GPeTA", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeTAi.Params.GP.GPType = GPeTA
+	gpeTAi.SetBuildConfig("GPType", "GPeTA")
 	gpeTA = gpeTAi
 	stnp = nt.AddSTNLayer4D(prefix+"STNp", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	stns = nt.AddSTNLayer4D(prefix+"STNs", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	mtxGo = nt.AddMatrixLayer(prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	mtxNo = nt.AddMatrixLayer(prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
-	mtxGo.(AxonLayer).AsAxon().BuildConfig["OtherMatrixName"] = mtxNo.Name()
-	mtxNo.(AxonLayer).AsAxon().BuildConfig["OtherMatrixName"] = mtxGo.Name()
+	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
+	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
 
 	one2one := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
@@ -220,21 +220,21 @@ func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, superT
 func (nt *Network) AddMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(MatrixLayer))
-	ly.Params.Learn.NeuroMod.DAMod = da
+	ly.SetBuildConfig("DAMod", da.String())
 	ly.SetClass("BG")
 	return ly
 }
 
 // ConnectToMatrix adds a MatrixPrjn from given sending layer to a matrix layer
 func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.Forward)
+	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(MatrixPrjn))
 }
 
 // AddGPLayer2D adds a GPLayer of given size, with given name.
+// Must set the GPType BuildConfig setting to appropriate GPLayerType
 func (nt *Network) AddGPeLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(GPLayer))
-	ly.Params.GP.GPType = GPeIn
 	ly.SetClass("BG")
 	return ly
 }
@@ -243,7 +243,7 @@ func (nt *Network) AddGPeLayer2D(name string, nNeurY, nNeurX int) *Layer {
 func (nt *Network) AddGPiLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(GPLayer))
-	ly.Params.GP.GPType = GPi
+	ly.SetBuildConfig("GPType", "GPi")
 	ly.SetClass("BG")
 	return ly
 }

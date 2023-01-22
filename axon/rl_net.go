@@ -34,8 +34,8 @@ func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float3
 	nt.AddLayerInit(ri, prefix+"RewInteg", []int{1, 2}, emer.LayerType(TDIntegLayer))
 	td = &Layer{}
 	nt.AddLayerInit(td, prefix+"TD", []int{1, 1}, emer.LayerType(TDDaLayer))
-	ri.(*Layer).BuildConfig["TDPredLayName"] = rp.Name()
-	td.(*Layer).BuildConfig["TDIntegLayName"] = ri.Name()
+	ri.SetBuildConfig("TDPredLayName", rp.Name())
+	td.SetBuildConfig("TDIntegLayName", ri.Name())
 	if rel == relpos.Behind {
 		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), XAlign: relpos.Left, Space: space})
 		ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), XAlign: relpos.Left, Space: space})
@@ -58,7 +58,7 @@ func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float3
 	dal := &Layer{}
 	da = dal
 	nt.AddLayerInit(da, prefix+"DA", []int{1, 1}, emer.LayerType(RWDaLayer))
-	dal.BuildConfig["RWPredLayName"] = rp.Name()
+	dal.SetBuildConfig("RWPredLayName", rp.Name())
 	if rel == relpos.Behind {
 		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), XAlign: relpos.Left, Space: space})
 		da.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), XAlign: relpos.Left, Space: space})

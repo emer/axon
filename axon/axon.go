@@ -83,8 +83,13 @@ type AxonLayer interface {
 	// neurons in this layer -- convenience interface method for threading dispatch.
 	NeurStartIdx() int
 
+	// SetBuildConfig sets named configuration parameter to given string value
+	// to be used in the PostBuild stage -- mainly for layer names that need to be
+	// looked up and turned into indexes, after entire network is built.
+	SetBuildConfig(param, val string)
+
 	// PostBuild performs special post-Build() configuration steps for specific algorithms,
-	// using configuration data set in BuildConfig during the ConfigNet process.
+	// using configuration data from SetBuildConfig during the ConfigNet process.
 	PostBuild()
 
 	// InitWts initializes the weight values in the network, i.e., resetting learning

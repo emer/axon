@@ -115,6 +115,9 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 * Add SendCtxtGe, RecvCtxtGe in GPU
 
+* PT layer code
+* finish BLA layer code
+
 * DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
 
 * grab pool in plus phase, prior to updating gated, but after all the std plus phase stuff.

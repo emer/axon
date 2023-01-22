@@ -5,9 +5,9 @@
 package axon
 
 import (
+	"log"
 	"strings"
 
-	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/kit"
 )
 
@@ -15,9 +15,10 @@ import (
 
 // MatrixParams has parameters for BG Striatum Matrix MSN layers
 // These are the main Go / NoGo gating units in BG.
-// All of the learning modulation is pre-computed on the recv neuron
-// RLRate variable via NeuroMod and LayerVals.Special.V1 = sign multiplier,
-// in PlusPhase prior to DWt call.
+// DA, ACh learning rate modulation is pre-computed on the recv neuron
+// RLRate variable via NeuroMod.  Also uses Pool.Gated for InvertNoGate,
+// updated in PlusPhase prior to DWt call.
+// Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
 	// GPHasPools     bool        `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false).  If true, then Matrix must also have pools "`
 	GateThr        float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
@@ -64,7 +65,7 @@ const (
 // GPeOut, GPeIn, GPeTA (arkypallidal), and GPi (see GPType for type).
 // Typically just a single unit per Pool representing a given stripe.
 type GPParams struct {
-	GPType GPLayerTypes `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
+	GPType GPLayerTypes `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer -- must set during config using SetBuildConfig of GPType."`
 
 	pad, pad1, pad2 uint32
 }
@@ -73,29 +74,6 @@ func (gp *GPParams) Defaults() {
 }
 
 func (gp *GPParams) Update() {
-}
-
-// STNParams represents STN neurons, with two subtypes:
-// STNp are more strongly driven and get over bursting threshold, driving strong,
-// rapid activation of the KCa channels, causing a long pause in firing, which
-// creates a window during which GPe dynamics resolve Go vs. No balance.
-// STNs are more weakly driven and thus more slowly activate KCa, resulting in
-// a longer period of activation, during which the GPi is inhibited to prevent
-// premature gating based only MtxGo inhibition -- gating only occurs when
-// GPeIn signal has had a chance to integrate its MtxNo inputs.
-type STNParams struct {
-	CaD       slbool.Bool `desc:"use CaD timescale (delayed) calcium signal -- for STNs -- else use CaP (faster) for STNp"`
-	CaScale   float32     `desc:"scaling factor applied to input Ca to bring into proper range of these dynamics"`
-	ThetaInit slbool.Bool `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
-
-	pad float32
-}
-
-func (sp *STNParams) Defaults() {
-	sp.CaScale = 3
-}
-
-func (sp *STNParams) Update() {
 }
 
 //gosl: end pcore_layers
@@ -124,6 +102,13 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Inhib.Pool.FB = 0
 	ly.Params.Inhib.Pool.Gi = 0.5
 	ly.Params.Inhib.ActAvg.Nominal = 0.25
+
+	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
+	ly.Params.Learn.NeuroMod.DALrateMod.SetBool(true)
+	ly.Params.Learn.NeuroMod.AChLrateMod.SetBool(true)
+	ly.Params.Learn.NeuroMod.DALratePct = 1
+	ly.Params.Learn.NeuroMod.AChLratePct = 1
+	ly.Params.Learn.NeuroMod.AChDisInhib = 1
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
@@ -243,10 +228,18 @@ func (ly *Layer) MatrixPostBuild() {
 	ly.Params.Matrix.ThalLay5Idx = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
 
 	ly.Params.Matrix.OtherMatrixIdx = ly.BuildConfigFindLayer("OtherMatrixName", true)
+
+	dm, err := ly.BuildConfigByName("DAMod")
+	if err == nil {
+		err = ly.Params.Learn.NeuroMod.DAMod.FromString(dm)
+		if err != nil {
+			log.Println(err)
+		}
+	}
 }
 
 ////////////////////////////////////////////////////////////////////
-//  GPLays
+//  GP
 
 func (ly *Layer) GPDefaults() {
 	// GP is tonically self-active and has no FFFB inhibition
@@ -330,6 +323,19 @@ var KiT_GPLayerTypes = kit.Enums.AddEnum(GPLayerTypesN, kit.NotBitFlag, nil)
 func (ev GPLayerTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
 func (ev *GPLayerTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
+func (ly *Layer) GPPostBuild() {
+	gpnm, err := ly.BuildConfigByName("GPType")
+	if err == nil {
+		err = ly.Params.GP.GPType.FromString(gpnm)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////
+//  STN
+
 func (ly *Layer) STNDefaults() {
 	// STN is tonically self-active and has no FFFB inhibition
 	ly.Params.Act.SKCa.Gbar = 2
@@ -344,11 +350,11 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
-		ly.Params.STN.CaD.SetBool(false)
-		ly.Params.STN.CaScale = 4
+		ly.Params.Act.SKCa.CaD.SetBool(false)
+		ly.Params.Act.SKCa.CaScale = 4
 	} else {
-		ly.Params.STN.CaD.SetBool(true)
-		ly.Params.STN.CaScale = 3
+		ly.Params.Act.SKCa.CaD.SetBool(true)
+		ly.Params.Act.SKCa.CaScale = 3
 		ly.Params.Act.Init.Ge = 0.2
 		ly.Params.Act.Init.GeVar = 0.2
 	}
@@ -374,6 +380,9 @@ func (ly *Layer) STNDefaults() {
 		}
 	}
 }
+
+////////////////////////////////////////////////////////////////////
+//  VThal
 
 func (ly *Layer) VThalDefaults() {
 	// note: not tonically active

@@ -223,8 +223,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
 	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
 
-	mtxGo.(axon.AxonLayer).AsAxon().BuildConfig["ThalLay1Name"] = thal.Name()
-	mtxNo.(axon.AxonLayer).AsAxon().BuildConfig["ThalLay1Name"] = thal.Name()
+	mtxGo.SetBuildConfig("ThalLay1Name", thal.Name())
+	mtxNo.SetBuildConfig("ThalLay1Name", thal.Name())
 
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
 	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, emer.Input)
@@ -507,6 +507,13 @@ func (ss *Sim) ApplyRew() {
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
 	ss.Stats.SetFloat32("Rew", rew)
 
+	hasRew := false
+	if rew != 0 {
+		hasRew = true
+	}
+	ss.Context.NeuroMod.SetRew(rew, hasRew) // this is what actually does the work
+	ss.Context.NeuroMod.DA = rew            // no reward prediction error
+
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
 	itsr.Values[0] = rew
@@ -617,8 +624,10 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.CreateTables()
 
 	tsttrl := ss.Logs.Table(etime.Test, etime.Trial)
-	tstst := tsttrl.Clone()
-	ss.Logs.MiscTables["TestTrialStats"] = tstst
+	if tsttrl != nil {
+		tstst := tsttrl.Clone()
+		ss.Logs.MiscTables["TestTrialStats"] = tstst
+	}
 
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
 	// don't plot certain combinations we don't use

@@ -18,7 +18,8 @@ type KNaParams struct {
 	Rise float32     `viewif:"On" desc:"Rise rate of fast time-scale adaptation as function of Na concentration due to spiking -- directly multiplies -- 1/rise = tau for rise rate"`
 	Max  float32     `viewif:"On" desc:"Maximum potential conductance of fast K channels -- divide nA biological value by 10 for the normalized units here"`
 	Tau  float32     `viewif:"On" desc:"time constant in cycles for decay of adaptation, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life)"`
-	Dt   float32     `view:"-" desc:"1/Tau rate constant"`
+
+	Dt float32 `view:"-" desc:"1/Tau rate constant"`
 
 	pad, pad1, pad2 int32
 }
@@ -56,8 +57,8 @@ type KNaMedSlow struct {
 
 	pad, pad1, pad2 int32
 
-	Med  KNaParams `view:"inline" desc:"medium time-scale adaptation"`
-	Slow KNaParams `view:"inline" desc:"slow time-scale adaptation"`
+	Med  KNaParams `viewif:"On" view:"inline" desc:"medium time-scale adaptation"`
+	Slow KNaParams `viewif:"On" view:"inline" desc:"slow time-scale adaptation"`
 }
 
 func (ka *KNaMedSlow) Defaults() {

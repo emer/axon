@@ -17,11 +17,12 @@ import "github.com/goki/mat32"
 // of the membrane potential, centered at Voff with slope Vslope.
 type MahpParams struct {
 	Gbar   float32 `desc:"strength of mAHP current"`
-	Voff   float32 `def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
-	Vslope float32 `def:"9" desc:"slope of the arget (infinite time) gating function"`
-	TauMax float32 `def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
-	Tadj   float32 `view:"-" inactive:"+" desc:"temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C"`
-	DtMax  float32 `view:"-" inactive:"+" desc:"1/Tau"`
+	Voff   float32 `viewif:"Gbar>0" def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
+	Vslope float32 `viewif:"Gbar>0" def:"9" desc:"slope of the arget (infinite time) gating function"`
+	TauMax float32 `viewif:"Gbar>0" def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
+	Tadj   float32 `viewif:"Gbar>0" view:"-" inactive:"+" desc:"temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C"`
+
+	DtMax float32 `view:"-" inactive:"+" desc:"1/Tau"`
 
 	pad, pad2 int32
 }

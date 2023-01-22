@@ -104,8 +104,25 @@ type Neuron struct {
 	GiNoiseP float32 `desc:"accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda."`
 	GiNoise  float32 `desc:"integrated noise inhibotyr conductance, added into Gi"`
 
-	GeM      float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
-	GiM      float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
+	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
+	GeSyn    float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
+	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
+	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
+	GiSyn    float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
+	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
+	GModRaw  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GModSyn  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GeSynMax float32 `desc:"maximum GeSyn value across the ThetaCycle"`
+	GeSynPrv float32 `desc:"previous GeSynMax value from the previous ThetaCycle"`
+
+	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
+	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
+	Gak      float32 `desc:"conductance of A-type K potassium channels"`
+
+	GeM float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+	GiM float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+
 	MahpN    float32 `desc:"accumulating voltage-gated gating value for the medium time scale AHP"`
 	SahpCa   float32 `desc:"slowly accumulating calcium value that drives the slow AHP"`
 	SahpN    float32 `desc:"sAHP gating value"`
@@ -129,21 +146,9 @@ type Neuron struct {
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
 
-	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
-	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
-	GeSyn    float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
-	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
-	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
-	GiSyn    float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
-	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
-	GModRaw  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
-	GModSyn  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
-	GeSynMax float32 `desc:"maximum GeSyn value across the ThetaCycle"`
-	GeSynPrv float32 `desc:"previous GeSynMax value from the previous ThetaCycle"`
-
-	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
-	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
-	Gak      float32 `desc:"conductance of A-type K potassium channels"`
+	SKCai float32 `desc:"intracellular Calcium concentration for activation of SKCa channels, driven by VGCC activation from spiking and decaying / buffererd relatively slowly."`
+	SKCaM float32 `desc:"Calcium-gated potassium channel gating factor, driven by SKCai via a Hill equation as in chans.SKPCaParams."`
+	Gsk   float32 `desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`
 
 	/////////////////////////////////////////
 	//  Special Layer Vars Below
@@ -151,8 +156,6 @@ type Neuron struct {
 	Burst    float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
 	BurstPrv float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
 	CtxtGe   float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
-
-	pad, pad1, pad2 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
