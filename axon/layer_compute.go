@@ -35,13 +35,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 		}
 		pl := &ly.Pools[nrn.SubPool]
 		ly.Params.GeExtToPool(ctx, uint32(ni), nrn, pl, lpl, subPools) // todo: can this be done in send spike?
-		ini := int32(ni)
-		lpl.AvgMax.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP, ini)
-		lpl.AvgMax.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD, ini)
-		lpl.AvgMax.SpkMax.Cycle.UpdateVal(nrn.SpkMax, ini)
-		lpl.AvgMax.Act.Cycle.UpdateVal(nrn.Act, ini)
-		lpl.AvgMax.Ge.Cycle.UpdateVal(nrn.Ge, ini)
-		lpl.AvgMax.Gi.Cycle.UpdateVal(nrn.Gi, ini)
+		lpl.AvgMax.UpdateVals(nrn, int32(ni))
 	}
 	lpl.AvgMax.CalcAvg()
 	ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.Vals)
@@ -61,13 +55,7 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 		ly.Params.SubPoolGiFmSpikes(ctx, pl, lpl, lyInhib, ly.Vals.ActAvg.GiMult)
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
-			ini := int32(ni)
-			pl.AvgMax.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP, ini)
-			pl.AvgMax.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD, ini)
-			pl.AvgMax.SpkMax.Cycle.UpdateVal(nrn.SpkMax, ini)
-			pl.AvgMax.Act.Cycle.UpdateVal(nrn.Act, ini)
-			pl.AvgMax.Ge.Cycle.UpdateVal(nrn.Ge, ini)
-			pl.AvgMax.Gi.Cycle.UpdateVal(nrn.Gi, ini)
+			pl.AvgMax.UpdateVals(nrn, int32(ni))
 		}
 		pl.AvgMax.CalcAvg()
 	}

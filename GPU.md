@@ -85,7 +85,7 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 # TODO:
 
-* How to apply inputs?? need to sync full neuron state bidirectionally at that point, unless we manage fixed set of external input values.. second pass on that..
+* inputs are just big float32 arrays sized in advance according to the relevant layer sizes -- no worries.
 
 * general renaming for params selectors:
     * .Hidden -> .SuperLayer
@@ -116,5 +116,7 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 * Add SendCtxtGe, RecvCtxtGe in GPU
 
 * DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
+
+* grab pool in plus phase, prior to updating gated, but after all the std plus phase stuff.
 
 

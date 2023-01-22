@@ -87,6 +87,16 @@ func (am *PoolAvgMax) CalcAvg() {
 	am.Gi.Cycle.CalcAvg()
 }
 
+// UpdateVals for neuron values
+func (am *PoolAvgMax) UpdateVals(nrn *Neuron, ni int32) {
+	am.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP, ni)
+	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD, ni)
+	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax, ni)
+	am.Act.Cycle.UpdateVal(nrn.Act, ni)
+	am.Ge.Cycle.UpdateVal(nrn.Ge, ni)
+	am.Gi.Cycle.UpdateVal(nrn.Gi, ni)
+}
+
 // Pool contains computed values for FS-FFFB inhibition,
 // and various other state values for layers
 // and pools (unit groups) that can be subject to inhibition
