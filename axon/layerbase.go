@@ -7,7 +7,6 @@ package axon
 import (
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/params"
@@ -343,18 +342,6 @@ func (ly *LayerBase) Build() error {
 	err = ly.BuildPrjns()
 	ly.AxonLay.PostBuild()
 	return err
-}
-
-// BuildConfigByName looks for given BuildConfig option by name,
-// and reports & returns an error if not found.
-func (ly *LayerBase) BuildConfigByName(nm string) (string, error) {
-	cfg, ok := ly.BuildConfig[nm]
-	if !ok {
-		err := fmt.Errorf("Layer: %s does not have BuildConfig: %s set -- error in ConfigNet", ly.Name(), nm)
-		log.Println(err)
-		return cfg, err
-	}
-	return cfg, nil
 }
 
 // VarRange returns the min / max values for given variable

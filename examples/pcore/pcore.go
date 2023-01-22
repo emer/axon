@@ -14,8 +14,6 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/pcore"
-	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -34,10 +32,10 @@ import (
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/ki/bools"
 	"github.com/goki/mat32"
 )
 
@@ -102,7 +100,7 @@ func (ss *SimParams) Defaults() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *pcore.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Sim          SimParams        `view:"no-inline" desc:"sim params"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
@@ -124,7 +122,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &pcore.Network{}
+	ss.Net = &axon.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
 	ss.Params.ExtraSets = "LearnWts WtScales"
@@ -197,7 +195,7 @@ func (ss *Sim) ConfigEnv() {
 	ss.Envs.Add(trn, tst)
 }
 
-func (ss *Sim) ConfigNet(net *pcore.Network) {
+func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "PCore")
 	np := ss.Sim.NPools
 	nuY := ss.Sim.NUnitsY
@@ -209,11 +207,15 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	full := prjn.NewFull()
 	_ = full
 
-	snc := rl.AddClampDaLayer(net.AsAxon(), "SNc")
+	snc := net.AddLayer2D("SNc", 1, 1, emer.Input)
+	_ = snc
 
 	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	cin := net.AddCINLayer("CIN", mtxGo.Name(), mtxNo.Name(), space)
-	cin.RewLayers.Add(snc.Name())
+	_ = cin
+
+	// cin automatically uses Rew -- snc is only for display purposes
+
 	_ = gpeOut
 	_ = gpeIn
 	_ = gpeTA
@@ -221,15 +223,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
 	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
 
-	mtxGo.(*pcore.MatrixLayer).MtxThals.Add(thal.Name())
-	mtxNo.(*pcore.MatrixLayer).MtxThals.Add(thal.Name())
+	mtxGo.(axon.AxonLayer).AsAxon().BuildConfig["ThalLay1Name"] = thal.Name()
+	mtxNo.(axon.AxonLayer).AsAxon().BuildConfig["ThalLay1Name"] = thal.Name()
 
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
 	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, emer.Input)
 	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, emer.Input)
 	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, emer.Hidden)
-
-	snc.SendDA.AddAllBut(net)
 
 	net.ConnectLayers(pfc, stnp, pone2one, emer.Forward)
 	net.ConnectLayers(pfc, stns, pone2one, emer.Forward)
@@ -266,7 +266,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 }
 
 // InitWts configures initial weights according to structure
-func (ss *Sim) InitWts(net *pcore.Network) {
+func (ss *Sim) InitWts(net *axon.Network) {
 	net.InitWts()
 
 	if !ss.Sim.InitMtxWts {
@@ -289,7 +289,7 @@ func (ss *Sim) InitWts(net *pcore.Network) {
 		} else {
 			sy.Wt = 0
 		}
-		sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 
 	for _, pji := range mtxno.RcvPrjns {
@@ -304,7 +304,7 @@ func (ss *Sim) InitWts(net *pcore.Network) {
 		} else {
 			sy.Wt = 0
 		}
-		sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 	ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
 
@@ -384,8 +384,8 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Phase].OnStart.Add("ApplyInputs", func() {
 			phs := man.Stacks[mode].Loops[etime.Phase].Counter.Cur
 			if phs == 1 {
-				ss.Net.NewState()
-				ss.Context.NewState(mode.String())
+				ss.Net.NewState(&ss.Context)
+				ss.Context.NewState(mode)
 			}
 			ss.ApplyInputs(mode, phs == 0) // zero on phase == 0
 		})
@@ -488,9 +488,8 @@ func (ss *Sim) ApplyRew() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	mtxly := net.LayerByName("MtxGo").(*pcore.MatrixLayer)
-	mtxly.GatedFmAvgSpk() // will also be called later
-	didGate := mtxly.AnyGated()
+	mtxly := net.LayerByName("MtxGo").(*axon.Layer)
+	didGate := mtxly.MatrixGated()                      // will also be called later
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
 	switch {
@@ -504,8 +503,8 @@ func (ss *Sim) ApplyRew() {
 		rew = 0
 	}
 
-	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
-	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(shouldGate))
+	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
 	ss.Stats.SetFloat32("Rew", rew)
 
 	itsr := etensor.Float32{}
@@ -522,7 +521,7 @@ func (ss *Sim) NewRun() {
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Context.Reset()
-	ss.Context.Mode = etime.Train.String()
+	ss.Context.Mode = etime.Train
 	ss.InitWts(ss.Net)
 	ss.InitStats()
 	ss.StatCounters()
@@ -553,15 +552,14 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Context.Mode)
+	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Context.Cycle)
-	ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
-	ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ss.Stats.SetFloat32("ACCPos", ss.Sim.ACCPos)
+	ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	trlnm := fmt.Sprintf("%4f_%4f", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", trlnm)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle", "Gated", "Should", "Rew"})
@@ -572,13 +570,13 @@ func (ss *Sim) StatCounters() {
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
 	net := ss.Net
-	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
+	vtly := net.LayerByName("VThal").(*axon.Layer)
 	gated := vtly.AnyGated()
 	if !gated {
 		ss.Stats.SetFloat("VThal_RT", 0)
 		return
 	}
-	mode := etime.ModeFromString(ss.Context.Mode)
+	mode := ss.Context.Mode
 	trlog := ss.Logs.Log(mode, etime.Cycle)
 	spkCyc := 0
 	for row := 0; row < trlog.Rows; row++ {
@@ -706,7 +704,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Context.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 

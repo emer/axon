@@ -17,7 +17,7 @@
 // Set 1: main network structs and vals
 [[vk::binding(0, 1)]] StructuredBuffer<Context> Ctxt; // [0]
 [[vk::binding(1, 1)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
-// [[vk::binding(2, 1)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+[[vk::binding(2, 1)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 1)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 // [[vk::binding(4, 1)]] RWStructuredBuffer<PrjnVals> PrjVals; // [Layer][SendPrjns]
 [[vk::binding(5, 1)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurs][Syns]
@@ -28,9 +28,8 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<SynIdx> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurs][Syns]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
-
 void DWtSyn(in Context ctx, uint si, in PrjnParams pj, inout Synapse sy, in Neuron sn, in Neuron rn, bool isTarget) {
-	pj.DWtSyn(ctx, sy, sn, rn, isTarget);
+	pj.DWtSyn(ctx, sy, sn, rn, Pools[rn.SubPoolG], isTarget);
 }
 
 void DWtSendNeurSyn2(in Context ctx, uint snsi, in NeurSynIdx nsi, in LayerParams ly, in PrjnParams pj) {

@@ -380,11 +380,12 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ctx *Context) {
-	for pi := range ly.Pools {
+	// todo: see if it is faster to just grab pool info now, then do everything below on CPU
+	for pi := range ly.Pools { // gpu_cycletoplus
 		pl := &ly.Pools[pi]
 		pl.AvgMax.CycleToPlus()
 	}
-	for ni := range ly.Neurons {
+	for ni := range ly.Neurons { // gpu_plusphase
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
@@ -394,8 +395,18 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 		ly.Params.PlusPhase(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
 		ly.Params.PlusPhaseSpecial(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
 	}
-	// todo: sync vals now?
 	ly.AxonLay.CorSimFmActs() // todo: on GPU?
+	// sync pools -> GPU -> CPU
+	ly.PlusPhasePost(ctx) // special
+	// copy CPU -> GPU with gated info..  matrix is expensive!
+}
+
+// PlusPhasePost does special algorithm processing at end of plus
+func (ly *Layer) PlusPhasePost(ctx *Context) {
+	switch ly.LayerType() {
+	case MatrixLayer:
+		ly.MatrixGated()
+	}
 }
 
 // TargToExt sets external input Ext from target values Target

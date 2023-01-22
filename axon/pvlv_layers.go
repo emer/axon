@@ -8,7 +8,7 @@ package axon
 
 //gosl: end pvlv_layers
 
-func (ly *LayerParams) BLALayerDefaults() {
+func (ly *LayerParams) BLADefaults() {
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
 	ly.Act.Dend.SSGi = 0

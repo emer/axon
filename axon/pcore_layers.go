@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/goki/gosl/slbool"
+	"github.com/goki/ki/kit"
 )
 
 //gosl: start pcore_layers
@@ -18,15 +19,16 @@ import (
 // RLRate variable via NeuroMod and LayerVals.Special.V1 = sign multiplier,
 // in PlusPhase prior to DWt call.
 type MatrixParams struct {
-	InvertNoGate slbool.Bool `desc:"invert the direction of learning if not gated -- allows negative DA to increase gating when gating didn't happen."`
-	GateThr      float32     `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
-	NoGoGeLrn    float32     `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
-
-	pad float32
+	// GPHasPools     bool        `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false).  If true, then Matrix must also have pools "`
+	GateThr        float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
+	NoGoGeLrn      float32 `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
+	OtherMatrixIdx int32   `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
+	ThalLay1Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
+	ThalLay2Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used"`
+	ThalLay3Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used"`
+	ThalLay4Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used"`
+	ThalLay5Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used"`
 }
-
-// todo: this is not currently supported or used, but might be relevant in the future:
-// GPHasPools   bool    `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false)"`
 
 func (mp *MatrixParams) Defaults() {
 	mp.GateThr = 0.01
@@ -34,6 +36,66 @@ func (mp *MatrixParams) Defaults() {
 }
 
 func (mp *MatrixParams) Update() {
+}
+
+// GPLayerTypes is a GPLayer axon-specific layer type enum.
+type GPLayerTypes int32
+
+// The GPLayer types
+const (
+	// GPeOut is Outer layer of GPe neurons, receiving inhibition from MtxGo
+	GPeOut GPLayerTypes = iota
+
+	// GPeIn is Inner layer of GPe neurons, receiving inhibition from GPeOut and MtxNo
+	GPeIn
+
+	// GPeTA is arkypallidal layer of GPe neurons, receiving inhibition from GPeIn
+	// and projecting inhibition to Mtx
+	GPeTA
+
+	// GPi is the inner globus pallidus, functionally equivalent to SNr,
+	// receiving from MtxGo and GPeIn, and sending inhibition to VThal
+	GPi
+
+	GPLayerTypesN
+)
+
+// GPLayer represents a globus pallidus layer, including:
+// GPeOut, GPeIn, GPeTA (arkypallidal), and GPi (see GPType for type).
+// Typically just a single unit per Pool representing a given stripe.
+type GPParams struct {
+	GPType GPLayerTypes `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
+
+	pad, pad1, pad2 uint32
+}
+
+func (gp *GPParams) Defaults() {
+}
+
+func (gp *GPParams) Update() {
+}
+
+// STNParams represents STN neurons, with two subtypes:
+// STNp are more strongly driven and get over bursting threshold, driving strong,
+// rapid activation of the KCa channels, causing a long pause in firing, which
+// creates a window during which GPe dynamics resolve Go vs. No balance.
+// STNs are more weakly driven and thus more slowly activate KCa, resulting in
+// a longer period of activation, during which the GPi is inhibited to prevent
+// premature gating based only MtxGo inhibition -- gating only occurs when
+// GPeIn signal has had a chance to integrate its MtxNo inputs.
+type STNParams struct {
+	CaD       slbool.Bool `desc:"use CaD timescale (delayed) calcium signal -- for STNs -- else use CaP (faster) for STNp"`
+	CaScale   float32     `desc:"scaling factor applied to input Ca to bring into proper range of these dynamics"`
+	ThetaInit slbool.Bool `desc:"initialize Ca, KCa values at start of every ThetaCycle (i.e., behavioral trial)"`
+
+	pad float32
+}
+
+func (sp *STNParams) Defaults() {
+	sp.CaScale = 3
+}
+
+func (sp *STNParams) Update() {
 }
 
 //gosl: end pcore_layers
@@ -52,7 +114,7 @@ func (mp *MatrixParams) Update() {
 // 	ly.InitMods()
 // }
 
-func (ly *Layer) MatrixLayerDefaults() {
+func (ly *Layer) MatrixDefaults() {
 	ly.Params.Act.Decay.Act = 0
 	ly.Params.Act.Decay.Glong = 0
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -87,10 +149,249 @@ func (ly *Layer) MatrixLayerDefaults() {
 			}
 		}
 	}
-
-	ly.UpdateParams()
 }
 
-// MatrixPlusPhase is called on
-func (ly *Layer) MatrixPlusPhase() {
+// MatrixGated is called after std PlusPhase, on CPU, has Pool info
+// downloaded from GPU
+func (ly *Layer) MatrixGated() bool {
+	if ly.Params.Learn.NeuroMod.DAMod != D1Mod { // copy from go
+		oly := ly.Network.Layer(int(ly.Params.Matrix.OtherMatrixIdx)).(AxonLayer).AsAxon()
+		for pi := range ly.Pools {
+			pl := &ly.Pools[pi]
+			opl := &oly.Pools[pi]
+			pl.Gated = opl.Gated
+		}
+		return ly.Pools[0].Gated.IsTrue()
+	}
+	mtxGated := ly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+
+	thalGated := false
+	if ly.Params.Matrix.ThalLay1Idx >= 0 {
+		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay1Idx)).(AxonLayer).AsAxon()
+		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+	}
+	if ly.Params.Matrix.ThalLay2Idx >= 0 {
+		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay2Idx)).(AxonLayer).AsAxon()
+		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+	}
+	if ly.Params.Matrix.ThalLay3Idx >= 0 {
+		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay3Idx)).(AxonLayer).AsAxon()
+		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+	}
+	if ly.Params.Matrix.ThalLay4Idx >= 0 {
+		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay4Idx)).(AxonLayer).AsAxon()
+		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+	}
+	if ly.Params.Matrix.ThalLay5Idx >= 0 {
+		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay5Idx)).(AxonLayer).AsAxon()
+		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+	}
+
+	mtxGated = mtxGated && thalGated
+
+	// note: in principle with multi-pool GP, could try to establish
+	// a correspondence between thal and matrix pools, such that
+	// a failure to gate at the thal level for a given pool would veto
+	// just the one corresponding pool.  However, we're not really sure
+	// that this will make sense and not doing yet..
+
+	if !mtxGated { // nobody did if thal didn't
+		for pi := range ly.Pools {
+			pl := &ly.Pools[pi]
+			pl.Gated.SetBool(false)
+		}
+	}
+	return mtxGated
+}
+
+// GatedFmSpkMax updates the Gated state in Pools of given layer,
+// based on Avg SpkMax being above given threshold.
+// returns true if any gated.
+func (ly *Layer) GatedFmSpkMax(thr float32) bool {
+	anyGated := false
+	if ly.Is4D() {
+		for pi := 1; pi < len(ly.Pools); pi++ {
+			pl := &ly.Pools[pi]
+			spkavg := pl.AvgMax.SpkMax.Cycle.Avg
+			gthr := spkavg > thr
+			if gthr {
+				anyGated = true
+			}
+			pl.Gated.SetBool(gthr)
+		}
+	} else {
+		spkavg := ly.Pools[0].AvgMax.SpkMax.Cycle.Avg
+		if spkavg > thr {
+			anyGated = true
+		}
+	}
+	ly.Pools[0].Gated.SetBool(anyGated)
+	return anyGated
+}
+
+// AnyGated returns true if the layer-level pool Gated flag is true,
+// which indicates if any of the layers gated.
+func (ly *Layer) AnyGated() bool {
+	return ly.Pools[0].Gated.IsTrue()
+}
+
+func (ly *Layer) MatrixPostBuild() {
+	ly.Params.Matrix.ThalLay1Idx = ly.BuildConfigFindLayer("ThalLay1Name", false) // optional
+	ly.Params.Matrix.ThalLay2Idx = ly.BuildConfigFindLayer("ThalLay2Name", false) // optional
+	ly.Params.Matrix.ThalLay3Idx = ly.BuildConfigFindLayer("ThalLay3Name", false) // optional
+	ly.Params.Matrix.ThalLay4Idx = ly.BuildConfigFindLayer("ThalLay4Name", false) // optional
+	ly.Params.Matrix.ThalLay5Idx = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
+
+	ly.Params.Matrix.OtherMatrixIdx = ly.BuildConfigFindLayer("OtherMatrixName", true)
+}
+
+////////////////////////////////////////////////////////////////////
+//  GPLays
+
+func (ly *Layer) GPDefaults() {
+	// GP is tonically self-active and has no FFFB inhibition
+	ly.Params.Act.Init.Ge = 0.3
+	ly.Params.Act.Init.GeVar = 0.1
+	ly.Params.Act.Init.GiVar = 0.1
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
+	ly.Params.Inhib.Layer.On.SetBool(false)
+	ly.Params.Inhib.Pool.On.SetBool(false)
+
+	for _, pjii := range ly.RcvPrjns {
+		pji := pjii.(AxonPrjn)
+		pj := pji.AsAxon()
+		pj.Params.Learn.Learn.SetBool(false)
+		pj.Params.SWt.Adapt.SigGain = 1
+		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SWt.Init.Mean = 0.75
+		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWt.Init.Sym.SetBool(false)
+		if pj.Send.(AxonLayer).LayerType() == MatrixLayer {
+			pj.Params.PrjnScale.Abs = 0.5
+		} else if pj.Send.(AxonLayer).LayerType() == STNLayer {
+			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
+		}
+		switch ly.Params.GP.GPType {
+		case GPeIn:
+			if pj.Send.(AxonLayer).LayerType() == MatrixLayer { // MtxNoToGPeIn -- primary NoGo pathway
+				pj.Params.PrjnScale.Abs = 1
+			} else if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeOutToGPeIn
+				pj.Params.PrjnScale.Abs = 0.3 // was 0.5
+			}
+			if pj.Send.(AxonLayer).LayerType() == STNLayer { // STNpToGPeIn -- stronger to drive burst of activity
+				pj.Params.PrjnScale.Abs = 1 // was 0.5
+			}
+		case GPeOut:
+			if pj.Send.(AxonLayer).LayerType() == STNLayer { // STNpToGPeOut
+				pj.Params.PrjnScale.Abs = 0.1
+			}
+		case GPeTA:
+			if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToGPeTA
+				pj.Params.PrjnScale.Abs = 0.7 // was 0.9 -- just enough to knock down to near-zero at baseline
+			}
+		}
+	}
+
+	if ly.Params.GP.GPType == GPi {
+		ly.GPiDefaults()
+	}
+}
+
+func (ly *Layer) GPiDefaults() {
+	ly.Params.Act.Init.Ge = 0.6
+	// note: GPLayer took care of STN input prjns
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.SWt.Adapt.SigGain = 1
+		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SWt.Init.Mean = 0.75
+		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWt.Init.Sym.SetBool(false)
+		pj.Params.Learn.Learn.SetBool(false)
+		if pj.Send.(AxonLayer).LayerType() == MatrixLayer { // MtxGoToGPi
+			pj.Params.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
+		} else if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToGPi
+			pj.Params.PrjnScale.Abs = 1 // stronger because integrated signal, also act can be weaker
+		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
+			pj.Params.PrjnScale.Abs = 1
+		} else if strings.HasSuffix(pj.Send.Name(), "STNs") { // STNsToGPi
+			pj.Params.PrjnScale.Abs = 0.3
+		}
+	}
+}
+
+//go:generate stringer -type=GPLayerTypes
+
+var KiT_GPLayerTypes = kit.Enums.AddEnum(GPLayerTypesN, kit.NotBitFlag, nil)
+
+func (ev GPLayerTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *GPLayerTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+func (ly *Layer) STNDefaults() {
+	// STN is tonically self-active and has no FFFB inhibition
+	ly.Params.Act.SKCa.Gbar = 2
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Inhib.Layer.On.SetBool(true) // true = important for real-world cases
+	ly.Params.Inhib.Layer.Gi = 0.2
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.ActAvg.Nominal = 0.15
+
+	if strings.HasSuffix(ly.Nm, "STNp") {
+		ly.Params.STN.CaD.SetBool(false)
+		ly.Params.STN.CaScale = 4
+	} else {
+		ly.Params.STN.CaD.SetBool(true)
+		ly.Params.STN.CaScale = 3
+		ly.Params.Act.Init.Ge = 0.2
+		ly.Params.Act.Init.GeVar = 0.2
+	}
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.Learn.Learn.SetBool(false)
+		pj.Params.SWt.Adapt.SigGain = 1
+		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SWt.Init.Mean = 0.75
+		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWt.Init.Sym.SetBool(false)
+		if strings.HasSuffix(ly.Nm, "STNp") {
+			if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToSTNp
+				pj.Params.PrjnScale.Abs = 0.1
+			}
+		} else { // STNs
+			if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToSTNs
+				pj.Params.PrjnScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
+			} else {
+				pj.Params.PrjnScale.Abs = 0.2 // weaker inputs
+			}
+		}
+	}
+}
+
+func (ly *Layer) VThalDefaults() {
+	// note: not tonically active
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Inhib.Layer.On.SetBool(false)
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.ActAvg.Nominal = 0.25
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.Learn.Learn.SetBool(false)
+		pj.Params.SWt.Adapt.SigGain = 1
+		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SWt.Init.Mean = 0.75
+		pj.Params.SWt.Init.Var = 0.0
+		pj.Params.SWt.Init.Sym.SetBool(false)
+		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToVThal
+			pj.Params.PrjnScale.Abs = 2 // was 2.5 for agate model..
+		}
+	}
 }

@@ -203,8 +203,9 @@ func (pj *Prjn) DWt(ctx *Context) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
+			rpl := &rlay.Pools[rn.SubPool]
 			sy := &syns[ci]
-			pj.Params.DWtSyn(ctx, sy, sn, rn, isTarget)
+			pj.Params.DWtSyn(ctx, sy, sn, rn, rpl, isTarget)
 		}
 	}
 }

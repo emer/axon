@@ -14,10 +14,11 @@ import "github.com/goki/gosl/slbool"
 // and subsequent activity, and is based biologically on synaptic tags.
 // Trace is reset at time of reward based on ACh level from CINs.
 type MatrixPrjnParams struct {
-	CurTrlDA slbool.Bool `def:"true" desc:"if true, current trial DA dopamine can drive learning (i.e., synaptic co-activity trace is updated prior to DA-driven dWt), otherwise DA is applied to existing trace before trace is updated, meaning that at least one trial must separate gating activity and DA"`
-	AChDecay float32     `def:"2" min:"0" desc:"multiplier on CIN ACh level for decaying prior traces -- decay never exceeds 1, so a larger number ensures complete decay with lower ACh levels."`
+	CurTrlDA     slbool.Bool `def:"true" desc:"if true, current trial DA dopamine can drive learning (i.e., synaptic co-activity trace is updated prior to DA-driven dWt), otherwise DA is applied to existing trace before trace is updated, meaning that at least one trial must separate gating activity and DA"`
+	AChDecay     float32     `def:"2" min:"0" desc:"multiplier on CIN ACh level for decaying prior traces -- decay never exceeds 1, so a larger number ensures complete decay with lower ACh levels."`
+	InvertNoGate slbool.Bool `desc:"invert the direction of learning if not gated -- allows negative DA to increase gating when gating didn't happen."`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (tp *MatrixPrjnParams) Defaults() {

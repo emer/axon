@@ -151,9 +151,8 @@ type Neuron struct {
 	Burst    float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
 	BurstPrv float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
 	CtxtGe   float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
-	LearnMod float32 `desc:"learning modulator factor used by special algorithms.  e.g., in MatrixLayer, reflects whether gating happened or not (+1 or -1)"`
 
-	pad, pad1 float32
+	pad, pad1, pad2 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

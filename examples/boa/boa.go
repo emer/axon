@@ -38,6 +38,7 @@ import (
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/ki/bools"
 	"github.com/goki/mat32"
 )
 
@@ -767,27 +768,27 @@ func (ss *Sim) GatedStats() {
 	ev := ss.Envs[ss.Context.Mode].(*Approach)
 	mtxLy := net.LayerByName("VpMtxGo").(*pcore.MatrixLayer)
 	didGate := mtxLy.AnyGated()
-	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
-	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(ev.ShouldGate))
+	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
 	ss.Stats.SetFloat32("GateUS", mat32.NaN())
 	ss.Stats.SetFloat32("GateCS", mat32.NaN())
 	ss.Stats.SetFloat32("NoGatePre", mat32.NaN())
 	ss.Stats.SetFloat32("NoGatePost", mat32.NaN())
 	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
 	if didGate {
-		ss.Stats.SetFloat32("WrongCSGate", pcore.BoolToFloat32(ev.Drive != ev.USForPos()))
+		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(ev.Drive != ev.USForPos()))
 	}
 	if ev.ShouldGate {
 		if ev.US != -1 {
-			ss.Stats.SetFloat32("GateUS", pcore.BoolToFloat32(didGate))
+			ss.Stats.SetFloat32("GateUS", bools.ToFloat32(didGate))
 		} else {
-			ss.Stats.SetFloat32("GateCS", pcore.BoolToFloat32(didGate))
+			ss.Stats.SetFloat32("GateCS", bools.ToFloat32(didGate))
 		}
 	} else {
 		if ev.Dist < ev.DistMax-1 { // todo: not very robust
-			ss.Stats.SetFloat32("NoGatePost", pcore.BoolToFloat32(!didGate))
+			ss.Stats.SetFloat32("NoGatePost", bools.ToFloat32(!didGate))
 		} else {
-			ss.Stats.SetFloat32("NoGatePre", pcore.BoolToFloat32(!didGate))
+			ss.Stats.SetFloat32("NoGatePre", bools.ToFloat32(!didGate))
 		}
 	}
 	ss.Stats.SetFloat32("Rew", ev.Rew)
@@ -832,9 +833,9 @@ func (ss *Sim) MaintStats() {
 		ss.Stats.SetFloat32(fnm, mat32.NaN())
 		if isFwd {
 			ss.Stats.SetFloat32(mnm, mact)
-			ss.Stats.SetFloat32(fnm, pcore.BoolToFloat32(!overThr))
+			ss.Stats.SetFloat32(fnm, bools.ToFloat32(!overThr))
 		} else if !isCons {
-			ss.Stats.SetFloat32(pnm, pcore.BoolToFloat32(overThr))
+			ss.Stats.SetFloat32(pnm, bools.ToFloat32(overThr))
 		}
 	}
 	if hasMaint {

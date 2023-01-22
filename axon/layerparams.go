@@ -86,6 +86,8 @@ type LayerParams struct {
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
+	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
+	STN     STNParams     `viewif:"LayType=STNLayer" view:"inline" desc:"subthalamic nucleus parameters."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
 }
@@ -105,6 +107,8 @@ func (ly *LayerParams) Update() {
 	ly.TDInteg.Update()
 	ly.TDDa.Update()
 	ly.Matrix.Update()
+	ly.GP.Update()
+	ly.STN.Update()
 }
 
 func (ly *LayerParams) Defaults() {
@@ -125,6 +129,8 @@ func (ly *LayerParams) Defaults() {
 	ly.TDInteg.Defaults()
 	ly.TDDa.Defaults()
 	ly.Matrix.Defaults()
+	ly.GP.Defaults()
+	ly.STN.Defaults()
 }
 
 // AllParams returns a listing of all parameters in the Layer
@@ -169,6 +175,12 @@ func (ly *LayerParams) AllParams() string {
 	case MatrixLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
 		str += "Matrix: {\n " + JsonToParams(b)
+	case GPLayer:
+		b, _ = json.MarshalIndent(&ly.GP, "", " ")
+		str += "GP:     {\n " + JsonToParams(b)
+	case STNLayer:
+		b, _ = json.MarshalIndent(&ly.STN, "", " ")
+		str += "STN:    {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -394,6 +406,12 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.Act = nrn.CaSpkP - nrn.SpkPrv
 		if nrn.Act < 0 {
 			nrn.Act = 0
+		}
+	case MatrixLayer:
+		if ly.Learn.NeuroMod.DAMod == D2Mod && !(ly.Learn.NeuroMod.AChDisInhib > 0 && vals.NeuroMod.ACh < 0.2) && ctx.Cycle >= ly.Act.Dt.MaxCycStart {
+			if nrn.Ge > nrn.SpkMax {
+				nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
+			}
 		}
 	}
 }

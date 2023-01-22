@@ -5,8 +5,6 @@
 package axon
 
 import (
-	"log"
-
 	"github.com/goki/mat32"
 )
 
@@ -65,7 +63,7 @@ func (cp *CTParams) Defaults() {
 type PulvParams struct {
 	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit."`
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
-	DriveLayIdx  uint32  `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via DriveLayName BuildConfig setting"`
+	DriveLayIdx  int32   `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via DriveLayName BuildConfig setting"`
 	pad          float32
 }
 
@@ -94,7 +92,7 @@ func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
 // note: Defaults not called on GPU
 
 // called in Defaults for CT layer type
-func (ly *LayerParams) CTLayerDefaults() {
+func (ly *LayerParams) CTDefaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
@@ -108,7 +106,7 @@ func (ly *LayerParams) CTLayerDefaults() {
 }
 
 // called in Defaults for Pulvinar layer type
-func (ly *LayerParams) PulvLayerDefaults() {
+func (ly *LayerParams) PulvDefaults() {
 	ly.Act.Decay.Act = 0
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0
@@ -117,16 +115,7 @@ func (ly *LayerParams) PulvLayerDefaults() {
 
 // PulvPostBuild does post-Build config of Pulvinar based on BuildConfig options
 func (ly *Layer) PulvPostBuild() {
-	drnm, err := ly.BuildConfigByName("DriveLayName")
-	if err != nil {
-		return
-	}
-	dly, err := ly.Network.LayerByNameTry(drnm)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	ly.Params.Pulv.DriveLayIdx = uint32(dly.Index())
+	ly.Params.Pulv.DriveLayIdx = ly.BuildConfigFindLayer("DriveLayName", true)
 }
 
 // GPU TODO: this code needs to be performed in GPU-land somehow!

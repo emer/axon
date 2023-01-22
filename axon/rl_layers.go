@@ -5,8 +5,6 @@
 package axon
 
 import (
-	"log"
-
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gosl/slbool"
 )
@@ -61,7 +59,7 @@ func (rp *RWPredParams) Update() {
 // learning dynamic (i.e., PV learning in the PVLV framework).
 type RWDaParams struct {
 	TonicGe      float32 `desc:"tonic baseline Ge level for DA = 0 -- +/- are between 0 and 2*TonicGe -- just for spiking display of computed DA value"`
-	RWPredLayIdx uint32  `inactive:"+" desc:"idx of RWPredLayer to get reward prediction from -- set during Build from BuildConfig RWPredLayName"`
+	RWPredLayIdx int32   `inactive:"+" desc:"idx of RWPredLayer to get reward prediction from -- set during Build from BuildConfig RWPredLayName"`
 
 	pad, pad1 uint32
 }
@@ -82,7 +80,7 @@ func (rp *RWDaParams) GeFmDA(da float32) float32 {
 type TDIntegParams struct {
 	Discount     float32 `desc:"discount factor -- how much to discount the future prediction from TDPred"`
 	PredGain     float32 `desc:"gain factor on TD rew pred activations"`
-	TDPredLayIdx uint32  `inactive:"+" desc:"idx of TDPredLayer to get reward prediction from -- set during Build from BuildConfig TDPredLayName"`
+	TDPredLayIdx int32   `inactive:"+" desc:"idx of TDPredLayer to get reward prediction from -- set during Build from BuildConfig TDPredLayName"`
 
 	pad uint32
 }
@@ -99,7 +97,7 @@ func (tp *TDIntegParams) Update() {
 // between the TDIntegLayer activations in the minus and plus phase.
 type TDDaParams struct {
 	TonicGe       float32 `desc:"tonic baseline Ge level for DA = 0 -- +/- are between 0 and 2*TonicGe -- just for spiking display of computed DA value"`
-	TDIntegLayIdx uint32  `inactive:"+" desc:"idx of TDIntegLayer to get reward prediction from -- set during Build from BuildConfig TDIntegLayName"`
+	TDIntegLayIdx int32   `inactive:"+" desc:"idx of TDIntegLayer to get reward prediction from -- set during Build from BuildConfig TDIntegLayName"`
 
 	pad, pad1 uint32
 }
@@ -120,11 +118,11 @@ func (tp *TDDaParams) GeFmDA(da float32) float32 {
 
 // note: Defaults not called on GPU
 
-func (ly *LayerParams) RWLayerDefaults() {
+func (ly *LayerParams) RWDefaults() {
 	ly.Inhib.ActAvg.Nominal = .5
 }
 
-func (ly *LayerParams) RWPredLayerDefaults() {
+func (ly *LayerParams) RWPredDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Act.Dt.GeTau = 40
@@ -132,72 +130,33 @@ func (ly *LayerParams) RWPredLayerDefaults() {
 
 // RWDaPostBuild does post-Build config
 func (ly *Layer) RWDaPostBuild() {
-	rnm, err := ly.BuildConfigByName("RWPredLayName")
-	if err != nil {
-		return
-	}
-	dly, err := ly.Network.LayerByNameTry(rnm)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	ly.Params.RWDa.RWPredLayIdx = uint32(dly.Index())
+	ly.Params.RWDa.RWPredLayIdx = ly.BuildConfigFindLayer("RWPredLayName", true)
 }
 
-func (ly *LayerParams) TDLayerDefaults() {
+func (ly *LayerParams) TDDefaults() {
 	ly.Inhib.ActAvg.Nominal = .5
 }
 
-func (ly *LayerParams) TDPredLayerDefaults() {
+func (ly *LayerParams) TDPredDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Act.Dt.GeTau = 40
 }
 
-func (ly *Layer) RSalAChPostBuildFind(nm string, dest *int32) {
-	*dest = -1
-	if rnm, ok := ly.BuildConfig[nm]; ok {
-		dly, err := ly.Network.LayerByNameTry(rnm)
-		if err != nil {
-			log.Println(err)
-		} else {
-			*dest = int32(dly.Index())
-		}
-	}
-}
-
 func (ly *Layer) RSalAChPostBuild() {
-	ly.RSalAChPostBuildFind("SrcLay1Name", &ly.Params.RSalACh.SrcLay1Idx)
-	ly.RSalAChPostBuildFind("SrcLay2Name", &ly.Params.RSalACh.SrcLay2Idx)
-	ly.RSalAChPostBuildFind("SrcLay3Name", &ly.Params.RSalACh.SrcLay3Idx)
-	ly.RSalAChPostBuildFind("SrcLay4Name", &ly.Params.RSalACh.SrcLay4Idx)
-	ly.RSalAChPostBuildFind("SrcLay5Name", &ly.Params.RSalACh.SrcLay5Idx)
+	ly.Params.RSalACh.SrcLay1Idx = ly.BuildConfigFindLayer("SrcLay1Name", false) // optional
+	ly.Params.RSalACh.SrcLay2Idx = ly.BuildConfigFindLayer("SrcLay2Name", false) // optional
+	ly.Params.RSalACh.SrcLay3Idx = ly.BuildConfigFindLayer("SrcLay3Name", false) // optional
+	ly.Params.RSalACh.SrcLay4Idx = ly.BuildConfigFindLayer("SrcLay4Name", false) // optional
+	ly.Params.RSalACh.SrcLay5Idx = ly.BuildConfigFindLayer("SrcLay5Name", false) // optional
 }
 
 // TDIntegPostBuild does post-Build config
 func (ly *Layer) TDIntegPostBuild() {
-	rnm, err := ly.BuildConfigByName("TDPredLayName")
-	if err != nil {
-		return
-	}
-	dly, err := ly.Network.LayerByNameTry(rnm)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	ly.Params.TDInteg.TDPredLayIdx = uint32(dly.Index())
+	ly.Params.TDInteg.TDPredLayIdx = ly.BuildConfigFindLayer("TDPredLayName", true)
 }
 
 // TDDaPostBuild does post-Build config
 func (ly *Layer) TDDaPostBuild() {
-	rnm, err := ly.BuildConfigByName("TDIntegLayName")
-	if err != nil {
-		return
-	}
-	dly, err := ly.Network.LayerByNameTry(rnm)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	ly.Params.TDDa.TDIntegLayIdx = uint32(dly.Index())
+	ly.Params.TDDa.TDIntegLayIdx = ly.BuildConfigFindLayer("TDIntegLayName", true)
 }

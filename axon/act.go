@@ -424,6 +424,7 @@ type ActParams struct {
 	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
 	VGCC    chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
 	AK      chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
+	SKCa    chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
 	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
 }
 
@@ -453,6 +454,8 @@ func (ac *ActParams) Defaults() {
 	ac.VGCC.Ca = 25
 	ac.AK.Defaults()
 	ac.AK.Gbar = 0.1
+	ac.SKCa.Defaults()
+	ac.SKCa.Gbar = 0
 	ac.Attn.Defaults()
 	ac.Update()
 }
@@ -473,6 +476,7 @@ func (ac *ActParams) Update() {
 	ac.GABAB.Update()
 	ac.VGCC.Update()
 	ac.AK.Update()
+	ac.SKCa.Update()
 	ac.Attn.Update()
 }
 

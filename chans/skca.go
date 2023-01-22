@@ -26,7 +26,7 @@ type SKCaParams struct {
 }
 
 func (sp *SKCaParams) Defaults() {
-	sp.Gbar = 0.1
+	sp.Gbar = 2.0
 	sp.Hill = 4
 	sp.C50 = 0.6
 	sp.ActTau = 10
