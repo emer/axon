@@ -184,7 +184,7 @@ func (pj *MatrixPrjn) DWtUS(ctxt *axon.Context) {
 			dtr := rn.SpkMax * snAct
 			dwt := float32(0)
 			if usActive { // determines when learning from trace happens
-				tr += dtr
+				tr += dtr // this is not right -- not necc. CurTrlDA!
 				dwt = daLrn * tr
 				tr = 0
 			} else {

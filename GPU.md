@@ -30,9 +30,13 @@ Set 2:  Storage
 
 * `Context` (was Time) is the *only* state that is copied **from CPU -> GPU** every cycle.  At end of ThetaCycle, Neurons are grabbed back from GPU -> CPU.
 
-* `LayerVals` are copied **from GPU -> CPU**, so anything that a layer computes that needs to be accessed in the CPU must be in LayerVals.  There is a `Special` field for `LaySpecialVals` that holds generic special values that can be used for different cases.
+* `LayerVals` are copied **from GPU -> CPU** every cycle, so anything that a layer computes that needs to be accessed in the CPU must be in LayerVals.  There is a `Special` field for `LaySpecialVals` that holds generic special values that can be used for different cases.
 
-* Anything involving direct copying of values between different layers, as happens especially in RL algorithms, should be done in the CPU and copied into Context.  There will be a 1 cycle delay but that is fine.
+* Anything involving direct copying of values between different layers, as happens especially in RL algorithms, should be done in the CPU and copied into Context, or via LayerVals.  There will be a 1 cycle delay but that is fine.
+
+* `Pools` are copied **from GPU -> CPU** at the start of the plus phase, so that detailed pool-level AvgMax stats are available for plus-phase computations prior to doing DWt.
+
+* Note that Aggregating any values, e.g., layer-level AvgMax, must happen at the *aggregator* level - cannot do this in parallel at the lower level as memory coherency / mutex is not there.  Thus, we are doing all this aggregation in `gpu_laygi` and `gpu_poolgi` at the cycle level, and then copying snapshots from there.
 
 ## Type / Code organization
 
@@ -99,20 +103,18 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 * pass n layers, n prjns as fast buffer thing to shader
 
+* Implement all the indexes, global vars:
 * Neuron.SubPoolG
 * Pool.IsLayPool
 * Layer.LayerIdxs
 * Prjn.Idxs
-
-* TEST more: NewState and PlusPhase need to update pool.Inhib.Clamped state -- input is now set up front.
-
-* Figure out global vars per above
-
-* Build all cortical variants into base type
 
 * CaLrnSyn methods -- easy.
 
 * SendSpike!
 
 * Add SendCtxtGe, RecvCtxtGe in GPU
+
+* DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
+
 

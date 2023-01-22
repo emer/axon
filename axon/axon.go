@@ -38,7 +38,7 @@ type AxonNetwork interface {
 
 	// NewStateImpl handles all initialization at start of new input pattern, including computing
 	// input scaling from running average activation etc.
-	NewStateImpl()
+	NewStateImpl(ctx *Context)
 
 	// Cycle handles entire update for one cycle (msec) of neuron activity state.
 	CycleImpl(ctx *Context)
@@ -75,6 +75,9 @@ type AxonLayer interface {
 	// AsAxon returns this layer as a axon.Layer -- so that the AxonLayer
 	// interface does not need to include accessors to all the basic stuff
 	AsAxon() *Layer
+
+	// LayerType returns the axon-specific LayerTypes type
+	LayerType() LayerTypes
 
 	// NeurStartIdx is the starting index in global network slice of neurons for
 	// neurons in this layer -- convenience interface method for threading dispatch.
@@ -131,14 +134,6 @@ type AxonLayer interface {
 	// Used to prevent adapting of inhibition or TrgAvg values.
 	IsInput() bool
 
-	// NewState handles all initialization at start of new input pattern,
-	// including computing Ge scaling from running average activation etc.
-	// should already have presented the external input to the network at this point.
-	NewState()
-
-	// DecayState decays activation state by given proportion (default is on ly.Params.Act.Init.Decay)
-	DecayState(decay, glong float32)
-
 	// RecvPrjns returns the slice of receiving projections for this layer
 	RecvPrjns() *AxonPrjns
 
@@ -186,6 +181,17 @@ type AxonLayer interface {
 	// For example, updating a neuromodulatory signal such as dopamine.
 	CyclePost(ctx *Context)
 
+	// NewState handles all initialization at start of new input pattern,
+	// including computing Ge scaling from running average activation etc.
+	// should already have presented the external input to the network at this point.
+	NewState(ctx *Context)
+
+	// DecayState decays activation state by given proportion (default is on ly.Params.Act.Init.Decay)
+	DecayState(ctx *Context, decay, glong float32)
+
+	//////////////////////////////////////////////////////////////////////////////////////
+	//  Phase Methods
+
 	// MinusPhase does updating after end of minus phase
 	MinusPhase(ctx *Context)
 
@@ -203,6 +209,9 @@ type AxonLayer interface {
 	// in activation state between minus and plus phases
 	// (1 = identical, 0 = uncorrelated).
 	CorSimFmActs()
+
+	//////////////////////////////////////////////////////////////////////////////////////
+	//  Learn Methods
 
 	// DWtLayer does weight change at the layer level.
 	// does NOT call main projection-level DWt method.
@@ -247,6 +256,9 @@ type AxonPrjn interface {
 	// AsAxon returns this prjn as a axon.Prjn -- so that the AxonPrjn
 	// interface does not need to include accessors to all the basic stuff.
 	AsAxon() *Prjn
+
+	// PrjnType returns the axon-specific PrjnTypes type
+	PrjnType() PrjnTypes
 
 	// InitWts initializes weight values according to Learn.WtInit params
 	InitWts()

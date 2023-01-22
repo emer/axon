@@ -344,7 +344,7 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Context)
 			inputLayer.ApplyExt(input)
 			outputLayer.ApplyExt(output)
 
-			net.NewState()
+			net.NewState(ctx)
 			ctx.NewState(etime.Train)
 			for cycle := 0; cycle < nCycles; cycle++ {
 				fun(net, ctx)

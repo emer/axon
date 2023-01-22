@@ -56,8 +56,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	net.Defaults()
 	net.InitWts()
 
-	net.NewState()
-	ltime := NewContext()
+	ctx := NewContext()
+	net.NewState(ctx)
 
 	// spike the first neuron. Do this after NewState(), so that the spike is not decayed away
 	inputLayer1.AsAxon().Neurons[1].Spike = 1.0
@@ -72,7 +72,7 @@ func TestLayer_SendSpike(t *testing.T) {
 	in2pj0.Syns[in2pj0.SendConIdxStart[0]+4].Wt = 3.0
 	in2pj0.Params.GScale.Scale = 0.4
 
-	net.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ltime) },
+	net.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) },
 		"SendSpike")
 
 	// the neuron we spiked is connected to 9 neurons in the output layer
@@ -108,8 +108,8 @@ func TestLayerToJson(t *testing.T) {
 	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
 	net := createNetwork(shape, t)
 	hiddenLayer := net.LayerByName("Hidden").(AxonLayer)
-	ltime := NewContext()
-	net.Cycle(ltime) // run one cycle to make the weights more different
+	ctx := NewContext()
+	net.Cycle(ctx) // run one cycle to make the weights more different
 
 	netC := createNetwork(shape, t)
 	hiddenLayerC := netC.LayerByName("Hidden").(AxonLayer)

@@ -79,6 +79,8 @@ func (ly *Layer) Defaults() {
 		ly.Params.TDLayerDefaults()
 	case BLALayer:
 		ly.Params.BLALayerDefaults()
+	case MatrixLayer:
+		ly.MatrixLayerDefaults()
 	}
 }
 
@@ -594,6 +596,17 @@ func (ly *Layer) InitWts() {
 		}
 		p.InitWts()
 	}
+	ly.Params.Act.Dend.HasMod.SetBool(false)
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		pj := p.(AxonPrjn).AsAxon()
+		if pj.Params.Com.GType == ModulatoryG {
+			ly.Params.Act.Dend.HasMod.SetBool(true)
+			break
+		}
+	}
 }
 
 // InitActAvg initializes the running-average activation values that drive learning.
@@ -673,13 +686,11 @@ func (ly *Layer) InitActs() {
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		pl.Inhib.Init()
-		pl.ActM.Init()
-		pl.ActP.Init()
+		pl.Init()
 		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsInput.IsTrue() {
 			pl.Inhib.Clamped.SetBool(true)
 		}
-		// todo: need to dynamically update Target layers!
+		// Target layers are dynamically updated
 	}
 	ly.InitPrjnGBuffs()
 }

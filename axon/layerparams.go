@@ -17,6 +17,7 @@ import (
 // #include "learn_neur.hlsl"
 // #include "deep_layers.hlsl"
 // #include "rl_layers.hlsl"
+// #include "pcore_layers.hlsl"
 // #include "pool.hlsl"
 // #include "layervals.hlsl"
 //gosl: end layerparams
@@ -29,14 +30,15 @@ import (
 
 // LayerIdxs contains index access into global arrays for GPU.
 type LayerIdxs struct {
-	Pool   uint32 // start of pools for this layer -- first one is always the layer-wide pool
-	NeurSt uint32 // start of neurons for this layer in global array (same as Layer.NeurStIdx)
-	RecvSt uint32 // start index into RecvPrjns global array
-	RecvN  uint32 // number of recv projections
-	SendSt uint32 // start index into SendPrjns global array
-	SendN  uint32 // number of send projections
+	PoolSt uint32 `inactive:"+" desc:"start of pools for this layer -- first one is always the layer-wide pool"`
+	NeurSt uint32 `inactive:"+" desc:"start of neurons for this layer in global array (same as Layer.NeurStIdx)"`
+	NeurN  uint32 `inactive:"+" desc:"number of neurons in layer"`
+	RecvSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
+	RecvN  uint32 `inactive:"+" desc:"number of recv projections"`
+	SendSt uint32 `inactive:"+" desc:"start index into SendPrjns global array"`
+	SendN  uint32 `inactive:"+" desc:"number of send projections"`
 
-	pad, pad1 uint32
+	pad uint32
 }
 
 // SetNeuronExtPosNeg sets neuron Ext value based on neuron index
@@ -83,6 +85,7 @@ type LayerParams struct {
 	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
+	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
 }
@@ -101,6 +104,7 @@ func (ly *LayerParams) Update() {
 	ly.RWDa.Update()
 	ly.TDInteg.Update()
 	ly.TDDa.Update()
+	ly.Matrix.Update()
 }
 
 func (ly *LayerParams) Defaults() {
@@ -120,6 +124,7 @@ func (ly *LayerParams) Defaults() {
 	ly.RWDa.Defaults()
 	ly.TDInteg.Defaults()
 	ly.TDDa.Defaults()
+	ly.Matrix.Defaults()
 }
 
 // AllParams returns a listing of all parameters in the Layer
@@ -161,6 +166,9 @@ func (ly *LayerParams) AllParams() string {
 	case TDDaLayer:
 		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
 		str += "TDDa: {\n " + JsonToParams(b)
+	case MatrixLayer:
+		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
+		str += "Matrix: {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -184,6 +192,7 @@ func (ly *LayerParams) LayPoolGiFmSpikes(ctx *Context, lpl *Pool, vals *LayerVal
 }
 
 // SubPoolGiFmSpikes computes inhibition Gi from Spikes within a sub-pool
+// pl is guaranteed not to be the overall layer pool
 func (ly *LayerParams) SubPoolGiFmSpikes(ctx *Context, pl *Pool, lpl *Pool, lyInhib bool, giMult float32) {
 	pl.Inhib.SpikesFmRaw(pl.NNeurons())
 	ly.Inhib.Pool.Inhib(&pl.Inhib, giMult)
@@ -250,6 +259,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 	case TDIntegLayer:
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
+	case MatrixLayer:
+		// todo: extra Ge for NoGo!
 	}
 	return saveVal
 }
@@ -269,7 +280,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, randc
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
 	if ly.Act.Dend.HasMod.IsTrue() {
-		mod := ly.Act.Dend.ModGain * nrn.GeModSyn
+		mod := ly.Act.Dend.ModGain * nrn.GModSyn
 		if mod > 1 {
 			mod = 1
 		}
@@ -303,9 +314,9 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *
 
 // GiInteg adds Gi values from all sources including SubPool computed inhib
 // and updates GABAB as well
-func (ly *LayerParams) GiInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, giMult float32) {
+func (ly *LayerParams) GiInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
 	// pl := &ly.Pools[nrn.SubPool]
-	nrn.Gi = giMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise
+	nrn.Gi = vals.ActAvg.GiMult*pl.Inhib.Gi + nrn.GiSyn + nrn.GiNoise + ly.Learn.NeuroMod.GiFmACh(vals.NeuroMod.ACh)
 	nrn.SSGi = pl.Inhib.SSGi
 	nrn.SSGiDend = 0
 	if !(ly.Act.Clamp.IsInput.IsTrue() || ly.Act.Clamp.IsTarget.IsTrue()) {
@@ -339,14 +350,15 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 	}
 }
 
-// PostSpike does updates at neuron level after spiking has been computed.
+// PostSpikeSpecial does updates at neuron level after spiking has been computed.
 // This is where special layer types add extra code.
-func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, vals *LayerVals) {
+// It also updates the CaSpkPCyc stats.
+func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
-			actMax := vals.ActAvg.CaSpkP.Max
-			actAvg := vals.ActAvg.CaSpkP.Avg
+			actMax := lpl.AvgMax.CaSpkP.Cycle.Max
+			actAvg := lpl.AvgMax.CaSpkP.Cycle.Avg
 			thr := ly.Burst.ThrFmAvgMax(actAvg, actMax)
 			burst := float32(0)
 			if nrn.CaSpkP > thr {
@@ -384,6 +396,12 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, vals *Lay
 			nrn.Act = 0
 		}
 	}
+}
+
+// PostSpike does updates at neuron level after spiking has been computed.
+// it is called *after* PostSpikeSpecial.
+// It also updates the CaSpkPCyc stats.
+func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
 	intdt := ly.Act.Dt.IntDt
 	if ctx.PlusPhase.IsTrue() {
 		intdt *= 3.0
@@ -392,6 +410,58 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, vals *Lay
 	if ctx.PlusPhase.IsFalse() {
 		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////
+//  Phase timescale
+
+// NewState handles all initialization at start of new input pattern.
+// Should already have presented the external input to the network at this point.
+func (ly *LayerParams) NewState(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
+	nrn.SpkPrv = nrn.CaSpkD
+	nrn.GeSynPrv = nrn.GeSynMax
+	nrn.SpkMax = 0
+	nrn.SpkMaxCa = 0
+	nrn.GeSynPrv = 0
+
+	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
+	// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
+	// Note: synapse-level Ca decay happens in DWt
+}
+
+// MinusPhase does neuron level minus-phase updating
+func (ly *LayerParams) MinusPhase(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
+	nrn.ActM = nrn.ActInt
+	nrn.CaSpkPM = nrn.CaSpkP
+	if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
+		nrn.Ext = nrn.Target
+		nrn.SetFlag(NeuronHasExt)
+		nrn.ISI = -1 // get fresh update on plus phase output acts
+		nrn.ISIAvg = -1
+		nrn.ActInt = ly.Act.Init.Act // reset for plus phase
+	}
+}
+
+// PlusPhase does neuron level plus-phase updating
+func (ly *LayerParams) PlusPhase(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+	nrn.ActP = nrn.ActInt
+	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, lpl.AvgMax.CaSpkD.Plus.Max)
+	dlr := ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
+	modlr := ly.Learn.NeuroMod.LRMod(vals.NeuroMod.DA, vals.NeuroMod.ACh)
+	nrn.RLRate = mlr * dlr * modlr
+	nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
+	var tau float32
+	ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
+	nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
+}
+
+// PlusPhaseSpecial does any special plus phase updating at the neuron level
+func (ly *LayerParams) PlusPhaseSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+	switch ly.LayType {
+	case MatrixLayer:
+		// todo: update nrn.LearnMod for sign based on gated
+		// and RLRate sign based on D1 / D2
 	}
 }
 

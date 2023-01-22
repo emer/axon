@@ -7,52 +7,56 @@ package axon
 import (
 	"strings"
 
-	"github.com/emer/axonold/axon"
+	"github.com/goki/gosl/slbool"
 )
 
 //gosl: start pcore_layers
 
-// MatrixParams has parameters for Dorsal Striatum Matrix computation
+// MatrixParams has parameters for BG Striatum Matrix MSN layers
 // These are the main Go / NoGo gating units in BG.
+// All of the learning modulation is pre-computed on the recv neuron
+// RLRate variable via NeuroMod and LayerVals.Special.V1 = sign multiplier,
+// in PlusPhase prior to DWt call.
 type MatrixParams struct {
-	GPHasPools   bool    `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false)"`
-	InvertNoGate bool    `desc:"invert the direction of learning if not gated -- allows negative DA to increase gating when gating didn't happen.  Does not work with GPHasPools at present."`
-	GateThr      float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and Thal layers to count as having gated"`
-	BurstGain    float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
-	DipGain      float32 `def:"1" desc:"multiplicative gain factor applied to positive (burst) dopamine signals in computing DALrn effect learning dopamine value based on raw DA that we receive (D2R reversal occurs *after* applying Burst based on sign of raw DA)"`
-	NoGoGeLrn    float32 `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
-	ModGain      float32 `desc:"gain factor multiplying the modulator input GeSyn conductances -- total modulation has a maximum of 1"`
-	AChInhib     float32 `desc:"strength of extra Gi current multiplied by MaxACh-ACh (ACh > Max = 0) -- ACh is disinhibitory on striatal firing"`
-	MaxACh       float32 `desc:"level of ACh at or above which AChInhib goes to 0 -- ACh typically ranges between 0-1"`
+	InvertNoGate slbool.Bool `desc:"invert the direction of learning if not gated -- allows negative DA to increase gating when gating didn't happen."`
+	GateThr      float32     `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
+	NoGoGeLrn    float32     `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
+
+	pad float32
 }
+
+// todo: this is not currently supported or used, but might be relevant in the future:
+// GPHasPools   bool    `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false)"`
 
 func (mp *MatrixParams) Defaults() {
 	mp.GateThr = 0.01
-	mp.BurstGain = 1
-	mp.DipGain = 1
 	mp.NoGoGeLrn = 1
-	mp.ModGain = 1
-	mp.AChInhib = 0
-	mp.MaxACh = 0.5
 }
 
-// GiFmACh returns inhibitory conductance from ach value, where ACh is 0 at baseline
-// and goes up to 1 at US or CS -- effect is disinhibitory on MSNs
-func (mp *MatrixParams) GiFmACh(ach float32) float32 {
-	ai := mp.MaxACh - ach
-	if ai < 0 {
-		ai = 0
-	}
-	return mp.AChInhib * ai
+func (mp *MatrixParams) Update() {
 }
 
 //gosl: end pcore_layers
 
+// todo: original has this:
+
+// func (ly *MatrixLayer) DecayState(decay, glong float32) {
+// 	ly.Layer.DecayState(decay, glong)
+// 	for ni := range ly.Neurons {
+// 		nrn := &ly.Neurons[ni]
+// 		if nrn.IsOff() {
+// 			continue
+// 		}
+// 		ly.Params.Learn.DecayCaLrnSpk(nrn, glong) // ?
+// 	}
+// 	ly.InitMods()
+// }
+
 func (ly *Layer) MatrixLayerDefaults() {
 	ly.Params.Act.Decay.Act = 0
 	ly.Params.Act.Decay.Glong = 0
-	ly.Params.Inhib.Pool.On = false
-	ly.Params.Inhib.Layer.On = true
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Layer.FB = 0
 	ly.Params.Inhib.Pool.FB = 0
@@ -63,26 +67,30 @@ func (ly *Layer) MatrixLayerDefaults() {
 	// drivers vs. modulators
 
 	for _, pji := range ly.RcvPrjns {
-		pj := pji.(axon.AxonPrjn).AsAxon()
-		pj.SWt.Init.SPct = 0
-		if _, ok := pj.Send.(*GPLayer); ok { // From GPe TA or In
-			pj.PrjnScale.Abs = 1
-			pj.Params.Learn.Learn = false
-			pj.SWt.Adapt.SigGain = 1
-			pj.SWt.Init.Mean = 0.75
-			pj.SWt.Init.Var = 0.0
-			pj.SWt.Init.Sym = false
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.SWt.Init.SPct = 0
+		if pj.Send.(AxonLayer).LayerType() == GPLayer { // From GPe TA or In
+			pj.Params.PrjnScale.Abs = 1
+			pj.Params.Learn.Learn.SetBool(false)
+			pj.Params.SWt.Adapt.SigGain = 1
+			pj.Params.SWt.Init.Mean = 0.75
+			pj.Params.SWt.Init.Var = 0.0
+			pj.Params.SWt.Init.Sym.SetBool(false)
 			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
-				pj.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
+				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
 			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
 				if strings.HasSuffix(ly.Nm, "MtxGo") {
-					pj.PrjnScale.Abs = 2 // was .8
+					pj.Params.PrjnScale.Abs = 2 // was .8
 				} else {
-					pj.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
+					pj.Params.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
 				}
 			}
 		}
 	}
 
 	ly.UpdateParams()
+}
+
+// MatrixPlusPhase is called on
+func (ly *Layer) MatrixPlusPhase() {
 }

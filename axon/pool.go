@@ -12,6 +12,81 @@ import (
 
 //gosl: start pool
 
+// AvgMaxPhases contains the average and maximum values over a Pool of neurons,
+// at different time scales within a standard ThetaCycle of updating.
+// It is much more efficient on the GPU to just grab everything in one pass at
+// the cycle level, and then take snapshots from there.
+// All of the cycle level values are updated at the *start* of the cycle
+// based on values from the prior cycle -- thus are 1 cycle behind in general.
+type AvgMaxPhases struct {
+	Cycle minmax.AvgMax32 `inactive:"+" view:"inline" desc:"updated every cycle -- this is the source of all subsequent time scales"`
+	Minus minmax.AvgMax32 `inactive:"+" view:"inline" desc:"at the end of the minus phase"`
+	Plus  minmax.AvgMax32 `inactive:"+" view:"inline" desc:"at the end of the plus phase"`
+}
+
+// CycleToMinus grabs current Cycle values into the Minus phase values
+func (am *AvgMaxPhases) CycleToMinus() {
+	am.Minus = am.Cycle
+}
+
+// CycleToPlus grabs current Cycle values into the Plus phase values
+func (am *AvgMaxPhases) CycleToPlus() {
+	am.Plus = am.Cycle
+}
+
+// PoolAvgMax contains the average and maximum values over a Pool of neurons
+// for different variables of interest, at Cycle, Minus and Plus phase timescales.
+// All of the cycle level values are updated at the *start* of the cycle
+// based on values from the prior cycle -- thus are 1 cycle behind in general.
+type PoolAvgMax struct {
+	CaSpkP AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum CaSpkP (continuously updated at roughly 40 msec integration window timescale, ends up capturing potentiation, plus-phase signal) -- this is the primary variable to use for tracking overall pool activity"`
+	CaSpkD AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer"`
+	SpkMax AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle"`
+	Act    AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Act firing rate value"`
+	Ge     AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Ge excitatory conductance value"`
+	Gi     AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Gi inhibitory conductance value"`
+}
+
+// CycleToMinus grabs current Cycle values into the Minus phase values
+func (am *PoolAvgMax) CycleToMinus() {
+	am.CaSpkP.CycleToMinus()
+	am.CaSpkD.CycleToMinus()
+	am.SpkMax.CycleToMinus()
+	am.Act.CycleToMinus()
+	am.Ge.CycleToMinus()
+	am.Gi.CycleToMinus()
+}
+
+// CycleToPlus grabs current Cycle values into the Plus phase values
+func (am *PoolAvgMax) CycleToPlus() {
+	am.CaSpkP.CycleToPlus()
+	am.CaSpkD.CycleToPlus()
+	am.SpkMax.CycleToPlus()
+	am.Act.CycleToPlus()
+	am.Ge.CycleToPlus()
+	am.Gi.CycleToPlus()
+}
+
+// Init does Init on Cycle level -- for update start
+func (am *PoolAvgMax) Init() {
+	am.CaSpkP.Cycle.Init()
+	am.CaSpkD.Cycle.Init()
+	am.SpkMax.Cycle.Init()
+	am.Act.Cycle.Init()
+	am.Ge.Cycle.Init()
+	am.Gi.Cycle.Init()
+}
+
+// CalcAvg does CalcAvg on Cycle level
+func (am *PoolAvgMax) CalcAvg() {
+	am.CaSpkP.Cycle.CalcAvg()
+	am.CaSpkD.Cycle.CalcAvg()
+	am.SpkMax.Cycle.CalcAvg()
+	am.Act.Cycle.CalcAvg()
+	am.Ge.Cycle.CalcAvg()
+	am.Gi.Cycle.CalcAvg()
+}
+
 // Pool contains computed values for FS-FFFB inhibition,
 // and various other state values for layers
 // and pools (unit groups) that can be subject to inhibition
@@ -22,17 +97,20 @@ type Pool struct {
 	PoolIdx        uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool]"`
 	LayPoolIdx     uint32      `view:"-" desc:"pool index for layer-wide pool, only if this is not a LayPool"`
 	IsLayPool      slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
+	Gated          slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, VThalLayer), indicates if the pool was gated"`
+
+	pad, pad1, pad2 float32
 
 	Inhib  fsfffb.Inhib    `inactive:"+" desc:"fast-slow FFFB inhibition values"`
-	ActM   minmax.AvgMax32 `inactive:"+" view:"inline" desc:"minus phase average and max Act activation values, for ActAvg updt"`
-	ActP   minmax.AvgMax32 `inactive:"+" view:"inline" desc:"plus phase average and max Act activation values, for ActAvg updt"`
-	GeM    minmax.AvgMax32 `inactive:"+" view:"inline" desc:"stats for GeM minus phase averaged Ge values"`
-	GiM    minmax.AvgMax32 `inactive:"+" view:"inline" desc:"stats for GiM minus phase averaged Gi values"`
+	AvgMax PoolAvgMax      `desc:"average and max values for relevant variables in this pool, at different time scales"`
 	AvgDif minmax.AvgMax32 `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
 }
 
+// Init is callled during InitActs
 func (pl *Pool) Init() {
 	pl.Inhib.Init()
+	pl.AvgMax.Init()
+	pl.Gated.SetBool(false)
 }
 
 // NNeurons returns the number of neurons in the pool: EdIdx - StIdx

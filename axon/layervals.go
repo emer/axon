@@ -4,23 +4,18 @@
 
 package axon
 
-import "github.com/emer/etable/minmax"
-
 //gosl: start layervals
 
-// ActAvgVals are running-average activation levels used for Ge scaling and adaptive inhibition
+// ActAvgVals are long-running-average activation levels stored in the LayerVals,
+// for monitoring and adapting inhibition and possibly scaling parameters.
 type ActAvgVals struct {
 	ActMAvg   float32 `inactive:"+" desc:"running-average minus-phase activity integrated at Dt.LongAvgTau -- used for adapting inhibition relative to target level"`
 	ActPAvg   float32 `inactive:"+" desc:"running-average plus-phase activity integrated at Dt.LongAvgTau"`
-	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau -- for monitoring and adjusting Prjn scaling factors: Prjn PrjnScale"`
-	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau -- for monitoring and adjusting Prjn scaling factors: Prjn PrjnScale"`
+	AvgMaxGeM float32 `inactive:"+" desc:"running-average max of minus-phase Ge value across the layer integrated at Dt.LongAvgTau"`
+	AvgMaxGiM float32 `inactive:"+" desc:"running-average max of minus-phase Gi value across the layer integrated at Dt.LongAvgTau"`
 	GiMult    float32 `inactive:"+" desc:"multiplier on inhibition -- adapted to maintain target activity level"`
 
 	pad, pad1, pad2 float32
-
-	CaSpkPM minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkP value in layer in the minus phase -- for monitoring network activity levels"`
-	CaSpkP  minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkP value in layer, updated in plus phase and used for normalizing CaSpkP values in RLRate sigmoid derivative computation"`
-	CaSpkD  minmax.AvgMax32 `inactive:"+" desc:"avg and maximum CaSpkD value in layer, updated in plus phase and used for normalizing CaSpkD values in RLRate sigmoid derivative computation"`
 }
 
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)

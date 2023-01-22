@@ -22,6 +22,7 @@ import (
 // #include "learn.hlsl"
 // #include "deep_prjns.hlsl"
 // #include "rl_prjns.hlsl"
+// #include "pcore_prjns.hlsl"
 // #include "prjnvals.hlsl"
 //gosl: end prjnparams
 
@@ -86,7 +87,8 @@ type PrjnParams struct {
 	//     each applies to a specific prjn type.
 	//     use the `viewif` field tag to condition on PrjnType.
 
-	RLPred RLPredPrjnParams `viewif:"PrjnType=RWPrjn|TDPredPrjn" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
+	RLPred RLPredPrjnParams `viewif:"PrjnType=RWPrjn|TDPredPrjn" view:"inline" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
+	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
 
 	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
@@ -97,6 +99,7 @@ func (pj *PrjnParams) Defaults() {
 	pj.PrjnScale.Defaults()
 	pj.Learn.Defaults()
 	pj.RLPred.Defaults()
+	pj.Matrix.Defaults()
 }
 
 func (pj *PrjnParams) Update() {
@@ -105,6 +108,7 @@ func (pj *PrjnParams) Update() {
 	pj.SWt.Update()
 	pj.Learn.Update()
 	pj.RLPred.Update()
+	pj.Matrix.Update()
 }
 
 func (pj *PrjnParams) AllParams() string {
@@ -122,8 +126,15 @@ func (pj *PrjnParams) AllParams() string {
 	case RWPrjn, TDPredPrjn:
 		b, _ = json.MarshalIndent(&pj.RLPred, "", " ")
 		str += "RLPred: {\n " + JsonToParams(b)
+	case MatrixPrjn:
+		b, _ = json.MarshalIndent(&pj.Matrix, "", " ")
+		str += "Matrix: {\n " + JsonToParams(b)
 	}
 	return str
+}
+
+func (pj *PrjnParams) IsInhib() bool {
+	return pj.Com.GType == InhibitoryG
 }
 
 // NeuronGatherSpikesPrjn integrates G*Raw and G*Syn values for given neuron
@@ -145,6 +156,8 @@ func (pj *PrjnParams) NeuronGatherSpikesPrjn(ctx *Context, gv PrjnGVals, ni uint
 ///////////////////////////////////////////////////
 // DWt
 
+// TODO: DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
+
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on projection type.
 func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, isTarget bool) {
@@ -153,6 +166,8 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, isTarget
 		pj.DWtSynRWPred(ctx, sy, sn, rn)
 	case TDPredPrjn:
 		pj.DWtSynTDPred(ctx, sy, sn, rn)
+	case MatrixPrjn:
+		pj.DWtSynMatrix(ctx, sy, sn, rn)
 	default:
 		pj.DWtSynCortex(ctx, sy, sn, rn, isTarget)
 	}
@@ -201,6 +216,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, is
 // DWtSynRWPred computes the weight change (learning) at given synapse,
 // for the RWPredPrjn type
 func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+	// todo: move all of this into rn.RLrate
 	lda := ctx.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff
@@ -235,6 +251,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 // DWtSynTDPred computes the weight change (learning) at given synapse,
 // for the TDRewPredPrjn type
 func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+	// todo: move all of this into rn.RLrate
 	lda := ctx.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff
@@ -252,6 +269,33 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 
 	dwt := da * sn.SpkPrv // no recv unit activation, prior trial act
 	sy.DWt += eff_lr * dwt
+}
+
+// DWtSynMatrix computes the weight change (learning) at given synapse,
+// for the MatrixPrjn type.
+func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+	// note: rn.RLrate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
+
+	// delta trace reflects new gating activity
+	// at time of *gating*, has the InvertNoGate factor, in rn.LearnMod
+	dtr := rn.LearnMod * rn.SpkMax * sn.CaSpkD // todo: was CaSpkP -- experiment with other vars here?
+
+	tr := sy.Tr
+	if pj.Matrix.CurTrlDA.IsTrue() {
+		tr += dtr
+	}
+	// learning is based on current trace * RLRate(DA * ACh)
+	dwt := rn.RLRate * pj.Learn.LRate.Eff * tr
+
+	// decay at time of US signaled by ACh
+	tr -= pj.Matrix.TraceDecay(ctx.NeuroMod.ACh) * tr
+
+	// if we didn't get new trace already, add it
+	if pj.Matrix.CurTrlDA.IsFalse() {
+		tr += dtr
+	}
+	sy.Tr = tr
+	sy.DWt += dwt
 }
 
 ///////////////////////////////////////////////////

@@ -81,8 +81,11 @@ type NeuroModParams struct {
 	AChLrateMod slbool.Bool `desc:"modulate learning rate as a function of ACh acetylcholine level"`
 	DALratePct  float32     `min:"0" max:"1" viewif:"DALrateMod" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
 	AChLratePct float32     `min:"0" max:"1" viewif:"AChLrateMod" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
+	AChDisInhib float32     `min:"0" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
 	BurstGain   float32     `min:"0" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
 	DipGain     float32     `min:"0" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
+
+	pad, pad1, pad2 float32
 }
 
 func (nm *NeuroModParams) Defaults() {
@@ -135,6 +138,16 @@ func (nm *NeuroModParams) GGain(da float32) float32 {
 		gain += nm.DAModGain * mat32.Abs(da)
 	}
 	return gain
+}
+
+// GIFmACh returns amount of extra inhibition to add based on disinhibitory
+// effects of ACh -- no inhibition when ACh = 1, extra when < 1.
+func (nm *NeuroModParams) GiFmACh(ach float32) float32 {
+	ai := 1 - ach
+	if ai < 0 {
+		ai = 0
+	}
+	return nm.AChDisInhib * ai
 }
 
 //gosl: end neuromod

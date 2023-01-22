@@ -506,7 +506,6 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 		nrn.GiNoise -= decay * nrn.GiNoise
 
 		nrn.GiSyn -= decay * nrn.GiSyn
-		nrn.GModSyn -= decay * nrn.GModSyn
 	}
 
 	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
@@ -535,6 +534,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
+	nrn.GModSyn = 0
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0

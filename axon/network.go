@@ -102,8 +102,8 @@ func (nt *Network) SynVarProps() map[string]string {
 // NewState handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
 // Does NOT call InitGScale()
-func (nt *Network) NewState() {
-	nt.EmerNet.(AxonNetwork).NewStateImpl()
+func (nt *Network) NewState(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).NewStateImpl(ctx)
 }
 
 // Cycle runs one cycle of activation updating.  It just calls the CycleImpl
@@ -269,26 +269,26 @@ func (nt *Network) InitGScale() {
 // glong = separate decay factor for long-timescale conductances (g)
 // This is called automatically in NewState, but is avail
 // here for ad-hoc decay cases.
-func (nt *Network) DecayState(decay, glong float32) {
+func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).DecayState(decay, glong)
+		ly.(AxonLayer).DecayState(ctx, decay, glong)
 	}
 }
 
 // DecayStateByClass decays activation state for given class name(s)
 // by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
 // glong = separate decay factor for long-timescale conductances (g)
-func (nt *Network) DecayStateByClass(decay, glong float32, class ...string) {
+func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, class ...string) {
 	lnms := nt.LayersByClass(class...)
 	for _, lynm := range lnms {
 		ly := nt.LayerByName(lynm).(AxonLayer)
 		if ly.IsOff() {
 			continue
 		}
-		ly.DecayState(decay, glong)
+		ly.DecayState(ctx, decay, glong)
 	}
 }
 
@@ -325,12 +325,12 @@ func (nt *Network) UpdateExtFlags() {
 }
 
 // NewStateImpl handles all initialization at start of new input state
-func (nt *Network) NewStateImpl() {
+func (nt *Network) NewStateImpl(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).NewState()
+		ly.(AxonLayer).NewState(ctx)
 	}
 }
 

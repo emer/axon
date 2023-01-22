@@ -68,11 +68,13 @@ func newTestNet() *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
 
+	ctx := NewContext()
+
 	testNet.Build()
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts()
-	testNet.NewState() // get GScale
+	testNet.InitWts()                                          // get GScale here
+	testNet.NewState(ctx)
 	return &testNet
 }
 
@@ -141,12 +143,12 @@ func TestSpikeProp(t *testing.T) {
 
 	for del := 0; del <= 4; del++ {
 		prj.Params.Com.Delay = uint32(del)
-		net.InitWts()  // resets Gbuf
-		net.NewState() // get GScale
+		net.InitWts() // resets Gbuf
+		net.NewState(ctx)
 
 		inLay.ApplyExt(pat)
 
-		net.NewState()
+		net.NewState(ctx)
 		ctx.NewState(etime.Train)
 
 		inCyc := 0
@@ -218,7 +220,7 @@ func TestNetAct(t *testing.T) {
 		inLay.ApplyExt(inpat)
 		outLay.ApplyExt(inpat)
 
-		testNet.NewState()
+		testNet.NewState(ctx)
 		ctx.NewState(etime.Train)
 
 		for qtr := 0; qtr < 4; qtr++ {
@@ -347,7 +349,7 @@ func TestNetLearn(t *testing.T) {
 			inLay.ApplyExt(inpat)
 			outLay.ApplyExt(inpat)
 
-			testNet.NewState()
+			testNet.NewState(ctx)
 			ctx.NewState(etime.Train)
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
@@ -437,18 +439,17 @@ func TestInhibAct(t *testing.T) {
 	InhibNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
 	InhibNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
 
+	ctx := NewContext()
+
 	InhibNet.Build()
 	InhibNet.Defaults()
 	InhibNet.ApplyParams(ParamSets[0].Sheets["Network"], false)
 	InhibNet.ApplyParams(ParamSets[0].Sheets["InhibOff"], false)
-	InhibNet.InitWts()
-	InhibNet.NewState() // get GScale
+	InhibNet.InitWts() // get GScale
+	InhibNet.NewState(ctx)
 
 	InhibNet.InitWts()
 	InhibNet.InitExt()
-
-	ctx := NewContext()
-	ctx.Defaults()
 
 	printCycs := false
 	printQtrs := false
@@ -485,7 +486,7 @@ func TestInhibAct(t *testing.T) {
 		inLay.ApplyExt(inpat)
 		outLay.ApplyExt(inpat)
 
-		InhibNet.NewState()
+		InhibNet.NewState(ctx)
 		ctx.NewState(etime.Train)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {

@@ -40,7 +40,7 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 		mode := m // For closures
 		stack := man.Stacks[mode]
 		stack.Loops[etime.Trial].OnStart.Add("ResetState", func() {
-			net.NewState()
+			net.NewState(ctx)
 			ctx.NewState(mode)
 		})
 	}

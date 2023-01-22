@@ -26,7 +26,7 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	startIdx := pj.SendConIdxStart[sendIdx]
 	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
 	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
-	inhib := pj.Params.Com.Inhib.IsTrue()
+	inhib := pj.Params.IsInhib()
 	for i := range syns {
 		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
@@ -47,7 +47,7 @@ func (pj *Prjn) PrjnGatherSpikes(ctx *Context) {
 	del := pj.Params.Com.Delay
 	sz := del + 1
 	zi := pj.Vals.Gidx.Zi
-	if pj.Params.Com.Inhib.IsTrue() {
+	if pj.Params.IsInhib() {
 		for ri := range pj.GVals {
 			gv := &pj.GVals[ri]
 			bi := uint32(ri)*sz + zi
@@ -330,7 +330,7 @@ func (pj *Prjn) SWtFmWt() {
 // SynScale performs synaptic scaling based on running average activation vs. targets.
 // Layer-level AvgDifFmTrgAvg function must be called first.
 func (pj *Prjn) SynScale() {
-	if pj.Params.Learn.Learn.IsFalse() || pj.Params.Com.Inhib.IsTrue() {
+	if pj.Params.Learn.Learn.IsFalse() || pj.Params.IsInhib() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()

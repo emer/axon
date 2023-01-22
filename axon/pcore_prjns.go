@@ -4,23 +4,37 @@
 
 package axon
 
+import "github.com/goki/gosl/slbool"
+
 //gosl: start pcore_prjns
 
-// MatrixTraceParams for for trace-based learning in the MatrixPrjn.
+// MatrixPrjnParams for trace-based learning in the MatrixPrjn.
 // A trace of synaptic co-activity is formed, and then modulated by dopamine
 // whenever it occurs.  This bridges the temporal gap between gating activity
 // and subsequent activity, and is based biologically on synaptic tags.
 // Trace is reset at time of reward based on ACh level from CINs.
-type MatrixTraceParams struct {
-	CurTrlDA  bool    `def:"true" desc:"if true, current trial DA dopamine can drive learning (i.e., synaptic co-activity trace is updated prior to DA-driven dWt), otherwise DA is applied to existing trace before trace is updated, meaning that at least one trial must separate gating activity and DA"`
-	Decay     float32 `def:"2" min:"0" desc:"multiplier on CIN ACh level for decaying prior traces -- decay never exceeds 1.  larger values drive strong credit assignment for any US outcome."`
-	NoACh     bool    `desc:"ignore ACh for learning modulation -- only used for reset if so -- otherwise ACh directly multiplies dWt"`
-	Modulator bool    `desc:"this projection is a modulator -- the conductance here multiplies other inputs -- it must be active for anything else to activate"`
+type MatrixPrjnParams struct {
+	CurTrlDA slbool.Bool `def:"true" desc:"if true, current trial DA dopamine can drive learning (i.e., synaptic co-activity trace is updated prior to DA-driven dWt), otherwise DA is applied to existing trace before trace is updated, meaning that at least one trial must separate gating activity and DA"`
+	AChDecay float32     `def:"2" min:"0" desc:"multiplier on CIN ACh level for decaying prior traces -- decay never exceeds 1, so a larger number ensures complete decay with lower ACh levels."`
+
+	pad, pad1 float32
 }
 
-func (tp *MatrixTraceParams) Defaults() {
-	tp.CurTrlDA = true
-	tp.Decay = 2
+func (tp *MatrixPrjnParams) Defaults() {
+	tp.CurTrlDA.SetBool(true)
+	tp.AChDecay = 2
+}
+
+func (tp *MatrixPrjnParams) Update() {
+}
+
+// TraceDecay returns the decay factor as a function of ach level
+func (tp *MatrixPrjnParams) TraceDecay(ach float32) float32 {
+	dk := ach * tp.AChDecay
+	if dk > 1 {
+		dk = 1
+	}
+	return dk
 }
 
 //gosl: end pcore_pjrns

@@ -27,6 +27,22 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<SynIdx> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurs][Syns]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
+void UpdateVals(inout Pool pl, in Neuron nrn, int ini) {
+	pl.AvgMax.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP, ini);
+	pl.AvgMax.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD, ini);
+	pl.AvgMax.SpkMax.Cycle.UpdateVal(nrn.SpkMax, ini);
+	pl.AvgMax.Act.Cycle.UpdateVal(nrn.Act, ini);
+	pl.AvgMax.Ge.Cycle.UpdateVal(nrn.Ge, ini);
+	pl.AvgMax.Gi.Cycle.UpdateVal(nrn.Gi, ini);
+}
+
+void CaSpkPAvgMax(in Context ctx, uint li, in LayerParams ly, inout Pool pl) {
+	pl.AvgMax.Init();
+	for(uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
+		UpdateVals(pl, Neurons[ly.Idxs.NeurSt+ni], int(ni));
+	}
+	pl.AvgMax.CalcAvg();
+}
 
 void PoolGi2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, float giMult) {
 	if(pl.IsLayPool == 0) {

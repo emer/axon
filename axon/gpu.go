@@ -4,7 +4,7 @@
 
 package axon
 
-//go:generate gosl --keep -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go prjnvals.go gpu_exttopool.hlsl gpu_laygi.hlsl gpu_poolgi.hlsl gpu_cycle.hlsl gpu_dwt.hlsl
+//go:generate gosl --keep -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pcore_prjns.go prjnvals.go gpu_exttopool.hlsl gpu_laygi.hlsl gpu_poolgi.hlsl gpu_cycle.hlsl gpu_dwt.hlsl
 
 // Full vars code -- each gpu_*.hlsl uses a subset
 

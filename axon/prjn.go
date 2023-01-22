@@ -376,7 +376,9 @@ func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
-	pj.Params.Com.Inhib.SetBool(pj.Typ == emer.Inhib)
+	if pj.Typ == emer.Inhib {
+		pj.Params.Com.GType = InhibitoryG
+	}
 	pj.Params.Learn.LRate.Init()
 	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
