@@ -244,7 +244,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
 					"Layer.Matrix.NoGoGeLrn":           "0.2",  // todo: experiment.
-					"Layer.Learn.NeuroMod.AChDisInhib": "0.5",
+					"Layer.Learn.NeuroMod.AChDisInhib": "1",
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
 					"Layer.Inhib.Layer.On":             "true",
@@ -409,6 +409,8 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":        "0.25",
 					"Prjn.Matrix.InvertNoGate": "false", // todo: test --- false > true -- doesn't work
 					"Prjn.Matrix.CurTrlDA":     "true",
+					"Prjn.Matrix.UseHasRew":    "true", // hack to use US-only timing
+					"Prjn.Matrix.AChDecay":     "0",    // not used if UseHasRew is on
 					"Prjn.Learn.Learn":         "true",
 					"Prjn.Learn.LRate.Base":    "0.1",
 				}},

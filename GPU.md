@@ -85,6 +85,12 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 # TODO:
 
+* BOA: need a time-integration on ACh from RSal -- can be very up-and-down and the end when used for learning can randomly be off..
+
+* BOA: ACh is not reliable as a US -> decay factor for BG learning.  Need to have something that uniquely identifies ground-truth outcome, and updates learning only then.  For now, can just use hack..
+
+* BOA: also the double-gating at US is a bit weird -- major over gating in general..
+
 * inputs are just big float32 arrays sized in advance according to the relevant layer sizes -- no worries.
 
 * general renaming for params selectors:
@@ -114,9 +120,6 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 * SendSpike!
 
 * Add SendCtxtGe, RecvCtxtGe in GPU
-
-* PT layer code
-* finish BLA layer code
 
 * DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
 

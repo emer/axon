@@ -721,6 +721,7 @@ func (ss *Sim) TrialStats() {
 	ss.MaintStats()
 	da := ss.Net.LayerByName("DA").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("DA", float64(da.Neurons[0].Act))
+	ss.Stats.SetFloat("ACh", float64(ss.Context.NeuroMod.ACh))
 	rp := ss.Net.LayerByName("RWPred").(axon.AxonLayer).AsAxon()
 	ss.Stats.SetFloat("RewPred", float64(rp.Neurons[0].Act))
 
@@ -914,6 +915,8 @@ func (ss *Sim) ConfigLogItems() {
 	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("DA", "DA", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("ACh", "ACh", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("RewPred", "RewPred", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false

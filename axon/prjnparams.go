@@ -298,7 +298,7 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, rp
 	dwt := rn.RLRate * pj.Learn.LRate.Eff * tr
 
 	// decay at time of US signaled by ACh
-	tr -= pj.Matrix.TraceDecay(ctx.NeuroMod.ACh) * tr
+	tr -= pj.Matrix.TraceDecay(ctx, ctx.NeuroMod.ACh) * tr
 
 	// if we didn't get new trace already, add it
 	if pj.Matrix.CurTrlDA.IsFalse() {
