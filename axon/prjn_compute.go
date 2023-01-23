@@ -26,7 +26,7 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	startIdx := pj.SendConIdxStart[sendIdx]
 	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
 	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
-	inhib := pj.Params.IsInhib()
+	excite := pj.Params.IsExcitatory()
 	for i := range syns {
 		recvIdx := synConIdxs[i]
 		sv := scale * syns[i].Wt
@@ -34,7 +34,7 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
 		// better to re-write as matmul, or to re-write from recv neuron side.
 		pj.GBuf[recvIdx*delayBufSize+currDelayIdx] += sv
-		if !inhib {
+		if excite { // only excitatory drives inhibition
 			pj.PIBuf[pj.PIdxs[recvIdx]*delayBufSize+currDelayIdx] += sv
 		}
 	}

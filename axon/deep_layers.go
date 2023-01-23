@@ -63,7 +63,7 @@ func (cp *CTParams) Defaults() {
 type PulvParams struct {
 	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit."`
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
-	DriveLayIdx  int32   `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via DriveLayName BuildConfig setting"`
+	DriveLayIdx  int32   `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting"`
 	pad          float32
 }
 
@@ -100,9 +100,19 @@ func (ly *LayerParams) CTDefaults() {
 	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
 	ly.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:
-	// ly.Params.Act.NMDA.Gbar = 0.3
-	// ly.Params.Act.NMDA.Tau = 300
-	// ly.Params.Act.GABAB.Gbar = 0.3
+	// ly.Act.NMDA.Gbar = 0.3
+	// ly.Act.NMDA.Tau = 300
+	// ly.Act.GABAB.Gbar = 0.3
+}
+
+func (ly *LayerParams) PTMaintDefaults() {
+	ly.Act.Decay.Act = 0 // deep doesn't decay!
+	ly.Act.Decay.Glong = 0
+	ly.Act.Decay.AHP = 0
+	ly.Act.NMDA.Gbar = 0.3 // long strong maint
+	ly.Act.NMDA.Tau = 300
+	ly.Act.GABAB.Gbar = 0.3
+	ly.Act.Dend.ModGain = 200 // this multiplies thalamic input projections -- only briefly active so need to be strong
 }
 
 // called in Defaults for Pulvinar layer type

@@ -71,10 +71,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Matrix.GateThr": "0.01",
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "0.5", // 0.5 > 0.4
-					"Layer.Inhib.Layer.FB": "0.0",
+					"Layer.Matrix.GateThr":             "0.01", // .02 too high..
+					"Layer.Matrix.NoGoGeLrn":           "0.2",  // todo: experiment.
+					"Layer.Learn.NeuroMod.AChDisInhib": "1",
+					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.Gi":             "0.5", // 0.5 > 0.4
+					"Layer.Inhib.Layer.FB":             "0.0",
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{

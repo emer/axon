@@ -73,6 +73,8 @@ const (
 	// (5IB) deep neurons, which provide the main output signal from cortex,
 	// specifically the subset of PT neurons that are gated by the BG to
 	// drive sustained active maintenance, via strong NMDA channels.
+	// Set projections from thalamus to be modulatory, and use Act.Dend.ModGain
+	// to set extra strength these inputs which are only briefly active.
 	PTMaintLayer
 
 	/////////////

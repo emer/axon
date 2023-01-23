@@ -13,10 +13,6 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/deep"
-	"github.com/emer/axon/pcore"
-	"github.com/emer/axon/pvlv"
-	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -33,7 +29,6 @@ import (
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/minmax"
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
@@ -93,7 +88,7 @@ func (ss *SimParams) Defaults() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *pcore.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Sim          SimParams        `view:"no-inline" desc:"sim params"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
@@ -115,7 +110,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &pcore.Network{}
+	ss.Net = &axon.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
 	// ss.Params.ExtraSets = "WtScales"
@@ -170,7 +165,7 @@ func (ss *Sim) ConfigEnv() {
 	ss.Envs.Add(trn, tst)
 }
 
-func (ss *Sim) ConfigNet(net *pcore.Network) {
+func (ss *Sim) ConfigNet(net *axon.Network) {
 	ev := ss.Envs["Train"].(*Approach)
 	net.InitName(net, "Boa")
 
@@ -189,11 +184,11 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	rew, rwPred, snci := rl.AddRWLayers(net.AsAxon(), "", relpos.Behind, space)
+	rew, rwPred, snci := net.AddRWLayers("", relpos.Behind, space)
 	_ = rew
 	_ = rwPred
-	snc := snci.(*rl.RWDaLayer)
-	ach := net.AddRSalienceLayer("ACh")
+	snc := snci.(*axon.Layer)
+	ach := net.AddRSalienceAChLayer("ACh")
 
 	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, emer.Input)
 	us, usPulv := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
@@ -214,18 +209,14 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
 	vl := net.AddLayer2D("VL", ny, nAct, emer.Target)  // Action
 	act := net.AddLayer2D("Act", ny, nAct, emer.Input) // Action
-	m1P := deep.AddPulvLayer2D(net.AsAxon(), "M1P", nuCtxY, nuCtxX)
-	m1P.Driver = m1.Name()
+	m1P := net.AddPulvLayer2D("M1P", nuCtxY, nuCtxX)
+	m1P.SetBuildConfig("DriveLayName", m1.Name())
 	_ = vl
 	_ = act
 
-	blaa, blae, _, _, cemPos, _, pptg := pvlv.AddAmygdala(net.AsAxon(), "", false, ev.NDrives, nuCtxY, nuCtxX, space)
+	blaa, blae, _, _, cemPos, _, pptg := net.AddAmygdala("", false, ev.NDrives, nuCtxY, nuCtxX, space)
 	_ = cemPos
-	ach.RewLayers.Add(rew.Name(), pptg.Name())
-	blaa.(*pvlv.BLALayer).USLayers.Add(us.Name())
-	blae.(*pvlv.BLALayer).USLayers.Add(us.Name())
-	vPmtxGo.(*pcore.MatrixLayer).USLayers.Add(us.Name())
-	vPmtxNo.(*pcore.MatrixLayer).USLayers.Add(us.Name())
+	_ = pptg
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
@@ -259,8 +250,10 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
 
-	vPmtxGo.(*pcore.MatrixLayer).MtxThals.Add(accmd.Name(), ofcmd.Name())
-	vPmtxNo.(*pcore.MatrixLayer).MtxThals.Add(accmd.Name(), ofcmd.Name())
+	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
+	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
+	vPmtxGo.SetBuildConfig("ThalLay2Name", accmd.Name())
+	vPmtxNo.SetBuildConfig("ThalLay2Name", accmd.Name())
 
 	// m1P plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
@@ -282,18 +275,18 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectLayers(ofcpt, alm, full, emer.Forward)
 	// net.ConnectLayers(accpt, alm, full, emer.Forward)
 
-	ach.SendACh.Add(vPmtxGo.Name(), vPmtxNo.Name(), blaa.Name(), blae.Name())
-
 	// todo: blae is not connected properly at all yet
 
+	ach.SetBuildConfig("SrcLay1Name", pptg.Name())
+
 	// BLA
-	net.ConnectLayersPrjn(cs, blaa, full, emer.Forward, &pvlv.BLAPrjn{})
-	net.ConnectLayersPrjn(us, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
-	// net.ConnectLayersPrjn(usp, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
-	// net.ConnectLayersPrjn(drives, blaa, pone2one, emer.Forward, &pvlv.BLAPrjn{}).SetClass("USToBLA")
+	net.ConnectToBLA(cs, blaa, full)
+	net.ConnectToBLA(us, blaa, pone2one).SetClass("USToBLA")
+	// net.ConnectToBLA(usp, blaa, pone2one).SetClass("USToBLA")
+	// net.ConnectToBLA(drives, blaa, pone2one).SetClass("USToBLA")
 	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
-	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &pvlv.BLAPrjn{})
+	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &axon.BLAPrjn{})
 	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(drives, blae, pone2one, emer.Forward)
 
@@ -315,7 +308,6 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	////////////////////////////////////////////////
 	// BG / DA connections
-	snc.SendDA.AddAllBut(net)
 
 	// net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
 	net.BidirConnectLayers(alm, m1, full) // todo: alm weaker?
@@ -330,8 +322,8 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 
 	// same prjns to stn as mtxgo
 	net.ConnectToMatrix(us, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaa, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaa, vPmtxNo, pone2one)
+	net.ConnectToMatrix(blaa, vPmtxGo, pone2one).SetClass("BLAToBG")
+	net.ConnectToMatrix(blaa, vPmtxNo, pone2one).SetClass("BLAToBG")
 	net.ConnectLayers(blaa, vPstnp, full, emer.Forward)
 	net.ConnectLayers(blaa, vPstns, full, emer.Forward)
 
@@ -360,10 +352,10 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	// net.ConnectToMatrix(alm, vPmtxGo, full) // not to MD
 	// net.ConnectToMatrix(alm, vPmtxNo, full)
 
-	net.ConnectLayersPrjn(ofc, rwPred, full, emer.Forward, &rl.RWPrjn{})
-	net.ConnectLayersPrjn(ofcct, rwPred, full, emer.Forward, &rl.RWPrjn{})
-	net.ConnectLayersPrjn(acc, rwPred, full, emer.Forward, &rl.RWPrjn{})
-	net.ConnectLayersPrjn(accct, rwPred, full, emer.Forward, &rl.RWPrjn{})
+	net.ConnectToRWPrjn(ofc, rwPred, full)
+	net.ConnectToRWPrjn(ofcct, rwPred, full)
+	net.ConnectToRWPrjn(acc, rwPred, full)
+	net.ConnectToRWPrjn(accct, rwPred, full)
 
 	////////////////////////////////////////////////
 	// position
@@ -402,7 +394,7 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 }
 
 // InitWts configures initial weights according to structure
-func (ss *Sim) InitWts(net *pcore.Network) {
+func (ss *Sim) InitWts(net *axon.Network) {
 	net.InitWts()
 	ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
 }
@@ -540,7 +532,7 @@ func (ss *Sim) ConfigLoops() {
 
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
-func (ss *Sim) TakeAction(net *pcore.Network) {
+func (ss *Sim) TakeAction(net *axon.Network) {
 	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
 		ss.Sim.ThetaStep++
 		return
@@ -548,7 +540,7 @@ func (ss *Sim) TakeAction(net *pcore.Network) {
 	// fmt.Printf("Take Action\n")
 	ss.Sim.ThetaStep = 0 // reset for next time
 
-	ev := ss.Envs[ss.Context.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 
 	netAct, anm := ss.DecodeAct(ev)
 	genAct := ev.ActGen()
@@ -583,7 +575,7 @@ func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
 // ApplyRew applies updated reward
 func (ss *Sim) ApplyRew() {
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	lays := []string{"Rew"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
@@ -595,7 +587,7 @@ func (ss *Sim) ApplyRew() {
 // ApplyUS applies US
 func (ss *Sim) ApplyUS() {
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	lays := []string{"US"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
@@ -606,7 +598,7 @@ func (ss *Sim) ApplyUS() {
 
 func (ss *Sim) ApplyAction(act int) {
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode]
+	ev := ss.Envs[ss.Context.Mode.String()]
 	ly := net.LayerByName("VL").(axon.AxonLayer).AsAxon()
 	ly.SetType(emer.Input)
 	ap := ev.State("Action")
@@ -622,13 +614,13 @@ func (ss *Sim) ApplyAction(act int) {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 
 	if ev.Time == 0 {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
 		net.InitActs() // this is still essential even with fully functioning decay below:
 		// todo: need a more selective US gating mechanism!
-		net.DecayStateByClass(1, 1, "Hidden", "PT", "CT", "Thal")
+		net.DecayStateByClass(&ss.Context, 1, 1, "HiddenLayer", "PTLayer", "CTLayer", "VThalLayer")
 		ev.RenderLocalist("Gate", 0)
 	}
 
@@ -640,6 +632,13 @@ func (ss *Sim) ApplyInputs() {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
+	}
+
+	// this is key step to drive DA and US-ACh
+	if ev.US != -1 {
+		ss.Context.NeuroMod.SetRew(ev.Rew, true)
+	} else {
+		ss.Context.NeuroMod.SetRew(0, false)
 	}
 
 	// fmt.Printf("Rew: %g\n", ev.Rew)
@@ -654,7 +653,7 @@ func (ss *Sim) NewRun() {
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Context.Reset()
-	ss.Context.Mode = etime.Train.String()
+	ss.Context.Mode = etime.Train
 	ss.Sim.ThetaStep = 0
 	ss.Sim.PctCortex = 0
 	ss.InitWts(ss.Net)
@@ -701,16 +700,15 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Context.Mode)
+	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Context.Cycle)
-	ss.Stats.SetFloat("PctCortex", float64(ss.Sim.PctCortex))
-	// ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
-	// ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ss.Stats.SetFloat32("PctCortex", ss.Sim.PctCortex)
+	// ss.Stats.SetFloat32("ACCPos", ss.Sim.ACCPos)
+	// ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", "trl")
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "GenAction", "ActAction", "ActMatch", "Gated", "Should", "Rew"})
@@ -765,8 +763,8 @@ func (ss *Sim) GatedStats() {
 	}
 	// fmt.Printf("Gate Stats\n")
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode].(*Approach)
-	mtxLy := net.LayerByName("VpMtxGo").(*pcore.MatrixLayer)
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
+	mtxLy := net.LayerByName("VpMtxGo").(*axon.Layer)
 	didGate := mtxLy.AnyGated()
 	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
@@ -800,7 +798,7 @@ func (ss *Sim) MaintStats() {
 		return
 	}
 	// fmt.Printf("Maint Stats\n")
-	ev := ss.Envs[ss.Context.Mode].(*Approach)
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	// should be maintaining while going forward
 	isFwd := ev.LastAct == ev.ActMap["Forward"]
 	isCons := ev.LastAct == ev.ActMap["Consume"]
@@ -816,13 +814,13 @@ func (ss *Sim) MaintStats() {
 		var mact float32
 		if ptly.Is4D() {
 			for pi := 1; pi < len(ptly.Pools); pi++ {
-				avg := ptly.Pools[pi].ActP.Avg
+				avg := ptly.Pools[pi].AvgMax.Act.Plus.Avg
 				if avg > mact {
 					mact = avg
 				}
 			}
 		} else {
-			mact = ptly.Pools[0].ActP.Avg
+			mact = ptly.Pools[0].AvgMax.Act.Plus.Avg
 		}
 		overThr := mact > actThr
 		if overThr {
@@ -863,7 +861,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	deep.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	// ss.ConfigActRFs()
 
@@ -959,7 +957,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Context.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 

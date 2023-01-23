@@ -6,6 +6,7 @@ package axon
 
 import (
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
 
@@ -74,4 +75,9 @@ func (nt *Network) AddRSalienceAChLayer(name string) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{1, 1}, emer.LayerType(RSalienceAChLayer))
 	return ly
+}
+
+// ConnectToRWPred adds a RWPrjn from given sending layer to a RWPred layer
+func (nt *Network) ConnectToRWPrjn(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(RWPrjn))
 }

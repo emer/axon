@@ -160,11 +160,11 @@ func (ly *Layer) RSalAChMaxLayAct(maxAct float32, net *Network, layIdx int32) fl
 	}
 	lay := net.Layers[layIdx].(AxonLayer).AsAxon()
 	lpl := &lay.Pools[0]
-	act := ly.Params.RSalACh.Thr(lpl.AvgMax.CaSpkP.Cycle.Max)
+	act := ly.Params.RSalACh.Thr(lpl.AvgMax.Act.Cycle.Max) // use act -- otherwise too variable
 	if act > maxAct {
 		maxAct = act
 	}
-	return act
+	return maxAct
 }
 
 // CyclePost is called after the standard Cycle update, as a separate

@@ -17,7 +17,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.Clamp.Ge":    "1.5",
 				}},
-			{Sel: ".CT", Desc: "corticothalamic context -- using markovian copy params",
+			{Sel: ".CTLayer", Desc: "corticothalamic context -- using markovian copy params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.12",
 					"Layer.CT.GeGain":            "1.0",
@@ -57,24 +57,24 @@ var ParamSets = params.Sets{
 						"Layer.Act.Decay.Glong":   "0.0",
 					}},
 			*/
-			{Sel: "PTLayer", Desc: "time integration params",
+			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "1.8", // was 1.0
-					"Layer.Inhib.Pool.Gi":   "1.8", // was 1.8
-					"Layer.Act.GABAB.Gbar":  "0.2",
-					"Layer.Act.NMDA.Gbar":   "0.3", // 0.3 enough..
-					"Layer.Act.NMDA.Tau":    "300",
-					"Layer.Act.Decay.Act":   "0.0",
-					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Sahp.Gbar":   "0.01", // not much pressure -- long maint
-					"Layer.ThalNMDAGain":    "150",  // 150 > 100? enough it seems
+					"Layer.Inhib.Layer.Gi":   "1.8", // was 1.0
+					"Layer.Inhib.Pool.Gi":    "1.8", // was 1.8
+					"Layer.Act.GABAB.Gbar":   "0.2",
+					"Layer.Act.NMDA.Gbar":    "0.3", // 0.3 enough..
+					"Layer.Act.NMDA.Tau":     "300",
+					"Layer.Act.Decay.Act":    "0.0",
+					"Layer.Act.Decay.Glong":  "0.0",
+					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
+					"Layer.Act.Dend.ModGain": "150",  // 150 > 100? enough it seems
 				}},
-			{Sel: "ThalLayer", Desc: "",
+			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
-			{Sel: "PulvLayer", Desc: "",
+			{Sel: ".PulvinarLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
 					"Layer.Pulv.DriveScale":         "0.1",  // 0.1 now default
@@ -179,19 +179,22 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "0.8", // was 0.8
 					"Layer.Act.Clamp.Ge":   "0.6", // was 0.6
 				}},
-			{Sel: ".BLA", Desc: "",
+			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.025",
-					"Layer.Inhib.Layer.Gi":       "1.8", // needs to be strong to prevent random off-US act
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.9",
-					"Layer.Act.Gbar.L":           "0.2",
-					"Layer.DaMod.BurstGain":      "0.2",
-					"Layer.DaMod.DipGain":        "0",    // ignore small negative DA
-					"Layer.BLA.NoDALRate":        "0.0",  // todo: explore
-					"Layer.BLA.NegLRate":         "0.1",  // todo: explore
-					"Layer.Learn.RLRate.Diff":    "true", // can turn off if NoDALRate is 0
-					"Layer.Learn.RLRate.DiffThr": "0.01", // based on cur - prv
+					"Layer.RSalACh.RewThr": "0.3",
+				}},
+			{Sel: ".BLALayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal":     "0.025",
+					"Layer.Inhib.Layer.Gi":           "1.8", // needs to be strong to prevent random off-US act
+					"Layer.Inhib.Pool.On":            "true",
+					"Layer.Inhib.Pool.Gi":            "0.9",
+					"Layer.Act.Gbar.L":               "0.2",
+					"Layer.Learn.NeuroMod.BurstGain": "0.2",
+					"Layer.Learn.NeuroMod.DipGain":   "0",    // ignore small negative DA
+					"Layer.BLA.NegLRate":             "0.1",  // todo: explore
+					"Layer.Learn.RLRate.Diff":        "true", // can turn off if NoDALRate is 0
+					"Layer.Learn.RLRate.DiffThr":     "0.01", // based on cur - prv
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
@@ -205,7 +208,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
 				}},
-			{Sel: "PPTgLayer", Desc: "",
+			{Sel: ".PPTgLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
 					"Layer.Inhib.Layer.Gi":       "1.0",
@@ -226,7 +229,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.On":       "true",
 					"Layer.Inhib.Layer.Gi":       "0.2",
 				}},
-			{Sel: "GPLayer", Desc: "all gp",
+			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
 					"Layer.Act.Init.Ge":          "0.3",
 					"Layer.Act.Init.GeVar":       "0.1",
@@ -237,35 +240,32 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Init.Ge": "0.6",
 				}},
-			{Sel: "MatrixLayer", Desc: "all mtx",
+			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Matrix.GPHasPools":    "false",
-					"Layer.Matrix.InvertNoGate":  "false", // false > true -- doesn't work
-					"Layer.Matrix.GateThr":       "0.05",  // 0.05 > 0.08 maybe
-					"Layer.Matrix.ModGain":       "5",
-					"Layer.Matrix.AChInhib":      "5",
-					"Layer.Matrix.MaxACh":        "0.5",
-					"Layer.Inhib.ActAvg.Nominal": ".03",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "0.0", // was .8
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.5", // 0.7 > 0.6 more sparse
+					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
+					"Layer.Matrix.NoGoGeLrn":           "0.2",  // todo: experiment.
+					"Layer.Learn.NeuroMod.AChDisInhib": "0.5",
+					"Layer.Act.Dend.ModGain":           "2",
+					"Layer.Inhib.ActAvg.Nominal":       ".03",
+					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.Gi":             "0.0", // was .8
+					"Layer.Inhib.Pool.On":              "true",
+					"Layer.Inhib.Pool.Gi":              "0.5", // 0.7 > 0.6 more sparse
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
-			{Sel: "#RWPred", Desc: "",
+			{Sel: ".RWPredLayer", Desc: "",
 				Params: params.Params{
-					"Layer.PredRange.Min": "0.01",
-					"Layer.PredRange.Max": "0.99",
+					"Layer.RWPred.PredRange.Min": "0.01",
+					"Layer.RWPred.PredRange.Max": "0.99",
 				}},
 			////////////////////////////////////////////////////////////////
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
-					"Prjn.Learn.Trace.Tau":      "1",
-					"Prjn.Learn.Trace.NeuronCa": "false", // faster and no diff here?
-					"Prjn.Learn.LRate.Base":     "0.04",
+					"Prjn.Learn.Trace.Tau":  "1",
+					"Prjn.Learn.LRate.Base": "0.04",
 				}},
 			{Sel: ".BackPrjn", Desc: "back is weaker",
 				Params: params.Params{
@@ -278,7 +278,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "1.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
 				}},
 			{Sel: ".ThalToSuper", Desc: "",
 				Params: params.Params{
@@ -346,7 +346,7 @@ var ParamSets = params.Sets{
 				}},
 			//////////////////////////////////////////////
 			// To BLA
-			{Sel: "BLAPrjn", Desc: "",
+			{Sel: ".BLAPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau": "1",
 				}},
@@ -401,15 +401,16 @@ var ParamSets = params.Sets{
 				}},
 
 			// BG prjns
-			{Sel: "MatrixPrjn", Desc: "",
+			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "1.0", // stronger
-					"Prjn.SWt.Init.SPct":    "0",
-					"Prjn.SWt.Init.Mean":    "0.5",
-					"Prjn.SWt.Init.Var":     "0.25",
-					"Prjn.Trace.CurTrlDA":   "true",
-					"Prjn.Learn.Learn":      "true",
-					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.PrjnScale.Abs":       "1.0", // stronger
+					"Prjn.SWt.Init.SPct":       "0",
+					"Prjn.SWt.Init.Mean":       "0.5",
+					"Prjn.SWt.Init.Var":        "0.25",
+					"Prjn.Matrix.InvertNoGate": "false", // todo: test --- false > true -- doesn't work
+					"Prjn.Matrix.CurTrlDA":     "true",
+					"Prjn.Learn.Learn":         "true",
+					"Prjn.Learn.LRate.Base":    "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -423,11 +424,15 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs": "5",
 					"Prjn.PrjnScale.Rel": ".2",
 				}},
+			{Sel: ".BLAToBG", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "8",
+				}},
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.Learn":     "false",
-					"Prjn.PrjnScale.Rel":   "0.02", // even .1 does gating without CS
-					"Prjn.Trace.Modulator": "true",
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Rel": "1", // even .1 does gating without CS
+					"Prjn.Com.GType":     "ModulatoryG",
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
@@ -449,7 +454,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5",
 				}},
-			{Sel: "RWPrjn", Desc: "to reward prediction",
+			{Sel: ".RWPrjn", Desc: "to reward prediction",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.002", // 0.002 -- this is key param for how much BG learning happens!
 					// does not affect too much..
@@ -461,7 +466,7 @@ var ParamSets = params.Sets{
 	},
 	{Name: "NoTrainMtx", Desc: "turn off training in Mtx", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "MatrixPrjn", Desc: "learning in mtx",
+			{Sel: ".MatrixPrjn", Desc: "learning in mtx",
 				Params: params.Params{
 					"Prjn.Learn.Learn": "false",
 				}},

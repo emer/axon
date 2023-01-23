@@ -64,6 +64,8 @@ func (ly *Layer) Defaults() {
 
 	case CTLayer:
 		ly.Params.CTDefaults()
+	case PTMaintLayer:
+		ly.Params.PTMaintDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
 
@@ -974,6 +976,7 @@ func (ly *Layer) UpdateExtFlags() {
 func (ly *Layer) InitGScale() {
 	totGeRel := float32(0)
 	totGiRel := float32(0)
+	totGmRel := float32(0)
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
@@ -990,16 +993,20 @@ func (ly *Layer) InitGScale() {
 		// if pj.Params.GScale == 0 {
 		// 	continue
 		// }
-		if pj.Typ == emer.Inhib {
+		switch pj.Params.Com.GType {
+		case InhibitoryG:
 			totGiRel += pj.Params.PrjnScale.Rel
-		} else {
+		case ModulatoryG:
+			totGmRel += pj.Params.PrjnScale.Rel
+		case ExcitatoryG:
 			totGeRel += pj.Params.PrjnScale.Rel
 		}
 	}
 
 	for _, p := range ly.RcvPrjns {
 		pj := p.(AxonPrjn).AsAxon()
-		if pj.Typ == emer.Inhib {
+		switch pj.Params.Com.GType {
+		case InhibitoryG:
 			if totGiRel > 0 {
 				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGiRel
 				pj.Params.GScale.Scale /= totGiRel
@@ -1007,7 +1014,15 @@ func (ly *Layer) InitGScale() {
 				pj.Params.GScale.Rel = 0
 				pj.Params.GScale.Scale = 0
 			}
-		} else {
+		case ModulatoryG:
+			if totGmRel > 0 {
+				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGmRel
+				pj.Params.GScale.Scale /= totGmRel
+			} else {
+				pj.Params.GScale.Rel = 0
+				pj.Params.GScale.Scale = 0
+			}
+		case ExcitatoryG:
 			if totGeRel > 0 {
 				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGeRel
 				pj.Params.GScale.Scale /= totGeRel

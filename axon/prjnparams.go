@@ -138,6 +138,10 @@ func (pj *PrjnParams) IsInhib() bool {
 	return pj.Com.GType == InhibitoryG
 }
 
+func (pj *PrjnParams) IsExcitatory() bool {
+	return pj.Com.GType == ExcitatoryG
+}
+
 // NeuronGatherSpikesPrjn integrates G*Raw and G*Syn values for given neuron
 // from the given Prjn-level GSyn integrated values.
 func (pj *PrjnParams) NeuronGatherSpikesPrjn(ctx *Context, gv PrjnGVals, ni uint32, nrn *Neuron) {

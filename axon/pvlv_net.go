@@ -23,19 +23,19 @@ func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, unY, unX int, rel 
 	if pos {
 		d1 := &Layer{}
 		nt.AddLayerInit(d1, prefix+"BLAPosAcqD1", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
-		d1.Params.Learn.NeuroMod.DAMod = D1Mod
+		d1.SetBuildConfig("DAMod", "D1Mod")
 		d2 := &Layer{}
 		nt.AddLayerInit(d2, prefix+"BLAPosExtD2", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
-		d2.Params.Learn.NeuroMod.DAMod = D2Mod
+		d2.SetBuildConfig("DAMod", "D2Mod")
 		acq = d1
 		ext = d2
 	} else {
 		d1 := &Layer{}
 		nt.AddLayerInit(d1, prefix+"BLANegExtD1", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
-		d1.Params.Learn.NeuroMod.DAMod = D1Mod
+		d1.SetBuildConfig("DAMod", "D1Mod")
 		d2 := &Layer{}
 		nt.AddLayerInit(d2, prefix+"BLANegAcqD2", []int{1, nUs, unY, unX}, emer.LayerType(BLALayer))
-		d2.Params.Learn.NeuroMod.DAMod = D2Mod
+		d2.SetBuildConfig("DAMod", "D2Mod")
 		acq = d2
 		ext = d1
 	}
@@ -88,4 +88,9 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 	}
 
 	return
+}
+
+// ConnectToBLA adds a BLAPrjn from given sending layer to a BLA layer
+func (nt *Network) ConnectToBLA(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAPrjn))
 }

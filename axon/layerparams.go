@@ -278,8 +278,6 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 	case TDIntegLayer:
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
-	case MatrixLayer:
-		// todo: extra Ge for NoGo!
 	}
 	return saveVal
 }
@@ -298,7 +296,10 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, randc
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
-	if ly.Act.Dend.HasMod.IsTrue() {
+	if ly.LayType == PTMaintLayer {
+		nrn.GeRaw += ly.Act.Dend.ModGain * nrn.GModRaw
+		nrn.GeSyn += ly.Act.Dend.ModGain * nrn.GModSyn
+	} else if ly.Act.Dend.HasMod.IsTrue() {
 		mod := ly.Act.Dend.ModGain * nrn.GModSyn
 		if mod > 1 {
 			mod = 1
