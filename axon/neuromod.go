@@ -23,6 +23,8 @@ type NeuroModVals struct {
 	ACh      float32     `inactive:"+" desc:"acetylcholine -- activated by salient events, particularly at the onset of a reward / punishment outcome (US), or onset of a conditioned stimulus (CS).  Driven by BLA -> PPtg that detects changes in BLA activity, via RSalienceAChLayer type"`
 	NE       float32     `inactive:"+" desc:"norepinepherine -- not yet in use"`
 	Ser      float32     `inactive:"+" desc:"serotonin -- not yet in use"`
+
+	AChRaw float32 `inactive:"+" desc:"raw ACh value used in updating global ACh value by RSalienceAChLayer"`
 }
 
 func (nm *NeuroModVals) Reset() {
@@ -33,6 +35,7 @@ func (nm *NeuroModVals) Reset() {
 	nm.ACh = 0
 	nm.NE = 0
 	nm.Ser = 0
+	nm.AChRaw = 0
 }
 
 // SetRew is a convenience function for setting the external reward
@@ -43,6 +46,11 @@ func (nm *NeuroModVals) SetRew(rew float32, hasRew bool) {
 	} else {
 		nm.Rew = 0
 	}
+}
+
+// NewState is called by Context.NewState at start of new trial
+func (nm *NeuroModVals) NewState() {
+	nm.Reset()
 }
 
 // DAModTypes are types of dopamine modulation of neural activity.

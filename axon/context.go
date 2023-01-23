@@ -59,6 +59,7 @@ func (tm *Context) NewState(mode etime.Modes) {
 	tm.Cycle = 0
 	tm.Mode = mode
 	tm.Testing.SetBool(mode != etime.Train)
+	tm.NeuroMod.NewState()
 }
 
 // NewPhase resets PhaseCycle = 0 and sets the plus phase as specified

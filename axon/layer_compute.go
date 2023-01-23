@@ -160,7 +160,7 @@ func (ly *Layer) RSalAChMaxLayAct(maxAct float32, net *Network, layIdx int32) fl
 	}
 	lay := net.Layers[layIdx].(AxonLayer).AsAxon()
 	lpl := &lay.Pools[0]
-	act := ly.Params.RSalACh.Thr(lpl.AvgMax.Act.Cycle.Max) // use act -- otherwise too variable
+	act := ly.Params.RSalACh.Thr(lpl.AvgMax.Act.Cycle.Max) // use Act -- otherwise too variable
 	if act > maxAct {
 		maxAct = act
 	}
@@ -197,7 +197,8 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay3Idx)
 		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay4Idx)
 		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay5Idx)
-		ctx.NeuroMod.ACh = maxAct
+		ctx.NeuroMod.AChRaw = maxAct // raw value this trial
+		ctx.NeuroMod.ACh = mat32.Max(ctx.NeuroMod.ACh, ctx.NeuroMod.AChRaw)
 	case RWDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := net.LayVals[ly.Params.RWDa.RWPredLayIdx]

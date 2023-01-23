@@ -390,7 +390,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
 	case RSalienceAChLayer:
-		nrn.Act = ctx.NeuroMod.ACh
+		nrn.Act = ctx.NeuroMod.AChRaw // integrated into ActInt
 	case RWPredLayer:
 		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
 		if ni == 0 {
