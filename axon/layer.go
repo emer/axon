@@ -44,10 +44,11 @@ func (ly *Layer) Defaults() {
 		ly.Params.LayType = ly.LayerType()
 		ly.Params.Defaults()
 		ly.Vals.ActAvg.GiMult = 1
-	} else {
-		for _, pj := range ly.RcvPrjns {
-			pj.Defaults()
-		}
+	}
+	for _, pj := range ly.RcvPrjns { // must do prjn defaults first, then custom
+		pj.Defaults()
+	}
+	if ly.Params == nil {
 		return
 	}
 	switch ly.LayerType() {
@@ -90,9 +91,6 @@ func (ly *Layer) Defaults() {
 		ly.STNDefaults()
 	case VThalLayer:
 		ly.VThalDefaults()
-	}
-	for _, pj := range ly.RcvPrjns {
-		pj.Defaults()
 	}
 	ly.UpdateParams()
 }
@@ -224,6 +222,12 @@ func (ly *Layer) UnitVal1D(varIdx int, idx int) float32 {
 			return ly.Vals.NeuroMod.ACh
 		case 2:
 			return ly.Vals.NeuroMod.NE
+		case 3:
+			return ly.Vals.NeuroMod.Ser
+		case 4:
+			nrn := &ly.Neurons[idx]
+			pl := &ly.Pools[nrn.SubPool]
+			return float32(pl.Gated)
 		}
 	} else {
 		nrn := &ly.Neurons[idx]

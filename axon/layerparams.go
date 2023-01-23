@@ -482,13 +482,4 @@ func (ly *LayerParams) PlusPhase(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 	nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
 }
 
-// PlusPhaseSpecial does any special plus phase updating at the neuron level
-func (ly *LayerParams) PlusPhaseSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
-	switch ly.LayType {
-	case MatrixLayer:
-		// todo: update nrn.LearnMod for sign based on gated
-		// and RLRate sign based on D1 / D2
-	}
-}
-
 //gosl: end layerparams

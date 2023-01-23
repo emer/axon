@@ -181,7 +181,9 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		net := ly.Network.(AxonNetwork).AsAxon()
 		maxAct := float32(0)
 		if ly.Params.RSalACh.Rew.IsTrue() {
-			maxAct = ly.Params.RSalACh.Thr(ctx.NeuroMod.Rew)
+			if ctx.NeuroMod.HasRew.IsTrue() {
+				maxAct = 1
+			}
 		}
 		if ly.Params.RSalACh.RewPred.IsTrue() {
 			rpAct := ly.Params.RSalACh.Thr(ctx.NeuroMod.RewPred)
@@ -393,7 +395,6 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 		pl := &ly.Pools[nrn.SubPool]
 		lpl := &ly.Pools[0]
 		ly.Params.PlusPhase(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
-		ly.Params.PlusPhaseSpecial(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
 	}
 	ly.AxonLay.CorSimFmActs() // todo: on GPU?
 	// sync pools -> GPU -> CPU

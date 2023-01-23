@@ -67,7 +67,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#GPi", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Init.Ge": "0.5",
+					"Layer.Act.Init.Ge": "0.5", // todo: 0.6 in params
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{

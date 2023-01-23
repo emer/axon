@@ -217,7 +217,7 @@ var NeuronVarProps = map[string]string{
 
 // NeuronLayerVars are layer-level variables displayed as neuron layers.
 var (
-	NeuronLayerVars  = []string{"DA", "ACh", "NE"}
+	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated"}
 	NNeuronLayerVars = len(NeuronLayerVars)
 )
 

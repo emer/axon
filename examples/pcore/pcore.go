@@ -480,10 +480,26 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 		}
 		ly.ApplyExt(&itsr)
 	}
+	ss.ResetRew()
+}
+
+// ResetRew resets any reward inputs -- at ApplyInputs
+func (ss *Sim) ResetRew() {
+	phs := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
+	if phs == 0 {
+		ss.Context.NeuroMod.SetRew(0, false) // no rew
+	} else {
+		ss.Context.NeuroMod.SetRew(0, true) // no rew
+	}
+	ss.SetRew(0)
 }
 
 // ApplyRew applies reward input based on gating action and input
 func (ss *Sim) ApplyRew() {
+	phs := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
+	if phs == 0 {
+		return
+	}
 	net := ss.Net
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
@@ -507,12 +523,13 @@ func (ss *Sim) ApplyRew() {
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
 	ss.Stats.SetFloat32("Rew", rew)
 
-	hasRew := false
-	if rew != 0 {
-		hasRew = true
-	}
-	ss.Context.NeuroMod.SetRew(rew, hasRew) // this is what actually does the work
-	ss.Context.NeuroMod.DA = rew            // no reward prediction error
+	ss.SetRew(rew)
+}
+
+func (ss *Sim) SetRew(rew float32) {
+	net := ss.Net
+	ss.Context.NeuroMod.Rew = rew
+	ss.Context.NeuroMod.DA = rew // no reward prediction error
 
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
