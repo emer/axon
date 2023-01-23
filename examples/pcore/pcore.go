@@ -659,7 +659,7 @@ func (ss *Sim) ConfigLogs() {
 
 func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
-	layers := ss.Net.LayersByClass("Matrix", "Thal")
+	layers := ss.Net.LayersByClass("MatrixLayer", "VThalLayer")
 	npools := []int{ss.Sim.NPools}
 	for _, lnm := range layers {
 		clnm := lnm

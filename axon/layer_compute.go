@@ -53,6 +53,7 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
 		ly.Params.SubPoolGiFmSpikes(ctx, pl, lpl, lyInhib, ly.Vals.ActAvg.GiMult)
+		pl.AvgMax.Init()
 		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 			nrn := &ly.Neurons[ni]
 			pl.AvgMax.UpdateVals(nrn, int32(ni))
