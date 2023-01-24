@@ -1021,6 +1021,7 @@ func (ly *Layer) InitGScale() {
 			} else {
 				pj.Params.GScale.Rel = 0
 				pj.Params.GScale.Scale = 0
+
 			}
 		case ExcitatoryG:
 			if totGeRel > 0 {

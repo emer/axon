@@ -44,7 +44,7 @@ version:
 	/bin/cat $(VERS_FILE)
 	git commit -am "$(VERS) release -- $(VERS_FILE) updated"
 
-release:	
+release:
 	git tag -a $(VERS) -m "$(VERS) release"
 	git push origin --tags
-	
+

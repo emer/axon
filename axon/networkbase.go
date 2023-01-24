@@ -394,7 +394,8 @@ func (nt *NetworkBase) LateralConnectLayerPrjn(lay emer.Layer, pat prjn.Pattern,
 }
 
 // Build constructs the layer and projection state based on the layer shapes
-// and patterns of interconnectivity
+// and patterns of interconnectivity. Configures threading using heuristics based
+// on final network size.
 func (nt *NetworkBase) Build() error {
 	nt.FunTimes = make(map[string]*timer.Time)
 

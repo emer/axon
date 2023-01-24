@@ -19,7 +19,9 @@ const (
 	defaultNumEpochs      = 350
 )
 
-var numThreads = flag.Int("threads", 1, "number of threads (goroutines) to use")
+var threadsNeuron = flag.Int("thrNeuron", 0, "number of goroutines to launch for NeuronFun")
+var threadsSendSpike = flag.Int("thrSendSpike", 0, "number of goroutines to launch for SendSpike")
+var threadsSynCa = flag.Int("thrSynCa", 0, "number of goroutines to launch for SynCa")
 var numEpochs = flag.Int("epochs", defaultNumEpochs, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
 var numUnits = flag.Int("units", 100, "number of units per layer -- uses NxN where N = sqrt(units)")
@@ -28,13 +30,13 @@ var writeStats = flag.Bool("writestats", false, "whether to write network stats 
 
 func BenchmarkBenchNetFull(b *testing.B) {
 	if *verbose {
-		fmt.Printf("Running bench with: %d threads, %d epochs, %d pats, %d units\n", *numThreads, *numEpochs, *numPats, *numUnits)
+		fmt.Printf("Running bench with: %d neuronThreads, %d sendSpikeThreads, %d synCaThreads, %d epochs, %d pats, %d units\n", *threadsNeuron, *threadsSendSpike, *threadsSynCa, *numEpochs, *numPats, *numUnits)
 	}
 
 	rand.Seed(42)
 
 	net := &axon.Network{}
-	ConfigNet(net, *numThreads, *numUnits, *verbose)
+	ConfigNet(net, *threadsNeuron, *threadsSendSpike, *threadsSynCa, *numUnits, *verbose)
 	if *verbose {
 		log.Println(net.SizeReport())
 	}
@@ -162,7 +164,7 @@ var fp32Result float32
 // Benchmark the cost of doing a type assert on a layer
 func BenchmarkLayerTypeAssert(b *testing.B) {
 	net := &axon.Network{}
-	ConfigNet(net, 1, 2048, false)
+	ConfigNet(net, 1, 1, 1, 2048, false)
 	tmp := float32(0.0)
 
 	b.ResetTimer()
@@ -182,7 +184,7 @@ func BenchmarkLayerTypeAssert(b *testing.B) {
 // Benchmark cost of not doing the type assertion, for comparison
 func BenchmarkLayerTypeAssertBaseline(b *testing.B) {
 	net := &axon.Network{}
-	ConfigNet(net, 1, 2048, false)
+	ConfigNet(net, 1, 1, 1, 2048, false)
 	tmp := float32(0.0)
 	layers := make([]axon.AxonLayer, len(net.Layers))
 	// pre-convert all the layers to AxonLayer
