@@ -37,10 +37,8 @@ func (ly *LayerParams) BLADefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.025
 
 	// ly.Learn.NeuroMod.DAMod needs to be set via BuildConfig
-	ly.Learn.NeuroMod.DALrateMod.SetBool(true)
-	ly.Learn.NeuroMod.AChLrateMod.SetBool(true)
-	ly.Learn.NeuroMod.DALratePct = 1
-	ly.Learn.NeuroMod.AChLratePct = 1
+	ly.Learn.NeuroMod.DALRateMod = 1
+	ly.Learn.NeuroMod.AChLRateMod = 1
 	ly.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
 }
 
