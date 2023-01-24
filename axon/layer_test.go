@@ -68,7 +68,7 @@ func TestLayer_SendSpike(t *testing.T) {
 	const in1pj0_scale = 6.6
 	in1pj0 := inputLayer1.SendPrjn(0).(*Prjn)
 	in1pj0.Syns[in1pj0.SendConIdxStart[1]].Wt = in1pj0_n1_to_n2_wt
-  in1pj0.Params.GScale.Scale = in1pj0_scale
+	in1pj0.Params.GScale.Scale = in1pj0_scale
 
 	const in2pj0_n0_to_n4_wt = 3.0
 	const in2pj0_scale = 0.4
@@ -95,8 +95,8 @@ func TestLayer_SendSpike(t *testing.T) {
 		assert.Equal(t, 9, count)
 	}
 
-	delayStride := in1pj0.Com.Delay + 1
-	assert.Equal(t, in1pj0.Com.Delay, in2pj0.Com.Delay) // sanity
+	delayStride := in1pj0.Params.Com.Delay + 1
+	assert.Equal(t, in1pj0.Params.Com.Delay, in2pj0.Params.Com.Delay) // sanity
 
 	// spot-check two of the conductances
 	l1contrib := float32(in1pj0_n1_to_n2_wt) * in1pj0_scale

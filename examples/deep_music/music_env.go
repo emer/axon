@@ -35,7 +35,7 @@ type MusicEnv struct {
 	NoteRange      minmax.Int                   `desc:"range of notes in given track"`
 	NNotes         int                          `desc:"number of notes"`
 	Song           etable.Table                 `desc:"the song encoded into 200 msec increments, with columns as tracks"`
-	Context        env.Ctr                      `view:"inline" desc:"current time step"`
+	Time           env.Ctr                      `view:"inline" desc:"current time step"`
 	Note           etensor.Float32              `desc:"current note, rendered as a 4D tensor with shape: [1, NNotes, UnitsPer, 1]"`
 	NoteIdx        int                          `desc:"current note index"`
 	Player         func(msg midi.Message) error `view:"-" desc:"the function for playing midi"`
