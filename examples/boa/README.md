@@ -78,9 +78,30 @@ See [O'Reilly, 2020](https://ccnlab.org/papers/OReilly20.pdf) for more info abou
 
 The ACh neuromodulatory signal plays an essential role in the model, because it determines the time windows for BG gating and learning.  ACh = time, DA = value.  If fires at the wrong times, or doesn't fire at salient events, then the model will fail.
 
-Via the PPTg temporal difference mechanism, ACh should respond to the onset of ANY novel CS, and at the time of the US. 
+Via the PPTg temporal difference mechanism, ACh should respond to the onset of ANY novel CS, and at the time of the US.
 
+TODO: If PFC is already goal-engaged, then ACh should be inhibited!  don't get distracted!  Top-down inhibitory connections to brainstem.  Implement as inhibitory connections to PPTg from PT?  Interacts with Gate layer replacement.
 
+TODO: add stats for this!
+
+# Matrix learning rule
+
+The learning rule should be a function of both layer pool gated and local pool gated, and the ACh value indicating the opportunity to gate.
+
+At time of CS, if layer gated:
+* If local pool gated:
+    + Tr = Send * Recv, later DA: Go up, No down  <- normal credit assignment
+* If local NOT gated:
+    + nothing -- we're good!
+
+If layer NOT gated:  <- exploration opportunity cost
+* In proportion to ACh, Go up, No down -- if no ACh, no learn!
+    + This should NOT be in the final trace because it didn't do anything.
+    + should be weaker and exploratory.
+    
+Timing:
+    
+    
 # Stats in the logs
 
 * `AllGood` = summary stat representing the average of several of the following stats.  If this is around 1, then the model should be performing well, both behaviorally and in terms of what each of the key layers is doing.

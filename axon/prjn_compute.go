@@ -192,6 +192,7 @@ func (pj *Prjn) DWt(ctx *Context) {
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
+	layPool := &rlay.Pools[0]
 	isTarget := rlay.Params.Act.Clamp.IsTarget.IsTrue()
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
@@ -203,9 +204,9 @@ func (pj *Prjn) DWt(ctx *Context) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			rpl := &rlay.Pools[rn.SubPool]
+			subPool := &rlay.Pools[rn.SubPool]
 			sy := &syns[ci]
-			pj.Params.DWtSyn(ctx, sy, sn, rn, rpl, isTarget)
+			pj.Params.DWtSyn(ctx, sy, sn, rn, layPool, subPool, isTarget)
 		}
 	}
 }

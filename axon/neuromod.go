@@ -90,8 +90,8 @@ type NeuroModParams struct {
 	DALratePct  float32     `min:"0" max:"1" viewif:"DALrateMod" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
 	AChLratePct float32     `min:"0" max:"1" viewif:"AChLrateMod" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
 	AChDisInhib float32     `min:"0" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
-	BurstGain   float32     `min:"0" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
-	DipGain     float32     `min:"0" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
+	BurstGain   float32     `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
+	DipGain     float32     `min:"0" def:"1" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
 
 	pad, pad1, pad2 float32
 }

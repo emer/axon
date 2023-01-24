@@ -25,6 +25,7 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/patgen"
+	"github.com/emer/emergent/popcode"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
@@ -64,19 +65,20 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	NPools     int     `view:"-" desc:"number of pools"`
-	NUnitsY    int     `view:"-" desc:"number of units within each pool, Y"`
-	NUnitsX    int     `view:"-" desc:"number of units within each pool, X"`
-	NUnits     int     `view:"-" desc:"total number of units within each pool"`
-	NoInc      bool    `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
-	ACCPos     float32 `desc:"activation of ACC positive valence -- drives go"`
-	ACCNeg     float32 `desc:"activation of ACC neg valence -- drives nogo"`
-	ACCPosInc  float32 `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
-	ACCNegInc  float32 `desc:"across-units multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
-	SNc        float32 `desc:"dopamine level - computed for learning"`
-	TestInc    float32 `desc:"increment in testing activation for test all"`
-	TestReps   int     `desc:"number of repetitions per testing level"`
-	InitMtxWts bool    `desc:"initialize matrix Go / No weights to follow Pos / Neg inputs -- else .5 even and must be learned"`
+	NPools     int          `view:"-" desc:"number of pools"`
+	NUnitsY    int          `view:"-" desc:"number of units within each pool, Y"`
+	NUnitsX    int          `view:"-" desc:"number of units within each pool, X"`
+	NUnits     int          `view:"-" desc:"total number of units within each pool"`
+	NoInc      bool         `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
+	ACCPos     float32      `desc:"activation of ACC positive valence -- drives go"`
+	ACCNeg     float32      `desc:"activation of ACC neg valence -- drives nogo"`
+	ACCPosInc  float32      `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
+	ACCNegInc  float32      `desc:"across-units multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
+	SNc        float32      `desc:"dopamine level - computed for learning"`
+	TestInc    float32      `desc:"increment in testing activation for test all"`
+	TestReps   int          `desc:"number of repetitions per testing level"`
+	InitMtxWts bool         `desc:"initialize matrix Go / No weights to follow Pos / Neg inputs -- else .5 even and must be learned"`
+	PopCode    popcode.OneD `desc:"pop code the values in ACCPos and Neg"`
 }
 
 // Defaults sets default params
@@ -88,10 +90,12 @@ func (ss *SimParams) Defaults() {
 	ss.NUnits = ss.NUnitsY * ss.NUnitsX
 	ss.ACCPos = 1
 	ss.ACCNeg = .2
-	ss.ACCPosInc = 0.8
+	ss.ACCPosInc = 1 // 0.8
 	ss.ACCNegInc = 1
 	ss.TestInc = 0.1
 	ss.TestReps = 25
+	ss.PopCode.Defaults()
+	ss.PopCode.SetRange(-0.2, 1.2, 0.1)
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -125,7 +129,7 @@ func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "LearnWts WtScales"
+	ss.Params.ExtraSets = "WtScales"
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -456,26 +460,29 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{np * nu}, nil, nil)
 
-	row := 0
-
 	lays := []string{"ACCPos", "ACCNeg", "PFC"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		if !zero {
 			for j := 0; j < np; j++ {
+				// np = different pools have changing increments
+				// such that first pool is best choice
 				io := j * nu
-				for i := 0; i < nu; i++ {
-					pval := float32(ss.Pats.CellTensorFloat1D("Input", row, i))
-					switch lnm {
-					case "ACCPos":
-						itsr.Values[io+i] = pval * vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
-					case "ACCNeg":
-						itsr.Values[io+i] = pval * vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
-					default:
-						itsr.Values[io+i] = pval * vals[li]
-					}
+				var poolVal float32
+				switch lnm {
+				case "ACCPos":
+					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
+				case "ACCNeg":
+					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
+				default:
+					poolVal = 1
 				}
+				sv := itsr.Values[io : io+nu]
+				ss.Sim.PopCode.Encode(&sv, poolVal, nu, false)
+				// for i := 0; i < nu; i++ {
+				// 	pval := float32(ss.Pats.CellTensorFloat1D("Input", row, i))
+				// 	itsr.Values[io+i] = pval * vals[li]
 			}
 		}
 		ly.ApplyExt(&itsr)

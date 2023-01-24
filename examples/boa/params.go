@@ -403,16 +403,16 @@ var ParamSets = params.Sets{
 			// BG prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":       "1.0", // stronger
-					"Prjn.SWt.Init.SPct":       "0",
-					"Prjn.SWt.Init.Mean":       "0.5",
-					"Prjn.SWt.Init.Var":        "0.25",
-					"Prjn.Matrix.InvertNoGate": "false", // todo: test --- false > true -- doesn't work
-					"Prjn.Matrix.CurTrlDA":     "true",
-					"Prjn.Matrix.UseHasRew":    "true", // hack to use US-only timing
-					"Prjn.Matrix.AChDecay":     "0",    // not used if UseHasRew is on
-					"Prjn.Learn.Learn":         "true",
-					"Prjn.Learn.LRate.Base":    "0.1",
+					"Prjn.PrjnScale.Abs":      "1.0", // stronger
+					"Prjn.SWt.Init.SPct":      "0",
+					"Prjn.SWt.Init.Mean":      "0.5",
+					"Prjn.SWt.Init.Var":       "0.25",
+					"Prjn.Matrix.NoGateLRate": "0.005",
+					"Prjn.Matrix.CurTrlDA":    "false",
+					"Prjn.Matrix.UseHasRew":   "true", // hack to use US-only timing
+					"Prjn.Matrix.AChDecay":    "0",    // not used if UseHasRew is on
+					"Prjn.Learn.Learn":        "true",
+					"Prjn.Learn.LRate.Base":   "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{

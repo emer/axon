@@ -83,14 +83,14 @@ var ParamSets = params.Sets{
 			// 	}},
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":       "1.0", // stronger
-					"Prjn.SWt.Init.SPct":       "0",
-					"Prjn.SWt.Init.Mean":       "0.5",
-					"Prjn.SWt.Init.Var":        "0.25",
-					"Prjn.Matrix.CurTrlDA":     "true",
-					"Prjn.Matrix.InvertNoGate": "true",
-					"Prjn.Learn.Learn":         "true",
-					"Prjn.Learn.LRate.Base":    "0.1",
+					"Prjn.PrjnScale.Abs":      "1.0", // stronger
+					"Prjn.SWt.Init.SPct":      "0",
+					"Prjn.SWt.Init.Mean":      "0.5",
+					"Prjn.SWt.Init.Var":       "0.25",
+					"Prjn.Matrix.CurTrlDA":    "true",
+					"Prjn.Matrix.NoGateLRate": "0.005", // 0.005 lowest that works
+					"Prjn.Learn.Learn":        "true",
+					"Prjn.Learn.LRate.Base":   "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
