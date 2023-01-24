@@ -303,10 +303,10 @@ func (dp *DtParams) AvgVarUpdt(avg, vr *float32, val float32) {
 // simulated using a poisson spiking process.
 type SpikeNoiseParams struct {
 	On   slbool.Bool `desc:"add noise simulating background spiking levels"`
-	GeHz float32     `def:"100" desc:"mean frequency of excitatory spikes -- typically 50Hz but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
-	Ge   float32     `min:"0" desc:"excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs"`
-	GiHz float32     `def:"200" desc:"mean frequency of inhibitory spikes -- typically 100Hz fast spiking but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
-	Gi   float32     `min:"0" desc:"excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs"`
+	GeHz float32     `viewif:"On" def:"100" desc:"mean frequency of excitatory spikes -- typically 50Hz but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
+	Ge   float32     `viewif:"On" min:"0" desc:"excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs"`
+	GiHz float32     `viewif:"On" def:"200" desc:"mean frequency of inhibitory spikes -- typically 100Hz fast spiking but multiple inputs increase rate -- poisson lambda parameter, also the variance"`
+	Gi   float32     `viewif:"On" min:"0" desc:"excitatory conductance per spike -- .001 has minimal impact, .01 can be strong, and .15 is needed to influence timing of clamped inputs"`
 
 	GeExpInt float32 `view:"-" json:"-" xml:"-" desc:"Exp(-Interval) which is the threshold for GeNoiseP as it is updated"`
 	GiExpInt float32 `view:"-" json:"-" xml:"-" desc:"Exp(-Interval) which is the threshold for GiNoiseP as it is updated"`
@@ -379,7 +379,7 @@ func (cp *ClampParams) Defaults() {
 // AttnParams determine how the Attn modulates Ge
 type AttnParams struct {
 	On  slbool.Bool `desc:"is attentional modulation active?"`
-	Min float32     `desc:"minimum act multiplier if attention is 0"`
+	Min float32     `viewif:"On" desc:"minimum act multiplier if attention is 0"`
 
 	pad, pad1 int32
 }

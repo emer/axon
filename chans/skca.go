@@ -25,9 +25,9 @@ type SKCaParams struct {
 	ActTau  float32     `viewif:"Gbar>0" def:"10" desc:"activation time constant -- roughly 5-15 msec in literature"`
 	DeTau   float32     `viewif:"Gbar>0" def:"30,50" desc:"deactivation time constant -- roughly 30-50 msec in literature"`
 
-	ActDt   float32 `view:"+" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	DeDt    float32 `view:"+" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	C50Hill float32 `view:"+" json:"-" xml:"-" desc:"C50 ^ Hill precomputed"`
+	ActDt   float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	DeDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	C50Hill float32 `view:"-" json:"-" xml:"-" desc:"C50 ^ Hill precomputed"`
 
 	pad, pad1 float32
 }

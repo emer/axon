@@ -84,10 +84,10 @@ const (
 // and are applied in the core cycle update equations.
 type NeuroModParams struct {
 	DAMod       DAModTypes  `desc:"effects of dopamine modulation on excitatory and inhibitory conductances"`
-	DAModGain   float32     `desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
+	DAModGain   float32     `viewif:"DAMod!=NoDAMod" desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
 	DALrateMod  slbool.Bool `desc:"modulate learning rate as a function of abs(DA) absolute value of dopamine"`
-	AChLrateMod slbool.Bool `desc:"modulate learning rate as a function of ACh acetylcholine level"`
 	DALratePct  float32     `min:"0" max:"1" viewif:"DALrateMod" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
+	AChLrateMod slbool.Bool `desc:"modulate learning rate as a function of ACh acetylcholine level"`
 	AChLratePct float32     `min:"0" max:"1" viewif:"AChLrateMod" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
 	AChDisInhib float32     `min:"0" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
 	BurstGain   float32     `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`

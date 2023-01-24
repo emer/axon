@@ -680,8 +680,8 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("GateUS", 0)
 	ss.Stats.SetFloat("GateCS", 0)
-	ss.Stats.SetFloat("NoGatePre", 0)
-	ss.Stats.SetFloat("NoGatePost", 0)
+	ss.Stats.SetFloat("GatedEarly", 0)
+	ss.Stats.SetFloat("GatedPostCS", 0)
 	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetString("NetAction", "")
@@ -738,12 +738,12 @@ func (ss *Sim) TrialStats() {
 		allGood += fv
 		agN++
 	}
-	if fv := ss.Stats.Float("NoGatePre"); !math.IsNaN(fv) {
-		allGood += 1
+	if fv := ss.Stats.Float("GatedEarly"); !math.IsNaN(fv) {
+		allGood += 1 - fv
 		agN++
 	}
-	if fv := ss.Stats.Float("NoGatePost"); !math.IsNaN(fv) {
-		allGood += 1 - fv // why is this invert
+	if fv := ss.Stats.Float("GatedPostCS"); !math.IsNaN(fv) {
+		allGood += 1 - fv
 		agN++
 	}
 	if fv := ss.Stats.Float("WrongCSGate"); !math.IsNaN(fv) {
@@ -770,8 +770,8 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
 	ss.Stats.SetFloat32("GateUS", mat32.NaN())
 	ss.Stats.SetFloat32("GateCS", mat32.NaN())
-	ss.Stats.SetFloat32("NoGatePre", mat32.NaN())
-	ss.Stats.SetFloat32("NoGatePost", mat32.NaN())
+	ss.Stats.SetFloat32("GatedEarly", mat32.NaN())
+	ss.Stats.SetFloat32("GatedPostCS", mat32.NaN())
 	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
 	if didGate {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(ev.Drive != ev.USForPos()))
@@ -784,9 +784,9 @@ func (ss *Sim) GatedStats() {
 		}
 	} else {
 		if ev.Dist < ev.DistMax-1 { // todo: not very robust
-			ss.Stats.SetFloat32("NoGatePost", bools.ToFloat32(!didGate))
+			ss.Stats.SetFloat32("GatedPostCS", bools.ToFloat32(didGate))
 		} else {
-			ss.Stats.SetFloat32("NoGatePre", bools.ToFloat32(!didGate))
+			ss.Stats.SetFloat32("GatedEarly", bools.ToFloat32(didGate))
 		}
 	}
 	ss.Stats.SetFloat32("Rew", ev.Rew)
@@ -876,7 +876,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "WrongCSGate")
 	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
-	// "GateUS", "NoGatePre", "NoGatePost", "Gated", "PctCortex",
+	// "GateUS", "GatedEarly", "GatedPostCS", "Gated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
 
 	ss.Logs.CreateTables()
@@ -898,8 +898,8 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("NoGatePre", "NoGatePre", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("NoGatePost", "NoGatePost", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GatedEarly", "GatedEarly", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GatedPostCS", "GatedPostCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 
 	lays := ss.Net.LayersByClass("PTLayer")
