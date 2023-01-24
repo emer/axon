@@ -222,7 +222,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // DWtSynRWPred computes the weight change (learning) at given synapse,
 // for the RWPredPrjn type
 func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	// todo: move all of this into rn.RLrate
+	// todo: move all of this into rn.RLRate
 	lda := ctx.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff
@@ -257,7 +257,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // DWtSynTDPred computes the weight change (learning) at given synapse,
 // for the TDRewPredPrjn type
 func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	// todo: move all of this into rn.RLrate
+	// todo: move all of this into rn.RLRate
 	lda := ctx.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff
@@ -280,7 +280,7 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // DWtSynMatrix computes the weight change (learning) at given synapse,
 // for the MatrixPrjn type.
 func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	// note: rn.RLrate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
+	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
 	dtr := float32(0)
 	dwt := float32(0)
