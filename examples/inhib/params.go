@@ -70,7 +70,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
-			{Sel: ".Inhib", Desc: "inhibitory projections",
+			{Sel: ".InhibPrjn", Desc: "inhibitory projections",
 				Params: params.Params{
 					// "Prjn.SWt.Init.Dist": "Uniform",
 					"Prjn.SWt.Init.Mean": "0.5",

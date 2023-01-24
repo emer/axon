@@ -272,7 +272,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ac.GvgccFmVm(nrn)
 	ac.GkFmVm(nrn)
 
-	nrn.GABAB, nrn.GABABx = ac.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+	ac.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
 	nrn.GgabaB = ac.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 
 	nrn.Gi += nrn.GgabaB
@@ -305,7 +305,7 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	ly.Params.Act.Erev.E = float32(ss.ErevE)
 	ly.Params.Act.Erev.I = float32(ss.ErevI)
 	// ly.Params.Act.Noise.Var = float64(ss.Noise)
-	ly.Params.Act.KNa.On = ss.KNaAdapt
+	ly.Params.Act.KNa.On.SetBool(ss.KNaAdapt)
 	ly.Params.Act.Mahp.Gbar = ss.MahpGbar
 	ly.Params.Act.NMDA.Gbar = ss.NMDAGbar
 	ly.Params.Act.GABAB.Gbar = ss.GABABGbar

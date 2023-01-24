@@ -255,7 +255,7 @@ func (ss *Sim) ConfigLoops() {
 		curMode := m // For closures.
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetTimeVal", func() {
-				time.Mode = curMode.String()
+				time.Mode = curMode
 			})
 		}
 	}
@@ -311,7 +311,7 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.Context.Reset()
-	ss.Context.Mode = etime.Test.String()
+	ss.Context.Mode = etime.Test
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
@@ -334,9 +334,9 @@ func (ss *Sim) InitStats() {
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
 	var mode etime.Modes
-	mode.FromString(ss.Context.Mode)
+	mode.FromString(ss.Context.Mode.String())
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
-	ss.Stats.SetInt("Cycle", ss.Context.Cycle)
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Trial", "Cycle"})
 }
 
@@ -469,7 +469,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Context.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
