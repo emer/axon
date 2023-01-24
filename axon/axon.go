@@ -7,6 +7,7 @@ package axon
 import (
 	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/etensor"
+	"github.com/goki/gosl/sltype"
 )
 
 // AxonNetwork defines the essential algorithmic API for Axon, at the network level.
@@ -37,28 +38,28 @@ type AxonNetwork interface {
 
 	// NewStateImpl handles all initialization at start of new input pattern, including computing
 	// input scaling from running average activation etc.
-	NewStateImpl()
+	NewStateImpl(ctx *Context)
 
 	// Cycle handles entire update for one cycle (msec) of neuron activity state.
-	CycleImpl(ctime *Time)
+	CycleImpl(ctx *Context)
 
 	// MinusPhaseImpl does updating after minus phase
-	MinusPhaseImpl(ctime *Time)
+	MinusPhaseImpl(ctx *Context)
 
 	// PlusPhaseImpl does updating after plus phase
-	PlusPhaseImpl(ctime *Time)
+	PlusPhaseImpl(ctx *Context)
 
 	// DWtImpl computes the weight change (learning) based on current
 	// running-average activation values
-	DWtImpl(ctime *Time)
+	DWtImpl(ctx *Context)
 
 	// WtFmDWtImpl updates the weights from delta-weight changes.
 	// Also calls SynScale every Interval times
-	WtFmDWtImpl(ctime *Time)
+	WtFmDWtImpl(ctx *Context)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, and adapting inhibition
-	SlowAdapt(ctime *Time)
+	SlowAdapt(ctx *Context)
 }
 
 // AxonLayer defines the essential algorithmic API for Axon, at the layer level.
@@ -75,9 +76,21 @@ type AxonLayer interface {
 	// interface does not need to include accessors to all the basic stuff
 	AsAxon() *Layer
 
+	// LayerType returns the axon-specific LayerTypes type
+	LayerType() LayerTypes
+
 	// NeurStartIdx is the starting index in global network slice of neurons for
-	// neurons in this layer
+	// neurons in this layer -- convenience interface method for threading dispatch.
 	NeurStartIdx() int
+
+	// SetBuildConfig sets named configuration parameter to given string value
+	// to be used in the PostBuild stage -- mainly for layer names that need to be
+	// looked up and turned into indexes, after entire network is built.
+	SetBuildConfig(param, val string)
+
+	// PostBuild performs special post-Build() configuration steps for specific algorithms,
+	// using configuration data from SetBuildConfig during the ConfigNet process.
+	PostBuild()
 
 	// InitWts initializes the weight values in the network, i.e., resetting learning
 	// Also calls InitActs
@@ -126,14 +139,6 @@ type AxonLayer interface {
 	// Used to prevent adapting of inhibition or TrgAvg values.
 	IsInput() bool
 
-	// NewState handles all initialization at start of new input pattern,
-	// including computing Ge scaling from running average activation etc.
-	// should already have presented the external input to the network at this point.
-	NewState()
-
-	// DecayState decays activation state by given proportion (default is on ly.Act.Init.Decay)
-	DecayState(decay, glong float32)
-
 	// RecvPrjns returns the slice of receiving projections for this layer
 	RecvPrjns() *AxonPrjns
 
@@ -145,50 +150,64 @@ type AxonLayer interface {
 
 	// GiFmSpikes integrates new inhibitory conductances from Spikes
 	// at the layer and pool level
-	GiFmSpikes(ctime *Time)
+	GiFmSpikes(ctx *Context)
 
 	// CycleNeuron does one cycle (msec) of updating at the neuron level
 	// calls the following via this AxonLay interface:
-	// * Ginteg
+	// * GInteg
 	// * SpikeFmG
 	// * PostAct
-	CycleNeuron(ni int, nrn *Neuron, ctime *Time)
+	CycleNeuron(ctx *Context, ni uint32, nrn *Neuron)
 
 	// GInteg integrates conductances G over time (Ge, NMDA, etc).
-	// reads pool Gi values
-	GInteg(ni int, nrn *Neuron, ctime *Time)
+	// reads pool Gi values.
+	GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, randctr *sltype.Uint2)
 
 	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
-	SpikeFmG(ni int, nrn *Neuron, ctime *Time)
+	SpikeFmG(ctx *Context, ni uint32, nrn *Neuron)
 
-	// PostAct does updates at neuron level after activation (spiking)
-	// updated for all neurons.
-	// It is a hook for specialized algorithms -- empty at Axon base level
-	PostAct(ni int, nrn *Neuron, ctime *Time)
+	// PostSpike does updates at neuron level after spiking has been computed.
+	// This is where special layer types add extra code.
+	PostSpike(ctx *Context, ni uint32, nrn *Neuron)
 
-	// SendSpike transmits spikes from sending neurons to receivers.
-	// For each projection, we write into the receiver's spike buffer.
-	// -- last step in Cycle, integrated the next time around.
-	SendSpike(ctime *Time)
+	// SendSpike sends spike to receivers -- last step in Cycle, integrated
+	// the next time around.
+	// Writes to sending projections for this neuron.
+	SendSpike(ctx *Context)
 
 	// CyclePost is called after the standard Cycle update, as a separate
 	// network layer loop.
 	// This is reserved for any kind of special ad-hoc types that
-	// need to do something special after Act is finally computed.
-	// For example, sending a neuromodulatory signal such as dopamine.
-	CyclePost(ctime *Time)
+	// need to do something special after Spiking is finally computed and Sent.
+	// It ONLY runs on the CPU, not the GPU -- should update global values
+	// in the Context state which are re-sync'd back to GPU,
+	// and values in other layers MUST come from LayerVals because
+	// this is the only data that is sync'd back from the GPU each cycle.
+	// For example, updating a neuromodulatory signal such as dopamine.
+	CyclePost(ctx *Context)
+
+	// NewState handles all initialization at start of new input pattern,
+	// including computing Ge scaling from running average activation etc.
+	// should already have presented the external input to the network at this point.
+	NewState(ctx *Context)
+
+	// DecayState decays activation state by given proportion (default is on ly.Params.Act.Init.Decay)
+	DecayState(ctx *Context, decay, glong float32)
+
+	//////////////////////////////////////////////////////////////////////////////////////
+	//  Phase Methods
 
 	// MinusPhase does updating after end of minus phase
-	MinusPhase(ctime *Time)
+	MinusPhase(ctx *Context)
 
 	// PlusPhase does updating after end of plus phase
-	PlusPhase(ctime *Time)
+	PlusPhase(ctx *Context)
 
 	// SpkSt1 saves current activations into SpkSt1
-	SpkSt1(ctime *Time)
+	SpkSt1(ctx *Context)
 
 	// SpkSt2 saves current activations into SpkSt2
-	SpkSt2(ctime *Time)
+	SpkSt2(ctx *Context)
 
 	// CorSimFmActs computes the correlation similarity
 	// (centered cosine aka normalized dot product)
@@ -196,24 +215,37 @@ type AxonLayer interface {
 	// (1 = identical, 0 = uncorrelated).
 	CorSimFmActs()
 
+	//////////////////////////////////////////////////////////////////////////////////////
+	//  Learn Methods
+
 	// DWtLayer does weight change at the layer level.
 	// does NOT call main projection-level DWt method.
 	// in base, only calls DTrgAvgFmErr
-	DWtLayer(ctime *Time)
+	DWtLayer(ctx *Context)
 
 	// WtFmDWtLayer does weight update at the layer level.
 	// does NOT call main projection-level WtFmDWt method.
 	// in base, only calls TrgAvgFmD
-	WtFmDWtLayer(ctime *Time)
+	WtFmDWtLayer(ctx *Context)
 
 	// SlowAdapt is the layer-level slow adaptation functions.
 	// Calls AdaptInhib and AvgDifFmTrgAvg for Synaptic Scaling.
 	// Does NOT call projection-level methods.
-	SlowAdapt(ctime *Time)
+	SlowAdapt(ctx *Context)
 
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
-	SynFail(ctime *Time)
+	SynFail(ctx *Context)
+
+	// SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
+	// CtxtGe excitatory conductance on CT layers.
+	// This should be called at the end of the Plus (5IB Burst) phase via Network.CTCtxt
+	SendCtxtGe(ctx *Context)
+
+	// CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
+	// overall Ctxt value, only on CT layers.
+	// This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
+	CtxtFmGe(ctx *Context)
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
@@ -229,6 +261,9 @@ type AxonPrjn interface {
 	// AsAxon returns this prjn as a axon.Prjn -- so that the AxonPrjn
 	// interface does not need to include accessors to all the basic stuff.
 	AsAxon() *Prjn
+
+	// PrjnType returns the axon-specific PrjnTypes type
+	PrjnType() PrjnTypes
 
 	// InitWts initializes weight values according to Learn.WtInit params
 	InitWts()
@@ -247,38 +282,38 @@ type AxonPrjn interface {
 	// to add to buffer on receivers.
 	SendSpike(si int)
 
-	// GFmSpikes increments synaptic conductances from Spikes
+	// PrjnGatherSpikes increments synaptic conductances from Spikes
 	// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-	GFmSpikes(ctime *Time)
+	PrjnGatherSpikes(ctx *Context)
 
 	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in sending order, filtering on sending spike.
-	SendSynCa(ctime *Time)
+	SendSynCa(ctx *Context)
 
 	// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in recv order, filtering on recv spike.
-	RecvSynCa(ctime *Time)
+	RecvSynCa(ctx *Context)
 
 	// DWt computes the weight change (learning) -- on sending projections.
-	DWt(ctime *Time)
+	DWt(ctx *Context)
 
 	// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 	// This is called on *receiving* projections, prior to WtFmDwt.
-	DWtSubMean(ctime *Time)
+	DWtSubMean(ctx *Context)
 
 	// WtFmDWt updates the synaptic weight values from delta-weight changes,
 	// on sending projections
-	WtFmDWt(ctime *Time)
+	WtFmDWt(ctx *Context)
 
 	// SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 	// GScale conductance scaling, and adapting inhibition
-	SlowAdapt(ctime *Time)
+	SlowAdapt(ctx *Context)
 
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
-	SynFail(ctime *Time)
+	SynFail(ctx *Context)
 }
 
 type AxonPrjns []AxonPrjn

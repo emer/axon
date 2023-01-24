@@ -6,6 +6,8 @@ package chans
 
 import "github.com/goki/mat32"
 
+//gosl: start chans
+
 // NMDAParams control the NMDA dynamics, based on Jahr & Stevens (1990) equations
 // which are widely used in models, from Brunel & Wang (2001) to Sanders et al. (2013).
 // The overall conductance is a function of a voltage-dependent postsynaptic factor based
@@ -13,10 +15,10 @@ import "github.com/goki/mat32"
 // increments
 type NMDAParams struct {
 	Gbar float32 `def:"0,0.15,0.25,0.3,1.4" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.  0.15 standard for SnmdaDeplete = false, 1.4 when on."`
-	Tau  float32 `def:"30,50,100,200,300" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far."`
-	ITau float32 `def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism."`
-	MgC  float32 `def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far in large models, 1.2, Voff = 0 best in smaller nets."`
-	Voff float32 `def:"0,5" desc:"offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model.  0 is best in small models"`
+	Tau  float32 `viewif:"Gbar>0" def:"30,50,100,200,300" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far."`
+	ITau float32 `viewif:"Gbar>0" def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism."`
+	MgC  float32 `viewif:"Gbar>0" def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far in large models, 1.2, Voff = 0 best in smaller nets."`
+	Voff float32 `viewif:"Gbar>0" def:"0,5" desc:"offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model.  0 is best in small models"`
 
 	Dt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	IDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
@@ -73,9 +75,10 @@ func (np *NMDAParams) CaFmV(v float32) float32 {
 
 // VFactors returns MgGFmV and CaFmV based on normalized membrane potential.
 // Just does the voltage conversion once.
-func (np *NMDAParams) VFactors(v float32) (mgg, cav float32) {
+func (np *NMDAParams) VFactors(v float32, mgg, cav *float32) {
 	vbio := VToBio(v)
-	return np.MgGFmVbio(vbio), np.CaFmVbio(vbio)
+	*mgg = np.MgGFmVbio(vbio)
+	*cav = np.CaFmVbio(vbio)
 }
 
 // NMDASyn returns the updated synaptic NMDA Glu binding
@@ -103,3 +106,5 @@ func (np *NMDAParams) SnmdaFmSpike(spike float32, snmdaO, snmdaI *float32) {
 		*snmdaI -= np.IDt * *snmdaI
 	}
 }
+
+//gosl: end chans

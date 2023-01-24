@@ -29,21 +29,18 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Slope":               "0.02", //
 					"Layer.Act.Sahp.CaTau":               "5",    // 5 > 10
 				}},
-			{Sel: "SuperLayer", Desc: "super layer params",
-				Params: params.Params{
-					"Layer.Burst.ThrRel": "0.1", // 0.1 > 0.2 > 0
-					"Layer.Burst.ThrAbs": "0.1",
-				}},
-			{Sel: ".Hidden", Desc: "fix avg act",
+			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Burst.ThrRel":         "0.1", // 0.1 > 0.2 > 0
+					"Layer.Burst.ThrAbs":         "0.1",
 				}},
 			{Sel: ".InLay", Desc: "input layers need more inhibition",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.025", // 0.025 for full song
 					// "Layer.Inhib.ActAvg.Nominal": "0.05", // 0.08 for 18 notes -- 30 rows
 				}},
-			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
+			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.12", // CT in general more active
 					"Layer.Inhib.Layer.Gi":       "2.8",  // 2.8 best -- 1.4 prev
@@ -59,7 +56,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Noise.Ge":         "0.005",
 					"Layer.Act.Noise.Gi":         "0.005",
 				}},
-			{Sel: "PulvLayer", Desc: "Pulv = Pulvinar",
+			{Sel: ".PulvinarLayer", Desc: "Pulv = Pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1 >> 1.2
 					"Layer.Pulv.DriveScale":         "0.1", // 0.1 shows up -- was 0.02
@@ -82,11 +79,11 @@ var ParamSets = params.Sets{
 					"Prjn.Com.PFail":           "0.0",
 					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 (small bene) > 4 (worse at end on full)
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2
 				}},
-			{Sel: ".CTCtxt", Desc: "all CT context prjns",
+			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.001", // 0.001 >> 0.002 for full
 					"Prjn.Learn.Trace.Tau":     "4",     // 4 > 2?

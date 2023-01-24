@@ -33,7 +33,6 @@ import (
 type NetworkBase struct {
 	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
-	Layers      emer.Layers           `desc:"list of layers"`
 	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
 	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
 	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
@@ -42,8 +41,14 @@ type NetworkBase struct {
 	MetaData    map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
 
 	// Implementation level code below:
-	Neurons     []Neuron               `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
-	Prjns       []AxonPrjn             `view:"-" desc:"pointers to all projections in the network, via the AxonPrjn interface"`
+	Layers     emer.Layers   `desc:"array of layers"`
+	LayParams  []LayerParams `view:"-" desc:"array of layer parameters, in 1-to-1 correspondence with Layers"`
+	LayVals    []LayerVals   `view:"-" desc:"array of layer values, in 1-to-1 correspondence with Layers"`
+	Neurons    []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
+	Prjns      []AxonPrjn    `view:"-" desc:"pointers to all projections in the network, via the AxonPrjn interface"`
+	PrjnParams []PrjnParams  `view:"-" desc:"array of projection parameters, in 1-to-1 correspondence with Prjns"`
+	PrjnVals   []PrjnVals    `view:"-" desc:"array of projection values, in 1-to-1 correspondence with Prjns"`
+
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
@@ -242,7 +247,7 @@ func (nt *NetworkBase) AllPrjnScales() string {
 				continue
 			}
 			pj := recvPrjn.(AxonPrjn).AsAxon()
-			str += fmt.Sprintf("\t%23s\t\tAbs:\t%g\tRel:\t%g\n", pj.Name(), pj.PrjnScale.Abs, pj.PrjnScale.Rel)
+			str += fmt.Sprintf("\t%23s\t\tAbs:\t%g\tRel:\t%g\n", pj.Name(), pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel)
 		}
 	}
 	return str
@@ -398,6 +403,7 @@ func (nt *NetworkBase) Build() error {
 	emsg := ""
 	totNeurons := 0
 	totPrjns := 0
+	nLayers := len(nt.Layers)
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -411,16 +417,23 @@ func (nt *NetworkBase) Build() error {
 			nt.LayClassMap[cl] = ll
 		}
 	}
-	nt.Neurons = make([]Neuron, totNeurons) // never grows
+	nt.LayParams = make([]LayerParams, nLayers)
+	nt.LayVals = make([]LayerVals, nLayers)
+	nt.Neurons = make([]Neuron, totNeurons)
 	nt.Prjns = make([]AxonPrjn, totPrjns)
+	nt.PrjnParams = make([]PrjnParams, totPrjns)
+	nt.PrjnVals = make([]PrjnVals, totPrjns)
 
 	// we can't do this in Defaults(), since we need to know the number of neurons etc.
-	nt.Threads.SetDefaults(len(nt.Neurons), len(nt.Prjns), len(nt.Layers))
+	nt.Threads.SetDefaults(totNeurons, totPrjns, nLayers)
 
 	nidx := 0
 	pidx := 0
-	for _, l := range nt.Layers {
-		ly := l.(AxonLayer)
+	for li, l := range nt.Layers {
+		lyi := l.(AxonLayer)
+		ly := lyi.AsAxon()
+		ly.Params = &nt.LayParams[li]
+		ly.Vals = &nt.LayVals[li]
 		if ly.IsOff() {
 			continue
 		}
@@ -428,16 +441,21 @@ func (nt *NetworkBase) Build() error {
 		aly := ly.AsAxon()
 		aly.Neurons = nt.Neurons[nidx : nidx+nn]
 		aly.NeurStIdx = nidx
+		sprjns := *ly.SendPrjns()
+		for pi, spj := range sprjns {
+			pii := pidx + pi
+			pji := spj.(AxonPrjn)
+			pj := pji.AsAxon()
+			pj.Params = &nt.PrjnParams[pii]
+			pj.Vals = &nt.PrjnVals[pii]
+			nt.Prjns[pii] = pji
+		}
+		nidx += nn
+		pidx += len(sprjns)
 		err := ly.Build()
 		if err != nil {
 			emsg += err.Error() + "\n"
 		}
-		sprjns := *ly.SendPrjns()
-		for pi, spj := range sprjns {
-			nt.Prjns[pidx+pi] = spj.(AxonPrjn)
-		}
-		nidx += nn
-		pidx += len(sprjns)
 	}
 	nt.Layout()
 	if emsg != "" {

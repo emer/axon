@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
@@ -37,7 +38,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.SWt.Init.Var": "0",
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",
 				}},
@@ -48,7 +49,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Gbar.L":     "0.2",
 					"Layer.Inhib.Layer.On": "false",
 				}},
-			{Sel: ".Inhib", Desc: "weaker inhib",
+			{Sel: ".InhibPrjn", Desc: "weaker inhib",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.1",
 				}},
@@ -67,11 +68,13 @@ func newTestNet() *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
 
+	ctx := NewContext()
+
+	testNet.Build()
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	testNet.Build()
-	testNet.InitWts()
-	testNet.NewState() // get GScale
+	testNet.InitWts()                                          // get GScale here
+	testNet.NewState(ctx)
 	return &testNet
 }
 
@@ -127,32 +130,32 @@ func TestSpikeProp(t *testing.T) {
 
 	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward).(*Prjn)
 
+	net.Build()
 	net.Defaults()
 	net.ApplyParams(ParamSets[0].Sheets["Network"], false)
-	net.Build()
 
 	net.InitExt()
 
-	ctime := NewTime()
+	ctx := NewContext()
 
 	pat := etensor.NewFloat32([]int{1, 1}, nil, []string{"Y", "X"})
 	pat.Set([]int{0, 0}, 1)
 
 	for del := 0; del <= 4; del++ {
-		prj.Com.Delay = del
-		net.InitWts()  // resets Gbuf
-		net.NewState() // get GScale
+		prj.Params.Com.Delay = uint32(del)
+		net.InitWts() // resets Gbuf
+		net.NewState(ctx)
 
 		inLay.ApplyExt(pat)
 
-		net.NewState()
-		ctime.NewState("Train")
+		net.NewState(ctx)
+		ctx.NewState(etime.Train)
 
 		inCyc := 0
 		hidCyc := 0
 		for cyc := 0; cyc < 100; cyc++ {
-			net.Cycle(ctime)
-			ctime.CycleInc()
+			net.Cycle(ctx)
+			ctx.CycleInc()
 
 			if inLay.Neurons[0].Spike > 0 {
 				inCyc = cyc
@@ -180,7 +183,7 @@ func TestNetAct(t *testing.T) {
 	hidLay := testNet.LayerByName("Hidden").(*Layer)
 	outLay := testNet.LayerByName("Output").(*Layer)
 
-	ctime := NewTime()
+	ctx := NewContext()
 
 	printCycs := false
 	printQtrs := false
@@ -217,13 +220,13 @@ func TestNetAct(t *testing.T) {
 		inLay.ApplyExt(inpat)
 		outLay.ApplyExt(inpat)
 
-		testNet.NewState()
-		ctime.NewState("Train")
+		testNet.NewState(ctx)
+		ctx.NewState(etime.Train)
 
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				testNet.Cycle(ctime)
-				ctime.CycleInc()
+				testNet.Cycle(ctx)
+				ctx.CycleInc()
 
 				if printCycs {
 					inLay.UnitVals(&inActs, "Act")
@@ -237,8 +240,8 @@ func TestNetAct(t *testing.T) {
 				}
 			}
 			if qtr == 2 {
-				testNet.MinusPhase(ctime)
-				ctime.NewPhase(false)
+				testNet.MinusPhase(ctx)
+				ctx.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {
@@ -254,7 +257,7 @@ func TestNetAct(t *testing.T) {
 			outLay.UnitVals(&outGis, "Gi")
 
 			if printQtrs {
-				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctime.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
+				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctx.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 			}
 
 			if printCycs && printQtrs {
@@ -278,7 +281,7 @@ func TestNetAct(t *testing.T) {
 				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
-		testNet.PlusPhase(ctime)
+		testNet.PlusPhase(ctx)
 
 		if printQtrs {
 			fmt.Printf("=============================\n")
@@ -336,7 +339,7 @@ func TestNetLearn(t *testing.T) {
 		testNet.InitWts()
 		testNet.InitExt()
 
-		ctime := NewTime()
+		ctx := NewContext()
 
 		for pi := 0; pi < 4; pi++ {
 			inpat, err := inPats.SubSpaceTry([]int{pi})
@@ -346,12 +349,12 @@ func TestNetLearn(t *testing.T) {
 			inLay.ApplyExt(inpat)
 			outLay.ApplyExt(inpat)
 
-			testNet.NewState()
-			ctime.NewState("Train")
+			testNet.NewState(ctx)
+			ctx.NewState(etime.Train)
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					testNet.Cycle(ctime)
-					ctime.CycleInc()
+					testNet.Cycle(ctx)
+					ctx.CycleInc()
 
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
@@ -364,12 +367,12 @@ func TestNetLearn(t *testing.T) {
 					outLay.UnitVals(&outSpkCaD, "SpkCaD")
 
 					if printCycs {
-						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctime.Cycle, hidAct, hidGes, hidGis, hidSpkCaM, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
+						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidSpkCaM, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
 					}
 				}
 				if qtr == 2 {
-					testNet.MinusPhase(ctime)
-					ctime.NewPhase(false)
+					testNet.MinusPhase(ctx)
+					ctx.NewPhase(false)
 				}
 
 				hidLay.UnitVals(&hidSpkCaP, "SpkCaP")
@@ -379,7 +382,7 @@ func TestNetLearn(t *testing.T) {
 				outLay.UnitVals(&outSpkCaD, "SpkCaD")
 
 				if printQtrs {
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctime.Cycle, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidSpkCaP, hidSpkCaD, outSpkCaP, outSpkCaD)
 				}
 
 				if pi == 0 && qtr == 0 {
@@ -395,20 +398,20 @@ func TestNetLearn(t *testing.T) {
 					cmprFloats(outSpkCaD, qtr3OutSpkCaD, "qtr 3 outSpkCaD", t)
 				}
 			}
-			testNet.PlusPhase(ctime)
+			testNet.PlusPhase(ctx)
 
 			if printQtrs {
 				fmt.Printf("=============================\n")
 			}
 
-			testNet.DWt(ctime)
+			testNet.DWt(ctx)
 
 			didx := ti*4 + pi
 
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
-			testNet.WtFmDWt(ctime)
+			testNet.WtFmDWt(ctx)
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
@@ -436,17 +439,17 @@ func TestInhibAct(t *testing.T) {
 	InhibNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
 	InhibNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
 
+	ctx := NewContext()
+
+	InhibNet.Build()
 	InhibNet.Defaults()
 	InhibNet.ApplyParams(ParamSets[0].Sheets["Network"], false)
 	InhibNet.ApplyParams(ParamSets[0].Sheets["InhibOff"], false)
-	InhibNet.Build()
-	InhibNet.InitWts()
-	InhibNet.NewState() // get GScale
+	InhibNet.InitWts() // get GScale
+	InhibNet.NewState(ctx)
 
 	InhibNet.InitWts()
 	InhibNet.InitExt()
-
-	ctime := NewTime()
 
 	printCycs := false
 	printQtrs := false
@@ -483,12 +486,12 @@ func TestInhibAct(t *testing.T) {
 		inLay.ApplyExt(inpat)
 		outLay.ApplyExt(inpat)
 
-		InhibNet.NewState()
-		ctime.NewState("Train")
+		InhibNet.NewState(ctx)
+		ctx.NewState(etime.Train)
 		for qtr := 0; qtr < 4; qtr++ {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
-				InhibNet.Cycle(ctime)
-				ctime.CycleInc()
+				InhibNet.Cycle(ctx)
+				ctx.CycleInc()
 
 				if printCycs {
 					inLay.UnitVals(&inActs, "Act")
@@ -502,8 +505,8 @@ func TestInhibAct(t *testing.T) {
 				}
 			}
 			if qtr == 2 {
-				InhibNet.MinusPhase(ctime)
-				ctime.NewPhase(false)
+				InhibNet.MinusPhase(ctx)
+				ctx.NewPhase(false)
 			}
 
 			if printCycs && printQtrs {
@@ -519,7 +522,7 @@ func TestInhibAct(t *testing.T) {
 			outLay.UnitVals(&outGis, "Gi")
 
 			if printQtrs {
-				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctime.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
+				fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, ctx.Cycle, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 			}
 
 			if printCycs && printQtrs {
@@ -543,7 +546,7 @@ func TestInhibAct(t *testing.T) {
 				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
 		}
-		InhibNet.PlusPhase(ctime)
+		InhibNet.PlusPhase(ctx)
 
 		if printQtrs {
 			fmt.Printf("=============================\n")

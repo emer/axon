@@ -10,6 +10,12 @@ Includes excitatory, leak, inhibition, and dynamic potassium channels.
 */
 package chans
 
+//gosl: hlsl chans
+// #include "fastexp.hlsl"
+//gosl: end chans
+
+//gosl: start chans
+
 // Chans are ion channels used in computing point-neuron activation function
 type Chans struct {
 	E float32 `desc:"excitatory sodium (Na) AMPA channels activated by synaptic glutamate"`
@@ -23,16 +29,6 @@ func (ch *Chans) SetAll(e, l, i, k float32) {
 	ch.E, ch.L, ch.I, ch.K = e, l, i, k
 }
 
-// SetFmOtherMinus sets all the values from other Chans minus given value
-func (ch *Chans) SetFmOtherMinus(oth Chans, minus float32) {
-	ch.E, ch.L, ch.I, ch.K = oth.E-minus, oth.L-minus, oth.I-minus, oth.K-minus
-}
-
-// SetFmMinusOther sets all the values from given value minus other Chans
-func (ch *Chans) SetFmMinusOther(minus float32, oth Chans) {
-	ch.E, ch.L, ch.I, ch.K = minus-oth.E, minus-oth.L, minus-oth.I, minus-oth.K
-}
-
 // VToBio returns biological mV voltage from normalized 0-1 voltage
 // where 0 = -100mV and 1 = 0mV
 func VToBio(vm float32) float32 {
@@ -43,4 +39,16 @@ func VToBio(vm float32) float32 {
 // where 0 = -100mV and 1 = 0mV
 func VFmBio(vm float32) float32 {
 	return (vm + 100) / 100
+}
+
+//gosl: end chans
+
+// SetFmOtherMinus sets all the values from other Chans minus given value
+func (ch *Chans) SetFmOtherMinus(oth Chans, minus float32) {
+	ch.E, ch.L, ch.I, ch.K = oth.E-minus, oth.L-minus, oth.I-minus, oth.K-minus
+}
+
+// SetFmMinusOther sets all the values from given value minus other Chans
+func (ch *Chans) SetFmMinusOther(minus float32, oth Chans) {
+	ch.E, ch.L, ch.I, ch.K = minus-oth.E, minus-oth.L, minus-oth.I, minus-oth.K
 }

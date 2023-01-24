@@ -74,6 +74,34 @@ See [O'Reilly, 2020](https://ccnlab.org/papers/OReilly20.pdf) for more info abou
 
 * **Rew** (reward) arrives in the `Rew` input layer, as computed by the environment to reflect the "subjective" value of the US in relation to the Drive state, minus the time and effort (distance) expended.  In this model, we use a simple Rescorla-Wagner (RW) model in the `RWPred` layer, that learns to predict the `Rew` value through learned input weights from the OFC and ACC layers.  The widely-used TD (temporal differences) model of DA is a generalization of RW that also drives CS-driven changes in future reward expectation, whereas RW only operates directly on the current time Rew values.  The PVLV model [(Mollick et al. 2020)](#references) provides a biologically detailed framework for how phasic DA is driven by the amygdala (BLA, CeM), VS (patch neuron pathway), PPTg, and other brain areas.  We will likely include more of PVLV (implemented in [pvlv](https://github.com/emer/axon/tree/master/pvlv) with an example in [examples/pvlv](https://github.com/emer/axon/tree/master/examples/pvlv)) in future versions of this model.
 
+# ACh Reward Salience
+
+The ACh neuromodulatory signal plays an essential role in the model, because it determines the time windows for BG gating and learning.  ACh = time, DA = value.  If fires at the wrong times, or doesn't fire at salient events, then the model will fail.
+
+Via the PPTg temporal difference mechanism, ACh should respond to the onset of ANY novel CS, and at the time of the US.
+
+TODO: If PFC is already goal-engaged, then ACh should be inhibited!  don't get distracted!  Top-down inhibitory connections to brainstem.  Implement as inhibitory connections to PPTg from PT?  Interacts with Gate layer replacement.
+
+TODO: add stats for this!
+
+# Matrix learning rule
+
+The learning rule should be a function of both layer pool gated and local pool gated, and the ACh value indicating the opportunity to gate.
+
+At time of CS, if layer gated:
+* If local pool gated:
+    + Tr = Send * Recv, later DA: Go up, No down  <- normal credit assignment
+* If local NOT gated:
+    + nothing -- we're good!
+
+If layer NOT gated:  <- exploration opportunity cost
+* In proportion to ACh, Go up, No down -- if no ACh, no learn!
+    + This should NOT be in the final trace because it didn't do anything.
+    + should be weaker and exploratory.
+    
+Timing:
+    
+    
 # Stats in the logs
 
 * `AllGood` = summary stat representing the average of several of the following stats.  If this is around 1, then the model should be performing well, both behaviorally and in terms of what each of the key layers is doing.

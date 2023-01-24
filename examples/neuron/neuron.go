@@ -160,13 +160,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Neuron")
 	net.AddLayer2D("Neuron", 1, 1, emer.Hidden)
 
-	net.Defaults()
-	ss.SetParams("Network", false) // only set Network params
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.SetParams("Network", false) // only set Network params
 	ss.InitWts(net)
 }
 
@@ -225,7 +225,7 @@ func (ss *Sim) RunCycles() {
 		case ss.OffCycle:
 			inputOn = false
 		}
-		// nrn.Noise = float32(ly.Act.Noise.Gen(-1))
+		// nrn.Noise = float32(ly.Params.Act.Noise.Gen(-1))
 		// nrn.Ge += nrn.Noise // GeNoise
 		nrn.Gi = 0
 		ss.NeuronUpdt(ss.Net, inputOn)
@@ -244,7 +244,7 @@ func (ss *Sim) RunCycles() {
 // this just calls the relevant code directly, bypassing most other stuff.
 func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
-	ac := &ly.Act
+	ac := &ly.Params.Act
 	nrn := &(ly.Neurons[0])
 	nex := &ss.NeuronEx
 	if inputOn {
@@ -272,7 +272,7 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ac.GvgccFmVm(nrn)
 	ac.GkFmVm(nrn)
 
-	nrn.GABAB, nrn.GABABx = ac.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi)
+	ac.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
 	nrn.GgabaB = ac.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 
 	nrn.Gi += nrn.GgabaB
@@ -300,18 +300,18 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 	}
 	err := ss.SetParamsSet("Base", sheet, setMsg)
 	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
-	ly.Act.Gbar.E = 1
-	ly.Act.Gbar.L = 0.2
-	ly.Act.Erev.E = float32(ss.ErevE)
-	ly.Act.Erev.I = float32(ss.ErevI)
-	// ly.Act.Noise.Var = float64(ss.Noise)
-	ly.Act.KNa.On = ss.KNaAdapt
-	ly.Act.Mahp.Gbar = ss.MahpGbar
-	ly.Act.NMDA.Gbar = ss.NMDAGbar
-	ly.Act.GABAB.Gbar = ss.GABABGbar
-	ly.Act.VGCC.Gbar = ss.VGCCGbar
-	ly.Act.AK.Gbar = ss.AKGbar
-	ly.Act.Update()
+	ly.Params.Act.Gbar.E = 1
+	ly.Params.Act.Gbar.L = 0.2
+	ly.Params.Act.Erev.E = float32(ss.ErevE)
+	ly.Params.Act.Erev.I = float32(ss.ErevI)
+	// ly.Params.Act.Noise.Var = float64(ss.Noise)
+	ly.Params.Act.KNa.On.SetBool(ss.KNaAdapt)
+	ly.Params.Act.Mahp.Gbar = ss.MahpGbar
+	ly.Params.Act.NMDA.Gbar = ss.NMDAGbar
+	ly.Params.Act.GABAB.Gbar = ss.GABABGbar
+	ly.Params.Act.VGCC.Gbar = ss.VGCCGbar
+	ly.Params.Act.AK.Gbar = ss.AKGbar
+	ly.Params.Act.Update()
 	return err
 }
 

@@ -28,7 +28,6 @@ import (
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
@@ -70,7 +69,7 @@ type Sim struct {
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Time         axon.Time        `desc:"axon timing parameters and state"`
+	Context      axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
@@ -95,7 +94,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 5
 	ss.PCAInterval = 5
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()
 }
@@ -178,13 +177,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults() // needs it both before and after building!
+	ss.Params.SetObject("Network")
 	net.InitWts()
 }
 
@@ -222,8 +221,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -234,7 +233,7 @@ func (ss *Sim) ConfigLoops() {
 		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
-			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Time.Mode])
+			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Context.Mode])
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
@@ -321,10 +320,10 @@ func (ss *Sim) ConfigLoops() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Time.Mode]
+	ev := ss.Envs[ss.Context.Mode.String()]
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
-	lays := net.LayersByClass("Input", "Target")
+	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range lays {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := ev.State(ly.Nm)
@@ -340,8 +339,8 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Time.Reset()
-	ss.Time.Mode = etime.Train.String()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
@@ -399,14 +398,13 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ev := ss.Envs[ss.Time.Mode]
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ev := ss.Envs[ss.Context.Mode.String()]
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
 }
@@ -416,7 +414,7 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
 
-	ss.Stats.SetFloat("TrlCorSim", float64(out.CorSim.Cor))
+	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
 
 	if ss.Stats.Float("TrlUnitErr") > 0 {
@@ -464,10 +462,13 @@ func (ss *Sim) ConfigLogs() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
+	if dt == nil {
+		return
+	}
 	row := dt.Rows
 
 	switch {

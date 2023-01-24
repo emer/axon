@@ -212,7 +212,7 @@ type Sim struct {
 	NZeroStop    int                      `desc:"if a positive number, training will stop after this many epochs with zero mem errors"`
 	TrainEnv     env.FixedTable           `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
 	TestEnv      env.FixedTable           `desc:"Testing environment -- manages iterating over testing"`
-	Time         axon.Time                `desc:"axon timing parameters and state"`
+	Context      axon.Context             `desc:"axon timing parameters and state"`
 	ViewOn       bool                     `desc:"whether to update the network view while running"`
 	TrainUpdt    axon.TimeScales          `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
 	TestUpdt     axon.TimeScales          `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
@@ -423,13 +423,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	net.Defaults()
-	ss.SetParams("Network", ss.LogSetParams) // only set Network params
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.SetParams("Network", ss.LogSetParams) // only set Network params
 	net.InitWts()
 }
 
@@ -459,9 +459,9 @@ func (ss *Sim) NewRndSeed() {
 // and add a few tabs at the end to allow for expansion..
 func (ss *Sim) Counters(train bool) string {
 	if train {
-		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%s\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Time.Cycle, ss.TrainEnv.TrialName.Cur)
+		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%s\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Context.Cycle, ss.TrainEnv.TrialName.Cur)
 	} else {
-		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%s\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Time.Cycle, ss.TestEnv.TrialName.Cur)
+		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%s\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Context.Cycle, ss.TestEnv.TrialName.Cur)
 	}
 }
 
@@ -478,15 +478,15 @@ func (ss *Sim) UpdateViewTime(train bool, viewUpdt axon.TimeScales) {
 	case axon.Cycle:
 		ss.UpdateView(train)
 	case axon.FastSpike:
-		if ss.Time.Cycle%10 == 0 {
+		if ss.Context.Cycle%10 == 0 {
 			ss.UpdateView(train)
 		}
 	case axon.GammaCycle:
-		if ss.Time.Cycle%25 == 0 {
+		if ss.Context.Cycle%25 == 0 {
 			ss.UpdateView(train)
 		}
 	case axon.AlphaCycle:
-		if ss.Time.Cycle%100 == 0 {
+		if ss.Context.Cycle%100 == 0 {
 			ss.UpdateView(train)
 		}
 	}
@@ -544,15 +544,15 @@ func (ss *Sim) ThetaCyc(train bool) {
 	cycPerQtr := []int{100, 100, 100, 50}
 
 	ss.Net.NewState()
-	ss.Time.NewState()
+	ss.Context.NewState()
 	for qtr := 0; qtr < 4; qtr++ {
 		maxCyc := cycPerQtr[qtr]
 		for cyc := 0; cyc < maxCyc; cyc++ {
-			ss.Net.Cycle(&ss.Time)
+			ss.Net.Cycle(&ss.Context)
 			if !train {
-				ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+				ss.LogTstCyc(ss.TstCycLog, ss.Context.Cycle)
 			}
-			ss.Time.CycleInc()
+			ss.Context.CycleInc()
 
 			if ss.ViewOn {
 				ss.UpdateViewTime(train, viewUpdt)
@@ -560,7 +560,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 		}
 		switch qtr + 1 {
 		case 1: // Second, Third Quarters: CA1 is driven by CA3 recall
-			ss.Net.ActSt1(&ss.Time)
+			ss.Net.ActSt1(&ss.Context)
 			ca1FmECin.PrjnScale.Abs = 0
 			ca1FmCa3.PrjnScale.Abs = 1
 			if train {
@@ -570,7 +570,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 			}
 			ss.Net.InitGScale() // update computed scaling factors
 		case 2:
-			ss.Net.ActSt2(&ss.Time)
+			ss.Net.ActSt2(&ss.Context)
 		case 3: // Fourth Quarter: CA1 back to ECin drive only
 			if train { // clamp ECout from ECin
 				ca1FmECin.PrjnScale.Abs = 1
@@ -579,10 +579,10 @@ func (ss *Sim) ThetaCyc(train bool) {
 				ecin.UnitVals(&ss.TmpVals, "Act")
 				ecout.ApplyExt1D32(ss.TmpVals)
 			}
-			ss.Net.MinusPhase(&ss.Time)
+			ss.Net.MinusPhase(&ss.Context)
 			ss.MemStats(train) // must come after QuarterFinal
 		case 4:
-			ss.Net.PlusPhase(&ss.Time)
+			ss.Net.PlusPhase(&ss.Context)
 		}
 		if ss.ViewOn {
 			ss.UpdateViewTime(train, viewUpdt)
@@ -681,7 +681,7 @@ func (ss *Sim) NewRun() {
 	ss.TrainEnv.Table = etable.NewIdxView(ss.TrainAB)
 	ss.TrainEnv.Init(run)
 	ss.TestEnv.Init(run)
-	ss.Time.Reset()
+	ss.Context.Reset()
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.TrnTrlLog.SetNumRows(0)

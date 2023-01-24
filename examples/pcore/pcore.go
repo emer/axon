@@ -14,8 +14,6 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/pcore"
-	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -27,6 +25,7 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/patgen"
+	"github.com/emer/emergent/popcode"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
@@ -34,10 +33,10 @@ import (
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/ki/bools"
 	"github.com/goki/mat32"
 )
 
@@ -66,19 +65,20 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	NPools     int     `view:"-" desc:"number of pools"`
-	NUnitsY    int     `view:"-" desc:"number of units within each pool, Y"`
-	NUnitsX    int     `view:"-" desc:"number of units within each pool, X"`
-	NUnits     int     `view:"-" desc:"total number of units within each pool"`
-	NoInc      bool    `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
-	ACCPos     float32 `desc:"activation of ACC positive valence -- drives go"`
-	ACCNeg     float32 `desc:"activation of ACC neg valence -- drives nogo"`
-	ACCPosInc  float32 `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
-	ACCNegInc  float32 `desc:"across-units multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
-	SNc        float32 `desc:"dopamine level - computed for learning"`
-	TestInc    float32 `desc:"increment in testing activation for test all"`
-	TestReps   int     `desc:"number of repetitions per testing level"`
-	InitMtxWts bool    `desc:"initialize matrix Go / No weights to follow Pos / Neg inputs -- else .5 even and must be learned"`
+	NPools     int          `view:"-" desc:"number of pools"`
+	NUnitsY    int          `view:"-" desc:"number of units within each pool, Y"`
+	NUnitsX    int          `view:"-" desc:"number of units within each pool, X"`
+	NUnits     int          `view:"-" desc:"total number of units within each pool"`
+	NoInc      bool         `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
+	ACCPos     float32      `desc:"activation of ACC positive valence -- drives go"`
+	ACCNeg     float32      `desc:"activation of ACC neg valence -- drives nogo"`
+	ACCPosInc  float32      `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
+	ACCNegInc  float32      `desc:"across-units multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
+	SNc        float32      `desc:"dopamine level - computed for learning"`
+	TestInc    float32      `desc:"increment in testing activation for test all"`
+	TestReps   int          `desc:"number of repetitions per testing level"`
+	InitMtxWts bool         `desc:"initialize matrix Go / No weights to follow Pos / Neg inputs -- else .5 even and must be learned"`
+	PopCode    popcode.OneD `desc:"pop code the values in ACCPos and Neg"`
 }
 
 // Defaults sets default params
@@ -90,10 +90,12 @@ func (ss *SimParams) Defaults() {
 	ss.NUnits = ss.NUnitsY * ss.NUnitsX
 	ss.ACCPos = 1
 	ss.ACCNeg = .2
-	ss.ACCPosInc = 0.8
+	ss.ACCPosInc = 1 // 0.8
 	ss.ACCNegInc = 1
 	ss.TestInc = 0.1
 	ss.TestReps = 25
+	ss.PopCode.Defaults()
+	ss.PopCode.SetRange(-0.2, 1.2, 0.1)
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -102,7 +104,7 @@ func (ss *SimParams) Defaults() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *pcore.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Sim          SimParams        `view:"no-inline" desc:"sim params"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
@@ -110,7 +112,7 @@ type Sim struct {
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Pats         *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Time         axon.Time        `desc:"axon timing parameters and state"`
+	Context      axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 
@@ -124,10 +126,10 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &pcore.Network{}
+	ss.Net = &axon.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "LearnWts WtScales"
+	ss.Params.ExtraSets = "WtScales"
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -135,7 +137,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -197,7 +199,7 @@ func (ss *Sim) ConfigEnv() {
 	ss.Envs.Add(trn, tst)
 }
 
-func (ss *Sim) ConfigNet(net *pcore.Network) {
+func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "PCore")
 	np := ss.Sim.NPools
 	nuY := ss.Sim.NUnitsY
@@ -209,11 +211,15 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	full := prjn.NewFull()
 	_ = full
 
-	snc := rl.AddClampDaLayer(net.AsAxon(), "SNc")
+	snc := net.AddLayer2D("SNc", 1, 1, emer.Input)
+	_ = snc
 
 	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	cin := net.AddCINLayer("CIN", mtxGo.Name(), mtxNo.Name(), space)
-	cin.RewLayers.Add(snc.Name())
+	_ = cin
+
+	// cin automatically uses Rew -- snc is only for display purposes
+
 	_ = gpeOut
 	_ = gpeIn
 	_ = gpeTA
@@ -221,15 +227,13 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
 	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
 
-	mtxGo.(*pcore.MatrixLayer).MtxThals.Add(thal.Name())
-	mtxNo.(*pcore.MatrixLayer).MtxThals.Add(thal.Name())
+	mtxGo.SetBuildConfig("ThalLay1Name", thal.Name())
+	mtxNo.SetBuildConfig("ThalLay1Name", thal.Name())
 
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
 	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, emer.Input)
 	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, emer.Input)
 	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, emer.Hidden)
-
-	snc.SendDA.AddAllBut(net)
 
 	net.ConnectLayers(pfc, stnp, pone2one, emer.Forward)
 	net.ConnectLayers(pfc, stns, pone2one, emer.Forward)
@@ -255,18 +259,18 @@ func (ss *Sim) ConfigNet(net *pcore.Network) {
 	pfc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCNeg", YAlign: relpos.Front, Space: space})
 	pfcd.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "PFC", YAlign: relpos.Front, Space: space})
 
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	ss.InitWts(net)
 }
 
 // InitWts configures initial weights according to structure
-func (ss *Sim) InitWts(net *pcore.Network) {
+func (ss *Sim) InitWts(net *axon.Network) {
 	net.InitWts()
 
 	if !ss.Sim.InitMtxWts {
@@ -289,7 +293,7 @@ func (ss *Sim) InitWts(net *pcore.Network) {
 		} else {
 			sy.Wt = 0
 		}
-		sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 
 	for _, pji := range mtxno.RcvPrjns {
@@ -304,7 +308,7 @@ func (ss *Sim) InitWts(net *pcore.Network) {
 		} else {
 			sy.Wt = 0
 		}
-		sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 	ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
 
@@ -359,8 +363,8 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
 	man.GetLoop(etime.Test, etime.Cycle).AddEvents(applyRew)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
 
 	man.GetLoop(etime.Test, etime.Trial).OnStart.Add("TestInc", func() {
 		if ss.Sim.NoInc {
@@ -384,8 +388,8 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Phase].OnStart.Add("ApplyInputs", func() {
 			phs := man.Stacks[mode].Loops[etime.Phase].Counter.Cur
 			if phs == 1 {
-				ss.Net.NewState()
-				ss.Time.NewState(mode.String())
+				ss.Net.NewState(&ss.Context)
+				ss.Context.NewState(mode)
 			}
 			ss.ApplyInputs(mode, phs == 0) // zero on phase == 0
 		})
@@ -456,41 +460,59 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{np * nu}, nil, nil)
 
-	row := 0
-
 	lays := []string{"ACCPos", "ACCNeg", "PFC"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		if !zero {
 			for j := 0; j < np; j++ {
+				// np = different pools have changing increments
+				// such that first pool is best choice
 				io := j * nu
-				for i := 0; i < nu; i++ {
-					pval := float32(ss.Pats.CellTensorFloat1D("Input", row, i))
-					switch lnm {
-					case "ACCPos":
-						itsr.Values[io+i] = pval * vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
-					case "ACCNeg":
-						itsr.Values[io+i] = pval * vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
-					default:
-						itsr.Values[io+i] = pval * vals[li]
-					}
+				var poolVal float32
+				switch lnm {
+				case "ACCPos":
+					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
+				case "ACCNeg":
+					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
+				default:
+					poolVal = 1
 				}
+				sv := itsr.Values[io : io+nu]
+				ss.Sim.PopCode.Encode(&sv, poolVal, nu, false)
+				// for i := 0; i < nu; i++ {
+				// 	pval := float32(ss.Pats.CellTensorFloat1D("Input", row, i))
+				// 	itsr.Values[io+i] = pval * vals[li]
 			}
 		}
 		ly.ApplyExt(&itsr)
 	}
+	ss.ResetRew()
+}
+
+// ResetRew resets any reward inputs -- at ApplyInputs
+func (ss *Sim) ResetRew() {
+	phs := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
+	if phs == 0 {
+		ss.Context.NeuroMod.SetRew(0, false) // no rew
+	} else {
+		ss.Context.NeuroMod.SetRew(0, true) // no rew
+	}
+	ss.SetRew(0)
 }
 
 // ApplyRew applies reward input based on gating action and input
 func (ss *Sim) ApplyRew() {
+	phs := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
+	if phs == 0 {
+		return
+	}
 	net := ss.Net
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	mtxly := net.LayerByName("MtxGo").(*pcore.MatrixLayer)
-	mtxly.GatedFmAvgSpk() // will also be called later
-	didGate := mtxly.AnyGated()
+	mtxly := net.LayerByName("MtxGo").(*axon.Layer)
+	didGate := mtxly.MatrixGated()                      // will also be called later
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
 	switch {
@@ -504,9 +526,17 @@ func (ss *Sim) ApplyRew() {
 		rew = 0
 	}
 
-	ss.Stats.SetFloat32("Gated", pcore.BoolToFloat32(didGate))
-	ss.Stats.SetFloat32("Should", pcore.BoolToFloat32(shouldGate))
+	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
 	ss.Stats.SetFloat32("Rew", rew)
+
+	ss.SetRew(rew)
+}
+
+func (ss *Sim) SetRew(rew float32) {
+	net := ss.Net
+	ss.Context.NeuroMod.Rew = rew
+	ss.Context.NeuroMod.DA = rew // no reward prediction error
 
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
@@ -521,8 +551,8 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Time.Reset()
-	ss.Time.Mode = etime.Train.String()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Train
 	ss.InitWts(ss.Net)
 	ss.InitStats()
 	ss.StatCounters()
@@ -553,15 +583,14 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ss.Stats.SetFloat("ACCPos", float64(ss.Sim.ACCPos))
-	ss.Stats.SetFloat("ACCNeg", float64(ss.Sim.ACCNeg))
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ss.Stats.SetFloat32("ACCPos", ss.Sim.ACCPos)
+	ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	trlnm := fmt.Sprintf("%4f_%4f", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", trlnm)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle", "Gated", "Should", "Rew"})
@@ -572,13 +601,13 @@ func (ss *Sim) StatCounters() {
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
 	net := ss.Net
-	vtly := net.LayerByName("VThal").(*pcore.ThalLayer)
+	vtly := net.LayerByName("VThal").(*axon.Layer)
 	gated := vtly.AnyGated()
 	if !gated {
 		ss.Stats.SetFloat("VThal_RT", 0)
 		return
 	}
-	mode := etime.ModeFromString(ss.Time.Mode)
+	mode := ss.Context.Mode
 	trlog := ss.Logs.Log(mode, etime.Cycle)
 	spkCyc := 0
 	for row := 0; row < trlog.Rows; row++ {
@@ -619,8 +648,10 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.CreateTables()
 
 	tsttrl := ss.Logs.Table(etime.Test, etime.Trial)
-	tstst := tsttrl.Clone()
-	ss.Logs.MiscTables["TestTrialStats"] = tstst
+	if tsttrl != nil {
+		tstst := tsttrl.Clone()
+		ss.Logs.MiscTables["TestTrialStats"] = tstst
+	}
 
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
 	// don't plot certain combinations we don't use
@@ -635,7 +666,7 @@ func (ss *Sim) ConfigLogs() {
 
 func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
-	layers := ss.Net.LayersByClass("Matrix", "Thal")
+	layers := ss.Net.LayersByClass("MatrixLayer", "VThalLayer")
 	npools := []int{ss.Sim.NPools}
 	for _, lnm := range layers {
 		clnm := lnm
@@ -706,7 +737,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 

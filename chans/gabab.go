@@ -8,16 +8,21 @@ import (
 	"github.com/goki/mat32"
 )
 
+//gosl: start chans
+
 // GABABParams control the GABAB dynamics in PFC Maint neurons,
 // based on Brunel & Wang (2001) parameters.
 type GABABParams struct {
 	Gbar     float32 `def:"0,0.2,0.25,0.3,0.4" desc:"overall strength multiplier of GABA-B current"`
-	RiseTau  float32 `def:"45" desc:"rise time for bi-exponential time dynamics of GABA-B"`
-	DecayTau float32 `def:"50" desc:"decay time for bi-exponential time dynamics of GABA-B"`
-	Gbase    float32 `def:"0.2" desc:"baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)"`
-	GiSpike  float32 `def:"10" desc:"multiplier for converting Gi to equivalent GABA spikes"`
-	MaxTime  float32 `inactive:"+" desc:"time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau"`
-	TauFact  float32 `view:"-" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
+	RiseTau  float32 `viewif:"Gbar>0" def:"45" desc:"rise time for bi-exponential time dynamics of GABA-B"`
+	DecayTau float32 `viewif:"Gbar>0" def:"50" desc:"decay time for bi-exponential time dynamics of GABA-B"`
+	Gbase    float32 `viewif:"Gbar>0" def:"0.2" desc:"baseline level of GABA-B channels open independent of inhibitory input (is added to spiking-produced conductance)"`
+	GiSpike  float32 `viewif:"Gbar>0" def:"10" desc:"multiplier for converting Gi to equivalent GABA spikes"`
+	MaxTime  float32 `viewif:"Gbar>0" inactive:"+" desc:"time offset when peak conductance occurs, in msec, computed from RiseTau and DecayTau"`
+
+	TauFact float32 `view:"-" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
+
+	pad int32
 }
 
 func (gp *GABABParams) Defaults() {
@@ -54,18 +59,19 @@ func (gp *GABABParams) GFmS(s float32) float32 {
 }
 
 // BiExp computes bi-exponential update, returns dG and dX deltas to add to g and x
-func (gp *GABABParams) BiExp(g, x float32) (dG, dX float32) {
-	dG = (gp.TauFact*x - g) / gp.RiseTau
-	dX = -x / gp.DecayTau
+func (gp *GABABParams) BiExp(g, x float32, dG, dX *float32) {
+	*dG = (gp.TauFact*x - g) / gp.RiseTau
+	*dX = -x / gp.DecayTau
 	return
 }
 
 // GABAB returns the updated GABA-B / GIRK activation and underlying x value
 // based on current values and gi inhibitory conductance (proxy for GABA spikes)
-func (gp *GABABParams) GABAB(gabaB, gabaBx, gi float32) (g, x float32) {
-	dG, dX := gp.BiExp(gabaB, gabaBx)
-	x = gabaBx + gp.GFmS(gi) + dX // gets new input
-	g = gabaB + dG
+func (gp *GABABParams) GABAB(gabaB, gabaBx, gi float32, g, x *float32) {
+	var dG, dX float32
+	gp.BiExp(gabaB, gabaBx, &dG, &dX)
+	*x = gabaBx + gp.GFmS(gi) + dX // gets new input
+	*g = gabaB + dG
 	return
 }
 
@@ -74,3 +80,5 @@ func (gp *GABABParams) GABAB(gabaB, gabaBx, gi float32) (g, x float32) {
 func (gp *GABABParams) GgabaB(gabaB, vm float32) float32 {
 	return gp.Gbar * gp.GFmV(vm) * (gabaB + gp.Gbase)
 }
+
+//gosl: end chans

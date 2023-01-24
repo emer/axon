@@ -9,36 +9,62 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/goki/ki/bitflag"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
-// NeuronVarStart is the starting field where float32 variables start
-// all variables prior must be 32 bit (int32)
+// NeuronVarStart is the starting *field* index (not byte count!)
+// where float32 variables start -- all prior must be 32 bit (uint32, int32),
 // Note: all non-float32 infrastructure variables must be at the start!
-const NeuronVarStart = 3
+const NeuronVarStart = 5
+
+//go:generate stringer -type=NeuronFlags
+
+// var KiT_NeurFlags = kit.Enums.AddEnum(NeuronFlagsNum, kit.BitFlag, nil)
+// func (ev NeuronFlags) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+// func (ev *NeuronFlags) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+//gosl: start neuron
+
+// NeuronFlags are bit-flags encoding relevant binary state for neurons
+type NeuronFlags int32
+
+// The neuron flags
+const (
+	// NeuronOff flag indicates that this neuron has been turned off (i.e., lesioned)
+	NeuronOff NeuronFlags = 1
+
+	// NeuronHasExt means the neuron has external input in its Ext field
+	NeuronHasExt NeuronFlags = 1 << 2
+
+	// NeuronHasTarg means the neuron has external target input in its Target field
+	NeuronHasTarg NeuronFlags = 1 << 3
+
+	// NeuronHasCmpr means the neuron has external comparison input in its Target field -- used for computing
+	// comparison statistics but does not drive neural activity ever
+	NeuronHasCmpr NeuronFlags = 1 << 4
+)
 
 // axon.Neuron holds all of the neuron (unit) level variables.
 // This is the most basic version, without any optional features.
 // All variables accessible via Unit interface must be float32
 // and start at the top, in contiguous order
 type Neuron struct {
-	Flags   NeuronFlags `desc:"bit flags for binary state variables"`
-	LayIdx  int32       `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
-	SubPool int32       `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
-	Spike   float32     `desc:"binary variable encoding whether neuron has spiked or not on this cycle"`
-	Spiked  float32     `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
-	Act     float32     `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations."`
-	ActInt  float32     `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations."`
-	ActM    float32     `desc:"ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations."`
-	ActP    float32     `desc:"ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations."`
-	Ext     float32     `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
-	Target  float32     `desc:"target value: drives learning to produce this activation value"`
+	Flags    NeuronFlags `desc:"bit flags for binary state variables"`
+	NeurIdx  uint32      `desc:"index of this neuron within its owning layer"`
+	LayIdx   uint32      `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
+	SubPool  uint32      `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
+	SubPoolG uint32      `desc:"index in global network-wide list of pools"`
 
-	GeSyn  float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
+	Spike  float32 `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
+	Spiked float32 `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
+	Act    float32 `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations."`
+	ActInt float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations."`
+	ActM   float32 `desc:"ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations."`
+	ActP   float32 `desc:"ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations."`
+	Ext    float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
+	Target float32 `desc:"target value: drives learning to produce this activation value"`
+
 	Ge     float32 `desc:"total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include Gbar.E"`
-	GiSyn  float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
 	Gi     float32 `desc:"total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include Gbar.I"`
 	Gk     float32 `desc:"total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include Gbar.K"`
 	Inet   float32 `desc:"net current produced by all channels -- drives update of Vm"`
@@ -46,9 +72,9 @@ type Neuron struct {
 	VmDend float32 `desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`
 
 	CaSyn   float32 `desc:"spike-driven calcium trace for synapse-level Ca-driven learning: exponential integration of SpikeG * Spike at SynTau time constant (typically 30).  Synapses integrate send.CaSyn * recv.CaSyn across M, P, D time integrals for the synaptic trace driving credit assignment in learning. Time constant reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning."`
-	CaSpkM  float32 `desc:"spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5).  Simulates a calmodulin (CaM) like signal at the most abstract level."`
-	CaSpkP  float32 `desc:"cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`
-	CaSpkD  float32 `desc:"cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`
+	CaSpkM  float32 `desc:"spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on continuous time-integrated spiking: exponential integration of SpikeG * Spike at MTau time constant (typically 5).  Simulates a calmodulin (CaM) like signal at the most abstract level."`
+	CaSpkP  float32 `desc:"continuous cascaded integration of CaSpkM at PTau time constant (typically 40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`
+	CaSpkD  float32 `desc:"continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`
 	CaSpkPM float32 `desc:"minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value."`
 	CaLrn   float32 `desc:"recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component).  This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales."`
 	CaM     float32 `desc:"integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning."`
@@ -78,8 +104,25 @@ type Neuron struct {
 	GiNoiseP float32 `desc:"accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda."`
 	GiNoise  float32 `desc:"integrated noise inhibotyr conductance, added into Gi"`
 
-	GeM      float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
-	GiM      float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
+	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
+	GeSyn    float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
+	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
+	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
+	GiSyn    float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
+	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
+	GModRaw  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GModSyn  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GeSynMax float32 `desc:"maximum GeSyn value across the ThetaCycle"`
+	GeSynPrv float32 `desc:"previous GeSynMax value from the previous ThetaCycle"`
+
+	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
+	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
+	Gak      float32 `desc:"conductance of A-type K potassium channels"`
+
+	GeM float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+	GiM float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+
 	MahpN    float32 `desc:"accumulating voltage-gated gating value for the medium time scale AHP"`
 	SahpCa   float32 `desc:"slowly accumulating calcium value that drives the slow AHP"`
 	SahpN    float32 `desc:"sAHP gating value"`
@@ -103,15 +146,36 @@ type Neuron struct {
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
 
-	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
-	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
-	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
-	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
-	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
-	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
-	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
-	Gak      float32 `desc:"conductance of A-type K potassium channels"`
+	SKCai float32 `desc:"intracellular Calcium concentration for activation of SKCa channels, driven by VGCC activation from spiking and decaying / buffererd relatively slowly."`
+	SKCaM float32 `desc:"Calcium-gated potassium channel gating factor, driven by SKCai via a Hill equation as in chans.SKPCaParams."`
+	Gsk   float32 `desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`
+
+	/////////////////////////////////////////
+	//  Special Layer Vars Below
+
+	Burst    float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
+	BurstPrv float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
+	CtxtGe   float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
 }
+
+func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
+	return nrn.Flags&flag != 0
+}
+
+func (nrn *Neuron) SetFlag(flag NeuronFlags) {
+	nrn.Flags |= flag
+}
+
+func (nrn *Neuron) ClearFlag(flag NeuronFlags) {
+	nrn.Flags &^= flag
+}
+
+// IsOff returns true if the neuron has been turned off (lesioned)
+func (nrn *Neuron) IsOff() bool {
+	return nrn.HasFlag(NeuronOff)
+}
+
+//gosl: end neuron
 
 var NeuronVars = []string{}
 
@@ -151,6 +215,12 @@ var NeuronVarProps = map[string]string{
 	"SSGiDend":  `auto-scale:"+"`,
 }
 
+// NeuronLayerVars are layer-level variables displayed as neuron layers.
+var (
+	NeuronLayerVars  = []string{"DA", "ACh", "NE", "Ser", "Gated"}
+	NNeuronLayerVars = len(NeuronLayerVars)
+)
+
 func init() {
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	typ := reflect.TypeOf((*Neuron)(nil)).Elem()
@@ -159,6 +229,9 @@ func init() {
 	for i := startIdx; i < nf; i++ {
 		fs := typ.FieldByIndex([]int{i})
 		v := fs.Name
+		if !fs.IsExported() {
+			continue
+		}
 		NeuronVars = append(NeuronVars, v)
 		NeuronVarsMap[v] = i - startIdx
 		pstr := NeuronVarProps[v]
@@ -168,6 +241,10 @@ func init() {
 				NeuronVarProps[v] = pstr
 			}
 		}
+	}
+	for _, v := range NeuronLayerVars {
+		NeuronVarsMap[v] = len(NeuronVars)
+		NeuronVars = append(NeuronVars, v)
 	}
 }
 
@@ -198,56 +275,3 @@ func (nrn *Neuron) VarByName(varNm string) (float32, error) {
 	}
 	return nrn.VarByIndex(i), nil
 }
-
-func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
-	return bitflag.Has32(int32(nrn.Flags), int(flag))
-}
-
-func (nrn *Neuron) SetFlag(flag NeuronFlags) {
-	bitflag.Set32((*int32)(&nrn.Flags), int(flag))
-}
-
-func (nrn *Neuron) ClearFlag(flag NeuronFlags) {
-	bitflag.Clear32((*int32)(&nrn.Flags), int(flag))
-}
-
-func (nrn *Neuron) SetMask(mask int32) {
-	bitflag.SetMask32((*int32)(&nrn.Flags), mask)
-}
-
-func (nrn *Neuron) ClearMask(mask int32) {
-	bitflag.ClearMask32((*int32)(&nrn.Flags), mask)
-}
-
-// IsOff returns true if the neuron has been turned off (lesioned)
-func (nrn *Neuron) IsOff() bool {
-	return nrn.HasFlag(NeuronOff)
-}
-
-// NeuronFlags are bit-flags encoding relevant binary state for neurons
-type NeuronFlags int32
-
-//go:generate stringer -type=NeuronFlags
-
-var KiT_NeurFlags = kit.Enums.AddEnum(NeuronFlagsNum, kit.BitFlag, nil)
-
-func (ev NeuronFlags) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *NeuronFlags) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-// The neuron flags
-const (
-	// NeuronOff flag indicates that this neuron has been turned off (i.e., lesioned)
-	NeuronOff NeuronFlags = iota
-
-	// NeuronHasExt means the neuron has external input in its Ext field
-	NeuronHasExt
-
-	// NeuronHasTarg means the neuron has external target input in its Target field
-	NeuronHasTarg
-
-	// NeuronHasCmpr means the neuron has external comparison input in its Target field -- used for computing
-	// comparison statistics but does not drive neural activity ever
-	NeuronHasCmpr
-
-	NeuronFlagsNum
-)

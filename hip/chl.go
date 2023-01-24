@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build this_is_broken_we_should_fix_or_delete
+
 package hip
 
 import (
@@ -92,14 +94,14 @@ func (pj *CHLPrjn) UpdateParams() {
 
 // DWt computes the weight change (learning) -- on sending projections
 // CHL version supported if On
-func (pj *CHLPrjn) DWt(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+func (pj *CHLPrjn) DWt(ctxt *axon.Context) {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	if pj.CHL.On {
-		pj.DWtCHL(ctime)
+		pj.DWtCHL(ctxt)
 	} else {
-		pj.Prjn.DWt(ctime)
+		pj.Prjn.DWt(ctxt)
 	}
 }
 
@@ -112,8 +114,8 @@ func (pj *CHLPrjn) SAvgCor(slay *axon.Layer) float32 {
 }
 
 // DWtCHL computes the weight change (learning) for CHL
-func (pj *CHLPrjn) DWtCHL(ctime *axon.Time) {
-	if !pj.Learn.Learn {
+func (pj *CHLPrjn) DWtCHL(ctxt *axon.Context) {
+	if !pj.Params.Learn.Learn {
 		return
 	}
 	slay := pj.Send.(axon.AxonLayer).AsAxon()
@@ -121,7 +123,7 @@ func (pj *CHLPrjn) DWtCHL(ctime *axon.Time) {
 	if slay.Pools[0].ActP.Avg < pj.CHL.SAvgThr { // inactive, no learn
 		return
 	}
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])

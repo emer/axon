@@ -5,56 +5,33 @@
 package axon
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
 
 	"github.com/emer/emergent/emer"
-	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/ringidx"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/indent"
+	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
 )
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
 
-// PrjnGVals contains projection-level conductance values,
-// integrated by prjn before being integrated at the neuron level,
-// which enables the neuron to perform non-linear integration as needed.
-type PrjnGVals struct {
-	GRaw float32 `desc:"raw conductance received from senders = current raw spiking drive"`
-	GSyn float32 `desc:"time-integrated total synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay"`
-}
-
-func (pv *PrjnGVals) Init() {
-	pv.GRaw = 0
-	pv.GSyn = 0
-}
-
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnBase
-	Com       SynComParams    `view:"inline" desc:"synaptic communication parameters: delay, probability of failure"`
-	PrjnScale PrjnScaleParams `view:"inline" desc:"projection scaling parameters: modulates overall strength of projection, using both absolute and relative factors, with adaptation option to maintain target max conductances"`
-	SWt       SWtParams       `view:"add-fields" desc:"slowly adapting, structural weight value parameters, which control initial weight values and slower outer-loop adjustments"`
-	Learn     LearnSynParams  `view:"add-fields" desc:"synaptic-level learning parameters for learning in the fast LWt values."`
-	Syns      []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
-
-	// misc state variables below:
-	GScale GScaleVals  `view:"inline" desc:"conductance scaling values"`
-	Gidx   ringidx.FIx `inactive:"+" desc:"ring (circular) index for GBuf buffer of synaptically delayed conductance increments.  The current time is always at the zero index, which is read and then shifted.  Len is delay+1."`
-	GBuf   []float32   `desc:"Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- scale * weight is added with Com delay offset."`
-	PIBuf  []float32   `desc:"pooled inhibition ring buffer for each pool * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per pool in receiving layer."`
-	PIdxs  []int32     `desc:"indexes of subpool for each receiving neuron, for aggregating PIBuf -- this is redundant with Neuron.Subpool but provides faster local access in SendSpike."`
-	GVals  []PrjnGVals `desc:"projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed."`
+	Params *PrjnParams `desc:"all prjn-level parameters -- these must remain constant once configured"`
+	Vals   *PrjnVals   `view:"-" desc:"projection state values updated during computation"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
+
+// Object returns the object with parameters to be set by emer.Params
+func (pj *Prjn) Object() interface{} {
+	return pj.Params
+}
 
 // AsAxon returns this prjn as a axon.Prjn -- all derived prjns must redefine
 // this to return the base Prjn type, so that the AxonPrjn interface does not
@@ -63,141 +40,49 @@ func (pj *Prjn) AsAxon() *Prjn {
 	return pj
 }
 
+// PrjnType returns axon specific cast of pj.Typ prjn type
+func (pj *Prjn) PrjnType() PrjnTypes {
+	return PrjnTypes(pj.Typ)
+}
+
+func (pj *Prjn) Class() string {
+	return pj.PrjnType().String() + " " + pj.Cls
+}
+
 func (pj *Prjn) Defaults() {
-	pj.Com.Defaults()
-	pj.SWt.Defaults()
-	pj.PrjnScale.Defaults()
-	pj.Learn.Defaults()
-	if pj.Typ == emer.Inhib {
-		pj.SWt.Adapt.On = false
+	if pj.Params == nil {
+		return
+	}
+	pj.Params.PrjnType = pj.PrjnType()
+	pj.Params.Defaults()
+	switch pj.PrjnType() {
+	case InhibPrjn:
+		pj.Params.SWt.Adapt.On.SetBool(false)
+	case RWPrjn, TDPredPrjn:
+		pj.Params.RLPredPrjnDefaults()
+	case BLAPrjn:
+		pj.Params.BLAPrjnDefaults()
 	}
 }
 
-// UpdateParams updates all params given any changes that might have been made to individual values
+// Update is interface that does local update of struct vals
+func (pj *Prjn) Update() {
+	if pj.Params == nil {
+		return
+	}
+	pj.Params.Update()
+}
+
+// UpdateParams updates all params given any changes
+// that might have been made to individual values
 func (pj *Prjn) UpdateParams() {
-	pj.Com.Update()
-	pj.PrjnScale.Update()
-	pj.SWt.Update()
-	pj.Learn.Update()
+	pj.Update()
 }
-
-// GScaleVals holds the conductance scaling and associated values needed for adapting scale
-type GScaleVals struct {
-	Scale float32 `inactive:"+" desc:"scaling factor for integrating synaptic input conductances (G's), originally computed as a function of sending layer activity and number of connections, and typically adapted from there -- see Prjn.PrjnScale adapt params"`
-	Rel   float32 `inactive:"+" desc:"normalized relative proportion of total receiving conductance for this projection: PrjnScale.Rel / sum(PrjnScale.Rel across relevant prjns)"`
-}
-
-func (pj *Prjn) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj }
-func (pj *Prjn) SetPattern(pat prjn.Pattern) emer.Prjn { pj.Pat = pat; return pj }
-func (pj *Prjn) SetType(typ emer.PrjnType) emer.Prjn   { pj.Typ = typ; return pj }
 
 // AllParams returns a listing of all parameters in the Layer
 func (pj *Prjn) AllParams() string {
-	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n"
-	b, _ := json.MarshalIndent(&pj.Com, "", " ")
-	str += "Com: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.PrjnScale, "", " ")
-	str += "PrjnScale: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.SWt, "", " ")
-	str += "SWt: {\n " + JsonToParams(b)
-	b, _ = json.MarshalIndent(&pj.Learn, "", " ")
-	str += "Learn: {\n " + strings.Replace(JsonToParams(b), " LRate: {", "\n  LRate: {", -1)
+	str := "///////////////////////////////////////////////////\nPrjn: " + pj.Name() + "\n" + pj.Params.AllParams()
 	return str
-}
-
-func (pj *Prjn) SynVarNames() []string {
-	return SynapseVars
-}
-
-// SynVarProps returns properties for variables
-func (pj *Prjn) SynVarProps() map[string]string {
-	return SynapseVarProps
-}
-
-// SynIdx returns the index of the synapse between given send, recv unit indexes
-// (1D, flat indexes). Returns -1 if synapse not found between these two neurons.
-// Requires searching within connections for receiving unit.
-func (pj *Prjn) SynIdx(sidx, ridx int) int {
-	if sidx >= len(pj.SendConN) {
-		return -1
-	}
-	nc := int(pj.SendConN[sidx])
-	st := int(pj.SendConIdxStart[sidx])
-	for ci := 0; ci < nc; ci++ {
-		ri := int(pj.SendConIdx[st+ci])
-		if ri != ridx {
-			continue
-		}
-		return int(st + ci)
-	}
-	return -1
-}
-
-// SynVarIdx returns the index of given variable within the synapse,
-// according to *this prjn's* SynVarNames() list (using a map to lookup index),
-// or -1 and error message if not found.
-func (pj *Prjn) SynVarIdx(varNm string) (int, error) {
-	return SynapseVarByName(varNm)
-}
-
-// SynVarNum returns the number of synapse-level variables
-// for this prjn.  This is needed for extending indexes in derived types.
-func (pj *Prjn) SynVarNum() int {
-	return len(SynapseVars)
-}
-
-// Syn1DNum returns the number of synapses for this prjn as a 1D array.
-// This is the max idx for SynVal1D and the number of vals set by SynVals.
-func (pj *Prjn) Syn1DNum() int {
-	return len(pj.Syns)
-}
-
-// SynVal1D returns value of given variable index (from SynVarIdx) on given SynIdx.
-// Returns NaN on invalid index.
-// This is the core synapse var access method used by other methods,
-// so it is the only one that needs to be updated for derived layer types.
-func (pj *Prjn) SynVal1D(varIdx int, synIdx int) float32 {
-	if synIdx < 0 || synIdx >= len(pj.Syns) {
-		return mat32.NaN()
-	}
-	if varIdx < 0 || varIdx >= pj.SynVarNum() {
-		return mat32.NaN()
-	}
-	sy := &pj.Syns[synIdx]
-	return sy.VarByIndex(varIdx)
-}
-
-// SynVals sets values of given variable name for each synapse, using the natural ordering
-// of the synapses (sender based for Axon),
-// into given float32 slice (only resized if not big enough).
-// Returns error on invalid var name.
-func (pj *Prjn) SynVals(vals *[]float32, varNm string) error {
-	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
-	if err != nil {
-		return err
-	}
-	ns := len(pj.Syns)
-	if *vals == nil || cap(*vals) < ns {
-		*vals = make([]float32, ns)
-	} else if len(*vals) < ns {
-		*vals = (*vals)[0:ns]
-	}
-	for i := range pj.Syns {
-		(*vals)[i] = pj.AxonPrj.SynVal1D(vidx, i)
-	}
-	return nil
-}
-
-// SynVal returns value of given variable name on the synapse
-// between given send, recv unit indexes (1D, flat indexes).
-// Returns mat32.NaN() for access errors (see SynValTry for error message)
-func (pj *Prjn) SynVal(varNm string, sidx, ridx int) float32 {
-	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
-	if err != nil {
-		return mat32.NaN()
-	}
-	synIdx := pj.SynIdx(sidx, ridx)
-	return pj.AxonPrj.SynVal1D(vidx, synIdx)
 }
 
 // SetSynVal sets value of given variable name on the synapse
@@ -218,7 +103,7 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 		if sy.SWt == 0 {
 			sy.SWt = sy.Wt
 		}
-		sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 	return nil
 }
@@ -242,7 +127,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte(fmt.Sprintf("\"MetaData\": {\n")))
 	depth++
 	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.GScale.Scale)))
+	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.Params.GScale.Scale)))
 	depth--
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
@@ -251,9 +136,9 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	// depth++
 	// w.Write(indent.TabBytes(depth))
 	// w.Write([]byte(fmt.Sprintf("\"SWtMeans\": [ ")))
-	// nn := len(pj.SWtMeans)
-	// for ni := range pj.SWtMeans {
-	// 	w.Write([]byte(fmt.Sprintf("%g", pj.SWtMeans[ni])))
+	// nn := len(pj.Params.SWtMeans)
+	// for ni := range pj.Params.SWtMeans {
+	// 	w.Write([]byte(fmt.Sprintf("%g", pj.Params.SWtMeans[ni])))
 	// 	if ni < nn-1 {
 	// 		w.Write([]byte(", "))
 	// 	}
@@ -346,7 +231,7 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 	if pw.MetaData != nil {
 		if gs, ok := pw.MetaData["GScale"]; ok {
 			pv, _ := strconv.ParseFloat(gs, 32)
-			pj.GScale.Scale = float32(pv)
+			pj.Params.GScale.Scale = float32(pv)
 		}
 	}
 	var err error
@@ -369,43 +254,24 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 	return err
 }
 
-// Build constructs the full connectivity among the layers as specified in this projection.
-// Calls PrjnBase.BuildBase and then allocates the synaptic values in Syns accordingly.
-func (pj *Prjn) Build() error {
-	if err := pj.BuildBase(); err != nil {
-		return err
-	}
-	// this is a large alloc, as number of syns is typically large
-	pj.Syns = make([]Synapse, len(pj.SendConIdx))
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	rlen := rlay.Shape().Len()
-	pj.GVals = make([]PrjnGVals, rlen)
-	pj.PIdxs = make([]int32, rlen)
-	for ni := range rlay.Neurons {
-		pj.PIdxs[ni] = rlay.Neurons[ni].SubPool
-	}
-	pj.BuildGBuffs()
-	return nil
-}
+//////////////////////////////////////////////////////////////////////////////////////
+//  Init methods
 
 // BuildGBuf builds GBuf with current Com Delay values, if not correct size
 func (pj *Prjn) BuildGBuffs() {
 	rlen := uint32(pj.Recv.Shape().Len())
-	dl := uint32(pj.Com.Delay + 1)
+	dl := pj.Params.Com.Delay + 1
 	gblen := dl * rlen
-	if pj.Gidx.Len == dl && uint32(len(pj.GBuf)) == gblen {
+	if pj.Vals.Gidx.Len == dl && uint32(len(pj.GBuf)) == gblen {
 		return
 	}
-	pj.Gidx.Len = dl
-	pj.Gidx.Zi = 0
+	pj.Vals.Gidx.Len = dl
+	pj.Vals.Gidx.Zi = 0
 	pj.GBuf = make([]float32, gblen)
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	npools := len(rlay.Pools)
 	pj.PIBuf = make([]float32, int(dl)*npools)
 }
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Init methods
 
 // SetSWtsRPool initializes SWt structural weight values using given tensor
 // of values which has unique values for each recv neuron within a given pool.
@@ -446,8 +312,8 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 						sy := &pj.Syns[rsi]
 						swt := swts.FloatVal1D((scst + ci) % wsz)
 						sy.SWt = float32(swt)
-						sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
-						sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+						sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
+						sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 					}
 				}
 			}
@@ -494,8 +360,8 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 			rsi := pj.RecvSynIdx[st+ci]
 			sy := &pj.Syns[rsi]
 			sy.SWt = swt
-			sy.Wt = pj.SWt.ClipWt(sy.SWt + (sy.Wt - pj.SWt.Init.Mean))
-			sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
+			sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
+			sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 		}
 	}
 }
@@ -504,21 +370,24 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
 func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
-	pj.SWt.InitWtsSyn(sy, mean, spct)
+	pj.Params.SWt.InitWtsSyn(sy, mean, spct)
 }
 
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
 func (pj *Prjn) InitWts() {
-	pj.Learn.LRate.Init()
+	if pj.Typ == emer.Inhib {
+		pj.Params.Com.GType = InhibitoryG
+	}
+	pj.Params.Learn.LRate.Init()
 	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	spct := pj.SWt.Init.SPct
+	spct := pj.Params.SWt.Init.SPct
 	if rlay.AxonLay.IsTarget() {
-		pj.SWt.Init.SPct = 0
+		pj.Params.SWt.Init.SPct = 0
 		spct = 0
 	}
-	smn := pj.SWt.Init.Mean
+	smn := pj.Params.SWt.Init.Mean
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
@@ -532,7 +401,7 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
-	if pj.SWt.Adapt.On && !rlay.AxonLay.IsTarget() {
+	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.AxonLay.IsTarget() {
 		pj.SWtRescale()
 	}
 }
@@ -541,7 +410,7 @@ func (pj *Prjn) InitWts() {
 // using subtractive normalization.
 func (pj *Prjn) SWtRescale() {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	smn := pj.SWt.Init.Mean
+	smn := pj.Params.SWt.Init.Mean
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
 		if nrn.IsOff() {
@@ -556,9 +425,9 @@ func (pj *Prjn) SWtRescale() {
 		for _, rsi := range rsidxs {
 			swt := pj.Syns[rsi].SWt
 			sum += swt
-			if swt <= pj.SWt.Limit.Min {
+			if swt <= pj.Params.SWt.Limit.Min {
 				nmin++
-			} else if swt >= pj.SWt.Limit.Max {
+			} else if swt >= pj.Params.SWt.Limit.Max {
 				nmax++
 			}
 		}
@@ -577,9 +446,9 @@ func (pj *Prjn) SWtRescale() {
 			}
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
-				if sy.SWt <= pj.SWt.Limit.Max {
-					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				if sy.SWt <= pj.Params.SWt.Limit.Max {
+					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
+					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		} else {
@@ -589,9 +458,9 @@ func (pj *Prjn) SWtRescale() {
 			}
 			for _, rsi := range rsidxs {
 				sy := &pj.Syns[rsi]
-				if sy.SWt >= pj.SWt.Limit.Min {
-					sy.SWt = pj.SWt.ClipSWt(sy.SWt + mdf)
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
+				if sy.SWt >= pj.Params.SWt.Limit.Min {
+					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
+					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		}
@@ -603,11 +472,11 @@ func (pj *Prjn) SWtRescale() {
 func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	rpj := rpjp.AsAxon()
 	slay := pj.Send.(AxonLayer).AsAxon()
-	ns := int32(len(slay.Neurons))
-	for si := int32(0); si < ns; si++ {
+	ns := uint32(len(slay.Neurons))
+	for si := uint32(0); si < ns; si++ {
 		nc := pj.SendConN[si]
 		st := pj.SendConIdxStart[si]
-		for ci := int32(0); ci < nc; ci++ {
+		for ci := uint32(0); ci < nc; ci++ {
 			sy := &pj.Syns[st+ci]
 			ri := pj.SendConIdx[st+ci]
 			// now we need to find the reciprocal synapse on rpj!
@@ -627,9 +496,9 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 				continue
 			}
 			// start at index proportional to si relative to rist
-			up := int32(0)
+			up := uint32(0)
 			if ried > rist {
-				up = int32(float32(rsnc) * float32(si-rist) / float32(ried-rist))
+				up = uint32(float32(rsnc) * float32(si-rist) / float32(ried-rist))
 			}
 			dn := up - 1
 
@@ -688,522 +557,6 @@ func (pj *Prjn) InitGBuffs() {
 	}
 }
 
-//////////////////////////////////////////////////////////////////////////////////////
-//  Act methods
-
-// SendSpike sends a spike from the sending neuron at index sendIdx
-// into the buffer on the receiver side. The buffer on the receiver side
-// is a ring buffer, which is used for modelling the time delay between
-// sending and receiving spikes.
-func (pj *Prjn) SendSpike(sendIdx int) {
-	scale := pj.GScale.Scale
-	maxDelay := uint32(pj.Com.Delay)
-	delayBufSize := maxDelay + 1
-	currDelayIdx := pj.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
-	numCons := pj.SendConN[sendIdx]
-	startIdx := pj.SendConIdxStart[sendIdx]
-	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
-	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
-	inhib := pj.Typ == emer.Inhib
-	for i := range syns {
-		recvIdx := synConIdxs[i]
-		sv := scale * syns[i].Wt
-		pj.GBuf[uint32(recvIdx)*delayBufSize+currDelayIdx] += sv
-		// inhibitory neurons directly drive GiSyn, so we skip them for FS-FFFB calc
-		if !inhib {
-			pj.PIBuf[uint32(pj.PIdxs[recvIdx])*delayBufSize+currDelayIdx] += sv
-		}
-	}
-}
-
-// GFmSpikes increments synaptic conductances from Spikes
-// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-func (pj *Prjn) GFmSpikes(ctime *Time) {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	del := pj.Com.Delay
-	sz := del + 1
-	zi := int(pj.Gidx.Zi)
-	if pj.Typ == emer.Inhib {
-		for ri := range pj.GVals {
-			gv := &pj.GVals[ri]
-			bi := ri*sz + zi
-			gv.GRaw = pj.GBuf[bi]
-			pj.GBuf[bi] = 0
-			gv.GSyn = rlay.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
-		}
-		pj.Gidx.Shift(1) // rotate buffer
-		return
-	}
-	// TODO: Race condition if one layer has multiple incoming prjns (common)
-	lpl := &rlay.Pools[0]
-	if len(rlay.Pools) == 1 {
-		lpl.Inhib.FFsRaw += pj.PIBuf[zi]
-		pj.PIBuf[zi] = 0
-	} else {
-		for pi := range rlay.Pools {
-			pl := &rlay.Pools[pi]
-			bi := pi*sz + zi
-			sv := pj.PIBuf[bi]
-			pl.Inhib.FFsRaw += sv
-			lpl.Inhib.FFsRaw += sv
-			pj.PIBuf[bi] = 0
-		}
-	}
-	for ri := range pj.GVals {
-		gv := &pj.GVals[ri]
-		bi := ri*sz + zi
-		gv.GRaw = pj.GBuf[bi]
-		pj.GBuf[bi] = 0
-		gv.GSyn = rlay.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
-	}
-	pj.Gidx.Shift(1) // rotate buffer
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  SynCa methods
-
-// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in sending order, filtering on sending spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
-func (pj *Prjn) SendSynCa(ctime *Time) {
-	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
-		return
-	}
-	kp := &pj.Learn.KinaseCa
-	cycTot := int32(ctime.CycleTot)
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.Spike == 0 {
-			continue
-		}
-		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
-			continue
-		}
-		snCaSyn := ssg * sn.CaSyn
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
-				continue
-			}
-			sy := &syns[ci]
-			// todo: use atomic?
-			supt := sy.CaUpT
-			if supt == cycTot { // already updated in sender pass
-				continue
-			}
-			sy.CaUpT = cycTot
-			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = snCaSyn * rn.CaSyn
-			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-		}
-	}
-}
-
-// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in recv order, filtering on recv spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
-func (pj *Prjn) RecvSynCa(ctime *Time) {
-	if !pj.Learn.Learn || pj.Learn.Trace.NeuronCa {
-		return
-	}
-	kp := &pj.Learn.KinaseCa
-	cycTot := int32(ctime.CycleTot)
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Learn.CaSpk.SynSpkG
-	for ri := range rlay.Neurons {
-		rn := &rlay.Neurons[ri]
-		if rn.Spike == 0 {
-			continue
-		}
-		if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
-			continue
-		}
-		rnCaSyn := ssg * rn.CaSyn
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-		rcons := pj.RecvConIdx[st : st+nc]
-		for ci, rsi := range rsidxs {
-			si := rcons[ci]
-			sn := &slay.Neurons[si]
-			if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
-				continue
-			}
-			sy := &pj.Syns[rsi]
-			// todo: use atomic
-			supt := sy.CaUpT
-			if supt == cycTot { // already updated in sender pass
-				continue
-			}
-			sy.CaUpT = cycTot
-			sy.CaM, sy.CaP, sy.CaD = kp.CurCa(cycTot-1, supt, sy.CaM, sy.CaP, sy.CaD)
-			sy.Ca = sn.CaSyn * rnCaSyn
-			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-		}
-	}
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Learn methods
-
-// DWt computes the weight change (learning) -- on sending projections
-func (pj *Prjn) DWt(ctime *Time) {
-	if !pj.Learn.Learn {
-		return
-	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
-		if pj.Learn.Trace.NeuronCa {
-			pj.DWtNeurSpkTheta(ctime)
-		} else {
-			pj.DWtSynSpkTheta(ctime)
-		}
-	} else {
-		if pj.Learn.Trace.NeuronCa {
-			pj.DWtTraceNeurSpkTheta(ctime)
-		} else {
-			pj.DWtTraceSynSpkTheta(ctime)
-		}
-	}
-}
-
-// DWtTraceSynSpkTheta computes the weight change (learning) based on
-// synaptically-integrated spiking, for the optimized version
-// computed at the Theta cycle interval.  Trace version.
-func (pj *Prjn) DWtTraceSynSpkTheta(ctime *Time) {
-	kp := &pj.Learn.KinaseCa
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	cycTot := int32(ctime.CycleTot)
-	lr := pj.Learn.LRate.Eff
-	for si := range slay.Neurons {
-		// sn := &slay.Neurons[si]
-		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			_, _, caD := kp.CurCa(cycTot, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD)                       // caD reflects entire window
-			if sy.Wt == 0 {                                                 // failed con, no learn
-				continue
-			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
-			// note: trace ensures that nothing changes for inactive synapses..
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLRate * lr * err
-		}
-	}
-}
-
-// DWtTraceNeurSpkTheta computes the weight change (learning) based on
-// separate neurally-integrated spiking, for the optimized version
-// computed at the Theta cycle interval.  Trace version.
-func (pj *Prjn) DWtTraceNeurSpkTheta(ctime *Time) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			caD := rn.CaSpkD * sn.CaSpkD
-			sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
-			if sy.Wt == 0 {                           // failed con, no learn
-				continue
-			}
-			err := sy.Tr * (rn.CaP - rn.CaD) // recv Ca drives error signal
-			// note: trace ensures that nothing changes for inactive synapses..
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLRate * lr * err
-		}
-	}
-}
-
-// DWtSynSpkTheta computes the weight change (learning) based on
-// synaptically-integrated spiking, for the optimized version
-// computed at the Theta cycle interval.  Non-Trace version for target layers.
-func (pj *Prjn) DWtSynSpkTheta(ctime *Time) {
-	kp := &pj.Learn.KinaseCa
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	cycTot := int32(ctime.CycleTot)
-	lr := pj.Learn.LRate.Eff
-	for si := range slay.Neurons {
-		// sn := &slay.Neurons[si]
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			_, caP, caD := kp.CurCa(cycTot, sy.CaUpT, sy.CaM, sy.CaP, sy.CaD) // always update
-			if sy.Wt == 0 {                                                   // failed con, no learn
-				continue
-			}
-			err := caP - caD
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLRate * lr * err
-		}
-	}
-}
-
-// DWtNeurSpkTheta computes the weight change (learning) based on
-// separate neurally-integrated spiking, for the optimized version
-// computed at the Theta cycle interval.  non-Trace version for Target layers.
-func (pj *Prjn) DWtNeurSpkTheta(ctime *Time) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
-			if sy.Wt == 0 { // failed con, no learn
-				continue
-			}
-			err := sn.CaSpkP*rn.CaSpkP - sn.CaSpkD*rn.CaSpkD
-			// sb immediately -- enters into zero sum
-			if err > 0 {
-				err *= (1 - sy.LWt)
-			} else {
-				err *= sy.LWt
-			}
-			sy.DWt += rn.RLRate * lr * err
-		}
-	}
-}
-
-// DWtSubMean subtracts the mean from any projections that have SubMean > 0.
-// This is called on *receiving* projections, prior to WtFmDwt.
-func (pj *Prjn) DWtSubMean(ctime *Time) {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	sm := pj.Learn.Trace.SubMean
-	if sm == 0 { // || rlay.AxonLay.IsTarget() { // sm default is now 0, so don't exclude
-		return
-	}
-	for ri := range rlay.Neurons {
-		nc := int(pj.RecvConN[ri])
-		if nc < 1 {
-			continue
-		}
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-		sumDWt := float32(0)
-		nnz := 0 // non-zero
-		for _, rsi := range rsidxs {
-			dw := pj.Syns[rsi].DWt
-			if dw != 0 {
-				sumDWt += dw
-				nnz++
-			}
-		}
-		if nnz <= 1 {
-			continue
-		}
-		sumDWt /= float32(nnz)
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
-			if sy.DWt != 0 {
-				sy.DWt -= sm * sumDWt
-			}
-		}
-	}
-}
-
-// WtFmDWt updates the synaptic weight values from delta-weight changes.
-// called on the *sending* projections.
-func (pj *Prjn) WtFmDWt(ctime *Time) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	for si := range slay.Neurons {
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			sy.DSWt += sy.DWt
-			pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
-			pj.Com.Fail(&sy.Wt, sy.SWt)
-		}
-	}
-}
-
-// SlowAdapt does the slow adaptation: SWt learning and SynScale
-func (pj *Prjn) SlowAdapt(ctime *Time) {
-	pj.SWtFmWt()
-	pj.SynScale()
-}
-
-// SWtFmWt updates structural, slowly-adapting SWt value based on
-// accumulated DSWt values, which are zero-summed with additional soft bounding
-// relative to SWt limits.
-func (pj *Prjn) SWtFmWt() {
-	if !pj.Learn.Learn || !pj.SWt.Adapt.On {
-		return
-	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
-		return
-	}
-	max := pj.SWt.Limit.Max
-	min := pj.SWt.Limit.Min
-	lr := pj.SWt.Adapt.LRate
-	dvar := pj.SWt.Adapt.DreamVar
-	for ri := range rlay.Neurons {
-		nc := int(pj.RecvConN[ri])
-		if nc < 1 {
-			continue
-		}
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-		avgDWt := float32(0)
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
-			if sy.DSWt >= 0 { // softbound for SWt
-				sy.DSWt *= (max - sy.SWt)
-			} else {
-				sy.DSWt *= (sy.SWt - min)
-			}
-			avgDWt += sy.DSWt
-		}
-		avgDWt /= float32(nc)
-		avgDWt *= pj.SWt.Adapt.SubMean
-		if dvar > 0 {
-			for _, rsi := range rsidxs {
-				sy := &pj.Syns[rsi]
-				sy.SWt += lr * (sy.DSWt - avgDWt)
-				sy.DSWt = 0
-				if sy.Wt == 0 { // restore failed wts
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
-				}
-				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.SWt.Adapt.RndVar()
-				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
-			}
-		} else {
-			for _, rsi := range rsidxs {
-				sy := &pj.Syns[rsi]
-				sy.SWt += lr * (sy.DSWt - avgDWt)
-				sy.DSWt = 0
-				if sy.Wt == 0 { // restore failed wts
-					sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
-				}
-				sy.LWt = pj.SWt.LWtFmWts(sy.Wt, sy.SWt)
-				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
-			}
-		}
-	}
-}
-
-// SynScale performs synaptic scaling based on running average activation vs. targets.
-// Layer-level AvgDifFmTrgAvg function must be called first.
-func (pj *Prjn) SynScale() {
-	if !pj.Learn.Learn || pj.Typ == emer.Inhib {
-		return
-	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if !rlay.IsLearnTrgAvg() {
-		return
-	}
-	tp := &rlay.Learn.TrgAvgAct
-	lr := tp.SynScaleRate
-	for ri := range rlay.Neurons {
-		nrn := &rlay.Neurons[ri]
-		if nrn.IsOff() {
-			continue
-		}
-		adif := -lr * nrn.AvgDif
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
-			if adif >= 0 { // key to have soft bounding on lwt here!
-				sy.LWt += (1 - sy.LWt) * adif * sy.SWt
-			} else {
-				sy.LWt += sy.LWt * adif * sy.SWt
-			}
-			sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
-		}
-	}
-}
-
-// SynFail updates synaptic weight failure only -- normally done as part of DWt
-// and WtFmDWt, but this call can be used during testing to update failing synapses.
-func (pj *Prjn) SynFail(ctime *Time) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	for si := range slay.Neurons {
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		for ci := range syns {
-			sy := &syns[ci]
-			if sy.Wt == 0 { // restore failed wts
-				sy.Wt = pj.SWt.WtVal(sy.SWt, sy.LWt)
-			}
-			pj.Com.Fail(&sy.Wt, sy.SWt)
-		}
-	}
-}
-
-// LRateMod sets the LRate modulation parameter for Prjns, which is
-// for dynamic modulation of learning rate (see also LRateSched).
-// Updates the effective learning rate factor accordingly.
-func (pj *Prjn) LRateMod(mod float32) {
-	pj.Learn.LRate.Mod = mod
-	pj.Learn.LRate.Update()
-}
-
-// LRateSched sets the schedule-based learning rate multiplier.
-// See also LRateMod.
-// Updates the effective learning rate factor accordingly.
-func (pj *Prjn) LRateSched(sched float32) {
-	pj.Learn.LRate.Sched = sched
-	pj.Learn.LRate.Update()
+var PrjnProps = ki.Props{
+	"EnumType:Typ": KiT_PrjnTypes, // uses our PrjnTypes for GUI
 }

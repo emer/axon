@@ -166,7 +166,7 @@ func (ss *Sim) ConfigLogItems() {
 			}}})
 
 	// Standard stats for Ge and AvgAct tuning -- for all hidden, output layers
-	layers := ss.Net.LayersByClass("Hidden", "Target")
+	layers := ss.Net.LayersByClass("HiddenLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := ss.Net.LayerByName(clnm)
@@ -182,7 +182,7 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat32(ly.Pools[0].Inhib.Act.Avg)
 				}, elog.Scope(elog.AllModes, elog.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_MaxGeM",
@@ -195,7 +195,7 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetFloat32(ly.Pools[0].GeM.Max)
 				}, elog.Scope(elog.AllModes, elog.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.AvgMaxGeM)
+					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
 				}}})
 		// ss.Logs.AddItem(&elog.Item{
 		// 	Name:  clnm + "_MaxGiM",
@@ -208,7 +208,7 @@ func (ss *Sim) ConfigLogItems() {
 		// 			ctx.SetFloat32(ly.Pools[0].GiM.Max)
 		// 		}, elog.Scope(elog.AllModes, elog.Epoch): func(ctx *elog.Context) {
 		// 			ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-		// 			ctx.SetFloat32(ly.ActAvg.AvgMaxGiM)
+		// 			ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGiM)
 		// 		}}})
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgDifAvg",
@@ -338,7 +338,7 @@ func (ss *Sim) ConfigLogItems() {
 	}
 
 	// input layer average activity -- important for tuning
-	layers = ss.Net.LayersByClass("Input")
+	layers = ss.Net.LayersByClass("InputLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		ss.Logs.AddItem(&elog.Item{
@@ -350,12 +350,12 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				elog.Scope(elog.Train, elog.Epoch): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.ActAvg.ActMAvg)
+					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
 				}}})
 	}
 
 	// input / output layer activity patterns during testing
-	layers = ss.Net.LayersByClass("Input", "Target")
+	layers = ss.Net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := ss.Net.LayerByName(clnm)

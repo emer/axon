@@ -76,7 +76,7 @@ type Sim struct {
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
 	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Pats     *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
-	Time     axon.Time        `desc:"axon timing parameters and state"`
+	Context  axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
@@ -97,7 +97,7 @@ func (ss *Sim) New() {
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 	ss.Defaults()
 }
@@ -197,13 +197,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 			net.ConnectLayers(nl, tl, full, emer.Back).SetClass("Excite")
 		}
 	}
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	ss.InitWts(net)
 }
 
@@ -239,11 +239,11 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 	net := ss.Net
-	time := &ss.Time
+	time := &ss.Context
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 10).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199) // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199) // plus phase timing
 
 	for m, _ := range man.Stacks {
 		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle", func() {
@@ -255,7 +255,7 @@ func (ss *Sim) ConfigLoops() {
 		curMode := m // For closures.
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetTimeVal", func() {
-				time.Mode = curMode.String()
+				time.Mode = curMode
 			})
 		}
 	}
@@ -310,8 +310,8 @@ func (ss *Sim) ApplyInputs() {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
-	ss.Time.Reset()
-	ss.Time.Mode = etime.Test.String()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Test
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
@@ -334,9 +334,9 @@ func (ss *Sim) InitStats() {
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
 	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode.FromString(ss.Context.Mode.String())
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Trial", "Cycle"})
 }
 
@@ -370,7 +370,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	layers := ss.Net.LayersByClass("Input", "Hidden")
+	layers := ss.Net.LayersByClass("InputLayer", "HiddenLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		ss.Logs.AddItem(&elog.Item{
@@ -469,7 +469,7 @@ func (ss *Sim) ConfigLogItems() {
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)

@@ -17,21 +17,21 @@ import (
 // plusStart is start of plus phase, typically 150,
 // and plusEnd is end of plus phase, typically 199
 // resets the state at start of trial
-func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, plusEnd int) {
+func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart, plusEnd int) {
 	minusPhase := looper.NewEvent("MinusPhase:Start", 0, func() {
-		time.PlusPhase = false
-		time.NewPhase(false)
+		ctx.PlusPhase.SetBool(false)
+		ctx.NewPhase(false)
 	})
-	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1(time) })
-	beta2 := looper.NewEvent("Beta2", 100, func() { net.SpkSt2(time) })
+	beta1 := looper.NewEvent("Beta1", 50, func() { net.SpkSt1(ctx) })
+	beta2 := looper.NewEvent("Beta2", 100, func() { net.SpkSt2(ctx) })
 	plusPhase := &looper.Event{Name: "PlusPhase", AtCtr: plusStart}
-	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase(time) })
+	plusPhase.OnEvent.Add("MinusPhase:End", func() { net.MinusPhase(ctx) })
 	plusPhase.OnEvent.Add("PlusPhase:Start", func() {
-		time.PlusPhase = true
-		time.NewPhase(true)
+		ctx.PlusPhase.SetBool(true)
+		ctx.NewPhase(true)
 	})
 	plusPhaseEnd := looper.NewEvent("PlusPhase:End", plusEnd, func() {
-		net.PlusPhase(time)
+		net.PlusPhase(ctx)
 	})
 
 	man.AddEventAllModes(etime.Cycle, minusPhase, beta1, beta2, plusPhase, plusPhaseEnd)
@@ -40,26 +40,26 @@ func LooperStdPhases(man *looper.Manager, time *Time, net *Network, plusStart, p
 		mode := m // For closures
 		stack := man.Stacks[mode]
 		stack.Loops[etime.Trial].OnStart.Add("ResetState", func() {
-			net.NewState()
-			time.NewState(mode.String())
+			net.NewState(ctx)
+			ctx.NewState(mode)
 		})
 	}
 }
 
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFmDWt functions to looper
-// for given network, time, and netview update manager
-func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, viewupdt *netview.ViewUpdt) {
+// for given network, ctx, and netview update manager
+func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, viewupdt *netview.ViewUpdt) {
 
 	for m, _ := range man.Stacks {
 		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle", func() {
-			net.Cycle(time)
-			time.CycleInc()
+			net.Cycle(ctx)
+			ctx.CycleInc()
 		})
 	}
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("UpdateWeights", func() {
-		net.DWt(time)
+		net.DWt(ctx)
 		viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
-		net.WtFmDWt(time)
+		net.WtFmDWt(ctx)
 	})
 
 	// Set variables on ss that are referenced elsewhere, such as ApplyInputs.
@@ -67,7 +67,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, time *Time, viewu
 		curMode := m // For closures.
 		for _, loop := range loops.Loops {
 			loop.OnStart.Add("SetTimeVal", func() {
-				time.Mode = curMode.String()
+				ctx.Mode = curMode
 			})
 		}
 	}

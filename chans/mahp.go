@@ -6,6 +6,8 @@ package chans
 
 import "github.com/goki/mat32"
 
+//gosl: start chans
+
 // MahpParams implements an M-type medium afterhyperpolarizing (mAHP) channel,
 // where m also stands for muscarinic due to the ACh inactivation of this channel.
 // It has a slow activation and deactivation time constant, and opens at a lowish
@@ -15,11 +17,14 @@ import "github.com/goki/mat32"
 // of the membrane potential, centered at Voff with slope Vslope.
 type MahpParams struct {
 	Gbar   float32 `desc:"strength of mAHP current"`
-	Voff   float32 `def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
-	Vslope float32 `def:"9" desc:"slope of the arget (infinite time) gating function"`
-	TauMax float32 `def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
-	Tadj   float32 `view:"-" inactive:"+" desc:"temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C"`
-	DtMax  float32 `view:"-" inactive:"+" desc:"1/Tau"`
+	Voff   float32 `viewif:"Gbar>0" def:"-30" desc:"voltage offset (threshold) in biological units for infinite time N gating function -- where the gate is at 50% strength"`
+	Vslope float32 `viewif:"Gbar>0" def:"9" desc:"slope of the arget (infinite time) gating function"`
+	TauMax float32 `viewif:"Gbar>0" def:"1000" desc:"maximum slow rate time constant in msec for activation / deactivation.  The effective Tau is much slower -- 1/20th in original temp, and 1/60th in standard 37 C temp"`
+	Tadj   float32 `viewif:"Gbar>0" view:"-" inactive:"+" desc:"temperature adjustment factor: assume temp = 37 C, whereas original units were at 23 C"`
+
+	DtMax float32 `view:"-" inactive:"+" desc:"1/Tau"`
+
+	pad, pad2 int32
 }
 
 // Defaults sets the parameters
@@ -46,7 +51,7 @@ func (mp *MahpParams) EFun(z float32) float32 {
 
 // NinfTauFmV returns the target infinite-time N gate value and
 // voltage-dependent time constant tau, from vbio
-func (mp *MahpParams) NinfTauFmV(vbio float32) (ninf, tau float32) {
+func (mp *MahpParams) NinfTauFmV(vbio float32, ninf, tau *float32) {
 	vo := vbio - mp.Voff
 
 	// logical functions, but have signularity at Voff (vo = 0)
@@ -55,22 +60,23 @@ func (mp *MahpParams) NinfTauFmV(vbio float32) (ninf, tau float32) {
 
 	a := mp.DtMax * mp.Vslope * mp.EFun(-vo/mp.Vslope)
 	b := mp.DtMax * mp.Vslope * mp.EFun(vo/mp.Vslope)
-	tau = 1.0 / (a + b)
-	ninf = a * tau // a / (a+b)
-	tau /= mp.Tadj // correct right away..
+	*tau = 1.0 / (a + b)
+	*ninf = a * *tau // a / (a+b)
+	*tau /= mp.Tadj  // correct right away..
 
 	return
 }
 
 // NinfTauFmV returns the target infinite-time N gate value and
 // voltage-dependent time constant tau, from normalized vm
-func (mp *MahpParams) NinfTauFmVnorm(v float32) (ninf, tau float32) {
-	return mp.NinfTauFmV(VToBio(v))
+func (mp *MahpParams) NinfTauFmVnorm(v float32, ninf, tau *float32) {
+	mp.NinfTauFmV(VToBio(v), ninf, tau)
 }
 
 // DNFmV returns the change in gating factor N based on normalized Vm
 func (mp *MahpParams) DNFmV(v, n float32) float32 {
-	ninf, tau := mp.NinfTauFmVnorm(v)
+	var ninf, tau float32
+	mp.NinfTauFmVnorm(v, &ninf, &tau)
 	// dt := 1.0 - mat32.FastExp(-mp.Tadj/tau) // Mainen comments out this form; Poirazi uses
 	// dt := mp.Tadj / tau // simple linear fix
 	dn := (ninf - n) / tau
@@ -81,3 +87,5 @@ func (mp *MahpParams) DNFmV(v, n float32) float32 {
 func (mp *MahpParams) GmAHP(n float32) float32 {
 	return mp.Tadj * mp.Gbar * n
 }
+
+//gosl: end chans

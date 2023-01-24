@@ -46,7 +46,6 @@ func TestLayer_SendSpike(t *testing.T) {
 	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
 	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), emer.Forward)
 	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), emer.Forward)
-	net.Defaults()
 
 	/*
 	 * Input1 -> Output
@@ -54,10 +53,11 @@ func TestLayer_SendSpike(t *testing.T) {
 	 */
 
 	assert.NoError(t, net.Build())
+	net.Defaults()
 	net.InitWts()
 
-	net.NewState()
-	ltime := NewTime()
+	ctx := NewContext()
+	net.NewState(ctx)
 
 	// spike the neurons. Do this after NewState(), so that the spike is not decayed away
 	inputLayer1.AsAxon().Neurons[1].Spike = 1.0
@@ -68,15 +68,15 @@ func TestLayer_SendSpike(t *testing.T) {
 	const in1pj0_scale = 6.6
 	in1pj0 := inputLayer1.SendPrjn(0).(*Prjn)
 	in1pj0.Syns[in1pj0.SendConIdxStart[1]].Wt = in1pj0_n1_to_n2_wt
-	in1pj0.GScale.Scale = in1pj0_scale
+	in1pj0.Params.GScale.Scale = in1pj0_scale
 
 	const in2pj0_n0_to_n4_wt = 3.0
 	const in2pj0_scale = 0.4
 	in2pj0 := inputLayer2.SendPrjn(0).(*Prjn)
+	in2pj0.Params.GScale.Scale = in2pj0_scale
 	in2pj0.Syns[in2pj0.SendConIdxStart[0]+4].Wt = in2pj0_n0_to_n4_wt
-	in2pj0.GScale.Scale = in2pj0_scale
 
-	net.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ltime) },
+	net.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) },
 		"SendSpike")
 
 	// the neurons we spiked are connected to 9 neurons in the output layer
@@ -95,8 +95,8 @@ func TestLayer_SendSpike(t *testing.T) {
 		assert.Equal(t, 9, count)
 	}
 
-	delayStride := in1pj0.Com.Delay + 1
-	assert.Equal(t, in1pj0.Com.Delay, in2pj0.Com.Delay) // sanity
+	delayStride := in1pj0.Params.Com.Delay + 1
+	assert.Equal(t, in1pj0.Params.Com.Delay, in2pj0.Params.Com.Delay) // sanity
 
 	// spot-check two of the conductances
 	l1contrib := float32(in1pj0_n1_to_n2_wt) * in1pj0_scale
@@ -114,8 +114,8 @@ func TestLayerToJson(t *testing.T) {
 	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
 	net := createNetwork(shape, t)
 	hiddenLayer := net.LayerByName("Hidden").(AxonLayer)
-	ltime := NewTime()
-	net.Cycle(ltime) // run one cycle to make the weights more different
+	ctx := NewContext()
+	net.Cycle(ctx) // run one cycle to make the weights more different
 
 	netC := createNetwork(shape, t)
 	hiddenLayerC := netC.LayerByName("Hidden").(AxonLayer)
@@ -164,8 +164,8 @@ func createNetwork(shape []int, t *testing.T) *Network {
 	full := prjn.NewFull()
 	net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
-	net.Defaults()
 	assert.NoError(t, net.Build())
+	net.Defaults()
 	net.InitWts()
 	return net
 }
@@ -182,9 +182,9 @@ func TestLayerBase_IsOff(t *testing.T) {
 	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
 	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, emer.Forward)
 	hidToOut, outToHid := net.BidirConnectLayers(hiddenLayer, outputLayer, full)
-	net.Defaults()
 
 	assert.NoError(t, net.Build())
+	net.Defaults()
 
 	assert.False(t, inputLayer.IsOff())
 

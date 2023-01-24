@@ -51,7 +51,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":       "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 					"Prjn.Learn.Trace.SubMean": "1",   // 1 > 0 for long run stability
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.3", // 0.3 > 0.2 > 0.1 > 0.5
 				}},

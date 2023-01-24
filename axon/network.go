@@ -102,40 +102,40 @@ func (nt *Network) SynVarProps() map[string]string {
 // NewState handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
 // Does NOT call InitGScale()
-func (nt *Network) NewState() {
-	nt.EmerNet.(AxonNetwork).NewStateImpl()
+func (nt *Network) NewState(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).NewStateImpl(ctx)
 }
 
 // Cycle runs one cycle of activation updating.  It just calls the CycleImpl
 // method through the AxonNetwork interface, thereby ensuring any specialized
 // algorithm-specific version is called as needed (in general, strongly prefer
 // updating the Layer specific version).
-func (nt *Network) Cycle(ctime *Time) {
-	nt.EmerNet.(AxonNetwork).CycleImpl(ctime)
+func (nt *Network) Cycle(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).CycleImpl(ctx)
 }
 
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
-func (nt *Network) CycleImpl(ctime *Time) {
-	// GFmSpikes has to wait for the output of the SendSpikeFun
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.GFmSpikes(ctime) }, "GFmSpikes")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctime) }, "GiFmSpikes")
-	nt.NeuronFun(func(ly AxonLayer, ni int, nrn *Neuron) { ly.CycleNeuron(ni, nrn, ctime) }, "CycleNeuron")
-	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctime) }, "SendSpike")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctime) }, "CyclePost")
-	if !ctime.Testing {
-		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctime) }, "SendSynCa")
-		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctime) }, "RecvSynCa")
+func (nt *Network) CycleImpl(ctx *Context) {
+	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.PrjnGatherSpikes(ctx) }, "PrjnGatherSpikes")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
+	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
+	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) }, "SendSpike")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
+	if ctx.Testing.IsFalse() {
+		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctx) }, "SendSynCa")
+		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctx) }, "RecvSynCa")
 	}
 }
 
 // MinusPhase does updating after end of minus phase
-func (nt *Network) MinusPhase(ctime *Time) {
-	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctime)
+func (nt *Network) MinusPhase(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctx)
 }
 
 // PlusPhase does updating after end of plus phase
-func (nt *Network) PlusPhase(ctime *Time) {
-	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctime)
+func (nt *Network) PlusPhase(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctx)
 }
 
 // TargToExt sets external input Ext from target values Target
@@ -162,34 +162,34 @@ func (nt *Network) ClearTargExt() {
 }
 
 // SpkSt1 saves current acts into SpkSt1 (using SpkCaP)
-func (nt *Network) SpkSt1(ctime *Time) {
+func (nt *Network) SpkSt1(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt1(ctime)
+		ly.(AxonLayer).SpkSt1(ctx)
 	}
 }
 
 // SpkSt2 saves current acts into SpkSt2 (using SpkCaP)
-func (nt *Network) SpkSt2(ctime *Time) {
+func (nt *Network) SpkSt2(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt2(ctime)
+		ly.(AxonLayer).SpkSt2(ctx)
 	}
 }
 
 // DWt computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWt(ctime *Time) {
-	nt.EmerNet.(AxonNetwork).DWtImpl(ctime)
+func (nt *Network) DWt(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).DWtImpl(ctx)
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
 // Also calls SynScale every Interval times
-func (nt *Network) WtFmDWt(ctime *Time) {
-	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ctime)
+func (nt *Network) WtFmDWt(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ctx)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -269,26 +269,26 @@ func (nt *Network) InitGScale() {
 // glong = separate decay factor for long-timescale conductances (g)
 // This is called automatically in NewState, but is avail
 // here for ad-hoc decay cases.
-func (nt *Network) DecayState(decay, glong float32) {
+func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).DecayState(decay, glong)
+		ly.(AxonLayer).DecayState(ctx, decay, glong)
 	}
 }
 
 // DecayStateByClass decays activation state for given class name(s)
 // by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
 // glong = separate decay factor for long-timescale conductances (g)
-func (nt *Network) DecayStateByClass(decay, glong float32, class ...string) {
+func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, class ...string) {
 	lnms := nt.LayersByClass(class...)
 	for _, lynm := range lnms {
 		ly := nt.LayerByName(lynm).(AxonLayer)
 		if ly.IsOff() {
 			continue
 		}
-		ly.DecayState(decay, glong)
+		ly.DecayState(ctx, decay, glong)
 	}
 }
 
@@ -325,69 +325,81 @@ func (nt *Network) UpdateExtFlags() {
 }
 
 // NewStateImpl handles all initialization at start of new input state
-func (nt *Network) NewStateImpl() {
+func (nt *Network) NewStateImpl(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).NewState()
+		ly.(AxonLayer).NewState(ctx)
 	}
 }
 
 // MinusPhaseImpl does updating after end of minus phase
-func (nt *Network) MinusPhaseImpl(ctime *Time) {
+func (nt *Network) MinusPhaseImpl(ctx *Context) {
 	// not worth threading this probably
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).MinusPhase(ctime)
+		ly.(AxonLayer).MinusPhase(ctx)
 	}
 }
 
 // PlusPhaseImpl does updating after end of plus phase
-func (nt *Network) PlusPhaseImpl(ctime *Time) {
+func (nt *Network) PlusPhaseImpl(ctx *Context) {
 	// not worth threading this probably
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).PlusPhase(ctime)
+		ly.(AxonLayer).PlusPhase(ctx)
 	}
+	nt.CTCtxt(ctx)
+}
+
+// CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
+func (nt *Network) CTCtxt(ctx *Context) {
+	nt.LayerMapSeq(func(ly AxonLayer) {
+		ly.SendCtxtGe(ctx)
+	}, "SendCtxtGe")
+
+	nt.LayerMapSeq(func(ly AxonLayer) {
+		ly.CtxtFmGe(ctx)
+	}, "CtxtFmGe")
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learn methods
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
-func (nt *Network) DWtImpl(ctime *Time) {
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctime) }, "DWtLayer")
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctime) }, "DWt")
+func (nt *Network) DWtImpl(ctx *Context) {
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt")             // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
-func (nt *Network) WtFmDWtImpl(ctime *Time) {
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctime) }, "DWtSubMean")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctime) }, "WtFmDWtLayer")
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctime) }, "WtFmDWt")
-	nt.EmerNet.(AxonNetwork).SlowAdapt(ctime)
+func (nt *Network) WtFmDWtImpl(ctx *Context) {
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // def no
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+	nt.EmerNet.(AxonNetwork).SlowAdapt(ctx)
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
 // GScale conductance scaling, and adapting inhibition
-func (nt *Network) SlowAdapt(ctime *Time) {
+func (nt *Network) SlowAdapt(ctx *Context) {
 	nt.SlowCtr++
 	if nt.SlowCtr < nt.SlowInterval {
 		return
 	}
 	nt.SlowCtr = 0
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctime) }, "SlowAdapt")
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctime) }, "SlowAdapt")
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
 }
 
 // SynFail updates synaptic failure
-func (nt *Network) SynFail(ctime *Time) {
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SynFail(ctime) }, "SynFail")
+func (nt *Network) SynFail(ctx *Context) {
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SynFail(ctx) }, "SynFail")
 }
 
 // LRateMod sets the LRate modulation parameter for Prjns, which is
@@ -479,11 +491,11 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	}
 	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
-		(*dwts)[idx+0] = ly.ActAvg.ActMAvg
-		(*dwts)[idx+1] = ly.ActAvg.ActPAvg
-		(*dwts)[idx+2] = ly.ActAvg.AvgMaxGeM
-		(*dwts)[idx+3] = ly.ActAvg.AvgMaxGiM
-		(*dwts)[idx+4] = ly.ActAvg.GiMult
+		(*dwts)[idx+0] = ly.Vals.ActAvg.ActMAvg
+		(*dwts)[idx+1] = ly.Vals.ActAvg.ActPAvg
+		(*dwts)[idx+2] = ly.Vals.ActAvg.AvgMaxGeM
+		(*dwts)[idx+3] = ly.Vals.ActAvg.AvgMaxGiM
+		(*dwts)[idx+4] = ly.Vals.ActAvg.GiMult
 		idx += 5
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
@@ -499,7 +511,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
-			(*dwts)[idx] = pj.GScale.Scale
+			(*dwts)[idx] = pj.Params.GScale.Scale
 			idx++
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
@@ -519,11 +531,11 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 	davg := 1 / float32(navg)
 	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
-		ly.ActAvg.ActMAvg = davg * dwts[idx+0]
-		ly.ActAvg.ActPAvg = davg * dwts[idx+1]
-		ly.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
-		ly.ActAvg.AvgMaxGiM = davg * dwts[idx+3]
-		ly.ActAvg.GiMult = davg * dwts[idx+4]
+		ly.Vals.ActAvg.ActMAvg = davg * dwts[idx+0]
+		ly.Vals.ActAvg.ActPAvg = davg * dwts[idx+1]
+		ly.Vals.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
+		ly.Vals.ActAvg.AvgMaxGiM = davg * dwts[idx+3]
+		ly.Vals.ActAvg.GiMult = davg * dwts[idx+4]
 		idx += 5
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
@@ -539,7 +551,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
-			pj.GScale.Scale = davg * dwts[idx]
+			pj.Params.GScale.Scale = davg * dwts[idx]
 			idx++
 			ns := len(pj.Syns)
 			for j := range pj.Syns {

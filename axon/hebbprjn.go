@@ -4,6 +4,12 @@
 
 package axon
 
+/*
+
+todo: for GPU, must have this in base case
+
+import "github.com/goki/gosl/slbool"
+
 // HebbPrjn is a simple hebbian learning projection, using the CPCA Hebbian rule.
 // Note: when used with inhibitory projections, requires Learn.Trace.SubMean = 1
 type HebbPrjn struct {
@@ -14,7 +20,7 @@ type HebbPrjn struct {
 func (pj *HebbPrjn) Defaults() {
 	pj.Prjn.Defaults()
 	pj.IncGain = 0.5
-	pj.Learn.Trace.SubMean = 1 // this is critical!
+	pj.Params.Learn.Trace.SubMean = 1 // this is critical!
 }
 
 func (pj *HebbPrjn) UpdateParams() {
@@ -22,13 +28,13 @@ func (pj *HebbPrjn) UpdateParams() {
 }
 
 // DWt computes the hebbian weight change
-func (pj *HebbPrjn) DWt(ctime *Time) {
-	if !pj.Learn.Learn {
+func (pj *HebbPrjn) DWt(ctx *Context) {
+	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	lr := pj.Learn.LRate.Eff
+	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		nc := int(pj.SendConN[si])
@@ -47,3 +53,5 @@ func (pj *HebbPrjn) DWt(ctime *Time) {
 		}
 	}
 }
+
+*/

@@ -74,7 +74,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "1.8",
 					"Layer.Act.Gbar.L":     "0.1", // set explictly, new default, a bit better vs 0.2
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.WtScale.Rel": "0.2",
 				}},
@@ -110,7 +110,7 @@ type Sim struct {
 	NZeroStop    int             `desc:"if a positive number, training will stop after this many epochs with zero SSE"`
 	TrainEnv     ExEnv           `desc:"Training environment -- contains everything about iterating over input / output patterns over training"`
 	TestEnv      ExEnv           `desc:"Testing environment -- manages iterating over testing"`
-	Time         axon.Time       `desc:"axon timing parameters and state"`
+	Context      axon.Context    `desc:"axon timing parameters and state"`
 	ViewOn       bool            `desc:"whether to update the network view while running"`
 	TrainUpdt    axon.TimeScales `desc:"at what time scale to update the display during training?  Anything longer than Epoch updates at Epoch in this model"`
 	TestUpdt     axon.TimeScales `desc:"at what time scale to update the display during testing?  Anything longer than Epoch updates at Epoch in this model"`
@@ -255,13 +255,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	net.Defaults()
-	ss.SetParams("Network", ss.LogSetParams) // only set Network params
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.SetParams("Network", ss.LogSetParams) // only set Network params
 	net.InitWts()
 }
 
@@ -291,9 +291,9 @@ func (ss *Sim) NewRndSeed() {
 // and add a few tabs at the end to allow for expansion..
 func (ss *Sim) Counters(train bool) string {
 	if train {
-		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Time.Cycle, ss.TrainEnv.String())
+		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TrainEnv.Trial.Cur, ss.Context.Cycle, ss.TrainEnv.String())
 	} else {
-		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Time.Cycle, ss.TestEnv.String())
+		return fmt.Sprintf("Run:\t%d\tEpoch:\t%d\tTrial:\t%d\tCycle:\t%d\tName:\t%v\t\t\t", ss.TrainEnv.Run.Cur, ss.TrainEnv.Epoch.Cur, ss.TestEnv.Trial.Cur, ss.Context.Cycle, ss.TestEnv.String())
 	}
 }
 
@@ -329,18 +329,18 @@ func (ss *Sim) AlphaCyc(train bool) {
 	}
 
 	ss.Net.AlphaCycInit()
-	ss.Time.AlphaCycStart()
+	ss.Context.AlphaCycStart()
 	for qtr := 0; qtr < 4; qtr++ {
-		for cyc := 0; cyc < ss.Time.CycPerQtr; cyc++ {
-			ss.Net.Cycle(&ss.Time)
+		for cyc := 0; cyc < ss.Context.CycPerQtr; cyc++ {
+			ss.Net.Cycle(&ss.Context)
 			if !train {
-				ss.LogTstCyc(ss.TstCycLog, ss.Time.Cycle)
+				ss.LogTstCyc(ss.TstCycLog, ss.Context.Cycle)
 			}
-			ss.Time.CycleInc()
+			ss.Context.CycleInc()
 			if ss.ViewOn {
 				switch viewUpdt {
 				case axon.Cycle:
-					if cyc != ss.Time.CycPerQtr-1 { // will be updated by quarter
+					if cyc != ss.Context.CycPerQtr-1 { // will be updated by quarter
 						ss.UpdateView(train)
 					}
 				case axon.FastSpike:
@@ -350,8 +350,8 @@ func (ss *Sim) AlphaCyc(train bool) {
 				}
 			}
 		}
-		ss.Net.QuarterFinal(&ss.Time)
-		ss.Time.QuarterInc()
+		ss.Net.QuarterFinal(&ss.Context)
+		ss.Context.QuarterInc()
 		if ss.ViewOn {
 			switch {
 			case viewUpdt <= axon.Quarter:
@@ -446,7 +446,7 @@ func (ss *Sim) NewRun() {
 	run := ss.TrainEnv.Run.Cur
 	ss.TrainEnv.Init(run)
 	ss.TestEnv.Init(run)
-	ss.Time.Reset()
+	ss.Context.Reset()
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.TrnEpcLog.SetNumRows(0)

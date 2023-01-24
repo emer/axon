@@ -3,7 +3,7 @@
 // license that can be found in the LICENSE file.
 
 /*
-rl_cond explores the temporal differences (TD) reinforcement learning algorithm under some basic Pavlovian conditioning environments.
+rl_cond explores the temporal differences (TD) and Rescorla-Wagner reinforcement learning algorithms under some basic Pavlovian conditioning environments.
 */
 package main
 
@@ -12,7 +12,6 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/rl"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -23,12 +22,10 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/etable"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 )
@@ -54,76 +51,21 @@ func guirun() {
 	win.StartEventLoop()
 }
 
-// ParamSets is the default set of parameters -- Base is always applied, and others can be optionally
-// selected to apply on top of that
-var ParamSets = params.Sets{
-	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			// {Sel: "Layer", Desc: "faster average",
-			// 	Params: params.Params{
-			// 		// "Layer.Act.Dt.AvgTau": "200",
-			// 	}},
-			{Sel: "#Input", Desc: "input fixed act",
-				Params: params.Params{
-					"Layer.Act.Decay.Act":        "1",
-					"Layer.Act.Decay.Glong":      "1",
-					"Layer.Inhib.ActAvg.Nominal": "0.05",
-				}},
-			{Sel: "#Rew", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "1",
-				}},
-			{Sel: "#RewPred", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "1",
-					"Layer.Act.Dt.GeTau":         "40",
-				}},
-			{Sel: "TDRewIntegLayer", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "1",
-					"Layer.RewInteg.Discount":    "0.9",
-					"Layer.RewInteg.RewPredGain": "1.0",
-				}},
-			// {Sel: "Prjn", Desc: "no extra learning factors",
-			// 	Params: params.Params{}},
-			{Sel: "RWPrjn", Desc: "RW pred",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean":    "0",
-					"Prjn.SWt.Init.Var":     "0",
-					"Prjn.SWt.Init.Sym":     "false",
-					"Prjn.Learn.LRate.Base": "0.1",
-					"Prjn.OppSignLRate":     "1.0",
-					"Prjn.DaTol":            "0.0",
-				}},
-			{Sel: "#InputToRewPred", Desc: "input to rewpred",
-				Params: params.Params{
-					"Prjn.SWt.Init.Mean":    "0",
-					"Prjn.SWt.Init.Var":     "0",
-					"Prjn.SWt.Init.Sym":     "false",
-					"Prjn.Learn.LRate.Base": "0.1",
-					"Prjn.OppSignLRate":     "1.0",
-				}},
-		},
-	}},
-}
-
 // Sim encapsulates the entire simulation model, and we define all the
 // functionality as methods on this struct.  This structure keeps all relevant
 // state information organized and available without having to pass everything around
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net      *rl.Network      `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	RW       bool             `desc:"if true, use Rescorla-Wagner -- set in code or rebuild network"`
+	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params   emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats    estats.Stats     `desc:"contains computed statistic values"`
 	Logs     elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Pats     *etable.Table    `view:"no-inline" desc:"the training patterns to use"`
 	Envs     env.Envs         `view:"no-inline" desc:"Environments"`
-	Time     axon.Time        `desc:"axon timing parameters and state"`
+	Context  axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 
 	GUI      egui.GUI    `view:"-" desc:"manages all the gui elements"`
@@ -136,15 +78,21 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &rl.Network{}
+	ss.RW = true
+	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
+	if ss.RW {
+		ss.Params.ExtraSets = "RW"
+	} else {
+		ss.Params.ExtraSets = "TD"
+	}
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
 	ss.Stats.Init()
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -180,37 +128,37 @@ func (ss *Sim) ConfigEnv() {
 	ss.Envs.Add(trn)
 }
 
-func (ss *Sim) ConfigNet(net *rl.Network) {
+func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "RLCond")
 
-	rew, rp, ri, td := net.AddTDLayers("", relpos.RightOf, 4)
-	_ = rew
-	_ = ri
+	space := float32(4)
+	full := prjn.NewFull()
+
+	var rplay emer.Layer
+	var ptype axon.PrjnTypes
+
+	if ss.RW {
+		_, rp, _ := net.AddRWLayers("", relpos.RightOf, space)
+		rplay = rp
+		ptype = axon.RWPrjn
+	} else {
+		_, rp, _, _ := net.AddTDLayers("", relpos.RightOf, space)
+		rplay = rp
+		ptype = axon.TDPredPrjn
+	}
+	sal := net.AddRSalienceAChLayer("ACh")
+	sal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Rew", XAlign: relpos.Left, Space: 1})
 	inp := net.AddLayer2D("Input", 3, 20, emer.Input)
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left})
+	net.ConnectLayers(inp, rplay, full, emer.PrjnType(ptype))
 
-	net.ConnectLayersPrjn(inp, rp, prjn.NewFull(), emer.Forward, &rl.TDRewPredPrjn{})
-
-	rwrp := &rl.RWPredLayer{}
-	net.AddLayerInit(rwrp, "RWPred", []int{1, 2}, emer.Hidden)
-	rwda := &rl.RWDaLayer{}
-	net.AddLayerInit(rwda, "RWDA", []int{1, 1}, emer.Hidden)
-	rwda.RewLay = rew.Name()
-	rwrp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: rp.Name(), XAlign: relpos.Left, Space: 2})
-	rwda.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rwrp.Name(), YAlign: relpos.Front, Space: 2})
-
-	net.ConnectLayersPrjn(inp, rwrp, prjn.NewFull(), emer.Forward, &rl.RWPrjn{})
-
-	td.(*rl.TDDaLayer).SendDA.Add(rp.Name(), ri.Name())
-	rwda.SendDA.Add(rwrp.Nm)
-
-	net.Defaults()
-	ss.Params.SetObject("Network")
 	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	net.Defaults()
+	ss.Params.SetObject("Network")
 	net.InitWts()
 }
 
@@ -243,8 +191,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 300).AddTime(etime.Trial, 20).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -255,7 +203,7 @@ func (ss *Sim) ConfigLoops() {
 		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
-			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Time.Mode])
+			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Context.Mode])
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
@@ -292,7 +240,7 @@ func (ss *Sim) ConfigLoops() {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
-	ev := ss.Envs[ss.Time.Mode]
+	ev := ss.Envs[ss.Context.Mode.String()].(*CondEnv)
 
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
@@ -307,9 +255,7 @@ func (ss *Sim) ApplyInputs() {
 		ly.ApplyExt(pats)
 	}
 
-	pats := ev.State("Reward")
-	ly := ss.Net.LayerByName("Rew").(axon.AxonLayer).AsAxon()
-	ly.ApplyExt1DTsr(pats)
+	ss.Context.NeuroMod.SetRew(float32(ev.Reward.Values[0]), true)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -317,8 +263,8 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.Envs.ByMode(etime.Train).Init(0)
-	ss.Time.Reset()
-	ss.Time.Mode = etime.Train.String()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
@@ -336,14 +282,13 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ev := ss.Envs[ss.Time.Mode]
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ev := ss.Envs[ss.Context.Mode.String()]
 	ss.Stats.SetString("TrialName", ev.(*CondEnv).String())
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle"})
 }
@@ -363,9 +308,20 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RL")
-
-	ss.Logs.PlotItems("TD_Act")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RSalienceAChLayer")
+	if ss.RW {
+		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RWDaLayer", "RWPredLayer")
+		if li, ok := ss.Logs.ItemByName("DA_Act"); ok {
+			li.FixMin = false
+		}
+		ss.Logs.PlotItems("DA_Act", "ACh_Act")
+	} else {
+		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "TDDaLayer", "TDPredLayer", "TDIntegLayer")
+		if li, ok := ss.Logs.ItemByName("TD_Act"); ok {
+			li.FixMin = false
+		}
+		ss.Logs.PlotItems("TD_Act", "ACh_Act")
+	}
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -377,8 +333,8 @@ func (ss *Sim) ConfigLogs() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+	if mode != etime.Analyze {
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)

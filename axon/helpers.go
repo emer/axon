@@ -35,7 +35,7 @@ func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 func EnvApplyInputs(net *Network, ev env.Env) {
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
-	lays := net.LayersByClass("Input", "Target")
+	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(AxonLayer).AsAxon()
 		pats := ev.State(ly.Nm)

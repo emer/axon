@@ -36,7 +36,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Slope":               "0.02", //
 					"Layer.Act.Sahp.CaTau":               "10",   //
 				}},
-			{Sel: "SuperLayer", Desc: "super layer params",
+			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
 					"Layer.Burst.ThrRel": "0.1", // 0.1, 0.1 best
 					"Layer.Burst.ThrAbs": "0.1",
@@ -47,7 +47,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.15",
 					"Layer.Act.Clamp.Ge":         "1.5",
 				}},
-			{Sel: ".CT", Desc: "CT NMDA gbar factor is key",
+			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 == 2.4 > lower
 					"Layer.Inhib.Layer.FB":          "1",
@@ -71,7 +71,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.RLRate.SpkThr":     "0.1",  // 0.1 def
 					"Layer.Learn.RLRate.Min":        "0.001",
 				}},
-			{Sel: "PulvLayer", Desc: "pulvinar",
+			{Sel: ".PulvinarLayer", Desc: "pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > higher v1.6.1
 					"Layer.Inhib.Layer.FB":          "1",
@@ -87,20 +87,19 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
-					"Prjn.Learn.Trace.SubMean":  "0",    // 0 > 1 -- even with CTCtxt = 0
-					"Prjn.Learn.LRate.Base":     "0.03", // .03 > others -- same as CtCtxt
-					"Prjn.SWt.Adapt.LRate":      "0.01", // 0.01 or 0.0001 music
-					"Prjn.SWt.Adapt.DreamVar":   "0.0",  // 0.01 is just tolerable
-					"Prjn.SWt.Init.SPct":        "1.0",  // 1 works fine here -- .5 also ok
-					"Prjn.Com.PFail":            "0.0",
-					"Prjn.Learn.Trace.NeuronCa": "false",
-					"Prjn.Learn.Trace.Tau":      "2", // 2 > 1
+					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- even with CTCtxt = 0
+					"Prjn.Learn.LRate.Base":    "0.03", // .03 > others -- same as CtCtxt
+					"Prjn.SWt.Adapt.LRate":     "0.01", // 0.01 or 0.0001 music
+					"Prjn.SWt.Adapt.DreamVar":  "0.0",  // 0.01 is just tolerable
+					"Prjn.SWt.Init.SPct":       "1.0",  // 1 works fine here -- .5 also ok
+					"Prjn.Com.PFail":           "0.0",
+					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2", // 0.2 > 0.3
 				}},
-			{Sel: ".CTCtxt", Desc: "all CT context prjns",
+			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
 					"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1

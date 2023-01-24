@@ -11,7 +11,6 @@ import (
 	"os"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/ecmd"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
@@ -68,13 +67,13 @@ var InputNameMap map[string]int
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	Net          *deep.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats        estats.Stats     `desc:"contains computed statistic values"`
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
-	Time         axon.Time        `desc:"axon timing parameters and state"`
+	Context      axon.Context     `desc:"axon timing parameters and state"`
 	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
 	UnitsPer     int              `def:"1" desc:"number of units per localist unit -- 1 actually best"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
@@ -90,7 +89,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.Net = &deep.Network{}
+	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
@@ -100,7 +99,7 @@ func (ss *Sim) New() {
 	ss.UnitsPer = 1       // 1 >> 4 for unknown reasons..
 	ss.TestInterval = 500
 	ss.PCAInterval = 5
-	ss.Time.Defaults()
+	ss.Context.Defaults()
 	ss.ConfigArgs() // do this first, has key defaults
 	if InputNameMap == nil {
 		InputNameMap = make(map[string]int, len(InputNames))
@@ -152,7 +151,7 @@ func (ss *Sim) ConfigEnv() {
 	ss.Envs.Add(trn, tst)
 }
 
-func (ss *Sim) ConfigNet(net *deep.Network) {
+func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "DeepFSA")
 
 	full := prjn.NewFull()
@@ -186,9 +185,9 @@ func (ss *Sim) ConfigNet(net *deep.Network) {
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
 	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
 
+	err := net.Build()
 	net.Defaults()
 	ss.Params.SetObject("Network")
-	err := net.Build()
 	if err != nil {
 		log.Println(err)
 		return
@@ -232,8 +231,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Time, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Time, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -331,7 +330,7 @@ func (ss *Sim) ConfigLoops() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	fsenv := ss.Envs[ss.Time.Mode].(*FSAEnv)
+	fsenv := ss.Envs[ss.Context.Mode.String()].(*FSAEnv)
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
@@ -342,8 +341,8 @@ func (ss *Sim) ApplyInputs() {
 	ns := fsenv.NNext.Values[0]
 	for ni := range in.Neurons {
 		inr := &in.Neurons[ni]
-		inr.ClearMask(clrmsk)
-		inr.SetMask(setmsk)
+		inr.ClearFlag(clrmsk)
+		inr.SetFlag(setmsk)
 	}
 	for i := 0; i < ns; i++ {
 		lbl := fsenv.NextLabels.Values[i]
@@ -357,14 +356,14 @@ func (ss *Sim) ApplyInputs() {
 				idx := li*ss.UnitsPer + yi
 				inr := &in.Neurons[idx]
 				inr.Ext = 1
-				inr.ClearMask(clrmsk)
-				inr.SetMask(setmsk)
+				inr.ClearFlag(clrmsk)
+				inr.SetFlag(setmsk)
 			}
 		}
 		inr := &trg.Neurons[li]
 		inr.Ext = 1
-		inr.ClearMask(clrmsk)
-		inr.SetMask(setmsk)
+		inr.ClearFlag(clrmsk)
+		inr.SetFlag(setmsk)
 	}
 }
 
@@ -374,8 +373,8 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Time.Reset()
-	ss.Time.Mode = etime.Train.String()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
@@ -403,14 +402,13 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Time.Mode)
+	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Time.Cycle)
-	ev := ss.Envs[ss.Time.Mode]
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ev := ss.Envs[ss.Context.Mode.String()]
 	ss.Stats.SetString("TrialName", ev.(*FSAEnv).String())
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "Output", "TrlErr", "TrlCorSim"})
 }
@@ -420,7 +418,7 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
 	trg := ss.Net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
-	ss.Stats.SetFloat("TrlCorSim", float64(inp.CorSim.Cor))
+	ss.Stats.SetFloat("TrlCorSim", float64(inp.Vals.CorSim.Cor))
 	err, minusIdx, _ := inp.LocalistErr4D()
 	tgn := &trg.Neurons[minusIdx]
 	if tgn.Ext > 0.5 {
@@ -453,7 +451,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
 
-	deep.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -463,7 +461,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Input", "Target")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctErr")
 
@@ -477,7 +475,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	layers := ss.Net.LayersByClass("Hidden", "Target", "CT", "Pulv")
+	layers := ss.Net.LayersByClass("HiddenLayer", "TargetLayer", "CTLayer", "PulvLayer")
 	for _, lnm := range layers {
 		clnm := lnm
 		ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
@@ -535,8 +533,8 @@ func (ss *Sim) ConfigLogItems() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
-		ss.Time.Mode = mode.String() // Also set specifically in a Loop callback.
+	if mode != etime.Analyze {
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)

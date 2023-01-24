@@ -4,25 +4,32 @@
 
 package fsfffb
 
-import "github.com/goki/mat32"
+import (
+	"github.com/goki/gosl/slbool"
+	"github.com/goki/mat32"
+)
+
+//gosl: start fsfffb
 
 // Inhib contains state values for computed FFFB inhibition
 type Inhib struct {
-	FFsRaw   float32 `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
-	FBsRaw   float32 `desc:"all feedback outgoing spikes generated from neurons in this pool -- raw aggregation"`
-	GeExtRaw float32 `desc:"all extra GeExt conductances added to neurons"`
-	FFs      float32 `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
-	FBs      float32 `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
-	GeExts   float32 `desc:"all extra GeExt conductances added to neurons, normalized by pool size"`
-	Clamped  bool    `desc:"if true, this layer is hard-clamped and should use GeExts exclusively for PV"`
-	FSi      float32 `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
-	SSi      float32 `desc:"slow spiking SST+ integration of FBs feedback spikes"`
-	SSf      float32 `desc:"slow spiking facilitation factor, representing facilitating effects of recent activity"`
-	FSGi     float32 `desc:"overall fast-spiking inhibitory conductance"`
-	SSGi     float32 `desc:"overall slow-spiking inhibitory conductance"`
-	Gi       float32 `desc:"overall inhibitory conductance = FSGi + SSGi"`
-	GiOrig   float32 `desc:"original value of the inhibition (before pool or other effects)"`
-	LayGi    float32 `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
+	FFsRaw   float32     `desc:"all feedforward incoming spikes into neurons in this pool -- raw aggregation"`
+	FBsRaw   float32     `desc:"all feedback outgoing spikes generated from neurons in this pool -- raw aggregation"`
+	GeExtRaw float32     `desc:"all extra GeExt conductances added to neurons"`
+	FFs      float32     `desc:"all feedforward incoming spikes into neurons in this pool, normalized by pool size"`
+	FBs      float32     `desc:"all feedback outgoing spikes generated from neurons in this pool, normalized by pool size"`
+	GeExts   float32     `desc:"all extra GeExt conductances added to neurons, normalized by pool size"`
+	Clamped  slbool.Bool `desc:"if true, this layer is hard-clamped and should use GeExts exclusively for PV"`
+	FSi      float32     `desc:"fast spiking PV+ fast integration of FFs feedforward spikes"`
+	SSi      float32     `desc:"slow spiking SST+ integration of FBs feedback spikes"`
+	SSf      float32     `desc:"slow spiking facilitation factor, representing facilitating effects of recent activity"`
+	FSGi     float32     `desc:"overall fast-spiking inhibitory conductance"`
+	SSGi     float32     `desc:"overall slow-spiking inhibitory conductance"`
+	Gi       float32     `desc:"overall inhibitory conductance = FSGi + SSGi"`
+	GiOrig   float32     `desc:"original value of the inhibition (before pool or other effects)"`
+	LayGi    float32     `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
+
+	pad float32
 }
 
 func (fi *Inhib) Init() {
@@ -76,23 +83,25 @@ func (fi *Inhib) SaveOrig() {
 	fi.GiOrig = fi.Gi
 }
 
-// LayerMax updates given pool-level inhib values from given layer-level
-// with resulting value being the Max of either
-func (fi *Inhib) LayerMax(li *Inhib) {
-	fi.LayGi = li.Gi
-	fi.Gi = mat32.Max(fi.Gi, li.Gi)
-}
-
-// PoolMax updates given layer-level inhib values from given pool-level
-// with resulting value being the Max of either
-func (fi *Inhib) PoolMax(pi *Inhib) {
-	fi.Gi = mat32.Max(fi.Gi, pi.Gi)
-}
-
 // GiFmFSSS returns the sum of FSGi and SSGi as overall inhibition
 func (fi *Inhib) GiFmFSSS() float32 {
 	return fi.FSGi + fi.SSGi
 }
+
+// LayerMax updates given pool-level inhib values from given layer-level Gi
+// with resulting value being the Max of either
+func (fi *Inhib) LayerMax(liGi float32) {
+	fi.LayGi = liGi
+	fi.Gi = mat32.Max(fi.Gi, liGi)
+}
+
+// PoolMax updates given layer-level inhib values from given pool-level
+// with resulting value being the Max of either
+func (fi *Inhib) PoolMax(piGi float32) {
+	fi.Gi = mat32.Max(fi.Gi, piGi)
+}
+
+//gosl: end fsfffb
 
 // Inhibs is a slice of Inhib records
 type Inhibs []Inhib

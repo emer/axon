@@ -93,7 +93,8 @@ func (ss *Sim) VmRun() {
 		g := ss.VGCC.GFmV(vnorm)
 		m := ss.VGCC.MFmV(v)
 		h := ss.VGCC.HFmV(v)
-		dm, dh := ss.VGCC.DMHFmV(vnorm, m, h)
+		var dm, dh float32
+		ss.VGCC.DMHFmV(vnorm, m, h, &dm, &dh)
 
 		dt.SetCellFloat("V", vi, float64(v))
 		dt.SetCellFloat("Gvgcc", vi, float64(g))
@@ -154,7 +155,8 @@ func (ss *Sim) TimeRun() {
 		vnorm := chans.VFmBio(v)
 		t := float32(ti) * msdt
 		g = ss.VGCC.Gvgcc(vnorm, m, h)
-		dm, dh := ss.VGCC.DMHFmV(vnorm, m, h)
+		var dm, dh float32
+		ss.VGCC.DMHFmV(vnorm, m, h, &dm, &dh)
 		m += dm
 		h += dh
 
