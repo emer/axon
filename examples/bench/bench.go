@@ -143,7 +143,7 @@ func ConfigEpcLog(dt *etable.Table) {
 }
 
 func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose bool) {
-	ltime := axon.NewContext()
+	ctx := axon.NewContext()
 	net.InitWts()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
@@ -175,21 +175,21 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 			inLay.ApplyExt(inp)
 			outLay.ApplyExt(outp)
 
-			net.NewState()
-			ltime.NewState(etime.Train)
+			net.NewState(ctx)
+			ctx.NewState(etime.Train)
 			for qtr := 0; qtr < 4; qtr++ {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
-					net.Cycle(ltime)
-					ltime.CycleInc()
+					net.Cycle(ctx)
+					ctx.CycleInc()
 				}
 				if qtr == 2 {
-					net.MinusPhase(ltime)
-					ltime.NewPhase(true)
+					net.MinusPhase(ctx)
+					ctx.NewPhase(true)
 				}
 			}
-			net.PlusPhase(ltime)
-			net.DWt(ltime)
-			net.WtFmDWt(ltime)
+			net.PlusPhase(ctx)
+			net.DWt(ctx)
+			net.WtFmDWt(ctx)
 			outCorSim += outLay.Vals.CorSim.Cor
 			pSSE := outLay.PctUnitErr()
 			sse += pSSE
