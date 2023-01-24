@@ -105,10 +105,8 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.RLRate.Diff.SetBool(false)
 
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
-	ly.Params.Learn.NeuroMod.DALRateMod.SetBool(true)
-	ly.Params.Learn.NeuroMod.AChLRateMod.SetBool(true)
-	ly.Params.Learn.NeuroMod.DALRatePct = 1
-	ly.Params.Learn.NeuroMod.AChLRatePct = 1
+	ly.Params.Learn.NeuroMod.DALRateMod = 1
+	ly.Params.Learn.NeuroMod.AChLRateMod = 1
 	ly.Params.Learn.NeuroMod.AChDisInhib = 1
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:

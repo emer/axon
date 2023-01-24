@@ -83,15 +83,13 @@ const (
 // activity and learning rate.  These can apply to any neuron type,
 // and are applied in the core cycle update equations.
 type NeuroModParams struct {
-	DAMod       DAModTypes  `desc:"effects of dopamine modulation on excitatory and inhibitory conductances"`
-	DAModGain   float32     `viewif:"DAMod!=NoDAMod" desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
-	DALRateMod  slbool.Bool `desc:"modulate learning rate as a function of abs(DA) absolute value of dopamine"`
-	DALRatePct  float32     `min:"0" max:"1" viewif:"DALRateMod" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
-	AChLRateMod slbool.Bool `desc:"modulate learning rate as a function of ACh acetylcholine level"`
-	AChLRatePct float32     `min:"0" max:"1" viewif:"AChLRateMod" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
-	AChDisInhib float32     `min:"0" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
-	BurstGain   float32     `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
-	DipGain     float32     `min:"0" def:"1" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
+	DAMod       DAModTypes `desc:"effects of dopamine modulation on excitatory and inhibitory conductances"`
+	DAModGain   float32    `viewif:"DAMod!=NoDAMod" desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
+	DALRateMod  float32    `min:"0" max:"1" viewif:"DALRateMod" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
+	AChLRateMod float32    `min:"0" max:"1" viewif:"AChLRateMod" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
+	AChDisInhib float32    `min:"0" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
+	BurstGain   float32    `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
+	DipGain     float32    `min:"0" def:"1" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
 
 	pad, pad1, pad2 float32
 }
@@ -99,24 +97,19 @@ type NeuroModParams struct {
 func (nm *NeuroModParams) Defaults() {
 	// nm.DAMod is typically set by BuildConfig -- don't reset here
 	nm.DAModGain = 0.5
-	nm.DALRateMod.SetBool(false)
-	nm.AChLRateMod.SetBool(false)
-	nm.DALRatePct = 0.5
-	nm.AChLRatePct = 0.5
+	nm.DALRateMod = 0
+	nm.AChLRateMod = 0
 	nm.BurstGain = 1
 	nm.DipGain = 1
 }
 
 func (nm *NeuroModParams) Update() {
-	nm.DALRatePct = mat32.Clamp(nm.DALRatePct, 0, 1)
-	nm.AChLRatePct = mat32.Clamp(nm.AChLRatePct, 0, 1)
+	nm.DALRateMod = mat32.Clamp(nm.DALRateMod, 0, 1)
+	nm.AChLRateMod = mat32.Clamp(nm.AChLRateMod, 0, 1)
 }
 
 // LRModFact returns learning rate modulation factor for given inputs.
-func (nm *NeuroModParams) LRModFact(on bool, pct, val float32) float32 {
-	if !on {
-		return 1
-	}
+func (nm *NeuroModParams) LRModFact(pct, val float32) float32 {
 	val = mat32.Clamp(mat32.Abs(val), 0, 1)
 	return 1.0 - pct*(1.0-val)
 }
@@ -126,8 +119,8 @@ func (nm *NeuroModParams) LRModFact(on bool, pct, val float32) float32 {
 // If DALRateMod is true and DAMod == D1Mod or D2Mod, then the sign is a function
 // of the DA
 func (nm *NeuroModParams) LRMod(da, ach float32) float32 {
-	mod := nm.LRModFact(nm.DALRateMod.IsTrue(), nm.DALRatePct, da) * nm.LRModFact(nm.AChLRateMod.IsTrue(), nm.AChLRatePct, ach)
-	if nm.DALRateMod.IsTrue() {
+	mod := nm.LRModFact(nm.DALRateMod, da) * nm.LRModFact(nm.AChLRateMod, ach)
+	if nm.DALRateMod > 0 {
 		if nm.DAMod == D1Mod {
 			mod *= mat32.Sign(da)
 		} else if nm.DAMod == D2Mod {
