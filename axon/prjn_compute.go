@@ -9,6 +9,72 @@ package axon
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
+// RecvSpikes increments synaptic conductances from Spikes,
+// using a receiver-based computation that can be parallelized across receivers
+// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
+/*
+func (pj *Prjn) RecvSpikes(ctx *Context, ri uint32, rn *Neuron) {
+	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
+		return
+	}
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	scale := pj.Params.GScale.Scale
+	maxDelay := pj.Params.Com.Delay
+	delayBufSize := maxDelay + 1
+	currDelayIdx := pj.Vals.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
+	numCons := pj.RecvConN[ri]
+	startIdx := pj.SendConIdxStart[sendIdx]
+	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
+	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
+	excite := pj.Params.IsExcitatory()
+	zi := pj.Vals.Gidx.Zi
+	for i := range syns {
+		recvIdx := synConIdxs[i]
+		rnPool := rlay.Neurons[recvIdx].SubPool
+		sv := scale * syns[i].Wt
+		pj.GBuf[recvIdx*delayBufSize+currDelayIdx] += sv
+		if excite { // only excitatory drives inhibition
+			pj.PIBuf[rnPool*delayBufSize+currDelayIdx] += sv
+		}
+	}
+
+	if pj.Params.IsInhib() {
+		for ri := range pj.GVals {
+			gv := &pj.GVals[ri]
+			bi := uint32(ri)*sz + zi
+			gv.GRaw = pj.GBuf[bi]
+			pj.GBuf[bi] = 0
+			gv.GSyn = rlay.Params.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
+		}
+		pj.Vals.Gidx.Shift(1) // rotate buffer
+		return
+	}
+	// TODO: Race condition if one layer has multiple incoming prjns (common)
+	lpl := &rlay.Pools[0]
+	if len(rlay.Pools) == 1 {
+		lpl.Inhib.FFsRaw += pj.PIBuf[zi]
+		pj.PIBuf[zi] = 0
+	} else {
+		for pi := range rlay.Pools {
+			pl := &rlay.Pools[pi]
+			bi := uint32(pi)*sz + zi
+			sv := pj.PIBuf[bi]
+			pl.Inhib.FFsRaw += sv
+			lpl.Inhib.FFsRaw += sv
+			pj.PIBuf[bi] = 0
+		}
+	}
+	for ri := range pj.GVals {
+		gv := &pj.GVals[ri]
+		bi := uint32(ri)*sz + zi
+		gv.GRaw = pj.GBuf[bi]
+		pj.GBuf[bi] = 0
+		gv.GSyn = rlay.Params.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
+	}
+	pj.Vals.Gidx.Shift(1) // rotate buffer
+}
+*/
+
 // SendSpike sends a spike from the sending neuron at index sendIdx
 // into the buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
@@ -17,11 +83,11 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
 		return
 	}
-
+	rlay := pj.Recv.(AxonLayer).AsAxon()
 	scale := pj.Params.GScale.Scale
 	maxDelay := pj.Params.Com.Delay
 	delayBufSize := maxDelay + 1
-	currDelayIdx := uint32(pj.Vals.Gidx.Idx(maxDelay)) // index in ringbuffer to put new values -- end of line.
+	currDelayIdx := pj.Vals.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
 	numCons := pj.SendConN[sendIdx]
 	startIdx := pj.SendConIdxStart[sendIdx]
 	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
@@ -29,13 +95,19 @@ func (pj *Prjn) SendSpike(sendIdx int) {
 	excite := pj.Params.IsExcitatory()
 	for i := range syns {
 		recvIdx := synConIdxs[i]
+		rnPool := rlay.Neurons[recvIdx].SubPool
 		sv := scale * syns[i].Wt
 		// TODO: race condition, multiple threads will write into the same recv neuron buffer
 		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
 		// better to re-write as matmul, or to re-write from recv neuron side.
+
+		// Note: from the recv side, you can't leverage the sparse sending activity:
+		// most neurons are not spiking at any given moment,
+		// but it can be much more parallel, so maybe it is worth it on the GPU.
+
 		pj.GBuf[recvIdx*delayBufSize+currDelayIdx] += sv
 		if excite { // only excitatory drives inhibition
-			pj.PIBuf[pj.PIdxs[recvIdx]*delayBufSize+currDelayIdx] += sv
+			pj.PIBuf[rnPool*delayBufSize+currDelayIdx] += sv
 		}
 	}
 }
@@ -96,7 +168,7 @@ func (pj *Prjn) SendSynCa(ctx *Context) {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
-	cycTot := ctx.CycleTot
+	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
@@ -105,7 +177,7 @@ func (pj *Prjn) SendSynCa(ctx *Context) {
 		if sn.Spike == 0 {
 			continue
 		}
-		if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
+		if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
 			continue
 		}
 		snCaSyn := ssg * sn.CaSyn
@@ -116,19 +188,8 @@ func (pj *Prjn) SendSynCa(ctx *Context) {
 		for ci := range syns {
 			ri := scons[ci]
 			rn := &rlay.Neurons[ri]
-			if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
-				continue
-			}
 			sy := &syns[ci]
-			// todo: use atomic?
-			supt := sy.CaUpT
-			if supt == cycTot { // already updated in sender pass
-				continue
-			}
-			sy.CaUpT = cycTot
-			kp.CurCa(cycTot-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
-			sy.Ca = snCaSyn * rn.CaSyn
-			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			pj.Params.SendSynCaSyn(ctx, sy, rn, snCaSyn, updtThr)
 		}
 	}
 }
@@ -143,7 +204,7 @@ func (pj *Prjn) RecvSynCa(ctx *Context) {
 		return
 	}
 	kp := &pj.Params.Learn.KinaseCa
-	cycTot := ctx.CycleTot
+	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
@@ -152,7 +213,7 @@ func (pj *Prjn) RecvSynCa(ctx *Context) {
 		if rn.Spike == 0 {
 			continue
 		}
-		if rn.CaSpkP < kp.UpdtThr && rn.CaSpkD < kp.UpdtThr {
+		if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
 			continue
 		}
 		rnCaSyn := ssg * rn.CaSyn
@@ -163,19 +224,8 @@ func (pj *Prjn) RecvSynCa(ctx *Context) {
 		for ci, rsi := range rsidxs {
 			si := rcons[ci]
 			sn := &slay.Neurons[si]
-			if sn.CaSpkP < kp.UpdtThr && sn.CaSpkD < kp.UpdtThr {
-				continue
-			}
 			sy := &pj.Syns[rsi]
-			// todo: use atomic
-			supt := sy.CaUpT
-			if supt == cycTot { // already updated in sender pass
-				continue
-			}
-			sy.CaUpT = cycTot
-			kp.CurCa(cycTot-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
-			sy.Ca = sn.CaSyn * rnCaSyn
-			kp.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+			pj.Params.RecvSynCaSyn(ctx, sy, sn, rnCaSyn, updtThr)
 		}
 	}
 }

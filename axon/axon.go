@@ -148,6 +148,10 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
 
+	// RecvSpikes receives spikes from senders -- possible GPU-based approach
+	// for given receiving neuron.
+	// RecvSpikes(ctx *Context, ni uint32, nrn *Neuron)
+
 	// GiFmSpikes integrates new inhibitory conductances from Spikes
 	// at the layer and pool level
 	GiFmSpikes(ctx *Context)

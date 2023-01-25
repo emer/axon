@@ -35,10 +35,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.Trace.NeuronCa": "true", // true = much faster
-					"Prjn.Learn.LRate.Base":     "0.1",  // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.LRate":      "0.1",  // .1 >= .2,
-					"Prjn.SWt.Init.SPct":        "0.5",  // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
+					"Prjn.SWt.Adapt.LRate":  "0.1", // .1 >= .2,
+					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{
@@ -96,7 +95,9 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 	}
 
 	if threadNeuron == 0 && threadSendSpike == 0 && threadSynCa == 0 {
-		fmt.Print("Threading: using default values\n")
+		if verbose {
+			fmt.Print("Threading: using default values\n")
+		}
 	} else {
 		// override defaults: neurons, sendSpike, synCa
 		err := net.Threads.Set(threadNeuron, threadSendSpike, threadSynCa)
@@ -224,6 +225,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 		fmt.Printf("Took %6.4g secs for %v epochs, avg per epc: %6.4g\n", tmr.TotalSecs(), epcs, tmr.TotalSecs()/float64(epcs))
 		net.TimerReport()
 	} else {
-		fmt.Printf("%6.3g\n", tmr.TotalSecs())
+		net.ThreadReport()
+		fmt.Printf("Total Secs: %6.3g\n", tmr.TotalSecs())
 	}
 }

@@ -12,7 +12,13 @@ import "github.com/emer/emergent/ringidx"
 
 //gosl: start prjnvals
 
-// PrjnGVals contains projection-level conductance values,
+// PrjnGBuf contains just a single float for the Prjn GBuf raw spike accumulator
+// In GPU, it works better to use a struct, so we're doing that.
+type PrjnGBuf struct {
+	GRaw float32
+}
+
+// PrjnGVals contains projection-level conductance values for each recv neuron,
 // integrated by prjn before being integrated at the neuron level,
 // which enables the neuron to perform non-linear integration as needed.
 type PrjnGVals struct {

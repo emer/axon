@@ -25,6 +25,8 @@ type NeuroModVals struct {
 	Ser      float32     `inactive:"+" desc:"serotonin -- not yet in use"`
 
 	AChRaw float32 `inactive:"+" desc:"raw ACh value used in updating global ACh value by RSalienceAChLayer"`
+
+	pad, pad1, pad2 float32
 }
 
 func (nm *NeuroModVals) Reset() {
@@ -91,7 +93,7 @@ type NeuroModParams struct {
 	BurstGain   float32    `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
 	DipGain     float32    `min:"0" def:"1" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
 
-	pad, pad1, pad2 float32
+	pad float32
 }
 
 func (nm *NeuroModParams) Defaults() {
