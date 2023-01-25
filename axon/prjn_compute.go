@@ -12,7 +12,6 @@ package axon
 // RecvSpikes increments synaptic conductances from Spikes,
 // using a receiver-based computation that can be parallelized across receivers
 // including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-/*
 func (pj *Prjn) RecvSpikes(ctx *Context, ri uint32, rn *Neuron) {
 	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
 		return
@@ -73,7 +72,6 @@ func (pj *Prjn) RecvSpikes(ctx *Context, ri uint32, rn *Neuron) {
 	}
 	pj.Vals.Gidx.Shift(1) // rotate buffer
 }
-*/
 
 // SendSpike sends a spike from the sending neuron at index sendIdx
 // into the buffer on the receiver side. The buffer on the receiver side

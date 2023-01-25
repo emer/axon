@@ -352,6 +352,7 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	if pj.Matrix.CurTrlDA.IsFalse() {
 		tr += dtr
 	}
+	sy.DTr = dtr
 	sy.Tr = tr
 	sy.DWt += dwt
 }

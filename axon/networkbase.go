@@ -41,13 +41,15 @@ type NetworkBase struct {
 	MetaData    map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
 
 	// Implementation level code below:
-	Layers     emer.Layers   `desc:"array of layers"`
+	Layers emer.Layers `desc:"array of layers, via emer.Layer interface pointer"`
+	// todo: could now have concrete list of all Layer objects here
 	LayParams  []LayerParams `view:"-" desc:"array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals    []LayerVals   `view:"-" desc:"array of layer values, in 1-to-1 correspondence with Layers"`
 	Neurons    []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
-	Prjns      []AxonPrjn    `view:"-" desc:"pointers to all projections in the network, via the AxonPrjn interface"`
-	PrjnParams []PrjnParams  `view:"-" desc:"array of projection parameters, in 1-to-1 correspondence with Prjns"`
-	PrjnVals   []PrjnVals    `view:"-" desc:"array of projection values, in 1-to-1 correspondence with Prjns"`
+	Prjns      []AxonPrjn    `view:"-" desc:"[Layers][RecvPrjns] pointers to all projections in the network, via the AxonPrjn interface"`
+	PrjnParams []PrjnParams  `view:"-" desc:"[Layers][RecvPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns"`
+	PrjnVals   []PrjnVals    `view:"-" desc:"[Layers][RecvPrjns] array of projection values, in 1-to-1 correspondence with Prjns"`
+	Synapses   []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] entire network's allocation of synapses"`
 
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
@@ -423,7 +425,8 @@ func (nt *NetworkBase) Build() error {
 			continue
 		}
 		totNeurons += ly.Shape().Len()
-		totPrjns += ly.NSendPrjns()
+		// totPrjns += ly.NSendPrjns()
+		totPrjns += ly.NRecvPrjns() // now doing recv
 		cls := strings.Split(ly.Class(), " ")
 		for _, cl := range cls {
 			ll := nt.LayClassMap[cl]
@@ -441,6 +444,7 @@ func (nt *NetworkBase) Build() error {
 	// we can't do this in Defaults(), since we need to know the number of neurons etc.
 	nt.Threads.SetDefaults(totNeurons, totPrjns, nLayers)
 
+	totSynapses := 0
 	nidx := 0
 	pidx := 0
 	for li, l := range nt.Layers {
@@ -455,10 +459,10 @@ func (nt *NetworkBase) Build() error {
 		aly := ly.AsAxon()
 		aly.Neurons = nt.Neurons[nidx : nidx+nn]
 		aly.NeurStIdx = nidx
-		sprjns := *ly.SendPrjns()
-		for pi, spj := range sprjns {
+		rprjns := *ly.RecvPrjns()
+		for pi, rpj := range rprjns {
 			pii := pidx + pi
-			pji := spj.(AxonPrjn)
+			pji := rpj.(AxonPrjn)
 			pj := pji.AsAxon()
 			pj.Params = &nt.PrjnParams[pii]
 			pj.Vals = &nt.PrjnVals[pii]
@@ -466,11 +470,35 @@ func (nt *NetworkBase) Build() error {
 		}
 		nidx += nn
 		pidx += len(sprjns)
-		err := ly.Build()
+		err := ly.Build() // also builds prjns
 		if err != nil {
 			emsg += err.Error() + "\n"
 		}
+		// now collect total number of synapses after layer build
+		for pi, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			totSynapses += len(pj.RecvConIdx)
+		}
 	}
+	if totSynapses > math.MaxUint32 {
+		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity)
+	}
+	
+	nt.Synapses = make([]Synapse, totSynapses)
+	
+	// distribute synapses
+	sidx := 0
+	for li, lyi := range nt.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		rprjns := *ly.RecvPrjns()
+		for pi, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			nsyn := len(pj.RecvConIdx)
+			pj.Syns = nt.Synapses[sidx : sidx + nsyn]
+			sidx += nsyn
+		}
+	}
+	
 	nt.Layout()
 	if emsg != "" {
 		return errors.New(emsg)

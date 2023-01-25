@@ -39,7 +39,7 @@ type PrjnBase struct {
 	SendConNAvgMax  minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of sending connections in the sending layer"`
 	SendConIdxStart []uint32        `view:"-" desc:"starting index into ConIdx list for each neuron in sending layer -- just a list incremented by ConN"`
 	SendConIdx      []uint32        `view:"-" desc:"index of other neuron on receiving side of projection, ordered by the sending layer's order of units as the outer loop (each start is in ConIdxSt), and then by the sending layer's units within that"`
-	Syns            []Synapse       `desc:"synaptic state values, ordered by the sending layer units which owns them -- one-to-one with SendConIdx array"`
+	Syns            []Synapse       `desc:"this projection's subset of global list of synaptic state values, ordered by the receiving layer units which 'owns' them -- one-to-one with RecvConIdx array"`
 
 	// misc state variables below:
 	GBuf  []float32   `view:"-" desc:"[recv neurons * Gidx.Len] Ge or Gi conductance ring buffer for each neuron * Gidx.Len, accessed through Gidx, and length Gidx.Len in size per neuron -- scale * weight is added with Com delay offset."`
@@ -106,11 +106,26 @@ func (pj *PrjnBase) Validate(logmsg bool) error {
 	return nil
 }
 
-// BuildBase constructs the full connectivity among the layers as specified in this projection.
-// Calls Validate and returns false if invalid.
+// Build constructs the full connectivity among the layers as specified in this projection.
+// Calls PrjnBase.BuildBase and then allocates the synaptic values in Syns accordingly.
+// func (pj *PrjnBase) Build() error {
+// 	if err := pj.BuildBase(); err != nil {
+// 		return err
+// 	}
+// 	// this is a large alloc, as number of syns is typically large
+// 	pj.Syns = make([]Synapse, len(pj.SendConIdx))
+// 	rlay := pj.Recv.(AxonLayer).AsAxon()
+// 	rlen := rlay.Shape().Len()
+// 	pj.GVals = make([]PrjnGVals, rlen)
+// 	return nil
+// }
+
+// Build constructs the full connectivity among the layers.
+// Calls Validate and returns error if invalid.
 // Pat.Connect is called to get the pattern of the connection.
 // Then the connection indexes are configured according to that pattern.
-func (pj *PrjnBase) BuildBase() error {
+// Does NOT allocate synapses -- these are set by Network from global slice.
+func (pj *PrjnBase) Build() error {
 	if pj.Off {
 		return nil
 	}
@@ -322,18 +337,4 @@ func (pj *PrjnBase) SynVal(varNm string, sidx, ridx int) float32 {
 	}
 	synIdx := pj.SynIdx(sidx, ridx)
 	return pj.AxonPrj.SynVal1D(vidx, synIdx)
-}
-
-// Build constructs the full connectivity among the layers as specified in this projection.
-// Calls PrjnBase.BuildBase and then allocates the synaptic values in Syns accordingly.
-func (pj *PrjnBase) Build() error {
-	if err := pj.BuildBase(); err != nil {
-		return err
-	}
-	// this is a large alloc, as number of syns is typically large
-	pj.Syns = make([]Synapse, len(pj.SendConIdx))
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	rlen := rlay.Shape().Len()
-	pj.GVals = make([]PrjnGVals, rlen)
-	return nil
 }
