@@ -18,6 +18,22 @@ import (
 //  Cycle
 //  note: these are calls to LayerParams methods that have the core computation
 
+// RecvSpikes integrates G*Raw and G*Syn values for given neuron
+// from the Prjn-level GSyn integrated values.
+/*
+func (ly *Layer) RecvSpikes(ctx *Context, ni uint32, nrn *Neuron) {
+	nrn.GeRaw = 0
+	nrn.GeSyn = 0
+	for _, p := range ly.RcvPrjns {
+		if p.IsOff() {
+			continue
+		}
+		pj := p.AsAxon()
+		pj.RecvSpikes(ctx, ni, nrn)
+	}
+}
+*/
+
 // Prjns.PrjnGatherSpikes called first, at Network level for all prjns
 
 // GiFmSpikes integrates new inhibitory conductances from Spikes

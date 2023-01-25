@@ -16,29 +16,31 @@ go test -c -o ${exe} .
 # typically run with -threads=N arg as follows:
 # $./run_bench.sh -threads=2
 
-CMD=(${exe} -test.bench=. -writestats)
+CMD=(${exe} -test.bench=BenchmarkBenchNetFull -verbose=false)
 
 echo " "
 echo "Size     1 thr  2 thr  4 thr"
 echo "---------------------------------"
 echo "SMALL:  "
-${CMD[@]} -verbose=0 -epochs 10 -pats 100 -units 25 $*
-${CMD[@]} -verbose=0 -epochs 10 -pats 100 -units 25 -threads=2 $*
-${CMD[@]} -verbose=0 -epochs 10 -pats 100 -units 25 -threads=4 $*
+${CMD[@]} -epochs 10 -pats 100 -units 25 -maxProcs 1 $*
+${CMD[@]} -epochs 10 -pats 100 -units 25 -maxProcs 2 $*
+${CMD[@]} -epochs 10 -pats 100 -units 25 -maxProcs 4 $*
 echo "MEDIUM: "
-${CMD[@]} -verbose=0 -epochs 3 -pats 100 -units 100 $*
-${CMD[@]} -verbose=0 -epochs 3 -pats 100 -units 100 -threads=2 $*
-${CMD[@]} -verbose=0 -epochs 3 -pats 100 -units 100 -threads=4 $*
+${CMD[@]} -epochs 3 -pats 100 -units 100 -maxProcs 1 $*
+${CMD[@]} -epochs 3 -pats 100 -units 100 -maxProcs 2 $*
+${CMD[@]} -epochs 3 -pats 100 -units 100 -maxProcs 4 $*
 echo "LARGE:  "
-${CMD[@]} -verbose=0 -epochs 5 -pats 20 -units 625 $*
-${CMD[@]} -verbose=0 -epochs 5 -pats 20 -units 625 -threads=2 $*
-${CMD[@]} -verbose=0 -epochs 5 -pats 20 -units 625 -threads=4 $*
+# note: used to use 5 epochs, 20 pats, but now too slow with only syn-based ca
+${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 1 $*
+${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 2 $*
+${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 4 $*
 echo "HUGE:   "
-${CMD[@]} -verbose=0 -epochs 5 -pats 10 -units 1024 $*
-${CMD[@]} -verbose=0 -epochs 5 -pats 10 -units 1024 -threads=2 $*
-${CMD[@]} -verbose=0 -epochs 5 -pats 10 -units 1024 -threads=4 $*
+# note: used to use 5 epochs, 10 pats, but now too slow with only syn-based ca
+${CMD[@]} -epochs 2 -pats 5 -units 1024 -maxProcs 1 $*
+${CMD[@]} -epochs 2 -pats 5 -units 1024 -maxProcs 2 $*
+${CMD[@]} -epochs 2 -pats 5 -units 1024 -maxProcs 4 $*
 echo "GINORM: "
-${CMD[@]} -verbose=0 -epochs 2 -pats 10 -units 2048 $*
-${CMD[@]} -verbose=0 -epochs 2 -pats 10 -units 2048 -threads=2 $*
-${CMD[@]} -verbose=0 -epochs 2 -pats 10 -units 2048 -threads=4 $*
+${CMD[@]} -epochs 1 -pats 2 -units 2048 -maxProcs 1 $*
+${CMD[@]} -epochs 1 -pats 2 -units 2048 -maxProcs 2 $*
+${CMD[@]} -epochs 1 -pats 1 -units 2048 -maxProcs 4 $*
 

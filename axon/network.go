@@ -117,6 +117,7 @@ func (nt *Network) Cycle(ctx *Context) {
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
 func (nt *Network) CycleImpl(ctx *Context) {
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
+	// nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.RecvSpikes(ctx, ni, nrn) }, "RecvSpikes")
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.PrjnGatherSpikes(ctx) }, "PrjnGatherSpikes")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
 	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")

@@ -4,6 +4,50 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.7.0 NeuronCa = false (option gone), default threading
+
+For LARGE case, 1 thread, New code:
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  5.640	   14.7
+	          DWt 	  7.095	   18.5
+	   GiFmSpikes 	  0.129	    0.3
+	    RecvSynCa 	 13.617	   35.5
+	    SendSpike 	  1.181	    3.1
+	    SendSynCa 	 10.137	   26.5
+	      WtFmDWt 	  0.474	    1.2
+	        Total 	 38.314
+
+For LARGE case, 1 thread, 1.6.20:
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  4.477	   12.4
+	          DWt 	  7.170	   19.8
+	    GFmSpikes 	  0.035	    0.1
+	   GiFmSpikes 	  0.071	    0.2
+	    RecvSynCa 	 13.065	   36.2
+	    SendSpike 	  1.168	    3.2
+	    SendSynCa 	  9.778	   27.1
+	      WtFmDWt 	  0.374	    1.0
+	        Total 	 36.139
+
+Summary: Very similar -- CycleNeuron is most notable perhaps.
+    
+For old larger sizes -- too slow now with NeuronCa = false always:
+
+Size     1 thr  2 thr  4 thr
+---------------------------------
+SMALL:   5.03    5.55    5.71
+MEDIUM:  8.95    9.05    9.16
+LARGE:  77.1    65.7    61.2
+
+
+# Axon 1.6.20 NeuronCa = false, default threading
+
+Size     1 thr  2 thr  4 thr
+---------------------------------
+SMALL:   4.17    4.66    4.82   -- only SynCa threads changing
+MEDIUM:  7.84    7.99    8.08
+LARGE:  72.9    64.2    60.1   -- all = max procs
+
 # Axon 1.6.1 NeuronCa = true, 11/9/22: WorkMgr
 
 

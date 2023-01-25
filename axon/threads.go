@@ -40,6 +40,11 @@ type NetThreads struct {
 	SynCa     int `desc:"for synaptic-level calcium updating -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
 }
 
+func (nt *NetThreads) String() string {
+	maxProcs := runtime.GOMAXPROCS(0)
+	return fmt.Sprintf("Threads: GOMAXPROCS: %d  Neurons: %d  SendSpike: %d  SynCa: %d", maxProcs, nt.Neurons, nt.SendSpike, nt.SynCa)
+}
+
 // SetDefaults uses heuristics to determine the number of goroutines to use
 // for each task: Neurons, SendSpike, SynCa.
 func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
@@ -182,9 +187,15 @@ func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni uint32, nrn
 //////////////////////////////////////////////////////////////
 // Timing reports
 
+// ThreadsReport reports the number of threads used
+func (nt *NetworkBase) ThreadReport() {
+	fmt.Println(nt.Threads.String())
+}
+
 // TimerReport reports the amount of time spent in each function, and in each thread
 func (nt *NetworkBase) TimerReport() {
 	fmt.Printf("TimerReport: %v\n", nt.Nm)
+	fmt.Println(nt.Threads.String())
 	fmt.Printf("\t%13s \t%7s\t%7s\n", "Function Name", "Secs", "Pct")
 	nfn := len(nt.FunTimes)
 	fnms := make([]string, nfn)
