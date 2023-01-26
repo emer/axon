@@ -296,9 +296,11 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, randc
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 // drvAct is for Pulvinar layers, activation of driving neuron
 func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
+	extraRaw := float32(0)
+	extraSyn := float32(0)
 	if ly.LayType == PTMaintLayer {
-		nrn.GeRaw += ly.Act.Dend.ModGain * nrn.GModRaw
-		nrn.GeSyn += ly.Act.Dend.ModGain * nrn.GModSyn
+		extraRaw = ly.Act.Dend.ModGain * nrn.GModRaw
+		extraSyn = ly.Act.Dend.ModGain * nrn.GModSyn
 	} else if ly.Act.Dend.HasMod.IsTrue() {
 		mod := ly.Act.Dend.ModGain * nrn.GModSyn
 		if mod > 1 {
@@ -324,10 +326,10 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *
 			geRaw = 0
 		}
 	}
-	ly.Act.NMDAFmRaw(nrn, geRaw)
+	ly.Act.NMDAFmRaw(nrn, geRaw+extraRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc, randctr) // sets nrn.GeExt too
+	ly.Act.GeFmSyn(ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc+extraSyn, randctr) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	ly.Act.GSkCaFmCa(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(ni, nrn, nrn.GiSyn, randctr)

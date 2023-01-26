@@ -681,6 +681,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("GateUS", 0)
 	ss.Stats.SetFloat("GateCS", 0)
 	ss.Stats.SetFloat("GatedEarly", 0)
+	ss.Stats.SetFloat("MaintEarly", 0)
 	ss.Stats.SetFloat("GatedPostCS", 0)
 	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("Rew", 0)
@@ -774,6 +775,7 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("GateUS", mat32.NaN())
 	ss.Stats.SetFloat32("GateCS", mat32.NaN())
 	ss.Stats.SetFloat32("GatedEarly", mat32.NaN())
+	ss.Stats.SetFloat32("MaintEarly", mat32.NaN())
 	ss.Stats.SetFloat32("GatedPostCS", mat32.NaN())
 	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
 	if didGate {
@@ -797,9 +799,9 @@ func (ss *Sim) GatedStats() {
 
 // MaintStats updates the PFC maint stats
 func (ss *Sim) MaintStats() {
-	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
-		return
-	}
+	// if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
+	// 	return
+	// }
 	// fmt.Printf("Maint Stats\n")
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	// should be maintaining while going forward
@@ -840,6 +842,7 @@ func (ss *Sim) MaintStats() {
 		}
 	}
 	if hasMaint {
+		ss.Stats.SetFloat32("MaintEarly", bools.ToFloat32(ev.Drive != ev.USForPos()))
 		ev.RenderLocalist("Gate", 1)
 	} else {
 		ev.RenderLocalist("Gate", 0)
@@ -902,6 +905,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedEarly", "GatedEarly", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("MaintEarly", "MaintEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedPostCS", "GatedPostCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 
