@@ -370,7 +370,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	layers := ss.Net.LayersByClass("InputLayer", "HiddenLayer")
+	layers := ss.Net.LayersByType(axon.InputLayer, axon.SuperLayer)
 	for _, lnm := range layers {
 		clnm := lnm
 		ss.Logs.AddItem(&elog.Item{

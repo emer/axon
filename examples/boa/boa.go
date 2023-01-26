@@ -533,6 +533,8 @@ func (ss *Sim) ConfigLoops() {
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
 func (ss *Sim) TakeAction(net *axon.Network) {
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
+	ev.ActGen() // always update comparison
 	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
 		ss.Sim.ThetaStep++
 		return
@@ -540,13 +542,11 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	// fmt.Printf("Take Action\n")
 	ss.Sim.ThetaStep = 0 // reset for next time
 
-	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-
 	netAct, anm := ss.DecodeAct(ev)
 	genAct := ev.ActGen()
 	genActNm := ev.Acts[genAct]
 	ss.Stats.SetString("NetAction", anm)
-	ss.Stats.SetString("GenAction", genActNm)
+	ss.Stats.SetString("InstinctAction", genActNm)
 	if netAct == genAct {
 		ss.Stats.SetFloat("ActMatch", 1)
 	} else {
@@ -620,7 +620,7 @@ func (ss *Sim) ApplyInputs() {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
 		net.InitActs() // this is still essential even with fully functioning decay below:
 		// todo: need a more selective US gating mechanism!
-		net.DecayStateByClass(&ss.Context, 1, 1, "HiddenLayer", "PTLayer", "CTLayer", "VThalLayer")
+		net.DecayStateByType(&ss.Context, 1, 1, axon.SuperLayer, axon.PTMaintLayer, axon.CTLayer, axon.VThalLayer)
 		ev.RenderLocalist("Gate", 0)
 	}
 
@@ -681,15 +681,16 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("GateUS", 0)
 	ss.Stats.SetFloat("GateCS", 0)
 	ss.Stats.SetFloat("GatedEarly", 0)
+	ss.Stats.SetFloat("MaintEarly", 0)
 	ss.Stats.SetFloat("GatedPostCS", 0)
 	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetString("NetAction", "")
-	ss.Stats.SetString("GenAction", "")
+	ss.Stats.SetString("InstinctAction", "")
 	ss.Stats.SetString("ActAction", "")
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
-	lays := ss.Net.LayersByClass("PTLayer")
+	lays := ss.Net.LayersByType(axon.PTMaintLayer)
 	for _, lnm := range lays {
 		ss.Stats.SetFloat("Maint"+lnm, 0)
 		ss.Stats.SetFloat("MaintFail"+lnm, 0)
@@ -711,7 +712,7 @@ func (ss *Sim) StatCounters() {
 	// ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", "trl")
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "GenAction", "ActAction", "ActMatch", "Gated", "Should", "Rew"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "InstinctAction", "ActAction", "ActMatch", "Gated", "Should", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -758,19 +759,23 @@ func (ss *Sim) TrialStats() {
 
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats() {
-	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 1 {
-		return
-	}
+	// this misses a lot of
+	// if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 1 {
+	// 	return
+	// }
+
 	// fmt.Printf("Gate Stats\n")
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	mtxLy := net.LayerByName("VpMtxGo").(*axon.Layer)
 	didGate := mtxLy.AnyGated()
+	// fmt.Printf("didGate: %v\n", didGate)
 	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
 	ss.Stats.SetFloat32("GateUS", mat32.NaN())
 	ss.Stats.SetFloat32("GateCS", mat32.NaN())
 	ss.Stats.SetFloat32("GatedEarly", mat32.NaN())
+	ss.Stats.SetFloat32("MaintEarly", mat32.NaN())
 	ss.Stats.SetFloat32("GatedPostCS", mat32.NaN())
 	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
 	if didGate {
@@ -794,9 +799,9 @@ func (ss *Sim) GatedStats() {
 
 // MaintStats updates the PFC maint stats
 func (ss *Sim) MaintStats() {
-	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
-		return
-	}
+	// if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
+	// 	return
+	// }
 	// fmt.Printf("Maint Stats\n")
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	// should be maintaining while going forward
@@ -804,7 +809,7 @@ func (ss *Sim) MaintStats() {
 	isCons := ev.LastAct == ev.ActMap["Consume"]
 	actThr := float32(0.05) // 0.1 too high
 	net := ss.Net
-	lays := net.LayersByClass("PTLayer")
+	lays := net.LayersByType(axon.PTMaintLayer)
 	hasMaint := false
 	for _, lnm := range lays {
 		mnm := "Maint" + lnm
@@ -837,6 +842,7 @@ func (ss *Sim) MaintStats() {
 		}
 	}
 	if hasMaint {
+		ss.Stats.SetFloat32("MaintEarly", bools.ToFloat32(ev.Drive != ev.USForPos()))
 		ev.RenderLocalist("Gate", 1)
 	} else {
 		ev.RenderLocalist("Gate", 0)
@@ -853,7 +859,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
-	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "GenAction", "ActAction")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "InstinctAction", "ActAction")
 	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
 	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
 
@@ -874,7 +880,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "WrongCSGate")
+	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
 	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
 	// "GateUS", "GatedEarly", "GatedPostCS", "Gated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
@@ -899,10 +905,11 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedEarly", "GatedEarly", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("MaintEarly", "MaintEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedPostCS", "GatedPostCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 
-	lays := ss.Net.LayersByClass("PTLayer")
+	lays := ss.Net.LayersByType(axon.PTMaintLayer)
 	for _, lnm := range lays {
 		nm := "Maint" + lnm
 		ss.Logs.AddStatAggItem(nm, nm, etime.Run, etime.Epoch, etime.Trial)
@@ -934,7 +941,7 @@ func (ss *Sim) ConfigLogItems() {
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IdxView(ctx.Mode, etime.Trial)
-				spl := split.GroupBy(ix, []string{"GenAction"})
+				spl := split.GroupBy(ix, []string{"InstinctAction"})
 				split.AggTry(spl, "ActMatch", agg.AggMean)
 				ags := spl.AggsToTable(etable.ColNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
@@ -950,7 +957,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ags := ss.Logs.MiscTables["ActCor"]
-					rw := ags.RowsByString("GenAction", anm, etable.Equals, etable.UseCase)
+					rw := ags.RowsByString("InstinctAction", anm, etable.Equals, etable.UseCase)
 					if len(rw) > 0 {
 						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
 					}

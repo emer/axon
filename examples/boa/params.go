@@ -61,13 +61,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":   "1.8", // was 1.0
 					"Layer.Inhib.Pool.Gi":    "1.8", // was 1.8
-					"Layer.Act.GABAB.Gbar":   "0.2",
+					"Layer.Act.GABAB.Gbar":   "0.3",
 					"Layer.Act.NMDA.Gbar":    "0.3", // 0.3 enough..
 					"Layer.Act.NMDA.Tau":     "300",
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "150",  // 150 > 100? enough it seems
+					"Layer.Act.Dend.ModGain": "4",    // much less now -- normalized separately from other prjns
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -278,7 +278,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "1.0", // if this is too strong, it gates to the wrong CS
 				}},
 			{Sel: ".ThalToSuper", Desc: "",
 				Params: params.Params{
@@ -287,6 +287,7 @@ var ParamSets = params.Sets{
 			{Sel: ".ThalToPT", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
+					"Prjn.Com.GType":     "ModulatoryG", // this marks as modulatory with extra ModGain factor
 				}},
 			{Sel: ".CTtoThal", Desc: "",
 				Params: params.Params{
@@ -295,8 +296,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
+					"Prjn.PrjnScale.Rel":    "3",      // important to turn up rel so other sources are weaker
+					"Prjn.PrjnScale.Abs":    "1",      // 2 > 1
 					"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
+					"Prjn.SWt.Init.Mean":    "0.5",
+					"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
 				}},
 			/*
 				{Sel: "#OFCToALM", Desc: "",
@@ -312,10 +316,10 @@ var ParamSets = params.Sets{
 						"Prjn.PrjnScale.Rel": "1",
 					}},
 			*/
-			{Sel: "#ACCToACCPT", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
-				}},
+			// {Sel: "#ACCToACCPT", Desc: "",
+			// 	Params: params.Params{
+			// 		"Prjn.PrjnScale.Abs": "1.5",
+			// 	}},
 			{Sel: "#ACCPTToACCMD", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5",
@@ -375,7 +379,7 @@ var ParamSets = params.Sets{
 			*/
 			{Sel: "#BLAPosAcqD1ToOFC", Desc: "strong",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Abs": "4",
 				}},
 			{Sel: "#BLAPosExtD2ToBLAPosAcqD1", Desc: "inhibition from extinction",
 				Params: params.Params{
@@ -438,7 +442,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 2 > 1
+					"Prjn.PrjnScale.Abs": "1", // 2 > 1
 					"Prjn.PrjnScale.Rel": ".5",
 					// "Prjn.Learn.Learn":   "false",
 					// "Prjn.SWt.Init.Mean": "0.8",

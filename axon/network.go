@@ -279,11 +279,11 @@ func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 	}
 }
 
-// DecayStateByClass decays activation state for given class name(s)
+// DecayStateByType decays activation state for given class name(s)
 // by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
 // glong = separate decay factor for long-timescale conductances (g)
-func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, class ...string) {
-	lnms := nt.LayersByClass(class...)
+func (nt *Network) DecayStateByType(ctx *Context, decay, glong float32, types ...LayerTypes) {
+	lnms := nt.LayersByType(types...)
 	for _, lynm := range lnms {
 		ly := nt.LayerByName(lynm).(AxonLayer)
 		if ly.IsOff() {

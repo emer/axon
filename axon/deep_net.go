@@ -159,6 +159,42 @@ func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 	return in, pulv
 }
 
+// AddPTThalForSuper adds a PT pyramidal tract layer and a
+// Thalamus layer for given superficial layer (deep.SuperLayer) and associated CT
+// with given suffix (e.g., MD, VM).
+// PT and Thal have SetClass(super.Name()) called to allow shared params.
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal.
+// The PT and Thal layers are positioned behind the CT layer.
+func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
+	name := super.Name()
+	shp := super.Shape()
+	if shp.NumDims() == 2 {
+		pt = nt.AddPTLayer2D(name+"PT", shp.Dim(0), shp.Dim(1))
+		thal = nt.AddThalLayer2D(name+suffix, shp.Dim(0), shp.Dim(1))
+	} else {
+		pt = nt.AddPTLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		thal = nt.AddThalLayer4D(name+suffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+	}
+	pt.SetClass(name)
+	thal.SetClass(name)
+	pt.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: ct.Name(), XAlign: relpos.Left, Space: space})
+	thal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pt.Name(), XAlign: relpos.Left, Space: space})
+	one2one := prjn.NewOneToOne()
+	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
+	pthal.SetClass("PTtoThal")
+	thalpt.SetClass("ThalToPT")
+	// note: cannot do this at this point -- need to have it in the params and overall Defaults
+	// thalpt.(AxonPrjn).AsAxon().Params.Com.GType = ModulatoryG // thalamic projections are modulatory
+	// on other inputs, multiplying their impact
+	sthal, thals := nt.BidirConnectLayers(super, thal, superToPT) // shortcuts
+	sthal.SetClass("SuperToThal")
+	thals.SetClass("ThalToSuper")
+	nt.ConnectLayers(super, pt, superToPT, emer.Forward).SetClass("SuperToPT")
+	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
+	nt.ConnectLayers(ct, thal, ctToThal, emer.Forward).SetClass("CTtoThal")
+	return
+}
+
 /*
 // AddPulvAttnLayer2D adds a PulvAttnLayer of given size, with given name.
 func (nt *Network) AddPulvAttnLayer2D(name string, nNeurY, nNeurX int) *PulvAttnLayer {
