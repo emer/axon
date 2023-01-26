@@ -287,6 +287,7 @@ var ParamSets = params.Sets{
 			{Sel: ".ThalToPT", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
+					"Prjn.Com.GType":     "ModulatoryG", // this marks as modulatory with extra ModGain factor
 				}},
 			{Sel: ".CTtoThal", Desc: "",
 				Params: params.Params{
