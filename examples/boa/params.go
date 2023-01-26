@@ -67,7 +67,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "150",  // 150 > 100? enough it seems
+					"Layer.Act.Dend.ModGain": "1",    // much less now
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -278,7 +278,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "1.0", // if this is too strong, it gates to the wrong CS
 				}},
 			{Sel: ".ThalToSuper", Desc: "",
 				Params: params.Params{

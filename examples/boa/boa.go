@@ -533,14 +533,14 @@ func (ss *Sim) ConfigLoops() {
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
 func (ss *Sim) TakeAction(net *axon.Network) {
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
+	ev.ActGen() // always update comparison
 	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
 		ss.Sim.ThetaStep++
 		return
 	}
 	// fmt.Printf("Take Action\n")
 	ss.Sim.ThetaStep = 0 // reset for next time
-
-	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 
 	netAct, anm := ss.DecodeAct(ev)
 	genAct := ev.ActGen()
@@ -758,14 +758,17 @@ func (ss *Sim) TrialStats() {
 
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats() {
-	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 1 {
-		return
-	}
+	// this misses a lot of
+	// if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 1 {
+	// 	return
+	// }
+
 	// fmt.Printf("Gate Stats\n")
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	mtxLy := net.LayerByName("VpMtxGo").(*axon.Layer)
 	didGate := mtxLy.AnyGated()
+	// fmt.Printf("didGate: %v\n", didGate)
 	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
 	ss.Stats.SetFloat32("GateUS", mat32.NaN())
@@ -874,7 +877,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "Target")
 
-	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "WrongCSGate")
+	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
 	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
 	// "GateUS", "GatedEarly", "GatedPostCS", "Gated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
