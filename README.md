@@ -408,6 +408,29 @@ Overall inhibition:
 
 There are three major steps here: `GInteg`, `SpikeFmG`, and `CaFmSpike`, the last of which updates Ca values used in learning.
 
+The logic of spike communication is complicated by the presence of synaptic delays, in `Prjn.Com.Delay`, such that spikes are accumulated into one place on a ring buffer that is organized by recv neuron and then delay per each neuron, while being read out of another location in this buffer:
+
+```
+GBuf: [RecvNeuron][MaxDelay]
+
+RN: 0     1     2         <- recv neuron indexes
+DI: 0 1 2 0 1 2 0 1 2     <- delay indexes
+   [                 ]
+C0: ^ v                   <- cycle 0, ring index: ^ = store, v = read
+C1:   ^ v                 <- cycle 1, shift over by 1 -- overwrite last read
+C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps around
+```
+
+Because there are so few neurons spiking at any time, it is very efficient to use a sender-based dynamic to write spikes only for senders that spiked -- this is what the `SendSpike` method does.  However, multiple senders could be trying to write to the same place in the GBuf.  We have a GBuf per each projection, so that means that threading can only be projection-parallel (fairly coarse-grained).  For the GPU, however, it is much more efficient to accumulate per receiver and operate at a Prjn*RecvNeurons granularity (basically the RN indexes in the GBuf).
+
+The first-pass reading of recv spikes happens in `PrjnGatherSpikes` at the Prjn level, and it must always operate on all neurons (dense computation).  It iterates over recv neurons and accumulates the read-out value from GBuf based on synaptic delay, into the GVals, which grabs a GRaw value from GBuf current read position, and then does temporal integration of this value into `GSyn` which represents the synaptic conductance with exponential decay (and immediate rise -- nominally an alpha function with exponential rise but that rise time is below the 1 msec resolution).
+
+Finally, `NeuronGatherSpikes` iterates over all recv neurons, and gathers the GRaw and GSyn values across the RecvPrjns into the relevant Neuron-level variables: `GeRaw, GeSyn; GiRaw, GiSyn; GModRaw, GModSyn` for the three different types of projections: `ExcitatoryG`, `InhibitoryG`, and `ModulatoryG`.
+
+TODO: inhibition!
+
+
+
 #### GInteg: Integrate G*Raw and G*Syn from Recv Prjns, other G*s
 
 Iterates over Recv Prjns:

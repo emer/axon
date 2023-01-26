@@ -34,8 +34,6 @@ func (ly *Layer) RecvSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 }
 */
 
-// Prjns.PrjnGatherSpikes called first, at Network level for all prjns
-
 // GiFmSpikes integrates new inhibitory conductances from Spikes
 // at the layer and pool level.
 // Called separately by Network.CycleImpl on all Layers
@@ -78,17 +76,20 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 	}
 }
 
-// NeuronGatherSpikes integrates G*Raw and G*Syn values for given neuron
-// from the Prjn-level GSyn integrated values.
-func (ly *Layer) NeuronGatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
-	ly.Params.NeuronGatherSpikesInit(ctx, ni, nrn)
+// GatherSpikes integrates G*Raw and G*Syn values for given neuron
+// while integrating the Prjn-level GSyn integrated values.
+// ni is local index of neuron within its layer.
+func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
+	ly.Params.GatherSpikesInit(nrn)
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
 		pj := p.AsAxon()
-		gv := pj.GVals[ni]
-		pj.Params.NeuronGatherSpikesPrjn(ctx, gv, ni, nrn)
+		bi := pj.Params.Com.DelLen*ni + pj.Params.Com.ReadIdx(ctx.CycleTot)
+		gRaw := pj.GBuf[bi]
+		pj.GBuf[bi] = 0
+		pj.Params.GatherSpikes(ctx, ly.Params, ni, nrn, gRaw, &pj.GSyns[ni])
 	}
 }
 
@@ -108,7 +109,7 @@ func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls NeuronGatherSpikes, GFmRawSyn, GiInteg
 func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, randctr *sltype.Uint2) {
-	ly.NeuronGatherSpikes(ctx, ni, nrn)
+	ly.GatherSpikes(ctx, ni, nrn)
 
 	drvGe := float32(0)
 	nonDrvPct := float32(0)

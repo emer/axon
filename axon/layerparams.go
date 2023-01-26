@@ -226,12 +226,9 @@ func (ly *LayerParams) SubPoolGiFmSpikes(ctx *Context, pl *Pool, lpl *Pool, lyIn
 //////////////////////////////////////////////////////////////////////////////////////
 //  CycleNeuron methods
 
-////////////////////////
-//  GInteg
-
-// NeuronGatherSpikesInit initializes G*Raw and G*Syn values for given neuron
+// GatherSpikesInit initializes G*Raw and G*Syn values for given neuron
 // prior to integration
-func (ly *LayerParams) NeuronGatherSpikesInit(ctx *Context, ni uint32, nrn *Neuron) {
+func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
@@ -240,7 +237,8 @@ func (ly *LayerParams) NeuronGatherSpikesInit(ctx *Context, ni uint32, nrn *Neur
 	nrn.GiSyn = nrn.GiBase
 }
 
-// See prjnparams for NeuronGatherSpikesPrjn
+////////////////////////
+//  GInteg
 
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn

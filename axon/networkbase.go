@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,15 +42,17 @@ type NetworkBase struct {
 	MetaData    map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
 
 	// Implementation level code below:
-	Layers emer.Layers `desc:"array of layers, via emer.Layer interface pointer"`
+	MaxDelay uint32      `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	Layers   emer.Layers `desc:"array of layers, via emer.Layer interface pointer"`
 	// todo: could now have concrete list of all Layer objects here
 	LayParams  []LayerParams `view:"-" desc:"array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals    []LayerVals   `view:"-" desc:"array of layer values, in 1-to-1 correspondence with Layers"`
 	Neurons    []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
 	Prjns      []AxonPrjn    `view:"-" desc:"[Layers][RecvPrjns] pointers to all projections in the network, via the AxonPrjn interface"`
 	PrjnParams []PrjnParams  `view:"-" desc:"[Layers][RecvPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns"`
-	PrjnVals   []PrjnVals    `view:"-" desc:"[Layers][RecvPrjns] array of projection values, in 1-to-1 correspondence with Prjns"`
 	Synapses   []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] entire network's allocation of synapses"`
+	PrjnGBuf   []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection"`
+	PrjnGSyns  []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
@@ -439,7 +442,6 @@ func (nt *NetworkBase) Build() error {
 	nt.Neurons = make([]Neuron, totNeurons)
 	nt.Prjns = make([]AxonPrjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
-	nt.PrjnVals = make([]PrjnVals, totPrjns)
 
 	// we can't do this in Defaults(), since we need to know the number of neurons etc.
 	nt.Threads.SetDefaults(totNeurons, totPrjns, nLayers)
@@ -465,45 +467,95 @@ func (nt *NetworkBase) Build() error {
 			pji := rpj.(AxonPrjn)
 			pj := pji.AsAxon()
 			pj.Params = &nt.PrjnParams[pii]
-			pj.Vals = &nt.PrjnVals[pii]
 			nt.Prjns[pii] = pji
 		}
 		nidx += nn
-		pidx += len(sprjns)
+		pidx += len(rprjns)
 		err := ly.Build() // also builds prjns
 		if err != nil {
 			emsg += err.Error() + "\n"
 		}
 		// now collect total number of synapses after layer build
-		for pi, rpj := range rprjns {
+		for _, rpj := range rprjns {
 			pj := rpj.(AxonPrjn).AsAxon()
 			totSynapses += len(pj.RecvConIdx)
 		}
 	}
 	if totSynapses > math.MaxUint32 {
-		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity)
+		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity\n")
 	}
-	
+
 	nt.Synapses = make([]Synapse, totSynapses)
-	
+
 	// distribute synapses
 	sidx := 0
-	for li, lyi := range nt.Layers {
+	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
 		rprjns := *ly.RecvPrjns()
-		for pi, rpj := range rprjns {
+		for _, rpj := range rprjns {
 			pj := rpj.(AxonPrjn).AsAxon()
 			nsyn := len(pj.RecvConIdx)
-			pj.Syns = nt.Synapses[sidx : sidx + nsyn]
+			pj.Syns = nt.Synapses[sidx : sidx+nsyn]
 			sidx += nsyn
 		}
 	}
-	
+
 	nt.Layout()
 	if emsg != "" {
 		return errors.New(emsg)
 	}
 	return nil
+}
+
+// BuildPrjnGBuf builds the PrjnGBuf, PrjnGSyns,
+// based on the MaxDelay values in thePrjnParams,
+// which should have been configured by this point.
+// Called by default in InitWts()
+func (nt *NetworkBase) BuildPrjnGBuf() {
+	nt.MaxDelay = 0
+	npjneur := uint32(0)
+	for _, lyi := range nt.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		nneur := uint32(len(ly.Neurons))
+		rprjns := *ly.RecvPrjns()
+		for _, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			if pj.Params.Com.MaxDelay > nt.MaxDelay {
+				nt.MaxDelay = pj.Params.Com.MaxDelay
+			}
+			npjneur += nneur
+		}
+	}
+	mxlen := nt.MaxDelay + 1
+	gbsz := npjneur * mxlen
+	if uint32(cap(nt.PrjnGBuf)) >= gbsz {
+		nt.PrjnGBuf = nt.PrjnGBuf[:gbsz]
+	} else {
+		nt.PrjnGBuf = make([]float32, gbsz)
+	}
+	if uint32(cap(nt.PrjnGSyns)) >= npjneur {
+		nt.PrjnGSyns = nt.PrjnGSyns[:npjneur]
+	} else {
+		nt.PrjnGSyns = make([]float32, npjneur)
+	}
+
+	gbi := uint32(0)
+	gsi := uint32(0)
+	for _, lyi := range nt.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		nneur := uint32(len(ly.Neurons))
+		rprjns := *ly.RecvPrjns()
+		for _, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			gbs := nneur * mxlen
+			pj.Params.Idxs.GBufSt = gbi
+			pj.GBuf = nt.PrjnGBuf[gbi : gbi+gbs]
+			gbi += gbs
+			pj.Params.Idxs.GSynSt = gsi
+			pj.GSyns = nt.PrjnGSyns[gsi : gsi+nneur]
+			gsi += nneur
+		}
+	}
 }
 
 // DeleteAll deletes all layers, prepares network for re-configuring and building

@@ -23,7 +23,6 @@ import (
 type Prjn struct {
 	PrjnBase
 	Params *PrjnParams `desc:"all prjn-level parameters -- these must remain constant once configured"`
-	Vals   *PrjnVals   `view:"-" desc:"projection state values updated during computation"`
 }
 
 var KiT_Prjn = kit.Types.AddType(&Prjn{}, PrjnProps)
@@ -256,22 +255,6 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Init methods
-
-// BuildGBuf builds GBuf with current Com Delay values, if not correct size
-func (pj *Prjn) BuildGBuffs() {
-	rlen := uint32(pj.Recv.Shape().Len())
-	dl := pj.Params.Com.Delay + 1
-	gblen := dl * rlen
-	if pj.Vals.Gidx.Len == dl && uint32(len(pj.GBuf)) == gblen {
-		return
-	}
-	pj.Vals.Gidx.Len = dl
-	pj.Vals.Gidx.Zi = 0
-	pj.GBuf = make([]float32, gblen)
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	npools := len(rlay.Pools)
-	pj.PIBuf = make([]float32, int(dl)*npools)
-}
 
 // SetSWtsRPool initializes SWt structural weight values using given tensor
 // of values which has unique values for each recv neuron within a given pool.
@@ -545,12 +528,11 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 // but can be called when needed.  Must be called to completely initialize
 // prior activity, e.g., full Glong clearing.
 func (pj *Prjn) InitGBuffs() {
-	pj.BuildGBuffs() // make sure correct size based on Com.Delay setting
 	for ri := range pj.GBuf {
 		pj.GBuf[ri] = 0
 	}
-	for ri := range pj.GVals {
-		pj.GVals[ri].Init()
+	for ri := range pj.GSyns {
+		pj.GSyns[ri] = 0
 	}
 	for pi := range pj.PIBuf {
 		pj.PIBuf[pi] = 0

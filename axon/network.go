@@ -199,6 +199,7 @@ func (nt *Network) WtFmDWt(ctx *Context) {
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts() {
+	nt.BuildPrjnGBuf()
 	nt.SlowCtr = 0
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -599,7 +600,7 @@ func (nt *Network) SizeReport() string {
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
 			projMemSynapses := projNumSynapses * memSynapse
-			projMemIdxs := len(proj.RecvConIdx)*4 + len(proj.RecvSynIdx)*4 + len(proj.SendConIdx)*4
+			projMemIdxs := len(proj.RecvConIdx)*4 + len(proj.SendSynIdx)*4 + len(proj.SendConIdx)*4
 			globalMemSynapses += projMemSynapses + projMemIdxs
 			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", proj.Recv.Name(),
 				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())

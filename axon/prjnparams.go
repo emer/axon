@@ -48,15 +48,15 @@ type NeurSynIdx struct {
 
 // PrjnIdxs contains prjn-level index information into global memory arrays
 type PrjnIdxs struct {
-	PrjnIdx      uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
-	RecvLay      uint32 // index of the receiving layer in global list of layers
-	RecvLayN     uint32 // number of neurons in recv layer
-	SendLay      uint32 // index of the sending layer in global list of layers
-	SendLayN     uint32 // number of neurons in send layer
-	RecvSynSt    uint32 // start index into RecvNeurSynIdxs global array: [Layer][RecvPrjns][RecvNeurs]
-	SendSynSt    uint32 // start index into SendNeurSynIdxs global array: [Layer][SendPrjns][SendNeurs]
-	RecvPrjnGVSt uint32 // start index into RecvPrjnGVals global array: [Layer][RecvPrjns][RecvNeurs]
-	// todo: RecvPrjnGVSt == RecvSynSt ??
+	PrjnIdx   uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
+	RecvLay   uint32 // index of the receiving layer in global list of layers
+	RecvLayN  uint32 // number of neurons in recv layer
+	SendLay   uint32 // index of the sending layer in global list of layers
+	SendLayN  uint32 // number of neurons in send layer
+	RecvSynSt uint32 // start index into RecvNeurSynIdxs global array: [Layer][RecvPrjns][RecvNeurs]
+	SendSynSt uint32 // start index into SendNeurSynIdxs global array: [Layer][SendPrjns][SendNeurs]
+	GBufSt    uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurs][MaxDelay+1]
+	GSynSt    uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurs]
 }
 
 // GScaleVals holds the conductance scaling values.
@@ -142,19 +142,23 @@ func (pj *PrjnParams) IsExcitatory() bool {
 	return pj.Com.GType == ExcitatoryG
 }
 
-// NeuronGatherSpikesPrjn integrates G*Raw and G*Syn values for given neuron
-// from the given Prjn-level GSyn integrated values.
-func (pj *PrjnParams) NeuronGatherSpikesPrjn(ctx *Context, gv PrjnGVals, ni uint32, nrn *Neuron) {
+// GatherSpikes integrates G*Raw and G*Syn values for given neuron
+// from the given Prjn-level GRaw value, first integrating
+// projection-level GSyn value.
+func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn *Neuron, gRaw float32, gSyn *float32) {
 	switch pj.Com.GType {
 	case ExcitatoryG:
-		nrn.GeRaw += gv.GRaw
-		nrn.GeSyn += gv.GSyn
+		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		nrn.GeRaw += gRaw
+		nrn.GeSyn += *gSyn
 	case InhibitoryG:
-		nrn.GiRaw += gv.GRaw
-		nrn.GiSyn += gv.GSyn
+		*gSyn = ly.Act.Dt.GiSynFmRaw(*gSyn, gRaw)
+		nrn.GeRaw += gRaw
+		nrn.GeSyn += *gSyn
 	case ModulatoryG:
-		nrn.GModRaw += gv.GRaw
-		nrn.GModSyn += gv.GSyn
+		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		nrn.GModRaw += gRaw
+		nrn.GModSyn += *gSyn
 	}
 }
 

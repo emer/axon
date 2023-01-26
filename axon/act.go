@@ -907,18 +907,59 @@ const (
 // and modulatory projections that have multiplicative-like effects.
 type SynComParams struct {
 	GType    PrjnGTypes  `desc:"type of conductance (G) communicated by this projection"`
-	Delay    uint32      `min:"0" def:"2" desc:"additional synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must call InitWts() on Network!  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time.  Biologically, subtract 1 from synaptic delay values to set corresponding Delay value."`
+	Delay    uint32      `min:"0" def:"2" desc:"additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value."`
+	MaxDelay uint32      `inactive:"+" desc:"maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network."`
 	PFail    float32     `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
 	PFailSWt slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
+
+	DelLen uint32 `view:"-" desc:"delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed"`
 }
 
 func (sc *SynComParams) Defaults() {
 	sc.Delay = 2
+	sc.MaxDelay = 2
 	sc.PFail = 0 // 0.5 works?
 	sc.PFailSWt.SetBool(false)
+	sc.Update()
 }
 
 func (sc *SynComParams) Update() {
+	if sc.Delay > sc.MaxDelay {
+		sc.Delay = sc.MaxDelay
+	}
+	sc.DelLen = sc.Delay + 1
+}
+
+// RingIdx returns the wrap-around ring index for given raw index.
+// For writing and reading spikes to GBuf buffer, based on
+// Context.CycleTot counter.
+// RN: 0     1     2         <- recv neuron indexes
+// DI: 0 1 2 0 1 2 0 1 2     <- delay indexes
+//
+//	[                 ]
+//
+// C0: ^ v                   <- cycle 0, ring index: ^ = write, v = read
+// C1:   ^ v                 <- cycle 1, shift over by 1 -- overwrite last read
+// C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps around
+func (sc *SynComParams) RingIdx(i uint32) uint32 {
+	if i >= sc.DelLen {
+		i -= sc.DelLen
+	}
+	return i
+}
+
+// WriteIdx returns index for writing new spikes into the GBuf buffer,
+// based on the Context CycleTot counter which increments each cycle.
+// This is logically the last index in the ring buffer.
+func (sc *SynComParams) WriteIdx(cycTot uint32) uint32 {
+	return sc.RingIdx(cycTot%sc.DelLen + sc.DelLen)
+}
+
+// ReadIdx returns index for reading existing spikes from the GBuf buffer,
+// based on the Context CycleTot counter which increments each cycle.
+// This is logically the zero index in the ring buffer.
+func (sc *SynComParams) ReadIdx(cycTot uint32) uint32 {
+	return sc.RingIdx(cycTot % sc.DelLen)
 }
 
 // WtFailP returns probability of weight (synapse) failure given current SWt value
