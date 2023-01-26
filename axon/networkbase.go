@@ -100,6 +100,20 @@ func (nt *NetworkBase) MakeLayMap() {
 	}
 }
 
+// LayersByType returns a list of layer names by given layer types.
+// Lists are compiled when network Build() function called.
+// The layer Type is always included as a Class, along with any other
+// space-separated strings specified in Class for parameter styling, etc.
+// If no classes are passed, all layer names in order are returned.
+func (nt *NetworkBase) LayersByType(layType ...LayerTypes) []string {
+	var nms []string
+	for _, tp := range layType {
+		nm := tp.String()
+		nms = append(nms, nm)
+	}
+	return nt.LayersByClass(nms...)
+}
+
 // LayersByClass returns a list of layer names by given class(es).
 // Lists are compiled when network Build() function called.
 // The layer Type is always included as a Class, along with any other
