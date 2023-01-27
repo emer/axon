@@ -39,20 +39,20 @@ type PrjnBase struct {
 	Pat     prjn.Pattern  `desc:"pattern of connectivity"`
 	Typ     emer.PrjnType `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
 
-	RecvConNAvgMax minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of recv connections in the receiving layer"`
-	SendConNAvgMax minmax.AvgMax32 `inactive:"+" desc:"average and maximum number of sending connections in the sending layer"`
+	RecvConNAvgMax minmax.AvgMax32 `inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
+	SendConNAvgMax minmax.AvgMax32 `inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
 
-	RecvCon    []StartN  `view:"-" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt"`
+	RecvCon    []StartN  `view:"+" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt"`
 	Syns       []Synapse `desc:"[RecvNeurons][RecvCon.N SendingNeurons] this projection's subset of global list of synaptic state values, ordered so that each receiving layer neuron's connections are contiguous, with RecvCon[ri].N sending connections per receiver."`
-	RecvConIdx []uint32  `view:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] index of other neuron on the sending side of projection, in same order as Syns.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
+	RecvConIdx []uint32  `view:"+" desc:"[RecvNeurons][RecvCon.N SendingNeurons] index of other neuron on the sending side of projection, in same order as Syns.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
 
-	SendCon    []StartN `view:"-" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the SendSynIdx array of indexes into the Syns synapses.  Synapses are not organized by sending neuron so an extra indirection is needed."`
-	SendSynIdx []uint32 `view:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list"`
+	SendCon    []StartN `view:"+" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the SendSynIdx array of indexes into the Syns synapses.  Synapses are not organized by sending neuron so an extra indirection is needed."`
+	SendSynIdx []uint32 `view:"+" desc:"[SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list"`
 	SendConIdx []uint32 `view:"-" desc:"[SendNeurons[[SendCon.N RecvNeurons] index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
 
 	// spike aggregation values:
-	GBuf  []float32 `view:"-" desc:"[RecvNeurons][Params.Com.MaxDelay] Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf."`
-	GSyns []float32 `view:"-" desc:"[RecvNeurons] projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn."`
+	GBuf  []float32 `view:"+" desc:"[RecvNeurons][Params.Com.MaxDelay] Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf."`
+	GSyns []float32 `view:"+" desc:"[RecvNeurons] projection-level synaptic conductance values, integrated by prjn before being integrated at the neuron level, which enables the neuron to perform non-linear integration as needed -- a subslice from network PrjnGSyn."`
 }
 
 // emer.Prjn interface
@@ -125,7 +125,7 @@ func (pj *PrjnBase) RecvSyns(ri int) []Synapse {
 // within the sending layer, to be iterated over for processing.
 func (pj *PrjnBase) SendSynIdxs(si int) []uint32 {
 	scon := pj.SendCon[si]
-	return pj.SendConIdx[scon.Start : scon.Start+scon.N]
+	return pj.SendSynIdx[scon.Start : scon.Start+scon.N]
 }
 
 // Build constructs the full connectivity among the layers.

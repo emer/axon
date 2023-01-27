@@ -26,7 +26,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 	syns := pj.RecvSyns(recvIdx)
 	for ci := range syns {
 		sy := &syns[ci]
-		sendIdx := pj.Params.Idxs.SendNIdxToLayIdx(sy.SendIdx)
+		sendIdx := pj.Params.SynSendLayIdx(sy)
 		sn := &slay.Neurons[sendIdx]
 		sv := sn.Spike * scale * sy.Wt
 		pj.GBuf[pjcom.WriteIdx(uint32(recvIdx), wrOff)] += sv
@@ -47,16 +47,10 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int) {
 	sidxs := pj.SendSynIdxs(sendIdx)
 	for _, ssi := range sidxs {
 		sy := &pj.Syns[ssi]
-		recvIdx := pj.Params.Idxs.RecvNIdxToLayIdx(sy.RecvIdx)
+		recvIdx := pj.Params.SynRecvLayIdx(sy)
 		sv := scale * sy.Wt
-		// TODO: race condition, multiple threads will write into the same recv neuron buffer
-		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
-		// better to re-write as matmul, or to re-write from recv neuron side.
-
-		// Note: from the recv side, you can't leverage the sparse sending activity:
-		// most neurons are not spiking at any given moment,
-		// but it can be much more parallel, so maybe it is worth it on the GPU.
-		pj.GBuf[pjcom.WriteIdx(recvIdx, wrOff)] += sv
+		bi := pjcom.WriteIdx(recvIdx, wrOff)
+		pj.GBuf[bi] += sv
 	}
 }
 

@@ -52,7 +52,7 @@ type SynComParams struct {
 	MaxDelay  uint32      `inactive:"+" desc:"maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network."`
 	PFail     float32     `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
 	PFailSWt  slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
-	SendSpike slbool.Bool `desc:"if true, use the SendSpike sender-based spiking function -- else receiver-based.  GPU always uses receiver based -- copied from network"`
+	SendSpike slbool.Bool `inactive:"+" desc:"if true, use the SendSpike sender-based spiking function -- else receiver-based.  GPU always uses receiver based -- copied from network"`
 
 	DelLen uint32 `view:"-" desc:"delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed"`
 }

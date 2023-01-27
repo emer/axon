@@ -66,6 +66,7 @@ type NetworkBase struct {
 func (nt *NetworkBase) InitName(net emer.Network, name string) {
 	nt.EmerNet = net
 	nt.Nm = name
+	nt.SendSpike = true
 }
 
 // emer.Network interface methods:
