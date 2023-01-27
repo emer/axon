@@ -143,7 +143,8 @@ func TestSpikeProp(t *testing.T) {
 
 	for del := 0; del <= 4; del++ {
 		prj.Params.Com.Delay = uint32(del)
-		net.InitWts() // resets Gbuf
+		prj.Params.Com.MaxDelay = uint32(del) // now need to ensure that >= Delay
+		net.InitWts()                         // resets Gbuf
 		net.NewState(ctx)
 
 		inLay.ApplyExt(pat)
