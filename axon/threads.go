@@ -42,7 +42,7 @@ type NetThreads struct {
 
 func (nt *NetThreads) String() string {
 	maxProcs := runtime.GOMAXPROCS(0)
-	return fmt.Sprintf("Threads: GOMAXPROCS: %d  Neurons: %d  SendSpike: %d  SynCa: %d", maxProcs, nt.Neurons, nt.SendSpike, nt.SynCa)
+	return fmt.Sprintf("OS Threads (=GOMAXPROCS): %d. Gorountines: %d (Neurons) %d (SendSpike) %d (SynCa)", maxProcs, nt.Neurons, nt.SendSpike, nt.SynCa)
 }
 
 // SetDefaults uses heuristics to determine the number of goroutines to use
