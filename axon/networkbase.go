@@ -40,6 +40,7 @@ type NetworkBase struct {
 	MinPos      mat32.Vec3            `view:"-" desc:"minimum display position in network"`
 	MaxPos      mat32.Vec3            `view:"-" desc:"maximum display position in network"`
 	MetaData    map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
+	SendSpike   bool                  `desc:"if true, use the SendSpike sender-based spiking function -- else receiver-based.  GPU always uses receiver based"`
 
 	// Implementation level code below:
 	MaxDelay uint32      `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
@@ -489,14 +490,27 @@ func (nt *NetworkBase) Build() error {
 
 	// distribute synapses
 	sidx := 0
+	pjidx := 0
 	for _, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
-		rprjns := *ly.RecvPrjns()
+		rlay := lyi.(AxonLayer).AsAxon()
+		rprjns := *rlay.RecvPrjns()
 		for _, rpj := range rprjns {
 			pj := rpj.(AxonPrjn).AsAxon()
+			slay := pj.Send.(AxonLayer).AsAxon()
 			nsyn := len(pj.RecvConIdx)
 			pj.Syns = nt.Synapses[sidx : sidx+nsyn]
 			sidx += nsyn
+			for ri := range rlay.Neurons {
+				rcon := pj.RecvCon[ri]
+				syns := pj.RecvSyns(ri)
+				for ci := range syns {
+					sy := &syns[ci]
+					sy.RecvIdx = uint32(ri + rlay.NeurStIdx) // network-global idx
+					sy.SendIdx = pj.RecvConIdx[int(rcon.Start)+ci] + uint32(slay.NeurStIdx)
+					sy.PrjnIdx = uint32(pjidx)
+				}
+			}
+			pjidx++
 		}
 	}
 
@@ -514,12 +528,23 @@ func (nt *NetworkBase) Build() error {
 func (nt *NetworkBase) BuildPrjnGBuf() {
 	nt.MaxDelay = 0
 	npjneur := uint32(0)
+	pjidx := uint32(0)
 	for _, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
 		nneur := uint32(len(ly.Neurons))
 		rprjns := *ly.RecvPrjns()
 		for _, rpj := range rprjns {
 			pj := rpj.(AxonPrjn).AsAxon()
+			slay := pj.Send.(AxonLayer).AsAxon()
+			pj.Params.Idxs.PrjnIdx = pjidx
+			pj.Params.Idxs.RecvLay = uint32(ly.Idx)
+			pj.Params.Idxs.RecvLaySt = uint32(ly.NeurStIdx)
+			pj.Params.Idxs.RecvLayN = uint32(len(ly.Neurons))
+			pj.Params.Idxs.SendLay = uint32(slay.Idx)
+			pj.Params.Idxs.SendLaySt = uint32(slay.NeurStIdx)
+			pj.Params.Idxs.SendLayN = uint32(len(slay.Neurons))
+
+			pj.Params.Com.SendSpike.SetBool(nt.SendSpike)
 			if pj.Params.Com.MaxDelay > nt.MaxDelay {
 				nt.MaxDelay = pj.Params.Com.MaxDelay
 			}

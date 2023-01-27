@@ -193,12 +193,16 @@ func (ly *LayerParams) AllParams() string {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  GeExtToPool
+//  GeToPool
 
-// GeExtToPool adds GeExt from each neuron into the Pools
-func (ly *LayerParams) GeExtToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool) {
+// GeToPool adds Spike, GeRaw and GeExt from each neuron into the Pools
+func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool) {
+	pl.Inhib.FBsRaw += nrn.Spike
+	pl.Inhib.FFsRaw += nrn.GeRaw
 	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
 	if subPool {
+		lpl.Inhib.FFsRaw += nrn.Spike
+		lpl.Inhib.FFsRaw += nrn.GeRaw
 		lpl.Inhib.GeExtRaw += nrn.GeExt
 	}
 }

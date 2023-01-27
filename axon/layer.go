@@ -736,7 +736,7 @@ func (ly *Layer) InitPrjnGBuffs() {
 
 // InitWtsSym initializes the weight symmetry -- higher layers copy weights from lower layers
 func (ly *Layer) InitWtSym() {
-	for _, p := range ly.SndPrjns {
+	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
@@ -748,7 +748,7 @@ func (ly *Layer) InitWtSym() {
 		if p.RecvLay().Index() < p.SendLay().Index() {
 			continue
 		}
-		rpj, has := ly.RecipToSendPrjn(p)
+		rpj, has := ly.RecipToRecvPrjn(p)
 		if !has {
 			continue
 		}

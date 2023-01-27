@@ -415,7 +415,6 @@ GBuf: [RecvNeuron][MaxDelay]
 
 RN: 0     1     2         <- recv neuron indexes
 DI: 0 1 2 0 1 2 0 1 2     <- delay indexes
-   [                 ]
 C0: ^ v                   <- cycle 0, ring index: ^ = store, v = read
 C1:   ^ v                 <- cycle 1, shift over by 1 -- overwrite last read
 C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps around

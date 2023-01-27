@@ -29,34 +29,30 @@ import (
 
 //gosl: start prjnparams
 
-// SynIdx stores indexes into synapse for a recv synapse -- actual synapses are in Send order
-type SynIdx struct {
-	SynIdx      uint32 // index in full list of synapses
-	SendNeurIdx uint32 // index of sending neuron in full list of neurons
-
-	// todo: looks like Storage can handle arrays of 8 bytes -- only float3 is the problem!
-	// pad, pad1 uint32 // this hurts a bit at the synapse level..
-}
-
-// NeurSynIdx stores indexes into synapses for a given neuron
-type NeurSynIdx struct {
-	NeurIdx uint32 // index of neuron
-	PrjnIdx uint32 // index of projection
-	SynSt   uint32 // starting index into synapses
-	SynN    uint32 // number of synapses for this neuron
-}
-
 // PrjnIdxs contains prjn-level index information into global memory arrays
 type PrjnIdxs struct {
-	PrjnIdx   uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
+	PrjnIdx   uint32 // index of the projection in global prjn list: [Layer][RecvPrjns]
 	RecvLay   uint32 // index of the receiving layer in global list of layers
+	RecvLaySt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
 	RecvLayN  uint32 // number of neurons in recv layer
 	SendLay   uint32 // index of the sending layer in global list of layers
+	SendLaySt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
 	SendLayN  uint32 // number of neurons in send layer
-	RecvSynSt uint32 // start index into RecvNeurSynIdxs global array: [Layer][RecvPrjns][RecvNeurs]
-	SendSynSt uint32 // start index into SendNeurSynIdxs global array: [Layer][SendPrjns][SendNeurs]
 	GBufSt    uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurs][MaxDelay+1]
 	GSynSt    uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurs]
+}
+
+// RecvNIdxToLayIdx converts a neuron's index in network level global list of all neurons
+// to receiving layer-specific index-- e.g., for accessing GBuf and GSyn values.
+// Just subtracts RecvLaySt -- docu-function basically..
+func (pi *PrjnIdxs) RecvNIdxToLayIdx(ni uint32) uint32 {
+	return ni - pi.RecvLaySt
+}
+
+// SendNIdxToLayIdx converts a neuron's index in network level global list of all neurons
+// to sending layer-specific index.  Just subtracts SendLaySt -- docu-function basically..
+func (pi *PrjnIdxs) SendNIdxToLayIdx(ni uint32) uint32 {
+	return ni - pi.SendLaySt
 }
 
 // GScaleVals holds the conductance scaling values.
@@ -141,6 +137,23 @@ func (pj *PrjnParams) IsInhib() bool {
 func (pj *PrjnParams) IsExcitatory() bool {
 	return pj.Com.GType == ExcitatoryG
 }
+
+// SynRecvLayIdx converts the Synapse RecvIdx of recv neuron's index
+// in network level global list of all neurons to receiving
+// layer-specific index.
+func (pj *PrjnParams) SynRecvLayIdx(sy *Synapse) uint32 {
+	return pj.Idxs.RecvNIdxToLayIdx(sy.RecvIdx)
+}
+
+// SynSendLayIdx converts the Synapse SendIdx of sending neuron's index
+// in network level global list of all neurons to sending
+// layer-specific index.
+func (pj *PrjnParams) SynSendLayIdx(sy *Synapse) uint32 {
+	return pj.Idxs.SendNIdxToLayIdx(sy.SendIdx)
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  Cycle
 
 // GatherSpikes integrates G*Raw and G*Syn values for given neuron
 // from the given Prjn-level GRaw value, first integrating

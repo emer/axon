@@ -150,21 +150,22 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write([]byte(fmt.Sprintf("\"Rs\": [\n")))
 	depth++
 	for ri := 0; ri < nr; ri++ {
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
+		rc := pj.RecvCon[ri]
+		syns := pj.RecvSyns(ri)
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("{\n"))
 		depth++
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte(fmt.Sprintf("\"Ri\": %v,\n", ri)))
 		w.Write(indent.TabBytes(depth))
-		w.Write([]byte(fmt.Sprintf("\"N\": %v,\n", nc)))
+		w.Write([]byte(fmt.Sprintf("\"N\": %v,\n", rc.N)))
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Si\": [ "))
-		for ci := 0; ci < nc; ci++ {
-			si := pj.RecvConIdx[st+ci]
+		for ci := range syns {
+			sy := &syns[ci]
+			si := pj.Params.SynRecvLayIdx(sy)
 			w.Write([]byte(fmt.Sprintf("%v", si)))
-			if ci == nc-1 {
+			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
 			} else {
 				w.Write([]byte(", "))
@@ -173,11 +174,10 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write([]byte("],\n"))
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Wt\": [ "))
-		for ci := 0; ci < nc; ci++ {
-			rsi := pj.RecvSynIdx[st+ci]
-			sy := &pj.Syns[rsi]
+		for ci := range syns {
+			sy := &syns[ci]
 			w.Write([]byte(strconv.FormatFloat(float64(sy.Wt), 'g', weights.Prec, 32)))
-			if ci == nc-1 {
+			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
 			} else {
 				w.Write([]byte(", "))
@@ -186,11 +186,10 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write([]byte("],\n"))
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Wt1\": [ ")) // Wt1 is SWt
-		for ci := 0; ci < nc; ci++ {
-			rsi := pj.RecvSynIdx[st+ci]
-			sy := &pj.Syns[rsi]
+		for ci := range syns {
+			sy := &syns[ci]
 			w.Write([]byte(strconv.FormatFloat(float64(sy.SWt), 'g', weights.Prec, 32)))
-			if ci == nc-1 {
+			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
 			} else {
 				w.Write([]byte(", "))
@@ -287,12 +286,9 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 						ri = rsh.Offset([]int{rpy, rpx, ruy, rux})
 					}
 					scst := (ruy*rNuX + rux) * rfsz
-					nc := int(pj.RecvConN[ri])
-					st := int(pj.RecvConIdxStart[ri])
-					for ci := 0; ci < nc; ci++ {
-						// si := int(pj.RecvConIdx[st+ci]) // could verify coords etc
-						rsi := pj.RecvSynIdx[st+ci]
-						sy := &pj.Syns[rsi]
+					syns := pj.RecvSyns(ri)
+					for ci := range syns {
+						sy := &syns[ci]
 						swt := swts.FloatVal1D((scst + ci) % wsz)
 						sy.SWt = float32(swt)
 						sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
@@ -313,13 +309,11 @@ func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) flo
 	ssh := pj.Send.Shape()
 
 	for ri := 0; ri < rn; ri++ {
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		for ci := 0; ci < nc; ci++ {
-			si := int(pj.RecvConIdx[st+ci])
-			rsi := pj.RecvSynIdx[st+ci]
-			sy := &pj.Syns[rsi]
-			wt := wtFun(si, ri, ssh, rsh)
+		syns := pj.RecvSyns(ri)
+		for ci := range syns {
+			sy := &syns[ci]
+			si := pj.Params.SynSendLayIdx(sy)
+			wt := wtFun(int(si), ri, ssh, rsh)
 			sy.SWt = wt
 			sy.Wt = wt
 			sy.LWt = 0.5
@@ -335,13 +329,11 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 	ssh := pj.Send.Shape()
 
 	for ri := 0; ri < rn; ri++ {
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		for ci := 0; ci < nc; ci++ {
-			si := int(pj.RecvConIdx[st+ci])
+		syns := pj.RecvSyns(ri)
+		for ci := range syns {
+			sy := &syns[ci]
+			si := int(pj.Params.SynSendLayIdx(sy))
 			swt := swtFun(si, ri, ssh, rsh)
-			rsi := pj.RecvSynIdx[st+ci]
-			sy := &pj.Syns[rsi]
 			sy.SWt = swt
 			sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
 			sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
@@ -376,11 +368,9 @@ func (pj *Prjn) InitWts() {
 		if nrn.IsOff() {
 			continue
 		}
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
+		syns := pj.RecvSyns(ri)
+		for ci := range syns {
+			sy := &syns[ci]
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
@@ -399,14 +389,16 @@ func (pj *Prjn) SWtRescale() {
 		if nrn.IsOff() {
 			continue
 		}
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-
 		var nmin, nmax int
 		var sum float32
-		for _, rsi := range rsidxs {
-			swt := pj.Syns[rsi].SWt
+		syns := pj.RecvSyns(ri)
+		nCons := len(syns)
+		if nCons <= 1 {
+			continue
+		}
+		for ci := range syns {
+			sy := &syns[ci]
+			swt := sy.SWt
 			sum += swt
 			if swt <= pj.Params.SWt.Limit.Min {
 				nmin++
@@ -414,33 +406,30 @@ func (pj *Prjn) SWtRescale() {
 				nmax++
 			}
 		}
-		if nc <= 1 {
-			continue
-		}
-		amn := sum / float32(nc)
+		amn := sum / float32(nCons)
 		mdf := smn - amn // subtractive
 		if mdf == 0 {
 			continue
 		}
 		if mdf > 0 { // need to increase
-			if nmax > 0 && nmax < nc {
-				amn = sum / float32(nc-nmax)
+			if nmax > 0 && nmax < nCons {
+				amn = sum / float32(nCons-nmax)
 				mdf = smn - amn
 			}
-			for _, rsi := range rsidxs {
-				sy := &pj.Syns[rsi]
+			for ci := range syns {
+				sy := &syns[ci]
 				if sy.SWt <= pj.Params.SWt.Limit.Max {
 					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
 					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
 			}
 		} else {
-			if nmin > 0 && nmin < nc {
-				amn = sum / float32(nc-nmin)
+			if nmin > 0 && nmin < nCons {
+				amn = sum / float32(nCons-nmin)
 				mdf = smn - amn
 			}
-			for _, rsi := range rsidxs {
-				sy := &pj.Syns[rsi]
+			for ci := range syns {
+				sy := &syns[ci]
 				if sy.SWt >= pj.Params.SWt.Limit.Min {
 					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
 					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
@@ -450,52 +439,67 @@ func (pj *Prjn) SWtRescale() {
 	}
 }
 
-// InitWtSym initializes weight symmetry -- is given the reciprocal projection where
-// the Send and Recv layers are reversed.
+// old sender based version:
+//                     only looked at recv layers > send layers -- ri is "above" si
+//  for:      ri    <- this is now sender on recip prjn: recipSi
+//           ^ \    <- look for send back to original si, now as a receiver
+//          /   v
+// start: si == recipRi <- look in sy.RecvIdx of recipSi's sending cons for recipRi == si
+//
+
+// now using recv based version:
+//
+// start: ri == recipSi <- look in sy.SendIdx of recipRi's recv cons for recipSi == ri
+//         ^   /
+//          \ v     <- look for recv from original ri, now as a sender
+//  for:     si     <- this is now recv on recip prjn: recipRi
+
+// InitWtSym initializes weight symmetry.
+// Is given the reciprocal projection where
+// the Send and Recv layers are reversed
+// (see LayerBase RecipToRecvPrjn)
 func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 	rpj := rpjp.AsAxon()
-	slay := pj.Send.(AxonLayer).AsAxon()
-	ns := uint32(len(slay.Neurons))
-	for si := uint32(0); si < ns; si++ {
-		nc := pj.SendConN[si]
-		st := pj.SendConIdxStart[si]
-		for ci := uint32(0); ci < nc; ci++ {
-			sy := &pj.Syns[st+ci]
-			ri := pj.SendConIdx[st+ci]
-			// now we need to find the reciprocal synapse on rpj!
-			// look in ri for sending connections
-			rsi := ri
-			if len(rpj.SendConN) == 0 {
+	if len(rpj.SendCon) == 0 {
+		return
+	}
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for rii := range rlay.Neurons {
+		ri := uint32(rii)
+		syns := pj.RecvSyns(rii)
+		for ci := range syns {
+			sy := &syns[ci]
+			si := pj.Params.SynSendLayIdx(sy) // <- this sends to me, ri
+			recipRi := si                     // reciprocal case is si is now receiver
+			recipc := rpj.RecvCon[recipRi]
+			if recipc.N == 0 {
 				continue
 			}
-			rsnc := rpj.SendConN[rsi]
-			if rsnc == 0 {
+			firstSy := &rpj.Syns[recipc.Start]
+			lastSy := &rpj.Syns[recipc.Start+recipc.N-1]
+			firstSi := rpj.Params.SynSendLayIdx(firstSy)
+			lastSi := rpj.Params.SynSendLayIdx(lastSy)
+			if ri < firstSi || ri > lastSi { // fast reject -- prjns are always in order!
 				continue
 			}
-			rsst := rpj.SendConIdxStart[rsi]
-			rist := rpj.SendConIdx[rsst]        // starting index in recv prjn
-			ried := rpj.SendConIdx[rsst+rsnc-1] // ending index
-			if si < rist || si > ried {         // fast reject -- prjns are always in order!
-				continue
-			}
-			// start at index proportional to si relative to rist
+			// start at index proportional to ri relative to rist
 			up := uint32(0)
-			if ried > rist {
-				up = uint32(float32(rsnc) * float32(si-rist) / float32(ried-rist))
+			if lastSi > firstSi {
+				up = uint32(float32(recipc.N) * float32(ri-firstSi) / float32(lastSi-firstSi))
 			}
 			dn := up - 1
 
 			for {
 				doing := false
-				if up < rsnc {
+				if up < recipc.N {
 					doing = true
-					rrii := rsst + up
-					rri := rpj.SendConIdx[rrii]
-					if rri == si {
-						rsy := &rpj.Syns[rrii]
-						rsy.Wt = sy.Wt
-						rsy.LWt = sy.LWt
-						rsy.SWt = sy.SWt
+					recipCi := recipc.Start + up
+					recipSy := &rpj.Syns[recipCi]
+					recipSi := rpj.Params.SynSendLayIdx(recipSy)
+					if recipSi == ri {
+						recipSy.Wt = sy.Wt
+						recipSy.LWt = sy.LWt
+						recipSy.SWt = sy.SWt
 						// note: if we support SymFmTop then can have option to go other way
 						break
 					}
@@ -503,13 +507,13 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 				}
 				if dn >= 0 {
 					doing = true
-					rrii := rsst + dn
-					rri := rpj.SendConIdx[rrii]
-					if rri == si {
-						rsy := &rpj.Syns[rrii]
-						rsy.Wt = sy.Wt
-						rsy.LWt = sy.LWt
-						rsy.SWt = sy.SWt
+					recipCi := recipc.Start + dn
+					recipSy := &rpj.Syns[recipCi]
+					recipSi := rpj.Params.SynSendLayIdx(recipSy)
+					if recipSi == ri {
+						recipSy.Wt = sy.Wt
+						recipSy.LWt = sy.LWt
+						recipSy.SWt = sy.SWt
 						// note: if we support SymFmTop then can have option to go other way
 						break
 					}
@@ -533,9 +537,6 @@ func (pj *Prjn) InitGBuffs() {
 	}
 	for ri := range pj.GSyns {
 		pj.GSyns[ri] = 0
-	}
-	for pi := range pj.PIBuf {
-		pj.PIBuf[pi] = 0
 	}
 }
 

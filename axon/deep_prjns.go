@@ -10,6 +10,8 @@ package axon
 
 // GPU TODO: need to add special GPU function -- now just doing in CPU
 
+// todo: use GMod for this?  Ignore until last cycle!?
+
 // SendCtxtGe sends the full Burst activation from sending neuron index si,
 // to integrate CtxtGe excitatory conductance on receivers
 func (pj *Prjn) SendCtxtGe(si int, burst float32) {
