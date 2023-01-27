@@ -30,6 +30,7 @@ examples/bench/bench_*.csv
 
 # pprof files
 *.prof
+*.pprof
 
 /vendor/*
 
