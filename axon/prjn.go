@@ -163,7 +163,7 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write([]byte("\"Si\": [ "))
 		for ci := range syns {
 			sy := &syns[ci]
-			si := pj.Params.SynRecvLayIdx(sy)
+			si := pj.Params.SynSendLayIdx(sy)
 			w.Write([]byte(fmt.Sprintf("%v", si)))
 			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))

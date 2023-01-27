@@ -19,8 +19,8 @@ import (
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
 
-// GatherSpikes integrates G*Raw and G*Syn values for given neuron
-// while integrating the Prjn-level GSyn integrated values.
+// GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
+// while integrating the Recv Prjn-level GSyn integrated values.
 // ni is layer-specific index of neuron within its layer.
 func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 	ly.Params.GatherSpikesInit(nrn)
@@ -30,10 +30,8 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 		}
 		pj := p.AsAxon()
 
-		if pj.Params.Com.SendSpike.IsFalse() {
-			pj.RecvSpikes(ctx, int(ni))
-			// Note: RecvSpikes iterates over all senders for given recv
-			// but makes sense to do while touching same GBuf memory
+		if pj.Params.Com.CPURecvSpikes.IsTrue() { // about 4x slower!
+			pj.RecvSpikes(ctx, int(ni)) // Note: iterates over all senders for given recv
 		}
 		bi := pj.Params.Com.ReadIdx(ni, ctx.CycleTot)
 		gRaw := pj.GBuf[bi]

@@ -47,12 +47,12 @@ const (
 // probability of failure, and Inhib for inhibitory connections,
 // and modulatory projections that have multiplicative-like effects.
 type SynComParams struct {
-	GType     PrjnGTypes  `desc:"type of conductance (G) communicated by this projection"`
-	Delay     uint32      `min:"0" def:"2" desc:"additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value."`
-	MaxDelay  uint32      `inactive:"+" desc:"maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network."`
-	PFail     float32     `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
-	PFailSWt  slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
-	SendSpike slbool.Bool `inactive:"+" desc:"if true, use the SendSpike sender-based spiking function -- else receiver-based.  GPU always uses receiver based -- copied from network"`
+	GType         PrjnGTypes  `desc:"type of conductance (G) communicated by this projection"`
+	Delay         uint32      `min:"0" def:"2" desc:"additional synaptic delay in msec for inputs arriving at this projection.  Must be <= MaxDelay which is set during network building based on MaxDelay of any existing Prjn in the network.  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time (1 msec).  Biologically, subtract 1 from biological synaptic delay values to set corresponding Delay value."`
+	MaxDelay      uint32      `inactive:"+" desc:"maximum value of Delay -- based on MaxDelay values when the BuildGBuf function was called when the network was built -- cannot set it longer than this, except by calling BuildGBuf on network after changing MaxDelay to a larger value in any projection in the network."`
+	PFail         float32     `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
+	PFailSWt      slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
+	CPURecvSpikes slbool.Bool `view:"-" desc:"copied from Network for local access: if true, use the RecvSpikes receiver-based spiking function -- on the CPU -- this is more than 35x slower than the default SendSpike function -- it is only an option for testing in comparison to the GPU mode, which always uses RecvSpikes because the sender mode is not possible."`
 
 	DelLen uint32 `view:"-" desc:"delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed"`
 }

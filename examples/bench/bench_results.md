@@ -23,7 +23,7 @@ For LARGE case, 1 thread, Recv-based synapses
 
 Basically various things got a bit faster and SendSpike got a bit slower, but no overall difference.
 
-If you edit networkbase.go and chnage the default to SendSpike = false, it causes a dramatic slowdown:
+If you edit networkbase.go and change the default to CPURecvSpikes = true, it causes a dramatic slowdown:
 
 	Function Name 	   Secs	    Pct
 	  CycleNeuron 	  5.698	    3.5
@@ -36,7 +36,7 @@ If you edit networkbase.go and chnage the default to SendSpike = false, it cause
 	      WtFmDWt 	  0.474	    0.3
 	        Total 	163.426
 
-All of the time cost is now in GatherSpikes, which is integrating from all senders every cycle, instead of just the ones that spiked, as the SendSpike does.  That is 4x slower!  However, on the GPU, we can only do it receiver-based, so hopefully it is fast enough!  It is possible that throwing more threads in CPU land at this will help a bit, but very unlikely to approach the speed of SendSpike.
+All of the time cost is now in GatherSpikes, which is integrating from all senders every cycle, instead of just the ones that spiked, as the SendSpike does.  That is 4x slower in terms of overall speed, and the specific function goes from 3.5 secs for Send + Gather to 122, so the actual slowdown for this specific computation is 35x!  However, on the GPU, we can only do it receiver-based, so hopefully it is fast enough!  It is possible that throwing more threads in CPU land at this will help a bit, but very unlikely to approach the speed of SendSpike.
 
 It is quite a relief however that SendSpike can still be reasonably fast even when all the connections are organized receiver based -- this gives us decent CPU performance while hopefully also getting great GPU performance..
 

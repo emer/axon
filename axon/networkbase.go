@@ -32,15 +32,15 @@ import (
 // NetworkBase manages the basic structural components of a network (layers).
 // The main Network then can just have the algorithm-specific code.
 type NetworkBase struct {
-	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
-	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
-	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
-	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
-	MinPos      mat32.Vec3            `view:"-" desc:"minimum display position in network"`
-	MaxPos      mat32.Vec3            `view:"-" desc:"maximum display position in network"`
-	MetaData    map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
-	SendSpike   bool                  `desc:"if true, use the SendSpike sender-based spiking function -- else receiver-based.  GPU always uses receiver based"`
+	EmerNet       emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Nm            string                `desc:"overall name of network -- helps discriminate if there are multiple"`
+	WtsFile       string                `desc:"filename of last weights file loaded or saved"`
+	LayMap        map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
+	LayClassMap   map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
+	MinPos        mat32.Vec3            `view:"-" desc:"minimum display position in network"`
+	MaxPos        mat32.Vec3            `view:"-" desc:"maximum display position in network"`
+	MetaData      map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
+	CPURecvSpikes bool                  `desc:"if true, use the RecvSpikes receiver-based spiking function -- on the CPU -- this is more than 35x slower than the default SendSpike function -- it is only an option for testing in comparison to the GPU mode, which always uses RecvSpikes because the sender mode is not possible."`
 
 	// Implementation level code below:
 	MaxDelay uint32      `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
@@ -66,7 +66,6 @@ type NetworkBase struct {
 func (nt *NetworkBase) InitName(net emer.Network, name string) {
 	nt.EmerNet = net
 	nt.Nm = name
-	nt.SendSpike = true
 }
 
 // emer.Network interface methods:
@@ -545,7 +544,7 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 			pj.Params.Idxs.SendLaySt = uint32(slay.NeurStIdx)
 			pj.Params.Idxs.SendLayN = uint32(len(slay.Neurons))
 
-			pj.Params.Com.SendSpike.SetBool(nt.SendSpike)
+			pj.Params.Com.CPURecvSpikes.SetBool(nt.CPURecvSpikes)
 			if pj.Params.Com.MaxDelay > nt.MaxDelay {
 				nt.MaxDelay = pj.Params.Com.MaxDelay
 			}
