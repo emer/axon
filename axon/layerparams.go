@@ -201,7 +201,7 @@ func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, 
 	pl.Inhib.FFsRaw += nrn.GeRaw
 	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
 	if subPool {
-		lpl.Inhib.FFsRaw += nrn.Spike
+		lpl.Inhib.FBsRaw += nrn.Spike
 		lpl.Inhib.FFsRaw += nrn.GeRaw
 		lpl.Inhib.GeExtRaw += nrn.GeExt
 	}
@@ -393,7 +393,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		}
 	case CTLayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
-			nrn.CtxtGe = nrn.CtxtGeRaw
+			nrn.CtxtGe += nrn.CtxtGeRaw
 		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew

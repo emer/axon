@@ -91,11 +91,7 @@ func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
 	drvMax := dly.Pools[0].AvgMax.CaSpkP.Cycle.Max
 	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 	dneur := dly.Neurons[ni]
-	if dly.LayerType() == SuperLayer {
-		drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
-	} else {
-		drvGe = ly.Params.Pulv.DriveGe(dneur.CaSpkP)
-	}
+	drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
 	return
 }
 

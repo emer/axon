@@ -220,7 +220,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcpt, ofcmd := net.AddPTThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
+	ofcpt, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
 	_ = ofcpt
 	ofcct.SetClass("OFC CTCopy")
 	// net.ConnectCTSelf(ofcct, pone2one) // much better for ofc not to have self prjns..
@@ -239,7 +239,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
-	accpt, accmd := net.AddPTThalForSuper(acc, accct, "MD", one2one, full, full, space)
+	accpt, accmd := net.AddPTMaintThalForSuper(acc, accct, "MD", one2one, full, full, space)
 	_ = accpt
 	accct.SetClass("ACC CTCopy")
 	net.ConnectCTSelf(accct, full)

@@ -181,7 +181,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
-					"Layer.RSalACh.RewThr": "0.3",
+					"Layer.RSalACh.RewThr": "0.1",
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
