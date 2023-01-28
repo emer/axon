@@ -164,7 +164,7 @@ func (nt *Network) ClearTargExt() {
 	}
 }
 
-// SpkSt1 saves current acts into SpkSt1 (using SpkCaP)
+// SpkSt1 saves current acts into SpkSt1 (using CaSpkP)
 func (nt *Network) SpkSt1(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -174,7 +174,7 @@ func (nt *Network) SpkSt1(ctx *Context) {
 	}
 }
 
-// SpkSt2 saves current acts into SpkSt2 (using SpkCaP)
+// SpkSt2 saves current acts into SpkSt2 (using CaSpkP)
 func (nt *Network) SpkSt2(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
