@@ -32,8 +32,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.LoTol":           "0.8",
 					"Layer.Inhib.ActAvg.HiTol":           "0.0",
 					"Layer.Act.Dend.SSGi":                "2.0", // 2.0 > 1.5 more reliable
-					"Layer.Act.Decay.Act":                "0.2",
-					"Layer.Act.Decay.Glong":              "0.6",
+					"Layer.Act.Decay.Act":                "0.0",
+					"Layer.Act.Decay.Glong":              "0.0",
 					"Layer.Act.NMDA.Gbar":                "0.15",   // now .15 best
 					"Layer.Act.NMDA.MgC":                 "1.2",    // 1.4 == 1.2 for trace
 					"Layer.Act.NMDA.Voff":                "0",      // 5 == 0 for trace

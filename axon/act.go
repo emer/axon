@@ -488,7 +488,6 @@ func (ac *ActParams) Update() {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	nrn.ISI = -1
 	nrn.ISIAvg = -1
 	nrn.ActInt = ac.Init.Act // start fresh
 
@@ -847,6 +846,11 @@ func (ac *ActParams) SpikeFmVm(nrn *Neuron) {
 				nrn.Spiked = 1
 			} else {
 				nrn.Spiked = 0
+			}
+			if nrn.ISI > 200 { // keep from growing infinitely large
+				// used to do this arbitrarily in DecayState but that
+				// caused issues with missing refractory periods
+				nrn.ISI = -1
 			}
 		} else {
 			nrn.Spiked = 0

@@ -454,7 +454,7 @@ func (ly *LayerParams) NewState(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, 
 	nrn.GeSynPrv = nrn.GeSynMax
 	nrn.SpkMax = 0
 	nrn.SpkMaxCa = 0
-	nrn.GeSynPrv = 0
+	nrn.GeSynMax = 0
 
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
 	// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default

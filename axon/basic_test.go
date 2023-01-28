@@ -206,6 +206,20 @@ func TestNetAct(t *testing.T) {
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0.42606226, 0.42606226, 0.42606226, 0.4260622}
 
+	p1qtr0HidActs := []float32{1.1965988e-10, 0.50503737, 0, 0}
+	p1qtr0HidGes := []float32{0.0045430386, 0.5417977, 0, 0}
+	p1qtr0HidGis := []float32{0.3178829, 0.3178829, 0.3178829, 0.3178829}
+	p1qtr0OutActs := []float32{1.6391945e-10, 0.3799649, 0, 0}
+	p1qtr0OutGes := []float32{0.0037496479, 0.113552466, 0, 0}
+	p1qtr0OutGis := []float32{0.1000951, 0.1000951, 0.1000951, 0.1000951}
+
+	p1qtr3HidActs := []float32{2.653303e-39, 0.5264462, 0, 0}
+	p1qtr3HidGes := []float32{0.0008803774, 0.50142866, 0, 0}
+	p1qtr3HidGis := []float32{0.3444711, 0.3444711, 0.3444711, 0.3444711}
+	p1qtr3OutActs := []float32{3.6347e-39, 0.7274741, 0, 0}
+	p1qtr3OutGes := []float32{0, 0.8, 0, 0}
+	p1qtr3OutGis := []float32{0.473608, 0.473608, 0.473608, 0.473608}
+
 	inActs := []float32{}
 	hidActs := []float32{}
 	hidGes := []float32{}
@@ -285,6 +299,22 @@ func TestNetAct(t *testing.T) {
 				cmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
 				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
 			}
+			if pi == 1 && qtr == 0 {
+				cmprFloats(hidActs, p1qtr0HidActs, "p1 qtr 0 hidActs", t)
+				cmprFloats(hidGes, p1qtr0HidGes, "p1 qtr 0 hidGes", t)
+				cmprFloats(hidGis, p1qtr0HidGis, "p1 qtr 0 hidGis", t)
+				cmprFloats(outActs, p1qtr0OutActs, "p1 qtr 0 outActs", t)
+				cmprFloats(outGes, p1qtr0OutGes, "p1 qtr 0 outGes", t)
+				cmprFloats(outGis, p1qtr0OutGis, "p1 qtr 0 outGis", t)
+			}
+			if pi == 1 && qtr == 3 {
+				cmprFloats(hidActs, p1qtr3HidActs, "p1 qtr 3 hidActs", t)
+				cmprFloats(hidGes, p1qtr3HidGes, "p1 qtr 3 hidGes", t)
+				cmprFloats(hidGis, p1qtr3HidGis, "p1 qtr 3 hidGis", t)
+				cmprFloats(outActs, p1qtr3OutActs, "p1 qtr 3 outActs", t)
+				cmprFloats(outGes, p1qtr3OutGes, "p1 qtr 3 outGes", t)
+				cmprFloats(outGis, p1qtr3OutGis, "p1 qtr 3 outGis", t)
+			}
 		}
 		testNet.PlusPhase(ctx)
 
@@ -306,7 +336,7 @@ func TestNetLearn(t *testing.T) {
 	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
 
 	printCycs := false
-	printQtrs := true
+	printQtrs := false
 
 	qtr0HidCaSpkP := []float32{0.6022083, 0, 0, 0}
 	qtr0HidCaSpkD := []float32{0.2685343, 0, 0, 0}
@@ -319,10 +349,10 @@ func TestNetLearn(t *testing.T) {
 	qtr3OutCaSpkD := []float32{0.760237, 0, 0, 0}
 
 	// these are organized by pattern within and then by test iteration (params) outer
-	hidDwts := []float32{0.0017427707, 0.001458157, 0.0023176437, 0.0016285274}
-	outDwts := []float32{0.0076494003, 0.010328078, 0.0077902386, 0.008364963}
-	hidWts := []float32{0.5104552, 0.5087481, 0.5139025, 0.50976986}
-	outWts := []float32{0.5457716, 0.56166166, 0.5466097, 0.5500266}
+	hidDwts := []float32{0.0017427707, 0.0019655386, 0.0016441783, 0.0020374325}
+	outDwts := []float32{0.0076494003, 0.009837036, 0.008439174, 0.010048241}
+	hidWts := []float32{0.5104552, 0.51179105, 0.5098639, 0.51222205}
+	outWts := []float32{0.5457716, 0.5587571, 0.5504675, 0.5600071}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -463,16 +493,16 @@ func TestInhibAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.8761159, 0, 0, 0}
-	qtr0HidGes := []float32{0.91799927, 0, 0, 0}
-	qtr0HidGis := []float32{0.09300988, 0, 0, 0}
-	qtr0OutActs := []float32{0.793471, 0, 0, 0}
-	qtr0OutGes := []float32{0.81241286, 0, 0, 0}
+	qtr0HidActs := []float32{0.8598428, 0, 0, 0}
+	qtr0HidGes := []float32{1.1709294, 0, 0, 0}
+	qtr0HidGis := []float32{0, 0, 0, 0}
+	qtr0OutActs := []float32{0.83419645, 0, 0, 0}
+	qtr0OutGes := []float32{0.47685283, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.91901356, 0, 0, 0}
-	qtr3HidGes := []float32{1.1383185, 0, 0, 0}
-	qtr3HidGis := []float32{0.09305171, 0, 0, 0}
+	qtr3HidActs := []float32{0.99999994, 0, 0, 0}
+	qtr3HidGes := []float32{1.3619012, 0, 0, 0}
+	qtr3HidGis := []float32{0, 0, 0, 0}
 	qtr3OutActs := []float32{0.92592585, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0, 0, 0, 0}
