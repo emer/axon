@@ -65,7 +65,7 @@ func (ly *Layer) Defaults() {
 	case CTLayer:
 		ly.Params.CTDefaults()
 	case PTMaintLayer:
-		ly.Params.PTMaintDefaults()
+		ly.PTMaintDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
 
@@ -998,7 +998,7 @@ func (ly *Layer) InitGScale() {
 			totGiRel += pj.Params.PrjnScale.Rel
 		case ModulatoryG:
 			totGmRel += pj.Params.PrjnScale.Rel
-		case ExcitatoryG:
+		default:
 			totGeRel += pj.Params.PrjnScale.Rel
 		}
 	}
@@ -1023,7 +1023,7 @@ func (ly *Layer) InitGScale() {
 				pj.Params.GScale.Scale = 0
 
 			}
-		case ExcitatoryG:
+		default:
 			if totGeRel > 0 {
 				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGeRel
 				pj.Params.GScale.Scale /= totGeRel

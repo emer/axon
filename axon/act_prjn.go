@@ -27,14 +27,21 @@ type PrjnGTypes int32
 
 // The projection conductance types
 const (
-	// Excitatory projections drive Ge conductance on receiving neurons.
+	// Excitatory projections drive Ge conductance on receiving neurons,
+	// which send to GiRaw and GiSyn neuron variables.
 	ExcitatoryG PrjnGTypes = iota
 
-	// Inhibitory projections drive Gi inhibitory conductance.
+	// Inhibitory projections drive Gi inhibitory conductance,
+	// which send to GiRaw and GiSyn neuron variables.
 	InhibitoryG
 
-	// Modulatory projections have a multiplicative effect on other inputs.
+	// Modulatory projections have a multiplicative effect on other inputs,
+	// which send to GModRaw and GModSyn neuron variables.
 	ModulatoryG
+
+	// Context projections are for inputs to CT layers, which update
+	// only at the end of the plus phase, and send to CtxtGe.
+	ContextG
 
 	PrjnGTypesN
 )
@@ -55,6 +62,8 @@ type SynComParams struct {
 	CPURecvSpikes slbool.Bool `view:"-" desc:"copied from Network for local access: if true, use the RecvSpikes receiver-based spiking function -- on the CPU -- this is more than 35x slower than the default SendSpike function -- it is only an option for testing in comparison to the GPU mode, which always uses RecvSpikes because the sender mode is not possible."`
 
 	DelLen uint32 `view:"-" desc:"delay length = actual length of the GBuf buffer per neuron = Delay+1 -- just for speed"`
+
+	pad float32
 }
 
 func (sc *SynComParams) Defaults() {

@@ -250,22 +250,22 @@ func (nt *Network) AddSTNLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 	return ly
 }
 
-// AddPTLayer2D adds a PTLayer of given size, with given name.
-func (nt *Network) AddPTLayer2D(name string, nNeurY, nNeurX int) *Layer {
+// AddPTMaintLayer2D adds a PTMaintLayer of given size, with given name.
+func (nt *Network) AddPTMaintLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(PTMaintLayer))
 	return ly
 }
 
-// AddPTLayer4D adds a PTLayer of given size, with given name.
-func (nt *Network) AddPTLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+// AddPTMaintLayer4D adds a PTMaintLayer of given size, with given name.
+func (nt *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := &Layer{}
 	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(PTMaintLayer))
 	return ly
 }
 
-// ConnectPTSelf adds a Self (Lateral) projection within a PT layer,
+// ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
 // which supports active maintenance, with a class of PTSelfMaint
-func (nt *Network) ConnectPTSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
+func (nt *Network) ConnectPTMaintSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
 }

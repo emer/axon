@@ -251,9 +251,8 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
-	for _, pjii := range ly.RcvPrjns {
-		pji := pjii.(AxonPrjn)
-		pj := pji.AsAxon()
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
 		pj.Params.Learn.Learn.SetBool(false)
 		pj.Params.SWt.Adapt.SigGain = 1
 		pj.Params.SWt.Init.SPct = 0

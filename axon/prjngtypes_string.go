@@ -16,12 +16,13 @@ func _() {
 	_ = x[ExcitatoryG-0]
 	_ = x[InhibitoryG-1]
 	_ = x[ModulatoryG-2]
-	_ = x[PrjnGTypesN-3]
+	_ = x[ContextG-3]
+	_ = x[PrjnGTypesN-4]
 }
 
-const _PrjnGTypes_name = "ExcitatoryGInhibitoryGModulatoryGPrjnGTypesN"
+const _PrjnGTypes_name = "ExcitatoryGInhibitoryGModulatoryGContextGPrjnGTypesN"
 
-var _PrjnGTypes_index = [...]uint8{0, 11, 22, 33, 44}
+var _PrjnGTypes_index = [...]uint8{0, 11, 22, 33, 41, 52}
 
 func (i PrjnGTypes) String() string {
 	if i < 0 || i >= PrjnGTypes(len(_PrjnGTypes_index)-1) {

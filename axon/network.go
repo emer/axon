@@ -358,18 +358,6 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 		}
 		ly.(AxonLayer).PlusPhase(ctx)
 	}
-	nt.CTCtxt(ctx)
-}
-
-// CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
-func (nt *Network) CTCtxt(ctx *Context) {
-	nt.LayerMapSeq(func(ly AxonLayer) {
-		ly.SendCtxtGe(ctx)
-	}, "SendCtxtGe")
-
-	nt.LayerMapSeq(func(ly AxonLayer) {
-		ly.CtxtFmGe(ctx)
-	}, "CtxtFmGe")
 }
 
 //////////////////////////////////////////////////////////////////////////////////////

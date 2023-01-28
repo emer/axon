@@ -159,20 +159,21 @@ func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 	return in, pulv
 }
 
-// AddPTThalForSuper adds a PT pyramidal tract layer and a
+// AddPTMaintThalForSuper adds a PTMaint pyramidal tract active maintenance layer and a
 // Thalamus layer for given superficial layer (deep.SuperLayer) and associated CT
 // with given suffix (e.g., MD, VM).
 // PT and Thal have SetClass(super.Name()) called to allow shared params.
-// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal.
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal,
+// PTtoThal, ThalToPT
 // The PT and Thal layers are positioned behind the CT layer.
-func (nt *Network) AddPTThalForSuper(super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
+func (nt *Network) AddPTMaintThalForSuper(super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
 	name := super.Name()
 	shp := super.Shape()
 	if shp.NumDims() == 2 {
-		pt = nt.AddPTLayer2D(name+"PT", shp.Dim(0), shp.Dim(1))
+		pt = nt.AddPTMaintLayer2D(name+"PT", shp.Dim(0), shp.Dim(1))
 		thal = nt.AddThalLayer2D(name+suffix, shp.Dim(0), shp.Dim(1))
 	} else {
-		pt = nt.AddPTLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		pt = nt.AddPTMaintLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 		thal = nt.AddThalLayer4D(name+suffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
 	pt.SetClass(name)

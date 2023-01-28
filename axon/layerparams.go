@@ -237,6 +237,7 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.CtxtGeRaw = 0
 	nrn.GeSyn = nrn.GeBase
 	nrn.GiSyn = nrn.GiBase
 }
@@ -379,17 +380,20 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 // This is where special layer types add extra code.
 // It also updates the CaSpkPCyc stats.
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+	nrn.Burst = nrn.CaSpkP
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
 			actMax := lpl.AvgMax.CaSpkP.Cycle.Max
 			actAvg := lpl.AvgMax.CaSpkP.Cycle.Avg
 			thr := ly.Burst.ThrFmAvgMax(actAvg, actMax)
-			burst := float32(0)
-			if nrn.CaSpkP > thr {
-				burst = nrn.CaSpkP
+			if nrn.CaSpkP < thr {
+				nrn.Burst = 0
 			}
-			nrn.Burst = burst
+		}
+	case CTLayer:
+		if ctx.Cycle == ctx.ThetaCycles-1 {
+			nrn.CtxtGe = nrn.CtxtGeRaw
 		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
@@ -450,6 +454,7 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 // NewState handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
 func (ly *LayerParams) NewState(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
+	nrn.BurstPrv = nrn.Burst
 	nrn.SpkPrv = nrn.CaSpkD
 	nrn.GeSynPrv = nrn.GeSynMax
 	nrn.SpkMax = 0

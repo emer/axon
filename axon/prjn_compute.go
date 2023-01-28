@@ -16,20 +16,30 @@ package axon
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
 func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
-	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
-		return
-	}
-	slay := pj.Send.(AxonLayer).AsAxon()
 	scale := pj.Params.GScale.Scale
+	slay := pj.Send.(AxonLayer).AsAxon()
 	pjcom := &pj.Params.Com
 	wrOff := pjcom.WriteOff(ctx.CycleTot - 1) // note: -1 because this is logically done on prior timestep
 	syns := pj.RecvSyns(recvIdx)
-	for ci := range syns {
-		sy := &syns[ci]
-		sendIdx := pj.Params.SynSendLayIdx(sy)
-		sn := &slay.Neurons[sendIdx]
-		sv := sn.Spike * scale * sy.Wt
-		pj.GBuf[pjcom.WriteIdx(uint32(recvIdx), wrOff)] += sv
+	if pj.PrjnType() == CTCtxtPrjn {
+		if ctx.Cycle != ctx.ThetaCycles-1 {
+			return
+		}
+		for ci := range syns {
+			sy := &syns[ci]
+			sendIdx := pj.Params.SynSendLayIdx(sy)
+			sn := &slay.Neurons[sendIdx]
+			sv := sn.Burst * scale * sy.Wt
+			pj.GBuf[pjcom.WriteIdx(uint32(recvIdx), wrOff)] += sv
+		}
+	} else {
+		for ci := range syns {
+			sy := &syns[ci]
+			sendIdx := pj.Params.SynSendLayIdx(sy)
+			sn := &slay.Neurons[sendIdx]
+			sv := sn.Spike * scale * sy.Wt
+			pj.GBuf[pjcom.WriteIdx(uint32(recvIdx), wrOff)] += sv
+		}
 	}
 }
 
@@ -37,11 +47,18 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 // into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpike(ctx *Context, sendIdx int) {
-	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
-		return
-	}
+func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 	scale := pj.Params.GScale.Scale
+	if pj.PrjnType() == CTCtxtPrjn {
+		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
+			return
+		}
+		scale *= nrn.Burst // Burst is regular CaSpkP for all non-SuperLayer neurons
+	} else {
+		if nrn.Spike == 0 {
+			return
+		}
+	}
 	pjcom := &pj.Params.Com
 	wrOff := pjcom.WriteOff(ctx.CycleTot)
 	sidxs := pj.SendSynIdxs(sendIdx)

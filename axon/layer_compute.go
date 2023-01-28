@@ -143,14 +143,11 @@ func (ly *Layer) PostSpike(ctx *Context, ni uint32, nrn *Neuron) {
 func (ly *Layer) SendSpike(ctx *Context) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		if nrn.Spike == 0 {
-			continue
-		}
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue
 			}
-			sp.SendSpike(ctx, ni)
+			sp.SendSpike(ctx, ni, nrn)
 		}
 	}
 }

@@ -31,13 +31,14 @@ type Context struct {
 	PlusPhase   slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
 	PhaseCycle  int32       `desc:"cycle within current phase -- minus or plus"`
 	Cycle       int32       `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
+	ThetaCycles int32       `def:"200" desc:"length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn)."`
 	CycleTot    int32       `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time"`
 	Time        float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	Testing     slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCyc  float32     `def:"0.001" desc:"amount of time to increment per cycle"`
 	RandsPerCyc uint32      `def:"2" desc:"maximum number of random numbers used per cycle, if noise is active -- we always just increase the random counter by this amount to maintain consistency"`
 
-	pad, pad1 int32
+	pad int32
 
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
@@ -47,6 +48,7 @@ type Context struct {
 func (tm *Context) Defaults() {
 	tm.TimePerCyc = 0.001
 	tm.RandsPerCyc = 2
+	tm.ThetaCycles = 200
 }
 
 // NewState resets counters at start of new state (trial) of processing.

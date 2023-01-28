@@ -241,16 +241,6 @@ type AxonLayer interface {
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
 	SynFail(ctx *Context)
-
-	// SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
-	// CtxtGe excitatory conductance on CT layers.
-	// This should be called at the end of the Plus (5IB Burst) phase via Network.CTCtxt
-	SendCtxtGe(ctx *Context)
-
-	// CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
-	// overall Ctxt value, only on CT layers.
-	// This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
-	CtxtFmGe(ctx *Context)
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
@@ -285,7 +275,7 @@ type AxonPrjn interface {
 
 	// SendSpike sends a spike from sending neuron index si,
 	// to add to buffer on receivers.
-	SendSpike(ctx *Context, sendIdx int)
+	SendSpike(ctx *Context, sendIdx int, nrn *Neuron)
 
 	// RecvSpikes receives spikes from the sending neurons at index sendIdx
 	// into the GBuf buffer on the receiver side. The buffer on the receiver side

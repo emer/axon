@@ -40,6 +40,8 @@ type PrjnIdxs struct {
 	SendLayN  uint32 // number of neurons in send layer
 	GBufSt    uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurs][MaxDelay+1]
 	GSynSt    uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurs]
+
+	pad, pad1, pad2 uint32
 }
 
 // RecvNIdxToLayIdx converts a neuron's index in network level global list of all neurons
@@ -106,6 +108,10 @@ func (pj *PrjnParams) Update() {
 	pj.Learn.Update()
 	pj.RLPred.Update()
 	pj.Matrix.Update()
+
+	if pj.PrjnType == CTCtxtPrjn {
+		pj.Com.GType = ContextG
+	}
 }
 
 func (pj *PrjnParams) AllParams() string {
@@ -172,6 +178,8 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
 		nrn.GModRaw += gRaw
 		nrn.GModSyn += *gSyn
+	case ContextG:
+		nrn.CtxtGeRaw += gRaw
 	}
 }
 
@@ -246,7 +254,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctx.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
 	if pj.PrjnType == CTCtxtPrjn {
-		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.SpkPrv)
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv)
 	} else {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
 	}
