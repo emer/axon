@@ -493,16 +493,16 @@ func TestInhibAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidActs := []float32{0.8598428, 0, 0, 0}
-	qtr0HidGes := []float32{1.1709294, 0, 0, 0}
-	qtr0HidGis := []float32{0, 0, 0, 0}
-	qtr0OutActs := []float32{0.83419645, 0, 0, 0}
-	qtr0OutGes := []float32{0.47685283, 0, 0, 0}
+	qtr0HidActs := []float32{0.8761159, 0, 0, 0}
+	qtr0HidGes := []float32{0.91799927, 0, 0, 0}
+	qtr0HidGis := []float32{0.09300988, 0, 0, 0}
+	qtr0OutActs := []float32{0.793471, 0, 0, 0}
+	qtr0OutGes := []float32{0.81241286, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.99999994, 0, 0, 0}
-	qtr3HidGes := []float32{1.3619012, 0, 0, 0}
-	qtr3HidGis := []float32{0, 0, 0, 0}
+	qtr3HidActs := []float32{0.91901356, 0, 0, 0}
+	qtr3HidGes := []float32{1.1383185, 0, 0, 0}
+	qtr3HidGis := []float32{0.09305171, 0, 0, 0}
 	qtr3OutActs := []float32{0.92592585, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0, 0, 0, 0}

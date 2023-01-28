@@ -107,7 +107,7 @@ func (ly *Layer) MatrixDefaults() {
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 1
-	ly.Params.Learn.NeuroMod.AChDisInhib = 1
+	ly.Params.Learn.NeuroMod.AChDisInhib = 5
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators

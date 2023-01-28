@@ -172,8 +172,8 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 		nrn.GeSyn += *gSyn
 	case InhibitoryG:
 		*gSyn = ly.Act.Dt.GiSynFmRaw(*gSyn, gRaw)
-		nrn.GeRaw += gRaw
-		nrn.GeSyn += *gSyn
+		nrn.GiRaw += gRaw
+		nrn.GiSyn += *gSyn
 	case ModulatoryG:
 		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
 		nrn.GModRaw += gRaw

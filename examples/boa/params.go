@@ -67,7 +67,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "4",    // much less now -- normalized separately from other prjns
+					"Layer.Act.Dend.ModGain": "6",    // much less now -- normalized separately from other prjns
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -148,11 +148,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ACCCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.6",
+					"Layer.Inhib.Layer.Gi": "2.2",
 				}},
 			{Sel: "#ACCPT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "3.0",
+					"Layer.Inhib.Layer.Gi": "2.5",
 				}},
 			{Sel: "#ACCMD", Desc: "",
 				Params: params.Params{
@@ -244,7 +244,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
 					"Layer.Matrix.NoGoGeLrn":           "0.2",  // todo: experiment.
-					"Layer.Learn.NeuroMod.AChDisInhib": "1",
+					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
 					"Layer.Inhib.Layer.On":             "true",
