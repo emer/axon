@@ -17,45 +17,45 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong": "0.0",
 					"Layer.Act.Clamp.Ge":    "1.5",
 				}},
-			{Sel: ".CTLayer", Desc: "corticothalamic context -- using markovian copy params",
+			{Sel: ".CTLayer", Desc: "corticothalamic context -- using FSA-based params -- intermediate",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.12",
 					"Layer.CT.GeGain":            "1.0",
-					"Layer.CT.DecayTau":          "0",
-					"Layer.Inhib.Layer.Gi":       "1.4",
-					"Layer.Inhib.Pool.Gi":        "1.4",
-					"Layer.Act.GABAB.Gbar":       "0.2",
-					"Layer.Act.NMDA.Gbar":        "0.15",
-					"Layer.Act.NMDA.Tau":         "100",
+					"Layer.CT.DecayTau":          "50",
+					"Layer.Inhib.Layer.Gi":       "2.2",
+					"Layer.Inhib.Pool.Gi":        "2.2",
+					"Layer.Act.GABAB.Gbar":       "0.25",
+					"Layer.Act.NMDA.Gbar":        "0.25",
+					"Layer.Act.NMDA.Tau":         "200",
 					"Layer.Act.Decay.Act":        "0.0",
 					"Layer.Act.Decay.Glong":      "0.0",
 					"Layer.Act.Sahp.Gbar":        "1.0",
 				}},
-			{Sel: ".CTCopy", Desc: "single-step copy params",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.12",
-					"Layer.CT.GeGain":            "1.0",
-					"Layer.CT.DecayTau":          "0",
-					"Layer.Inhib.Layer.Gi":       "2.4", // was 1.8
-					"Layer.Act.GABAB.Gbar":       "0.2",
-					"Layer.Act.NMDA.Gbar":        "0.15",
-					"Layer.Act.NMDA.Tau":         "100",
-					"Layer.Act.Decay.Act":        "0.0",
-					"Layer.Act.Decay.Glong":      "0.0",
-				}},
 			/*
-				{Sel: ".CTInteg", Desc: "time integration params",
+				{Sel: ".CTCopy", Desc: "single-step copy params -- for reference",
 					Params: params.Params{
 						"Layer.Inhib.ActAvg.Nominal": "0.12",
-						"Layer.CT.GeGain":         "4.0",
-						"Layer.CT.DecayTau":       "50",
-						"Layer.Inhib.Layer.Gi":    "2.8", // was 1.8
-						"Layer.Act.GABAB.Gbar":    "0.3",
-						"Layer.Act.NMDA.Gbar":     "0.3",
-						"Layer.Act.NMDA.Tau":      "300",
-						"Layer.Act.Decay.Act":     "0.0",
-						"Layer.Act.Decay.Glong":   "0.0",
+						"Layer.CT.GeGain":            "1.0",
+						"Layer.CT.DecayTau":          "0",
+						"Layer.Inhib.Layer.Gi":       "2.4", // was 1.8
+						"Layer.Act.GABAB.Gbar":       "0.2",
+						"Layer.Act.NMDA.Gbar":        "0.15",
+						"Layer.Act.NMDA.Tau":         "100",
+						"Layer.Act.Decay.Act":        "0.0",
+						"Layer.Act.Decay.Glong":      "0.0",
 					}},
+					{Sel: ".CTInteg", Desc: "time integration params -- for reference",
+						Params: params.Params{
+							"Layer.Inhib.ActAvg.Nominal": "0.12",
+							"Layer.CT.GeGain":         "4.0",
+							"Layer.CT.DecayTau":       "50",
+							"Layer.Inhib.Layer.Gi":    "2.8", // was 1.8
+							"Layer.Act.GABAB.Gbar":    "0.3",
+							"Layer.Act.NMDA.Gbar":     "0.3",
+							"Layer.Act.NMDA.Tau":      "300",
+							"Layer.Act.Decay.Act":     "0.0",
+							"Layer.Act.Decay.Glong":   "0.0",
+						}},
 			*/
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
@@ -67,7 +67,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "6",    // much less now -- normalized separately from other prjns
+					"Layer.Act.Dend.ModGain": "2",    // much less now -- normalized separately from other prjns
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -123,8 +123,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "2.6", // was 2.8
-					"Layer.Inhib.Pool.Gi":  "1.6", // was 1.4
+					"Layer.Inhib.Layer.Gi": "1.2", // was 2.8
+					"Layer.Inhib.Pool.Gi":  "1.2", // was 1.4
 				}},
 			{Sel: "#OFC", Desc: "",
 				Params: params.Params{
@@ -148,7 +148,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ACCCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "2.2",
+					"Layer.Inhib.Layer.Gi": "1.2",
 				}},
 			{Sel: "#ACCPT", Desc: "",
 				Params: params.Params{
@@ -264,7 +264,7 @@ var ParamSets = params.Sets{
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
-					"Prjn.Learn.Trace.Tau":  "1",
+					"Prjn.Learn.Trace.Tau":  "4",
 					"Prjn.Learn.LRate.Base": "0.04",
 				}},
 			{Sel: ".BackPrjn", Desc: "back is weaker",
@@ -278,7 +278,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "1.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
 				}},
 			{Sel: ".ThalToSuper", Desc: "",
 				Params: params.Params{
@@ -301,6 +301,12 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
 					"Prjn.SWt.Init.Mean":    "0.5",
 					"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
+				}},
+			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
+					"Prjn.Learn.Trace.Tau":     "4",    // 2 > 1
+					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
 			/*
 				{Sel: "#OFCToALM", Desc: "",
@@ -411,7 +417,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":      "0",
 					"Prjn.SWt.Init.Mean":      "0.5",
 					"Prjn.SWt.Init.Var":       "0.25",
-					"Prjn.Matrix.NoGateLRate": "0.005",
+					"Prjn.Matrix.NoGateLRate": "0.0", // 0.005 std
 					"Prjn.Matrix.CurTrlDA":    "false",
 					"Prjn.Matrix.UseHasRew":   "true", // hack to use US-only timing
 					"Prjn.Matrix.AChDecay":    "0",    // not used if UseHasRew is on
@@ -442,7 +448,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1", // 2 > 1
+					"Prjn.PrjnScale.Abs": "2", // 2 > 1
 					"Prjn.PrjnScale.Rel": ".5",
 					// "Prjn.Learn.Learn":   "false",
 					// "Prjn.SWt.Init.Mean": "0.8",

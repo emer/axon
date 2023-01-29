@@ -233,6 +233,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
 	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(ofcpt, ofcct, full, emer.Forward) // good?
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
@@ -249,6 +250,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
+	net.ConnectLayers(accpt, accct, full, emer.Forward) // good?
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
