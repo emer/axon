@@ -9,13 +9,6 @@ import (
 	"strings"
 )
 
-// these are global arrays:
-// var SendNeurSynIdxs []NeurSynIdx // [Layer][SendPrjns][SendNeurons]
-// var RecvNeurSynIdxs []NeurSynIdx // [Layer][RecvPrjns][RecvNeurons]
-
-// var SendSynapses []Synapse // [Layer][SendPrjns][SendNeurons][SendSyns]
-// var RecvSynIdxs []SynIdx // [Layer][RecvPrjns][RecvNeurons][RecvSyns]
-
 //gosl: hlsl prjnparams
 // #include "prjntypes.hlsl"
 // #include "act_prjn.hlsl"
@@ -29,6 +22,14 @@ import (
 
 //gosl: start prjnparams
 
+// StartN holds a starting offset index and a number of items
+// arranged from Start to Start+N (exclusive).
+// This is not 16 byte padded and only for use on CPU side.
+type StartN struct {
+	Start uint32 `desc:"starting offset"`
+	N     uint32 `desc:"number of items -- [Start:Start+N]"`
+}
+
 // PrjnIdxs contains prjn-level index information into global memory arrays
 type PrjnIdxs struct {
 	PrjnIdx   uint32 // index of the projection in global prjn list: [Layer][RecvPrjns]
@@ -38,10 +39,12 @@ type PrjnIdxs struct {
 	SendLay   uint32 // index of the sending layer in global list of layers
 	SendLaySt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
 	SendLayN  uint32 // number of neurons in send layer
-	GBufSt    uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurs][MaxDelay+1]
-	GSynSt    uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurs]
+	GBufSt    uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurons][MaxDelay+1]
+	GSynSt    uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurons]
+	RecvConSt uint32 // start index into global PrjnRecvCon array: [Layer][RecvPrjns][RecvNeurons]
+	SynapseSt uint32 // start index into global Synapse array: [Layer][RecvPrjns][Synapses]
 
-	pad, pad1, pad2 uint32
+	pad uint32
 }
 
 // RecvNIdxToLayIdx converts a neuron's index in network level global list of all neurons

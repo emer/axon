@@ -17,14 +17,6 @@ import (
 	"github.com/goki/mat32"
 )
 
-// StartN holds a starting offset index and a number of items
-// arranged from Start to Start+N (exclusive).
-// This is not 16 byte padded and only for use on CPU side.
-type StartN struct {
-	Start uint32 `desc:"starting offset"`
-	N     uint32 `desc:"number of items -- [Start:Start+N]"`
-}
-
 // PrjnBase contains the basic structural information for specifying a projection of synaptic
 // connections between two layers, and maintaining all the synaptic connection-level data.
 // The exact same struct object is added to the Recv and Send layers, and it manages everything

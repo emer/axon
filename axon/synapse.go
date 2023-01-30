@@ -20,8 +20,8 @@ const SynapseVarStart = 16
 
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
-	RecvIdx uint32 `desc:"receiving neuron index in global list of neurons"`
-	SendIdx uint32 `desc:"sending neuron index in global list of neurons"`
+	RecvIdx uint32 `desc:"receiving neuron index in network's global list of neurons"`
+	SendIdx uint32 `desc:"sending neuron index in network's global list of neurons"`
 	PrjnIdx uint32 `desc:"projection index in global list of projections organized as [Layers][RecvPrjns]"`
 	CaUpT   int32  `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
 

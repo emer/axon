@@ -105,8 +105,14 @@ func (sc *SynComParams) WriteOff(cycTot int32) uint32 {
 
 // WriteIdx returns actual index for writing new spikes into the GBuf buffer,
 // based on the layer-based recv neuron index and the
-// WriteOff offset from the CycleTot.
-func (sc *SynComParams) WriteIdx(rnIdx, wrOff uint32) uint32 {
+// WriteOff offset computed from the CycleTot.
+func (sc *SynComParams) WriteIdx(rnIdx uint32, cycTot int32) uint32 {
+	return sc.WriteIdxOff(rnIdx, sc.WriteOff(cycTot))
+}
+
+// WriteIdxOff returns actual index for writing new spikes into the GBuf buffer,
+// based on the layer-based recv neuron index and the given WriteOff offset.
+func (sc *SynComParams) WriteIdxOff(rnIdx, wrOff uint32) uint32 {
 	return rnIdx*sc.DelLen + wrOff
 }
 

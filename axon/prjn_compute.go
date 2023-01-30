@@ -19,7 +19,8 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 	scale := pj.Params.GScale.Scale
 	slay := pj.Send.(AxonLayer).AsAxon()
 	pjcom := &pj.Params.Com
-	wrOff := pjcom.WriteOff(ctx.CycleTot - 1) // note: -1 because this is logically done on prior timestep
+	bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CycleTot-1)
+	// note: -1 because this is logically done on prior timestep
 	syns := pj.RecvSyns(recvIdx)
 	if pj.PrjnType() == CTCtxtPrjn {
 		if ctx.Cycle != ctx.ThetaCycles-1 {
@@ -30,7 +31,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 			sendIdx := pj.Params.SynSendLayIdx(sy)
 			sn := &slay.Neurons[sendIdx]
 			sv := sn.Burst * scale * sy.Wt
-			pj.GBuf[pjcom.WriteIdx(uint32(recvIdx), wrOff)] += sv
+			pj.GBuf[bi] += sv
 		}
 	} else {
 		for ci := range syns {
@@ -38,7 +39,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 			sendIdx := pj.Params.SynSendLayIdx(sy)
 			sn := &slay.Neurons[sendIdx]
 			sv := sn.Spike * scale * sy.Wt
-			pj.GBuf[pjcom.WriteIdx(uint32(recvIdx), wrOff)] += sv
+			pj.GBuf[bi] += sv
 		}
 	}
 }
@@ -66,7 +67,7 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 		sy := &pj.Syns[ssi]
 		recvIdx := pj.Params.SynRecvLayIdx(sy)
 		sv := scale * sy.Wt
-		bi := pjcom.WriteIdx(recvIdx, wrOff)
+		bi := pjcom.WriteIdxOff(recvIdx, wrOff)
 		pj.GBuf[bi] += sv
 	}
 }

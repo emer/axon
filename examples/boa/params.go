@@ -243,7 +243,7 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
-					"Layer.Matrix.NoGoGeLrn":           "0.5",  // todo: experiment.
+					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
 					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
@@ -355,11 +355,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".ToM1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.02", // .02 > .04  -- key to slow it down
+					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
 				}},
 			{Sel: ".ToVL", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.02", // .02 > .04  -- key to slow it down
+					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
 				}},
 			{Sel: "#DistToM1", Desc: "",
 				Params: params.Params{

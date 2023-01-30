@@ -18,8 +18,7 @@
 [[vk::binding(1, 1)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 [[vk::binding(2, 1)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 1)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-// [[vk::binding(4, 1)]] RWStructuredBuffer<PrjnVals> PrjVals; // [Layer][SendPrjns]
-[[vk::binding(5, 1)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurs][Syns]
+[[vk::binding(4, 1)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurs][Syns]
 
 // Set 2: prjn, synapse level indexes and buffer values
 // [[vk::binding(0, 2)]] StructuredBuffer<NeurSynIdx> SendNeurSynIdxs; // [Layer][SendPrjns][SendNeurs]

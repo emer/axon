@@ -30,7 +30,7 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 		}
 		pj := p.AsAxon()
 
-		if pj.Params.Com.CPURecvSpikes.IsTrue() { // about 4x slower!
+		if pj.Params.Com.CPURecvSpikes.IsTrue() { // about 35x slower!
 			pj.RecvSpikes(ctx, int(ni)) // Note: iterates over all senders for given recv
 		}
 		bi := pj.Params.Com.ReadIdx(ni, ctx.CycleTot)
