@@ -118,10 +118,12 @@ func (nt *Network) Cycle(ctx *Context) {
 func (nt *Network) CycleImpl(ctx *Context) {
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
 	// nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.RecvSpikes(ctx, ni, nrn) }, "RecvSpikes")
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.PrjnGatherSpikes(ctx) }, "PrjnGatherSpikes")
+	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
 	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
-	nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) }, "SendSpike")
+	if !nt.CPURecvSpikes {
+		nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) }, "SendSpike")
+	}
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 	if ctx.Testing.IsFalse() {
 		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctx) }, "SendSynCa")
@@ -162,7 +164,7 @@ func (nt *Network) ClearTargExt() {
 	}
 }
 
-// SpkSt1 saves current acts into SpkSt1 (using SpkCaP)
+// SpkSt1 saves current acts into SpkSt1 (using CaSpkP)
 func (nt *Network) SpkSt1(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -172,7 +174,7 @@ func (nt *Network) SpkSt1(ctx *Context) {
 	}
 }
 
-// SpkSt2 saves current acts into SpkSt2 (using SpkCaP)
+// SpkSt2 saves current acts into SpkSt2 (using CaSpkP)
 func (nt *Network) SpkSt2(ctx *Context) {
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -199,6 +201,7 @@ func (nt *Network) WtFmDWt(ctx *Context) {
 // InitWts initializes synaptic weights and all other associated long-term state variables
 // including running-average state values (e.g., layer running average activations etc)
 func (nt *Network) InitWts() {
+	nt.BuildPrjnGBuf()
 	nt.SlowCtr = 0
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -355,18 +358,6 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 		}
 		ly.(AxonLayer).PlusPhase(ctx)
 	}
-	nt.CTCtxt(ctx)
-}
-
-// CTCtxt sends context to CT layers and integrates CtxtGe on CT layers
-func (nt *Network) CTCtxt(ctx *Context) {
-	nt.LayerMapSeq(func(ly AxonLayer) {
-		ly.SendCtxtGe(ctx)
-	}, "SendCtxtGe")
-
-	nt.LayerMapSeq(func(ly AxonLayer) {
-		ly.CtxtFmGe(ctx)
-	}, "CtxtFmGe")
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -599,7 +590,7 @@ func (nt *Network) SizeReport() string {
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
 			projMemSynapses := projNumSynapses * memSynapse
-			projMemIdxs := len(proj.RecvConIdx)*4 + len(proj.RecvSynIdx)*4 + len(proj.SendConIdx)*4
+			projMemIdxs := len(proj.RecvConIdx)*4 + len(proj.SendSynIdx)*4 + len(proj.SendConIdx)*4
 			globalMemSynapses += projMemSynapses + projMemIdxs
 			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", proj.Recv.Name(),
 				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())

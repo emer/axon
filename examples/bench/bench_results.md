@@ -4,6 +4,44 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.7.2x (ror/gpu2 branch): everything now receiver-based
+
+In preparation for the GPU version, the synaptic memory structures are all now receiver-based, and all of the Prjn memory structures (Synapses, GBuf, Gsyn) are now subsets of one large global slice.  This did not appear to make much difference for the LARGE case, while still using the sender-based spiking function (which now has to work a bit harder by indirecting through the synapses instead of just sequentially cruising through them).
+
+For LARGE case, 1 thread, Recv-based synapses
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  5.556	   14.5
+	          DWt 	  7.023	   18.3
+	 GatherSpikes 	  0.523	    1.4
+	   GiFmSpikes 	  0.155	    0.4
+	    RecvSynCa 	  9.811	   25.5
+	    SendSpike 	  3.002	    7.8
+	    SendSynCa 	 11.892	   30.9
+	      WtFmDWt 	  0.477	    1.2
+	        Total 	 38.441
+
+
+Basically various things got a bit faster and SendSpike got a bit slower, but no overall difference.
+
+If you edit networkbase.go and change the default to CPURecvSpikes = true, it causes a dramatic slowdown:
+
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  5.698	    3.5
+	          DWt 	  7.000	    4.3
+	 GatherSpikes 	122.251	   74.8
+	   GiFmSpikes 	  0.221	    0.1
+	    RecvSynCa 	  9.835	    6.0
+	   SendCtxtGe 	  0.001	    0.0
+	    SendSynCa 	 17.945	   11.0
+	      WtFmDWt 	  0.474	    0.3
+	        Total 	163.426
+
+All of the time cost is now in GatherSpikes, which is integrating from all senders every cycle, instead of just the ones that spiked, as the SendSpike does.  That is 4x slower in terms of overall speed, and the specific function goes from 3.5 secs for Send + Gather to 122, so the actual slowdown for this specific computation is 35x!  However, on the GPU, we can only do it receiver-based, so hopefully it is fast enough!  It is possible that throwing more threads in CPU land at this will help a bit, but very unlikely to approach the speed of SendSpike.
+
+It is quite a relief however that SendSpike can still be reasonably fast even when all the connections are organized receiver based -- this gives us decent CPU performance while hopefully also getting great GPU performance..
+
+Also, TODO: ./run_large.sh shows a major discrepancy in the thread report vs basic timing printout: 23 sec in the latter vs. 38 for the former.  Not sure what is up.
+
 # Axon 1.7.0 NeuronCa = false (option gone), default threading
 
 For LARGE case, 1 thread, New code:

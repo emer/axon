@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,23 +32,28 @@ import (
 // NetworkBase manages the basic structural components of a network (layers).
 // The main Network then can just have the algorithm-specific code.
 type NetworkBase struct {
-	EmerNet     emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Nm          string                `desc:"overall name of network -- helps discriminate if there are multiple"`
-	WtsFile     string                `desc:"filename of last weights file loaded or saved"`
-	LayMap      map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
-	LayClassMap map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
-	MinPos      mat32.Vec3            `view:"-" desc:"minimum display position in network"`
-	MaxPos      mat32.Vec3            `view:"-" desc:"maximum display position in network"`
-	MetaData    map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
+	EmerNet       emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Nm            string                `desc:"overall name of network -- helps discriminate if there are multiple"`
+	WtsFile       string                `desc:"filename of last weights file loaded or saved"`
+	LayMap        map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
+	LayClassMap   map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
+	MinPos        mat32.Vec3            `view:"-" desc:"minimum display position in network"`
+	MaxPos        mat32.Vec3            `view:"-" desc:"maximum display position in network"`
+	MetaData      map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
+	CPURecvSpikes bool                  `desc:"if true, use the RecvSpikes receiver-based spiking function -- on the CPU -- this is more than 35x slower than the default SendSpike function -- it is only an option for testing in comparison to the GPU mode, which always uses RecvSpikes because the sender mode is not possible."`
 
 	// Implementation level code below:
-	Layers     emer.Layers   `desc:"array of layers"`
+	MaxDelay uint32      `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	Layers   emer.Layers `desc:"array of layers, via emer.Layer interface pointer"`
+	// todo: could now have concrete list of all Layer objects here
 	LayParams  []LayerParams `view:"-" desc:"array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals    []LayerVals   `view:"-" desc:"array of layer values, in 1-to-1 correspondence with Layers"`
 	Neurons    []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
-	Prjns      []AxonPrjn    `view:"-" desc:"pointers to all projections in the network, via the AxonPrjn interface"`
-	PrjnParams []PrjnParams  `view:"-" desc:"array of projection parameters, in 1-to-1 correspondence with Prjns"`
-	PrjnVals   []PrjnVals    `view:"-" desc:"array of projection values, in 1-to-1 correspondence with Prjns"`
+	Prjns      []AxonPrjn    `view:"-" desc:"[Layers][RecvPrjns] pointers to all projections in the network, via the AxonPrjn interface"`
+	PrjnParams []PrjnParams  `view:"-" desc:"[Layers][RecvPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns"`
+	Synapses   []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] entire network's allocation of synapses"`
+	PrjnGBuf   []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection"`
+	PrjnGSyns  []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
@@ -423,7 +429,8 @@ func (nt *NetworkBase) Build() error {
 			continue
 		}
 		totNeurons += ly.Shape().Len()
-		totPrjns += ly.NSendPrjns()
+		// totPrjns += ly.NSendPrjns()
+		totPrjns += ly.NRecvPrjns() // now doing recv
 		cls := strings.Split(ly.Class(), " ")
 		for _, cl := range cls {
 			ll := nt.LayClassMap[cl]
@@ -436,11 +443,11 @@ func (nt *NetworkBase) Build() error {
 	nt.Neurons = make([]Neuron, totNeurons)
 	nt.Prjns = make([]AxonPrjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
-	nt.PrjnVals = make([]PrjnVals, totPrjns)
 
 	// we can't do this in Defaults(), since we need to know the number of neurons etc.
 	nt.Threads.SetDefaults(totNeurons, totPrjns, nLayers)
 
+	totSynapses := 0
 	nidx := 0
 	pidx := 0
 	for li, l := range nt.Layers {
@@ -455,27 +462,125 @@ func (nt *NetworkBase) Build() error {
 		aly := ly.AsAxon()
 		aly.Neurons = nt.Neurons[nidx : nidx+nn]
 		aly.NeurStIdx = nidx
-		sprjns := *ly.SendPrjns()
-		for pi, spj := range sprjns {
+		rprjns := *ly.RecvPrjns()
+		for pi, rpj := range rprjns {
 			pii := pidx + pi
-			pji := spj.(AxonPrjn)
+			pji := rpj.(AxonPrjn)
 			pj := pji.AsAxon()
 			pj.Params = &nt.PrjnParams[pii]
-			pj.Vals = &nt.PrjnVals[pii]
 			nt.Prjns[pii] = pji
 		}
 		nidx += nn
-		pidx += len(sprjns)
-		err := ly.Build()
+		pidx += len(rprjns)
+		err := ly.Build() // also builds prjns
 		if err != nil {
 			emsg += err.Error() + "\n"
 		}
+		// now collect total number of synapses after layer build
+		for _, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			totSynapses += len(pj.RecvConIdx)
+		}
 	}
+	if totSynapses > math.MaxUint32 {
+		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity\n")
+	}
+
+	nt.Synapses = make([]Synapse, totSynapses)
+
+	// distribute synapses
+	sidx := 0
+	pjidx := 0
+	for _, lyi := range nt.Layers {
+		rlay := lyi.(AxonLayer).AsAxon()
+		rprjns := *rlay.RecvPrjns()
+		for _, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			slay := pj.Send.(AxonLayer).AsAxon()
+			nsyn := len(pj.RecvConIdx)
+			pj.Syns = nt.Synapses[sidx : sidx+nsyn]
+			sidx += nsyn
+			for ri := range rlay.Neurons {
+				rcon := pj.RecvCon[ri]
+				syns := pj.RecvSyns(ri)
+				for ci := range syns {
+					sy := &syns[ci]
+					sy.RecvIdx = uint32(ri + rlay.NeurStIdx) // network-global idx
+					sy.SendIdx = pj.RecvConIdx[int(rcon.Start)+ci] + uint32(slay.NeurStIdx)
+					sy.PrjnIdx = uint32(pjidx)
+				}
+			}
+			pjidx++
+		}
+	}
+
 	nt.Layout()
 	if emsg != "" {
 		return errors.New(emsg)
 	}
 	return nil
+}
+
+// BuildPrjnGBuf builds the PrjnGBuf, PrjnGSyns,
+// based on the MaxDelay values in thePrjnParams,
+// which should have been configured by this point.
+// Called by default in InitWts()
+func (nt *NetworkBase) BuildPrjnGBuf() {
+	nt.MaxDelay = 0
+	npjneur := uint32(0)
+	pjidx := uint32(0)
+	for _, lyi := range nt.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		nneur := uint32(len(ly.Neurons))
+		rprjns := *ly.RecvPrjns()
+		for _, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			slay := pj.Send.(AxonLayer).AsAxon()
+			pj.Params.Idxs.PrjnIdx = pjidx
+			pj.Params.Idxs.RecvLay = uint32(ly.Idx)
+			pj.Params.Idxs.RecvLaySt = uint32(ly.NeurStIdx)
+			pj.Params.Idxs.RecvLayN = uint32(len(ly.Neurons))
+			pj.Params.Idxs.SendLay = uint32(slay.Idx)
+			pj.Params.Idxs.SendLaySt = uint32(slay.NeurStIdx)
+			pj.Params.Idxs.SendLayN = uint32(len(slay.Neurons))
+
+			pj.Params.Com.CPURecvSpikes.SetBool(nt.CPURecvSpikes)
+			if pj.Params.Com.MaxDelay > nt.MaxDelay {
+				nt.MaxDelay = pj.Params.Com.MaxDelay
+			}
+			npjneur += nneur
+		}
+	}
+	mxlen := nt.MaxDelay + 1
+	gbsz := npjneur * mxlen
+	if uint32(cap(nt.PrjnGBuf)) >= gbsz {
+		nt.PrjnGBuf = nt.PrjnGBuf[:gbsz]
+	} else {
+		nt.PrjnGBuf = make([]float32, gbsz)
+	}
+	if uint32(cap(nt.PrjnGSyns)) >= npjneur {
+		nt.PrjnGSyns = nt.PrjnGSyns[:npjneur]
+	} else {
+		nt.PrjnGSyns = make([]float32, npjneur)
+	}
+
+	gbi := uint32(0)
+	gsi := uint32(0)
+	for _, lyi := range nt.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		nneur := uint32(len(ly.Neurons))
+		rprjns := *ly.RecvPrjns()
+		for _, rpj := range rprjns {
+			pj := rpj.(AxonPrjn).AsAxon()
+			gbs := nneur * mxlen
+			pj.Params.Idxs.GBufSt = gbi
+			pj.GBuf = nt.PrjnGBuf[gbi : gbi+gbs]
+			gbi += gbs
+			pj.Params.Idxs.GSynSt = gsi
+			pj.GSyns = nt.PrjnGSyns[gsi : gsi+nneur]
+			gsi += nneur
+		}
+	}
 }
 
 // DeleteAll deletes all layers, prepares network for re-configuring and building

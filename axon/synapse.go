@@ -10,28 +10,34 @@ import (
 	"unsafe"
 )
 
-// SynapseVarStart is the byte offset of fields in the Synapse structure
-// where the float32 named variables start.
+// SynapseVarStart is the *byte* offset (4 per 32 bit)
+// of fields in the Synapse structure where the float32
+// named variables start.
 // Note: all non-float32 infrastructure variables must be at the start!
-const SynapseVarStart = 8
+const SynapseVarStart = 16
 
 //gosl: start synapse
 
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
-	RecvNeurIdx uint32 `desc:"receiving neuron index in global list of neurons"`
+	RecvIdx uint32 `desc:"receiving neuron index in network's global list of neurons"`
+	SendIdx uint32 `desc:"sending neuron index in network's global list of neurons"`
+	PrjnIdx uint32 `desc:"projection index in global list of projections organized as [Layers][RecvPrjns]"`
+	CaUpT   int32  `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
 
-	CaUpT int32   `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
-	Wt    float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`
-	LWt   float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`
-	SWt   float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
-	DWt   float32 `desc:"change in synaptic weight, from learning -- updates LWt which then updates Wt."`
-	DSWt  float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
-	Ca    float32 `desc:"Raw calcium singal for Kinase learning: SpikeG * (send.CaSyn * recv.CaSyn)"`
-	CaM   float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`
-	CaP   float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
-	CaD   float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
-	Tr    float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning."`
+	Wt   float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`
+	LWt  float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`
+	SWt  float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
+	DWt  float32 `desc:"delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt."`
+	DSWt float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
+	Ca   float32 `desc:"Raw calcium singal for Kinase learning: SpikeG * (send.CaSyn * recv.CaSyn)"`
+	CaM  float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`
+	CaP  float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
+	CaD  float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
+	Tr   float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`
+	DTr  float32 `desc:"delta (change in) Tr trace of synaptic activity over time"`
+
+	pad float32
 }
 
 //gosl: end synapse
@@ -40,7 +46,7 @@ func (sy *Synapse) VarNames() []string {
 	return SynapseVars
 }
 
-var SynapseVars = []string{"Wt", "LWt", "SWt", "DWt", "DSWt", "Ca", "CaM", "CaP", "CaD", "Tr"}
+var SynapseVars = []string{"Wt", "LWt", "SWt", "DWt", "DSWt", "Ca", "CaM", "CaP", "CaD", "Tr", "DTr"}
 
 var SynapseVarProps = map[string]string{
 	"DWt":  `auto-scale:"+"`,
@@ -49,6 +55,7 @@ var SynapseVarProps = map[string]string{
 	"CaP":  `auto-scale:"+"`,
 	"CaD":  `auto-scale:"+"`,
 	"Tr":   `auto-scale:"+"`,
+	"DTr":  `auto-scale:"+"`,
 }
 
 var SynapseVarsMap map[string]int

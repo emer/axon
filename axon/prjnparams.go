@@ -9,13 +9,6 @@ import (
 	"strings"
 )
 
-// these are global arrays:
-// var SendNeurSynIdxs []NeurSynIdx // [Layer][SendPrjns][SendNeurons]
-// var RecvNeurSynIdxs []NeurSynIdx // [Layer][RecvPrjns][RecvNeurons]
-
-// var SendSynapses []Synapse // [Layer][SendPrjns][SendNeurons][SendSyns]
-// var RecvSynIdxs []SynIdx // [Layer][RecvPrjns][RecvNeurons][RecvSyns]
-
 //gosl: hlsl prjnparams
 // #include "prjntypes.hlsl"
 // #include "act_prjn.hlsl"
@@ -29,34 +22,42 @@ import (
 
 //gosl: start prjnparams
 
-// SynIdx stores indexes into synapse for a recv synapse -- actual synapses are in Send order
-type SynIdx struct {
-	SynIdx      uint32 // index in full list of synapses
-	SendNeurIdx uint32 // index of sending neuron in full list of neurons
-
-	// todo: looks like Storage can handle arrays of 8 bytes -- only float3 is the problem!
-	// pad, pad1 uint32 // this hurts a bit at the synapse level..
-}
-
-// NeurSynIdx stores indexes into synapses for a given neuron
-type NeurSynIdx struct {
-	NeurIdx uint32 // index of neuron
-	PrjnIdx uint32 // index of projection
-	SynSt   uint32 // starting index into synapses
-	SynN    uint32 // number of synapses for this neuron
+// StartN holds a starting offset index and a number of items
+// arranged from Start to Start+N (exclusive).
+// This is not 16 byte padded and only for use on CPU side.
+type StartN struct {
+	Start uint32 `desc:"starting offset"`
+	N     uint32 `desc:"number of items -- [Start:Start+N]"`
 }
 
 // PrjnIdxs contains prjn-level index information into global memory arrays
 type PrjnIdxs struct {
-	PrjnIdx      uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
-	RecvLay      uint32 // index of the receiving layer in global list of layers
-	RecvLayN     uint32 // number of neurons in recv layer
-	SendLay      uint32 // index of the sending layer in global list of layers
-	SendLayN     uint32 // number of neurons in send layer
-	RecvSynSt    uint32 // start index into RecvNeurSynIdxs global array: [Layer][RecvPrjns][RecvNeurs]
-	SendSynSt    uint32 // start index into SendNeurSynIdxs global array: [Layer][SendPrjns][SendNeurs]
-	RecvPrjnGVSt uint32 // start index into RecvPrjnGVals global array: [Layer][RecvPrjns][RecvNeurs]
-	// todo: RecvPrjnGVSt == RecvSynSt ??
+	PrjnIdx   uint32 // index of the projection in global prjn list: [Layer][RecvPrjns]
+	RecvLay   uint32 // index of the receiving layer in global list of layers
+	RecvLaySt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
+	RecvLayN  uint32 // number of neurons in recv layer
+	SendLay   uint32 // index of the sending layer in global list of layers
+	SendLaySt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
+	SendLayN  uint32 // number of neurons in send layer
+	GBufSt    uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurons][MaxDelay+1]
+	GSynSt    uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurons]
+	RecvConSt uint32 // start index into global PrjnRecvCon array: [Layer][RecvPrjns][RecvNeurons]
+	SynapseSt uint32 // start index into global Synapse array: [Layer][RecvPrjns][Synapses]
+
+	pad uint32
+}
+
+// RecvNIdxToLayIdx converts a neuron's index in network level global list of all neurons
+// to receiving layer-specific index-- e.g., for accessing GBuf and GSyn values.
+// Just subtracts RecvLaySt -- docu-function basically..
+func (pi *PrjnIdxs) RecvNIdxToLayIdx(ni uint32) uint32 {
+	return ni - pi.RecvLaySt
+}
+
+// SendNIdxToLayIdx converts a neuron's index in network level global list of all neurons
+// to sending layer-specific index.  Just subtracts SendLaySt -- docu-function basically..
+func (pi *PrjnIdxs) SendNIdxToLayIdx(ni uint32) uint32 {
+	return ni - pi.SendLaySt
 }
 
 // GScaleVals holds the conductance scaling values.
@@ -110,6 +111,10 @@ func (pj *PrjnParams) Update() {
 	pj.Learn.Update()
 	pj.RLPred.Update()
 	pj.Matrix.Update()
+
+	if pj.PrjnType == CTCtxtPrjn {
+		pj.Com.GType = ContextG
+	}
 }
 
 func (pj *PrjnParams) AllParams() string {
@@ -142,19 +147,42 @@ func (pj *PrjnParams) IsExcitatory() bool {
 	return pj.Com.GType == ExcitatoryG
 }
 
-// NeuronGatherSpikesPrjn integrates G*Raw and G*Syn values for given neuron
-// from the given Prjn-level GSyn integrated values.
-func (pj *PrjnParams) NeuronGatherSpikesPrjn(ctx *Context, gv PrjnGVals, ni uint32, nrn *Neuron) {
+// SynRecvLayIdx converts the Synapse RecvIdx of recv neuron's index
+// in network level global list of all neurons to receiving
+// layer-specific index.
+func (pj *PrjnParams) SynRecvLayIdx(sy *Synapse) uint32 {
+	return pj.Idxs.RecvNIdxToLayIdx(sy.RecvIdx)
+}
+
+// SynSendLayIdx converts the Synapse SendIdx of sending neuron's index
+// in network level global list of all neurons to sending
+// layer-specific index.
+func (pj *PrjnParams) SynSendLayIdx(sy *Synapse) uint32 {
+	return pj.Idxs.SendNIdxToLayIdx(sy.SendIdx)
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  Cycle
+
+// GatherSpikes integrates G*Raw and G*Syn values for given neuron
+// from the given Prjn-level GRaw value, first integrating
+// projection-level GSyn value.
+func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn *Neuron, gRaw float32, gSyn *float32) {
 	switch pj.Com.GType {
 	case ExcitatoryG:
-		nrn.GeRaw += gv.GRaw
-		nrn.GeSyn += gv.GSyn
+		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		nrn.GeRaw += gRaw
+		nrn.GeSyn += *gSyn
 	case InhibitoryG:
-		nrn.GiRaw += gv.GRaw
-		nrn.GiSyn += gv.GSyn
+		*gSyn = ly.Act.Dt.GiSynFmRaw(*gSyn, gRaw)
+		nrn.GiRaw += gRaw
+		nrn.GiSyn += *gSyn
 	case ModulatoryG:
-		nrn.GModRaw += gv.GRaw
-		nrn.GModSyn += gv.GSyn
+		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		nrn.GModRaw += gRaw
+		nrn.GModSyn += *gSyn
+	case ContextG:
+		nrn.CtxtGeRaw += gRaw
 	}
 }
 
@@ -199,6 +227,14 @@ func (pj *PrjnParams) RecvSynCaSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSy
 	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 }
 
+// CycleSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// This version updates every cycle, for GPU usage called on each synapse.
+func (pj *PrjnParams) CycleSynCaSyn(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+	sy.CaUpT = ctx.CycleTot
+	sy.Ca = sn.CaSyn * rn.CaSyn * pj.Learn.KinaseCa.SpikeG
+	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+}
+
 ///////////////////////////////////////////////////
 // DWt
 
@@ -229,7 +265,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctx.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
 	if pj.PrjnType == CTCtxtPrjn {
-		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.SpkPrv)
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv)
 	} else {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
 	}
@@ -352,6 +388,7 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	if pj.Matrix.CurTrlDA.IsFalse() {
 		tr += dtr
 	}
+	sy.DTr = dtr
 	sy.Tr = tr
 	sy.DWt += dwt
 }

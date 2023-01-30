@@ -4,155 +4,72 @@
 
 package axon
 
-// prjn_compute.go has the core computational methods, which are also called by GPU
+// prjn_compute.go has the core computational methods, for the CPU.
+// On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
+// files, which correspond to different shaders for each different function.
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// RecvSpikes increments synaptic conductances from Spikes,
-// using a receiver-based computation that can be parallelized across receivers
-// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-/*
-func (pj *Prjn) RecvSpikes(ctx *Context, ri uint32, rn *Neuron) {
-	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
-		return
-	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	scale := pj.Params.GScale.Scale
-	maxDelay := pj.Params.Com.Delay
-	delayBufSize := maxDelay + 1
-	currDelayIdx := pj.Vals.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
-	numCons := pj.RecvConN[ri]
-	startIdx := pj.SendConIdxStart[sendIdx]
-	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
-	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
-	excite := pj.Params.IsExcitatory()
-	zi := pj.Vals.Gidx.Zi
-	for i := range syns {
-		recvIdx := synConIdxs[i]
-		rnPool := rlay.Neurons[recvIdx].SubPool
-		sv := scale * syns[i].Wt
-		pj.GBuf[recvIdx*delayBufSize+currDelayIdx] += sv
-		if excite { // only excitatory drives inhibition
-			pj.PIBuf[rnPool*delayBufSize+currDelayIdx] += sv
-		}
-	}
-
-	if pj.Params.IsInhib() {
-		for ri := range pj.GVals {
-			gv := &pj.GVals[ri]
-			bi := uint32(ri)*sz + zi
-			gv.GRaw = pj.GBuf[bi]
-			pj.GBuf[bi] = 0
-			gv.GSyn = rlay.Params.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
-		}
-		pj.Vals.Gidx.Shift(1) // rotate buffer
-		return
-	}
-	// TODO: Race condition if one layer has multiple incoming prjns (common)
-	lpl := &rlay.Pools[0]
-	if len(rlay.Pools) == 1 {
-		lpl.Inhib.FFsRaw += pj.PIBuf[zi]
-		pj.PIBuf[zi] = 0
-	} else {
-		for pi := range rlay.Pools {
-			pl := &rlay.Pools[pi]
-			bi := uint32(pi)*sz + zi
-			sv := pj.PIBuf[bi]
-			pl.Inhib.FFsRaw += sv
-			lpl.Inhib.FFsRaw += sv
-			pj.PIBuf[bi] = 0
-		}
-	}
-	for ri := range pj.GVals {
-		gv := &pj.GVals[ri]
-		bi := uint32(ri)*sz + zi
-		gv.GRaw = pj.GBuf[bi]
-		pj.GBuf[bi] = 0
-		gv.GSyn = rlay.Params.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
-	}
-	pj.Vals.Gidx.Shift(1) // rotate buffer
-}
-*/
-
-// SendSpike sends a spike from the sending neuron at index sendIdx
-// into the buffer on the receiver side. The buffer on the receiver side
+// RecvSpikes receives spikes from the sending neurons at index sendIdx
+// into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpike(sendIdx int) {
-	if PrjnTypes(pj.Typ) == CTCtxtPrjn { // skip regular
-		return
-	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 	scale := pj.Params.GScale.Scale
-	maxDelay := pj.Params.Com.Delay
-	delayBufSize := maxDelay + 1
-	currDelayIdx := pj.Vals.Gidx.Idx(maxDelay) // index in ringbuffer to put new values -- end of line.
-	numCons := pj.SendConN[sendIdx]
-	startIdx := pj.SendConIdxStart[sendIdx]
-	syns := pj.Syns[startIdx : startIdx+numCons] // Get slice of synapses for current neuron
-	synConIdxs := pj.SendConIdx[startIdx : startIdx+numCons]
-	excite := pj.Params.IsExcitatory()
-	for i := range syns {
-		recvIdx := synConIdxs[i]
-		rnPool := rlay.Neurons[recvIdx].SubPool
-		sv := scale * syns[i].Wt
-		// TODO: race condition, multiple threads will write into the same recv neuron buffer
-		// and spikes will get lost. Could use atomic, but atomics are expensive and scale poorly
-		// better to re-write as matmul, or to re-write from recv neuron side.
-
-		// Note: from the recv side, you can't leverage the sparse sending activity:
-		// most neurons are not spiking at any given moment,
-		// but it can be much more parallel, so maybe it is worth it on the GPU.
-
-		pj.GBuf[recvIdx*delayBufSize+currDelayIdx] += sv
-		if excite { // only excitatory drives inhibition
-			pj.PIBuf[rnPool*delayBufSize+currDelayIdx] += sv
+	slay := pj.Send.(AxonLayer).AsAxon()
+	pjcom := &pj.Params.Com
+	bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CycleTot-1)
+	// note: -1 because this is logically done on prior timestep
+	syns := pj.RecvSyns(recvIdx)
+	if pj.PrjnType() == CTCtxtPrjn {
+		if ctx.Cycle != ctx.ThetaCycles-1 {
+			return
+		}
+		for ci := range syns {
+			sy := &syns[ci]
+			sendIdx := pj.Params.SynSendLayIdx(sy)
+			sn := &slay.Neurons[sendIdx]
+			sv := sn.Burst * scale * sy.Wt
+			pj.GBuf[bi] += sv
+		}
+	} else {
+		for ci := range syns {
+			sy := &syns[ci]
+			sendIdx := pj.Params.SynSendLayIdx(sy)
+			sn := &slay.Neurons[sendIdx]
+			sv := sn.Spike * scale * sy.Wt
+			pj.GBuf[bi] += sv
 		}
 	}
 }
 
-// PrjnGatherSpikes increments synaptic conductances from Spikes
-// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-func (pj *Prjn) PrjnGatherSpikes(ctx *Context) {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	del := pj.Params.Com.Delay
-	sz := del + 1
-	zi := pj.Vals.Gidx.Zi
-	if pj.Params.IsInhib() {
-		for ri := range pj.GVals {
-			gv := &pj.GVals[ri]
-			bi := uint32(ri)*sz + zi
-			gv.GRaw = pj.GBuf[bi]
-			pj.GBuf[bi] = 0
-			gv.GSyn = rlay.Params.Act.Dt.GiSynFmRaw(gv.GSyn, gv.GRaw)
+// SendSpike sends a spike from the sending neuron at index sendIdx
+// into the GBuf buffer on the receiver side. The buffer on the receiver side
+// is a ring buffer, which is used for modelling the time delay between
+// sending and receiving spikes.
+func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
+	scale := pj.Params.GScale.Scale
+	if pj.PrjnType() == CTCtxtPrjn {
+		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
+			return
 		}
-		pj.Vals.Gidx.Shift(1) // rotate buffer
-		return
-	}
-	// TODO: Race condition if one layer has multiple incoming prjns (common)
-	lpl := &rlay.Pools[0]
-	if len(rlay.Pools) == 1 {
-		lpl.Inhib.FFsRaw += pj.PIBuf[zi]
-		pj.PIBuf[zi] = 0
+		scale *= nrn.Burst // Burst is regular CaSpkP for all non-SuperLayer neurons
 	} else {
-		for pi := range rlay.Pools {
-			pl := &rlay.Pools[pi]
-			bi := uint32(pi)*sz + zi
-			sv := pj.PIBuf[bi]
-			pl.Inhib.FFsRaw += sv
-			lpl.Inhib.FFsRaw += sv
-			pj.PIBuf[bi] = 0
+		if nrn.Spike == 0 {
+			return
 		}
 	}
-	for ri := range pj.GVals {
-		gv := &pj.GVals[ri]
-		bi := uint32(ri)*sz + zi
-		gv.GRaw = pj.GBuf[bi]
-		pj.GBuf[bi] = 0
-		gv.GSyn = rlay.Params.Act.Dt.GeSynFmRaw(gv.GSyn, gv.GRaw)
+	pjcom := &pj.Params.Com
+	wrOff := pjcom.WriteOff(ctx.CycleTot)
+	sidxs := pj.SendSynIdxs(sendIdx)
+	for _, ssi := range sidxs {
+		sy := &pj.Syns[ssi]
+		recvIdx := pj.Params.SynRecvLayIdx(sy)
+		sv := scale * sy.Wt
+		bi := pjcom.WriteIdxOff(recvIdx, wrOff)
+		pj.GBuf[bi] += sv
 	}
-	pj.Vals.Gidx.Shift(1) // rotate buffer
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -171,7 +88,7 @@ func (pj *Prjn) SendSynCa(ctx *Context) {
 	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
@@ -181,14 +98,11 @@ func (pj *Prjn) SendSynCa(ctx *Context) {
 			continue
 		}
 		snCaSyn := ssg * sn.CaSyn
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
-		for ci := range syns {
-			ri := scons[ci]
+		sidxs := pj.SendSynIdxs(si)
+		for _, ssi := range sidxs {
+			sy := &pj.Syns[ssi]
+			ri := pj.Params.SynRecvLayIdx(sy)
 			rn := &rlay.Neurons[ri]
-			sy := &syns[ci]
 			pj.Params.SendSynCaSyn(ctx, sy, rn, snCaSyn, updtThr)
 		}
 	}
@@ -207,7 +121,7 @@ func (pj *Prjn) RecvSynCa(ctx *Context) {
 	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
 		if rn.Spike == 0 {
@@ -217,14 +131,11 @@ func (pj *Prjn) RecvSynCa(ctx *Context) {
 			continue
 		}
 		rnCaSyn := ssg * rn.CaSyn
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-		rcons := pj.RecvConIdx[st : st+nc]
-		for ci, rsi := range rsidxs {
-			si := rcons[ci]
+		syns := pj.RecvSyns(ri)
+		for ci := range syns {
+			sy := &syns[ci]
+			si := pj.Params.SynSendLayIdx(sy)
 			sn := &slay.Neurons[si]
-			sy := &pj.Syns[rsi]
 			pj.Params.RecvSynCaSyn(ctx, sy, sn, rnCaSyn, updtThr)
 		}
 	}
@@ -244,18 +155,15 @@ func (pj *Prjn) DWt(ctx *Context) {
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	layPool := &rlay.Pools[0]
 	isTarget := rlay.Params.Act.Clamp.IsTarget.IsTrue()
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
+	for ri := range rlay.Neurons {
+		rn := &rlay.Neurons[ri]
 		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
-		scons := pj.SendConIdx[st : st+nc]
+		syns := pj.RecvSyns(ri)
 		for ci := range syns {
-			ri := scons[ci]
-			rn := &rlay.Neurons[ri]
-			subPool := &rlay.Pools[rn.SubPool]
 			sy := &syns[ci]
+			si := pj.Params.SynSendLayIdx(sy)
+			sn := &slay.Neurons[si]
+			subPool := &rlay.Pools[rn.SubPool]
 			pj.Params.DWtSyn(ctx, sy, sn, rn, layPool, subPool, isTarget)
 		}
 	}
@@ -270,16 +178,15 @@ func (pj *Prjn) DWtSubMean(ctx *Context) {
 		return
 	}
 	for ri := range rlay.Neurons {
-		nc := int(pj.RecvConN[ri])
-		if nc < 1 {
+		syns := pj.RecvSyns(ri)
+		if len(syns) < 1 {
 			continue
 		}
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
 		sumDWt := float32(0)
 		nnz := 0 // non-zero
-		for _, rsi := range rsidxs {
-			dw := pj.Syns[rsi].DWt
+		for ci := range syns {
+			sy := &syns[ci]
+			dw := sy.DWt
 			if dw != 0 {
 				sumDWt += dw
 				nnz++
@@ -289,8 +196,8 @@ func (pj *Prjn) DWtSubMean(ctx *Context) {
 			continue
 		}
 		sumDWt /= float32(nnz)
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
+		for ci := range syns {
+			sy := &syns[ci]
 			if sy.DWt != 0 {
 				sy.DWt -= sm * sumDWt
 			}
@@ -299,13 +206,11 @@ func (pj *Prjn) DWtSubMean(ctx *Context) {
 }
 
 // WtFmDWt updates the synaptic weight values from delta-weight changes.
-// called on the *sending* projections.
+// called on the *receiving* projections.
 func (pj *Prjn) WtFmDWt(ctx *Context) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	for si := range slay.Neurons {
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for ri := range rlay.Neurons {
+		syns := pj.RecvSyns(ri)
 		for ci := range syns {
 			sy := &syns[ci]
 			pj.Params.WtFmDWtSyn(ctx, sy)
@@ -335,15 +240,14 @@ func (pj *Prjn) SWtFmWt() {
 	lr := pj.Params.SWt.Adapt.LRate
 	dvar := pj.Params.SWt.Adapt.DreamVar
 	for ri := range rlay.Neurons {
-		nc := int(pj.RecvConN[ri])
-		if nc < 1 {
+		syns := pj.RecvSyns(ri)
+		nCons := len(syns)
+		if nCons < 1 {
 			continue
 		}
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
 		avgDWt := float32(0)
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
+		for ci := range syns {
+			sy := &syns[ci]
 			if sy.DSWt >= 0 { // softbound for SWt
 				sy.DSWt *= (max - sy.SWt)
 			} else {
@@ -351,11 +255,11 @@ func (pj *Prjn) SWtFmWt() {
 			}
 			avgDWt += sy.DSWt
 		}
-		avgDWt /= float32(nc)
+		avgDWt /= float32(nCons)
 		avgDWt *= pj.Params.SWt.Adapt.SubMean
 		if dvar > 0 {
-			for _, rsi := range rsidxs {
-				sy := &pj.Syns[rsi]
+			for ci := range syns {
+				sy := &syns[ci]
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				if sy.Wt == 0 { // restore failed wts
@@ -365,8 +269,8 @@ func (pj *Prjn) SWtFmWt() {
 				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 			}
 		} else {
-			for _, rsi := range rsidxs {
-				sy := &pj.Syns[rsi]
+			for ci := range syns {
+				sy := &syns[ci]
 				sy.SWt += lr * (sy.DSWt - avgDWt)
 				sy.DSWt = 0
 				if sy.Wt == 0 { // restore failed wts
@@ -397,11 +301,9 @@ func (pj *Prjn) SynScale() {
 			continue
 		}
 		adif := -lr * nrn.AvgDif
-		nc := int(pj.RecvConN[ri])
-		st := int(pj.RecvConIdxStart[ri])
-		rsidxs := pj.RecvSynIdx[st : st+nc]
-		for _, rsi := range rsidxs {
-			sy := &pj.Syns[rsi]
+		syns := pj.RecvSyns(ri)
+		for ci := range syns {
+			sy := &syns[ci]
 			if adif >= 0 { // key to have soft bounding on lwt here!
 				sy.LWt += (1 - sy.LWt) * adif * sy.SWt
 			} else {
@@ -415,11 +317,9 @@ func (pj *Prjn) SynScale() {
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
 func (pj *Prjn) SynFail(ctx *Context) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	for si := range slay.Neurons {
-		nc := int(pj.SendConN[si])
-		st := int(pj.SendConIdxStart[si])
-		syns := pj.Syns[st : st+nc]
+	rlay := pj.Recv.(AxonLayer).AsAxon()
+	for ri := range rlay.Neurons {
+		syns := pj.RecvSyns(ri)
 		for ci := range syns {
 			sy := &syns[ci]
 			if sy.Wt == 0 { // restore failed wts

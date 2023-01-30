@@ -107,7 +107,7 @@ func (ly *Layer) MatrixDefaults() {
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 1
-	ly.Params.Learn.NeuroMod.AChDisInhib = 1
+	ly.Params.Learn.NeuroMod.AChDisInhib = 5
 
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
@@ -251,9 +251,8 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
-	for _, pjii := range ly.RcvPrjns {
-		pji := pjii.(AxonPrjn)
-		pj := pji.AsAxon()
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
 		pj.Params.Learn.Learn.SetBool(false)
 		pj.Params.SWt.Adapt.SigGain = 1
 		pj.Params.SWt.Init.SPct = 0

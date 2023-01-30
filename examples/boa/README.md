@@ -97,23 +97,31 @@ At time of CS, if layer gated:
 If layer NOT gated:  <- exploration opportunity cost
 * In proportion to ACh, Go up, No down -- if no ACh, no learn!
     + This should NOT be in the final trace because it didn't do anything.
-    + should be weaker and exploratory.
-    
-Timing:
-    
-    
+    + should be weaker and exploratory. -- .005 works and is needed in pcore.
+
 # Stats in the logs
 
 * `AllGood` = summary stat representing the average of several of the following stats.  If this is around 1, then the model should be performing well, both behaviorally and in terms of what each of the key layers is doing.
 
-* `ActMatch` = match between network's action and the instinct-driven "correct" action.
+* `ActMatch` = match between network's action and the instinct-driven "correct" action.  Usually the `LeftCor` action -- tracking % of time it correctly does the Left action (in zoolander mode where it only goes left to search) -- is the most indicative
 
 * `PctCortex` = % of approach trials (entire sequence of explore then approach) driven by the cortex instead of the instinct.
 
 * `MaintFail*` are loss of active maintenance of goal reps in PT layer -- making sure those are working properly across time.
 
+* `MaintEarly` means the PT layer is getting active prior to BG gating -- need to turn down `.SuperToPT` -- see below.
+
 * `WrongCSGate` is gating to approach the wrong CS (one that does not satisfy the current drive) -- this can happen if the BG happens to get activated via OFC and ACC patterns even if the CS is not associated with the drive-relevant US.  It will be punished by negative DA and should not keep happening.
 
+# Parameter tuning
+
+## PT Tuning
+
+The PT layer is somewhat sensitive in parameter tuning because it has several potentially conflicting demands: It must exhibit robust active maintenance (requiring strong excitation over time), while also being sensitive to the BG gating signal via MD modulatory projections.  This typically means that `.PTSelfMaint` `Abs` is strong enough to prevent `MaintFail`, but not too strong to cause `MaintEarly` to start happening.  `.SuperToPT` must be relatively weak (use .`Abs`) so super -> PT alone does not cause gating, but not too weak that it fails to gate when MD gets active.  Finally, `PTMaintLayer` `Dend.ModGain` is key for setting the strength of the MD thalamus modulatory projections into the PT -- these target the NMDA channels specifically, and help to "ignite" the active maintenance.
+
+## MD Tuning
+
+MD thalamus likewise has multiple conflicting demands, similar to PT: must not get active spontaneously, but needs to activate quickly when disinhibited from the BG.  The `Gated*` stats track MD activity (in addition to BG), similar to how `Maint*` tracks PT tuning.  `.SuperToThal` provides key `Abs` tuning for strength from cortex -- also `.CTToThal` controls CT input to MD -- this is not critical for basic tasks but may be important for more interesting predictive learning cases. 
 
 # References 
 

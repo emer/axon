@@ -105,14 +105,22 @@ func (ly *LayerParams) CTDefaults() {
 	// ly.Act.GABAB.Gbar = 0.3
 }
 
-func (ly *LayerParams) PTMaintDefaults() {
-	ly.Act.Decay.Act = 0 // deep doesn't decay!
-	ly.Act.Decay.Glong = 0
-	ly.Act.Decay.AHP = 0
-	ly.Act.NMDA.Gbar = 0.3 // long strong maint
-	ly.Act.NMDA.Tau = 300
-	ly.Act.GABAB.Gbar = 0.3
-	ly.Act.Dend.ModGain = 200 // this multiplies thalamic input projections -- only briefly active so need to be strong
+func (ly *Layer) PTMaintDefaults() {
+	ly.Params.Act.Decay.Act = 0 // deep doesn't decay!
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.AHP = 0
+	ly.Params.Act.NMDA.Gbar = 0.3 // long strong maint
+	ly.Params.Act.NMDA.Tau = 300
+	ly.Params.Act.GABAB.Gbar = 0.3
+	ly.Params.Act.Dend.ModGain = 200 // this multiplies thalamic input projections -- only briefly active so need to be strong
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		slay := pj.Send.(AxonLayer).AsAxon()
+		if slay.LayerType() == VThalLayer {
+			pj.Params.Com.GType = ModulatoryG
+		}
+	}
 }
 
 // called in Defaults for Pulvinar layer type
@@ -126,54 +134,4 @@ func (ly *LayerParams) PulvDefaults() {
 // PulvPostBuild does post-Build config of Pulvinar based on BuildConfig options
 func (ly *Layer) PulvPostBuild() {
 	ly.Params.Pulv.DriveLayIdx = ly.BuildConfigFindLayer("DriveLayName", true)
-}
-
-// GPU TODO: this code needs to be performed in GPU-land somehow!
-// for now it is being done separately by the layer, CPU only.
-
-// SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
-// CtxtGe excitatory conductance on CT layers.
-// This should be called at the end of the Plus (5IB Burst) phase via Network.CTCtxt
-func (ly *Layer) SendCtxtGe(ctx *Context) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() || nrn.CaSpkP < 0.1 {
-			continue
-		}
-		for _, sp := range ly.SndPrjns {
-			if sp.IsOff() {
-				continue
-			}
-			ptyp := PrjnTypes(sp.Type())
-			if ptyp != CTCtxtPrjn {
-				continue
-			}
-			pj := sp.AsAxon()
-			pj.SendCtxtGe(ni, nrn.CaSpkP)
-		}
-	}
-}
-
-// CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
-// overall Ctxt value, only on CT layers.
-// This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
-func (ly *Layer) CtxtFmGe(ctx *Context) {
-	if ly.LayerType() != CTLayer {
-		return
-	}
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		nrn.CtxtGe = 0
-	}
-	for _, rp := range ly.RcvPrjns {
-		if rp.IsOff() {
-			continue
-		}
-		ptyp := PrjnTypes(rp.Type())
-		if ptyp != CTCtxtPrjn {
-			continue
-		}
-		pj := rp.AsAxon()
-		pj.RecvCtxtGeInc()
-	}
 }

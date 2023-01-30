@@ -205,16 +205,41 @@ func (ly *LayerBase) PoolTry(idx int) (*Pool, error) {
 	return &(ly.Pools[idx]), nil
 }
 
-// RecipToSendPrjn finds the reciprocal projection relative to the given sending projection
-// found within the SendPrjns of this layer.  This is then a recv prjn within this layer:
+// RecipToSendPrjn finds the reciprocal projection to
+// the given sending projection within the ly layer.
+// i.e., where ly is instead the *receiving* layer from same other layer B
+// that is the receiver of the spj projection we're sending to.
 //
-//	S=A -> R=B recip: R=A <- S=B -- ly = A -- we are the sender of srj and recv of rpj.
+//	ly = A,  other layer = B:
+//
+// spj: S=A -> R=B
+// rpj: R=A <- S=B
 //
 // returns false if not found.
 func (ly *LayerBase) RecipToSendPrjn(spj emer.Prjn) (emer.Prjn, bool) {
 	for _, rpj := range ly.RcvPrjns {
-		if rpj.SendLay() == spj.RecvLay() {
+		if rpj.SendLay() == spj.RecvLay() { // B = sender of rpj, recv of spj
 			return rpj, true
+		}
+	}
+	return nil, false
+}
+
+// RecipToRecvPrjn finds the reciprocal projection to
+// the given recv projection within the ly layer.
+// i.e., where ly is instead the *sending* layer to same other layer B
+// that is the sender of the rpj projection we're receiving from.
+//
+//	ly = A, other layer = B:
+//
+// rpj: R=A <- S=B
+// spj: S=A -> R=B
+//
+// returns false if not found.
+func (ly *LayerBase) RecipToRecvPrjn(rpj emer.Prjn) (emer.Prjn, bool) {
+	for _, spj := range ly.SndPrjns {
+		if spj.RecvLay() == rpj.SendLay() { // B = sender of rpj, recv of spj
+			return spj, true
 		}
 	}
 	return nil, false

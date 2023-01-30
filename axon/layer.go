@@ -65,7 +65,7 @@ func (ly *Layer) Defaults() {
 	case CTLayer:
 		ly.Params.CTDefaults()
 	case PTMaintLayer:
-		ly.Params.PTMaintDefaults()
+		ly.PTMaintDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
 
@@ -736,7 +736,7 @@ func (ly *Layer) InitPrjnGBuffs() {
 
 // InitWtsSym initializes the weight symmetry -- higher layers copy weights from lower layers
 func (ly *Layer) InitWtSym() {
-	for _, p := range ly.SndPrjns {
+	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
@@ -748,7 +748,7 @@ func (ly *Layer) InitWtSym() {
 		if p.RecvLay().Index() < p.SendLay().Index() {
 			continue
 		}
-		rpj, has := ly.RecipToSendPrjn(p)
+		rpj, has := ly.RecipToRecvPrjn(p)
 		if !has {
 			continue
 		}
@@ -998,7 +998,7 @@ func (ly *Layer) InitGScale() {
 			totGiRel += pj.Params.PrjnScale.Rel
 		case ModulatoryG:
 			totGmRel += pj.Params.PrjnScale.Rel
-		case ExcitatoryG:
+		default:
 			totGeRel += pj.Params.PrjnScale.Rel
 		}
 	}
@@ -1023,7 +1023,7 @@ func (ly *Layer) InitGScale() {
 				pj.Params.GScale.Scale = 0
 
 			}
-		case ExcitatoryG:
+		default:
 			if totGeRel > 0 {
 				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGeRel
 				pj.Params.GScale.Scale /= totGeRel

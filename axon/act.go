@@ -11,8 +11,6 @@ import (
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/gosl/slrand"
 	"github.com/goki/gosl/sltype"
-	"github.com/goki/ki/ints"
-	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 )
 
@@ -418,7 +416,7 @@ type ActParams struct {
 	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
 	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
 	Mahp    chans.MahpParams  `view:"inline" desc:"M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
-	Sahp    chans.SahpParams  `view:"inline" desc:"slow time-scale afterhyperpolarization sAHP current -- integrates SpkCaD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron"`
+	Sahp    chans.SahpParams  `view:"inline" desc:"slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron"`
 	KNa     chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
 	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
 	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
@@ -490,7 +488,6 @@ func (ac *ActParams) Update() {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	nrn.ISI = -1
 	nrn.ISIAvg = -1
 	nrn.ActInt = ac.Init.Act // start fresh
 
@@ -547,7 +544,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
 
-	nrn.CtxtGe -= glong * nrn.CtxtGe
+	// nrn.CtxtGe -= glong * nrn.CtxtGe
 }
 
 //gosl: end act
@@ -616,6 +613,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GeExt = 0
 
 	nrn.CtxtGe = 0
+	nrn.CtxtGeRaw = 0
 
 	ac.InitLongActs(nrn)
 }
@@ -850,6 +848,11 @@ func (ac *ActParams) SpikeFmVm(nrn *Neuron) {
 			} else {
 				nrn.Spiked = 0
 			}
+			if nrn.ISI > 200 { // keep from growing infinitely large
+				// used to do this arbitrarily in DecayState but that
+				// caused issues with missing refractory periods
+				nrn.ISI = -1
+			}
 		} else {
 			nrn.Spiked = 0
 		}
@@ -867,144 +870,3 @@ func (ac *ActParams) SpikeFmVm(nrn *Neuron) {
 }
 
 //gosl: end act
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Projection-level activation params
-
-//go:generate stringer -type=PrjnGTypes
-
-var KiT_PrjnGTypes = kit.Enums.AddEnum(PrjnGTypesN, kit.NotBitFlag, nil)
-
-func (ev PrjnGTypes) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *PrjnGTypes) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
-
-//gosl: start act_prjn
-
-// PrjnGTypes represents the conductance (G) effects of a given projection,
-// including excitatory, inhibitory, and modulatory.
-type PrjnGTypes int32
-
-// The projection conductance types
-const (
-	// Excitatory projections drive Ge conductance on receiving neurons.
-	ExcitatoryG PrjnGTypes = iota
-
-	// Inhibitory projections drive Gi inhibitory conductance.
-	InhibitoryG
-
-	// Modulatory projections have a multiplicative effect on other inputs.
-	ModulatoryG
-
-	PrjnGTypesN
-)
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  SynComParams
-
-// SynComParams are synaptic communication parameters:
-// used in the Prjn parameters.  Includes delay and
-// probability of failure, and Inhib for inhibitory connections,
-// and modulatory projections that have multiplicative-like effects.
-type SynComParams struct {
-	GType    PrjnGTypes  `desc:"type of conductance (G) communicated by this projection"`
-	Delay    uint32      `min:"0" def:"2" desc:"additional synaptic delay for inputs arriving at this projection -- IMPORTANT: if you change this, you must call InitWts() on Network!  Delay = 0 means a spike reaches receivers in the next Cycle, which is the minimum time.  Biologically, subtract 1 from synaptic delay values to set corresponding Delay value."`
-	PFail    float32     `desc:"probability of synaptic transmission failure -- if > 0, then weights are turned off at random as a function of PFail (times 1-SWt if PFailSwt)"`
-	PFailSWt slbool.Bool `desc:"if true, then probability of failure is inversely proportional to SWt structural / slow weight value (i.e., multiply PFail * (1-SWt)))"`
-}
-
-func (sc *SynComParams) Defaults() {
-	sc.Delay = 2
-	sc.PFail = 0 // 0.5 works?
-	sc.PFailSWt.SetBool(false)
-}
-
-func (sc *SynComParams) Update() {
-}
-
-// WtFailP returns probability of weight (synapse) failure given current SWt value
-func (sc *SynComParams) WtFailP(swt float32) float32 {
-	if sc.PFailSWt.IsFalse() {
-		return sc.PFail
-	}
-	return sc.PFail * (1 - swt)
-}
-
-//gosl: end act_prjn
-
-// WtFail returns true if synapse should fail, as function of SWt value (optionally)
-func (sc *SynComParams) WtFail(swt float32) bool {
-	fp := sc.WtFailP(swt)
-	if fp == 0 {
-		return false
-	}
-	return erand.BoolP(fp)
-}
-
-// Fail updates failure status of given weight, given SWt value
-func (sc *SynComParams) Fail(wt *float32, swt float32) {
-	if sc.PFail > 0 {
-		if sc.WtFail(swt) {
-			*wt = 0
-		}
-	}
-}
-
-//gosl: start act_prjn
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  PrjnScaleParams
-
-// PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,
-// using both absolute and relative factors.
-type PrjnScaleParams struct {
-	Rel    float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling"`
-	Abs    float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
-	AvgTau float32 `def:"500" desc:"time constant for integrating projection-level averages to track G scale: Prjn.GScale.AvgAvg, AvgMax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
-
-	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-}
-
-func (ws *PrjnScaleParams) Defaults() {
-	ws.Rel = 1
-	ws.Abs = 1
-	ws.AvgTau = 500
-	ws.Update()
-}
-
-func (ws *PrjnScaleParams) Update() {
-	ws.AvgDt = 1 / ws.AvgTau
-}
-
-// SLayActScale computes scaling factor based on sending layer activity level (savg), number of units
-// in sending layer (snu), and number of recv connections (ncon).
-// Uses a fixed sem_extra standard-error-of-the-mean (SEM) extra value of 2
-// to add to the average expected number of active connections to receive,
-// for purposes of computing scaling factors with partial connectivity
-// For 25% layer activity, binomial SEM = sqrt(p(1-p)) = .43, so 3x = 1.3 so 2 is a reasonable default.
-func (ws *PrjnScaleParams) SLayActScale(savg, snu, ncon float32) float32 {
-	if ncon < 1 { // prjn Avg can be < 1 in some cases
-		ncon = 1
-	}
-	semExtra := 2
-	slayActN := int(mat32.Round(savg * snu)) // sending layer actual # active
-	slayActN = ints.MaxInt(slayActN, 1)
-	var sc float32
-	if ncon == snu {
-		sc = 1 / float32(slayActN)
-	} else {
-		maxActN := int(mat32.Min(ncon, float32(slayActN))) // max number we could get
-		avgActN := int(mat32.Round(savg * ncon))           // recv average actual # active if uniform
-		avgActN = ints.MaxInt(avgActN, 1)
-		expActN := avgActN + semExtra // expected
-		expActN = ints.MinInt(expActN, maxActN)
-		sc = 1 / float32(expActN)
-	}
-	return sc
-}
-
-// FullScale returns full scaling factor, which is product of Abs * Rel * SLayActScale
-func (ws *PrjnScaleParams) FullScale(savg, snu, ncon float32) float32 {
-	return ws.Abs * ws.Rel * ws.SLayActScale(savg, snu, ncon)
-}
-
-//gosl: end act_prjn

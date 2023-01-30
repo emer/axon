@@ -12,31 +12,39 @@ import (
 	"github.com/goki/mat32"
 )
 
-// layer_compute.go has the core computational methods, which are also called by GPU
+// layer_compute.go has the core computational methods, for the CPU.
+// On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
+// files, which correspond to different shaders for each different function.
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle
-//  note: these are calls to LayerParams methods that have the core computation
 
-// RecvSpikes integrates G*Raw and G*Syn values for given neuron
-// from the Prjn-level GSyn integrated values.
-/*
-func (ly *Layer) RecvSpikes(ctx *Context, ni uint32, nrn *Neuron) {
-	nrn.GeRaw = 0
-	nrn.GeSyn = 0
+// GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
+// while integrating the Recv Prjn-level GSyn integrated values.
+// ni is layer-specific index of neuron within its layer.
+func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
+	ly.Params.GatherSpikesInit(nrn)
 	for _, p := range ly.RcvPrjns {
 		if p.IsOff() {
 			continue
 		}
 		pj := p.AsAxon()
-		pj.RecvSpikes(ctx, ni, nrn)
+
+		if pj.Params.Com.CPURecvSpikes.IsTrue() { // about 35x slower!
+			pj.RecvSpikes(ctx, int(ni)) // Note: iterates over all senders for given recv
+		}
+		bi := pj.Params.Com.ReadIdx(ni, ctx.CycleTot)
+		gRaw := pj.GBuf[bi]
+		pj.GBuf[bi] = 0
+		pj.Params.GatherSpikes(ctx, ly.Params, ni, nrn, gRaw, &pj.GSyns[ni])
 	}
 }
-*/
 
-// Prjns.PrjnGatherSpikes called first, at Network level for all prjns
-
-// GiFmSpikes integrates new inhibitory conductances from Spikes
+// GiFmSpikes gets the Spike, GeRaw and GeExt from neurons in the pools
+// where Spike drives FBsRaw -- raw feedback signal,
+// GeRaw drives FFsRaw -- aggregate feedforward excitatory spiking input
+// GeExt represents extra excitatory input from other sources.
+// Then integrates new inhibitory conductances therefrom,
 // at the layer and pool level.
 // Called separately by Network.CycleImpl on all Layers
 // Also updates all AvgMax values at the Cycle level.
@@ -50,7 +58,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 			continue
 		}
 		pl := &ly.Pools[nrn.SubPool]
-		ly.Params.GeExtToPool(ctx, uint32(ni), nrn, pl, lpl, subPools) // todo: can this be done in send spike?
+		ly.Params.GeToPool(ctx, uint32(ni), nrn, pl, lpl, subPools)
 		lpl.AvgMax.UpdateVals(nrn, int32(ni))
 	}
 	lpl.AvgMax.CalcAvg()
@@ -78,38 +86,18 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 	}
 }
 
-// NeuronGatherSpikes integrates G*Raw and G*Syn values for given neuron
-// from the Prjn-level GSyn integrated values.
-func (ly *Layer) NeuronGatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
-	ly.Params.NeuronGatherSpikesInit(ctx, ni, nrn)
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
-			continue
-		}
-		pj := p.AsAxon()
-		gv := pj.GVals[ni]
-		pj.Params.NeuronGatherSpikesPrjn(ctx, gv, ni, nrn)
-	}
-}
-
 func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
 	dly := ly.Network.Layer(int(ly.Params.Pulv.DriveLayIdx)).(AxonLayer).AsAxon()
 	drvMax := dly.Pools[0].AvgMax.CaSpkP.Cycle.Max
 	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 	dneur := dly.Neurons[ni]
-	if dly.LayerType() == SuperLayer {
-		drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
-	} else {
-		drvGe = ly.Params.Pulv.DriveGe(dneur.CaSpkP)
-	}
+	drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
 	return
 }
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
-// calls NeuronGatherSpikes, GFmRawSyn, GiInteg
+// calls SpecialGFmRawSyn, GiInteg
 func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, randctr *sltype.Uint2) {
-	ly.NeuronGatherSpikes(ctx, ni, nrn)
-
 	drvGe := float32(0)
 	nonDrvPct := float32(0)
 	if ly.LayerType() == PulvinarLayer {
@@ -151,18 +139,11 @@ func (ly *Layer) PostSpike(ctx *Context, ni uint32, nrn *Neuron) {
 func (ly *Layer) SendSpike(ctx *Context) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		if nrn.Spike == 0 {
-			continue
-		}
-		ly.Pools[nrn.SubPool].Inhib.FBsRaw += 1.0 // note: this is immediate..
-		if nrn.SubPool > 0 {
-			ly.Pools[0].Inhib.FBsRaw += 1.0
-		}
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue
 			}
-			sp.SendSpike(ni)
+			sp.SendSpike(ctx, ni, nrn)
 		}
 	}
 }

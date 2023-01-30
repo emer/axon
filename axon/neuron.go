@@ -53,7 +53,7 @@ type Neuron struct {
 	NeurIdx  uint32      `desc:"index of this neuron within its owning layer"`
 	LayIdx   uint32      `desc:"index of the layer that this neuron belongs to -- needed for neuron-level parallel code."`
 	SubPool  uint32      `desc:"index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools)."`
-	SubPoolG uint32      `desc:"index in global network-wide list of pools"`
+	SubPoolN uint32      `desc:"index in network-wide list of all pools"`
 
 	Spike  float32 `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
 	Spiked float32 `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
@@ -104,7 +104,7 @@ type Neuron struct {
 	GiNoiseP float32 `desc:"accumulating poisson probability factor for driving inhibitory noise spiking -- multiply times uniform random deviate at each time step, until it gets below the target threshold based on lambda."`
 	GiNoise  float32 `desc:"integrated noise inhibotyr conductance, added into Gi"`
 
-	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, deep.GeCtxt etc"`
+	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc"`
 	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
 	GeSyn    float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
 	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
@@ -153,9 +153,12 @@ type Neuron struct {
 	/////////////////////////////////////////
 	//  Special Layer Vars Below
 
-	Burst    float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
-	BurstPrv float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
-	CtxtGe   float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
+	Burst     float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
+	BurstPrv  float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
+	CtxtGe    float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
+	CtxtGeRaw float32 `desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
+
+	pad, pad1, pad2 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

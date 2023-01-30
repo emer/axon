@@ -62,14 +62,15 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	TwoThetas       bool    `desc:"if true, do 2 theta trials per action"`
-	PctCortex       float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
-	PctCortexMax    float32 `desc:"maximum PctCortex, when running on the schedule"`
-	PctCortexStEpc  int     `desc:"epoch when PctCortex starts increasing"`
-	PctCortexMaxEpc int     `desc:"epoch when PctCortexMax is reached"`
-	PCAInterval     int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
-	CortexDriving   bool    `desc:"true if cortex is driving this behavioral approach sequence"`
-	ThetaStep       int     `desc:"theta counter -- only take an action every 2 trials"`
+	TwoThetas         bool    `desc:"if true, do 2 theta trials per action"`
+	PctCortex         float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
+	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
+	PctCortexStEpc    int     `desc:"epoch when PctCortex starts increasing"`
+	PctCortexMaxEpc   int     `desc:"epoch when PctCortexMax is reached"`
+	PctCortexInterval int     `desc:"how often to update PctCortex"`
+	PCAInterval       int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
+	CortexDriving     bool    `desc:"true if cortex is driving this behavioral approach sequence"`
+	ThetaStep         int     `desc:"theta counter -- only take an action every 2 trials"`
 }
 
 // Defaults sets default params
@@ -77,7 +78,8 @@ func (ss *SimParams) Defaults() {
 	ss.TwoThetas = true
 	ss.PctCortexMax = 1.0
 	ss.PctCortexStEpc = 10
-	ss.PctCortexMaxEpc = 50
+	ss.PctCortexMaxEpc = 30
+	ss.PctCortexInterval = 2
 	ss.PCAInterval = 10
 	ss.ThetaStep = 0
 }
@@ -220,7 +222,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcpt, ofcmd := net.AddPTThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
+	ofcpt, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
 	_ = ofcpt
 	ofcct.SetClass("OFC CTCopy")
 	// net.ConnectCTSelf(ofcct, pone2one) // much better for ofc not to have self prjns..
@@ -233,13 +235,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
 	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(ofcpt, ofcct, full, emer.Forward) // good?
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
 	acc, accct := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
-	accpt, accmd := net.AddPTThalForSuper(acc, accct, "MD", one2one, full, full, space)
+	accpt, accmd := net.AddPTMaintThalForSuper(acc, accct, "MD", one2one, full, full, space)
 	_ = accpt
 	accct.SetClass("ACC CTCopy")
 	net.ConnectCTSelf(accct, full)
@@ -249,6 +252,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
+	net.ConnectLayers(accpt, accct, full, emer.Forward) // good?
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
@@ -296,9 +300,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(accpt, alm, full, emer.Forward)
 	net.ConnectLayers(gate, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
-	net.ConnectLayers(dist, m1, full, emer.Forward)
-	net.ConnectLayers(time, m1, full, emer.Forward)
-	net.ConnectLayers(gate, m1, full, emer.Forward) // this is key: direct to M1
+	net.ConnectLayers(dist, m1, full, emer.Forward).SetClass("ToM1")
+	net.ConnectLayers(time, m1, full, emer.Forward).SetClass("ToM1")
+	net.ConnectLayers(gate, m1, full, emer.Forward).SetClass("ToM1")
+	net.ConnectLayers(gate, vl, full, emer.Forward).SetClass("ToVL")
 	// neither of these other connections work nearly as well as explicit gate
 	// net.ConnectLayers(ofcpt, m1, full, emer.Forward)
 	// net.ConnectLayers(accpt, m1, full, emer.Forward)
@@ -306,19 +311,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(accmd, m1, full, emer.Forward)
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
-	////////////////////////////////////////////////
-	// BG / DA connections
-
 	// net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
 	net.BidirConnectLayers(alm, m1, full) // todo: alm weaker?
 	// net.ConnectLayers(alm, almpt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(alm, m1, full, emer.Forward)  //  note: non-gated!
-	net.BidirConnectLayers(m1, vl, full)
+	ff, fb := net.BidirConnectLayers(m1, vl, full)
+	ff.SetClass("ToVL")
+	fb.SetClass("ToM1")
 	// net.BidirConnectLayers(alm, vl, full)
 	// net.BidirConnectLayers(almct, vl, full)
 
 	net.ConnectLayers(vl, alm, full, emer.Back)
 	net.ConnectLayers(vl, almct, full, emer.Back)
+
+	////////////////////////////////////////////////
+	// BG / DA connections
 
 	// same prjns to stn as mtxgo
 	net.ConnectToMatrix(us, vPmtxGo, pone2one)
@@ -502,7 +509,7 @@ func (ss *Sim) ConfigLoops() {
 
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if trnEpc >= ss.Sim.PctCortexStEpc && trnEpc%5 == 0 {
+		if trnEpc >= ss.Sim.PctCortexStEpc && trnEpc%ss.Sim.PctCortexInterval == 0 {
 			ss.Sim.PctCortex = ss.Sim.PctCortexMax * float32(trnEpc-ss.Sim.PctCortexStEpc) / float32(ss.Sim.PctCortexMaxEpc-ss.Sim.PctCortexStEpc)
 			if ss.Sim.PctCortex > ss.Sim.PctCortexMax {
 				ss.Sim.PctCortex = ss.Sim.PctCortexMax

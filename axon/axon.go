@@ -148,9 +148,10 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Cycle Methods
 
-	// RecvSpikes receives spikes from senders -- possible GPU-based approach
-	// for given receiving neuron.
-	// RecvSpikes(ctx *Context, ni uint32, nrn *Neuron)
+	// GatherSpikes integrates G*Raw and G*Syn values for given neuron
+	// while integrating the Prjn-level GSyn integrated values.
+	// ni is layer-specific index of neuron within its layer.
+	GatherSpikes(ctx *Context, ni uint32, nrn *Neuron)
 
 	// GiFmSpikes integrates new inhibitory conductances from Spikes
 	// at the layer and pool level
@@ -240,16 +241,6 @@ type AxonLayer interface {
 	// SynFail updates synaptic weight failure only -- normally done as part of DWt
 	// and WtFmDWt, but this call can be used during testing to update failing synapses.
 	SynFail(ctx *Context)
-
-	// SendCtxtGe sends activation (CaSpkP) over CTCtxtPrjn projections to integrate
-	// CtxtGe excitatory conductance on CT layers.
-	// This should be called at the end of the Plus (5IB Burst) phase via Network.CTCtxt
-	SendCtxtGe(ctx *Context)
-
-	// CtxtFmGe integrates new CtxtGe excitatory conductance from projections, and computes
-	// overall Ctxt value, only on CT layers.
-	// This should be called at the end of the Plus (5IB Bursting) phase via Network.CTCtxt
-	CtxtFmGe(ctx *Context)
 }
 
 // AxonPrjn defines the essential algorithmic API for Axon, at the projection level.
@@ -284,11 +275,13 @@ type AxonPrjn interface {
 
 	// SendSpike sends a spike from sending neuron index si,
 	// to add to buffer on receivers.
-	SendSpike(si int)
+	SendSpike(ctx *Context, sendIdx int, nrn *Neuron)
 
-	// PrjnGatherSpikes increments synaptic conductances from Spikes
-	// including pooled aggregation of spikes into Pools for FS-FFFB inhib.
-	PrjnGatherSpikes(ctx *Context)
+	// RecvSpikes receives spikes from the sending neurons at index sendIdx
+	// into the GBuf buffer on the receiver side. The buffer on the receiver side
+	// is a ring buffer, which is used for modelling the time delay between
+	// sending and receiving spikes.
+	RecvSpikes(ctx *Context, recvIdx int)
 
 	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.

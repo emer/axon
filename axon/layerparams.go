@@ -36,10 +36,8 @@ type LayerIdxs struct {
 	NeurN  uint32 `inactive:"+" desc:"number of neurons in layer"`
 	RecvSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
 	RecvN  uint32 `inactive:"+" desc:"number of recv projections"`
-	SendSt uint32 `inactive:"+" desc:"start index into SendPrjns global array"`
-	SendN  uint32 `inactive:"+" desc:"number of send projections"`
 
-	pad uint32
+	pad, pad1, pad2 uint32
 }
 
 // SetNeuronExtPosNeg sets neuron Ext value based on neuron index
@@ -193,12 +191,16 @@ func (ly *LayerParams) AllParams() string {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  GeExtToPool
+//  GeToPool
 
-// GeExtToPool adds GeExt from each neuron into the Pools
-func (ly *LayerParams) GeExtToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool) {
+// GeToPool adds Spike, GeRaw and GeExt from each neuron into the Pools
+func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool) {
+	pl.Inhib.FBsRaw += nrn.Spike
+	pl.Inhib.FFsRaw += nrn.GeRaw
 	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
 	if subPool {
+		lpl.Inhib.FBsRaw += nrn.Spike
+		lpl.Inhib.FFsRaw += nrn.GeRaw
 		lpl.Inhib.GeExtRaw += nrn.GeExt
 	}
 }
@@ -226,21 +228,20 @@ func (ly *LayerParams) SubPoolGiFmSpikes(ctx *Context, pl *Pool, lpl *Pool, lyIn
 //////////////////////////////////////////////////////////////////////////////////////
 //  CycleNeuron methods
 
-////////////////////////
-//  GInteg
-
-// NeuronGatherSpikesInit initializes G*Raw and G*Syn values for given neuron
+// GatherSpikesInit initializes G*Raw and G*Syn values for given neuron
 // prior to integration
-func (ly *LayerParams) NeuronGatherSpikesInit(ctx *Context, ni uint32, nrn *Neuron) {
+func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.CtxtGeRaw = 0
 	nrn.GeSyn = nrn.GeBase
 	nrn.GiSyn = nrn.GiBase
 }
 
-// See prjnparams for NeuronGatherSpikesPrjn
+////////////////////////
+//  GInteg
 
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
@@ -377,17 +378,20 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 // This is where special layer types add extra code.
 // It also updates the CaSpkPCyc stats.
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+	nrn.Burst = nrn.CaSpkP
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
 			actMax := lpl.AvgMax.CaSpkP.Cycle.Max
 			actAvg := lpl.AvgMax.CaSpkP.Cycle.Avg
 			thr := ly.Burst.ThrFmAvgMax(actAvg, actMax)
-			burst := float32(0)
-			if nrn.CaSpkP > thr {
-				burst = nrn.CaSpkP
+			if nrn.CaSpkP < thr {
+				nrn.Burst = 0
 			}
-			nrn.Burst = burst
+		}
+	case CTLayer:
+		if ctx.Cycle == ctx.ThetaCycles-1 {
+			nrn.CtxtGe += nrn.CtxtGeRaw
 		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
@@ -448,11 +452,12 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 // NewState handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
 func (ly *LayerParams) NewState(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
+	nrn.BurstPrv = nrn.Burst
 	nrn.SpkPrv = nrn.CaSpkD
 	nrn.GeSynPrv = nrn.GeSynMax
 	nrn.SpkMax = 0
 	nrn.SpkMaxCa = 0
-	nrn.GeSynPrv = 0
+	nrn.GeSynMax = 0
 
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
 	// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
