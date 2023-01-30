@@ -30,6 +30,35 @@ import (
 // ./bench -epochs 100 -pats 10 -units 100 -threads=1
 // so these params below are reasonable for actually learning (eventually)
 
+// CenterPoolIdxs returns the unit indexes for 2x2 center pools
+// if sub-pools are present, then only first such subpool is used.
+// TODO: Figure out what this is doing
+func CenterPoolIdxs(ly emer.Layer, n int) []int {
+	npy := ly.Shape().Dim(0)
+	npx := ly.Shape().Dim(1)
+	npxact := npx
+	nu := ly.Shape().Dim(2) * ly.Shape().Dim(3)
+	nsp := 1
+	cpy := (npy - n) / 2
+	cpx := (npx - n) / 2
+	nt := n * n * nu
+	idxs := make([]int, nt)
+
+	ix := 0
+	for py := 0; py < 2; py++ {
+		y := (py + cpy) * nsp
+		for px := 0; px < 2; px++ {
+			x := (px + cpx) * nsp
+			si := (y*npxact + x) * nu
+			for ni := 0; ni < nu; ni++ {
+				idxs[ix+ni] = si + ni
+			}
+			ix += nu
+		}
+	}
+	return idxs
+}
+
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
 		"Network": &params.Sheet{
@@ -65,23 +94,44 @@ var ParamSets = params.Sets{
 
 func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 	units int, verbose bool) {
-	net.InitName(net, "BenchNet")
+	net.InitName(net, "BenchLvisNet")
 
-	squn := int(math.Sqrt(float64(units)))
-	shp := []int{squn, squn}
+	/*
+	 * v1m6 ---> v2m16 <--> v4f16 <--> output
+	 *     '----------------^
+	 */
 
-	inLay := net.AddLayer("Input", shp, emer.Input)
-	hid1Lay := net.AddLayer("Hidden1", shp, emer.Hidden)
-	hid2Lay := net.AddLayer("Hidden2", shp, emer.Hidden)
-	hid3Lay := net.AddLayer("Hidden3", shp, emer.Hidden)
-	outLay := net.AddLayer("Output", shp, emer.Target)
+	// construct the layers
+	v1m16 := net.AddLayer4D("V1m16", 16, 16, 5, 4, emer.Input)
+	v2m16 := net.AddLayer4D("V2m16", 8, 8, 8, 8, emer.Hidden)
+	v4f16 := net.AddLayer4D("V4f16", 4, 4, 10, 10, emer.Hidden)
+	outLay := net.AddLayer2D("Output", 4, 4, emer.Target)
+
+	v1m16.SetClass("V1m")
+	v1m16.SetRepIdxsShape(CenterPoolIdxs(v1m16, 2), emer.CenterPoolShape(v1m16, 2))
+	v2m16.SetClass("V2m V2")
+	v2m16.SetRepIdxsShape(CenterPoolIdxs(v2m16, 2), emer.CenterPoolShape(v2m16, 2))
+	v4f16.SetClass("V4")
+	v4f16.SetRepIdxsShape(CenterPoolIdxs(v4f16, 2), emer.CenterPoolShape(v4f16, 2))
 
 	full := prjn.NewFull()
+	sparseRandom := prjn.NewUnifRnd()
+	sparseRandom.PCon = 0.1
 
-	net.ConnectLayers(inLay, hid1Lay, full, emer.Forward)
-	net.BidirConnectLayers(hid1Lay, hid2Lay, full)
-	net.BidirConnectLayers(hid2Lay, hid3Lay, full)
-	net.BidirConnectLayers(hid3Lay, outLay, full)
+	Prjn4x4Skp2 := prjn.NewPoolTile()
+	// skip & size are measured in pools, not individual neurons
+	Prjn4x4Skp2.Size.Set(4, 4)
+	Prjn4x4Skp2.Skip.Set(2, 2) // skip: how many pools to move over
+	Prjn4x4Skp2.Start.Set(-1, -1)
+	Prjn4x4Skp2.TopoRange.Min = 0.8
+	Prjn4x4Skp2Recip := prjn.NewPoolTileRecip(Prjn4x4Skp2)
+	_ = Prjn4x4Skp2Recip
+
+	net.ConnectLayers(v1m16, v2m16, Prjn4x4Skp2, emer.Forward)
+	net.BidirConnectLayers(v2m16, v4f16, Prjn4x4Skp2)
+	net.BidirConnectLayers(v2m16, v4f16, full)
+	net.ConnectLayers(v1m16, v4f16, sparseRandom, emer.Forward).SetClass("V1SC")
+	net.BidirConnectLayers(v4f16, outLay, full)
 
 	net.RecFunTimes = verbose
 
@@ -151,9 +201,9 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 
 	epcLog.SetNumRows(epcs)
 
-	inLay := net.LayerByName("Input").(*axon.Layer)
-	hid1Lay := net.LayerByName("Hidden1").(*axon.Layer)
-	hid2Lay := net.LayerByName("Hidden2").(*axon.Layer)
+	inLay := net.LayerByName("V1m16").(*axon.Layer)
+	hid1Lay := net.LayerByName("V2m16").(*axon.Layer)
+	hid2Lay := net.LayerByName("V4f16").(*axon.Layer)
 	outLay := net.LayerByName("Output").(*axon.Layer)
 
 	inPats := pats.ColByName("Input").(*etensor.Float32)
