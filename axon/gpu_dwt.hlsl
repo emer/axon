@@ -27,7 +27,7 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<SynIdx> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurs][Syns]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
-void DWtSyn2(in Context ctx, in LayerParams rlay, in PrjnParams pj, uint ci, in Synapse sy, in Neuron sn, in Neuron rn) {
+void DWtSyn2(in Context ctx, in LayerParams rlay, in PrjnParams pj, uint ci, inout Synapse sy, in Neuron sn, in Neuron rn) {
 	if(pj.Learn.Learn == 0) {
 		return;
 	}

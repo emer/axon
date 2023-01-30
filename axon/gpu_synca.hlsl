@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// performs the RecvSynCa function on all sending projections
+// performs the SynCa synaptic Ca integration function on all sending projections
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
@@ -11,8 +11,7 @@
 // note: binding is var, set
 // Set 0: uniforms -- these are constant
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
-// [[vk::binding(1, 0)]] uniform PrjnParams SendPrjns[]; // [Layer][SendPrjns]
-[[vk::binding(2, 0)]] uniform PrjnParams RecvPrjns[]; // [Layer][RecvPrjns]
+[[vk::binding(1, 0)]] uniform PrjnParams Prjns[]; // [Layer][RecvPrjns]
 
 // Set 1: main network structs and vals
 [[vk::binding(0, 1)]] StructuredBuffer<Context> Ctxt; // [0]
@@ -28,42 +27,25 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<SynIdx> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurs][Syns]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<PrjnGVals> RecvPrjnGVals; // [Layer][RecvPrjns][RecvNeurs]
 
-void RecvSynCaSyn(in Context ctx, in PrjnParams pj, in SynIdx sidx, float rnCaSyn, float updtThr) {
-	pj.RecvSynCaSyn(ctx, Synapses[sidx.SynIdx], Neurons[sidx.SendNeurIdx], rnCaSyn, updtThr);
+void SynCa2(in Context ctx, in PrjnParams pj, uint ci, inout Synapse sy, in Neuron sn, in Neuron rn) {
+	if(pj.Learn.Learn == 0) {
+		return;
+	}
+	pj.CycleSynCaSyn(ctx, sy, sn, rn);
 }
 
-void RecvSynCaSendNeurSyn2(in Context ctx, in NeurSynIdx nsi, in Neuron rn, in LayerParams slay, in PrjnParams pj) {
-	if (pj.Learn.Learn == 0) {
-		return;
-	}
-	if (rn.Spike == 0) {
-		return;
-	}
-	float updtThr = pj.Learn.KinaseCa.UpdtThr;
-	if (rn.CaSpkP < updtThr && rn.CaSpkD < updtThr) {
-		return;
-	}
-	float rnCaSyn = rn.CaSyn * pj.Learn.KinaseCa.SpikeG * slay.Learn.CaSpk.SynSpkG;
-	uint nc = nsi.SynN;
-	uint st = nsi.SynSt;
-	for(uint ri = 0; ri < nc; ri++) {
-		uint sia = ri + st;
-		RecvSynCaSyn(ctx, pj, RecvSynIdxs[sia], rnCaSyn, updtThr);
-	}
-}
-
-void RecvSynCaSendNeurSyn(in Context ctx, in NeurSynIdx nsi) {
-	RecvSynCaSendNeurSyn2(ctx, nsi, Neurons[nsi.NeurIdx], Layers[RecvPrjns[nsi.PrjnIdx].Idxs.SendLay], RecvPrjns[nsi.PrjnIdx]);
+void SynCa(in Context ctx, uint ci, inout Synapse sy) {
+	SynCa2(ctx, Prjns[sy.PrjnIdx], ci, sy, Neurons[sy.SendIdx], Neurons[sy.RecvIdx]);
 }
 
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over RecvNeurSynIdxs
+void main(uint3 idx : SV_DispatchThreadID) { // over Synapses
 	uint ns;
 	uint st;
-	RecvNeurSynIdxs.GetDimensions(ns, st);
+	Synapses.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		RecvSynCaSendNeurSyn(Ctxt[0], RecvNeurSynIdxs[idx.x]);
+		SynCa(Ctxt[0], idx.x, Synapses[idx.x]);
 	}
 }
 

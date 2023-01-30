@@ -86,16 +86,13 @@ func (np *CaLrnParams) CaLrn(nrn *Neuron) {
 // and RLRate as a proxy for the activation (spiking) based learning signal.
 type CaSpkParams struct {
 	SpikeG float32 `def:"8,12" desc:"gain multiplier on spike for computing CaSpk: increasing this directly affects the magnitude of the trace values, learning rate in Target layers, and other factors that depend on CaSpk values: RLRate, UpdtThr.  Prjn.KinaseCa.SpikeG provides an additional gain factor specific to the synapse-level trace factors, without affecting neuron-level CaSpk values.  Larger networks require higher gain factors at the neuron level -- 12, vs 8 for smaller."`
-	SynTau float32 `def:"30" min:"1" desc:"time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec)"`
+	SynTau float32 `def:"30" min:"1" desc:"time constant for integrating spike-driven calcium trace at sender and recv neurons, CaSyn, which then drives synapse-level integration of the joint pre * post synapse-level activity, in cycles (msec).  Note: if this param is changed, then there will be a change in effective learning rate that can be compensated for by multiplying PrjnParams.Learn.KinaseCa.SpikeG by sqrt(30 / sqrt(SynTau)"`
 
-	pad, pad1 int32
+	SynDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+
+	pad int32
 
 	Dt kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaSpk across M, P and D cascading levels -- these are typically the same as in CaLrn and Prjn level for synaptic integration, except for the M factor."`
-
-	SynDt   float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	SynSpkG float32 `view:"+" json:"-" xml:"-" inactive:"+" desc:"Ca gain factor for SynSpkCa learning rule, to compensate for the effect of SynTau, which increases Ca as it gets larger.  is 1 for SynTau = 30 -- todo: eliminate this at some point!"`
-
-	pad2, pad3 int32
 }
 
 func (np *CaSpkParams) Defaults() {
@@ -108,7 +105,6 @@ func (np *CaSpkParams) Defaults() {
 func (np *CaSpkParams) Update() {
 	np.Dt.Update()
 	np.SynDt = 1 / np.SynTau
-	np.SynSpkG = mat32.Sqrt(30) / mat32.Sqrt(np.SynTau)
 }
 
 // CaFmSpike computes CaSpk* and CaSyn calcium signals based on current spike.

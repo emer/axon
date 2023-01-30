@@ -67,7 +67,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "2",    // much less now -- normalized separately from other prjns
+					"Layer.Act.Dend.ModGain": "20",   // 10?
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -123,7 +123,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.2", // was 2.8
+					"Layer.Inhib.Layer.Gi": "2.8", // 2.4 not strong enough to prevent diffuse activity
 					"Layer.Inhib.Pool.Gi":  "1.2", // was 1.4
 				}},
 			{Sel: "#OFC", Desc: "",
@@ -148,7 +148,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ACCCT", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.2",
+					"Layer.Inhib.Layer.Gi": "1.4",
 				}},
 			{Sel: "#ACCPT", Desc: "",
 				Params: params.Params{
@@ -243,7 +243,7 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
-					"Layer.Matrix.NoGoGeLrn":           "0.2",  // todo: experiment.
+					"Layer.Matrix.NoGoGeLrn":           "0.5",  // todo: experiment.
 					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
@@ -271,14 +271,29 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
 				}},
-			{Sel: ".SuperToPT", Desc: "",
+			{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
+					"Prjn.PrjnScale.Rel": "1",    // keep this constant -- only self vs. this -- thal is modulatory
+					"Prjn.PrjnScale.Abs": "0.02", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
+					"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
+					"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
+					"Prjn.SWt.Init.Mean":    "0.5",
+					"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
 				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
 					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: ".ThalToSuper", Desc: "",
 				Params: params.Params{
@@ -288,19 +303,15 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
 					"Prjn.Com.GType":     "ModulatoryG", // this marks as modulatory with extra ModGain factor
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: ".CTtoThal", Desc: "",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
-				}},
-			{Sel: ".PTSelfMaint", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel":    "3",      // important to turn up rel so other sources are weaker
-					"Prjn.PrjnScale.Abs":    "1",      // 2 > 1
-					"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
-					"Prjn.SWt.Init.Mean":    "0.5",
-					"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.PrjnScale.Rel": "0.1",
 				}},
 			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
@@ -342,6 +353,14 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.01",
 				}},
+			{Sel: ".ToM1", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.02", // .02 > .04  -- key to slow it down
+				}},
+			{Sel: ".ToVL", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.02", // .02 > .04  -- key to slow it down
+				}},
 			{Sel: "#DistToM1", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2.0",
@@ -352,7 +371,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VLToM1", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
+					"Prjn.PrjnScale.Abs": "1.0", // not 2.0..
 				}},
 			//////////////////////////////////////////////
 			// To BLA
@@ -417,8 +436,8 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct":      "0",
 					"Prjn.SWt.Init.Mean":      "0.5",
 					"Prjn.SWt.Init.Var":       "0.25",
-					"Prjn.Matrix.NoGateLRate": "0.0", // 0.005 std
-					"Prjn.Matrix.CurTrlDA":    "false",
+					"Prjn.Matrix.NoGateLRate": "0.005", // 0.005 std -- seems ok..
+					"Prjn.Matrix.CurTrlDA":    "true",
 					"Prjn.Matrix.UseHasRew":   "true", // hack to use US-only timing
 					"Prjn.Matrix.AChDecay":    "0",    // not used if UseHasRew is on
 					"Prjn.Learn.Learn":        "true",

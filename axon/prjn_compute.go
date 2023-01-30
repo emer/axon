@@ -87,7 +87,7 @@ func (pj *Prjn) SendSynCa(ctx *Context) {
 	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
 		if sn.Spike == 0 {
@@ -120,7 +120,7 @@ func (pj *Prjn) RecvSynCa(ctx *Context) {
 	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG * slay.Params.Learn.CaSpk.SynSpkG
+	ssg := kp.SpikeG
 	for ri := range rlay.Neurons {
 		rn := &rlay.Neurons[ri]
 		if rn.Spike == 0 {

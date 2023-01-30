@@ -224,6 +224,14 @@ func (pj *PrjnParams) RecvSynCaSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSy
 	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 }
 
+// CycleSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// This version updates every cycle, for GPU usage called on each synapse.
+func (pj *PrjnParams) CycleSynCaSyn(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+	sy.CaUpT = ctx.CycleTot
+	sy.Ca = sn.CaSyn * rn.CaSyn * pj.Learn.KinaseCa.SpikeG
+	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
+}
+
 ///////////////////////////////////////////////////
 // DWt
 

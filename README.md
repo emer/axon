@@ -363,7 +363,7 @@ Neurons are connected via synapses parameterized with the following variables, c
 
 The `axon.Network` `CycleImpl` method in [`axon/network.go`](https://github.com/emer/axon/blob/master/axon/network.go) calls the following functions in order:
 
-* `PrjnGatherSpikes` on all `Prjn`s: integrates Raw and Syn conductances for each Prjn from spikes sent previously, into `GVals` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
+* `GatherSpikes` on all `Neurons`s: integrates Raw and Syn conductances for each Prjn from spikes sent previously, into `GVals` organized by receiving neuron index, so they can then be integrated into the full somatic conductances in CycleNeuron.
 
 * `GiFmSpikes` on all `Layer`s: computes inhibitory conductances based on total incoming FF and FB spikes into the layer, using the [FS-FFFB](https://github.com/emer/axon/tree/master/fsfffb) summary functions.
 
