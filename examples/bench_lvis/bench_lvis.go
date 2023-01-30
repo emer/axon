@@ -11,7 +11,6 @@ package bench
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 
 	"github.com/emer/axon/axon"
@@ -92,8 +91,7 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
-	units int, verbose bool) {
+func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa int, verbose bool) {
 	net.InitName(net, "BenchLvisNet")
 
 	/*
@@ -102,9 +100,10 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 	 */
 
 	// construct the layers
-	v1m16 := net.AddLayer4D("V1m16", 16, 16, 5, 4, emer.Input)
-	v2m16 := net.AddLayer4D("V2m16", 8, 8, 8, 8, emer.Hidden)
-	v4f16 := net.AddLayer4D("V4f16", 4, 4, 10, 10, emer.Hidden)
+	// in LVIS: 16 x 16 x 5 x 4
+	v1m16 := net.AddLayer4D("V1m16", 6, 6, 4, 4, emer.Input)
+	v2m16 := net.AddLayer4D("V2m16", 8, 8, 6, 6, emer.Hidden)
+	v4f16 := net.AddLayer4D("V4f16", 4, 4, 8, 8, emer.Hidden)
 	outLay := net.AddLayer2D("Output", 4, 4, emer.Target)
 
 	v1m16.SetClass("V1m")
@@ -129,7 +128,6 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 
 	net.ConnectLayers(v1m16, v2m16, Prjn4x4Skp2, emer.Forward)
 	net.BidirConnectLayers(v2m16, v4f16, Prjn4x4Skp2)
-	net.BidirConnectLayers(v2m16, v4f16, full)
 	net.ConnectLayers(v1m16, v4f16, sparseRandom, emer.Forward).SetClass("V1SC")
 	net.BidirConnectLayers(v4f16, outLay, full)
 
@@ -160,36 +158,33 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 	net.InitWts()
 }
 
-func ConfigPats(dt *etable.Table, pats, units int) {
-	squn := int(math.Sqrt(float64(units)))
-	shp := []int{squn, squn}
-	// fmt.Printf("shape: %v\n", shp)
+func ConfigPats(pats *etable.Table, numPats int, inputShape [2]int, outputShape [2]int) {
 
-	dt.SetFromSchema(etable.Schema{
-		{"Name", etensor.STRING, nil, nil},
-		{"Input", etensor.FLOAT32, shp, []string{"Y", "X"}},
-		{"Output", etensor.FLOAT32, shp, []string{"Y", "X"}},
-	}, pats)
+	pats.SetFromSchema(etable.Schema{
+		{Name: "Name", Type: etensor.STRING, CellShape: nil, DimNames: nil},
+		{Name: "Input", Type: etensor.FLOAT32, CellShape: inputShape[:], DimNames: []string{"Y", "X"}},
+		{Name: "Output", Type: etensor.FLOAT32, CellShape: outputShape[:], DimNames: []string{"Y", "X"}},
+	}, numPats)
 
 	// note: actually can learn if activity is .15 instead of .25
-	nOn := units / 8
+	nOn := (inputShape[0] * inputShape[1]) / 8
 
-	patgen.PermutedBinaryRows(dt.Cols[1], nOn, 1, 0)
-	patgen.PermutedBinaryRows(dt.Cols[2], nOn, 1, 0)
+	patgen.PermutedBinaryRows(pats.Cols[1], nOn, 1, 0)
+	patgen.PermutedBinaryRows(pats.Cols[2], nOn, 1, 0)
 }
 
 func ConfigEpcLog(dt *etable.Table) {
 	dt.SetFromSchema(etable.Schema{
-		{"Epoch", etensor.INT64, nil, nil},
-		{"CorSim", etensor.FLOAT32, nil, nil},
-		{"AvgCorSim", etensor.FLOAT32, nil, nil},
-		{"SSE", etensor.FLOAT32, nil, nil},
-		{"CountErr", etensor.FLOAT32, nil, nil},
-		{"PctErr", etensor.FLOAT32, nil, nil},
-		{"PctCor", etensor.FLOAT32, nil, nil},
-		{"Hid1ActAvg", etensor.FLOAT32, nil, nil},
-		{"Hid2ActAvg", etensor.FLOAT32, nil, nil},
-		{"OutActAvg", etensor.FLOAT32, nil, nil},
+		{Name: "Epoch", Type: etensor.INT64, CellShape: nil, DimNames: nil},
+		{Name: "CorSim", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "AvgCorSim", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "SSE", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "CountErr", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "PctErr", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "PctCor", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "Hid1ActAvg", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "Hid2ActAvg", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
+		{Name: "OutActAvg", Type: etensor.FLOAT32, CellShape: nil, DimNames: nil},
 	}, 0)
 }
 

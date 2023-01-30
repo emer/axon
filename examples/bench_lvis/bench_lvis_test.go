@@ -23,29 +23,32 @@ var threadsSendSpike = flag.Int("thrSendSpike", 0, "number of goroutines to laun
 var threadsSynCa = flag.Int("thrSynCa", 0, "number of goroutines to launch for SynCa")
 var numEpochs = flag.Int("epochs", defaultNumEpochs, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
-var numUnits = flag.Int("units", 100, "number of units per layer -- uses NxN where N = sqrt(units)")
 var verbose = flag.Bool("verbose", true, "if false, only report the final time")
-var writeStats = flag.Bool("writestats", false, "whether to write network stats to a CSV file")
 
 func BenchmarkBenchNetFull(b *testing.B) {
+	inputShape := [2]int{10, 10}
+	outputShape := [2]int{4, 4}
+
 	if *maxProcs > 0 {
 		runtime.GOMAXPROCS(*maxProcs)
 	}
 
 	if *verbose {
-		fmt.Printf("Running bench with: %d neuronThreads, %d sendSpikeThreads, %d synCaThreads, %d epochs, %d pats, %d units\n", *threadsNeuron, *threadsSendSpike, *threadsSynCa, *numEpochs, *numPats, *numUnits)
+		fmt.Printf("Running bench with: %d neuronThreads, %d sendSpikeThreads, %d synCaThreads, %d epochs, %d pats, (%d, %d) input, (%d, %d) output\n",
+			*threadsNeuron, *threadsSendSpike, *threadsSynCa,
+			*numEpochs, *numPats, inputShape[0], inputShape[1], outputShape[0], outputShape[1])
 	}
 
 	rand.Seed(42)
 
 	net := &axon.Network{}
-	ConfigNet(net, *threadsNeuron, *threadsSendSpike, *threadsSynCa, *numUnits, *verbose)
+	ConfigNet(net, *threadsNeuron, *threadsSendSpike, *threadsSynCa, *verbose)
 	if *verbose {
 		log.Println(net.SizeReport())
 	}
 
 	pats := &etable.Table{}
-	ConfigPats(pats, *numPats, *numUnits)
+	ConfigPats(pats, *numPats, inputShape, outputShape)
 
 	epcLog := &etable.Table{}
 	ConfigEpcLog(epcLog)
