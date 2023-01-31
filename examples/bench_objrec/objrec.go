@@ -8,11 +8,10 @@ processing (up to inferotemporal (IT) cortex) can produce robust object
 recognition that is invariant to changes in position, size, etc of retinal
 input images.
 */
-package bench
+package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"runtime"
 
@@ -34,7 +33,6 @@ import (
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/etview"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/minmax"
 	"github.com/emer/etable/split"
 	"github.com/emer/etable/tsragg"
@@ -128,13 +126,17 @@ func (ss *Sim) NewPrjns() {
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	ss.ConfigEnv()
-	ss.ConfigNet(ss.Net)
+	if err := ss.ConfigEnv(); err != nil {
+		panic(err)
+	}
+	if err := ss.ConfigNet(ss.Net); err != nil {
+		panic(err)
+	}
 	ss.ConfigLogs()
 	ss.ConfigLoops()
 }
 
-func (ss *Sim) ConfigEnv() {
+func (ss *Sim) ConfigEnv() error {
 	// Can be called multiple times -- don't re-create
 	var trn, novTrn, tst *LEDEnv
 	if len(ss.Envs) == 0 {
@@ -153,7 +155,9 @@ func (ss *Sim) ConfigEnv() {
 	trn.MinLED = 0
 	trn.MaxLED = 17 // exclude last 2 by default
 	trn.NOutPer = ss.NOutPer
-	trn.Validate()
+	if err := trn.Validate(); err != nil {
+		return err
+	}
 	trn.Trial.Max = 100
 
 	novTrn.Nm = etime.Analyze.String()
@@ -162,7 +166,9 @@ func (ss *Sim) ConfigEnv() {
 	novTrn.MinLED = 18
 	novTrn.MaxLED = 19 // only last 2 items
 	novTrn.NOutPer = ss.NOutPer
-	novTrn.Validate()
+	if err := novTrn.Validate(); err != nil {
+		return err
+	}
 	novTrn.Trial.Max = 100
 	novTrn.XFormRand.TransX.Set(-0.125, 0.125)
 	novTrn.XFormRand.TransY.Set(-0.125, 0.125)
@@ -176,16 +182,19 @@ func (ss *Sim) ConfigEnv() {
 	tst.MaxLED = 19 // all by default
 	tst.NOutPer = ss.NOutPer
 	tst.Trial.Max = 50 // 0 // 1000 is too long!
-	tst.Validate()
+	if err := tst.Validate(); err != nil {
+		return err
+	}
 
 	trn.Init(0)
 	novTrn.Init(0)
 	tst.Init(0)
 
 	ss.Envs.Add(trn, novTrn, tst)
+	return nil
 }
 
-func (ss *Sim) ConfigNet(net *axon.Network) {
+func (ss *Sim) ConfigNet(net *axon.Network) error {
 	net.InitName(net, "Objrec")
 	v1 := net.AddLayer4D("V1", 10, 10, 5, 4, emer.Input)
 	v4 := net.AddLayer4D("V4", 5, 5, 10, 10, emer.Hidden) // 10x10 == 16x16 > 7x7 (orig)
@@ -220,14 +229,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
 
+	if err := net.Build(); err != nil {
+		return err
+	}
 	net.Defaults()
-	ss.Params.SetObject("Network")
-	err := net.Build()
-	if err != nil {
-		log.Println(err)
-		return
+	if err := ss.Params.SetObject("Network"); err != nil {
+		return err
 	}
 	net.InitWts()
+
+	return nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -263,13 +274,6 @@ func (ss *Sim) ConfigLoops() {
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
-
-	// copied from boa.go. Do we need this?
-	man.GetLoop(etime.Train, etime.Trial).OnEnd.Replace("UpdateWeights", func() {
-		ss.Net.DWt(&ss.Context)
-		ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
-		ss.Net.WtFmDWt(&ss.Context)
-	})
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -404,7 +408,7 @@ func (ss *Sim) ApplyInputs() {
 	ev := ss.Envs[ss.Context.Mode.String()]
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
-	lays := net.LayersByClass("Input", "Target")
+	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := ev.State(ly.Nm)
@@ -670,14 +674,6 @@ func (ss *Sim) ConfigActRFs() {
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Gui
 
-func (ss *Sim) ConfigNetView(nv *netview.NetView) {
-	nv.ViewDefaults()
-	cam := &(nv.Scene().Camera)
-	cam.Pose.Pos.Set(0.0, 1.733, 2.3)
-	cam.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
-	// cam.Pose.Quat.SetFromAxisAngle(mat32.Vec3{-1, 0, 0}, 0.4077744)
-}
-
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
 	title := "Object Recognition"
@@ -686,10 +682,15 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
+	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+
+	cam := &(nv.Scene().Camera)
+	cam.Pose.Pos.Set(0.0, 1.733, 2.3)
+	cam.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
-	ss.ConfigNetView(nv)
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 

@@ -1,4 +1,4 @@
-package bench
+package main
 
 import "github.com/emer/emergent/params"
 
@@ -114,7 +114,6 @@ var ParamSets = params.Sets{
 			{Sel: "Prjn", Desc: "yes extra learning factors",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":       "0.2",    // 0.4 for NeuronCa; 0.2 best, 0.1 nominal
-					"Prjn.Learn.Trace.NeuronCa":   "false",  // false = sig better (SynCa)
 					"Prjn.Learn.Trace.SubMean":    "1",      // 1 -- faster if 0 until 20 epc -- prevents sig amount of late deterioration
 					"Prjn.SWt.Adapt.LRate":        "0.0001", // 0.005 == .1 == .01
 					"Prjn.SWt.Init.SPct":          "1",      // 1 >= lower (trace-v11)
@@ -126,7 +125,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.KinaseCa.Dt.DTau": "40",
 					"Prjn.Learn.KinaseCa.UpdtThr": "0.01", // 0.01 > 0.02 max tolerable
 				}},
-			{Sel: ".Back", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
+			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates -- smaller as network gets bigger",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.2",  // .2 >= .3 > .15 > .1 > .05 @176
 					"Prjn.Learn.Learn":   "true", // keep random weights to enable exploration
