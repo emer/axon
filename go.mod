@@ -16,6 +16,8 @@ require (
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
+require github.com/emer/leabra v1.2.5 // indirect
+
 require (
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
 	github.com/BurntSushi/freetype-go v0.0.0-20160129220410-b763ddbfe298 // indirect
@@ -32,6 +34,7 @@ require (
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.8.0 // indirect
+	github.com/emer/vision v1.1.16 // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
@@ -46,7 +49,6 @@ require (
 	github.com/goki/prof v1.0.0 // indirect
 	github.com/goki/vci v1.0.1 // indirect
 	github.com/goki/vgpu v1.0.11 // indirect
-
 	github.com/goki/vulkan v0.0.0-20220928215615-c67065a9cfc2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
