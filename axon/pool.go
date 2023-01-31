@@ -101,15 +101,13 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron, ni int32) {
 // and various other state values for layers
 // and pools (unit groups) that can be subject to inhibition
 type Pool struct {
-	StIdx, EdIdx   uint32      `inactive:"+" desc:"starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool"`
-	StIdxG, EdIdxG uint32      `view:"-" desc:"starting and ending (exlusive) global network-wide indexes for the list of neurons in this pool"`
-	LayIdx         uint32      `view:"-" desc:"layer index in global layer list"`
-	PoolIdx        uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool]"`
-	LayPoolIdx     uint32      `view:"-" desc:"pool index for layer-wide pool, only if this is not a LayPool"`
-	IsLayPool      slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
-	Gated          slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, VThalLayer), indicates if the pool was gated"`
+	StIdx, EdIdx uint32      `inactive:"+" desc:"starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool"`
+	LayIdx       uint32      `view:"-" desc:"layer index in global layer list"`
+	PoolIdx      uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool]"`
+	IsLayPool    slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
+	Gated        slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, VThalLayer), indicates if the pool was gated"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 uint32
 
 	Inhib  fsfffb.Inhib    `inactive:"+" desc:"fast-slow FFFB inhibition values"`
 	AvgMax PoolAvgMax      `desc:"average and max values for relevant variables in this pool, at different time scales"`

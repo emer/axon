@@ -5,7 +5,7 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// calls SubPoolGiFmSpikes on sub-pools, after poolgemax has been called.
+// calls GeToPool, AvgMax Update on each Pool
 
 // note: binding is var, set
 
@@ -25,14 +25,24 @@
 // Set 2: prjn, synapse level indexes and buffer values
 // [[vk::binding(0, 2)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
 
-void PoolGi2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, float giMult) {
-	if(pl.IsLayPool == 0) {
-		ly.SubPoolGiFmSpikes(ctx, pl, Pools[ly.Idxs.PoolSt], ly.Inhib.Layer.On == 1, giMult);
+void PoolGeMaxNeuron(in Context ctx, in LayerParams ly, uint ni, in Neuron nrn, inout Pool pl) {
+	ly.GeToPool(ctx, ni, nrn, pl);
+	pl.AvgMax.UpdateVals(nrn, int(ni));
+}
+
+void PoolGeMax2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, in LayerVals vals) {
+	pl.AvgMax.Init();
+	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
+		PoolGeMaxNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], pl);
+	}
+	pl.AvgMax.CalcAvg();
+	if (pl.IsLayPool == 1) { // must do layer-level first in this round, then used in next round
+		ly.LayPoolGiFmSpikes(ctx, pl, vals);
 	}
 }
 
-void PoolGi(in Context ctx, uint pi, inout Pool pl) {
-	PoolGi2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx].ActAvg.GiMult);
+void PoolGeMax(in Context ctx, uint pi, inout Pool pl) {
+	PoolGeMax2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx]);
 }
 
 [numthreads(64, 1, 1)]
@@ -41,7 +51,7 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Pools
 	uint st;
 	Pools.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		PoolGi(Ctxt[0], idx.x, Pools[idx.x]);
+		PoolGeMax(Ctxt[0], idx.x, Pools[idx.x]);
 	}
 }
 

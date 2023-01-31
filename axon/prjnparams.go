@@ -32,32 +32,32 @@ type StartN struct {
 
 // PrjnIdxs contains prjn-level index information into global memory arrays
 type PrjnIdxs struct {
-	PrjnIdx   uint32 // index of the projection in global prjn list: [Layer][RecvPrjns]
-	RecvLay   uint32 // index of the receiving layer in global list of layers
-	RecvLaySt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
-	RecvLayN  uint32 // number of neurons in recv layer
-	SendLay   uint32 // index of the sending layer in global list of layers
-	SendLaySt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
-	SendLayN  uint32 // number of neurons in send layer
-	GBufSt    uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurons][MaxDelay+1]
-	GSynSt    uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurons]
-	RecvConSt uint32 // start index into global PrjnRecvCon array: [Layer][RecvPrjns][RecvNeurons]
-	SynapseSt uint32 // start index into global Synapse array: [Layer][RecvPrjns][Synapses]
+	PrjnIdx    uint32 // index of the projection in global prjn list: [Layer][RecvPrjns]
+	RecvLay    uint32 // index of the receiving layer in global list of layers
+	RecvNeurSt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
+	RecvNeurN  uint32 // number of neurons in recv layer
+	SendLay    uint32 // index of the sending layer in global list of layers
+	SendNeurSt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
+	SendNeurN  uint32 // number of neurons in send layer
+	SynapseSt  uint32 // start index into global Synapse array: [Layer][RecvPrjns][Synapses]
+	RecvConSt  uint32 // start index into global PrjnRecvCon array: [Layer][RecvPrjns][RecvNeurons]
+	GBufSt     uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurons][MaxDelay+1]
+	GSynSt     uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurons]
 
 	pad uint32
 }
 
 // RecvNIdxToLayIdx converts a neuron's index in network level global list of all neurons
 // to receiving layer-specific index-- e.g., for accessing GBuf and GSyn values.
-// Just subtracts RecvLaySt -- docu-function basically..
+// Just subtracts RecvNeurSt -- docu-function basically..
 func (pi *PrjnIdxs) RecvNIdxToLayIdx(ni uint32) uint32 {
-	return ni - pi.RecvLaySt
+	return ni - pi.RecvNeurSt
 }
 
 // SendNIdxToLayIdx converts a neuron's index in network level global list of all neurons
-// to sending layer-specific index.  Just subtracts SendLaySt -- docu-function basically..
+// to sending layer-specific index.  Just subtracts SendNeurSt -- docu-function basically..
 func (pi *PrjnIdxs) SendNIdxToLayIdx(ni uint32) uint32 {
-	return ni - pi.SendLaySt
+	return ni - pi.SendNeurSt
 }
 
 // GScaleVals holds the conductance scaling values.

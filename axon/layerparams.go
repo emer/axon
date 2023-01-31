@@ -203,7 +203,8 @@ func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool) 
 	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
 }
 
-// LayPoolGiFmSpikes computes inhibition Gi from Spikes for layer-level pool
+// LayPoolGiFmSpikes computes inhibition Gi from Spikes for layer-level pool.
+// Also grabs updated Context NeuroMod values into LayerVals
 func (ly *LayerParams) LayPoolGiFmSpikes(ctx *Context, lpl *Pool, vals *LayerVals) {
 	vals.NeuroMod = ctx.NeuroMod
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
