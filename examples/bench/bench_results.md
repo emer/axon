@@ -6,19 +6,19 @@ Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, App
 
 # Axon 1.7.3x (ror/gpu2 branch): GPU first results
 
-This are very first results with no validation of the computation -- main thing is that it doesn't crash and the computational times look plausible!  SynCa is a beast and needs to be investigated!
+This are very first results with no validation of the computation -- main thing is that it doesn't crash and the computational times look plausible!  SynCa is a beast and needs to be investigated!  Using ./run_gpu.sh to target HUGE and LARGE:
 
 HUGE:
 
 	Function Name 	   Secs	    Pct
-	    GPU:Cycle 	  0.578	    2.9
-	      GPU:DWt 	  0.086	    0.4
-	GPU:GatherSpikes 	  0.621	    3.1
-	GPU:PoolGeMax 	  0.505	    2.5
-	   GPU:PoolGi 	  0.500	    2.5
-	    GPU:SynCa 	 17.449	   88.1
-	  GPU:WtFmDWt 	  0.073	    0.4
-	        Total 	 19.812
+	    GPU:Cycle 	  0.376	   17.0
+	      GPU:DWt 	  0.004	    0.2
+	GPU:GatherSpikes 	  0.410	   18.6
+	GPU:PoolGeMax 	  0.371	   16.8
+	   GPU:PoolGi 	  0.370	   16.8
+	    GPU:SynCa 	  0.672	   30.5
+	  GPU:WtFmDWt 	  0.003	    0.2
+	        Total 	  2.206
 
 OS Threads (=GOMAXPROCS): 4. Gorountines: 4 (Neurons) 4 (SendSpike) 4 (SynCa)
 	Function Name 	   Secs	    Pct

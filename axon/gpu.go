@@ -232,14 +232,14 @@ func (gp *GPU) SynMemToGPU() {
 }
 
 func (gp *GPU) NSub(n int) int {
-	return ints.IntMultiple(n, gp.NThreads)
+	return ints.IntMultiple(n, gp.NThreads) / gp.NThreads
 }
 
 func (gp *GPU) RunPipeline(net *Network, name string, pl *vgpu.Pipeline, n int) {
 	// todo: need to bind vars again?
 	net.FunTimerStart(name)
-	gp.Sys.CmdResetBindVars(gp.Sys.CmdPool.Buff, 0)
-	// gp.Sys.ComputeResetBegin()
+	// gp.Sys.CmdResetBindVars(gp.Sys.CmdPool.Buff, 0)
+	gp.Sys.ComputeResetBegin()
 	pl.ComputeCommand(gp.NSub(n), 1, 1)
 	gp.Sys.ComputeSubmitWait()
 	net.FunTimerStop(name)
@@ -256,7 +256,9 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 
 	gp.RunPipeline(net, "GPU:Cycle", gp.Cycle, len(net.Neurons))
 
-	gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses))
+	if ctx.Testing.IsFalse() {
+		gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses))
+	}
 }
 
 func (gp *GPU) RunDWt(ctx *Context, net *Network) {

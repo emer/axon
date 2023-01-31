@@ -16,7 +16,7 @@
 // Set 1: main network structs and vals
 [[vk::binding(0, 1)]] StructuredBuffer<Context> Ctxt; // [0]
 [[vk::binding(1, 1)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
-[[vk::binding(2, 1)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+// [[vk::binding(2, 1)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 1)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 1)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurs][Syns]
 
@@ -31,10 +31,21 @@ void SynCa2(in Context ctx, in PrjnParams pj, uint ci, inout Synapse sy, in Neur
 		return;
 	}
 	pj.CycleSynCaSyn(ctx, sy, sn, rn);
+	/*
+	float ca = 0;
+	if (rn.Spike != 0 || sn.Spike == 0) {
+		ca = sn.CaSyn * rn.CaSyn * pj.Learn.KinaseCa.SpikeG;
+		sy.Ca = ca;
+	}
+	*/
+	// sy.CaM = .4; // even just doing this takes same amount of time!
+	// sy.CaUpT = ctx.CycleTot;
+	// pj.Learn.KinaseCa.FmCa(ca, sy.CaM, sy.CaP, sy.CaD);
 }
 
 void SynCa(in Context ctx, uint ci, inout Synapse sy) {
 	SynCa2(ctx, Prjns[sy.PrjnIdx], ci, sy, Neurons[sy.SendIdx], Neurons[sy.RecvIdx]);
+	// sy.CaM = 0.4; // even here..  same time
 }
 
 
