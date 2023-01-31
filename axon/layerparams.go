@@ -196,16 +196,11 @@ func (ly *LayerParams) AllParams() string {
 //////////////////////////////////////////////////////////////////////////////////////
 //  GeToPool
 
-// GeToPool adds Spike, GeRaw and GeExt from each neuron into the Pools
-func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, subPool bool) {
+// GeToPool adds Spike, GeRaw and GeExt from each neuron into the given Pool
+func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool) {
 	pl.Inhib.FBsRaw += nrn.Spike
 	pl.Inhib.FFsRaw += nrn.GeRaw
 	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
-	if subPool {
-		lpl.Inhib.FBsRaw += nrn.Spike
-		lpl.Inhib.FFsRaw += nrn.GeRaw
-		lpl.Inhib.GeExtRaw += nrn.GeExt
-	}
 }
 
 // LayPoolGiFmSpikes computes inhibition Gi from Spikes for layer-level pool

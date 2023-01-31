@@ -32,12 +32,10 @@ package axon
 
 // cycle update:
 
-// PrjnGatherSpikes:
-// gpu_gfmspikes.hlsl [Prjns]
+// GatherSpikes & RecvSpikes:
+// gpu_gather.hlsl [RecvNeurons]
 
 // GiFmSpikes:
-// gpu_exttopool.hlsl [Neurons] // todo: can this be done in send spike??
-// gpu_laygi.hlsl [Layers]
 // gpu_poolgi.hlsl [Pools]
 
 // CycleNeuron:

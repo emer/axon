@@ -40,8 +40,8 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 }
 
 // GiFmSpikes gets the Spike, GeRaw and GeExt from neurons in the pools
-// where Spike drives FBsRaw -- raw feedback signal,
-// GeRaw drives FFsRaw -- aggregate feedforward excitatory spiking input
+// where Spike drives FBsRaw = raw feedback signal,
+// GeRaw drives FFsRaw = aggregate feedforward excitatory spiking input.
 // GeExt represents extra excitatory input from other sources.
 // Then integrates new inhibitory conductances therefrom,
 // at the layer and pool level.
@@ -49,24 +49,37 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 // Also updates all AvgMax values at the Cycle level.
 func (ly *Layer) GiFmSpikes(ctx *Context) {
 	lpl := &ly.Pools[0]
-	subPools := (len(ly.Pools) > 1)
-	lpl.AvgMax.Init()
+	np := len(ly.Pools)
+	subPools := (np > 1)
+	for pi := 0; pi < np; pi++ {
+		pl := &ly.Pools[pi]
+		pl.AvgMax.Init()
+	}
 	for ni := range ly.Neurons { // note: layer-level iterating across neurons
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
 		pl := &ly.Pools[nrn.SubPool]
-		ly.Params.GeToPool(ctx, uint32(ni), nrn, pl, lpl, subPools)
-		lpl.AvgMax.UpdateVals(nrn, int32(ni))
+		ly.Params.GeToPool(ctx, uint32(ni), nrn, pl)
+		pl.AvgMax.UpdateVals(nrn, int32(ni))
+		if subPools { // update layer too -- otherwise pl == lpl
+			ly.Params.GeToPool(ctx, uint32(ni), nrn, lpl)
+			lpl.AvgMax.UpdateVals(nrn, int32(ni))
+		}
 	}
-	lpl.AvgMax.CalcAvg()
+	for pi := 0; pi < np; pi++ {
+		pl := &ly.Pools[pi]
+		pl.AvgMax.CalcAvg()
+	}
 	ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.Vals)
 	// ly.PoolGiFmSpikes(ctx) // note: this is now called as a second pass
 	// so that we can do between-layer inhibition
 }
 
-// PoolGiFmSpikes computes inhibition Gi from Spikes within relevant Pools
+// PoolGiFmSpikes computes inhibition Gi from Spikes within sub-pools.
+// and also between different layers based on LayInhib* indexes
+// must happen after LayPoolGiFmSpikes has been called.
 func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 	ly.BetweenLayerGi(ctx)
 	np := len(ly.Pools)
@@ -78,12 +91,6 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 	for pi := 1; pi < np; pi++ {
 		pl := &ly.Pools[pi]
 		ly.Params.SubPoolGiFmSpikes(ctx, pl, lpl, lyInhib, ly.Vals.ActAvg.GiMult)
-		pl.AvgMax.Init()
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			pl.AvgMax.UpdateVals(nrn, int32(ni))
-		}
-		pl.AvgMax.CalcAvg()
 	}
 }
 
