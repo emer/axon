@@ -10,6 +10,8 @@ import (
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/etable/etable"
+	"github.com/emer/etable/etensor"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -49,6 +51,16 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	pats := &etable.Table{}
 	ConfigPats(pats, *numPats, inputShape, outputShape)
+
+	inLay := net.LayerByName("V1m16").(*axon.Layer)
+	outLay := net.LayerByName("Output").(*axon.Layer)
+
+	inPats := pats.ColByName("Input").(*etensor.Float32)
+	outPats := pats.ColByName("Output").(*etensor.Float32)
+
+	// todo: is the input shape actually correct for a 4D layer?
+	assert.Equal(b, inLay.Shp.Len(), inPats.Len())
+	assert.Equal(b, outLay.Shp.Len(), outPats.Len())
 
 	epcLog := &etable.Table{}
 	ConfigEpcLog(epcLog)
