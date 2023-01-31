@@ -28,7 +28,6 @@ import (
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
-	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -252,7 +251,9 @@ func (ss *Sim) Init() {
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
-	ss.Params.SetAll()
+	if err := ss.Params.SetAll(); err != nil {
+		panic(err)
+	}
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -275,8 +276,8 @@ func (ss *Sim) ConfigLoops() {
 	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
 
-	for m, _ := range man.Stacks {
-		mode := m // For closures
+	for mode := range man.Stacks {
+		mode := mode // For closures
 		stack := man.Stacks[mode]
 		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
 			// note: OnStart for env.Env, others may happen OnEnd
@@ -394,7 +395,7 @@ func (ss *Sim) ConfigLoops() {
 	}
 
 	if Debug {
-		mpi.Println(man.DocString())
+		fmt.Println(man.DocString())
 	}
 	ss.Loops = man
 }
@@ -662,6 +663,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		row = ss.Stats.Int("Trial")
 	}
 
+	fmt.Println(row)
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
 }
 
@@ -776,13 +778,13 @@ func (ss *Sim) CmdArgs() {
 
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
-		mpi.Printf("Saving NetView data from testing\n")
+		fmt.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
 	runs := ss.Args.Int("runs")
 	run := ss.Args.Int("run")
-	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
+	fmt.Printf("Running %d Runs starting at %d\n", runs, run)
 	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs
