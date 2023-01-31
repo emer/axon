@@ -7,6 +7,7 @@
 
 # model binaries
 examples/bench/bench
+examples/bench_objrec/bench_objrec
 examples/boa/boa
 examples/ra25/ra25
 
