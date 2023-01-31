@@ -51,6 +51,7 @@ func main() {
 func guirun() {
 	TheSim.Init()
 	win := TheSim.ConfigGui()
+	TheSim.Net.GPUOn(&TheSim.Context) // must happen after gui or no gui
 	win.StartEventLoop()
 }
 

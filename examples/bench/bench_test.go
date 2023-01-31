@@ -16,11 +16,17 @@ import (
 	"github.com/goki/gi/gi"
 )
 
+func init() {
+	// must lock main thread for gpu!
+	runtime.LockOSThread()
+}
+
 const (
 	convergenceTestEpochs = 10
 	defaultNumEpochs      = 350
 )
 
+var gpu = flag.Bool("gpu", false, "whether to run gpu or not")
 var maxProcs = flag.Int("maxProcs", 0, "GOMAXPROCS value to set -- 0 = use current default")
 var threadsNeuron = flag.Int("thrNeuron", 0, "number of goroutines to launch for NeuronFun")
 var threadsSendSpike = flag.Int("thrSendSpike", 0, "number of goroutines to launch for SendSpike")
@@ -54,7 +60,7 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	epcLog := &etable.Table{}
 	ConfigEpcLog(epcLog)
 
-	TrainNet(net, pats, epcLog, *numEpochs, *verbose)
+	TrainNet(net, pats, epcLog, *numEpochs, *verbose, *gpu)
 
 	if *writeStats {
 		filename := fmt.Sprintf("bench_%d_units.csv", *numUnits)

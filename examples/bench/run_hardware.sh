@@ -42,5 +42,5 @@ ${CMD[@]} -epochs 2 -pats 5 -units 1024 -maxProcs 4 $*
 echo "GINORM: "
 ${CMD[@]} -epochs 1 -pats 2 -units 2048 -maxProcs 1 $*
 ${CMD[@]} -epochs 1 -pats 2 -units 2048 -maxProcs 2 $*
-${CMD[@]} -epochs 1 -pats 1 -units 2048 -maxProcs 4 $*
+${CMD[@]} -epochs 1 -pats 2 -units 2048 -maxProcs 4 $*
 

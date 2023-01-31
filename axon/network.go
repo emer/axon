@@ -116,8 +116,11 @@ func (nt *Network) Cycle(ctx *Context) {
 
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
 func (nt *Network) CycleImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunCycle(ctx, nt)
+		return
+	}
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
-	// nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.RecvSpikes(ctx, ni, nrn) }, "RecvSpikes")
 	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
@@ -366,12 +369,20 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunDWt(ctx, nt)
+		return
+	}
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt")             // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunWtFmDWt(ctx, nt)
+		return
+	}
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // def no
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")

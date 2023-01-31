@@ -58,6 +58,7 @@ type NetworkBase struct {
 	PrjnGSyns   []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
+	GPU         GPU                    `desc:"GPU implementation"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
 	WaitGp      sync.WaitGroup         `view:"-" desc:"network-level wait group for synchronizing threaded layer calls"`

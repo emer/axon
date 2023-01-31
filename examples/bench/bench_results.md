@@ -4,6 +4,68 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.7.3x (ror/gpu2 branch): GPU first results
+
+This are very first results with no validation of the computation -- main thing is that it doesn't crash and the computational times look plausible!  SynCa is a beast and needs to be investigated!
+
+HUGE:
+
+	Function Name 	   Secs	    Pct
+	    GPU:Cycle 	  0.578	    2.9
+	      GPU:DWt 	  0.086	    0.4
+	GPU:GatherSpikes 	  0.621	    3.1
+	GPU:PoolGeMax 	  0.505	    2.5
+	   GPU:PoolGi 	  0.500	    2.5
+	    GPU:SynCa 	 17.449	   88.1
+	  GPU:WtFmDWt 	  0.073	    0.4
+	        Total 	 19.812
+
+OS Threads (=GOMAXPROCS): 4. Gorountines: 4 (Neurons) 4 (SendSpike) 4 (SynCa)
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  0.550	    3.0
+	    CyclePost 	  0.000	    0.0
+	          DWt 	  6.596	   35.6
+	     DWtLayer 	  0.000	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.147	    0.8
+	   GiFmSpikes 	  0.093	    0.5
+	    RecvSynCa 	  3.669	   19.8
+	    SendSpike 	  1.492	    8.1
+	    SendSynCa 	  5.553	   30.0
+	      WtFmDWt 	  0.421	    2.3
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 18.521
+
+LARGE:
+
+	Function Name 	   Secs	    Pct
+	    GPU:Cycle 	  2.030	    7.3
+	      GPU:DWt 	  0.099	    0.4
+	GPU:GatherSpikes 	  1.984	    7.1
+	GPU:PoolGeMax 	  1.817	    6.5
+	   GPU:PoolGi 	  1.773	    6.4
+	    GPU:SynCa 	 20.062	   72.0
+	  GPU:WtFmDWt 	  0.096	    0.3
+	        Total 	 27.862
+
+OS Threads (=GOMAXPROCS): 4. Gorountines: 4 (Neurons) 4 (SendSpike) 4 (SynCa)
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  1.177	    6.3
+	    CyclePost 	  0.001	    0.0
+	          DWt 	  6.845	   36.6
+	     DWtLayer 	  0.000	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.284	    1.5
+	   GiFmSpikes 	  0.179	    1.0
+	    RecvSynCa 	  4.292	   22.9
+	    SendSpike 	  1.354	    7.2
+	    SendSynCa 	  4.112	   22.0
+	      WtFmDWt 	  0.473	    2.5
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 18.716
+
+    
+    
 # Axon 1.7.2x (ror/gpu2 branch): everything now receiver-based
 
 In preparation for the GPU version, the synaptic memory structures are all now receiver-based, and all of the Prjn memory structures (Synapses, GBuf, Gsyn) are now subsets of one large global slice.  This did not appear to make much difference for the LARGE case, while still using the sender-based spiking function (which now has to work a bit harder by indirecting through the synapses instead of just sequentially cruising through them).

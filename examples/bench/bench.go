@@ -143,11 +143,15 @@ func ConfigEpcLog(dt *etable.Table) {
 	}, 0)
 }
 
-func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose bool) {
+func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, gpu bool) {
 	ctx := axon.NewContext()
 	net.InitWts()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
+
+	if gpu {
+		net.GPUOnNoGUI(ctx)
+	}
 
 	epcLog.SetNumRows(epcs)
 
