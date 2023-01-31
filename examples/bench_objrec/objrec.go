@@ -8,7 +8,7 @@ processing (up to inferotemporal (IT) cortex) can produce robust object
 recognition that is invariant to changes in position, size, etc of retinal
 input images.
 */
-package main
+package bench
 
 import (
 	"fmt"
@@ -218,7 +218,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	itOut.SetClass("NovLearn")
 	outIT.SetClass("NovLearn")
 
-	net.NThreads = 1
 	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(0))
 
 	net.Defaults()

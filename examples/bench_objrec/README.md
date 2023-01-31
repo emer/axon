@@ -1,19 +1,16 @@
-Back to [All Sims](https://github.com/CompCogNeuro/sims) (also for general info and executable downloads)
+# Bench LVIS
 
----
-title: "CCNBook Objrec"
----
+This network is similar to [lvis/sims/objrec](https://github.com/ccnlab/lvis/tree/main/sims/objrec).
 
-Back to [CCNBook/Sims/All](/CCNBook/Sims/All "wikilink") or
-[Perception](/CCNBook/Perception "wikilink").
+## Simon's comments on Projection patterns
 
-# Introduction
+- Sometimes people refer to these connectivity patterns as "Convolution", but that's misleading. They have locality, but no weight sharing. In deep learning, you'd refer to this as [locally connected layer](https://keras.io/api/layers/locally_connected_layers/locall_connected2d/) or as block-sparsity.
 
 This simulation explores how a hierarchy of areas in the ventral stream of visual processing (up to inferotemporal (IT) cortex) can produce robust object recognition that is invariant to changes in position, size, etc of retinal input images.
 
 # Network Structure
 
-![V1 Filters](fig_v1_visual_filters.png?raw=true "V1 Filters")
+![V1 Filters](img/fig_v1_visual_filters.png?raw=true "V1 Filters")
 
 **Figure 1:** V1 filtering steps, simulating simple and complex cell firing properties, including length-sum and end-stop cells. Top shows organization of these filters in each 4x5 V1 hypercolumn.
 
@@ -27,7 +24,7 @@ The V4 layer is also organized into a grid of hypercolumns (pools), this time 5x
 
 # Training
 
-![LED Objects](fig_objrec_objs.png?raw=true "LED Objects")
+![LED Objects](img/fig_objrec_objs.png?raw=true "LED Objects")
 
 **Figure 2:** Set of 20 objects composed from horizontal and vertical line elements used for the object recognition simulation. By using a restricted set of visual feature elements, we can more easily understand how the model works, and also test for generalization to novel objects (object 18 and 19 are not trained initially, and then subsequently trained only in a relatively few locations -- learning there generalizes well to other locations).
 
