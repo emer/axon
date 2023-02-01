@@ -13,6 +13,7 @@ examples/ra25/ra25
 
 # benchmarking output
 examples/bench/bench_*.csv
+examples/bench_objrec/Objrec_*.tsv
 
 # Test binary, build with `go test -c`
 *.test
