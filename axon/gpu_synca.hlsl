@@ -31,23 +31,11 @@ void SynCa2(in Context ctx, in PrjnParams pj, uint ci, inout Synapse sy, in Neur
 		return;
 	}
 	pj.CycleSynCaSyn(ctx, sy, sn, rn);
-	/*
-	float ca = 0;
-	if (rn.Spike != 0 || sn.Spike == 0) {
-		ca = sn.CaSyn * rn.CaSyn * pj.Learn.KinaseCa.SpikeG;
-		sy.Ca = ca;
-	}
-	*/
-	// sy.CaM = .4; // even just doing this takes same amount of time!
-	// sy.CaUpT = ctx.CycleTot;
-	// pj.Learn.KinaseCa.FmCa(ca, sy.CaM, sy.CaP, sy.CaD);
 }
 
 void SynCa(in Context ctx, uint ci, inout Synapse sy) {
 	SynCa2(ctx, Prjns[sy.PrjnIdx], ci, sy, Neurons[sy.SendIdx], Neurons[sy.RecvIdx]);
-	// sy.CaM = 0.4; // even here..  same time
 }
-
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Synapses

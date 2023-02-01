@@ -175,7 +175,25 @@ const (
 	LayerTypesN
 )
 
+// IsExtLayerType returns true if the layer type deals with external input:
+// Input, Target, Compare
+func IsExtLayerType(lt LayerTypes) bool {
+	if lt == InputLayer || lt == TargetLayer || lt == CompareLayer {
+		return true
+	}
+	return false
+}
+
 //gosl: end layertypes
+
+// IsExt returns true if the layer type deals with external input:
+// Input, Target, Compare
+func (lt LayerTypes) IsExt() bool {
+	if lt == InputLayer || lt == TargetLayer || lt == CompareLayer {
+		return true
+	}
+	return false
+}
 
 //go:generate stringer -type=LayerTypes
 

@@ -700,7 +700,7 @@ func (ac *ActParams) GeFmSyn(ctx *Context, ni uint32, nrn *Neuron, geSyn, geExt 
 	}
 	geSyn = ac.Attn.ModVal(geSyn, nrn.Attn)
 
-	if ac.Clamp.Add.IsFalse() && nrn.HasFlag(NeuronHasExt) {
+	if ac.Clamp.Add.IsFalse() && nrn.HasFlag(NeuronHasExt) { // todo: this flag check is not working
 		geSyn = nrn.Ext * ac.Clamp.Ge
 		nrn.GeExt = geSyn
 		geExt = 0 // no extra in this case

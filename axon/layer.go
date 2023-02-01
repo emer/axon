@@ -765,40 +765,32 @@ func (ly *Layer) InitWtSym() {
 	}
 }
 
-// InitExt initializes external input state -- called prior to apply ext
+//////////////////////////////////////////////////////////////////////////////////////
+//  ApplyExt
+
+// InitExt initializes external input state.
+// Should be called prior to ApplyExt on all layers receiving Ext input.
 func (ly *Layer) InitExt() {
-	msk := NeuronHasExt | NeuronHasTarg | NeuronHasCmpr
+	if !ly.LayerType().IsExt() {
+		return
+	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		nrn.Ext = 0
-		nrn.Target = 0
-		nrn.ClearFlag(msk)
+		ly.Params.InitExt(uint32(ni), nrn)
+		ly.Exts[ni] = -1 // missing by default
 	}
 }
 
-// ApplyExtFlags gets the clear mask and set mask for updating neuron flags
-// based on layer type, and whether input should be applied to Target (else Ext)
-func (ly *Layer) ApplyExtFlags() (clrmsk, setmsk NeuronFlags, toTarg bool) {
-	clrmsk = NeuronHasExt | NeuronHasTarg | NeuronHasCmpr
-	toTarg = false
-	if ly.Typ == emer.Target {
-		setmsk = NeuronHasTarg
-		toTarg = true
-	} else if ly.Typ == emer.Compare {
-		setmsk = NeuronHasCmpr
-		toTarg = true
-	} else {
-		setmsk = NeuronHasExt
-	}
-	return
-}
-
-// ApplyExt applies external input in the form of an etensor.Float32.  If
-// dimensionality of tensor matches that of layer, and is 2D or 4D, then each dimension
-// is iterated separately, so any mismatch preserves dimensional structure.
+// ApplyExt applies external input in the form of an etensor.Float32 or 64.
+// Negative values are not valid, and will be interpreted as missing inputs.
+// If dimensionality of tensor matches that of layer, and is 2D or 4D,
+// then each dimension is iterated separately, so any mismatch preserves
+// dimensional structure.
 // Otherwise, the flat 1D view of the tensor is used.
 // If the layer is a Target or Compare layer type, then it goes in Target
-// otherwise it goes in Ext
+// otherwise it goes in Ext.
+// Also sets the Exts values on layer, which are used for the GPU version,
+// which requires calling the network ApplyExts() method -- is a no-op for CPU.
 func (ly *Layer) ApplyExt(ext etensor.Tensor) {
 	switch {
 	case ext.NumDims() == 2 && ly.Shp.NumDims() == 4: // special case
@@ -812,34 +804,52 @@ func (ly *Layer) ApplyExt(ext etensor.Tensor) {
 	}
 }
 
+// ApplyExtVal applies given external value to given neuron
+// using clearMask, setMask, and toTarg from ApplyExtFlags.
+// Also saves Val in Exts for potential use by GPU.
+func (ly *Layer) ApplyExtVal(ni int, nrn *Neuron, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
+	ly.Exts[ni] = val
+	if val < 0 {
+		return
+	}
+	if toTarg {
+		nrn.Target = val
+	} else {
+		nrn.Ext = val
+	}
+	nrn.ClearFlag(clearMask)
+	nrn.SetFlag(setMask)
+}
+
+// ApplyExtFlags gets the clear mask and set mask for updating neuron flags
+// based on layer type, and whether input should be applied to Target (else Ext)
+func (ly *Layer) ApplyExtFlags() (clearMask, setMask NeuronFlags, toTarg bool) {
+	ly.Params.ApplyExtFlags(&clearMask, &setMask, &toTarg)
+	return
+}
+
 // ApplyExt2D applies 2D tensor external input
 func (ly *Layer) ApplyExt2D(ext etensor.Tensor) {
-	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	ymx := ints.MinInt(ext.Dim(0), ly.Shp.Dim(0))
 	xmx := ints.MinInt(ext.Dim(1), ly.Shp.Dim(1))
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
-			vl := float32(ext.FloatVal(idx))
-			i := ly.Shp.Offset(idx)
-			nrn := &ly.Neurons[i]
+			val := float32(ext.FloatVal(idx))
+			ni := ly.Shp.Offset(idx)
+			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			if toTarg {
-				nrn.Target = vl
-			} else {
-				nrn.Ext = vl
-			}
-			nrn.ClearFlag(clrmsk)
-			nrn.SetFlag(setmsk)
+			ly.ApplyExtVal(ni, nrn, val, clearMask, setMask, toTarg)
 		}
 	}
 }
 
 // ApplyExt2Dto4D applies 2D tensor external input to a 4D layer
 func (ly *Layer) ApplyExt2Dto4D(ext etensor.Tensor) {
-	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	lNy, lNx, _, _ := etensor.Prjn2DShape(&ly.Shp, false)
 
 	ymx := ints.MinInt(ext.Dim(0), lNy)
@@ -847,26 +857,20 @@ func (ly *Layer) ApplyExt2Dto4D(ext etensor.Tensor) {
 	for y := 0; y < ymx; y++ {
 		for x := 0; x < xmx; x++ {
 			idx := []int{y, x}
-			vl := float32(ext.FloatVal(idx))
-			ui := etensor.Prjn2DIdx(&ly.Shp, false, y, x)
-			nrn := &ly.Neurons[ui]
+			val := float32(ext.FloatVal(idx))
+			ni := etensor.Prjn2DIdx(&ly.Shp, false, y, x)
+			nrn := &ly.Neurons[ni]
 			if nrn.IsOff() {
 				continue
 			}
-			if toTarg {
-				nrn.Target = vl
-			} else {
-				nrn.Ext = vl
-			}
-			nrn.ClearFlag(clrmsk)
-			nrn.SetFlag(setmsk)
+			ly.ApplyExtVal(ni, nrn, val, clearMask, setMask, toTarg)
 		}
 	}
 }
 
 // ApplyExt4D applies 4D tensor external input
 func (ly *Layer) ApplyExt4D(ext etensor.Tensor) {
-	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	ypmx := ints.MinInt(ext.Dim(0), ly.Shp.Dim(0))
 	xpmx := ints.MinInt(ext.Dim(1), ly.Shp.Dim(1))
 	ynmx := ints.MinInt(ext.Dim(2), ly.Shp.Dim(2))
@@ -876,19 +880,13 @@ func (ly *Layer) ApplyExt4D(ext etensor.Tensor) {
 			for yn := 0; yn < ynmx; yn++ {
 				for xn := 0; xn < xnmx; xn++ {
 					idx := []int{yp, xp, yn, xn}
-					vl := float32(ext.FloatVal(idx))
-					i := ly.Shp.Offset(idx)
-					nrn := &ly.Neurons[i]
+					val := float32(ext.FloatVal(idx))
+					ni := ly.Shp.Offset(idx)
+					nrn := &ly.Neurons[ni]
 					if nrn.IsOff() {
 						continue
 					}
-					if toTarg {
-						nrn.Target = vl
-					} else {
-						nrn.Ext = vl
-					}
-					nrn.ClearFlag(clrmsk)
-					nrn.SetFlag(setmsk)
+					ly.ApplyExtVal(ni, nrn, val, clearMask, setMask, toTarg)
 				}
 			}
 		}
@@ -899,21 +897,15 @@ func (ly *Layer) ApplyExt4D(ext etensor.Tensor) {
 // If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1DTsr(ext etensor.Tensor) {
-	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := ints.MinInt(ext.Len(), len(ly.Neurons))
-	for i := 0; i < mx; i++ {
-		nrn := &ly.Neurons[i]
+	for ni := 0; ni < mx; ni++ {
+		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		vl := float32(ext.FloatVal1D(i))
-		if toTarg {
-			nrn.Target = vl
-		} else {
-			nrn.Ext = vl
-		}
-		nrn.ClearFlag(clrmsk)
-		nrn.SetFlag(setmsk)
+		val := float32(ext.FloatVal1D(ni))
+		ly.ApplyExtVal(ni, nrn, val, clearMask, setMask, toTarg)
 	}
 }
 
@@ -921,21 +913,15 @@ func (ly *Layer) ApplyExt1DTsr(ext etensor.Tensor) {
 // If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1D(ext []float64) {
-	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := ints.MinInt(len(ext), len(ly.Neurons))
-	for i := 0; i < mx; i++ {
-		nrn := &ly.Neurons[i]
+	for ni := 0; ni < mx; ni++ {
+		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		vl := float32(ext[i])
-		if toTarg {
-			nrn.Target = vl
-		} else {
-			nrn.Ext = vl
-		}
-		nrn.ClearFlag(clrmsk)
-		nrn.SetFlag(setmsk)
+		val := float32(ext[ni])
+		ly.ApplyExtVal(ni, nrn, val, clearMask, setMask, toTarg)
 	}
 }
 
@@ -943,21 +929,15 @@ func (ly *Layer) ApplyExt1D(ext []float64) {
 // If the layer is a Target or Compare layer type, then it goes in Target
 // otherwise it goes in Ext
 func (ly *Layer) ApplyExt1D32(ext []float32) {
-	clrmsk, setmsk, toTarg := ly.ApplyExtFlags()
+	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := ints.MinInt(len(ext), len(ly.Neurons))
-	for i := 0; i < mx; i++ {
-		nrn := &ly.Neurons[i]
+	for ni := 0; ni < mx; ni++ {
+		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		vl := ext[i]
-		if toTarg {
-			nrn.Target = vl
-		} else {
-			nrn.Ext = vl
-		}
-		nrn.ClearFlag(clrmsk)
-		nrn.SetFlag(setmsk)
+		val := ext[ni]
+		ly.ApplyExtVal(ni, nrn, val, clearMask, setMask, toTarg)
 	}
 }
 
@@ -965,16 +945,19 @@ func (ly *Layer) ApplyExt1D32(ext []float32) {
 // layer Type field -- call this if the Type has changed since the last
 // ApplyExt* method call.
 func (ly *Layer) UpdateExtFlags() {
-	clrmsk, setmsk, _ := ly.ApplyExtFlags()
+	clearMask, setMask, _ := ly.ApplyExtFlags()
 	for i := range ly.Neurons {
 		nrn := &ly.Neurons[i]
 		if nrn.IsOff() {
 			continue
 		}
-		nrn.ClearFlag(clrmsk)
-		nrn.SetFlag(setmsk)
+		nrn.ClearFlag(clearMask)
+		nrn.SetFlag(setMask)
 	}
 }
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  InitGScale
 
 // InitGScale computes the initial scaling factor for synaptic input conductances G,
 // stored in GScale.Scale, based on sending layer initial activation.

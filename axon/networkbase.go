@@ -56,6 +56,7 @@ type NetworkBase struct {
 	PrjnRecvCon []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt."`
 	PrjnGBuf    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection"`
 	PrjnGSyns   []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
+	Exts        []float32     `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	GPU         GPU                    `desc:"GPU implementation"`
@@ -445,6 +446,7 @@ func (nt *NetworkBase) Build() error {
 	emsg := ""
 	totNeurons := 0
 	totPrjns := 0
+	totExts := 0
 	nLayers := len(nt.Layers)
 	totPools := nLayers // layer pool for each layer at least
 	for _, lyi := range nt.Layers {
@@ -453,7 +455,11 @@ func (nt *NetworkBase) Build() error {
 		}
 		ly := lyi.(AxonLayer).AsAxon()
 		totPools += ly.NSubPools()
-		totNeurons += ly.Shape().Len()
+		nn := ly.Shape().Len()
+		totNeurons += nn
+		if ly.LayerType().IsExt() {
+			totExts += nn
+		}
 		totPrjns += ly.NRecvPrjns() // now doing recv
 		cls := strings.Split(ly.Class(), " ")
 		for _, cl := range cls {
@@ -468,6 +474,7 @@ func (nt *NetworkBase) Build() error {
 	nt.Neurons = make([]Neuron, totNeurons)
 	nt.Prjns = make([]AxonPrjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
+	nt.Exts = make([]float32, totExts)
 
 	// we can't do this in Defaults(), since we need to know the number of neurons etc.
 	nt.Threads.SetDefaults(totNeurons, totPrjns, nLayers)
@@ -477,6 +484,7 @@ func (nt *NetworkBase) Build() error {
 	neurIdx := 0
 	prjnIdx := 0
 	poolIdx := 0
+	extIdx := 0
 	for li, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
 		ly.Params = &nt.LayParams[li]
@@ -492,6 +500,14 @@ func (nt *NetworkBase) Build() error {
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
+		if ly.LayerType().IsExt() {
+			ly.Exts = nt.Exts[extIdx : extIdx+nn]
+			ly.Params.Idxs.ExtsSt = uint32(extIdx)
+			extIdx += nn
+		} else {
+			ly.Exts = nil
+			ly.Params.Idxs.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
+		}
 		rprjns := *ly.RecvPrjns()
 		ly.Params.Idxs.RecvSt = uint32(prjnIdx)
 		ly.Params.Idxs.RecvN = uint32(len(rprjns))

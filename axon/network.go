@@ -310,13 +310,27 @@ func (nt *Network) InitActs() {
 	}
 }
 
-// InitExt initializes external input state -- call prior to applying external inputs to layers
+// InitExt initializes external input state.
+// Call prior to applying external inputs to layers.
 func (nt *Network) InitExt() {
+	// note: important to do this for GPU
+	// to ensure partial inputs work the same way on CPU and GPU.
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
 		ly.(AxonLayer).InitExt()
+	}
+}
+
+// ApplyExts applies external inputs to layers, based on values
+// that were set in prior layer-specific ApplyExt calls.
+// This does nothing on the CPU, but is critical for the GPU,
+// and should be added to all sims where GPU will be used.
+func (nt *Network) ApplyExts(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunApplyExts(ctx, nt)
+		return
 	}
 }
 

@@ -28,6 +28,8 @@ import (
 type StartN struct {
 	Start uint32 `desc:"starting offset"`
 	N     uint32 `desc:"number of items -- [Start:Start+N]"`
+
+	pad, pad1 uint32 // todo: see if we can do without these?
 }
 
 // PrjnIdxs contains prjn-level index information into global memory arrays
@@ -231,7 +233,10 @@ func (pj *PrjnParams) RecvSynCaSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSy
 // This version updates every cycle, for GPU usage called on each synapse.
 func (pj *PrjnParams) CycleSynCaSyn(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 	sy.CaUpT = ctx.CycleTot
-	sy.Ca = sn.CaSyn * rn.CaSyn * pj.Learn.KinaseCa.SpikeG
+	sy.Ca = 0
+	if rn.Spike != 0 || sn.Spike != 0 {
+		sy.Ca = sn.CaSyn * rn.CaSyn * pj.Learn.KinaseCa.SpikeG
+	}
 	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 }
 

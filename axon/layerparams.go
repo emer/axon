@@ -34,8 +34,9 @@ type LayerIdxs struct {
 	NeurN  uint32 `inactive:"+" desc:"number of neurons in layer"`
 	RecvSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
 	RecvN  uint32 `inactive:"+" desc:"number of recv projections"`
+	ExtsSt uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
 
-	pad, pad1, pad2 uint32
+	pad, pad1 uint32
 }
 
 // SetNeuronExtPosNeg sets neuron Ext value based on neuron index
@@ -194,7 +195,57 @@ func (ly *LayerParams) AllParams() string {
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
-//  GeToPool
+//  ApplyExt
+
+// ApplyExtFlags gets the clear mask and set mask for updating neuron flags
+// based on layer type, and whether input should be applied to Target (else Ext)
+func (ly *LayerParams) ApplyExtFlags(clearMask, setMask *NeuronFlags, toTarg *bool) {
+	*clearMask = NeuronHasExt | NeuronHasTarg | NeuronHasCmpr
+	*toTarg = false
+	switch ly.LayType {
+	case TargetLayer:
+		*setMask = NeuronHasTarg
+		*toTarg = true
+	case CompareLayer:
+		*setMask = NeuronHasCmpr
+		*toTarg = true
+	default:
+		*setMask = NeuronHasExt
+	}
+	return
+}
+
+// InitExt initializes external input state for given neuron
+func (ly *LayerParams) InitExt(ni uint32, nrn *Neuron) {
+	nrn.Ext = 0
+	nrn.Target = 0
+	nrn.ClearFlag(NeuronHasExt | NeuronHasTarg | NeuronHasCmpr)
+}
+
+// ApplyExtVal applies given external value to given neuron,
+// setting flags based on type of layer.
+// Should only be called on Input, Target, Compare layers.
+// Negative values are not valid, and will be interpreted as missing inputs.
+func (ly *LayerParams) ApplyExtVal(ni uint32, nrn *Neuron, val float32) {
+	if val < 0 {
+		return
+	}
+	var clearMask, setMask NeuronFlags
+	var toTarg bool
+	ly.ApplyExtFlags(&clearMask, &setMask, &toTarg)
+	if toTarg {
+		nrn.Target = val
+	} else {
+		nrn.Ext = val
+	}
+	nrn.ClearFlag(clearMask)
+	nrn.SetFlag(setMask)
+	nrn.SetFlag(NeuronHasExt) // doesn't fix it
+	nrn.Flags |= NeuronHasExt
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  Cycle methods
 
 // GeToPool adds Spike, GeRaw and GeExt from each neuron into the given Pool
 func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool) {

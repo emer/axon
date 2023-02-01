@@ -18,9 +18,6 @@ import (
 	"github.com/goki/mat32"
 )
 
-// Note: this test project exactly reproduces the configuration and behavior of
-// C++ emergent/demo/axon/basic_axon_test.proj  in version 8.5.6 svn 11492
-
 // number of distinct sets of learning parameters to test
 const NLrnPars = 1
 
@@ -178,7 +175,6 @@ func TestSpikeProp(t *testing.T) {
 }
 
 func TestNetAct(t *testing.T) {
-	// t.Skip("Skipping TestNetAct for now until stable")
 	testNet := newTestNet()
 	testNet.InitExt()
 	inPats := newInPats()

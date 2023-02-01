@@ -35,13 +35,13 @@ CMD=(${exe} -test.bench=BenchmarkBenchNetFull -writestats)
 # ${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 1 $*
 # ${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 2 $*
 # ${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 4 $*
-${CMD[@]} -epochs 3 -pats 10 -units 625 -gpu $*
-${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 4 $*
+# ${CMD[@]} -epochs 3 -pats 10 -units 625 -gpu $*
+# ${CMD[@]} -epochs 3 -pats 10 -units 625 -maxProcs 4 $*
 echo " "
 echo "=============================================================="
 echo "HUGE Network (5 x 1024 units)"
 ${CMD[@]} -epochs 2 -pats 5 -units 1024 -gpu $*
-${CMD[@]} -epochs 2 -pats 5 -units 1024 -maxProcs 4 $*
+${CMD[@]} -epochs 2 -pats 5 -units 1024 $*
 # echo " "
 # echo "=============================================================="
 # echo "GINORMOUS Network (5 x 2048 units)"

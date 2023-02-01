@@ -179,6 +179,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, 
 
 			inLay.ApplyExt(inp)
 			outLay.ApplyExt(outp)
+			net.ApplyExts(ctx)
 
 			net.NewState(ctx)
 			ctx.NewState(etime.Train)
