@@ -14,28 +14,30 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[NeuronOff-1]
-	_ = x[NeuronHasExt-4]
-	_ = x[NeuronHasTarg-8]
-	_ = x[NeuronHasCmpr-16]
+	_ = x[NeuronHasExt-2]
+	_ = x[NeuronHasTarg-4]
+	_ = x[NeuronHasCmpr-8]
 }
 
 const (
-	_NeuronFlags_name_0 = "NeuronOff"
-	_NeuronFlags_name_1 = "NeuronHasExt"
-	_NeuronFlags_name_2 = "NeuronHasTarg"
-	_NeuronFlags_name_3 = "NeuronHasCmpr"
+	_NeuronFlags_name_0 = "NeuronOffNeuronHasExt"
+	_NeuronFlags_name_1 = "NeuronHasTarg"
+	_NeuronFlags_name_2 = "NeuronHasCmpr"
+)
+
+var (
+	_NeuronFlags_index_0 = [...]uint8{0, 9, 21}
 )
 
 func (i NeuronFlags) String() string {
 	switch {
-	case i == 1:
-		return _NeuronFlags_name_0
+	case 1 <= i && i <= 2:
+		i -= 1
+		return _NeuronFlags_name_0[_NeuronFlags_index_0[i]:_NeuronFlags_index_0[i+1]]
 	case i == 4:
 		return _NeuronFlags_name_1
 	case i == 8:
 		return _NeuronFlags_name_2
-	case i == 16:
-		return _NeuronFlags_name_3
 	default:
 		return "NeuronFlags(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

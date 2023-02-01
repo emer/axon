@@ -240,8 +240,6 @@ func (ly *LayerParams) ApplyExtVal(ni uint32, nrn *Neuron, val float32) {
 	}
 	nrn.ClearFlag(clearMask)
 	nrn.SetFlag(setMask)
-	nrn.SetFlag(NeuronHasExt) // doesn't fix it
-	nrn.Flags |= NeuronHasExt
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
