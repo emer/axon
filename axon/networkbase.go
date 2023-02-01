@@ -139,7 +139,11 @@ func (nt *NetworkBase) LayersByClass(classes ...string) []string {
 	for _, lc := range classes {
 		nms = append(nms, nt.LayClassMap[lc]...)
 	}
-	return dedupe.DeDupe(nms)
+	layers := dedupe.DeDupe(nms)
+	if len(layers) == 0 {
+		panic("No Layers found!")
+	}
+	return layers
 }
 
 // StdVertLayout arranges layers in a standard vertical (z axis stack) layout, by setting
