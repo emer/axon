@@ -12,6 +12,7 @@ package bench
 import (
 	"fmt"
 	"math/rand"
+	"testing"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/emer"
@@ -91,7 +92,8 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa int, verbose bool) {
+func ConfigNet(b *testing.B, net *axon.Network, inputNeurDimPerPool, inputPools, outputDim,
+	threadNeuron, threadSendSpike, threadSynCa int, verbose bool) {
 	net.InitName(net, "BenchLvisNet")
 
 	/*
@@ -101,10 +103,10 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa int
 
 	// construct the layers
 	// in LVIS: 16 x 16 x 5 x 4
-	v1m16 := net.AddLayer4D("V1m16", 6, 6, 4, 4, emer.Input)
+	v1m16 := net.AddLayer4D("V1m16", inputPools, inputPools, inputNeurDimPerPool, inputNeurDimPerPool, emer.Input)
 	v2m16 := net.AddLayer4D("V2m16", 8, 8, 6, 6, emer.Hidden)
 	v4f16 := net.AddLayer4D("V4f16", 4, 4, 8, 8, emer.Hidden)
-	outLay := net.AddLayer2D("Output", 4, 4, emer.Target)
+	outLay := net.AddLayer2D("Output", outputDim, outputDim, emer.Target)
 
 	v1m16.SetClass("V1m")
 	v1m16.SetRepIdxsShape(CenterPoolIdxs(v1m16, 2), emer.CenterPoolShape(v1m16, 2))
