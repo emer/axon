@@ -318,6 +318,14 @@ func (ss *Sim) ConfigLoops() {
 	man.AddOnEndToAll("Log", ss.Log)
 	axon.LooperResetLogBelow(man, &ss.Logs)
 
+	// log some basic stats to stdout
+	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("LogToStdout", func() {
+		table := ss.Logs.Table(etime.Train, etime.Epoch)
+		corSim := table.CellFloat("CorSim", table.Rows-1)
+		epochNum := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		fmt.Println("Epoch: ", epochNum, " corSim: ", corSim)
+	})
+
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if (ss.PCAInterval > 0) && (trnEpc%ss.PCAInterval == 0) {
@@ -663,7 +671,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		row = ss.Stats.Int("Trial")
 	}
 
-	fmt.Println(row)
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
 }
 
