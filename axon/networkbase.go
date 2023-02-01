@@ -141,7 +141,7 @@ func (nt *NetworkBase) LayersByClass(classes ...string) []string {
 	}
 	layers := dedupe.DeDupe(nms)
 	if len(layers) == 0 {
-		panic("No Layers found!")
+		panic(fmt.Sprintf("No Layers found for query: %#v. Basic layer types have been renamed since v1.7, use LayersByType for forward compatibility.", classes))
 	}
 	return layers
 }
