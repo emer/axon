@@ -51,7 +51,7 @@ func main() {
 func guirun() {
 	TheSim.Init()
 	win := TheSim.ConfigGui()
-	TheSim.Net.GPUOn(&TheSim.Context) // must happen after gui or no gui
+	TheSim.Net.GPUOnGUI(&TheSim.Context) // must happen after gui or no gui
 	win.StartEventLoop()
 }
 
@@ -332,6 +332,7 @@ func (ss *Sim) ApplyInputs() {
 			ly.ApplyExt(pats)
 		}
 	}
+	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -413,6 +414,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
+	ss.Net.GPU.CopyNeuronsFromGPU(&ss.Context, ss.Net)
 	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))

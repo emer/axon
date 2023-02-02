@@ -23,25 +23,45 @@ var content embed.FS
 
 // note: binding is var, set
 
-// Set 0: uniforms -- these are constant
+// Set 0: uniform layer params -- could not have prjns also be uniform..
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
-[[vk::binding(1, 0)]] uniform PrjnParams Prjns[]; // [Layer][RecvPrjns]
 
-// Set 1: main network structs and vals -- all are writable
-[[vk::binding(0, 1)]] StructuredBuffer<Context> Ctxt; // [0]
-[[vk::binding(1, 1)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
-[[vk::binding(2, 1)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-[[vk::binding(3, 1)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(4, 1)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-[[vk::binding(5, 1)]] RWStructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
-[[vk::binding(6, 1)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
+// Set 1: effectively uniform prjn params as structured buffers in storage
+[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
+[[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
 
-// Set 2: prjn, synapse level indexes -- read only but too big for uniform probably?
-[[vk::binding(0, 2)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
+// Set 2: main network structs and vals -- all are writable
+[[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
+[[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
+[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+[[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
+[[vk::binding(5, 2)]] RWStructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+[[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
 [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
+
+Set: 0
+    Role: Uniform
+        Var: 0:	Layers	Struct[3]	(size: 1264)	Vals: 1
+Set: 1
+    Role: Storage
+        Var: 0:	Prjns	Struct[2]	(size: 320)	Vals: 1
+        Var: 1:	RecvCon	Struct[8]	(size: 16)	Vals: 1
+Set: 2
+    Role: Storage
+        Var: 0:	Ctxt	Struct	(size: 112)	Vals: 1
+        Var: 1:	Neurons	Struct[12]	(size: 368)	Vals: 1
+        Var: 2:	Pools	Struct[3]	(size: 704)	Vals: 1
+        Var: 3:	LayVals	Struct[3]	(size: 112)	Vals: 1
+        Var: 4:	Synapses	Struct[8]	(size: 64)	Vals: 1
+        Var: 5:	GBuf	Float32[24]	(size: 4)	Vals: 1
+        Var: 6:	GSyns	Float32[8]	(size: 4)	Vals: 1
+Set: 3
+    Role: Storage
+        Var: 0:	Exts	Float32[8]	(size: 4)	Vals: 1
 */
 
 /*
@@ -75,9 +95,9 @@ type GPU struct {
 	On           bool           `desc:"if true, actually use the GPU"`
 	GPU          *vgpu.GPU      `desc:"the vgpu Vulkan GPU"`
 	Sys          *vgpu.System   `desc:"the vgpu compute system"`
-	Params       *vgpu.VarSet   `desc:"VarSet = 0: the uniform LayerParams, PrjnParams "`
-	Structs      *vgpu.VarSet   `desc:"VarSet = 1: the Storage buffer for RW state structs "`
-	Idxs         *vgpu.VarSet   `desc:"Varset = 2: the Storage buffer for large read-only index vals"`
+	Params       *vgpu.VarSet   `desc:"VarSet = 0: the uniform LayerParams"`
+	Prjns        *vgpu.VarSet   `desc:"VarSet = 1: the storage PrjnParams, RecvCon"`
+	Structs      *vgpu.VarSet   `desc:"VarSet = 2: the Storage buffer for RW state structs "`
 	Exts         *vgpu.VarSet   `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
 	GatherSpikes *vgpu.Pipeline `desc:"GatherSpikes pipeline"`
 	PoolGeMax    *vgpu.Pipeline `desc:"PoolGeMax pipeline"`
@@ -121,12 +141,15 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	vars := gp.Sys.Vars()
 	gp.Params = vars.AddSet()
+	gp.Prjns = vars.AddSet()
 	gp.Structs = vars.AddSet()
-	gp.Idxs = vars.AddSet()
 	gp.Exts = vars.AddSet()
 
 	gp.Params.AddStruct("Layers", int(unsafe.Sizeof(LayerParams{})), len(net.LayParams), vgpu.Uniform, vgpu.ComputeShader)
-	gp.Params.AddStruct("Prjns", int(unsafe.Sizeof(PrjnParams{})), len(net.PrjnParams), vgpu.Uniform, vgpu.ComputeShader)
+
+	// note: prjns must be in Storage here because couldn't have both Layers and Prjns as uniform.
+	gp.Prjns.AddStruct("Prjns", int(unsafe.Sizeof(PrjnParams{})), len(net.PrjnParams), vgpu.Storage, vgpu.ComputeShader)
+	gp.Prjns.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Structs.AddStruct("Ctxt", int(unsafe.Sizeof(Context{})), 1, vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.AddStruct("Neurons", int(unsafe.Sizeof(Neuron{})), len(net.Neurons), vgpu.Storage, vgpu.ComputeShader)
@@ -136,13 +159,11 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Structs.Add("GBuf", vgpu.Float32, len(net.PrjnGBuf), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("GSyns", vgpu.Float32, len(net.PrjnGSyns), vgpu.Storage, vgpu.ComputeShader)
 
-	gp.Idxs.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
-
 	gp.Exts.Add("Exts", vgpu.Float32, len(net.Exts), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Params.ConfigVals(1)
+	gp.Prjns.ConfigVals(1)
 	gp.Structs.ConfigVals(1)
-	gp.Idxs.ConfigVals(1)
 	gp.Exts.ConfigVals(1)
 
 	// pipelines
@@ -158,7 +179,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.Config()
 
 	gp.CopyParamsToGPU(ctx, net)
-	gp.CopyIdxsToGPU(ctx, net)
 	gp.CopyExtsToGPU(ctx, net)
 	gp.CopyContextToGPU(ctx, net)
 	gp.CopyNeuronsToGPU(ctx, net)
@@ -168,17 +188,17 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	// todo: add a convenience method to vgpu to do this for everything
 	vars.BindDynValIdx(0, "Layers", 0)
-	vars.BindDynValIdx(0, "Prjns", 0)
 
-	vars.BindDynValIdx(1, "Ctxt", 0)
-	vars.BindDynValIdx(1, "Neurons", 0)
-	vars.BindDynValIdx(1, "Pools", 0)
-	vars.BindDynValIdx(1, "LayVals", 0)
-	vars.BindDynValIdx(1, "Synapses", 0)
-	vars.BindDynValIdx(1, "GBuf", 0)
-	vars.BindDynValIdx(1, "GSyns", 0)
+	vars.BindDynValIdx(1, "Prjns", 0)
+	vars.BindDynValIdx(1, "RecvCon", 0)
 
-	vars.BindDynValIdx(2, "RecvCon", 0)
+	vars.BindDynValIdx(2, "Ctxt", 0)
+	vars.BindDynValIdx(2, "Neurons", 0)
+	vars.BindDynValIdx(2, "Pools", 0)
+	vars.BindDynValIdx(2, "LayVals", 0)
+	vars.BindDynValIdx(2, "Synapses", 0)
+	vars.BindDynValIdx(2, "GBuf", 0)
+	vars.BindDynValIdx(2, "GSyns", 0)
 
 	vars.BindDynValIdx(3, "Exts", 0)
 }
@@ -187,12 +207,10 @@ func (gp *GPU) CopyParamsToGPU(ctx *Context, net *Network) {
 	_, layv, _ := gp.Params.ValByIdxTry("Layers", 0)
 	layv.CopyFromBytes(unsafe.Pointer(&net.LayParams[0]))
 
-	_, pjnv, _ := gp.Params.ValByIdxTry("Prjns", 0)
+	_, pjnv, _ := gp.Prjns.ValByIdxTry("Prjns", 0)
 	pjnv.CopyFromBytes(unsafe.Pointer(&net.PrjnParams[0]))
-}
 
-func (gp *GPU) CopyIdxsToGPU(ctx *Context, net *Network) {
-	_, rconv, _ := gp.Idxs.ValByIdxTry("RecvCon", 0)
+	_, rconv, _ := gp.Prjns.ValByIdxTry("RecvCon", 0)
 	rconv.CopyFromBytes(unsafe.Pointer(&net.PrjnRecvCon[0]))
 }
 
@@ -212,6 +230,9 @@ func (gp *GPU) CopyNeuronsToGPU(ctx *Context, net *Network) {
 }
 
 func (gp *GPU) CopyNeuronsFromGPU(ctx *Context, net *Network) {
+	if !gp.On {
+		return
+	}
 	gp.Sys.Mem.SyncValIdxFmGPU(gp.Structs.Set, "Neurons", 0) // this is about same as SyncToGPU
 	_, neurv, _ := gp.Structs.ValByIdxTry("Neurons", 0)
 	neurv.CopyToBytes(unsafe.Pointer(&net.Neurons[0]))

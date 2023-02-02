@@ -123,6 +123,24 @@ The PT layer is somewhat sensitive in parameter tuning because it has several po
 
 MD thalamus likewise has multiple conflicting demands, similar to PT: must not get active spontaneously, but needs to activate quickly when disinhibited from the BG.  The `Gated*` stats track MD activity (in addition to BG), similar to how `Maint*` tracks PT tuning.  `.SuperToThal` provides key `Abs` tuning for strength from cortex -- also `.CTToThal` controls CT input to MD -- this is not critical for basic tasks but may be important for more interesting predictive learning cases. 
 
+#
+
+* Drive for curiosity but no US for it.
+* separate BLACuriosity Layer in layer inhib pool with GeBase to make default active.
+* When u see novel US, BLAC fires, activates VPMtrxGo with Curiosty drive (todo: BLAC -> VpMtxGo pool that gets C ddrive input)
+* OFC pool for curiosity that gets from drive, is engaged when doing "curiosity goal".
+* At US outcome, get bonus DA for curiosity goal + actual US outcome.
+* Bonus curiosity DA comes from BLAC layer activity -- dont need to know about OFC.  So learning about actual US from a novel CS always gets extra DA.
+* Baseline level of DA for US even if doesn't match current drive.
+
+* hierarchy of outcomes: 
+1. US matches drive = C DA + Drive * US
+2. US doesn't match drive, but is positive = C DA + (Baseline Drive) * US -- Bdrive is a param.
+3. US is "nothing" <- (a weak negative US) = C DA
+4. US is negative = C DA - bad US
+
+all the same equation: novelty BLA + drive * US, where drive is 1 for active drive and baseline for non-active drive.  Negative US's have drive = 1 effectively.
+
 # References 
 
 * Alexander, G. E., DeLong, M. R., & Strick, P. L. (1986). Parallel organization of functionally segregated circuits linking basal ganglia and cortex. Annual Review of Neuroscience, 9, 357–381. http://www.ncbi.nlm.nih.gov/pubmed/3085570

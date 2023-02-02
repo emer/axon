@@ -500,6 +500,11 @@ func (nt *NetworkBase) Build() error {
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
+		for pi := range ly.Pools {
+			pl := &ly.Pools[pi]
+			pl.LayIdx = uint32(li)
+			pl.PoolIdx = uint32(poolIdx + pi)
+		}
 		if ly.LayerType().IsExt() {
 			ly.Exts = nt.Exts[extIdx : extIdx+nn]
 			ly.Params.Idxs.ExtsSt = uint32(extIdx)
@@ -554,6 +559,8 @@ func (nt *NetworkBase) Build() error {
 			pj := rpj.(AxonPrjn).AsAxon()
 			slay := pj.Send.(AxonLayer).AsAxon()
 			nsyn := len(pj.RecvConIdx)
+			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
+			pj.Params.Idxs.SynapseSt = uint32(sidx)
 			pj.Syns = nt.Synapses[sidx : sidx+nsyn]
 			sidx += nsyn
 			for ri := range rlay.Neurons {

@@ -30,7 +30,7 @@ func TestGPUAct(t *testing.T) {
 
 	testNet.GPUOnNoGUI(ctx)
 
-	printCycs := true
+	printCycs := false
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
@@ -71,6 +71,9 @@ func TestGPUAct(t *testing.T) {
 	outGes := []float32{}
 	outGis := []float32{}
 
+	hidSt1 := []float32{}
+	hidSt2 := []float32{}
+
 	cycPerQtr := 50
 
 	for pi := 0; pi < 1; pi++ {
@@ -99,10 +102,12 @@ func TestGPUAct(t *testing.T) {
 					hidLay.UnitVals(&hidActs, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
 					hidLay.UnitVals(&hidGis, "Gi")
+					hidLay.UnitVals(&hidSt1, "SpkSt1")
+					hidLay.UnitVals(&hidSt2, "SpkSt2")
 					outLay.UnitVals(&outActs, "Act")
 					outLay.UnitVals(&outGes, "Ge")
 					outLay.UnitVals(&outGis, "Gi")
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nin exts: %v\nin ges: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, cyc, inExts, inGes, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nin exts: %v\nin ges: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v st1: %v  st2: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, cyc, inExts, inGes, inActs, hidActs, hidGes, hidGis, hidSt1, hidSt2, outActs, outGes, outGis)
 				}
 			}
 			if qtr == 2 {

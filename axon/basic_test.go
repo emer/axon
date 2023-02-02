@@ -61,6 +61,7 @@ func newTestNet() *Network {
 	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, emer.Hidden)
 	outLay := testNet.AddLayer("Output", []int{4, 1}, emer.Target)
 
+	_ = inLay
 	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
