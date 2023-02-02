@@ -259,6 +259,9 @@ func (pj *PrjnBase) SynIdx(sidx, ridx int) int {
 	}
 	// todo: use proportional search as in symmetrizing function!
 	rcon := pj.RecvCon[ridx]
+	if rcon.N == 0 {
+		return -1
+	}
 	firstSi := int(pj.RecvConIdx[rcon.Start])
 	lastSi := int(pj.RecvConIdx[rcon.Start+rcon.N-1])
 	if sidx < firstSi || sidx > lastSi { // fast reject -- prjns are always in order!
