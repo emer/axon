@@ -138,14 +138,11 @@ func (ly *Layer) MatrixDefaults() {
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
 // downloaded from GPU
 func (ly *Layer) MatrixGated() bool {
-	if ly.Params.Learn.NeuroMod.DAMod != D1Mod { // copy from go
+	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
 		oly := ly.Network.Layer(int(ly.Params.Matrix.OtherMatrixIdx)).(AxonLayer).AsAxon()
-		for pi := range ly.Pools {
-			pl := &ly.Pools[pi]
-			opl := &oly.Pools[pi]
-			pl.Gated = opl.Gated
-		}
-		return ly.Pools[0].Gated.IsTrue()
+		ly.Pools[0].Gated = oly.Pools[0].Gated
+		// note: NoGo layers don't track gating at the sub-pool level!
+		return oly.Pools[0].Gated.IsTrue()
 	}
 	mtxGated := ly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
 

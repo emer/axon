@@ -362,9 +362,13 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	dtr := float32(0)
 	dwt := float32(0)
 	if layPool.Gated.IsTrue() { // our layer gated
-		if subPool.Gated.IsTrue() {
-			dtr = rn.SpkMax * sn.CaSpkD // we will get the credit later at time of US
-		}
+		// let's not worry about giving credit only to the sub-pool for now
+		// if we need to do this later, we can add a different factor for
+		// D2 (NoGo) vs D1 (Go) -- the NoGo case should *not* care about subpools
+		// in any case.  Probably the Go case can not care too.
+		// if subPool.Gated.IsTrue() {
+		dtr = rn.SpkMax * sn.CaSpkD // we will get the credit later at time of US
+		// }
 		// if our local subPool did not gate, don't learn -- we weren't responsible
 	} else { // our layer didn't gate: should it have?
 		// this drives a slower opportunity cost learning if ACh says something
