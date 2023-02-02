@@ -34,9 +34,9 @@ type LayerIdxs struct {
 	NeurN  uint32 `inactive:"+" desc:"number of neurons in layer"`
 	RecvSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
 	RecvN  uint32 `inactive:"+" desc:"number of recv projections"`
+	SendSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
+	SendN  uint32 `inactive:"+" desc:"number of recv projections"`
 	ExtsSt uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
-
-	pad, pad1 uint32
 }
 
 // SetNeuronExtPosNeg sets neuron Ext value based on neuron index

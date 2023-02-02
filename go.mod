@@ -8,11 +8,11 @@ require (
 	github.com/emer/empi v1.0.17
 	github.com/emer/etable v1.1.15
 	github.com/goki/gi v1.3.10
-	github.com/goki/gosl v1.0.6
+	github.com/goki/gosl v1.0.7
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.14
-	github.com/goki/vgpu v1.0.12
+	github.com/goki/vgpu v1.0.14
 	github.com/stretchr/testify v1.8.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )

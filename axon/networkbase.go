@@ -52,11 +52,15 @@ type NetworkBase struct {
 	Neurons     []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
 	Prjns       []AxonPrjn    `view:"-" desc:"[Layers][RecvPrjns] pointers to all projections in the network, via the AxonPrjn interface"`
 	PrjnParams  []PrjnParams  `view:"-" desc:"[Layers][RecvPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns"`
-	Synapses    []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] entire network's allocation of synapses"`
+	Synapses    []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][SendNeurons] entire network's allocation of synapses"`
 	PrjnRecvCon []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt."`
 	PrjnGBuf    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection"`
 	PrjnGSyns   []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
-	Exts        []float32     `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
+	PrjnSendCon []StartN      `view:"-" desc:"[Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the SendSynIdxs array of sender-organized indexes into synapses."`
+	// PrjnSendPrjns []uint32      `view:"-" desc:"[Layers][SendPrjns] indexes into Synapses for each sending neuron, organized into blocks according to PrjnSendCon, for sender-based access, which is slower but needed for sparse path."`
+	PrjnSendSynIdxs []uint32 `view:"-" desc:"[Layers][SendPrjns][SendNeurons[RecvNeurons] indexes into Synapses for each sending neuron, organized into blocks according to PrjnSendCon, for sender-based access, which is slower but needed for sparse path."`
+
+	Exts []float32 `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	GPU         GPU                    `desc:"GPU implementation"`
@@ -481,6 +485,7 @@ func (nt *NetworkBase) Build() error {
 
 	totSynapses := 0
 	totRecvCon := 0
+	totSendCon := 0
 	neurIdx := 0
 	prjnIdx := 0
 	poolIdx := 0

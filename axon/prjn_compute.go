@@ -23,7 +23,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 	// note: -1 because this is logically done on prior timestep
 	syns := pj.RecvSyns(recvIdx)
 	if pj.PrjnType() == CTCtxtPrjn {
-		if ctx.Cycle != ctx.ThetaCycles-1 {
+		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
 		}
 		for ci := range syns {
