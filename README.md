@@ -376,7 +376,7 @@ The `axon.Network` `CycleImpl` method in [`axon/network.go`](axon/network.go) ca
 
 * `CyclePost` on all `Layer`s: a hook for specialized algorithms.
 
-* `SendSynCa` and `RecvSynCa` on all `Prjn`s: update synapse-level calcium (Ca) for any neurons that spiked (on either the send or recv side).  This is expensive computationally because it goes through synapses (but only for neurons that actually spiked).
+* `SynCaSend` and `SynCaRecv` on all `Prjn`s: update synapse-level calcium (Ca) for any neurons that spiked (on either the send or recv side).  This is expensive computationally because it goes through synapses (but only for neurons that actually spiked).
 
 All of the relevant parameters and most of the equations are in the [`axon/act.go`](axon/act.go),  [`axon/inhib.go`](axon/inhib.go), and [`axon/learn.go`](axon/learn.go) which correspond to the `Act`, `Inhib` and `Learn` fields in the `Layer` struct.  Default values of parameters are shown in comments below.
 
@@ -524,7 +524,7 @@ The cascading update looks like this:
 As shown below for the `DWt` function, the *Error* gradient is:
 * `Error = CaP - CaD`
 
-In addition, the Ca trace used for synaptic-level integration for the trace-based *Credit* assignment factor (see `SendSynCa` and `RecvSynCa` below) is updated with a smoothing factor of `1/SynTau` (1/30 msec) which defines the time window over which pre * post synaptic activity interacts in updating the synaptic-level trace:
+In addition, the Ca trace used for synaptic-level integration for the trace-based *Credit* assignment factor (see `SynCaSend` and `SynCaRecv` below) is updated with a smoothing factor of `1/SynTau` (1/30 msec) which defines the time window over which pre * post synaptic activity interacts in updating the synaptic-level trace:
 
 * `CaSyn += (SpikeG * Spike - CaSyn) / SynTau`
 
@@ -545,9 +545,9 @@ For each Neuron, if `Spike != 0`, then iterate over `SendPrjns` for that layer, 
 
 This is expensive computationally because it requires traversing all of the synapses for each sending neuron, in a sparse manner due to the fact that few neurons are typically spiking at any given cycle.
 
-### SendSynCa, RecvSynCa
+### SynCaSend, SynCaRecv
 
-If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SendSynCa`) and then any receiving neurons that spiked (`RecvSynCa`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdtThr` = 0.01.
+If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SynCaSend`) and then any receiving neurons that spiked (`SynCaRecv`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdtThr` = 0.01.
 
 After filtering, the basic cascaded integration shown above is performed on synapse-level variables where the immediate driving Ca value is the product of `CaSyn` on the recv and send neurons times a `SpikeG` gain factor:
 * `CaM += (SpikeG * send.CaSyn * recv.CaSyn - CaM) / MTau`

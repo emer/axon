@@ -75,69 +75,43 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  SynCa methods
 
-// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *Prjn) SendSynCa(ctx *Context) {
+func (pj *Prjn) SynCaSend(ctx *Context, ni uint32, sn *Neuron, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	kp := &pj.Params.Learn.KinaseCa
-	updtThr := kp.UpdtThr
-	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.Spike == 0 {
-			continue
-		}
-		if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
-			continue
-		}
-		snCaSyn := ssg * sn.CaSyn
-		sidxs := pj.SendSynIdxs(si)
-		for _, ssi := range sidxs {
-			sy := &pj.Syns[ssi]
-			ri := pj.Params.SynRecvLayIdx(sy)
-			rn := &rlay.Neurons[ri]
-			pj.Params.SendSynCaSyn(ctx, sy, rn, snCaSyn, updtThr)
-		}
+	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * sn.CaSyn
+	sidxs := pj.SendSynIdxs(int(ni))
+	for _, ssi := range sidxs {
+		sy := &pj.Syns[ssi]
+		ri := pj.Params.SynRecvLayIdx(sy)
+		rn := &rlay.Neurons[ri]
+		pj.Params.SynCaSendSyn(ctx, sy, rn, snCaSyn, updtThr)
 	}
 }
 
-// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *Prjn) RecvSynCa(ctx *Context) {
+func (pj *Prjn) SynCaRecv(ctx *Context, ni uint32, rn *Neuron, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	kp := &pj.Params.Learn.KinaseCa
-	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG
-	for ri := range rlay.Neurons {
-		rn := &rlay.Neurons[ri]
-		if rn.Spike == 0 {
-			continue
-		}
-		if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
-			continue
-		}
-		rnCaSyn := ssg * rn.CaSyn
-		syns := pj.RecvSyns(ri)
-		for ci := range syns {
-			sy := &syns[ci]
-			si := pj.Params.SynSendLayIdx(sy)
-			sn := &slay.Neurons[si]
-			pj.Params.RecvSynCaSyn(ctx, sy, sn, rnCaSyn, updtThr)
-		}
+	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * rn.CaSyn
+	syns := pj.RecvSyns(int(ni))
+	for ci := range syns {
+		sy := &syns[ci]
+		si := pj.Params.SynSendLayIdx(sy)
+		sn := &slay.Neurons[si]
+		pj.Params.SynCaRecvSyn(ctx, sy, sn, rnCaSyn, updtThr)
 	}
 }
 

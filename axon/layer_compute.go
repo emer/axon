@@ -184,6 +184,48 @@ func (ly *Layer) SendSpike(ctx *Context) {
 	}
 }
 
+// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// Optimized version only updates at point of spiking.
+// This pass goes through in sending order, filtering on sending spike.
+// Threading: Can be called concurrently for all prjns, since it updates synapses
+// (which are local to a single prjn).
+func (ly *Layer) SynCaSend(ctx *Context, ni uint32, sn *Neuron) {
+	if sn.Spike == 0 {
+		return
+	}
+	updtThr := ly.Params.Learn.CaLrn.UpdtThr
+	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
+		return
+	}
+	for _, sp := range ly.SndPrjns {
+		if sp.IsOff() {
+			continue
+		}
+		sp.SynCaSend(ctx, ni, sn, updtThr)
+	}
+}
+
+// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// Optimized version only updates at point of spiking.
+// This pass goes through in recv order, filtering on recv spike.
+// Threading: Can be called concurrently for all prjns, since it updates synapses
+// (which are local to a single prjn).
+func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
+	if rn.Spike == 0 {
+		return
+	}
+	updtThr := ly.Params.Learn.CaLrn.UpdtThr
+	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
+		return
+	}
+	for _, rp := range ly.RcvPrjns {
+		if rp.IsOff() {
+			continue
+		}
+		rp.SynCaRecv(ctx, ni, rn, updtThr)
+	}
+}
+
 // RSalAChMaxLayAct returns the updated maxAct value using
 // LayVals.ActAvg.CaSpkP.Max from given layer index,
 // subject to any relevant RewThr thresholding.

@@ -303,7 +303,7 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 
 	gp.RunPipeline(net, "GPU:Cycle", gp.Cycle, len(net.Neurons))
 
-	gp.RunPipeline(net, "GPU:SendSpike", gp.SendSpike, len(net.Neurons))
+	// gp.RunPipeline(net, "GPU:SendSpike", gp.SendSpike, len(net.Neurons))
 
 	if ctx.Testing.IsFalse() {
 		gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses))

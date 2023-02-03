@@ -227,6 +227,16 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Learn Methods
 
+	// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// Optimized version only updates at point of spiking.
+	// This pass goes through in sending order, filtering on sending spike.
+	SynCaSend(ctx *Context, ni uint32, sn *Neuron)
+
+	// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// Optimized version only updates at point of spiking.
+	// This pass goes through in recv order, filtering on recv spike.
+	SynCaRecv(ctx *Context, ni uint32, rn *Neuron)
+
 	// DWtLayer does weight change at the layer level.
 	// does NOT call main projection-level DWt method.
 	// in base, only calls DTrgAvgFmErr
@@ -287,15 +297,15 @@ type AxonPrjn interface {
 	// sending and receiving spikes.
 	RecvSpikes(ctx *Context, recvIdx int)
 
-	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in sending order, filtering on sending spike.
-	SendSynCa(ctx *Context)
+	SynCaSend(ctx *Context, ni uint32, sn *Neuron, updtThr float32)
 
-	// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in recv order, filtering on recv spike.
-	RecvSynCa(ctx *Context)
+	SynCaRecv(ctx *Context, ni uint32, rn *Neuron, updtThr float32)
 
 	// DWt computes the weight change (learning) -- on sending projections.
 	DWt(ctx *Context)

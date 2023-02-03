@@ -130,8 +130,8 @@ func (nt *Network) CycleImpl(ctx *Context) {
 	}
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 	if ctx.Testing.IsFalse() {
-		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctx) }, "SendSynCa")
-		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctx) }, "RecvSynCa")
+		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
+		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
 	}
 }
 

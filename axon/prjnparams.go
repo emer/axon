@@ -193,12 +193,12 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 ///////////////////////////////////////////////////
 // SynCa
 
-// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *PrjnParams) SendSynCaSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSyn, updtThr float32) {
+func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSyn, updtThr float32) {
 	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
 		return
 	}
@@ -212,12 +212,12 @@ func (pj *PrjnParams) SendSynCaSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSy
 	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 }
 
-// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *PrjnParams) RecvSynCaSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSyn, updtThr float32) {
+func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSyn, updtThr float32) {
 	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
 		return
 	}

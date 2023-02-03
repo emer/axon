@@ -39,17 +39,24 @@ void SynCa2(in Context ctx, in PrjnParams pj, uint ci, inout Synapse sy, in Neur
 	pj.CycleSynCaSyn(ctx, sy, sn, rn);
 }
 
-void SynCa(in Context ctx, uint ci, inout Synapse sy) {
-	SynCa2(ctx, Prjns[sy.PrjnIdx], ci, sy, Neurons[sy.SendIdx], Neurons[sy.RecvIdx]);
+void SynCaRecv(in Context ctx, uint ni, in Neurons nrn) {
+	if (nrn.Spike == 0) {
+		return;
+	}
+	float updtThr = 
+	if (nrn.CaSpkP < 0) {
+		return;
+	}
+	SynCaRecv2(ctx, Prjns[sy.PrjnIdx], ci, sy, Neurons[sy.SendIdx], Neurons[sy.RecvIdx]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Synapses
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
 	uint ns;
 	uint st;
-	Synapses.GetDimensions(ns, st);
+	Neurons.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		SynCa(Ctxt[0], idx.x, Synapses[idx.x]);
+		SynCaRecv(Ctxt[0], idx.x, Neurons[idx.x]);
 	}
 }
 
