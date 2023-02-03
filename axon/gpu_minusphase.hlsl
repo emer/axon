@@ -5,7 +5,7 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// does PlusPhase Update on each Pool
+// does MinusPhase Update on each Pool
 
 // note: binding is var, set
 
@@ -28,22 +28,23 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-void PlusPhaseNeuron(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in Pool lpl, in LayerVals vals) {
-	ly.PlusPhaseNeuron(ctx, ni, nrn, Pools[nrn.SubPoolN], lpl, vals);
+void MinusPhaseNeuron(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in Pool lpl, in LayerVals vals) {
+	ly.MinusPhaseNeuron(ctx, ni, nrn, Pools[nrn.SubPoolN], lpl, vals);
 }
 
-void PlusPhase2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, inout LayerVals vals) {
-	ly.PlusPhasePool(ctx, pl);
+void MinusPhase2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, inout LayerVals vals) {
+	ly.MinusPhasePool(ctx, pl);
 	if (pl.IsLayPool == 0) {
 		return;
 	}
 	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
-		PlusPhaseNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], pl, vals);
+		MinusPhaseNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], pl, vals);
 	}
+	ly.AvgGeM(ctx, pl, vals);
 }
 
-void PlusPhase(in Context ctx, uint pi, inout Pool pl) {
-	PlusPhase2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx]);
+void MinusPhase(in Context ctx, uint pi, inout Pool pl) {
+	MinusPhase2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx]);
 }
 
 [numthreads(64, 1, 1)]
@@ -52,7 +53,7 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Pools
 	uint st;
 	Pools.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		PlusPhase(Ctxt[0], idx.x, Pools[idx.x]);
+		MinusPhase(Ctxt[0], idx.x, Pools[idx.x]);
 	}
 }
 

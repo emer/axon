@@ -39,21 +39,20 @@ void SendSpikeSyn(in Context ctx, in PrjnParams pj, in Synapse sy, in float send
 	InterlockedAdd(GBuf[bi], int(sendVal * sy.Wt));
 }
 
-void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron nrn) {
+void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron sn) {
 	float sendVal = pj.GScale.Scale;
 	if (pj.PrjnType == CTCtxtPrjn) {
 		if (ctx.Cycle != ctx.ThetaCycles-1-int(pj.Com.DelLen)) {
 			return;
 		}
-		sendVal *= Neurons[sendIdx].Burst;
+		sendVal *= sn.Burst;
 	} else {
-		if (nrn.Spike == 0) {
+		if (sn.Spike == 0) {
 			return;
 		}
 	}
 	uint recvNeurSt = pj.Idxs.RecvNeurSt;
-	uint sendNeurSt = pj.Idxs.SendNeurSt;
-	uint cni = pj.Idxs.SendConSt + (sendIdx - sendNeurSt);
+	uint cni = pj.Idxs.SendConSt + sendIdx;
 	uint synst = pj.Idxs.SendSynSt + SendCon[cni].Start;
 	uint synn = SendCon[cni].N;
 	for (uint ci = 0; ci < synn; ci++) {
@@ -61,14 +60,15 @@ void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron nrn
 	}
 }
 
-void SendSpike2(in Context ctx, LayerParams ly, uint nin, inout Neuron nrn) {
+void SendSpike2(in Context ctx, LayerParams ly, uint nin, inout Neuron sn) {
+	uint ni = nin - ly.Idxs.NeurSt;
 	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {
-		SendSpikePrjn(ctx, Prjns[SendPrjnIdxs[ly.Idxs.SendSt + pi]], nin, nrn);
+		SendSpikePrjn(ctx, Prjns[SendPrjnIdxs[ly.Idxs.SendSt + pi]], ni, sn);
 	}
 }
 
-void SendSpike(in Context ctx, uint nin, inout Neuron nrn) {
-	SendSpike2(ctx, Layers[nrn.LayIdx], nin, nrn);
+void SendSpike(in Context ctx, uint nin, inout Neuron sn) {
+	SendSpike2(ctx, Layers[sn.LayIdx], nin, sn);
 }
 
 [numthreads(64, 1, 1)]

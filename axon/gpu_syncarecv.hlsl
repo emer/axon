@@ -16,9 +16,9 @@
 // Set 1: effectively uniform prjn params as structured buffers in storage
 [[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
 [[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(2, 1)]] StructuredBuffer<uint> SendPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> SendSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
+// [[vk::binding(2, 1)]] StructuredBuffer<uint> SendPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
+// [[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+// [[vk::binding(4, 1)]] StructuredBuffer<uint> SendSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
@@ -32,22 +32,43 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-void SynCa2(in Context ctx, in PrjnParams pj, uint ci, inout Synapse sy, in Neuron sn, in Neuron rn) {
-	if(pj.Learn.Learn == 0) {
-		return;
-	}
-	pj.CycleSynCaSyn(ctx, sy, sn, rn);
+void SynCaRecvSyn(in Context ctx, in PrjnParams pj, inout Synapse sy, float rnCaSyn, float updtThr) {
+	pj.SynCaRecvSyn(ctx, sy, Neurons[sy.SendIdx], rnCaSyn, updtThr);
 }
 
-void SynCaRecv(in Context ctx, uint ni, in Neurons nrn) {
-	if (nrn.Spike == 0) {
+void SynCaRecvPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, in Neuron rn, float updtThr) {
+	if (pj.Learn.Learn == 0) {
 		return;
 	}
-	float updtThr = 
-	if (nrn.CaSpkP < 0) {
+	
+	float rnCaSyn = pj.Learn.KinaseCa.SpikeG * rn.CaSyn;
+	uint cni = pj.Idxs.RecvConSt + ni;
+	uint synst = pj.Idxs.SynapseSt + RecvCon[cni].Start;
+	uint synn = RecvCon[cni].N;
+	
+	for (uint ci = 0; ci < synn; ci++) {
+		SynCaRecvSyn(ctx, pj, Synapses[synst + ci], rnCaSyn, updtThr);
+	}
+}
+
+void SynCaRecv2(in Context ctx, in LayerParams ly, uint nin, in Neuron rn) {
+	float updtThr = ly.Learn.CaLrn.UpdtThr;
+
+	if (rn.CaSpkP < updtThr && rn.CaSpkD < updtThr) {
 		return;
 	}
-	SynCaRecv2(ctx, Prjns[sy.PrjnIdx], ci, sy, Neurons[sy.SendIdx], Neurons[sy.RecvIdx]);
+	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
+	
+	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
+		SynCaRecvPrjn(ctx, Prjns[ly.Idxs.RecvSt + pi], ly, ni, rn, updtThr);
+	}
+}
+
+void SynCaRecv(in Context ctx, uint nin, in Neuron rn) {
+	if (rn.Spike == 0) {
+		return;
+	}
+	SynCaRecv2(ctx, Layers[rn.LayIdx], nin, rn);
 }
 
 [numthreads(64, 1, 1)]

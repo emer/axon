@@ -103,6 +103,10 @@ func (nt *Network) SynVarProps() map[string]string {
 // Should already have presented the external input to the network at this point.
 // Does NOT call InitGScale()
 func (nt *Network) NewState(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunNewState(ctx, nt)
+		return
+	}
 	nt.EmerNet.(AxonNetwork).NewStateImpl(ctx)
 }
 
@@ -137,11 +141,19 @@ func (nt *Network) CycleImpl(ctx *Context) {
 
 // MinusPhase does updating after end of minus phase
 func (nt *Network) MinusPhase(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunMinusPhase(ctx, nt)
+		return
+	}
 	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctx)
 }
 
 // PlusPhase does updating after end of plus phase
 func (nt *Network) PlusPhase(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunPlusPhase(ctx, nt)
+		return
+	}
 	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctx)
 }
 

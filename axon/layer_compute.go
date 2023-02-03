@@ -327,15 +327,11 @@ func (ly *Layer) CyclePost(ctx *Context) {
 // Does NOT call InitGScale()
 func (ly *Layer) NewState(ctx *Context) {
 	lpl := &ly.Pools[0]
-	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActMAvg, lpl.AvgMax.Act.Minus.Avg, ly.Params.Act.Dt.LongAvgDt)
-	ly.Params.Inhib.ActAvg.AvgFmAct(&ly.Vals.ActAvg.ActPAvg, lpl.AvgMax.Act.Plus.Avg, ly.Params.Act.Dt.LongAvgDt)
+	ly.Params.ActAvgFmAct(ctx, lpl, ly.Vals)
 
-	// todo: combine pool-level calls with decaystatelayer below
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsTarget.IsTrue() {
-			pl.Inhib.Clamped.SetBool(false)
-		}
+		ly.Params.NewStatePool(ctx, pl) // also calls DecayState on pool
 	}
 
 	for ni := range ly.Neurons {
@@ -344,10 +340,11 @@ func (ly *Layer) NewState(ctx *Context) {
 			continue
 		}
 		// note: this calls the basic neuron-level DecayState
-		ly.Params.NewState(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], ly.Vals)
+		ly.Params.NewStateNeuron(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], lpl, ly.Vals)
 	}
-	// todo: must do on GPU:
-	ly.DecayStateLayer(ctx, ly.Params.Act.Decay.Act, ly.Params.Act.Decay.Glong)
+	if ly.Params.Act.Decay.Glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
+		ly.InitPrjnGBuffs()
+	}
 }
 
 // DecayState decays activation state by given proportion
@@ -367,7 +364,6 @@ func (ly *Layer) DecayState(ctx *Context, decay, glong float32) {
 
 // DecayStateLayer does layer-level decay, but not neuron level
 func (ly *Layer) DecayStateLayer(ctx *Context, decay, glong float32) {
-	// todo: must do on GPU!
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Decay(decay)
@@ -431,30 +427,20 @@ func (ly *Layer) AvgMaxVarByPool(varNm string, poolIdx int) minmax.AvgMax32 {
 	return am
 }
 
-// AvgGeM computes the average and max GeM stats, updated in MinusPhase
-func (ly *Layer) AvgGeM(ctx *Context) {
-	lpl := &ly.Pools[0]
-	ly.Vals.ActAvg.AvgMaxGeM += ly.Params.Act.Dt.LongAvgDt * (lpl.AvgMax.Ge.Minus.Max - ly.Vals.ActAvg.AvgMaxGeM)
-	ly.Vals.ActAvg.AvgMaxGiM += ly.Params.Act.Dt.LongAvgDt * (lpl.AvgMax.Gi.Minus.Max - ly.Vals.ActAvg.AvgMaxGiM)
-}
-
 // MinusPhase does updating at end of the minus phase
 func (ly *Layer) MinusPhase(ctx *Context) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
-		pl.AvgMax.CycleToMinus()
-		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsTarget.IsTrue() {
-			pl.Inhib.Clamped.SetBool(true)
-		}
+		ly.Params.MinusPhasePool(ctx, pl)
 	}
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
-		ly.Params.MinusPhase(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], ly.Vals)
+		ly.Params.MinusPhaseNeuron(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], &ly.Pools[0], ly.Vals)
 	}
-	ly.AvgGeM(ctx)
+	ly.Params.AvgGeM(ctx, &ly.Pools[0], ly.Vals)
 }
 
 // PlusPhase does updating at end of the plus phase
@@ -462,7 +448,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 	// todo: see if it is faster to just grab pool info now, then do everything below on CPU
 	for pi := range ly.Pools { // gpu_cycletoplus
 		pl := &ly.Pools[pi]
-		pl.AvgMax.CycleToPlus()
+		ly.Params.PlusPhasePool(ctx, pl)
 	}
 	for ni := range ly.Neurons { // gpu_plusphase
 		nrn := &ly.Neurons[ni]
@@ -471,7 +457,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 		}
 		pl := &ly.Pools[nrn.SubPool]
 		lpl := &ly.Pools[0]
-		ly.Params.PlusPhase(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
+		ly.Params.PlusPhaseNeuron(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
 	}
 	ly.AxonLay.CorSimFmActs() // todo: on GPU?
 	// sync pools -> GPU -> CPU

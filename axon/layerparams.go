@@ -497,9 +497,22 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 /////////////////////////////////////////////////////////////////////////
 //  Phase timescale
 
-// NewState handles all initialization at start of new input pattern.
+// ActAvgFmAct computes the LayerVals ActAvg from act values -- at start of new state
+func (ly *LayerParams) ActAvgFmAct(ctx *Context, lpl *Pool, vals *LayerVals) {
+	ly.Inhib.ActAvg.AvgFmAct(&vals.ActAvg.ActMAvg, lpl.AvgMax.Act.Minus.Avg, ly.Act.Dt.LongAvgDt)
+	ly.Inhib.ActAvg.AvgFmAct(&vals.ActAvg.ActPAvg, lpl.AvgMax.Act.Plus.Avg, ly.Act.Dt.LongAvgDt)
+}
+
+func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
+	if ly.Act.Clamp.Add.IsFalse() && ly.Act.Clamp.IsTarget.IsTrue() {
+		pl.Inhib.Clamped.SetBool(false)
+	}
+	pl.Inhib.Decay(ly.Act.Decay.Act)
+}
+
+// NewStateNeuron handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
-func (ly *LayerParams) NewState(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
+func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.BurstPrv = nrn.Burst
 	nrn.SpkPrv = nrn.CaSpkD
 	nrn.GeSynPrv = nrn.GeSynMax
@@ -512,8 +525,21 @@ func (ly *LayerParams) NewState(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, 
 	// Note: synapse-level Ca decay happens in DWt
 }
 
-// MinusPhase does neuron level minus-phase updating
-func (ly *LayerParams) MinusPhase(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
+func (ly *LayerParams) MinusPhasePool(ctx *Context, pl *Pool) {
+	pl.AvgMax.CycleToMinus()
+	if ly.Act.Clamp.Add.IsFalse() && ly.Act.Clamp.IsTarget.IsTrue() {
+		pl.Inhib.Clamped.SetBool(true)
+	}
+}
+
+// AvgGeM computes the average and max GeM stats, updated in MinusPhase
+func (ly *LayerParams) AvgGeM(ctx *Context, lpl *Pool, vals *LayerVals) {
+	vals.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.AvgMax.Ge.Minus.Max - vals.ActAvg.AvgMaxGeM)
+	vals.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.AvgMax.Gi.Minus.Max - vals.ActAvg.AvgMaxGiM)
+}
+
+// MinusPhaseNeuron does neuron level minus-phase updating
+func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActM = nrn.ActInt
 	nrn.CaSpkPM = nrn.CaSpkP
 	if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
@@ -525,8 +551,12 @@ func (ly *LayerParams) MinusPhase(ctx *Context, ni uint32, nrn *Neuron, pl *Pool
 	}
 }
 
-// PlusPhase does neuron level plus-phase updating
-func (ly *LayerParams) PlusPhase(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+func (ly *LayerParams) PlusPhasePool(ctx *Context, pl *Pool) {
+	pl.AvgMax.CycleToPlus()
+}
+
+// PlusPhaseNeuron does neuron level plus-phase updating
+func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActP = nrn.ActInt
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, lpl.AvgMax.CaSpkD.Plus.Max)
 	dlr := float32(0)
