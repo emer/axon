@@ -43,10 +43,12 @@ type PrjnIdxs struct {
 	SendNeurN  uint32 // number of neurons in send layer
 	SynapseSt  uint32 // start index into global Synapse array: [Layer][RecvPrjns][Synapses]
 	RecvConSt  uint32 // start index into global PrjnRecvCon array: [Layer][RecvPrjns][RecvNeurons]
+	SendSynSt  uint32 // start index into global sender-based Synapse index array: [Layer][SendPrjns][Synapses]
+	SendConSt  uint32 // start index into global PrjnSendCon array: [Layer][SendPrjns][SendNeurons]
 	GBufSt     uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurons][MaxDelay+1]
 	GSynSt     uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurons]
 
-	pad uint32
+	pad, pad1, pad2 uint32
 }
 
 // RecvNIdxToLayIdx converts a neuron's index in network level global list of all neurons

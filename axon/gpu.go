@@ -29,6 +29,9 @@ var content embed.FS
 // Set 1: effectively uniform prjn params as structured buffers in storage
 [[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
 [[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(2, 1)]] StructuredBuffer<uint> SendPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(4, 1)]] StructuredBuffer<uint> SendSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
@@ -96,7 +99,7 @@ type GPU struct {
 	GPU          *vgpu.GPU      `desc:"the vgpu Vulkan GPU"`
 	Sys          *vgpu.System   `desc:"the vgpu compute system"`
 	Params       *vgpu.VarSet   `desc:"VarSet = 0: the uniform LayerParams"`
-	Prjns        *vgpu.VarSet   `desc:"VarSet = 1: the storage PrjnParams, RecvCon"`
+	Prjns        *vgpu.VarSet   `desc:"VarSet = 1: the storage PrjnParams, RecvCon, Send*"`
 	Structs      *vgpu.VarSet   `desc:"VarSet = 2: the Storage buffer for RW state structs "`
 	Exts         *vgpu.VarSet   `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
 	GatherSpikes *vgpu.Pipeline `desc:"GatherSpikes pipeline"`
@@ -150,6 +153,9 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	// note: prjns must be in Storage here because couldn't have both Layers and Prjns as uniform.
 	gp.Prjns.AddStruct("Prjns", int(unsafe.Sizeof(PrjnParams{})), len(net.PrjnParams), vgpu.Storage, vgpu.ComputeShader)
 	gp.Prjns.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
+	gp.Prjns.Add("SendPrjnIdxs", vgpu.Uint32, len(net.SendPrjnIdxs), vgpu.Storage, vgpu.ComputeShader)
+	gp.Prjns.AddStruct("SendCon", int(unsafe.Sizeof(StartN{})), len(net.PrjnSendCon), vgpu.Storage, vgpu.ComputeShader)
+	gp.Prjns.Add("SendSynIdxs", vgpu.Uint32, len(net.SendSynIdxs), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Structs.AddStruct("Ctxt", int(unsafe.Sizeof(Context{})), 1, vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.AddStruct("Neurons", int(unsafe.Sizeof(Neuron{})), len(net.Neurons), vgpu.Storage, vgpu.ComputeShader)
@@ -191,6 +197,9 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	vars.BindDynValIdx(1, "Prjns", 0)
 	vars.BindDynValIdx(1, "RecvCon", 0)
+	vars.BindDynValIdx(1, "SendPrjnIdxs", 0)
+	vars.BindDynValIdx(1, "SendCon", 0)
+	vars.BindDynValIdx(1, "SendSynIdxs", 0)
 
 	vars.BindDynValIdx(2, "Ctxt", 0)
 	vars.BindDynValIdx(2, "Neurons", 0)
@@ -212,6 +221,15 @@ func (gp *GPU) CopyParamsToGPU(ctx *Context, net *Network) {
 
 	_, rconv, _ := gp.Prjns.ValByIdxTry("RecvCon", 0)
 	rconv.CopyFromBytes(unsafe.Pointer(&net.PrjnRecvCon[0]))
+
+	_, spiv, _ := gp.Prjns.ValByIdxTry("SendPrjnIdxs", 0)
+	spiv.CopyFromBytes(unsafe.Pointer(&net.SendPrjnIdxs[0]))
+
+	_, sconv, _ := gp.Prjns.ValByIdxTry("SendCon", 0)
+	sconv.CopyFromBytes(unsafe.Pointer(&net.PrjnSendCon[0]))
+
+	_, ssiv, _ := gp.Prjns.ValByIdxTry("SendSynIdxs", 0)
+	ssiv.CopyFromBytes(unsafe.Pointer(&net.SendSynIdxs[0]))
 }
 
 func (gp *GPU) CopyExtsToGPU(ctx *Context, net *Network) {
