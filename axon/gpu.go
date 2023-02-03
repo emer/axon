@@ -106,6 +106,7 @@ type GPU struct {
 	PoolGeMax    *vgpu.Pipeline `desc:"PoolGeMax pipeline"`
 	PoolGi       *vgpu.Pipeline `desc:"PoolG pipeline"`
 	Cycle        *vgpu.Pipeline `desc:"Cycle pipeline"`
+	SendSpike    *vgpu.Pipeline `desc:"SendSpike pipeline"`
 	SynCa        *vgpu.Pipeline `desc:"SynCa pipeline"`
 	DWt          *vgpu.Pipeline `desc:"DWt pipeline"`
 	WtFmDWt      *vgpu.Pipeline `desc:"WtFmDWt pipeline"`
@@ -177,6 +178,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.PoolGeMax = gp.Sys.NewComputePipelineEmbed("PoolGeMax", content, "shaders/gpu_poolgemax.spv")
 	gp.PoolGi = gp.Sys.NewComputePipelineEmbed("PoolGi", content, "shaders/gpu_poolgi.spv")
 	gp.Cycle = gp.Sys.NewComputePipelineEmbed("Cycle", content, "shaders/gpu_cycle.spv")
+	gp.SendSpike = gp.Sys.NewComputePipelineEmbed("SendSpikes", content, "shaders/gpu_sendspike.spv")
 	gp.SynCa = gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
 	gp.DWt = gp.Sys.NewComputePipelineEmbed("DWt", content, "shaders/gpu_dwt.spv")
 	gp.WtFmDWt = gp.Sys.NewComputePipelineEmbed("WtFmDWt", content, "shaders/gpu_wtfmdwt.spv")
@@ -300,6 +302,8 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 	gp.RunPipeline(net, "GPU:PoolGi", gp.PoolGi, len(net.Pools))
 
 	gp.RunPipeline(net, "GPU:Cycle", gp.Cycle, len(net.Neurons))
+
+	gp.RunPipeline(net, "GPU:SendSpike", gp.SendSpike, len(net.Neurons))
 
 	if ctx.Testing.IsFalse() {
 		gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses))
