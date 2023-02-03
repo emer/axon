@@ -42,6 +42,10 @@ func TestDefaults(t *testing.T) {
 	assert.Nil(t, net.LayerByName("DoesNotExist"))
 	_, err := net.LayerByNameTry("DoesNotExist")
 	assert.Error(t, err)
+	val := net.LayersByType(InputLayer)
+	assert.Equal(t, 1, len(val))
+	val = net.LayersByClass("InputLayer")
+	assert.Equal(t, 1, len(val))
 
 	for layerIdx, layer := range net.Layers {
 		assert.Equal(t, layerIdx, layer.Index())
