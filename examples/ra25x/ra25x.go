@@ -29,7 +29,6 @@ import (
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/minmax"
 	"github.com/emer/etable/tsragg"
 	"github.com/goki/gi/gi"

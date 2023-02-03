@@ -14,7 +14,7 @@ import (
 // of fields in the Synapse structure where the float32
 // named variables start.
 // Note: all non-float32 infrastructure variables must be at the start!
-const SynapseVarStart = 16
+const SynapseVarStart = 20
 
 //gosl: start synapse
 
