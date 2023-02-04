@@ -17,7 +17,6 @@ import (
 // #include "rl_prjns.hlsl"
 // #include "pvlv_prjns.hlsl"
 // #include "pcore_prjns.hlsl"
-// #include "prjnvals.hlsl"
 //gosl: end prjnparams
 
 //gosl: start prjnparams

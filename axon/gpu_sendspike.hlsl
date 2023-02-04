@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#extension GL_EXT_shader_atomic_float : enable
+// #extension GL_EXT_shader_atomic_float : enable
 
 // performs the SendSpike function on all sending neurons
 
@@ -28,7 +28,7 @@
 // [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-[[vk::binding(5, 2)]] RWStructuredBuffer<uint> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+[[vk::binding(5, 2)]] RWStructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 // [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
