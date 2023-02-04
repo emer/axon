@@ -15,7 +15,7 @@ import (
 //go:embed shaders/*.spv
 var content embed.FS
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_applyext.hlsl gpu_gather.hlsl gpu_poolgemax.hlsl gpu_poolgi.hlsl gpu_cycle.hlsl gpu_sendspike.hlsl gpu_syncarecv.hlsl gpu_syncasend.hlsl gpu_newstate.hlsl gpu_minusphase.hlsl gpu_plusphase.hlsl gpu_dwt.hlsl gpu_wtfmdwt.hlsl
+//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_applyext.hlsl gpu_gather.hlsl gpu_poolgemax.hlsl gpu_betweengi.hlsl gpu_poolgi.hlsl gpu_cycle.hlsl gpu_sendspike.hlsl gpu_syncarecv.hlsl gpu_syncasend.hlsl gpu_newstate.hlsl gpu_minusphase.hlsl gpu_plusphase.hlsl gpu_dwt.hlsl gpu_wtfmdwt.hlsl
 
 // Full vars code -- each gpu_*.hlsl uses a subset
 
@@ -109,6 +109,7 @@ type GPU struct {
 	Exts         *vgpu.VarSet   `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
 	GatherSpikes *vgpu.Pipeline `desc:"GatherSpikes pipeline"`
 	PoolGeMax    *vgpu.Pipeline `desc:"PoolGeMax pipeline"`
+	BetweenGi    *vgpu.Pipeline `desc:"BetweenGi pipeline"`
 	PoolGi       *vgpu.Pipeline `desc:"PoolG pipeline"`
 	Cycle        *vgpu.Pipeline `desc:"Cycle pipeline"`
 	SendSpike    *vgpu.Pipeline `desc:"SendSpike pipeline"`
@@ -196,6 +197,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	// pipelines
 	gp.GatherSpikes = gp.Sys.NewComputePipelineEmbed("GatherSpikes", content, "shaders/gpu_gather.spv")
 	gp.PoolGeMax = gp.Sys.NewComputePipelineEmbed("PoolGeMax", content, "shaders/gpu_poolgemax.spv")
+	gp.BetweenGi = gp.Sys.NewComputePipelineEmbed("BetweenGi", content, "shaders/gpu_betweengi.spv")
 	gp.PoolGi = gp.Sys.NewComputePipelineEmbed("PoolGi", content, "shaders/gpu_poolgi.spv")
 	gp.Cycle = gp.Sys.NewComputePipelineEmbed("Cycle", content, "shaders/gpu_cycle.spv")
 	gp.SendSpike = gp.Sys.NewComputePipelineEmbed("SendSpikes", content, "shaders/gpu_sendspike.spv")
@@ -331,7 +333,7 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 	// todo: use semaphors for all of these instead of waits
 	// todo: need to bind vars again?
 	gp.RunPipeline(net, "GPU:PoolGeMax", gp.PoolGeMax, len(net.Pools))
-
+	gp.RunPipeline(net, "GPU:BetweenGi", gp.BetweenGi, len(net.Pools))
 	gp.RunPipeline(net, "GPU:PoolGi", gp.PoolGi, len(net.Pools))
 
 	gp.RunPipeline(net, "GPU:Cycle", gp.Cycle, len(net.Neurons))
