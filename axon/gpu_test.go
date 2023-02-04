@@ -304,14 +304,17 @@ func TestGPULearn(t *testing.T) {
 				fmt.Printf("=============================\n")
 			}
 
-			testNet.DWt(ctx)
-			testNet.WtFmDWt(ctx)
-			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
-
 			didx := ti*4 + pi
 
+			testNet.DWt(ctx)
+			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
+
+			// note: gotta grab dwt while they exist
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+
+			testNet.WtFmDWt(ctx)
+			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)

@@ -36,7 +36,7 @@
 
 void SendSpikeSyn(in Context ctx, in PrjnParams pj, in Synapse sy, in float sendVal, in uint recvNeurSt) {
 	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CycleTot);
-	InterlockedAdd(GBuf[bi], int(sendVal * sy.Wt));
+	InterlockedAdd(GBuf[bi], sendVal * sy.Wt);
 }
 
 void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron sn) {

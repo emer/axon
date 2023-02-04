@@ -29,14 +29,14 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-void WtFmDWtSyn2(in Context ctx, in PrjnParams pj, in Synapse sy) {
+void WtFmDWtSyn2(in Context ctx, in PrjnParams pj, inout Synapse sy) {
 	if(pj.Learn.Learn == 0) {
 		return;
 	}
 	pj.WtFmDWtSyn(ctx, sy);
 }
 
-void WtFmDWtSyn(in Context ctx, uint ci, in Synapse sy) {
+void WtFmDWtSyn(in Context ctx, uint ci, inout Synapse sy) {
 	WtFmDWtSyn2(ctx, Prjns[sy.PrjnIdx], sy);
 }
 

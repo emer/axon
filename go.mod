@@ -3,21 +3,23 @@ module github.com/emer/axon
 go 1.18
 
 require (
+	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/emer/emergent v1.3.38
 	github.com/emer/empi v1.0.17
 	github.com/emer/etable v1.1.15
+	github.com/emer/vision v1.1.16
 	github.com/goki/gi v1.3.10
 	github.com/goki/gosl v1.0.7
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.14
-	github.com/goki/vgpu v1.0.14
+	github.com/goki/vgpu v1.0.15
 	github.com/stretchr/testify v1.8.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
-require github.com/emer/leabra v1.2.5 // indirect
+require github.com/emer/leabra v1.2.5
 
 require (
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
@@ -29,13 +31,11 @@ require (
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/akutz/sortfold v0.2.1 // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
-	github.com/anthonynsimon/bild v0.13.0 // indirect
 	github.com/antonmedv/expr v1.10.4 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.8.0 // indirect
-	github.com/emer/vision v1.1.16 // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.1 // indirect
