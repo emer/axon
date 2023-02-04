@@ -157,6 +157,11 @@ type AxonLayer interface {
 	// at the layer and pool level
 	GiFmSpikes(ctx *Context)
 
+	// PoolGiFmSpikes computes inhibition Gi from Spikes within relevant Pools
+	// this is a second pass after GiFmSpikes so that it can also deal with
+	// between-layer inhibition.
+	PoolGiFmSpikes(ctx *Context)
+
 	// CycleNeuron does one cycle (msec) of updating at the neuron level
 	// calls the following via this AxonLay interface:
 	// * GInteg

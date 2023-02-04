@@ -89,6 +89,11 @@ type LayerParams struct {
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
+
+	LayInhib1Idx int32 `view:"-" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used"`
+	LayInhib2Idx int32 `view:"-" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib2Name if present -- -1 if not used"`
+	LayInhib3Idx int32 `view:"-" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib3Name if present -- -1 if not used"`
+	LayInhib4Idx int32 `view:"-" desc:"idx of Layer to geta layer-level inhibition from -- set during Build from BuildConfig LayInhib4Name if present -- -1 if not used"`
 }
 
 func (ly *LayerParams) Update() {
