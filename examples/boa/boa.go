@@ -219,8 +219,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	blaa, blae, _, _, cemPos, _, pptg := net.AddAmygdala("", false, ev.NDrives, nuCtxY, nuCtxX, space)
 	_ = cemPos
 	_ = pptg
-	blaa.SetBuildConfig("LayInhib1Name", blae.Name())
-	blae.SetBuildConfig("LayInhib1Name", blaa.Name())
+	// blaa.SetBuildConfig("LayInhib1Name", blae.Name()) // just for testing
+	// blae.SetBuildConfig("LayInhib1Name", blaa.Name())
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
