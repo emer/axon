@@ -63,11 +63,13 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 	}
 	lpl.AvgMax.CalcAvg()
 	ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.Vals)
-	ly.PoolGiFmSpikes(ctx)
+	// ly.PoolGiFmSpikes(ctx) // note: this is now called as a second pass
+	// so that we can do between-layer inhibition
 }
 
 // PoolGiFmSpikes computes inhibition Gi from Spikes within relevant Pools
 func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
+	ly.BetweenLayerGi(ctx)
 	np := len(ly.Pools)
 	if np == 1 {
 		return
@@ -84,6 +86,32 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 		}
 		pl.AvgMax.CalcAvg()
 	}
+}
+
+// BetweenLayerGi computes inhibition Gi between layers
+func (ly *Layer) BetweenLayerGi(ctx *Context) {
+	lpl := &ly.Pools[0]
+	maxGi := lpl.Inhib.Gi
+	net := ly.Network.(AxonNetwork).AsAxon()
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib1Idx)
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib2Idx)
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib3Idx)
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib4Idx)
+	lpl.Inhib.Gi = maxGi // our inhib is max of us and everyone in the layer pool
+}
+
+// BetweenLayerGiMax returns max gi value for input maxGi vs
+// the given layIdx layer
+func (ly *Layer) BetweenLayerGiMax(maxGi float32, net *Network, layIdx int32) float32 {
+	if layIdx < 0 {
+		return maxGi
+	}
+	lay := net.Layers[layIdx].(AxonLayer).AsAxon()
+	lpl := &lay.Pools[0]
+	if lpl.Inhib.Gi > maxGi {
+		maxGi = lpl.Inhib.Gi
+	}
+	return maxGi
 }
 
 func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
