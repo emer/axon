@@ -345,9 +345,9 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 
 	if ctx.Testing.IsFalse() {
 		// todo: test in larger networks!
-		gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses)) // faster!
-		// gp.RunPipeline(net, "GPU:SynCaRecv", gp.SynCaRecv, len(net.Neurons)) // recv first as faster
-		// gp.RunPipeline(net, "GPU:SynCaSend", gp.SynCaSend, len(net.Neurons))
+		// gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses)) // faster!
+		gp.RunPipeline(net, "GPU:SynCaRecv", gp.SynCaRecv, len(net.Neurons)) // recv first as faster
+		gp.RunPipeline(net, "GPU:SynCaSend", gp.SynCaSend, len(net.Neurons))
 	}
 }
 

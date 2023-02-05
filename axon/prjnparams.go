@@ -193,18 +193,19 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 // SynCa
 
 // SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in sending order, filtering on sending spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
+// Optimized version only updates at point of spiking, threaded over neurons.
+// This pass updates sending projections -- all sending synapses are
+// unique to a given sending neuron, so this is threadsafe.
+// Cannot do both send and recv in same pass without potential for
+// race conditions.
 func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSyn, updtThr float32) {
 	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
 		return
 	}
 	supt := sy.CaUpT
-	// if supt == ctx.CycleTot { // already updated -- shouldn't happen
-	// 	return
-	// }
+	if supt == ctx.CycleTot { // already updated in recv pass
+		return
+	}
 	sy.CaUpT = ctx.CycleTot
 	pj.Learn.KinaseCa.CurCa(ctx.CycleTot-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
 	sy.Ca = snCaSyn * rn.CaSyn
@@ -212,10 +213,11 @@ func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSy
 }
 
 // SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in recv order, filtering on recv spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
+// Optimized version only updates at point of spiking, threaded over neurons.
+// This pass updates recv projections -- all recv synapses are
+// unique to a given recv neuron, so this is threadsafe.
+// Cannot do both send and recv in same pass without potential for
+// race conditions.
 func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSyn, updtThr float32) {
 	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
 		return
