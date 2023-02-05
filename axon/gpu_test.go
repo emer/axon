@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/emer/emergent/etime"
+	"github.com/goki/mat32"
 )
 
 func init() {
@@ -181,8 +182,22 @@ func TestGPUAct(t *testing.T) {
 	testNet.GPU.Destroy()
 }
 
+// tolerance version -- learning diffs across GPU can end up being significant
+func cmprFloatsTol(out, cor []float32, msg string, t *testing.T, tol float32) {
+	t.Helper()
+	for i := range out {
+		if mat32.IsNaN(out[1]) {
+			t.Errorf("%v err: out: %v is NaN, index: %v\n", msg, out[i], i)
+		}
+		dif := mat32.Abs(out[i] - cor[i])
+		if dif > tol { // allow for small numerical diffs
+			t.Errorf("%v err: out: %v, cor: %v, dif: %v index: %v\n", msg, out[i], cor[i], dif, i)
+			t.Errorf("%v out: %v, cor: %v", msg, out, cor)
+		}
+	}
+}
+
 func TestGPULearn(t *testing.T) {
-	// t.Skip("Skipping TestNetLearn for now until stable")
 	testNet := newTestNet()
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input").(*Layer)
@@ -195,17 +210,19 @@ func TestGPULearn(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	qtr0HidCaSpkP := []float32{0.6022083, 0, 0, 0}
-	qtr0HidCaSpkD := []float32{0.2685343, 0, 0, 0}
-	qtr0OutCaSpkP := []float32{0.45473036, 0, 0, 0}
-	qtr0OutCaSpkD := []float32{0.16285785, 0, 0, 0}
-
-	qtr3HidCaSpkP := []float32{0.7530813, 0, 0, 0}
-	qtr3HidCaSpkD := []float32{0.72417825, 0, 0, 0}
-	qtr3OutCaSpkP := []float32{0.89738756, 0, 0, 0}
-	qtr3OutCaSpkD := []float32{0.760237, 0, 0, 0}
-
 	// these are organized by pattern within and then by test iteration (params) outer
+	// only the single active synapse is represented -- one per pattern
+	// if there are differences, they will multiply over patterns and layers..
+	qtr3HidCaP := []float32{0.480879, 0.47434732, 0.46390998, 0.4749324}
+	qtr3HidCaD := []float32{0.45077288, 0.4384445, 0.43477264, 0.4374903}
+	qtr3OutCaP := []float32{0.5378871, 0.5379575, 0.5363678, 0.53920734}
+	qtr3OutCaD := []float32{0.4513688, 0.43564144, 0.43557996, 0.4358468}
+
+	q3hidCaP := make([]float32, 4*NLrnPars)
+	q3hidCaD := make([]float32, 4*NLrnPars)
+	q3outCaP := make([]float32, 4*NLrnPars)
+	q3outCaD := make([]float32, 4*NLrnPars)
+
 	hidDwts := []float32{0.0017427707, 0.0019655386, 0.0016441783, 0.0020374325}
 	outDwts := []float32{0.0076494003, 0.009837036, 0.008439174, 0.010048241}
 	hidWts := []float32{0.5104552, 0.51179105, 0.5098639, 0.51222205}
@@ -219,11 +236,11 @@ func TestGPULearn(t *testing.T) {
 	hidAct := []float32{}
 	hidGes := []float32{}
 	hidGis := []float32{}
-	hidCaSpkM := []float32{}
-	hidCaSpkP := []float32{}
-	hidCaSpkD := []float32{}
-	outCaSpkP := []float32{}
-	outCaSpkD := []float32{}
+	hidCaM := []float32{}
+	hidCaP := []float32{}
+	hidCaD := []float32{}
+	outCaP := []float32{}
+	outCaD := []float32{}
 
 	cycPerQtr := 50
 
@@ -259,15 +276,15 @@ func TestGPULearn(t *testing.T) {
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
 					hidLay.UnitVals(&hidGis, "Gi")
-					hidLay.UnitVals(&hidCaSpkM, "CaSpkM")
-					hidLay.UnitVals(&hidCaSpkP, "CaSpkP")
-					hidLay.UnitVals(&hidCaSpkD, "CaSpkD")
+					hidLay.UnitVals(&hidCaM, "CaM")
+					hidLay.UnitVals(&hidCaP, "CaP")
+					hidLay.UnitVals(&hidCaD, "CaD")
 
-					outLay.UnitVals(&outCaSpkP, "CaSpkP")
-					outLay.UnitVals(&outCaSpkD, "CaSpkD")
+					outLay.UnitVals(&outCaP, "CaP")
+					outLay.UnitVals(&outCaD, "CaD")
 
 					if printCycs {
-						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaSpkM, hidCaSpkP, hidCaSpkD, outCaSpkP, outCaSpkD)
+						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
 					}
 				}
 				if qtr == 2 {
@@ -275,27 +292,22 @@ func TestGPULearn(t *testing.T) {
 					ctx.NewPhase(false)
 				}
 
-				hidLay.UnitVals(&hidCaSpkP, "CaSpkP")
-				hidLay.UnitVals(&hidCaSpkD, "CaSpkD")
+				hidLay.UnitVals(&hidCaP, "CaP")
+				hidLay.UnitVals(&hidCaD, "CaD")
 
-				outLay.UnitVals(&outCaSpkP, "CaSpkP")
-				outLay.UnitVals(&outCaSpkD, "CaSpkD")
+				outLay.UnitVals(&outCaP, "CaP")
+				outLay.UnitVals(&outCaD, "CaD")
+
+				if qtr == 3 {
+					didx := ti*4 + pi
+					q3hidCaD[didx] = hidCaD[pi]
+					q3hidCaP[didx] = hidCaP[pi]
+					q3outCaD[didx] = outCaD[pi]
+					q3outCaP[didx] = outCaP[pi]
+				}
 
 				if printQtrs {
-					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaSpkP, hidCaSpkD, outCaSpkP, outCaSpkD)
-				}
-
-				if pi == 0 && qtr == 0 {
-					cmprFloats(hidCaSpkP, qtr0HidCaSpkP, "qtr 0 hidCaSpkP", t)
-					cmprFloats(hidCaSpkD, qtr0HidCaSpkD, "qtr 0 hidCaSpkD", t)
-					cmprFloats(outCaSpkP, qtr0OutCaSpkP, "qtr 0 outCaSpkP", t)
-					cmprFloats(outCaSpkD, qtr0OutCaSpkD, "qtr 0 outCaSpkD", t)
-				}
-				if pi == 0 && qtr == 3 {
-					cmprFloats(hidCaSpkP, qtr3HidCaSpkP, "qtr 3 hidCaSpkP", t)
-					cmprFloats(hidCaSpkD, qtr3HidCaSpkD, "qtr 3 hidCaSpkD", t)
-					cmprFloats(outCaSpkP, qtr3OutCaSpkP, "qtr 3 outCaSpkP", t)
-					cmprFloats(outCaSpkD, qtr3OutCaSpkD, "qtr 3 outCaSpkD", t)
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaP, hidCaD, outCaP, outCaD)
 				}
 			}
 			testNet.PlusPhase(ctx)
@@ -322,10 +334,185 @@ func TestGPULearn(t *testing.T) {
 		}
 	}
 
-	cmprFloats(hiddwt, hidDwts, "hid DWt", t)
-	cmprFloats(outdwt, outDwts, "out DWt", t)
-	cmprFloats(hidwt, hidWts, "hid Wt", t)
-	cmprFloats(outwt, outWts, "out Wt", t)
+	tol := float32(0.002) // these can end up diverging significantly over time..
+	// the synaptic ca integration etc.
+
+	cmprFloats(q3hidCaP, qtr3HidCaP, "qtr 3 hidCaP", t)
+	cmprFloats(q3hidCaD, qtr3HidCaD, "qtr 3 hidCaD", t)
+	cmprFloats(q3outCaP, qtr3OutCaP, "qtr 3 outCaP", t)
+	cmprFloats(q3outCaD, qtr3OutCaD, "qtr 3 outCaD", t)
+
+	cmprFloatsTol(hiddwt, hidDwts, "hid DWt", t, tol)
+	cmprFloatsTol(outdwt, outDwts, "out DWt", t, tol)
+	cmprFloatsTol(hidwt, hidWts, "hid Wt", t, tol)
+	cmprFloatsTol(outwt, outWts, "out Wt", t, tol)
+
+	testNet.GPU.Destroy()
+}
+
+func TestGPULearnRLRate(t *testing.T) {
+	testNet := newTestNet()
+	inPats := newInPats()
+	inLay := testNet.LayerByName("Input").(*Layer)
+	hidLay := testNet.LayerByName("Hidden").(*Layer)
+	outLay := testNet.LayerByName("Output").(*Layer)
+
+	// allp := testNet.AllParams()
+	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
+
+	printCycs := false
+	printQtrs := false
+
+	patHidRLRates := []float32{0.0019189873, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05,
+		0.00016045463, 0.0039065774, 5.0000002e-05, 5.0000002e-05,
+		5.0000002e-05, 0.00017801004, 0.0018357612, 5.0000002e-05,
+		5.0000002e-05, 5.0000002e-05, 0.00018263639, 0.0040663530}
+
+	// these are organized by pattern within and then by test iteration (params) outer
+	// only the single active synapse is represented -- one per pattern
+	// if there are differences, they will multiply over patterns and layers..
+
+	qtr3HidCaP := []float32{0.480879, 0.47434732, 0.46390998, 0.4749324}
+	qtr3HidCaD := []float32{0.45077288, 0.4384445, 0.43477264, 0.4374903}
+	qtr3OutCaP := []float32{0.5378871, 0.5379575, 0.5363678, 0.53920734}
+	qtr3OutCaD := []float32{0.4513688, 0.43564144, 0.43557996, 0.4358468}
+
+	q3hidCaP := make([]float32, 4*NLrnPars)
+	q3hidCaD := make([]float32, 4*NLrnPars)
+	q3outCaP := make([]float32, 4*NLrnPars)
+	q3outCaD := make([]float32, 4*NLrnPars)
+
+	hidDwts := []float32{3.3443548e-06, 7.678528e-06, 3.018319e-06, 8.28492e-06}
+	outDwts := []float32{0.0076494003, 0.009837036, 0.008439174, 0.010048241}
+	hidWts := []float32{0.50002, 0.50004613, 0.50001824, 0.5000497}
+	outWts := []float32{0.5457716, 0.5587571, 0.5504675, 0.5600071}
+
+	hiddwt := make([]float32, 4*NLrnPars)
+	outdwt := make([]float32, 4*NLrnPars)
+	hidwt := make([]float32, 4*NLrnPars)
+	outwt := make([]float32, 4*NLrnPars)
+	hidrlrs := make([]float32, 4*4*NLrnPars) // 4 units, 4 pats
+
+	hidAct := []float32{}
+	hidGes := []float32{}
+	hidGis := []float32{}
+	hidCaM := []float32{}
+	hidCaP := []float32{}
+	hidCaD := []float32{}
+	hidRLRate := []float32{}
+	outCaP := []float32{}
+	outCaD := []float32{}
+
+	cycPerQtr := 50
+
+	for ti := 0; ti < NLrnPars; ti++ {
+		testNet.Defaults()
+		testNet.ApplyParams(ParamSets[0].Sheets["Network"], false)  // always apply base
+		testNet.ApplyParams(ParamSets[ti].Sheets["Network"], false) // then specific
+		hidLay.Params.Learn.RLRate.On.SetBool(true)
+		testNet.InitWts()
+		testNet.InitExt()
+
+		ctx := NewContext()
+
+		testNet.GPUOnNoGUI(ctx)
+
+		for pi := 0; pi < 4; pi++ {
+			inpat, err := inPats.SubSpaceTry([]int{pi})
+			if err != nil {
+				t.Error(err)
+			}
+			testNet.InitExt()
+			inLay.ApplyExt(inpat)
+			outLay.ApplyExt(inpat)
+			testNet.ApplyExts(ctx) // key now for GPU
+
+			ctx.NewState(etime.Train)
+			testNet.NewState(ctx)
+			for qtr := 0; qtr < 4; qtr++ {
+				for cyc := 0; cyc < cycPerQtr; cyc++ {
+					testNet.Cycle(ctx)
+					ctx.CycleInc()
+					testNet.GPU.CopyNeuronsFromGPU(ctx, testNet)
+
+					hidLay.UnitVals(&hidAct, "Act")
+					hidLay.UnitVals(&hidGes, "Ge")
+					hidLay.UnitVals(&hidGis, "Gi")
+					hidLay.UnitVals(&hidCaM, "CaM")
+					hidLay.UnitVals(&hidCaP, "CaP")
+					hidLay.UnitVals(&hidCaD, "CaD")
+
+					outLay.UnitVals(&outCaP, "CaP")
+					outLay.UnitVals(&outCaD, "CaD")
+
+					if printCycs {
+						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
+					}
+				}
+				if qtr == 2 {
+					testNet.MinusPhase(ctx)
+					ctx.NewPhase(false)
+				}
+
+				hidLay.UnitVals(&hidCaP, "CaP")
+				hidLay.UnitVals(&hidCaD, "CaD")
+
+				outLay.UnitVals(&outCaP, "CaP")
+				outLay.UnitVals(&outCaD, "CaD")
+
+				if qtr == 3 {
+					didx := ti*4 + pi
+					q3hidCaD[didx] = hidCaD[pi]
+					q3hidCaP[didx] = hidCaP[pi]
+					q3outCaD[didx] = outCaD[pi]
+					q3outCaP[didx] = outCaP[pi]
+				}
+
+				if printQtrs {
+					fmt.Printf("pat: %v qtr: %v cyc: %v\nhid avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidCaP, hidCaD, outCaP, outCaD)
+				}
+			}
+			testNet.PlusPhase(ctx)
+			testNet.GPU.CopyNeuronsFromGPU(ctx, testNet) // RLRate updated after plus
+
+			if printQtrs {
+				fmt.Printf("=============================\n")
+			}
+
+			hidLay.UnitVals(&hidRLRate, "RLRate")
+			ridx := ti*4*4 + pi*4
+			copy(hidrlrs[ridx:ridx+4], hidRLRate)
+
+			testNet.DWt(ctx)
+			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
+
+			didx := ti*4 + pi
+
+			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
+
+			testNet.WtFmDWt(ctx)
+			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
+
+			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
+			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
+		}
+	}
+
+	tol := float32(0.002) // these can end up diverging significantly over time..
+	// the synaptic ca integration etc.
+
+	cmprFloats(hidrlrs, patHidRLRates, "hid RLRate", t)
+
+	cmprFloats(q3hidCaP, qtr3HidCaP, "qtr 3 hidCaP", t)
+	cmprFloats(q3hidCaD, qtr3HidCaD, "qtr 3 hidCaD", t)
+	cmprFloats(q3outCaP, qtr3OutCaP, "qtr 3 outCaP", t)
+	cmprFloats(q3outCaD, qtr3OutCaD, "qtr 3 outCaD", t)
+
+	cmprFloatsTol(hiddwt, hidDwts, "hid DWt", t, tol)
+	cmprFloatsTol(outdwt, outDwts, "out DWt", t, tol)
+	cmprFloatsTol(hidwt, hidWts, "hid Wt", t, tol)
+	cmprFloatsTol(outwt, outWts, "out Wt", t, tol)
 
 	testNet.GPU.Destroy()
 }
