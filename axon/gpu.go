@@ -357,7 +357,7 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 
 	gp.RunPipeline(net, "Cycle", len(net.Neurons), "PoolGi", "Cycle", "")
 
-	if ctx.Testing.IsFalse() {
+	if ctx.Testing.IsTrue() {
 		gp.RunPipeline(net, "SendSpike", len(net.Neurons), "Cycle", "CycleEnd", "Cycle")
 	} else {
 		gp.RunPipeline(net, "SendSpike", len(net.Neurons), "Cycle", "SendSpike", "")
@@ -366,10 +366,11 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 		// gp.RunPipeline(net, "SynCaRecv", gp.SynCaRecv, len(net.Neurons)) // recv first as faster
 		// gp.RunPipeline(net, "SynCaSend", gp.SynCaSend, len(net.Neurons))
 	}
-	if !net.RecFunTimes {
+	if net.RecFunTimes {
+		gp.Sys.ComputeWait()
+	} else {
 		gp.Sys.ComputeWaitFence("Cycle")
 	}
-	gp.Sys.ComputeWait()
 }
 
 func (gp *GPU) RunNewState(ctx *Context, net *Network) {
