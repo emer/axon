@@ -10,6 +10,7 @@ import (
 
 	"github.com/goki/gi/oswin"
 	"github.com/goki/vgpu/vgpu"
+	vk "github.com/goki/vulkan"
 )
 
 //go:embed shaders/*.spv
@@ -91,10 +92,6 @@ gpu_dwt.hlsl		[Synapses]
 todo: submean
 gpu_wtfmdwt.hlsl	[Synapses]
 
-todo: plus phase!
-
-todo: need apply inputs tensors!
-
 */
 
 // TheGPU is the gpu device, shared across all networks
@@ -102,28 +99,14 @@ var TheGPU *vgpu.GPU
 
 // GPU manages all of the GPU-based computation
 type GPU struct {
-	On           bool           `desc:"if true, actually use the GPU"`
-	Sys          *vgpu.System   `desc:"the vgpu compute system"`
-	Params       *vgpu.VarSet   `desc:"VarSet = 0: the uniform LayerParams"`
-	Prjns        *vgpu.VarSet   `desc:"VarSet = 1: the storage PrjnParams, RecvCon, Send*"`
-	Structs      *vgpu.VarSet   `desc:"VarSet = 2: the Storage buffer for RW state structs "`
-	Exts         *vgpu.VarSet   `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
-	GatherSpikes *vgpu.Pipeline `desc:"GatherSpikes pipeline"`
-	PoolGeMax    *vgpu.Pipeline `desc:"PoolGeMax pipeline"`
-	BetweenGi    *vgpu.Pipeline `desc:"BetweenGi pipeline"`
-	PoolGi       *vgpu.Pipeline `desc:"PoolG pipeline"`
-	Cycle        *vgpu.Pipeline `desc:"Cycle pipeline"`
-	SendSpike    *vgpu.Pipeline `desc:"SendSpike pipeline"`
-	SynCa        *vgpu.Pipeline `desc:"SynCa pipeline"`
-	SynCaRecv    *vgpu.Pipeline `desc:"SynCa pipeline"`
-	SynCaSend    *vgpu.Pipeline `desc:"SynCa pipeline"`
-	NewState     *vgpu.Pipeline `desc:"new state pipeline"`
-	MinusPhase   *vgpu.Pipeline `desc:"minus phase pipeline"`
-	PlusPhase    *vgpu.Pipeline `desc:"plus phase pipeline"`
-	DWt          *vgpu.Pipeline `desc:"DWt pipeline"`
-	WtFmDWt      *vgpu.Pipeline `desc:"WtFmDWt pipeline"`
-	ApplyExts    *vgpu.Pipeline `desc:"ApplyExts pipeline"`
-	NThreads     int            `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
+	On        bool                    `desc:"if true, actually use the GPU"`
+	Sys       *vgpu.System            `desc:"the vgpu compute system"`
+	Params    *vgpu.VarSet            `desc:"VarSet = 0: the uniform LayerParams"`
+	Prjns     *vgpu.VarSet            `desc:"VarSet = 1: the storage PrjnParams, RecvCon, Send*"`
+	Structs   *vgpu.VarSet            `desc:"VarSet = 2: the Storage buffer for RW state structs "`
+	Exts      *vgpu.VarSet            `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
+	Semaphors map[string]vk.Semaphore `view:"-" desc:"for sequencing commands"`
+	NThreads  int                     `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
 
 	DidBind map[string]bool `view:"-" desc:"tracks var binding"`
 }
@@ -200,21 +183,30 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Exts.ConfigVals(1)
 
 	// pipelines
-	gp.GatherSpikes = gp.Sys.NewComputePipelineEmbed("GatherSpikes", content, "shaders/gpu_gather.spv")
-	gp.PoolGeMax = gp.Sys.NewComputePipelineEmbed("PoolGeMax", content, "shaders/gpu_poolgemax.spv")
-	gp.BetweenGi = gp.Sys.NewComputePipelineEmbed("BetweenGi", content, "shaders/gpu_betweengi.spv")
-	gp.PoolGi = gp.Sys.NewComputePipelineEmbed("PoolGi", content, "shaders/gpu_poolgi.spv")
-	gp.Cycle = gp.Sys.NewComputePipelineEmbed("Cycle", content, "shaders/gpu_cycle.spv")
-	gp.SendSpike = gp.Sys.NewComputePipelineEmbed("SendSpikes", content, "shaders/gpu_sendspike.spv")
-	gp.SynCa = gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
-	gp.SynCaRecv = gp.Sys.NewComputePipelineEmbed("SynCaRecv", content, "shaders/gpu_syncarecv.spv")
-	gp.SynCaSend = gp.Sys.NewComputePipelineEmbed("SynCaSend", content, "shaders/gpu_syncasend.spv")
-	gp.NewState = gp.Sys.NewComputePipelineEmbed("NewState", content, "shaders/gpu_newstate.spv")
-	gp.MinusPhase = gp.Sys.NewComputePipelineEmbed("MinusPhase", content, "shaders/gpu_minusphase.spv")
-	gp.PlusPhase = gp.Sys.NewComputePipelineEmbed("PlusPhase", content, "shaders/gpu_plusphase.spv")
-	gp.DWt = gp.Sys.NewComputePipelineEmbed("DWt", content, "shaders/gpu_dwt.spv")
-	gp.WtFmDWt = gp.Sys.NewComputePipelineEmbed("WtFmDWt", content, "shaders/gpu_wtfmdwt.spv")
-	gp.ApplyExts = gp.Sys.NewComputePipelineEmbed("ApplyExts", content, "shaders/gpu_applyext.spv")
+	gp.Sys.NewComputePipelineEmbed("GatherSpikes", content, "shaders/gpu_gather.spv")
+	gp.Sys.NewComputePipelineEmbed("PoolGeMax", content, "shaders/gpu_poolgemax.spv")
+	gp.Sys.NewComputePipelineEmbed("BetweenGi", content, "shaders/gpu_betweengi.spv")
+	gp.Sys.NewComputePipelineEmbed("PoolGi", content, "shaders/gpu_poolgi.spv")
+	gp.Sys.NewComputePipelineEmbed("Cycle", content, "shaders/gpu_cycle.spv")
+	gp.Sys.NewComputePipelineEmbed("SendSpike", content, "shaders/gpu_sendspike.spv")
+	gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
+	gp.Sys.NewComputePipelineEmbed("SynCaRecv", content, "shaders/gpu_syncarecv.spv")
+	gp.Sys.NewComputePipelineEmbed("SynCaSend", content, "shaders/gpu_syncasend.spv")
+	gp.Sys.NewComputePipelineEmbed("NewState", content, "shaders/gpu_newstate.spv")
+	gp.Sys.NewComputePipelineEmbed("MinusPhase", content, "shaders/gpu_minusphase.spv")
+	gp.Sys.NewComputePipelineEmbed("PlusPhase", content, "shaders/gpu_plusphase.spv")
+	gp.Sys.NewComputePipelineEmbed("DWt", content, "shaders/gpu_dwt.spv")
+	gp.Sys.NewComputePipelineEmbed("WtFmDWt", content, "shaders/gpu_wtfmdwt.spv")
+	gp.Sys.NewComputePipelineEmbed("ApplyExts", content, "shaders/gpu_applyext.spv")
+
+	gp.Sys.NewSemaphore("CycleEnd")
+	gp.Sys.NewSemaphore("GatherSpikes")
+	gp.Sys.NewSemaphore("PoolGeMax")
+	gp.Sys.NewSemaphore("BetweenGi")
+	gp.Sys.NewSemaphore("PoolGi")
+	gp.Sys.NewSemaphore("Cycle")
+	gp.Sys.NewSemaphore("SendSpike")
+	gp.Sys.NewFence("Cycle")
 
 	gp.Sys.Config()
 
@@ -323,67 +315,79 @@ func (gp *GPU) SyncMemToGPU() {
 	gp.Sys.Mem.SyncToGPU()
 }
 
-func (gp *GPU) RunPipeline(net *Network, name string, pl *vgpu.Pipeline, n int) {
-	// todo: need to bind vars again?  try just doing it once the first time
-	// and compare times..
-	net.FunTimerStart(name)
-	// bound := gp.DidBind[pl.Name]
-	// if !bound {
+// RunPipeline runs given pipeline with optional wait & signal semaphores and fence.
+// If recording function times, it does not use the semaphores -- waits -- much slower
+// but useful for diagnosing individual function timing.
+func (gp *GPU) RunPipeline(net *Network, name string, n int, wait, signal, fence string) {
+	pl, err := gp.Sys.PipelineByNameTry(name)
+	if err != nil {
+		panic(err)
+	}
+	gnm := "GPU:" + name
+	net.FunTimerStart(gnm)
 	gp.Sys.CmdResetBindVars(gp.Sys.CmdPool.Buff, 0)
-	// gp.DidBind[pl.Name] = true
-	// } else {
-	// 	gp.Sys.ComputeResetBegin() // this works for act but not learn!
-	// }
 	pl.ComputeCommand1D(n, gp.NThreads)
-	gp.Sys.ComputeSubmitWait()
-	net.FunTimerStop(name)
+	if net.RecFunTimes || (signal == "" && fence == "") {
+		gp.Sys.ComputeSubmitWait()
+		net.FunTimerStop(gnm)
+		return
+	}
+	// could use fence but no semaphores -- try it: https://stackoverflow.com/questions/39537176/in-what-situations-is-vkfence-better-than-vkqueuewaitidle-for-vkqueuesubmit
+	if wait != "" {
+		gp.Sys.ComputeSubmitWaitSignal(wait, signal, fence)
+	} else {
+		gp.Sys.ComputeSubmitSignal(signal, fence)
+	}
 }
 
 func (gp *GPU) RunApplyExts(ctx *Context, net *Network) {
 	gp.CopyExtsToGPU(ctx, net)
 	gp.SyncMemToGPU()
-	gp.RunPipeline(net, "GPU:ApplyExt", gp.ApplyExts, len(net.Neurons))
+	gp.RunPipeline(net, "ApplyExts", len(net.Neurons), "", "", "")
 }
 
 func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 	gp.CopyContextToGPU(ctx, net)
-	gp.SyncMemToGPU()
-	gp.RunPipeline(net, "GPU:GatherSpikes", gp.GatherSpikes, len(net.Neurons))
+	gp.SyncMemToGPU() // todo: see about making this use semaphores?
+	gp.RunPipeline(net, "GatherSpikes", len(net.Neurons), "", "GatherSpikes", "")
 
-	// todo: use semaphors for all of these instead of waits
-	// todo: need to bind vars again?
-	gp.RunPipeline(net, "GPU:PoolGeMax", gp.PoolGeMax, len(net.Pools))
-	gp.RunPipeline(net, "GPU:BetweenGi", gp.BetweenGi, len(net.Pools))
-	gp.RunPipeline(net, "GPU:PoolGi", gp.PoolGi, len(net.Pools))
+	gp.RunPipeline(net, "PoolGeMax", len(net.Pools), "GatherSpikes", "PoolGeMax", "")
+	gp.RunPipeline(net, "BetweenGi", len(net.Pools), "PoolGeMax", "BetweenGi", "")
+	gp.RunPipeline(net, "PoolGi", len(net.Pools), "BetweenGi", "PoolGi", "")
 
-	gp.RunPipeline(net, "GPU:Cycle", gp.Cycle, len(net.Neurons))
-
-	gp.RunPipeline(net, "GPU:SendSpike", gp.SendSpike, len(net.Neurons))
+	gp.RunPipeline(net, "Cycle", len(net.Neurons), "PoolGi", "Cycle", "")
 
 	if ctx.Testing.IsFalse() {
+		gp.RunPipeline(net, "SendSpike", len(net.Neurons), "Cycle", "CycleEnd", "Cycle")
+	} else {
+		gp.RunPipeline(net, "SendSpike", len(net.Neurons), "Cycle", "SendSpike", "")
 		// todo: test in larger networks!
-		gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses)) // faster?
-		// gp.RunPipeline(net, "GPU:SynCaRecv", gp.SynCaRecv, len(net.Neurons)) // recv first as faster
-		// gp.RunPipeline(net, "GPU:SynCaSend", gp.SynCaSend, len(net.Neurons))
+		gp.RunPipeline(net, "SynCa", len(net.Synapses), "SendSpike", "CycleEnd", "Cycle")
+		// gp.RunPipeline(net, "SynCaRecv", gp.SynCaRecv, len(net.Neurons)) // recv first as faster
+		// gp.RunPipeline(net, "SynCaSend", gp.SynCaSend, len(net.Neurons))
 	}
+	if !net.RecFunTimes {
+		gp.Sys.ComputeWaitFence("Cycle")
+	}
+	gp.Sys.ComputeWait()
 }
 
 func (gp *GPU) RunNewState(ctx *Context, net *Network) {
-	gp.RunPipeline(net, "GPU:NewState", gp.NewState, len(net.Pools))
+	gp.RunPipeline(net, "NewState", len(net.Pools), "", "", "")
 }
 
 func (gp *GPU) RunMinusPhase(ctx *Context, net *Network) {
-	gp.RunPipeline(net, "GPU:MinusPhase", gp.MinusPhase, len(net.Pools))
+	gp.RunPipeline(net, "MinusPhase", len(net.Pools), "", "", "")
 }
 
 func (gp *GPU) RunPlusPhase(ctx *Context, net *Network) {
-	gp.RunPipeline(net, "GPU:PlusPhase", gp.PlusPhase, len(net.Pools))
+	gp.RunPipeline(net, "PlusPhase", len(net.Pools), "", "", "")
 }
 
 func (gp *GPU) RunDWt(ctx *Context, net *Network) {
-	gp.RunPipeline(net, "GPU:DWt", gp.DWt, len(net.Synapses))
+	gp.RunPipeline(net, "DWt", len(net.Synapses), "", "", "")
 }
 
 func (gp *GPU) RunWtFmDWt(ctx *Context, net *Network) {
-	gp.RunPipeline(net, "GPU:WtFmDWt", gp.WtFmDWt, len(net.Synapses))
+	gp.RunPipeline(net, "WtFmDWt", len(net.Synapses), "", "", "")
 }

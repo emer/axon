@@ -14,12 +14,15 @@ require (
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.14
-	github.com/goki/vgpu v1.0.15
+	github.com/goki/vgpu v1.0.16
 	github.com/stretchr/testify v1.8.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )
 
-require github.com/emer/leabra v1.2.5
+require (
+	github.com/emer/leabra v1.2.5
+	github.com/goki/vulkan v0.0.0-20220928215615-c67065a9cfc2
+)
 
 require (
 	git.sr.ht/~sbinet/gg v0.3.1 // indirect
@@ -49,7 +52,6 @@ require (
 	github.com/goki/pi v1.0.22 // indirect
 	github.com/goki/prof v1.0.0 // indirect
 	github.com/goki/vci v1.0.1 // indirect
-	github.com/goki/vulkan v0.0.0-20220928215615-c67065a9cfc2 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
