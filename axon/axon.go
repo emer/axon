@@ -228,13 +228,19 @@ type AxonLayer interface {
 	//  Learn Methods
 
 	// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
-	// Optimized version only updates at point of spiking.
-	// This pass goes through in sending order, filtering on sending spike.
+	// Optimized version only updates at point of spiking, threaded over neurons.
+	// This pass updates sending projections -- all sending synapses are
+	// unique to a given sending neuron, so this is threadsafe.
+	// Cannot do both send and recv in same pass without potential for
+	// race conditions.
 	SynCaSend(ctx *Context, ni uint32, sn *Neuron)
 
 	// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
-	// Optimized version only updates at point of spiking.
-	// This pass goes through in recv order, filtering on recv spike.
+	// Optimized version only updates at point of spiking, threaded over neurons.
+	// This pass updates recv projections -- all recv synapses are
+	// unique to a given recv neuron, so this is threadsafe.
+	// Cannot do both send and recv in same pass without potential for
+	// race conditions.
 	SynCaRecv(ctx *Context, ni uint32, rn *Neuron)
 
 	// DWtLayer does weight change at the layer level.

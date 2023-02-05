@@ -575,6 +575,7 @@ func (nt *NetworkBase) Build() error {
 			nsyn := len(pj.RecvConIdx)
 			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
 			pj.Params.Idxs.SynapseSt = uint32(sidx)
+			pj.Params.Idxs.PrjnIdx = uint32(pjidx)
 			pj.Syns = nt.Synapses[sidx : sidx+nsyn]
 			for ri := range rlay.Neurons {
 				rcon := pj.RecvCon[ri]

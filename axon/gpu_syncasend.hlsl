@@ -32,7 +32,7 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-void SynCaSendSyn(in Context ctx, in PrjnParams pj, inout Synapse sy, float snCaSyn, float updtThr) {
+void SynCaSendSyn(in Context ctx, in PrjnParams pj, in Synapse sy, float snCaSyn, float updtThr) {
 	pj.SynCaSendSyn(ctx, sy, Neurons[sy.RecvIdx], snCaSyn, updtThr);
 }
 

@@ -15,7 +15,7 @@ import (
 //go:embed shaders/*.spv
 var content embed.FS
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_applyext.hlsl gpu_gather.hlsl gpu_poolgemax.hlsl gpu_betweengi.hlsl gpu_poolgi.hlsl gpu_cycle.hlsl gpu_sendspike.hlsl gpu_synca.hlsl gpu_newstate.hlsl gpu_minusphase.hlsl gpu_plusphase.hlsl gpu_dwt.hlsl gpu_wtfmdwt.hlsl
+//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_applyext.hlsl gpu_gather.hlsl gpu_poolgemax.hlsl gpu_betweengi.hlsl gpu_poolgi.hlsl gpu_cycle.hlsl gpu_sendspike.hlsl gpu_synca.hlsl gpu_syncasend.hlsl gpu_syncarecv.hlsl gpu_newstate.hlsl gpu_minusphase.hlsl gpu_plusphase.hlsl gpu_dwt.hlsl gpu_wtfmdwt.hlsl
 
 // not using: gpu_syncarecv.hlsl gpu_syncasend.hlsl
 
@@ -117,15 +117,15 @@ type GPU struct {
 	Cycle        *vgpu.Pipeline `desc:"Cycle pipeline"`
 	SendSpike    *vgpu.Pipeline `desc:"SendSpike pipeline"`
 	SynCa        *vgpu.Pipeline `desc:"SynCa pipeline"`
-	// SynCaRecv    *vgpu.Pipeline `desc:"SynCa pipeline"`
-	// SynCaSend    *vgpu.Pipeline `desc:"SynCa pipeline"`
-	NewState   *vgpu.Pipeline `desc:"new state pipeline"`
-	MinusPhase *vgpu.Pipeline `desc:"minus phase pipeline"`
-	PlusPhase  *vgpu.Pipeline `desc:"plus phase pipeline"`
-	DWt        *vgpu.Pipeline `desc:"DWt pipeline"`
-	WtFmDWt    *vgpu.Pipeline `desc:"WtFmDWt pipeline"`
-	ApplyExts  *vgpu.Pipeline `desc:"ApplyExts pipeline"`
-	NThreads   int            `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
+	SynCaRecv    *vgpu.Pipeline `desc:"SynCa pipeline"`
+	SynCaSend    *vgpu.Pipeline `desc:"SynCa pipeline"`
+	NewState     *vgpu.Pipeline `desc:"new state pipeline"`
+	MinusPhase   *vgpu.Pipeline `desc:"minus phase pipeline"`
+	PlusPhase    *vgpu.Pipeline `desc:"plus phase pipeline"`
+	DWt          *vgpu.Pipeline `desc:"DWt pipeline"`
+	WtFmDWt      *vgpu.Pipeline `desc:"WtFmDWt pipeline"`
+	ApplyExts    *vgpu.Pipeline `desc:"ApplyExts pipeline"`
+	NThreads     int            `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
 }
 
 // GPUOnGUI turns on GPU mode in context of GUI active, configures the GPU -- call after all built,
@@ -204,10 +204,10 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.BetweenGi = gp.Sys.NewComputePipelineEmbed("BetweenGi", content, "shaders/gpu_betweengi.spv")
 	gp.PoolGi = gp.Sys.NewComputePipelineEmbed("PoolGi", content, "shaders/gpu_poolgi.spv")
 	gp.Cycle = gp.Sys.NewComputePipelineEmbed("Cycle", content, "shaders/gpu_cycle.spv")
-	// gp.SendSpike = gp.Sys.NewComputePipelineEmbed("SendSpikes", content, "shaders/gpu_sendspike.spv")
+	gp.SendSpike = gp.Sys.NewComputePipelineEmbed("SendSpikes", content, "shaders/gpu_sendspike.spv")
 	gp.SynCa = gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
-	// gp.SynCaRecv = gp.Sys.NewComputePipelineEmbed("SynCaRecv", content, "shaders/gpu_syncarecv.spv")
-	// gp.SynCaSend = gp.Sys.NewComputePipelineEmbed("SynCaSend", content, "shaders/gpu_syncasend.spv")
+	gp.SynCaRecv = gp.Sys.NewComputePipelineEmbed("SynCaRecv", content, "shaders/gpu_syncarecv.spv")
+	gp.SynCaSend = gp.Sys.NewComputePipelineEmbed("SynCaSend", content, "shaders/gpu_syncasend.spv")
 	gp.NewState = gp.Sys.NewComputePipelineEmbed("NewState", content, "shaders/gpu_newstate.spv")
 	gp.MinusPhase = gp.Sys.NewComputePipelineEmbed("MinusPhase", content, "shaders/gpu_minusphase.spv")
 	gp.PlusPhase = gp.Sys.NewComputePipelineEmbed("PlusPhase", content, "shaders/gpu_plusphase.spv")
@@ -343,12 +343,13 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 
 	gp.RunPipeline(net, "GPU:Cycle", gp.Cycle, len(net.Neurons))
 
-	// gp.RunPipeline(net, "GPU:SendSpike", gp.SendSpike, len(net.Neurons))
+	gp.RunPipeline(net, "GPU:SendSpike", gp.SendSpike, len(net.Neurons))
 
 	if ctx.Testing.IsFalse() {
+		// todo: test in larger networks!
 		gp.RunPipeline(net, "GPU:SynCa", gp.SynCa, len(net.Synapses)) // faster!
+		// gp.RunPipeline(net, "GPU:SynCaRecv", gp.SynCaRecv, len(net.Neurons)) // recv first as faster
 		// gp.RunPipeline(net, "GPU:SynCaSend", gp.SynCaSend, len(net.Neurons))
-		// gp.RunPipeline(net, "GPU:SynCaRecv", gp.SynCaRecv, len(net.Neurons))
 	}
 }
 

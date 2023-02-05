@@ -96,10 +96,10 @@ func TestGPUAct(t *testing.T) {
 				testNet.GPU.CopyNeuronsFromGPU(ctx, testNet)
 
 				if printCycs {
-					inLay.UnitVals(&inExts, "Ext")
-					inLay.UnitVals(&inGes, "Ge")
-					inLay.UnitVals(&inActs, "Act")
-					hidLay.UnitVals(&hidActs, "Act")
+					inLay.UnitVals(&inExts, "SpkSt1")
+					inLay.UnitVals(&inGes, "SpkSt2")
+					inLay.UnitVals(&inActs, "Spike")
+					hidLay.UnitVals(&hidActs, "Spike")
 					hidLay.UnitVals(&hidGes, "Ge")
 					hidLay.UnitVals(&hidGis, "Gi")
 					hidLay.UnitVals(&hidSt1, "SpkSt1")
@@ -135,7 +135,7 @@ func TestGPUAct(t *testing.T) {
 				fmt.Printf("=============================\n")
 			}
 
-			if true {
+			if false {
 
 				if pi == 0 && qtr == 0 {
 					cmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)

@@ -58,10 +58,10 @@ void RecvSpikes(in Context ctx, in PrjnParams pj, in LayerParams ly, uint recvId
 
 void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, inout Neuron nrn) {
 	// now doing SendSpike
-	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(ni, ctx.CycleTot-1); // -1 = prior time step
-	RecvSpikes(ctx, pj, ly, ni, GBuf[bi]); // writes to gbuf
+	// uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(ni, ctx.CycleTot-1); // -1 = prior time step
+	// RecvSpikes(ctx, pj, ly, ni, GBuf[bi]); // writes to gbuf
 	
-	bi = pj.Idxs.GBufSt + pj.Com.ReadIdx(ni, ctx.CycleTot);
+	uint bi = pj.Idxs.GBufSt + pj.Com.ReadIdx(ni, ctx.CycleTot);
 	float gRaw = GBuf[bi];
 	GBuf[bi] = 0;
 	float gSyn = GSyns[pj.Idxs.GSynSt + ni];

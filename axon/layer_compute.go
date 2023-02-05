@@ -185,10 +185,11 @@ func (ly *Layer) SendSpike(ctx *Context) {
 }
 
 // SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in sending order, filtering on sending spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
+// Optimized version only updates at point of spiking, threaded over neurons.
+// This pass updates sending projections -- all sending synapses are
+// unique to a given sending neuron, so this is threadsafe.
+// Cannot do both send and recv in same pass without potential for
+// race conditions.
 func (ly *Layer) SynCaSend(ctx *Context, ni uint32, sn *Neuron) {
 	if sn.Spike == 0 {
 		return
@@ -206,10 +207,11 @@ func (ly *Layer) SynCaSend(ctx *Context, ni uint32, sn *Neuron) {
 }
 
 // SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking.
-// This pass goes through in recv order, filtering on recv spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
+// Optimized version only updates at point of spiking, threaded over neurons.
+// This pass updates recv projections -- all recv synapses are
+// unique to a given recv neuron, so this is threadsafe.
+// Cannot do both send and recv in same pass without potential for
+// race conditions.
 func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
 	if rn.Spike == 0 {
 		return
