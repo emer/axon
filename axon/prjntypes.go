@@ -17,7 +17,7 @@ type PrjnTypes int32
 // The projection types
 const (
 	// Forward is a feedforward, bottom-up projection from sensory inputs to higher layers
-	ForwardPrj PrjnTypes = iota
+	ForwardPrjn PrjnTypes = iota
 
 	// Back is a feedback, top-down projection from higher layers back to lower layers
 	BackPrjn

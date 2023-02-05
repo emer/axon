@@ -483,17 +483,17 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 				continue
 			}
 			// start at index proportional to ri relative to rist
-			up := uint32(0)
+			up := int32(0)
 			if lastSi > firstSi {
-				up = uint32(float32(recipc.N) * float32(ri-firstSi) / float32(lastSi-firstSi))
+				up = int32(float32(recipc.N) * float32(ri-firstSi) / float32(lastSi-firstSi))
 			}
 			dn := up - 1
 
 			for {
 				doing := false
-				if up < recipc.N {
+				if up < int32(recipc.N) {
 					doing = true
-					recipCi := recipc.Start + up
+					recipCi := int32(recipc.Start) + up
 					recipSy := &rpj.Syns[recipCi]
 					recipSi := rpj.Params.SynSendLayIdx(recipSy)
 					if recipSi == ri {
@@ -507,7 +507,7 @@ func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
 				}
 				if dn >= 0 {
 					doing = true
-					recipCi := recipc.Start + dn
+					recipCi := int32(recipc.Start) + dn
 					recipSy := &rpj.Syns[recipCi]
 					recipSi := rpj.Params.SynSendLayIdx(recipSy)
 					if recipSi == ri {
