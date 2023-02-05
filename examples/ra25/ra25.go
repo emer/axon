@@ -51,7 +51,7 @@ func main() {
 func guirun() {
 	TheSim.Init()
 	win := TheSim.ConfigGui()
-	TheSim.Net.GPUOnGUI(&TheSim.Context) // must happen after gui or no gui
+	TheSim.Net.GPUOnNoGUI(&TheSim.Context) // must happen after gui or no gui
 	win.StartEventLoop()
 }
 
@@ -549,6 +549,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 	ss.GUI.FinalizeGUI(false)
 	return ss.GUI.Win
+
+	// GPU todo: need OnQuit call to delete GPU
 }
 
 func (ss *Sim) ConfigArgs() {
@@ -583,6 +585,9 @@ func (ss *Sim) CmdArgs() {
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
 
 	ss.NewRun()
+
+	ss.Net.GPUOnNoGUI(&TheSim.Context) // must happen after gui or no gui
+
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()
@@ -590,4 +595,6 @@ func (ss *Sim) CmdArgs() {
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
+
+	ss.Net.GPU.Destroy()
 }

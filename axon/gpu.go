@@ -124,6 +124,8 @@ type GPU struct {
 	WtFmDWt      *vgpu.Pipeline `desc:"WtFmDWt pipeline"`
 	ApplyExts    *vgpu.Pipeline `desc:"ApplyExts pipeline"`
 	NThreads     int            `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
+
+	DidBind map[string]bool `view:"-" desc:"tracks var binding"`
 }
 
 // GPUOnGUI turns on GPU mode in context of GUI active, configures the GPU -- call after all built,
@@ -157,6 +159,7 @@ func (gp *GPU) Destroy() {
 // Config configures the network -- must call on an already-built network
 func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.NThreads = 64
+	gp.DidBind = make(map[string]bool)
 
 	if TheGPU == nil {
 		TheGPU = vgpu.NewComputeGPU()
@@ -296,6 +299,15 @@ func (gp *GPU) CopySynapsesFromGPU(ctx *Context, net *Network) {
 	synv.CopyToBytes(unsafe.Pointer(&net.Synapses[0]))
 }
 
+func (gp *GPU) CopyLayerValsFromGPU(ctx *Context, net *Network) {
+	if !gp.On {
+		return
+	}
+	gp.Sys.Mem.SyncValIdxFmGPU(gp.Structs.Set, "LayVals", 0)
+	_, layv, _ := gp.Structs.ValByIdxTry("LayVals", 0)
+	layv.CopyToBytes(unsafe.Pointer(&net.LayVals[0]))
+}
+
 func (gp *GPU) CopyStateToGPU(ctx *Context, net *Network) {
 	_, poolv, _ := gp.Structs.ValByIdxTry("Pools", 0)
 	poolv.CopyFromBytes(unsafe.Pointer(&net.Pools[0]))
@@ -315,8 +327,13 @@ func (gp *GPU) RunPipeline(net *Network, name string, pl *vgpu.Pipeline, n int) 
 	// todo: need to bind vars again?  try just doing it once the first time
 	// and compare times..
 	net.FunTimerStart(name)
+	// bound := gp.DidBind[pl.Name]
+	// if !bound {
 	gp.Sys.CmdResetBindVars(gp.Sys.CmdPool.Buff, 0)
-	// gp.Sys.ComputeResetBegin()
+	// gp.DidBind[pl.Name] = true
+	// } else {
+	// 	gp.Sys.ComputeResetBegin() // this works for act but not learn!
+	// }
 	pl.ComputeCommand1D(n, gp.NThreads)
 	gp.Sys.ComputeSubmitWait()
 	net.FunTimerStop(name)
