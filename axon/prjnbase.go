@@ -268,17 +268,17 @@ func (pj *PrjnBase) SynIdx(sidx, ridx int) int {
 		return -1
 	}
 	// start at index proportional to ri relative to rist
-	up := uint32(0)
+	up := int32(0)
 	if lastSi > firstSi {
-		up = uint32(float32(rcon.N) * float32(sidx-firstSi) / float32(lastSi-firstSi))
+		up = int32(float32(rcon.N) * float32(sidx-firstSi) / float32(lastSi-firstSi))
 	}
 	dn := up - 1
 
 	for {
 		doing := false
-		if up < rcon.N {
+		if up < int32(rcon.N) {
 			doing = true
-			rconi := rcon.Start + up
+			rconi := int32(rcon.Start) + up
 			if int(pj.RecvConIdx[rconi]) == sidx {
 				return int(rconi)
 			}
@@ -286,7 +286,7 @@ func (pj *PrjnBase) SynIdx(sidx, ridx int) int {
 		}
 		if dn >= 0 {
 			doing = true
-			rconi := rcon.Start + dn
+			rconi := int32(rcon.Start) + dn
 			if int(pj.RecvConIdx[rconi]) == sidx {
 				return int(rconi)
 			}
