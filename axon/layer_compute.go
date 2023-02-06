@@ -151,7 +151,6 @@ func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
 	randctr := ctx.RandCtr.Uint2() // use local var so updates are local
 	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals, &randctr)
 	ly.AxonLay.SpikeFmG(ctx, ni, nrn)
-	ly.AxonLay.PostSpike(ctx, ni, nrn)
 }
 
 // PostSpike does updates at neuron level after spiking has been computed.
@@ -167,6 +166,10 @@ func (ly *Layer) PostSpike(ctx *Context, ni uint32, nrn *Neuron) {
 func (ly *Layer) SendSpike(ctx *Context) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.AxonLay.PostSpike(ctx, uint32(ni), nrn)
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue
