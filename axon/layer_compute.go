@@ -118,8 +118,8 @@ func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
 	dly := ly.Network.Layer(int(ly.Params.Pulv.DriveLayIdx)).(AxonLayer).AsAxon()
 	drvMax := dly.Pools[0].AvgMax.CaSpkP.Cycle.Max
 	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
-	dneur := dly.Neurons[ni]
-	drvGe = ly.Params.Pulv.DriveGe(dneur.Burst)
+	burst := dly.Neurons[ni].Burst
+	drvGe = ly.Params.Pulv.DriveGe(burst)
 	return
 }
 
@@ -132,13 +132,13 @@ func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *La
 		drvGe, nonDrvPct = ly.PulvinarDriver(ni)
 	}
 
-	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct, randctr)
+	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct)
 
 	ly.Params.GFmRawSyn(ctx, ni, nrn, randctr)
 	ly.Params.GiInteg(ctx, ni, nrn, pl, vals)
 	ly.Params.GNeuroMod(ctx, ni, nrn, vals)
 
-	ly.Params.SpecialPostGs(ctx, ni, nrn, randctr, saveVal)
+	ly.Params.SpecialPostGs(ctx, ni, nrn, saveVal)
 }
 
 // SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
@@ -151,7 +151,6 @@ func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
 	randctr := ctx.RandCtr.Uint2() // use local var so updates are local
 	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals, &randctr)
 	ly.AxonLay.SpikeFmG(ctx, ni, nrn)
-	ly.AxonLay.PostSpike(ctx, ni, nrn)
 }
 
 // PostSpike does updates at neuron level after spiking has been computed.
@@ -167,6 +166,10 @@ func (ly *Layer) PostSpike(ctx *Context, ni uint32, nrn *Neuron) {
 func (ly *Layer) SendSpike(ctx *Context) {
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.AxonLay.PostSpike(ctx, uint32(ni), nrn)
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue

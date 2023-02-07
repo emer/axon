@@ -251,7 +251,7 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe float32, nonDrvPct float32, randctr *sltype.Uint2) float32 {
+func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe float32, nonDrvPct float32) float32 {
 	var saveVal float32 // sometimes we need to use a value computed here, for the post Gs step
 	switch ly.LayType {
 	case CTLayer:
@@ -291,7 +291,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 // SpecialPostGs is used for special layer types to do things
 // after the standard updates in GFmRawSyn.
 // It is passed the saveVal from SpecialPreGs
-func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, randctr *sltype.Uint2, saveVal float32) {
+func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveVal float32) {
 	switch ly.LayType {
 	case CTLayer:
 		nrn.GeExt = saveVal // todo: it is not clear if this really does anything?  next time around?
