@@ -32,8 +32,8 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 		if pj.Params.Com.CPURecvSpikes.IsTrue() { // about 35x slower!
 			pj.RecvSpikes(ctx, int(ni)) // Note: iterates over all senders for given recv
 		}
-		bi := pj.Params.Com.ReadIdx(ni, ctx.CycleTot)
-		gRaw := pj.GBuf[bi]
+		bi := pj.Params.Com.ReadIdx(ni, ctx.CycleTot, pj.Params.Idxs.RecvNeurN)
+		gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
 		pj.GBuf[bi] = 0
 		pj.Params.GatherSpikes(ctx, ly.Params, ni, nrn, gRaw, &pj.GSyns[ni])
 	}

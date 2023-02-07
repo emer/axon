@@ -54,7 +54,7 @@ type NetworkBase struct {
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][RecvPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns"`
 	Synapses     []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][SendNeurons] entire network's allocation of synapses"`
 	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt."`
-	PrjnGBuf     []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection"`
+	PrjnGBuf     []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses uint-encoded float values for faster GPU atomic integration"`
 	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][SendPrjnIdxs][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the SendSynIdxs array of sender-organized indexes into synapses."`
 	SendPrjnIdxs []uint32      `view:"-" desc:"[Layers][SendPrjns] indexes into Prjns (organized by RecvPrjn) organized by sending projections -- needed for iterating through sending prjns efficiently on GPU."`
@@ -664,7 +664,7 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 	if uint32(cap(nt.PrjnGBuf)) >= gbsz {
 		nt.PrjnGBuf = nt.PrjnGBuf[:gbsz]
 	} else {
-		nt.PrjnGBuf = make([]float32, gbsz)
+		nt.PrjnGBuf = make([]uint32, gbsz)
 	}
 	if uint32(cap(nt.PrjnGSyns)) >= npjneur {
 		nt.PrjnGSyns = nt.PrjnGSyns[:npjneur]

@@ -2,9 +2,6 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// testing atomic add -- not working
-// #extension GL_EXT_shader_atomic_float : enable
-
 // performs the DWt function on all sending projections
 
 #include "context.hlsl"
@@ -37,12 +34,6 @@ void DWtSyn2(in Context ctx, in LayerParams rlay, in PrjnParams pj, uint ci, ino
 		return;
 	}
 	bool isTarget = (rlay.Act.Clamp.IsTarget == 1);
-
-	// AtomicFloat32AddEXT(GBuf[10], 1);
-	// OpAtomicFAddEXT(GBuf[10], 1);
-	// InterlockedExchange(GBuf[10], 1);
-	// InterlockedCompareStoreFloatBitwise(GBuf[10], 1, 2, 2);
-	// atomicAdd(GBuf[ci], float(1.0));
 
 	pj.DWtSyn(ctx, sy, sn, rn, Pools[rlay.Idxs.PoolSt], Pools[rn.SubPoolN], isTarget);
 }

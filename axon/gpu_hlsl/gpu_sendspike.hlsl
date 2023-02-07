@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#extension GL_EXT_shader_atomic_float : enable
+// #extension GL_EXT_shader_atomic_float : enable
 
 // performs the SendSpike function on all sending neurons
 
@@ -28,19 +28,19 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] StructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] StructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-[[vk::binding(5, 2)]] RWStructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+[[vk::binding(5, 2)]] RWStructuredBuffer<uint> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 // [[vk::binding(6, 2)]] StructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] StructuredBuffer<float> Exts;  [In / Out Layers][Neurons]
 
 void SendSpikeSyn(in Context ctx, in PrjnParams pj, in Synapse sy, in float sendVal, in uint recvNeurSt) {
-	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CycleTot);
-	InterlockedAdd(GBuf[bi], sendVal * sy.Wt);
+	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CycleTot, pj.Idxs.RecvNeurN);
+	InterlockedAdd(GBuf[bi], uint(sendVal * sy.Wt));
 }
 
 void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron sn) {
-	float sendVal = pj.GScale.Scale;
+	float sendVal = pj.GScale.Scale * pj.Com.FloatToGBufFactor(); // baked in
 	if (pj.PrjnType == CTCtxtPrjn) {
 		if (ctx.Cycle != ctx.ThetaCycles-1-int(pj.Com.DelLen)) {
 			return;

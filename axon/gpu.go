@@ -172,7 +172,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Structs.AddStruct("Pools", int(unsafe.Sizeof(Pool{})), len(net.Pools), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.AddStruct("LayVals", int(unsafe.Sizeof(LayerVals{})), len(net.LayVals), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.AddStruct("Synapses", int(unsafe.Sizeof(Synapse{})), len(net.Synapses), vgpu.Storage, vgpu.ComputeShader)
-	gp.Structs.Add("GBuf", vgpu.Float32, len(net.PrjnGBuf), vgpu.Storage, vgpu.ComputeShader)
+	gp.Structs.Add("GBuf", vgpu.Int32, len(net.PrjnGBuf), vgpu.Storage, vgpu.ComputeShader)
 	gp.Structs.Add("GSyns", vgpu.Float32, len(net.PrjnGSyns), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Exts.Add("Exts", vgpu.Float32, len(net.Exts), vgpu.Storage, vgpu.ComputeShader)

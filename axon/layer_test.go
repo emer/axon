@@ -38,6 +38,7 @@ func TestLayer(t *testing.T) {
 	assert.Equal(t, []int{2, 2}, tensor.Shape.Shp)
 }
 
+/*
 func TestLayer_SendSpike(t *testing.T) {
 	t.Skip("skipping -- needs reorg to recv based")
 	net := NewNetwork("LayerTest")
@@ -48,10 +49,10 @@ func TestLayer_SendSpike(t *testing.T) {
 	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), emer.Forward)
 	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), emer.Forward)
 
-	/*
-	 * Input1 -> Output
-	 * Input2 -^
-	 */
+
+	// Input1 -> Output
+	// Input2 -^
+
 
 	assert.NoError(t, net.Build())
 	net.Defaults()
@@ -105,6 +106,7 @@ func TestLayer_SendSpike(t *testing.T) {
 	assert.Equal(t, l1contrib, recvBuffs[0][0*delayStride+(delayStride-1)])
 	assert.Equal(t, l2contrib, recvBuffs[1][4*delayStride+(delayStride-1)])
 }
+*/
 
 func TestLayerToJson(t *testing.T) {
 	shape := []int{2, 2}
