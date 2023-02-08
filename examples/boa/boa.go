@@ -879,7 +879,8 @@ func (ss *Sim) ConfigLogs() {
 	// ss.ConfigActRFs()
 
 	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), layers, etime.Epoch, etime.Trial)
+	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Epoch, etime.Trial)
+	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
 
 	// todo: PCA items should apply to CT layers too -- pass a type here.
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)

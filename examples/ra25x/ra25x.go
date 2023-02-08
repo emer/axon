@@ -469,7 +469,9 @@ func (ss *Sim) ConfigLogs() {
 	ss.ConfigLogItems()
 
 	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), layers, etime.Epoch, etime.Trial)
+	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Epoch, etime.Trial)
+	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
+
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)

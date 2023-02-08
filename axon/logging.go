@@ -46,7 +46,7 @@ func PCAStats(net *Network, lg *elog.Logs, stats *estats.Stats) {
 // LogAddDiagnosticItems adds standard Axon diagnostic statistics to given logs,
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
-func LogAddDiagnosticItems(lg *elog.Logs, net *Network, layerNames []string, times ...etime.Times) {
+func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Times) {
 	for _, lnm := range layerNames {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
@@ -97,9 +97,11 @@ func LogAddDiagnosticItems(lg *elog.Logs, net *Network, layerNames []string, tim
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 	}
+}
 
+func LogInputLayer(lg *elog.Logs, net *Network) {
 	// input layer average activity -- important for tuning
-	layerNames = net.LayersByType(InputLayer)
+	layerNames := net.LayersByType(InputLayer)
 	for _, lnm := range layerNames {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
