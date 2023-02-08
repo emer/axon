@@ -275,6 +275,20 @@ func (gp *GPU) CopyNeuronsToGPU(ctx *Context, net *Network) {
 	neurv.CopyFromBytes(unsafe.Pointer(&net.Neurons[0]))
 }
 
+func (gp *GPU) CopyStateToGPU(ctx *Context, net *Network) {
+	_, poolv, _ := gp.Structs.ValByIdxTry("Pools", 0)
+	poolv.CopyFromBytes(unsafe.Pointer(&net.Pools[0]))
+
+	_, layv, _ := gp.Structs.ValByIdxTry("LayVals", 0)
+	layv.CopyFromBytes(unsafe.Pointer(&net.LayVals[0]))
+
+	_, synv, _ := gp.Structs.ValByIdxTry("Synapses", 0)
+	synv.CopyFromBytes(unsafe.Pointer(&net.Synapses[0]))
+}
+
+////////////////////////////////////
+// 	Copy From
+
 func (gp *GPU) CopyNeuronsFromGPU(ctx *Context, net *Network) {
 	if !gp.On {
 		return
@@ -302,15 +316,22 @@ func (gp *GPU) CopyLayerValsFromGPU(ctx *Context, net *Network) {
 	layv.CopyToBytes(unsafe.Pointer(&net.LayVals[0]))
 }
 
-func (gp *GPU) CopyStateToGPU(ctx *Context, net *Network) {
-	_, poolv, _ := gp.Structs.ValByIdxTry("Pools", 0)
-	poolv.CopyFromBytes(unsafe.Pointer(&net.Pools[0]))
+func (gp *GPU) CopyPoolsFromGPU(ctx *Context, net *Network) {
+	if !gp.On {
+		return
+	}
+	gp.Sys.Mem.SyncValIdxFmGPU(gp.Structs.Set, "Pools", 0)
+	_, plv, _ := gp.Structs.ValByIdxTry("Pools", 0)
+	plv.CopyToBytes(unsafe.Pointer(&net.Pools[0]))
+}
 
-	_, layv, _ := gp.Structs.ValByIdxTry("LayVals", 0)
-	layv.CopyFromBytes(unsafe.Pointer(&net.LayVals[0]))
-
-	_, synv, _ := gp.Structs.ValByIdxTry("Synapses", 0)
-	synv.CopyFromBytes(unsafe.Pointer(&net.Synapses[0]))
+func (gp *GPU) CopyStateFromGPU(ctx *Context, net *Network) {
+	if !gp.On {
+		return
+	}
+	gp.CopyNeuronsFromGPU(ctx, net)
+	gp.CopyLayerValsFromGPU(ctx, net)
+	gp.CopyPoolsFromGPU(ctx, net)
 }
 
 func (gp *GPU) SyncMemToGPU() {

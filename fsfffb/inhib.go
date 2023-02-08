@@ -29,9 +29,9 @@ type Inhib struct {
 	GiOrig   float32     `desc:"original value of the inhibition (before pool or other effects)"`
 	LayGi    float32     `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
 
-	FFsRawInt   int32 `view:"-" desc:"int32 atomic add compatible integration of FFsRaw"`
-	FBsRawInt   int32 `view:"-" desc:"int32 atomic add compatible integration of FBsRaw"`
-	GeExtRawInt int32 `view:"-" desc:"int32 atomic add compatible integration of GeExtRaw"`
+	FFsRawInt   int32 `desc:"int32 atomic add compatible integration of FFsRaw"`
+	FBsRawInt   int32 `desc:"int32 atomic add compatible integration of FBsRaw"`
+	GeExtRawInt int32 `desc:"int32 atomic add compatible integration of GeExtRaw"`
 
 	pad, pad1 float32
 }
