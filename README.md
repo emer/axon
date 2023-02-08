@@ -131,6 +131,8 @@ Inhibition is provided in the neocortex primarily by the fast-spiking parvalbumi
 
 Thus, we are now using the [FS-FFFB](fsfffb) *fast & slow* FFFB function that more explicitly captures the contributions of the PV+ and SST+ interneurons, and is based directly on FF and FB spikes, without requiring access to the internal Ge and Act rate-code variables in each neuron.  See above link for more info.  This function works even better overall than the original FFFB, in addition to providing a much more direct mapping onto the underlying biology.
 
+While most layers and models use the FS-FFFB approximation, Axon does support explicit modelling of inhibitory neurons by using the `emer.Inhib` value of `emer.PrjnType`.
+
 See the `examples/inhib` model (from the CCN textbook originally) for an exploration of the basic excitatory and inhibitory dynamics in these models, comparing interneurons with FS-FFFB.
 
 ## Kinase-based, Trace-enabled Error-backpropagation Learning
@@ -236,8 +238,7 @@ Metaphorically, various forms of equalizing taxation and wealth redistribution a
 
 3. **Zero-sum weight changes:** In some cases it can also be useful to constrain the faster error-driven weight changes to be zero-sum, which is supported by an optional parameter.  This zero-sum logic was nicely articulated by [Schraudolph (1998)](#references), and is implemented in the widely-used ResNet models.
 
-4. **Soft bounding and contrast enhancement:** To keep individual weight magnitudes bounded, we use a standard exponential-approach "soft bounding" dynamic (increases are multiplied by $1-w$; decreases by $w$).  In addition, as developed in the Leabra model, it is useful to add a *contrast enhancement* mechanism to counteract the compressive effects of this soft bounding, so that effective weights span the full range of weight values.
-TODO: what is $w$?
+4. **Soft bounding and contrast enhancement:** To keep individual weight magnitudes bounded, we use a standard exponential-approach "soft bounding" dynamic (increases are multiplied by $1 - \text{weight}$; decreases by $\text{weight}$).  In addition, as developed in the Leabra model, it is useful to add a *contrast enhancement* mechanism to counteract the compressive effects of this soft bounding, so that effective weights span the full range of weight values.
 
 # Axon Algorithm Equations
 
@@ -267,7 +268,7 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 * `Target` = target value: drives learning to produce this activation value in a supervised learning task.
 * `GeSyn` = time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in `GeRaw`) and exponential decay with `Dt.GeTau`, aggregated over projections -- does *not* include `Gbar.E`.
 * `Ge` = total excitatory conductance, including all forms of excitation (e.g., NMDA) -- does *not* include `Gbar.E`.
-* `GiSyn` = time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in `GiRaw`) and exponential decay with `Dt.GiTau`, aggregated over projections -- does *not* include `Gbar.I`.  This is added with computed FFFB inhibition to get the full inhibition in `Gi`. TODO: I thought you said there are no inhibitory neurons, so I don't see how this fits in.
+* `GiSyn` = time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in `GiRaw`) and exponential decay with `Dt.GiTau`, aggregated over projections -- does *not* include `Gbar.I`.  This is added with computed FFFB inhibition to get the full inhibition in `Gi`.
 * `Gi` = total inhibitory synaptic conductance -- the net inhibitory input to the neuron -- does *not* include `Gbar.I`.
 * `Gk` = total potassium conductance, typically reflecting sodium-gated potassium currents involved in adaptation effects -- does *not* include `Gbar.K`.
 * `Inet` = net current produced by all channels -- drives update of `Vm`.
