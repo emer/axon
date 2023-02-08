@@ -210,7 +210,7 @@ By adopting the above form of error gradient term, we can now also adopt this tr
 
 $$ \text{Credit} = \langle x y \rangle_t y' $$
 
-where the angle-bracket expression indicates an exponentially smoothed sender and receiver activation product over time.
+where the angle-bracket expression indicates an exponentially weighted moving average (EWMA) of the sender and receiver activation product.
 
 The most computationally-effective form of learning goes one step further in computing this credit-assignment trace factor, by integrating spike-driven activity traces (representing calcium currents) within a given theta cycle of activity, in addition to integrating across multiple such theta-cycle "trials" of activity for the eligibility trace.  This is significantly more computationally-expensive, as it requires synapse-level integration of the calcium currents on the millisecond-level timescale (a highly optimized form of computation is used so updates occur only at the time of spiking, resulting in a roughly 2x increase in computational cost overall).
 
@@ -274,15 +274,15 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 * `Inet` = net current produced by all channels -- drives update of `Vm`.
 * `Vm` = membrane potential -- integrates `Inet` current over time.
 * `VmDend` = dendritic membrane potential. Has a slower time constant than `Vm`, is not subject to the `VmR` reset after spiking. See [Temporal and Spatial Dynamics of Dendritic Integration](#temporal-and-spatial-dynamics-of-dendritic-integration-dendritic-integ).
-* `CaSyn` = spike-driven calcium trace for synapse-level Ca-driven learning: exponentially smoothed `SpikeG * Spike` with smoothing factor `1/SynTau` (typically 1/30).  Synapses smooth `send.CaSyn * recv.CaSyn` with M, P, D smoothing factors for the synaptic trace driving credit assignment in learning. Smoothing factors reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
-* `CaSpkM` = spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on exponentially smoothed `SpikeG * Spike` with smoothing factor `1/MTau` (typically 1/5).  Simulates a calmodulin (CaM) like signal at the most abstract level.
-* `CaSpkP` = exponentially smoothed `CaSpkM` with smoothing factor `1/PTau` (typically 1/40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of `Act`.
-* `CaSpkD` = exponentially smoothed `CaSpkP` with smoothing factor `1/DTau` (typically 1/40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of `Act`.
+* `CaSyn` = spike-driven calcium trace for synapse-level Ca-driven learning: EWMA of `SpikeG * Spike` with smoothing factor `1/SynTau` (typically 1/30).  Synapses smooth `send.CaSyn * recv.CaSyn` with M, P, D smoothing factors for the synaptic trace driving credit assignment in learning. Smoothing factors reflects binding time of Glu to NMDA and Ca buffering postsynaptically, and determines time window where pre * post spiking must overlap to drive learning.
+* `CaSpkM` = spike-driven calcium trace used as a neuron-level proxy for synpatic credit assignment factor based on EWMA of `SpikeG * Spike` with smoothing factor `1/MTau` (typically 1/5).  Simulates a calmodulin (CaM) like signal at the most abstract level.
+* `CaSpkP` = EWMA of `CaSpkM` with smoothing factor `1/PTau` (typically 1/40), representing neuron-level purely spiking version of plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of `Act`.
+* `CaSpkD` = EWMA of `CaSpkP` with smoothing factor `1/DTau` (typically 1/40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of `Act`.
 * `CaSpkPM` = minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.
 * `CaLrn` = recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (`NmdaCa`) and spiking-driven VGCC (`VgccCaInt`) calcium sources (vs. `CaSpk*` which only reflects spiking component).  This is integrated into `CaM`, `CaP`, `CaD`, and temporal derivative is `CaP - CaD` (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but the VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially smoothed over longer multi-trial timescales.
-* `CaM` = exponentially smoothed `CaLrn` with smoothing factor `1/MTau` (typically 1/5), simulating a calmodulin (`CaM`) like signal, which then drives `CaP`, `CaD` for delta signal driving error-driven learning.
-* `CaP` = exponentially smoothed `CaM` with smoothing factor `1/PTau` (typically 1/40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.
-* `CaD` = exponentially smoothed `CaP` with smoothing factor `1/DTau` (typically 1/40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.
+* `CaM` = EWMA of `CaLrn` with smoothing factor `1/MTau` (typically 1/5), simulating a calmodulin (`CaM`) like signal, which then drives `CaP`, `CaD` for delta signal driving error-driven learning.
+* `CaP` = EWMA of `CaM` with smoothing factor `1/PTau` (typically 1/40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.
+* `CaD` = EWMA of `CaP` with smoothing factor `1/DTau` (typically 1/40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.
 * `CaDiff` = difference `CaP - CaD `-- this is the error signal that drives error-driven learning.
 * `SpkMaxCa` = Ca smoothed like `CaSpkP` but only starting at `MaxCycStart` cycle, to prevent inclusion of carryover spiking from prior theta cycle trial -- the `PTau` time constant otherwise results in significant carryover.
 * `SpkMax` = maximum `CaSpkP` across one theta cycle time window -- used for specialized algorithms that have more phasic behavior within a single trial, e.g., basal ganglia matrix layer gating.  Also useful for visualization of peak activity of neurons.
@@ -290,7 +290,7 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 * `SpkSt1` = the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by `SpkSt1()` function.  Used for example in hippocampus for CA3, CA1 learning.
 * `SpkSt2` = the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by `SpkSt2()` function.  Used for example in hippocampus for CA3, CA1 learning.
 * `RLRate` = recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the `CaSpkD` of recv unit, and the normalized difference `(CaSpkP - CaSpkD) / Max(CaSpkP - CaSpkD)`.
-* `ActAvg` = exponentially smoothed activation (of minus phase activation state) over long time intervals (smoothing factor = `1/Dt.LongAvgTau`) -- useful for finding hog units and seeing overall distribution of activation.
+* `ActAvg` = EWMA of activation (of minus phase activation state) over long time intervals (smoothing factor = `1/Dt.LongAvgTau`) -- useful for finding hog units and seeing overall distribution of activation.
 * `AvgPct`= `ActAvg` as a proportion of overall layer activation -- this is used for synaptic scaling to match `TrgAvg` activation -- updated at `SlowInterval` intervals
 * `TrgAvg` = neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to `AvgPct`.
 * `DTrgAvg` = change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
@@ -357,9 +357,9 @@ Neurons are connected via synapses parameterized with the following variables, c
 * `DWt` = change in synaptic weight, from learning -- updates `LWt` which then updates `Wt`.
 * `DSWt` = change in `SWt` slow synaptic weight -- accumulates `DWt`
 * `Ca` = Raw calcium singal for Kinase learning: `SpikeG * (send.CaSyn * recv.CaSyn)`
-* `CaM` = first stage exponentially smothed Ca calcium level (like `CaM` = calmodulin), feeds into `CaP`
-* `CaP` = shorter timescale exponentially smothed `CaM` value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
-* `CaD` = longer timescale exponentially smothed `CaP` value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
+* `CaM` = first stage EWMA of Ca calcium level (like `CaM` = calmodulin), feeds into `CaP`
+* `CaP` = shorter timescale EWMA of `CaM` value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
+* `CaD` = longer timescale EWMA of `CaP` value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
 * `Tr` = trace of synaptic activity over time -- used for credit assignment in learning.
 
 ## Activation Update Cycle (every 1 msec): Ge, Gi, Vm, Spike
@@ -497,7 +497,7 @@ The core Ca calcium value that drives the *trace - kinase* learning rule is stor
 
 Where `Norm` (80) renormalizes the concentration-based factors to a range that works well for learning.
 
-In larger networks, directly using the calcium flux from the `VGCC` channel (`VgccCa`) works well, but in smaller networks it typically works better to use a simpler approximation to the VGCC Ca that purely reflects spiking rate and not the other voltage-related factors that affect Ca in the actual channels.  In either case, `VgccCa` is exponentially smoothed with a factor reflecting buffering and diffusion of these highly transient Ca signals driven by spiking:
+In larger networks, directly using the calcium flux from the `VGCC` channel (`VgccCa`) works well, but in smaller networks it typically works better to use a simpler approximation to the VGCC Ca that purely reflects spiking rate and not the other voltage-related factors that affect Ca in the actual channels.  In either case, `VgccCa` is EWMA of with a factor reflecting buffering and diffusion of these highly transient Ca signals driven by spiking:
 
 ```Go
     if SpkVGCC {
@@ -615,7 +615,7 @@ First, when the network is initialized, a `TrgAvg` value is assigned to each neu
 * `TrgAvg += DTrgAvg - AVG(DTrgAvg)   // zero-sum`
 
 
-After every Trial, the neuron's actual average activation `ActAvg` is updated in an exponentially smoothed manner:
+After every Trial, the neuron's actual average activation `ActAvg` is updated in an EWMA of manner:
 * `ActAvg += (ActM - ActAvg) / LongAvgTau   //  LongAvgTau = 20 trials`
 
 Then, in SlowAdapt, the `ActAvg` values are normalized into a proportion relative to the averages within the Pool a neuron belongs to, and the difference between this and the `TrgAvg` recorded:
