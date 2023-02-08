@@ -76,7 +76,7 @@ func (tm *Context) CycleInc() {
 	tm.Cycle++
 	tm.CycleTot++
 	tm.Time += tm.TimePerCyc
-	tm.RandCtr.Add(tm.RandsPerCyc)
+	tm.RandCtr.Add(uint32(RandFunIdxN))
 }
 
 //gosl: end time

@@ -9,8 +9,6 @@ import (
 	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gosl/slbool"
-	"github.com/goki/gosl/slrand"
-	"github.com/goki/gosl/sltype"
 	"github.com/goki/mat32"
 )
 
@@ -327,8 +325,8 @@ func (an *SpikeNoiseParams) Defaults() {
 
 // PGe updates the GeNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Ge from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGe(p *float32, ni uint32, randctr *sltype.Uint2) float32 {
-	*p *= slrand.Float(randctr, uint32(ni))
+func (an *SpikeNoiseParams) PGe(ctx *Context, p *float32, ni uint32) float32 {
+	*p *= GetRandomNumber(ni, ctx.RandCtr, RandFunActPGe)
 	if *p <= an.GeExpInt {
 		*p = 1
 		return an.Ge
@@ -338,8 +336,8 @@ func (an *SpikeNoiseParams) PGe(p *float32, ni uint32, randctr *sltype.Uint2) fl
 
 // PGi updates the GiNoiseP probability, multiplying a uniform random number [0-1]
 // and returns Gi from spiking if a spike is triggered
-func (an *SpikeNoiseParams) PGi(p *float32, ni uint32, randctr *sltype.Uint2) float32 {
-	*p *= slrand.Float(randctr, uint32(ni))
+func (an *SpikeNoiseParams) PGi(ctx *Context, p *float32, ni uint32) float32 {
+	*p *= GetRandomNumber(ni, ctx.RandCtr, RandFunActPGi)
 	if *p <= an.GiExpInt {
 		*p = 1
 		return an.Gi
@@ -694,7 +692,7 @@ func (ac *ActParams) GSkCaFmCa(nrn *Neuron) {
 
 // GeFmSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
-func (ac *ActParams) GeFmSyn(ni uint32, nrn *Neuron, geSyn, geExt float32, randctr *sltype.Uint2) {
+func (ac *ActParams) GeFmSyn(ctx *Context, ni uint32, nrn *Neuron, geSyn, geExt float32) {
 	nrn.GeExt = 0
 	if ac.Clamp.Add.IsTrue() && nrn.HasFlag(NeuronHasExt) {
 		nrn.GeExt = nrn.Ext * ac.Clamp.Ge
@@ -712,32 +710,32 @@ func (ac *ActParams) GeFmSyn(ni uint32, nrn *Neuron, geSyn, geExt float32, randc
 	if nrn.Ge < 0 {
 		nrn.Ge = 0
 	}
-	ac.GeNoise(ni, nrn, randctr)
+	ac.GeNoise(ctx, ni, nrn)
 }
 
 // GeNoise updates nrn.GeNoise if active
-func (ac *ActParams) GeNoise(ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
+func (ac *ActParams) GeNoise(ctx *Context, ni uint32, nrn *Neuron) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Ge == 0 {
 		return
 	}
-	ge := ac.Noise.PGe(&nrn.GeNoiseP, ni, randctr)
+	ge := ac.Noise.PGe(ctx, &nrn.GeNoiseP, ni)
 	nrn.GeNoise = ac.Dt.GeSynFmRaw(nrn.GeNoise, ge)
 	nrn.Ge += nrn.GeNoise
 }
 
 // GiNoise updates nrn.GiNoise if active
-func (ac *ActParams) GiNoise(ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
+func (ac *ActParams) GiNoise(ctx *Context, ni uint32, nrn *Neuron) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Gi == 0 {
 		return
 	}
-	gi := ac.Noise.PGi(&nrn.GiNoiseP, ni, randctr)
+	gi := ac.Noise.PGi(ctx, &nrn.GiNoiseP, ni)
 	nrn.GiNoise = ac.Dt.GiSynFmRaw(nrn.GiNoise, gi)
 }
 
 // GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
-func (ac *ActParams) GiFmSyn(ni uint32, nrn *Neuron, giSyn float32, randctr *sltype.Uint2) float32 {
-	ac.GiNoise(ni, nrn, randctr)
+func (ac *ActParams) GiFmSyn(ctx *Context, ni uint32, nrn *Neuron, giSyn float32) float32 {
+	ac.GiNoise(ctx, ni, nrn)
 	if giSyn < 0 { // negative inhib G doesn't make any sense
 		giSyn = 0
 	}

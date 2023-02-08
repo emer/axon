@@ -7,7 +7,6 @@ package axon
 import (
 	"github.com/emer/emergent/emer"
 	"github.com/emer/etable/etensor"
-	"github.com/goki/gosl/sltype"
 )
 
 // AxonNetwork defines the essential algorithmic API for Axon, at the network level.
@@ -171,7 +170,7 @@ type AxonLayer interface {
 
 	// GInteg integrates conductances G over time (Ge, NMDA, etc).
 	// reads pool Gi values.
-	GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, randctr *sltype.Uint2)
+	GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals)
 
 	// SpikeFmG computes Vm from Ge, Gi, Gl conductances and then Spike from that
 	SpikeFmG(ctx *Context, ni uint32, nrn *Neuron)
