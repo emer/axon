@@ -201,7 +201,7 @@ func (ss *Sim) NeuronUpdt(sSpk, rSpk bool, ge, gi float32) {
 		rn.RCa = ly.Params.Learn.NeurCa.CaNorm(rn.RCa) // NOTE: RCa update from spike is 1 cycle behind Snmda
 	} else {
 		rn.GeRaw = ge
-		ac.Dt.GeSynFmRaw(rn.GeRaw, &rn.GeSyn, ac.Init.Ge)
+		ac.Dt.GeSynFmRaw(rn.GeRaw, &rn.GeSyn, ac.Init.GeBase)
 		rn.Ge = rn.GeSyn
 		rn.Gi = gi
 		ac.NMDAFmRaw(rn, 0)

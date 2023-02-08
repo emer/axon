@@ -127,12 +127,12 @@ func (dp *DendParams) Update() {
 // ActInitParams are initial values for key network state variables.
 // Initialized in InitActs called by InitWts, and provides target values for DecayState.
 type ActInitParams struct {
-	Vm    float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
-	Act   float32 `def:"0" desc:"initial activation value -- typically 0"`
-	Ge    float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
-	Gi    float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
-	GeVar float32 `def:"0" desc:"variance (sigma) of gaussian distribution around baseline Ge values, per unit, to establish variability in intrinsic excitability.  value never goes < 0"`
-	GiVar float32 `def:"0" desc:"variance (sigma) of gaussian distribution around baseline Gi values, per unit, to establish variability in intrinsic excitability.  value never goes < 0"`
+	Vm     float32 `def:"0.3" desc:"initial membrane potential -- see Erev.L for the resting potential (typically .3)"`
+	Act    float32 `def:"0" desc:"initial activation value -- typically 0"`
+	GeBase float32 `def:"0" desc:"baseline level of excitatory conductance (net input) -- Ge is initialized to this value, and it is added in as a constant background level of excitatory input -- captures all the other inputs not represented in the model, and intrinsic excitability, etc"`
+	GiBase float32 `def:"0" desc:"baseline level of inhibitory conductance (net input) -- Gi is initialized to this value, and it is added in as a constant background level of inhibitory input -- captures all the other inputs not represented in the model"`
+	GeVar  float32 `def:"0" desc:"variance (sigma) of gaussian distribution around baseline Ge values, per unit, to establish variability in intrinsic excitability.  value never goes < 0"`
+	GiVar  float32 `def:"0" desc:"variance (sigma) of gaussian distribution around baseline Gi values, per unit, to establish variability in intrinsic excitability.  value never goes < 0"`
 
 	pad, pad1 int32
 }
@@ -143,8 +143,8 @@ func (ai *ActInitParams) Update() {
 func (ai *ActInitParams) Defaults() {
 	ai.Vm = 0.3
 	ai.Act = 0
-	ai.Ge = 0
-	ai.Gi = 0
+	ai.GeBase = 0
+	ai.GiBase = 0
 	ai.GeVar = 0
 	ai.GiVar = 0
 }
@@ -152,8 +152,8 @@ func (ai *ActInitParams) Defaults() {
 //gosl: end act
 
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
-func (ai *ActInitParams) GeBase() float32 {
-	ge := ai.Ge
+func (ai *ActInitParams) GetGeBase() float32 {
+	ge := ai.GeBase
 	if ai.GeVar > 0 {
 		ge += float32(erand.Gauss(float64(ai.GeVar), -1))
 		if ge < 0 {
@@ -164,8 +164,8 @@ func (ai *ActInitParams) GeBase() float32 {
 }
 
 // GiBase returns the baseline Gi value: Gi + rand(GiVar) > 0
-func (ai *ActInitParams) GiBase() float32 {
-	gi := ai.Gi
+func (ai *ActInitParams) GetGiBase() float32 {
+	gi := ai.GiBase
 	if ai.GiVar > 0 {
 		gi += float32(erand.Gauss(float64(ai.GiVar), -1))
 		if gi < 0 {
@@ -558,8 +558,8 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.ISIAvg = -1
 	nrn.Act = ac.Init.Act
 	nrn.ActInt = ac.Init.Act
-	nrn.GeBase = ac.Init.GeBase()
-	nrn.GiBase = ac.Init.GiBase()
+	nrn.GeBase = ac.Init.GetGeBase()
+	nrn.GiBase = ac.Init.GetGiBase()
 	nrn.GeSyn = nrn.GeBase
 	nrn.Ge = nrn.GeBase
 	nrn.Gi = nrn.GiBase

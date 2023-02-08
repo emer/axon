@@ -239,7 +239,7 @@ func (ly *Layer) MatrixPostBuild() {
 
 func (ly *Layer) GPDefaults() {
 	// GP is tonically self-active and has no FFFB inhibition
-	ly.Params.Act.Init.Ge = 0.3
+	ly.Params.Act.Init.GeBase = 0.3
 	ly.Params.Act.Init.GeVar = 0.1
 	ly.Params.Act.Init.GiVar = 0.1
 	ly.Params.Act.Decay.Act = 0
@@ -288,7 +288,7 @@ func (ly *Layer) GPDefaults() {
 }
 
 func (ly *Layer) GPiDefaults() {
-	ly.Params.Act.Init.Ge = 0.6
+	ly.Params.Act.Init.GeBase = 0.6
 	// note: GPLayer took care of STN input prjns
 
 	for _, pji := range ly.RcvPrjns {
@@ -350,7 +350,7 @@ func (ly *Layer) STNDefaults() {
 	} else {
 		ly.Params.Act.SKCa.CaD.SetBool(true)
 		ly.Params.Act.SKCa.CaScale = 3
-		ly.Params.Act.Init.Ge = 0.2
+		ly.Params.Act.Init.GeBase = 0.2
 		ly.Params.Act.Init.GeVar = 0.2
 	}
 
