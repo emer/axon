@@ -6,8 +6,6 @@ package axon
 
 import (
 	"encoding/json"
-
-	"github.com/goki/gosl/sltype"
 )
 
 //gosl: hlsl layerparams
@@ -301,7 +299,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveV
 // GFmRawSyn computes overall Ge and GiSyn conductances for neuron
 // from GeRaw and GeSyn values, including NMDA, VGCC, AMPA, and GABA-A channels.
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *sltype.Uint2) {
+func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	extraRaw := float32(0)
 	extraSyn := float32(0)
 	if ly.LayType == PTMaintLayer {
@@ -335,10 +333,10 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron, randctr *
 	ly.Act.NMDAFmRaw(nrn, geRaw+extraRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc+extraSyn, randctr) // sets nrn.GeExt too
+	ly.Act.GeFmSyn(ctx, ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc+extraSyn) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	ly.Act.GSkCaFmCa(nrn)
-	nrn.GiSyn = ly.Act.GiFmSyn(ni, nrn, nrn.GiSyn, randctr)
+	nrn.GiSyn = ly.Act.GiFmSyn(ctx, ni, nrn, nrn.GiSyn)
 }
 
 // GiInteg adds Gi values from all sources including SubPool computed inhib

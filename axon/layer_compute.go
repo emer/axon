@@ -8,7 +8,6 @@ import (
 	"log"
 
 	"github.com/emer/etable/minmax"
-	"github.com/goki/gosl/sltype"
 	"github.com/goki/mat32"
 )
 
@@ -125,7 +124,7 @@ func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls SpecialGFmRawSyn, GiInteg
-func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, randctr *sltype.Uint2) {
+func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals) {
 	drvGe := float32(0)
 	nonDrvPct := float32(0)
 	if ly.LayerType() == PulvinarLayer {
@@ -134,7 +133,7 @@ func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *La
 
 	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct)
 
-	ly.Params.GFmRawSyn(ctx, ni, nrn, randctr)
+	ly.Params.GFmRawSyn(ctx, ni, nrn)
 	ly.Params.GiInteg(ctx, ni, nrn, pl, vals)
 	ly.Params.GNeuroMod(ctx, ni, nrn, vals)
 
@@ -148,8 +147,7 @@ func (ly *Layer) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
-	randctr := ctx.RandCtr.Uint2() // use local var so updates are local
-	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals, &randctr)
+	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals)
 	ly.AxonLay.SpikeFmG(ctx, ni, nrn)
 }
 

@@ -36,9 +36,9 @@ type Context struct {
 	Time        float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	Testing     slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCyc  float32     `def:"0.001" desc:"amount of time to increment per cycle"`
-	RandsPerCyc uint32      `def:"2" desc:"maximum number of random numbers used per cycle, if noise is active -- we always just increase the random counter by this amount to maintain consistency"`
 
-	pad int32
+	pad  int32
+	pad1 int32
 
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
@@ -47,7 +47,6 @@ type Context struct {
 // Defaults sets default values
 func (tm *Context) Defaults() {
 	tm.TimePerCyc = 0.001
-	tm.RandsPerCyc = 2
 	tm.ThetaCycles = 200
 }
 
@@ -76,7 +75,7 @@ func (tm *Context) CycleInc() {
 	tm.Cycle++
 	tm.CycleTot++
 	tm.Time += tm.TimePerCyc
-	tm.RandCtr.Add(tm.RandsPerCyc)
+	tm.RandCtr.Add(uint32(RandFunIdxN))
 }
 
 //gosl: end time
