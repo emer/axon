@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 // performs the SynCa synaptic Ca integration function on all sending projections
+// NOTE: we are NOT using this as it is significantly slower than Send, Recv versions.
 
 #include "context.hlsl"
 #include "layerparams.hlsl"

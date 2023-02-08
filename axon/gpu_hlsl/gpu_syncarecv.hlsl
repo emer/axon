@@ -54,7 +54,7 @@ void SynCaRecvPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni,
 void SynCaRecv2(in Context ctx, in LayerParams ly, uint nin, in Neuron rn) {
 	float updtThr = ly.Learn.CaLrn.UpdtThr;
 
-	if (rn.CaSpkP < updtThr && rn.CaSpkD < updtThr) {
+	if ((rn.CaSpkP < updtThr) && (rn.CaSpkD < updtThr)) {
 		return;
 	}
 	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go

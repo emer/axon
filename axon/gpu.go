@@ -207,7 +207,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewSemaphore("PoolGi")
 	gp.Sys.NewSemaphore("Cycle")
 	gp.Sys.NewSemaphore("SendSpike")
-	gp.Sys.NewSemaphore("SynCaRecv")
+	gp.Sys.NewSemaphore("SynCaSend")
 	gp.Sys.NewFence("Cycle")
 
 	gp.Sys.Config()
@@ -384,10 +384,9 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 		gp.RunPipeline(net, "SendSpike", len(net.Neurons), "Cycle", "CycleEnd", "Cycle")
 	} else {
 		gp.RunPipeline(net, "SendSpike", len(net.Neurons), "Cycle", "SendSpike", "")
-		// todo: test in larger networks!
-		// gp.RunPipeline(net, "SynCa", len(net.Synapses), "SendSpike", "CycleEnd", "Cycle")
-		gp.RunPipeline(net, "SynCaRecv", len(net.Neurons), "SendSpike", "SynCaRecv", "") // recv first as faster
-		gp.RunPipeline(net, "SynCaSend", len(net.Neurons), "SynCaRecv", "CycleEnd", "Cycle")
+		// gp.RunPipeline(net, "SynCa", len(net.Synapses), "SendSpike", "CycleEnd", "Cycle") // definitely slower!!
+		gp.RunPipeline(net, "SynCaSend", len(net.Neurons), "SendSpike", "SynCaSend", "") // use send first b/c just did SendSpike -- tiny bit faster
+		gp.RunPipeline(net, "SynCaRecv", len(net.Neurons), "SynCaSend", "CycleEnd", "Cycle")
 	}
 	if net.RecFunTimes {
 		gp.Sys.ComputeWait()

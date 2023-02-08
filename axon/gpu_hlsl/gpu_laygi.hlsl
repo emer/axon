@@ -26,9 +26,14 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
+void LayGi2(in Context ctx, uint li, in LayerParams ly, inout Pool pl, in LayerVals vals) {
+	pl.AvgMax.Calc();
+	pl.Inhib.IntToRaw();
+	ly.LayPoolGiFmSpikes(ctx, pl, vals);
+}
+
 void LayGi(in Context ctx, uint li, in LayerParams ly) {
-	Pools[ly.Idxs.PoolSt].Inhib.IntToRaw();
-	ly.LayPoolGiFmSpikes(ctx, Pools[ly.Idxs.PoolSt], LayVals[li]);
+	LayGi2(ctx, li, ly, Pools[ly.Idxs.PoolSt], LayVals[li]);
 }
 
 [numthreads(64, 1, 1)]

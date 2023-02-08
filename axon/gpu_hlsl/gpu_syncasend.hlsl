@@ -32,7 +32,7 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-void SynCaSendSyn(in Context ctx, in PrjnParams pj, in Synapse sy, float snCaSyn, float updtThr) {
+void SynCaSendSyn(in Context ctx, in PrjnParams pj, inout Synapse sy, float snCaSyn, float updtThr) {
 	pj.SynCaSendSyn(ctx, sy, Neurons[sy.RecvIdx], snCaSyn, updtThr);
 }
 
@@ -54,7 +54,7 @@ void SynCaSendPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni,
 void SynCaSend2(in Context ctx, in LayerParams ly, uint nin, in Neuron sn) {
 	float updtThr = ly.Learn.CaLrn.UpdtThr;
 
-	if (sn.CaSpkP < updtThr && sn.CaSpkD < updtThr) {
+	if ((sn.CaSpkP < updtThr) && (sn.CaSpkD < updtThr)) {
 		return;
 	}
 	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go

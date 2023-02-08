@@ -7,7 +7,7 @@
 
 // calls GeToPool, AvgMax Update on each Pool
 // NOTE: this is receiver-based on Pools and is very slow compared to 
-// the atomic add based code in gpu_gather
+// the atomic add based code in gpu_gather and is NOT being used now
 
 // note: binding is var, set
 

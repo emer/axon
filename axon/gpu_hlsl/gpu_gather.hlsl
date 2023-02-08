@@ -74,11 +74,13 @@ void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint 
 	GSyns[pj.Idxs.GSynSt + ni] = gSyn;	
 }
 
-void NeuronAvgMax(in Context ctx, in LayerParams ly, inout Pool pl, inout Pool lpl, uint ni, in Neuron nrn) {
+void NoOp() {
+}
+
+void NeuronAvgMax(in Context ctx, in LayerParams ly, uint ni, in Neuron nrn) {
 	AtomicInhibRawIncr(Pools[nrn.SubPoolN].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
 	AtomicUpdatePoolAvgMax(Pools[nrn.SubPoolN].AvgMax, nrn);
-	if (pl.IsLayPool == 0) { // also update layer pool
-		AtomicInhibRawIncr(Pools[ly.Idxs.PoolSt].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
+	if (Pools[nrn.SubPoolN].IsLayPool == 0) { // also update layer pool
 		AtomicInhibRawIncr(Pools[ly.Idxs.PoolSt].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
 		AtomicUpdatePoolAvgMax(Pools[ly.Idxs.PoolSt].AvgMax, nrn);
 	}
@@ -93,7 +95,11 @@ void GatherSpikes2(in Context ctx, LayerParams ly, uint nin, inout Neuron nrn) {
 		GatherSpikesPrjn(ctx, Prjns[ly.Idxs.RecvSt + pi], ly, ni, nrn);
 	}
 	
-	NeuronAvgMax(ctx, ly, Pools[nrn.SubPoolN], Pools[ly.Idxs.PoolSt], ni, nrn);
+	// Note: Interlocked* methods can ONLY operate directly on the
+	// RWStructuredBuffer items, not on arg variables.  Furthermore,
+	// if you pass the pools as inout arg values, it dutifully
+	// writes over any changes with the unchanged args on output!
+	NeuronAvgMax(ctx, ly, ni, nrn);
 }
 
 void GatherSpikes(in Context ctx, uint nin, inout Neuron nrn) {

@@ -30,6 +30,7 @@
 
 void PoolGi2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, float giMult) {
 	if(pl.IsLayPool == 0) {
+		pl.AvgMax.Calc();
 		pl.Inhib.IntToRaw();
 		ly.SubPoolGiFmSpikes(ctx, pl, Pools[ly.Idxs.PoolSt], ly.Inhib.Layer.On == 1, giMult);
 	}

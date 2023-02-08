@@ -19,9 +19,9 @@ func init() {
 }
 
 func TestGPUAct(t *testing.T) {
-	// if testing.Short() { // use short to exclude gpu tests in general
-	// 	t.Skip("GPU tests skipped in Short mode -- don't work on CI")
-	// }
+	if testing.Short() { // use short to exclude gpu tests in general
+		t.Skip("GPU tests skipped in Short mode -- don't work on CI")
+	}
 	testNet := newTestNet()
 	testNet.InitExt()
 	inPats := newInPats()
@@ -35,7 +35,7 @@ func TestGPUAct(t *testing.T) {
 	testNet.GPUOnNoGUI(ctx)
 
 	printCycs := false
-	printQtrs := true
+	printQtrs := false
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
 	qtr0HidGes := []float32{0.31093338, 0, 0, 0}
@@ -134,40 +134,37 @@ func TestGPUAct(t *testing.T) {
 				fmt.Printf("=============================\n")
 			}
 
-			if false {
-
-				if pi == 0 && qtr == 0 {
-					cmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
-					cmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
-					cmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
-					cmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
-					cmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
-					cmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
-				}
-				if pi == 0 && qtr == 3 {
-					cmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
-					cmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
-					cmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
-					cmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
-					cmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
-					cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
-				}
-				if pi == 1 && qtr == 0 {
-					cmprFloats(hidActs, p1qtr0HidActs, "p1 qtr 0 hidActs", t)
-					cmprFloats(hidGes, p1qtr0HidGes, "p1 qtr 0 hidGes", t)
-					cmprFloats(hidGis, p1qtr0HidGis, "p1 qtr 0 hidGis", t)
-					cmprFloats(outActs, p1qtr0OutActs, "p1 qtr 0 outActs", t)
-					cmprFloats(outGes, p1qtr0OutGes, "p1 qtr 0 outGes", t)
-					cmprFloats(outGis, p1qtr0OutGis, "p1 qtr 0 outGis", t)
-				}
-				if pi == 1 && qtr == 3 {
-					cmprFloats(hidActs, p1qtr3HidActs, "p1 qtr 3 hidActs", t)
-					cmprFloats(hidGes, p1qtr3HidGes, "p1 qtr 3 hidGes", t)
-					cmprFloats(hidGis, p1qtr3HidGis, "p1 qtr 3 hidGis", t)
-					cmprFloats(outActs, p1qtr3OutActs, "p1 qtr 3 outActs", t)
-					cmprFloats(outGes, p1qtr3OutGes, "p1 qtr 3 outGes", t)
-					cmprFloats(outGis, p1qtr3OutGis, "p1 qtr 3 outGis", t)
-				}
+			if pi == 0 && qtr == 0 {
+				cmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
+				cmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
+				cmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
+				cmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
+				cmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
+				cmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
+			}
+			if pi == 0 && qtr == 3 {
+				cmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
+				cmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
+				cmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
+				cmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
+				cmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
+				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
+			}
+			if pi == 1 && qtr == 0 {
+				cmprFloats(hidActs, p1qtr0HidActs, "p1 qtr 0 hidActs", t)
+				cmprFloats(hidGes, p1qtr0HidGes, "p1 qtr 0 hidGes", t)
+				cmprFloats(hidGis, p1qtr0HidGis, "p1 qtr 0 hidGis", t)
+				cmprFloats(outActs, p1qtr0OutActs, "p1 qtr 0 outActs", t)
+				cmprFloats(outGes, p1qtr0OutGes, "p1 qtr 0 outGes", t)
+				cmprFloats(outGis, p1qtr0OutGis, "p1 qtr 0 outGis", t)
+			}
+			if pi == 1 && qtr == 3 {
+				cmprFloats(hidActs, p1qtr3HidActs, "p1 qtr 3 hidActs", t)
+				cmprFloats(hidGes, p1qtr3HidGes, "p1 qtr 3 hidGes", t)
+				cmprFloats(hidGis, p1qtr3HidGis, "p1 qtr 3 hidGis", t)
+				cmprFloats(outActs, p1qtr3OutActs, "p1 qtr 3 outActs", t)
+				cmprFloats(outGes, p1qtr3OutGes, "p1 qtr 3 outGes", t)
+				cmprFloats(outGis, p1qtr3OutGis, "p1 qtr 3 outGis", t)
 			}
 		}
 		testNet.PlusPhase(ctx)
@@ -351,7 +348,7 @@ func TestGPULearn(t *testing.T) {
 	testNet.GPU.Destroy()
 }
 
-func TestGPULearnRLRate(t *testing.T) {
+func TestGPURLRate(t *testing.T) {
 	if testing.Short() { // use short to exclude gpu tests in general
 		t.Skip("GPU tests skipped in Short mode -- don't work on CI")
 	}
