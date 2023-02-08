@@ -6,6 +6,8 @@
 #include "layerparams.hlsl"
 
 // calls GeToPool, AvgMax Update on each Pool
+// NOTE: this is receiver-based on Pools and is very slow compared to 
+// the atomic add based code in gpu_gather
 
 // note: binding is var, set
 
@@ -22,15 +24,15 @@
 [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 // [[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-// [[vk::binding(5, 2)]] RWStructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+// [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 // [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
 void PoolGeMaxNeuron(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, inout Pool pl) {
-	ly.GeToPool(ctx, ni, nrn, pl);
-	pl.AvgMax.UpdateVals(nrn, int(ni));
+	pl.Inhib.RawIncr(nrn.Spike, nrn.GeRaw, nrn.GeExt);
+	pl.AvgMax.UpdateVals(nrn);
 }
 
 void PoolGeMax2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, in LayerVals vals) {
@@ -38,7 +40,7 @@ void PoolGeMax2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, in La
 	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
 		PoolGeMaxNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], pl);
 	}
-	pl.AvgMax.CalcAvg();
+	pl.AvgMax.Calc();
 	if (pl.IsLayPool == 1) { // must do layer-level first in this round, then used in next round
 		ly.LayPoolGiFmSpikes(ctx, pl, vals);
 	}

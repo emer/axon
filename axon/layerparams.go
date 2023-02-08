@@ -245,13 +245,6 @@ func (ly *LayerParams) ApplyExtVal(ni uint32, nrn *Neuron, val float32) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle methods
 
-// GeToPool adds Spike, GeRaw and GeExt from each neuron into the given Pool
-func (ly *LayerParams) GeToPool(ctx *Context, ni uint32, nrn *Neuron, pl *Pool) {
-	pl.Inhib.FBsRaw += nrn.Spike
-	pl.Inhib.FFsRaw += nrn.GeRaw
-	pl.Inhib.GeExtRaw += nrn.GeExt // note: from previous cycle..
-}
-
 // LayPoolGiFmSpikes computes inhibition Gi from Spikes for layer-level pool.
 // Also grabs updated Context NeuroMod values into LayerVals
 func (ly *LayerParams) LayPoolGiFmSpikes(ctx *Context, lpl *Pool, vals *LayerVals) {

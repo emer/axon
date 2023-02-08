@@ -22,7 +22,7 @@
 [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 // [[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-// [[vk::binding(5, 2)]] RWStructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+// [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 // [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
@@ -30,6 +30,7 @@
 
 void PoolGi2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, float giMult) {
 	if(pl.IsLayPool == 0) {
+		pl.Inhib.IntToRaw();
 		ly.SubPoolGiFmSpikes(ctx, pl, Pools[ly.Idxs.PoolSt], ly.Inhib.Layer.On == 1, giMult);
 	}
 }

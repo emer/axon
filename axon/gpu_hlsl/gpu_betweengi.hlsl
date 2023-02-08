@@ -22,7 +22,7 @@
 [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 // [[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-// [[vk::binding(5, 2)]] RWStructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+// [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 // [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
@@ -39,29 +39,23 @@ float BetweenLayerGiMax(float maxGi, int layIdx) {
 	return maxGi;
 }
 
-void BetweenGi2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, float giMult) {
-	if (pl.IsLayPool == 0) {
-		return;
-	}
-	float maxGi = pl.Inhib.Gi;
+void BetweenGi2(in Context ctx, in LayerParams ly, inout Pool lpl) {
+	float maxGi = lpl.Inhib.Gi;
 	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib1Idx);
 	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib2Idx);
 	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib3Idx);
 	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib4Idx);
-	pl.Inhib.Gi = maxGi; // our inhib is max of us and everyone in the layer pool
+	lpl.Inhib.Gi = maxGi; // our inhib is max of us and everyone in the layer pool
 }
 
-void BetweenGi(in Context ctx, uint pi, inout Pool pl) {
-	BetweenGi2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx].ActAvg.GiMult);
+void BetweenGi(in Context ctx, uint li, in LayerParams ly) {
+	BetweenGi2(ctx, ly, Pools[ly.Idxs.PoolSt]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Pools
-	uint ns;
-	uint st;
-	Pools.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		BetweenGi(Ctxt[0], idx.x, Pools[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Layers
+	if (idx.x < Ctxt[0].NLayers) {
+		BetweenGi(Ctxt[0], idx.x, Layers[idx.x]);
 	}
 }
 

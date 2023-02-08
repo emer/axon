@@ -28,7 +28,7 @@
 // [[vk::binding(2, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] StructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] StructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-[[vk::binding(5, 2)]] RWStructuredBuffer<uint> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+[[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][MaxDel+1][RecvNeurons]
 // [[vk::binding(6, 2)]] StructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
@@ -36,11 +36,11 @@
 
 void SendSpikeSyn(in Context ctx, in PrjnParams pj, in Synapse sy, in float sendVal, in uint recvNeurSt) {
 	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CycleTot, pj.Idxs.RecvNeurN);
-	InterlockedAdd(GBuf[bi], uint(sendVal * sy.Wt));
+	InterlockedAdd(GBuf[bi], int(sendVal * sy.Wt));
 }
 
 void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron sn) {
-	float sendVal = pj.GScale.Scale * pj.Com.FloatToGBufFactor(); // baked in
+	float sendVal = pj.GScale.Scale * pj.Com.FloatToIntFactor(); // baked in
 	if (pj.PrjnType == CTCtxtPrjn) {
 		if (ctx.Cycle != ctx.ThetaCycles-1-int(pj.Com.DelLen)) {
 			return;

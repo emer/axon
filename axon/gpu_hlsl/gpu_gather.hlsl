@@ -20,10 +20,10 @@
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
-// [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
+[[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-[[vk::binding(5, 2)]] RWStructuredBuffer<uint> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+[[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
@@ -31,15 +31,15 @@
 
 /*
 void RecvSpikeSyn(in Context ctx, in Synapse sy, in float scale, inout float gbuf) {
-	gbuf += Neurons[sy.SendIdx].Spike * scale * sy.Wt;
+	gbuf += int(Neurons[sy.SendIdx].Spike * scale * sy.Wt);
 }
 
 void RecvBurstSyn(in Context ctx, in Synapse sy, in float scale, inout float gbuf) {
-	gbuf += Neurons[sy.SendIdx].Burst * scale * sy.Wt;
+	gbuf += int(Neurons[sy.SendIdx].Burst * scale * sy.Wt);
 }
 
 void RecvSpikes(in Context ctx, in PrjnParams pj, in LayerParams ly, uint recvIdx, inout float gbuf) {
-	float scale = pj.GScale.Scale;
+	float scale = pj.GScale.Scale * pj.Com.FloatToIntFactor();
 	uint cni = pj.Idxs.RecvConSt + recvIdx;
 	uint synst = pj.Idxs.SynapseSt + RecvCon[cni].Start;
 	uint synn = RecvCon[cni].N;
@@ -58,6 +58,9 @@ void RecvSpikes(in Context ctx, in PrjnParams pj, in LayerParams ly, uint recvId
 }
 */
 
+
+
+
 void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, inout Neuron nrn) {
 	// now doing SendSpike
 	// uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(ni, ctx.CycleTot-1); // -1 = prior time step
@@ -67,8 +70,18 @@ void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint 
 	float gRaw = pj.Com.FloatFromGBuf(GBuf[bi]);
 	GBuf[bi] = 0;
 	float gSyn = GSyns[pj.Idxs.GSynSt + ni];
-	pj.GatherSpikes(ctx, ly, ni, nrn, gRaw, gSyn); // gSyn modified in fun
+	pj.GatherSpikes(ctx, ly, ni, nrn, gRaw, gSyn); // integrates into G*Raw; gSyn modified in fun
 	GSyns[pj.Idxs.GSynSt + ni] = gSyn;	
+}
+
+void NeuronAvgMax(in Context ctx, in LayerParams ly, inout Pool pl, inout Pool lpl, uint ni, in Neuron nrn) {
+	AtomicInhibRawIncr(Pools[nrn.SubPoolN].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
+	AtomicUpdatePoolAvgMax(Pools[nrn.SubPoolN].AvgMax, nrn);
+	if (pl.IsLayPool == 0) { // also update layer pool
+		AtomicInhibRawIncr(Pools[ly.Idxs.PoolSt].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
+		AtomicInhibRawIncr(Pools[ly.Idxs.PoolSt].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
+		AtomicUpdatePoolAvgMax(Pools[ly.Idxs.PoolSt].AvgMax, nrn);
+	}
 }
 
 void GatherSpikes2(in Context ctx, LayerParams ly, uint nin, inout Neuron nrn) {
@@ -79,6 +92,8 @@ void GatherSpikes2(in Context ctx, LayerParams ly, uint nin, inout Neuron nrn) {
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
 		GatherSpikesPrjn(ctx, Prjns[ly.Idxs.RecvSt + pi], ly, ni, nrn);
 	}
+	
+	NeuronAvgMax(ctx, ly, Pools[nrn.SubPoolN], Pools[ly.Idxs.PoolSt], ni, nrn);
 }
 
 void GatherSpikes(in Context ctx, uint nin, inout Neuron nrn) {

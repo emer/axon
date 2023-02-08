@@ -200,9 +200,9 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 // Cannot do both send and recv in same pass without potential for
 // race conditions.
 func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSyn, updtThr float32) {
-	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
-		return
-	}
+	// if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
+	// 	return
+	// }
 	supt := sy.CaUpT
 	if supt == ctx.CycleTot { // already updated in recv pass
 		return
@@ -220,9 +220,9 @@ func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSy
 // Cannot do both send and recv in same pass without potential for
 // race conditions.
 func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSyn, updtThr float32) {
-	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
-		return
-	}
+	// if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
+	// 	return
+	// }
 	supt := sy.CaUpT
 	if supt == ctx.CycleTot { // already updated in sender pass
 		return
@@ -235,7 +235,13 @@ func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSy
 
 // CycleSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // This version updates every cycle, for GPU usage called on each synapse.
-func (pj *PrjnParams) CycleSynCaSyn(ctx *Context, sy *Synapse, sn, rn *Neuron) {
+func (pj *PrjnParams) CycleSynCaSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, updtThr float32) {
+	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
+		return
+	}
+	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
+		return
+	}
 	sy.CaUpT = ctx.CycleTot
 	sy.Ca = 0
 	if rn.Spike != 0 || sn.Spike != 0 {

@@ -6,9 +6,12 @@ package axon
 
 import (
 	"github.com/emer/axon/fsfffb"
-	"github.com/emer/etable/minmax"
 	"github.com/goki/gosl/slbool"
 )
+
+//gosl: hlsl pool
+// #include "avgmaxi.hlsl"
+//gosl: end pool
 
 //gosl: start pool
 
@@ -19,9 +22,9 @@ import (
 // All of the cycle level values are updated at the *start* of the cycle
 // based on values from the prior cycle -- thus are 1 cycle behind in general.
 type AvgMaxPhases struct {
-	Cycle minmax.AvgMax32 `inactive:"+" view:"inline" desc:"updated every cycle -- this is the source of all subsequent time scales"`
-	Minus minmax.AvgMax32 `inactive:"+" view:"inline" desc:"at the end of the minus phase"`
-	Plus  minmax.AvgMax32 `inactive:"+" view:"inline" desc:"at the end of the plus phase"`
+	Cycle AvgMaxI32 `view:"inline" desc:"updated every cycle -- this is the source of all subsequent time scales"`
+	Minus AvgMaxI32 `view:"inline" desc:"at the end of the minus phase"`
+	Plus  AvgMaxI32 `view:"inline" desc:"at the end of the plus phase"`
 }
 
 // CycleToMinus grabs current Cycle values into the Minus phase values
@@ -32,6 +35,11 @@ func (am *AvgMaxPhases) CycleToMinus() {
 // CycleToPlus grabs current Cycle values into the Plus phase values
 func (am *AvgMaxPhases) CycleToPlus() {
 	am.Plus = am.Cycle
+}
+
+// Calc does Calc on Cycle, which is then ready for aggregation again
+func (am *AvgMaxPhases) Calc() {
+	am.Cycle.Calc()
 }
 
 // PoolAvgMax contains the average and maximum values over a Pool of neurons
@@ -45,6 +53,16 @@ type PoolAvgMax struct {
 	Act    AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Act firing rate value"`
 	Ge     AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Ge excitatory conductance value"`
 	Gi     AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Gi inhibitory conductance value"`
+}
+
+// SetN sets the N for aggregation
+func (am *PoolAvgMax) SetN(n int32) {
+	am.CaSpkP.Cycle.N = n
+	am.CaSpkD.Cycle.N = n
+	am.SpkMax.Cycle.N = n
+	am.Act.Cycle.N = n
+	am.Ge.Cycle.N = n
+	am.Gi.Cycle.N = n
 }
 
 // CycleToMinus grabs current Cycle values into the Minus phase values
@@ -67,7 +85,8 @@ func (am *PoolAvgMax) CycleToPlus() {
 	am.Gi.CycleToPlus()
 }
 
-// Init does Init on Cycle level -- for update start
+// Init does Init on Cycle vals-- for update start.
+// always left init'd so generally unnecessary
 func (am *PoolAvgMax) Init() {
 	am.CaSpkP.Cycle.Init()
 	am.CaSpkD.Cycle.Init()
@@ -77,25 +96,45 @@ func (am *PoolAvgMax) Init() {
 	am.Gi.Cycle.Init()
 }
 
-// CalcAvg does CalcAvg on Cycle level
-func (am *PoolAvgMax) CalcAvg() {
-	am.CaSpkP.Cycle.CalcAvg()
-	am.CaSpkD.Cycle.CalcAvg()
-	am.SpkMax.Cycle.CalcAvg()
-	am.Act.Cycle.CalcAvg()
-	am.Ge.Cycle.CalcAvg()
-	am.Gi.Cycle.CalcAvg()
+// Calc does Calc on Cycle level, and re-inits
+func (am *PoolAvgMax) Calc() {
+	am.CaSpkP.Calc()
+	am.CaSpkD.Calc()
+	am.SpkMax.Calc()
+	am.Act.Calc()
+	am.Ge.Calc()
+	am.Gi.Calc()
 }
 
 // UpdateVals for neuron values
-func (am *PoolAvgMax) UpdateVals(nrn *Neuron, ni int32) {
-	am.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP, ni)
-	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD, ni)
-	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax, ni)
-	am.Act.Cycle.UpdateVal(nrn.Act, ni)
-	am.Ge.Cycle.UpdateVal(nrn.Ge, ni)
-	am.Gi.Cycle.UpdateVal(nrn.Gi, ni)
+func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
+	am.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP)
+	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD)
+	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax)
+	am.Act.Cycle.UpdateVal(nrn.Act)
+	am.Ge.Cycle.UpdateVal(nrn.Ge)
+	am.Gi.Cycle.UpdateVal(nrn.Gi)
 }
+
+//gosl: end pool
+
+//gosl: hlsl pool
+/*
+// // AtomicUpdatePoolAvgMax provides an atomic update using atomic ints
+// // implemented by InterlockedAdd HLSL intrinsic.
+// // This is a #define because it doesn't work on arg values --
+// // must be directly operating on a RWStorageBuffer entity.
+#define AtomicUpdatePoolAvgMax(am, nrn) \
+	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, nrn.CaSpkP); \
+	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, nrn.CaSpkD); \
+	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, nrn.SpkMax); \
+	AtomicUpdateAvgMaxI32(am.Act.Cycle, nrn.Act); \
+	AtomicUpdateAvgMaxI32(am.Ge.Cycle, nrn.Ge); \
+	AtomicUpdateAvgMaxI32(am.Gi.Cycle, nrn.Gi)
+*/
+//gosl: end pool
+
+//gosl: start pool
 
 // Pool contains computed values for FS-FFFB inhibition,
 // and various other state values for layers
@@ -109,15 +148,18 @@ type Pool struct {
 
 	pad, pad1 uint32
 
-	Inhib  fsfffb.Inhib    `inactive:"+" desc:"fast-slow FFFB inhibition values"`
-	AvgMax PoolAvgMax      `desc:"average and max values for relevant variables in this pool, at different time scales"`
-	AvgDif minmax.AvgMax32 `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
+	Inhib  fsfffb.Inhib `inactive:"+" desc:"fast-slow FFFB inhibition values"`
+	AvgMax PoolAvgMax   `desc:"average and max values for relevant variables in this pool, at different time scales"`
+	AvgDif AvgMaxI32    `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
 }
 
 // Init is callled during InitActs
 func (pl *Pool) Init() {
 	pl.Inhib.Init()
+	pl.AvgMax.SetN(int32(pl.NNeurons()))
 	pl.AvgMax.Init()
+	pl.AvgDif.N = int32(pl.NNeurons())
+	pl.AvgDif.Init()
 	pl.Gated.SetBool(false)
 }
 

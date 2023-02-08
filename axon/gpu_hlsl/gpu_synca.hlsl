@@ -26,7 +26,7 @@
 // [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-// [[vk::binding(5, 2)]] StructuredBuffer<float> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
+// [[vk::binding(5, 2)]] StructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 // [[vk::binding(6, 2)]] StructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
@@ -36,7 +36,8 @@ void SynCa2(in Context ctx, in PrjnParams pj, uint ci, inout Synapse sy, in Neur
 	if(pj.Learn.Learn == 0) {
 		return;
 	}
-	pj.CycleSynCaSyn(ctx, sy, sn, rn);
+ 	float updtThr = Layers[pj.Idxs.RecvLay].Learn.CaLrn.UpdtThr;
+	pj.CycleSynCaSyn(ctx, sy, sn, rn, updtThr);
 }
 
 void SynCa(in Context ctx, uint ci, inout Synapse sy) {

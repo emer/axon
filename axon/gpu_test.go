@@ -19,6 +19,9 @@ func init() {
 }
 
 func TestGPUAct(t *testing.T) {
+	// if testing.Short() { // use short to exclude gpu tests in general
+	// 	t.Skip("GPU tests skipped in Short mode -- don't work on CI")
+	// }
 	testNet := newTestNet()
 	testNet.InitExt()
 	inPats := newInPats()
@@ -32,7 +35,7 @@ func TestGPUAct(t *testing.T) {
 	testNet.GPUOnNoGUI(ctx)
 
 	printCycs := false
-	printQtrs := false
+	printQtrs := true
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
 	qtr0HidGes := []float32{0.31093338, 0, 0, 0}
@@ -193,6 +196,9 @@ func cmprFloatsTol(out, cor []float32, msg string, t *testing.T, tol float32) {
 }
 
 func TestGPULearn(t *testing.T) {
+	if testing.Short() { // use short to exclude gpu tests in general
+		t.Skip("GPU tests skipped in Short mode -- don't work on CI")
+	}
 	testNet := newTestNet()
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input").(*Layer)
@@ -346,6 +352,9 @@ func TestGPULearn(t *testing.T) {
 }
 
 func TestGPULearnRLRate(t *testing.T) {
+	if testing.Short() { // use short to exclude gpu tests in general
+		t.Skip("GPU tests skipped in Short mode -- don't work on CI")
+	}
 	testNet := newTestNet()
 	inPats := newInPats()
 	inLay := testNet.LayerByName("Input").(*Layer)

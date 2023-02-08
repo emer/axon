@@ -29,7 +29,11 @@ type Inhib struct {
 	GiOrig   float32     `desc:"original value of the inhibition (before pool or other effects)"`
 	LayGi    float32     `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
 
-	pad float32
+	FFsRawInt   int32 `view:"-" desc:"int32 atomic add compatible integration of FFsRaw"`
+	FBsRawInt   int32 `view:"-" desc:"int32 atomic add compatible integration of FBsRaw"`
+	GeExtRawInt int32 `view:"-" desc:"int32 atomic add compatible integration of GeExtRaw"`
+
+	pad, pad1 float32
 }
 
 func (fi *Inhib) Init() {
@@ -42,6 +46,9 @@ func (fi *Inhib) InitRaw() {
 	fi.FFsRaw = 0
 	fi.FBsRaw = 0
 	fi.GeExtRaw = 0
+	fi.FFsRawInt = 0
+	fi.FBsRawInt = 0
+	fi.GeExtRawInt = 0
 }
 
 // Zero resets all accumulating inhibition factors to 0
@@ -68,6 +75,13 @@ func (fi *Inhib) Decay(decay float32) {
 	fi.FSGi -= decay * fi.FSGi
 	fi.SSGi -= decay * fi.SSGi
 	fi.Gi -= decay * fi.Gi
+}
+
+// RawIncr increments raw values from given neuron-based input values
+func (fi *Inhib) RawIncr(spike, geRaw, geExt float32) {
+	fi.FBsRaw += spike
+	fi.FFsRaw += geRaw
+	fi.GeExtRaw += geExt
 }
 
 // SpikesFmRaw updates spike values from raw, dividing by given number in pool
@@ -101,6 +115,69 @@ func (fi *Inhib) PoolMax(piGi float32) {
 	fi.Gi = mat32.Max(fi.Gi, piGi)
 }
 
+//////////////////////////////////////////
+// atomic int safe accumulation
+
+// FloatToIntFactor returns the factor used for converting float32
+// to int32 for summing, assuming that
+// the overall value is in the general order of 0-1 (512 is the max).
+func (fi *Inhib) FloatToIntFactor() float32 {
+	return float32(1 << 22) // leaves 9 bits = 512 to cover extreme values
+}
+
+// FloatFmIntFactor returns the factor used for converting int32
+// back to float32 -- this is 1 / FloatToIntFactor for faster multiplication
+// instead of dividing.
+func (fi *Inhib) FloatFmIntFactor() float32 {
+	return 1.0 / float32(1<<22)
+}
+
+// FloatToInt converts the given floating point value
+// to a large int for max updating.
+func (fi *Inhib) FloatToInt(val float32) int32 {
+	return int32(val * fi.FloatToIntFactor())
+}
+
+// FloatFromInt converts the given int32 value produced
+// via FloatToInt back into a float32 (divides by factor)
+func (fi *Inhib) FloatFromInt(ival int32) float32 {
+	//gosl: end fsfffb
+	// note: this is not GPU-portable..
+	if ival < 0 {
+		panic("axon.FS-FFFB Inhib: FloatFromInt is negative, there was an overflow error")
+	}
+	//gosl: start fsfffb
+	return float32(ival) * fi.FloatFmIntFactor()
+}
+
+// RawIncrInt increments raw values from given neuron-based input values
+// for the int-based values (typically use Atomic InterlockedAdd instead)
+func (fi *Inhib) RawIncrInt(spike, geRaw, geExt float32) {
+	fi.FBsRawInt += int32(spike) // already an int!
+	fi.FFsRawInt += fi.FloatToInt(geRaw)
+	fi.GeExtRawInt += fi.FloatToInt(geExt)
+}
+
+// IntToRaw computes int values into float32 raw values
+func (fi *Inhib) IntToRaw() {
+	fi.FBsRaw = float32(fi.FBsRawInt)
+	fi.FFsRaw = fi.FloatFromInt(fi.FFsRawInt)
+	fi.GeExtRaw = fi.FloatFromInt(fi.GeExtRawInt)
+}
+
+//gosl: end fsfffb
+
+//gosl: hlsl fsfffb
+/*
+// // AtomicInhibRawIncr provides an atomic update using atomic ints
+// // implemented by InterlockedAdd HLSL intrinsic.
+// // This is a #define because it doesn't work on arg values --
+// // must be directly operating on a RWStorageBuffer entity.
+#define AtomicInhibRawIncr(fi, spike, geRaw, geExt) \
+	InterlockedAdd(fi.FBsRawInt, int(spike)); \
+	InterlockedAdd(fi.FFsRawInt, fi.FloatToInt(geRaw)); \
+	InterlockedAdd(fi.GeExtRawInt, fi.FloatToInt(geExt))
+*/
 //gosl: end fsfffb
 
 // Inhibs is a slice of Inhib records

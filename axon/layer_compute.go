@@ -51,26 +51,22 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 	lpl := &ly.Pools[0]
 	np := len(ly.Pools)
 	subPools := (np > 1)
-	for pi := 0; pi < np; pi++ {
-		pl := &ly.Pools[pi]
-		pl.AvgMax.Init()
-	}
 	for ni := range ly.Neurons { // note: layer-level iterating across neurons
 		nrn := &ly.Neurons[ni]
 		if nrn.IsOff() {
 			continue
 		}
 		pl := &ly.Pools[nrn.SubPool]
-		ly.Params.GeToPool(ctx, uint32(ni), nrn, pl)
-		pl.AvgMax.UpdateVals(nrn, int32(ni))
+		pl.Inhib.RawIncr(nrn.Spike, nrn.GeRaw, nrn.GeExt)
+		pl.AvgMax.UpdateVals(nrn)
 		if subPools { // update layer too -- otherwise pl == lpl
-			ly.Params.GeToPool(ctx, uint32(ni), nrn, lpl)
-			lpl.AvgMax.UpdateVals(nrn, int32(ni))
+			lpl.Inhib.RawIncr(nrn.Spike, nrn.GeRaw, nrn.GeExt)
+			lpl.AvgMax.UpdateVals(nrn)
 		}
 	}
 	for pi := 0; pi < np; pi++ {
 		pl := &ly.Pools[pi]
-		pl.AvgMax.CalcAvg()
+		pl.AvgMax.Calc()
 	}
 	ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.Vals)
 	// ly.PoolGiFmSpikes(ctx) // note: this is now called as a second pass
@@ -766,9 +762,9 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 			}
 			nrn.AvgPct = nrn.ActAvg / plavg
 			nrn.AvgDif = nrn.AvgPct - nrn.TrgAvg
-			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), int32(ni))
+			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif))
 		}
-		pl.AvgDif.CalcAvg()
+		pl.AvgDif.Calc()
 	}
 	if sp == 1 { // update stats
 		pl := &ly.Pools[0]
@@ -778,9 +774,9 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 			if nrn.IsOff() {
 				continue
 			}
-			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif), int32(ni))
+			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif))
 		}
-		pl.AvgDif.CalcAvg()
+		pl.AvgDif.Calc()
 	}
 }
 

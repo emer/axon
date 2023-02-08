@@ -16,7 +16,7 @@ import (
 //go:embed shaders/*.spv
 var content embed.FS
 
-//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_hlsl
+//go:generate gosl -exclude=Update,UpdateParams,Defaults,AllParams github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase ../fsfffb/inhib.go ../fsfffb github.com/emer/emergent/etime github.com/emer/emergent/ringidx avgmax.go neuromod.go context.go neuron.go synapse.go pool.go layervals.go act.go act_prjn.go inhib.go learn.go layertypes.go layerparams.go deep_layers.go rl_layers.go pvlv_layers.go pcore_layers.go prjntypes.go prjnparams.go deep_prjns.go rl_prjns.go pvlv_prjns.go pcore_prjns.go gpu_hlsl
 
 // Full vars code -- each gpu_*.hlsl uses a subset
 
@@ -75,7 +75,7 @@ GatherSpikes & RecvSpikes:
 gpu_gather.hlsl 	[Neurons]
 
 GiFmSpikes:
-gpu_poolgemax.hlsl [Pools] -- does GeToPool and AvgMax Update, calls LayPoolGiFmSpikes
+gpu_laygi.hlsl     [Layers]
 gpu_poolgi.hlsl 	  [Pools] -- only operates on sub-Pools, does SubPoolGiFmSpikes
 
 CycleNeuron:
@@ -99,14 +99,14 @@ var TheGPU *vgpu.GPU
 
 // GPU manages all of the GPU-based computation
 type GPU struct {
-	On        bool                    `desc:"if true, actually use the GPU"`
-	Sys       *vgpu.System            `desc:"the vgpu compute system"`
-	Params    *vgpu.VarSet            `desc:"VarSet = 0: the uniform LayerParams"`
-	Prjns     *vgpu.VarSet            `desc:"VarSet = 1: the storage PrjnParams, RecvCon, Send*"`
-	Structs   *vgpu.VarSet            `desc:"VarSet = 2: the Storage buffer for RW state structs "`
-	Exts      *vgpu.VarSet            `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
-	Semaphors map[string]vk.Semaphore `view:"-" desc:"for sequencing commands"`
-	NThreads  int                     `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
+	On         bool                    `desc:"if true, actually use the GPU"`
+	Sys        *vgpu.System            `desc:"the vgpu compute system"`
+	Params     *vgpu.VarSet            `desc:"VarSet = 0: the uniform LayerParams"`
+	Prjns      *vgpu.VarSet            `desc:"VarSet = 1: the storage PrjnParams, RecvCon, Send*"`
+	Structs    *vgpu.VarSet            `desc:"VarSet = 2: the Storage buffer for RW state structs "`
+	Exts       *vgpu.VarSet            `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
+	Semaphores map[string]vk.Semaphore `view:"-" desc:"for sequencing commands"`
+	NThreads   int                     `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
 
 	DidBind map[string]bool `view:"-" desc:"tracks var binding"`
 }
@@ -142,6 +142,7 @@ func (gp *GPU) Destroy() {
 // Config configures the network -- must call on an already-built network
 func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.NThreads = 64
+	ctx.NLayers = int32(net.NLayers())
 	gp.DidBind = make(map[string]bool)
 
 	if TheGPU == nil {
@@ -184,7 +185,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	// pipelines
 	gp.Sys.NewComputePipelineEmbed("GatherSpikes", content, "shaders/gpu_gather.spv")
-	gp.Sys.NewComputePipelineEmbed("PoolGeMax", content, "shaders/gpu_poolgemax.spv")
+	gp.Sys.NewComputePipelineEmbed("LayGi", content, "shaders/gpu_laygi.spv")
 	gp.Sys.NewComputePipelineEmbed("BetweenGi", content, "shaders/gpu_betweengi.spv")
 	gp.Sys.NewComputePipelineEmbed("PoolGi", content, "shaders/gpu_poolgi.spv")
 	gp.Sys.NewComputePipelineEmbed("Cycle", content, "shaders/gpu_cycle.spv")
@@ -201,11 +202,12 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	gp.Sys.NewSemaphore("CycleEnd")
 	gp.Sys.NewSemaphore("GatherSpikes")
-	gp.Sys.NewSemaphore("PoolGeMax")
+	gp.Sys.NewSemaphore("LayGi")
 	gp.Sys.NewSemaphore("BetweenGi")
 	gp.Sys.NewSemaphore("PoolGi")
 	gp.Sys.NewSemaphore("Cycle")
 	gp.Sys.NewSemaphore("SendSpike")
+	gp.Sys.NewSemaphore("SynCaRecv")
 	gp.Sys.NewFence("Cycle")
 
 	gp.Sys.Config()
@@ -351,8 +353,8 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 	gp.SyncMemToGPU() // todo: see about making this use semaphores?
 	gp.RunPipeline(net, "GatherSpikes", len(net.Neurons), "", "GatherSpikes", "")
 
-	gp.RunPipeline(net, "PoolGeMax", len(net.Pools), "GatherSpikes", "PoolGeMax", "")
-	gp.RunPipeline(net, "BetweenGi", len(net.Pools), "PoolGeMax", "BetweenGi", "")
+	gp.RunPipeline(net, "LayGi", len(net.Layers), "GatherSpikes", "LayGi", "")
+	gp.RunPipeline(net, "BetweenGi", len(net.Layers), "LayGi", "BetweenGi", "")
 	gp.RunPipeline(net, "PoolGi", len(net.Pools), "BetweenGi", "PoolGi", "")
 
 	gp.RunPipeline(net, "Cycle", len(net.Neurons), "PoolGi", "Cycle", "")
@@ -362,9 +364,9 @@ func (gp *GPU) RunCycle(ctx *Context, net *Network) {
 	} else {
 		gp.RunPipeline(net, "SendSpike", len(net.Neurons), "Cycle", "SendSpike", "")
 		// todo: test in larger networks!
-		gp.RunPipeline(net, "SynCa", len(net.Synapses), "SendSpike", "CycleEnd", "Cycle")
-		// gp.RunPipeline(net, "SynCaRecv", gp.SynCaRecv, len(net.Neurons)) // recv first as faster
-		// gp.RunPipeline(net, "SynCaSend", gp.SynCaSend, len(net.Neurons))
+		// gp.RunPipeline(net, "SynCa", len(net.Synapses), "SendSpike", "CycleEnd", "Cycle")
+		gp.RunPipeline(net, "SynCaRecv", len(net.Neurons), "SendSpike", "SynCaRecv", "") // recv first as faster
+		gp.RunPipeline(net, "SynCaSend", len(net.Neurons), "SynCaRecv", "CycleEnd", "Cycle")
 	}
 	if net.RecFunTimes {
 		gp.Sys.ComputeWait()

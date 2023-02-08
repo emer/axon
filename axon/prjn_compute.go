@@ -53,7 +53,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
 func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
-	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToGBufFactor() // pre-bake in conversion to uint factor
+	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
 	if pj.PrjnType() == CTCtxtPrjn {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
@@ -70,7 +70,7 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 	for _, ssi := range sidxs {
 		sy := &pj.Syns[ssi]
 		recvIdx := pj.Params.SynRecvLayIdx(sy)
-		sv := uint32(scale * sy.Wt)
+		sv := int32(scale * sy.Wt)
 		bi := pjcom.WriteIdxOff(recvIdx, wrOff, pj.Params.Idxs.RecvNeurN)
 		pj.GBuf[bi] += sv
 	}

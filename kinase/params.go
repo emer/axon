@@ -92,7 +92,7 @@ func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD *float32) {
 	if isi <= 0 {
 		return
 	}
-	if isi > kp.MaxISI {
+	if isi > kp.MaxISI { // perhaps it is a problem to not set time here?
 		*caM = 0
 		*caP = 0
 		*caD = 0

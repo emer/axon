@@ -132,29 +132,37 @@ func (sc *SynComParams) ReadIdx(rnIdx uint32, cycTot int32, nRecvNeurs uint32) u
 	return sc.ReadOff(cycTot)*nRecvNeurs + rnIdx // delay is outer, neurs are inner -- should be faster?
 }
 
-// FloatToGBufFactor returns the factor used for converting float32
-// to uint32 in GBuf encoding.  Because total G is constrained via
+// FloatToIntFactor returns the factor used for converting float32
+// to int32 in GBuf encoding.  Because total G is constrained via
 // scaling factors to be around ~1, it is safe to use a factor that
 // uses most of the available bits, leaving enough room to prevent
 // overflow when adding together the different vals.
 // For encoding, bake this into scale factor in SendSpike, and
-// cast the result to uint32.
-func (sc *SynComParams) FloatToGBufFactor() float32 {
-	return float32(1 << 24) // leaves 8 bits = 256 to cover any extreme cases
+// cast the result to int32.
+func (sc *SynComParams) FloatToIntFactor() float32 {
+	return float32(1 << 24) // leaves 7 bits = 128 to cover any extreme cases
 	// this is sufficient to pass existing tests at std tolerances.
 }
 
 // FloatToGBuf converts the given floating point value
-// to a large uint for accumulating in GBuf.
+// to a large int32 for accumulating in GBuf.
 // Note: more efficient to bake factor into scale factor per prjn.
-func (sc *SynComParams) FloatToGBuf(val float32) uint32 {
-	return uint32(val * sc.FloatToGBufFactor())
+func (sc *SynComParams) FloatToGBuf(val float32) int32 {
+	return int32(val * sc.FloatToIntFactor())
 }
 
-// FloatFromGBuf converts the given uint32 value produced
-// via FloatToGBuf back into a float32 (divides by factor)
-func (sc *SynComParams) FloatFromGBuf(ival uint32) float32 {
-	return float32(ival) / sc.FloatToGBufFactor()
+// FloatFromGBuf converts the given int32 value produced
+// via FloatToGBuf back into a float32 (divides by factor).
+// If the value is negative, a panic is triggered indicating
+// there was numerical overflow in the aggregation.
+// If this occurs, the FloatToIntFactor needs to be decreased.
+func (sc *SynComParams) FloatFromGBuf(ival int32) float32 {
+	//gosl: end act_prjn
+	if ival < 0 {
+		panic("axon.SynComParams: FloatFromGBuf is negative, there was an overflow error")
+	}
+	//gosl: start act_prjn
+	return float32(ival) / sc.FloatToIntFactor()
 }
 
 // WtFailP returns probability of weight (synapse) failure given current SWt value
