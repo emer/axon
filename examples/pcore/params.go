@@ -47,7 +47,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#STNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.Ge":          "0.2",
+					"Layer.Act.Init.GeBase":      "0.2",
 					"Layer.Act.Init.GeVar":       "0.2",
 					"Layer.Inhib.ActAvg.Nominal": "0.15",
 					"Layer.Inhib.Layer.On":       "true",
@@ -60,14 +60,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
-					"Layer.Act.Init.Ge":          "0.3",
+					"Layer.Act.Init.GeBase":      "0.3",
 					"Layer.Act.Init.GeVar":       "0.1",
 					"Layer.Act.Init.GiVar":       "0.1",
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
 			{Sel: "#GPi", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Init.Ge": "0.5", // todo: 0.6 in params
+					"Layer.Act.Init.GeBase": "0.5", // todo: 0.6 in params
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
