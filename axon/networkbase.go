@@ -43,8 +43,8 @@ type NetworkBase struct {
 	CPURecvSpikes bool                  `desc:"if true, use the RecvSpikes receiver-based spiking function -- on the CPU -- this is more than 35x slower than the default SendSpike function -- it is only an option for testing in comparison to the GPU mode, which always uses RecvSpikes because the sender mode is not possible."`
 
 	// Implementation level code below:
-	MaxDelay uint32      `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
-	Layers   emer.Layers `desc:"array of layers, via emer.Layer interface pointer"`
+	MaxDelay uint32       `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	Layers   []emer.Layer `desc:"array of layers, via emer.Layer interface pointer"`
 	// todo: could now have concrete list of all Layer objects here
 	LayParams  []LayerParams `view:"-" desc:"array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals    []LayerVals   `view:"-" desc:"array of layer values, in 1-to-1 correspondence with Layers"`
@@ -104,6 +104,21 @@ func (nt *NetworkBase) MakeLayMap() {
 	for _, ly := range nt.Layers {
 		nt.LayMap[ly.Name()] = ly
 	}
+}
+
+func (net *NetworkBase) GetLayersByTypes(types ...LayerTypes) []*Layer {
+	var layers []*Layer
+
+	for _, tp := range types {
+		typeName := tp.String()
+		layerNames := net.LayClassMap[typeName]
+		for _, layerName := range layerNames {
+			layer := net.LayerByName(layerName).(*Layer).AsAxon()
+			layers = append(layers, layer)
+		}
+	}
+
+	return layers
 }
 
 // LayersByType returns a list of layer names by given layer types.
