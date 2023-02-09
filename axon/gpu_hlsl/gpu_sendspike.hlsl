@@ -24,7 +24,7 @@
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
-[[vk::binding(1, 2)]] StructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
+[[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 [[vk::binding(2, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Pools]
 [[vk::binding(3, 2)]] StructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] StructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
@@ -66,7 +66,7 @@ void PostSpike(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in 
 }
 
 
-void SendSpike2(in Context ctx, LayerParams ly, uint nin, in Neuron sn) {
+void SendSpike2(in Context ctx, LayerParams ly, uint nin, inout Neuron sn) {
 	uint ni = nin - ly.Idxs.NeurSt;
 
 	PostSpike(ctx, ly, ni, sn, Pools[sn.SubPoolN], Pools[Layers[sn.LayIdx].Idxs.PoolSt], LayVals[sn.LayIdx]);
@@ -76,7 +76,7 @@ void SendSpike2(in Context ctx, LayerParams ly, uint nin, in Neuron sn) {
 	}
 }
 
-void SendSpike(in Context ctx, uint nin, in Neuron sn) {
+void SendSpike(in Context ctx, uint nin, inout Neuron sn) {
 	SendSpike2(ctx, Layers[sn.LayIdx], nin, sn);
 }
 

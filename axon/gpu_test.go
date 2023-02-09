@@ -211,20 +211,24 @@ func TestGPULearn(t *testing.T) {
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
-	qtr3HidCaP := []float32{0.480879, 0.47434732, 0.46390998, 0.4749324}
-	qtr3HidCaD := []float32{0.45077288, 0.4384445, 0.43477264, 0.4374903}
-	qtr3OutCaP := []float32{0.5378871, 0.5379575, 0.5363678, 0.53920734}
-	qtr3OutCaD := []float32{0.4513688, 0.43564144, 0.43557996, 0.4358468}
+	qtr3HidCaP := []float32{0.48164067, 0.47525364, 0.4646372, 0.4758791}
+	qtr3HidCaD := []float32{0.45075783, 0.4384308, 0.43476036, 0.43747732}
+	qtr3OutCaP := []float32{0.5401089, 0.54058266, 0.5389495, 0.54185855}
+	qtr3OutCaD := []float32{0.45136902, 0.43564644, 0.4355862, 0.4358528}
 
 	q3hidCaP := make([]float32, 4*NLrnPars)
 	q3hidCaD := make([]float32, 4*NLrnPars)
 	q3outCaP := make([]float32, 4*NLrnPars)
 	q3outCaD := make([]float32, 4*NLrnPars)
 
-	hidDwts := []float32{0.0017427707, 0.0019655386, 0.0016441783, 0.0020374325}
-	outDwts := []float32{0.0076494003, 0.009837036, 0.008439174, 0.010048241}
-	hidWts := []float32{0.5104552, 0.51179105, 0.5098639, 0.51222205}
-	outWts := []float32{0.5457716, 0.5587571, 0.5504675, 0.5600071}
+	hidDwts := []float32{0.0019396556, 0.0021842457, 0.0018292944, 0.0022638545}
+	// 0.0019419516, 0.0021907063, 0.001831886, 0.0022705847
+	outDwts := []float32{0.008366027, 0.010467653, 0.009353173, 0.010706494}
+	// 0.008427641, 0.010844037, 0.009319315, 0.011078155}
+	hidWts := []float32{0.5116358, 0.5131027, 0.5109739, 0.51357985}
+	// 0.51164985, 0.51314133, 0.5109896, 0.5136202}
+	outWts := []float32{0.55003285, 0.56248677, 0.555891, 0.5638975}
+	// 0.55039877, 0.56470954, 0.55569035, 0.56609094}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -332,7 +336,7 @@ func TestGPULearn(t *testing.T) {
 		}
 	}
 
-	tol := float32(0.002) // these can end up diverging significantly over time..
+	tol := float32(1.0e-6) // these can end up diverging significantly over time..
 	// the synaptic ca integration etc.
 
 	cmprFloats(q3hidCaP, qtr3HidCaP, "qtr 3 hidCaP", t)
@@ -364,29 +368,31 @@ func TestGPURLRate(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
-	patHidRLRates := []float32{0.0019189873, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05,
-		0.00016045463, 0.0039065774, 5.0000002e-05, 5.0000002e-05,
-		5.0000002e-05, 0.00017801004, 0.0018357612, 5.0000002e-05,
-		5.0000002e-05, 5.0000002e-05, 0.00018263639, 0.0040663530}
+	patHidRLRates := []float32{0.0019666697, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05,
+		0.00016045463, 0.0039996677, 5.0000002e-05, 5.0000002e-05,
+		5.0000002e-05, 0.00017801004, 0.0018803712, 5.0000002e-05,
+		5.0000002e-05, 5.0000002e-05, 0.00018263639, 0.0041628983}
 
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
 
-	qtr3HidCaP := []float32{0.480879, 0.47434732, 0.46390998, 0.4749324}
-	qtr3HidCaD := []float32{0.45077288, 0.4384445, 0.43477264, 0.4374903}
-	qtr3OutCaP := []float32{0.5378871, 0.5379575, 0.5363678, 0.53920734}
-	qtr3OutCaD := []float32{0.4513688, 0.43564144, 0.43557996, 0.4358468}
+	qtr3HidCaP := []float32{0.48164067, 0.47525364, 0.4646372, 0.4758791}
+	qtr3HidCaD := []float32{0.45075783, 0.4384308, 0.43476036, 0.43747732}
+	qtr3OutCaP := []float32{0.5401089, 0.54058266, 0.5389495, 0.54185855}
+	qtr3OutCaD := []float32{0.45136902, 0.43564644, 0.4355862, 0.4358528}
 
 	q3hidCaP := make([]float32, 4*NLrnPars)
 	q3hidCaD := make([]float32, 4*NLrnPars)
 	q3outCaP := make([]float32, 4*NLrnPars)
 	q3outCaD := make([]float32, 4*NLrnPars)
 
-	hidDwts := []float32{3.3443548e-06, 7.678528e-06, 3.018319e-06, 8.28492e-06}
-	outDwts := []float32{0.0076494003, 0.009837036, 0.008439174, 0.010048241}
-	hidWts := []float32{0.50002, 0.50004613, 0.50001824, 0.5000497}
-	outWts := []float32{0.5457716, 0.5587571, 0.5504675, 0.5600071}
+	hidDwts := []float32{3.8191774e-06, 8.762097e-06, 3.4446257e-06, 9.452213e-06}
+	outDwts := []float32{0.008366027, 0.010467653, 0.009353173, 0.010706494}
+	// 0.008427641, 0.010844037, 0.009319315, 0.011078155}
+	hidWts := []float32{0.5000229, 0.5000526, 0.50002074, 0.50005686}
+	outWts := []float32{0.55003285, 0.56248677, 0.555891, 0.5638975}
+	// 0.55039877, 0.56470954, 0.55569035, 0.56609094}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -500,7 +506,7 @@ func TestGPURLRate(t *testing.T) {
 		}
 	}
 
-	tol := float32(0.002) // these can end up diverging significantly over time..
+	tol := float32(1.0e-6) // these can end up diverging significantly over time..
 	// the synaptic ca integration etc.
 
 	cmprFloats(hidrlrs, patHidRLRates, "hid RLRate", t)

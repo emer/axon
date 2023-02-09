@@ -395,12 +395,12 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctx *Context) {
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
 	if nt.GPU.On {
 		nt.GPU.RunDWt(ctx, nt)
 		return
 	}
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt")             // def thread
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt") // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.

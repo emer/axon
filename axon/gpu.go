@@ -6,6 +6,7 @@ package axon
 
 import (
 	"embed"
+	"log"
 	"unsafe"
 
 	"github.com/goki/gi/oswin"
@@ -329,9 +330,28 @@ func (gp *GPU) CopyStateFromGPU(ctx *Context, net *Network) {
 	if !gp.On {
 		return
 	}
-	gp.CopyNeuronsFromGPU(ctx, net)
-	gp.CopyLayerValsFromGPU(ctx, net)
-	gp.CopyPoolsFromGPU(ctx, net)
+	nrn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Neurons", 0)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	lvl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "LayVals", 0)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	pl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Pools", 0)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrn, lvl, pl)
+	_, neurv, _ := gp.Structs.ValByIdxTry("Neurons", 0)
+	neurv.CopyToBytes(unsafe.Pointer(&net.Neurons[0]))
+	_, layv, _ := gp.Structs.ValByIdxTry("LayVals", 0)
+	layv.CopyToBytes(unsafe.Pointer(&net.LayVals[0]))
+	_, plv, _ := gp.Structs.ValByIdxTry("Pools", 0)
+	plv.CopyToBytes(unsafe.Pointer(&net.Pools[0]))
 }
 
 func (gp *GPU) SyncMemToGPU() {

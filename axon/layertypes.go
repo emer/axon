@@ -178,7 +178,7 @@ const (
 // IsExtLayerType returns true if the layer type deals with external input:
 // Input, Target, Compare
 func IsExtLayerType(lt LayerTypes) bool {
-	if lt == InputLayer || lt == TargetLayer || lt == CompareLayer {
+	if lt == InputLayer || lt == TargetLayer || lt == CompareLayer || lt == RewLayer {
 		return true
 	}
 	return false
@@ -189,7 +189,7 @@ func IsExtLayerType(lt LayerTypes) bool {
 // IsExt returns true if the layer type deals with external input:
 // Input, Target, Compare
 func (lt LayerTypes) IsExt() bool {
-	if lt == InputLayer || lt == TargetLayer || lt == CompareLayer {
+	if lt == InputLayer || lt == TargetLayer || lt == CompareLayer || lt == RewLayer {
 		return true
 	}
 	return false

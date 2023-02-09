@@ -4,34 +4,78 @@
 
 package kinase
 
+import (
+	"github.com/goki/gosl/slbool"
+	"github.com/goki/mat32"
+)
+
 //gosl: start kinase
 
 // CaDtParams has rate constants for integrating Ca calcium
 // at different time scales, including final CaP = CaMKII and CaD = DAPK1
 // timescales for LTP potentiation vs. LTD depression factors.
 type CaDtParams struct {
-	MTau float32 `def:"2,5" min:"1" desc:"CaM (calmodulin) time constant in cycles (msec) -- for synaptic-level integration this integrates on top of Ca signal from send->CaSyn * recv->CaSyn, each of which are typically integrated with a 30 msec Tau."`
-	PTau float32 `def:"40" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information."`
-	DTau float32 `def:"40" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome)."`
+	MTau   float32     `def:"2,5" min:"1" desc:"CaM (calmodulin) time constant in cycles (msec) -- for synaptic-level integration this integrates on top of Ca signal from send->CaSyn * recv->CaSyn, each of which are typically integrated with a 30 msec Tau."`
+	PTau   float32     `def:"39" min:"1" desc:"LTP spike-driven Ca factor (CaP) time constant in cycles (msec), simulating CaMKII in the Kinase framework, with 40 on top of MTau roughly tracking the biophysical rise time.  Computationally, CaP represents the plus phase learning signal that reflects the most recent past information."`
+	DTau   float32     `def:"41" min:"1" desc:"LTD spike-driven Ca factor (CaD) time constant in cycles (msec), simulating DAPK1 in Kinase framework.  Computationally, CaD represents the minus phase learning signal that reflects the expectation representation prior to experiencing the outcome (in addition to the outcome).  For integration equations, this cannot be identical to PTau."`
+	ExpAdj slbool.Bool `desc:"if true, adjust dt time constants when using exponential integration equations to compensate for difference between discrete and continuous integration"`
 
 	MDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 
-	pad, pad1 int32
+	pad int32
 }
 
 func (kp *CaDtParams) Defaults() {
 	kp.MTau = 5
-	kp.PTau = 40
-	kp.DTau = 40
+	kp.PTau = 39
+	kp.DTau = 41
+	kp.ExpAdj.SetBool(true)
 	kp.Update()
 }
 
 func (kp *CaDtParams) Update() {
+	if kp.PTau == kp.DTau { // cannot be the same
+		kp.PTau -= 1.0
+		kp.DTau += 1.0
+	}
 	kp.MDt = 1 / kp.MTau
 	kp.PDt = 1 / kp.PTau
 	kp.DDt = 1 / kp.DTau
+}
+
+// Equations for below, courtesy of Rishi Chaudhri:
+// https://www.wolframalpha.com/input?i=dx%2Fdt+%3D+-a*x%2C+dy%2Fdt+%3D+b*x+-+b*y%2C+dz%2Fdt+%3D+c*y+-+c*z
+
+// CaAtT computes the 3 Ca values at given future time, assuming 0
+// new Ca incoming (no spiking), using closed-form exponential functions.
+func (kp *CaDtParams) CaAtT(ti int32, caM, caP, caD *float32) {
+	t := float32(ti)
+	mdt := kp.MDt
+	pdt := kp.PDt
+	ddt := kp.DDt
+	if kp.ExpAdj.IsTrue() { // adjust for discrete
+		mdt *= 1.11
+		pdt *= 1.03
+		ddt *= 1.03
+	}
+	mi := *caM
+	pi := *caP
+	di := *caD
+
+	*caM = mi * mat32.FastExp(-t*mdt)
+
+	em := mat32.FastExp(t * mdt)
+	ep := mat32.FastExp(t * pdt)
+
+	*caP = pi*mat32.FastExp(-t*pdt) - (pdt*mi*mat32.FastExp(-t*(mdt+pdt))*(em-ep))/(pdt-mdt)
+
+	epd := mat32.FastExp(t * (pdt + ddt))
+	emd := mat32.FastExp(t * (mdt + ddt))
+	emp := mat32.FastExp(t * (mdt + pdt))
+
+	*caD = pdt*ddt*mi*mat32.FastExp(-t*(mdt+pdt+ddt))*(ddt*(emd-epd)+(pdt*(epd-emp))+mdt*(emp-emd))/((mdt-pdt)*(mdt-ddt)*(pdt-ddt)) - ddt*pi*mat32.FastExp(-t*(pdt+ddt))*(ep-mat32.FastExp(t*ddt))/(ddt-pdt) + di*mat32.FastExp(-t*ddt)
 }
 
 // CaParams has rate constants for integrating spike-driven Ca calcium
@@ -98,9 +142,10 @@ func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD *float32) {
 		*caD = 0
 		return
 	}
-	for i := int32(0); i < isi; i++ {
-		kp.FmCa(0, caM, caP, caD) // just decay to 0
-	}
+	kp.Dt.CaAtT(isi, caM, caP, caD) // this is roughly 7x faster than iterating:
+	// for i := int32(0); i < isi; i++ {
+	// 	kp.FmCa(0, caM, caP, caD) // just decay to 0
+	// }
 	return
 }
 
