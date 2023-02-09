@@ -157,7 +157,7 @@ func (nt *NetworkBase) LayerMapSeq(fun func(ly AxonLayer), funame string) {
 func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string, nThreads int) {
 	nt.FunTimerStart(funame)
 	if nThreads <= 1 {
-		nt.NeuronMapSequential(fun, funame)
+		nt.NeuronMapSeq(fun, funame)
 	} else {
 		parallelRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
@@ -170,8 +170,8 @@ func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni uint32, nrn *
 	nt.FunTimerStop(funame)
 }
 
-// NeuronMapSequential applies function of given name to all neurons sequentially.
-func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string) {
+// NeuronMapSeq applies function of given name to all neurons sequentially.
+func (nt *NetworkBase) NeuronMapSeq(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string) {
 	nt.FunTimerStart(funame)
 	for _, layer := range nt.Layers {
 		lyr := layer.(AxonLayer)
