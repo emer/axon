@@ -51,14 +51,14 @@ func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
 	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
 
 	// heuristics
-	prjnMinThr := ints.MinInt(ints.MaxInt(nPrjns, 1), 4)
+	synCaHeur := ints.MaxInt(nPrjns, 1)
 	synHeur := math.Ceil(float64(nNeurons) / float64(1000))
 	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
 
 	if err := nt.Set(
 		ints.MinInt(maxProcs, int(neuronHeur)),
 		ints.MinInt(maxProcs, int(synHeur)),
-		ints.MinInt(maxProcs, int(prjnMinThr)),
+		ints.MinInt(maxProcs, int(synCaHeur)),
 	); err != nil {
 		log.Fatal(err)
 	}
