@@ -32,7 +32,7 @@ func TestGPUAct(t *testing.T) {
 
 	ctx := NewContext()
 
-	testNet.GPUOnNoGUI(ctx)
+	testNet.ConfigGPUnoGUI(ctx)
 
 	printCycs := false
 	printQtrs := false
@@ -94,7 +94,7 @@ func TestGPUAct(t *testing.T) {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				testNet.Cycle(ctx)
 				ctx.CycleInc()
-				testNet.GPU.CopyNeuronsFromGPU(ctx, testNet)
+				testNet.GPU.CopyNeuronsFmGPU()
 
 				if printCycs {
 					inLay.UnitVals(&inExts, "Ext")
@@ -255,7 +255,7 @@ func TestGPULearn(t *testing.T) {
 
 		ctx := NewContext()
 
-		testNet.GPUOnNoGUI(ctx)
+		testNet.ConfigGPUnoGUI(ctx)
 
 		for pi := 0; pi < 4; pi++ {
 			inpat, err := inPats.SubSpaceTry([]int{pi})
@@ -273,7 +273,7 @@ func TestGPULearn(t *testing.T) {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					testNet.Cycle(ctx)
 					ctx.CycleInc()
-					testNet.GPU.CopyNeuronsFromGPU(ctx, testNet)
+					testNet.GPU.CopyNeuronsFmGPU()
 
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
@@ -321,14 +321,14 @@ func TestGPULearn(t *testing.T) {
 			didx := ti*4 + pi
 
 			testNet.DWt(ctx)
-			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
+			testNet.GPU.CopySynapsesFmGPU()
 
 			// note: gotta grab dwt while they exist
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
 			testNet.WtFmDWt(ctx)
-			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
+			testNet.GPU.CopySynapsesFmGPU()
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
@@ -422,7 +422,7 @@ func TestGPURLRate(t *testing.T) {
 
 		ctx := NewContext()
 
-		testNet.GPUOnNoGUI(ctx)
+		testNet.ConfigGPUnoGUI(ctx)
 
 		for pi := 0; pi < 4; pi++ {
 			inpat, err := inPats.SubSpaceTry([]int{pi})
@@ -440,7 +440,7 @@ func TestGPURLRate(t *testing.T) {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					testNet.Cycle(ctx)
 					ctx.CycleInc()
-					testNet.GPU.CopyNeuronsFromGPU(ctx, testNet)
+					testNet.GPU.CopyNeuronsFmGPU()
 
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
@@ -480,7 +480,7 @@ func TestGPURLRate(t *testing.T) {
 				}
 			}
 			testNet.PlusPhase(ctx)
-			testNet.GPU.CopyNeuronsFromGPU(ctx, testNet) // RLRate updated after plus
+			testNet.GPU.CopyNeuronsFmGPU() // RLRate updated after plus
 
 			if printQtrs {
 				fmt.Printf("=============================\n")
@@ -491,7 +491,7 @@ func TestGPURLRate(t *testing.T) {
 			copy(hidrlrs[ridx:ridx+4], hidRLRate)
 
 			testNet.DWt(ctx)
-			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
+			testNet.GPU.CopySynapsesFmGPU()
 
 			didx := ti*4 + pi
 
@@ -499,7 +499,7 @@ func TestGPURLRate(t *testing.T) {
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
 			testNet.WtFmDWt(ctx)
-			testNet.GPU.CopySynapsesFromGPU(ctx, testNet)
+			testNet.GPU.CopySynapsesFmGPU()
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)

@@ -103,10 +103,6 @@ func (nt *Network) SynVarProps() map[string]string {
 // Should already have presented the external input to the network at this point.
 // Does NOT call InitGScale()
 func (nt *Network) NewState(ctx *Context) {
-	if nt.GPU.On {
-		nt.GPU.RunNewState(ctx, nt)
-		return
-	}
 	nt.EmerNet.(AxonNetwork).NewStateImpl(ctx)
 }
 
@@ -121,7 +117,7 @@ func (nt *Network) Cycle(ctx *Context) {
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
 func (nt *Network) CycleImpl(ctx *Context) {
 	if nt.GPU.On {
-		nt.GPU.RunCycle(ctx, nt)
+		nt.GPU.RunCycle()
 		return
 	}
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
@@ -141,19 +137,11 @@ func (nt *Network) CycleImpl(ctx *Context) {
 
 // MinusPhase does updating after end of minus phase
 func (nt *Network) MinusPhase(ctx *Context) {
-	if nt.GPU.On {
-		nt.GPU.RunMinusPhase(ctx, nt)
-		return
-	}
 	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctx)
 }
 
 // PlusPhase does updating after end of plus phase
 func (nt *Network) PlusPhase(ctx *Context) {
-	if nt.GPU.On {
-		nt.GPU.RunPlusPhase(ctx, nt)
-		return
-	}
 	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctx)
 }
 
@@ -235,6 +223,7 @@ func (nt *Network) InitWts() {
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
+	nt.GPU.SyncSynapsesToGPU()
 }
 
 // InitTopoSWts initializes SWt structural weight parameters from
@@ -296,6 +285,7 @@ func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 		}
 		ly.(AxonLayer).DecayState(ctx, decay, glong)
 	}
+	nt.GPU.SyncStateToGPU()
 }
 
 // DecayStateByType decays activation state for given class name(s)
@@ -310,6 +300,7 @@ func (nt *Network) DecayStateByType(ctx *Context, decay, glong float32, types ..
 		}
 		ly.DecayState(ctx, decay, glong)
 	}
+	nt.GPU.SyncStateToGPU()
 }
 
 // InitActs fully initializes activation state -- not automatically called
@@ -320,6 +311,7 @@ func (nt *Network) InitActs() {
 		}
 		ly.(AxonLayer).InitActs()
 	}
+	nt.GPU.SyncStateToGPU()
 }
 
 // InitExt initializes external input state.
@@ -341,7 +333,7 @@ func (nt *Network) InitExt() {
 // and should be added to all sims where GPU will be used.
 func (nt *Network) ApplyExts(ctx *Context) {
 	if nt.GPU.On {
-		nt.GPU.RunApplyExts(ctx, nt)
+		nt.GPU.RunApplyExts()
 		return
 	}
 }
@@ -360,6 +352,10 @@ func (nt *Network) UpdateExtFlags() {
 
 // NewStateImpl handles all initialization at start of new input state
 func (nt *Network) NewStateImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunNewState()
+		return
+	}
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -370,6 +366,10 @@ func (nt *Network) NewStateImpl(ctx *Context) {
 
 // MinusPhaseImpl does updating after end of minus phase
 func (nt *Network) MinusPhaseImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunMinusPhase()
+		return
+	}
 	// not worth threading this probably
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -381,6 +381,10 @@ func (nt *Network) MinusPhaseImpl(ctx *Context) {
 
 // PlusPhaseImpl does updating after end of plus phase
 func (nt *Network) PlusPhaseImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunPlusPhase()
+		return
+	}
 	// not worth threading this probably
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -397,7 +401,7 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 func (nt *Network) DWtImpl(ctx *Context) {
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
 	if nt.GPU.On {
-		nt.GPU.RunDWt(ctx, nt)
+		nt.GPU.RunDWt()
 		return
 	}
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt") // def thread
@@ -406,7 +410,7 @@ func (nt *Network) DWtImpl(ctx *Context) {
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctx *Context) {
 	if nt.GPU.On {
-		nt.GPU.RunWtFmDWt(ctx, nt)
+		nt.GPU.RunWtFmDWt()
 		return
 	}
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")

@@ -31,10 +31,15 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	GPU = true
+)
 
 func main() {
 	TheSim.New()
@@ -51,7 +56,6 @@ func main() {
 func guirun() {
 	TheSim.Init()
 	win := TheSim.ConfigGui()
-	TheSim.Net.GPUOnGUI(&TheSim.Context) // must happen after gui or no gui
 	win.StartEventLoop()
 }
 
@@ -414,8 +418,8 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	ss.Net.GPU.CopyStateFromGPU(&ss.Context, ss.Net)
-	ss.Net.GPU.CopySynapsesFromGPU(&ss.Context, ss.Net)
+	ss.Net.GPU.CopyStateFmGPU()
+	ss.Net.GPU.CopySynapsesFmGPU() // optional
 	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
@@ -549,9 +553,14 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		vgpu.Debug = true                        // get debugging messages on GPU
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context) // must happen after gui or no gui
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
-
-	// GPU todo: need OnQuit call to delete GPU
 }
 
 func (ss *Sim) ConfigArgs() {
@@ -587,7 +596,9 @@ func (ss *Sim) CmdArgs() {
 
 	ss.NewRun()
 
-	ss.Net.GPUOnNoGUI(&TheSim.Context) // must happen after gui or no gui
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&TheSim.Context) // must happen after gui or no gui
+	}
 
 	ss.Loops.Run(etime.Train)
 
@@ -597,5 +608,5 @@ func (ss *Sim) CmdArgs() {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
 
-	ss.Net.GPU.Destroy()
+	ss.Net.GPU.Destroy() // safe even if no GPU
 }
