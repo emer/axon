@@ -243,23 +243,23 @@ func (pj *PrjnParams) CycleSynCaSyn(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on projection type.
 // rpl is the receiving layer SubPool
-func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool, isTarget bool) {
+func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool *Pool, isTarget bool) {
 	switch pj.PrjnType {
 	case RWPrjn:
-		pj.DWtSynRWPred(ctx, sy, sn, rn, layPool, subPool)
+		pj.DWtSynRWPred(ctx, sy, sn, rn)
 	case TDPredPrjn:
-		pj.DWtSynTDPred(ctx, sy, sn, rn, layPool, subPool)
+		pj.DWtSynTDPred(ctx, sy, sn, rn)
 	case MatrixPrjn:
-		pj.DWtSynMatrix(ctx, sy, sn, rn, layPool, subPool)
+		pj.DWtSynMatrix(ctx, sy, sn, rn, layPool)
 	default:
-		pj.DWtSynCortex(ctx, sy, sn, rn, layPool, subPool, isTarget)
+		pj.DWtSynCortex(ctx, sy, sn, rn, isTarget)
 	}
 }
 
 // DWtSynCortex computes the weight change (learning) at given synapse for cortex.
 // Uses synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool, isTarget bool) {
+func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, isTarget bool) {
 	caM := sy.CaM
 	caP := sy.CaP
 	caD := sy.CaD
@@ -298,7 +298,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
 // for the RWPredPrjn type
-func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 	// todo: move all of this into rn.RLRate
 	lda := ctx.NeuroMod.DA
 	da := lda
@@ -333,7 +333,7 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 
 // DWtSynTDPred computes the weight change (learning) at given synapse,
 // for the TDRewPredPrjn type
-func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron) {
 	// todo: move all of this into rn.RLRate
 	lda := ctx.NeuroMod.DA
 	da := lda
@@ -356,7 +356,7 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 
 // DWtSynMatrix computes the weight change (learning) at given synapse,
 // for the MatrixPrjn type.
-func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
 	dtr := float32(0)

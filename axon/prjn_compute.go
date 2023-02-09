@@ -163,8 +163,7 @@ func (pj *Prjn) DWt(ctx *Context) {
 			sy := &syns[ci]
 			si := pj.Params.SynSendLayIdx(sy)
 			sn := &slay.Neurons[si]
-			subPool := &rlay.Pools[rn.SubPool]
-			pj.Params.DWtSyn(ctx, sy, sn, rn, layPool, subPool, isTarget)
+			pj.Params.DWtSyn(ctx, sy, sn, rn, layPool, isTarget)
 		}
 	}
 }
