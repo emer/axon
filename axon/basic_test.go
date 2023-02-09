@@ -187,7 +187,7 @@ func TestNetAct(t *testing.T) {
 	ctx := NewContext()
 
 	printCycs := false
-	printQtrs := true
+	printQtrs := false
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
 	qtr0HidGes := []float32{0.31093338, 0, 0, 0}

@@ -40,7 +40,6 @@ CMD=(${exe} -test.bench=BenchmarkBenchNetFull -writestats)
 echo " "
 echo "=============================================================="
 echo "HUGE Network (5 x 1024 units)"
-turning off verbose allows fast cycle-level processing
 ${CMD[@]} -epochs 2 -pats 5 -units 1024 -gpu -verbose=false $*
 ${CMD[@]} -epochs 2 -pats 5 -units 1024 -gpu $*
 ${CMD[@]} -epochs 2 -pats 5 -units 1024 $*

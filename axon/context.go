@@ -11,8 +11,8 @@ import (
 )
 
 //gosl: hlsl context
-// #include "slrand.hlsl"
 // #include "etime.hlsl"
+// #include "axonrand.hlsl"
 // #include "neuromod.hlsl"
 //gosl: end context
 

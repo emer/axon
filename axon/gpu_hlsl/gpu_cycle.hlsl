@@ -39,30 +39,27 @@ void PulvinarDriver(in LayerParams ly, in LayerParams dly, in Pool lpl, uint ni,
 
 // GInteg integrates conductances G over time (Ge, NMDA, etc).
 // calls NeuronGatherSpikes, GFmRawSyn, GiInteg
-void GInteg(in Context ctx, in LayerParams ly, uint ni, uint nin, inout Neuron nrn, in Pool pl, in LayerVals vals, inout uint2 randctr) {
+void GInteg(in Context ctx, in LayerParams ly, uint ni, uint nin, inout Neuron nrn, in Pool pl, in LayerVals vals) {
 	float drvGe = 0;
 	float nonDrvPct = 0;
 	if (ly.LayType == PulvinarLayer) {
 		PulvinarDriver(ly, Layers[ly.Pulv.DriveLayIdx], Pools[Layers[ly.Pulv.DriveLayIdx].Idxs.PoolSt], ni, nin, drvGe, nonDrvPct);
 	}
 
-	float saveVal = ly.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct, randctr);
+	float saveVal = ly.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct);
 	
-	ly.GFmRawSyn(ctx, ni, nrn, randctr);
+	ly.GFmRawSyn(ctx, ni, nrn);
 	ly.GiInteg(ctx, ni, nrn, pl, vals);
 	ly.GNeuroMod(ctx, ni, nrn, vals);
 	
-	ly.SpecialPostGs(ctx, ni, nrn, randctr, 0);
+	ly.SpecialPostGs(ctx, ni, nrn, 0);
 }
 
 void CycleNeuron2(in Context ctx, in LayerParams ly, uint nin, inout Neuron nrn, in Pool pl, in Pool lpl, in LayerVals vals) {
 	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
-	uint2 randctr = ctx.RandCtr.Uint2();
 	
-	GInteg(ctx, ly, ni, nin, nrn, pl, vals, randctr);
+	GInteg(ctx, ly, ni, nin, nrn, pl, vals);
 	ly.SpikeFmG(ctx, ni, nrn);
-	ly.PostSpikeSpecial(ctx, ni, nrn, pl, lpl, vals);
-	ly.PostSpike(ctx, ni, nrn, pl, vals);
 }
 
 void CycleNeuron(in Context ctx, uint ni, inout Neuron nrn) {
