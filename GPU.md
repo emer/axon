@@ -4,23 +4,28 @@ This document provides detailed info about the GPU implementation of axon, using
 
 # GPU Variable layout:
 
-Set 0:  Uniforms
-    0. LayerParams -- array by layer index
-    1. PrjnParams -- array by prjn index -- need flat prjn indexes!
-
-Set 1:  non-RW Storage of indexes -- can't use uniform or ConstantBuffer
-    0. SendNeurSynIdxs
-    1. RecvNeurSynIdxs
-    2. RecvSynIdxs
-    
-Set 2:  Storage
-    0. Time
-    1. Neurons -- array by global neuron index
-    2. Synapses -- array by global synapse index?
-    3. Pools -- multi-dim array?
-    4. LayerVals -- array by layer index
-    5. PrjnVals -- array by prjn index
-
+Set: 0
+    Role: Uniform
+        Var: 0:	Layers	Struct[4]	(size: 1280)	Vals: 1
+Set: 1
+    Role: Storage
+        Var: 0:	Prjns	Struct[5]	(size: 336)	Vals: 1
+        Var: 1:	RecvCon	Struct[281]	(size: 16)	Vals: 1
+        Var: 2:	SendPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
+        Var: 3:	SendCon	Struct[242]	(size: 16)	Vals: 1
+        Var: 4:	SendSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
+Set: 2
+    Role: Storage
+        Var: 0:	Ctxt	Struct	(size: 112)	Vals: 1
+        Var: 1:	Neurons	Struct[178]	(size: 368)	Vals: 1
+        Var: 2:	Pools	Struct[4]	(size: 720)	Vals: 1
+        Var: 3:	LayVals	Struct[4]	(size: 112)	Vals: 1
+        Var: 4:	Synapses	Struct[12992]	(size: 64)	Vals: 1
+        Var: 5:	GBuf	Int32[843]	(size: 4)	Vals: 1
+        Var: 6:	GSyns	Float32[281]	(size: 4)	Vals: 1
+Set: 3
+    Role: Storage
+        Var: 0:	Exts	Float32[50]	(size: 4)	Vals: 1
 
 # General issues and strategies
 

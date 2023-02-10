@@ -31,7 +31,6 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
-	"github.com/goki/vgpu/vgpu"
 )
 
 var (
@@ -554,7 +553,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 	ss.GUI.FinalizeGUI(false)
 	if GPU {
-		vgpu.Debug = true                        // get debugging messages on GPU
+		// vgpu.Debug = true                        // get debugging messages on GPU
 		ss.Net.ConfigGPUwithGUI(&TheSim.Context) // must happen after gui or no gui
 		gi.SetQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()

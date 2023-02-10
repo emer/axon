@@ -210,14 +210,16 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("WtFmDWt", content, "shaders/gpu_wtfmdwt.spv")
 	gp.Sys.NewComputePipelineEmbed("ApplyExts", content, "shaders/gpu_applyext.spv")
 
-	gp.Sys.NewSemaphore("CycleEnd")
-	gp.Sys.NewSemaphore("GatherSpikes")
-	gp.Sys.NewSemaphore("LayGi")
-	gp.Sys.NewSemaphore("BetweenGi")
-	gp.Sys.NewSemaphore("PoolGi")
-	gp.Sys.NewSemaphore("Cycle")
-	gp.Sys.NewSemaphore("SendSpike")
-	gp.Sys.NewSemaphore("SynCaSend")
+	gp.Sys.NewEvent("MemCopyTo")
+	gp.Sys.NewEvent("MemCopyFm")
+	gp.Sys.NewEvent("CycleEnd")
+	gp.Sys.NewEvent("GatherSpikes")
+	gp.Sys.NewEvent("LayGi")
+	gp.Sys.NewEvent("BetweenGi")
+	gp.Sys.NewEvent("PoolGi")
+	gp.Sys.NewEvent("Cycle")
+	gp.Sys.NewEvent("SendSpike")
+	gp.Sys.NewEvent("SynCaSend")
 	gp.Sys.NewFence("Cycle")
 
 	gp.Sys.Config()
@@ -523,28 +525,44 @@ func (gp *GPU) CopyStateFmGPU() {
 ///////////////////////////////////////////////////////////////////////
 // 	Run
 
-// RunPipeline runs given pipeline with optional wait & signal semaphores and fence.
-// If recording function times, it does not use the semaphores -- waits -- much slower
-// but useful for diagnosing individual function timing.
-func (gp *GPU) RunPipeline(name string, n int, wait, signal, fence string) {
+// RunPipelineSubmitWait runs given pipeline in "single shot" mode,
+// which is maximally inefficient if multiple commands need to be run.
+// This is the only mode in which timer information is available.
+func (gp *GPU) RunPipelineSubmitWait(name string, n int) {
 	pl, err := gp.Sys.PipelineByNameTry(name)
 	if err != nil {
 		panic(err)
 	}
 	gnm := "GPU:" + name
 	gp.Net.FunTimerStart(gnm)
-	gp.Sys.CmdResetBindVars(gp.Sys.CmdPool.Buff, 0)
+	gp.Sys.ComputeResetBindVars(0)
 	pl.ComputeCommand1D(n, gp.NThreads)
-	if gp.Net.RecFunTimes || (signal == "" && fence == "") {
-		gp.Sys.ComputeSubmitWait()
-		gp.Net.FunTimerStop(gnm)
-		return
+	gp.Sys.ComputeSubmitWait()
+	gp.Net.FunTimerStop(gnm)
+}
+
+// StartRun resets the command buffer in preparation for recording commands
+// for a multi-step run.
+// It is much more efficient to record all commands to one buffer, and use
+// Events to synchronize the steps between them, rather than using semaphores.
+// The submit call is by far the most expensive so that should only happen once!
+func (gp *GPU) StartRun() {
+	gp.Sys.ComputeResetBindVars(0)
+}
+
+// RunPipelineWaitSignal records command to run given pipeline with
+// optional wait & signal event names
+func (gp *GPU) RunPipeline(name string, n int, wait, signal string) {
+	pl, err := gp.Sys.PipelineByNameTry(name)
+	if err != nil {
+		panic(err)
 	}
-	// could use fence but no semaphores -- try it: https://stackoverflow.com/questions/39537176/in-what-situations-is-vkfence-better-than-vkqueuewaitidle-for-vkqueuesubmit
 	if wait != "" {
-		gp.Sys.ComputeSubmitWaitSignal(wait, signal, fence)
-	} else {
-		gp.Sys.ComputeSubmitSignal(signal, fence)
+		gp.Sys.ComputeWaitEvents(wait)
+	}
+	pl.ComputeCommand1D(n, gp.NThreads)
+	if signal != "" {
+		gp.Sys.ComputeSetEvent(signal)
 	}
 }
 
@@ -554,8 +572,16 @@ func (gp *GPU) RunPipeline(name string, n int, wait, signal, fence string) {
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunApplyExts() {
 	gp.CopyExtsToGPU()
-	gp.SyncMemToGPU()
-	gp.RunPipeline("ApplyExts", len(gp.Net.Neurons), "", "", "")
+	exr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Exts.Set, "Exts", 0)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	gp.StartRun()
+	gp.Sys.ComputeCmdCopyToGPU(exr)
+	gp.Sys.ComputeSetEvent("MemCopyTo")
+	gp.RunPipeline("ApplyExts", len(gp.Net.Neurons), "MemCopyTo", "")
+	gp.Sys.ComputeSubmitWait()
 }
 
 // RunCycle is the main cycle-level update loop for updating one msec of neuron state.
@@ -564,27 +590,51 @@ func (gp *GPU) RunApplyExts() {
 // different shader programs using Semaphores to coordinate sequencing on the GPU.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunCycle() {
-	gp.SyncContextToGPU() // todo: see about making this use semaphores?
-	gp.RunPipeline("GatherSpikes", len(gp.Net.Neurons), "", "GatherSpikes", "")
-
-	gp.RunPipeline("LayGi", len(gp.Net.Layers), "GatherSpikes", "LayGi", "")
-	gp.RunPipeline("BetweenGi", len(gp.Net.Layers), "LayGi", "BetweenGi", "")
-	gp.RunPipeline("PoolGi", len(gp.Net.Pools), "BetweenGi", "PoolGi", "")
-
-	gp.RunPipeline("Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle", "")
-
-	if gp.Ctx.Testing.IsTrue() {
-		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "CycleEnd", "Cycle")
-	} else {
-		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike", "")
-		// gp.RunPipeline("SynCa", len(gp.Net.Synapses), "SendSpike", "CycleEnd", "Cycle") // definitely slower!!
-		gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "SendSpike", "SynCaSend", "") // use send first b/c just did SendSpike -- tiny bit faster
-		gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd", "Cycle")
-	}
 	if gp.Net.RecFunTimes {
-		gp.Sys.ComputeWait()
+		gp.SyncContextToGPU()
+
+		gp.RunPipelineSubmitWait("GatherSpikes", len(gp.Net.Neurons))
+
+		gp.RunPipelineSubmitWait("LayGi", len(gp.Net.Layers))
+		gp.RunPipelineSubmitWait("BetweenGi", len(gp.Net.Layers))
+		gp.RunPipelineSubmitWait("PoolGi", len(gp.Net.Pools))
+
+		gp.RunPipelineSubmitWait("Cycle", len(gp.Net.Neurons))
+
+		if gp.Ctx.Testing.IsTrue() {
+			gp.RunPipelineSubmitWait("SendSpike", len(gp.Net.Neurons))
+		} else {
+			gp.RunPipelineSubmitWait("SendSpike", len(gp.Net.Neurons))
+			gp.RunPipelineSubmitWait("SynCaSend", len(gp.Net.Neurons))
+			gp.RunPipelineSubmitWait("SynCaRecv", len(gp.Net.Neurons))
+		}
 	} else {
-		gp.Sys.ComputeWaitFence("Cycle")
+		gp.CopyContextToGPU()
+		cxr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Ctxt", 0)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		gp.StartRun()
+		gp.Sys.ComputeCmdCopyToGPU(cxr)
+		gp.Sys.ComputeSetEvent("MemCopyTo")
+		gp.RunPipeline("GatherSpikes", len(gp.Net.Neurons), "MemCopyTo", "GatherSpikes")
+
+		gp.RunPipeline("LayGi", len(gp.Net.Layers), "GatherSpikes", "LayGi")
+		gp.RunPipeline("BetweenGi", len(gp.Net.Layers), "LayGi", "BetweenGi")
+		gp.RunPipeline("PoolGi", len(gp.Net.Pools), "BetweenGi", "PoolGi")
+
+		gp.RunPipeline("Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
+
+		if gp.Ctx.Testing.IsTrue() {
+			gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "CycleEnd")
+		} else {
+			gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
+			// gp.RunPipeline("SynCa", len(gp.Net.Synapses), "SendSpike", "CycleEnd", "Cycle") // definitely slower!!
+			gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "SendSpike", "SynCaSend") // use send first b/c just did SendSpike -- tiny bit faster
+			gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
+		}
+		gp.Sys.ComputeSubmitWait()
 	}
 }
 
@@ -592,31 +642,31 @@ func (gp *GPU) RunCycle() {
 // ThetaCycle trial.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunNewState() {
-	gp.RunPipeline("NewState", len(gp.Net.Pools), "", "", "")
+	gp.RunPipelineSubmitWait("NewState", len(gp.Net.Pools))
 }
 
 // RunMinusPhase runs the MinusPhase shader to update snapshot variables
 // at the end of the minus phase.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunMinusPhase() {
-	gp.RunPipeline("MinusPhase", len(gp.Net.Pools), "", "", "")
+	gp.RunPipelineSubmitWait("MinusPhase", len(gp.Net.Pools))
 }
 
 // RunPlusPhase runs the PlusPhase shader to update snapshot variables
 // and do additional stats-level processing at end of the plus phase.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunPlusPhase() {
-	gp.RunPipeline("PlusPhase", len(gp.Net.Pools), "", "", "")
+	gp.RunPipelineSubmitWait("PlusPhase", len(gp.Net.Pools))
 }
 
 // RunDWt runs the DWt shader to compute weight changes.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunDWt() {
-	gp.RunPipeline("DWt", len(gp.Net.Synapses), "", "", "")
+	gp.RunPipelineSubmitWait("DWt", len(gp.Net.Synapses))
 }
 
 // RunWtFmDWt runs the WtFmDWt shader to update weights from weigh changes.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunWtFmDWt() {
-	gp.RunPipeline("WtFmDWt", len(gp.Net.Synapses), "", "", "")
+	gp.RunPipelineSubmitWait("WtFmDWt", len(gp.Net.Synapses))
 }

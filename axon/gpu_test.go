@@ -11,6 +11,7 @@ import (
 
 	"github.com/emer/emergent/etime"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
 func init() {
@@ -32,6 +33,7 @@ func TestGPUAct(t *testing.T) {
 
 	ctx := NewContext()
 
+	vgpu.Debug = true
 	testNet.ConfigGPUnoGUI(ctx)
 
 	printCycs := false

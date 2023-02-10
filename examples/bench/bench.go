@@ -150,7 +150,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, 
 	porder := rand.Perm(np) // randomly permuted order of ints
 
 	if gpu {
-		net.GPUOnNoGUI(ctx)
+		net.ConfigGPUnoGUI(ctx)
 	}
 
 	epcLog.SetNumRows(epcs)
