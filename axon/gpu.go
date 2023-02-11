@@ -210,6 +210,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("PlusNeuron", content, "shaders/gpu_plusneuron.spv")
 	gp.Sys.NewComputePipelineEmbed("DWt", content, "shaders/gpu_dwt.spv")
 	gp.Sys.NewComputePipelineEmbed("WtFmDWt", content, "shaders/gpu_wtfmdwt.spv")
+	gp.Sys.NewComputePipelineEmbed("DWtSubMean", content, "shaders/gpu_dwtsubmean.spv")
 	gp.Sys.NewComputePipelineEmbed("ApplyExts", content, "shaders/gpu_applyext.spv")
 
 	gp.Sys.NewEvent("MemCopyTo")
@@ -684,6 +685,8 @@ func (gp *GPU) RunPipeline(name string, n int, wait, signal string) {
 // GPU-side neuron state.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunApplyExts() {
+	gnm := "GPU:ApplyExts"
+	gp.Net.FunTimerStart(gnm)
 	gp.CopyExtsToGPU()
 	exr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Exts.Set, "Exts", 0)
 	if err != nil {
@@ -695,6 +698,7 @@ func (gp *GPU) RunApplyExts() {
 	gp.Sys.ComputeSetEvent("MemCopyTo")
 	gp.RunPipeline("ApplyExts", len(gp.Net.Neurons), "MemCopyTo", "")
 	gp.Sys.ComputeSubmitWait()
+	gp.Net.FunTimerStop(gnm)
 }
 
 // RunCycle is the main cycle-level update loop for updating one msec of neuron state.
@@ -723,6 +727,8 @@ func (gp *GPU) RunCycle() {
 		}
 		gp.SyncLayerValsFmGPU() // only thing we get back
 	} else {
+		gnm := "GPU:Cycle"
+		gp.Net.FunTimerStart(gnm)
 		cxr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Ctxt", 0)
 		if err != nil {
 			log.Println(err)
@@ -756,6 +762,7 @@ func (gp *GPU) RunCycle() {
 		gp.Sys.ComputeWaitEvents("CycleEnd")
 		gp.Sys.ComputeCmdCopyFmGPU(lvr)
 		gp.Sys.ComputeSubmitWait()
+		gp.Net.FunTimerStop(gnm)
 	}
 }
 
@@ -770,10 +777,13 @@ func (gp *GPU) RunNewState() {
 // at the end of the minus phase.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunMinusPhase() {
+	gnm := "GPU:MinusPhase"
+	gp.Net.FunTimerStart(gnm)
 	gp.StartRun()
 	gp.RunPipeline("MinusPool", len(gp.Net.Pools), "", "PoolGi")
 	gp.RunPipeline("MinusNeuron", len(gp.Net.Neurons), "PoolGi", "")
 	gp.Sys.ComputeSubmitWait()
+	gp.Net.FunTimerStop(gnm)
 }
 
 // RunPlusPhase runs the PlusPhase shader to update snapshot variables
@@ -781,6 +791,8 @@ func (gp *GPU) RunMinusPhase() {
 // All non-synapse state is copied back down after this.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunPlusPhase() {
+	gnm := "GPU:PlusPhase"
+	gp.Net.FunTimerStart(gnm)
 	nrn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Neurons", 0)
 	if err != nil {
 		log.Println(err)
@@ -805,6 +817,7 @@ func (gp *GPU) RunPlusPhase() {
 	gp.CopyNeuronsFmGPU()
 	gp.CopyLayerValsFmGPU()
 	gp.CopyPoolsFmGPU()
+	gp.Net.FunTimerStop(gnm)
 }
 
 // RunDWt runs the DWt shader to compute weight changes.
@@ -816,5 +829,11 @@ func (gp *GPU) RunDWt() {
 // RunWtFmDWt runs the WtFmDWt shader to update weights from weigh changes.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunWtFmDWt() {
-	gp.RunPipelineWait("WtFmDWt", len(gp.Net.Synapses))
+	gnm := "GPU:WtFmDWt"
+	gp.Net.FunTimerStart(gnm)
+	gp.StartRun()
+	gp.RunPipeline("DWtSubMean", len(gp.Net.Neurons), "", "PoolGi")
+	gp.RunPipeline("WtFmDWt", len(gp.Net.Synapses), "PoolGi", "")
+	gp.Sys.ComputeSubmitWait()
+	gp.Net.FunTimerStop(gnm)
 }
