@@ -63,7 +63,7 @@ type NetworkBase struct {
 	Exts []float32 `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
-	GPU         GPU                    `desc:"GPU implementation"`
+	GPU         GPU                    `view:"inline" desc:"GPU implementation"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
 	WaitGp      sync.WaitGroup         `view:"-" desc:"network-level wait group for synchronizing threaded layer calls"`

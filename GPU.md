@@ -1,6 +1,45 @@
 # GPU: graphical processing unit implementation
 
-This document provides detailed info about the GPU implementation of axon, using [gosl](https://github.com/goki/gosl) to convert the existing Go code into HLSL shader code, in the `shaders` directory, which is then compiled and loaded by the [vgpu](https://github.com/goki/vgpu) Vulkan GPU framework.  This allows the same Go codebase to run on CPU and GPU.
+This document provides detailed info about the GPU implementation of axon, which allows the same Go codebase to run on CPU and GPU.  [gosl](https://github.com/goki/gosl) converts the existing Go code into HLSL shader code, along with hand-written HLSL glue code in `gpu_hlsl`, all of which ends up in the `shaders` directory.  The `go generate` command in the `axon` subdirectory, or equivalent `make all` target in the `shaders` directory, must be called whenever the main codebase changes.  The `.hlsl` files are compiled via `glslc` into SPIR-V `.spv` files that are embedded into the axon library and loaded by the [vgpu](https://github.com/goki/vgpu) Vulkan GPU framework.
+
+To add GPU support to an existing simulation, add these lines to the end of the `ConfigGUI` method to run in GUI mode:
+
+```Go
+	ss.GUI.FinalizeGUI(false) // existing -- insert below vvv
+	if GPU {
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
+	return ss.GUI.Win // existing -- insert above ^^^
+```
+
+And in the `CmdArgs()` function for `-nogui` command-line execution, there is a default `-gpu` arg added by the `ecmd.Args` package, which can be passed to use gpu with this additional code:
+
+```Go
+	ss.NewRun() // existing -- insert below vvv
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&TheSim.Context)
+	}
+```
+
+and at the very end of that function:
+```Go
+	ss.Net.GPU.Destroy()
+```
+
+You must also add this at the end of the `ApplyInputs` method:
+```Go
+	ss.Net.ApplyExts(&ss.Context)
+```
+which actually applies the external inputs to the network in GPU mode (and does nothing in CPU mode).
+
+The `Net.GPU` object manages all the GPU functionality and the `Net.GPU.On` is checked to determine whether to use GPU vs. CPU for all the relevant function calls -- that flag can be toggled to switch.  Direct calls to GPU methods automatically check the flag and return immediately if not `On`, so it is safe to just include these directly, e.g., for additional places where memory is `Sync`'d.
+
+The network state (everything except Synapses) is automatically synchronized at the end of the Plus Phase, so it will be visible in the netview.
+
+Also, the `axon.LooperUpdtNetView` method now requires a `ss.Net` argument, to enable grabbing Neuron state if updating at the Cycle level.
 
 # GPU Variable layout:
 

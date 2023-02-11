@@ -26,7 +26,7 @@
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 [[vk::binding(2, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Pools]
-[[vk::binding(3, 2)]] StructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] StructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
 [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][MaxDel+1][RecvNeurons]
 // [[vk::binding(6, 2)]] StructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
@@ -60,8 +60,8 @@ void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron sn)
 	}
 }
 
-void PostSpike(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, in Pool lpl, in LayerVals vals) {
-	ly.PostSpikeSpecial(ctx, ni, nrn, pl, lpl, vals);
+void PostSpike(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in Pool pl, in Pool lpl, inout LayerVals vals) {
+	ly.PostSpikeSpecial(ctx, ni, nrn, pl, lpl, vals); // this writes to vals
 	ly.PostSpike(ctx, ni, nrn, pl, vals);
 }
 

@@ -90,7 +90,7 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs) {
 }
 
 // LooperUpdtNetView adds netview update calls at each time level
-func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt) {
+func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Network) {
 	for m, stack := range man.Stacks {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {
@@ -103,6 +103,7 @@ func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt) {
 		}
 		cycLoop := man.GetLoop(curMode, etime.Cycle)
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
+			net.GPU.SyncNeuronsFmGPU()
 			cyc := cycLoop.Counter.Cur
 			viewupdt.UpdateCycle(cyc)
 		})

@@ -118,6 +118,7 @@ func (nt *Network) Cycle(ctx *Context) {
 func (nt *Network) CycleImpl(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunCycle()
+		nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 		return
 	}
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
@@ -128,11 +129,11 @@ func (nt *Network) CycleImpl(ctx *Context) {
 	if !nt.CPURecvSpikes {
 		nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) }, "SendSpike")
 	}
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 	if ctx.Testing.IsFalse() {
 		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
 		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
 	}
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 }
 
 // MinusPhase does updating after end of minus phase

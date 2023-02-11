@@ -103,16 +103,17 @@ var TheGPU *vgpu.GPU
 
 // GPU manages all of the GPU-based computation
 type GPU struct {
-	On         bool                    `desc:"if true, actually use the GPU"`
-	Net        *Network                `desc:"the network we operate on -- we live under this net"`
-	Ctx        *Context                `desc:"the context we use"`
-	Sys        *vgpu.System            `desc:"the vgpu compute system"`
-	Params     *vgpu.VarSet            `desc:"VarSet = 0: the uniform LayerParams"`
-	Prjns      *vgpu.VarSet            `desc:"VarSet = 1: the storage PrjnParams, RecvCon, Send*"`
-	Structs    *vgpu.VarSet            `desc:"VarSet = 2: the Storage buffer for RW state structs "`
-	Exts       *vgpu.VarSet            `desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
-	Semaphores map[string]vk.Semaphore `view:"-" desc:"for sequencing commands"`
-	NThreads   int                     `def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
+	On          bool                    `desc:"if true, actually use the GPU"`
+	RecFunTimes bool                    `desc:"if true, slower separate shader pipeline runs are used, with a CPU-sync Wait at the end, to enable timing information about each individual shader to be collected using the network FunTimer system.  otherwise, only aggregate information is available about the entire Cycle call.`
+	Net         *Network                `view:"-" desc:"the network we operate on -- we live under this net"`
+	Ctx         *Context                `view:"-" desc:"the context we use"`
+	Sys         *vgpu.System            `view:"-" desc:"the vgpu compute system"`
+	Params      *vgpu.VarSet            `view:"-" desc:"VarSet = 0: the uniform LayerParams"`
+	Prjns       *vgpu.VarSet            `view:"-" desc:"VarSet = 1: the storage PrjnParams, RecvCon, Send*"`
+	Structs     *vgpu.VarSet            `view:"-" desc:"VarSet = 2: the Storage buffer for RW state structs "`
+	Exts        *vgpu.VarSet            `view:"-" desc:"Varset = 3: the Storage buffer for external inputs -- sync frequently"`
+	Semaphores  map[string]vk.Semaphore `view:"-" desc:"for sequencing commands"`
+	NThreads    int                     `view:"-" inactive:"-" def:"64" desc:"number of warp threads -- typically 64 -- must update all hlsl files if changed!"`
 
 	DidBind map[string]bool `view:"-" desc:"tracks var binding"`
 }
@@ -576,6 +577,13 @@ func (gp *GPU) SyncSynapsesFmGPU() {
 	gp.CopySynapsesFmGPU()
 }
 
+// CopyStateFmCPU copies Neurons, LayerVals, and Pools from GPU to CPU, after Sync.
+func (gp *GPU) CopyStateFmGPU() {
+	gp.CopyNeuronsFmGPU()
+	gp.CopyLayerValsFmGPU()
+	gp.CopyPoolsFmGPU()
+}
+
 // SyncStateFmCPU copies Neurons, LayerVals, and Pools from GPU to CPU.
 // This is the main GPU->CPU sync step automatically called in PlusPhase.
 func (gp *GPU) SyncStateFmGPU() {
@@ -598,9 +606,7 @@ func (gp *GPU) SyncStateFmGPU() {
 		return
 	}
 	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrn, lvl, pl)
-	gp.CopyNeuronsFmGPU()
-	gp.CopyLayerValsFmGPU()
-	gp.CopyPoolsFmGPU()
+	gp.CopyStateFmGPU()
 }
 
 // SyncAllFmCPU copies Neurons, LayerVals, Pools, and Synapses from GPU to CPU.
@@ -630,9 +636,7 @@ func (gp *GPU) SyncAllFmGPU() {
 		return
 	}
 	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrn, lvl, pl, syn)
-	gp.CopyNeuronsFmGPU()
-	gp.CopyLayerValsFmGPU()
-	gp.CopyPoolsFmGPU()
+	gp.CopyStateFmGPU()
 	gp.CopySynapsesFmGPU()
 }
 
@@ -707,7 +711,7 @@ func (gp *GPU) RunApplyExts() {
 // different shader programs using Semaphores to coordinate sequencing on the GPU.
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunCycle() {
-	if gp.Net.RecFunTimes { // must use Wait calls here.
+	if gp.RecFunTimes { // must use Wait calls here.
 		gp.SyncContextToGPU()
 
 		gp.RunPipelineWait("GatherSpikes", len(gp.Net.Neurons))
@@ -762,6 +766,7 @@ func (gp *GPU) RunCycle() {
 		gp.Sys.ComputeWaitEvents("CycleEnd")
 		gp.Sys.ComputeCmdCopyFmGPU(lvr)
 		gp.Sys.ComputeSubmitWait()
+		gp.CopyLayerValsFmGPU()
 		gp.Net.FunTimerStop(gnm)
 	}
 }
@@ -814,9 +819,7 @@ func (gp *GPU) RunPlusPhase() {
 	gp.Sys.ComputeWaitEvents("MemCopyFm")
 	gp.Sys.ComputeCmdCopyFmGPU(nrn, lvl, pl)
 	gp.Sys.ComputeSubmitWait()
-	gp.CopyNeuronsFmGPU()
-	gp.CopyLayerValsFmGPU()
-	gp.CopyPoolsFmGPU()
+	gp.CopyStateFmGPU()
 	gp.Net.FunTimerStop(gnm)
 }
 

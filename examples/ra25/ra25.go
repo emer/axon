@@ -31,6 +31,7 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
 var (
@@ -308,7 +309,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -551,7 +552,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 	ss.GUI.FinalizeGUI(false)
 	if GPU {
-		// vgpu.Debug = true                        // get debugging messages on GPU
+		vgpu.Debug = Debug
 		ss.Net.ConfigGPUwithGUI(&TheSim.Context) // must happen after gui or no gui
 		gi.SetQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()

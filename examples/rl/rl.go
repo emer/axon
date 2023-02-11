@@ -30,8 +30,12 @@ import (
 	"github.com/goki/gi/gimain"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	GPU = false
+)
 
 func main() {
 	TheSim.New()
@@ -225,7 +229,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -255,7 +259,8 @@ func (ss *Sim) ApplyInputs() {
 		ly.ApplyExt(pats)
 	}
 
-	ss.Context.NeuroMod.SetRew(float32(ev.Reward.Values[0]), true)
+	ss.Context.NeuroMod.SetRew(float32(ev.Reward.Values[0]), ev.HasRew)
+	ss.Net.ApplyExts(&ss.Context)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -401,6 +406,12 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
 }
 
