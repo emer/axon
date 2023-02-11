@@ -463,7 +463,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("},\n"))
 	w.Write(indent.TabBytes(depth))
-	if ly.IsLearnTrgAvg() {
+	if ly.Params.IsLearnTrgAvg() {
 		w.Write([]byte(fmt.Sprintf("\"Units\": {\n")))
 		depth++
 

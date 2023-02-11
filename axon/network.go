@@ -382,16 +382,24 @@ func (nt *Network) MinusPhaseImpl(ctx *Context) {
 // PlusPhaseImpl does updating after end of plus phase
 func (nt *Network) PlusPhaseImpl(ctx *Context) {
 	if nt.GPU.On {
-		nt.GPU.RunPlusPhase()
-		return
+		nt.GPU.RunPlusPhase() // copies all state back down: Neurons, LayerVals, Pools
+	} else {
+		// not worth threading this probably
+		for _, ly := range nt.Layers {
+			if ly.IsOff() {
+				continue
+			}
+			ly.(AxonLayer).PlusPhase(ctx)
+		}
 	}
-	// not worth threading this probably
+	// Post happens on the CPU always
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).PlusPhase(ctx)
+		ly.(AxonLayer).PlusPhasePost(ctx)
 	}
+	nt.GPU.SyncStateToGPU() // plus phase post can do anything
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -399,7 +407,6 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctx *Context) {
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
 	if nt.GPU.On {
 		nt.GPU.RunDWt()
 		return
@@ -411,11 +418,10 @@ func (nt *Network) DWtImpl(ctx *Context) {
 func (nt *Network) WtFmDWtImpl(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunWtFmDWt()
-		return
+	} else {
+		nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
+		nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
 	}
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // def no
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ctx)
 }
 
@@ -427,8 +433,15 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 		return
 	}
 	nt.SlowCtr = 0
+
+	// note: for now doing all this slow stuff CPU-side
+	// These Sync calls always check if GPU is On
+	nt.GPU.SyncAllFmGPU()
+
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
+
+	nt.GPU.SyncAllToGPU()
 }
 
 // SynFail updates synaptic failure
@@ -512,7 +525,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			ly := lyi.(AxonLayer).AsAxon()
 			nwts += 5               // ActAvgVals
 			nwts += len(ly.Neurons) // ActAvg
-			if ly.IsLearnTrgAvg() {
+			if ly.Params.IsLearnTrgAvg() {
 				nwts += len(ly.Neurons)
 			}
 			for _, pji := range ly.SndPrjns {
@@ -536,7 +549,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			(*dwts)[idx+ni] = nrn.ActAvg
 		}
 		idx += len(ly.Neurons)
-		if ly.IsLearnTrgAvg() {
+		if ly.Params.IsLearnTrgAvg() {
 			for ni := range ly.Neurons {
 				nrn := &ly.Neurons[ni]
 				(*dwts)[idx+ni] = nrn.DTrgAvg
@@ -576,7 +589,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			nrn.ActAvg = davg * dwts[idx+ni]
 		}
 		idx += len(ly.Neurons)
-		if ly.IsLearnTrgAvg() {
+		if ly.Params.IsLearnTrgAvg() {
 			for ni := range ly.Neurons {
 				nrn := &ly.Neurons[ni]
 				nrn.DTrgAvg = dwts[idx+ni]

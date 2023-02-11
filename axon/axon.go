@@ -212,6 +212,9 @@ type AxonLayer interface {
 	// PlusPhase does updating after end of plus phase
 	PlusPhase(ctx *Context)
 
+	// PlusPhasePost does CPU-specific pass after PlusPhase
+	PlusPhasePost(ctx *Context)
+
 	// SpkSt1 saves current activations into SpkSt1
 	SpkSt1(ctx *Context)
 
@@ -242,16 +245,6 @@ type AxonLayer interface {
 	// Cannot do both send and recv in same pass without potential for
 	// race conditions.
 	SynCaRecv(ctx *Context, ni uint32, rn *Neuron)
-
-	// DWtLayer does weight change at the layer level.
-	// does NOT call main projection-level DWt method.
-	// in base, only calls DTrgAvgFmErr
-	DWtLayer(ctx *Context)
-
-	// WtFmDWtLayer does weight update at the layer level.
-	// does NOT call main projection-level WtFmDWt method.
-	// in base, only calls TrgAvgFmD
-	WtFmDWtLayer(ctx *Context)
 
 	// SlowAdapt is the layer-level slow adaptation functions.
 	// Calls AdaptInhib and AvgDifFmTrgAvg for Synaptic Scaling.

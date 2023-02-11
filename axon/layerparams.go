@@ -242,6 +242,26 @@ func (ly *LayerParams) ApplyExtVal(ni uint32, nrn *Neuron, val float32) {
 	nrn.SetFlag(setMask)
 }
 
+// IsLearnTrgAvg returns true if this layer has Learn.TrgAvgAct.On set for learning
+// adjustments based on target average activity levels, and the layer is not an
+// input or target layer.
+func (ly *LayerParams) IsLearnTrgAvg() bool {
+	if ly.Act.Clamp.IsInput.IsTrue() || ly.Act.Clamp.IsTarget.IsTrue() || ly.Learn.TrgAvgAct.On.IsFalse() {
+		return false
+	}
+	return true
+}
+
+// LearnTrgAvgErrLRate returns the effective error-driven learning rate for adjusting
+// target average activity levels.  This is 0 if !IsLearnTrgAvg() and otherwise
+// is Learn.TrgAvgAct.ErrLRate
+func (ly *LayerParams) LearnTrgAvgErrLRate() float32 {
+	if !ly.IsLearnTrgAvg() {
+		return 0
+	}
+	return ly.Learn.TrgAvgAct.ErrLRate
+}
+
 //////////////////////////////////////////////////////////////////////////////////////
 //  Cycle methods
 
@@ -564,6 +584,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	var tau float32
 	ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
 	nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
+	nrn.DTrgAvg += ly.LearnTrgAvgErrLRate() * (nrn.CaSpkP - nrn.CaSpkD)
 }
 
 //gosl: end layerparams

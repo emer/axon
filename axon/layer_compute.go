@@ -457,14 +457,12 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 		lpl := &ly.Pools[0]
 		ly.Params.PlusPhaseNeuron(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
 	}
-	ly.AxonLay.CorSimFmActs() // todo: on GPU?
-	// sync pools -> GPU -> CPU
-	ly.PlusPhasePost(ctx) // special
-	// copy CPU -> GPU with gated info..  matrix is expensive!
 }
 
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
+	ly.TrgAvgFmD()
+	ly.AxonLay.CorSimFmActs() // GPU syncs down the state
 	switch ly.LayerType() {
 	case MatrixLayer:
 		ly.MatrixGated()
@@ -596,39 +594,6 @@ func (ly *Layer) IsInputOrTarget() bool {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
 
-func (ly *Layer) IsLearnTrgAvg() bool {
-	if ly.AxonLay.IsTarget() || ly.AxonLay.IsInput() || ly.Params.Learn.TrgAvgAct.On.IsFalse() {
-		return false
-	}
-	return true
-}
-
-// DWtLayer does weight change at the layer level.
-// does NOT call main projection-level DWt method.
-// in base, only calls DTrgAvgFmErr
-func (ly *Layer) DWtLayer(ctx *Context) {
-	ly.DTrgAvgFmErr()
-}
-
-// DTrgAvgFmErr computes change in TrgAvg based on unit-wise error signal
-// Called by DWtLayer at the layer level
-func (ly *Layer) DTrgAvgFmErr() {
-	if !ly.IsLearnTrgAvg() {
-		return
-	}
-	lr := ly.Params.Learn.TrgAvgAct.ErrLRate
-	if lr == 0 {
-		return
-	}
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		nrn.DTrgAvg += lr * (nrn.CaSpkP - nrn.CaSpkD) // CaP - CaD almost as good in ra25 -- todo explore
-	}
-}
-
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
 func (ly *Layer) DTrgSubMean() {
@@ -689,10 +654,10 @@ func (ly *Layer) DTrgSubMean() {
 	}
 }
 
-// TrgAvgFmD updates TrgAvg from DTrgAvg
-// it is called by WtFmDWtLayer
+// TrgAvgFmD updates TrgAvg from DTrgAvg -- called in PlusPhasePost
 func (ly *Layer) TrgAvgFmD() {
-	if !ly.IsLearnTrgAvg() || ly.Params.Learn.TrgAvgAct.ErrLRate == 0 {
+	lr := ly.Params.LearnTrgAvgErrLRate()
+	if lr == 0 {
 		return
 	}
 	ly.DTrgSubMean()

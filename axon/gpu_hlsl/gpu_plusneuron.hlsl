@@ -28,31 +28,22 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-void PlusPhaseNeuron(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in Pool lpl, in LayerVals vals) {
-	ly.PlusPhaseNeuron(ctx, ni, nrn, Pools[nrn.SubPoolN], lpl, vals);
+void PlusPhaseNeuron2(in Context ctx, in LayerParams ly, uint nin, inout Neuron nrn, inout Pool pl) {
+	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
+	ly.PlusPhaseNeuron(ctx, ni, nrn, pl, Pools[ly.Idxs.PoolSt], LayVals[pl.LayIdx]);
 }
 
-void PlusPhase2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, inout LayerVals vals) {
-	ly.PlusPhasePool(ctx, pl);
-	if (pl.IsLayPool == 0) {
-		return;
-	}
-	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
-		PlusPhaseNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], pl, vals);
-	}
-}
-
-void PlusPhase(in Context ctx, uint pi, inout Pool pl) {
-	PlusPhase2(ctx, pi, pl, Layers[pl.LayIdx], LayVals[pl.LayIdx]);
+void PlusPhaseNeuron(in Context ctx, uint nin, inout Neuron nrn) {
+	PlusPhaseNeuron2(ctx, Layers[nrn.LayIdx], nin, nrn, Pools[nrn.SubPoolN]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Pools
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
 	uint ns;
 	uint st;
-	Pools.GetDimensions(ns, st);
+	Neurons.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		PlusPhase(Ctxt[0], idx.x, Pools[idx.x]);
+		PlusPhaseNeuron(Ctxt[0], idx.x, Neurons[idx.x]);
 	}
 }
 

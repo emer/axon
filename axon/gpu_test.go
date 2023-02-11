@@ -11,7 +11,6 @@ import (
 
 	"github.com/emer/emergent/etime"
 	"github.com/goki/mat32"
-	"github.com/goki/vgpu/vgpu"
 )
 
 func init() {
@@ -33,7 +32,7 @@ func TestGPUAct(t *testing.T) {
 
 	ctx := NewContext()
 
-	vgpu.Debug = true
+	// vgpu.Debug = true
 	testNet.ConfigGPUnoGUI(ctx)
 
 	printCycs := false
@@ -96,7 +95,7 @@ func TestGPUAct(t *testing.T) {
 			for cyc := 0; cyc < cycPerQtr; cyc++ {
 				testNet.Cycle(ctx)
 				ctx.CycleInc()
-				testNet.GPU.CopyNeuronsFmGPU()
+				testNet.GPU.SyncNeuronsFmGPU()
 
 				if printCycs {
 					inLay.UnitVals(&inExts, "Ext")
@@ -275,7 +274,7 @@ func TestGPULearn(t *testing.T) {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					testNet.Cycle(ctx)
 					ctx.CycleInc()
-					testNet.GPU.CopyNeuronsFmGPU()
+					testNet.GPU.SyncNeuronsFmGPU()
 
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
@@ -323,14 +322,14 @@ func TestGPULearn(t *testing.T) {
 			didx := ti*4 + pi
 
 			testNet.DWt(ctx)
-			testNet.GPU.CopySynapsesFmGPU()
+			testNet.GPU.SyncSynapsesFmGPU()
 
 			// note: gotta grab dwt while they exist
 			hiddwt[didx] = hidLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
 			testNet.WtFmDWt(ctx)
-			testNet.GPU.CopySynapsesFmGPU()
+			testNet.GPU.SyncSynapsesFmGPU()
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)
@@ -442,7 +441,7 @@ func TestGPURLRate(t *testing.T) {
 				for cyc := 0; cyc < cycPerQtr; cyc++ {
 					testNet.Cycle(ctx)
 					ctx.CycleInc()
-					testNet.GPU.CopyNeuronsFmGPU()
+					testNet.GPU.SyncNeuronsFmGPU()
 
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
@@ -482,7 +481,7 @@ func TestGPURLRate(t *testing.T) {
 				}
 			}
 			testNet.PlusPhase(ctx)
-			testNet.GPU.CopyNeuronsFmGPU() // RLRate updated after plus
+			testNet.GPU.SyncNeuronsFmGPU() // RLRate updated after plus
 
 			if printQtrs {
 				fmt.Printf("=============================\n")
@@ -493,7 +492,7 @@ func TestGPURLRate(t *testing.T) {
 			copy(hidrlrs[ridx:ridx+4], hidRLRate)
 
 			testNet.DWt(ctx)
-			testNet.GPU.CopySynapsesFmGPU()
+			testNet.GPU.SyncSynapsesFmGPU()
 
 			didx := ti*4 + pi
 
@@ -501,7 +500,7 @@ func TestGPURLRate(t *testing.T) {
 			outdwt[didx] = outLay.RcvPrjns[0].SynVal("DWt", pi, pi)
 
 			testNet.WtFmDWt(ctx)
-			testNet.GPU.CopySynapsesFmGPU()
+			testNet.GPU.SyncSynapsesFmGPU()
 
 			hidwt[didx] = hidLay.RcvPrjns[0].SynVal("Wt", pi, pi)
 			outwt[didx] = outLay.RcvPrjns[0].SynVal("Wt", pi, pi)

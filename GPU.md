@@ -90,13 +90,7 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 # TODO:
 
-* BOA: need a time-integration on ACh from RSal -- can be very up-and-down and the end when used for learning can randomly be off..
-
-* BOA: ACh is not reliable as a US -> decay factor for BG learning.  Need to have something that uniquely identifies ground-truth outcome, and updates learning only then.  For now, can just use hack..
-
-* BOA: also the double-gating at US is a bit weird -- major over gating in general..
-
-* inputs are just big float32 arrays sized in advance according to the relevant layer sizes -- no worries.
+* DWtSubMean!
 
 * general renaming for params selectors:
     * .Hidden -> .SuperLayer
@@ -110,22 +104,14 @@ Each class of special algorithms has its own set of mostly GPU-side code:
     
 * HebbPrjn type
     
-* build WarpSize = 64 default into vgpu compute command
-
-* pass n layers, n prjns as fast buffer thing to shader
-
-* Implement all the indexes, global vars:
-* Neuron.SubPoolG
-* Pool.IsLayPool
-* Layer.LayerIdxs
-* Prjn.Idxs
-
-* CaLrnSyn methods -- easy.
-
-* SendSpike!
-
 * DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
 
-* grab pool in plus phase, prior to updating gated, but after all the std plus phase stuff.
+# BOA notes:
+
+* BOA: need a time-integration on ACh from RSal -- can be very up-and-down and the end when used for learning can randomly be off..
+
+* BOA: ACh is not reliable as a US -> decay factor for BG learning.  Need to have something that uniquely identifies ground-truth outcome, and updates learning only then.  For now, can just use hack..
+
+* BOA: also the double-gating at US is a bit weird -- major over gating in general..
 
 

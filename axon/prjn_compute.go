@@ -268,7 +268,7 @@ func (pj *Prjn) SynScale() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if !rlay.IsLearnTrgAvg() {
+	if !rlay.Params.IsLearnTrgAvg() {
 		return
 	}
 	tp := &rlay.Params.Learn.TrgAvgAct

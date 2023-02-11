@@ -417,8 +417,6 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	ss.Net.GPU.CopyStateFmGPU()
-	ss.Net.GPU.CopySynapsesFmGPU() // optional
 	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
