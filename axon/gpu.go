@@ -453,6 +453,20 @@ func (gp *GPU) SyncSynapsesToGPU() {
 	gp.SyncMemToGPU()
 }
 
+// SyncGBufToGPU copies the GBuf and GSyns memory to the GPU.
+// This is a temporary measure to be replaced with a simple kernel to init gbuf,
+// needed for InitActs.
+func (gp *GPU) SyncGBufToGPU() {
+	if !gp.On {
+		return
+	}
+	_, gbv, _ := gp.Structs.ValByIdxTry("GBuf", 0)
+	gbv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGBuf[0]))
+	_, gsv, _ := gp.Structs.ValByIdxTry("GSyns", 0)
+	gsv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnGSyns[0]))
+	gp.SyncMemToGPU()
+}
+
 ///////////////////////////////////////////////////////////////////////
 // 	Sync From
 

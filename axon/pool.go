@@ -42,6 +42,13 @@ func (am *AvgMaxPhases) Calc() {
 	am.Cycle.Calc()
 }
 
+// Zero does a full reset on everything -- for InitActs
+func (am *AvgMaxPhases) Zero() {
+	am.Cycle.Zero()
+	am.Minus.Zero()
+	am.Plus.Zero()
+}
+
 // PoolAvgMax contains the average and maximum values over a Pool of neurons
 // for different variables of interest, at Cycle, Minus and Plus phase timescales.
 // All of the cycle level values are updated at the *start* of the cycle
@@ -94,6 +101,16 @@ func (am *PoolAvgMax) Init() {
 	am.Act.Cycle.Init()
 	am.Ge.Cycle.Init()
 	am.Gi.Cycle.Init()
+}
+
+// Zero does full reset on everything -- for InitActs
+func (am *PoolAvgMax) Zero() {
+	am.CaSpkP.Zero()
+	am.CaSpkD.Zero()
+	am.SpkMax.Zero()
+	am.Act.Zero()
+	am.Ge.Zero()
+	am.Gi.Zero()
 }
 
 // Calc does Calc on Cycle level, and re-inits
@@ -156,8 +173,8 @@ type Pool struct {
 // Init is callled during InitActs
 func (pl *Pool) Init() {
 	pl.Inhib.Init()
+	pl.AvgMax.Zero()
 	pl.AvgMax.SetN(int32(pl.NNeurons()))
-	pl.AvgMax.Init()
 	pl.AvgDif.N = int32(pl.NNeurons())
 	pl.AvgDif.Init()
 	pl.Gated.SetBool(false)

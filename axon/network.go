@@ -211,7 +211,7 @@ func (nt *Network) InitWts() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).InitWts()
+		ly.(AxonLayer).InitWts() // calls InitActs too
 	}
 	// separate pass to enforce symmetry
 	// st := time.Now()
@@ -224,6 +224,7 @@ func (nt *Network) InitWts() {
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
 	nt.GPU.SyncAllToGPU()
+	nt.GPU.SyncGBufToGPU()
 }
 
 // InitTopoSWts initializes SWt structural weight parameters from
@@ -312,6 +313,7 @@ func (nt *Network) InitActs() {
 		ly.(AxonLayer).InitActs()
 	}
 	nt.GPU.SyncStateToGPU()
+	nt.GPU.SyncGBufToGPU()
 }
 
 // InitExt initializes external input state.

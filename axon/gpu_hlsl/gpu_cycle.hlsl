@@ -30,10 +30,10 @@
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
 
-void PulvinarDriver(in LayerParams ly, in LayerParams dly, in Pool lpl, uint ni, uint nin, out float drvGe, out float nonDrvPct) {
-	float drvMax = lpl.AvgMax.CaSpkP.Cycle.Max;
+void PulvinarDriver(in LayerParams ly, in LayerParams dly, in Pool dlpl, uint ni, uint nin, out float drvGe, out float nonDrvPct) {
+	float drvMax = dlpl.AvgMax.CaSpkP.Cycle.Max;
 	nonDrvPct = ly.Pulv.NonDrivePct(drvMax); // how much non-driver to keep
-	uint pnin = ni + ly.Idxs.NeurSt;
+	uint pnin = ni + dly.Idxs.NeurSt;
 	drvGe = ly.Pulv.DriveGe(Neurons[pnin].Burst);
 }
 
@@ -52,7 +52,7 @@ void GInteg(in Context ctx, in LayerParams ly, uint ni, uint nin, inout Neuron n
 	ly.GiInteg(ctx, ni, nrn, pl, vals);
 	ly.GNeuroMod(ctx, ni, nrn, vals);
 	
-	ly.SpecialPostGs(ctx, ni, nrn, 0);
+	ly.SpecialPostGs(ctx, ni, nrn, saveVal);
 }
 
 void CycleNeuron2(in Context ctx, in LayerParams ly, uint nin, inout Neuron nrn, in Pool pl, in Pool lpl, in LayerVals vals) {

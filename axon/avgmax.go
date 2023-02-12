@@ -35,6 +35,13 @@ func (am *AvgMaxI32) Init() {
 	am.CurMax = 0
 }
 
+// Zero resets everything completely -- back to "as new" state.
+func (am *AvgMaxI32) Zero() {
+	am.Init()
+	am.Avg = 0
+	am.Max = 0
+}
+
 // FloatToIntFactor returns the factor used for converting float32
 // to int32 for Max updating, assuming that
 // the overall value is in the general order of 0-1 (127 is the max).
