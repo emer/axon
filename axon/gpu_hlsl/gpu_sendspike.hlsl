@@ -23,7 +23,7 @@
 [[vk::binding(4, 1)]] StructuredBuffer<uint> SendSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
-[[vk::binding(0, 2)]] StructuredBuffer<Context> Ctxt; // [0]
+[[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 [[vk::binding(2, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Pools]
 [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
@@ -86,7 +86,7 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Send Neurons
 	uint st;
 	Neurons.GetDimensions(ns, st);
 	if (idx.x < ns) {
-		SendSpike(Ctxt[0], idx.x, Neurons[idx.x]);
+		SendSpike(Ctx[0], idx.x, Neurons[idx.x]);
 	}
 }
 

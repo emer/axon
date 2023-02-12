@@ -224,7 +224,7 @@ func (nt *Network) InitWts() {
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
-	nt.GPU.SyncSynapsesToGPU()
+	nt.GPU.SyncAllToGPU()
 }
 
 // InitTopoSWts initializes SWt structural weight parameters from

@@ -52,6 +52,15 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 
 	for m, _ := range man.Stacks {
 		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle", func() {
+			if man.ModeStack().StepLevel == etime.Cycle {
+				net.GPU.CycleByCycle = true
+			} else {
+				if viewupdt.IsCycleUpdating() {
+					net.GPU.CycleByCycle = true
+				} else {
+					net.GPU.CycleByCycle = false
+				}
+			}
 			net.Cycle(ctx)
 			ctx.CycleInc()
 		})

@@ -6,7 +6,7 @@ To add GPU support to an existing simulation, add these lines to the end of the 
 
 ```Go
 	ss.GUI.FinalizeGUI(false) // existing -- insert below vvv
-	if GPU {
+	if GPU { // GPU is global bool var flag at top -- or true if always using
 		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
 		gi.SetQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
@@ -55,7 +55,7 @@ Set: 1
         Var: 4:	SendSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
 Set: 2
     Role: Storage
-        Var: 0:	Ctxt	Struct	(size: 112)	Vals: 1
+        Var: 0:	Ctx	Struct	(size: 112)	Vals: 1
         Var: 1:	Neurons	Struct[178]	(size: 368)	Vals: 1
         Var: 2:	Pools	Struct[4]	(size: 720)	Vals: 1
         Var: 3:	LayVals	Struct[4]	(size: 112)	Vals: 1

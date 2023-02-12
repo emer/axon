@@ -34,8 +34,12 @@ import (
 	"github.com/goki/mat32"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	GPU = true
+)
 
 func main() {
 	TheSim.New()
@@ -314,7 +318,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -339,6 +343,7 @@ func (ss *Sim) ApplyInputs() {
 	trg := net.LayerByName("Targets").(axon.AxonLayer).AsAxon()
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
 	ns := fsenv.NNext.Values[0]
+	net.InitExt()
 	for ni := range in.Neurons {
 		inr := &in.Neurons[ni]
 		inr.ClearFlag(clrmsk)
@@ -355,16 +360,13 @@ func (ss *Sim) ApplyInputs() {
 			for yi := 0; yi < ss.UnitsPer; yi++ {
 				idx := li*ss.UnitsPer + yi
 				inr := &in.Neurons[idx]
-				inr.Ext = 1
-				inr.ClearFlag(clrmsk)
-				inr.SetFlag(setmsk)
+				in.ApplyExtVal(idx, inr, 1, clrmsk, setmsk, false)
 			}
 		}
 		inr := &trg.Neurons[li]
-		inr.Ext = 1
-		inr.ClearFlag(clrmsk)
-		inr.SetFlag(setmsk)
+		trg.ApplyExtVal(li, inr, 1, clrmsk, setmsk, false)
 	}
+	ss.Net.ApplyExts(&ss.Context)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -630,6 +632,12 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
 }
 
