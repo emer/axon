@@ -182,6 +182,8 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
 	gp.Sys.NewComputePipelineEmbed("SynCaRecv", content, "shaders/gpu_syncarecv.spv")
 	gp.Sys.NewComputePipelineEmbed("SynCaSend", content, "shaders/gpu_syncasend.spv")
+	gp.Sys.NewComputePipelineEmbed("CyclePost", content, "shaders/gpu_cyclepost.spv")
+
 	gp.Sys.NewComputePipelineEmbed("NewState", content, "shaders/gpu_newstate.spv")
 	gp.Sys.NewComputePipelineEmbed("MinusPool", content, "shaders/gpu_minuspool.spv")
 	gp.Sys.NewComputePipelineEmbed("MinusNeuron", content, "shaders/gpu_minusneuron.spv")
@@ -201,6 +203,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewEvent("BetweenGi")
 	gp.Sys.NewEvent("PoolGi")
 	gp.Sys.NewEvent("Cycle")
+	gp.Sys.NewEvent("CyclePost")
 	gp.Sys.NewEvent("SendSpike")
 	gp.Sys.NewEvent("SynCaSend")
 
@@ -756,12 +759,13 @@ func (gp *GPU) RunCycleOne() {
 	gp.RunPipeline("Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
 
 	if gp.Ctx.Testing.IsTrue() {
-		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "CycleEnd")
-		// todo: CyclePost
+		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
+		gp.RunPipeline("CyclePost", 1, "SendSpike", "CycleEnd")
 	} else {
 		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
-		// todo: CyclePost
-		gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "SendSpike", "SynCaSend") // use send first b/c just did SendSpike -- tiny bit faster
+		gp.RunPipeline("CyclePost", 1, "SendSpike", "CyclePost")
+		gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
+		// use send first b/c just did SendSpike -- tiny bit faster
 		gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
 	}
 
@@ -809,12 +813,13 @@ func (gp *GPU) RunCycles(ncyc int) {
 		gp.RunPipeline("Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
 
 		if gp.Ctx.Testing.IsTrue() {
-			gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "CycleEnd")
-			// todo: CyclePost
+			gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
+			gp.RunPipeline("CyclePost", 1, "SendSpike", "CycleEnd")
 		} else {
 			gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
-			// todo: CyclePost
-			gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "SendSpike", "SynCaSend") // use send first b/c just did SendSpike -- tiny bit faster
+			gp.RunPipeline("CyclePost", 1, "SendSpike", "CyclePost")
+			gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
+			// use send first b/c just did SendSpike -- tiny bit faster
 			gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
 		}
 		if ci < ncyc-1 {
@@ -848,8 +853,10 @@ func (gp *GPU) RunCycleSeparateFuns() {
 
 	if gp.Ctx.Testing.IsTrue() {
 		gp.RunPipelineWait("SendSpike", len(gp.Net.Neurons))
+		gp.RunPipelineWait("CyclePost", 1)
 	} else {
 		gp.RunPipelineWait("SendSpike", len(gp.Net.Neurons))
+		gp.RunPipelineWait("CyclePost", 1)
 		gp.RunPipelineWait("SynCaSend", len(gp.Net.Neurons))
 		gp.RunPipelineWait("SynCaRecv", len(gp.Net.Neurons))
 	}

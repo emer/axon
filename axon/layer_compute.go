@@ -224,20 +224,14 @@ func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
 	}
 }
 
-// RSalAChMaxLayAct returns the updated maxAct value using
-// LayVals.ActAvg.CaSpkP.Max from given layer index,
-// subject to any relevant RewThr thresholding.
-func (ly *Layer) RSalAChMaxLayAct(maxAct float32, net *Network, layIdx int32) float32 {
+// RSalAChLayMaxAct returns the lpl.AvgMax.Act.Cycle.Max for given layIdx
+func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
 	if layIdx < 0 {
-		return maxAct
+		return 0
 	}
 	lay := net.Layers[layIdx].(AxonLayer).AsAxon()
 	lpl := &lay.Pools[0]
-	act := ly.Params.RSalACh.Thr(lpl.AvgMax.Act.Cycle.Max) // use Act -- otherwise too variable
-	if act > maxAct {
-		maxAct = act
-	}
-	return maxAct
+	return lpl.AvgMax.Act.Cycle.Max
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -253,67 +247,26 @@ func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
 	case RSalienceAChLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
-		maxAct := float32(0)
-		if ly.Params.RSalACh.Rew.IsTrue() {
-			if ctx.NeuroMod.HasRew.IsTrue() {
-				maxAct = 1
-			}
-		}
-		if ly.Params.RSalACh.RewPred.IsTrue() {
-			rpAct := ly.Params.RSalACh.Thr(ctx.NeuroMod.RewPred)
-			if rpAct > maxAct {
-				maxAct = rpAct
-			}
-		}
-		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay1Idx)
-		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay2Idx)
-		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay3Idx)
-		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay4Idx)
-		maxAct = ly.RSalAChMaxLayAct(maxAct, net, ly.Params.RSalACh.SrcLay5Idx)
-		ctx.NeuroMod.AChRaw = maxAct // raw value this trial
-		ctx.NeuroMod.ACh = mat32.Max(ctx.NeuroMod.ACh, ctx.NeuroMod.AChRaw)
+		lay1MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay1Idx)
+		lay2MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay2Idx)
+		lay3MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay3Idx)
+		lay4MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay4Idx)
+		lay5MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay5Idx)
+		ly.Params.CyclePostRSalAChLayer(ctx, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct)
 	case RWDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
-		pvals := net.LayVals[ly.Params.RWDa.RWPredLayIdx]
-		pred := pvals.Special.V1 - pvals.Special.V2
-		ctx.NeuroMod.RewPred = pred // record
-		da := float32(0)
-		if ctx.NeuroMod.HasRew.IsTrue() {
-			da = ctx.NeuroMod.Rew - pred
-		}
-		ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
-		ly.Vals.NeuroMod.DA = da
+		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
+		ly.Params.CyclePostRWDaLayer(ctx, ly.Vals, pvals)
 	case TDPredLayer:
-		if ctx.PlusPhase.IsTrue() {
-			pred := ly.Vals.Special.V1 - ly.Vals.Special.V2
-			ctx.NeuroMod.PrevPred = pred
-		}
+		ly.Params.CyclePostTDPredLayer(ctx, ly.Vals)
 	case TDIntegLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
-		pvals := net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
-		rew := float32(0)
-		if ctx.NeuroMod.HasRew.IsTrue() {
-			rew = ctx.NeuroMod.Rew
-		}
-		rpval := float32(0)
-		if ctx.PlusPhase.IsTrue() {
-			pred := pvals.Special.V1 - pvals.Special.V2 // neuron0 (pos) - neuron1 (neg)
-			rpval = rew + ly.Params.TDInteg.Discount*ly.Params.TDInteg.PredGain*pred
-			ly.Vals.Special.V2 = rpval // plus phase
-		} else {
-			rpval = ly.Params.TDInteg.PredGain * ctx.NeuroMod.PrevPred
-			ly.Vals.Special.V1 = rpval // minus phase is *previous trial*
-		}
-		ctx.NeuroMod.RewPred = rpval // global value will be copied to layers next cycle
+		pvals := &net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
+		ly.Params.CyclePostTDIntegLayer(ctx, ly.Vals, pvals)
 	case TDDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
-		ivals := net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
-		da := ivals.Special.V2 - ivals.Special.V1
-		if ctx.PlusPhase.IsFalse() {
-			da = 0
-		}
-		ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
-		ly.Vals.NeuroMod.DA = da
+		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
+		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
 	}
 }
 

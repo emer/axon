@@ -6,6 +6,8 @@ package axon
 
 import (
 	"encoding/json"
+
+	"github.com/goki/mat32"
 )
 
 //gosl: hlsl layerparams
@@ -505,6 +507,86 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
 		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
 	}
+}
+
+/////////////////////////////////////////////////////////////////////////
+//  Special CyclePost methods for different layer types
+
+// RSalAChMaxLayAct returns the updated maxAct value using
+// LayVals.ActAvg.CaSpkP.Max from given layer index,
+// subject to any relevant RewThr thresholding.
+func (ly *LayerParams) RSalAChMaxLayAct(maxAct, layMaxAct float32) float32 {
+	act := ly.RSalACh.Thr(layMaxAct) // use Act -- otherwise too variable
+	if act > maxAct {
+		maxAct = act
+	}
+	return maxAct
+}
+
+func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct float32) {
+	maxAct := float32(0)
+	if ly.RSalACh.Rew.IsTrue() {
+		if ctx.NeuroMod.HasRew.IsTrue() {
+			maxAct = 1
+		}
+	}
+	if ly.RSalACh.RewPred.IsTrue() {
+		rpAct := ly.RSalACh.Thr(ctx.NeuroMod.RewPred)
+		if rpAct > maxAct {
+			maxAct = rpAct
+		}
+	}
+	maxAct = ly.RSalAChMaxLayAct(maxAct, lay1MaxAct)
+	maxAct = ly.RSalAChMaxLayAct(maxAct, lay2MaxAct)
+	maxAct = ly.RSalAChMaxLayAct(maxAct, lay3MaxAct)
+	maxAct = ly.RSalAChMaxLayAct(maxAct, lay4MaxAct)
+	maxAct = ly.RSalAChMaxLayAct(maxAct, lay5MaxAct)
+	ctx.NeuroMod.AChRaw = maxAct // raw value this trial
+	ctx.NeuroMod.ACh = mat32.Max(ctx.NeuroMod.ACh, ctx.NeuroMod.AChRaw)
+}
+
+func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, vals *LayerVals, pvals *LayerVals) {
+	pred := pvals.Special.V1 - pvals.Special.V2
+	ctx.NeuroMod.RewPred = pred // record
+	da := float32(0)
+	if ctx.NeuroMod.HasRew.IsTrue() {
+		da = ctx.NeuroMod.Rew - pred
+	}
+	ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
+	vals.NeuroMod.DA = da
+}
+
+func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, vals *LayerVals) {
+	if ctx.PlusPhase.IsTrue() {
+		pred := vals.Special.V1 - vals.Special.V2
+		ctx.NeuroMod.PrevPred = pred
+	}
+}
+
+func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, vals *LayerVals, pvals *LayerVals) {
+	rew := float32(0)
+	if ctx.NeuroMod.HasRew.IsTrue() {
+		rew = ctx.NeuroMod.Rew
+	}
+	rpval := float32(0)
+	if ctx.PlusPhase.IsTrue() {
+		pred := pvals.Special.V1 - pvals.Special.V2 // neuron0 (pos) - neuron1 (neg)
+		rpval = rew + ly.TDInteg.Discount*ly.TDInteg.PredGain*pred
+		vals.Special.V2 = rpval // plus phase
+	} else {
+		rpval = ly.TDInteg.PredGain * ctx.NeuroMod.PrevPred
+		vals.Special.V1 = rpval // minus phase is *previous trial*
+	}
+	ctx.NeuroMod.RewPred = rpval // global value will be copied to layers next cycle
+}
+
+func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *LayerVals) {
+	da := ivals.Special.V2 - ivals.Special.V1
+	if ctx.PlusPhase.IsFalse() {
+		da = 0
+	}
+	ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
+	vals.NeuroMod.DA = da
 }
 
 /////////////////////////////////////////////////////////////////////////

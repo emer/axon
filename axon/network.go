@@ -118,7 +118,6 @@ func (nt *Network) Cycle(ctx *Context) {
 func (nt *Network) CycleImpl(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunCycle()
-		nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 		return
 	}
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
