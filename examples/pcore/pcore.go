@@ -38,10 +38,15 @@ import (
 	"github.com/goki/gi/gimain"
 	"github.com/goki/ki/bools"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	GPU = false
+)
 
 func main() {
 	TheSim.New()
@@ -428,7 +433,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -488,6 +493,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 		ly.ApplyExt(&itsr)
 	}
 	ss.ResetRew()
+	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
 // ResetRew resets any reward inputs -- at ApplyInputs
@@ -512,6 +518,8 @@ func (ss *Sim) ApplyRew() {
 	// going to the same layers, but good practice and cheap anyway
 
 	mtxly := net.LayerByName("MtxGo").(*axon.Layer)
+
+	net.GPU.SyncStateFmGPU()
 	didGate := mtxly.MatrixGated()                      // will also be called later
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
@@ -531,6 +539,7 @@ func (ss *Sim) ApplyRew() {
 	ss.Stats.SetFloat32("Rew", rew)
 
 	ss.SetRew(rew)
+	net.GPU.SyncStateToGPU()
 }
 
 func (ss *Sim) SetRew(rew float32) {
@@ -543,6 +552,9 @@ func (ss *Sim) SetRew(rew float32) {
 	itsr.Values[0] = rew
 	sncly := net.LayerByName("SNc").(axon.AxonLayer).AsAxon()
 	sncly.ApplyExt(&itsr)
+
+	net.GPU.SyncContextToGPU()
+	net.ApplyExts(&ss.Context)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -872,6 +884,13 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		vgpu.Debug = Debug
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context) // must happen after gui or no gui
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
 }
 

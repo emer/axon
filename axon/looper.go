@@ -67,6 +67,9 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 	}
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("UpdateWeights", func() {
 		net.DWt(ctx)
+		if viewupdt.IsViewingSynapse() {
+			net.GPU.SyncSynapsesFmGPU()
+		}
 		viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
 		net.WtFmDWt(ctx)
 	})
