@@ -278,7 +278,7 @@ func (ly *Layer) CyclePost(ctx *Context) {
 // Does NOT call InitGScale()
 func (ly *Layer) NewState(ctx *Context) {
 	lpl := &ly.Pools[0]
-	ly.Params.ActAvgFmAct(ctx, lpl, ly.Vals)
+	ly.Params.NewStateLayer(ctx, lpl, ly.Vals)
 
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -510,40 +510,6 @@ func (ly *Layer) CorSimFmActs() {
 	ly.Params.Act.Dt.AvgVarUpdt(&ly.Vals.CorSim.Avg, &ly.Vals.CorSim.Var, ly.Vals.CorSim.Cor)
 }
 
-// IsTarget returns true if this layer is a Target layer.
-// By default, returns true for layers of Type == emer.Target
-// Other Target layers include the TRCLayer in deep predictive learning.
-// It is used in SynScale to not apply it to target layers.
-// In both cases, Target layers are purely error-driven.
-func (ly *Layer) IsTarget() bool {
-	switch ly.LayerType() {
-	case TargetLayer:
-		return true
-	case PulvinarLayer:
-		return true
-	default:
-		return false
-	}
-}
-
-// IsInput returns true if this layer is an Input layer.
-// By default, returns true for layers of Type == emer.Input
-// Used to prevent adapting of inhibition or TrgAvg values.
-func (ly *Layer) IsInput() bool {
-	switch ly.LayerType() {
-	case InputLayer:
-		return true
-	default:
-		return false
-	}
-}
-
-// IsInputOrTarget returns true if this layer is either an Input
-// or a Target layer.
-func (ly *Layer) IsInputOrTarget() bool {
-	return (ly.AxonLay.IsTarget() || ly.AxonLay.IsInput())
-}
-
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
 
@@ -642,7 +608,7 @@ func (ly *Layer) SlowAdapt(ctx *Context) {
 
 // AdaptInhib adapts inhibition
 func (ly *Layer) AdaptInhib(ctx *Context) {
-	if ly.Params.Inhib.ActAvg.AdaptGi.IsFalse() || ly.AxonLay.IsInput() {
+	if ly.Params.Inhib.ActAvg.AdaptGi.IsFalse() || ly.Params.IsInput() {
 		return
 	}
 	ly.Params.Inhib.ActAvg.Adapt(&ly.Vals.ActAvg.GiMult, ly.Vals.ActAvg.ActMAvg)

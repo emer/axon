@@ -41,7 +41,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -464,9 +464,9 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
-	// note: plusPhase is shared between all stacks!
+	// note: phase is shared between all stacks!
 	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
-	plusPhase.OnEvent.Add("TakeAction", func() {
+	plusPhase.OnEvent.Prepend("TakeAction", func() {
 		ss.TakeAction(ss.Net)
 	})
 
@@ -579,7 +579,8 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "ActM")
+	ss.Net.GPU.SyncNeuronsFmGPU()
+	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "Act")
 	return ev.DecodeAct(vt)
 }
 
@@ -617,6 +618,7 @@ func (ss *Sim) ApplyAction(act int) {
 	ly.SetType(emer.Target)
 	ly = net.LayerByName("Act").(axon.AxonLayer).AsAxon()
 	ly.ApplyExt(ap)
+	ss.Net.ApplyExts(&ss.Context)
 }
 
 // ApplyInputs applies input patterns from given environment.

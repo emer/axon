@@ -126,18 +126,6 @@ type AxonLayer interface {
 	// ApplyExt* method call.
 	UpdateExtFlags()
 
-	// IsTarget returns true if this layer is a Target layer.
-	// By default, returns true for layers of Type == emer.Target
-	// Other Target layers include the TRCLayer in deep predictive learning.
-	// It is also used in SynScale to not apply it to target layers.
-	// In both cases, Target layers are purely error-driven.
-	IsTarget() bool
-
-	// IsInput returns true if this layer is an Input layer.
-	// By default, returns true for layers of Type == emer.Input
-	// Used to prevent adapting of inhibition or TrgAvg values.
-	IsInput() bool
-
 	// RecvPrjns returns the slice of receiving projections for this layer
 	RecvPrjns() *AxonPrjns
 

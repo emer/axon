@@ -177,7 +177,8 @@ var ParamSets = params.Sets{
 			{Sel: "#VL", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8", // was 0.8
-					"Layer.Act.Clamp.Ge":   "0.6", // was 0.6
+					"Layer.Act.Clamp.Ge":   "0.3", // was 0.6
+					"Layer.Act.Clamp.Add":  "true",
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{

@@ -210,7 +210,7 @@ func (pj *Prjn) SWtFmWt() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
+	if rlay.Params.IsTarget() {
 		return
 	}
 	max := pj.Params.SWt.Limit.Max

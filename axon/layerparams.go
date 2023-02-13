@@ -244,6 +244,40 @@ func (ly *LayerParams) ApplyExtVal(ni uint32, nrn *Neuron, val float32) {
 	nrn.SetFlag(setMask)
 }
 
+// IsTarget returns true if this layer is a Target layer.
+// By default, returns true for layers of Type == emer.Target
+// Other Target layers include the TRCLayer in deep predictive learning.
+// It is used in SynScale to not apply it to target layers.
+// In both cases, Target layers are purely error-driven.
+func (ly *LayerParams) IsTarget() bool {
+	switch ly.LayType {
+	case TargetLayer:
+		return true
+	case PulvinarLayer:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsInput returns true if this layer is an Input layer.
+// By default, returns true for layers of Type == emer.Input
+// Used to prevent adapting of inhibition or TrgAvg values.
+func (ly *LayerParams) IsInput() bool {
+	switch ly.LayType {
+	case InputLayer:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsInputOrTarget returns true if this layer is either an Input
+// or a Target layer.
+func (ly *LayerParams) IsInputOrTarget() bool {
+	return (ly.IsTarget() || ly.IsInput())
+}
+
 // IsLearnTrgAvg returns true if this layer has Learn.TrgAvgAct.On set for learning
 // adjustments based on target average activity levels, and the layer is not an
 // input or target layer.
@@ -598,9 +632,16 @@ func (ly *LayerParams) ActAvgFmAct(ctx *Context, lpl *Pool, vals *LayerVals) {
 	ly.Inhib.ActAvg.AvgFmAct(&vals.ActAvg.ActPAvg, lpl.AvgMax.Act.Plus.Avg, ly.Act.Dt.LongAvgDt)
 }
 
+func (ly *LayerParams) NewStateLayer(ctx *Context, lpl *Pool, vals *LayerVals) {
+	ly.ActAvgFmAct(ctx, lpl, vals)
+	ly.Act.Clamp.IsInput.SetBool(ly.IsInput())
+	ly.Act.Clamp.IsTarget.SetBool(ly.IsTarget())
+}
+
 func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
-	if ly.Act.Clamp.Add.IsFalse() && ly.Act.Clamp.IsTarget.IsTrue() {
-		pl.Inhib.Clamped.SetBool(false)
+	pl.Inhib.Clamped.SetBool(false)
+	if ly.Act.Clamp.Add.IsFalse() && ly.Act.Clamp.IsInput.IsTrue() {
+		pl.Inhib.Clamped.SetBool(true)
 	}
 	pl.Inhib.Decay(ly.Act.Decay.Act)
 }

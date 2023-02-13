@@ -49,7 +49,7 @@ void NewState2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, inout 
 	if (pl.IsLayPool == 0) {
 		return;
 	}
-	ly.ActAvgFmAct(ctx, pl, vals);
+	ly.NewStateLayer(ctx, pl, vals);
 	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
 		NewStateNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], pl, vals);
 	}

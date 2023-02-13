@@ -7,6 +7,7 @@ package axon
 import (
 	"github.com/emer/axon/fsfffb"
 	"github.com/goki/gosl/slbool"
+	"github.com/goki/mat32"
 )
 
 //gosl: hlsl pool
@@ -128,7 +129,7 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 	am.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP)
 	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD)
 	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax)
-	am.Act.Cycle.UpdateVal(nrn.Act)
+	am.Act.Cycle.UpdateVal(mat32.Abs(nrn.Act)) // can be neg
 	am.Ge.Cycle.UpdateVal(nrn.Ge)
 	am.Gi.Cycle.UpdateVal(nrn.Gi)
 }

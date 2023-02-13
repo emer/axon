@@ -711,8 +711,8 @@ func (ly *Layer) InitActAvg() {
 
 // InitActs fully initializes activation state -- only called automatically during InitWts
 func (ly *Layer) InitActs() {
-	ly.Params.Act.Clamp.IsInput.SetBool(ly.AxonLay.IsInput())
-	ly.Params.Act.Clamp.IsTarget.SetBool(ly.AxonLay.IsTarget())
+	ly.Params.Act.Clamp.IsInput.SetBool(ly.Params.IsInput())
+	ly.Params.Act.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
 		ly.Params.Act.InitActs(nrn)

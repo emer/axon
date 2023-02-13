@@ -358,7 +358,7 @@ func (pj *Prjn) InitWts() {
 	pj.AxonPrj.InitGBuffs()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
 	spct := pj.Params.SWt.Init.SPct
-	if rlay.AxonLay.IsTarget() {
+	if rlay.Params.IsTarget() {
 		pj.Params.SWt.Init.SPct = 0
 		spct = 0
 	}
@@ -374,7 +374,7 @@ func (pj *Prjn) InitWts() {
 			pj.InitWtsSyn(sy, smn, spct)
 		}
 	}
-	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.AxonLay.IsTarget() {
+	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {
 		pj.SWtRescale()
 	}
 }
