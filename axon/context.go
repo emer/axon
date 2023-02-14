@@ -92,7 +92,7 @@ func (tm *Context) Reset() {
 		tm.Defaults()
 	}
 	tm.RandCtr.Reset()
-	tm.NeuroMod.Reset()
+	tm.NeuroMod.Init()
 }
 
 // NewContext returns a new Time struct with default parameters

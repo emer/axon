@@ -634,6 +634,7 @@ func (ss *Sim) ApplyInputs() {
 		net.InitActs() // this is still essential even with fully functioning decay below:
 		// todo: need a more selective US gating mechanism!
 		net.DecayStateByType(&ss.Context, 1, 1, axon.SuperLayer, axon.PTMaintLayer, axon.CTLayer, axon.VThalLayer)
+		// note: it is critical that this clears GBuf to get rid of incoming spikes
 		ev.RenderLocalist("Gate", 0)
 	}
 

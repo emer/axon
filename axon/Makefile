@@ -16,8 +16,8 @@ clean:
 	$(GOCLEAN)
 gosl:
 	gosl -keep -exclude=Update,UpdateParams,Defaults,Init github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase time.go neuron.go synapse.go act.go learn.go layer.go
-	
-	
+
+
 # NOTE: MUST update version number here prior to running 'make release'
 VERS=v1.7.7
 PACKAGE=axon

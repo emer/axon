@@ -41,7 +41,7 @@ void CyclePost(inout Context ctx, uint li, in LayerParams ly, inout LayerVals va
 		float lay3MaxAct = RSalAChLayMaxAct(ly.RSalACh.SrcLay3Idx);
 		float lay4MaxAct = RSalAChLayMaxAct(ly.RSalACh.SrcLay4Idx);
 		float lay5MaxAct = RSalAChLayMaxAct(ly.RSalACh.SrcLay5Idx);
-		ly.CyclePostRSalAChLayer(ctx, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct);
+		ly.CyclePostRSalAChLayer(ctx, vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct);
 		break;
 	case RWDaLayer:
 		ly.CyclePostRWDaLayer(ctx, vals, LayVals[ly.RWDa.RWPredLayIdx]);

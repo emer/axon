@@ -252,7 +252,7 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		lay3MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay3Idx)
 		lay4MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay4Idx)
 		lay5MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay5Idx)
-		ly.Params.CyclePostRSalAChLayer(ctx, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct)
+		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct)
 	case RWDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
@@ -291,7 +291,7 @@ func (ly *Layer) NewState(ctx *Context) {
 			continue
 		}
 		// note: this calls the basic neuron-level DecayState
-		ly.Params.NewStateNeuron(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], lpl, ly.Vals)
+		ly.Params.NewStateNeuron(ctx, uint32(ni), nrn, ly.Vals)
 	}
 	if ly.Params.Act.Decay.Glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
 		ly.InitPrjnGBuffs()

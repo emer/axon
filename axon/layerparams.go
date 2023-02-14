@@ -557,7 +557,7 @@ func (ly *LayerParams) RSalAChMaxLayAct(maxAct, layMaxAct float32) float32 {
 	return maxAct
 }
 
-func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct float32) {
+func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct float32) {
 	maxAct := float32(0)
 	if ly.RSalACh.Rew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() {
@@ -575,8 +575,10 @@ func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, lay1MaxAct, lay2MaxAc
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay3MaxAct)
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay4MaxAct)
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay5MaxAct)
-	ctx.NeuroMod.AChRaw = maxAct // raw value this trial
-	ctx.NeuroMod.ACh = mat32.Max(ctx.NeuroMod.ACh, ctx.NeuroMod.AChRaw)
+	vals.NeuroMod.AChRaw = maxAct
+	vals.NeuroMod.ACh = mat32.Max(vals.NeuroMod.ACh, vals.NeuroMod.AChRaw)
+	ctx.NeuroMod.AChRaw = vals.NeuroMod.AChRaw
+	ctx.NeuroMod.ACh = vals.NeuroMod.ACh
 }
 
 func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, vals *LayerVals, pvals *LayerVals) {
@@ -648,7 +650,7 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
 
 // NewStateNeuron handles all initialization at start of new input pattern.
 // Should already have presented the external input to the network at this point.
-func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals *LayerVals) {
 	nrn.BurstPrv = nrn.Burst
 	nrn.SpkPrv = nrn.CaSpkD
 	nrn.GeSynPrv = nrn.GeSynMax

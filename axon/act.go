@@ -588,6 +588,8 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.GnmdaSyn = 0
 	nrn.Gnmda = 0
+	nrn.GnmdaLrn = 0
+	nrn.NmdaCa = 0
 	nrn.SnmdaO = 0
 	nrn.SnmdaI = 0
 
@@ -599,16 +601,25 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.VgccM = 0
 	nrn.VgccH = 0
 	nrn.Gak = 0
+	nrn.VgccCaInt = 0
 
 	nrn.SKCai = 0
 	nrn.SKCaM = 0
 	nrn.Gsk = 0
 
+	nrn.GeExt = 0
 	nrn.GeRaw = 0
 	nrn.GiRaw = 0
+	nrn.GModRaw = 0
+	nrn.GModSyn = 0
+	nrn.GeSynMax = 0
+	nrn.GeSynPrv = 0
+
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
-	nrn.GeExt = 0
+
+	nrn.Burst = 0
+	nrn.BurstPrv = 0
 
 	nrn.CtxtGe = 0
 	nrn.CtxtGeRaw = 0
@@ -628,6 +639,7 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 	nrn.ActM = 0
 	nrn.ActP = 0
 	nrn.GeM = 0
+	nrn.GiM = 0
 }
 
 //gosl: start act

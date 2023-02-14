@@ -612,15 +612,11 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 // Also calls InitActs
 func (ly *Layer) InitWts() {
 	ly.AxonLay.UpdateParams()
+	ly.Vals.Init()
 	ly.Vals.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
 	ly.Vals.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
-	ly.Vals.ActAvg.AvgMaxGeM = 1
-	ly.Vals.ActAvg.AvgMaxGiM = 1
-	ly.Vals.ActAvg.GiMult = 1
 	ly.AxonLay.InitActAvg()
 	ly.AxonLay.InitActs()
-	ly.Vals.CorSim.Init()
-
 	ly.AxonLay.InitGScale()
 
 	for _, p := range ly.SndPrjns {

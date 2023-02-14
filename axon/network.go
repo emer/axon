@@ -302,6 +302,7 @@ func (nt *Network) DecayStateByType(ctx *Context, decay, glong float32, types ..
 		ly.DecayState(ctx, decay, glong)
 	}
 	nt.GPU.SyncStateToGPU()
+	nt.GPU.SyncGBufToGPU() // zeros everyone
 }
 
 // InitActs fully initializes activation state -- not automatically called
@@ -313,7 +314,7 @@ func (nt *Network) InitActs() {
 		ly.(AxonLayer).InitActs()
 	}
 	nt.GPU.SyncStateToGPU()
-	nt.GPU.SyncGBufToGPU()
+	nt.GPU.SyncGBufToGPU() // zeros everyone
 }
 
 // InitExt initializes external input state.

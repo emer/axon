@@ -29,7 +29,7 @@ type NeuroModVals struct {
 	pad, pad1, pad2 float32
 }
 
-func (nm *NeuroModVals) Reset() {
+func (nm *NeuroModVals) Init() {
 	nm.Rew = 0
 	nm.HasRew.SetBool(false)
 	nm.RewPred = 0
@@ -52,7 +52,7 @@ func (nm *NeuroModVals) SetRew(rew float32, hasRew bool) {
 
 // NewState is called by Context.NewState at start of new trial
 func (nm *NeuroModVals) NewState() {
-	nm.Reset()
+	nm.Init()
 }
 
 // DAModTypes are types of dopamine modulation of neural activity.

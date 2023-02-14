@@ -115,7 +115,6 @@ func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Net
 		}
 		cycLoop := man.GetLoop(curMode, etime.Cycle)
 		cycLoop.OnEnd.Add("GUI:UpdateNetView", func() {
-			net.GPU.SyncNeuronsFmGPU()
 			cyc := cycLoop.Counter.Cur
 			viewupdt.UpdateCycle(cyc)
 		})

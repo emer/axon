@@ -18,6 +18,14 @@ type ActAvgVals struct {
 	pad, pad1, pad2 float32
 }
 
+func (lv *ActAvgVals) Init() {
+	lv.ActMAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWts
+	lv.ActPAvg = 0 // will be set to ly.Params.InhibActAvg.Nominal in InitWts
+	lv.AvgMaxGeM = 1
+	lv.AvgMaxGiM = 1
+	lv.GiMult = 1
+}
+
 // CorSimStats holds correlation similarity (centered cosine aka normalized dot product)
 // statistics at the layer level
 type CorSimStats struct {
@@ -31,6 +39,7 @@ type CorSimStats struct {
 func (cd *CorSimStats) Init() {
 	cd.Cor = 0
 	cd.Avg = 0
+	cd.Var = 0
 }
 
 // LaySpecialVals holds special values used to communicate to other layers
@@ -43,6 +52,13 @@ type LaySpecialVals struct {
 	V4 float32 `inactive:"+" desc:"one value"`
 }
 
+func (lv *LaySpecialVals) Init() {
+	lv.V1 = 0
+	lv.V2 = 0
+	lv.V3 = 0
+	lv.V4 = 0
+}
+
 // LayerVals holds extra layer state that is updated per layer.
 // It is sync'd down from the GPU to the CPU after every Cycle.
 type LayerVals struct {
@@ -50,6 +66,13 @@ type LayerVals struct {
 	CorSim   CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory values: global to the layer, copied from Context"`
 	Special  LaySpecialVals `view:"inline" desc:"special values used to communicate to other layers based on neural values computed on the GPU -- special cross-layer computations happen CPU-side and are sent back into the network via Context on the next cycle -- used for special algorithms such as RL / DA etc"`
+}
+
+func (lv *LayerVals) Init() {
+	lv.ActAvg.Init()
+	lv.CorSim.Init()
+	lv.NeuroMod.Init()
+	lv.Special.Init()
 }
 
 //gosl: end layervals

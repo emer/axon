@@ -238,6 +238,11 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	vars.BindDynValIdx(3, "Exts", 0)
 }
 
+///////////////////////////////////////////////////////////////////////
+// 	Sync To
+//			the CopyFromBytes call automatically flags updated regions
+// 		and SyncMemToGPU does all updated
+
 // SyncMemToGPU synchronizes any staging memory buffers that have been updated with
 // a Copy function, actually sending the updates from the staging -> GPU.
 // The CopyTo commands just copy Network-local data to a staging buffer,
@@ -393,7 +398,7 @@ func (gp *GPU) SyncNeuronsToGPU() {
 	gp.SyncMemToGPU()
 }
 
-// CopyStateToStaging copies Neurons, Pools, and LayVals state to staging from CPU.
+// CopyStateToStaging copies LayerVals, Pools, Neurons state to staging from CPU.
 // this is typically sufficient for most syncing --
 // only missing the Synapses which must be copied separately.
 // Must call SyncMemToGPU after this (see SyncStateToGPU).
@@ -401,12 +406,12 @@ func (gp *GPU) CopyStateToStaging() {
 	if !gp.On {
 		return
 	}
-	gp.CopyNeuronsToStaging()
 	gp.CopyLayerValsToStaging()
 	gp.CopyPoolsToStaging()
+	gp.CopyNeuronsToStaging()
 }
 
-// SyncStateToGPU copies Neurons, Pools, and LayVals state to GPU
+// SyncStateToGPU copies LayVals, Pools, Neurons state to GPU
 // this is typically sufficient for most syncing --
 // only missing the Synapses which must be copied separately.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
@@ -418,7 +423,7 @@ func (gp *GPU) SyncStateToGPU() {
 	gp.SyncMemToGPU()
 }
 
-// SyncAllToGPU copies Neurons, Pools, LayVals, Synapses to GPU.
+// SyncAllToGPU copies LayerVals, Pools, Neurons, Synapses to GPU.
 // Calls SyncMemToGPU -- use when this is the only copy taking place.
 func (gp *GPU) SyncAllToGPU() {
 	if !gp.On {
@@ -469,6 +474,17 @@ func (gp *GPU) SyncGBufToGPU() {
 
 ///////////////////////////////////////////////////////////////////////
 // 	Sync From
+//			unlike Sync To, need to specify the regions to sync from first
+// 		and then copy from staging to get into CPU memory
+
+// SyncRegionStruct returns the SyncRegion with error panic
+func (gp *GPU) SyncRegionStruct(vnm string) vgpu.MemReg {
+	r, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, vnm, 0)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
 
 // CopyContextFmStaging copies Context from staging to CPU, after Sync back down.
 func (gp *GPU) CopyContextFmStaging() {
@@ -487,11 +503,7 @@ func (gp *GPU) SyncContextFmGPU() {
 	if !gp.On {
 		return
 	}
-	cxr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Ctx", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	cxr := gp.SyncRegionStruct("Ctx")
 	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr)
 	gp.CopyContextFmStaging()
 }
@@ -513,12 +525,8 @@ func (gp *GPU) SyncLayerValsFmGPU() {
 	if !gp.On {
 		return
 	}
-	lvl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "LayVals", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(lvl)
+	lvr := gp.SyncRegionStruct("LayVals")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(lvr)
 	gp.CopyLayerValsFmStaging()
 }
 
@@ -538,12 +546,8 @@ func (gp *GPU) SyncPoolsFmGPU() {
 	if !gp.On {
 		return
 	}
-	pl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Pools", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(pl)
+	plr := gp.SyncRegionStruct("Pools")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(plr)
 	gp.CopyPoolsFmStaging()
 }
 
@@ -563,12 +567,8 @@ func (gp *GPU) SyncNeuronsFmGPU() {
 	if !gp.On {
 		return
 	}
-	nrn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Neurons", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrn)
+	nrr := gp.SyncRegionStruct("Neurons")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrr)
 	gp.CopyNeuronsFmStaging()
 }
 
@@ -587,20 +587,35 @@ func (gp *GPU) SyncSynapsesFmGPU() {
 	if !gp.On {
 		return
 	}
-	syn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Synapses", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(syn)
+	syr := gp.SyncRegionStruct("Synapses")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(syr)
 	gp.CopySynapsesFmStaging()
 }
 
-// CopyStateFmStaging copies Neurons, LayerVals, and Pools from staging to CPU, after Sync.
-func (gp *GPU) CopyStateFmStaging() {
-	gp.CopyNeuronsFmStaging()
+// CopyLayerStateFmStaging copies Context, LayerVals and Pools from staging to CPU, after Sync.
+func (gp *GPU) CopyLayerStateFmStaging() {
+	gp.CopyContextFmStaging()
 	gp.CopyLayerValsFmStaging()
 	gp.CopyPoolsFmStaging()
+}
+
+// SyncLayerStateFmCPU copies Context, LayerVals, and Pools from GPU to CPU.
+// This is the main GPU->CPU sync step automatically called after each Cycle.
+func (gp *GPU) SyncLayerStateFmGPU() {
+	if !gp.On {
+		return
+	}
+	cxr := gp.SyncRegionStruct("Ctx")
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, lvr, plr)
+	gp.CopyLayerStateFmStaging()
+}
+
+// CopyStateFmStaging copies Context, LayerVals, Pools, and Neurons from staging to CPU, after Sync.
+func (gp *GPU) CopyStateFmStaging() {
+	gp.CopyLayerStateFmStaging()
+	gp.CopyNeuronsFmStaging()
 }
 
 // SyncStateFmCPU copies Neurons, LayerVals, and Pools from GPU to CPU.
@@ -609,53 +624,28 @@ func (gp *GPU) SyncStateFmGPU() {
 	if !gp.On {
 		return
 	}
-	nrn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Neurons", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	lvl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "LayVals", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	pl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Pools", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrn, lvl, pl)
+	cxr := gp.SyncRegionStruct("Ctx")
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
+	nrr := gp.SyncRegionStruct("Neurons")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(cxr, lvr, plr, nrr)
 	gp.CopyStateFmStaging()
 }
 
-// SyncAllFmCPU copies Neurons, LayerVals, Pools, and Synapses from GPU to CPU.
-// This is the main GPU->CPU sync step automatically called in PlusPhase.
+// SyncAllFmCPU copies State except Context plus Synapses from GPU to CPU.
+// This is called before SlowAdapt, which is run CPU-side
 func (gp *GPU) SyncAllFmGPU() {
 	if !gp.On {
 		return
 	}
-	nrn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Neurons", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	lvl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "LayVals", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	pl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Pools", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	syn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Synapses", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	gp.Sys.Mem.SyncStorageRegionsFmGPU(nrn, lvl, pl, syn)
-	gp.CopyStateFmStaging()
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
+	nrr := gp.SyncRegionStruct("Neurons")
+	syr := gp.SyncRegionStruct("Synapses")
+	gp.Sys.Mem.SyncStorageRegionsFmGPU(lvr, plr, nrr, syr)
+	gp.CopyLayerValsFmStaging()
+	gp.CopyPoolsFmStaging()
+	gp.CopyNeuronsFmStaging()
 	gp.CopySynapsesFmStaging()
 }
 
@@ -745,20 +735,15 @@ func (gp *GPU) RunCycle() {
 }
 
 // RunCycleOne does one cycle of updating in an optimized manner using Events to
-// sequence each of the pipeline calls.
+// sequence each of the pipeline calls.  It is for CycleByCycle mode and syncs back
+// full state every cycle.
 func (gp *GPU) RunCycleOne() {
 	gnm := "GPU:CycleOne"
 	gp.Net.FunTimerStart(gnm)
-	cxr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Ctx", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	lvr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "LayVals", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	cxr := gp.SyncRegionStruct("Ctx")
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
+	nrr := gp.SyncRegionStruct("Neurons")
 
 	gp.CopyContextToStaging()
 	gp.StartRun()
@@ -772,11 +757,10 @@ func (gp *GPU) RunCycleOne() {
 
 	gp.RunPipeline("Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
 
+	gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
 	if gp.Ctx.Testing.IsTrue() {
-		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
 		gp.RunPipeline("CyclePost", 1, "SendSpike", "CycleEnd")
 	} else {
-		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
 		gp.RunPipeline("CyclePost", 1, "SendSpike", "CyclePost")
 		gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
 		// use send first b/c just did SendSpike -- tiny bit faster
@@ -784,11 +768,12 @@ func (gp *GPU) RunCycleOne() {
 	}
 
 	gp.Sys.ComputeWaitEvents("CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr) // ctx updated in cycle post
-
+	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr, plr, nrr)
 	gp.Sys.ComputeSubmitWait()
-	gp.CopyLayerValsFmStaging()
-	gp.CopyContextFmStaging()
+	gp.CopyStateFmStaging()
+
+	// fmt.Printf("Cyc: %d  ACh: %g\n", gp.Ctx.Cycle, gp.Ctx.NeuroMod.ACh)
+
 	gp.Net.FunTimerStop(gnm)
 }
 
@@ -796,16 +781,9 @@ func (gp *GPU) RunCycleOne() {
 func (gp *GPU) RunCycles(ncyc int) {
 	gnm := "GPU:Cycles"
 	gp.Net.FunTimerStart(gnm)
-	cxr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Ctx", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	lvr, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "LayVals", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	cxr := gp.SyncRegionStruct("Ctx")
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
 
 	stCtx := *gp.Ctx // save starting state to restore below
 
@@ -826,28 +804,28 @@ func (gp *GPU) RunCycles(ncyc int) {
 
 		gp.RunPipeline("Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
 
+		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
 		if gp.Ctx.Testing.IsTrue() {
-			gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
 			gp.RunPipeline("CyclePost", 1, "SendSpike", "CycleEnd")
 		} else {
-			gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
 			gp.RunPipeline("CyclePost", 1, "SendSpike", "CyclePost")
 			gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
 			// use send first b/c just did SendSpike -- tiny bit faster
 			gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
 		}
 		if ci < ncyc-1 {
-			gp.RunPipeline("CycleInc", len(gp.Net.Neurons), "CycleEnd", "CycleInc") // we do
+			gp.RunPipeline("CycleInc", 1, "CycleEnd", "CycleInc") // we do
 		}
 	}
 	gp.Sys.ComputeWaitEvents("CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr)
+	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr, plr)
 	gp.Sys.ComputeSubmitWait()
 
-	gp.CopyLayerValsFmStaging()
-	gp.CopyContextFmStaging()        // gp.Ctx is now in the future
-	stCtx.NeuroMod = gp.Ctx.NeuroMod // only state that is updated separately
+	gp.CopyLayerStateFmStaging()
+	stCtx.NeuroMod = gp.Ctx.NeuroMod // only state that is updated separately -- counters are full ncyc ahead
 	*gp.Ctx = stCtx
+
+	// fmt.Printf("Cyc: %d  ACh: %g\n", gp.Ctx.Cycle, gp.Ctx.NeuroMod.ACh)
 
 	gp.Net.FunTimerStop(gnm)
 }
@@ -874,7 +852,7 @@ func (gp *GPU) RunCycleSeparateFuns() {
 		gp.RunPipelineWait("SynCaSend", len(gp.Net.Neurons))
 		gp.RunPipelineWait("SynCaRecv", len(gp.Net.Neurons))
 	}
-	gp.SyncLayerValsFmGPU() // only thing we get back
+	gp.SyncLayerStateFmGPU()
 }
 
 // RunNewState runs the NewState shader to initialize state at start of new
@@ -904,26 +882,15 @@ func (gp *GPU) RunMinusPhase() {
 func (gp *GPU) RunPlusPhase() {
 	gnm := "GPU:PlusPhase"
 	gp.Net.FunTimerStart(gnm)
-	nrn, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Neurons", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	lvl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "LayVals", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	pl, err := gp.Sys.Mem.SyncRegionValIdx(gp.Structs.Set, "Pools", 0)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	cxr := gp.SyncRegionStruct("Ctx")
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
+	nrr := gp.SyncRegionStruct("Neurons")
 	gp.StartRun()
 	gp.RunPipeline("PlusPool", len(gp.Net.Pools), "", "PoolGi")
 	gp.RunPipeline("PlusNeuron", len(gp.Net.Neurons), "PoolGi", "MemCopyFm")
 	gp.Sys.ComputeWaitEvents("MemCopyFm")
-	gp.Sys.ComputeCmdCopyFmGPU(nrn, lvl, pl)
+	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr, plr, nrr)
 	gp.Sys.ComputeSubmitWait()
 	gp.CopyStateFmStaging()
 	gp.Net.FunTimerStop(gnm)
