@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"unsafe"
 
+	"github.com/emer/emergent/netview"
 	"github.com/goki/mat32"
 )
 
@@ -225,6 +226,7 @@ var (
 )
 
 func init() {
+	netview.NVarCols = 4 // many neurons
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	typ := reflect.TypeOf((*Neuron)(nil)).Elem()
 	nf := typ.NumField()

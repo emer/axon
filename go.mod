@@ -5,17 +5,17 @@ go 1.18
 require (
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/emer/emergent v1.3.40
+	github.com/emer/emergent v1.3.41
 	github.com/emer/empi v1.0.17
 	github.com/emer/etable v1.1.15
 	github.com/emer/leabra v1.2.5
 	github.com/emer/vision v1.1.16
-	github.com/goki/gi v1.3.10
-	github.com/goki/gosl v1.0.10
+	github.com/goki/gi v1.3.11
+	github.com/goki/gosl v1.0.11
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.14
-	github.com/goki/vgpu v1.0.19
+	github.com/goki/vgpu v1.0.20
 	github.com/goki/vulkan v1.0.5
 	github.com/stretchr/testify v1.8.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
