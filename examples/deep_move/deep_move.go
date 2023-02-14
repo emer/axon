@@ -521,7 +521,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Input", "Target")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("DepthP_CorSim", "DepthP_PrvMCorSim", "HeadDirP_CorSim", "HeadDirP_PrvMCorSim")
 

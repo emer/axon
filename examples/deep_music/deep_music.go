@@ -378,7 +378,7 @@ func (ss *Sim) ApplyInputs() {
 		// net.SynFail(&ss.Context) // not actually such a generative source of noise..
 	}
 	// going to the same layers, but good practice and cheap anyway
-	lays := net.LayersByClass("InpuLayert", "TargetLayer")
+	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := ev.State("Note")
@@ -524,7 +524,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Input", "Target")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctErr")
 
