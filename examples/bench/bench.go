@@ -84,6 +84,7 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 	net.BidirConnectLayers(hid3Lay, outLay, full)
 
 	net.RecFunTimes = verbose
+	net.GPU.RecFunTimes = verbose
 
 	// builds with default threads
 	if err := net.Build(); err != nil {

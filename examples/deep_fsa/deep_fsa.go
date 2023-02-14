@@ -671,11 +671,9 @@ func (ss *Sim) CmdArgs() {
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
 
 	ss.NewRun()
-
 	if ss.Args.Bool("gpu") {
 		ss.Net.ConfigGPUnoGUI(&TheSim.Context)
 	}
-
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()
