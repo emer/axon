@@ -34,7 +34,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -82,7 +82,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.RW = true
+	ss.RW = false
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	if ss.RW {

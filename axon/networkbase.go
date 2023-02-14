@@ -494,6 +494,7 @@ func (nt *NetworkBase) Build() error {
 	for li, lyi := range nt.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
 		ly.Params = &nt.LayParams[li]
+		ly.Params.LayType = LayerTypes(ly.Typ)
 		ly.Vals = &nt.LayVals[li]
 		if ly.IsOff() {
 			continue

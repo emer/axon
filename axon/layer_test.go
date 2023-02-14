@@ -15,22 +15,22 @@ import (
 func TestLayer(t *testing.T) {
 	net := NewNetwork("LayerTest")
 	shape := []int{2, 2}
-	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer)
-	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
-
-	assert.True(t, inputLayer.IsInput())
-	assert.False(t, outputLayer.IsInput())
-	assert.True(t, outputLayer.IsTarget())
+	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer).AsAxon()
+	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer).AsAxon()
+	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer).AsAxon()
 
 	assert.NoError(t, net.Build())
 
+	assert.True(t, inputLayer.Params.IsInput())
+	assert.False(t, outputLayer.Params.IsInput())
+	assert.True(t, outputLayer.Params.IsTarget())
+
 	// the layer.Neuron struct is empty before Build(), which may be surprising to the user?
-	assert.Equal(t, 4, len(hiddenLayer.AsAxon().Neurons))
+	assert.Equal(t, 4, len(hiddenLayer.Neurons))
 
 	// query the 'Spike' variable for all neurons of the layer
 	tensor := etensor.NewFloat32([]int{2}, nil, nil)
-	assert.Nil(t, hiddenLayer.AsAxon().UnitValsTensor(tensor, "Spike"))
+	assert.Nil(t, hiddenLayer.UnitValsTensor(tensor, "Spike"))
 	for i := 0; i < 4; i++ {
 		// can't have spiked as we haven't run the network yet
 		assert.Equal(t, float32(0.0), tensor.Values[i])

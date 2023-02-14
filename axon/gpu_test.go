@@ -6,6 +6,7 @@ package axon
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 	"testing"
 
@@ -19,8 +20,8 @@ func init() {
 }
 
 func TestGPUAct(t *testing.T) {
-	if testing.Short() { // use short to exclude gpu tests in general
-		t.Skip("GPU tests skipped in Short mode -- don't work on CI")
+	if os.Getenv("TEST_GPU") == "" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	testNet := newTestNet()
 	testNet.InitExt()
@@ -194,8 +195,8 @@ func cmprFloatsTol(out, cor []float32, msg string, t *testing.T, tol float32) {
 }
 
 func TestGPULearn(t *testing.T) {
-	if testing.Short() { // use short to exclude gpu tests in general
-		t.Skip("GPU tests skipped in Short mode -- don't work on CI")
+	if os.Getenv("TEST_GPU") == "" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	testNet := newTestNet()
 	inPats := newInPats()
@@ -354,8 +355,8 @@ func TestGPULearn(t *testing.T) {
 }
 
 func TestGPURLRate(t *testing.T) {
-	if testing.Short() { // use short to exclude gpu tests in general
-		t.Skip("GPU tests skipped in Short mode -- don't work on CI")
+	if os.Getenv("TEST_GPU") == "" {
+		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	testNet := newTestNet()
 	inPats := newInPats()
