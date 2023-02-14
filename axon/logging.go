@@ -5,8 +5,6 @@
 package axon
 
 import (
-	"fmt"
-
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
@@ -48,56 +46,54 @@ func PCAStats(net *Network, lg *elog.Logs, stats *estats.Stats) {
 // LogAddDiagnosticItems adds standard Axon diagnostic statistics to given logs,
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
-func LogAddDiagnosticItems(lg *elog.Logs, layers []*Layer, times ...etime.Times) {
-	for _, layer := range layers {
-
-		if layer == nil {
-			fmt.Println("LogAddDiagnosticItems: nil layer")
-			continue
-		}
-
+func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Times) {
+	for _, lnm := range layerNames {
+		clnm := lnm
 		lg.AddItem(&elog.Item{
-			Name:   layer.Name() + "_ActMAvg",
+			Name:   clnm + "_ActMAvg",
 			Type:   etensor.FLOAT64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
-					ctx.SetFloat32(layer.Pools[0].AvgMax.Act.Minus.Avg)
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Avg)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 
 		lg.AddItem(&elog.Item{
-			Name:   layer.Name() + "_ActMMax",
+			Name:   clnm + "_ActMMax",
 			Type:   etensor.FLOAT64,
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
-					ctx.SetFloat32(layer.Pools[0].AvgMax.Act.Minus.Max)
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Max)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 		lg.AddItem(&elog.Item{
-			Name:  layer.Name() + "_MaxGeM",
+			Name:  clnm + "_MaxGeM",
 			Type:  etensor.FLOAT64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
-					ctx.SetFloat32(layer.Pools[0].AvgMax.Ge.Minus.Max)
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Pools[0].AvgMax.Ge.Minus.Max)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
-
-					ctx.SetFloat32(layer.Vals.ActAvg.AvgMaxGeM)
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
 				}}})
 		lg.AddItem(&elog.Item{
-			Name:  layer.Name() + "_CorDiff",
+			Name:  clnm + "_CorDiff",
 			Type:  etensor.FLOAT64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
-
-					ctx.SetFloat32(1.0 - layer.Vals.CorSim.Cor)
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(1.0 - ly.Vals.CorSim.Cor)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})

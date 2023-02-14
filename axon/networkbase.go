@@ -114,21 +114,6 @@ func (nt *NetworkBase) MakeLayMap() {
 	}
 }
 
-func (net *NetworkBase) GetLayersByTypes(types ...LayerTypes) []*Layer {
-	var layers []*Layer
-
-	for _, tp := range types {
-		typeName := tp.String()
-		layerNames := net.LayClassMap[typeName]
-		for _, layerName := range layerNames {
-			layer := net.LayerByName(layerName).(*Layer).AsAxon()
-			layers = append(layers, layer)
-		}
-	}
-
-	return layers
-}
-
 // LayersByType returns a list of layer names by given layer types.
 // Lists are compiled when network Build() function called.
 // The layer Type is always included as a Class, along with any other
