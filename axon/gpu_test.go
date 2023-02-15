@@ -39,6 +39,7 @@ func TestGPUAct(t *testing.T) {
 	printCycs := false
 	printQtrs := false
 
+	// these are all from CPU TestNetAct
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
 	qtr0HidGes := []float32{0.31093338, 0, 0, 0}
 	qtr0HidGis := []float32{0.1547833, 0.1547833, 0.1547833, 0.1547833}

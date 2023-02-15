@@ -48,8 +48,8 @@ func (kp *CaDtParams) Update() {
 // Equations for below, courtesy of Rishi Chaudhri:
 // https://www.wolframalpha.com/input?i=dx%2Fdt+%3D+-a*x%2C+dy%2Fdt+%3D+b*x+-+b*y%2C+dz%2Fdt+%3D+c*y+-+c*z
 
-// CaAtT computes the 3 Ca values at given future time, assuming 0
-// new Ca incoming (no spiking), using closed-form exponential functions.
+// CaAtT computes the 3 Ca values at (currentTime + ti), assuming 0
+// new Ca incoming (no spiking). It uses closed-form exponential functions.
 func (kp *CaDtParams) CaAtT(ti int32, caM, caP, caD *float32) {
 	t := float32(ti)
 	mdt := kp.MDt
@@ -142,10 +142,13 @@ func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD *float32) {
 		*caD = 0
 		return
 	}
-	kp.Dt.CaAtT(isi, caM, caP, caD) // this is roughly 7x faster than iterating:
+	kp.Dt.CaAtT(isi, caM, caP, caD) // this is roughly 10% faster than iterating:
 	// for i := int32(0); i < isi; i++ {
 	// 	kp.FmCa(0, caM, caP, caD) // just decay to 0
 	// }
+	// todo: see if we can use a faster step size, conditional on isi, which could be
+	// e.g., 2x faster for a 2x step size increase, likely with a minimal change in
+	// accuracy if we use suitable rate constant adjustments.
 	return
 }
 

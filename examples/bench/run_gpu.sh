@@ -17,7 +17,7 @@ exe=${TMPDIR}/bench
 go test -c -o ${exe} .
 
 # typically run with -threads=N arg as follows:
-# $./run_bench.sh -thrNeuron=4 -thrSendSpike=4 -thrSynCa=4 -test.cpuprofile=cpu.prof
+# $./run_gpu.sh -thrNeuron=10 -thrSendSpike=10 -thrSynCa=10 -test.cpuprofile=cpu.prof
 
 CMD=(${exe} -test.bench=BenchmarkBenchNetFull -writestats)
 
