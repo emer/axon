@@ -48,7 +48,6 @@ var content embed.FS
 
 // Set 3: external inputs, temp vars
 [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
-[[vk::binding(1, 3)]] RWStructuredBuffer<uint> Spikers;  // [[Neurons]] -- indexes of those that spiked
 
 
 Set: 0
@@ -168,7 +167,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Structs.Add("GSyns", vgpu.Float32, len(gp.Net.PrjnGSyns), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Exts.Add("Exts", vgpu.Float32, len(gp.Net.Exts), vgpu.Storage, vgpu.ComputeShader)
-	gp.Exts.Add("Spikers", vgpu.Uint32, len(gp.Net.Neurons), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Params.ConfigVals(1)
 	gp.Prjns.ConfigVals(1)
@@ -240,7 +238,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	vars.BindDynValIdx(2, "GSyns", 0)
 
 	vars.BindDynValIdx(3, "Exts", 0)
-	vars.BindDynValIdx(3, "Spikers", 0)
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -814,9 +811,9 @@ func (gp *GPU) RunCycles(ncyc int) {
 			gp.RunPipeline("CyclePost", 1, "SendSpike", "CycleEnd")
 		} else {
 			gp.RunPipeline("CyclePost", 1, "SendSpike", "CyclePost")
-			gp.RunPipeline("SynCaSend", len(gp.Net.Neurons)/2, "CyclePost", "SynCaSend")
+			gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
 			// use send first b/c just did SendSpike -- tiny bit faster
-			gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons)/2, "SynCaSend", "CycleEnd")
+			gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
 		}
 		if ci < ncyc-1 {
 			gp.RunPipeline("CycleInc", 1, "CycleEnd", "CycleInc") // we do
@@ -854,11 +851,10 @@ func (gp *GPU) RunCycleSeparateFuns() {
 	} else {
 		gp.RunPipelineWait("SendSpike", len(gp.Net.Neurons))
 		gp.RunPipelineWait("CyclePost", 1)
-		gp.RunPipelineWait("SynCaSend", len(gp.Net.Neurons)/2) // 50% max
-		gp.RunPipelineWait("SynCaRecv", len(gp.Net.Neurons)/2) // 50% max
+		gp.RunPipelineWait("SynCaSend", len(gp.Net.Neurons))
+		gp.RunPipelineWait("SynCaRecv", len(gp.Net.Neurons))
 	}
 	gp.SyncLayerStateFmGPU()
-	// fmt.Printf("NSpiked:  %d  Neurons: %d  pct: %g\n", gp.Ctx.NSpiked, len(gp.Net.Neurons), float32(100*gp.Ctx.NSpiked)/float32(len(gp.Net.Neurons)))
 }
 
 // RunNewState runs the NewState shader to initialize state at start of new
