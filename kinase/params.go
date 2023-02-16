@@ -24,7 +24,11 @@ type CaDtParams struct {
 	PDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 	DDt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
 
-	pad int32
+	M4Dt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"4 * rate = 1 / tau"`
+	P4Dt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"4 * rate = 1 / tau"`
+	D4Dt float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"4 * rate = 1 / tau"`
+
+	pad, pad1 int32
 }
 
 func (kp *CaDtParams) Defaults() {
@@ -43,6 +47,10 @@ func (kp *CaDtParams) Update() {
 	kp.MDt = 1 / kp.MTau
 	kp.PDt = 1 / kp.PTau
 	kp.DDt = 1 / kp.DTau
+
+	kp.M4Dt = 4.0*kp.MDt - 0.2
+	kp.P4Dt = 4.0*kp.PDt - 0.01
+	kp.D4Dt = 4.0 * kp.DDt
 }
 
 // Equations for below, courtesy of Rishi Chaudhri:
@@ -118,6 +126,16 @@ func (kp *CaParams) FmCa(ca float32, caM, caP, caD *float32) {
 	*caD += kp.Dt.DDt * (*caP - *caD)
 }
 
+// FmCa4 computes updates to CaM, CaP, CaD from current calcium level
+// using 4x rate constants, to be called at 4 msec intervals.
+// This introduces some error but is significantly faster
+// and does not affect overall learning.
+func (kp *CaParams) FmCa4(ca float32, caM, caP, caD *float32) {
+	*caM += kp.Dt.M4Dt * (ca - *caM)
+	*caP += kp.Dt.P4Dt * (*caM - *caP)
+	*caD += kp.Dt.D4Dt * (*caP - *caD)
+}
+
 // IntFmTime returns the interval from current time
 // and last update time, which is 0 if never updated
 // (in which case return is 0)
@@ -142,13 +160,16 @@ func (kp *CaParams) CurCa(ctime, utime int32, caM, caP, caD *float32) {
 		*caD = 0
 		return
 	}
-	kp.Dt.CaAtT(isi, caM, caP, caD) // this is roughly 10% faster than iterating:
-	// for i := int32(0); i < isi; i++ {
-	// 	kp.FmCa(0, caM, caP, caD) // just decay to 0
-	// }
-	// todo: see if we can use a faster step size, conditional on isi, which could be
-	// e.g., 2x faster for a 2x step size increase, likely with a minimal change in
-	// accuracy if we use suitable rate constant adjustments.
+	// kp.Dt.CaAtT(isi, caM, caP, caD) // this is roughly 10% faster than iterating at 1msec
+	// this 4 msec integration is still reasonably accurate and faster than the closed-form expr
+	isi4 := isi / 4
+	rm := isi % 4
+	for i := int32(0); i < isi4; i++ {
+		kp.FmCa4(0, caM, caP, caD) // just decay to 0
+	}
+	for i := int32(0); i < rm; i++ {
+		kp.FmCa(0, caM, caP, caD) // just decay to 0
+	}
 	return
 }
 

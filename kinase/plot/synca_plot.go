@@ -39,7 +39,7 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	CaDt      kinase.CaDtParams `view:"inline" desc:"Ca time constants"`
+	CaDt      kinase.CaParams `view:"inline" desc:"Ca time constants"`
 	Minit     float64
 	Pinit     float64
 	Dinit     float64
@@ -61,9 +61,6 @@ var TheSim Sim
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
 	ss.CaDt.Defaults()
-	ss.CaDt.PTau = 38
-	ss.CaDt.DTau = 42
-	ss.CaDt.Update()
 	ss.Minit = 0.7
 	ss.Pinit = 0.5
 	ss.Dinit = 0.3
@@ -91,9 +88,9 @@ func (ss *Sim) Run() {
 	mi := ss.Minit
 	pi := ss.Pinit
 	di := ss.Dinit
-	mdt := float64(ss.CaDt.MDt) * (1.0 + ss.MdtAdj)
-	pdt := float64(ss.CaDt.PDt) * (1.0 + ss.PdtAdj)
-	ddt := float64(ss.CaDt.DDt) * (1.0 + ss.DdtAdj)
+	mdt := float64(ss.CaDt.Dt.MDt) * (1.0 + ss.MdtAdj)
+	pdt := float64(ss.CaDt.Dt.PDt) * (1.0 + ss.PdtAdj)
+	ddt := float64(ss.CaDt.Dt.DDt) * (1.0 + ss.DdtAdj)
 	for ti := 0; ti < 200; ti++ {
 		t := float64(ti)
 		m := ss.Minit * math.Exp(-t*mdt)
@@ -113,22 +110,34 @@ func (ss *Sim) Run() {
 		caM := float32(ss.Minit)
 		caP := float32(ss.Pinit)
 		caD := float32(ss.Dinit)
-		ss.CaDt.CaAtT(int32(ti), &caM, &caP, &caD)
+		ss.CaDt.Dt.CaAtT(int32(ti), &caM, &caP, &caD)
 		m = float64(caM)
 		p = float64(caP)
 		d = float64(caD)
+
+		caM = float32(ss.Minit)
+		caP = float32(ss.Pinit)
+		caD = float32(ss.Dinit)
+		ss.CaDt.CurCa(int32(ti), 0, &caM, &caP, &caD)
+		mi4 := float64(caM)
+		pi4 := float64(caP)
+		di4 := float64(caD)
 
 		dt.SetCellFloat("t", ti, t)
 		dt.SetCellFloat("mi", ti, mi)
 		dt.SetCellFloat("pi", ti, pi)
 		dt.SetCellFloat("di", ti, di)
+		dt.SetCellFloat("mi4", ti, mi4)
+		dt.SetCellFloat("pi4", ti, pi4)
+		dt.SetCellFloat("di4", ti, di4)
 		dt.SetCellFloat("m", ti, m)
 		dt.SetCellFloat("p", ti, p)
 		dt.SetCellFloat("d", ti, d)
 
-		mi += float64(ss.CaDt.MDt) * (0 - mi)
-		pi += float64(ss.CaDt.PDt) * (mi - pi)
-		di += float64(ss.CaDt.DDt) * (pi - di)
+		mi += float64(ss.CaDt.Dt.MDt) * (0 - mi)
+		pi += float64(ss.CaDt.Dt.PDt) * (mi - pi)
+		di += float64(ss.CaDt.Dt.DDt) * (pi - di)
+
 	}
 	ss.Plot.Update()
 }
@@ -143,6 +152,9 @@ func (ss *Sim) ConfigTable(dt *etable.Table) {
 		{"mi", etensor.FLOAT64, nil, nil},
 		{"pi", etensor.FLOAT64, nil, nil},
 		{"di", etensor.FLOAT64, nil, nil},
+		{"mi4", etensor.FLOAT64, nil, nil},
+		{"pi4", etensor.FLOAT64, nil, nil},
+		{"di4", etensor.FLOAT64, nil, nil},
 		{"m", etensor.FLOAT64, nil, nil},
 		{"p", etensor.FLOAT64, nil, nil},
 		{"d", etensor.FLOAT64, nil, nil},
@@ -159,6 +171,9 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetColParams("mi", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("pi", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("di", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("mi4", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("pi4", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("di4", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("m", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("p", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("d", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
