@@ -1,42 +1,105 @@
 # GPU: graphical processing unit implementation
 
-This document provides detailed info about the GPU implementation of axon, using [gosl](https://github.com/goki/gosl) to convert the existing Go code into HLSL shader code, in the `shaders` directory, which is then compiled and loaded by the [vgpu](https://github.com/goki/vgpu) Vulkan GPU framework.  This allows the same Go codebase to run on CPU and GPU.
+This document provides detailed info about the GPU implementation of axon, which allows the same Go codebase to run on CPU and GPU.  [gosl](https://github.com/goki/gosl) converts the existing Go code into HLSL shader code, along with hand-written HLSL glue code in `gpu_hlsl`, all of which ends up in the `shaders` directory.  The `go generate` command in the `axon` subdirectory, or equivalent `make all` target in the `shaders` directory, must be called whenever the main codebase changes.  The `.hlsl` files are compiled via `glslc` into SPIR-V `.spv` files that are embedded into the axon library and loaded by the [vgpu](https://github.com/goki/vgpu) Vulkan GPU framework.
+
+To add GPU support to an existing simulation, add these lines to the end of the `ConfigGUI` method to run in GUI mode:
+
+```Go
+	ss.GUI.FinalizeGUI(false) // existing -- insert below vvv
+	if GPU { // GPU is global bool var flag at top -- or true if always using
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
+	return ss.GUI.Win // existing -- insert above ^^^
+```
+
+And in the `CmdArgs()` function for `-nogui` command-line execution, there is a default `-gpu` arg added by the `ecmd.Args` package, which can be passed to use gpu with this additional code:
+
+```Go
+	ss.NewRun() // existing -- insert below vvv
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&TheSim.Context)
+	}
+```
+
+and at the very end of that function:
+```Go
+	ss.Net.GPU.Destroy()
+```
+
+You must also add this at the end of the `ApplyInputs` method:
+```Go
+	ss.Net.ApplyExts(&ss.Context)
+```
+which actually applies the external inputs to the network in GPU mode (and does nothing in CPU mode).
+
+The `Net.GPU` object manages all the GPU functionality and the `Net.GPU.On` is checked to determine whether to use GPU vs. CPU for all the relevant function calls -- that flag can be toggled to switch.  Direct calls to GPU methods automatically check the flag and return immediately if not `On`, so it is safe to just include these directly, e.g., for additional places where memory is `Sync`'d.
+
+The network state (everything except Synapses) is automatically synchronized at the end of the Plus Phase, so it will be visible in the netview.
+
+Also, the `axon.LooperUpdtNetView` method now requires a `ss.Net` argument, to enable grabbing Neuron state if updating at the Cycle level.
+
+The new `LayerTypes` and `PrjnTypes` enums require renaming type selectors in params and other places.  There is now just one layer type, `Layer`, so cases that were different types are now specified by the Class selector (`.` prefix) based on the LayerTypes enum, which is automatically added for each layer.
+
+```Go
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
+```
+
+And it is recommended to use `LayersByType` with type enums instead of `LayersByClass` with strings, where appropriate.
+
+* Here are the types that changed:
+    * .Hidden -> .SuperLayer
+    * .Inhib -> .InhibPrjn
+    * SuperLayer -> .SuperLayer
+    * CTLayer -> .CTLayer
+    * PulvLayer -> .PulvinarLayer
+
+Finally, you must move the calls to `net.Defaults`, `Params.SetObject` *after* the `net.Build()` call -- a network must be built before the params are allocated.
 
 # GPU Variable layout:
 
-Set 0:  Uniforms
-    0. LayerParams -- array by layer index
-    1. PrjnParams -- array by prjn index -- need flat prjn indexes!
-
-Set 1:  non-RW Storage of indexes -- can't use uniform or ConstantBuffer
-    0. SendNeurSynIdxs
-    1. RecvNeurSynIdxs
-    2. RecvSynIdxs
-    
-Set 2:  Storage
-    0. Time
-    1. Neurons -- array by global neuron index
-    2. Synapses -- array by global synapse index?
-    3. Pools -- multi-dim array?
-    4. LayerVals -- array by layer index
-    5. PrjnVals -- array by prjn index
-
+Set: 0 "Params" -- read only
+    Role: Uniform
+        Var: 0:	Layers	Struct[4]	(size: 1280)	Vals: 1
+Set: 1 "Prjns" -- read only
+    Role: Storage
+        Var: 0:	Prjns	Struct[5]	(size: 336)	Vals: 1
+        Var: 1:	RecvCon	Struct[281]	(size: 16)	Vals: 1
+        Var: 2:	SendPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
+        Var: 3:	SendCon	Struct[242]	(size: 16)	Vals: 1
+        Var: 4:	SendSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
+Set: 2 "Structs" -- read-write
+    Role: Storage
+        Var: 0:	Ctx	Struct	(size: 112)	Vals: 1
+        Var: 1:	Neurons	Struct[178]	(size: 368)	Vals: 1
+        Var: 2:	Pools	Struct[4]	(size: 720)	Vals: 1
+        Var: 3:	LayVals	Struct[4]	(size: 112)	Vals: 1
+        Var: 4:	Synapses	Struct[12992]	(size: 64)	Vals: 1
+        Var: 5:	GBuf	Int32[843]	(size: 4)	Vals: 1
+        Var: 6:	GSyns	Float32[281]	(size: 4)	Vals: 1
+Set: 3 "Exts" -- read-only
+    Role: Storage
+        Var: 0:	Exts	Float32[50]	(size: 4)	Vals: 1
 
 # General issues and strategies
 
 * Everything must be stored in top-level arrays of structs as shown above -- these are the only variable length data structures.
 
-* Efficient access requires Start, N indexes in data structs and there must be a contiguous layout for each different way of iterating over the data (otherwise require a singleton index array to indirect through, which is not efficient) -- this means both recv and send versions of the PrjnParams, which are constant and not a big deal to duplicate.
+* The projections and synapses are now organized in a receiver-based ordering, with indexes used to access in a sender-based order. 
 
-* `Context` (was Time) is the *only* state that is copied **from CPU -> GPU** every cycle.  At end of ThetaCycle, Neurons are grabbed back from GPU -> CPU.
+* The core computation is invoked via the `RunCycle` method, which can actually run 10 cycles at a time in one GPU command submission, which greatly reduces overhead.  The cycle-level computation is fully implemented all on the GPU, but basic layer-level state is copied back down by default because it is very fast to do so and might be needed.
 
-* `LayerVals` are copied **from GPU -> CPU** every cycle, so anything that a layer computes that needs to be accessed in the CPU must be in LayerVals.  There is a `Special` field for `LaySpecialVals` that holds generic special values that can be used for different cases.
+* `Context` (was Time) is copied *from CPU -> GPU* at the start of `RunCycle` and back down *from GPU -> CPU* at the end.  The GPU can update the `NeuroMod` values during the Cycle call, while Context can be updated with on the GPU side to encode global reward values and other relevant context.
 
-* Anything involving direct copying of values between different layers, as happens especially in RL algorithms, should be done in the CPU and copied into Context, or via LayerVals.  There will be a 1 cycle delay but that is fine.
+* `LayerVals` and `Pool`s are copied *from GPU -> CPU* at the end of `RunCycle`, and can be used for logging, stats or other functions during the 200 cycle update.  There is a `Special` field for `LaySpecialVals` that holds generic special values that can be used for different cases.
 
-* `Pools` are copied **from GPU -> CPU** at the start of the plus phase, so that detailed pool-level AvgMax stats are available for plus-phase computations prior to doing DWt.
+* At end of the 200 cycle ThetaCycle, the above state plus Neurons are grabbed back from GPU -> CPU, so further stats etc can be computed on this Neuron level data.
 
-* Note that Aggregating any values, e.g., layer-level AvgMax, must happen at the *aggregator* level - cannot do this in parallel at the lower level as memory coherency / mutex is not there.  Thus, we are doing all this aggregation in `gpu_laygi` and `gpu_poolgi` at the cycle level, and then copying snapshots from there.
+* The GPU must have a separate impl for any code that involves accessing state outside of what it is directly processing (e.g., an individual Neuron) -- this access must go through the global state variables on the GPU, while it can be accessed via local pointer-based fields in the CPU-side.
+
+* In a few cases, it was useful to leverage atomic add operations to aggregate values, which are fully supported on all platforms for ints, but not floats.  Thus, we convert floats to ints by multiplying by a large number (e.g., `1 << 24`) and then dividing that back out after the aggregation, effectively a fixed-precision floating point implementation, which works well given the normalized values typically present.  A signed `int` is used and the sign checked to detect overflow.  
 
 ## Type / Code organization
 
@@ -59,7 +122,6 @@ Set 2:  Storage
 * `Prjn` in `prjn_compute.go` pulls out core algorithm-specific code that is also run on the GPU, making calls into the `PrjnParams` methods.
 
 `Network`: likewise has `NetworkBase` etc.
-
 
 ### GPU-side 
 
@@ -85,42 +147,8 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 # TODO:
 
-* BOA: need a time-integration on ACh from RSal -- can be very up-and-down and the end when used for learning can randomly be off..
-
-* BOA: ACh is not reliable as a US -> decay factor for BG learning.  Need to have something that uniquely identifies ground-truth outcome, and updates learning only then.  For now, can just use hack..
-
-* BOA: also the double-gating at US is a bit weird -- major over gating in general..
-
-* inputs are just big float32 arrays sized in advance according to the relevant layer sizes -- no worries.
-
-* general renaming for params selectors:
-    * .Hidden -> .SuperLayer
-    * .Inhib -> .InhibPrjn
-    * SuperLayer -> .SuperLayer
-    * CTLayer -> .CTLayer
-    * PulvLayer -> .PulvinarLayer
-
-    * LayersByClass needs fixed if in sim
-    * MUST move Defaults, Params.SetObject *after* Build()!
-    
 * HebbPrjn type
     
-* build WarpSize = 64 default into vgpu compute command
-
-* pass n layers, n prjns as fast buffer thing to shader
-
-* Implement all the indexes, global vars:
-* Neuron.SubPoolG
-* Pool.IsLayPool
-* Layer.LayerIdxs
-* Prjn.Idxs
-
-* CaLrnSyn methods -- easy.
-
-* SendSpike!
-
 * DWt is using Context.NeuroMod for all DA, ACh values -- in principle should use LayerVals.NeuroMod in case a layer does something different.  can fix later as needed.
-
-* grab pool in plus phase, prior to updating gated, but after all the std plus phase stuff.
 
 

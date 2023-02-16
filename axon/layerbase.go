@@ -36,7 +36,8 @@ type LayerBase struct {
 	RcvPrjns    AxonPrjns         `desc:"list of receiving projections into this layer from other layers"`
 	SndPrjns    AxonPrjns         `desc:"list of sending projections from this layer to other layers"`
 	Neurons     []Neuron          `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
-	Pools       []Pool            `desc:"inhibition and other pooled, aggregate state variables -- flat list has at least of 1 for layer, and one for each sub-pool (unit group) if shape supports that (4D).  You must iterate over index and use pointer to modify values."`
+	Pools       []Pool            `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
+	Exts        []float32         `view:"-" desc:"external input values for this layer, allocated from network global Exts slice"`
 	BuildConfig map[string]string `desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
 }
 
@@ -181,10 +182,11 @@ func (ly *LayerBase) RepShape() *etensor.Shape {
 	return &ly.RepShp
 }
 
-// NPools returns the number of unit sub-pools according to the shape parameters.
-// Currently supported for a 4D shape, where the unit pools are the first 2 Y,X dims
-// and then the units within the pools are the 2nd 2 Y,X dims
-func (ly *LayerBase) NPools() int {
+// NSubPools returns the number of sub-pools of neurons
+// according to the shape parameters.  2D shapes have 0 sub pools.
+// For a 4D shape, the pools are the first set of 2 Y,X dims
+// and then the neurons within the pools are the 2nd set of 2 Y,X dims.
+func (ly *LayerBase) NSubPools() int {
 	if ly.Shp.NumDims() != 4 {
 		return 0
 	}
@@ -362,11 +364,11 @@ func (ly *LayerBase) BuildSubPools() {
 
 // BuildPools builds the inhibitory pools structures -- nu = number of units in layer
 func (ly *LayerBase) BuildPools(nu int) error {
-	np := 1 + ly.NPools()
-	ly.Pools = make([]Pool, np)
+	np := 1 + ly.NSubPools()
 	lpl := &ly.Pools[0]
 	lpl.StIdx = 0
 	lpl.EdIdx = uint32(nu)
+	lpl.IsLayPool.SetBool(true)
 	if np > 1 {
 		ly.BuildSubPools()
 	}

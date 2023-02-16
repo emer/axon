@@ -116,8 +116,11 @@ func (nt *Network) Cycle(ctx *Context) {
 
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
 func (nt *Network) CycleImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunCycle()
+		return
+	}
 	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
-	// nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.RecvSpikes(ctx, ni, nrn) }, "RecvSpikes")
 	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
@@ -125,11 +128,11 @@ func (nt *Network) CycleImpl(ctx *Context) {
 	if !nt.CPURecvSpikes {
 		nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) }, "SendSpike")
 	}
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 	if ctx.Testing.IsFalse() {
-		nt.SynCaFun(func(pj AxonPrjn) { pj.SendSynCa(ctx) }, "SendSynCa")
-		nt.SynCaFun(func(pj AxonPrjn) { pj.RecvSynCa(ctx) }, "RecvSynCa")
+		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
+		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
 	}
+	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
 }
 
 // MinusPhase does updating after end of minus phase
@@ -208,7 +211,7 @@ func (nt *Network) InitWts() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).InitWts()
+		ly.(AxonLayer).InitWts() // calls InitActs too
 	}
 	// separate pass to enforce symmetry
 	// st := time.Now()
@@ -220,6 +223,8 @@ func (nt *Network) InitWts() {
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
+	nt.GPU.SyncAllToGPU()
+	nt.GPU.SyncGBufToGPU()
 }
 
 // InitTopoSWts initializes SWt structural weight parameters from
@@ -281,6 +286,7 @@ func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 		}
 		ly.(AxonLayer).DecayState(ctx, decay, glong)
 	}
+	nt.GPU.SyncStateToGPU()
 }
 
 // DecayStateByType decays activation state for given class name(s)
@@ -295,6 +301,8 @@ func (nt *Network) DecayStateByType(ctx *Context, decay, glong float32, types ..
 		}
 		ly.DecayState(ctx, decay, glong)
 	}
+	nt.GPU.SyncStateToGPU()
+	nt.GPU.SyncGBufToGPU() // zeros everyone
 }
 
 // InitActs fully initializes activation state -- not automatically called
@@ -305,15 +313,31 @@ func (nt *Network) InitActs() {
 		}
 		ly.(AxonLayer).InitActs()
 	}
+	nt.GPU.SyncStateToGPU()
+	nt.GPU.SyncGBufToGPU() // zeros everyone
 }
 
-// InitExt initializes external input state -- call prior to applying external inputs to layers
+// InitExt initializes external input state.
+// Call prior to applying external inputs to layers.
 func (nt *Network) InitExt() {
+	// note: important to do this for GPU
+	// to ensure partial inputs work the same way on CPU and GPU.
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
 		ly.(AxonLayer).InitExt()
+	}
+}
+
+// ApplyExts applies external inputs to layers, based on values
+// that were set in prior layer-specific ApplyExt calls.
+// This does nothing on the CPU, but is critical for the GPU,
+// and should be added to all sims where GPU will be used.
+func (nt *Network) ApplyExts(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunApplyExts()
+		return
 	}
 }
 
@@ -331,6 +355,10 @@ func (nt *Network) UpdateExtFlags() {
 
 // NewStateImpl handles all initialization at start of new input state
 func (nt *Network) NewStateImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunNewState()
+		return
+	}
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -341,6 +369,10 @@ func (nt *Network) NewStateImpl(ctx *Context) {
 
 // MinusPhaseImpl does updating after end of minus phase
 func (nt *Network) MinusPhaseImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunMinusPhase()
+		return
+	}
 	// not worth threading this probably
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
@@ -352,13 +384,25 @@ func (nt *Network) MinusPhaseImpl(ctx *Context) {
 
 // PlusPhaseImpl does updating after end of plus phase
 func (nt *Network) PlusPhaseImpl(ctx *Context) {
-	// not worth threading this probably
+	if nt.GPU.On {
+		nt.GPU.RunPlusPhase() // copies all state back down: Neurons, LayerVals, Pools
+	} else {
+		// not worth threading this probably
+		for _, ly := range nt.Layers {
+			if ly.IsOff() {
+				continue
+			}
+			ly.(AxonLayer).PlusPhase(ctx)
+		}
+	}
+	// Post happens on the CPU always
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).PlusPhase(ctx)
+		ly.(AxonLayer).PlusPhasePost(ctx)
 	}
+	nt.GPU.SyncStateToGPU() // plus phase post can do anything
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -366,15 +410,21 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 
 // DWtImpl computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWtImpl(ctx *Context) {
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.DWtLayer(ctx) }, "DWtLayer") // def no thr
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt")             // def thread
+	if nt.GPU.On {
+		nt.GPU.RunDWt()
+		return
+	}
+	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt") // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
 func (nt *Network) WtFmDWtImpl(ctx *Context) {
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // def no
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+	if nt.GPU.On {
+		nt.GPU.RunWtFmDWt()
+	} else {
+		nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
+		nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+	}
 	nt.EmerNet.(AxonNetwork).SlowAdapt(ctx)
 }
 
@@ -386,8 +436,15 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 		return
 	}
 	nt.SlowCtr = 0
+
+	// note: for now doing all this slow stuff CPU-side
+	// These Sync calls always check if GPU is On
+	nt.GPU.SyncAllFmGPU()
+
 	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
 	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
+
+	nt.GPU.SyncAllToGPU()
 }
 
 // SynFail updates synaptic failure
@@ -471,7 +528,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			ly := lyi.(AxonLayer).AsAxon()
 			nwts += 5               // ActAvgVals
 			nwts += len(ly.Neurons) // ActAvg
-			if ly.IsLearnTrgAvg() {
+			if ly.Params.IsLearnTrgAvg() {
 				nwts += len(ly.Neurons)
 			}
 			for _, pji := range ly.SndPrjns {
@@ -495,7 +552,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			(*dwts)[idx+ni] = nrn.ActAvg
 		}
 		idx += len(ly.Neurons)
-		if ly.IsLearnTrgAvg() {
+		if ly.Params.IsLearnTrgAvg() {
 			for ni := range ly.Neurons {
 				nrn := &ly.Neurons[ni]
 				(*dwts)[idx+ni] = nrn.DTrgAvg
@@ -535,7 +592,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			nrn.ActAvg = davg * dwts[idx+ni]
 		}
 		idx += len(ly.Neurons)
-		if ly.IsLearnTrgAvg() {
+		if ly.Params.IsLearnTrgAvg() {
 			for ni := range ly.Neurons {
 				nrn := &ly.Neurons[ni]
 				nrn.DTrgAvg = dwts[idx+ni]

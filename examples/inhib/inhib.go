@@ -284,7 +284,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 

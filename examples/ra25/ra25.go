@@ -31,10 +31,15 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	GPU = false
+)
 
 func main() {
 	TheSim.New()
@@ -304,7 +309,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -331,6 +336,7 @@ func (ss *Sim) ApplyInputs() {
 			ly.ApplyExt(pats)
 		}
 	}
+	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -442,14 +448,14 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
-	layers := ss.Net.AsAxon().GetLayersByTypes(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Epoch, etime.Trial)
 	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
 
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Input", "Target")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
 
@@ -545,6 +551,13 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		vgpu.Debug = Debug
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context) // must happen after gui or no gui
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
 }
 
@@ -580,6 +593,9 @@ func (ss *Sim) CmdArgs() {
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
 
 	ss.NewRun()
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&TheSim.Context) // must happen after gui or no gui
+	}
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()
@@ -587,4 +603,6 @@ func (ss *Sim) CmdArgs() {
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
+
+	ss.Net.GPU.Destroy() // safe even if no GPU
 }

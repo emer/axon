@@ -37,8 +37,12 @@ import (
 	"github.com/goki/mat32"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	GPU = false
+)
 
 func main() {
 	TheSim.New()
@@ -460,9 +464,9 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
-	// note: plusPhase is shared between all stacks!
+	// note: phase is shared between all stacks!
 	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
-	plusPhase.OnEvent.Add("TakeAction", func() {
+	plusPhase.OnEvent.Prepend("TakeAction", func() {
 		ss.TakeAction(ss.Net)
 	})
 
@@ -527,7 +531,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -575,7 +579,8 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "ActM")
+	ss.Net.GPU.SyncNeuronsFmGPU()
+	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "Act")
 	return ev.DecodeAct(vt)
 }
 
@@ -613,6 +618,7 @@ func (ss *Sim) ApplyAction(act int) {
 	ly.SetType(emer.Target)
 	ly = net.LayerByName("Act").(axon.AxonLayer).AsAxon()
 	ly.ApplyExt(ap)
+	ss.Net.ApplyExts(&ss.Context)
 }
 
 // ApplyInputs applies input patterns from given environment.
@@ -628,6 +634,7 @@ func (ss *Sim) ApplyInputs() {
 		net.InitActs() // this is still essential even with fully functioning decay below:
 		// todo: need a more selective US gating mechanism!
 		net.DecayStateByType(&ss.Context, 1, 1, axon.SuperLayer, axon.PTMaintLayer, axon.CTLayer, axon.VThalLayer)
+		// note: it is critical that this clears GBuf to get rid of incoming spikes
 		ev.RenderLocalist("Gate", 0)
 	}
 
@@ -651,6 +658,7 @@ func (ss *Sim) ApplyInputs() {
 	// fmt.Printf("Rew: %g\n", ev.Rew)
 	// ss.ApplyUS() // now full trial
 	// ss.ApplyRew()
+	ss.Net.ApplyExts(&ss.Context)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -878,7 +886,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// ss.ConfigActRFs()
 
-	layers := ss.Net.AsAxon().GetLayersByTypes(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Epoch, etime.Trial)
 	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
 
@@ -1068,6 +1076,12 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
 }
 

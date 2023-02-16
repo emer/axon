@@ -30,21 +30,26 @@ import (
 // CaLrn is then integrated in a cascading manner at multiple time scales:
 // CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase).
 type CaLrnParams struct {
-	Norm      float32           `def:"80" desc:"denomenator used for normalizing CaLrn, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance"`
-	SpkVGCC   slbool.Bool       `def:"true" desc:"use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike"`
-	SpkVgccCa float32           `def:"35" desc:"multiplier on spike for computing Ca contribution to CaLrn in SpkVGCC mode"`
-	VgccTau   float32           `def:"10" desc:"time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn"`
-	Dt        kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaLrn across M, P and D cascading levels"`
-	VgccDt    float32           `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
-	NormInv   float32           `view:"-" json:"-" xml:"-" inactive:"+" desc:"= 1 / Norm"`
+	Norm      float32     `def:"80" desc:"denomenator used for normalizing CaLrn, so the max is roughly 1 - 1.5 or so, which works best in terms of previous standard learning rules, and overall learning performance"`
+	SpkVGCC   slbool.Bool `def:"true" desc:"use spikes to generate VGCC instead of actual VGCC current -- see SpkVGCCa for calcium contribution from each spike"`
+	SpkVgccCa float32     `def:"35" desc:"multiplier on spike for computing Ca contribution to CaLrn in SpkVGCC mode"`
+	VgccTau   float32     `def:"10" desc:"time constant of decay for VgccCa calcium -- it is highly transient around spikes, so decay and diffusion factors are more important than for long-lasting NMDA factor.  VgccCa is integrated separately int VgccCaInt prior to adding into NMDA Ca in CaLrn"`
 
-	pad, pad1 int32
+	Dt kinase.CaDtParams `view:"inline" desc:"time constants for integrating CaLrn across M, P and D cascading levels"`
+
+	UpdtThr float32 `def:"0.01,0.02,0.5" desc:"Threshold on CaSpkP CaSpkD value for updating synapse-level Ca values (SynCa) -- this is purely a performance optimization that excludes random infrequent spikes -- 0.05 works well on larger networks but not smaller, which require the .01 default."`
+
+	VgccDt  float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"rate = 1 / tau"`
+	NormInv float32 `view:"-" json:"-" xml:"-" inactive:"+" desc:"= 1 / Norm"`
+
+	pad int32
 }
 
 func (np *CaLrnParams) Defaults() {
 	np.Norm = 80
 	np.SpkVGCC.SetBool(true)
 	np.SpkVgccCa = 35
+	np.UpdtThr = 0.01
 	np.VgccTau = 10
 	np.Dt.Defaults()
 	np.Dt.MTau = 2

@@ -52,12 +52,24 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 
 	for m, _ := range man.Stacks {
 		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle", func() {
+			if man.ModeStack().StepLevel == etime.Cycle {
+				net.GPU.CycleByCycle = true
+			} else {
+				if viewupdt.IsCycleUpdating() {
+					net.GPU.CycleByCycle = true
+				} else {
+					net.GPU.CycleByCycle = false
+				}
+			}
 			net.Cycle(ctx)
 			ctx.CycleInc()
 		})
 	}
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("UpdateWeights", func() {
 		net.DWt(ctx)
+		if viewupdt.IsViewingSynapse() {
+			net.GPU.SyncSynapsesFmGPU()
+		}
 		viewupdt.RecordSyns() // note: critical to update weights here so DWt is visible
 		net.WtFmDWt(ctx)
 	})
@@ -90,7 +102,7 @@ func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs) {
 }
 
 // LooperUpdtNetView adds netview update calls at each time level
-func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt) {
+func LooperUpdtNetView(man *looper.Manager, viewupdt *netview.ViewUpdt, net *Network) {
 	for m, stack := range man.Stacks {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {

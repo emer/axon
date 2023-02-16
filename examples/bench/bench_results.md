@@ -4,6 +4,68 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.7.3x (ror/gpu2 branch): GPU first results
+
+This are very first results with no validation of the computation -- main thing is that it doesn't crash and the computational times look plausible!  SynCa is a beast and needs to be investigated!  Using ./run_gpu.sh to target HUGE and LARGE:
+
+HUGE:
+
+	Function Name 	   Secs	    Pct
+	    GPU:Cycle 	  0.376	   17.0
+	      GPU:DWt 	  0.004	    0.2
+	GPU:GatherSpikes 	  0.410	   18.6
+	GPU:PoolGeMax 	  0.371	   16.8
+	   GPU:PoolGi 	  0.370	   16.8
+	    GPU:SynCa 	  0.672	   30.5
+	  GPU:WtFmDWt 	  0.003	    0.2
+	        Total 	  2.206
+
+OS Threads (=GOMAXPROCS): 4. Gorountines: 4 (Neurons) 4 (SendSpike) 4 (SynCa)
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  0.550	    3.0
+	    CyclePost 	  0.000	    0.0
+	          DWt 	  6.596	   35.6
+	     DWtLayer 	  0.000	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.147	    0.8
+	   GiFmSpikes 	  0.093	    0.5
+	    SynCaRecv 	  3.669	   19.8
+	    SendSpike 	  1.492	    8.1
+	    SynCaSend 	  5.553	   30.0
+	      WtFmDWt 	  0.421	    2.3
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 18.521
+
+LARGE:
+
+	Function Name 	   Secs	    Pct
+	    GPU:Cycle 	  2.030	    7.3
+	      GPU:DWt 	  0.099	    0.4
+	GPU:GatherSpikes 	  1.984	    7.1
+	GPU:PoolGeMax 	  1.817	    6.5
+	   GPU:PoolGi 	  1.773	    6.4
+	    GPU:SynCa 	 20.062	   72.0
+	  GPU:WtFmDWt 	  0.096	    0.3
+	        Total 	 27.862
+
+OS Threads (=GOMAXPROCS): 4. Gorountines: 4 (Neurons) 4 (SendSpike) 4 (SynCa)
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  1.177	    6.3
+	    CyclePost 	  0.001	    0.0
+	          DWt 	  6.845	   36.6
+	     DWtLayer 	  0.000	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.284	    1.5
+	   GiFmSpikes 	  0.179	    1.0
+	    SynCaRecv 	  4.292	   22.9
+	    SendSpike 	  1.354	    7.2
+	    SynCaSend 	  4.112	   22.0
+	      WtFmDWt 	  0.473	    2.5
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 18.716
+
+    
+    
 # Axon 1.7.2x (ror/gpu2 branch): everything now receiver-based
 
 In preparation for the GPU version, the synaptic memory structures are all now receiver-based, and all of the Prjn memory structures (Synapses, GBuf, Gsyn) are now subsets of one large global slice.  This did not appear to make much difference for the LARGE case, while still using the sender-based spiking function (which now has to work a bit harder by indirecting through the synapses instead of just sequentially cruising through them).
@@ -14,9 +76,9 @@ For LARGE case, 1 thread, Recv-based synapses
 	          DWt 	  7.023	   18.3
 	 GatherSpikes 	  0.523	    1.4
 	   GiFmSpikes 	  0.155	    0.4
-	    RecvSynCa 	  9.811	   25.5
+	    SynCaRecv 	  9.811	   25.5
 	    SendSpike 	  3.002	    7.8
-	    SendSynCa 	 11.892	   30.9
+	    SynCaSend 	 11.892	   30.9
 	      WtFmDWt 	  0.477	    1.2
 	        Total 	 38.441
 
@@ -30,9 +92,9 @@ If you edit networkbase.go and change the default to CPURecvSpikes = true, it ca
 	          DWt 	  7.000	    4.3
 	 GatherSpikes 	122.251	   74.8
 	   GiFmSpikes 	  0.221	    0.1
-	    RecvSynCa 	  9.835	    6.0
+	    SynCaRecv 	  9.835	    6.0
 	   SendCtxtGe 	  0.001	    0.0
-	    SendSynCa 	 17.945	   11.0
+	    SynCaSend 	 17.945	   11.0
 	      WtFmDWt 	  0.474	    0.3
 	        Total 	163.426
 
@@ -49,9 +111,9 @@ For LARGE case, 1 thread, New code:
 	  CycleNeuron 	  5.640	   14.7
 	          DWt 	  7.095	   18.5
 	   GiFmSpikes 	  0.129	    0.3
-	    RecvSynCa 	 13.617	   35.5
+	    SynCaRecv 	 13.617	   35.5
 	    SendSpike 	  1.181	    3.1
-	    SendSynCa 	 10.137	   26.5
+	    SynCaSend 	 10.137	   26.5
 	      WtFmDWt 	  0.474	    1.2
 	        Total 	 38.314
 
@@ -61,9 +123,9 @@ For LARGE case, 1 thread, 1.6.20:
 	          DWt 	  7.170	   19.8
 	    GFmSpikes 	  0.035	    0.1
 	   GiFmSpikes 	  0.071	    0.2
-	    RecvSynCa 	 13.065	   36.2
+	    SynCaRecv 	 13.065	   36.2
 	    SendSpike 	  1.168	    3.2
-	    SendSynCa 	  9.778	   27.1
+	    SynCaSend 	  9.778	   27.1
 	      WtFmDWt 	  0.374	    1.0
 	        Total 	 36.139
 
@@ -116,8 +178,8 @@ TimerReport: BenchNet
 	          DWt 	  0.233	    4.2
 	   DWtSubMean 	  0.001	    0.0
 	    GFmSpikes 	  0.215	    3.8
-	    RecvSynCa 	  0.132	    2.4   <- should be 0
-	    SendSynCa 	  0.142	    2.5
+	    SynCaRecv 	  0.132	    2.4   <- should be 0
+	    SynCaSend 	  0.142	    2.5
 	      WtFmDWt 	  0.326	    5.8
 	        Total 	  5.597
 ```
@@ -132,8 +194,8 @@ TimerReport: BenchNet
 	          DWt 	  1.079	    8.6
 	   DWtSubMean 	  0.000	    0.0
 	    GFmSpikes 	  0.096	    0.8
-	    RecvSynCa 	  0.001	    0.0 <- is 0
-	    SendSynCa 	  0.001	    0.0
+	    SynCaRecv 	  0.001	    0.0 <- is 0
+	    SynCaSend 	  0.001	    0.0
 	      WtFmDWt 	  1.692	   13.5
 	        Total 	 12.548
 ```

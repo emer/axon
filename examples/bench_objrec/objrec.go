@@ -398,7 +398,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.Grid("Image").UpdateSig()
 		})
 
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -528,14 +528,14 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigActRFs()
 
-	layers := ss.Net.AsAxon().GetLayersByTypes(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Epoch, etime.Trial)
 	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
 
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Target")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "TargetLayer")
 
 	// this was useful during development of trace learning:
 	// axon.LogAddCaLrnDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
@@ -591,7 +591,7 @@ func (ss *Sim) ConfigLogItems() {
 				ss.Logs.MiscTables[ctx.Item.Name] = cats
 				ctx.SetTensor(cats.Cols[1])
 			}}})
-	layers := ss.Net.LayersByClass("Hidden", "Target")
+	layers := ss.Net.LayersByType(axon.SuperLayer, axon.TargetLayer)
 	for _, lnm := range layers {
 		clnm := lnm
 		ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()

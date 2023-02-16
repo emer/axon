@@ -14,12 +14,13 @@ import (
 // of fields in the Synapse structure where the float32
 // named variables start.
 // Note: all non-float32 infrastructure variables must be at the start!
-const SynapseVarStart = 16
+const SynapseVarStart = 20
 
 //gosl: start synapse
 
 // axon.Synapse holds state for the synaptic connection between neurons
 type Synapse struct {
+	SynIdx  uint32 `desc:"index in network's global list of synapses"`
 	RecvIdx uint32 `desc:"receiving neuron index in network's global list of neurons"`
 	SendIdx uint32 `desc:"sending neuron index in network's global list of neurons"`
 	PrjnIdx uint32 `desc:"projection index in global list of projections organized as [Layers][RecvPrjns]"`
@@ -36,8 +37,6 @@ type Synapse struct {
 	CaD  float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
 	Tr   float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`
 	DTr  float32 `desc:"delta (change in) Tr trace of synaptic activity over time"`
-
-	pad float32
 }
 
 //gosl: end synapse

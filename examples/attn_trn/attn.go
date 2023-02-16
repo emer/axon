@@ -18,7 +18,6 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/axon/deep"
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/env"
 	"github.com/emer/emergent/evec"
@@ -30,7 +29,6 @@ import (
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // include to get gui views
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
@@ -220,7 +218,7 @@ type Sim struct {
 	Cycles      int             `def:"200" desc:"number of cycles per trial"`
 	Runs        int             `def:"10" desc:"number of runs to run to collect stats"`
 	KNaAdapt    bool            `def:"true" desc:"sodium (Na) gated potassium (K) channels that cause neurons to fatigue over time"`
-	Net         *deep.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
+	Net         *axon.Network   `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Prjn3x3Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
 	Prjn5x5Skp1 *prjn.PoolTile  `view:"Standard same-to-same size topographic projection"`
 	Test        TestType        `desc:"select which type of test (input patterns) to use"`
@@ -260,7 +258,7 @@ var TheSim Sim
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
 	ss.Defaults()
-	ss.Net = &deep.Network{}
+	ss.Net = &axon.Network{}
 	ss.Test = AttnSize
 	ss.TstTrlLog = &etable.Table{}
 	ss.TstRunLog = &etable.Table{}
@@ -331,7 +329,7 @@ func (ss *Sim) UpdateEnv() {
 	}
 }
 
-func (ss *Sim) ConfigNet(net *deep.Network) {
+func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "AttnNet")
 	psz := ss.TestEnv.V1Pools
 	fsz := ss.TestEnv.V1Feats

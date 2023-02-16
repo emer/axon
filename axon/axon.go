@@ -126,18 +126,6 @@ type AxonLayer interface {
 	// ApplyExt* method call.
 	UpdateExtFlags()
 
-	// IsTarget returns true if this layer is a Target layer.
-	// By default, returns true for layers of Type == emer.Target
-	// Other Target layers include the TRCLayer in deep predictive learning.
-	// It is also used in SynScale to not apply it to target layers.
-	// In both cases, Target layers are purely error-driven.
-	IsTarget() bool
-
-	// IsInput returns true if this layer is an Input layer.
-	// By default, returns true for layers of Type == emer.Input
-	// Used to prevent adapting of inhibition or TrgAvg values.
-	IsInput() bool
-
 	// RecvPrjns returns the slice of receiving projections for this layer
 	RecvPrjns() *AxonPrjns
 
@@ -212,6 +200,9 @@ type AxonLayer interface {
 	// PlusPhase does updating after end of plus phase
 	PlusPhase(ctx *Context)
 
+	// PlusPhasePost does CPU-specific pass after PlusPhase
+	PlusPhasePost(ctx *Context)
+
 	// SpkSt1 saves current activations into SpkSt1
 	SpkSt1(ctx *Context)
 
@@ -227,15 +218,21 @@ type AxonLayer interface {
 	//////////////////////////////////////////////////////////////////////////////////////
 	//  Learn Methods
 
-	// DWtLayer does weight change at the layer level.
-	// does NOT call main projection-level DWt method.
-	// in base, only calls DTrgAvgFmErr
-	DWtLayer(ctx *Context)
+	// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// Optimized version only updates at point of spiking, threaded over neurons.
+	// This pass updates sending projections -- all sending synapses are
+	// unique to a given sending neuron, so this is threadsafe.
+	// Cannot do both send and recv in same pass without potential for
+	// race conditions.
+	SynCaSend(ctx *Context, ni uint32, sn *Neuron)
 
-	// WtFmDWtLayer does weight update at the layer level.
-	// does NOT call main projection-level WtFmDWt method.
-	// in base, only calls TrgAvgFmD
-	WtFmDWtLayer(ctx *Context)
+	// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// Optimized version only updates at point of spiking, threaded over neurons.
+	// This pass updates recv projections -- all recv synapses are
+	// unique to a given recv neuron, so this is threadsafe.
+	// Cannot do both send and recv in same pass without potential for
+	// race conditions.
+	SynCaRecv(ctx *Context, ni uint32, rn *Neuron)
 
 	// SlowAdapt is the layer-level slow adaptation functions.
 	// Calls AdaptInhib and AvgDifFmTrgAvg for Synaptic Scaling.
@@ -287,15 +284,15 @@ type AxonPrjn interface {
 	// sending and receiving spikes.
 	RecvSpikes(ctx *Context, recvIdx int)
 
-	// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in sending order, filtering on sending spike.
-	SendSynCa(ctx *Context)
+	SynCaSend(ctx *Context, ni uint32, sn *Neuron, updtThr float32)
 
-	// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+	// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
 	// Optimized version only updates at point of spiking.
 	// This pass goes through in recv order, filtering on recv spike.
-	RecvSynCa(ctx *Context)
+	SynCaRecv(ctx *Context, ni uint32, rn *Neuron, updtThr float32)
 
 	// DWt computes the weight change (learning) -- on sending projections.
 	DWt(ctx *Context)

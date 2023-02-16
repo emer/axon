@@ -52,7 +52,7 @@ func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
 
 	// heuristics
 	prjnMinThr := ints.MinInt(ints.MaxInt(nPrjns, 1), 4)
-	synHeur := math.Ceil(float64(nNeurons) / float64(1000))
+	synHeur := math.Ceil(float64(nNeurons) / float64(500))
 	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
 
 	if err := nt.Set(

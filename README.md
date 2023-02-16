@@ -19,6 +19,8 @@ See [python README](python/README.md) and [Python Wiki](https://github.com/emer/
 
 # Current Status / News
 
+* Feb 2023: **v1.7.9** completed first pass on [GPU](GPU.md) implementation based on [gosl](https://github.com/goki/gosl) conversion from the Go source to Vulkan HLSL shaders running under the [vgpu](https://github.com/goki/vgpu) framework.
+
 * Dec 2022: **v1.6.12** represents the start of an anticipated stable plateau in development, with this README fully updated to describe the current algorithm, and well-tested and biologically-based implementations of all the major elements of the core algorithm, and initial steps on specialized PFC / BG / RL algorithms as integrated in the `examples/boa` model.
 
 * May-July 2021: Initial implementation and significant experimentation.  The fully spiking-based Axon framework is capable of learning to categorize rendered 3D object images based on the deep, bidirectionally-connected LVis model originally reported in O'Reilly et al. (2013).  Given the noisy, complex nature of the spiking dynamics, getting this level of functionality out of a large, deep network architecture was not easy, and it drove a number of critical additional mechanisms that are necessary for this model to work.
@@ -50,9 +52,11 @@ make -C axon release
 
 * There are 3 main levels of structure: `Network`, `Layer` and `Prjn` (projection).  The network calls methods on its Layers, and Layers iterate over both `Neuron` data structures (which have only a minimal set of methods) and the `Prjn`s, to implement the relevant computations.  The `Prjn` fully manages everything about a projection of connectivity between two layers, including the full list of `Synapse` elements in the connection.  The Layer also has a set of `Pool` elements, one for each level at which inhibition is computed (there is always one for the Layer, and then optionally one for each Sub-Pool of units).
 
-* The `NetworkBase` and `LayerBase` structs manage all the core structural aspects (data structures etc), and then the algorithm-specific versions (e.g., `axon.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while then directly implementing the algorithm code.  Almost every step of computation has an associated method in `axon.Layer`, so look first in [layer.go](axon/layer.go) to see how something is implemented.
+* The `NetworkBase`, `LayerBase`, and `PrjnBase` structs manage all the core structural aspects (data structures etc), and then the algorithm-specific versions (e.g., `axon.Network`) use Go's anonymous embedding (akin to inheritance in C++) to transparently get all that functionality, while directly implementing the algorithm code.  The [layer_compute.go](axon/layer_compute.go) file has the core algorithm specific code, while [layer.go](axon/layer.go) has other algorithm specific maintenance code.
 
-* Each structural element directly has all the parameters controlling its behavior -- e.g., the `Layer` contains an `ActParams` field (named `Act`), etc.  The ability to share parameter settings across multiple layers etc is achieved through a **styling**-based paradigm -- you apply parameter "styles" to relevant layers -- see [Params](https://github.com/emer/emergent/wiki/Params) for more info.  We adopt the CSS (cascading-style-sheets) standard where parameters can be specifed in terms of the Name of an object (e.g., `#Hidden`), the *Class* of an object (e.g., `.TopDown` -- where the class name TopDown is manually assigned to relevant elements), and the *Type* of an object (e.g., `Layer` applies to all layers).  Multiple space-separated classes can be assigned to any given element, enabling a powerful combinatorial styling strategy to be used.
+* To enable the [GPU](GPU.md) implementation, all of the layer parameters are in `LayerParams` (accessed via `Layer.Params`) and prjn params in `PrjnParams` (accessed via `Prjn.Params`), in [layerparams.go](layerparams.go) and [prjnparams.go](prjnparams.go) respectively.  `LayerParams` contains `ActParams` field (named `Act`), etc.
+
+* The ability to share parameter settings across multiple layers etc is achieved through a **styling**-based paradigm -- you apply parameter "styles" to relevant layers -- see [Params](https://github.com/emer/emergent/wiki/Params) for more info.  We adopt the CSS (cascading-style-sheets) standard where parameters can be specifed in terms of the Name of an object (e.g., `#Hidden`), the *Class* of an object (e.g., `.TopDown` -- where the class name TopDown is manually assigned to relevant elements), and the *Type* of an object (e.g., `Layer` applies to all layers).  Multiple space-separated classes can be assigned to any given element, enabling a powerful combinatorial styling strategy to be used.
 
 * Go uses `interface`s to represent abstract collections of functionality (i.e., sets of methods).  The `emer` package provides a set of interfaces for each structural level (e.g., `emer.Layer` etc) -- any given specific layer must implement all of these methods, and the structural containers (e.g., the list of layers in a network) are lists of these interfaces.  An interface is implicitly a *pointer* to an actual concrete object that implements the interface.  Thus, we typically need to convert this interface into the pointer to the actual concrete type, as in:
 
@@ -376,7 +380,7 @@ The `axon.Network` `CycleImpl` method in [`axon/network.go`](axon/network.go) ca
 
 * `CyclePost` on all `Layer`s: a hook for specialized algorithms.
 
-* `SendSynCa` and `RecvSynCa` on all `Prjn`s: update synapse-level calcium (Ca) for any neurons that spiked (on either the send or recv side).  This is expensive computationally because it goes through synapses (but only for neurons that actually spiked).
+* `SynCaSend` and `SynCaRecv` on all `Prjn`s: update synapse-level calcium (Ca) for any neurons that spiked (on either the send or recv side).  This is expensive computationally because it goes through synapses (but only for neurons that actually spiked).
 
 All of the relevant parameters and most of the equations are in the [`axon/act.go`](axon/act.go),  [`axon/inhib.go`](axon/inhib.go), and [`axon/learn.go`](axon/learn.go) which correspond to the `Act`, `Inhib` and `Learn` fields in the `Layer` struct.  Default values of parameters are shown in comments below.
 
@@ -524,7 +528,7 @@ The cascading update looks like this:
 As shown below for the `DWt` function, the *Error* gradient is:
 * `Error = CaP - CaD`
 
-In addition, the Ca trace used for synaptic-level integration for the trace-based *Credit* assignment factor (see `SendSynCa` and `RecvSynCa` below) is updated with a smoothing factor of `1/SynTau` (1/30 msec) which defines the time window over which pre * post synaptic activity interacts in updating the synaptic-level trace:
+In addition, the Ca trace used for synaptic-level integration for the trace-based *Credit* assignment factor (see `SynCaSend` and `SynCaRecv` below) is updated with a smoothing factor of `1/SynTau` (1/30 msec) which defines the time window over which pre * post synaptic activity interacts in updating the synaptic-level trace:
 
 * `CaSyn += (SpikeG * Spike - CaSyn) / SynTau`
 
@@ -545,9 +549,9 @@ For each Neuron, if `Spike != 0`, then iterate over `SendPrjns` for that layer, 
 
 This is expensive computationally because it requires traversing all of the synapses for each sending neuron, in a sparse manner due to the fact that few neurons are typically spiking at any given cycle.
 
-### SendSynCa, RecvSynCa
+### SynCaSend, SynCaRecv
 
-If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SendSynCa`) and then any receiving neurons that spiked (`RecvSynCa`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdtThr` = 0.01.
+If synapse-level calcium (Ca) is being used for the trace *Credit* assignment factor in learning, then two projection-level functions are called across all projections, which are optimized to first filter by any sending neurons that have just spiked (`SynCaSend`) and then any receiving neurons that spiked (`SynCaRecv`) -- Ca only needs to be updated in these two cases.  This major opmitimization is only possible when using the simplified purely spike-driven form of Ca as in the `CaSpk` vars above.  Another optimization is to exclude any neurons for which `CaSpkP` and `CaSpkD` are below a low update threshold `UpdtThr` = 0.01.
 
 After filtering, the basic cascaded integration shown above is performed on synapse-level variables where the immediate driving Ca value is the product of `CaSyn` on the recv and send neurons times a `SpikeG` gain factor:
 * `CaM += (SpikeG * send.CaSyn * recv.CaSyn - CaM) / MTau`

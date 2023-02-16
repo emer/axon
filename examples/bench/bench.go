@@ -84,6 +84,7 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 	net.BidirConnectLayers(hid3Lay, outLay, full)
 
 	net.RecFunTimes = verbose
+	net.GPU.RecFunTimes = verbose
 
 	// builds with default threads
 	if err := net.Build(); err != nil {
@@ -143,11 +144,15 @@ func ConfigEpcLog(dt *etable.Table) {
 	}, 0)
 }
 
-func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose bool) {
+func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, gpu bool) {
 	ctx := axon.NewContext()
 	net.InitWts()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
+
+	if gpu {
+		net.ConfigGPUnoGUI(ctx)
+	}
 
 	epcLog.SetNumRows(epcs)
 
@@ -175,6 +180,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 
 			inLay.ApplyExt(inp)
 			outLay.ApplyExt(outp)
+			net.ApplyExts(ctx)
 
 			net.NewState(ctx)
 			ctx.NewState(etime.Train)

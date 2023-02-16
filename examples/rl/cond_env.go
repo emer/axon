@@ -61,6 +61,7 @@ type CondEnv struct {
 	NoRewVal float32         `desc:"value for non-reward"`
 	Input    etensor.Float64 `desc:"one-hot input representation of current option"`
 	Reward   etensor.Float64 `desc:"single reward value"`
+	HasRew   bool            `desc:"true if a US reward value was set"`
 	Run      env.Ctr         `view:"inline" desc:"current run of model as provided during Init"`
 	Epoch    env.Ctr         `view:"inline" desc:"number of times through Seq.Max number of sequences"`
 	Trial    env.Ctr         `view:"inline" desc:"one trial is a pass through all TotTime Events"`
@@ -161,8 +162,10 @@ func (ev *CondEnv) SetReward() bool {
 	tm := ev.Event.Cur
 	rw := ev.US.IsOn(tm)
 	if rw {
+		ev.HasRew = true
 		ev.Reward.Values[0] = float64(ev.RewVal)
 	} else {
+		ev.HasRew = false
 		ev.Reward.Values[0] = float64(ev.NoRewVal)
 	}
 	return rw

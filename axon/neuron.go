@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"unsafe"
 
+	"github.com/emer/emergent/netview"
 	"github.com/goki/mat32"
 )
 
@@ -34,14 +35,14 @@ const (
 	NeuronOff NeuronFlags = 1
 
 	// NeuronHasExt means the neuron has external input in its Ext field
-	NeuronHasExt NeuronFlags = 1 << 2
+	NeuronHasExt NeuronFlags = 2
 
 	// NeuronHasTarg means the neuron has external target input in its Target field
-	NeuronHasTarg NeuronFlags = 1 << 3
+	NeuronHasTarg NeuronFlags = 4
 
 	// NeuronHasCmpr means the neuron has external comparison input in its Target field -- used for computing
 	// comparison statistics but does not drive neural activity ever
-	NeuronHasCmpr NeuronFlags = 1 << 4
+	NeuronHasCmpr NeuronFlags = 8
 )
 
 // axon.Neuron holds all of the neuron (unit) level variables.
@@ -162,7 +163,7 @@ type Neuron struct {
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {
-	return nrn.Flags&flag != 0
+	return (nrn.Flags & flag) > 0 // weird: != 0 does NOT work..
 }
 
 func (nrn *Neuron) SetFlag(flag NeuronFlags) {
@@ -225,6 +226,7 @@ var (
 )
 
 func init() {
+	netview.NVarCols = 4 // many neurons
 	NeuronVarsMap = make(map[string]int, len(NeuronVars))
 	typ := reflect.TypeOf((*Neuron)(nil)).Elem()
 	nf := typ.NumField()

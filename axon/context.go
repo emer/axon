@@ -11,8 +11,8 @@ import (
 )
 
 //gosl: hlsl context
-// #include "slrand.hlsl"
 // #include "etime.hlsl"
+// #include "axonrand.hlsl"
 // #include "neuromod.hlsl"
 //gosl: end context
 
@@ -36,69 +36,71 @@ type Context struct {
 	Time        float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
 	Testing     slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCyc  float32     `def:"0.001" desc:"amount of time to increment per cycle"`
-
-	pad  int32
-	pad1 int32
+	NLayers     int32       `view:"-" desc:"number of layers in the network -- needed for GPU mode"`
+	NSpiked     int32       `inactive:"+" desc:"number of neurons that spiked"`
 
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
 }
 
 // Defaults sets default values
-func (tm *Context) Defaults() {
-	tm.TimePerCyc = 0.001
-	tm.ThetaCycles = 200
+func (ctx *Context) Defaults() {
+	ctx.TimePerCyc = 0.001
+	ctx.ThetaCycles = 200
 }
 
 // NewState resets counters at start of new state (trial) of processing.
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
-func (tm *Context) NewState(mode etime.Modes) {
-	tm.Phase = 0
-	tm.PlusPhase.SetBool(false)
-	tm.PhaseCycle = 0
-	tm.Cycle = 0
-	tm.Mode = mode
-	tm.Testing.SetBool(mode != etime.Train)
-	tm.NeuroMod.NewState()
+func (ctx *Context) NewState(mode etime.Modes) {
+	ctx.Phase = 0
+	ctx.PlusPhase.SetBool(false)
+	ctx.PhaseCycle = 0
+	ctx.Cycle = 0
+	ctx.NSpiked = 0
+	ctx.Mode = mode
+	ctx.Testing.SetBool(mode != etime.Train)
+	ctx.NeuroMod.NewState()
 }
 
 // NewPhase resets PhaseCycle = 0 and sets the plus phase as specified
-func (tm *Context) NewPhase(plusPhase bool) {
-	tm.PhaseCycle = 0
-	tm.PlusPhase.SetBool(plusPhase)
+func (ctx *Context) NewPhase(plusPhase bool) {
+	ctx.PhaseCycle = 0
+	ctx.PlusPhase.SetBool(plusPhase)
 }
 
 // CycleInc increments at the cycle level
-func (tm *Context) CycleInc() {
-	tm.PhaseCycle++
-	tm.Cycle++
-	tm.CycleTot++
-	tm.Time += tm.TimePerCyc
-	tm.RandCtr.Add(uint32(RandFunIdxN))
+func (ctx *Context) CycleInc() {
+	ctx.PhaseCycle++
+	ctx.Cycle++
+	ctx.CycleTot++
+	ctx.Time += ctx.TimePerCyc
+	ctx.RandCtr.Add(uint32(RandFunIdxN))
+	ctx.NSpiked = 0
 }
 
 //gosl: end time
 
 // Reset resets the counters all back to zero
-func (tm *Context) Reset() {
-	tm.Phase = 0
-	tm.PlusPhase.SetBool(false)
-	tm.PhaseCycle = 0
-	tm.Cycle = 0
-	tm.CycleTot = 0
-	tm.Time = 0
-	tm.Testing.SetBool(false)
-	if tm.TimePerCyc == 0 {
-		tm.Defaults()
+func (ctx *Context) Reset() {
+	ctx.Phase = 0
+	ctx.PlusPhase.SetBool(false)
+	ctx.PhaseCycle = 0
+	ctx.Cycle = 0
+	ctx.CycleTot = 0
+	ctx.Time = 0
+	ctx.Testing.SetBool(false)
+	ctx.NSpiked = 0
+	if ctx.TimePerCyc == 0 {
+		ctx.Defaults()
 	}
-	tm.RandCtr.Reset()
-	tm.NeuroMod.Reset()
+	ctx.RandCtr.Reset()
+	ctx.NeuroMod.Init()
 }
 
 // NewContext returns a new Time struct with default parameters
 func NewContext() *Context {
-	tm := &Context{}
-	tm.Defaults()
-	return tm
+	ctx := &Context{}
+	ctx.Defaults()
+	return ctx
 }

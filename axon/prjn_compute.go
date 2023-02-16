@@ -15,33 +15,37 @@ package axon
 // into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
+// THIS IS NOT USED BY DEFAULT -- VERY SLOW!
 func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
-	scale := pj.Params.GScale.Scale
-	slay := pj.Send.(AxonLayer).AsAxon()
-	pjcom := &pj.Params.Com
-	bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CycleTot-1)
-	// note: -1 because this is logically done on prior timestep
-	syns := pj.RecvSyns(recvIdx)
-	if pj.PrjnType() == CTCtxtPrjn {
-		if ctx.Cycle != ctx.ThetaCycles-1 {
-			return
+	return
+	/*
+		scale := pj.Params.GScale.Scale
+		slay := pj.Send.(AxonLayer).AsAxon()
+		pjcom := &pj.Params.Com
+		bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CycleTot-1, pj.Params.Idxs.RecvNeurN)
+		// note: -1 because this is logically done on prior timestep
+		syns := pj.RecvSyns(recvIdx)
+		if pj.PrjnType() == CTCtxtPrjn {
+			if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
+				return
+			}
+			for ci := range syns {
+				sy := &syns[ci]
+				sendIdx := pj.Params.SynSendLayIdx(sy)
+				sn := &slay.Neurons[sendIdx]
+				sv := sn.Burst * scale * sy.Wt
+				pj.GBuf[bi] += sv
+			}
+		} else {
+			for ci := range syns {
+				sy := &syns[ci]
+				sendIdx := pj.Params.SynSendLayIdx(sy)
+				sn := &slay.Neurons[sendIdx]
+				sv := sn.Spike * scale * sy.Wt
+				pj.GBuf[bi] += sv
+			}
 		}
-		for ci := range syns {
-			sy := &syns[ci]
-			sendIdx := pj.Params.SynSendLayIdx(sy)
-			sn := &slay.Neurons[sendIdx]
-			sv := sn.Burst * scale * sy.Wt
-			pj.GBuf[bi] += sv
-		}
-	} else {
-		for ci := range syns {
-			sy := &syns[ci]
-			sendIdx := pj.Params.SynSendLayIdx(sy)
-			sn := &slay.Neurons[sendIdx]
-			sv := sn.Spike * scale * sy.Wt
-			pj.GBuf[bi] += sv
-		}
-	}
+	*/
 }
 
 // SendSpike sends a spike from the sending neuron at index sendIdx
@@ -49,7 +53,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
 func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
-	scale := pj.Params.GScale.Scale
+	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
 	if pj.PrjnType() == CTCtxtPrjn {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
@@ -66,8 +70,8 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 	for _, ssi := range sidxs {
 		sy := &pj.Syns[ssi]
 		recvIdx := pj.Params.SynRecvLayIdx(sy)
-		sv := scale * sy.Wt
-		bi := pjcom.WriteIdxOff(recvIdx, wrOff)
+		sv := int32(scale * sy.Wt)
+		bi := pjcom.WriteIdxOff(recvIdx, wrOff, pj.Params.Idxs.RecvNeurN)
 		pj.GBuf[bi] += sv
 	}
 }
@@ -75,69 +79,43 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  SynCa methods
 
-// SendSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *Prjn) SendSynCa(ctx *Context) {
+func (pj *Prjn) SynCaSend(ctx *Context, ni uint32, sn *Neuron, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	kp := &pj.Params.Learn.KinaseCa
-	updtThr := kp.UpdtThr
-	slay := pj.Send.(AxonLayer).AsAxon()
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		if sn.Spike == 0 {
-			continue
-		}
-		if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
-			continue
-		}
-		snCaSyn := ssg * sn.CaSyn
-		sidxs := pj.SendSynIdxs(si)
-		for _, ssi := range sidxs {
-			sy := &pj.Syns[ssi]
-			ri := pj.Params.SynRecvLayIdx(sy)
-			rn := &rlay.Neurons[ri]
-			pj.Params.SendSynCaSyn(ctx, sy, rn, snCaSyn, updtThr)
-		}
+	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * sn.CaSyn
+	sidxs := pj.SendSynIdxs(int(ni))
+	for _, ssi := range sidxs {
+		sy := &pj.Syns[ssi]
+		ri := pj.Params.SynRecvLayIdx(sy)
+		rn := &rlay.Neurons[ri]
+		pj.Params.SynCaSendSyn(ctx, sy, rn, snCaSyn, updtThr)
 	}
 }
 
-// RecvSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike.
 // Threading: Can be called concurrently for all prjns, since it updates synapses
 // (which are local to a single prjn).
-func (pj *Prjn) RecvSynCa(ctx *Context) {
+func (pj *Prjn) SynCaRecv(ctx *Context, ni uint32, rn *Neuron, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	kp := &pj.Params.Learn.KinaseCa
-	updtThr := kp.UpdtThr
 	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
-	ssg := kp.SpikeG
-	for ri := range rlay.Neurons {
-		rn := &rlay.Neurons[ri]
-		if rn.Spike == 0 {
-			continue
-		}
-		if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
-			continue
-		}
-		rnCaSyn := ssg * rn.CaSyn
-		syns := pj.RecvSyns(ri)
-		for ci := range syns {
-			sy := &syns[ci]
-			si := pj.Params.SynSendLayIdx(sy)
-			sn := &slay.Neurons[si]
-			pj.Params.RecvSynCaSyn(ctx, sy, sn, rnCaSyn, updtThr)
-		}
+	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * rn.CaSyn
+	syns := pj.RecvSyns(int(ni))
+	for ci := range syns {
+		sy := &syns[ci]
+		si := pj.Params.SynSendLayIdx(sy)
+		sn := &slay.Neurons[si]
+		pj.Params.SynCaRecvSyn(ctx, sy, sn, rnCaSyn, updtThr)
 	}
 }
 
@@ -232,7 +210,7 @@ func (pj *Prjn) SWtFmWt() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if rlay.AxonLay.IsTarget() {
+	if rlay.Params.IsTarget() {
 		return
 	}
 	max := pj.Params.SWt.Limit.Max
@@ -290,7 +268,7 @@ func (pj *Prjn) SynScale() {
 		return
 	}
 	rlay := pj.Recv.(AxonLayer).AsAxon()
-	if !rlay.IsLearnTrgAvg() {
+	if !rlay.Params.IsLearnTrgAvg() {
 		return
 	}
 	tp := &rlay.Params.Learn.TrgAvgAct
