@@ -26,7 +26,6 @@ import (
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/etensor"
-	_ "github.com/emer/etable/etview" // _ = include to get gui views
 	"github.com/emer/etable/minmax"
 	"github.com/emer/etable/tsragg"
 	"github.com/goki/gi/gi"
@@ -38,7 +37,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	GPU = true
 )
 
 func main() {

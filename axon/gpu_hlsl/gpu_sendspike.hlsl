@@ -33,6 +33,7 @@
 
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] StructuredBuffer<float> Exts;  [In / Out Layers][Neurons]
+// [[vk::binding(1, 3)]] StructuredBuffer<uint> Spikers;  // [[Neurons]] -- indexes of those that spiked
 
 void SendSpikeSyn(in Context ctx, in PrjnParams pj, in Synapse sy, in float sendVal, in uint recvNeurSt) {
 	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CycleTot, pj.Idxs.RecvNeurN);
@@ -69,6 +70,7 @@ void PostSpike(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in 
 void SendSpike2(in Context ctx, LayerParams ly, uint nin, inout Neuron sn) {
 	uint ni = nin - ly.Idxs.NeurSt;
 
+	// note: we can't use Spikers subset because of this call for everyone..
 	PostSpike(ctx, ly, ni, sn, Pools[sn.SubPoolN], Pools[Layers[sn.LayIdx].Idxs.PoolSt], LayVals[sn.LayIdx]);
 	
 	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {

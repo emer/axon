@@ -31,6 +31,7 @@
 
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
+[[vk::binding(1, 3)]] StructuredBuffer<uint> Spikers;  // [[Neurons]] -- indexes of those that spiked
 
 void SynCaSendSyn(in Context ctx, in PrjnParams pj, inout Synapse sy, float snCaSyn, float updtThr) {
 	pj.SynCaSendSyn(ctx, sy, Neurons[sy.RecvIdx], snCaSyn, updtThr);
@@ -54,9 +55,9 @@ void SynCaSendPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni,
 void SynCaSend2(in Context ctx, in LayerParams ly, uint nin, in Neuron sn) {
 	float updtThr = ly.Learn.CaLrn.UpdtThr;
 
-	if ((sn.CaSpkP < updtThr) && (sn.CaSpkD < updtThr)) {
-		return;
-	}
+	// if ((sn.CaSpkP < updtThr) && (sn.CaSpkD < updtThr)) {
+	// 	return;
+	// }
 	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
 	
 	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {
@@ -65,19 +66,21 @@ void SynCaSend2(in Context ctx, in LayerParams ly, uint nin, in Neuron sn) {
 }
 
 void SynCaSend(in Context ctx, uint nin, in Neuron sn) {
-	if (sn.Spike == 0) {
-		return;
-	}
+	// if (sn.Spike == 0) {
+	// 	return;
+	// }
 	SynCaSend2(ctx, Layers[sn.LayIdx], nin, sn);
 }
 
 [numthreads(64, 1, 1)]
 void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
-	uint ns;
-	uint st;
-	Neurons.GetDimensions(ns, st);
-	if(idx.x < ns) {
-		SynCaSend(Ctx[0], idx.x, Neurons[idx.x]);
+	// uint ns;
+	// uint st;
+	// Neurons.GetDimensions(ns, st);
+	// if (idx.x < ns) {
+		// SynCaSend(Ctx[0], idx.x, Neurons[idx.x]);
+	if (idx.x < Ctx[0].NSpiked) {
+		SynCaSend(Ctx[0], Spikers[idx.x], Neurons[Spikers[idx.x]]);
 	}
 }
 
