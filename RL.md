@@ -1,6 +1,6 @@
 # Reinforcement Learning and Dopamine
 
-The `rl_*` files in axon provide core infrastructure for dopamine neuromodulation and reinforcement learning, including the Rescorla-Wagner learning algorithm (RW) and Temporal Differences (TD) learning.
+The rl_{[net.go](axon/rl_net.go), [layers.go](axon/rl_layers.go), [prjns.go](axon/rl_prjns.go)} files in axon provide core infrastructure for dopamine neuromodulation and reinforcement learning, including the Rescorla-Wagner learning algorithm (RW) and Temporal Differences (TD) learning.
 
 In the new GPU-based code, the `Context` type, `NeuroModVals` field is used to communicate global neuromodulatory signals around the network: broadcasting new modulatory signals and communicating computed values between specialized layer types.
 
@@ -56,6 +56,6 @@ Some important considerations:
     
 * The RW and TD DA layers use the `CyclePost` layer-level method to send the DA to other layers, at end of each cycle, after activation is updated.  Thus, DA lags by 1 cycle, which typically should not be a problem. 
 
-* See the separate `pvlv` package for the full biologically-based pvlv model on top of this basic DA infrastructure.
+* See [PVLV](PVLV.md) for the full biologically-based PVLV model of phasic dopamine.
 
 * To encode positive and negative values using spiking, 2 units are used, one for positive and the other for negative.  The `Act` value always represents the (signed) computed value, not the spike rate, where applicable.

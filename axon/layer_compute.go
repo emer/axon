@@ -95,10 +95,10 @@ func (ly *Layer) BetweenLayerGi(ctx *Context) {
 	lpl := &ly.Pools[0]
 	maxGi := lpl.Inhib.Gi
 	net := ly.Network.(AxonNetwork).AsAxon()
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib1Idx)
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib2Idx)
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib3Idx)
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib4Idx)
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx1)
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx2)
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx3)
+	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx4)
 	lpl.Inhib.Gi = maxGi // our inhib is max of us and everyone in the layer pool
 }
 

@@ -114,8 +114,8 @@ type Neuron struct {
 	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
 	GModRaw  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
 	GModSyn  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
-	GeSynMax float32 `desc:"maximum GeSyn value across the ThetaCycle"`
-	GeSynPrv float32 `desc:"previous GeSynMax value from the previous ThetaCycle"`
+	GeSynAvg float32 `desc:"average GeSyn value across the ThetaCycle -- used for GeSynPrv, e.g., for PPTg that subtracts prior Ge from current to compute a temporal derivative"`
+	GeSynPrv float32 `desc:"previous GeSynAvg value from the previous ThetaCycle, e.g., for PPTg that subtracts prior Ge from current to compute a temporal derivative"`
 
 	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
 	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`

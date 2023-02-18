@@ -612,7 +612,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
-	nrn.GeSynMax = 0
+	nrn.GeSynAvg = 0
 	nrn.GeSynPrv = 0
 
 	nrn.SSGi = 0

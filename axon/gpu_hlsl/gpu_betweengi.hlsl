@@ -41,10 +41,10 @@ float BetweenLayerGiMax(float maxGi, int layIdx) {
 
 void BetweenGi2(in Context ctx, in LayerParams ly, inout Pool lpl) {
 	float maxGi = lpl.Inhib.Gi;
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib1Idx);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib2Idx);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib3Idx);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib4Idx);
+	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx1);
+	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx2);
+	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx3);
+	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx4);
 	lpl.Inhib.Gi = maxGi; // our inhib is max of us and everyone in the layer pool
 }
 

@@ -125,10 +125,10 @@ func (ly *Layer) UpdateParams() {
 // PostBuild performs special post-Build() configuration steps for specific algorithms,
 // using configuration data set in BuildConfig during the ConfigNet process.
 func (ly *Layer) PostBuild() {
-	ly.Params.LayInhib1Idx = ly.BuildConfigFindLayer("LayInhib1Name", false) // optional
-	ly.Params.LayInhib2Idx = ly.BuildConfigFindLayer("LayInhib2Name", false) // optional
-	ly.Params.LayInhib3Idx = ly.BuildConfigFindLayer("LayInhib3Name", false) // optional
-	ly.Params.LayInhib4Idx = ly.BuildConfigFindLayer("LayInhib4Name", false) // optional
+	ly.Params.LayInhib.Idx1 = ly.BuildConfigFindLayer("LayInhib1Name", false) // optional
+	ly.Params.LayInhib.Idx2 = ly.BuildConfigFindLayer("LayInhib2Name", false) // optional
+	ly.Params.LayInhib.Idx3 = ly.BuildConfigFindLayer("LayInhib3Name", false) // optional
+	ly.Params.LayInhib.Idx4 = ly.BuildConfigFindLayer("LayInhib4Name", false) // optional
 
 	switch ly.LayerType() {
 	case PulvinarLayer:
