@@ -28,12 +28,12 @@ type Inhib struct {
 	Gi       float32     `desc:"overall inhibitory conductance = FSGi + SSGi"`
 	GiOrig   float32     `desc:"original value of the inhibition (before pool or other effects)"`
 	LayGi    float32     `desc:"for pools, this is the layer-level inhibition that is MAX'd with the pool-level inhibition to produce the net inhibition"`
+	FFAvg    float32     `desc:"longer time scale running average FF drive -- used for FFAvgPrv"`
+	FFAvgPrv float32     `desc:"previous theta cycle FFAvg value -- for FFPrv factor -- updated in Decay function that is called at start of new ThetaCycle"`
 
 	FFsRawInt   int32 `desc:"int32 atomic add compatible integration of FFsRaw"`
 	FBsRawInt   int32 `desc:"int32 atomic add compatible integration of FBsRaw"`
 	GeExtRawInt int32 `desc:"int32 atomic add compatible integration of GeExtRaw"`
-
-	pad, pad1 float32
 }
 
 func (fi *Inhib) Init() {
@@ -61,12 +61,16 @@ func (fi *Inhib) Zero() {
 	fi.FSGi = 0
 	fi.SSGi = 0
 	fi.Gi = 0
+	fi.FFAvg = 0
+	fi.FFAvgPrv = 0
 	fi.GiOrig = 0
 	fi.LayGi = 0
 }
 
 // Decay reduces inhibition values by given decay proportion
 func (fi *Inhib) Decay(decay float32) {
+	fi.FFAvgPrv = fi.FFAvg // capture prior to decay
+
 	fi.FFs -= decay * fi.FFs
 	fi.FBs -= decay * fi.FBs
 	fi.FSi -= decay * fi.FSi
@@ -75,6 +79,7 @@ func (fi *Inhib) Decay(decay float32) {
 	fi.FSGi -= decay * fi.FSGi
 	fi.SSGi -= decay * fi.SSGi
 	fi.Gi -= decay * fi.Gi
+	fi.FFAvg -= decay * fi.FFAvg
 }
 
 // RawIncr increments raw values from given neuron-based input values

@@ -45,6 +45,10 @@ type AxonNetwork interface {
 	// MinusPhaseImpl does updating after minus phase
 	MinusPhaseImpl(ctx *Context)
 
+	// PlusPhaseStartImpl does updating at the start of the plus phase:
+	// applies Target inputs as External inputs.
+	PlusPhaseStartImpl(ctx *Context)
+
 	// PlusPhaseImpl does updating after plus phase
 	PlusPhaseImpl(ctx *Context)
 
@@ -196,6 +200,13 @@ type AxonLayer interface {
 
 	// MinusPhase does updating after end of minus phase
 	MinusPhase(ctx *Context)
+
+	// MinusPhasePost does CPU-specific pass after MinusPhase
+	MinusPhasePost(ctx *Context)
+
+	// PlusPhaseStart does updating at the start of the plus phase:
+	// applies Target inputs as External inputs.
+	PlusPhaseStart(ctx *Context)
 
 	// PlusPhase does updating after end of plus phase
 	PlusPhase(ctx *Context)

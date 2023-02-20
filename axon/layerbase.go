@@ -284,7 +284,7 @@ func (ly *LayerBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) 
 // NonDefaultParams returns a listing of all parameters in the Layer that
 // are not at their default values -- useful for setting param styles etc.
 func (ly *LayerBase) NonDefaultParams() string {
-	nds := giv.StructNonDefFieldsStr(ly.AxonLay, ly.Nm)
+	nds := giv.StructNonDefFieldsStr(ly.AxonLay.AsAxon().Params, ly.Nm)
 	for _, pj := range ly.RcvPrjns {
 		pnd := pj.NonDefaultParams()
 		nds += pnd

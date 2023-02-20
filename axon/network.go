@@ -140,6 +140,12 @@ func (nt *Network) MinusPhase(ctx *Context) {
 	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctx)
 }
 
+// PlusPhaseStart does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (nt *Network) PlusPhaseStart(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).PlusPhaseStartImpl(ctx)
+}
+
 // PlusPhase does updating after end of plus phase
 func (nt *Network) PlusPhase(ctx *Context) {
 	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctx)
@@ -371,14 +377,37 @@ func (nt *Network) NewStateImpl(ctx *Context) {
 func (nt *Network) MinusPhaseImpl(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunMinusPhase()
-		return
+	} else {
+		// not worth threading this probably
+		for _, ly := range nt.Layers {
+			if ly.IsOff() {
+				continue
+			}
+			ly.(AxonLayer).MinusPhase(ctx)
+		}
 	}
-	// not worth threading this probably
+	// Post happens on the CPU always
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).MinusPhase(ctx)
+		ly.(AxonLayer).MinusPhasePost(ctx)
+	}
+}
+
+// PlusPhaseStartImpl does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (nt *Network) PlusPhaseStartImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunPlusPhaseStart()
+	} else {
+		// not worth threading this probably
+		for _, ly := range nt.Layers {
+			if ly.IsOff() {
+				continue
+			}
+			ly.(AxonLayer).PlusPhaseStart(ctx)
+		}
 	}
 }
 

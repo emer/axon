@@ -8,6 +8,7 @@ boa: This project tests BG, OFC & ACC learning in a CS-driven approach task.
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -41,7 +42,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	GPU = true
 )
 
 func main() {
@@ -66,7 +67,6 @@ func guirun() {
 
 // SimParams has all the custom params for this sim
 type SimParams struct {
-	TwoThetas         bool    `desc:"if true, do 2 theta trials per action"`
 	PctCortex         float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
 	PctCortexStEpc    int     `desc:"epoch when PctCortex starts increasing"`
@@ -74,18 +74,15 @@ type SimParams struct {
 	PctCortexInterval int     `desc:"how often to update PctCortex"`
 	PCAInterval       int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 	CortexDriving     bool    `desc:"true if cortex is driving this behavioral approach sequence"`
-	ThetaStep         int     `desc:"theta counter -- only take an action every 2 trials"`
 }
 
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
-	ss.TwoThetas = true
 	ss.PctCortexMax = 1.0
 	ss.PctCortexStEpc = 10
 	ss.PctCortexMaxEpc = 30
 	ss.PctCortexInterval = 2
 	ss.PCAInterval = 10
-	ss.ThetaStep = 0
 }
 
 // Sim encapsulates the entire simulation model, and we define all the
@@ -437,9 +434,12 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200) // AddTime(etime.Phase, 2).
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
+	maxTrials := ev.TimeMax + 5 // allow for extra time for gating trials
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 100).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
+
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
@@ -466,7 +466,9 @@ func (ss *Sim) ConfigLoops() {
 
 	// note: phase is shared between all stacks!
 	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
-	plusPhase.OnEvent.Prepend("TakeAction", func() {
+	plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() {
+		// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
+		// because minus phase end has gated info, and plus phase start applies action input
 		ss.TakeAction(ss.Net)
 	})
 
@@ -496,7 +498,13 @@ func (ss *Sim) ConfigLoops() {
 	})
 
 	man.AddOnEndToAll("Log", ss.Log)
-	axon.LooperResetLogBelow(man, &ss.Logs)
+	axon.LooperResetLogBelow(man, &ss.Logs, etime.Sequence) // exclude sequence, doesn't reset Trial
+	man.GetLoop(etime.Train, etime.Epoch).OnStart.Add("ResetLogTrial", func() {
+		ss.Logs.ResetLog(etime.Train, etime.Trial)
+	})
+	man.GetLoop(etime.Test, etime.Epoch).OnStart.Add("ResetLogTrial", func() {
+		ss.Logs.ResetLog(etime.Train, etime.Trial)
+	})
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
@@ -546,12 +554,15 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	ev.ActGen() // always update comparison
-	if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
-		ss.Sim.ThetaStep++
-		return
+	mtxLy := net.LayerByName("VpMtxGo").(*axon.Layer)
+	didGate := mtxLy.AnyGated()
+	if didGate && !ss.Context.NeuroMod.HasRew.IsTrue() {
+		ev.DidGate = true
+		if Debug {
+			fmt.Printf("skipped action because gated\n")
+		}
+		return // no time to do action while also gating
 	}
-	// fmt.Printf("Take Action\n")
-	ss.Sim.ThetaStep = 0 // reset for next time
 
 	netAct, anm := ss.DecodeAct(ev)
 	genAct := ev.ActGen()
@@ -579,7 +590,6 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
-	ss.Net.GPU.SyncNeuronsFmGPU()
 	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "Act")
 	return ev.DecodeAct(vt)
 }
@@ -629,12 +639,11 @@ func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 
-	if ev.Time == 0 {
+	trl := ss.Loops.GetLoop(ss.Context.Mode, etime.Trial)
+	if trl.Counter.Cur == 0 {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
-		net.InitActs() // this is still essential even with fully functioning decay below:
-		// todo: need a more selective US gating mechanism!
-		net.DecayStateByType(&ss.Context, 1, 1, axon.SuperLayer, axon.PTMaintLayer, axon.CTLayer, axon.VThalLayer)
-		// note: it is critical that this clears GBuf to get rid of incoming spikes
+		// this gets rid of the residual action errors:
+		net.DecayStateByType(&ss.Context, 1, 1, axon.SuperLayer, axon.CTLayer)
 		ev.RenderLocalist("Gate", 0)
 	}
 
@@ -650,6 +659,11 @@ func (ss *Sim) ApplyInputs() {
 
 	// this is key step to drive DA and US-ACh
 	if ev.US != -1 {
+		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if trnEpc > 5 && ev.Rew < 0 {
+			fmt.Printf("negative reward for US: %d  %g\n", ev.US, ev.Rew)
+			ss.Loops.Stop(etime.Trial)
+		}
 		ss.Context.NeuroMod.SetRew(ev.Rew, true)
 	} else {
 		ss.Context.NeuroMod.SetRew(0, false)
@@ -669,7 +683,6 @@ func (ss *Sim) NewRun() {
 	// ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
-	ss.Sim.ThetaStep = 0
 	ss.Sim.PctCortex = 0
 	ss.InitWts(ss.Net)
 	ss.InitStats()
@@ -699,6 +712,8 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("MaintEarly", 0)
 	ss.Stats.SetFloat("GatedPostCS", 0)
 	ss.Stats.SetFloat("WrongCSGate", 0)
+	ss.Stats.SetFloat("AChShould", 0)
+	ss.Stats.SetFloat("AChShouldnt", 0)
 	ss.Stats.SetFloat("Rew", 0)
 	ss.Stats.SetString("NetAction", "")
 	ss.Stats.SetString("InstinctAction", "")
@@ -727,7 +742,7 @@ func (ss *Sim) StatCounters() {
 	// ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", "trl")
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Cycle", "NetAction", "InstinctAction", "ActAction", "ActMatch", "Gated", "Should", "Rew"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Cycle", "NetAction", "InstinctAction", "ActAction", "ActMatch", "Gated", "Should", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -735,6 +750,9 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	ss.GatedStats()
 	ss.MaintStats()
+
+	// ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
+
 	ss.Stats.SetFloat("DA", float64(ss.Context.NeuroMod.DA))
 	ss.Stats.SetFloat("ACh", float64(ss.Context.NeuroMod.ACh))
 	ss.Stats.SetFloat("AChRaw", float64(ss.Context.NeuroMod.AChRaw))
@@ -770,16 +788,15 @@ func (ss *Sim) TrialStats() {
 		allGood /= float64(agN)
 	}
 	ss.Stats.SetFloat("AllGood", allGood)
+
+	if ss.Context.NeuroMod.HasRew.IsTrue() { // got an outcome -- skip to next Sequence
+		trl := ss.Loops.GetLoop(ss.Context.Mode, etime.Trial)
+		trl.SkipToMax()
+	}
 }
 
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats() {
-	// this misses a lot of
-	// if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 1 {
-	// 	return
-	// }
-
-	// fmt.Printf("Gate Stats\n")
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	mtxLy := net.LayerByName("VpMtxGo").(*axon.Layer)
@@ -793,6 +810,8 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("MaintEarly", mat32.NaN())
 	ss.Stats.SetFloat32("GatedPostCS", mat32.NaN())
 	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
+	ss.Stats.SetFloat32("AChShould", mat32.NaN())
+	ss.Stats.SetFloat32("AChShouldnt", mat32.NaN())
 	if didGate {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(ev.Drive != ev.USForPos()))
 	}
@@ -809,6 +828,13 @@ func (ss *Sim) GatedStats() {
 			ss.Stats.SetFloat32("GatedEarly", bools.ToFloat32(didGate))
 		}
 	}
+	// We get get ACh when new CS or Rew
+	if ss.Context.NeuroMod.HasRew.IsTrue() || ev.LastAct == ev.ActMap["Left"] || ev.LastAct == ev.ActMap["Right"] {
+		ss.Stats.SetFloat32("AChShould", ss.Context.NeuroMod.ACh)
+	} else {
+		ss.Stats.SetFloat32("AChShouldnt", ss.Context.NeuroMod.ACh)
+	}
+
 	ss.Stats.SetFloat32("Rew", ev.Rew)
 }
 
@@ -870,7 +896,7 @@ func (ss *Sim) MaintStats() {
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
-	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Phase, etime.Cycle)
+	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Sequence, etime.Trial, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
@@ -909,6 +935,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.NoPlot(etime.Train, etime.Phase)
 	ss.Logs.NoPlot(etime.Test, etime.Phase)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
+	ss.Logs.NoPlot(etime.Train, etime.Sequence)
+	ss.Logs.NoPlot(etime.Test, etime.Sequence)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	// ss.Logs.SetMeta(etime.Test, etime.Cycle, "LegendCol", "RunName")
@@ -925,6 +953,8 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("MaintEarly", "MaintEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedPostCS", "GatedPostCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("AChShould", "AChShould", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("AChShouldnt", "AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
 
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
 	for _, lnm := range lays {
@@ -998,8 +1028,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	switch {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
-	case time == etime.Trial:
-		row = ss.Stats.Int("Trial")
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc

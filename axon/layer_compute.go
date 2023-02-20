@@ -293,9 +293,10 @@ func (ly *Layer) NewState(ctx *Context) {
 		// note: this calls the basic neuron-level DecayState
 		ly.Params.NewStateNeuron(ctx, uint32(ni), nrn, ly.Vals)
 	}
-	if ly.Params.Act.Decay.Glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
-		ly.InitPrjnGBuffs()
-	}
+	// if ly.Params.Act.Decay.Glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
+	// always safer to do this rather than not -- sometimes layer has specifically cleared
+	ly.InitPrjnGBuffs()
+	// }
 }
 
 // DecayState decays activation state by given proportion
@@ -394,6 +395,26 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 	ly.Params.AvgGeM(ctx, &ly.Pools[0], ly.Vals)
 }
 
+// MinusPhasePost does special algorithm processing at end of minus
+func (ly *Layer) MinusPhasePost(ctx *Context) {
+	switch ly.LayerType() {
+	case MatrixLayer:
+		ly.MatrixGated() // need gated state for decisions about action processing, so do in minus too
+	}
+}
+
+// PlusPhaseStart does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (ly *Layer) PlusPhaseStart(ctx *Context) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Params.PlusPhaseStartNeuron(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], &ly.Pools[0], ly.Vals)
+	}
+}
+
 // PlusPhase does updating at end of the plus phase
 func (ly *Layer) PlusPhase(ctx *Context) {
 	// todo: see if it is faster to just grab pool info now, then do everything below on CPU
@@ -419,6 +440,13 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	switch ly.LayerType() {
 	case MatrixLayer:
 		ly.MatrixGated()
+	case VThalLayer:
+		fallthrough
+	case PTMaintLayer:
+		if ctx.NeuroMod.HasRew.IsTrue() { // if got reward outcome, we clear
+			ly.DecayState(ctx, 1, 1)
+		}
+		// todo: GPU needs to grab the GBuf at start of next trial!
 	}
 }
 

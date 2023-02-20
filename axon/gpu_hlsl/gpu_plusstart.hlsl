@@ -5,7 +5,7 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// does MinusPhase Update on each Neuron
+// does PlusPhaseStart on each Neuron
 
 // note: binding is var, set
 
@@ -28,13 +28,13 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-void MinusPhaseNeuron2(in Context ctx, in LayerParams ly, uint nin, inout Neuron nrn, in Pool pl) {
+void PlusPhaseStartNeuron2(in Context ctx, in LayerParams ly, uint nin, inout Neuron nrn, in Pool pl) {
 	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
-	ly.MinusPhaseNeuron(ctx, ni, nrn, pl, Pools[ly.Idxs.PoolSt], LayVals[pl.LayIdx]);
+	ly.PlusPhaseStartNeuron(ctx, ni, nrn, pl, Pools[ly.Idxs.PoolSt], LayVals[pl.LayIdx]);
 }
 
-void MinusPhaseNeuron(in Context ctx, uint nin, inout Neuron nrn) {
-	MinusPhaseNeuron2(ctx, Layers[nrn.LayIdx], nin, nrn, Pools[nrn.SubPoolN]);
+void PlusPhaseStartNeuron(in Context ctx, uint nin, inout Neuron nrn) {
+	PlusPhaseStartNeuron2(ctx, Layers[nrn.LayIdx], nin, nrn, Pools[nrn.SubPoolN]);
 }
 
 [numthreads(64, 1, 1)]
@@ -43,7 +43,7 @@ void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
 	uint st;
 	Neurons.GetDimensions(ns, st);
 	if(idx.x < ns) {
-		MinusPhaseNeuron(Ctx[0], idx.x, Neurons[idx.x]);
+		PlusPhaseStartNeuron(Ctx[0], idx.x, Neurons[idx.x]);
 	}
 }
 

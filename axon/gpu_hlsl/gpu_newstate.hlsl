@@ -53,11 +53,11 @@ void NewState2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, inout 
 	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
 		NewStateNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], vals);
 	}
-	if (ly.Act.Decay.Glong != 0) { // clear pipeline of incoming spikes, assuming time has passed
-		for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-			InitPrjnGBuffs(Prjns[ly.Idxs.RecvSt + pi]);
-		}
+	// if (ly.Act.Decay.Glong != 0) { // clear pipeline of incoming spikes, assuming time has passed
+	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
+		InitPrjnGBuffs(Prjns[ly.Idxs.RecvSt + pi]);
 	}
+	// }
 }
 
 void NewState(in Context ctx, uint pi, inout Pool pl) {

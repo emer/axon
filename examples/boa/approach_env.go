@@ -44,6 +44,7 @@ type Approach struct {
 	StateCtr    int                         `desc:"count up for generating a new state"`
 	LastAct     int                         `desc:"last action taken"`
 	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
+	DidGate     bool                        `desc:"did gate at some point during sequence"`
 }
 
 func (ev *Approach) Name() string {
@@ -164,6 +165,7 @@ func (ev *Approach) NewStart() {
 	ev.US = -1
 	ev.LastUS = -1
 	ev.Rew = 0
+	ev.DidGate = false
 	ev.RenderState()
 	ev.RenderRewUS()
 }
@@ -324,7 +326,7 @@ func (ev *Approach) ActGen() int {
 			}
 			return cons
 		}
-		ev.ShouldGate = (ev.LastAct != fwd) // first time looking at correct one
+		ev.ShouldGate = !ev.DidGate && (ev.LastAct != fwd) // first time looking at correct one
 		return fwd
 	}
 	lt := ev.ActMap["Left"]
