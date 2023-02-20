@@ -16,6 +16,7 @@ func TestBoaRACE(t *testing.T) {
 	}
 	TheSim.Args.SetInt("runs", 1)
 	TheSim.Args.SetInt("epochs", 1)
+	TheSim.Args.SetInt("seqs", 2)
 
 	TheSim.CmdArgs()
 }

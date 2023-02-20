@@ -1118,6 +1118,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddStd()
 	ss.Args.SetInt("epochs", 200)
 	ss.Args.SetInt("runs", 10)
+	ss.Args.AddInt("seqs", 25, "sequences per epoch")
 	ss.Args.Parse() // always parse
 }
 
@@ -1141,6 +1142,8 @@ func (ss *Sim) CmdArgs() {
 	rc.Max = run + runs
 
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
+
+	ss.Loops.GetLoop(etime.Train, etime.Sequence).Counter.Max = ss.Args.Int("seqs")
 
 	ss.NewRun()
 	ss.Loops.Run(etime.Train)
