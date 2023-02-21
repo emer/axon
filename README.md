@@ -427,37 +427,13 @@ C1:   ^ v                 <- cycle 1, shift over by 1 -- overwrite last read
 C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps around
 ```
 
-Because there are so few neurons spiking at any time, it is very efficient to use a sender-based dynamic to write spikes only for senders that spiked -- this is what the `SendSpike` method does.  However, multiple senders could be trying to write to the same place in the GBuf.  We have a GBuf per each projection, so that means that threading can only be projection-parallel (fairly coarse-grained).  For the GPU, however, it is much more efficient to accumulate per receiver and operate at a Prjn*RecvNeurons granularity (basically the RN indexes in the GBuf).
+Because there are so few neurons spiking at any time, it is very efficient to use a sender-based dynamic to write spikes only for senders that spiked -- this is what the `SendSpike` method does.  However, multiple senders could be trying to write to the same place in the GBuf.  We have a GBuf per each projection, so that means that threading can only be projection-parallel (fairly coarse-grained).  For the GPU, an atomic add operation is used to aggregate to GBuf, operating with sending neuron-level parallelism.
 
 The first-pass reading of recv spikes happens in `PrjnGatherSpikes` at the Prjn level, and it must always operate on all neurons (dense computation).  It iterates over recv neurons and accumulates the read-out value from GBuf based on synaptic delay, into the GVals, which grabs a GRaw value from GBuf current read position, and then does temporal integration of this value into `GSyn` which represents the synaptic conductance with exponential decay (and immediate rise -- nominally an alpha function with exponential rise but that rise time is below the 1 msec resolution).
 
 Finally, `NeuronGatherSpikes` iterates over all recv neurons, and gathers the GRaw and GSyn values across the RecvPrjns into the relevant Neuron-level variables: `GeRaw, GeSyn; GiRaw, GiSyn; GModRaw, GModSyn` for the three different types of projections: `ExcitatoryG`, `InhibitoryG`, and `ModulatoryG`.
 
 TODO: inhibition!
-
-
-
-The logic of spike communication is complicated by the presence of synaptic delays, in `Prjn.Com.Delay`, such that spikes are accumulated into one place on a ring buffer that is organized by recv neuron and then delay per each neuron, while being read out of another location in this buffer:
-
-```
-GBuf: [RecvNeuron][MaxDelay]
-
-RN: 0     1     2         <- recv neuron indexes
-DI: 0 1 2 0 1 2 0 1 2     <- delay indexes
-C0: ^ v                   <- cycle 0, ring index: ^ = store, v = read
-C1:   ^ v                 <- cycle 1, shift over by 1 -- overwrite last read
-C2: v   ^                 <- cycle 2: read out value stored on C0 -- index wraps around
-```
-
-Because there are so few neurons spiking at any time, it is very efficient to use a sender-based dynamic to write spikes only for senders that spiked -- this is what the `SendSpike` method does.  However, multiple senders could be trying to write to the same place in the GBuf.  We have a GBuf per each projection, so that means that threading can only be projection-parallel (fairly coarse-grained).  For the GPU, however, it is much more efficient to accumulate per receiver and operate at a Prjn*RecvNeurons granularity (basically the RN indexes in the GBuf).
-
-The first-pass reading of recv spikes happens in `PrjnGatherSpikes` at the Prjn level, and it must always operate on all neurons (dense computation).  It iterates over recv neurons and accumulates the read-out value from GBuf based on synaptic delay, into the GVals, which grabs a GRaw value from GBuf current read position, and then does temporal integration of this value into `GSyn` which represents the synaptic conductance with exponential decay (and immediate rise -- nominally an alpha function with exponential rise but that rise time is below the 1 msec resolution).
-
-Finally, `NeuronGatherSpikes` iterates over all recv neurons, and gathers the GRaw and GSyn values across the RecvPrjns into the relevant Neuron-level variables: `GeRaw, GeSyn; GiRaw, GiSyn; GModRaw, GModSyn` for the three different types of projections: `ExcitatoryG`, `InhibitoryG`, and `ModulatoryG`.
-
-TODO: inhibition!
-
-
 
 #### GInteg: Integrate G\*Raw and G\*Syn from Recv Prjns, other G\*s
 
@@ -706,11 +682,17 @@ The only way to manage the complexity of large spiking nets is to develop advanc
 
 # Appendix: Specialized Algorithms: BG, PFC, DA, etc
 
-This repository contains specialized additions to the core algorithm described here:
-* deep_{[net.go](axon/deep_net.go), [layer.go](axon/deep_layer.go), [prjns.go](axon/deep_prjns.go)} have the mechanisms for simulating the deep neocortical <-> thalamus pathways (wherein basic Axon represents purely superficial-layer processing).
-* rl_{[net.go](axon/rl_net.go), [layer.go](axon/rl_layer.go), [prjns.go](axon/rl_prjns.go)} have basic reinforcement learning models such as Rescorla-Wagner and TD (temporal differences).
-* pcore_{[net.go](axon/pcore_net.go), [layer.go](axon/pcore_layer.go), [prjns.go](axon/pcore_prjns.go)} have the prefrontal-cortex basal ganglia working memory model (PBWM).
-* [hip](hip) has the hippocampus specific learning mechanisms.
+This repository contains specialized additions to the core algorithm described above, which are implemented via specific `LayerTypes` and `PrjnTypes`, in `_net.go`, `_layers.go`, and `_prjns.go` files:
+
+* The [deep cortical layers](DEEP.md) and the bidirectional connections with the thalamus, which can support predictive error-driven learning [O'Reilly et al., 2021](#references): deep_{[net.go](axon/deep_net.go), [layers.go](axon/deep_layers.go), [prjns.go](axon/deep_prjns.go)}. The basic Axon represents purely superficial-layer processing, consistent with the `LayerTypes` of `SuperLayer`.
+
+* [Reinforcement Learning](RL.md) including as Rescorla-Wagner and TD (temporal differences). rl_{[net.go](axon/rl_net.go), [layers.go](axon/rl_layers.go), [prjns.go](axon/rl_prjns.go)}. 
+
+* The [PVLV](PVLV.md) (Primary Value, Learned Value) algorithm, which is a biologically detailed model of the brain circuits driving phasic dopamine firing, in: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.
+
+* The [PCORE](PCORE_BG.md) Pallidal Core model of basal ganglia (BG) in: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)} have the prefrontal-cortex basal ganglia working memory model (PBWM).
+
+* [hip](hip) has the hippocampus specific learning mechanisms (not yet updated).
 
 # Appendix: Kinase-Trace Learning Rule Derivation
 
@@ -811,7 +793,7 @@ TODO: GaoGrahamZhouEtAl20
 
 * O’Reilly, R. C. (1996). Biologically plausible error-driven learning using local activation differences: The generalized recirculation algorithm. Neural Computation, 8(5), 895–938. https://doi.org/10.1162/neco.1996.8.5.895
 
-* O’Reilly, R. C., Russin, J. L., Zolfaghar, M., & Rohrlich, J. (2020). Deep Predictive Learning in Neocortex and Pulvinar. ArXiv:2006.14800 (q-Bio). http://arxiv.org/abs/2006.14800
+* O’Reilly, R. C., Russin, J. L., Zolfaghar, M., & Rohrlich, J. (2021). Deep predictive learning in neocortex and pulvinar. Journal of Cognitive Neuroscience, 33(6), 1158–1196.
 
 * Poirazi, P., Brannon, T., & Mel, B. W. (2003). Arithmetic of Subthreshold Synaptic Summation in a Model CA1 Pyramidal Cell. Neuron, 37(6), 977–987. https://doi.org/10.1016/S0896-6273(03)00148-X
 

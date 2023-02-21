@@ -55,6 +55,15 @@ func (nm *NeuroModVals) NewState() {
 	nm.Init()
 }
 
+// AChFmRaw updates ACh from AChRaw using given decay time constant.
+func (nm *NeuroModVals) AChFmRaw(dt float32) {
+	if nm.AChRaw > nm.ACh { // instant up
+		nm.ACh = nm.AChRaw
+	} else {
+		nm.ACh += dt * (nm.AChRaw - nm.ACh)
+	}
+}
+
 // DAModTypes are types of dopamine modulation of neural activity.
 type DAModTypes int32
 

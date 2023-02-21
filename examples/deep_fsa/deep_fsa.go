@@ -77,7 +77,7 @@ type Sim struct {
 	Logs         elog.Logs        `desc:"Contains all the logs and information about the logs.'"`
 	Envs         env.Envs         `view:"no-inline" desc:"Environments"`
 	Context      axon.Context     `desc:"axon timing parameters and state"`
-	ViewUpdt     netview.ViewUpdt `desc:"netview update parameters"`
+	ViewUpdt     netview.ViewUpdt `view:"inline" desc:"netview update parameters"`
 	UnitsPer     int              `def:"1" desc:"number of units per localist unit -- 1 actually best"`
 	TestInterval int              `desc:"how often to run through all the test patterns, in terms of training epochs -- can use 0 or -1 for no testing"`
 	PCAInterval  int              `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`

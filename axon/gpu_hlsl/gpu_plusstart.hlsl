@@ -5,7 +5,7 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// computes BetweenLayer GI on layer pools, after poolgemax has been called.
+// does PlusPhaseStart on each Neuron
 
 // note: binding is var, set
 
@@ -28,34 +28,22 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
-float BetweenLayerGiMax(float maxGi, int layIdx) {
-	if (layIdx < 0) {
-		return maxGi;
-	}
-	float ogi = Pools[Layers[layIdx].Idxs.PoolSt].Inhib.Gi;
-	if (ogi > maxGi) {
-		maxGi = ogi;
-	}
-	return maxGi;
+void PlusPhaseStartNeuron2(in Context ctx, in LayerParams ly, uint nin, inout Neuron nrn, in Pool pl) {
+	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
+	ly.PlusPhaseStartNeuron(ctx, ni, nrn, pl, Pools[ly.Idxs.PoolSt], LayVals[pl.LayIdx]);
 }
 
-void BetweenGi2(in Context ctx, in LayerParams ly, inout Pool lpl) {
-	float maxGi = lpl.Inhib.Gi;
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx1);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx2);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx3);
-	maxGi = BetweenLayerGiMax(maxGi, ly.LayInhib.Idx4);
-	lpl.Inhib.Gi = maxGi; // our inhib is max of us and everyone in the layer pool
-}
-
-void BetweenGi(in Context ctx, uint li, in LayerParams ly) {
-	BetweenGi2(ctx, ly, Pools[ly.Idxs.PoolSt]);
+void PlusPhaseStartNeuron(in Context ctx, uint nin, inout Neuron nrn) {
+	PlusPhaseStartNeuron2(ctx, Layers[nrn.LayIdx], nin, nrn, Pools[nrn.SubPoolN]);
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Layers
-	if (idx.x < Ctx[0].NLayers) {
-		BetweenGi(Ctx[0], idx.x, Layers[idx.x]);
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
+	uint ns;
+	uint st;
+	Neurons.GetDimensions(ns, st);
+	if(idx.x < ns) {
+		PlusPhaseStartNeuron(Ctx[0], idx.x, Neurons[idx.x]);
 	}
 }
 

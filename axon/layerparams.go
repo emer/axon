@@ -6,8 +6,6 @@ package axon
 
 import (
 	"encoding/json"
-
-	"github.com/goki/mat32"
 )
 
 //gosl: hlsl layerparams
@@ -29,7 +27,7 @@ import (
 // var SendPrjns []PrjnParams // [Layer][SendPrjns]
 // var RecvPrjns []PrjnParams // [Layer][RecvPrjns]
 
-// LayerIdxs contains index access into global arrays for GPU.
+// LayerIdxs contains index access into network global arrays for GPU.
 type LayerIdxs struct {
 	PoolSt uint32 `inactive:"+" desc:"start of pools for this layer -- first one is always the layer-wide pool"`
 	NeurSt uint32 `inactive:"+" desc:"start of neurons for this layer in global array (same as Layer.NeurStIdx)"`
@@ -40,6 +38,16 @@ type LayerIdxs struct {
 	SendN  uint32 `inactive:"+" desc:"number of recv projections"`
 	ExtsSt uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
 }
+
+// LayerInhibIdxs contains indexes of layers for between-layer inhibition
+type LayerInhibIdxs struct {
+	Idx1 int32 `inactive:"+" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used"`
+	Idx2 int32 `inactive:"+" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib2Name if present -- -1 if not used"`
+	Idx3 int32 `inactive:"+" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib3Name if present -- -1 if not used"`
+	Idx4 int32 `inactive:"+" desc:"idx of Layer to geta layer-level inhibition from -- set during Build from BuildConfig LayInhib4Name if present -- -1 if not used"`
+}
+
+// note: the following must appear above LayerParams for GPU usage which is order sensitive
 
 // SetNeuronExtPosNeg sets neuron Ext value based on neuron index
 // with positive values going in first unit, negative values rectified
@@ -68,9 +76,10 @@ type LayerParams struct {
 
 	pad, pad1, pad2 int32
 
-	Act   ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
-	Inhib InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
-	Learn LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
+	Act      ActParams       `view:"add-fields" desc:"Activation parameters and methods for computing activations"`
+	Inhib    InhibParams     `view:"add-fields" desc:"Inhibition parameters and methods for computing layer-level inhibition"`
+	LayInhib LayerInhibIdxs  `view:"inline" desc:"indexes of layers that contribute between-layer inhibition to this layer -- set these indexes via BuildConfig LayInhibXName (X = 1, 2...)"`
+	Learn    LearnNeurParams `view:"add-fields" desc:"Learning parameters and methods that operate at the neuron level"`
 
 	//////////////////////////////////////////
 	//  Specialized layer type parameters
@@ -90,11 +99,6 @@ type LayerParams struct {
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
 	Idxs LayerIdxs `view:"-" desc:"recv and send projection array access info"`
-
-	LayInhib1Idx int32 `view:"-" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used"`
-	LayInhib2Idx int32 `view:"-" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib2Name if present -- -1 if not used"`
-	LayInhib3Idx int32 `view:"-" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib3Name if present -- -1 if not used"`
-	LayInhib4Idx int32 `view:"-" desc:"idx of Layer to geta layer-level inhibition from -- set during Build from BuildConfig LayInhib4Name if present -- -1 if not used"`
 }
 
 func (ly *LayerParams) Update() {
@@ -408,22 +412,8 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 		nrn.GeSyn *= mod
 	}
 
-	if nrn.GeSyn > nrn.GeSynMax {
-		nrn.GeSynMax = nrn.GeSyn
-	}
 	geRaw := nrn.GeRaw
 	geSyn := nrn.GeSyn
-	if ly.LayType == PPTgLayer {
-		geSyn = (nrn.GeSyn - nrn.GeSynPrv)
-		if geSyn < 0 {
-			geSyn = 0
-		}
-		geRawPrev := nrn.GeSynPrv * ly.Act.Dt.GeDt
-		geRaw = (nrn.GeRaw - geRawPrev)
-		if geRaw < 0 {
-			geRaw = 0
-		}
-	}
 	ly.Act.NMDAFmRaw(nrn, geRaw+extraRaw)
 	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
@@ -514,11 +504,11 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.Act = ctx.NeuroMod.RewPred
 	case TDDaLayer:
 		nrn.Act = ctx.NeuroMod.DA // I presumably set this last time..
-	case PPTgLayer:
-		nrn.Act = nrn.CaSpkP - nrn.SpkPrv
-		if nrn.Act < 0 {
-			nrn.Act = 0
-		}
+	// case PPTgLayer:
+	// 	nrn.Act = nrn.CaSpkP - nrn.SpkPrv
+	// 	if nrn.Act < 0 {
+	// 		nrn.Act = 0
+	// 	}
 	case MatrixLayer:
 		if ly.Learn.NeuroMod.DAMod == D2Mod && !(ly.Learn.NeuroMod.AChDisInhib > 0 && vals.NeuroMod.ACh < 0.2) && ctx.Cycle >= ly.Act.Dt.MaxCycStart {
 			if nrn.Ge > nrn.SpkMax {
@@ -576,7 +566,8 @@ func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, vals *LayerVals, lay1
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay4MaxAct)
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay5MaxAct)
 	vals.NeuroMod.AChRaw = maxAct
-	vals.NeuroMod.ACh = mat32.Max(vals.NeuroMod.ACh, vals.NeuroMod.AChRaw)
+	vals.NeuroMod.AChFmRaw(ly.Act.Dt.IntDt)
+
 	ctx.NeuroMod.AChRaw = vals.NeuroMod.AChRaw
 	ctx.NeuroMod.ACh = vals.NeuroMod.ACh
 }
@@ -653,10 +644,8 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
 func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals *LayerVals) {
 	nrn.BurstPrv = nrn.Burst
 	nrn.SpkPrv = nrn.CaSpkD
-	nrn.GeSynPrv = nrn.GeSynMax
 	nrn.SpkMax = 0
 	nrn.SpkMaxCa = 0
-	nrn.GeSynMax = 0
 
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
 	// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
@@ -680,6 +669,11 @@ func (ly *LayerParams) AvgGeM(ctx *Context, lpl *Pool, vals *LayerVals) {
 func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActM = nrn.ActInt
 	nrn.CaSpkPM = nrn.CaSpkP
+}
+
+// PlusPhaseStartNeuron does neuron level plus-phase start:
+// applies Target inputs as External inputs.
+func (ly *LayerParams) PlusPhaseStartNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
 		nrn.Ext = nrn.Target
 		nrn.SetFlag(NeuronHasExt)
@@ -696,7 +690,7 @@ func (ly *LayerParams) PlusPhasePool(ctx *Context, pl *Pool) {
 // PlusPhaseNeuron does neuron level plus-phase updating
 func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActP = nrn.ActInt
-	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, lpl.AvgMax.CaSpkD.Plus.Max)
+	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
 	dlr := float32(0)
 	if ly.LayType == BLALayer {
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous trial

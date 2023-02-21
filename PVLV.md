@@ -4,6 +4,8 @@ This is a ground-up rewrite of PVLV [Mollick et al, 2020](#references) for axon,
 
 This is an incremental work-in-progress, documented as it goes along.
 
+Files: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.
+
 # BLA
 
 There are 2x2 BLA types: Positive or Negative valence US's with Acquisition vs. Extinction:

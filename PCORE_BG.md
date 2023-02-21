@@ -2,7 +2,9 @@
 
 The core of this model is the Globus Pallidus (external segment), GPe, which plays a central role in integrating Go and NoGo signals from the striatum, in contrast to the standard, "classical" framework which focuses on the GPi or SNr as the primary locus of integration.
 
-There are two recently-identified revisions to the standard circuitry diagram that drive this model (Suryanarayana et al, 2019; others):
+Files: pcore_{[net.go](axon/pcore_net.go), [layers.go](axon/pcore_layers.go), [prjns.go](axon/pcore_prjns.go)}
+
+There are two recently-identified revisions to the standard circuitry diagram that drive this model [(Suryanarayana et al, 2019; others)](#references):
 
 * A distinction between outer (GPeOut) and inner (GPeIn) layers of the GPe, with both D1-dominant (Go) and D2-dominant (NoGo / No) projections into the GPe (the classical "direct" vs. "indirect" terminology thus not being quite as applicable).
 

@@ -169,6 +169,8 @@ var ParamSets = params.Sets{
 			{Sel: "#M1", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9",
+					// "Layer.Act.Decay.Act":   "1.0",
+					// "Layer.Act.Decay.Glong": "1.0",
 				}},
 			{Sel: "#M1P", Desc: "",
 				Params: params.Params{
@@ -176,13 +178,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VL", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8", // was 0.8
-					"Layer.Act.Clamp.Ge":   "0.3", // was 0.6
-					"Layer.Act.Clamp.Add":  "true",
+					"Layer.Inhib.Layer.Gi":  "0.8",  // was 0.8
+					"Layer.Pulv.DriveScale": "0.12", // 0.12 > 0.1
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
-					"Layer.RSalACh.RewThr": "0.1",
+					"Layer.RSalACh.RewThr": "0.2",
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
@@ -215,6 +216,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":       "1.0",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
+					"Layer.Inhib.Pool.FFPrv":     "10",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -275,7 +277,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",    // keep this constant -- only self vs. this -- thal is modulatory
-					"Prjn.PrjnScale.Abs": "0.02", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
+					"Prjn.PrjnScale.Abs": "0.01", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -422,6 +424,14 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: ".BLAToCeM_Inhib", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".CeMToPPTg", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": "1",

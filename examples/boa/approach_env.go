@@ -32,6 +32,7 @@ type Approach struct {
 	PatSize     evec.Vec2i                  `desc:"size of CS patterns"`
 	Acts        []string                    `desc:"list of actions"`
 	ActMap      map[string]int              `desc:"action map of action names to indexes"`
+	NActs       int                         `desc:"number of actual represented actions -- the last action on Acts list is None -- not rendered"`
 	States      map[string]*etensor.Float32 `desc:"named states -- e.g., USs, CSs, etc"`
 	TrgPos      int                         `desc:"target position where Drive US is"`
 	Drive       int                         `desc:"current drive state"`
@@ -44,6 +45,7 @@ type Approach struct {
 	StateCtr    int                         `desc:"count up for generating a new state"`
 	LastAct     int                         `desc:"last action taken"`
 	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
+	DidGate     bool                        `desc:"did gate at some point during sequence"`
 }
 
 func (ev *Approach) Name() string {
@@ -57,7 +59,8 @@ func (ev *Approach) Desc() string {
 // Defaults sets default params
 func (ev *Approach) Defaults() {
 	ev.TimeCost = 0.05
-	ev.Acts = []string{"Forward", "Left", "Right", "Consume"}
+	ev.Acts = []string{"Forward", "Left", "Right", "Consume", "None"}
+	ev.NActs = len(ev.Acts) - 1
 	ev.NDrives = 4
 	ev.CSPerDrive = 1
 	ev.Locations = 4 // <= drives always
@@ -91,7 +94,7 @@ func (ev *Approach) Config() {
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
 	ev.States["Gate"] = etensor.NewFloat32([]int{ev.NYReps, 2}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
-	ev.States["Action"] = etensor.NewFloat32([]int{ev.NYReps, len(ev.Acts)}, nil, nil)
+	ev.States["Action"] = etensor.NewFloat32([]int{ev.NYReps, ev.NActs}, nil, nil)
 
 	ev.ConfigPats()
 	ev.NewState()
@@ -164,6 +167,7 @@ func (ev *Approach) NewStart() {
 	ev.US = -1
 	ev.LastUS = -1
 	ev.Rew = 0
+	ev.DidGate = false
 	ev.RenderState()
 	ev.RenderRewUS()
 }
@@ -172,6 +176,9 @@ func (ev *Approach) NewStart() {
 func (ev *Approach) RenderLocalist(name string, val int) {
 	st := ev.States[name]
 	st.SetZeros()
+	if val >= st.Dim(1) {
+		return
+	}
 	for y := 0; y < ev.NYReps; y++ {
 		st.Set([]int{y, val}, 1.0)
 	}
@@ -324,7 +331,7 @@ func (ev *Approach) ActGen() int {
 			}
 			return cons
 		}
-		ev.ShouldGate = (ev.LastAct != fwd) // first time looking at correct one
+		ev.ShouldGate = !ev.DidGate && (ev.LastAct != fwd) // first time looking at correct one
 		return fwd
 	}
 	lt := ev.ActMap["Left"]

@@ -5,7 +5,7 @@
 #include "context.hlsl"
 #include "layerparams.hlsl"
 
-// does MinusPhase Update on each Pool
+// does MinusPhase Update on each Neuron
 
 // note: binding is var, set
 

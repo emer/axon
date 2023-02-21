@@ -283,6 +283,7 @@ func NetActTest(t *testing.T, gpu bool) {
 			if qtr == 2 {
 				testNet.MinusPhase(ctx)
 				ctx.NewPhase(false)
+				testNet.PlusPhaseStart(ctx)
 			}
 
 			if printCycs && printQtrs {
@@ -476,6 +477,7 @@ func NetTestLearn(t *testing.T, gpu bool) {
 				if qtr == 2 {
 					testNet.MinusPhase(ctx)
 					ctx.NewPhase(false)
+					testNet.PlusPhaseStart(ctx)
 				}
 
 				hidLay.UnitVals(&hidCaP, "CaP")
@@ -660,6 +662,7 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 				if qtr == 2 {
 					testNet.MinusPhase(ctx)
 					ctx.NewPhase(false)
+					testNet.PlusPhaseStart(ctx)
 				}
 
 				hidLay.UnitVals(&hidCaP, "CaP")
@@ -811,6 +814,7 @@ func TestInhibAct(t *testing.T) {
 			if qtr == 2 {
 				InhibNet.MinusPhase(ctx)
 				ctx.NewPhase(false)
+				InhibNet.PlusPhaseStart(ctx)
 			}
 
 			if printCycs && printQtrs {

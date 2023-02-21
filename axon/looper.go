@@ -29,6 +29,7 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 	plusPhase.OnEvent.Add("PlusPhase:Start", func() {
 		ctx.PlusPhase.SetBool(true)
 		ctx.NewPhase(true)
+		net.PlusPhaseStart(ctx)
 	})
 	plusPhaseEnd := looper.NewEvent("PlusPhase:End", plusEnd, func() {
 		net.PlusPhase(ctx)
@@ -87,12 +88,21 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 
 // LooperResetLogBelow adds a function in OnStart to all stacks and loops
 // to reset the log at the level below each loop -- this is good default behavior.
-func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs) {
+// Exceptions can be passed to exclude specific levels -- e.g., if except is Epoch
+// then Epoch does not reset the log below it
+func LooperResetLogBelow(man *looper.Manager, logs *elog.Logs, except ...etime.Times) {
 	for m, stack := range man.Stacks {
 		curMode := m // For closures.
 		for t, loop := range stack.Loops {
 			curTime := t
-			if below := stack.TimeBelow(curTime); below != etime.NoTime {
+			isExcept := false
+			for _, ex := range except {
+				if curTime == ex {
+					isExcept = true
+					break
+				}
+			}
+			if below := stack.TimeBelow(curTime); !isExcept && below != etime.NoTime {
 				loop.OnStart.Add("ResetLog"+below.String(), func() {
 					logs.ResetLog(curMode, below)
 				})

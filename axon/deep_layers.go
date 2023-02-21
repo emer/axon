@@ -61,7 +61,7 @@ func (cp *CTParams) Defaults() {
 // state of Pulvinar thalamic relay cell neurons is computed from
 // the corresponding driver neuron Burst activation (or CaSpkP if not Super)
 type PulvParams struct {
-	DriveScale   float32 `def:"0.05" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit."`
+	DriveScale   float32 `def:"0.1" min:"0.0" desc:"multiplier on driver input strength, multiplies CaSpkP from driver layer to produce Ge excitatory input to Pulv unit."`
 	FullDriveAct float32 `def:"0.6" min:"0.01" desc:"Level of Max driver layer CaSpkP at which the drivers fully drive the burst phase activation.  If there is weaker driver input, then (Max/FullDriveAct) proportion of the non-driver inputs remain and this critically prevents the network from learning to turn activation off, which is difficult and severely degrades learning."`
 	DriveLayIdx  int32   `inactive:"+" desc:"index of layer that generates the driving activity into this one -- set via SetBuildConfig(DriveLayName) setting"`
 	pad          float32
@@ -71,7 +71,7 @@ func (tp *PulvParams) Update() {
 }
 
 func (tp *PulvParams) Defaults() {
-	tp.DriveScale = 0.05
+	tp.DriveScale = 0.1
 	tp.FullDriveAct = 0.6
 }
 

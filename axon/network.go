@@ -140,6 +140,12 @@ func (nt *Network) MinusPhase(ctx *Context) {
 	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctx)
 }
 
+// PlusPhaseStart does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (nt *Network) PlusPhaseStart(ctx *Context) {
+	nt.EmerNet.(AxonNetwork).PlusPhaseStartImpl(ctx)
+}
+
 // PlusPhase does updating after end of plus phase
 func (nt *Network) PlusPhase(ctx *Context) {
 	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctx)
@@ -280,6 +286,7 @@ func (nt *Network) InitGScale() {
 // This is called automatically in NewState, but is avail
 // here for ad-hoc decay cases.
 func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
+	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -289,12 +296,29 @@ func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 	nt.GPU.SyncStateToGPU()
 }
 
-// DecayStateByType decays activation state for given class name(s)
+// DecayStateByType decays activation state for given layer types
 // by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
 // glong = separate decay factor for long-timescale conductances (g)
 func (nt *Network) DecayStateByType(ctx *Context, decay, glong float32, types ...LayerTypes) {
-	lnms := nt.LayersByType(types...)
-	for _, lynm := range lnms {
+	nt.DecayStateLayers(ctx, decay, glong, nt.LayersByType(types...)...)
+}
+
+// DecayStateByClass decays activation state for given class name(s)
+// by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g)
+func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, classes ...string) {
+	nt.DecayStateLayers(ctx, decay, glong, nt.LayersByClass(classes...)...)
+}
+
+// DecayStateLayers decays activation state for given layers
+// by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
+// glong = separate decay factor for long-timescale conductances (g).
+// If this is not being called at the start, around NewState call,
+// then you should also call: nt.GPU.SyncGBufToGPU()
+// to zero the GBuf values which otherwise will persist spikes in flight.
+func (nt *Network) DecayStateLayers(ctx *Context, decay, glong float32, layers ...string) {
+	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
+	for _, lynm := range layers {
 		ly := nt.LayerByName(lynm).(AxonLayer)
 		if ly.IsOff() {
 			continue
@@ -302,7 +326,6 @@ func (nt *Network) DecayStateByType(ctx *Context, decay, glong float32, types ..
 		ly.DecayState(ctx, decay, glong)
 	}
 	nt.GPU.SyncStateToGPU()
-	nt.GPU.SyncGBufToGPU() // zeros everyone
 }
 
 // InitActs fully initializes activation state -- not automatically called
@@ -371,14 +394,37 @@ func (nt *Network) NewStateImpl(ctx *Context) {
 func (nt *Network) MinusPhaseImpl(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunMinusPhase()
-		return
+	} else {
+		// not worth threading this probably
+		for _, ly := range nt.Layers {
+			if ly.IsOff() {
+				continue
+			}
+			ly.(AxonLayer).MinusPhase(ctx)
+		}
 	}
-	// not worth threading this probably
+	// Post happens on the CPU always
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).MinusPhase(ctx)
+		ly.(AxonLayer).MinusPhasePost(ctx)
+	}
+}
+
+// PlusPhaseStartImpl does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (nt *Network) PlusPhaseStartImpl(ctx *Context) {
+	if nt.GPU.On {
+		nt.GPU.RunPlusPhaseStart()
+	} else {
+		// not worth threading this probably
+		for _, ly := range nt.Layers {
+			if ly.IsOff() {
+				continue
+			}
+			ly.(AxonLayer).PlusPhaseStart(ctx)
+		}
 	}
 }
 

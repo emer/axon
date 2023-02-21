@@ -237,7 +237,7 @@ func (pj *PrjnBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
 // are not at their default values -- useful for setting param styles etc.
 func (pj *PrjnBase) NonDefaultParams() string {
 	pth := pj.Recv.Name() + "." + pj.Name() // redundant but clearer..
-	nds := giv.StructNonDefFieldsStr(pj.AxonPrj, pth)
+	nds := giv.StructNonDefFieldsStr(pj.AxonPrj.AsAxon().Params, pth)
 	return nds
 }
 

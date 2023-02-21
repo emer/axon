@@ -189,6 +189,7 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("NewState", content, "shaders/gpu_newstate.spv")
 	gp.Sys.NewComputePipelineEmbed("MinusPool", content, "shaders/gpu_minuspool.spv")
 	gp.Sys.NewComputePipelineEmbed("MinusNeuron", content, "shaders/gpu_minusneuron.spv")
+	gp.Sys.NewComputePipelineEmbed("PlusStart", content, "shaders/gpu_plusstart.spv")
 	gp.Sys.NewComputePipelineEmbed("PlusPool", content, "shaders/gpu_pluspool.spv")
 	gp.Sys.NewComputePipelineEmbed("PlusNeuron", content, "shaders/gpu_plusneuron.spv")
 	gp.Sys.NewComputePipelineEmbed("DWt", content, "shaders/gpu_dwt.spv")
@@ -866,15 +867,31 @@ func (gp *GPU) RunNewState() {
 
 // RunMinusPhase runs the MinusPhase shader to update snapshot variables
 // at the end of the minus phase.
+// All non-synapse state is copied back down after this, so it is available
+// for action calls
 // The caller must check the On flag before running this, to use CPU vs. GPU
 func (gp *GPU) RunMinusPhase() {
 	gnm := "GPU:MinusPhase"
 	gp.Net.FunTimerStart(gnm)
+	cxr := gp.SyncRegionStruct("Ctx")
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
+	nrr := gp.SyncRegionStruct("Neurons")
 	gp.StartRun()
 	gp.RunPipeline("MinusPool", len(gp.Net.Pools), "", "PoolGi")
-	gp.RunPipeline("MinusNeuron", len(gp.Net.Neurons), "PoolGi", "")
+	gp.RunPipeline("MinusNeuron", len(gp.Net.Neurons), "PoolGi", "MemCopyFm")
+	gp.Sys.ComputeWaitEvents("MemCopyFm")
+	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr, plr, nrr)
 	gp.Sys.ComputeSubmitWait()
+	gp.CopyStateFmStaging()
 	gp.Net.FunTimerStop(gnm)
+}
+
+// RunPlusPhaseStart runs the PlusPhaseStart shader
+// does updating at the start of the plus phase:
+// applies Target inputs as External inputs.
+func (gp *GPU) RunPlusPhaseStart() {
+	gp.RunPipelineWait("PlusStart", len(gp.Net.Neurons))
 }
 
 // RunPlusPhase runs the PlusPhase shader to update snapshot variables
@@ -891,6 +908,13 @@ func (gp *GPU) RunPlusPhase() {
 	gp.StartRun()
 	gp.RunPipeline("PlusPool", len(gp.Net.Pools), "", "PoolGi")
 	gp.RunPipeline("PlusNeuron", len(gp.Net.Neurons), "PoolGi", "MemCopyFm")
+
+	// note: could use atomic add to accumulate CorSim stat values in LayVals tmp vars for Cosv, ssm and ssp
+	// from which the overall val is computed
+	// use float atomic add for this case b/c not so time critical
+	// also, matrix gated could be computed all on GPU without too much difficulty.
+	// this would put all standard computation on the GPU for entire ThetaCycle
+
 	gp.Sys.ComputeWaitEvents("MemCopyFm")
 	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr, plr, nrr)
 	gp.Sys.ComputeSubmitWait()
