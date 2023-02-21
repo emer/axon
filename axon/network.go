@@ -286,6 +286,7 @@ func (nt *Network) InitGScale() {
 // This is called automatically in NewState, but is avail
 // here for ad-hoc decay cases.
 func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
+	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, ly := range nt.Layers {
 		if ly.IsOff() {
 			continue
@@ -311,8 +312,12 @@ func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, classes
 
 // DecayStateLayers decays activation state for given layers
 // by given proportion e.g., 1 = decay completely, and 0 = decay not at all.
-// glong = separate decay factor for long-timescale conductances (g)
+// glong = separate decay factor for long-timescale conductances (g).
+// If this is not being called at the start, around NewState call,
+// then you should also call: nt.GPU.SyncGBufToGPU()
+// to zero the GBuf values which otherwise will persist spikes in flight.
 func (nt *Network) DecayStateLayers(ctx *Context, decay, glong float32, layers ...string) {
+	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, lynm := range layers {
 		ly := nt.LayerByName(lynm).(AxonLayer)
 		if ly.IsOff() {
@@ -321,7 +326,6 @@ func (nt *Network) DecayStateLayers(ctx *Context, decay, glong float32, layers .
 		ly.DecayState(ctx, decay, glong)
 	}
 	nt.GPU.SyncStateToGPU()
-	nt.GPU.SyncGBufToGPU() // zeros everyone
 }
 
 // InitActs fully initializes activation state -- not automatically called

@@ -212,8 +212,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
 	act := net.AddLayer2D("Act", ny, nAct, emer.Input) // Action
-	// vl := net.AddLayer2D("VL", ny, nAct, emer.Target)  // Action
-	vl := net.AddPulvLayer2D("VL", ny, nAct)
+	vl := net.AddPulvLayer2D("VL", ny, nAct)           // VL predicts brainstem Action: either its own or instinct
 	vl.SetBuildConfig("DriveLayName", act.Name())
 
 	m1P := net.AddPulvLayer2D("M1P", nuCtxY, nuCtxX)
@@ -647,8 +646,7 @@ func (ss *Sim) ApplyInputs() {
 	trl := ss.Loops.GetLoop(ss.Context.Mode, etime.Trial)
 	if trl.Counter.Cur == 0 {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
-		// this gets rid of the residual action errors:
-		net.GPU.SyncStateFmGPU() // decay state will sync back to GPU -- get the state now
+		// this eliminates residual action errors -- todo: see about automating this somehow
 		net.DecayStateLayers(&ss.Context, 1, 1, "OFC", "ACC")
 		ev.RenderLocalist("Gate", 0)
 	}
@@ -926,8 +924,6 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "TargetLayer")
-	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "TargetLayer")
 
 	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
 	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"

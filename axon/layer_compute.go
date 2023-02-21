@@ -444,9 +444,9 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 		fallthrough
 	case PTMaintLayer:
 		if ctx.NeuroMod.HasRew.IsTrue() { // if got reward outcome, we clear
-			ly.DecayState(ctx, 1, 1)
+			ly.DecayState(ctx, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 		}
-		// todo: GPU needs to grab the GBuf at start of next trial!
+
 	}
 }
 
