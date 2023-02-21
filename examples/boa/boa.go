@@ -42,7 +42,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -79,8 +79,8 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 10
-	ss.PctCortexMaxEpc = 30
+	ss.PctCortexStEpc = 5
+	ss.PctCortexMaxEpc = 25
 	ss.PctCortexInterval = 2
 	ss.PCAInterval = 10
 }
@@ -93,6 +93,7 @@ func (ss *SimParams) Defaults() {
 type Sim struct {
 	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Sim          SimParams        `view:"no-inline" desc:"sim params"`
+	StopOnErr    bool             `desc:"if true, stop running when an error programmed into the code occurs"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
 	Stats        estats.Stats     `desc:"contains computed statistic values"`
@@ -176,7 +177,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuBgX := 5
 	nuCtxY := 6
 	nuCtxX := 6
-	nAct := len(ev.ActMap)
+	nAct := ev.NActs
 	space := float32(2)
 
 	pone2one := prjn.NewPoolOneToOne()
@@ -210,8 +211,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// todo: need m1d, driven by smad -- output pathway
 
 	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
-	vl := net.AddLayer2D("VL", ny, nAct, emer.Target)  // Action
 	act := net.AddLayer2D("Act", ny, nAct, emer.Input) // Action
+	// vl := net.AddLayer2D("VL", ny, nAct, emer.Target)  // Action
+	vl := net.AddPulvLayer2D("VL", ny, nAct)
+	vl.SetBuildConfig("DriveLayName", act.Name())
+
 	m1P := net.AddPulvLayer2D("M1P", nuCtxY, nuCtxX)
 	m1P.SetBuildConfig("DriveLayName", m1.Name())
 	_ = vl
@@ -561,6 +565,11 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		if Debug {
 			fmt.Printf("skipped action because gated\n")
 		}
+		ev.Action("None", nil)
+		ss.ApplyAction()
+		ly := ss.Net.LayerByName("VL").(axon.AxonLayer).AsAxon()
+		ly.Pools[0].Inhib.Clamped.SetBool(false) // not clamped this trial
+		ss.Net.GPU.SyncPoolsToGPU()
 		return // no time to do action while also gating
 	}
 
@@ -583,7 +592,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	ss.Stats.SetString("ActAction", actActNm)
 
 	ev.Action(actActNm, nil)
-	ss.ApplyAction(actAct)
+	ss.ApplyAction()
 	// ss.ApplyRew()
 	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
@@ -618,15 +627,11 @@ func (ss *Sim) ApplyUS() {
 	}
 }
 
-func (ss *Sim) ApplyAction(act int) {
+func (ss *Sim) ApplyAction() {
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()]
-	ly := net.LayerByName("VL").(axon.AxonLayer).AsAxon()
-	ly.SetType(emer.Input)
 	ap := ev.State("Action")
-	ly.ApplyExt(ap)
-	ly.SetType(emer.Target)
-	ly = net.LayerByName("Act").(axon.AxonLayer).AsAxon()
+	ly := net.LayerByName("Act").(axon.AxonLayer).AsAxon()
 	ly.ApplyExt(ap)
 	ss.Net.ApplyExts(&ss.Context)
 }
@@ -643,7 +648,7 @@ func (ss *Sim) ApplyInputs() {
 	if trl.Counter.Cur == 0 {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
 		// this gets rid of the residual action errors:
-		net.DecayStateByType(&ss.Context, 1, 1, axon.SuperLayer, axon.CTLayer)
+		net.DecayStateLayers(&ss.Context, 1, 1, "OFC", "ACC")
 		ev.RenderLocalist("Gate", 0)
 	}
 
@@ -660,8 +665,8 @@ func (ss *Sim) ApplyInputs() {
 	// this is key step to drive DA and US-ACh
 	if ev.US != -1 {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if trnEpc > 5 && ev.Rew < 0 {
-			fmt.Printf("negative reward for US: %d  %g\n", ev.US, ev.Rew)
+		if ss.StopOnErr && trnEpc > 5 && ev.Rew < 0 {
+			fmt.Printf("STOPPED due to negative reward for US: %d  %g\n", ev.US, ev.Rew)
 			ss.Loops.Stop(etime.Trial)
 		}
 		ss.Context.NeuroMod.SetRew(ev.Rew, true)
@@ -920,8 +925,8 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
 
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "TargetLayer")
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "TargetLayer")
+	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "TargetLayer")
+	// ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.AllModes, etime.Cycle, "TargetLayer")
 
 	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
 	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
@@ -980,7 +985,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddItem(&elog.Item{
 		Name:      "ActCor",
 		Type:      etensor.FLOAT64,
-		CellShape: []int{len(ev.Acts)},
+		CellShape: []int{ev.NActs},
 		DimNames:  []string{"Acts"},
 		// Plot:      true,
 		Range:     minmax.F64{Min: 0},

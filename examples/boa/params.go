@@ -169,6 +169,8 @@ var ParamSets = params.Sets{
 			{Sel: "#M1", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9",
+					// "Layer.Act.Decay.Act":   "1.0",
+					// "Layer.Act.Decay.Glong": "1.0",
 				}},
 			{Sel: "#M1P", Desc: "",
 				Params: params.Params{
@@ -176,9 +178,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VL", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8", // was 0.8
-					"Layer.Act.Clamp.Ge":   "0.3", // was 0.6
-					"Layer.Act.Clamp.Add":  "true",
+					"Layer.Inhib.Layer.Gi":  "0.8",  // was 0.8
+					"Layer.Pulv.DriveScale": "0.12", // 0.12 > 0.1
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
