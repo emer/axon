@@ -42,7 +42,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	GPU = true
 )
 
 func main() {
@@ -648,6 +648,7 @@ func (ss *Sim) ApplyInputs() {
 	if trl.Counter.Cur == 0 {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
 		// this gets rid of the residual action errors:
+		net.GPU.SyncStateFmGPU() // decay state will sync back to GPU -- get the state now
 		net.DecayStateLayers(&ss.Context, 1, 1, "OFC", "ACC")
 		ev.RenderLocalist("Gate", 0)
 	}
