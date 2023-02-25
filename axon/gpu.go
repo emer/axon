@@ -1054,7 +1054,7 @@ func (gp *GPU) RunWtFmDWt() {
 // RunWtFmDWtCmd returns the commands to
 // run the WtFmDWt shader to update weights from weigh changes.
 func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
-	cnm := "RunMinusPhase"
+	cnm := "RunWtFmDWt"
 	cmd, err := gp.Sys.CmdBuffByNameTry(cnm)
 	if err == nil {
 		return cmd
