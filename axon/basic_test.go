@@ -17,6 +17,7 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
 func init() {
@@ -189,6 +190,7 @@ func TestGPUAct(t *testing.T) {
 	if os.Getenv("TEST_GPU") == "" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
+	vgpu.Debug = true
 	NetActTest(t, true)
 }
 

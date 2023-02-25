@@ -277,7 +277,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caP := sy.CaP
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctx.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
-	if pj.PrjnType == CTCtxtPrjn {
+	if pj.PrjnType == CTCtxtPrjn || pj.PrjnType == BLAPrjn {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv)
 	} else {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window

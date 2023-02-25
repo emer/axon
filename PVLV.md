@@ -8,6 +8,8 @@ Files: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjn
 
 # BLA
 
+BLA does X.
+
 There are 2x2 BLA types: Positive or Negative valence US's with Acquisition vs. Extinction:
 
 * BLAPosD1 = Pos / Acq
@@ -21,11 +23,19 @@ A major simplification and improvement in the axon version is that the extinctio
 
 The (new) learning rule based on the axon trace code is:
 
-* DWt = lr * Tr_prv * (1 + abs(DA)) * (CaP - CaD)
-    + CaP: plus phase Ca -- has DA modulation reflected in a D1 / D2 direction
-    + CaD: minus phase Ca -- prior to DA -- note in original this was t-1 -- axon uses longer theta cycles and plus phase is when DA is delivered by default.
+* DWt = lr * (1 + g * abs(DA)) * abs(CaSpkP - SpkPrv) * Tr_prv * (CaSpkP - SpkPrv)
+    + CaSpkP: current trial plus phase Ca -- has DA modulation reflected in a D1 / D2 direction
+    + SpkPrv: CaSpkP from the previous ThetaCycle (trial).  Thus, as in the Leabra PVLV, the outcome / US is compared to the prior t-1 trial.
     + Tr_prv: is S * R trace from *previous* time (i.e., not yet reflecting new Tr update -- as in CTPrjn)
-    + DA also drives lrate, included in RLRate which also does the small-delta filtering included in prior impl
+    + The DA modulation of learning rate is implemented via RLrate factor, in NeuroMod field.  This also includes the `Diff` lrate factor as in standard axon, which is likewise based on the between-trial diff as opposed to the plus - minus phase differences.
+
+# CeM
+
+For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL (TODO: make sure this is OK!).
+    
+# PPTg
+
+The PPTg layer computes the temporal derivative 
 
 
 # References

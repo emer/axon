@@ -77,6 +77,11 @@ Set: 3
 // TheGPU is the gpu device, shared across all networks
 var TheGPU *vgpu.GPU
 
+// CyclesN is the number of cycles to run as a group
+// for ra25, 10 = ~50 msec / trial, 25 = ~48, all 150 / 50 minus / plus = ~44
+// 10 is good enough and unlikely to mess with anything else..
+const CyclesN = 10
+
 // GPU manages all of the GPU-based computation
 type GPU struct {
 	On           bool `desc:"if true, actually use the GPU"`
@@ -680,7 +685,16 @@ func (gp *GPU) StartRun() {
 	gp.Sys.ComputeResetBindVars(0)
 }
 
-// RunPipelineWaitSignal records command to run given pipeline with
+// StartRunCmd resets the given command buffer in preparation
+// for recording commands for a multi-step run.
+// It is much more efficient to record all commands to one buffer, and use
+// Events to synchronize the steps between them, rather than using semaphores.
+// The submit call is by far the most expensive so that should only happen once!
+func (gp *GPU) StartRunCmd(cmd vk.CommandBuffer) {
+	gp.Sys.ComputeResetBindVarsCmd(cmd, 0)
+}
+
+// RunPipeline records command to run given pipeline with
 // optional wait & signal event names
 func (gp *GPU) RunPipeline(name string, n int, wait, signal string) {
 	pl, err := gp.Sys.PipelineByNameTry(name)
@@ -693,6 +707,22 @@ func (gp *GPU) RunPipeline(name string, n int, wait, signal string) {
 	pl.ComputeCommand1D(n, gp.NThreads)
 	if signal != "" {
 		gp.Sys.ComputeSetEvent(signal)
+	}
+}
+
+// RunPipelineCmd records command to run given pipeline with
+// optional wait & signal event names
+func (gp *GPU) RunPipelineCmd(cmd vk.CommandBuffer, name string, n int, wait, signal string) {
+	pl, err := gp.Sys.PipelineByNameTry(name)
+	if err != nil {
+		panic(err)
+	}
+	if wait != "" {
+		gp.Sys.ComputeWaitEventsCmd(cmd, wait)
+	}
+	pl.ComputeCommand1DCmd(cmd, n, gp.NThreads)
+	if signal != "" {
+		gp.Sys.ComputeSetEventCmd(cmd, signal)
 	}
 }
 
@@ -731,9 +761,8 @@ func (gp *GPU) RunCycle() {
 		gp.RunCycleOne()
 		return
 	}
-	if gp.Ctx.Cycle%10 == 0 { // for ra25, 10 = ~50 msec / trial, 25 = ~48, all 150 / 50 minus / plus = ~44
-		// 10 is good enough and unlikely to mess with anything else..
-		gp.RunCycles(10)
+	if gp.Ctx.Cycle%CyclesN == 0 {
+		gp.RunCycles()
 	}
 }
 
@@ -781,48 +810,15 @@ func (gp *GPU) RunCycleOne() {
 }
 
 // RunCycles does multiple cycles of updating in one chunk
-func (gp *GPU) RunCycles(ncyc int) {
+func (gp *GPU) RunCycles() {
+	cmd := gp.RunCyclesCmd()
 	gnm := "GPU:Cycles"
 	gp.Net.FunTimerStart(gnm)
-	cxr := gp.SyncRegionStruct("Ctx")
-	lvr := gp.SyncRegionStruct("LayVals")
-	plr := gp.SyncRegionStruct("Pools")
 
 	stCtx := *gp.Ctx // save starting state to restore below
-
 	gp.CopyContextToStaging()
-	gp.StartRun()
-	gp.Sys.ComputeCmdCopyToGPU(cxr) // staging -> GPU
-	gp.Sys.ComputeSetEvent("MemCopyTo")
-	gp.RunPipeline("GatherSpikes", len(gp.Net.Neurons), "MemCopyTo", "GatherSpikes")
 
-	for ci := 0; ci < ncyc; ci++ {
-		if ci > 0 {
-			gp.RunPipeline("GatherSpikes", len(gp.Net.Neurons), "CycleInc", "GatherSpikes")
-		}
-
-		gp.RunPipeline("LayGi", len(gp.Net.Layers), "GatherSpikes", "LayGi")
-		gp.RunPipeline("BetweenGi", len(gp.Net.Layers), "LayGi", "BetweenGi")
-		gp.RunPipeline("PoolGi", len(gp.Net.Pools), "BetweenGi", "PoolGi")
-
-		gp.RunPipeline("Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
-
-		gp.RunPipeline("SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
-		if gp.Ctx.Testing.IsTrue() {
-			gp.RunPipeline("CyclePost", 1, "SendSpike", "CycleEnd")
-		} else {
-			gp.RunPipeline("CyclePost", 1, "SendSpike", "CyclePost")
-			gp.RunPipeline("SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
-			// use send first b/c just did SendSpike -- tiny bit faster
-			gp.RunPipeline("SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
-		}
-		if ci < ncyc-1 {
-			gp.RunPipeline("CycleInc", 1, "CycleEnd", "CycleInc") // we do
-		}
-	}
-	gp.Sys.ComputeWaitEvents("CycleEnd")
-	gp.Sys.ComputeCmdCopyFmGPU(cxr, lvr, plr)
-	gp.Sys.ComputeSubmitWait()
+	gp.Sys.ComputeSubmitWaitCmd(cmd)
 
 	gp.CopyLayerStateFmStaging()
 	stCtx.NeuroMod = gp.Ctx.NeuroMod // only state that is updated separately -- counters are full ncyc ahead
@@ -831,6 +827,58 @@ func (gp *GPU) RunCycles(ncyc int) {
 	// fmt.Printf("Cyc: %d  ACh: %g\n", gp.Ctx.Cycle, gp.Ctx.NeuroMod.ACh)
 
 	gp.Net.FunTimerStop(gnm)
+}
+
+// RunCyclesCmd returns the RunCycles commands to
+// do multiple cycles of updating in one chunk
+func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
+	cnm := "RunCycles"
+	if gp.Ctx.Testing.IsTrue() {
+		cnm += "Testing"
+	}
+	cmd, err := gp.Sys.CmdBuffByNameTry(cnm)
+	if err == nil {
+		return cmd
+	}
+	cmd = gp.Sys.NewCmdBuff(cnm)
+
+	cxr := gp.SyncRegionStruct("Ctx")
+	lvr := gp.SyncRegionStruct("LayVals")
+	plr := gp.SyncRegionStruct("Pools")
+
+	gp.StartRunCmd(cmd)
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
+	gp.RunPipelineCmd(cmd, "GatherSpikes", len(gp.Net.Neurons), "MemCopyTo", "GatherSpikes")
+
+	for ci := 0; ci < CyclesN; ci++ {
+		if ci > 0 {
+			gp.RunPipelineCmd(cmd, "GatherSpikes", len(gp.Net.Neurons), "CycleInc", "GatherSpikes")
+		}
+
+		gp.RunPipelineCmd(cmd, "LayGi", len(gp.Net.Layers), "GatherSpikes", "LayGi")
+		gp.RunPipelineCmd(cmd, "BetweenGi", len(gp.Net.Layers), "LayGi", "BetweenGi")
+		gp.RunPipelineCmd(cmd, "PoolGi", len(gp.Net.Pools), "BetweenGi", "PoolGi")
+
+		gp.RunPipelineCmd(cmd, "Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
+
+		gp.RunPipelineCmd(cmd, "SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
+		if gp.Ctx.Testing.IsTrue() {
+			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
+		} else {
+			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CyclePost")
+			gp.RunPipelineCmd(cmd, "SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
+			// use send first b/c just did SendSpike -- tiny bit faster
+			gp.RunPipelineCmd(cmd, "SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
+		}
+		if ci < CyclesN-1 {
+			gp.RunPipelineCmd(cmd, "CycleInc", 1, "CycleEnd", "CycleInc") // we do
+		}
+	}
+	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
+	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr)
+	gp.Sys.ComputeCmdEndCmd(cmd)
+	return cmd
 }
 
 // RunCycleSeparateFuns does one cycle of updating in a very slow manner
