@@ -25,8 +25,9 @@ type NeuroModVals struct {
 	Ser      float32     `inactive:"+" desc:"serotonin -- not yet in use"`
 
 	AChRaw float32 `inactive:"+" desc:"raw ACh value used in updating global ACh value by RSalienceAChLayer"`
+	PPTg   float32 `inactive:"+" desc:"raw PPTg value reflecting the positive-rectified delta output of the Amygdala, which drives ACh and DA in the PVLV framework "`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (nm *NeuroModVals) Init() {
