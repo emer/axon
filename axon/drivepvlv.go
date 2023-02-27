@@ -221,27 +221,15 @@ type VSPatchIdxs struct {
 
 // VSVals are VSPatch or VSMatrix values
 type VSVals struct {
-	PosD1 float32 `desc:"VS D1 positive valence pathway -- patch opposes positive US (PV) outcomes"`
-	PosD2 float32 `desc:"VS D2 positive valence pathway -- opposes D1"`
-	NegD2 float32 `desc:"VS D2 negative valence pathway -- patch opposes negative US (PV) outcomes"`
-	NegD1 float32 `desc:"VS D1 negative valence pathway -- opposes D2"`
+	Pos float32 `desc:"VS D1 - D2 positive valence pathway -- patch opposes positive US (PV) outcomes"`
+	Neg float32 `desc:"VS D2 - D1 negative valence pathway -- patch opposes negative US (PV) outcomes"`
+
+	pad, pad1 float32
 }
 
 func (vs *VSVals) Zero() {
-	vs.PosD1 = 0
-	vs.PosD2 = 0
-	vs.NegD2 = 0
-	vs.NegD1 = 0
-}
-
-// Pos returns PosD1 - PosD2
-func (vs *VSVals) Pos() float32 {
-	return vs.PosD1 - vs.PosD2
-}
-
-// Neg returns NegD2 - NegD1
-func (vs *VSVals) Neg() float32 {
-	return vs.NegD2 - vs.NegD1
+	vs.Pos = 0
+	vs.Neg = 0
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -440,26 +428,16 @@ func (dp *DrivePVLV) NegPV() float32 {
 	return rew
 }
 
-// VSPatchPosNeg returns VSPatch positive and negative values:
-// PosD1-PosD2 and NegD2-NegD1
-func (dp *DrivePVLV) VSPatchPosNeg(pos, neg *float32) {
-	*pos = dp.VSPatchVals.Pos()
-	*neg = dp.VSPatchVals.Neg()
-}
-
 // DA computes the updated dopamine from all the current state,
 // including pptg passed in as an arg.
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA and is returned
 func (dp *DrivePVLV) DA(pptg float32) float32 {
-	vsPatchPos := float32(0)
-	vsPatchNeg := float32(0)
-	dp.VSPatchPosNeg(&vsPatchPos, &vsPatchNeg)
 	pvPosRaw := dp.PosPV()
 	pvNeg := dp.NegPV()
 	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
-	dp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos, vsPatchNeg)
-	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.LHbDip, dp.LHb.LHbBurst, vsPatchPos)
+	dp.LHb.LHbFmPVVS(pvPos, pvNeg, dp.VSPatchVals.Pos, dp.VSPatchVals.Neg)
+	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.LHbDip, dp.LHb.LHbBurst, dp.VSPatchVals.Pos)
 	dp.VTA.DAFmRaw()
 	return dp.VTA.Vals.DA
 }
@@ -480,3 +458,32 @@ func (dp *DrivePVLV) DriveUpdt(resetUs bool) {
 }
 
 //gosl: end drivepvlv
+
+// GetVSPatchVals sets VSPatchVals using VSPatchLays indexes
+func (dp *DrivePVLV) GetVSPatchVals(net *Network) {
+	vsPosD1 := net.Layer(int(dp.VSPatchLays.PosD1)).(AxonLayer).AsAxon()
+	vsPosD2 := net.Layer(int(dp.VSPatchLays.PosD2)).(AxonLayer).AsAxon()
+	vsNegD2 := net.Layer(int(dp.VSPatchLays.NegD2)).(AxonLayer).AsAxon()
+	vsNegD1 := net.Layer(int(dp.VSPatchLays.NegD1)).(AxonLayer).AsAxon()
+
+	pos := float32(0)
+	np := len(vsPosD1.Pools)
+	for pi := 1; pi < np; pi++ {
+		plD1 := &vsPosD1.Pools[pi]
+		plD2 := &vsPosD2.Pools[pi]
+		d := plD1.AvgMax.CaSpkP.Cycle.Avg - plD2.AvgMax.CaSpkP.Cycle.Avg
+		pos += d
+	}
+
+	neg := float32(0)
+	np = len(vsNegD2.Pools)
+	for pi := 1; pi < np; pi++ {
+		plD1 := &vsNegD1.Pools[pi]
+		plD2 := &vsNegD2.Pools[pi]
+		d := plD2.AvgMax.CaSpkP.Cycle.Avg - plD1.AvgMax.CaSpkP.Cycle.Avg
+		neg += d
+	}
+
+	dp.VSPatchVals.Pos = pos
+	dp.VSPatchVals.Neg = neg
+}

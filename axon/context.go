@@ -39,8 +39,9 @@ type Context struct {
 	NLayers     int32       `view:"-" desc:"number of layers in the network -- needed for GPU mode"`
 	NSpiked     int32       `inactive:"+" desc:"number of neurons that spiked"`
 
-	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
+	RandCtr   slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
+	NeuroMod  NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
+	DrivePVLV DrivePVLV      `desc:"internal drives and PVLV dopamine mechanisms -- maintained centrally -- requires VSPatch and PPTg inputs, drives DA"`
 }
 
 // Defaults sets default values
