@@ -19,14 +19,14 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
-	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
+	"github.com/emer/envs/cond"
 	"github.com/emer/etable/etable"
-	"github.com/emer/etable/etensor"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 	"github.com/goki/vgpu/vgpu"
 )
@@ -64,6 +64,7 @@ func guirun() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
+	RunName      string           `view:"environment run name"`
 	Net          *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params       emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops        *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
@@ -86,6 +87,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
+	ss.RunName = "PosAcq_B50"
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
@@ -106,8 +108,6 @@ func (ss *Sim) New() {
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
-	// ss.ConfigPats()
-	ss.OpenPats()
 	ss.ConfigEnv()
 	ss.ConfigNet(ss.Net)
 	ss.ConfigLogs()
@@ -116,35 +116,25 @@ func (ss *Sim) Config() {
 
 func (ss *Sim) ConfigEnv() {
 	// Can be called multiple times -- don't re-create
-	var trn, tst *PVLVEnv
+	var trn, tst *cond.CondEnv
 	if len(ss.Envs) == 0 {
-		trn = &PVLVEnv{}
-		tst = &PVLVEnv{}
+		trn = &cond.CondEnv{}
+		tst = &cond.CondEnv{}
 	} else {
-		trn = ss.Envs.ByMode(etime.Train).(*PVLVEnv)
-		tst = ss.Envs.ByMode(etime.Test).(*PVLVEnv)
+		trn = ss.Envs.ByMode(etime.Train).(*cond.CondEnv)
+		tst = ss.Envs.ByMode(etime.Test).(*cond.CondEnv)
 	}
-
-	ss.Env = PVLVEnv{Nm: "Env", Dsc: "run environment"}
-	ss.Env.New(ss)
 
 	// note: names must be standard here!
 	trn.Nm = etime.Train.String()
 	trn.Dsc = "training params and state"
-	trn.Config(etable.NewIdxView(ss.Pats))
+	trn.Config(ss.Args.Int("runs"), ss.RunName)
 	trn.Validate()
 
 	tst.Nm = etime.Test.String()
 	tst.Dsc = "testing params and state"
-	tst.Config(etable.NewIdxView(ss.Pats))
-	tst.Sequential = true
+	tst.Config(ss.Args.Int("runs"), ss.RunName)
 	tst.Validate()
-
-	// note: to create a train / test split of pats, do this:
-	// all := etable.NewIdxView(ss.Pats)
-	// splits, _ := split.Permuted(all, []float64{.8, .2}, []string{"Train", "Test"})
-	// trn.Table = splits.Splits[0]
-	// tst.Table = splits.Splits[1]
 
 	trn.Init(0)
 	tst.Init(0)
@@ -154,23 +144,26 @@ func (ss *Sim) ConfigEnv() {
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
+	net.InitName(net, "PVLV")
+	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ny := ev.NYReps
+	nUSs := cond.NPVs
+
 	nuBgY := 5
 	nuBgX := 5
 	nuCtxY := 6
 	nuCtxX := 6
 	space := float32(2)
-	nUSs := 4
 
 	pone2one := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
 	_ = pone2one
 
-	ny := ev.NYReps
-
-	stimIn := net.AddLayer2D("StimIn", 12, 1, emer.Input)
-	ctxIn := net.AddLayer2D("ContextIn", 20, 3, emer.Input)
-	ustimeIn := net.AddLayer4D("USTimeIn", 16, 2, 4, 5, emer.Input)
+	stim := ev.CurStates["StimIn"]
+	ctxt := ev.CurStates["ContextIn"]
+	time := ev.CurStates["USTimeIn"]
+	pv := ev.CurStates["PosPV"]
 
 	rew, rwPred, snci := net.AddRWLayers("", relpos.Behind, space)
 	_ = rew
@@ -178,35 +171,42 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	snc := snci.(*axon.Layer)
 	ach := net.AddRSalienceAChLayer("ACh")
 
-	drives := net.AddLayer4D("Drives", 1, nUSs, ny, 1, emer.Input)
-	us := net.AddLayer4D("US", 1, nUSs, ny, 1, emer.Input)
-	gate := net.AddLayer2D("Gate", ny, 2, emer.Input) // signals gated or not
-
 	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
-	blaa, blae, blana, blane, cemPos, cemNeg, pptg := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
+	drives := net.AddLayer4D("Drives", 1, nUSs, ny, 1, emer.Input)
+	pospv := net.AddLayer4D("PosPV", pv.Dim(0), pv.Dim(1), pv.Dim(2), pv.Dim(3), emer.Input)
+	negpv := net.AddLayer4D("NegPV", pv.Dim(0), pv.Dim(1), pv.Dim(2), pv.Dim(3), emer.Input)
+	cs := net.AddLayer4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), emer.Input)
+	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), emer.Input)
+	ustimeIn := net.AddLayer4D("USTimeIn", time.Dim(0), time.Dim(1), time.Dim(2), time.Dim(3), emer.Input)
+	_ = ctxIn
+	_ = ustimeIn
+
+	gate := net.AddLayer2D("Gate", ny, 2, emer.Input) // signals gated or not
+	_ = gate
+
+	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, pptg := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
 	_ = cemPos
 	_ = pptg
-	blaa.SetBuildConfig("LayInhib1Name", blana.Name())
-	blana.SetBuildConfig("LayInhib1Name", blaa.Name())
+	_ = blaNegE
+	_ = cemNeg
+	blaPosA.SetBuildConfig("LayInhib1Name", blaNegA.Name())
+	blaNegA.SetBuildConfig("LayInhib1Name", blaPosA.Name())
 
 	ofc, ofcct := net.AddSuperCT4D("OFC", 1, nUSs, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
 	ofcpt, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
 	_ = ofcpt
 	ofcct.SetClass("OFC CTCopy")
-	net.ConnectToPulv(ofc, ofcct, usPulv, pone2one, pone2one)
+	// net.ConnectToPulv(ofc, ofcct, usPulv, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	// net.ConnectLayers(drives, ofcct, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
-	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(pospv, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(ofcpt, ofcct, full, emer.Forward) // good?
-
-	// todo: add ofcp and acc projections to it
-	// todo: acc should have pos and negative stripes, with grounded prjns??
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
@@ -214,28 +214,26 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ach.SetBuildConfig("SrcLay1Name", pptg.Name())
 
 	// BLA
-	net.ConnectToBLA(cs, blaa, full)
-	net.ConnectToBLA(us, blaa, pone2one).SetClass("USToBLA")
-	// net.ConnectToBLA(usp, blaa, pone2one).SetClass("USToBLA")
-	// net.ConnectToBLA(drives, blaa, pone2one).SetClass("USToBLA")
-	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
+	net.ConnectToBLA(cs, blaPosA, full)
+	net.ConnectToBLA(pospv, blaPosA, pone2one).SetClass("USToBLA")
+	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
-	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &axon.BLAPrjn{})
-	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib).SetClass("BgFixed")
-	// net.ConnectLayers(drives, blae, pone2one, emer.Forward)
+	// net.ConnectLayersPrjn(ofcpt, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
+	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BgFixed")
+	// net.ConnectLayers(drives, blaPosE, pone2one, emer.Forward)
 
 	////////////////////////////////////////////////
 	// BG / DA connections
 
 	// same prjns to stn as mtxgo
-	net.ConnectToMatrix(us, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaa, vPmtxGo, pone2one).SetClass("BLAToBG")
-	net.ConnectToMatrix(blaa, vPmtxNo, pone2one).SetClass("BLAToBG")
-	net.ConnectLayers(blaa, vPstnp, full, emer.Forward)
-	net.ConnectLayers(blaa, vPstns, full, emer.Forward)
+	net.ConnectToMatrix(pospv, vPmtxGo, pone2one)
+	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
+	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
+	net.ConnectLayers(blaPosA, vPstnp, full, emer.Forward)
+	net.ConnectLayers(blaPosA, vPstns, full, emer.Forward)
 
-	net.ConnectToMatrix(blae, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blae, vPmtxNo, pone2one)
+	net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
+	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
@@ -259,11 +257,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ach.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: snc.Name(), XAlign: relpos.Left, Space: space})
 
 	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: rew.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
+	pospv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
+	negpv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pospv.Name(), XAlign: relpos.Left, Space: space})
 	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
+	ctxIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: space})
+	ustimeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ctxIn.Name(), YAlign: relpos.Front, Space: space})
 
-	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	ofc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: space})
+	blaPosA.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
+	blaNegA.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blaPosE.Name(), XAlign: relpos.Left, Space: space})
+	cemPos.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blaNegE.Name(), XAlign: relpos.Left, Space: space})
+	cemNeg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: cemPos.Name(), XAlign: relpos.Left, Space: space})
+
+	gate.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaPosA.Name(), YAlign: relpos.Front, Space: space})
+
+	ofc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gate.Name(), YAlign: relpos.Front, Space: space})
 
 	err := net.Build()
 	if err != nil {
@@ -272,7 +279,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	net.Defaults()
 	ss.Params.SetObject("Network")
-	ss.InitWts(net)
+	net.InitWts()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -321,7 +328,6 @@ func (ss *Sim) ConfigLoops() {
 		})
 		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
-			// axon.EnvApplyInputs(ss.Net, ss.Envs[ss.Context.Mode])
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
@@ -415,7 +421,7 @@ func (ss *Sim) ApplyInputs() {
 	for _, lnm := range lays {
 		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		pats := ev.State(ly.Nm)
-		if pats != nil {
+		if !kit.IfaceIsNil(pats) {
 			ly.ApplyExt(pats)
 		}
 	}
@@ -444,35 +450,6 @@ func (ss *Sim) TestAll() {
 	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
 }
 
-/////////////////////////////////////////////////////////////////////////
-//   Pats
-
-func (ss *Sim) ConfigPats() {
-	dt := ss.Pats
-	dt.SetMetaData("name", "TrainPats")
-	dt.SetMetaData("desc", "Training patterns")
-	sch := etable.Schema{
-		{"Name", etensor.STRING, nil, nil},
-		{"Input", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
-		{"Output", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
-	}
-	dt.SetFromSchema(sch, 25)
-
-	patgen.PermutedBinaryMinDiff(dt.Cols[1].(*etensor.Float32), 6, 1, 0, 3)
-	patgen.PermutedBinaryMinDiff(dt.Cols[2].(*etensor.Float32), 6, 1, 0, 3)
-	dt.SaveCSV("random_5x5_25_gen.tsv", etable.Tab, etable.Headers)
-}
-
-func (ss *Sim) OpenPats() {
-	dt := ss.Pats
-	dt.SetMetaData("name", "TrainPats")
-	dt.SetMetaData("desc", "Training patterns")
-	err := dt.OpenCSV("random_5x5_25.tsv", etable.Tab)
-	if err != nil {
-		log.Println(err)
-	}
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Stats
 
@@ -494,23 +471,13 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
 	ev := ss.Envs[ss.Context.Mode.String()]
-	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
+	ss.Stats.SetString("TrialName", ev.(*cond.CondEnv).TrialName)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
-
-	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
-	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
-
-	if ss.Stats.Float("TrlUnitErr") > 0 {
-		ss.Stats.SetFloat("TrlErr", 1)
-	} else {
-		ss.Stats.SetFloat("TrlErr", 0)
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -523,11 +490,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddStatAggItem("CorSim", "TrlCorSim", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("UnitErr", "TrlUnitErr", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddErrStatAggItems("TrlErr", etime.Run, etime.Epoch, etime.Trial)
-
-	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
+	// ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -540,7 +503,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
-	ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
+	// ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -578,17 +541,18 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
-	title := "Axon Random Associator"
-	ss.GUI.MakeWindow(ss, "ra25", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	title := "Axon PVLV"
+	ss.GUI.MakeWindow(ss, "pvlv", title, `This is the PVLV test model in Axon. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
+	nv.Params.LayNmSize = 0.03
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
-	nv.Scene().Camera.Pose.Pos.Set(0, 1, 2.75) // more "head on" than default which is more "top down"
+	nv.Scene().Camera.Pose.Pos.Set(0, 1.4, 2.6)
 	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.AddPlots(title, &ss.Logs)
@@ -630,7 +594,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
 		Active:  egui.ActiveAlways,
 		Func: func() {
-			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/ra25/README.md")
+			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
