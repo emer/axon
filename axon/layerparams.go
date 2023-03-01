@@ -37,6 +37,10 @@ type LayerIdxs struct {
 	SendSt uint32 `inactive:"+" desc:"start index into RecvPrjns global array"`
 	SendN  uint32 `inactive:"+" desc:"number of recv projections"`
 	ExtsSt uint32 `inactive:"+" desc:"starting index in network global Exts list of external input for this layer -- only for Input / Target / Compare layer types"`
+	ShpPlY int32  `inactive:"+" desc:"layer shape Pools Y dimension -- 1 for 2D"`
+	ShpPlX int32  `inactive:"+" desc:"layer shape Pools X dimension -- 1 for 2D"`
+	ShpUnY int32  `inactive:"+" desc:"layer shape Units Y dimension"`
+	ShpUnX int32  `inactive:"+" desc:"layer shape Units X dimension"`
 }
 
 // LayerInhibIdxs contains indexes of layers for between-layer inhibition
@@ -344,6 +348,9 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 ////////////////////////
 //  GInteg
 
+// todo: pass in pool -- allows VSPatch to set context VSPatch values from pool vals
+// needs to be able to set one for each type (pos / neg D1 / D2)
+
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
@@ -380,6 +387,32 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 	case TDIntegLayer:
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
+
+	case PosPVLayer:
+		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
+		us := ctx.DrivePVLV.PosUSs.Get(ui)
+		nrn.GeRaw = us
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case NegPVLayer:
+		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
+		us := ctx.DrivePVLV.NegUSs.Get(ui)
+		nrn.GeRaw = us
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case VTALayer:
+		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case LHbLayer:
+		if ni == 0 {
+			nrn.GeRaw = ctx.DrivePVLV.LHb.LHbDip
+		} else {
+			nrn.GeRaw = ctx.DrivePVLV.LHb.LHbBurst
+		}
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case DrivesLayer:
+		di := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
+		dr := ctx.DrivePVLV.Drive.Drives.Get(di)
+		nrn.GeRaw = dr
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	}
 	return saveVal
 }
@@ -515,6 +548,27 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 				nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
 			}
 		}
+	case PosPVLayer:
+		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
+		us := ctx.DrivePVLV.PosUSs.Get(ui)
+		nrn.Act = us
+	case NegPVLayer:
+		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
+		us := ctx.DrivePVLV.NegUSs.Get(ui)
+		nrn.Act = us
+	case VTALayer:
+		nrn.Act = ctx.DrivePVLV.VTA.Vals.DA
+	case LHbLayer:
+		if ni == 0 {
+			nrn.Act = ctx.DrivePVLV.LHb.LHbDip
+		} else {
+			nrn.Act = ctx.DrivePVLV.LHb.LHbBurst
+		}
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case DrivesLayer:
+		di := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
+		dr := ctx.DrivePVLV.Drive.Drives.Get(di)
+		nrn.Act = dr
 	}
 }
 

@@ -127,6 +127,8 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 
+	ss.Context.DrivePVLV.Drive.NActive = int32(cond.NPVs)
+
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
 }
@@ -153,9 +155,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	time := ev.CurStates["USTimeIn"]
 	pv := ev.CurStates["PosPV"]
 
-	rew, rwPred, snc := net.AddRWLayers("", relpos.Behind, space)
-	_ = rew
-	_ = rwPred
+	vta, lhb := net.AddVTALHbLayers(relpos.Behind, space)
+	drives := net.AddDrivesLayer(&ss.Context, ny)
 	ach := net.AddRSalienceAChLayer("ACh")
 
 	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
@@ -163,7 +164,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vsPatchPosD1, vsPatchPosD2 := net.AddVSPatchLayers("", true, nUSs, 2, 2, relpos.Behind, space)
 	vsPatchNegD1, vsPatchNegD2 := net.AddVSPatchLayers("", false, nUSs, 2, 2, relpos.Behind, space)
 
-	drives := net.AddLayer4D("Drives", 1, nUSs, ny, 1, axon.InputLayer)
 	pospv := net.AddLayer4D("PosPV", pv.Dim(0), pv.Dim(1), pv.Dim(2), pv.Dim(3), axon.InputLayer)
 	negpv := net.AddLayer4D("NegPV", pv.Dim(0), pv.Dim(1), pv.Dim(2), pv.Dim(3), axon.InputLayer)
 	cs := net.AddLayer4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), axon.InputLayer)
@@ -249,13 +249,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	////////////////////////////////////////////////
 	// position
 
-	vPgpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rew.Name(), YAlign: relpos.Front, Space: space})
-	ach.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: snc.Name(), XAlign: relpos.Left, Space: space})
+	vPgpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: vta.Name(), YAlign: relpos.Front, Space: space})
+	ach.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: lhb.Name(), XAlign: relpos.Left, Space: space})
 
 	vsPatchPosD1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: vPstns.Name(), YAlign: relpos.Front, Space: space})
 	vsPatchNegD2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: vsPatchPosD1.Name(), YAlign: relpos.Front, Space: space})
 
-	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: rew.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
+	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: vta.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
 	pospv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
 	negpv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pospv.Name(), XAlign: relpos.Left, Space: space})
 	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
@@ -375,7 +375,7 @@ func (ss *Sim) UpdateLoopMax() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()]
+	ev := ss.Envs[ss.Context.Mode.String()].(*cond.CondEnv)
 	ss.UpdateLoopMax()
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
@@ -387,7 +387,9 @@ func (ss *Sim) ApplyInputs() {
 			ly.ApplyExt(pats)
 		}
 	}
-	net.ApplyExts(&ss.Context) // now required for GPU mode
+	ss.Context.DrivePVLV.Drive.Drives.Zero()
+	ss.Context.DrivePVLV.Drive.Drives.Set(0) // need to get this somehow!
+	net.ApplyExts(&ss.Context)               // now required for GPU mode
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter

@@ -50,6 +50,7 @@ func (ctx *Context) Defaults() {
 	ctx.TimePerCyc = 0.001
 	ctx.ThetaCycles = 200
 	ctx.Mode = etime.Train
+	ctx.DrivePVLV.Defaults()
 }
 
 // NewState resets counters at start of new state (trial) of processing.

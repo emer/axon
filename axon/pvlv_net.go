@@ -120,3 +120,23 @@ func (nt *Network) AddVSPatchLayers(prefix string, pos bool, nUs, unY, unX int, 
 func (nt *Network) ConnectToVSPatch(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(VSPatchPrjn))
 }
+
+// AddVTALHbLayers adds VTA dopamine and LHb dipping layers
+// which are driven by corresponding VTA and LHb values in Context.DrivePVLV
+func (nt *Network) AddVTALHbLayers(rel relpos.Relations, space float32) (vta, lhb *Layer) {
+	vta = nt.AddLayer2D("VTA", 1, 1, VTALayer)
+	lhb = nt.AddLayer2D("LHb", 1, 2, LHbLayer)
+	if rel == relpos.Behind {
+		lhb.SetRelPos(relpos.Rel{Rel: rel, Other: vta.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		lhb.SetRelPos(relpos.Rel{Rel: rel, Other: vta.Name(), YAlign: relpos.Front, Space: space})
+	}
+	return
+}
+
+// AddDrivesLayer adds DrivePVLV layer representing current drive activity,
+// which are driven by corresponding Context.DrivePVLV.Drive.Drives
+func (nt *Network) AddDrivesLayer(ctx *Context, nYunits int) *Layer {
+	drv := nt.AddLayer4D("Drives", 1, int(ctx.DrivePVLV.Drive.NActive), nYunits, 1, DrivesLayer)
+	return drv
+}

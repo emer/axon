@@ -484,7 +484,8 @@ func (nt *NetworkBase) Build() error {
 		if ly.IsOff() {
 			continue
 		}
-		nn := ly.Shape().Len()
+		shp := ly.Shape()
+		nn := shp.Len()
 		ly.Neurons = nt.Neurons[neurIdx : neurIdx+nn]
 		ly.NeurStIdx = neurIdx
 		np := ly.NSubPools() + 1
@@ -492,6 +493,17 @@ func (nt *NetworkBase) Build() error {
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
+		if shp.NumDims() == 2 {
+			ly.Params.Idxs.ShpUnY = int32(shp.Dim(0))
+			ly.Params.Idxs.ShpUnX = int32(shp.Dim(1))
+			ly.Params.Idxs.ShpPlY = 1
+			ly.Params.Idxs.ShpPlX = 1
+		} else {
+			ly.Params.Idxs.ShpPlY = int32(shp.Dim(0))
+			ly.Params.Idxs.ShpPlX = int32(shp.Dim(1))
+			ly.Params.Idxs.ShpUnY = int32(shp.Dim(2))
+			ly.Params.Idxs.ShpUnX = int32(shp.Dim(3))
+		}
 		for pi := range ly.Pools {
 			pl := &ly.Pools[pi]
 			pl.LayIdx = uint32(li)
