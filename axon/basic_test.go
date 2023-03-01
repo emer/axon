@@ -17,7 +17,6 @@ import (
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/mat32"
-	"github.com/goki/vgpu/vgpu"
 )
 
 func init() {
@@ -64,9 +63,9 @@ var ParamSets = params.Sets{
 func newTestNet() *Network {
 	var testNet Network
 	testNet.InitName(&testNet, "testNet")
-	inLay := testNet.AddLayer("Input", []int{4, 1}, emer.Input)
-	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, emer.Hidden)
-	outLay := testNet.AddLayer("Output", []int{4, 1}, emer.Target)
+	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
+	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
+	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	_ = inLay
 	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
@@ -133,8 +132,8 @@ func cmprFloats(out, cor []float32, msg string, t *testing.T) {
 
 func TestSpikeProp(t *testing.T) {
 	net := NewNetwork("SpikeNet")
-	inLay := net.AddLayer("Input", []int{1, 1}, emer.Input).(*Layer)
-	hidLay := net.AddLayer("Hidden", []int{1, 1}, emer.Hidden).(*Layer)
+	inLay := net.AddLayer("Input", []int{1, 1}, InputLayer)
+	hidLay := net.AddLayer("Hidden", []int{1, 1}, SuperLayer)
 
 	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward).(*Prjn)
 
@@ -190,7 +189,7 @@ func TestGPUAct(t *testing.T) {
 	if os.Getenv("TEST_GPU") == "" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
-	vgpu.Debug = true
+	// vgpu.Debug = true
 	NetActTest(t, true)
 }
 
@@ -739,9 +738,9 @@ func TestInhibAct(t *testing.T) {
 	var InhibNet Network
 	InhibNet.InitName(&InhibNet, "InhibNet")
 
-	inLay := InhibNet.AddLayer("Input", []int{4, 1}, emer.Input).(*Layer)
-	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, emer.Hidden).(*Layer)
-	outLay := InhibNet.AddLayer("Output", []int{4, 1}, emer.Target).(*Layer)
+	inLay := InhibNet.AddLayer("Input", []int{4, 1}, InputLayer)
+	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
+	outLay := InhibNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	InhibNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
 	InhibNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Inhib)

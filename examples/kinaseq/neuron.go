@@ -141,8 +141,8 @@ func (ss *Sim) InitSyn(sy *axon.Synapse) {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Neuron")
-	sly := net.AddLayer2D("Send", 1, 1, emer.Hidden).(*axon.Layer)
-	rly := net.AddLayer2D("Recv", 1, 1, emer.Hidden).(*axon.Layer)
+	sly := net.AddLayer2D("Send", 1, 1, axon.SuperLayer).(*axon.Layer)
+	rly := net.AddLayer2D("Recv", 1, 1, axon.SuperLayer).(*axon.Layer)
 	pj := net.ConnectLayers(sly, rly, prjn.NewFull(), emer.Forward)
 	err := net.Build()
 	if err != nil {

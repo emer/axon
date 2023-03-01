@@ -249,7 +249,7 @@ func (ly *LayerParams) ApplyExtVal(ni uint32, nrn *Neuron, val float32) {
 }
 
 // IsTarget returns true if this layer is a Target layer.
-// By default, returns true for layers of Type == emer.Target
+// By default, returns true for layers of Type == TargetLayer
 // Other Target layers include the TRCLayer in deep predictive learning.
 // It is used in SynScale to not apply it to target layers.
 // In both cases, Target layers are purely error-driven.
@@ -265,7 +265,7 @@ func (ly *LayerParams) IsTarget() bool {
 }
 
 // IsInput returns true if this layer is an Input layer.
-// By default, returns true for layers of Type == emer.Input
+// By default, returns true for layers of Type == axon.InputLayer
 // Used to prevent adapting of inhibition or TrgAvg values.
 func (ly *LayerParams) IsInput() bool {
 	switch ly.LayType {

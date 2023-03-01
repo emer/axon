@@ -188,31 +188,30 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	rew, rwPred, snci := net.AddRWLayers("", relpos.Behind, space)
+	rew, rwPred, snc := net.AddRWLayers("", relpos.Behind, space)
 	_ = rew
 	_ = rwPred
-	snc := snci.(*axon.Layer)
 	ach := net.AddRSalienceAChLayer("ACh")
 
-	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, emer.Input)
+	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, axon.InputLayer)
 	us, usPulv := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
 	// cs, csp := net.AddInputPulv2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
 	// localist, for now:
 	// cs, csp := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
-	cs := net.AddLayer2D("CS", ny, ev.NDrives, emer.Input)
+	cs := net.AddLayer2D("CS", ny, ev.NDrives, axon.InputLayer)
 	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
 	// pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
-	pos := net.AddLayer2D("Pos", ny, nloc, emer.Input) // irrelevant here
-	gate := net.AddLayer2D("Gate", ny, 2, emer.Input)  // signals gated or not
+	pos := net.AddLayer2D("Pos", ny, nloc, axon.InputLayer) // irrelevant here
+	gate := net.AddLayer2D("Gate", ny, 2, axon.InputLayer)  // signals gated or not
 
 	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
 	// todo: need m1d, driven by smad -- output pathway
 
-	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, emer.Hidden)
-	act := net.AddLayer2D("Act", ny, nAct, emer.Input) // Action
-	vl := net.AddPulvLayer2D("VL", ny, nAct)           // VL predicts brainstem Action: either its own or instinct
+	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, axon.SuperLayer)
+	act := net.AddLayer2D("Act", ny, nAct, axon.InputLayer) // Action
+	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action: either its own or instinct
 	vl.SetBuildConfig("DriveLayName", act.Name())
 
 	m1P := net.AddPulvLayer2D("M1P", nuCtxY, nuCtxX)

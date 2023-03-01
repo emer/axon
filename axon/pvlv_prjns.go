@@ -16,3 +16,12 @@ func (pj *PrjnParams) BLAPrjnDefaults() {
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
 }
+
+func (pj *PrjnParams) VSPatchPrjnDefaults() {
+	pj.SWt.Adapt.SigGain = 1
+	pj.SWt.Init.Mean = 0.1
+	pj.SWt.Init.Var = 0.05
+	pj.SWt.Init.Sym.SetBool(false)
+	pj.Learn.Trace.Tau = 1
+	pj.Learn.Trace.Update()
+}

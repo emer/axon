@@ -264,6 +264,8 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool,
 		pj.DWtSynTDPred(ctx, sy, sn, rn, layPool, subPool)
 	case MatrixPrjn:
 		pj.DWtSynMatrix(ctx, sy, sn, rn, layPool, subPool)
+	case VSPatchPrjn:
+		pj.DWtSynVSPatch(ctx, sy, sn, rn, layPool, subPool)
 	default:
 		pj.DWtSynCortex(ctx, sy, sn, rn, layPool, subPool, isTarget)
 	}
@@ -277,8 +279,8 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caP := sy.CaP
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctx.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
-	if pj.PrjnType == CTCtxtPrjn || pj.PrjnType == BLAPrjn {
-		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv)
+	if pj.PrjnType == CTCtxtPrjn || pj.PrjnType == BLAPrjn {          // todo: try separate types for these
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // instead of mixing into cortical one
 	} else {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
 	}
@@ -407,6 +409,14 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	}
 	sy.DTr = dtr
 	sy.Tr = tr
+	sy.DWt += dwt
+}
+
+// DWtSynVSPatch computes the weight change (learning) at given synapse,
+// for the VSPatchPrjn type.
+func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
+	dwt := rn.RLRate * pj.Learn.LRate.Eff * rn.CaSpkD * sn.CaSpkD
 	sy.DWt += dwt
 }
 

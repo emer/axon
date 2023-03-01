@@ -125,14 +125,6 @@ func (ds *DriveVals) ExpStep(drv int32, dt, base float32) float32 {
 	return dv
 }
 
-// ExpStepN updates given number of drives with an exponential step
-// with given dt values toward given baseline values.
-func (ds *DriveVals) ExpStepN(n int32, dt, base *DriveVals) {
-	for i := int32(0); i < 8; i++ {
-		ds.ExpStep(i, dt.Get(i), base.Get(i))
-	}
-}
-
 // Drives manages the drive parameters for updating drive state,
 // and drive state.
 type Drives struct {
@@ -169,7 +161,9 @@ func (dp *Drives) Update() {
 // ExpStep updates given drives with an exponential step using dt values
 // toward baseline values.
 func (dp *Drives) ExpStep() {
-	dp.Drives.ExpStepN(dp.NActive, &dp.Dt, &dp.Base)
+	for i := int32(0); i < 8; i++ {
+		dp.Drives.ExpStep(i, dp.Dt.Get(i), dp.Base.Get(i))
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

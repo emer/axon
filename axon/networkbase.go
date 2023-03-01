@@ -306,15 +306,15 @@ func (nt *NetworkBase) AddLayerInit(ly emer.Layer, name string, shape []int, typ
 // shape is in row-major format with outer-most dimensions first:
 // e.g., 4D 3, 2, 4, 5 = 3 rows (Y) of 2 cols (X) of pools, with each unit
 // group having 4 rows (Y) of 5 (X) units.
-func (nt *NetworkBase) AddLayer(name string, shape []int, typ emer.LayerType) emer.Layer {
-	ly := nt.EmerNet.NewLayer() // essential to use EmerNet interface here!
-	nt.AddLayerInit(ly, name, shape, typ)
+func (nt *NetworkBase) AddLayer(name string, shape []int, typ LayerTypes) *Layer {
+	ly := &Layer{}
+	nt.AddLayerInit(ly, name, shape, emer.LayerType(typ))
 	return ly
 }
 
 // AddLayer2D adds a new layer with given name and 2D shape to the network.
 // 2D and 4D layer shapes are generally preferred but not essential.
-func (nt *NetworkBase) AddLayer2D(name string, shapeY, shapeX int, typ emer.LayerType) emer.Layer {
+func (nt *NetworkBase) AddLayer2D(name string, shapeY, shapeX int, typ LayerTypes) *Layer {
 	return nt.AddLayer(name, []int{shapeY, shapeX}, typ)
 }
 
@@ -323,7 +323,7 @@ func (nt *NetworkBase) AddLayer2D(name string, shapeY, shapeX int, typ emer.Laye
 // shape is in row-major format with outer-most dimensions first:
 // e.g., 4D 3, 2, 4, 5 = 3 rows (Y) of 2 cols (X) of pools, with each pool
 // having 4 rows (Y) of 5 (X) neurons.
-func (nt *NetworkBase) AddLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, typ emer.LayerType) emer.Layer {
+func (nt *NetworkBase) AddLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, typ LayerTypes) *Layer {
 	return nt.AddLayer(name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, typ)
 }
 

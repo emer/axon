@@ -142,6 +142,13 @@ const (
 	// also sets Act to the exact differenence.
 	PPTgLayer
 
+	// VSPatchLayer represents a ventral striatum patch layer,
+	// which learns to represent the expected amount of dopamine reward
+	// and projects both directly with shunting inhibition to the VTA
+	// and indirectly via the LHb / RMTg to cancel phasic dopamine firing
+	// to expected rewards (i.e., reward prediction error).
+	VSPatchLayer
+
 	/////////////////////////////
 	// PCORE Basal Ganglia (BG)
 

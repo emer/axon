@@ -12,43 +12,37 @@ import (
 
 // AddSuperLayer2D adds a Super Layer of given size, with given name.
 func (nt *Network) AddSuperLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.Hidden)
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, SuperLayer)
 	return ly
 }
 
 // AddSuperLayer4D adds a Super Layer of given size, with given name.
 func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, SuperLayer)
 	return ly
 }
 
 // AddCTLayer2D adds a CT Layer of given size, with given name.
 func (nt *Network) AddCTLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(CTLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, CTLayer)
 	return ly
 }
 
 // AddCTLayer4D adds a CT Layer of given size, with given name.
 func (nt *Network) AddCTLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(CTLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, CTLayer)
 	return ly
 }
 
 // AddPulvLayer2D adds a Pulvinar Layer of given size, with given name.
 func (nt *Network) AddPulvLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(PulvinarLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PulvinarLayer)
 	return ly
 }
 
 // AddPulvLayer4D adds a Pulvinar Layer of given size, with given name.
 func (nt *Network) AddPulvLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(PulvinarLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PulvinarLayer)
 	return ly
 }
 
@@ -137,7 +131,7 @@ func (nt *Network) ConnectSuperToCT(send, recv emer.Layer, pat prjn.Pattern) eme
 // The Input layer is set as the Driver of the Layer.
 // Both layers have SetClass(name) called to allow shared params.
 func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32) (emer.Layer, *Layer) {
-	in := nt.AddLayer2D(name, nNeurY, nNeurX, emer.Input)
+	in := nt.AddLayer2D(name, nNeurY, nNeurX, InputLayer)
 	pulv := nt.AddPulvLayer2D(name+"P", nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.SetClass(name)
@@ -150,7 +144,7 @@ func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32
 // The Input layer is set as the Driver of the Layer.
 // Both layers have SetClass(name) called to allow shared params.
 func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (emer.Layer, *Layer) {
-	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, emer.Input)
+	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, InputLayer)
 	pulv := nt.AddPulvLayer4D(name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.SetClass(name)

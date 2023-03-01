@@ -11,7 +11,7 @@ import (
 func TestAddLayer(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
-	layer := net.AddLayer("Input", shape, emer.Input)
+	layer := net.AddLayer("Input", shape, InputLayer)
 	assert.Equal(t, 1, net.NLayers())
 	assert.Same(t, layer, net.LayerByName("Input"))
 }
@@ -19,9 +19,9 @@ func TestAddLayer(t *testing.T) {
 func TestDefaults(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{2, 2}
-	input := net.AddLayer("Input", shape, emer.Input)
-	hidden := net.AddLayer("Hidden", shape, emer.Hidden)
-	output := net.AddLayer("Output", shape, emer.Target)
+	input := net.AddLayer("Input", shape, InputLayer)
+	hidden := net.AddLayer("Hidden", shape, SuperLayer)
+	output := net.AddLayer("Output", shape, TargetLayer)
 
 	full := prjn.NewFull()
 	net.ConnectLayers(input, hidden, full, emer.Forward)
@@ -64,8 +64,8 @@ func TestDefaults(t *testing.T) {
 func TestConnectLayers(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
-	input := net.AddLayer("Input", shape, emer.Input)
-	output := net.AddLayer("Output", shape, emer.Target)
+	input := net.AddLayer("Input", shape, InputLayer)
+	output := net.AddLayer("Output", shape, TargetLayer)
 	assert.Equal(t, 2, net.NLayers())
 	net.ConnectLayers(input, output, prjn.NewFull(), emer.Forward)
 
@@ -76,7 +76,7 @@ func TestConnectLayers(t *testing.T) {
 func TestDelete(t *testing.T) {
 	net := NewNetwork("testNet")
 	shape := []int{5, 5}
-	net.AddLayer("Input", shape, emer.Input)
+	net.AddLayer("Input", shape, InputLayer)
 	assert.Equal(t, 1, net.NLayers())
 	net.DeleteAll()
 	assert.Equal(t, 0, net.NLayers())

@@ -4,7 +4,9 @@
 
 package axon
 
-import "log"
+import (
+	"log"
+)
 
 //gosl: start pvlv_layers
 
@@ -51,4 +53,47 @@ func (ly *Layer) BLAPostBuild() {
 			log.Println(err)
 		}
 	}
+}
+
+func (ly *Layer) VSPatchDefaults() {
+	// ly.Params.Act.Decay.Act = 0
+	// ly.Params.Act.Decay.Glong = 0
+	// ly.Params.Inhib.Pool.On.SetBool(false)
+	// ly.Params.Inhib.Layer.On.SetBool(true)
+	// ly.Params.Inhib.Layer.Gi = 0.5
+	// ly.Params.Inhib.Layer.FB = 0
+	// ly.Params.Inhib.Pool.FB = 0
+	// ly.Params.Inhib.Pool.Gi = 0.5
+	ly.Params.Inhib.ActAvg.Nominal = 0.25
+	ly.Params.Learn.RLRate.Diff.SetBool(false)
+
+	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
+	ly.Params.Learn.NeuroMod.DALRateMod = 1
+	ly.Params.Learn.NeuroMod.AChLRateMod = 1
+	ly.Params.Learn.NeuroMod.AChDisInhib = 0 // 5 for matrix -- not sure about this?
+
+	// important: user needs to adjust wt scale of some PFC inputs vs others:
+	// drivers vs. modulators
+
+	// for _, pji := range ly.RcvPrjns {
+	// 	pj := pji.(AxonPrjn).AsAxon()
+	// 	pj.Params.SWt.Init.SPct = 0
+	// 	if pj.Send.(AxonLayer).LayerType() == GPLayer { // From GPe TA or In
+	// 		pj.Params.PrjnScale.Abs = 1
+	// 		pj.Params.Learn.Learn.SetBool(false)
+	// 		pj.Params.SWt.Adapt.SigGain = 1
+	// 		pj.Params.SWt.Init.Mean = 0.75
+	// 		pj.Params.SWt.Init.Var = 0.0
+	// 		pj.Params.SWt.Init.Sym.SetBool(false)
+	// 		if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
+	// 			pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
+	// 		} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
+	// 			if strings.HasSuffix(ly.Nm, "MtxGo") {
+	// 				pj.Params.PrjnScale.Abs = 2 // was .8
+	// 			} else {
+	// 				pj.Params.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
+	// 			}
+	// 		}
+	// 	}
+	// }
 }

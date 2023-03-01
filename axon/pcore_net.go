@@ -165,8 +165,7 @@ func (nt *Network) AddCINLayer(name, mtxGo, mtxNo string, space float32) *Layer 
 // of given size, with given name.
 // This version has a 4D structure, with Pools representing separable gating domains.
 func (nt *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(VThalLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, VThalLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -175,8 +174,7 @@ func (nt *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 // of given size, with given name.
 // This version has a 2D structure
 func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(VThalLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, VThalLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -185,8 +183,7 @@ func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
 func (nt *Network) AddMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(MatrixLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, MatrixLayer)
 	ly.SetBuildConfig("DAMod", da.String())
 	ly.SetClass("BG")
 	return ly
@@ -200,16 +197,14 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 // AddGPLayer2D adds a GPLayer of given size, with given name.
 // Must set the GPType BuildConfig setting to appropriate GPLayerType
 func (nt *Network) AddGPeLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
 	ly.SetClass("BG")
 	return ly
 }
 
 // AddGPiLayer2D adds a GPiLayer of given size, with given name.
 func (nt *Network) AddGPiLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
 	ly.SetBuildConfig("GPType", "GPi")
 	ly.SetClass("BG")
 	return ly
@@ -217,8 +212,7 @@ func (nt *Network) AddGPiLayer2D(name string, nNeurY, nNeurX int) *Layer {
 
 // AddSTNLayer2D adds a subthalamic nucleus Layer of given size, with given name.
 func (nt *Network) AddSTNLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(STNLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, STNLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -226,8 +220,7 @@ func (nt *Network) AddSTNLayer2D(name string, nNeurY, nNeurX int) *Layer {
 // AddGPLayer4D adds a GPLayer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
 func (nt *Network) AddGPeLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -235,8 +228,7 @@ func (nt *Network) AddGPeLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 // AddGPiLayer4D adds a GPiLayer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
 func (nt *Network) AddGPiLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -244,23 +236,20 @@ func (nt *Network) AddGPiLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 // AddSTNLayer4D adds a subthalamic nucleus Layer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
 func (nt *Network) AddSTNLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(STNLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, STNLayer)
 	ly.SetClass("BG")
 	return ly
 }
 
 // AddPTMaintLayer2D adds a PTMaintLayer of given size, with given name.
 func (nt *Network) AddPTMaintLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(PTMaintLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PTMaintLayer)
 	return ly
 }
 
 // AddPTMaintLayer4D adds a PTMaintLayer of given size, with given name.
 func (nt *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(PTMaintLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PTMaintLayer)
 	return ly
 }
 

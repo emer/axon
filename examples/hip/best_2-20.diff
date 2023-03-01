@@ -226,7 +226,7 @@ index 0e622a4..acac8c5 100644
 +	ca3FmDg.WtScale.Rel = 0 // turn off DG input to CA3 in first quarter
  
  	if train {
- 		ecout.SetType(emer.Target) // clamp a plus phase during testing
+ 		ecout.SetType(axon.TargetLayer) // clamp a plus phase during testing
 @@ -467,11 +505,6 @@ func (ss *Sim) AlphaCyc(train bool) {
  	}
  	ecout.UpdateExtFlags() // call this after updating type

@@ -84,6 +84,8 @@ func (ly *Layer) Defaults() {
 
 	case BLALayer:
 		ly.Params.BLADefaults()
+	case VSPatchLayer:
+		ly.VSPatchDefaults()
 
 	case MatrixLayer:
 		ly.MatrixDefaults()

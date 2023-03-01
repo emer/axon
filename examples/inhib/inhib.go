@@ -161,12 +161,12 @@ func InhByNm(net *axon.Network, n int) *axon.Layer {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Inhib")
-	inlay := net.AddLayer2D(LayNm(0), ss.HidSize.Y, ss.HidSize.X, emer.Input)
+	inlay := net.AddLayer2D(LayNm(0), ss.HidSize.Y, ss.HidSize.X, axon.InputLayer)
 	_ = inlay
 
 	for hi := 1; hi <= ss.NLayers; hi++ {
-		net.AddLayer2D(LayNm(hi), ss.HidSize.Y, ss.HidSize.X, emer.Hidden)
-		net.AddLayer2D(InhNm(hi), ss.HidSize.Y, 2, emer.Hidden).SetClass("InhibLay")
+		net.AddLayer2D(LayNm(hi), ss.HidSize.Y, ss.HidSize.X, axon.SuperLayer)
+		net.AddLayer2D(InhNm(hi), ss.HidSize.Y, 2, axon.SuperLayer).SetClass("InhibLay")
 	}
 
 	full := prjn.NewFull()

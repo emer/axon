@@ -58,12 +58,18 @@ const (
 	TDPredPrjn
 
 	// BLAPrjn implements the PVLV BLA learning rule:
-	// dW = Ach * X_t-1 * (Y_t - Y_t-1)
+	// dW = ACh * X_t-1 * (Y_t - Y_t-1)
 	// The recv delta is across trials, where the US should activate on trial
 	// boundary, to enable sufficient time for gating through to OFC, so
 	// BLA initially learns based on US present - US absent.
 	// It can also learn based on CS onset if there is a prior CS that predicts that.
 	BLAPrjn
+
+	// VSPatchPrjn implements the VSPatch learning rule:
+	// dW = ACh * DA * X * Y
+	// where DA is D1 vs. D2 modulated DA level, X = sending activity factor,
+	// Y = receiving activity factor, and ACh provides overall modulation.
+	VSPatchPrjn
 
 	// MatrixPrjn supports trace-based learning, where an initial
 	// trace of synaptic co-activity is formed, and then modulated

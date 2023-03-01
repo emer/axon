@@ -195,10 +195,10 @@ func (ss *Sim) ConfigEnv() error {
 
 func (ss *Sim) ConfigNet(net *axon.Network) error {
 	net.InitName(net, "Objrec")
-	v1 := net.AddLayer4D("V1", 10, 10, 5, 4, emer.Input)
-	v4 := net.AddLayer4D("V4", 5, 5, 10, 10, emer.Hidden) // 10x10 == 16x16 > 7x7 (orig)
-	it := net.AddLayer2D("IT", 16, 16, emer.Hidden)       // 16x16 == 20x20 > 10x10 (orig)
-	out := net.AddLayer4D("Output", 4, 5, ss.NOutPer, 1, emer.Target)
+	v1 := net.AddLayer4D("V1", 10, 10, 5, 4, axon.InputLayer)
+	v4 := net.AddLayer4D("V4", 5, 5, 10, 10, axon.SuperLayer) // 10x10 == 16x16 > 7x7 (orig)
+	it := net.AddLayer2D("IT", 16, 16, axon.SuperLayer)       // 16x16 == 20x20 > 10x10 (orig)
+	out := net.AddLayer4D("Output", 4, 5, ss.NOutPer, 1, axon.TargetLayer)
 
 	v1.SetRepIdxsShape(emer.CenterPoolIdxs(v1, 2), emer.CenterPoolShape(v1, 2))
 	v4.SetRepIdxsShape(emer.CenterPoolIdxs(v4, 2), emer.CenterPoolShape(v4, 2))

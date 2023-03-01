@@ -48,44 +48,17 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
-			{Sel: ".PulvinarLayer", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
-					"Layer.Pulv.DriveScale":         "0.1",  // 0.1 now default
-					"Layer.Act.Decay.Act":           "0.0",  // clear
-					"Layer.Act.Decay.Glong":         "0.0",  //
-					"Layer.Act.Decay.AHP":           "0.0",  //
-					"Layer.Act.NMDA.Gbar":           "0.1",  // .1 music
-					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLRate.SigmoidMin": "1",
-				}},
 			{Sel: "#Drives", Desc: "expect act",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / ndrives
 				}},
-			{Sel: ".US", Desc: "expect act",
+			{Sel: "#PosPV", Desc: "expect act",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.25", // 1 / ndrives
 				}},
-			{Sel: "#CS", Desc: "expect act",
+			{Sel: "#StimIn", Desc: "expect act",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / css
-				}},
-			{Sel: ".Dist", Desc: "expect act",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / maxdist -- low to jack up Ge
-				}},
-			{Sel: "#DistP", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6",
-				}},
-			{Sel: ".Time", Desc: "expect act",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / maxtime -- low to jack up Ge
-				}},
-			{Sel: "#TimeP", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8",
 				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
@@ -112,48 +85,6 @@ var ParamSets = params.Sets{
 			{Sel: "#OFCMD", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "0.6",
-				}},
-			{Sel: ".ACC", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.On": "true",
-					"Layer.Inhib.Layer.Gi": "0.9",
-					"Layer.Inhib.Pool.On":  "false",
-					"Layer.Act.Dend.SSGi":  "0",
-				}},
-			{Sel: "#ACCCT", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.4",
-				}},
-			{Sel: "#ACCPT", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "2.5",
-				}},
-			{Sel: "#ACCMD", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6", // 0.6 > 0.5 -- 0.8 too high
-				}},
-			{Sel: ".ALM", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",
-				}},
-			{Sel: "#ALMCT", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "2.4",
-				}},
-			{Sel: "#M1", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.9",
-					// "Layer.Act.Decay.Act":   "1.0",
-					// "Layer.Act.Decay.Glong": "1.0",
-				}},
-			{Sel: "#M1P", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.5",
-				}},
-			{Sel: "#VL", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":  "0.8",  // was 0.8
-					"Layer.Pulv.DriveScale": "0.12", // 0.12 > 0.1
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
@@ -296,60 +227,6 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Trace.Tau":     "4",    // 2 > 1
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
-			/*
-				{Sel: "#OFCToALM", Desc: "",
-					Params: params.Params{
-						"Prjn.PrjnScale.Rel": "0.2",
-					}},
-				{Sel: "#ACCToALM", Desc: "",
-					Params: params.Params{
-						"Prjn.PrjnScale.Rel": "0.2",
-					}},
-				{Sel: "#ALMToALMd", Desc: "selects action based on alm -- nominally weaker?",
-					Params: params.Params{
-						"Prjn.PrjnScale.Rel": "1",
-					}},
-			*/
-			// {Sel: "#ACCToACCPT", Desc: "",
-			// 	Params: params.Params{
-			// 		"Prjn.PrjnScale.Abs": "1.5",
-			// 	}},
-			{Sel: "#ACCPTToACCMD", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
-				}},
-			{Sel: "#DistToACC", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.0",
-				}},
-			{Sel: "#TimeToACC", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.0",
-				}},
-			{Sel: "#USPToOFCCT", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.01",
-				}},
-			{Sel: ".ToM1", Desc: "",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
-				}},
-			{Sel: ".ToVL", Desc: "",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
-				}},
-			{Sel: "#DistToM1", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
-				}},
-			{Sel: "#TimeToM1", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
-				}},
-			{Sel: "#VLToM1", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.0", // not 2.0..
-				}},
 			//////////////////////////////////////////////
 			// To BLA
 			{Sel: ".BLAPrjn", Desc: "",
@@ -364,11 +241,11 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base": "0.001",
 					"Prjn.PrjnScale.Rel":    "0.5",
 				}},
-			{Sel: "#USToBLAPosAcqD1", Desc: "",
+			{Sel: "#PosPVToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "5.0",
 				}},
-			{Sel: "#CSToBLAPosAcqD1", Desc: "",
+			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.5",
 				}},
@@ -435,7 +312,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Learn.Learn":   "false",
 				}},
-			{Sel: "#USToVpMtxGo", Desc: "",
+			{Sel: "#PosPVToVpMtxGo", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "5",
 					"Prjn.PrjnScale.Rel": ".2",
@@ -477,14 +354,6 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.0",
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.SWt.Init.Sym":  "false",
-				}},
-		}},
-	},
-	{Name: "NoTrainMtx", Desc: "turn off training in Mtx", Sheets: params.Sheets{
-		"Network": &params.Sheet{
-			{Sel: ".MatrixPrjn", Desc: "learning in mtx",
-				Params: params.Params{
-					"Prjn.Learn.Learn": "false",
 				}},
 		}},
 	},

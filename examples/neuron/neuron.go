@@ -16,7 +16,6 @@ import (
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/netview"
@@ -158,7 +157,7 @@ func (ss *Sim) Config() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Neuron")
-	net.AddLayer2D("Neuron", 1, 1, emer.Hidden)
+	net.AddLayer2D("Neuron", 1, 1, axon.SuperLayer)
 
 	err := net.Build()
 	if err != nil {
