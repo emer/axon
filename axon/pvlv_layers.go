@@ -66,14 +66,15 @@ func (ly *Layer) PVLVPostBuild() {
 func (ly *Layer) VSPatchDefaults() {
 	// ly.Params.Act.Decay.Act = 0
 	// ly.Params.Act.Decay.Glong = 0
-	// ly.Params.Inhib.Pool.On.SetBool(false)
-	// ly.Params.Inhib.Layer.On.SetBool(true)
-	// ly.Params.Inhib.Layer.Gi = 0.5
-	// ly.Params.Inhib.Layer.FB = 0
-	// ly.Params.Inhib.Pool.FB = 0
-	// ly.Params.Inhib.Pool.Gi = 0.5
+	ly.Params.Inhib.Pool.On.SetBool(true)
+	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Layer.FB = 0
+	ly.Params.Inhib.Pool.FB = 0
+	ly.Params.Inhib.Pool.Gi = 0.5
 	ly.Params.Inhib.ActAvg.Nominal = 0.25
 	ly.Params.Learn.RLRate.Diff.SetBool(false)
+	ly.Params.Learn.RLRate.SigmoidMin = 1
 
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Params.Learn.NeuroMod.DALRateMod = 1

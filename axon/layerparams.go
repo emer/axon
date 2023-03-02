@@ -400,6 +400,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case VTALayer:
 		ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
+		ctx.NeuroMod.DA = ctx.DrivePVLV.VTA.Vals.DA
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:

@@ -756,10 +756,10 @@ func (ss *Sim) TrialStats() {
 
 	// ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 
-	ss.Stats.SetFloat("DA", float64(ss.Context.NeuroMod.DA))
-	ss.Stats.SetFloat("ACh", float64(ss.Context.NeuroMod.ACh))
-	ss.Stats.SetFloat("AChRaw", float64(ss.Context.NeuroMod.AChRaw))
-	ss.Stats.SetFloat("RewPred", float64(ss.Context.NeuroMod.RewPred))
+	ss.Stats.SetFloat32("DA", ss.Context.NeuroMod.DA)
+	ss.Stats.SetFloat32("ACh", ss.Context.NeuroMod.ACh)
+	ss.Stats.SetFloat32("AChRaw", ss.Context.NeuroMod.AChRaw)
+	ss.Stats.SetFloat32("RewPred", ss.Context.NeuroMod.RewPred)
 
 	var allGood float64
 	agN := 0

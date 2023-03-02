@@ -16,8 +16,13 @@ import (
 // along with embedded beta phases which just record St1 and St2 activity in this case.
 // plusStart is start of plus phase, typically 150,
 // and plusEnd is end of plus phase, typically 199
-// resets the state at start of trial
-func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart, plusEnd int) {
+// resets the state at start of trial.
+// Can pass a trial-level time scale to use instead of the default etime.Trial
+func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart, plusEnd int, trial ...etime.Times) {
+	trl := etime.Trial
+	if len(trial) > 0 {
+		trl = trial[0]
+	}
 	minusPhase := looper.NewEvent("MinusPhase:Start", 0, func() {
 		ctx.PlusPhase.SetBool(false)
 		ctx.NewPhase(false)
@@ -40,7 +45,7 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[etime.Trial].OnStart.Add("ResetState", func() {
+		stack.Loops[trl].OnStart.Add("ResetState", func() {
 			net.NewState(ctx)
 			ctx.NewState(mode)
 		})
@@ -49,8 +54,12 @@ func LooperStdPhases(man *looper.Manager, ctx *Context, net *Network, plusStart,
 
 // LooperSimCycleAndLearn adds Cycle and DWt, WtFmDWt functions to looper
 // for given network, ctx, and netview update manager
-func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, viewupdt *netview.ViewUpdt) {
-
+// Can pass a trial-level time scale to use instead of the default etime.Trial
+func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, viewupdt *netview.ViewUpdt, trial ...etime.Times) {
+	trl := etime.Trial
+	if len(trial) > 0 {
+		trl = trial[0]
+	}
 	for m, _ := range man.Stacks {
 		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle", func() {
 			if man.ModeStack().StepLevel == etime.Cycle {
@@ -66,7 +75,7 @@ func LooperSimCycleAndLearn(man *looper.Manager, net *Network, ctx *Context, vie
 			ctx.CycleInc()
 		})
 	}
-	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("UpdateWeights", func() {
+	man.GetLoop(etime.Train, trl).OnEnd.Add("UpdateWeights", func() {
 		net.DWt(ctx)
 		if viewupdt.IsViewingSynapse() {
 			net.GPU.SyncSynapsesFmGPU()

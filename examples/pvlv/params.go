@@ -123,6 +123,10 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":        "0.5",
 					"Layer.Inhib.Pool.FFPrv":     "10",
 				}},
+			{Sel: "#USTimeIn", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.01",
+				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.15",

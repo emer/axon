@@ -5,6 +5,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -23,7 +24,10 @@ import (
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/envs/cond"
+	"github.com/emer/etable/agg"
+	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
+	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/ki/kit"
@@ -65,6 +69,7 @@ func guirun() {
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
 	RunName  string           `view:"environment run name"`
+	UseOFC   bool             `view:"use OFC instead of USTimeIn"`
 	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params   emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
@@ -239,11 +244,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToRWPrjn(ofc, rwPred, full)
 	// net.ConnectToRWPrjn(ofcct, rwPred, full)
 
-	net.ConnectToVSPatch(ofc, vsPatchPosD1, full)
-	net.ConnectToVSPatch(ofc, vsPatchPosD2, full)
-
-	net.ConnectToVSPatch(ofc, vsPatchNegD1, full)
-	net.ConnectToVSPatch(ofc, vsPatchNegD2, full)
+	if ss.UseOFC {
+		net.ConnectToVSPatch(ofc, vsPatchPosD1, pone2one)
+		net.ConnectToVSPatch(ofc, vsPatchPosD2, pone2one)
+		net.ConnectToVSPatch(ofc, vsPatchNegD1, pone2one)
+		net.ConnectToVSPatch(ofc, vsPatchNegD2, pone2one)
+	}
+	net.ConnectToVSPatch(ustimeIn, vsPatchPosD1, full)
+	net.ConnectToVSPatch(ustimeIn, vsPatchPosD2, full)
+	net.ConnectToVSPatch(ustimeIn, vsPatchNegD1, full)
+	net.ConnectToVSPatch(ustimeIn, vsPatchNegD2, full)
 
 	////////////////////////////////////////////////
 	// position
@@ -310,7 +320,7 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Condition, 1).AddTime(etime.Block, 50).AddTime(etime.Trial, 8).AddTime(etime.Tick, 5).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Condition, 1).AddTime(etime.Block, 50).AddTime(etime.Sequence, 8).AddTime(etime.Trial, 5).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
@@ -318,15 +328,15 @@ func (ss *Sim) ConfigLoops() {
 	for m, _ := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
-		stack.Loops[etime.Tick].OnStart.Add("Env:Step", func() {
+		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
 			// note: OnStart for env.Env, others may happen OnEnd
 			ss.Envs[mode.String()].Step()
 		})
-		stack.Loops[etime.Tick].OnStart.Add("ApplyInputs", func() {
+		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
 			ss.ApplyInputs()
 		})
-		stack.Loops[etime.Tick].OnEnd.Add("StatCounters", ss.StatCounters)
-		stack.Loops[etime.Tick].OnEnd.Add("TrialStats", ss.TickStats)
+		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
+		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
@@ -335,7 +345,10 @@ func (ss *Sim) ConfigLoops() {
 	// Logging
 
 	man.AddOnEndToAll("Log", ss.Log)
-	axon.LooperResetLogBelow(man, &ss.Logs)
+	axon.LooperResetLogBelow(man, &ss.Logs, etime.Sequence)
+	man.GetLoop(etime.Train, etime.Block).OnStart.Add("ResetLogTrial", func() {
+		ss.Logs.ResetLog(etime.Train, etime.Trial)
+	})
 
 	// Save weights to file, to look at later
 	// man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
@@ -364,8 +377,8 @@ func (ss *Sim) UpdateLoopMax() {
 	trn := ss.Loops.Stacks[etime.Train]
 	trn.Loops[etime.Condition].Counter.Max = ev.Condition.Max
 	trn.Loops[etime.Block].Counter.Max = ev.Block.Max
-	trn.Loops[etime.Trial].Counter.Max = ev.Trial.Max
-	trn.Loops[etime.Tick].Counter.Max = ev.Tick.Max
+	trn.Loops[etime.Sequence].Counter.Max = ev.Trial.Max
+	trn.Loops[etime.Trial].Counter.Max = ev.Tick.Max
 }
 
 // ApplyInputs applies input patterns from given environment.
@@ -439,12 +452,24 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
 	ev := ss.Envs[ss.Context.Mode.String()].(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Trial", "Tick", "TrialName", "Cycle"})
+	ss.Stats.SetString("TrialType", ev.TrialType)
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Trial", "Trial", "TrialType", "TrialName", "Cycle"})
 }
 
-// TickStats computes the tick-level statistics.
+// TrialStats computes the tick-level statistics.
 // Aggregation is done directly from log data.
-func (ss *Sim) TickStats() {
+func (ss *Sim) TrialStats() {
+	ctx := &ss.Context
+	dr := &ctx.DrivePVLV
+	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
+	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
+	ss.Stats.SetFloat32("VSPatchPos", dr.VSPatchVals.Pos)
+	ss.Stats.SetFloat32("VSPatchNeg", dr.VSPatchVals.Neg)
+	ss.Stats.SetFloat32("LHbDip", dr.VTA.Vals.LHbDip)
+	ss.Stats.SetFloat32("LHbBurst", dr.VTA.Vals.LHbBurst)
+	ss.Stats.SetFloat32("PVpos", dr.VTA.Vals.PVpos)
+	ss.Stats.SetFloat32("PVneg", dr.VTA.Vals.PVneg)
+	ss.Stats.SetFloat32("PPTg", dr.VTA.Vals.PPTg)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -453,24 +478,51 @@ func (ss *Sim) TickStats() {
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
-	ss.Logs.AddCounterItems(etime.Run, etime.Condition, etime.Block, etime.Trial, etime.Tick, etime.Cycle)
+	ss.Logs.AddCounterItems(etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.Train, etime.AllTimes, "RunName")
-	ss.Logs.AddStatStringItem(etime.Train, etime.Tick, "TrialName")
+	ss.Logs.AddStatStringItem(etime.Train, etime.Trial, "TrialName")
+	ss.Logs.AddStatStringItem(etime.Train, etime.Trial, "TrialType")
 
 	// ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
+	ss.ConfigLogItems()
+
 	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Block, etime.Tick)
+	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Block, etime.Trial)
 	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
 
-	// ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
+	ss.Logs.PlotItems("DA", "VSPatchPos", "LHbDip")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
+	ss.Logs.NoPlot(etime.Train, etime.Epoch)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
+
+	ss.Logs.SetMeta(etime.Train, etime.Trial, "LegendCol", "Sequence")
+}
+
+func (ss *Sim) ConfigLogItems() {
+	li := ss.Logs.AddStatAggItem("DA", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li.FixMin = false
+	li.FixMax = true
+	li = ss.Logs.AddStatAggItem("ACh", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li.FixMin = false
+	li.FixMax = true
+	li = ss.Logs.AddStatAggItem("VSPatchPos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li.FixMin = false
+	li.FixMax = true
+	li = ss.Logs.AddStatAggItem("VSPatchNeg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li.FixMin = false
+	li.FixMax = true
+	li = ss.Logs.AddStatAggItem("LHbDip", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li.FixMax = true
+	li = ss.Logs.AddStatAggItem("LHbBurst", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("PVpos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("PVneg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("PPTg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 }
 
 // Log is the main logging function, handles special things for different scopes
@@ -488,11 +540,36 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	switch {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
-	case time == etime.Tick:
-		row = ss.Stats.Int("Tick")
+	// case time == etime.Trial:
+	// 	row = ss.Stats.Int("Trial")
+	case time == etime.Block:
+		ss.BlockStats()
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
+}
+
+func (ss *Sim) BlockStats() {
+	stnm := "BlockByType"
+	plt := ss.GUI.Plots[etime.ScopeKey(stnm)]
+
+	ix := ss.Logs.IdxView(etime.Train, etime.Trial)
+	spl := split.GroupBy(ix, []string{"TrialType", "Trial"})
+	for _, ts := range ix.Table.ColNames {
+		if ts == "TrialType" || ts == "TrialName" || ts == "Trial" {
+			continue
+		}
+		split.Agg(spl, ts, agg.AggMean)
+	}
+	dt := spl.AggsToTable(etable.ColNameOnly)
+	for ri := 0; ri < dt.Rows; ri++ {
+		tt := dt.CellString("TrialType", ri)
+		trl := int(dt.CellFloat("Trial", ri))
+		dt.SetCellString("TrialType", ri, fmt.Sprintf("%s_%d", tt, trl))
+	}
+	ss.Logs.MiscTables[stnm] = dt
+	plt.SetTable(dt)
+	plt.Update()
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -515,6 +592,15 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.AddPlots(title, &ss.Logs)
+
+	stnm := "BlockByType"
+	dt := ss.Logs.MiscTable(stnm)
+	plt := ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, stnm+" Plot").(*eplot.Plot2D)
+	ss.GUI.Plots[etime.ScopeKey(stnm)] = plt
+	plt.Params.Title = stnm
+	plt.Params.XAxisCol = "TrialType"
+
+	plt.SetTable(dt)
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",

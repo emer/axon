@@ -394,7 +394,7 @@ type DrivePVLV struct {
 	Effort      Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
 	VTA         VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
 	LHb         LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
-	VSPatchVals VSVals    `inactive:"+" view:"inline" desc:"VSPatch values"`
+	VSPatchVals VSVals    `desc:"VSPatch values"`
 	PosUSs      DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli)"`
 	NegUSs      DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli) -- does not have corresponding drive but uses DriveVals"`
 }
