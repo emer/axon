@@ -134,7 +134,7 @@ func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *La
 		drvGe, nonDrvPct = ly.PulvinarDriver(ni)
 	}
 
-	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct)
+	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, pl, vals, drvGe, nonDrvPct)
 
 	ly.Params.GFmRawSyn(ctx, ni, nrn)
 	ly.Params.GiInteg(ctx, ni, nrn, pl, vals)

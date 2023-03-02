@@ -32,21 +32,20 @@ func _() {
 	_ = x[CeMLayer-16]
 	_ = x[PPTgLayer-17]
 	_ = x[VSPatchLayer-18]
-	_ = x[PosPVLayer-19]
-	_ = x[NegPVLayer-20]
-	_ = x[VTALayer-21]
-	_ = x[LHbLayer-22]
-	_ = x[DrivesLayer-23]
-	_ = x[MatrixLayer-24]
-	_ = x[STNLayer-25]
-	_ = x[GPLayer-26]
-	_ = x[VThalLayer-27]
-	_ = x[LayerTypesN-28]
+	_ = x[PVLayer-19]
+	_ = x[VTALayer-20]
+	_ = x[LHbLayer-21]
+	_ = x[DrivesLayer-22]
+	_ = x[MatrixLayer-23]
+	_ = x[STNLayer-24]
+	_ = x[GPLayer-25]
+	_ = x[VThalLayer-26]
+	_ = x[LayerTypesN-27]
 }
 
-const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerPTMaintLayerRewLayerRSalienceAChLayerRWPredLayerRWDaLayerTDPredLayerTDIntegLayerTDDaLayerBLALayerCeMLayerPPTgLayerVSPatchLayerPosPVLayerNegPVLayerVTALayerLHbLayerDrivesLayerMatrixLayerSTNLayerGPLayerVThalLayerLayerTypesN"
+const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerPTMaintLayerRewLayerRSalienceAChLayerRWPredLayerRWDaLayerTDPredLayerTDIntegLayerTDDaLayerBLALayerCeMLayerPPTgLayerVSPatchLayerPVLayerVTALayerLHbLayerDrivesLayerMatrixLayerSTNLayerGPLayerVThalLayerLayerTypesN"
 
-var _LayerTypes_index = [...]uint16{0, 10, 20, 31, 43, 50, 63, 71, 83, 91, 108, 119, 128, 139, 151, 160, 168, 176, 185, 197, 207, 217, 225, 233, 244, 255, 263, 270, 280, 291}
+var _LayerTypes_index = [...]uint16{0, 10, 20, 31, 43, 50, 63, 71, 83, 91, 108, 119, 128, 139, 151, 160, 168, 176, 185, 197, 204, 212, 220, 231, 242, 250, 257, 267, 278}
 
 func (i LayerTypes) String() string {
 	if i < 0 || i >= LayerTypes(len(_LayerTypes_index)-1) {

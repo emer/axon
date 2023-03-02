@@ -153,7 +153,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["StimIn"]
 	ctxt := ev.CurStates["ContextIn"]
 	time := ev.CurStates["USTimeIn"]
-	pv := ev.CurStates["PosPV"]
+	// pv := ev.CurStates["PosPV"]
 
 	vta, lhb := net.AddVTALHbLayers(relpos.Behind, space)
 	drives := net.AddDrivesLayer(&ss.Context, ny)
@@ -163,9 +163,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vsPatchPosD1, vsPatchPosD2 := net.AddVSPatchLayers("", true, nUSs, 2, 2, relpos.Behind, space)
 	vsPatchNegD1, vsPatchNegD2 := net.AddVSPatchLayers("", false, nUSs, 2, 2, relpos.Behind, space)
+	pospv, negpv := net.AddPVLayers(nUSs, nUSs, ny, relpos.Behind, space)
 
-	pospv := net.AddLayer4D("PosPV", pv.Dim(0), pv.Dim(1), pv.Dim(2), pv.Dim(3), axon.InputLayer)
-	negpv := net.AddLayer4D("NegPV", pv.Dim(0), pv.Dim(1), pv.Dim(2), pv.Dim(3), axon.InputLayer)
 	cs := net.AddLayer4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), axon.InputLayer)
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
 	ustimeIn := net.AddLayer4D("USTimeIn", time.Dim(0), time.Dim(1), time.Dim(2), time.Dim(3), axon.InputLayer)
@@ -387,9 +386,26 @@ func (ss *Sim) ApplyInputs() {
 			ly.ApplyExt(pats)
 		}
 	}
-	ss.Context.DrivePVLV.Drive.Drives.Zero()
-	ss.Context.DrivePVLV.Drive.Drives.Set(0) // need to get this somehow!
-	net.ApplyExts(&ss.Context)               // now required for GPU mode
+	ss.ApplyPVLV(&ss.Context, &ev.CurTrial)
+	net.ApplyExts(&ss.Context) // now required for GPU mode
+}
+
+// ApplyPVLV applies current PVLV values to Context.DrivePVLV,
+// from given trial data.
+func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
+	dr := &ctx.DrivePVLV
+	dr.InitUS()
+	ctx.NeuroMod.HasRew.SetBool(false)
+	if trl.USOn {
+		if trl.Valence == cond.Pos {
+			dr.SetPosUS(int32(trl.US), trl.USMag)
+		} else {
+			dr.SetNegUS(int32(trl.US), trl.USMag)
+		}
+		ctx.NeuroMod.HasRew.SetBool(true)
+	}
+	dr.InitDrives()
+	dr.SetDrive(0, 1) // todo: need to get drive somehow -- add to env?
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter

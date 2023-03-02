@@ -354,8 +354,9 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 // SpecialPreGs is used for special layer types to do things to the
 // conductance values prior to doing the standard updates in GFmRawSyn
 // drvAct is for Pulvinar layers, activation of driving neuron
-func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe float32, nonDrvPct float32) float32 {
-	var saveVal float32 // sometimes we need to use a value computed here, for the post Gs step
+func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, drvGe float32, nonDrvPct float32) float32 {
+	saveVal := float32(0)        // sometimes we need to use a value computed here, for the post Gs step
+	pi := int32(nrn.SubPool) - 1 // 0-n pool index
 	switch ly.LayType {
 	case CTLayer:
 		geCtxt := ly.CT.GeGain * nrn.CtxtGe
@@ -388,17 +389,17 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
 
-	case PosPVLayer:
-		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
-		us := ctx.DrivePVLV.PosUSs.Get(ui)
-		nrn.GeRaw = us
-		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
-	case NegPVLayer:
-		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
-		us := ctx.DrivePVLV.NegUSs.Get(ui)
+	case PVLayer:
+		us := float32(0)
+		if ly.Learn.NeuroMod.Valence == Positive {
+			us = ctx.DrivePVLV.PosUSs.Get(pi)
+		} else {
+			us = ctx.DrivePVLV.NegUSs.Get(pi)
+		}
 		nrn.GeRaw = us
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case VTALayer:
+		ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:
@@ -409,8 +410,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, drvGe 
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
-		di := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
-		dr := ctx.DrivePVLV.Drive.Drives.Get(di)
+		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
 		nrn.GeRaw = dr
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	}
@@ -499,6 +499,7 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 // It also updates the CaSpkPCyc stats.
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.Burst = nrn.CaSpkP
+	pi := int32(nrn.SubPool) - 1 // 0-n pool index
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
@@ -537,24 +538,24 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.Act = ctx.NeuroMod.RewPred
 	case TDDaLayer:
 		nrn.Act = ctx.NeuroMod.DA // I presumably set this last time..
-	// case PPTgLayer:
-	// 	nrn.Act = nrn.CaSpkP - nrn.SpkPrv
-	// 	if nrn.Act < 0 {
-	// 		nrn.Act = 0
-	// 	}
 	case MatrixLayer:
 		if ly.Learn.NeuroMod.DAMod == D2Mod && !(ly.Learn.NeuroMod.AChDisInhib > 0 && vals.NeuroMod.ACh < 0.2) && ctx.Cycle >= ly.Act.Dt.MaxCycStart {
 			if nrn.Ge > nrn.SpkMax {
 				nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
 			}
 		}
-	case PosPVLayer:
-		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
-		us := ctx.DrivePVLV.PosUSs.Get(ui)
-		nrn.Act = us
-	case NegPVLayer:
-		ui := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
-		us := ctx.DrivePVLV.NegUSs.Get(ui)
+
+	case PPTgLayer:
+		if ni == 0 {
+			ctx.NeuroMod.PPTg = lpl.AvgMax.Act.Cycle.Max // todo: use CaSpkP instead of Act?
+		}
+	case PVLayer:
+		us := float32(0)
+		if ly.Learn.NeuroMod.Valence == Positive {
+			us = ctx.DrivePVLV.PosUSs.Get(pi)
+		} else {
+			us = ctx.DrivePVLV.NegUSs.Get(pi)
+		}
 		nrn.Act = us
 	case VTALayer:
 		nrn.Act = ctx.DrivePVLV.VTA.Vals.DA
@@ -566,9 +567,10 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
-		di := int32(ni) / (ly.Idxs.ShpUnY * ly.Idxs.ShpUnX)
-		dr := ctx.DrivePVLV.Drive.Drives.Get(di)
+		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
 		nrn.Act = dr
+	case VSPatchLayer:
+		ctx.DrivePVLV.VSPatchVals.SetVal(pl.AvgMax.CaSpkP.Cycle.Avg, pi, ly.Learn.NeuroMod.Valence, ly.Learn.NeuroMod.DAMod)
 	}
 }
 

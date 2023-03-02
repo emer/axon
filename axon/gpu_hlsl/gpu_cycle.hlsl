@@ -46,7 +46,7 @@ void GInteg(in Context ctx, in LayerParams ly, uint ni, uint nin, inout Neuron n
 		PulvinarDriver(ly, Layers[ly.Pulv.DriveLayIdx], Pools[Layers[ly.Pulv.DriveLayIdx].Idxs.PoolSt], ni, nin, drvGe, nonDrvPct);
 	}
 
-	float saveVal = ly.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct);
+	float saveVal = ly.SpecialPreGs(ctx, ni, nrn, pl, vals, drvGe, nonDrvPct);
 	
 	ly.GFmRawSyn(ctx, ni, nrn);
 	ly.GiInteg(ctx, ni, nrn, pl, vals);

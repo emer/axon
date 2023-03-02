@@ -205,25 +205,47 @@ func (ef *Effort) DiscFmEffort() float32 {
 ///////////////////////////////////////////////////////////////////////////////
 //  VSPatch collects VSPatch values
 
-// VSIdxs are indexes into the various VSPatch or VSMatrix layers
-type VSPatchIdxs struct {
-	PosD1 int32 `desc:"VS D1 positive valence pathway -- patch opposes positive US (PV) outcomes"`
-	PosD2 int32 `desc:"VS D2 positive valence pathway -- opposes D1"`
-	NegD2 int32 `desc:"VS D2 negative valence pathway -- patch opposes negative US (PV) outcomes"`
-	NegD1 int32 `desc:"VS D1 negative valence pathway -- opposes D2"`
-}
-
-// VSVals are VSPatch or VSMatrix values
+// VSVals are VSPatch / VSMatrix values
 type VSVals struct {
 	Pos float32 `desc:"VS D1 - D2 positive valence pathway -- patch opposes positive US (PV) outcomes"`
 	Neg float32 `desc:"VS D2 - D1 negative valence pathway -- patch opposes negative US (PV) outcomes"`
 
 	pad, pad1 float32
+
+	PosD1 DriveVals `inactive:"+" view:"inline" desc:"VSPatchPosD1 pool activations, recorded by layers"`
+	PosD2 DriveVals `inactive:"+" view:"inline" desc:"VSPatchPosD2 pool activations, recorded by layers"`
+	NegD2 DriveVals `inactive:"+" view:"inline" desc:"VSPatchNegD2 pool activations, recorded by layers"`
+	NegD1 DriveVals `inactive:"+" view:"inline" desc:"VSPatchNegD1 pool activations, recorded by layers"`
 }
 
 func (vs *VSVals) Zero() {
 	vs.Pos = 0
 	vs.Neg = 0
+}
+
+// SetVal sets a Pos/Neg D1/D2 value for given value index based on pool index
+func (vs *VSVals) SetVal(val float32, poolIdx int32, valence ValenceTypes, dar DAModTypes) {
+	if valence == Positive && dar == D1Mod {
+		vs.PosD1.Set(poolIdx, val)
+	} else if valence == Positive && dar == D2Mod {
+		vs.PosD2.Set(poolIdx, val)
+	} else if valence == Negative && dar == D2Mod {
+		vs.NegD2.Set(poolIdx, val)
+	} else if valence == Negative && dar == D1Mod {
+		vs.NegD1.Set(poolIdx, val)
+	}
+}
+
+// PosNegFmVals computes positive and negative summary values from detailed values
+func (vs *VSVals) PosNegFmVals() {
+	pos := float32(0)
+	neg := float32(0)
+	for i := int32(0); i < 8; i++ {
+		pos += vs.PosD1.Get(i) - vs.PosD2.Get(i)
+		neg += vs.NegD2.Get(i) - vs.NegD1.Get(i)
+	}
+	vs.Pos = pos
+	vs.Neg = neg
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -368,14 +390,13 @@ func (vt *VTA) DAFmRaw() {
 // and learned value (PVLV), describing the functions of the Amygala,
 // Ventral Striatum, VTA and associated midbrain nuclei (PPTg, LHb, RMTg)
 type DrivePVLV struct {
-	Drive       Drives      `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
-	Effort      Effort      `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
-	VTA         VTA         `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
-	LHb         LHb         `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
-	VSPatchLays VSPatchIdxs `view:"inline" desc:"indexes to the VSPatch Pos / Neg D1 / D2 layers"`
-	VSPatchVals VSVals      `view:"inline" desc:"VSPatch values"`
-	PosUSs      DriveVals   `view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli)"`
-	NegUSs      DriveVals   `view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli) -- does not have corresponding drive but uses DriveVals"`
+	Drive       Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+	Effort      Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+	VTA         VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
+	LHb         LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+	VSPatchVals VSVals    `inactive:"+" view:"inline" desc:"VSPatch values"`
+	PosUSs      DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli)"`
+	NegUSs      DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli) -- does not have corresponding drive but uses DriveVals"`
 }
 
 func (dp *DrivePVLV) Defaults() {
@@ -404,6 +425,16 @@ func (dp *DrivePVLV) SetNegUS(usn int32, val float32) {
 	dp.NegUSs.Set(usn, val)
 }
 
+// InitDrives initializes all the Drives to zero
+func (dp *DrivePVLV) InitDrives() {
+	dp.Drive.Drives.Zero()
+}
+
+// SetDrive sets given Drive to given value
+func (dp *DrivePVLV) SetDrive(dr int32, val float32) {
+	dp.Drive.Drives.Set(dr, val)
+}
+
 // PosPV returns the reward for current positive US state relative to current drives
 func (dp *DrivePVLV) PosPV() float32 {
 	rew := float32(0)
@@ -430,6 +461,7 @@ func (dp *DrivePVLV) DA(pptg float32) float32 {
 	pvPosRaw := dp.PosPV()
 	pvNeg := dp.NegPV()
 	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
+	dp.VSPatchVals.PosNegFmVals()
 	dp.LHb.LHbFmPVVS(pvPos, pvNeg, dp.VSPatchVals.Pos, dp.VSPatchVals.Neg)
 	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.LHbDip, dp.LHb.LHbBurst, dp.VSPatchVals.Pos)
 	dp.VTA.DAFmRaw()
@@ -452,32 +484,3 @@ func (dp *DrivePVLV) DriveUpdt(resetUs bool) {
 }
 
 //gosl: end drivepvlv
-
-// GetVSPatchVals sets VSPatchVals using VSPatchLays indexes
-func (dp *DrivePVLV) GetVSPatchVals(net *Network) {
-	vsPosD1 := net.Layer(int(dp.VSPatchLays.PosD1)).(AxonLayer).AsAxon()
-	vsPosD2 := net.Layer(int(dp.VSPatchLays.PosD2)).(AxonLayer).AsAxon()
-	vsNegD2 := net.Layer(int(dp.VSPatchLays.NegD2)).(AxonLayer).AsAxon()
-	vsNegD1 := net.Layer(int(dp.VSPatchLays.NegD1)).(AxonLayer).AsAxon()
-
-	pos := float32(0)
-	np := len(vsPosD1.Pools)
-	for pi := 1; pi < np; pi++ {
-		plD1 := &vsPosD1.Pools[pi]
-		plD2 := &vsPosD2.Pools[pi]
-		d := plD1.AvgMax.CaSpkP.Cycle.Avg - plD2.AvgMax.CaSpkP.Cycle.Avg
-		pos += d
-	}
-
-	neg := float32(0)
-	np = len(vsNegD2.Pools)
-	for pi := 1; pi < np; pi++ {
-		plD1 := &vsNegD1.Pools[pi]
-		plD2 := &vsNegD2.Pools[pi]
-		d := plD2.AvgMax.CaSpkP.Cycle.Avg - plD1.AvgMax.CaSpkP.Cycle.Avg
-		neg += d
-	}
-
-	dp.VSPatchVals.Pos = pos
-	dp.VSPatchVals.Neg = neg
-}

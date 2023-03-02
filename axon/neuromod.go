@@ -10,6 +10,12 @@ import (
 	"github.com/goki/mat32"
 )
 
+//go:generate stringer -type=DAModTypes
+//go:generate stringer -type=ValenceTypes
+
+var KiT_DAModTypes = kit.Enums.AddEnum(DAModTypesN, kit.NotBitFlag, nil)
+var KiT_ValenceTypes = kit.Enums.AddEnum(ValenceTypesN, kit.NotBitFlag, nil)
+
 //gosl: start neuromod
 
 // NeuroModVals neuromodulatory values -- they are global to the layer and
@@ -91,19 +97,31 @@ const (
 	DAModTypesN
 )
 
+// ValenceTypes are types of valence coding: positive or negative.
+type ValenceTypes int32
+
+const (
+	// Positive valence codes for outcomes aligned with drives / goals.
+	Positive ValenceTypes = iota
+
+	// Negative valence codes for harmful or aversive outcomes.
+	Negative
+
+	ValenceTypesN
+)
+
 // NeuroModParams specifies the effects of neuromodulators on neural
 // activity and learning rate.  These can apply to any neuron type,
 // and are applied in the core cycle update equations.
 type NeuroModParams struct {
-	DAMod       DAModTypes `desc:"effects of dopamine modulation on excitatory and inhibitory conductances"`
-	DAModGain   float32    `viewif:"DAMod!=NoDAMod" desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
-	DALRateMod  float32    `min:"0" max:"1" viewif:"DALRateMod" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
-	AChLRateMod float32    `min:"0" max:"1" viewif:"AChLRateMod" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
-	AChDisInhib float32    `min:"0" def:"0,5" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
-	BurstGain   float32    `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
-	DipGain     float32    `min:"0" def:"1" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
-
-	pad float32
+	DAMod       DAModTypes   `desc:"dopamine receptor-based effects of dopamine modulation on excitatory and inhibitory conductances: D1 is excitatory, D2 is inhibitory as a function of increasing dopamine"`
+	Valence     ValenceTypes `desc:"valence coding of this layer -- may affect specific layer types but does not directly affect neuromodulators currently"`
+	DAModGain   float32      `viewif:"DAMod!=NoDAMod" desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
+	DALRateMod  float32      `min:"0" max:"1" viewif:"DALRateMod" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
+	AChLRateMod float32      `min:"0" max:"1" viewif:"AChLRateMod" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
+	AChDisInhib float32      `min:"0" def:"0,5" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
+	BurstGain   float32      `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`
+	DipGain     float32      `min:"0" def:"1" desc:"multiplicative gain factor applied to negative dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign! should be small for acq, but roughly equal to burst for ext"`
 }
 
 func (nm *NeuroModParams) Defaults() {
@@ -175,7 +193,3 @@ func (nm *NeuroModParams) GiFmACh(ach float32) float32 {
 }
 
 //gosl: end neuromod
-
-//go:generate stringer -type=DAModTypes
-
-var KiT_DAModTypes = kit.Enums.AddEnum(DAModTypesN, kit.NotBitFlag, nil)

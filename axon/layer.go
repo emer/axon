@@ -146,7 +146,11 @@ func (ly *Layer) PostBuild() {
 		ly.TDDaPostBuild()
 
 	case BLALayer:
-		ly.BLAPostBuild()
+		fallthrough
+	case PVLayer:
+		fallthrough
+	case VSPatchLayer:
+		ly.PVLVPostBuild()
 
 	case MatrixLayer:
 		ly.MatrixPostBuild()

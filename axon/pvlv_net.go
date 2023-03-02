@@ -22,15 +22,19 @@ func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, unY, unX int, rel 
 	if pos {
 		d1 := nt.AddLayer4D(prefix+"BLAPosAcqD1", 1, nUs, unY, unX, BLALayer)
 		d1.SetBuildConfig("DAMod", "D1Mod")
+		d1.SetBuildConfig("Valence", "Positive")
 		d2 := nt.AddLayer4D(prefix+"BLAPosExtD2", 1, nUs, unY, unX, BLALayer)
 		d2.SetBuildConfig("DAMod", "D2Mod")
+		d2.SetBuildConfig("Valence", "Positive")
 		acq = d1
 		ext = d2
 	} else {
 		d1 := nt.AddLayer4D(prefix+"BLANegExtD1", 1, nUs, unY, unX, BLALayer)
 		d1.SetBuildConfig("DAMod", "D1Mod")
+		d1.SetBuildConfig("Valence", "Negative")
 		d2 := nt.AddLayer4D(prefix+"BLANegAcqD2", 1, nUs, unY, unX, BLALayer)
 		d2.SetBuildConfig("DAMod", "D2Mod")
+		d2.SetBuildConfig("Valence", "Negative")
 		acq = d2
 		ext = d1
 	}
@@ -90,13 +94,32 @@ func (nt *Network) ConnectToBLA(send, recv emer.Layer, pat prjn.Pattern) emer.Pr
 	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAPrjn))
 }
 
+// AddPVLayers adds PosPV and NegPV layers for positive or negative valence
+// primary value outcomes (USs)
+func (nt *Network) AddPVLayers(nPosPV, nNegPV, nYunits int, rel relpos.Relations, space float32) (pospv, negpv *Layer) {
+	pospv = nt.AddLayer4D("PosPV", 1, nPosPV, nYunits, 1, PVLayer)
+	pospv.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
+	pospv.SetBuildConfig("Valence", "Positive")
+	negpv = nt.AddLayer4D("NegPV", 1, nNegPV, nYunits, 1, PVLayer)
+	negpv.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
+	negpv.SetBuildConfig("Valence", "Negative")
+	if rel == relpos.Behind {
+		negpv.SetRelPos(relpos.Rel{Rel: rel, Other: pospv.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		negpv.SetRelPos(relpos.Rel{Rel: rel, Other: pospv.Name(), YAlign: relpos.Front, Space: space})
+	}
+	return
+}
+
 // AddVSPatchLayers adds two VSPatch layers: D1 / D2 for positive or negative valence
 func (nt *Network) AddVSPatchLayers(prefix string, pos bool, nUs, unY, unX int, rel relpos.Relations, space float32) (d1, d2 *Layer) {
 	if pos {
 		d1 = nt.AddLayer4D(prefix+"VSPatchPosD1", 1, nUs, unY, unX, VSPatchLayer)
 		d1.SetBuildConfig("DAMod", "D1Mod")
+		d1.SetBuildConfig("Valence", "Positive")
 		d2 = nt.AddLayer4D(prefix+"VSPatchPosD2", 1, nUs, unY, unX, VSPatchLayer)
 		d2.SetBuildConfig("DAMod", "D2Mod")
+		d2.SetBuildConfig("Valence", "Positive")
 		if rel == relpos.Behind {
 			d2.SetRelPos(relpos.Rel{Rel: rel, Other: d1.Name(), XAlign: relpos.Left, Space: space})
 		} else {
@@ -105,8 +128,10 @@ func (nt *Network) AddVSPatchLayers(prefix string, pos bool, nUs, unY, unX int, 
 	} else {
 		d2 = nt.AddLayer4D(prefix+"VSPatchNegD2", 1, nUs, unY, unX, VSPatchLayer)
 		d2.SetBuildConfig("DAMod", "D2Mod")
+		d2.SetBuildConfig("Valence", "Negative")
 		d1 = nt.AddLayer4D(prefix+"VSPatchNegD1", 1, nUs, unY, unX, VSPatchLayer)
 		d1.SetBuildConfig("DAMod", "D1Mod")
+		d1.SetBuildConfig("Valence", "Negative")
 		if rel == relpos.Behind {
 			d1.SetRelPos(relpos.Rel{Rel: rel, Other: d2.Name(), XAlign: relpos.Left, Space: space})
 		} else {

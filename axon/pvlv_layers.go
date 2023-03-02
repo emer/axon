@@ -45,10 +45,18 @@ func (ly *LayerParams) BLADefaults() {
 	ly.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
 }
 
-func (ly *Layer) BLAPostBuild() {
+// PVLVPostBuild is used for BLA, VSPatch, and PVLayer types to sett NeuroMod params
+func (ly *Layer) PVLVPostBuild() {
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
 		err = ly.Params.Learn.NeuroMod.DAMod.FromString(dm)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	vl, err := ly.BuildConfigByName("Valence")
+	if err == nil {
+		err = ly.Params.Learn.NeuroMod.Valence.FromString(vl)
 		if err != nil {
 			log.Println(err)
 		}
