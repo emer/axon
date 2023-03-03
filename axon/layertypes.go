@@ -149,24 +149,31 @@ const (
 	// to expected rewards (i.e., reward prediction error).
 	VSPatchLayer
 
-	// PVLayer represents a primary value layer (PosPV or NegPV).
-	// It tracks the Context.DrivePVLV.PosUSs or NegUSs, for visualization purposes.
-	PVLayer
-
 	// VTALayer represents the ventral tegmental area, which releases
-	// dopamine.  It tracks the Context.DrivePVLV.VTA.DA value for
-	// visualization purposes.
+	// dopamine.  It calls the Context.DrivePVLV.VTA methods,
+	// and tracks resulting DA for visualization purposes.
 	VTALayer
 
 	// LHbLayer represents the lateral habenula, which drives dipping
 	// in the VTA.  It tracks the Context.DrivePVLV.LHb values for
-	// visualization purposes.
+	// visualization purposes -- updated by VTALayer.
 	LHbLayer
 
 	// DrivesLayer represents the Drives in DrivePVLV framework.
 	// It tracks the Context.Drive.Drives values for
 	// visualization purposes.
 	DrivesLayer
+
+	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
+	// It tracks the Context.DrivePVLV.USpos or USneg, for visualization purposes.
+	// Actual US inputs are set in DrivePVLV.
+	USLayer
+
+	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
+	// the total primary value as a function of US inputs, drives, and effort.
+	// It tracks the Context.DrivePVLV.VTA.PVpos, PVneg values for
+	// visualization purposes.
+	PVLayer
 
 	/////////////////////////////
 	// PCORE Basal Ganglia (BG)

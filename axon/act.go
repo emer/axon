@@ -399,6 +399,66 @@ func (at *AttnParams) ModVal(val float32, attn float32) float32 {
 	return val * (at.Min + (1-at.Min)*attn)
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//  PopCodeParams
+
+// PopCodeParams provides encoding population codes,
+// used to represent a single continuous (scalar) value
+// across a population of units / neurons (1 dimensional)
+type PopCodeParams struct {
+	On     slbool.Bool `desc:"use popcode encoding of variable(s) that this layer represents"`
+	Min    float32     `viewif:"On" desc:"minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	Max    float32     `viewif:"On" desc:"maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	Sigma  float32     `viewif:"On" def:"0.2" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range"`
+	Clip   slbool.Bool `viewif:"On" desc:"ensure that encoded and decoded value remains within specified range"`
+	Thr    float32     `viewif:"On" def:"0.1" desc:"threshold to cut off small activation contributions to overall average value (i.e., if unit's activation is below this threshold, it doesn't contribute to weighted average computation)"`
+	MinSum float32     `viewif:"On" def:"0.2" desc:"minimum total activity of all the units representing a value: when computing weighted average value, this is used as a minimum for the sum that you divide by"`
+
+	pad float32
+}
+
+func (pc *PopCodeParams) Defaults() {
+	pc.Min = -0.5
+	pc.Max = 1.5
+	pc.Sigma = 0.2
+	pc.Clip.SetBool(true)
+	pc.Thr = 0.1
+	pc.MinSum = 0.2
+}
+
+func (pc *PopCodeParams) Update() {
+}
+
+// SetRange sets the min, max and sigma values
+func (pc *PopCodeParams) SetRange(min, max, sigma float32) {
+	pc.Min = min
+	pc.Max = max
+	pc.Sigma = sigma
+}
+
+// EncodeVal returns value for given value, for neuron index i
+// out of n total neurons. n must be 2 or more.
+func (pc *PopCodeParams) EncodeVal(i, n uint32, val float32) float32 {
+	if pc.Clip.IsTrue() {
+		if val < pc.Min {
+			val = pc.Min
+		}
+		if val > pc.Max {
+			val = pc.Max
+		}
+	}
+	rng := pc.Max - pc.Min
+	gnrm := 1.0 / (rng * pc.Sigma)
+	incr := rng / float32(n-1)
+	trg := pc.Min + incr*float32(i)
+	dist := gnrm * (trg - val)
+	act := mat32.FastExp(-(dist * dist))
+	return act
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  ActParams
+
 // axon.ActParams contains all the activation computation params and functions
 // for basic Axon, at the neuron level .
 // This is included in axon.Layer to drive the computation.
@@ -422,6 +482,7 @@ type ActParams struct {
 	AK      chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
 	SKCa    chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
 	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
+	PopCode PopCodeParams     `view:"inline" desc:"provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)"`
 }
 
 func (ac *ActParams) Defaults() {
@@ -453,6 +514,7 @@ func (ac *ActParams) Defaults() {
 	ac.SKCa.Defaults()
 	ac.SKCa.Gbar = 0
 	ac.Attn.Defaults()
+	ac.PopCode.Defaults()
 	ac.Update()
 }
 
@@ -474,6 +536,7 @@ func (ac *ActParams) Update() {
 	ac.AK.Update()
 	ac.SKCa.Update()
 	ac.Attn.Update()
+	ac.PopCode.Update()
 }
 
 ///////////////////////////////////////////////////////////////////////

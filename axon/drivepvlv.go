@@ -257,7 +257,7 @@ func (vs *VSVals) PosNegFmVals() {
 // Negative net LHb activity drives bursts in VTA DA activity, e.g., when actual pos > predicted
 // (redundant with LV / Amygdala via PPTg) or "relief" burst when actual neg < predicted.
 type LHb struct {
-	PosGain     float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PVpos component"`
+	PosGain     float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
 	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg - VSPatchNeg component"`
 	PosOmitPred float32 `def:"0.2" desc:"additional gain factor for VSPatchPos when D2 > D1, which is a *predicted* omission of positive outcome (not actual) -- this can explain away actual ommission -- higher values here allow more such explaining away"`
 	NegOmitPred float32 `def:"0.8" desc:"additional gain factor for VSPatchNeg when D1 > D2, which is a *predicted* omission of negative outcome (not actual) -- this can explain away actual ommission -- higher values here allow more such explaining away"`
@@ -308,8 +308,8 @@ func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos, vsPatchNeg float32) {
 // Used as gain factors and computed values.
 type VTAVals struct {
 	DA         float32 `desc:"overall dopamine value reflecting all of the different inputs"`
-	PVpos      float32 `desc:"PVposUS with effort discount factor applied (1-Effort.Disc) -- what actually drives DA bursting from actual USs received"`
-	PVneg      float32 `desc:"negative valence primary value -- total negative US receipt"`
+	PVpos      float32 `desc:"total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received"`
+	PVneg      float32 `desc:"total negative valence primary value = sum of USneg inputs"`
 	PPTg       float32 `desc:"positive valence trial-level deltas, positive only rectified, from the PPTg, driven by Amygdala LV (learned value) system.  Reflects reward salience -- the onset of unexpected CSs and USs.  Note that positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
 	LHbDip     float32 `desc:"dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips"`
 	LHbBurst   float32 `desc:"burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts"`
@@ -395,8 +395,8 @@ type DrivePVLV struct {
 	VTA         VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
 	LHb         LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
 	VSPatchVals VSVals    `desc:"VSPatch values"`
-	PosUSs      DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli)"`
-	NegUSs      DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli) -- does not have corresponding drive but uses DriveVals"`
+	USpos       DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
+	USneg       DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals"`
 }
 
 func (dp *DrivePVLV) Defaults() {
@@ -405,24 +405,24 @@ func (dp *DrivePVLV) Defaults() {
 	dp.VTA.Defaults()
 	dp.LHb.Defaults()
 	dp.VSPatchVals.Zero()
-	dp.PosUSs.Zero()
-	dp.NegUSs.Zero()
+	dp.USpos.Zero()
+	dp.USneg.Zero()
 }
 
 // InitUS initializes all the USs to zero
 func (dp *DrivePVLV) InitUS() {
-	dp.PosUSs.Zero()
-	dp.NegUSs.Zero()
+	dp.USpos.Zero()
+	dp.USneg.Zero()
 }
 
 // SetPosUS sets given positive US (associated with same-indexed Drive) to given value
 func (dp *DrivePVLV) SetPosUS(usn int32, val float32) {
-	dp.PosUSs.Set(usn, val)
+	dp.USpos.Set(usn, val)
 }
 
 // SetNegUS sets given negative US to given value
 func (dp *DrivePVLV) SetNegUS(usn int32, val float32) {
-	dp.NegUSs.Set(usn, val)
+	dp.USneg.Set(usn, val)
 }
 
 // InitDrives initializes all the Drives to zero
@@ -439,16 +439,16 @@ func (dp *DrivePVLV) SetDrive(dr int32, val float32) {
 func (dp *DrivePVLV) PosPV() float32 {
 	rew := float32(0)
 	for i := int32(0); i < dp.Drive.NActive; i++ {
-		rew += dp.PosUSs.Get(i) * mat32.Max(dp.Drive.Drives.Get(i), dp.Drive.DriveMin)
+		rew += dp.USpos.Get(i) * mat32.Max(dp.Drive.Drives.Get(i), dp.Drive.DriveMin)
 	}
 	return rew
 }
 
-// NegPV returns the reward for current negative US state -- just a sum of NegUSs
+// NegPV returns the reward for current negative US state -- just a sum of USneg
 func (dp *DrivePVLV) NegPV() float32 {
 	rew := float32(0)
 	for i := int32(0); i < dp.Drive.NActive; i++ {
-		rew += dp.PosUSs.Get(i) * mat32.Max(dp.Drive.Drives.Get(i), dp.Drive.DriveMin)
+		rew += dp.USneg.Get(i)
 	}
 	return rew
 }
@@ -475,10 +475,10 @@ func (dp *DrivePVLV) DA(pptg float32) float32 {
 func (dp *DrivePVLV) DriveUpdt(resetUs bool) {
 	dp.Drive.ExpStep()
 	for i := int32(0); i < dp.Drive.NActive; i++ {
-		us := dp.PosUSs.Get(i)
+		us := dp.USpos.Get(i)
 		dp.Drive.Drives.Add(i, -us*dp.Drive.USDec.Get(i))
 		if resetUs {
-			dp.PosUSs.Set(i, 0)
+			dp.USpos.Set(i, 0)
 		}
 	}
 }

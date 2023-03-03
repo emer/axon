@@ -389,14 +389,24 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
 
-	case PVLayer:
+	case USLayer:
 		us := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			us = ctx.DrivePVLV.PosUSs.Get(pi)
+			us = ctx.DrivePVLV.USpos.Get(pi)
 		} else {
-			us = ctx.DrivePVLV.NegUSs.Get(pi)
+			us = ctx.DrivePVLV.USneg.Get(pi)
 		}
 		nrn.GeRaw = us
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case PVLayer:
+		pv := float32(0)
+		if ly.Learn.NeuroMod.Valence == Positive {
+			pv = ctx.DrivePVLV.VTA.Vals.PVpos
+		} else {
+			pv = ctx.DrivePVLV.VTA.Vals.PVneg
+		}
+		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
+		nrn.GeRaw = pc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case VTALayer:
 		ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
@@ -550,14 +560,23 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		if ni == 0 {
 			ctx.NeuroMod.PPTg = lpl.AvgMax.Act.Cycle.Max // todo: use CaSpkP instead of Act?
 		}
-	case PVLayer:
+	case USLayer:
 		us := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			us = ctx.DrivePVLV.PosUSs.Get(pi)
+			us = ctx.DrivePVLV.USpos.Get(pi)
 		} else {
-			us = ctx.DrivePVLV.NegUSs.Get(pi)
+			us = ctx.DrivePVLV.USneg.Get(pi)
 		}
 		nrn.Act = us
+	case PVLayer:
+		pv := float32(0)
+		if ly.Learn.NeuroMod.Valence == Positive {
+			pv = ctx.DrivePVLV.VTA.Vals.PVpos
+		} else {
+			pv = ctx.DrivePVLV.VTA.Vals.PVneg
+		}
+		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
+		nrn.Act = pc
 	case VTALayer:
 		nrn.Act = ctx.DrivePVLV.VTA.Vals.DA
 	case LHbLayer:
@@ -571,7 +590,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
 		nrn.Act = dr
 	case VSPatchLayer:
-		ctx.DrivePVLV.VSPatchVals.SetVal(pl.AvgMax.CaSpkP.Cycle.Avg, pi, ly.Learn.NeuroMod.Valence, ly.Learn.NeuroMod.DAMod)
+		if nrn.NeurIdx == pl.StIdx {
+			ctx.DrivePVLV.VSPatchVals.SetVal(pl.AvgMax.CaSpkP.Cycle.Avg, pi, ly.Learn.NeuroMod.Valence, ly.Learn.NeuroMod.DAMod)
+		}
 	}
 }
 

@@ -106,3 +106,12 @@ func (ly *Layer) VSPatchDefaults() {
 	// 	}
 	// }
 }
+
+func (ly *LayerParams) PVDefaults() {
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 0.1
+	ly.Inhib.Pool.On.SetBool(true)
+	ly.Inhib.Pool.Gi = 0.1
+	ly.Inhib.ActAvg.Nominal = 0.1
+	ly.Act.PopCode.On.SetBool(true)
+}

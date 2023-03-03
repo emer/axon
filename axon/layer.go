@@ -86,6 +86,8 @@ func (ly *Layer) Defaults() {
 		ly.Params.BLADefaults()
 	case VSPatchLayer:
 		ly.VSPatchDefaults()
+	case PVLayer:
+		ly.Params.PVDefaults()
 
 	case MatrixLayer:
 		ly.MatrixDefaults()
@@ -146,6 +148,8 @@ func (ly *Layer) PostBuild() {
 		ly.TDDaPostBuild()
 
 	case BLALayer:
+		fallthrough
+	case USLayer:
 		fallthrough
 	case PVLayer:
 		fallthrough

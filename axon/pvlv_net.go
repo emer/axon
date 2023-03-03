@@ -94,19 +94,82 @@ func (nt *Network) ConnectToBLA(send, recv emer.Layer, pat prjn.Pattern) emer.Pr
 	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAPrjn))
 }
 
-// AddPVLayers adds PosPV and NegPV layers for positive or negative valence
-// primary value outcomes (USs)
-func (nt *Network) AddPVLayers(nPosPV, nNegPV, nYunits int, rel relpos.Relations, space float32) (pospv, negpv *Layer) {
-	pospv = nt.AddLayer4D("PosPV", 1, nPosPV, nYunits, 1, PVLayer)
-	pospv.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
-	pospv.SetBuildConfig("Valence", "Positive")
-	negpv = nt.AddLayer4D("NegPV", 1, nNegPV, nYunits, 1, PVLayer)
-	negpv.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
-	negpv.SetBuildConfig("Valence", "Negative")
+// AddUSLayers adds USpos and USneg layers for positive or negative valence
+// unconditioned stimuli (USs).
+// These track the Context.DrivePVLV.USpos or USneg, for visualization purposes.
+// Actual US inputs are set in DrivePVLV.
+func (nt *Network) AddUSLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations, space float32) (usPos, usNeg *Layer) {
+	usPos = nt.AddLayer4D("USpos", 1, nUSpos, nYunits, 1, USLayer)
+	usPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
+	usPos.SetBuildConfig("Valence", "Positive")
+	usNeg = nt.AddLayer4D("USneg", 1, nUSneg, nYunits, 1, USLayer)
+	usNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
+	usNeg.SetBuildConfig("Valence", "Negative")
 	if rel == relpos.Behind {
-		negpv.SetRelPos(relpos.Rel{Rel: rel, Other: pospv.Name(), XAlign: relpos.Left, Space: space})
+		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPos.Name(), XAlign: relpos.Left, Space: space})
 	} else {
-		negpv.SetRelPos(relpos.Rel{Rel: rel, Other: pospv.Name(), YAlign: relpos.Front, Space: space})
+		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPos.Name(), YAlign: relpos.Front, Space: space})
+	}
+	return
+}
+
+// AddUSPulvLayers adds USpos and USneg layers for positive or negative valence
+// unconditioned stimuli (USs).
+// These track the Context.DrivePVLV.USpos or USneg, for visualization purposes.
+// Actual US inputs are set in DrivePVLV.
+// Adds Pulvinar predictive layers for each.
+func (nt *Network) AddUSPulvLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations, space float32) (usPos, usNeg, usPosP, usNegP *Layer) {
+	usPos, usPosP = nt.AddInputPulv4D("USpos", 1, nUSpos, nYunits, 1, space)
+	usPos.SetType(emer.LayerType(USLayer))
+	usPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
+	usPos.SetBuildConfig("Valence", "Positive")
+	usNeg, usNegP = nt.AddInputPulv4D("USneg", 1, nUSneg, nYunits, 1, space)
+	usNeg.SetType(emer.LayerType(USLayer))
+	usNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
+	usNeg.SetBuildConfig("Valence", "Negative")
+	if rel == relpos.Behind {
+		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPosP.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPos.Name(), YAlign: relpos.Front, Space: space})
+	}
+	return
+}
+
+// AddPVLayers adds PVpos and PVneg layers for positive or negative valence
+// primary value representations, representing the total drive and effort weighted
+// USpos outcome, or total USneg outcome, as a population-coded value.
+func (nt *Network) AddPVLayers(x, y int, rel relpos.Relations, space float32) (pvPos, pvNeg *Layer) {
+	pvPos = nt.AddLayer2D("PVpos", x, y, PVLayer)
+	pvPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
+	pvPos.SetBuildConfig("Valence", "Positive")
+	pvNeg = nt.AddLayer2D("PVneg", x, y, PVLayer)
+	pvNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
+	pvNeg.SetBuildConfig("Valence", "Negative")
+	if rel == relpos.Behind {
+		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPos.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPos.Name(), YAlign: relpos.Front, Space: space})
+	}
+	return
+}
+
+// AddPVLayers adds PVpos and PVneg layers for positive or negative valence
+// primary value representations, representing the total drive and effort weighted
+// USpos outcomes, or total USneg outcomes.
+// Adds Pulvinar predictive layers for each.
+func (nt *Network) AddPVPulvLayers(x, y int, rel relpos.Relations, space float32) (pvPos, pvNeg, pvPosP, pvNegP *Layer) {
+	pvPos, pvPosP = nt.AddInputPulv2D("PVpos", x, y, space)
+	pvPos.SetType(emer.LayerType(PVLayer))
+	pvPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
+	pvPos.SetBuildConfig("Valence", "Positive")
+	pvNeg, pvNegP = nt.AddInputPulv2D("PVneg", x, y, space)
+	pvNeg.SetType(emer.LayerType(PVLayer))
+	pvNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
+	pvNeg.SetBuildConfig("Valence", "Negative")
+	if rel == relpos.Behind {
+		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPosP.Name(), XAlign: relpos.Left, Space: space})
+	} else {
+		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPos.Name(), YAlign: relpos.Front, Space: space})
 	}
 	return
 }

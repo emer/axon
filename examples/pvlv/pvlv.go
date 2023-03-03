@@ -157,22 +157,31 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	stim := ev.CurStates["StimIn"]
 	ctxt := ev.CurStates["ContextIn"]
-	time := ev.CurStates["USTimeIn"]
+	timeIn := ev.CurStates["USTimeIn"]
 	// pv := ev.CurStates["PosPV"]
 
 	vta, lhb := net.AddVTALHbLayers(relpos.Behind, space)
-	drives := net.AddDrivesLayer(&ss.Context, ny)
 	ach := net.AddRSalienceAChLayer("ACh")
 
 	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
 	vsPatchPosD1, vsPatchPosD2 := net.AddVSPatchLayers("", true, nUSs, 2, 2, relpos.Behind, space)
 	vsPatchNegD1, vsPatchNegD2 := net.AddVSPatchLayers("", false, nUSs, 2, 2, relpos.Behind, space)
-	pospv, negpv := net.AddPVLayers(nUSs, nUSs, ny, relpos.Behind, space)
 
-	cs := net.AddLayer4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), axon.InputLayer)
+	drives := net.AddDrivesLayer(&ss.Context, ny)
+	usPos, usNeg, usPosP, usNegP := net.AddUSPulvLayers(nUSs, nUSs, ny, relpos.Behind, space)
+	_ = usNegP
+	_ = usPos
+	_ = usNeg
+
+	pvPos, pvNeg, pvPosP, pvNegP := net.AddPVPulvLayers(4, 4, relpos.Behind, space)
+	_ = pvNegP
+	time, timeP := net.AddInputPulv2D("Time", ny, cond.MaxTime, space) // todo: also popcode
+
+	cs, csP := net.AddInputPulv4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
+
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
-	ustimeIn := net.AddLayer4D("USTimeIn", time.Dim(0), time.Dim(1), time.Dim(2), time.Dim(3), axon.InputLayer)
+	ustimeIn := net.AddLayer4D("USTimeIn", timeIn.Dim(0), timeIn.Dim(1), timeIn.Dim(2), timeIn.Dim(3), axon.InputLayer)
 	_ = ctxIn
 	_ = ustimeIn
 
@@ -187,20 +196,25 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	blaPosA.SetBuildConfig("LayInhib1Name", blaNegA.Name())
 	blaNegA.SetBuildConfig("LayInhib1Name", blaPosA.Name())
 
-	ofc, ofcct := net.AddSuperCT4D("OFC", 1, nUSs, nuCtxY, nuCtxX, space, one2one)
+	ofc, ofcCT := net.AddSuperCT4D("OFC", 1, nUSs, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcpt, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
-	_ = ofcpt
-	ofcct.SetClass("OFC CTCopy")
-	// net.ConnectToPulv(ofc, ofcct, usPulv, pone2one, pone2one)
+	ofcPT, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
+	_ = ofcPT
+	ofcCT.SetClass("OFC CTCopy")
+	// net.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	// net.ConnectLayers(drives, ofcct, pone2one, emer.Forward).SetClass("DrivesToOFC")
+	// net.ConnectLayers(drives, ofcCT, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
-	net.ConnectLayers(pospv, ofc, pone2one, emer.Forward)
-	net.ConnectLayers(ofcpt, ofcct, full, emer.Forward) // good?
+	net.ConnectLayers(pvPos, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(ofcPT, ofcCT, full, emer.Forward) // good?
+
+	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
+	net.ConnectToPulv(ofc, ofcCT, timeP, full, full)
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
@@ -209,10 +223,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// BLA
 	net.ConnectToBLA(cs, blaPosA, full)
-	net.ConnectToBLA(pospv, blaPosA, pone2one).SetClass("USToBLA")
+	net.ConnectToBLA(pvPos, blaPosA, pone2one).SetClass("USToBLA")
 	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
-	// net.ConnectLayersPrjn(ofcpt, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
+	// net.ConnectLayersPrjn(ofcPT, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
 	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(drives, blaPosE, pone2one, emer.Forward)
 
@@ -220,7 +234,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// BG / DA connections
 
 	// same prjns to stn as mtxgo
-	net.ConnectToMatrix(pospv, vPmtxGo, pone2one)
+	net.ConnectToMatrix(pvPos, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
 	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
 	net.ConnectLayers(blaPosA, vPstnp, full, emer.Forward)
@@ -236,13 +250,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
 	net.ConnectLayers(ofc, vPstnp, full, emer.Forward)
 	net.ConnectLayers(ofc, vPstns, full, emer.Forward)
-	// net.ConnectToMatrix(ofcct, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
-	// net.ConnectToMatrix(ofcct, vPmtxNo, pone2one)
-	// net.ConnectToMatrix(ofcpt, vPmtxGo, pone2one)
-	// net.ConnectToMatrix(ofcpt, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(ofcCT, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
+	// net.ConnectToMatrix(ofcCT, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(ofcPT, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(ofcPT, vPmtxNo, pone2one)
 
 	// net.ConnectToRWPrjn(ofc, rwPred, full)
-	// net.ConnectToRWPrjn(ofcct, rwPred, full)
+	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
 
 	if ss.UseOFC {
 		net.ConnectToVSPatch(ofc, vsPatchPosD1, pone2one)
@@ -265,9 +279,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vsPatchNegD2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: vsPatchPosD1.Name(), YAlign: relpos.Front, Space: space})
 
 	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: vta.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	pospv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
-	negpv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pospv.Name(), XAlign: relpos.Left, Space: space})
-	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
+	usPos.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
+	usNeg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: usPosP.Name(), XAlign: relpos.Left, Space: space})
+
+	pvPos.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
+	pvNeg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pvPosP.Name(), XAlign: relpos.Left, Space: space})
+
+	time.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pvPos.Name(), YAlign: relpos.Front, Space: space})
+
+	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: time.Name(), YAlign: relpos.Front, Space: space})
 	ctxIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: space})
 	ustimeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ctxIn.Name(), YAlign: relpos.Front, Space: space})
 
