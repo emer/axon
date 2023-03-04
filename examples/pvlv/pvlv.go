@@ -148,6 +148,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuBgX := 5
 	nuCtxY := 6
 	nuCtxX := 6
+	popY := 4
+	popX := 4
 	space := float32(2)
 
 	pone2one := prjn.NewPoolOneToOne()
@@ -165,18 +167,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
-	vsPatchPosD1, vsPatchPosD2 := net.AddVSPatchLayers("", true, nUSs, 2, 2, relpos.Behind, space)
-	vsPatchNegD1, vsPatchNegD2 := net.AddVSPatchLayers("", false, nUSs, 2, 2, relpos.Behind, space)
+	vsPatchPosD1, vsPatchPosD2 := net.AddVSPatchLayers("", true, nUSs, nuBgY, nuBgX, relpos.Behind, space)
+	vsPatchNegD1, vsPatchNegD2 := net.AddVSPatchLayers("", false, nUSs, nuBgY, nuBgX, relpos.Behind, space)
 
-	drives := net.AddDrivesLayer(&ss.Context, ny)
+	drives, drivesP := net.AddDrivesPulvLayer(&ss.Context, popY, popX, space)
 	usPos, usNeg, usPosP, usNegP := net.AddUSPulvLayers(nUSs, nUSs, ny, relpos.Behind, space)
 	_ = usNegP
 	_ = usPos
 	_ = usNeg
 
-	pvPos, pvNeg, pvPosP, pvNegP := net.AddPVPulvLayers(4, 4, relpos.Behind, space)
+	pvPos, pvNeg, pvPosP, pvNegP := net.AddPVPulvLayers(popY, popX, relpos.Behind, space)
 	_ = pvNegP
-	time, timeP := net.AddInputPulv2D("Time", ny, cond.MaxTime, space) // todo: also popcode
+	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
 	cs, csP := net.AddInputPulv4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
 
@@ -208,9 +210,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(drives, ofcCT, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
-	net.ConnectLayers(pvPos, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(time, ofc, full, emer.Forward).SetClass("TimeToOFC")
+	net.ConnectLayers(pvPos, ofc, full, emer.Forward).SetClass("PVposToOFC")
+	net.ConnectLayers(usPos, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(ofcPT, ofcCT, full, emer.Forward) // good?
 
+	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
@@ -223,7 +228,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// BLA
 	net.ConnectToBLA(cs, blaPosA, full)
-	net.ConnectToBLA(pvPos, blaPosA, pone2one).SetClass("USToBLA")
+	net.ConnectToBLA(usPos, blaPosA, pone2one).SetClass("USToBLA")
 	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
 	// net.ConnectLayersPrjn(ofcPT, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
@@ -258,47 +263,46 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToRWPrjn(ofc, rwPred, full)
 	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
 
-	if ss.UseOFC {
-		net.ConnectToVSPatch(ofc, vsPatchPosD1, pone2one)
-		net.ConnectToVSPatch(ofc, vsPatchPosD2, pone2one)
-		net.ConnectToVSPatch(ofc, vsPatchNegD1, pone2one)
-		net.ConnectToVSPatch(ofc, vsPatchNegD2, pone2one)
-	}
-	net.ConnectToVSPatch(ustimeIn, vsPatchPosD1, full)
-	net.ConnectToVSPatch(ustimeIn, vsPatchPosD2, full)
-	net.ConnectToVSPatch(ustimeIn, vsPatchNegD1, full)
-	net.ConnectToVSPatch(ustimeIn, vsPatchNegD2, full)
+	net.ConnectToVSPatch(ofcPT, vsPatchPosD1, pone2one)
+	net.ConnectToVSPatch(ofcPT, vsPatchPosD2, pone2one)
+	net.ConnectToVSPatch(ofcPT, vsPatchNegD1, pone2one)
+	net.ConnectToVSPatch(ofcPT, vsPatchNegD2, pone2one)
+
+	// net.ConnectToVSPatch(ustimeIn, vsPatchPosD1, full)
+	// net.ConnectToVSPatch(ustimeIn, vsPatchPosD2, full)
+	// net.ConnectToVSPatch(ustimeIn, vsPatchNegD1, full)
+	// net.ConnectToVSPatch(ustimeIn, vsPatchNegD2, full)
 
 	////////////////////////////////////////////////
 	// position
 
-	vPgpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: vta.Name(), YAlign: relpos.Front, Space: space})
-	ach.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: lhb.Name(), XAlign: relpos.Left, Space: space})
+	vPgpi.PlaceRightOf(vta, space)
+	ach.PlaceBehind(lhb, space)
 
-	vsPatchPosD1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: vPstns.Name(), YAlign: relpos.Front, Space: space})
-	vsPatchNegD2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: vsPatchPosD1.Name(), YAlign: relpos.Front, Space: space})
+	vsPatchPosD1.PlaceRightOf(vPstns, space)
+	vsPatchNegD2.PlaceRightOf(vsPatchPosD1, space)
 
-	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: vta.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	usPos.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
-	usNeg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: usPosP.Name(), XAlign: relpos.Left, Space: space})
+	drives.PlaceAbove(vta)
+	usPos.PlaceBehind(drivesP, space)
+	usNeg.PlaceBehind(usPosP, space)
 
-	pvPos.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
-	pvNeg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pvPosP.Name(), XAlign: relpos.Left, Space: space})
+	pvPos.PlaceRightOf(drives, space)
+	pvNeg.PlaceBehind(pvPosP, space)
 
-	time.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pvPos.Name(), YAlign: relpos.Front, Space: space})
+	time.PlaceRightOf(pvPos, space)
 
-	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: time.Name(), YAlign: relpos.Front, Space: space})
-	ctxIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: space})
-	ustimeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ctxIn.Name(), YAlign: relpos.Front, Space: space})
+	cs.PlaceRightOf(time, space)
+	ctxIn.PlaceRightOf(cs, space)
+	ustimeIn.PlaceRightOf(ctxIn, space)
 
-	blaPosA.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	blaNegA.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blaPosE.Name(), XAlign: relpos.Left, Space: space})
-	cemPos.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blaNegE.Name(), XAlign: relpos.Left, Space: space})
-	cemNeg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: cemPos.Name(), XAlign: relpos.Left, Space: space})
+	blaPosA.PlaceAbove(drives)
+	blaNegA.PlaceBehind(blaPosE, space)
+	cemPos.PlaceBehind(blaNegE, space)
+	cemNeg.PlaceBehind(cemPos, space)
 
-	gate.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaPosA.Name(), YAlign: relpos.Front, Space: space})
+	gate.PlaceRightOf(blaPosA, space)
 
-	ofc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gate.Name(), YAlign: relpos.Front, Space: space})
+	ofc.PlaceRightOf(gate, space)
 
 	err := net.Build()
 	if err != nil {
@@ -417,6 +421,10 @@ func (ss *Sim) ApplyInputs() {
 		pats := ev.State(ly.Nm)
 		if !kit.IfaceIsNil(pats) {
 			ly.ApplyExt(pats)
+		}
+		switch lnm {
+		case "StimIn":
+			ly.Pools[0].Inhib.Clamped.SetBool(ev.CurTrial.CSOn)
 		}
 	}
 	ss.ApplyPVLV(&ss.Context, &ev.CurTrial)

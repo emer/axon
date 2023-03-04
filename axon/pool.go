@@ -130,8 +130,8 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD)
 	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax)
 	am.Act.Cycle.UpdateVal(mat32.Abs(nrn.Act)) // can be neg
-	am.Ge.Cycle.UpdateVal(nrn.Ge)
-	am.Gi.Cycle.UpdateVal(nrn.Gi)
+	am.Ge.Cycle.UpdateVal(mat32.Abs(nrn.Ge))
+	am.Gi.Cycle.UpdateVal(mat32.Abs(nrn.Gi))
 }
 
 //gosl: end pool

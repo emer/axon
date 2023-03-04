@@ -42,9 +42,9 @@ func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, unY, unX int, rel 
 	nt.ConnectLayers(ext, acq, prjn.NewPoolOneToOne(), emer.Inhib).SetClass("BLAExtToAcq")
 
 	if rel == relpos.Behind {
-		ext.SetRelPos(relpos.Rel{Rel: rel, Other: acq.Name(), XAlign: relpos.Left, Space: space})
+		ext.PlaceBehind(acq, space)
 	} else {
-		ext.SetRelPos(relpos.Rel{Rel: rel, Other: acq.Name(), YAlign: relpos.Front, Space: space})
+		ext.PlaceRightOf(acq, space)
 	}
 	acq.SetClass("BLA")
 	ext.SetClass("BLA")
@@ -78,12 +78,12 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 		// nt.ConnectLayers(cemNeg, pptg, p1to1, emer.Forward).SetClass("CeMToPPTg")
 	}
 
-	cemPos.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: blaPosExt.Name(), XAlign: relpos.Left, Space: space})
+	cemPos.PlaceBehind(blaPosExt, space)
 	if neg {
-		cemNeg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: cemPos.Name(), XAlign: relpos.Left, Space: space})
-		pptg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: cemNeg.Name(), XAlign: relpos.Left, Space: space})
+		cemNeg.PlaceBehind(cemPos, space)
+		pptg.PlaceBehind(cemNeg, space)
 	} else {
-		pptg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: cemPos.Name(), XAlign: relpos.Left, Space: space})
+		pptg.PlaceBehind(cemPos, space)
 	}
 
 	return
@@ -106,9 +106,9 @@ func (nt *Network) AddUSLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations
 	usNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
 	usNeg.SetBuildConfig("Valence", "Negative")
 	if rel == relpos.Behind {
-		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPos.Name(), XAlign: relpos.Left, Space: space})
+		usNeg.PlaceBehind(usPos, space)
 	} else {
-		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPos.Name(), YAlign: relpos.Front, Space: space})
+		usNeg.PlaceRightOf(usPos, space)
 	}
 	return
 }
@@ -119,36 +119,33 @@ func (nt *Network) AddUSLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations
 // Actual US inputs are set in DrivePVLV.
 // Adds Pulvinar predictive layers for each.
 func (nt *Network) AddUSPulvLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations, space float32) (usPos, usNeg, usPosP, usNegP *Layer) {
-	usPos, usPosP = nt.AddInputPulv4D("USpos", 1, nUSpos, nYunits, 1, space)
-	usPos.SetType(emer.LayerType(USLayer))
-	usPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
-	usPos.SetBuildConfig("Valence", "Positive")
-	usNeg, usNegP = nt.AddInputPulv4D("USneg", 1, nUSneg, nYunits, 1, space)
-	usNeg.SetType(emer.LayerType(USLayer))
-	usNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
-	usNeg.SetBuildConfig("Valence", "Negative")
+	usPos, usNeg = nt.AddUSLayers(nUSpos, nUSneg, nYunits, rel, space)
+	usPosP = nt.AddPulvForLayer(usPos, space)
+	usNegP = nt.AddPulvForLayer(usNeg, space)
 	if rel == relpos.Behind {
-		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPosP.Name(), XAlign: relpos.Left, Space: space})
-	} else {
-		usNeg.SetRelPos(relpos.Rel{Rel: rel, Other: usPos.Name(), YAlign: relpos.Front, Space: space})
+		usNeg.PlaceBehind(usPosP, space)
 	}
+	usPosP.SetClass("USLayer")
+	usNegP.SetClass("USLayer")
 	return
 }
 
 // AddPVLayers adds PVpos and PVneg layers for positive or negative valence
 // primary value representations, representing the total drive and effort weighted
-// USpos outcome, or total USneg outcome, as a population-coded value.
-func (nt *Network) AddPVLayers(x, y int, rel relpos.Relations, space float32) (pvPos, pvNeg *Layer) {
-	pvPos = nt.AddLayer2D("PVpos", x, y, PVLayer)
+// USpos outcome, or total USneg outcome.
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of units in the X and Y dimensions.
+func (nt *Network) AddPVLayers(unY, unX int, rel relpos.Relations, space float32) (pvPos, pvNeg *Layer) {
+	pvPos = nt.AddLayer2D("PVpos", unY, unX, PVLayer)
 	pvPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
 	pvPos.SetBuildConfig("Valence", "Positive")
-	pvNeg = nt.AddLayer2D("PVneg", x, y, PVLayer)
+	pvNeg = nt.AddLayer2D("PVneg", unY, unX, PVLayer)
 	pvNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
 	pvNeg.SetBuildConfig("Valence", "Negative")
 	if rel == relpos.Behind {
-		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPos.Name(), XAlign: relpos.Left, Space: space})
+		pvNeg.PlaceBehind(pvPos, space)
 	} else {
-		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPos.Name(), YAlign: relpos.Front, Space: space})
+		pvNeg.PlaceRightOf(pvPos, space)
 	}
 	return
 }
@@ -156,21 +153,18 @@ func (nt *Network) AddPVLayers(x, y int, rel relpos.Relations, space float32) (p
 // AddPVLayers adds PVpos and PVneg layers for positive or negative valence
 // primary value representations, representing the total drive and effort weighted
 // USpos outcomes, or total USneg outcomes.
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of units in the X and Y dimensions.
 // Adds Pulvinar predictive layers for each.
-func (nt *Network) AddPVPulvLayers(x, y int, rel relpos.Relations, space float32) (pvPos, pvNeg, pvPosP, pvNegP *Layer) {
-	pvPos, pvPosP = nt.AddInputPulv2D("PVpos", x, y, space)
-	pvPos.SetType(emer.LayerType(PVLayer))
-	pvPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
-	pvPos.SetBuildConfig("Valence", "Positive")
-	pvNeg, pvNegP = nt.AddInputPulv2D("PVneg", x, y, space)
-	pvNeg.SetType(emer.LayerType(PVLayer))
-	pvNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
-	pvNeg.SetBuildConfig("Valence", "Negative")
+func (nt *Network) AddPVPulvLayers(unY, unX int, rel relpos.Relations, space float32) (pvPos, pvNeg, pvPosP, pvNegP *Layer) {
+	pvPos, pvNeg = nt.AddPVLayers(unX, unY, rel, space)
+	pvPosP = nt.AddPulvForLayer(pvPos, space)
+	pvNegP = nt.AddPulvForLayer(pvNeg, space)
 	if rel == relpos.Behind {
-		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPosP.Name(), XAlign: relpos.Left, Space: space})
-	} else {
-		pvNeg.SetRelPos(relpos.Rel{Rel: rel, Other: pvPos.Name(), YAlign: relpos.Front, Space: space})
+		pvNeg.PlaceBehind(pvPosP, space)
 	}
+	pvPosP.SetClass("USLayer")
+	pvNegP.SetClass("USLayer")
 	return
 }
 
@@ -184,9 +178,9 @@ func (nt *Network) AddVSPatchLayers(prefix string, pos bool, nUs, unY, unX int, 
 		d2.SetBuildConfig("DAMod", "D2Mod")
 		d2.SetBuildConfig("Valence", "Positive")
 		if rel == relpos.Behind {
-			d2.SetRelPos(relpos.Rel{Rel: rel, Other: d1.Name(), XAlign: relpos.Left, Space: space})
+			d2.PlaceBehind(d1, space)
 		} else {
-			d2.SetRelPos(relpos.Rel{Rel: rel, Other: d1.Name(), YAlign: relpos.Front, Space: space})
+			d2.PlaceRightOf(d1, space)
 		}
 	} else {
 		d2 = nt.AddLayer4D(prefix+"VSPatchNegD2", 1, nUs, unY, unX, VSPatchLayer)
@@ -196,9 +190,9 @@ func (nt *Network) AddVSPatchLayers(prefix string, pos bool, nUs, unY, unX int, 
 		d1.SetBuildConfig("DAMod", "D1Mod")
 		d1.SetBuildConfig("Valence", "Negative")
 		if rel == relpos.Behind {
-			d1.SetRelPos(relpos.Rel{Rel: rel, Other: d2.Name(), XAlign: relpos.Left, Space: space})
+			d1.PlaceBehind(d2, space)
 		} else {
-			d1.SetRelPos(relpos.Rel{Rel: rel, Other: d2.Name(), YAlign: relpos.Front, Space: space})
+			d1.PlaceRightOf(d2, space)
 		}
 	}
 	return
@@ -215,16 +209,30 @@ func (nt *Network) AddVTALHbLayers(rel relpos.Relations, space float32) (vta, lh
 	vta = nt.AddLayer2D("VTA", 1, 1, VTALayer)
 	lhb = nt.AddLayer2D("LHb", 1, 2, LHbLayer)
 	if rel == relpos.Behind {
-		lhb.SetRelPos(relpos.Rel{Rel: rel, Other: vta.Name(), XAlign: relpos.Left, Space: space})
+		lhb.PlaceBehind(vta, space)
 	} else {
-		lhb.SetRelPos(relpos.Rel{Rel: rel, Other: vta.Name(), YAlign: relpos.Front, Space: space})
+		lhb.PlaceRightOf(vta, space)
 	}
 	return
 }
 
 // AddDrivesLayer adds DrivePVLV layer representing current drive activity,
-// which are driven by corresponding Context.DrivePVLV.Drive.Drives
-func (nt *Network) AddDrivesLayer(ctx *Context, nYunits int) *Layer {
-	drv := nt.AddLayer4D("Drives", 1, int(ctx.DrivePVLV.Drive.NActive), nYunits, 1, DrivesLayer)
+// which are driven by corresponding Context.DrivePVLV.Drive.Drives.
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of units in the X and Y dimensions, per drive pool.
+func (nt *Network) AddDrivesLayer(ctx *Context, unY, unX int) *Layer {
+	drv := nt.AddLayer4D("Drives", 1, int(ctx.DrivePVLV.Drive.NActive), unY, unX, DrivesLayer)
 	return drv
+}
+
+// AddDrivesPulvLayer adds DrivePVLV layer representing current drive activity,
+// which are driven by corresponding Context.DrivePVLV.Drive.Drives.
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of units in the X and Y dimensions, per drive pool.
+// Adds Pulvinar predictive layers for Drives.
+func (nt *Network) AddDrivesPulvLayer(ctx *Context, unY, unX int, space float32) (drv, drvP *Layer) {
+	drv = nt.AddDrivesLayer(ctx, unY, unX)
+	drvP = nt.AddPulvForLayer(drv, space)
+	drvP.SetClass("DrivesLayer")
+	return
 }

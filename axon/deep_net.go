@@ -53,7 +53,7 @@ func (nt *Network) AddPulvLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 func (nt *Network) AddSuperCT2D(name string, shapeY, shapeX int, space float32, pat prjn.Pattern) (super, ct *Layer) {
 	super = nt.AddSuperLayer2D(name, shapeY, shapeX)
 	ct = nt.AddCTLayer2D(name+"CT", shapeY, shapeX)
-	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	ct.PlaceBehind(super, space)
 	nt.ConnectSuperToCT(super, ct, pat)
 	super.SetClass(name)
 	ct.SetClass(name)
@@ -67,7 +67,7 @@ func (nt *Network) AddSuperCT2D(name string, shapeY, shapeX int, space float32, 
 func (nt *Network) AddSuperCT4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32, pat prjn.Pattern) (super, ct *Layer) {
 	super = nt.AddSuperLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct = nt.AddCTLayer4D(name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
-	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	ct.PlaceBehind(super, space)
 	nt.ConnectSuperToCT(super, ct, pat)
 	super.SetClass(name)
 	ct.SetClass(name)
@@ -88,7 +88,25 @@ func (nt *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
 		plv = nt.AddPulvLayer4D(name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
 	plv.SetBuildConfig("DriveLayName", name)
-	plv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: space})
+	plv.SetRelPos(relpos.NewBehind(name+"CT", space))
+	return plv
+}
+
+// AddPulvForLayer adds a Pulvinar for given Layer (typically an Input type layer)
+// with a P suffix.  The Pulv.Driver is set to given Layer.
+// The Pulv layer needs other CT connections from higher up to predict this layer.
+// Pulvinar is positioned behind the given Layer.
+func (nt *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
+	name := lay.Name()
+	shp := lay.Shape()
+	var plv *Layer
+	if shp.NumDims() == 2 {
+		plv = nt.AddPulvLayer2D(name+"P", shp.Dim(0), shp.Dim(1))
+	} else {
+		plv = nt.AddPulvLayer4D(name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+	}
+	plv.SetBuildConfig("DriveLayName", name)
+	plv.PlaceBehind(lay, space)
 	return plv
 }
 
@@ -136,7 +154,7 @@ func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.SetClass(name)
 	pulv.SetClass(name)
-	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	pulv.PlaceBehind(in, space)
 	return in, pulv
 }
 
@@ -149,7 +167,7 @@ func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.SetClass(name)
 	pulv.SetClass(name)
-	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	pulv.PlaceBehind(in, space)
 	return in, pulv
 }
 
@@ -172,8 +190,8 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct *Layer, suffix string, super
 	}
 	pt.SetClass(name)
 	thal.SetClass(name)
-	pt.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: ct.Name(), XAlign: relpos.Left, Space: space})
-	thal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pt.Name(), XAlign: relpos.Left, Space: space})
+	pt.PlaceBehind(ct, space)
+	thal.PlaceBehind(pt, space)
 	one2one := prjn.NewOneToOne()
 	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal")

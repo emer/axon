@@ -33,13 +33,13 @@ func (nt *Network) AddTDLayers(prefix string, rel relpos.Relations, space float3
 	ri.SetBuildConfig("TDPredLayName", rp.Name())
 	td.SetBuildConfig("TDIntegLayName", ri.Name())
 	if rel == relpos.Behind {
-		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), XAlign: relpos.Left, Space: space})
-		ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), XAlign: relpos.Left, Space: space})
-		td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), XAlign: relpos.Left, Space: space})
+		rp.PlaceBehind(rew, space)
+		ri.PlaceBehind(rp, space)
+		td.PlaceBehind(ri, space)
 	} else {
-		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
-		ri.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
-		td.SetRelPos(relpos.Rel{Rel: rel, Other: ri.Name(), YAlign: relpos.Front, Space: space})
+		rp.PlaceRightOf(rew, space)
+		ri.PlaceRightOf(rp, space)
+		td.PlaceRightOf(ri, space)
 	}
 	return
 }
@@ -53,11 +53,11 @@ func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float3
 	da = nt.AddLayer2D(prefix+"DA", 1, 1, RWDaLayer)
 	da.SetBuildConfig("RWPredLayName", rp.Name())
 	if rel == relpos.Behind {
-		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), XAlign: relpos.Left, Space: space})
-		da.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), XAlign: relpos.Left, Space: space})
+		rp.PlaceBehind(rew, space)
+		da.PlaceBehind(rp, space)
 	} else {
-		rp.SetRelPos(relpos.Rel{Rel: rel, Other: rew.Name(), YAlign: relpos.Front, Space: space})
-		da.SetRelPos(relpos.Rel{Rel: rel, Other: rp.Name(), YAlign: relpos.Front, Space: space})
+		rp.PlaceRightOf(rew, space)
+		da.PlaceRightOf(rp, space)
 	}
 	return
 }

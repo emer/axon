@@ -372,26 +372,26 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	////////////////////////////////////////////////
 	// position
 
-	vPgpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: rew.Name(), YAlign: relpos.Front, Space: space})
-	ach.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: snc.Name(), XAlign: relpos.Left, Space: space})
+	vPgpi.PlaceRightOf(rew, space)
+	ach.PlaceBehind(snc, space)
 
 	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: rew.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	us.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: drives.Name(), XAlign: relpos.Left, Space: space})
-	cs.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: drives.Name(), YAlign: relpos.Front, Space: space})
-	dist.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: cs.Name(), YAlign: relpos.Front, Space: space})
-	time.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: distp.Name(), XAlign: relpos.Left, Space: space})
-	pos.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: dist.Name(), YAlign: relpos.Front, Space: space})
-	gate.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pos.Name(), XAlign: relpos.Left, Space: space})
+	us.PlaceBehind(drives, space)
+	cs.PlaceRightOf(drives, space)
+	dist.PlaceRightOf(cs, space)
+	time.PlaceBehind(distp, space)
+	pos.PlaceRightOf(dist, space)
+	gate.PlaceBehind(pos, space)
 
-	m1.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: pos.Name(), YAlign: relpos.Front, Space: space})
-	m1P.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1.Name(), XAlign: relpos.Left, Space: space})
-	vl.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: m1P.Name(), XAlign: relpos.Left, Space: space})
-	act.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: vl.Name(), XAlign: relpos.Left, Space: space})
+	m1.PlaceRightOf(pos, space)
+	m1P.PlaceBehind(m1, space)
+	vl.PlaceBehind(m1P, space)
+	act.PlaceBehind(vl, space)
 
 	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	ofc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: blaa.Name(), YAlign: relpos.Front, Space: space})
-	acc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: ofc.Name(), YAlign: relpos.Front, Space: space})
-	alm.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: acc.Name(), YAlign: relpos.Front, Space: space})
+	ofc.PlaceRightOf(blaa, space)
+	acc.PlaceRightOf(ofc, space)
+	alm.PlaceRightOf(acc, space)
 
 	err := net.Build()
 	if err != nil {

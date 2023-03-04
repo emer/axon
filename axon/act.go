@@ -418,8 +418,8 @@ type PopCodeParams struct {
 }
 
 func (pc *PopCodeParams) Defaults() {
-	pc.Min = -0.5
-	pc.Max = 1.5
+	pc.Min = -0.25
+	pc.Max = 1.25
 	pc.Sigma = 0.2
 	pc.Clip.SetBool(true)
 	pc.Thr = 0.1

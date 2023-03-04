@@ -19,7 +19,7 @@ import (
 // space is the spacing between layers (2 typical).
 // A CIN or more widely used RSalienceLayer should be added and
 // project ACh to the MtxGo, No layers.
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi AxonLayer) {
+func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi *Layer) {
 	gpi = nt.AddGPiLayer2D(prefix+"GPi", gpNeurY, gpNeurX)
 	gpeOuti := nt.AddGPeLayer2D(prefix+"GPeOut", gpNeurY, gpNeurX)
 	gpeOuti.SetBuildConfig("GPType", "GPeOut")
@@ -67,14 +67,14 @@ func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeur
 	nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib).SetClass("GPeInToMtx")
 	nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib).SetClass("GPeInToMtx")
 
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpi.Name(), XAlign: relpos.Left, Space: space})
-	gpeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeOut.Name(), YAlign: relpos.Front, Space: space})
-	gpeTA.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeIn.Name(), YAlign: relpos.Front, Space: space})
-	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
-	stns.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: stnp.Name(), YAlign: relpos.Front, Space: space})
+	gpeOut.PlaceBehind(gpi, space)
+	gpeIn.PlaceRightOf(gpeOut, space)
+	gpeTA.PlaceRightOf(gpeIn, space)
+	stnp.PlaceRightOf(gpi, space)
+	stns.PlaceRightOf(stnp, space)
 
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
-	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
+	mtxGo.PlaceBehind(gpeOut, space)
+	mtxNo.PlaceRightOf(mtxGo, space)
 
 	return
 }
@@ -88,7 +88,7 @@ func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeur
 // space is the spacing between layers (2 typical)
 // A CIN or more widely used RSalienceLayer should be added and
 // project ACh to the MtxGo, No layers.
-func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi AxonLayer) {
+func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi *Layer) {
 	gpi = nt.AddGPiLayer4D(prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti := nt.AddGPeLayer4D(prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti.SetBuildConfig("GPType", "GPeOut")
@@ -137,14 +137,14 @@ func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib).SetClass("GPeInToMtx")
 	nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib).SetClass("GPeInToMtx")
 
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpi.Name(), XAlign: relpos.Left, Space: space})
-	gpeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeOut.Name(), YAlign: relpos.Front, Space: space})
-	gpeTA.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeIn.Name(), YAlign: relpos.Front, Space: space})
-	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
-	stns.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: stnp.Name(), YAlign: relpos.Front, Space: space})
+	gpeOut.PlaceBehind(gpi, space)
+	gpeIn.PlaceRightOf(gpeOut, space)
+	gpeTA.PlaceRightOf(gpeIn, space)
+	stnp.PlaceRightOf(gpi, space)
+	stns.PlaceRightOf(stnp, space)
 
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
-	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
+	mtxGo.PlaceBehind(gpeOut, space)
+	mtxNo.PlaceRightOf(mtxGo, space)
 
 	return
 }
@@ -157,7 +157,7 @@ func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 // If other ACh modulation is needed, a global RSalienceLayer can be used.
 func (nt *Network) AddCINLayer(name, mtxGo, mtxNo string, space float32) *Layer {
 	cin := nt.AddRSalienceAChLayer(name)
-	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo, YAlign: relpos.Front, Space: space})
+	cin.SetRelPos(relpos.NewRightOf(mtxNo, space))
 	return cin
 }
 

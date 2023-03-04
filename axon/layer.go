@@ -88,6 +88,8 @@ func (ly *Layer) Defaults() {
 		ly.VSPatchDefaults()
 	case PVLayer:
 		ly.Params.PVDefaults()
+	case DrivesLayer:
+		ly.Params.DrivesDefaults()
 
 	case MatrixLayer:
 		ly.MatrixDefaults()

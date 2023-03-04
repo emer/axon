@@ -6,6 +6,8 @@ package axon
 
 import (
 	"encoding/json"
+
+	"github.com/goki/mat32"
 )
 
 //gosl: hlsl layerparams
@@ -396,7 +398,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		} else {
 			us = ctx.DrivePVLV.USneg.Get(pi)
 		}
-		nrn.GeRaw = us
+		nrn.GeRaw = mat32.Abs(us)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case PVLayer:
 		pv := float32(0)
@@ -415,14 +417,19 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:
 		if ni == 0 {
-			nrn.GeRaw = ctx.DrivePVLV.LHb.LHbDip
+			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.LHbDip)
 		} else {
-			nrn.GeRaw = ctx.DrivePVLV.LHb.LHbBurst
+			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.LHbBurst)
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
 		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
-		nrn.GeRaw = dr
+		pc := dr
+		if dr > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			pc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+		}
+		nrn.GeRaw = pc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	}
 	return saveVal
@@ -588,7 +595,12 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
 		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
-		nrn.Act = dr
+		pc := dr
+		if dr > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			pc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+		}
+		nrn.Act = pc
 	case VSPatchLayer:
 		if nrn.NeurIdx == pl.StIdx {
 			ctx.DrivePVLV.VSPatchVals.SetVal(pl.AvgMax.CaSpkP.Cycle.Avg, pi, ly.Learn.NeuroMod.Valence, ly.Learn.NeuroMod.DAMod)

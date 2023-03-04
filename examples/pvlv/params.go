@@ -123,6 +123,29 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":        "0.5",
 					"Layer.Inhib.Pool.FFPrv":     "10",
 				}},
+			{Sel: ".DrivesLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "0.5",
+					"Layer.Pulv.DriveScale":      "0.05",
+				}},
+			{Sel: ".USLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "0.5",
+				}},
+			{Sel: ".VSPatchLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Layer.Gi":       "0.5",
+					"Layer.Inhib.Pool.On":        "false",
+					"Layer.Inhib.Pool.Gi":        "0.5",
+				}},
 			{Sel: "#USTimeIn", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.01",
@@ -167,11 +190,11 @@ var ParamSets = params.Sets{
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
-			{Sel: ".RWPredLayer", Desc: "",
-				Params: params.Params{
-					"Layer.RWPred.PredRange.Min": "0.01",
-					"Layer.RWPred.PredRange.Max": "0.99",
-				}},
+			// {Sel: ".RWPredLayer", Desc: "",
+			// 	Params: params.Params{
+			// 		"Layer.RWPred.PredRange.Min": "0.01",
+			// 		"Layer.RWPred.PredRange.Max": "0.99",
+			// 	}},
 			////////////////////////////////////////////////////////////////
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",

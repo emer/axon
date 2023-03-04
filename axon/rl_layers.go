@@ -75,7 +75,11 @@ func (rp *RWDaParams) Update() {
 
 // GeFmDA returns excitatory conductance from DA dopamine value
 func (rp *RWDaParams) GeFmDA(da float32) float32 {
-	return rp.TonicGe * (1.0 + da)
+	ge := rp.TonicGe * (1.0 + da)
+	if ge < 0 {
+		ge = 0
+	}
+	return ge
 }
 
 // TDIntegParams are params for reward integrator layer

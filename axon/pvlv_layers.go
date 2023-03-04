@@ -115,3 +115,12 @@ func (ly *LayerParams) PVDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.1
 	ly.Act.PopCode.On.SetBool(true)
 }
+
+func (ly *LayerParams) DrivesDefaults() {
+	ly.Inhib.Layer.On.SetBool(false)
+	ly.Inhib.Layer.Gi = 0.1
+	ly.Inhib.Pool.On.SetBool(true)
+	ly.Inhib.Pool.Gi = 0.9
+	ly.Inhib.ActAvg.Nominal = 0.1
+	ly.Act.PopCode.On.SetBool(true)
+}

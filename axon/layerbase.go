@@ -130,6 +130,24 @@ func (ly *LayerBase) SetRelPos(rel relpos.Rel) {
 	}
 }
 
+// PlaceRightOf positions the layer to the right of the other layer,
+// with given spacing, using default YAlign = Front alignment
+func (ly *LayerBase) PlaceRightOf(other *Layer, space float32) {
+	ly.Rel = relpos.NewRightOf(other.Name(), space)
+}
+
+// PlaceBehind positions the layer behind the other layer,
+// with given spacing, using default XAlign = Left alignment
+func (ly *LayerBase) PlaceBehind(other *Layer, space float32) {
+	ly.Rel = relpos.NewBehind(other.Name(), space)
+}
+
+// PlaceAbove positions the layer above the other layer,
+// using default XAlign = Left, YAlign = Front alignment
+func (ly *LayerBase) PlaceAbove(other *Layer) {
+	ly.Rel = relpos.NewAbove(other.Name())
+}
+
 func (ly *LayerBase) Size() mat32.Vec2 {
 	if ly.Rel.Scale == 0 {
 		ly.Rel.Defaults()
