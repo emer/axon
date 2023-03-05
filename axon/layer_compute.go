@@ -251,8 +251,7 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		lay2MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay2Idx)
 		lay3MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay3Idx)
 		lay4MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay4Idx)
-		lay5MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay5Idx)
-		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct)
+		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
 	case RWDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]

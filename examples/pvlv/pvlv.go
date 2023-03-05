@@ -30,6 +30,7 @@ import (
 	"github.com/emer/etable/split"
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
+	"github.com/goki/ki/ki"
 	"github.com/goki/ki/kit"
 	"github.com/goki/mat32"
 	"github.com/goki/vgpu/vgpu"
@@ -68,8 +69,7 @@ func guirun() {
 // as arguments to methods, and provides the core GUI interface (note the view tags
 // for the fields which provide hints to how things should be displayed).
 type Sim struct {
-	RunName  string           `view:"environment run name"`
-	UseOFC   bool             `view:"use OFC instead of USTimeIn"`
+	RunName  string           `view:"-" desc:"environment run name"`
 	Net      *axon.Network    `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	Params   emer.Params      `view:"inline" desc:"all parameter management"`
 	Loops    *looper.Manager  `view:"no-inline" desc:"contains looper control loops for running sim"`
@@ -132,7 +132,7 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 
-	ss.Context.DrivePVLV.Drive.NActive = int32(cond.NPVs)
+	ss.Context.DrivePVLV.Drive.NActive = int32(cond.NUSs)
 
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
@@ -142,7 +142,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "PVLV")
 	ev := ss.Envs["Train"].(*cond.CondEnv)
 	ny := ev.NYReps
-	nUSs := cond.NPVs
+	nUSs := cond.NUSs
 
 	nuBgY := 5
 	nuBgX := 5
@@ -159,8 +159,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	stim := ev.CurStates["StimIn"]
 	ctxt := ev.CurStates["ContextIn"]
-	timeIn := ev.CurStates["USTimeIn"]
-	// pv := ev.CurStates["PosPV"]
+	// timeIn := ev.CurStates["USTimeIn"]
 
 	vta, lhb := net.AddVTALHbLayers(relpos.Behind, space)
 	ach := net.AddRSalienceAChLayer("ACh")
@@ -185,9 +184,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	cs, csP := net.AddInputPulv4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
 
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
-	ustimeIn := net.AddLayer4D("USTimeIn", timeIn.Dim(0), timeIn.Dim(1), timeIn.Dim(2), timeIn.Dim(3), axon.InputLayer)
 	_ = ctxIn
-	_ = ustimeIn
+	// ustimeIn := net.AddLayer4D("USTimeIn", timeIn.Dim(0), timeIn.Dim(1), timeIn.Dim(2), timeIn.Dim(3), axon.InputLayer)
+	// _ = ustimeIn
 
 	gate := net.AddLayer2D("Gate", ny, 2, axon.InputLayer) // signals gated or not
 	_ = gate
@@ -225,8 +224,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
-
-	ach.SetBuildConfig("SrcLay1Name", pptg.Name())
 
 	// BLA
 	net.ConnectToBLA(cs, blaPosA, full)
@@ -295,7 +292,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	cs.PlaceRightOf(time, space)
 	ctxIn.PlaceRightOf(cs, space)
-	ustimeIn.PlaceRightOf(ctxIn, space)
+	// ustimeIn.PlaceRightOf(ctxIn, space)
 
 	blaPosA.PlaceAbove(drives)
 	blaNegA.PlaceBehind(blaPosE, space)
@@ -644,13 +641,20 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	plt.SetTable(dt)
 
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
-		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Init()
-			ss.GUI.UpdateWindow()
-		},
+	cb := gi.AddNewComboBox(ss.GUI.ToolBar, "runs")
+	cb.ItemsFromStringList(cond.RunNames, false, 50)
+	ri := 0
+	for i, rn := range cond.RunNames {
+		if rn == ss.RunName {
+			ri = i
+			break
+		}
+	}
+	cb.SelectItem(ri)
+	cb.ComboSig.Connect(ss.GUI.Win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		ss.RunName = data.(string)
+		ev := ss.Envs["Train"].(*cond.CondEnv)
+		ev.RunName = ss.RunName
 	})
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",

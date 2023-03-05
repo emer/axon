@@ -286,8 +286,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// todo: blae is not connected properly at all yet
 
-	ach.SetBuildConfig("SrcLay1Name", pptg.Name())
-
 	// BLA
 	net.ConnectToBLA(cs, blaa, full)
 	net.ConnectToBLA(us, blaa, pone2one).SetClass("USToBLA")

@@ -357,7 +357,6 @@ type VTA struct {
 
 func (vt *VTA) Defaults() {
 	vt.Gain.SetAll(1)
-	// todo: VSPatchPos may need to be 2
 }
 
 // DAFmRaw computes the intermediate Vals and final DA value from

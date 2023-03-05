@@ -101,6 +101,7 @@ type LayerParams struct {
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
 	BLA     BLAParams     `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes basolateral amygdala -- most of which is implemented by the NeuroMod settings for DA and ACh modulation."`
+	PPTg    PPTgParams    `viewif:"LayType=PPTgLayer" view:"inline" desc:"parameterizes PPTg = pedunculopontine tegmental nucleus layer."`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
@@ -123,6 +124,7 @@ func (ly *LayerParams) Update() {
 	ly.TDDa.Update()
 
 	ly.BLA.Update()
+	ly.PPTg.Update()
 
 	ly.Matrix.Update()
 	ly.GP.Update()
@@ -147,6 +149,7 @@ func (ly *LayerParams) Defaults() {
 	ly.TDDa.Defaults()
 
 	ly.BLA.Defaults()
+	ly.PPTg.Defaults()
 
 	ly.Matrix.Defaults()
 	ly.GP.Defaults()
@@ -565,7 +568,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 
 	case PPTgLayer:
 		if ni == 0 {
-			ctx.NeuroMod.PPTg = lpl.AvgMax.Act.Cycle.Max // todo: use CaSpkP instead of Act?
+			ctx.NeuroMod.PPTg = ly.PPTg.PPTgGain * lpl.AvgMax.CaSpkP.Cycle.Max
 		}
 	case USLayer:
 		us := float32(0)
@@ -638,7 +641,7 @@ func (ly *LayerParams) RSalAChMaxLayAct(maxAct, layMaxAct float32) float32 {
 	return maxAct
 }
 
-func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct float32) {
+func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct float32) {
 	maxAct := float32(0)
 	if ly.RSalACh.Rew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() {
@@ -651,11 +654,16 @@ func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, vals *LayerVals, lay1
 			maxAct = rpAct
 		}
 	}
+	if ly.RSalACh.PPTg.IsTrue() {
+		ptAct := ly.RSalACh.Thr(ctx.NeuroMod.PPTg)
+		if ptAct > maxAct {
+			maxAct = ptAct
+		}
+	}
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay1MaxAct)
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay2MaxAct)
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay3MaxAct)
 	maxAct = ly.RSalAChMaxLayAct(maxAct, lay4MaxAct)
-	maxAct = ly.RSalAChMaxLayAct(maxAct, lay5MaxAct)
 	vals.NeuroMod.AChRaw = maxAct
 	vals.NeuroMod.AChFmRaw(ly.Act.Dt.IntDt)
 

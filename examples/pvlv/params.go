@@ -122,10 +122,11 @@ var ParamSets = params.Sets{
 			{Sel: ".PPTgLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Layer.Gi":       "1.0", // todo: explore
 					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.5",
-					"Layer.Inhib.Pool.FFPrv":     "10",
+					"Layer.Inhib.Pool.Gi":        "0.5", // todo: could be lower = more bursting
+					"Layer.Inhib.Pool.FFPrv":     "10",  // key td param
+					"Layer.PPTg.PPTgGain":        "2",   // key for impact on CS bursting
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
@@ -149,10 +150,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":       "1.0",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.0",
-				}},
-			{Sel: "#USTimeIn", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.01",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{

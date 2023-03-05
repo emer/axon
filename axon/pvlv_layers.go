@@ -26,6 +26,21 @@ func (bp *BLAParams) Update() {
 
 }
 
+// PPTgParams has parameters for PPTg = pedunculopontine tegmental nucleus layer.
+type PPTgParams struct {
+	PPTgGain float32 `desc:"extra multiplier on raw PPTg Max CaSpkP activity for driving effects of PPTg on ACh and DA neuromodulation"`
+
+	pad, pad1, pad2 float32
+}
+
+func (pp *PPTgParams) Defaults() {
+	pp.PPTgGain = 2
+}
+
+func (bp *PPTgParams) Update() {
+
+}
+
 //gosl: end pvlv_layers
 
 func (ly *LayerParams) BLADefaults() {
@@ -80,47 +95,32 @@ func (ly *Layer) VSPatchDefaults() {
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 1
 	ly.Params.Learn.NeuroMod.AChDisInhib = 0 // 5 for matrix -- not sure about this?
-
-	// important: user needs to adjust wt scale of some PFC inputs vs others:
-	// drivers vs. modulators
-
-	// for _, pji := range ly.RcvPrjns {
-	// 	pj := pji.(AxonPrjn).AsAxon()
-	// 	pj.Params.SWt.Init.SPct = 0
-	// 	if pj.Send.(AxonLayer).LayerType() == GPLayer { // From GPe TA or In
-	// 		pj.Params.PrjnScale.Abs = 1
-	// 		pj.Params.Learn.Learn.SetBool(false)
-	// 		pj.Params.SWt.Adapt.SigGain = 1
-	// 		pj.Params.SWt.Init.Mean = 0.75
-	// 		pj.Params.SWt.Init.Var = 0.0
-	// 		pj.Params.SWt.Init.Sym.SetBool(false)
-	// 		if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
-	// 			pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
-	// 		} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
-	// 			if strings.HasSuffix(ly.Nm, "MtxGo") {
-	// 				pj.Params.PrjnScale.Abs = 2 // was .8
-	// 			} else {
-	// 				pj.Params.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
-	// 			}
-	// 		}
-	// 	}
-	// }
 }
 
 func (ly *LayerParams) PVDefaults() {
+	ly.Inhib.ActAvg.Nominal = 0.1
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.1
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Pool.Gi = 0.1
-	ly.Inhib.ActAvg.Nominal = 0.1
 	ly.Act.PopCode.On.SetBool(true)
 }
 
 func (ly *LayerParams) DrivesDefaults() {
+	ly.Inhib.ActAvg.Nominal = 0.1
 	ly.Inhib.Layer.On.SetBool(false)
 	ly.Inhib.Layer.Gi = 0.1
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Pool.Gi = 0.9
+	ly.Act.PopCode.On.SetBool(true)
+}
+
+func (ly *LayerParams) PPTgDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.1
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 1 // todo: explore
+	ly.Inhib.Pool.On.SetBool(true)
+	ly.Inhib.Pool.Gi = 0.5   // todo: could be lower!
+	ly.Inhib.Pool.FFPrv = 10 // key for temporal derivative
 	ly.Act.PopCode.On.SetBool(true)
 }
