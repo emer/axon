@@ -427,12 +427,12 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
 		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
-		pc := dr
+		dpc := dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
-			pc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
 		}
-		nrn.GeRaw = pc
+		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	}
 	return saveVal
@@ -598,12 +598,12 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
 		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
-		pc := dr
+		dpc := dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
-			pc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
 		}
-		nrn.Act = pc
+		nrn.Act = dpc
 	case VSPatchLayer:
 		if nrn.NeurIdx == pl.StIdx {
 			val := pl.AvgMax.CaSpkD.Cycle.Avg / ly.Inhib.ActAvg.Nominal

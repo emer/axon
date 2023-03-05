@@ -655,6 +655,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		ss.RunName = data.(string)
 		ev := ss.Envs["Train"].(*cond.CondEnv)
 		ev.RunName = ss.RunName
+		ev.InitCond()
 	})
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
