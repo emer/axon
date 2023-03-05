@@ -52,7 +52,11 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / ndrives
 				}},
-			{Sel: "#PosPV", Desc: "expect act",
+			{Sel: ".USLayer", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.25", // 1 / ndrives
+				}},
+			{Sel: ".PVLayer", Desc: "expect act",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.25", // 1 / ndrives
 				}},
@@ -142,9 +146,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
 					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "0.5",
-					"Layer.Inhib.Pool.On":        "false",
-					"Layer.Inhib.Pool.Gi":        "0.5",
+					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Pool.On":        "true",
+					"Layer.Inhib.Pool.Gi":        "1.0",
 				}},
 			{Sel: "#USTimeIn", Desc: "",
 				Params: params.Params{
@@ -268,7 +272,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base": "0.001",
 					"Prjn.PrjnScale.Rel":    "0.5",
 				}},
-			{Sel: "#PosPVToBLAPosAcqD1", Desc: "",
+			{Sel: "#USposToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "5.0",
 				}},
@@ -339,7 +343,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Learn.Learn":   "false",
 				}},
-			{Sel: "#PosPVToVpMtxGo", Desc: "",
+			{Sel: "#USposToVpMtxGo", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "5",
 					"Prjn.PrjnScale.Rel": ".2",
@@ -373,14 +377,6 @@ var ParamSets = params.Sets{
 			{Sel: ".GPeInToMtx", Desc: "provides weak counterbalance for GPeTA -> Mtx to reduce oscillations",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5",
-				}},
-			{Sel: ".RWPrjn", Desc: "to reward prediction",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.002", // 0.002 -- this is key param for how much BG learning happens!
-					// does not affect too much..
-					"Prjn.SWt.Init.Mean": "0.0",
-					"Prjn.SWt.Init.Var":  "0.0",
-					"Prjn.SWt.Init.Sym":  "false",
 				}},
 		}},
 	},

@@ -26,11 +26,13 @@ type AvgMaxPhases struct {
 	Cycle AvgMaxI32 `view:"inline" desc:"updated every cycle -- this is the source of all subsequent time scales"`
 	Minus AvgMaxI32 `view:"inline" desc:"at the end of the minus phase"`
 	Plus  AvgMaxI32 `view:"inline" desc:"at the end of the plus phase"`
+	Prev  AvgMaxI32 `view:"inline" desc:"at the end of the previous plus phase"`
 }
 
 // CycleToMinus grabs current Cycle values into the Minus phase values
 func (am *AvgMaxPhases) CycleToMinus() {
 	am.Minus = am.Cycle
+	am.Prev = am.Plus
 }
 
 // CycleToPlus grabs current Cycle values into the Plus phase values
@@ -48,6 +50,7 @@ func (am *AvgMaxPhases) Zero() {
 	am.Cycle.Zero()
 	am.Minus.Zero()
 	am.Plus.Zero()
+	am.Prev.Zero()
 }
 
 // PoolAvgMax contains the average and maximum values over a Pool of neurons

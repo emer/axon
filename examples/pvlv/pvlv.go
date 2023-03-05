@@ -90,7 +90,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.RunName = "PosAcq_B50"
+	ss.RunName = "PosAcq" // "PosAcq_B50"
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
@@ -169,6 +169,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vsPatchPosD1, vsPatchPosD2 := net.AddVSPatchLayers("", true, nUSs, nuBgY, nuBgX, relpos.Behind, space)
 	vsPatchNegD1, vsPatchNegD2 := net.AddVSPatchLayers("", false, nUSs, nuBgY, nuBgX, relpos.Behind, space)
+	_ = vsPatchNegD1
+	_ = vsPatchNegD2
 
 	drives, drivesP := net.AddDrivesPulvLayer(&ss.Context, popY, popX, space)
 	usPos, usNeg, usPosP, usNegP := net.AddUSPulvLayers(nUSs, nUSs, ny, relpos.Behind, space)
@@ -239,7 +241,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// BG / DA connections
 
 	// same prjns to stn as mtxgo
-	net.ConnectToMatrix(pvPos, vPmtxGo, pone2one)
+	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
 	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
 	net.ConnectLayers(blaPosA, vPstnp, full, emer.Forward)
@@ -265,8 +267,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToVSPatch(ofcPT, vsPatchPosD1, pone2one)
 	net.ConnectToVSPatch(ofcPT, vsPatchPosD2, pone2one)
-	net.ConnectToVSPatch(ofcPT, vsPatchNegD1, pone2one)
-	net.ConnectToVSPatch(ofcPT, vsPatchNegD2, pone2one)
+	// net.ConnectToVSPatch(ofcPT, vsPatchNegD1, pone2one)
+	// net.ConnectToVSPatch(ofcPT, vsPatchNegD2, pone2one)
 
 	// net.ConnectToVSPatch(ustimeIn, vsPatchPosD1, full)
 	// net.ConnectToVSPatch(ustimeIn, vsPatchPosD2, full)
@@ -453,7 +455,9 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
-	ss.Envs.ByMode(etime.Train).Init(0)
+	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ev.RunName = ss.RunName
+	ev.Init(0)
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
@@ -534,13 +538,17 @@ func (ss *Sim) ConfigLogs() {
 
 func (ss *Sim) ConfigLogItems() {
 	li := ss.Logs.AddStatAggItem("DA", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li.FixMin = false
+	li.Range.Min = -1
+	li.Range.Max = 1
+	li.FixMin = true
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("ACh", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.FixMin = false
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("VSPatchPos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li.FixMin = false
+	li.Range.Min = -1
+	li.Range.Max = 1
+	li.FixMin = true
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("VSPatchNeg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.FixMin = false
@@ -595,6 +603,12 @@ func (ss *Sim) BlockStats() {
 		trl := int(dt.CellFloat("Trial", ri))
 		dt.SetCellString("TrialType", ri, fmt.Sprintf("%s_%d", tt, trl))
 	}
+	dt.SetMetaData("DA:On", "+")
+	dt.SetMetaData("VSPatchPos:On", "+")
+	dt.SetMetaData("DA:FixMin", "+")
+	dt.SetMetaData("DA:Min", "-1")
+	dt.SetMetaData("DA:FixMax", "+")
+	dt.SetMetaData("DA:Max", "1")
 	ss.Logs.MiscTables[stnm] = dt
 	plt.SetTable(dt)
 	plt.Update()
@@ -629,6 +643,15 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	plt.Params.XAxisCol = "TrialType"
 
 	plt.SetTable(dt)
+
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
+		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.Init()
+			ss.GUI.UpdateWindow()
+		},
+	})
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",

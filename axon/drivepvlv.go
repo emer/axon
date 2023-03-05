@@ -373,6 +373,9 @@ func (vt *VTA) DAFmRaw() {
 	if vt.Vals.VSPatchPos < 0 {
 		vt.Vals.VSPatchPos = 0
 	}
+	if vt.Vals.PVpos <= 0.01 {
+		vt.Vals.VSPatchPos = 0
+	}
 
 	burstDA := mat32.Max(vt.Vals.PVpos, vt.Vals.PPTg)
 	burstDA = mat32.Max(burstDA, vt.Vals.LHbBurst)
@@ -462,6 +465,9 @@ func (dp *DrivePVLV) DA(pptg float32) float32 {
 	pvNeg := dp.NegPV()
 	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
 	dp.VSPatchVals.PosNegFmVals()
+	if pvPos <= 0.01 {
+		dp.VSPatchVals.Pos = 0
+	}
 	dp.LHb.LHbFmPVVS(pvPos, pvNeg, dp.VSPatchVals.Pos, dp.VSPatchVals.Neg)
 	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.LHbDip, dp.LHb.LHbBurst, dp.VSPatchVals.Pos)
 	dp.VTA.DAFmRaw()
