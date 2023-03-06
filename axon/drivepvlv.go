@@ -464,9 +464,6 @@ func (dp *DrivePVLV) DA(pptg float32) float32 {
 	pvNeg := dp.NegPV()
 	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
 	dp.VSPatchVals.PosNegFmVals()
-	if pvPos <= 0.01 {
-		dp.VSPatchVals.Pos = 0
-	}
 	dp.LHb.LHbFmPVVS(pvPos, pvNeg, dp.VSPatchVals.Pos, dp.VSPatchVals.Neg)
 	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.LHbDip, dp.LHb.LHbBurst, dp.VSPatchVals.Pos)
 	dp.VTA.DAFmRaw()

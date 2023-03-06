@@ -264,6 +264,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToVSPatch(ofcPT, vsPatchPosD1, pone2one)
 	net.ConnectToVSPatch(ofcPT, vsPatchPosD2, pone2one)
+	net.ConnectToVSPatch(ofcCT, vsPatchPosD1, pone2one)
+	net.ConnectToVSPatch(ofcCT, vsPatchPosD2, pone2one)
+	net.ConnectToVSPatch(time, vsPatchPosD1, full)
+	net.ConnectToVSPatch(time, vsPatchPosD2, full)
 	// net.ConnectToVSPatch(ofcPT, vsPatchNegD1, pone2one)
 	// net.ConnectToVSPatch(ofcPT, vsPatchNegD2, pone2one)
 
@@ -448,13 +452,19 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	dr.SetDrive(0, 1) // todo: need to get drive somehow -- add to env?
 }
 
+// InitEnvRun intializes a new environment run, as when the RunName is changed
+// or at NewRun()
+func (ss *Sim) InitEnvRun() {
+	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ev.RunName = ss.RunName
+	ev.Init(0)
+}
+
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
 // for the new run value
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
-	ev := ss.Envs["Train"].(*cond.CondEnv)
-	ev.RunName = ss.RunName
-	ev.Init(0)
+	ss.InitEnvRun()
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
@@ -653,9 +663,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	cb.SelectItem(ri)
 	cb.ComboSig.Connect(ss.GUI.Win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		ss.RunName = data.(string)
-		ev := ss.Envs["Train"].(*cond.CondEnv)
-		ev.RunName = ss.RunName
-		ev.InitCond()
+		ss.InitEnvRun()
 	})
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
