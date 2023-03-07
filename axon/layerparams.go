@@ -100,7 +100,7 @@ type LayerParams struct {
 	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
-	BLA     BLAParams     `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes basolateral amygdala -- most of which is implemented by the NeuroMod settings for DA and ACh modulation."`
+	BLA     BLAParams     `viewif:"LayType=BLALayer" view:"inline" desc:"parameterizes basolateral amygdala -- most of which is implemented by the NeuroMod settings for DA and ACh modulation."`
 	PPTg    PPTgParams    `viewif:"LayType=PPTgLayer" view:"inline" desc:"parameterizes PPTg = pedunculopontine tegmental nucleus layer."`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`

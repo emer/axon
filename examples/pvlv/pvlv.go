@@ -232,6 +232,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// todo: from deep maint layer
 	// net.ConnectLayersPrjn(ofcPT, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
 	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BgFixed")
+	net.ConnectLayers(ofcPT, blaPosE, pone2one, emer.Forward)
 	// net.ConnectLayers(drives, blaPosE, pone2one, emer.Forward)
 
 	////////////////////////////////////////////////

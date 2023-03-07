@@ -109,7 +109,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L": "0.3",
+					"Layer.Act.Gbar.L":                 "0.3",
+					"Layer.Learn.NeuroMod.BurstGain":   "0",
+					"Layer.Learn.NeuroMod.DipGain":     "1", // ignore small negative DA
+					"Layer.Learn.NeuroMod.AChLRateMod": "0",
 				}},
 			{Sel: "#CeMPos", Desc: "",
 				Params: params.Params{
@@ -145,7 +148,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.4",
 					"Layer.Inhib.Layer.On":       "true",
 					"Layer.Inhib.Layer.Gi":       "1.0",
 					"Layer.Inhib.Pool.On":        "true",
@@ -293,6 +296,14 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: "#OFCPTToBLAPosExtD2", Desc: "weak",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.5",
+					"Prjn.PrjnScale.Abs":    "0.5",
+					"Prjn.SWt.Init.SPct":    "0",
+					"Prjn.SWt.Init.Mean":    "0.1",
+					"Prjn.SWt.Init.Var":     "0.0",
 				}},
 			{Sel: ".BLAToCeM_Excite", Desc: "",
 				Params: params.Params{

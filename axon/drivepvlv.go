@@ -350,12 +350,17 @@ func (vt *VTAVals) Zero() {
 //   - Dipping / pausing inhibitory inputs from lateral habenula (LHb) reflecting
 //     predicted positive outcome > actual, or actual negative > predicted.
 type VTA struct {
+	Thr float32 `desc:"threshold for activity of PVpos or PPTg to determine when different factors are engaged"`
+
+	pad, pad1, pad2 float32
+
 	Gain VTAVals `view:"inline" desc:"gain multipliers on inputs from each input"`
 	Raw  VTAVals `view:"inline" inactive:"+" desc:"raw current values -- inputs to the computation"`
 	Vals VTAVals `view:"inline" inactive:"+" desc:"computed current values"`
 }
 
 func (vt *VTA) Defaults() {
+	vt.Thr = 0.05
 	vt.Gain.SetAll(1)
 }
 
@@ -372,16 +377,17 @@ func (vt *VTA) DAFmRaw() {
 	if vt.Vals.VSPatchPos < 0 {
 		vt.Vals.VSPatchPos = 0
 	}
-	if vt.Vals.PVpos <= 0.01 {
-		vt.Vals.VSPatchPos = 0
+	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos
+	csDA := mat32.Max(vt.Vals.PPTg, vt.Vals.LHbBurst) // - vt.Vals.LHbDip
+	netDA := float32(0)
+	if vt.Vals.PVpos > vt.Thr { // if actual PV, ignore PPTg and apply VSPatchPos
+		netDA = pvDA
+	} else if vt.Vals.PPTg > vt.Thr { // if actual CS, use only CS -- VSPatchPos doesn't count
+		netDA = csDA
+	} else {
+		netDA = pvDA + csDA // throw it all in..
 	}
-
-	burstDA := mat32.Max(vt.Vals.PVpos, vt.Vals.PPTg)
-	burstDA = mat32.Max(burstDA, vt.Vals.LHbBurst)
-	netBurstDA := burstDA - vt.Vals.VSPatchPos // shunting
-
-	dipDA := vt.Vals.LHbDip // *not* shunted by VSPatchNeg -- controversial
-	vt.Vals.DA = vt.Gain.DA * (netBurstDA - dipDA)
+	vt.Vals.DA = vt.Gain.DA * netDA
 }
 
 ///////////////////////////////////////////////////////////////////////////////
