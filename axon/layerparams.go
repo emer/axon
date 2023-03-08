@@ -568,7 +568,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 
 	case PPTgLayer:
 		if ni == 0 {
-			ctx.NeuroMod.PPTg = ly.PPTg.PPTgGain * lpl.AvgMax.CaSpkP.Cycle.Max
+			ctx.NeuroMod.PPTg = ly.PPTg.PPTgVal(lpl.AvgMax.CaSpkP.Cycle.Max)
 		}
 	case USLayer:
 		us := float32(0)

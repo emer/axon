@@ -28,17 +28,26 @@ func (bp *BLAParams) Update() {
 
 // PPTgParams has parameters for PPTg = pedunculopontine tegmental nucleus layer.
 type PPTgParams struct {
-	PPTgGain float32 `desc:"extra multiplier on raw PPTg Max CaSpkP activity for driving effects of PPTg on ACh and DA neuromodulation"`
+	Thr  float32 `desc:"threshold on PPTg activation prior to multiplying by Gain"`
+	Gain float32 `desc:"extra multiplier on raw PPTg Max CaSpkP activity for driving effects of PPTg on ACh and DA neuromodulation"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (pp *PPTgParams) Defaults() {
-	pp.PPTgGain = 2
+	pp.Thr = 0.2
+	pp.Gain = 2
 }
 
-func (bp *PPTgParams) Update() {
+func (pp *PPTgParams) Update() {
 
+}
+
+func (pp *PPTgParams) PPTgVal(val float32) float32 {
+	if val < pp.Thr {
+		return 0
+	}
+	return pp.Gain * val
 }
 
 //gosl: end pvlv_layers

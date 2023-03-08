@@ -2,9 +2,26 @@
 
 This is a ground-up rewrite of PVLV [Mollick et al, 2020](#references) for axon, designed to capture the essential properties of the [Go leabra version](https://github.com/emer/leabra/tree/master/pvlv) in a yet simpler and cleaner way.  Each layer type is implemented in a more self-contained manner using the axon trace-based learning rule, which has better natural affordances for DA modulation.  Thus, these can be used in a more mix-and-match manner (e.g., the BLA can be used to train OFC, independent of its phasic dopamine role).
 
-This is an incremental work-in-progress, documented as it goes along.
-
 Files: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjns.go](axon/pvlv_prjns.go)}.
+
+# A Central Challenge: Learning *Something* when *Nothing* happens
+
+As articulated in the PVLV papers, a central challenge that any RL model must solve is to make learning dependent on expectations such that the *absence* of an expected outcome can serve as a learning event, with the appropriate effects.  This is critical for extinction learning, when an expected reward outcome no longer occurs, and the system must learn to no longer have this expectation of reward.  This issue is particularly challenging for PVLV because extinction learning involves different pathways than initial acquisition (e.g., BLA Ext vs. Acq layers), so some kind of indirect effects of expectation are required.
+
+In the 2020 version of the model, activation of the BLA by a CS, and subsequent activity of the USTime layer, represented the expectation and provided the *modulatory* activity on BLAExt and VSPatch to enable extinction learning conditioned on expectations.
+
+In the current version, the gated goal engaged state, corresponding to *OFC PT layer sustained activity*, is the key neural indicator of an active expectation.  Thus, we need to ensure that the model exhibits proper CS-driven BG (VP) gating of active maintenance in OFC PT, and that this maintained activity is available at the right time to drive extinction learning in the right way.
+
+## Time of learning vs. gating issues
+
+Gating happens within the CS onset theta cycle, resulting in an activated OFC PT layer by the end of the trial, when learning happens.  Thus, barring some additional mechanism, learning from PT -> BLA and VSPatch will happen when it shouldn't.  To prevent this, we could do one of the following:
+
+* Set a flag in context when gating happens, and exclude extinction learning specifically on such trials.
+
+* Add a Maint layer that represents whether system is actively maintaining, updated at transition to next trial.. But this must still be used to condition learning b/c activity in PT is still there regardless..
+
+
+
 
 # BLA: Basolateral Amygdala
 
@@ -52,3 +69,4 @@ The ventral striatum (VS) patch neurons functionally provide the discounting of 
 # References
 
 * Mollick, J. A., Hazy, T. E., Krueger, K. A., Nair, A., Mackie, P., Herd, S. A., & O'Reilly, R. C. (2020). A systems-neuroscience model of phasic dopamine. Psychological Review, 127(6), 972–1021. https://doi.org/10.1037/rev0000199.  [PDF]((https://ccnlab.org/papers/MollickHazyKruegerEtAl20.pdf)
+

@@ -111,8 +111,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Gbar.L":                 "0.3",
 					"Layer.Learn.NeuroMod.BurstGain":   "0",
-					"Layer.Learn.NeuroMod.DipGain":     "1", // ignore small negative DA
+					"Layer.Learn.NeuroMod.DipGain":     "10",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0",
+					"Layer.Learn.RLRate.Diff":          "false", // can turn off if NoDALRate is 0
 				}},
 			{Sel: "#CeMPos", Desc: "",
 				Params: params.Params{
@@ -129,7 +130,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5", // todo: could be lower = more bursting
 					"Layer.Inhib.Pool.FFPrv":     "10",  // key td param
-					"Layer.PPTg.PPTgGain":        "2",   // key for impact on CS bursting
+					"Layer.PPTg.Gain":            "2",   // key for impact on CS bursting
+					"Layer.PPTg.Thr":             "0.2",
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
@@ -264,6 +266,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau": "1",
 				}},
+			{Sel: ".VSPatchPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.1",
+				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
 					"Prjn.SWt.Init.SPct":    "0",
@@ -278,7 +284,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.5",
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			/*
 				{Sel: "#OFCToBLAPosExtD2", Desc: "",
@@ -299,7 +305,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCPTToBLAPosExtD2", Desc: "weak",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.5",
+					"Prjn.Learn.LRate.Base": "0.2",
 					"Prjn.PrjnScale.Abs":    "0.5",
 					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.SWt.Init.Mean":    "0.1",

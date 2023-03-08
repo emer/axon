@@ -265,10 +265,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectToVSPatch(ofcPT, vsPatchPosD1, pone2one)
 	net.ConnectToVSPatch(ofcPT, vsPatchPosD2, pone2one)
-	net.ConnectToVSPatch(ofcCT, vsPatchPosD1, pone2one)
-	net.ConnectToVSPatch(ofcCT, vsPatchPosD2, pone2one)
-	net.ConnectToVSPatch(time, vsPatchPosD1, full)
-	net.ConnectToVSPatch(time, vsPatchPosD2, full)
+	// net.ConnectToVSPatch(ofcCT, vsPatchPosD1, pone2one) // only ofcPT is properly conditional on goal engaged
+	// net.ConnectToVSPatch(ofcCT, vsPatchPosD2, pone2one)
+	// net.ConnectToVSPatch(time, vsPatchPosD1, full)
+	// net.ConnectToVSPatch(time, vsPatchPosD2, full)
 	// net.ConnectToVSPatch(ofcPT, vsPatchNegD1, pone2one)
 	// net.ConnectToVSPatch(ofcPT, vsPatchNegD2, pone2one)
 
@@ -459,6 +459,25 @@ func (ss *Sim) InitEnvRun() {
 	ev := ss.Envs["Train"].(*cond.CondEnv)
 	ev.RunName = ss.RunName
 	ev.Init(0)
+	ss.LoadCondWeights(ev.CurRun.Weights) // only if nonempty
+}
+
+// LoadRunWeights loads weights specified in current run, if any
+func (ss *Sim) LoadRunWeights() {
+	ev := ss.Envs["Train"].(*cond.CondEnv)
+	ss.LoadCondWeights(ev.CurRun.Weights) // only if nonempty
+}
+
+// LoadCondWeights loads weights saved after named condition, in wts/cond.wts.gz
+func (ss *Sim) LoadCondWeights(cond string) {
+	if cond == "" {
+		return
+	}
+	wfn := "wts/" + cond + ".wts.gz"
+	err := ss.Net.OpenWtsJSON(gi.FileName(wfn))
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -469,6 +488,7 @@ func (ss *Sim) NewRun() {
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
+	ss.LoadRunWeights()
 	ss.InitStats()
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Condition)
