@@ -69,13 +69,31 @@ const (
 	// within the thalamus.
 	TRNLayer
 
-	// PTMaintLayer implements the pyramidal tract layer 5 intrinsic bursting
-	// (5IB) deep neurons, which provide the main output signal from cortex,
-	// specifically the subset of PT neurons that are gated by the BG to
-	// drive sustained active maintenance, via strong NMDA channels.
-	// Set projections from thalamus to be modulatory, and use Act.Dend.ModGain
-	// to set extra strength these inputs which are only briefly active.
+	// PTMaintLayer implements the subset of pyramidal tract (PT)
+	// layer 5 intrinsic bursting (5IB) deep neurons that exhibit
+	// robust, stable maintenance of activity over the duration of a
+	// goal engaged window, modulated by basal ganglia (BG) disinhibitory
+	// gating, supported by strong NMDA channels and recurrent excitation.
+	// Use Act.Dend.ModGain to set extra strength for thalamic gating
+	// inputs which are only briefly active.
 	PTMaintLayer
+
+	// PTPredLayer implements the subset of pyramidal tract (PT)
+	// layer 5 intrinsic bursting (5IB) deep neurons that combine
+	// modulatory input from PTMaintLayer sustained maintenance and
+	// CTLayer dynamic predictive learning that helps to predict
+	// state changes during the period of active goal maintenance.
+	// This layer provides the primary input to VSPatch US-timing
+	// prediction layers, and other layers that require predictive dynamic
+	// Use Act.Dend.ModGain to set extra strength for thalamic gating
+	// inputs which are only briefly active.
+	PTPredLayer
+
+	// PTNotMaintLayer implements a tonically active layer that is inhibited
+	// by the PTMaintLayer, thereby providing an active representation of
+	// the *absence* of maintained PT activity, which is useful for driving
+	// appropriate actions (e.g., exploration) when not in goal-engaged mode.
+	PTNotMaintLayer
 
 	/////////////
 	// RL

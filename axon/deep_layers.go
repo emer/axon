@@ -91,8 +91,20 @@ func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
 
 // note: Defaults not called on GPU
 
-// called in Defaults for CT layer type
 func (ly *LayerParams) CTDefaults() {
+	ly.Act.Decay.Act = 0 // deep doesn't decay!
+	ly.Act.Decay.Glong = 0
+	ly.Act.Decay.AHP = 0
+	ly.Act.Dend.SSGi = 0    // key: otherwise interferes with NMDA maint!
+	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
+	ly.Inhib.Pool.Gi = 2.2
+	// these are for longer temporal integration:
+	// ly.Act.NMDA.Gbar = 0.3
+	// ly.Act.NMDA.Tau = 300
+	// ly.Act.GABAB.Gbar = 0.3
+}
+
+func (ly *LayerParams) PTPredDefaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
 	ly.Act.Decay.AHP = 0

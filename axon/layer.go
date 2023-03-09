@@ -66,6 +66,8 @@ func (ly *Layer) Defaults() {
 		ly.Params.CTDefaults()
 	case PTMaintLayer:
 		ly.PTMaintDefaults()
+	case PTPredLayer:
+		ly.Params.PTPredDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
 
@@ -87,11 +89,13 @@ func (ly *Layer) Defaults() {
 	case PPTgLayer:
 		ly.Params.PPTgDefaults()
 	case VSPatchLayer:
-		ly.VSPatchDefaults()
+		ly.Params.VSPatchDefaults()
 	case PVLayer:
 		ly.Params.PVDefaults()
 	case DrivesLayer:
 		ly.Params.DrivesDefaults()
+	case USLayer:
+		ly.Params.USDefaults()
 
 	case MatrixLayer:
 		ly.MatrixDefaults()

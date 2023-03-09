@@ -204,6 +204,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ofcPT, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
 	_ = ofcPT
 	ofcCT.SetClass("OFC CTCopy")
+	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcmd, pone2one, pone2one, pone2one, space)
+	_ = ofcPTPred
+	_ = ofcPT
+	ofcCT.SetClass("OFC CTCopy")
 	// net.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
@@ -307,6 +311,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	gate.PlaceRightOf(blaPosA, space)
 
 	ofc.PlaceRightOf(gate, space)
+	ofcmd.PlaceBehind(ofcPTPred, space)
 
 	err := net.Build()
 	if err != nil {

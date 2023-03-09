@@ -5,6 +5,8 @@
 package axon
 
 import (
+	"strings"
+
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
@@ -171,8 +173,29 @@ func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 	return in, pulv
 }
 
+//////////////////////////////////////////////////////////////////
+//  PTMaintLayer
+
+// AddPTMaintLayer2D adds a PTMaintLayer of given size, with given name.
+func (nt *Network) AddPTMaintLayer2D(name string, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PTMaintLayer)
+	return ly
+}
+
+// AddPTMaintLayer4D adds a PTMaintLayer of given size, with given name.
+func (nt *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PTMaintLayer)
+	return ly
+}
+
+// ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
+// which supports active maintenance, with a class of PTSelfMaint
+func (nt *Network) ConnectPTMaintSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
+}
+
 // AddPTMaintThalForSuper adds a PTMaint pyramidal tract active maintenance layer and a
-// Thalamus layer for given superficial layer (deep.SuperLayer) and associated CT
+// Thalamus layer for given superficial layer (SuperLayer) and associated CT
 // with given suffix (e.g., MD, VM).
 // PT and Thal have SetClass(super.Name()) called to allow shared params.
 // Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal,
@@ -205,6 +228,51 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct *Layer, suffix string, super
 	nt.ConnectLayers(super, pt, superToPT, emer.Forward).SetClass("SuperToPT")
 	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
 	nt.ConnectLayers(ct, thal, ctToThal, emer.Forward).SetClass("CTtoThal")
+	return
+}
+
+//////////////////////////////////////////////////////////////////
+//  PTPredLayer
+
+// AddPTPredLayer2D adds a PTPredLayer of given size, with given name.
+func (nt *Network) AddPTPredLayer2D(name string, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PTPredLayer)
+	return ly
+}
+
+// AddPTPredLayer4D adds a PTPredLayer of given size, with given name.
+func (nt *Network) AddPTPredLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PTPredLayer)
+	return ly
+}
+
+// ConnectPTPredSelf adds a Self (Lateral) projection within a PTPredLayer,
+// which supports active maintenance, with a class of PTSelfMaint
+func (nt *Network) ConnectPTPredSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
+}
+
+// AddPTPredLayer adds a PTPred pyramidal tract prediction layer
+// for given PTMaint layer and associated CT.
+// Sets SetClass(super.Name()) to allow shared params.
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal,
+// PTtoThal, ThalToPT
+// The PTPred layer is positioned behind the PT layer.
+func (nt *Network) AddPTPredLayer(ptMaint, ct, thal *Layer, ptToPredPrjn, ctToPredPrjn, toThalPrjn prjn.Pattern, space float32) (ptPred *Layer) {
+	name := strings.TrimSuffix(ptMaint.Name(), "PT")
+	shp := ptMaint.Shape()
+	if shp.NumDims() == 2 {
+		ptPred = nt.AddPTPredLayer2D(name+"PTPred", shp.Dim(0), shp.Dim(1))
+	} else {
+		ptPred = nt.AddPTPredLayer4D(name+"PTPred", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+	}
+	ptPred.SetClass(name)
+	ptPred.PlaceBehind(ptMaint, space)
+	nt.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn).SetClass("PTtoPred")
+	nt.ConnectLayers(ct, ptPred, ctToPredPrjn, emer.PrjnType(ForwardPrjn)).SetClass("CTtoPred")
+	toThal, fmThal := nt.BidirConnectLayers(ptMaint, thal, toThalPrjn)
+	toThal.SetClass("PredToThal")
+	fmThal.SetClass("ThalToPred")
 	return
 }
 

@@ -37,7 +37,7 @@ func LogTestErrors(lg *elog.Logs) {
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func PCAStats(net *Network, lg *elog.Logs, stats *estats.Stats) {
-	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByType(SuperLayer, TargetLayer, CTLayer))
+	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -122,7 +122,7 @@ func LogInputLayer(lg *elog.Logs, net *Network) {
 // across 3 given time levels, in higher to lower order, e.g., Run, Epoch, Trial
 // These are useful for diagnosing the behavior of the network.
 func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer)
+	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer)
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := net.LayerByName(clnm)
@@ -213,7 +213,7 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
 func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByType(SuperLayer, CTLayer, TargetLayer)
+	layers := net.LayersByType(SuperLayer, CTLayer, PTPredLayer, TargetLayer)
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{

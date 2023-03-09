@@ -93,7 +93,7 @@ type LayerParams struct {
 	//     use the `viewif` field tag to condition on LayType.
 
 	Burst   BurstParams   `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT      CTParams      `viewif:"LayType=CTLayer" view:"inline" desc:"params for the CT corticothalamic layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+	CT      CTParams      `viewif:"LayType=CTLayer,PTPredLayer" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
 	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
 	RSalACh RSalAChParams `viewif:"LayType=RSalienceAChLayer" view:"inline" desc:"parameterizes reward salience as ACh global neuromodulatory signal as a function of the MAX activation of its inputs."`
 	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
@@ -362,9 +362,20 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, drvGe float32, nonDrvPct float32) float32 {
 	saveVal := float32(0)        // sometimes we need to use a value computed here, for the post Gs step
 	pi := int32(nrn.SubPool) - 1 // 0-n pool index
+	geCtxt := float32(0)
 	switch ly.LayType {
+	case PTPredLayer:
+		// fallthrough // todo: support this in gosl
+		geCtxt = ly.CT.GeGain * nrn.CtxtGe
+		nrn.GeRaw += geCtxt
+		if ly.CT.DecayDt > 0 {
+			nrn.CtxtGe -= ly.CT.DecayDt * nrn.CtxtGe
+			ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+			nrn.GeSyn += ctxExt
+			saveVal = ctxExt // used In PostGs to set nrn.GeExt
+		}
 	case CTLayer:
-		geCtxt := ly.CT.GeGain * nrn.CtxtGe
+		geCtxt = ly.CT.GeGain * nrn.CtxtGe
 		nrn.GeRaw += geCtxt
 		if ly.CT.DecayDt > 0 {
 			nrn.CtxtGe -= ly.CT.DecayDt * nrn.CtxtGe
@@ -786,6 +797,17 @@ func (ly *LayerParams) PlusPhasePool(ctx *Context, pl *Pool) {
 	pl.AvgMax.CycleToPlus()
 }
 
+// PlusPhaseNeuronSpecial does special layer type neuron level plus-phase updating
+func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+	switch ly.LayType {
+	case PTMaintLayer:
+		if lpl.AvgMax.CaSpkD.Prev.Max < 0.1 { // if layer was not maintaining last trial, wait until next to represent
+			nrn.CaSpkD = 0
+			nrn.CaSpkP = 0
+		}
+	}
+}
+
 // PlusPhaseNeuron does neuron level plus-phase updating
 func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActP = nrn.ActInt
@@ -803,6 +825,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
 	nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
 	nrn.DTrgAvg += ly.LearnTrgAvgErrLRate() * (nrn.CaSpkP - nrn.CaSpkD)
+	ly.PlusPhaseNeuronSpecial(ctx, ni, nrn, pl, lpl, vals)
 }
 
 //gosl: end layerparams

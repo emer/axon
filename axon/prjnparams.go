@@ -416,11 +416,11 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // for the VSPatchPrjn type.
 func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
-	clr := float32(0)
-	if ctx.NeuroMod.HasRew.IsTrue() {
-		clr = 1.0
-	}
-	dwt := clr * rn.RLRate * pj.Learn.LRate.Eff * rn.CaSpkD * sn.CaSpkD
+	// clr := float32(0)
+	// if ctx.NeuroMod.HasRew.IsTrue() {
+	// 	clr = 1.0
+	// }
+	dwt := rn.RLRate * pj.Learn.LRate.Eff * rn.CaSpkD * sn.CaSpkD
 	sy.DWt += dwt
 }
 
