@@ -446,7 +446,7 @@ func (ss *Sim) ApplyInputs() {
 	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
-// ApplyPVLV applies current PVLV values to Context.DrivePVLV,
+// ApplyPVLV applies current PVLV values to Context.mDrivePVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	dr := &ctx.DrivePVLV

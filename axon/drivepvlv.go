@@ -4,7 +4,10 @@
 
 package axon
 
-import "github.com/goki/mat32"
+import (
+	"github.com/goki/gosl/slbool"
+	"github.com/goki/mat32"
+)
 
 //gosl: start drivepvlv
 
@@ -350,9 +353,10 @@ func (vt *VTAVals) Zero() {
 //   - Dipping / pausing inhibitory inputs from lateral habenula (LHb) reflecting
 //     predicted positive outcome > actual, or actual negative > predicted.
 type VTA struct {
-	Thr float32 `desc:"threshold for activity of PVpos or PPTg to determine when different factors are engaged"`
-
-	pad, pad1, pad2 float32
+	Thr            float32     `desc:"threshold for activity of PVpos or PPTg to determine when different factors are engaged"`
+	LHbDipResetThr float32     `desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
+	LHbDipSum      float32     `inactive:"+" desc:"sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
+	LHbDipReset    slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
 
 	Gain VTAVals `view:"inline" desc:"gain multipliers on inputs from each input"`
 	Raw  VTAVals `view:"inline" inactive:"+" desc:"raw current values -- inputs to the computation"`
@@ -361,6 +365,7 @@ type VTA struct {
 
 func (vt *VTA) Defaults() {
 	vt.Thr = 0.05
+	vt.LHbDipResetThr = 0.5
 	vt.Gain.SetAll(1)
 }
 
@@ -388,6 +393,21 @@ func (vt *VTA) DAFmRaw() {
 		netDA = pvDA + csDA // throw it all in..
 	}
 	vt.Vals.DA = vt.Gain.DA * netDA
+}
+
+// LHbDipResetFmSum increments LHbDipSum and checks if should flag a reset
+func (vt *VTA) LHbDipResetFmSum() {
+	vt.LHbDipSum += vt.Vals.LHbDip
+	if vt.Vals.PVpos > vt.Thr { // if actual PV, reset
+		vt.LHbDipSum = 0
+	} else if vt.Vals.PPTg > vt.Thr { // if actual CS, reset
+		vt.LHbDipSum = 0
+	}
+	vt.LHbDipReset.SetBool(false)
+	if vt.LHbDipSum > vt.LHbDipResetThr {
+		vt.LHbDipReset.SetBool(true)
+		vt.LHbDipSum = 0
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -462,17 +482,18 @@ func (dp *DrivePVLV) NegPV() float32 {
 }
 
 // DA computes the updated dopamine from all the current state,
-// including pptg passed in as an arg.
+// including pptg via Context passed in as an arg.
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
-// Resulting DA is in VTA.Vals.DA and is returned
-func (dp *DrivePVLV) DA(pptg float32) float32 {
+// Resulting DA is in VTA.Vals.DA, set to Context.NeuroMod.DA, and is returned
+func (dp *DrivePVLV) DA(ctx *Context) float32 {
 	pvPosRaw := dp.PosPV()
 	pvNeg := dp.NegPV()
 	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
 	dp.VSPatchVals.PosNegFmVals()
 	dp.LHb.LHbFmPVVS(pvPos, pvNeg, dp.VSPatchVals.Pos, dp.VSPatchVals.Neg)
-	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.LHbDip, dp.LHb.LHbBurst, dp.VSPatchVals.Pos)
+	dp.VTA.Raw.Set(pvPos, pvNeg, ctx.NeuroMod.PPTg, dp.LHb.LHbDip, dp.LHb.LHbBurst, dp.VSPatchVals.Pos)
 	dp.VTA.DAFmRaw()
+	ctx.NeuroMod.DA = dp.VTA.Vals.DA
 	return dp.VTA.Vals.DA
 }
 

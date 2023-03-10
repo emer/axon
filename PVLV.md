@@ -53,20 +53,19 @@ The BG (ventral striatum (VS) & ventral pallidum (VP)) drives disinhibitory gati
 
 Gating happens within the CS-onset theta cycle, driven by direct BLA recognition of the CS and corresponding PPTg temporal-derivative activity that drives ACh, which disinhibits the BG.  This results in an activated OFC PT layer by the end of the trial.  This is problematic in the PVLV context, because the active PT layer will drive activity and learning in the VSPatch layer consistent with the goal engaged state.  In the 2020 PVLV model, the USTime input was programmed to activate only on the post-CS trial.
 
-The CS gating time window is particularly problematic for learning because ACh is active at this point, and it serves as a learning modulator.  Thus, absent some other mechanism, VSPatch will learn to expect dopamine at the time of CS onset.
-
-To prevent this, we could do one of the following:
-
-* Set a flag in context when gating happens, and exclude extinction learning specifically on such trials.
-
-* Add a Maint layer that represents whether system is actively maintaining, updated at transition to next trial.. But this must still be used to condition learning b/c activity in PT is still there regardless..
-
 ## Time / context specificity of PT activity vs. Stable maintenance
 
 There is a basic tension in PT maintained activity, which can be resolved by having two different PT layer types.  On the one hand, PT needs to maintain a stable representation of the stimulus and other context present at the time of initial goal activation (gating), so that learning can properly bridge across the full time window between the initial gating and final outcome.  On the other hand, prediction of specific events within the goal-engaged window, and especially the prediction of when the goal will be achieved, requires a continuously-updating dynamic representation, like that provided by the CT layer, which is specifically driven by predictive learning of state as it updates across time.  However, the CT layer is always active, and thus does not strongly distinguish the critical difference between goal engaged vs. not.  Furthermore, anatomically, CT only projects to the thalamus and does not have the broad broadcasting ability of the PT layer.  Electrophysiologically, there is plenty of evidence for both sustained and dynamically updating PT activity.  As usual, these are not strongly segregated anatomically, but we use different layers in the model to make the connectivity and parameterization simpler.
 
-A reasonable solution to this situation is to add a new PT layer that represents the integration of PT stable maintenance and CT dynamic updating.
+A reasonable solution to this situation is to add a new PT layer type, `PTPredLayer`, that represents the integration of PT stable maintenance and CT dynamic updating.  This layer type receives a temporally-delayed `CTCtxtPrjn` from the corresponding `PTMaintLayer`, which also solves the timing issue above, because the temporal delay prevents activity during the CS gating trial itself.  The PTPred layer is parameterized to not have strong active maintenance NMDA currents, and to track and help predict the relevant dynamic variables (time, effort etc).
 
+## Extinction learning and goal inactivation
+
+When an expected outcome does not occur, the model needs to determine at what point to give up on the engaged goal of expecting this outcome, and suffer the accumulated negative consequences of effort expended.  A simple mechanism to accomplish this is to integrate the LHb dopamine dip signals over time, and when this integrated value exceeds a threshold, the goal maintenance state is reset and accumulated negative dopamine learning takes place during the time window when the `LHbDip` is driving it.
+
+Interestingly, this gives a nice computational motivation for having a separate anatomical substrate for dips triggered by the absence of expected rewards, vs. the shunting of expected outcomes that actually occur.  The LHb needs to accumulate the dips over time and somehow drive a reset of the active goal, potentially with an additional "disappointment" penalty. <- TODO implement
+
+TODO: also implement raw effort cost which contributes to the above -- currently effort discounting of actual rewards never goes negative, but it must do so here..  Another example of differential logic supported by different anatomy..
 
 # BLA: Basolateral Amygdala
 

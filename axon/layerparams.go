@@ -425,8 +425,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeRaw = pc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case VTALayer:
-		ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
-		ctx.NeuroMod.DA = ctx.DrivePVLV.VTA.Vals.DA
+		ctx.DrivePVLV.DA(ctx)
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:
@@ -808,6 +807,10 @@ func (ly *LayerParams) PlusPhasePool(ctx *Context, pl *Pool) {
 
 // PlusPhaseNeuronSpecial does special layer type neuron level plus-phase updating
 func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
+	switch ly.LayType {
+	case VTALayer:
+		ctx.DrivePVLV.VTA.LHbDipResetFmSum()
+	}
 }
 
 // PlusPhaseNeuron does neuron level plus-phase updating
@@ -827,7 +830,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
 	nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
 	nrn.DTrgAvg += ly.LearnTrgAvgErrLRate() * (nrn.CaSpkP - nrn.CaSpkD)
-	// ly.PlusPhaseNeuronSpecial(ctx, ni, nrn, pl, lpl, vals)
+	ly.PlusPhaseNeuronSpecial(ctx, ni, nrn, pl, lpl, vals)
 }
 
 //gosl: end layerparams
