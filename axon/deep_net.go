@@ -252,6 +252,17 @@ func (nt *Network) ConnectPTPredSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn 
 	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
 }
 
+// ConnectPTPredToPulv connects PTPred with given Pulv: PTPred -> Pulv is class PTPredToPulv,
+// From Pulv = type = Back, class = FmPulv
+// toPulvPat is the prjn.Pattern PTPred -> Pulv and fmPulvPat is Pulv -> PTPred
+// Typically Pulv is a different shape than PTPred, so use Full or appropriate
+// topological pattern
+func (nt *Network) ConnectPTPredToPulv(ptPred, pulv emer.Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toPTPred emer.Prjn) {
+	toPulv = nt.ConnectLayers(ptPred, pulv, toPulvPat, emer.Forward).SetClass("PTPredToPulv")
+	toPTPred = nt.ConnectLayers(pulv, ptPred, fmPulvPat, emer.Back).SetClass("FmPulv")
+	return
+}
+
 // AddPTPredLayer adds a PTPred pyramidal tract prediction layer
 // for given PTMaint layer and associated CT.
 // Sets SetClass(super.Name()) to allow shared params.

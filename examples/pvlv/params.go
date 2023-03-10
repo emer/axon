@@ -13,9 +13,9 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":   "0.0",
-					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Clamp.Ge":    "1.5",
+					// "Layer.Act.Decay.Act":   "0.0", // do this only where needed
+					// "Layer.Act.Decay.Glong": "0.0",
+					"Layer.Act.Clamp.Ge": "1.5",
 				}},
 			{Sel: ".CTLayer", Desc: "corticothalamic context -- using FSA-based params -- intermediate",
 				Params: params.Params{
@@ -31,6 +31,21 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":      "0.0",
 					"Layer.Act.Sahp.Gbar":        "1.0",
 				}},
+			{Sel: ".PTPredLayer", Desc: "PTPred prediction layer -- more dynamic acts",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.12",
+					"Layer.CT.GeGain":            "0.01",
+					"Layer.CT.DecayTau":          "50",
+					"Layer.Inhib.Layer.Gi":       "0.8", // overridden by OFCPTPred below
+					"Layer.Inhib.Pool.Gi":        "0.8",
+					"Layer.Act.GABAB.Gbar":       "0.2", // regular
+					"Layer.Act.NMDA.Gbar":        "0.15",
+					"Layer.Act.NMDA.Tau":         "100",
+					"Layer.Act.Decay.Act":        "0.2",
+					"Layer.Act.Decay.Glong":      "0.6",
+					"Layer.Act.Sahp.Gbar":        "0.1",
+					"Layer.Act.KNa.Slow.Max":     "0.2", // maybe too random if higher?
+				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":   "1.8", // was 1.0
@@ -45,8 +60,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.6",
-					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
+					"Layer.Inhib.Layer.Gi": "0.8",
+					"Layer.Inhib.Pool.Gi":  "0.8", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			{Sel: "#Drives", Desc: "expect act",
 				Params: params.Params{
@@ -60,12 +75,20 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.25", // 1 / ndrives
 				}},
+			{Sel: ".InputLayer", Desc: "t",
+				Params: params.Params{
+					"Layer.Act.Decay.Act":   "1.0",
+					"Layer.Act.Decay.Glong": "1.0",
+				}},
 			{Sel: "#StimIn", Desc: "expect act",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / css
 				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
+					"Layer.Act.Decay.Act":        "0.0", // do this only where needed
+					"Layer.Act.Decay.Glong":      "0.0",
+					"Layer.Act.Decay.OnRew":      "true", // everything clears
 					"Layer.Inhib.ActAvg.Nominal": "0.025",
 					"Layer.Inhib.Layer.Gi":       "1.1",
 					"Layer.Inhib.Pool.On":        "true",
@@ -76,6 +99,11 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "2.8", // 2.4 not strong enough to prevent diffuse activity
 					"Layer.Inhib.Pool.Gi":  "1.2", // was 1.4
+				}},
+			{Sel: "#OFCPTPred", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "0.8",
+					"Layer.Inhib.Pool.Gi":  "0.8",
 				}},
 			{Sel: "#OFC", Desc: "",
 				Params: params.Params{
@@ -88,7 +116,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCMD", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.Gi": "0.6",
+					"Layer.Inhib.Pool.Gi": "0.8",
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
@@ -96,14 +124,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
+					"Layer.Act.Decay.Act":            "1.0",
+					"Layer.Act.Decay.Glong":          "1.0",
 					"Layer.Inhib.ActAvg.Nominal":     "0.025",
 					"Layer.Inhib.Layer.Gi":           "1.8", // needs to be strong to prevent random off-US act
 					"Layer.Inhib.Pool.On":            "true",
 					"Layer.Inhib.Pool.Gi":            "0.9",
 					"Layer.Act.Gbar.L":               "0.2",
 					"Layer.Learn.NeuroMod.BurstGain": "0.2",
-					"Layer.Learn.NeuroMod.DipGain":   "0",    // ignore small negative DA
-					"Layer.BLA.NegLRate":             "0.1",  // todo: explore
+					"Layer.Learn.NeuroMod.DipGain":   "0",   // ignore small negative DA
+					"Layer.BLA.NegLRate":             "0.1", // todo: explore
+					"Layer.Learn.RLRate.SigmoidMin":  "1.0",
 					"Layer.Learn.RLRate.Diff":        "true", // can turn off if NoDALRate is 0
 					"Layer.Learn.RLRate.DiffThr":     "0.01", // based on cur - prv
 				}},
@@ -111,7 +142,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Gbar.L":                 "0.3",
 					"Layer.Learn.NeuroMod.BurstGain":   "0",
-					"Layer.Learn.NeuroMod.DipGain":     "10",
+					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0",
 					"Layer.Learn.RLRate.Diff":          "false", // can turn off if NoDALRate is 0
 				}},
@@ -130,8 +161,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5", // todo: could be lower = more bursting
 					"Layer.Inhib.Pool.FFPrv":     "10",  // key td param
-					"Layer.PPTg.Gain":            "2",   // key for impact on CS bursting
-					"Layer.PPTg.Thr":             "0.2",
+					"Layer.PVLV.Gain":            "4",   // key for impact on CS bursting
+					"Layer.PVLV.Thr":             "0.2",
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
@@ -150,11 +181,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.4",
-					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Act.Gbar.L":           "0.4",
+					"Layer.Inhib.ActAvg.Nominal": "0.2",
+					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Layer.Gi":       "1.0",
 					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "1.0",
+					"Layer.Inhib.Pool.Gi":        "0.3",
+					"Layer.PVLV.Gain":            "6",
+					"Layer.PVLV.Thr":             "0.2",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -285,6 +319,7 @@ var ParamSets = params.Sets{
 			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.PrjnScale.Abs":    "1",
 				}},
 			/*
 				{Sel: "#OFCToBLAPosExtD2", Desc: "",
@@ -303,7 +338,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},
-			{Sel: "#OFCPTToBLAPosExtD2", Desc: "weak",
+			{Sel: ".OFCToBLAExt", Desc: "weak",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.2",
 					"Prjn.PrjnScale.Abs":    "0.5",
@@ -327,6 +362,13 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},
+			{Sel: ".BLAExtToAcq", Desc: "fixed",
+				Params: params.Params{
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Learn.Learn":   "false",
+				}},
 			{Sel: ".CeMToPPTg", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
@@ -334,6 +376,10 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: "#TimePToOFCPTPred", Desc: "needs to be strong so reps are differentiated",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1",
 				}},
 
 			// BG prjns

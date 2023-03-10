@@ -93,7 +93,7 @@ type LayerParams struct {
 	//     use the `viewif` field tag to condition on LayType.
 
 	Burst   BurstParams   `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT      CTParams      `viewif:"LayType=CTLayer,PTPredLayer" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
 	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
 	RSalACh RSalAChParams `viewif:"LayType=RSalienceAChLayer" view:"inline" desc:"parameterizes reward salience as ACh global neuromodulatory signal as a function of the MAX activation of its inputs."`
 	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
@@ -101,7 +101,7 @@ type LayerParams struct {
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
 	BLA     BLAParams     `viewif:"LayType=BLALayer" view:"inline" desc:"parameterizes basolateral amygdala -- most of which is implemented by the NeuroMod settings for DA and ACh modulation."`
-	PPTg    PPTgParams    `viewif:"LayType=PPTgLayer" view:"inline" desc:"parameterizes PPTg = pedunculopontine tegmental nucleus layer."`
+	PVLV    PVLVParams    `viewif:"LayType=[PPTgLayer,VSPatchLayer]" view:"inline" desc:"parameters for readout of values as inputs to PVLV equations -- provides thresholding and gain multiplier."`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
@@ -124,7 +124,7 @@ func (ly *LayerParams) Update() {
 	ly.TDDa.Update()
 
 	ly.BLA.Update()
-	ly.PPTg.Update()
+	ly.PVLV.Update()
 
 	ly.Matrix.Update()
 	ly.GP.Update()
@@ -149,7 +149,7 @@ func (ly *LayerParams) Defaults() {
 	ly.TDDa.Defaults()
 
 	ly.BLA.Defaults()
-	ly.PPTg.Defaults()
+	ly.PVLV.Defaults()
 
 	ly.Matrix.Defaults()
 	ly.GP.Defaults()
@@ -172,7 +172,7 @@ func (ly *LayerParams) AllParams() string {
 	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Burst, "", " ")
 		str += "Burst: {\n " + JsonToParams(b)
-	case CTLayer:
+	case CTLayer, PTPredLayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
 		str += "CT:    {\n " + JsonToParams(b)
 	case PulvinarLayer:
@@ -456,6 +456,11 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveV
 	switch ly.LayType {
 	case CTLayer:
 		nrn.GeExt = saveVal // todo: it is not clear if this really does anything?  next time around?
+	case PTPredLayer:
+		nrn.GeExt = saveVal
+		if nrn.CtxtGe < 0.01 {
+			nrn.Ge = 0 // gated by context input
+		}
 	}
 }
 
@@ -546,6 +551,10 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			nrn.CtxtGe += nrn.CtxtGeRaw
 		}
+	case PTPredLayer: // todo: fallthrough
+		if ctx.Cycle == ctx.ThetaCycles-1 {
+			nrn.CtxtGe += nrn.CtxtGeRaw
+		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
 	case RSalienceAChLayer:
@@ -579,7 +588,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 
 	case PPTgLayer:
 		if ni == 0 {
-			ctx.NeuroMod.PPTg = ly.PPTg.PPTgVal(lpl.AvgMax.CaSpkP.Cycle.Max)
+			ctx.NeuroMod.PPTg = ly.PVLV.Val(lpl.AvgMax.CaSpkP.Cycle.Max)
 		}
 	case USLayer:
 		us := float32(0)
@@ -617,7 +626,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.Act = dpc
 	case VSPatchLayer:
 		if nrn.NeurIdx == pl.StIdx {
-			val := pl.AvgMax.CaSpkD.Cycle.Avg / ly.Inhib.ActAvg.Nominal
+			val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
 			ctx.DrivePVLV.VSPatchVals.SetVal(val, pi, ly.Learn.NeuroMod.Valence, ly.Learn.NeuroMod.DAMod)
 		}
 	}
@@ -799,13 +808,6 @@ func (ly *LayerParams) PlusPhasePool(ctx *Context, pl *Pool) {
 
 // PlusPhaseNeuronSpecial does special layer type neuron level plus-phase updating
 func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
-	switch ly.LayType {
-	case PTMaintLayer:
-		if lpl.AvgMax.CaSpkD.Prev.Max < 0.1 { // if layer was not maintaining last trial, wait until next to represent
-			nrn.CaSpkD = 0
-			nrn.CaSpkP = 0
-		}
-	}
 }
 
 // PlusPhaseNeuron does neuron level plus-phase updating
@@ -825,7 +827,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
 	nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
 	nrn.DTrgAvg += ly.LearnTrgAvgErrLRate() * (nrn.CaSpkP - nrn.CaSpkD)
-	ly.PlusPhaseNeuronSpecial(ctx, ni, nrn, pl, lpl, vals)
+	// ly.PlusPhaseNeuronSpecial(ctx, ni, nrn, pl, lpl, vals)
 }
 
 //gosl: end layerparams

@@ -435,17 +435,13 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.TrgAvgFmD()
-	ly.AxonLay.CorSimFmActs() // GPU syncs down the state
+	ly.AxonLay.CorSimFmActs()                                               // GPU syncs down the state
+	if ly.Params.Act.Decay.OnRew.IsTrue() && ctx.NeuroMod.HasRew.IsTrue() { // if got reward outcome, we clear
+		ly.DecayState(ctx, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+	}
 	switch ly.LayerType() {
 	case MatrixLayer:
 		ly.MatrixGated()
-	case VThalLayer:
-		fallthrough
-	case PTMaintLayer:
-		if ctx.NeuroMod.HasRew.IsTrue() { // if got reward outcome, we clear
-			ly.DecayState(ctx, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
-		}
-
 	}
 }
 

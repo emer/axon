@@ -201,10 +201,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ofc, ofcCT := net.AddSuperCT4D("OFC", 1, nUSs, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcPT, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
+	ofcPT, ofcMD := net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
 	_ = ofcPT
 	ofcCT.SetClass("OFC CTCopy")
-	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcmd, pone2one, pone2one, pone2one, space)
+	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, pone2one, pone2one, pone2one, space)
 	_ = ofcPTPred
 	_ = ofcPT
 	ofcCT.SetClass("OFC CTCopy")
@@ -213,12 +213,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// to reflect either current CS or maintained CS but not just echoing drive state.
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	// net.ConnectLayers(drives, ofcCT, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
+	net.ConnectLayers(vPgpi, ofcMD, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
 	net.ConnectLayers(time, ofc, full, emer.Forward).SetClass("TimeToOFC")
 	net.ConnectLayers(pvPos, ofc, full, emer.Forward).SetClass("PVposToOFC")
 	net.ConnectLayers(usPos, ofc, pone2one, emer.Forward)
-	net.ConnectLayers(ofcPT, ofcCT, full, emer.Forward) // good?
+	net.ConnectLayers(ofcPT, ofcCT, pone2one, emer.Forward)
 
 	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
@@ -226,8 +226,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
 	net.ConnectToPulv(ofc, ofcCT, timeP, full, full)
 
-	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
-	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
+	// net.ConnectPTPredToPulv(ofcPTPred, drivesP, pone2one, pone2one)
+	// net.ConnectPTPredToPulv(ofcPTPred, usPosP, pone2one, pone2one)
+	// net.ConnectPTPredToPulv(ofcPTPred, pvPosP, pone2one, pone2one)
+	net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
+	net.ConnectPTPredToPulv(ofcPTPred, timeP, full, full)
+
+	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
+	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 
 	// BLA
 	net.ConnectToBLA(cs, blaPosA, full)
@@ -236,7 +242,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// todo: from deep maint layer
 	// net.ConnectLayersPrjn(ofcPT, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
 	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BgFixed")
-	net.ConnectLayers(ofcPT, blaPosE, pone2one, emer.Forward)
+	net.ConnectLayers(ofcPTPred, blaPosE, pone2one, emer.Forward).SetClass("OFCToBLAExt")
 	// net.ConnectLayers(drives, blaPosE, pone2one, emer.Forward)
 
 	////////////////////////////////////////////////
@@ -267,8 +273,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToRWPrjn(ofc, rwPred, full)
 	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
 
-	net.ConnectToVSPatch(ofcPT, vsPatchPosD1, pone2one)
-	net.ConnectToVSPatch(ofcPT, vsPatchPosD2, pone2one)
+	net.ConnectToVSPatch(ofcPTPred, vsPatchPosD1, pone2one)
+	net.ConnectToVSPatch(ofcPTPred, vsPatchPosD2, pone2one)
 	// net.ConnectToVSPatch(ofcCT, vsPatchPosD1, pone2one) // only ofcPT is properly conditional on goal engaged
 	// net.ConnectToVSPatch(ofcCT, vsPatchPosD2, pone2one)
 	// net.ConnectToVSPatch(time, vsPatchPosD1, full)
@@ -311,7 +317,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	gate.PlaceRightOf(blaPosA, space)
 
 	ofc.PlaceRightOf(gate, space)
-	ofcmd.PlaceBehind(ofcPTPred, space)
+	ofcMD.PlaceBehind(ofcPTPred, space)
 
 	err := net.Build()
 	if err != nil {

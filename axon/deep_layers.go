@@ -105,14 +105,18 @@ func (ly *LayerParams) CTDefaults() {
 }
 
 func (ly *LayerParams) PTPredDefaults() {
-	ly.Act.Decay.Act = 0 // deep doesn't decay!
-	ly.Act.Decay.Glong = 0
+	ly.Act.Decay.Act = 0.2 // keep it dynamically changing
+	ly.Act.Decay.Glong = 0.6
 	ly.Act.Decay.AHP = 0
-	ly.Act.Dend.SSGi = 0    // key: otherwise interferes with NMDA maint!
-	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
-	ly.Inhib.Pool.Gi = 2.2
-	// these are for longer temporal integration:
-	// ly.Act.NMDA.Gbar = 0.3
+	ly.Act.Decay.OnRew.SetBool(true)
+	// ly.Act.Dend.SSGi = 0 // key: otherwise interferes with NMDA maint!
+	ly.Inhib.Layer.Gi = 0.8
+	ly.Inhib.Pool.Gi = 0.8
+	ly.Act.Sahp.Gbar = 0.1    // more
+	ly.Act.KNa.Slow.Max = 0.2 // todo: more?
+
+	// these are for longer temporal integration -- use regular
+	// ly.Act.NMDA.Gbar = 0.15
 	// ly.Act.NMDA.Tau = 300
 	// ly.Act.GABAB.Gbar = 0.3
 }
@@ -121,10 +125,12 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Params.Act.Decay.Glong = 0
 	ly.Params.Act.Decay.AHP = 0
+	ly.Params.Act.Decay.OnRew.SetBool(true)
 	ly.Params.Act.NMDA.Gbar = 0.3 // long strong maint
 	ly.Params.Act.NMDA.Tau = 300
 	ly.Params.Act.GABAB.Gbar = 0.3
 	ly.Params.Act.Dend.ModGain = 200 // this multiplies thalamic input projections -- only briefly active so need to be strong
+	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(AxonPrjn).AsAxon()

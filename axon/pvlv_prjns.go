@@ -9,19 +9,23 @@ package axon
 //gosl: end pvlv_prjns
 
 func (pj *PrjnParams) BLAPrjnDefaults() {
+	pj.SWt.Adapt.On.SetBool(false)
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
+	pj.Learn.LRate.Base = 0.1
 }
 
 func (pj *PrjnParams) VSPatchPrjnDefaults() {
+	pj.SWt.Adapt.On.SetBool(false)
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
+	pj.Learn.LRate.Base = 0.1
 }
