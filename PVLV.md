@@ -80,16 +80,25 @@ There are 2x2 BLA types: Positive or Negative valence US's with Acquisition vs. 
 
 The D1 / D2 flips the sign of the influence of DA on the plus-phase activation of the BLA neuron (D1 = excitatory, D2 = inhibitory).
 
+The (new) learning rule for PosAcqD1, based on the axon trace code, is:
+
+* DWt = lr * DALr * Tr_prv * |CaSpkP - SpkPrv|_+
+    + CaSpkP: current trial plus phase Ca -- also has DA modulation reflected in a D1 / D2 direction
+    + SpkPrv: CaSpkP from the previous ThetaCycle (trial).  Thus, as in the Leabra PVLV, the outcome / US is compared to the prior t-1 trial.  This difference is positively-rectified: negative deltas are 0.
+    + Tr_prv: is S * R trace from *previous* time (i.e., not yet reflecting new Tr update -- as in CTPrjn)
+    + DALr: is the DA modulation of learning rate, implemented via `RLrate` factor via `Learn.NeuroMod` params.  This includes the `Diff` lrate factor as in standard axon, which is likewise based on the between-trial diff as opposed to the plus - minus phase differences.
+
+The key logic for using the t-1 to t delta is that it self-limits the learning once BLA neurons start coming on for the CS -- initially they are activated by the US directly, so the delta occurs at the US trial, but after sufficient learning, BLA neurons activate at the CS and remain active during the intervening trial, so that there is no longer a delta at the US.
+    
+## Extinction learning
+
+Extinction learning is different:
+
+
 A major simplification and improvement in the axon version is that the extinction neurons receive from the OFC neurons that are activated by the corresponding acquisition neurons, thus solving the "learn from disappointment" problem in a much better way: when we are OFC-expecting a given US, and we give up on that and suck up the negative DA, then the corresponding BLA ext neurons get punished.
 
-The (new) learning rule based on the axon trace code is:
-
-* DWt = lr * (1 + g * abs(DA)) * abs(CaSpkP - SpkPrv) * Tr_prv * (CaSpkP - SpkPrv)
-    + CaSpkP: current trial plus phase Ca -- has DA modulation reflected in a D1 / D2 direction
-    + SpkPrv: CaSpkP from the previous ThetaCycle (trial).  Thus, as in the Leabra PVLV, the outcome / US is compared to the prior t-1 trial.
-    + Tr_prv: is S * R trace from *previous* time (i.e., not yet reflecting new Tr update -- as in CTPrjn)
-    + The DA modulation of learning rate is implemented via RLrate factor, in NeuroMod field.  This also includes the `Diff` lrate factor as in standard axon, which is likewise based on the between-trial diff as opposed to the plus - minus phase differences.
-
+    
+    
 # CeM -> PPTg -> ACh
 
 This pathway drives acetylcholine (ACh) release in response to *changes* in BLA activity from one trial step to the next, so that ACh can provide a phasic signal reflecting the onset of a *new* CS or US, consistent with available data about firing of neurons in the nucleus basalis and CIN (cholinergic interneurons) in the BG [(Sturgill et al., 2020)](#references).  This ACh signal modulates activity in the BG, so gating is restricted to these time points.  The `CeM` (central nucleus of the amygdala) provides a summary readout of the BLA activity levels, as the difference between the `Acq - Ext` activity, representing the overall CS activity strength.  This goes to the `PPTg` (pedunculopontine tegmental nucleus) which computes a temporal derivative of its CeM input, which then drives phasic DA (dopamine, in VTA and SNc anatomically) and ACh, as described in the PVLV model [(Mollick et al., 2020)](#references).

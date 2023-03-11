@@ -239,11 +239,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLA(cs, blaPosA, full)
 	net.ConnectToBLA(usPos, blaPosA, pone2one).SetClass("USToBLA")
 	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
-	// todo: from deep maint layer
-	// net.ConnectLayersPrjn(ofcPT, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
-	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BgFixed")
-	net.ConnectLayers(ofcPTPred, blaPosE, pone2one, emer.Forward).SetClass("OFCToBLAExt")
-	// net.ConnectLayers(drives, blaPosE, pone2one, emer.Forward)
+	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BLAExtToAcq")
+	// note: cannot be from PTPred because not active at time of CS!
+	net.ConnectLayers(ofcPT, blaPosE, pone2one, emer.PrjnType(axon.BLAPrjn)).SetClass("OFCToBLAExt")
 
 	////////////////////////////////////////////////
 	// BG / DA connections

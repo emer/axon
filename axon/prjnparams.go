@@ -193,6 +193,15 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 ///////////////////////////////////////////////////
 // SynCa
 
+// DoSynCa returns false if should not do synaptic-level calcium updating.
+// Done by default in Cortex, not for other special projection types.
+func (pj *PrjnParams) DoSynCa() bool {
+	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn {
+		return false
+	}
+	return true
+}
+
 // SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking, threaded over neurons.
 // This pass updates sending projections -- all sending synapses are
@@ -200,6 +209,9 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 // Cannot do both send and recv in same pass without potential for
 // race conditions.
 func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSyn, updtThr float32) {
+	if !pj.DoSynCa() {
+		return
+	}
 	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
 		return
 	}
@@ -220,6 +232,9 @@ func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSy
 // Cannot do both send and recv in same pass without potential for
 // race conditions.
 func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSyn, updtThr float32) {
+	if !pj.DoSynCa() {
+		return
+	}
 	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
 		return
 	}
@@ -266,6 +281,8 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool,
 		pj.DWtSynMatrix(ctx, sy, sn, rn, layPool, subPool)
 	case VSPatchPrjn:
 		pj.DWtSynVSPatch(ctx, sy, sn, rn, layPool, subPool)
+	case BLAPrjn:
+		pj.DWtSynBLA(ctx, sy, sn, rn, layPool, subPool)
 	default:
 		pj.DWtSynCortex(ctx, sy, sn, rn, layPool, subPool, isTarget)
 	}
@@ -279,7 +296,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caP := sy.CaP
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctx.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
-	if pj.PrjnType == CTCtxtPrjn || pj.PrjnType == BLAPrjn {          // todo: try separate types for these
+	if pj.PrjnType == CTCtxtPrjn {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // instead of mixing into cortical one
 	} else {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
@@ -291,11 +308,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	if isTarget {
 		err = caP - caD // for target layers, syn Ca drives error signal directly
 	} else {
-		if pj.PrjnType == BLAPrjn {
-			err = sy.Tr * (rn.CaSpkP - rn.SpkPrv)
-		} else {
-			err = sy.Tr * (rn.CaP - rn.CaD) // hiddens: recv Ca drives error signal w/ trace credit
-		}
+		err = sy.Tr * (rn.CaP - rn.CaD) // hiddens: recv Ca drives error signal w/ trace credit
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum
@@ -309,6 +322,23 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	} else {
 		sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
 	}
+}
+
+// DWtSynBLA computes the weight change (learning) at given synapse for BLAPrjn type.
+func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // instead of mixing into cortical one
+	delta := rn.CaSpkP - rn.SpkPrv
+	if delta < 0 { // delta cannot go negative!
+		delta = 0
+	}
+	err := sy.Tr * delta
+	// sb immediately -- enters into zero sum
+	if err > 0 {
+		err *= (1 - sy.LWt)
+	} else {
+		err *= sy.LWt
+	}
+	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
 }
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,

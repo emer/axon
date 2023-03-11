@@ -79,6 +79,8 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 //////////////////////////////////////////////////////////////////////////////////////
 //  SynCa methods
 
+// todo: exclude doing SynCa for types that don't use it!
+
 // SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.

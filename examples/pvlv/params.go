@@ -140,7 +140,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":                 "0.3",
+					"Layer.Act.Gbar.L":                 "0.2",
+					"Layer.Inhib.Pool.Gi":              "0.4",
 					"Layer.Learn.NeuroMod.BurstGain":   "0",
 					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0",
@@ -150,9 +151,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.15",
 					"Layer.Act.Dend.SSGi":        "0",
-					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Layer.Gi":       "0.5",
 					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.5",
+					"Layer.Inhib.Pool.Gi":        "0.3",
 				}},
 			{Sel: ".PPTgLayer", Desc: "",
 				Params: params.Params{
@@ -302,7 +303,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.Learn.LRate.Base": "0.0", // 0.1 def
 				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
@@ -318,7 +319,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.Learn.LRate.Base": "0.01",
 					"Prjn.PrjnScale.Abs":    "1",
 				}},
 			/*
@@ -341,16 +342,17 @@ var ParamSets = params.Sets{
 			{Sel: ".OFCToBLAExt", Desc: "weak",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.2",
-					"Prjn.PrjnScale.Abs":    "0.5",
+					"Prjn.PrjnScale.Abs":    "1",
 					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.SWt.Init.Mean":    "0.1",
-					"Prjn.SWt.Init.Var":     "0.0",
+					"Prjn.SWt.Init.Var":     "0.05",
 				}},
 			{Sel: ".BLAToCeM_Excite", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Adapt.On":  "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},
@@ -362,8 +364,9 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},
-			{Sel: ".BLAExtToAcq", Desc: "fixed",
+			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.01",
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",

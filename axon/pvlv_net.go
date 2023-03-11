@@ -163,8 +163,8 @@ func (nt *Network) AddPVPulvLayers(unY, unX int, rel relpos.Relations, space flo
 	if rel == relpos.Behind {
 		pvNeg.PlaceBehind(pvPosP, space)
 	}
-	pvPosP.SetClass("USLayer")
-	pvNegP.SetClass("USLayer")
+	pvPosP.SetClass("PVLayer")
+	pvNegP.SetClass("PVLayer")
 	return
 }
 

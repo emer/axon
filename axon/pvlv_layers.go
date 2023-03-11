@@ -115,9 +115,9 @@ func (ly *LayerParams) VSPatchDefaults() {
 func (ly *LayerParams) PVDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.1
 	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 0.1
+	ly.Inhib.Layer.Gi = 1
 	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Pool.Gi = 0.1
+	ly.Inhib.Pool.Gi = 1
 	ly.Act.PopCode.On.SetBool(true)
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
