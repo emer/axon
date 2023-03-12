@@ -100,7 +100,6 @@ type LayerParams struct {
 	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
-	BLA     BLAParams     `viewif:"LayType=BLALayer" view:"inline" desc:"parameterizes basolateral amygdala -- most of which is implemented by the NeuroMod settings for DA and ACh modulation."`
 	PVLV    PVLVParams    `viewif:"LayType=[PPTgLayer,VSPatchLayer]" view:"inline" desc:"parameters for readout of values as inputs to PVLV equations -- provides thresholding and gain multiplier."`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
@@ -123,7 +122,6 @@ func (ly *LayerParams) Update() {
 	ly.TDInteg.Update()
 	ly.TDDa.Update()
 
-	ly.BLA.Update()
 	ly.PVLV.Update()
 
 	ly.Matrix.Update()
@@ -148,7 +146,6 @@ func (ly *LayerParams) Defaults() {
 	ly.TDInteg.Defaults()
 	ly.TDDa.Defaults()
 
-	ly.BLA.Defaults()
 	ly.PVLV.Defaults()
 
 	ly.Matrix.Defaults()
@@ -195,9 +192,9 @@ func (ly *LayerParams) AllParams() string {
 		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
 		str += "TDDa:   {\n " + JsonToParams(b)
 
-	case BLALayer:
-		b, _ = json.MarshalIndent(&ly.BLA, "", " ")
-		str += "BLA:    {\n " + JsonToParams(b)
+	case PPTgLayer, VSPatchLayer:
+		b, _ = json.MarshalIndent(&ly.PVLV, "", " ")
+		str += "PVLV:   {\n " + JsonToParams(b)
 
 	case MatrixLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
@@ -425,14 +422,14 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeRaw = pc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case VTALayer:
-		ctx.DrivePVLV.DA(ctx)
+		ctx.DA()
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:
 		if ni == 0 {
-			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.LHbDip)
+			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.Dip)
 		} else {
-			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.LHbBurst)
+			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.Burst)
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
@@ -610,9 +607,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.Act = ctx.DrivePVLV.VTA.Vals.DA
 	case LHbLayer:
 		if ni == 0 {
-			nrn.Act = ctx.DrivePVLV.LHb.LHbDip
+			nrn.Act = ctx.DrivePVLV.LHb.Dip
 		} else {
-			nrn.Act = ctx.DrivePVLV.LHb.LHbBurst
+			nrn.Act = ctx.DrivePVLV.LHb.Burst
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
@@ -787,6 +784,10 @@ func (ly *LayerParams) AvgGeM(ctx *Context, lpl *Pool, vals *LayerVals) {
 func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActM = nrn.ActInt
 	nrn.CaSpkPM = nrn.CaSpkP
+	switch ly.LayType {
+	case VTALayer:
+		ctx.LHbDipResetFmSum() // do in minus phase so ACh has time to propagate
+	}
 }
 
 // PlusPhaseStartNeuron does neuron level plus-phase start:
@@ -807,10 +808,6 @@ func (ly *LayerParams) PlusPhasePool(ctx *Context, pl *Pool) {
 
 // PlusPhaseNeuronSpecial does special layer type neuron level plus-phase updating
 func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
-	switch ly.LayType {
-	case VTALayer:
-		ctx.DrivePVLV.VTA.LHbDipResetFmSum()
-	}
 }
 
 // PlusPhaseNeuron does neuron level plus-phase updating
@@ -830,7 +827,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	ly.Act.Sahp.NinfTauFmCa(nrn.SahpCa, &nrn.SahpN, &tau)
 	nrn.SahpCa = ly.Act.Sahp.CaInt(nrn.SahpCa, nrn.CaSpkD)
 	nrn.DTrgAvg += ly.LearnTrgAvgErrLRate() * (nrn.CaSpkP - nrn.CaSpkD)
-	ly.PlusPhaseNeuronSpecial(ctx, ni, nrn, pl, lpl, vals)
+	// ly.PlusPhaseNeuronSpecial(ctx, ni, nrn, pl, lpl, vals)
 }
 
 //gosl: end layerparams

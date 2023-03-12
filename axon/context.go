@@ -83,7 +83,24 @@ func (ctx *Context) CycleInc() {
 	ctx.NSpiked = 0
 }
 
-//gosl: end time
+// DA computes the updated dopamine from all the current state,
+// including pptg via Context passed in as an arg.
+// Call after setting USs, VSPatchVals, Effort, Drives, etc.
+// Resulting DA is in VTA.Vals.DA, set to Context.NeuroMod.DA, and is returned
+func (ctx *Context) DA() float32 {
+	ctx.NeuroMod.DA = ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
+	return ctx.NeuroMod.DA
+}
+
+// LHbDipResetFmSum increments DipSum and checks if should flag a reset.
+func (ctx *Context) LHbDipResetFmSum() {
+	ctx.DrivePVLV.LHbDipResetFmSum()
+	if ctx.DrivePVLV.LHb.DipReset.IsTrue() {
+		ctx.NeuroMod.SetRew(0, true)
+	}
+}
+
+//gosl: end context
 
 // Reset resets the counters all back to zero
 func (ctx *Context) Reset() {

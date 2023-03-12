@@ -132,8 +132,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":            "0.9",
 					"Layer.Act.Gbar.L":               "0.2",
 					"Layer.Learn.NeuroMod.BurstGain": "0.2",
-					"Layer.Learn.NeuroMod.DipGain":   "0",   // ignore small negative DA
-					"Layer.BLA.NegLRate":             "0.1", // todo: explore
+					"Layer.Learn.NeuroMod.DipGain":   "0", // ignore small negative DA
 					"Layer.Learn.RLRate.SigmoidMin":  "1.0",
 					"Layer.Learn.RLRate.Diff":        "true", // can turn off if NoDALRate is 0
 					"Layer.Learn.RLRate.DiffThr":     "0.01", // based on cur - prv
@@ -144,7 +143,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":              "0.4",
 					"Layer.Learn.NeuroMod.BurstGain":   "0",
 					"Layer.Learn.NeuroMod.DipGain":     "1",
-					"Layer.Learn.NeuroMod.AChLRateMod": "0",
+					"Layer.Learn.NeuroMod.AChLRateMod": "1",
 					"Layer.Learn.RLRate.Diff":          "false", // can turn off if NoDALRate is 0
 				}},
 			{Sel: "#CeMPos", Desc: "",
@@ -182,14 +181,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":           "0.4",
-					"Layer.Inhib.ActAvg.Nominal": "0.2",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Layer.Gi":       "1.0",
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.3",
-					"Layer.PVLV.Gain":            "6",
-					"Layer.PVLV.Thr":             "0.2",
+					"Layer.Act.Gbar.L":                 "0.4",
+					"Layer.Inhib.ActAvg.Nominal":       "0.2",
+					"Layer.Inhib.Layer.On":             "false",
+					"Layer.Inhib.Layer.Gi":             "1.0",
+					"Layer.Inhib.Pool.On":              "true",
+					"Layer.Inhib.Pool.Gi":              "0.3",
+					"Layer.Learn.NeuroMod.AChLRateMod": "1",
+					"Layer.PVLV.Gain":                  "6",
+					"Layer.PVLV.Thr":                   "0.1",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -219,7 +219,7 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
-					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
+					"Layer.Matrix.NoGoGeLrn":           "0.5",  // 0.1 >= 0.2 > 0.5 a bit
 					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
@@ -297,13 +297,18 @@ var ParamSets = params.Sets{
 				}},
 			//////////////////////////////////////////////
 			// To BLA
-			{Sel: ".BLAPrjn", Desc: "",
+			{Sel: ".BLAAcqPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.Trace.Tau":      "1",
+					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
+				}},
+			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.Trace.Tau": "1",
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.0", // 0.1 def
+					"Prjn.Learn.LRate.Base": "0.0", // 0.05 def
 				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
@@ -315,12 +320,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USposToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "5.0",
+					"Prjn.PrjnScale.Abs": "2.0",
 				}},
 			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01",
-					"Prjn.PrjnScale.Abs":    "1",
+					"Prjn.Learn.LRate.Base": "0.05",
+					"Prjn.PrjnScale.Abs":    "1.5",
 				}},
 			/*
 				{Sel: "#OFCToBLAPosExtD2", Desc: "",
@@ -333,16 +338,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4",
 				}},
-			{Sel: "#BLAPosExtD2ToBLAPosAcqD1", Desc: "inhibition from extinction",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.0",
-				}},
-			{Sel: ".OFCToBLAExt", Desc: "weak",
+			{Sel: ".ToBLAExt", Desc: "weak",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.2",
-					"Prjn.PrjnScale.Abs":    "1",
+					"Prjn.PrjnScale.Abs":    "2",
 					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.SWt.Init.Mean":    "0.1",
 					"Prjn.SWt.Init.Var":     "0.05",
@@ -366,7 +365,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.01",
+					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",

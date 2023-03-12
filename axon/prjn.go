@@ -59,8 +59,10 @@ func (pj *Prjn) Defaults() {
 		pj.Params.SWt.Adapt.On.SetBool(false)
 	case RWPrjn, TDPredPrjn:
 		pj.Params.RLPredPrjnDefaults()
-	case BLAPrjn:
-		pj.Params.BLAPrjnDefaults()
+	case BLAAcqPrjn:
+		pj.Params.BLAAcqPrjnDefaults()
+	case BLAExtPrjn:
+		pj.Params.BLAExtPrjnDefaults()
 	case VSPatchPrjn:
 		pj.Params.VSPatchPrjnDefaults()
 	}
@@ -124,30 +126,6 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	depth++
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"From\": %q,\n", slay.Name())))
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"MetaData\": {\n")))
-	depth++
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte(fmt.Sprintf("\"GScale\": \"%g\"\n", pj.Params.GScale.Scale)))
-	depth--
-	w.Write(indent.TabBytes(depth))
-	w.Write([]byte("},\n"))
-	// w.Write(indent.TabBytes(depth))
-	// w.Write([]byte(fmt.Sprintf("\"MetaVals\": {\n")))
-	// depth++
-	// w.Write(indent.TabBytes(depth))
-	// w.Write([]byte(fmt.Sprintf("\"SWtMeans\": [ ")))
-	// nn := len(pj.Params.SWtMeans)
-	// for ni := range pj.Params.SWtMeans {
-	// 	w.Write([]byte(fmt.Sprintf("%g", pj.Params.SWtMeans[ni])))
-	// 	if ni < nn-1 {
-	// 		w.Write([]byte(", "))
-	// 	}
-	// }
-	// w.Write([]byte(" ]\n"))
-	// depth--
-	// w.Write(indent.TabBytes(depth))
-	// w.Write([]byte("},\n"))
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte(fmt.Sprintf("\"Rs\": [\n")))
 	depth++
@@ -228,12 +206,6 @@ func (pj *Prjn) ReadWtsJSON(r io.Reader) error {
 
 // SetWts sets the weights for this projection from weights.Prjn decoded values
 func (pj *Prjn) SetWts(pw *weights.Prjn) error {
-	if pw.MetaData != nil {
-		if gs, ok := pw.MetaData["GScale"]; ok {
-			pv, _ := strconv.ParseFloat(gs, 32)
-			pj.Params.GScale.Scale = float32(pv)
-		}
-	}
 	var err error
 	for i := range pw.Rs {
 		pr := &pw.Rs[i]

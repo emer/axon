@@ -201,22 +201,18 @@ func (sc *SynComParams) Fail(wt *float32, swt float32) {
 // PrjnScaleParams are projection scaling parameters: modulates overall strength of projection,
 // using both absolute and relative factors.
 type PrjnScaleParams struct {
-	Rel    float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling"`
-	Abs    float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
-	AvgTau float32 `def:"500" desc:"time constant for integrating projection-level averages to track G scale: Prjn.GScale.AvgAvg, AvgMax (tau is roughly how long it takes for value to change significantly) -- these are updated at the cycle level and thus require a much slower rate constant compared to other such variables integrated at the AlphaCycle level."`
+	Rel float32 `min:"0" desc:"[Defaults: Forward=1, Back=0.2] relative scaling that shifts balance between different projections -- this is subject to normalization across all other projections into receiving neuron, and determines the GScale.Target for adapting scaling"`
+	Abs float32 `def:"1" min:"0" desc:"absolute multiplier adjustment factor for the prjn scaling -- can be used to adjust for idiosyncrasies not accommodated by the standard scaling based on initial target activation level and relative scaling factors -- any adaptation operates by directly adjusting scaling factor from the initially computed value"`
 
-	AvgDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	pad, pad1 float32
 }
 
 func (ws *PrjnScaleParams) Defaults() {
 	ws.Rel = 1
 	ws.Abs = 1
-	ws.AvgTau = 500
-	ws.Update()
 }
 
 func (ws *PrjnScaleParams) Update() {
-	ws.AvgDt = 1 / ws.AvgTau
 }
 
 // SLayActScale computes scaling factor based on sending layer activity level (savg), number of units

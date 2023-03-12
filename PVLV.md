@@ -92,7 +92,18 @@ The key logic for using the t-1 to t delta is that it self-limits the learning o
     
 ## Extinction learning
 
-Extinction learning is different:
+If LHb Dip summed over trials accumulates above a threshold, then an expected reward is considered to have not occurred, and the current actively maintained goal is reset.  Timing-wise, the ACh associated with a reward salience outcome is registered at the end of the trial in which the absence is registered, along with the reset of the associated active goal maintenance.  This ACh modulates learning in BLA and VS on such reward salience trials.
+
+TODO: 
+
+* Move LHbSum -> LHb.  Have it drive HasRew on Context, with Rew = 0 -- same as no actual reward.  This will drive ACh automatically.
+
+* Restore ACh modulation of VS, Amyg learning
+
+* finish BLAExt -- extinction 
+
+
+Extinction learning is different:  
 
 
 A major simplification and improvement in the axon version is that the extinction neurons receive from the OFC neurons that are activated by the corresponding acquisition neurons, thus solving the "learn from disappointment" problem in a much better way: when we are OFC-expecting a given US, and we give up on that and suck up the negative DA, then the corresponding BLA ext neurons get punished.

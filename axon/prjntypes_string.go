@@ -20,15 +20,16 @@ func _() {
 	_ = x[CTCtxtPrjn-4]
 	_ = x[RWPrjn-5]
 	_ = x[TDPredPrjn-6]
-	_ = x[BLAPrjn-7]
-	_ = x[VSPatchPrjn-8]
-	_ = x[MatrixPrjn-9]
-	_ = x[PrjnTypesN-10]
+	_ = x[BLAAcqPrjn-7]
+	_ = x[BLAExtPrjn-8]
+	_ = x[VSPatchPrjn-9]
+	_ = x[MatrixPrjn-10]
+	_ = x[PrjnTypesN-11]
 }
 
-const _PrjnTypes_name = "ForwardPrjnBackPrjnLateralPrjnInhibPrjnCTCtxtPrjnRWPrjnTDPredPrjnBLAPrjnVSPatchPrjnMatrixPrjnPrjnTypesN"
+const _PrjnTypes_name = "ForwardPrjnBackPrjnLateralPrjnInhibPrjnCTCtxtPrjnRWPrjnTDPredPrjnBLAAcqPrjnBLAExtPrjnVSPatchPrjnMatrixPrjnPrjnTypesN"
 
-var _PrjnTypes_index = [...]uint8{0, 11, 19, 30, 39, 49, 55, 65, 72, 83, 93, 103}
+var _PrjnTypes_index = [...]uint8{0, 11, 19, 30, 39, 49, 55, 65, 75, 85, 96, 106, 116}
 
 func (i PrjnTypes) String() string {
 	if i < 0 || i >= PrjnTypes(len(_PrjnTypes_index)-1) {

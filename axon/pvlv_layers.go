@@ -10,22 +10,6 @@ import (
 
 //gosl: start pvlv_layers
 
-// BLAParams has parameters for basolateral amygdala.  Most of BLA
-// learning is handled by NeuroMod settings for DA and ACh modulation.
-type BLAParams struct {
-	NegLRate float32 `desc:"negative DWt learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
-
-	pad, pad1, pad2 float32
-}
-
-func (bp *BLAParams) Defaults() {
-	bp.NegLRate = 0.1
-}
-
-func (bp *BLAParams) Update() {
-
-}
-
 // PVLVParams has parameters for readout of values as inputs to PVLV equations.
 type PVLVParams struct {
 	Thr  float32 `desc:"threshold on value prior to multiplying by Gain"`

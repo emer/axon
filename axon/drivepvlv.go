@@ -264,12 +264,17 @@ type LHb struct {
 	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg - VSPatchNeg component"`
 	PosOmitPred float32 `def:"0.2" desc:"additional gain factor for VSPatchPos when D2 > D1, which is a *predicted* omission of positive outcome (not actual) -- this can explain away actual ommission -- higher values here allow more such explaining away"`
 	NegOmitPred float32 `def:"0.8" desc:"additional gain factor for VSPatchNeg when D1 > D2, which is a *predicted* omission of negative outcome (not actual) -- this can explain away actual ommission -- higher values here allow more such explaining away"`
+	DipResetThr float32 `def:"0.5" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
 
-	LHbDip   float32 `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
-	LHbBurst float32 `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
+	Dip      float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
+	Burst    float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
+	DipSum   float32     `inactive:"+" desc:"sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
+	DipReset slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
 
 	Pos float32 `inactive:"+" desc:"computed net VSPatchPos - PVpos"`
 	Neg float32 `inactive:"+" desc:"computed net PVneg - VSPatchNeg"`
+
+	pad float32
 }
 
 func (lh *LHb) Defaults() {
@@ -277,6 +282,7 @@ func (lh *LHb) Defaults() {
 	lh.NegGain = 1
 	lh.PosOmitPred = 0.2
 	lh.NegOmitPred = 0.8
+	lh.DipResetThr = 0.4
 }
 
 // LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
@@ -296,11 +302,24 @@ func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos, vsPatchNeg float32) {
 	netLHb := lh.Pos + lh.Neg
 
 	if netLHb > 0 {
-		lh.LHbDip = netLHb
-		lh.LHbBurst = 0
+		lh.Dip = netLHb
+		lh.Burst = 0
 	} else {
-		lh.LHbBurst = -netLHb
-		lh.LHbDip = 0
+		lh.Burst = -netLHb
+		lh.Dip = 0
+	}
+}
+
+// DipResetFmSum increments DipSum and checks if should flag a reset
+func (lh *LHb) DipResetFmSum(resetSum bool) {
+	lh.DipSum += lh.Dip
+	if resetSum {
+		lh.DipSum = 0
+	}
+	lh.DipReset.SetBool(false)
+	if lh.DipSum > lh.DipResetThr {
+		lh.DipReset.SetBool(true)
+		lh.DipSum = 0
 	}
 }
 
@@ -353,10 +372,9 @@ func (vt *VTAVals) Zero() {
 //   - Dipping / pausing inhibitory inputs from lateral habenula (LHb) reflecting
 //     predicted positive outcome > actual, or actual negative > predicted.
 type VTA struct {
-	Thr            float32     `desc:"threshold for activity of PVpos or PPTg to determine when different factors are engaged"`
-	LHbDipResetThr float32     `desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
-	LHbDipSum      float32     `inactive:"+" desc:"sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
-	LHbDipReset    slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
+	Thr float32 `desc:"threshold for activity of PVpos or PPTg to determine when different factors are engaged"`
+
+	pad, pad1, pad2 float32
 
 	Gain VTAVals `view:"inline" desc:"gain multipliers on inputs from each input"`
 	Raw  VTAVals `view:"inline" inactive:"+" desc:"raw current values -- inputs to the computation"`
@@ -365,7 +383,6 @@ type VTA struct {
 
 func (vt *VTA) Defaults() {
 	vt.Thr = 0.05
-	vt.LHbDipResetThr = 0.5
 	vt.Gain.SetAll(1)
 }
 
@@ -393,21 +410,6 @@ func (vt *VTA) DAFmRaw() {
 		netDA = pvDA + csDA // throw it all in..
 	}
 	vt.Vals.DA = vt.Gain.DA * netDA
-}
-
-// LHbDipResetFmSum increments LHbDipSum and checks if should flag a reset
-func (vt *VTA) LHbDipResetFmSum() {
-	vt.LHbDipSum += vt.Vals.LHbDip
-	if vt.Vals.PVpos > vt.Thr { // if actual PV, reset
-		vt.LHbDipSum = 0
-	} else if vt.Vals.PPTg > vt.Thr { // if actual CS, reset
-		vt.LHbDipSum = 0
-	}
-	vt.LHbDipReset.SetBool(false)
-	if vt.LHbDipSum > vt.LHbDipResetThr {
-		vt.LHbDipReset.SetBool(true)
-		vt.LHbDipSum = 0
-	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -485,16 +487,26 @@ func (dp *DrivePVLV) NegPV() float32 {
 // including pptg via Context passed in as an arg.
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA, set to Context.NeuroMod.DA, and is returned
-func (dp *DrivePVLV) DA(ctx *Context) float32 {
+func (dp *DrivePVLV) DA(pptg float32) float32 {
 	pvPosRaw := dp.PosPV()
 	pvNeg := dp.NegPV()
 	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
 	dp.VSPatchVals.PosNegFmVals()
 	dp.LHb.LHbFmPVVS(pvPos, pvNeg, dp.VSPatchVals.Pos, dp.VSPatchVals.Neg)
-	dp.VTA.Raw.Set(pvPos, pvNeg, ctx.NeuroMod.PPTg, dp.LHb.LHbDip, dp.LHb.LHbBurst, dp.VSPatchVals.Pos)
+	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.Dip, dp.LHb.Burst, dp.VSPatchVals.Pos)
 	dp.VTA.DAFmRaw()
-	ctx.NeuroMod.DA = dp.VTA.Vals.DA
 	return dp.VTA.Vals.DA
+}
+
+// LHbDipResetFmSum increments DipSum and checks if should flag a reset
+func (dp *DrivePVLV) LHbDipResetFmSum() {
+	reset := false
+	if dp.VTA.Vals.PVpos > dp.VTA.Thr { // if actual PV, reset
+		reset = true
+	} else if dp.VTA.Vals.PPTg > dp.VTA.Thr { // if actual CS, reset
+		reset = true
+	}
+	dp.LHb.DipResetFmSum(reset)
 }
 
 // DriveUpdt updates the drives based on the current USs,

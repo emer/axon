@@ -89,9 +89,9 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 	return
 }
 
-// ConnectToBLA adds a BLAPrjn from given sending layer to a BLA layer
+// ConnectToBLA adds a BLAAcqPrjn from given sending layer to a BLA layer
 func (nt *Network) ConnectToBLA(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAPrjn))
+	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAAcqPrjn))
 }
 
 // AddUSLayers adds USpos and USneg layers for positive or negative valence

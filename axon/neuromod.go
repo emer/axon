@@ -22,7 +22,7 @@ var KiT_ValenceTypes = kit.Enums.AddEnum(ValenceTypesN, kit.NotBitFlag, nil)
 // affect learning rate and other neural activity parameters of neurons.
 type NeuroModVals struct {
 	Rew      float32     `inactive:"+" desc:"reward value -- this is set here in the Context struct, and the RL Rew layer grabs it from there -- must also set HasRew flag when rew is set -- otherwise is ignored."`
-	HasRew   slbool.Bool `inactive:"+" desc:"must be set to true when a reward is present -- otherwise Rew is ignored"`
+	HasRew   slbool.Bool `inactive:"+" desc:"must be set to true when a reward is present -- otherwise Rew is ignored.  Also set during extinction by PVLV.  This drives ACh release in the PVLV model."`
 	RewPred  float32     `inactive:"+" desc:"reward prediction -- computed by a special reward prediction layer"`
 	PrevPred float32     `inactive:"+" desc:"previous time step reward prediction -- e.g., for TDPredLayer"`
 	DA       float32     `inactive:"+" desc:"dopamine -- represents reward prediction error, signaled as phasic increases or decreases in activity relative to a tonic baseline, which is represented by a value of 0.  Released by the VTA -- ventral tegmental area, or SNc -- substantia nigra pars compacta."`
