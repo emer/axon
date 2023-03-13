@@ -683,6 +683,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.CtxtGe = 0
 	nrn.CtxtGeRaw = 0
+	nrn.CtxtGeOrig = 0
 
 	ac.InitLongActs(nrn)
 }

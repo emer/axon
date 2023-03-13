@@ -15,6 +15,7 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
+	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/mat32"
 )
@@ -875,4 +876,28 @@ func saveToFile(net *Network, t *testing.T) {
 		t.Error(err)
 	}
 	fp.Write(wb)
+}
+
+func TestSWtInit(t *testing.T) {
+	pj := &PrjnParams{}
+	pj.Defaults()
+	sy := &Synapse{}
+	mean := float32(0.5)
+	spct := float32(0.5)
+
+	nsamp := 100
+	sch := etable.Schema{
+		{"Wt", etensor.FLOAT32, nil, nil},
+		{"LWt", etensor.FLOAT32, nil, nil},
+		{"SWt", etensor.FLOAT32, nil, nil},
+	}
+	dt := &etable.Table{}
+	dt.SetFromSchema(sch, nsamp)
+	for i := 0; i < nsamp; i++ {
+		pj.SWt.InitWtsSyn(sy, mean, spct)
+		dt.SetCellFloat("Wt", i, sy.Wt)
+		dt.SetCellFloat("LWt", i, sy.LWt)
+		dt.SetCellFloat("SWt", i, sy.SWt)
+	}
+	fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", dt.sy.Wt, sy.LWt, sy.SWt)
 }

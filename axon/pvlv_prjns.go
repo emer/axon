@@ -26,6 +26,7 @@ func (bp *BLAAcqPrjnParams) Update() {
 func (pj *PrjnParams) BLAAcqPrjnDefaults() {
 	pj.SWt.Adapt.On.SetBool(false)
 	pj.SWt.Adapt.SigGain = 1
+	pj.SWt.Init.SPct = 0
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym.SetBool(false)
@@ -37,6 +38,7 @@ func (pj *PrjnParams) BLAAcqPrjnDefaults() {
 func (pj *PrjnParams) BLAExtPrjnDefaults() {
 	pj.SWt.Adapt.On.SetBool(false)
 	pj.SWt.Adapt.SigGain = 1
+	pj.SWt.Init.SPct = 0
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym.SetBool(false)
@@ -48,10 +50,11 @@ func (pj *PrjnParams) BLAExtPrjnDefaults() {
 func (pj *PrjnParams) VSPatchPrjnDefaults() {
 	pj.SWt.Adapt.On.SetBool(false)
 	pj.SWt.Adapt.SigGain = 1
+	pj.SWt.Init.SPct = 0
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
-	pj.Learn.LRate.Base = 0.1
+	pj.Learn.LRate.Base = 0.01
 }

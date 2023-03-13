@@ -161,7 +161,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5", // todo: could be lower = more bursting
 					"Layer.Inhib.Pool.FFPrv":     "10",  // key td param
-					"Layer.PVLV.Gain":            "4",   // key for impact on CS bursting
+					"Layer.PVLV.Gain":            "2",   // key for impact on CS bursting
 					"Layer.PVLV.Thr":             "0.2",
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
@@ -181,14 +181,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":                 "0.4",
+					"Layer.Act.Gbar.L":                 "0.2",
 					"Layer.Inhib.ActAvg.Nominal":       "0.2",
 					"Layer.Inhib.Layer.On":             "false",
-					"Layer.Inhib.Layer.Gi":             "1.0",
+					"Layer.Inhib.Layer.Gi":             "0.5",
 					"Layer.Inhib.Pool.On":              "true",
-					"Layer.Inhib.Pool.Gi":              "0.3",
-					"Layer.Learn.NeuroMod.AChLRateMod": "1",
-					"Layer.PVLV.Gain":                  "6",
+					"Layer.Inhib.Pool.Gi":              "0.5",
+					"Layer.Learn.NeuroMod.AChLRateMod": "0",
+					"Layer.PVLV.Gain":                  "12",
 					"Layer.PVLV.Thr":                   "0.1",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
@@ -295,20 +295,24 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Trace.Tau":     "4",    // 2 > 1
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
+			{Sel: "#OFCCTToOFCPTPred", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0",
+				}},
 			//////////////////////////////////////////////
 			// To BLA
 			{Sel: ".BLAAcqPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.Trace.Tau":      "1",
 					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
 				}},
-			{Sel: ".BLAExtPrjn", Desc: "",
-				Params: params.Params{
-					"Prjn.Learn.Trace.Tau": "1",
-				}},
+			// {Sel: ".BLAExtPrjn", Desc: "",
+			// 	Params: params.Params{
+			// 	}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.0", // 0.05 def
+					"Prjn.SWt.Init.SPct":    "0",
+					"Prjn.PrjnScale.Abs":    "2",
+					"Prjn.Learn.LRate.Base": "0.01", // 0.01 def
 				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
@@ -340,7 +344,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".ToBLAExt", Desc: "weak",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.2",
+					"Prjn.Learn.LRate.Base": "0.05",
 					"Prjn.PrjnScale.Abs":    "2",
 					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.SWt.Init.Mean":    "0.1",

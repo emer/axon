@@ -354,7 +354,13 @@ func (pj *PrjnParams) DWtSynBLAAcq(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // Extinction is self-limiting based on incrementally out-competing the Acq pathway until
 // it stops being able to drive gating of the PTMaint layer that drives extinction.
 func (pj *PrjnParams) DWtSynBLAExt(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	err := sn.BurstPrv * rn.CaSpkD
+	ract := rn.CaSpkD
+	lmax := layPool.AvgMax.CaSpkD.Plus.Max
+	if lmax > 0 {
+		ract /= lmax
+	}
+
+	err := sn.BurstPrv * ract
 	// sb immediately -- enters into zero sum
 	if err > 0 {
 		err *= (1 - sy.LWt)
@@ -468,9 +474,14 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPrjn type.
 func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+	ract := rn.CaSpkD
+	lmax := layPool.AvgMax.CaSpkD.Plus.Max
+	if lmax > 0 {
+		ract /= lmax
+	}
 	// note: rn.RLRate already has DA * (D1 vs. D2 sign reversal) factored in.
 	// cannot use ACh because it is not present during extinction.
-	dwt := rn.RLRate * pj.Learn.LRate.Eff * rn.CaSpkD * sn.CaSpkD
+	dwt := rn.RLRate * pj.Learn.LRate.Eff * sn.CaSpkD * ract
 	sy.DWt += dwt
 }
 

@@ -152,12 +152,11 @@ type Neuron struct {
 	/////////////////////////////////////////
 	//  Special Layer Vars Below
 
-	Burst     float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
-	BurstPrv  float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
-	CtxtGe    float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
-	CtxtGeRaw float32 `desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
-
-	pad float32
+	Burst      float32 `desc:"5IB bursting activation value, computed by thresholding regular CaSpkP value in Super superficial layers"`
+	BurstPrv   float32 `desc:"previous Burst bursting activation from prior time step -- used for context-based learning"`
+	CtxtGe     float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
+	CtxtGeRaw  float32 `desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
+	CtxtGeOrig float32 `desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

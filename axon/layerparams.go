@@ -454,7 +454,7 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveV
 		nrn.GeExt = saveVal // todo: it is not clear if this really does anything?  next time around?
 	case PTPredLayer:
 		nrn.GeExt = saveVal
-		if nrn.CtxtGe < 0.01 {
+		if nrn.CtxtGeOrig < 0.01 {
 			nrn.Ge = 0 // gated by context input
 		}
 	}
@@ -546,10 +546,12 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 	case CTLayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			nrn.CtxtGe += nrn.CtxtGeRaw
+			nrn.CtxtGeOrig = nrn.CtxtGe
 		}
 	case PTPredLayer: // todo: fallthrough
 		if ctx.Cycle == ctx.ThetaCycles-1 {
 			nrn.CtxtGe += nrn.CtxtGeRaw
+			nrn.CtxtGeOrig = nrn.CtxtGe
 		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
