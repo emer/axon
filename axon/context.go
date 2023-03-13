@@ -84,11 +84,12 @@ func (ctx *Context) CycleInc() {
 }
 
 // DA computes the updated dopamine from all the current state,
-// including pptg via Context passed in as an arg.
+// including pptg and vsPatchPos (from RewPred) via Context.
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA, set to Context.NeuroMod.DA, and is returned
 func (ctx *Context) DA() float32 {
 	ctx.NeuroMod.DA = ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
+	ctx.NeuroMod.RewPred = ctx.DrivePVLV.VTA.Vals.VSPatchPos
 	return ctx.NeuroMod.DA
 }
 

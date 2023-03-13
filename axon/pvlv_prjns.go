@@ -21,21 +21,6 @@ func (bp *BLAAcqPrjnParams) Update() {
 
 }
 
-// VSPatchPrjnParams has parameters for ventral striatum (VS) patch learning.
-type VSPatchPrjnParams struct {
-	NegDeltaLRate float32 `def:"0.01" desc:"negative delta learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
-
-	pad, pad1, pad2 float32
-}
-
-func (bp *VSPatchPrjnParams) Defaults() {
-	bp.NegDeltaLRate = 0.01
-}
-
-func (bp *VSPatchPrjnParams) Update() {
-
-}
-
 //gosl: end pvlv_prjns
 
 func (pj *PrjnParams) BLAAcqPrjnDefaults() {
@@ -47,7 +32,7 @@ func (pj *PrjnParams) BLAAcqPrjnDefaults() {
 	pj.SWt.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
-	pj.Learn.LRate.Base = 0.05
+	pj.Learn.LRate.Base = 0.02
 }
 
 func (pj *PrjnParams) BLAExtPrjnDefaults() {
@@ -59,7 +44,7 @@ func (pj *PrjnParams) BLAExtPrjnDefaults() {
 	pj.SWt.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
-	pj.Learn.LRate.Base = 0.05
+	pj.Learn.LRate.Base = 0.1
 }
 
 func (pj *PrjnParams) VSPatchPrjnDefaults() {

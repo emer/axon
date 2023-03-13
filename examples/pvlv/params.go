@@ -56,7 +56,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "20",   // 10?
+					"Layer.Act.Dend.ModGain": "30",   // 10?
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -192,9 +192,9 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.DALRateMod":  "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
-					"Layer.Learn.NeuroMod.DipGain":     "0.1", // asymmetric for ext
-					"Layer.PVLV.Gain":                  "16",
-					"Layer.PVLV.Thr":                   "0.2",
+					"Layer.Learn.NeuroMod.DipGain":     "0", // asymmetric for ext
+					"Layer.PVLV.Gain":                  "6",
+					"Layer.PVLV.Thr":                   "0.3",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -224,7 +224,7 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
-					"Layer.Matrix.NoGoGeLrn":           "0.5",  // 0.1 >= 0.2 > 0.5 a bit
+					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
 					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
@@ -302,27 +302,22 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCCTToOFCPTPred", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
+					"Prjn.PrjnScale.Abs": "0.0",
 				}},
 			//////////////////////////////////////////////
 			// To BLA
 			{Sel: ".BLAAcqPrjn", Desc: "",
 				Params: params.Params{
+					"Prjn.Learn.LRate.Base":     "0.02",
 					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.2",
+					"Prjn.Learn.LRate.Base": "0.01",
 					"Prjn.PrjnScale.Abs":    "1",
 					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.SWt.Init.Mean":    "0.1",
 					"Prjn.SWt.Init.Var":     "0.05",
-				}},
-			{Sel: ".VSPatchPrjn", Desc: "",
-				Params: params.Params{
-					"Prjn.SWt.Init.SPct":    "0",
-					"Prjn.PrjnScale.Abs":    "2",
-					"Prjn.Learn.LRate.Base": "0.001", // 0.01 def
 				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
@@ -338,16 +333,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.02",
-					"Prjn.PrjnScale.Abs":    "1.5",
+					"Prjn.PrjnScale.Abs": "1.5",
 				}},
-			/*
-				{Sel: "#OFCToBLAPosExtD2", Desc: "",
-					Params: params.Params{
-						"Prjn.SWt.Init.Mean": "0.5",
-						"Prjn.SWt.Init.Var":  "0.25",
-					}},
-			*/
+			{Sel: "#ContextInToBLAPosExtD2", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.5",
+				}},
 			{Sel: "#BLAPosAcqD1ToOFC", Desc: "strong",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4",
@@ -388,6 +379,11 @@ var ParamSets = params.Sets{
 			{Sel: "#TimePToOFCPTPred", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
+				}},
+			{Sel: ".VSPatchPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs":    "2",
+					"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
 				}},
 
 			// BG prjns

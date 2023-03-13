@@ -623,9 +623,9 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		}
 		nrn.Act = dpc
 	case VSPatchLayer:
-		if nrn.NeurIdx == pl.StIdx {
+		if nrn.NeurIdx == 0 {
 			val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
-			ctx.DrivePVLV.VSPatchVals.SetVal(val, pi, ly.Learn.NeuroMod.Valence, ly.Learn.NeuroMod.DAMod)
+			ctx.DrivePVLV.VSPatch.Set(pi, val)
 		}
 	}
 }

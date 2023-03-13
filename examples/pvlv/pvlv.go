@@ -166,10 +166,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
-	vsPatchPosD1, vsPatchPosD2 := net.AddVSPatchLayers("", true, nUSs, nuBgY, nuBgX, relpos.Behind, space)
-	vsPatchNegD1, vsPatchNegD2 := net.AddVSPatchLayers("", false, nUSs, nuBgY, nuBgX, relpos.Behind, space)
-	_ = vsPatchNegD1
-	_ = vsPatchNegD2
+	vsPatch := net.AddVSPatchLayer("", nUSs, nuBgY, nuBgX)
 
 	drives, drivesP := net.AddDrivesPulvLayer(&ss.Context, popY, popX, space)
 	usPos, usNeg, usPosP, usNegP := net.AddUSPulvLayers(nUSs, nUSs, ny, relpos.Behind, space)
@@ -226,11 +223,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
 	net.ConnectToPulv(ofc, ofcCT, timeP, full, full)
 
+	// these are all very static, lead to static PT reps:
 	// net.ConnectPTPredToPulv(ofcPTPred, drivesP, pone2one, pone2one)
 	// net.ConnectPTPredToPulv(ofcPTPred, usPosP, pone2one, pone2one)
 	// net.ConnectPTPredToPulv(ofcPTPred, pvPosP, pone2one, pone2one)
-	net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
+	// net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
 	net.ConnectPTPredToPulv(ofcPTPred, timeP, full, full)
+	net.ConnectLayers(time, ofcPTPred, full, emer.Forward)
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
@@ -260,12 +259,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
-	net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
-	net.ConnectLayers(drives, vPstns, full, emer.Forward)
+	// net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
+	// net.ConnectLayers(drives, vPstns, full, emer.Forward)
 	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
-	net.ConnectLayers(ofc, vPstnp, full, emer.Forward)
-	net.ConnectLayers(ofc, vPstns, full, emer.Forward)
+	// net.ConnectLayers(ofc, vPstnp, full, emer.Forward)
+	// net.ConnectLayers(ofc, vPstns, full, emer.Forward)
 	// net.ConnectToMatrix(ofcCT, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
 	// net.ConnectToMatrix(ofcCT, vPmtxNo, pone2one)
 	// net.ConnectToMatrix(ofcPT, vPmtxGo, pone2one)
@@ -274,19 +273,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToRWPrjn(ofc, rwPred, full)
 	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
 
-	net.ConnectToVSPatch(ofcPTPred, vsPatchPosD1, pone2one)
-	net.ConnectToVSPatch(ofcPTPred, vsPatchPosD2, pone2one)
-	// net.ConnectToVSPatch(ofcCT, vsPatchPosD1, pone2one) // only ofcPT is properly conditional on goal engaged
-	// net.ConnectToVSPatch(ofcCT, vsPatchPosD2, pone2one)
-	// net.ConnectToVSPatch(time, vsPatchPosD1, full)
-	// net.ConnectToVSPatch(time, vsPatchPosD2, full)
-	// net.ConnectToVSPatch(ofcPT, vsPatchNegD1, pone2one)
-	// net.ConnectToVSPatch(ofcPT, vsPatchNegD2, pone2one)
-
-	// net.ConnectToVSPatch(ustimeIn, vsPatchPosD1, full)
-	// net.ConnectToVSPatch(ustimeIn, vsPatchPosD2, full)
-	// net.ConnectToVSPatch(ustimeIn, vsPatchNegD1, full)
-	// net.ConnectToVSPatch(ustimeIn, vsPatchNegD2, full)
+	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
+	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
 
 	////////////////////////////////////////////////
 	// position
@@ -294,8 +282,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vPgpi.PlaceRightOf(vta, space)
 	ach.PlaceBehind(lhb, space)
 
-	vsPatchPosD1.PlaceRightOf(vPstns, space)
-	vsPatchNegD2.PlaceRightOf(vsPatchPosD1, space)
+	vsPatch.PlaceRightOf(vPstns, space)
 
 	drives.PlaceAbove(vta)
 	usPos.PlaceBehind(drivesP, space)
@@ -535,8 +522,7 @@ func (ss *Sim) TrialStats() {
 	dr := &ctx.DrivePVLV
 	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
 	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
-	ss.Stats.SetFloat32("VSPatchPos", dr.VSPatchVals.Pos)
-	ss.Stats.SetFloat32("VSPatchNeg", dr.VSPatchVals.Neg)
+	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)
 	ss.Stats.SetFloat32("LHbDip", dr.VTA.Vals.LHbDip)
 	ss.Stats.SetFloat32("LHbBurst", dr.VTA.Vals.LHbBurst)
 	ss.Stats.SetFloat32("PVpos", dr.VTA.Vals.PVpos)
@@ -563,7 +549,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Block, etime.Trial)
 	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
 
-	ss.Logs.PlotItems("DA", "VSPatchPos")
+	ss.Logs.PlotItems("DA", "VSPatch")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -585,13 +571,10 @@ func (ss *Sim) ConfigLogItems() {
 	li = ss.Logs.AddStatAggItem("ACh", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.FixMin = false
 	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("VSPatchPos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("VSPatch", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.Range.Min = -1
 	li.Range.Max = 1.1
 	li.FixMin = true
-	li.FixMax = true
-	li = ss.Logs.AddStatAggItem("VSPatchNeg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li.FixMin = false
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("LHbDip", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.FixMax = true
@@ -644,7 +627,7 @@ func (ss *Sim) BlockStats() {
 		dt.SetCellString("TrialType", ri, fmt.Sprintf("%s_%d", tt, trl))
 	}
 	dt.SetMetaData("DA:On", "+")
-	dt.SetMetaData("VSPatchPos:On", "+")
+	dt.SetMetaData("VSPatch:On", "+")
 	dt.SetMetaData("DA:FixMin", "+")
 	dt.SetMetaData("DA:Min", "-1")
 	dt.SetMetaData("DA:FixMax", "+")

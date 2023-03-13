@@ -168,34 +168,33 @@ func (nt *Network) AddPVPulvLayers(unY, unX int, rel relpos.Relations, space flo
 	return
 }
 
-// AddVSPatchLayers adds two VSPatch layers: D1 / D2 for positive or negative valence
-func (nt *Network) AddVSPatchLayers(prefix string, pos bool, nUs, unY, unX int, rel relpos.Relations, space float32) (d1, d2 *Layer) {
-	if pos {
-		d1 = nt.AddLayer4D(prefix+"VSPatchPosD1", 1, nUs, unY, unX, VSPatchLayer)
-		d1.SetBuildConfig("DAMod", "D1Mod")
-		d1.SetBuildConfig("Valence", "Positive")
-		d2 = nt.AddLayer4D(prefix+"VSPatchPosD2", 1, nUs, unY, unX, VSPatchLayer)
-		d2.SetBuildConfig("DAMod", "D2Mod")
-		d2.SetBuildConfig("Valence", "Positive")
-		if rel == relpos.Behind {
-			d2.PlaceBehind(d1, space)
-		} else {
-			d2.PlaceRightOf(d1, space)
-		}
-	} else {
-		d2 = nt.AddLayer4D(prefix+"VSPatchNegD2", 1, nUs, unY, unX, VSPatchLayer)
-		d2.SetBuildConfig("DAMod", "D2Mod")
-		d2.SetBuildConfig("Valence", "Negative")
-		d1 = nt.AddLayer4D(prefix+"VSPatchNegD1", 1, nUs, unY, unX, VSPatchLayer)
-		d1.SetBuildConfig("DAMod", "D1Mod")
-		d1.SetBuildConfig("Valence", "Negative")
-		if rel == relpos.Behind {
-			d1.PlaceBehind(d2, space)
-		} else {
-			d1.PlaceRightOf(d2, space)
-		}
-	}
-	return
+// AddVSPatchLayer adds VSPatch (Pos, D1)
+func (nt *Network) AddVSPatchLayer(prefix string, nUs, unY, unX int) *Layer {
+	d1 := nt.AddLayer4D(prefix+"VSPatch", 1, nUs, unY, unX, VSPatchLayer)
+	d1.SetBuildConfig("DAMod", "D1Mod")
+	d1.SetBuildConfig("Valence", "Positive")
+	return d1
+
+	// d2 = nt.AddLayer4D(prefix+"VSPatchPosD2", 1, nUs, unY, unX, VSPatchLayer)
+	// d2.SetBuildConfig("DAMod", "D2Mod")
+	// d2.SetBuildConfig("Valence", "Positive")
+	// if rel == relpos.Behind {
+	// 	d2.PlaceBehind(d1, space)
+	// } else {
+	// 	d2.PlaceRightOf(d1, space)
+	// }
+	//  else {
+	// d2 = nt.AddLayer4D(prefix+"VSPatchNegD2", 1, nUs, unY, unX, VSPatchLayer)
+	// d2.SetBuildConfig("DAMod", "D2Mod")
+	// d2.SetBuildConfig("Valence", "Negative")
+	// d1 = nt.AddLayer4D(prefix+"VSPatchNegD1", 1, nUs, unY, unX, VSPatchLayer)
+	// d1.SetBuildConfig("DAMod", "D1Mod")
+	// d1.SetBuildConfig("Valence", "Negative")
+	// if rel == relpos.Behind {
+	// 	d1.PlaceBehind(d2, space)
+	// } else {
+	// 	d1.PlaceRightOf(d2, space)
+	// }
 }
 
 // ConnectToVSPatch adds a VSPatchPrjn from given sending layer to a VSPatch layer

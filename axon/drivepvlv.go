@@ -206,52 +206,6 @@ func (ef *Effort) DiscFmEffort() float32 {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//  VSPatch collects VSPatch values
-
-// VSVals are VSPatch / VSMatrix values
-type VSVals struct {
-	Pos float32 `desc:"VS D1 - D2 positive valence pathway -- patch opposes positive US (PV) outcomes"`
-	Neg float32 `desc:"VS D2 - D1 negative valence pathway -- patch opposes negative US (PV) outcomes"`
-
-	pad, pad1 float32
-
-	PosD1 DriveVals `inactive:"+" view:"inline" desc:"VSPatchPosD1 pool activations, recorded by layers"`
-	PosD2 DriveVals `inactive:"+" view:"inline" desc:"VSPatchPosD2 pool activations, recorded by layers"`
-	NegD2 DriveVals `inactive:"+" view:"inline" desc:"VSPatchNegD2 pool activations, recorded by layers"`
-	NegD1 DriveVals `inactive:"+" view:"inline" desc:"VSPatchNegD1 pool activations, recorded by layers"`
-}
-
-func (vs *VSVals) Zero() {
-	vs.Pos = 0
-	vs.Neg = 0
-}
-
-// SetVal sets a Pos/Neg D1/D2 value for given value index based on pool index
-func (vs *VSVals) SetVal(val float32, poolIdx int32, valence ValenceTypes, dar DAModTypes) {
-	if valence == Positive && dar == D1Mod {
-		vs.PosD1.Set(poolIdx, val)
-	} else if valence == Positive && dar == D2Mod {
-		vs.PosD2.Set(poolIdx, val)
-	} else if valence == Negative && dar == D2Mod {
-		vs.NegD2.Set(poolIdx, val)
-	} else if valence == Negative && dar == D1Mod {
-		vs.NegD1.Set(poolIdx, val)
-	}
-}
-
-// PosNegFmVals computes positive and negative summary values from detailed values
-func (vs *VSVals) PosNegFmVals() {
-	pos := float32(0)
-	neg := float32(0)
-	for i := int32(0); i < 8; i++ {
-		pos += vs.PosD1.Get(i) - vs.PosD2.Get(i)
-		neg += vs.NegD2.Get(i) - vs.NegD1.Get(i)
-	}
-	vs.Pos = pos
-	vs.Neg = neg
-}
-
-///////////////////////////////////////////////////////////////////////////////
 //  LHb & RMTg
 
 // LHb has values for computing LHb & RMTg which drives dips / pauses in DA firing.
@@ -261,44 +215,31 @@ func (vs *VSVals) PosNegFmVals() {
 // (redundant with LV / Amygdala via PPTg) or "relief" burst when actual neg < predicted.
 type LHb struct {
 	PosGain     float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
-	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg - VSPatchNeg component"`
-	PosOmitPred float32 `def:"0.2" desc:"additional gain factor for VSPatchPos when D2 > D1, which is a *predicted* omission of positive outcome (not actual) -- this can explain away actual ommission -- higher values here allow more such explaining away"`
-	NegOmitPred float32 `def:"0.8" desc:"additional gain factor for VSPatchNeg when D1 > D2, which is a *predicted* omission of negative outcome (not actual) -- this can explain away actual ommission -- higher values here allow more such explaining away"`
-	DipResetThr float32 `def:"0.5" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
+	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
+	DipResetThr float32 `def:"0.4" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
 
 	Dip      float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
 	Burst    float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
 	DipSum   float32     `inactive:"+" desc:"sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
 	DipReset slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
 
-	Pos float32 `inactive:"+" desc:"computed net VSPatchPos - PVpos"`
-	Neg float32 `inactive:"+" desc:"computed net PVneg - VSPatchNeg"`
+	Pos float32 `inactive:"+" desc:"computed PosGain * (VSPatchPos - PVpos)"`
+	Neg float32 `inactive:"+" desc:"computed NegGain * PVneg"`
 
-	pad float32
+	pad, pad1, pad2 float32
 }
 
 func (lh *LHb) Defaults() {
 	lh.PosGain = 1
 	lh.NegGain = 1
-	lh.PosOmitPred = 0.2
-	lh.NegOmitPred = 0.8
 	lh.DipResetThr = 0.4
 }
 
 // LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
 // and VSPatch inputs.
-func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos, vsPatchNeg float32) {
-	if vsPatchPos < 0 {
-		vsPatchPos *= lh.PosOmitPred
-	}
-	if vsPatchNeg < 0 {
-		vsPatchNeg *= lh.NegOmitPred
-	}
-
-	// note: not doing matrix yet
-
+func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos float32) {
 	lh.Pos = lh.PosGain * (vsPatchPos - pvPos)
-	lh.Neg = lh.NegGain * (pvNeg - vsPatchNeg)
+	lh.Neg = lh.NegGain * pvNeg
 	netLHb := lh.Pos + lh.Neg
 
 	if netLHb > 0 {
@@ -335,7 +276,7 @@ type VTAVals struct {
 	PPTg       float32 `desc:"positive valence trial-level deltas, positive only rectified, from the PPTg, driven by Amygdala LV (learned value) system.  Reflects reward salience -- the onset of unexpected CSs and USs.  Note that positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
 	LHbDip     float32 `desc:"dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips"`
 	LHbBurst   float32 `desc:"burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts"`
-	VSPatchPos float32 `desc:"net shunting input from VSPatchPosD1 - D2.  No shunting from VSPatchNeg is currently supported."`
+	VSPatchPos float32 `desc:"net shunting input from VSPatch (PosD1 -- PVi in original PVLV)"`
 
 	pad float32
 }
@@ -372,7 +313,7 @@ func (vt *VTAVals) Zero() {
 //   - Dipping / pausing inhibitory inputs from lateral habenula (LHb) reflecting
 //     predicted positive outcome > actual, or actual negative > predicted.
 type VTA struct {
-	Thr float32 `desc:"threshold for activity of PVpos or PPTg to determine when different factors are engaged"`
+	PVThr float32 `desc:"threshold for activity of PVpos or VSPatchPos to determine if a PV event (actual PV or omission thereof) is present"`
 
 	pad, pad1, pad2 float32
 
@@ -382,7 +323,7 @@ type VTA struct {
 }
 
 func (vt *VTA) Defaults() {
-	vt.Thr = 0.05
+	vt.PVThr = 0.05
 	vt.Gain.SetAll(1)
 }
 
@@ -402,7 +343,7 @@ func (vt *VTA) DAFmRaw() {
 	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos
 	csDA := mat32.Max(vt.Vals.PPTg, vt.Vals.LHbBurst) // - vt.Vals.LHbDip
 	netDA := float32(0)
-	if vt.Vals.PVpos > vt.Thr || vt.Vals.VSPatchPos > vt.Thr { // if actual PV, ignore PPTg and apply VSPatchPos
+	if vt.Vals.PVpos > vt.PVThr || vt.Vals.VSPatchPos > vt.PVThr { // if actual PV, ignore PPTg and apply VSPatchPos
 		netDA = pvDA
 	} else {
 		netDA = pvDA + csDA // throw it all in..
@@ -418,13 +359,13 @@ func (vt *VTA) DAFmRaw() {
 // and learned value (PVLV), describing the functions of the Amygala,
 // Ventral Striatum, VTA and associated midbrain nuclei (PPTg, LHb, RMTg)
 type DrivePVLV struct {
-	Drive       Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
-	Effort      Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
-	VTA         VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
-	LHb         LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
-	VSPatchVals VSVals    `desc:"VSPatch values"`
-	USpos       DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
-	USneg       DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals"`
+	Drive   Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+	Effort  Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+	VTA     VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
+	LHb     LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+	USpos   DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
+	USneg   DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals"`
+	VSPatch DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values"`
 }
 
 func (dp *DrivePVLV) Defaults() {
@@ -432,9 +373,9 @@ func (dp *DrivePVLV) Defaults() {
 	dp.Effort.Defaults()
 	dp.VTA.Defaults()
 	dp.LHb.Defaults()
-	dp.VSPatchVals.Zero()
 	dp.USpos.Zero()
 	dp.USneg.Zero()
+	dp.VSPatch.Zero()
 }
 
 // InitUS initializes all the USs to zero
@@ -481,17 +422,29 @@ func (dp *DrivePVLV) NegPV() float32 {
 	return rew
 }
 
+// VSPatchMax returns the max VSPatch value across drives
+func (dp *DrivePVLV) VSPatchMax() float32 {
+	max := float32(0)
+	for i := int32(0); i < dp.Drive.NActive; i++ {
+		vs := dp.VSPatch.Get(i)
+		if vs > max {
+			max = vs
+		}
+	}
+	return max
+}
+
 // DA computes the updated dopamine from all the current state,
-// including pptg via Context passed in as an arg.
-// Call after setting USs, VSPatchVals, Effort, Drives, etc.
+// including pptg via Context.
+// Call after setting USs, Effort, Drives, VSPatch vals etc.
 // Resulting DA is in VTA.Vals.DA, set to Context.NeuroMod.DA, and is returned
 func (dp *DrivePVLV) DA(pptg float32) float32 {
 	pvPosRaw := dp.PosPV()
 	pvNeg := dp.NegPV()
 	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
-	dp.VSPatchVals.PosNegFmVals()
-	dp.LHb.LHbFmPVVS(pvPos, pvNeg, dp.VSPatchVals.Pos, dp.VSPatchVals.Neg)
-	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.Dip, dp.LHb.Burst, dp.VSPatchVals.Pos)
+	vsPatchPos := dp.VSPatchMax()
+	dp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
+	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.Dip, dp.LHb.Burst, vsPatchPos)
 	dp.VTA.DAFmRaw()
 	return dp.VTA.Vals.DA
 }
@@ -499,9 +452,9 @@ func (dp *DrivePVLV) DA(pptg float32) float32 {
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset
 func (dp *DrivePVLV) LHbDipResetFmSum() {
 	reset := false
-	if dp.VTA.Vals.PVpos > dp.VTA.Thr { // if actual PV, reset
+	if dp.VTA.Vals.PVpos > dp.VTA.PVThr { // if actual PV, reset
 		reset = true
-	} else if dp.VTA.Vals.PPTg > dp.VTA.Thr { // if actual CS, reset
+	} else if dp.VTA.Vals.PPTg > dp.VTA.PVThr { // if actual CS, reset
 		reset = true
 	}
 	dp.LHb.DipResetFmSum(reset)
