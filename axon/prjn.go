@@ -65,6 +65,8 @@ func (pj *Prjn) Defaults() {
 		pj.Params.BLAExtPrjnDefaults()
 	case VSPatchPrjn:
 		pj.Params.VSPatchPrjnDefaults()
+	case MatrixPrjn:
+		pj.Params.MatrixDefaults()
 	}
 }
 

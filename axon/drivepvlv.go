@@ -402,10 +402,8 @@ func (vt *VTA) DAFmRaw() {
 	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos
 	csDA := mat32.Max(vt.Vals.PPTg, vt.Vals.LHbBurst) // - vt.Vals.LHbDip
 	netDA := float32(0)
-	if vt.Vals.PVpos > vt.Thr { // if actual PV, ignore PPTg and apply VSPatchPos
+	if vt.Vals.PVpos > vt.Thr || vt.Vals.VSPatchPos > vt.Thr { // if actual PV, ignore PPTg and apply VSPatchPos
 		netDA = pvDA
-	} else if vt.Vals.PPTg > vt.Thr { // if actual CS, use only CS -- VSPatchPos doesn't count
-		netDA = csDA
 	} else {
 		netDA = pvDA + csDA // throw it all in..
 	}

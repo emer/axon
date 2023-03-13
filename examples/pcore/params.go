@@ -83,8 +83,7 @@ var ParamSets = params.Sets{
 			// 	}},
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":      "1.0", // stronger
-					"Prjn.SWt.Init.SPct":      "0",
+					"Prjn.PrjnScale.Abs":      "1.0", // not stronger
 					"Prjn.SWt.Init.Mean":      "0.5",
 					"Prjn.SWt.Init.Var":       "0.25",
 					"Prjn.Matrix.CurTrlDA":    "true",

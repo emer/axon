@@ -124,24 +124,26 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":            "1.0",
-					"Layer.Act.Decay.Glong":          "1.0",
-					"Layer.Inhib.ActAvg.Nominal":     "0.025",
-					"Layer.Inhib.Layer.Gi":           "1.8", // needs to be strong to prevent random off-US act
-					"Layer.Inhib.Pool.On":            "true",
-					"Layer.Inhib.Pool.Gi":            "0.9",
-					"Layer.Act.Gbar.L":               "0.2",
-					"Layer.Learn.NeuroMod.BurstGain": "0.2",
-					"Layer.Learn.NeuroMod.DipGain":   "0", // ignore small negative DA
-					"Layer.Learn.RLRate.SigmoidMin":  "1.0",
-					"Layer.Learn.RLRate.Diff":        "true", // can turn off if NoDALRate is 0
-					"Layer.Learn.RLRate.DiffThr":     "0.01", // based on cur - prv
+					"Layer.Act.Decay.Act":             "1.0",
+					"Layer.Act.Decay.Glong":           "1.0",
+					"Layer.Inhib.ActAvg.Nominal":      "0.025",
+					"Layer.Inhib.Layer.Gi":            "1.8", // needs to be strong to prevent random off-US act
+					"Layer.Inhib.Pool.On":             "true",
+					"Layer.Inhib.Pool.Gi":             "0.9",
+					"Layer.Act.Gbar.L":                "0.2",
+					"Layer.Learn.NeuroMod.DALRateMod": "0.5",
+					"Layer.Learn.NeuroMod.BurstGain":  "0.2",
+					"Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
+					"Layer.Learn.RLRate.SigmoidMin":   "1.0",
+					"Layer.Learn.RLRate.Diff":         "true", // can turn off if NoDALRate is 0
+					"Layer.Learn.RLRate.DiffThr":      "0.01", // based on cur - prv
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Gbar.L":                 "0.2",
 					"Layer.Inhib.Pool.Gi":              "0.4",
-					"Layer.Learn.NeuroMod.BurstGain":   "0",
+					"Layer.Learn.NeuroMod.DALRateMod":  "0.5",
+					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "1",
 					"Layer.Learn.RLRate.Diff":          "false", // can turn off if NoDALRate is 0
@@ -187,9 +189,12 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":             "0.5",
 					"Layer.Inhib.Pool.On":              "true",
 					"Layer.Inhib.Pool.Gi":              "0.5",
-					"Layer.Learn.NeuroMod.AChLRateMod": "0",
-					"Layer.PVLV.Gain":                  "12",
-					"Layer.PVLV.Thr":                   "0.1",
+					"Layer.Learn.NeuroMod.DALRateMod":  "1",
+					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
+					"Layer.Learn.NeuroMod.BurstGain":   "1",
+					"Layer.Learn.NeuroMod.DipGain":     "0.1", // asymmetric for ext
+					"Layer.PVLV.Gain":                  "16",
+					"Layer.PVLV.Thr":                   "0.2",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -240,7 +245,7 @@ var ParamSets = params.Sets{
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
 				Params: params.Params{
-					"Prjn.Learn.Trace.Tau":  "4",
+					"Prjn.Learn.Trace.Tau":  "1",
 					"Prjn.Learn.LRate.Base": "0.04",
 				}},
 			{Sel: ".BackPrjn", Desc: "back is weaker",
@@ -266,7 +271,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "4.0", // if this is too strong, it gates to the wrong CS
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -292,7 +297,7 @@ var ParamSets = params.Sets{
 			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
-					"Prjn.Learn.Trace.Tau":     "4",    // 2 > 1
+					"Prjn.Learn.Trace.Tau":     "1",    // 2 > 1
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
 			{Sel: "#OFCCTToOFCPTPred", Desc: "",
@@ -305,14 +310,19 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
 				}},
-			// {Sel: ".BLAExtPrjn", Desc: "",
-			// 	Params: params.Params{
-			// 	}},
+			{Sel: ".BLAExtPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.2",
+					"Prjn.PrjnScale.Abs":    "1",
+					"Prjn.SWt.Init.SPct":    "0",
+					"Prjn.SWt.Init.Mean":    "0.1",
+					"Prjn.SWt.Init.Var":     "0.05",
+				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.SWt.Init.SPct":    "0",
 					"Prjn.PrjnScale.Abs":    "2",
-					"Prjn.Learn.LRate.Base": "0.01", // 0.01 def
+					"Prjn.Learn.LRate.Base": "0.001", // 0.01 def
 				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
@@ -324,11 +334,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USposToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
+					"Prjn.PrjnScale.Abs": "3.0", // if weaker, e.g., 2, other pools get active
 				}},
 			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.05",
+					"Prjn.Learn.LRate.Base": "0.02",
 					"Prjn.PrjnScale.Abs":    "1.5",
 				}},
 			/*
@@ -341,14 +351,6 @@ var ParamSets = params.Sets{
 			{Sel: "#BLAPosAcqD1ToOFC", Desc: "strong",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4",
-				}},
-			{Sel: ".ToBLAExt", Desc: "weak",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.05",
-					"Prjn.PrjnScale.Abs":    "2",
-					"Prjn.SWt.Init.SPct":    "0",
-					"Prjn.SWt.Init.Mean":    "0.1",
-					"Prjn.SWt.Init.Var":     "0.05",
 				}},
 			{Sel: ".BLAToCeM_Excite", Desc: "",
 				Params: params.Params{
@@ -392,9 +394,8 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":      "1.0", // stronger
-					"Prjn.SWt.Init.SPct":      "0",
 					"Prjn.SWt.Init.Mean":      "0.5",
-					"Prjn.SWt.Init.Var":       "0.25",
+					"Prjn.SWt.Init.Var":       "0.4",   // more variance
 					"Prjn.Matrix.NoGateLRate": "0.005", // 0.005 std -- seems ok..
 					"Prjn.Matrix.CurTrlDA":    "true",
 					"Prjn.Matrix.UseHasRew":   "true", // hack to use US-only timing
@@ -411,12 +412,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USposToVpMtxGo", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "5",
+					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.PrjnScale.Rel": ".2",
 				}},
 			{Sel: ".BLAToBG", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "8",
+					"Prjn.PrjnScale.Rel": "1",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{

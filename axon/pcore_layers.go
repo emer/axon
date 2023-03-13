@@ -118,6 +118,7 @@ func (ly *Layer) MatrixDefaults() {
 		if pj.Send.(AxonLayer).LayerType() == GPLayer { // From GPe TA or In
 			pj.Params.PrjnScale.Abs = 1
 			pj.Params.Learn.Learn.SetBool(false)
+			pj.Params.SWt.Adapt.On.SetBool(false)
 			pj.Params.SWt.Adapt.SigGain = 1
 			pj.Params.SWt.Init.Mean = 0.75
 			pj.Params.SWt.Init.Var = 0.0

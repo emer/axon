@@ -244,7 +244,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// most of ctxIn is same as StimIn / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
 	net.ConnectLayers(ctxIn, blaPosE, full, emer.PrjnType(axon.BLAExtPrjn)).SetClass("ToBLAExt")
-	net.ConnectLayers(ofcPT, blaPosE, full, emer.PrjnType(axon.BLAExtPrjn)).SetClass("ToBLAExt")
+	net.ConnectLayers(ofcPT, blaPosE, pone2one, emer.PrjnType(axon.BLAExtPrjn)).SetClass("ToBLAExt")
 
 	////////////////////////////////////////////////
 	// BG / DA connections
@@ -563,7 +563,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Block, etime.Trial)
 	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
 
-	ss.Logs.PlotItems("DA", "VSPatchPos", "LHbDip")
+	ss.Logs.PlotItems("DA", "VSPatchPos")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
@@ -579,7 +579,7 @@ func (ss *Sim) ConfigLogs() {
 func (ss *Sim) ConfigLogItems() {
 	li := ss.Logs.AddStatAggItem("DA", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.Range.Min = -1
-	li.Range.Max = 1
+	li.Range.Max = 1.1
 	li.FixMin = true
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("ACh", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
@@ -587,7 +587,7 @@ func (ss *Sim) ConfigLogItems() {
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("VSPatchPos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.Range.Min = -1
-	li.Range.Max = 1
+	li.Range.Max = 1.1
 	li.FixMin = true
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("VSPatchNeg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)

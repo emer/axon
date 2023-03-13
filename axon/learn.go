@@ -573,6 +573,9 @@ func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	wtv := sp.Init.RndVar()
 	sy.Wt = mean + wtv
 	sy.SWt = sp.ClipSWt(mean + spct*wtv)
+	if spct == 0 { // this is critical for weak init wt, SPCt = 0 prjns
+		sy.SWt = 0.5
+	}
 	sy.LWt = sp.LWtFmWts(sy.Wt, sy.SWt)
 	sy.DWt = 0
 	sy.DSWt = 0

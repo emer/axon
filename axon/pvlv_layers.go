@@ -51,7 +51,15 @@ func (ly *LayerParams) BLADefaults() {
 
 	// ly.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	// because it depends on the configured D1 vs. D2 status
-	ly.Learn.NeuroMod.DALRateMod = 1
+	if ly.Learn.NeuroMod.DAMod == D2Mod {
+		ly.Learn.NeuroMod.DALRateSign.SetBool(true) // set this for Extinction type
+		ly.Learn.NeuroMod.BurstGain = 1
+		ly.Learn.NeuroMod.DipGain = 1
+	} else {
+		ly.Learn.NeuroMod.BurstGain = 0.2
+		ly.Learn.NeuroMod.DipGain = 0
+	}
+	ly.Learn.NeuroMod.DALRateMod = 0.5
 	ly.Learn.NeuroMod.AChLRateMod = 1
 	ly.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
 }
@@ -89,11 +97,16 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 
 	// ms.Learn.NeuroMod.DAMod needs to be set via BuildConfig
+	ly.Learn.NeuroMod.DALRateSign.SetBool(true)
 	ly.Learn.NeuroMod.DALRateMod = 1
-	ly.Learn.NeuroMod.AChLRateMod = 0 // critical to not be dependent on ACh for extinction and tuning to time
-	ly.Learn.NeuroMod.AChDisInhib = 0 // 5 for matrix -- not sure about this?
+	ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
+	ly.Learn.NeuroMod.AChDisInhib = 0   // 5 for matrix -- not sure about this?
+	// if ly.Learn.NeuroMod.DAMod == D2Mod {
+	ly.Learn.NeuroMod.BurstGain = 1
+	ly.Learn.NeuroMod.DipGain = 0.1
+	// }
 	ly.PVLV.Thr = 0.2
-	ly.PVLV.Gain = 2
+	ly.PVLV.Gain = 12
 }
 
 func (ly *LayerParams) PVDefaults() {
