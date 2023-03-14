@@ -118,7 +118,7 @@ type NeuroModParams struct {
 	Valence     ValenceTypes `desc:"valence coding of this layer -- may affect specific layer types but does not directly affect neuromodulators currently"`
 	DAModGain   float32      `viewif:"DAMod!=NoDAMod" desc:"multiplicative factor on overall DA modulation specified by DAMod -- resulting overall gain factor is: 1 + DAModGain * DA, where DA is appropriate DA-driven factor"`
 	DALRateSign slbool.Bool  `desc:"modulate the sign of the learning rate factor according to the DA sign, taking into account the DAMod sign reversal for D2Mod, also using BurstGain and DipGain to modulate DA value -- otherwise, only the magnitude of the learning rate is modulated as a function of raw DA magnitude according to DALRateMod (without additional gain factors)"`
-	DALRateMod  float32      `min:"0" max:"1" viewif:"!DALRateSign" desc:"proportion of maximum learning rate that DA can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
+	DALRateMod  float32      `min:"0" max:"1" viewif:"!DALRateSign" desc:"if not using DALRateSign, this is the proportion of maximum learning rate that Abs(DA) magnitude can modulate -- e.g., if 0.2, then DA = 0 = 80% of std learning rate, 1 = 100%"`
 	AChLRateMod float32      `min:"0" max:"1" desc:"proportion of maximum learning rate that ACh can modulate -- e.g., if 0.2, then ACh = 0 = 80% of std learning rate, 1 = 100%"`
 	AChDisInhib float32      `min:"0" def:"0,5" desc:"amount of extra Gi inhibition added in proportion to 1 - ACh level -- makes ACh disinhibitory"`
 	BurstGain   float32      `min:"0" def:"1" desc:"multiplicative gain factor applied to positive dopamine signals -- this operates on the raw dopamine signal prior to any effect of D2 receptors in reversing its sign!"`

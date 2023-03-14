@@ -44,7 +44,7 @@ func (ly *LayerParams) BLADefaults() {
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 1.8
 	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Pool.Gi = 1.0
+	ly.Inhib.Pool.Gi = 0.9
 	ly.Inhib.ActAvg.Nominal = 0.025
 	ly.Learn.RLRate.SigmoidMin = 1.0
 	ly.Learn.TrgAvgAct.On.SetBool(false)
@@ -56,10 +56,10 @@ func (ly *LayerParams) BLADefaults() {
 		ly.Learn.NeuroMod.BurstGain = 1
 		ly.Learn.NeuroMod.DipGain = 1
 	} else {
+		ly.Learn.NeuroMod.DALRateMod = 0.5
 		ly.Learn.NeuroMod.BurstGain = 0.2
 		ly.Learn.NeuroMod.DipGain = 0
 	}
-	ly.Learn.NeuroMod.DALRateMod = 0.5
 	ly.Learn.NeuroMod.AChLRateMod = 1
 	ly.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
 }
@@ -91,22 +91,19 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Inhib.Layer.FB = 0
 	ly.Inhib.Pool.FB = 0
 	ly.Inhib.Pool.Gi = 0.5
-	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Learn.RLRate.Diff.SetBool(false)
 	ly.Learn.RLRate.SigmoidMin = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 
 	// ms.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Learn.NeuroMod.DALRateSign.SetBool(true)
-	ly.Learn.NeuroMod.DALRateMod = 1
 	ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
 	ly.Learn.NeuroMod.AChDisInhib = 0   // 5 for matrix -- not sure about this?
-	// if ly.Learn.NeuroMod.DAMod == D2Mod {
 	ly.Learn.NeuroMod.BurstGain = 1
-	ly.Learn.NeuroMod.DipGain = 0.1
-	// }
-	ly.PVLV.Thr = 0.2
-	ly.PVLV.Gain = 12
+	ly.Learn.NeuroMod.DipGain = 1 // extinction -- works fine at 1
+	ly.PVLV.Thr = 0.3
+	ly.PVLV.Gain = 6
 }
 
 func (ly *LayerParams) PVDefaults() {

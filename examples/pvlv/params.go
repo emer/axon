@@ -135,18 +135,17 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.BurstGain":  "0.2",
 					"Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
 					"Layer.Learn.RLRate.SigmoidMin":   "1.0",
-					"Layer.Learn.RLRate.Diff":         "true", // can turn off if NoDALRate is 0
+					"Layer.Learn.RLRate.Diff":         "true",
 					"Layer.Learn.RLRate.DiffThr":      "0.01", // based on cur - prv
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":                 "0.2",
-					"Layer.Inhib.Pool.Gi":              "0.4",
-					"Layer.Learn.NeuroMod.DALRateMod":  "0.5",
+					"Layer.Act.Gbar.L": "0.2",
+					// "Layer.Inhib.Pool.Gi":              "0.4",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "1",
-					"Layer.Learn.RLRate.Diff":          "false", // can turn off if NoDALRate is 0
+					"Layer.Learn.RLRate.Diff":          "false",
 				}},
 			{Sel: "#CeMPos", Desc: "",
 				Params: params.Params{
@@ -189,10 +188,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":             "0.5",
 					"Layer.Inhib.Pool.On":              "true",
 					"Layer.Inhib.Pool.Gi":              "0.5",
-					"Layer.Learn.NeuroMod.DALRateMod":  "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
-					"Layer.Learn.NeuroMod.DipGain":     "0", // asymmetric for ext
+					"Layer.Learn.NeuroMod.DipGain":     "1", // controls extinction -- works fine at 1
 					"Layer.PVLV.Gain":                  "6",
 					"Layer.PVLV.Thr":                   "0.3",
 				}},
