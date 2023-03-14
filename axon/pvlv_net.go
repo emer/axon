@@ -60,8 +60,12 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 		blaNegAcq, blaNegExt = nt.AddBLALayers(prefix, false, nUs, unY, unX, relpos.Behind, space)
 	}
 	cemPos = nt.AddLayer4D(prefix+"CeMPos", 1, nUs, 1, unX, CeMLayer)
+	cemPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
+	cemPos.SetBuildConfig("Valence", "Positive")
 	if neg {
 		cemNeg = nt.AddLayer4D(prefix+"CeMNeg", 1, nUs, 1, unX, CeMLayer)
+		cemNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
+		cemNeg.SetBuildConfig("Valence", "Negative")
 	}
 
 	pptg = nt.AddPPTgLayer(prefix, nUs, 1, unX)
@@ -89,9 +93,14 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 	return
 }
 
-// ConnectToBLA adds a BLAAcqPrjn from given sending layer to a BLA layer
-func (nt *Network) ConnectToBLA(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+// ConnectToBLAAcq adds a BLAAcqPrjn from given sending layer to a BLA layer
+func (nt *Network) ConnectToBLAAcq(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
 	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAAcqPrjn))
+}
+
+// ConnectToBLAExt adds a BLAExtPrjn from given sending layer to a BLA layer
+func (nt *Network) ConnectToBLAExt(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAExtPrjn))
 }
 
 // AddUSLayers adds USpos and USneg layers for positive or negative valence
@@ -233,5 +242,27 @@ func (nt *Network) AddDrivesPulvLayer(ctx *Context, unY, unX int, space float32)
 	drv = nt.AddDrivesLayer(ctx, unY, unX)
 	drvP = nt.AddPulvForLayer(drv, space)
 	drvP.SetClass("DrivesLayer")
+	return
+}
+
+// AddPVUSDrivePulvLayers adds PVLV layers for PV-related information visualizing
+// the internal states of the Context.DrivePVLV state, with Pulvinar prediction
+// layers for training PFC layers.
+// * drives = popcode representation of drive strength (no activity for 0)
+// number of active drives comes from Context; popY, popX units per pool.
+// * us = nYunits per US, represented as present or absent
+// * pv = popcode representation of final primary value on positive and negative
+// valences -- this is what the dopamine value ends up conding (pos - neg).
+// Layers are organized in depth per type: USs in one column, PVs in the next,
+// with Drives in the back.
+func (nt *Network) AddPVUSDrivePulvLayers(ctx *Context, nUSneg, nYunits, popY, popX int, space float32) (drives, drivesP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
+	rel := relpos.Behind
+	nUSpos := int(ctx.DrivePVLV.Drive.NActive)
+	usPos, usNeg, usPosP, usNegP = nt.AddUSPulvLayers(nUSpos, nUSneg, nYunits, rel, space)
+	pvPos, pvNeg, pvPosP, pvNegP = nt.AddPVPulvLayers(popY, popX, rel, space)
+	drives, drivesP = nt.AddDrivesPulvLayer(ctx, popY, popX, space)
+
+	pvPos.PlaceRightOf(usPos, space)
+	drives.PlaceBehind(usNegP, space)
 	return
 }

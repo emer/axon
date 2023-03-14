@@ -162,8 +162,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5", // todo: could be lower = more bursting
 					"Layer.Inhib.Pool.FFPrv":     "10",  // key td param
-					"Layer.PVLV.Gain":            "2",   // key for impact on CS bursting
 					"Layer.PVLV.Thr":             "0.2",
+					"Layer.PVLV.Gain":            "2", // key for impact on CS bursting
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
@@ -182,7 +182,6 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":                 "0.2",
 					"Layer.Inhib.ActAvg.Nominal":       "0.2",
 					"Layer.Inhib.Layer.On":             "false",
 					"Layer.Inhib.Layer.Gi":             "0.5",
@@ -191,8 +190,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1", // controls extinction -- works fine at 1
-					"Layer.PVLV.Gain":                  "6",
 					"Layer.PVLV.Thr":                   "0.3",
+					"Layer.PVLV.Gain":                  "6",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -231,14 +230,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":              "true",
 					"Layer.Inhib.Pool.Gi":              "0.5", // 0.7 > 0.6 more sparse
 				}},
-			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
-			// 	Params: params.Params{
-			// 	}},
-			// {Sel: ".RWPredLayer", Desc: "",
-			// 	Params: params.Params{
-			// 		"Layer.RWPred.PredRange.Min": "0.01",
-			// 		"Layer.RWPred.PredRange.Max": "0.99",
-			// 	}},
 			////////////////////////////////////////////////////////////////
 			// cortical prjns
 			{Sel: "Prjn", Desc: "all prjns",
@@ -300,7 +291,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCCTToOFCPTPred", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.0",
+					"Prjn.PrjnScale.Abs": "0.5",
 				}},
 			//////////////////////////////////////////////
 			// To BLA

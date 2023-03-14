@@ -90,7 +90,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.RunName = "PosAcq" // "PosAcq_B50"
+	ss.RunName = "PosAcq_B50"
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
@@ -168,14 +168,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vsPatch := net.AddVSPatchLayer("", nUSs, nuBgY, nuBgX)
 
-	drives, drivesP := net.AddDrivesPulvLayer(&ss.Context, popY, popX, space)
-	usPos, usNeg, usPosP, usNegP := net.AddUSPulvLayers(nUSs, nUSs, ny, relpos.Behind, space)
+	drives, drivesP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVUSDrivePulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
 	_ = usNegP
 	_ = usPos
 	_ = usNeg
-
-	pvPos, pvNeg, pvPosP, pvNegP := net.AddPVPulvLayers(popY, popX, relpos.Behind, space)
+	_ = pvNeg
 	_ = pvNegP
+
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
 	cs, csP := net.AddInputPulv4D("CS", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
@@ -236,15 +235,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 
 	// BLA
-	net.ConnectToBLA(cs, blaPosA, full)
-	net.ConnectToBLA(usPos, blaPosA, pone2one).SetClass("USToBLA")
+	net.ConnectToBLAAcq(cs, blaPosA, full)
+	net.ConnectToBLAAcq(usPos, blaPosA, pone2one).SetClass("USToBLA")
 	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BLAExtToAcq")
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
-	net.ConnectLayers(ctxIn, blaPosE, full, emer.PrjnType(axon.BLAExtPrjn)).SetClass("ToBLAExt")
-	net.ConnectLayers(ofcPT, blaPosE, pone2one, emer.PrjnType(axon.BLAExtPrjn)).SetClass("ToBLAExt")
+	net.ConnectToBLAExt(ctxIn, blaPosE, full)
+	net.ConnectToBLAExt(ofcPT, blaPosE, pone2one)
 
 	////////////////////////////////////////////////
 	// BG / DA connections
@@ -285,12 +284,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vsPatch.PlaceRightOf(vPstns, space)
 
-	drives.PlaceAbove(vta)
-	usPos.PlaceBehind(drivesP, space)
-	usNeg.PlaceBehind(usPosP, space)
-
-	pvPos.PlaceRightOf(drives, space)
-	pvNeg.PlaceBehind(pvPosP, space)
+	usPos.PlaceAbove(vta)
 
 	time.PlaceRightOf(pvPos, space)
 
@@ -298,7 +292,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctxIn.PlaceRightOf(cs, space)
 	// ustimeIn.PlaceRightOf(ctxIn, space)
 
-	blaPosA.PlaceAbove(drives)
+	blaPosA.PlaceAbove(usPos)
 	blaNegA.PlaceBehind(blaPosE, space)
 	cemPos.PlaceBehind(blaNegE, space)
 	cemNeg.PlaceBehind(cemPos, space)
@@ -477,6 +471,22 @@ func (ss *Sim) LoadCondWeights(cond string) {
 	err := ss.Net.OpenWtsJSON(gi.FileName(wfn))
 	if err != nil {
 		log.Println(err)
+	}
+}
+
+// SaveCondWeights saves weights based on current condition, in wts/cond.wts.gz
+func (ss *Sim) SaveCondWeights() {
+	ev := ss.Envs["Train"].(*cond.CondEnv)
+	cnm, _ := ev.CurRun.Cond(ev.Condition.Cur)
+	if cnm == "" {
+		return
+	}
+	wfn := "wts/" + cnm + ".wts.gz"
+	err := ss.Net.SaveWtsJSON(gi.FileName(wfn))
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Printf("Saved weights to: %s\n", wfn)
 	}
 }
 
@@ -693,6 +703,16 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 
 	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
+
+	ss.GUI.ToolBar.AddSeparator("wts")
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Save Wts", Icon: "file-save",
+		Tooltip: "Save weights for the current condition name.",
+		Active:  egui.ActiveStopped,
+		Func: func() {
+			ss.SaveCondWeights()
+			// ss.GUI.UpdateWindow()
+		},
+	})
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")

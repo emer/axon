@@ -114,11 +114,13 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.Inhib.Pool.Gi = 0.8
 	ly.Act.Sahp.Gbar = 0.1    // more
 	ly.Act.KNa.Slow.Max = 0.2 // todo: more?
+	ly.CT.GeGain = 0.01
+	ly.CT.DecayTau = 50
 
-	// these are for longer temporal integration -- use regular
-	// ly.Act.NMDA.Gbar = 0.15
-	// ly.Act.NMDA.Tau = 300
-	// ly.Act.GABAB.Gbar = 0.3
+	// regular:
+	ly.Act.GABAB.Gbar = 0.2
+	ly.Act.NMDA.Gbar = 0.15
+	ly.Act.NMDA.Tau = 100
 }
 
 func (ly *Layer) PTMaintDefaults() {
@@ -129,7 +131,7 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.NMDA.Gbar = 0.3 // long strong maint
 	ly.Params.Act.NMDA.Tau = 300
 	ly.Params.Act.GABAB.Gbar = 0.3
-	ly.Params.Act.Dend.ModGain = 200 // this multiplies thalamic input projections -- only briefly active so need to be strong
+	ly.Params.Act.Dend.ModGain = 30 // this multiplies thalamic input projections -- only briefly active so need to be strong
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 
 	for _, pji := range ly.RcvPrjns {

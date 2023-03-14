@@ -38,8 +38,8 @@ func (pp *PVLVParams) Val(val float32) float32 {
 //gosl: end pvlv_layers
 
 func (ly *LayerParams) BLADefaults() {
-	ly.Act.Decay.Act = 0
-	ly.Act.Decay.Glong = 0
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
 	ly.Act.Dend.SSGi = 0
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 1.8
@@ -55,16 +55,19 @@ func (ly *LayerParams) BLADefaults() {
 		ly.Learn.NeuroMod.DALRateSign.SetBool(true) // set this for Extinction type
 		ly.Learn.NeuroMod.BurstGain = 1
 		ly.Learn.NeuroMod.DipGain = 1
+		ly.Learn.RLRate.Diff.SetBool(false)
 	} else {
 		ly.Learn.NeuroMod.DALRateMod = 0.5
 		ly.Learn.NeuroMod.BurstGain = 0.2
 		ly.Learn.NeuroMod.DipGain = 0
+		ly.Learn.RLRate.Diff.SetBool(true)
+		ly.Learn.RLRate.DiffThr = 0.01
 	}
 	ly.Learn.NeuroMod.AChLRateMod = 1
 	ly.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
 }
 
-// PVLVPostBuild is used for BLA, VSPatch, and PVLayer types to sett NeuroMod params
+// PVLVPostBuild is used for BLA, VSPatch, and PVLayer types to set NeuroMod params
 func (ly *Layer) PVLVPostBuild() {
 	dm, err := ly.BuildConfigByName("DAMod")
 	if err == nil {
@@ -79,6 +82,38 @@ func (ly *Layer) PVLVPostBuild() {
 		if err != nil {
 			log.Println(err)
 		}
+	}
+}
+
+func (ly *Layer) CeMDefaults() {
+	ly.Params.Act.Decay.Act = 1
+	ly.Params.Act.Decay.Glong = 1
+	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Pool.On.SetBool(true)
+	ly.Params.Inhib.Pool.Gi = 0.3
+	ly.Params.Inhib.ActAvg.Nominal = 0.15
+	ly.Params.Learn.RLRate.SigmoidMin = 1.0
+	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.SWt.Init.SPct = 0
+		pj.Params.Learn.Learn.SetBool(false)
+		pj.Params.PrjnScale.Abs = 1
+		pj.Params.SWt.Adapt.On.SetBool(false)
+		pj.Params.SWt.Adapt.SigGain = 1
+		pj.Params.SWt.Init.Mean = 0.8
+		pj.Params.SWt.Init.Var = 0.0
+		pj.Params.SWt.Init.Sym.SetBool(false)
+		// slay := pj.Send.(AxonLayer).AsAxon()
+		// if ly.Params.NeuroMod.Valence == Positive {
+		// 	if slay.Params.NeuroMod.DAMod == D2Mod {
+		// 	}
+		// } else {
+		//
+		// }
 	}
 }
 
@@ -122,11 +157,12 @@ func (ly *LayerParams) DrivesDefaults() {
 	ly.Inhib.Layer.On.SetBool(false)
 	ly.Inhib.Layer.Gi = 0.1
 	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Pool.Gi = 0.9
+	ly.Inhib.Pool.Gi = 0.5
 	ly.Act.PopCode.On.SetBool(true)
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Pulv.DriveScale = 0.05
 }
 
 func (ly *LayerParams) PPTgDefaults() {

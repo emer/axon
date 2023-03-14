@@ -56,5 +56,5 @@ func (pj *PrjnParams) VSPatchPrjnDefaults() {
 	pj.SWt.Init.Sym.SetBool(false)
 	pj.Learn.Trace.Tau = 1
 	pj.Learn.Trace.Update()
-	pj.Learn.LRate.Base = 0.01
+	pj.Learn.LRate.Base = 0.05
 }

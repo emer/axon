@@ -7,7 +7,7 @@ require (
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/emer/emergent v1.3.45
 	github.com/emer/empi v1.0.17
-	github.com/emer/envs v1.0.4
+	github.com/emer/envs v1.0.5
 	github.com/emer/etable v1.1.17
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18
