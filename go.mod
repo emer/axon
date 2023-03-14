@@ -7,7 +7,7 @@ require (
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/emer/emergent v1.3.45
 	github.com/emer/empi v1.0.17
-	github.com/emer/envs v1.0.3
+	github.com/emer/envs v1.0.4
 	github.com/emer/etable v1.1.17
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18
@@ -17,7 +17,7 @@ require (
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.14
 	github.com/goki/vgpu v1.0.22
-	github.com/goki/vulkan v1.0.5
+	github.com/goki/vulkan v1.0.6
 	github.com/stretchr/testify v1.8.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )

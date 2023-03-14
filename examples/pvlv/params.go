@@ -80,7 +80,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":   "1.0",
 					"Layer.Act.Decay.Glong": "1.0",
 				}},
-			{Sel: "#StimIn", Desc: "expect act",
+			{Sel: "#CS", Desc: "expect act",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / css
 				}},
@@ -329,7 +329,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "3.0", // if weaker, e.g., 2, other pools get active
 				}},
-			{Sel: "#StimInToBLAPosAcqD1", Desc: "",
+			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5",
 				}},

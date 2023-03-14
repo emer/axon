@@ -157,7 +157,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	full := prjn.NewFull()
 	_ = pone2one
 
-	stim := ev.CurStates["StimIn"]
+	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 	// timeIn := ev.CurStates["USTimeIn"]
 
@@ -178,7 +178,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = pvNegP
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
-	cs, csP := net.AddInputPulv4D("StimIn", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
+	cs, csP := net.AddInputPulv4D("CS", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
 
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
 	_ = ctxIn
@@ -227,9 +227,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectPTPredToPulv(ofcPTPred, drivesP, pone2one, pone2one)
 	// net.ConnectPTPredToPulv(ofcPTPred, usPosP, pone2one, pone2one)
 	// net.ConnectPTPredToPulv(ofcPTPred, pvPosP, pone2one, pone2one)
-	// net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
+	net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
 	net.ConnectPTPredToPulv(ofcPTPred, timeP, full, full)
 	net.ConnectLayers(time, ofcPTPred, full, emer.Forward)
+	net.ConnectLayers(cs, ofcPTPred, full, emer.Forward)
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
@@ -240,7 +241,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BLAExtToAcq")
 	// note: context is hippocampus -- key thing is that it comes on with stim
-	// most of ctxIn is same as StimIn / CS in this case, but a few key things for extinction
+	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
 	net.ConnectLayers(ctxIn, blaPosE, full, emer.PrjnType(axon.BLAExtPrjn)).SetClass("ToBLAExt")
 	net.ConnectLayers(ofcPT, blaPosE, pone2one, emer.PrjnType(axon.BLAExtPrjn)).SetClass("ToBLAExt")
@@ -426,7 +427,7 @@ func (ss *Sim) ApplyInputs() {
 			ly.ApplyExt(pats)
 		}
 		switch lnm {
-		case "StimIn":
+		case "CS":
 			ly.Pools[0].Inhib.Clamped.SetBool(ev.CurTrial.CSOn)
 		}
 	}
