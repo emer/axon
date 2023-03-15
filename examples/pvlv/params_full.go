@@ -6,9 +6,8 @@ package main
 
 import "github.com/emer/emergent/params"
 
-// ParamSets is the default set of parameters -- Base is always applied,
-// and others can be optionally selected to apply on top of that
-var ParamSets = params.Sets{
+// ParamSetsFull is the full set of params -- reg ParamSets only has special
+var ParamSetsFull = params.Sets{
 	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
@@ -124,15 +123,24 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
+					"Layer.Act.Decay.Act":             "1.0",
+					"Layer.Act.Decay.Glong":           "1.0",
 					"Layer.Inhib.ActAvg.Nominal":      "0.025",
 					"Layer.Inhib.Layer.Gi":            "1.8", // needs to be strong to prevent random off-US act
+					"Layer.Inhib.Pool.On":             "true",
 					"Layer.Inhib.Pool.Gi":             "0.9",
+					"Layer.Act.Gbar.L":                "0.2",
 					"Layer.Learn.NeuroMod.DALRateMod": "0.5",
 					"Layer.Learn.NeuroMod.BurstGain":  "0.2",
 					"Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
+					"Layer.Learn.RLRate.SigmoidMin":   "1.0",
+					"Layer.Learn.RLRate.Diff":         "true",
+					"Layer.Learn.RLRate.DiffThr":      "0.01", // based on cur - prv
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
+					"Layer.Act.Gbar.L": "0.2",
+					// "Layer.Inhib.Pool.Gi":              "0.4",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "1",
@@ -295,6 +303,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.01",
 					"Prjn.PrjnScale.Abs":    "1",
+					"Prjn.SWt.Init.SPct":    "0",
+					"Prjn.SWt.Init.Mean":    "0.1",
+					"Prjn.SWt.Init.Var":     "0.05",
 				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
@@ -322,19 +333,36 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAToCeM_Excite", Desc: "",
 				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Adapt.On":  "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: ".BLAToCeM_Inhib", Desc: "",
 				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2", // 1 is ok but some spontaneous activity -- 2 is more reliable
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Learn.Learn":   "false",
 				}},
 			{Sel: ".CeMToPPTg", Desc: "",
 				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: "#TimePToOFCPTPred", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{
@@ -349,13 +377,15 @@ var ParamSets = params.Sets{
 			// BG prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "1.0", // stronger
-					"Prjn.SWt.Init.Mean":    "0.5",
-					"Prjn.SWt.Init.Var":     "0.4", // more variance
-					"Prjn.Matrix.CurTrlDA":  "true",
-					"Prjn.Matrix.UseHasRew": "true", // hack to use US-only timing
-					"Prjn.Matrix.AChDecay":  "0",    // not used if UseHasRew is on
-					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.PrjnScale.Abs":      "1.0", // stronger
+					"Prjn.SWt.Init.Mean":      "0.5",
+					"Prjn.SWt.Init.Var":       "0.4",   // more variance
+					"Prjn.Matrix.NoGateLRate": "0.005", // 0.005 std -- seems ok..
+					"Prjn.Matrix.CurTrlDA":    "true",
+					"Prjn.Matrix.UseHasRew":   "true", // hack to use US-only timing
+					"Prjn.Matrix.AChDecay":    "0",    // not used if UseHasRew is on
+					"Prjn.Learn.Learn":        "true",
+					"Prjn.Learn.LRate.Base":   "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{

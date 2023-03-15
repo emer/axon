@@ -157,6 +157,18 @@ func (pj *PrjnParams) IsExcitatory() bool {
 	return pj.Com.GType == ExcitatoryG
 }
 
+// SetFixedWts sets parameters for fixed, non-learning weights
+// with a default of Mean = 0.8, Var = 0 strength
+func (pj *PrjnParams) SetFixedWts() {
+	pj.SWt.Init.SPct = 0
+	pj.Learn.Learn.SetBool(false)
+	pj.SWt.Adapt.On.SetBool(false)
+	pj.SWt.Adapt.SigGain = 1
+	pj.SWt.Init.Mean = 0.8
+	pj.SWt.Init.Var = 0.0
+	pj.SWt.Init.Sym.SetBool(false)
+}
+
 // SynRecvLayIdx converts the Synapse RecvIdx of recv neuron's index
 // in network level global list of all neurons to receiving
 // layer-specific index.
@@ -480,7 +492,6 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, l
 		ract /= lmax
 	}
 	// note: rn.RLRate already has DA * (D1 vs. D2 sign reversal) factored in.
-	// cannot use ACh because it is not present during extinction.
 	dwt := rn.RLRate * pj.Learn.LRate.Eff * sn.CaSpkD * ract
 	sy.DWt += dwt
 }

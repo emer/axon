@@ -47,7 +47,7 @@ The LHb (lateral habenula) turns an expected (via VSPatch inputs) but absent US 
 
 * **DA dipping**: The combination of an active VSPatch input signaling the expectation of a US at the current point in time, with no bottom-up actual US receipt (e.g., via hypothalamic inputs), results in activity of a subset of LHb neurons, which then drive dipping (pausing) of DA tonic activity (via the inhibition provided by the RMTg).  This phasic dip in DA activity shifts the balance from D1 to D2 in all DA-recipient neurons in the BG and BLA, causing learning to start to expect this absence (see below on BLA Ext pathway).
 
-* **OFC / goal gating off**: the LHb dip activation is summed over trials, and when it reaches a threshold level, the system effectively "gives up" on the current US expectation.  This amounts to deactivating any existing goal state (i.e., the OFC maintained activity in this model), and in the goal-driven learning framework (BOA), it should also come with "paying the cost" of accumulated effort toward the goal (i.e., extra negative US / DA dipping), which may be associated with the subjective sense of "disappointment".  Biologically, this is thought to occur via MD thalamic projections to OFC, ACC, dlPFC areas, which are the same pathways activated when an actual US is received and likewise deactivates these areas.  Implementationally, it happens simply by setting the `HasRew` flag in the `Context.NeuroMod` structure, which triggers decay of the relevant PFC areas (via the `Act.Decay.OnRew` flag).  This happens at the end of the Minus Phase.
+* **OFC / goal gating off**: the LHb dip activation is summed over trials, and when it reaches a threshold level, the system effectively "gives up" on the current US expectation.  This amounts to deactivating any existing goal state (i.e., the OFC maintained activity in this model), and in the goal-driven learning framework (BOA), it also entails "paying the cost" of accumulated effort toward the goal (i.e., extra negative US / DA dipping -- gets applied to the first USneg value), which may be associated with the subjective sense of "disappointment".  Biologically, this is thought to occur via MD thalamic projections to OFC, ACC, dlPFC areas, which are the same pathways activated when an actual US is received and likewise deactivates these areas.  Implementationally, it happens simply by setting the `HasRew` flag in the `Context.NeuroMod` structure, which triggers decay of the relevant PFC areas (via the `Act.Decay.OnRew` flag).  This happens at the end of the Minus Phase.
 
 * **ACh signaling**: ACh is released for any reward-salient event, basically CS onset (via PPTg) and US onset) and it modulates learning and activity in the BLA and VS.  The LHb projections to the basal forebrain cholinergic system allow it to provide the key missing piece of ACh signaling for the absence of an expected US, so that a consistent framework of ACh neuromodulation can apply for all of these cases.
 
@@ -71,13 +71,7 @@ A reasonable solution to this situation is to add a new PT layer type, `PTPredLa
 
 ## Extinction learning and goal inactivation
 
-As noted above, the LHb will drive deactivation of the PT active maintenance layer, signaling 
-
-When an expected outcome does not occur, the model needs to determine at what point to give up on the engaged goal of expecting this outcome, and suffer the accumulated negative consequences of effort expended.  A simple mechanism to accomplish this is to integrate the LHb dopamine dip signals over time, and when this integrated value exceeds a threshold, the goal maintenance state is reset and accumulated negative dopamine learning takes place during the time window when the `LHbDip` is driving it.
-
-Interestingly, this gives a nice computational motivation for having a separate anatomical substrate for dips triggered by the absence of expected rewards, vs. the shunting of expected outcomes that actually occur.  The LHb needs to accumulate the dips over time and somehow drive a reset of the active goal, potentially with an additional "disappointment" penalty. <- TODO implement
-
-TODO: also implement raw effort cost which contributes to the above -- currently effort discounting of actual rewards never goes negative, but it must do so here..  Another example of differential logic supported by different anatomy..
+As noted above, the LHb will drive deactivation of the PT active maintenance layer, signaling that the expected US outcome was not achieved.  Because the PT drives input into the VSPatch expectation layer, it then no longer signals the expectation.  Thus, it is important for both the goal-driven and pavlovian paradigms to deactivate the PT maintenance at this point.
 
 # BLA: Basolateral Amygdala
 
@@ -107,30 +101,31 @@ The key logic for using the t-1 to t delta is that it self-limits the learning o
     
 ## Extinction learning
 
+The `BLAPosExtD2` extinction layer provides the "context specific override" of the acquisition learning in `BLAPosAcqD1`, which itself only unlearns very slowly if at all.  It achieves this override in 3 different ways:
 
-TODO: 
+* **Direct inhibition** of corresponding BLA Acq neurons in the same US pool.  This is via a projection with the `BLAExtToAcq` class, and setting the `Prjn.PrjnScale.Abs` value of this projection controls the strength of this inhibition.
 
-* Move LHbSum -> LHb.  Have it drive HasRew on Context, with Rew = 0 -- same as no actual reward.  This will drive ACh automatically.
+* **Opposing at CeM** -- the central nucleus layer, `CeMPos`, combines excitation from Acq and inhibition from Ext, and then drives the PPTg -- so when Ext is active, CeM gets less active and PPTg can fail to drive ACh modulation of gating.
 
-* Restore ACh modulation of VS, Amyg learning
+* **VS NoGo** -- Ext projects to the ventral striatum / ventral pallidum (Vp) NoGo layer and can oppose gating directly there.
 
-* finish BLAExt -- extinction 
+A key challenge here is to coordinate these two layers with respect to the US expectation that is being extinguished.  In the Leabra PVLV version a modulatory projection from Acq to Ext served this function.
 
+In this model, we instead leverage the OFC PT active maintenance to select the US that is being expected, as a consequence of BLA Acq triggering active maintenance gating of the specific expected US outcome, which then projects into BLA Ext.  The learning rule for Ext is not based on a delta rule, and instead is a straightforward DA D2-modulated associative learning rule:
 
-Extinction learning is different:  
+* `DWt = lr * DALr * Send_prv * (CaSpkP / Max)`
 
+Where `DALr` is *positive* when DA is negative, due to the D2 sign reversal, and the receiving activity is normalized by the Max layer activity, because it often starts out only very weakly active.  There is no meaningful delta here so it just keeps learning until the BLA Acq is extinguished to the point where it no longer can drive gating of OFC PT in the first place, breaking the learning cycle.
 
-A major simplification and improvement in the axon version is that the extinction neurons receive from the OFC neurons that are activated by the corresponding acquisition neurons, thus solving the "learn from disappointment" problem in a much better way: when we are OFC-expecting a given US, and we give up on that and suck up the negative DA, then the corresponding BLA ext neurons get punished.
-
-    
-    
+Also, it is important that the stable `PTMaint` layer drives the BLA Ext input, not the dynamically changing `PTPred`, because BLA Ext learns at the time when the US was expected, but it must then get activated earlier at the time of CS onset to block the BLA Acq gating.
+      
 # CeM -> PPTg -> ACh
 
 This pathway drives acetylcholine (ACh) release in response to *changes* in BLA activity from one trial step to the next, so that ACh can provide a phasic signal reflecting the onset of a *new* CS or US, consistent with available data about firing of neurons in the nucleus basalis and CIN (cholinergic interneurons) in the BG [(Sturgill et al., 2020)](#references).  This ACh signal modulates activity in the BG, so gating is restricted to these time points.  The `CeM` (central nucleus of the amygdala) provides a summary readout of the BLA activity levels, as the difference between the `Acq - Ext` activity, representing the overall CS activity strength.  This goes to the `PPTg` (pedunculopontine tegmental nucleus) which computes a temporal derivative of its CeM input, which then drives phasic DA (dopamine, in VTA and SNc anatomically) and ACh, as described in the PVLV model [(Mollick et al., 2020)](#references).
 
 ## CeM
 
-For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL (TODO: make sure this is OK!).
+For now, CeM is only serving as an integration of BLA `Acq` and `Ext` inputs, representing the balance between them.  This uses non-learning projections and mostly CeM is redundant with BLA anyway.  This also elides the function CeL.
     
 ## PPTg
 
@@ -143,6 +138,13 @@ The PPTg layer computes the temporal derivative of the CeM inputs, based on the 
 
 The ventral striatum (VS) patch neurons functionally provide the discounting of primary reward outcomes based on learned predictions, comprising the PV = primary value component of the PVLV algorithm.
 
+This model greatly simplifies the VSPatch by only having a single layer for positive valence, D1 receptor, instead of the opposing D1 vs. D2 for both positive and negative valence.  The omission of negative valence is reasonable because it is unclear to what extent negative outcomes can be compensated for by learned expectations, and especially the extent to which there is a "relief burst" when an expected negative outcome does not occur.  The opposing D2 pathway for positive valence does not introduce any qualitatively new behavior and causes additional complexity in balancing the two pathways.
+
+The learning rule here is a standard "3 factor" dopamine-modulated learning, very similar to the BLA Ext case, except operating at the current time step:
+
+* `DWt = lr * DALr * Send_prv * (CaSpkP / Max)`
+
+where `Max` again normalizes the receiving activity because VSPatch also can start out very weakly active.
 
 # References
 

@@ -6,6 +6,7 @@ package axon
 
 import (
 	"log"
+	"strings"
 )
 
 //gosl: start pvlv_layers
@@ -37,34 +38,46 @@ func (pp *PVLVParams) Val(val float32) float32 {
 
 //gosl: end pvlv_layers
 
-func (ly *LayerParams) BLADefaults() {
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Act.Dend.SSGi = 0
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 1.8
-	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Pool.Gi = 0.9
-	ly.Inhib.ActAvg.Nominal = 0.025
-	ly.Learn.RLRate.SigmoidMin = 1.0
-	ly.Learn.TrgAvgAct.On.SetBool(false)
+func (ly *Layer) BLADefaults() {
+	lp := ly.Params
+	lp.Act.Decay.Act = 1
+	lp.Act.Decay.Glong = 1
+	lp.Act.Dend.SSGi = 0
+	lp.Inhib.Layer.On.SetBool(true)
+	lp.Inhib.Layer.Gi = 1.8
+	lp.Inhib.Pool.On.SetBool(true)
+	lp.Inhib.Pool.Gi = 0.9
+	lp.Inhib.ActAvg.Nominal = 0.025
+	lp.Learn.RLRate.SigmoidMin = 1.0
+	lp.Learn.TrgAvgAct.On.SetBool(false)
 
-	// ly.Learn.NeuroMod.DAMod needs to be set via BuildConfig
+	// lp.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	// because it depends on the configured D1 vs. D2 status
-	if ly.Learn.NeuroMod.DAMod == D2Mod {
-		ly.Learn.NeuroMod.DALRateSign.SetBool(true) // set this for Extinction type
-		ly.Learn.NeuroMod.BurstGain = 1
-		ly.Learn.NeuroMod.DipGain = 1
-		ly.Learn.RLRate.Diff.SetBool(false)
+	isAcq := strings.Contains(ly.Nm, "Acq")
+
+	if isAcq {
+		lp.Learn.NeuroMod.DALRateMod = 0.5
+		lp.Learn.NeuroMod.BurstGain = 0.2
+		lp.Learn.NeuroMod.DipGain = 0
+		lp.Learn.RLRate.Diff.SetBool(true)
+		lp.Learn.RLRate.DiffThr = 0.01
 	} else {
-		ly.Learn.NeuroMod.DALRateMod = 0.5
-		ly.Learn.NeuroMod.BurstGain = 0.2
-		ly.Learn.NeuroMod.DipGain = 0
-		ly.Learn.RLRate.Diff.SetBool(true)
-		ly.Learn.RLRate.DiffThr = 0.01
+		lp.Learn.NeuroMod.DALRateSign.SetBool(true) // yes for Extinction
+		lp.Learn.NeuroMod.BurstGain = 1
+		lp.Learn.NeuroMod.DipGain = 1
+		lp.Learn.RLRate.Diff.SetBool(false)
 	}
-	ly.Learn.NeuroMod.AChLRateMod = 1
-	ly.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
+	lp.Learn.NeuroMod.AChLRateMod = 1
+	lp.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		slay := pj.Send.(AxonLayer).AsAxon()
+		if slay.LayerType() == BLALayer { // inhibition from Ext
+			pj.Params.SetFixedWts()
+			pj.Params.PrjnScale.Abs = 2
+		}
+	}
 }
 
 // PVLVPostBuild is used for BLA, VSPatch, and PVLayer types to set NeuroMod params
@@ -86,27 +99,22 @@ func (ly *Layer) PVLVPostBuild() {
 }
 
 func (ly *Layer) CeMDefaults() {
-	ly.Params.Act.Decay.Act = 1
-	ly.Params.Act.Decay.Glong = 1
-	ly.Params.Act.Dend.SSGi = 0
-	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.Inhib.Pool.On.SetBool(true)
-	ly.Params.Inhib.Pool.Gi = 0.3
-	ly.Params.Inhib.ActAvg.Nominal = 0.15
-	ly.Params.Learn.RLRate.SigmoidMin = 1.0
-	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
+	lp := ly.Params
+	lp.Act.Decay.Act = 1
+	lp.Act.Decay.Glong = 1
+	lp.Act.Dend.SSGi = 0
+	lp.Inhib.Layer.On.SetBool(true)
+	lp.Inhib.Layer.Gi = 0.5
+	lp.Inhib.Pool.On.SetBool(true)
+	lp.Inhib.Pool.Gi = 0.3
+	lp.Inhib.ActAvg.Nominal = 0.15
+	lp.Learn.RLRate.SigmoidMin = 1.0
+	lp.Learn.TrgAvgAct.On.SetBool(false)
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(AxonPrjn).AsAxon()
-		pj.Params.SWt.Init.SPct = 0
-		pj.Params.Learn.Learn.SetBool(false)
+		pj.Params.SetFixedWts()
 		pj.Params.PrjnScale.Abs = 1
-		pj.Params.SWt.Adapt.On.SetBool(false)
-		pj.Params.SWt.Adapt.SigGain = 1
-		pj.Params.SWt.Init.Mean = 0.8
-		pj.Params.SWt.Init.Var = 0.0
-		pj.Params.SWt.Init.Sym.SetBool(false)
 		// slay := pj.Send.(AxonLayer).AsAxon()
 		// if ly.Params.NeuroMod.Valence == Positive {
 		// 	if slay.Params.NeuroMod.DAMod == D2Mod {
@@ -165,18 +173,25 @@ func (ly *LayerParams) DrivesDefaults() {
 	ly.Pulv.DriveScale = 0.05
 }
 
-func (ly *LayerParams) PPTgDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.1
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 1 // todo: explore
-	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Pool.Gi = 0.5   // todo: could be lower!
-	ly.Inhib.Pool.FFPrv = 10 // key for temporal derivative
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-	ly.Learn.TrgAvgAct.On.SetBool(false)
-	ly.PVLV.Thr = 0.2
-	ly.PVLV.Gain = 2
+func (ly *Layer) PPTgDefaults() {
+	lp := ly.Params
+	lp.Inhib.ActAvg.Nominal = 0.1
+	lp.Inhib.Layer.On.SetBool(true)
+	lp.Inhib.Layer.Gi = 1 // todo: explore
+	lp.Inhib.Pool.On.SetBool(true)
+	lp.Inhib.Pool.Gi = 0.5   // todo: could be lower!
+	lp.Inhib.Pool.FFPrv = 10 // key for temporal derivative
+	lp.Act.Decay.Act = 1
+	lp.Act.Decay.Glong = 1
+	lp.Learn.TrgAvgAct.On.SetBool(false)
+	lp.PVLV.Thr = 0.2
+	lp.PVLV.Gain = 2
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.SetFixedWts()
+		pj.Params.PrjnScale.Abs = 1
+	}
 }
 
 func (ly *LayerParams) USDefaults() {
