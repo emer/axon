@@ -95,9 +95,9 @@ func (ctx *Context) DA() float32 {
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset.
 func (ctx *Context) LHbDipResetFmSum() {
-	ctx.DrivePVLV.LHbDipResetFmSum()
-	if ctx.DrivePVLV.LHb.DipReset.IsTrue() {
-		ctx.NeuroMod.SetRew(0, true)
+	dipReset := ctx.DrivePVLV.LHbDipResetFmSum()
+	if dipReset {
+		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
 	}
 }
 

@@ -735,6 +735,14 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			ss.RndSeeds.NewSeeds()
 		},
 	})
+	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Plot Drive & Effort",
+		Icon:    "play",
+		Tooltip: "Opens a new window to plot PVLV Drive and Effort dynamics.",
+		Active:  egui.ActiveAlways,
+		Func: func() {
+			go DriveEffortGUI()
+		},
+	})
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "README",
 		Icon:    "file-markdown",
 		Tooltip: "Opens your browser on the README file that contains instructions for how to run this model.",
@@ -743,6 +751,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 			gi.OpenURL("https://github.com/emer/axon/blob/master/examples/pvlv/README.md")
 		},
 	})
+
 	ss.GUI.FinalizeGUI(false)
 	if GPU {
 		vgpu.Debug = Debug

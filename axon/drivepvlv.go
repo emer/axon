@@ -132,9 +132,10 @@ func (ds *DriveVals) ExpStep(drv int32, dt, base float32) float32 {
 // and drive state.
 type Drives struct {
 	NActive  int32   `max:"8" desc:"number of active drives -- must be <= 8"`
+	NNegUSs  int32   `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
 	DriveMin float32 `desc:"minimum effective drive value"`
 
-	pad, pad1 int32
+	pad int32
 
 	Base  DriveVals `view:"inline" desc:"baseline levels for each drive -- what they naturally trend toward in the absence of any input.  Set inactive drives to 0 baseline, active ones typically elevated baseline (0-1 range)."`
 	Tau   DriveVals `view:"inline" desc:"time constants in ThetaCycle (trial) units for natural update toward Base values -- 0 values means no natural update."`
@@ -146,8 +147,19 @@ type Drives struct {
 }
 
 func (dp *Drives) Defaults() {
+	dp.NNegUSs = 1
 	dp.Update()
 	dp.USDec.SetAll(1)
+}
+
+// ToBaseline sets all drives to their baseline levels
+func (dp *Drives) ToBaseline() {
+	dp.Drives = dp.Base
+}
+
+// ToZero sets all drives to 0
+func (dp *Drives) ToZero() {
+	dp.Drives = dp.Base
 }
 
 func (dp *Drives) Update() {
@@ -235,6 +247,9 @@ func (lh *LHb) Defaults() {
 	lh.DipResetThr = 0.4
 }
 
+func (lh *LHb) Update() {
+}
+
 // LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
 // and VSPatch inputs.
 func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos float32) {
@@ -252,7 +267,8 @@ func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos float32) {
 }
 
 // DipResetFmSum increments DipSum and checks if should flag a reset
-func (lh *LHb) DipResetFmSum(resetSum bool) {
+// returns true if did reset.
+func (lh *LHb) DipResetFmSum(resetSum bool) bool {
 	lh.DipSum += lh.Dip
 	if resetSum {
 		lh.DipSum = 0
@@ -262,6 +278,7 @@ func (lh *LHb) DipResetFmSum(resetSum bool) {
 		lh.DipReset.SetBool(true)
 		lh.DipSum = 0
 	}
+	return lh.DipReset.IsTrue()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -327,6 +344,9 @@ func (vt *VTA) Defaults() {
 	vt.Gain.SetAll(1)
 }
 
+func (vt *VTA) Update() {
+}
+
 // DAFmRaw computes the intermediate Vals and final DA value from
 // Raw values that have been set prior to calling.
 func (vt *VTA) DAFmRaw() {
@@ -364,7 +384,7 @@ type DrivePVLV struct {
 	VTA     VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
 	LHb     LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
 	USpos   DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
-	USneg   DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals"`
+	USneg   DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals.  Number of active ones is Drive.NNegUSs -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
 	VSPatch DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values"`
 }
 
@@ -376,6 +396,13 @@ func (dp *DrivePVLV) Defaults() {
 	dp.USpos.Zero()
 	dp.USneg.Zero()
 	dp.VSPatch.Zero()
+}
+
+func (dp *DrivePVLV) Update() {
+	dp.Drive.Update()
+	dp.Effort.Update()
+	dp.VTA.Update()
+	dp.LHb.Update()
 }
 
 // InitUS initializes all the USs to zero
@@ -437,7 +464,8 @@ func (dp *DrivePVLV) VSPatchMax() float32 {
 // DA computes the updated dopamine from all the current state,
 // including pptg via Context.
 // Call after setting USs, Effort, Drives, VSPatch vals etc.
-// Resulting DA is in VTA.Vals.DA, set to Context.NeuroMod.DA, and is returned
+// Resulting DA is in VTA.Vals.DA, and is returned
+// (to be set to Context.NeuroMod.DA)
 func (dp *DrivePVLV) DA(pptg float32) float32 {
 	pvPosRaw := dp.PosPV()
 	pvNeg := dp.NegPV()
@@ -450,20 +478,26 @@ func (dp *DrivePVLV) DA(pptg float32) float32 {
 }
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset
-func (dp *DrivePVLV) LHbDipResetFmSum() {
+func (dp *DrivePVLV) LHbDipResetFmSum() bool {
 	reset := false
 	if dp.VTA.Vals.PVpos > dp.VTA.PVThr { // if actual PV, reset
 		reset = true
 	} else if dp.VTA.Vals.PPTg > dp.VTA.PVThr { // if actual CS, reset
 		reset = true
 	}
-	dp.LHb.DipResetFmSum(reset)
+	dipReset := dp.LHb.DipResetFmSum(reset)
+	dp.USneg.Set(0, 0) // special effort neg
+	if dipReset {
+		dp.USneg.Set(0, 1.0-dp.Effort.DiscFmEffort()) // proportional to discount factor, maxes out at 1
+	}
+	return dipReset
 }
 
 // DriveUpdt updates the drives based on the current USs,
 // subtracting USDec * US from current Drive,
 // and calling ExpStep with the Dt and Base params.
-// and optionally resets the USs back to zero.
+// if resetUs is true, USpos values are reset after update
+// so they can be set on occurrence without having to reset.
 func (dp *DrivePVLV) DriveUpdt(resetUs bool) {
 	dp.Drive.ExpStep()
 	for i := int32(0); i < dp.Drive.NActive; i++ {
@@ -473,6 +507,28 @@ func (dp *DrivePVLV) DriveUpdt(resetUs bool) {
 			dp.USpos.Set(i, 0)
 		}
 	}
+}
+
+// TODO: need the gating flag to reset at start of gating
+
+// EffortUpdt updates the effort based on given effort increment,
+// resetting first if hasRew flag is true indicating receipt of a
+// US based on Context.NeuroMod.HasRew flag.
+func (dp *DrivePVLV) EffortUpdt(effort float32, hasRew bool) {
+	if hasRew {
+		dp.Effort.Reset()
+	}
+	dp.Effort.AddEffort(effort)
+}
+
+// DriveEffortUpdt updates the Drives and Effort based on
+// given effort increment, resetting first if hasRew flag is true
+// indicating receipt of a US based on Context.NeuroMod.HasRew flag.
+// if resetUs is true, USpos values are reset after update
+// so they can be set on occurrence without having to reset.
+func (dp *DrivePVLV) DriveEffortUpdt(effort float32, hasRew, resetUs bool) {
+	dp.DriveUpdt(resetUs)
+	dp.EffortUpdt(effort, hasRew)
 }
 
 //gosl: end drivepvlv

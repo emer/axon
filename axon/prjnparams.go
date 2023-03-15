@@ -337,8 +337,8 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 func (pj *PrjnParams) DWtSynBLAAcq(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // previous trial
 	delta := rn.CaSpkP - rn.SpkPrv
-	if delta < 0 { // delta cannot go negative!
-		delta = 0
+	if delta < 0 { // neg delta learns much slower
+		delta *= pj.BLAAcq.NegDeltaLRate
 	}
 	err := sy.Tr * delta
 	// sb immediately -- enters into zero sum
