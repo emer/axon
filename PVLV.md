@@ -6,7 +6,7 @@ Files: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjn
 
 # Introduction
 
-![PV.1](fig_pvlv_pv_lv_schultz_da.png?raw=true "PV.1")
+<img src="fig_pvlv_pv_lv_schultz_da.png" height="600">
 
 **Figure 1:** PV and LV in the PVLV model: LV = Learned Value (Amygdala), which learns the value of conditioned stimuli (CSs). PV = Primary Value (Ventral Striatum, principally the Nucleus Accumbens Core, NAc), which learns to expect US (unconditioned stimuli, rewards) and shunt dopamine when they occur, or, when omitted, the LHb (lateral habenula) drives a dip / pause in DA firing.  Data from Schultz et al (1997) of VTA firing in a Pavlovian conditioning paradigm.
 
