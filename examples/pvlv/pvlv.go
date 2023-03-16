@@ -40,7 +40,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -162,12 +162,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctxt := ev.CurStates["ContextIn"]
 	// timeIn := ev.CurStates["USTimeIn"]
 
-	vta, lhb := net.AddVTALHbLayers(relpos.Behind, space)
-	ach := net.AddRSalienceAChLayer("ACh")
+	vta, lhb, ach := net.AddVTALHbAChLayers(relpos.Behind, space)
+	_ = lhb
+	_ = ach
 
 	vPmtxGo, vPmtxNo, _, _, vPgpeTA, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
 	vsGated := net.AddVSGatedLayer("", ny)
-
 	vsPatch := net.AddVSPatchLayer("", nUSs, nuBgY, nuBgX)
 
 	drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddDrivePVLVPulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
@@ -187,9 +187,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = ctxIn
 	// ustimeIn := net.AddLayer4D("USTimeIn", timeIn.Dim(0), timeIn.Dim(1), timeIn.Dim(2), timeIn.Dim(3), axon.InputLayer)
 	// _ = ustimeIn
-
-	gate := net.AddLayer2D("Gate", ny, 2, axon.InputLayer) // signals gated or not
-	_ = gate
 
 	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, pptg := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
 	_ = cemPos
@@ -280,13 +277,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
 
 	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
-	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
 
 	////////////////////////////////////////////////
 	// position
 
 	vPgpi.PlaceRightOf(vta, space)
-	ach.PlaceBehind(lhb, space)
 
 	vsPatch.PlaceRightOf(vPstns, space)
 	vsGated.PlaceRightOf(vPgpeTA, space)
@@ -304,9 +299,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	cemPos.PlaceBehind(blaNegE, space)
 	cemNeg.PlaceBehind(cemPos, space)
 
-	gate.PlaceRightOf(blaPosA, space)
-
-	ofc.PlaceRightOf(gate, space)
+	ofc.PlaceRightOf(blaPosA, space)
 	ofcMD.PlaceBehind(ofcPTPred, space)
 
 	err := net.Build()

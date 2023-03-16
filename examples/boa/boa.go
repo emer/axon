@@ -157,6 +157,8 @@ func (ss *Sim) ConfigEnv() {
 	trn.Config()
 	trn.Validate()
 
+	ss.Context.DrivePVLV.Drive.NActive = int32(trn.NDrives)
+
 	tst.Nm = etime.Test.String()
 	tst.Defaults()
 	tst.Config()
@@ -178,6 +180,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	nuCtxY := 6
 	nuCtxX := 6
 	nAct := ev.NActs
+	popY := 4
+	popX := 4
 	space := float32(2)
 
 	pone2one := prjn.NewPoolOneToOne()
@@ -188,24 +192,29 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	rew, rwPred, snc := net.AddRWLayers("", relpos.Behind, space)
-	_ = rew
-	_ = rwPred
-	ach := net.AddRSalienceAChLayer("ACh")
+	vta, lhb, ach := net.AddVTALHbAChLayers(relpos.Behind, space)
+	_ = lhb
+	_ = ach
 
-	drives := net.AddLayer4D("Drives", 1, ev.NDrives, ny, 1, axon.InputLayer)
-	us, usPulv := net.AddInputPulv4D("US", 1, ev.NDrives, ny, 1, space)
-	// cs, csp := net.AddInputPulv2D("CS", ev.PatSize.Y, ev.PatSize.X, space)
-	// localist, for now:
-	// cs, csp := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
+	vPmtxGo, vPmtxNo, _, _, vPgpeTA, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
+	vsGated := net.AddVSGatedLayer("", ny)
+	vsPatch := net.AddVSPatchLayer("", ev.NDrives, nuBgY, nuBgX)
+
+	drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddDrivePVLVPulvLayers(&ss.Context, ev.NDrives, ny, popY, popX, space)
+	_ = usNegP
+	_ = usPos
+	_ = usNeg
+	_ = pvPos
+	_ = pvNeg
+	_ = pvNegP
+	_ = effort
+	_ = effortP
+	_ = drivesP
+
 	cs := net.AddLayer2D("CS", ny, ev.NDrives, axon.InputLayer)
 	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
-	// pos, posp := net.AddInputPulv2D("Pos", ny, nloc, space)
 	pos := net.AddLayer2D("Pos", ny, nloc, axon.InputLayer) // irrelevant here
-	gate := net.AddLayer2D("Gate", ny, 2, axon.InputLayer)  // signals gated or not
-
-	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
 
 	// todo: need m1d, driven by smad -- output pathway
 
@@ -219,61 +228,71 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = vl
 	_ = act
 
-	blaa, blae, _, _, cemPos, _, pptg := net.AddAmygdala("", false, ev.NDrives, nuCtxY, nuCtxX, space)
+	blaPosA, blaPosE, _, _, cemPos, _, pptg := net.AddAmygdala("", false, ev.NDrives, nuCtxY, nuCtxX, space)
 	_ = cemPos
 	_ = pptg
-	// blaa.SetBuildConfig("LayInhib1Name", blae.Name()) // just for testing
-	// blae.SetBuildConfig("LayInhib1Name", blaa.Name())
+	// blaPosA.SetBuildConfig("LayInhib1Name", blaPosE.Name()) // just for testing
+	// blaPosE.SetBuildConfig("LayInhib1Name", blaPosA.Name())
 
-	ofc, ofcct := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
+	ofc, ofcCT := net.AddSuperCT4D("OFC", 1, ev.NDrives, nuCtxY, nuCtxX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcpt, ofcmd := net.AddPTMaintThalForSuper(ofc, ofcct, "MD", one2one, pone2one, pone2one, space)
-	_ = ofcpt
-	ofcct.SetClass("OFC CTCopy")
-	// net.ConnectCTSelf(ofcct, pone2one) // much better for ofc not to have self prjns..
-	// net.ConnectToPulv(ofc, ofcct, csp, full, full)
-	net.ConnectToPulv(ofc, ofcct, usPulv, pone2one, pone2one)
+	ofcPT, ofcMD := net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
+	_ = ofcPT
+	ofcCT.SetClass("OFC CTCopy")
+	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, pone2one, pone2one, pone2one, space)
+	ofcPTPred.SetClass("OFC")
+	notMaint := net.AddPTNotMaintLayer(ofcPT, ny, 1, space)
+	notMaint.Nm = "NotMaint"
+
+	// net.ConnectCTSelf(ofcCT, pone2one) // much better for ofc not to have self prjns..
+	// net.ConnectToPulv(ofc, ofcCT, csp, full, full)
+	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	// net.ConnectLayers(drives, ofcct, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	net.ConnectLayers(vPgpi, ofcmd, full, emer.Inhib).SetClass("BgFixed")
+	// net.ConnectLayers(drives, ofcCT, pone2one, emer.Forward).SetClass("DrivesToOFC")
+	net.ConnectLayers(vPgpi, ofcMD, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
-	net.ConnectLayers(us, ofc, pone2one, emer.Forward)
-	net.ConnectLayers(ofcpt, ofcct, full, emer.Forward) // good?
+	net.ConnectLayers(usPos, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(ofcPT, ofcCT, pone2one, emer.Forward) // good?
 
 	// todo: add ofcp and acc projections to it
 	// todo: acc should have pos and negative stripes, with grounded prjns??
 
-	acc, accct := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
+	acc, accCT := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
-	accpt, accmd := net.AddPTMaintThalForSuper(acc, accct, "MD", one2one, full, full, space)
-	_ = accpt
-	accct.SetClass("ACC CTCopy")
-	net.ConnectCTSelf(accct, full)
-	net.ConnectToPulv(acc, accct, distp, full, full)
-	net.ConnectToPulv(acc, accct, timep, full, full)
-	net.ConnectLayers(vPgpi, accmd, full, emer.Inhib).SetClass("BgFixed")
+	accPT, accMD := net.AddPTMaintThalForSuper(acc, accCT, "MD", one2one, full, full, space)
+	_ = accPT
+	accCT.SetClass("ACC CTCopy")
+	accPTPred := net.AddPTPredLayer(accPT, accCT, accMD, pone2one, pone2one, pone2one, space)
+	accPTPred.SetClass("ACC")
+
+	net.ConnectCTSelf(accCT, full)
+	net.ConnectToPulv(acc, accCT, distp, full, full)
+	net.ConnectToPulv(acc, accCT, timep, full, full)
+	net.ConnectLayers(vPgpi, accMD, full, emer.Inhib).SetClass("BgFixed")
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(time, acc, full, emer.Forward)
-	net.ConnectLayers(accpt, accct, full, emer.Forward) // good?
+	net.ConnectLayers(accPT, accCT, full, emer.Forward) // good?
 
-	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
-	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcmd.Name())
-	vPmtxGo.SetBuildConfig("ThalLay2Name", accmd.Name())
-	vPmtxNo.SetBuildConfig("ThalLay2Name", accmd.Name())
+	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
+	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
+	vPmtxGo.SetBuildConfig("ThalLay2Name", accMD.Name())
+	vPmtxNo.SetBuildConfig("ThalLay2Name", accMD.Name())
 
 	// m1P plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
-	alm, almct := net.AddSuperCT2D("ALM", nuCtxY+2, nuCtxX+2, space, one2one)
-	// almpt, almthal := net.AddPTThalForSuper(alm, almct, "MD", one2one, full, full, space)
-	almct.SetClass("ALM CTCopy")
+	alm, almCT := net.AddSuperCT2D("ALM", nuCtxY+2, nuCtxX+2, space, one2one)
+	// almpt, almthal := net.AddPTThalForSuper(alm, almCT, "MD", one2one, full, full, space)
+	almCT.SetClass("ALM CTCopy")
 	// _ = almpt
-	// net.ConnectCTSelf(almct, full)
-	net.ConnectToPulv(alm, almct, m1P, full, full)
-	// net.ConnectToPulv(alm, almct, posp, full, full)
-	// net.ConnectToPulv(alm, almct, distp, full, full)
+	// net.ConnectCTSelf(almCT, full)
+	net.ConnectToPulv(alm, almCT, m1P, full, full)
+	// net.ConnectToPulv(alm, almCT, posp, full, full)
+	// net.ConnectToPulv(alm, almCT, distp, full, full)
 	// net.ConnectLayers(vPgpi, almthal, full, emer.Inhib).SetClass("BgFixed")
 
 	//	todo: add a PL layer, with Integ maint
@@ -281,40 +300,42 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// contextualization based on action
 	// net.BidirConnectLayers(ofc, alm, full)
 	// net.BidirConnectLayers(acc, alm, full)
-	// net.ConnectLayers(ofcpt, alm, full, emer.Forward)
-	// net.ConnectLayers(accpt, alm, full, emer.Forward)
+	// net.ConnectLayers(ofcPT, alm, full, emer.Forward)
+	// net.ConnectLayers(accPT, alm, full, emer.Forward)
 
-	// todo: blae is not connected properly at all yet
+	// todo: blaPosE is not connected properly at all yet
 
 	// BLA
-	net.ConnectToBLA(cs, blaa, full)
-	net.ConnectToBLA(us, blaa, pone2one).SetClass("USToBLA")
-	// net.ConnectToBLA(usp, blaa, pone2one).SetClass("USToBLA")
-	// net.ConnectToBLA(drives, blaa, pone2one).SetClass("USToBLA")
-	net.ConnectLayers(blaa, ofc, pone2one, emer.Forward)
+	net.ConnectToBLAAcq(cs, blaPosA, full)
+	net.ConnectToBLAAcq(usPos, blaPosA, pone2one).SetClass("USToBLA")
+	// net.ConnectToBLA(usp, blaPosA, pone2one).SetClass("USToBLA")
+	// net.ConnectToBLA(drives, blaPosA, pone2one).SetClass("USToBLA")
+	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
 	// todo: from deep maint layer
-	// net.ConnectLayersPrjn(ofcpt, blae, pone2one, emer.Forward, &axon.BLAPrjn{})
-	net.ConnectLayers(blae, blaa, pone2one, emer.Inhib).SetClass("BgFixed")
-	// net.ConnectLayers(drives, blae, pone2one, emer.Forward)
+	// net.ConnectLayersPrjn(ofcPT, blaPosE, pone2one, emer.Forward, &axon.BLAPrjn{})
+	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BgFixed")
+	// net.ConnectLayers(drives, blaPosE, pone2one, emer.Forward)
+	net.ConnectToBLAExt(cs, blaPosE, full)
+	net.ConnectToBLAExt(ofcPT, blaPosE, pone2one)
 
 	net.ConnectLayers(dist, alm, full, emer.Forward)
 	net.ConnectLayers(time, alm, full, emer.Forward)
-	net.ConnectLayers(ofcpt, alm, full, emer.Forward)
-	net.ConnectLayers(accpt, alm, full, emer.Forward)
-	net.ConnectLayers(gate, alm, full, emer.Forward)
+	net.ConnectLayers(ofcPT, alm, full, emer.Forward)
+	net.ConnectLayers(accPT, alm, full, emer.Forward)
+	net.ConnectLayers(notMaint, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
 	net.ConnectLayers(dist, m1, full, emer.Forward).SetClass("ToM1")
 	net.ConnectLayers(time, m1, full, emer.Forward).SetClass("ToM1")
-	net.ConnectLayers(gate, m1, full, emer.Forward).SetClass("ToM1")
-	net.ConnectLayers(gate, vl, full, emer.Forward).SetClass("ToVL")
+	net.ConnectLayers(notMaint, m1, full, emer.Forward).SetClass("ToM1")
+	net.ConnectLayers(notMaint, vl, full, emer.Forward).SetClass("ToVL")
 	// neither of these other connections work nearly as well as explicit gate
-	// net.ConnectLayers(ofcpt, m1, full, emer.Forward)
-	// net.ConnectLayers(accpt, m1, full, emer.Forward)
-	// net.ConnectLayers(ofcmd, m1, full, emer.Forward)
-	// net.ConnectLayers(accmd, m1, full, emer.Forward)
+	// net.ConnectLayers(ofcPT, m1, full, emer.Forward)
+	// net.ConnectLayers(accPT, m1, full, emer.Forward)
+	// net.ConnectLayers(ofcMD, m1, full, emer.Forward)
+	// net.ConnectLayers(accMD, m1, full, emer.Forward)
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
-	// net.ConnectLayers(almct, m1, full, emer.Forward) //  action output
+	// net.ConnectLayers(almCT, m1, full, emer.Forward) //  action output
 	net.BidirConnectLayers(alm, m1, full) // todo: alm weaker?
 	// net.ConnectLayers(alm, almpt, one2one, emer.Forward) // is weaker, provides some action sel but gating = stronger
 	// net.ConnectLayers(alm, m1, full, emer.Forward)  //  note: non-gated!
@@ -322,23 +343,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ff.SetClass("ToVL")
 	fb.SetClass("ToM1")
 	// net.BidirConnectLayers(alm, vl, full)
-	// net.BidirConnectLayers(almct, vl, full)
+	// net.BidirConnectLayers(almCT, vl, full)
 
 	net.ConnectLayers(vl, alm, full, emer.Back)
-	net.ConnectLayers(vl, almct, full, emer.Back)
+	net.ConnectLayers(vl, almCT, full, emer.Back)
 
 	////////////////////////////////////////////////
 	// BG / DA connections
 
 	// same prjns to stn as mtxgo
-	net.ConnectToMatrix(us, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaa, vPmtxGo, pone2one).SetClass("BLAToBG")
-	net.ConnectToMatrix(blaa, vPmtxNo, pone2one).SetClass("BLAToBG")
-	net.ConnectLayers(blaa, vPstnp, full, emer.Forward)
-	net.ConnectLayers(blaa, vPstns, full, emer.Forward)
+	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
+	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
+	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
+	net.ConnectLayers(blaPosA, vPstnp, full, emer.Forward)
+	net.ConnectLayers(blaPosA, vPstns, full, emer.Forward)
 
-	net.ConnectToMatrix(blae, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blae, vPmtxNo, pone2one)
+	net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
+	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
@@ -347,49 +368,51 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
 	net.ConnectLayers(ofc, vPstnp, full, emer.Forward)
 	net.ConnectLayers(ofc, vPstns, full, emer.Forward)
-	// net.ConnectToMatrix(ofcct, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
-	// net.ConnectToMatrix(ofcct, vPmtxNo, pone2one)
-	// net.ConnectToMatrix(ofcpt, vPmtxGo, pone2one)
-	// net.ConnectToMatrix(ofcpt, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(ofcCT, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
+	// net.ConnectToMatrix(ofcCT, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(ofcPT, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(ofcPT, vPmtxNo, pone2one)
 	net.ConnectToMatrix(acc, vPmtxGo, full)
 	net.ConnectToMatrix(acc, vPmtxNo, full)
 	net.ConnectLayers(acc, vPstnp, full, emer.Forward)
 	net.ConnectLayers(acc, vPstns, full, emer.Forward)
-	// net.ConnectToMatrix(accct, vPmtxGo, pone2one)
-	// net.ConnectToMatrix(accct, vPmtxNo, pone2one)
-	// net.ConnectToMatrix(accpt, vPmtxGo, pone2one)
-	// net.ConnectToMatrix(accpt, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(accCT, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(accCT, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(accPT, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(accPT, vPmtxNo, pone2one)
 	// net.ConnectToMatrix(alm, vPmtxGo, full) // not to MD
 	// net.ConnectToMatrix(alm, vPmtxNo, full)
 
-	net.ConnectToRWPrjn(ofc, rwPred, full)
-	net.ConnectToRWPrjn(ofcct, rwPred, full)
-	net.ConnectToRWPrjn(acc, rwPred, full)
-	net.ConnectToRWPrjn(accct, rwPred, full)
+	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
+	net.ConnectToVSPatch(accPTPred, vsPatch, pone2one)
 
 	////////////////////////////////////////////////
 	// position
 
-	vPgpi.PlaceRightOf(rew, space)
-	ach.PlaceBehind(snc, space)
+	vPgpi.PlaceRightOf(vta, space)
 
-	drives.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: rew.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	us.PlaceBehind(drives, space)
-	cs.PlaceRightOf(drives, space)
+	vsPatch.PlaceRightOf(vPstns, space)
+	vsGated.PlaceRightOf(vPgpeTA, space)
+
+	usPos.PlaceAbove(vta)
+
+	cs.PlaceRightOf(pvPos, space)
 	dist.PlaceRightOf(cs, space)
 	time.PlaceBehind(distp, space)
 	pos.PlaceRightOf(dist, space)
-	gate.PlaceBehind(pos, space)
 
 	m1.PlaceRightOf(pos, space)
 	m1P.PlaceBehind(m1, space)
 	vl.PlaceBehind(m1P, space)
 	act.PlaceBehind(vl, space)
 
-	blaa.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: drives.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	ofc.PlaceRightOf(blaa, space)
+	blaPosA.PlaceAbove(usPos)
+	ofc.PlaceRightOf(blaPosA, space)
+	ofcMD.PlaceBehind(ofcPTPred, space)
 	acc.PlaceRightOf(ofc, space)
+	accMD.PlaceBehind(accPTPred, space)
 	alm.PlaceRightOf(acc, space)
+	notMaint.PlaceBehind(almCT, space)
 
 	err := net.Build()
 	if err != nil {
@@ -923,7 +946,7 @@ func (ss *Sim) ConfigLogs() {
 	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 
 	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
-	// "MaintOFCPT", "MaintACCPT", "MaintFailOFCPT", "MaintFailACCPT"
+	// "MaintofcPT", "MaintaccPT", "MaintFailofcPT", "MaintFailaccPT"
 	// "GateUS", "GatedEarly", "GatedPostCS", "Gated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
 

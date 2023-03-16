@@ -211,15 +211,18 @@ func (nt *Network) ConnectToVSPatch(send, recv emer.Layer, pat prjn.Pattern) eme
 	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(VSPatchPrjn))
 }
 
-// AddVTALHbLayers adds VTA dopamine and LHb dipping layers
-// which are driven by corresponding VTA and LHb values in Context.DrivePVLV
-func (nt *Network) AddVTALHbLayers(rel relpos.Relations, space float32) (vta, lhb *Layer) {
+// AddVTALHbAChLayers adds VTA dopamine, LHb DA dipping, and ACh layers
+// which are driven by corresponding values in Context.DrivePVLV
+func (nt *Network) AddVTALHbAChLayers(rel relpos.Relations, space float32) (vta, lhb, ach *Layer) {
 	vta = nt.AddLayer2D("VTA", 1, 1, VTALayer)
 	lhb = nt.AddLayer2D("LHb", 1, 2, LHbLayer)
+	ach = nt.AddRSalienceAChLayer("ACh")
 	if rel == relpos.Behind {
 		lhb.PlaceBehind(vta, space)
+		ach.PlaceBehind(lhb, space)
 	} else {
 		lhb.PlaceRightOf(vta, space)
+		ach.PlaceRightOf(lhb, space)
 	}
 	return
 }

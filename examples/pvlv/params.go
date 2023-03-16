@@ -60,8 +60,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8",
-					"Layer.Inhib.Pool.Gi":  "0.8", // 0.6 > 0.5 -- 0.8 too high
+					"Layer.Inhib.Layer.Gi": "0.6",
+					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			{Sel: "#Drives", Desc: "expect act",
 				Params: params.Params{
@@ -116,7 +116,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCMD", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.Gi": "0.8",
+					"Layer.Inhib.Pool.Gi": "0.6",
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
@@ -159,24 +159,18 @@ var ParamSets = params.Sets{
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
 					"Layer.Pulv.DriveScale":      "0.05",
 				}},
 			{Sel: ".USLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":       "0.2",
-					"Layer.Inhib.Layer.On":             "false",
 					"Layer.Inhib.Layer.Gi":             "0.5",
-					"Layer.Inhib.Pool.On":              "true",
 					"Layer.Inhib.Pool.Gi":              "0.5",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
@@ -252,7 +246,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "4.0", // 4.0 needed here for quick gating..
+					"Prjn.PrjnScale.Abs": "2.0", // 4.0 needed here for quick gating..
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
