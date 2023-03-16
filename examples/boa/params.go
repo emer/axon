@@ -108,14 +108,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
 				}},
-			{Sel: ".Time", Desc: "expect act",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / maxtime -- low to jack up Ge
-				}},
-			{Sel: "#TimeP", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "0.8",
-				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":        "0.0", // do this only where needed
@@ -364,10 +356,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.0",
 				}},
-			{Sel: "#TimeToACC", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.0",
-				}},
 			{Sel: ".ToM1", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
@@ -377,10 +365,6 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
 				}},
 			{Sel: "#DistToM1", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
-				}},
-			{Sel: "#TimeToM1", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2.0",
 				}},

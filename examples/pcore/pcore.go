@@ -520,7 +520,7 @@ func (ss *Sim) ApplyRew() {
 	mtxly := net.LayerByName("MtxGo").(*axon.Layer)
 
 	net.GPU.SyncStateFmGPU()
-	didGate := mtxly.MatrixGated()                      // will also be called later
+	didGate := mtxly.MatrixGated(&ss.Context)           // will also be called later
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
 	switch {

@@ -212,8 +212,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = drivesP
 
 	cs := net.AddLayer2D("CS", ny, ev.NDrives, axon.InputLayer)
-	dist, distp := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
-	time, timep := net.AddInputPulv2D("Time", ny, ev.TimeMax, space)
+	dist, distP := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	pos := net.AddLayer2D("Pos", ny, nloc, axon.InputLayer) // irrelevant here
 
 	// todo: need m1d, driven by smad -- output pathway
@@ -270,12 +269,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accPTPred.SetClass("ACC")
 
 	net.ConnectCTSelf(accCT, full)
-	net.ConnectToPulv(acc, accCT, distp, full, full)
-	net.ConnectToPulv(acc, accCT, timep, full, full)
+	net.ConnectToPulv(acc, accCT, distP, full, full)
+	net.ConnectToPulv(acc, accCT, effortP, full, full)
 	net.ConnectLayers(vPgpi, accMD, full, emer.Inhib).SetClass("BgFixed")
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
-	net.ConnectLayers(time, acc, full, emer.Forward)
+	net.ConnectLayers(effort, acc, full, emer.Forward)
 	net.ConnectLayers(accPT, accCT, full, emer.Forward) // good?
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
@@ -292,7 +291,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectCTSelf(almCT, full)
 	net.ConnectToPulv(alm, almCT, m1P, full, full)
 	// net.ConnectToPulv(alm, almCT, posp, full, full)
-	// net.ConnectToPulv(alm, almCT, distp, full, full)
+	// net.ConnectToPulv(alm, almCT, distP, full, full)
 	// net.ConnectLayers(vPgpi, almthal, full, emer.Inhib).SetClass("BgFixed")
 
 	//	todo: add a PL layer, with Integ maint
@@ -319,13 +318,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAExt(ofcPT, blaPosE, pone2one)
 
 	net.ConnectLayers(dist, alm, full, emer.Forward)
-	net.ConnectLayers(time, alm, full, emer.Forward)
+	net.ConnectLayers(effort, alm, full, emer.Forward)
 	net.ConnectLayers(ofcPT, alm, full, emer.Forward)
 	net.ConnectLayers(accPT, alm, full, emer.Forward)
 	net.ConnectLayers(notMaint, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
 	net.ConnectLayers(dist, m1, full, emer.Forward).SetClass("ToM1")
-	net.ConnectLayers(time, m1, full, emer.Forward).SetClass("ToM1")
+	net.ConnectLayers(effort, m1, full, emer.Forward).SetClass("ToM1")
 	net.ConnectLayers(notMaint, m1, full, emer.Forward).SetClass("ToM1")
 	net.ConnectLayers(notMaint, vl, full, emer.Forward).SetClass("ToVL")
 	// neither of these other connections work nearly as well as explicit gate
@@ -398,7 +397,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	cs.PlaceRightOf(pvPos, space)
 	dist.PlaceRightOf(cs, space)
-	time.PlaceBehind(distp, space)
 	pos.PlaceRightOf(dist, space)
 
 	m1.PlaceRightOf(pos, space)
@@ -674,7 +672,7 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	lays := []string{"Pos", "Drives", "US", "CS", "Dist", "Time", "Rew", "Gate"}
+	lays := []string{"Pos", "CS", "Dist"}
 	for _, lnm := range lays {
 		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
 		itsr := ev.State(lnm)
@@ -693,10 +691,23 @@ func (ss *Sim) ApplyInputs() {
 		ss.Context.NeuroMod.SetRew(0, false)
 	}
 
-	// fmt.Printf("Rew: %g\n", ev.Rew)
-	// ss.ApplyUS() // now full trial
-	// ss.ApplyRew()
+	ss.ApplyPVLV(&ss.Context, ev)
 	ss.Net.ApplyExts(&ss.Context)
+}
+
+// ApplyPVLV applies current PVLV values to Context.mDrivePVLV,
+// from given trial data.
+func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
+	dr := &ctx.DrivePVLV
+	dr.InitUS()
+	ctx.NeuroMod.HasRew.SetBool(false)
+	if ev.US >= 0 {
+		dr.SetPosUS(int32(ev.US), 1) // magnitude always 1
+		ctx.NeuroMod.HasRew.SetBool(true)
+	}
+	dr.InitDrives()
+	dr.Effort.AddEffort(1) // should be based on action taken last step
+	dr.SetDrive(0, 1)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -772,7 +783,11 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	ss.GatedStats()
+	ctx := &ss.Context
+	dr := &ctx.DrivePVLV
+	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
+
+	ss.GatedStats() // todo: update to read from DrivePVLV values
 	ss.MaintStats()
 
 	// ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
@@ -1066,7 +1081,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
-	nv.Params.LayNmSize = 0.03
+	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 
