@@ -213,7 +213,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
 					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
-					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
+					"Layer.Matrix.IsVS":                "true",
+					"Layer.Learn.NeuroMod.AChDisInhib": "5", // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
 					"Layer.Inhib.Layer.On":             "true",

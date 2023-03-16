@@ -40,7 +40,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	GPU = true
 )
 
 func main() {
@@ -100,7 +100,8 @@ func (ss *Sim) New() {
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
-	ss.ConfigArgs() // do this first, has key defaults
+	ss.Context.DrivePVLV.Effort.Gain = 0.01 // don't discount as much
+	ss.ConfigArgs()                         // do this first, has key defaults
 	// ss.Defaults()
 }
 
@@ -164,16 +165,19 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vta, lhb := net.AddVTALHbLayers(relpos.Behind, space)
 	ach := net.AddRSalienceAChLayer("ACh")
 
-	vPmtxGo, vPmtxNo, _, _, _, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
+	vPmtxGo, vPmtxNo, _, _, vPgpeTA, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
+	vsGated := net.AddVSGatedLayer("", ny)
 
 	vsPatch := net.AddVSPatchLayer("", nUSs, nuBgY, nuBgX)
 
-	drives, drivesP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVUSDrivePulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
+	drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddDrivePVLVPulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
 	_ = usNegP
 	_ = usPos
 	_ = usNeg
 	_ = pvNeg
 	_ = pvNegP
+	_ = effort
+	_ = effortP
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
@@ -201,9 +205,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = ofcPT
 	ofcCT.SetClass("OFC CTCopy")
 	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, pone2one, pone2one, pone2one, space)
-	_ = ofcPTPred
-	_ = ofcPT
-	ofcCT.SetClass("OFC CTCopy")
+	ofcPTPred.SetClass("OFC")
+	ofcNotMaint := net.AddPTNotMaintLayer(ofcPT, ny, 1, space)
+	_ = ofcNotMaint
+
 	// net.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
@@ -217,6 +222,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(ofcPT, ofcCT, pone2one, emer.Forward)
 
 	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcCT, effortP, full, full)
 	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
@@ -283,12 +289,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ach.PlaceBehind(lhb, space)
 
 	vsPatch.PlaceRightOf(vPstns, space)
+	vsGated.PlaceRightOf(vPgpeTA, space)
 
 	usPos.PlaceAbove(vta)
 
 	time.PlaceRightOf(pvPos, space)
 
-	cs.PlaceRightOf(time, space)
+	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
 	// ustimeIn.PlaceRightOf(ctxIn, space)
 
@@ -444,7 +451,8 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 		ctx.NeuroMod.HasRew.SetBool(true)
 	}
 	dr.InitDrives()
-	dr.SetDrive(0, 1) // todo: need to get drive somehow -- add to env?
+	dr.Effort.AddEffort(1) // should be based on action taken last step
+	dr.SetDrive(0, 1)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -531,6 +539,7 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
 	dr := &ctx.DrivePVLV
+	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
 	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
 	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
 	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)

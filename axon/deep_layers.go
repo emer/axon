@@ -143,6 +143,22 @@ func (ly *Layer) PTMaintDefaults() {
 	}
 }
 
+func (ly *Layer) PTNotMaintDefaults() {
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.OnRew.SetBool(true)
+	ly.Params.Act.Init.GeBase = 1.0
+	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Params.Inhib.ActAvg.Nominal = 0.5
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Layer.On.SetBool(true)
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.SetFixedWts()
+	}
+}
+
 // called in Defaults for Pulvinar layer type
 func (ly *LayerParams) PulvDefaults() {
 	ly.Act.Decay.Act = 0

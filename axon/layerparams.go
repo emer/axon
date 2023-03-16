@@ -360,8 +360,10 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	saveVal := float32(0)        // sometimes we need to use a value computed here, for the post Gs step
 	pi := int32(nrn.SubPool) - 1 // 0-n pool index
 	geCtxt := float32(0)
+	dr := float32(0)
+	dpc := float32(0)
 	switch ly.LayType {
-	case PTPredLayer:
+	case CTLayer:
 		// fallthrough // todo: support this in gosl
 		geCtxt = ly.CT.GeGain * nrn.CtxtGe
 		nrn.GeRaw += geCtxt
@@ -371,7 +373,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 			nrn.GeSyn += ctxExt
 			saveVal = ctxExt // used In PostGs to set nrn.GeExt
 		}
-	case CTLayer:
+	case PTPredLayer:
 		geCtxt = ly.CT.GeGain * nrn.CtxtGe
 		nrn.GeRaw += geCtxt
 		if ly.CT.DecayDt > 0 {
@@ -402,6 +404,35 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
 
+	case VTALayer:
+		ctx.DA()
+		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case LHbLayer:
+		if ni == 0 {
+			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.Dip)
+		} else {
+			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.Burst)
+		}
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case DrivesLayer:
+		dr = ctx.DrivePVLV.Drive.Drives.Get(pi)
+		dpc = dr
+		if dr > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+		}
+		nrn.GeRaw = dpc
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case EffortLayer:
+		dr = ctx.DrivePVLV.Effort.DiscFmEffort()
+		dpc = dr
+		if dr > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+		}
+		nrn.GeRaw = dpc
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case USLayer:
 		us := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
@@ -421,25 +452,14 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
 		nrn.GeRaw = pc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
-	case VTALayer:
-		ctx.DA()
-		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
-		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
-	case LHbLayer:
-		if ni == 0 {
-			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.Dip)
+	case VSGatedLayer:
+		dr = 0
+		if pi == 0 {
+			dr = float32(ctx.DrivePVLV.VSMatrix.JustGated)
 		} else {
-			nrn.GeRaw = mat32.Abs(ctx.DrivePVLV.LHb.Burst)
+			dr = float32(ctx.DrivePVLV.VSMatrix.HasGated)
 		}
-		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
-	case DrivesLayer:
-		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
-		dpc := dr
-		if dr > 0 {
-			pni := nrn.NeurIdx - pl.StIdx
-			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
-		}
-		nrn.GeRaw = dpc
+		nrn.GeRaw = mat32.Abs(dr)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	}
 	return saveVal
@@ -533,6 +553,8 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.Burst = nrn.CaSpkP
 	pi := int32(nrn.SubPool) - 1 // 0-n pool index
+	dr := float32(0)
+	dpc := float32(0)
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
@@ -588,6 +610,36 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		if ni == 0 {
 			ctx.NeuroMod.PPTg = ly.PVLV.Val(lpl.AvgMax.CaSpkD.Cycle.Max)
 		}
+	case VSPatchLayer:
+		if nrn.NeurIdx == 0 {
+			val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
+			ctx.DrivePVLV.VSPatch.Set(pi, val)
+		}
+	case VTALayer:
+		nrn.Act = ctx.DrivePVLV.VTA.Vals.DA
+	case LHbLayer:
+		if ni == 0 {
+			nrn.Act = ctx.DrivePVLV.LHb.Dip
+		} else {
+			nrn.Act = ctx.DrivePVLV.LHb.Burst
+		}
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case DrivesLayer:
+		dr = ctx.DrivePVLV.Drive.Drives.Get(pi)
+		dpc = dr
+		if dr > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+		}
+		nrn.Act = dpc
+	case EffortLayer:
+		dr = ctx.DrivePVLV.Effort.DiscFmEffort()
+		dpc = dr
+		if dr > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+		}
+		nrn.Act = dpc
 	case USLayer:
 		us := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
@@ -605,28 +657,14 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		}
 		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
 		nrn.Act = pc
-	case VTALayer:
-		nrn.Act = ctx.DrivePVLV.VTA.Vals.DA
-	case LHbLayer:
-		if ni == 0 {
-			nrn.Act = ctx.DrivePVLV.LHb.Dip
+	case VSGatedLayer:
+		dr = 0
+		if pi == 0 {
+			dr = float32(ctx.DrivePVLV.VSMatrix.JustGated)
 		} else {
-			nrn.Act = ctx.DrivePVLV.LHb.Burst
+			dr = float32(ctx.DrivePVLV.VSMatrix.HasGated)
 		}
-		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
-	case DrivesLayer:
-		dr := ctx.DrivePVLV.Drive.Drives.Get(pi)
-		dpc := dr
-		if dr > 0 {
-			pni := nrn.NeurIdx - pl.StIdx
-			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
-		}
-		nrn.Act = dpc
-	case VSPatchLayer:
-		if nrn.NeurIdx == 0 {
-			val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
-			ctx.DrivePVLV.VSPatch.Set(pi, val)
-		}
+		nrn.Act = dr
 	}
 }
 

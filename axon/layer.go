@@ -68,6 +68,8 @@ func (ly *Layer) Defaults() {
 		ly.PTMaintDefaults()
 	case PTPredLayer:
 		ly.Params.PTPredDefaults()
+	case PTNotMaintLayer:
+		ly.PTNotMaintDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
 
@@ -107,6 +109,8 @@ func (ly *Layer) Defaults() {
 		ly.STNDefaults()
 	case VThalLayer:
 		ly.VThalDefaults()
+	case VSGatedLayer:
+		ly.Params.VSGatedDefaults()
 	}
 	ly.UpdateParams()
 }

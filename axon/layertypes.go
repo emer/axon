@@ -178,19 +178,24 @@ const (
 	LHbLayer
 
 	// DrivesLayer represents the Drives in DrivePVLV framework.
-	// It tracks the Context.Drive.Drives values for
-	// visualization purposes.
+	// It tracks the Context.DrivePVLV.Drives values for
+	// visualization and predictive learning purposes.
 	DrivesLayer
 
+	// EffortLayer represents the Effort factor in DrivePVLV framework.
+	// It tracks the Context.DrivePVLV.Effort.Disc value for
+	// visualization and predictive learning purposes.
+	EffortLayer
+
 	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
-	// It tracks the Context.DrivePVLV.USpos or USneg, for visualization purposes.
-	// Actual US inputs are set in DrivePVLV.
+	// It tracks the Context.DrivePVLV.USpos or USneg, for visualization
+	// and predictive learning purposes. Actual US inputs are set in DrivePVLV.
 	USLayer
 
 	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
 	// the total primary value as a function of US inputs, drives, and effort.
 	// It tracks the Context.DrivePVLV.VTA.PVpos, PVneg values for
-	// visualization purposes.
+	// visualization and predictive learning purposes.
 	PVLayer
 
 	/////////////////////////////
@@ -222,6 +227,11 @@ const (
 	// mainly in the Ventral thalamus: VA / VM / VL,
 	// and also parts of MD mediodorsal thalamus.
 	VThalLayer
+
+	// VSGated represents explicit coding of VS gating status:
+	// JustGated and HasGated (since last US or failed predicted US),
+	// For visualization and / or motor action signaling.
+	VSGatedLayer
 
 	LayerTypesN
 )

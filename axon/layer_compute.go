@@ -398,7 +398,7 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 func (ly *Layer) MinusPhasePost(ctx *Context) {
 	switch ly.LayerType() {
 	case MatrixLayer:
-		ly.MatrixGated() // need gated state for decisions about action processing, so do in minus too
+		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
 	}
 }
 
@@ -443,7 +443,7 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	}
 	switch ly.LayerType() {
 	case MatrixLayer:
-		ly.MatrixGated()
+		ly.MatrixGated(ctx)
 	}
 }
 

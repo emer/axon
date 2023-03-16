@@ -225,7 +225,7 @@ func (nt *Network) AddVTALHbLayers(rel relpos.Relations, space float32) (vta, lh
 }
 
 // AddDrivesLayer adds DrivePVLV layer representing current drive activity,
-// which are driven by corresponding Context.DrivePVLV.Drive.Drives.
+// from Context.DrivePVLV.Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of units in the X and Y dimensions, per drive pool.
 func (nt *Network) AddDrivesLayer(ctx *Context, unY, unX int) *Layer {
@@ -234,7 +234,7 @@ func (nt *Network) AddDrivesLayer(ctx *Context, unY, unX int) *Layer {
 }
 
 // AddDrivesPulvLayer adds DrivePVLV layer representing current drive activity,
-// which are driven by corresponding Context.DrivePVLV.Drive.Drives.
+// from Context.DrivePVLV.Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of units in the X and Y dimensions, per drive pool.
 // Adds Pulvinar predictive layers for Drives.
@@ -245,24 +245,48 @@ func (nt *Network) AddDrivesPulvLayer(ctx *Context, unY, unX int, space float32)
 	return
 }
 
-// AddPVUSDrivePulvLayers adds PVLV layers for PV-related information visualizing
+// AddEffortLayer adds DrivePVLV layer representing current effort factor,
+// from Context.DrivePVLV.Effort.EffortDisc()
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of units in the X and Y dimensions, per drive pool.
+func (nt *Network) AddEffortLayer(unY, unX int) *Layer {
+	eff := nt.AddLayer2D("Effort", unY, unX, EffortLayer)
+	return eff
+}
+
+// AddEffortPulvLayer adds DrivePVLV layer representing current effort factor,
+// from Context.DrivePVLV.Effort.EffortDisc()
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of units in the X and Y dimensions, per drive pool.
+// Adds Pulvinar predictive layers for Effort.
+func (nt *Network) AddEffortPulvLayer(unY, unX int, space float32) (eff, effP *Layer) {
+	eff = nt.AddEffortLayer(unY, unX)
+	effP = nt.AddPulvForLayer(eff, space)
+	effP.SetClass("EffortLayer")
+	return
+}
+
+// AddDrivePVLVPulvLayers adds PVLV layers for PV-related information visualizing
 // the internal states of the Context.DrivePVLV state, with Pulvinar prediction
 // layers for training PFC layers.
 // * drives = popcode representation of drive strength (no activity for 0)
 // number of active drives comes from Context; popY, popX units per pool.
+// * effort = popcode representation of effort discount factor, popY, popX units.
 // * us = nYunits per US, represented as present or absent
 // * pv = popcode representation of final primary value on positive and negative
 // valences -- this is what the dopamine value ends up conding (pos - neg).
 // Layers are organized in depth per type: USs in one column, PVs in the next,
 // with Drives in the back.
-func (nt *Network) AddPVUSDrivePulvLayers(ctx *Context, nUSneg, nYunits, popY, popX int, space float32) (drives, drivesP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
+func (nt *Network) AddDrivePVLVPulvLayers(ctx *Context, nUSneg, nYunits, popY, popX int, space float32) (drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
 	rel := relpos.Behind
 	nUSpos := int(ctx.DrivePVLV.Drive.NActive)
 	usPos, usNeg, usPosP, usNegP = nt.AddUSPulvLayers(nUSpos, nUSneg, nYunits, rel, space)
 	pvPos, pvNeg, pvPosP, pvNegP = nt.AddPVPulvLayers(popY, popX, rel, space)
 	drives, drivesP = nt.AddDrivesPulvLayer(ctx, popY, popX, space)
+	effort, effortP = nt.AddEffortPulvLayer(popY, popX, space)
 
 	pvPos.PlaceRightOf(usPos, space)
 	drives.PlaceBehind(usNegP, space)
+	effort.PlaceRightOf(drives, space)
 	return
 }

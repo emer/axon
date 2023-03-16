@@ -211,7 +211,7 @@ func (ef *Effort) Reset() {
 	ef.Raw = 0
 }
 
-// DiscFmEffort computes EffortDisc from EffortRaw
+// DiscFmEffort computes Effort.Disc from EffortRaw
 func (ef *Effort) DiscFmEffort() float32 {
 	ef.Disc = 1.0 / (1.0 + ef.Gain*ef.Raw)
 	return ef.Disc
@@ -372,6 +372,43 @@ func (vt *VTA) DAFmRaw() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+//  VSMatrix
+
+// VSMatrix has parameters and values for computing VSMatrix gating status.
+// VS = ventral striatum, aka VP = ventral pallidum = output part of VS
+type VSMatrix struct {
+	JustGated slbool.Bool `inactive:"+" desc:"VSMatrix just gated (to engage goal maintenance in PFC areas), set at end of plus phase -- this excludes any gating happening at time of US"`
+	HasGated  slbool.Bool `inactive:"+" desc:"VSMatrix has gated since the last time HasRew was set (US outcome received or expected one failed to be received)"`
+
+	pad, pad1 float32
+}
+
+func (vt *VSMatrix) Defaults() {
+}
+
+func (vt *VSMatrix) Update() {
+}
+
+func (vt *VSMatrix) Reset() {
+	vt.JustGated.SetBool(false)
+	vt.HasGated.SetBool(false)
+}
+
+// VSGated updates JustGated and HasGated as function of VS gating (VP).
+// at end of the plus phase.
+func (vt *VSMatrix) VSGated(gated, hasRew bool) {
+	if hasRew {
+		vt.HasGated.SetBool(false)
+		vt.JustGated.SetBool(false) // don't count gating at time of US
+	} else {
+		vt.JustGated.SetBool(gated)
+		if gated {
+			vt.HasGated.SetBool(true)
+		}
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////
 //  DrivePVLV
 
 // DrivePVLV represents the core brainstem-level (hypothalamus) bodily drives
@@ -379,13 +416,14 @@ func (vt *VTA) DAFmRaw() {
 // and learned value (PVLV), describing the functions of the Amygala,
 // Ventral Striatum, VTA and associated midbrain nuclei (PPTg, LHb, RMTg)
 type DrivePVLV struct {
-	Drive   Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
-	Effort  Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
-	VTA     VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
-	LHb     LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
-	USpos   DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
-	USneg   DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals.  Number of active ones is Drive.NNegUSs -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
-	VSPatch DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values"`
+	Drive    Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
+	Effort   Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+	VTA      VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
+	LHb      LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
+	USpos    DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
+	USneg    DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals.  Number of active ones is Drive.NNegUSs -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
+	VSPatch  DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values"`
+	VSMatrix VSMatrix  `view:"inline" desc:"VSMatrix has parameters and values for computing VSMatrix gating status. VS = ventral striatum, aka VP = ventral pallidum = output part of VS"`
 }
 
 func (dp *DrivePVLV) Defaults() {
@@ -396,6 +434,7 @@ func (dp *DrivePVLV) Defaults() {
 	dp.USpos.Zero()
 	dp.USneg.Zero()
 	dp.VSPatch.Zero()
+	dp.VSMatrix.Reset()
 }
 
 func (dp *DrivePVLV) Update() {
@@ -403,6 +442,7 @@ func (dp *DrivePVLV) Update() {
 	dp.Effort.Update()
 	dp.VTA.Update()
 	dp.LHb.Update()
+	dp.VSMatrix.Update()
 }
 
 // InitUS initializes all the USs to zero

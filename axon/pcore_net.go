@@ -240,3 +240,10 @@ func (nt *Network) AddSTNLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 	ly.SetClass("BG")
 	return ly
 }
+
+// AddVSGatedLayer adds a VSGatedLayer with given number of Y units
+// and 2 pools, first one represents JustGated, second is HasGated.
+func (nt *Network) AddVSGatedLayer(prefix string, nYunits int) *Layer {
+	ly := nt.AddLayer4D(prefix+"VSGated", 1, 2, nYunits, 1, VSGatedLayer)
+	return ly
+}

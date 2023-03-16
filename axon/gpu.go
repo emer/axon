@@ -853,6 +853,7 @@ func (gp *GPU) RunCycles() {
 	gp.Sys.ComputeSubmitWaitCmd(cmd)
 	gp.CopyLayerStateFmStaging()
 	stCtx.NeuroMod = gp.Ctx.NeuroMod // only state that is updated separately -- counters are full ncyc ahead
+	stCtx.DrivePVLV = gp.Ctx.DrivePVLV
 	*gp.Ctx = stCtx
 	gp.Net.FunTimerStop(gnm)
 }
