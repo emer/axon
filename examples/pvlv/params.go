@@ -154,15 +154,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".USLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.25",
 					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Layer.Pool.Gi":  "0.5",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
 				}},
 			{Sel: ".PVLayer", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.2",
+					"Layer.Inhib.ActAvg.Nominal": "0.5",
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
@@ -208,7 +207,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.AChDisInhib": "5", // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
-					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.On":             "false",
 					"Layer.Inhib.Layer.Gi":             "0.0", // was .8
 					"Layer.Inhib.Pool.On":              "true",
 					"Layer.Inhib.Pool.Gi":              "0.5", // 0.7 > 0.6 more sparse

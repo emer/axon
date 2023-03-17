@@ -420,7 +420,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		dpc = dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
-			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+			dpc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
 		}
 		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
@@ -429,7 +429,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		dpc = dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
-			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+			dpc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
 		}
 		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
@@ -449,7 +449,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		} else {
 			pv = ctx.DrivePVLV.VTA.Prev.PVneg
 		}
-		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
+		pc := ly.Act.PopCode.EncodeGe(ni, ly.Idxs.NeurN, pv)
 		nrn.GeRaw = pc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case VSGatedLayer:
@@ -630,7 +630,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		dpc = dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
-			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+			dpc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
 		}
 		nrn.Act = dpc
 	case EffortLayer:
@@ -638,7 +638,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		dpc = dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
-			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
+			dpc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
 		}
 		nrn.Act = dpc
 	case USLayer:
@@ -656,7 +656,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		} else {
 			pv = ctx.DrivePVLV.VTA.Vals.PVneg
 		}
-		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
+		pc := ly.Act.PopCode.EncodeGe(ni, ly.Idxs.NeurN, pv)
 		nrn.Act = pc
 	case VSGatedLayer:
 		dr = 0

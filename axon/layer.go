@@ -94,12 +94,14 @@ func (ly *Layer) Defaults() {
 		ly.PPTgDefaults()
 	case VSPatchLayer:
 		ly.Params.VSPatchDefaults()
-	case PVLayer:
-		ly.Params.PVDefaults()
 	case DrivesLayer:
 		ly.Params.DrivesDefaults()
+	case EffortLayer:
+		ly.Params.EffortDefaults()
 	case USLayer:
 		ly.Params.USDefaults()
+	case PVLayer:
+		ly.Params.PVDefaults()
 
 	case MatrixLayer:
 		ly.MatrixDefaults()

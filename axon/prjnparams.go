@@ -352,6 +352,9 @@ func (pj *PrjnParams) DWtSynBLAAcq(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	if delta < 0 { // neg delta learns much slower
 		delta *= pj.BLAAcq.NegDeltaLRate
 	}
+	if ctx.NeuroMod.HasRew.IsFalse() {
+		delta *= pj.BLAAcq.NonUSLRate
+	}
 	err := sy.Tr * delta
 	// sb immediately -- enters into zero sum
 	if err > 0 {

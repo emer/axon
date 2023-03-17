@@ -125,6 +125,27 @@ func (ly *Layer) CeMDefaults() {
 	}
 }
 
+func (ly *Layer) PPTgDefaults() {
+	lp := ly.Params
+	lp.Inhib.ActAvg.Nominal = 0.1
+	lp.Inhib.Layer.On.SetBool(true)
+	lp.Inhib.Layer.Gi = 1 // todo: explore
+	lp.Inhib.Pool.On.SetBool(true)
+	lp.Inhib.Pool.Gi = 0.5   // todo: could be lower!
+	lp.Inhib.Pool.FFPrv = 10 // key for temporal derivative
+	lp.Act.Decay.Act = 1
+	lp.Act.Decay.Glong = 1
+	lp.Learn.TrgAvgAct.On.SetBool(false)
+	lp.PVLV.Thr = 0.2
+	lp.PVLV.Gain = 2
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.SetFixedWts()
+		pj.Params.PrjnScale.Abs = 1
+	}
+}
+
 func (ly *LayerParams) VSPatchDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
@@ -149,17 +170,6 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.PVLV.Gain = 6
 }
 
-func (ly *LayerParams) PVDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.1
-	ly.Inhib.Layer.On.SetBool(true)
-	ly.Inhib.Layer.Gi = 1
-	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Pool.Gi = 1
-	ly.Act.PopCode.On.SetBool(true)
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
-}
-
 func (ly *LayerParams) DrivesDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.1
 	ly.Inhib.Layer.On.SetBool(false)
@@ -170,35 +180,35 @@ func (ly *LayerParams) DrivesDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
-	ly.Pulv.DriveScale = 0.05
 }
 
-func (ly *Layer) PPTgDefaults() {
-	lp := ly.Params
-	lp.Inhib.ActAvg.Nominal = 0.1
-	lp.Inhib.Layer.On.SetBool(true)
-	lp.Inhib.Layer.Gi = 1 // todo: explore
-	lp.Inhib.Pool.On.SetBool(true)
-	lp.Inhib.Pool.Gi = 0.5   // todo: could be lower!
-	lp.Inhib.Pool.FFPrv = 10 // key for temporal derivative
-	lp.Act.Decay.Act = 1
-	lp.Act.Decay.Glong = 1
-	lp.Learn.TrgAvgAct.On.SetBool(false)
-	lp.PVLV.Thr = 0.2
-	lp.PVLV.Gain = 2
-
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
-		pj.Params.SetFixedWts()
-		pj.Params.PrjnScale.Abs = 1
-	}
+func (ly *LayerParams) EffortDefaults() {
+	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 0.5
+	ly.Inhib.Pool.On.SetBool(false)
+	ly.Act.PopCode.On.SetBool(true)
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
+	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
 func (ly *LayerParams) USDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.1
-	ly.Inhib.Layer.On.SetBool(false)
-	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Pool.Gi = 0.5
+	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 0.5
+	ly.Inhib.Pool.On.SetBool(false)
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
+	ly.Learn.TrgAvgAct.On.SetBool(false)
+}
+
+func (ly *LayerParams) PVDefaults() {
+	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 0.5
+	ly.Inhib.Pool.On.SetBool(false)
+	ly.Act.PopCode.On.SetBool(true)
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)

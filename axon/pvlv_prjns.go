@@ -9,12 +9,14 @@ package axon
 // BLAAcqPrjnParams has parameters for basolateral amygdala acquisition learning.
 type BLAAcqPrjnParams struct {
 	NegDeltaLRate float32 `def:"0.01" desc:"negative delta learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
+	NonUSLRate    float32 `def:"0.01" desc:"learning rate when the US is not present -- this is the second-order conditioning case"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (bp *BLAAcqPrjnParams) Defaults() {
 	bp.NegDeltaLRate = 0.01
+	bp.NonUSLRate = 0.01
 }
 
 func (bp *BLAAcqPrjnParams) Update() {

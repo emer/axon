@@ -126,6 +126,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
 	ss.Context.Defaults()
+	ss.Context.DrivePVLV.Effort.Gain = 0.02
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -248,17 +249,22 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
+
+	net.ConnectPTPredToPulv(ofcPTPred, usPosP, pone2one, pone2one)
+	net.ConnectPTPredToPulv(ofcPTPred, pvPosP, pone2one, pone2one)
+	net.ConnectPTPredToPulv(ofcPTPred, drivesP, pone2one, pone2one)
+
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
 	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
+
 	// net.ConnectLayers(drives, ofcCT, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	net.ConnectLayers(vPgpi, ofcMD, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
 	net.ConnectLayers(usPos, ofc, pone2one, emer.Forward)
 	net.ConnectLayers(ofcPT, ofcCT, pone2one, emer.Forward) // good?
 
-	// todo: add ofcp and acc projections to it
-	// todo: acc should have pos and negative stripes, with grounded prjns??
+	net.ConnectLayers(usPos, ofcPTPred, pone2one, emer.Forward)
 
 	acc, accCT := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
@@ -272,6 +278,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPulv(acc, accCT, distP, full, full)
 	net.ConnectToPulv(acc, accCT, effortP, full, full)
 	net.ConnectLayers(vPgpi, accMD, full, emer.Inhib).SetClass("BgFixed")
+
+	net.ConnectPTPredToPulv(accPTPred, distP, full, full)
+	net.ConnectPTPredToPulv(accPTPred, effortP, full, full)
 
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(effort, acc, full, emer.Forward)
@@ -321,6 +330,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(effort, alm, full, emer.Forward)
 	net.ConnectLayers(ofcPT, alm, full, emer.Forward)
 	net.ConnectLayers(accPT, alm, full, emer.Forward)
+	net.ConnectLayers(ofcPTPred, alm, full, emer.Forward)
+	net.ConnectLayers(accPTPred, alm, full, emer.Forward)
 	net.ConnectLayers(notMaint, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
 	net.ConnectLayers(dist, m1, full, emer.Forward).SetClass("ToM1")
@@ -361,20 +372,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
-	net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
-	net.ConnectLayers(drives, vPstns, full, emer.Forward)
+	// net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
+	// net.ConnectLayers(drives, vPstns, full, emer.Forward)
 	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
-	net.ConnectLayers(ofc, vPstnp, full, emer.Forward)
-	net.ConnectLayers(ofc, vPstns, full, emer.Forward)
+	// net.ConnectLayers(ofc, vPstnp, full, emer.Forward)
+	// net.ConnectLayers(ofc, vPstns, full, emer.Forward)
 	// net.ConnectToMatrix(ofcCT, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
 	// net.ConnectToMatrix(ofcCT, vPmtxNo, pone2one)
 	// net.ConnectToMatrix(ofcPT, vPmtxGo, pone2one)
 	// net.ConnectToMatrix(ofcPT, vPmtxNo, pone2one)
 	net.ConnectToMatrix(acc, vPmtxGo, full)
 	net.ConnectToMatrix(acc, vPmtxNo, full)
-	net.ConnectLayers(acc, vPstnp, full, emer.Forward)
-	net.ConnectLayers(acc, vPstns, full, emer.Forward)
+	// net.ConnectLayers(acc, vPstnp, full, emer.Forward)
+	// net.ConnectLayers(acc, vPstns, full, emer.Forward)
 	// net.ConnectToMatrix(accCT, vPmtxGo, pone2one)
 	// net.ConnectToMatrix(accCT, vPmtxNo, pone2one)
 	// net.ConnectToMatrix(accPT, vPmtxGo, pone2one)
@@ -610,7 +621,6 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 	ev.Action(actActNm, nil)
 	ss.ApplyAction()
-	// ss.ApplyRew()
 	// fmt.Printf("action: %s\n", ev.Acts[act])
 }
 
@@ -618,30 +628,6 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
 	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "Act")
 	return ev.DecodeAct(vt)
-}
-
-// ApplyRew applies updated reward
-func (ss *Sim) ApplyRew() {
-	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-	lays := []string{"Rew"}
-	for _, lnm := range lays {
-		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		itsr := ev.State(lnm)
-		ly.ApplyExt(itsr)
-	}
-}
-
-// ApplyUS applies US
-func (ss *Sim) ApplyUS() {
-	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-	lays := []string{"US"}
-	for _, lnm := range lays {
-		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
-		itsr := ev.State(lnm)
-		ly.ApplyExt(itsr)
-	}
 }
 
 func (ss *Sim) ApplyAction() {
@@ -705,9 +691,9 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
 		dr.SetPosUS(int32(ev.US), 1) // magnitude always 1
 		ctx.NeuroMod.HasRew.SetBool(true)
 	}
-	dr.InitDrives()
 	dr.Effort.AddEffort(1) // should be based on action taken last step
-	dr.SetDrive(0, 1)
+	dr.InitDrives()
+	dr.SetDrive(int32(ev.Drive), 1)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter

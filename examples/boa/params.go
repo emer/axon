@@ -56,34 +56,29 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "20",   // 10?
+					"Layer.Act.Dend.ModGain": "30",   // 10?
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
-			{Sel: ".PulvinarLayer", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "0.9",  // 0.9 > 1.0
-					"Layer.Pulv.DriveScale":         "0.1",  // 0.1 now default
-					"Layer.Act.Decay.Act":           "0.0",  // clear
-					"Layer.Act.Decay.Glong":         "0.0",  //
-					"Layer.Act.Decay.AHP":           "0.0",  //
-					"Layer.Act.NMDA.Gbar":           "0.1",  // .1 music
-					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLRate.SigmoidMin": "1",
-				}},
 			{Sel: ".DrivesLayer", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / ndrives
+					"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / ndrives
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
-					"Layer.Pulv.DriveScale":      "0.05",
 				}},
 			{Sel: ".USLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Pool.Gi":        "0.5",
+					"Layer.Inhib.ActAvg.Nominal": "0.25",
+					"Layer.Inhib.Layer.Gi":       "0.5",
+				}},
+			{Sel: ".PVLayer", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.25",
+					"Layer.Inhib.Layer.Gi":       "0.5",
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
@@ -262,7 +257,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
-					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.On":             "false",
 					"Layer.Inhib.Layer.Gi":             "0.0", // was .8
 					"Layer.Inhib.Pool.On":              "true",
 					"Layer.Inhib.Pool.Gi":              "0.5", // 0.7 > 0.6 more sparse
@@ -297,7 +292,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "4.0", // if this is too strong, it gates to the wrong CS
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -423,7 +418,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 1 is ok but some spontaneous activity -- 2 is more reliable
+					"Prjn.PrjnScale.Abs": "0", // 1 is ok but some spontaneous activity -- 2 is more reliable
 				}},
 			{Sel: ".CeMToPPTg", Desc: "",
 				Params: params.Params{
@@ -463,11 +458,16 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAToBG", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "8",
+					"Prjn.PrjnScale.Abs": "1",
 				}},
-			{Sel: ".DrivesToMtx", Desc: "",
+			{Sel: ".DrivesToMtx", Desc: "it is critical that this is strong to allow enough Ge in Matrix",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
-					"Prjn.PrjnScale.Rel": "1", // even .1 does gating without CS
+					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Rel": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Com.GType":     "ModulatoryG",
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",

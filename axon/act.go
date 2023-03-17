@@ -406,20 +406,20 @@ func (at *AttnParams) ModVal(val float32, attn float32) float32 {
 // across a population of units / neurons (1 dimensional)
 type PopCodeParams struct {
 	On     slbool.Bool `desc:"use popcode encoding of variable(s) that this layer represents"`
-	Min    float32     `viewif:"On" desc:"minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
-	Max    float32     `viewif:"On" desc:"maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
-	Sigma  float32     `viewif:"On" def:"0.2" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range"`
+	Ge     float32     `viewif:"On" desc:"Ge multiplier for driving input based on PopCode"`
+	Min    float32     `viewif:"On" def:"-0.1" desc:"minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	Max    float32     `viewif:"On" def:"1.1" desc:"maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	Sigma  float32     `viewif:"On" def:"0.1" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range"`
 	Clip   slbool.Bool `viewif:"On" desc:"ensure that encoded and decoded value remains within specified range"`
 	Thr    float32     `viewif:"On" def:"0.1" desc:"threshold to cut off small activation contributions to overall average value (i.e., if unit's activation is below this threshold, it doesn't contribute to weighted average computation)"`
 	MinSum float32     `viewif:"On" def:"0.2" desc:"minimum total activity of all the units representing a value: when computing weighted average value, this is used as a minimum for the sum that you divide by"`
-
-	pad float32
 }
 
 func (pc *PopCodeParams) Defaults() {
-	pc.Min = -0.25
-	pc.Max = 1.25
-	pc.Sigma = 0.2
+	pc.Ge = 0.1
+	pc.Min = -0.1
+	pc.Max = 1.1
+	pc.Sigma = 0.1
 	pc.Clip.SetBool(true)
 	pc.Thr = 0.1
 	pc.MinSum = 0.2
@@ -453,6 +453,12 @@ func (pc *PopCodeParams) EncodeVal(i, n uint32, val float32) float32 {
 	dist := gnrm * (trg - val)
 	act := mat32.FastExp(-(dist * dist))
 	return act
+}
+
+// EncodeGe returns Ge value for given value, for neuron index i
+// out of n total neurons. n must be 2 or more.
+func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
+	return pc.Ge * pc.EncodeVal(i, n, val)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
