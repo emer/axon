@@ -258,7 +258,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
 					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
-					"Layer.Learn.NeuroMod.AChDisInhib": "5",    // key to be 5
+					"Layer.Matrix.IsVS":                "true",
+					"Layer.Learn.NeuroMod.AChDisInhib": "5", // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
 					"Layer.Inhib.Layer.On":             "false",
@@ -372,7 +373,7 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs": "1.0", // not 2.0..
 				}},
 			//////////////////////////////////////////////
-			// To BLA
+			// PVLV
 			{Sel: ".BLAAcqPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":     "0.02",
@@ -431,6 +432,11 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".VSPatchPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs":    "2",
+					"Prjn.Learn.LRate.Base": "0.001", // slower
 				}},
 
 			// BG prjns

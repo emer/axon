@@ -278,7 +278,7 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs": "0.5",
 				}},
 			//////////////////////////////////////////////
-			// To BLA
+			// PVLV
 			{Sel: ".BLAAcqPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":     "0.02",

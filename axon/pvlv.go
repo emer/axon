@@ -397,11 +397,10 @@ func (vt *VSMatrix) Reset() {
 // VSGated updates JustGated and HasGated as function of VS gating (VP).
 // at end of the plus phase.
 func (vt *VSMatrix) VSGated(gated, hasRew bool) {
+	vt.JustGated.SetBool(gated)
 	if hasRew {
 		vt.HasGated.SetBool(false)
-		vt.JustGated.SetBool(false) // don't count gating at time of US
 	} else {
-		vt.JustGated.SetBool(gated)
 		if gated {
 			vt.HasGated.SetBool(true)
 		}

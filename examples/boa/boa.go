@@ -650,9 +650,6 @@ func (ss *Sim) ApplyInputs() {
 	trl := ss.Loops.GetLoop(ss.Context.Mode, etime.Trial)
 	if trl.Counter.Cur == 0 {
 		ss.Sim.CortexDriving = erand.BoolProb(float64(ss.Sim.PctCortex), -1)
-		// this eliminates residual action errors -- todo: see about automating this somehow
-		net.DecayStateLayers(&ss.Context, 1, 1, "OFC", "ACC")
-		ev.RenderLocalist("Gate", 0)
 	}
 
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
@@ -725,13 +722,13 @@ func (ss *Sim) TestAll() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	ss.Stats.SetFloat("Gated", 0)
+	ss.Stats.SetFloat("JustGated", 0)
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("GateUS", 0)
 	ss.Stats.SetFloat("GateCS", 0)
 	ss.Stats.SetFloat("GatedEarly", 0)
 	ss.Stats.SetFloat("MaintEarly", 0)
-	ss.Stats.SetFloat("GatedPostCS", 0)
+	ss.Stats.SetFloat("GatedAgain", 0)
 	ss.Stats.SetFloat("WrongCSGate", 0)
 	ss.Stats.SetFloat("AChShould", 0)
 	ss.Stats.SetFloat("AChShouldnt", 0)
@@ -763,7 +760,7 @@ func (ss *Sim) StatCounters() {
 	// ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", "trl")
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Cycle", "NetAction", "InstinctAction", "ActAction", "ActMatch", "Gated", "Should", "Rew"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Cycle", "NetAction", "InstinctAction", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -773,15 +770,21 @@ func (ss *Sim) TrialStats() {
 	dr := &ctx.PVLV
 	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
 
-	ss.GatedStats() // todo: update to read from DrivePVLV values
+	ss.GatedStats()
 	ss.MaintStats()
 
-	// ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 
-	ss.Stats.SetFloat32("DA", ss.Context.NeuroMod.DA)
+	if ev.US != -1 {
+		ss.Stats.SetFloat32("DA", ss.Context.NeuroMod.DA)
+		ss.Stats.SetFloat32("RewPred", ss.Context.NeuroMod.RewPred) // gets from VSPatch or RWPred etc
+	} else {
+		ss.Stats.SetFloat("DA", math.NaN())
+		ss.Stats.SetFloat("RewPred", math.NaN())
+	}
+
 	ss.Stats.SetFloat32("ACh", ss.Context.NeuroMod.ACh)
 	ss.Stats.SetFloat32("AChRaw", ss.Context.NeuroMod.AChRaw)
-	ss.Stats.SetFloat32("RewPred", ss.Context.NeuroMod.RewPred)
 
 	var allGood float64
 	agN := 0
@@ -801,7 +804,7 @@ func (ss *Sim) TrialStats() {
 		allGood += 1 - fv
 		agN++
 	}
-	if fv := ss.Stats.Float("GatedPostCS"); !math.IsNaN(fv) {
+	if fv := ss.Stats.Float("GatedAgain"); !math.IsNaN(fv) {
 		allGood += 1 - fv
 		agN++
 	}
@@ -822,39 +825,39 @@ func (ss *Sim) TrialStats() {
 
 // GatedStats updates the gated states
 func (ss *Sim) GatedStats() {
-	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-	mtxLy := net.LayerByName("VpMtxGo").(*axon.Layer)
-	didGate := mtxLy.AnyGated()
-	// fmt.Printf("didGate: %v\n", didGate)
-	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
+	justGated := ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
+	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
+	// fmt.Printf("justGated: %v\n", justGated)
+	ss.Stats.SetFloat32("JustGated", bools.ToFloat32(justGated))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
+	ss.Stats.SetFloat32("HasGated", bools.ToFloat32(hasGated))
 	ss.Stats.SetFloat32("GateUS", mat32.NaN())
 	ss.Stats.SetFloat32("GateCS", mat32.NaN())
 	ss.Stats.SetFloat32("GatedEarly", mat32.NaN())
 	ss.Stats.SetFloat32("MaintEarly", mat32.NaN())
-	ss.Stats.SetFloat32("GatedPostCS", mat32.NaN())
+	ss.Stats.SetFloat32("GatedAgain", mat32.NaN())
 	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
 	ss.Stats.SetFloat32("AChShould", mat32.NaN())
 	ss.Stats.SetFloat32("AChShouldnt", mat32.NaN())
-	if didGate {
+	if justGated {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(ev.Drive != ev.USForPos()))
 	}
 	if ev.ShouldGate {
 		if ev.US != -1 {
-			ss.Stats.SetFloat32("GateUS", bools.ToFloat32(didGate))
+			ss.Stats.SetFloat32("GateUS", bools.ToFloat32(justGated))
 		} else {
-			ss.Stats.SetFloat32("GateCS", bools.ToFloat32(didGate))
+			ss.Stats.SetFloat32("GateCS", bools.ToFloat32(justGated))
 		}
 	} else {
-		if ev.Dist < ev.DistMax-1 { // todo: not very robust
-			ss.Stats.SetFloat32("GatedPostCS", bools.ToFloat32(didGate))
-		} else {
-			ss.Stats.SetFloat32("GatedEarly", bools.ToFloat32(didGate))
+		if hasGated {
+			ss.Stats.SetFloat32("GatedAgain", bools.ToFloat32(justGated))
+		} else { // !should gate means early..
+			ss.Stats.SetFloat32("GatedEarly", bools.ToFloat32(justGated))
 		}
 	}
 	// We get get ACh when new CS or Rew
-	if ss.Context.NeuroMod.HasRew.IsTrue() || ev.LastAct == ev.ActMap["Left"] || ev.LastAct == ev.ActMap["Right"] {
+	if ss.Context.NeuroMod.HasRew.IsTrue() || ev.LastCS != ev.CS {
 		ss.Stats.SetFloat32("AChShould", ss.Context.NeuroMod.ACh)
 	} else {
 		ss.Stats.SetFloat32("AChShouldnt", ss.Context.NeuroMod.ACh)
@@ -865,10 +868,6 @@ func (ss *Sim) GatedStats() {
 
 // MaintStats updates the PFC maint stats
 func (ss *Sim) MaintStats() {
-	// if ss.Sim.TwoThetas && ss.Sim.ThetaStep == 0 {
-	// 	return
-	// }
-	// fmt.Printf("Maint Stats\n")
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	// should be maintaining while going forward
 	isFwd := ev.LastAct == ev.ActMap["Forward"]
@@ -909,9 +908,6 @@ func (ss *Sim) MaintStats() {
 	}
 	if hasMaint {
 		ss.Stats.SetFloat32("MaintEarly", bools.ToFloat32(ev.Drive != ev.USForPos()))
-		ev.RenderLocalist("Gate", 1)
-	} else {
-		ev.RenderLocalist("Gate", 0)
 	}
 }
 
@@ -948,7 +944,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
 	// "MaintofcPT", "MaintaccPT", "MaintFailofcPT", "MaintFailaccPT"
-	// "GateUS", "GatedEarly", "GatedPostCS", "Gated", "PctCortex",
+	// "GateUS", "GatedEarly", "GatedAgain", "JustGated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
 
 	ss.Logs.CreateTables()
@@ -968,13 +964,13 @@ func (ss *Sim) ConfigLogs() {
 func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("AllGood", "AllGood", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("ActMatch", "ActMatch", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("JustGated", "JustGated", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedEarly", "GatedEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("MaintEarly", "MaintEarly", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GatedPostCS", "GatedPostCS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GatedAgain", "GatedAgain", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShould", "AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", "AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
