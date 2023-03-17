@@ -40,9 +40,9 @@ type Context struct {
 	NLayers     int32       `view:"-" desc:"number of layers in the network -- needed for GPU mode"`
 	NSpiked     int32       `inactive:"+" desc:"number of neurons that spiked"`
 
-	RandCtr   slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-	NeuroMod  NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
-	DrivePVLV DrivePVLV      `desc:"internal drives and PVLV dopamine mechanisms -- maintained centrally -- requires VSPatch and PPTg inputs, drives DA"`
+	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
+	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
+	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (PPTgLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -50,7 +50,7 @@ func (ctx *Context) Defaults() {
 	ctx.TimePerCyc = 0.001
 	ctx.ThetaCycles = 200
 	ctx.Mode = etime.Train
-	ctx.DrivePVLV.Defaults()
+	ctx.PVLV.Defaults()
 }
 
 // NewState resets counters at start of new state (trial) of processing.
@@ -88,21 +88,21 @@ func (ctx *Context) CycleInc() {
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA is returned.
 func (ctx *Context) DA() float32 {
-	ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
-	return ctx.DrivePVLV.VTA.Vals.DA
+	ctx.PVLV.DA(ctx.NeuroMod.PPTg)
+	return ctx.PVLV.VTA.Vals.DA
 }
 
 // NeuroModFmPVLV updates NeuroMod values from DrivePVLV vals
 func (ctx *Context) NeuroModFmPVLV() {
-	ctx.NeuroMod.DA = ctx.DrivePVLV.VTA.Vals.DA
-	ctx.NeuroMod.RewPred = ctx.DrivePVLV.VTA.Vals.VSPatchPos
-	ctx.DrivePVLV.VTA.Prev = ctx.DrivePVLV.VTA.Vals // avoid race
-	ctx.DrivePVLV.Effort.PrevDisc = ctx.DrivePVLV.Effort.Disc
+	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
+	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
+	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
+	ctx.PVLV.Effort.PrevDisc = ctx.PVLV.Effort.Disc
 }
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset.
 func (ctx *Context) LHbDipResetFmSum() {
-	dipReset := ctx.DrivePVLV.LHbDipResetFmSum()
+	dipReset := ctx.PVLV.LHbDipResetFmSum()
 	if dipReset {
 		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
 	}

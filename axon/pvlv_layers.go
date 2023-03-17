@@ -171,30 +171,33 @@ func (ly *LayerParams) VSPatchDefaults() {
 }
 
 func (ly *LayerParams) DrivesDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.1
+	ly.Inhib.ActAvg.Nominal = 0.03
 	ly.Inhib.Layer.On.SetBool(false)
 	ly.Inhib.Layer.Gi = 0.1
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Pool.Gi = 0.5
 	ly.Act.PopCode.On.SetBool(true)
+	ly.Act.PopCode.MinAct = 0.2 // low activity for low drive -- also has special 0 case = nothing
+	ly.Act.PopCode.MinSigma = 0.08
+	ly.Act.PopCode.MaxSigma = 0.12
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
 func (ly *LayerParams) EffortDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Pool.On.SetBool(false)
-	ly.Act.PopCode.On.SetBool(true)
+	ly.Act.PopCode.On.SetBool(true) // use only popcode
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
 func (ly *LayerParams) USDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Pool.On.SetBool(false)
@@ -204,11 +207,15 @@ func (ly *LayerParams) USDefaults() {
 }
 
 func (ly *LayerParams) PVDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.25
+	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Inhib.Layer.On.SetBool(true)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Pool.On.SetBool(false)
 	ly.Act.PopCode.On.SetBool(true)
+	// note: may want to modulate rate code as well:
+	// ly.Act.PopCode.MinAct = 0.2
+	// ly.Act.PopCode.MinSigma = 0.08
+	// ly.Act.PopCode.MaxSigma = 0.12
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Learn.TrgAvgAct.On.SetBool(false)

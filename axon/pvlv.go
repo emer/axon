@@ -409,13 +409,18 @@ func (vt *VSMatrix) VSGated(gated, hasRew bool) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-//  DrivePVLV
+//  PVLV
 
-// DrivePVLV represents the core brainstem-level (hypothalamus) bodily drives
-// and resulting dopamine as computed by the PVLV model of primary value
-// and learned value (PVLV), describing the functions of the Amygala,
+// PVLV represents the core brainstem-level (hypothalamus) bodily drives
+// and resulting dopamine from US (unconditioned stimulus) inputs,
+// as computed by the PVLV model of primary value (PV)
+// and learned value (LV), describing the functions of the Amygala,
 // Ventral Striatum, VTA and associated midbrain nuclei (PPTg, LHb, RMTg)
-type DrivePVLV struct {
+// Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine
+// are computed in equations using inputs from specialized network layers
+// (PPTgLayer driven by BLA, CeM layers, VSPatchLayer).
+// Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
+type PVLV struct {
 	Drive    Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
 	Effort   Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
 	VTA      VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
@@ -426,74 +431,74 @@ type DrivePVLV struct {
 	VSMatrix VSMatrix  `view:"inline" desc:"VSMatrix has parameters and values for computing VSMatrix gating status. VS = ventral striatum, aka VP = ventral pallidum = output part of VS"`
 }
 
-func (dp *DrivePVLV) Defaults() {
-	dp.Drive.Defaults()
-	dp.Effort.Defaults()
-	dp.VTA.Defaults()
-	dp.LHb.Defaults()
-	dp.USpos.Zero()
-	dp.USneg.Zero()
-	dp.VSPatch.Zero()
-	dp.VSMatrix.Reset()
+func (pp *PVLV) Defaults() {
+	pp.Drive.Defaults()
+	pp.Effort.Defaults()
+	pp.VTA.Defaults()
+	pp.LHb.Defaults()
+	pp.USpos.Zero()
+	pp.USneg.Zero()
+	pp.VSPatch.Zero()
+	pp.VSMatrix.Reset()
 }
 
-func (dp *DrivePVLV) Update() {
-	dp.Drive.Update()
-	dp.Effort.Update()
-	dp.VTA.Update()
-	dp.LHb.Update()
-	dp.VSMatrix.Update()
+func (pp *PVLV) Update() {
+	pp.Drive.Update()
+	pp.Effort.Update()
+	pp.VTA.Update()
+	pp.LHb.Update()
+	pp.VSMatrix.Update()
 }
 
 // InitUS initializes all the USs to zero
-func (dp *DrivePVLV) InitUS() {
-	dp.USpos.Zero()
-	dp.USneg.Zero()
+func (pp *PVLV) InitUS() {
+	pp.USpos.Zero()
+	pp.USneg.Zero()
 }
 
 // SetPosUS sets given positive US (associated with same-indexed Drive) to given value
-func (dp *DrivePVLV) SetPosUS(usn int32, val float32) {
-	dp.USpos.Set(usn, val)
+func (pp *PVLV) SetPosUS(usn int32, val float32) {
+	pp.USpos.Set(usn, val)
 }
 
 // SetNegUS sets given negative US to given value
-func (dp *DrivePVLV) SetNegUS(usn int32, val float32) {
-	dp.USneg.Set(usn, val)
+func (pp *PVLV) SetNegUS(usn int32, val float32) {
+	pp.USneg.Set(usn, val)
 }
 
 // InitDrives initializes all the Drives to zero
-func (dp *DrivePVLV) InitDrives() {
-	dp.Drive.Drives.Zero()
+func (pp *PVLV) InitDrives() {
+	pp.Drive.Drives.Zero()
 }
 
 // SetDrive sets given Drive to given value
-func (dp *DrivePVLV) SetDrive(dr int32, val float32) {
-	dp.Drive.Drives.Set(dr, val)
+func (pp *PVLV) SetDrive(dr int32, val float32) {
+	pp.Drive.Drives.Set(dr, val)
 }
 
 // PosPV returns the reward for current positive US state relative to current drives
-func (dp *DrivePVLV) PosPV() float32 {
+func (pp *PVLV) PosPV() float32 {
 	rew := float32(0)
-	for i := int32(0); i < dp.Drive.NActive; i++ {
-		rew += dp.USpos.Get(i) * mat32.Max(dp.Drive.Drives.Get(i), dp.Drive.DriveMin)
+	for i := int32(0); i < pp.Drive.NActive; i++ {
+		rew += pp.USpos.Get(i) * mat32.Max(pp.Drive.Drives.Get(i), pp.Drive.DriveMin)
 	}
 	return rew
 }
 
 // NegPV returns the reward for current negative US state -- just a sum of USneg
-func (dp *DrivePVLV) NegPV() float32 {
+func (pp *PVLV) NegPV() float32 {
 	rew := float32(0)
-	for i := int32(0); i < dp.Drive.NActive; i++ {
-		rew += dp.USneg.Get(i)
+	for i := int32(0); i < pp.Drive.NActive; i++ {
+		rew += pp.USneg.Get(i)
 	}
 	return rew
 }
 
 // VSPatchMax returns the max VSPatch value across drives
-func (dp *DrivePVLV) VSPatchMax() float32 {
+func (pp *PVLV) VSPatchMax() float32 {
 	max := float32(0)
-	for i := int32(0); i < dp.Drive.NActive; i++ {
-		vs := dp.VSPatch.Get(i)
+	for i := int32(0); i < pp.Drive.NActive; i++ {
+		vs := pp.VSPatch.Get(i)
 		if vs > max {
 			max = vs
 		}
@@ -506,29 +511,29 @@ func (dp *DrivePVLV) VSPatchMax() float32 {
 // Call after setting USs, Effort, Drives, VSPatch vals etc.
 // Resulting DA is in VTA.Vals.DA, and is returned
 // (to be set to Context.NeuroMod.DA)
-func (dp *DrivePVLV) DA(pptg float32) float32 {
-	pvPosRaw := dp.PosPV()
-	pvNeg := dp.NegPV()
-	pvPos := pvPosRaw * dp.Effort.PrevDisc
-	vsPatchPos := dp.VSPatchMax()
-	dp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
-	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.Dip, dp.LHb.Burst, vsPatchPos)
-	dp.VTA.DAFmRaw()
-	return dp.VTA.Vals.DA
+func (pp *PVLV) DA(pptg float32) float32 {
+	pvPosRaw := pp.PosPV()
+	pvNeg := pp.NegPV()
+	pvPos := pvPosRaw * pp.Effort.PrevDisc
+	vsPatchPos := pp.VSPatchMax()
+	pp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
+	pp.VTA.Raw.Set(pvPos, pvNeg, pptg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)
+	pp.VTA.DAFmRaw()
+	return pp.VTA.Vals.DA
 }
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset
-func (dp *DrivePVLV) LHbDipResetFmSum() bool {
+func (pp *PVLV) LHbDipResetFmSum() bool {
 	reset := false
-	if dp.VTA.Vals.PVpos > dp.VTA.PVThr { // if actual PV, reset
+	if pp.VTA.Vals.PVpos > pp.VTA.PVThr { // if actual PV, reset
 		reset = true
-	} else if dp.VTA.Vals.PPTg > dp.VTA.PVThr { // if actual CS, reset
+	} else if pp.VTA.Vals.PPTg > pp.VTA.PVThr { // if actual CS, reset
 		reset = true
 	}
-	dipReset := dp.LHb.DipResetFmSum(reset)
-	dp.USneg.Set(0, 0) // special effort neg
+	dipReset := pp.LHb.DipResetFmSum(reset)
+	pp.USneg.Set(0, 0) // special effort neg
 	if dipReset {
-		dp.USneg.Set(0, 1.0-dp.Effort.Disc) // proportional to discount factor, maxes out at 1
+		pp.USneg.Set(0, 1.0-pp.Effort.Disc) // proportional to discount factor, maxes out at 1
 	}
 	return dipReset
 }
@@ -538,13 +543,13 @@ func (dp *DrivePVLV) LHbDipResetFmSum() bool {
 // and calling ExpStep with the Dt and Base params.
 // if resetUs is true, USpos values are reset after update
 // so they can be set on occurrence without having to reset.
-func (dp *DrivePVLV) DriveUpdt(resetUs bool) {
-	dp.Drive.ExpStep()
-	for i := int32(0); i < dp.Drive.NActive; i++ {
-		us := dp.USpos.Get(i)
-		dp.Drive.Drives.Add(i, -us*dp.Drive.USDec.Get(i))
+func (pp *PVLV) DriveUpdt(resetUs bool) {
+	pp.Drive.ExpStep()
+	for i := int32(0); i < pp.Drive.NActive; i++ {
+		us := pp.USpos.Get(i)
+		pp.Drive.Drives.Add(i, -us*pp.Drive.USDec.Get(i))
 		if resetUs {
-			dp.USpos.Set(i, 0)
+			pp.USpos.Set(i, 0)
 		}
 	}
 }
@@ -554,11 +559,11 @@ func (dp *DrivePVLV) DriveUpdt(resetUs bool) {
 // EffortUpdt updates the effort based on given effort increment,
 // resetting first if hasRew flag is true indicating receipt of a
 // US based on Context.NeuroMod.HasRew flag.
-func (dp *DrivePVLV) EffortUpdt(effort float32, hasRew bool) {
+func (pp *PVLV) EffortUpdt(effort float32, hasRew bool) {
 	if hasRew {
-		dp.Effort.Reset()
+		pp.Effort.Reset()
 	}
-	dp.Effort.AddEffort(effort)
+	pp.Effort.AddEffort(effort)
 }
 
 // DriveEffortUpdt updates the Drives and Effort based on
@@ -566,9 +571,9 @@ func (dp *DrivePVLV) EffortUpdt(effort float32, hasRew bool) {
 // indicating receipt of a US based on Context.NeuroMod.HasRew flag.
 // if resetUs is true, USpos values are reset after update
 // so they can be set on occurrence without having to reset.
-func (dp *DrivePVLV) DriveEffortUpdt(effort float32, hasRew, resetUs bool) {
-	dp.DriveUpdt(resetUs)
-	dp.EffortUpdt(effort, hasRew)
+func (pp *PVLV) DriveEffortUpdt(effort float32, hasRew, resetUs bool) {
+	pp.DriveUpdt(resetUs)
+	pp.EffortUpdt(effort, hasRew)
 }
 
 //gosl: end drivepvlv

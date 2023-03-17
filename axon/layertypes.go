@@ -168,33 +168,33 @@ const (
 	VSPatchLayer
 
 	// VTALayer represents the ventral tegmental area, which releases
-	// dopamine.  It calls the Context.DrivePVLV.VTA methods,
+	// dopamine.  It calls the ContextPVLV.VTA methods,
 	// and tracks resulting DA for visualization purposes.
 	VTALayer
 
 	// LHbLayer represents the lateral habenula, which drives dipping
-	// in the VTA.  It tracks the Context.DrivePVLV.LHb values for
+	// in the VTA.  It tracks the ContextPVLV.LHb values for
 	// visualization purposes -- updated by VTALayer.
 	LHbLayer
 
 	// DrivesLayer represents the Drives in DrivePVLV framework.
-	// It tracks the Context.DrivePVLV.Drives values for
+	// It tracks the ContextPVLV.Drives values for
 	// visualization and predictive learning purposes.
 	DrivesLayer
 
 	// EffortLayer represents the Effort factor in DrivePVLV framework.
-	// It tracks the Context.DrivePVLV.Effort.Disc value for
+	// It tracks the ContextPVLV.Effort.Disc value for
 	// visualization and predictive learning purposes.
 	EffortLayer
 
 	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
-	// It tracks the Context.DrivePVLV.USpos or USneg, for visualization
+	// It tracks the ContextPVLV.USpos or USneg, for visualization
 	// and predictive learning purposes. Actual US inputs are set in DrivePVLV.
 	USLayer
 
 	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
 	// the total primary value as a function of US inputs, drives, and effort.
-	// It tracks the Context.DrivePVLV.VTA.PVpos, PVneg values for
+	// It tracks the ContextPVLV.VTA.PVpos, PVneg values for
 	// visualization and predictive learning purposes.
 	PVLayer
 

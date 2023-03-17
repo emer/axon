@@ -401,58 +401,83 @@ func (at *AttnParams) ModVal(val float32, attn float32) float32 {
 //////////////////////////////////////////////////////////////////////////////////////
 //  PopCodeParams
 
-// PopCodeParams provides encoding population codes,
-// used to represent a single continuous (scalar) value
-// across a population of units / neurons (1 dimensional)
+// PopCodeParams provides an encoding of scalar value using population code,
+// where a single continuous (scalar) value is encoded as a gaussian bump
+// across a population of neurons (1 dimensional).
+// It can also modulate rate code and number of neurons active according to the value.
+// This is for layers that represent values as in the PVLV system (from Context.PVLV).
+// Both normalized activation values (1 max) and Ge conductance values can be generated.
 type PopCodeParams struct {
-	On     slbool.Bool `desc:"use popcode encoding of variable(s) that this layer represents"`
-	Ge     float32     `viewif:"On" desc:"Ge multiplier for driving input based on PopCode"`
-	Min    float32     `viewif:"On" def:"-0.1" desc:"minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
-	Max    float32     `viewif:"On" def:"1.1" desc:"maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
-	Sigma  float32     `viewif:"On" def:"0.1" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range"`
-	Clip   slbool.Bool `viewif:"On" desc:"ensure that encoded and decoded value remains within specified range"`
-	Thr    float32     `viewif:"On" def:"0.1" desc:"threshold to cut off small activation contributions to overall average value (i.e., if unit's activation is below this threshold, it doesn't contribute to weighted average computation)"`
-	MinSum float32     `viewif:"On" def:"0.2" desc:"minimum total activity of all the units representing a value: when computing weighted average value, this is used as a minimum for the sum that you divide by"`
+	On       slbool.Bool `desc:"use popcode encoding of variable(s) that this layer represents"`
+	Ge       float32     `viewif:"On" def:"0.1" desc:"Ge multiplier for driving excitatory conductance based on PopCode -- multiplies normalized activation values"`
+	Min      float32     `viewif:"On" def:"-0.1" desc:"minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	Max      float32     `viewif:"On" def:"1.1" desc:"maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	MinAct   float32     `viewif:"On" def:"1,0.5" desc:"activation multiplier for values at Min end of range, where values at Max end have an activation of 1 -- if this is < 1, then there is a rate code proportional to the value in addition to the popcode pattern -- see also MinSigma, MaxSigma"`
+	MinSigma float32     `viewif:"On" def:"0.1,0.08" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma < MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
+	MaxSigma float32     `viewif:"On" def:"0.1,0.12" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma < MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
+	Clip     slbool.Bool `viewif:"On" desc:"ensure that encoded and decoded value remains within specified range"`
 }
 
 func (pc *PopCodeParams) Defaults() {
 	pc.Ge = 0.1
 	pc.Min = -0.1
 	pc.Max = 1.1
-	pc.Sigma = 0.1
+	pc.MinAct = 1
+	pc.MinSigma = 0.1
+	pc.MaxSigma = 0.1
 	pc.Clip.SetBool(true)
-	pc.Thr = 0.1
-	pc.MinSum = 0.2
 }
 
 func (pc *PopCodeParams) Update() {
 }
 
 // SetRange sets the min, max and sigma values
-func (pc *PopCodeParams) SetRange(min, max, sigma float32) {
+func (pc *PopCodeParams) SetRange(min, max, minSigma, maxSigma float32) {
 	pc.Min = min
 	pc.Max = max
-	pc.Sigma = sigma
+	pc.MinSigma = minSigma
+	pc.MaxSigma = maxSigma
+}
+
+// ClipVal returns clipped (clamped) value in min / max range
+func (pc *PopCodeParams) ClipVal(val float32) float32 {
+	clipVal := val
+	if clipVal < pc.Min {
+		clipVal = pc.Min
+	}
+	if clipVal > pc.Max {
+		clipVal = pc.Max
+	}
+	return clipVal
+}
+
+// ProjectParam projects given min / max param value onto val within range
+func (pc *PopCodeParams) ProjectParam(minParam, maxParam, clipVal float32) float32 {
+	normVal := (clipVal - pc.Min) / (pc.Max - pc.Min)
+	return minParam + normVal*(maxParam-minParam)
 }
 
 // EncodeVal returns value for given value, for neuron index i
 // out of n total neurons. n must be 2 or more.
 func (pc *PopCodeParams) EncodeVal(i, n uint32, val float32) float32 {
+	clipVal := pc.ClipVal(val)
 	if pc.Clip.IsTrue() {
-		if val < pc.Min {
-			val = pc.Min
-		}
-		if val > pc.Max {
-			val = pc.Max
-		}
+		val = clipVal
 	}
 	rng := pc.Max - pc.Min
-	gnrm := 1.0 / (rng * pc.Sigma)
+	act := float32(1)
+	if pc.MinAct < 1 {
+		act = pc.ProjectParam(pc.MinAct, 1.0, clipVal)
+	}
+	sig := pc.MinSigma
+	if pc.MaxSigma > pc.MinSigma {
+		sig = pc.ProjectParam(pc.MinSigma, pc.MaxSigma, clipVal)
+	}
+	gnrm := 1.0 / (rng * sig)
 	incr := rng / float32(n-1)
 	trg := pc.Min + incr*float32(i)
 	dist := gnrm * (trg - val)
-	act := mat32.FastExp(-(dist * dist))
-	return act
+	return act * mat32.FastExp(-(dist * dist))
 }
 
 // EncodeGe returns Ge value for given value, for neuron index i

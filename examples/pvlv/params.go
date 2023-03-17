@@ -70,7 +70,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CS", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / css
+					"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / css
 				}},
 			{Sel: ".OFC", Desc: "",
 				Params: params.Params{
@@ -142,26 +142,28 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":        "0.5", // todo: could be lower = more bursting
 					"Layer.Inhib.Pool.FFPrv":     "10",  // key td param
 					"Layer.PVLV.Thr":             "0.2",
-					"Layer.PVLV.Gain":            "2", // key for impact on CS bursting
+					"Layer.PVLV.Gain":            "2.5", // key for impact of CS bursting
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.03",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
-					"Layer.Pulv.DriveScale":      "0.05",
 				}},
 			{Sel: ".USLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.25",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.5",
+					"Layer.Inhib.ActAvg.Nominal": "0.2",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Pool.On":        "false",
+					"Layer.Inhib.Layer.Gi":       "0.5",
 				}},
 			{Sel: ".PVLayer", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.5",
+					"Layer.Inhib.ActAvg.Nominal": "0.2",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Pool.On":        "false",
+					"Layer.Inhib.Layer.Gi":       "0.5",
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
@@ -297,7 +299,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USposToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3.0", // if weaker, e.g., 2, other pools get active
+					"Prjn.PrjnScale.Abs": "6.0", // if weaker, e.g., 2, other pools get active
 				}},
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
@@ -357,17 +359,21 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USposToVpMtxGo", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.PrjnScale.Rel": ".2",
 				}},
 			{Sel: ".BLAToBG", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
 				}},
-			{Sel: ".DrivesToMtx", Desc: "",
+			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
-					"Prjn.PrjnScale.Rel": "1", // even .1 does gating without CS
+					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Rel": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Com.GType":     "ModulatoryG",
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",

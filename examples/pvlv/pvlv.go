@@ -100,8 +100,8 @@ func (ss *Sim) New() {
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
-	ss.Context.DrivePVLV.Effort.Gain = 0.01 // don't discount as much
-	ss.ConfigArgs()                         // do this first, has key defaults
+	ss.Context.PVLV.Effort.Gain = 0.01 // don't discount as much
+	ss.ConfigArgs()                    // do this first, has key defaults
 	// ss.Defaults()
 }
 
@@ -133,7 +133,7 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 
-	ss.Context.DrivePVLV.Drive.NActive = int32(cond.NUSs)
+	ss.Context.PVLV.Drive.NActive = int32(cond.NUSs)
 
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
@@ -432,7 +432,7 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.mDrivePVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	dr := &ctx.DrivePVLV
+	dr := &ctx.PVLV
 	dr.InitUS()
 	ctx.NeuroMod.HasRew.SetBool(false)
 	if trl.USOn {
@@ -445,7 +445,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	}
 	dr.InitDrives()
 	dr.Effort.AddEffort(1) // should be based on action taken last step
-	dr.SetDrive(0, 1)
+	dr.SetDrive(int32(trl.US), 1)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -531,7 +531,7 @@ func (ss *Sim) StatCounters() {
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
-	dr := &ctx.DrivePVLV
+	dr := &ctx.PVLV
 	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
 	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
 	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)

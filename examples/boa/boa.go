@@ -126,7 +126,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
 	ss.Context.Defaults()
-	ss.Context.DrivePVLV.Effort.Gain = 0.02
+	ss.Context.PVLV.Effort.Gain = 0.02
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -158,7 +158,7 @@ func (ss *Sim) ConfigEnv() {
 	trn.Config()
 	trn.Validate()
 
-	ss.Context.DrivePVLV.Drive.NActive = int32(trn.NDrives)
+	ss.Context.PVLV.Drive.NActive = int32(trn.NDrives)
 
 	tst.Nm = etime.Test.String()
 	tst.Defaults()
@@ -684,7 +684,7 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.mDrivePVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
-	dr := &ctx.DrivePVLV
+	dr := &ctx.PVLV
 	dr.InitUS()
 	ctx.NeuroMod.HasRew.SetBool(false)
 	if ev.US >= 0 {
@@ -770,7 +770,7 @@ func (ss *Sim) StatCounters() {
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
-	dr := &ctx.DrivePVLV
+	dr := &ctx.PVLV
 	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
 
 	ss.GatedStats() // todo: update to read from DrivePVLV values

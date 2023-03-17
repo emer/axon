@@ -105,7 +105,7 @@ func (nt *Network) ConnectToBLAExt(send, recv emer.Layer, pat prjn.Pattern) emer
 
 // AddUSLayers adds USpos and USneg layers for positive or negative valence
 // unconditioned stimuli (USs).
-// These track the Context.DrivePVLV.USpos or USneg, for visualization purposes.
+// These track the ContextPVLV.USpos or USneg, for visualization purposes.
 // Actual US inputs are set in DrivePVLV.
 func (nt *Network) AddUSLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations, space float32) (usPos, usNeg *Layer) {
 	usPos = nt.AddLayer4D("USpos", 1, nUSpos, nYunits, 1, USLayer)
@@ -124,7 +124,7 @@ func (nt *Network) AddUSLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations
 
 // AddUSPulvLayers adds USpos and USneg layers for positive or negative valence
 // unconditioned stimuli (USs).
-// These track the Context.DrivePVLV.USpos or USneg, for visualization purposes.
+// These track the ContextPVLV.USpos or USneg, for visualization purposes.
 // Actual US inputs are set in DrivePVLV.
 // Adds Pulvinar predictive layers for each.
 func (nt *Network) AddUSPulvLayers(nUSpos, nUSneg, nYunits int, rel relpos.Relations, space float32) (usPos, usNeg, usPosP, usNegP *Layer) {
@@ -212,7 +212,7 @@ func (nt *Network) ConnectToVSPatch(send, recv emer.Layer, pat prjn.Pattern) eme
 }
 
 // AddVTALHbAChLayers adds VTA dopamine, LHb DA dipping, and ACh layers
-// which are driven by corresponding values in Context.DrivePVLV
+// which are driven by corresponding values in ContextPVLV
 func (nt *Network) AddVTALHbAChLayers(rel relpos.Relations, space float32) (vta, lhb, ach *Layer) {
 	vta = nt.AddLayer2D("VTA", 1, 1, VTALayer)
 	lhb = nt.AddLayer2D("LHb", 1, 2, LHbLayer)
@@ -228,16 +228,16 @@ func (nt *Network) AddVTALHbAChLayers(rel relpos.Relations, space float32) (vta,
 }
 
 // AddDrivesLayer adds DrivePVLV layer representing current drive activity,
-// from Context.DrivePVLV.Drive.Drives.
+// from ContextPVLV.Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of units in the X and Y dimensions, per drive pool.
 func (nt *Network) AddDrivesLayer(ctx *Context, unY, unX int) *Layer {
-	drv := nt.AddLayer4D("Drives", 1, int(ctx.DrivePVLV.Drive.NActive), unY, unX, DrivesLayer)
+	drv := nt.AddLayer4D("Drives", 1, int(ctx.PVLV.Drive.NActive), unY, unX, DrivesLayer)
 	return drv
 }
 
 // AddDrivesPulvLayer adds DrivePVLV layer representing current drive activity,
-// from Context.DrivePVLV.Drive.Drives.
+// from ContextPVLV.Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of units in the X and Y dimensions, per drive pool.
 // Adds Pulvinar predictive layers for Drives.
@@ -249,7 +249,7 @@ func (nt *Network) AddDrivesPulvLayer(ctx *Context, unY, unX int, space float32)
 }
 
 // AddEffortLayer adds DrivePVLV layer representing current effort factor,
-// from Context.DrivePVLV.Effort.EffortDisc()
+// from ContextPVLV.Effort.EffortDisc()
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of units in the X and Y dimensions, per drive pool.
 func (nt *Network) AddEffortLayer(unY, unX int) *Layer {
@@ -258,7 +258,7 @@ func (nt *Network) AddEffortLayer(unY, unX int) *Layer {
 }
 
 // AddEffortPulvLayer adds DrivePVLV layer representing current effort factor,
-// from Context.DrivePVLV.Effort.EffortDisc()
+// from ContextPVLV.Effort.EffortDisc()
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of units in the X and Y dimensions, per drive pool.
 // Adds Pulvinar predictive layers for Effort.
@@ -270,7 +270,7 @@ func (nt *Network) AddEffortPulvLayer(unY, unX int, space float32) (eff, effP *L
 }
 
 // AddDrivePVLVPulvLayers adds PVLV layers for PV-related information visualizing
-// the internal states of the Context.DrivePVLV state, with Pulvinar prediction
+// the internal states of the ContextPVLV state, with Pulvinar prediction
 // layers for training PFC layers.
 // * drives = popcode representation of drive strength (no activity for 0)
 // number of active drives comes from Context; popY, popX units per pool.
@@ -282,7 +282,7 @@ func (nt *Network) AddEffortPulvLayer(unY, unX int, space float32) (eff, effP *L
 // with Drives in the back.
 func (nt *Network) AddDrivePVLVPulvLayers(ctx *Context, nUSneg, nYunits, popY, popX int, space float32) (drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
 	rel := relpos.Behind
-	nUSpos := int(ctx.DrivePVLV.Drive.NActive)
+	nUSpos := int(ctx.PVLV.Drive.NActive)
 	usPos, usNeg, usPosP, usNegP = nt.AddUSPulvLayers(nUSpos, nUSneg, nYunits, rel, space)
 	pvPos, pvNeg, pvPosP, pvNegP = nt.AddPVPulvLayers(popY, popX, rel, space)
 	drives, drivesP = nt.AddDrivesPulvLayer(ctx, popY, popX, space)

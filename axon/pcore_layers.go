@@ -23,7 +23,7 @@ import (
 type MatrixParams struct {
 	GateThr        float32     `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
 	NoGoGeLrn      float32     `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
-	IsVS           slbool.Bool `desc:"is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the Context.DrivePVLV state, and used for updating effort and other factors."`
+	IsVS           slbool.Bool `desc:"is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the ContextPVLV state, and used for updating effort and other factors."`
 	OtherMatrixIdx int32       `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
 	ThalLay1Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
 	ThalLay2Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used"`
@@ -193,7 +193,7 @@ func (ly *Layer) MatrixGated(ctx *Context) bool {
 	}
 
 	if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-		ctx.DrivePVLV.VSMatrix.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue())
+		ctx.PVLV.VSMatrix.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue())
 	}
 	return mtxGated
 }

@@ -48,13 +48,13 @@ type DrEffPlot struct {
 // Config configures all the elements using the standard functions
 func (ss *DrEffPlot) Config() {
 	ss.Context.Defaults()
-	dp := &ss.Context.DrivePVLV
-	dp.Drive.NActive = 1
-	dp.Drive.DriveMin = 0
-	dp.Drive.Base.Set(0, 1)
-	dp.Drive.Tau.Set(0, 100)
-	dp.Drive.USDec.Set(0, 1)
-	dp.Drive.Update()
+	pp := &ss.Context.PVLV
+	pp.Drive.NActive = 1
+	pp.Drive.DriveMin = 0
+	pp.Drive.Base.Set(0, 1)
+	pp.Drive.Tau.Set(0, 100)
+	pp.Drive.USDec.Set(0, 1)
+	pp.Drive.Update()
 	ss.TimeSteps = 100
 	ss.USTime.Set(2, 20)
 	ss.Effort.Set(0.5, 1.5)
@@ -75,14 +75,14 @@ func (ss *DrEffPlot) EffortPlot() {
 	dt := ss.Table
 	nv := 100
 	dt.SetNumRows(nv)
-	dp := &ss.Context.DrivePVLV
-	dp.Effort.Reset()
+	pp := &ss.Context.PVLV
+	pp.Effort.Reset()
 	for vi := 0; vi < nv; vi++ {
-		ev := dp.Effort.DiscFmEffort()
+		ev := pp.Effort.DiscFmEffort()
 		dt.SetCellFloat("T", vi, float64(vi))
 		dt.SetCellFloat("Eff", vi, float64(ev))
 
-		dp.Effort.AddEffort(1) // unit
+		pp.Effort.AddEffort(1) // unit
 	}
 	ss.Plot.Update()
 }
@@ -116,18 +116,18 @@ func (ss *DrEffPlot) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	dp := &ss.Context.DrivePVLV
-	dp.Effort.Reset()
+	pp := &ss.Context.PVLV
+	pp.Effort.Reset()
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
-	dp.USpos.Set(0, 0)
-	dp.Drive.ToBaseline()
-	dp.Update()
+	pp.USpos.Set(0, 0)
+	pp.Drive.ToBaseline()
+	pp.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := dp.Effort.DiscFmEffort()
+		ev := pp.Effort.DiscFmEffort()
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
-		dr := dp.Drive.Drives.Get(0)
+		dr := pp.Drive.Drives.Get(0)
 		usv := float32(0)
 		if ti == lastUS+ut {
 			ei = 0 // don't update on us trial
@@ -141,8 +141,8 @@ func (ss *DrEffPlot) TimeRun() {
 		dt.SetCellFloat("US", ti, float64(usv))
 		dt.SetCellFloat("Drive", ti, float64(dr))
 
-		dp.USpos.Set(0, usv)
-		dp.DriveEffortUpdt(ei, usv > 0, false)
+		pp.USpos.Set(0, usv)
+		pp.DriveEffortUpdt(ei, usv > 0, false)
 	}
 	ss.TimePlot.Update()
 }

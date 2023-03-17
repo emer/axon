@@ -65,19 +65,23 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesLayer", Desc: "expect act",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / ndrives
+					"Layer.Inhib.ActAvg.Nominal": "0.03",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
 				}},
 			{Sel: ".USLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.25",
+					"Layer.Inhib.ActAvg.Nominal": "0.2",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Pool.On":        "false",
 					"Layer.Inhib.Layer.Gi":       "0.5",
 				}},
-			{Sel: ".PVLayer", Desc: "expect act",
+			{Sel: ".PVLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.25",
+					"Layer.Inhib.ActAvg.Nominal": "0.2",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Pool.On":        "false",
 					"Layer.Inhib.Layer.Gi":       "0.5",
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
@@ -460,7 +464,7 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Rel": "8",
 					"Prjn.PrjnScale.Abs": "1",
 				}},
-			{Sel: ".DrivesToMtx", Desc: "it is critical that this is strong to allow enough Ge in Matrix",
+			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
 				Params: params.Params{
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.PrjnScale.Abs": "1",
