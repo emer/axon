@@ -186,11 +186,10 @@ func (dp *Drives) ExpStep() {
 
 // Effort has effort and parameters for updating it
 type Effort struct {
-	Gain float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
-	Raw  float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
-	Disc float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
-
-	pad float32
+	Gain     float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
+	Raw      float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
+	Disc     float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
+	PrevDisc float32 `inactive:"-" desc:"previous discount factor -- to avoid race condition"`
 }
 
 func (ef *Effort) Defaults() {
@@ -337,6 +336,7 @@ type VTA struct {
 	Gain VTAVals `view:"inline" desc:"gain multipliers on inputs from each input"`
 	Raw  VTAVals `view:"inline" inactive:"+" desc:"raw current values -- inputs to the computation"`
 	Vals VTAVals `view:"inline" inactive:"+" desc:"computed current values"`
+	Prev VTAVals `view:"inline" inactive:"+" desc:"previous computed  values -- to avoid a data race"`
 }
 
 func (vt *VTA) Defaults() {
@@ -509,7 +509,7 @@ func (dp *DrivePVLV) VSPatchMax() float32 {
 func (dp *DrivePVLV) DA(pptg float32) float32 {
 	pvPosRaw := dp.PosPV()
 	pvNeg := dp.NegPV()
-	pvPos := pvPosRaw * dp.Effort.DiscFmEffort()
+	pvPos := pvPosRaw * dp.Effort.PrevDisc
 	vsPatchPos := dp.VSPatchMax()
 	dp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
 	dp.VTA.Raw.Set(pvPos, pvNeg, pptg, dp.LHb.Dip, dp.LHb.Burst, vsPatchPos)
@@ -528,7 +528,7 @@ func (dp *DrivePVLV) LHbDipResetFmSum() bool {
 	dipReset := dp.LHb.DipResetFmSum(reset)
 	dp.USneg.Set(0, 0) // special effort neg
 	if dipReset {
-		dp.USneg.Set(0, 1.0-dp.Effort.DiscFmEffort()) // proportional to discount factor, maxes out at 1
+		dp.USneg.Set(0, 1.0-dp.Effort.Disc) // proportional to discount factor, maxes out at 1
 	}
 	return dipReset
 }

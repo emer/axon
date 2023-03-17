@@ -63,18 +63,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
-			{Sel: "#Drives", Desc: "expect act",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1", // 1 / ndrives
-				}},
-			{Sel: ".USLayer", Desc: "expect act",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.25", // 1 / ndrives
-				}},
-			{Sel: ".PVLayer", Desc: "expect act",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.25", // 1 / ndrives
-				}},
 			{Sel: ".InputLayer", Desc: "t",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":   "1.0",
@@ -159,13 +147,22 @@ var ParamSets = params.Sets{
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
 					"Layer.Pulv.DriveScale":      "0.05",
 				}},
 			{Sel: ".USLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "false",
+					"Layer.Inhib.Layer.Pool.Gi":  "0.5",
+					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
+				}},
+			{Sel: ".PVLayer", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.2",
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
@@ -246,7 +243,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.0", // 4.0 needed here for quick gating..
+					"Prjn.PrjnScale.Abs": "4.0", // 4.0 needed here for quick gating..
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",

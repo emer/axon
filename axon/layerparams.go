@@ -405,7 +405,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
 
 	case VTALayer:
-		ctx.DA()
+		ctx.DA() // this does not set the neuromod.DA value, to avoid race
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.DrivePVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:
@@ -445,9 +445,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = ctx.DrivePVLV.VTA.Vals.PVpos
+			pv = ctx.DrivePVLV.VTA.Prev.PVpos
 		} else {
-			pv = ctx.DrivePVLV.VTA.Vals.PVneg
+			pv = ctx.DrivePVLV.VTA.Prev.PVneg
 		}
 		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
 		nrn.GeRaw = pc
@@ -616,6 +616,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			ctx.DrivePVLV.VSPatch.Set(pi, val)
 		}
 	case VTALayer:
+		ctx.NeuroModFmPVLV()
 		nrn.Act = ctx.DrivePVLV.VTA.Vals.DA
 	case LHbLayer:
 		if ni == 0 {
@@ -633,7 +634,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		}
 		nrn.Act = dpc
 	case EffortLayer:
-		dr = ctx.DrivePVLV.Effort.DiscFmEffort()
+		dr = ctx.DrivePVLV.Effort.Disc
 		dpc = dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx

@@ -129,7 +129,7 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
 	ly.Inhib.Pool.On.SetBool(true)
-	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.On.SetBool(false)
 	ly.Inhib.Layer.Gi = 0.5
 	ly.Inhib.Layer.FB = 0
 	ly.Inhib.Pool.FB = 0

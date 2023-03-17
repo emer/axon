@@ -86,11 +86,18 @@ func (ctx *Context) CycleInc() {
 // DA computes the updated dopamine from all the current state,
 // including pptg and vsPatchPos (from RewPred) via Context.
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
-// Resulting DA is in VTA.Vals.DA, set to Context.NeuroMod.DA, and is returned
+// Resulting DA is in VTA.Vals.DA is returned.
 func (ctx *Context) DA() float32 {
-	ctx.NeuroMod.DA = ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
+	ctx.DrivePVLV.DA(ctx.NeuroMod.PPTg)
+	return ctx.DrivePVLV.VTA.Vals.DA
+}
+
+// NeuroModFmPVLV updates NeuroMod values from DrivePVLV vals
+func (ctx *Context) NeuroModFmPVLV() {
+	ctx.NeuroMod.DA = ctx.DrivePVLV.VTA.Vals.DA
 	ctx.NeuroMod.RewPred = ctx.DrivePVLV.VTA.Vals.VSPatchPos
-	return ctx.NeuroMod.DA
+	ctx.DrivePVLV.VTA.Prev = ctx.DrivePVLV.VTA.Vals // avoid race
+	ctx.DrivePVLV.Effort.PrevDisc = ctx.DrivePVLV.Effort.Disc
 }
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset.
