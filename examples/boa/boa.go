@@ -28,6 +28,7 @@ import (
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
+	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
@@ -967,6 +968,8 @@ func (ss *Sim) ConfigLogs() {
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	// ss.Logs.SetMeta(etime.Test, etime.Cycle, "LegendCol", "RunName")
+
+	axon.ConfigLayerActsLog(ss.Net, &ss.Logs)
 }
 
 func (ss *Sim) ConfigLogItems() {
@@ -1055,6 +1058,10 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	switch {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
+	case time == etime.Trial:
+		axon.LogLayerActs(ss.Net, &ss.Logs, &ss.GUI)
+	case time == etime.Epoch:
+		axon.LogLayerActsAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -1081,6 +1088,14 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
 	ss.GUI.AddPlots(title, &ss.Logs)
+
+	plt := ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Plot").(*eplot.Plot2D)
+	ss.GUI.Plots["LayerActs"] = plt
+	plt.SetTable(ss.Logs.MiscTables["LayerActs"])
+
+	plt = ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Avg Plot").(*eplot.Plot2D)
+	ss.GUI.Plots["LayerActsAvg"] = plt
+	plt.SetTable(ss.Logs.MiscTables["LayerActsAvg"])
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",

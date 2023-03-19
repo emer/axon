@@ -392,7 +392,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.Rew) // Rew must be set in Context!
 	case RSalienceAChLayer:
-		nrn.GeRaw = ctx.NeuroMod.ACh // straight up
+		nrn.GeRaw = 0.2 * ctx.NeuroMod.ACh
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case RWDaLayer:
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.NeuroMod.DA)
@@ -410,9 +410,9 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:
 		if ni == 0 {
-			nrn.GeRaw = mat32.Abs(ctx.PVLV.LHb.Dip)
+			nrn.GeRaw = 0.2 * mat32.Abs(ctx.PVLV.LHb.Dip)
 		} else {
-			nrn.GeRaw = mat32.Abs(ctx.PVLV.LHb.Burst)
+			nrn.GeRaw = 0.2 * mat32.Abs(ctx.PVLV.LHb.Burst)
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
@@ -440,7 +440,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		} else {
 			us = ctx.PVLV.USneg.Get(pi)
 		}
-		nrn.GeRaw = mat32.Abs(us)
+		nrn.GeRaw = 0.1 * mat32.Abs(us)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case PVLayer:
 		pv := float32(0)

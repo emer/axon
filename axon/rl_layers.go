@@ -68,7 +68,7 @@ type RWDaParams struct {
 }
 
 func (rp *RWDaParams) Defaults() {
-	rp.TonicGe = 0.3
+	rp.TonicGe = 0.2
 }
 
 func (rp *RWDaParams) Update() {
