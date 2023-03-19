@@ -28,7 +28,6 @@ import (
 	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
-	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/minmax"
@@ -279,6 +278,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accCT.SetClass("ACC CTCopy")
 	accPTPred := net.AddPTPredLayer(accPT, accCT, accMD, pone2one, pone2one, pone2one, space)
 	accPTPred.SetClass("ACC")
+	net.ConnectPTNotMaint(accPT, notMaint, full)
 
 	net.ConnectCTSelf(accCT, full)
 	net.ConnectToPulv(acc, accCT, distP, full, full)
@@ -969,7 +969,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	// ss.Logs.SetMeta(etime.Test, etime.Cycle, "LegendCol", "RunName")
 
-	axon.ConfigLayerActsLog(ss.Net, &ss.Logs)
+	axon.LayerActsLogConfig(ss.Net, &ss.Logs)
 }
 
 func (ss *Sim) ConfigLogItems() {
@@ -1058,10 +1058,13 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	switch {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
-	case time == etime.Trial:
-		axon.LogLayerActs(ss.Net, &ss.Logs, &ss.GUI)
-	case time == etime.Epoch:
-		axon.LogLayerActsAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
+	case mode == etime.Train && time == etime.Trial:
+		ev := ss.Envs[mode.String()].(*Approach)
+		if ev.US != -1 && ss.Stats.Float("JustGated") == 1 { // focus on US gating at first..
+			axon.LayerActsLog(ss.Net, &ss.Logs, &ss.GUI)
+		}
+	case mode == etime.Train && time == etime.Epoch:
+		axon.LayerActsLogAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
@@ -1089,13 +1092,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
-	plt := ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Plot").(*eplot.Plot2D)
-	ss.GUI.Plots["LayerActs"] = plt
-	plt.SetTable(ss.Logs.MiscTables["LayerActs"])
-
-	plt = ss.GUI.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Avg Plot").(*eplot.Plot2D)
-	ss.GUI.Plots["LayerActsAvg"] = plt
-	plt.SetTable(ss.Logs.MiscTables["LayerActsAvg"])
+	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
 		Tooltip: "Initialize everything including network weights, and start over.  Also applies current params.",

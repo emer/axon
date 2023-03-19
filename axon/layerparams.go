@@ -678,10 +678,8 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 		intdt *= 3.0
 	}
 	nrn.ActInt += intdt * (nrn.Act - nrn.ActInt) // using reg act here now
-	if ctx.PlusPhase.IsFalse() {
-		nrn.GeM += ly.Act.Dt.IntDt * (nrn.Ge - nrn.GeM)
-		nrn.GiM += ly.Act.Dt.IntDt * (nrn.GiSyn - nrn.GiM)
-	}
+	nrn.GeInt += intdt * (nrn.Ge - nrn.GeInt)
+	nrn.GiInt += intdt * (nrn.GiSyn - nrn.GiInt)
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -815,10 +813,11 @@ func (ly *LayerParams) MinusPhasePool(ctx *Context, pl *Pool) {
 	}
 }
 
-// AvgGeM computes the average and max GeM stats, updated in MinusPhase
+// AvgGeM computes the average and max GeInt, GiInt in minus phase
+// (AvgMaxGeM, AvgMaxGiM) stats, updated in MinusPhase
 func (ly *LayerParams) AvgGeM(ctx *Context, lpl *Pool, vals *LayerVals) {
-	vals.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.AvgMax.Ge.Minus.Max - vals.ActAvg.AvgMaxGeM)
-	vals.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.AvgMax.Gi.Minus.Max - vals.ActAvg.AvgMaxGiM)
+	vals.ActAvg.AvgMaxGeM += ly.Act.Dt.LongAvgDt * (lpl.AvgMax.GeInt.Minus.Max - vals.ActAvg.AvgMaxGeM)
+	vals.ActAvg.AvgMaxGiM += ly.Act.Dt.LongAvgDt * (lpl.AvgMax.GiInt.Minus.Max - vals.ActAvg.AvgMaxGiM)
 }
 
 // MinusPhaseNeuron does neuron level minus-phase updating

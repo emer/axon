@@ -12,6 +12,7 @@ import (
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/etable/agg"
+	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/metric"
@@ -84,7 +85,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Ti
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.Ge.Minus.Max)
+					ctx.SetFloat32(ly.Pools[0].AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
@@ -483,7 +484,7 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.Ge.Minus.Max)
+					ctx.SetFloat32(ly.Pools[0].AvgMax.GeInt.Minus.Max)
 				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
@@ -491,8 +492,8 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 	}
 }
 
-// ConfigLayerActsLogMetaData configures meta data for LayerActs table
-func ConfigLayerActsLogMetaData(dt *etable.Table) {
+// LayerActsLogConfigMetaData configures meta data for LayerActs table
+func LayerActsLogConfigMetaData(dt *etable.Table) {
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
 	dt.SetMetaData("Type", "Bar")
@@ -502,36 +503,42 @@ func ConfigLayerActsLogMetaData(dt *etable.Table) {
 	dt.SetMetaData("Nominal:FixMin", "+")
 	dt.SetMetaData("ActM:On", "+")
 	dt.SetMetaData("ActM:FixMin", "+")
+	dt.SetMetaData("ActM:Max", "1")
 	dt.SetMetaData("ActP:FixMin", "+")
-	dt.SetMetaData("GeM:FixMin", "+")
-	dt.SetMetaData("GeP:FixMin", "+")
+	dt.SetMetaData("ActP:Max", "1")
+	dt.SetMetaData("MaxGeM:FixMin", "+")
+	dt.SetMetaData("MaxGeM:FixMax", "+")
+	dt.SetMetaData("MaxGeM:Max", "3")
+	dt.SetMetaData("MaxGeP:FixMin", "+")
+	dt.SetMetaData("MaxGeP:FixMax", "+")
+	dt.SetMetaData("MaxGeP:Max", "3")
 }
 
-// ConfigLayerActsLog configures Tables to record
+// LayerActsLogConfig configures Tables to record
 // layer activity for tuning the network inhibition, nominal activity,
 // relative scaling, etc. in elog.MiscTables:
 // LayerActs is current, LayerActsRec is record over trials,
 // LayerActsAvg is average of recorded trials.
-func ConfigLayerActsLog(net *Network, lg *elog.Logs) {
+func LayerActsLogConfig(net *Network, lg *elog.Logs) {
 	dt := lg.MiscTable("LayerActs")
 	dt.SetMetaData("name", "LayerActs")
 	dt.SetMetaData("desc", "Layer Activations")
-	ConfigLayerActsLogMetaData(dt)
+	LayerActsLogConfigMetaData(dt)
 	dtRec := lg.MiscTable("LayerActsRec")
 	dtRec.SetMetaData("name", "LayerActsRec")
 	dtRec.SetMetaData("desc", "Layer Activations Recorded")
-	ConfigLayerActsLogMetaData(dtRec)
+	LayerActsLogConfigMetaData(dtRec)
 	dtAvg := lg.MiscTable("LayerActsAvg")
 	dtAvg.SetMetaData("name", "LayerActsAvg")
 	dtAvg.SetMetaData("desc", "Layer Activations Averaged")
-	ConfigLayerActsLogMetaData(dtAvg)
+	LayerActsLogConfigMetaData(dtAvg)
 	sch := etable.Schema{
 		{"Layer", etensor.STRING, nil, nil},
 		{"Nominal", etensor.FLOAT64, nil, nil},
 		{"ActM", etensor.FLOAT64, nil, nil},
 		{"ActP", etensor.FLOAT64, nil, nil},
-		{"GeM", etensor.FLOAT64, nil, nil},
-		{"GeP", etensor.FLOAT64, nil, nil},
+		{"MaxGeM", etensor.FLOAT64, nil, nil},
+		{"MaxGeP", etensor.FLOAT64, nil, nil},
 	}
 	nlay := len(net.Layers)
 	dt.SetFromSchema(sch, nlay)
@@ -545,52 +552,75 @@ func ConfigLayerActsLog(net *Network, lg *elog.Logs) {
 	}
 }
 
-// LogLayerActs records layer activity for tuning the network
+// LayerActsLog records layer activity for tuning the network
 // inhibition, nominal activity, relative scaling, etc.
-func LogLayerActs(net *Network, lg *elog.Logs, gui *egui.GUI) {
+// if gui is non-nil, plot is updated.
+func LayerActsLog(net *Network, lg *elog.Logs, gui *egui.GUI) {
 	dt := lg.MiscTable("LayerActs")
 	dtRec := lg.MiscTable("LayerActsRec")
 	for li, lyi := range net.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
+		lpl := &ly.Pools[0]
 		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
-		dt.SetCellFloat("ActM", li, float64(ly.Pools[0].AvgMax.Act.Minus.Avg))
-		dt.SetCellFloat("ActP", li, float64(ly.Pools[0].AvgMax.Act.Plus.Avg))
-		dt.SetCellFloat("GeM", li, float64(ly.Pools[0].AvgMax.Ge.Minus.Avg))
-		dt.SetCellFloat("GeP", li, float64(ly.Pools[0].AvgMax.Ge.Plus.Avg))
+		dt.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
+		dt.SetCellFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
+		dt.SetCellFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
+		dt.SetCellFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
 		dtRec.SetNumRows(dtRec.Rows + 1)
 		dtRec.SetCellString("Layer", li, ly.Nm)
 		dtRec.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
-		dtRec.SetCellFloat("ActM", li, float64(ly.Pools[0].AvgMax.Act.Minus.Avg))
-		dtRec.SetCellFloat("ActP", li, float64(ly.Pools[0].AvgMax.Act.Plus.Avg))
-		dtRec.SetCellFloat("GeM", li, float64(ly.Pools[0].AvgMax.Ge.Minus.Avg))
-		dtRec.SetCellFloat("GeP", li, float64(ly.Pools[0].AvgMax.Ge.Plus.Avg))
+		dtRec.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
+		dtRec.SetCellFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
+		dtRec.SetCellFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
+		dtRec.SetCellFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
 	}
-	gui.UpdatePlotScope(etime.ScopeKey("LayerActs"))
+	if gui != nil {
+		gui.UpdatePlotScope(etime.ScopeKey("LayerActs"))
+	}
 }
 
-// LogLayerActsAvg computes average of LayerActsRec record
+// LayerActsLogAvg computes average of LayerActsRec record
 // of layer activity for tuning the network
 // inhibition, nominal activity, relative scaling, etc.
+// if gui is non-nil, plot is updated.
 // if recReset is true, reset the recorded data after computing average.
-func LogLayerActsAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) {
+func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) {
 	dtRec := lg.MiscTable("LayerActsRec")
 	dtAvg := lg.MiscTable("LayerActsAvg")
 	ix := etable.NewIdxView(dtRec)
 	spl := split.GroupBy(ix, []string{"Layer"})
 	split.AggAllNumericCols(spl, agg.AggMean)
 	ags := spl.AggsToTable(etable.ColNameOnly)
+	cols := []string{"Nominal", "ActM", "ActP", "MaxGeM", "MaxGeP"}
 	for li, lyi := range net.Layers {
 		ly := lyi.(AxonLayer).AsAxon()
 		rw := ags.RowsByString("Layer", ly.Nm, etable.Equals, etable.UseCase)[0]
-		dtAvg.SetCellFloat("Nominal", li, ags.CellFloat("Nominal", rw))
-		dtAvg.SetCellFloat("ActM", li, ags.CellFloat("ActM", rw))
-		dtAvg.SetCellFloat("ActP", li, ags.CellFloat("ActP", rw))
-		dtAvg.SetCellFloat("ActM", li, ags.CellFloat("ActM", rw))
-		dtAvg.SetCellFloat("GeM", li, ags.CellFloat("GeM", rw))
-		dtAvg.SetCellFloat("GeP", li, ags.CellFloat("GeP", rw))
+		for _, cn := range cols {
+			dtAvg.SetCellFloat(cn, li, ags.CellFloat(cn, rw))
+		}
 	}
 	if recReset {
 		dtRec.SetNumRows(0)
 	}
-	gui.UpdatePlotScope(etime.ScopeKey("LayerActsAvg"))
+	if gui != nil {
+		gui.UpdatePlotScope(etime.ScopeKey("LayerActsAvg"))
+	}
+}
+
+// LayerActsLogRecReset resets the recorded LayerActsRec data
+// used for computing averages
+func LayerActsLogRecReset(lg *elog.Logs) {
+	dtRec := lg.MiscTable("LayerActsRec")
+	dtRec.SetNumRows(0)
+}
+
+// LayerActsLogConfigGUI configures GUI for LayerActsLog Plot and LayerActs Avg Plot
+func LayerActsLogConfigGUI(lg *elog.Logs, gui *egui.GUI) {
+	plt := gui.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Plot").(*eplot.Plot2D)
+	gui.Plots["LayerActs"] = plt
+	plt.SetTable(lg.MiscTables["LayerActs"])
+
+	plt = gui.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Avg Plot").(*eplot.Plot2D)
+	gui.Plots["LayerActsAvg"] = plt
+	plt.SetTable(lg.MiscTables["LayerActsAvg"])
 }

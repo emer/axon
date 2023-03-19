@@ -336,7 +336,7 @@ func (nt *NetworkBase) AllPrjnScales() string {
 			}
 			pj := recvPrjn.(AxonPrjn).AsAxon()
 			sn := pj.Send.Name()
-			str += fmt.Sprintf("\t%15s\t\tAbs:\t%6.2f\tRel:\t%6.2f\n", sn, pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel)
+			str += fmt.Sprintf("\t%15s\t\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
 			ph := pj.ParamsHistory.ParamsHistory()
 			rh := ph["Prjn.PrjnScale.Rel"]
 			ah := ph["Prjn.PrjnScale.Abs"]

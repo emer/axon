@@ -149,7 +149,7 @@ func (ly *Layer) PTNotMaintDefaults() {
 	ly.Params.Act.Decay.OnRew.SetBool(true)
 	ly.Params.Act.Init.GeBase = 1.0
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
-	ly.Params.Inhib.ActAvg.Nominal = 0.5
+	ly.Params.Inhib.ActAvg.Nominal = 0.2
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.Layer.On.SetBool(true)
 

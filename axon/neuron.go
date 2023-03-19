@@ -59,7 +59,7 @@ type Neuron struct {
 	Spike  float32 `desc:"whether neuron has spiked or not on this cycle (0 or 1)"`
 	Spiked float32 `desc:"1 if neuron has spiked within the last 10 cycles (msecs), corresponding to a nominal max spiking rate of 100 Hz, 0 otherwise -- useful for visualization and computing activity levels in terms of average spiked levels."`
 	Act    float32 `desc:"rate-coded activation value reflecting instantaneous estimated rate of spiking, based on 1 / ISIAvg.  This drives feedback inhibition in the FFFB function (todo: this will change when better inhibition is implemented), and is integrated over time for ActInt which is then used for performance statistics and layer average activations, etc.  Should not be used for learning or other computations."`
-	ActInt float32 `desc:"integrated running-average activation value computed from Act to produce a longer-term integrated value reflecting the overall activation state across a reasonable time scale to reflect overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations."`
+	ActInt float32 `desc:"integrated running-average activation value computed from Act with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall activation state across the ThetaCycle time scale, as the overall response of network to current input state -- this is copied to ActM and ActP at the ends of the minus and plus phases, respectively, and used in computing performance-level statistics (which are typically based on ActM).  Should not be used for learning or other computations."`
 	ActM   float32 `desc:"ActInt activation state at end of third quarter, representing the posterior-cortical minus phase activation -- used for statistics and monitoring network performance. Should not be used for learning or other computations."`
 	ActP   float32 `desc:"ActInt activation state at end of fourth quarter, representing the posterior-cortical plus_phase activation -- used for statistics and monitoring network performance.  Should not be used for learning or other computations."`
 	Ext    float32 `desc:"external input: drives activation of unit from outside influences (e.g., sensory input)"`
@@ -114,13 +114,12 @@ type Neuron struct {
 	GiBase  float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
 	GModRaw float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
 	GModSyn float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GeInt   float32 `desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+	GiInt   float32 `desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`
 
 	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
 	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`
 	Gak      float32 `desc:"conductance of A-type K potassium channels"`
-
-	GeM float32 `desc:"time-averaged Ge value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
-	GiM float32 `desc:"time-averaged GiSyn value over the minus phase -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
 
 	MahpN    float32 `desc:"accumulating voltage-gated gating value for the medium time scale AHP"`
 	SahpCa   float32 `desc:"slowly accumulating calcium value that drives the slow AHP"`
@@ -185,7 +184,8 @@ var NeuronVarsMap map[string]int
 var NeuronVarProps = map[string]string{
 	"GeSyn":     `range:"2"`,
 	"Ge":        `range:"2"`,
-	"GeM":       `range:"2"`,
+	"GeInt":     `range:"2"`,
+	"GiInt":     `range:"2"`,
 	"Vm":        `min:"0" max:"1"`,
 	"VmDend":    `min:"0" max:"1"`,
 	"ISI":       `auto-scale:"+"`,

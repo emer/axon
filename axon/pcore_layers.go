@@ -398,7 +398,7 @@ func (ly *Layer) VThalDefaults() {
 	ly.Params.Act.Dend.SSGi = 0
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
-	ly.Params.Inhib.ActAvg.Nominal = 0.25
+	ly.Params.Inhib.ActAvg.Nominal = 0.1
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(AxonPrjn).AsAxon()

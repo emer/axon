@@ -207,7 +207,7 @@ type DtParams struct {
 	VmSteps     int32   `def:"2" min:"1" desc:"number of integration steps to take in computing new Vm value -- this is the one computation that can be most numerically unstable so taking multiple steps with proportionally smaller dt is beneficial"`
 	GeTau       float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau       float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
-	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
+	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, GeInt from Ge, and GiInt from GiSyn -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
 	LongAvgTau  float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
 	MaxCycStart int32   `def:"50" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state"`
 
@@ -720,7 +720,7 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (SpkPrv, SpkSt*, ActM, ActP, GeM)
+// (SpkPrv, SpkSt*, ActM, ActP, GeInt, GiInt)
 // Called from InitActs, which is called from InitWts,
 // but otherwise not automatically called
 // (DecayState is used instead)
@@ -730,8 +730,8 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 	nrn.SpkSt2 = 0
 	nrn.ActM = 0
 	nrn.ActP = 0
-	nrn.GeM = 0
-	nrn.GiM = 0
+	nrn.GeInt = 0
+	nrn.GiInt = 0
 }
 
 //gosl: start act

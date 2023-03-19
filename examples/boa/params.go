@@ -143,13 +143,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".ACC", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":   "0.0", // do this only where needed
-					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Decay.OnRew": "true", // everything clears
-					"Layer.Inhib.Layer.On":  "true",
-					"Layer.Inhib.Layer.Gi":  "0.9",
-					"Layer.Inhib.Pool.On":   "false",
-					"Layer.Act.Dend.SSGi":   "0",
+					"Layer.Act.Decay.Act":        "0.0", // do this only where needed
+					"Layer.Act.Decay.Glong":      "0.0",
+					"Layer.Act.Decay.OnRew":      "true", // everything clears
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.On":       "true",
+					"Layer.Inhib.Layer.Gi":       "0.9",
+					"Layer.Inhib.Pool.On":        "false",
+					"Layer.Act.Dend.SSGi":        "0",
 				}},
 			{Sel: "#ACCCT", Desc: "",
 				Params: params.Params{
@@ -443,7 +444,7 @@ var ParamSets = params.Sets{
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "6",
-					"Prjn.Learn.LRate.Base": "0.2", // slower
+					"Prjn.Learn.LRate.Base": "0.02", // slower
 				}},
 
 			// BG prjns

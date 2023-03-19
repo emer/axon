@@ -62,8 +62,8 @@ type PoolAvgMax struct {
 	CaSpkD AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum CaSpkD longer-term depression / DAPK1 signal in layer"`
 	SpkMax AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum SpkMax value (based on CaSpkP) -- reflects peak activity at any point across the cycle"`
 	Act    AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Act firing rate value"`
-	Ge     AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Ge excitatory conductance value"`
-	Gi     AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum Gi inhibitory conductance value"`
+	GeInt  AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GeInt integrated running-average excitatory conductance value"`
+	GiInt  AvgMaxPhases `inactive:"+" view:"inline" desc:"avg and maximum GiInt integrated running-average inhibitory conductance value"`
 }
 
 // SetN sets the N for aggregation
@@ -72,8 +72,8 @@ func (am *PoolAvgMax) SetN(n int32) {
 	am.CaSpkD.Cycle.N = n
 	am.SpkMax.Cycle.N = n
 	am.Act.Cycle.N = n
-	am.Ge.Cycle.N = n
-	am.Gi.Cycle.N = n
+	am.GeInt.Cycle.N = n
+	am.GiInt.Cycle.N = n
 }
 
 // CycleToMinus grabs current Cycle values into the Minus phase values
@@ -82,8 +82,8 @@ func (am *PoolAvgMax) CycleToMinus() {
 	am.CaSpkD.CycleToMinus()
 	am.SpkMax.CycleToMinus()
 	am.Act.CycleToMinus()
-	am.Ge.CycleToMinus()
-	am.Gi.CycleToMinus()
+	am.GeInt.CycleToMinus()
+	am.GiInt.CycleToMinus()
 }
 
 // CycleToPlus grabs current Cycle values into the Plus phase values
@@ -92,8 +92,8 @@ func (am *PoolAvgMax) CycleToPlus() {
 	am.CaSpkD.CycleToPlus()
 	am.SpkMax.CycleToPlus()
 	am.Act.CycleToPlus()
-	am.Ge.CycleToPlus()
-	am.Gi.CycleToPlus()
+	am.GeInt.CycleToPlus()
+	am.GiInt.CycleToPlus()
 }
 
 // Init does Init on Cycle vals-- for update start.
@@ -103,8 +103,8 @@ func (am *PoolAvgMax) Init() {
 	am.CaSpkD.Cycle.Init()
 	am.SpkMax.Cycle.Init()
 	am.Act.Cycle.Init()
-	am.Ge.Cycle.Init()
-	am.Gi.Cycle.Init()
+	am.GeInt.Cycle.Init()
+	am.GiInt.Cycle.Init()
 }
 
 // Zero does full reset on everything -- for InitActs
@@ -113,8 +113,8 @@ func (am *PoolAvgMax) Zero() {
 	am.CaSpkD.Zero()
 	am.SpkMax.Zero()
 	am.Act.Zero()
-	am.Ge.Zero()
-	am.Gi.Zero()
+	am.GeInt.Zero()
+	am.GiInt.Zero()
 }
 
 // Calc does Calc on Cycle level, and re-inits
@@ -123,8 +123,8 @@ func (am *PoolAvgMax) Calc() {
 	am.CaSpkD.Calc()
 	am.SpkMax.Calc()
 	am.Act.Calc()
-	am.Ge.Calc()
-	am.Gi.Calc()
+	am.GeInt.Calc()
+	am.GiInt.Calc()
 }
 
 // UpdateVals for neuron values
@@ -133,8 +133,8 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD)
 	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax)
 	am.Act.Cycle.UpdateVal(mat32.Abs(nrn.Act)) // can be neg
-	am.Ge.Cycle.UpdateVal(mat32.Abs(nrn.Ge))
-	am.Gi.Cycle.UpdateVal(mat32.Abs(nrn.Gi))
+	am.GeInt.Cycle.UpdateVal(mat32.Abs(nrn.Ge))
+	am.GiInt.Cycle.UpdateVal(mat32.Abs(nrn.Gi))
 }
 
 //gosl: end pool
@@ -150,8 +150,8 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, nrn.CaSpkD); \
 	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, nrn.SpkMax); \
 	AtomicUpdateAvgMaxI32(am.Act.Cycle, nrn.Act); \
-	AtomicUpdateAvgMaxI32(am.Ge.Cycle, nrn.Ge); \
-	AtomicUpdateAvgMaxI32(am.Gi.Cycle, nrn.Gi)
+	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, nrn.Ge); \
+	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, nrn.Gi)
 */
 //gosl: end pool
 
@@ -235,7 +235,7 @@ func (ly *Layer) TopoGi(ctx *Context) {
 					ti := ty*pxn + tx
 					if l4d {
 						pl := &ly.Pools[ti+1]
-						tge += wt * pl.OldInhib.Ge.Avg
+						tge += wt * pl.OldInhib.GeInt.Avg
 						tact += wt * pl.OldInhib.Act.Avg
 					} else {
 						nrn := &ly.Neurons[ti]
