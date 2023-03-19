@@ -188,6 +188,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pone2one := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
+	mtxRndPrjn := prjn.NewPoolUnifRnd()
+	mtxRndPrjn.PCon = 0.75
+	_ = mtxRndPrjn
 	_ = pone2one
 
 	ny := ev.NYReps
@@ -265,6 +268,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(ofcPT, ofcCT, pone2one, emer.Forward) // good?
 
 	net.ConnectLayers(usPos, ofcPTPred, pone2one, emer.Forward)
+	net.ConnectLayers(pvPos, ofcPTPred, pone2one, emer.Forward)
+	net.ConnectLayers(drives, ofcPTPred, pone2one, emer.Forward)
 
 	acc, accCT := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
@@ -285,6 +290,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(dist, acc, full, emer.Forward)
 	net.ConnectLayers(effort, acc, full, emer.Forward)
 	net.ConnectLayers(accPT, accCT, full, emer.Forward) // good?
+
+	net.ConnectLayers(dist, accPTPred, full, emer.Forward)
+	net.ConnectLayers(effort, accPTPred, full, emer.Forward)
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
@@ -363,13 +371,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// same prjns to stn as mtxgo
 	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
-	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
+	net.ConnectToMatrix(blaPosA, vPmtxGo, mtxRndPrjn).SetClass("BLAToBG")
+	net.ConnectToMatrix(blaPosA, vPmtxNo, mtxRndPrjn).SetClass("BLAToBG")
 	net.ConnectLayers(blaPosA, vPstnp, full, emer.Forward)
 	net.ConnectLayers(blaPosA, vPstns, full, emer.Forward)
 
-	net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
+	// net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
 	// net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory

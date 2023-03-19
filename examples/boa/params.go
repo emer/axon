@@ -92,7 +92,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1", // controls extinction -- works fine at 1
-					"Layer.PVLV.Thr":                   "0.3",
+					"Layer.PVLV.Thr":                   "0.2",
 					"Layer.PVLV.Gain":                  "6",
 				}},
 			{Sel: "#CS", Desc: "expect act",
@@ -115,7 +115,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.025",
 					"Layer.Inhib.Layer.Gi":       "1.1",
 					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.8",
+					"Layer.Inhib.Pool.Gi":        "1.0",
 					"Layer.Act.Dend.SSGi":        "0",
 				}},
 			{Sel: "#OFCCT", Desc: "",
@@ -259,6 +259,9 @@ var ParamSets = params.Sets{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
 					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
 					"Layer.Matrix.IsVS":                "true",
+					"Layer.Learn.NeuroMod.DALRateSign": "true",
+					"Layer.Learn.NeuroMod.BurstGain":   "1",
+					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChDisInhib": "5", // key to be 5
 					"Layer.Act.Dend.ModGain":           "2",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
@@ -356,6 +359,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.0",
 				}},
+			{Sel: "#EffortToACC", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0",
+				}},
 			{Sel: ".ToM1", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
@@ -403,7 +410,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#BLAPosAcqD1ToOFC", Desc: "strong",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4",
+					"Prjn.PrjnScale.Abs": "4", // 4 orig
 				}},
 			{Sel: ".BLAToCeM_Excite", Desc: "",
 				Params: params.Params{
@@ -435,8 +442,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "2",
-					"Prjn.Learn.LRate.Base": "0.001", // slower
+					"Prjn.PrjnScale.Abs":    "6",
+					"Prjn.Learn.LRate.Base": "0.2", // slower
 				}},
 
 			// BG prjns
@@ -462,7 +469,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#USposToVpMtxGo", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "5",
+					"Prjn.PrjnScale.Abs": "5", // 5 orig
 					"Prjn.PrjnScale.Rel": ".2",
 				}},
 			{Sel: ".BLAToBG", Desc: "",

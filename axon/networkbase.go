@@ -221,6 +221,17 @@ func (nt *NetworkBase) BoundsUpdt() {
 	nt.MaxPos = mx
 }
 
+// ParamsHistoryReset resets parameter application history
+func (nt *NetworkBase) ParamsHistoryReset() {
+	for _, ly := range nt.Layers {
+		ly.(params.History).ParamsHistoryReset()
+	}
+}
+
+// ParamsApplied is just to satisfy History interface so reset can be applied
+func (nt *NetworkBase) ParamsApplied(sel *params.Sel) {
+}
+
 // ApplyParams applies given parameter style Sheet to layers and prjns in this network.
 // Calls UpdateParams to ensure derived parameters are all updated.
 // If setMsg is true, then a message is printed to confirm each parameter that is set.
@@ -262,6 +273,51 @@ func (nt *NetworkBase) AllParams() string {
 	return nds
 }
 
+// KeyLayerParams returns a listing for all layers in the network,
+// of the most important layer-level params (specific to each algorithm).
+func (nt *NetworkBase) KeyLayerParams() string {
+	return nt.AllLayerInhibs()
+}
+
+// KeyPrjnParams returns a listing for all Recv projections in the network,
+// of the most important projection-level params (specific to each algorithm).
+func (nt *NetworkBase) KeyPrjnParams() string {
+	return nt.AllPrjnScales()
+}
+
+// AllLayerInhibs returns a listing of all Layer Inhibition parameters in the Network
+func (nt *NetworkBase) AllLayerInhibs() string {
+	str := ""
+	for _, lyi := range nt.Layers {
+		if lyi.IsOff() {
+			continue
+		}
+		ly := lyi.(AxonLayer).AsAxon()
+		lp := ly.Params
+		ph := ly.ParamsHistory.ParamsHistory()
+		lh := ph["Layer.Inhib.ActAvg.Nominal"]
+		if lh != "" {
+			lh = "Params: " + lh
+		}
+		str += fmt.Sprintf("%15s\t\tNominal:\t%6.2f\t%s\n", ly.Name(), lp.Inhib.ActAvg.Nominal, lh)
+		if lp.Inhib.Layer.On.IsTrue() {
+			lh := ph["Layer.Inhib.Layer.Gi"]
+			if lh != "" {
+				lh = "Params: " + lh
+			}
+			str += fmt.Sprintf("\t\t\t\t\t\tLayer.Gi:\t%6.2f\t%s\n", lp.Inhib.Layer.Gi, lh)
+		}
+		if lp.Inhib.Pool.On.IsTrue() {
+			lh := ph["Layer.Inhib.Pool.Gi"]
+			if lh != "" {
+				lh = "Params: " + lh
+			}
+			str += fmt.Sprintf("\t\t\t\t\t\tPool.Gi: \t%6.2f\t%s\n", lp.Inhib.Pool.Gi, lh)
+		}
+	}
+	return str
+}
+
 // AllPrjnScales returns a listing of all PrjnScale parameters in the Network
 // in all Layers, Recv projections.  These are among the most important
 // and numerous of parameters (in larger networks) -- this helps keep
@@ -279,7 +335,17 @@ func (nt *NetworkBase) AllPrjnScales() string {
 				continue
 			}
 			pj := recvPrjn.(AxonPrjn).AsAxon()
-			str += fmt.Sprintf("\t%23s\t\tAbs:\t%g\tRel:\t%g\n", pj.Name(), pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel)
+			sn := pj.Send.Name()
+			str += fmt.Sprintf("\t%15s\t\tAbs:\t%6.2f\tRel:\t%6.2f\n", sn, pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel)
+			ph := pj.ParamsHistory.ParamsHistory()
+			rh := ph["Prjn.PrjnScale.Rel"]
+			ah := ph["Prjn.PrjnScale.Abs"]
+			if ah != "" {
+				str += fmt.Sprintf("\t\t\t\t\t\t\t    Abs Params: %s\n", ah)
+			}
+			if rh != "" {
+				str += fmt.Sprintf("\t\t\t\t\t\t\t    Rel Params: %s\n", rh)
+			}
 		}
 	}
 	return str
