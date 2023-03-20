@@ -9,7 +9,7 @@ import (
 	"github.com/goki/mat32"
 )
 
-//gosl: start drivepvlv
+//gosl: start pvlv
 
 // DriveVals represents different internal drives, such as hunger, thirst, etc.
 // labels can be provided by specific environments.
@@ -575,4 +575,4 @@ func (pp *PVLV) DriveEffortUpdt(effort float32, hasRew, resetUs bool) {
 	pp.EffortUpdt(effort, hasRew)
 }
 
-//gosl: end drivepvlv
+//gosl: end pvlv

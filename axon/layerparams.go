@@ -93,7 +93,7 @@ type LayerParams struct {
 	//     use the `viewif` field tag to condition on LayType.
 
 	Burst   BurstParams   `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
 	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
 	RSalACh RSalAChParams `viewif:"LayType=RSalienceAChLayer" view:"inline" desc:"parameterizes reward salience as ACh global neuromodulatory signal as a function of the MAX activation of its inputs."`
 	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
@@ -169,7 +169,7 @@ func (ly *LayerParams) AllParams() string {
 	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Burst, "", " ")
 		str += "Burst: {\n " + JsonToParams(b)
-	case CTLayer, PTPredLayer:
+	case CTLayer, PTPredLayer, PTNotMaintLayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
 		str += "CT:    {\n " + JsonToParams(b)
 	case PulvinarLayer:
@@ -359,29 +359,23 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *LayerVals, drvGe float32, nonDrvPct float32) float32 {
 	saveVal := float32(0)        // sometimes we need to use a value computed here, for the post Gs step
 	pi := int32(nrn.SubPool) - 1 // 0-n pool index
-	geCtxt := float32(0)
-	dr := float32(0)
-	dpc := float32(0)
 	switch ly.LayType {
 	case CTLayer:
-		// fallthrough // todo: support this in gosl
-		geCtxt = ly.CT.GeGain * nrn.CtxtGe
-		nrn.GeRaw += geCtxt
-		if ly.CT.DecayDt > 0 {
-			nrn.CtxtGe -= ly.CT.DecayDt * nrn.CtxtGe
-			ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
-			nrn.GeSyn += ctxExt
-			saveVal = ctxExt // used In PostGs to set nrn.GeExt
-		}
+		fallthrough
 	case PTPredLayer:
-		geCtxt = ly.CT.GeGain * nrn.CtxtGe
+		geCtxt := ly.CT.GeGain * nrn.CtxtGe
 		nrn.GeRaw += geCtxt
 		if ly.CT.DecayDt > 0 {
 			nrn.CtxtGe -= ly.CT.DecayDt * nrn.CtxtGe
-			ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
-			nrn.GeSyn += ctxExt
-			saveVal = ctxExt // used In PostGs to set nrn.GeExt
 		}
+		ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+		nrn.GeSyn += ctxExt
+		saveVal = ctxExt // used In PostGs to set nrn.GeExt
+	case PTNotMaintLayer:
+		giCtxt := ly.CT.GeGain * nrn.CtxtGe
+		nrn.GiRaw += giCtxt
+		ctxExt := ly.Act.Dt.GiSynFmRawSteady(giCtxt)
+		nrn.GiSyn += ctxExt
 	case PulvinarLayer:
 		if ctx.PlusPhase.IsFalse() {
 			break
@@ -416,8 +410,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
-		dr = ctx.PVLV.Drive.Drives.Get(pi)
-		dpc = dr
+		dr := ctx.PVLV.Drive.Drives.Get(pi)
+		dpc := dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
 			dpc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
@@ -425,8 +419,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case EffortLayer:
-		dr = ctx.PVLV.Effort.DiscFmEffort()
-		dpc = dr
+		dr := ctx.PVLV.Effort.DiscFmEffort()
+		dpc := dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
 			dpc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), dr)
@@ -453,7 +447,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeRaw = pc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case VSGatedLayer:
-		dr = 0
+		dr := float32(0)
 		if pi == 0 {
 			dr = float32(ctx.PVLV.VSMatrix.JustGated)
 		} else {
@@ -471,10 +465,10 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveVal float32) {
 	switch ly.LayType {
 	case CTLayer:
-		nrn.GeExt = saveVal // todo: it is not clear if this really does anything?  next time around?
+		nrn.GeExt = saveVal
 	case PTPredLayer:
 		nrn.GeExt = saveVal
-		if nrn.CtxtGeOrig < 0.01 {
+		if nrn.CtxtGeOrig < 0.05 {
 			nrn.Ge = 0 // gated by context input
 		}
 	}
@@ -566,13 +560,16 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			}
 		}
 	case CTLayer:
+		fallthrough
+	case PTPredLayer:
+		fallthrough
+	case PTNotMaintLayer:
 		if ctx.Cycle == ctx.ThetaCycles-1 {
-			nrn.CtxtGe += nrn.CtxtGeRaw
-			nrn.CtxtGeOrig = nrn.CtxtGe
-		}
-	case PTPredLayer: // todo: fallthrough
-		if ctx.Cycle == ctx.ThetaCycles-1 {
-			nrn.CtxtGe += nrn.CtxtGeRaw
+			if ly.CT.DecayTau == 0 {
+				nrn.CtxtGe = nrn.CtxtGeRaw
+			} else {
+				nrn.CtxtGe += nrn.CtxtGeRaw
+			}
 			nrn.CtxtGeOrig = nrn.CtxtGe
 		}
 	case RewLayer:

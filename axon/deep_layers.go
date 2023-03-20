@@ -152,6 +152,9 @@ func (ly *Layer) PTNotMaintDefaults() {
 	ly.Params.Inhib.ActAvg.Nominal = 0.2
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.CT.GeGain = 0.2
+	ly.Params.CT.DecayTau = 0
+	ly.Params.CT.Update()
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(AxonPrjn).AsAxon()

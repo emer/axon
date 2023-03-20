@@ -70,7 +70,7 @@ type SimParams struct {
 	PctCortex         float32 `desc:"proportion of behavioral approach sequences driven by the cortex vs. hard-coded reflexive subcortical"`
 	PctCortexMax      float32 `desc:"maximum PctCortex, when running on the schedule"`
 	PctCortexStEpc    int     `desc:"epoch when PctCortex starts increasing"`
-	PctCortexMaxEpc   int     `desc:"epoch when PctCortexMax is reached"`
+	PctCortexNEpc     int     `desc:"number of epochs over which PctCortexMax is reached"`
 	PctCortexInterval int     `desc:"how often to update PctCortex"`
 	PCAInterval       int     `desc:"how frequently (in epochs) to compute PCA on hidden representations to measure variance?"`
 	CortexDriving     bool    `desc:"true if cortex is driving this behavioral approach sequence"`
@@ -79,8 +79,8 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 5
-	ss.PctCortexMaxEpc = 25
+	ss.PctCortexStEpc = 50
+	ss.PctCortexNEpc = 20
 	ss.PctCortexInterval = 2
 	ss.PCAInterval = 10
 }
@@ -276,7 +276,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	accPT, accMD := net.AddPTMaintThalForSuper(acc, accCT, "MD", one2one, full, full, space)
 	_ = accPT
 	accCT.SetClass("ACC CTCopy")
-	accPTPred := net.AddPTPredLayer(accPT, accCT, accMD, pone2one, pone2one, pone2one, space)
+	accPTPred := net.AddPTPredLayer(accPT, accCT, accMD, full, full, full, space)
 	accPTPred.SetClass("ACC")
 	net.ConnectPTNotMaint(accPT, notMaint, full)
 
@@ -337,16 +337,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	net.ConnectLayers(dist, alm, full, emer.Forward)
 	net.ConnectLayers(effort, alm, full, emer.Forward)
-	net.ConnectLayers(ofcPT, alm, full, emer.Forward)
-	net.ConnectLayers(accPT, alm, full, emer.Forward)
+	// net.ConnectLayers(ofcPT, alm, full, emer.Forward)
+	// net.ConnectLayers(accPT, alm, full, emer.Forward)
 	net.ConnectLayers(ofcPTPred, alm, full, emer.Forward)
 	net.ConnectLayers(accPTPred, alm, full, emer.Forward)
 	net.ConnectLayers(notMaint, alm, full, emer.Forward)
 	// net.ConnectLayers(pos, alm, full, emer.Forward)
 	net.ConnectLayers(dist, m1, full, emer.Forward).SetClass("ToM1")
 	net.ConnectLayers(effort, m1, full, emer.Forward).SetClass("ToM1")
+
+	net.ConnectLayers(ofcPTPred, m1, full, emer.Forward)
+	net.ConnectLayers(accPTPred, m1, full, emer.Forward)
 	net.ConnectLayers(notMaint, m1, full, emer.Forward).SetClass("ToM1")
+
+	net.ConnectLayers(ofcPTPred, vl, full, emer.Forward)
+	net.ConnectLayers(accPTPred, vl, full, emer.Forward)
 	net.ConnectLayers(notMaint, vl, full, emer.Forward).SetClass("ToVL")
+
 	// neither of these other connections work nearly as well as explicit gate
 	// net.ConnectLayers(ofcPT, m1, full, emer.Forward)
 	// net.ConnectLayers(accPT, m1, full, emer.Forward)
@@ -403,7 +410,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToMatrix(alm, vPmtxNo, full)
 
 	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
-	net.ConnectToVSPatch(accPTPred, vsPatch, pone2one)
+	net.ConnectToVSPatch(accPTPred, vsPatch, full)
+	net.ConnectToVSPatch(almCT, vsPatch, full) // give access to motor action -- CT has prev action..
 
 	////////////////////////////////////////////////
 	// position
@@ -563,7 +571,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PctCortex", func() {
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if trnEpc >= ss.Sim.PctCortexStEpc && trnEpc%ss.Sim.PctCortexInterval == 0 {
-			ss.Sim.PctCortex = ss.Sim.PctCortexMax * float32(trnEpc-ss.Sim.PctCortexStEpc) / float32(ss.Sim.PctCortexMaxEpc-ss.Sim.PctCortexStEpc)
+			ss.Sim.PctCortex = ss.Sim.PctCortexMax * float32(trnEpc-ss.Sim.PctCortexStEpc) / float32(ss.Sim.PctCortexNEpc)
 			if ss.Sim.PctCortex > ss.Sim.PctCortexMax {
 				ss.Sim.PctCortex = ss.Sim.PctCortexMax
 			} else {
@@ -742,6 +750,10 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("AChShould", 0)
 	ss.Stats.SetFloat("AChShouldnt", 0)
 	ss.Stats.SetFloat("Rew", 0)
+	ss.Stats.SetFloat("DA", 0)
+	ss.Stats.SetFloat("RewPred", 0)
+	ss.Stats.SetFloat("DA_NR", 0)
+	ss.Stats.SetFloat("RewPred_NR", 0)
 	ss.Stats.SetString("NetAction", "")
 	ss.Stats.SetString("InstinctAction", "")
 	ss.Stats.SetString("ActAction", "")
@@ -787,7 +799,11 @@ func (ss *Sim) TrialStats() {
 	if ev.US != -1 {
 		ss.Stats.SetFloat32("DA", ss.Context.NeuroMod.DA)
 		ss.Stats.SetFloat32("RewPred", ss.Context.NeuroMod.RewPred) // gets from VSPatch or RWPred etc
+		ss.Stats.SetFloat("DA_NR", math.NaN())
+		ss.Stats.SetFloat("RewPred_NR", math.NaN())
 	} else {
+		ss.Stats.SetFloat32("DA_NR", ss.Context.NeuroMod.DA)
+		ss.Stats.SetFloat32("RewPred_NR", ss.Context.NeuroMod.RewPred)
 		ss.Stats.SetFloat("DA", math.NaN())
 		ss.Stats.SetFloat("RewPred", math.NaN())
 	}
@@ -1005,6 +1021,10 @@ func (ss *Sim) ConfigLogItems() {
 	li.FixMin = false
 	li = ss.Logs.AddStatAggItem("RewPred", "RewPred", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("DA_NR", "DA_NR", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
+	li = ss.Logs.AddStatAggItem("RewPred_NR", "RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
+	li.FixMin = false
 
 	ev := TheSim.Envs[etime.Train.String()].(*Approach)
 	ss.Logs.AddItem(&elog.Item{
@@ -1060,7 +1080,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		row = ss.Stats.Int("Cycle")
 	case mode == etime.Train && time == etime.Trial:
 		ev := ss.Envs[mode.String()].(*Approach)
-		if ev.US != -1 && ss.Stats.Float("JustGated") == 1 { // focus on US gating at first..
+		if ev.US == -1 && ss.Stats.Float("JustGated") == 1 {
 			axon.LayerActsLog(ss.Net, &ss.Logs, &ss.GUI)
 		}
 	case mode == etime.Train && time == etime.Epoch:

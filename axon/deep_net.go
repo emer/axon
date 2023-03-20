@@ -208,7 +208,7 @@ func (nt *Network) AddPTNotMaintLayer(ptMaint *Layer, nNeurY, nNeurX int, space 
 // ConnectPTNotMaint adds a projection from PTMaintLayer to PTNotMaintLayer,
 // as fixed inhibitory connections, with class ToPTNotMaintInhib
 func (nt *Network) ConnectPTNotMaint(ptMaint, ptNotMaint emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(ptMaint, ptNotMaint, pat, emer.Inhib).SetClass("ToPTNotMaintInhib")
+	return nt.ConnectLayers(ptMaint, ptNotMaint, pat, emer.PrjnType(CTCtxtPrjn)).SetClass("ToPTNotMaintInhib")
 }
 
 // AddPTMaintThalForSuper adds a PTMaint pyramidal tract active maintenance layer and a

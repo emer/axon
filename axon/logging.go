@@ -587,6 +587,9 @@ func LayerActsLog(net *Network, lg *elog.Logs, gui *egui.GUI) {
 func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) {
 	dtRec := lg.MiscTable("LayerActsRec")
 	dtAvg := lg.MiscTable("LayerActsAvg")
+	if dtRec.Rows == 0 {
+		return
+	}
 	ix := etable.NewIdxView(dtRec)
 	spl := split.GroupBy(ix, []string{"Layer"})
 	split.AggAllNumericCols(spl, agg.AggMean)

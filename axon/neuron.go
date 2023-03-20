@@ -112,10 +112,10 @@ type Neuron struct {
 	GiRaw   float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
 	GiSyn   float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
 	GiBase  float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
-	GModRaw float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
-	GModSyn float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
 	GeInt   float32 `desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
 	GiInt   float32 `desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`
+	GModRaw float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GModSyn float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
 
 	SSGi     float32 `desc:"SST+ somatostatin positive slow spiking inhibition"`
 	SSGiDend float32 `desc:"amount of SST+ somatostatin positive slow spiking inhibition applied to dendritic Vm (VmDend)"`

@@ -87,7 +87,8 @@ var ParamSets = params.Sets{
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":       "0.2",
-					"Layer.Inhib.Layer.Gi":             "0.5",
+					"Layer.Inhib.Layer.On":             "true", // off by default
+					"Layer.Inhib.Layer.Gi":             "0.5",  // > 0.5 is worse -- hard to get specific to OFC / US
 					"Layer.Inhib.Pool.Gi":              "0.5",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
@@ -334,6 +335,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5",
 				}},
+			{Sel: "#OFCToOFCMD", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "6.0", // if this is too strong, it gates to the wrong CS
+				}},
 			/*
 				{Sel: "#OFCToALM", Desc: "",
 					Params: params.Params{
@@ -355,6 +360,10 @@ var ParamSets = params.Sets{
 			{Sel: "#ACCPTToACCMD", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5",
+				}},
+			{Sel: "#ACCPTToACCPTPred", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 				}},
 			{Sel: "#DistToACC", Desc: "",
 				Params: params.Params{
@@ -443,8 +452,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "6",
-					"Prjn.Learn.LRate.Base": "0.02", // slower
+					"Prjn.PrjnScale.Abs":    "3",
+					"Prjn.Learn.LRate.Base": "0.05", // 0.2 > 0.02..?
+				}},
+			{Sel: "#OFCPTPredToVSPatch", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "6", // let ofc is more dominant, has pools
+				}},
+			{Sel: "#ALMCTToVSPatch", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "3", // todo: explore
 				}},
 
 			// BG prjns

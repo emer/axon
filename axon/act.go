@@ -635,7 +635,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
 
-	// nrn.CtxtGe -= glong * nrn.CtxtGe
+	nrn.CtxtGeOrig -= glong * nrn.CtxtGeOrig
 }
 
 //gosl: end act
