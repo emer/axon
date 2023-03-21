@@ -276,6 +276,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToRWPrjn(ofc, rwPred, full)
 	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
 
+	net.ConnectToVSPatch(drives, vsPatch, pone2one).SetClass("DrivesToVSPatch") // modulatory
 	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
 
 	////////////////////////////////////////////////
@@ -559,8 +560,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.ConfigLogItems()
 
 	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Block, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
+	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Block, etime.Trial)
+	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon(), etime.Train)
 
 	ss.Logs.PlotItems("DA", "VSPatch")
 

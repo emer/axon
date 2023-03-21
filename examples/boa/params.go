@@ -87,8 +87,6 @@ var ParamSets = params.Sets{
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":       "0.2",
-					"Layer.Inhib.Layer.On":             "true", // off by default
-					"Layer.Inhib.Layer.Gi":             "0.5",  // > 0.5 is worse -- hard to get specific to OFC / US
 					"Layer.Inhib.Pool.Gi":              "0.5",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
@@ -456,7 +454,7 @@ var ParamSets = params.Sets{
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "3",
-					"Prjn.Learn.LRate.Base": "0.05", // 0.2 > 0.02..?
+					"Prjn.Learn.LRate.Base": "0.2", // 0.2 > 0.02..?
 				}},
 			{Sel: "#OFCPTPredToVSPatch", Desc: "",
 				Params: params.Params{
@@ -515,6 +513,16 @@ var ParamSets = params.Sets{
 					// "Prjn.Learn.Learn":   "false",
 					// "Prjn.SWt.Init.Mean": "0.8",
 					// "Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".DrivesToVSPatch", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
+				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Rel": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Com.GType":     "ModulatoryG",
 				}},
 			{Sel: ".FmSTNp", Desc: "increase to prevent repeated gating",
 				Params: params.Params{

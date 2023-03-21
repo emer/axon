@@ -376,6 +376,16 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Com.GType":     "ModulatoryG",
 				}},
+			{Sel: ".DrivesToVSPatch", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
+				Params: params.Params{
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Rel": "1",
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Com.GType":     "ModulatoryG",
+				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2", // 2 > 1

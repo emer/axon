@@ -487,7 +487,7 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 }
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
-// for the VSPatchPrjn type.
+// for the VSPatchPrjn type.  Currently only supporting the Pos D1 type.
 func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	ract := rn.CaSpkD
 	lmax := layPool.AvgMax.CaSpkD.Plus.Max
@@ -495,6 +495,7 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, l
 		ract /= lmax
 	}
 	// note: rn.RLRate already has DA * (D1 vs. D2 sign reversal) factored in.
+	// and also the logic that non-positive DA leads to weight decreases.
 	dwt := rn.RLRate * pj.Learn.LRate.Eff * sn.CaSpkD * ract
 	sy.DWt += dwt
 }

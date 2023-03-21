@@ -547,8 +547,6 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.Burst = nrn.CaSpkP
 	pi := int32(nrn.SubPool) - 1 // 0-n pool index
-	dr := float32(0)
-	dpc := float32(0)
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
@@ -608,7 +606,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			ctx.NeuroMod.PPTg = ly.PVLV.Val(lpl.AvgMax.CaSpkD.Cycle.Max)
 		}
 	case VSPatchLayer:
-		if nrn.NeurIdx == 0 {
+		if nrn.NeurIdx == pl.StIdx {
 			val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
 			ctx.PVLV.VSPatch.Set(pi, val)
 		}
@@ -623,16 +621,16 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		}
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case DrivesLayer:
-		dr = ctx.PVLV.Drive.Drives.Get(pi)
-		dpc = dr
+		dr := ctx.PVLV.Drive.Drives.Get(pi)
+		dpc := dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
 			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
 		}
 		nrn.Act = dpc
 	case EffortLayer:
-		dr = ctx.PVLV.Effort.Disc
-		dpc = dr
+		dr := ctx.PVLV.Effort.Disc
+		dpc := dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx
 			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
@@ -656,7 +654,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		pc := ly.Act.PopCode.EncodeVal(ni, ly.Idxs.NeurN, pv)
 		nrn.Act = pc
 	case VSGatedLayer:
-		dr = 0
+		dr := float32(0)
 		if pi == 0 {
 			dr = float32(ctx.PVLV.VSMatrix.JustGated)
 		} else {
@@ -799,7 +797,7 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals
 	nrn.SpkMaxCa = 0
 
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
-	if ly.LayType == PPTgLayer {
+	if ly.LayType == PPTgLayer || ly.LayType == VSPatchLayer {
 		nrn.CaSpkP = 0
 		nrn.CaSpkD = 0 // used as a read-out for ACh -- needs to clear
 	}
@@ -855,13 +853,19 @@ func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni uint32, nrn *Neur
 func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActP = nrn.ActInt
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
+	modlr := ly.Learn.NeuroMod.LRMod(vals.NeuroMod.DA, vals.NeuroMod.ACh)
 	dlr := float32(0)
-	if ly.LayType == BLALayer {
+	switch ly.LayType {
+	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous trial
-	} else {
+	case VSPatchLayer:
+		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
+		if vals.NeuroMod.DA <= 0.01 && modlr > -0.5 { // always decrease if no DA
+			modlr = -0.5
+		}
+	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 	}
-	modlr := ly.Learn.NeuroMod.LRMod(vals.NeuroMod.DA, vals.NeuroMod.ACh)
 	nrn.RLRate = mlr * dlr * modlr
 	nrn.ActAvg += ly.Act.Dt.LongAvgDt * (nrn.ActM - nrn.ActAvg)
 	var tau float32

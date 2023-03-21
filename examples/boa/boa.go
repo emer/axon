@@ -386,7 +386,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
 	// net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
-	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
+	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx") // modulatory in params
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
 	// net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
 	// net.ConnectLayers(drives, vPstns, full, emer.Forward)
@@ -409,6 +409,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToMatrix(alm, vPmtxGo, full) // not to MD
 	// net.ConnectToMatrix(alm, vPmtxNo, full)
 
+	net.ConnectToVSPatch(drives, vsPatch, pone2one).SetClass("DrivesToVSPatch") // modulatory
 	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
 	net.ConnectToVSPatch(accPTPred, vsPatch, full)
 	net.ConnectToVSPatch(almCT, vsPatch, full) // give access to motor action -- CT has prev action..
