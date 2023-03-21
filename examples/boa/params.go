@@ -92,8 +92,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":              "0.5",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
-					"Layer.Learn.NeuroMod.DipGain":     "1", // controls extinction -- works fine at 1
-					"Layer.PVLV.Thr":                   "0.2",
+					"Layer.Learn.NeuroMod.DipGain":     "1",   // controls extinction -- works fine at 1
+					"Layer.PVLV.Thr":                   "0.2", // .2 -- .25 doesn't get strong enough to overcome DA
 					"Layer.PVLV.Gain":                  "6",
 				}},
 			{Sel: "#CS", Desc: "expect act",
@@ -223,6 +223,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PPTgLayer", Desc: "",
 				Params: params.Params{
+					"Layer.Act.Decay.Act":        "1.0", // critical to not decay -- otherwise FFPrv reset!
+					"Layer.Act.Decay.Glong":      "1.0",
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
 					"Layer.Inhib.Layer.Gi":       "1.0",
 					"Layer.Inhib.Pool.On":        "true",
@@ -375,11 +377,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".ToM1", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			{Sel: ".ToVL", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01", // .01 > .02 > .04  -- key to slow it down
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			{Sel: "#DistToM1", Desc: "",
 				Params: params.Params{
@@ -395,6 +397,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base":     "0.02",
 					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
+					"Prjn.BLAAcq.NonUSLRate":    "0.0",  // def 0.01
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{

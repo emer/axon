@@ -487,7 +487,7 @@ func (pp *PVLV) PosPV() float32 {
 // NegPV returns the reward for current negative US state -- just a sum of USneg
 func (pp *PVLV) NegPV() float32 {
 	rew := float32(0)
-	for i := int32(0); i < pp.Drive.NActive; i++ {
+	for i := int32(0); i < pp.Drive.NNegUSs; i++ {
 		rew += pp.USneg.Get(i)
 	}
 	return rew
@@ -503,6 +503,26 @@ func (pp *PVLV) VSPatchMax() float32 {
 		}
 	}
 	return max
+}
+
+// HasPosUS returns true if there is at least one non-zero positive US
+func (pp *PVLV) HasPosUS() bool {
+	for i := int32(0); i < pp.Drive.NActive; i++ {
+		if pp.USpos.Get(i) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// HasNegUS returns true if there is at least one non-zero negative US
+func (pp *PVLV) HasNegUS() bool {
+	for i := int32(0); i < pp.Drive.NActive; i++ {
+		if pp.USpos.Get(i) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // DA computes the updated dopamine from all the current state,

@@ -799,6 +799,10 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals
 	nrn.SpkMaxCa = 0
 
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
+	if ly.LayType == PPTgLayer {
+		nrn.CaSpkP = 0
+		nrn.CaSpkD = 0 // used as a read-out for ACh -- needs to clear
+	}
 	// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
 	// Note: synapse-level Ca decay happens in DWt
 }

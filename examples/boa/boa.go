@@ -488,7 +488,7 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
+	// man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
@@ -551,9 +551,12 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnStart.Add("ResetLogTrial", func() {
 		ss.Logs.ResetLog(etime.Train, etime.Trial)
 	})
-	man.GetLoop(etime.Test, etime.Epoch).OnStart.Add("ResetLogTrial", func() {
-		ss.Logs.ResetLog(etime.Train, etime.Trial)
+	man.GetLoop(etime.Train, etime.Sequence).OnStart.Add("ResetLogTrial", func() {
+		ss.Logs.ResetLog(etime.Debug, etime.Trial)
 	})
+	// man.GetLoop(etime.Test, etime.Epoch).OnStart.Add("ResetLogTrial", func() {
+	// 	ss.Logs.ResetLog(etime.Train, etime.Trial)
+	// })
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Add("LogAnalyze", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
@@ -584,9 +587,9 @@ func (ss *Sim) ConfigLoops() {
 	// GUI
 
 	if ss.Args.Bool("nogui") {
-		man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
-			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
-		})
+		// man.GetLoop(etime.Test, etime.Trial).Main.Add("NetDataRecord", func() {
+		// 	ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
+		// })
 	} else {
 		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
@@ -605,8 +608,9 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	ev.ActGen() // always update comparison
 	mtxLy := net.LayerByName("VpMtxGo").(*axon.Layer)
 	didGate := mtxLy.AnyGated()
-	if didGate && !ss.Context.NeuroMod.HasRew.IsTrue() {
+	if didGate && !ss.Context.PVLV.HasPosUS() {
 		ev.DidGate = true
+		ss.Stats.SetString("Debug", "skip gate")
 		if Debug {
 			fmt.Printf("skipped action because gated\n")
 		}
@@ -615,7 +619,8 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		ly := ss.Net.LayerByName("VL").(axon.AxonLayer).AsAxon()
 		ly.Pools[0].Inhib.Clamped.SetBool(false) // not clamped this trial
 		ss.Net.GPU.SyncPoolsToGPU()
-		return // no time to do action while also gating
+		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
+		return                           // no time to do action while also gating
 	}
 
 	netAct, anm := ss.DecodeAct(ev)
@@ -661,6 +666,7 @@ func (ss *Sim) ApplyAction() {
 // args so that it can be used for various different contexts
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
+	ss.Stats.SetString("Debug", "") // start clear
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 
@@ -681,11 +687,6 @@ func (ss *Sim) ApplyInputs() {
 
 	// this is key step to drive DA and US-ACh
 	if ev.US != -1 {
-		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		if ss.StopOnErr && trnEpc > 5 && ev.Rew < 0 {
-			fmt.Printf("STOPPED due to negative reward for US: %d  %g\n", ev.US, ev.Rew)
-			ss.Loops.Stop(etime.Trial)
-		}
 		ss.Context.NeuroMod.SetRew(ev.Rew, true)
 	} else {
 		ss.Context.NeuroMod.SetRew(0, false)
@@ -701,7 +702,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
 	dr := &ctx.PVLV
 	dr.InitUS()
 	ctx.NeuroMod.HasRew.SetBool(false)
-	if ev.US >= 0 {
+	if ev.US != -1 {
 		dr.SetPosUS(int32(ev.US), 1) // magnitude always 1
 		ctx.NeuroMod.HasRew.SetBool(true)
 	}
@@ -723,15 +724,15 @@ func (ss *Sim) NewRun() {
 	ss.InitStats()
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
-	ss.Logs.ResetLog(etime.Test, etime.Epoch)
+	// ss.Logs.ResetLog(etime.Test, etime.Epoch)
 }
 
 // TestAll runs through the full set of testing items
-func (ss *Sim) TestAll() {
-	// ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Loops.ResetAndRun(etime.Test)
-	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
-}
+// func (ss *Sim) TestAll() {
+// 	// ss.Envs.ByMode(etime.Test).Init(0)
+// 	ss.Loops.ResetAndRun(etime.Test)
+// 	ss.Loops.Mode = etime.Train // Important to reset Mode back to Train because this is called from within the Train Run.
+// }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 // 		Stats
@@ -739,6 +740,15 @@ func (ss *Sim) TestAll() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
+	ss.Stats.SetFloat("PctCortex", 0)
+	ss.Stats.SetFloat("Dist", 0)
+	ss.Stats.SetFloat("Drive", 0)
+	ss.Stats.SetFloat("CS", 0)
+	ss.Stats.SetFloat("US", 0)
+	ss.Stats.SetFloat("HasRew", 0)
+	ss.Stats.SetString("NetAction", "")
+	ss.Stats.SetString("InstinctAction", "")
+	ss.Stats.SetString("ActAction", "")
 	ss.Stats.SetFloat("JustGated", 0)
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("GateUS", 0)
@@ -754,9 +764,6 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
-	ss.Stats.SetString("NetAction", "")
-	ss.Stats.SetString("InstinctAction", "")
-	ss.Stats.SetString("ActAction", "")
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
@@ -765,6 +772,7 @@ func (ss *Sim) InitStats() {
 		ss.Stats.SetFloat("MaintFail"+lnm, 0)
 		ss.Stats.SetFloat("PreAct"+lnm, 0)
 	}
+	ss.Stats.SetString("Debug", "") // special debug notes per trial
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -774,12 +782,15 @@ func (ss *Sim) StatCounters() {
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	ss.Stats.SetInt("Epoch", trnEpc)
 	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
 	ss.Stats.SetFloat32("PctCortex", ss.Sim.PctCortex)
-	// ss.Stats.SetFloat32("ACCPos", ss.Sim.ACCPos)
-	// ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
-	// trlnm := fmt.Sprintf("pos: %g, neg: %g", ss.Sim.ACCPos, ss.Sim.ACCNeg)
+	ss.Stats.SetFloat32("Dist", float32(ev.Dist))
+	ss.Stats.SetFloat32("Drive", float32(ev.Drive))
+	ss.Stats.SetFloat32("CS", float32(ev.CS))
+	ss.Stats.SetFloat32("US", float32(ev.US))
+	ss.Stats.SetFloat32("HasRew", float32(ss.Context.NeuroMod.HasRew))
 	ss.Stats.SetString("TrialName", "trl")
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Cycle", "NetAction", "InstinctAction", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
 }
@@ -794,9 +805,7 @@ func (ss *Sim) TrialStats() {
 	ss.GatedStats()
 	ss.MaintStats()
 
-	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-
-	if ev.US != -1 {
+	if ss.Context.PVLV.HasPosUS() {
 		ss.Stats.SetFloat32("DA", ss.Context.NeuroMod.DA)
 		ss.Stats.SetFloat32("RewPred", ss.Context.NeuroMod.RewPred) // gets from VSPatch or RWPred etc
 		ss.Stats.SetFloat("DA_NR", math.NaN())
@@ -842,7 +851,7 @@ func (ss *Sim) TrialStats() {
 	}
 	ss.Stats.SetFloat("AllGood", allGood)
 
-	if ss.Context.NeuroMod.HasRew.IsTrue() { // got an outcome -- skip to next Sequence
+	if ss.Context.PVLV.HasPosUS() { // got an outcome -- skip to next Sequence
 		trl := ss.Loops.GetLoop(ss.Context.Mode, etime.Trial)
 		trl.SkipToMax()
 	}
@@ -869,7 +878,7 @@ func (ss *Sim) GatedStats() {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(ev.Drive != ev.USForPos()))
 	}
 	if ev.ShouldGate {
-		if ev.US != -1 {
+		if ss.Context.PVLV.HasPosUS() {
 			ss.Stats.SetFloat32("GateUS", bools.ToFloat32(justGated))
 		} else {
 			ss.Stats.SetFloat32("GateCS", bools.ToFloat32(justGated))
@@ -882,7 +891,7 @@ func (ss *Sim) GatedStats() {
 		}
 	}
 	// We get get ACh when new CS or Rew
-	if ss.Context.NeuroMod.HasRew.IsTrue() || ev.LastCS != ev.CS {
+	if ss.Context.PVLV.HasPosUS() || ev.LastCS != ev.CS {
 		ss.Stats.SetFloat32("AChShould", ss.Context.NeuroMod.ACh)
 	} else {
 		ss.Stats.SetFloat32("AChShouldnt", ss.Context.NeuroMod.ACh)
@@ -946,26 +955,25 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
+	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Dist", "US", "HasRew")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "InstinctAction", "ActAction")
-	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
-	// ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
-	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	// ss.ConfigActRFs()
 
 	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Epoch, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
+	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
+	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon(), etime.Train)
 
 	// todo: PCA items should apply to CT layers too -- pass a type here.
-	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 
 	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
 	// "MaintofcPT", "MaintaccPT", "MaintFailofcPT", "MaintFailaccPT"
@@ -976,11 +984,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
-	ss.Logs.NoPlot(etime.Train, etime.Phase)
-	ss.Logs.NoPlot(etime.Test, etime.Phase)
-	ss.Logs.NoPlot(etime.Test, etime.Run)
-	ss.Logs.NoPlot(etime.Train, etime.Sequence)
-	ss.Logs.NoPlot(etime.Test, etime.Sequence)
+	ss.Logs.NoPlot(etime.Train, etime.Phase, etime.Sequence)
+	ss.Logs.NoPlot(etime.Test, etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
 	// ss.Logs.SetMeta(etime.Test, etime.Cycle, "LegendCol", "RunName")
@@ -1001,6 +1006,10 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShould", "AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", "AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
+
+	// Add a special debug message -- use of etime.Debug triggers
+	// inclusion
+	ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
 
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
 	for _, lnm := range lays {
@@ -1064,7 +1073,7 @@ func (ss *Sim) ConfigLogItems() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
+	if mode.String() != "Analyze" && mode.String() != "Debug" {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
@@ -1079,10 +1088,24 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
 	case mode == etime.Train && time == etime.Trial:
-		ev := ss.Envs[mode.String()].(*Approach)
-		if ev.US == -1 && ss.Stats.Float("JustGated") == 1 {
+		if !ss.Context.PVLV.HasPosUS() && ss.Stats.Float("JustGated") == 1 {
 			axon.LayerActsLog(ss.Net, &ss.Logs, &ss.GUI)
 		}
+		ss.Logs.Log(etime.Debug, etime.Trial)
+		if !ss.Args.Bool("nogui") {
+			ss.GUI.UpdateTableView(etime.Debug, etime.Trial)
+		}
+
+		// if ss.Stats.Float("GatedEarly") > 0 {
+		// 	fmt.Printf("STOPPED due to gated early: %d  %g\n", ev.US, ev.Rew)
+		// 	ss.Loops.Stop(etime.Trial)
+		// }
+
+		// trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		// if ss.StopOnErr && trnEpc > 5 && ev.Rew < 0 {
+		// 	fmt.Printf("STOPPED due to negative reward for US: %d  %g\n", ev.US, ev.Rew)
+		// 	ss.Loops.Stop(etime.Trial)
+		// }
 	case mode == etime.Train && time == etime.Epoch:
 		axon.LayerActsLogAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
 	}
@@ -1112,6 +1135,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	ss.GUI.AddPlots(title, &ss.Logs)
 
+	ss.GUI.AddTableView(&ss.Logs, etime.Debug, etime.Trial)
+
 	axon.LayerActsLogConfigGUI(&ss.Logs, &ss.GUI)
 
 	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "Init", Icon: "update",
@@ -1123,15 +1148,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 
-	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train, etime.Test})
-	ss.GUI.AddToolbarItem(egui.ToolbarItem{Label: "TestInit", Icon: "update",
-		Tooltip: "reinitialize the testing control so it re-runs.",
-		Active:  egui.ActiveStopped,
-		Func: func() {
-			ss.Loops.ResetCountersByMode(etime.Test)
-			ss.GUI.UpdateWindow()
-		},
-	})
+	ss.GUI.AddLooperCtrl(ss.Loops, []etime.Modes{etime.Train})
 
 	////////////////////////////////////////////////
 	ss.GUI.ToolBar.AddSeparator("log")

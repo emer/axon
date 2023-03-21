@@ -40,8 +40,8 @@ func (pp *PVLVParams) Val(val float32) float32 {
 
 func (ly *Layer) BLADefaults() {
 	lp := ly.Params
-	lp.Act.Decay.Act = 1
-	lp.Act.Decay.Glong = 1
+	lp.Act.Decay.Act = 0
+	lp.Act.Decay.Glong = 0
 	lp.Act.Dend.SSGi = 0
 	lp.Inhib.Layer.On.SetBool(true)
 	lp.Inhib.Layer.Gi = 1.8
