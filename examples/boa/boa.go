@@ -79,9 +79,9 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 50
-	ss.PctCortexNEpc = 20
-	ss.PctCortexInterval = 2
+	ss.PctCortexStEpc = 10
+	ss.PctCortexNEpc = 10
+	ss.PctCortexInterval = 1
 	ss.PCAInterval = 10
 }
 
@@ -126,7 +126,7 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
 	ss.Context.Defaults()
-	ss.Context.PVLV.Effort.Gain = 0.02
+	ss.Context.PVLV.Effort.Gain = 0.05
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -264,7 +264,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectLayers(drives, ofcCT, pone2one, emer.Forward).SetClass("DrivesToOFC")
 	net.ConnectLayers(vPgpi, ofcMD, full, emer.Inhib).SetClass("BgFixed")
 	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
-	net.ConnectLayers(usPos, ofc, pone2one, emer.Forward)
+	net.ConnectLayers(usPos, ofc, pone2one, emer.Back)
 	net.ConnectLayers(ofcPT, ofcCT, pone2one, emer.Forward) // good?
 
 	net.ConnectLayers(usPos, ofcPTPred, pone2one, emer.Forward)
@@ -295,6 +295,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(dist, accPTPred, full, emer.Forward)
 	net.ConnectLayers(effort, accPTPred, full, emer.Forward)
 
+	net.ConnectLayers(acc, ofc, full, emer.Back)
+	net.ConnectLayers(ofc, acc, full, emer.Back)
+
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxGo.SetBuildConfig("ThalLay2Name", accMD.Name())
@@ -302,7 +305,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// m1P plus phase has action, Ctxt -> CT allows CT now to use that prev action
 
-	alm, almCT := net.AddSuperCT2D("ALM", nuCtxY+2, nuCtxX+2, space, one2one)
+	alm, almCT := net.AddSuperCT2D("ALM", nuCtxY, nuCtxX, space, one2one)
 	// almpt, almthal := net.AddPTThalForSuper(alm, almCT, "MD", one2one, full, full, space)
 	almCT.SetClass("ALM CTCopy")
 	// _ = almpt
@@ -487,7 +490,7 @@ func (ss *Sim) ConfigLoops() {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	maxTrials := ev.TimeMax + 5 // allow for extra time for gating trials
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 100).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
 
 	// man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
 
@@ -649,7 +652,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 
 // DecodeAct decodes the VL ActM state to find closest action pattern
 func (ss *Sim) DecodeAct(ev *Approach) (int, string) {
-	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "Act")
+	vt := ss.Stats.SetLayerTensor(ss.Net, "VL", "CaSpkP") // was "Act"
 	return ev.DecodeAct(vt)
 }
 
@@ -706,6 +709,9 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
 	if ev.US != -1 {
 		dr.SetPosUS(int32(ev.US), 1) // magnitude always 1
 		ctx.NeuroMod.HasRew.SetBool(true)
+	}
+	if ss.Context.PVLV.VSMatrix.JustGated.IsTrue() {
+		ss.Context.PVLV.Effort.Reset() // always start counting at start of goal
 	}
 	dr.Effort.AddEffort(1) // should be based on action taken last step
 	dr.InitDrives()
@@ -863,7 +869,6 @@ func (ss *Sim) GatedStats() {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	justGated := ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
 	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
-	// fmt.Printf("justGated: %v\n", justGated)
 	ss.Stats.SetFloat32("JustGated", bools.ToFloat32(justGated))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
 	ss.Stats.SetFloat32("HasGated", bools.ToFloat32(hasGated))
@@ -976,7 +981,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate")
+	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate", "DA", "RewPred", "RewPred_NR", "LeftCor")
 	// "MaintofcPT", "MaintaccPT", "MaintFailofcPT", "MaintFailaccPT"
 	// "GateUS", "GatedEarly", "GatedAgain", "JustGated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
@@ -1089,7 +1094,10 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
 	case mode == etime.Train && time == etime.Trial:
-		if !ss.Context.PVLV.HasPosUS() && ss.Stats.Float("JustGated") == 1 {
+		// if !ss.Context.PVLV.HasPosUS() && ss.Stats.Float("JustGated") == 1 {
+		// 	axon.LayerActsLog(ss.Net, &ss.Logs, &ss.GUI)
+		// }
+		if !ss.Context.PVLV.HasPosUS() && ss.Context.PVLV.VSMatrix.HasGated.IsTrue() { // maint
 			axon.LayerActsLog(ss.Net, &ss.Logs, &ss.GUI)
 		}
 		ss.Logs.Log(etime.Debug, etime.Trial)

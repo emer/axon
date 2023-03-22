@@ -174,7 +174,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1", // controls extinction -- works fine at 1
 					"Layer.PVLV.Thr":                   "0.3",
-					"Layer.PVLV.Gain":                  "6",
+					"Layer.PVLV.Gain":                  "8",
+					"Layer.VSPatch.NoDALRate":          "0.1", // 0.1 exinguishes Ok, .2 too high, 0.05 too low in BOA
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{

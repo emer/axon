@@ -36,6 +36,34 @@ func (pp *PVLVParams) Val(val float32) float32 {
 	return pp.Gain * vs
 }
 
+// VSPatchParams parameters for VSPatch learning
+type VSPatchParams struct {
+	NoDALRate float32 `def:"0.1" desc:"learning rate when no positive dopamine is present (i.e., when not learning to predict a positive valence PV / US outcome.  if too high, extinguishes too quickly.  if too low, doesn't discriminate US vs. non-US trials as well."`
+	NoDAThr   float32 `def:"0.01" desc:"threshold on DA level to engage the NoDALRate -- use a small positive number just in case"`
+
+	pad, pad1 float32
+}
+
+func (pp *VSPatchParams) Defaults() {
+	pp.NoDALRate = 0.1
+	pp.NoDAThr = 0.01
+}
+
+func (pp *VSPatchParams) Update() {
+
+}
+
+// DALRate returns the learning rate modulation factor modlr based on dopamine level
+func (pp *VSPatchParams) DALRate(da, modlr float32) float32 {
+	if da <= pp.NoDAThr {
+		if modlr < -pp.NoDALRate { // big dip: use it
+			return modlr
+		}
+		return -pp.NoDALRate
+	}
+	return modlr
+}
+
 //gosl: end pvlv_layers
 
 func (ly *Layer) BLADefaults() {

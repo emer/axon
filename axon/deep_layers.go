@@ -144,14 +144,15 @@ func (ly *Layer) PTMaintDefaults() {
 }
 
 func (ly *Layer) PTNotMaintDefaults() {
-	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.Act = 1
+	ly.Params.Act.Decay.Glong = 1
 	ly.Params.Act.Decay.OnRew.SetBool(true)
-	ly.Params.Act.Init.GeBase = 1.0
+	ly.Params.Act.Init.GeBase = 1.2
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.2
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.CT.GeGain = 0.2
 	ly.Params.CT.DecayTau = 0
 	ly.Params.CT.Update()

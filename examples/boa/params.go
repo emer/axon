@@ -36,7 +36,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.12",
 					"Layer.CT.GeGain":            "0.01",
 					"Layer.CT.DecayTau":          "50",
-					"Layer.Inhib.Layer.Gi":       "0.8", // overridden by OFCPTPred below
+					"Layer.Inhib.Layer.Gi":       "0.8", // 0.8 overridden by OFCPTPred below
 					"Layer.Inhib.Pool.Gi":        "0.8",
 					"Layer.Act.GABAB.Gbar":       "0.2", // regular
 					"Layer.Act.NMDA.Gbar":        "0.15",
@@ -57,6 +57,13 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
 					"Layer.Act.Dend.ModGain": "30",   // 10?
+				}},
+			{Sel: ".PTNotMaintLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Act.Init.GeBase": "1.2",
+					"Layer.Act.Decay.Act":   "1.0",
+					"Layer.Act.Decay.Glong": "1.0",
+					"Layer.Inhib.Layer.Gi":  "0.5",
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -90,9 +97,10 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":              "0.5",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
-					"Layer.Learn.NeuroMod.DipGain":     "1",   // controls extinction -- works fine at 1
-					"Layer.PVLV.Thr":                   "0.2", // .2 -- .25 doesn't get strong enough to overcome DA
-					"Layer.PVLV.Gain":                  "6",
+					"Layer.Learn.NeuroMod.DipGain":     "1",    // controls extinction -- works fine at 1
+					"Layer.PVLV.Thr":                   "0.25", // .2 -- .25 doesn't get strong enough to overcome DA, .15 is too low
+					"Layer.PVLV.Gain":                  "10",   //
+					"Layer.VSPatch.NoDALRate":          "0.2",  // 0.05 is just not quite sufficient
 				}},
 			{Sel: "#CS", Desc: "expect act",
 				Params: params.Params{
@@ -112,7 +120,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":      "0.0",
 					"Layer.Act.Decay.OnRew":      "true", // everything clears
 					"Layer.Inhib.ActAvg.Nominal": "0.025",
-					"Layer.Inhib.Layer.Gi":       "1.1",
+					"Layer.Inhib.Layer.Gi":       "1.1", // todo: 1.4?
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.0",
 					"Layer.Act.Dend.SSGi":        "0",
@@ -124,7 +132,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFC", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.2", // was 1.1
+					"Layer.Inhib.Layer.Gi": "1.2", // todo: 1.4?
+					"Layer.Inhib.Pool.Gi":  "1.0", // was 1.1
 				}},
 			{Sel: "#OFCPT", Desc: "",
 				Params: params.Params{
@@ -162,7 +171,6 @@ var ParamSets = params.Sets{
 			{Sel: "#ACCPTPred", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8",
-					"Layer.Inhib.Pool.Gi":  "0.8",
 				}},
 			{Sel: "#ACCMD", Desc: "",
 				Params: params.Params{
@@ -197,6 +205,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
+					"Layer.Act.Decay.Act":             "0.0",
+					"Layer.Act.Decay.Glong":           "0.0",
 					"Layer.Inhib.ActAvg.Nominal":      "0.025",
 					"Layer.Inhib.Layer.Gi":            "1.8", // needs to be strong to prevent random off-US act
 					"Layer.Inhib.Pool.Gi":             "0.9",
@@ -337,7 +347,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#OFCToOFCMD", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "6.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "4.0", // 6? if this is too strong, it gates to the wrong CS
 				}},
 			/*
 				{Sel: "#OFCToALM", Desc: "",
@@ -453,16 +463,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "3",
+					"Prjn.PrjnScale.Abs":    "3",   // 3 orig
 					"Prjn.Learn.LRate.Base": "0.2", // 0.2 > 0.02..?
 				}},
-			{Sel: "#OFCPTPredToVSPatch", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "6", // let ofc is more dominant, has pools
-				}},
+			// {Sel: "#OFCPTPredToVSPatch", Desc: "",
+			// 	Params: params.Params{
+			// 		"Prjn.PrjnScale.Abs": "3", // let ofc is more dominant, has pools
+			// 	}},
 			{Sel: "#ALMCTToVSPatch", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3", // todo: explore
+					"Prjn.PrjnScale.Abs": "2", // todo: explore
 				}},
 
 			// BG prjns

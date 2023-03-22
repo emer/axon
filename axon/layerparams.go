@@ -101,6 +101,7 @@ type LayerParams struct {
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
 	PVLV    PVLVParams    `viewif:"LayType=[PPTgLayer,VSPatchLayer]" view:"inline" desc:"parameters for readout of values as inputs to PVLV equations -- provides thresholding and gain multiplier."`
+	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline" desc:"parameters for VSPatch learning"`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
 
@@ -123,6 +124,7 @@ func (ly *LayerParams) Update() {
 	ly.TDDa.Update()
 
 	ly.PVLV.Update()
+	ly.VSPatch.Update()
 
 	ly.Matrix.Update()
 	ly.GP.Update()
@@ -147,6 +149,7 @@ func (ly *LayerParams) Defaults() {
 	ly.TDDa.Defaults()
 
 	ly.PVLV.Defaults()
+	ly.VSPatch.Defaults()
 
 	ly.Matrix.Defaults()
 	ly.GP.Defaults()
@@ -168,40 +171,44 @@ func (ly *LayerParams) AllParams() string {
 	switch ly.LayType {
 	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Burst, "", " ")
-		str += "Burst: {\n " + JsonToParams(b)
+		str += "Burst:   {\n " + JsonToParams(b)
 	case CTLayer, PTPredLayer, PTNotMaintLayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
-		str += "CT:    {\n " + JsonToParams(b)
+		str += "CT:      {\n " + JsonToParams(b)
 	case PulvinarLayer:
 		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
-		str += "Pulv:  {\n " + JsonToParams(b)
+		str += "Pulv:    {\n " + JsonToParams(b)
 
 	case RSalienceAChLayer:
 		b, _ = json.MarshalIndent(&ly.RSalACh, "", " ")
 		str += "RSalACh: {\n " + JsonToParams(b)
 	case RWPredLayer:
 		b, _ = json.MarshalIndent(&ly.RWPred, "", " ")
-		str += "RWPred: {\n " + JsonToParams(b)
+		str += "RWPred:  {\n " + JsonToParams(b)
 	case RWDaLayer:
 		b, _ = json.MarshalIndent(&ly.RWDa, "", " ")
-		str += "RWDa:   {\n " + JsonToParams(b)
+		str += "RWDa:    {\n " + JsonToParams(b)
 	case TDIntegLayer:
 		b, _ = json.MarshalIndent(&ly.TDInteg, "", " ")
 		str += "TDInteg: {\n " + JsonToParams(b)
 	case TDDaLayer:
 		b, _ = json.MarshalIndent(&ly.TDDa, "", " ")
-		str += "TDDa:   {\n " + JsonToParams(b)
+		str += "TDDa:    {\n " + JsonToParams(b)
 
-	case PPTgLayer, VSPatchLayer:
+	case VSPatchLayer:
+		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
+		str += "VSPatch: {\n " + JsonToParams(b)
+		fallthrough
+	case PPTgLayer:
 		b, _ = json.MarshalIndent(&ly.PVLV, "", " ")
-		str += "PVLV:   {\n " + JsonToParams(b)
+		str += "PVLV:    {\n " + JsonToParams(b)
 
 	case MatrixLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
-		str += "Matrix: {\n " + JsonToParams(b)
+		str += "Matrix:  {\n " + JsonToParams(b)
 	case GPLayer:
 		b, _ = json.MarshalIndent(&ly.GP, "", " ")
-		str += "GP:     {\n " + JsonToParams(b)
+		str += "GP:      {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -860,9 +867,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous trial
 	case VSPatchLayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
-		if vals.NeuroMod.DA <= 0.01 && modlr > -0.5 { // always decrease if no DA
-			modlr = -0.5
-		}
+		modlr = ly.VSPatch.DALRate(vals.NeuroMod.DA, modlr) // always decrease if no DA
 	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 	}
