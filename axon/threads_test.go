@@ -322,11 +322,11 @@ func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa int) *Netwo
 	 * Input -> Hidden -> Hidden3 -> Output
 	 *       -> Hidden2 -^
 	 */
-	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer)
-	hiddenLayer2 := net.AddLayer("Hidden2", shape, emer.Hidden).(AxonLayer)
-	hiddenLayer3 := net.AddLayer("Hidden3", shape, emer.Hidden).(AxonLayer)
-	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
+	inputLayer := net.AddLayer("Input", shape, InputLayer)
+	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
+	hiddenLayer2 := net.AddLayer("Hidden2", shape, SuperLayer)
+	hiddenLayer3 := net.AddLayer("Hidden3", shape, SuperLayer)
+	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 	net.ConnectLayers(inputLayer, hiddenLayer, prjn.NewFull(), emer.Forward)
 	net.ConnectLayers(inputLayer, hiddenLayer2, prjn.NewFull(), emer.Forward)
 	net.BidirConnectLayers(hiddenLayer, hiddenLayer3, prjn.NewFull())

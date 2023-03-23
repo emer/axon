@@ -5,10 +5,14 @@
 package axon
 
 import (
+	"strconv"
+
+	"github.com/emer/emergent/egui"
 	"github.com/emer/emergent/elog"
 	"github.com/emer/emergent/estats"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/etable/agg"
+	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/emer/etable/metric"
@@ -37,7 +41,7 @@ func LogTestErrors(lg *elog.Logs) {
 // PCAStats computes PCA statistics on recorded hidden activation patterns
 // from Analyze, Trial log data
 func PCAStats(net *Network, lg *elog.Logs, stats *estats.Stats) {
-	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByType(SuperLayer, TargetLayer, CTLayer))
+	stats.PCAStats(lg.IdxView(etime.Analyze, etime.Trial), "ActM", net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer))
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -46,7 +50,7 @@ func PCAStats(net *Network, lg *elog.Logs, stats *estats.Stats) {
 // LogAddDiagnosticItems adds standard Axon diagnostic statistics to given logs,
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
-func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Times) {
+func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes, times ...etime.Times) {
 	for _, lnm := range layerNames {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
@@ -55,10 +59,10 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Ti
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Avg)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 
@@ -68,10 +72,10 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Ti
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Max)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 		lg.AddItem(&elog.Item{
@@ -79,10 +83,10 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Ti
 			Type:  etensor.FLOAT64,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.Ge.Minus.Max)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+					ctx.SetFloat32(ly.Pools[0].AvgMax.GeInt.Minus.Max)
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
 				}}})
@@ -100,7 +104,7 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, times ...etime.Ti
 	}
 }
 
-func LogInputLayer(lg *elog.Logs, net *Network) {
+func LogInputLayer(lg *elog.Logs, net *Network, mode etime.Modes) {
 	// input layer average activity -- important for tuning
 	layerNames := net.LayersByType(InputLayer)
 	for _, lnm := range layerNames {
@@ -121,8 +125,8 @@ func LogInputLayer(lg *elog.Logs, net *Network) {
 // LogAddPCAItems adds PCA statistics to log for Hidden and Target layers
 // across 3 given time levels, in higher to lower order, e.g., Run, Epoch, Trial
 // These are useful for diagnosing the behavior of the network.
-func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer)
+func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etime.Times) {
+	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer)
 	for _, lnm := range layers {
 		clnm := lnm
 		cly := net.LayerByName(clnm)
@@ -144,7 +148,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
@@ -154,7 +158,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
@@ -164,7 +168,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
@@ -174,7 +178,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
 					ctx.SetStatFloat(ctx.Item.Name)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ix := ctx.LastNRows(ctx.Mode, times[1], 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
 				}}})
@@ -212,8 +216,8 @@ func LogAddLayerGeActAvgItems(lg *elog.Logs, net *Network, mode etime.Modes, etm
 // LogAddExtraDiagnosticItems adds extra Axon diagnostic statistics to given logs,
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These are useful for tuning and diagnosing the behavior of the network.
-func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
-	layers := net.LayersByType(SuperLayer, CTLayer, TargetLayer)
+func LogAddExtraDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, times ...etime.Times) {
+	layers := net.LayersByType(SuperLayer, CTLayer, PTPredLayer, TargetLayer)
 	for _, lnm := range layers {
 		clnm := lnm
 		lg.AddItem(&elog.Item{
@@ -222,10 +226,10 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].AvgMax.CaSpkP.Minus.Avg)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 		lg.AddItem(&elog.Item{
@@ -234,10 +238,10 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].AvgMax.CaSpkP.Minus.Max)
-				}, etime.Scope(etime.AllModes, times[0]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
 		lg.AddItem(&elog.Item{
@@ -265,7 +269,7 @@ func LogAddExtraDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 // across two given time levels, in higher to lower order, e.g., Epoch, Trial
 // These were useful for the development of the Ca-based "trace" learning rule
 // that directly uses NMDA and VGCC-like spiking Ca
-func LogAddCaLrnDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Times) {
+func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, times ...etime.Times) {
 	layers := net.LayersByType(SuperLayer, TargetLayer)
 	for _, lnm := range layers {
 		clnm := lnm
@@ -438,7 +442,7 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, net *Network, times ...etime.Time
 // LogAddPulvCorSimItems adds CorSim stats for Pulv / Pulvinar layers
 // aggregated across three time scales, ordered from higher to lower,
 // e.g., Run, Epoch, Trial.
-func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
+func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etime.Times) {
 	layers := net.LayersByType(PulvinarLayer)
 	for _, lnm := range layers {
 		clnm := lnm
@@ -449,10 +453,10 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			FixMax: true,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Vals.CorSim.Cor)
-				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[2], agg.AggMean)
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ix := ctx.LastNRows(etime.Train, times[1], 5) // cached
@@ -465,10 +469,10 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			FixMax: false,
 			Range:  minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Pools[0].AvgMax.Act.Minus.Avg)
-				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Vals.ActAvg.ActMAvg)
 				}}})
@@ -478,12 +482,148 @@ func LogAddPulvCorSimItems(lg *elog.Logs, net *Network, times ...etime.Times) {
 			Plot:  false,
 			Range: minmax.F64{Max: 1},
 			Write: elog.WriteMap{
-				etime.Scope(etime.AllModes, times[2]): func(ctx *elog.Context) {
+				etime.Scope(mode, times[2]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
-					ctx.SetFloat32(ly.Pools[0].AvgMax.Ge.Minus.Max)
-				}, etime.Scope(etime.AllModes, times[1]): func(ctx *elog.Context) {
+					ctx.SetFloat32(ly.Pools[0].AvgMax.GeInt.Minus.Max)
+				}, etime.Scope(mode, times[1]): func(ctx *elog.Context) {
 					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
 					ctx.SetFloat32(ly.Vals.ActAvg.AvgMaxGeM)
 				}}})
 	}
+}
+
+// LayerActsLogConfigMetaData configures meta data for LayerActs table
+func LayerActsLogConfigMetaData(dt *etable.Table) {
+	dt.SetMetaData("read-only", "true")
+	dt.SetMetaData("precision", strconv.Itoa(elog.LogPrec))
+	dt.SetMetaData("Type", "Bar")
+	dt.SetMetaData("XAxisCol", "Layer")
+	dt.SetMetaData("XAxisRot", "45")
+	dt.SetMetaData("Nominal:On", "+")
+	dt.SetMetaData("Nominal:FixMin", "+")
+	dt.SetMetaData("ActM:On", "+")
+	dt.SetMetaData("ActM:FixMin", "+")
+	dt.SetMetaData("ActM:Max", "1")
+	dt.SetMetaData("ActP:FixMin", "+")
+	dt.SetMetaData("ActP:Max", "1")
+	dt.SetMetaData("MaxGeM:FixMin", "+")
+	dt.SetMetaData("MaxGeM:FixMax", "+")
+	dt.SetMetaData("MaxGeM:Max", "3")
+	dt.SetMetaData("MaxGeP:FixMin", "+")
+	dt.SetMetaData("MaxGeP:FixMax", "+")
+	dt.SetMetaData("MaxGeP:Max", "3")
+}
+
+// LayerActsLogConfig configures Tables to record
+// layer activity for tuning the network inhibition, nominal activity,
+// relative scaling, etc. in elog.MiscTables:
+// LayerActs is current, LayerActsRec is record over trials,
+// LayerActsAvg is average of recorded trials.
+func LayerActsLogConfig(net *Network, lg *elog.Logs) {
+	dt := lg.MiscTable("LayerActs")
+	dt.SetMetaData("name", "LayerActs")
+	dt.SetMetaData("desc", "Layer Activations")
+	LayerActsLogConfigMetaData(dt)
+	dtRec := lg.MiscTable("LayerActsRec")
+	dtRec.SetMetaData("name", "LayerActsRec")
+	dtRec.SetMetaData("desc", "Layer Activations Recorded")
+	LayerActsLogConfigMetaData(dtRec)
+	dtAvg := lg.MiscTable("LayerActsAvg")
+	dtAvg.SetMetaData("name", "LayerActsAvg")
+	dtAvg.SetMetaData("desc", "Layer Activations Averaged")
+	LayerActsLogConfigMetaData(dtAvg)
+	sch := etable.Schema{
+		{"Layer", etensor.STRING, nil, nil},
+		{"Nominal", etensor.FLOAT64, nil, nil},
+		{"ActM", etensor.FLOAT64, nil, nil},
+		{"ActP", etensor.FLOAT64, nil, nil},
+		{"MaxGeM", etensor.FLOAT64, nil, nil},
+		{"MaxGeP", etensor.FLOAT64, nil, nil},
+	}
+	nlay := len(net.Layers)
+	dt.SetFromSchema(sch, nlay)
+	dtRec.SetFromSchema(sch, 0)
+	dtAvg.SetFromSchema(sch, nlay)
+	for li, lyi := range net.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		dt.SetCellString("Layer", li, ly.Nm)
+		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
+		dtAvg.SetCellString("Layer", li, ly.Nm)
+	}
+}
+
+// LayerActsLog records layer activity for tuning the network
+// inhibition, nominal activity, relative scaling, etc.
+// if gui is non-nil, plot is updated.
+func LayerActsLog(net *Network, lg *elog.Logs, gui *egui.GUI) {
+	dt := lg.MiscTable("LayerActs")
+	dtRec := lg.MiscTable("LayerActsRec")
+	for li, lyi := range net.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		lpl := &ly.Pools[0]
+		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
+		dt.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
+		dt.SetCellFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
+		dt.SetCellFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
+		dt.SetCellFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
+		dtRec.SetNumRows(dtRec.Rows + 1)
+		dtRec.SetCellString("Layer", li, ly.Nm)
+		dtRec.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
+		dtRec.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
+		dtRec.SetCellFloat("ActP", li, float64(lpl.AvgMax.Act.Plus.Avg))
+		dtRec.SetCellFloat("MaxGeM", li, float64(lpl.AvgMax.GeInt.Minus.Max))
+		dtRec.SetCellFloat("MaxGeP", li, float64(lpl.AvgMax.GeInt.Plus.Max))
+	}
+	if gui != nil {
+		gui.UpdatePlotScope(etime.ScopeKey("LayerActs"))
+	}
+}
+
+// LayerActsLogAvg computes average of LayerActsRec record
+// of layer activity for tuning the network
+// inhibition, nominal activity, relative scaling, etc.
+// if gui is non-nil, plot is updated.
+// if recReset is true, reset the recorded data after computing average.
+func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) {
+	dtRec := lg.MiscTable("LayerActsRec")
+	dtAvg := lg.MiscTable("LayerActsAvg")
+	if dtRec.Rows == 0 {
+		return
+	}
+	ix := etable.NewIdxView(dtRec)
+	spl := split.GroupBy(ix, []string{"Layer"})
+	split.AggAllNumericCols(spl, agg.AggMean)
+	ags := spl.AggsToTable(etable.ColNameOnly)
+	cols := []string{"Nominal", "ActM", "ActP", "MaxGeM", "MaxGeP"}
+	for li, lyi := range net.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		rw := ags.RowsByString("Layer", ly.Nm, etable.Equals, etable.UseCase)[0]
+		for _, cn := range cols {
+			dtAvg.SetCellFloat(cn, li, ags.CellFloat(cn, rw))
+		}
+	}
+	if recReset {
+		dtRec.SetNumRows(0)
+	}
+	if gui != nil {
+		gui.UpdatePlotScope(etime.ScopeKey("LayerActsAvg"))
+	}
+}
+
+// LayerActsLogRecReset resets the recorded LayerActsRec data
+// used for computing averages
+func LayerActsLogRecReset(lg *elog.Logs) {
+	dtRec := lg.MiscTable("LayerActsRec")
+	dtRec.SetNumRows(0)
+}
+
+// LayerActsLogConfigGUI configures GUI for LayerActsLog Plot and LayerActs Avg Plot
+func LayerActsLogConfigGUI(lg *elog.Logs, gui *egui.GUI) {
+	plt := gui.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Plot").(*eplot.Plot2D)
+	gui.Plots["LayerActs"] = plt
+	plt.SetTable(lg.MiscTables["LayerActs"])
+
+	plt = gui.TabView.AddNewTab(eplot.KiT_Plot2D, "LayerActs Avg Plot").(*eplot.Plot2D)
+	gui.Plots["LayerActsAvg"] = plt
+	plt.SetTable(lg.MiscTables["LayerActsAvg"])
 }

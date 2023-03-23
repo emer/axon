@@ -181,11 +181,10 @@ func (ai *ActInitParams) GetGiBase() float32 {
 // DecayParams control the decay of activation state in the DecayState function
 // called in NewState when a new state is to be processed.
 type DecayParams struct {
-	Act   float32 `def:"0,0.2,0.5,1" max:"1" min:"0" desc:"proportion to decay most activation state variables toward initial values at start of every ThetaCycle (except those controlled separately below) -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
-	Glong float32 `def:"0,0.6" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow a fresh start -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
-	AHP   float32 `def:"0" max:"1" min:"0" desc:"decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa -- has a separate decay because often useful to have this not decay at all even if decay is on."`
-
-	pad int32
+	Act   float32     `def:"0,0.2,0.5,1" max:"1" min:"0" desc:"proportion to decay most activation state variables toward initial values at start of every ThetaCycle (except those controlled separately below) -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
+	Glong float32     `def:"0,0.6" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow a fresh start -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
+	AHP   float32     `def:"0" max:"1" min:"0" desc:"decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa -- has a separate decay because often useful to have this not decay at all even if decay is on."`
+	OnRew slbool.Bool `desc:"decay layer at end of ThetaCycle when there is a global reward -- true by default for PTPred, PTMaint and PFC Super layers"`
 }
 
 func (ai *DecayParams) Update() {
@@ -208,7 +207,7 @@ type DtParams struct {
 	VmSteps     int32   `def:"2" min:"1" desc:"number of integration steps to take in computing new Vm value -- this is the one computation that can be most numerically unstable so taking multiple steps with proportionally smaller dt is beneficial"`
 	GeTau       float32 `def:"5" min:"1" desc:"time constant for decay of excitatory AMPA receptor conductance."`
 	GiTau       float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
-	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, and for GeM from Ge -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
+	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, GeInt from Ge, and GiInt from GiSyn -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
 	LongAvgTau  float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
 	MaxCycStart int32   `def:"50" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state"`
 
@@ -399,6 +398,97 @@ func (at *AttnParams) ModVal(val float32, attn float32) float32 {
 	return val * (at.Min + (1-at.Min)*attn)
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//  PopCodeParams
+
+// PopCodeParams provides an encoding of scalar value using population code,
+// where a single continuous (scalar) value is encoded as a gaussian bump
+// across a population of neurons (1 dimensional).
+// It can also modulate rate code and number of neurons active according to the value.
+// This is for layers that represent values as in the PVLV system (from Context.PVLV).
+// Both normalized activation values (1 max) and Ge conductance values can be generated.
+type PopCodeParams struct {
+	On       slbool.Bool `desc:"use popcode encoding of variable(s) that this layer represents"`
+	Ge       float32     `viewif:"On" def:"0.1" desc:"Ge multiplier for driving excitatory conductance based on PopCode -- multiplies normalized activation values"`
+	Min      float32     `viewif:"On" def:"-0.1" desc:"minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	Max      float32     `viewif:"On" def:"1.1" desc:"maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
+	MinAct   float32     `viewif:"On" def:"1,0.5" desc:"activation multiplier for values at Min end of range, where values at Max end have an activation of 1 -- if this is < 1, then there is a rate code proportional to the value in addition to the popcode pattern -- see also MinSigma, MaxSigma"`
+	MinSigma float32     `viewif:"On" def:"0.1,0.08" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma < MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
+	MaxSigma float32     `viewif:"On" def:"0.1,0.12" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma < MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
+	Clip     slbool.Bool `viewif:"On" desc:"ensure that encoded and decoded value remains within specified range"`
+}
+
+func (pc *PopCodeParams) Defaults() {
+	pc.Ge = 0.1
+	pc.Min = -0.1
+	pc.Max = 1.1
+	pc.MinAct = 1
+	pc.MinSigma = 0.1
+	pc.MaxSigma = 0.1
+	pc.Clip.SetBool(true)
+}
+
+func (pc *PopCodeParams) Update() {
+}
+
+// SetRange sets the min, max and sigma values
+func (pc *PopCodeParams) SetRange(min, max, minSigma, maxSigma float32) {
+	pc.Min = min
+	pc.Max = max
+	pc.MinSigma = minSigma
+	pc.MaxSigma = maxSigma
+}
+
+// ClipVal returns clipped (clamped) value in min / max range
+func (pc *PopCodeParams) ClipVal(val float32) float32 {
+	clipVal := val
+	if clipVal < pc.Min {
+		clipVal = pc.Min
+	}
+	if clipVal > pc.Max {
+		clipVal = pc.Max
+	}
+	return clipVal
+}
+
+// ProjectParam projects given min / max param value onto val within range
+func (pc *PopCodeParams) ProjectParam(minParam, maxParam, clipVal float32) float32 {
+	normVal := (clipVal - pc.Min) / (pc.Max - pc.Min)
+	return minParam + normVal*(maxParam-minParam)
+}
+
+// EncodeVal returns value for given value, for neuron index i
+// out of n total neurons. n must be 2 or more.
+func (pc *PopCodeParams) EncodeVal(i, n uint32, val float32) float32 {
+	clipVal := pc.ClipVal(val)
+	if pc.Clip.IsTrue() {
+		val = clipVal
+	}
+	rng := pc.Max - pc.Min
+	act := float32(1)
+	if pc.MinAct < 1 {
+		act = pc.ProjectParam(pc.MinAct, 1.0, clipVal)
+	}
+	sig := pc.MinSigma
+	if pc.MaxSigma > pc.MinSigma {
+		sig = pc.ProjectParam(pc.MinSigma, pc.MaxSigma, clipVal)
+	}
+	gnrm := 1.0 / (rng * sig)
+	incr := rng / float32(n-1)
+	trg := pc.Min + incr*float32(i)
+	dist := gnrm * (trg - val)
+	return act * mat32.FastExp(-(dist * dist))
+}
+
+// EncodeGe returns Ge value for given value, for neuron index i
+// out of n total neurons. n must be 2 or more.
+func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
+	return pc.Ge * pc.EncodeVal(i, n, val)
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//  ActParams
+
 // axon.ActParams contains all the activation computation params and functions
 // for basic Axon, at the neuron level .
 // This is included in axon.Layer to drive the computation.
@@ -422,6 +512,7 @@ type ActParams struct {
 	AK      chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
 	SKCa    chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
 	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
+	PopCode PopCodeParams     `view:"inline" desc:"provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)"`
 }
 
 func (ac *ActParams) Defaults() {
@@ -453,6 +544,7 @@ func (ac *ActParams) Defaults() {
 	ac.SKCa.Defaults()
 	ac.SKCa.Gbar = 0
 	ac.Attn.Defaults()
+	ac.PopCode.Defaults()
 	ac.Update()
 }
 
@@ -474,6 +566,7 @@ func (ac *ActParams) Update() {
 	ac.AK.Update()
 	ac.SKCa.Update()
 	ac.Attn.Update()
+	ac.PopCode.Update()
 }
 
 ///////////////////////////////////////////////////////////////////////
@@ -542,7 +635,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
 
-	// nrn.CtxtGe -= glong * nrn.CtxtGe
+	nrn.CtxtGeOrig -= glong * nrn.CtxtGeOrig
 }
 
 //gosl: end act
@@ -621,12 +714,13 @@ func (ac *ActParams) InitActs(nrn *Neuron) {
 
 	nrn.CtxtGe = 0
 	nrn.CtxtGeRaw = 0
+	nrn.CtxtGeOrig = 0
 
 	ac.InitLongActs(nrn)
 }
 
 // InitLongActs initializes longer time-scale activation states in neuron
-// (SpkPrv, SpkSt*, ActM, ActP, GeM)
+// (SpkPrv, SpkSt*, ActM, ActP, GeInt, GiInt)
 // Called from InitActs, which is called from InitWts,
 // but otherwise not automatically called
 // (DecayState is used instead)
@@ -636,8 +730,8 @@ func (ac *ActParams) InitLongActs(nrn *Neuron) {
 	nrn.SpkSt2 = 0
 	nrn.ActM = 0
 	nrn.ActP = 0
-	nrn.GeM = 0
-	nrn.GiM = 0
+	nrn.GeInt = 0
+	nrn.GiInt = 0
 }
 
 //gosl: start act

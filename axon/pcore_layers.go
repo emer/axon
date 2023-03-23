@@ -8,6 +8,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/goki/gosl/slbool"
 	"github.com/goki/ki/kit"
 )
 
@@ -20,15 +21,18 @@ import (
 // updated in PlusPhase prior to DWt call.
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
-	// GPHasPools     bool        `desc:"do the GP pathways that we drive have separate pools that compete for selecting one out of multiple options in parallel (true) or is it a single big competition for Go vs. No (false).  If true, then Matrix must also have pools "`
-	GateThr        float32 `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
-	NoGoGeLrn      float32 `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
-	OtherMatrixIdx int32   `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
-	ThalLay1Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
-	ThalLay2Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used"`
-	ThalLay3Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used"`
-	ThalLay4Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used"`
-	ThalLay5Idx    int32   `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used"`
+	GateThr        float32     `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
+	NoGoGeLrn      float32     `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
+	IsVS           slbool.Bool `desc:"is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the ContextPVLV state, and used for updating effort and other factors."`
+	OtherMatrixIdx int32       `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
+	ThalLay1Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
+	ThalLay2Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay2Name if present -- -1 if not used"`
+	ThalLay3Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay3Name if present -- -1 if not used"`
+	ThalLay4Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay4Name if present -- -1 if not used"`
+	ThalLay5Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used"`
+	ThalLay6Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used"`
+
+	pad, pad1 int32
 }
 
 func (mp *MatrixParams) Defaults() {
@@ -118,6 +122,7 @@ func (ly *Layer) MatrixDefaults() {
 		if pj.Send.(AxonLayer).LayerType() == GPLayer { // From GPe TA or In
 			pj.Params.PrjnScale.Abs = 1
 			pj.Params.Learn.Learn.SetBool(false)
+			pj.Params.SWt.Adapt.On.SetBool(false)
 			pj.Params.SWt.Adapt.SigGain = 1
 			pj.Params.SWt.Init.Mean = 0.75
 			pj.Params.SWt.Init.Var = 0.0
@@ -137,7 +142,7 @@ func (ly *Layer) MatrixDefaults() {
 
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
 // downloaded from GPU
-func (ly *Layer) MatrixGated() bool {
+func (ly *Layer) MatrixGated(ctx *Context) bool {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
 		oly := ly.Network.Layer(int(ly.Params.Matrix.OtherMatrixIdx)).(AxonLayer).AsAxon()
 		ly.Pools[0].Gated = oly.Pools[0].Gated
@@ -167,6 +172,10 @@ func (ly *Layer) MatrixGated() bool {
 		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay5Idx)).(AxonLayer).AsAxon()
 		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
 	}
+	if ly.Params.Matrix.ThalLay6Idx >= 0 {
+		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay6Idx)).(AxonLayer).AsAxon()
+		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+	}
 
 	mtxGated = mtxGated && thalGated
 
@@ -181,6 +190,10 @@ func (ly *Layer) MatrixGated() bool {
 			pl := &ly.Pools[pi]
 			pl.Gated.SetBool(false)
 		}
+	}
+
+	if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
+		ctx.PVLV.VSMatrix.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue())
 	}
 	return mtxGated
 }
@@ -222,6 +235,7 @@ func (ly *Layer) MatrixPostBuild() {
 	ly.Params.Matrix.ThalLay3Idx = ly.BuildConfigFindLayer("ThalLay3Name", false) // optional
 	ly.Params.Matrix.ThalLay4Idx = ly.BuildConfigFindLayer("ThalLay4Name", false) // optional
 	ly.Params.Matrix.ThalLay5Idx = ly.BuildConfigFindLayer("ThalLay5Name", false) // optional
+	ly.Params.Matrix.ThalLay6Idx = ly.BuildConfigFindLayer("ThalLay6Name", false) // optional
 
 	ly.Params.Matrix.OtherMatrixIdx = ly.BuildConfigFindLayer("OtherMatrixName", true)
 
@@ -384,7 +398,7 @@ func (ly *Layer) VThalDefaults() {
 	ly.Params.Act.Dend.SSGi = 0
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
-	ly.Params.Inhib.ActAvg.Nominal = 0.25
+	ly.Params.Inhib.ActAvg.Nominal = 0.1
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(AxonPrjn).AsAxon()
@@ -398,4 +412,17 @@ func (ly *Layer) VThalDefaults() {
 			pj.Params.PrjnScale.Abs = 2 // was 2.5 for agate model..
 		}
 	}
+}
+
+////////////////////////////////////////////////////////////////////
+//  VSGated
+
+func (ly *LayerParams) VSGatedDefaults() {
+	ly.Inhib.ActAvg.Nominal = 0.5
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 1
+	ly.Inhib.Pool.On.SetBool(false)
+	ly.Inhib.Pool.Gi = 1
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
 }

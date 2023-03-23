@@ -44,6 +44,8 @@ type Approach struct {
 	LastUS      int                         `desc:"previous US state"`
 	StateCtr    int                         `desc:"count up for generating a new state"`
 	LastAct     int                         `desc:"last action taken"`
+	CS          int                         `desc:"current CS"`
+	LastCS      int                         `desc:"last CS -- previous trial"`
 	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
 	DidGate     bool                        `desc:"did gate at some point during sequence"`
 }
@@ -92,7 +94,6 @@ func (ev *Approach) Config() {
 	ev.States["CS"] = etensor.NewFloat32([]int{ev.NYReps, ev.NDrives}, nil, nil)
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
-	ev.States["Gate"] = etensor.NewFloat32([]int{ev.NYReps, 2}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
 	ev.States["Action"] = etensor.NewFloat32([]int{ev.NYReps, ev.NActs}, nil, nil)
 
@@ -208,6 +209,7 @@ func (ev *Approach) RenderState() {
 		cs := ev.States["CS"]
 		cs.CopyFrom(pat)
 	*/
+	ev.CS = patn
 	ev.RenderLocalist("CS", patn)
 }
 
@@ -229,6 +231,7 @@ func (ev *Approach) RenderAction(act int) {
 
 // Step does one step
 func (ev *Approach) Step() bool {
+	ev.LastCS = ev.CS
 	if ev.LastUS != -1 || ev.Time >= ev.TimeMax {
 		ev.NewStart()
 	}

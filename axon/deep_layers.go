@@ -91,7 +91,6 @@ func (tp *PulvParams) NonDrivePct(drvMax float32) float32 {
 
 // note: Defaults not called on GPU
 
-// called in Defaults for CT layer type
 func (ly *LayerParams) CTDefaults() {
 	ly.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Act.Decay.Glong = 0
@@ -105,14 +104,35 @@ func (ly *LayerParams) CTDefaults() {
 	// ly.Act.GABAB.Gbar = 0.3
 }
 
+func (ly *LayerParams) PTPredDefaults() {
+	ly.Act.Decay.Act = 0.2 // keep it dynamically changing
+	ly.Act.Decay.Glong = 0.6
+	ly.Act.Decay.AHP = 0
+	ly.Act.Decay.OnRew.SetBool(true)
+	// ly.Act.Dend.SSGi = 0 // key: otherwise interferes with NMDA maint!
+	ly.Inhib.Layer.Gi = 0.8
+	ly.Inhib.Pool.Gi = 0.8
+	ly.Act.Sahp.Gbar = 0.1    // more
+	ly.Act.KNa.Slow.Max = 0.2 // todo: more?
+	ly.CT.GeGain = 0.01
+	ly.CT.DecayTau = 50
+
+	// regular:
+	ly.Act.GABAB.Gbar = 0.2
+	ly.Act.NMDA.Gbar = 0.15
+	ly.Act.NMDA.Tau = 100
+}
+
 func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.Decay.Act = 0 // deep doesn't decay!
 	ly.Params.Act.Decay.Glong = 0
 	ly.Params.Act.Decay.AHP = 0
+	ly.Params.Act.Decay.OnRew.SetBool(true)
 	ly.Params.Act.NMDA.Gbar = 0.3 // long strong maint
 	ly.Params.Act.NMDA.Tau = 300
 	ly.Params.Act.GABAB.Gbar = 0.3
-	ly.Params.Act.Dend.ModGain = 200 // this multiplies thalamic input projections -- only briefly active so need to be strong
+	ly.Params.Act.Dend.ModGain = 30 // this multiplies thalamic input projections -- only briefly active so need to be strong
+	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 
 	for _, pji := range ly.RcvPrjns {
 		pj := pji.(AxonPrjn).AsAxon()
@@ -120,6 +140,26 @@ func (ly *Layer) PTMaintDefaults() {
 		if slay.LayerType() == VThalLayer {
 			pj.Params.Com.GType = ModulatoryG
 		}
+	}
+}
+
+func (ly *Layer) PTNotMaintDefaults() {
+	ly.Params.Act.Decay.Act = 1
+	ly.Params.Act.Decay.Glong = 1
+	ly.Params.Act.Decay.OnRew.SetBool(true)
+	ly.Params.Act.Init.GeBase = 1.2
+	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
+	ly.Params.Inhib.ActAvg.Nominal = 0.2
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.CT.GeGain = 0.2
+	ly.Params.CT.DecayTau = 0
+	ly.Params.CT.Update()
+
+	for _, pji := range ly.RcvPrjns {
+		pj := pji.(AxonPrjn).AsAxon()
+		pj.Params.SetFixedWts()
 	}
 }
 

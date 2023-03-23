@@ -15,9 +15,9 @@ import (
 func TestLayer(t *testing.T) {
 	net := NewNetwork("LayerTest")
 	shape := []int{2, 2}
-	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer).AsAxon()
-	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer).AsAxon()
-	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer).AsAxon()
+	inputLayer := net.AddLayer("Input", shape, InputLayer)
+	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
+	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 
 	assert.NoError(t, net.Build())
 
@@ -43,9 +43,9 @@ func TestLayer_SendSpike(t *testing.T) {
 	t.Skip("skipping -- needs reorg to recv based")
 	net := NewNetwork("LayerTest")
 	shape := []int{3, 3}
-	inputLayer1 := net.AddLayer("Input1", shape, emer.Input).(AxonLayer)
-	inputLayer2 := net.AddLayer("Input2", shape, emer.Input).(AxonLayer)
-	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
+	inputLayer1 := net.AddLayer("Input1", shape, InputLayer).(AxonLayer)
+	inputLayer2 := net.AddLayer("Input2", shape, InputLayer).(AxonLayer)
+	outputLayer := net.AddLayer("Output", shape, TargetLayer).(AxonLayer)
 	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), emer.Forward)
 	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), emer.Forward)
 
@@ -161,9 +161,9 @@ func TestLayerToJson(t *testing.T) {
 
 func createNetwork(shape []int, t *testing.T) *Network {
 	net := NewNetwork("LayerTest")
-	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden)
-	outputLayer := net.AddLayer("Output", shape, emer.Target)
+	inputLayer := net.AddLayer("Input", shape, InputLayer)
+	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
+	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 	full := prjn.NewFull()
 	net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
@@ -176,10 +176,10 @@ func createNetwork(shape []int, t *testing.T) *Network {
 func TestLayerBase_IsOff(t *testing.T) {
 	net := NewNetwork("LayerTest")
 	shape := []int{2, 2}
-	inputLayer := net.AddLayer("Input", shape, emer.Input).(AxonLayer)
-	inputLayer2 := net.AddLayer("Input2", shape, emer.Input).(AxonLayer)
-	hiddenLayer := net.AddLayer("Hidden", shape, emer.Hidden).(AxonLayer)
-	outputLayer := net.AddLayer("Output", shape, emer.Target).(AxonLayer)
+	inputLayer := net.AddLayer("Input", shape, InputLayer)
+	inputLayer2 := net.AddLayer("Input2", shape, InputLayer)
+	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
+	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 
 	full := prjn.NewFull()
 	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)

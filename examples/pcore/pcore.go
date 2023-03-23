@@ -216,7 +216,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	full := prjn.NewFull()
 	_ = full
 
-	snc := net.AddLayer2D("SNc", 1, 1, emer.Input)
+	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
 	_ = snc
 
 	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
@@ -235,10 +235,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxGo.SetBuildConfig("ThalLay1Name", thal.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", thal.Name())
 
-	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, emer.Input)
-	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, emer.Input)
-	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, emer.Input)
-	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, emer.Hidden)
+	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
+	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
+	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, axon.InputLayer)
+	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, axon.SuperLayer)
 
 	net.ConnectLayers(pfc, stnp, pone2one, emer.Forward)
 	net.ConnectLayers(pfc, stns, pone2one, emer.Forward)
@@ -520,7 +520,7 @@ func (ss *Sim) ApplyRew() {
 	mtxly := net.LayerByName("MtxGo").(*axon.Layer)
 
 	net.GPU.SyncStateFmGPU()
-	didGate := mtxly.MatrixGated()                      // will also be called later
+	didGate := mtxly.MatrixGated(&ss.Context)           // will also be called later
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	var rew float32
 	switch {

@@ -14,6 +14,7 @@ import (
 // #include "etime.hlsl"
 // #include "axonrand.hlsl"
 // #include "neuromod.hlsl"
+// #include "pvlv.hlsl"
 //gosl: end context
 
 //gosl: start context
@@ -32,15 +33,19 @@ type Context struct {
 	PhaseCycle  int32       `desc:"cycle within current phase -- minus or plus"`
 	Cycle       int32       `desc:"cycle counter: number of iterations of activation updating (settling) on the current state -- this counts time sequentially until reset with NewState"`
 	ThetaCycles int32       `def:"200" desc:"length of the theta cycle in terms of 1 msec Cycles -- some network update steps depend on doing something at the end of the theta cycle (e.g., CTCtxtPrjn)."`
-	CycleTot    int32       `desc:"total cycle count -- this increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time"`
+	CycleTot    int32       `desc:"total cycle count -- increments continuously from whenever it was last reset -- typically this is number of milliseconds in simulation time -- is int32 and not uint32 b/c used with Synapse CaUpT which needs to have a -1 case for expired update time"`
 	Time        float32     `desc:"accumulated amount of time the network has been running, in simulation-time (not real world time), in seconds"`
+	TrialsTot   int32       `desc:"total trial count -- increments continuously in NewState call *only in Train mode* from whenever it was last reset -- can be used for synchronizing weight updates across nodes"`
 	Testing     slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCyc  float32     `def:"0.001" desc:"amount of time to increment per cycle"`
 	NLayers     int32       `view:"-" desc:"number of layers in the network -- needed for GPU mode"`
 	NSpiked     int32       `inactive:"+" desc:"number of neurons that spiked"`
 
+	pad, pad1, pad2 int32
+
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
+	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (PPTgLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -48,6 +53,7 @@ func (ctx *Context) Defaults() {
 	ctx.TimePerCyc = 0.001
 	ctx.ThetaCycles = 200
 	ctx.Mode = etime.Train
+	ctx.PVLV.Defaults()
 }
 
 // NewState resets counters at start of new state (trial) of processing.
@@ -62,6 +68,9 @@ func (ctx *Context) NewState(mode etime.Modes) {
 	ctx.Mode = mode
 	ctx.Testing.SetBool(mode != etime.Train)
 	ctx.NeuroMod.NewState()
+	if mode == etime.Train {
+		ctx.TrialsTot++
+	}
 }
 
 // NewPhase resets PhaseCycle = 0 and sets the plus phase as specified
@@ -80,7 +89,32 @@ func (ctx *Context) CycleInc() {
 	ctx.NSpiked = 0
 }
 
-//gosl: end time
+// DA computes the updated dopamine from all the current state,
+// including pptg and vsPatchPos (from RewPred) via Context.
+// Call after setting USs, VSPatchVals, Effort, Drives, etc.
+// Resulting DA is in VTA.Vals.DA is returned.
+func (ctx *Context) DA() float32 {
+	ctx.PVLV.DA(ctx.NeuroMod.PPTg)
+	return ctx.PVLV.VTA.Vals.DA
+}
+
+// NeuroModFmPVLV updates NeuroMod values from DrivePVLV vals
+func (ctx *Context) NeuroModFmPVLV() {
+	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
+	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
+	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
+	ctx.PVLV.Effort.PrevDisc = ctx.PVLV.Effort.Disc
+}
+
+// LHbDipResetFmSum increments DipSum and checks if should flag a reset.
+func (ctx *Context) LHbDipResetFmSum() {
+	dipReset := ctx.PVLV.LHbDipResetFmSum()
+	if dipReset {
+		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
+	}
+}
+
+//gosl: end context
 
 // Reset resets the counters all back to zero
 func (ctx *Context) Reset() {
@@ -90,6 +124,7 @@ func (ctx *Context) Reset() {
 	ctx.Cycle = 0
 	ctx.CycleTot = 0
 	ctx.Time = 0
+	ctx.TrialsTot = 0
 	ctx.Testing.SetBool(false)
 	ctx.NSpiked = 0
 	if ctx.TimePerCyc == 0 {

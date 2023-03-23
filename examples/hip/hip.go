@@ -359,12 +359,12 @@ func (ss *Sim) SetEnv(trainAC bool) {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Hip")
-	in := net.AddLayer4D("Input", 6, 2, 3, 4, emer.Input)
-	ecin := net.AddLayer4D("ECin", 6, 2, 3, 4, emer.Hidden)
-	ecout := net.AddLayer4D("ECout", 6, 2, 3, 4, emer.Target) // clamped in plus phase
-	ca1 := net.AddLayer4D("CA1", 6, 2, 4, 10, emer.Hidden)
-	dg := net.AddLayer2D("DG", 25, 25, emer.Hidden)
-	ca3 := net.AddLayer2D("CA3", 30, 10, emer.Hidden)
+	in := net.AddLayer4D("Input", 6, 2, 3, 4, axon.InputLayer)
+	ecin := net.AddLayer4D("ECin", 6, 2, 3, 4, axon.SuperLayer)
+	ecout := net.AddLayer4D("ECout", 6, 2, 3, 4, axon.TargetLayer) // clamped in plus phase
+	ca1 := net.AddLayer4D("CA1", 6, 2, 4, 10, axon.SuperLayer)
+	dg := net.AddLayer2D("DG", 25, 25, axon.SuperLayer)
+	ca3 := net.AddLayer2D("CA3", 30, 10, axon.SuperLayer)
 
 	ecin.SetClass("EC")
 	ecout.SetClass("EC")
@@ -533,7 +533,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ca3FmDg.PrjnScale.Rel = 0 // turn off DG input to CA3 in first quarter
 
 	if train {
-		ecout.SetType(emer.Target) // clamp a plus phase during testing
+		ecout.SetType(axon.TargetLayer) // clamp a plus phase during testing
 	} else {
 		ecout.SetType(emer.Compare) // don't clamp
 	}

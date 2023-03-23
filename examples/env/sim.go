@@ -230,10 +230,10 @@ func (ss *Sim) ConfigEnv() {
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "EnvSim")
-	inp := net.AddLayer2D("Input", ss.Size, ss.Size, emer.Input)
-	hid := net.AddLayer2D("Hidden", 10, 10, emer.Hidden)
-	x := net.AddLayer2D("X", 1, ss.Size, emer.Target)
-	y := net.AddLayer2D("Y", 1, ss.Size, emer.Target)
+	inp := net.AddLayer2D("Input", ss.Size, ss.Size, axon.InputLayer)
+	hid := net.AddLayer2D("Hidden", 10, 10, axon.SuperLayer)
+	x := net.AddLayer2D("X", 1, ss.Size, axon.TargetLayer)
+	y := net.AddLayer2D("Y", 1, ss.Size, axon.TargetLayer)
 
 	x.SetClass("Output")
 	y.SetClass("Output")

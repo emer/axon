@@ -19,7 +19,7 @@ import (
 // space is the spacing between layers (2 typical).
 // A CIN or more widely used RSalienceLayer should be added and
 // project ACh to the MtxGo, No layers.
-func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi AxonLayer) {
+func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi *Layer) {
 	gpi = nt.AddGPiLayer2D(prefix+"GPi", gpNeurY, gpNeurX)
 	gpeOuti := nt.AddGPeLayer2D(prefix+"GPeOut", gpNeurY, gpNeurX)
 	gpeOuti.SetBuildConfig("GPType", "GPeOut")
@@ -67,14 +67,14 @@ func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeur
 	nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib).SetClass("GPeInToMtx")
 	nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib).SetClass("GPeInToMtx")
 
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpi.Name(), XAlign: relpos.Left, Space: space})
-	gpeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeOut.Name(), YAlign: relpos.Front, Space: space})
-	gpeTA.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeIn.Name(), YAlign: relpos.Front, Space: space})
-	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
-	stns.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: stnp.Name(), YAlign: relpos.Front, Space: space})
+	gpeOut.PlaceBehind(gpi, space)
+	gpeIn.PlaceRightOf(gpeOut, space)
+	gpeTA.PlaceRightOf(gpeIn, space)
+	stnp.PlaceRightOf(gpi, space)
+	stns.PlaceRightOf(stnp, space)
 
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
-	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
+	mtxGo.PlaceBehind(gpeOut, space)
+	mtxNo.PlaceRightOf(mtxGo, space)
 
 	return
 }
@@ -88,7 +88,7 @@ func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeur
 // space is the spacing between layers (2 typical)
 // A CIN or more widely used RSalienceLayer should be added and
 // project ACh to the MtxGo, No layers.
-func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi AxonLayer) {
+func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi *Layer) {
 	gpi = nt.AddGPiLayer4D(prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti := nt.AddGPeLayer4D(prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
 	gpeOuti.SetBuildConfig("GPType", "GPeOut")
@@ -137,14 +137,14 @@ func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib).SetClass("GPeInToMtx")
 	nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib).SetClass("GPeInToMtx")
 
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpi.Name(), XAlign: relpos.Left, Space: space})
-	gpeIn.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeOut.Name(), YAlign: relpos.Front, Space: space})
-	gpeTA.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeIn.Name(), YAlign: relpos.Front, Space: space})
-	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
-	stns.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: stnp.Name(), YAlign: relpos.Front, Space: space})
+	gpeOut.PlaceBehind(gpi, space)
+	gpeIn.PlaceRightOf(gpeOut, space)
+	gpeTA.PlaceRightOf(gpeIn, space)
+	stnp.PlaceRightOf(gpi, space)
+	stns.PlaceRightOf(stnp, space)
 
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: gpeOut.Name(), XAlign: relpos.Left, Space: space})
-	mtxNo.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxGo.Name(), YAlign: relpos.Front, Space: space})
+	mtxGo.PlaceBehind(gpeOut, space)
+	mtxNo.PlaceRightOf(mtxGo, space)
 
 	return
 }
@@ -157,7 +157,7 @@ func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 // If other ACh modulation is needed, a global RSalienceLayer can be used.
 func (nt *Network) AddCINLayer(name, mtxGo, mtxNo string, space float32) *Layer {
 	cin := nt.AddRSalienceAChLayer(name)
-	cin.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: mtxNo, YAlign: relpos.Front, Space: space})
+	cin.SetRelPos(relpos.NewRightOf(mtxNo, space))
 	return cin
 }
 
@@ -165,8 +165,7 @@ func (nt *Network) AddCINLayer(name, mtxGo, mtxNo string, space float32) *Layer 
 // of given size, with given name.
 // This version has a 4D structure, with Pools representing separable gating domains.
 func (nt *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(VThalLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, VThalLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -175,8 +174,7 @@ func (nt *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 // of given size, with given name.
 // This version has a 2D structure
 func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(VThalLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, VThalLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -185,8 +183,7 @@ func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 // Assumes that a 4D structure will be used, with Pools representing separable gating domains.
 // da gives the DaReceptor type (D1R = Go, D2R = NoGo)
 func (nt *Network) AddMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, da DAModTypes) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(MatrixLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, MatrixLayer)
 	ly.SetBuildConfig("DAMod", da.String())
 	ly.SetClass("BG")
 	return ly
@@ -200,16 +197,14 @@ func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer
 // AddGPLayer2D adds a GPLayer of given size, with given name.
 // Must set the GPType BuildConfig setting to appropriate GPLayerType
 func (nt *Network) AddGPeLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
 	ly.SetClass("BG")
 	return ly
 }
 
 // AddGPiLayer2D adds a GPiLayer of given size, with given name.
 func (nt *Network) AddGPiLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, GPLayer)
 	ly.SetBuildConfig("GPType", "GPi")
 	ly.SetClass("BG")
 	return ly
@@ -217,8 +212,7 @@ func (nt *Network) AddGPiLayer2D(name string, nNeurY, nNeurX int) *Layer {
 
 // AddSTNLayer2D adds a subthalamic nucleus Layer of given size, with given name.
 func (nt *Network) AddSTNLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(STNLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, STNLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -226,8 +220,7 @@ func (nt *Network) AddSTNLayer2D(name string, nNeurY, nNeurX int) *Layer {
 // AddGPLayer4D adds a GPLayer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
 func (nt *Network) AddGPeLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -235,8 +228,7 @@ func (nt *Network) AddGPeLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 // AddGPiLayer4D adds a GPiLayer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
 func (nt *Network) AddGPiLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(GPLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, GPLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -244,28 +236,14 @@ func (nt *Network) AddGPiLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 // AddSTNLayer4D adds a subthalamic nucleus Layer of given size, with given name.
 // Makes a 4D structure with Pools representing separable gating domains.
 func (nt *Network) AddSTNLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(STNLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, STNLayer)
 	ly.SetClass("BG")
 	return ly
 }
 
-// AddPTMaintLayer2D adds a PTMaintLayer of given size, with given name.
-func (nt *Network) AddPTMaintLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(PTMaintLayer))
+// AddVSGatedLayer adds a VSGatedLayer with given number of Y units
+// and 2 pools, first one represents JustGated, second is HasGated.
+func (nt *Network) AddVSGatedLayer(prefix string, nYunits int) *Layer {
+	ly := nt.AddLayer4D(prefix+"VSGated", 1, 2, nYunits, 1, VSGatedLayer)
 	return ly
-}
-
-// AddPTMaintLayer4D adds a PTMaintLayer of given size, with given name.
-func (nt *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(PTMaintLayer))
-	return ly
-}
-
-// ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
-// which supports active maintenance, with a class of PTSelfMaint
-func (nt *Network) ConnectPTMaintSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
 }

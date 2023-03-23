@@ -69,13 +69,29 @@ const (
 	// within the thalamus.
 	TRNLayer
 
-	// PTMaintLayer implements the pyramidal tract layer 5 intrinsic bursting
-	// (5IB) deep neurons, which provide the main output signal from cortex,
-	// specifically the subset of PT neurons that are gated by the BG to
-	// drive sustained active maintenance, via strong NMDA channels.
-	// Set projections from thalamus to be modulatory, and use Act.Dend.ModGain
-	// to set extra strength these inputs which are only briefly active.
+	// PTMaintLayer implements the subset of pyramidal tract (PT)
+	// layer 5 intrinsic bursting (5IB) deep neurons that exhibit
+	// robust, stable maintenance of activity over the duration of a
+	// goal engaged window, modulated by basal ganglia (BG) disinhibitory
+	// gating, supported by strong NMDA channels and recurrent excitation.
+	// Use Act.Dend.ModGain to set extra strength for thalamic gating
+	// inputs which are only briefly active.
 	PTMaintLayer
+
+	// PTPredLayer implements the subset of pyramidal tract (PT)
+	// layer 5 intrinsic bursting (5IB) deep neurons that combine
+	// modulatory input from PTMaintLayer sustained maintenance and
+	// CTLayer dynamic predictive learning that helps to predict
+	// state changes during the period of active goal maintenance.
+	// This layer provides the primary input to VSPatch US-timing
+	// prediction layers, and other layers that require predictive dynamic
+	PTPredLayer
+
+	// PTNotMaintLayer implements a tonically active layer that is inhibited
+	// by the PTMaintLayer, thereby providing an active representation of
+	// the *absence* of maintained PT activity, which is useful for driving
+	// appropriate actions (e.g., exploration) when not in goal-engaged mode.
+	PTNotMaintLayer
 
 	/////////////
 	// RL
@@ -142,6 +158,44 @@ const (
 	// also sets Act to the exact differenence.
 	PPTgLayer
 
+	// VSPatchLayer represents a ventral striatum patch layer,
+	// which learns to represent the expected amount of dopamine reward
+	// and projects both directly with shunting inhibition to the VTA
+	// and indirectly via the LHb / RMTg to cancel phasic dopamine firing
+	// to expected rewards (i.e., reward prediction error).
+	VSPatchLayer
+
+	// VTALayer represents the ventral tegmental area, which releases
+	// dopamine.  It calls the ContextPVLV.VTA methods,
+	// and tracks resulting DA for visualization purposes.
+	VTALayer
+
+	// LHbLayer represents the lateral habenula, which drives dipping
+	// in the VTA.  It tracks the ContextPVLV.LHb values for
+	// visualization purposes -- updated by VTALayer.
+	LHbLayer
+
+	// DrivesLayer represents the Drives in DrivePVLV framework.
+	// It tracks the ContextPVLV.Drives values for
+	// visualization and predictive learning purposes.
+	DrivesLayer
+
+	// EffortLayer represents the Effort factor in DrivePVLV framework.
+	// It tracks the ContextPVLV.Effort.Disc value for
+	// visualization and predictive learning purposes.
+	EffortLayer
+
+	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
+	// It tracks the ContextPVLV.USpos or USneg, for visualization
+	// and predictive learning purposes. Actual US inputs are set in DrivePVLV.
+	USLayer
+
+	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
+	// the total primary value as a function of US inputs, drives, and effort.
+	// It tracks the ContextPVLV.VTA.PVpos, PVneg values for
+	// visualization and predictive learning purposes.
+	PVLayer
+
 	/////////////////////////////
 	// PCORE Basal Ganglia (BG)
 
@@ -171,6 +225,11 @@ const (
 	// mainly in the Ventral thalamus: VA / VM / VL,
 	// and also parts of MD mediodorsal thalamus.
 	VThalLayer
+
+	// VSGated represents explicit coding of VS gating status:
+	// JustGated and HasGated (since last US or failed predicted US),
+	// For visualization and / or motor action signaling.
+	VSGatedLayer
 
 	LayerTypesN
 )

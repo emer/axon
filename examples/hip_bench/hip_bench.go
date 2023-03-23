@@ -337,12 +337,12 @@ func (ss *Sim) SetEnv(trainAC bool) {
 func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "Hip_bench")
 	hp := &ss.Hip
-	in := net.AddLayer4D("Input", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, emer.Input)
-	ecin := net.AddLayer4D("ECin", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, emer.Hidden)
-	ecout := net.AddLayer4D("ECout", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, emer.Target) // clamped in plus phase
-	ca1 := net.AddLayer4D("CA1", hp.ECSize.Y, hp.ECSize.X, hp.CA1Pool.Y, hp.CA1Pool.X, emer.Hidden)
-	dg := net.AddLayer2D("DG", hp.DGSize.Y, hp.DGSize.X, emer.Hidden)
-	ca3 := net.AddLayer2D("CA3", hp.CA3Size.Y, hp.CA3Size.X, emer.Hidden)
+	in := net.AddLayer4D("Input", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, axon.InputLayer)
+	ecin := net.AddLayer4D("ECin", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, axon.SuperLayer)
+	ecout := net.AddLayer4D("ECout", hp.ECSize.Y, hp.ECSize.X, hp.ECPool.Y, hp.ECPool.X, axon.TargetLayer) // clamped in plus phase
+	ca1 := net.AddLayer4D("CA1", hp.ECSize.Y, hp.ECSize.X, hp.CA1Pool.Y, hp.CA1Pool.X, axon.SuperLayer)
+	dg := net.AddLayer2D("DG", hp.DGSize.Y, hp.DGSize.X, axon.SuperLayer)
+	ca3 := net.AddLayer2D("CA3", hp.CA3Size.Y, hp.CA3Size.X, axon.SuperLayer)
 
 	ecin.SetClass("EC")
 	ecout.SetClass("EC")
@@ -559,7 +559,7 @@ func (ss *Sim) ThetaCyc(train bool) {
 	ca3FmDg.PrjnScale.Rel = dgwtscale - ss.Hip.MossyDel // turn off DG input to CA3 in first quarter
 
 	if train {
-		ecout.SetType(emer.Target) // clamp a plus phase during testing
+		ecout.SetType(axon.TargetLayer) // clamp a plus phase during testing
 	} else {
 		ecout.SetType(emer.Compare) // don't clamp
 	}
@@ -662,7 +662,7 @@ func (ss *Sim) PreThetaCyc(train bool) {
 	ca1FmCa3.PrjnScale.Abs = 0
 
 	if train {
-		ecout.SetType(emer.Target) // clamp a plus phase during testing
+		ecout.SetType(axon.TargetLayer) // clamp a plus phase during testing
 	} else {
 		ecout.SetType(emer.Compare) // don't clamp
 	}

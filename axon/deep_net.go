@@ -5,6 +5,8 @@
 package axon
 
 import (
+	"strings"
+
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
@@ -12,43 +14,37 @@ import (
 
 // AddSuperLayer2D adds a Super Layer of given size, with given name.
 func (nt *Network) AddSuperLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.Hidden)
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, SuperLayer)
 	return ly
 }
 
 // AddSuperLayer4D adds a Super Layer of given size, with given name.
 func (nt *Network) AddSuperLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.Hidden)
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, SuperLayer)
 	return ly
 }
 
 // AddCTLayer2D adds a CT Layer of given size, with given name.
 func (nt *Network) AddCTLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(CTLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, CTLayer)
 	return ly
 }
 
 // AddCTLayer4D adds a CT Layer of given size, with given name.
 func (nt *Network) AddCTLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(CTLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, CTLayer)
 	return ly
 }
 
 // AddPulvLayer2D adds a Pulvinar Layer of given size, with given name.
 func (nt *Network) AddPulvLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, emer.LayerType(PulvinarLayer))
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PulvinarLayer)
 	return ly
 }
 
 // AddPulvLayer4D adds a Pulvinar Layer of given size, with given name.
 func (nt *Network) AddPulvLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := &Layer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, emer.LayerType(PulvinarLayer))
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PulvinarLayer)
 	return ly
 }
 
@@ -56,10 +52,10 @@ func (nt *Network) AddPulvLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 // with CTCtxtPrjn projection from Super to CT using given projection pattern,
 // and NO Pulv Pulvinar.
 // CT is placed Behind Super.
-func (nt *Network) AddSuperCT2D(name string, shapeY, shapeX int, space float32, pat prjn.Pattern) (super, ct emer.Layer) {
+func (nt *Network) AddSuperCT2D(name string, shapeY, shapeX int, space float32, pat prjn.Pattern) (super, ct *Layer) {
 	super = nt.AddSuperLayer2D(name, shapeY, shapeX)
 	ct = nt.AddCTLayer2D(name+"CT", shapeY, shapeX)
-	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	ct.PlaceBehind(super, space)
 	nt.ConnectSuperToCT(super, ct, pat)
 	super.SetClass(name)
 	ct.SetClass(name)
@@ -70,10 +66,10 @@ func (nt *Network) AddSuperCT2D(name string, shapeY, shapeX int, space float32, 
 // with CTCtxtPrjn projection from Super to CT using given projection pattern,
 // and NO Pulv Pulvinar.
 // CT is placed Behind Super.
-func (nt *Network) AddSuperCT4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32, pat prjn.Pattern) (super, ct emer.Layer) {
+func (nt *Network) AddSuperCT4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32, pat prjn.Pattern) (super, ct *Layer) {
 	super = nt.AddSuperLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX)
 	ct = nt.AddCTLayer4D(name+"CT", nPoolsY, nPoolsX, nNeurY, nNeurX)
-	ct.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	ct.PlaceBehind(super, space)
 	nt.ConnectSuperToCT(super, ct, pat)
 	super.SetClass(name)
 	ct.SetClass(name)
@@ -84,17 +80,35 @@ func (nt *Network) AddSuperCT4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX in
 // with a P suffix.  The Pulv.Driver is set to Super.
 // The Pulv layer needs other CT connections from higher up to predict this layer.
 // Pulvinar is positioned behind the CT layer.
-func (nt *Network) AddPulvForSuper(super emer.Layer, space float32) emer.Layer {
+func (nt *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
 	name := super.Name()
 	shp := super.Shape()
-	var plv emer.Layer
+	var plv *Layer
 	if shp.NumDims() == 2 {
 		plv = nt.AddPulvLayer2D(name+"P", shp.Dim(0), shp.Dim(1))
 	} else {
 		plv = nt.AddPulvLayer4D(name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
-	plv.(AxonLayer).SetBuildConfig("DriveLayName", name)
-	plv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name + "CT", XAlign: relpos.Left, Space: space})
+	plv.SetBuildConfig("DriveLayName", name)
+	plv.SetRelPos(relpos.NewBehind(name+"CT", space))
+	return plv
+}
+
+// AddPulvForLayer adds a Pulvinar for given Layer (typically an Input type layer)
+// with a P suffix.  The Pulv.Driver is set to given Layer.
+// The Pulv layer needs other CT connections from higher up to predict this layer.
+// Pulvinar is positioned behind the given Layer.
+func (nt *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
+	name := lay.Name()
+	shp := lay.Shape()
+	var plv *Layer
+	if shp.NumDims() == 2 {
+		plv = nt.AddPulvLayer2D(name+"P", shp.Dim(0), shp.Dim(1))
+	} else {
+		plv = nt.AddPulvLayer4D(name+"P", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+	}
+	plv.SetBuildConfig("DriveLayName", name)
+	plv.PlaceBehind(lay, space)
 	return plv
 }
 
@@ -136,37 +150,75 @@ func (nt *Network) ConnectSuperToCT(send, recv emer.Layer, pat prjn.Pattern) eme
 // AddInputPulv2D adds an Input and Layer of given size, with given name.
 // The Input layer is set as the Driver of the Layer.
 // Both layers have SetClass(name) called to allow shared params.
-func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32) (emer.Layer, *Layer) {
-	in := nt.AddLayer2D(name, nNeurY, nNeurX, emer.Input)
+func (nt *Network) AddInputPulv2D(name string, nNeurY, nNeurX int, space float32) (*Layer, *Layer) {
+	in := nt.AddLayer2D(name, nNeurY, nNeurX, InputLayer)
 	pulv := nt.AddPulvLayer2D(name+"P", nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.SetClass(name)
 	pulv.SetClass(name)
-	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	pulv.PlaceBehind(in, space)
 	return in, pulv
 }
 
 // AddInputPulv4D adds an Input and Layer of given size, with given name.
 // The Input layer is set as the Driver of the Layer.
 // Both layers have SetClass(name) called to allow shared params.
-func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (emer.Layer, *Layer) {
-	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, emer.Input)
+func (nt *Network) AddInputPulv4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int, space float32) (*Layer, *Layer) {
+	in := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, InputLayer)
 	pulv := nt.AddPulvLayer4D(name+"P", nPoolsY, nPoolsX, nNeurY, nNeurX)
 	pulv.SetBuildConfig("DriveLayName", name)
 	in.SetClass(name)
 	pulv.SetClass(name)
-	pulv.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: name, XAlign: relpos.Left, Space: space})
+	pulv.PlaceBehind(in, space)
 	return in, pulv
 }
 
+//////////////////////////////////////////////////////////////////
+//  PTMaintLayer
+
+// AddPTMaintLayer2D adds a PTMaintLayer of given size, with given name.
+func (nt *Network) AddPTMaintLayer2D(name string, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PTMaintLayer)
+	return ly
+}
+
+// AddPTMaintLayer4D adds a PTMaintLayer of given size, with given name.
+func (nt *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PTMaintLayer)
+	return ly
+}
+
+// ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
+// which supports active maintenance, with a class of PTSelfMaint
+func (nt *Network) ConnectPTMaintSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
+}
+
+// AddPTNotMaintLayer adds a PTNotMaintLayer of given size, for given
+// PTMaintLayer -- places it to the right of this layer, and calls
+// ConnectPTNotMaint to connect the two, using full connectivity.
+func (nt *Network) AddPTNotMaintLayer(ptMaint *Layer, nNeurY, nNeurX int, space float32) *Layer {
+	name := ptMaint.Name()
+	ly := nt.AddLayer2D(name+"Not", nNeurY, nNeurX, PTNotMaintLayer)
+	nt.ConnectPTNotMaint(ptMaint, ly, prjn.NewFull())
+	ly.PlaceRightOf(ptMaint, space)
+	return ly
+}
+
+// ConnectPTNotMaint adds a projection from PTMaintLayer to PTNotMaintLayer,
+// as fixed inhibitory connections, with class ToPTNotMaintInhib
+func (nt *Network) ConnectPTNotMaint(ptMaint, ptNotMaint emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.ConnectLayers(ptMaint, ptNotMaint, pat, emer.PrjnType(CTCtxtPrjn)).SetClass("ToPTNotMaintInhib")
+}
+
 // AddPTMaintThalForSuper adds a PTMaint pyramidal tract active maintenance layer and a
-// Thalamus layer for given superficial layer (deep.SuperLayer) and associated CT
+// Thalamus layer for given superficial layer (SuperLayer) and associated CT
 // with given suffix (e.g., MD, VM).
 // PT and Thal have SetClass(super.Name()) called to allow shared params.
 // Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal,
 // PTtoThal, ThalToPT
 // The PT and Thal layers are positioned behind the CT layer.
-func (nt *Network) AddPTMaintThalForSuper(super, ct emer.Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal emer.Layer) {
+func (nt *Network) AddPTMaintThalForSuper(super, ct *Layer, suffix string, superToPT, ptSelf, ctToThal prjn.Pattern, space float32) (pt, thal *Layer) {
 	name := super.Name()
 	shp := super.Shape()
 	if shp.NumDims() == 2 {
@@ -178,8 +230,8 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct emer.Layer, suffix string, s
 	}
 	pt.SetClass(name)
 	thal.SetClass(name)
-	pt.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: ct.Name(), XAlign: relpos.Left, Space: space})
-	thal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: pt.Name(), XAlign: relpos.Left, Space: space})
+	pt.PlaceBehind(ct, space)
+	thal.PlaceBehind(pt, space)
 	one2one := prjn.NewOneToOne()
 	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal")
@@ -193,6 +245,60 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct emer.Layer, suffix string, s
 	nt.ConnectLayers(super, pt, superToPT, emer.Forward).SetClass("SuperToPT")
 	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
 	nt.ConnectLayers(ct, thal, ctToThal, emer.Forward).SetClass("CTtoThal")
+	return
+}
+
+//////////////////////////////////////////////////////////////////
+//  PTPredLayer
+
+// AddPTPredLayer2D adds a PTPredLayer of given size, with given name.
+func (nt *Network) AddPTPredLayer2D(name string, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PTPredLayer)
+	return ly
+}
+
+// AddPTPredLayer4D adds a PTPredLayer of given size, with given name.
+func (nt *Network) AddPTPredLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PTPredLayer)
+	return ly
+}
+
+// ConnectPTPredSelf adds a Self (Lateral) projection within a PTPredLayer,
+// which supports active maintenance, with a class of PTSelfMaint
+func (nt *Network) ConnectPTPredSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
+	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
+}
+
+// ConnectPTPredToPulv connects PTPred with given Pulv: PTPred -> Pulv is class PTPredToPulv,
+// From Pulv = type = Back, class = FmPulv
+// toPulvPat is the prjn.Pattern PTPred -> Pulv and fmPulvPat is Pulv -> PTPred
+// Typically Pulv is a different shape than PTPred, so use Full or appropriate
+// topological pattern
+func (nt *Network) ConnectPTPredToPulv(ptPred, pulv emer.Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toPTPred emer.Prjn) {
+	toPulv = nt.ConnectLayers(ptPred, pulv, toPulvPat, emer.Forward).SetClass("PTPredToPulv")
+	toPTPred = nt.ConnectLayers(pulv, ptPred, fmPulvPat, emer.Back).SetClass("FmPulv")
+	return
+}
+
+// AddPTPredLayer adds a PTPred pyramidal tract prediction layer
+// for given PTMaint layer and associated CT.
+// Sets SetClass(super.Name()) to allow shared params.
+// Projections are made with given classes: SuperToPT, PTSelfMaint, CTtoThal,
+// PTtoThal, ThalToPT
+// The PTPred layer is positioned behind the PT layer.
+func (nt *Network) AddPTPredLayer(ptMaint, ct, thal *Layer, ptToPredPrjn, ctToPredPrjn, toThalPrjn prjn.Pattern, space float32) (ptPred *Layer) {
+	name := strings.TrimSuffix(ptMaint.Name(), "PT")
+	shp := ptMaint.Shape()
+	if shp.NumDims() == 2 {
+		ptPred = nt.AddPTPredLayer2D(name+"PTPred", shp.Dim(0), shp.Dim(1))
+	} else {
+		ptPred = nt.AddPTPredLayer4D(name+"PTPred", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+	}
+	ptPred.SetClass(name)
+	ptPred.PlaceBehind(ptMaint, space)
+	nt.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn).SetClass("PTtoPred")
+	nt.ConnectLayers(ct, ptPred, ctToPredPrjn, emer.PrjnType(ForwardPrjn)).SetClass("CTtoPred")
+	// note: ptpred does not connect to thalamus -- it is only active on trial *after* thal gating
 	return
 }
 

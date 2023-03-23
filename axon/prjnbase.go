@@ -22,14 +22,15 @@ import (
 // The exact same struct object is added to the Recv and Send layers, and it manages everything
 // about the connectivity, and methods on the Prjn handle all the relevant computation.
 type PrjnBase struct {
-	AxonPrj AxonPrjn      `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Off     bool          `desc:"inactivate this projection -- allows for easy experimentation"`
-	Cls     string        `desc:"Class is for applying parameter styles, can be space separated multple tags"`
-	Notes   string        `desc:"can record notes about this projection here"`
-	Send    emer.Layer    `desc:"sending layer for this projection"`
-	Recv    emer.Layer    `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*axon.Layer)"`
-	Pat     prjn.Pattern  `desc:"pattern of connectivity"`
-	Typ     emer.PrjnType `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
+	AxonPrj       AxonPrjn           `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Off           bool               `desc:"inactivate this projection -- allows for easy experimentation"`
+	Cls           string             `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Notes         string             `desc:"can record notes about this projection here"`
+	Send          emer.Layer         `desc:"sending layer for this projection"`
+	Recv          emer.Layer         `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*axon.Layer)"`
+	Pat           prjn.Pattern       `desc:"pattern of connectivity"`
+	Typ           emer.PrjnType      `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
+	ParamsHistory params.HistoryImpl `desc:"provides a history of parameters applied to the layer"`
 
 	RecvConNAvgMax minmax.AvgMax32 `inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
 	SendConNAvgMax minmax.AvgMax32 `inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
@@ -218,6 +219,16 @@ func (pj *PrjnBase) String() string {
 		str += " Pat=" + pj.Pat.Name()
 	}
 	return str
+}
+
+// ParamsHistoryReset resets parameter application history
+func (pj *PrjnBase) ParamsHistoryReset() {
+	pj.ParamsHistory.ParamsHistoryReset()
+}
+
+// ParamsApplied is just to satisfy History interface so reset can be applied
+func (pj *PrjnBase) ParamsApplied(sel *params.Sel) {
+	pj.ParamsHistory.ParamsApplied(sel)
 }
 
 // ApplyParams applies given parameter style Sheet to this projection.

@@ -5,18 +5,19 @@ go 1.18
 require (
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/emer/emergent v1.3.44
+	github.com/emer/emergent v1.3.47
 	github.com/emer/empi v1.0.17
-	github.com/emer/etable v1.1.16
+	github.com/emer/envs v1.0.5
+	github.com/emer/etable v1.1.18
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18
-	github.com/goki/gi v1.3.15
-	github.com/goki/gosl v1.0.11
+	github.com/goki/gi v1.3.16
+	github.com/goki/gosl v1.0.12
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.14
-	github.com/goki/vgpu v1.0.21
-	github.com/goki/vulkan v1.0.5
+	github.com/goki/vgpu v1.0.22
+	github.com/goki/vulkan v1.0.6
 	github.com/stretchr/testify v1.8.0
 	gitlab.com/gomidi/midi/v2 v2.0.25
 )
@@ -46,7 +47,7 @@ require (
 	github.com/go-pdf/fpdf v0.6.0 // indirect
 	github.com/goki/freetype v0.0.0-20220119013949-7a161fd3728c // indirect
 	github.com/goki/go-difflib v1.2.1 // indirect
-	github.com/goki/pi v1.0.25 // indirect
+	github.com/goki/pi v1.0.27 // indirect
 	github.com/goki/prof v1.0.0 // indirect
 	github.com/goki/vci v1.0.1 // indirect
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect

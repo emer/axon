@@ -95,6 +95,7 @@ type PrjnParams struct {
 
 	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
+	BLAAcq BLAAcqPrjnParams `viewif:"PrjnType=BLAAcqPrjn" view:"inline" desc:"Basolateral Amygdala acquisition pathway projection parameters, for negative activation delta direction (extinction)."`
 
 	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
@@ -106,6 +107,7 @@ func (pj *PrjnParams) Defaults() {
 	pj.Learn.Defaults()
 	pj.RLPred.Defaults()
 	pj.Matrix.Defaults()
+	pj.BLAAcq.Defaults()
 }
 
 func (pj *PrjnParams) Update() {
@@ -115,6 +117,7 @@ func (pj *PrjnParams) Update() {
 	pj.Learn.Update()
 	pj.RLPred.Update()
 	pj.Matrix.Update()
+	pj.BLAAcq.Update()
 
 	if pj.PrjnType == CTCtxtPrjn {
 		pj.Com.GType = ContextG
@@ -139,6 +142,9 @@ func (pj *PrjnParams) AllParams() string {
 	case MatrixPrjn:
 		b, _ = json.MarshalIndent(&pj.Matrix, "", " ")
 		str += "Matrix: {\n " + JsonToParams(b)
+	case BLAAcqPrjn:
+		b, _ = json.MarshalIndent(&pj.BLAAcq, "", " ")
+		str += "BLAAcq: {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -149,6 +155,18 @@ func (pj *PrjnParams) IsInhib() bool {
 
 func (pj *PrjnParams) IsExcitatory() bool {
 	return pj.Com.GType == ExcitatoryG
+}
+
+// SetFixedWts sets parameters for fixed, non-learning weights
+// with a default of Mean = 0.8, Var = 0 strength
+func (pj *PrjnParams) SetFixedWts() {
+	pj.SWt.Init.SPct = 0
+	pj.Learn.Learn.SetBool(false)
+	pj.SWt.Adapt.On.SetBool(false)
+	pj.SWt.Adapt.SigGain = 1
+	pj.SWt.Init.Mean = 0.8
+	pj.SWt.Init.Var = 0.0
+	pj.SWt.Init.Sym.SetBool(false)
 }
 
 // SynRecvLayIdx converts the Synapse RecvIdx of recv neuron's index
@@ -193,6 +211,15 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 ///////////////////////////////////////////////////
 // SynCa
 
+// DoSynCa returns false if should not do synaptic-level calcium updating.
+// Done by default in Cortex, not for some other special projection types.
+func (pj *PrjnParams) DoSynCa() bool {
+	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAAcqPrjn || pj.PrjnType == BLAExtPrjn {
+		return false
+	}
+	return true
+}
+
 // SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking, threaded over neurons.
 // This pass updates sending projections -- all sending synapses are
@@ -200,6 +227,9 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 // Cannot do both send and recv in same pass without potential for
 // race conditions.
 func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSyn, updtThr float32) {
+	if !pj.DoSynCa() {
+		return
+	}
 	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
 		return
 	}
@@ -220,6 +250,9 @@ func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSy
 // Cannot do both send and recv in same pass without potential for
 // race conditions.
 func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSyn, updtThr float32) {
+	if !pj.DoSynCa() {
+		return
+	}
 	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
 		return
 	}
@@ -264,6 +297,12 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool,
 		pj.DWtSynTDPred(ctx, sy, sn, rn, layPool, subPool)
 	case MatrixPrjn:
 		pj.DWtSynMatrix(ctx, sy, sn, rn, layPool, subPool)
+	case VSPatchPrjn:
+		pj.DWtSynVSPatch(ctx, sy, sn, rn, layPool, subPool)
+	case BLAAcqPrjn:
+		pj.DWtSynBLAAcq(ctx, sy, sn, rn, layPool, subPool)
+	case BLAExtPrjn:
+		pj.DWtSynBLAExt(ctx, sy, sn, rn, layPool, subPool)
 	default:
 		pj.DWtSynCortex(ctx, sy, sn, rn, layPool, subPool, isTarget)
 	}
@@ -278,7 +317,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctx.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
 	if pj.PrjnType == CTCtxtPrjn {
-		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv)
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // instead of mixing into cortical one
 	} else {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
 	}
@@ -289,11 +328,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	if isTarget {
 		err = caP - caD // for target layers, syn Ca drives error signal directly
 	} else {
-		if pj.PrjnType == BLAPrjn {
-			err = sy.Tr * (rn.CaSpkP - rn.SpkPrv)
-		} else {
-			err = sy.Tr * (rn.CaP - rn.CaD) // hiddens: recv Ca drives error signal w/ trace credit
-		}
+		err = sy.Tr * (rn.CaP - rn.CaD) // hiddens: recv Ca drives error signal w/ trace credit
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum
@@ -307,6 +342,47 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	} else {
 		sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
 	}
+}
+
+// DWtSynBLAAcq computes the weight change (learning) at given synapse for BLAAcqPrjn type.
+// Acquisition is based on delta from US activity over trials (temporal difference)
+func (pj *PrjnParams) DWtSynBLAAcq(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // previous trial
+	delta := rn.CaSpkP - rn.SpkPrv
+	if delta < 0 { // neg delta learns much slower
+		delta *= pj.BLAAcq.NegDeltaLRate
+	}
+	if ctx.NeuroMod.HasRew.IsFalse() {
+		delta *= pj.BLAAcq.NonUSLRate
+	}
+	err := sy.Tr * delta
+	// sb immediately -- enters into zero sum
+	if err > 0 {
+		err *= (1 - sy.LWt)
+	} else {
+		err *= sy.LWt
+	}
+	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
+}
+
+// DWtSynBLAExt computes the weight change (learning) at given synapse for BLAExtPrjn type.
+// Extinction is self-limiting based on incrementally out-competing the Acq pathway until
+// it stops being able to drive gating of the PTMaint layer that drives extinction.
+func (pj *PrjnParams) DWtSynBLAExt(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+	ract := rn.CaSpkD
+	lmax := layPool.AvgMax.CaSpkD.Plus.Max
+	if lmax > 0 {
+		ract /= lmax
+	}
+
+	err := sn.BurstPrv * ract
+	// sb immediately -- enters into zero sum
+	if err > 0 {
+		err *= (1 - sy.LWt)
+	} else {
+		err *= sy.LWt
+	}
+	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
 }
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
@@ -410,6 +486,20 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	sy.DWt += dwt
 }
 
+// DWtSynVSPatch computes the weight change (learning) at given synapse,
+// for the VSPatchPrjn type.  Currently only supporting the Pos D1 type.
+func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+	ract := rn.CaSpkD
+	lmax := layPool.AvgMax.CaSpkD.Plus.Max
+	if lmax > 0 {
+		ract /= lmax
+	}
+	// note: rn.RLRate already has DA * (D1 vs. D2 sign reversal) factored in.
+	// and also the logic that non-positive DA leads to weight decreases.
+	dwt := rn.RLRate * pj.Learn.LRate.Eff * sn.CaSpkD * ract
+	sy.DWt += dwt
+}
+
 ///////////////////////////////////////////////////
 // WtFmDWt
 
@@ -420,7 +510,9 @@ func (pj *PrjnParams) WtFmDWtSyn(ctx *Context, sy *Synapse) {
 		pj.WtFmDWtSynNoLimits(ctx, sy)
 	case TDPredPrjn:
 		pj.WtFmDWtSynNoLimits(ctx, sy)
-	case BLAPrjn:
+	case BLAAcqPrjn:
+		pj.WtFmDWtSynNoLimits(ctx, sy)
+	case BLAExtPrjn:
 		pj.WtFmDWtSynNoLimits(ctx, sy)
 	default:
 		pj.WtFmDWtSynCortex(ctx, sy)

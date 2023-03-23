@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/etable/etable"
 	"github.com/goki/gi/gi"
@@ -99,11 +98,11 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	squn := int(math.Sqrt(float64(numUnits)))
 	shp := []int{squn, squn}
 
-	net.AddLayer("Input", shp, emer.Input)
-	net.AddLayer("Hidden1", shp, emer.Hidden)
-	net.AddLayer("Hidden2", shp, emer.Hidden)
-	net.AddLayer("Hidden3", shp, emer.Hidden)
-	net.AddLayer("Output", shp, emer.Target)
+	net.AddLayer("Input", shp, axon.InputLayer)
+	net.AddLayer("Hidden1", shp, axon.SuperLayer)
+	net.AddLayer("Hidden2", shp, axon.SuperLayer)
+	net.AddLayer("Hidden3", shp, axon.SuperLayer)
+	net.AddLayer("Output", shp, axon.TargetLayer)
 
 	net.RecFunTimes = true
 

@@ -152,7 +152,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	sal := net.AddRSalienceAChLayer("ACh")
 	sal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Rew", XAlign: relpos.Left, Space: 1})
-	inp := net.AddLayer2D("Input", 3, 20, emer.Input)
+	inp := net.AddLayer2D("Input", 3, 20, axon.InputLayer)
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left})
 	net.ConnectLayers(inp, rplay, full, emer.PrjnType(ptype))
 

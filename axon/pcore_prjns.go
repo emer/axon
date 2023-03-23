@@ -42,3 +42,10 @@ func (tp *MatrixPrjnParams) TraceDecay(ctx *Context, ach float32) float32 {
 }
 
 //gosl: end pcore_pjrns
+
+func (pj *PrjnParams) MatrixDefaults() {
+	pj.SWt.Adapt.On.SetBool(false)
+	pj.SWt.Adapt.SigGain = 6 // not 1 -- could be for some cases
+	pj.SWt.Init.Sym.SetBool(false)
+	pj.SWt.Init.SPct = 0
+}

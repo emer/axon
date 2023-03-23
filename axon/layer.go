@@ -66,6 +66,10 @@ func (ly *Layer) Defaults() {
 		ly.Params.CTDefaults()
 	case PTMaintLayer:
 		ly.PTMaintDefaults()
+	case PTPredLayer:
+		ly.Params.PTPredDefaults()
+	case PTNotMaintLayer:
+		ly.PTNotMaintDefaults()
 	case PulvinarLayer:
 		ly.Params.PulvDefaults()
 
@@ -83,7 +87,21 @@ func (ly *Layer) Defaults() {
 		ly.Params.TDDefaults()
 
 	case BLALayer:
-		ly.Params.BLADefaults()
+		ly.BLADefaults()
+	case CeMLayer:
+		ly.CeMDefaults()
+	case PPTgLayer:
+		ly.PPTgDefaults()
+	case VSPatchLayer:
+		ly.Params.VSPatchDefaults()
+	case DrivesLayer:
+		ly.Params.DrivesDefaults()
+	case EffortLayer:
+		ly.Params.EffortDefaults()
+	case USLayer:
+		ly.Params.USDefaults()
+	case PVLayer:
+		ly.Params.PVDefaults()
 
 	case MatrixLayer:
 		ly.MatrixDefaults()
@@ -93,6 +111,8 @@ func (ly *Layer) Defaults() {
 		ly.STNDefaults()
 	case VThalLayer:
 		ly.VThalDefaults()
+	case VSGatedLayer:
+		ly.Params.VSGatedDefaults()
 	}
 	ly.UpdateParams()
 }
@@ -144,7 +164,15 @@ func (ly *Layer) PostBuild() {
 		ly.TDDaPostBuild()
 
 	case BLALayer:
-		ly.BLAPostBuild()
+		fallthrough
+	case CeMLayer:
+		fallthrough
+	case USLayer:
+		fallthrough
+	case PVLayer:
+		fallthrough
+	case VSPatchLayer:
+		ly.PVLVPostBuild()
 
 	case MatrixLayer:
 		ly.MatrixPostBuild()

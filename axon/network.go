@@ -475,7 +475,7 @@ func (nt *Network) WtFmDWtImpl(ctx *Context) {
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
-// GScale conductance scaling, and adapting inhibition
+// and adapting inhibition
 func (nt *Network) SlowAdapt(ctx *Context) {
 	nt.SlowCtr++
 	if nt.SlowCtr < nt.SlowInterval {
@@ -607,8 +607,6 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
-			(*dwts)[idx] = pj.Params.GScale.Scale
-			idx++
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
 				(*dwts)[idx+j] = sy.DWt
@@ -647,8 +645,6 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 		}
 		for _, pji := range ly.SndPrjns {
 			pj := pji.(AxonPrjn).AsAxon()
-			pj.Params.GScale.Scale = davg * dwts[idx]
-			idx++
 			ns := len(pj.Syns)
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])

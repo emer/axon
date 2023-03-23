@@ -18,16 +18,17 @@ type RSalAChParams struct {
 	RewThr     float32     `desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
 	Rew        slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
 	RewPred    slbool.Bool `desc:"use the global Context.NeuroMod.RewPred value"`
+	PPTg       slbool.Bool `desc:"use the global Context.NeuroMod.PPTg value"`
 	SrcLay1Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
 	SrcLay2Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
 	SrcLay3Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
 	SrcLay4Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
-	SrcLay5Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay5Name if present -- -1 if not used"`
 }
 
 func (rp *RSalAChParams) Defaults() {
 	rp.RewThr = 0.1
 	rp.Rew.SetBool(true)
+	rp.PPTg.SetBool(true)
 }
 
 func (rp *RSalAChParams) Update() {
@@ -67,7 +68,7 @@ type RWDaParams struct {
 }
 
 func (rp *RWDaParams) Defaults() {
-	rp.TonicGe = 0.3
+	rp.TonicGe = 0.2
 }
 
 func (rp *RWDaParams) Update() {
@@ -75,7 +76,11 @@ func (rp *RWDaParams) Update() {
 
 // GeFmDA returns excitatory conductance from DA dopamine value
 func (rp *RWDaParams) GeFmDA(da float32) float32 {
-	return rp.TonicGe * (1.0 + da)
+	ge := rp.TonicGe * (1.0 + da)
+	if ge < 0 {
+		ge = 0
+	}
+	return ge
 }
 
 // TDIntegParams are params for reward integrator layer
@@ -150,7 +155,6 @@ func (ly *Layer) RSalAChPostBuild() {
 	ly.Params.RSalACh.SrcLay2Idx = ly.BuildConfigFindLayer("SrcLay2Name", false) // optional
 	ly.Params.RSalACh.SrcLay3Idx = ly.BuildConfigFindLayer("SrcLay3Name", false) // optional
 	ly.Params.RSalACh.SrcLay4Idx = ly.BuildConfigFindLayer("SrcLay4Name", false) // optional
-	ly.Params.RSalACh.SrcLay5Idx = ly.BuildConfigFindLayer("SrcLay5Name", false) // optional
 }
 
 // TDIntegPostBuild does post-Build config

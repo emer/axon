@@ -163,9 +163,9 @@ type RLRateParams struct {
 	On         slbool.Bool `def:"true" desc:"use learning rate modulation"`
 	SigmoidMin float32     `viewif:"On" def:"0.05,1" desc:"minimum learning rate multiplier for sigmoidal act (1-act) factor -- prevents lrate from going too low for extreme values.  Set to 1 to disable Sigmoid derivative factor, which is default for Target layers."`
 	Diff       slbool.Bool `viewif:"On" desc:"modulate learning rate as a function of plus - minus differences"`
-	SpkThr     float32     `viewif:"On" def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
-	DiffThr    float32     `viewif:"On" def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
-	Min        float32     `viewif:"On" def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
+	SpkThr     float32     `viewif:"On&&Diff" def:"0.1" desc:"threshold on Max(CaSpkP, CaSpkD) below which Min lrate applies -- must be > 0 to prevent div by zero"`
+	DiffThr    float32     `viewif:"On&&Diff" def:"0.02" desc:"threshold on recv neuron error delta, i.e., |CaSpkP - CaSpkD| below which lrate is at Min value"`
+	Min        float32     `viewif:"On&&Diff" def:"0.001" desc:"for Diff component, minimum learning rate value when below ActDiffThr"`
 
 	pad, pad1 int32
 }
@@ -573,6 +573,9 @@ func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
 	wtv := sp.Init.RndVar()
 	sy.Wt = mean + wtv
 	sy.SWt = sp.ClipSWt(mean + spct*wtv)
+	if spct == 0 { // this is critical for weak init wt, SPCt = 0 prjns
+		sy.SWt = 0.5
+	}
 	sy.LWt = sp.LWtFmWts(sy.Wt, sy.SWt)
 	sy.DWt = 0
 	sy.DSWt = 0
@@ -702,9 +705,9 @@ type LearnSynParams struct {
 
 	pad, pad1, pad2 int32
 
-	LRate    LRateParams     `desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
-	Trace    TraceParams     `desc:"trace-based learning parameters"`
-	KinaseCa kinase.CaParams `view:"inline" desc:"kinase calcium Ca integration parameters"`
+	LRate    LRateParams     `viewif:"Learn" desc:"learning rate parameters, supporting two levels of modulation on top of base learning rate."`
+	Trace    TraceParams     `viewif:"Learn" desc:"trace-based learning parameters"`
+	KinaseCa kinase.CaParams `viewif:"Learn" view:"inline" desc:"kinase calcium Ca integration parameters"`
 }
 
 func (ls *LearnSynParams) Update() {

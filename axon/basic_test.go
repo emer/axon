@@ -15,6 +15,8 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
+	"github.com/emer/etable/agg"
+	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/mat32"
 )
@@ -63,9 +65,9 @@ var ParamSets = params.Sets{
 func newTestNet() *Network {
 	var testNet Network
 	testNet.InitName(&testNet, "testNet")
-	inLay := testNet.AddLayer("Input", []int{4, 1}, emer.Input)
-	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, emer.Hidden)
-	outLay := testNet.AddLayer("Output", []int{4, 1}, emer.Target)
+	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
+	hidLay := testNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
+	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	_ = inLay
 	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
@@ -132,8 +134,8 @@ func cmprFloats(out, cor []float32, msg string, t *testing.T) {
 
 func TestSpikeProp(t *testing.T) {
 	net := NewNetwork("SpikeNet")
-	inLay := net.AddLayer("Input", []int{1, 1}, emer.Input).(*Layer)
-	hidLay := net.AddLayer("Hidden", []int{1, 1}, emer.Hidden).(*Layer)
+	inLay := net.AddLayer("Input", []int{1, 1}, InputLayer)
+	hidLay := net.AddLayer("Hidden", []int{1, 1}, SuperLayer)
 
 	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward).(*Prjn)
 
@@ -189,6 +191,7 @@ func TestGPUAct(t *testing.T) {
 	if os.Getenv("TEST_GPU") == "" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
+	// vgpu.Debug = true
 	NetActTest(t, true)
 }
 
@@ -737,9 +740,9 @@ func TestInhibAct(t *testing.T) {
 	var InhibNet Network
 	InhibNet.InitName(&InhibNet, "InhibNet")
 
-	inLay := InhibNet.AddLayer("Input", []int{4, 1}, emer.Input).(*Layer)
-	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, emer.Hidden).(*Layer)
-	outLay := InhibNet.AddLayer("Output", []int{4, 1}, emer.Target).(*Layer)
+	inLay := InhibNet.AddLayer("Input", []int{4, 1}, InputLayer)
+	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
+	outLay := InhibNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	InhibNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
 	InhibNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Inhib)
@@ -874,4 +877,174 @@ func saveToFile(net *Network, t *testing.T) {
 		t.Error(err)
 	}
 	fp.Write(wb)
+}
+
+func TestSWtInit(t *testing.T) {
+	pj := &PrjnParams{}
+	pj.Defaults()
+	sy := &Synapse{}
+
+	nsamp := 100
+	sch := etable.Schema{
+		{"Wt", etensor.FLOAT32, nil, nil},
+		{"LWt", etensor.FLOAT32, nil, nil},
+		{"SWt", etensor.FLOAT32, nil, nil},
+	}
+	dt := &etable.Table{}
+	dt.SetFromSchema(sch, nsamp)
+
+	/////////////////////////////////////////////
+	mean := float32(0.5)
+	vr := float32(0.25)
+	spct := float32(0.5)
+	pj.SWt.Init.Var = vr
+
+	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
+	for i := 0; i < nsamp; i++ {
+		pj.SWt.InitWtsSyn(sy, mean, spct)
+		dt.SetCellFloat("Wt", i, float64(sy.Wt))
+		dt.SetCellFloat("LWt", i, float64(sy.LWt))
+		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+	}
+	ix := etable.NewIdxView(dt)
+	desc := agg.DescAll(ix)
+
+	meanRow := desc.RowsByString("Agg", "Mean", etable.Equals, etable.UseCase)[0]
+	minRow := desc.RowsByString("Agg", "Min", etable.Equals, etable.UseCase)[0]
+	maxRow := desc.RowsByString("Agg", "Max", etable.Equals, etable.UseCase)[0]
+	semRow := desc.RowsByString("Agg", "Sem", etable.Equals, etable.UseCase)[0]
+
+	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	}
+	if desc.CellFloat("Wt", meanRow) < 0.45 || desc.CellFloat("Wt", meanRow) > 0.55 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	}
+	if desc.CellFloat("Wt", semRow) < 0.01 || desc.CellFloat("Wt", semRow) > 0.02 {
+		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.CellFloat("Wt", semRow))
+	}
+
+	// b := bytes.NewBuffer(nil)
+	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// fmt.Printf("%s\n", string(b.Bytes()))
+
+	/////////////////////////////////////////////
+	mean = float32(0.5)
+	vr = float32(0.25)
+	spct = float32(1.0)
+	pj.SWt.Init.Var = vr
+
+	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
+	for i := 0; i < nsamp; i++ {
+		pj.SWt.InitWtsSyn(sy, mean, spct)
+		dt.SetCellFloat("Wt", i, float64(sy.Wt))
+		dt.SetCellFloat("LWt", i, float64(sy.LWt))
+		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+	}
+	desc = agg.DescAll(ix)
+	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	}
+	if desc.CellFloat("Wt", meanRow) < 0.45 || desc.CellFloat("Wt", meanRow) > 0.55 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	}
+	if desc.CellFloat("Wt", semRow) < 0.01 || desc.CellFloat("Wt", semRow) > 0.02 {
+		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.CellFloat("Wt", semRow))
+	}
+	if desc.CellFloat("LWt", minRow) != 0.5 || desc.CellFloat("LWt", maxRow) != 0.5 {
+		t.Errorf("SPct: %g\t LWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
+	}
+	// b.Reset()
+	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// fmt.Printf("%s\n", string(b.Bytes()))
+
+	/////////////////////////////////////////////
+	mean = float32(0.5)
+	vr = float32(0.25)
+	spct = float32(0.0)
+	pj.SWt.Init.Var = vr
+
+	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
+	for i := 0; i < nsamp; i++ {
+		pj.SWt.InitWtsSyn(sy, mean, spct)
+		dt.SetCellFloat("Wt", i, float64(sy.Wt))
+		dt.SetCellFloat("LWt", i, float64(sy.LWt))
+		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+	}
+	desc = agg.DescAll(ix)
+	if desc.CellFloat("Wt", minRow) > 0.3 || desc.CellFloat("Wt", maxRow) < 0.7 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.3, > 0.7 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	}
+	if desc.CellFloat("Wt", meanRow) < 0.45 || desc.CellFloat("Wt", meanRow) > 0.55 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.45, < 0.55 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	}
+	if desc.CellFloat("Wt", semRow) < 0.01 || desc.CellFloat("Wt", semRow) > 0.02 {
+		t.Errorf("SPct: %g\t Wt SEM should be > 0.01, < 0.02 not: %g\n", spct, desc.CellFloat("Wt", semRow))
+	}
+	if desc.CellFloat("SWt", minRow) != 0.5 || desc.CellFloat("SWt", maxRow) != 0.5 {
+		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
+	}
+	// b.Reset()
+	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// fmt.Printf("%s\n", string(b.Bytes()))
+
+	/////////////////////////////////////////////
+	mean = float32(0.1)
+	vr = float32(0.05)
+	spct = float32(0.0)
+	pj.SWt.Init.Var = vr
+
+	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
+	for i := 0; i < nsamp; i++ {
+		pj.SWt.InitWtsSyn(sy, mean, spct)
+		dt.SetCellFloat("Wt", i, float64(sy.Wt))
+		dt.SetCellFloat("LWt", i, float64(sy.LWt))
+		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+	}
+	desc = agg.DescAll(ix)
+	if desc.CellFloat("Wt", minRow) > 0.08 || desc.CellFloat("Wt", maxRow) < 0.12 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.08, > 0.12 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	}
+	if desc.CellFloat("Wt", meanRow) < 0.08 || desc.CellFloat("Wt", meanRow) > 0.12 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.08, < 0.12 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	}
+	if desc.CellFloat("SWt", minRow) != 0.5 || desc.CellFloat("SWt", maxRow) != 0.5 {
+		t.Errorf("SPct: %g\t SWt Min and Max should both be 0.5, not: %g, %g\n", spct, desc.CellFloat("LWt", minRow), desc.CellFloat("LWt", maxRow))
+	}
+	// b.Reset()
+	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// fmt.Printf("%s\n", string(b.Bytes()))
+}
+
+func TestSWtLinLearn(t *testing.T) {
+	pj := &PrjnParams{}
+	pj.Defaults()
+	sy := &Synapse{}
+
+	/////////////////////////////////////////////
+	mean := float32(0.1)
+	vr := float32(0.05)
+	spct := float32(0.0)
+	dwt := float32(0.1)
+	pj.SWt.Init.Var = vr
+	pj.SWt.Adapt.SigGain = 1
+	nlrn := 10
+	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
+
+	pj.SWt.InitWtsSyn(sy, mean, spct)
+	// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
+	for i := 0; i < nlrn; i++ {
+		sy.DWt = dwt
+		pj.SWt.WtFmDWt(&sy.DWt, &sy.Wt, &sy.LWt, sy.SWt)
+		// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
+	}
+	if sy.Wt != 1 {
+		t.Errorf("SPct: %g\t Wt should be 1 not: %g\n", spct, sy.Wt)
+	}
+	if sy.LWt != 1 {
+		t.Errorf("SPct: %g\t LWt should be 1 not: %g\n", spct, sy.LWt)
+	}
+	if sy.SWt != 0.5 {
+		t.Errorf("SPct: %g\t SWt should be 0.5 not: %g\n", spct, sy.SWt)
+	}
 }

@@ -14,12 +14,9 @@ test:
 	$(GOTEST) -v ./...
 clean:
 	$(GOCLEAN)
-gosl:
-	gosl -keep -exclude=Update,UpdateParams,Defaults,Init github.com/goki/mat32/fastexp.go github.com/emer/etable/minmax ../chans/chans.go ../chans ../kinase time.go neuron.go synapse.go act.go learn.go layer.go
-
 
 # NOTE: MUST update version number here prior to running 'make release'
-VERS=v1.7.10
+VERS=v1.7.11
 PACKAGE=axon
 VERS_DATE=`date -u +%Y-%m-%d\ %H:%M`
 GIT_COMMIT=`git rev-parse --short HEAD`

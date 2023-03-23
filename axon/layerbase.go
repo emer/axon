@@ -20,25 +20,26 @@ import (
 // LayerBase manages the structural elements of the layer, which are common
 // to any Layer type. The main Layer then can just have the algorithm-specific code.
 type LayerBase struct {
-	AxonLay     AxonLayer         `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Network     emer.Network      `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
-	Nm          string            `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
-	Cls         string            `desc:"Class is for applying parameter styles, can be space separated multple tags"`
-	Off         bool              `desc:"inactivate this layer -- allows for easy experimentation"`
-	Shp         etensor.Shape     `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
-	Typ         emer.LayerType    `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
-	Rel         relpos.Rel        `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
-	Ps          mat32.Vec3        `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
-	Idx         int               `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
-	NeurStIdx   int               `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
-	RepIxs      []int             `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
-	RepShp      etensor.Shape     `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
-	RcvPrjns    AxonPrjns         `desc:"list of receiving projections into this layer from other layers"`
-	SndPrjns    AxonPrjns         `desc:"list of sending projections from this layer to other layers"`
-	Neurons     []Neuron          `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
-	Pools       []Pool            `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
-	Exts        []float32         `view:"-" desc:"external input values for this layer, allocated from network global Exts slice"`
-	BuildConfig map[string]string `desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
+	AxonLay       AxonLayer          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Network       emer.Network       `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
+	Nm            string             `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
+	Cls           string             `desc:"Class is for applying parameter styles, can be space separated multple tags"`
+	Off           bool               `desc:"inactivate this layer -- allows for easy experimentation"`
+	Shp           etensor.Shape      `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
+	Typ           emer.LayerType     `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
+	Rel           relpos.Rel         `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
+	Ps            mat32.Vec3         `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
+	Idx           int                `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
+	NeurStIdx     int                `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
+	RepIxs        []int              `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
+	RepShp        etensor.Shape      `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
+	RcvPrjns      AxonPrjns          `desc:"list of receiving projections into this layer from other layers"`
+	SndPrjns      AxonPrjns          `desc:"list of sending projections from this layer to other layers"`
+	Neurons       []Neuron           `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
+	Pools         []Pool             `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
+	Exts          []float32          `view:"-" desc:"external input values for this layer, allocated from network global Exts slice"`
+	BuildConfig   map[string]string  `desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
+	ParamsHistory params.HistoryImpl `desc:"provides a history of parameters applied to the layer"`
 }
 
 // emer.Layer interface methods
@@ -128,6 +129,24 @@ func (ly *LayerBase) SetRelPos(rel relpos.Rel) {
 	if ly.Rel.Scale == 0 {
 		ly.Rel.Defaults()
 	}
+}
+
+// PlaceRightOf positions the layer to the right of the other layer,
+// with given spacing, using default YAlign = Front alignment
+func (ly *LayerBase) PlaceRightOf(other *Layer, space float32) {
+	ly.Rel = relpos.NewRightOf(other.Name(), space)
+}
+
+// PlaceBehind positions the layer behind the other layer,
+// with given spacing, using default XAlign = Left alignment
+func (ly *LayerBase) PlaceBehind(other *Layer, space float32) {
+	ly.Rel = relpos.NewBehind(other.Name(), space)
+}
+
+// PlaceAbove positions the layer above the other layer,
+// using default XAlign = Left, YAlign = Front alignment
+func (ly *LayerBase) PlaceAbove(other *Layer) {
+	ly.Rel = relpos.NewAbove(other.Name())
 }
 
 func (ly *LayerBase) Size() mat32.Vec2 {
@@ -251,6 +270,19 @@ func (ly *LayerBase) RecipToRecvPrjn(rpj emer.Prjn) (emer.Prjn, bool) {
 func (ly *LayerBase) Config(shape []int, typ emer.LayerType) {
 	ly.SetShape(shape)
 	ly.Typ = typ
+}
+
+// ParamsHistoryReset resets parameter application history
+func (ly *LayerBase) ParamsHistoryReset() {
+	ly.ParamsHistory.ParamsHistoryReset()
+	for _, pj := range ly.RcvPrjns {
+		pj.(params.History).ParamsHistoryReset()
+	}
+}
+
+// ParamsApplied is just to satisfy History interface so reset can be applied
+func (ly *LayerBase) ParamsApplied(sel *params.Sel) {
+	ly.ParamsHistory.ParamsApplied(sel)
 }
 
 // ApplyParams applies given parameter style Sheet to this layer and its recv projections.

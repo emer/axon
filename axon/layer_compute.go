@@ -134,7 +134,7 @@ func (ly *Layer) GInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, vals *La
 		drvGe, nonDrvPct = ly.PulvinarDriver(ni)
 	}
 
-	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, drvGe, nonDrvPct)
+	saveVal := ly.Params.SpecialPreGs(ctx, ni, nrn, pl, vals, drvGe, nonDrvPct)
 
 	ly.Params.GFmRawSyn(ctx, ni, nrn)
 	ly.Params.GiInteg(ctx, ni, nrn, pl, vals)
@@ -251,8 +251,7 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		lay2MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay2Idx)
 		lay3MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay3Idx)
 		lay4MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay4Idx)
-		lay5MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay5Idx)
-		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct, lay5MaxAct)
+		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
 	case RWDaLayer:
 		net := ly.Network.(AxonNetwork).AsAxon()
 		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
@@ -399,7 +398,7 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 func (ly *Layer) MinusPhasePost(ctx *Context) {
 	switch ly.LayerType() {
 	case MatrixLayer:
-		ly.MatrixGated() // need gated state for decisions about action processing, so do in minus too
+		ly.MatrixGated(ctx) // need gated state for decisions about action processing, so do in minus too
 	}
 }
 
@@ -437,16 +436,14 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.TrgAvgFmD()
 	ly.AxonLay.CorSimFmActs() // GPU syncs down the state
-	switch ly.LayerType() {
-	case MatrixLayer:
-		ly.MatrixGated()
-	case VThalLayer:
-		fallthrough
-	case PTMaintLayer:
-		if ctx.NeuroMod.HasRew.IsTrue() { // if got reward outcome, we clear
+	if ly.Params.Act.Decay.OnRew.IsTrue() {
+		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.DipReset.IsTrue() {
 			ly.DecayState(ctx, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 		}
-
+	}
+	switch ly.LayerType() {
+	case MatrixLayer:
+		ly.MatrixGated(ctx)
 	}
 }
 
