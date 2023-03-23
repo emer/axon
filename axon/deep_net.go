@@ -298,9 +298,7 @@ func (nt *Network) AddPTPredLayer(ptMaint, ct, thal *Layer, ptToPredPrjn, ctToPr
 	ptPred.PlaceBehind(ptMaint, space)
 	nt.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn).SetClass("PTtoPred")
 	nt.ConnectLayers(ct, ptPred, ctToPredPrjn, emer.PrjnType(ForwardPrjn)).SetClass("CTtoPred")
-	// toThal, fmThal := nt.BidirConnectLayers(ptPred, thal, toThalPrjn)
-	// toThal.SetClass("PredToThal")
-	// fmThal.SetClass("ThalToPred")
+	// note: ptpred does not connect to thalamus -- it is only active on trial *after* thal gating
 	return
 }
 

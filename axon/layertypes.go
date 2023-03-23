@@ -85,8 +85,6 @@ const (
 	// state changes during the period of active goal maintenance.
 	// This layer provides the primary input to VSPatch US-timing
 	// prediction layers, and other layers that require predictive dynamic
-	// Use Act.Dend.ModGain to set extra strength for thalamic gating
-	// inputs which are only briefly active.
 	PTPredLayer
 
 	// PTNotMaintLayer implements a tonically active layer that is inhibited
