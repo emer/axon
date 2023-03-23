@@ -182,9 +182,3 @@ where `Max` again normalizes the receiving activity because VSPatch also can sta
 * Waelti, P., Dickinson, A., & Schultz, W. (2001). Dopamine responses comply with basic assumptions of formal learning theory. Nature, 412, 43–48. http://www.ncbi.nlm.nih.gov/pubmed/11452299
 
 
-# TODO:
-
-* multiplicative effort discounting will not produce a net negative on goal failure -- need an extra case for that.
-
-* PT not clearing -- need to clear super too!
-
