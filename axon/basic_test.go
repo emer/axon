@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
@@ -70,9 +69,9 @@ func newTestNet() *Network {
 	outLay := testNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
 	_ = inLay
-	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
-	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
-	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
+	testNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), ForwardPrjn)
+	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
+	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
 
 	ctx := NewContext()
 
@@ -86,7 +85,7 @@ func newTestNet() *Network {
 
 func TestSynVals(t *testing.T) {
 	testNet := newTestNet()
-	hidLay := testNet.LayerByName("Hidden").(*Layer)
+	hidLay := testNet.LayByName("Hidden")
 	p, err := hidLay.SendNameTry("Input")
 	if err != nil {
 		t.Error(err)
@@ -137,7 +136,7 @@ func TestSpikeProp(t *testing.T) {
 	inLay := net.AddLayer("Input", []int{1, 1}, InputLayer)
 	hidLay := net.AddLayer("Hidden", []int{1, 1}, SuperLayer)
 
-	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward).(*Prjn)
+	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), ForwardPrjn)
 
 	net.Build()
 	net.Defaults()
@@ -200,9 +199,9 @@ func NetActTest(t *testing.T, gpu bool) {
 	testNet.InitExt()
 	inPats := newInPats()
 
-	inLay := testNet.LayerByName("Input").(*Layer)
-	hidLay := testNet.LayerByName("Hidden").(*Layer)
-	outLay := testNet.LayerByName("Output").(*Layer)
+	inLay := testNet.LayByName("Input")
+	hidLay := testNet.LayByName("Hidden")
+	outLay := testNet.LayByName("Output")
 
 	ctx := NewContext()
 
@@ -366,9 +365,9 @@ func TestGPULearn(t *testing.T) {
 func NetTestLearn(t *testing.T, gpu bool) {
 	testNet := newTestNet()
 	inPats := newInPats()
-	inLay := testNet.LayerByName("Input").(*Layer)
-	hidLay := testNet.LayerByName("Hidden").(*Layer)
-	outLay := testNet.LayerByName("Output").(*Layer)
+	inLay := testNet.LayByName("Input")
+	hidLay := testNet.LayByName("Hidden")
+	outLay := testNet.LayByName("Output")
 
 	// allp := testNet.AllParams()
 	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
@@ -555,9 +554,9 @@ func TestNetRLRate(t *testing.T) {
 func NetTestRLRate(t *testing.T, gpu bool) {
 	testNet := newTestNet()
 	inPats := newInPats()
-	inLay := testNet.LayerByName("Input").(*Layer)
-	hidLay := testNet.LayerByName("Hidden").(*Layer)
-	outLay := testNet.LayerByName("Output").(*Layer)
+	inLay := testNet.LayByName("Input")
+	hidLay := testNet.LayByName("Hidden")
+	outLay := testNet.LayByName("Output")
 
 	// allp := testNet.AllParams()
 	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
@@ -744,10 +743,12 @@ func TestInhibAct(t *testing.T) {
 	hidLay := InhibNet.AddLayer("Hidden", []int{4, 1}, SuperLayer)
 	outLay := InhibNet.AddLayer("Output", []int{4, 1}, TargetLayer)
 
-	InhibNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Forward)
-	InhibNet.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), emer.Inhib)
-	InhibNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), emer.Forward)
-	InhibNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), emer.Back)
+	one2one := prjn.NewOneToOne()
+
+	InhibNet.ConnectLayers(inLay, hidLay, one2one, ForwardPrjn)
+	InhibNet.ConnectLayers(inLay, hidLay, one2one, InhibPrjn)
+	InhibNet.ConnectLayers(hidLay, outLay, one2one, ForwardPrjn)
+	InhibNet.ConnectLayers(outLay, hidLay, one2one, BackPrjn)
 
 	ctx := NewContext()
 
@@ -899,9 +900,12 @@ func TestSWtInit(t *testing.T) {
 	spct := float32(0.5)
 	pj.SWt.Init.Var = vr
 
+	nt := NewNetwork("test")
+	nt.SetRndSeed(1)
+
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(sy, mean, spct)
+		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -936,7 +940,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(sy, mean, spct)
+		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -966,7 +970,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(sy, mean, spct)
+		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -996,7 +1000,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(sy, mean, spct)
+		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -1021,6 +1025,9 @@ func TestSWtLinLearn(t *testing.T) {
 	pj.Defaults()
 	sy := &Synapse{}
 
+	nt := NewNetwork("test")
+	nt.SetRndSeed(1)
+
 	/////////////////////////////////////////////
 	mean := float32(0.1)
 	vr := float32(0.05)
@@ -1031,7 +1038,7 @@ func TestSWtLinLearn(t *testing.T) {
 	nlrn := 10
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 
-	pj.SWt.InitWtsSyn(sy, mean, spct)
+	pj.SWt.InitWtsSyn(nt, sy, mean, spct)
 	// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 	for i := 0; i < nlrn; i++ {
 		sy.DWt = dwt

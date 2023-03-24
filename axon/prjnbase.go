@@ -26,10 +26,10 @@ type PrjnBase struct {
 	Off           bool               `desc:"inactivate this projection -- allows for easy experimentation"`
 	Cls           string             `desc:"Class is for applying parameter styles, can be space separated multple tags"`
 	Notes         string             `desc:"can record notes about this projection here"`
-	Send          emer.Layer         `desc:"sending layer for this projection"`
-	Recv          emer.Layer         `desc:"receiving layer for this projection -- the emer.Layer interface can be converted to the specific Layer type you are using, e.g., rlay := prjn.Recv.(*axon.Layer)"`
+	Send          *Layer             `desc:"sending layer for this projection"`
+	Recv          *Layer             `desc:"receiving layer for this projection"`
 	Pat           prjn.Pattern       `desc:"pattern of connectivity"`
-	Typ           emer.PrjnType      `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
+	Typ           PrjnTypes          `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
 	ParamsHistory params.HistoryImpl `desc:"provides a history of parameters applied to the layer"`
 
 	RecvConNAvgMax minmax.AvgMax32 `inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
@@ -63,12 +63,12 @@ func (pj *PrjnBase) Name() string {
 }
 func (pj *PrjnBase) SetClass(cls string) emer.Prjn         { pj.Cls = cls; return pj.AxonPrj }
 func (pj *PrjnBase) SetPattern(pat prjn.Pattern) emer.Prjn { pj.Pat = pat; return pj.AxonPrj }
-func (pj *PrjnBase) SetType(typ emer.PrjnType) emer.Prjn   { pj.Typ = typ; return pj.AxonPrj }
+func (pj *PrjnBase) SetType(typ emer.PrjnType) emer.Prjn   { pj.Typ = PrjnTypes(typ); return pj.AxonPrj }
 func (pj *PrjnBase) Label() string                         { return pj.Name() }
 func (pj *PrjnBase) RecvLay() emer.Layer                   { return pj.Recv }
 func (pj *PrjnBase) SendLay() emer.Layer                   { return pj.Send }
 func (pj *PrjnBase) Pattern() prjn.Pattern                 { return pj.Pat }
-func (pj *PrjnBase) Type() emer.PrjnType                   { return pj.Typ }
+func (pj *PrjnBase) Type() emer.PrjnType                   { return emer.PrjnType(pj.Typ) }
 func (pj *PrjnBase) PrjnTypeName() string                  { return pj.Typ.String() }
 func (pj *PrjnBase) IsOff() bool                           { return pj.Off }
 
@@ -77,7 +77,7 @@ func (pj *PrjnBase) IsOff() bool                           { return pj.Off }
 func (pj *PrjnBase) SetOff(off bool) { pj.Off = off }
 
 // Connect sets the connectivity between two layers and the pattern to use in interconnecting them
-func (pj *PrjnBase) Connect(slay, rlay emer.Layer, pat prjn.Pattern, typ emer.PrjnType) {
+func (pj *PrjnBase) Connect(slay, rlay *Layer, pat prjn.Pattern, typ PrjnTypes) {
 	pj.Send = slay
 	pj.Recv = rlay
 	pj.Pat = pat

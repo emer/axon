@@ -7,7 +7,6 @@ package axon
 import (
 	"strings"
 
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
@@ -117,32 +116,32 @@ func (nt *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
 // toPulvPat is the prjn.Pattern CT -> Pulv and fmPulvPat is Pulv -> CT, Super
 // Typically Pulv is a different shape than Super and CT, so use Full or appropriate
 // topological pattern
-func (nt *Network) ConnectToPulv(super, ct, pulv emer.Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toSuper, toCT emer.Prjn) {
-	toPulv = nt.ConnectLayers(ct, pulv, toPulvPat, emer.Forward).SetClass("CTToPulv")
-	toSuper = nt.ConnectLayers(pulv, super, fmPulvPat, emer.Back).SetClass("FmPulv")
-	toCT = nt.ConnectLayers(pulv, ct, fmPulvPat, emer.Back).SetClass("FmPulv")
+func (nt *Network) ConnectToPulv(super, ct, pulv *Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toSuper, toCT *Prjn) {
+	toPulv = nt.ConnectLayers(ct, pulv, toPulvPat, ForwardPrjn).SetClass("CTToPulv").(AxonPrjn).AsAxon()
+	toSuper = nt.ConnectLayers(pulv, super, fmPulvPat, BackPrjn).SetClass("FmPulv").(AxonPrjn).AsAxon()
+	toCT = nt.ConnectLayers(pulv, ct, fmPulvPat, BackPrjn).SetClass("FmPulv").(AxonPrjn).AsAxon()
 	return
 }
 
 // ConnectCtxtToCT adds a CTCtxtPrjn from given sending layer to a CT layer
-func (nt *Network) ConnectCtxtToCT(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(CTCtxtPrjn))
+func (nt *Network) ConnectCtxtToCT(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	return nt.ConnectLayers(send, recv, pat, CTCtxtPrjn)
 }
 
 // ConnectCTSelf adds a Self (Lateral) CTCtxtPrjn projection within a CT layer,
 // in addition to a regular lateral projection, which supports active maintenance.
 // The CTCtxtPrjn has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
-func (nt *Network) ConnectCTSelf(ly emer.Layer, pat prjn.Pattern) (ctxt, maint emer.Prjn) {
-	ctxt = nt.ConnectLayers(ly, ly, pat, emer.PrjnType(CTCtxtPrjn)).SetClass("CTSelfCtxt")
-	maint = nt.LateralConnectLayer(ly, pat).SetClass("CTSelfMaint")
+func (nt *Network) ConnectCTSelf(ly *Layer, pat prjn.Pattern) (ctxt, maint *Prjn) {
+	ctxt = nt.ConnectLayers(ly, ly, pat, CTCtxtPrjn).SetClass("CTSelfCtxt").(AxonPrjn).AsAxon()
+	maint = nt.LateralConnectLayer(ly, pat).SetClass("CTSelfMaint").(AxonPrjn).AsAxon()
 	return
 }
 
 // ConnectSuperToCT adds a CTCtxtPrjn from given sending Super layer to a CT layer
 // This automatically sets the FmSuper flag to engage proper defaults,
 // Uses given projection pattern -- e.g., Full, OneToOne, or PoolOneToOne
-func (nt *Network) ConnectSuperToCT(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	pj := nt.ConnectLayers(send, recv, pat, emer.PrjnType(CTCtxtPrjn))
+func (nt *Network) ConnectSuperToCT(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	pj := nt.ConnectLayers(send, recv, pat, CTCtxtPrjn)
 	pj.SetClass("CTFmSuper")
 	return pj
 }
@@ -190,8 +189,8 @@ func (nt *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeu
 
 // ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
 // which supports active maintenance, with a class of PTSelfMaint
-func (nt *Network) ConnectPTMaintSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
+func (nt *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern) *Prjn {
+	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint").(AxonPrjn).AsAxon()
 }
 
 // AddPTNotMaintLayer adds a PTNotMaintLayer of given size, for given
@@ -207,8 +206,8 @@ func (nt *Network) AddPTNotMaintLayer(ptMaint *Layer, nNeurY, nNeurX int, space 
 
 // ConnectPTNotMaint adds a projection from PTMaintLayer to PTNotMaintLayer,
 // as fixed inhibitory connections, with class ToPTNotMaintInhib
-func (nt *Network) ConnectPTNotMaint(ptMaint, ptNotMaint emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(ptMaint, ptNotMaint, pat, emer.PrjnType(CTCtxtPrjn)).SetClass("ToPTNotMaintInhib")
+func (nt *Network) ConnectPTNotMaint(ptMaint, ptNotMaint *Layer, pat prjn.Pattern) *Prjn {
+	return nt.ConnectLayers(ptMaint, ptNotMaint, pat, CTCtxtPrjn).SetClass("ToPTNotMaintInhib").(AxonPrjn).AsAxon()
 }
 
 // AddPTMaintThalForSuper adds a PTMaint pyramidal tract active maintenance layer and a
@@ -242,9 +241,9 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct *Layer, suffix string, super
 	sthal, thals := nt.BidirConnectLayers(super, thal, superToPT) // shortcuts
 	sthal.SetClass("SuperToThal")
 	thals.SetClass("ThalToSuper")
-	nt.ConnectLayers(super, pt, superToPT, emer.Forward).SetClass("SuperToPT")
+	nt.ConnectLayers(super, pt, superToPT, ForwardPrjn).SetClass("SuperToPT")
 	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
-	nt.ConnectLayers(ct, thal, ctToThal, emer.Forward).SetClass("CTtoThal")
+	nt.ConnectLayers(ct, thal, ctToThal, ForwardPrjn).SetClass("CTtoThal")
 	return
 }
 
@@ -265,8 +264,8 @@ func (nt *Network) AddPTPredLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeur
 
 // ConnectPTPredSelf adds a Self (Lateral) projection within a PTPredLayer,
 // which supports active maintenance, with a class of PTSelfMaint
-func (nt *Network) ConnectPTPredSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint")
+func (nt *Network) ConnectPTPredSelf(ly *Layer, pat prjn.Pattern) *Prjn {
+	return nt.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint").(AxonPrjn).AsAxon()
 }
 
 // ConnectPTPredToPulv connects PTPred with given Pulv: PTPred -> Pulv is class PTPredToPulv,
@@ -274,9 +273,9 @@ func (nt *Network) ConnectPTPredSelf(ly emer.Layer, pat prjn.Pattern) emer.Prjn 
 // toPulvPat is the prjn.Pattern PTPred -> Pulv and fmPulvPat is Pulv -> PTPred
 // Typically Pulv is a different shape than PTPred, so use Full or appropriate
 // topological pattern
-func (nt *Network) ConnectPTPredToPulv(ptPred, pulv emer.Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toPTPred emer.Prjn) {
-	toPulv = nt.ConnectLayers(ptPred, pulv, toPulvPat, emer.Forward).SetClass("PTPredToPulv")
-	toPTPred = nt.ConnectLayers(pulv, ptPred, fmPulvPat, emer.Back).SetClass("FmPulv")
+func (nt *Network) ConnectPTPredToPulv(ptPred, pulv *Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toPTPred *Prjn) {
+	toPulv = nt.ConnectLayers(ptPred, pulv, toPulvPat, ForwardPrjn).SetClass("PTPredToPulv").(AxonPrjn).AsAxon()
+	toPTPred = nt.ConnectLayers(pulv, ptPred, fmPulvPat, BackPrjn).SetClass("FmPulv").(AxonPrjn).AsAxon()
 	return
 }
 
@@ -297,7 +296,7 @@ func (nt *Network) AddPTPredLayer(ptMaint, ct, thal *Layer, ptToPredPrjn, ctToPr
 	ptPred.SetClass(name)
 	ptPred.PlaceBehind(ptMaint, space)
 	nt.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn).SetClass("PTtoPred")
-	nt.ConnectLayers(ct, ptPred, ctToPredPrjn, emer.PrjnType(ForwardPrjn)).SetClass("CTtoPred")
+	nt.ConnectLayers(ct, ptPred, ctToPredPrjn, ForwardPrjn).SetClass("CTtoPred")
 	// note: ptpred does not connect to thalamus -- it is only active on trial *after* thal gating
 	return
 }

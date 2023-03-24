@@ -116,10 +116,9 @@ func (ly *Layer) MatrixDefaults() {
 	// important: user needs to adjust wt scale of some PFC inputs vs others:
 	// drivers vs. modulators
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.SWt.Init.SPct = 0
-		if pj.Send.(AxonLayer).LayerType() == GPLayer { // From GPe TA or In
+		if pj.Send.LayerType() == GPLayer { // From GPe TA or In
 			pj.Params.PrjnScale.Abs = 1
 			pj.Params.Learn.Learn.SetBool(false)
 			pj.Params.SWt.Adapt.On.SetBool(false)
@@ -144,7 +143,7 @@ func (ly *Layer) MatrixDefaults() {
 // downloaded from GPU
 func (ly *Layer) MatrixGated(ctx *Context) bool {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
-		oly := ly.Network.Layer(int(ly.Params.Matrix.OtherMatrixIdx)).(AxonLayer).AsAxon()
+		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIdx)]
 		ly.Pools[0].Gated = oly.Pools[0].Gated
 		// note: NoGo layers don't track gating at the sub-pool level!
 		return oly.Pools[0].Gated.IsTrue()
@@ -153,27 +152,27 @@ func (ly *Layer) MatrixGated(ctx *Context) bool {
 
 	thalGated := false
 	if ly.Params.Matrix.ThalLay1Idx >= 0 {
-		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay1Idx)).(AxonLayer).AsAxon()
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Idx)]
 		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
 	}
 	if ly.Params.Matrix.ThalLay2Idx >= 0 {
-		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay2Idx)).(AxonLayer).AsAxon()
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Idx)]
 		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
 	}
 	if ly.Params.Matrix.ThalLay3Idx >= 0 {
-		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay3Idx)).(AxonLayer).AsAxon()
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Idx)]
 		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
 	}
 	if ly.Params.Matrix.ThalLay4Idx >= 0 {
-		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay4Idx)).(AxonLayer).AsAxon()
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Idx)]
 		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
 	}
 	if ly.Params.Matrix.ThalLay5Idx >= 0 {
-		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay5Idx)).(AxonLayer).AsAxon()
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Idx)]
 		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
 	}
 	if ly.Params.Matrix.ThalLay6Idx >= 0 {
-		tly := ly.Network.Layer(int(ly.Params.Matrix.ThalLay6Idx)).(AxonLayer).AsAxon()
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Idx)]
 		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
 	}
 
@@ -262,35 +261,34 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.Learn.Learn.SetBool(false)
 		pj.Params.SWt.Adapt.SigGain = 1
 		pj.Params.SWt.Init.SPct = 0
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.25
 		pj.Params.SWt.Init.Sym.SetBool(false)
-		if pj.Send.(AxonLayer).LayerType() == MatrixLayer {
+		if pj.Send.LayerType() == MatrixLayer {
 			pj.Params.PrjnScale.Abs = 0.5
-		} else if pj.Send.(AxonLayer).LayerType() == STNLayer {
+		} else if pj.Send.LayerType() == STNLayer {
 			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
 		}
 		switch ly.Params.GP.GPType {
 		case GPeIn:
-			if pj.Send.(AxonLayer).LayerType() == MatrixLayer { // MtxNoToGPeIn -- primary NoGo pathway
+			if pj.Send.LayerType() == MatrixLayer { // MtxNoToGPeIn -- primary NoGo pathway
 				pj.Params.PrjnScale.Abs = 1
-			} else if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeOutToGPeIn
+			} else if pj.Send.LayerType() == GPLayer { // GPeOutToGPeIn
 				pj.Params.PrjnScale.Abs = 0.3 // was 0.5
 			}
-			if pj.Send.(AxonLayer).LayerType() == STNLayer { // STNpToGPeIn -- stronger to drive burst of activity
+			if pj.Send.LayerType() == STNLayer { // STNpToGPeIn -- stronger to drive burst of activity
 				pj.Params.PrjnScale.Abs = 1 // was 0.5
 			}
 		case GPeOut:
-			if pj.Send.(AxonLayer).LayerType() == STNLayer { // STNpToGPeOut
+			if pj.Send.LayerType() == STNLayer { // STNpToGPeOut
 				pj.Params.PrjnScale.Abs = 0.1
 			}
 		case GPeTA:
-			if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToGPeTA
+			if pj.Send.LayerType() == GPLayer { // GPeInToGPeTA
 				pj.Params.PrjnScale.Abs = 0.7 // was 0.9 -- just enough to knock down to near-zero at baseline
 			}
 		}
@@ -305,17 +303,16 @@ func (ly *Layer) GPiDefaults() {
 	ly.Params.Act.Init.GeBase = 0.6
 	// note: GPLayer took care of STN input prjns
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.SWt.Adapt.SigGain = 1
 		pj.Params.SWt.Init.SPct = 0
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.25
 		pj.Params.SWt.Init.Sym.SetBool(false)
 		pj.Params.Learn.Learn.SetBool(false)
-		if pj.Send.(AxonLayer).LayerType() == MatrixLayer { // MtxGoToGPi
+		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
 			pj.Params.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
-		} else if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToGPi
+		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi
 			pj.Params.PrjnScale.Abs = 1 // stronger because integrated signal, also act can be weaker
 		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
 			pj.Params.PrjnScale.Abs = 1
@@ -368,8 +365,7 @@ func (ly *Layer) STNDefaults() {
 		ly.Params.Act.Init.GeVar = 0.2
 	}
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.Learn.Learn.SetBool(false)
 		pj.Params.SWt.Adapt.SigGain = 1
 		pj.Params.SWt.Init.SPct = 0
@@ -377,11 +373,11 @@ func (ly *Layer) STNDefaults() {
 		pj.Params.SWt.Init.Var = 0.25
 		pj.Params.SWt.Init.Sym.SetBool(false)
 		if strings.HasSuffix(ly.Nm, "STNp") {
-			if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToSTNp
+			if pj.Send.LayerType() == GPLayer { // GPeInToSTNp
 				pj.Params.PrjnScale.Abs = 0.1
 			}
 		} else { // STNs
-			if pj.Send.(AxonLayer).LayerType() == GPLayer { // GPeInToSTNs
+			if pj.Send.LayerType() == GPLayer { // GPeInToSTNs
 				pj.Params.PrjnScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
 			} else {
 				pj.Params.PrjnScale.Abs = 0.2 // weaker inputs
@@ -400,8 +396,7 @@ func (ly *Layer) VThalDefaults() {
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.Learn.Learn.SetBool(false)
 		pj.Params.SWt.Adapt.SigGain = 1
 		pj.Params.SWt.Init.SPct = 0

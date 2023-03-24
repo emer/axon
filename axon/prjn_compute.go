@@ -20,7 +20,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 	return
 	/*
 		scale := pj.Params.GScale.Scale
-		slay := pj.Send.(AxonLayer).AsAxon()
+		slay := pj.Send
 		pjcom := &pj.Params.Com
 		bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CycleTot-1, pj.Params.Idxs.RecvNeurN)
 		// note: -1 because this is logically done on prior timestep
@@ -90,7 +90,7 @@ func (pj *Prjn) SynCaSend(ctx *Context, ni uint32, sn *Neuron, updtThr float32) 
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * sn.CaSyn
 	sidxs := pj.SendSynIdxs(int(ni))
 	for _, ssi := range sidxs {
@@ -110,7 +110,7 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ni uint32, rn *Neuron, updtThr float32) 
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	slay := pj.Send.(AxonLayer).AsAxon()
+	slay := pj.Send
 	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * rn.CaSyn
 	syns := pj.RecvSyns(int(ni))
 	for ci := range syns {
@@ -131,8 +131,8 @@ func (pj *Prjn) DWt(ctx *Context) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	slay := pj.Send
+	rlay := pj.Recv
 	layPool := &rlay.Pools[0]
 	isTarget := rlay.Params.Act.Clamp.IsTarget.IsTrue()
 	for ri := range rlay.Neurons {
@@ -152,7 +152,7 @@ func (pj *Prjn) DWt(ctx *Context) {
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 // This is called on *receiving* projections, prior to WtFmDwt.
 func (pj *Prjn) DWtSubMean(ctx *Context) {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	sm := pj.Params.Learn.Trace.SubMean
 	if sm == 0 { // || rlay.AxonLay.IsTarget() { // sm default is now 0, so don't exclude
 		return
@@ -188,7 +188,7 @@ func (pj *Prjn) DWtSubMean(ctx *Context) {
 // WtFmDWt updates the synaptic weight values from delta-weight changes.
 // called on the *receiving* projections.
 func (pj *Prjn) WtFmDWt(ctx *Context) {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	for ri := range rlay.Neurons {
 		syns := pj.RecvSyns(ri)
 		for ci := range syns {
@@ -211,7 +211,7 @@ func (pj *Prjn) SWtFmWt() {
 	if pj.Params.Learn.Learn.IsFalse() || pj.Params.SWt.Adapt.On.IsFalse() {
 		return
 	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	if rlay.Params.IsTarget() {
 		return
 	}
@@ -245,7 +245,7 @@ func (pj *Prjn) SWtFmWt() {
 				if sy.Wt == 0 { // restore failed wts
 					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 				}
-				sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt) + pj.Params.SWt.Adapt.RndVar()
+				sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt) // + pj.Params.SWt.Adapt.RndVar()
 				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 			}
 		} else {
@@ -269,7 +269,7 @@ func (pj *Prjn) SynScale() {
 	if pj.Params.Learn.Learn.IsFalse() || pj.Params.IsInhib() {
 		return
 	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	if !rlay.Params.IsLearnTrgAvg() {
 		return
 	}
@@ -297,7 +297,7 @@ func (pj *Prjn) SynScale() {
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
 func (pj *Prjn) SynFail(ctx *Context) {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	for ri := range rlay.Neurons {
 		syns := pj.RecvSyns(ri)
 		for ci := range syns {

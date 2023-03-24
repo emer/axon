@@ -153,7 +153,7 @@ func (ai *ActInitParams) Defaults() {
 func (ai *ActInitParams) GetGeBase() float32 {
 	ge := ai.GeBase
 	if ai.GeVar > 0 {
-		ge += float32(erand.Gauss(float64(ai.GeVar), -1))
+		ge += float32(erand.GaussianGen(0, float64(ai.GeVar), -1))
 		if ge < 0 {
 			ge = 0
 		}
@@ -165,7 +165,7 @@ func (ai *ActInitParams) GetGeBase() float32 {
 func (ai *ActInitParams) GetGiBase() float32 {
 	gi := ai.GiBase
 	if ai.GiVar > 0 {
-		gi += float32(erand.Gauss(float64(ai.GiVar), -1))
+		gi += float32(erand.GaussianGen(0, float64(ai.GiVar), -1))
 		if gi < 0 {
 			gi = 0
 		}

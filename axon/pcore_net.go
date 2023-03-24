@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
@@ -40,32 +39,32 @@ func (nt *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeur
 
 	full := prjn.NewFull()
 
-	nt.ConnectLayers(mtxGo, gpeOut, full, emer.Inhib).SetClass("BgFixed")
+	nt.ConnectLayers(mtxGo, gpeOut, full, InhibPrjn).SetClass("BgFixed")
 
-	nt.ConnectLayers(mtxNo, gpeIn, full, emer.Inhib)
-	nt.ConnectLayers(gpeOut, gpeIn, full, emer.Inhib)
+	nt.ConnectLayers(mtxNo, gpeIn, full, InhibPrjn)
+	nt.ConnectLayers(gpeOut, gpeIn, full, InhibPrjn)
 
-	nt.ConnectLayers(gpeIn, gpeTA, full, emer.Inhib).SetClass("BgFixed")
-	nt.ConnectLayers(gpeIn, stnp, full, emer.Inhib).SetClass("BgFixed")
+	nt.ConnectLayers(gpeIn, gpeTA, full, InhibPrjn).SetClass("BgFixed")
+	nt.ConnectLayers(gpeIn, stnp, full, InhibPrjn).SetClass("BgFixed")
 
 	// note: this projection exists in bio, but does weird things with Ca dynamics in STNs..
-	// nt.ConnectLayers(gpeIn, stns, full, emer.Inhib).SetClass("BgFixed")
+	// nt.ConnectLayers(gpeIn, stns, full, InhibPrjn).SetClass("BgFixed")
 
-	nt.ConnectLayers(gpeIn, gpi, full, emer.Inhib)
-	nt.ConnectLayers(mtxGo, gpi, full, emer.Inhib)
+	nt.ConnectLayers(gpeIn, gpi, full, InhibPrjn)
+	nt.ConnectLayers(mtxGo, gpi, full, InhibPrjn)
 
-	nt.ConnectLayers(stnp, gpeOut, full, emer.Forward).SetClass("FmSTNp")
-	nt.ConnectLayers(stnp, gpeIn, full, emer.Forward).SetClass("FmSTNp")
-	nt.ConnectLayers(stnp, gpeTA, full, emer.Forward).SetClass("FmSTNp")
-	nt.ConnectLayers(stnp, gpi, full, emer.Forward).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeOut, full, ForwardPrjn).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeIn, full, ForwardPrjn).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeTA, full, ForwardPrjn).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpi, full, ForwardPrjn).SetClass("FmSTNp")
 
-	nt.ConnectLayers(stns, gpi, full, emer.Forward).SetClass("FmSTNs")
+	nt.ConnectLayers(stns, gpi, full, ForwardPrjn).SetClass("FmSTNs")
 
-	nt.ConnectLayers(gpeTA, mtxGo, full, emer.Inhib).SetClass("GPeTAToMtx")
-	nt.ConnectLayers(gpeTA, mtxNo, full, emer.Inhib).SetClass("GPeTAToMtx")
+	nt.ConnectLayers(gpeTA, mtxGo, full, InhibPrjn).SetClass("GPeTAToMtx")
+	nt.ConnectLayers(gpeTA, mtxNo, full, InhibPrjn).SetClass("GPeTAToMtx")
 
-	nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib).SetClass("GPeInToMtx")
-	nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib).SetClass("GPeInToMtx")
+	nt.ConnectLayers(gpeIn, mtxGo, full, InhibPrjn).SetClass("GPeInToMtx")
+	nt.ConnectLayers(gpeIn, mtxNo, full, InhibPrjn).SetClass("GPeInToMtx")
 
 	gpeOut.PlaceBehind(gpi, space)
 	gpeIn.PlaceRightOf(gpeOut, space)
@@ -110,32 +109,32 @@ func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	one2one := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
 
-	nt.ConnectLayers(mtxGo, gpeOut, one2one, emer.Inhib).SetClass("BgFixed")
+	nt.ConnectLayers(mtxGo, gpeOut, one2one, InhibPrjn).SetClass("BgFixed")
 
-	nt.ConnectLayers(mtxNo, gpeIn, one2one, emer.Inhib)
-	nt.ConnectLayers(gpeOut, gpeIn, one2one, emer.Inhib)
+	nt.ConnectLayers(mtxNo, gpeIn, one2one, InhibPrjn)
+	nt.ConnectLayers(gpeOut, gpeIn, one2one, InhibPrjn)
 
-	nt.ConnectLayers(gpeIn, gpeTA, one2one, emer.Inhib).SetClass("BgFixed")
-	nt.ConnectLayers(gpeIn, stnp, one2one, emer.Inhib).SetClass("BgFixed")
+	nt.ConnectLayers(gpeIn, gpeTA, one2one, InhibPrjn).SetClass("BgFixed")
+	nt.ConnectLayers(gpeIn, stnp, one2one, InhibPrjn).SetClass("BgFixed")
 
 	// note: this projection exists in bio, but does weird things with Ca dynamics in STNs..
-	// nt.ConnectLayers(gpeIn, stns, one2one, emer.Inhib).SetClass("BgFixed")
+	// nt.ConnectLayers(gpeIn, stns, one2one, InhibPrjn).SetClass("BgFixed")
 
-	nt.ConnectLayers(gpeIn, gpi, one2one, emer.Inhib)
-	nt.ConnectLayers(mtxGo, gpi, one2one, emer.Inhib)
+	nt.ConnectLayers(gpeIn, gpi, one2one, InhibPrjn)
+	nt.ConnectLayers(mtxGo, gpi, one2one, InhibPrjn)
 
-	nt.ConnectLayers(stnp, gpeOut, one2one, emer.Forward).SetClass("FmSTNp")
-	nt.ConnectLayers(stnp, gpeIn, one2one, emer.Forward).SetClass("FmSTNp")
-	nt.ConnectLayers(stnp, gpeTA, full, emer.Forward).SetClass("FmSTNp")
-	nt.ConnectLayers(stnp, gpi, one2one, emer.Forward).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeOut, one2one, ForwardPrjn).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeIn, one2one, ForwardPrjn).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpeTA, full, ForwardPrjn).SetClass("FmSTNp")
+	nt.ConnectLayers(stnp, gpi, one2one, ForwardPrjn).SetClass("FmSTNp")
 
-	nt.ConnectLayers(stns, gpi, one2one, emer.Forward).SetClass("FmSTNs")
+	nt.ConnectLayers(stns, gpi, one2one, ForwardPrjn).SetClass("FmSTNs")
 
-	nt.ConnectLayers(gpeTA, mtxGo, full, emer.Inhib).SetClass("GPeTAToMtx")
-	nt.ConnectLayers(gpeTA, mtxNo, full, emer.Inhib).SetClass("GPeTAToMtx")
+	nt.ConnectLayers(gpeTA, mtxGo, full, InhibPrjn).SetClass("GPeTAToMtx")
+	nt.ConnectLayers(gpeTA, mtxNo, full, InhibPrjn).SetClass("GPeTAToMtx")
 
-	nt.ConnectLayers(gpeIn, mtxGo, full, emer.Inhib).SetClass("GPeInToMtx")
-	nt.ConnectLayers(gpeIn, mtxNo, full, emer.Inhib).SetClass("GPeInToMtx")
+	nt.ConnectLayers(gpeIn, mtxGo, full, InhibPrjn).SetClass("GPeInToMtx")
+	nt.ConnectLayers(gpeIn, mtxNo, full, InhibPrjn).SetClass("GPeInToMtx")
 
 	gpeOut.PlaceBehind(gpi, space)
 	gpeIn.PlaceRightOf(gpeOut, space)
@@ -190,8 +189,8 @@ func (nt *Network) AddMatrixLayer(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 }
 
 // ConnectToMatrix adds a MatrixPrjn from given sending layer to a matrix layer
-func (nt *Network) ConnectToMatrix(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(MatrixPrjn))
+func (nt *Network) ConnectToMatrix(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	return nt.ConnectLayers(send, recv, pat, MatrixPrjn)
 }
 
 // AddGPLayer2D adds a GPLayer of given size, with given name.

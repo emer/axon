@@ -82,19 +82,19 @@ func (nt *NetThreads) Set(neurons, sendSpike, synCa int) error {
 
 // SynCaFun applies function of given name to all projections, using
 // NetThreads.SynCa number of goroutines.
-func (nt *NetworkBase) SynCaFun(fun func(pj AxonPrjn), funame string) {
+func (nt *NetworkBase) SynCaFun(fun func(pj *Prjn), funame string) {
 	nt.PrjnMapParallel(fun, funame, nt.Threads.SynCa)
 }
 
 // NeuronFun applies function of given name to all neurons, using
 // NetThreads.Neurons number of goroutines.
-func (nt *NetworkBase) NeuronFun(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string) {
+func (nt *NetworkBase) NeuronFun(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
 	nt.NeuronMapParallel(fun, funame, nt.Threads.Neurons)
 }
 
 // SendSpikeFun applies function of given name to all layers
 // using as many goroutines as configured in NetThreads.SendSpike
-func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer), funame string) {
+func (nt *NetworkBase) SendSpikeFun(fun func(ly *Layer), funame string) {
 	nt.LayerMapParallel(fun, funame, nt.Threads.SendSpike)
 }
 
@@ -103,7 +103,7 @@ func (nt *NetworkBase) SendSpikeFun(fun func(ly AxonLayer), funame string) {
 
 // PrjnMapParallel applies function of given name to all projections
 // using nThreads go routines if nThreads > 1, otherwise runs sequentially.
-func (nt *NetworkBase) PrjnMapParallel(fun func(prjn AxonPrjn), funame string, nThreads int) {
+func (nt *NetworkBase) PrjnMapParallel(fun func(prjn *Prjn), funame string, nThreads int) {
 	nt.FunTimerStart(funame)
 	// run single-threaded, skipping the overhead of goroutines
 	if nThreads <= 1 {
@@ -119,7 +119,7 @@ func (nt *NetworkBase) PrjnMapParallel(fun func(prjn AxonPrjn), funame string, n
 }
 
 // PrjnMapSeq applies function of given name to all projections sequentially.
-func (nt *NetworkBase) PrjnMapSeq(fun func(pj AxonPrjn), funame string) {
+func (nt *NetworkBase) PrjnMapSeq(fun func(pj *Prjn), funame string) {
 	nt.FunTimerStart(funame)
 	for _, pj := range nt.Prjns {
 		fun(pj)
@@ -129,14 +129,14 @@ func (nt *NetworkBase) PrjnMapSeq(fun func(pj AxonPrjn), funame string) {
 
 // LayerMapParallel applies function of given name to all layers
 // using nThreads go routines if nThreads > 1, otherwise runs sequentially.
-func (nt *NetworkBase) LayerMapParallel(fun func(ly AxonLayer), funame string, nThreads int) {
+func (nt *NetworkBase) LayerMapParallel(fun func(ly *Layer), funame string, nThreads int) {
 	nt.FunTimerStart(funame)
 	if nThreads <= 1 {
 		nt.LayerMapSeq(fun, funame)
 	} else {
 		parallelRun(func(st, ed int) {
 			for li := st; li < ed; li++ {
-				fun(nt.Layers[li].(AxonLayer))
+				fun(nt.Layers[li])
 			}
 		}, len(nt.Layers), nThreads)
 	}
@@ -144,17 +144,17 @@ func (nt *NetworkBase) LayerMapParallel(fun func(ly AxonLayer), funame string, n
 }
 
 // LayerMapSeq applies function of given name to all layers sequentially.
-func (nt *NetworkBase) LayerMapSeq(fun func(ly AxonLayer), funame string) {
+func (nt *NetworkBase) LayerMapSeq(fun func(ly *Layer), funame string) {
 	nt.FunTimerStart(funame)
 	for _, ly := range nt.Layers {
-		fun(ly.(AxonLayer))
+		fun(ly)
 	}
 	nt.FunTimerStop(funame)
 }
 
 // NeuronMapParallel applies function of given name to all neurons
 // using as many go routines as configured in NetThreads.Neurons.
-func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string, nThreads int) {
+func (nt *NetworkBase) NeuronMapParallel(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string, nThreads int) {
 	nt.FunTimerStart(funame)
 	if nThreads <= 1 {
 		nt.NeuronMapSequential(fun, funame)
@@ -162,7 +162,7 @@ func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni uint32, nrn *
 		parallelRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
-				ly := nt.Layers[nrn.LayIdx].(AxonLayer)
+				ly := nt.Layers[nrn.LayIdx]
 				fun(ly, uint32(ni-ly.NeurStartIdx()), nrn)
 			}
 		}, len(nt.Neurons), nThreads)
@@ -171,10 +171,10 @@ func (nt *NetworkBase) NeuronMapParallel(fun func(ly AxonLayer, ni uint32, nrn *
 }
 
 // NeuronMapSequential applies function of given name to all neurons sequentially.
-func (nt *NetworkBase) NeuronMapSequential(fun func(ly AxonLayer, ni uint32, nrn *Neuron), funame string) {
+func (nt *NetworkBase) NeuronMapSequential(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
 	nt.FunTimerStart(funame)
 	for _, layer := range nt.Layers {
-		lyr := layer.(AxonLayer)
+		lyr := layer
 		lyrNeurons := lyr.AsAxon().Neurons
 		for nrnIdx := range lyrNeurons {
 			nrn := &lyrNeurons[nrnIdx]

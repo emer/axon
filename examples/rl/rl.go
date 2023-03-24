@@ -138,7 +138,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	space := float32(4)
 	full := prjn.NewFull()
 
-	var rplay emer.Layer
+	var rplay *axon.Layer
 	var ptype axon.PrjnTypes
 
 	if ss.RW {
@@ -154,7 +154,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Rew", XAlign: relpos.Left, Space: 1})
 	inp := net.AddLayer2D("Input", 3, 20, axon.InputLayer)
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left})
-	net.ConnectLayers(inp, rplay, full, emer.PrjnType(ptype))
+	net.ConnectLayers(inp, rplay, full, ptype)
 
 	err := net.Build()
 	if err != nil {

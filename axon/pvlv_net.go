@@ -5,7 +5,6 @@
 package axon
 
 import (
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
@@ -39,7 +38,7 @@ func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, unY, unX int, rel 
 		ext = d1
 	}
 
-	nt.ConnectLayers(ext, acq, prjn.NewPoolOneToOne(), emer.Inhib).SetClass("BLAExtToAcq")
+	nt.ConnectLayers(ext, acq, prjn.NewPoolOneToOne(), InhibPrjn).SetClass("BLAExtToAcq")
 
 	if rel == relpos.Behind {
 		ext.PlaceBehind(acq, space)
@@ -72,14 +71,14 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 
 	p1to1 := prjn.NewPoolOneToOne()
 
-	nt.ConnectLayers(blaPosAcq, cemPos, p1to1, emer.Forward).SetClass("BLAToCeM_Excite")
-	nt.ConnectLayers(blaPosExt, cemPos, p1to1, emer.Inhib).SetClass("BLAToCeM_Inhib")
-	nt.ConnectLayers(cemPos, pptg, p1to1, emer.Forward).SetClass("CeMToPPTg")
+	nt.ConnectLayers(blaPosAcq, cemPos, p1to1, ForwardPrjn).SetClass("BLAToCeM_Excite")
+	nt.ConnectLayers(blaPosExt, cemPos, p1to1, InhibPrjn).SetClass("BLAToCeM_Inhib")
+	nt.ConnectLayers(cemPos, pptg, p1to1, ForwardPrjn).SetClass("CeMToPPTg")
 
 	if neg {
-		nt.ConnectLayers(blaNegAcq, cemNeg, p1to1, emer.Forward).SetClass("BLAToCeM_Excite")
-		nt.ConnectLayers(blaNegExt, cemNeg, p1to1, emer.Inhib).SetClass("BLAToCeM_Inhib")
-		// nt.ConnectLayers(cemNeg, pptg, p1to1, emer.Forward).SetClass("CeMToPPTg")
+		nt.ConnectLayers(blaNegAcq, cemNeg, p1to1, ForwardPrjn).SetClass("BLAToCeM_Excite")
+		nt.ConnectLayers(blaNegExt, cemNeg, p1to1, InhibPrjn).SetClass("BLAToCeM_Inhib")
+		// nt.ConnectLayers(cemNeg, pptg, p1to1, ForwardPrjn).SetClass("CeMToPPTg")
 	}
 
 	cemPos.PlaceBehind(blaPosExt, space)
@@ -94,13 +93,13 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 }
 
 // ConnectToBLAAcq adds a BLAAcqPrjn from given sending layer to a BLA layer
-func (nt *Network) ConnectToBLAAcq(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAAcqPrjn))
+func (nt *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	return nt.ConnectLayers(send, recv, pat, BLAAcqPrjn)
 }
 
 // ConnectToBLAExt adds a BLAExtPrjn from given sending layer to a BLA layer
-func (nt *Network) ConnectToBLAExt(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(BLAExtPrjn))
+func (nt *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	return nt.ConnectLayers(send, recv, pat, BLAExtPrjn)
 }
 
 // AddUSLayers adds USpos and USneg layers for positive or negative valence
@@ -207,8 +206,8 @@ func (nt *Network) AddVSPatchLayer(prefix string, nUs, unY, unX int) *Layer {
 }
 
 // ConnectToVSPatch adds a VSPatchPrjn from given sending layer to a VSPatch layer
-func (nt *Network) ConnectToVSPatch(send, recv emer.Layer, pat prjn.Pattern) emer.Prjn {
-	return nt.ConnectLayers(send, recv, pat, emer.PrjnType(VSPatchPrjn))
+func (nt *Network) ConnectToVSPatch(send, recv *Layer, pat prjn.Pattern) *Prjn {
+	return nt.ConnectLayers(send, recv, pat, VSPatchPrjn)
 }
 
 // AddVTALHbAChLayers adds VTA dopamine, LHb DA dipping, and ACh layers

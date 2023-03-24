@@ -27,7 +27,6 @@ import (
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/popcode"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
@@ -230,7 +229,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = gpeTA
 
 	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
-	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
+	net.ConnectLayers(gpi, thal, pone2one, axon.InhibPrjn).SetClass("BgFixed")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", thal.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", thal.Name())
@@ -240,8 +239,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, axon.InputLayer)
 	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, axon.SuperLayer)
 
-	net.ConnectLayers(pfc, stnp, pone2one, emer.Forward)
-	net.ConnectLayers(pfc, stns, pone2one, emer.Forward)
+	net.ConnectLayers(pfc, stnp, pone2one, axon.ForwardPrjn)
+	net.ConnectLayers(pfc, stns, pone2one, axon.ForwardPrjn)
 
 	net.ConnectToMatrix(accpos, mtxGo, pone2one)
 	net.ConnectToMatrix(accpos, mtxNo, pone2one)
@@ -250,19 +249,19 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(pfc, mtxGo, pone2one)
 	net.ConnectToMatrix(pfc, mtxNo, pone2one)
 
-	net.ConnectLayers(thal, pfcd, one2one, emer.Forward)
-	net.ConnectLayers(pfc, thal, one2one, emer.Forward)
-	net.ConnectLayers(pfcd, thal, one2one, emer.Forward)
+	net.ConnectLayers(thal, pfcd, one2one, axon.ForwardPrjn)
+	net.ConnectLayers(pfc, thal, one2one, axon.ForwardPrjn)
+	net.ConnectLayers(pfcd, thal, one2one, axon.ForwardPrjn)
 
-	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "SNc", YAlign: relpos.Front, Space: space})
-	thal.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpi.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeTA.Name(), YAlign: relpos.Front, Space: space})
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpeOut.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	accpos.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: mtxGo.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	accneg.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCPos", YAlign: relpos.Front, Space: space})
-	pfc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCNeg", YAlign: relpos.Front, Space: space})
-	pfcd.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "PFC", YAlign: relpos.Front, Space: space})
+	gpi.PlaceRightOf(snc, space)
+	thal.PlaceRightOf(gpi, space)
+	gpeOut.PlaceAbove(gpi)
+	stnp.PlaceRightOf(gpeTA, space)
+	mtxGo.PlaceAbove(gpeOut)
+	accpos.PlaceAbove(mtxGo)
+	accneg.PlaceRightOf(accpos, space)
+	pfc.PlaceRightOf(accneg, space)
+	pfcd.PlaceRightOf(pfc, space)
 
 	err := net.Build()
 	if err != nil {
@@ -286,9 +285,8 @@ func (ss *Sim) InitWts(net *axon.Network) {
 	mtxgo := net.LayerByName("MtxGo").(axon.AxonLayer).AsAxon()
 	mtxno := net.LayerByName("MtxNo").(axon.AxonLayer).AsAxon()
 
-	for _, pji := range mtxgo.RcvPrjns {
-		pj := pji.(axon.AxonPrjn).AsAxon()
-		slay := pj.Send.(axon.AxonLayer).AsAxon()
+	for _, pj := range mtxgo.RcvPrjns {
+		slay := pj.Send
 		if slay.Nm == "PFC" {
 			continue
 		}
@@ -301,9 +299,8 @@ func (ss *Sim) InitWts(net *axon.Network) {
 		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 
-	for _, pji := range mtxno.RcvPrjns {
-		pj := pji.(axon.AxonPrjn).AsAxon()
-		slay := pj.Send.(axon.AxonLayer).AsAxon()
+	for _, pj := range mtxno.RcvPrjns {
+		slay := pj.Send
 		if slay.Nm == "PFC" {
 			continue
 		}

@@ -177,14 +177,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		ll := LayByNm(net, hi-1)
 		tl := LayByNm(net, hi)
 		il := InhByNm(net, hi)
-		net.ConnectLayers(ll, tl, full, emer.Forward).SetClass("Excite")
-		net.ConnectLayers(ll, il, full, emer.Forward).SetClass("ToInhib")
-		net.ConnectLayers(tl, il, full, emer.Back).SetClass("ToInhib")
-		net.ConnectLayers(il, tl, full, emer.Inhib)
-		net.ConnectLayers(il, il, full, emer.Inhib)
+		net.ConnectLayers(ll, tl, full, axon.ForwardPrjn).SetClass("Excite")
+		net.ConnectLayers(ll, il, full, axon.ForwardPrjn).SetClass("ToInhib")
+		net.ConnectLayers(tl, il, full, axon.BackPrjn).SetClass("ToInhib")
+		net.ConnectLayers(il, tl, full, axon.InhibPrjn)
+		net.ConnectLayers(il, il, full, axon.InhibPrjn)
 
 		// if hi > 1 {
-		// 	net.ConnectLayers(inlay, tl, rndcut, emer.Forward).SetClass("RndSc")
+		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPrjn).SetClass("RndSc")
 		// }
 
 		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
@@ -192,9 +192,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 		if hi < ss.NLayers {
 			nl := LayByNm(net, hi+1)
-			net.ConnectLayers(nl, il, full, emer.Forward).SetClass("ToInhib")
-			net.ConnectLayers(tl, nl, full, emer.Forward).SetClass("Excite")
-			net.ConnectLayers(nl, tl, full, emer.Back).SetClass("Excite")
+			net.ConnectLayers(nl, il, full, axon.ForwardPrjn).SetClass("ToInhib")
+			net.ConnectLayers(tl, nl, full, axon.ForwardPrjn).SetClass("Excite")
+			net.ConnectLayers(nl, tl, full, axon.BackPrjn).SetClass("Excite")
 		}
 	}
 	err := net.Build()

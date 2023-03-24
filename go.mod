@@ -5,9 +5,9 @@ go 1.18
 require (
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
-	github.com/emer/emergent v1.3.47
+	github.com/emer/emergent v1.3.48
 	github.com/emer/empi v1.0.17
-	github.com/emer/envs v1.0.5
+	github.com/emer/envs v1.0.6
 	github.com/emer/etable v1.1.18
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18

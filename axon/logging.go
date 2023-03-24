@@ -129,7 +129,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer)
 	for _, lnm := range layers {
 		clnm := lnm
-		cly := net.LayerByName(clnm)
+		cly := net.LayByName(clnm)
 		lg.AddItem(&elog.Item{
 			Name:      clnm + "_ActM",
 			Type:      etensor.FLOAT64,
@@ -279,10 +279,10 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-		// 			ly := net.LayerByName(clnm).(AxonLayer).AsAxon()
+		// 			ly := net.LayByName(clnm).(AxonLayer).AsAxon()
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-		// 			ly := net.LayerByName(clnm).(AxonLayer).AsAxon()
+		// 			ly := net.LayByName(clnm).(AxonLayer).AsAxon()
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 		// 			ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
@@ -544,8 +544,7 @@ func LayerActsLogConfig(net *Network, lg *elog.Logs) {
 	dt.SetFromSchema(sch, nlay)
 	dtRec.SetFromSchema(sch, 0)
 	dtAvg.SetFromSchema(sch, nlay)
-	for li, lyi := range net.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for li, ly := range net.Layers {
 		dt.SetCellString("Layer", li, ly.Nm)
 		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
 		dtAvg.SetCellString("Layer", li, ly.Nm)
@@ -558,8 +557,7 @@ func LayerActsLogConfig(net *Network, lg *elog.Logs) {
 func LayerActsLog(net *Network, lg *elog.Logs, gui *egui.GUI) {
 	dt := lg.MiscTable("LayerActs")
 	dtRec := lg.MiscTable("LayerActsRec")
-	for li, lyi := range net.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for li, ly := range net.Layers {
 		lpl := &ly.Pools[0]
 		dt.SetCellFloat("Nominal", li, float64(ly.Params.Inhib.ActAvg.Nominal))
 		dt.SetCellFloat("ActM", li, float64(lpl.AvgMax.Act.Minus.Avg))
@@ -595,8 +593,7 @@ func LayerActsLogAvg(net *Network, lg *elog.Logs, gui *egui.GUI, recReset bool) 
 	split.AggAllNumericCols(spl, agg.AggMean)
 	ags := spl.AggsToTable(etable.ColNameOnly)
 	cols := []string{"Nominal", "ActM", "ActP", "MaxGeM", "MaxGeP"}
-	for li, lyi := range net.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for li, ly := range net.Layers {
 		rw := ags.RowsByString("Layer", ly.Nm, etable.Equals, etable.UseCase)[0]
 		for _, cn := range cols {
 			dtAvg.SetCellFloat(cn, li, ags.CellFloat(cn, rw))

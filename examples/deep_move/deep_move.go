@@ -180,13 +180,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectCTSelf(dpHidct, full) // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(dpHidct, full).SetClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect) // fmPulv: rect == full
-	net.ConnectLayers(act, dpHid, full, emer.Forward)
-	net.ConnectLayers(dpIn, dpHid, rect, emer.Forward)
+	net.ConnectLayers(act, dpHid, full, axon.ForwardPrjn)
+	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPrjn)
 	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
 
 	// net.ConnectLayers(dpHidct, dpHid, full, emer.Back)
 
-	var dpHid2, dpHid2ct emer.Layer
+	var dpHid2, dpHid2ct *axon.Layer
 	if ss.Hid2 {
 		// attempt at topo in 2nd hidden -- didn't work -- needs pools basically
 		// rfWidth2 := rfWidth * nPerAng
@@ -203,20 +203,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 		net.ConnectCTSelf(dpHid2ct, full)
 		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full)
-		net.ConnectLayers(act, dpHid2, full, emer.Forward)
+		net.ConnectLayers(act, dpHid2, full, axon.ForwardPrjn)
 
-		// net.ConnectLayers(dpHid, dpHid2, rect2, emer.Forward)
+		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPrjn)
 		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, emer.Back)
 
 		net.BidirConnectLayers(dpHid, dpHid2, full)
-		net.ConnectLayers(dpHid2ct, dpHidct, full, emer.Back)
+		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPrjn)
 	}
 
 	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", 10, 10, 2*space, one2one)
 	// net.ConnectCTSelf(hdHidct, full)
 	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full) // shortcut top-down
-	net.ConnectLayers(act, hdHid, full, emer.Forward)
-	net.ConnectLayers(hd, hdHid, full, emer.Forward)
+	net.ConnectLayers(act, hdHid, full, axon.ForwardPrjn)
+	net.ConnectLayers(hd, hdHid, full, axon.ForwardPrjn)
 
 	dpIn.SetClass("DepthIn")
 	dpInp.SetClass("DepthIn")

@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
@@ -32,25 +33,24 @@ import (
 // NetworkBase manages the basic structural components of a network (layers).
 // The main Network then can just have the algorithm-specific code.
 type NetworkBase struct {
-	EmerNet       emer.Network          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Nm            string                `desc:"overall name of network -- helps discriminate if there are multiple"`
-	WtsFile       string                `desc:"filename of last weights file loaded or saved"`
-	LayMap        map[string]emer.Layer `view:"-" desc:"map of name to layers -- layer names must be unique"`
-	LayClassMap   map[string][]string   `view:"-" desc:"map of layer classes -- made during Build"`
-	MinPos        mat32.Vec3            `view:"-" desc:"minimum display position in network"`
-	MaxPos        mat32.Vec3            `view:"-" desc:"maximum display position in network"`
-	MetaData      map[string]string     `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
-	CPURecvSpikes bool                  `desc:"if true, use the RecvSpikes receiver-based spiking function -- on the CPU -- this is more than 35x slower than the default SendSpike function -- it is only an option for testing in comparison to the GPU mode, which always uses RecvSpikes because the sender mode is not possible."`
+	EmerNet       emer.Network        `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an emer.Network, which can always be used to extract the true underlying type of object when network is embedded in other structs -- function receivers do not have this ability so this is necessary."`
+	Nm            string              `desc:"overall name of network -- helps discriminate if there are multiple"`
+	WtsFile       string              `desc:"filename of last weights file loaded or saved"`
+	LayMap        map[string]*Layer   `view:"-" desc:"map of name to layers -- layer names must be unique"`
+	LayClassMap   map[string][]string `view:"-" desc:"map of layer classes -- made during Build"`
+	MinPos        mat32.Vec3          `view:"-" desc:"minimum display position in network"`
+	MaxPos        mat32.Vec3          `view:"-" desc:"maximum display position in network"`
+	MetaData      map[string]string   `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
+	CPURecvSpikes bool                `desc:"if true, use the RecvSpikes receiver-based spiking function -- on the CPU -- this is more than 35x slower than the default SendSpike function -- it is only an option for testing in comparison to the GPU mode, which always uses RecvSpikes because the sender mode is not possible."`
 
 	// Implementation level code below:
-	MaxDelay uint32      `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
-	Layers   emer.Layers `desc:"array of layers, via emer.Layer interface pointer"`
-	// todo: could now have concrete list of all Layer objects here instead of interface
+	MaxDelay     uint32        `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals      []LayerVals   `view:"-" desc:"[Layers] array of layer values, in 1-to-1 correspondence with Layers"`
 	Pools        []Pool        `view:"-" desc:"[Layers][Pools] array of inhibitory pools for all layers."`
 	Neurons      []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
-	Prjns        []AxonPrjn    `view:"-" desc:"[Layers][RecvPrjns] pointers to all projections in the network, via the AxonPrjn interface"`
+	Prjns        []*Prjn       `view:"-" desc:"[Layers][RecvPrjns] pointers to all projections in the network"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][RecvPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns"`
 	Synapses     []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][SendNeurons] entire network's allocation of synapses"`
 	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt."`
@@ -62,6 +62,8 @@ type NetworkBase struct {
 
 	Exts []float32 `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
+	Rand        erand.SysRand          `view:"-" desc:"random number generator for the network -- all random calls must use this -- set seed here for weight initialization values"`
+	RndSeed     int64                  `inactive:"+" desc:"random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights"`
 	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
 	GPU         GPU                    `view:"inline" desc:"GPU implementation"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
@@ -83,10 +85,10 @@ func (nt *NetworkBase) NLayers() int                  { return len(nt.Layers) }
 func (nt *NetworkBase) Layer(idx int) emer.Layer      { return nt.Layers[idx] }
 func (nt *NetworkBase) Bounds() (min, max mat32.Vec3) { min = nt.MinPos; max = nt.MaxPos; return }
 
-// LayerByName returns a layer by looking it up by name in the layer map (nil if not found).
+// LayByName returns a layer by looking it up by name in the layer map (nil if not found).
 // Will create the layer map if it is nil or a different size than layers slice,
 // but otherwise needs to be updated manually.
-func (nt *NetworkBase) LayerByName(name string) emer.Layer {
+func (nt *NetworkBase) LayByName(name string) *Layer {
 	if nt.LayMap == nil || len(nt.LayMap) != len(nt.Layers) {
 		nt.MakeLayMap()
 	}
@@ -94,10 +96,10 @@ func (nt *NetworkBase) LayerByName(name string) emer.Layer {
 	return ly
 }
 
-// LayerByNameTry returns a layer by looking it up by name -- returns error message
+// LayByNameTry returns a layer by looking it up by name -- returns error message
 // if layer is not found
-func (nt *NetworkBase) LayerByNameTry(name string) (emer.Layer, error) {
-	ly := nt.LayerByName(name)
+func (nt *NetworkBase) LayByNameTry(name string) (*Layer, error) {
+	ly := nt.LayByName(name)
 	if ly == nil {
 		err := fmt.Errorf("Layer named: %v not found in Network: %v\n", name, nt.Nm)
 		// log.Println(err)
@@ -106,9 +108,22 @@ func (nt *NetworkBase) LayerByNameTry(name string) (emer.Layer, error) {
 	return ly, nil
 }
 
+// LayByName returns a layer by looking it up by name in the layer map (nil if not found).
+// Will create the layer map if it is nil or a different size than layers slice,
+// but otherwise needs to be updated manually.
+func (nt *NetworkBase) LayerByName(name string) emer.Layer {
+	return nt.LayByName(name)
+}
+
+// LayerByNameTry returns a layer by looking it up by name -- returns error message
+// if layer is not found
+func (nt *NetworkBase) LayerByNameTry(name string) (emer.Layer, error) {
+	return nt.LayByNameTry(name)
+}
+
 // MakeLayMap updates layer map based on current layers
 func (nt *NetworkBase) MakeLayMap() {
-	nt.LayMap = make(map[string]emer.Layer, len(nt.Layers))
+	nt.LayMap = make(map[string]*Layer, len(nt.Layers))
 	for _, ly := range nt.Layers {
 		nt.LayMap[ly.Name()] = ly
 	}
@@ -171,7 +186,7 @@ func (nt *NetworkBase) StdVertLayout() {
 // Layout computes the 3D layout of layers based on their relative position settings
 func (nt *NetworkBase) Layout() {
 	for itr := 0; itr < 5; itr++ {
-		var lstly emer.Layer
+		var lstly *Layer
 		for _, ly := range nt.Layers {
 			rp := ly.RelPos()
 			var oly emer.Layer
@@ -185,7 +200,7 @@ func (nt *NetworkBase) Layout() {
 			} else {
 				if rp.Other != "" {
 					var err error
-					oly, err = nt.LayerByNameTry(rp.Other)
+					oly, err = nt.LayByNameTry(rp.Other)
 					if err != nil {
 						log.Println(err)
 						continue
@@ -224,7 +239,7 @@ func (nt *NetworkBase) BoundsUpdt() {
 // ParamsHistoryReset resets parameter application history
 func (nt *NetworkBase) ParamsHistoryReset() {
 	for _, ly := range nt.Layers {
-		ly.(params.History).ParamsHistoryReset()
+		ly.ParamsHistoryReset()
 	}
 }
 
@@ -288,11 +303,10 @@ func (nt *NetworkBase) KeyPrjnParams() string {
 // AllLayerInhibs returns a listing of all Layer Inhibition parameters in the Network
 func (nt *NetworkBase) AllLayerInhibs() string {
 	str := ""
-	for _, lyi := range nt.Layers {
-		if lyi.IsOff() {
+	for _, ly := range nt.Layers {
+		if ly.IsOff() {
 			continue
 		}
-		ly := lyi.(AxonLayer).AsAxon()
 		lp := ly.Params
 		ph := ly.ParamsHistory.ParamsHistory()
 		lh := ph["Layer.Inhib.ActAvg.Nominal"]
@@ -330,11 +344,10 @@ func (nt *NetworkBase) AllPrjnScales() string {
 		}
 		str += "\nLayer: " + ly.Name() + "\n"
 		for i := 0; i < ly.NRecvPrjns(); i++ {
-			recvPrjn := ly.RecvPrjn(i)
-			if recvPrjn.IsOff() {
+			pj := ly.RcvPrjns[i]
+			if pj.IsOff() {
 				continue
 			}
-			pj := recvPrjn.(AxonPrjn).AsAxon()
 			sn := pj.Send.Name()
 			str += fmt.Sprintf("\t%15s\t\tAbs:\t%6.2f\tRel:\t%6.2f\tGScale:\t%6.2f\tRel:%6.2f\n", sn, pj.Params.PrjnScale.Abs, pj.Params.PrjnScale.Rel, pj.Params.GScale.Scale, pj.Params.GScale.Rel)
 			ph := pj.ParamsHistory.ParamsHistory()
@@ -353,13 +366,13 @@ func (nt *NetworkBase) AllPrjnScales() string {
 
 // AddLayerInit is implementation routine that takes a given layer and
 // adds it to the network, and initializes and configures it properly.
-func (nt *NetworkBase) AddLayerInit(ly emer.Layer, name string, shape []int, typ emer.LayerType) {
+func (nt *NetworkBase) AddLayerInit(ly *Layer, name string, shape []int, typ LayerTypes) {
 	if nt.EmerNet == nil {
 		log.Printf("Network EmerNet is nil -- you MUST call InitName on network, passing a pointer to the network to initialize properly!")
 		return
 	}
 	ly.InitName(ly, name, nt.EmerNet)
-	ly.Config(shape, typ)
+	ly.Config(shape, emer.LayerType(typ))
 	nt.Layers = append(nt.Layers, ly)
 	ly.SetIndex(len(nt.Layers) - 1)
 	nt.MakeLayMap()
@@ -374,7 +387,7 @@ func (nt *NetworkBase) AddLayerInit(ly emer.Layer, name string, shape []int, typ
 // group having 4 rows (Y) of 5 (X) units.
 func (nt *NetworkBase) AddLayer(name string, shape []int, typ LayerTypes) *Layer {
 	ly := &Layer{}
-	nt.AddLayerInit(ly, name, shape, emer.LayerType(typ))
+	nt.AddLayerInit(ly, name, shape, typ)
 	return ly
 }
 
@@ -397,12 +410,12 @@ func (nt *NetworkBase) AddLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 // adding to the recv and send projection lists on each side of the connection.
 // Returns error if not successful.
 // Does not yet actually connect the units within the layers -- that requires Build.
-func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat prjn.Pattern, typ emer.PrjnType) (rlay, slay emer.Layer, pj emer.Prjn, err error) {
-	rlay, err = nt.LayerByNameTry(recv)
+func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat prjn.Pattern, typ PrjnTypes) (rlay, slay *Layer, pj *Prjn, err error) {
+	rlay, err = nt.LayByNameTry(recv)
 	if err != nil {
 		return
 	}
-	slay, err = nt.LayerByNameTry(send)
+	slay, err = nt.LayByNameTry(send)
 	if err != nil {
 		return
 	}
@@ -414,8 +427,8 @@ func (nt *NetworkBase) ConnectLayerNames(send, recv string, pat prjn.Pattern, ty
 // adding to the recv and send projection lists on each side of the connection.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) ConnectLayers(send, recv emer.Layer, pat prjn.Pattern, typ emer.PrjnType) emer.Prjn {
-	pj := nt.EmerNet.NewPrjn() // essential to use EmerNet interface here!
+func (nt *NetworkBase) ConnectLayers(send, recv *Layer, pat prjn.Pattern, typ PrjnTypes) *Prjn {
+	pj := &Prjn{}
 	return nt.ConnectLayersPrjn(send, recv, pat, typ, pj)
 }
 
@@ -423,11 +436,11 @@ func (nt *NetworkBase) ConnectLayers(send, recv emer.Layer, pat prjn.Pattern, ty
 // adding given prjn to the recv and send projection lists on each side of the connection.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) ConnectLayersPrjn(send, recv emer.Layer, pat prjn.Pattern, typ emer.PrjnType, pj emer.Prjn) emer.Prjn {
+func (nt *NetworkBase) ConnectLayersPrjn(send, recv *Layer, pat prjn.Pattern, typ PrjnTypes, pj *Prjn) *Prjn {
 	pj.Init(pj)
 	pj.Connect(send, recv, pat, typ)
-	recv.(AxonLayer).RecvPrjns().Add(pj.(AxonPrjn))
-	send.(AxonLayer).SendPrjns().Add(pj.(AxonPrjn))
+	recv.RcvPrjns.Add(pj)
+	send.SndPrjns.Add(pj)
 	return pj
 }
 
@@ -436,17 +449,17 @@ func (nt *NetworkBase) ConnectLayersPrjn(send, recv emer.Layer, pat prjn.Pattern
 // to the high layer, and receives a Back projection in the opposite direction.
 // Returns error if not successful.
 // Does not yet actually connect the units within the layers -- that requires Build.
-func (nt *NetworkBase) BidirConnectLayerNames(low, high string, pat prjn.Pattern) (lowlay, highlay emer.Layer, fwdpj, backpj emer.Prjn, err error) {
-	lowlay, err = nt.LayerByNameTry(low)
+func (nt *NetworkBase) BidirConnectLayerNames(low, high string, pat prjn.Pattern) (lowlay, highlay *Layer, fwdpj, backpj *Prjn, err error) {
+	lowlay, err = nt.LayByNameTry(low)
 	if err != nil {
 		return
 	}
-	highlay, err = nt.LayerByNameTry(high)
+	highlay, err = nt.LayByNameTry(high)
 	if err != nil {
 		return
 	}
-	fwdpj = nt.ConnectLayers(lowlay, highlay, pat, emer.Forward)
-	backpj = nt.ConnectLayers(highlay, lowlay, pat, emer.Back)
+	fwdpj = nt.ConnectLayers(lowlay, highlay, pat, ForwardPrjn)
+	backpj = nt.ConnectLayers(highlay, lowlay, pat, BackPrjn)
 	return
 }
 
@@ -455,9 +468,9 @@ func (nt *NetworkBase) BidirConnectLayerNames(low, high string, pat prjn.Pattern
 // and receives a Back projection in the opposite direction.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) BidirConnectLayers(low, high emer.Layer, pat prjn.Pattern) (fwdpj, backpj emer.Prjn) {
-	fwdpj = nt.ConnectLayers(low, high, pat, emer.Forward)
-	backpj = nt.ConnectLayers(high, low, pat, emer.Back)
+func (nt *NetworkBase) BidirConnectLayers(low, high *Layer, pat prjn.Pattern) (fwdpj, backpj *Prjn) {
+	fwdpj = nt.ConnectLayers(low, high, pat, ForwardPrjn)
+	backpj = nt.ConnectLayers(high, low, pat, BackPrjn)
 	return
 }
 
@@ -467,27 +480,27 @@ func (nt *NetworkBase) BidirConnectLayers(low, high emer.Layer, pat prjn.Pattern
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
 // Py = python version with no return vals.
-func (nt *NetworkBase) BidirConnectLayersPy(low, high emer.Layer, pat prjn.Pattern) {
-	nt.ConnectLayers(low, high, pat, emer.Forward)
-	nt.ConnectLayers(high, low, pat, emer.Back)
+func (nt *NetworkBase) BidirConnectLayersPy(low, high *Layer, pat prjn.Pattern) {
+	nt.ConnectLayers(low, high, pat, ForwardPrjn)
+	nt.ConnectLayers(high, low, pat, BackPrjn)
 }
 
 // LateralConnectLayer establishes a self-projection within given layer.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) LateralConnectLayer(lay emer.Layer, pat prjn.Pattern) emer.Prjn {
-	pj := nt.EmerNet.NewPrjn() // essential to use EmerNet interface here!
+func (nt *NetworkBase) LateralConnectLayer(lay *Layer, pat prjn.Pattern) *Prjn {
+	pj := &Prjn{}
 	return nt.LateralConnectLayerPrjn(lay, pat, pj)
 }
 
 // LateralConnectLayerPrjn makes lateral self-projection using given projection.
 // Does not yet actually connect the units within the layers -- that
 // requires Build.
-func (nt *NetworkBase) LateralConnectLayerPrjn(lay emer.Layer, pat prjn.Pattern, pj emer.Prjn) emer.Prjn {
+func (nt *NetworkBase) LateralConnectLayerPrjn(lay *Layer, pat prjn.Pattern, pj *Prjn) *Prjn {
 	pj.Init(pj)
-	pj.Connect(lay, lay, pat, emer.Lateral)
-	lay.(AxonLayer).RecvPrjns().Add(pj.(AxonPrjn))
-	lay.(AxonLayer).SendPrjns().Add(pj.(AxonPrjn))
+	pj.Connect(lay, lay, pat, LateralPrjn)
+	lay.RcvPrjns.Add(pj)
+	lay.SndPrjns.Add(pj)
 	return pj
 }
 
@@ -504,11 +517,10 @@ func (nt *NetworkBase) Build() error {
 	totExts := 0
 	nLayers := len(nt.Layers)
 	totPools := nLayers // layer pool for each layer at least
-	for _, lyi := range nt.Layers {
-		if lyi.IsOff() { // note: better not turn on later!
+	for _, ly := range nt.Layers {
+		if ly.IsOff() { // note: better not turn on later!
 			continue
 		}
-		ly := lyi.(AxonLayer).AsAxon()
 		totPools += ly.NSubPools()
 		nn := ly.Shape().Len()
 		totNeurons += nn
@@ -527,7 +539,7 @@ func (nt *NetworkBase) Build() error {
 	nt.LayVals = make([]LayerVals, nLayers)
 	nt.Pools = make([]Pool, totPools)
 	nt.Neurons = make([]Neuron, totNeurons)
-	nt.Prjns = make([]AxonPrjn, totPrjns)
+	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
 	nt.Exts = make([]float32, totExts)
 
@@ -542,8 +554,7 @@ func (nt *NetworkBase) Build() error {
 	sprjnIdx := 0
 	poolIdx := 0
 	extIdx := 0
-	for li, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for li, ly := range nt.Layers {
 		ly.Params = &nt.LayParams[li]
 		ly.Params.LayType = LayerTypes(ly.Typ)
 		ly.Vals = &nt.LayVals[li]
@@ -586,12 +597,10 @@ func (nt *NetworkBase) Build() error {
 		rprjns := *ly.RecvPrjns()
 		ly.Params.Idxs.RecvSt = uint32(prjnIdx)
 		ly.Params.Idxs.RecvN = uint32(len(rprjns))
-		for pi, rpj := range rprjns {
+		for pi, pj := range rprjns {
 			pii := prjnIdx + pi
-			pji := rpj.(AxonPrjn)
-			pj := pji.AsAxon()
 			pj.Params = &nt.PrjnParams[pii]
-			nt.Prjns[pii] = pji
+			nt.Prjns[pii] = pj
 		}
 		err := ly.Build() // also builds prjns and sets SubPool indexes
 		if err != nil {
@@ -602,8 +611,7 @@ func (nt *NetworkBase) Build() error {
 			nrn.SubPoolN = uint32(poolIdx) + nrn.SubPool
 		}
 		// now collect total number of synapses after layer build
-		for _, rpj := range rprjns {
-			pj := rpj.(AxonPrjn).AsAxon()
+		for _, pj := range rprjns {
 			totSynapses += len(pj.RecvConIdx)
 			totRecvCon += nn // sep vals for each recv neuron per prjn
 		}
@@ -630,18 +638,15 @@ func (nt *NetworkBase) Build() error {
 	sidx := 0
 	pjidx := 0
 	recvConIdx := 0
-	for _, lyi := range nt.Layers {
-		rlay := lyi.(AxonLayer).AsAxon()
-		rprjns := *rlay.RecvPrjns()
-		for _, rpj := range rprjns {
-			pj := rpj.(AxonPrjn).AsAxon()
-			slay := pj.Send.(AxonLayer).AsAxon()
+	for _, ly := range nt.Layers {
+		for _, pj := range ly.RcvPrjns {
+			slay := pj.Send
 			nsyn := len(pj.RecvConIdx)
 			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
 			pj.Params.Idxs.SynapseSt = uint32(sidx)
 			pj.Params.Idxs.PrjnIdx = uint32(pjidx)
 			pj.Syns = nt.Synapses[sidx : sidx+nsyn]
-			for ri := range rlay.Neurons {
+			for ri := range ly.Neurons {
 				rcon := pj.RecvCon[ri]
 				nt.PrjnRecvCon[recvConIdx] = rcon
 				recvConIdx++
@@ -649,7 +654,7 @@ func (nt *NetworkBase) Build() error {
 				for ci := range syns {
 					sy := &syns[ci]
 					sy.SynIdx = uint32(sidx)
-					sy.RecvIdx = uint32(ri + rlay.NeurStIdx) // network-global idx
+					sy.RecvIdx = uint32(ri + ly.NeurStIdx) // network-global idx
 					sy.SendIdx = pj.RecvConIdx[int(rcon.Start)+ci] + uint32(slay.NeurStIdx)
 					sy.PrjnIdx = uint32(pjidx)
 					sidx++
@@ -663,15 +668,12 @@ func (nt *NetworkBase) Build() error {
 	sprjnIdx = 0
 	sendConIdx := 0
 	sidx = 0
-	for _, lyi := range nt.Layers {
-		slay := lyi.(AxonLayer).AsAxon()
-		sprjns := *slay.SendPrjns()
-		for _, spj := range sprjns {
-			pj := spj.(AxonPrjn).AsAxon()
+	for _, ly := range nt.Layers {
+		for _, pj := range ly.SndPrjns {
 			nt.SendPrjnIdxs[sprjnIdx] = pj.Params.Idxs.PrjnIdx
 			pj.Params.Idxs.SendConSt = uint32(sendConIdx)
 			pj.Params.Idxs.SendSynSt = uint32(sidx)
-			for si := range slay.Neurons {
+			for si := range ly.Neurons {
 				scon := pj.SendCon[si]
 				nt.PrjnSendCon[sendConIdx] = scon
 				sendConIdx++
@@ -701,13 +703,10 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 	nt.MaxDelay = 0
 	npjneur := uint32(0)
 	pjidx := uint32(0)
-	for _, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for _, ly := range nt.Layers {
 		nneur := uint32(len(ly.Neurons))
-		rprjns := *ly.RecvPrjns()
-		for _, rpj := range rprjns {
-			pj := rpj.(AxonPrjn).AsAxon()
-			slay := pj.Send.(AxonLayer).AsAxon()
+		for _, pj := range ly.RcvPrjns {
+			slay := pj.Send
 			pj.Params.Idxs.PrjnIdx = pjidx
 			pj.Params.Idxs.RecvLay = uint32(ly.Idx)
 			pj.Params.Idxs.RecvNeurSt = uint32(ly.NeurStIdx)
@@ -738,12 +737,9 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 
 	gbi := uint32(0)
 	gsi := uint32(0)
-	for _, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for _, ly := range nt.Layers {
 		nneur := uint32(len(ly.Neurons))
-		rprjns := *ly.RecvPrjns()
-		for _, rpj := range rprjns {
-			pj := rpj.(AxonPrjn).AsAxon()
+		for _, pj := range ly.RcvPrjns {
 			gbs := nneur * mxlen
 			pj.Params.Idxs.GBufSt = gbi
 			pj.GBuf = nt.PrjnGBuf[gbi : gbi+gbs]
@@ -885,7 +881,7 @@ func (nt *NetworkBase) SetWts(nw *weights.Network) error {
 	}
 	for li := range nw.Layers {
 		lw := &nw.Layers[li]
-		ly, er := nt.LayerByNameTry(lw.Layer)
+		ly, er := nt.LayByNameTry(lw.Layer)
 		if er != nil {
 			err = er
 			continue
@@ -956,4 +952,20 @@ func (nt *NetworkBase) VarRange(varNm string) (min, max float32, err error) {
 		}
 	}
 	return
+}
+
+// SetRndSeed sets random seed and calls ResetRndSeed
+func (nt *NetworkBase) SetRndSeed(seed int64) {
+	nt.RndSeed = seed
+	nt.ResetRndSeed()
+}
+
+// ResetRndSeed sets random seed to saved RndSeed, ensuring that the
+// network-specific random seed generator has been created.
+func (nt *NetworkBase) ResetRndSeed() {
+	if nt.Rand.Rand == nil {
+		nt.Rand.NewRand(nt.RndSeed)
+	} else {
+		nt.Rand.Seed(nt.RndSeed)
+	}
 }

@@ -98,9 +98,8 @@ func (ly *Layer) BLADefaults() {
 	lp.Learn.NeuroMod.AChLRateMod = 1
 	lp.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
-		slay := pj.Send.(AxonLayer).AsAxon()
+	for _, pj := range ly.RcvPrjns {
+		slay := pj.Send
 		if slay.LayerType() == BLALayer { // inhibition from Ext
 			pj.Params.SetFixedWts()
 			pj.Params.PrjnScale.Abs = 2
@@ -139,8 +138,7 @@ func (ly *Layer) CeMDefaults() {
 	lp.Learn.RLRate.SigmoidMin = 1.0
 	lp.Learn.TrgAvgAct.On.SetBool(false)
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.PrjnScale.Abs = 1
 		// slay := pj.Send.(AxonLayer).AsAxon()
@@ -167,8 +165,7 @@ func (ly *Layer) PPTgDefaults() {
 	lp.PVLV.Thr = 0.2
 	lp.PVLV.Gain = 2
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.PrjnScale.Abs = 1
 	}

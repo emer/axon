@@ -19,7 +19,7 @@ import (
 // ToggleLayersOff can be used to disable layers in a Network, for example if you are doing an ablation study.
 func ToggleLayersOff(net *Network, layerNames []string, off bool) {
 	for _, lnm := range layerNames {
-		lyi := net.LayerByName(lnm)
+		lyi := net.LayByName(lnm)
 		if lyi == nil {
 			fmt.Printf("layer not found: %s\n", lnm)
 			continue
@@ -37,7 +37,7 @@ func EnvApplyInputs(net *Network, ev env.Env) {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(InputLayer, TargetLayer)
 	for _, lnm := range lays {
-		ly := net.LayerByName(lnm).(AxonLayer).AsAxon()
+		ly := net.LayByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)

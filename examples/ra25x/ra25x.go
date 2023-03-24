@@ -177,7 +177,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// NewFull returns a new prjn.Full connectivity pattern
 	full := prjn.NewFull()
 
-	net.ConnectLayers(inp, hid1, full, emer.Forward)
+	net.ConnectLayers(inp, hid1, full, axon.ForwardPrjn)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
 

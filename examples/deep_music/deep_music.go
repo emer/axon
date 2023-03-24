@@ -189,7 +189,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	in.SetClass("InLay")
 	inPulv.SetClass("InLay")
 
-	var hidp, hid2, hid2ct emer.Layer
+	var hidp, hid2, hid2ct *axon.Layer
 	hid, hidct := net.AddSuperCT2D("Hidden", 20, nUnits, space, one2one) // one2one learn > full
 	_ = hidp
 	if ss.Hid2 {
@@ -198,7 +198,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	net.ConnectCTSelf(hidct, full)
 	net.ConnectToPulv(hid, hidct, inPulv, full, full)
-	net.ConnectLayers(in, hid, full, emer.Forward)
+	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Hid2 {
@@ -212,8 +212,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	if ss.Hid2 {
 		net.BidirConnectLayers(hid, hid2, full)
-		net.ConnectLayers(hid2ct, hidct, full, emer.Back)
-		// net.ConnectLayers(hid2ct, hid, full, emer.Back)
+		net.ConnectLayers(hid2ct, hidct, full, axon.BackPrjn)
+		// net.ConnectLayers(hid2ct, hid, full, axon.BackPrjn)
 	}
 
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})

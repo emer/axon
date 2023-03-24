@@ -212,7 +212,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) error {
 	pool1to1 := prjn.NewPoolOneToOne()
 	_ = pool1to1
 
-	net.ConnectLayers(v1, v4, ss.V1V4Prjn, emer.Forward)
+	net.ConnectLayers(v1, v4, ss.V1V4Prjn, axon.ForwardPrjn)
 	v4IT, _ := net.BidirConnectLayers(v4, it, full)
 	itOut, outIT := net.BidirConnectLayers(it, out, full)
 

@@ -181,7 +181,7 @@ func (sc *SynComParams) WtFail(swt float32) bool {
 	if fp == 0 {
 		return false
 	}
-	return erand.BoolP(fp)
+	return erand.BoolP32(fp, -1)
 }
 
 // Fail updates failure status of given weight, given SWt value
