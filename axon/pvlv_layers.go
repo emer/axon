@@ -141,7 +141,7 @@ func (ly *Layer) CeMDefaults() {
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.PrjnScale.Abs = 1
-		// slay := pj.Send.(AxonLayer).AsAxon()
+		// slay := pj.Send
 		// if ly.Params.NeuroMod.Valence == Positive {
 		// 	if slay.Params.NeuroMod.DAMod == D2Mod {
 		// 	}

@@ -767,11 +767,11 @@ func (ly *Layer) InitWtSym() {
 		if pj.IsOff() {
 			continue
 		}
-		if pj.AsAxon().Params.SWt.Init.Sym.IsFalse() {
+		if pj.Params.SWt.Init.Sym.IsFalse() {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
-		if pj.RecvLay().Index() < pj.SendLay().Index() {
+		if pj.Recv.Index() < pj.Send.Index() {
 			continue
 		}
 		rpj, has := ly.RecipToRecvPrjn(pj)
@@ -993,7 +993,7 @@ func (ly *Layer) InitGScale() {
 		if pj.IsOff() {
 			continue
 		}
-		slay := pj.SendLay().(AxonLayer).AsAxon()
+		slay := pj.Send
 		savg := slay.Params.Inhib.ActAvg.Nominal
 		snu := len(slay.Neurons)
 		ncon := pj.RecvConNAvgMax.Avg

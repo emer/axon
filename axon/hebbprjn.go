@@ -32,8 +32,8 @@ func (pj *HebbPrjn) DWt(ctx *Context) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	slay := pj.Send
+	rlay := pj.Recv
 	lr := pj.Params.Learn.LRate.Eff
 	for si := range slay.Neurons {
 		sn := &slay.Neurons[si]
