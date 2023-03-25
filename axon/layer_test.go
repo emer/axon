@@ -61,8 +61,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	net.NewState(ctx)
 
 	// spike the neurons. Do this after NewState(), so that the spike is not decayed away
-	inputLayer1.AsAxon().Neurons[1].Spike = 1.0
-	inputLayer2.AsAxon().Neurons[0].Spike = 1.0
+	inputLayer1.Neurons[1].Spike = 1.0
+	inputLayer2.Neurons[0].Spike = 1.0
 
 	// set some of the weights
 	const in1pj0_n1_to_n2_wt = 0.1
@@ -83,8 +83,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	// the neurons we spiked are connected to 9 neurons in the output layer
 	// make sure they all received the spike
 	recvBuffs := [][]float32{
-		inputLayer1.AsAxon().SndPrjns[0].(*Prjn).GBuf,
-		inputLayer2.AsAxon().SndPrjns[0].(*Prjn).GBuf,
+		inputLayer1.SndPrjns[0].(*Prjn).GBuf,
+		inputLayer2.SndPrjns[0].(*Prjn).GBuf,
 	}
 	for _, recvBuf := range recvBuffs {
 		count := 0
@@ -139,8 +139,8 @@ func TestLayerToJson(t *testing.T) {
 	assert.NoError(t, fh.Close())
 
 	// make sure the synapse weights are the same
-	origProj := hiddenLayer.AsAxon().RcvPrjns[0]
-	copyProj := hiddenLayerC.AsAxon().RcvPrjns[0]
+	origProj := hiddenLayer.RcvPrjns[0]
+	copyProj := hiddenLayerC.RcvPrjns[0]
 	varIdx, _ := origProj.SynVarIdx("Wt")
 	assert.Equal(t, origProj.Syn1DNum(), copyProj.Syn1DNum())
 	for idx := 0; idx < origProj.Syn1DNum(); idx++ {
@@ -149,8 +149,8 @@ func TestLayerToJson(t *testing.T) {
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
 	}
 
-	nrns := hiddenLayer.AsAxon().Neurons
-	nrnsC := hiddenLayerC.AsAxon().Neurons
+	nrns := hiddenLayer.Neurons
+	nrnsC := hiddenLayerC.Neurons
 	// right now only two of the Neuron variables are exported
 	for i := range nrns {
 		assert.Equal(t, nrns[i].TrgAvg, nrnsC[i].TrgAvg)

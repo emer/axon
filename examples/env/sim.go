@@ -385,7 +385,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 	lays := []string{"Input", "X", "Y"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.LayByName(lnm)
 		pats := en.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -480,8 +480,8 @@ func (ss *Sim) InitStats() {
 // different time-scales over which stats could be accumulated etc.
 // You can also aggregate directly from log data, as is done for testing stats
 func (ss *Sim) TrialStats(accum bool) {
-	x := ss.Net.LayerByName("X").(axon.AxonLayer).AsAxon()
-	y := ss.Net.LayerByName("Y").(axon.AxonLayer).AsAxon()
+	x := ss.Net.LayByName("X")
+	y := ss.Net.LayByName("Y")
 	ss.TrlCosDiff = float64(x.CosDiff.Cos+y.CosDiff.Cos) * 0.5
 	ss.TrlSSE, ss.TrlAvgSSE = x.MSE(0.5) // 0.5 = per-unit tolerance -- right side of .5
 	ys, ya := y.MSE(0.5)
@@ -749,7 +749,7 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 	dt.SetCellFloat("PerTrlMSec", row, ss.EpcPerTrlMSec)
 
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.LayByName(lnm)
 		dt.SetCellFloat(ly.Nm+" ActAvg", row, float64(ly.Pools[0].ActAvg.ActPAvgEff))
 	}
 
@@ -830,7 +830,7 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 	dt.SetCellFloat("CosDiff", row, ss.TrlCosDiff)
 
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.LayByName(lnm)
 		vt := ss.ValsTsr("Input")
 		ly.UnitValsTensor(vt, "Act")
 		dt.SetCellTensor(ly.Nm+" Act", row, vt)
@@ -858,7 +858,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
 		{"CosDiff", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.LayByName(lnm)
 		sch = append(sch, etable.Column{lnm + " Act", etensor.FLOAT64, ly.Shp.Shp, nil})
 	}
 	dt.SetFromSchema(sch, nt)
@@ -966,7 +966,7 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 
 	dt.SetCellFloat("Cycle", cyc, float64(cyc))
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.LayByName(lnm)
 		dt.SetCellFloat(ly.Nm+" Ge.Avg", cyc, float64(ly.Pools[0].Inhib.Ge.Avg))
 		dt.SetCellFloat(ly.Nm+" Act.Avg", cyc, float64(ly.Pools[0].Inhib.Act.Avg))
 	}

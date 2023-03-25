@@ -173,12 +173,11 @@ func (nt *NetworkBase) NeuronMapParallel(fun func(ly *Layer, ni uint32, nrn *Neu
 // NeuronMapSequential applies function of given name to all neurons sequentially.
 func (nt *NetworkBase) NeuronMapSequential(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
 	nt.FunTimerStart(funame)
-	for _, layer := range nt.Layers {
-		lyr := layer
-		lyrNeurons := lyr.AsAxon().Neurons
+	for _, ly := range nt.Layers {
+		lyrNeurons := ly.Neurons
 		for nrnIdx := range lyrNeurons {
 			nrn := &lyrNeurons[nrnIdx]
-			fun(lyr, uint32(nrnIdx), nrn)
+			fun(ly, uint32(nrnIdx), nrn)
 		}
 	}
 	nt.FunTimerStop(funame)

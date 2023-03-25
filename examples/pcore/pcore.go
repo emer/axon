@@ -282,8 +282,8 @@ func (ss *Sim) InitWts(net *axon.Network) {
 		return
 	}
 
-	mtxgo := net.LayerByName("MtxGo").(axon.AxonLayer).AsAxon()
-	mtxno := net.LayerByName("MtxNo").(axon.AxonLayer).AsAxon()
+	mtxgo := net.LayByName("MtxGo")
+	mtxno := net.LayByName("MtxNo")
 
 	for _, pj := range mtxgo.RcvPrjns {
 		slay := pj.Send
@@ -365,8 +365,8 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
 	man.GetLoop(etime.Test, etime.Cycle).AddEvents(applyRew)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	man.GetLoop(etime.Test, etime.Trial).OnStart.Add("TestInc", func() {
 		if ss.Sim.NoInc {
@@ -419,7 +419,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	////////////////////////////////////////////
@@ -465,7 +465,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	lays := []string{"ACCPos", "ACCNeg", "PFC"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
-		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := net.LayByName(lnm)
 		if !zero {
 			for j := 0; j < np; j++ {
 				// np = different pools have changing increments
@@ -514,7 +514,7 @@ func (ss *Sim) ApplyRew() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	mtxly := net.LayerByName("MtxGo").(*axon.Layer)
+	mtxly := net.LayByName("MtxGo")
 
 	net.GPU.SyncStateFmGPU()
 	didGate := mtxly.MatrixGated(&ss.Context)           // will also be called later
@@ -547,7 +547,7 @@ func (ss *Sim) SetRew(rew float32) {
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
 	itsr.Values[0] = rew
-	sncly := net.LayerByName("SNc").(axon.AxonLayer).AsAxon()
+	sncly := net.LayByName("SNc")
 	sncly.ApplyExt(&itsr)
 
 	net.GPU.SyncContextToGPU()
@@ -610,7 +610,7 @@ func (ss *Sim) StatCounters() {
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
 	net := ss.Net
-	vtly := net.LayerByName("VThal").(*axon.Layer)
+	vtly := net.LayByName("VThal")
 	gated := vtly.AnyGated()
 	if !gated {
 		ss.Stats.SetFloat("VThal_RT", 0)
@@ -649,8 +649,8 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
-	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
+	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
 	ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT", "Gated", "Should", "Rew")
 
@@ -662,7 +662,7 @@ func (ss *Sim) ConfigLogs() {
 		ss.Logs.MiscTables["TestTrialStats"] = tstst
 	}
 
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Train, etime.Phase)
@@ -711,8 +711,7 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetTensor(tsr)
 				}, etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
 					tsr := ss.Stats.F64Tensor("Log_ActAvg")
-					lyi := ctx.Layer(clnm)
-					ly := lyi.(axon.AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
 					for pi := 0; pi < ss.Sim.NPools; pi++ {
 						tsr.Values[pi] = float64(ly.AvgMaxVarByPool("SpkMax", pi+1).Avg)
 					}

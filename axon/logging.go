@@ -279,10 +279,10 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-		// 			ly := net.LayByName(clnm).(AxonLayer).AsAxon()
+		// 			ly := net.LayByName(clnm)
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-		// 			ly := net.LayByName(clnm).(AxonLayer).AsAxon()
+		// 			ly := net.LayByName(clnm)
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 		// 			ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
