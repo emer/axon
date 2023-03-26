@@ -303,16 +303,14 @@ func (nt *Network) AddPTPredLayer(ptMaint, ct, thal *Layer, ptToPredPrjn, ctToPr
 
 /*
 // AddPulvAttnLayer2D adds a PulvAttnLayer of given size, with given name.
-func (nt *Network) AddPulvAttnLayer2D(name string, nNeurY, nNeurX int) *PulvAttnLayer {
-	ly := &PulvAttnLayer{}
-	nt.AddLayerInit(ly, name, []int{nNeurY, nNeurX}, Pulv)
+func (nt *Network) AddPulvAttnLayer2D(name string, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, PulvAttnLayer)
 	return ly
 }
 
 // AddPulvAttnLayer4D adds a Layer of given size, with given name.
-func (nt *Network) AddPulvAttnLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *PulvAttnLayer {
-	ly := &PulvAttnLayer{}
-	nt.AddLayerInit(ly, name, []int{nPoolsY, nPoolsX, nNeurY, nNeurX}, Pulv)
+func (nt *Network) AddPulvAttnLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, PulvAttnLayer)
 	return ly
 }
 */

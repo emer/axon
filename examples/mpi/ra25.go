@@ -38,7 +38,6 @@ var Debug = false
 
 func main() {
 	TheSim.New()
-	TheSim.Config()
 	if len(os.Args) > 1 {
 		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
@@ -49,6 +48,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.Config()
 	TheSim.Init()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
@@ -286,6 +286,12 @@ func (ss *Sim) ConfigLoops() {
 		}
 	})
 
+	trainEpoch.OnEnd.Add("RandCheck", func() {
+		if ss.Args.Bool("mpi") {
+			empi.RandCheck(ss.Comm) // prints error message
+		}
+	})
+
 	/////////////////////////////////////////////
 	// Logging
 
@@ -295,6 +301,9 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
+			if ss.Args.Bool("mpi") {
+				ss.Logs.MPIGatherTableRows(etime.Analyze, etime.Trial, ss.Comm)
+			}
 			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
@@ -392,18 +401,18 @@ func (ss *Sim) ConfigPats() {
 		{"Input", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
 		{"Output", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
 	}
-	dt.SetFromSchema(sch, 25)
+	dt.SetFromSchema(sch, 24)
 
 	patgen.PermutedBinaryMinDiff(dt.Cols[1].(*etensor.Float32), 6, 1, 0, 3)
 	patgen.PermutedBinaryMinDiff(dt.Cols[2].(*etensor.Float32), 6, 1, 0, 3)
-	dt.SaveCSV("random_5x5_25_gen.tsv", etable.Tab, etable.Headers)
+	dt.SaveCSV("random_5x5_24_gen.tsv", etable.Tab, etable.Headers)
 }
 
 func (ss *Sim) OpenPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	err := dt.OpenCSV("random_5x5_25.tsv", etable.Tab)
+	err := dt.OpenCSV("random_5x5_24.tsv", etable.Tab) // note: using 24 so more evenly divisible
 	if err != nil {
 		log.Println(err)
 	}
@@ -492,6 +501,11 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	if mode != etime.Analyze {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
+	var saveRow int
+	if ss.Args.Bool("mpi") && time == etime.Epoch { // gather data for trial level at epoch
+		saveRow = ss.Logs.Table(mode, etime.Trial).Rows
+		ss.Logs.MPIGatherTableRows(mode, etime.Trial, ss.Comm)
+	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
 	if dt == nil {
@@ -507,6 +521,11 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
+
+	if ss.Args.Bool("mpi") && time == etime.Epoch { // reset rows back to original pre-gather
+		dt := ss.Logs.Table(mode, etime.Trial)
+		dt.SetNumRows(saveRow)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -580,14 +599,31 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
+	ss.Args.AddBool("mpi", false, "if set, use MPI for distributed computation")
+
 	ss.Args.Parse() // always parse
 }
 
 func (ss *Sim) CmdArgs() {
+	if ss.Args.Bool("mpi") {
+		ss.MPIInit()
+	}
+
+	// key for Config and Init to be after MPIInit
+	ss.Config()
+	ss.Init()
+
 	ss.Args.ProcStd(&ss.Params)
-	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
+	if mpi.WorldRank() == 0 {
+		ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
+	}
+
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
 	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
+
+	if mpi.WorldRank() != 0 {
+		ss.Args.SetBool("wts", false)
+	}
 
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
@@ -612,6 +648,8 @@ func (ss *Sim) CmdArgs() {
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
+
+	ss.MPIFinalize()
 }
 
 ////////////////////////////////////////////////////////////////////

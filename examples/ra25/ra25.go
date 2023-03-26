@@ -43,7 +43,6 @@ var (
 
 func main() {
 	TheSim.New()
-	TheSim.Config()
 	if len(os.Args) > 1 {
 		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
@@ -54,6 +53,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.Config()
 	TheSim.Init()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
