@@ -33,7 +33,11 @@ float RSalAChLayMaxAct(int layIdx) {
 	return Pools[Layers[layIdx].Idxs.PoolSt].AvgMax.Act.Cycle.Max;
 }
 
-void CyclePost(inout Context ctx, uint li, in LayerParams ly, inout LayerVals vals) {
+void CyclePostVSPatch(inout Context ctx, uint li, in LayerParams ly, int pi, in Pool pl) {
+	ly.CyclePostVSPatchLayer(ctx, pi, pl);
+}
+
+void CyclePost(inout Context ctx, uint li, in LayerParams ly, inout LayerVals vals, in Pool lpl) {
 	switch (ly.LayType) {
 	case RSalienceAChLayer:
 		float lay1MaxAct = RSalAChLayMaxAct(ly.RSalACh.SrcLay1Idx);
@@ -54,15 +58,35 @@ void CyclePost(inout Context ctx, uint li, in LayerParams ly, inout LayerVals va
 	case TDDaLayer:
 		ly.CyclePostTDDaLayer(ctx, vals, LayVals[ly.TDDa.TDIntegLayIdx]);
 		break;
+	case PPTgLayer:
+		ly.CyclePostPPTgLayer(ctx, lpl);
+	// case VSPatchLayer: {
+	// 	int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
+	// 	for (int pi = 0; pi < npl; pi++) {
+	// 		CyclePostVSPatch(ctx, li, ly, pi+1, Pools[ly.Idxs.PoolSt+1+pi]);
+	// 	}
+	// 	}
 	}
 }
 
+void CyclePostVTA(inout Context ctx, in LayerParams ly) {
+	ly.CyclePostVTALayer(ctx);
+}
+
+
 [numthreads(1, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Layers
+void main(uint3 idx : SV_DispatchThreadID) { // Just one!
 	if (idx.x == 0) {
+		int vtaLay = -1;
 		for (int li = 0; li < Ctx[0].NLayers; li++) {
-			CyclePost(Ctx[0], li, Layers[li], LayVals[li]);
+			CyclePost(Ctx[0], li, Layers[li], LayVals[li], Pools[Layers[li].Idxs.PoolSt]);
+			if (Layers[li].LayType == VTALayer) {
+				vtaLay = li;
+			}
 		}
+		// if (vtaLay >= 0) { // depends on other cases
+		// 	CyclePostVTA(Ctx[0], Layers[vtaLay]);
+		// }
 	}
 }
 

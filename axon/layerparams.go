@@ -406,7 +406,6 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.RewPred)
 
 	case VTALayer:
-		ctx.DA() // this does not set the neuromod.DA value, to avoid race
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.PVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case LHbLayer:
@@ -580,7 +579,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
 	case RSalienceAChLayer:
-		nrn.Act = ctx.NeuroMod.AChRaw // integrated into ActInt
+		nrn.Act = ctx.NeuroMod.AChRaw // I set this in CyclePost
 	case RWPredLayer:
 		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
 		if ni == 0 {
@@ -589,7 +588,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			vals.Special.V2 = nrn.ActInt
 		}
 	case RWDaLayer:
-		nrn.Act = ctx.NeuroMod.DA // I presumably set this last time..
+		nrn.Act = ctx.NeuroMod.DA // I set this in CyclePost
 	case TDPredLayer:
 		nrn.Act = nrn.Ge // linear
 		if ni == 0 {
@@ -600,7 +599,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 	case TDIntegLayer:
 		nrn.Act = ctx.NeuroMod.RewPred
 	case TDDaLayer:
-		nrn.Act = ctx.NeuroMod.DA // I presumably set this last time..
+		nrn.Act = ctx.NeuroMod.DA // I set this in CyclePost
 	case MatrixLayer:
 		if ly.Learn.NeuroMod.DAMod == D2Mod && !(ly.Learn.NeuroMod.AChDisInhib > 0 && vals.NeuroMod.ACh < 0.2) && ctx.Cycle >= ly.Act.Dt.MaxCycStart {
 			if nrn.Ge > nrn.SpkMax {
@@ -608,18 +607,8 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			}
 		}
 
-	case PPTgLayer:
-		if ni == 0 {
-			ctx.NeuroMod.PPTg = ly.PVLV.Val(lpl.AvgMax.CaSpkD.Cycle.Max)
-		}
-	case VSPatchLayer:
-		if nrn.NeurIdx == pl.StIdx {
-			val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
-			ctx.PVLV.VSPatch.Set(pi, val)
-		}
 	case VTALayer:
-		ctx.NeuroModFmPVLV()
-		nrn.Act = ctx.PVLV.VTA.Vals.DA
+		nrn.Act = ctx.PVLV.VTA.Vals.DA // I set this in CyclePost
 	case LHbLayer:
 		if ni == 0 {
 			nrn.Act = ctx.PVLV.LHb.Dip
@@ -686,6 +675,8 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 
 /////////////////////////////////////////////////////////////////////////
 //  Special CyclePost methods for different layer types
+//  call these in layer_compute.go/CyclePost and
+//  gpu_hlsl/gpu_cyclepost.hlsl
 
 // RSalAChMaxLayAct returns the updated maxAct value using
 // LayVals.ActAvg.CaSpkP.Max from given layer index,
@@ -770,6 +761,20 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *
 	}
 	ctx.NeuroMod.DA = da // updates global value that will be copied to layers next cycle.
 	vals.NeuroMod.DA = da
+}
+
+func (ly *LayerParams) CyclePostPPTgLayer(ctx *Context, lpl *Pool) {
+	ctx.NeuroMod.PPTg = ly.PVLV.Val(lpl.AvgMax.CaSpkD.Cycle.Max)
+}
+
+// note: needs to iterate over sub-pools in layer!
+func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi int32, pl *Pool) {
+	val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
+	ctx.PVLV.VSPatch.Set(pi-1, val)
+}
+
+func (ly *LayerParams) CyclePostVTALayer(ctx *Context) {
+	ctx.PVLVDA()
 }
 
 /////////////////////////////////////////////////////////////////////////

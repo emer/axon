@@ -236,11 +236,9 @@ func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
 // network layer loop.
 // This is reserved for any kind of special ad-hoc types that
 // need to do something special after Spiking is finally computed and Sent.
-// It ONLY runs on the CPU, not the GPU -- should update global values
-// in the Context state which are re-sync'd back to GPU,
-// and values in other layers MUST come from LayerVals because
-// this is the only data that is sync'd back from the GPU each cycle.
-// For example, updating a neuromodulatory signal such as dopamine.
+// Typically used for updating global values in the Context state,
+// such as updating a neuromodulatory signal such as dopamine.
+// Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
 func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
 	case RSalienceAChLayer:
@@ -264,6 +262,15 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		net := ly.Network
 		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
 		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
+	case PPTgLayer:
+		ly.Params.CyclePostPPTgLayer(ctx, &ly.Pools[0])
+	case VSPatchLayer:
+		for pi := 1; pi < len(ly.Pools); pi++ {
+			pl := &ly.Pools[pi]
+			ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl)
+		}
+	case VTALayer:
+		ly.Params.CyclePostVTALayer(ctx)
 	}
 }
 

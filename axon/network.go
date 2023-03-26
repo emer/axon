@@ -120,7 +120,6 @@ func (nt *Network) CycleImpl(ctx *Context) {
 		nt.GPU.RunCycle()
 		return
 	}
-	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
 	nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
 	nt.LayerMapSeq(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
 	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
@@ -132,7 +131,7 @@ func (nt *Network) CycleImpl(ctx *Context) {
 		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
 		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
 	}
-	nt.LayerMapSeq(func(ly *Layer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
+	nt.LayerMapSeq(func(ly *Layer) { ly.CyclePost(ctx) }, "CyclePost") // do not thread -- minor computation
 }
 
 // MinusPhase does updating after end of minus phase
