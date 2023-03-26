@@ -305,7 +305,7 @@ func (pj *Prjn) SynFail(ctx *Context) {
 			if sy.Wt == 0 { // restore failed wts
 				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
 			}
-			pj.Params.Com.Fail(&sy.Wt, sy.SWt)
+			pj.Params.Com.Fail(ctx, &sy.Wt, sy.SWt)
 		}
 	}
 }

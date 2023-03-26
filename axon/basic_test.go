@@ -1018,6 +1018,33 @@ func TestSWtInit(t *testing.T) {
 	// b.Reset()
 	// desc.WriteCSV(b, etable.Tab, etable.Headers)
 	// fmt.Printf("%s\n", string(b.Bytes()))
+
+	/////////////////////////////////////////////
+	mean = float32(0.8)
+	vr = float32(0.05)
+	spct = float32(0.5)
+	pj.SWt.Init.Var = vr
+
+	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
+	for i := 0; i < nsamp; i++ {
+		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
+		dt.SetCellFloat("Wt", i, float64(sy.Wt))
+		dt.SetCellFloat("LWt", i, float64(sy.LWt))
+		dt.SetCellFloat("SWt", i, float64(sy.SWt))
+	}
+	desc = agg.DescAll(ix)
+	if desc.CellFloat("Wt", minRow) > 0.76 || desc.CellFloat("Wt", maxRow) < 0.84 {
+		t.Errorf("SPct: %g\t Wt Min and Max should be < 0.66, > 0.74 not: %g, %g\n", spct, desc.CellFloat("Wt", minRow), desc.CellFloat("Wt", maxRow))
+	}
+	if desc.CellFloat("Wt", meanRow) < 0.79 || desc.CellFloat("Wt", meanRow) > 0.81 {
+		t.Errorf("SPct: %g\t Wt Mean should be > 0.65, < 0.75 not: %g\n", spct, desc.CellFloat("Wt", meanRow))
+	}
+	if desc.CellFloat("SWt", minRow) < 0.76 || desc.CellFloat("SWt", maxRow) > 0.83 {
+		t.Errorf("SPct: %g\t SWt Min and Max should be < 0.76, > 0.83, not: %g, %g\n", spct, desc.CellFloat("SWt", minRow), desc.CellFloat("SWt", maxRow))
+	}
+	// b.Reset()
+	// desc.WriteCSV(b, etable.Tab, etable.Headers)
+	// fmt.Printf("%s\n", string(b.Bytes()))
 }
 
 func TestSWtLinLearn(t *testing.T) {

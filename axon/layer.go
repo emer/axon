@@ -689,7 +689,7 @@ func (ly *Layer) InitActAvg() {
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
 			if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-				erand.PermuteInts(porder)
+				erand.PermuteInts(porder, &ly.Network.Rand)
 			}
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
@@ -714,7 +714,7 @@ func (ly *Layer) InitActAvg() {
 			porder[i] = i
 		}
 		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-			erand.PermuteInts(porder)
+			erand.PermuteInts(porder, &ly.Network.Rand)
 		}
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
@@ -737,7 +737,7 @@ func (ly *Layer) InitActs() {
 	ly.Params.Act.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Params.Act.InitActs(nrn)
+		ly.Params.Act.InitActs(ly.Network, nrn)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
