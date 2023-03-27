@@ -186,10 +186,10 @@ func (dp *Drives) ExpStep() {
 
 // Effort has effort and parameters for updating it
 type Effort struct {
-	Gain     float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
-	Raw      float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
-	Disc     float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
-	PrevDisc float32 `inactive:"-" desc:"previous discount factor -- to avoid race condition"`
+	Gain float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
+	Raw  float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
+	Disc float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
+	pad  float32
 }
 
 func (ef *Effort) Defaults() {
@@ -200,20 +200,22 @@ func (ef *Effort) Update() {
 
 }
 
-// AddEffort adds an increment of effort
-func (ef *Effort) AddEffort(inc float32) {
-	ef.Raw += inc
-}
-
 // Reset resets the raw effort back to zero -- at start of new gating event
 func (ef *Effort) Reset() {
 	ef.Raw = 0
+	ef.Disc = 1
 }
 
 // DiscFmEffort computes Effort.Disc from EffortRaw
 func (ef *Effort) DiscFmEffort() float32 {
 	ef.Disc = 1.0 / (1.0 + ef.Gain*ef.Raw)
 	return ef.Disc
+}
+
+// AddEffort adds an increment of effort
+func (ef *Effort) AddEffort(inc float32) {
+	ef.Raw += inc
+	ef.DiscFmEffort()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -533,7 +535,7 @@ func (pp *PVLV) HasNegUS() bool {
 func (pp *PVLV) DA(pptg float32) float32 {
 	pvPosRaw := pp.PosPV()
 	pvNeg := pp.NegPV()
-	pvPos := pvPosRaw * pp.Effort.PrevDisc
+	pvPos := pvPosRaw * pp.Effort.Disc
 	vsPatchPos := pp.VSPatchMax()
 	pp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
 	pp.VTA.Raw.Set(pvPos, pvNeg, pptg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)

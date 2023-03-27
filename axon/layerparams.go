@@ -425,7 +425,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case EffortLayer:
-		dr := ctx.PVLV.Effort.DiscFmEffort()
+		dr := ctx.PVLV.Effort.Disc
 		dpc := dr
 		if dr > 0 {
 			pni := nrn.NeurIdx - pl.StIdx

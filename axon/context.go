@@ -98,7 +98,6 @@ func (ctx *Context) PVLVDA() float32 {
 	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
 	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
 	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
-	ctx.PVLV.Effort.PrevDisc = ctx.PVLV.Effort.Disc
 	return ctx.PVLV.VTA.Vals.DA
 }
 

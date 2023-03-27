@@ -735,6 +735,7 @@ func (gp *GPU) RunApplyExts() {
 	gnm := "GPU:ApplyExts"
 	gp.Net.FunTimerStart(gnm)
 	gp.CopyExtsToStaging()
+	gp.CopyContextToStaging()
 	gp.Sys.ComputeSubmitWaitCmd(cmd)
 	gp.Net.FunTimerStop(gnm)
 }
@@ -756,8 +757,10 @@ func (gp *GPU) RunApplyExtsCmd() vk.CommandBuffer {
 	if err != nil {
 		log.Println(err)
 	}
+	cxr := gp.SyncRegionStruct("Ctx")
 	gp.StartRunCmd(cmd)
 	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, exr)
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
 	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
 	gp.RunPipelineCmd(cmd, "ApplyExts", len(gp.Net.Neurons), "MemCopyTo", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)

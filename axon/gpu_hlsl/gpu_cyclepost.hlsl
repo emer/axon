@@ -60,12 +60,14 @@ void CyclePost(inout Context ctx, uint li, in LayerParams ly, inout LayerVals va
 		break;
 	case PPTgLayer:
 		ly.CyclePostPPTgLayer(ctx, lpl);
-	// case VSPatchLayer: {
-	// 	int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
-	// 	for (int pi = 0; pi < npl; pi++) {
-	// 		CyclePostVSPatch(ctx, li, ly, pi+1, Pools[ly.Idxs.PoolSt+1+pi]);
-	// 	}
-	// 	}
+		break;
+	case VSPatchLayer: {
+		int npl = ly.Idxs.ShpPlY * ly.Idxs.ShpPlX;
+		for (int pi = 0; pi < npl; pi++) {
+			CyclePostVSPatch(ctx, li, ly, pi+1, Pools[ly.Idxs.PoolSt+1+pi]);
+		}
+		}
+		break;
 	}
 }
 
@@ -84,9 +86,9 @@ void main(uint3 idx : SV_DispatchThreadID) { // Just one!
 				vtaLay = li;
 			}
 		}
-		// if (vtaLay >= 0) { // depends on other cases
-		// 	CyclePostVTA(Ctx[0], Layers[vtaLay]);
-		// }
+		if (vtaLay >= 0) { // depends on other cases
+			CyclePostVTA(Ctx[0], Layers[vtaLay]);
+		}
 	}
 }
 
