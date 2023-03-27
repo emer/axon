@@ -312,7 +312,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "4.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
