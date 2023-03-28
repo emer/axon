@@ -27,7 +27,6 @@ import (
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/popcode"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/etable/agg"
 	"github.com/emer/etable/eplot"
@@ -230,7 +229,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = gpeTA
 
 	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
-	net.ConnectLayers(gpi, thal, pone2one, emer.Inhib).SetClass("BgFixed")
+	net.ConnectLayers(gpi, thal, pone2one, axon.InhibPrjn).SetClass("BgFixed")
 
 	mtxGo.SetBuildConfig("ThalLay1Name", thal.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", thal.Name())
@@ -240,8 +239,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, axon.InputLayer)
 	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, axon.SuperLayer)
 
-	net.ConnectLayers(pfc, stnp, pone2one, emer.Forward)
-	net.ConnectLayers(pfc, stns, pone2one, emer.Forward)
+	net.ConnectLayers(pfc, stnp, pone2one, axon.ForwardPrjn)
+	net.ConnectLayers(pfc, stns, pone2one, axon.ForwardPrjn)
 
 	net.ConnectToMatrix(accpos, mtxGo, pone2one)
 	net.ConnectToMatrix(accpos, mtxNo, pone2one)
@@ -250,19 +249,19 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(pfc, mtxGo, pone2one)
 	net.ConnectToMatrix(pfc, mtxNo, pone2one)
 
-	net.ConnectLayers(thal, pfcd, one2one, emer.Forward)
-	net.ConnectLayers(pfc, thal, one2one, emer.Forward)
-	net.ConnectLayers(pfcd, thal, one2one, emer.Forward)
+	net.ConnectLayers(thal, pfcd, one2one, axon.ForwardPrjn)
+	net.ConnectLayers(pfc, thal, one2one, axon.ForwardPrjn)
+	net.ConnectLayers(pfcd, thal, one2one, axon.ForwardPrjn)
 
-	gpi.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "SNc", YAlign: relpos.Front, Space: space})
-	thal.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpi.Name(), YAlign: relpos.Front, Space: space})
-	gpeOut.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpi.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	stnp.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: gpeTA.Name(), YAlign: relpos.Front, Space: space})
-	mtxGo.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: gpeOut.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	accpos.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: mtxGo.Name(), YAlign: relpos.Front, XAlign: relpos.Left, YOffset: 1})
-	accneg.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCPos", YAlign: relpos.Front, Space: space})
-	pfc.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "ACCNeg", YAlign: relpos.Front, Space: space})
-	pfcd.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "PFC", YAlign: relpos.Front, Space: space})
+	gpi.PlaceRightOf(snc, space)
+	thal.PlaceRightOf(gpi, space)
+	gpeOut.PlaceAbove(gpi)
+	stnp.PlaceRightOf(gpeTA, space)
+	mtxGo.PlaceAbove(gpeOut)
+	accpos.PlaceAbove(mtxGo)
+	accneg.PlaceRightOf(accpos, space)
+	pfc.PlaceRightOf(accneg, space)
+	pfcd.PlaceRightOf(pfc, space)
 
 	err := net.Build()
 	if err != nil {
@@ -283,12 +282,11 @@ func (ss *Sim) InitWts(net *axon.Network) {
 		return
 	}
 
-	mtxgo := net.LayerByName("MtxGo").(axon.AxonLayer).AsAxon()
-	mtxno := net.LayerByName("MtxNo").(axon.AxonLayer).AsAxon()
+	mtxgo := net.AxonLayerByName("MtxGo")
+	mtxno := net.AxonLayerByName("MtxNo")
 
-	for _, pji := range mtxgo.RcvPrjns {
-		pj := pji.(axon.AxonPrjn).AsAxon()
-		slay := pj.Send.(axon.AxonLayer).AsAxon()
+	for _, pj := range mtxgo.RcvPrjns {
+		slay := pj.Send
 		if slay.Nm == "PFC" {
 			continue
 		}
@@ -301,9 +299,8 @@ func (ss *Sim) InitWts(net *axon.Network) {
 		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
 	}
 
-	for _, pji := range mtxno.RcvPrjns {
-		pj := pji.(axon.AxonPrjn).AsAxon()
-		slay := pj.Send.(axon.AxonLayer).AsAxon()
+	for _, pj := range mtxno.RcvPrjns {
+		slay := pj.Send
 		if slay.Nm == "PFC" {
 			continue
 		}
@@ -368,8 +365,8 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
 	man.GetLoop(etime.Test, etime.Cycle).AddEvents(applyRew)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	man.GetLoop(etime.Test, etime.Trial).OnStart.Add("TestInc", func() {
 		if ss.Sim.NoInc {
@@ -422,7 +419,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	////////////////////////////////////////////
@@ -468,7 +465,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	lays := []string{"ACCPos", "ACCNeg", "PFC"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
-		ly := net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := net.AxonLayerByName(lnm)
 		if !zero {
 			for j := 0; j < np; j++ {
 				// np = different pools have changing increments
@@ -517,7 +514,7 @@ func (ss *Sim) ApplyRew() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	mtxly := net.LayerByName("MtxGo").(*axon.Layer)
+	mtxly := net.AxonLayerByName("MtxGo")
 
 	net.GPU.SyncStateFmGPU()
 	didGate := mtxly.MatrixGated(&ss.Context)           // will also be called later
@@ -550,7 +547,7 @@ func (ss *Sim) SetRew(rew float32) {
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
 	itsr.Values[0] = rew
-	sncly := net.LayerByName("SNc").(axon.AxonLayer).AsAxon()
+	sncly := net.AxonLayerByName("SNc")
 	sncly.ApplyExt(&itsr)
 
 	net.GPU.SyncContextToGPU()
@@ -613,7 +610,7 @@ func (ss *Sim) StatCounters() {
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
 	net := ss.Net
-	vtly := net.LayerByName("VThal").(*axon.Layer)
+	vtly := net.AxonLayerByName("VThal")
 	gated := vtly.AnyGated()
 	if !gated {
 		ss.Stats.SetFloat("VThal_RT", 0)
@@ -652,8 +649,8 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
-	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
+	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
 	ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT", "Gated", "Should", "Rew")
 
@@ -665,7 +662,7 @@ func (ss *Sim) ConfigLogs() {
 		ss.Logs.MiscTables["TestTrialStats"] = tstst
 	}
 
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Train, etime.Phase)
@@ -714,8 +711,7 @@ func (ss *Sim) ConfigLogItems() {
 					ctx.SetTensor(tsr)
 				}, etime.Scope(etime.AllModes, etime.Trial): func(ctx *elog.Context) {
 					tsr := ss.Stats.F64Tensor("Log_ActAvg")
-					lyi := ctx.Layer(clnm)
-					ly := lyi.(axon.AxonLayer).AsAxon()
+					ly := ctx.Layer(clnm).(axon.AxonLayer).AsAxon()
 					for pi := 0; pi < ss.Sim.NPools; pi++ {
 						tsr.Values[pi] = float64(ly.AvgMaxVarByPool("SpkMax", pi+1).Avg)
 					}

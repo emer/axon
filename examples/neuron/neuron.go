@@ -213,7 +213,7 @@ func (ss *Sim) RunCycles() {
 	ss.StopNow = false
 	ss.Net.InitActs()
 	ss.SetParams("", false)
-	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
+	ly := ss.Net.AxonLayerByName("Neuron")
 	nrn := &(ly.Neurons[0])
 	inputOn := false
 	for cyc := 0; cyc < ss.NCycles; cyc++ {
@@ -242,7 +242,7 @@ func (ss *Sim) RunCycles() {
 // NeuronUpdt updates the neuron
 // this just calls the relevant code directly, bypassing most other stuff.
 func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
-	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
+	ly := ss.Net.AxonLayerByName("Neuron")
 	ac := &ly.Params.Act
 	nrn := &(ly.Neurons[0])
 	nex := &ss.NeuronEx
@@ -298,7 +298,7 @@ func (ss *Sim) SetParams(sheet string, setMsg bool) error {
 		ss.Params.ValidateSheets([]string{"Network", "Sim"})
 	}
 	err := ss.SetParamsSet("Base", sheet, setMsg)
-	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
+	ly := ss.Net.AxonLayerByName("Neuron")
 	ly.Params.Act.Gbar.E = 1
 	ly.Params.Act.Gbar.L = 0.2
 	ly.Params.Act.Erev.E = float32(ss.ErevE)
@@ -352,7 +352,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	ly := ss.Net.LayerByName("Neuron").(axon.AxonLayer).AsAxon()
+	ly := ss.Net.AxonLayerByName("Neuron")
 	nrn := &(ly.Neurons[0])
 	// nex := &ss.NeuronEx
 	lg := &ss.Logs

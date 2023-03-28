@@ -177,7 +177,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// NewFull returns a new prjn.Full connectivity pattern
 	full := prjn.NewFull()
 
-	net.ConnectLayers(inp, hid1, full, emer.Forward)
+	net.ConnectLayers(inp, hid1, full, axon.ForwardPrjn)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
 
@@ -233,8 +233,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -287,7 +287,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
-			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
 	})
@@ -309,7 +309,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	// lrate schedule
@@ -352,7 +352,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -441,7 +441,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	out := ss.Net.AxonLayerByName("Output")
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
@@ -473,23 +473,23 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon(), etime.Train)
+	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
-	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
 	// this was useful during development of trace learning:
-	// axon.LogAddCaLrnDiagnosticItems(&ss.Logs, ss.Net.AsAxon(), etime.Epoch, etime.Trial)
+	// axon.LogAddCaLrnDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
 
 	ss.Logs.CreateTables()
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
@@ -501,7 +501,7 @@ func (ss *Sim) ConfigLogItems() {
 	layers := ss.Net.LayersByClass("HiddenLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
-		ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(clnm)
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  etensor.FLOAT64,
@@ -569,10 +569,10 @@ func (ss *Sim) ConfigLogItems() {
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-		// 			ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		// 			ly := ss.Net.AxonLayerByName(clnm)
 		// 			ctx.SetFloat32(ly.AvgMaxVarByPool("Spiked", 0).Avg)
 		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-		// 			ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+		// 			ly := ss.Net.AxonLayerByName(clnm)
 		// 			ctx.SetFloat32(ly.AvgMaxVarByPool("Spiked", 0).Avg)
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(
 		// 			ctx *elog.Context) {

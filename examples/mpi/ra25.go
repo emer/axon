@@ -2,12 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-//go:build this_is_broken_we_should_fix_or_delete
-
-// ra25 runs a simple random-associator four-layer axon network
-// that uses the standard supervised learning paradigm to learn
-// mappings between 25 random input / output patterns
-// defined over 5x5 input / output layers (i.e., 25 units)
+// mpi is a version of ra25 that runs under MPI to learn in parallel
+// across multiple nodes, sharing DWt changes via MPI.
 package main
 
 import (
@@ -42,7 +38,6 @@ var Debug = false
 
 func main() {
 	TheSim.New()
-	TheSim.Config()
 	if len(os.Args) > 1 {
 		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
@@ -53,6 +48,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.Config()
 	TheSim.Init()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
@@ -167,6 +163,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ss.Params.SetObject("NetSize")
 
 	net.InitName(net, "RA25")
+	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
 	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)
 	hid2 := net.AddLayer2D("Hidden2", ss.Params.LayY("Hidden2", 10), ss.Params.LayX("Hidden2", 10), axon.SuperLayer)
@@ -180,18 +177,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// NewFull returns a new prjn.Full connectivity pattern
 	full := prjn.NewFull()
 
-	net.ConnectLayers(inp, hid1, full, emer.Forward)
+	net.ConnectLayers(inp, hid1, full, axon.ForwardPrjn)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
 
 	// net.LateralConnectLayerPrjn(hid1, full, &axon.HebbPrjn{}).SetType(emer.Inhib)
-
-	// note: can set these to do parallel threaded computation across multiple cpus
-	// not worth it for this small of a model, but definitely helps for larger ones
-	// if Thread {
-	// 	hid2.SetThread(1)
-	// 	out.SetThread(1)
-	// }
 
 	// note: if you wanted to change a layer type from e.g., Target to Compare, do this:
 	// out.SetType(emer.Compare)
@@ -214,6 +204,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
+	if !ss.Args.Bool("nogui") {
+		ss.Stats.SetString("RunName", ss.Params.RunName(0)) // in case user interactively changes tag
+	}
 	ss.Loops.ResetCounters()
 	ss.InitRndSeed()
 	// ss.ConfigEnv() // re-config env just in case a different set of patterns was
@@ -222,12 +215,14 @@ func (ss *Sim) Init() {
 	ss.Params.SetAll()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
+	ss.ViewUpdt.RecordSyns()
 }
 
 // InitRndSeed initializes the random seed based on current training run number
 func (ss *Sim) InitRndSeed() {
 	run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
 	ss.RndSeeds.Set(run)
+	ss.RndSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -246,8 +241,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, effTrls).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	man.GetLoop(etime.Train, etime.Trial).OnEnd.Replace("UpdateWeights", func() {
 		ss.Net.DWt(&ss.Context)
@@ -293,6 +288,12 @@ func (ss *Sim) ConfigLoops() {
 		}
 	})
 
+	trainEpoch.OnEnd.Add("RandCheck", func() {
+		if ss.Args.Bool("mpi") {
+			empi.RandCheck(ss.Comm) // prints error message
+		}
+	})
+
 	/////////////////////////////////////////////
 	// Logging
 
@@ -302,7 +303,10 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
-			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			if ss.Args.Bool("mpi") {
+				ss.Logs.MPIGatherTableRows(etime.Analyze, etime.Trial, ss.Comm)
+			}
+			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
 	})
@@ -324,7 +328,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	////////////////////////////////////////////
@@ -335,7 +339,7 @@ func (ss *Sim) ConfigLoops() {
 			ss.GUI.NetDataRecord(ss.ViewUpdt.Text)
 		})
 	} else {
-		axon.LooperUpdtNetView(man, &ss.ViewUpdt)
+		axon.LooperUpdtNetView(man, &ss.ViewUpdt, ss.Net)
 		axon.LooperUpdtPlots(man, &ss.GUI)
 	}
 
@@ -351,17 +355,18 @@ func (ss *Sim) ConfigLoops() {
 // (training, testing, etc).
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
-	ev := ss.Envs[ss.Context.Mode]
+	ev := ss.Envs[ss.Context.Mode.String()]
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
-	lays := net.LayersByClass("InputLayer", "TargetLayer")
+	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
 		}
 	}
+	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -371,7 +376,7 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Context.Reset()
-	ss.Context.Mode = etime.Train.String()
+	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
 	ss.InitStats()
 	ss.StatCounters()
@@ -398,18 +403,18 @@ func (ss *Sim) ConfigPats() {
 		{"Input", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
 		{"Output", etensor.FLOAT32, []int{5, 5}, []string{"Y", "X"}},
 	}
-	dt.SetFromSchema(sch, 25)
+	dt.SetFromSchema(sch, 24)
 
 	patgen.PermutedBinaryMinDiff(dt.Cols[1].(*etensor.Float32), 6, 1, 0, 3)
 	patgen.PermutedBinaryMinDiff(dt.Cols[2].(*etensor.Float32), 6, 1, 0, 3)
-	dt.SaveCSV("random_5x5_25_gen.tsv", etable.Tab, etable.Headers)
+	dt.SaveCSV("random_5x5_24_gen.tsv", etable.Tab, etable.Headers)
 }
 
 func (ss *Sim) OpenPats() {
 	dt := ss.Pats
 	dt.SetMetaData("name", "TrainPats")
 	dt.SetMetaData("desc", "Training patterns")
-	err := dt.OpenCSV("random_5x5_25.tsv", etable.Tab)
+	err := dt.OpenCSV("random_5x5_24.tsv", etable.Tab) // note: using 24 so more evenly divisible
 	if err != nil {
 		log.Println(err)
 	}
@@ -429,14 +434,13 @@ func (ss *Sim) InitStats() {
 // StatCounters saves current counters to Stats, so they are available for logging etc
 // Also saves a string rep of them for ViewUpdt.Text
 func (ss *Sim) StatCounters() {
-	var mode etime.Modes
-	mode.FromString(ss.Context.Mode)
+	mode := ss.Context.Mode
 	ss.Loops.Stacks[mode].CtrsToStats(&ss.Stats)
 	// always use training epoch..
 	trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 	ss.Stats.SetInt("Epoch", trnEpc)
-	ss.Stats.SetInt("Cycle", ss.Context.Cycle)
-	ev := ss.Envs[ss.Context.Mode]
+	ss.Stats.SetInt("Cycle", int(ss.Context.Cycle))
+	ev := ss.Envs[ss.Context.Mode.String()]
 	ss.Stats.SetString("TrialName", ev.(*env.FixedTable).TrialName.Cur)
 	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "TrialName", "Cycle", "TrlUnitErr", "TrlErr", "TrlCorSim"})
 }
@@ -444,9 +448,9 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	out := ss.Net.AxonLayerByName("Output")
 
-	ss.Stats.SetFloat("TrlCorSim", float64(out.CorSim.Cor))
+	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
 
 	if ss.Stats.Float("TrlUnitErr") > 0 {
@@ -474,19 +478,19 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
-	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
-	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Epoch, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon())
+	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
+	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
-	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "Input", "Target")
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
 
 	ss.Logs.CreateTables()
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
@@ -496,11 +500,19 @@ func (ss *Sim) ConfigLogs() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
-		ss.Context.Mode = mode.String() // Also set specifically in a Loop callback.
+	if mode != etime.Analyze {
+		ss.Context.Mode = mode // Also set specifically in a Loop callback.
+	}
+	var saveRow int
+	if ss.Args.Bool("mpi") && time == etime.Epoch { // gather data for trial level at epoch
+		saveRow = ss.Logs.Table(mode, etime.Trial).Rows
+		ss.Logs.MPIGatherTableRows(mode, etime.Trial, ss.Comm)
 	}
 	ss.StatCounters()
 	dt := ss.Logs.Table(mode, time)
+	if dt == nil {
+		return
+	}
 	row := dt.Rows
 
 	switch {
@@ -511,6 +523,11 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	}
 
 	ss.Logs.LogRow(mode, time, row) // also logs to file, etc
+
+	if ss.Args.Bool("mpi") && time == etime.Epoch { // reset rows back to original pre-gather
+		dt := ss.Logs.Table(mode, etime.Trial)
+		dt.SetNumRows(saveRow)
+	}
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -518,8 +535,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
-	title := "Leabra Random Associator"
-	ss.GUI.MakeWindow(ss, "ra25", title, `This demonstrates a basic Leabra model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
+	title := "Axon Random Associator"
+	ss.GUI.MakeWindow(ss, "ra25", title, `This demonstrates a basic Axon model. See <a href="https://github.com/emer/emergent">emergent on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 10
 
 	nv := ss.GUI.AddNetView("NetView")
@@ -584,14 +601,31 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.AddInt("iticycles", 0, "number of cycles to run between trials (inter-trial-interval)")
 	ss.Args.SetInt("epochs", 100)
 	ss.Args.SetInt("runs", 5)
+	ss.Args.AddBool("mpi", false, "if set, use MPI for distributed computation")
+
 	ss.Args.Parse() // always parse
 }
 
 func (ss *Sim) CmdArgs() {
+	if ss.Args.Bool("mpi") {
+		ss.MPIInit()
+	}
+
+	// key for Config and Init to be after MPIInit
+	ss.Config()
+	ss.Init()
+
 	ss.Args.ProcStd(&ss.Params)
-	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
+	if mpi.WorldRank() == 0 {
+		ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
+	}
+
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
 	ss.Stats.SetString("RunName", ss.Params.RunName(ss.Args.Int("run"))) // used for naming logs, stats, etc
+
+	if mpi.WorldRank() != 0 {
+		ss.Args.SetBool("wts", false)
+	}
 
 	netdata := ss.Args.Bool("netdata")
 	if netdata {
@@ -616,6 +650,8 @@ func (ss *Sim) CmdArgs() {
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
+
+	ss.MPIFinalize()
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -628,7 +664,6 @@ func (ss *Sim) MPIInit() {
 	ss.Comm, err = mpi.NewComm(nil) // use all procs
 	if err != nil {
 		log.Println(err)
-		ss.UseMPI = false
 	} else {
 		mpi.Printf("MPI running on %d procs\n", mpi.WorldSize())
 	}
@@ -636,7 +671,7 @@ func (ss *Sim) MPIInit() {
 
 // MPIFinalize finalizes MPI
 func (ss *Sim) MPIFinalize() {
-	if ss.UseMPI {
+	if ss.Args.Bool("mpi") {
 		mpi.Finalize()
 	}
 }
@@ -651,7 +686,7 @@ func (ss *Sim) CollectDWts(net *axon.Network) {
 // DWt changes across parallel nodes, each of which are learning on different
 // sequences of inputs.
 func (ss *Sim) MPIWtFmDWt() {
-	if ss.UseMPI {
+	if ss.Args.Bool("mpi") {
 		ss.CollectDWts(ss.Net)
 		ndw := len(ss.AllDWts)
 		if len(ss.SumDWts) != ndw {

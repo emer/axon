@@ -9,7 +9,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/emer/emergent/emer"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/indent"
@@ -120,8 +120,8 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
 func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
-	slay := pj.Send.(AxonLayer).AsAxon()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	slay := pj.Send
+	rlay := pj.Recv
 	nr := len(rlay.Neurons)
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("{\n"))
@@ -320,19 +320,19 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Prjn) InitWtsSyn(sy *Synapse, mean, spct float32) {
-	pj.Params.SWt.InitWtsSyn(sy, mean, spct)
+func (pj *Prjn) InitWtsSyn(rnd erand.Rand, sy *Synapse, mean, spct float32) {
+	pj.Params.SWt.InitWtsSyn(rnd, sy, mean, spct)
 }
 
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
-func (pj *Prjn) InitWts() {
-	if pj.Typ == emer.Inhib {
+func (pj *Prjn) InitWts(nt *Network) {
+	if pj.Typ == InhibPrjn {
 		pj.Params.Com.GType = InhibitoryG
 	}
 	pj.Params.Learn.LRate.Init()
-	pj.AxonPrj.InitGBuffs()
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	pj.InitGBuffs()
+	rlay := pj.Recv
 	spct := pj.Params.SWt.Init.SPct
 	if rlay.Params.IsTarget() {
 		pj.Params.SWt.Init.SPct = 0
@@ -347,7 +347,7 @@ func (pj *Prjn) InitWts() {
 		syns := pj.RecvSyns(ri)
 		for ci := range syns {
 			sy := &syns[ci]
-			pj.InitWtsSyn(sy, smn, spct)
+			pj.InitWtsSyn(&nt.Rand, sy, smn, spct)
 		}
 	}
 	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {
@@ -358,7 +358,7 @@ func (pj *Prjn) InitWts() {
 // SWtRescale rescales the SWt values to preserve the target overall mean value,
 // using subtractive normalization.
 func (pj *Prjn) SWtRescale() {
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	smn := pj.Params.SWt.Init.Mean
 	for ri := range rlay.Neurons {
 		nrn := &rlay.Neurons[ri]
@@ -434,12 +434,11 @@ func (pj *Prjn) SWtRescale() {
 // Is given the reciprocal projection where
 // the Send and Recv layers are reversed
 // (see LayerBase RecipToRecvPrjn)
-func (pj *Prjn) InitWtSym(rpjp AxonPrjn) {
-	rpj := rpjp.AsAxon()
+func (pj *Prjn) InitWtSym(rpj *Prjn) {
 	if len(rpj.SendCon) == 0 {
 		return
 	}
-	rlay := pj.Recv.(AxonLayer).AsAxon()
+	rlay := pj.Recv
 	for rii := range rlay.Neurons {
 		ri := uint32(rii)
 		syns := pj.RecvSyns(rii)

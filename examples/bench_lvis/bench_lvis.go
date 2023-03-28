@@ -128,9 +128,9 @@ func ConfigNet(b *testing.B, net *axon.Network, inputNeurDimPerPool, inputPools,
 	Prjn4x4Skp2Recip := prjn.NewPoolTileRecip(Prjn4x4Skp2)
 	_ = Prjn4x4Skp2Recip
 
-	net.ConnectLayers(v1m16, v2m16, Prjn4x4Skp2, emer.Forward)
+	net.ConnectLayers(v1m16, v2m16, Prjn4x4Skp2, axon.ForwardPrjn)
 	net.BidirConnectLayers(v2m16, v4f16, Prjn4x4Skp2)
-	net.ConnectLayers(v1m16, v4f16, sparseRandom, emer.Forward).SetClass("V1SC")
+	net.ConnectLayers(v1m16, v4f16, sparseRandom, axon.ForwardPrjn).SetClass("V1SC")
 	net.BidirConnectLayers(v4f16, outLay, full)
 
 	net.RecFunTimes = verbose

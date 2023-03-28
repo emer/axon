@@ -134,9 +134,8 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.Dend.ModGain = 30 // this multiplies thalamic input projections -- only briefly active so need to be strong
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
-		slay := pj.Send.(AxonLayer).AsAxon()
+	for _, pj := range ly.RcvPrjns {
+		slay := pj.Send
 		if slay.LayerType() == VThalLayer {
 			pj.Params.Com.GType = ModulatoryG
 		}
@@ -157,8 +156,7 @@ func (ly *Layer) PTNotMaintDefaults() {
 	ly.Params.CT.DecayTau = 0
 	ly.Params.CT.Update()
 
-	for _, pji := range ly.RcvPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 	}
 }

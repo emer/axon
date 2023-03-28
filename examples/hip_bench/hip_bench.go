@@ -540,10 +540,10 @@ func (ss *Sim) ThetaCyc(train bool) {
 		ss.Net.WtFmDWt()
 	}
 
-	ca1 := ss.Net.LayerByName("CA1").(axon.AxonLayer).AsAxon()
-	ca3 := ss.Net.LayerByName("CA3").(axon.AxonLayer).AsAxon()
-	// ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
-	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
+	ca1 := ss.Net.AxonLayerByName("CA1")
+	ca3 := ss.Net.AxonLayerByName("CA3")
+	// ecin := ss.Net.AxonLayerByName("ECin")
+	ecout := ss.Net.AxonLayerByName("ECout")
 	ca1FmECin := ca1.RcvPrjns.SendName("ECin").(axon.AxonPrjn).AsAxon()
 	ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(axon.AxonPrjn).AsAxon()
 	ca3FmDg := ca3.RcvPrjns.SendName("DG").(axon.AxonPrjn).AsAxon()
@@ -649,10 +649,10 @@ func (ss *Sim) PreThetaCyc(train bool) {
 		ss.Net.WtFmDWt()
 	}
 
-	ca1 := ss.Net.LayerByName("CA1").(axon.AxonLayer).AsAxon()
-	// ca3 := ss.Net.LayerByName("CA3").(axon.AxonLayer).AsAxon()
-	// ecin := ss.Net.LayerByName("ECin").(axon.AxonLayer).AsAxon()
-	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
+	ca1 := ss.Net.AxonLayerByName("CA1")
+	// ca3 := ss.Net.AxonLayerByName("CA3")
+	// ecin := ss.Net.AxonLayerByName("ECin")
+	ecout := ss.Net.AxonLayerByName("ECout")
 	ca1FmECin := ca1.RcvPrjns.SendName("ECin").(axon.AxonPrjn).AsAxon()
 	ca1FmCa3 := ca1.RcvPrjns.SendName("CA3").(axon.AxonPrjn).AsAxon()
 
@@ -725,7 +725,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 	lays := []string{"Input", "ECout"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := en.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -871,8 +871,8 @@ func (ss *Sim) InitStats() {
 // for the entire full pattern as opposed to the plus-phase target
 // values clamped from ECin activations
 func (ss *Sim) MemStats(train bool) {
-	ecout := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
-	inp := ss.Net.LayerByName("Input").(axon.AxonLayer).AsAxon() // note: must be input b/c ECin can be active
+	ecout := ss.Net.AxonLayerByName("ECout")
+	inp := ss.Net.AxonLayerByName("Input") // note: must be input b/c ECin can be active
 	nn := ecout.Shape().Len()
 	actThr := float32(0.2)
 	trgOnWasOffAll := 0.0 // all units
@@ -937,7 +937,7 @@ func (ss *Sim) MemStats(train bool) {
 // different time-scales over which stats could be accumulated etc.
 // You can also aggregate directly from log data, as is done for testing stats
 func (ss *Sim) TrialStats(accum bool) {
-	outLay := ss.Net.LayerByName("ECout").(axon.AxonLayer).AsAxon()
+	outLay := ss.Net.AxonLayerByName("ECout")
 	ss.TrlCosDiff = float64(outLay.CosDiff.Cos)
 	ss.TrlUnitErr = outLay.PctUnitErr()
 	if accum {
@@ -1012,8 +1012,8 @@ func (ss *Sim) SaveWeights(filename gi.FileName) {
 
 // SetDgCa3Off sets the DG and CA3 layers off (or on)
 func (ss *Sim) SetDgCa3Off(net *axon.Network, off bool) {
-	ca3 := net.LayerByName("CA3").(axon.AxonLayer).AsAxon()
-	dg := net.LayerByName("DG").(axon.AxonLayer).AsAxon()
+	ca3 := net.AxonLayerByName("CA3")
+	dg := net.AxonLayerByName("DG")
 	ca3.Off = off
 	dg.Off = off
 }
@@ -1362,8 +1362,8 @@ func (ss *Sim) LogTrnTrl(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigTrnTrlLog(dt *etable.Table) {
-	// inLay := ss.Net.LayerByName("Input").(axon.AxonLayer).AsAxon()
-	// outLay := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	// inLay := ss.Net.AxonLayerByName("Input")
+	// outLay := ss.Net.AxonLayerByName("Output")
 
 	dt.SetMetaData("name", "TrnTrlLog")
 	dt.SetMetaData("desc", "Record of training per input pattern")
@@ -1440,7 +1440,7 @@ func (ss *Sim) LogTrnEpc(dt *etable.Table) {
 	dt.SetCellFloat("TrgOffWasOn", row, agg.Mean(tix, "TrgOffWasOn")[0])
 
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.Vals.ActAvg.AvgMaxGeM))
 		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.Vals.ActAvg.ActMAvg))
 	}
@@ -1533,12 +1533,12 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 	dt.SetCellFloat("TrgOffWasOn", row, ss.TrgOffWasOn)
 
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		dt.SetCellFloat(ly.Nm+" ActM.Avg", row, float64(ly.Pools[0].ActM.Avg))
 	}
 
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		tsr := ss.ValsTsr(lnm)
 		ly.UnitValsTensor(tsr, "Act")
 		dt.SetCellTensor(lnm+"Act", row, tsr)
@@ -1551,8 +1551,8 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 }
 
 func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
-	// inLay := ss.Net.LayerByName("Input").(axon.AxonLayer).AsAxon()
-	// outLay := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	// inLay := ss.Net.AxonLayerByName("Input")
+	// outLay := ss.Net.AxonLayerByName("Output")
 
 	dt.SetMetaData("name", "TstTrlLog")
 	dt.SetMetaData("desc", "Record of testing per input pattern")
@@ -1576,7 +1576,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
 		sch = append(sch, etable.Column{lnm + " ActM.Avg", etensor.FLOAT64, nil, nil})
 	}
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		sch = append(sch, etable.Column{lnm + "Act", etensor.FLOAT64, ly.Shp.Shp, nil})
 	}
 
@@ -1729,7 +1729,7 @@ func (ss *Sim) LogTstEpc(dt *etable.Table) {
 				dt.SetCellFloat(lnm+" "+ts, row, btn)
 			}
 		}
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		dt.SetCellFloat(ly.Nm+"_MaxGeM", row, float64(ly.Vals.ActAvg.AvgMaxGeM))
 		dt.SetCellFloat(ly.Nm+"_ActAvg", row, float64(ly.Vals.ActAvg.ActMAvg))
 	}
@@ -1841,7 +1841,7 @@ func (ss *Sim) LogTstCyc(dt *etable.Table, cyc int) {
 
 	dt.SetCellFloat("Cycle", cyc, float64(cyc))
 	for _, lnm := range ss.LayStatNms {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		dt.SetCellFloat(ly.Nm+" Ge.Avg", cyc, float64(ly.Pools[0].Inhib.Ge.Avg))
 		dt.SetCellFloat(ly.Nm+" Act.Avg", cyc, float64(ly.Pools[0].Inhib.Act.Avg))
 	}

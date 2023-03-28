@@ -152,11 +152,11 @@ func InhNm(n int) string {
 }
 
 func LayByNm(net *axon.Network, n int) *axon.Layer {
-	return net.LayerByName(LayNm(n)).(*axon.Layer)
+	return net.AxonLayerByName(LayNm(n))
 }
 
 func InhByNm(net *axon.Network, n int) *axon.Layer {
-	return net.LayerByName(InhNm(n)).(*axon.Layer)
+	return net.AxonLayerByName(InhNm(n))
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -177,14 +177,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		ll := LayByNm(net, hi-1)
 		tl := LayByNm(net, hi)
 		il := InhByNm(net, hi)
-		net.ConnectLayers(ll, tl, full, emer.Forward).SetClass("Excite")
-		net.ConnectLayers(ll, il, full, emer.Forward).SetClass("ToInhib")
-		net.ConnectLayers(tl, il, full, emer.Back).SetClass("ToInhib")
-		net.ConnectLayers(il, tl, full, emer.Inhib)
-		net.ConnectLayers(il, il, full, emer.Inhib)
+		net.ConnectLayers(ll, tl, full, axon.ForwardPrjn).SetClass("Excite")
+		net.ConnectLayers(ll, il, full, axon.ForwardPrjn).SetClass("ToInhib")
+		net.ConnectLayers(tl, il, full, axon.BackPrjn).SetClass("ToInhib")
+		net.ConnectLayers(il, tl, full, axon.InhibPrjn)
+		net.ConnectLayers(il, il, full, axon.InhibPrjn)
 
 		// if hi > 1 {
-		// 	net.ConnectLayers(inlay, tl, rndcut, emer.Forward).SetClass("RndSc")
+		// 	net.ConnectLayers(inlay, tl, rndcut, axon.ForwardPrjn).SetClass("RndSc")
 		// }
 
 		tl.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: ll.Name(), YAlign: relpos.Front, XAlign: relpos.Middle})
@@ -192,9 +192,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 		if hi < ss.NLayers {
 			nl := LayByNm(net, hi+1)
-			net.ConnectLayers(nl, il, full, emer.Forward).SetClass("ToInhib")
-			net.ConnectLayers(tl, nl, full, emer.Forward).SetClass("Excite")
-			net.ConnectLayers(nl, tl, full, emer.Back).SetClass("Excite")
+			net.ConnectLayers(nl, il, full, axon.ForwardPrjn).SetClass("ToInhib")
+			net.ConnectLayers(tl, nl, full, axon.ForwardPrjn).SetClass("Excite")
+			net.ConnectLayers(nl, tl, full, axon.BackPrjn).SetClass("Excite")
 		}
 	}
 	err := net.Build()
@@ -243,7 +243,7 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 10).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199) // plus phase timing
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199) // plus phase timing
 
 	for m, _ := range man.Stacks {
 		man.Stacks[m].Loops[etime.Cycle].Main.Add("Cycle", func() {
@@ -301,7 +301,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	net.InitExt() // clear any existing inputs -- not strictly necessary if always
-	ly := net.LayerByName("Layer0").(axon.AxonLayer).AsAxon()
+	ly := net.AxonLayerByName("Layer0")
 	pat := ss.Pats.CellTensor("Input", rand.Intn(10))
 	ly.ApplyExt(pat)
 }
@@ -353,7 +353,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCounterItems(etime.Trial, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
 	ss.ConfigLogItems()
 
@@ -361,7 +361,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.CreateTables()
 
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	// ss.Logs.NoPlot(etime.Test, etime.Run)
@@ -379,7 +379,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.AvgMaxVarByPool("Spike", 0).Avg)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -388,7 +388,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Neurons[0].Gi)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -397,7 +397,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.Gi)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -406,7 +406,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.FFs)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -415,7 +415,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.FBs)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -424,7 +424,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.FSi)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -433,7 +433,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSi)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -442,7 +442,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSf)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -451,7 +451,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.FSGi)
 				}}})
 		ss.Logs.AddItem(&elog.Item{
@@ -460,7 +460,7 @@ func (ss *Sim) ConfigLogItems() {
 			FixMin: true,
 			Write: elog.WriteMap{
 				etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-					ly := ss.Net.LayerByName(clnm).(axon.AxonLayer).AsAxon()
+					ly := ss.Net.AxonLayerByName(clnm)
 					ctx.SetFloat32(ly.Pools[0].Inhib.SSGi)
 				}}})
 	}

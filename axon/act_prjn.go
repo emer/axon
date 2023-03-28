@@ -176,18 +176,19 @@ func (sc *SynComParams) WtFailP(swt float32) float32 {
 //gosl: end act_prjn
 
 // WtFail returns true if synapse should fail, as function of SWt value (optionally)
-func (sc *SynComParams) WtFail(swt float32) bool {
+func (sc *SynComParams) WtFail(ctx *Context, swt float32) bool {
 	fp := sc.WtFailP(swt)
 	if fp == 0 {
 		return false
 	}
-	return erand.BoolP(fp)
+	return erand.BoolP32(fp, -1)
+	// return slrand.BoolP(ctx.RandCtr, si) // todo: needs a synapse index
 }
 
 // Fail updates failure status of given weight, given SWt value
-func (sc *SynComParams) Fail(wt *float32, swt float32) {
+func (sc *SynComParams) Fail(ctx *Context, wt *float32, swt float32) {
 	if sc.PFail > 0 {
-		if sc.WtFail(swt) {
+		if sc.WtFail(ctx, swt) {
 			*wt = 0
 		}
 	}

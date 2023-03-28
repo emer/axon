@@ -5,10 +5,9 @@
 package axon
 
 import (
-	"math/rand"
-
 	"github.com/emer/axon/chans"
 	"github.com/emer/axon/kinase"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/mat32"
@@ -428,13 +427,13 @@ func (sp *SWtAdaptParams) Update() {
 //gosl: end learn
 
 // RndVar returns the random variance in weight value (zero mean) based on Var param
-func (sp *SWtInitParams) RndVar() float32 {
-	return sp.Var * 2 * (rand.Float32() - 0.5)
+func (sp *SWtInitParams) RndVar(rnd erand.Rand) float32 {
+	return sp.Var * 2.0 * (rnd.Float32(-1) - 0.5)
 }
 
 // RndVar returns the random variance (zero mean) based on DreamVar param
-func (sp *SWtAdaptParams) RndVar() float32 {
-	return sp.DreamVar * 2 * (rand.Float32() - 0.5)
+func (sp *SWtAdaptParams) RndVar(rnd erand.Rand) float32 {
+	return sp.DreamVar * 2.0 * (rnd.Float32(-1) - 0.5)
 }
 
 //gosl: start learn
@@ -569,8 +568,8 @@ func DecaySynCa(sy *Synapse, decay float32) {
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (sp *SWtParams) InitWtsSyn(sy *Synapse, mean, spct float32) {
-	wtv := sp.Init.RndVar()
+func (sp *SWtParams) InitWtsSyn(rnd erand.Rand, sy *Synapse, mean, spct float32) {
+	wtv := sp.Init.RndVar(rnd)
 	sy.Wt = mean + wtv
 	sy.SWt = sp.ClipSWt(mean + spct*wtv)
 	if spct == 0 { // this is critical for weak init wt, SPCt = 0 prjns

@@ -21,12 +21,12 @@ import (
 // to any Layer type. The main Layer then can just have the algorithm-specific code.
 type LayerBase struct {
 	AxonLay       AxonLayer          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
-	Network       emer.Network       `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
+	Network       *Network           `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
 	Nm            string             `desc:"Name of the layer -- this must be unique within the network, which has a map for quick lookup and layers are typically accessed directly by name"`
 	Cls           string             `desc:"Class is for applying parameter styles, can be space separated multple tags"`
 	Off           bool               `desc:"inactivate this layer -- allows for easy experimentation"`
 	Shp           etensor.Shape      `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
-	Typ           emer.LayerType     `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
+	Typ           LayerTypes         `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
 	Rel           relpos.Rel         `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
 	Ps            mat32.Vec3         `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
 	Idx           int                `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
@@ -50,7 +50,7 @@ type LayerBase struct {
 func (ly *LayerBase) InitName(lay emer.Layer, name string, net emer.Network) {
 	ly.AxonLay = lay.(AxonLayer)
 	ly.Nm = name
-	ly.Network = net
+	ly.Network = net.(AxonNetwork).AsAxon()
 	ly.BuildConfig = make(map[string]string)
 }
 
@@ -65,8 +65,8 @@ func (ly *LayerBase) SetClass(cls string)        { ly.Cls = cls }
 func (ly *LayerBase) LayerType() LayerTypes      { return LayerTypes(ly.Typ) }
 func (ly *LayerBase) Class() string              { return ly.LayerType().String() + " " + ly.Cls }
 func (ly *LayerBase) TypeName() string           { return "Layer" } // type category, for params..
-func (ly *LayerBase) Type() emer.LayerType       { return ly.Typ }
-func (ly *LayerBase) SetType(typ emer.LayerType) { ly.Typ = typ }
+func (ly *LayerBase) Type() emer.LayerType       { return emer.LayerType(ly.Typ) }
+func (ly *LayerBase) SetType(typ emer.LayerType) { ly.Typ = LayerTypes(typ) }
 func (ly *LayerBase) IsOff() bool                { return ly.Off }
 func (ly *LayerBase) SetOff(off bool) {
 	ly.Off = off
@@ -237,7 +237,7 @@ func (ly *LayerBase) PoolTry(idx int) (*Pool, error) {
 // rpj: R=A <- S=B
 //
 // returns false if not found.
-func (ly *LayerBase) RecipToSendPrjn(spj emer.Prjn) (emer.Prjn, bool) {
+func (ly *LayerBase) RecipToSendPrjn(spj *Prjn) (*Prjn, bool) {
 	for _, rpj := range ly.RcvPrjns {
 		if rpj.SendLay() == spj.RecvLay() { // B = sender of rpj, recv of spj
 			return rpj, true
@@ -257,7 +257,7 @@ func (ly *LayerBase) RecipToSendPrjn(spj emer.Prjn) (emer.Prjn, bool) {
 // spj: S=A -> R=B
 //
 // returns false if not found.
-func (ly *LayerBase) RecipToRecvPrjn(rpj emer.Prjn) (emer.Prjn, bool) {
+func (ly *LayerBase) RecipToRecvPrjn(rpj *Prjn) (*Prjn, bool) {
 	for _, spj := range ly.SndPrjns {
 		if spj.RecvLay() == rpj.SendLay() { // B = sender of rpj, recv of spj
 			return spj, true
@@ -269,14 +269,14 @@ func (ly *LayerBase) RecipToRecvPrjn(rpj emer.Prjn) (emer.Prjn, bool) {
 // Config configures the basic properties of the layer
 func (ly *LayerBase) Config(shape []int, typ emer.LayerType) {
 	ly.SetShape(shape)
-	ly.Typ = typ
+	ly.Typ = LayerTypes(typ)
 }
 
 // ParamsHistoryReset resets parameter application history
 func (ly *LayerBase) ParamsHistoryReset() {
 	ly.ParamsHistory.ParamsHistoryReset()
 	for _, pj := range ly.RcvPrjns {
-		pj.(params.History).ParamsHistoryReset()
+		pj.ParamsHistoryReset()
 	}
 }
 
@@ -354,7 +354,7 @@ func (ly *LayerBase) BuildConfigByName(nm string) (string, error) {
 func (ly *LayerBase) BuildConfigFindLayer(nm string, mustName bool) int32 {
 	idx := int32(-1)
 	if rnm, ok := ly.BuildConfig[nm]; ok {
-		dly, err := ly.Network.LayerByNameTry(rnm)
+		dly, err := ly.Network.LayByNameTry(rnm)
 		if err != nil {
 			log.Println(err)
 		} else {

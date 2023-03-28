@@ -40,7 +40,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = false
+	GPU = true
 )
 
 func main() {
@@ -209,14 +209,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
-	net.ConnectLayers(drives, ofc, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	// net.ConnectLayers(drives, ofcCT, pone2one, emer.Forward).SetClass("DrivesToOFC")
-	net.ConnectLayers(vPgpi, ofcMD, full, emer.Inhib).SetClass("BgFixed")
-	// net.ConnectLayers(cs, ofc, full, emer.Forward) // let BLA handle it
-	net.ConnectLayers(time, ofc, full, emer.Forward).SetClass("TimeToOFC")
-	net.ConnectLayers(pvPos, ofc, full, emer.Forward).SetClass("PVposToOFC")
-	net.ConnectLayers(usPos, ofc, pone2one, emer.Forward)
-	net.ConnectLayers(ofcPT, ofcCT, pone2one, emer.Forward)
+	net.ConnectLayers(drives, ofc, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
+	// net.ConnectLayers(drives, ofcCT, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
+	net.ConnectLayers(vPgpi, ofcMD, full, axon.InhibPrjn).SetClass("BgFixed")
+	// net.ConnectLayers(cs, ofc, full, axon.ForwardPrjn) // let BLA handle it
+	net.ConnectLayers(time, ofc, full, axon.ForwardPrjn).SetClass("TimeToOFC")
+	net.ConnectLayers(pvPos, ofc, full, axon.ForwardPrjn).SetClass("PVposToOFC")
+	net.ConnectLayers(usPos, ofc, pone2one, axon.ForwardPrjn)
+	net.ConnectLayers(ofcPT, ofcCT, pone2one, axon.ForwardPrjn)
 
 	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
 	net.ConnectToPulv(ofc, ofcCT, effortP, full, full)
@@ -231,8 +231,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectPTPredToPulv(ofcPTPred, pvPosP, pone2one, pone2one)
 	net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
 	net.ConnectPTPredToPulv(ofcPTPred, timeP, full, full)
-	net.ConnectLayers(time, ofcPTPred, full, emer.Forward)
-	net.ConnectLayers(cs, ofcPTPred, full, emer.Forward)
+	net.ConnectLayers(time, ofcPTPred, full, axon.ForwardPrjn)
+	net.ConnectLayers(cs, ofcPTPred, full, axon.ForwardPrjn)
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
@@ -240,8 +240,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// BLA
 	net.ConnectToBLAAcq(cs, blaPosA, full)
 	net.ConnectToBLAAcq(usPos, blaPosA, pone2one).SetClass("USToBLA")
-	net.ConnectLayers(blaPosA, ofc, pone2one, emer.Forward)
-	net.ConnectLayers(blaPosE, blaPosA, pone2one, emer.Inhib).SetClass("BLAExtToAcq")
+	net.ConnectLayers(blaPosA, ofc, pone2one, axon.ForwardPrjn)
+	net.ConnectLayers(blaPosE, blaPosA, pone2one, axon.InhibPrjn).SetClass("BLAExtToAcq")
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
@@ -255,19 +255,19 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
 	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
-	net.ConnectLayers(blaPosA, vPstnp, full, emer.Forward)
-	net.ConnectLayers(blaPosA, vPstns, full, emer.Forward)
+	net.ConnectLayers(blaPosA, vPstnp, full, axon.ForwardPrjn)
+	net.ConnectLayers(blaPosA, vPstns, full, axon.ForwardPrjn)
 
 	net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
-	// net.ConnectLayers(drives, vPstnp, full, emer.Forward) // probably not good: modulatory
-	// net.ConnectLayers(drives, vPstns, full, emer.Forward)
+	// net.ConnectLayers(drives, vPstnp, full, axon.ForwardPrjn) // probably not good: modulatory
+	// net.ConnectLayers(drives, vPstns, full, axon.ForwardPrjn)
 	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
 	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
-	// net.ConnectLayers(ofc, vPstnp, full, emer.Forward)
-	// net.ConnectLayers(ofc, vPstns, full, emer.Forward)
+	// net.ConnectLayers(ofc, vPstnp, full, axon.ForwardPrjn)
+	// net.ConnectLayers(ofc, vPstns, full, axon.ForwardPrjn)
 	// net.ConnectToMatrix(ofcCT, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
 	// net.ConnectToMatrix(ofcCT, vPmtxNo, pone2one)
 	// net.ConnectToMatrix(ofcPT, vPmtxGo, pone2one)
@@ -345,8 +345,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Condition, 1).AddTime(etime.Block, 50).AddTime(etime.Sequence, 8).AddTime(etime.Trial, 5).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -376,7 +376,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	// man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 	// 	ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-	// 	axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+	// 	axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	// })
 
 	////////////////////////////////////////////
@@ -416,7 +416,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if !kit.IfaceIsNil(pats) {
 			ly.ApplyExt(pats)
@@ -559,14 +559,14 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.ConfigLogItems()
 
-	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Block, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon(), etime.Train)
+	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
 	ss.Logs.PlotItems("DA", "VSPatch")
 
 	ss.Logs.CreateTables()
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Train, etime.Epoch)

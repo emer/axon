@@ -5,7 +5,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/etable/etensor"
 	"github.com/stretchr/testify/assert"
@@ -43,11 +42,11 @@ func TestLayer_SendSpike(t *testing.T) {
 	t.Skip("skipping -- needs reorg to recv based")
 	net := NewNetwork("LayerTest")
 	shape := []int{3, 3}
-	inputLayer1 := net.AddLayer("Input1", shape, InputLayer).(AxonLayer)
-	inputLayer2 := net.AddLayer("Input2", shape, InputLayer).(AxonLayer)
-	outputLayer := net.AddLayer("Output", shape, TargetLayer).(AxonLayer)
-	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), emer.Forward)
-	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), emer.Forward)
+	inputLayer1 := net.AddLayer("Input1", shape, InputLayer)
+	inputLayer2 := net.AddLayer("Input2", shape, InputLayer)
+	outputLayer := net.AddLayer("Output", shape, TargetLayer)
+	net.ConnectLayers(inputLayer1, outputLayer, prjn.NewFull(), ForwardPrjn)
+	net.ConnectLayers(inputLayer2, outputLayer, prjn.NewFull(), ForwardPrjn)
 
 
 	// Input1 -> Output
@@ -62,8 +61,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	net.NewState(ctx)
 
 	// spike the neurons. Do this after NewState(), so that the spike is not decayed away
-	inputLayer1.AsAxon().Neurons[1].Spike = 1.0
-	inputLayer2.AsAxon().Neurons[0].Spike = 1.0
+	inputLayer1.Neurons[1].Spike = 1.0
+	inputLayer2.Neurons[0].Spike = 1.0
 
 	// set some of the weights
 	const in1pj0_n1_to_n2_wt = 0.1
@@ -84,8 +83,8 @@ func TestLayer_SendSpike(t *testing.T) {
 	// the neurons we spiked are connected to 9 neurons in the output layer
 	// make sure they all received the spike
 	recvBuffs := [][]float32{
-		inputLayer1.AsAxon().SndPrjns[0].(*Prjn).GBuf,
-		inputLayer2.AsAxon().SndPrjns[0].(*Prjn).GBuf,
+		inputLayer1.SndPrjns[0].(*Prjn).GBuf,
+		inputLayer2.SndPrjns[0].(*Prjn).GBuf,
 	}
 	for _, recvBuf := range recvBuffs {
 		count := 0
@@ -116,12 +115,12 @@ func TestLayerToJson(t *testing.T) {
 	// and syncing them by dumping the weights from net A and loading the weights
 	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
 	net := createNetwork(shape, t)
-	hiddenLayer := net.LayerByName("Hidden").(AxonLayer)
+	hiddenLayer := net.AxonLayerByName("Hidden")
 	ctx := NewContext()
 	net.Cycle(ctx) // run one cycle to make the weights more different
 
 	netC := createNetwork(shape, t)
-	hiddenLayerC := netC.LayerByName("Hidden").(AxonLayer)
+	hiddenLayerC := netC.AxonLayerByName("Hidden")
 
 	// save to JSON
 	filename := t.TempDir() + "/layer.json"
@@ -140,8 +139,8 @@ func TestLayerToJson(t *testing.T) {
 	assert.NoError(t, fh.Close())
 
 	// make sure the synapse weights are the same
-	origProj := hiddenLayer.AsAxon().RcvPrjns[0]
-	copyProj := hiddenLayerC.AsAxon().RcvPrjns[0]
+	origProj := hiddenLayer.RcvPrjns[0]
+	copyProj := hiddenLayerC.RcvPrjns[0]
 	varIdx, _ := origProj.SynVarIdx("Wt")
 	assert.Equal(t, origProj.Syn1DNum(), copyProj.Syn1DNum())
 	for idx := 0; idx < origProj.Syn1DNum(); idx++ {
@@ -150,8 +149,8 @@ func TestLayerToJson(t *testing.T) {
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
 	}
 
-	nrns := hiddenLayer.AsAxon().Neurons
-	nrnsC := hiddenLayerC.AsAxon().Neurons
+	nrns := hiddenLayer.Neurons
+	nrnsC := hiddenLayerC.Neurons
 	// right now only two of the Neuron variables are exported
 	for i := range nrns {
 		assert.Equal(t, nrns[i].TrgAvg, nrnsC[i].TrgAvg)
@@ -165,7 +164,7 @@ func createNetwork(shape []int, t *testing.T) *Network {
 	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 	full := prjn.NewFull()
-	net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
+	net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPrjn)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
 	assert.NoError(t, net.Build())
 	net.Defaults()
@@ -182,8 +181,8 @@ func TestLayerBase_IsOff(t *testing.T) {
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 
 	full := prjn.NewFull()
-	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, emer.Forward)
-	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, emer.Forward)
+	inToHid := net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPrjn)
+	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, ForwardPrjn)
 	hidToOut, outToHid := net.BidirConnectLayers(hiddenLayer, outputLayer, full)
 
 	assert.NoError(t, net.Build())

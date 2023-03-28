@@ -150,10 +150,10 @@ func (ai *ActInitParams) Defaults() {
 //gosl: end act
 
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
-func (ai *ActInitParams) GetGeBase() float32 {
+func (ai *ActInitParams) GetGeBase(rnd erand.Rand) float32 {
 	ge := ai.GeBase
 	if ai.GeVar > 0 {
-		ge += float32(erand.Gauss(float64(ai.GeVar), -1))
+		ge += float32(float64(ai.GeVar) * rnd.NormFloat64(-1))
 		if ge < 0 {
 			ge = 0
 		}
@@ -162,10 +162,10 @@ func (ai *ActInitParams) GetGeBase() float32 {
 }
 
 // GiBase returns the baseline Gi value: Gi + rand(GiVar) > 0
-func (ai *ActInitParams) GetGiBase() float32 {
+func (ai *ActInitParams) GetGiBase(rnd erand.Rand) float32 {
 	gi := ai.GiBase
 	if ai.GiVar > 0 {
-		gi += float32(erand.Gauss(float64(ai.GiVar), -1))
+		gi += float32(float64(ai.GiVar) * rnd.NormFloat64(-1))
 		if gi < 0 {
 			gi = 0
 		}
@@ -642,15 +642,15 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
 // automatically called (DecayState is used instead)
-func (ac *ActParams) InitActs(nrn *Neuron) {
+func (ac *ActParams) InitActs(rnd erand.Rand, nrn *Neuron) {
 	nrn.Spike = 0
 	nrn.Spiked = 0
 	nrn.ISI = -1
 	nrn.ISIAvg = -1
 	nrn.Act = ac.Init.Act
 	nrn.ActInt = ac.Init.Act
-	nrn.GeBase = ac.Init.GetGeBase()
-	nrn.GiBase = ac.Init.GetGiBase()
+	nrn.GeBase = ac.Init.GetGeBase(rnd)
+	nrn.GiBase = ac.Init.GetGiBase(rnd)
 	nrn.GeSyn = nrn.GeBase
 	nrn.Ge = nrn.GeBase
 	nrn.Gi = nrn.GiBase

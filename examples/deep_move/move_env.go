@@ -404,7 +404,7 @@ func (ev *MoveEnv) ActGen() int {
 			act = ltAct
 		}
 	default:
-		if erand.BoolProb(0.5, -1) {
+		if erand.BoolP(0.5, -1) {
 			act = lastAct
 		} else {
 			act = rand.Intn(len(ev.Acts))

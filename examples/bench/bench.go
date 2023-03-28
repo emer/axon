@@ -15,7 +15,6 @@ import (
 	"math/rand"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
@@ -78,7 +77,7 @@ func ConfigNet(net *axon.Network, threadNeuron, threadSendSpike, threadSynCa,
 
 	full := prjn.NewFull()
 
-	net.ConnectLayers(inLay, hid1Lay, full, emer.Forward)
+	net.ConnectLayers(inLay, hid1Lay, full, axon.ForwardPrjn)
 	net.BidirConnectLayers(hid1Lay, hid2Lay, full)
 	net.BidirConnectLayers(hid2Lay, hid3Lay, full)
 	net.BidirConnectLayers(hid3Lay, outLay, full)

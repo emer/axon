@@ -37,7 +37,7 @@ func (oo *OnOff) TrialUpdt() {
 	if !oo.Act {
 		return
 	}
-	oo.CurAct = erand.BoolP(oo.P)
+	oo.CurAct = erand.BoolP32(oo.P, -1)
 	oo.CurOn = oo.On - oo.OnVar + 2*rand.Intn(oo.OnVar+1)
 	oo.CurOff = oo.Off - oo.OffVar + 2*rand.Intn(oo.OffVar+1)
 }

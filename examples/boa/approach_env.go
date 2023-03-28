@@ -342,7 +342,7 @@ func (ev *Approach) ActGen() int {
 	if ev.LastAct == lt || ev.LastAct == rt {
 		return ev.LastAct
 	}
-	if ev.AlwaysLeft || erand.BoolProb(.5, -1) {
+	if ev.AlwaysLeft || erand.BoolP(.5, -1) {
 		return lt
 	}
 	return rt

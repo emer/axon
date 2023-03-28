@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/patgen"
 	"github.com/emer/emergent/prjn"
@@ -149,8 +148,8 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 	}{}
 
 	for li := range netS.Layers {
-		layerS := netS.Layers[li].(AxonLayer).AsAxon()
-		layerP := netP.Layers[li].(AxonLayer).AsAxon()
+		layerS := netS.Layers[li]
+		layerP := netP.Layers[li]
 
 		// check Neuron fields
 		for ni := range layerS.Neurons {
@@ -181,9 +180,9 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 		}
 
 		// check Synapse fields
-		for pi := range *layerS.SendPrjns() {
-			prjnS := (*layerS.SendPrjns())[pi].(*Prjn)
-			prjnP := (*layerP.SendPrjns())[pi].(*Prjn)
+		for pi := range layerS.SndPrjns {
+			prjnS := layerS.SndPrjns[pi]
+			prjnP := layerP.SndPrjns[pi]
 			for si := range prjnS.Syns {
 				synS := reflect.ValueOf(prjnS.Syns[si])
 				synP := reflect.ValueOf(prjnP.Syns[si])
@@ -213,8 +212,8 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 // to allow writing tests that are expected to fail (eg assert that two networks are not equal)
 func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 	for li := range netS.Layers {
-		layerS := netS.Layers[li].(AxonLayer).AsAxon()
-		layerP := netP.Layers[li].(AxonLayer).AsAxon()
+		layerS := netS.Layers[li]
+		layerP := netP.Layers[li]
 		for ni := range layerS.Neurons {
 			nrnS := reflect.ValueOf(layerS.Neurons[ni])
 			nrnP := reflect.ValueOf(layerP.Neurons[ni])
@@ -278,8 +277,8 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 	// rand.Seed(1337)
 	// inPats := pats.ColByName("Input").(*etensor.Float32)
 	// outPats := pats.ColByName("Output").(*etensor.Float32)
-	// inputLayer := netS.LayerByName("Input").(*Layer)
-	// outputLayer := netS.LayerByName("Output").(*Layer)
+	// inputLayer := netS.AxonLayerByName("Input").(*Layer)
+	// outputLayer := netS.AxonLayerByName("Output").(*Layer)
 	// input := inPats.SubSpace([]int{0})
 	// output := outPats.SubSpace([]int{0})
 	// inputLayer.ApplyExt(input)
@@ -327,8 +326,8 @@ func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa int) *Netwo
 	hiddenLayer2 := net.AddLayer("Hidden2", shape, SuperLayer)
 	hiddenLayer3 := net.AddLayer("Hidden3", shape, SuperLayer)
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
-	net.ConnectLayers(inputLayer, hiddenLayer, prjn.NewFull(), emer.Forward)
-	net.ConnectLayers(inputLayer, hiddenLayer2, prjn.NewFull(), emer.Forward)
+	net.ConnectLayers(inputLayer, hiddenLayer, prjn.NewFull(), ForwardPrjn)
+	net.ConnectLayers(inputLayer, hiddenLayer2, prjn.NewFull(), ForwardPrjn)
 	net.BidirConnectLayers(hiddenLayer, hiddenLayer3, prjn.NewFull())
 	net.BidirConnectLayers(hiddenLayer2, hiddenLayer3, prjn.NewFull())
 	net.BidirConnectLayers(hiddenLayer3, outputLayer, prjn.NewFull())
@@ -353,8 +352,8 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Context)
 
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
-	inputLayer := net.LayerByName("Input").(*Layer)
-	outputLayer := net.LayerByName("Output").(*Layer)
+	inputLayer := net.AxonLayerByName("Input")
+	outputLayer := net.AxonLayerByName("Output")
 	ctx := NewContext()
 	for epoch := 0; epoch < epochs; epoch++ {
 		for pi := 0; pi < pats.NumRows(); pi++ {

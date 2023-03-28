@@ -23,12 +23,10 @@ import (
 // ni is layer-specific index of neuron within its layer.
 func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 	ly.Params.GatherSpikesInit(nrn)
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
 			continue
 		}
-		pj := p.AsAxon()
-
 		if pj.Params.Com.CPURecvSpikes.IsTrue() { // about 35x slower!
 			pj.RecvSpikes(ctx, int(ni)) // Note: iterates over all senders for given recv
 		}
@@ -94,7 +92,7 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 func (ly *Layer) BetweenLayerGi(ctx *Context) {
 	lpl := &ly.Pools[0]
 	maxGi := lpl.Inhib.Gi
-	net := ly.Network.(AxonNetwork).AsAxon()
+	net := ly.Network
 	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx1)
 	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx2)
 	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx3)
@@ -108,7 +106,7 @@ func (ly *Layer) BetweenLayerGiMax(maxGi float32, net *Network, layIdx int32) fl
 	if layIdx < 0 {
 		return maxGi
 	}
-	lay := net.Layers[layIdx].(AxonLayer).AsAxon()
+	lay := net.Layers[layIdx]
 	lpl := &lay.Pools[0]
 	if lpl.Inhib.Gi > maxGi {
 		maxGi = lpl.Inhib.Gi
@@ -117,7 +115,7 @@ func (ly *Layer) BetweenLayerGiMax(maxGi float32, net *Network, layIdx int32) fl
 }
 
 func (ly *Layer) PulvinarDriver(ni uint32) (drvGe, nonDrvPct float32) {
-	dly := ly.Network.Layer(int(ly.Params.Pulv.DriveLayIdx)).(AxonLayer).AsAxon()
+	dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
 	drvMax := dly.Pools[0].AvgMax.CaSpkP.Cycle.Max
 	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 	burst := dly.Neurons[ni].Burst
@@ -150,8 +148,8 @@ func (ly *Layer) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 func (ly *Layer) CycleNeuron(ctx *Context, ni uint32, nrn *Neuron) {
-	ly.AxonLay.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals)
-	ly.AxonLay.SpikeFmG(ctx, ni, nrn)
+	ly.GInteg(ctx, ni, nrn, &ly.Pools[nrn.SubPool], ly.Vals)
+	ly.SpikeFmG(ctx, ni, nrn)
 }
 
 // PostSpike does updates at neuron level after spiking has been computed.
@@ -170,7 +168,7 @@ func (ly *Layer) SendSpike(ctx *Context) {
 		if nrn.IsOff() {
 			continue
 		}
-		ly.AxonLay.PostSpike(ctx, uint32(ni), nrn)
+		ly.PostSpike(ctx, uint32(ni), nrn)
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
 				continue
@@ -229,7 +227,7 @@ func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
 	if layIdx < 0 {
 		return 0
 	}
-	lay := net.Layers[layIdx].(AxonLayer).AsAxon()
+	lay := net.Layers[layIdx]
 	lpl := &lay.Pools[0]
 	return lpl.AvgMax.Act.Cycle.Max
 }
@@ -238,34 +236,41 @@ func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
 // network layer loop.
 // This is reserved for any kind of special ad-hoc types that
 // need to do something special after Spiking is finally computed and Sent.
-// It ONLY runs on the CPU, not the GPU -- should update global values
-// in the Context state which are re-sync'd back to GPU,
-// and values in other layers MUST come from LayerVals because
-// this is the only data that is sync'd back from the GPU each cycle.
-// For example, updating a neuromodulatory signal such as dopamine.
+// Typically used for updating global values in the Context state,
+// such as updating a neuromodulatory signal such as dopamine.
+// Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
 func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
 	case RSalienceAChLayer:
-		net := ly.Network.(AxonNetwork).AsAxon()
+		net := ly.Network
 		lay1MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay1Idx)
 		lay2MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay2Idx)
 		lay3MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay3Idx)
 		lay4MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay4Idx)
 		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
 	case RWDaLayer:
-		net := ly.Network.(AxonNetwork).AsAxon()
+		net := ly.Network
 		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
 		ly.Params.CyclePostRWDaLayer(ctx, ly.Vals, pvals)
 	case TDPredLayer:
 		ly.Params.CyclePostTDPredLayer(ctx, ly.Vals)
 	case TDIntegLayer:
-		net := ly.Network.(AxonNetwork).AsAxon()
+		net := ly.Network
 		pvals := &net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
 		ly.Params.CyclePostTDIntegLayer(ctx, ly.Vals, pvals)
 	case TDDaLayer:
-		net := ly.Network.(AxonNetwork).AsAxon()
+		net := ly.Network
 		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
 		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
+	case PPTgLayer:
+		ly.Params.CyclePostPPTgLayer(ctx, &ly.Pools[0])
+	case VSPatchLayer:
+		for pi := 1; pi < len(ly.Pools); pi++ {
+			pl := &ly.Pools[pi]
+			ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl)
+		}
+	case VTALayer:
+		ly.Params.CyclePostVTALayer(ctx)
 	}
 }
 
@@ -359,7 +364,7 @@ func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
 // Uses fast index-based variable access.
 func (ly *Layer) AvgMaxVarByPool(varNm string, poolIdx int) minmax.AvgMax32 {
 	var am minmax.AvgMax32
-	vidx, err := ly.AxonLay.UnitVarIdx(varNm)
+	vidx, err := ly.UnitVarIdx(varNm)
 	if err != nil {
 		log.Printf("axon.Layer.AvgMaxVar: %s\n", err)
 		return am
@@ -435,7 +440,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.TrgAvgFmD()
-	ly.AxonLay.CorSimFmActs() // GPU syncs down the state
+	ly.CorSimFmActs() // GPU syncs down the state
 	if ly.Params.Act.Decay.OnRew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.DipReset.IsTrue() {
 			ly.DecayState(ctx, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
@@ -692,11 +697,11 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 // SynFail updates synaptic weight failure only -- normally done as part of DWt
 // and WtFmDWt, but this call can be used during testing to update failing synapses.
 func (ly *Layer) SynFail(ctx *Context) {
-	for _, p := range ly.SndPrjns {
-		if p.IsOff() {
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).SynFail(ctx)
+		pj.SynFail(ctx)
 	}
 }
 
@@ -704,11 +709,11 @@ func (ly *Layer) SynFail(ctx *Context) {
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
 func (ly *Layer) LRateMod(mod float32) {
-	for _, p := range ly.RcvPrjns {
-		// if p.IsOff() { // keep all sync'd
+	for _, pj := range ly.RcvPrjns {
+		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).AsAxon().LRateMod(mod)
+		pj.LRateMod(mod)
 	}
 }
 
@@ -716,11 +721,11 @@ func (ly *Layer) LRateMod(mod float32) {
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
 func (ly *Layer) LRateSched(sched float32) {
-	for _, p := range ly.RcvPrjns {
-		// if p.IsOff() { // keep all sync'd
+	for _, pj := range ly.RcvPrjns {
+		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).AsAxon().LRateSched(sched)
+		pj.LRateSched(sched)
 	}
 }
 
@@ -731,10 +736,10 @@ func (ly *Layer) LRateSched(sched float32) {
 // at the start of learning
 func (ly *Layer) SetSubMean(trgAvg, prjn float32) {
 	ly.Params.Learn.TrgAvgAct.SubMean = trgAvg
-	for _, p := range ly.RcvPrjns {
-		// if p.IsOff() { // keep all sync'd
+	for _, pj := range ly.RcvPrjns {
+		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		p.(AxonPrjn).AsAxon().Params.Learn.Trace.SubMean = prjn
+		pj.Params.Learn.Trace.SubMean = prjn
 	}
 }

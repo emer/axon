@@ -180,13 +180,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// net.ConnectCTSelf(dpHidct, full) // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(dpHidct, full).SetClass("CTSelfMaint") // no diff
 	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect) // fmPulv: rect == full
-	net.ConnectLayers(act, dpHid, full, emer.Forward)
-	net.ConnectLayers(dpIn, dpHid, rect, emer.Forward)
+	net.ConnectLayers(act, dpHid, full, axon.ForwardPrjn)
+	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPrjn)
 	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
 
 	// net.ConnectLayers(dpHidct, dpHid, full, emer.Back)
 
-	var dpHid2, dpHid2ct emer.Layer
+	var dpHid2, dpHid2ct *axon.Layer
 	if ss.Hid2 {
 		// attempt at topo in 2nd hidden -- didn't work -- needs pools basically
 		// rfWidth2 := rfWidth * nPerAng
@@ -203,20 +203,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 		net.ConnectCTSelf(dpHid2ct, full)
 		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full)
-		net.ConnectLayers(act, dpHid2, full, emer.Forward)
+		net.ConnectLayers(act, dpHid2, full, axon.ForwardPrjn)
 
-		// net.ConnectLayers(dpHid, dpHid2, rect2, emer.Forward)
+		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPrjn)
 		// net.ConnectLayers(dpHid2, dpHid, rect2Recip, emer.Back)
 
 		net.BidirConnectLayers(dpHid, dpHid2, full)
-		net.ConnectLayers(dpHid2ct, dpHidct, full, emer.Back)
+		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPrjn)
 	}
 
 	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", 10, 10, 2*space, one2one)
 	// net.ConnectCTSelf(hdHidct, full)
 	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full) // shortcut top-down
-	net.ConnectLayers(act, hdHid, full, emer.Forward)
-	net.ConnectLayers(hd, hdHid, full, emer.Forward)
+	net.ConnectLayers(act, hdHid, full, axon.ForwardPrjn)
+	net.ConnectLayers(hd, hdHid, full, axon.ForwardPrjn)
 
 	dpIn.SetClass("DepthIn")
 	dpInp.SetClass("DepthIn")
@@ -278,8 +278,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25*avgPerTrl).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -315,7 +315,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
-			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			// ss.SimMat()
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
@@ -338,7 +338,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	// lrate schedule
@@ -385,7 +385,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(lnm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -448,7 +448,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("HeadDirP_PrvMCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "SpkPrv", "ActM"))
 	ss.Stats.SetFloat32("HeadDirP_PrvPCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "SpkPrv", "ActP"))
 
-	inp := ss.Net.LayerByName("DepthP").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.AxonLayerByName("DepthP")
 	ss.Stats.SetFloat("TrlErr", 1)
 	ss.Stats.SetFloat32("TrlCorSim", inp.Vals.CorSim.Cor)
 	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr())
@@ -508,19 +508,19 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr")
 
-	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
-	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon(), etime.Train)
+	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
-	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("DepthP_CorSim", "DepthP_PrvMCorSim", "HeadDirP_CorSim", "HeadDirP_PrvMCorSim")

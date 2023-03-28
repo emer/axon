@@ -103,7 +103,7 @@ func (nt *Network) SynVarProps() map[string]string {
 // Should already have presented the external input to the network at this point.
 // Does NOT call InitGScale()
 func (nt *Network) NewState(ctx *Context) {
-	nt.EmerNet.(AxonNetwork).NewStateImpl(ctx)
+	nt.NewStateImpl(ctx)
 }
 
 // Cycle runs one cycle of activation updating.  It just calls the CycleImpl
@@ -111,7 +111,7 @@ func (nt *Network) NewState(ctx *Context) {
 // algorithm-specific version is called as needed (in general, strongly prefer
 // updating the Layer specific version).
 func (nt *Network) Cycle(ctx *Context) {
-	nt.EmerNet.(AxonNetwork).CycleImpl(ctx)
+	nt.CycleImpl(ctx)
 }
 
 // CycleImpl handles entire update for one cycle (msec) of neuron activity
@@ -120,35 +120,34 @@ func (nt *Network) CycleImpl(ctx *Context) {
 		nt.GPU.RunCycle()
 		return
 	}
-	// todo: each of these methods should be tested for thread benefits -- some may not be worth it
-	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
-	nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
+	nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
+	nt.LayerMapSeq(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
+	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
+	nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
 	if !nt.CPURecvSpikes {
-		nt.SendSpikeFun(func(ly AxonLayer) { ly.SendSpike(ctx) }, "SendSpike")
+		nt.SendSpikeFun(func(ly *Layer) { ly.SendSpike(ctx) }, "SendSpike")
 	}
 	if ctx.Testing.IsFalse() {
-		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
-		nt.NeuronFun(func(ly AxonLayer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
+		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
+		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
 	}
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.CyclePost(ctx) }, "CyclePost") // def NoThread, only on CPU
+	nt.LayerMapSeq(func(ly *Layer) { ly.CyclePost(ctx) }, "CyclePost") // do not thread -- minor computation
 }
 
 // MinusPhase does updating after end of minus phase
 func (nt *Network) MinusPhase(ctx *Context) {
-	nt.EmerNet.(AxonNetwork).MinusPhaseImpl(ctx)
+	nt.MinusPhaseImpl(ctx)
 }
 
 // PlusPhaseStart does updating at the start of the plus phase:
 // applies Target inputs as External inputs.
 func (nt *Network) PlusPhaseStart(ctx *Context) {
-	nt.EmerNet.(AxonNetwork).PlusPhaseStartImpl(ctx)
+	nt.PlusPhaseStartImpl(ctx)
 }
 
 // PlusPhase does updating after end of plus phase
 func (nt *Network) PlusPhase(ctx *Context) {
-	nt.EmerNet.(AxonNetwork).PlusPhaseImpl(ctx)
+	nt.PlusPhaseImpl(ctx)
 }
 
 // TargToExt sets external input Ext from target values Target
@@ -159,7 +158,7 @@ func (nt *Network) TargToExt() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).AsAxon().TargToExt()
+		ly.TargToExt()
 	}
 }
 
@@ -170,7 +169,7 @@ func (nt *Network) ClearTargExt() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).AsAxon().ClearTargExt()
+		ly.ClearTargExt()
 	}
 }
 
@@ -180,7 +179,7 @@ func (nt *Network) SpkSt1(ctx *Context) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt1(ctx)
+		ly.SpkSt1(ctx)
 	}
 }
 
@@ -190,19 +189,19 @@ func (nt *Network) SpkSt2(ctx *Context) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).SpkSt2(ctx)
+		ly.SpkSt2(ctx)
 	}
 }
 
 // DWt computes the weight change (learning) based on current running-average activation values
 func (nt *Network) DWt(ctx *Context) {
-	nt.EmerNet.(AxonNetwork).DWtImpl(ctx)
+	nt.DWtImpl(ctx)
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
 // Also calls SynScale every Interval times
 func (nt *Network) WtFmDWt(ctx *Context) {
-	nt.EmerNet.(AxonNetwork).WtFmDWtImpl(ctx)
+	nt.WtFmDWtImpl(ctx)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -217,7 +216,7 @@ func (nt *Network) InitWts() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).InitWts() // calls InitActs too
+		ly.InitWts(nt) // calls InitActs too
 	}
 	// separate pass to enforce symmetry
 	// st := time.Now()
@@ -225,7 +224,7 @@ func (nt *Network) InitWts() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).InitWtSym()
+		ly.InitWtSym()
 	}
 	// dur := time.Now().Sub(st)
 	// fmt.Printf("sym: %v\n", dur)
@@ -244,25 +243,23 @@ func (nt *Network) InitTopoSWts() {
 			continue
 		}
 		for i := 0; i < ly.NRecvPrjns(); i++ {
-			recvPrjn := ly.RecvPrjn(i)
-			if recvPrjn.IsOff() {
+			pj := ly.RcvPrjns[i]
+			if pj.IsOff() {
 				continue
 			}
-			pat := recvPrjn.Pattern()
+			pat := pj.Pattern()
 			switch pt := pat.(type) {
 			case *prjn.PoolTile:
 				if !pt.HasTopoWts() {
 					continue
 				}
-				pj := recvPrjn.(AxonPrjn).AsAxon()
-				slay := recvPrjn.SendLay()
+				slay := pj.Send
 				pt.TopoWts(slay.Shape(), ly.Shape(), swts)
 				pj.SetSWtsRPool(swts)
 			case *prjn.Circle:
 				if !pt.TopoWts {
 					continue
 				}
-				pj := recvPrjn.(AxonPrjn).AsAxon()
 				pj.SetSWtsFunc(pt.GaussWts)
 			}
 		}
@@ -276,7 +273,7 @@ func (nt *Network) InitGScale() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).InitGScale()
+		ly.InitGScale()
 	}
 }
 
@@ -291,7 +288,7 @@ func (nt *Network) DecayState(ctx *Context, decay, glong float32) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).DecayState(ctx, decay, glong)
+		ly.DecayState(ctx, decay, glong)
 	}
 	nt.GPU.SyncStateToGPU()
 }
@@ -319,7 +316,7 @@ func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, classes
 func (nt *Network) DecayStateLayers(ctx *Context, decay, glong float32, layers ...string) {
 	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, lynm := range layers {
-		ly := nt.LayerByName(lynm).(AxonLayer)
+		ly := nt.AxonLayerByName(lynm)
 		if ly.IsOff() {
 			continue
 		}
@@ -334,7 +331,7 @@ func (nt *Network) InitActs() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).InitActs()
+		ly.InitActs()
 	}
 	nt.GPU.SyncStateToGPU()
 	nt.GPU.SyncGBufToGPU() // zeros everyone
@@ -349,7 +346,7 @@ func (nt *Network) InitExt() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).InitExt()
+		ly.InitExt()
 	}
 }
 
@@ -372,7 +369,7 @@ func (nt *Network) UpdateExtFlags() {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).UpdateExtFlags()
+		ly.UpdateExtFlags()
 	}
 }
 
@@ -386,7 +383,7 @@ func (nt *Network) NewStateImpl(ctx *Context) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).NewState(ctx)
+		ly.NewState(ctx)
 	}
 }
 
@@ -400,7 +397,7 @@ func (nt *Network) MinusPhaseImpl(ctx *Context) {
 			if ly.IsOff() {
 				continue
 			}
-			ly.(AxonLayer).MinusPhase(ctx)
+			ly.MinusPhase(ctx)
 		}
 	}
 	// Post happens on the CPU always
@@ -408,7 +405,7 @@ func (nt *Network) MinusPhaseImpl(ctx *Context) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).MinusPhasePost(ctx)
+		ly.MinusPhasePost(ctx)
 	}
 }
 
@@ -423,7 +420,7 @@ func (nt *Network) PlusPhaseStartImpl(ctx *Context) {
 			if ly.IsOff() {
 				continue
 			}
-			ly.(AxonLayer).PlusPhaseStart(ctx)
+			ly.PlusPhaseStart(ctx)
 		}
 	}
 }
@@ -438,7 +435,7 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 			if ly.IsOff() {
 				continue
 			}
-			ly.(AxonLayer).PlusPhase(ctx)
+			ly.PlusPhase(ctx)
 		}
 	}
 	// Post happens on the CPU always
@@ -446,7 +443,7 @@ func (nt *Network) PlusPhaseImpl(ctx *Context) {
 		if ly.IsOff() {
 			continue
 		}
-		ly.(AxonLayer).PlusPhasePost(ctx)
+		ly.PlusPhasePost(ctx)
 	}
 	nt.GPU.SyncStateToGPU() // plus phase post can do anything
 }
@@ -460,7 +457,7 @@ func (nt *Network) DWtImpl(ctx *Context) {
 		nt.GPU.RunDWt()
 		return
 	}
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWt(ctx) }, "DWt") // def thread
+	nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // def thread
 }
 
 // WtFmDWtImpl updates the weights from delta-weight changes.
@@ -468,10 +465,10 @@ func (nt *Network) WtFmDWtImpl(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunWtFmDWt()
 	} else {
-		nt.PrjnMapSeq(func(pj AxonPrjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
-		nt.PrjnMapSeq(func(pj AxonPrjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+		nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
+		nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
 	}
-	nt.EmerNet.(AxonNetwork).SlowAdapt(ctx)
+	nt.SlowAdapt(ctx)
 }
 
 // SlowAdapt is the layer-level slow adaptation functions: Synaptic scaling,
@@ -487,15 +484,15 @@ func (nt *Network) SlowAdapt(ctx *Context) {
 	// These Sync calls always check if GPU is On
 	nt.GPU.SyncAllFmGPU()
 
-	nt.LayerMapSeq(func(ly AxonLayer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
+	nt.LayerMapSeq(func(ly *Layer) { ly.SlowAdapt(ctx) }, "SlowAdapt")
+	nt.PrjnMapSeq(func(pj *Prjn) { pj.SlowAdapt(ctx) }, "SlowAdapt")
 
 	nt.GPU.SyncAllToGPU()
 }
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctx *Context) {
-	nt.PrjnMapSeq(func(pj AxonPrjn) { pj.SynFail(ctx) }, "SynFail")
+	nt.PrjnMapSeq(func(pj *Prjn) { pj.SynFail(ctx) }, "SynFail")
 }
 
 // LRateMod sets the LRate modulation parameter for Prjns, which is
@@ -506,7 +503,7 @@ func (nt *Network) LRateMod(mod float32) {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).AsAxon().LRateMod(mod)
+		ly.LRateMod(mod)
 	}
 }
 
@@ -518,7 +515,7 @@ func (nt *Network) LRateSched(sched float32) {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).AsAxon().LRateSched(sched)
+		ly.LRateSched(sched)
 	}
 }
 
@@ -532,7 +529,7 @@ func (nt *Network) SetSubMean(trgAvg, prjn float32) {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).AsAxon().SetSubMean(trgAvg, prjn)
+		ly.SetSubMean(trgAvg, prjn)
 	}
 }
 
@@ -553,7 +550,7 @@ func (nt *Network) UnLesionNeurons() {
 		// if ly.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		ly.(AxonLayer).AsAxon().UnLesionNeurons()
+		ly.UnLesionNeurons()
 	}
 }
 
@@ -570,23 +567,20 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	made := false
 	if *dwts == nil {
 		nwts := 0
-		for _, lyi := range nt.Layers {
-			ly := lyi.(AxonLayer).AsAxon()
+		for _, ly := range nt.Layers {
 			nwts += 5               // ActAvgVals
 			nwts += len(ly.Neurons) // ActAvg
 			if ly.Params.IsLearnTrgAvg() {
 				nwts += len(ly.Neurons)
 			}
-			for _, pji := range ly.SndPrjns {
-				pj := pji.(AxonPrjn).AsAxon()
+			for _, pj := range ly.SndPrjns {
 				nwts += len(pj.Syns) + 3 // Scale, AvgAvg, MaxAvg
 			}
 		}
 		*dwts = make([]float32, nwts)
 		made = true
 	}
-	for _, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for _, ly := range nt.Layers {
 		(*dwts)[idx+0] = ly.Vals.ActAvg.ActMAvg
 		(*dwts)[idx+1] = ly.Vals.ActAvg.ActPAvg
 		(*dwts)[idx+2] = ly.Vals.ActAvg.AvgMaxGeM
@@ -605,8 +599,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			}
 			idx += len(ly.Neurons)
 		}
-		for _, pji := range ly.SndPrjns {
-			pj := pji.(AxonPrjn).AsAxon()
+		for _, pj := range ly.SndPrjns {
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
 				(*dwts)[idx+j] = sy.DWt
@@ -623,8 +616,7 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 func (nt *Network) SetDWts(dwts []float32, navg int) {
 	idx := 0
 	davg := 1 / float32(navg)
-	for _, lyi := range nt.Layers {
-		ly := lyi.(AxonLayer).AsAxon()
+	for _, ly := range nt.Layers {
 		ly.Vals.ActAvg.ActMAvg = davg * dwts[idx+0]
 		ly.Vals.ActAvg.ActPAvg = davg * dwts[idx+1]
 		ly.Vals.ActAvg.AvgMaxGeM = davg * dwts[idx+2]
@@ -643,8 +635,7 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			}
 			idx += len(ly.Neurons)
 		}
-		for _, pji := range ly.SndPrjns {
-			pj := pji.(AxonPrjn).AsAxon()
+		for _, pj := range ly.SndPrjns {
 			ns := len(pj.Syns)
 			for j := range pj.Syns {
 				sy := &(pj.Syns[j])
@@ -670,18 +661,16 @@ func (nt *Network) SizeReport() string {
 	memNeuron := int(unsafe.Sizeof(Neuron{}))
 	memSynapse := int(unsafe.Sizeof(Synapse{}))
 
-	for _, lyi := range nt.Layers {
-		layer := lyi.(AxonLayer).AsAxon()
-		layerNumNeurons := len(layer.Neurons)
+	for _, ly := range nt.Layers {
+		layerNumNeurons := len(ly.Neurons)
 		// Sizeof returns size of struct in bytes
 		layerMemNeurons := layerNumNeurons * memNeuron
 		globaNumNeurons += layerNumNeurons
 		globalMemNeurons += layerMemNeurons
-		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", layer.Nm, layerNumNeurons,
+		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, layerNumNeurons,
 			(datasize.ByteSize)(layerMemNeurons).HumanReadable())
-		for _, pji := range layer.SndPrjns {
-			proj := pji.(AxonPrjn).AsAxon()
-			projNumSynapses := len(proj.Syns)
+		for _, pj := range ly.SndPrjns {
+			projNumSynapses := len(pj.Syns)
 			globalNumSynapses += projNumSynapses
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)
@@ -690,9 +679,9 @@ func (nt *Network) SizeReport() string {
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
 			projMemSynapses := projNumSynapses * memSynapse
-			projMemIdxs := len(proj.RecvConIdx)*4 + len(proj.SendSynIdx)*4 + len(proj.SendConIdx)*4
+			projMemIdxs := len(pj.RecvConIdx)*4 + len(pj.SendSynIdx)*4 + len(pj.SendConIdx)*4
 			globalMemSynapses += projMemSynapses + projMemIdxs
-			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", proj.Recv.Name(),
+			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
 				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())
 		}
 	}

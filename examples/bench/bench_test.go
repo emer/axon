@@ -131,7 +131,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// NeuronFun and divide that by (epochs * pats * quarters * cycles)
 	for i := 0; i < b.N; i++ {
 		ctx.NewState(etime.Train)
-		net.NeuronFun(func(ly axon.AxonLayer, ni uint32, nrn *axon.Neuron) { ly.CycleNeuron(ctx, ni, nrn) },
+		net.NeuronFun(func(ly *axon.Layer, ni uint32, nrn *axon.Neuron) { ly.CycleNeuron(ctx, ni, nrn) },
 			"CycleNeuron")
 	}
 }
@@ -186,9 +186,8 @@ func BenchmarkLayerTypeAssert(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// there'll be 5 layers total
 		for _, ly := range net.Layers {
-			lyr := ly.(axon.AxonLayer)
 			// do something with lyr st the compiler cannot optimize it away
-			tmp += lyr.AsAxon().Neurons[0].Spike
+			tmp += ly.AsAxon().Neurons[0].Spike
 		}
 	}
 	// avoid compiler optimization
@@ -200,17 +199,12 @@ func BenchmarkLayerTypeAssertBaseline(b *testing.B) {
 	net := &axon.Network{}
 	ConfigNet(net, 1, 1, 1, 2048, false)
 	tmp := float32(0.0)
-	layers := make([]axon.AxonLayer, len(net.Layers))
-	// pre-convert all the layers to AxonLayer
-	for i, ly := range net.Layers {
-		layers[i] = ly.(axon.AxonLayer)
-	}
 
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		for _, ly := range layers {
-			tmp += ly.AsAxon().Neurons[0].Spike
+		for _, ly := range net.Layers {
+			tmp += ly.Neurons[0].Spike
 		}
 	}
 	// avoid compiler optimization

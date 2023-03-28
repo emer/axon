@@ -189,7 +189,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	in.SetClass("InLay")
 	inPulv.SetClass("InLay")
 
-	var hidp, hid2, hid2ct emer.Layer
+	var hidp, hid2, hid2ct *axon.Layer
 	hid, hidct := net.AddSuperCT2D("Hidden", 20, nUnits, space, one2one) // one2one learn > full
 	_ = hidp
 	if ss.Hid2 {
@@ -198,7 +198,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	}
 	net.ConnectCTSelf(hidct, full)
 	net.ConnectToPulv(hid, hidct, inPulv, full, full)
-	net.ConnectLayers(in, hid, full, emer.Forward)
+	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Hid2 {
@@ -212,8 +212,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	if ss.Hid2 {
 		net.BidirConnectLayers(hid, hid2, full)
-		net.ConnectLayers(hid2ct, hidct, full, emer.Back)
-		// net.ConnectLayers(hid2ct, hid, full, emer.Back)
+		net.ConnectLayers(hid2ct, hidct, full, axon.BackPrjn)
+		// net.ConnectLayers(hid2ct, hid, full, axon.BackPrjn)
 	}
 
 	hid.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: in.Name(), XAlign: relpos.Left, YAlign: relpos.Front, Space: 2})
@@ -268,8 +268,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, ntrls).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -305,7 +305,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
-			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			ss.SimMat()
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
@@ -328,7 +328,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	// lrate schedule
@@ -380,7 +380,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State("Note")
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -439,7 +439,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	inp := ss.Net.LayerByName("InputP").(axon.AxonLayer).AsAxon()
+	inp := ss.Net.AxonLayerByName("InputP")
 	err, minusIdx, plusIdx := inp.LocalistErr4D()
 	ss.Stats.SetInt("TargNote", plusIdx)
 	ss.Stats.SetInt("OutNote", minusIdx)
@@ -511,19 +511,19 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddCopyFromFloatItems(etime.Train, etime.Epoch, etime.Test, etime.Epoch, "Tst", "CorSim", "UnitErr", "PctCor", "PctErr")
 
-	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPulvCorSimItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
 	ss.ConfigLogItems()
 
-	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon(), etime.Train)
+	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
-	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctErr")

@@ -43,7 +43,6 @@ var (
 
 func main() {
 	TheSim.New()
-	TheSim.Config()
 	if len(os.Args) > 1 {
 		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
@@ -54,6 +53,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.Config()
 	TheSim.Init()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
@@ -158,6 +158,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ss.Params.SetObject("NetSize")
 
 	net.InitName(net, "RA25")
+	net.SetRndSeed(ss.RndSeeds[0]) // init new separate random seed, using run = 0
 	inp := net.AddLayer2D("Input", 5, 5, axon.InputLayer)
 	hid1 := net.AddLayer2D("Hidden1", ss.Params.LayY("Hidden1", 10), ss.Params.LayX("Hidden1", 10), axon.SuperLayer)
 	hid2 := net.AddLayer2D("Hidden2", ss.Params.LayY("Hidden2", 10), ss.Params.LayX("Hidden2", 10), axon.SuperLayer)
@@ -171,7 +172,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// NewFull returns a new prjn.Full connectivity pattern
 	full := prjn.NewFull()
 
-	net.ConnectLayers(inp, hid1, full, emer.Forward)
+	net.ConnectLayers(inp, hid1, full, axon.ForwardPrjn)
 	net.BidirConnectLayers(hid1, hid2, full)
 	net.BidirConnectLayers(hid2, out, full)
 
@@ -187,7 +188,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		log.Println(err)
 		return
 	}
-	net.Defaults() // needs it both before and after building!
+	net.Defaults()
 	ss.Params.SetObject("Network")
 	net.InitWts()
 }
@@ -216,6 +217,7 @@ func (ss *Sim) Init() {
 func (ss *Sim) InitRndSeed() {
 	run := ss.Loops.GetLoop(etime.Train, etime.Run).Counter.Cur
 	ss.RndSeeds.Set(run)
+	ss.RndSeeds.Set(run, &ss.Net.Rand)
 }
 
 // ConfigLoops configures the control loops: Training, Testing
@@ -226,8 +228,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, 25).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -276,7 +278,7 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Epoch).OnEnd.Add("PCAStats", func() {
 		trnEpc := man.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.PCAInterval > 0 && trnEpc%ss.PCAInterval == 0 {
-			axon.PCAStats(ss.Net.AsAxon(), &ss.Logs, &ss.Stats)
+			axon.PCAStats(ss.Net, &ss.Logs, &ss.Stats)
 			ss.Logs.ResetLog(etime.Analyze, etime.Trial)
 		}
 	})
@@ -298,7 +300,7 @@ func (ss *Sim) ConfigLoops() {
 	// Save weights to file, to look at later
 	man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
 		ctrString := ss.Stats.PrintVals([]string{"Run", "Epoch"}, []string{"%03d", "%05d"}, "_")
-		axon.SaveWeightsIfArgSet(ss.Net.AsAxon(), &ss.Args, ctrString, ss.Stats.String("RunName"))
+		axon.SaveWeightsIfArgSet(ss.Net, &ss.Args, ctrString, ss.Stats.String("RunName"))
 	})
 
 	////////////////////////////////////////////
@@ -330,7 +332,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -418,7 +420,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	out := ss.Net.LayerByName("Output").(axon.AxonLayer).AsAxon()
+	out := ss.Net.AxonLayerByName("Output")
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
@@ -448,19 +450,19 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
-	layers := ss.Net.AsAxon().LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
+	layers := ss.Net.LayersByType(axon.SuperLayer, axon.CTLayer, axon.TargetLayer)
 	axon.LogAddDiagnosticItems(&ss.Logs, layers, etime.Train, etime.Epoch, etime.Trial)
-	axon.LogInputLayer(&ss.Logs, ss.Net.AsAxon(), etime.Train)
+	axon.LogInputLayer(&ss.Logs, ss.Net, etime.Train)
 
-	axon.LogAddPCAItems(&ss.Logs, ss.Net.AsAxon(), etime.Train, etime.Run, etime.Epoch, etime.Trial)
+	axon.LogAddPCAItems(&ss.Logs, ss.Net, etime.Train, etime.Run, etime.Epoch, etime.Trial)
 
-	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net.AsAxon(), etime.Test, etime.Cycle)
+	axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Test, etime.Trial, "InputLayer", "TargetLayer")
 
 	ss.Logs.PlotItems("CorSim", "PctCor", "FirstZero", "LastZero")
 
 	ss.Logs.CreateTables()
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
@@ -470,7 +472,7 @@ func (ss *Sim) ConfigLogs() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
+	if mode != etime.Analyze {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()

@@ -138,7 +138,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	space := float32(4)
 	full := prjn.NewFull()
 
-	var rplay emer.Layer
+	var rplay *axon.Layer
 	var ptype axon.PrjnTypes
 
 	if ss.RW {
@@ -154,7 +154,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	sal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Rew", XAlign: relpos.Left, Space: 1})
 	inp := net.AddLayer2D("Input", 3, 20, axon.InputLayer)
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left})
-	net.ConnectLayers(inp, rplay, full, emer.PrjnType(ptype))
+	net.ConnectLayers(inp, rplay, full, ptype)
 
 	err := net.Build()
 	if err != nil {
@@ -195,8 +195,8 @@ func (ss *Sim) ConfigLoops() {
 
 	man.AddStack(etime.Train).AddTime(etime.Run, 1).AddTime(etime.Epoch, 300).AddTime(etime.Trial, 20).AddTime(etime.Cycle, 200)
 
-	axon.LooperStdPhases(man, &ss.Context, ss.Net.AsAxon(), 150, 199)            // plus phase timing
-	axon.LooperSimCycleAndLearn(man, ss.Net.AsAxon(), &ss.Context, &ss.ViewUpdt) // std algo code
+	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
+	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
 	for m, _ := range man.Stacks {
 		mode := m // For closures
@@ -251,7 +251,7 @@ func (ss *Sim) ApplyInputs() {
 
 	lays := []string{"Input"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayerByName(lnm).(axon.AxonLayer).AsAxon()
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats == nil {
 			continue
@@ -329,7 +329,7 @@ func (ss *Sim) ConfigLogs() {
 	}
 
 	ss.Logs.CreateTables()
-	ss.Logs.SetContext(&ss.Stats, ss.Net.AsAxon())
+	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	ss.Logs.NoPlot(etime.Train, etime.Cycle)
 	// note: Analyze not plotted by default

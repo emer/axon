@@ -605,11 +605,10 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 		}
 	}
 	var err error
-	rpjs := ly.RecvPrjns()
-	if len(lw.Prjns) == len(*rpjs) { // this is essential if multiple prjns from same layer
+	if len(lw.Prjns) == ly.NRecvPrjns() { // this is essential if multiple prjns from same layer
 		for pi := range lw.Prjns {
 			pw := &lw.Prjns[pi]
-			pj := (*rpjs)[pi]
+			pj := ly.RcvPrjns[pi]
 			er := pj.SetWts(pw)
 			if er != nil {
 				err = er
@@ -638,27 +637,26 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 
 // InitWts initializes the weight values in the network, i.e., resetting learning
 // Also calls InitActs
-func (ly *Layer) InitWts() {
+func (ly *Layer) InitWts(nt *Network) {
 	ly.AxonLay.UpdateParams()
 	ly.Vals.Init()
 	ly.Vals.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
 	ly.Vals.ActAvg.ActPAvg = ly.Params.Inhib.ActAvg.Nominal
-	ly.AxonLay.InitActAvg()
-	ly.AxonLay.InitActs()
-	ly.AxonLay.InitGScale()
+	ly.InitActAvg()
+	ly.InitActs()
+	ly.InitGScale()
 
-	for _, p := range ly.SndPrjns {
-		if p.IsOff() {
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
 			continue
 		}
-		p.InitWts()
+		pj.InitWts(nt)
 	}
 	ly.Params.Act.Dend.HasMod.SetBool(false)
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
 			continue
 		}
-		pj := p.(AxonPrjn).AsAxon()
 		if pj.Params.Com.GType == ModulatoryG {
 			ly.Params.Act.Dend.HasMod.SetBool(true)
 			break
@@ -691,7 +689,7 @@ func (ly *Layer) InitActAvg() {
 		for pi := 1; pi < np; pi++ {
 			pl := &ly.Pools[pi]
 			if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-				erand.PermuteInts(porder)
+				erand.PermuteInts(porder, &ly.Network.Rand)
 			}
 			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
 				nrn := &ly.Neurons[ni]
@@ -716,7 +714,7 @@ func (ly *Layer) InitActAvg() {
 			porder[i] = i
 		}
 		if ly.Params.Learn.TrgAvgAct.Permute.IsTrue() {
-			erand.PermuteInts(porder)
+			erand.PermuteInts(porder, &ly.Network.Rand)
 		}
 		for ni := range ly.Neurons {
 			nrn := &ly.Neurons[ni]
@@ -739,7 +737,7 @@ func (ly *Layer) InitActs() {
 	ly.Params.Act.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Params.Act.InitActs(nrn)
+		ly.Params.Act.InitActs(&ly.Network.Rand, nrn)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
@@ -755,37 +753,35 @@ func (ly *Layer) InitActs() {
 // InitPrjnGBuffs initializes the projection-level conductance buffers and
 // conductance integration values for receiving projections in this layer.
 func (ly *Layer) InitPrjnGBuffs() {
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
 			continue
 		}
-		p.(AxonPrjn).InitGBuffs()
+		pj.InitGBuffs()
 	}
 }
 
 // InitWtsSym initializes the weight symmetry -- higher layers copy weights from lower layers
 func (ly *Layer) InitWtSym() {
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
 			continue
 		}
-		plp := p.(AxonPrjn)
-		if plp.AsAxon().Params.SWt.Init.Sym.IsFalse() {
+		if pj.Params.SWt.Init.Sym.IsFalse() {
 			continue
 		}
 		// key ordering constraint on which way weights are copied
-		if p.RecvLay().Index() < p.SendLay().Index() {
+		if pj.Recv.Index() < pj.Send.Index() {
 			continue
 		}
-		rpj, has := ly.RecipToRecvPrjn(p)
+		rpj, has := ly.RecipToRecvPrjn(pj)
 		if !has {
 			continue
 		}
-		rlp := rpj.(AxonPrjn)
-		if rlp.AsAxon().Params.SWt.Init.Sym.IsFalse() {
+		if rpj.Params.SWt.Init.Sym.IsFalse() {
 			continue
 		}
-		plp.InitWtSym(rlp)
+		pj.InitWtSym(rpj)
 	}
 }
 
@@ -993,12 +989,11 @@ func (ly *Layer) InitGScale() {
 	totGeRel := float32(0)
 	totGiRel := float32(0)
 	totGmRel := float32(0)
-	for _, p := range ly.RcvPrjns {
-		if p.IsOff() {
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
 			continue
 		}
-		pj := p.(AxonPrjn).AsAxon()
-		slay := p.SendLay().(AxonLayer).AsAxon()
+		slay := pj.Send
 		savg := slay.Params.Inhib.ActAvg.Nominal
 		snu := len(slay.Neurons)
 		ncon := pj.RecvConNAvgMax.Avg
@@ -1019,8 +1014,7 @@ func (ly *Layer) InitGScale() {
 		}
 	}
 
-	for _, p := range ly.RcvPrjns {
-		pj := p.(AxonPrjn).AsAxon()
+	for _, pj := range ly.RcvPrjns {
 		switch pj.Params.Com.GType {
 		case InhibitoryG:
 			if totGiRel > 0 {
@@ -1064,8 +1058,7 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 	perNeur := 300 // cost per neuron, relative to synapse which is 1
 	neur = len(ly.Neurons) * perNeur
 	syn = 0
-	for _, pji := range ly.SndPrjns {
-		pj := pji.(AxonPrjn).AsAxon()
+	for _, pj := range ly.SndPrjns {
 		ns := len(pj.Syns)
 		syn += ns
 	}
@@ -1096,7 +1089,7 @@ func (ly *Layer) PctUnitErr() float64 {
 			continue
 		}
 		trg := false
-		if ly.Typ == emer.Compare || ly.Typ == emer.Target {
+		if ly.Typ == CompareLayer || ly.Typ == TargetLayer {
 			if nrn.Target > thr {
 				trg = true
 			}
