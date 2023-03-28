@@ -88,7 +88,7 @@ func (nt *NetworkBase) Bounds() (min, max mat32.Vec3) { min = nt.MinPos; max = n
 // LayByName returns a layer by looking it up by name in the layer map (nil if not found).
 // Will create the layer map if it is nil or a different size than layers slice,
 // but otherwise needs to be updated manually.
-func (nt *NetworkBase) LayByName(name string) *Layer {
+func (nt *NetworkBase) AxonLayerByName(name string) *Layer {
 	if nt.LayMap == nil || len(nt.LayMap) != len(nt.Layers) {
 		nt.MakeLayMap()
 	}
@@ -99,7 +99,7 @@ func (nt *NetworkBase) LayByName(name string) *Layer {
 // LayByNameTry returns a layer by looking it up by name -- returns error message
 // if layer is not found
 func (nt *NetworkBase) LayByNameTry(name string) (*Layer, error) {
-	ly := nt.LayByName(name)
+	ly := nt.AxonLayerByName(name)
 	if ly == nil {
 		err := fmt.Errorf("Layer named: %v not found in Network: %v\n", name, nt.Nm)
 		// log.Println(err)
@@ -112,7 +112,7 @@ func (nt *NetworkBase) LayByNameTry(name string) (*Layer, error) {
 // Will create the layer map if it is nil or a different size than layers slice,
 // but otherwise needs to be updated manually.
 func (nt *NetworkBase) LayerByName(name string) emer.Layer {
-	return nt.LayByName(name)
+	return nt.AxonLayerByName(name)
 }
 
 // LayerByNameTry returns a layer by looking it up by name -- returns error message

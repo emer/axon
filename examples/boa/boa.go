@@ -589,7 +589,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	ev.ActGen() // always update comparison
-	mtxLy := net.LayByName("VpMtxGo")
+	mtxLy := net.AxonLayerByName("VpMtxGo")
 	didGate := mtxLy.AnyGated()
 	if didGate && !ss.Context.PVLV.HasPosUS() {
 		ev.DidGate = true
@@ -599,7 +599,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		}
 		ev.Action("None", nil)
 		ss.ApplyAction()
-		ly := ss.Net.LayByName("VL")
+		ly := ss.Net.AxonLayerByName("VL")
 		ly.Pools[0].Inhib.Clamped.SetBool(false) // not clamped this trial
 		ss.Net.GPU.SyncPoolsToGPU()
 		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
@@ -639,7 +639,7 @@ func (ss *Sim) ApplyAction() {
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()]
 	ap := ev.State("Action")
-	ly := net.LayByName("Act")
+	ly := net.AxonLayerByName("Act")
 	ly.ApplyExt(ap)
 	ss.Net.ApplyExts(&ss.Context)
 }
@@ -663,7 +663,7 @@ func (ss *Sim) ApplyInputs() {
 
 	lays := []string{"Pos", "CS", "Dist"}
 	for _, lnm := range lays {
-		ly := net.LayByName(lnm)
+		ly := net.AxonLayerByName(lnm)
 		itsr := ev.State(lnm)
 		ly.ApplyExt(itsr)
 	}
@@ -899,7 +899,7 @@ func (ss *Sim) MaintStats() {
 		mnm := "Maint" + lnm
 		fnm := "MaintFail" + lnm
 		pnm := "PreAct" + lnm
-		ptly := net.LayByName(lnm)
+		ptly := net.AxonLayerByName(lnm)
 		var mact float32
 		if ptly.Is4D() {
 			for pi := 1; pi < len(ptly.Pools); pi++ {

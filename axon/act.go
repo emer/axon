@@ -6,6 +6,7 @@ package axon
 
 import (
 	"github.com/emer/axon/chans"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/minmax"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/mat32"
@@ -149,10 +150,10 @@ func (ai *ActInitParams) Defaults() {
 //gosl: end act
 
 // GeBase returns the baseline Ge value: Ge + rand(GeVar) > 0
-func (ai *ActInitParams) GetGeBase(nt *Network) float32 {
+func (ai *ActInitParams) GetGeBase(rnd erand.Rand) float32 {
 	ge := ai.GeBase
 	if ai.GeVar > 0 {
-		ge += float32(float64(ai.GeVar) * nt.Rand.NormFloat64(-1))
+		ge += float32(float64(ai.GeVar) * rnd.NormFloat64(-1))
 		if ge < 0 {
 			ge = 0
 		}
@@ -161,10 +162,10 @@ func (ai *ActInitParams) GetGeBase(nt *Network) float32 {
 }
 
 // GiBase returns the baseline Gi value: Gi + rand(GiVar) > 0
-func (ai *ActInitParams) GetGiBase(nt *Network) float32 {
+func (ai *ActInitParams) GetGiBase(rnd erand.Rand) float32 {
 	gi := ai.GiBase
 	if ai.GiVar > 0 {
-		gi += float32(float64(ai.GiVar) * nt.Rand.NormFloat64(-1))
+		gi += float32(float64(ai.GiVar) * rnd.NormFloat64(-1))
 		if gi < 0 {
 			gi = 0
 		}
@@ -641,15 +642,15 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
 // automatically called (DecayState is used instead)
-func (ac *ActParams) InitActs(nt *Network, nrn *Neuron) {
+func (ac *ActParams) InitActs(rnd erand.Rand, nrn *Neuron) {
 	nrn.Spike = 0
 	nrn.Spiked = 0
 	nrn.ISI = -1
 	nrn.ISIAvg = -1
 	nrn.Act = ac.Init.Act
 	nrn.ActInt = ac.Init.Act
-	nrn.GeBase = ac.Init.GetGeBase(nt)
-	nrn.GiBase = ac.Init.GetGiBase(nt)
+	nrn.GeBase = ac.Init.GetGeBase(rnd)
+	nrn.GiBase = ac.Init.GetGiBase(rnd)
 	nrn.GeSyn = nrn.GeBase
 	nrn.Ge = nrn.GeBase
 	nrn.Gi = nrn.GiBase

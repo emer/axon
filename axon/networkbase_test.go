@@ -12,7 +12,7 @@ func TestAddLayer(t *testing.T) {
 	shape := []int{5, 5}
 	layer := net.AddLayer("Input", shape, InputLayer)
 	assert.Equal(t, 1, net.NLayers())
-	assert.Same(t, layer, net.LayByName("Input"))
+	assert.Same(t, layer, net.AxonLayerByName("Input"))
 }
 
 func TestDefaults(t *testing.T) {
@@ -35,10 +35,10 @@ func TestDefaults(t *testing.T) {
 	assert.Equal(t, 12, len(net.Neurons))
 
 	// test layer access
-	assert.Equal(t, net.Layers[0], net.LayByName("Input"))
-	assert.Equal(t, net.Layers[1], net.LayByName("Hidden"))
-	assert.Equal(t, net.Layers[2], net.LayByName("Output"))
-	assert.Nil(t, net.LayByName("DoesNotExist"))
+	assert.Equal(t, net.Layers[0], net.AxonLayerByName("Input"))
+	assert.Equal(t, net.Layers[1], net.AxonLayerByName("Hidden"))
+	assert.Equal(t, net.Layers[2], net.AxonLayerByName("Output"))
+	assert.Nil(t, net.AxonLayerByName("DoesNotExist"))
 	_, err := net.LayByNameTry("DoesNotExist")
 	assert.Error(t, err)
 	val := net.LayersByType(InputLayer)

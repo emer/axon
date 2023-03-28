@@ -9,6 +9,7 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/weights"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/ki/indent"
@@ -319,8 +320,8 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Prjn) InitWtsSyn(nt *Network, sy *Synapse, mean, spct float32) {
-	pj.Params.SWt.InitWtsSyn(nt, sy, mean, spct)
+func (pj *Prjn) InitWtsSyn(rnd erand.Rand, sy *Synapse, mean, spct float32) {
+	pj.Params.SWt.InitWtsSyn(rnd, sy, mean, spct)
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -346,7 +347,7 @@ func (pj *Prjn) InitWts(nt *Network) {
 		syns := pj.RecvSyns(ri)
 		for ci := range syns {
 			sy := &syns[ci]
-			pj.InitWtsSyn(nt, sy, smn, spct)
+			pj.InitWtsSyn(&nt.Rand, sy, smn, spct)
 		}
 	}
 	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {

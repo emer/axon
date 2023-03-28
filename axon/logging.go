@@ -129,7 +129,7 @@ func LogAddPCAItems(lg *elog.Logs, net *Network, mode etime.Modes, times ...etim
 	layers := net.LayersByType(SuperLayer, TargetLayer, CTLayer, PTPredLayer)
 	for _, lnm := range layers {
 		clnm := lnm
-		cly := net.LayByName(clnm)
+		cly := net.AxonLayerByName(clnm)
 		lg.AddItem(&elog.Item{
 			Name:      clnm + "_ActM",
 			Type:      etensor.FLOAT64,
@@ -279,10 +279,10 @@ func LogAddCaLrnDiagnosticItems(lg *elog.Logs, mode etime.Modes, net *Network, t
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-		// 			ly := net.LayByName(clnm)
+		// 			ly := net.AxonLayerByName(clnm)
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-		// 			ly := net.LayByName(clnm)
+		// 			ly := net.AxonLayerByName(clnm)
 		// 			ctx.SetFloat32(ly.SpikedAvgByPool(0))
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 		// 			ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)

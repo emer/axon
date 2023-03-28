@@ -338,8 +338,8 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 
 	// just using direct access to state here
-	in := net.LayByName("Input")
-	trg := net.LayByName("Targets")
+	in := net.AxonLayerByName("Input")
+	trg := net.AxonLayerByName("Targets")
 	clrmsk, setmsk, _ := in.ApplyExtFlags()
 	ns := fsenv.NNext.Values[0]
 	net.InitExt()
@@ -417,8 +417,8 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	inp := ss.Net.LayByName("InputP")
-	trg := ss.Net.LayByName("Targets")
+	inp := ss.Net.AxonLayerByName("InputP")
+	trg := ss.Net.AxonLayerByName("Targets")
 	ss.Stats.SetFloat("TrlCorSim", float64(inp.Vals.CorSim.Cor))
 	err, minusIdx, _ := inp.LocalistErr4D()
 	tgn := &trg.Neurons[minusIdx]
@@ -482,7 +482,7 @@ func (ss *Sim) ConfigLogItems() {
 	layers := ss.Net.LayersByType(axon.SuperLayer, axon.TargetLayer, axon.CTLayer, axon.PulvinarLayer)
 	for _, lnm := range layers {
 		clnm := lnm
-		ly := ss.Net.LayByName(clnm)
+		ly := ss.Net.AxonLayerByName(clnm)
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  etensor.FLOAT64,

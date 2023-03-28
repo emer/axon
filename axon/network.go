@@ -316,7 +316,7 @@ func (nt *Network) DecayStateByClass(ctx *Context, decay, glong float32, classes
 func (nt *Network) DecayStateLayers(ctx *Context, decay, glong float32, layers ...string) {
 	nt.GPU.SyncStateFmGPU() // note: because we have to sync back, we need to sync from first to be current
 	for _, lynm := range layers {
-		ly := nt.LayByName(lynm)
+		ly := nt.AxonLayerByName(lynm)
 		if ly.IsOff() {
 			continue
 		}

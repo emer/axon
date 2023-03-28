@@ -115,12 +115,12 @@ func TestLayerToJson(t *testing.T) {
 	// and syncing them by dumping the weights from net A and loading the weights
 	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
 	net := createNetwork(shape, t)
-	hiddenLayer := net.LayByName("Hidden")
+	hiddenLayer := net.AxonLayerByName("Hidden")
 	ctx := NewContext()
 	net.Cycle(ctx) // run one cycle to make the weights more different
 
 	netC := createNetwork(shape, t)
-	hiddenLayerC := netC.LayByName("Hidden")
+	hiddenLayerC := netC.AxonLayerByName("Hidden")
 
 	// save to JSON
 	filename := t.TempDir() + "/layer.json"

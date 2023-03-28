@@ -380,7 +380,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State("Note")
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -439,7 +439,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	inp := ss.Net.LayByName("InputP")
+	inp := ss.Net.AxonLayerByName("InputP")
 	err, minusIdx, plusIdx := inp.LocalistErr4D()
 	ss.Stats.SetInt("TargNote", plusIdx)
 	ss.Stats.SetInt("OutNote", minusIdx)

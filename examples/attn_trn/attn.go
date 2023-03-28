@@ -502,7 +502,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 
 	lays := []string{"V1", "LIP"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := en.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -511,7 +511,7 @@ func (ss *Sim) ApplyInputs(en env.Env) {
 }
 
 func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
-	ly := ss.Net.LayByName(lnm)
+	ly := ss.Net.AxonLayerByName(lnm)
 	sz := evec.Vec2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
 	pt := stm.PosXY(sz)
 	cx := int(pt.X)
@@ -536,7 +536,7 @@ func (ss *Sim) StimMaxAct(stm *Stim, lnm string) float32 {
 }
 
 func (ss *Sim) StimAvgAct(stm *Stim, lnm string) float32 {
-	ly := ss.Net.LayByName(lnm)
+	ly := ss.Net.AxonLayerByName(lnm)
 	sz := evec.Vec2i{ly.Shp.Dim(1), ly.Shp.Dim(0)}
 	pt := stm.PosXY(sz)
 	cx := int(mat32.Round(pt.X)) - 1
@@ -779,7 +779,7 @@ func (ss *Sim) LogTstTrl(dt *etable.Table) {
 
 	for _, lnm := range ss.TstRecLays {
 		tsr := ss.ValsTsr(lnm)
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		ly.UnitValsTensor(tsr, "Act")
 		dt.SetCellTensor(lnm, row, tsr)
 	}
@@ -804,7 +804,7 @@ func (ss *Sim) ConfigTstTrlLog(dt *etable.Table) {
 		{"PctMod", etensor.FLOAT64, nil, nil},
 	}
 	for _, lnm := range ss.TstRecLays {
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		sch = append(sch, etable.Column{lnm, etensor.FLOAT64, ly.Shp.Shp, nil})
 	}
 	dt.SetFromSchema(sch, 0)

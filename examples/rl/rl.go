@@ -251,7 +251,7 @@ func (ss *Sim) ApplyInputs() {
 
 	lays := []string{"Input"}
 	for _, lnm := range lays {
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats == nil {
 			continue

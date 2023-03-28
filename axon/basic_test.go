@@ -85,7 +85,7 @@ func newTestNet() *Network {
 
 func TestSynVals(t *testing.T) {
 	testNet := newTestNet()
-	hidLay := testNet.LayByName("Hidden")
+	hidLay := testNet.AxonLayerByName("Hidden")
 	p, err := hidLay.SendNameTry("Input")
 	if err != nil {
 		t.Error(err)
@@ -199,9 +199,9 @@ func NetActTest(t *testing.T, gpu bool) {
 	testNet.InitExt()
 	inPats := newInPats()
 
-	inLay := testNet.LayByName("Input")
-	hidLay := testNet.LayByName("Hidden")
-	outLay := testNet.LayByName("Output")
+	inLay := testNet.AxonLayerByName("Input")
+	hidLay := testNet.AxonLayerByName("Hidden")
+	outLay := testNet.AxonLayerByName("Output")
 
 	ctx := NewContext()
 
@@ -365,9 +365,9 @@ func TestGPULearn(t *testing.T) {
 func NetTestLearn(t *testing.T, gpu bool) {
 	testNet := newTestNet()
 	inPats := newInPats()
-	inLay := testNet.LayByName("Input")
-	hidLay := testNet.LayByName("Hidden")
-	outLay := testNet.LayByName("Output")
+	inLay := testNet.AxonLayerByName("Input")
+	hidLay := testNet.AxonLayerByName("Hidden")
+	outLay := testNet.AxonLayerByName("Output")
 
 	// allp := testNet.AllParams()
 	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
@@ -554,9 +554,9 @@ func TestNetRLRate(t *testing.T) {
 func NetTestRLRate(t *testing.T, gpu bool) {
 	testNet := newTestNet()
 	inPats := newInPats()
-	inLay := testNet.LayByName("Input")
-	hidLay := testNet.LayByName("Hidden")
-	outLay := testNet.LayByName("Output")
+	inLay := testNet.AxonLayerByName("Input")
+	hidLay := testNet.AxonLayerByName("Hidden")
+	outLay := testNet.AxonLayerByName("Output")
 
 	// allp := testNet.AllParams()
 	// os.WriteFile("test_net_act_all_pars.txt", []byte(allp), 0664)
@@ -905,7 +905,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
+		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -940,7 +940,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
+		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -970,7 +970,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
+		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -1000,7 +1000,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
+		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -1027,7 +1027,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(nt, sy, mean, spct)
+		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -1065,7 +1065,7 @@ func TestSWtLinLearn(t *testing.T) {
 	nlrn := 10
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 
-	pj.SWt.InitWtsSyn(nt, sy, mean, spct)
+	pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
 	// fmt.Printf("Wt: %g\t LWt: %g\t SWt: %g\n", sy.Wt, sy.LWt, sy.SWt)
 	for i := 0; i < nlrn; i++ {
 		sy.DWt = dwt

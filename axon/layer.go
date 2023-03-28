@@ -737,7 +737,7 @@ func (ly *Layer) InitActs() {
 	ly.Params.Act.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	for ni := range ly.Neurons {
 		nrn := &ly.Neurons[ni]
-		ly.Params.Act.InitActs(ly.Network, nrn)
+		ly.Params.Act.InitActs(&ly.Network.Rand, nrn)
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]

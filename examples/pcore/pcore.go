@@ -282,8 +282,8 @@ func (ss *Sim) InitWts(net *axon.Network) {
 		return
 	}
 
-	mtxgo := net.LayByName("MtxGo")
-	mtxno := net.LayByName("MtxNo")
+	mtxgo := net.AxonLayerByName("MtxGo")
+	mtxno := net.AxonLayerByName("MtxNo")
 
 	for _, pj := range mtxgo.RcvPrjns {
 		slay := pj.Send
@@ -465,7 +465,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	lays := []string{"ACCPos", "ACCNeg", "PFC"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
-		ly := net.LayByName(lnm)
+		ly := net.AxonLayerByName(lnm)
 		if !zero {
 			for j := 0; j < np; j++ {
 				// np = different pools have changing increments
@@ -514,7 +514,7 @@ func (ss *Sim) ApplyRew() {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	mtxly := net.LayByName("MtxGo")
+	mtxly := net.AxonLayerByName("MtxGo")
 
 	net.GPU.SyncStateFmGPU()
 	didGate := mtxly.MatrixGated(&ss.Context)           // will also be called later
@@ -547,7 +547,7 @@ func (ss *Sim) SetRew(rew float32) {
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
 	itsr.Values[0] = rew
-	sncly := net.LayByName("SNc")
+	sncly := net.AxonLayerByName("SNc")
 	sncly.ApplyExt(&itsr)
 
 	net.GPU.SyncContextToGPU()
@@ -610,7 +610,7 @@ func (ss *Sim) StatCounters() {
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
 	net := ss.Net
-	vtly := net.LayByName("VThal")
+	vtly := net.AxonLayerByName("VThal")
 	gated := vtly.AnyGated()
 	if !gated {
 		ss.Stats.SetFloat("VThal_RT", 0)

@@ -375,7 +375,7 @@ func (ss *Sim) ConfigLoops() {
 			}
 		}
 		// note: this is actually a tiny bit worse:
-		// ly := ss.Net.LayByName("Output")
+		// ly := ss.Net.AxonLayerByName("Output")
 		// fmit := ly.RecvPrjns().SendName("IT").(axon.AxonPrjn).AsAxon()
 		// fmit.Learn.Lrate.Mod = 1.0 / fmit.Learn.Lrate.Sched
 		// fmit.Learn.Lrate.Update()
@@ -419,7 +419,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -491,7 +491,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	out := ss.Net.LayByName("Output")
+	out := ss.Net.AxonLayerByName("Output")
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
@@ -594,7 +594,7 @@ func (ss *Sim) ConfigLogItems() {
 	layers := ss.Net.LayersByType(axon.SuperLayer, axon.TargetLayer)
 	for _, lnm := range layers {
 		clnm := lnm
-		ly := ss.Net.LayByName(clnm)
+		ly := ss.Net.AxonLayerByName(clnm)
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  etensor.FLOAT64,

@@ -277,8 +277,8 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 	// rand.Seed(1337)
 	// inPats := pats.ColByName("Input").(*etensor.Float32)
 	// outPats := pats.ColByName("Output").(*etensor.Float32)
-	// inputLayer := netS.LayByName("Input").(*Layer)
-	// outputLayer := netS.LayByName("Output").(*Layer)
+	// inputLayer := netS.AxonLayerByName("Input").(*Layer)
+	// outputLayer := netS.AxonLayerByName("Output").(*Layer)
 	// input := inPats.SubSpace([]int{0})
 	// output := outPats.SubSpace([]int{0})
 	// inputLayer.ApplyExt(input)
@@ -352,8 +352,8 @@ func runFunEpochs(pats *etable.Table, net *Network, fun func(*Network, *Context)
 
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
-	inputLayer := net.LayByName("Input")
-	outputLayer := net.LayByName("Output")
+	inputLayer := net.AxonLayerByName("Input")
+	outputLayer := net.AxonLayerByName("Output")
 	ctx := NewContext()
 	for epoch := 0; epoch < epochs; epoch++ {
 		for pi := 0; pi < pats.NumRows(); pi++ {

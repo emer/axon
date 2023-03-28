@@ -385,7 +385,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range lays {
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(lnm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -448,7 +448,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("HeadDirP_PrvMCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "SpkPrv", "ActM"))
 	ss.Stats.SetFloat32("HeadDirP_PrvPCorSim", ss.Stats.LayerVarsCorrel(ss.Net, "HeadDirP", "SpkPrv", "ActP"))
 
-	inp := ss.Net.LayByName("DepthP")
+	inp := ss.Net.AxonLayerByName("DepthP")
 	ss.Stats.SetFloat("TrlErr", 1)
 	ss.Stats.SetFloat32("TrlCorSim", inp.Vals.CorSim.Cor)
 	ss.Stats.SetFloat("TrlUnitErr", inp.PctUnitErr())

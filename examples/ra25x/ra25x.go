@@ -352,7 +352,7 @@ func (ss *Sim) ApplyInputs() {
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByClass("InputLayer", "TargetLayer")
 	for _, lnm := range lays {
-		ly := ss.Net.LayByName(lnm)
+		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
 			ly.ApplyExt(pats)
@@ -441,7 +441,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	out := ss.Net.LayByName("Output")
+	out := ss.Net.AxonLayerByName("Output")
 
 	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
@@ -501,7 +501,7 @@ func (ss *Sim) ConfigLogItems() {
 	layers := ss.Net.LayersByClass("HiddenLayer", "TargetLayer")
 	for _, lnm := range layers {
 		clnm := lnm
-		ly := ss.Net.LayByName(clnm)
+		ly := ss.Net.AxonLayerByName(clnm)
 		ss.Logs.AddItem(&elog.Item{
 			Name:  clnm + "_AvgCaDiff",
 			Type:  etensor.FLOAT64,
@@ -569,10 +569,10 @@ func (ss *Sim) ConfigLogItems() {
 		// 	FixMin: true,
 		// 	Write: elog.WriteMap{
 		// 		etime.Scope(etime.Train, etime.Cycle): func(ctx *elog.Context) {
-		// 			ly := ss.Net.LayByName(clnm)
+		// 			ly := ss.Net.AxonLayerByName(clnm)
 		// 			ctx.SetFloat32(ly.AvgMaxVarByPool("Spiked", 0).Avg)
 		// 		}, etime.Scope(etime.Train, etime.Trial): func(ctx *elog.Context) {
-		// 			ly := ss.Net.LayByName(clnm)
+		// 			ly := ss.Net.AxonLayerByName(clnm)
 		// 			ctx.SetFloat32(ly.AvgMaxVarByPool("Spiked", 0).Avg)
 		// 		}, etime.Scope(etime.Train, etime.Epoch): func(
 		// 			ctx *elog.Context) {
