@@ -22,7 +22,7 @@ func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
 		scale := pj.Params.GScale.Scale
 		slay := pj.Send
 		pjcom := &pj.Params.Com
-		bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CycleTot-1, pj.Params.Idxs.RecvNeurN)
+		bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CyclesTotal-1, pj.Params.Idxs.RecvNeurN)
 		// note: -1 because this is logically done on prior timestep
 		syns := pj.RecvSyns(recvIdx)
 		if pj.PrjnType() == CTCtxtPrjn {
@@ -65,7 +65,7 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 		}
 	}
 	pjcom := &pj.Params.Com
-	wrOff := pjcom.WriteOff(ctx.CycleTot)
+	wrOff := pjcom.WriteOff(ctx.CyclesTotal)
 	sidxs := pj.SendSynIdxs(sendIdx)
 	for _, ssi := range sidxs {
 		sy := &pj.Syns[ssi]

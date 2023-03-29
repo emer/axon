@@ -234,11 +234,11 @@ func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSy
 		return
 	}
 	supt := sy.CaUpT
-	if supt == ctx.CycleTot { // already updated in recv pass
+	if supt == ctx.CyclesTotal { // already updated in recv pass
 		return
 	}
-	sy.CaUpT = ctx.CycleTot
-	pj.Learn.KinaseCa.CurCa(ctx.CycleTot-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
+	sy.CaUpT = ctx.CyclesTotal
+	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
 	sy.Ca = snCaSyn * rn.CaSyn
 	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 }
@@ -257,11 +257,11 @@ func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSy
 		return
 	}
 	supt := sy.CaUpT
-	if supt == ctx.CycleTot { // already updated in sender pass
+	if supt == ctx.CyclesTotal { // already updated in sender pass
 		return
 	}
-	sy.CaUpT = ctx.CycleTot
-	pj.Learn.KinaseCa.CurCa(ctx.CycleTot-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
+	sy.CaUpT = ctx.CyclesTotal
+	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
 	sy.Ca = sn.CaSyn * rnCaSyn
 	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 }
@@ -273,7 +273,7 @@ func (pj *PrjnParams) CycleSynCaSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, u
 		(sn.CaSpkP < updtThr && sn.CaSpkD < updtThr) {
 		return
 	}
-	sy.CaUpT = ctx.CycleTot
+	sy.CaUpT = ctx.CyclesTotal
 	sy.Ca = 0
 	if rn.Spike != 0 || sn.Spike != 0 {
 		sy.Ca = sn.CaSyn * rn.CaSyn * pj.Learn.KinaseCa.SpikeG
@@ -315,7 +315,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caM := sy.CaM
 	caP := sy.CaP
 	caD := sy.CaD
-	pj.Learn.KinaseCa.CurCa(ctx.CycleTot, sy.CaUpT, &caM, &caP, &caD) // always update
+	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal, sy.CaUpT, &caM, &caP, &caD) // always update
 	if pj.PrjnType == CTCtxtPrjn {
 		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // instead of mixing into cortical one
 	} else {

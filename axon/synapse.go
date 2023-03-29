@@ -24,7 +24,7 @@ type Synapse struct {
 	RecvIdx uint32 `desc:"receiving neuron index in network's global list of neurons"`
 	SendIdx uint32 `desc:"sending neuron index in network's global list of neurons"`
 	PrjnIdx uint32 `desc:"projection index in global list of projections organized as [Layers][RecvPrjns]"`
-	CaUpT   int32  `desc:"time in CycleTot of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
+	CaUpT   int32  `desc:"time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
 
 	Wt   float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`
 	LWt  float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`

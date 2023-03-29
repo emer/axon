@@ -206,13 +206,18 @@ func (ef *Effort) Reset() {
 	ef.Disc = 1
 }
 
+// DiscFun is the effort discount function: 1 / (1 + ef.Gain * effort)
+func (ef *Effort) DiscFun(effort float32) float32 {
+	return 1.0 / (1.0 + ef.Gain*effort)
+}
+
 // DiscFmEffort computes Effort.Disc from EffortRaw
 func (ef *Effort) DiscFmEffort() float32 {
-	ef.Disc = 1.0 / (1.0 + ef.Gain*ef.Raw)
+	ef.Disc = ef.DiscFun(ef.Raw)
 	return ef.Disc
 }
 
-// AddEffort adds an increment of effort
+// AddEffort adds an increment of effort and updates the Disc discount factor Disc
 func (ef *Effort) AddEffort(inc float32) {
 	ef.Raw += inc
 	ef.DiscFmEffort()
@@ -525,6 +530,14 @@ func (pp *PVLV) HasNegUS() bool {
 		}
 	}
 	return false
+}
+
+// PosPVFmDriveEffort returns the net primary value ("reward") based on
+// given US value and drive for that value (typically in 0-1 range),
+// and total effort, from which the effort discount factor is computed an applied:
+// usValue * drive * Effort.DiscFun(effort)
+func (pp *PVLV) PosPVFmDriveEffort(usValue, drive, effort float32) float32 {
+	return usValue * drive * pp.Effort.DiscFun(effort)
 }
 
 // DA computes the updated dopamine from all the current state,

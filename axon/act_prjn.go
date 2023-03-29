@@ -83,7 +83,7 @@ func (sc *SynComParams) Update() {
 
 // RingIdx returns the wrap-around ring index for given raw index.
 // For writing and reading spikes to GBuf buffer, based on
-// Context.CycleTot counter.
+// Context.CyclesTotal counter.
 // RN: 0     1     2         <- recv neuron indexes
 // DI: 0 1 2 0 1 2 0 1 2     <- delay indexes
 // C0: ^ v                   <- cycle 0, ring index: ^ = write, v = read
@@ -97,7 +97,7 @@ func (sc *SynComParams) RingIdx(i uint32) uint32 {
 }
 
 // WriteOff returns offset for writing new spikes into the GBuf buffer,
-// based on Context CycleTot counter which increments each cycle.
+// based on Context CyclesTotal counter which increments each cycle.
 // This is logically the last position in the ring buffer.
 func (sc *SynComParams) WriteOff(cycTot int32) uint32 {
 	return sc.RingIdx(uint32(cycTot)%sc.DelLen + sc.DelLen)
@@ -105,7 +105,7 @@ func (sc *SynComParams) WriteOff(cycTot int32) uint32 {
 
 // WriteIdx returns actual index for writing new spikes into the GBuf buffer,
 // based on the layer-based recv neuron index and the
-// WriteOff offset computed from the CycleTot.
+// WriteOff offset computed from the CyclesTotal.
 func (sc *SynComParams) WriteIdx(rnIdx uint32, cycTot int32, nRecvNeurs uint32) uint32 {
 	return sc.WriteIdxOff(rnIdx, sc.WriteOff(cycTot), nRecvNeurs)
 }
@@ -118,7 +118,7 @@ func (sc *SynComParams) WriteIdxOff(rnIdx, wrOff uint32, nRecvNeurs uint32) uint
 }
 
 // ReadOff returns offset for reading existing spikes from the GBuf buffer,
-// based on Context CycleTot counter which increments each cycle.
+// based on Context CyclesTotal counter which increments each cycle.
 // This is logically the zero position in the ring buffer.
 func (sc *SynComParams) ReadOff(cycTot int32) uint32 {
 	return sc.RingIdx(uint32(cycTot) % sc.DelLen)
@@ -126,7 +126,7 @@ func (sc *SynComParams) ReadOff(cycTot int32) uint32 {
 
 // ReadIdx returns index for reading existing spikes from the GBuf buffer,
 // based on the layer-based recv neuron index and the
-// ReadOff offset from the CycleTot.
+// ReadOff offset from the CyclesTotal.
 func (sc *SynComParams) ReadIdx(rnIdx uint32, cycTot int32, nRecvNeurs uint32) uint32 {
 	// return rnIdx*sc.DelLen + sc.ReadOff(cycTot)
 	return sc.ReadOff(cycTot)*nRecvNeurs + rnIdx // delay is outer, neurs are inner -- should be faster?
