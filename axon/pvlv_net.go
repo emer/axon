@@ -83,6 +83,8 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 
 	cemPos.PlaceBehind(blaPosExt, space)
 	if neg {
+		blaNegAcq.PlaceBehind(blaPosExt, space)
+		cemPos.PlaceBehind(blaNegExt, space)
 		cemNeg.PlaceBehind(cemPos, space)
 		pptg.PlaceBehind(cemNeg, space)
 	} else {

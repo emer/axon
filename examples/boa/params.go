@@ -48,15 +48,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.8", // was 1.0
-					"Layer.Inhib.Pool.Gi":    "1.8", // was 1.8
-					"Layer.Act.GABAB.Gbar":   "0.3",
-					"Layer.Act.NMDA.Gbar":    "0.3", // 0.3 enough..
-					"Layer.Act.NMDA.Tau":     "300",
-					"Layer.Act.Decay.Act":    "0.0",
-					"Layer.Act.Decay.Glong":  "0.0",
-					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "30",   // 10?
+					"Layer.Inhib.Layer.Gi":             "1.8", // was 1.0
+					"Layer.Inhib.Pool.Gi":              "1.8", // was 1.8
+					"Layer.Act.GABAB.Gbar":             "0.3",
+					"Layer.Act.NMDA.Gbar":              "0.3", // 0.3 enough..
+					"Layer.Act.NMDA.Tau":               "300",
+					"Layer.Act.Decay.Act":              "0.0",
+					"Layer.Act.Decay.Glong":            "0.0",
+					"Layer.Act.Sahp.Gbar":              "0.01", // not much pressure -- long maint
+					"Layer.Act.Dend.ModGain":           "30",   // 10?
+					"Layer.Learn.NeuroMod.AChDisInhib": "1.0",
 				}},
 			{Sel: ".PTNotMaintLayer", Desc: "",
 				Params: params.Params{
@@ -94,13 +95,13 @@ var ParamSets = params.Sets{
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":       "0.2",
-					"Layer.Inhib.Pool.Gi":              "0.5",
+					"Layer.Inhib.Pool.Gi":              "0.3",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
-					"Layer.Learn.NeuroMod.BurstGain":   "1",
-					"Layer.Learn.NeuroMod.DipGain":     "1",    // controls extinction -- works fine at 1
-					"Layer.PVLV.Thr":                   "0.25", // .2 -- .25 doesn't get strong enough to overcome DA, .15 is too low
-					"Layer.PVLV.Gain":                  "10",   //
-					"Layer.VSPatch.NoDALRate":          "0.2",  // 0.05 is just not quite sufficient
+					"Layer.Learn.NeuroMod.BurstGain":   "3",   // extra key for compensating for NoDALRate
+					"Layer.Learn.NeuroMod.DipGain":     "1",   // controls extinction -- works fine at 1
+					"Layer.PVLV.Thr":                   "0.3", // .2 -- .25 doesn't get strong enough to overcome DA, .15 is too low
+					"Layer.PVLV.Gain":                  "20",  // 20 needed for faster learning
+					"Layer.VSPatch.NoDALRate":          "0.2", // 0.05 is just not quite sufficient
 				}},
 			{Sel: "#CS", Desc: "expect act",
 				Params: params.Params{
@@ -464,7 +465,7 @@ var ParamSets = params.Sets{
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "3",   // 3 orig
-					"Prjn.Learn.LRate.Base": "0.2", // 0.2 > 0.02..?
+					"Prjn.Learn.LRate.Base": "0.1", // 0.2 > 0.02..?
 				}},
 			// {Sel: "#OFCPTPredToVSPatch", Desc: "",
 			// 	Params: params.Params{
