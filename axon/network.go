@@ -5,7 +5,11 @@
 package axon
 
 import (
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	"math"
 	"strings"
 	"unsafe"
 
@@ -657,6 +661,45 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			idx += ns
 		}
 	}
+}
+
+// GetWtsHash returns a string that is the md5 sum of all the weights in the model
+func (net *Network) GetWtsHash() string {
+	numSyns := 0
+	for _, lyi := range net.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		for _, pji := range ly.SndPrjns {
+			pj := pji.AsAxon()
+			numSyns += len(pj.Syns)
+		}
+	}
+	wts := make([]float32, numSyns)
+
+	i := 0
+	for _, lyi := range net.Layers {
+		ly := lyi.(AxonLayer).AsAxon()
+		for _, pji := range ly.SndPrjns {
+			pji := pji.AsAxon()
+			for j := range pji.Syns {
+				wts[i] = pji.Syns[j].Wt
+				i++
+			}
+		}
+	}
+	return HashEncodeSlice(wts)
+}
+
+func HashEncodeSlice(slice []float32) string {
+	byteSlice := make([]byte, len(slice)*4)
+	for i, f := range slice {
+		binary.LittleEndian.PutUint32(byteSlice[i*4:], math.Float32bits(f))
+	}
+
+	md5Hasher := md5.New()
+	md5Hasher.Write(byteSlice)
+	md5Sum := md5Hasher.Sum(nil)
+
+	return hex.EncodeToString(md5Sum)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
