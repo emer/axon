@@ -57,6 +57,7 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 
 	fun := func(net *Network, ctx *Context) {
 		net.Cycle(ctx)
+		net.WtFmDWt(ctx)
 	}
 
 	// by splitting the epochs into three parts for netB, we make sure that the
@@ -64,16 +65,18 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 	// as we re-set the seed at the beginning of runFunEpochs.
 	runFunEpochs(pats, netB, fun, 1)
 	runFunEpochs(pats, netB, fun, 2)
-	runFunEpochs(pats, netA, fun, 10)
-	runFunEpochs(pats, netB, fun, 7)
+	runFunEpochs(pats, netA, fun, 5)
+	runFunEpochs(pats, netB, fun, 2)
 
 	// compare the resulting networks
 	assertNeuronsSynsEqual(t, netA, netB)
+	assert.Equal(t, netA.WtsHash(), netB.WtsHash())
 
 	// sanity check, to make sure we're not accidentally sharing pointers etc.
 	assert.True(t, neuronsSynsAreEqual(netA, netB))
 	runFunEpochs(pats, netA, fun, 1)
 	assert.False(t, neuronsSynsAreEqual(netA, netB))
+	assert.False(t, netA.WtsHash() == netB.WtsHash())
 }
 
 func TestMultithreadedSendSpike(t *testing.T) {
