@@ -7,6 +7,9 @@ package axon
 import (
 	"bufio"
 	"compress/gzip"
+	"crypto/md5"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -927,6 +930,50 @@ func (nt *NetworkBase) ReadWtsCpp(r io.Reader) error {
 		log.Println(err)
 	}
 	return err
+}
+
+// WtsSlice sets all the weights in recv order in given slice, resizing as needed
+func (nt *Network) WtsSlice(wts *[]float32) {
+	numSyns := 0
+	for _, ly := range nt.Layers {
+		for _, pj := range ly.RcvPrjns {
+			numSyns += len(pj.Syns)
+		}
+	}
+	if cap(*wts) >= numSyns {
+		*wts = (*wts)[:numSyns]
+	} else {
+		*wts = make([]float32, numSyns)
+	}
+	i := 0
+	for _, ly := range nt.Layers {
+		for _, pj := range ly.RcvPrjns {
+			for j := range pj.Syns {
+				(*wts)[i] = pj.Syns[j].Wt
+				i++
+			}
+		}
+	}
+}
+
+// WtsHash returns a hash code of all weight values
+func (nt *Network) WtsHash() string {
+	var wts []float32
+	nt.WtsSlice(&wts)
+	return HashEncodeSlice(wts)
+}
+
+func HashEncodeSlice(slice []float32) string {
+	byteSlice := make([]byte, len(slice)*4)
+	for i, f := range slice {
+		binary.LittleEndian.PutUint32(byteSlice[i*4:], math.Float32bits(f))
+	}
+
+	md5Hasher := md5.New()
+	md5Hasher.Write(byteSlice)
+	md5Sum := md5Hasher.Sum(nil)
+
+	return hex.EncodeToString(md5Sum)
 }
 
 // VarRange returns the min / max values for given variable
