@@ -4,7 +4,10 @@
 
 package axon
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 //gosl: start avgmaxi
 
@@ -70,11 +73,11 @@ func (am *AvgMaxI32) FloatToIntSum(val float32) int32 {
 
 // FloatFromInt converts the given int32 value produced
 // via FloatToInt back into a float32 (divides by factor)
-func (am *AvgMaxI32) FloatFromInt(ival int32) float32 {
+func (am *AvgMaxI32) FloatFromInt(ival, refIdx int32) float32 {
 	//gosl: end avgmaxi
 	// note: this is not GPU-portable..
 	if ival < 0 {
-		panic("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error")
+		panic("axon.AvgMaxI32: FloatFromInt is negative, there was an overflow error, in refIdx: " + strconv.Itoa(int(refIdx)))
 	}
 	//gosl: start avgmaxi
 	return float32(ival) * am.FloatFmIntFactor()
@@ -91,10 +94,13 @@ func (am *AvgMaxI32) UpdateVal(val float32) {
 
 // Calc computes the average given the current Sum
 // and copies over CurMax to Max
-func (am *AvgMaxI32) Calc() {
-	am.Max = am.FloatFromInt(am.CurMax)
-	am.Avg = am.FloatFromInt(am.Sum) // N is already baked in
-	am.Init()                        // immediately ready to go
+// refIdx is a reference index of thing being computed, which will be printed
+// in case there is an overflow, for debugging (can't be a string because
+// this code runs on GPU).
+func (am *AvgMaxI32) Calc(refIdx int32) {
+	am.Max = am.FloatFromInt(am.CurMax, refIdx)
+	am.Avg = am.FloatFromInt(am.Sum, refIdx) // N is already baked in
+	am.Init()                                // immediately ready to go
 }
 
 //gosl: end avgmaxi

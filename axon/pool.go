@@ -41,8 +41,8 @@ func (am *AvgMaxPhases) CycleToPlus() {
 }
 
 // Calc does Calc on Cycle, which is then ready for aggregation again
-func (am *AvgMaxPhases) Calc() {
-	am.Cycle.Calc()
+func (am *AvgMaxPhases) Calc(refIdx int32) {
+	am.Cycle.Calc(refIdx)
 }
 
 // Zero does a full reset on everything -- for InitActs
@@ -118,13 +118,13 @@ func (am *PoolAvgMax) Zero() {
 }
 
 // Calc does Calc on Cycle level, and re-inits
-func (am *PoolAvgMax) Calc() {
-	am.CaSpkP.Calc()
-	am.CaSpkD.Calc()
-	am.SpkMax.Calc()
-	am.Act.Calc()
-	am.GeInt.Calc()
-	am.GiInt.Calc()
+func (am *PoolAvgMax) Calc(refIdx int32) {
+	am.CaSpkP.Calc(refIdx)
+	am.CaSpkD.Calc(refIdx)
+	am.SpkMax.Calc(refIdx)
+	am.Act.Calc(refIdx)
+	am.GeInt.Calc(refIdx)
+	am.GiInt.Calc(refIdx)
 }
 
 // UpdateVals for neuron values
