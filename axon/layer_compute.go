@@ -64,7 +64,7 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 	}
 	for pi := 0; pi < np; pi++ {
 		pl := &ly.Pools[pi]
-		pl.AvgMax.Calc()
+		pl.AvgMax.Calc(int32(ly.Idx))
 	}
 	ly.Params.LayPoolGiFmSpikes(ctx, lpl, ly.Vals)
 	// ly.PoolGiFmSpikes(ctx) // note: this is now called as a second pass
@@ -678,7 +678,7 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 			nrn.AvgDif = nrn.AvgPct - nrn.TrgAvg
 			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif))
 		}
-		pl.AvgDif.Calc()
+		pl.AvgDif.Calc(int32(ly.Idx)) // ref in case of crash
 	}
 	if sp == 1 { // update stats
 		pl := &ly.Pools[0]
@@ -690,7 +690,7 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 			}
 			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif))
 		}
-		pl.AvgDif.Calc()
+		pl.AvgDif.Calc(int32(ly.Idx))
 	}
 }
 
