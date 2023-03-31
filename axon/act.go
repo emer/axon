@@ -412,9 +412,9 @@ type PopCodeParams struct {
 	Ge       float32     `viewif:"On" def:"0.1" desc:"Ge multiplier for driving excitatory conductance based on PopCode -- multiplies normalized activation values"`
 	Min      float32     `viewif:"On" def:"-0.1" desc:"minimum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
 	Max      float32     `viewif:"On" def:"1.1" desc:"maximum value representable -- for GaussBump, typically include extra to allow mean with activity on either side to represent the lowest value you want to encode"`
-	MinAct   float32     `viewif:"On" def:"1,0.5" desc:"activation multiplier for values at Min end of range, where values at Max end have an activation of 1 -- if this is < 1, then there is a rate code proportional to the value in addition to the popcode pattern -- see also MinSigma, MaxSigma"`
-	MinSigma float32     `viewif:"On" def:"0.1,0.08" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma < MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
-	MaxSigma float32     `viewif:"On" def:"0.1,0.12" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma < MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
+	MinAct   float32     `viewif:"On" def:"1,0.5" desc:"activation multiplier for values at Min end of range, where values at Max end have an activation of 1 -- if this is &lt; 1, then there is a rate code proportional to the value in addition to the popcode pattern -- see also MinSigma, MaxSigma"`
+	MinSigma float32     `viewif:"On" def:"0.1,0.08" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma &lt; MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
+	MaxSigma float32     `viewif:"On" def:"0.1,0.12" desc:"sigma parameter of a gaussian specifying the tuning width of the coarse-coded units, in normalized 0-1 range -- for Min value -- if MinSigma &lt; MaxSigma then more units are activated for Max values vs. Min values, proportionally"`
 	Clip     slbool.Bool `viewif:"On" desc:"ensure that encoded and decoded value remains within specified range"`
 }
 
