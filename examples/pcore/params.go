@@ -78,12 +78,17 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":             "0.5", // 0.5 > 0.4
 					"Layer.Inhib.Layer.FB":             "0.0",
 				}},
+			{Sel: ".VThalLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.25", // matches orig
+				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":      "1.0", // not stronger
+					"Prjn.SWt.Adapt.On":       "true",
 					"Prjn.SWt.Init.Mean":      "0.5",
 					"Prjn.SWt.Init.Var":       "0.25",
 					"Prjn.Matrix.CurTrlDA":    "true",

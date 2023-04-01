@@ -109,6 +109,7 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Learn.RLRate.Diff.SetBool(false)
 
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
+	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
 	ly.Params.Learn.NeuroMod.DALRateMod = 1
 	ly.Params.Learn.NeuroMod.AChLRateMod = 1
 	ly.Params.Learn.NeuroMod.AChDisInhib = 5
@@ -263,6 +264,7 @@ func (ly *Layer) GPDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.Learn.Learn.SetBool(false)
+		pj.Params.SWt.Adapt.On.SetBool(false)
 		pj.Params.SWt.Adapt.SigGain = 1
 		pj.Params.SWt.Init.SPct = 0
 		pj.Params.SWt.Init.Mean = 0.75
