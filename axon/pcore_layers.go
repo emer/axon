@@ -120,13 +120,10 @@ func (ly *Layer) MatrixDefaults() {
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SWt.Init.SPct = 0
 		if pj.Send.LayerType() == GPLayer { // From GPe TA or In
+			pj.Params.SetFixedWts()
 			pj.Params.PrjnScale.Abs = 1
-			pj.Params.Learn.Learn.SetBool(false)
-			pj.Params.SWt.Adapt.On.SetBool(false)
-			pj.Params.SWt.Adapt.SigGain = 1
 			pj.Params.SWt.Init.Mean = 0.75
 			pj.Params.SWt.Init.Var = 0.0
-			pj.Params.SWt.Init.Sym.SetBool(false)
 			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
 				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
 			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
@@ -263,13 +260,9 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
 	for _, pj := range ly.RcvPrjns {
-		pj.Params.Learn.Learn.SetBool(false)
-		pj.Params.SWt.Adapt.On.SetBool(false)
-		pj.Params.SWt.Adapt.SigGain = 1
-		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SetFixedWts()
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.25
-		pj.Params.SWt.Init.Sym.SetBool(false)
 		if pj.Send.LayerType() == MatrixLayer {
 			pj.Params.PrjnScale.Abs = 0.5
 		} else if pj.Send.LayerType() == STNLayer {
@@ -306,12 +299,9 @@ func (ly *Layer) GPiDefaults() {
 	// note: GPLayer took care of STN input prjns
 
 	for _, pj := range ly.RcvPrjns {
-		pj.Params.SWt.Adapt.SigGain = 1
-		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SetFixedWts()
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.25
-		pj.Params.SWt.Init.Sym.SetBool(false)
-		pj.Params.Learn.Learn.SetBool(false)
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
 			pj.Params.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
 		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi
@@ -368,12 +358,9 @@ func (ly *Layer) STNDefaults() {
 	}
 
 	for _, pj := range ly.RcvPrjns {
-		pj.Params.Learn.Learn.SetBool(false)
-		pj.Params.SWt.Adapt.SigGain = 1
-		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SetFixedWts()
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.25
-		pj.Params.SWt.Init.Sym.SetBool(false)
 		if strings.HasSuffix(ly.Nm, "STNp") {
 			if pj.Send.LayerType() == GPLayer { // GPeInToSTNp
 				pj.Params.PrjnScale.Abs = 0.1
@@ -399,12 +386,9 @@ func (ly *Layer) VThalDefaults() {
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
 
 	for _, pj := range ly.RcvPrjns {
-		pj.Params.Learn.Learn.SetBool(false)
-		pj.Params.SWt.Adapt.SigGain = 1
-		pj.Params.SWt.Init.SPct = 0
+		pj.Params.SetFixedWts()
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.0
-		pj.Params.SWt.Init.Sym.SetBool(false)
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToVThal
 			pj.Params.PrjnScale.Abs = 2 // was 2.5 for agate model..
 		}

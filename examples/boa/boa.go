@@ -79,8 +79,8 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 10
-	ss.PctCortexNEpc = 10
+	ss.PctCortexStEpc = 5
+	ss.PctCortexNEpc = 5
 	ss.PctCortexInterval = 1
 	ss.PCAInterval = 10
 }

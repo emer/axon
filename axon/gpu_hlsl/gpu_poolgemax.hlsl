@@ -40,7 +40,7 @@ void PoolGeMax2(in Context ctx, uint pi, inout Pool pl, in LayerParams ly, in La
 	for (uint ni = pl.StIdx; ni < pl.EdIdx; ni++) {
 		PoolGeMaxNeuron(ctx, ly, ni, Neurons[ly.Idxs.NeurSt+ni], pl);
 	}
-	pl.AvgMax.Calc();
+	pl.AvgMax.Calc(pl.LayIdx);
 	if (pl.IsLayPool == 1) { // must do layer-level first in this round, then used in next round
 		ly.LayPoolGiFmSpikes(ctx, pl, vals);
 	}

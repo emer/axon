@@ -56,7 +56,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":              "0.0",
 					"Layer.Act.Decay.Glong":            "0.0",
 					"Layer.Act.Sahp.Gbar":              "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain":           "30",   // 10?
+					"Layer.Act.Dend.ModGain":           "10",   // 10?
 					"Layer.Learn.NeuroMod.AChDisInhib": "1.0",
 				}},
 			{Sel: ".PTNotMaintLayer", Desc: "",
@@ -244,17 +244,19 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true", // this is critical, else too active
-					"Layer.Inhib.Layer.Gi":       "0.6",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true", // this is critical, else too active
+					"Layer.Inhib.Layer.Gi":             "0.6",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: "#VpSTNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":      "0.2",
-					"Layer.Act.Init.GeVar":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "0.2",
+					"Layer.Act.Init.GeBase":            "0.2",
+					"Layer.Act.Init.GeVar":             "0.2",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.Gi":             "0.2",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{

@@ -66,7 +66,7 @@ void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint 
 	// uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(ni, ctx.CycleTot-1); // -1 = prior time step
 	// RecvSpikes(ctx, pj, ly, ni, GBuf[bi]); // writes to gbuf
 	
-	uint bi = pj.Idxs.GBufSt + pj.Com.ReadIdx(ni, ctx.CycleTot, pj.Idxs.RecvNeurN);
+	uint bi = pj.Idxs.GBufSt + pj.Com.ReadIdx(ni, ctx.CyclesTotal, pj.Idxs.RecvNeurN);
 	float gRaw = pj.Com.FloatFromGBuf(GBuf[bi]);
 	GBuf[bi] = 0;
 	float gSyn = GSyns[pj.Idxs.GSynSt + ni];
