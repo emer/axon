@@ -19,8 +19,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#PFC", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":   "0.6",
+					"Layer.Inhib.Layer.Gi": "1.0",
 				}},
 			{Sel: "#ACCNeg", Desc: "",
 				Params: params.Params{
@@ -36,27 +35,29 @@ var ParamSets = params.Sets{
 			// 	Params: params.Params{}},
 			{Sel: "#STNp", Desc: "Pausing STN",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "0.2",
-					"Layer.Act.SKCa.Gbar":        "2",
-					"Layer.Act.SKCa.C50":         "0.6",
-					"Layer.Act.SKCa.ActTau":      "10",
-					"Layer.Act.SKCa.DeTau":       "50",
-					"Layer.Act.SKCa.CaScale":     "4",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.Gi":             "0.2",
+					"Layer.Act.SKCa.Gbar":              "2",
+					"Layer.Act.SKCa.C50":               "0.6",
+					"Layer.Act.SKCa.ActTau":            "10",
+					"Layer.Act.SKCa.DeTau":             "50",
+					"Layer.Act.SKCa.CaScale":           "4",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: "#STNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":      "0.2",
-					"Layer.Act.Init.GeVar":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "0.2",
-					"Layer.Act.SKCa.Gbar":        "2",
-					"Layer.Act.SKCa.C50":         "0.6",
-					"Layer.Act.SKCa.ActTau":      "10",
-					"Layer.Act.SKCa.DeTau":       "50",
-					"Layer.Act.SKCa.CaScale":     "3",
+					"Layer.Act.Init.GeBase":            "0.2",
+					"Layer.Act.Init.GeVar":             "0.2",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.Gi":             "0.2",
+					"Layer.Act.SKCa.Gbar":              "2",
+					"Layer.Act.SKCa.C50":               "0.6",
+					"Layer.Act.SKCa.ActTau":            "10",
+					"Layer.Act.SKCa.DeTau":             "50",
+					"Layer.Act.SKCa.CaScale":           "3",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
@@ -78,9 +79,38 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":             "0.5", // 0.5 > 0.4
 					"Layer.Inhib.Layer.FB":             "0.0",
 				}},
+			{Sel: ".CTLayer", Desc: "corticothalamic context -- using FSA-based params -- intermediate",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.12",
+					"Layer.CT.GeGain":            "1.0",
+					"Layer.CT.DecayTau":          "50",
+					"Layer.Inhib.Layer.Gi":       "2.2",
+					"Layer.Inhib.Pool.Gi":        "2.2",
+					"Layer.Act.GABAB.Gbar":       "0.25",
+					"Layer.Act.NMDA.Gbar":        "0.25",
+					"Layer.Act.NMDA.Tau":         "200",
+					"Layer.Act.Decay.Act":        "0.0",
+					"Layer.Act.Decay.Glong":      "0.0",
+					"Layer.Act.Sahp.Gbar":        "1.0",
+				}},
+			{Sel: ".PTMaintLayer", Desc: "time integration params",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":             "1.8", // was 1.0
+					"Layer.Inhib.Pool.Gi":              "1.8", // was 1.8
+					"Layer.Act.GABAB.Gbar":             "0.3",
+					"Layer.Act.NMDA.Gbar":              "0.3", // 0.3 enough..
+					"Layer.Act.NMDA.Tau":               "300",
+					"Layer.Act.Decay.Act":              "0.0",
+					"Layer.Act.Decay.Glong":            "0.0",
+					"Layer.Act.Sahp.Gbar":              "0.01", // not much pressure -- long maint
+					"Layer.Act.Dend.ModGain":           "20",   // 10?
+					"Layer.Learn.NeuroMod.AChDisInhib": "1.0",
+				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.25", // matches orig
+					"Layer.Inhib.Layer.Gi":       "0.6",
+					"Layer.Inhib.Pool.Gi":        "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
@@ -103,7 +133,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Learn.Learn":   "false",
 				}},
-			{Sel: "#VThalToPFCo", Desc: "usually uniform weights",
+			{Sel: "#PFCVMToPFC", Desc: "usually uniform weights",
 				Params: params.Params{
 					"Prjn.SWt.Init.Mean": "0.9",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -135,9 +165,53 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
-			{Sel: "#PFCToVThal", Desc: "strong",
+			{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0",
+					"Prjn.PrjnScale.Rel": "1",    // keep this constant -- only self vs. this -- thal is modulatory
+					"Prjn.PrjnScale.Abs": "0.01", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
+					"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
+					"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
+					"Prjn.SWt.Init.Mean":    "0.5",
+					"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
+				}},
+			{Sel: ".SuperToThal", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1.0",
+					"Prjn.PrjnScale.Abs": "2.5", // if this is too strong, it gates to the wrong CS
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".ThalToSuper", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.1",
+				}},
+			{Sel: ".ThalToPT", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1.0",
+					"Prjn.Com.GType":     "ModulatoryG", // this marks as modulatory with extra ModGain factor
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+				}},
+			{Sel: ".CTtoThal", Desc: "",
+				Params: params.Params{
+					"Prjn.SWt.Init.Var":  "0.25",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.PrjnScale.Rel": "0.1",
+				}},
+			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
+					"Prjn.Learn.Trace.Tau":     "1",    // 2 > 1
+					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
 		}},
 	},
@@ -243,9 +317,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 				}},
-			{Sel: "#GPiToVThal", Desc: "final inhibition",
+			{Sel: "#GPiToPFCVM", Desc: "final inhibition",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 2 orig
+					"Prjn.PrjnScale.Abs": "2", // 2 default
 				}},
 		}},
 	},
