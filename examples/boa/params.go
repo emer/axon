@@ -263,11 +263,15 @@ var ParamSets = params.Sets{
 					"Layer.Act.Init.GeBase":      "0.3",
 					"Layer.Act.Init.GeVar":       "0.1",
 					"Layer.Act.Init.GiVar":       "0.1",
+					"Layer.Act.Dt.GeTau":         "6", // 5 def; 6 looks better..
+					"Layer.Act.Dt.GiTau":         "7", // 7 def; slower = more gating (dramatic)
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
 			{Sel: "#VpGPi", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase": "0.6",
+					"Layer.Act.Init.GeBase": "0.6", // todo: test 0.5
+					"Layer.Act.Dt.GeTau":    "7",   // 7 > 6 > 5
+					"Layer.Act.Dt.GiTau":    "7",   //
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{

@@ -627,10 +627,11 @@ func (ss *Sim) TrialStats() {
 	mode := ss.Context.Mode
 	trlog := ss.Logs.Log(mode, etime.Cycle)
 	spkCyc := 0
-	for row := 0; row < trlog.Rows; row++ {
+	// note: starts at 200 due to first phase
+	for row := 200; row < trlog.Rows; row++ {
 		vts := trlog.CellTensorFloat1D("PFCVM_Spike", row, 0)
 		if vts > 0 {
-			spkCyc = row
+			spkCyc = row - 200
 			break
 		}
 	}

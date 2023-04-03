@@ -295,7 +295,7 @@ func (ly *Layer) GPDefaults() {
 }
 
 func (ly *Layer) GPiDefaults() {
-	ly.Params.Act.Init.GeBase = 0.6
+	ly.Params.Act.Init.GeBase = 0.5
 	// note: GPLayer took care of STN input prjns
 
 	for _, pj := range ly.RcvPrjns {
