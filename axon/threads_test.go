@@ -22,7 +22,7 @@ const (
 // TestMultithreadingCycleFun tests the whole net.Cycle() function, turning on
 // multithreading for all functions.
 func TestMultithreadingCycleFun(t *testing.T) {
-	pats := generateRandomPatterns(100)
+	pats := generateRandomPatterns(100, 42)
 	// launch many goroutines to increase odds of finding race conditions
 	netS, netP := buildIdenticalNetworks(t, pats, 16, 16, 16)
 
@@ -49,10 +49,88 @@ func TestMultithreadingCycleFun(t *testing.T) {
 	assert.Equal(t, 16, netP.Threads.SynCa)
 }
 
+func TestCollectAndSetDWts(t *testing.T) {
+	// TODO: This should be moved out of threads_test.go, but all the useful
+	// helper functions are here.
+
+	patsA := generateRandomPatterns(1, 1337)
+	patsB := generateRandomPatterns(1, 42)
+	shape := []int{shape1D, shape1D}
+
+	rand.Seed(1337)
+	netA := buildNet(t, shape, 1, 1, 1)
+	netA.SlowInterval = 1
+	rand.Seed(1337)
+	netB := buildNet(t, shape, 1, 1, 1)
+	netB.SlowInterval = 1
+
+	runCycle := func(net *Network, ctx *Context, pats *etable.Table) {
+		inPats := pats.ColByName("Input").(*etensor.Float32).SubSpace([]int{0})
+		outPats := pats.ColByName("Output").(*etensor.Float32).SubSpace([]int{0})
+		inputLayer := net.AxonLayerByName("Input")
+		outputLayer := net.AxonLayerByName("Output")
+		// we train on a single pattern
+		input := inPats.SubSpace([]int{0})
+		output := outPats.SubSpace([]int{0})
+
+		inputLayer.ApplyExt(input)
+		outputLayer.ApplyExt(output)
+
+		net.NewState(ctx)
+		ctx.NewState(etime.Train)
+		for qtr := 0; qtr < 4; qtr++ {
+			for cyc := 0; cyc < 25; cyc++ {
+				net.Cycle(ctx)
+				ctx.CycleInc()
+			}
+			if qtr == 2 {
+				net.MinusPhase(ctx)
+				ctx.NewPhase(true)
+				net.PlusPhaseStart(ctx)
+			}
+		}
+		net.PlusPhase(ctx)
+		net.DWt(ctx)
+	}
+
+	rand.Seed(42)
+	ctxA := NewContext()
+	runCycle(netA, ctxA, patsA)
+
+	rand.Seed(42)
+	ctxB := NewContext()
+	runCycle(netB, ctxB, patsB)
+
+	// No DWt applied, hence networks still equal
+	assert.Equal(t, netA.WtsHash(), netB.WtsHash())
+
+	var dwts []float32
+	netA.CollectDWts(&dwts) // important to collect DWt before applying it
+	netA.WtFmDWt(ctxA)
+	netA.SlowAdapt(ctxA)
+	assert.False(t, netA.WtsHash() == netB.WtsHash())
+
+	netB.SetDWts(dwts, 1)
+	netB.WtFmDWt(ctxB)
+	netB.SlowAdapt(ctxB)
+	assert.True(t, netA.WtsHash() == netB.WtsHash())
+
+	// And again (as a sanity check), but without syncing DWt -> Models should diverge
+	runCycle(netA, ctxA, patsA)
+	runCycle(netB, ctxB, patsB)
+	netA.WtFmDWt(ctxA)
+	netA.SlowAdapt(ctxA)
+	assert.False(t, netA.WtsHash() == netB.WtsHash())
+	// netB is trained on a different pattern, hence different DWt, hence different Wt
+	netB.WtFmDWt(ctxB)
+	netB.SlowAdapt(ctxB)
+	assert.False(t, netA.WtsHash() == netB.WtsHash())
+}
+
 // Make sure that training is deterministic, as long as the network is the same
 // at the beginning of the test.
 func TestDeterministicSingleThreadedTraining(t *testing.T) {
-	pats := generateRandomPatterns(10)
+	pats := generateRandomPatterns(10, 42)
 	netA, netB := buildIdenticalNetworks(t, pats, 1, 1, 1)
 
 	fun := func(net *Network, ctx *Context) {
@@ -80,7 +158,7 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 }
 
 func TestMultithreadedSendSpike(t *testing.T) {
-	pats := generateRandomPatterns(10)
+	pats := generateRandomPatterns(10, 42)
 	netS, netP := buildIdenticalNetworks(t, pats, 1, 16, 1)
 
 	fun := func(net *Network, ctx *Context) {
@@ -100,7 +178,7 @@ func TestMultithreadedSendSpike(t *testing.T) {
 }
 
 func TestMultithreadedNeuronFun(t *testing.T) {
-	pats := generateRandomPatterns(10)
+	pats := generateRandomPatterns(10, 42)
 	netS, netP := buildIdenticalNetworks(t, pats, 16, 1, 1)
 
 	fun := func(net *Network, ctx *Context) {
@@ -120,7 +198,7 @@ func TestMultithreadedNeuronFun(t *testing.T) {
 }
 
 func TestMultithreadedSynCa(t *testing.T) {
-	pats := generateRandomPatterns(10)
+	pats := generateRandomPatterns(10, 42)
 	netS, netP := buildIdenticalNetworks(t, pats, 16, 1, 16)
 
 	fun := func(net *Network, ctx *Context) {
@@ -238,10 +316,10 @@ func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 	return true
 }
 
-func generateRandomPatterns(nPats int) *etable.Table {
+func generateRandomPatterns(nPats int, seed int64) *etable.Table {
 	shape := []int{shape1D, shape1D}
 
-	rand.Seed(42)
+	rand.Seed(seed)
 
 	pats := &etable.Table{}
 	pats.SetFromSchema(etable.Schema{
