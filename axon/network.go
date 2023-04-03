@@ -465,6 +465,7 @@ func (nt *Network) WtFmDWtImpl(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunWtFmDWt()
 	} else {
+		nt.LayerMapSeq(func(ly *Layer) { ly.WtFmDWtLayer(ctx) }, "WtFmDWtLayer") // def thread
 		nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean")
 		nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
 	}
