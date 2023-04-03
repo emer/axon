@@ -439,7 +439,6 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
-	ly.TrgAvgFmD()
 	ly.CorSimFmActs() // GPU syncs down the state
 	if ly.Params.Act.Decay.OnRew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.DipReset.IsTrue() {
