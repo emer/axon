@@ -37,27 +37,30 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true",
-					"Layer.Inhib.Layer.Gi":             "0.2",
-					"Layer.Act.SKCa.Gbar":              "2",
+					"Layer.Inhib.Layer.Gi":             "0.5",
+					"Layer.Act.SKCa.Gbar":              "4",
 					"Layer.Act.SKCa.C50":               "0.6",
-					"Layer.Act.SKCa.ActTau":            "10",
-					"Layer.Act.SKCa.DeTau":             "50",
+					"Layer.Act.SKCa.ActTau":            "5",
+					"Layer.Act.SKCa.DeTau":             "30",
+					"Layer.Act.SKCa.CaDecayTau":        "150",
 					"Layer.Act.SKCa.CaScale":           "4",
 					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: "#STNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":            "0.2",
-					"Layer.Act.Init.GeVar":             "0.2",
+					"Layer.Act.Init.GeBase":            "0.0",
+					"Layer.Act.Init.GeVar":             "0.0",
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true",
-					"Layer.Inhib.Layer.Gi":             "0.2",
-					"Layer.Act.SKCa.Gbar":              "2",
+					"Layer.Inhib.Layer.Gi":             "0.8",
+					"Layer.Act.SKCa.Gbar":              "4",
+					"Layer.Act.SKCa.CaD":               "false",
 					"Layer.Act.SKCa.C50":               "0.6",
-					"Layer.Act.SKCa.ActTau":            "10",
-					"Layer.Act.SKCa.DeTau":             "50",
-					"Layer.Act.SKCa.CaScale":           "3",
-					"Layer.Learn.NeuroMod.AChDisInhib": "2", // 2 is plenty to turn off
+					"Layer.Act.SKCa.ActTau":            "15",
+					"Layer.Act.SKCa.DeTau":             "30",
+					"Layer.Act.SKCa.CaScale":           "4",
+					"Layer.Act.SKCa.CaDecayTau":        "150",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2", // 2 is plenty to turn off, 1 sometimes not
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
@@ -107,7 +110,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":              "0.0",
 					"Layer.Act.Decay.Glong":            "0.0",
 					"Layer.Act.Sahp.Gbar":              "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain":           "20",   // 10?
+					"Layer.Act.Dend.ModGain":           "10",   // 10?
 					"Layer.Learn.NeuroMod.AChDisInhib": "1.0",
 				}},
 			{Sel: ".VThalLayer", Desc: "",
@@ -159,13 +162,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#PFCToSTNp", Desc: "strong pfc to stn",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},
 			{Sel: "#PFCToSTNs", Desc: "strong pfc to stn",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.3",
+					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
 				}},

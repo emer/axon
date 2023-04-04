@@ -620,8 +620,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.VgccH -= glong * nrn.VgccH
 	nrn.Gak -= glong * nrn.Gak
 
-	nrn.SKCai -= glong * nrn.SKCai
-	nrn.SKCaM -= glong * nrn.SKCaM
+	// don't mess with SKCa -- longer time scale
 	nrn.Gsk -= glong * nrn.Gsk
 
 	// learning-based NMDA, Ca values decayed in Learn.DecayNeurCa
@@ -696,7 +695,8 @@ func (ac *ActParams) InitActs(rnd erand.Rand, nrn *Neuron) {
 	nrn.Gak = 0
 	nrn.VgccCaInt = 0
 
-	nrn.SKCai = 0
+	nrn.SKCaIn = 1
+	nrn.SKCaR = 0
 	nrn.SKCaM = 0
 	nrn.Gsk = 0
 
@@ -785,9 +785,9 @@ func (ac *ActParams) GSkCaFmCa(nrn *Neuron) {
 		return
 	}
 	if ac.SKCa.CaD.IsTrue() {
-		nrn.SKCai = ac.SKCa.CaScale * nrn.CaSpkD // todo: CaD?
+		nrn.SKCai = ac.SKCa.CaUpdate(nrn.CaSpkD, nrn.SKCai)
 	} else {
-		nrn.SKCai = ac.SKCa.CaScale * nrn.CaSpkP // todo: CaP?
+		nrn.SKCai = ac.SKCa.CaUpdate(nrn.CaSpkP, nrn.SKCai)
 	}
 	nrn.SKCaM = ac.SKCa.MFmCa(nrn.SKCai, nrn.SKCaM)
 	nrn.Gsk = ac.SKCa.Gbar * nrn.SKCaM

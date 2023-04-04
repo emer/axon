@@ -94,6 +94,7 @@ type Sim struct {
 	UpdtInterval int           `min:"1" def:"10"  desc:"how often to update display (in cycles)"`
 	Net          *axon.Network `view:"no-inline" desc:"the network -- click to view / edit parameters for layers, prjns, etc"`
 	NeuronEx     NeuronEx      `view:"no-inline" desc:"extra neuron state for additional channels: VGCC, AK"`
+	Context      axon.Context  `desc:"axon timing parameters and state"`
 	Stats        estats.Stats  `desc:"contains computed statistic values"`
 	Logs         elog.Logs     `view:"no-inline" desc:"logging"`
 	Params       params.Sets   `view:"no-inline" desc:"full collection of param sets -- not really interesting for this model"`
@@ -128,7 +129,6 @@ func (ss *Sim) New() {
 func (ss *Sim) Defaults() {
 	ss.UpdtInterval = 10
 	ss.GeClamp = true
-	ss.Cycle = 0
 	ss.SpikeHz = 50
 	ss.Ge = 0.05
 	ss.Gi = 0.1
@@ -144,6 +144,9 @@ func (ss *Sim) Defaults() {
 	ss.NCycles = 200
 	ss.OnCycle = 10
 	ss.OffCycle = 160
+	ss.Context.Defaults()
+	ss.Context.Reset()
+	ss.Context.Mode = etime.Train
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +183,7 @@ func (ss *Sim) InitWts(net *axon.Network) {
 // Init restarts the run, and initializes everything, including network weights
 // and resets the epoch log table
 func (ss *Sim) Init() {
-	ss.Cycle = 0
+	ss.Context.Reset()
 	ss.InitWts(ss.Net)
 	ss.NeuronEx.Init()
 	ss.StopNow = false
@@ -192,13 +195,13 @@ func (ss *Sim) Init() {
 // use tabs to achieve a reasonable formatting overall
 // and add a few tabs at the end to allow for expansion..
 func (ss *Sim) Counters() string {
-	return fmt.Sprintf("Cycle:\t%d\t\t\t", ss.Cycle)
+	return fmt.Sprintf("Cycle:\t%d\t\t\t", ss.Context.Cycle)
 }
 
 func (ss *Sim) UpdateView() {
 	ss.TstCycPlot.UpdatePlot()
 	if ss.NetView != nil && ss.NetView.IsVisible() {
-		ss.NetView.Record(ss.Counters(), ss.Cycle)
+		ss.NetView.Record(ss.Counters(), int(ss.Context.Cycle))
 		// note: essential to use Go version of update when called from another goroutine
 		ss.NetView.GoUpdate() // note: using counters is significantly slower..
 	}
@@ -212,26 +215,24 @@ func (ss *Sim) RunCycles() {
 	ss.Init()
 	ss.StopNow = false
 	ss.Net.InitActs()
+	ss.Context.NewState(etime.Train)
 	ss.SetParams("", false)
-	ly := ss.Net.AxonLayerByName("Neuron")
-	nrn := &(ly.Neurons[0])
+	// ly := ss.Net.AxonLayerByName("Neuron")
+	// nrn := &(ly.Neurons[0])
 	inputOn := false
 	for cyc := 0; cyc < ss.NCycles; cyc++ {
-		ss.Cycle = cyc
 		switch cyc {
 		case ss.OnCycle:
 			inputOn = true
 		case ss.OffCycle:
 			inputOn = false
 		}
-		// nrn.Noise = float32(ly.Params.Act.Noise.Gen(-1))
-		// nrn.Ge += nrn.Noise // GeNoise
-		nrn.Gi = 0
 		ss.NeuronUpdt(ss.Net, inputOn)
-		ss.Logs.LogRow(etime.Test, etime.Cycle, ss.Cycle)
-		if ss.Cycle%ss.UpdtInterval == 0 {
+		ss.Logs.LogRow(etime.Test, etime.Cycle, cyc)
+		if cyc%ss.UpdtInterval == 0 {
 			ss.UpdateView()
 		}
+		ss.Context.CycleInc()
 		if ss.StopNow {
 			break
 		}
@@ -246,6 +247,9 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 	ac := &ly.Params.Act
 	nrn := &(ly.Neurons[0])
 	nex := &ss.NeuronEx
+	// nrn.Noise = float32(ly.Params.Act.Noise.Gen(-1))
+	// nrn.Ge += nrn.Noise // GeNoise
+	// nrn.Gi = 0
 	if inputOn {
 		if ss.GeClamp {
 			nrn.GeRaw = ss.Ge
@@ -264,20 +268,10 @@ func (ss *Sim) NeuronUpdt(nt *axon.Network, inputOn bool) {
 		nrn.GeRaw = 0
 		nrn.GeSyn = 0
 	}
-	nrn.Ge = nrn.GeSyn
-	nrn.Gi = ss.Gi
-
-	ac.NMDAFmRaw(nrn, 0)
-	ac.GvgccFmVm(nrn)
-	ac.GkFmVm(nrn)
-
-	ac.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
-	nrn.GgabaB = ac.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
-
-	nrn.Gi += nrn.GgabaB
-
-	ac.VmFmG(nrn)
-	ac.SpikeFmVm(nrn)
+	nrn.GiRaw = ss.Gi
+	nrn.GiSyn = ac.Dt.GiSynFmRawSteady(nrn.GiRaw)
+	ly.GInteg(&ss.Context, 0, nrn, &ly.Pools[0], ly.Vals)
+	ly.SpikeFmG(&ss.Context, 0, nrn)
 }
 
 // Stop tells the sim to stop running
@@ -364,10 +358,10 @@ func (ss *Sim) ConfigLogItems() {
 		Range:  minmax.F64{Max: 1},
 		Write: elog.WriteMap{
 			etime.Scope(etime.Test, etime.Cycle): func(ctx *elog.Context) {
-				ctx.SetInt(ss.Cycle)
+				ctx.SetInt(int(ss.Context.Cycle))
 			}}})
 
-	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "GnmdaSyn", "Gnmda", "GABAB", "GgabaB", "Gvgcc", "VgccM", "VgccH", "Gak", "MahpN", "GknaMed", "GknaSlow"}
+	vars := []string{"GeSyn", "Ge", "Gi", "Inet", "Vm", "Act", "Spike", "Gk", "ISI", "ISIAvg", "VmDend", "GnmdaSyn", "Gnmda", "GABAB", "GgabaB", "Gvgcc", "VgccM", "VgccH", "Gak", "MahpN", "GknaMed", "GknaSlow", "GiSyn"}
 
 	for _, vnm := range vars {
 		cvnm := vnm // closure

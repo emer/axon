@@ -144,9 +144,10 @@ type Neuron struct {
 	VgccCa    float32 `desc:"instantaneous VGCC calcium flux -- can be driven by spiking or directly from Gvgcc"`
 	VgccCaInt float32 `desc:"time-integrated VGCC calcium flux -- this is actually what drives learning"`
 
-	SKCai float32 `desc:"intracellular Calcium concentration for activation of SKCa channels, driven by VGCC activation from spiking and decaying / buffererd relatively slowly."`
-	SKCaM float32 `desc:"Calcium-gated potassium channel gating factor, driven by SKCai via a Hill equation as in chans.SKPCaParams."`
-	Gsk   float32 `desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`
+	SKCaIn float32 `desc:"intracellular calcium store level, available to be released with spiking as SKCaR, which can bind to SKCa receptors and drive K current. it is replenished only when there is no spiking activity"`
+	SKCaR  float32 `desc:"released amount of intracellular calcium, from SKCaIn, as a function of spiking events.  this can bind to SKCa channels and drive K currents."`
+	SKCaM  float32 `desc:"Calcium-gated potassium channel gating factor, driven by SKCaR via a Hill equation as in chans.SKPCaParams."`
+	Gsk    float32 `desc:"Calcium-gated potassium channel conductance as a function of Gbar * SKCaM."`
 
 	/////////////////////////////////////////
 	//  Special Layer Vars Below
@@ -156,6 +157,8 @@ type Neuron struct {
 	CtxtGe     float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
 	CtxtGeRaw  float32 `desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
 	CtxtGeOrig float32 `desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`
+
+	pad, pad1, pad2 float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

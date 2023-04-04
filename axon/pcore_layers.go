@@ -352,9 +352,9 @@ func (ly *Layer) STNDefaults() {
 		ly.Params.Act.SKCa.CaScale = 4
 	} else {
 		ly.Params.Act.SKCa.CaD.SetBool(true)
-		ly.Params.Act.SKCa.CaScale = 3
-		ly.Params.Act.Init.GeBase = 0.2
-		ly.Params.Act.Init.GeVar = 0.2
+		ly.Params.Act.SKCa.CaScale = 4
+		ly.Params.Act.Init.GeBase = 0.0
+		ly.Params.Act.Init.GeVar = 0.0
 	}
 
 	for _, pj := range ly.RcvPrjns {
@@ -364,12 +364,14 @@ func (ly *Layer) STNDefaults() {
 		if strings.HasSuffix(ly.Nm, "STNp") {
 			if pj.Send.LayerType() == GPLayer { // GPeInToSTNp
 				pj.Params.PrjnScale.Abs = 0.1
+			} else {
+				pj.Params.PrjnScale.Abs = 2.0 // pfc inputs
 			}
 		} else { // STNs
 			if pj.Send.LayerType() == GPLayer { // GPeInToSTNs
 				pj.Params.PrjnScale.Abs = 0.1 // note: not currently used -- interferes with threshold-based Ca self-inhib dynamics
 			} else {
-				pj.Params.PrjnScale.Abs = 0.2 // weaker inputs
+				pj.Params.PrjnScale.Abs = 1.0
 			}
 		}
 	}

@@ -47,7 +47,6 @@ type Sim struct {
 	SpikeCa     float32          `desc:"increment in Ca from spiking"`
 	CaDecayTau  float32          `desc:"time constant for Ca Decay"`
 	TimeCaStart float32          `desc:"time-run starting Ca conc"`
-	TimeCaEnd   float32          `desc:"time-run ending Ca conc / value during spiking"`
 	Table       *etable.Table    `view:"no-inline" desc:"table for plot"`
 	Plot        *eplot.Plot2D    `view:"-" desc:"the plot"`
 	TimeTable   *etable.Table    `view:"no-inline" desc:"table for plot"`
@@ -74,7 +73,6 @@ func (ss *Sim) Config() {
 	// AnwarRoomeNedelescuEtAl14 is definitive study -- looks like ~10-20.
 	// old: HelmchenImotoSakmann96 -- says 100-ish
 	ss.TimeCaStart = 0
-	ss.TimeCaEnd = 1
 	ss.Update()
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
@@ -137,7 +135,6 @@ func (ss *Sim) TimeRun() {
 	dt := ss.TimeTable
 
 	ca := ss.TimeCaStart
-	cainc := (ss.TimeCaEnd - ss.TimeCaStart) / float32(ss.TimeSteps)
 	msdt := float32(0.001)
 	m := float32(0)
 
@@ -159,11 +156,6 @@ func (ss *Sim) TimeRun() {
 				ca += ss.SpikeCa
 			}
 			ca -= ca / ss.CaDecayTau
-		} else {
-			ca += cainc
-			if ca > ss.TimeCaEnd {
-				ca = ss.TimeCaEnd
-			}
 		}
 	}
 	ss.TimePlot.Update()
