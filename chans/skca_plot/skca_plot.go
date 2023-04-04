@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/chans"
+	"github.com/emer/axon/kinase"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -37,22 +38,19 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	SKCa        chans.SKCaParams `desc:"SKCa function"`
-	CaStart     float32          `def:"0.001" desc:"starting Ca conc"`
-	CaEnd       float32          `def:"2" desc:"ending Ca conc"`
-	CaStep      float32          `def:"0.05" desc:"Ca conc increment"`
-	TimeSteps   int              `desc:"number of time steps"`
-	TimeSpike   bool             `desc:"do spiking instead of Ca conc ramp"`
-	SpikeFreq   float32          `desc:"spiking frequency"`
-	SpikeCa     float32          `desc:"increment in Ca from spiking"`
-	CaDecayTau  float32          `desc:"time constant for Ca Decay"`
-	TimeCaStart float32          `desc:"time-run starting Ca conc"`
-	Table       *etable.Table    `view:"no-inline" desc:"table for plot"`
-	Plot        *eplot.Plot2D    `view:"-" desc:"the plot"`
-	TimeTable   *etable.Table    `view:"no-inline" desc:"table for plot"`
-	TimePlot    *eplot.Plot2D    `view:"-" desc:"the plot"`
-	Win         *gi.Window       `view:"-" desc:"main GUI window"`
-	ToolBar     *gi.ToolBar      `view:"-" desc:"the master toolbar"`
+	SKCa       chans.SKCaParams `desc:"SKCa params"`
+	CaParams   kinase.CaParams  `desc:"time constants for integrating Ca from spiking across M, P and D cascading levels"`
+	NoSpikeThr float32          `def:"0.5" desc:"threshold of SK M gating factor above which the neuron cannot spike"`
+	CaStep     float32          `def:"0.05" desc:"Ca conc increment for M gating func plot"`
+	TimeSteps  int              `desc:"number of time steps"`
+	TimeSpike  bool             `desc:"do spiking instead of Ca conc ramp"`
+	SpikeFreq  float32          `desc:"spiking frequency"`
+	Table      *etable.Table    `view:"no-inline" desc:"table for plot"`
+	Plot       *eplot.Plot2D    `view:"-" desc:"the plot"`
+	TimeTable  *etable.Table    `view:"no-inline" desc:"table for plot"`
+	TimePlot   *eplot.Plot2D    `view:"-" desc:"the plot"`
+	Win        *gi.Window       `view:"-" desc:"main GUI window"`
+	ToolBar    *gi.ToolBar      `view:"-" desc:"the master toolbar"`
 }
 
 // TheSim is the overall state for this simulation
@@ -62,17 +60,12 @@ var TheSim Sim
 func (ss *Sim) Config() {
 	ss.SKCa.Defaults()
 	ss.SKCa.Gbar = 1
-	ss.CaStart = 0.001
-	ss.CaEnd = 5
-	ss.CaStep = .1
-	ss.TimeSteps = 200
+	ss.CaParams.Defaults()
+	ss.CaStep = .05
+	ss.TimeSteps = 200 * 3
 	ss.TimeSpike = true
-	ss.SpikeFreq = 50
-	ss.SpikeCa = 0.1
-	ss.CaDecayTau = 20 // .4ms in Fujita, 185.7 in Gillies & Willshaw;
-	// AnwarRoomeNedelescuEtAl14 is definitive study -- looks like ~10-20.
-	// old: HelmchenImotoSakmann96 -- says 100-ish
-	ss.TimeCaStart = 0
+	ss.NoSpikeThr = 0.5
+	ss.SpikeFreq = 100
 	ss.Update()
 	ss.Table = &etable.Table{}
 	ss.ConfigTable(ss.Table)
@@ -89,10 +82,10 @@ func (ss *Sim) CamRun() {
 	ss.Update()
 	dt := ss.Table
 
-	nv := int((ss.CaEnd - ss.CaStart) / ss.CaStep)
+	nv := int(1.0 / ss.CaStep)
 	dt.SetNumRows(nv)
 	for vi := 0; vi < nv; vi++ {
-		cai := ss.CaStart + float32(vi)*ss.CaStep
+		cai := float32(vi) * ss.CaStep
 		mh := ss.SKCa.MAsympHill(cai)
 		mg := ss.SKCa.MAsympGW06(cai)
 
@@ -122,8 +115,8 @@ func (ss *Sim) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Ca", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Mhill", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Mgw06", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Mhill", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Mgw06", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 1)
 	return plt
 }
 
@@ -134,29 +127,41 @@ func (ss *Sim) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	ca := ss.TimeCaStart
-	msdt := float32(0.001)
+	caIn := float32(1)
+	caR := float32(0)
 	m := float32(0)
+	spike := float32(0)
+	msdt := float32(0.001)
+
+	caM := float32(0)
+	caP := float32(0)
+	caD := float32(0)
 
 	isi := int(1000 / ss.SpikeFreq)
+	trial := 0
 
 	dt.SetNumRows(ss.TimeSteps)
 	for ti := 0; ti < ss.TimeSteps; ti++ {
+		trial = ti / 200
 		t := float32(ti) * msdt
-		m = ss.SKCa.MFmCa(ca, m)
-		g := m * ss.SKCa.Gbar * m
+		m = ss.SKCa.MFmCa(caR, m)
+		ss.SKCa.CaInRFmSpike(spike, caD, &caIn, &caR)
 
 		dt.SetCellFloat("Time", ti, float64(t))
-		dt.SetCellFloat("Ca", ti, float64(ca))
-		dt.SetCellFloat("Gsk", ti, float64(g))
+		dt.SetCellFloat("Spike", ti, float64(spike))
+		dt.SetCellFloat("CaM", ti, float64(caM))
+		dt.SetCellFloat("CaP", ti, float64(caP))
+		dt.SetCellFloat("CaD", ti, float64(caD))
+		dt.SetCellFloat("CaIn", ti, float64(caIn))
+		dt.SetCellFloat("CaR", ti, float64(caR))
 		dt.SetCellFloat("M", ti, float64(m))
 
-		if ss.TimeSpike {
-			if ti%isi < 3 {
-				ca += ss.SpikeCa
-			}
-			ca -= ca / ss.CaDecayTau
+		if m < ss.NoSpikeThr && trial%2 == 0 && ti%isi == 0 { // spike on even trials
+			spike = 1
+		} else {
+			spike = 0
 		}
+		ss.CaParams.FmSpike(spike, &caM, &caP, &caD)
 	}
 	ss.TimePlot.Update()
 }
@@ -168,8 +173,12 @@ func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
 
 	sch := etable.Schema{
 		{"Time", etensor.FLOAT64, nil, nil},
-		{"Ca", etensor.FLOAT64, nil, nil},
-		{"Gsk", etensor.FLOAT64, nil, nil},
+		{"Spike", etensor.FLOAT64, nil, nil},
+		{"CaM", etensor.FLOAT64, nil, nil},
+		{"CaP", etensor.FLOAT64, nil, nil},
+		{"CaD", etensor.FLOAT64, nil, nil},
+		{"CaIn", etensor.FLOAT64, nil, nil},
+		{"CaR", etensor.FLOAT64, nil, nil},
 		{"M", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
@@ -181,8 +190,13 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("Time", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Gsk", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Spike", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("CaM", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("CaP", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("CaD", eplot.Off, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("CaIn", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("CaR", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("M", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	return plt
 }
 
@@ -225,7 +239,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	split.SetSplits(.3, .7)
 
-	tbar.AddAction(gi.ActOpts{Label: "Ca-G Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(gi.ActOpts{Label: "Ca-M Run", Icon: "update", Tooltip: "Run the equations and plot results."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		ss.CamRun()
 		vp.SetNeedsFullRender()
 	})

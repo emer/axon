@@ -181,19 +181,23 @@ func (ai *ActInitParams) GetGiBase(rnd erand.Rand) float32 {
 // DecayParams control the decay of activation state in the DecayState function
 // called in NewState when a new state is to be processed.
 type DecayParams struct {
-	Act   float32     `def:"0,0.2,0.5,1" max:"1" min:"0" desc:"proportion to decay most activation state variables toward initial values at start of every ThetaCycle (except those controlled separately below) -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
-	Glong float32     `def:"0,0.6" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow a fresh start -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
-	AHP   float32     `def:"0" max:"1" min:"0" desc:"decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa -- has a separate decay because often useful to have this not decay at all even if decay is on."`
-	OnRew slbool.Bool `desc:"decay layer at end of ThetaCycle when there is a global reward -- true by default for PTPred, PTMaint and PFC Super layers"`
+	Act     float32     `def:"0,0.2,0.5,1" max:"1" min:"0" desc:"proportion to decay most activation state variables toward initial values at start of every ThetaCycle (except those controlled separately below) -- if 1 it is effectively equivalent to full clear, resetting other derived values.  ISI is reset every AlphaCycle to get a fresh sample of activations (doesn't affect direct computation -- only readout)."`
+	Glong   float32     `def:"0,0.6" max:"1" min:"0" desc:"proportion to decay long-lasting conductances, NMDA and GABA, and also the dendritic membrane potential -- when using random stimulus order, it is important to decay this significantly to allow a fresh start -- but set Act to 0 to enable ongoing activity to keep neurons in their sensitive regime."`
+	AHP     float32     `def:"0" max:"1" min:"0" desc:"decay of afterhyperpolarization currents, including mAHP, sAHP, and KNa -- has a separate decay because often useful to have this not decay at all even if decay is on."`
+	LearnCa float32     `def:"0" max:"1" min:"0" desc:"decay of Ca variables driven by spiking activity used in learning: CaSpk* and Ca* variables. These are typically not decayed but may need to be in some situations."`
+	OnRew   slbool.Bool `desc:"decay layer at end of ThetaCycle when there is a global reward -- true by default for PTPred, PTMaint and PFC Super layers"`
+
+	pad, pad1, pad2 float32
 }
 
-func (ai *DecayParams) Update() {
+func (dp *DecayParams) Update() {
 }
 
-func (ai *DecayParams) Defaults() {
-	ai.Act = 0.2
-	ai.Glong = 0.6
-	ai.AHP = 0
+func (dp *DecayParams) Defaults() {
+	dp.Act = 0.2
+	dp.Glong = 0.6
+	dp.AHP = 0
+	dp.LearnCa = 0
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -572,6 +576,36 @@ func (ac *ActParams) Update() {
 ///////////////////////////////////////////////////////////////////////
 //  Init
 
+// DecayLearnCa decays neuron-level calcium learning and spiking variables
+// by given factor.  Note: this is generally NOT useful,
+// causing variability in these learning factors as a function
+// of the decay parameter that then has impacts on learning rates etc.
+// see Act.Decay.LearnCa param controlling this
+func (ac *ActParams) DecayLearnCa(nrn *Neuron, decay float32) {
+	nrn.GnmdaLrn -= decay * nrn.GnmdaLrn
+	nrn.NmdaCa -= decay * nrn.NmdaCa
+	nrn.SnmdaO -= decay * nrn.SnmdaO
+	nrn.SnmdaI -= decay * nrn.SnmdaI
+
+	nrn.VgccCa -= decay * nrn.VgccCa
+	nrn.VgccCaInt -= decay * nrn.VgccCaInt
+
+	nrn.CaLrn -= decay * nrn.CaLrn
+
+	nrn.CaSyn -= decay * nrn.CaSyn
+	nrn.CaSpkM -= decay * nrn.CaSpkM
+	nrn.CaSpkP -= decay * nrn.CaSpkP
+	nrn.CaSpkD -= decay * nrn.CaSpkD
+
+	nrn.CaM -= decay * nrn.CaM
+	nrn.CaP -= decay * nrn.CaP
+	nrn.CaD -= decay * nrn.CaD
+
+	nrn.SKCaIn += decay * (1.0 - nrn.SKCaIn) // recovers
+	nrn.SKCaR -= decay * nrn.SKCaR
+	nrn.SKCaM -= decay * nrn.SKCaM
+}
+
 // DecayState decays the activation state toward initial values
 // in proportion to given decay parameter.  Special case values
 // such as Glong and KNa are also decayed with their
@@ -623,7 +657,9 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	// don't mess with SKCa -- longer time scale
 	nrn.Gsk -= glong * nrn.Gsk
 
-	// learning-based NMDA, Ca values decayed in Learn.DecayNeurCa
+	if ac.Decay.LearnCa > 0 { // learning-based Ca values -- not usual
+		ac.DecayLearnCa(nrn, ac.Decay.LearnCa)
+	}
 
 	nrn.Inet = 0
 	nrn.GeRaw = 0
@@ -784,12 +820,8 @@ func (ac *ActParams) GSkCaFmCa(nrn *Neuron) {
 	if ac.SKCa.Gbar == 0 {
 		return
 	}
-	if ac.SKCa.CaD.IsTrue() {
-		nrn.SKCai = ac.SKCa.CaUpdate(nrn.CaSpkD, nrn.SKCai)
-	} else {
-		nrn.SKCai = ac.SKCa.CaUpdate(nrn.CaSpkP, nrn.SKCai)
-	}
-	nrn.SKCaM = ac.SKCa.MFmCa(nrn.SKCai, nrn.SKCaM)
+	nrn.SKCaM = ac.SKCa.MFmCa(nrn.SKCaR, nrn.SKCaM)
+	ac.SKCa.CaInRFmSpike(nrn.Spike, nrn.CaSpkD, &nrn.SKCaIn, &nrn.SKCaR)
 	nrn.Gsk = ac.SKCa.Gbar * nrn.SKCaM
 	nrn.Gk += nrn.Gsk
 }

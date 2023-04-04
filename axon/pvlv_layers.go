@@ -161,6 +161,7 @@ func (ly *Layer) PPTgDefaults() {
 	lp.Inhib.Pool.FFPrv = 10 // key for temporal derivative
 	lp.Act.Decay.Act = 1
 	lp.Act.Decay.Glong = 1
+	lp.Act.Decay.LearnCa = 1 // uses CaSpkD as a readout!
 	lp.Learn.TrgAvgAct.On.SetBool(false)
 	lp.PVLV.Thr = 0.2
 	lp.PVLV.Gain = 2
@@ -174,6 +175,7 @@ func (ly *Layer) PPTgDefaults() {
 func (ly *LayerParams) VSPatchDefaults() {
 	ly.Act.Decay.Act = 1
 	ly.Act.Decay.Glong = 1
+	ly.Act.Decay.LearnCa = 1 // uses CaSpkD as a readout!
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Layer.On.SetBool(false)
 	ly.Inhib.Layer.Gi = 0.5

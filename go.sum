@@ -59,8 +59,8 @@ github.com/dlclark/regexp2 v1.8.1 h1:6Lcdwya6GjPUNsBct8Lg/yRPwMhABj269AAzdGSiR+0
 github.com/dlclark/regexp2 v1.8.1/go.mod h1:DHkYz0B9wPfa6wondMfaivmHpzrQ3v9q8cnmRbL6yW8=
 github.com/emer/emergent v1.3.50 h1:6Lg6kdwPa2qyE/GOjrIFXX8K9820bTUOCn9mBV4l1rk=
 github.com/emer/emergent v1.3.50/go.mod h1:9oJkmYgl+ZYtjB6wVzET56l04KQJmgiRa1Zn8Shu8pw=
-github.com/emer/empi v1.0.17 h1:1arFWAzdDR9emrKbz2sTGMhfAa+Kk0y3UTeBW1j9ltw=
-github.com/emer/empi v1.0.17/go.mod h1:cwXlhwSb91QvfadOlVRrXvcpLGa1ld3GZme5ygb4kt8=
+github.com/emer/empi v1.0.19 h1:se2B3gPWNrjcbGiDMiVAd0Z3Unyy3NCzE2cUFQ0h4xg=
+github.com/emer/empi v1.0.19/go.mod h1:cwXlhwSb91QvfadOlVRrXvcpLGa1ld3GZme5ygb4kt8=
 github.com/emer/envs v1.0.6 h1:QChYZKiBLNziBfkDjPezvNP45JY06jiWTza1/5z9boI=
 github.com/emer/envs v1.0.6/go.mod h1:Y1/Wmr7ztP+2mD24ZkwMr3xMeGgbS+z7p9rziU208nM=
 github.com/emer/etable v1.1.20 h1:tFsO7ypNn7x0SrOmQotUJS+EU7n32mCHTe94fAMkDRI=

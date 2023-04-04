@@ -273,32 +273,6 @@ func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
 	nrn.CaDiff = 0
 }
 
-// DecayNeurCa decays neuron-level calcium learning and spiking variables
-// by given factor.  Note: this is NOT called by default and is generally
-// not useful, causing variability in these learning factors as a function
-// of the decay parameter that then has impacts on learning rates etc.
-// It is only here for reference or optional testing.
-func (ln *LearnNeurParams) DecayCaLrnSpk(nrn *Neuron, decay float32) {
-	nrn.GnmdaLrn -= decay * nrn.GnmdaLrn
-	nrn.NmdaCa -= decay * nrn.NmdaCa
-	nrn.SnmdaO -= decay * nrn.SnmdaO
-	nrn.SnmdaI -= decay * nrn.SnmdaI
-
-	nrn.VgccCa -= decay * nrn.VgccCa
-	nrn.VgccCaInt -= decay * nrn.VgccCaInt
-
-	nrn.CaLrn -= decay * nrn.CaLrn
-
-	nrn.CaSyn -= decay * nrn.CaSyn
-	nrn.CaSpkM -= decay * nrn.CaSpkM
-	nrn.CaSpkP -= decay * nrn.CaSpkP
-	nrn.CaSpkD -= decay * nrn.CaSpkD
-
-	nrn.CaM -= decay * nrn.CaM
-	nrn.CaP -= decay * nrn.CaP
-	nrn.CaD -= decay * nrn.CaD
-}
-
 // LrnNMDAFmRaw updates the separate NMDA conductance and calcium values
 // based on GeTot = GeRaw + external ge conductance.  These are the variables
 // that drive learning -- can be the same as activation but also can be different
