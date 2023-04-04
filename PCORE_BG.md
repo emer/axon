@@ -30,7 +30,7 @@ In summary, the GPe is the core integrator of the BG circuit, while the STN orch
 
 # Dynamics
 
-![Net](figs/fig_pcore_netdyn_cyc.png?raw=true "Network gating dynamics")
+<img src="figs/fig_pcore_netdyn_cyc.png" width="800">
 
 The above figure shows the key stages unfolding over cycles within a standard Alpha cycle of 100 cycles.  Some of the time constants have been sped up to ensure everything occurs within this timeframe -- it may take longer in the real system.
 
@@ -44,7 +44,7 @@ The above figure shows the key stages unfolding over cycles within a standard Al
 
 * Cycle 91: STN layers regain activation, resetting the circuit.  If PFC inputs do not turn off, the system will not re-gate, because the KCa channels are not fully reset.
 
-![Net](figs/fig_pcore_rt_all_default.png?raw=true "Reaction time behavior")
+<img src="figs/fig_pcore_rt_all_default.png" width="800">
 
 The above figure shows the reaction time (cycles) to activate the thalamus above a firing threshold of .5, for a full sweep of ACC positive and negative values, which preferentially activate Go and No respectively.  The positive values are incremented by .1 in an outer loop, while the negative values are incremented by .1 within each level of positive.  Thus, you can see that as NoGo gets stronger, it competes against Go, causing an increase in reaction time, followed by a failure to gate at all.
 
@@ -52,13 +52,19 @@ The above figure shows the reaction time (cycles) to activate the thalamus above
 
 Recent data: a majority of STN units show decreasing ramp prior to go cue, then small subset show brief phasic burst at Go then brief inhib window then *strong sustained activity* during / after movement.  This sustained activity will turn off gating window -- gating in PFCd can presumably do that and provide the final termination of the gating event.
 
-![RT](figs/fig_fujimoto_kita_93_fig3_stn.png?raw=true "Fujimoto & Kita, 1993, figure 3")
+<img src="figs/fig_fujimoto_kita_93_fig3_stn.png" width="800">
 
-![RT](figs/fig_mirzaei_et_al_2017_stn.png?raw=true "STN recordings from Mizraei et al, 2017")
+**Figure:** Fujimoto & Kita, 1993, figure 3
+
+<img src="figs/fig_mirzaei_et_al_2017_stn.png" width="800">
+
+**Figure:** STN recordings from Mizraei et al, 2017
 
 Data from [Dodson et al, 2015](#references) and [Mirzaei et al, 2017](#references) shows brief increase then dips or increases in activity in GPe prototypical neurons, with also very consistent data about brief burst then shutoff in TA neurons.  So both outer and inner GPe prototypical neuron profiles can be found.
 
-![RT](figs/fig_dodson_et_al_2015_gpe.png?raw=true "GPe recordings around movement from Dodson et al, 2015")
+<img src="figs/fig_dodson_et_al_2015_gpe.png" width="800">
+
+**Figure:** GPe recordings around movement from Dodson et al, 2015
 
 ## STNp pause mechanisms: SKCa channels
 

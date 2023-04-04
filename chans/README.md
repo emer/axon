@@ -56,15 +56,15 @@ We take a simpler approach which is to just use a bi-exponential function to sim
 
 See `gabab_plot` subdirectory for program that generates these plots:
 
-![GABA-B V-G](gabab_plot/fig_sanders_et_al_13_kir_v_g.png)
+<img src="gabab_plot/fig_sanders_et_al_13_kir_v_g.png" width="800">
 
 **V-G plot for GABA-B / GIRK** from Sanders et al, 2013.
 
-![GABA-B S-G](gabab_plot/fig_thomson_destexhe99_s_g_sigmoid.png)
+<img src="gabab_plot/fig_thomson_destexhe99_s_g_sigmoid.png" width="800">
 
 **Spike-G sigmoid plot for GABA-B / GIRK** from Thomson & Destexhe (1999)
 
-![GABA-B Time](gabab_plot/fig_thomson_destexhe99_g_time.png)
+<img src="gabab_plot/fig_thomson_destexhe99_g_time.png" width="800">
 
 **Bi-exponential time course with 45msec rise and 50msec decay** fitting to results from Thomson & Destexhe (1999)
 
@@ -81,7 +81,7 @@ where v is the normalized Vm value from the Leabra rate code equations -- `vbio`
 
 See the `nmda_plot` directory for a program that plots this function, which looks like this (in terms of net conductance also taking into account the driving potential, which adds an `(E - v)` term in the numerator).
 
-![GABA-B V-G](nmda_plot/fig_brunelwang01.png)
+<img src="nmda_plot/fig_brunelwang01.png" width="800">
 
 **V-G plot for NMDA** from Brunel & Wang (2001)
 

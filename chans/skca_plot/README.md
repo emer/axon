@@ -22,11 +22,11 @@ SKCa can be activated by intracellular stores in a way that drives pauses in fir
 	}
 ```
 
-<img src="fig_skca_m.png" height="400">
+<img src="fig_skca_m.png" width="800">
 
 **Figure 1:** M gating as a function of Ca, using Hill function with exponent 4, C50 = .5.
 
-<img src="fig_skca_time.png" height="400">
+<img src="fig_skca_time.png" width="800">
 
 **Figure 2:** Time plot showing pausing and lack of recovery.  The spiking input to the neuron is toggled every 200 msec (theta cycle), with 3 cycles shown.  The CaIn level does not recover during the off phase -- 2 or more such phases are required.
 
