@@ -342,16 +342,18 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Act.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
 	ly.Params.Act.Dend.SSGi = 0
 	ly.Params.Inhib.Layer.On.SetBool(true) // true = important for real-world cases
-	ly.Params.Inhib.Layer.Gi = 0.2
+	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
-		// todo SKCa prams
+		ly.Params.Act.SKCa.Gbar = 3
+		// otherwise defaults are set to STNp
 	} else {
-		// todo SKCa prams
-		ly.Params.Act.Init.GeBase = 0.0
-		ly.Params.Act.Init.GeVar = 0.0
+		ly.Params.Act.SKCa.Gbar = 3
+		ly.Params.Act.SKCa.C50 = 0.4
+		ly.Params.Act.SKCa.KCaR = 0.4
+		ly.Params.Act.SKCa.CaRDecayTau = 200
 	}
 
 	for _, pj := range ly.RcvPrjns {

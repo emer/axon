@@ -10,6 +10,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 
@@ -626,7 +627,7 @@ func (ss *Sim) TrialStats() {
 	vtly := net.AxonLayerByName("PFCVM")
 	gated := vtly.AnyGated()
 	if !gated {
-		ss.Stats.SetFloat("PFCVM_RT", 0)
+		ss.Stats.SetFloat("PFCVM_RT", math.NaN())
 		return
 	}
 	mode := ss.Context.Mode
@@ -635,7 +636,7 @@ func (ss *Sim) TrialStats() {
 	// note: starts at 200 due to first phase
 	for row := 200; row < trlog.Rows; row++ {
 		vts := trlog.CellTensorFloat1D("PFCVM_Spike", row, 0)
-		if vts > 0 {
+		if vts > 0.05 {
 			spkCyc = row - 200
 			break
 		}

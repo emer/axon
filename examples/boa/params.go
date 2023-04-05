@@ -247,12 +247,11 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true", // this is critical, else too active
 					"Layer.Inhib.Layer.Gi":             "0.6",
+					"Layer.Act.SKCa.Gbar":              "3",
 					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: "#VpSTNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":            "0.2",
-					"Layer.Act.Init.GeVar":             "0.2",
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.2",
@@ -485,16 +484,15 @@ var ParamSets = params.Sets{
 			// BG prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":      "1.0", // stronger
-					"Prjn.SWt.Init.SPct":      "0",
-					"Prjn.SWt.Init.Mean":      "0.5",
-					"Prjn.SWt.Init.Var":       "0.25",
-					"Prjn.Matrix.NoGateLRate": "0.005", // 0.005 std -- seems ok..
-					"Prjn.Matrix.CurTrlDA":    "true",
-					"Prjn.Matrix.UseHasRew":   "true", // hack to use US-only timing
-					"Prjn.Matrix.AChDecay":    "0",    // not used if UseHasRew is on
-					"Prjn.Learn.Learn":        "true",
-					"Prjn.Learn.LRate.Base":   "0.1",
+					"Prjn.PrjnScale.Abs":    "1.0", // stronger
+					"Prjn.SWt.Init.SPct":    "0",
+					"Prjn.SWt.Init.Mean":    "0.5",
+					"Prjn.SWt.Init.Var":     "0.25",
+					"Prjn.Matrix.CurTrlDA":  "true",
+					"Prjn.Matrix.UseHasRew": "true", // hack to use US-only timing
+					"Prjn.Matrix.AChDecay":  "0",    // not used if UseHasRew is on
+					"Prjn.Learn.Learn":      "true",
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{

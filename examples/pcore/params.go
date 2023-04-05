@@ -39,10 +39,8 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.5",
 					"Layer.Act.Decay.LearnCa":          "1.0", // key
-					"Layer.Act.SKCa.Gbar":              "2",
+					"Layer.Act.SKCa.Gbar":              "3",
 					"Layer.Act.SKCa.C50":               "0.5",
-					"Layer.Act.SKCa.ActTau":            "15",
-					"Layer.Act.SKCa.DeTau":             "30",
 					"Layer.Act.SKCa.KCaR":              "0.8",
 					"Layer.Act.SKCa.CaRDecayTau":       "150",
 					"Layer.Act.SKCa.CaInThr":           "0.01",
@@ -59,8 +57,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":             "0.8",
 					"Layer.Act.SKCa.Gbar":              "3",
 					"Layer.Act.SKCa.C50":               "0.4",
-					"Layer.Act.SKCa.ActTau":            "15",
-					"Layer.Act.SKCa.DeTau":             "30",
 					"Layer.Act.SKCa.KCaR":              "0.4",
 					"Layer.Act.SKCa.CaRDecayTau":       "200",
 					"Layer.Act.SKCa.CaInThr":           "0.01",
@@ -134,7 +130,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean":      "0.5",
 					"Prjn.SWt.Init.Var":       "0.25",
 					"Prjn.Matrix.CurTrlDA":    "true",
-					"Prjn.Matrix.NoGateLRate": "0.005", // 0.005 lowest that works
+					"Prjn.Matrix.NoGateLRate": "0.002", // 0.002 now lowest
 					"Prjn.Learn.Learn":        "true",
 					"Prjn.Learn.LRate.Base":   "0.1",
 				}},
@@ -196,7 +192,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "2.5", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",

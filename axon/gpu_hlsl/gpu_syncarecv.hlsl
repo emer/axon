@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// performs the SynCa synaptic Ca integration function on all sending projections
+// performs the SynCa synaptic Ca integration function on all recv projections
 
 #include "context.hlsl"
 #include "layerparams.hlsl"

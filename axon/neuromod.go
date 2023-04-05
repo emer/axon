@@ -157,6 +157,14 @@ func (nm *NeuroModParams) DAGain(da float32) float32 {
 	return da
 }
 
+// DASign returns the sign of dopamine effects: D2Mod = -1, else 1
+func (nm *NeuroModParams) DASign() float32 {
+	if nm.DAMod == D2Mod {
+		return -1.0
+	}
+	return 1.0
+}
+
 // LRMod returns overall learning rate modulation factor due to neuromodulation
 // from given dopamine (DA) and ACh inputs.
 // If DALRateMod is true and DAMod == D1Mod or D2Mod, then the sign is a function
@@ -164,12 +172,7 @@ func (nm *NeuroModParams) DAGain(da float32) float32 {
 func (nm *NeuroModParams) LRMod(da, ach float32) float32 {
 	mod := nm.LRModFact(nm.AChLRateMod, ach)
 	if nm.DALRateSign.IsTrue() {
-		da := nm.DAGain(da)
-		if nm.DAMod == D1Mod {
-			mod *= da
-		} else if nm.DAMod == D2Mod {
-			mod *= -da
-		}
+		mod *= nm.DAGain(da) * nm.DASign()
 	} else {
 		mod *= nm.LRModFact(nm.DALRateMod, da)
 	}

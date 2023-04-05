@@ -22,13 +22,13 @@ import (
 // computed using the Hill equations described in Fujita et al (2012), Gunay et al (2008)
 // (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4.
 type SKCaParams struct {
-	Gbar        float32 `def:"0,2" desc:"overall strength of sKCa current -- inactive if 0"`
+	Gbar        float32 `def:"0,2,3" desc:"overall strength of sKCa current -- inactive if 0"`
 	Hill        float32 `viewif:"Gbar>0" def:"4" desc:"Hill coefficient (exponent) for x^h / (x^h + c50^h) function describing the asymptotic gating factor m as a function of Ca -- there are 4 relevant states so a factor around 4 makes sense and is empirically observed"`
-	C50         float32 `viewif:"Gbar>0" def:"0.5" desc:"50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR"`
+	C50         float32 `viewif:"Gbar>0" def:"0.4,0.5" desc:"50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR"`
 	ActTau      float32 `viewif:"Gbar>0" def:"15" desc:"K channel gating factor activation time constant -- roughly 5-15 msec in literature"`
-	DeTau       float32 `viewif:"Gbar>0" def:"30,50" desc:"K channel gating factor deactivation time constant -- roughly 30-50 msec in literature"`
-	KCaR        float32 `viewif:"Gbar>0" def:"0.8" desc:"proportion of CaIn intracellular stores that are released per spike, going into CaR"`
-	CaRDecayTau float32 `viewif:"Gbar>0" def:"150" desc:"SKCaR released calcium decay time constant"`
+	DeTau       float32 `viewif:"Gbar>0" def:"30" desc:"K channel gating factor deactivation time constant -- roughly 30-50 msec in literature"`
+	KCaR        float32 `viewif:"Gbar>0" def:"0.4,0.8" desc:"proportion of CaIn intracellular stores that are released per spike, going into CaR"`
+	CaRDecayTau float32 `viewif:"Gbar>0" def:"150,200" desc:"SKCaR released calcium decay time constant"`
 	CaInThr     float32 `viewif:"Gbar>0" def:"0.01" desc:"level of time-integrated spiking activity (CaSpkD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge."`
 	CaInTau     float32 `viewif:"Gbar>0" def:"50" desc:"time constant in msec for storing CaIn when activity is below CaInThr"`
 

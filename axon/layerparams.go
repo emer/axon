@@ -859,6 +859,7 @@ func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni uint32, nrn *Neur
 // PlusPhaseNeuron does neuron level plus-phase updating
 func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActP = nrn.ActInt
+	nrn.DASign = ly.Learn.NeuroMod.DASign()
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
 	modlr := ly.Learn.NeuroMod.LRMod(vals.NeuroMod.DA, vals.NeuroMod.ACh)
 	dlr := float32(0)
