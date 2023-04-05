@@ -501,6 +501,15 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Learn.Learn":   "false",
 				}},
+			{Sel: ".GPiInhibToMD", Desc: "inhibition from GPi to MD",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2", // todo: experiment -- could be stronger
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.SWt.Adapt.On":  "false",
+					"Prjn.Learn.Learn":   "false",
+				}},
 			{Sel: "#USposToVpMtxGo", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "5", // 5 orig

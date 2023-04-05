@@ -28,15 +28,15 @@ type PrjnBase struct {
 	Notes         string             `desc:"can record notes about this projection here"`
 	Send          *Layer             `desc:"sending layer for this projection"`
 	Recv          *Layer             `desc:"receiving layer for this projection"`
-	Pat           prjn.Pattern       `desc:"pattern of connectivity"`
+	Pat           prjn.Pattern       `tableview:"-" desc:"pattern of connectivity"`
 	Typ           PrjnTypes          `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
-	ParamsHistory params.HistoryImpl `desc:"provides a history of parameters applied to the layer"`
+	ParamsHistory params.HistoryImpl `tableview:"-" desc:"provides a history of parameters applied to the layer"`
 
-	RecvConNAvgMax minmax.AvgMax32 `inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
-	SendConNAvgMax minmax.AvgMax32 `inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
+	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
+	SendConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
 
 	RecvCon    []StartN  `view:"-" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage."`
-	Syns       []Synapse `desc:"[RecvNeurons][RecvCon.N SendingNeurons] this projection's subset of global list of synaptic state values, ordered so that each receiving layer neuron's connections are contiguous, with RecvCon[ri].N sending connections per receiver."`
+	Syns       []Synapse `tableview:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] this projection's subset of global list of synaptic state values, ordered so that each receiving layer neuron's connections are contiguous, with RecvCon[ri].N sending connections per receiver."`
 	RecvConIdx []uint32  `view:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
 
 	SendCon    []StartN `view:"-" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the SendSynIdx array of indexes into the Syns synapses.  Synapses are not organized by sending neuron so an extra indirection is needed."`
