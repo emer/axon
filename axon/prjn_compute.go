@@ -11,43 +11,6 @@ package axon
 //////////////////////////////////////////////////////////////////////////////////////
 //  Act methods
 
-// RecvSpikes receives spikes from the sending neurons at index sendIdx
-// into the GBuf buffer on the receiver side. The buffer on the receiver side
-// is a ring buffer, which is used for modelling the time delay between
-// sending and receiving spikes.
-// THIS IS NOT USED BY DEFAULT -- VERY SLOW!
-func (pj *Prjn) RecvSpikes(ctx *Context, recvIdx int) {
-	return
-	/*
-		scale := pj.Params.GScale.Scale
-		slay := pj.Send
-		pjcom := &pj.Params.Com
-		bi := pjcom.WriteIdx(uint32(recvIdx), ctx.CyclesTotal-1, pj.Params.Idxs.RecvNeurN)
-		// note: -1 because this is logically done on prior timestep
-		syns := pj.RecvSyns(recvIdx)
-		if pj.PrjnType() == CTCtxtPrjn {
-			if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
-				return
-			}
-			for ci := range syns {
-				sy := &syns[ci]
-				sendIdx := pj.Params.SynSendLayIdx(sy)
-				sn := &slay.Neurons[sendIdx]
-				sv := sn.Burst * scale * sy.Wt
-				pj.GBuf[bi] += sv
-			}
-		} else {
-			for ci := range syns {
-				sy := &syns[ci]
-				sendIdx := pj.Params.SynSendLayIdx(sy)
-				sn := &slay.Neurons[sendIdx]
-				sv := sn.Spike * scale * sy.Wt
-				pj.GBuf[bi] += sv
-			}
-		}
-	*/
-}
-
 // SendSpike sends a spike from the sending neuron at index sendIdx
 // into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between

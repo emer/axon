@@ -27,9 +27,6 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32, nrn *Neuron) {
 		if pj.IsOff() {
 			continue
 		}
-		if pj.Params.Com.CPURecvSpikes.IsTrue() { // about 35x slower!
-			pj.RecvSpikes(ctx, int(ni)) // Note: iterates over all senders for given recv
-		}
 		bi := pj.Params.Com.ReadIdx(ni, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN)
 		gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
 		pj.GBuf[bi] = 0
@@ -312,7 +309,6 @@ func (ly *Layer) DecayState(ctx *Context, decay, glong float32) {
 			continue
 		}
 		ly.Params.Act.DecayState(nrn, decay, glong)
-		// ly.Params.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	ly.DecayStateLayer(ctx, decay, glong)
@@ -326,22 +322,6 @@ func (ly *Layer) DecayStateLayer(ctx *Context, decay, glong float32) {
 	}
 	if glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
 		ly.InitPrjnGBuffs()
-	}
-}
-
-// DecayCaLrnSpk decays neuron-level calcium learning and spiking variables
-// by given factor, which is typically ly.Params.Act.Decay.Glong.
-// Note: this is NOT called by default and is generally
-// not useful, causing variability in these learning factors as a function
-// of the decay parameter that then has impacts on learning rates etc.
-// It is only here for reference or optional testing.
-func (ly *Layer) DecayCaLrnSpk(decay float32) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
-			continue
-		}
-		ly.Params.Learn.DecayCaLrnSpk(nrn, decay)
 	}
 }
 

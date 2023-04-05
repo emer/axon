@@ -56,7 +56,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":              "0.0",
 					"Layer.Act.Decay.Glong":            "0.0",
 					"Layer.Act.Sahp.Gbar":              "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain":           "30",   // 10?
+					"Layer.Act.Dend.ModGain":           "10",   // 10?
 					"Layer.Learn.NeuroMod.AChDisInhib": "1.0",
 				}},
 			{Sel: ".PTNotMaintLayer", Desc: "",
@@ -244,28 +244,33 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true", // this is critical, else too active
-					"Layer.Inhib.Layer.Gi":       "0.6",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true", // this is critical, else too active
+					"Layer.Inhib.Layer.Gi":             "0.6",
+					"Layer.Act.SKCa.Gbar":              "3",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: "#VpSTNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":      "0.2",
-					"Layer.Act.Init.GeVar":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "0.2",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.Gi":             "0.2",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
 					"Layer.Act.Init.GeBase":      "0.3",
 					"Layer.Act.Init.GeVar":       "0.1",
 					"Layer.Act.Init.GiVar":       "0.1",
+					"Layer.Act.Dt.GeTau":         "6", // 5 def; 6 looks better..
+					"Layer.Act.Dt.GiTau":         "7", // 7 def; slower = more gating (dramatic)
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
 			{Sel: "#VpGPi", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase": "0.6",
+					"Layer.Act.Init.GeBase": "0.6", // todo: test 0.5
+					"Layer.Act.Dt.GeTau":    "7",   // 7 > 6 > 5
+					"Layer.Act.Dt.GiTau":    "7",   //
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
@@ -479,16 +484,15 @@ var ParamSets = params.Sets{
 			// BG prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":      "1.0", // stronger
-					"Prjn.SWt.Init.SPct":      "0",
-					"Prjn.SWt.Init.Mean":      "0.5",
-					"Prjn.SWt.Init.Var":       "0.25",
-					"Prjn.Matrix.NoGateLRate": "0.005", // 0.005 std -- seems ok..
-					"Prjn.Matrix.CurTrlDA":    "true",
-					"Prjn.Matrix.UseHasRew":   "true", // hack to use US-only timing
-					"Prjn.Matrix.AChDecay":    "0",    // not used if UseHasRew is on
-					"Prjn.Learn.Learn":        "true",
-					"Prjn.Learn.LRate.Base":   "0.1",
+					"Prjn.PrjnScale.Abs":    "1.0", // stronger
+					"Prjn.SWt.Init.SPct":    "0",
+					"Prjn.SWt.Init.Mean":    "0.5",
+					"Prjn.SWt.Init.Var":     "0.25",
+					"Prjn.Matrix.CurTrlDA":  "true",
+					"Prjn.Matrix.UseHasRew": "true", // hack to use US-only timing
+					"Prjn.Matrix.AChDecay":  "0",    // not used if UseHasRew is on
+					"Prjn.Learn.Learn":      "true",
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{

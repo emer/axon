@@ -10,6 +10,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 
@@ -82,6 +83,8 @@ type SimParams struct {
 	TestInc    float32      `desc:"increment in testing activation for test all"`
 	TestReps   int          `desc:"number of repetitions per testing level"`
 	InitMtxWts bool         `desc:"initialize matrix Go / No weights to follow Pos / Neg inputs -- else .5 even and must be learned"`
+	InN        int          `desc:"number of different values to learn in input layer"`
+	InCtr      int          `inactive:"+" desc:"input counter -- gives PFC network something to do"`
 	PopCode    popcode.OneD `desc:"pop code the values in ACCPos and Neg"`
 }
 
@@ -97,7 +100,8 @@ func (ss *SimParams) Defaults() {
 	ss.ACCPosInc = 1 // 0.8
 	ss.ACCNegInc = 1
 	ss.TestInc = 0.1
-	ss.TestReps = 25
+	ss.TestReps = 25 // 25
+	ss.InN = 5
 	ss.PopCode.Defaults()
 	ss.PopCode.SetRange(-0.2, 1.2, 0.1)
 }
@@ -228,19 +232,26 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = gpeIn
 	_ = gpeTA
 
-	thal := net.AddThalLayer4D("VThal", 1, np, nuY, nuX)
-	net.ConnectLayers(gpi, thal, pone2one, axon.InhibPrjn).SetClass("BgFixed")
-
-	mtxGo.SetBuildConfig("ThalLay1Name", thal.Name())
-	mtxNo.SetBuildConfig("ThalLay1Name", thal.Name())
-
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
 	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
-	pfc := net.AddLayer4D("PFC", 1, np, nuY, nuX, axon.InputLayer)
-	pfcd := net.AddLayer4D("PFCo", 1, np, nuY, nuX, axon.SuperLayer)
+
+	inly, inP := net.AddInputPulv4D("In", 1, np, nuY, nuX, space)
+
+	pfc, pfcCT := net.AddSuperCT4D("PFC", 1, np, nuY, nuX, space, one2one)
+	// prjns are: super->PT, PT self, CT-> thal
+	pfcPT, pfcVM := net.AddPTMaintThalForSuper(pfc, pfcCT, "VM", one2one, pone2one, pone2one, space)
+	_ = pfcPT
+	pfcCT.SetClass("PFC CTCopy")
+
+	net.ConnectToPulv(pfc, pfcCT, inP, pone2one, pone2one)
 
 	net.ConnectLayers(pfc, stnp, pone2one, axon.ForwardPrjn)
 	net.ConnectLayers(pfc, stns, pone2one, axon.ForwardPrjn)
+
+	net.ConnectLayers(gpi, pfcVM, pone2one, axon.InhibPrjn).SetClass("BgFixed")
+
+	mtxGo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
+	mtxNo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
 
 	net.ConnectToMatrix(accpos, mtxGo, pone2one)
 	net.ConnectToMatrix(accpos, mtxNo, pone2one)
@@ -249,19 +260,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToMatrix(pfc, mtxGo, pone2one)
 	net.ConnectToMatrix(pfc, mtxNo, pone2one)
 
-	net.ConnectLayers(thal, pfcd, one2one, axon.ForwardPrjn)
-	net.ConnectLayers(pfc, thal, one2one, axon.ForwardPrjn)
-	net.ConnectLayers(pfcd, thal, one2one, axon.ForwardPrjn)
-
 	gpi.PlaceRightOf(snc, space)
-	thal.PlaceRightOf(gpi, space)
 	gpeOut.PlaceAbove(gpi)
 	stnp.PlaceRightOf(gpeTA, space)
 	mtxGo.PlaceAbove(gpeOut)
 	accpos.PlaceAbove(mtxGo)
 	accneg.PlaceRightOf(accpos, space)
-	pfc.PlaceRightOf(accneg, space)
-	pfcd.PlaceRightOf(pfc, space)
+	inly.PlaceRightOf(accneg, space)
+	pfc.PlaceRightOf(inly, space)
+	pfcCT.PlaceRightOf(pfc, space)
+	pfcPT.PlaceBehind(pfc, space)
+	pfcVM.PlaceRightOf(pfcPT, space)
 
 	err := net.Build()
 	if err != nil {
@@ -388,12 +397,8 @@ func (ss *Sim) ConfigLoops() {
 		// 	ss.Envs[mode.String()].Step()
 		// })
 		stack.Loops[etime.Phase].OnStart.Add("ApplyInputs", func() {
-			phs := man.Stacks[mode].Loops[etime.Phase].Counter.Cur
-			if phs == 1 {
-				ss.Net.NewState(&ss.Context)
-				ss.Context.NewState(mode)
-			}
-			ss.ApplyInputs(mode, phs == 0) // zero on phase == 0
+			phase := man.Stacks[mode].Loops[etime.Phase].Counter.Cur
+			ss.ApplyInputs(mode, phase)
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
@@ -444,12 +449,12 @@ func (ss *Sim) ConfigLoops() {
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
-func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
+func (ss *Sim) ApplyInputs(mode etime.Modes, phase int) {
 	net := ss.Net
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	if mode == etime.Train && !zero {
+	if mode == etime.Train && phase == 1 {
 		if !ss.Sim.NoInc {
 			ss.Sim.ACCPos = rand.Float32()
 			ss.Sim.ACCNeg = rand.Float32()
@@ -462,52 +467,55 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, zero bool) {
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{np * nu}, nil, nil)
 
-	lays := []string{"ACCPos", "ACCNeg", "PFC"}
+	lays := []string{"ACCPos", "ACCNeg", "In"}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
 		ly := net.AxonLayerByName(lnm)
-		if !zero {
-			for j := 0; j < np; j++ {
-				// np = different pools have changing increments
-				// such that first pool is best choice
-				io := j * nu
-				var poolVal float32
-				switch lnm {
-				case "ACCPos":
-					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
-				case "ACCNeg":
-					poolVal = vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
-				default:
-					poolVal = 1
-				}
-				sv := itsr.Values[io : io+nu]
-				ss.Sim.PopCode.Encode(&sv, poolVal, nu, false)
-				// for i := 0; i < nu; i++ {
-				// 	pval := float32(ss.Pats.CellTensorFloat1D("Input", row, i))
-				// 	itsr.Values[io+i] = pval * vals[li]
+		for j := 0; j < np; j++ {
+			// np = different pools have changing increments
+			// such that first pool is best choice
+			io := j * nu
+			var poolVal float32
+			switch lnm {
+			case "ACCPos":
+				poolVal = vals[li] * mat32.Pow(ss.Sim.ACCPosInc, float32(j))
+			case "ACCNeg":
+				poolVal = vals[li] * mat32.Pow(ss.Sim.ACCNegInc, float32(j))
+			default:
+				poolVal = float32(ss.Sim.InCtr) / float32(ss.Sim.InN)
 			}
+			sv := itsr.Values[io : io+nu]
+			ss.Sim.PopCode.Encode(&sv, poolVal, nu, false)
+			// for i := 0; i < nu; i++ {
+			// 	pval := float32(ss.Pats.CellTensorFloat1D("Input", row, i))
+			// 	itsr.Values[io+i] = pval * vals[li]
 		}
 		ly.ApplyExt(&itsr)
 	}
-	ss.ResetRew()
+	ss.Sim.InCtr++
+	if ss.Sim.InCtr > ss.Sim.InN {
+		ss.Sim.InCtr = 0
+	}
+	ss.ResetRew(phase)
 	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
 // ResetRew resets any reward inputs -- at ApplyInputs
-func (ss *Sim) ResetRew() {
-	phs := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
-	if phs == 0 {
+func (ss *Sim) ResetRew(phase int) {
+	if phase == 0 {
 		ss.Context.NeuroMod.SetRew(0, false) // no rew
+		ss.Context.NeuroMod.ACh = 0
 	} else {
-		ss.Context.NeuroMod.SetRew(0, true) // no rew
+		ss.Context.NeuroMod.SetRew(0, true) // rew
+		ss.Context.NeuroMod.ACh = 1
 	}
 	ss.SetRew(0)
 }
 
 // ApplyRew applies reward input based on gating action and input
 func (ss *Sim) ApplyRew() {
-	phs := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
-	if phs == 0 {
+	phase := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
+	if phase == 0 {
 		return
 	}
 	net := ss.Net
@@ -519,20 +527,24 @@ func (ss *Sim) ApplyRew() {
 	net.GPU.SyncStateFmGPU()
 	didGate := mtxly.MatrixGated(&ss.Context)           // will also be called later
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
+	match := false
 	var rew float32
 	switch {
 	case shouldGate && didGate:
 		rew = 1
+		match = true
 	case shouldGate && !didGate:
 		rew = -1
 	case !shouldGate && didGate:
 		rew = -1
 	case !shouldGate && !didGate:
 		rew = 0
+		match = true
 	}
 
 	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
+	ss.Stats.SetFloat32("Match", bools.ToFloat32(match))
 	ss.Stats.SetFloat32("Rew", rew)
 
 	ss.SetRew(rew)
@@ -560,6 +572,7 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
+	ss.Sim.InCtr = 0
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.InitWts(ss.Net)
@@ -583,9 +596,10 @@ func (ss *Sim) TestAll() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
-	ss.Stats.SetFloat("VThal_RT", 0.0)
+	ss.Stats.SetFloat("PFCVM_RT", 0.0)
 	ss.Stats.SetFloat("Gated", 0)
 	ss.Stats.SetFloat("Should", 0)
+	ss.Stats.SetFloat("Match", 0)
 	ss.Stats.SetFloat("Rew", 0)
 }
 
@@ -602,7 +616,7 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	trlnm := fmt.Sprintf("%4f_%4f", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", trlnm)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle", "Gated", "Should", "Rew"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle", "Gated", "Should", "Match", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -610,23 +624,24 @@ func (ss *Sim) StatCounters() {
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
 	net := ss.Net
-	vtly := net.AxonLayerByName("VThal")
+	vtly := net.AxonLayerByName("PFCVM")
 	gated := vtly.AnyGated()
 	if !gated {
-		ss.Stats.SetFloat("VThal_RT", 0)
+		ss.Stats.SetFloat("PFCVM_RT", math.NaN())
 		return
 	}
 	mode := ss.Context.Mode
 	trlog := ss.Logs.Log(mode, etime.Cycle)
-	spkCyc := 0
-	for row := 0; row < trlog.Rows; row++ {
-		vts := trlog.CellTensorFloat1D("VThal_Spike", row, 0)
-		if vts > 0 {
-			spkCyc = row
+	spkCyc := 200
+	// note: starts at 200 due to first phase
+	for row := 200; row < trlog.Rows; row++ {
+		vts := trlog.CellTensorFloat1D("PFCVM_Spike", row, 0)
+		if vts > 0.05 {
+			spkCyc = row - 200
 			break
 		}
 	}
-	ss.Stats.SetFloat("VThal_RT", float64(spkCyc)/200)
+	ss.Stats.SetFloat("PFCVM_RT", float64(spkCyc)/200)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -643,6 +658,7 @@ func (ss *Sim) ConfigLogs() {
 
 	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Match", "Match", etime.Run, etime.Epoch, etime.Trial)
 	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
@@ -652,7 +668,7 @@ func (ss *Sim) ConfigLogs() {
 	// axon.LogAddDiagnosticItems(&ss.Logs, ss.Net, etime.Epoch, etime.Trial)
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("MtxGo_ActAvg", "VThal_ActAvg", "VThal_RT", "Gated", "Should", "Rew")
+	ss.Logs.PlotItems("MtxGo_ActAvg", "PFCVM_ActAvg", "PFCVM_RT", "Gated", "Should", "Match", "Rew")
 
 	ss.Logs.CreateTables()
 
@@ -674,8 +690,8 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	ss.Logs.AddStatAggItem("VThal_RT", "VThal_RT", etime.Run, etime.Epoch, etime.Trial)
-	layers := ss.Net.LayersByClass("MatrixLayer", "VThalLayer")
+	ss.Logs.AddStatAggItem("PFCVM_RT", "PFCVM_RT", etime.Run, etime.Epoch, etime.Trial)
+	layers := ss.Net.LayersByType(axon.MatrixLayer, axon.VThalLayer)
 	npools := []int{ss.Sim.NPools}
 	for _, lnm := range layers {
 		clnm := lnm
@@ -749,8 +765,8 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	}
 	ss.StatCounters()
 
-	phs := ss.Loops.Stacks[mode].Loops[etime.Phase].Counter.Cur
-	if phs == 0 && time <= etime.Trial {
+	phase := ss.Loops.Stacks[mode].Loops[etime.Phase].Counter.Cur
+	if phase == 0 && time <= etime.Trial {
 		return // no logging on first phase
 	}
 
@@ -775,6 +791,10 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) TestStats() {
 	tststnm := "TestTrialStats"
 	plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
+	plt.Params.XAxisCol = "Trial"
+	plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 
 	ix := ss.Logs.IdxView(etime.Test, etime.Trial)
 	spl := split.GroupBy(ix, []string{"TrialName"})

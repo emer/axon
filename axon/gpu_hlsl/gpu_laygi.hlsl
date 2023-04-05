@@ -27,7 +27,7 @@
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
 void LayGi2(in Context ctx, uint li, in LayerParams ly, inout Pool pl, inout LayerVals vals) {
-	pl.AvgMax.Calc();
+	pl.AvgMax.Calc(int(li));
 	pl.Inhib.IntToRaw();
 	ly.LayPoolGiFmSpikes(ctx, pl, vals); // also updates LayerVals with NeuroMod
 }

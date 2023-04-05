@@ -1,30 +1,34 @@
-# VGCC: Voltage-gated Calcium Channels
+# sKCa: Voltage-gated Calcium Channels
 
-This plots the VGCC current function, which is an L-type Ca channel that opens as a function of membrane potential.  It tends to broaden the effect of action potential spikes in the dendrites.
-
-```Go
-G(vm) = -vm / (1 - exp(0.0756 * vm))
-```
+This plots the sKCa current function, which is describes the small-conductance calcium-activated potassium channel, using the equations described in Fujita et al (2012) based on Gunay et al (2008), (also Muddapu & Chakravarthy, 2021).  There is a gating factor M that depends on the Ca concentration, modeled using an X / (X + C50) form Hill equation:
 
 ```Go
-M(vm) = 1 / (1 + exp(-(vm + 37)))     // Tau = 3.6 msec
+M_hill(ca) = ca^h / (ca^h + c50^h)
 ```
+
+This function is .5 when `ca == c50`, and the `h` default power (`Hill` param) of 4 makes it a sharply nonlinear function.
+
+SKCa can be activated by intracellular stores in a way that drives pauses in firing, and can require inactivity to recharge the Ca available for release. These intracellular stores can release quickly, have a slow decay once released, and the stores can take a while to rebuild, leading to rapidly triggered, long-lasting pauses that don't recur until stores have rebuilt, which is the observed pattern of firing of STNp pausing neurons, that open up a window for BG gating.
+
+`CaIn` = intracellular stores available for release; `CaR` = released amount from stores;  `CaM` = K channel conductance gating factor driven by CaR binding.
 
 ```Go
-H(vm) = 1 / (1 + exp((vm + 41) * 2))  // Tau = 29 msec
+	CaR -= CaR * CaRDecayDt
+	if spike {
+		CaR += CaIn * KCaR
+	}
+	if CaD < CaInThr {
+		CaIn += CaInDt * (1 - CaIn)
+	}
 ```
 
-```Go
-VGCC(vm) = M^3 H * G(vm)
-```
+<img src="fig_skca_m.png" width="800">
 
-![M and H gating from V](fig_vgcc_m_h_from_v.png?raw=true "M and H gating factors as a function of V (biological units)")
+**Figure 1:** M gating as a function of Ca, using Hill function with exponent 4, C50 = .5.
 
-The intersection of M and H produces a very narrow membrane potential window centered around -40 mV where the gates are both activated, with the fast updating (3.6 msec tau) and cubic dependence on M essentially shutting off the current very quickly when the action potential goes away.  The longer H time constant provides a slow adaptation-like dynamic that is sensitive to frequency (more adaptation at higher frequencies).
+<img src="fig_skca_time.png" width="800">
 
-![M and H over time](fig_vgcc_time_plot.png?raw=true "M and H gating factors developing over time in response to simulated spiking potentials")
+**Figure 2:** Time plot showing pausing and lack of recovery.  The spiking input to the neuron is toggled every 200 msec (theta cycle), with 3 cycles shown.  The CaIn level does not recover during the off phase -- 2 or more such phases are required.
 
-The `Time Run` plot (above) shows these dynamics playing out with a sequence of spiking.
 
-Functionally, the narrow voltage window restricts the significance of this channel to the peri-spiking time window, where the Ca++ influx provides a bit of extra sustain on the trailing edge of the spike.  More importantly, the Ca++ provides a postsynaptic-only spiking signal for learning.
 

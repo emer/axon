@@ -464,7 +464,8 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 		// salient was happening but nobody gated..
 		// it is needed for the basic pcore test case to get off the floor
 		// todo: if rn.SpkMax is zero for everything, might need to use Ge?
-		dwt = pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
+		// dtr = -pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
+		dwt = rn.DASign * pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
 	}
 
 	tr := sy.Tr

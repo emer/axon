@@ -35,6 +35,12 @@ You must also add this at the end of the `ApplyInputs` method:
 ```
 which actually applies the external inputs to the network in GPU mode (and does nothing in CPU mode).
 
+If using `mpi` in combination with GPU, you need to add:
+```Go
+    ss.Net.SyncAllToGPU()
+```
+prior to calling `WtFmDWt` after sync'ing the dwt across nodes.
+
 The `Net.GPU` object manages all the GPU functionality and the `Net.GPU.On` is checked to determine whether to use GPU vs. CPU for all the relevant function calls -- that flag can be toggled to switch.  Direct calls to GPU methods automatically check the flag and return immediately if not `On`, so it is safe to just include these directly, e.g., for additional places where memory is `Sync`'d.
 
 The network state (everything except Synapses) is automatically synchronized at the end of the Plus Phase, so it will be visible in the netview.

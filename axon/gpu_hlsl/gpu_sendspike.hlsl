@@ -36,7 +36,7 @@
 // [[vk::binding(1, 3)]] StructuredBuffer<uint> Spikers;  // [[Neurons]] -- indexes of those that spiked
 
 void SendSpikeSyn(in Context ctx, in PrjnParams pj, in Synapse sy, in float sendVal, in uint recvNeurSt) {
-	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CycleTot, pj.Idxs.RecvNeurN);
+	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CyclesTotal, pj.Idxs.RecvNeurN);
 	InterlockedAdd(GBuf[bi], int(sendVal * sy.Wt));
 }
 

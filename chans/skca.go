@@ -5,40 +5,52 @@
 package chans
 
 import (
-	"github.com/goki/gosl/slbool"
 	"github.com/goki/mat32"
 )
 
 //gosl: start chans
 
-// SKCaParams describes the small-conductance calcium-activated potassium channel
-// using the equations described in Fujita et al (2012) based on Gunay et al (2008)
-// (also Muddapu & Chakravarthy, 2021)
-// There is a gating factor M that depends on the Ca concentration, modeled using
-// an X / (X + C50) form Hill equation
+// SKCaParams describes the small-conductance calcium-activated potassium channel,
+// activated by intracellular stores in a way that drives pauses in firing,
+// and can require inactivity to recharge the Ca available for release.
+// These intracellular stores can release quickly, have a slow decay once released,
+// and the stores can take a while to rebuild, leading to rapidly triggered,
+// long-lasting pauses that don't recur until stores have rebuilt, which is the
+// observed pattern of firing of STNp pausing neurons.
+// CaIn = intracellular stores available for release; CaR = released amount from stores
+// CaM = K channel conductance gating factor driven by CaR binding,
+// computed using the Hill equations described in Fujita et al (2012), Gunay et al (2008)
+// (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4.
 type SKCaParams struct {
-	Gbar    float32     `def:"0,2" desc:"overall strength of sKCa current -- inactive if 0"`
-	CaD     slbool.Bool `viewif:"Gbar>0" desc:"use CaD timescale (delayed) calcium signal -- for STNs -- else use CaP (faster) for STNp"`
-	CaScale float32     `viewif:"Gbar>0" def:"3" desc:"scaling factor applied to input Ca to bring into proper range of these dynamics"`
-	Hill    float32     `viewif:"Gbar>0" def:"4" desc:"Hill coefficient (exponent) for x^h / (x^h + c50^h) function describing the asymptotic gating factor m as a function of Ca -- there are 4 relevant states so a factor around 4 makes sense and is empirically observed"`
-	C50     float32     `viewif:"Gbar>0" def:"0.6" desc:"50% Ca concentration baseline value in Hill equation -- values from .3 to .6 are present in the literature"`
-	ActTau  float32     `viewif:"Gbar>0" def:"10" desc:"activation time constant -- roughly 5-15 msec in literature"`
-	DeTau   float32     `viewif:"Gbar>0" def:"30,50" desc:"deactivation time constant -- roughly 30-50 msec in literature"`
+	Gbar        float32 `def:"0,2,3" desc:"overall strength of sKCa current -- inactive if 0"`
+	Hill        float32 `viewif:"Gbar>0" def:"4" desc:"Hill coefficient (exponent) for x^h / (x^h + c50^h) function describing the asymptotic gating factor m as a function of Ca -- there are 4 relevant states so a factor around 4 makes sense and is empirically observed"`
+	C50         float32 `viewif:"Gbar>0" def:"0.4,0.5" desc:"50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR"`
+	ActTau      float32 `viewif:"Gbar>0" def:"15" desc:"K channel gating factor activation time constant -- roughly 5-15 msec in literature"`
+	DeTau       float32 `viewif:"Gbar>0" def:"30" desc:"K channel gating factor deactivation time constant -- roughly 30-50 msec in literature"`
+	KCaR        float32 `viewif:"Gbar>0" def:"0.4,0.8" desc:"proportion of CaIn intracellular stores that are released per spike, going into CaR"`
+	CaRDecayTau float32 `viewif:"Gbar>0" def:"150,200" desc:"SKCaR released calcium decay time constant"`
+	CaInThr     float32 `viewif:"Gbar>0" def:"0.01" desc:"level of time-integrated spiking activity (CaSpkD) below which CaIn intracelluar stores are replenished -- a low threshold can be used to require minimal activity to recharge -- set to a high value (e.g., 10) for constant recharge."`
+	CaInTau     float32 `viewif:"Gbar>0" def:"50" desc:"time constant in msec for storing CaIn when activity is below CaInThr"`
 
-	ActDt   float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	DeDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	C50Hill float32 `view:"-" json:"-" xml:"-" desc:"C50 ^ Hill precomputed"`
+	ActDt      float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	DeDt       float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	CaRDecayDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	CaInDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
+	C50Hill    float32 `view:"-" json:"-" xml:"-" desc:"C50 ^ Hill precomputed"`
 
 	pad, pad1 float32
 }
 
 func (sp *SKCaParams) Defaults() {
-	sp.CaScale = 3
 	sp.Gbar = 0.0
 	sp.Hill = 4
-	sp.C50 = 0.6
-	sp.ActTau = 10
-	sp.DeTau = 50
+	sp.C50 = 0.5
+	sp.ActTau = 15
+	sp.DeTau = 30
+	sp.KCaR = 0.8
+	sp.CaRDecayTau = 150
+	sp.CaInThr = 0.01
+	sp.CaInTau = 50
 	sp.Update()
 }
 
@@ -46,6 +58,8 @@ func (sp *SKCaParams) Update() {
 	sp.C50Hill = mat32.Pow(sp.C50, sp.Hill)
 	sp.ActDt = 1.0 / sp.ActTau
 	sp.DeDt = 1.0 / sp.DeTau
+	sp.CaRDecayDt = 1.0 / sp.CaRDecayTau
+	sp.CaInDt = 1.0 / sp.CaInTau
 }
 
 // MAsympHill gives the asymptotic (driving) gating factor M as a function of CAi
@@ -56,7 +70,7 @@ func (sp *SKCaParams) MAsympHill(cai float32) float32 {
 }
 
 // MAsympGW06 gives the asymptotic (driving) gating factor M as a function of CAi
-// for the GilliesWillshaw06 equation version
+// for the GilliesWillshaw06 equation version -- not used by default.
 // this is a log-saturating function
 func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
 	if cai < 0.001 {
@@ -65,10 +79,23 @@ func (sp *SKCaParams) MAsympGW06(cai float32) float32 {
 	return 0.81 / (1.0 + mat32.FastExp(-(mat32.Log(cai)+0.3))/0.46)
 }
 
-// MFmCa returns updated m gating value as a function of current intracellular Ca
-// and the previous intracellular Ca -- the time constant tau is based on previous.
-func (sp *SKCaParams) MFmCa(cai, mcur float32) float32 {
-	mas := sp.MAsympHill(cai)
+// CaInRFmSpike updates CaIn, CaR from Spiking and CaD time-integrated spiking activity
+func (sp *SKCaParams) CaInRFmSpike(spike, caD float32, caIn, caR *float32) {
+	*caR -= *caR * sp.CaRDecayDt
+	if spike > 0 {
+		x := *caIn * sp.KCaR
+		*caR += x
+		*caIn -= x
+	}
+	if caD < sp.CaInThr {
+		*caIn += sp.CaInDt * (1.0 - *caIn)
+	}
+}
+
+// MFmCa returns updated m gating value as a function of current CaR released Ca
+// and the current m gating value, with activation and deactivation time constants.
+func (sp *SKCaParams) MFmCa(caR, mcur float32) float32 {
+	mas := sp.MAsympHill(caR)
 	if mas > mcur {
 		return mcur + sp.ActDt*(mas-mcur)
 	}

@@ -27,8 +27,8 @@ type LayerBase struct {
 	Off           bool               `desc:"inactivate this layer -- allows for easy experimentation"`
 	Shp           etensor.Shape      `desc:"shape of the layer -- can be 2D for basic layers and 4D for layers with sub-groups (hypercolumns) -- order is outer-to-inner (row major) so Y then X for 2D and for 4D: Y-X unit pools then Y-X neurons within pools"`
 	Typ           LayerTypes         `desc:"type of layer -- Hidden, Input, Target, Compare, or extended type in specialized algorithms -- matches against .Class parameter styles (e.g., .Hidden etc)"`
-	Rel           relpos.Rel         `view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
-	Ps            mat32.Vec3         `desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
+	Rel           relpos.Rel         `tableview:"-" view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
+	Ps            mat32.Vec3         `tableview:"-" desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
 	Idx           int                `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
 	NeurStIdx     int                `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
 	RepIxs        []int              `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
@@ -38,8 +38,8 @@ type LayerBase struct {
 	Neurons       []Neuron           `desc:"slice of neurons for this layer -- flat list of len = Shp.Len(). You must iterate over index and use pointer to modify values."`
 	Pools         []Pool             `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
 	Exts          []float32          `view:"-" desc:"external input values for this layer, allocated from network global Exts slice"`
-	BuildConfig   map[string]string  `desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
-	ParamsHistory params.HistoryImpl `desc:"provides a history of parameters applied to the layer"`
+	BuildConfig   map[string]string  `tableview:"-" desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
+	ParamsHistory params.HistoryImpl `tableview:"-" desc:"provides a history of parameters applied to the layer"`
 }
 
 // emer.Layer interface methods

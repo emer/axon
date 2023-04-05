@@ -809,11 +809,6 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals
 	nrn.SpkMaxCa = 0
 
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
-	if ly.LayType == PPTgLayer || ly.LayType == VSPatchLayer {
-		nrn.CaSpkP = 0
-		nrn.CaSpkD = 0 // used as a read-out for ACh -- needs to clear
-	}
-	// ly.Learn.DecayCaLrnSpk(nrn, glong) // NOT called by default
 	// Note: synapse-level Ca decay happens in DWt
 }
 
@@ -864,6 +859,7 @@ func (ly *LayerParams) PlusPhaseNeuronSpecial(ctx *Context, ni uint32, nrn *Neur
 // PlusPhaseNeuron does neuron level plus-phase updating
 func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActP = nrn.ActInt
+	nrn.DASign = ly.Learn.NeuroMod.DASign()
 	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrn.CaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
 	modlr := ly.Learn.NeuroMod.LRMod(vals.NeuroMod.DA, vals.NeuroMod.ACh)
 	dlr := float32(0)
