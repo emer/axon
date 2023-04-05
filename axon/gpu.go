@@ -1056,7 +1056,9 @@ func (gp *GPU) RunWtFmDWt() {
 }
 
 // RunWtFmDWtCmd returns the commands to
-// run the WtFmDWt shader to update weights from weigh changes.
+// run the WtFmDWt shader to update weights from weight changes.
+// This also syncs neuron state from CPU -> GPU because TrgAvgFmD
+// has updated that state.
 func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
 	cnm := "RunWtFmDWt"
 	cmd, err := gp.Sys.CmdBuffByNameTry(cnm)
@@ -1065,7 +1067,10 @@ func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
 	}
 	cmd = gp.Sys.NewCmdBuff(cnm)
 
+	nrr := gp.SyncRegionStruct("Neurons")
+
 	gp.StartRunCmd(cmd)
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr) // staging -> GPU
 	gp.RunPipelineCmd(cmd, "DWtSubMean", len(gp.Net.Neurons), "", "PoolGi")
 	gp.RunPipelineCmd(cmd, "WtFmDWt", len(gp.Net.Synapses), "PoolGi", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)

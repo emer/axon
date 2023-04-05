@@ -157,6 +157,7 @@ func (ss *Sim) MPIWtFmDWt() {
 		ss.Comm.AllReduceF32(mpi.OpSum, ss.SumDWts, ss.AllDWts)
 		ss.Net.SetDWts(ss.SumDWts, mpi.WorldSize())
 	}
+    // note: if using GPU, add: ss.Net.SyncAllToGPU() here!
 	ss.Net.WtFmDWt(&ss.Context)
 }
 ```
