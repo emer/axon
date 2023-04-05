@@ -451,6 +451,7 @@ func (nt *Network) UpdateExtFlags() {
 	}
 }
 
+
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctx *Context) {
 	nt.PrjnMapSeq(func(pj *Prjn) { pj.SynFail(ctx) }, "SynFail")
