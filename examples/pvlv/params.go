@@ -88,7 +88,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "2.8", // 2.4 not strong enough to prevent diffuse activity
 					"Layer.Inhib.Pool.Gi":  "1.2", // was 1.4
 				}},
-			{Sel: "#OFCPTPred", Desc: "",
+			{Sel: "#OFCPTp", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8",
 					"Layer.Inhib.Pool.Gi":  "0.8",
@@ -274,7 +274,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Trace.Tau":     "1",    // 2 > 1
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
-			{Sel: "#OFCCTToOFCPTPred", Desc: "",
+			{Sel: "#OFCCTToOFCPTp", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5",
 				}},
@@ -330,7 +330,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 				}},
-			{Sel: "#TimePToOFCPTPred", Desc: "needs to be strong so reps are differentiated",
+			{Sel: "#TimePToOFCPTp", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
 				}},

@@ -289,9 +289,9 @@ func (nt *Network) AddPTPredLayer(ptMaint, ct, thal *Layer, ptToPredPrjn, ctToPr
 	name := strings.TrimSuffix(ptMaint.Name(), "PT")
 	shp := ptMaint.Shape()
 	if shp.NumDims() == 2 {
-		ptPred = nt.AddPTPredLayer2D(name+"PTPred", shp.Dim(0), shp.Dim(1))
+		ptPred = nt.AddPTPredLayer2D(name+"PTp", shp.Dim(0), shp.Dim(1))
 	} else {
-		ptPred = nt.AddPTPredLayer4D(name+"PTPred", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
+		ptPred = nt.AddPTPredLayer4D(name+"PTp", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
 	ptPred.SetClass(name)
 	ptPred.PlaceBehind(ptMaint, space)

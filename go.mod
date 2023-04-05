@@ -11,7 +11,7 @@ require (
 	github.com/emer/etable v1.1.21
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18
-	github.com/goki/gi v1.3.17
+	github.com/goki/gi v1.3.18
 	github.com/goki/gosl v1.0.13
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
