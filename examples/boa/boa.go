@@ -260,14 +260,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(drives, ofc, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
 
 	// net.ConnectLayers(drives, ofcCT, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
-	net.ConnectLayers(vPgpi, ofcMD, full, axon.InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(vPgpi, ofcMD, full, axon.InhibPrjn).SetClass("GPiInhibToMD")
 	// net.ConnectLayers(cs, ofc, full, axon.ForwardPrjn) // let BLA handle it
 	net.ConnectLayers(usPos, ofc, pone2one, axon.BackPrjn)
 	net.ConnectLayers(ofcPT, ofcCT, pone2one, axon.ForwardPrjn) // good?
 
-	net.ConnectLayers(usPos, ofcPTPred, pone2one, axon.ForwardPrjn)
-	net.ConnectLayers(pvPos, ofcPTPred, pone2one, axon.ForwardPrjn)
-	net.ConnectLayers(drives, ofcPTPred, pone2one, axon.ForwardPrjn)
+	net.ConnectLayers(usPos, ofcPTPred, pone2one, axon.ForwardPrjn).SetClass("ToPTPred")
+	net.ConnectLayers(pvPos, ofcPTPred, pone2one, axon.ForwardPrjn).SetClass("ToPTPred")
+	net.ConnectLayers(drives, ofcPTPred, pone2one, axon.ForwardPrjn).SetClass("ToPTPred")
 
 	acc, accCT := net.AddSuperCT2D("ACC", nuCtxY+2, nuCtxX+2, space, one2one)
 	// prjns are: super->PT, PT self, CT->thal
@@ -281,7 +281,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectCTSelf(accCT, full)
 	net.ConnectToPulv(acc, accCT, distP, full, full)
 	net.ConnectToPulv(acc, accCT, effortP, full, full)
-	net.ConnectLayers(vPgpi, accMD, full, axon.InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(vPgpi, accMD, full, axon.InhibPrjn).SetClass("GPiInhibToMD")
 
 	net.ConnectPTPredToPulv(accPTPred, distP, full, full)
 	net.ConnectPTPredToPulv(accPTPred, effortP, full, full)
@@ -290,8 +290,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(effort, acc, full, axon.ForwardPrjn)
 	net.ConnectLayers(accPT, accCT, full, axon.ForwardPrjn) // good?
 
-	net.ConnectLayers(dist, accPTPred, full, axon.ForwardPrjn)
-	net.ConnectLayers(effort, accPTPred, full, axon.ForwardPrjn)
+	net.ConnectLayers(dist, accPTPred, full, axon.ForwardPrjn).SetClass("ToPTPred")
+	net.ConnectLayers(effort, accPTPred, full, axon.ForwardPrjn).SetClass("ToPTPred")
 
 	net.ConnectLayers(acc, ofc, full, axon.BackPrjn)
 	net.ConnectLayers(ofc, acc, full, axon.BackPrjn)

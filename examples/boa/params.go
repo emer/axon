@@ -141,7 +141,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi": "1.8", // was 1.3
 					"Layer.Inhib.Pool.Gi":  "2.0", // was 0.6
 				}},
-			{Sel: "#OFCPTPred", Desc: "",
+			{Sel: "#OFCPTp", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8",
 					"Layer.Inhib.Pool.Gi":  "0.8",
@@ -169,7 +169,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "2.5",
 				}},
-			{Sel: "#ACCPTPred", Desc: "",
+			{Sel: "#ACCPTp", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8",
 				}},
@@ -347,7 +347,11 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Trace.Tau":     "1",    // 2 > 1
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
-			{Sel: "#OFCCTToOFCPTPred", Desc: "",
+			{Sel: ".ToPTPred", Desc: "needs more activation",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0",
+				}},
+			{Sel: "#OFCCTToOFCPTp", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5",
 				}},
@@ -377,7 +381,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5",
 				}},
-			{Sel: "#ACCPTToACCPTPred", Desc: "",
+			{Sel: "#ACCPTToACCPTp", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2",
 				}},
@@ -472,7 +476,7 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs":    "3",   // 3 orig
 					"Prjn.Learn.LRate.Base": "0.1", // 0.2 > 0.02..?
 				}},
-			// {Sel: "#OFCPTPredToVSPatch", Desc: "",
+			// {Sel: "#OFCPTpToVSPatch", Desc: "",
 			// 	Params: params.Params{
 			// 		"Prjn.PrjnScale.Abs": "3", // let ofc is more dominant, has pools
 			// 	}},
@@ -499,6 +503,15 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Learn.Learn":   "false",
+				}},
+			{Sel: ".GPiInhibToMD", Desc: "inhibition from GPi to MD",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2", // 2 > 1 -- inhib stronger, prevent unwanted gating
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.SWt.Adapt.On":  "false",
 					"Prjn.Learn.Learn":   "false",
 				}},
 			{Sel: "#USposToVpMtxGo", Desc: "",
