@@ -235,7 +235,7 @@ func (ef *Effort) AddEffort(inc float32) {
 type LHb struct {
 	PosGain     float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
 	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
-	DipResetThr float32 `def:"0.4" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
+	DipResetThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
 
 	Dip      float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
 	Burst    float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
@@ -251,7 +251,7 @@ type LHb struct {
 func (lh *LHb) Defaults() {
 	lh.PosGain = 1
 	lh.NegGain = 1
-	lh.DipResetThr = 0.4
+	lh.DipResetThr = 0.2
 }
 
 func (lh *LHb) Update() {

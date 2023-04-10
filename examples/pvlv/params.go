@@ -130,11 +130,11 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.3",
 				}},
-			{Sel: "#SC", Desc: "",
+			{Sel: ".SC", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
 					"Layer.Inhib.Layer.Gi":       "1.0",
-					"Layer.Inhib.Layer.FFPrv":    "10", // key td param
+					"Layer.Inhib.Layer.FFPrv":    "5", // key td param
 					"Layer.Inhib.Pool.On":        "false",
 					"Layer.Act.Decay.Act":        "0.0",
 					"Layer.Act.Decay.Glong":      "0.0",
@@ -174,7 +174,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":              "0.5",
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
-					"Layer.Learn.NeuroMod.DipGain":     "1", // controls extinction -- works fine at 1
+					"Layer.Learn.NeuroMod.DipGain":     "0.1", // controls extinction -- works fine at 1
 					"Layer.PVLV.Thr":                   "0.3",
 					"Layer.PVLV.Gain":                  "8",
 					"Layer.VSPatch.NoDALRate":          "0.1", // 0.1 exinguishes Ok, .2 too high, 0.05 too low in BOA
@@ -287,6 +287,14 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base":     "0.02",
 					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
 				}},
+			{Sel: ".ToSC", Desc: "fixed, non-learning params",
+				Params: params.Params{
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.4",
+					"Prjn.SWt.Adapt.On":  "false",
+					"Prjn.Learn.Learn":   "false",
+				}},
 			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.01",
@@ -354,6 +362,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.SWt.Adapt.On":  "false",
 					"Prjn.Learn.Learn":   "false",
 				}},
 			{Sel: "#USposToVpMtxGo", Desc: "",
