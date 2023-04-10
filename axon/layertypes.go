@@ -100,13 +100,6 @@ const (
 	// showing spiking rates for each, and Act always represents signed value.
 	RewLayer
 
-	// RSalienceAChLayer reads Max layer activity from specified source layer(s)
-	// and optionally the global Context.NeuroMod.Rew or RewPred state variables,
-	// and updates the global ACh = Max of all as the positively-rectified,
-	// non-prediction-discounted reward salience signal.
-	// Acetylcholine (ACh) is known to represent something like this signal.
-	RSalienceAChLayer
-
 	// RWPredLayer computes reward prediction for a simple Rescorla-Wagner
 	// learning dynamic (i.e., PV learning in the PVLV framework).
 	// Activity is computed as linear function of excitatory conductance
@@ -151,12 +144,17 @@ const (
 	// CeMLayer represents a central nucleus of the amygdala layer.
 	CeMLayer
 
-	// PPTgLayer represents a pedunculopontine tegmental nucleus layer.
-	// it subtracts prior trial's excitatory conductance to
-	// compute the temporal derivative over time, with a positive
-	// rectification.
-	// also sets Act to the exact differenence.
-	PPTgLayer
+	// LDTLayer represents the laterodorsal tegmentum layer, which
+	// is the primary limbic ACh (acetylcholine) driver to other ACh:
+	// BG cholinergic interneurons (CIN) and nucleus basalis ACh areas.
+	// The phasic ACh release signals reward salient inputs from CS, US
+	// and US omssion, and it drives widespread disinhibition of BG gating
+	// and VTA DA firing.
+	// It receives excitation from superior colliculus which computes
+	// a temporal derivative (stimulus specific adaptation, SSA)
+	// of sensory inputs, and inhibitory input from OFC, ACC driving
+	// suppression of distracting inputs during goal-engaged states.
+	LDTLayer
 
 	// VSPatchLayer represents a ventral striatum patch layer,
 	// which learns to represent the expected amount of dopamine reward

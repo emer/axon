@@ -119,7 +119,7 @@ var ParamSetsFull = params.Sets{
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
-					"Layer.RSalACh.RewThr": "0.2",
+					"Layer.LDT.RewThr": "0.2",
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
@@ -154,7 +154,7 @@ var ParamSetsFull = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.3",
 				}},
-			{Sel: ".PPTgLayer", Desc: "",
+			{Sel: ".LDTLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
 					"Layer.Inhib.Layer.Gi":       "1.0", // todo: explore

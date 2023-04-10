@@ -106,10 +106,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "0.6",
 				}},
-			{Sel: "#ACh", Desc: "",
-				Params: params.Params{
-					"Layer.RSalACh.RewThr": "0.2",
-				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":      "0.025",
@@ -134,15 +130,21 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.3",
 				}},
-			{Sel: ".PPTgLayer", Desc: "",
+			{Sel: "#SC", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Layer.Gi":       "1.0", // todo: explore
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.5", // todo: could be lower = more bursting
-					"Layer.Inhib.Pool.FFPrv":     "10",  // key td param
-					"Layer.PVLV.Thr":             "0.2",
-					"Layer.PVLV.Gain":            "2.5", // key for impact of CS bursting
+					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Layer.FFPrv":    "10", // key td param
+					"Layer.Inhib.Pool.On":        "false",
+					"Layer.Act.Decay.Act":        "0.0",
+					"Layer.Act.Decay.Glong":      "0.0",
+				}},
+			{Sel: ".LDTLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.1",
+					"Layer.Inhib.Layer.Gi":       "1.0",
+					"Layer.Inhib.Pool.On":        "false",
+					"Layer.LDT.RewThr":           "0.2",
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
@@ -325,10 +327,6 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2", // 1 is ok but some spontaneous activity -- 2 is more reliable
-				}},
-			{Sel: ".CeMToPPTg", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
 				}},
 			{Sel: "#TimePToOFCPTp", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{

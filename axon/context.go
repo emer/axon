@@ -45,7 +45,7 @@ type Context struct {
 
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
-	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (PPTgLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
+	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -94,7 +94,7 @@ func (ctx *Context) CycleInc() {
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA is returned.
 func (ctx *Context) PVLVDA() float32 {
-	ctx.PVLV.DA(ctx.NeuroMod.PPTg)
+	ctx.PVLV.DA(ctx.NeuroMod.ACh)
 	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
 	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
 	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
@@ -103,7 +103,7 @@ func (ctx *Context) PVLVDA() float32 {
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset.
 func (ctx *Context) LHbDipResetFmSum() {
-	dipReset := ctx.PVLV.LHbDipResetFmSum()
+	dipReset := ctx.PVLV.LHbDipResetFmSum(ctx.NeuroMod.ACh)
 	if dipReset {
 		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
 	}

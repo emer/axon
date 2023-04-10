@@ -61,12 +61,6 @@ func (nt *Network) AddRWLayers(prefix string, rel relpos.Relations, space float3
 	return
 }
 
-// AddRSalienceAChLayer adds an RSalienceAChLayer unsigned reward salience coding ACh layer.
-func (nt *Network) AddRSalienceAChLayer(name string) *Layer {
-	ly := nt.AddLayer2D(name, 1, 1, RSalienceAChLayer)
-	return ly
-}
-
 // ConnectToRWPred adds a RWPrjn from given sending layer to a RWPred layer
 func (nt *Network) ConnectToRWPrjn(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	return nt.ConnectLayers(send, recv, pat, RWPrjn)

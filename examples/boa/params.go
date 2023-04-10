@@ -202,7 +202,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ACh", Desc: "",
 				Params: params.Params{
-					"Layer.RSalACh.RewThr": "0.2",
+					"Layer.LDT.RewThr": "0.2",
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
@@ -230,7 +230,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.3",
 				}},
-			{Sel: ".PPTgLayer", Desc: "",
+			{Sel: ".LDTLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":        "1.0", // critical to not decay -- otherwise FFPrv reset!
 					"Layer.Act.Decay.Glong":      "1.0",

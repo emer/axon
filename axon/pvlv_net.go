@@ -9,10 +9,10 @@ import (
 	"github.com/emer/emergent/relpos"
 )
 
-// AddPPTgLayer adds a PPTgLayer
-func (nt *Network) AddPPTgLayer(prefix string, nUs, unY, unX int) *Layer {
-	pptg := nt.AddLayer4D(prefix+"PPTg", 1, nUs, unY, unX, PPTgLayer)
-	return pptg
+// AddLDTLayer adds a LDTLayer
+func (nt *Network) AddLDTLayer(prefix string) *Layer {
+	ldt := nt.AddLayer2D(prefix+"LDT", 1, 1, LDTLayer)
+	return ldt
 }
 
 // AddBLALayers adds two BLA layers, acquisition / extinction / D1 / D2,
@@ -51,9 +51,9 @@ func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, unY, unX int, rel 
 }
 
 // AddAmygdala adds a full amygdala complex including BLA,
-// CeM, and PPTg.  Inclusion of negative valence is optional with neg
+// CeM, and LDT.  Inclusion of negative valence is optional with neg
 // arg -- neg* layers are nil if not included.
-func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, pptg *Layer) {
+func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg *Layer) {
 	blaPosAcq, blaPosExt = nt.AddBLALayers(prefix, true, nUs, unY, unX, relpos.Behind, space)
 	if neg {
 		blaNegAcq, blaNegExt = nt.AddBLALayers(prefix, false, nUs, unY, unX, relpos.Behind, space)
@@ -67,18 +67,14 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 		cemNeg.SetBuildConfig("Valence", "Negative")
 	}
 
-	pptg = nt.AddPPTgLayer(prefix, nUs, 1, unX)
-
 	p1to1 := prjn.NewPoolOneToOne()
 
 	nt.ConnectLayers(blaPosAcq, cemPos, p1to1, ForwardPrjn).SetClass("BLAToCeM_Excite")
 	nt.ConnectLayers(blaPosExt, cemPos, p1to1, InhibPrjn).SetClass("BLAToCeM_Inhib")
-	nt.ConnectLayers(cemPos, pptg, p1to1, ForwardPrjn).SetClass("CeMToPPTg")
 
 	if neg {
 		nt.ConnectLayers(blaNegAcq, cemNeg, p1to1, ForwardPrjn).SetClass("BLAToCeM_Excite")
 		nt.ConnectLayers(blaNegExt, cemNeg, p1to1, InhibPrjn).SetClass("BLAToCeM_Inhib")
-		// nt.ConnectLayers(cemNeg, pptg, p1to1, ForwardPrjn).SetClass("CeMToPPTg")
 	}
 
 	cemPos.PlaceBehind(blaPosExt, space)
@@ -86,9 +82,6 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, unY, unX int, space
 		blaNegAcq.PlaceBehind(blaPosExt, space)
 		cemPos.PlaceBehind(blaNegExt, space)
 		cemNeg.PlaceBehind(cemPos, space)
-		pptg.PlaceBehind(cemNeg, space)
-	} else {
-		pptg.PlaceBehind(cemPos, space)
 	}
 
 	return
@@ -212,21 +205,23 @@ func (nt *Network) ConnectToVSPatch(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	return nt.ConnectLayers(send, recv, pat, VSPatchPrjn)
 }
 
-// AddVTALHbAChLayers adds VTA dopamine, LHb DA dipping, and ACh layers
+// AddVTALHbLDTLayers adds VTA dopamine, LHb DA dipping, and LDT ACh layers
 // which are driven by corresponding values in ContextPVLV
-func (nt *Network) AddVTALHbAChLayers(rel relpos.Relations, space float32) (vta, lhb, ach *Layer) {
+func (nt *Network) AddVTALHbLDTLayers(rel relpos.Relations, space float32) (vta, lhb, ldt *Layer) {
 	vta = nt.AddLayer2D("VTA", 1, 1, VTALayer)
 	lhb = nt.AddLayer2D("LHb", 1, 2, LHbLayer)
-	ach = nt.AddRSalienceAChLayer("ACh")
+	ldt = nt.AddLDTLayer("LDT")
 	if rel == relpos.Behind {
 		lhb.PlaceBehind(vta, space)
-		ach.PlaceBehind(lhb, space)
+		ldt.PlaceBehind(lhb, space)
 	} else {
 		lhb.PlaceRightOf(vta, space)
-		ach.PlaceRightOf(lhb, space)
+		ldt.PlaceRightOf(lhb, space)
 	}
 	return
 }
+
+// todo: AddSC
 
 // AddDrivesLayer adds DrivePVLV layer representing current drive activity,
 // from ContextPVLV.Drive.Drives.

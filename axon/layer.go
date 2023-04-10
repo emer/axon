@@ -90,7 +90,7 @@ func (ly *Layer) Defaults() {
 		ly.BLADefaults()
 	case CeMLayer:
 		ly.CeMDefaults()
-	case PPTgLayer:
+	case LDTLayer:
 		ly.PPTgDefaults()
 	case VSPatchLayer:
 		ly.Params.VSPatchDefaults()
@@ -154,8 +154,8 @@ func (ly *Layer) PostBuild() {
 	case PulvinarLayer:
 		ly.PulvPostBuild()
 
-	case RSalienceAChLayer:
-		ly.RSalAChPostBuild()
+	case LDTLayer:
+		ly.LDTPostBuild()
 	case RWDaLayer:
 		ly.RWDaPostBuild()
 	case TDIntegLayer:

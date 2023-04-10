@@ -162,9 +162,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctxt := ev.CurStates["ContextIn"]
 	// timeIn := ev.CurStates["USTimeIn"]
 
-	vta, lhb, ach := net.AddVTALHbAChLayers(relpos.Behind, space)
+	vta, lhb, ldt := net.AddVTALHbLDTLayers(relpos.Behind, space)
 	_ = lhb
-	_ = ach
+	_ = ldt
 
 	vPmtxGo, vPmtxNo, _, _, vPgpeTA, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
 	vsGated := net.AddVSGatedLayer("", ny)
@@ -188,9 +188,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// ustimeIn := net.AddLayer4D("USTimeIn", timeIn.Dim(0), timeIn.Dim(1), timeIn.Dim(2), timeIn.Dim(3), axon.InputLayer)
 	// _ = ustimeIn
 
-	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, pptg := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
+	sc := net.AddLayer2D("SC", nuBgY, nuBgX, axon.SuperLayer)
+	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
+
+	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
 	_ = cemPos
-	_ = pptg
 	_ = blaNegE
 	_ = cemNeg
 	blaPosA.SetBuildConfig("LayInhib1Name", blaNegA.Name())
@@ -233,6 +235,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectPTPredToPulv(ofcPTPred, timeP, full, full)
 	net.ConnectLayers(time, ofcPTPred, full, axon.ForwardPrjn)
 	net.ConnectLayers(cs, ofcPTPred, full, axon.ForwardPrjn)
+
+	net.ConnectLayers(cs, sc, full, axon.ForwardPrjn)
 
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
@@ -294,6 +298,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
 	// ustimeIn.PlaceRightOf(ctxIn, space)
+	sc.PlaceRightOf(ctxIn, space)
 
 	blaPosA.PlaceAbove(usPos)
 	blaNegA.PlaceBehind(blaPosE, space)
@@ -541,7 +546,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("LHbBurst", dr.VTA.Vals.LHbBurst)
 	ss.Stats.SetFloat32("PVpos", dr.VTA.Vals.PVpos)
 	ss.Stats.SetFloat32("PVneg", dr.VTA.Vals.PVneg)
-	ss.Stats.SetFloat32("PPTg", dr.VTA.Vals.PPTg)
+	ss.Stats.SetFloat32("SC", 1)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -595,7 +600,7 @@ func (ss *Sim) ConfigLogItems() {
 	li = ss.Logs.AddStatAggItem("LHbBurst", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVpos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVneg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("PPTg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("SC", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 }
 
 // Log is the main logging function, handles special things for different scopes

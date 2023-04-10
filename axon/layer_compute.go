@@ -219,8 +219,8 @@ func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
 	}
 }
 
-// RSalAChLayMaxAct returns the lpl.AvgMax.Act.Cycle.Max for given layIdx
-func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
+// LDTLayMaxAct returns the lpl.AvgMax.Act.Cycle.Max for given layIdx
+func (ly *Layer) LDTLayMaxAct(net *Network, layIdx int32) float32 {
 	if layIdx < 0 {
 		return 0
 	}
@@ -238,13 +238,13 @@ func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
 // Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
 func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
-	case RSalienceAChLayer:
+	case LDTLayer:
 		net := ly.Network
-		lay1MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay1Idx)
-		lay2MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay2Idx)
-		lay3MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay3Idx)
-		lay4MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay4Idx)
-		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
+		lay1MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay1Idx)
+		lay2MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay2Idx)
+		lay3MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay3Idx)
+		lay4MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay4Idx)
+		ly.Params.CyclePostLDTLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
 	case RWDaLayer:
 		net := ly.Network
 		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
@@ -259,13 +259,15 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		net := ly.Network
 		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
 		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
-	case PPTgLayer:
-		ly.Params.CyclePostPPTgLayer(ctx, &ly.Pools[0])
+	case CeMLayer:
+		ly.Params.CyclePostCeMLayer(ctx, &ly.Pools[0])
 	case VSPatchLayer:
 		for pi := 1; pi < len(ly.Pools); pi++ {
 			pl := &ly.Pools[pi]
 			ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl)
 		}
+	case PTNotMaintLayer:
+		ly.Params.CyclePostPTNotMaintLayer(ctx, &ly.Pools[0])
 	case VTALayer:
 		ly.Params.CyclePostVTALayer(ctx)
 	}

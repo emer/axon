@@ -6,7 +6,6 @@ package axon
 
 import (
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
 )
 
 // AddBG adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
@@ -146,18 +145,6 @@ func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 	mtxNo.PlaceRightOf(mtxGo, space)
 
 	return
-}
-
-// AddCINLayer adds a RSalienceLayer unsigned reward salience coding ACh layer
-// which sends ACh to given Matrix Go and No layers (names), and is default located
-// to the right of the MtxNo layer with given spacing.
-// CIN is a cholinergic interneuron interspersed in the striatum that shows these
-// response properties and modulates learning in the striatum around US and CS events.
-// If other ACh modulation is needed, a global RSalienceLayer can be used.
-func (nt *Network) AddCINLayer(name, mtxGo, mtxNo string, space float32) *Layer {
-	cin := nt.AddRSalienceAChLayer(name)
-	cin.SetRelPos(relpos.NewRightOf(mtxNo, space))
-	return cin
 }
 
 // AddThalLayer4D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer

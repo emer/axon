@@ -227,10 +227,11 @@ func (ef *Effort) AddEffort(inc float32) {
 //  LHb & RMTg
 
 // LHb has values for computing LHb & RMTg which drives dips / pauses in DA firing.
-// Positive net LHb activity drives dips / pauses in VTA DA activity, e.g., when predicted pos > actual
-// or actual neg > predicted.
-// Negative net LHb activity drives bursts in VTA DA activity, e.g., when actual pos > predicted
-// (redundant with LV / Amygdala via PPTg) or "relief" burst when actual neg < predicted.
+// Positive net LHb activity drives dips / pauses in VTA DA activity,
+// e.g., when predicted pos > actual or actual neg > predicted.
+// Negative net LHb activity drives bursts in VTA DA activity,
+// e.g., when actual pos > predicted (redundant with LV / Amygdala)
+// or "relief" burst when actual neg < predicted.
 type LHb struct {
 	PosGain     float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
 	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
@@ -296,18 +297,16 @@ type VTAVals struct {
 	DA         float32 `desc:"overall dopamine value reflecting all of the different inputs"`
 	PVpos      float32 `desc:"total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received"`
 	PVneg      float32 `desc:"total negative valence primary value = sum of USneg inputs"`
-	PPTg       float32 `desc:"positive valence trial-level deltas, positive only rectified, from the PPTg, driven by Amygdala LV (learned value) system.  Reflects reward salience -- the onset of unexpected CSs and USs.  Note that positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
+	CeMpos     float32 `desc:"positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
+	CeMneg     float32 `desc:"negative valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLANegAcqD2 - BLANegExtD1|_+ positively rectified.  CeM sets Raw directly."`
 	LHbDip     float32 `desc:"dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips"`
 	LHbBurst   float32 `desc:"burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts"`
 	VSPatchPos float32 `desc:"net shunting input from VSPatch (PosD1 -- PVi in original PVLV)"`
-
-	pad float32
 }
 
-func (vt *VTAVals) Set(pvPos, pvNeg, pptg, lhbDip, lhbBurst, vsPatchPos float32) {
+func (vt *VTAVals) Set(pvPos, pvNeg, lhbDip, lhbBurst, vsPatchPos float32) {
 	vt.PVpos = pvPos
 	vt.PVneg = pvNeg
-	vt.PPTg = pptg
 	vt.LHbDip = lhbDip
 	vt.LHbBurst = lhbBurst
 	vt.VSPatchPos = vsPatchPos
@@ -317,7 +316,8 @@ func (vt *VTAVals) SetAll(val float32) {
 	vt.DA = val
 	vt.PVpos = val
 	vt.PVneg = val
-	vt.PPTg = val
+	vt.CeMpos = val
+	vt.CeMneg = val
 	vt.LHbDip = val
 	vt.LHbBurst = val
 	vt.VSPatchPos = val
@@ -331,10 +331,12 @@ func (vt *VTAVals) Zero() {
 // as a function of:
 //   - PV (primary value) driving inputs reflecting US inputs,
 //     which are modulated by Drives and discounted by Effort for positive.
-//   - LV / Amygdala which drives bursting for unexpected CSs or USs via PPTg.
+//   - LV / Amygdala which drives bursting for unexpected CSs or USs via CeM.
 //   - Shunting expectations of reward from VSPatchPosD1 - D2.
 //   - Dipping / pausing inhibitory inputs from lateral habenula (LHb) reflecting
 //     predicted positive outcome > actual, or actual negative > predicted.
+//   - ACh from LDT (laterodorsal tegmentum) reflecting sensory / reward salience,
+//     which disinhibits VTA activity.
 type VTA struct {
 	PVThr float32 `desc:"threshold for activity of PVpos or VSPatchPos to determine if a PV event (actual PV or omission thereof) is present"`
 
@@ -356,10 +358,12 @@ func (vt *VTA) Update() {
 
 // DAFmRaw computes the intermediate Vals and final DA value from
 // Raw values that have been set prior to calling.
-func (vt *VTA) DAFmRaw() {
+// ACh value from LDT is passed as a parameter.
+func (vt *VTA) DAFmRaw(ach float32) {
 	vt.Vals.PVpos = vt.Gain.PVpos * vt.Raw.PVpos
 	vt.Vals.PVneg = vt.Gain.PVneg * vt.Raw.PVneg
-	vt.Vals.PPTg = vt.Gain.PPTg * vt.Raw.PPTg
+	vt.Vals.CeMpos = vt.Gain.CeMpos * vt.Raw.CeMpos
+	vt.Vals.CeMneg = vt.Gain.CeMneg * vt.Raw.CeMneg
 	vt.Vals.LHbDip = vt.Gain.LHbDip * vt.Raw.LHbDip
 	vt.Vals.LHbBurst = vt.Gain.LHbBurst * vt.Raw.LHbBurst
 	vt.Vals.VSPatchPos = vt.Gain.VSPatchPos * vt.Raw.VSPatchPos
@@ -368,12 +372,12 @@ func (vt *VTA) DAFmRaw() {
 		vt.Vals.VSPatchPos = 0
 	}
 	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos
-	csDA := mat32.Max(vt.Vals.PPTg, vt.Vals.LHbBurst) // - vt.Vals.LHbDip
-	netDA := float32(0)
-	if vt.Vals.PVpos > vt.PVThr || vt.Vals.VSPatchPos > vt.PVThr { // if actual PV, ignore PPTg and apply VSPatchPos
-		netDA = pvDA
-	} else {
-		netDA = pvDA + csDA // throw it all in..
+	csNet := vt.Vals.CeMpos - vt.Vals.CeMneg         // todo: is this sensible?  max next with 0 so positive..
+	csDA := ach * mat32.Max(csNet, vt.Vals.LHbBurst) // - vt.Vals.LHbDip
+	// note that ach is only on cs -- should be 1 for PV events anyway..
+	netDA := pvDA
+	if vt.Vals.PVpos < vt.PVThr && vt.Vals.VSPatchPos < vt.PVThr { // if not actual PV, add cs
+		netDA += csDA // todo: does this work for everything?  do we need above if?
 	}
 	vt.Vals.DA = vt.Gain.DA * netDA
 }
@@ -421,10 +425,10 @@ func (vt *VSMatrix) VSGated(gated, hasRew bool) {
 // and resulting dopamine from US (unconditioned stimulus) inputs,
 // as computed by the PVLV model of primary value (PV)
 // and learned value (LV), describing the functions of the Amygala,
-// Ventral Striatum, VTA and associated midbrain nuclei (PPTg, LHb, RMTg)
+// Ventral Striatum, VTA and associated midbrain nuclei (LDT, LHb, RMTg)
 // Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine
 // are computed in equations using inputs from specialized network layers
-// (PPTgLayer driven by BLA, CeM layers, VSPatchLayer).
+// (LDTLayer driven by BLA, CeM layers, VSPatchLayer).
 // Renders USLayer, PVLayer, DrivesLayer representations based on state updated here.
 type PVLV struct {
 	Drive    Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
@@ -541,28 +545,28 @@ func (pp *PVLV) PosPVFmDriveEffort(usValue, drive, effort float32) float32 {
 }
 
 // DA computes the updated dopamine from all the current state,
-// including pptg via Context.
+// including ACh from LDT via Context.
 // Call after setting USs, Effort, Drives, VSPatch vals etc.
 // Resulting DA is in VTA.Vals.DA, and is returned
 // (to be set to Context.NeuroMod.DA)
-func (pp *PVLV) DA(pptg float32) float32 {
+func (pp *PVLV) DA(ach float32) float32 {
 	pvPosRaw := pp.PosPV()
 	pvNeg := pp.NegPV()
 	pvPos := pvPosRaw * pp.Effort.Disc
 	vsPatchPos := pp.VSPatchMax()
 	pp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
-	pp.VTA.Raw.Set(pvPos, pvNeg, pptg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)
-	pp.VTA.DAFmRaw()
+	pp.VTA.Raw.Set(pvPos, pvNeg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)
+	pp.VTA.DAFmRaw(ach)
 	return pp.VTA.Vals.DA
 }
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset
-func (pp *PVLV) LHbDipResetFmSum() bool {
+func (pp *PVLV) LHbDipResetFmSum(ach float32) bool {
 	reset := false
 	if pp.VTA.Vals.PVpos > pp.VTA.PVThr { // if actual PV, reset
 		reset = true
-	} else if pp.VTA.Vals.PPTg > pp.VTA.PVThr { // if actual CS, reset
-		reset = true
+		// } else if ach > pp.VTA.PVThr { // if actual CS, reset // todo: not sure what to do
+		// 	reset = true
 	}
 	dipReset := pp.LHb.DipResetFmSum(reset)
 	pp.USneg.Set(0, 0) // special effort neg

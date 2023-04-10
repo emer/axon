@@ -7,9 +7,45 @@ package axon
 import (
 	"log"
 	"strings"
+
+	"github.com/goki/gosl/slbool"
+	"github.com/goki/mat32"
 )
 
 //gosl: start pvlv_layers
+
+// LDTParams compute reward salience as ACh global neuromodulatory signal
+// as a function of the MAX activation of its inputs.
+type LDTParams struct {
+	RewThr     float32     `desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
+	Rew        slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
+	RewPred    slbool.Bool `desc:"use the global Context.NeuroMod.RewPred value"`
+	SrcLay1Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
+	SrcLay2Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
+	SrcLay3Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
+	SrcLay4Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
+
+	pad int32
+}
+
+func (rp *LDTParams) Defaults() {
+	rp.RewThr = 0.1
+	rp.Rew.SetBool(true)
+}
+
+func (rp *LDTParams) Update() {
+}
+
+// Thr applies
+func (rp *LDTParams) Thr(val float32) float32 {
+	if rp.RewThr <= 0 {
+		return val
+	}
+	if mat32.Abs(val) < rp.RewThr {
+		return 0
+	}
+	return 1
+}
 
 // PVLVParams has parameters for readout of values as inputs to PVLV equations.
 type PVLVParams struct {
