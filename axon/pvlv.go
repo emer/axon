@@ -274,7 +274,8 @@ func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos float32) {
 }
 
 // DipResetFmSum increments DipSum and checks if should flag a reset
-// returns true if did reset.
+// returns true if did reset.  resetSum resets the accumulating DipSum
+// at salient events like US input or CS-driven gating
 func (lh *LHb) DipResetFmSum(resetSum bool) bool {
 	lh.DipSum += lh.Dip
 	if resetSum {
@@ -377,7 +378,7 @@ func (vt *VTA) DAFmRaw(ach float32) {
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := pvDA
 	if vt.Vals.PVpos < vt.PVThr && vt.Vals.VSPatchPos < vt.PVThr { // if not actual PV, add cs
-		netDA += csDA // todo: does this work for everything?  do we need above if?
+		netDA += csDA
 	}
 	vt.Vals.DA = vt.Gain.DA * netDA
 }
@@ -560,15 +561,19 @@ func (pp *PVLV) DA(ach float32) float32 {
 	return pp.VTA.Vals.DA
 }
 
-// LHbDipResetFmSum increments DipSum and checks if should flag a reset
+// LHbDipResetFmSum increments DipSum and checks if should flag a reset.
+// computed at end of minus phase -- so there is time for reset to have effects.
+// most other updates in plus phase -- some variables could be stale here.
 func (pp *PVLV) LHbDipResetFmSum(ach float32) bool {
-	reset := false
-	if pp.VTA.Vals.PVpos > pp.VTA.PVThr { // if actual PV, reset
-		reset = true
-		// } else if ach > pp.VTA.PVThr { // if actual CS, reset // todo: not sure what to do
-		// 	reset = true
+	resetSum := false                     // reset sum at salient events: actual US, CS-gating
+	if pp.VTA.Vals.PVpos > pp.VTA.PVThr { // if actual PV, reset dip sum
+		resetSum = true
+		// } else if pp.VSMatrix.JustGated.IsTrue() { // note: is leftover from prior trial
+		// this would prevent extinction on trial just after CS gating..
+		// using raw ACh is too sensitive.
+		// 	resetSum = true
 	}
-	dipReset := pp.LHb.DipResetFmSum(reset)
+	dipReset := pp.LHb.DipResetFmSum(resetSum)
 	pp.USneg.Set(0, 0) // special effort neg
 	if dipReset {
 		pp.USneg.Set(0, 1.0-pp.Effort.Disc) // proportional to discount factor, maxes out at 1

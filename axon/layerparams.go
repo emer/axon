@@ -687,6 +687,14 @@ func (ly *LayerParams) LDTMaxLayAct(maxAct, layMaxAct float32) float32 {
 
 func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct float32) {
 	maxAct := float32(0)
+	maxAct = ly.LDTMaxLayAct(maxAct, lay1MaxAct)
+	maxAct = ly.LDTMaxLayAct(maxAct, lay2MaxAct)
+	maxAct = ly.LDTMaxLayAct(maxAct, lay3MaxAct)
+	maxAct = ly.LDTMaxLayAct(maxAct, lay4MaxAct)
+
+	maint := ly.LDT.MaintFmNotMaint(1.0 - ctx.NeuroMod.NotMaint)
+	maxAct *= (1.0 - maint*ly.LDT.MaintInhib)
+
 	if ly.LDT.Rew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() {
 			maxAct = 1
@@ -698,10 +706,6 @@ func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, lay1MaxA
 			maxAct = rpAct
 		}
 	}
-	maxAct = ly.LDTMaxLayAct(maxAct, lay1MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay2MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay3MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay4MaxAct)
 	vals.NeuroMod.AChRaw = maxAct
 	vals.NeuroMod.AChFmRaw(ly.Act.Dt.IntDt)
 

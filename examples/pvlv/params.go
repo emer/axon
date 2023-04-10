@@ -138,6 +138,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "false",
 					"Layer.Act.Decay.Act":        "0.0",
 					"Layer.Act.Decay.Glong":      "0.0",
+					"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
 				}},
 			{Sel: ".LDTLayer", Desc: "",
 				Params: params.Params{

@@ -17,34 +17,47 @@ import (
 // LDTParams compute reward salience as ACh global neuromodulatory signal
 // as a function of the MAX activation of its inputs.
 type LDTParams struct {
-	RewThr     float32     `desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
-	Rew        slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
-	RewPred    slbool.Bool `desc:"use the global Context.NeuroMod.RewPred value"`
-	SrcLay1Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
-	SrcLay2Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
-	SrcLay3Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
-	SrcLay4Idx int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
+	RewThr      float32     `desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
+	Rew         slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
+	RewPred     slbool.Bool `desc:"use the global Context.NeuroMod.RewPred value"`
+	MaintInhib  float32     `desc:"extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower."`
+	NotMaintMax float32     `desc:"maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0."`
+	SrcLay1Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
+	SrcLay2Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
+	SrcLay3Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
+	SrcLay4Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
 
-	pad int32
+	pad, pad1, pad2 int32
 }
 
-func (rp *LDTParams) Defaults() {
-	rp.RewThr = 0.1
-	rp.Rew.SetBool(true)
+func (lp *LDTParams) Defaults() {
+	lp.RewThr = 0.1
+	lp.Rew.SetBool(true)
+	lp.MaintInhib = 0.5
+	lp.NotMaintMax = 0.4
 }
 
-func (rp *LDTParams) Update() {
+func (lp *LDTParams) Update() {
 }
 
-// Thr applies
-func (rp *LDTParams) Thr(val float32) float32 {
-	if rp.RewThr <= 0 {
+// Thr applies threshold to given value
+func (lp *LDTParams) Thr(val float32) float32 {
+	if lp.RewThr <= 0 {
 		return val
 	}
-	if mat32.Abs(val) < rp.RewThr {
+	if mat32.Abs(val) < lp.RewThr {
 		return 0
 	}
 	return 1
+}
+
+// MaintFmNotMaint returns a 0-1 value reflecting strength of active maintenance
+// based on the activity of the PTNotMaintLayer as recorded in NeuroMod.NotMaint.
+func (lp *LDTParams) MaintFmNotMaint(notMaint float32) float32 {
+	if notMaint > lp.NotMaintMax {
+		return 0
+	}
+	return (lp.NotMaintMax - notMaint) / lp.NotMaintMax // == 1 when notMaint = 0
 }
 
 // PVLVParams has parameters for readout of values as inputs to PVLV equations.
@@ -228,7 +241,7 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
 	ly.Learn.NeuroMod.AChDisInhib = 0   // 5 for matrix -- not sure about this?
 	ly.Learn.NeuroMod.BurstGain = 1
-	ly.Learn.NeuroMod.DipGain = 1 // extinction -- works fine at 1
+	ly.Learn.NeuroMod.DipGain = 0.1 // extinction -- better slower -- e.g., .1
 	ly.PVLV.Thr = 0.3
 	ly.PVLV.Gain = 6
 }
