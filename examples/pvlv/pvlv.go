@@ -193,10 +193,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
 	net.ConnectToSC(cs, sc, full)
 
-	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
+	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, novAct := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
 	_ = cemPos
 	_ = blaNegE
 	_ = cemNeg
+	_ = novAct
 	blaPosA.SetBuildConfig("LayInhib1Name", blaNegA.Name())
 	blaNegA.SetBuildConfig("LayInhib1Name", blaPosA.Name())
 

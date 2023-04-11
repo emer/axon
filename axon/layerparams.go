@@ -441,7 +441,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = ctx.PVLV.VTA.Prev.PVpos
+			// undiscounted by effort..
+			pv = ctx.PVLV.VTA.Prev.USpos // could be PVpos
 		} else {
 			pv = ctx.PVLV.VTA.Prev.PVneg
 		}
@@ -868,6 +869,9 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	switch ly.LayType {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous trial
+		if pl.StIdx == ly.Idxs.NeurSt {                          // first pool
+			dlr = 0 // first pool is novelty / curiosity -- no learn
+		}
 	case VSPatchLayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		modlr = ly.VSPatch.DALRate(vals.NeuroMod.DA, modlr) // always decrease if no DA

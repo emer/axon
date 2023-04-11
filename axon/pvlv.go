@@ -11,7 +11,9 @@ import (
 
 //gosl: start pvlv
 
-// DriveVals represents different internal drives, such as hunger, thirst, etc.
+// DriveVals represents different internal drives,
+// such as hunger, thirst, etc.  The first drive is
+// typically reserved for novelty / curiosity.
 // labels can be provided by specific environments.
 type DriveVals struct {
 	D0 float32
@@ -296,6 +298,7 @@ func (lh *LHb) DipResetFmSum(resetSum bool) bool {
 // Used as gain factors and computed values.
 type VTAVals struct {
 	DA         float32 `desc:"overall dopamine value reflecting all of the different inputs"`
+	USpos      float32 `desc:"total positive valence primary value = sum of USpos * Drive without effort discounting"`
 	PVpos      float32 `desc:"total positive valence primary value = sum of USpos * Drive * (1-Effort.Disc) -- what actually drives DA bursting from actual USs received"`
 	PVneg      float32 `desc:"total negative valence primary value = sum of USneg inputs"`
 	CeMpos     float32 `desc:"positive valence central nucleus of the amygdala (CeM) LV (learned value) activity, reflecting |BLAPosAcqD1 - BLAPosExtD2|_+ positively rectified.  CeM sets Raw directly.  Note that a positive US onset even with no active Drive will be reflected here, enabling learning about unexpected outcomes."`
@@ -303,9 +306,12 @@ type VTAVals struct {
 	LHbDip     float32 `desc:"dip from LHb / RMTg -- net inhibitory drive on VTA DA firing = dips"`
 	LHbBurst   float32 `desc:"burst from LHb / RMTg -- net excitatory drive on VTA DA firing = bursts"`
 	VSPatchPos float32 `desc:"net shunting input from VSPatch (PosD1 -- PVi in original PVLV)"`
+
+	pad, pad1, pad2 float32
 }
 
-func (vt *VTAVals) Set(pvPos, pvNeg, lhbDip, lhbBurst, vsPatchPos float32) {
+func (vt *VTAVals) Set(usPos, pvPos, pvNeg, lhbDip, lhbBurst, vsPatchPos float32) {
+	vt.USpos = usPos
 	vt.PVpos = pvPos
 	vt.PVneg = pvNeg
 	vt.LHbDip = lhbDip
@@ -315,6 +321,7 @@ func (vt *VTAVals) Set(pvPos, pvNeg, lhbDip, lhbBurst, vsPatchPos float32) {
 
 func (vt *VTAVals) SetAll(val float32) {
 	vt.DA = val
+	vt.USpos = val
 	vt.PVpos = val
 	vt.PVneg = val
 	vt.CeMpos = val
@@ -551,12 +558,15 @@ func (pp *PVLV) PosPVFmDriveEffort(usValue, drive, effort float32) float32 {
 // Resulting DA is in VTA.Vals.DA, and is returned
 // (to be set to Context.NeuroMod.DA)
 func (pp *PVLV) DA(ach float32) float32 {
-	pvPosRaw := pp.PosPV()
+	usPos := pp.PosPV()
 	pvNeg := pp.NegPV()
-	pvPos := pvPosRaw * pp.Effort.Disc
+	if pp.LHb.DipReset.IsTrue() {
+		pvNeg += 1.0 - pp.Effort.Disc // pay effort cost here..
+	}
+	pvPos := usPos * pp.Effort.Disc
 	vsPatchPos := pp.VSPatchMax()
 	pp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
-	pp.VTA.Raw.Set(pvPos, pvNeg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)
+	pp.VTA.Raw.Set(usPos, pvPos, pvNeg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)
 	pp.VTA.DAFmRaw(ach)
 	return pp.VTA.Vals.DA
 }
@@ -574,10 +584,6 @@ func (pp *PVLV) LHbDipResetFmSum(ach float32) bool {
 		// 	resetSum = true
 	}
 	dipReset := pp.LHb.DipResetFmSum(resetSum)
-	pp.USneg.Set(0, 0) // special effort neg
-	if dipReset {
-		pp.USneg.Set(0, 1.0-pp.Effort.Disc) // proportional to discount factor, maxes out at 1
-	}
 	return dipReset
 }
 

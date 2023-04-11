@@ -53,7 +53,7 @@ func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX int
 // AddAmygdala adds a full amygdala complex including BLA,
 // CeM, and LDT.  Inclusion of negative valence is optional with neg
 // arg -- neg* layers are nil if not included.
-func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg *Layer) {
+func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, novAct *Layer) {
 	blaPosAcq, blaPosExt = nt.AddBLALayers(prefix, true, nUs, nNeurY, nNeurX, relpos.Behind, space)
 	if neg {
 		blaNegAcq, blaNegExt = nt.AddBLALayers(prefix, false, nUs, nNeurY, nNeurX, relpos.Behind, space)
@@ -67,6 +67,8 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int,
 		cemNeg.SetBuildConfig("Valence", "Negative")
 	}
 
+	novAct = nt.AddLayer4D(prefix+"Novel", 1, 1, 1, 5, InputLayer)
+
 	p1to1 := prjn.NewPoolOneToOne()
 
 	nt.ConnectLayers(blaPosAcq, cemPos, p1to1, ForwardPrjn).SetClass("BLAToCeM_Excite")
@@ -77,11 +79,16 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int,
 		nt.ConnectLayers(blaNegExt, cemNeg, p1to1, InhibPrjn).SetClass("BLAToCeM_Inhib")
 	}
 
+	nt.ConnectLayers(novAct, blaPosAcq, p1to1, ForwardPrjn).SetClass("NovelToBLAPosAcq")
+
 	cemPos.PlaceBehind(blaPosExt, space)
 	if neg {
 		blaNegAcq.PlaceBehind(blaPosExt, space)
 		cemPos.PlaceBehind(blaNegExt, space)
 		cemNeg.PlaceBehind(cemPos, space)
+		novAct.PlaceBehind(cemNeg, space)
+	} else {
+		novAct.PlaceBehind(cemPos, space)
 	}
 
 	return

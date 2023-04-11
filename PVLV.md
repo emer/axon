@@ -125,7 +125,11 @@ In this model, we instead leverage the OFC PT active maintenance to select the U
 Where `DALr` is *positive* when DA is negative, due to the D2 sign reversal, and the receiving activity is normalized by the Max layer activity, because it often starts out only very weakly active.  There is no meaningful delta here so it just keeps learning until the BLA Acq is extinguished to the point where it no longer can drive gating of OFC PT in the first place, breaking the learning cycle.
 
 Also, it is important that the stable `PTMaint` layer drives the BLA Ext input, not the dynamically changing `PTPred`, because BLA Ext learns at the time when the US was expected, but it must then get activated earlier at the time of CS onset to block the BLA Acq gating.
-      
+
+## Novelty & Curiosity Drive
+
+The first pool in the BLAPosAcq / PosExt layers is reserved for the "novelty" case.  This pool is driven by persistent excitatory input and active by default unless inhibited by another layer -- i.e., a CS is novel until proven otherwise.  If the pursuit of the CS leads to no positive US outcome, then the corresponding extinction layer will learn to oppose the positive novelty activation.  If it leads to a US outcome, then that association will be learned, and the CS will then activate that US instead of novelty.
+
 # SC -> LDT ACh
 
 In the [Mollick et al. (2020)](#references) version, the PPTg (pedunculopontine tegmentum) directly computed a temporal derivative of amygdala inputs, to account for phasic DA firing only at the *onset* of a CS, when the BLA has sustained CS activity.  However, updated research shows that this is incorrect, and it is also causes problems functionally in the context of the BOA model.

@@ -130,6 +130,14 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.3",
 				}},
+			{Sel: "#Novel", Desc: "",
+				Params: params.Params{
+					"Layer.Act.Init.GeBase":      "0.3",
+					"Layer.Act.Init.GeVar":       "0.1",
+					"Layer.Inhib.ActAvg.Nominal": "0.15",
+					"Layer.Inhib.Layer.Gi":       "0.8",
+					"Layer.Inhib.Pool.On":        "false",
+				}},
 			{Sel: ".SC", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
@@ -182,17 +190,18 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true", // this is critical, else too active
-					"Layer.Inhib.Layer.Gi":       "0.6",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true", // this is critical, else too active
+					"Layer.Inhib.Layer.Gi":             "0.6",
+					"Layer.Act.SKCa.Gbar":              "3",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: "#VpSTNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":      "0.2",
-					"Layer.Act.Init.GeVar":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Inhib.Layer.On":       "true",
-					"Layer.Inhib.Layer.Gi":       "0.2",
+					"Layer.Inhib.ActAvg.Nominal":       "0.15",
+					"Layer.Inhib.Layer.On":             "true",
+					"Layer.Inhib.Layer.Gi":             "0.2",
+					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
