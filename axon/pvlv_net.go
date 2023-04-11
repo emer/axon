@@ -67,7 +67,7 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int,
 		cemNeg.SetBuildConfig("Valence", "Negative")
 	}
 
-	novAct = nt.AddLayer4D(prefix+"Novel", 1, 1, 1, 5, InputLayer)
+	novAct = nt.AddLayer4D(prefix+"Novel", 1, 1, 5, 5, InputLayer)
 
 	p1to1 := prjn.NewPoolOneToOne()
 

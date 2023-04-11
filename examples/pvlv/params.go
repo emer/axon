@@ -132,17 +132,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#Novel", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":      "0.3",
-					"Layer.Act.Init.GeVar":       "0.1",
-					"Layer.Inhib.ActAvg.Nominal": "0.15",
+					"Layer.Act.Init.GeBase":      "0.4",
+					"Layer.Act.Init.GeVar":       "0.2",
+					"Layer.Inhib.ActAvg.Nominal": "0.05",
 					"Layer.Inhib.Layer.Gi":       "0.8",
 					"Layer.Inhib.Pool.On":        "false",
 				}},
 			{Sel: ".SC", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Layer.Gi":       "1.0",
-					"Layer.Inhib.Layer.FFPrv":    "5", // key td param
+					"Layer.Inhib.Layer.Gi":       "0.8",
+					"Layer.Inhib.Layer.FFPrv":    "10", // key td param
 					"Layer.Inhib.Pool.On":        "false",
 					"Layer.Act.Decay.Act":        "0.0",
 					"Layer.Act.Decay.Glong":      "0.0",
@@ -157,7 +157,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.03",
+					"Layer.Inhib.ActAvg.Nominal": "0.01",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.5",
@@ -220,7 +220,7 @@ var ParamSets = params.Sets{
 					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
 					"Layer.Matrix.IsVS":                "true",
 					"Layer.Learn.NeuroMod.AChDisInhib": "5", // key to be 5
-					"Layer.Act.Dend.ModGain":           "2",
+					"Layer.Act.Dend.ModGain":           "5",
 					"Layer.Inhib.ActAvg.Nominal":       ".03",
 					"Layer.Inhib.Layer.On":             "false",
 					"Layer.Inhib.Layer.Gi":             "0.0", // was .8

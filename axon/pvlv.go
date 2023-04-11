@@ -133,7 +133,7 @@ func (ds *DriveVals) ExpStep(drv int32, dt, base float32) float32 {
 // Drives manages the drive parameters for updating drive state,
 // and drive state.
 type Drives struct {
-	NActive  int32   `max:"8" desc:"number of active drives -- must be <= 8"`
+	NActive  int32   `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be <= 8"`
 	NNegUSs  int32   `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
 	DriveMin float32 `desc:"minimum effective drive value"`
 

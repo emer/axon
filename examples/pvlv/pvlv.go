@@ -90,7 +90,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.RunName = "PosAcq_B50"
+	ss.RunName = "PosAcq_A100B50"
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
@@ -134,7 +134,7 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 
-	ss.Context.PVLV.Drive.NActive = int32(cond.NUSs)
+	ss.Context.PVLV.Drive.NActive = int32(cond.NUSs + 1)
 
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
@@ -208,8 +208,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ofcCT.SetClass("OFC CTCopy")
 	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, pone2one, pone2one, pone2one, space)
 	ofcPTPred.SetClass("OFC")
-	ofcNotMaint := net.AddPTNotMaintLayer(ofcPT, ny, 1, space)
-	_ = ofcNotMaint
+	notMaint := net.AddPTNotMaintLayer(ofcPT, ny, 1, space)
+	notMaint.Nm = "NotMaint"
 
 	// net.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
@@ -447,7 +447,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	ctx.NeuroMod.HasRew.SetBool(false)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
-			dr.SetPosUS(int32(trl.US), trl.USMag)
+			dr.SetPosUS(int32(trl.US+1), trl.USMag) // +1 for curiosity
 		} else {
 			dr.SetNegUS(int32(trl.US), trl.USMag)
 		}
@@ -455,7 +455,8 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	}
 	dr.InitDrives()
 	dr.Effort.AddEffort(1) // should be based on action taken last step
-	dr.SetDrive(int32(trl.US), 1)
+	dr.SetDrive(0, 1.0)    // curiosity
+	dr.SetDrive(int32(trl.US+1), 1)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -508,6 +509,7 @@ func (ss *Sim) NewRun() {
 	ss.InitEnvRun()
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
+	ss.Context.PVLV.Effort.Reset()
 	ss.Net.InitWts()
 	ss.LoadRunWeights()
 	ss.InitStats()
