@@ -142,6 +142,12 @@ func (nm *NeuroModParams) Update() {
 	nm.AChLRateMod = mat32.Clamp(nm.AChLRateMod, 0, 1)
 }
 
+// IsBLAExt returns true if this is Positive, D2 or Negative D1 -- BLA extinction
+func (nm *NeuroModParams) IsBLAExt() bool {
+	return (nm.Valence == Positive && nm.DAMod == D2Mod) ||
+		(nm.Valence == Negative && nm.DAMod == D1Mod)
+}
+
 // LRModFact returns learning rate modulation factor for given inputs.
 func (nm *NeuroModParams) LRModFact(pct, val float32) float32 {
 	val = mat32.Clamp(mat32.Abs(val), 0, 1)

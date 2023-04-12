@@ -294,8 +294,8 @@ var ParamSets = params.Sets{
 			// PVLV
 			{Sel: ".BLAAcqPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base":     "0.02",
-					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
+					"Prjn.Learn.LRate.Base":  "0.02",
+					"Prjn.BLA.NegDeltaLRate": "0.01", // todo: explore
 				}},
 			{Sel: ".ToSC", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -328,7 +328,14 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ContextInToBLAPosExtD2", Desc: "",
 				Params: params.Params{
+					"Prjn.PrjnScale.Abs":    "3",
+					"Prjn.Learn.LRate.Base": "0.1",
+				}},
+			{Sel: ".PTpToBLAExt", Desc: "stronger by default",
+				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.5",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.3",
 				}},
 			{Sel: "#BLAPosAcqD1ToOFC", Desc: "strong",
 				Params: params.Params{
@@ -382,6 +389,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAToBG", Desc: "",
 				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.PrjnScale.Rel": "1",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",

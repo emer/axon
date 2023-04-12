@@ -139,7 +139,7 @@ func (ly *Layer) BLADefaults() {
 		lp.Learn.RLRate.Diff.SetBool(true)
 		lp.Learn.RLRate.DiffThr = 0.01
 	} else {
-		lp.Learn.NeuroMod.DALRateSign.SetBool(true) // yes for Extinction
+		// lp.Learn.NeuroMod.DALRateSign.SetBool(true) // yes for Extinction
 		lp.Learn.NeuroMod.BurstGain = 1
 		lp.Learn.NeuroMod.DipGain = 1
 		lp.Learn.RLRate.Diff.SetBool(false)

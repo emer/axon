@@ -389,7 +389,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.Rew) // Rew must be set in Context!
 	case LDTLayer:
-		nrn.GeRaw = 0.2 * ctx.NeuroMod.ACh
+		nrn.GeRaw = 0.4 * ctx.NeuroMod.ACh
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case RWDaLayer:
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.NeuroMod.DA)
@@ -404,6 +404,21 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	case VTALayer:
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.PVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case BLALayer:
+		// only for ext type:
+		if ly.Learn.NeuroMod.IsBLAExt() {
+			geCtxt := ly.CT.GeGain * nrn.CtxtGe
+			nrn.GeRaw += geCtxt
+			if ly.CT.DecayDt > 0 {
+				nrn.CtxtGe -= ly.CT.DecayDt * nrn.CtxtGe
+			}
+			ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+			nrn.GeSyn += ctxExt
+			saveVal = ctxExt // used In PostGs to set nrn.GeExt
+			// todo: this will cause oscillation for extinguished items
+			nrn.GeRaw *= ctx.NeuroMod.ACh // strong ach gating
+			nrn.GeSyn *= ctx.NeuroMod.ACh
+		}
 	case LHbLayer:
 		if ni == 0 {
 			nrn.GeRaw = 0.2 * mat32.Abs(ctx.PVLV.LHb.Dip)
@@ -869,7 +884,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	switch ly.LayType {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous trial
-		if pl.StIdx == 0 {                                       // first pool
+		if !ly.Learn.NeuroMod.IsBLAExt() && pl.StIdx == 0 {      // first pool
 			dlr = 0 // first pool is novelty / curiosity -- no learn
 		}
 	case VSPatchLayer:

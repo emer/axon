@@ -95,7 +95,7 @@ type PrjnParams struct {
 
 	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
-	BLAAcq BLAAcqPrjnParams `viewif:"PrjnType=BLAAcqPrjn" view:"inline" desc:"Basolateral Amygdala acquisition pathway projection parameters, for negative activation delta direction (extinction)."`
+	BLA    BLAPrjnParams    `viewif:"PrjnType=[BLAAcqPrjn,BLAExtPrjn]" view:"inline" desc:"Basolateral Amygdala projection parameters."`
 
 	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
@@ -107,7 +107,7 @@ func (pj *PrjnParams) Defaults() {
 	pj.Learn.Defaults()
 	pj.RLPred.Defaults()
 	pj.Matrix.Defaults()
-	pj.BLAAcq.Defaults()
+	pj.BLA.Defaults()
 }
 
 func (pj *PrjnParams) Update() {
@@ -117,7 +117,7 @@ func (pj *PrjnParams) Update() {
 	pj.Learn.Update()
 	pj.RLPred.Update()
 	pj.Matrix.Update()
-	pj.BLAAcq.Update()
+	pj.BLA.Update()
 
 	if pj.PrjnType == CTCtxtPrjn {
 		pj.Com.GType = ContextG
@@ -143,8 +143,10 @@ func (pj *PrjnParams) AllParams() string {
 		b, _ = json.MarshalIndent(&pj.Matrix, "", " ")
 		str += "Matrix: {\n " + JsonToParams(b)
 	case BLAAcqPrjn:
-		b, _ = json.MarshalIndent(&pj.BLAAcq, "", " ")
-		str += "BLAAcq: {\n " + JsonToParams(b)
+		fallthrough
+	case BLAExtPrjn:
+		b, _ = json.MarshalIndent(&pj.BLA, "", " ")
+		str += "BLA: {\n " + JsonToParams(b)
 	}
 	return str
 }
@@ -299,10 +301,10 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool,
 		pj.DWtSynMatrix(ctx, sy, sn, rn, layPool, subPool)
 	case VSPatchPrjn:
 		pj.DWtSynVSPatch(ctx, sy, sn, rn, layPool, subPool)
-	case BLAAcqPrjn:
-		pj.DWtSynBLAAcq(ctx, sy, sn, rn, layPool, subPool)
 	case BLAExtPrjn:
-		pj.DWtSynBLAExt(ctx, sy, sn, rn, layPool, subPool)
+		pj.DWtSynBLA(ctx, sy, sn, rn, layPool, subPool)
+	case BLAAcqPrjn:
+		pj.DWtSynBLA(ctx, sy, sn, rn, layPool, subPool)
 	default:
 		pj.DWtSynCortex(ctx, sy, sn, rn, layPool, subPool, isTarget)
 	}
@@ -344,38 +346,20 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	}
 }
 
-// DWtSynBLAAcq computes the weight change (learning) at given synapse for BLAAcqPrjn type.
+// todo: remove different BLA types if this works..
+
+// DWtSynBLA computes the weight change (learning) at given synapse for BLA*Prjn type.
 // Acquisition is based on delta from US activity over trials (temporal difference)
-func (pj *PrjnParams) DWtSynBLAAcq(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // previous trial
 	delta := rn.CaSpkP - rn.SpkPrv
 	if delta < 0 { // neg delta learns much slower
-		delta *= pj.BLAAcq.NegDeltaLRate
+		delta *= pj.BLA.NegDeltaLRate
 	}
 	if ctx.NeuroMod.HasRew.IsFalse() {
-		delta *= pj.BLAAcq.NonUSLRate
+		delta *= pj.BLA.NonUSLRate
 	}
 	err := sy.Tr * delta
-	// sb immediately -- enters into zero sum
-	if err > 0 {
-		err *= (1 - sy.LWt)
-	} else {
-		err *= sy.LWt
-	}
-	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
-}
-
-// DWtSynBLAExt computes the weight change (learning) at given synapse for BLAExtPrjn type.
-// Extinction is self-limiting based on incrementally out-competing the Acq pathway until
-// it stops being able to drive gating of the PTMaint layer that drives extinction.
-func (pj *PrjnParams) DWtSynBLAExt(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	ract := rn.CaSpkD
-	lmax := layPool.AvgMax.CaSpkD.Plus.Max
-	if lmax > 0 {
-		ract /= lmax
-	}
-
-	err := sn.BurstPrv * ract
 	// sb immediately -- enters into zero sum
 	if err > 0 {
 		err *= (1 - sy.LWt)

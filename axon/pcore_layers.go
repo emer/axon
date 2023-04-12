@@ -138,40 +138,46 @@ func (ly *Layer) MatrixDefaults() {
 }
 
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
-// downloaded from GPU
-func (ly *Layer) MatrixGated(ctx *Context) bool {
+// downloaded from GPU.  Returns the pool index if 4D layer (0 = first).
+func (ly *Layer) MatrixGated(ctx *Context) (bool, int) {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
 		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIdx)]
 		ly.Pools[0].Gated = oly.Pools[0].Gated
 		// note: NoGo layers don't track gating at the sub-pool level!
-		return oly.Pools[0].Gated.IsTrue()
+		return oly.Pools[0].Gated.IsTrue(), 0
 	}
-	mtxGated := ly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+	mtxGated, poolIdx := ly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
 
 	thalGated := false
 	if ly.Params.Matrix.ThalLay1Idx >= 0 {
 		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
 	}
 	if ly.Params.Matrix.ThalLay2Idx >= 0 {
 		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
 	}
 	if ly.Params.Matrix.ThalLay3Idx >= 0 {
 		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
 	}
 	if ly.Params.Matrix.ThalLay4Idx >= 0 {
 		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
 	}
 	if ly.Params.Matrix.ThalLay5Idx >= 0 {
 		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
 	}
 	if ly.Params.Matrix.ThalLay6Idx >= 0 {
 		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
 	}
 
 	mtxGated = mtxGated && thalGated
@@ -190,16 +196,17 @@ func (ly *Layer) MatrixGated(ctx *Context) bool {
 	}
 
 	if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-		ctx.PVLV.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue())
+		ctx.PVLV.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
 	}
-	return mtxGated
+	return mtxGated, poolIdx
 }
 
 // GatedFmSpkMax updates the Gated state in Pools of given layer,
 // based on Avg SpkMax being above given threshold.
-// returns true if any gated.
-func (ly *Layer) GatedFmSpkMax(thr float32) bool {
+// returns true if any gated, and the pool index if 4D layer (0 = first).
+func (ly *Layer) GatedFmSpkMax(thr float32) (bool, int) {
 	anyGated := false
+	poolIdx := -1
 	if ly.Is4D() {
 		for pi := 1; pi < len(ly.Pools); pi++ {
 			pl := &ly.Pools[pi]
@@ -207,6 +214,9 @@ func (ly *Layer) GatedFmSpkMax(thr float32) bool {
 			gthr := spkavg > thr
 			if gthr {
 				anyGated = true
+				if poolIdx < 0 {
+					poolIdx = pi - 1
+				}
 			}
 			pl.Gated.SetBool(gthr)
 		}
@@ -217,7 +227,7 @@ func (ly *Layer) GatedFmSpkMax(thr float32) bool {
 		}
 	}
 	ly.Pools[0].Gated.SetBool(anyGated)
-	return anyGated
+	return anyGated, poolIdx
 }
 
 // AnyGated returns true if the layer-level pool Gated flag is true,

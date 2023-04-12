@@ -100,8 +100,10 @@ func (ss *Sim) New() {
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
-	ss.Context.PVLV.Effort.Gain = 0.01 // don't discount as much
-	ss.Context.PVLV.Effort.Max = 2     // give up if nothing happening.
+	ss.Context.PVLV.Effort.Gain = 0.01    // don't discount as much
+	ss.Context.PVLV.Effort.Max = 8        // give up if nothing happening.
+	ss.Context.PVLV.Effort.MaxNovel = 2   // give up if nothing happening.
+	ss.Context.PVLV.Effort.MaxPostDip = 2 // give up if nothing happening.
 	// ss.Context.PVLV.LHb.DipResetThr = 0.2
 	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()
@@ -252,7 +254,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
 	net.ConnectToBLAExt(ctxIn, blaPosE, full)
-	net.ConnectToBLAExt(ofcPT, blaPosE, pone2one)
+	net.ConnectToBLAExt(ofcPTPred, blaPosE, pone2one).SetClass("PTpToBLAExt")
 
 	////////////////////////////////////////////////
 	// BG / DA connections

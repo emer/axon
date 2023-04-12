@@ -188,16 +188,22 @@ func (dp *Drives) ExpStep() {
 
 // Effort has effort and parameters for updating it
 type Effort struct {
-	Gain float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
-	Max  float32 `desc:"negative or 0 value disables; maximum raw effort level -- above this point, any current goal will be terminated during the LHbDipResetFmSum function, which also looks for accumulated disappointment.  This can be set stochastically and adjusted based on incremental rewards for more realistic scenarios."`
-	Raw  float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
-	Disc float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
-	pad  float32
+	Gain       float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
+	CurMax     float32 `inactive:"-" desc:"current maximum raw effort level -- above this point, any current goal will be terminated during the LHbDipResetFmSum function, which also looks for accumulated disappointment.  See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered."`
+	Max        float32 `desc:"default maximum raw effort level, when MaxNovel and MaxPostDip don't apply."`
+	MaxNovel   float32 `desc:"maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max"`
+	MaxPostDip float32 `desc:"if the LowThr amount of VSPatch expectation is triggered, as accumulated in LHb.DipSum, then CurMax is set to the current Raw effort plus this increment, which is generally low -- once an expectation has been activated, don't wait around forever.."`
+	Raw        float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
+	Disc       float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
+	pad        float32
 }
 
 func (ef *Effort) Defaults() {
 	ef.Gain = 0.1
+	ef.CurMax = 100
 	ef.Max = 100
+	ef.MaxNovel = 8
+	ef.MaxPostDip = 4
 }
 
 func (ef *Effort) Update() {
@@ -207,6 +213,7 @@ func (ef *Effort) Update() {
 // Reset resets the raw effort back to zero -- at start of new gating event
 func (ef *Effort) Reset() {
 	ef.Raw = 0
+	ef.CurMax = ef.Max
 	ef.Disc = 1
 }
 
@@ -240,6 +247,7 @@ type LHb struct {
 	PosGain     float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
 	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
 	DipResetThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
+	DipLowThr   float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
 
 	Dip      float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
 	Burst    float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
@@ -249,13 +257,14 @@ type LHb struct {
 	Pos float32 `inactive:"+" desc:"computed PosGain * (VSPatchPos - PVpos)"`
 	Neg float32 `inactive:"+" desc:"computed NegGain * PVneg"`
 
-	pad, pad1, pad2 float32
+	pad, pad1 float32
 }
 
 func (lh *LHb) Defaults() {
 	lh.PosGain = 1
 	lh.NegGain = 1
 	lh.DipResetThr = 0.2
+	lh.DipLowThr = 0.05
 }
 
 func (lh *LHb) Update() {
@@ -582,12 +591,16 @@ func (pp *PVLV) DA(ach float32, hasRew bool) float32 {
 // with Rew = 0 if true.
 func (pp *PVLV) LHbDipResetFmSum(ach float32) bool {
 	resetSum := false                     // reset sum at salient events: actual US, CS-gating
-	if pp.VTA.Vals.PVpos > pp.VTA.PVThr { // if actual PV, reset dip sum
+	if pp.VTA.Vals.USpos > pp.VTA.PVThr { // if actual PV, reset dip sum -- can't rely on HasRew at this point
 		resetSum = true
 	}
 	// note: VSGated resets DipSum at end of plus phase when VS gating happens
+	prevSum := pp.LHb.DipSum
 	dipReset := pp.LHb.DipResetFmSum(resetSum)
-	if pp.Effort.Max > 0 && pp.Effort.Raw > pp.Effort.Max {
+	if prevSum < pp.LHb.DipLowThr && pp.LHb.DipSum >= pp.LHb.DipLowThr {
+		pp.Effort.CurMax = pp.Effort.Raw + pp.Effort.MaxPostDip
+	}
+	if pp.Effort.CurMax > 0 && pp.Effort.Raw > pp.Effort.CurMax {
 		pp.LHb.DipReset.SetBool(true)
 		dipReset = true
 	}
@@ -614,10 +627,13 @@ func (pp *PVLV) DriveUpdt(resetUs bool) {
 // (ventral striatum / ventral pallidum) gating at end of the plus phase.
 // Also resets effort and LHb.DipSum counters -- starting fresh at start
 // of a new goal engaged state.
-func (pp *PVLV) VSGated(gated, hasRew bool) {
+func (pp *PVLV) VSGated(gated, hasRew bool, poolIdx int) {
 	if !hasRew && gated {
 		pp.Effort.Reset()
 		pp.LHb.DipSum = 0
+		if poolIdx == 0 { // novelty / curiosity pool
+			pp.Effort.CurMax = pp.Effort.MaxNovel
+		}
 	}
 	pp.VSMatrix.VSGated(gated, hasRew)
 }
