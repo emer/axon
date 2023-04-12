@@ -318,6 +318,15 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.LRate.Base": "0.001",
 					"Prjn.PrjnScale.Rel":    "0.5",
 				}},
+			{Sel: ".USToBLAExtInhib", Desc: "actual US inhibits exinction",
+				Params: params.Params{
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.25",
+					"Prjn.SWt.Adapt.On":  "false",
+					"Prjn.Learn.Learn":   "false",
+					"Prjn.PrjnScale.Abs": "2",
+				}},
 			{Sel: "#USposToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "6.0", // if weaker, e.g., 2, other pools get active

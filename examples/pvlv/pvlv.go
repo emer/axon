@@ -248,6 +248,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// BLA
 	net.ConnectToBLAAcq(cs, blaPosA, full)
 	net.ConnectToBLAAcq(usPos, blaPosA, pone2one).SetClass("USToBLA")
+	net.ConnectLayers(usPos, blaPosE, pone2one, axon.InhibPrjn).SetClass("USToBLAExtInhib")
 	net.ConnectLayers(blaPosA, ofc, pone2one, axon.ForwardPrjn)
 	net.ConnectLayers(blaPosE, blaPosA, pone2one, axon.InhibPrjn).SetClass("BLAExtToAcq")
 	// note: context is hippocampus -- key thing is that it comes on with stim
