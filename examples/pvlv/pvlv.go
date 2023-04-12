@@ -101,7 +101,8 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
 	ss.Context.PVLV.Effort.Gain = 0.01 // don't discount as much
-	// ss.Context.PVLV.LHb.DipResetThr = 0.1
+	ss.Context.PVLV.Effort.Max = 2     // give up if nothing happening.
+	// ss.Context.PVLV.LHb.DipResetThr = 0.2
 	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()
 }
@@ -144,7 +145,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "PVLV")
 	ev := ss.Envs["Train"].(*cond.CondEnv)
 	ny := ev.NYReps
-	nUSs := cond.NUSs
+	nUSs := cond.NUSs + 1 // first US / drive is novelty / curiosity
 
 	nuBgY := 5
 	nuBgX := 5
@@ -454,8 +455,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 		ctx.NeuroMod.HasRew.SetBool(true)
 	}
 	dr.InitDrives()
-	dr.Effort.AddEffort(1) // should be based on action taken last step
-	dr.SetDrive(0, 1.0)    // curiosity
+	dr.SetDrive(0, 1.0) // curiosity
 	dr.SetDrive(int32(trl.US+1), 1)
 }
 

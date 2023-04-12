@@ -133,7 +133,7 @@ func (ds *DriveVals) ExpStep(drv int32, dt, base float32) float32 {
 // Drives manages the drive parameters for updating drive state,
 // and drive state.
 type Drives struct {
-	NActive  int32   `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be <= 8"`
+	NActive  int32   `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be &lt;= 8"`
 	NNegUSs  int32   `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
 	DriveMin float32 `desc:"minimum effective drive value"`
 
@@ -189,6 +189,7 @@ func (dp *Drives) ExpStep() {
 // Effort has effort and parameters for updating it
 type Effort struct {
 	Gain float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
+	Max  float32 `desc:"negative or 0 value disables; maximum raw effort level -- above this point, any current goal will be terminated during the LHbDipResetFmSum function, which also looks for accumulated disappointment.  This can be set stochastically and adjusted based on incremental rewards for more realistic scenarios."`
 	Raw  float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
 	Disc float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
 	pad  float32
@@ -196,6 +197,7 @@ type Effort struct {
 
 func (ef *Effort) Defaults() {
 	ef.Gain = 0.1
+	ef.Max = 100
 }
 
 func (ef *Effort) Update() {
@@ -367,7 +369,7 @@ func (vt *VTA) Update() {
 // DAFmRaw computes the intermediate Vals and final DA value from
 // Raw values that have been set prior to calling.
 // ACh value from LDT is passed as a parameter.
-func (vt *VTA) DAFmRaw(ach float32) {
+func (vt *VTA) DAFmRaw(ach float32, hasRew bool) {
 	vt.Vals.PVpos = vt.Gain.PVpos * vt.Raw.PVpos
 	vt.Vals.PVneg = vt.Gain.PVneg * vt.Raw.PVneg
 	vt.Vals.CeMpos = vt.Gain.CeMpos * vt.Raw.CeMpos
@@ -379,13 +381,15 @@ func (vt *VTA) DAFmRaw(ach float32) {
 	if vt.Vals.VSPatchPos < 0 {
 		vt.Vals.VSPatchPos = 0
 	}
-	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos
+	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos - vt.Vals.PVneg
 	csNet := vt.Vals.CeMpos - vt.Vals.CeMneg         // todo: is this sensible?  max next with 0 so positive..
 	csDA := ach * mat32.Max(csNet, vt.Vals.LHbBurst) // - vt.Vals.LHbDip
 	// note that ach is only on cs -- should be 1 for PV events anyway..
-	netDA := pvDA
-	if vt.Vals.PVpos < vt.PVThr && vt.Vals.VSPatchPos < vt.PVThr { // if not actual PV, add cs
-		netDA += csDA
+	netDA := float32(0)
+	if hasRew {
+		netDA = pvDA
+	} else {
+		netDA = csDA
 	}
 	vt.Vals.DA = vt.Gain.DA * netDA
 }
@@ -557,7 +561,7 @@ func (pp *PVLV) PosPVFmDriveEffort(usValue, drive, effort float32) float32 {
 // Call after setting USs, Effort, Drives, VSPatch vals etc.
 // Resulting DA is in VTA.Vals.DA, and is returned
 // (to be set to Context.NeuroMod.DA)
-func (pp *PVLV) DA(ach float32) float32 {
+func (pp *PVLV) DA(ach float32, hasRew bool) float32 {
 	usPos := pp.PosPV()
 	pvNeg := pp.NegPV()
 	if pp.LHb.DipReset.IsTrue() {
@@ -567,23 +571,26 @@ func (pp *PVLV) DA(ach float32) float32 {
 	vsPatchPos := pp.VSPatchMax()
 	pp.LHb.LHbFmPVVS(pvPos, pvNeg, vsPatchPos)
 	pp.VTA.Raw.Set(usPos, pvPos, pvNeg, pp.LHb.Dip, pp.LHb.Burst, vsPatchPos)
-	pp.VTA.DAFmRaw(ach)
+	pp.VTA.DAFmRaw(ach, hasRew)
 	return pp.VTA.Vals.DA
 }
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset.
 // computed at end of minus phase -- so there is time for reset to have effects.
-// most other updates in plus phase -- some variables could be stale here.
+// most other updates happen in plus phase -- some variables could be stale here.
+// The reset bool is used by Context version of this function to set HasRew flag
+// with Rew = 0 if true.
 func (pp *PVLV) LHbDipResetFmSum(ach float32) bool {
 	resetSum := false                     // reset sum at salient events: actual US, CS-gating
 	if pp.VTA.Vals.PVpos > pp.VTA.PVThr { // if actual PV, reset dip sum
 		resetSum = true
-		// } else if pp.VSMatrix.JustGated.IsTrue() { // note: is leftover from prior trial
-		// this would prevent extinction on trial just after CS gating..
-		// using raw ACh is too sensitive.
-		// 	resetSum = true
 	}
+	// note: VSGated resets DipSum at end of plus phase when VS gating happens
 	dipReset := pp.LHb.DipResetFmSum(resetSum)
+	if pp.Effort.Max > 0 && pp.Effort.Raw > pp.Effort.Max {
+		pp.LHb.DipReset.SetBool(true)
+		dipReset = true
+	}
 	return dipReset
 }
 
@@ -603,7 +610,17 @@ func (pp *PVLV) DriveUpdt(resetUs bool) {
 	}
 }
 
-// TODO: need the gating flag to reset at start of gating
+// VSGated updates JustGated and HasGated as function of VS
+// (ventral striatum / ventral pallidum) gating at end of the plus phase.
+// Also resets effort and LHb.DipSum counters -- starting fresh at start
+// of a new goal engaged state.
+func (pp *PVLV) VSGated(gated, hasRew bool) {
+	if !hasRew && gated {
+		pp.Effort.Reset()
+		pp.LHb.DipSum = 0
+	}
+	pp.VSMatrix.VSGated(gated, hasRew)
+}
 
 // EffortUpdt updates the effort based on given effort increment,
 // resetting first if hasRew flag is true indicating receipt of a

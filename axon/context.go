@@ -94,7 +94,7 @@ func (ctx *Context) CycleInc() {
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA is returned.
 func (ctx *Context) PVLVDA() float32 {
-	ctx.PVLV.DA(ctx.NeuroMod.ACh)
+	ctx.PVLV.DA(ctx.NeuroMod.ACh, ctx.NeuroMod.HasRew.IsTrue())
 	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
 	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
 	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
