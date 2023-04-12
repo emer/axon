@@ -407,7 +407,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	case BLALayer:
 		// only for ext type:
 		if ly.Learn.NeuroMod.IsBLAExt() {
-			geCtxt := ly.CT.GeGain * nrn.CtxtGe
+			geCtxt := ctx.NeuroMod.ACh * ly.CT.GeGain * nrn.CtxtGe
 			nrn.GeRaw += geCtxt
 			if ly.CT.DecayDt > 0 {
 				nrn.CtxtGe -= ly.CT.DecayDt * nrn.CtxtGe
@@ -415,9 +415,6 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 			ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
 			nrn.GeSyn += ctxExt
 			saveVal = ctxExt // used In PostGs to set nrn.GeExt
-			// todo: this will cause oscillation for extinguished items
-			nrn.GeRaw *= ctx.NeuroMod.ACh // strong ach gating
-			nrn.GeSyn *= ctx.NeuroMod.ACh
 		}
 	case LHbLayer:
 		if ni == 0 {
@@ -498,16 +495,22 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveV
 func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	extraRaw := float32(0)
 	extraSyn := float32(0)
-	if ly.LayType == PTMaintLayer {
+	switch ly.LayType {
+	case PTMaintLayer:
 		extraRaw = ly.Act.Dend.ModGain * nrn.GModRaw
 		extraSyn = ly.Act.Dend.ModGain * nrn.GModSyn
-	} else if ly.Act.Dend.HasMod.IsTrue() {
-		mod := ly.Act.Dend.ModGain * nrn.GModSyn
-		if mod > 1 {
-			mod = 1
+	case BLALayer:
+		extraRaw = ctx.NeuroMod.ACh * nrn.GModRaw
+		extraSyn = ctx.NeuroMod.ACh * nrn.GModSyn
+	default:
+		if ly.Act.Dend.HasMod.IsTrue() {
+			mod := ly.Act.Dend.ModGain * nrn.GModSyn
+			if mod > 1 {
+				mod = 1
+			}
+			nrn.GeRaw *= mod
+			nrn.GeSyn *= mod
 		}
-		nrn.GeRaw *= mod
-		nrn.GeSyn *= mod
 	}
 
 	geRaw := nrn.GeRaw

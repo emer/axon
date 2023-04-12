@@ -1,7 +1,7 @@
 <svg
-  width="1280px"
-  height="720px"
-  viewBox="0 0 1280 720"
+  width="884.1409px"
+  height="591.83997px"
+  viewBox="0 0 884.1409 591.83997"
   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
   xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -31,37 +31,63 @@
       orient="auto">
       <path
         id="path59"
-        style="fill-rule:evenodd;stroke-width:1.0pt;"
+        style="stroke-width:1.0pt;fill-rule:evenodd;"
         transform="scale(0.4) rotate(180) translate(10,0)"
         d="M 0,0 L 5,-5 L -12.5,0 L 5,5 L 0,0 z " />
     </marker>
     <marker
       id="Arrow1Mstart"
+      inkscape:stockid="Arrow1Mstart"
+      style="overflow:visible"
+      refX="0"
+      refY="0"
+      orient="auto">
+      <path
+        id="path429"
+        style="fill-rule:evenodd;stroke-width:1.0pt;"
+        transform="scale(0.4) translate(10,0)"
+        d="M 0,0 L 5,-5 L -12.5,0 L 5,5 L 0,0 z " />
+    </marker>
+    <marker
+      id="Arrow1Mstart287"
       style="overflow:visible"
       inkscape:stockid="Arrow1Mstart"
       refX="0"
       refY="0"
       orient="auto">
       <path
-        id="path429"
-        style="stroke-width:1.0pt;fill-rule:evenodd;"
+        id="path"
+        style="fill-rule:evenodd;fill:#FF00FF;stroke:#FF00FF;stroke-width:1.0pt;"
         transform="scale(0.4) translate(10,0)"
+        d="M 0,0 L 5,-5 L -12.5,0 L 5,5 L 0,0 z " />
+    </marker>
+    <marker
+      id="Arrow1Mend287"
+      style="overflow:visible"
+      inkscape:stockid="Arrow1Mend"
+      refX="0"
+      refY="0"
+      orient="auto">
+      <path
+        id="path"
+        style="fill-rule:evenodd;fill:#FF00FF;stroke:#FF00FF;stroke-width:1.0pt;"
+        transform="scale(0.4) rotate(180) translate(10,0)"
         d="M 0,0 L 5,-5 L -12.5,0 L 5,5 L 0,0 z " />
     </marker>
   </defs>
   <sodipodi:namedview
     id="namedview81"
-    inkscape:cx="5.0493484"
-    inkscape:zoom="1.584375"
-    inkscape:document-units="px"
+    inkscape:cy="0"
     inkscape:current-layer="Layer1"
-    inkscape:cy="23.984224">
+    inkscape:cx="0"
+    inkscape:zoom="2.2971451"
+    inkscape:document-units="px">
     <inkscape:grid
       id="grid887"
-      spacingx="12"
       spacingy="12"
       type="xygrid"
-      units="px" />
+      units="px"
+      spacingx="12" />
   </sodipodi:namedview>
   <g
     id="LayerBG"
@@ -71,10 +97,10 @@
     <rect
       id="rect324"
       style="stroke:none;stroke-opacity:1;stroke-width:1px;fill:#FFFFFF;fill-opacity:1;"
-      x="30.884764"
-      y="24.621319"
-      width="852.887"
-      height="567.037" />
+      x="7.8125887"
+      y="9.623007"
+      width="870.18304"
+      height="578.1683" />
   </g>
   <g
     id="Layer1"
@@ -82,15 +108,15 @@
     style="display:inline">
     <path
       id="path81"
-      style="stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;stroke:#000000;"
+      style="stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;stroke:#000000;stroke-opacity:1;"
       d="m 300.91003,485.4913 432.65674,0.3920288 " />
     <path
       id="path631"
-      style="stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;stroke:#000000;stroke-opacity:1;"
+      style="stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;stroke:#000000;"
       d="m 276.23962,417.40094 456.34033,-0.5947876 " />
     <path
       id="path831"
-      style="stroke:#000000;stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;"
+      style="fill:none;stroke:#000000;stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);"
       d="m 276.23962,353.01114 456.34033,-0.5947876 " />
     <path
       id="path888"
@@ -98,19 +124,19 @@
       d="m 180.46265,61.263943 537.23254,1.1895905 " />
     <path
       id="path353"
-      style="stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);fill:none;stroke:#000000;"
+      style="fill:none;stroke:#000000;stroke-opacity:1;stroke-width:1px;marker-end:url(#Arrow1Mend);"
       d="m 224.23343,212.42766 493.55493,-0.07273865 " />
     <path
       id="path721"
-      style="stroke:#000000;stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;"
+      style="stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;stroke:#000000;stroke-opacity:1;"
       d="m 180.46265,61.263943 537.23254,1.1895905 " />
     <path
       id="path445"
-      style="marker-end:url(#Arrow1Mend);fill:none;stroke:#000000;stroke-dasharray:2,6;stroke-opacity:1;stroke-width:2px;"
-      d="m 63.51098,101.71004 798.3478,0 " />
+      style="stroke:#000000;stroke-dasharray:2,6;stroke-opacity:1;stroke-width:2px;marker-end:url(#Arrow1Mend);fill:none;"
+      d="m 102.00138,37.33561 757.16534,0 " />
     <text
       id="text425"
-      style="fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;"
+      style="fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;fill:#4169E1;"
       transform="none"
       x="188.64525"
       y="497.64035">
@@ -121,7 +147,7 @@
     </text>
     <text
       id="text541"
-      style="stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;"
+      style="font-family:Arial;font-size:36px;stroke:none;fill:#FF4500;fill-opacity:1;text-align:AlignLeft;"
       transform="none"
       x="185.6848"
       y="429.55">
@@ -132,7 +158,7 @@
     </text>
     <text
       id="text538"
-      style="font-family:Arial;font-size:36px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;"
+      style="stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;"
       transform="none"
       x="48.042557"
       y="364.76404">
@@ -143,69 +169,81 @@
     </text>
     <text
       id="text705"
-      style="text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;fill:#000000;fill-opacity:1;"
+      style="fill:#32CD32;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;"
       transform="none"
       x="183.71117"
       y="366.02637">
       <tspan
-        id="tspan737"
+        id="tspan318"
         x="183.71117"
         y="366.02637">OFC</tspan>
     </text>
     <text
       id="text528"
-      style="fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;"
+      style="text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;fill:#000000;fill-opacity:1;"
       transform="none"
       x="84.235016"
       y="271.0597">
       <tspan
-        id="tspan318"
+        id="tspan456"
         x="84.235016"
         y="271.0597">VS-&gt;VP-&gt;MD</tspan>
     </text>
     <text
       id="text466"
-      style="fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;"
+      style="fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;fill:#32CD32;"
       transform="none"
       x="408.4014"
       y="194.49814">
       <tspan
-        id="tspan456"
+        id="tspan300"
         x="408.4014"
         y="194.49814">BLA</tspan>
     </text>
     <text
-      id="text300"
-      style="font-family:Arial;font-size:36px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;"
+      id="text694"
+      style="text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;fill:#32CD32;fill-opacity:1;"
       transform="none"
       x="731.99994"
       y="73.75465">
       <tspan
-        id="tspan694"
+        id="tspan511"
         x="731.99994"
         y="73.75465">US</tspan>
     </text>
     <text
-      id="text511"
-      style="font-size:36px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;"
+      id="text162"
+      style="stroke:none;fill:#FF8C00;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:32px;"
+      transform="none"
+      x="39.896423"
+      y="109.07965">
+      <tspan
+        id="tspan89"
+        x="39.896423"
+        y="109.07965">ACh</tspan>
+    </text>
+    <text
+      id="text2"
+      style="text-align:AlignLeft;font-family:Arial;font-size:36px;stroke:none;fill:#0000FF;fill-opacity:1;"
+      transform="none"
       x="114.200745"
       y="73.75465">
       <tspan
-        id="tspan162"
+        id="tspan728"
         x="114.200745"
         y="73.75465">CS</tspan>
     </text>
     <path
-      id="path89"
+      id="path274"
       style="marker-end:url(#Arrow1Mend);stroke:#000000;stroke-opacity:1;stroke-width:2px;fill:none;"
       d="m 492.59473,181.56133 256.57318,-57.91823 " />
     <path
-      id="path728"
+      id="path211"
       style="fill:none;marker-end:url(#Arrow1Mend);stroke:#000000;stroke-opacity:1;stroke-width:2px;"
       d="m 142.75092,122.30482 248.24602,56.282516 " />
     <path
-      id="path274"
-      style="stroke-opacity:1;stroke-width:2px;fill:none;marker-end:url(#Arrow1Mend);stroke:#000000;"
+      id="path237"
+      style="marker-end:url(#Arrow1Mend);stroke:#000000;stroke-opacity:1;stroke-width:2px;fill:none;"
       transform="translate(-616.2081,0.5947952)"
       d="m 877.1947,507.42947 0,41.635685 " />
     <path
@@ -215,38 +253,38 @@
       d="m 731.1732,323.41693 0,-41.635685 " />
     <path
       id="path451"
-      style="stroke-width:2px;fill:none;marker-end:url(#Arrow1Mend);stroke:#000000;stroke-opacity:1;"
+      style="stroke:#000000;stroke-opacity:1;stroke-width:2px;fill:none;marker-end:url(#Arrow1Mend);"
       transform="translate(-616.2081,0.5947952)"
       d="m 805.6505,281.94183 0,41.635685 " />
     <path
       id="path287"
-      style="marker-end:url(#Arrow1Mend);stroke:#000000;marker-start:url(#Arrow1Mstart);stroke-opacity:1;stroke-width:2px;fill:none;"
+      style="marker-end:url(#Arrow1Mend287);stroke:#FF00FF;marker-start:url(#Arrow1Mstart287);stroke-opacity:1;stroke-width:2px;fill:none;"
       transform="translate(-616.2081,0.5947952)"
       d="m 1390.446,191.5329 0,41.635685 " />
     <path
       id="path258"
-      style="fill:none;marker-end:url(#Arrow1Mend);stroke:#000000;stroke-opacity:1;stroke-width:2px;"
+      style="stroke:#000000;stroke-opacity:1;stroke-width:2px;fill:none;marker-end:url(#Arrow1Mend);"
       transform="translate(-616.2081,0.5947952)"
       d="m 756.2825,122.52788 -1.2623291,111.06369 " />
     <text
-      id="text211"
-      style="font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;"
+      id="text106"
+      style="fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;fill:#FF00FF;"
       transform="none"
       x="1348.3135"
       y="220.20868">
       <tspan
-        id="tspan237"
+        id="tspan495"
         x="732.10535"
         y="220.80347">DA</tspan>
     </text>
     <text
       id="text189"
-      style="font-size:24px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;"
+      style="text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;"
       transform="none"
       x="710.8855"
       y="408.9266">
       <tspan
-        id="tspan237"
+        id="tspan47"
         x="94.6774"
         y="409.5214">LHA</tspan>
     </text>
@@ -257,130 +295,169 @@
       x="702.04913"
       y="385.57355">
       <tspan
-        id="tspan237"
+        id="tspan947"
         x="85.84111"
         y="386.16833">Insula</tspan>
     </text>
     <text
       id="text703"
       style="stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:24px;"
-      transform="matrix(-4.371139e-08,-1,1,-4.371139e-08,-152.11047,319.3688)"
+      transform="matrix(-4.371139e-08,-1,1,-4.371139e-08,-141.53462,360.5185)"
       x="647.09045"
       y="220.83984">
       <tspan
-        id="tspan237"
+        id="tspan790"
         x="30.882492"
         y="221.43463">Match</tspan>
     </text>
     <text
       id="text510"
-      style="text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;"
+      style="font-size:24px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;"
       transform="none"
       x="763.2246"
       y="220.83984">
       <tspan
-        id="tspan237"
+        id="tspan15"
         x="147.01662"
         y="221.43463">Trace</tspan>
     </text>
     <text
       id="text159"
-      style="stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:24px;"
+      style="text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;"
       transform="none"
-      x="673.2839"
-      y="90.82012">
+      x="650.5939"
+      y="46.209267">
       <tspan
-        id="tspan106"
-        x="57.075806"
-        y="91.41491">Time</tspan>
+        id="tspan408"
+        x="34.385803"
+        y="46.804054">Time</tspan>
     </text>
     <text
-      id="text"
-      style="font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;"
+      id="text387"
+      style="fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;"
       transform="none"
       x="668.5501"
       y="150.78067">
       <tspan
-        id="tspan106"
+        id="tspan485"
         x="52.34204"
         y="151.37546">Trigger</tspan>
     </text>
     <g
-      id="g495">
+      id="g26">
       <path
-        id="path47"
-        style="fill:none;marker-end:url(#Arrow1Mend);stroke:#000000;stroke-opacity:1;stroke-width:2px;"
+        id="path413"
+        style="stroke-opacity:1;stroke-width:2px;fill:none;marker-end:url(#Arrow1Mend);stroke:#000000;"
         d="m 756.2825,122.52788 0,41.635685 " />
       <text
-        id="text947"
+        id="text90"
         style="text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;"
         transform="none"
         x="764.90704"
         y="148.69888">
         <tspan
-          id="tspan790"
+          id="tspan194"
           x="764.90704"
           y="148.69888">Learn</tspan>
       </text>
     </g>
     <path
-      id="path408"
-      style="fill:none;marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:2px;"
+      id="path563"
+      style="marker-start:url(#Arrow1Mstart);stroke:#000000;stroke-opacity:1;stroke-width:2px;fill:none;"
       d="m 271.46008,335.93024 156.82971,-116.81839 " />
     <text
-      id="text26"
-      style="font-size:24px;text-align:AlignLeft;font-family:Arial;stroke:none;fill:#000000;fill-opacity:1;"
+      id="text433"
+      style="font-family:Arial;stroke:none;fill:#4169E1;fill-opacity:1;font-size:24px;text-align:AlignLeft;"
       transform="none"
       x="299.18954"
       y="475.73636">
       <tspan
-        id="tspan485"
+        id="tspan147"
         x="299.18954"
         y="475.73636">Overall action plan (all actions predicted)</tspan>
     </text>
     <text
-      id="text194"
-      style="font-size:24px;text-align:AlignLeft;font-family:Arial;stroke:none;fill:#000000;fill-opacity:1;"
+      id="text957"
+      style="fill:#FF4500;fill-opacity:1;font-size:24px;text-align:AlignLeft;font-family:Arial;stroke:none;"
       transform="none"
       x="312.00003"
       y="409.4481">
       <tspan
-        id="tspan387"
+        id="tspan199"
         x="312.00003"
         y="409.4481">Time, Effort, Reward Utility prediction</tspan>
     </text>
     <text
-      id="text413"
-      style="stroke:none;fill:#000000;fill-opacity:1;font-size:24px;text-align:AlignLeft;font-family:Arial;"
+      id="text"
+      style="text-align:AlignLeft;font-family:Arial;stroke:none;fill:#32CD32;fill-opacity:1;font-size:24px;"
       transform="none"
       x="362.34583"
       y="341.35773">
       <tspan
-        id="tspan90"
+        id="tspan605"
         x="362.34583"
         y="341.35773">Outcome (US) prediction</tspan>
     </text>
     <text
-      id="text563"
-      style="font-size:24px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;"
+      id="text156"
+      style="text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;"
       transform="none"
       x="348.41943"
       y="574.24646">
       <tspan
-        id="tspan433"
+        id="tspan266"
         x="348.41943"
         y="574.24646">Action2...</tspan>
     </text>
     <text
-      id="text147"
-      style="fill:#000000;fill-opacity:1;text-align:AlignLeft;font-family:Arial;font-size:24px;stroke:none;"
+      id="text828"
+      style="font-family:Arial;font-size:24px;stroke:none;fill:#000000;fill-opacity:1;text-align:AlignLeft;"
       transform="none"
       x="246.39484"
       y="574.3373">
       <tspan
-        id="tspan957"
+        id="tspan561"
         x="246.39484"
         y="574.3373">Action1</tspan>
     </text>
+    <path
+      id="path202"
+      style="stroke-opacity:1;stroke-width:2px;fill:none;stroke:#FF8C00;"
+      d="m 56.322044,118.042915 71.35733,0 " />
+    <g
+      id="g718"
+      transform="translate(611.0918,-0.57686615)">
+      <path
+        id="path783"
+        style="stroke-opacity:1;stroke-width:2px;fill:none;stroke:#FF8C00;"
+        d="m 127.92297,84.645065 -0.48724365,32.84272 " />
+      <path
+        id="path746"
+        style="stroke-opacity:1;stroke-width:2px;fill:none;stroke:#FF8C00;"
+        d="m 127.25648,85.44359 28.287178,0.0032653809 " />
+      <path
+        id="path376"
+        style="stroke:#FF8C00;stroke-opacity:1;stroke-width:2px;fill:none;"
+        d="m 156.0801,85.61719 0.057922363,33.21691 " />
+    </g>
+    <g
+      id="g447">
+      <path
+        id="path94"
+        style="stroke:#FF8C00;stroke-opacity:1;stroke-width:2px;fill:none;"
+        d="m 127.92297,84.645065 -0.48724365,32.84272 " />
+      <path
+        id="path577"
+        style="stroke-width:2px;fill:none;stroke:#FF8C00;stroke-opacity:1;"
+        d="m 127.25648,85.44359 28.287178,0.0032653809 " />
+      <path
+        id="path463"
+        style="stroke-opacity:1;stroke-width:2px;fill:none;stroke:#FF8C00;"
+        d="m 156.0801,85.61719 0.057922363,33.21691 " />
+    </g>
+    <path
+      id="path996"
+      style="fill:none;stroke:#FF8C00;stroke-opacity:1;stroke-width:2px;"
+      d="m 156.65196,118.308556 581.35114,0.9101105 " />
   </g>
 </svg>

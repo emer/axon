@@ -161,6 +161,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
 	_ = pone2one
+	rndpone2one := prjn.NewPoolUnifRnd()
+	rndpone2one.PCon = 0.5
 
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
@@ -255,7 +257,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
 	net.ConnectToBLAExt(ctxIn, blaPosE, full)
-	net.ConnectToBLAExt(ofcPTPred, blaPosE, pone2one).SetClass("PTpToBLAExt")
+	net.ConnectToBLAExt(ofcPTPred, blaPosE, rndpone2one).SetClass("PTpToBLAExt")
 
 	////////////////////////////////////////////////
 	// BG / DA connections

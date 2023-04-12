@@ -765,7 +765,7 @@ GABAa rise, decay times:
 
 A series of models published around the year 2000 investigated the role of active dendritic channels on signal integration across different dendritic compartments [(Migliore et al, 1999; Poirazi et al, 2003; Jarsky et al, 2005)](#references) -- see [Spruston (2008), Poirazi & Papoutsi (2020)](#references) for reviews.  A common conclusion was that the A-type K channel can be inactivated as a result of elevated Vm in the dendrite, driving a nonlinear gating-like interaction between dendritic inputs: when enough input comes in (e.g., from 2 different projections), then the rest of the inputs are all integrated more-or-less linearly, but below this critical threshold, inputs are much more damped by the active A-type K channels.  There are also other complications associated with VGCC L-type and T-type voltage-gated Ca channels which can drive Ca spikes, to amplify regular AMPA conductances, relative weakness and attenuation of active HH Na spiking channels in dendrites, and issues of where inhibition comes in, etc.  See following figure from Spruston (2008) for a summary of some key traces:
 
-<img src="fig_dendrite_coinc_spruston08_fig5.png" width="800">
+<img src="figs/fig_dendrite_coinc_spruston08_fig5.png" width="800">
 
 **Figure:** Figure 5 from Spruston (2008), showing mutual dependence on two dendritic compartments for synaptic integration in panel a, and also significant differences in temporal duration of elevated Vm in dendrites vs. soma.
 
@@ -775,7 +775,7 @@ Here are some specific considerations and changes to capture some of these dynam
 
 * The `Dend` params specify a `GbarExp` parameter that applies a fraction of the Exp slope to `VmDend`, and a `GbarR` param that injects a proportional amount of leak current during the spike reset (`Tr`) window to bring the Vm back down a bit, reflecting the weaker amount of `Kdr` out in the dendrites.  This produces traces that resemble the above figure, as shown in the following run of the `examples/neuron` model, comparing `VmDend` with `Vm`.  Preliminary indications suggest this has a significant benefit on model performance overall (on ra25 and fsa so far), presumably by engaging NMDA and GABAB channels better.
 
-<img src="fig_axon_neuron_vmdend.png" width="800">
+<img src="figs/fig_axon_neuron_vmdend.png" width="800">
 
 **Figure:** VmDend now has dynamics that reflect weaker trace of soma spiking -- initial results suggest this improves performance by better engaging the NMDA / GABAB channels.
 

@@ -6,7 +6,7 @@ Files: pvlv_{[net.go](axon/pvlv_net.go), [layers.go](axon/pvlv_layers.go), [prjn
 
 # Introduction
 
-<img src="fig_pvlv_pv_lv_schultz_da.png" height="600">
+<img src="figs/fig_pvlv_pv_lv_schultz_da.png" height="600">
 
 **Figure 1:** PV and LV in the PVLV model: LV = Learned Value (Amygdala), which learns the value of conditioned stimuli (CSs). PV = Primary Value (Ventral Striatum, principally the Nucleus Accumbens Core, NAc), which learns to expect US (unconditioned stimuli, rewards) and shunt dopamine when they occur, or, when omitted, the LHb (lateral habenula) drives a dip / pause in DA firing.  Data from Schultz et al (1997) of VTA firing in a Pavlovian conditioning paradigm.
 
@@ -28,7 +28,7 @@ PVLV models the neurobiological mechanisms that cause this change in dopamine si
 
 This division of labor is consistent with a considerable amount of data [Hazy et al, 2010](#references). The 2020 PVLV model has a greatly elaborated representation of the amygdala and ventral striatal circuitry, including explicitly separate pathways for appetitive vs. aversive processing, as well as incorporating a central role for the *lateral habenula* (LHb) in driving pauses in dopamine cell firing (dipping) for worse than expected outcomes. Figure 1 provides a big-picture overview of the model.
 
-![PV.2](fig_bvpvlv_pv_lv_only.png?raw=true "PV.2")
+![PV.2](figs/fig_bvpvlv_pv_lv_only.png?raw=true "PV.2")
 
 **Figure 2:** Simplified diagram of major components of the PVLV model, with the LV Learned Value component in the Amygdala and PV Primary Value component in the Ventral Striatum (principally the Nucleus Accumbens Core, NAc).  LHb: Lateral Habenula, RMTg: RostroMedial Tegmentum, LDT: Laterodorsal Tegmentum, LHA: Lateral Hypothalamus, PBN: Parabrachial Nucleus. 
 
@@ -118,17 +118,19 @@ The `BLAPosExtD2` extinction layer provides the "context specific override" of t
 
 A key challenge here is to coordinate these two layers with respect to the US expectation that is being extinguished.  In the Leabra PVLV version a modulatory projection from Acq to Ext served this function.
 
-In this model, we instead leverage the OFC PT active maintenance to select the US that is being expected, as a consequence of BLA Acq triggering active maintenance gating of the specific expected US outcome, which then projects into BLA Ext.  The learning rule for Ext is not based on a delta rule, and instead is a straightforward DA D2-modulated associative learning rule:
+In this model, we instead leverage the OFC PT active maintenance to select the US that is being expected, as a consequence of BLA Acq triggering active maintenance gating of the specific expected US outcome, which then projects into BLA Ext.  
 
-* `DWt = lr * DALr * Send_prv * (CaSpkP / Max)`
+To work with the Novelty case (below), and leverage the delta-based learning rule in acquisition, we make the `OFC PTpred` projection into the `Ext` layer modulated by ACh, and `Ext` is also inhibited by the US itself.  This means that it will only activate at a *goal failure* event.  It is also possible to use a `CtxtPrjn` projection to have BLA Acq drive Ext in a trial-delayed manner (this is also ACh gated), to avoid any dependence on PT active maintenance.
 
-Where `DALr` is *positive* when DA is negative, due to the D2 sign reversal, and the receiving activity is normalized by the Max layer activity, because it often starts out only very weakly active.  There is no meaningful delta here so it just keeps learning until the BLA Acq is extinguished to the point where it no longer can drive gating of OFC PT in the first place, breaking the learning cycle.
-
-Also, it is important that the stable `PTMaint` layer drives the BLA Ext input, not the dynamically changing `PTPred`, because BLA Ext learns at the time when the US was expected, but it must then get activated earlier at the time of CS onset to block the BLA Acq gating.
+Importantly, while the learning of Ext is driven by the maintained PTpred, it must have a fast CS-driven activation in order to oppose the Acq pool.  Thus, this CS-driven pathway (which includes contextual inputs via the hippocampus and other areas) is the primary locus of learning, and it also is not ACh gated because it must remain active persistently to counter the Acq activation. 
 
 ## Novelty & Curiosity Drive
 
-The first pool in the BLAPosAcq / PosExt layers is reserved for the "novelty" case.  This pool is driven by persistent excitatory input and active by default unless inhibited by another layer -- i.e., a CS is novel until proven otherwise.  If the pursuit of the CS leads to no positive US outcome, then the corresponding extinction layer will learn to oppose the positive novelty activation.  If it leads to a US outcome, then that association will be learned, and the CS will then activate that US instead of novelty.
+<img src="figs/fig_pvlv_bla_novelty.png" height="600">
+
+The first pool in the BLAPosAcq / PosExt layers is reserved for the "novelty" case (see above figure).  This pool is driven by persistent excitatory input and active by default unless inhibited by another layer -- i.e., a CS is novel until proven otherwise.  If the pursuit of the CS leads to no positive US outcome, then the corresponding extinction layer will learn to oppose the positive novelty activation.  If it leads to a US outcome, then that association will be learned, and the CS will then activate that US instead of novelty.
+
+The delta learning rule for novelty extinction works via the same extinction logic as regular US pathways: if no US outcome occurs, and the maximum effort limit has been reached, then the LHb dip / reset dynamic is activated, triggering phasic ACh release as if an actual US had occurred.
 
 # SC -> LDT ACh
 

@@ -127,6 +127,8 @@ func (ly *Layer) BLADefaults() {
 	lp.Inhib.ActAvg.Nominal = 0.025
 	lp.Learn.RLRate.SigmoidMin = 1.0
 	lp.Learn.TrgAvgAct.On.SetBool(false)
+	lp.Learn.RLRate.Diff.SetBool(true)
+	lp.Learn.RLRate.DiffThr = 0.01
 
 	// lp.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	// because it depends on the configured D1 vs. D2 status
@@ -136,13 +138,10 @@ func (ly *Layer) BLADefaults() {
 		lp.Learn.NeuroMod.DALRateMod = 0.5
 		lp.Learn.NeuroMod.BurstGain = 0.2
 		lp.Learn.NeuroMod.DipGain = 0
-		lp.Learn.RLRate.Diff.SetBool(true)
-		lp.Learn.RLRate.DiffThr = 0.01
 	} else {
 		// lp.Learn.NeuroMod.DALRateSign.SetBool(true) // yes for Extinction
 		lp.Learn.NeuroMod.BurstGain = 1
 		lp.Learn.NeuroMod.DipGain = 1
-		lp.Learn.RLRate.Diff.SetBool(false)
 	}
 	lp.Learn.NeuroMod.AChLRateMod = 1
 	lp.Learn.NeuroMod.AChDisInhib = 0 // needs to be always active

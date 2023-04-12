@@ -56,7 +56,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":    "0.0",
 					"Layer.Act.Decay.Glong":  "0.0",
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "30",   // 10?
+					"Layer.Act.Dend.ModGain": "20",   // 10?
 				}},
 			{Sel: ".VThalLayer", Desc: "",
 				Params: params.Params{
@@ -117,10 +117,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
+					"Layer.Inhib.Pool.Gi":              "0.9",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "1",
-					"Layer.Learn.RLRate.Diff":          "false",
 				}},
 			{Sel: "#CeMPos", Desc: "",
 				Params: params.Params{
@@ -257,7 +257,7 @@ var ParamSets = params.Sets{
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
-					"Prjn.PrjnScale.Abs": "4.0", // 4.0 needed here for quick gating..
+					"Prjn.PrjnScale.Abs": "4.0", // 2.0 needed here for quick gating..
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
@@ -337,12 +337,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#ContextInToBLAPosExtD2", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "3",
+					"Prjn.PrjnScale.Abs":    "2",
 					"Prjn.Learn.LRate.Base": "0.1",
 				}},
-			{Sel: ".PTpToBLAExt", Desc: "stronger by default",
+			{Sel: ".PTpToBLAExt", Desc: "modulatory, stronger by default",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
+					"Prjn.Com.GType":     "ModulatoryG",
+					"Prjn.PrjnScale.Abs": "0.5",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.3",
 				}},
@@ -360,7 +361,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 1 is ok but some spontaneous activity -- 2 is more reliable
+					"Prjn.PrjnScale.Abs": "4", // 1 is ok but some spontaneous activity -- 2 is more reliable
 				}},
 			{Sel: "#TimePToOFCPTp", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{
