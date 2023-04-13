@@ -217,12 +217,12 @@ const (
 	// Typically just a single unit per Pool representing a given stripe.
 	GPLayer
 
-	// VThalLayer represents a BG gated thalamic layer,
+	// BGThalLayer represents a BG gated thalamic layer,
 	// which receives BG gating in the form of an
 	// inhibitory projection from GPi.  Located
 	// mainly in the Ventral thalamus: VA / VM / VL,
 	// and also parts of MD mediodorsal thalamus.
-	VThalLayer
+	BGThalLayer
 
 	// VSGated represents explicit coding of VS gating status:
 	// JustGated and HasGated (since last US or failed predicted US),

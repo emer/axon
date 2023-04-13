@@ -151,7 +151,7 @@ func (nt *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNe
 // of given size, with given name.
 // This version has a 4D structure, with Pools representing separable gating domains.
 func (nt *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
-	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, VThalLayer)
+	ly := nt.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, BGThalLayer)
 	ly.SetClass("BG")
 	return ly
 }
@@ -160,7 +160,7 @@ func (nt *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX 
 // of given size, with given name.
 // This version has a 2D structure
 func (nt *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
-	ly := nt.AddLayer2D(name, nNeurY, nNeurX, VThalLayer)
+	ly := nt.AddLayer2D(name, nNeurY, nNeurX, BGThalLayer)
 	ly.SetClass("BG")
 	return ly
 }

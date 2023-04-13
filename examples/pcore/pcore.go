@@ -223,10 +223,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = snc
 
 	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
-	cin := net.AddCINLayer("CIN", mtxGo.Name(), mtxNo.Name(), space)
-	_ = cin
+	ldt := net.AddLDTLayer("")
+	_ = ldt
 
-	// cin automatically uses Rew -- snc is only for display purposes
+	// ldt automatically uses Rew -- snc is only for display purposes
 
 	_ = gpeOut
 	_ = gpeIn
@@ -264,6 +264,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	gpeOut.PlaceAbove(gpi)
 	stnp.PlaceRightOf(gpeTA, space)
 	mtxGo.PlaceAbove(gpeOut)
+	ldt.PlaceRightOf(mtxNo, space)
 	accpos.PlaceAbove(mtxGo)
 	accneg.PlaceRightOf(accpos, space)
 	inly.PlaceRightOf(accneg, space)
@@ -525,7 +526,7 @@ func (ss *Sim) ApplyRew() {
 	mtxly := net.AxonLayerByName("MtxGo")
 
 	net.GPU.SyncStateFmGPU()
-	didGate := mtxly.MatrixGated(&ss.Context)           // will also be called later
+	didGate, _ := mtxly.MatrixGated(&ss.Context)        // will also be called later
 	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
 	match := false
 	var rew float32
@@ -691,11 +692,11 @@ func (ss *Sim) ConfigLogs() {
 
 func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("PFCVM_RT", "PFCVM_RT", etime.Run, etime.Epoch, etime.Trial)
-	layers := ss.Net.LayersByType(axon.MatrixLayer, axon.VThalLayer)
+	layers := ss.Net.LayersByType(axon.MatrixLayer, axon.BGThalLayer)
 	npools := []int{ss.Sim.NPools}
 	for _, lnm := range layers {
 		clnm := lnm
-		if clnm == "CIN" {
+		if clnm == "LDT" {
 			continue
 		}
 		ss.Logs.AddItem(&elog.Item{

@@ -196,9 +196,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	vta, lhb, ach := net.AddVTALHbAChLayers(relpos.Behind, space)
+	vta, lhb, ldt := net.AddVTALHbLDTLayers(relpos.Behind, space)
 	_ = lhb
-	_ = ach
+	_ = ldt
 
 	vPmtxGo, vPmtxNo, _, _, vPgpeTA, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, ev.NDrives, nuBgY, nuBgX, nuBgY, nuBgX, space)
 	vsGated := net.AddVSGatedLayer("", ny)

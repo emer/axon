@@ -387,20 +387,21 @@ func (ly *Layer) STNDefaults() {
 }
 
 ////////////////////////////////////////////////////////////////////
-//  VThal
+//  BGThal
 
-func (ly *Layer) VThalDefaults() {
+func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
 	ly.Params.Act.Dend.SSGi = 0
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
+	ly.Params.Learn.NeuroMod.AChDisInhib = 1
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.0
-		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToVThal
+		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
 			pj.Params.PrjnScale.Abs = 2 // was 2.5 for agate model..
 		}
 	}

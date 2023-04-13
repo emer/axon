@@ -165,7 +165,7 @@ type Pool struct {
 	LayIdx       uint32      `view:"-" desc:"layer index in global layer list"`
 	PoolIdx      uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool]"`
 	IsLayPool    slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
-	Gated        slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, VThalLayer), indicates if the pool was gated"`
+	Gated        slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated"`
 
 	pad, pad1 uint32
 

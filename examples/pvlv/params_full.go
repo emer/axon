@@ -57,7 +57,7 @@ var ParamSetsFull = params.Sets{
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
 					"Layer.Act.Dend.ModGain": "30",   // 10?
 				}},
-			{Sel: ".VThalLayer", Desc: "",
+			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8",
 					"Layer.Inhib.Pool.Gi":  "0.8", // 0.6 > 0.5 -- 0.8 too high

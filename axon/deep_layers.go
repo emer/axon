@@ -136,7 +136,7 @@ func (ly *Layer) PTMaintDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		slay := pj.Send
-		if slay.LayerType() == VThalLayer {
+		if slay.LayerType() == BGThalLayer {
 			pj.Params.Com.GType = ModulatoryG
 		}
 	}

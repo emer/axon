@@ -66,7 +66,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong": "1.0",
 					"Layer.Inhib.Layer.Gi":  "0.5",
 				}},
-			{Sel: ".VThalLayer", Desc: "",
+			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
@@ -200,10 +200,6 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":  "0.8",  // was 0.8
 					"Layer.Pulv.DriveScale": "0.12", // 0.12 > 0.1
 				}},
-			{Sel: "#ACh", Desc: "",
-				Params: params.Params{
-					"Layer.LDT.RewThr": "0.2",
-				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":             "0.0",
@@ -241,6 +237,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.FFPrv":     "10", // key td param
 					"Layer.PVLV.Thr":             "0.2",
 					"Layer.PVLV.Gain":            "2", // key for impact on CS bursting
+					"Layer.LDT.RewThr":           "0.2",
 				}},
 			{Sel: "#VpSTNp", Desc: "Pausing STN",
 				Params: params.Params{
@@ -413,9 +410,9 @@ var ParamSets = params.Sets{
 			// PVLV
 			{Sel: ".BLAAcqPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base":     "0.02",
-					"Prjn.BLAAcq.NegDeltaLRate": "0.01", // todo: explore
-					"Prjn.BLAAcq.NonUSLRate":    "0.0",  // def 0.01
+					"Prjn.Learn.LRate.Base":  "0.02",
+					"Prjn.BLA.NegDeltaLRate": "0.01", // todo: explore
+					"Prjn.BLA.NonUSLRate":    "0.0",  // def 0.01
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{
@@ -462,14 +459,6 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0", // 1 is ok but some spontaneous activity -- 2 is more reliable
-				}},
-			{Sel: ".CeMToPPTg", Desc: "",
-				Params: params.Params{
-					"Prjn.Learn.Learn":   "false",
-					"Prjn.PrjnScale.Abs": "1",
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{

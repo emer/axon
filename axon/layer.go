@@ -109,8 +109,8 @@ func (ly *Layer) Defaults() {
 		ly.GPDefaults()
 	case STNLayer:
 		ly.STNDefaults()
-	case VThalLayer:
-		ly.VThalDefaults()
+	case BGThalLayer:
+		ly.BGThalDefaults()
 	case VSGatedLayer:
 		ly.Params.VSGatedDefaults()
 	}

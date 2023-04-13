@@ -114,7 +114,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dend.ModGain":           "10",   // 10?
 					"Layer.Learn.NeuroMod.AChDisInhib": "1.0",
 				}},
-			{Sel: ".VThalLayer", Desc: "",
+			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.25", // matches orig
 					"Layer.Inhib.Layer.Gi":       "0.6",

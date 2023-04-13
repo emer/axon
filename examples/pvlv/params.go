@@ -58,7 +58,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
 					"Layer.Act.Dend.ModGain": "20",   // 10?
 				}},
-			{Sel: ".VThalLayer", Desc: "",
+			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.6",
 					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
@@ -111,6 +111,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal":      "0.025",
 					"Layer.Inhib.Layer.Gi":            "1.8", // needs to be strong to prevent random off-US act
 					"Layer.Inhib.Pool.Gi":             "0.9",
+					"Layer.Act.Dt.GiTau":              "20",
 					"Layer.Learn.NeuroMod.DALRateMod": "0.5",
 					"Layer.Learn.NeuroMod.BurstGain":  "0.2",
 					"Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
@@ -338,7 +339,7 @@ var ParamSets = params.Sets{
 			{Sel: "#ContextInToBLAPosExtD2", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "2",
-					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.Learn.LRate.Base": "0.01", // 0.1 too fast for partial B50
 				}},
 			{Sel: ".PTpToBLAExt", Desc: "modulatory, stronger by default",
 				Params: params.Params{
@@ -399,7 +400,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAToBG", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Abs": "4",
 					"Prjn.PrjnScale.Rel": "1",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
