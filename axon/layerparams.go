@@ -442,12 +442,7 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case USLayer:
-		us := float32(0)
-		if ly.Learn.NeuroMod.Valence == Positive {
-			us = ctx.PVLV.USpos.Get(pi)
-		} else {
-			us = ctx.PVLV.USneg.Get(pi)
-		}
+		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		nrn.GeRaw = 0.1 * mat32.Abs(us)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case PVLayer:
@@ -648,12 +643,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		}
 		nrn.Act = dpc
 	case USLayer:
-		us := float32(0)
-		if ly.Learn.NeuroMod.Valence == Positive {
-			us = ctx.PVLV.USpos.Get(pi)
-		} else {
-			us = ctx.PVLV.USneg.Get(pi)
-		}
+		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		nrn.Act = us
 	case PVLayer:
 		pv := float32(0)

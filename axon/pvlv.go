@@ -507,6 +507,21 @@ func (pp *PVLV) SetDrive(dr int32, val float32) {
 	pp.Drive.Drives.Set(dr, val)
 }
 
+// USStimVal returns stimulus value for US at given index
+// and valence.  If US > 0.01, a full 1 US activation is returned.
+func (pp *PVLV) USStimVal(usIdx int32, valence ValenceTypes) float32 {
+	us := float32(0)
+	if valence == Positive {
+		us = pp.USpos.Get(usIdx)
+	} else {
+		us = pp.USneg.Get(usIdx)
+	}
+	if us > 0.01 { // threshold for presentation to net
+		us = 1 // https://github.com/emer/axon/issues/194
+	}
+	return us
+}
+
 // PosPV returns the reward for current positive US state relative to current drives
 func (pp *PVLV) PosPV() float32 {
 	rew := float32(0)
