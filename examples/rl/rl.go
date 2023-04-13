@@ -138,22 +138,23 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	space := float32(4)
 	full := prjn.NewFull()
 
-	var rplay *axon.Layer
+	var rp, rplay, rew *axon.Layer
 	var ptype axon.PrjnTypes
 
 	if ss.RW {
-		_, rp, _ := net.AddRWLayers("", relpos.RightOf, space)
+		rew, rp, _ = net.AddRWLayers("", relpos.RightOf, space)
 		rplay = rp
 		ptype = axon.RWPrjn
 	} else {
-		_, rp, _, _ := net.AddTDLayers("", relpos.RightOf, space)
+		rew, rp, _, _ = net.AddTDLayers("", relpos.RightOf, space)
 		rplay = rp
 		ptype = axon.TDPredPrjn
 	}
-	sal := net.AddRSalienceAChLayer("ACh")
-	sal.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Rew", XAlign: relpos.Left, Space: 1})
+	ldt := net.AddLDTLayer("")
+	ldt.Nm = "ACh"
+	ldt.PlaceBehind(rew, 1)
 	inp := net.AddLayer2D("Input", 3, 20, axon.InputLayer)
-	inp.SetRelPos(relpos.Rel{Rel: relpos.Above, Other: "Rew", YAlign: relpos.Front, XAlign: relpos.Left})
+	inp.PlaceAbove(rew)
 	net.ConnectLayers(inp, rplay, full, ptype)
 
 	err := net.Build()
@@ -313,7 +314,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 
-	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RSalienceAChLayer")
+	ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "LDTLayer")
 	if ss.RW {
 		ss.Logs.AddLayerTensorItems(ss.Net, "Act", etime.Train, etime.Trial, "RWDaLayer", "RWPredLayer")
 		if li, ok := ss.Logs.ItemByName("DA_Act"); ok {
