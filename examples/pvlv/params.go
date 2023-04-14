@@ -339,7 +339,7 @@ var ParamSets = params.Sets{
 			{Sel: "#ContextInToBLAPosExtD2", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "2",
-					"Prjn.Learn.LRate.Base": "0.01", // 0.1 too fast for partial B50
+					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			{Sel: ".PTpToBLAExt", Desc: "modulatory, stronger by default",
 				Params: params.Params{
@@ -362,7 +362,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4", // 1 is ok but some spontaneous activity -- 2 is more reliable
+					"Prjn.PrjnScale.Abs": "1", // 1 is ok but some spontaneous activity -- 2 is more reliable
 				}},
 			{Sel: "#TimePToOFCPTp", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{
@@ -400,7 +400,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAToBG", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4",
+					"Prjn.PrjnScale.Abs": "1",
 					"Prjn.PrjnScale.Rel": "1",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",
@@ -425,7 +425,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".DrivesToOFC", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 2 > 1
+					"Prjn.PrjnScale.Abs": "0.5", // was 2 -- should be weaker!  BLA -> OFC strong
 					"Prjn.PrjnScale.Rel": ".5",
 					// "Prjn.Learn.Learn":   "false",
 					// "Prjn.SWt.Init.Mean": "0.8",

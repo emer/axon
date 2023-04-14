@@ -265,11 +265,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// same prjns to stn as mtxgo
 	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
 	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
-	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
+	// net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
 	net.ConnectLayers(blaPosA, vPstnp, full, axon.ForwardPrjn)
 	net.ConnectLayers(blaPosA, vPstns, full, axon.ForwardPrjn)
 
-	net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
+	// net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one) // todo: no!
 	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
@@ -672,7 +672,7 @@ func (ss *Sim) BlockStats() {
 	dt.SetMetaData("VSPatch:On", "+")
 	dt.SetMetaData("DA:FixMin", "+")
 	dt.SetMetaData("DA:Min", "-1")
-	dt.SetMetaData("DA:FixMax", "+")
+	dt.SetMetaData("DA:FixMax", "-")
 	dt.SetMetaData("DA:Max", "1")
 	ss.Logs.MiscTables[stnm] = dt
 	plt.SetTable(dt)

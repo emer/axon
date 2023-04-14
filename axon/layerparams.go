@@ -554,6 +554,9 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 		if nrn.SpkMaxCa > nrn.SpkMax {
 			nrn.SpkMax = nrn.SpkMaxCa
 		}
+		if nrn.GeInt > nrn.GeIntMax {
+			nrn.GeIntMax = nrn.GeInt
+		}
 	}
 }
 
@@ -818,6 +821,7 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals
 	nrn.SpkPrv = nrn.CaSpkD
 	nrn.SpkMax = 0
 	nrn.SpkMaxCa = 0
+	nrn.GeIntMax = 0
 
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
 	// Note: synapse-level Ca decay happens in DWt

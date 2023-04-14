@@ -319,10 +319,11 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	caD := sy.CaD
 	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal, sy.CaUpT, &caM, &caP, &caD) // always update
 	if pj.PrjnType == CTCtxtPrjn {
-		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // instead of mixing into cortical one
+		sy.DTr = sn.BurstPrv
 	} else {
-		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, caD) // caD reflects entire window
+		sy.DTr = caD // caD reflects entire window
 	}
+	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sy.DTr)
 	if sy.Wt == 0 { // failed con, no learn
 		return
 	}
@@ -346,27 +347,31 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	}
 }
 
-// todo: remove different BLA types if this works..
+// todo: remove different BLA prjn types if this works..
 
 // DWtSynBLA computes the weight change (learning) at given synapse for BLA*Prjn type.
 // Acquisition is based on delta from US activity over trials (temporal difference)
 func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sn.BurstPrv) // previous trial
 	delta := rn.CaSpkP - rn.SpkPrv
 	if delta < 0 { // neg delta learns much slower
 		delta *= pj.BLA.NegDeltaLRate
 	}
-	if ctx.NeuroMod.HasRew.IsFalse() {
-		delta *= pj.BLA.NonUSLRate
-	}
-	err := sy.Tr * delta
-	// sb immediately -- enters into zero sum
-	if err > 0 {
-		err *= (1 - sy.LWt)
+	dwt := float32(0)
+	if ctx.NeuroMod.HasRew.IsTrue() { // reset
+		dwt = sy.Tr * delta
+		sy.Tr = 0
+	} else if ctx.NeuroMod.ACh > 0.1 {
+		sy.DTr = ctx.NeuroMod.ACh * sn.Burst
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sy.DTr) // todo: unclear if this is good -- slows typical 1 trial
 	} else {
-		err *= sy.LWt
+		sy.DTr = 0
 	}
-	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * err
+	if dwt > 0 {
+		dwt *= (1 - sy.LWt)
+	} else {
+		dwt *= sy.LWt
+	}
+	sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * dwt
 }
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
@@ -432,43 +437,61 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
-	dtr := float32(0)
-	dwt := float32(0)
-	if layPool.Gated.IsTrue() { // our layer gated
-		// let's not worry about giving credit only to the sub-pool for now
-		// if we need to do this later, we can add a different factor for
-		// D2 (NoGo) vs D1 (Go) -- the NoGo case should *not* care about subpools
-		// in any case.  Probably the Go case can not care too.
-		// if subPool.Gated.IsTrue() {
-		dtr = rn.SpkMax * sn.CaSpkD // we will get the credit later at time of US
-		// }
-		// if our local subPool did not gate, don't learn -- we weren't responsible
-	} else { // our layer didn't gate: should it have?
-		// this drives a slower opportunity cost learning if ACh says something
-		// salient was happening but nobody gated..
-		// it is needed for the basic pcore test case to get off the floor
-		// todo: if rn.SpkMax is zero for everything, might need to use Ge?
-		// dtr = -pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
-		dwt = rn.DASign * pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
+	ract := rn.GeIntMax
+	lmax := layPool.AvgMax.GeIntMax.Plus.Max
+	if lmax > 0 {
+		ract /= lmax
 	}
 
-	tr := sy.Tr
-	if pj.Matrix.CurTrlDA.IsTrue() { // off by default -- used for quick-and-dirty 1 trial
-		tr += dtr
+	if ctx.NeuroMod.HasRew.IsTrue() { // US time -- use DA and current recv activity
+		// todo: we need a better recv activity signal for NoGo even if didn't spike
+		sy.DWt = rn.RLRate * pj.Learn.LRate.Eff * sy.Tr * ract
+		sy.Tr = 0
+		sy.DTr = 0
+	} else {
+		sy.DTr = ctx.NeuroMod.ACh * sn.CaSpkD * ract
+		sy.Tr += sy.DTr
 	}
-	// learning is based on current trace * RLRate(DA * ACh)
-	dwt += rn.RLRate * pj.Learn.LRate.Eff * tr
 
-	// decay at time of US signaled by ACh
-	tr -= pj.Matrix.TraceDecay(ctx, ctx.NeuroMod.ACh) * tr
+	/*
+		dtr := float32(0)
+		dwt := float32(0)
+		if layPool.Gated.IsTrue() { // our layer gated
+			// let's not worry about giving credit only to the sub-pool for now
+			// if we need to do this later, we can add a different factor for
+			// D2 (NoGo) vs D1 (Go) -- the NoGo case should *not* care about subpools
+			// in any case.  Probably the Go case can not care too.
+			// if subPool.Gated.IsTrue() {
+			dtr = rn.SpkMax * sn.CaSpkD // we will get the credit later at time of US
+			// }
+			// if our local subPool did not gate, don't learn -- we weren't responsible
+		} else { // our layer didn't gate: should it have?
+			// this drives a slower opportunity cost learning if ACh says something
+			// salient was happening but nobody gated..
+			// it is needed for the basic pcore test case to get off the floor
+			// todo: if rn.SpkMax is zero for everything, might need to use Ge?
+			// dtr = -pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
+			dwt = rn.DASign * pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
+		}
 
-	// if we didn't get new trace already, add it
-	if pj.Matrix.CurTrlDA.IsFalse() {
-		tr += dtr
-	}
-	sy.DTr = dtr
-	sy.Tr = tr
-	sy.DWt += dwt
+		tr := sy.Tr
+		if pj.Matrix.CurTrlDA.IsTrue() { // off by default -- used for quick-and-dirty 1 trial
+			tr += dtr
+		}
+		// learning is based on current trace * RLRate(DA * ACh)
+		dwt += rn.RLRate * pj.Learn.LRate.Eff * tr
+
+		// decay at time of US signaled by ACh
+		tr -= pj.Matrix.TraceDecay(ctx, ctx.NeuroMod.ACh) * tr
+
+		// if we didn't get new trace already, add it
+		if pj.Matrix.CurTrlDA.IsFalse() {
+			tr += dtr
+		}
+		sy.DTr = dtr
+		sy.Tr = tr
+		sy.DWt += dwt
+	*/
 }
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
