@@ -100,7 +100,7 @@ func (ss *SimParams) Defaults() {
 	ss.ACCPosInc = 1 // 0.8
 	ss.ACCNegInc = 1
 	ss.TestInc = 0.1
-	ss.TestReps = 25 // 25
+	ss.TestReps = 25
 	ss.InN = 5
 	ss.PopCode.Defaults()
 	ss.PopCode.SetRange(-0.2, 1.2, 0.1)
@@ -137,7 +137,7 @@ func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "WtScales"
+	ss.Params.ExtraSets = "WtScales" // todo: ensure params same without
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -218,16 +218,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
 	_ = full
+	mtxRndPrjn := prjn.NewPoolUnifRnd()
+	mtxRndPrjn.PCon = 0.75
+	_ = mtxRndPrjn
 
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
 	_ = snc
 
 	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
-	ldt := net.AddLDTLayer("")
-	_ = ldt
-
-	// ldt automatically uses Rew -- snc is only for display purposes
-
 	_ = gpeOut
 	_ = gpeIn
 	_ = gpeTA
@@ -254,7 +252,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxNo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
 
 	net.ConnectToMatrix(accpos, mtxGo, pone2one)
-	net.ConnectToMatrix(accpos, mtxNo, pone2one)
+	net.ConnectToMatrix(accpos, mtxNo, pone2one) // more balanced with both
 	net.ConnectToMatrix(accneg, mtxNo, pone2one)
 	net.ConnectToMatrix(accneg, mtxGo, pone2one)
 	net.ConnectToMatrix(pfc, mtxGo, pone2one)
@@ -264,7 +262,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	gpeOut.PlaceAbove(gpi)
 	stnp.PlaceRightOf(gpeTA, space)
 	mtxGo.PlaceAbove(gpeOut)
-	ldt.PlaceRightOf(mtxNo, space)
 	accpos.PlaceAbove(mtxGo)
 	accneg.PlaceRightOf(accpos, space)
 	inly.PlaceRightOf(accneg, space)
@@ -362,28 +359,21 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 50).AddTime(etime.Trial, 50).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 50).AddTime(etime.Sequence, 50).AddTime(etime.Trial, 3).AddTime(etime.Cycle, 200)
 
 	nTestInc := int(1.0/ss.Sim.TestInc) + 1
 
-	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Trial, ss.Sim.TestReps*nTestInc*nTestInc).AddTime(etime.Phase, 2).AddTime(etime.Cycle, 200)
-
-	// using 190 there to make it look better on raster view.. :)
-	applyRew := looper.NewEvent("ApplyRew", 190, func() {
-		ss.ApplyRew()
-	})
-	man.GetLoop(etime.Train, etime.Cycle).AddEvents(applyRew)
-	man.GetLoop(etime.Test, etime.Cycle).AddEvents(applyRew)
+	man.AddStack(etime.Test).AddTime(etime.Epoch, 1).AddTime(etime.Sequence, ss.Sim.TestReps*nTestInc*nTestInc).AddTime(etime.Trial, 3).AddTime(etime.Cycle, 200)
 
 	axon.LooperStdPhases(man, &ss.Context, ss.Net, 150, 199)            // plus phase timing
 	axon.LooperSimCycleAndLearn(man, ss.Net, &ss.Context, &ss.ViewUpdt) // std algo code
 
-	man.GetLoop(etime.Test, etime.Trial).OnStart.Add("TestInc", func() {
+	man.GetLoop(etime.Test, etime.Sequence).OnStart.Add("TestInc", func() {
 		if ss.Sim.NoInc {
 			return
 		}
-		trl := man.Stacks[etime.Test].Loops[etime.Trial].Counter.Cur
-		repn := trl / ss.Sim.TestReps
+		seq := man.Stacks[etime.Test].Loops[etime.Sequence].Counter.Cur
+		repn := seq / ss.Sim.TestReps
 		pos := repn / nTestInc
 		neg := repn % nTestInc
 		ss.Sim.ACCPos = float32(pos) * ss.Sim.TestInc
@@ -397,9 +387,9 @@ func (ss *Sim) ConfigLoops() {
 		// 	// note: OnStart for env.Env, others may happen OnEnd
 		// 	ss.Envs[mode.String()].Step()
 		// })
-		stack.Loops[etime.Phase].OnStart.Add("ApplyInputs", func() {
-			phase := man.Stacks[mode].Loops[etime.Phase].Counter.Cur
-			ss.ApplyInputs(mode, phase)
+		stack.Loops[etime.Trial].OnStart.Add("ApplyInputs", func() {
+			trial := man.Stacks[mode].Loops[etime.Trial].Counter.Cur
+			ss.ApplyInputs(mode, trial)
 		})
 		stack.Loops[etime.Trial].OnEnd.Add("StatCounters", ss.StatCounters)
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
@@ -408,13 +398,13 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
 	// Add Testing
-	trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
-	trainEpoch.OnStart.Add("TestAtInterval", func() {
-		if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
-			// Note the +1 so that it doesn't occur at the 0th timestep.
-			ss.TestAll()
-		}
-	})
+	// trainEpoch := man.GetLoop(etime.Train, etime.Epoch)
+	// trainEpoch.OnStart.Add("TestAtInterval", func() {
+	// 	if (ss.TestInterval > 0) && ((trainEpoch.Counter.Cur+1)%ss.TestInterval == 0) {
+	// 		// Note the +1 so that it doesn't occur at the 0th timestep.
+	// 		ss.TestAll()
+	// 	}
+	// })
 
 	/////////////////////////////////////////////
 	// Logging
@@ -450,12 +440,12 @@ func (ss *Sim) ConfigLoops() {
 // It is good practice to have this be a separate method with appropriate
 // args so that it can be used for various different contexts
 // (training, testing, etc).
-func (ss *Sim) ApplyInputs(mode etime.Modes, phase int) {
+func (ss *Sim) ApplyInputs(mode etime.Modes, trial int) {
 	net := ss.Net
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	if mode == etime.Train && phase == 1 {
+	if mode == etime.Train && trial == 1 {
 		if !ss.Sim.NoInc {
 			ss.Sim.ACCPos = rand.Float32()
 			ss.Sim.ACCNeg = rand.Float32()
@@ -497,37 +487,36 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, phase int) {
 	if ss.Sim.InCtr > ss.Sim.InN {
 		ss.Sim.InCtr = 0
 	}
-	ss.ResetRew(phase)
+	ss.ApplyPVLV(trial)
 	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
-// ResetRew resets any reward inputs -- at ApplyInputs
-func (ss *Sim) ResetRew(phase int) {
-	if phase == 0 {
+// ApplyPVLV applies PVLV reward inputs
+func (ss *Sim) ApplyPVLV(trial int) {
+	nan := mat32.NaN()
+	ss.Stats.SetFloat32("Gated", nan)
+	ss.Stats.SetFloat32("Should", nan)
+	ss.Stats.SetFloat32("Match", nan)
+	ss.Stats.SetFloat32("Rew", nan)
+
+	switch trial {
+	case 0:
 		ss.Context.NeuroMod.SetRew(0, false) // no rew
 		ss.Context.NeuroMod.ACh = 0
-	} else {
-		ss.Context.NeuroMod.SetRew(0, true) // rew
+	case 1:
+		ss.Context.NeuroMod.SetRew(0, false) // no rew
 		ss.Context.NeuroMod.ACh = 1
+	case 2:
+		ss.Context.NeuroMod.ACh = 1
+		ss.GatedRew()
 	}
-	ss.SetRew(0)
 }
 
-// ApplyRew applies reward input based on gating action and input
-func (ss *Sim) ApplyRew() {
-	phase := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Phase].Counter.Cur
-	if phase == 0 {
-		return
-	}
-	net := ss.Net
-	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
-	// going to the same layers, but good practice and cheap anyway
-
-	mtxly := net.AxonLayerByName("MtxGo")
-
-	net.GPU.SyncStateFmGPU()
-	didGate, _ := mtxly.MatrixGated(&ss.Context)        // will also be called later
-	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0.1 // thbreshold level of diff to drive gating
+// GatedRew applies reward input based on gating action and input
+func (ss *Sim) GatedRew() {
+	mtxly := ss.Net.AxonLayerByName("MtxGo")
+	didGate, _ := mtxly.MatrixGated(&ss.Context) // will also be called later
+	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0
 	match := false
 	var rew float32
 	switch {
@@ -543,18 +532,16 @@ func (ss *Sim) ApplyRew() {
 		match = true
 	}
 
+	ss.SetRew(rew)
 	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
 	ss.Stats.SetFloat32("Match", bools.ToFloat32(match))
 	ss.Stats.SetFloat32("Rew", rew)
-
-	ss.SetRew(rew)
-	net.GPU.SyncStateToGPU()
 }
 
 func (ss *Sim) SetRew(rew float32) {
 	net := ss.Net
-	ss.Context.NeuroMod.Rew = rew
+	ss.Context.NeuroMod.SetRew(rew, true)
 	ss.Context.NeuroMod.DA = rew // no reward prediction error
 
 	itsr := etensor.Float32{}
@@ -562,9 +549,6 @@ func (ss *Sim) SetRew(rew float32) {
 	itsr.Values[0] = rew
 	sncly := net.AxonLayerByName("SNc")
 	sncly.ApplyExt(&itsr)
-
-	net.GPU.SyncContextToGPU()
-	net.ApplyExts(&ss.Context)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -617,28 +601,31 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetFloat32("ACCNeg", ss.Sim.ACCNeg)
 	trlnm := fmt.Sprintf("%4f_%4f", ss.Sim.ACCPos, ss.Sim.ACCNeg)
 	ss.Stats.SetString("TrialName", trlnm)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Trial", "Phase", "TrialName", "Cycle", "Gated", "Should", "Match", "Rew"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "TrialName", "Cycle", "Gated", "Should", "Match", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
+	trial := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Trial].Counter.Cur
+	ss.Stats.SetFloat("PFCVM_RT", math.NaN())
+	if trial != 1 {
+		return
+	}
 	net := ss.Net
 	vtly := net.AxonLayerByName("PFCVM")
 	gated := vtly.AnyGated()
 	if !gated {
-		ss.Stats.SetFloat("PFCVM_RT", math.NaN())
 		return
 	}
 	mode := ss.Context.Mode
 	trlog := ss.Logs.Log(mode, etime.Cycle)
-	spkCyc := 200
-	// note: starts at 200 due to first phase
-	for row := 200; row < trlog.Rows; row++ {
+	spkCyc := 0
+	for row := 0; row < trlog.Rows; row++ {
 		vts := trlog.CellTensorFloat1D("PFCVM_Spike", row, 0)
 		if vts > 0.05 {
-			spkCyc = row - 200
+			spkCyc = row
 			break
 		}
 	}
@@ -651,16 +638,17 @@ func (ss *Sim) TrialStats() {
 func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
-	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Trial, etime.Phase, etime.Cycle)
+	ss.Logs.AddCounterItems(etime.Run, etime.Epoch, etime.Sequence, etime.Trial, etime.Cycle)
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
 	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Sequence, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCPos")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "ACCNeg")
 
-	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("Match", "Match", etime.Run, etime.Epoch, etime.Trial)
-	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Gated", "Gated", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	ss.Logs.AddStatAggItem("Match", "Match", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
+	li := ss.Logs.AddStatAggItem("Rew", "Rew", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
 	li.FixMin = false
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -682,8 +670,8 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
-	ss.Logs.NoPlot(etime.Train, etime.Phase)
-	ss.Logs.NoPlot(etime.Test, etime.Phase)
+	ss.Logs.NoPlot(etime.Train, etime.Trial)
+	ss.Logs.NoPlot(etime.Test, etime.Trial)
 	ss.Logs.NoPlot(etime.Test, etime.Run)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")
@@ -691,7 +679,7 @@ func (ss *Sim) ConfigLogs() {
 }
 
 func (ss *Sim) ConfigLogItems() {
-	ss.Logs.AddStatAggItem("PFCVM_RT", "PFCVM_RT", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("PFCVM_RT", "PFCVM_RT", etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
 	layers := ss.Net.LayersByType(axon.MatrixLayer, axon.BGThalLayer)
 	npools := []int{ss.Sim.NPools}
 	for _, lnm := range layers {
@@ -733,8 +721,10 @@ func (ss *Sim) ConfigLogItems() {
 						tsr.Values[pi] = float64(ly.AvgMaxVarByPool("SpkMax", pi+1).Avg)
 					}
 					ctx.SetTensor(tsr)
-				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
+				}, etime.Scope(etime.AllModes, etime.Sequence): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, etime.Trial, agg.AggMean)
+				}, etime.Scope(etime.AllModes, etime.Epoch): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, etime.Sequence, agg.AggMean)
 				}, etime.Scope(etime.Train, etime.Run): func(ctx *elog.Context) {
 					ix := ctx.LastNRows(ctx.Mode, etime.Epoch, 5)
 					ctx.SetFloat64(agg.Mean(ix, ctx.Item.Name)[0])
@@ -761,13 +751,13 @@ func (ss *Sim) ConfigLogItems() {
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
+	if mode != etime.Analyze {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
 
-	phase := ss.Loops.Stacks[mode].Loops[etime.Phase].Counter.Cur
-	if phase == 0 && time <= etime.Trial {
+	trial := ss.Loops.Stacks[mode].Loops[etime.Trial].Counter.Cur
+	if trial == 0 && time <= etime.Trial {
 		return // no logging on first phase
 	}
 
@@ -780,8 +770,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	switch {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
-	case time == etime.Trial:
-		row = ss.Stats.Int("Trial")
 	case time == etime.Epoch && mode == etime.Test:
 		ss.TestStats()
 	}
@@ -792,12 +780,12 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) TestStats() {
 	tststnm := "TestTrialStats"
 	plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
-	plt.Params.XAxisCol = "Trial"
+	plt.Params.XAxisCol = "Sequence"
 	plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 
-	ix := ss.Logs.IdxView(etime.Test, etime.Trial)
+	ix := ss.Logs.IdxView(etime.Test, etime.Sequence)
 	spl := split.GroupBy(ix, []string{"TrialName"})
 	for _, ts := range ix.Table.ColNames {
 		if ts == "TrialName" {

@@ -887,6 +887,11 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	case VSPatchLayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		modlr = ly.VSPatch.DALRate(vals.NeuroMod.DA, modlr) // always decrease if no DA
+	// case MatrixLayer:
+	// 	mlr = 1.0 - nrn.GeIntMax
+	// 	if mlr < 0 {
+	// 		mlr = 0
+	// 	}
 	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 	}

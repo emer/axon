@@ -129,8 +129,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.On":       "true",
 					"Prjn.SWt.Init.Mean":      "0.5",
 					"Prjn.SWt.Init.Var":       "0.25",
-					"Prjn.Matrix.CurTrlDA":    "true",
-					"Prjn.Matrix.NoGateLRate": "0.002", // 0.002 now lowest
+					"Prjn.Matrix.NoGateLRate": "0.01", // 0.002 now lowest
 					"Prjn.Learn.Learn":        "true",
 					"Prjn.Learn.LRate.Base":   "0.1",
 				}},

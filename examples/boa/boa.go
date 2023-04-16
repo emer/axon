@@ -969,7 +969,7 @@ func (ss *Sim) ConfigLogs() {
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
 	// don't plot certain combinations we don't use
 	// ss.Logs.NoPlot(etime.Train, etime.Cycle)
-	ss.Logs.NoPlot(etime.Train, etime.Phase, etime.Sequence)
+	ss.Logs.NoPlot(etime.Train, etime.Sequence)
 	ss.Logs.NoPlot(etime.Test, etime.Run, etime.Epoch, etime.Sequence, etime.Trial)
 	// note: Analyze not plotted by default
 	ss.Logs.SetMeta(etime.Train, etime.Run, "LegendCol", "RunName")

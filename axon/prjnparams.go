@@ -442,15 +442,24 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	if lmax > 0 {
 		ract /= lmax
 	}
+	if ract < pj.Matrix.LearnThr {
+		ract = 0
+	}
 
+	ach := ctx.NeuroMod.ACh
 	if ctx.NeuroMod.HasRew.IsTrue() { // US time -- use DA and current recv activity
-		// todo: we need a better recv activity signal for NoGo even if didn't spike
-		sy.DWt = rn.RLRate * pj.Learn.LRate.Eff * sy.Tr * ract
+		sy.DWt += rn.RLRate * pj.Learn.LRate.Eff * sy.Tr * ract
 		sy.Tr = 0
 		sy.DTr = 0
-	} else {
-		sy.DTr = ctx.NeuroMod.ACh * sn.CaSpkD * ract
+	} else if ach > 0.1 {
+		if layPool.Gated.IsTrue() { // our layer gated
+			sy.DTr = ach * sn.CaSpkD * ract
+		} else {
+			sy.DTr = -pj.Matrix.NoGateLRate * ach * sn.CaSpkD * ract
+		}
 		sy.Tr += sy.DTr
+	} else {
+		sy.DTr = 0
 	}
 
 	/*
