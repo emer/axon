@@ -256,7 +256,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToBLAAcq(usPos, blaPosA, pone2one).SetClass("USToBLA")
 	net.ConnectLayers(usPos, blaPosE, pone2one, axon.InhibPrjn).SetClass("USToBLAExtInhib")
 	net.ConnectLayers(blaPosA, ofc, pone2one, axon.ForwardPrjn)
-	net.ConnectLayers(blaPosE, blaPosA, pone2one, axon.InhibPrjn).SetClass("BLAExtToAcq")
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
@@ -274,7 +273,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectLayers(blaPosA, vPstns, full, axon.ForwardPrjn)
 
 	// net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one) // todo: no!
-	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one).SetClass("BLAAcqToGo")
+	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one).SetClass("BLAExtToNo")
 
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")

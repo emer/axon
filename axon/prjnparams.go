@@ -442,7 +442,7 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	if lmax > 0 {
 		ract /= lmax
 	}
-	if ract < pj.Matrix.LearnThr {
+	if ract < pj.Learn.Trace.LearnThr {
 		ract = 0
 	}
 
@@ -471,7 +471,7 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, l
 	if lmax > 0 {
 		ract /= lmax
 	}
-	if ract < pj.Matrix.LearnThr { // todo change to BG or put in base?
+	if ract < pj.Learn.Trace.LearnThr {
 		ract = 0
 	}
 	// note: rn.RLRate already has DA * (D1 vs. D2 sign reversal) factored in.

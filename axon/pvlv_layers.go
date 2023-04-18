@@ -241,7 +241,7 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Learn.NeuroMod.AChDisInhib = 0   // 5 for matrix -- not sure about this?
 	ly.Learn.NeuroMod.BurstGain = 1
 	ly.Learn.NeuroMod.DipGain = 0.1 // extinction -- better slower -- e.g., .1
-	ly.PVLV.Thr = 0.3
+	ly.PVLV.Thr = 0.2
 	ly.PVLV.Gain = 6
 }
 

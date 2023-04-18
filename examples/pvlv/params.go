@@ -307,8 +307,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01",
-					"Prjn.PrjnScale.Abs":    "1",
+					"Prjn.Learn.LRate.Base":  "0.02",
+					"Prjn.PrjnScale.Abs":     "1",
+					"Prjn.BLA.NegDeltaLRate": "1.0",
 				}},
 			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
 				Params: params.Params{
@@ -361,7 +362,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1", // 1 is ok but some spontaneous activity -- 2 is more reliable
+					"Prjn.PrjnScale.Abs": "0.1", // 1 is ok but some spontaneous activity -- 2 is more reliable
 				}},
 			{Sel: "#TimePToOFCPTp", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{
@@ -369,19 +370,20 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "2",
-					"Prjn.Learn.LRate.Base": "0.05", // 0.05 def
+					"Prjn.PrjnScale.Abs":        "2",
+					"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
+					"Prjn.Learn.Trace.LearnThr": "0.3",
 				}},
 
 			// BG prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":      "1.0", // stronger
-					"Prjn.SWt.Init.Mean":      "0.5",
-					"Prjn.SWt.Init.Var":       "0.4", // more variance
-					"Prjn.Learn.LRate.Base":   "0.1",
-					"Prjn.Matrix.LearnThr":    "0.75",
-					"Prjn.Matrix.NoGateLRate": "0.0",
+					"Prjn.PrjnScale.Abs":        "1.0", // stronger
+					"Prjn.SWt.Init.Mean":        "0.5",
+					"Prjn.SWt.Init.Var":         "0.4", // more variance
+					"Prjn.Learn.LRate.Base":     "0.1",
+					"Prjn.Learn.Trace.LearnThr": "0.75",
+					"Prjn.Matrix.NoGateLRate":   "0.0",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
