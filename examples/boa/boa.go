@@ -204,7 +204,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vsGated := net.AddVSGatedLayer("", ny)
 	vsPatch := net.AddVSPatchLayer("", ev.NDrives, nuBgY, nuBgX)
 
-	drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddDrivePVLVPulvLayers(&ss.Context, ev.NDrives, ny, popY, popX, space)
+	drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(&ss.Context, ev.NDrives, ny, popY, popX, space)
 	_ = usNegP
 	_ = usPos
 	_ = usNeg
@@ -679,22 +679,22 @@ func (ss *Sim) ApplyInputs() {
 	ss.Net.ApplyExts(&ss.Context)
 }
 
-// ApplyPVLV applies current PVLV values to Context.mDrivePVLV,
+// ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
-	dr := &ctx.PVLV
-	dr.InitUS()
+	pv := &ctx.PVLV
+	pv.InitUS()
 	ctx.NeuroMod.HasRew.SetBool(false)
 	if ev.US != -1 {
-		dr.SetPosUS(int32(ev.US), 1) // magnitude always 1
+		pv.SetPosUS(int32(ev.US), 1) // magnitude always 1
 		ctx.NeuroMod.HasRew.SetBool(true)
 	}
 	if ss.Context.PVLV.VSMatrix.JustGated.IsTrue() {
 		ss.Context.PVLV.Effort.Reset() // always start counting at start of goal
 	}
-	dr.Effort.AddEffort(1) // should be based on action taken last step
-	dr.InitDrives()
-	dr.SetDrive(int32(ev.Drive), 1)
+	pv.Effort.AddEffort(1) // should be based on action taken last step
+	pv.InitDrives()
+	pv.SetDrive(int32(ev.Drive), 1)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -785,8 +785,8 @@ func (ss *Sim) StatCounters() {
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
-	dr := &ctx.PVLV
-	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
+	pv := &ctx.PVLV
+	pv.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
 
 	ss.GatedStats()
 	ss.MaintStats()

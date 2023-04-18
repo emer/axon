@@ -107,7 +107,7 @@ func (nt *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 // AddUSLayers adds USpos and USneg layers for positive or negative valence
 // unconditioned stimuli (USs).
 // These track the ContextPVLV.USpos or USneg, for visualization purposes.
-// Actual US inputs are set in DrivePVLV.
+// Actual US inputs are set in PVLV.
 func (nt *Network) AddUSLayers(nUSpos, nUSneg, nYneur int, rel relpos.Relations, space float32) (usPos, usNeg *Layer) {
 	usPos = nt.AddLayer4D("USpos", 1, nUSpos, nYneur, 1, USLayer)
 	usPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
@@ -126,7 +126,7 @@ func (nt *Network) AddUSLayers(nUSpos, nUSneg, nYneur int, rel relpos.Relations,
 // AddUSPulvLayers adds USpos and USneg layers for positive or negative valence
 // unconditioned stimuli (USs).
 // These track the ContextPVLV.USpos or USneg, for visualization purposes.
-// Actual US inputs are set in DrivePVLV.
+// Actual US inputs are set in PVLV.
 // Adds Pulvinar predictive layers for each.
 func (nt *Network) AddUSPulvLayers(nUSpos, nUSneg, nYneur int, rel relpos.Relations, space float32) (usPos, usNeg, usPosP, usNegP *Layer) {
 	usPos, usNeg = nt.AddUSLayers(nUSpos, nUSneg, nYneur, rel, space)
@@ -259,7 +259,7 @@ func (nt *Network) ConnectToSC(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	return pj
 }
 
-// AddDrivesLayer adds DrivePVLV layer representing current drive activity,
+// AddDrivesLayer adds PVLV layer representing current drive activity,
 // from ContextPVLV.Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions, per drive pool.
@@ -268,7 +268,7 @@ func (nt *Network) AddDrivesLayer(ctx *Context, nNeurY, nNeurX int) *Layer {
 	return drv
 }
 
-// AddDrivesPulvLayer adds DrivePVLV layer representing current drive activity,
+// AddDrivesPulvLayer adds PVLV layer representing current drive activity,
 // from ContextPVLV.Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
 // given numbers of neurons in the X and Y dimensions, per drive pool.
@@ -280,19 +280,19 @@ func (nt *Network) AddDrivesPulvLayer(ctx *Context, nNeurY, nNeurX int, space fl
 	return
 }
 
-// AddEffortLayer adds DrivePVLV layer representing current effort factor,
-// from ContextPVLV.Effort.EffortDisc()
+// AddEffortLayer adds PVLV layer representing current effort factor,
+// from ContextPVLV.Effort.Disc
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
-// given numbers of neurons in the X and Y dimensions, per drive pool.
+// given numbers of neurons in the X and Y dimensions.
 func (nt *Network) AddEffortLayer(nNeurY, nNeurX int) *Layer {
 	eff := nt.AddLayer2D("Effort", nNeurY, nNeurX, EffortLayer)
 	return eff
 }
 
-// AddEffortPulvLayer adds DrivePVLV layer representing current effort factor,
-// from ContextPVLV.Effort.EffortDisc()
+// AddEffortPulvLayer adds PVLV layer representing current effort factor,
+// from ContextPVLV.Effort.Disc
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
-// given numbers of neurons in the X and Y dimensions, per drive pool.
+// given numbers of neurons in the X and Y dimensions.
 // Adds Pulvinar predictive layers for Effort.
 func (nt *Network) AddEffortPulvLayer(nNeurY, nNeurX int, space float32) (eff, effP *Layer) {
 	eff = nt.AddEffortLayer(nNeurY, nNeurX)
@@ -301,27 +301,51 @@ func (nt *Network) AddEffortPulvLayer(nNeurY, nNeurX int, space float32) (eff, e
 	return
 }
 
-// AddDrivePVLVPulvLayers adds PVLV layers for PV-related information visualizing
+// AddUrgencyLayer adds PVLV layer representing current urgency factor,
+// from ContextPVLV.Urgency.Urge
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of neurons in the X and Y dimensions.
+func (nt *Network) AddUrgencyLayer(nNeurY, nNeurX int) *Layer {
+	urge := nt.AddLayer2D("Urgency", nNeurY, nNeurX, UrgencyLayer)
+	return urge
+}
+
+// AddUrgencyPulvLayer adds PVLV layer representing current urgency factor,
+// from ContextPVLV.Urgency.Urge
+// Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
+// given numbers of neurons in the X and Y dimensions.
+// Adds Pulvinar predictive layers for Urgency.
+func (nt *Network) AddUrgencyPulvLayer(nNeurY, nNeurX int, space float32) (urge, urgeP *Layer) {
+	urge = nt.AddUrgencyLayer(nNeurY, nNeurX)
+	urgeP = nt.AddPulvForLayer(urge, space)
+	urgeP.SetClass("UrgencyLayer")
+	return
+}
+
+// AddPVLVPulvLayers adds PVLV layers for PV-related information visualizing
 // the internal states of the ContextPVLV state, with Pulvinar prediction
 // layers for training PFC layers.
 // * drives = popcode representation of drive strength (no activity for 0)
 // number of active drives comes from Context; popY, popX neurons per pool.
 // * effort = popcode representation of effort discount factor, popY, popX neurons.
+// * urgency = popcode representation of urgency Go bias factor, popY, popX neurons.
 // * us = nYneur per US, represented as present or absent
 // * pv = popcode representation of final primary value on positive and negative
 // valences -- this is what the dopamine value ends up conding (pos - neg).
 // Layers are organized in depth per type: USs in one column, PVs in the next,
-// with Drives in the back.
-func (nt *Network) AddDrivePVLVPulvLayers(ctx *Context, nUSneg, nYneur, popY, popX int, space float32) (drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
+// with Drives in the back; effort and urgency behind that.
+func (nt *Network) AddPVLVPulvLayers(ctx *Context, nUSneg, nYneur, popY, popX int, space float32) (drives, drivesP, effort, effortP, urgency, urgencyP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP *Layer) {
 	rel := relpos.Behind
 	nUSpos := int(ctx.PVLV.Drive.NActive)
 	usPos, usNeg, usPosP, usNegP = nt.AddUSPulvLayers(nUSpos, nUSneg, nYneur, rel, space)
 	pvPos, pvNeg, pvPosP, pvNegP = nt.AddPVPulvLayers(popY, popX, rel, space)
 	drives, drivesP = nt.AddDrivesPulvLayer(ctx, popY, popX, space)
 	effort, effortP = nt.AddEffortPulvLayer(popY, popX, space)
+	urgency, urgencyP = nt.AddUrgencyPulvLayer(popY, popX, space)
 
 	pvPos.PlaceRightOf(usPos, space)
 	drives.PlaceBehind(usNegP, space)
-	effort.PlaceRightOf(drives, space)
+	effort.PlaceBehind(drivesP, space)
+	urgency.PlaceRightOf(effort, space)
 	return
 }

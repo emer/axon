@@ -222,16 +222,75 @@ func (ef *Effort) DiscFun(effort float32) float32 {
 	return 1.0 / (1.0 + ef.Gain*effort)
 }
 
-// DiscFmEffort computes Effort.Disc from EffortRaw
+// DiscFmEffort computes Disc from Raw effort
 func (ef *Effort) DiscFmEffort() float32 {
 	ef.Disc = ef.DiscFun(ef.Raw)
 	return ef.Disc
 }
 
-// AddEffort adds an increment of effort and updates the Disc discount factor Disc
+// AddEffort adds an increment of effort and updates the Disc discount factor
 func (ef *Effort) AddEffort(inc float32) {
 	ef.Raw += inc
 	ef.DiscFmEffort()
+}
+
+///////////////////////////////////////////////////////////////////////////////
+//  Urgency
+
+// Urgency has urgency (increasing pressure to do something) and parameters for updating it.
+// Raw urgency is incremented by same units as effort, but is only reset with a positive US.
+// Could also make it a function of drives and bodily state factors
+// e.g., desperate thirst, hunger.  Drive activations probably have limited range
+// and renormalization, so urgency can be another dimension with more impact by directly biasing Go.
+type Urgency struct {
+	U50   float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
+	Power int32   `def:"4" desc:"exponent on the urgency factor -- valid numbers are 1,2,4,6"`
+	Raw   float32 `desc:"raw effort for urgency -- increments linearly upward in effort units"`
+	Urge  float32 `inactive:"-" desc:"urgency activity level"`
+}
+
+func (ur *Urgency) Defaults() {
+	ur.U50 = 20
+	ur.Power = 4
+	ur.Raw = 0
+	ur.Urge = 0
+}
+
+func (ur *Urgency) Update() {
+
+}
+
+// Reset resets the raw urgency back to zero -- at start of new gating event
+func (ur *Urgency) Reset() {
+	ur.Raw = 0
+	ur.Urge = 0
+}
+
+// UrgeFun is the urgency function: urgency / (urgency + 1) where
+// urgency = (Raw / U50)^Power
+func (ur *Urgency) UrgeFun(urgency float32) float32 {
+	urgency /= ur.U50
+	switch ur.Power {
+	case 2:
+		urgency *= urgency
+	case 4:
+		urgency *= urgency * urgency * urgency
+	case 6:
+		urgency *= urgency * urgency * urgency * urgency * urgency
+	}
+	return urgency / (1.0 + urgency)
+}
+
+// UrgeFmUrgency computes Urge from Raw
+func (ur *Urgency) UrgeFmUrgency() float32 {
+	ur.Urge = ur.UrgeFun(ur.Raw)
+	return ur.Urge
+}
+
+// AddEffort adds an effort increment of urgency and updates the Urge factor
+func (ur *Urgency) AddEffort(inc float32) {
+	ur.Raw += inc
+	ur.UrgeFmUrgency()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -454,6 +513,7 @@ func (vt *VSMatrix) VSGated(gated, hasRew bool) {
 type PVLV struct {
 	Drive    Drives    `desc:"parameters and state for built-in drives that form the core motivations of agent, controlled by lateral hypothalamus and associated body state monitoring such as glucose levels and thirst."`
 	Effort   Effort    `view:"inline" desc:"effort parameters and state, tracking relative depletion of glucose levels and water levels as a function of time and exertion"`
+	Urgency  Urgency   `view:"inline" desc:"urgency (increasing pressure to do something) and parameters for updating it. Raw urgency is incremented by same units as effort, but is only reset with a positive US."`
 	VTA      VTA       `desc:"parameters and values for computing VTA dopamine, as a function of PV primary values (via Pos / Neg US), LV learned values (Amygdala bursting from unexpected CSs, USs), shunting VSPatchPos expectations, and dipping / pausing inputs from LHb"`
 	LHb      LHb       `view:"inline" desc:"lateral habenula (LHb) parameters and state, which drives dipping / pausing in dopamine when the predicted positive outcome > actual, or actual negative outcome > predicted.  Can also drive bursting for the converse, and via matrix phasic firing"`
 	USpos    DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying input(s) (unconditioned stimuli = US)"`
@@ -465,6 +525,7 @@ type PVLV struct {
 func (pp *PVLV) Defaults() {
 	pp.Drive.Defaults()
 	pp.Effort.Defaults()
+	pp.Urgency.Defaults()
 	pp.VTA.Defaults()
 	pp.LHb.Defaults()
 	pp.USpos.Zero()
@@ -476,6 +537,7 @@ func (pp *PVLV) Defaults() {
 func (pp *PVLV) Update() {
 	pp.Drive.Update()
 	pp.Effort.Update()
+	pp.Urgency.Update()
 	pp.VTA.Update()
 	pp.LHb.Update()
 	pp.VSMatrix.Update()
@@ -653,7 +715,7 @@ func (pp *PVLV) VSGated(gated, hasRew bool, poolIdx int) {
 	pp.VSMatrix.VSGated(gated, hasRew)
 }
 
-// EffortUpdt updates the effort based on given effort increment,
+// EffortUpdt updates the effort and urgency based on given effort increment,
 // resetting first if hasRew flag is true indicating receipt of a
 // US based on Context.NeuroMod.HasRew flag.
 func (pp *PVLV) EffortUpdt(effort float32, hasRew bool) {
@@ -663,7 +725,19 @@ func (pp *PVLV) EffortUpdt(effort float32, hasRew bool) {
 	pp.Effort.AddEffort(effort)
 }
 
-// DriveEffortUpdt updates the Drives and Effort based on
+// UrgencyUpdt updates the urgency and urgency based on given effort increment,
+// resetting first if hasRew flag is true indicating receipt of a
+// US based on Context.NeuroMod.HasRew flag -- it checks the magnitude of US
+// in addition to ensure that an actual positive US is present and not just a
+// 0 valued US from dip reset etc.
+func (pp *PVLV) UrgencyUpdt(effort float32, hasRew bool) {
+	if hasRew && pp.HasPosUS() {
+		pp.Urgency.Reset()
+	}
+	pp.Urgency.AddEffort(effort)
+}
+
+// DriveEffortUpdt updates the Drives and Effort & Urgency based on
 // given effort increment, resetting first if hasRew flag is true
 // indicating receipt of a US based on Context.NeuroMod.HasRew flag.
 // if resetUs is true, USpos values are reset after update
@@ -671,6 +745,7 @@ func (pp *PVLV) EffortUpdt(effort float32, hasRew bool) {
 func (pp *PVLV) DriveEffortUpdt(effort float32, hasRew, resetUs bool) {
 	pp.DriveUpdt(resetUs)
 	pp.EffortUpdt(effort, hasRew)
+	pp.UrgencyUpdt(effort, hasRew)
 }
 
 //gosl: end pvlv

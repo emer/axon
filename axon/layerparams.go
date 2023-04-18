@@ -441,6 +441,15 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		}
 		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case UrgencyLayer:
+		ur := ctx.PVLV.Urgency.Urge
+		upc := ur
+		if ur > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			upc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), ur)
+		}
+		nrn.GeRaw = upc
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case USLayer:
 		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		nrn.GeRaw = 0.1 * mat32.Abs(us)
@@ -613,12 +622,6 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.Act = ctx.NeuroMod.RewPred
 	case TDDaLayer:
 		nrn.Act = ctx.NeuroMod.DA // I set this in CyclePost
-	case MatrixLayer:
-		if ly.Learn.NeuroMod.DAMod == D2Mod && !(ly.Learn.NeuroMod.AChDisInhib > 0 && vals.NeuroMod.ACh < 0.2) && ctx.Cycle >= ly.Act.Dt.MaxCycStart {
-			if nrn.Ge > nrn.SpkMax {
-				nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
-			}
-		}
 
 	case VTALayer:
 		nrn.Act = ctx.PVLV.VTA.Vals.DA // I set this in CyclePost
@@ -645,6 +648,14 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
 		}
 		nrn.Act = dpc
+	case UrgencyLayer:
+		ur := ctx.PVLV.Urgency.Urge
+		upc := ur
+		if ur > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			upc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), ur)
+		}
+		nrn.Act = upc
 	case USLayer:
 		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		nrn.Act = us

@@ -461,55 +461,18 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	} else {
 		sy.DTr = 0
 	}
-
-	/*
-		dtr := float32(0)
-		dwt := float32(0)
-		if layPool.Gated.IsTrue() { // our layer gated
-			// let's not worry about giving credit only to the sub-pool for now
-			// if we need to do this later, we can add a different factor for
-			// D2 (NoGo) vs D1 (Go) -- the NoGo case should *not* care about subpools
-			// in any case.  Probably the Go case can not care too.
-			// if subPool.Gated.IsTrue() {
-			dtr = rn.SpkMax * sn.CaSpkD // we will get the credit later at time of US
-			// }
-			// if our local subPool did not gate, don't learn -- we weren't responsible
-		} else { // our layer didn't gate: should it have?
-			// this drives a slower opportunity cost learning if ACh says something
-			// salient was happening but nobody gated..
-			// it is needed for the basic pcore test case to get off the floor
-			// todo: if rn.SpkMax is zero for everything, might need to use Ge?
-			// dtr = -pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
-			dwt = rn.DASign * pj.Matrix.NoGateLRate * ctx.NeuroMod.ACh * rn.SpkMax * sn.CaSpkD
-		}
-
-		tr := sy.Tr
-		if pj.Matrix.CurTrlDA.IsTrue() { // off by default -- used for quick-and-dirty 1 trial
-			tr += dtr
-		}
-		// learning is based on current trace * RLRate(DA * ACh)
-		dwt += rn.RLRate * pj.Learn.LRate.Eff * tr
-
-		// decay at time of US signaled by ACh
-		tr -= pj.Matrix.TraceDecay(ctx, ctx.NeuroMod.ACh) * tr
-
-		// if we didn't get new trace already, add it
-		if pj.Matrix.CurTrlDA.IsFalse() {
-			tr += dtr
-		}
-		sy.DTr = dtr
-		sy.Tr = tr
-		sy.DWt += dwt
-	*/
 }
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPrjn type.  Currently only supporting the Pos D1 type.
 func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	ract := rn.CaSpkD
-	lmax := layPool.AvgMax.CaSpkD.Plus.Max
+	ract := rn.GeIntMax
+	lmax := layPool.AvgMax.GeIntMax.Plus.Max
 	if lmax > 0 {
 		ract /= lmax
+	}
+	if ract < pj.Matrix.LearnThr { // todo change to BG or put in base?
+		ract = 0
 	}
 	// note: rn.RLRate already has DA * (D1 vs. D2 sign reversal) factored in.
 	// and also the logic that non-positive DA leads to weight decreases.

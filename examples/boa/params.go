@@ -272,7 +272,6 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
-					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
 					"Layer.Matrix.IsVS":                "true",
 					"Layer.Learn.NeuroMod.DALRateSign": "true",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",

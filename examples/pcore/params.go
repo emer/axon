@@ -81,7 +81,6 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.01", // .02 too high..
-					"Layer.Matrix.NoGoGeLrn":           "0.2",  // todo: experiment.
 					"Layer.Learn.NeuroMod.AChDisInhib": "1",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.5", // 0.5 > 0.4
@@ -129,9 +128,34 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.On":       "true",
 					"Prjn.SWt.Init.Mean":      "0.5",
 					"Prjn.SWt.Init.Var":       "0.25",
-					"Prjn.Matrix.NoGateLRate": "0.01", // 0.002 now lowest
+					"Prjn.Matrix.LearnThr":    "0.75",
+					"Prjn.Matrix.NoGateLRate": "0.01", // 0.01 seems fine actually
 					"Prjn.Learn.Learn":        "true",
-					"Prjn.Learn.LRate.Base":   "0.1",
+					"Prjn.Learn.LRate.Base":   "0.05",
+				}},
+			{Sel: ".ACCPosToGo", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.0", // 1.5 = faster go
+					"Prjn.SWt.Init.Mean": "0.7",
+				}},
+			{Sel: ".ACCPosToNo", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.0",
+				}},
+			{Sel: ".ACCNegToNo", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.0",
+				}},
+			{Sel: ".ACCNegToGo", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1.0",
+				}},
+			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
+				Params: params.Params{
+					"Prjn.SWt.Init.SPct": "0",
+					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Var":  "0.0",
+					"Prjn.Learn.Learn":   "false",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -159,6 +183,14 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Rel": "0.1",
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.25",
+				}},
+			{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
+					"Prjn.PrjnScale.Abs": "20",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.25",
+					"Prjn.Learn.Learn":   "false",
 				}},
 			{Sel: "#PFCToSTNp", Desc: "strong pfc to stn",
 				Params: params.Params{

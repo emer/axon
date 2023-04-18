@@ -173,19 +173,24 @@ const (
 	// visualization purposes -- updated by VTALayer.
 	LHbLayer
 
-	// DrivesLayer represents the Drives in DrivePVLV framework.
+	// DrivesLayer represents the Drives in PVLV framework.
 	// It tracks the ContextPVLV.Drives values for
 	// visualization and predictive learning purposes.
 	DrivesLayer
 
-	// EffortLayer represents the Effort factor in DrivePVLV framework.
+	// EffortLayer represents the Effort factor in PVLV framework.
 	// It tracks the ContextPVLV.Effort.Disc value for
 	// visualization and predictive learning purposes.
 	EffortLayer
 
+	// UrgencyLayer represents the Urgency factor in PVLV framework.
+	// It tracks the ContextPVLV.Urgency.Urge value for
+	// visualization and predictive learning purposes.
+	UrgencyLayer
+
 	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
 	// It tracks the ContextPVLV.USpos or USneg, for visualization
-	// and predictive learning purposes. Actual US inputs are set in DrivePVLV.
+	// and predictive learning purposes. Actual US inputs are set in PVLV.
 	USLayer
 
 	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing

@@ -271,6 +271,18 @@ func (ly *LayerParams) EffortDefaults() {
 	ly.Learn.TrgAvgAct.On.SetBool(false)
 }
 
+func (ly *LayerParams) UrgencyDefaults() {
+	ly.Inhib.ActAvg.Nominal = 0.2
+	ly.Inhib.Layer.On.SetBool(true)
+	ly.Inhib.Layer.Gi = 0.5
+	ly.Inhib.Pool.On.SetBool(false)
+	ly.Act.PopCode.On.SetBool(true) // use only popcode
+	ly.Act.PopCode.MinAct = 0
+	ly.Act.Decay.Act = 1
+	ly.Act.Decay.Glong = 1
+	ly.Learn.TrgAvgAct.On.SetBool(false)
+}
+
 func (ly *LayerParams) USDefaults() {
 	ly.Inhib.ActAvg.Nominal = 0.2
 	ly.Inhib.Layer.On.SetBool(true)

@@ -138,6 +138,8 @@ func (ss *Sim) ConfigEnv() {
 	trn.Init(0)
 
 	ss.Context.PVLV.Drive.NActive = int32(cond.NUSs + 1)
+	ss.Context.PVLV.Drive.NNegUSs = 1
+	ss.Context.PVLV.Urgency.U50 = 50 // no pressure during regular trials
 
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
@@ -176,7 +178,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vsGated := net.AddVSGatedLayer("", ny)
 	vsPatch := net.AddVSPatchLayer("", nUSs, nuBgY, nuBgX)
 
-	drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddDrivePVLVPulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
+	drives, drivesP, effort, effortP, urgency, urgencyP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
 	_ = usNegP
 	_ = usPos
 	_ = usNeg
@@ -184,6 +186,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = pvNegP
 	_ = effort
 	_ = effortP
+	_ = urgency
+	_ = urgencyP
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
@@ -264,13 +268,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	// same prjns to stn as mtxgo
 	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
-	// net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
+	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAAcqToGo")
+	// net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAAcqToNo")
 	net.ConnectLayers(blaPosA, vPstnp, full, axon.ForwardPrjn)
 	net.ConnectLayers(blaPosA, vPstns, full, axon.ForwardPrjn)
 
 	// net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one) // todo: no!
-	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
+	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one).SetClass("BLAAcqToGo")
+
 	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
 	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
 	// net.ConnectLayers(drives, vPstnp, full, axon.ForwardPrjn) // probably not good: modulatory
@@ -445,23 +450,23 @@ func (ss *Sim) ApplyInputs() {
 	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
-// ApplyPVLV applies current PVLV values to Context.mDrivePVLV,
+// ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	dr := &ctx.PVLV
-	dr.InitUS()
+	pv := &ctx.PVLV
+	pv.InitUS()
 	ctx.NeuroMod.HasRew.SetBool(false)
 	if trl.USOn {
 		if trl.Valence == cond.Pos {
-			dr.SetPosUS(int32(trl.US+1), trl.USMag) // +1 for curiosity
+			pv.SetPosUS(int32(trl.US+1), trl.USMag) // +1 for curiosity
 		} else {
-			dr.SetNegUS(int32(trl.US), trl.USMag)
+			pv.SetNegUS(int32(trl.US), trl.USMag)
 		}
 		ctx.NeuroMod.HasRew.SetBool(true)
 	}
-	dr.InitDrives()
-	dr.SetDrive(0, 1.0) // curiosity
-	dr.SetDrive(int32(trl.US+1), 1)
+	pv.InitDrives()
+	pv.SetDrive(0, 1.0) // curiosity
+	pv.SetDrive(int32(trl.US+1), 1)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -549,17 +554,17 @@ func (ss *Sim) StatCounters() {
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
-	dr := &ctx.PVLV
-	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
+	pv := &ctx.PVLV
+	pv.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
 	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
 	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
 	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)
-	ss.Stats.SetFloat32("LHbDip", dr.VTA.Vals.LHbDip)
-	ss.Stats.SetFloat32("DipSum", dr.LHb.DipSum)
-	ss.Stats.SetFloat32("DipReset", float32(dr.LHb.DipReset))
-	ss.Stats.SetFloat32("LHbBurst", dr.VTA.Vals.LHbBurst)
-	ss.Stats.SetFloat32("PVpos", dr.VTA.Vals.PVpos)
-	ss.Stats.SetFloat32("PVneg", dr.VTA.Vals.PVneg)
+	ss.Stats.SetFloat32("LHbDip", pv.VTA.Vals.LHbDip)
+	ss.Stats.SetFloat32("DipSum", pv.LHb.DipSum)
+	ss.Stats.SetFloat32("DipReset", float32(pv.LHb.DipReset))
+	ss.Stats.SetFloat32("LHbBurst", pv.VTA.Vals.LHbBurst)
+	ss.Stats.SetFloat32("PVpos", pv.VTA.Vals.PVpos)
+	ss.Stats.SetFloat32("PVneg", pv.VTA.Vals.PVneg)
 	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pools[0].AvgMax.CaSpkD.Cycle.Max)
 }
 

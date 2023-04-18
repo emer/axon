@@ -98,6 +98,8 @@ func (ly *Layer) Defaults() {
 		ly.Params.DrivesDefaults()
 	case EffortLayer:
 		ly.Params.EffortDefaults()
+	case UrgencyLayer:
+		ly.Params.UrgencyDefaults()
 	case USLayer:
 		ly.Params.USDefaults()
 	case PVLayer:

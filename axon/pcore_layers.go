@@ -22,7 +22,6 @@ import (
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
 	GateThr        float32     `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
-	NoGoGeLrn      float32     `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
 	IsVS           slbool.Bool `desc:"is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the ContextPVLV state, and used for updating effort and other factors."`
 	OtherMatrixIdx int32       `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
 	ThalLay1Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
@@ -32,12 +31,11 @@ type MatrixParams struct {
 	ThalLay5Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used"`
 	ThalLay6Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used"`
 
-	pad, pad1 int32
+	pad, pad1, pad2 int32
 }
 
 func (mp *MatrixParams) Defaults() {
 	mp.GateThr = 0.01
-	mp.NoGoGeLrn = 1
 }
 
 func (mp *MatrixParams) Update() {

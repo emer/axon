@@ -218,7 +218,6 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Matrix.GateThr":             "0.05", // 0.05 > 0.08 maybe
-					"Layer.Matrix.NoGoGeLrn":           "0.1",  // 0.1 >= 0.2 > 0.5 a bit
 					"Layer.Matrix.IsVS":                "true",
 					"Layer.Learn.NeuroMod.AChDisInhib": "5", // key to be 5
 					"Layer.Act.Dend.ModGain":           "5",
@@ -377,13 +376,12 @@ var ParamSets = params.Sets{
 			// BG prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "1.0", // stronger
-					"Prjn.SWt.Init.Mean":    "0.5",
-					"Prjn.SWt.Init.Var":     "0.4", // more variance
-					"Prjn.Matrix.CurTrlDA":  "true",
-					"Prjn.Matrix.UseHasRew": "true", // hack to use US-only timing
-					"Prjn.Matrix.AChDecay":  "0",    // not used if UseHasRew is on
-					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.PrjnScale.Abs":      "1.0", // stronger
+					"Prjn.SWt.Init.Mean":      "0.5",
+					"Prjn.SWt.Init.Var":       "0.4", // more variance
+					"Prjn.Learn.LRate.Base":   "0.1",
+					"Prjn.Matrix.LearnThr":    "0.75",
+					"Prjn.Matrix.NoGateLRate": "0.0",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -398,9 +396,14 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.PrjnScale.Rel": ".2",
 				}},
-			{Sel: ".BLAToBG", Desc: "",
+			{Sel: ".BLAAcqToGo", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Abs": "4",
+					"Prjn.PrjnScale.Rel": "1",
+				}},
+			{Sel: ".BLAExtToNo", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.PrjnScale.Rel": "1",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",

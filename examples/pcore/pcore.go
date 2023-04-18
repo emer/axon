@@ -79,6 +79,7 @@ type SimParams struct {
 	ACCNeg     float32      `desc:"activation of ACC neg valence -- drives nogo"`
 	ACCPosInc  float32      `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
 	ACCNegInc  float32      `desc:"across-units multiplier in activation of ACC neg valence, e.g., 1.1 increments subsequent units by 10%"`
+	PosNegThr  float32      `desc:"threshold on diff between ACCPos - ACCNeg for counting as a Go trial"`
 	SNc        float32      `desc:"dopamine level - computed for learning"`
 	TestInc    float32      `desc:"increment in testing activation for test all"`
 	TestReps   int          `desc:"number of repetitions per testing level"`
@@ -99,6 +100,7 @@ func (ss *SimParams) Defaults() {
 	ss.ACCNeg = .2
 	ss.ACCPosInc = 1 // 0.8
 	ss.ACCNegInc = 1
+	ss.PosNegThr = 0
 	ss.TestInc = 0.1
 	ss.TestReps = 25
 	ss.InN = 5
@@ -137,7 +139,7 @@ func (ss *Sim) New() {
 	ss.Net = &axon.Network{}
 	ss.Sim.Defaults()
 	ss.Params.Params = ParamSets
-	ss.Params.ExtraSets = "WtScales" // todo: ensure params same without
+	// ss.Params.ExtraSets = "WtScales" // todo: ensure params same without
 	ss.Params.AddNetwork(ss.Net)
 	ss.Params.AddSim(ss)
 	ss.Params.AddNetSize()
@@ -146,6 +148,8 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
 	ss.Context.Defaults()
+	ss.Context.PVLV.Drive.NActive = 2
+	ss.Context.PVLV.Drive.NNegUSs = 1
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -222,13 +226,16 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRndPrjn.PCon = 0.75
 	_ = mtxRndPrjn
 
-	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
-	_ = snc
-
 	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	_ = gpeOut
 	_ = gpeIn
 	_ = gpeTA
+
+	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
+	_ = snc
+
+	urge := net.AddUrgencyLayer(5, 4)
+	_ = urge
 
 	accpos := net.AddLayer4D("ACCPos", 1, np, nuY, nuX, axon.InputLayer)
 	accneg := net.AddLayer4D("ACCNeg", 1, np, nuY, nuX, axon.InputLayer)
@@ -251,14 +258,17 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxGo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
 	mtxNo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
 
-	net.ConnectToMatrix(accpos, mtxGo, pone2one)
-	net.ConnectToMatrix(accpos, mtxNo, pone2one) // more balanced with both
-	net.ConnectToMatrix(accneg, mtxNo, pone2one)
-	net.ConnectToMatrix(accneg, mtxGo, pone2one)
+	net.ConnectToMatrix(accpos, mtxGo, pone2one).SetClass("ACCPosToGo")
+	net.ConnectToMatrix(accpos, mtxNo, pone2one).SetClass("ACCPosToNo") // more balanced with both
+	net.ConnectToMatrix(accneg, mtxNo, pone2one).SetClass("ACCNegToNo")
+	net.ConnectToMatrix(accneg, mtxGo, pone2one).SetClass("ACCNegToGo")
 	net.ConnectToMatrix(pfc, mtxGo, pone2one)
 	net.ConnectToMatrix(pfc, mtxNo, pone2one)
 
-	gpi.PlaceRightOf(snc, space)
+	net.ConnectToMatrix(urge, mtxGo, full)
+
+	snc.PlaceRightOf(gpi, space)
+	urge.PlaceRightOf(snc, space)
 	gpeOut.PlaceAbove(gpi)
 	stnp.PlaceRightOf(gpeTA, space)
 	mtxGo.PlaceAbove(gpeOut)
@@ -493,6 +503,10 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, trial int) {
 
 // ApplyPVLV applies PVLV reward inputs
 func (ss *Sim) ApplyPVLV(trial int) {
+	if ss.Context.Mode == etime.Test {
+		ss.Context.PVLV.Urgency.Reset()
+	}
+
 	nan := mat32.NaN()
 	ss.Stats.SetFloat32("Gated", nan)
 	ss.Stats.SetFloat32("Should", nan)
@@ -516,19 +530,20 @@ func (ss *Sim) ApplyPVLV(trial int) {
 func (ss *Sim) GatedRew() {
 	mtxly := ss.Net.AxonLayerByName("MtxGo")
 	didGate, _ := mtxly.MatrixGated(&ss.Context) // will also be called later
-	shouldGate := (ss.Sim.ACCPos - ss.Sim.ACCNeg) > 0
+	pndiff := (ss.Sim.ACCPos - ss.Sim.ACCNeg) - ss.Sim.PosNegThr
+	shouldGate := pndiff > 0
 	match := false
 	var rew float32
 	switch {
 	case shouldGate && didGate:
-		rew = 1
+		rew = pndiff
 		match = true
 	case shouldGate && !didGate:
-		rew = -1
+		rew = -pndiff
 	case !shouldGate && didGate:
-		rew = -1
+		rew = pndiff
 	case !shouldGate && !didGate:
-		rew = 0
+		rew = -pndiff
 		match = true
 	}
 
@@ -543,6 +558,12 @@ func (ss *Sim) SetRew(rew float32) {
 	net := ss.Net
 	ss.Context.NeuroMod.SetRew(rew, true)
 	ss.Context.NeuroMod.DA = rew // no reward prediction error
+	ss.Context.PVLV.InitUS()
+	if rew > 0 {
+		ss.Context.PVLV.SetPosUS(1, rew)
+	} else if rew < 0 {
+		ss.Context.PVLV.SetNegUS(1, rew)
+	}
 
 	itsr := etensor.Float32{}
 	itsr.SetShape([]int{1}, nil, nil)
@@ -608,6 +629,7 @@ func (ss *Sim) StatCounters() {
 // Aggregation is done directly from log data.
 // ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
+	ss.Context.PVLV.DriveEffortUpdt(1, ss.Context.NeuroMod.HasRew.IsTrue(), false)
 	trial := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Trial].Counter.Cur
 	ss.Stats.SetFloat("PFCVM_RT", math.NaN())
 	if trial != 1 {
@@ -780,11 +802,6 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 func (ss *Sim) TestStats() {
 	tststnm := "TestTrialStats"
 	plt := ss.GUI.Plots[etime.ScopeKey(tststnm)]
-	plt.Params.XAxisCol = "Sequence"
-	plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-	plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
-
 	ix := ss.Logs.IdxView(etime.Test, etime.Sequence)
 	spl := split.GroupBy(ix, []string{"TrialName"})
 	for _, ts := range ix.Table.ColNames {
@@ -796,6 +813,10 @@ func (ss *Sim) TestStats() {
 	tstst := spl.AggsToTable(etable.ColNameOnly)
 	ss.Logs.MiscTables[tststnm] = tstst
 	plt.SetTable(tstst)
+	plt.Params.XAxisCol = "Sequence"
+	plt.SetColParams("Gated", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Should", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("Match", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////
