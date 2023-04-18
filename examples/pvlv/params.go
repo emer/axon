@@ -11,12 +11,6 @@ import "github.com/emer/emergent/params"
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
-				Params: params.Params{
-					// "Layer.Act.Decay.Act":   "0.0", // do this only where needed
-					// "Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Clamp.Ge": "1.5",
-				}},
 			{Sel: ".CTLayer", Desc: "corticothalamic context -- using FSA-based params -- intermediate",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.12",
@@ -106,19 +100,25 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "0.6",
 				}},
-			{Sel: ".BLALayer", Desc: "",
+			// {Sel: ".BLALayer", Desc: "",
+			// 	Params: params.Params{
+			// 		"Layer.Inhib.ActAvg.Nominal":      "0.025",
+			// 		"Layer.Inhib.Layer.Gi":            "1.8", // needs to be strong to prevent random off-US act
+			// 		"Layer.Inhib.Pool.Gi":             "0.9",
+			// 		"Layer.Act.Dt.GiTau":              "20",
+			// 		"Layer.Learn.NeuroMod.DALRateMod": "0.5",
+			// 		"Layer.Learn.NeuroMod.BurstGain":  "0.2",
+			// 		"Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
+			// 	}},
+			{Sel: "#BLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal":      "0.025",
-					"Layer.Inhib.Layer.Gi":            "1.8", // needs to be strong to prevent random off-US act
-					"Layer.Inhib.Pool.Gi":             "0.9",
-					"Layer.Act.Dt.GiTau":              "20",
 					"Layer.Learn.NeuroMod.DALRateMod": "0.5",
 					"Layer.Learn.NeuroMod.BurstGain":  "0.2",
-					"Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
+					"Layer.Learn.NeuroMod.DipGain":    "0",
 				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.Gi":              "0.9",
+					// "Layer.Inhib.Pool.Gi":              "0.9",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
 					"Layer.Learn.NeuroMod.DipGain":     "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "1",
@@ -131,14 +131,14 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.3",
 				}},
-			{Sel: "#Novel", Desc: "",
-				Params: params.Params{
-					"Layer.Act.Init.GeBase":      "0.4",
-					"Layer.Act.Init.GeVar":       "0.2",
-					"Layer.Inhib.ActAvg.Nominal": "0.05",
-					"Layer.Inhib.Layer.Gi":       "0.8",
-					"Layer.Inhib.Pool.On":        "false",
-				}},
+			// {Sel: "#BLANovelCS", Desc: "",
+			// 	Params: params.Params{
+			// 		"Layer.Act.Init.GeBase":      "0.4",
+			// 		"Layer.Act.Init.GeVar":       "0.2",
+			// 		"Layer.Inhib.ActAvg.Nominal": "0.05",
+			// 		"Layer.Inhib.Layer.Gi":       "0.8",
+			// 		"Layer.Inhib.Pool.On":        "false",
+			// 	}},
 			{Sel: ".SC", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
@@ -229,11 +229,6 @@ var ParamSets = params.Sets{
 				}},
 			////////////////////////////////////////////////////////////////
 			// cortical prjns
-			{Sel: "Prjn", Desc: "all prjns",
-				Params: params.Params{
-					"Prjn.Learn.Trace.Tau":  "1",
-					"Prjn.Learn.LRate.Base": "0.04",
-				}},
 			{Sel: ".BackPrjn", Desc: "back is weaker",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1",
@@ -311,18 +306,18 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs":     "1",
 					"Prjn.BLA.NegDeltaLRate": "1.0",
 				}},
-			{Sel: ".USToBLA", Desc: "starts strong, learns slow",
-				Params: params.Params{
-					"Prjn.SWt.Init.SPct":    "0",
-					"Prjn.SWt.Init.Mean":    "0.5",
-					"Prjn.SWt.Init.Var":     "0.25",
-					"Prjn.Learn.LRate.Base": "0.001",
-					"Prjn.PrjnScale.Rel":    "0.5",
-				}},
+			// {Sel: ".USToBLAAcq", Desc: "starts strong, learns slow",
+			// 	Params: params.Params{
+			// 		"Prjn.SWt.Init.SPct":    "0",
+			// 		"Prjn.SWt.Init.Mean":    "0.5",
+			// 		"Prjn.SWt.Init.Var":     "0.25",
+			// 		"Prjn.Learn.LRate.Base": "0.001",
+			// 		"Prjn.PrjnScale.Rel":    "0.5",
+			// 	}},
 			{Sel: ".USToBLAExtInhib", Desc: "actual US inhibits exinction",
 				Params: params.Params{
 					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
+					"Prjn.SWt.Init.Mean": "0.75",
 					"Prjn.SWt.Init.Var":  "0.25",
 					"Prjn.SWt.Adapt.On":  "false",
 					"Prjn.Learn.Learn":   "false",
@@ -332,15 +327,20 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "6.0", // if weaker, e.g., 2, other pools get active
 				}},
-			{Sel: "#CSToBLAPosAcqD1", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1.5",
-				}},
+			// {Sel: ".CSToBLAPos", Desc: "stronger by default",
+			// 	Params: params.Params{
+			// 		"Prjn.PrjnScale.Abs": "1.5",
+			// 	}},
 			{Sel: "#ContextInToBLAPosExtD2", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "2",
 					"Prjn.Learn.LRate.Base": "0.1",
 				}},
+			// {Sel: ".BLAFromNovel", Desc: "dilutes everyone else, so make it weaker Rel, compensate with Abs",
+			// 	Params: params.Params{
+			// 		"Prjn.PrjnScale.Rel": "0.1",
+			// 		"Prjn.PrjnScale.Abs": "5",
+			// 	}},
 			{Sel: ".PTpToBLAExt", Desc: "modulatory, stronger by default",
 				Params: params.Params{
 					"Prjn.Com.GType":     "ModulatoryG",

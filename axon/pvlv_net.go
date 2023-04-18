@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
@@ -53,7 +54,7 @@ func (nt *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX int
 // AddAmygdala adds a full amygdala complex including BLA,
 // CeM, and LDT.  Inclusion of negative valence is optional with neg
 // arg -- neg* layers are nil if not included.
-func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, novAct *Layer) {
+func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int, space float32) (blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov *Layer) {
 	blaPosAcq, blaPosExt = nt.AddBLALayers(prefix, true, nUs, nNeurY, nNeurX, relpos.Behind, space)
 	if neg {
 		blaNegAcq, blaNegExt = nt.AddBLALayers(prefix, false, nUs, nNeurY, nNeurX, relpos.Behind, space)
@@ -67,7 +68,14 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int,
 		cemNeg.SetBuildConfig("Valence", "Negative")
 	}
 
-	novAct = nt.AddLayer4D(prefix+"Novel", 1, 1, 5, 5, InputLayer)
+	blaNov = nt.AddLayer4D(prefix+"BLANovelCS", 1, 1, 4, 4, BLALayer)
+	blaNov.SetBuildConfig("DAMod", "D1Mod")
+	blaNov.SetBuildConfig("Valence", "Positive")
+	blaNov.DefParams = params.Params{
+		"Layer.Inhib.ActAvg.Nominal": "0.05",
+		"Layer.Inhib.Layer.Gi":       "0.8",
+		"Layer.Inhib.Pool.On":        "false",
+	}
 
 	p1to1 := prjn.NewPoolOneToOne()
 
@@ -79,16 +87,24 @@ func (nt *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int,
 		nt.ConnectLayers(blaNegExt, cemNeg, p1to1, InhibPrjn).SetClass("BLAToCeM_Inhib")
 	}
 
-	nt.ConnectLayers(novAct, blaPosAcq, p1to1, ForwardPrjn).SetClass("NovelToBLAPosAcq")
+	pj := nt.ConnectLayers(blaNov, blaPosAcq, p1to1, ForwardPrjn)
+	pj.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Rel": "0.1",
+		"Prjn.PrjnScale.Abs": "5",
+	}
+	pj.SetClass("BLAFromNovel")
 
 	cemPos.PlaceBehind(blaPosExt, space)
 	if neg {
 		blaNegAcq.PlaceBehind(blaPosExt, space)
 		cemPos.PlaceBehind(blaNegExt, space)
 		cemNeg.PlaceBehind(cemPos, space)
-		novAct.PlaceBehind(cemNeg, space)
+		blaNov.PlaceBehind(cemNeg, space)
 	} else {
-		novAct.PlaceBehind(cemPos, space)
+		blaNov.PlaceBehind(cemPos, space)
 	}
 
 	return
@@ -102,6 +118,55 @@ func (nt *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
 // ConnectToBLAExt adds a BLAExtPrjn from given sending layer to a BLA layer
 func (nt *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	return nt.ConnectLayers(send, recv, pat, BLAExtPrjn)
+}
+
+// ConnectCSToBLAPos connects the CS input to BLAPosAcqD1, BLANovelCS layers
+// using fixed, higher-variance weights, full projection.
+// Sets classes to: CSToBLAPos, CSToBLANovel
+func (nt *Network) ConnectCSToBLAPos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *Prjn) {
+	toAcq = nt.ConnectLayers(cs, blaAcq, prjn.NewFull(), BLAAcqPrjn)
+	toAcq.DefParams = params.Params{ // stronger..
+		"Prjn.PrjnScale.Abs": "1.5",
+	}
+	toAcq.SetClass("CSToBLAPos")
+
+	toNov = nt.ConnectLayers(cs, blaNov, prjn.NewFull(), BLAAcqPrjn)
+	toNov.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.75",
+		"Prjn.SWt.Init.Var":  "0.25",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.Learn.Learn":   "false",
+	}
+	toNov.SetClass("CSToBLANovel")
+	return
+}
+
+// ConnectUSToBLAPos connects the US input to BLAPosAcqD1 and
+// BLAPosExtD2 layers,
+// using fixed, higher-variance weights, full projection.
+// Sets classes to: USToBLAAcq and USToBLAExt
+func (nt *Network) ConnectUSToBLAPos(us, blaAcq, blaExt *Layer) (toAcq, toExt *Prjn) {
+	toAcq = nt.ConnectLayers(us, blaAcq, prjn.NewPoolOneToOne(), BLAAcqPrjn)
+	toAcq.DefParams = params.Params{
+		"Prjn.SWt.Init.SPct":    "0",
+		"Prjn.SWt.Init.Mean":    "0.75",
+		"Prjn.SWt.Init.Var":     "0.25",
+		"Prjn.Learn.LRate.Base": "0.001",
+		"Prjn.PrjnScale.Rel":    "0.5",
+	}
+	toAcq.SetClass("USToBLAAcq")
+	toExt = nt.ConnectLayers(us, blaExt, prjn.NewPoolOneToOne(), InhibPrjn)
+	toExt.DefParams = params.Params{
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Abs": "2",
+	}
+	toExt.SetClass("USToBLAExtInhib")
+	return
 }
 
 // AddUSLayers adds USpos and USneg layers for positive or negative valence

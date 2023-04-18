@@ -68,6 +68,8 @@ func (pj *Prjn) Defaults() {
 	case MatrixPrjn:
 		pj.Params.MatrixDefaults()
 	}
+	pj.ApplyDefParams()
+	pj.UpdateParams()
 }
 
 // Update is interface that does local update of struct vals

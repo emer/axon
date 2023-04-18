@@ -353,7 +353,7 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // Acquisition is based on delta from US activity over trials (temporal difference)
 func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	delta := rn.CaSpkP - rn.SpkPrv
-	if delta < 0 { // neg delta learns much slower
+	if delta < 0 { // neg delta learns slower in Acq, not Ext
 		delta *= pj.BLA.NegDeltaLRate
 	}
 	dwt := float32(0)
@@ -361,8 +361,9 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPo
 		dwt = sy.Tr * delta
 		sy.Tr = 0
 	} else if ctx.NeuroMod.ACh > 0.1 {
+		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
 		sy.DTr = ctx.NeuroMod.ACh * sn.Burst
-		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sy.DTr) // todo: unclear if this is good -- slows typical 1 trial
+		sy.Tr = pj.Learn.Trace.TrFmCa(sy.Tr, sy.DTr)
 	} else {
 		sy.DTr = 0
 	}
@@ -474,7 +475,7 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, sy *Synapse, sn, rn *Neuron, l
 	if ract < pj.Learn.Trace.LearnThr {
 		ract = 0
 	}
-	// note: rn.RLRate already has DA * (D1 vs. D2 sign reversal) factored in.
+	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 	// and also the logic that non-positive DA leads to weight decreases.
 	dwt := rn.RLRate * pj.Learn.LRate.Eff * sn.CaSpkD * ract
 	sy.DWt += dwt

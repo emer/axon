@@ -116,6 +116,7 @@ func (ly *Layer) Defaults() {
 	case VSGatedLayer:
 		ly.Params.VSGatedDefaults()
 	}
+	ly.ApplyDefParams()
 	ly.UpdateParams()
 }
 

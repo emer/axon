@@ -19,8 +19,12 @@ import (
 
 // PrjnBase contains the basic structural information for specifying a projection of synaptic
 // connections between two layers, and maintaining all the synaptic connection-level data.
-// The exact same struct object is added to the Recv and Send layers, and it manages everything
+// The same struct token is added to the Recv and Send layer prjn lists, and it manages everything
 // about the connectivity, and methods on the Prjn handle all the relevant computation.
+// The Base does not have algorithm-specific methods and parameters, so it can be easily
+// reused for different algorithms, and cleanly separates the algorithm-specific code.
+// Any dependency on the algorithm-level Prjn can be captured in the AxonPrjn interface,
+// accessed via the AxonPrj field.
 type PrjnBase struct {
 	AxonPrj       AxonPrjn           `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonPrjn, which can always be used to extract the true underlying type of object when prjn is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Off           bool               `desc:"inactivate this projection -- allows for easy experimentation"`
@@ -30,6 +34,7 @@ type PrjnBase struct {
 	Recv          *Layer             `desc:"receiving layer for this projection"`
 	Pat           prjn.Pattern       `tableview:"-" desc:"pattern of connectivity"`
 	Typ           PrjnTypes          `desc:"type of projection -- Forward, Back, Lateral, or extended type in specialized algorithms -- matches against .Cls parameter styles (e.g., .Back etc)"`
+	DefParams     params.Params      `tableview:"-" desc:"default parameters that are applied prior to user-set parameters -- these are useful for specific functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a prjn type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map."`
 	ParamsHistory params.HistoryImpl `tableview:"-" desc:"provides a history of parameters applied to the layer"`
 
 	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
@@ -237,11 +242,25 @@ func (pj *PrjnBase) ParamsApplied(sel *params.Sel) {
 // it always prints a message if a parameter fails to be set.
 // returns true if any params were set, and error if there were any errors.
 func (pj *PrjnBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) {
-	app, err := pars.Apply(pj.AxonPrj, setMsg) // essential to go through AxonPrj
+	app, err := pars.Apply(pj.AxonPrj, setMsg)
+	// note: must use AxonPrj to get to actual Prjn, which then uses Styler interface
+	// to return the Params struct.
 	if app {
 		pj.AxonPrj.UpdateParams()
 	}
 	return app, err
+}
+
+// ApplyDefParams applies DefParams default parameters if set
+// Called by Prjn.Defaults()
+func (pj *PrjnBase) ApplyDefParams() {
+	if pj.DefParams == nil {
+		return
+	}
+	err := pj.DefParams.Apply(pj.AxonPrj, false)
+	if err != nil {
+		log.Printf("programmer error -- fix DefParams: %s\n", err)
+	}
 }
 
 // NonDefaultParams returns a listing of all parameters in the Layer that

@@ -7,16 +7,16 @@ package axon
 //gosl: start pvlv_prjns
 
 // BLAPrjnParams has parameters for basolateral amygdala acquisition learning.
+// The Learn.Trace.Tau time constant determines the strength of second-order
+// conditioning -- default of 1 means none, but can be increased as needed.
 type BLAPrjnParams struct {
-	NegDeltaLRate float32 `def:"0.01" desc:"negative delta learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
-	NonUSLRate    float32 `def:"0.01" desc:"learning rate when the US is not present -- this is the second-order conditioning case"`
+	NegDeltaLRate float32 `def:"0.01,1" desc:"negative delta learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
 
-	pad, pad1 float32
+	pad, pad1, pad2 float32
 }
 
 func (bp *BLAPrjnParams) Defaults() {
 	bp.NegDeltaLRate = 0.01
-	bp.NonUSLRate = 0.01
 }
 
 func (bp *BLAPrjnParams) Update() {
@@ -32,7 +32,7 @@ func (pj *PrjnParams) BLAAcqPrjnDefaults() {
 	pj.SWt.Init.Mean = 0.1
 	pj.SWt.Init.Var = 0.05
 	pj.SWt.Init.Sym.SetBool(false)
-	pj.Learn.Trace.Tau = 1
+	pj.Learn.Trace.Tau = 1 // increase for second order conditioning
 	pj.Learn.Trace.Update()
 	pj.Learn.LRate.Base = 0.02
 }

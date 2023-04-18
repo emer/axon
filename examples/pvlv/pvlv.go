@@ -202,11 +202,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
 	net.ConnectToSC(cs, sc, full)
 
-	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, novAct := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
+	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, blaNov := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
 	_ = cemPos
 	_ = blaNegE
 	_ = cemNeg
-	_ = novAct
+	_ = blaNov
 	blaPosA.SetBuildConfig("LayInhib1Name", blaNegA.Name())
 	blaNegA.SetBuildConfig("LayInhib1Name", blaPosA.Name())
 
@@ -251,11 +251,12 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 
-	// BLA
-	net.ConnectToBLAAcq(cs, blaPosA, full)
-	net.ConnectToBLAAcq(usPos, blaPosA, pone2one).SetClass("USToBLA")
-	net.ConnectLayers(usPos, blaPosE, pone2one, axon.InhibPrjn).SetClass("USToBLAExtInhib")
+	// BLA connections -- sets defaults, classes
+	net.ConnectCSToBLAPos(cs, blaPosA, blaNov)
+	net.ConnectUSToBLAPos(usPos, blaPosA, blaPosE)
+
 	net.ConnectLayers(blaPosA, ofc, pone2one, axon.ForwardPrjn)
+
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
@@ -694,7 +695,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
-	nv.Params.LayNmSize = 0.03
+	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
