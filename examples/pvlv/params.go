@@ -30,7 +30,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.12",
 					"Layer.CT.GeGain":            "0.01",
 					"Layer.CT.DecayTau":          "50",
-					"Layer.Inhib.Layer.Gi":       "0.8", // overridden by OFCPTPred below
+					"Layer.Inhib.Layer.Gi":       "0.8", // overridden by OFCusPTPred below
 					"Layer.Inhib.Pool.Gi":        "0.8",
 					"Layer.Act.GABAB.Gbar":       "0.2", // regular
 					"Layer.Act.NMDA.Gbar":        "0.15",
@@ -66,7 +66,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / css
 				}},
-			{Sel: ".OFC", Desc: "",
+			{Sel: ".OFCus", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":        "0.0", // do this only where needed
 					"Layer.Act.Decay.Glong":      "0.0",
@@ -77,41 +77,44 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Pool.Gi":        "0.8",
 					"Layer.Act.Dend.SSGi":        "0",
 				}},
-			{Sel: "#OFCCT", Desc: "",
+			{Sel: "#OFCusCT", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "2.8", // 2.4 not strong enough to prevent diffuse activity
 					"Layer.Inhib.Pool.Gi":  "1.2", // was 1.4
 				}},
-			{Sel: "#OFCPTp", Desc: "",
+			{Sel: "#OFCusPTp", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.8",
 					"Layer.Inhib.Pool.Gi":  "0.8",
 				}},
-			{Sel: "#OFC", Desc: "",
+			{Sel: "#OFCus", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.2", // was 1.1
+					"Layer.Inhib.Layer.Gi": "2.2", // was 1.1
+					"Layer.Inhib.Pool.Gi":  "1.2",
 				}},
-			{Sel: "#OFCPT", Desc: "",
+			{Sel: "#OFCusPT", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.8", // was 1.3
 					"Layer.Inhib.Pool.Gi":  "2.0", // was 0.6
 				}},
-			{Sel: "#OFCMD", Desc: "",
+			{Sel: "#OFCusMD", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "0.6",
 				}},
-			// {Sel: ".BLALayer", Desc: "",
-			// 	Params: params.Params{
-			// 		"Layer.Inhib.ActAvg.Nominal":      "0.025",
-			// 		"Layer.Inhib.Layer.Gi":            "1.8", // needs to be strong to prevent random off-US act
-			// 		"Layer.Inhib.Pool.Gi":             "0.9",
-			// 		"Layer.Act.Dt.GiTau":              "20",
-			// 		"Layer.Learn.NeuroMod.DALRateMod": "0.5",
-			// 		"Layer.Learn.NeuroMod.BurstGain":  "0.2",
-			// 		"Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
-			// 	}},
+			{Sel: ".BLALayer", Desc: "",
+				Params: params.Params{
+					"Layer.CT.GeGain": "0.1", // 0.1 has sig effect -- can go a bit lower if need
+					// "Layer.Inhib.ActAvg.Nominal":      "0.025",
+					// "Layer.Inhib.Layer.Gi":            "1.8",
+					// "Layer.Inhib.Pool.Gi":             "0.9",
+					// "Layer.Act.Dt.GiTau":              "20",
+					// "Layer.Learn.NeuroMod.DALRateMod": "0.5",
+					// "Layer.Learn.NeuroMod.BurstGain":  "0.2",
+					// "Layer.Learn.NeuroMod.DipGain":    "0", // ignore small negative DA
+				}},
 			{Sel: "#BLAPosAcqD1", Desc: "",
 				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":            "2.2",
 					"Layer.Learn.NeuroMod.DALRateMod": "0.5",
 					"Layer.Learn.NeuroMod.BurstGain":  "0.2",
 					"Layer.Learn.NeuroMod.DipGain":    "0",
@@ -187,9 +190,8 @@ var ParamSets = params.Sets{
 					"Layer.Learn.NeuroMod.DipGain":     "0.1", // controls extinction -- works fine at 1
 					"Layer.PVLV.Thr":                   "0.3",
 					"Layer.PVLV.Gain":                  "8",
-					"Layer.VSPatch.NoDALRate":          "0.1", // 0.1 exinguishes Ok, .2 too high, 0.05 too low in BOA
 				}},
-			{Sel: "#VpSTNp", Desc: "Pausing STN",
+			{Sel: "#VsSTNp", Desc: "Pausing STN",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true", // this is critical, else too active
@@ -197,7 +199,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.SKCa.Gbar":              "3",
 					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
-			{Sel: "#VpSTNs", Desc: "Sustained STN",
+			{Sel: "#VsSTNs", Desc: "Sustained STN",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true",
@@ -211,7 +213,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Init.GiVar":       "0.1",
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
-			{Sel: "#VpGPi", Desc: "",
+			{Sel: "#VsGPi", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Init.GeBase": "0.6",
 				}},
@@ -281,7 +283,7 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Trace.Tau":     "1",    // 2 > 1
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
-			{Sel: "#OFCCTToOFCPTp", Desc: "",
+			{Sel: "#OFCusCTToOFCusPTp", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5",
 				}},
@@ -333,7 +335,7 @@ var ParamSets = params.Sets{
 			// 	}},
 			{Sel: "#ContextInToBLAPosExtD2", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "2",
+					"Prjn.PrjnScale.Abs":    "4",
 					"Prjn.Learn.LRate.Base": "0.1",
 				}},
 			// {Sel: ".BLAFromNovel", Desc: "dilutes everyone else, so make it weaker Rel, compensate with Abs",
@@ -348,9 +350,11 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.5",
 					"Prjn.SWt.Init.Var":  "0.3",
 				}},
-			{Sel: "#BLAPosAcqD1ToOFC", Desc: "strong",
+			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "strong, high variance",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4",
+					"Prjn.PrjnScale.Abs": "6",
+					"Prjn.SWt.Init.Mean": "0.5",
+					"Prjn.SWt.Init.Var":  "0.4",
 				}},
 			{Sel: ".BLAToCeM_Excite", Desc: "",
 				Params: params.Params{
@@ -362,9 +366,9 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1", // 1 is ok but some spontaneous activity -- 2 is more reliable
+					"Prjn.PrjnScale.Abs": "0.4",
 				}},
-			{Sel: "#TimePToOFCPTp", Desc: "needs to be strong so reps are differentiated",
+			{Sel: "#TimePToOFCusPTp", Desc: "needs to be strong so reps are differentiated",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
 				}},
@@ -380,8 +384,8 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":        "1.0", // stronger
 					"Prjn.SWt.Init.Mean":        "0.5",
-					"Prjn.SWt.Init.Var":         "0.4", // more variance
-					"Prjn.Learn.LRate.Base":     "0.1",
+					"Prjn.SWt.Init.Var":         "0.4",  // more variance
+					"Prjn.Learn.LRate.Base":     "0.02", // slower fine
 					"Prjn.Learn.Trace.LearnThr": "0.75",
 					"Prjn.Matrix.NoGateLRate":   "0.0",
 				}},
@@ -393,7 +397,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.On":  "false",
 					"Prjn.Learn.Learn":   "false",
 				}},
-			{Sel: "#USposToVpMtxGo", Desc: "",
+			{Sel: "#USposToVsMtxGo", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2",
 					"Prjn.PrjnScale.Rel": ".2",
@@ -405,7 +409,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToNo", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Abs": "0.1",
 					"Prjn.PrjnScale.Rel": "1",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "this is modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act",

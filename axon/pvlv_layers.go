@@ -129,6 +129,8 @@ func (ly *Layer) BLADefaults() {
 	lp.Learn.TrgAvgAct.On.SetBool(false)
 	lp.Learn.RLRate.Diff.SetBool(true)
 	lp.Learn.RLRate.DiffThr = 0.01
+	lp.CT.DecayTau = 0
+	lp.CT.GeGain = 0.1 // 0.1 has effect, can go a bit lower if need to
 
 	// lp.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	// because it depends on the configured D1 vs. D2 status

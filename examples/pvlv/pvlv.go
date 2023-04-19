@@ -161,6 +161,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	pone2one := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
+	_ = one2one
 	full := prjn.NewFull()
 	_ = pone2one
 	rndpone2one := prjn.NewPoolUnifRnd()
@@ -174,20 +175,18 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = lhb
 	_ = ldt
 
-	vPmtxGo, vPmtxNo, _, _, vPgpeTA, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
-	vsGated := net.AddVSGatedLayer("", ny)
-	vsPatch := net.AddVSPatchLayer("", nUSs, nuBgY, nuBgX)
+	// note: it is easier to get layers by name rather than deal with all the return values
+	net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 
-	drives, drivesP, effort, effortP, urgency, urgencyP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
-	_ = usNegP
-	_ = usPos
-	_ = usNeg
-	_ = pvNeg
-	_ = pvNegP
-	_ = effort
-	_ = effortP
-	_ = urgency
-	_ = urgencyP
+	vSgpi := net.AxonLayerByName("VsGPi")
+	usPos := net.AxonLayerByName("USpos")
+	pvPos := net.AxonLayerByName("PVpos")
+	ofc := net.AxonLayerByName("OFCus")
+	ofcCT := net.AxonLayerByName("OFCusCT")
+	ofcPTp := net.AxonLayerByName("OFCusPTp")
+	blaPosAcq := net.AxonLayerByName("BLAPosAcqD1")
+	blaPosExt := net.AxonLayerByName("BLAPosExtD2")
+	blaNov := net.AxonLayerByName("BLANovelCS")
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
@@ -202,107 +201,22 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
 	net.ConnectToSC(cs, sc, full)
 
-	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, blaNov := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
-	_ = cemPos
-	_ = blaNegE
-	_ = cemNeg
-	_ = blaNov
-	blaPosA.SetBuildConfig("LayInhib1Name", blaNegA.Name())
-	blaNegA.SetBuildConfig("LayInhib1Name", blaPosA.Name())
-
-	ofc, ofcCT := net.AddSuperCT4D("OFC", 1, nUSs, nuCtxY, nuCtxX, space, one2one)
-	// prjns are: super->PT, PT self, CT-> thal
-	ofcPT, ofcMD := net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
-	_ = ofcPT
-	ofcCT.SetClass("OFC CTCopy")
-	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, pone2one, pone2one, pone2one, space)
-	ofcPTPred.SetClass("OFC")
-	notMaint := net.AddPTNotMaintLayer(ofcPT, ny, 1, space)
-	notMaint.Nm = "NotMaint"
-
-	// net.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
-	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
-	// to reflect either current CS or maintained CS but not just echoing drive state.
-	net.ConnectLayers(drives, ofc, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
-	// net.ConnectLayers(drives, ofcCT, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
-	net.ConnectLayers(vPgpi, ofcMD, full, axon.InhibPrjn).SetClass("BgFixed")
-	// net.ConnectLayers(cs, ofc, full, axon.ForwardPrjn) // let BLA handle it
-	net.ConnectLayers(time, ofc, full, axon.ForwardPrjn).SetClass("TimeToOFC")
-	net.ConnectLayers(pvPos, ofc, full, axon.ForwardPrjn).SetClass("PVposToOFC")
-	net.ConnectLayers(usPos, ofc, pone2one, axon.ForwardPrjn)
-	net.ConnectLayers(ofcPT, ofcCT, pone2one, axon.ForwardPrjn)
-
-	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcCT, effortP, full, full)
-	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
 	net.ConnectToPulv(ofc, ofcCT, timeP, full, full)
-
-	// these are all very static, lead to static PT reps:
-	// net.ConnectPTPredToPulv(ofcPTPred, drivesP, pone2one, pone2one)
-	// net.ConnectPTPredToPulv(ofcPTPred, usPosP, pone2one, pone2one)
-	// net.ConnectPTPredToPulv(ofcPTPred, pvPosP, pone2one, pone2one)
-	net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
-	net.ConnectPTPredToPulv(ofcPTPred, timeP, full, full)
-	net.ConnectLayers(time, ofcPTPred, full, axon.ForwardPrjn)
-	net.ConnectLayers(cs, ofcPTPred, full, axon.ForwardPrjn)
-
-	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
-	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
+	net.ConnectLayers(time, ofc, full, axon.BackPrjn) // use back for weaker inputs
+	net.ConnectPTPredToPulv(ofcPTp, timeP, full, full)
+	net.ConnectLayers(time, ofcPTp, full, axon.ForwardPrjn)
+	net.ConnectLayers(cs, ofcPTp, full, axon.ForwardPrjn)
+	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
 
 	// BLA connections -- sets defaults, classes
-	net.ConnectCSToBLAPos(cs, blaPosA, blaNov)
-	net.ConnectUSToBLAPos(usPos, blaPosA, blaPosE)
-
-	net.ConnectLayers(blaPosA, ofc, pone2one, axon.ForwardPrjn)
+	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
 
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
-	net.ConnectToBLAExt(ctxIn, blaPosE, full)
-	net.ConnectToBLAExt(ofcPTPred, blaPosE, rndpone2one).SetClass("PTpToBLAExt")
+	net.ConnectToBLAExt(ctxIn, blaPosExt, full)
 
-	////////////////////////////////////////////////
-	// BG / DA connections
-
-	// same prjns to stn as mtxgo
-	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAAcqToGo")
-	// net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAAcqToNo")
-	net.ConnectLayers(blaPosA, vPstnp, full, axon.ForwardPrjn)
-	net.ConnectLayers(blaPosA, vPstns, full, axon.ForwardPrjn)
-
-	// net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one) // todo: no!
-	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one).SetClass("BLAExtToNo")
-
-	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
-	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
-	// net.ConnectLayers(drives, vPstnp, full, axon.ForwardPrjn) // probably not good: modulatory
-	// net.ConnectLayers(drives, vPstns, full, axon.ForwardPrjn)
-	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
-	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
-	// net.ConnectLayers(ofc, vPstnp, full, axon.ForwardPrjn)
-	// net.ConnectLayers(ofc, vPstns, full, axon.ForwardPrjn)
-	// net.ConnectToMatrix(ofcCT, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
-	// net.ConnectToMatrix(ofcCT, vPmtxNo, pone2one)
-	// net.ConnectToMatrix(ofcPT, vPmtxGo, pone2one)
-	// net.ConnectToMatrix(ofcPT, vPmtxNo, pone2one)
-
-	// net.ConnectToRWPrjn(ofc, rwPred, full)
-	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
-
-	net.ConnectToVSPatch(drives, vsPatch, pone2one).SetClass("DrivesToVSPatch") // modulatory
-	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
-
-	////////////////////////////////////////////////
-	// position
-
-	vPgpi.PlaceRightOf(vta, space)
-
-	vsPatch.PlaceRightOf(vPstns, space)
-	vsGated.PlaceRightOf(vPgpeTA, space)
-
+	vSgpi.PlaceRightOf(vta, space)
 	usPos.PlaceAbove(vta)
 
 	time.PlaceRightOf(pvPos, space)
@@ -311,14 +225,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ctxIn.PlaceRightOf(cs, space)
 	// ustimeIn.PlaceRightOf(ctxIn, space)
 	sc.PlaceRightOf(ctxIn, space)
-
-	blaPosA.PlaceAbove(usPos)
-	blaNegA.PlaceBehind(blaPosE, space)
-	cemPos.PlaceBehind(blaNegE, space)
-	cemNeg.PlaceBehind(cemPos, space)
-
-	ofc.PlaceRightOf(blaPosA, space)
-	ofcMD.PlaceBehind(ofcPTPred, space)
 
 	err := net.Build()
 	if err != nil {

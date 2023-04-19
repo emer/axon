@@ -352,12 +352,12 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 // DWtSynBLA computes the weight change (learning) at given synapse for BLA*Prjn type.
 // Acquisition is based on delta from US activity over trials (temporal difference)
 func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
-	delta := rn.CaSpkP - rn.SpkPrv
-	if delta < 0 { // neg delta learns slower in Acq, not Ext
-		delta *= pj.BLA.NegDeltaLRate
-	}
 	dwt := float32(0)
 	if ctx.NeuroMod.HasRew.IsTrue() { // reset
+		delta := rn.CaSpkP - rn.SpkPrv
+		if delta < 0 { // neg delta learns slower in Acq, not Ext
+			delta *= pj.BLA.NegDeltaLRate
+		}
 		dwt = sy.Tr * delta
 		sy.Tr = 0
 	} else if ctx.NeuroMod.ACh > 0.1 {

@@ -93,7 +93,7 @@ type LayerParams struct {
 	//     use the `viewif` field tag to condition on LayType.
 
 	Burst   BurstParams   `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
 	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
 	LDT     LDTParams     `viewif:"LayType=LDTLayer" view:"inline" desc:"parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition"`
 	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
@@ -172,7 +172,7 @@ func (ly *LayerParams) AllParams() string {
 	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Burst, "", " ")
 		str += "Burst:   {\n " + JsonToParams(b)
-	case CTLayer, PTPredLayer, PTNotMaintLayer:
+	case CTLayer, PTPredLayer, PTNotMaintLayer, BLALayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
 		str += "CT:      {\n " + JsonToParams(b)
 	case PulvinarLayer:
@@ -407,11 +407,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	case BLALayer:
 		// only for ext type:
 		if ly.Learn.NeuroMod.IsBLAExt() {
-			geCtxt := ctx.NeuroMod.ACh * ly.CT.GeGain * nrn.CtxtGe
+			geCtxt := ctx.NeuroMod.ACh * ly.CT.GeGain * nrn.CtxtGeOrig
 			nrn.GeRaw += geCtxt
-			if ly.CT.DecayDt > 0 {
-				nrn.CtxtGe -= ly.CT.DecayDt * nrn.CtxtGe
-			}
 			ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
 			nrn.GeSyn += ctxExt
 			saveVal = ctxExt // used In PostGs to set nrn.GeExt
@@ -483,6 +480,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 // It is passed the saveVal from SpecialPreGs
 func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveVal float32) {
 	switch ly.LayType {
+	case BLALayer:
+		fallthrough
 	case CTLayer:
 		nrn.GeExt = saveVal
 	case PTPredLayer:
@@ -597,6 +596,16 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 				nrn.CtxtGe += nrn.CtxtGeRaw
 			}
 			nrn.CtxtGeOrig = nrn.CtxtGe
+		}
+	case BLALayer:
+		if ctx.Cycle == ctx.ThetaCycles-1 {
+			if ctx.NeuroMod.HasRew.IsTrue() {
+				nrn.CtxtGe = 0
+				nrn.CtxtGeOrig = 0
+			} else if ctx.NeuroMod.ACh > 0.1 {
+				nrn.CtxtGe = nrn.CtxtGeRaw
+				nrn.CtxtGeOrig = nrn.CtxtGe
+			}
 		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
@@ -898,11 +907,6 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	case VSPatchLayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		modlr = ly.VSPatch.DALRate(vals.NeuroMod.DA, modlr) // always decrease if no DA
-	// case MatrixLayer:
-	// 	mlr = 1.0 - nrn.GeIntMax
-	// 	if mlr < 0 {
-	// 		mlr = 0
-	// 	}
 	default:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 	}
