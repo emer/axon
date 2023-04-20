@@ -95,7 +95,7 @@ type PrjnParams struct {
 
 	RLPred RLPredPrjnParams `viewif:"PrjnType=[RWPrjn,TDPredPrjn]" view:"inline" desc:"Params for RWPrjn and TDPredPrjn for doing dopamine-modulated learning for reward prediction: Da * Send activity. Use in RWPredLayer or TDPredLayer typically to generate reward predictions. If the Da sign is positive, the first recv unit learns fully; for negative, second one learns fully.  Lower lrate applies for opposite cases.  Weights are positive-only."`
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
-	BLA    BLAPrjnParams    `viewif:"PrjnType=[BLAAcqPrjn,BLAExtPrjn]" view:"inline" desc:"Basolateral Amygdala projection parameters."`
+	BLA    BLAPrjnParams    `viewif:"PrjnType=BLAPrjn" view:"inline" desc:"Basolateral Amygdala projection parameters."`
 
 	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
@@ -142,9 +142,7 @@ func (pj *PrjnParams) AllParams() string {
 	case MatrixPrjn:
 		b, _ = json.MarshalIndent(&pj.Matrix, "", " ")
 		str += "Matrix: {\n " + JsonToParams(b)
-	case BLAAcqPrjn:
-		fallthrough
-	case BLAExtPrjn:
+	case BLAPrjn:
 		b, _ = json.MarshalIndent(&pj.BLA, "", " ")
 		str += "BLA: {\n " + JsonToParams(b)
 	}
@@ -216,7 +214,7 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 // DoSynCa returns false if should not do synaptic-level calcium updating.
 // Done by default in Cortex, not for some other special projection types.
 func (pj *PrjnParams) DoSynCa() bool {
-	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAAcqPrjn || pj.PrjnType == BLAExtPrjn {
+	if pj.PrjnType == RWPrjn || pj.PrjnType == TDPredPrjn || pj.PrjnType == MatrixPrjn || pj.PrjnType == VSPatchPrjn || pj.PrjnType == BLAPrjn {
 		return false
 	}
 	return true
@@ -301,9 +299,7 @@ func (pj *PrjnParams) DWtSyn(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool,
 		pj.DWtSynMatrix(ctx, sy, sn, rn, layPool, subPool)
 	case VSPatchPrjn:
 		pj.DWtSynVSPatch(ctx, sy, sn, rn, layPool, subPool)
-	case BLAExtPrjn:
-		pj.DWtSynBLA(ctx, sy, sn, rn, layPool, subPool)
-	case BLAAcqPrjn:
+	case BLAPrjn:
 		pj.DWtSynBLA(ctx, sy, sn, rn, layPool, subPool)
 	default:
 		pj.DWtSynCortex(ctx, sy, sn, rn, layPool, subPool, isTarget)
@@ -347,10 +343,10 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 	}
 }
 
-// todo: remove different BLA prjn types if this works..
-
-// DWtSynBLA computes the weight change (learning) at given synapse for BLA*Prjn type.
-// Acquisition is based on delta from US activity over trials (temporal difference)
+// DWtSynBLA computes the weight change (learning) at given synapse for BLAPrjn type.
+// Like the BG Matrix learning rule, a synaptic tag "trace" is established at CS onset (ACh)
+// and learning at US / extinction is a function of trace * delta from US activity
+// (temporal difference), which limits learning.
 func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	dwt := float32(0)
 	if ctx.NeuroMod.HasRew.IsTrue() { // reset
@@ -491,9 +487,7 @@ func (pj *PrjnParams) WtFmDWtSyn(ctx *Context, sy *Synapse) {
 		pj.WtFmDWtSynNoLimits(ctx, sy)
 	case TDPredPrjn:
 		pj.WtFmDWtSynNoLimits(ctx, sy)
-	case BLAAcqPrjn:
-		pj.WtFmDWtSynNoLimits(ctx, sy)
-	case BLAExtPrjn:
+	case BLAPrjn:
 		pj.WtFmDWtSynNoLimits(ctx, sy)
 	default:
 		pj.WtFmDWtSynCortex(ctx, sy)

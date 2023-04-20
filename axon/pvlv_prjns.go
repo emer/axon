@@ -6,11 +6,11 @@ package axon
 
 //gosl: start pvlv_prjns
 
-// BLAPrjnParams has parameters for basolateral amygdala acquisition learning.
+// BLAPrjnParams has parameters for basolateral amygdala learning.
 // The Learn.Trace.Tau time constant determines the strength of second-order
 // conditioning -- default of 1 means none, but can be increased as needed.
 type BLAPrjnParams struct {
-	NegDeltaLRate float32 `def:"0.01,1" desc:"negative delta learning rate multiplier -- weights go down much more slowly than up -- extinction is separate learning in extinction layer"`
+	NegDeltaLRate float32 `def:"0.01,1" desc:"use 0.01 for acquisition (don't unlearn) and 1 for extinction -- negative delta learning rate multiplier"`
 
 	pad, pad1, pad2 float32
 }
@@ -25,7 +25,7 @@ func (bp *BLAPrjnParams) Update() {
 
 //gosl: end pvlv_prjns
 
-func (pj *PrjnParams) BLAAcqPrjnDefaults() {
+func (pj *PrjnParams) BLADefaults() {
 	pj.SWt.Adapt.On.SetBool(false)
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.SPct = 0
@@ -37,19 +37,8 @@ func (pj *PrjnParams) BLAAcqPrjnDefaults() {
 	pj.Learn.LRate.Base = 0.02
 }
 
-func (pj *PrjnParams) BLAExtPrjnDefaults() {
-	pj.SWt.Adapt.On.SetBool(false)
-	pj.SWt.Adapt.SigGain = 1
-	pj.SWt.Init.SPct = 0
-	pj.SWt.Init.Mean = 0.1
-	pj.SWt.Init.Var = 0.05
-	pj.SWt.Init.Sym.SetBool(false)
-	pj.Learn.Trace.Tau = 1
-	pj.Learn.Trace.Update()
-	pj.Learn.LRate.Base = 0.1
-}
-
-func (pj *PrjnParams) VSPatchPrjnDefaults() {
+func (pj *PrjnParams) VSPatchDefaults() {
+	pj.PrjnScale.Abs = 2 // needs strong drive in general
 	pj.SWt.Adapt.On.SetBool(false)
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.SPct = 0

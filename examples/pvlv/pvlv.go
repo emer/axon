@@ -164,8 +164,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = one2one
 	full := prjn.NewFull()
 	_ = pone2one
-	rndpone2one := prjn.NewPoolUnifRnd()
-	rndpone2one.PCon = 0.5
 
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
@@ -175,27 +173,13 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	_ = lhb
 	_ = ldt
 
-	// note: it is easier to get layers by name rather than deal with all the return values
-	net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
-
-	vSgpi := net.AxonLayerByName("VsGPi")
-	usPos := net.AxonLayerByName("USpos")
-	pvPos := net.AxonLayerByName("PVpos")
-	ofc := net.AxonLayerByName("OFCus")
-	ofcCT := net.AxonLayerByName("OFCusCT")
-	ofcPTp := net.AxonLayerByName("OFCusPTp")
-	blaPosAcq := net.AxonLayerByName("BLAPosAcqD1")
-	blaPosExt := net.AxonLayerByName("BLAPosExtD2")
-	blaNov := net.AxonLayerByName("BLANovelCS")
+	vSgpi, usPos, pvPos, ofc, ofcCT, ofcPTp, blaPosAcq, blaPosExt, blaNov := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
 	cs, csP := net.AddInputPulv4D("CS", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
 
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
-	_ = ctxIn
-	// ustimeIn := net.AddLayer4D("USTimeIn", timeIn.Dim(0), timeIn.Dim(1), timeIn.Dim(2), timeIn.Dim(3), axon.InputLayer)
-	// _ = ustimeIn
 
 	sc := net.AddSCLayer2D("", nuBgY, nuBgX)
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
@@ -218,9 +202,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	vSgpi.PlaceRightOf(vta, space)
 	usPos.PlaceAbove(vta)
-
 	time.PlaceRightOf(pvPos, space)
-
 	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
 	// ustimeIn.PlaceRightOf(ctxIn, space)

@@ -116,12 +116,18 @@ func (pp *VSPatchParams) DALRate(da, modlr float32) float32 {
 //gosl: end pvlv_layers
 
 func (ly *Layer) BLADefaults() {
+	isAcq := strings.Contains(ly.Nm, "Acq")
+
 	lp := ly.Params
 	lp.Act.Decay.Act = 0
 	lp.Act.Decay.Glong = 0
 	lp.Act.Dend.SSGi = 0
 	lp.Inhib.Layer.On.SetBool(true)
-	lp.Inhib.Layer.Gi = 1.8
+	if isAcq {
+		lp.Inhib.Layer.Gi = 2.2 // acq has more input
+	} else {
+		lp.Inhib.Layer.Gi = 1.8
+	}
 	lp.Inhib.Pool.On.SetBool(true)
 	lp.Inhib.Pool.Gi = 0.9
 	lp.Inhib.ActAvg.Nominal = 0.025
@@ -132,16 +138,11 @@ func (ly *Layer) BLADefaults() {
 	lp.CT.DecayTau = 0
 	lp.CT.GeGain = 0.1 // 0.1 has effect, can go a bit lower if need to
 
-	// lp.Learn.NeuroMod.DAMod needs to be set via BuildConfig
-	// because it depends on the configured D1 vs. D2 status
-	isAcq := strings.Contains(ly.Nm, "Acq")
-
 	if isAcq {
 		lp.Learn.NeuroMod.DALRateMod = 0.5
 		lp.Learn.NeuroMod.BurstGain = 0.2
 		lp.Learn.NeuroMod.DipGain = 0
 	} else {
-		// lp.Learn.NeuroMod.DALRateSign.SetBool(true) // yes for Extinction
 		lp.Learn.NeuroMod.BurstGain = 1
 		lp.Learn.NeuroMod.DipGain = 1
 	}
@@ -185,30 +186,21 @@ func (ly *Layer) CeMDefaults() {
 	lp.Inhib.Pool.On.SetBool(true)
 	lp.Inhib.Pool.Gi = 0.3
 	lp.Inhib.ActAvg.Nominal = 0.15
-	lp.Learn.RLRate.SigmoidMin = 1.0
 	lp.Learn.TrgAvgAct.On.SetBool(false)
+	lp.Learn.RLRate.SigmoidMin = 1.0 // doesn't matter -- doesn't learn..
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.PrjnScale.Abs = 1
-		// slay := pj.Send
-		// if ly.Params.NeuroMod.Valence == Positive {
-		// 	if slay.Params.NeuroMod.DAMod == D2Mod {
-		// 	}
-		// } else {
-		//
-		// }
 	}
 }
 
-func (ly *Layer) PPTgDefaults() {
+func (ly *Layer) LDTDefaults() {
 	lp := ly.Params
 	lp.Inhib.ActAvg.Nominal = 0.1
 	lp.Inhib.Layer.On.SetBool(true)
 	lp.Inhib.Layer.Gi = 1 // todo: explore
-	lp.Inhib.Pool.On.SetBool(true)
-	lp.Inhib.Pool.Gi = 0.5   // todo: could be lower!
-	lp.Inhib.Pool.FFPrv = 10 // key for temporal derivative
+	lp.Inhib.Pool.On.SetBool(false)
 	lp.Act.Decay.Act = 1
 	lp.Act.Decay.Glong = 1
 	lp.Act.Decay.LearnCa = 1 // uses CaSpkD as a readout!
@@ -240,17 +232,16 @@ func (ly *LayerParams) VSPatchDefaults() {
 	// ms.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Learn.NeuroMod.DALRateSign.SetBool(true)
 	ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
-	ly.Learn.NeuroMod.AChDisInhib = 0   // 5 for matrix -- not sure about this?
+	ly.Learn.NeuroMod.AChDisInhib = 0   // essential: has to fire when expected but not present!
 	ly.Learn.NeuroMod.BurstGain = 1
-	ly.Learn.NeuroMod.DipGain = 0.1 // extinction -- better slower -- e.g., .1
-	ly.PVLV.Thr = 0.2
-	ly.PVLV.Gain = 6
+	ly.Learn.NeuroMod.DipGain = 0.1 // extinction -- reduce to slow
+	ly.PVLV.Thr = 0.3
+	ly.PVLV.Gain = 8
 }
 
 func (ly *LayerParams) DrivesDefaults() {
-	ly.Inhib.ActAvg.Nominal = 0.03
+	ly.Inhib.ActAvg.Nominal = 0.01
 	ly.Inhib.Layer.On.SetBool(false)
-	ly.Inhib.Layer.Gi = 0.1
 	ly.Inhib.Pool.On.SetBool(true)
 	ly.Inhib.Pool.Gi = 0.5
 	ly.Act.PopCode.On.SetBool(true)

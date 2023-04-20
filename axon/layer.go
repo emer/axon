@@ -86,12 +86,12 @@ func (ly *Layer) Defaults() {
 	case TDIntegLayer, TDDaLayer:
 		ly.Params.TDDefaults()
 
+	case LDTLayer:
+		ly.LDTDefaults()
 	case BLALayer:
 		ly.BLADefaults()
 	case CeMLayer:
 		ly.CeMDefaults()
-	case LDTLayer:
-		ly.PPTgDefaults()
 	case VSPatchLayer:
 		ly.Params.VSPatchDefaults()
 	case DrivesLayer:

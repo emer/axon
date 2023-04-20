@@ -21,7 +21,7 @@ import (
 // updated in PlusPhase prior to DWt call.
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
-	GateThr        float32     `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
+	GateThr        float32     `def:"0.05" desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
 	IsVS           slbool.Bool `desc:"is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the ContextPVLV state, and used for updating effort and other factors."`
 	OtherMatrixIdx int32       `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
 	ThalLay1Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
@@ -35,7 +35,7 @@ type MatrixParams struct {
 }
 
 func (mp *MatrixParams) Defaults() {
-	mp.GateThr = 0.01
+	mp.GateThr = 0.05
 }
 
 func (mp *MatrixParams) Update() {
@@ -79,61 +79,6 @@ func (gp *GPParams) Update() {
 }
 
 //gosl: end pcore_layers
-
-// todo: original has this:
-
-// func (ly *MatrixLayer) DecayState(decay, glong float32) {
-// 	ly.Layer.DecayState(decay, glong)
-// 	for ni := range ly.Neurons {
-// 		nrn := &ly.Neurons[ni]
-// 		if nrn.IsOff() {
-// 			continue
-// 		}
-// 		ly.Params.Learn.DecayCaLrnSpk(nrn, glong) // ?
-// 	}
-// 	ly.InitMods()
-// }
-
-func (ly *Layer) MatrixDefaults() {
-	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
-	ly.Params.Inhib.Pool.On.SetBool(false)
-	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.Inhib.Layer.FB = 0
-	ly.Params.Inhib.Pool.FB = 0
-	ly.Params.Inhib.Pool.Gi = 0.5
-	ly.Params.Inhib.ActAvg.Nominal = 0.25
-	ly.Params.Learn.RLRate.On.SetBool(false)
-
-	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
-	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
-	ly.Params.Learn.NeuroMod.DALRateMod = 1
-	ly.Params.Learn.NeuroMod.AChLRateMod = 1
-	ly.Params.Learn.NeuroMod.AChDisInhib = 5
-
-	// important: user needs to adjust wt scale of some PFC inputs vs others:
-	// drivers vs. modulators
-
-	for _, pj := range ly.RcvPrjns {
-		pj.Params.SWt.Init.SPct = 0
-		if pj.Send.LayerType() == GPLayer { // From GPe TA or In
-			pj.Params.SetFixedWts()
-			pj.Params.PrjnScale.Abs = 1
-			pj.Params.SWt.Init.Mean = 0.75
-			pj.Params.SWt.Init.Var = 0.0
-			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
-				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
-			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
-				if strings.HasSuffix(ly.Nm, "MtxGo") {
-					pj.Params.PrjnScale.Abs = 2 // was .8
-				} else {
-					pj.Params.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
-				}
-			}
-		}
-	}
-}
 
 // MatrixGated is called after std PlusPhase, on CPU, has Pool info
 // downloaded from GPU.  Returns the pool index if 4D layer (0 = first).
@@ -234,6 +179,49 @@ func (ly *Layer) AnyGated() bool {
 	return ly.Pools[0].Gated.IsTrue()
 }
 
+func (ly *Layer) MatrixDefaults() {
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Dend.ModGain = 5 // for VS case -- otherwise irrelevant
+	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Inhib.Layer.FB = 0 // pure FF
+	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Pool.FB = 0 // pure FF
+	ly.Params.Inhib.Pool.Gi = 0.5
+	ly.Params.Inhib.ActAvg.Nominal = 0.25 // pooled should be lower
+	ly.Params.Learn.RLRate.On.SetBool(false)
+
+	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
+	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
+	ly.Params.Learn.NeuroMod.DALRateMod = 1
+	ly.Params.Learn.NeuroMod.AChLRateMod = 1
+	ly.Params.Learn.NeuroMod.AChDisInhib = 5
+
+	// important: user needs to adjust wt scale of some PFC inputs vs others:
+	// drivers vs. modulators
+
+	for _, pj := range ly.RcvPrjns {
+		pj.Params.SWt.Init.SPct = 0
+		if pj.Send.LayerType() == GPLayer { // From GPe TA or In
+			pj.Params.SetFixedWts()
+			pj.Params.PrjnScale.Abs = 1
+			pj.Params.SWt.Init.Mean = 0.75
+			pj.Params.SWt.Init.Var = 0.0
+			if strings.HasSuffix(pj.Send.Name(), "GPeIn") { // GPeInToMtx
+				pj.Params.PrjnScale.Abs = 0.5 // counterbalance for GPeTA to reduce oscillations
+			} else if strings.HasSuffix(pj.Send.Name(), "GPeTA") { // GPeTAToMtx
+				if strings.HasSuffix(ly.Nm, "MtxGo") {
+					pj.Params.PrjnScale.Abs = 2 // was .8
+				} else {
+					pj.Params.PrjnScale.Abs = 2
+					// was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
+				}
+			}
+		}
+	}
+}
+
 func (ly *Layer) MatrixPostBuild() {
 	ly.Params.Matrix.ThalLay1Idx = ly.BuildConfigFindLayer("ThalLay1Name", false) // optional
 	ly.Params.Matrix.ThalLay2Idx = ly.BuildConfigFindLayer("ThalLay2Name", false) // optional
@@ -288,7 +276,7 @@ func (ly *Layer) GPDefaults() {
 			}
 		case GPeOut:
 			if pj.Send.LayerType() == STNLayer { // STNpToGPeOut
-				pj.Params.PrjnScale.Abs = 0.1
+				pj.Params.PrjnScale.Abs = 0.1 // was 1.2 in
 			}
 		case GPeTA:
 			if pj.Send.LayerType() == GPLayer { // GPeInToGPeTA
@@ -353,6 +341,7 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
+	ly.Params.Learn.NeuroMod.AChDisInhib = 2
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
 		ly.Params.Act.SKCa.Gbar = 3
@@ -390,9 +379,12 @@ func (ly *Layer) STNDefaults() {
 func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
 	ly.Params.Act.Dend.SSGi = 0
-	ly.Params.Inhib.Layer.On.SetBool(false)
-	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
+	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Inhib.Layer.Gi = 0.6
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Pool.Gi = 0.6
+
 	ly.Params.Learn.NeuroMod.AChDisInhib = 1
 
 	for _, pj := range ly.RcvPrjns {
@@ -400,7 +392,7 @@ func (ly *Layer) BGThalDefaults() {
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.0
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
-			pj.Params.PrjnScale.Abs = 2 // was 2.5 for agate model..
+			pj.Params.PrjnScale.Abs = 2
 		}
 	}
 }

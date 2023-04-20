@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"github.com/emer/emergent/params"
 	"github.com/goki/mat32"
 )
 
@@ -104,23 +105,59 @@ func (ly *LayerParams) CTDefaults() {
 	// ly.Act.GABAB.Gbar = 0.3
 }
 
-func (ly *LayerParams) PTPredDefaults() {
-	ly.Act.Decay.Act = 0.2 // keep it dynamically changing
-	ly.Act.Decay.Glong = 0.6
-	ly.Act.Decay.AHP = 0
-	ly.Act.Decay.OnRew.SetBool(true)
-	// ly.Act.Dend.SSGi = 0 // key: otherwise interferes with NMDA maint!
-	ly.Inhib.Layer.Gi = 0.8
-	ly.Inhib.Pool.Gi = 0.8
-	ly.Act.Sahp.Gbar = 0.1    // more
-	ly.Act.KNa.Slow.Max = 0.2 // todo: more?
-	ly.CT.GeGain = 0.01
-	ly.CT.DecayTau = 50
+// CTDefParamsFast sets fast time-integration parameters for CTLayer.
+// This is what works best in the deep_move 1 trial history case,
+// vs Medium and Long
+func (ly *Layer) CTDefParamsFast() {
+	ly.DefParams = params.Params{
+		"Layer.CT.GeGain":       "1",
+		"Layer.CT.DecayTau":     "0",
+		"Layer.Inhib.Layer.Gi":  "2.0",
+		"Layer.Inhib.Pool.Gi":   "2.0",
+		"Layer.Act.GABAB.Gbar":  "0.2",
+		"Layer.Act.NMDA.Gbar":   "0.15",
+		"Layer.Act.NMDA.Tau":    "100",
+		"Layer.Act.Decay.Act":   "0.0",
+		"Layer.Act.Decay.Glong": "0.0",
+		"Layer.Act.Sahp.Gbar":   "1.0",
+	}
+}
 
-	// regular:
-	ly.Act.GABAB.Gbar = 0.2
-	ly.Act.NMDA.Gbar = 0.15
-	ly.Act.NMDA.Tau = 100
+// CTDefParamsMedium sets medium time-integration parameters for CTLayer.
+// This is what works best in the FSA test case, compared to Fast (deep_move)
+// and Long (deep_music) time integration.
+func (ly *Layer) CTDefParamsMedium() {
+	ly.DefParams = params.Params{
+		"Layer.CT.GeGain":       "0.8",
+		"Layer.CT.DecayTau":     "50",
+		"Layer.Inhib.Layer.Gi":  "2.2",
+		"Layer.Inhib.Pool.Gi":   "2.2",
+		"Layer.Act.GABAB.Gbar":  "0.25",
+		"Layer.Act.NMDA.Gbar":   "0.25",
+		"Layer.Act.NMDA.Tau":    "200",
+		"Layer.Act.Decay.Act":   "0.0",
+		"Layer.Act.Decay.Glong": "0.0",
+		"Layer.Act.Sahp.Gbar":   "1.0",
+	}
+}
+
+// CTDefParamsLong sets long time-integration parameters for CTLayer.
+// This is what works best in the deep_music test case integrating over
+// long time windows, compared to Medium and Fast.
+func (ly *Layer) CTDefParamsLong() {
+	ly.DefParams = params.Params{
+		"Layer.CT.GeGain":       "1.0",
+		"Layer.CT.DecayTau":     "50",
+		"Layer.Inhib.Layer.Gi":  "2.8",
+		"Layer.Inhib.Pool.Gi":   "2.8",
+		"Layer.Act.GABAB.Gbar":  "0.3",
+		"Layer.Act.NMDA.Gbar":   "0.3",
+		"Layer.Act.NMDA.Tau":    "300",
+		"Layer.Act.Decay.Act":   "0.0",
+		"Layer.Act.Decay.Glong": "0.0",
+		"Layer.Act.Dend.SSGi":   "0", // else kills nmda
+		"Layer.Act.Sahp.Gbar":   "1.0",
+	}
 }
 
 func (ly *Layer) PTMaintDefaults() {
@@ -128,10 +165,13 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.Decay.Glong = 0
 	ly.Params.Act.Decay.AHP = 0
 	ly.Params.Act.Decay.OnRew.SetBool(true)
+	ly.Params.Act.Sahp.Gbar = 0.01 // not much pressure -- long maint
+	ly.Params.Act.GABAB.Gbar = 0.3
 	ly.Params.Act.NMDA.Gbar = 0.3 // long strong maint
 	ly.Params.Act.NMDA.Tau = 300
-	ly.Params.Act.GABAB.Gbar = 0.3
-	ly.Params.Act.Dend.ModGain = 30 // this multiplies thalamic input projections -- only briefly active so need to be strong
+	ly.Params.Act.Dend.ModGain = 20 // this multiplies thalamic input projections -- only briefly active so need to be strong
+	ly.Params.Inhib.Layer.Gi = 1.8
+	ly.Params.Inhib.Pool.Gi = 1.8
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 
 	for _, pj := range ly.RcvPrjns {
@@ -159,6 +199,24 @@ func (ly *Layer) PTNotMaintDefaults() {
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 	}
+}
+
+func (ly *LayerParams) PTPredDefaults() {
+	ly.Act.Decay.Act = 0.12 // keep it dynamically changing
+	ly.Act.Decay.Glong = 0.6
+	ly.Act.Decay.AHP = 0
+	ly.Act.Decay.OnRew.SetBool(true)
+	ly.Act.Sahp.Gbar = 0.1    // more
+	ly.Act.KNa.Slow.Max = 0.2 // todo: more?
+	ly.Inhib.Layer.Gi = 0.8
+	ly.Inhib.Pool.Gi = 0.8
+	ly.CT.GeGain = 0.01
+	ly.CT.DecayTau = 50
+
+	// regular:
+	ly.Act.GABAB.Gbar = 0.2
+	ly.Act.NMDA.Gbar = 0.15
+	ly.Act.NMDA.Tau = 100
 }
 
 // called in Defaults for Pulvinar layer type

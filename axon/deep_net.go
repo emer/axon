@@ -7,6 +7,7 @@ package axon
 import (
 	"strings"
 
+	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
 )
@@ -117,9 +118,12 @@ func (nt *Network) AddPulvForLayer(lay *Layer, space float32) *Layer {
 // Typically Pulv is a different shape than Super and CT, so use Full or appropriate
 // topological pattern
 func (nt *Network) ConnectToPulv(super, ct, pulv *Layer, toPulvPat, fmPulvPat prjn.Pattern) (toPulv, toSuper, toCT *Prjn) {
-	toPulv = nt.ConnectLayers(ct, pulv, toPulvPat, ForwardPrjn).SetClass("CTToPulv").(AxonPrjn).AsAxon()
-	toSuper = nt.ConnectLayers(pulv, super, fmPulvPat, BackPrjn).SetClass("FmPulv").(AxonPrjn).AsAxon()
-	toCT = nt.ConnectLayers(pulv, ct, fmPulvPat, BackPrjn).SetClass("FmPulv").(AxonPrjn).AsAxon()
+	toPulv = nt.ConnectLayers(ct, pulv, toPulvPat, ForwardPrjn)
+	toPulv.SetClass("CTToPulv")
+	toSuper = nt.ConnectLayers(pulv, super, fmPulvPat, BackPrjn)
+	toSuper.SetClass("FmPulv")
+	toCT = nt.ConnectLayers(pulv, ct, fmPulvPat, BackPrjn)
+	toCT.SetClass("FmPulv")
 	return
 }
 
@@ -132,8 +136,10 @@ func (nt *Network) ConnectCtxtToCT(send, recv *Layer, pat prjn.Pattern) *Prjn {
 // in addition to a regular lateral projection, which supports active maintenance.
 // The CTCtxtPrjn has a Class label of CTSelfCtxt, and the regular one is CTSelfMaint
 func (nt *Network) ConnectCTSelf(ly *Layer, pat prjn.Pattern) (ctxt, maint *Prjn) {
-	ctxt = nt.ConnectLayers(ly, ly, pat, CTCtxtPrjn).SetClass("CTSelfCtxt").(AxonPrjn).AsAxon()
-	maint = nt.LateralConnectLayer(ly, pat).SetClass("CTSelfMaint").(AxonPrjn).AsAxon()
+	ctxt = nt.ConnectLayers(ly, ly, pat, CTCtxtPrjn)
+	ctxt.SetClass("CTSelfCtxt")
+	maint = nt.LateralConnectLayer(ly, pat)
+	maint.SetClass("CTSelfMaint")
 	return
 }
 
@@ -229,21 +235,69 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct *Layer, suffix string, super
 	}
 	pt.SetClass(name)
 	thal.SetClass(name)
-	pt.PlaceBehind(ct, space)
-	thal.PlaceBehind(pt, space)
+
 	one2one := prjn.NewOneToOne()
 	pthal, thalpt := nt.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal")
+	thalpt.DefParams = params.Params{
+		"Prjn.PrjnScale.Rel": "1.0",
+		"Prjn.Com.GType":     "ModulatoryG", // modulatory -- control with extra ModGain factor
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+	}
 	thalpt.SetClass("ThalToPT")
-	// note: cannot do this at this point -- need to have it in the params and overall Defaults
-	// thalpt.(AxonPrjn).AsAxon().Params.Com.GType = ModulatoryG // thalamic projections are modulatory
-	// on other inputs, multiplying their impact
+
 	sthal, thals := nt.BidirConnectLayers(super, thal, superToPT) // shortcuts
+	sthal.DefParams = params.Params{
+		"Prjn.PrjnScale.Rel": "1.0",
+		"Prjn.PrjnScale.Abs": "2.0", // key param for driving gating -- if too strong, premature gating
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+	}
 	sthal.SetClass("SuperToThal")
+	thals.DefParams = params.Params{
+		"Prjn.PrjnScale.Rel": "0.1",
+	}
 	thals.SetClass("ThalToSuper")
-	nt.ConnectLayers(super, pt, superToPT, ForwardPrjn).SetClass("SuperToPT")
-	nt.LateralConnectLayer(pt, ptSelf).SetClass("PTSelfMaint")
-	nt.ConnectLayers(ct, thal, ctToThal, ForwardPrjn).SetClass("CTtoThal")
+
+	pj := nt.ConnectLayers(super, pt, superToPT, ForwardPrjn)
+	pj.DefParams = params.Params{
+		// one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily
+		"Prjn.PrjnScale.Rel": "1",    // keep this constant -- only self vs. this -- thal is modulatory
+		"Prjn.PrjnScale.Abs": "0.01", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+	}
+	pj.SetClass("SuperToPT")
+
+	pj = nt.LateralConnectLayer(pt, ptSelf)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
+		"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
+		"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
+		"Prjn.SWt.Init.Mean":    "0.5",
+		"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
+	}
+	pj.SetClass("PTSelfMaint")
+
+	pj = nt.ConnectLayers(ct, thal, ctToThal, ForwardPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Rel": "0.1", // ct weak for gating
+	}
+	pj.SetClass("CTtoThal")
+
+	pt.PlaceBehind(ct, space)
+	thal.PlaceBehind(pt, space)
+
 	return
 }
 
@@ -296,7 +350,12 @@ func (nt *Network) AddPTPredLayer(ptMaint, ct, thal *Layer, ptToPredPrjn, ctToPr
 	ptPred.SetClass(name)
 	ptPred.PlaceBehind(ptMaint, space)
 	nt.ConnectCtxtToCT(ptMaint, ptPred, ptToPredPrjn).SetClass("PTtoPred")
-	nt.ConnectLayers(ct, ptPred, ctToPredPrjn, ForwardPrjn).SetClass("CTtoPred")
+	pj := nt.ConnectLayers(ct, ptPred, ctToPredPrjn, ForwardPrjn)
+	// pj.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Rel": "0.5", // todo: not clear if important to downscale
+	// }
+	pj.SetClass("CTtoPred")
+
 	// note: ptpred does not connect to thalamus -- it is only active on trial *after* thal gating
 	return
 }

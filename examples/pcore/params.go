@@ -54,7 +54,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.LearnCa":          "1.0", // key
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true",
-					"Layer.Inhib.Layer.Gi":             "0.8",
+					"Layer.Inhib.Layer.Gi":             "0.8", // was 0.8 - todo: 0.5?  lower?
 					"Layer.Act.SKCa.Gbar":              "3",
 					"Layer.Act.SKCa.C50":               "0.4",
 					"Layer.Act.SKCa.KCaR":              "0.4",
@@ -68,20 +68,16 @@ var ParamSets = params.Sets{
 					"Layer.Act.Init.GeBase":      "0.3",
 					"Layer.Act.Init.GeVar":       "0.1",
 					"Layer.Act.Init.GiVar":       "0.1",
-					"Layer.Act.Dt.GeTau":         "6", // 5 def; 6 looks better..
-					"Layer.Act.Dt.GiTau":         "7", // 7 def; slower = more gating (dramatic)
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
 			{Sel: "#GPi", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Init.GeBase": "0.5", // todo: 0.6 in params
-					"Layer.Act.Dt.GeTau":    "7",   // 7 > 6 > 5
-					"Layer.Act.Dt.GiTau":    "7",   //
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Matrix.GateThr":             "0.01", // .02 too high..
-					"Layer.Learn.NeuroMod.AChDisInhib": "1",
+					"Layer.Matrix.GateThr":             "0.01", // .05 default -- doesn't work..  todo..
+					"Layer.Learn.NeuroMod.AChDisInhib": "5",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.5", // 0.5 > 0.4
 					"Layer.Inhib.Layer.FB":             "0.0",
@@ -115,23 +111,23 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.25", // matches orig
-					"Layer.Inhib.Layer.Gi":       "0.6",
-					"Layer.Inhib.Pool.Gi":        "0.6", // 0.6 > 0.5 -- 0.8 too high
+					"Layer.Inhib.Layer.On": "true",
+					"Layer.Inhib.Layer.Gi": "0.6",
+					"Layer.Inhib.Pool.Gi":  "0.6", // 0.6 > 0.5 -- 0.8 too high
 				}},
 			// {Sel: "#SNc", Desc: "SNc -- no clamp limits",
 			// 	Params: params.Params{
 			// 	}},
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":      "1.0", // not stronger
-					"Prjn.SWt.Adapt.On":       "true",
-					"Prjn.SWt.Init.Mean":      "0.5",
-					"Prjn.SWt.Init.Var":       "0.25",
-					"Prjn.Matrix.LearnThr":    "0.75",
-					"Prjn.Matrix.NoGateLRate": "0.01", // 0.01 seems fine actually
-					"Prjn.Learn.Learn":        "true",
-					"Prjn.Learn.LRate.Base":   "0.05",
+					"Prjn.PrjnScale.Abs":        "1.0", // not stronger
+					"Prjn.SWt.Adapt.On":         "true",
+					"Prjn.SWt.Init.Mean":        "0.5",
+					"Prjn.SWt.Init.Var":         "0.25",
+					"Prjn.Matrix.NoGateLRate":   "0.01", // 0.01 seems fine actually
+					"Prjn.Learn.Learn":          "true",
+					"Prjn.Learn.LRate.Base":     "0.05",
+					"Prjn.Learn.Trace.LearnThr": "0.75",
 				}},
 			{Sel: ".ACCPosToGo", Desc: "",
 				Params: params.Params{

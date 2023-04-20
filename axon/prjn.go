@@ -57,14 +57,14 @@ func (pj *Prjn) Defaults() {
 	switch pj.PrjnType() {
 	case InhibPrjn:
 		pj.Params.SWt.Adapt.On.SetBool(false)
+	case BackPrjn:
+		pj.Params.PrjnScale.Rel = 0.1
 	case RWPrjn, TDPredPrjn:
-		pj.Params.RLPredPrjnDefaults()
-	case BLAAcqPrjn:
-		pj.Params.BLAAcqPrjnDefaults()
-	case BLAExtPrjn:
-		pj.Params.BLAExtPrjnDefaults()
+		pj.Params.RLPredDefaults()
+	case BLAPrjn:
+		pj.Params.BLADefaults()
 	case VSPatchPrjn:
-		pj.Params.VSPatchPrjnDefaults()
+		pj.Params.VSPatchDefaults()
 	case MatrixPrjn:
 		pj.Params.MatrixDefaults()
 	}

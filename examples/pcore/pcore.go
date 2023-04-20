@@ -226,10 +226,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRndPrjn.PCon = 0.75
 	_ = mtxRndPrjn
 
-	mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
-	_ = gpeOut
-	_ = gpeIn
+	mtxGo, mtxNo, gpeTA, stnp, stns, gpi := net.AddBG("", 1, np, nuY, nuX, nuY, nuX, space)
 	_ = gpeTA
+	gpeOut := net.AxonLayerByName("GPeOut")
 
 	snc := net.AddLayer2D("SNc", 1, 1, axon.InputLayer)
 	_ = snc

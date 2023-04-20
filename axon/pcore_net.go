@@ -9,23 +9,20 @@ import (
 )
 
 // AddBG adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
-// with given optional prefix.
+// with given optional prefix. Doesn't return GPeOut, GpeIn which are purely internal.
 // Only the Matrix has pool-based 4D shape by default -- use pool for "role" like
 // elements where matches need to be detected.
 // All GP / STN layers have gpNeur neurons.
 // Appropriate connections are made between layers, using standard styles.
 // space is the spacing between layers (2 typical).
-func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi *Layer) {
+func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeTA, stnp, stns, gpi *Layer) {
 	gpi = net.AddGPiLayer2D(prefix+"GPi", gpNeurY, gpNeurX)
-	gpeOuti := net.AddGPeLayer2D(prefix+"GPeOut", gpNeurY, gpNeurX)
-	gpeOuti.SetBuildConfig("GPType", "GPeOut")
-	gpeOut = gpeOuti
-	gpeIni := net.AddGPeLayer2D(prefix+"GPeIn", gpNeurY, gpNeurX)
-	gpeIni.SetBuildConfig("GPType", "GPeIn")
-	gpeIn = gpeIni
-	gpeTAi := net.AddGPeLayer2D(prefix+"GPeTA", gpNeurY, gpNeurX)
-	gpeTAi.SetBuildConfig("GPType", "GPeTA")
-	gpeTA = gpeTAi
+	gpeOut := net.AddGPeLayer2D(prefix+"GPeOut", gpNeurY, gpNeurX)
+	gpeOut.SetBuildConfig("GPType", "GPeOut")
+	gpeIn := net.AddGPeLayer2D(prefix+"GPeIn", gpNeurY, gpNeurX)
+	gpeIn.SetBuildConfig("GPType", "GPeIn")
+	gpeTA = net.AddGPeLayer2D(prefix+"GPeTA", gpNeurY, gpNeurX)
+	gpeTA.SetBuildConfig("GPType", "GPeTA")
 	stnp = net.AddSTNLayer2D(prefix+"STNp", gpNeurY, gpNeurX)
 	stns = net.AddSTNLayer2D(prefix+"STNs", gpNeurY, gpNeurX)
 	mtxGo = net.AddMatrixLayer(prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
@@ -76,7 +73,7 @@ func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeu
 }
 
 // AddBG4D adds MtxGo, MtxNo, GPeOut, GPeIn, GPeTA, STNp, STNs, GPi layers,
-// with given optional prefix.
+// with given optional prefix. Doesn't return GPeOut, GpeIn which are purely internal.
 // This version makes 4D pools throughout the GP layers,
 // with Pools representing separable gating domains.
 // All GP / STN layers have gpNeur neurons.
@@ -84,48 +81,47 @@ func (net *Network) AddBG(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeu
 // space is the spacing between layers (2 typical)
 // A CIN or more widely used RSalienceLayer should be added and
 // project ACh to the MtxGo, No layers.
-func (net *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeOut, gpeIn, gpeTA, stnp, stns, gpi *Layer) {
+func (net *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpNeurY, gpNeurX int, space float32) (mtxGo, mtxNo, gpeTA, stnp, stns, gpi *Layer) {
 	gpi = net.AddGPiLayer4D(prefix+"GPi", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeOuti := net.AddGPeLayer4D(prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeOuti.SetBuildConfig("GPType", "GPeOut")
-	gpeOut = gpeOuti
-	gpeIni := net.AddGPeLayer4D(prefix+"GPeIn", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeIni.SetBuildConfig("GPType", "GPeIn")
-	gpeIn = gpeIni
-	gpeTAi := net.AddGPeLayer4D(prefix+"GPeTA", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
-	gpeTAi.SetBuildConfig("GPType", "GPeTA")
-	gpeTA = gpeTAi
+	gpeOut := net.AddGPeLayer4D(prefix+"GPeOut", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpeOut.SetBuildConfig("GPType", "GPeOut")
+	gpeIn := net.AddGPeLayer4D(prefix+"GPeIn", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpeIn.SetBuildConfig("GPType", "GPeIn")
+	gpeTA = net.AddGPeLayer4D(prefix+"GPeTA", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	gpeTA.SetBuildConfig("GPType", "GPeTA")
 	stnp = net.AddSTNLayer4D(prefix+"STNp", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	stnp.SetClass("STNp")
 	stns = net.AddSTNLayer4D(prefix+"STNs", nPoolsY, nPoolsX, gpNeurY, gpNeurX)
+	stns.SetClass("STNs")
 	mtxGo = net.AddMatrixLayer(prefix+"MtxGo", nPoolsY, nPoolsX, nNeurY, nNeurX, D1Mod)
 	mtxNo = net.AddMatrixLayer(prefix+"MtxNo", nPoolsY, nPoolsX, nNeurY, nNeurX, D2Mod)
 
 	mtxGo.SetBuildConfig("OtherMatrixName", mtxNo.Name())
 	mtxNo.SetBuildConfig("OtherMatrixName", mtxGo.Name())
 
-	one2one := prjn.NewPoolOneToOne()
+	p1to1 := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
 
-	net.ConnectLayers(mtxGo, gpeOut, one2one, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(mtxGo, gpeOut, p1to1, InhibPrjn).SetClass("BgFixed")
 
-	net.ConnectLayers(mtxNo, gpeIn, one2one, InhibPrjn)
-	net.ConnectLayers(gpeOut, gpeIn, one2one, InhibPrjn)
+	net.ConnectLayers(mtxNo, gpeIn, p1to1, InhibPrjn)
+	net.ConnectLayers(gpeOut, gpeIn, p1to1, InhibPrjn)
 
-	net.ConnectLayers(gpeIn, gpeTA, one2one, InhibPrjn).SetClass("BgFixed")
-	net.ConnectLayers(gpeIn, stnp, one2one, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpeIn, gpeTA, p1to1, InhibPrjn).SetClass("BgFixed")
+	net.ConnectLayers(gpeIn, stnp, p1to1, InhibPrjn).SetClass("BgFixed")
 
 	// note: this projection exists in bio, but does weird things with Ca dynamics in STNs..
-	// nt.ConnectLayers(gpeIn, stns, one2one, InhibPrjn).SetClass("BgFixed")
+	// nt.ConnectLayers(gpeIn, stns, p1to1, InhibPrjn).SetClass("BgFixed")
 
-	net.ConnectLayers(gpeIn, gpi, one2one, InhibPrjn)
-	net.ConnectLayers(mtxGo, gpi, one2one, InhibPrjn)
+	net.ConnectLayers(gpeIn, gpi, p1to1, InhibPrjn)
+	net.ConnectLayers(mtxGo, gpi, p1to1, InhibPrjn)
 
-	net.ConnectLayers(stnp, gpeOut, one2one, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpeIn, one2one, ForwardPrjn).SetClass("FmSTNp")
+	net.ConnectLayers(stnp, gpeOut, p1to1, ForwardPrjn).SetClass("FmSTNp")
+	net.ConnectLayers(stnp, gpeIn, p1to1, ForwardPrjn).SetClass("FmSTNp")
 	net.ConnectLayers(stnp, gpeTA, full, ForwardPrjn).SetClass("FmSTNp")
-	net.ConnectLayers(stnp, gpi, one2one, ForwardPrjn).SetClass("FmSTNp")
+	net.ConnectLayers(stnp, gpi, p1to1, ForwardPrjn).SetClass("FmSTNp")
 
-	net.ConnectLayers(stns, gpi, one2one, ForwardPrjn).SetClass("FmSTNs")
+	net.ConnectLayers(stns, gpi, p1to1, ForwardPrjn).SetClass("FmSTNs")
 
 	net.ConnectLayers(gpeTA, mtxGo, full, InhibPrjn).SetClass("GPeTAToMtx")
 	net.ConnectLayers(gpeTA, mtxNo, full, InhibPrjn).SetClass("GPeTAToMtx")

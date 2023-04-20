@@ -8,6 +8,7 @@ import (
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
 	"github.com/emer/emergent/relpos"
+	"golang.org/x/exp/maps"
 )
 
 // AddLDTLayer adds a LDTLayer
@@ -41,7 +42,7 @@ func (net *Network) AddBLALayers(prefix string, pos bool, nUs, nNeurY, nNeurX in
 
 	pj := net.ConnectLayers(ext, acq, prjn.NewPoolOneToOne(), InhibPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "0.4",
+		"Prjn.PrjnScale.Abs": "0.4", // key param for efficacy of inhibition -- may need to tweak
 	}
 	pj.SetClass("BLAExtToAcq")
 
@@ -71,6 +72,7 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int
 	cemPos = net.AddLayer4D(prefix+"CeMPos", 1, nUs, 1, nNeurX, CeMLayer)
 	cemPos.SetBuildConfig("DAMod", "D1Mod") // not relevant but avoids warning
 	cemPos.SetBuildConfig("Valence", "Positive")
+
 	if neg {
 		cemNeg = net.AddLayer4D(prefix+"CeMNeg", 1, nUs, 1, nNeurX, CeMLayer)
 		cemNeg.SetBuildConfig("DAMod", "D2Mod") // not relevant but avoids warning
@@ -90,6 +92,7 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int
 
 	net.ConnectLayers(blaPosAcq, cemPos, p1to1, ForwardPrjn).SetClass("BLAToCeM_Excite")
 	net.ConnectLayers(blaPosExt, cemPos, p1to1, InhibPrjn).SetClass("BLAToCeM_Inhib")
+	// default Abs = 1 works for both of these
 
 	if neg {
 		net.ConnectLayers(blaNegAcq, cemNeg, p1to1, ForwardPrjn).SetClass("BLAToCeM_Excite")
@@ -98,11 +101,13 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int
 
 	pj := net.ConnectLayers(blaNov, blaPosAcq, p1to1, ForwardPrjn)
 	pj.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Adapt.On":  "false",
 		"Prjn.Learn.Learn":   "false",
 		"Prjn.PrjnScale.Rel": "0.1",
 		"Prjn.PrjnScale.Abs": "5",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.SWt.Init.Mean": "0.5",
+		"Prjn.SWt.Init.Var":  "0.4",
 	}
 	pj.SetClass("BLAFromNovel")
 
@@ -119,27 +124,46 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int
 	return
 }
 
-// ConnectToBLAAcq adds a BLAAcqPrjn from given sending layer to a BLA layer
+// ConnectToBLAAcq adds a BLAPrjn from given sending layer to a BLA layer,
+// and configures it for acquisition parameters. Sets class to BLAAcqPrjn.
 func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
-	return net.ConnectLayers(send, recv, pat, BLAAcqPrjn)
+	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.Learn.LRate.Base":  "0.02",
+		"Prjn.Learn.Trace.Tau":   "1",    // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "0.01", // slow for acq -- could be 0
+	}
+	pj.SetClass("BLAAcqPrjn")
+	return pj
 }
 
-// ConnectToBLAExt adds a BLAExtPrjn from given sending layer to a BLA layer
+// ConnectToBLAExt adds a BLAPrjn from given sending layer to a BLA layer,
+// and configures it for extinctrion parameters.  Sets class to BLAExtPrjn.
 func (net *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
-	return net.ConnectLayers(send, recv, pat, BLAExtPrjn)
+	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.Learn.LRate.Base":  "0.02",
+		"Prjn.Learn.Trace.Tau":   "1", // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "1", // fast for extinction unlearning -- could be slower
+	}
+	pj.SetClass("BLAExtPrjn")
+	return pj
 }
 
 // ConnectCSToBLAPos connects the CS input to BLAPosAcqD1, BLANovelCS layers
 // using fixed, higher-variance weights, full projection.
-// Sets classes to: CSToBLAPos, CSToBLANovel
+// Sets classes to: CSToBLAPos, CSToBLANovel with default params
 func (net *Network) ConnectCSToBLAPos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *Prjn) {
-	toAcq = net.ConnectLayers(cs, blaAcq, prjn.NewFull(), BLAAcqPrjn)
+	toAcq = net.ConnectLayers(cs, blaAcq, prjn.NewFull(), BLAPrjn)
 	toAcq.DefParams = params.Params{ // stronger..
-		"Prjn.PrjnScale.Abs": "1.5",
+		"Prjn.PrjnScale.Abs":     "1.5",
+		"Prjn.Learn.LRate.Base":  "0.02",
+		"Prjn.Learn.Trace.Tau":   "1",    // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "0.01", // slow for acq -- could be 0
 	}
 	toAcq.SetClass("CSToBLAPos")
 
-	toNov = net.ConnectLayers(cs, blaNov, prjn.NewFull(), BLAAcqPrjn)
+	toNov = net.ConnectLayers(cs, blaNov, prjn.NewFull(), BLAPrjn)
 	toNov.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
 		"Prjn.SWt.Init.SPct": "0",
 		"Prjn.SWt.Init.Mean": "0.75",
@@ -156,23 +180,27 @@ func (net *Network) ConnectCSToBLAPos(cs, blaAcq, blaNov *Layer) (toAcq, toNov *
 // using fixed, higher-variance weights, full projection.
 // Sets classes to: USToBLAAcq and USToBLAExt
 func (net *Network) ConnectUSToBLAPos(us, blaAcq, blaExt *Layer) (toAcq, toExt *Prjn) {
-	toAcq = net.ConnectLayers(us, blaAcq, prjn.NewPoolOneToOne(), BLAAcqPrjn)
+	toAcq = net.ConnectLayers(us, blaAcq, prjn.NewPoolOneToOne(), BLAPrjn)
 	toAcq.DefParams = params.Params{
-		"Prjn.SWt.Init.SPct":    "0",
-		"Prjn.SWt.Init.Mean":    "0.75",
-		"Prjn.SWt.Init.Var":     "0.25",
-		"Prjn.Learn.LRate.Base": "0.001",
-		"Prjn.PrjnScale.Rel":    "0.5",
+		"Prjn.PrjnScale.Rel":     "0.5",
+		"Prjn.PrjnScale.Abs":     "6",
+		"Prjn.SWt.Init.SPct":     "0",
+		"Prjn.SWt.Init.Mean":     "0.75",
+		"Prjn.SWt.Init.Var":      "0.25",
+		"Prjn.Learn.LRate.Base":  "0.001", // could be 0
+		"Prjn.Learn.Trace.Tau":   "1",     // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "0.01",  // slow for acq -- could be 0
 	}
 	toAcq.SetClass("USToBLAAcq")
+
 	toExt = net.ConnectLayers(us, blaExt, prjn.NewPoolOneToOne(), InhibPrjn)
-	toExt.DefParams = params.Params{
+	toExt.DefParams = params.Params{ // actual US inhibits exinction -- must be strong enough to block ACh enh Ge
+		"Prjn.PrjnScale.Abs": "2",
 		"Prjn.SWt.Init.SPct": "0",
 		"Prjn.SWt.Init.Mean": "0.8",
 		"Prjn.SWt.Init.Var":  "0",
 		"Prjn.SWt.Adapt.On":  "false",
 		"Prjn.Learn.Learn":   "false",
-		"Prjn.PrjnScale.Abs": "2",
 	}
 	toExt.SetClass("USToBLAExtInhib")
 	return
@@ -209,7 +237,13 @@ func (net *Network) AddUSPulvLayers(nUSpos, nUSneg, nYneur int, rel relpos.Relat
 	if rel == relpos.Behind {
 		usNeg.PlaceBehind(usPosP, space)
 	}
+	usParams := params.Params{
+		"Layer.Inhib.ActAvg.Nominal": "0.2",
+		"Layer.Inhib.Layer.Gi":       "0.5",
+	}
+	usPosP.DefParams = usParams
 	usPosP.SetClass("USLayer")
+	usNegP.DefParams = usParams
 	usNegP.SetClass("USLayer")
 	return
 }
@@ -247,7 +281,13 @@ func (net *Network) AddPVPulvLayers(nNeurY, nNeurX int, rel relpos.Relations, sp
 	if rel == relpos.Behind {
 		pvNeg.PlaceBehind(pvPosP, space)
 	}
+	pvParams := params.Params{
+		"Layer.Inhib.ActAvg.Nominal": "0.2",
+		"Layer.Inhib.Layer.Gi":       "0.5",
+	}
+	pvPosP.DefParams = pvParams
 	pvPosP.SetClass("PVLayer")
+	pvNegP.DefParams = pvParams
 	pvNegP.SetClass("PVLayer")
 	return
 }
@@ -329,6 +369,12 @@ func (net *Network) AddDrivesLayer(ctx *Context, nNeurY, nNeurX int) *Layer {
 func (net *Network) AddDrivesPulvLayer(ctx *Context, nNeurY, nNeurX int, space float32) (drv, drvP *Layer) {
 	drv = net.AddDrivesLayer(ctx, nNeurY, nNeurX)
 	drvP = net.AddPulvForLayer(drv, space)
+	drvP.DefParams = params.Params{
+		"Layer.Inhib.ActAvg.Nominal": "0.01",
+		"Layer.Inhib.Layer.On":       "false",
+		"Layer.Inhib.Pool.On":        "true",
+		"Layer.Inhib.Pool.Gi":        "0.5",
+	}
 	drvP.SetClass("DrivesLayer")
 	return
 }
@@ -375,12 +421,28 @@ func (net *Network) AddUrgencyPulvLayer(nNeurY, nNeurX int, space float32) (urge
 	return
 }
 
-// AddVS adds a Ventral Striatum (VS, mostly Nucleus Accumbens) set of layers
+// AddVS adds a Ventral Striatum (VS, mostly Nucleus Accumbens = NAcc) set of layers
 // including extensive Ventral Pallidum (VP) using the pcore BG framework,
-// via the AddBG method.  Also adds VSPatch and VSGated layers.o
-func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo, vSmtxNo, vSgpeOut, vSgpeIn, vSgpeTA, vSstnp, vSstns, vSgpi, vSpatch, vSgated *Layer) {
-	vSmtxGo, vSmtxNo, vSgpeOut, vSgpeIn, vSgpeTA, vSstnp, vSstns, vSgpi = net.AddBG("Vs", 1, nUSs, nNeurY, nNeurX, nNeurY, nNeurX, space)
-	vSgated = net.AddVSGatedLayer("", nY)
+// via the AddBG method.  Also adds VSPatch and VSGated layers.
+// vSmtxGo and No have VSMatrixLayer class set and default params
+// appropriate for multi-pool etc
+func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo, vSmtxNo, vSstnp, vSstns, vSgpi, vSpatch *Layer) {
+	vSmtxGo, vSmtxNo, vSgpeTA, vSstnp, vSstns, vSgpi := net.AddBG("Vs", 1, nUSs, nNeurY, nNeurX, nNeurY, nNeurX, space)
+
+	mp := params.Params{
+		"Layer.Matrix.IsVS":          "true",
+		"Layer.Inhib.ActAvg.Nominal": ".03",   // def .25
+		"Layer.Inhib.Layer.On":       "false", // def true
+		"Layer.Inhib.Pool.On":        "true",  // def false
+		"Layer.Inhib.Pool.Gi":        "0.5",
+	}
+	vSmtxGo.DefParams = mp
+	vSmtxGo.SetClass("VSMatrixLayer")
+
+	vSmtxNo.DefParams = mp
+	vSmtxGo.SetClass("VSMatrixLayer")
+
+	vSgated := net.AddVSGatedLayer("", nY)
 	vSpatch = net.AddVSPatchLayer("", nUSs, nNeurY, nNeurX)
 	vSpatch.PlaceRightOf(vSstns, space)
 	vSgated.PlaceRightOf(vSgpeTA, space)
@@ -420,17 +482,49 @@ func (net *Network) AddPVLVPulvLayers(ctx *Context, nUSneg, nYneur, popY, popX i
 // with given number of units per pool.  Also adds a PTNotMaintLayer
 // called NotMaint with nY units.
 func (net *Network) AddOFCus(ctx *Context, nUSs, nY, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD, notMaint *Layer) {
-	pone2one := prjn.NewPoolOneToOne()
+	p1to1 := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
 
 	ofc, ofcCT = net.AddSuperCT4D("OFCus", 1, nUSs, ofcY, ofcX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	ofcPT, ofcMD = net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
+	ofcPT, ofcMD = net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, p1to1, p1to1, space)
 	ofcCT.SetClass("OFCus CTCopy")
-	ofcPTp = net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, pone2one, pone2one, pone2one, space)
+	ofcPTp = net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, p1to1, p1to1, p1to1, space)
 	ofcPTp.SetClass("OFCus")
 	notMaint = net.AddPTNotMaintLayer(ofcPT, nY, 1, space)
 	notMaint.Nm = "NotMaint"
+
+	ofcParams := params.Params{
+		"Layer.Act.Decay.Act":        "0",
+		"Layer.Act.Decay.Glong":      "0",
+		"Layer.Act.Decay.OnRew":      "true", // everything clears
+		"Layer.Inhib.ActAvg.Nominal": "0.025",
+		"Layer.Inhib.Layer.Gi":       "2.2",
+		"Layer.Inhib.Pool.On":        "true",
+		"Layer.Inhib.Pool.Gi":        "1.2",
+		"Layer.Act.Dend.SSGi":        "0",
+	}
+	ofc.DefParams = ofcParams
+
+	ofcCT.CTDefParamsMedium()
+	ofcCT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.025"
+	ofcCT.DefParams["Layer.Inhib.Layer.Gi"] = "2.8"
+	ofcCT.DefParams["Layer.Inhib.Pool.On"] = "true"
+	ofcCT.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
+	ofcCT.DefParams["Layer.Act.Decay.OnRew"] = "true"
+
+	ofcPT.DefParams = maps.Clone(ofcParams)
+	ofcPT.DefParams["Layer.Inhib.Layer.Gi"] = "1.8"
+	ofcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
+
+	ofcPTp.DefParams = maps.Clone(ofcParams)
+	ofcPTp.DefParams["Layer.Inhib.Layer.Gi"] = "0.8"
+	ofcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "0.8"
+
+	ofcMD.DefParams = maps.Clone(ofcParams)
+	ofcMD.DefParams["Layer.Inhib.Layer.Gi"] = "1.1"
+	ofcMD.DefParams["Layer.Inhib.Pool.Gi"] = "0.6"
+
 	return
 }
 
@@ -441,18 +535,16 @@ func (net *Network) AddOFCus(ctx *Context, nUSs, nY, ofcY, ofcX int, space float
 // * AddAmygdala
 // * AddOFCus
 // Makes all appropriate interconnections and sets default parameters.
-// Still needs CS -> BLA, OFC connections.
-// It is easier to lookup the layers by name that need further connections
-// rather than return all of them here.
-func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) {
+// Needs CS -> BLA, OFC connections to be made.
+// Returns layers most likely to be used for remaining connections and positions.
+func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, ofcY, ofcX int, space float32) (vSgpi, usPos, pvPos, ofc, ofcCT, ofcPTp, blaPosAcq, blaPosExt, blaNov *Layer) {
 	nUSs := int(ctx.PVLV.Drive.NActive)
 
 	drives, drivesP, effort, effortP, urgency, urgencyP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddPVLVPulvLayers(ctx, nUSneg, nYneur, popY, popX, space)
 	_, _, _ = effort, urgency, urgencyP
 	_, _, _, _ = usNeg, usNegP, pvNeg, pvNegP
 
-	vSmtxGo, vSmtxNo, vSgpeOut, vSgpeIn, vSgpeTA, vSstnp, vSstns, vSgpi, vSpatch, vSgated := net.AddVS(nUSs, bgY, bgX, nYneur, space)
-	_, _, _, _ = vSgpeOut, vSgpeIn, vSgpeTA, vSgated
+	vSmtxGo, vSmtxNo, vSstnp, vSstns, vSgpi, vSpatch := net.AddVS(nUSs, bgY, bgX, nYneur, space)
 
 	blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov := net.AddAmygdala("", true, nUSs, ofcY, ofcX, space)
 	_, _, _, _, _ = blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov
@@ -463,54 +555,132 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	vSmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
 
-	pone2one := prjn.NewPoolOneToOne()
+	p1to1 := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
+	var pj *Prjn
 
-	// nt.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
+	// nt.ConnectToPulv(ofc, ofcCT, usPulv, p1to1, p1to1)
 	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
 	// to reflect either current CS or maintained CS but not just echoing drive state.
-	net.ConnectLayers(drives, ofc, pone2one, ForwardPrjn).SetClass("DrivesToOFC")
-	// nt.ConnectLayers(drives, ofcCT, pone2one, ForwardPrjn).SetClass("DrivesToOFC")
-	net.ConnectLayers(vSgpi, ofcMD, full, InhibPrjn).SetClass("BgFixed")
+	pj = net.ConnectLayers(drives, ofc, p1to1, ForwardPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Rel": "0.2", // weaker to not drive in absence of BLA
+	}
+	pj.SetClass("DrivesToOFC")
+
+	// nt.ConnectLayers(drives, ofcCT, p1to1, ForwardPrjn).SetClass("DrivesToOFC")
+	pj = net.ConnectLayers(vSgpi, ofcMD, full, InhibPrjn)
+	pj.DefParams = params.Params{ // BgFixed
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.Learn.Learn":   "false",
+	}
 	net.ConnectLayers(pvPos, ofc, full, BackPrjn)
-	net.ConnectLayers(usPos, ofc, pone2one, BackPrjn)
-	net.ConnectLayers(ofcPT, ofcCT, pone2one, ForwardPrjn)
+	net.ConnectLayers(usPos, ofc, p1to1, BackPrjn)
+	net.ConnectLayers(ofcPT, ofcCT, p1to1, ForwardPrjn)
 
-	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcCT, drivesP, p1to1, p1to1)
 	net.ConnectToPulv(ofc, ofcCT, effortP, full, full)
-	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
+	net.ConnectToPulv(ofc, ofcCT, urgencyP, full, full)
+	net.ConnectToPulv(ofc, ofcCT, usPosP, p1to1, p1to1)
+	net.ConnectToPulv(ofc, ofcCT, pvPosP, p1to1, p1to1)
 
+	net.ConnectPTPredToPulv(ofcPTp, effortP, full, full)
+	net.ConnectPTPredToPulv(ofcPTp, urgencyP, full, full)
 	// these are all very static, lead to static PT reps:
-	// nt.ConnectPTPredToPulv(ofcPTp, drivesP, pone2one, pone2one)
-	// nt.ConnectPTPredToPulv(ofcPTp, usPosP, pone2one, pone2one)
-	// nt.ConnectPTPredToPulv(ofcPTp, pvPosP, pone2one, pone2one)
+	// net.ConnectPTPredToPulv(ofcPTp, drivesP, p1to1, p1to1)
+	// net.ConnectPTPredToPulv(ofcPTp, usPosP, p1to1, p1to1)
+	// net.ConnectPTPredToPulv(ofcPTp, pvPosP, p1to1, p1to1)
 	// net.ConnectPTPredToPulv(ofcPTp, csP, full, full)
 
 	net.ConnectUSToBLAPos(usPos, blaPosAcq, blaPosExt)
-	net.ConnectLayers(blaPosAcq, ofc, pone2one, ForwardPrjn) // main driver strong input
-	net.ConnectToBLAExt(ofcPTp, blaPosExt, pone2one).SetClass("PTpToBLAExt")
-	// todo: was rndpone2one
 
-	net.ConnectToVSPatch(drives, vSpatch, pone2one).SetClass("DrivesToVSPatch") // modulatory
-	net.ConnectToVSPatch(ofcPTp, vSpatch, pone2one)
+	pj = net.ConnectLayers(blaPosAcq, ofc, p1to1, ForwardPrjn) // main driver strong input
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "6",
+		"Prjn.SWt.Init.Mean": "0.5",
+		"Prjn.SWt.Init.Var":  "0.4",
+	}
+
+	pj = net.ConnectToBLAExt(ofcPTp, blaPosExt, p1to1)
+	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
+	pj.DefParams["Prjn.PrjnScale.Abs"] = "0.5"
+	pj.DefParams["Prjn.SWt.Init.Mean"] = "0.5"
+	pj.DefParams["Prjn.SWt.Init.Var"] = "0.4"
+	pj.SetClass("PTpToBLAExt")
+
+	pj = net.ConnectToVSPatch(drives, vSpatch, p1to1)
+	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
+	pj.DefParams = params.Params{
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Abs": "2",
+		"Prjn.PrjnScale.Rel": "1",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+		"Prjn.Com.GType":     "ModulatoryG",
+	}
+	pj.SetClass("DrivesToVSPatch")
+
+	net.ConnectToVSPatch(ofcPTp, vSpatch, p1to1)
 
 	// same prjns to stn as mtxgo
-	net.ConnectToMatrix(usPos, vSmtxGo, pone2one)
-	net.ConnectToMatrix(blaPosAcq, vSmtxGo, pone2one).SetClass("BLAAcqToGo")
+	pj = net.ConnectToMatrix(usPos, vSmtxGo, p1to1)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "2", // strong
+		"Prjn.PrjnScale.Rel": ".2",
+	}
+	pj = net.ConnectToMatrix(blaPosAcq, vSmtxGo, p1to1)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "4", // key strength driver
+		"Prjn.PrjnScale.Rel": "1",
+	}
+	pj.SetClass("BLAAcqToGo")
 	net.ConnectLayers(blaPosAcq, vSstnp, full, ForwardPrjn)
 	net.ConnectLayers(blaPosAcq, vSstns, full, ForwardPrjn)
 
-	net.ConnectToMatrix(blaPosExt, vSmtxNo, pone2one).SetClass("BLAExtToNo")
+	pj = net.ConnectToMatrix(blaPosExt, vSmtxNo, p1to1)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "0.1", // extinction is mostly within BLA
+		"Prjn.PrjnScale.Rel": "1",
+	}
+	pj.SetClass("BLAExtToNo")
 
-	net.ConnectToMatrix(drives, vSmtxGo, pone2one).SetClass("DrivesToMtx")
-	net.ConnectToMatrix(drives, vSmtxNo, pone2one).SetClass("DrivesToMtx")
-	net.ConnectToMatrix(ofc, vSmtxGo, pone2one)
-	net.ConnectToMatrix(ofc, vSmtxNo, pone2one)
-	// net.ConnectToMatrix(ofcCT, vSmtxGo, pone2one) // important for matrix to mainly use CS & BLA
-	// net.ConnectToMatrix(ofcCT, vSmtxNo, pone2one)
-	// net.ConnectToMatrix(ofcPT, vSmtxGo, pone2one)
-	// net.ConnectToMatrix(ofcPT, vSmtxNo, pone2one)
+	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
+	d2m := params.Params{
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.PrjnScale.Abs": "2",
+		"Prjn.PrjnScale.Rel": "1",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+		"Prjn.Com.GType":     "ModulatoryG",
+	}
+	pj = net.ConnectToMatrix(drives, vSmtxGo, p1to1)
+	pj.DefParams = d2m
+	pj.SetClass("DrivesToMtx")
+	pj = net.ConnectToMatrix(drives, vSmtxNo, p1to1)
+	pj.DefParams = d2m
+	pj.SetClass("DrivesToMtx")
+
+	net.ConnectToMatrix(ofc, vSmtxGo, p1to1)
+	net.ConnectToMatrix(ofc, vSmtxNo, p1to1)
+	pj = net.ConnectToMatrix(urgency, vSmtxGo, full)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
+		"Prjn.PrjnScale.Abs": "20",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.5",
+		"Prjn.SWt.Init.Var":  "0.4",
+		"Prjn.Learn.Learn":   "false",
+	}
+
+	// net.ConnectToMatrix(ofcCT, vSmtxGo, p1to1) // important for matrix to mainly use CS & BLA
+	// net.ConnectToMatrix(ofcCT, vSmtxNo, p1to1)
+	// net.ConnectToMatrix(ofcPT, vSmtxGo, p1to1)
+	// net.ConnectToMatrix(ofcPT, vSmtxNo, p1to1)
 
 	////////////////////////////////////////////////
 	// position
@@ -518,4 +688,6 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	blaPosAcq.PlaceAbove(usPos)
 	ofc.PlaceRightOf(blaPosAcq, space)
 	ofcMD.PlaceBehind(ofcPTp, space)
+
+	return
 }

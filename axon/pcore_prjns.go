@@ -31,6 +31,8 @@ func (pj *PrjnParams) MatrixDefaults() {
 	pj.SWt.Adapt.SigGain = 6 // not 1 -- could be for some cases
 	pj.SWt.Init.Sym.SetBool(false)
 	pj.SWt.Init.SPct = 0
+	pj.SWt.Init.Mean = 0.5
+	pj.SWt.Init.Var = 0.4
 	pj.Learn.LRate.Base = 0.02
 	pj.Learn.Trace.LearnThr = 0.75
 }
