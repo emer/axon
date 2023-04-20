@@ -21,7 +21,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain": "10", // key gating efficacy param
+					"Layer.Act.Dend.ModGain": "10", // 10 > 1 -- key gating efficacy param
 				}},
 			////////////////////////////////////////////
 			// Prjns
@@ -37,15 +37,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.01", // key gating efficacy param
-				}},
-			{Sel: "#MtxGoToGPeOut", Desc: "This is key driver of Go threshold, along with to GPi",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.5",
-				}},
-			{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPeIn",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.8", // works over wide range: 0.5 - 1 -- learning controls
+					"Prjn.PrjnScale.Abs": "0.1", // key gating efficacy param
 				}},
 		}},
 	},
@@ -329,11 +321,11 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: "#GPeOutToGPeIn", Desc: "just enough to (dis)inhibit GPeIn",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.3", // 0.5 def
+					"Prjn.PrjnScale.Abs": "0.5", // 0.5 def, was 0.3 -- no dif really
 				}},
 			{Sel: "#GPeInToSTNp", Desc: "not very relevant -- pause knocks out anyway -- if too much higher than this, causes oscillations.",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1",
+					"Prjn.PrjnScale.Abs": "0.1", // not big diff
 				}},
 			// {Sel: "#GPeInToSTNs", Desc: "NOT currently used -- interferes with threshold-based Ca self-inhib dynamics",
 			// 	Params: params.Params{
@@ -357,15 +349,15 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: "#GPeInToGPeTA", Desc: "just enough to knock down in baseline state",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.7", // was .9
+					"Prjn.PrjnScale.Abs": "1", // was .7 then .9 -- 1 better match
 				}},
 			{Sel: "#MtxGoToGPeOut", Desc: "This is key driver of Go threshold, along with to GPi",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.5",
+					"Prjn.PrjnScale.Abs": "1", // 1 gives better match
 				}},
 			{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPeIn",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.8", // works over wide range: 0.5 - 1 -- learning controls
+					"Prjn.PrjnScale.Abs": "1", // was 0.8, 1 is fine
 				}},
 			{Sel: "#GPeInToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 				Params: params.Params{
@@ -373,7 +365,7 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: "#STNsToGPi", Desc: "keeps GPi active until GPeIn signal has been integrated a bit -- hold-your-horses",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": ".3", // .3 is effective in blocking GPI
+					"Prjn.PrjnScale.Abs": ".5", // .5 > .3 for RT, spurious gating
 				}},
 			{Sel: "#STNpToGPi", Desc: "strong initial phasic activation",
 				Params: params.Params{

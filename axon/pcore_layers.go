@@ -260,7 +260,7 @@ func (ly *Layer) GPDefaults() {
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.25
 		if pj.Send.LayerType() == MatrixLayer {
-			pj.Params.PrjnScale.Abs = 0.5
+			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut
 		} else if pj.Send.LayerType() == STNLayer {
 			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
 		}
@@ -269,7 +269,7 @@ func (ly *Layer) GPDefaults() {
 			if pj.Send.LayerType() == MatrixLayer { // MtxNoToGPeIn -- primary NoGo pathway
 				pj.Params.PrjnScale.Abs = 1
 			} else if pj.Send.LayerType() == GPLayer { // GPeOutToGPeIn
-				pj.Params.PrjnScale.Abs = 0.3 // was 0.5
+				pj.Params.PrjnScale.Abs = 0.5 // had 0.3 at some point
 			}
 			if pj.Send.LayerType() == STNLayer { // STNpToGPeIn -- stronger to drive burst of activity
 				pj.Params.PrjnScale.Abs = 1 // was 0.5
@@ -280,7 +280,7 @@ func (ly *Layer) GPDefaults() {
 			}
 		case GPeTA:
 			if pj.Send.LayerType() == GPLayer { // GPeInToGPeTA
-				pj.Params.PrjnScale.Abs = 0.7 // was 0.9 -- just enough to knock down to near-zero at baseline
+				pj.Params.PrjnScale.Abs = 1 // was 0.7 orig 0.9 -- just enough to knock down to near-zero at baseline
 			}
 		}
 	}
@@ -299,13 +299,13 @@ func (ly *Layer) GPiDefaults() {
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
-			pj.Params.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
+			pj.Params.PrjnScale.Abs = 1 // 1 is fine
 		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi
 			pj.Params.PrjnScale.Abs = 1 // stronger because integrated signal, also act can be weaker
 		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
 			pj.Params.PrjnScale.Abs = 1
 		} else if strings.HasSuffix(pj.Send.Name(), "STNs") { // STNsToGPi
-			pj.Params.PrjnScale.Abs = 0.3
+			pj.Params.PrjnScale.Abs = 0.5 // 0.5 slightly better than .3
 		}
 	}
 }
