@@ -246,7 +246,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pfcPT, pfcVM := net.AddPTMaintThalForSuper(pfc, pfcCT, "VM", one2one, pone2one, pone2one, space)
 	_ = pfcPT
 	pfcCT.SetClass("PFC CTCopy")
+	pfcCT.CTDefParamsMedium() // FSA
 
+	net.ConnectLayers(inly, pfc, pone2one, axon.ForwardPrjn)
 	net.ConnectToPulv(pfc, pfcCT, inP, pone2one, pone2one)
 
 	net.ConnectLayers(pfc, stnp, pone2one, axon.ForwardPrjn)
@@ -258,11 +260,14 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxNo.SetBuildConfig("ThalLay1Name", pfcVM.Name())
 
 	net.ConnectToMatrix(accpos, mtxGo, pone2one).SetClass("ACCPosToGo")
-	net.ConnectToMatrix(accpos, mtxNo, pone2one).SetClass("ACCPosToNo") // more balanced with both
 	net.ConnectToMatrix(accneg, mtxNo, pone2one).SetClass("ACCNegToNo")
+	// cross connections:
+	net.ConnectToMatrix(accpos, mtxNo, pone2one).SetClass("ACCPosToNo")
 	net.ConnectToMatrix(accneg, mtxGo, pone2one).SetClass("ACCNegToGo")
-	net.ConnectToMatrix(pfc, mtxGo, pone2one)
-	net.ConnectToMatrix(pfc, mtxNo, pone2one)
+
+	// pfc just has irrelevant info:
+	// net.ConnectToMatrix(pfc, mtxGo, pone2one)
+	// net.ConnectToMatrix(pfc, mtxNo, pone2one)
 
 	net.ConnectToMatrix(urge, mtxGo, full)
 
@@ -535,14 +540,14 @@ func (ss *Sim) GatedRew() {
 	var rew float32
 	switch {
 	case shouldGate && didGate:
-		rew = pndiff
+		rew = 1
 		match = true
 	case shouldGate && !didGate:
-		rew = -pndiff
+		rew = -1
 	case !shouldGate && didGate:
-		rew = pndiff
+		rew = -1
 	case !shouldGate && !didGate:
-		rew = -pndiff
+		rew = 1
 		match = true
 	}
 

@@ -250,21 +250,17 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct *Layer, suffix string, super
 	}
 	thalpt.SetClass("ThalToPT")
 
-	sthal, thals := nt.BidirConnectLayers(super, thal, superToPT) // shortcuts
+	sthal := nt.ConnectLayers(super, thal, superToPT, ForwardPrjn) // shortcuts
 	sthal.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel": "1.0",
 		"Prjn.PrjnScale.Abs": "2.0", // key param for driving gating -- if too strong, premature gating
 		"Prjn.Learn.Learn":   "false",
 		"Prjn.SWt.Adapt.On":  "false",
 		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Mean": "0.8", // typically 1to1
 		"Prjn.SWt.Init.Var":  "0.0",
 	}
 	sthal.SetClass("SuperToThal")
-	thals.DefParams = params.Params{
-		"Prjn.PrjnScale.Rel": "0.1",
-	}
-	thals.SetClass("ThalToSuper")
 
 	pj := nt.ConnectLayers(super, pt, superToPT, ForwardPrjn)
 	pj.DefParams = params.Params{
@@ -288,12 +284,6 @@ func (nt *Network) AddPTMaintThalForSuper(super, ct *Layer, suffix string, super
 		"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
 	}
 	pj.SetClass("PTSelfMaint")
-
-	pj = nt.ConnectLayers(ct, thal, ctToThal, ForwardPrjn)
-	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Rel": "0.1", // ct weak for gating
-	}
-	pj.SetClass("CTtoThal")
 
 	pt.PlaceBehind(ct, space)
 	thal.PlaceBehind(pt, space)

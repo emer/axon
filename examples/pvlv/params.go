@@ -47,7 +47,7 @@ var ParamSets = params.Sets{
 			// current experimental settings
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4.0", // todo: try 2.0
+					"Prjn.PrjnScale.Abs": "2.0", // todo: try 2.0
 				}},
 			{Sel: ".ToSC", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -479,14 +479,6 @@ var ParamSetsDefs = params.Sets{
 					"Prjn.SWt.Init.SPct": "0",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
-				}},
-			{Sel: ".CTtoThal", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
-				}},
-			{Sel: ".ThalToSuper", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
 				}},
 			{Sel: ".ThalToPT", Desc: "",
 				Params: params.Params{

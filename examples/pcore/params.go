@@ -11,11 +11,56 @@ import "github.com/emer/emergent/params"
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "clamp gain makes big diff on overall excitation, gating propensity",
+				Params: params.Params{
+					"Layer.Act.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
+				}},
+			{Sel: ".MatrixLayer", Desc: "all mtx",
+				Params: params.Params{
+					"Layer.Matrix.GateThr": "0.05", // .05 default
+				}},
+			{Sel: ".PTMaintLayer", Desc: "time integration params",
+				Params: params.Params{
+					"Layer.Act.Dend.ModGain": "10", // key gating efficacy param
+				}},
+			////////////////////////////////////////////
+			// Prjns
+			{Sel: ".MatrixPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Matrix.NoGateLRate": "1", // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
+				}},
+			{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.1", // don't dilute from others
+					"Prjn.PrjnScale.Abs": "20",
+					"Prjn.Learn.Learn":   "false",
+				}},
+			{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.01", // key gating efficacy param
+				}},
+			{Sel: "#MtxGoToGPeOut", Desc: "This is key driver of Go threshold, along with to GPi",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.5",
+				}},
+			{Sel: "#MtxGoToGPi", Desc: "go influence on gating -- slightly weaker than integrated GPeIn",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.8", // works over wide range: 0.5 - 1 -- learning controls
+				}},
+		}},
+	},
+}
+
+// ParamSetsDefs is the default set of parameters -- Base is always applied,
+// and others can be optionally selected to apply on top of that
+var ParamSetsDefs = params.Sets{
+	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
+		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":   "0.0",
 					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Clamp.Ge":    "0.6",
+					"Layer.Act.Clamp.Ge":    "0.8", // 1.5 is def, was 0.6 (too low) -- makes big diff on gating
 				}},
 			{Sel: "#PFC", Desc: "",
 				Params: params.Params{
@@ -98,16 +143,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":             "1.8", // was 1.0
-					"Layer.Inhib.Pool.Gi":              "1.8", // was 1.8
-					"Layer.Act.GABAB.Gbar":             "0.3",
-					"Layer.Act.NMDA.Gbar":              "0.3", // 0.3 enough..
-					"Layer.Act.NMDA.Tau":               "300",
-					"Layer.Act.Decay.Act":              "0.0",
-					"Layer.Act.Decay.Glong":            "0.0",
-					"Layer.Act.Sahp.Gbar":              "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain":           "10",   // 10?
-					"Layer.Learn.NeuroMod.AChDisInhib": "1.0",
+					"Layer.Inhib.Layer.Gi":   "1.8", // was 1.0
+					"Layer.Inhib.Pool.Gi":    "1.8", // was 1.8
+					"Layer.Act.GABAB.Gbar":   "0.3",
+					"Layer.Act.NMDA.Gbar":    "0.3", // 0.3 enough..
+					"Layer.Act.NMDA.Tau":     "300",
+					"Layer.Act.Decay.Act":    "0.0",
+					"Layer.Act.Decay.Glong":  "0.0",
+					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
+					"Layer.Act.Dend.ModGain": "10",   // 10?
 				}},
 			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{
@@ -145,13 +189,6 @@ var ParamSets = params.Sets{
 			{Sel: ".ACCNegToGo", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1.0",
-				}},
-			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
-				Params: params.Params{
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.8",
-					"Prjn.SWt.Init.Var":  "0.0",
-					"Prjn.Learn.Learn":   "false",
 				}},
 			{Sel: ".BgFixed", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -224,10 +261,6 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
 				}},
-			{Sel: ".ThalToSuper", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",
-				}},
 			{Sel: ".ThalToPT", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1.0",
@@ -235,12 +268,6 @@ var ParamSets = params.Sets{
 					"Prjn.Learn.Learn":   "false",
 					"Prjn.SWt.Init.Mean": "0.8",
 					"Prjn.SWt.Init.Var":  "0.0",
-				}},
-			{Sel: ".CTtoThal", Desc: "",
-				Params: params.Params{
-					"Prjn.SWt.Init.Var":  "0.25",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.PrjnScale.Rel": "0.1",
 				}},
 			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
@@ -342,7 +369,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#GPeInToGPi", Desc: "nogo influence on gating -- decreasing produces more graded function of Go",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
+					"Prjn.PrjnScale.Abs": "1", // 2 is much worse.. keep at 1
 				}},
 			{Sel: "#STNsToGPi", Desc: "keeps GPi active until GPeIn signal has been integrated a bit -- hold-your-horses",
 				Params: params.Params{
