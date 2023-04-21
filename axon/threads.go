@@ -13,7 +13,6 @@ import (
 	"sync"
 
 	"github.com/emer/emergent/timer"
-	"github.com/emer/empi/mpi"
 	"github.com/goki/ki/ints"
 )
 
@@ -49,8 +48,7 @@ func (nt *NetThreads) String() string {
 // SetDefaults uses heuristics to determine the number of goroutines to use
 // for each task: Neurons, SendSpike, SynCa.
 func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
-	mpiWorldSize := mpi.WorldSize()
-	nodeMaxProcs := int(math.Ceil(float64(runtime.GOMAXPROCS(0)) / float64(mpiWorldSize)))
+	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
 
 	// heuristics
 	prjnMinThr := ints.MinInt(ints.MaxInt(nPrjns, 1), 4)
@@ -58,9 +56,9 @@ func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
 	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
 
 	if err := nt.Set(
-		ints.MinInt(nodeMaxProcs, int(neuronHeur)),
-		ints.MinInt(nodeMaxProcs, int(synHeur)),
-		ints.MinInt(nodeMaxProcs, int(prjnMinThr)),
+		ints.MinInt(maxProcs, int(neuronHeur)),
+		ints.MinInt(maxProcs, int(synHeur)),
+		ints.MinInt(maxProcs, int(prjnMinThr)),
 	); err != nil {
 		log.Fatal(err)
 	}
