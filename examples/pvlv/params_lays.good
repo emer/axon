@@ -1,0 +1,146 @@
+            VTA		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            LHb		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+            LDT		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+          USpos		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+          USneg		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         USposP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         USnegP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+          PVpos		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+          PVneg		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         PVposP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         PVnegP		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+         Drives		Nominal:	  0.01	
+						Pool.Gi: 	  0.50	
+
+        DrivesP		Nominal:	  0.01	
+						Pool.Gi: 	  0.50	
+
+         Effort		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+        EffortP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+        Urgency		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+       UrgencyP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+          VsGPi		Nominal:	  1.00	
+
+       VsGPeOut		Nominal:	  1.00	
+
+        VsGPeIn		Nominal:	  1.00	
+
+        VsGPeTA		Nominal:	  1.00	
+
+         VsSTNp		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+
+         VsSTNs		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+
+        VsMtxGo		Nominal:	  0.03	
+						Pool.Gi: 	  0.50	
+
+        VsMtxNo		Nominal:	  0.03	
+						Pool.Gi: 	  0.50	
+
+        VSGated		Nominal:	  0.50	
+						Layer.Gi:	  1.00	
+
+        VSPatch		Nominal:	  0.20	
+						Pool.Gi: 	  0.50	
+
+    BLAPosAcqD1		Nominal:	  0.03	
+						Layer.Gi:	  2.20	
+						Pool.Gi: 	  0.90	
+
+    BLAPosExtD2		Nominal:	  0.03	
+						Layer.Gi:	  1.80	
+						Pool.Gi: 	  0.90	
+
+    BLANegExtD1		Nominal:	  0.03	
+						Layer.Gi:	  1.80	
+						Pool.Gi: 	  0.90	
+
+    BLANegAcqD2		Nominal:	  0.03	
+						Layer.Gi:	  2.20	
+						Pool.Gi: 	  0.90	
+
+         CeMPos		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.30	
+
+         CeMNeg		Nominal:	  0.15	
+						Layer.Gi:	  0.50	
+						Pool.Gi: 	  0.30	
+
+     BLANovelCS		Nominal:	  0.05	
+						Layer.Gi:	  0.80	
+
+          OFCus		Nominal:	  0.03	
+						Layer.Gi:	  2.20	
+						Pool.Gi: 	  1.20	
+
+        OFCusCT		Nominal:	  0.03	
+						Layer.Gi:	  2.80	
+						Pool.Gi: 	  1.20	
+
+        OFCusPT		Nominal:	  0.03	
+						Layer.Gi:	  1.80	
+						Pool.Gi: 	  2.00	
+
+        OFCusMD		Nominal:	  0.03	
+						Layer.Gi:	  1.10	
+						Pool.Gi: 	  0.60	
+
+       OFCusPTp		Nominal:	  0.03	
+						Layer.Gi:	  0.80	
+						Pool.Gi: 	  0.80	
+
+       NotMaint		Nominal:	  0.20	
+						Layer.Gi:	  0.50	
+
+           Time		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+          TimeP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+             CS		Nominal:	  0.05	Params: #CS: 0.05
+						Layer.Gi:	  0.90	
+
+            CSP		Nominal:	  0.10	
+						Layer.Gi:	  1.00	
+
+      ContextIn		Nominal:	  0.10	
+						Layer.Gi:	  0.90	
+
+             SC		Nominal:	  0.10	Params: .SC: 0.1
+						Layer.Gi:	  0.80	Params: .SC: 0.8
+
+
