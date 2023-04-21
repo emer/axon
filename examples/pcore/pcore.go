@@ -10,7 +10,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
 	"math/rand"
 	"os"
 
@@ -459,7 +458,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, trial int) {
 	ss.Net.InitExt() // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 
-	if mode == etime.Train && trial == 1 {
+	if mode == etime.Train && trial == 0 {
 		if !ss.Sim.NoInc {
 			ss.Sim.ACCPos = rand.Float32()
 			ss.Sim.ACCNeg = rand.Float32()
@@ -511,12 +510,6 @@ func (ss *Sim) ApplyPVLV(trial int) {
 		ss.Context.PVLV.Urgency.Reset()
 	}
 
-	nan := mat32.NaN()
-	ss.Stats.SetFloat32("Gated", nan)
-	ss.Stats.SetFloat32("Should", nan)
-	ss.Stats.SetFloat32("Match", nan)
-	ss.Stats.SetFloat32("Rew", nan)
-
 	switch trial {
 	case 0:
 		ss.Context.NeuroMod.SetRew(0, false) // no rew
@@ -532,30 +525,8 @@ func (ss *Sim) ApplyPVLV(trial int) {
 
 // GatedRew applies reward input based on gating action and input
 func (ss *Sim) GatedRew() {
-	mtxly := ss.Net.AxonLayerByName("MtxGo")
-	didGate, _ := mtxly.MatrixGated(&ss.Context) // will also be called later
-	pndiff := (ss.Sim.ACCPos - ss.Sim.ACCNeg) - ss.Sim.PosNegThr
-	shouldGate := pndiff > 0
-	match := false
-	var rew float32
-	switch {
-	case shouldGate && didGate:
-		rew = 1
-		match = true
-	case shouldGate && !didGate:
-		rew = -1
-	case !shouldGate && didGate:
-		rew = -1
-	case !shouldGate && !didGate:
-		rew = 1
-		match = true
-	}
-
+	rew := ss.Stats.Float32("Rew")
 	ss.SetRew(rew)
-	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
-	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
-	ss.Stats.SetFloat32("Match", bools.ToFloat32(match))
-	ss.Stats.SetFloat32("Rew", rew)
 }
 
 func (ss *Sim) SetRew(rew float32) {
@@ -630,15 +601,24 @@ func (ss *Sim) StatCounters() {
 }
 
 // TrialStats computes the trial-level statistics.
-// Aggregation is done directly from log data.
-// ApplyRew computes other relevant stats.
 func (ss *Sim) TrialStats() {
+	nan := mat32.NaN()
+	ss.Stats.SetFloat32("Gated", nan)
+	ss.Stats.SetFloat32("Should", nan)
+	ss.Stats.SetFloat32("Match", nan)
+	ss.Stats.SetFloat32("Rew", nan)
+	ss.Stats.SetFloat32("PFCVM_RT", nan)
+
 	ss.Context.PVLV.DriveEffortUpdt(1, ss.Context.NeuroMod.HasRew.IsTrue(), false)
 	trial := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Trial].Counter.Cur
-	ss.Stats.SetFloat("PFCVM_RT", math.NaN())
 	if trial != 1 {
 		return
 	}
+	ss.RTStat()
+	ss.GatedStats()
+}
+
+func (ss *Sim) RTStat() {
 	net := ss.Net
 	vtly := net.AxonLayerByName("PFCVM")
 	gated := vtly.AnyGated()
@@ -656,6 +636,33 @@ func (ss *Sim) TrialStats() {
 		}
 	}
 	ss.Stats.SetFloat("PFCVM_RT", float64(spkCyc)/200)
+}
+
+// GatedStats records gating stats
+func (ss *Sim) GatedStats() {
+	mtxly := ss.Net.AxonLayerByName("MtxGo")
+	didGate, _ := mtxly.MatrixGated(&ss.Context) // will also be called later
+	pndiff := (ss.Sim.ACCPos - ss.Sim.ACCNeg) - ss.Sim.PosNegThr
+	shouldGate := pndiff > 0
+	match := false
+	var rew float32
+	switch {
+	case shouldGate && didGate:
+		rew = 1
+		match = true
+	case shouldGate && !didGate:
+		rew = -1
+	case !shouldGate && didGate:
+		rew = -1
+	case !shouldGate && !didGate:
+		rew = 1
+		match = true
+	}
+
+	ss.Stats.SetFloat32("Gated", bools.ToFloat32(didGate))
+	ss.Stats.SetFloat32("Should", bools.ToFloat32(shouldGate))
+	ss.Stats.SetFloat32("Match", bools.ToFloat32(match))
+	ss.Stats.SetFloat32("Rew", rew)
 }
 
 //////////////////////////////////////////////////////////////////////////////
