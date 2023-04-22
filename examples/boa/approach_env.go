@@ -47,7 +47,8 @@ type Approach struct {
 	CS          int                         `desc:"current CS"`
 	LastCS      int                         `desc:"last CS -- previous trial"`
 	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
-	DidGate     bool                        `desc:"did gate at some point during sequence"`
+	JustGated   bool                        `desc:"just gated on this trial"`
+	HasGated    bool                        `desc:"has gated at some point during sequence"`
 }
 
 func (ev *Approach) Name() string {
@@ -168,7 +169,8 @@ func (ev *Approach) NewStart() {
 	ev.US = -1
 	ev.LastUS = -1
 	ev.Rew = 0
-	ev.DidGate = false
+	ev.JustGated = false
+	ev.HasGated = false
 	ev.RenderState()
 	ev.RenderRewUS()
 }
@@ -320,8 +322,10 @@ func (ev *Approach) USForPos() int {
 	return int(uss.Values[ev.Pos])
 }
 
-// ActGen returns an "instinctive" action that implements a basic policy
-func (ev *Approach) ActGen() int {
+// InstinctAct returns an "instinctive" action that implements a basic policy
+func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
+	ev.JustGated = justGated
+	ev.HasGated = hasGated
 	posUs := ev.USForPos()
 	fwd := ev.ActMap["Forward"]
 	cons := ev.ActMap["Consume"]
@@ -334,7 +338,9 @@ func (ev *Approach) ActGen() int {
 			}
 			return cons
 		}
-		ev.ShouldGate = !ev.DidGate && (ev.LastAct != fwd) // first time looking at correct one
+		ev.ShouldGate = !ev.HasGated // looking at correct, haven't yet gated
+	}
+	if ev.HasGated {
 		return fwd
 	}
 	lt := ev.ActMap["Left"]

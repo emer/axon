@@ -327,6 +327,18 @@ func (net *Network) AddVTALHbLDTLayers(rel relpos.Relations, space float32) (vta
 // Must set Inhib.FFPrv > 0 and Act.Decay.* = 0
 func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 	sc := net.AddLayer2D(prefix+"SC", nNeurY, nNeurX, SuperLayer)
+	sc.DefParams = params.Params{
+		"Layer.Inhib.ActAvg.Nominal": "0.1",
+		"Layer.Inhib.Layer.On":       "true",
+		"Layer.Inhib.Layer.Gi":       "1.2",
+		"Layer.Inhib.Pool.On":        "false",
+		"Layer.Act.Decay.Act":        "0.0",
+		"Layer.Act.Decay.Glong":      "0.0",
+		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
+		"Layer.Act.Decay.OnRew":      "true",
+		"Layer.Act.KNa.TrialSlow":    "true",
+		"Layer.Act.KNa.Slow.Max":     "1",
+	}
 	sc.SetClass("SC")
 	return sc
 }
@@ -338,6 +350,19 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 // Must set Inhib.FFPrv > 0 and Act.Decay.* = 0
 func (net *Network) AddSCLayer4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	sc := net.AddLayer4D(prefix+"SC", nPoolsY, nPoolsX, nNeurY, nNeurX, SuperLayer)
+	sc.DefParams = params.Params{
+		"Layer.Inhib.ActAvg.Nominal": "0.1",
+		"Layer.Inhib.Layer.On":       "true",
+		"Layer.Inhib.Layer.Gi":       "1.2",
+		"Layer.Inhib.Pool.On":        "true",
+		"Layer.Inhib.Pool.Gi":        "1.2",
+		"Layer.Act.Decay.Act":        "0.0",
+		"Layer.Act.Decay.Glong":      "0.0",
+		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
+		"Layer.Act.Decay.OnRew":      "true",
+		"Layer.Act.KNa.TrialSlow":    "true",
+		"Layer.Act.KNa.Slow.Max":     "1",
+	}
 	sc.SetClass("SC")
 	return sc
 }

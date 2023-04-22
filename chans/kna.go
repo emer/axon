@@ -53,9 +53,10 @@ func (ka *KNaParams) GcFmSpike(gKNa *float32, spike bool) {
 // Evidence supports 2 different time constants:
 // Slick (medium) and Slack (slow)
 type KNaMedSlow struct {
-	On slbool.Bool `desc:"if On, apply K-Na adaptation"`
+	On        slbool.Bool `desc:"if On, apply K-Na adaptation"`
+	TrialSlow slbool.Bool `desc:"engages an optional version of Slow that discretely turns on at start of new trial (NewState): nrn.GknaSlow += Slow.Max * nrn.SpkPrv -- achieves a strong form of adaptation"`
 
-	pad, pad1, pad2 int32
+	pad, pad1 int32
 
 	Med  KNaParams `viewif:"On" view:"inline" desc:"medium time-scale adaptation"`
 	Slow KNaParams `viewif:"On" view:"inline" desc:"slow time-scale adaptation"`
@@ -81,7 +82,9 @@ func (ka *KNaMedSlow) Update() {
 // GcFmSpike updates med, slow time scales of KNa adaptation from spiking
 func (ka *KNaMedSlow) GcFmSpike(gKNaM, gKNaS *float32, spike bool) {
 	ka.Med.GcFmSpike(gKNaM, spike)
-	ka.Slow.GcFmSpike(gKNaS, spike)
+	if ka.TrialSlow.IsFalse() {
+		ka.Slow.GcFmSpike(gKNaS, spike)
+	}
 }
 
 //gosl: end chans

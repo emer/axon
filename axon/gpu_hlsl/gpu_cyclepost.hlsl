@@ -63,7 +63,7 @@ float LDTLayMaxAct(int layIdx) {
 	if (layIdx < 0) {
 		return 0.0;
 	}
-	return Pools[Layers[layIdx].Idxs.PoolSt].AvgMax.Act.Cycle.Max;
+	return Pools[Layers[layIdx].Idxs.PoolSt].AvgMax.Act.Cycle.Avg;
 }
 
 void CyclePostLDT(inout Context ctx, in LayerParams ly, inout LayerVals vals) {

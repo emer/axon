@@ -20,16 +20,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / css
 				}},
-			{Sel: ".SC", Desc: "",
-				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.1",
-					"Layer.Inhib.Layer.Gi":       "0.8",
-					"Layer.Inhib.Layer.FFPrv":    "10", // key td param
-					"Layer.Inhib.Pool.On":        "false",
-					"Layer.Act.Decay.Act":        "0.0",
-					"Layer.Act.Decay.Glong":      "0.0",
-					"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
-				}},
 			{Sel: "#OFCus", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.8", // stronger inhibition here to knock out novelty

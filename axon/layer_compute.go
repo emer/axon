@@ -226,7 +226,7 @@ func (ly *Layer) LDTLayMaxAct(net *Network, layIdx int32) float32 {
 	}
 	lay := net.Layers[layIdx]
 	lpl := &lay.Pools[0]
-	return lpl.AvgMax.CaSpkD.Cycle.Max
+	return lpl.AvgMax.CaSpkD.Cycle.Avg
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -311,6 +311,22 @@ func (ly *Layer) DecayState(ctx *Context, decay, glong float32) {
 			continue
 		}
 		ly.Params.Act.DecayState(nrn, decay, glong)
+		// Note: synapse-level Ca decay happens in DWt
+	}
+	ly.DecayStateLayer(ctx, decay, glong)
+}
+
+// DecayStateAHP decays activation state by given proportion
+// (default decay values are ly.Params.Act.Decay.Act, Glong)
+// including extra param for AHP decay
+func (ly *Layer) DecayStateAHP(ctx *Context, decay, glong, ahp float32) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Params.Act.DecayState(nrn, decay, glong)
+		ly.Params.Act.DecayAHP(nrn, ahp)
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	ly.DecayStateLayer(ctx, decay, glong)
@@ -424,7 +440,7 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.CorSimFmActs() // GPU syncs down the state
 	if ly.Params.Act.Decay.OnRew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.DipReset.IsTrue() {
-			ly.DecayState(ctx, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+			ly.DecayStateAHP(ctx, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 		}
 	}
 	switch ly.LayerType() {

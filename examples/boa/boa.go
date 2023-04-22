@@ -157,7 +157,7 @@ func (ss *Sim) ConfigEnv() {
 	trn.Config()
 	trn.Validate()
 
-	ss.Context.PVLV.Drive.NActive = int32(trn.NDrives)
+	ss.Context.PVLV.Drive.NActive = int32(trn.NDrives) + 1
 
 	tst.Nm = etime.Test.String()
 	tst.Defaults()
@@ -477,15 +477,12 @@ func (ss *Sim) ConfigLoops() {
 // or reflexive subcortical action from env.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-	ev.ActGen() // always update comparison
-	mtxLy := net.AxonLayerByName("VsMtxGo")
-	didGate := mtxLy.AnyGated()
-	if didGate && !ss.Context.PVLV.HasPosUS() {
-		ev.DidGate = true
-		ss.Stats.SetString("Debug", "skip gate")
-		if Debug {
-			fmt.Printf("skipped action because gated\n")
-		}
+	justGated := ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
+	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
+	ss.Stats.SetString("Debug", fmt.Sprintf("just gated: %v  has: %v", justGated, hasGated))
+	ev.InstinctAct(justGated, hasGated)
+	if justGated && !ss.Context.PVLV.HasPosUS() {
+		ss.Stats.SetString("Debug", fmt.Sprintf("skip gated: %v  has: %v", justGated, hasGated))
 		ev.Action("None", nil)
 		ss.ApplyAction()
 		ly := ss.Net.AxonLayerByName("VL")
@@ -496,7 +493,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	}
 
 	netAct, anm := ss.DecodeAct(ev)
-	genAct := ev.ActGen()
+	genAct := ev.InstinctAct(justGated, hasGated)
 	genActNm := ev.Acts[genAct]
 	ss.Stats.SetString("NetAction", anm)
 	ss.Stats.SetString("InstinctAction", genActNm)
@@ -575,15 +572,13 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
 	pv.InitUS()
 	ctx.NeuroMod.HasRew.SetBool(false)
 	if ev.US != -1 {
-		pv.SetPosUS(int32(ev.US), 1) // magnitude always 1
+		pv.SetPosUS(int32(ev.US+1), 1) // 1 offset for curiosity drive, magnitude always 1
 		ctx.NeuroMod.HasRew.SetBool(true)
-	}
-	if ss.Context.PVLV.VSMatrix.JustGated.IsTrue() {
-		ss.Context.PVLV.Effort.Reset() // always start counting at start of goal
 	}
 	pv.Effort.AddEffort(1) // should be based on action taken last step
 	pv.InitDrives()
-	pv.SetDrive(int32(ev.Drive), 1)
+	pv.SetDrive(0, 1) // curiosity
+	pv.SetDrive(int32(ev.Drive+1), 1)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter

@@ -842,9 +842,9 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals
 	nrn.SpkMax = 0
 	nrn.SpkMaxCa = 0
 	nrn.GeIntMax = 0
-
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
 	// Note: synapse-level Ca decay happens in DWt
+	ly.Act.KNaNewState(ctx, nrn)
 }
 
 func (ly *LayerParams) MinusPhasePool(ctx *Context, pl *Pool) {

@@ -606,6 +606,16 @@ func (ac *ActParams) DecayLearnCa(nrn *Neuron, decay float32) {
 	nrn.SKCaM -= decay * nrn.SKCaM
 }
 
+// DecayAHP decays after-hyperpolarization variables
+// by given factor (typically Decay.AHP)
+func (ac *ActParams) DecayAHP(nrn *Neuron, decay float32) {
+	nrn.MahpN -= decay * nrn.MahpN
+	nrn.SahpCa -= decay * nrn.SahpCa
+	nrn.SahpN -= decay * nrn.SahpN
+	nrn.GknaMed -= decay * nrn.GknaMed
+	nrn.GknaSlow -= decay * nrn.GknaSlow
+}
+
 // DecayState decays the activation state toward initial values
 // in proportion to given decay parameter.  Special case values
 // such as Glong and KNa are also decayed with their
@@ -636,12 +646,9 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
 
-	nrn.MahpN -= ac.Decay.AHP * nrn.MahpN
-	nrn.SahpCa -= ac.Decay.AHP * nrn.SahpCa
-	nrn.SahpN -= ac.Decay.AHP * nrn.SahpN
-	nrn.GknaMed -= ac.Decay.AHP * nrn.GknaMed
-	nrn.GknaSlow -= ac.Decay.AHP * nrn.GknaSlow
-
+	if ac.Decay.AHP > 0 {
+		ac.DecayAHP(nrn, ac.Decay.AHP)
+	}
 	nrn.GgabaB -= glong * nrn.GgabaB
 	nrn.GABAB -= glong * nrn.GABAB
 	nrn.GABABx -= glong * nrn.GABABx
@@ -812,6 +819,13 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 	if ac.KNa.On.IsTrue() {
 		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
+	}
+}
+
+// KNaNewState does TrialSlow version of KNa during NewState if option is seta
+func (ac *ActParams) KNaNewState(ctx *Context, nrn *Neuron) {
+	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
+		nrn.GknaSlow += ac.KNa.Slow.Max * nrn.SpkPrv
 	}
 }
 

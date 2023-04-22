@@ -130,7 +130,7 @@ func (ss *Sim) Defaults() {
 	ss.UpdtInterval = 10
 	ss.GeClamp = true
 	ss.SpikeHz = 50
-	ss.Ge = 0.05
+	ss.Ge = 0.1
 	ss.Gi = 0.1
 	ss.ErevE = 1
 	ss.ErevI = 0.3
