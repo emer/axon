@@ -11,7 +11,7 @@ import "github.com/emer/emergent/params"
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: ".InputLayer", Desc: "t",
+			{Sel: ".InputLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Act.Decay.Act":   "1.0",
 					"Layer.Act.Decay.Glong": "1.0",
@@ -30,6 +30,15 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":      "0.0",
 					"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
 				}},
+			{Sel: "#OFCus", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "1.8", // stronger inhibition here to knock out novelty
+					"Layer.Inhib.Pool.Gi":  "1.2",
+				}},
+			{Sel: ".PTMaintLayer", Desc: "time integration params",
+				Params: params.Params{
+					"Layer.Act.Dend.ModGain": "10", // gating ease..
+				}},
 			//////////////////////////////////////////////////
 			// required custom params for this project
 			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
@@ -47,7 +56,7 @@ var ParamSets = params.Sets{
 			// current experimental settings
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0", // todo: try 2.0
+					"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
 				}},
 			{Sel: ".ToSC", Desc: "fixed, non-learning params",
 				Params: params.Params{
@@ -64,7 +73,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "strong, high variance",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "6", // key param for OFC focusing on current cs -- expt
+					"Prjn.PrjnScale.Abs": "4", // key param for OFC focusing on current cs -- expt
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{

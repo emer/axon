@@ -393,6 +393,7 @@ func (ly *Layer) BGThalDefaults() {
 		pj.Params.SWt.Init.Var = 0.0
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
 			pj.Params.PrjnScale.Abs = 2
+			pj.SetClass("GPiToBGThal")
 		}
 	}
 }

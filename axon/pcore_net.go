@@ -141,19 +141,19 @@ func (net *Network) AddBG4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX, gpN
 	return
 }
 
-// AddThalLayer4D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
+// AddBGThalLayer4D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
 // of given size, with given name.
 // This version has a 4D structure, with Pools representing separable gating domains.
-func (net *Network) AddThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddBGThalLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer4D(name, nPoolsY, nPoolsX, nNeurY, nNeurX, BGThalLayer)
 	ly.SetClass("BG")
 	return ly
 }
 
-// AddThalLayer2D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
+// AddBGThalLayer2D adds a BG gated thalamus (e.g., VA/VL/VM, MD) Layer
 // of given size, with given name.
 // This version has a 2D structure
-func (net *Network) AddThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
+func (net *Network) AddBGThalLayer2D(name string, nNeurY, nNeurX int) *Layer {
 	ly := net.AddLayer2D(name, nNeurY, nNeurX, BGThalLayer)
 	ly.SetClass("BG")
 	return ly

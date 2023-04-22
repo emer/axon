@@ -21,7 +21,6 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/envs/cond"
 	"github.com/emer/etable/agg"
@@ -167,13 +166,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
-	// timeIn := ev.CurStates["USTimeIn"]
 
-	vta, lhb, ldt := net.AddVTALHbLDTLayers(relpos.Behind, space)
-	_ = lhb
-	_ = ldt
-
-	vSgpi, usPos, pvPos, ofc, ofcCT, ofcPTp, blaPosAcq, blaPosExt, blaNov := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, effort, effortP, urgency, urgencyP, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, effort, effortP
+	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
+	_, _, _, _ = ofcVal, ofcValCT, ofcValPTp, notMaint
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
@@ -181,16 +178,20 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
 
-	sc := net.AddSCLayer2D("", nuBgY, nuBgX)
-	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
 	net.ConnectToSC(cs, sc, full)
 
-	net.ConnectToPulv(ofc, ofcCT, timeP, full, full)
-	net.ConnectLayers(time, ofc, full, axon.BackPrjn) // use back for weaker inputs
-	net.ConnectPTPredToPulv(ofcPTp, timeP, full, full)
-	net.ConnectLayers(time, ofcPTp, full, axon.ForwardPrjn)
-	net.ConnectLayers(cs, ofcPTp, full, axon.ForwardPrjn)
-	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
+	net.ConnectToPFCBack(time, timeP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectLayers(time, ofcUSPTp, full, axon.ForwardPrjn)  // this is key for making it move
+	net.ConnectLayers(time, ofcValPTp, full, axon.ForwardPrjn) // this is key for making it move
+
+	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
+
+	net.ConnectToPFCBack(urgency, urgencyP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(urgency, urgencyP, ofcVal, ofcValCT, ofcValPTp, full)
+
+	net.ConnectLayers(cs, ofcUSPTp, full, axon.ForwardPrjn)
+	net.ConnectToPulv(ofcUS, ofcUSCT, csP, full, full)
 
 	// BLA connections -- sets defaults, classes
 	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
@@ -200,13 +201,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// ptpred input is important for learning to make conditional on actual engagement
 	net.ConnectToBLAExt(ctxIn, blaPosExt, full)
 
-	vSgpi.PlaceRightOf(vta, space)
-	usPos.PlaceAbove(vta)
 	time.PlaceRightOf(pvPos, space)
 	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
-	// ustimeIn.PlaceRightOf(ctxIn, space)
-	sc.PlaceRightOf(ctxIn, space)
 
 	err := net.Build()
 	if err != nil {
