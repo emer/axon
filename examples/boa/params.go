@@ -6,9 +6,22 @@ package main
 
 import "github.com/emer/emergent/params"
 
-// ParamSets is the default set of parameters -- Base is always applied,
+// ParamSets is the active set of parameters -- Base is always applied,
 // and others can be optionally selected to apply on top of that
 var ParamSets = params.Sets{
+	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
+		"Network": &params.Sheet{
+			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
+				Params: params.Params{
+					"Layer.Act.Clamp.Ge": "1.5",
+				}},
+		}},
+	},
+}
+
+// ParamSetsDefs is the default set of parameters -- Base is always applied,
+// and others can be optionally selected to apply on top of that
+var ParamSetsDefs = params.Sets{
 	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",

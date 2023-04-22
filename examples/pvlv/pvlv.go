@@ -167,10 +167,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, effort, effortP, urgency, urgencyP, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
-	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, effort, effortP
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, effort, effortP, urgency, urgencyP, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	// note: list all above so can copy / paste and validate correct return values
+	_, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
-	_, _, _, _ = ofcVal, ofcValCT, ofcValPTp, notMaint
+	_, _, _, _, _ = ofcVal, ofcValCT, ofcValPTp, ofcValMD, notMaint
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
@@ -178,9 +179,31 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
 
+	///////////////////////////////////////////
+	// CS -> BLA, OFC
+
 	net.ConnectToSC(cs, sc, full)
 
+	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
+	net.ConnectToBLAAcq(cs, blaNegAcq, full)
+
+	// note: context is hippocampus -- key thing is that it comes on with stim
+	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
+	// ptpred input is important for learning to make conditional on actual engagement
+	net.ConnectToBLAExt(ctxIn, blaPosExt, full)
+	net.ConnectToBLAExt(ctxIn, blaNegExt, full)
+
+	// OFCus predicts cs
+	net.ConnectToPFCBack(cs, csP, ofcUS, ofcUSCT, ofcUSPTp, full)
+
+	///////////////////////////////////////////
+	// OFC predicts time, effort, urgency
+
+	// note: these should be predicted by ACC, not included in this sim
+	// todo: a more dynamic US rep is needed to drive predictions in OFC
+
 	net.ConnectToPFCBack(time, timeP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	// note: following are needed by violate true predictive learning of time
 	net.ConnectLayers(time, ofcUSPTp, full, axon.ForwardPrjn)  // this is key for making it move
 	net.ConnectLayers(time, ofcValPTp, full, axon.ForwardPrjn) // this is key for making it move
 
@@ -190,16 +213,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFCBack(urgency, urgencyP, ofcUS, ofcUSCT, ofcUSPTp, full)
 	net.ConnectToPFCBack(urgency, urgencyP, ofcVal, ofcValCT, ofcValPTp, full)
 
-	net.ConnectLayers(cs, ofcUSPTp, full, axon.ForwardPrjn)
-	net.ConnectToPulv(ofcUS, ofcUSCT, csP, full, full)
-
-	// BLA connections -- sets defaults, classes
-	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
-
-	// note: context is hippocampus -- key thing is that it comes on with stim
-	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
-	// ptpred input is important for learning to make conditional on actual engagement
-	net.ConnectToBLAExt(ctxIn, blaPosExt, full)
+	////////////////////////////////////////////////
+	// position
 
 	time.PlaceRightOf(pvPos, space)
 	cs.PlaceRightOf(time, space*3)
@@ -361,6 +376,9 @@ func (ss *Sim) InitEnvRun() {
 	ev.RunName = ss.RunName
 	ev.Init(0)
 	ss.LoadCondWeights(ev.CurRun.Weights) // only if nonempty
+	ss.Loops.ResetCountersBelow(etime.Train, etime.Sequence)
+	ss.Logs.ResetLog(etime.Train, etime.Trial)
+	ss.Logs.ResetLog(etime.Train, etime.Sequence)
 }
 
 // LoadRunWeights loads weights specified in current run, if any
@@ -432,7 +450,7 @@ func (ss *Sim) StatCounters() {
 	ev := ss.Envs[ss.Context.Mode.String()].(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
 	ss.Stats.SetString("TrialType", ev.TrialType)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Trial", "Trial", "TrialType", "TrialName", "Cycle"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle"})
 }
 
 // TrialStats computes the tick-level statistics.

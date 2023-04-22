@@ -79,7 +79,7 @@ func (net *Network) AddSuperCT4D(name string, nPoolsY, nPoolsX, nNeurY, nNeurX i
 }
 
 // AddPulvForSuper adds a Pulvinar for given superficial layer (SuperLayer)
-// with a P suffix.  The Pulv.Driver is set to Super.
+// with a P suffix.  The Pulv.Driver is set to Super, as is the Class on Pulv.
 // The Pulv layer needs other CT connections from higher up to predict this layer.
 // Pulvinar is positioned behind the CT layer.
 func (net *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
@@ -93,6 +93,7 @@ func (net *Network) AddPulvForSuper(super *Layer, space float32) *Layer {
 	}
 	plv.SetBuildConfig("DriveLayName", name)
 	plv.SetRelPos(relpos.NewBehind(name+"CT", space))
+	plv.SetClass(name)
 	return plv
 }
 
@@ -375,7 +376,7 @@ func (net *Network) AddAllPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeur
 
 	pfcThal.PlaceBehind(pfcPTp, space)
 
-	// net.ConnectLayers(pfcPT, pfcCT, p1to1, ForwardPrjn) // todo: test
+	net.ConnectLayers(pfcPT, pfcCT, p1to1, ForwardPrjn)
 
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
@@ -436,7 +437,7 @@ func (net *Network) AddAllPFC2D(name, thalSuffix string, nNeurY, nNeurX int, dec
 
 	pfcThal.PlaceBehind(pfcPTp, space)
 
-	// net.ConnectLayers(pfcPT, pfcCT, full, ForwardPrjn) // todo: test
+	net.ConnectLayers(pfcPT, pfcCT, full, ForwardPrjn)
 
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
@@ -473,22 +474,35 @@ func (net *Network) AddAllPFC2D(name, thalSuffix string, nNeurY, nNeurX int, dec
 
 // ConnectToPFC connects given predictively learned input to all
 // relevant PFC layers:
-// lay->pfc
-// layP->pfc, layP <-> pfcCT
+// lay -> pfc (skipped if lay == nil)
+// layP -> pfc, layP <-> pfcCT
 // pfcPTp <-> layP
 func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern) {
-	net.ConnectLayers(lay, pfc, pat, ForwardPrjn)
+	if lay != nil {
+		net.ConnectLayers(lay, pfc, pat, ForwardPrjn)
+	}
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat)
 	net.ConnectPTPredToPulv(pfcPTp, layP, pat, pat)
 }
 
 // ConnectToPFCBack connects given predictively learned input to all
 // relevant PFC layers:
-// lay->pfc using a BackPrjn -- weaker
-// layP->pfc, layP <-> pfcCT
+// lay -> pfc using a BackPrjn -- weaker
+// layP -> pfc, layP <-> pfcCT
 // pfcPTp <-> layP
 func (net *Network) ConnectToPFCBack(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern) {
 	net.ConnectLayers(lay, pfc, pat, BackPrjn)
+	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat)
+	net.ConnectPTPredToPulv(pfcPTp, layP, pat, pat)
+}
+
+// ConnectToPFCBidir connects given predictively learned input to all
+// relevant PFC layers, using bidirectional connections to super layers.
+// lay <-> pfc bidirectional
+// layP -> pfc, layP <-> pfcCT
+// pfcPTp <-> layP
+func (net *Network) ConnectToPFCBidir(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern) {
+	net.BidirConnectLayers(lay, pfc, pat)
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat)
 	net.ConnectPTPredToPulv(pfcPTp, layP, pat, pat)
 }

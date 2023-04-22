@@ -196,97 +196,105 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	vSgpi, usPos, pvPos, blaPosAcq, blaPosExt, blaNov, ofc, ofcCT, ofcPTp, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
-	_ = vSgpi
-	_ = usPos
+	vSgpi, effort, effortP, urgency, urgencyP, pvPos, blaPosAcq, blaPosExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	_ = accUtil
 
-	cs := net.AddLayer2D("CS", ny, ev.NDrives, axon.InputLayer)
+	cs, csP := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
 	dist, distP := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	pos := net.AddLayer2D("Pos", ny, nloc, axon.InputLayer) // irrelevant here
 
-	m1 := net.AddLayer2D("M1", nuCtxY, nuCtxX, axon.SuperLayer)
-	act := net.AddLayer2D("Act", ny, nAct, axon.InputLayer) // Action
-	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action: either its own or instinct
+	///////////////////////////////////////////
+	// M1, VL, ALM
+
+	act := net.AddLayer2D("Act", ny, nAct, axon.InputLayer) // Action: what is actually done
+	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", act.Name())
 
-	m1P := net.AddPulvLayer2D("M1P", nuCtxY, nuCtxX)
-	m1P.SetBuildConfig("DriveLayName", m1.Name())
-	_ = vl
-	_ = act
+	m1, m1CT := net.AddSuperCT2D("M1", nuCtxY, nuCtxX, space, one2one)
+	m1P := net.AddPulvForSuper(m1, space)
 
-	net.ConnectToPulv(acc, accCT, distP, full, full)
+	alm, almCT, almPT, almPTp, almMD := net.AddAllPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, space)
+	_ = almPT
 
-	net.ConnectPTPredToPulv(accPTPred, distP, full, full)
+	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPrjn)
+	// net.ConnectToMatrix(alm, vSmtxGo, full) // todo: explore
+	// net.ConnectToMatrix(alm, vSmtxNo, full)
 
-	net.ConnectLayers(dist, acc, full, axon.ForwardPrjn)
-	net.ConnectLayers(accPT, accCT, full, axon.ForwardPrjn) // good?
+	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPTp, full) // alm predicts m1
 
-	net.ConnectLayers(dist, accPTPred, full, axon.ForwardPrjn).SetClass("ToPTPred")
+	// vl is a predictive thalamus but we don't have direct access to its source
+	net.ConnectToPulv(m1, m1CT, vl, full, full)
+	net.ConnectToPFC(nil, vl, alm, almCT, almPTp, full) // alm predicts m1
 
-	// m1P plus phase has action, Ctxt -> CT allows CT now to use that prev action
+	// sensory inputs guiding action
+	// note: alm gets effort, dist via predictive coding below
 
-	alm, almCT := net.AddSuperCT2D("ALM", nuCtxY, nuCtxX, space, one2one)
-	// note: not doing full alm / dlPFC yet
-	// almpt, almthal := net.AddPTThalForSuper(alm, almCT, "MD", one2one, full, full, space)
-	almCT.SetClass("ALM CTCopy")
-	// net.ConnectCTSelf(almCT, full) // todo: test
-	net.ConnectToPulv(alm, almCT, m1P, full, full)
-	// net.ConnectToPulv(alm, almCT, distP, full, full) // todo: test -- should be used
-
-	// todo: explore contextualization based on action
-	// net.BidirConnectLayers(ofc, alm, full)
-	// net.BidirConnectLayers(acc, alm, full)
-	// net.ConnectLayers(ofcPT, alm, full, axon.ForwardPrjn)
-	// net.ConnectLayers(accPT, alm, full, axon.ForwardPrjn)
-
-	// todo: blaPosE is not connected properly at all yet
-
-	// BLA
-	net.ConnectToBLAAcq(cs, blaPosAcq, full)
-	net.ConnectToBLAExt(cs, blaPosExt, full)
-
-	net.ConnectLayers(dist, alm, full, axon.ForwardPrjn)
-	net.ConnectLayers(effort, alm, full, axon.ForwardPrjn)
-	// net.ConnectLayers(ofcPT, alm, full, axon.ForwardPrjn) // todo: test
-	// net.ConnectLayers(accPT, alm, full, axon.ForwardPrjn)
-	net.ConnectLayers(ofcPTPred, alm, full, axon.ForwardPrjn)
-	net.ConnectLayers(accPTPred, alm, full, axon.ForwardPrjn)
-	net.ConnectLayers(notMaint, alm, full, axon.ForwardPrjn)
-	// net.ConnectLayers(pos, alm, full, axon.ForwardPrjn) // not relevant for action here.
 	net.ConnectLayers(dist, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 	net.ConnectLayers(effort, m1, full, axon.ForwardPrjn).SetClass("ToM1")
 
-	// net.ConnectLayers(ofcPT, m1, full, axon.ForwardPrjn) // todo: test
-	// net.ConnectLayers(accPT, m1, full, axon.ForwardPrjn)
-	net.ConnectLayers(ofcPTPred, m1, full, axon.ForwardPrjn)
-	net.ConnectLayers(accPTPred, m1, full, axon.ForwardPrjn)
-	net.ConnectLayers(notMaint, m1, full, axon.ForwardPrjn).SetClass("ToM1")
-
-	// net.ConnectLayers(ofcPT, m1, full, axon.ForwardPrjn) // todo: test
-	// net.ConnectLayers(accPT, m1, full, axon.ForwardPrjn)
-	net.ConnectLayers(ofcPTPred, vl, full, axon.ForwardPrjn)
-	net.ConnectLayers(accPTPred, vl, full, axon.ForwardPrjn)
-	net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	// shortcut: todo: test removing
+	net.ConnectLayers(dist, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	net.ConnectLayers(effort, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	// key point: cs does not project directly to alm -- no simple S -> R mappings!?
 
-	net.BidirConnectLayers(alm, m1, full) // todo: alm weaker?
-	ff, fb := net.BidirConnectLayers(m1, vl, full)
-	ff.SetClass("ToVL")
-	fb.SetClass("ToM1")
-	// net.BidirConnectLayers(alm, vl, full) // todo: test skip prjn
-	// net.BidirConnectLayers(almCT, vl, full)
+	///////////////////////////////////////////
+	// CS -> BLA, OFC
 
-	net.ConnectLayers(vl, alm, full, axon.BackPrjn)
-	net.ConnectLayers(vl, almCT, full, axon.BackPrjn)
+	net.ConnectToSC(cs, sc, full)
 
-	net.ConnectToVSPatch(accPTPred, vsPatch, full)
-	net.ConnectToVSPatch(almCT, vsPatch, full) // give access to motor action -- CT has prev action..
+	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
+	net.ConnectToBLAExt(cs, blaPosExt, full)
 
-	// todo:
+	net.ConnectToBLAAcq(cs, blaPosAcq, full)
+	net.ConnectToBLAExt(cs, blaPosExt, full)
 
-	net.ConnectToPulv(accCost, accCostCT, distP, full, full)
-	net.ConnectToPulv(accCost, accCostCT, terrainP, full, full)
+	net.ConnectToBLAAcq(cs, blaPosAcq, full)
+	net.ConnectToBLAExt(cs, blaPosExt, full)
+
+	// OFCus predicts cs
+	net.ConnectToPFCBack(cs, csP, ofcUS, ofcUSCT, ofcUSPTp, full)
+
+	///////////////////////////////////////////
+	// OFC, ACC, ALM predicts dist
+
+	// todo: a more dynamic US rep is needed to drive predictions in OFC
+	// using distance and effort here in the meantime
+	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(dist, distP, ofcUS, ofcUSCT, ofcUSPTp, full)
+
+	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
+	net.ConnectToPFCBack(dist, distP, ofcVal, ofcValCT, ofcValPTp, full)
+
+	// note: effort, urgency for accCost already set in AddBOA
+	net.ConnectToPFC(dist, distP, accCost, accCostCT, accCostPTp, full)
+
+	//	alm predicts all effort, cost, sensory state vars
+	net.ConnectToPFC(effort, effortP, alm, almCT, almPTp, full)
+	net.ConnectToPFC(urgency, urgencyP, alm, almCT, almPTp, full)
+	net.ConnectToPFC(dist, distP, alm, almCT, almPTp, full)
+
+	///////////////////////////////////////////
+	// ALM, M1 <-> OFC, ACC
+
+	// super contextualization based on action
+	net.BidirConnectLayers(ofcUS, alm, full)
+	net.BidirConnectLayers(accCost, alm, full)
+
+	// action needs to know if maintaining a goal or not
+	// using ofcVal and accCost as representatives
+	net.ConnectLayers(ofcValPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+	net.ConnectLayers(accCostPTp, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+	net.ConnectLayers(notMaint, alm, full, axon.ForwardPrjn).SetClass("ToALM")
+
+	net.ConnectLayers(ofcValPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(accCostPTp, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+	net.ConnectLayers(notMaint, m1, full, axon.ForwardPrjn).SetClass("ToM1")
+
+	// full shortcut -- todo: test removing
+	net.ConnectLayers(ofcValPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	net.ConnectLayers(accCostPTp, vl, full, axon.ForwardPrjn).SetClass("ToVL")
+	net.ConnectLayers(notMaint, vl, full, axon.ForwardPrjn).SetClass("ToVL")
 
 	////////////////////////////////////////////////
 	// position
@@ -296,12 +304,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pos.PlaceRightOf(dist, space)
 
 	m1.PlaceRightOf(pos, space)
-	m1P.PlaceBehind(m1, space)
+	alm.PlaceRightOf(m1, space)
 	vl.PlaceBehind(m1P, space)
 	act.PlaceBehind(vl, space)
 
-	alm.PlaceRightOf(accUtil, space)
-	notMaint.PlaceBehind(almCT, space)
+	notMaint.PlaceRightOf(alm, space)
 
 	err := net.Build()
 	if err != nil {
@@ -471,7 +478,7 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	ev.ActGen() // always update comparison
-	mtxLy := net.AxonLayerByName("VpMtxGo")
+	mtxLy := net.AxonLayerByName("VsMtxGo")
 	didGate := mtxLy.AnyGated()
 	if didGate && !ss.Context.PVLV.HasPosUS() {
 		ev.DidGate = true
