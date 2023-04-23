@@ -39,6 +39,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.1", // key gating efficacy param
 				}},
+			{Sel: ".SuperToThal", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+				}},
 		}},
 	},
 }
