@@ -242,7 +242,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	pfc, pfcCT := net.AddSuperCT4D("PFC", 1, np, nuY, nuX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	pfcPT, pfcVM := net.AddPTMaintThalForSuper(pfc, pfcCT, "VM", one2one, pone2one, pone2one, space)
+	pfcPT, pfcVM := net.AddPTMaintThalForSuper(pfc, pfcCT, "VM", one2one, pone2one, space)
 	_ = pfcPT
 	pfcCT.SetClass("PFC CTCopy")
 	pfcCT.CTDefParamsMedium() // FSA
