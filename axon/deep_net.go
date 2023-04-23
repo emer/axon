@@ -257,7 +257,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix string, 
 	sthal := net.ConnectLayers(super, thal, superToPT, ForwardPrjn) // shortcuts
 	sthal.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel": "1.0",
-		"Prjn.PrjnScale.Abs": "2.0", // key param for driving gating -- if too strong, premature gating
+		"Prjn.PrjnScale.Abs": "4.0", // key param for driving gating -- if too strong, premature gating
 		"Prjn.Learn.Learn":   "false",
 		"Prjn.SWt.Adapt.On":  "false",
 		"Prjn.SWt.Init.SPct": "0",

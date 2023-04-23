@@ -182,7 +182,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	///////////////////////////////////////////
 	// CS -> BLA, OFC
 
-	net.ConnectToSC(cs, sc, full)
+	net.ConnectToSC1to1(cs, sc)
 
 	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
 	net.ConnectToBLAAcq(cs, blaNegAcq, full)
@@ -219,6 +219,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	time.PlaceRightOf(pvPos, space)
 	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
+	sc.PlaceRightOf(vSpatch, space)
 
 	err := net.Build()
 	if err != nil {

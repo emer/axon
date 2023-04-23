@@ -324,9 +324,17 @@ func (lh *LHb) Defaults() {
 	lh.NegGain = 1
 	lh.DipResetThr = 0.2
 	lh.DipLowThr = 0.05
+	lh.Reset()
 }
 
 func (lh *LHb) Update() {
+}
+
+func (lh *LHb) Reset() {
+	lh.Dip = 0
+	lh.Burst = 0
+	lh.DipSum = 0
+	lh.DipReset.SetBool(false)
 }
 
 // LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
@@ -432,6 +440,12 @@ func (vt *VTA) Defaults() {
 }
 
 func (vt *VTA) Update() {
+}
+
+func (vt *VTA) Reset() {
+	vt.Raw.Zero()
+	vt.Vals.Zero()
+	vt.Prev.Zero()
 }
 
 // DAFmRaw computes the intermediate Vals and final DA value from
@@ -541,6 +555,18 @@ func (pp *PVLV) Update() {
 	pp.VTA.Update()
 	pp.LHb.Update()
 	pp.VSMatrix.Update()
+}
+
+func (pp *PVLV) Reset() {
+	pp.Drive.ToZero()
+	pp.Effort.Reset()
+	pp.Urgency.Reset()
+	pp.LHb.Reset()
+	pp.VTA.Reset()
+	pp.USpos.Zero()
+	pp.USneg.Zero()
+	pp.VSPatch.Zero()
+	pp.VSMatrix.Reset()
 }
 
 // InitUS initializes all the USs to zero

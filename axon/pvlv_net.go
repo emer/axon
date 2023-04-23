@@ -376,6 +376,23 @@ func (net *Network) ConnectToSC(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	return pj
 }
 
+// ConnectToSC1to1 adds a 1to1 ForwardPrjn from given sending layer to
+// a SC layer, copying the geometry of the sending layer,
+// setting class as ToSC.  The conection weights are set to uniform.
+func (net *Network) ConnectToSC1to1(send, recv *Layer) *Prjn {
+	recv.Shp.CopyShape(&send.Shp)
+	pj := net.ConnectLayers(send, recv, prjn.NewOneToOne(), ForwardPrjn)
+	pj.DefParams = params.Params{
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+	}
+	pj.SetClass("ToSC")
+	return pj
+}
+
 // AddDrivesLayer adds PVLV layer representing current drive activity,
 // from ContextPVLV.Drive.Drives.
 // Uses a PopCode representation based on LayerParams.Act.PopCode, distributed over
@@ -535,7 +552,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 
 	vSmtxGo, vSmtxNo, vSstnp, vSstns, vSgpi, vSpatch, vSgated := net.AddVS(nUSs, bgY, bgX, nYneur, space)
 
-	sc = net.AddSCLayer2D("", bgY, bgX)
+	sc = net.AddSCLayer2D("", ofcY, ofcX)
 	ldt.SetBuildConfig("SrcLay1Name", sc.Name())
 
 	blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, cemPos, cemNeg, blaNov := net.AddAmygdala("", true, nUSs, ofcY, ofcX, space)

@@ -326,20 +326,17 @@ func (ev *Approach) USForPos() int {
 func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
 	ev.JustGated = justGated
 	ev.HasGated = hasGated
-	posUs := ev.USForPos()
 	fwd := ev.ActMap["Forward"]
 	cons := ev.ActMap["Consume"]
 	ev.ShouldGate = false
-	if posUs == ev.Drive {
-		if ev.Dist == 0 {
-			if ev.LastAct == cons {
-				ev.ShouldGate = true
-				return cons
-			}
+	if ev.Dist == 0 {
+		if ev.LastAct == cons {
+			ev.ShouldGate = true
 			return cons
 		}
-		ev.ShouldGate = !ev.HasGated // looking at correct, haven't yet gated
+		return cons
 	}
+	ev.ShouldGate = !ev.HasGated // looking at correct, haven't yet gated
 	if ev.HasGated {
 		return fwd
 	}

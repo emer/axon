@@ -48,14 +48,6 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
 				}},
-			{Sel: ".ToSC", Desc: "fixed, non-learning params",
-				Params: params.Params{
-					"Prjn.SWt.Init.SPct": "0",
-					"Prjn.SWt.Init.Mean": "0.5",
-					"Prjn.SWt.Init.Var":  "0.4",
-					"Prjn.SWt.Adapt.On":  "false",
-					"Prjn.Learn.Learn":   "false",
-				}},
 
 			{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
 				Params: params.Params{

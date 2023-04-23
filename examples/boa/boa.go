@@ -126,6 +126,9 @@ func (ss *Sim) New() {
 	ss.TestInterval = 500
 	ss.Context.Defaults()
 	ss.Context.PVLV.Effort.Gain = 0.05
+	ss.Context.PVLV.Effort.Max = 10
+	ss.Context.PVLV.Effort.MaxNovel = 8
+	ss.Context.PVLV.Effort.MaxPostDip = 4
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -241,7 +244,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	///////////////////////////////////////////
 	// CS -> BLA, OFC
 
-	net.ConnectToSC(cs, sc, full)
+	net.ConnectToSC1to1(cs, sc)
 
 	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
 	net.ConnectToBLAExt(cs, blaPosExt, full)
@@ -475,9 +478,11 @@ func (ss *Sim) ConfigLoops() {
 
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
+// Called in the minus phase.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-	justGated := ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
+	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
+	justGated := mtxLy.AnyGated() // PVLV.VSMatrix is not updated until plus phase
 	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
 	ss.Stats.SetString("Debug", fmt.Sprintf("just gated: %v  has: %v", justGated, hasGated))
 	ev.InstinctAct(justGated, hasGated)
@@ -485,18 +490,21 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		ss.Stats.SetString("Debug", fmt.Sprintf("skip gated: %v  has: %v", justGated, hasGated))
 		ev.Action("None", nil)
 		ss.ApplyAction()
+		ss.Stats.SetString("NetAction", "None")
+		ss.Stats.SetString("Instinct", "None")
+		ss.Stats.SetString("NetAction", "Gated")
+		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
 		ly := ss.Net.AxonLayerByName("VL")
 		ly.Pools[0].Inhib.Clamped.SetBool(false) // not clamped this trial
 		ss.Net.GPU.SyncPoolsToGPU()
-		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
-		return                           // no time to do action while also gating
+		return // no time to do action while also gating
 	}
 
 	netAct, anm := ss.DecodeAct(ev)
 	genAct := ev.InstinctAct(justGated, hasGated)
 	genActNm := ev.Acts[genAct]
 	ss.Stats.SetString("NetAction", anm)
-	ss.Stats.SetString("InstinctAction", genActNm)
+	ss.Stats.SetString("Instinct", genActNm)
 	if netAct == genAct {
 		ss.Stats.SetFloat("ActMatch", 1)
 	} else {
@@ -585,8 +593,8 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
 // for the new run value
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
-	// ss.Envs.ByMode(etime.Train).Init(0)
-	// ss.Envs.ByMode(etime.Test).Init(0)
+	ss.Envs.ByMode(etime.Train).Init(0)
+	ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.Sim.PctCortex = 0
@@ -617,7 +625,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("US", 0)
 	ss.Stats.SetFloat("HasRew", 0)
 	ss.Stats.SetString("NetAction", "")
-	ss.Stats.SetString("InstinctAction", "")
+	ss.Stats.SetString("Instinct", "")
 	ss.Stats.SetString("ActAction", "")
 	ss.Stats.SetFloat("JustGated", 0)
 	ss.Stats.SetFloat("Should", 0)
@@ -662,7 +670,7 @@ func (ss *Sim) StatCounters() {
 	ss.Stats.SetFloat32("US", float32(ev.US))
 	ss.Stats.SetFloat32("HasRew", float32(ss.Context.NeuroMod.HasRew))
 	ss.Stats.SetString("TrialName", "trl")
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Cycle", "NetAction", "InstinctAction", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Epoch", "Sequence", "Trial", "Cycle", "NetAction", "Instinct", "ActAction", "ActMatch", "JustGated", "Should", "Rew"})
 }
 
 // TrialStats computes the trial-level statistics.
@@ -825,7 +833,7 @@ func (ss *Sim) ConfigLogs() {
 	// ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.AllTimes, "PctCortex")
 	ss.Logs.AddStatFloatNoAggItem(etime.AllModes, etime.Trial, "Drive", "CS", "Dist", "US", "HasRew")
-	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "InstinctAction", "ActAction")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "NetAction", "Instinct", "ActAction")
 
 	ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -916,7 +924,7 @@ func (ss *Sim) ConfigLogItems() {
 		Write: elog.WriteMap{
 			etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 				ix := ctx.Logs.IdxView(ctx.Mode, etime.Trial)
-				spl := split.GroupBy(ix, []string{"InstinctAction"})
+				spl := split.GroupBy(ix, []string{"Instinct"})
 				split.AggTry(spl, "ActMatch", agg.AggMean)
 				ags := spl.AggsToTable(etable.ColNameOnly)
 				ss.Logs.MiscTables["ActCor"] = ags
@@ -932,7 +940,7 @@ func (ss *Sim) ConfigLogItems() {
 			Write: elog.WriteMap{
 				etime.Scope(etime.Train, etime.Epoch): func(ctx *elog.Context) {
 					ags := ss.Logs.MiscTables["ActCor"]
-					rw := ags.RowsByString("InstinctAction", anm, etable.Equals, etable.UseCase)
+					rw := ags.RowsByString("Instinct", anm, etable.Equals, etable.UseCase)
 					if len(rw) > 0 {
 						ctx.SetFloat64(ags.CellFloat("ActMatch", rw[0]))
 					}

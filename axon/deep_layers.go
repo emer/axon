@@ -169,7 +169,7 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.GABAB.Gbar = 0.3
 	ly.Params.Act.NMDA.Gbar = 0.3 // long strong maint
 	ly.Params.Act.NMDA.Tau = 300
-	ly.Params.Act.Dend.ModGain = 10 // this multiplies thalamic input projections -- only briefly active so need to be strong
+	ly.Params.Act.Dend.ModGain = 20 // this multiplies thalamic input projections -- only briefly active so need to be strong
 	ly.Params.Inhib.Layer.Gi = 1.8
 	ly.Params.Inhib.Pool.Gi = 1.8
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)

@@ -127,6 +127,7 @@ func (ctx *Context) Reset() {
 	}
 	ctx.RandCtr.Reset()
 	ctx.NeuroMod.Init()
+	ctx.PVLV.Reset()
 }
 
 // NewContext returns a new Time struct with default parameters
