@@ -186,8 +186,8 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.FB = 0 // pure FF
 	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.Inhib.Pool.On.SetBool(false)
-	ly.Params.Inhib.Pool.FB = 0 // pure FF
+	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer!
+	ly.Params.Inhib.Pool.FB = 0           // pure FF
 	ly.Params.Inhib.Pool.Gi = 0.5
 	ly.Params.Inhib.ActAvg.Nominal = 0.25 // pooled should be lower
 	ly.Params.Learn.RLRate.On.SetBool(false)
@@ -392,7 +392,7 @@ func (ly *Layer) BGThalDefaults() {
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.0
 		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
-			pj.Params.PrjnScale.Abs = 2
+			pj.Params.PrjnScale.Abs = 2 // 2 still allows some leak-gating
 			pj.SetClass("GPiToBGThal")
 		}
 	}

@@ -11,30 +11,35 @@ import "github.com/emer/emergent/params"
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "minimal base params needed for this model", Sheets: params.Sheets{
 		"Network": &params.Sheet{
-			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
+			{Sel: "Layer", Desc: "generic params for all layers",
 				Params: params.Params{
 					"Layer.Act.Clamp.Ge": "1.5",
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain": "1",
+					"Layer.Act.Dend.ModGain": "1", // todo: try with lower drive
 				}},
 			{Sel: "#BLAPosAcqD1", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "2.4",
+					"Layer.Inhib.Layer.Gi": "2.4", // 2.2 not enough to knock out novelty
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain": "10", // gating ease..
+					"Layer.Act.Dend.ModGain": "20", // 10 is ok, 20 more robust
 				}},
-			{Sel: ".DrivesToMtx", Desc: "not too strong so ext novelty doesn't activate",
+			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 				}},
-			{Sel: ".BLAAcqToGo", Desc: "must dominatea",
+			{Sel: ".BLAAcqToGo", Desc: "must dominate",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "4",
+					"Prjn.PrjnScale.Rel": "4", // todo: back off once working
 					"Prjn.PrjnScale.Abs": "4",
+				}},
+			{Sel: ".VSPatchPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs":    "1",     // 3 orig
+					"Prjn.Learn.LRate.Base": "0.001", // 0.05 def
 				}},
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
@@ -42,7 +47,19 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
+					"Prjn.PrjnScale.Abs": "4.0", // 4 needed, 3 too low
+				}},
+			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leakes with supertothal 4
+				}},
+			{Sel: ".BLAFromNovel", Desc: "if too strong, isn't out-competed",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2", // 3 is too strong.
+				}},
+			{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.01",
 				}},
 		}},
 	},
@@ -535,7 +552,7 @@ var ParamSetsDefs = params.Sets{
 					"Prjn.SWt.Init.Var":  "0.0",
 					"Prjn.Learn.Learn":   "false",
 				}},
-			{Sel: ".GPiInhibToMD", Desc: "inhibition from GPi to MD",
+			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2", // 2 > 1 -- inhib stronger, prevent unwanted gating
 					"Prjn.SWt.Init.SPct": "0",

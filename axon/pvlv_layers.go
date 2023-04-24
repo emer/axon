@@ -119,8 +119,8 @@ func (ly *Layer) BLADefaults() {
 	isAcq := strings.Contains(ly.Nm, "Acq")
 
 	lp := ly.Params
-	lp.Act.Decay.Act = 0
-	lp.Act.Decay.Glong = 0
+	lp.Act.Decay.Act = 0.2
+	lp.Act.Decay.Glong = 0.6
 	lp.Act.Dend.SSGi = 0
 	lp.Inhib.Layer.On.SetBool(true)
 	if isAcq {
@@ -151,7 +151,7 @@ func (ly *Layer) BLADefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		slay := pj.Send
-		if slay.LayerType() == BLALayer { // inhibition from Ext
+		if slay.LayerType() == BLALayer && !strings.Contains(slay.Nm, "Novel") { // inhibition from Ext
 			pj.Params.SetFixedWts()
 			pj.Params.PrjnScale.Abs = 2
 		}

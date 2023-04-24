@@ -353,7 +353,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 	return
 }
 
-// AddAllPFC4D adds a "full stack" of 4D PFC layers:
+// AddPFC4D adds a "full stack" of 4D PFC layers:
 // * AddSuperCT4D (Super and CT)
 // * AddPTMaintThal (PTMaint, BGThal)
 // * AddPTPredLayer (PTPred)
@@ -363,7 +363,7 @@ func (net *Network) AddPTPredLayer(ptMaint, ct *Layer, ptToPredPrjn, ctToPredPrj
 // decayOnRew determines the Act.Decay.OnRew setting (true of OFC, ACC type for sure).
 // CT layer uses the Medium timescale params.
 // use, e.g., pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "2.8" to change default params.
-func (net *Network) AddAllPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
+func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	p1to1 := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
 
@@ -401,7 +401,7 @@ func (net *Network) AddAllPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeur
 	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
-	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "1.8"
+	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"
 	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
 
 	pfcPTp.DefParams = maps.Clone(pfcParams)
@@ -415,7 +415,7 @@ func (net *Network) AddAllPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeur
 	return
 }
 
-// AddAllPFC2D adds a "full stack" of 2D PFC layers:
+// AddPFC2D adds a "full stack" of 2D PFC layers:
 // * AddSuperCT2D (Super and CT)
 // * AddPTMaintThal (PTMaint, BGThal)
 // * AddPTPredLayer (PTPred)
@@ -424,7 +424,7 @@ func (net *Network) AddAllPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeur
 // OneToOne, full connectivity is used between layers.
 // decayOnRew determines the Act.Decay.OnRew setting (true of OFC, ACC type for sure).
 // CT layer uses the Medium timescale params.
-func (net *Network) AddAllPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
+func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayOnRew bool, space float32) (pfc, pfcCT, pfcPT, pfcPTp, pfcThal *Layer) {
 	one2one := prjn.NewOneToOne()
 	full := prjn.NewFull()
 

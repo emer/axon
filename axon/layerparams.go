@@ -832,6 +832,7 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
 		pl.Inhib.Clamped.SetBool(true)
 	}
 	pl.Inhib.Decay(ly.Act.Decay.Act)
+	pl.Gated.SetBool(false)
 }
 
 // NewStateNeuron handles all initialization at start of new input pattern.

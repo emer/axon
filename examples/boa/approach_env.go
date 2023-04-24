@@ -322,6 +322,12 @@ func (ev *Approach) USForPos() int {
 	return int(uss.Values[ev.Pos])
 }
 
+// PosHasDriveUS returns true if the current USForPos corresponds
+// to the current Drive -- i.e., are we looking at the right thing?a
+func (ev *Approach) PosHasDriveUS() bool {
+	return ev.Drive == ev.USForPos()
+}
+
 // InstinctAct returns an "instinctive" action that implements a basic policy
 func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
 	ev.JustGated = justGated
@@ -336,10 +342,10 @@ func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
 		}
 		return cons
 	}
-	ev.ShouldGate = !ev.HasGated // looking at correct, haven't yet gated
 	if ev.HasGated {
 		return fwd
 	}
+	ev.ShouldGate = ev.PosHasDriveUS() // looking at correct, haven't yet gated
 	lt := ev.ActMap["Left"]
 	rt := ev.ActMap["Right"]
 	if ev.LastAct == lt || ev.LastAct == rt {

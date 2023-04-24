@@ -78,7 +78,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 5
+	ss.PctCortexStEpc = 10
 	ss.PctCortexNEpc = 5
 	ss.PctCortexInterval = 1
 	ss.PCAInterval = 10
@@ -223,7 +223,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	m1, m1CT := net.AddSuperCT2D("M1", nuCtxY, nuCtxX, space, one2one)
 	m1P := net.AddPulvForSuper(m1, space)
 
-	alm, almCT, almPT, almPTp, almMD := net.AddAllPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, space)
+	alm, almCT, almPT, almPTp, almMD := net.AddPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, space)
 	_ = almPT
 
 	net.ConnectLayers(vSgpi, almMD, full, axon.InhibPrjn)
@@ -362,8 +362,9 @@ func (ss *Sim) ConfigLoops() {
 
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	maxTrials := ev.TimeMax + 5 // allow for extra time for gating trials
+	seqPerEpc := 10             // 25 for more data
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTime(etime.Sequence, 25).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 40).AddTime(etime.Sequence, seqPerEpc).AddTime(etime.Trial, maxTrials).AddTime(etime.Cycle, 200)
 
 	// note: not using Test mode at this point, so just commenting all this out
 	// in case there is a future need for it.
@@ -494,7 +495,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		ss.Stats.SetString("Debug", fmt.Sprintf("skip gated: %v  has: %v", justGated, hasGated))
 		ev.Action("None", nil)
 		ss.ApplyAction()
-		ss.Stats.SetString("NetAction", "None")
+		ss.Stats.SetString("ActAction", "None")
 		ss.Stats.SetString("Instinct", "None")
 		ss.Stats.SetString("NetAction", "Gated")
 		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
@@ -728,19 +729,20 @@ func (ss *Sim) GatedStats() {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
 	justGated := ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
 	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
+	nan := mat32.NaN()
 	ss.Stats.SetFloat32("JustGated", bools.ToFloat32(justGated))
 	ss.Stats.SetFloat32("Should", bools.ToFloat32(ev.ShouldGate))
 	ss.Stats.SetFloat32("HasGated", bools.ToFloat32(hasGated))
-	ss.Stats.SetFloat32("GateUS", mat32.NaN())
-	ss.Stats.SetFloat32("GateCS", mat32.NaN())
-	ss.Stats.SetFloat32("GatedEarly", mat32.NaN())
-	ss.Stats.SetFloat32("MaintEarly", mat32.NaN())
-	ss.Stats.SetFloat32("GatedAgain", mat32.NaN())
-	ss.Stats.SetFloat32("WrongCSGate", mat32.NaN())
-	ss.Stats.SetFloat32("AChShould", mat32.NaN())
-	ss.Stats.SetFloat32("AChShouldnt", mat32.NaN())
+	ss.Stats.SetFloat32("GateUS", nan)
+	ss.Stats.SetFloat32("GateCS", nan)
+	ss.Stats.SetFloat32("GatedEarly", nan)
+	ss.Stats.SetFloat32("MaintEarly", nan)
+	ss.Stats.SetFloat32("GatedAgain", nan)
+	ss.Stats.SetFloat32("WrongCSGate", nan)
+	ss.Stats.SetFloat32("AChShould", nan)
+	ss.Stats.SetFloat32("AChShouldnt", nan)
 	if justGated {
-		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(ev.Drive != ev.USForPos()))
+		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(!ev.PosHasDriveUS()))
 	}
 	if ev.ShouldGate {
 		if ss.Context.PVLV.HasPosUS() {
@@ -804,7 +806,7 @@ func (ss *Sim) MaintStats() {
 		}
 	}
 	if hasMaint {
-		ss.Stats.SetFloat32("MaintEarly", bools.ToFloat32(ev.Drive != ev.USForPos()))
+		ss.Stats.SetFloat32("MaintEarly", bools.ToFloat32(!ev.PosHasDriveUS()))
 	}
 }
 
@@ -838,7 +840,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate", "DA", "RewPred", "RewPred_NR", "LeftCor")
+	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate", "Rew", "RewPred")
 	// "MaintofcPT", "MaintaccPT", "MaintFailofcPT", "MaintFailaccPT"
 	// "GateUS", "GatedEarly", "GatedAgain", "JustGated", "PctCortex",
 	// "Rew", "DA", "MtxGo_ActAvg"
@@ -992,7 +994,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Params.MaxRecs = 300
 	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
-	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
+	ss.ViewUpdt.Config(nv, etime.GammaCycle, etime.AlphaCycle)
 
 	nv.Scene().Camera.Pose.Pos.Set(0, 1.4, 2.6)
 	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})

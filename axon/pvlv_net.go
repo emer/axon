@@ -101,10 +101,10 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int
 	pj := net.ConnectLayers(blaNov, blaPosAcq, p1to1, ForwardPrjn)
 	pj.DefParams = params.Params{ // dilutes everyone else, so make it weaker Rel, compensate with Abs
 		"Prjn.Learn.Learn":   "false",
-		"Prjn.PrjnScale.Rel": "0.1",
-		"Prjn.PrjnScale.Abs": "5",
-		"Prjn.SWt.Init.SPct": "0",
 		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.PrjnScale.Rel": "0.1",
+		"Prjn.PrjnScale.Abs": "2", // 3 competes with CS to strongly
+		"Prjn.SWt.Init.SPct": "0",
 		"Prjn.SWt.Init.Mean": "0.5",
 		"Prjn.SWt.Init.Var":  "0.4",
 	}
@@ -141,9 +141,9 @@ func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
 func (net *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.Learn.LRate.Base":  "0.02",
-		"Prjn.Learn.Trace.Tau":   "1", // increase for second order conditioning
-		"Prjn.BLA.NegDeltaLRate": "1", // fast for extinction unlearning -- could be slower
+		"Prjn.Learn.LRate.Base":  "0.01", // learns relatively fast
+		"Prjn.Learn.Trace.Tau":   "1",    // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "1",    // fast for extinction unlearning -- could be slower
 	}
 	pj.SetClass("BLAExtPrjn")
 	return pj
@@ -472,10 +472,7 @@ func (net *Network) AddVS(nUSs, nNeurY, nNeurX, nY int, space float32) (vSmtxGo,
 
 	mp := params.Params{
 		"Layer.Matrix.IsVS":          "true",
-		"Layer.Inhib.ActAvg.Nominal": ".03",   // def .25
-		"Layer.Inhib.Layer.On":       "false", // def true
-		"Layer.Inhib.Pool.On":        "true",  // def false
-		"Layer.Inhib.Pool.Gi":        "0.5",
+		"Layer.Inhib.ActAvg.Nominal": ".03", // pooled, lower
 	}
 	vSmtxGo.DefParams = mp
 	vSmtxGo.SetClass("VSMatrixLayer")
@@ -523,7 +520,7 @@ func (net *Network) AddPVLVPulvLayers(ctx *Context, nUSneg, nYneur, popY, popX i
 // with given number of units per pool.  Also adds a PTNotMaintLayer
 // called NotMaint with nY units.
 func (net *Network) AddOFCus(ctx *Context, nUSs, nY, ofcY, ofcX int, space float32) (ofc, ofcCT, ofcPT, ofcPTp, ofcMD, notMaint *Layer) {
-	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddAllPFC4D("OFCus", "MD", 1, nUSs, ofcY, ofcX, true, space)
+	ofc, ofcCT, ofcPT, ofcPTp, ofcMD = net.AddPFC4D("OFCus", "MD", 1, nUSs, ofcY, ofcX, true, space)
 	notMaint = net.AddPTNotMaintLayer(ofcPT, nY, 1, space)
 	notMaint.Nm = "NotMaint"
 	return
@@ -561,7 +558,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	ofcUS, ofcUSCT, ofcUSPT, ofcUSPTp, ofcUSMD, notMaint := net.AddOFCus(ctx, nUSs, nYneur, ofcY, ofcX, space)
 	_ = ofcUSPT
 
-	ofcVal, ofcValCT, ofcValPT, ofcValPTp, ofcValMD := net.AddAllPFC2D("OFCval", "MD", ofcY, ofcX, true, space)
+	ofcVal, ofcValCT, ofcValPT, ofcValPTp, ofcValMD := net.AddPFC2D("OFCval", "MD", ofcY, ofcX, true, space)
 	_ = ofcValPT
 
 	p1to1 := prjn.NewPoolOneToOne()
@@ -751,7 +748,7 @@ func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, p
 	// OFCvalP is what ACCutil predicts, in order to learn about value (reward)
 	ofcValP := net.AddPulvForSuper(ofcVal, space)
 
-	accCost, accCostCT, accCostPT, accCostPTp, accCostMD := net.AddAllPFC2D("ACCcost", "MD", pfcY, pfcX, true, space)
+	accCost, accCostCT, accCostPT, accCostPTp, accCostMD := net.AddPFC2D("ACCcost", "MD", pfcY, pfcX, true, space)
 	vSmtxGo.SetBuildConfig("ThalLay3Name", accCostMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay3Name", accCostMD.Name())
 	net.ConnectLayers(vSgpi, accCostMD, full, InhibPrjn)
@@ -763,7 +760,7 @@ func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, p
 	// ACCcostP is what ACCutil predicts, in order to learn about cost
 	accCostP := net.AddPulvForSuper(accCost, space)
 
-	accUtil, accUtilCT, accUtilPT, accUtilPTp, accUtilMD := net.AddAllPFC2D("ACCutil", "MD", pfcY, pfcX, true, space)
+	accUtil, accUtilCT, accUtilPT, accUtilPTp, accUtilMD := net.AddPFC2D("ACCutil", "MD", pfcY, pfcX, true, space)
 	vSmtxGo.SetBuildConfig("ThalLay4Name", accUtilMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay4Name", accUtilMD.Name())
 	net.ConnectLayers(vSgpi, accUtilMD, full, InhibPrjn)

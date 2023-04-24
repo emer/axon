@@ -31,12 +31,6 @@ var ParamSets = params.Sets{
 				}},
 			//////////////////////////////////////////////////
 			// required custom params for this project
-			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
-					"Prjn.Learn.Trace.Tau":     "1",    // todo: expt
-					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
-				}},
 			{Sel: "#ContextInToBLAPosExtD2", Desc: "specific to this project",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs":    "4",
@@ -44,11 +38,19 @@ var ParamSets = params.Sets{
 				}},
 			//////////////////////////////////////////////////
 			// current experimental settings
+			{Sel: ".MatrixPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Matrix.NoGateLRate": "0.0", // 0.01 default, 0 needed b/c no actual contingency in pavlovian
+				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
 				}},
 
+			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leaks with supertothal 4
+				}},
 			{Sel: ".PTpToBLAExt", Desc: "modulatory, drives extinction learning based on maintained goal rep",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.5", // todo: expt
@@ -59,18 +61,17 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.4", // key param for efficacy of inhibition -- may need to tweak
-				}},
-
-			{Sel: ".MatrixPrjn", Desc: "",
-				Params: params.Params{
-					"Prjn.Matrix.NoGateLRate": "0.0", // 0.01 default, 0 needed b/c no actual contingency in pavlovian
+					"Prjn.PrjnScale.Abs": "1.0", // key param for efficacy of inhibition
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{ // todo: expt with these more..
 					"Prjn.PrjnScale.Abs":        "2",
 					"Prjn.Learn.Trace.LearnThr": "0.3",
 					"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
+				}},
+			{Sel: ".BLAExtPrjn", Desc: "ext learns very fast",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.001",
 				}},
 		}},
 	},
