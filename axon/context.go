@@ -60,6 +60,7 @@ func (ctx *Context) Defaults() {
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (ctx *Context) NewState(mode etime.Modes) {
+	ctx.PVLV.NewState(ctx.NeuroMod.HasRew.IsTrue())
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
@@ -98,6 +99,9 @@ func (ctx *Context) PVLVDA() float32 {
 	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
 	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
 	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
+	if ctx.PVLV.HasPosUS() {
+		ctx.NeuroMod.SetRew(ctx.PVLV.NetPV(), true)
+	}
 	return ctx.PVLV.VTA.Vals.DA
 }
 
@@ -110,6 +114,39 @@ func (ctx *Context) LHbDipResetFmSum() {
 }
 
 //gosl: end context
+
+// PVLVSetUS sets unconditioned stimulus (US) state for PVLV algorithm,
+// which determines if a positive, negative, or no primary value outcome
+// has been received.  Typically set this at the start of a Trial,
+// which then drives activity of relevant PVLV-rendered inputs, and dopamine.
+// The US index is automatically adjusted for the curiosity drive / US for
+// positive US outcomes -- i.e., pass in a value with 0 starting index.
+func (ctx *Context) PVLVSetUS(hasUS, isPos bool, usIdx int, magnitude float32) {
+	ctx.PVLV.InitUS()
+	ctx.NeuroMod.HasRew.SetBool(false)
+	if hasUS {
+		if isPos {
+			ctx.NeuroMod.HasRew.SetBool(true)            // only for positive USs -- todo: revisit!
+			ctx.PVLV.SetPosUS(int32(usIdx)+1, magnitude) // +1 for curiosity
+		} else {
+			ctx.PVLV.SetNegUS(int32(usIdx), magnitude)
+		}
+	} else {
+		ctx.NeuroMod.Rew = 0
+	}
+}
+
+// PVLVSetDrives sets current PVLV drives to given magnitude,
+// and sets the first curiosity drive to given level.
+// Drive indexes are 0 based, so 1 is added automatically to accommodate
+// the first curiosity drive.
+func (ctx *Context) PVLVSetDrives(curiosity, magnitude float32, drives ...int) {
+	ctx.PVLV.InitDrives()
+	ctx.PVLV.SetDrive(0, curiosity)
+	for _, di := range drives {
+		ctx.PVLV.SetDrive(int32(1+di), magnitude)
+	}
+}
 
 // Reset resets the counters all back to zero
 func (ctx *Context) Reset() {

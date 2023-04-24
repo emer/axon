@@ -639,7 +639,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	// modulatory -- critical that it drives full GeModSyn=1 in Matrix at max drive act
 	d2m := params.Params{
 		"Prjn.Learn.Learn":   "false",
-		"Prjn.PrjnScale.Abs": "2",
+		"Prjn.PrjnScale.Abs": "1",
 		"Prjn.PrjnScale.Rel": "1",
 		"Prjn.SWt.Init.SPct": "0",
 		"Prjn.SWt.Init.Mean": "0.8",
@@ -722,7 +722,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	drives.PlaceBehind(vSmtxGo, space)
 	drivesP.PlaceBehind(vSmtxNo, space)
 	blaNov.PlaceRightOf(vSgated, space*3)
-	sc.PlaceRightOf(blaNov, space*3)
+	sc.PlaceRightOf(vSpatch, space)
 	effort.PlaceBehind(usNegP, space)
 	usPos.PlaceAbove(vta)
 	blaPosAcq.PlaceAbove(usPos)
@@ -738,7 +738,7 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 // Makes all appropriate interconnections and sets default parameters.
 // Needs CS -> BLA, OFC connections to be made.
 // Returns layers most likely to be used for remaining connections and positions.
-func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, effort, effortP, urgency, urgencyP, pvPos, blaPosAcq, blaPosExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint *Layer) {
+func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, pfcY, pfcX int, space float32) (vSgpi, effort, effortP, urgency, urgencyP, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint *Layer) {
 	// nUSs := int(ctx.PVLV.Drive.NActive)
 
 	full := prjn.NewFull()

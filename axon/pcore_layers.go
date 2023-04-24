@@ -182,7 +182,7 @@ func (ly *Layer) AnyGated() bool {
 func (ly *Layer) MatrixDefaults() {
 	ly.Params.Act.Decay.Act = 0
 	ly.Params.Act.Decay.Glong = 0
-	ly.Params.Act.Dend.ModGain = 5 // for VS case -- otherwise irrelevant
+	ly.Params.Act.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.FB = 0 // pure FF
 	ly.Params.Inhib.Layer.Gi = 0.5

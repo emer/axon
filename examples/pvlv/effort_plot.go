@@ -134,20 +134,20 @@ func (ss *DrEffPlot) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	pp := &ss.Context.PVLV
-	pp.Effort.Reset()
-	pp.Urgency.Reset()
+	pv := &ss.Context.PVLV
+	pv.Effort.Reset()
+	pv.Urgency.Reset()
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
-	pp.USpos.Set(0, 0)
-	pp.Drive.ToBaseline()
-	pp.Update()
+	pv.USpos.Set(0, 0)
+	pv.Drive.ToBaseline()
+	pv.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := pp.Effort.DiscFmEffort()
-		urg := pp.Urgency.UrgeFmUrgency()
+		ev := pv.Effort.DiscFmEffort()
+		urg := pv.Urgency.UrgeFmUrgency()
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
-		dr := pp.Drive.Drives.Get(0)
+		dr := pv.Drive.Drives.Get(0)
 		usv := float32(0)
 		if ti == lastUS+ut {
 			ei = 0 // don't update on us trial
@@ -162,8 +162,10 @@ func (ss *DrEffPlot) TimeRun() {
 		dt.SetCellFloat("US", ti, float64(usv))
 		dt.SetCellFloat("Drive", ti, float64(dr))
 
-		pp.USpos.Set(0, usv)
-		pp.DriveEffortUpdt(ei, usv > 0, false)
+		pv.USpos.Set(0, usv)
+		pv.HasRewPrev.SetBool(usv > 0)
+		pv.EffortUrgencyUpdt(ei)
+		pv.DriveUpdt()
 	}
 	ss.TimePlot.Update()
 }

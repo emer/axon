@@ -125,10 +125,6 @@ func (ss *Sim) New() {
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.TestInterval = 500
 	ss.Context.Defaults()
-	ss.Context.PVLV.Effort.Gain = 0.05
-	ss.Context.PVLV.Effort.Max = 10
-	ss.Context.PVLV.Effort.MaxNovel = 8
-	ss.Context.PVLV.Effort.MaxPostDip = 4
 	ss.ConfigArgs() // do this first, has key defaults
 }
 
@@ -160,8 +156,6 @@ func (ss *Sim) ConfigEnv() {
 	trn.Config()
 	trn.Validate()
 
-	ss.Context.PVLV.Drive.NActive = int32(trn.NDrives) + 1
-
 	tst.Nm = etime.Test.String()
 	tst.Defaults()
 	tst.Config()
@@ -172,6 +166,19 @@ func (ss *Sim) ConfigEnv() {
 
 	// note: names must be in place when adding
 	ss.Envs.Add(trn, tst)
+
+	ss.ConfigPVLV(trn)
+}
+
+func (ss *Sim) ConfigPVLV(trn *Approach) {
+	pv := &ss.Context.PVLV
+	pv.Drive.NActive = int32(trn.NDrives) + 1
+	pv.Drive.DriveMin = 1 // 0.5 -- should be
+	pv.Effort.Gain = 0.05
+	pv.Effort.Max = 20
+	pv.Effort.MaxNovel = 8
+	pv.Effort.MaxPostDip = 4
+	pv.Urgency.U50 = 10
 }
 
 func (ss *Sim) ConfigNet(net *axon.Network) {
@@ -199,7 +206,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	vSgpi, effort, effortP, urgency, urgencyP, pvPos, blaPosAcq, blaPosExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, effort, effortP, urgency, urgencyP, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	_ = accUtil
 
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
@@ -249,11 +256,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
 	net.ConnectToBLAExt(cs, blaPosExt, full)
 
-	net.ConnectToBLAAcq(cs, blaPosAcq, full)
-	net.ConnectToBLAExt(cs, blaPosExt, full)
-
-	net.ConnectToBLAAcq(cs, blaPosAcq, full)
-	net.ConnectToBLAExt(cs, blaPosExt, full)
+	net.ConnectToBLAAcq(cs, blaNegAcq, full)
+	net.ConnectToBLAExt(cs, blaNegExt, full)
 
 	// OFCus predicts cs
 	net.ConnectToPFCBack(cs, csP, ofcUS, ofcUSCT, ofcUSPTp, full)
@@ -280,9 +284,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	///////////////////////////////////////////
 	// ALM, M1 <-> OFC, ACC
 
-	// super contextualization based on action
-	net.BidirConnectLayers(ofcUS, alm, full)
-	net.BidirConnectLayers(accCost, alm, full)
+	// super contextualization based on action, not good?
+	// net.BidirConnectLayers(ofcUS, alm, full)
+	// net.BidirConnectLayers(accCost, alm, full)
 
 	// action needs to know if maintaining a goal or not
 	// using ofcVal and accCost as representatives
@@ -562,13 +566,6 @@ func (ss *Sim) ApplyInputs() {
 		ly.ApplyExt(itsr)
 	}
 
-	// this is key step to drive DA and US-ACh
-	if ev.US != -1 {
-		ss.Context.NeuroMod.SetRew(ev.Rew, true)
-	} else {
-		ss.Context.NeuroMod.SetRew(0, false)
-	}
-
 	ss.ApplyPVLV(&ss.Context, ev)
 	ss.Net.ApplyExts(&ss.Context)
 }
@@ -576,17 +573,9 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
-	pv := &ctx.PVLV
-	pv.InitUS()
-	ctx.NeuroMod.HasRew.SetBool(false)
-	if ev.US != -1 {
-		pv.SetPosUS(int32(ev.US+1), 1) // 1 offset for curiosity drive, magnitude always 1
-		ctx.NeuroMod.HasRew.SetBool(true)
-	}
-	pv.Effort.AddEffort(1) // should be based on action taken last step
-	pv.InitDrives()
-	pv.SetDrive(0, 1) // curiosity
-	pv.SetDrive(int32(ev.Drive+1), 1)
+	ctx.PVLV.EffortUrgencyUpdt(1)
+	ctx.PVLVSetUS(ev.US != -1, true, ev.US, 1) // mag 1 for now..
+	ctx.PVLVSetDrives(1, 1, ev.Drive)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -676,23 +665,22 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	ctx := &ss.Context
-	pv := &ctx.PVLV
-	pv.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
-
 	ss.GatedStats()
 	ss.MaintStats()
 
+	nan := math.NaN()
 	if ss.Context.PVLV.HasPosUS() {
 		ss.Stats.SetFloat32("DA", ss.Context.NeuroMod.DA)
 		ss.Stats.SetFloat32("RewPred", ss.Context.NeuroMod.RewPred) // gets from VSPatch or RWPred etc
-		ss.Stats.SetFloat("DA_NR", math.NaN())
-		ss.Stats.SetFloat("RewPred_NR", math.NaN())
+		ss.Stats.SetFloat("DA_NR", nan)
+		ss.Stats.SetFloat("RewPred_NR", nan)
+		ss.Stats.SetFloat32("Rew", ss.Context.NeuroMod.Rew)
 	} else {
 		ss.Stats.SetFloat32("DA_NR", ss.Context.NeuroMod.DA)
 		ss.Stats.SetFloat32("RewPred_NR", ss.Context.NeuroMod.RewPred)
-		ss.Stats.SetFloat("DA", math.NaN())
-		ss.Stats.SetFloat("RewPred", math.NaN())
+		ss.Stats.SetFloat("DA", nan)
+		ss.Stats.SetFloat("RewPred", nan)
+		ss.Stats.SetFloat("Rew", nan)
 	}
 
 	ss.Stats.SetFloat32("ACh", ss.Context.NeuroMod.ACh)
@@ -773,8 +761,6 @@ func (ss *Sim) GatedStats() {
 	} else {
 		ss.Stats.SetFloat32("AChShouldnt", ss.Context.NeuroMod.ACh)
 	}
-
-	ss.Stats.SetFloat32("Rew", ev.Rew)
 }
 
 // MaintStats updates the PFC maint stats

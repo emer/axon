@@ -219,7 +219,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	time.PlaceRightOf(pvPos, space)
 	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
-	sc.PlaceRightOf(vSpatch, space)
 
 	err := net.Build()
 	if err != nil {
@@ -354,20 +353,9 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	pv := &ctx.PVLV
-	pv.InitUS()
-	ctx.NeuroMod.HasRew.SetBool(false)
-	if trl.USOn {
-		if trl.Valence == cond.Pos {
-			pv.SetPosUS(int32(trl.US+1), trl.USMag) // +1 for curiosity
-		} else {
-			pv.SetNegUS(int32(trl.US), trl.USMag)
-		}
-		ctx.NeuroMod.HasRew.SetBool(true)
-	}
-	pv.InitDrives()
-	pv.SetDrive(0, 1.0) // curiosity
-	pv.SetDrive(int32(trl.US+1), 1)
+	ctx.PVLV.EffortUrgencyUpdt(1)
+	ctx.PVLVSetUS(trl.USOn, trl.Valence == cond.Pos, trl.US, trl.USMag)
+	ctx.PVLVSetDrives(1, 1, trl.US)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -459,7 +447,6 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
 	pv := &ctx.PVLV
-	pv.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
 	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
 	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
 	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)

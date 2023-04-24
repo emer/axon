@@ -15,6 +15,35 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Clamp.Ge": "1.5",
 				}},
+			{Sel: ".MatrixLayer", Desc: "all mtx",
+				Params: params.Params{
+					"Layer.Act.Dend.ModGain": "1",
+				}},
+			{Sel: "#BLAPosAcqD1", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Layer.Gi": "2.4",
+				}},
+			{Sel: ".PTMaintLayer", Desc: "time integration params",
+				Params: params.Params{
+					"Layer.Act.Dend.ModGain": "10", // gating ease..
+				}},
+			{Sel: ".DrivesToMtx", Desc: "not too strong so ext novelty doesn't activate",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1",
+				}},
+			{Sel: ".BLAAcqToGo", Desc: "must dominatea",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "4",
+					"Prjn.PrjnScale.Abs": "4",
+				}},
+			{Sel: "#CSToBLAPosAcqD1", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.1", // was 0.5 -- too fast!?
+				}},
+			{Sel: ".SuperToThal", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
+				}},
 		}},
 	},
 }

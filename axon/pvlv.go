@@ -135,7 +135,7 @@ func (ds *DriveVals) ExpStep(drv int32, dt, base float32) float32 {
 type Drives struct {
 	NActive  int32   `max:"8" desc:"number of active drives -- first drive is novelty / curiosity drive -- total must be &lt;= 8"`
 	NNegUSs  int32   `min:"1" max:"8" desc:"number of active negative US states recognized -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
-	DriveMin float32 `desc:"minimum effective drive value"`
+	DriveMin float32 `desc:"minimum effective drive value -- this is an automatic baseline ensuring that a positive US results in at least some minimal level of reward.  Unlike Base values, this is not reflected in the activity of the drive values -- applies at the time of reward calculation as a minimum baseline."`
 
 	pad int32
 
@@ -150,6 +150,7 @@ type Drives struct {
 
 func (dp *Drives) Defaults() {
 	dp.NNegUSs = 1
+	dp.DriveMin = 0.5
 	dp.Update()
 	dp.USDec.SetAll(1)
 }
@@ -534,6 +535,10 @@ type PVLV struct {
 	USneg    DriveVals `inactive:"+" view:"inline" desc:"current negative-valence (aversive), non-drive-satisfying input(s) (unconditioned stimuli = US) -- does not have corresponding drive but uses DriveVals.  Number of active ones is Drive.NNegUSs -- the first is always reserved for the accumulated effort cost / dissapointment when an expected US is not achieved"`
 	VSPatch  DriveVals `inactive:"+" view:"inline" desc:"current positive-valence drive-satisfying reward predicting VSPatch (PosD1) values"`
 	VSMatrix VSMatrix  `view:"inline" desc:"VSMatrix has parameters and values for computing VSMatrix gating status. VS = ventral striatum, aka VP = ventral pallidum = output part of VS"`
+
+	HasRewPrev   slbool.Bool `inactive:"+" desc:"HasRew state from the previous trial -- copied from HasRew in NewState -- used for updating Effort, Urgency at start of new trial"`
+	HasPosUSPrev slbool.Bool `inactive:"+" desc:"HasPosUS state from the previous trial -- copied from HasPosUS in NewState -- used for updating Effort, Urgency at start of new trial"`
+	pad, pad1    int32
 }
 
 func (pp *PVLV) Defaults() {
@@ -567,6 +572,14 @@ func (pp *PVLV) Reset() {
 	pp.USneg.Zero()
 	pp.VSPatch.Zero()
 	pp.VSMatrix.Reset()
+	pp.HasRewPrev.SetBool(false)
+	pp.HasPosUSPrev.SetBool(false)
+}
+
+// NewState is called at start of new trial
+func (pp *PVLV) NewState(hasRew bool) {
+	pp.HasRewPrev.SetBool(hasRew)
+	pp.HasPosUSPrev.SetBool(pp.HasPosUS())
 }
 
 // InitUS initializes all the USs to zero
@@ -660,6 +673,11 @@ func (pp *PVLV) HasNegUS() bool {
 	return false
 }
 
+// NetPV returns VTA.Vals.PVpos - VTA.Vals.PVneg
+func (pp *PVLV) NetPV() float32 {
+	return pp.VTA.Vals.PVpos - pp.VTA.Vals.PVneg
+}
+
 // PosPVFmDriveEffort returns the net primary value ("reward") based on
 // given US value and drive for that value (typically in 0-1 range),
 // and total effort, from which the effort discount factor is computed an applied:
@@ -713,16 +731,11 @@ func (pp *PVLV) LHbDipResetFmSum(ach float32) bool {
 // DriveUpdt updates the drives based on the current USs,
 // subtracting USDec * US from current Drive,
 // and calling ExpStep with the Dt and Base params.
-// if resetUs is true, USpos values are reset after update
-// so they can be set on occurrence without having to reset.
-func (pp *PVLV) DriveUpdt(resetUs bool) {
+func (pp *PVLV) DriveUpdt() {
 	pp.Drive.ExpStep()
 	for i := int32(0); i < pp.Drive.NActive; i++ {
 		us := pp.USpos.Get(i)
 		pp.Drive.Drives.Add(i, -us*pp.Drive.USDec.Get(i))
-		if resetUs {
-			pp.USpos.Set(i, 0)
-		}
 	}
 }
 
@@ -741,37 +754,35 @@ func (pp *PVLV) VSGated(gated, hasRew bool, poolIdx int) {
 	pp.VSMatrix.VSGated(gated, hasRew)
 }
 
-// EffortUpdt updates the effort and urgency based on given effort increment,
-// resetting first if hasRew flag is true indicating receipt of a
-// US based on Context.NeuroMod.HasRew flag.
-func (pp *PVLV) EffortUpdt(effort float32, hasRew bool) {
-	if hasRew {
+// EffortUpdt updates the effort based on given effort increment,
+// resetting instead if HasRewPrev flag is true.
+// Call this at the start of the trial, in ApplyPVLV method.
+func (pp *PVLV) EffortUpdt(effort float32) {
+	if pp.HasRewPrev.IsTrue() {
 		pp.Effort.Reset()
+	} else {
+		pp.Effort.AddEffort(effort)
 	}
-	pp.Effort.AddEffort(effort)
 }
 
 // UrgencyUpdt updates the urgency and urgency based on given effort increment,
-// resetting first if hasRew flag is true indicating receipt of a
-// US based on Context.NeuroMod.HasRew flag -- it checks the magnitude of US
-// in addition to ensure that an actual positive US is present and not just a
-// 0 valued US from dip reset etc.
-func (pp *PVLV) UrgencyUpdt(effort float32, hasRew bool) {
-	if hasRew && pp.HasPosUS() {
+// resetting instead if HasRewPrev and HasPosUSPrev is true indicating receipt
+// of an actual positive US.
+// Call this at the start of the trial, in ApplyPVLV method.
+func (pp *PVLV) UrgencyUpdt(effort float32) {
+	if pp.HasRewPrev.IsTrue() && pp.HasPosUSPrev.IsTrue() {
 		pp.Urgency.Reset()
+	} else {
+		pp.Urgency.AddEffort(effort)
 	}
-	pp.Urgency.AddEffort(effort)
 }
 
-// DriveEffortUpdt updates the Drives and Effort & Urgency based on
-// given effort increment, resetting first if hasRew flag is true
-// indicating receipt of a US based on Context.NeuroMod.HasRew flag.
-// if resetUs is true, USpos values are reset after update
-// so they can be set on occurrence without having to reset.
-func (pp *PVLV) DriveEffortUpdt(effort float32, hasRew, resetUs bool) {
-	pp.DriveUpdt(resetUs)
-	pp.EffortUpdt(effort, hasRew)
-	pp.UrgencyUpdt(effort, hasRew)
+// EffortUrgencyUpdt updates the Effort & Urgency based on
+// given effort increment, resetting instead if HasRewPrev flag is true.
+// Call this at the start of the trial, in ApplyPVLV method.
+func (pp *PVLV) EffortUrgencyUpdt(effort float32) {
+	pp.EffortUpdt(effort)
+	pp.UrgencyUpdt(effort)
 }
 
 //gosl: end pvlv
