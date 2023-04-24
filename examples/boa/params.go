@@ -25,7 +25,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain": "20", // 10 is ok, 20 more robust
+					"Layer.Act.Dend.ModGain": "10", // 10 is ok, 20 more robust
 				}},
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
@@ -33,8 +33,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAAcqToGo", Desc: "must dominate",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "4", // todo: back off once working
+					"Prjn.PrjnScale.Rel": "1",
 					"Prjn.PrjnScale.Abs": "4",
+				}},
+			{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "0.1", // 0.1 def
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{

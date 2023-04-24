@@ -840,10 +840,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate", "Rew", "RewPred")
-	// "MaintofcPT", "MaintaccPT", "MaintFailofcPT", "MaintFailaccPT"
-	// "GateUS", "GatedEarly", "GatedAgain", "JustGated", "PctCortex",
-	// "Rew", "DA", "MtxGo_ActAvg"
+	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)

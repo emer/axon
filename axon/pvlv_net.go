@@ -650,11 +650,22 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	pj.DefParams = d2m
 	pj.SetClass("DrivesToMtx")
 
-	net.ConnectToMatrix(ofcUS, vSmtxGo, p1to1)
-	net.ConnectToMatrix(ofcUS, vSmtxNo, p1to1)
+	pfc2m := params.Params{ // contextual, not driving -- weaker
+		"Prjn.PrjnScale.Rel": "0.1",
+	}
+	pj = net.ConnectToMatrix(ofcUS, vSmtxGo, p1to1)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+	pj = net.ConnectToMatrix(ofcUS, vSmtxNo, p1to1)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
 
-	net.ConnectToMatrix(ofcVal, vSmtxGo, full)
-	net.ConnectToMatrix(ofcVal, vSmtxNo, full)
+	pj = net.ConnectToMatrix(ofcVal, vSmtxGo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+	pj = net.ConnectToMatrix(ofcVal, vSmtxNo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
 
 	pj = net.ConnectToMatrix(urgency, vSmtxGo, full)
 	pj.DefParams = params.Params{
@@ -739,7 +750,7 @@ func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, p
 	// nUSs := int(ctx.PVLV.Drive.NActive)
 
 	full := prjn.NewFull()
-	// var pj *Prjn
+	var pj *Prjn
 
 	vSgpi, vSmtxGo, vSmtxNo, vSpatch, effort, effortP, urgency, urgencyP, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(ctx, nUSneg, nYneur, popY, popX, bgY, bgX, pfcY, pfcX, space)
 	_, _, _, _, _, _ = usPos, usNeg, usNegP, pvNeg, pvNegP, ofcValCT
@@ -748,13 +759,21 @@ func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, p
 	// OFCvalP is what ACCutil predicts, in order to learn about value (reward)
 	ofcValP := net.AddPulvForSuper(ofcVal, space)
 
+	pfc2m := params.Params{ // contextual, not driving -- weaker
+		"Prjn.PrjnScale.Rel": "0.1",
+	}
+
 	accCost, accCostCT, accCostPT, accCostPTp, accCostMD := net.AddPFC2D("ACCcost", "MD", pfcY, pfcX, true, space)
 	vSmtxGo.SetBuildConfig("ThalLay3Name", accCostMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay3Name", accCostMD.Name())
 	net.ConnectLayers(vSgpi, accCostMD, full, InhibPrjn)
 	net.ConnectPTNotMaint(accCostPT, notMaint, full)
-	net.ConnectToMatrix(accCost, vSmtxGo, full)
-	net.ConnectToMatrix(accCost, vSmtxNo, full)
+	pj = net.ConnectToMatrix(accCost, vSmtxGo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+	pj = net.ConnectToMatrix(accCost, vSmtxNo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
 	net.ConnectToVSPatch(accCostPTp, vSpatch, full)
 
 	// ACCcostP is what ACCutil predicts, in order to learn about cost
@@ -765,8 +784,12 @@ func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, p
 	vSmtxNo.SetBuildConfig("ThalLay4Name", accUtilMD.Name())
 	net.ConnectLayers(vSgpi, accUtilMD, full, InhibPrjn)
 	net.ConnectPTNotMaint(accUtilPT, notMaint, full)
-	net.ConnectToMatrix(accUtil, vSmtxGo, full)
-	net.ConnectToMatrix(accUtil, vSmtxNo, full)
+	pj = net.ConnectToMatrix(accUtil, vSmtxGo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
+	pj = net.ConnectToMatrix(accUtil, vSmtxNo, full)
+	pj.DefParams = pfc2m
+	pj.SetClass("PFCToVSMtx")
 	net.ConnectToVSPatch(accUtilPTp, vSpatch, full)
 
 	///////////////////////////////////////////
