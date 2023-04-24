@@ -506,6 +506,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, trial int) {
 
 // ApplyPVLV applies PVLV reward inputs
 func (ss *Sim) ApplyPVLV(trial int) {
+	ss.Context.PVLV.EffortUrgencyUpdt(1)
 	if ss.Context.Mode == etime.Test {
 		ss.Context.PVLV.Urgency.Reset()
 	}
@@ -609,7 +610,6 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("Rew", nan)
 	ss.Stats.SetFloat32("PFCVM_RT", nan)
 
-	ss.Context.PVLV.DriveEffortUpdt(1, ss.Context.NeuroMod.HasRew.IsTrue(), false)
 	trial := ss.Loops.Stacks[ss.Context.Mode].Loops[etime.Trial].Counter.Cur
 	if trial != 1 {
 		return
