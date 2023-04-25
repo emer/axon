@@ -18,6 +18,8 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Inhib.Layer.On":   "false",
+					"Layer.Inhib.Pool.Gi":    "0.3",
+					"Layer.Inhib.Pool.FB":    "1",
 					"Layer.Act.Dend.ModGain": "1", // todo: try with lower drive
 				}},
 			{Sel: "#BLAPosAcqD1", Desc: "",
@@ -60,10 +62,9 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2",
 				}},
-			{Sel: ".DrivesToMtx", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "1",
-				}},
+			{Sel: ".DrivesToMtx", Desc: "", Params: params.Params{
+				"Prjn.PrjnScale.Abs": "1",
+			}},
 			{Sel: ".BLAAcqToGo", Desc: "must dominate",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
