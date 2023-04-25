@@ -234,7 +234,7 @@ func (ev *Approach) RenderAction(act int) {
 // Step does one step
 func (ev *Approach) Step() bool {
 	ev.LastCS = ev.CS
-	if ev.LastUS != -1 || ev.Time >= ev.TimeMax {
+	if ev.LastUS != -1 { // || ev.Time >= ev.TimeMax {
 		ev.NewStart()
 	}
 	ev.RenderState()

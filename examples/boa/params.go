@@ -51,15 +51,19 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4.0", // 4 needed, 3 too low
+					"Prjn.PrjnScale.Abs": "4.0", // 3-4 ok -- still spurious gating
 				}},
 			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leakes with supertothal 4
+					"Prjn.PrjnScale.Abs": "3", // 4 prevents some gating, 2 leaks with supertothal 4
 				}},
 			{Sel: ".BLAFromNovel", Desc: "if too strong, isn't out-competed",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2", // 3 is too strong.
+				}},
+			{Sel: "#UrgencyToVsMtxGo", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0", // todo: not working -- no ach by time this happens!  need to drive ach too.
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
 				Params: params.Params{

@@ -500,17 +500,20 @@ func (vt *VSMatrix) Reset() {
 	vt.HasGated.SetBool(false)
 }
 
-// VSGated updates JustGated and HasGated as function of VS gating (VP).
-// at end of the plus phase.
-func (vt *VSMatrix) VSGated(gated, hasRew bool) {
-	vt.JustGated.SetBool(gated)
+// NewState is called at start of new trial
+func (vt *VSMatrix) NewState(hasRew bool) {
 	if hasRew {
 		vt.HasGated.SetBool(false)
-	} else {
-		if gated {
-			vt.HasGated.SetBool(true)
-		}
+	} else if vt.JustGated.IsTrue() {
+		vt.HasGated.SetBool(true)
 	}
+	vt.JustGated.SetBool(false)
+}
+
+// VSGated updates JustGated as function of VS gating
+// at end of the plus phase.
+func (vt *VSMatrix) VSGated(gated bool) {
+	vt.JustGated.SetBool(gated)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -580,6 +583,7 @@ func (pp *PVLV) Reset() {
 func (pp *PVLV) NewState(hasRew bool) {
 	pp.HasRewPrev.SetBool(hasRew)
 	pp.HasPosUSPrev.SetBool(pp.HasPosUS())
+	pp.VSMatrix.NewState(hasRew)
 }
 
 // InitUS initializes all the USs to zero
@@ -751,7 +755,7 @@ func (pp *PVLV) VSGated(gated, hasRew bool, poolIdx int) {
 			pp.Effort.CurMax = pp.Effort.MaxNovel
 		}
 	}
-	pp.VSMatrix.VSGated(gated, hasRew)
+	pp.VSMatrix.VSGated(gated)
 }
 
 // EffortUpdt updates the effort based on given effort increment,

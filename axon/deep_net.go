@@ -199,7 +199,9 @@ func (net *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNe
 // ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
 // which supports active maintenance, with a class of PTSelfMaint
 func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern) *Prjn {
-	return net.LateralConnectLayer(ly, pat).SetClass("PTSelfMaint").(AxonPrjn).AsAxon()
+	pj := net.LateralConnectLayer(ly, pat)
+	pj.SetClass("PTSelfMaint")
+	return pj
 }
 
 // AddPTNotMaintLayer adds a PTNotMaintLayer of given size, for given

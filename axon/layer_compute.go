@@ -219,14 +219,14 @@ func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
 	}
 }
 
-// LDTLayMaxAct returns the lpl.AvgMax.CaSpkD.Cycle.Max for given layIdx
+// LDTLayMaxAct returns the lpl.AvgMax.CaSpkP.Cycle.Max for given layIdx
 func (ly *Layer) LDTLayMaxAct(net *Network, layIdx int32) float32 {
 	if layIdx < 0 {
 		return 0
 	}
 	lay := net.Layers[layIdx]
 	lpl := &lay.Pools[0]
-	return lpl.AvgMax.CaSpkD.Cycle.Avg
+	return lpl.AvgMax.CaSpkP.Cycle.Avg
 }
 
 // CyclePost is called after the standard Cycle update, as a separate

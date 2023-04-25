@@ -393,14 +393,6 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
-	// note: phase is shared between all stacks!
-	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
-	plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() {
-		// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
-		// because minus phase end has gated info, and plus phase start applies action input
-		ss.TakeAction(ss.Net)
-	})
-
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
 	// Add Testing
@@ -483,11 +475,12 @@ func (ss *Sim) ConfigLoops() {
 
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
-// Called in the minus phase.
+// Called at end of trial so final gating info is available
+// not necessary to do anything in plus phase based on action
+// trial-wise works fine.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
-	justGated := mtxLy.AnyGated() // PVLV.VSMatrix is not updated until plus phase
+	justGated := ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
 	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
 	ss.Stats.SetString("Debug", fmt.Sprintf("just gated: %v  has: %v", justGated, hasGated))
 	ev.InstinctAct(justGated, hasGated)
@@ -501,7 +494,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
 		ly := ss.Net.AxonLayerByName("VL")
 		ly.Pools[0].Inhib.Clamped.SetBool(false) // not clamped this trial
-		ss.Net.GPU.SyncPoolsToGPU()
+		// ss.Net.GPU.SyncPoolsToGPU()
 		return // no time to do action while also gating
 	}
 
@@ -666,6 +659,7 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
+	ss.TakeAction(ss.Net)
 	ss.GatedStats()
 	ss.MaintStats()
 
@@ -966,11 +960,12 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		// 	ss.Loops.Stop(etime.Trial)
 		// }
 
-		// trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
-		// if ss.StopOnErr && trnEpc > 5 && ev.Rew < 0 {
-		// 	fmt.Printf("STOPPED due to negative reward for US: %d  %g\n", ev.US, ev.Rew)
-		// 	ss.Loops.Stop(etime.Trial)
-		// }
+		ev := TheSim.Envs[etime.Train.String()].(*Approach)
+		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
+		if ss.StopOnErr && trnEpc > 5 && ss.Stats.Float("MaintEarly") > 0 {
+			fmt.Printf("STOPPED due to early maint for US: %d\n", ev.US)
+			ss.Loops.Stop(etime.Trial)
+		}
 	case mode == etime.Train && time == etime.Epoch:
 		axon.LayerActsLogAvg(ss.Net, &ss.Logs, &ss.GUI, true) // reset recs
 	}
