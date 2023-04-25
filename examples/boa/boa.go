@@ -848,7 +848,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateCSSlow", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "GateCSSlow", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -993,7 +993,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 
 // ConfigGui configures the GoGi gui interface for this simulation,
 func (ss *Sim) ConfigGui() *gi.Window {
-	title := "BOA = BG, OFC ACC Test"
+	title := "BOA = BG, OFC ACC"
 	ss.GUI.MakeWindow(ss, "boa", title, `This project tests learning in the BG, OFC & ACC for basic approach learning to a CS associated with a US. See <a href="https://github.com/emer/axon">axon on GitHub</a>.</p>`)
 	ss.GUI.CycleUpdateInterval = 20
 

@@ -17,10 +17,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
+					"Layer.Inhib.Pool.On":  "false",
 					"Layer.Matrix.GateThr": "0.05", // .05 default
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":   "1.8",
 					"Layer.Act.Dend.ModGain": "10", // 10 > 1 -- key gating efficacy param
 				}},
 			////////////////////////////////////////////

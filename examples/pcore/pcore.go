@@ -74,6 +74,7 @@ type SimParams struct {
 	NUnitsX    int          `view:"-" desc:"number of units within each pool, X"`
 	NUnits     int          `view:"-" desc:"total number of units within each pool"`
 	NoInc      bool         `desc:"do not auto-increment ACCPos / Neg values during test -- also set by Test1 button"`
+	ZeroTest   bool         `desc:"test with no ACC activity at all -- params need to prevent gating in this situation too"`
 	ACCPos     float32      `desc:"activation of ACC positive valence -- drives go"`
 	ACCNeg     float32      `desc:"activation of ACC neg valence -- drives nogo"`
 	ACCPosInc  float32      `desc:"across-units multiplier in activation of ACC positive valence -- e.g., .9 daecrements subsequent units by 10%"`
@@ -91,6 +92,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.NoInc = false
+	ss.ZeroTest = false
 	ss.NPools = 1
 	ss.NUnitsY = 5
 	ss.NUnitsX = 5
@@ -472,6 +474,9 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, trial int) {
 	itsr.SetShape([]int{np * nu}, nil, nil)
 
 	lays := []string{"ACCPos", "ACCNeg", "In"}
+	if ss.Sim.ZeroTest {
+		lays = []string{"In"}
+	}
 	vals := []float32{ss.Sim.ACCPos, ss.Sim.ACCNeg, 1}
 	for li, lnm := range lays {
 		ly := net.AxonLayerByName(lnm)

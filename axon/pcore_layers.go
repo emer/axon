@@ -181,8 +181,9 @@ func (ly *Layer) AnyGated() bool {
 
 func (ly *Layer) MatrixDefaults() {
 	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.Glong = 1  // prevent carryover of NMDA
 	ly.Params.Act.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+	// ly.Params.Act.NMDA.Gbar = 0    // Matrix needs nmda
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.FB = 0 // pure FF
 	ly.Params.Inhib.Layer.Gi = 0.5
@@ -250,7 +251,9 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Act.Init.GeVar = 0.1
 	ly.Params.Act.Init.GiVar = 0.1
 	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.Glong = 1
+	ly.Params.Act.NMDA.Gbar = 0 // carryover of NMDA was causing issues!
+	ly.Params.Act.GABAB.Gbar = 0
 	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -337,6 +340,8 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Act.Decay.Glong = 0
 	ly.Params.Act.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
 	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Act.NMDA.Gbar = 0 // fine with 0
+	ly.Params.Act.GABAB.Gbar = 0
 	ly.Params.Inhib.Layer.On.SetBool(true) // true = important for real-world cases
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -378,6 +383,9 @@ func (ly *Layer) STNDefaults() {
 
 func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
+	// ly.Params.Act.NMDA.Gbar = 0 // needs NMDA
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0.6
 	ly.Params.Act.Dend.SSGi = 0
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
 	ly.Params.Inhib.Layer.On.SetBool(true)

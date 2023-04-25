@@ -13,10 +13,11 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers",
 				Params: params.Params{
-					"Layer.Act.Clamp.Ge": "1.2",
+					"Layer.Act.Clamp.Ge": "1.5",
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
+					"Layer.Inhib.Layer.On":   "false",
 					"Layer.Act.Dend.ModGain": "1", // todo: try with lower drive
 				}},
 			{Sel: "#BLAPosAcqD1", Desc: "",
@@ -25,7 +26,39 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain": "10", // 10 is ok, 20 more robust
+					"Layer.Act.Dend.ModGain": "2", // 2 min -- reduces maint early
+				}},
+			{Sel: "#SC", Desc: "",
+				Params: params.Params{
+					"Layer.Act.Decay.Act": "1",
+				}},
+			////////////////////////////////////////////
+			// Cortical Prjns
+			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "stronger",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2", // 4 is too strong?
+				}},
+			{Sel: "#OFCusToOFCval", Desc: "stronger",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "3",
+				}},
+			{Sel: "#ACCcostToACCutil", Desc: "stronger",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "3",
+				}},
+			{Sel: "#DistToACCcost", Desc: "stronger",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1",
+				}},
+			{Sel: "#EffortToACCcost", Desc: "stronger",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1",
+				}},
+			////////////////////////////////////////////
+			// PVLV Prjns
+			{Sel: ".ToSC", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 				}},
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
@@ -34,7 +67,7 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAAcqToGo", Desc: "must dominate",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
-					"Prjn.PrjnScale.Abs": "4",
+					"Prjn.PrjnScale.Abs": "3",
 				}},
 			{Sel: ".PFCToVSMtx", Desc: "contextual, should be weaker",
 				Params: params.Params{
@@ -51,7 +84,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4.0", // 3-4 ok -- still spurious gating
+					"Prjn.PrjnScale.Abs": "4", // lower default to prevent maint early
+				}},
+			{Sel: "#ACCcostToACCcostMD", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "3", // supertothal for us stronger
 				}},
 			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{

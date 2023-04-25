@@ -625,10 +625,10 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
 	nrn.ISIAvg = -1
 	nrn.ActInt = ac.Init.Act // start fresh
+	nrn.Spiked = 0           // always fresh
 
 	if decay > 0 { // no-op for most, but not all..
 		nrn.Spike = 0
-		nrn.Spiked = 0
 		nrn.Act -= decay * (nrn.Act - ac.Init.Act)
 		nrn.ActInt -= decay * (nrn.ActInt - ac.Init.Act)
 		nrn.GeSyn -= decay * (nrn.GeSyn - nrn.GeBase)
