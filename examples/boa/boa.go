@@ -78,7 +78,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 10
+	ss.PctCortexStEpc = 30
 	ss.PctCortexNEpc = 5
 	ss.PctCortexInterval = 1
 	ss.PCAInterval = 10
@@ -393,6 +393,14 @@ func (ss *Sim) ConfigLoops() {
 		stack.Loops[etime.Trial].OnEnd.Add("TrialStats", ss.TrialStats)
 	}
 
+	// note: phase is shared between all stacks!
+	plusPhase, _ := man.Stacks[etime.Train].Loops[etime.Cycle].EventByName("PlusPhase")
+	plusPhase.OnEvent.InsertBefore("PlusPhase:Start", "TakeAction", func() {
+		// note: critical to have this happen *after* MinusPhase:End and *before* PlusPhase:Start
+		// because minus phase end has gated info, and plus phase start applies action input
+		ss.TakeAction(ss.Net)
+	})
+
 	man.GetLoop(etime.Train, etime.Run).OnStart.Add("NewRun", ss.NewRun)
 
 	// Add Testing
@@ -475,12 +483,12 @@ func (ss *Sim) ConfigLoops() {
 
 // TakeAction takes action for this step, using either decoded cortical
 // or reflexive subcortical action from env.
-// Called at end of trial so final gating info is available
-// not necessary to do anything in plus phase based on action
-// trial-wise works fine.
+// Called at end of minus phase. However, it can still gate sometimes
+// after this point, so that is dealt with at end of plus phase.
 func (ss *Sim) TakeAction(net *axon.Network) {
 	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
-	justGated := ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
+	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
+	justGated := mtxLy.AnyGated() // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
 	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
 	ss.Stats.SetString("Debug", fmt.Sprintf("just gated: %v  has: %v", justGated, hasGated))
 	ev.InstinctAct(justGated, hasGated)
@@ -494,7 +502,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
 		ly := ss.Net.AxonLayerByName("VL")
 		ly.Pools[0].Inhib.Clamped.SetBool(false) // not clamped this trial
-		// ss.Net.GPU.SyncPoolsToGPU()
+		ss.Net.GPU.SyncPoolsToGPU()
 		return // no time to do action while also gating
 	}
 
@@ -614,6 +622,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("GateUS", 0)
 	ss.Stats.SetFloat("GateCS", 0)
+	ss.Stats.SetFloat("GateCSSlow", 0) // slow CS gating, after action taken in minus phase
 	ss.Stats.SetFloat("GatedEarly", 0)
 	ss.Stats.SetFloat("MaintEarly", 0)
 	ss.Stats.SetFloat("GatedAgain", 0)
@@ -659,7 +668,6 @@ func (ss *Sim) StatCounters() {
 // TrialStats computes the trial-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
-	ss.TakeAction(ss.Net)
 	ss.GatedStats()
 	ss.MaintStats()
 
@@ -729,6 +737,7 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("HasGated", bools.ToFloat32(hasGated))
 	ss.Stats.SetFloat32("GateUS", nan)
 	ss.Stats.SetFloat32("GateCS", nan)
+	ss.Stats.SetFloat32("GateCSSlow", nan)
 	ss.Stats.SetFloat32("GatedEarly", nan)
 	ss.Stats.SetFloat32("MaintEarly", nan)
 	ss.Stats.SetFloat32("GatedAgain", nan)
@@ -737,6 +746,11 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("AChShouldnt", nan)
 	if justGated {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(!ev.PosHasDriveUS()))
+		if !ss.Context.PVLV.HasPosUS() && ss.Stats.String("NetAction") != "Gated" { // slow gating
+			ss.Stats.SetFloat32("GateCSSlow", 1)
+			// we have just gone "Left" and "burned" the novelty of this CS, so we won't gate
+			// on it again.  just have to wait for timeout..
+		}
 	}
 	if ev.ShouldGate {
 		if ss.Context.PVLV.HasPosUS() {
@@ -834,7 +848,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
+	ss.Logs.PlotItems("AllGood", "ActMatch", "GateCS", "GateCSSlow", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -856,6 +870,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GateCSSlow", "GateCSSlow", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedEarly", "GatedEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("MaintEarly", "MaintEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedAgain", "GatedAgain", etime.Run, etime.Epoch, etime.Trial)

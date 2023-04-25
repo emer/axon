@@ -13,7 +13,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers",
 				Params: params.Params{
-					"Layer.Act.Clamp.Ge": "1.5",
+					"Layer.Act.Clamp.Ge": "1.2",
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
