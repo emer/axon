@@ -495,7 +495,7 @@ func (ss *Sim) TakeAction(net *axon.Network) {
 	ev.InstinctAct(justGated, hasGated)
 	csGated := (justGated && !ctx.PVLV.HasPosUS())
 	threshold := float32(0.1)
-	deciding := !hasGated && (ctx.NeuroMod.ACh > threshold && mtxLy.Pools[0].AvgMax.SpkMax.Cycle.Max > threshold) // give it time
+	deciding := !csGated && !hasGated && (ctx.NeuroMod.ACh > threshold && mtxLy.Pools[0].AvgMax.SpkMax.Cycle.Max > threshold) // give it time
 	ss.Stats.SetFloat32("Deciding", bools.ToFloat32(deciding))
 	if csGated || deciding {
 		act := "CSGated"
