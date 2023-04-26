@@ -185,11 +185,11 @@ func (ly *Layer) MatrixDefaults() {
 	ly.Params.Act.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
 	// ly.Params.Act.NMDA.Gbar = 0    // Matrix needs nmda
 	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.FB = 0 // pure FF
-	ly.Params.Inhib.Layer.Gi = 0.5
+	ly.Params.Inhib.Layer.FB = 1 // pure FF
+	ly.Params.Inhib.Layer.Gi = 0.3
 	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer!
-	ly.Params.Inhib.Pool.FB = 0           // pure FF
-	ly.Params.Inhib.Pool.Gi = 0.5
+	ly.Params.Inhib.Pool.FB = 1           // pure FF
+	ly.Params.Inhib.Pool.Gi = 0.3
 	ly.Params.Inhib.ActAvg.Nominal = 0.25 // pooled should be lower
 	ly.Params.Learn.RLRate.On.SetBool(false)
 
@@ -260,10 +260,10 @@ func (ly *Layer) GPDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWt.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
+		pj.Params.SWt.Init.Var = 0.25  // 0.25
 		if pj.Send.LayerType() == MatrixLayer {
-			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut -- 0.5 orig, 1 good
+			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut -- 0.5 orig, 1 slightly better gating
 		} else if pj.Send.LayerType() == STNLayer {
 			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
 		}
@@ -275,11 +275,11 @@ func (ly *Layer) GPDefaults() {
 				pj.Params.PrjnScale.Abs = 0.5 // orig 0.3; 0.5 good
 			}
 			if pj.Send.LayerType() == STNLayer { // STNpToGPeIn -- stronger to drive burst of activity
-				pj.Params.PrjnScale.Abs = 1 // was 0.5
+				pj.Params.PrjnScale.Abs = 1 // was 0.5, 1 or 1.2 in boa -- 1 > 0.5
 			}
 		case GPeOut:
 			if pj.Send.LayerType() == STNLayer { // STNpToGPeOut
-				pj.Params.PrjnScale.Abs = 0.1
+				pj.Params.PrjnScale.Abs = 0.1 // 0.1 orig -- old boa had 1.2 -- much lower gating
 			}
 		case GPeTA:
 			if pj.Send.LayerType() == GPLayer { // GPeInToGPeTA
@@ -299,8 +299,8 @@ func (ly *Layer) GPiDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWt.Init.Mean = 0.75          // 0.75  see above
+		pj.Params.SWt.Init.Var = 0.25           // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
 			pj.Params.PrjnScale.Abs = 1 // 0.8 orig; 1 is fine
 		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi

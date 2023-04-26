@@ -18,6 +18,8 @@ var ParamSets = params.Sets{
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Inhib.Pool.On":  "false",
+					"Layer.Inhib.Pool.Gi":  "0.3",
+					"Layer.Inhib.Pool.FB":  "1",
 					"Layer.Matrix.GateThr": "0.05", // .05 default
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
@@ -29,6 +31,8 @@ var ParamSets = params.Sets{
 			// Prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
+					"Prjn.SWt.Init.Mean":      "0.25",
+					"Prjn.SWt.Init.Var":       "0.25",
 					"Prjn.Matrix.NoGateLRate": "1", // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
 				}},
 			{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",

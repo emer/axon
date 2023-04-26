@@ -202,6 +202,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	mtxRndPrjn.PCon = 0.75
 	_ = mtxRndPrjn
 	_ = pone2one
+	prjnClass := "PFCPrjn"
 
 	ny := ev.NYReps
 	nloc := ev.Locations
@@ -220,7 +221,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	vl := net.AddPulvLayer2D("VL", ny, nAct)                // VL predicts brainstem Action
 	vl.SetBuildConfig("DriveLayName", act.Name())
 
-	m1, m1CT := net.AddSuperCT2D("M1", nuCtxY, nuCtxX, space, one2one)
+	m1, m1CT := net.AddSuperCT2D("M1", "PFCPrjn", nuCtxY, nuCtxX, space, one2one)
 	m1P := net.AddPulvForSuper(m1, space)
 
 	alm, almCT, almPT, almPTp, almMD := net.AddPFC2D("ALM", "MD", nuCtxY, nuCtxX, true, space)
@@ -233,7 +234,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.ConnectToPFCBidir(m1, m1P, alm, almCT, almPTp, full) // alm predicts m1
 
 	// vl is a predictive thalamus but we don't have direct access to its source
-	net.ConnectToPulv(m1, m1CT, vl, full, full)
+	net.ConnectToPulv(m1, m1CT, vl, full, full, prjnClass)
 	net.ConnectToPFC(nil, vl, alm, almCT, almPTp, full) // alm predicts m1
 
 	// sensory inputs guiding action

@@ -103,7 +103,7 @@ func (net *Network) AddAmygdala(prefix string, neg bool, nUs, nNeurY, nNeurX int
 		"Prjn.Learn.Learn":   "false",
 		"Prjn.SWt.Adapt.On":  "false",
 		"Prjn.PrjnScale.Rel": "0.1",
-		"Prjn.PrjnScale.Abs": "2", // 3 competes with CS to strongly
+		"Prjn.PrjnScale.Abs": "2", // 3 competes with CS too strongly
 		"Prjn.SWt.Init.SPct": "0",
 		"Prjn.SWt.Init.Mean": "0.5",
 		"Prjn.SWt.Init.Var":  "0.4",
@@ -332,7 +332,7 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "1.2",
 		"Layer.Inhib.Pool.On":        "false",
-		"Layer.Act.Decay.Act":        "0.0",
+		"Layer.Act.Decay.Act":        "1", // key for rapid updating
 		"Layer.Act.Decay.Glong":      "0.0",
 		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
 		"Layer.Act.Decay.OnRew":      "true",
@@ -356,7 +356,7 @@ func (net *Network) AddSCLayer4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 		"Layer.Inhib.Layer.Gi":       "1.2",
 		"Layer.Inhib.Pool.On":        "true",
 		"Layer.Inhib.Pool.Gi":        "1.2",
-		"Layer.Act.Decay.Act":        "0.0",
+		"Layer.Act.Decay.Act":        "1", // key for rapid updating
 		"Layer.Act.Decay.Glong":      "0.0",
 		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
 		"Layer.Act.Decay.OnRew":      "true",
@@ -563,11 +563,12 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 
 	p1to1 := prjn.NewPoolOneToOne()
 	full := prjn.NewFull()
-	var pj *Prjn
+	var pj, bpj *Prjn
+	prjnClass := "PFCPrjn"
 
 	vSmtxGo.SetBuildConfig("ThalLay1Name", ofcUSMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay1Name", ofcUSMD.Name())
-	net.ConnectLayers(vSgpi, ofcUSMD, full, InhibPrjn) // BTThal sets defaults for this
+	net.ConnectLayers(vSgpi, ofcUSMD, full, InhibPrjn) // BGThal sets defaults for this
 
 	vSmtxGo.SetBuildConfig("ThalLay2Name", ofcValMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay2Name", ofcValMD.Name())
@@ -580,10 +581,11 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 
 	pj = net.ConnectLayers(blaPosAcq, ofcUS, p1to1, ForwardPrjn) // main driver strong input
 	pj.DefParams = params.Params{
-		"Prjn.PrjnScale.Abs": "4",
+		"Prjn.PrjnScale.Abs": "2",
 		"Prjn.SWt.Init.Mean": "0.5",
 		"Prjn.SWt.Init.Var":  "0.4",
 	}
+	pj.SetClass(prjnClass)
 
 	pj = net.ConnectToBLAExt(ofcUSPTp, blaPosExt, p1to1)
 	pj.DefParams["Prjn.Com.GType"] = "ModulatoryG"
@@ -687,34 +689,40 @@ func (net *Network) AddPVLVOFCus(ctx *Context, nUSneg, nYneur, popY, popX, bgY, 
 	pj.DefParams = params.Params{
 		"Prjn.PrjnScale.Rel": "0.2", // weaker to not drive in absence of BLA
 	}
-	pj.SetClass("DrivesToOFC")
+	pj.SetClass("DrivesToOFC " + prjnClass)
 
-	// net.ConnectCTSelf(ofcValCT, full) // todo: test
+	// net.ConnectCTSelf(ofcValCT, full, prjnClass) // todo: test
 
-	net.ConnectLayers(pvPos, ofcUS, full, BackPrjn)
-	net.ConnectLayers(usPos, ofcUS, p1to1, BackPrjn)
+	net.ConnectLayers(pvPos, ofcUS, full, BackPrjn).SetClass(prjnClass)
+	net.ConnectLayers(usPos, ofcUS, p1to1, BackPrjn).SetClass(prjnClass)
 	// note: not connecting negative value cases yet -- no idea what to do yet..
 
 	// note: these are all very static, lead to static PT reps:
 	// need a more dynamic US / value representation to predict.
 
 	// note: even though these are static, CT is
-	net.ConnectToPulv(ofcUS, ofcUSCT, drivesP, p1to1, p1to1)
-	net.ConnectToPulv(ofcUS, ofcUSCT, usPosP, p1to1, p1to1)
-	net.ConnectToPulv(ofcUS, ofcUSCT, pvPosP, p1to1, p1to1)
+	net.ConnectToPulv(ofcUS, ofcUSCT, drivesP, p1to1, p1to1, prjnClass)
+	net.ConnectToPulv(ofcUS, ofcUSCT, usPosP, p1to1, p1to1, prjnClass)
+	net.ConnectToPulv(ofcUS, ofcUSCT, pvPosP, p1to1, p1to1, prjnClass)
 	// note: not connecting negative value cases yet -- no idea what to do yet..
 
-	// net.ConnectPTPredToPulv(ofcUSPTp, drivesP, p1to1, p1to1)
-	// net.ConnectPTPredToPulv(ofcUSPTp, usPosP, p1to1, p1to1)
-	// net.ConnectPTPredToPulv(ofcUSPTp, pvPosP, p1to1, p1to1)
+	// net.ConnectPTPredToPulv(ofcUSPTp, drivesP, p1to1, p1to1, prjnClass)
+	// net.ConnectPTPredToPulv(ofcUSPTp, usPosP, p1to1, p1to1), prjnClass
+	// net.ConnectPTPredToPulv(ofcUSPTp, pvPosP, p1to1, p1to1, prjnClass)
 
 	///////////////////////////////////////////
 	// OFCval
 
-	// net.ConnectCTSelf(ofcValCT, full) // todo: test
+	// net.ConnectCTSelf(ofcValCT, full, prjnClass) // todo: test
 
 	net.ConnectPTNotMaint(ofcValPT, notMaint, full)
-	net.BidirConnectLayers(ofcUS, ofcVal, full)
+	pj, bpj = net.BidirConnectLayers(ofcUS, ofcVal, full)
+	pj.SetClass(prjnClass)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "3", // val needs stronger input
+	}
+	bpj.SetClass(prjnClass)
+
 	// note: do *not* bidirectionally connect PTp layers -- too much sustained activity
 
 	net.ConnectToPFC(pvPos, pvPosP, ofcVal, ofcValCT, ofcValPTp, full)
@@ -766,7 +774,7 @@ func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, p
 	accCost, accCostCT, accCostPT, accCostPTp, accCostMD := net.AddPFC2D("ACCcost", "MD", pfcY, pfcX, true, space)
 	vSmtxGo.SetBuildConfig("ThalLay3Name", accCostMD.Name())
 	vSmtxNo.SetBuildConfig("ThalLay3Name", accCostMD.Name())
-	net.ConnectLayers(vSgpi, accCostMD, full, InhibPrjn)
+	net.ConnectLayers(vSgpi, accCostMD, full, InhibPrjn) // BGThal configs
 	net.ConnectPTNotMaint(accCostPT, notMaint, full)
 	pj = net.ConnectToMatrix(accCost, vSmtxGo, full)
 	pj.DefParams = pfc2m
@@ -807,8 +815,14 @@ func (net *Network) AddBOA(ctx *Context, nUSneg, nYneur, popY, popX, bgY, bgX, p
 	// net.ConnectCTSelf(accUtilCT, full) // todo: test
 
 	// util predicts OFCval and ACCcost
-	net.ConnectToPFCBidir(ofcVal, ofcValP, accUtil, accUtilCT, accUtilPTp, full)
-	net.ConnectToPFCBidir(accCost, accCostP, accUtil, accUtilCT, accUtilPTp, full)
+	pj, _ = net.ConnectToPFCBidir(ofcVal, ofcValP, accUtil, accUtilCT, accUtilPTp, full)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "1", // not good to make this stronger actually
+	}
+	pj, _ = net.ConnectToPFCBidir(accCost, accCostP, accUtil, accUtilCT, accUtilPTp, full)
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "3", // drive acc stronger -- only this one works well
+	}
 
 	ofcVal.PlaceRightOf(ofcUS, space)
 	ofcValP.PlaceBehind(ofcValMD, space)

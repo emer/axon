@@ -242,9 +242,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	inly, inP := net.AddInputPulv4D("In", 1, np, nuY, nuX, space)
 
-	pfc, pfcCT := net.AddSuperCT4D("PFC", 1, np, nuY, nuX, space, one2one)
+	pfc, pfcCT := net.AddSuperCT4D("PFC", "PFCPrjn", 1, np, nuY, nuX, space, one2one)
 	// prjns are: super->PT, PT self, CT-> thal
-	pfcPT, pfcVM := net.AddPTMaintThalForSuper(pfc, pfcCT, "VM", one2one, pone2one, space)
+	pfcPT, pfcVM := net.AddPTMaintThalForSuper(pfc, pfcCT, "VM", "PFCPrjn", one2one, pone2one, space)
 	_ = pfcPT
 	pfcCT.SetClass("PFC CTCopy")
 	pfcCT.CTDefParamsMedium() // FSA
@@ -374,7 +374,7 @@ func (ss *Sim) InitRndSeed() {
 func (ss *Sim) ConfigLoops() {
 	man := looper.NewManager()
 
-	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 50).AddTime(etime.Sequence, 50).AddTime(etime.Trial, 3).AddTime(etime.Cycle, 200)
+	man.AddStack(etime.Train).AddTime(etime.Run, 5).AddTime(etime.Epoch, 30).AddTime(etime.Sequence, 50).AddTime(etime.Trial, 3).AddTime(etime.Cycle, 200)
 
 	nTestInc := int(1.0/ss.Sim.TestInc) + 1
 
