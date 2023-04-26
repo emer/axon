@@ -250,7 +250,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	pfcCT.CTDefParamsMedium() // FSA
 
 	net.ConnectLayers(inly, pfc, pone2one, axon.ForwardPrjn)
-	net.ConnectToPulv(pfc, pfcCT, inP, pone2one, pone2one)
+	net.ConnectToPulv(pfc, pfcCT, inP, pone2one, pone2one, "PFCPrjn")
 
 	net.ConnectLayers(pfc, stnp, pone2one, axon.ForwardPrjn)
 	net.ConnectLayers(pfc, stns, pone2one, axon.ForwardPrjn)

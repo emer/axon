@@ -190,21 +190,21 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inPulv.SetClass("InLay")
 
 	var hidp, hid2, hid2ct *axon.Layer
-	hid, hidct := net.AddSuperCT2D("Hidden", 20, nUnits, space, one2one) // one2one learn > full
+	hid, hidct := net.AddSuperCT2D("Hidden", "", 20, nUnits, space, one2one) // one2one learn > full
 	_ = hidp
 	if ss.Hid2 {
 		// hidp -> hid2 doesn't actually help at all..
 		// hidp = net.AddPulvForSuper(hid, space)
 	}
-	net.ConnectCTSelf(hidct, full)
-	net.ConnectToPulv(hid, hidct, inPulv, full, full)
+	net.ConnectCTSelf(hidct, full, "")
+	net.ConnectToPulv(hid, hidct, inPulv, full, full, "")
 	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
 	// net.ConnectLayers(hidct, hid, full, emer.Back) // not useful
 
 	if ss.Hid2 {
-		hid2, hid2ct = net.AddSuperCT2D("Hidden2", 20, nUnits, space, one2one) // one2one learn > full
-		net.ConnectCTSelf(hid2ct, full)
-		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full) // shortcut top-down
+		hid2, hid2ct = net.AddSuperCT2D("Hidden2", "", 20, nUnits, space, one2one) // one2one learn > full
+		net.ConnectCTSelf(hid2ct, full, "")
+		net.ConnectToPulv(hid2, hid2ct, inPulv, full, full, "") // shortcut top-down
 		projection, _ := inPulv.SendNameTry(hid2ct.Name())
 		projection.SetClass("CTToPulvHigher")
 		// net.ConnectToPulv(hid2, hid2ct, hidp, full, full) // predict layer below -- not useful
