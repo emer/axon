@@ -487,26 +487,34 @@ func (ss *Sim) ConfigLoops() {
 // Called at end of minus phase. However, it can still gate sometimes
 // after this point, so that is dealt with at end of plus phase.
 func (ss *Sim) TakeAction(net *axon.Network) {
-	ev := ss.Envs[ss.Context.Mode.String()].(*Approach)
+	ctx := &ss.Context
+	ev := ss.Envs[ctx.Mode.String()].(*Approach)
 	mtxLy := ss.Net.AxonLayerByName("VsMtxGo")
 	justGated := mtxLy.AnyGated() // not updated until plus phase: ss.Context.PVLV.VSMatrix.JustGated.IsTrue()
-	hasGated := ss.Context.PVLV.VSMatrix.HasGated.IsTrue()
-	ss.Stats.SetString("Debug", fmt.Sprintf("just gated: %v  has: %v", justGated, hasGated))
+	hasGated := ctx.PVLV.VSMatrix.HasGated.IsTrue()
 	ev.InstinctAct(justGated, hasGated)
-	if justGated && !ss.Context.PVLV.HasPosUS() {
-		ss.Stats.SetString("Debug", fmt.Sprintf("skip gated: %v  has: %v", justGated, hasGated))
+	csGated := (justGated && !ctx.PVLV.HasPosUS())
+	threshold := float32(0.1)
+	deciding := !hasGated && (ctx.NeuroMod.ACh > threshold && mtxLy.Pools[0].AvgMax.SpkMax.Cycle.Max > threshold) // give it time
+	ss.Stats.SetFloat32("Deciding", bools.ToFloat32(deciding))
+	if csGated || deciding {
+		act := "CSGated"
+		if !csGated {
+			act = "Deciding"
+		}
+		ss.Stats.SetString("Debug", act)
 		ev.Action("None", nil)
 		ss.ApplyAction()
 		ss.Stats.SetString("ActAction", "None")
 		ss.Stats.SetString("Instinct", "None")
-		ss.Stats.SetString("NetAction", "Gated")
+		ss.Stats.SetString("NetAction", act)
 		ss.Stats.SetFloat("ActMatch", 1) // whatever it is, it is ok
 		ly := ss.Net.AxonLayerByName("VL")
 		ly.Pools[0].Inhib.Clamped.SetBool(false) // not clamped this trial
 		ss.Net.GPU.SyncPoolsToGPU()
 		return // no time to do action while also gating
 	}
-
+	ss.Stats.SetString("Debug", "acting")
 	netAct, anm := ss.DecodeAct(ev)
 	genAct := ev.InstinctAct(justGated, hasGated)
 	genActNm := ev.Acts[genAct]
@@ -623,7 +631,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("Should", 0)
 	ss.Stats.SetFloat("GateUS", 0)
 	ss.Stats.SetFloat("GateCS", 0)
-	ss.Stats.SetFloat("GateCSSlow", 0) // slow CS gating, after action taken in minus phase
+	ss.Stats.SetFloat("Deciding", 0)
 	ss.Stats.SetFloat("GatedEarly", 0)
 	ss.Stats.SetFloat("MaintEarly", 0)
 	ss.Stats.SetFloat("GatedAgain", 0)
@@ -738,7 +746,6 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("HasGated", bools.ToFloat32(hasGated))
 	ss.Stats.SetFloat32("GateUS", nan)
 	ss.Stats.SetFloat32("GateCS", nan)
-	ss.Stats.SetFloat32("GateCSSlow", nan)
 	ss.Stats.SetFloat32("GatedEarly", nan)
 	ss.Stats.SetFloat32("MaintEarly", nan)
 	ss.Stats.SetFloat32("GatedAgain", nan)
@@ -747,11 +754,6 @@ func (ss *Sim) GatedStats() {
 	ss.Stats.SetFloat32("AChShouldnt", nan)
 	if justGated {
 		ss.Stats.SetFloat32("WrongCSGate", bools.ToFloat32(!ev.PosHasDriveUS()))
-		if !ss.Context.PVLV.HasPosUS() && ss.Stats.String("NetAction") != "Gated" { // slow gating
-			ss.Stats.SetFloat32("GateCSSlow", 1)
-			// we have just gone "Left" and "burned" the novelty of this CS, so we won't gate
-			// on it again.  just have to wait for timeout..
-		}
 	}
 	if ev.ShouldGate {
 		if ss.Context.PVLV.HasPosUS() {
@@ -849,7 +851,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "GateCSSlow", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -871,7 +873,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("Should", "Should", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateUS", "GateUS", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GateCS", "GateCS", etime.Run, etime.Epoch, etime.Trial)
-	ss.Logs.AddStatAggItem("GateCSSlow", "GateCSSlow", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Deciding", "Deciding", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedEarly", "GatedEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("MaintEarly", "MaintEarly", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GatedAgain", "GatedAgain", etime.Run, etime.Epoch, etime.Trial)
