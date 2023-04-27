@@ -49,6 +49,14 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
+				}},
+			{Sel: ".ThalToPFCInhib", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.1",
+				}},
 			////////////////////////////////////////////
 			// PVLV Prjns
 			{Sel: ".MatrixPrjn", Desc: "",

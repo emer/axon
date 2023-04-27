@@ -59,7 +59,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dt.VmDendTau":        "5",
 					"Layer.Act.Dt.GeTau":            "5",
 					"Layer.Act.GABAB.Gbar":          "0.25",  //
-					"Layer.Act.NMDA.Gbar":           "0.25",  // 0.25+ > .2, .15 only at start -- others catch up
+					"Layer.Act.NMDA.Gbar":           "0.008", // 0.25+ > .2, .15 only at start -- others catch up
 					"Layer.Act.NMDA.Tau":            "200",   // 200 slightly better than 300 early, same later; 100 fails
 					"Layer.Act.Noise.On":            "false", // todo?
 					"Layer.Act.Noise.Ge":            "0.005",
@@ -79,11 +79,11 @@ var ParamSets = params.Sets{
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0",  // clear long
-					"Layer.Act.Decay.AHP":           "0.0",  // clear ahp
-					"Layer.Act.GABAB.Gbar":          "0.2",  // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":           "0.15", // .15 > .1
-					"Layer.Learn.RLRate.SigmoidMin": "1.0",  // 1 > 0.05 with CaSpkD as var
+					"Layer.Act.Decay.Glong":         "0.0",   // clear long
+					"Layer.Act.Decay.AHP":           "0.0",   // clear ahp
+					"Layer.Act.GABAB.Gbar":          "0.2",   // .2 > old: 0.005
+					"Layer.Act.NMDA.Gbar":           "0.004", // .15 > .1
+					"Layer.Learn.RLRate.SigmoidMin": "1.0",   // 1 > 0.05 with CaSpkD as var
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{

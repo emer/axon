@@ -249,16 +249,19 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	}
 	name := super.Name()
 	shp := super.Shape()
+	// is4D := false
 	if shp.NumDims() == 2 {
 		pt = net.AddPTMaintLayer2D(name+"PT", shp.Dim(0), shp.Dim(1))
 		thal = net.AddBGThalLayer2D(name+thalSuffix, shp.Dim(0), shp.Dim(1))
 	} else {
+		// is4D = true
 		pt = net.AddPTMaintLayer4D(name+"PT", shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 		thal = net.AddBGThalLayer4D(name+thalSuffix, shp.Dim(0), shp.Dim(1), shp.Dim(2), shp.Dim(3))
 	}
 	pt.SetClass(name)
 	thal.SetClass(name)
 
+	full := prjn.NewFull()
 	one2one := prjn.NewOneToOne()
 	pthal, thalpt := net.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal" + prjnClass)
@@ -272,6 +275,22 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 		"Prjn.SWt.Init.Var":  "0.0",
 	}
 	thalpt.SetClass("ThalToPT" + prjnClass)
+	// if is4D {
+	fmThalInhib := params.Params{
+		"Prjn.PrjnScale.Rel": "1.0",
+		"Prjn.PrjnScale.Abs": "1.0",
+		"Prjn.Learn.Learn":   "false",
+		"Prjn.SWt.Adapt.On":  "false",
+		"Prjn.SWt.Init.SPct": "0",
+		"Prjn.SWt.Init.Mean": "0.8",
+		"Prjn.SWt.Init.Var":  "0.0",
+	}
+	ti := net.ConnectLayers(thal, pt, full, InhibPrjn)
+	ti.DefParams = fmThalInhib
+	ti.SetClass("ThalToPFCInhib")
+	ti = net.ConnectLayers(thal, ct, full, InhibPrjn)
+	ti.DefParams = fmThalInhib
+	ti.SetClass("ThalToPFCInhib")
 
 	sthal := net.ConnectLayers(super, thal, superToPT, ForwardPrjn) // shortcuts
 	sthal.DefParams = params.Params{
@@ -415,31 +434,31 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 		"Layer.Act.Decay.OnRew":      onRew,
 		"Layer.Inhib.ActAvg.Nominal": "0.025",
 		"Layer.Inhib.Layer.On":       "true",
-		"Layer.Inhib.Layer.Gi":       "1.2",
+		"Layer.Inhib.Layer.Gi":       "2.2",
 		"Layer.Inhib.Pool.On":        "true",
-		"Layer.Inhib.Pool.Gi":        "1.2",
+		"Layer.Inhib.Pool.Gi":        "0.8",
 		"Layer.Act.Dend.SSGi":        "0",
 	}
 	pfc.DefParams = pfcParams
 
 	pfcCT.CTDefParamsMedium()
 	pfcCT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.025"
-	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "2.8"
+	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "4" // 4?  2.8 orig
 	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "true"
 	pfcCT.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
 	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
-	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"
+	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4" // 2.4 orig
 	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
 	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "1" // maybe better -- test further
 
 	pfcPTp.DefParams = maps.Clone(pfcParams)
-	pfcPTp.DefParams["Layer.Inhib.Layer.Gi"] = "0.8"
+	pfcPTp.DefParams["Layer.Inhib.Layer.Gi"] = "1.2" // 0.8 orig
 	pfcPTp.DefParams["Layer.Inhib.Pool.Gi"] = "0.8"
 
 	pfcThal.DefParams = maps.Clone(pfcParams)
-	pfcThal.DefParams["Layer.Inhib.Layer.Gi"] = "1.1"
+	pfcThal.DefParams["Layer.Inhib.Layer.Gi"] = "2.0" // 1.1 orig
 	pfcThal.DefParams["Layer.Inhib.Pool.Gi"] = "0.6"
 
 	return

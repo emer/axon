@@ -538,7 +538,7 @@ func (ac *ActParams) Defaults() {
 	ac.KNa.Defaults()
 	ac.KNa.On.SetBool(true)
 	ac.NMDA.Defaults()
-	ac.NMDA.Gbar = 0.15 // .15 now -- was 0.3 best.
+	ac.NMDA.Gbar = 0.004 // 0.004 = old 0.15 with bug
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02

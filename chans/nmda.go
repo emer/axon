@@ -14,7 +14,7 @@ import "github.com/goki/mat32"
 // on Mg ion blockage, and presynaptic Glu-based opening, which in a simple model just
 // increments
 type NMDAParams struct {
-	Gbar float32 `def:"0,0.15,0.25,0.3,1.4" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.  0.15 standard for SnmdaDeplete = false, 1.4 when on."`
+	Gbar float32 `def:"0,0.004,0.008,0.01" desc:"overall multiplier for strength of NMDA current -- multiplies GnmdaSyn to get net conductance.  stronger values used to support active maintenance level conductances."`
 	Tau  float32 `viewif:"Gbar>0" def:"30,50,100,200,300" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far."`
 	ITau float32 `viewif:"Gbar>0" def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism."`
 	MgC  float32 `viewif:"Gbar>0" def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far in large models, 1.2, Voff = 0 best in smaller nets."`
@@ -26,7 +26,7 @@ type NMDAParams struct {
 }
 
 func (np *NMDAParams) Defaults() {
-	np.Gbar = 0.15
+	np.Gbar = 0.004
 	np.Tau = 100
 	np.ITau = 1 // off by default, as it doesn't work in actual axon models..
 	np.MgC = 1.4
@@ -47,7 +47,7 @@ func (np *NMDAParams) MgGFmVbio(vbio float32) float32 {
 	if vbio >= 0 {
 		return 0
 	}
-	return 1.0 / (1.0 + np.MgFact*mat32.FastExp(-0.062*vbio))
+	return -vbio / (1.0 + np.MgFact*mat32.FastExp(-0.062*vbio))
 }
 
 // MgGFmV returns the NMDA conductance as a function of normalized membrane potential
@@ -56,13 +56,24 @@ func (np *NMDAParams) MgGFmV(v float32) float32 {
 	return np.MgGFmVbio(VToBio(v))
 }
 
+// Urakubo 2008 implementation has this:
+// if ({ abs {v} } < 0.5)
+// max = {-1 / 0.0756 * {1 - 0.0378 * {v}}}
+// if (V > -0.1 & V < 0.1){
+//	  channel->Vca = -1/0.0756 + 0.5*V;
+// }
+// this was coded as this without the minus sign:
+// if vbio > -0.1 && vbio < 0.1 {
+// 	return 1.0 / (0.0756 + 0.5*vbio)
+// }
+
 // CaFmVbio returns the calcium current factor as a function of biological membrane
 // potential -- this factor is needed for computing the calcium current * MgGFmV.
 // This is the same function used in VGCC for their conductance factor.
 func (np *NMDAParams) CaFmVbio(vbio float32) float32 {
 	vbio += np.Voff
-	if vbio > -0.1 && vbio < 0.1 {
-		return 1.0 / (0.0756 + 0.5*vbio)
+	if vbio > -0.5 && vbio < 0.5 {
+		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
 	}
 	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))
 }

@@ -500,8 +500,11 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	extraSyn := float32(0)
 	switch ly.LayType {
 	case PTMaintLayer:
-		extraRaw = ly.Act.Dend.ModGain * nrn.GModRaw
-		extraSyn = ly.Act.Dend.ModGain * nrn.GModSyn
+		mod := ctx.NeuroMod.ACh * ly.Act.Dend.ModGain * nrn.GModSyn
+		nrn.GeRaw *= (1 + mod)
+		nrn.GeSyn *= (1 + mod)
+		extraRaw = ctx.NeuroMod.ACh * ly.Act.Dend.ModGain * nrn.GModRaw
+		extraSyn = mod
 	case BLALayer:
 		extraRaw = ctx.NeuroMod.ACh * nrn.GModRaw
 		extraSyn = ctx.NeuroMod.ACh * nrn.GModSyn

@@ -337,7 +337,7 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
 		"Layer.Act.Decay.OnRew":      "true",
 		"Layer.Act.KNa.TrialSlow":    "true",
-		"Layer.Act.KNa.Slow.Max":     "1",
+		"Layer.Act.KNa.Slow.Max":     "2", // 1 not strong enough!
 	}
 	sc.SetClass("SC")
 	return sc
