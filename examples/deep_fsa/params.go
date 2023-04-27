@@ -31,10 +31,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.AK.Gbar":                  "0.1",
 					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Act.NMDA.Voff":                "0",
-					"Layer.Act.Sahp.Gbar":                "0.1",  //
-					"Layer.Act.Sahp.Off":                 "0.8",  //
-					"Layer.Act.Sahp.Slope":               "0.02", //
-					"Layer.Act.Sahp.CaTau":               "10",   //
+					"Layer.Act.GABAB.Gbar":               "0.005", //
+					"Layer.Act.Sahp.Gbar":                "0.1",   //
+					"Layer.Act.Sahp.Off":                 "0.8",   //
+					"Layer.Act.Sahp.Slope":               "0.02",  //
+					"Layer.Act.Sahp.CaTau":               "10",    //
 				}},
 			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -58,7 +59,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Glong":         "0.0",
 					"Layer.Act.Dt.VmDendTau":        "5",
 					"Layer.Act.Dt.GeTau":            "5",
-					"Layer.Act.GABAB.Gbar":          "0.25",  //
+					"Layer.Act.GABAB.Gbar":          "0.006", //
 					"Layer.Act.NMDA.Gbar":           "0.008", // ~0.008 seems best
 					"Layer.Act.NMDA.Tau":            "200",   // 200 slightly better than 300 early, same later; 100 fails
 					"Layer.Act.Noise.On":            "false", // todo?

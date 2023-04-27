@@ -42,6 +42,8 @@ func (np *NMDAParams) Update() {
 
 // MgGFmVbio returns the NMDA conductance as a function of biological membrane potential
 // based on Mg ion blocking
+// Using parameters from Brunel & Wang (2001)
+// see also Urakubo et al (2008)
 func (np *NMDAParams) MgGFmVbio(vbio float32) float32 {
 	vbio += np.Voff
 	if vbio >= 0 {
@@ -72,6 +74,8 @@ func (np *NMDAParams) MgGFmV(v float32) float32 {
 // CaFmVbio returns the calcium current factor as a function of biological membrane
 // potential -- this factor is needed for computing the calcium current * MgGFmV.
 // This is the same function used in VGCC for their conductance factor.
+// based on implementation in Urakubo et al (2008).
+// http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/
 func (np *NMDAParams) CaFmVbio(vbio float32) float32 {
 	vbio += np.Voff
 	if vbio > -0.5 && vbio < 0.5 { // see note above

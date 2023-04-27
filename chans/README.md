@@ -74,7 +74,7 @@ The NMDA code uses the exponential function from Brunel & Wang (2001), which is 
 
 ```Go
 	vbio := v*100 - 100
-	return 1 / (1 + 0.28*math32.Exp(-0.062*vbio))
+	return -vbio / (1 + 0.28*math32.Exp(-0.062*vbio))
 ```   
 
 where v is the normalized Vm value from the Leabra rate code equations -- `vbio` converts it into biological units.

@@ -114,12 +114,15 @@ func (ss *Sim) VGRun() {
 	g := 0.0
 	for vi := 0; vi < nv; vi++ {
 		v = ss.Vstart + float64(vi)*ss.Vstep
-		g = (v - ss.GABAberev) / (1 + math.Exp(ss.GABAbv*((v-ss.GABAberev)+ss.GABAbo)))
-		gs := ss.GABAstd.GFmV(chans.VFmBio(float32(v)))
+		g = float64(ss.GABAstd.Gbar) * (v - ss.GABAberev) / (1 + math.Exp(ss.GABAbv*((v-ss.GABAberev)+ss.GABAbo)))
+		gs := ss.GABAstd.Gbar * ss.GABAstd.GFmV(chans.VFmBio(float32(v)))
+
+		gbug := 0.2 / (1.0 + mat32.FastExp(float32(0.1*((v+90)+10))))
 
 		dt.SetCellFloat("V", vi, v)
 		dt.SetCellFloat("GgabaB", vi, g)
 		dt.SetCellFloat("GgabaB_std", vi, float64(gs))
+		dt.SetCellFloat("GgabaB_bug", vi, float64(gbug))
 	}
 	ss.VGPlot.Update()
 }
@@ -133,6 +136,7 @@ func (ss *Sim) ConfigVGTable(dt *etable.Table) {
 		{"V", etensor.FLOAT64, nil, nil},
 		{"GgabaB", etensor.FLOAT64, nil, nil},
 		{"GgabaB_std", etensor.FLOAT64, nil, nil},
+		{"GgabaB_bug", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }

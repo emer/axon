@@ -40,6 +40,8 @@ func (np *VGCCParams) Update() {
 // }
 
 // GFmV returns the VGCC conductance as a function of normalized membrane potential
+// based on implementation in Urakubo et al (2008).
+// http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/
 func (np *VGCCParams) GFmV(v float32) float32 {
 	vbio := VToBio(v)
 	if vbio > -0.5 && vbio < 0.5 { // see note above
