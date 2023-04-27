@@ -28,6 +28,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.CaRun()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
 }

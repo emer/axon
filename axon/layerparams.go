@@ -540,7 +540,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, v
 	if !(ly.Act.Clamp.IsInput.IsTrue() || ly.Act.Clamp.IsTarget.IsTrue()) {
 		nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
 	}
-	ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
+	ly.Act.GABAB.GABAB(nrn.Gi, &nrn.GABAB, &nrn.GABABx)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
 }

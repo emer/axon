@@ -9,6 +9,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/emer/axon/chans"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -28,6 +29,8 @@ func main() {
 }
 
 func guirun() {
+	TheSim.VGRun()
+	TheSim.SGRun()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
 }
@@ -37,20 +40,21 @@ const LogPrec = 4
 
 // Sim holds the params, table, etc
 type Sim struct {
-	GABAbv    float64 `def:"0.1" desc:"multiplier on GABAb as function of voltage"`
-	GABAbo    float64 `def:"10" desc:"offset of GABAb function"`
-	GABAberev float64 `def:"-90" desc:"GABAb reversal / driving potential"`
-	Vstart    float64 `def:"-90" desc:"starting voltage"`
-	Vend      float64 `def:"0" desc:"ending voltage"`
-	Vstep     float64 `def:"1" desc:"voltage increment"`
-	Smax      int     `def:"15" desc:"max number of spikes"`
-	RiseTau   float64 `desc:"rise time constant"`
-	DecayTau  float64 `desc:"decay time constant -- must NOT be same as RiseTau"`
-	GsXInit   float64 `desc:"initial value of GsX driving variable at point of synaptic input onset -- decays expoentially from this start"`
-	MaxTime   float64 `inactive:"+" desc:"time when peak conductance occurs, in TimeInc units"`
-	TauFact   float64 `inactive:"+" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
-	TimeSteps int     `desc:"total number of time steps to take"`
-	TimeInc   float64 `desc:"time increment per step"`
+	GABAstd   chans.GABABParams `desc:"standard chans version of GABAB"`
+	GABAbv    float64           `def:"0.1" desc:"multiplier on GABAb as function of voltage"`
+	GABAbo    float64           `def:"10" desc:"offset of GABAb function"`
+	GABAberev float64           `def:"-90" desc:"GABAb reversal / driving potential"`
+	Vstart    float64           `def:"-90" desc:"starting voltage"`
+	Vend      float64           `def:"0" desc:"ending voltage"`
+	Vstep     float64           `def:"1" desc:"voltage increment"`
+	Smax      int               `def:"15" desc:"max number of spikes"`
+	RiseTau   float64           `desc:"rise time constant"`
+	DecayTau  float64           `desc:"decay time constant -- must NOT be same as RiseTau"`
+	GsXInit   float64           `desc:"initial value of GsX driving variable at point of synaptic input onset -- decays expoentially from this start"`
+	MaxTime   float64           `inactive:"+" desc:"time when peak conductance occurs, in TimeInc units"`
+	TauFact   float64           `inactive:"+" desc:"time constant factor used in integration: (Decay / Rise) ^ (Rise / (Decay - Rise))"`
+	TimeSteps int               `desc:"total number of time steps to take"`
+	TimeInc   float64           `desc:"time increment per step"`
 
 	VGTable   *etable.Table `view:"no-inline" desc:"table for plot"`
 	SGTable   *etable.Table `view:"no-inline" desc:"table for plot"`
@@ -67,13 +71,15 @@ var TheSim Sim
 
 // Config configures all the elements using the standard functions
 func (ss *Sim) Config() {
+	ss.GABAstd.Defaults()
+	ss.GABAstd.GiSpike = 1
 	ss.GABAbv = 0.1
 	ss.GABAbo = 10
 	ss.GABAberev = -90
 	ss.Vstart = -90
 	ss.Vend = 0
-	ss.Vstep = 1
-	ss.Smax = 15
+	ss.Vstep = .01
+	ss.Smax = 30
 	ss.RiseTau = 45
 	ss.DecayTau = 50
 	ss.GsXInit = 1
@@ -109,21 +115,24 @@ func (ss *Sim) VGRun() {
 	for vi := 0; vi < nv; vi++ {
 		v = ss.Vstart + float64(vi)*ss.Vstep
 		g = (v - ss.GABAberev) / (1 + math.Exp(ss.GABAbv*((v-ss.GABAberev)+ss.GABAbo)))
+		gs := ss.GABAstd.GFmV(chans.VFmBio(float32(v)))
 
 		dt.SetCellFloat("V", vi, v)
-		dt.SetCellFloat("g_GABAb", vi, g)
+		dt.SetCellFloat("GgabaB", vi, g)
+		dt.SetCellFloat("GgabaB_std", vi, float64(gs))
 	}
 	ss.VGPlot.Update()
 }
 
 func (ss *Sim) ConfigVGTable(dt *etable.Table) {
-	dt.SetMetaData("name", "GaBabplotTable")
+	dt.SetMetaData("name", "GABABplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"V", etensor.FLOAT64, nil, nil},
-		{"g_GABAb", etensor.FLOAT64, nil, nil},
+		{"GgabaB", etensor.FLOAT64, nil, nil},
+		{"GgabaB_std", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -134,7 +143,8 @@ func (ss *Sim) ConfigVGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("V", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("g_GABAb", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GgabaB", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GgabaB_std", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 
@@ -145,27 +155,31 @@ func (ss *Sim) SGRun() {
 	ss.Update()
 	dt := ss.SGTable
 
-	dt.SetNumRows(ss.Smax)
+	nv := int(float64(ss.Smax) / ss.Vstep)
+	dt.SetNumRows(nv)
 	s := 0.0
 	g := 0.0
-	for si := 0; si < ss.Smax; si++ {
-		s = float64(si)
-		g = 1 / (1 + math.Exp(-(s-7.1)/1.4))
+	for si := 0; si < nv; si++ {
+		s = float64(si) * ss.Vstep
+		g = 1.0 / (1.0 + math.Exp(-(s-7.1)/1.4))
+		gs := ss.GABAstd.GFmS(float32(s))
 
 		dt.SetCellFloat("S", si, s)
-		dt.SetCellFloat("gmax_GABAb", si, g)
+		dt.SetCellFloat("GgabaB_max", si, g)
+		dt.SetCellFloat("GgabaBstd_max", si, float64(gs))
 	}
 	ss.SGPlot.Update()
 }
 
 func (ss *Sim) ConfigSGTable(dt *etable.Table) {
-	dt.SetMetaData("name", "SG_GaBabplotTable")
+	dt.SetMetaData("name", "SG_GABAplotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
 		{"S", etensor.FLOAT64, nil, nil},
-		{"gmax_GABAb", etensor.FLOAT64, nil, nil},
+		{"GgabaB_max", etensor.FLOAT64, nil, nil},
+		{"GgabaBstd_max", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -176,7 +190,8 @@ func (ss *Sim) ConfigSGPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
 	plt.SetColParams("S", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("gmax_GABAb", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GgabaB_max", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GgabaBstd_max", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 
@@ -191,16 +206,30 @@ func (ss *Sim) TimeRun() {
 	time := 0.0
 	gs := 0.0
 	x := ss.GsXInit
+	gabaBx := float32(ss.GsXInit)
+	gabaB := float32(0.0)
+	gi := 0.0 // just goes down
 	for t := 0; t < ss.TimeSteps; t++ {
 		// record starting state first, then update
 		dt.SetCellFloat("Time", t, time)
 		dt.SetCellFloat("Gs", t, gs)
 		dt.SetCellFloat("GsX", t, x)
+		dt.SetCellFloat("GABAB", t, float64(gabaB))
+		dt.SetCellFloat("GABABx", t, float64(gabaBx))
 
+		gis := 1.0 / (1.0 + math.Exp(-(gi-7.1)/1.4))
 		dGs := (ss.TauFact*x - gs) / ss.RiseTau
-		dX := -x / ss.DecayTau
+		dXo := -x / ss.DecayTau
 		gs += dGs
-		x += dX
+		x += gis + dXo
+
+		var dG, dX float32
+		ss.GABAstd.BiExp(gabaB, gabaBx, &dG, &dX)
+		dt.SetCellFloat("dG", t, float64(dG))
+		dt.SetCellFloat("dX", t, float64(dX))
+
+		ss.GABAstd.GABAB(float32(gi), &gabaB, &gabaBx)
+
 		time += ss.TimeInc
 	}
 	ss.TimePlot.Update()
@@ -215,6 +244,10 @@ func (ss *Sim) ConfigTimeTable(dt *etable.Table) {
 		{"Time", etensor.FLOAT64, nil, nil},
 		{"Gs", etensor.FLOAT64, nil, nil},
 		{"GsX", etensor.FLOAT64, nil, nil},
+		{"GABAB", etensor.FLOAT64, nil, nil},
+		{"GABABx", etensor.FLOAT64, nil, nil},
+		{"dG", etensor.FLOAT64, nil, nil},
+		{"dX", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
@@ -227,6 +260,8 @@ func (ss *Sim) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D
 	plt.SetColParams("Time", eplot.Off, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Gs", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("GsX", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GABAB", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("GABABx", eplot.On, eplot.FixMin, 0, eplot.FloatMax, 0)
 	return plt
 }
 

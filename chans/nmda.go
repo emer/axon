@@ -18,7 +18,7 @@ type NMDAParams struct {
 	Tau  float32 `viewif:"Gbar>0" def:"30,50,100,200,300" desc:"decay time constant for NMDA channel activation  -- rise time is 2 msec and not worth extra effort for biexponential.  30 fits the Urakubo et al (2008) model with ITau = 100, but 100 works better in practice is small networks so far."`
 	ITau float32 `viewif:"Gbar>0" def:"1,100" desc:"decay time constant for NMDA channel inhibition, which captures the Urakubo et al (2008) allosteric dynamics (100 fits their model well) -- set to 1 to eliminate that mechanism."`
 	MgC  float32 `viewif:"Gbar>0" def:"1:1.5" desc:"magnesium ion concentration: Brunel & Wang (2001) and Sanders et al (2013) use 1 mM, based on Jahr & Stevens (1990). Urakubo et al (2008) use 1.5 mM. 1.4 with Voff = 5 works best so far in large models, 1.2, Voff = 0 best in smaller nets."`
-	Voff float32 `viewif:"Gbar>0" def:"0,5" desc:"offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model.  0 is best in small models"`
+	Voff float32 `viewif:"Gbar>0" def:"0" desc:"offset in membrane potential in biological units for voltage-dependent functions.  5 corresponds to the -65 mV rest, -45 threshold of the Urakubo et al (2008) model. 5 was used before in a buggy version of NMDA equation -- 0 is new default."`
 
 	Dt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	IDt    float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
@@ -30,7 +30,7 @@ func (np *NMDAParams) Defaults() {
 	np.Tau = 100
 	np.ITau = 1 // off by default, as it doesn't work in actual axon models..
 	np.MgC = 1.4
-	np.Voff = 5
+	np.Voff = 0
 	np.Update()
 }
 
@@ -56,13 +56,15 @@ func (np *NMDAParams) MgGFmV(v float32) float32 {
 	return np.MgGFmVbio(VToBio(v))
 }
 
-// Urakubo 2008 implementation has this:
+// Urakubo 2008 implementation in genesis
+// http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/ has this:
 // if ({ abs {v} } < 0.5)
 // max = {-1 / 0.0756 * {1 - 0.0378 * {v}}}
+// and this:
 // if (V > -0.1 & V < 0.1){
 //	  channel->Vca = -1/0.0756 + 0.5*V;
 // }
-// this was coded as this without the minus sign:
+// this was initially mis-coded as this without the minus sign:
 // if vbio > -0.1 && vbio < 0.1 {
 // 	return 1.0 / (0.0756 + 0.5*vbio)
 // }
@@ -72,7 +74,7 @@ func (np *NMDAParams) MgGFmV(v float32) float32 {
 // This is the same function used in VGCC for their conductance factor.
 func (np *NMDAParams) CaFmVbio(vbio float32) float32 {
 	vbio += np.Voff
-	if vbio > -0.5 && vbio < 0.5 {
+	if vbio > -0.5 && vbio < 0.5 { // see note above
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
 	}
 	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))

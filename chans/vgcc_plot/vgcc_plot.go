@@ -28,6 +28,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.VmRun()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
 }
@@ -62,8 +63,8 @@ func (ss *Sim) Config() {
 	ss.VGCC.Defaults()
 	ss.VGCC.Gbar = 1
 	ss.Vstart = -90
-	ss.Vend = 0
-	ss.Vstep = 1
+	ss.Vend = 2
+	ss.Vstep = 0.01
 	ss.TimeSteps = 200
 	ss.TimeSpike = true
 	ss.SpikeFreq = 50
