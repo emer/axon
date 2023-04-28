@@ -27,6 +27,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
+					"Layer.Inhib.Layer.Gi":   "1.8", // stronger inhibition here to knock out novelty
+					"Layer.Inhib.Pool.Gi":    "1.2",
 					"Layer.Act.Dend.ModGain": "10", // gating ease..
 				}},
 			//////////////////////////////////////////////////
@@ -72,6 +74,11 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAExtPrjn", Desc: "ext learns very fast",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.001",
+				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Rel": "1", // use abs to manipulate
+					"Prjn.PrjnScale.Abs": "1", // 2 > 1
 				}},
 		}},
 	},

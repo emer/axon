@@ -203,6 +203,10 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn
 		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
 		nrn.GModRaw += gRaw
 		nrn.GModSyn += *gSyn
+	case MaintG:
+		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		nrn.GMaintRaw += gRaw
+		// note: Syn happens via NMDA in Act
 	case ContextG:
 		nrn.CtxtGeRaw += gRaw
 	}

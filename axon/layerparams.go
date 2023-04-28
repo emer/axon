@@ -345,6 +345,7 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.GMaintRaw = 0
 	nrn.CtxtGeRaw = 0
 	nrn.GeSyn = nrn.GeBase
 	nrn.GiSyn = nrn.GiBase
@@ -501,8 +502,8 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	switch ly.LayType {
 	case PTMaintLayer:
 		mod := ctx.NeuroMod.ACh * ly.Act.Dend.ModGain * nrn.GModSyn
-		nrn.GeRaw *= (1 + mod)
-		nrn.GeSyn *= (1 + mod)
+		nrn.GeRaw *= mod // excluding maint here
+		nrn.GeSyn *= mod
 		extraRaw = ctx.NeuroMod.ACh * ly.Act.Dend.ModGain * nrn.GModRaw
 		extraSyn = mod
 	case BLALayer:
@@ -522,9 +523,10 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	geRaw := nrn.GeRaw
 	geSyn := nrn.GeSyn
 	ly.Act.NMDAFmRaw(nrn, geRaw+extraRaw)
+	ly.Act.MaintNMDAFmRaw(nrn)
 	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(ctx, ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc+extraSyn) // sets nrn.GeExt too
+	ly.Act.GeFmSyn(ctx, ni, nrn, geSyn, nrn.Gnmda+nrn.GnmdaMaint+nrn.Gvgcc+extraSyn) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	ly.Act.GSkCaFmCa(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(ctx, ni, nrn, nrn.GiSyn)

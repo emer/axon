@@ -149,6 +149,10 @@ func (net *Network) ConnectCTSelf(ly *Layer, pat prjn.Pattern, prjnClass string)
 	ctxt = net.ConnectLayers(ly, ly, pat, CTCtxtPrjn)
 	ctxt.SetClass("CTSelfCtxt" + prjnClass)
 	maint = net.LateralConnectLayer(ly, pat)
+	// maint.DefParams = params.Params{
+	// 	"Prjn.PrjnScale.Abs": "1",
+	// 	"Prjn.Com.GType":     "MaintG", // not helpful here
+	// }
 	maint.SetClass("CTSelfMaint" + prjnClass)
 	return
 }
@@ -319,6 +323,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 
 	pj = net.LateralConnectLayer(pt, ptSelf)
 	pj.DefParams = params.Params{
+		"Prjn.Com.GType":        "MaintG",
 		"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
 		"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
 		"Prjn.Learn.LRate.Base": "0.0001", // slower > faster

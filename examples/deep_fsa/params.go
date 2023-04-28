@@ -53,15 +53,17 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 == 2.4 > lower
 					"Layer.Inhib.Layer.FB":          "1",
 					"Layer.Act.Dend.SSGi":           "0",   // 0 > higher -- kills nmda maint!
-					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1.2
+					"Layer.CT.GeGain":               "1.5", // for maint: 1.5 better, else 0.8 > 0.5 > 1.2
 					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0",
 					"Layer.Act.Dt.VmDendTau":        "5",
 					"Layer.Act.Dt.GeTau":            "5",
-					"Layer.Act.GABAB.Gbar":          "0.006", //
-					"Layer.Act.NMDA.Gbar":           "0.008", // ~0.008 seems best
-					"Layer.Act.NMDA.Tau":            "200",   // 200 slightly better than 300 early, same later; 100 fails
+					"Layer.Act.GABAB.Gbar":          "0.01",  // 0.007 > 0.006, 5
+					"Layer.Act.NMDA.Gbar":           "0.006", // ~0.008 seems best
+					"Layer.Act.NMDA.Tau":            "100",   // 200 slightly better than 300 early, same later; 100 fails
+					"Layer.Act.MaintNMDA.Gbar":      "0.008", // ~0.008 seems best
+					"Layer.Act.MaintNMDA.Tau":       "200",   // 200 slightly better than 300 early, same later; 100 fails
 					"Layer.Act.Noise.On":            "false", // todo?
 					"Layer.Act.Noise.Ge":            "0.005",
 					"Layer.Act.Noise.Gi":            "0.005",
@@ -80,11 +82,9 @@ var ParamSets = params.Sets{
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0",   // clear long
-					"Layer.Act.Decay.AHP":           "0.0",   // clear ahp
-					"Layer.Act.GABAB.Gbar":          "0.2",   // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":           "0.004", // .15 > .1
-					"Layer.Learn.RLRate.SigmoidMin": "1.0",   // 1 > 0.05 with CaSpkD as var
+					"Layer.Act.Decay.Glong":         "0.0", // clear long
+					"Layer.Act.Decay.AHP":           "0.0", // clear ahp
+					"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > 0.05 with CaSpkD as var
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
@@ -119,9 +119,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",  // 0.1  >= 0.05 > 0.2
+					"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 1.0?
+					"Prjn.Com.GType":     "MaintG",
 					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
 				}},
+			// {Sel: ".CTSelfMaint", Desc: "",
+			// 	Params: params.Params{
+			// 		"Prjn.PrjnScale.Rel": "0.1",
+			// 		"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
+			// 	}},
 			{Sel: ".FmPulv", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2

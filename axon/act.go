@@ -497,26 +497,27 @@ func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
 // for basic Axon, at the neuron level .
 // This is included in axon.Layer to drive the computation.
 type ActParams struct {
-	Spike   SpikeParams       `view:"inline" desc:"Spiking function parameters"`
-	Dend    DendParams        `view:"inline" desc:"dendrite-specific parameters"`
-	Init    ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState"`
-	Decay   DecayParams       `view:"inline" desc:"amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora) "`
-	Dt      DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
-	Gbar    chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
-	Erev    chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
-	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
-	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
-	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
-	Mahp    chans.MahpParams  `view:"inline" desc:"M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
-	Sahp    chans.SahpParams  `view:"inline" desc:"slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron"`
-	KNa     chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
-	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
-	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
-	VGCC    chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
-	AK      chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
-	SKCa    chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
-	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
-	PopCode PopCodeParams     `view:"inline" desc:"provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)"`
+	Spike     SpikeParams       `view:"inline" desc:"Spiking function parameters"`
+	Dend      DendParams        `view:"inline" desc:"dendrite-specific parameters"`
+	Init      ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState"`
+	Decay     DecayParams       `view:"inline" desc:"amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora) "`
+	Dt        DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
+	Gbar      chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
+	Erev      chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
+	Clamp     ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
+	Noise     SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
+	VmRange   minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
+	Mahp      chans.MahpParams  `view:"inline" desc:"M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
+	Sahp      chans.SahpParams  `view:"inline" desc:"slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron"`
+	KNa       chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
+	NMDA      chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
+	MaintNMDA chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
+	GABAB     chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
+	VGCC      chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
+	AK        chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
+	SKCa      chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
+	Attn      AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
+	PopCode   PopCodeParams     `view:"inline" desc:"provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)"`
 }
 
 func (ac *ActParams) Defaults() {
@@ -538,7 +539,10 @@ func (ac *ActParams) Defaults() {
 	ac.KNa.Defaults()
 	ac.KNa.On.SetBool(true)
 	ac.NMDA.Defaults()
-	ac.NMDA.Gbar = 0.004 // 0.004 = old 0.15 with bug
+	ac.NMDA.Gbar = 0.004 // 0.004, old was 0.15 with bug
+	ac.MaintNMDA.Defaults()
+	ac.MaintNMDA.Gbar = 0.008
+	ac.MaintNMDA.Tau = 200
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
@@ -565,6 +569,7 @@ func (ac *ActParams) Update() {
 	ac.Sahp.Update()
 	ac.KNa.Update()
 	ac.NMDA.Update()
+	ac.MaintNMDA.Update()
 	ac.GABAB.Update()
 	ac.VGCC.Update()
 	ac.AK.Update()
@@ -584,8 +589,6 @@ func (ac *ActParams) Update() {
 func (ac *ActParams) DecayLearnCa(nrn *Neuron, decay float32) {
 	nrn.GnmdaLrn -= decay * nrn.GnmdaLrn
 	nrn.NmdaCa -= decay * nrn.NmdaCa
-	nrn.SnmdaO -= decay * nrn.SnmdaO
-	nrn.SnmdaI -= decay * nrn.SnmdaI
 
 	nrn.VgccCa -= decay * nrn.VgccCa
 	nrn.VgccCaInt -= decay * nrn.VgccCaInt
@@ -655,6 +658,8 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
 	nrn.Gnmda -= glong * nrn.Gnmda
+	nrn.GMaintSyn -= glong * nrn.GMaintSyn
+	nrn.GnmdaMaint -= glong * nrn.GnmdaMaint
 
 	nrn.Gvgcc -= glong * nrn.Gvgcc
 	nrn.VgccM -= glong * nrn.VgccM
@@ -673,6 +678,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.GMaintRaw = 0
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
@@ -723,10 +729,9 @@ func (ac *ActParams) InitActs(rnd erand.Rand, nrn *Neuron) {
 
 	nrn.GnmdaSyn = 0
 	nrn.Gnmda = 0
+	nrn.GnmdaMaint = 0
 	nrn.GnmdaLrn = 0
 	nrn.NmdaCa = 0
-	nrn.SnmdaO = 0
-	nrn.SnmdaI = 0
 
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
@@ -748,6 +753,8 @@ func (ac *ActParams) InitActs(rnd erand.Rand, nrn *Neuron) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.GMaintRaw = 0
+	nrn.GMaintSyn = 0
 
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
@@ -794,6 +801,16 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geTot float32) {
 	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, geTot)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
+}
+
+// MaintNMDAFmRaw updates all the Maint NMDA variables from
+// GModRaw and current Vm, Spiking
+func (ac *ActParams) MaintNMDAFmRaw(nrn *Neuron) {
+	if ac.MaintNMDA.Gbar == 0 {
+		return
+	}
+	nrn.GMaintSyn = ac.MaintNMDA.NMDASyn(nrn.GMaintSyn, nrn.GMaintRaw)
+	nrn.GnmdaMaint = ac.MaintNMDA.Gnmda(nrn.GMaintSyn, nrn.VmDend)
 }
 
 // GvgccFmVm updates all the VGCC voltage-gated calcium channel variables
