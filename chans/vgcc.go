@@ -26,6 +26,8 @@ func (np *VGCCParams) Defaults() {
 func (np *VGCCParams) Update() {
 }
 
+// note on a bug present in version prior to 4/27/2023, re
+// eliminating div 0 at 0, and numerical "fuzz" around 0:
 // Urakubo 2008 implementation in genesis
 // http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/ has this:
 // if ({ abs {v} } < 0.5)
@@ -44,7 +46,7 @@ func (np *VGCCParams) Update() {
 // http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/
 func (np *VGCCParams) GFmV(v float32) float32 {
 	vbio := VToBio(v)
-	if vbio > -0.5 && vbio < 0.5 { // see note above
+	if vbio > -0.5 && vbio < 0.5 { // this eliminates div 0 at 0, and numerical "fuzz" around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
 	}
 	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))

@@ -72,9 +72,9 @@ func (ss *Sim) Config() {
 	ss.MgC = 1
 	ss.NMDAd = 3.57
 	ss.NMDAerev = 0
-	ss.Vstart = -90 // -90 -- use -1 1 to test val around 0
-	ss.Vend = 2     // 50
-	ss.Vstep = .01  // use 0.001 instead for testing around 0
+	ss.Vstart = -1 // -90 // -90 -- use -1 1 to test val around 0
+	ss.Vend = 1    // 2     // 50
+	ss.Vstep = .01 // use 0.001 instead for testing around 0
 	ss.Tau = 100
 	ss.TimeSteps = 1000
 	ss.TimeV = -50
