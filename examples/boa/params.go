@@ -28,8 +28,19 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain":           "2", // 2 min -- reduces maint early
-					"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
+					"Layer.Act.Dend.ModGain":           "1.5", // 2 min -- reduces maint early
+					"Layer.Learn.NeuroMod.AChDisInhib": "0",   // todo: explore!  might be bad..
+				}},
+			// {Sel: ".PTPredLayer", Desc: "",
+			// 	Params: params.Params{
+			// 		"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
+			// 	}},
+			{Sel: ".VSPatchLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Pool.Gi": "0.5", // todo: go lower, get more inhib from elsewhere?
+					"Layer.Inhib.Pool.FB": "0",
+					"Layer.PVLV.Thr":      "0.4",
+					"Layer.PVLV.Gain":     "20",
 				}},
 			////////////////////////////////////////////
 			// Cortical Prjns
@@ -51,11 +62,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2",
+					"Prjn.PrjnScale.Abs": "4",
 				}},
-			{Sel: ".ThalToPFCInhib", Desc: "",
+			{Sel: ".ToPTp", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1",
+					"Prjn.PrjnScale.Abs": "4",
 				}},
 			////////////////////////////////////////////
 			// PVLV Prjns
@@ -82,8 +93,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "3",    // 3 orig
+					"Prjn.PrjnScale.Abs":    "2",    // 3 orig
 					"Prjn.Learn.LRate.Base": "0.01", // 0.05 def
+				}},
+			{Sel: ".DrivesToVSPatch", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1", // 3 orig
+				}},
+			{Sel: "#OFCusPTpToVsPatch", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "5", // 3 orig
 				}},
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
@@ -93,13 +112,17 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4", // 4 def
 				}},
+			{Sel: ".SuperToPT", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.5", // 4 def
+				}},
 			{Sel: "#ACCcostToACCcostMD", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "3", // supertothal for us stronger
 				}},
 			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3", // 4 prevents some gating, 2 leaks with supertothal 4
+					"Prjn.PrjnScale.Abs": "5", // with new mod, this can be stronger
 				}},
 			{Sel: ".BLAFromNovel", Desc: "if too strong, isn't out-competed",
 				Params: params.Params{

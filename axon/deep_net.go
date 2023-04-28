@@ -149,10 +149,10 @@ func (net *Network) ConnectCTSelf(ly *Layer, pat prjn.Pattern, prjnClass string)
 	ctxt = net.ConnectLayers(ly, ly, pat, CTCtxtPrjn)
 	ctxt.SetClass("CTSelfCtxt" + prjnClass)
 	maint = net.LateralConnectLayer(ly, pat)
-	// maint.DefParams = params.Params{
-	// 	"Prjn.PrjnScale.Abs": "1",
-	// 	"Prjn.Com.GType":     "MaintG", // not helpful here
-	// }
+	maint.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "0.5", // normalized separately
+		"Prjn.Com.GType":     "MaintG",
+	}
 	maint.SetClass("CTSelfMaint" + prjnClass)
 	return
 }
@@ -213,10 +213,18 @@ func (net *Network) AddPTMaintLayer4D(name string, nPoolsY, nPoolsX, nNeurY, nNe
 // ConnectPTMaintSelf adds a Self (Lateral) projection within a PTMaintLayer,
 // which supports active maintenance, with a class of PTSelfMaint
 func (net *Network) ConnectPTMaintSelf(ly *Layer, pat prjn.Pattern, prjnClass string) *Prjn {
-	if prjnClass != "" {
+	if prjnClass != "" && prjnClass[0] != ' ' {
 		prjnClass = " " + prjnClass
 	}
 	pj := net.LateralConnectLayer(ly, pat)
+	pj.DefParams = params.Params{
+		"Prjn.Com.GType":        "MaintG",
+		"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
+		"Prjn.PrjnScale.Abs":    "4",      // strong..
+		"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
+		"Prjn.SWt.Init.Mean":    "0.5",
+		"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
+	}
 	pj.SetClass("PTSelfMaint" + prjnClass)
 	return pj
 }
@@ -265,7 +273,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	pt.SetClass(name)
 	thal.SetClass(name)
 
-	full := prjn.NewFull()
+	// full := prjn.NewFull()
 	one2one := prjn.NewOneToOne()
 	pthal, thalpt := net.BidirConnectLayers(pt, thal, one2one)
 	pthal.SetClass("PTtoThal" + prjnClass)
@@ -280,21 +288,22 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	}
 	thalpt.SetClass("ThalToPT" + prjnClass)
 	// if is4D {
-	fmThalInhib := params.Params{
-		"Prjn.PrjnScale.Rel": "1.0",
-		"Prjn.PrjnScale.Abs": "1.0",
-		"Prjn.Learn.Learn":   "false",
-		"Prjn.SWt.Adapt.On":  "false",
-		"Prjn.SWt.Init.SPct": "0",
-		"Prjn.SWt.Init.Mean": "0.8",
-		"Prjn.SWt.Init.Var":  "0.0",
-	}
-	ti := net.ConnectLayers(thal, pt, full, InhibPrjn)
-	ti.DefParams = fmThalInhib
-	ti.SetClass("ThalToPFCInhib")
-	ti = net.ConnectLayers(thal, ct, full, InhibPrjn)
-	ti.DefParams = fmThalInhib
-	ti.SetClass("ThalToPFCInhib")
+	// fmThalInhib := params.Params{
+	// 	"Prjn.PrjnScale.Rel": "1.0",
+	// 	"Prjn.PrjnScale.Abs": "1.0",
+	// 	"Prjn.Learn.Learn":   "false",
+	// 	"Prjn.SWt.Adapt.On":  "false",
+	// 	"Prjn.SWt.Init.SPct": "0",
+	// 	"Prjn.SWt.Init.Mean": "0.8",
+	// 	"Prjn.SWt.Init.Var":  "0.0",
+	// }
+	// note: holding off on these for now -- thal modulation should handle..
+	// ti := net.ConnectLayers(thal, pt, full, InhibPrjn)
+	// ti.DefParams = fmThalInhib
+	// ti.SetClass("ThalToPFCInhib")
+	// ti = net.ConnectLayers(thal, ct, full, InhibPrjn)
+	// ti.DefParams = fmThalInhib
+	// ti.SetClass("ThalToPFCInhib")
 
 	sthal := net.ConnectLayers(super, thal, superToPT, ForwardPrjn) // shortcuts
 	sthal.DefParams = params.Params{
@@ -321,16 +330,7 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	}
 	pj.SetClass("SuperToPT" + prjnClass)
 
-	pj = net.LateralConnectLayer(pt, ptSelf)
-	pj.DefParams = params.Params{
-		"Prjn.Com.GType":        "MaintG",
-		"Prjn.PrjnScale.Rel":    "1",      // use abs to manipulate
-		"Prjn.PrjnScale.Abs":    "2",      // 2 > 1
-		"Prjn.Learn.LRate.Base": "0.0001", // slower > faster
-		"Prjn.SWt.Init.Mean":    "0.5",
-		"Prjn.SWt.Init.Var":     "0.5", // high variance so not just spreading out over time
-	}
-	pj.SetClass("PTSelfMaint" + prjnClass)
+	net.ConnectPTMaintSelf(pt, ptSelf, prjnClass)
 
 	pt.PlaceBehind(ct, space)
 	thal.PlaceBehind(pt, space)
@@ -454,7 +454,8 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
-	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4" // 2.4 orig
+	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
+	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.4"        // 2.4 orig
 	pfcPT.DefParams["Layer.Inhib.Pool.Gi"] = "2.0"
 	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "1" // maybe better -- test further
 
@@ -516,6 +517,7 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
+	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active
 	pfcPT.DefParams["Layer.Inhib.Layer.Gi"] = "2.0"
 	pfcPT.DefParams["Layer.Learn.NeuroMod.AChDisInhib"] = "1" // maybe better -- test further
 
@@ -535,9 +537,14 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 // pfcPTp <-> layP
 // sets PFCPrjn class name for projections
 func (net *Network) ConnectToPFC(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat prjn.Pattern) {
-	prjnClass := " PFCPrjn"
+	prjnClass := "PFCPrjn"
 	if lay != nil {
 		net.ConnectLayers(lay, pfc, pat, ForwardPrjn).SetClass(prjnClass)
+		pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPrjn) // ptp needs more input
+		pj.DefParams = params.Params{
+			"Prjn.PrjnScale.Abs": "4",
+		}
+		pj.SetClass("ToPTp " + prjnClass)
 	}
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
 	net.ConnectPTPredToPulv(pfcPTp, layP, pat, pat, prjnClass)
@@ -554,6 +561,11 @@ func (net *Network) ConnectToPFCBack(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat p
 	tp.SetClass(prjnClass)
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
 	net.ConnectPTPredToPulv(pfcPTp, layP, pat, pat, prjnClass)
+	pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPrjn) // ptp needs more input
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "4",
+	}
+	pj.SetClass("ToPTp " + prjnClass)
 }
 
 // ConnectToPFCBidir connects given predictively learned input to all
@@ -568,5 +580,10 @@ func (net *Network) ConnectToPFCBidir(lay, layP, pfc, pfcCT, pfcPTp *Layer, pat 
 	fb.SetClass(prjnClass)
 	net.ConnectToPulv(pfc, pfcCT, layP, pat, pat, prjnClass)
 	net.ConnectPTPredToPulv(pfcPTp, layP, pat, pat, prjnClass)
+	pj := net.ConnectLayers(lay, pfcPTp, pat, ForwardPrjn) // ptp needs more input
+	pj.DefParams = params.Params{
+		"Prjn.PrjnScale.Abs": "4",
+	}
+	pj.SetClass("ToPTp " + prjnClass)
 	return
 }

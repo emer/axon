@@ -166,7 +166,7 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Context.PVLV
 	pv.Drive.NActive = int32(trn.NDrives) + 1
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
-	pv.Effort.Gain = 0.05
+	pv.Effort.Gain = 0.1    // faster effort
 	pv.Effort.Max = 20
 	pv.Effort.MaxNovel = 8
 	pv.Effort.MaxPostDip = 4
@@ -843,7 +843,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "RewPred_NR", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)

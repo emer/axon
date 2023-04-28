@@ -19,20 +19,19 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.AdaptRate":       "0.1",
 					"Layer.Inhib.ActAvg.LoTol":           "0.8",
 					"Layer.Inhib.ActAvg.HiTol":           "0.0",
-					"Layer.Act.Dt.IntTau":                "40",     // 30 == 40 no diff
-					"Layer.Act.Decay.Act":                "0.0",    // 0 > .2 -- highly sensitive
-					"Layer.Act.Decay.Glong":              "0.6",    // 0.6 def > 0.5, .7 -- highly sensitive
-					"Layer.Act.Decay.AHP":                "0.0",    // 0 def
-					"Layer.Act.Dend.SSGi":                "2",      // 3.0o0 best
-					"Layer.Act.Dend.GbarExp":             "0.2",    // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":               "3",      // 3 > 6 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
-					"Layer.Act.Dt.GeTau":                 "5",      // 5 = 4 (bit slower) > 6 > 7 @176
-					"Layer.Act.Dt.LongAvgTau":            "20",     // 20 > 50 > 100
-					"Layer.Act.Dt.VmDendTau":             "5",      // 5 much better in fsa!
-					"Layer.Act.NMDA.MgC":                 "1.4",    // 1.4, 5 > 1.2, 0
-					"Layer.Act.NMDA.Voff":                "5",      // see above
-					"Layer.Act.NMDA.Gbar":                "0.15",   // .15 > .2 (blows up -- needs more inhib)
-					"Layer.Act.GABAB.Gbar":               "0.2",    // .2
+					"Layer.Act.Dt.IntTau":                "40",  // 30 == 40 no diff
+					"Layer.Act.Decay.Act":                "0.0", // 0 > .2 -- highly sensitive
+					"Layer.Act.Decay.Glong":              "0.6", // 0.6 def > 0.5, .7 -- highly sensitive
+					"Layer.Act.Decay.AHP":                "0.0", // 0 def
+					"Layer.Act.Dend.SSGi":                "2",   // 3.0o0 best
+					"Layer.Act.Dend.GbarExp":             "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Act.Dend.GbarR":               "3",   // 3 > 6 > 2 good for 0.2 -- too low rel to ExpGbar causes fast ini learning, but then unravels
+					"Layer.Act.Dt.GeTau":                 "5",   // 5 = 4 (bit slower) > 6 > 7 @176
+					"Layer.Act.Dt.LongAvgTau":            "20",  // 20 > 50 > 100
+					"Layer.Act.Dt.VmDendTau":             "5",   // 5 much better in fsa!
+					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0
+					"Layer.Act.NMDA.Gbar":                "0.004",
+					"Layer.Act.GABAB.Gbar":               "0.006",
 					"Layer.Act.AK.Gbar":                  "0.1",    // 1 == .1 trace-v8
 					"Layer.Act.VGCC.Gbar":                "0.02",   // non nmda: 0.15 good, 0.3 blows up
 					"Layer.Act.VGCC.Ca":                  "25",     // 25 / 10tau best performance
@@ -46,7 +45,7 @@ var ParamSets = params.Sets{
 					"Layer.Learn.CaSpk.SynTau":           "30",     // 30 > 20, 40
 					"Layer.Learn.CaSpk.Dt.MTau":          "5",      // 5 == 10 -- no big diff
 					"Layer.Learn.LrnNMDA.MgC":            "1.4",    // 1.4, 5 > 1.2, 0
-					"Layer.Learn.LrnNMDA.Voff":           "5",      // see above
+					"Layer.Learn.LrnNMDA.Voff":           "0",      // see above
 					"Layer.Learn.LrnNMDA.Tau":            "100",    // 100 def
 					"Layer.Learn.TrgAvgAct.On":           "true",   // no diff?
 					"Layer.Learn.TrgAvgAct.SubMean":      "1.0",    // 1 > 0 -- doesn't slow learning -- always 1

@@ -24,7 +24,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.FB":       "0.5",   // 0.5 > 0.2 > 0.1 > 1.0 -- usu 1.0
 					"Layer.Inhib.ActAvg.Nominal": "0.05",  // 0.4 for 1.2, 0.3 for 1.1
 					"Layer.Act.NMDA.MgC":         "1.2",   // 1.2 > 1.4 for SynSpkTheta
-					"Layer.Act.GABAB.Gbar":       "0.005", //
+					"Layer.Act.GABAB.Gbar":       "0.006", //
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":       {"StdDev": "0.1", "Min": "0.5"},

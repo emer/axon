@@ -27,9 +27,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.8", // stronger inhibition here to knock out novelty
-					"Layer.Inhib.Pool.Gi":    "1.2",
-					"Layer.Act.Dend.ModGain": "10", // gating ease..
+					"Layer.Inhib.Layer.Gi":     "1.8",
+					"Layer.Inhib.Pool.Gi":      "1.8",
+					"Layer.Act.Dend.ModGain":   "1.5",
+					"Layer.Act.GABAB.Gbar":     "0.01",
+					"Layer.Act.MaintNMDA.Gbar": "0.008",
+					"Layer.Act.MaintNMDA.Tau":  "300",
 				}},
 			//////////////////////////////////////////////////
 			// required custom params for this project
@@ -75,10 +78,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.001",
 				}},
+			{Sel: ".ThalToPFCInhib", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0",
+				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "1", // use abs to manipulate
-					"Prjn.PrjnScale.Abs": "1", // 2 > 1
+					"Prjn.PrjnScale.Abs": "4", // 4 needed to sustain
 				}},
 		}},
 	},

@@ -235,8 +235,8 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Learn.NeuroMod.AChDisInhib = 0   // essential: has to fire when expected but not present!
 	ly.Learn.NeuroMod.BurstGain = 1
 	ly.Learn.NeuroMod.DipGain = 0.1 // extinction -- reduce to slow
-	ly.PVLV.Thr = 0.3
-	ly.PVLV.Gain = 8
+	ly.PVLV.Thr = 0.4
+	ly.PVLV.Gain = 20
 }
 
 func (ly *LayerParams) DrivesDefaults() {

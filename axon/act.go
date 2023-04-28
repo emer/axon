@@ -104,9 +104,10 @@ type DendParams struct {
 	GbarR   float32     `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
 	SSGi    float32     `def:"0,2" desc:"SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend) -- this is important for countering a positive feedback loop from NMDA getting stronger over the course of learning -- also typically requires SubMean = 1 for TrgAvgAct and learning to fully counter this feedback loop."`
 	HasMod  slbool.Bool `inactive:"+" desc:"set automatically based on whether this layer has any recv projections that have a GType conductance type of Modulatory -- if so, then multiply GeSyn etc by GModSyn"`
-	ModGain float32     `desc:"gain factor on the total modulatory input  -- modulation can never go > 1 so increasing this gain can help ensure that full excitatory conductance comes in"`
+	ModGain float32     `desc:"multiplicative gain factor on the total modulatory input -- this can also be controlled by the PrjnScale.Abs factor on ModulatoryG inputs, but it is convenient to be able to control on the layer as well."`
+	ModBase float32     `desc:"baseline modulatory level for modulatory effects -- net modulation is ModBase + ModGain * GModSyn"`
 
-	pad, pad1, pad2 int32
+	pad, pad1 int32
 }
 
 func (dp *DendParams) Defaults() {
@@ -114,6 +115,7 @@ func (dp *DendParams) Defaults() {
 	dp.GbarExp = 0.2
 	dp.GbarR = 3
 	dp.ModGain = 1
+	dp.ModBase = 0
 }
 
 func (dp *DendParams) Update() {
@@ -541,8 +543,8 @@ func (ac *ActParams) Defaults() {
 	ac.NMDA.Defaults()
 	ac.NMDA.Gbar = 0.004 // 0.004, old was 0.15 with bug
 	ac.MaintNMDA.Defaults()
-	ac.MaintNMDA.Gbar = 0.008
-	ac.MaintNMDA.Tau = 200
+	ac.MaintNMDA.Gbar = 0.008 // medium time-scale defaults
+	ac.MaintNMDA.Tau = 300
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02

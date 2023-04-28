@@ -73,9 +73,13 @@ const (
 	// layer 5 intrinsic bursting (5IB) deep neurons that exhibit
 	// robust, stable maintenance of activity over the duration of a
 	// goal engaged window, modulated by basal ganglia (BG) disinhibitory
-	// gating, supported by strong NMDA channels and recurrent excitation.
-	// Use Act.Dend.ModGain to set extra strength for thalamic gating
-	// inputs which are only briefly active.
+	// gating, supported by strong MaintNMDA channels and recurrent excitation.
+	// The lateral PTSelfMaint projection uses MaintG to drive GMaintRaw input
+	// that feeds into the stronger, longer MaintNMDA channels,
+	// and the ThalToPT ModulatoryG projection from BGThalamus multiplicatively
+	// modulates the strength of other inputs, such that only at the time of
+	// BG gating are these strong enough to drive sustained active maintenance.
+	// Use Act.Dend.ModGain to parameterize.
 	PTMaintLayer
 
 	// PTPredLayer implements the subset of pyramidal tract (PT)

@@ -166,11 +166,13 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.Decay.AHP = 0
 	ly.Params.Act.Decay.OnRew.SetBool(true)
 	ly.Params.Act.Sahp.Gbar = 0.01 // not much pressure -- long maint
-	// ly.Params.Act.GABAB.Gbar = 0.01
-	// ly.Params.Act.NMDA.Gbar = 0.01 // long strong maint
-	// ly.Params.Act.NMDA.Tau = 300
-	ly.Params.Act.Dend.ModGain = 2 // multiplies thalamic input projections -- only briefly active so need to be stronger -- may need to be 10, 20 etc
-	ly.Params.Inhib.Layer.Gi = 2.4
+	ly.Params.Act.GABAB.Gbar = 0.01
+	ly.Params.Act.Dend.ModGain = 1.5
+	ly.Params.Inhib.ActAvg.Nominal = 0.3 // very active
+	if ly.Is4D() {
+		ly.Params.Inhib.ActAvg.Nominal = 0.05
+	}
+	ly.Params.Inhib.Layer.Gi = 1.8
 	ly.Params.Inhib.Pool.Gi = 1.8
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 
@@ -214,9 +216,9 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.CT.DecayTau = 50
 
 	// regular:
-	ly.Act.GABAB.Gbar = 0.005
-	ly.Act.NMDA.Gbar = 0.004
-	ly.Act.NMDA.Tau = 100
+	// ly.Act.GABAB.Gbar = 0.006
+	// ly.Act.NMDA.Gbar = 0.004
+	// ly.Act.NMDA.Tau = 100
 }
 
 // called in Defaults for Pulvinar layer type

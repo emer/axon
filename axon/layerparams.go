@@ -501,17 +501,17 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	extraSyn := float32(0)
 	switch ly.LayType {
 	case PTMaintLayer:
-		mod := ctx.NeuroMod.ACh * ly.Act.Dend.ModGain * nrn.GModSyn
-		nrn.GeRaw *= mod // excluding maint here
+		mod := ly.Act.Dend.ModBase + ctx.NeuroMod.ACh*ly.Act.Dend.ModGain*nrn.GModSyn
+		nrn.GeRaw *= mod // key: excluding GModMaint here, so active maintenance can persist
 		nrn.GeSyn *= mod
 		extraRaw = ctx.NeuroMod.ACh * ly.Act.Dend.ModGain * nrn.GModRaw
 		extraSyn = mod
 	case BLALayer:
-		extraRaw = ctx.NeuroMod.ACh * nrn.GModRaw
-		extraSyn = ctx.NeuroMod.ACh * nrn.GModSyn
+		extraRaw = ctx.NeuroMod.ACh * nrn.GModRaw * ly.Act.Dend.ModGain
+		extraSyn = ctx.NeuroMod.ACh * nrn.GModSyn * ly.Act.Dend.ModGain
 	default:
 		if ly.Act.Dend.HasMod.IsTrue() {
-			mod := ly.Act.Dend.ModGain * nrn.GModSyn
+			mod := ly.Act.Dend.ModBase + ly.Act.Dend.ModGain*nrn.GModSyn
 			if mod > 1 {
 				mod = 1
 			}
@@ -523,7 +523,7 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	geRaw := nrn.GeRaw
 	geSyn := nrn.GeSyn
 	ly.Act.NMDAFmRaw(nrn, geRaw+extraRaw)
-	ly.Act.MaintNMDAFmRaw(nrn)
+	ly.Act.MaintNMDAFmRaw(nrn) // uses GMaintRaw directly
 	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
 	ly.Act.GeFmSyn(ctx, ni, nrn, geSyn, nrn.Gnmda+nrn.GnmdaMaint+nrn.Gvgcc+extraSyn) // sets nrn.GeExt too
