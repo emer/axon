@@ -32,7 +32,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Act.NMDA.Voff":                "0",
 					"Layer.Act.NMDA.Gbar":                "0.006",
-					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def
+					"Layer.Act.GABAB.Gbar":               "0.012", // 0.015 def
 					"Layer.Learn.LrnNMDA.Gbar":           "0.006",
 					"Layer.Act.Sahp.Gbar":                "0.1",  //
 					"Layer.Act.Sahp.Off":                 "0.8",  //
@@ -59,7 +59,7 @@ var ParamSets = params.Sets{
 					"Layer.CT.DecayTau":                  "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Act.Decay.Act":                "0.0",
 					"Layer.Act.Decay.Glong":              "0.0",
-					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def > 0.01
+					"Layer.Act.GABAB.Gbar":               "0.012", // 0.015 def > 0.01
 					"Layer.Act.MaintNMDA.Gbar":           "0.007", // 0.007 best, but 0.01 > lower if reg nmda weak
 					"Layer.Act.MaintNMDA.Tau":            "200",   // 200 > 100 > 300
 					"Layer.Act.NMDA.Gbar":                "0.007", // 0.007 matching maint best

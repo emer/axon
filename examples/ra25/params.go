@@ -26,7 +26,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.NMDA.MgC":         "1.4",   // 1.2 > 1.4 for SynSpkTheta
 					"Layer.Act.NMDA.Gbar":        "0.006", // 0.006 def
 					"Layer.Learn.LrnNMDA.Gbar":   "0.006",
-					"Layer.Act.GABAB.Gbar":       "0.015", // 0.015 def
+					"Layer.Act.GABAB.Gbar":       "0.012", // 0.015 def
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":       {"StdDev": "0.1", "Min": "0.5"},

@@ -213,15 +213,15 @@ func NetActTest(t *testing.T, gpu bool) {
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
-	qtr0HidGes := []float32{0.31093338, 0, 0, 0}
+	qtr0HidGes := []float32{0.35385746, 0, 0, 0}
 	qtr0HidGis := []float32{0.1547833, 0.1547833, 0.1547833, 0.1547833}
-	qtr0OutActs := []float32{0.55552065, 0, 0, 0}
+	qtr0OutActs := []float32{0.5638285, 0, 0, 0}
 	qtr0OutGes := []float32{0.3789059, 0, 0, 0}
-	qtr0OutGis := []float32{0.20974194, 0.20974194, 0.20974194, 0.20974194}
+	qtr0OutGis := []float32{0.19012947, 0.19012947, 0.19012947, 0.19012947}
 
-	qtr3HidActs := []float32{0.53240955, 0, 0, 0}
-	qtr3HidGes := []float32{0.36792937, 0, 0, 0}
-	qtr3HidGis := []float32{0.21772972, 0.21772972, 0.21772972, 0.21772972}
+	qtr3HidActs := []float32{0.56933826, 0, 0, 0}
+	qtr3HidGes := []float32{0.43080646, 0, 0, 0}
+	qtr3HidGis := []float32{0.21780373, 0.21780373, 0.21780373, 0.21780373}
 	qtr3OutActs := []float32{0.7293362, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0.42606226, 0.42606226, 0.42606226, 0.4260622}
@@ -378,20 +378,20 @@ func NetTestLearn(t *testing.T, gpu bool) {
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
-	qtr3HidCaP := []float32{0.48164067, 0.47525364, 0.4646372, 0.4758791}
-	qtr3HidCaD := []float32{0.45075783, 0.4384308, 0.43476036, 0.43747732}
-	qtr3OutCaP := []float32{0.5401089, 0.54058266, 0.5389495, 0.54185855}
-	qtr3OutCaD := []float32{0.45136902, 0.43564644, 0.4355862, 0.4358528}
+	qtr3HidCaP := []float32{0.54922855, 0.54092765, 0.5374942, 0.5424088}
+	qtr3HidCaD := []float32{0.5214639, 0.49507803, 0.4993692, 0.5030094}
+	qtr3OutCaP := []float32{0.5834704, 0.5698648, 0.5812334, 0.5744743}
+	qtr3OutCaD := []float32{0.5047723, 0.4639851, 0.48322654, 0.47419468}
 
 	q3hidCaP := make([]float32, 4*NLrnPars)
 	q3hidCaD := make([]float32, 4*NLrnPars)
 	q3outCaP := make([]float32, 4*NLrnPars)
 	q3outCaD := make([]float32, 4*NLrnPars)
 
-	hidDwts := []float32{0.0015201505, 0.0017171452, 0.00143093, 0.0017795337}
-	outDwts := []float32{0.0067295646, 0.009379843, 0.007949657, 0.009496575}
-	hidWts := []float32{0.50912, 0.51030153, 0.50858474, 0.5106757}
-	outWts := []float32{0.5402921, 0.5560492, 0.5475578, 0.55674076}
+	hidDwts := []float32{0.0015591943, 0.002412954, 0.0018998333, 0.0019943935}
+	outDwts := []float32{0.003556001, 0.008800001, 0.0067477366, 0.0069709825}
+	hidWts := []float32{0.5093542, 0.5144739, 0.51139706, 0.51196396}
+	outWts := []float32{0.5213235, 0.5526102, 0.5404005, 0.54173136}
 
 	if gpu {
 		hidDwts = []float32{0.0015176951, 0.0017110581, 0.0014290133, 0.0017731723}

@@ -43,7 +43,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Off":                 "0.8",   //
 					"Layer.Act.Sahp.Slope":               "0.02",  //
 					"Layer.Act.Sahp.CaTau":               "5",     //
-					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def
+					"Layer.Act.GABAB.Gbar":               "0.012", // 0.015 def
 					"Layer.Act.AK.Gbar":                  "0.1",   // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
 					"Layer.Act.VGCC.Gbar":                "0.02",  // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Act.VGCC.Ca":                  "25",    // 25 / 10tau default

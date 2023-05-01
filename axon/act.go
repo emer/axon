@@ -541,10 +541,10 @@ func (ac *ActParams) Defaults() {
 	ac.KNa.Defaults()
 	ac.KNa.On.SetBool(true)
 	ac.NMDA.Defaults()
-	ac.NMDA.Gbar = 0.004 // 0.004, old was 0.15 with bug
+	ac.NMDA.Gbar = 0.006
 	ac.MaintNMDA.Defaults()
-	ac.MaintNMDA.Gbar = 0.008 // medium time-scale defaults
-	ac.MaintNMDA.Tau = 300
+	ac.MaintNMDA.Gbar = 0.015
+	ac.MaintNMDA.Tau = 200
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
