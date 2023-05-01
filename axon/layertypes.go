@@ -100,13 +100,6 @@ const (
 	// showing spiking rates for each, and Act always represents signed value.
 	RewLayer
 
-	// RSalienceAChLayer reads Max layer activity from specified source layer(s)
-	// and optionally the global Context.NeuroMod.Rew or RewPred state variables,
-	// and updates the global ACh = Max of all as the positively-rectified,
-	// non-prediction-discounted reward salience signal.
-	// Acetylcholine (ACh) is known to represent something like this signal.
-	RSalienceAChLayer
-
 	// RWPredLayer computes reward prediction for a simple Rescorla-Wagner
 	// learning dynamic (i.e., PV learning in the PVLV framework).
 	// Activity is computed as linear function of excitatory conductance
@@ -151,12 +144,17 @@ const (
 	// CeMLayer represents a central nucleus of the amygdala layer.
 	CeMLayer
 
-	// PPTgLayer represents a pedunculopontine tegmental nucleus layer.
-	// it subtracts prior trial's excitatory conductance to
-	// compute the temporal derivative over time, with a positive
-	// rectification.
-	// also sets Act to the exact differenence.
-	PPTgLayer
+	// LDTLayer represents the laterodorsal tegmentum layer, which
+	// is the primary limbic ACh (acetylcholine) driver to other ACh:
+	// BG cholinergic interneurons (CIN) and nucleus basalis ACh areas.
+	// The phasic ACh release signals reward salient inputs from CS, US
+	// and US omssion, and it drives widespread disinhibition of BG gating
+	// and VTA DA firing.
+	// It receives excitation from superior colliculus which computes
+	// a temporal derivative (stimulus specific adaptation, SSA)
+	// of sensory inputs, and inhibitory input from OFC, ACC driving
+	// suppression of distracting inputs during goal-engaged states.
+	LDTLayer
 
 	// VSPatchLayer represents a ventral striatum patch layer,
 	// which learns to represent the expected amount of dopamine reward
@@ -175,19 +173,24 @@ const (
 	// visualization purposes -- updated by VTALayer.
 	LHbLayer
 
-	// DrivesLayer represents the Drives in DrivePVLV framework.
+	// DrivesLayer represents the Drives in PVLV framework.
 	// It tracks the ContextPVLV.Drives values for
 	// visualization and predictive learning purposes.
 	DrivesLayer
 
-	// EffortLayer represents the Effort factor in DrivePVLV framework.
+	// EffortLayer represents the Effort factor in PVLV framework.
 	// It tracks the ContextPVLV.Effort.Disc value for
 	// visualization and predictive learning purposes.
 	EffortLayer
 
+	// UrgencyLayer represents the Urgency factor in PVLV framework.
+	// It tracks the ContextPVLV.Urgency.Urge value for
+	// visualization and predictive learning purposes.
+	UrgencyLayer
+
 	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
 	// It tracks the ContextPVLV.USpos or USneg, for visualization
-	// and predictive learning purposes. Actual US inputs are set in DrivePVLV.
+	// and predictive learning purposes. Actual US inputs are set in PVLV.
 	USLayer
 
 	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
@@ -219,12 +222,12 @@ const (
 	// Typically just a single unit per Pool representing a given stripe.
 	GPLayer
 
-	// VThalLayer represents a BG gated thalamic layer,
+	// BGThalLayer represents a BG gated thalamic layer,
 	// which receives BG gating in the form of an
 	// inhibitory projection from GPi.  Located
 	// mainly in the Ventral thalamus: VA / VM / VL,
 	// and also parts of MD mediodorsal thalamus.
-	VThalLayer
+	BGThalLayer
 
 	// VSGated represents explicit coding of VS gating status:
 	// JustGated and HasGated (since last US or failed predicted US),

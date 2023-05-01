@@ -18,7 +18,11 @@ import (
 )
 
 // LayerBase manages the structural elements of the layer, which are common
-// to any Layer type. The main Layer then can just have the algorithm-specific code.
+// to any Layer type.
+// The Base does not have algorithm-specific methods and parameters, so it can be easily
+// reused for different algorithms, and cleanly separates the algorithm-specific code.
+// Any dependency on the algorithm-level Layer can be captured in the AxonLayer interface,
+// accessed via the AxonLay field.
 type LayerBase struct {
 	AxonLay       AxonLayer          `copy:"-" json:"-" xml:"-" view:"-" desc:"we need a pointer to ourselves as an AxonLayer (which subsumes emer.Layer), which can always be used to extract the true underlying type of object when layer is embedded in other structs -- function receivers do not have this ability so this is necessary."`
 	Network       *Network           `copy:"-" json:"-" xml:"-" view:"-" desc:"our parent network, in case we need to use it to find other layers etc -- set when added by network"`
@@ -39,6 +43,7 @@ type LayerBase struct {
 	Pools         []Pool             `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
 	Exts          []float32          `view:"-" desc:"external input values for this layer, allocated from network global Exts slice"`
 	BuildConfig   map[string]string  `tableview:"-" desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
+	DefParams     params.Params      `tableview:"-" desc:"default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map."`
 	ParamsHistory params.HistoryImpl `tableview:"-" desc:"provides a history of parameters applied to the layer"`
 }
 
@@ -311,6 +316,18 @@ func (ly *LayerBase) ApplyParams(pars *params.Sheet, setMsg bool) (bool, error) 
 		}
 	}
 	return applied, rerr
+}
+
+// ApplyDefParams applies DefParams default parameters if set
+// Called by Layer.Defaults()
+func (ly *LayerBase) ApplyDefParams() {
+	if ly.DefParams == nil {
+		return
+	}
+	err := ly.DefParams.Apply(ly.AxonLay, false)
+	if err != nil {
+		log.Printf("programmer error -- fix DefParams: %s\n", err)
+	}
 }
 
 // NonDefaultParams returns a listing of all parameters in the Layer that

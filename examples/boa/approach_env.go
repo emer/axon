@@ -47,7 +47,8 @@ type Approach struct {
 	CS          int                         `desc:"current CS"`
 	LastCS      int                         `desc:"last CS -- previous trial"`
 	ShouldGate  bool                        `desc:"true if looking at correct CS for first time"`
-	DidGate     bool                        `desc:"did gate at some point during sequence"`
+	JustGated   bool                        `desc:"just gated on this trial"`
+	HasGated    bool                        `desc:"has gated at some point during sequence"`
 }
 
 func (ev *Approach) Name() string {
@@ -168,7 +169,8 @@ func (ev *Approach) NewStart() {
 	ev.US = -1
 	ev.LastUS = -1
 	ev.Rew = 0
-	ev.DidGate = false
+	ev.JustGated = false
+	ev.HasGated = false
 	ev.RenderState()
 	ev.RenderRewUS()
 }
@@ -232,7 +234,7 @@ func (ev *Approach) RenderAction(act int) {
 // Step does one step
 func (ev *Approach) Step() bool {
 	ev.LastCS = ev.CS
-	if ev.LastUS != -1 || ev.Time >= ev.TimeMax {
+	if ev.LastUS != -1 { // || ev.Time >= ev.TimeMax {
 		ev.NewStart()
 	}
 	ev.RenderState()
@@ -320,23 +322,30 @@ func (ev *Approach) USForPos() int {
 	return int(uss.Values[ev.Pos])
 }
 
-// ActGen returns an "instinctive" action that implements a basic policy
-func (ev *Approach) ActGen() int {
-	posUs := ev.USForPos()
+// PosHasDriveUS returns true if the current USForPos corresponds
+// to the current Drive -- i.e., are we looking at the right thing?a
+func (ev *Approach) PosHasDriveUS() bool {
+	return ev.Drive == ev.USForPos()
+}
+
+// InstinctAct returns an "instinctive" action that implements a basic policy
+func (ev *Approach) InstinctAct(justGated, hasGated bool) int {
+	ev.JustGated = justGated
+	ev.HasGated = hasGated
 	fwd := ev.ActMap["Forward"]
 	cons := ev.ActMap["Consume"]
 	ev.ShouldGate = false
-	if posUs == ev.Drive {
-		if ev.Dist == 0 {
-			if ev.LastAct == cons {
-				ev.ShouldGate = true
-				return cons
-			}
+	if ev.Dist == 0 {
+		if ev.LastAct == cons {
+			ev.ShouldGate = true
 			return cons
 		}
-		ev.ShouldGate = !ev.DidGate && (ev.LastAct != fwd) // first time looking at correct one
+		return cons
+	}
+	if ev.HasGated {
 		return fwd
 	}
+	ev.ShouldGate = ev.PosHasDriveUS() // looking at correct, haven't yet gated
 	lt := ev.ActMap["Left"]
 	rt := ev.ActMap["Right"]
 	if ev.LastAct == lt || ev.LastAct == rt {

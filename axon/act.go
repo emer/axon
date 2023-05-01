@@ -213,7 +213,7 @@ type DtParams struct {
 	GiTau       float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, GeInt from Ge, and GiInt from GiSyn -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
 	LongAvgTau  float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
-	MaxCycStart int32   `def:"50" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax values within a theta cycle -- early cycles often reflect prior state"`
+	MaxCycStart int32   `def:"50" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax, GeIntMax values within a theta cycle -- early cycles often reflect prior state"`
 
 	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
@@ -606,6 +606,16 @@ func (ac *ActParams) DecayLearnCa(nrn *Neuron, decay float32) {
 	nrn.SKCaM -= decay * nrn.SKCaM
 }
 
+// DecayAHP decays after-hyperpolarization variables
+// by given factor (typically Decay.AHP)
+func (ac *ActParams) DecayAHP(nrn *Neuron, decay float32) {
+	nrn.MahpN -= decay * nrn.MahpN
+	nrn.SahpCa -= decay * nrn.SahpCa
+	nrn.SahpN -= decay * nrn.SahpN
+	nrn.GknaMed -= decay * nrn.GknaMed
+	nrn.GknaSlow -= decay * nrn.GknaSlow
+}
+
 // DecayState decays the activation state toward initial values
 // in proportion to given decay parameter.  Special case values
 // such as Glong and KNa are also decayed with their
@@ -615,10 +625,10 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
 	nrn.ISIAvg = -1
 	nrn.ActInt = ac.Init.Act // start fresh
+	nrn.Spiked = 0           // always fresh
 
 	if decay > 0 { // no-op for most, but not all..
 		nrn.Spike = 0
-		nrn.Spiked = 0
 		nrn.Act -= decay * (nrn.Act - ac.Init.Act)
 		nrn.ActInt -= decay * (nrn.ActInt - ac.Init.Act)
 		nrn.GeSyn -= decay * (nrn.GeSyn - nrn.GeBase)
@@ -636,12 +646,9 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 	nrn.VmDend -= glong * (nrn.VmDend - ac.Init.Vm)
 
-	nrn.MahpN -= ac.Decay.AHP * nrn.MahpN
-	nrn.SahpCa -= ac.Decay.AHP * nrn.SahpCa
-	nrn.SahpN -= ac.Decay.AHP * nrn.SahpN
-	nrn.GknaMed -= ac.Decay.AHP * nrn.GknaMed
-	nrn.GknaSlow -= ac.Decay.AHP * nrn.GknaSlow
-
+	if ac.Decay.AHP > 0 {
+		ac.DecayAHP(nrn, ac.Decay.AHP)
+	}
 	nrn.GgabaB -= glong * nrn.GgabaB
 	nrn.GABAB -= glong * nrn.GABAB
 	nrn.GABABx -= glong * nrn.GABABx
@@ -812,6 +819,13 @@ func (ac *ActParams) GkFmVm(nrn *Neuron) {
 	if ac.KNa.On.IsTrue() {
 		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, nrn.Spike > .5)
 		nrn.Gk += nrn.GknaMed + nrn.GknaSlow
+	}
+}
+
+// KNaNewState does TrialSlow version of KNa during NewState if option is seta
+func (ac *ActParams) KNaNewState(ctx *Context, nrn *Neuron) {
+	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
+		nrn.GknaSlow += ac.KNa.Slow.Max * nrn.SpkPrv
 	}
 }
 

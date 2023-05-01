@@ -1,0 +1,190 @@
+
+Layer: VTA
+
+Layer: LHb
+
+Layer: LDT
+
+Layer: USpos
+
+Layer: USneg
+
+Layer: USposP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: USnegP
+
+Layer: PVpos
+
+Layer: PVneg
+
+Layer: PVposP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+
+Layer: PVnegP
+
+Layer: Drives
+
+Layer: DrivesP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: Effort
+
+Layer: EffortP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+	       OFCusPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+
+Layer: Urgency
+
+Layer: UrgencyP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+	       OFCusPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+
+Layer: VsGPi
+	        VsGPeIn		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	        VsMtxGo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	         VsSTNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	         VsSTNs		Abs:	  0.50	Rel:	  1.00	GScale:	  0.06	Rel:  0.50
+
+Layer: VsGPeOut
+	        VsMtxGo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+	         VsSTNp		Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
+
+Layer: VsGPeIn
+	        VsMtxNo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	       VsGPeOut		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	         VsSTNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+
+Layer: VsGPeTA
+	        VsGPeIn		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  1.00
+	         VsSTNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+
+Layer: VsSTNp
+	        VsGPeIn		Abs:	  0.10	Rel:	  1.00	GScale:	  0.00	Rel:  1.00
+	    BLAPosAcqD1		Abs:	  2.00	Rel:	  1.00	GScale:	  0.40	Rel:  1.00
+
+Layer: VsSTNs
+	    BLAPosAcqD1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+
+Layer: VsMtxGo
+	        VsGPeTA		Abs:	  2.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
+	        VsGPeIn		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	          USpos		Abs:	  2.00	Rel:	  0.20	GScale:	  0.06	Rel:  0.09
+	    BLAPosAcqD1		Abs:	  4.00	Rel:	  1.00	GScale:	  0.58	Rel:  0.43
+	         Drives		Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
+	          OFCus		Abs:	  1.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.43
+	        Urgency		Abs:	 20.00	Rel:	  0.10	GScale:	  0.29	Rel:  0.04
+
+Layer: VsMtxNo
+	        VsGPeTA		Abs:	  2.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
+	        VsGPeIn		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	    BLAPosExtD2		Abs:	  0.10	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	         Drives		Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
+	          OFCus		Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.50
+
+Layer: VSGated
+
+Layer: VSPatch
+	         Drives		Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
+							    Abs Params: .VSPatchPrjn: 2
+	       OFCusPTp		Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
+							    Abs Params: Base:.VSPatchPrjn: 2
+
+Layer: BLAPosAcqD1
+	    BLAPosExtD2		Abs:	  0.40	Rel:	  1.00	GScale:	  0.13	Rel:  1.00
+							    Abs Params: Base:.BLAExtToAcq: 0.4
+	     BLANovelCS		Abs:	  2.00	Rel:	  0.10	GScale:	  0.12	Rel:  0.06
+	          USpos		Abs:	  6.00	Rel:	  0.50	GScale:	  0.62	Rel:  0.31
+	             CS		Abs:	  1.50	Rel:	  1.00	GScale:	  0.47	Rel:  0.62
+
+Layer: BLAPosExtD2
+	    BLAPosAcqD1		Abs:	  2.00	Rel:	  1.00	GScale:	  1.00	Rel:  0.50
+	          USpos		Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
+	       OFCusPTp		Abs:	  0.50	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
+							    Abs Params: Base:.PTpToBLAExt: 0.5
+	      ContextIn		Abs:	  4.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.50
+							    Abs Params: Base:#ContextInToBLAPosExtD2: 4
+
+Layer: BLANegExtD1
+	    BLANegAcqD2		Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
+
+Layer: BLANegAcqD2
+	    BLANegExtD1		Abs:	  0.40	Rel:	  1.00	GScale:	  0.13	Rel:  1.00
+							    Abs Params: Base:.BLAExtToAcq: 0.4
+
+Layer: CeMPos
+	    BLAPosAcqD1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+	    BLAPosExtD2		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: CeMNeg
+	    BLANegAcqD2		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+	    BLANegExtD1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: BLANovelCS
+	             CS		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+
+Layer: OFCus
+	         Drives		Abs:	  1.00	Rel:	  0.20	GScale:	  0.09	Rel:  0.09
+	          PVpos		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	          USpos		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	        DrivesP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:  0.05
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	       UrgencyP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	         USposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	         PVposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	    BLAPosAcqD1		Abs:	  6.00	Rel:	  1.00	GScale:	  0.91	Rel:  0.45
+							    Abs Params: Base:#BLAPosAcqD1ToOFCus: 6
+	          TimeP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	           Time		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	            CSP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.05
+
+Layer: OFCusCT
+	          OFCus		Abs:	  1.00	Rel:	  1.00	GScale:	  0.37	Rel:  0.37
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.37
+	        DrivesP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	       UrgencyP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	         USposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	         PVposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	          TimeP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	            CSP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+
+Layer: OFCusPT
+	        OFCusMD		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	          OFCus		Abs:	  0.01	Rel:	  1.00	GScale:	  0.00	Rel:  0.50
+	        OFCusPT		Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
+
+Layer: OFCusMD
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	          OFCus		Abs:	  2.00	Rel:	  1.00	GScale:	  1.00	Rel:  0.50
+							    Abs Params: Base:.SuperToThal: 2.0
+	          VsGPi		Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
+
+Layer: OFCusPTp
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.23
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.23
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	       UrgencyP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	          TimeP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	           Time		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.23
+	             CS		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.23
+
+Layer: NotMaint
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+
+Layer: Time
+
+Layer: TimeP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+	       OFCusPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+
+Layer: CS
+
+Layer: CSP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+
+Layer: ContextIn
+
+Layer: SC
+	             CS		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+

@@ -33,7 +33,7 @@ const LogPrec = 4
 
 // DrEffPlot holds the params, table, etc
 type DrEffPlot struct {
-	Context   axon.Context  `desc:"Drive, Effort params are under DrivePVLV"`
+	Context   axon.Context  `desc:"Drive, Effort, Urgency params are under PVLV"`
 	TimeSteps int           `desc:"total number of time steps to simulate"`
 	USTime    minmax.Int    `desc:"range for number of time steps between US receipt"`
 	Effort    minmax.F32    `desc:"range for random effort per step"`
@@ -69,7 +69,7 @@ func (ss *DrEffPlot) Config() {
 func (ss *DrEffPlot) Update() {
 }
 
-// EffortPlot plots the equation as a function of V
+// EffortPlot plots the equation as a function of effort / time
 func (ss *DrEffPlot) EffortPlot() {
 	ss.Update()
 	dt := ss.Table
@@ -79,33 +79,51 @@ func (ss *DrEffPlot) EffortPlot() {
 	pp.Effort.Reset()
 	for vi := 0; vi < nv; vi++ {
 		ev := pp.Effort.DiscFmEffort()
-		dt.SetCellFloat("T", vi, float64(vi))
-		dt.SetCellFloat("Eff", vi, float64(ev))
+		dt.SetCellFloat("X", vi, float64(vi))
+		dt.SetCellFloat("Y", vi, float64(ev))
 
 		pp.Effort.AddEffort(1) // unit
 	}
 	ss.Plot.Update()
 }
 
+// UrgencyPlot plots the equation as a function of effort / time
+func (ss *DrEffPlot) UrgencyPlot() {
+	ss.Update()
+	dt := ss.Table
+	nv := 100
+	dt.SetNumRows(nv)
+	pp := &ss.Context.PVLV
+	pp.Urgency.Reset()
+	for vi := 0; vi < nv; vi++ {
+		ev := pp.Urgency.UrgeFmUrgency()
+		dt.SetCellFloat("X", vi, float64(vi))
+		dt.SetCellFloat("Y", vi, float64(ev))
+
+		pp.Urgency.AddEffort(1) // unit
+	}
+	ss.Plot.Update()
+}
+
 func (ss *DrEffPlot) ConfigTable(dt *etable.Table) {
-	dt.SetMetaData("name", "EffortTable")
+	dt.SetMetaData("name", "PlotTable")
 	dt.SetMetaData("read-only", "true")
 	dt.SetMetaData("precision", strconv.Itoa(LogPrec))
 
 	sch := etable.Schema{
-		{"T", etensor.FLOAT64, nil, nil},
-		{"Eff", etensor.FLOAT64, nil, nil},
+		{"X", etensor.FLOAT64, nil, nil},
+		{"Y", etensor.FLOAT64, nil, nil},
 	}
 	dt.SetFromSchema(sch, 0)
 }
 
 func (ss *DrEffPlot) ConfigPlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.Plot2D {
-	plt.Params.Title = "Effort Discount Function Plot"
-	plt.Params.XAxisCol = "T"
+	plt.Params.Title = "Effort Discount or Urgency Function Plot"
+	plt.Params.XAxisCol = "X"
 	plt.SetTable(dt)
 	// order of params: on, fixMin, min, fixMax, max
-	plt.SetColParams("T", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
-	plt.SetColParams("Eff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
+	plt.SetColParams("X", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
+	plt.SetColParams("Y", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	return plt
 }
 
@@ -116,18 +134,20 @@ func (ss *DrEffPlot) TimeRun() {
 	ss.Update()
 	dt := ss.TimeTable
 
-	pp := &ss.Context.PVLV
-	pp.Effort.Reset()
+	pv := &ss.Context.PVLV
+	pv.Effort.Reset()
+	pv.Urgency.Reset()
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
-	pp.USpos.Set(0, 0)
-	pp.Drive.ToBaseline()
-	pp.Update()
+	pv.USpos.Set(0, 0)
+	pv.Drive.ToBaseline()
+	pv.Update()
 	lastUS := 0
 	for ti := 0; ti < ss.TimeSteps; ti++ {
-		ev := pp.Effort.DiscFmEffort()
+		ev := pv.Effort.DiscFmEffort()
+		urg := pv.Urgency.UrgeFmUrgency()
 		ei := ss.Effort.Min + rand.Float32()*ss.Effort.Range()
-		dr := pp.Drive.Drives.Get(0)
+		dr := pv.Drive.Drives.Get(0)
 		usv := float32(0)
 		if ti == lastUS+ut {
 			ei = 0 // don't update on us trial
@@ -138,11 +158,14 @@ func (ss *DrEffPlot) TimeRun() {
 		dt.SetCellFloat("T", ti, float64(ti))
 		dt.SetCellFloat("Eff", ti, float64(ev))
 		dt.SetCellFloat("EffInc", ti, float64(ei))
+		dt.SetCellFloat("Urge", ti, float64(urg))
 		dt.SetCellFloat("US", ti, float64(usv))
 		dt.SetCellFloat("Drive", ti, float64(dr))
 
-		pp.USpos.Set(0, usv)
-		pp.DriveEffortUpdt(ei, usv > 0, false)
+		pv.USpos.Set(0, usv)
+		pv.HasRewPrev.SetBool(usv > 0)
+		pv.EffortUrgencyUpdt(ei)
+		pv.DriveUpdt()
 	}
 	ss.TimePlot.Update()
 }
@@ -156,6 +179,7 @@ func (ss *DrEffPlot) ConfigTimeTable(dt *etable.Table) {
 		{"T", etensor.FLOAT64, nil, nil},
 		{"Eff", etensor.FLOAT64, nil, nil},
 		{"EffInc", etensor.FLOAT64, nil, nil},
+		{"Urge", etensor.FLOAT64, nil, nil},
 		{"US", etensor.FLOAT64, nil, nil},
 		{"Drive", etensor.FLOAT64, nil, nil},
 	}
@@ -170,6 +194,7 @@ func (ss *DrEffPlot) ConfigTimePlot(plt *eplot.Plot2D, dt *etable.Table) *eplot.
 	plt.SetColParams("T", eplot.Off, eplot.FloatMin, 0, eplot.FloatMax, 0)
 	plt.SetColParams("Eff", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("EffInc", eplot.Off, eplot.FixMin, 0, eplot.FixMax, float64(ss.Effort.Max))
+	plt.SetColParams("Urge", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("US", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	plt.SetColParams("Drive", eplot.On, eplot.FixMin, 0, eplot.FixMax, 1)
 	return plt
@@ -182,7 +207,7 @@ func (ss *DrEffPlot) ConfigGui() *gi.Window {
 
 	// gi.WinEventTrace = true
 
-	win := gi.NewMainWindow("dreff_plot", "Drive / EFfort Plotting", width, height)
+	win := gi.NewMainWindow("dreff_plot", "Drive / Effort / Urgency Plotting", width, height)
 	ss.Win = win
 
 	vp := win.WinViewport2D()
@@ -211,8 +236,13 @@ func (ss *DrEffPlot) ConfigGui() *gi.Window {
 
 	split.SetSplits(.3, .7)
 
-	tbar.AddAction(gi.ActOpts{Label: "Effort Plot", Icon: "update", Tooltip: "plot basic effort equation."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+	tbar.AddAction(gi.ActOpts{Label: "Effort Plot", Icon: "update", Tooltip: "plot effort equation."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
 		ss.EffortPlot()
+		vp.SetNeedsFullRender()
+	})
+
+	tbar.AddAction(gi.ActOpts{Label: "Urgency Plot", Icon: "update", Tooltip: "plot urgency equation."}, win.This(), func(recv, send ki.Ki, sig int64, data interface{}) {
+		ss.UrgencyPlot()
 		vp.SetNeedsFullRender()
 	})
 

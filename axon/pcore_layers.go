@@ -21,8 +21,7 @@ import (
 // updated in PlusPhase prior to DWt call.
 // Must set Learn.NeuroMod.DAMod = D1Mod or D2Mod via SetBuildConfig("DAMod").
 type MatrixParams struct {
-	GateThr        float32     `desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
-	NoGoGeLrn      float32     `desc:"multiplier on Ge in NoGo (D2) neurons to provide a baseline level of learning, so that if a negative DA outcome occurs, there is some activity in NoGo for learning to work on.  Strong values increase amount of NoGo learning.  Shows up in SpkMax value which is what drives learning."`
+	GateThr        float32     `def:"0.05" desc:"threshold on layer Avg SpkMax for Matrix Go and VThal layers to count as having gated"`
 	IsVS           slbool.Bool `desc:"is this a ventral striatum (VS) matrix layer?  if true, the gating status of this layer is recorded in the ContextPVLV state, and used for updating effort and other factors."`
 	OtherMatrixIdx int32       `inactive:"+" desc:"index of other matrix (Go if we are NoGo and vice-versa).    Set during Build from BuildConfig OtherMatrixName"`
 	ThalLay1Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay1Name if present -- -1 if not used"`
@@ -32,12 +31,11 @@ type MatrixParams struct {
 	ThalLay5Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay5Name if present -- -1 if not used"`
 	ThalLay6Idx    int32       `inactive:"+" desc:"index of thalamus layer that we gate.  needed to get gating information.  Set during Build from BuildConfig ThalLay6Name if present -- -1 if not used"`
 
-	pad, pad1 int32
+	pad, pad1, pad2 int32
 }
 
 func (mp *MatrixParams) Defaults() {
-	mp.GateThr = 0.01
-	mp.NoGoGeLrn = 1
+	mp.GateThr = 0.05
 }
 
 func (mp *MatrixParams) Update() {
@@ -82,31 +80,118 @@ func (gp *GPParams) Update() {
 
 //gosl: end pcore_layers
 
-// todo: original has this:
+// MatrixGated is called after std PlusPhase, on CPU, has Pool info
+// downloaded from GPU.  Returns the pool index if 4D layer (0 = first).
+func (ly *Layer) MatrixGated(ctx *Context) (bool, int) {
+	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
+		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIdx)]
+		ly.Pools[0].Gated = oly.Pools[0].Gated
+		// note: NoGo layers don't track gating at the sub-pool level!
+		return oly.Pools[0].Gated.IsTrue(), 0
+	}
+	mtxGated, poolIdx := ly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
 
-// func (ly *MatrixLayer) DecayState(decay, glong float32) {
-// 	ly.Layer.DecayState(decay, glong)
-// 	for ni := range ly.Neurons {
-// 		nrn := &ly.Neurons[ni]
-// 		if nrn.IsOff() {
-// 			continue
-// 		}
-// 		ly.Params.Learn.DecayCaLrnSpk(nrn, glong) // ?
-// 	}
-// 	ly.InitMods()
-// }
+	thalGated := false
+	if ly.Params.Matrix.ThalLay1Idx >= 0 {
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Idx)]
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
+	}
+	if ly.Params.Matrix.ThalLay2Idx >= 0 {
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Idx)]
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
+	}
+	if ly.Params.Matrix.ThalLay3Idx >= 0 {
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Idx)]
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
+	}
+	if ly.Params.Matrix.ThalLay4Idx >= 0 {
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Idx)]
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
+	}
+	if ly.Params.Matrix.ThalLay5Idx >= 0 {
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Idx)]
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
+	}
+	if ly.Params.Matrix.ThalLay6Idx >= 0 {
+		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Idx)]
+		gt, _ := tly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
+		thalGated = thalGated || gt
+	}
+
+	mtxGated = mtxGated && thalGated
+
+	// note: in principle with multi-pool GP, could try to establish
+	// a correspondence between thal and matrix pools, such that
+	// a failure to gate at the thal level for a given pool would veto
+	// just the one corresponding pool.  However, we're not really sure
+	// that this will make sense and not doing yet..
+
+	if !mtxGated { // nobody did if thal didn't
+		for pi := range ly.Pools {
+			pl := &ly.Pools[pi]
+			pl.Gated.SetBool(false)
+		}
+	}
+
+	if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
+		ctx.PVLV.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
+	}
+	return mtxGated, poolIdx
+}
+
+// GatedFmSpkMax updates the Gated state in Pools of given layer,
+// based on Avg SpkMax being above given threshold.
+// returns true if any gated, and the pool index if 4D layer (0 = first).
+func (ly *Layer) GatedFmSpkMax(thr float32) (bool, int) {
+	anyGated := false
+	poolIdx := -1
+	if ly.Is4D() {
+		for pi := 1; pi < len(ly.Pools); pi++ {
+			pl := &ly.Pools[pi]
+			spkavg := pl.AvgMax.SpkMax.Cycle.Avg
+			gthr := spkavg > thr
+			if gthr {
+				anyGated = true
+				if poolIdx < 0 {
+					poolIdx = pi - 1
+				}
+			}
+			pl.Gated.SetBool(gthr)
+		}
+	} else {
+		spkavg := ly.Pools[0].AvgMax.SpkMax.Cycle.Avg
+		if spkavg > thr {
+			anyGated = true
+		}
+	}
+	ly.Pools[0].Gated.SetBool(anyGated)
+	return anyGated, poolIdx
+}
+
+// AnyGated returns true if the layer-level pool Gated flag is true,
+// which indicates if any of the layers gated.
+func (ly *Layer) AnyGated() bool {
+	return ly.Pools[0].Gated.IsTrue()
+}
 
 func (ly *Layer) MatrixDefaults() {
 	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
-	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Act.Decay.Glong = 1  // prevent carryover of NMDA
+	ly.Params.Act.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+	// ly.Params.Act.NMDA.Gbar = 0    // Matrix needs nmda
 	ly.Params.Inhib.Layer.On.SetBool(true)
-	ly.Params.Inhib.Layer.Gi = 0.5
-	ly.Params.Inhib.Layer.FB = 0
-	ly.Params.Inhib.Pool.FB = 0
-	ly.Params.Inhib.Pool.Gi = 0.5
-	ly.Params.Inhib.ActAvg.Nominal = 0.25
-	ly.Params.Learn.RLRate.Diff.SetBool(false)
+	ly.Params.Inhib.Layer.FB = 1 // pure FF
+	ly.Params.Inhib.Layer.Gi = 0.3
+	ly.Params.Inhib.Pool.On.SetBool(true) // needs both pool and layer!
+	ly.Params.Inhib.Pool.FB = 1           // pure FF
+	ly.Params.Inhib.Pool.Gi = 0.3
+	ly.Params.Inhib.ActAvg.Nominal = 0.25 // pooled should be lower
+	ly.Params.Learn.RLRate.On.SetBool(false)
 
 	// ly.Params.Learn.NeuroMod.DAMod needs to be set via BuildConfig
 	ly.Params.Learn.NeuroMod.DALRateSign.SetBool(true) // critical
@@ -130,100 +215,12 @@ func (ly *Layer) MatrixDefaults() {
 				if strings.HasSuffix(ly.Nm, "MtxGo") {
 					pj.Params.PrjnScale.Abs = 2 // was .8
 				} else {
-					pj.Params.PrjnScale.Abs = 1 // was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
+					pj.Params.PrjnScale.Abs = 2
+					// was .3 GPeTAToMtxNo must be weaker to prevent oscillations, even with GPeIn offset
 				}
 			}
 		}
 	}
-}
-
-// MatrixGated is called after std PlusPhase, on CPU, has Pool info
-// downloaded from GPU
-func (ly *Layer) MatrixGated(ctx *Context) bool {
-	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
-		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIdx)]
-		ly.Pools[0].Gated = oly.Pools[0].Gated
-		// note: NoGo layers don't track gating at the sub-pool level!
-		return oly.Pools[0].Gated.IsTrue()
-	}
-	mtxGated := ly.GatedFmSpkMax(ly.Params.Matrix.GateThr)
-
-	thalGated := false
-	if ly.Params.Matrix.ThalLay1Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay1Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
-	}
-	if ly.Params.Matrix.ThalLay2Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay2Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
-	}
-	if ly.Params.Matrix.ThalLay3Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay3Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
-	}
-	if ly.Params.Matrix.ThalLay4Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay4Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
-	}
-	if ly.Params.Matrix.ThalLay5Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay5Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
-	}
-	if ly.Params.Matrix.ThalLay6Idx >= 0 {
-		tly := ly.Network.Layers[int(ly.Params.Matrix.ThalLay6Idx)]
-		thalGated = tly.GatedFmSpkMax(ly.Params.Matrix.GateThr) || thalGated
-	}
-
-	mtxGated = mtxGated && thalGated
-
-	// note: in principle with multi-pool GP, could try to establish
-	// a correspondence between thal and matrix pools, such that
-	// a failure to gate at the thal level for a given pool would veto
-	// just the one corresponding pool.  However, we're not really sure
-	// that this will make sense and not doing yet..
-
-	if !mtxGated { // nobody did if thal didn't
-		for pi := range ly.Pools {
-			pl := &ly.Pools[pi]
-			pl.Gated.SetBool(false)
-		}
-	}
-
-	if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-		ctx.PVLV.VSMatrix.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue())
-	}
-	return mtxGated
-}
-
-// GatedFmSpkMax updates the Gated state in Pools of given layer,
-// based on Avg SpkMax being above given threshold.
-// returns true if any gated.
-func (ly *Layer) GatedFmSpkMax(thr float32) bool {
-	anyGated := false
-	if ly.Is4D() {
-		for pi := 1; pi < len(ly.Pools); pi++ {
-			pl := &ly.Pools[pi]
-			spkavg := pl.AvgMax.SpkMax.Cycle.Avg
-			gthr := spkavg > thr
-			if gthr {
-				anyGated = true
-			}
-			pl.Gated.SetBool(gthr)
-		}
-	} else {
-		spkavg := ly.Pools[0].AvgMax.SpkMax.Cycle.Avg
-		if spkavg > thr {
-			anyGated = true
-		}
-	}
-	ly.Pools[0].Gated.SetBool(anyGated)
-	return anyGated
-}
-
-// AnyGated returns true if the layer-level pool Gated flag is true,
-// which indicates if any of the layers gated.
-func (ly *Layer) AnyGated() bool {
-	return ly.Pools[0].Gated.IsTrue()
 }
 
 func (ly *Layer) MatrixPostBuild() {
@@ -254,17 +251,19 @@ func (ly *Layer) GPDefaults() {
 	ly.Params.Act.Init.GeVar = 0.1
 	ly.Params.Act.Init.GiVar = 0.1
 	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
+	ly.Params.Act.Decay.Glong = 1
+	ly.Params.Act.NMDA.Gbar = 0 // carryover of NMDA was causing issues!
+	ly.Params.Act.GABAB.Gbar = 0
 	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWt.Init.Mean = 0.75 // 0.75 -- very similar -- maybe a bit more reliable with 0.8 / 0
+		pj.Params.SWt.Init.Var = 0.25  // 0.25
 		if pj.Send.LayerType() == MatrixLayer {
-			pj.Params.PrjnScale.Abs = 0.5
+			pj.Params.PrjnScale.Abs = 1 // MtxGoToGPeOut -- 0.5 orig, 1 slightly better gating
 		} else if pj.Send.LayerType() == STNLayer {
 			pj.Params.PrjnScale.Abs = 1 // STNpToGPTA -- default level for GPeOut and GPeTA -- weaker to not oppose GPeIn surge
 		}
@@ -273,18 +272,18 @@ func (ly *Layer) GPDefaults() {
 			if pj.Send.LayerType() == MatrixLayer { // MtxNoToGPeIn -- primary NoGo pathway
 				pj.Params.PrjnScale.Abs = 1
 			} else if pj.Send.LayerType() == GPLayer { // GPeOutToGPeIn
-				pj.Params.PrjnScale.Abs = 0.3 // was 0.5
+				pj.Params.PrjnScale.Abs = 0.5 // orig 0.3; 0.5 good
 			}
 			if pj.Send.LayerType() == STNLayer { // STNpToGPeIn -- stronger to drive burst of activity
-				pj.Params.PrjnScale.Abs = 1 // was 0.5
+				pj.Params.PrjnScale.Abs = 1 // was 0.5, 1 or 1.2 in boa -- 1 > 0.5
 			}
 		case GPeOut:
 			if pj.Send.LayerType() == STNLayer { // STNpToGPeOut
-				pj.Params.PrjnScale.Abs = 0.1
+				pj.Params.PrjnScale.Abs = 0.1 // 0.1 orig -- old boa had 1.2 -- much lower gating
 			}
 		case GPeTA:
 			if pj.Send.LayerType() == GPLayer { // GPeInToGPeTA
-				pj.Params.PrjnScale.Abs = 0.7 // was 0.9 -- just enough to knock down to near-zero at baseline
+				pj.Params.PrjnScale.Abs = 1 // was 0.7 orig 0.9 -- just enough to knock down to near-zero at baseline
 			}
 		}
 	}
@@ -300,16 +299,16 @@ func (ly *Layer) GPiDefaults() {
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
-		pj.Params.SWt.Init.Mean = 0.75
-		pj.Params.SWt.Init.Var = 0.25
+		pj.Params.SWt.Init.Mean = 0.75          // 0.75  see above
+		pj.Params.SWt.Init.Var = 0.25           // 0.25
 		if pj.Send.LayerType() == MatrixLayer { // MtxGoToGPi
-			pj.Params.PrjnScale.Abs = 0.8 // slightly weaker than GPeIn
+			pj.Params.PrjnScale.Abs = 1 // 0.8 orig; 1 is fine
 		} else if pj.Send.LayerType() == GPLayer { // GPeInToGPi
 			pj.Params.PrjnScale.Abs = 1 // stronger because integrated signal, also act can be weaker
 		} else if strings.HasSuffix(pj.Send.Name(), "STNp") { // STNpToGPi
 			pj.Params.PrjnScale.Abs = 1
 		} else if strings.HasSuffix(pj.Send.Name(), "STNs") { // STNsToGPi
-			pj.Params.PrjnScale.Abs = 0.3
+			pj.Params.PrjnScale.Abs = 0.5 // 0.5 slightly better than .3
 		}
 	}
 }
@@ -341,10 +340,13 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Act.Decay.Glong = 0
 	ly.Params.Act.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
 	ly.Params.Act.Dend.SSGi = 0
+	ly.Params.Act.NMDA.Gbar = 0 // fine with 0
+	ly.Params.Act.GABAB.Gbar = 0
 	ly.Params.Inhib.Layer.On.SetBool(true) // true = important for real-world cases
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.15
+	ly.Params.Learn.NeuroMod.AChDisInhib = 2
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
 		ly.Params.Act.SKCa.Gbar = 3
@@ -377,21 +379,29 @@ func (ly *Layer) STNDefaults() {
 }
 
 ////////////////////////////////////////////////////////////////////
-//  VThal
+//  BGThal
 
-func (ly *Layer) VThalDefaults() {
+func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
+	// ly.Params.Act.NMDA.Gbar = 0 // needs NMDA
+	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Glong = 0.6
 	ly.Params.Act.Dend.SSGi = 0
-	ly.Params.Inhib.Layer.On.SetBool(false)
-	ly.Params.Inhib.Pool.On.SetBool(false)
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
+	ly.Params.Inhib.Layer.On.SetBool(true)
+	ly.Params.Inhib.Layer.Gi = 0.6
+	ly.Params.Inhib.Pool.On.SetBool(false)
+	ly.Params.Inhib.Pool.Gi = 0.6
+
+	ly.Params.Learn.NeuroMod.AChDisInhib = 1
 
 	for _, pj := range ly.RcvPrjns {
 		pj.Params.SetFixedWts()
 		pj.Params.SWt.Init.Mean = 0.75
 		pj.Params.SWt.Init.Var = 0.0
-		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToVThal
-			pj.Params.PrjnScale.Abs = 2 // was 2.5 for agate model..
+		if strings.HasSuffix(pj.Send.Name(), "GPi") { // GPiToBGThal
+			pj.Params.PrjnScale.Abs = 2 // 2 still allows some leak-gating
+			pj.SetClass("GPiToBGThal")
 		}
 	}
 }

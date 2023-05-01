@@ -21,7 +21,6 @@ import (
 	"github.com/emer/emergent/looper"
 	"github.com/emer/emergent/netview"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/emergent/relpos"
 	"github.com/emer/empi/mpi"
 	"github.com/emer/envs/cond"
 	"github.com/emer/etable/agg"
@@ -90,7 +89,7 @@ var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
-	ss.RunName = "PosAcq_B50"
+	ss.RunName = "PosAcq_A100B50"
 	ss.Net = &axon.Network{}
 	ss.Params.Params = ParamSets
 	ss.Params.AddNetwork(ss.Net)
@@ -100,8 +99,12 @@ func (ss *Sim) New() {
 	ss.Pats = &etable.Table{}
 	ss.RndSeeds.Init(100) // max 100 runs
 	ss.Context.Defaults()
-	ss.Context.PVLV.Effort.Gain = 0.01 // don't discount as much
-	ss.ConfigArgs()                    // do this first, has key defaults
+	ss.Context.PVLV.Effort.Gain = 0.01    // don't discount as much
+	ss.Context.PVLV.Effort.Max = 8        // give up if nothing happening.
+	ss.Context.PVLV.Effort.MaxNovel = 2   // give up if nothing happening.
+	ss.Context.PVLV.Effort.MaxPostDip = 2 // give up if nothing happening.
+	// ss.Context.PVLV.LHb.DipResetThr = 0.2
+	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()
 }
 
@@ -133,7 +136,9 @@ func (ss *Sim) ConfigEnv() {
 
 	trn.Init(0)
 
-	ss.Context.PVLV.Drive.NActive = int32(cond.NUSs)
+	ss.Context.PVLV.Drive.NActive = int32(cond.NUSs + 1)
+	ss.Context.PVLV.Drive.NNegUSs = 1
+	ss.Context.PVLV.Urgency.U50 = 50 // no pressure during regular trials
 
 	// note: names must be in place when adding
 	ss.Envs.Add(trn)
@@ -143,7 +148,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.InitName(net, "PVLV")
 	ev := ss.Envs["Train"].(*cond.CondEnv)
 	ny := ev.NYReps
-	nUSs := cond.NUSs
+	nUSs := cond.NUSs + 1 // first US / drive is novelty / curiosity
 
 	nuBgY := 5
 	nuBgX := 5
@@ -155,153 +160,65 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	pone2one := prjn.NewPoolOneToOne()
 	one2one := prjn.NewOneToOne()
+	_ = one2one
 	full := prjn.NewFull()
 	_ = pone2one
 
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
-	// timeIn := ev.CurStates["USTimeIn"]
 
-	vta, lhb, ach := net.AddVTALHbAChLayers(relpos.Behind, space)
-	_ = lhb
-	_ = ach
-
-	vPmtxGo, vPmtxNo, _, _, vPgpeTA, vPstnp, vPstns, vPgpi := net.AddBG("Vp", 1, nUSs, nuBgY, nuBgX, nuBgY, nuBgX, space)
-	vsGated := net.AddVSGatedLayer("", ny)
-	vsPatch := net.AddVSPatchLayer("", nUSs, nuBgY, nuBgX)
-
-	drives, drivesP, effort, effortP, usPos, usNeg, usPosP, usNegP, pvPos, pvNeg, pvPosP, pvNegP := net.AddDrivePVLVPulvLayers(&ss.Context, nUSs, ny, popY, popX, space)
-	_ = usNegP
-	_ = usPos
-	_ = usNeg
-	_ = pvNeg
-	_ = pvNegP
-	_ = effort
-	_ = effortP
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, effort, effortP, urgency, urgencyP, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	// note: list all above so can copy / paste and validate correct return values
+	_, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch
+	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
+	_, _, _, _, _ = ofcVal, ofcValCT, ofcValPTp, ofcValMD, notMaint
 
 	time, timeP := net.AddInputPulv4D("Time", 1, cond.MaxTime, ny, 1, space)
 
 	cs, csP := net.AddInputPulv4D("CS", stim.Dim(0), stim.Dim(1), stim.Dim(2), stim.Dim(3), space)
 
 	ctxIn := net.AddLayer4D("ContextIn", ctxt.Dim(0), ctxt.Dim(1), ctxt.Dim(2), ctxt.Dim(3), axon.InputLayer)
-	_ = ctxIn
-	// ustimeIn := net.AddLayer4D("USTimeIn", timeIn.Dim(0), timeIn.Dim(1), timeIn.Dim(2), timeIn.Dim(3), axon.InputLayer)
-	// _ = ustimeIn
 
-	blaPosA, blaPosE, blaNegA, blaNegE, cemPos, cemNeg, pptg := net.AddAmygdala("", true, nUSs, nuCtxY, nuCtxX, space)
-	_ = cemPos
-	_ = pptg
-	_ = blaNegE
-	_ = cemNeg
-	blaPosA.SetBuildConfig("LayInhib1Name", blaNegA.Name())
-	blaNegA.SetBuildConfig("LayInhib1Name", blaPosA.Name())
+	///////////////////////////////////////////
+	// CS -> BLA, OFC
 
-	ofc, ofcCT := net.AddSuperCT4D("OFC", 1, nUSs, nuCtxY, nuCtxX, space, one2one)
-	// prjns are: super->PT, PT self, CT-> thal
-	ofcPT, ofcMD := net.AddPTMaintThalForSuper(ofc, ofcCT, "MD", one2one, pone2one, pone2one, space)
-	_ = ofcPT
-	ofcCT.SetClass("OFC CTCopy")
-	ofcPTPred := net.AddPTPredLayer(ofcPT, ofcCT, ofcMD, pone2one, pone2one, pone2one, space)
-	ofcPTPred.SetClass("OFC")
-	ofcNotMaint := net.AddPTNotMaintLayer(ofcPT, ny, 1, space)
-	_ = ofcNotMaint
+	net.ConnectToSC1to1(cs, sc)
 
-	// net.ConnectToPulv(ofc, ofcCT, usPulv, pone2one, pone2one)
-	// Drives -> OFC then activates OFC -> VS -- OFC needs to be strongly BLA dependent
-	// to reflect either current CS or maintained CS but not just echoing drive state.
-	net.ConnectLayers(drives, ofc, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
-	// net.ConnectLayers(drives, ofcCT, pone2one, axon.ForwardPrjn).SetClass("DrivesToOFC")
-	net.ConnectLayers(vPgpi, ofcMD, full, axon.InhibPrjn).SetClass("BgFixed")
-	// net.ConnectLayers(cs, ofc, full, axon.ForwardPrjn) // let BLA handle it
-	net.ConnectLayers(time, ofc, full, axon.ForwardPrjn).SetClass("TimeToOFC")
-	net.ConnectLayers(pvPos, ofc, full, axon.ForwardPrjn).SetClass("PVposToOFC")
-	net.ConnectLayers(usPos, ofc, pone2one, axon.ForwardPrjn)
-	net.ConnectLayers(ofcPT, ofcCT, pone2one, axon.ForwardPrjn)
+	net.ConnectCSToBLAPos(cs, blaPosAcq, blaNov)
+	net.ConnectToBLAAcq(cs, blaNegAcq, full)
 
-	net.ConnectToPulv(ofc, ofcCT, drivesP, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcCT, effortP, full, full)
-	net.ConnectToPulv(ofc, ofcCT, usPosP, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcCT, pvPosP, pone2one, pone2one)
-	net.ConnectToPulv(ofc, ofcCT, csP, full, full)
-	net.ConnectToPulv(ofc, ofcCT, timeP, full, full)
-
-	// these are all very static, lead to static PT reps:
-	// net.ConnectPTPredToPulv(ofcPTPred, drivesP, pone2one, pone2one)
-	// net.ConnectPTPredToPulv(ofcPTPred, usPosP, pone2one, pone2one)
-	// net.ConnectPTPredToPulv(ofcPTPred, pvPosP, pone2one, pone2one)
-	net.ConnectPTPredToPulv(ofcPTPred, csP, full, full)
-	net.ConnectPTPredToPulv(ofcPTPred, timeP, full, full)
-	net.ConnectLayers(time, ofcPTPred, full, axon.ForwardPrjn)
-	net.ConnectLayers(cs, ofcPTPred, full, axon.ForwardPrjn)
-
-	vPmtxGo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
-	vPmtxNo.SetBuildConfig("ThalLay1Name", ofcMD.Name())
-
-	// BLA
-	net.ConnectToBLAAcq(cs, blaPosA, full)
-	net.ConnectToBLAAcq(usPos, blaPosA, pone2one).SetClass("USToBLA")
-	net.ConnectLayers(blaPosA, ofc, pone2one, axon.ForwardPrjn)
-	net.ConnectLayers(blaPosE, blaPosA, pone2one, axon.InhibPrjn).SetClass("BLAExtToAcq")
 	// note: context is hippocampus -- key thing is that it comes on with stim
 	// most of ctxIn is same as CS / CS in this case, but a few key things for extinction
 	// ptpred input is important for learning to make conditional on actual engagement
-	net.ConnectToBLAExt(ctxIn, blaPosE, full)
-	net.ConnectToBLAExt(ofcPT, blaPosE, pone2one)
+	net.ConnectToBLAExt(ctxIn, blaPosExt, full)
+	net.ConnectToBLAExt(ctxIn, blaNegExt, full)
 
-	////////////////////////////////////////////////
-	// BG / DA connections
+	// OFCus predicts cs
+	net.ConnectToPFCBack(cs, csP, ofcUS, ofcUSCT, ofcUSPTp, full)
 
-	// same prjns to stn as mtxgo
-	net.ConnectToMatrix(usPos, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaPosA, vPmtxGo, pone2one).SetClass("BLAToBG")
-	net.ConnectToMatrix(blaPosA, vPmtxNo, pone2one).SetClass("BLAToBG")
-	net.ConnectLayers(blaPosA, vPstnp, full, axon.ForwardPrjn)
-	net.ConnectLayers(blaPosA, vPstns, full, axon.ForwardPrjn)
+	///////////////////////////////////////////
+	// OFC predicts time, effort, urgency
 
-	net.ConnectToMatrix(blaPosE, vPmtxGo, pone2one)
-	net.ConnectToMatrix(blaPosE, vPmtxNo, pone2one)
-	net.ConnectToMatrix(drives, vPmtxGo, pone2one).SetClass("DrivesToMtx")
-	net.ConnectToMatrix(drives, vPmtxNo, pone2one).SetClass("DrivesToMtx")
-	// net.ConnectLayers(drives, vPstnp, full, axon.ForwardPrjn) // probably not good: modulatory
-	// net.ConnectLayers(drives, vPstns, full, axon.ForwardPrjn)
-	net.ConnectToMatrix(ofc, vPmtxGo, pone2one)
-	net.ConnectToMatrix(ofc, vPmtxNo, pone2one)
-	// net.ConnectLayers(ofc, vPstnp, full, axon.ForwardPrjn)
-	// net.ConnectLayers(ofc, vPstns, full, axon.ForwardPrjn)
-	// net.ConnectToMatrix(ofcCT, vPmtxGo, pone2one) // important for matrix to mainly use CS & BLA
-	// net.ConnectToMatrix(ofcCT, vPmtxNo, pone2one)
-	// net.ConnectToMatrix(ofcPT, vPmtxGo, pone2one)
-	// net.ConnectToMatrix(ofcPT, vPmtxNo, pone2one)
+	// note: these should be predicted by ACC, not included in this sim
+	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
-	// net.ConnectToRWPrjn(ofc, rwPred, full)
-	// net.ConnectToRWPrjn(ofcCT, rwPred, full)
+	net.ConnectToPFCBack(time, timeP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	// note: following are needed by violate true predictive learning of time
+	net.ConnectLayers(time, ofcUSPTp, full, axon.ForwardPrjn)  // this is key for making it move
+	net.ConnectLayers(time, ofcValPTp, full, axon.ForwardPrjn) // this is key for making it move
 
-	net.ConnectToVSPatch(drives, vsPatch, pone2one).SetClass("DrivesToVSPatch") // modulatory
-	net.ConnectToVSPatch(ofcPTPred, vsPatch, pone2one)
+	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
+
+	net.ConnectToPFCBack(urgency, urgencyP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(urgency, urgencyP, ofcVal, ofcValCT, ofcValPTp, full)
 
 	////////////////////////////////////////////////
 	// position
 
-	vPgpi.PlaceRightOf(vta, space)
-
-	vsPatch.PlaceRightOf(vPstns, space)
-	vsGated.PlaceRightOf(vPgpeTA, space)
-
-	usPos.PlaceAbove(vta)
-
 	time.PlaceRightOf(pvPos, space)
-
 	cs.PlaceRightOf(time, space*3)
 	ctxIn.PlaceRightOf(cs, space)
-	// ustimeIn.PlaceRightOf(ctxIn, space)
-
-	blaPosA.PlaceAbove(usPos)
-	blaNegA.PlaceBehind(blaPosE, space)
-	cemPos.PlaceBehind(blaNegE, space)
-	cemNeg.PlaceBehind(cemPos, space)
-
-	ofc.PlaceRightOf(blaPosA, space)
-	ofcMD.PlaceBehind(ofcPTPred, space)
 
 	err := net.Build()
 	if err != nil {
@@ -372,6 +289,9 @@ func (ss *Sim) ConfigLoops() {
 	man.GetLoop(etime.Train, etime.Block).OnStart.Add("ResetLogTrial", func() {
 		ss.Logs.ResetLog(etime.Train, etime.Trial)
 	})
+	man.GetLoop(etime.Train, etime.Sequence).OnStart.Add("ResetLogTrial", func() {
+		ss.Logs.ResetLog(etime.Debug, etime.Trial)
+	})
 
 	// Save weights to file, to look at later
 	// man.GetLoop(etime.Train, etime.Run).OnEnd.Add("SaveWeights", func() {
@@ -430,23 +350,12 @@ func (ss *Sim) ApplyInputs() {
 	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
-// ApplyPVLV applies current PVLV values to Context.mDrivePVLV,
+// ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	dr := &ctx.PVLV
-	dr.InitUS()
-	ctx.NeuroMod.HasRew.SetBool(false)
-	if trl.USOn {
-		if trl.Valence == cond.Pos {
-			dr.SetPosUS(int32(trl.US), trl.USMag)
-		} else {
-			dr.SetNegUS(int32(trl.US), trl.USMag)
-		}
-		ctx.NeuroMod.HasRew.SetBool(true)
-	}
-	dr.InitDrives()
-	dr.Effort.AddEffort(1) // should be based on action taken last step
-	dr.SetDrive(int32(trl.US), 1)
+	ctx.PVLV.EffortUrgencyUpdt(1)
+	ctx.PVLVSetUS(trl.USOn, trl.Valence == cond.Pos, trl.US, trl.USMag)
+	ctx.PVLVSetDrives(1, 1, trl.US)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -456,6 +365,9 @@ func (ss *Sim) InitEnvRun() {
 	ev.RunName = ss.RunName
 	ev.Init(0)
 	ss.LoadCondWeights(ev.CurRun.Weights) // only if nonempty
+	ss.Loops.ResetCountersBelow(etime.Train, etime.Sequence)
+	ss.Logs.ResetLog(etime.Train, etime.Trial)
+	ss.Logs.ResetLog(etime.Train, etime.Sequence)
 }
 
 // LoadRunWeights loads weights specified in current run, if any
@@ -499,6 +411,7 @@ func (ss *Sim) NewRun() {
 	ss.InitEnvRun()
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
+	ss.Context.PVLV.Effort.Reset()
 	ss.Net.InitWts()
 	ss.LoadRunWeights()
 	ss.InitStats()
@@ -514,6 +427,7 @@ func (ss *Sim) NewRun() {
 // InitStats initializes all the statistics.
 // called at start of new run
 func (ss *Sim) InitStats() {
+	ss.Stats.SetString("Debug", "") // special debug notes per trial
 }
 
 // StatCounters saves current counters to Stats, so they are available for logging etc
@@ -525,23 +439,24 @@ func (ss *Sim) StatCounters() {
 	ev := ss.Envs[ss.Context.Mode.String()].(*cond.CondEnv)
 	ss.Stats.SetString("TrialName", ev.TrialName)
 	ss.Stats.SetString("TrialType", ev.TrialType)
-	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Trial", "Trial", "TrialType", "TrialName", "Cycle"})
+	ss.ViewUpdt.Text = ss.Stats.Print([]string{"Run", "Condition", "Block", "Sequence", "Trial", "TrialType", "TrialName", "Cycle"})
 }
 
 // TrialStats computes the tick-level statistics.
 // Aggregation is done directly from log data.
 func (ss *Sim) TrialStats() {
 	ctx := &ss.Context
-	dr := &ctx.PVLV
-	dr.DriveEffortUpdt(1, ctx.NeuroMod.HasRew.IsTrue(), false)
+	pv := &ctx.PVLV
 	ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
 	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
 	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)
-	ss.Stats.SetFloat32("LHbDip", dr.VTA.Vals.LHbDip)
-	ss.Stats.SetFloat32("LHbBurst", dr.VTA.Vals.LHbBurst)
-	ss.Stats.SetFloat32("PVpos", dr.VTA.Vals.PVpos)
-	ss.Stats.SetFloat32("PVneg", dr.VTA.Vals.PVneg)
-	ss.Stats.SetFloat32("PPTg", dr.VTA.Vals.PPTg)
+	ss.Stats.SetFloat32("LHbDip", pv.VTA.Vals.LHbDip)
+	ss.Stats.SetFloat32("DipSum", pv.LHb.DipSum)
+	ss.Stats.SetFloat32("DipReset", float32(pv.LHb.DipReset))
+	ss.Stats.SetFloat32("LHbBurst", pv.VTA.Vals.LHbBurst)
+	ss.Stats.SetFloat32("PVpos", pv.VTA.Vals.PVpos)
+	ss.Stats.SetFloat32("PVneg", pv.VTA.Vals.PVneg)
+	ss.Stats.SetFloat32("SC", ss.Net.AxonLayerByName("SC").Pools[0].AvgMax.CaSpkD.Cycle.Max)
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -551,9 +466,9 @@ func (ss *Sim) ConfigLogs() {
 	ss.Stats.SetString("RunName", ss.Params.RunName(0)) // used for naming logs, stats, etc
 
 	ss.Logs.AddCounterItems(etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial, etime.Cycle)
-	ss.Logs.AddStatStringItem(etime.Train, etime.AllTimes, "RunName")
-	ss.Logs.AddStatStringItem(etime.Train, etime.Trial, "TrialName")
-	ss.Logs.AddStatStringItem(etime.Train, etime.Trial, "TrialType")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.AllTimes, "RunName")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialName")
+	ss.Logs.AddStatStringItem(etime.AllModes, etime.Trial, "TrialType")
 
 	// ss.Logs.AddPerTrlMSec("PerTrlMSec", etime.Run, etime.Epoch, etime.Trial)
 
@@ -579,7 +494,7 @@ func (ss *Sim) ConfigLogs() {
 func (ss *Sim) ConfigLogItems() {
 	li := ss.Logs.AddStatAggItem("DA", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.Range.Min = -1
-	li.Range.Max = 1.1
+	li.Range.Max = 1.2
 	li.FixMin = true
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("ACh", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
@@ -592,15 +507,21 @@ func (ss *Sim) ConfigLogItems() {
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("LHbDip", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.FixMax = true
+	li = ss.Logs.AddStatAggItem("DipSum", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("DipReset", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("LHbBurst", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVpos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVneg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("PPTg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("SC", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+
+	// Add a special debug message -- use of etime.Debug triggers
+	// inclusion
+	ss.Logs.AddStatStringItem(etime.Debug, etime.Trial, "Debug")
 }
 
 // Log is the main logging function, handles special things for different scopes
 func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
-	if mode.String() != "Analyze" {
+	if mode != etime.Analyze && mode != etime.Debug {
 		ss.Context.Mode = mode // Also set specifically in a Loop callback.
 	}
 	ss.StatCounters()
@@ -613,8 +534,11 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 	switch {
 	case time == etime.Cycle:
 		row = ss.Stats.Int("Cycle")
-	// case time == etime.Trial:
-	// 	row = ss.Stats.Int("Trial")
+	case mode == etime.Train && time == etime.Trial:
+		ss.Logs.Log(etime.Debug, etime.Trial)
+		if !ss.Args.Bool("nogui") {
+			ss.GUI.UpdateTableView(etime.Debug, etime.Trial)
+		}
 	case time == etime.Block:
 		ss.BlockStats()
 	}
@@ -644,7 +568,7 @@ func (ss *Sim) BlockStats() {
 	dt.SetMetaData("VSPatch:On", "+")
 	dt.SetMetaData("DA:FixMin", "+")
 	dt.SetMetaData("DA:Min", "-1")
-	dt.SetMetaData("DA:FixMax", "+")
+	dt.SetMetaData("DA:FixMax", "-")
 	dt.SetMetaData("DA:Max", "1")
 	ss.Logs.MiscTables[stnm] = dt
 	plt.SetTable(dt)
@@ -662,7 +586,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 
 	nv := ss.GUI.AddNetView("NetView")
 	nv.Params.MaxRecs = 300
-	nv.Params.LayNmSize = 0.03
+	nv.Params.LayNmSize = 0.02
 	nv.SetNet(ss.Net)
 	ss.ViewUpdt.Config(nv, etime.AlphaCycle, etime.AlphaCycle)
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
@@ -671,6 +595,8 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
 
 	ss.GUI.AddPlots(title, &ss.Logs)
+
+	ss.GUI.AddTableView(&ss.Logs, etime.Debug, etime.Trial)
 
 	stnm := "BlockByType"
 	dt := ss.Logs.MiscTable(stnm)

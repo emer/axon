@@ -26,7 +26,7 @@ func (pj *RLPredPrjnParams) Update() {
 
 //gosl: end rl_prjns
 
-func (pj *PrjnParams) RLPredPrjnDefaults() {
+func (pj *PrjnParams) RLPredDefaults() {
 	pj.SWt.Adapt.SigGain = 1
 	pj.SWt.Init.Mean = 0
 	pj.SWt.Init.Var = 0

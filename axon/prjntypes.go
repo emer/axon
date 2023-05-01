@@ -57,17 +57,13 @@ const (
 	// opposite cases.  Weights are positive-only.
 	TDPredPrjn
 
-	// BLAAcqPrjn implements the PVLV BLA acquisition pathway learning rule:
+	// BLAPrjn implements the PVLV BLA learning rule:
 	// dW = ACh * X_t-1 * (Y_t - Y_t-1)
 	// The recv delta is across trials, where the US should activate on trial
 	// boundary, to enable sufficient time for gating through to OFC, so
 	// BLA initially learns based on US present - US absent.
 	// It can also learn based on CS onset if there is a prior CS that predicts that.
-	BLAAcqPrjn
-
-	// BLAExtPrjn implements the PVLV BLA extinction pathway learning rule:
-	// dW = ACh * X_t-1 * Y_t
-	BLAExtPrjn
+	BLAPrjn
 
 	// VSPatchPrjn implements the VSPatch learning rule:
 	// dW = ACh * DA * X * Y

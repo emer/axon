@@ -117,7 +117,7 @@ func (pj *Prjn) DWt(ctx *Context) {
 func (pj *Prjn) DWtSubMean(ctx *Context) {
 	rlay := pj.Recv
 	sm := pj.Params.Learn.Trace.SubMean
-	if sm == 0 { // || rlay.AxonLay.IsTarget() { // sm default is now 0, so don't exclude
+	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
 		return
 	}
 	for ri := range rlay.Neurons {

@@ -45,7 +45,7 @@ type Context struct {
 
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
-	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (PPTgLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
+	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -60,6 +60,7 @@ func (ctx *Context) Defaults() {
 // Pass the evaluation model associated with this new state --
 // if !Train then testing will be set to true.
 func (ctx *Context) NewState(mode etime.Modes) {
+	ctx.PVLV.NewState(ctx.NeuroMod.HasRew.IsTrue())
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
@@ -94,22 +95,58 @@ func (ctx *Context) CycleInc() {
 // Call after setting USs, VSPatchVals, Effort, Drives, etc.
 // Resulting DA is in VTA.Vals.DA is returned.
 func (ctx *Context) PVLVDA() float32 {
-	ctx.PVLV.DA(ctx.NeuroMod.PPTg)
+	ctx.PVLV.DA(ctx.NeuroMod.ACh, ctx.NeuroMod.HasRew.IsTrue())
 	ctx.NeuroMod.DA = ctx.PVLV.VTA.Vals.DA
 	ctx.NeuroMod.RewPred = ctx.PVLV.VTA.Vals.VSPatchPos
 	ctx.PVLV.VTA.Prev = ctx.PVLV.VTA.Vals // avoid race
+	if ctx.PVLV.HasPosUS() {
+		ctx.NeuroMod.SetRew(ctx.PVLV.NetPV(), true)
+	}
 	return ctx.PVLV.VTA.Vals.DA
 }
 
 // LHbDipResetFmSum increments DipSum and checks if should flag a reset.
 func (ctx *Context) LHbDipResetFmSum() {
-	dipReset := ctx.PVLV.LHbDipResetFmSum()
+	dipReset := ctx.PVLV.LHbDipResetFmSum(ctx.NeuroMod.ACh)
 	if dipReset {
 		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
 	}
 }
 
 //gosl: end context
+
+// PVLVSetUS sets unconditioned stimulus (US) state for PVLV algorithm,
+// which determines if a positive, negative, or no primary value outcome
+// has been received.  Typically set this at the start of a Trial,
+// which then drives activity of relevant PVLV-rendered inputs, and dopamine.
+// The US index is automatically adjusted for the curiosity drive / US for
+// positive US outcomes -- i.e., pass in a value with 0 starting index.
+func (ctx *Context) PVLVSetUS(hasUS, isPos bool, usIdx int, magnitude float32) {
+	ctx.PVLV.InitUS()
+	ctx.NeuroMod.HasRew.SetBool(false)
+	if hasUS {
+		if isPos {
+			ctx.NeuroMod.HasRew.SetBool(true)            // only for positive USs -- todo: revisit!
+			ctx.PVLV.SetPosUS(int32(usIdx)+1, magnitude) // +1 for curiosity
+		} else {
+			ctx.PVLV.SetNegUS(int32(usIdx), magnitude)
+		}
+	} else {
+		ctx.NeuroMod.Rew = 0
+	}
+}
+
+// PVLVSetDrives sets current PVLV drives to given magnitude,
+// and sets the first curiosity drive to given level.
+// Drive indexes are 0 based, so 1 is added automatically to accommodate
+// the first curiosity drive.
+func (ctx *Context) PVLVSetDrives(curiosity, magnitude float32, drives ...int) {
+	ctx.PVLV.InitDrives()
+	ctx.PVLV.SetDrive(0, curiosity)
+	for _, di := range drives {
+		ctx.PVLV.SetDrive(int32(1+di), magnitude)
+	}
+}
 
 // Reset resets the counters all back to zero
 func (ctx *Context) Reset() {
@@ -127,6 +164,7 @@ func (ctx *Context) Reset() {
 	}
 	ctx.RandCtr.Reset()
 	ctx.NeuroMod.Init()
+	ctx.PVLV.Reset()
 }
 
 // NewContext returns a new Time struct with default parameters

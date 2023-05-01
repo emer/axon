@@ -93,14 +93,14 @@ type LayerParams struct {
 	//     use the `viewif` field tag to condition on LayType.
 
 	Burst   BurstParams   `viewif:"LayType=SuperLayer" view:"inline" desc:"BurstParams determine how the 5IB Burst activation is computed from CaSpkP integrated spiking values in Super layers -- thresholded."`
-	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
+	CT      CTParams      `viewif:"LayType=[CTLayer,PTPredLayer,PTNotMaintLayer,BLALayer]" view:"inline" desc:"params for the CT corticothalamic layer and PTPred layer that generates predictions over the Pulvinar using context -- uses the CtxtGe excitatory input plus stronger NMDA channels to maintain context trace"`
 	Pulv    PulvParams    `viewif:"LayType=PulvinarLayer" view:"inline" desc:"provides parameters for how the plus-phase (outcome) state of Pulvinar thalamic relay cell neurons is computed from the corresponding driver neuron Burst activation (or CaSpkP if not Super)"`
-	RSalACh RSalAChParams `viewif:"LayType=RSalienceAChLayer" view:"inline" desc:"parameterizes reward salience as ACh global neuromodulatory signal as a function of the MAX activation of its inputs."`
+	LDT     LDTParams     `viewif:"LayType=LDTLayer" view:"inline" desc:"parameterizes laterodorsal tegmentum ACh salience neuromodulatory signal, driven by superior colliculus stimulus novelty, US input / absence, and OFC / ACC inhibition"`
 	RWPred  RWPredParams  `viewif:"LayType=RWPredLayer" view:"inline" desc:"parameterizes reward prediction for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	RWDa    RWDaParams    `viewif:"LayType=RWDaLayer" view:"inline" desc:"parameterizes reward prediction dopamine for a simple Rescorla-Wagner learning dynamic (i.e., PV learning in the PVLV framework)."`
 	TDInteg TDIntegParams `viewif:"LayType=TDIntegLayer" view:"inline" desc:"parameterizes TD reward integration layer"`
 	TDDa    TDDaParams    `viewif:"LayType=TDDaLayer" view:"inline" desc:"parameterizes dopamine (DA) signal as the temporal difference (TD) between the TDIntegLayer activations in the minus and plus phase."`
-	PVLV    PVLVParams    `viewif:"LayType=[PPTgLayer,VSPatchLayer]" view:"inline" desc:"parameters for readout of values as inputs to PVLV equations -- provides thresholding and gain multiplier."`
+	PVLV    PVLVParams    `viewif:"LayType=[VSPatchLayer]" view:"inline" desc:"parameters for readout of values as inputs to PVLV equations -- provides thresholding and gain multiplier."`
 	VSPatch VSPatchParams `viewif:"LayType=VSPatchLayer" view:"inline" desc:"parameters for VSPatch learning"`
 	Matrix  MatrixParams  `viewif:"LayType=MatrixLayer" view:"inline" desc:"parameters for BG Striatum Matrix MSN layers, which are the main Go / NoGo gating units in BG."`
 	GP      GPParams      `viewif:"LayType=GPLayer" view:"inline" desc:"type of GP Layer."`
@@ -117,7 +117,7 @@ func (ly *LayerParams) Update() {
 	ly.CT.Update()
 	ly.Pulv.Update()
 
-	ly.RSalACh.Update()
+	ly.LDT.Update()
 	ly.RWPred.Update()
 	ly.RWDa.Update()
 	ly.TDInteg.Update()
@@ -142,7 +142,7 @@ func (ly *LayerParams) Defaults() {
 	ly.CT.Defaults()
 	ly.Pulv.Defaults()
 
-	ly.RSalACh.Defaults()
+	ly.LDT.Defaults()
 	ly.RWPred.Defaults()
 	ly.RWDa.Defaults()
 	ly.TDInteg.Defaults()
@@ -172,16 +172,16 @@ func (ly *LayerParams) AllParams() string {
 	case SuperLayer:
 		b, _ = json.MarshalIndent(&ly.Burst, "", " ")
 		str += "Burst:   {\n " + JsonToParams(b)
-	case CTLayer, PTPredLayer, PTNotMaintLayer:
+	case CTLayer, PTPredLayer, PTNotMaintLayer, BLALayer:
 		b, _ = json.MarshalIndent(&ly.CT, "", " ")
 		str += "CT:      {\n " + JsonToParams(b)
 	case PulvinarLayer:
 		b, _ = json.MarshalIndent(&ly.Pulv, "", " ")
 		str += "Pulv:    {\n " + JsonToParams(b)
 
-	case RSalienceAChLayer:
-		b, _ = json.MarshalIndent(&ly.RSalACh, "", " ")
-		str += "RSalACh: {\n " + JsonToParams(b)
+	case LDTLayer:
+		b, _ = json.MarshalIndent(&ly.LDT, "", " ")
+		str += "LDT: {\n " + JsonToParams(b)
 	case RWPredLayer:
 		b, _ = json.MarshalIndent(&ly.RWPred, "", " ")
 		str += "RWPred:  {\n " + JsonToParams(b)
@@ -198,10 +198,6 @@ func (ly *LayerParams) AllParams() string {
 	case VSPatchLayer:
 		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
 		str += "VSPatch: {\n " + JsonToParams(b)
-		fallthrough
-	case PPTgLayer:
-		b, _ = json.MarshalIndent(&ly.PVLV, "", " ")
-		str += "PVLV:    {\n " + JsonToParams(b)
 
 	case MatrixLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
@@ -392,8 +388,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	case RewLayer:
 		nrn.SetFlag(NeuronHasExt)
 		SetNeuronExtPosNeg(ni, nrn, ctx.NeuroMod.Rew) // Rew must be set in Context!
-	case RSalienceAChLayer:
-		nrn.GeRaw = 0.2 * ctx.NeuroMod.ACh
+	case LDTLayer:
+		nrn.GeRaw = 0.4 * ctx.NeuroMod.ACh
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case RWDaLayer:
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.NeuroMod.DA)
@@ -408,6 +404,15 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 	case VTALayer:
 		nrn.GeRaw = ly.RWDa.GeFmDA(ctx.PVLV.VTA.Vals.DA)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case BLALayer:
+		// only for ext type:
+		if ly.Learn.NeuroMod.IsBLAExt() {
+			geCtxt := ctx.NeuroMod.ACh * ly.CT.GeGain * nrn.CtxtGeOrig
+			nrn.GeRaw += geCtxt
+			ctxExt := ly.Act.Dt.GeSynFmRawSteady(geCtxt)
+			nrn.GeSyn += ctxExt
+			saveVal = ctxExt // used In PostGs to set nrn.GeExt
+		}
 	case LHbLayer:
 		if ni == 0 {
 			nrn.GeRaw = 0.2 * mat32.Abs(ctx.PVLV.LHb.Dip)
@@ -433,19 +438,24 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 		}
 		nrn.GeRaw = dpc
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
-	case USLayer:
-		us := float32(0)
-		if ly.Learn.NeuroMod.Valence == Positive {
-			us = ctx.PVLV.USpos.Get(pi)
-		} else {
-			us = ctx.PVLV.USneg.Get(pi)
+	case UrgencyLayer:
+		ur := ctx.PVLV.Urgency.Urge
+		upc := ur
+		if ur > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			upc = ly.Act.PopCode.EncodeGe(pni, uint32(pl.NNeurons()), ur)
 		}
+		nrn.GeRaw = upc
+		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
+	case USLayer:
+		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		nrn.GeRaw = 0.1 * mat32.Abs(us)
 		nrn.GeSyn = ly.Act.Dt.GeSynFmRawSteady(nrn.GeRaw)
 	case PVLayer:
 		pv := float32(0)
 		if ly.Learn.NeuroMod.Valence == Positive {
-			pv = ctx.PVLV.VTA.Prev.PVpos
+			// undiscounted by effort..
+			pv = ctx.PVLV.VTA.Prev.USpos // could be PVpos
 		} else {
 			pv = ctx.PVLV.VTA.Prev.PVneg
 		}
@@ -470,6 +480,8 @@ func (ly *LayerParams) SpecialPreGs(ctx *Context, ni uint32, nrn *Neuron, pl *Po
 // It is passed the saveVal from SpecialPreGs
 func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveVal float32) {
 	switch ly.LayType {
+	case BLALayer:
+		fallthrough
 	case CTLayer:
 		nrn.GeExt = saveVal
 	case PTPredLayer:
@@ -486,16 +498,22 @@ func (ly *LayerParams) SpecialPostGs(ctx *Context, ni uint32, nrn *Neuron, saveV
 func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	extraRaw := float32(0)
 	extraSyn := float32(0)
-	if ly.LayType == PTMaintLayer {
+	switch ly.LayType {
+	case PTMaintLayer:
 		extraRaw = ly.Act.Dend.ModGain * nrn.GModRaw
 		extraSyn = ly.Act.Dend.ModGain * nrn.GModSyn
-	} else if ly.Act.Dend.HasMod.IsTrue() {
-		mod := ly.Act.Dend.ModGain * nrn.GModSyn
-		if mod > 1 {
-			mod = 1
+	case BLALayer:
+		extraRaw = ctx.NeuroMod.ACh * nrn.GModRaw
+		extraSyn = ctx.NeuroMod.ACh * nrn.GModSyn
+	default:
+		if ly.Act.Dend.HasMod.IsTrue() {
+			mod := ly.Act.Dend.ModGain * nrn.GModSyn
+			if mod > 1 {
+				mod = 1
+			}
+			nrn.GeRaw *= mod
+			nrn.GeSyn *= mod
 		}
-		nrn.GeRaw *= mod
-		nrn.GeSyn *= mod
 	}
 
 	geRaw := nrn.GeRaw
@@ -544,6 +562,9 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 		if nrn.SpkMaxCa > nrn.SpkMax {
 			nrn.SpkMax = nrn.SpkMaxCa
 		}
+		if nrn.GeInt > nrn.GeIntMax {
+			nrn.GeIntMax = nrn.GeInt
+		}
 	}
 }
 
@@ -576,9 +597,19 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			}
 			nrn.CtxtGeOrig = nrn.CtxtGe
 		}
+	case BLALayer:
+		if ctx.Cycle == ctx.ThetaCycles-1 {
+			if ctx.NeuroMod.HasRew.IsTrue() {
+				nrn.CtxtGe = 0
+				nrn.CtxtGeOrig = 0
+			} else if ctx.NeuroMod.ACh > 0.1 {
+				nrn.CtxtGe = nrn.CtxtGeRaw
+				nrn.CtxtGeOrig = nrn.CtxtGe
+			}
+		}
 	case RewLayer:
 		nrn.Act = ctx.NeuroMod.Rew
-	case RSalienceAChLayer:
+	case LDTLayer:
 		nrn.Act = ctx.NeuroMod.AChRaw // I set this in CyclePost
 	case RWPredLayer:
 		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
@@ -600,12 +631,6 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 		nrn.Act = ctx.NeuroMod.RewPred
 	case TDDaLayer:
 		nrn.Act = ctx.NeuroMod.DA // I set this in CyclePost
-	case MatrixLayer:
-		if ly.Learn.NeuroMod.DAMod == D2Mod && !(ly.Learn.NeuroMod.AChDisInhib > 0 && vals.NeuroMod.ACh < 0.2) && ctx.Cycle >= ly.Act.Dt.MaxCycStart {
-			if nrn.Ge > nrn.SpkMax {
-				nrn.SpkMax = ly.Matrix.NoGoGeLrn * nrn.Ge
-			}
-		}
 
 	case VTALayer:
 		nrn.Act = ctx.PVLV.VTA.Vals.DA // I set this in CyclePost
@@ -632,13 +657,16 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 			dpc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), dr)
 		}
 		nrn.Act = dpc
-	case USLayer:
-		us := float32(0)
-		if ly.Learn.NeuroMod.Valence == Positive {
-			us = ctx.PVLV.USpos.Get(pi)
-		} else {
-			us = ctx.PVLV.USneg.Get(pi)
+	case UrgencyLayer:
+		ur := ctx.PVLV.Urgency.Urge
+		upc := ur
+		if ur > 0 {
+			pni := nrn.NeurIdx - pl.StIdx
+			upc = ly.Act.PopCode.EncodeVal(pni, uint32(pl.NNeurons()), ur)
 		}
+		nrn.Act = upc
+	case USLayer:
+		us := ctx.PVLV.USStimVal(pi, ly.Learn.NeuroMod.Valence)
 		nrn.Act = us
 	case PVLayer:
 		pv := float32(0)
@@ -678,40 +706,38 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 //  call these in layer_compute.go/CyclePost and
 //  gpu_hlsl/gpu_cyclepost.hlsl
 
-// RSalAChMaxLayAct returns the updated maxAct value using
+// LDTMaxLayAct returns the updated maxAct value using
 // LayVals.ActAvg.CaSpkP.Max from given layer index,
 // subject to any relevant RewThr thresholding.
-func (ly *LayerParams) RSalAChMaxLayAct(maxAct, layMaxAct float32) float32 {
-	act := ly.RSalACh.Thr(layMaxAct) // use Act -- otherwise too variable
+func (ly *LayerParams) LDTMaxLayAct(maxAct, layMaxAct float32) float32 {
+	act := ly.LDT.Thr(layMaxAct) // use Act -- otherwise too variable
 	if act > maxAct {
 		maxAct = act
 	}
 	return maxAct
 }
 
-func (ly *LayerParams) CyclePostRSalAChLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct float32) {
+func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct float32) {
 	maxAct := float32(0)
-	if ly.RSalACh.Rew.IsTrue() {
+	maxAct = ly.LDTMaxLayAct(maxAct, lay1MaxAct)
+	maxAct = ly.LDTMaxLayAct(maxAct, lay2MaxAct)
+	maxAct = ly.LDTMaxLayAct(maxAct, lay3MaxAct)
+	maxAct = ly.LDTMaxLayAct(maxAct, lay4MaxAct)
+
+	maint := ly.LDT.MaintFmNotMaint(1.0 - ctx.NeuroMod.NotMaint)
+	maxAct *= (1.0 - maint*ly.LDT.MaintInhib)
+
+	if ly.LDT.Rew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() {
 			maxAct = 1
 		}
 	}
-	if ly.RSalACh.RewPred.IsTrue() {
-		rpAct := ly.RSalACh.Thr(ctx.NeuroMod.RewPred)
+	if ly.LDT.RewPred.IsTrue() {
+		rpAct := ly.LDT.Thr(ctx.NeuroMod.RewPred)
 		if rpAct > maxAct {
 			maxAct = rpAct
 		}
 	}
-	if ly.RSalACh.PPTg.IsTrue() {
-		ptAct := ly.RSalACh.Thr(ctx.NeuroMod.PPTg)
-		if ptAct > maxAct {
-			maxAct = ptAct
-		}
-	}
-	maxAct = ly.RSalAChMaxLayAct(maxAct, lay1MaxAct)
-	maxAct = ly.RSalAChMaxLayAct(maxAct, lay2MaxAct)
-	maxAct = ly.RSalAChMaxLayAct(maxAct, lay3MaxAct)
-	maxAct = ly.RSalAChMaxLayAct(maxAct, lay4MaxAct)
 	vals.NeuroMod.AChRaw = maxAct
 	vals.NeuroMod.AChFmRaw(ly.Act.Dt.IntDt)
 
@@ -763,8 +789,16 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *
 	vals.NeuroMod.DA = da
 }
 
-func (ly *LayerParams) CyclePostPPTgLayer(ctx *Context, lpl *Pool) {
-	ctx.NeuroMod.PPTg = ly.PVLV.Val(lpl.AvgMax.CaSpkD.Cycle.Max)
+func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, lpl *Pool) {
+	if ly.Learn.NeuroMod.Valence == Positive {
+		ctx.PVLV.VTA.Raw.CeMpos = lpl.AvgMax.CaSpkD.Cycle.Max
+	} else {
+		ctx.PVLV.VTA.Raw.CeMneg = lpl.AvgMax.CaSpkD.Cycle.Max
+	}
+}
+
+func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, lpl *Pool) {
+	ctx.NeuroMod.NotMaint = lpl.AvgMax.CaSpkD.Cycle.Max
 }
 
 // note: needs to iterate over sub-pools in layer!
@@ -798,6 +832,7 @@ func (ly *LayerParams) NewStatePool(ctx *Context, pl *Pool) {
 		pl.Inhib.Clamped.SetBool(true)
 	}
 	pl.Inhib.Decay(ly.Act.Decay.Act)
+	pl.Gated.SetBool(false)
 }
 
 // NewStateNeuron handles all initialization at start of new input pattern.
@@ -807,9 +842,10 @@ func (ly *LayerParams) NewStateNeuron(ctx *Context, ni uint32, nrn *Neuron, vals
 	nrn.SpkPrv = nrn.CaSpkD
 	nrn.SpkMax = 0
 	nrn.SpkMaxCa = 0
-
+	nrn.GeIntMax = 0
 	ly.Act.DecayState(nrn, ly.Act.Decay.Act, ly.Act.Decay.Glong)
 	// Note: synapse-level Ca decay happens in DWt
+	ly.Act.KNaNewState(ctx, nrn)
 }
 
 func (ly *LayerParams) MinusPhasePool(ctx *Context, pl *Pool) {
@@ -866,6 +902,9 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl 
 	switch ly.LayType {
 	case BLALayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.SpkPrv) // delta on previous trial
+		if !ly.Learn.NeuroMod.IsBLAExt() && pl.StIdx == 0 {      // first pool
+			dlr = 0 // first pool is novelty / curiosity -- no learn
+		}
 	case VSPatchLayer:
 		dlr = ly.Learn.RLRate.RLRateDiff(nrn.CaSpkP, nrn.CaSpkD)
 		modlr = ly.VSPatch.DALRate(vals.NeuroMod.DA, modlr) // always decrease if no DA

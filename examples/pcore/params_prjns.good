@@ -1,0 +1,75 @@
+
+Layer: GPi
+	          GPeIn		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	          MtxGo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
+	           STNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	           STNs		Abs:	  0.50	Rel:	  1.00	GScale:	  0.06	Rel:  0.50
+
+Layer: GPeOut
+	          MtxGo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
+	           STNp		Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
+
+Layer: GPeIn
+	          MtxNo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.50
+	         GPeOut		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	           STNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+
+Layer: GPeTA
+	          GPeIn		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  1.00
+	           STNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+
+Layer: STNp
+	          GPeIn		Abs:	  0.10	Rel:	  1.00	GScale:	  0.00	Rel:  1.00
+	            PFC		Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
+
+Layer: STNs
+	            PFC		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: MtxGo
+	          GPeTA		Abs:	  2.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
+	          GPeIn		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	         ACCPos		Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.48
+	         ACCNeg		Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.48
+	        Urgency		Abs:	 20.00	Rel:	  0.10	GScale:	  0.24	Rel:  0.05
+							    Abs Params: #UrgencyToMtxGo: 20
+							    Rel Params: #UrgencyToMtxGo: 0.1
+
+Layer: MtxNo
+	          GPeTA		Abs:	  2.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
+	          GPeIn		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	         ACCNeg		Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.50
+	         ACCPos		Abs:	  1.00	Rel:	  1.00	GScale:	  0.17	Rel:  0.50
+
+Layer: SNc
+
+Layer: Urgency
+
+Layer: ACCPos
+
+Layer: ACCNeg
+
+Layer: In
+
+Layer: InP
+	          PFCCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: PFC
+	             In		Abs:	  1.00	Rel:	  1.00	GScale:	  0.30	Rel:  0.91
+	            InP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.03	Rel:  0.09
+
+Layer: PFCCT
+	            PFC		Abs:	  1.00	Rel:	  1.00	GScale:	  0.91	Rel:  0.91
+	            InP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.03	Rel:  0.09
+
+Layer: PFCPT
+	          PFCVM		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	            PFC		Abs:	  0.10	Rel:	  1.00	GScale:	  0.05	Rel:  0.50
+							    Abs Params: Base:.SuperToPT: 0.1
+	          PFCPT		Abs:	  2.00	Rel:	  1.00	GScale:	  0.33	Rel:  0.50
+
+Layer: PFCVM
+	          PFCPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	            PFC		Abs:	  2.00	Rel:	  1.00	GScale:	  1.00	Rel:  0.50
+	            GPi		Abs:	  2.00	Rel:	  1.00	GScale:	  0.08	Rel:  1.00
+	
+

@@ -22,9 +22,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":       "0.2",
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
-			{Sel: ".RSalienceAChLayer", Desc: "",
+			{Sel: ".LDTLayer", Desc: "",
 				Params: params.Params{
-					"Layer.RSalACh.RewPred": "true",
+					"Layer.LDT.RewPred": "true",
 				}},
 		},
 	}},

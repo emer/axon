@@ -20,10 +20,9 @@ import (
 // CaIn = intracellular stores available for release; CaR = released amount from stores
 // CaM = K channel conductance gating factor driven by CaR binding,
 // computed using the Hill equations described in Fujita et al (2012), Gunay et al (2008)
-// (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4.
+// (also Muddapu & Chakravarthy, 2021): X^h / (X^h + C50^h) where h ~= 4 (hard coded)
 type SKCaParams struct {
 	Gbar        float32 `def:"0,2,3" desc:"overall strength of sKCa current -- inactive if 0"`
-	Hill        float32 `viewif:"Gbar>0" def:"4" desc:"Hill coefficient (exponent) for x^h / (x^h + c50^h) function describing the asymptotic gating factor m as a function of Ca -- there are 4 relevant states so a factor around 4 makes sense and is empirically observed"`
 	C50         float32 `viewif:"Gbar>0" def:"0.4,0.5" desc:"50% Ca concentration baseline value in Hill equation -- set this to level that activates at reasonable levels of SKCaR"`
 	ActTau      float32 `viewif:"Gbar>0" def:"15" desc:"K channel gating factor activation time constant -- roughly 5-15 msec in literature"`
 	DeTau       float32 `viewif:"Gbar>0" def:"30" desc:"K channel gating factor deactivation time constant -- roughly 30-50 msec in literature"`
@@ -36,14 +35,10 @@ type SKCaParams struct {
 	DeDt       float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	CaRDecayDt float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
 	CaInDt     float32 `view:"-" json:"-" xml:"-" desc:"rate = 1 / tau"`
-	C50Hill    float32 `view:"-" json:"-" xml:"-" desc:"C50 ^ Hill precomputed"`
-
-	pad, pad1 float32
 }
 
 func (sp *SKCaParams) Defaults() {
 	sp.Gbar = 0.0
-	sp.Hill = 4
 	sp.C50 = 0.5
 	sp.ActTau = 15
 	sp.DeTau = 30
@@ -55,7 +50,6 @@ func (sp *SKCaParams) Defaults() {
 }
 
 func (sp *SKCaParams) Update() {
-	sp.C50Hill = mat32.Pow(sp.C50, sp.Hill)
 	sp.ActDt = 1.0 / sp.ActTau
 	sp.DeDt = 1.0 / sp.DeTau
 	sp.CaRDecayDt = 1.0 / sp.CaRDecayTau
@@ -65,8 +59,9 @@ func (sp *SKCaParams) Update() {
 // MAsympHill gives the asymptotic (driving) gating factor M as a function of CAi
 // for the Hill equation version used in Fujita et al (2012)
 func (sp *SKCaParams) MAsympHill(cai float32) float32 {
-	capow := mat32.Pow(cai, sp.Hill)
-	return capow / (capow + sp.C50Hill)
+	cai /= sp.C50
+	capow := cai * cai * cai * cai
+	return capow / (1 + capow)
 }
 
 // MAsympGW06 gives the asymptotic (driving) gating factor M as a function of CAi

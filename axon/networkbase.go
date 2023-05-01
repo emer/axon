@@ -330,6 +330,7 @@ func (nt *NetworkBase) AllLayerInhibs() string {
 			}
 			str += fmt.Sprintf("\t\t\t\t\t\tPool.Gi: \t%6.2f\t%s\n", lp.Inhib.Pool.Gi, lh)
 		}
+		str += fmt.Sprintf("\n")
 	}
 	return str
 }

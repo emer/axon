@@ -86,18 +86,20 @@ func (ly *Layer) Defaults() {
 	case TDIntegLayer, TDDaLayer:
 		ly.Params.TDDefaults()
 
+	case LDTLayer:
+		ly.LDTDefaults()
 	case BLALayer:
 		ly.BLADefaults()
 	case CeMLayer:
 		ly.CeMDefaults()
-	case PPTgLayer:
-		ly.PPTgDefaults()
 	case VSPatchLayer:
 		ly.Params.VSPatchDefaults()
 	case DrivesLayer:
 		ly.Params.DrivesDefaults()
 	case EffortLayer:
 		ly.Params.EffortDefaults()
+	case UrgencyLayer:
+		ly.Params.UrgencyDefaults()
 	case USLayer:
 		ly.Params.USDefaults()
 	case PVLayer:
@@ -109,11 +111,12 @@ func (ly *Layer) Defaults() {
 		ly.GPDefaults()
 	case STNLayer:
 		ly.STNDefaults()
-	case VThalLayer:
-		ly.VThalDefaults()
+	case BGThalLayer:
+		ly.BGThalDefaults()
 	case VSGatedLayer:
 		ly.Params.VSGatedDefaults()
 	}
+	ly.ApplyDefParams()
 	ly.UpdateParams()
 }
 
@@ -154,8 +157,8 @@ func (ly *Layer) PostBuild() {
 	case PulvinarLayer:
 		ly.PulvPostBuild()
 
-	case RSalienceAChLayer:
-		ly.RSalAChPostBuild()
+	case LDTLayer:
+		ly.LDTPostBuild()
 	case RWDaLayer:
 		ly.RWDaPostBuild()
 	case TDIntegLayer:

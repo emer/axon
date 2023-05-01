@@ -219,14 +219,14 @@ func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
 	}
 }
 
-// RSalAChLayMaxAct returns the lpl.AvgMax.Act.Cycle.Max for given layIdx
-func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
+// LDTLayMaxAct returns the lpl.AvgMax.CaSpkP.Cycle.Max for given layIdx
+func (ly *Layer) LDTLayMaxAct(net *Network, layIdx int32) float32 {
 	if layIdx < 0 {
 		return 0
 	}
 	lay := net.Layers[layIdx]
 	lpl := &lay.Pools[0]
-	return lpl.AvgMax.Act.Cycle.Max
+	return lpl.AvgMax.CaSpkP.Cycle.Avg
 }
 
 // CyclePost is called after the standard Cycle update, as a separate
@@ -238,13 +238,13 @@ func (ly *Layer) RSalAChLayMaxAct(net *Network, layIdx int32) float32 {
 // Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
 func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
-	case RSalienceAChLayer:
+	case LDTLayer:
 		net := ly.Network
-		lay1MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay1Idx)
-		lay2MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay2Idx)
-		lay3MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay3Idx)
-		lay4MaxAct := ly.RSalAChLayMaxAct(net, ly.Params.RSalACh.SrcLay4Idx)
-		ly.Params.CyclePostRSalAChLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
+		lay1MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay1Idx)
+		lay2MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay2Idx)
+		lay3MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay3Idx)
+		lay4MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay4Idx)
+		ly.Params.CyclePostLDTLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
 	case RWDaLayer:
 		net := ly.Network
 		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
@@ -259,13 +259,15 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		net := ly.Network
 		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
 		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
-	case PPTgLayer:
-		ly.Params.CyclePostPPTgLayer(ctx, &ly.Pools[0])
+	case CeMLayer:
+		ly.Params.CyclePostCeMLayer(ctx, &ly.Pools[0])
 	case VSPatchLayer:
 		for pi := 1; pi < len(ly.Pools); pi++ {
 			pl := &ly.Pools[pi]
 			ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl)
 		}
+	case PTNotMaintLayer:
+		ly.Params.CyclePostPTNotMaintLayer(ctx, &ly.Pools[0])
 	case VTALayer:
 		ly.Params.CyclePostVTALayer(ctx)
 	}
@@ -309,6 +311,22 @@ func (ly *Layer) DecayState(ctx *Context, decay, glong float32) {
 			continue
 		}
 		ly.Params.Act.DecayState(nrn, decay, glong)
+		// Note: synapse-level Ca decay happens in DWt
+	}
+	ly.DecayStateLayer(ctx, decay, glong)
+}
+
+// DecayStateAHP decays activation state by given proportion
+// (default decay values are ly.Params.Act.Decay.Act, Glong)
+// including extra param for AHP decay
+func (ly *Layer) DecayStateAHP(ctx *Context, decay, glong, ahp float32) {
+	for ni := range ly.Neurons {
+		nrn := &ly.Neurons[ni]
+		if nrn.IsOff() {
+			continue
+		}
+		ly.Params.Act.DecayState(nrn, decay, glong)
+		ly.Params.Act.DecayAHP(nrn, ahp)
 		// Note: synapse-level Ca decay happens in DWt
 	}
 	ly.DecayStateLayer(ctx, decay, glong)
@@ -422,7 +440,7 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.CorSimFmActs() // GPU syncs down the state
 	if ly.Params.Act.Decay.OnRew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.DipReset.IsTrue() {
-			ly.DecayState(ctx, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+			ly.DecayStateAHP(ctx, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 		}
 	}
 	switch ly.LayerType() {

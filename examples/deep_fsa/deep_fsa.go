@@ -37,7 +37,7 @@ var (
 	// Debug triggers various messages etc
 	Debug = false
 	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
-	GPU = true
+	GPU = false
 )
 
 func main() {
@@ -168,15 +168,15 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	inp.SetClass("InLay")
 	trg.SetClass("InLay")
 
-	hid, hidct := net.AddSuperCT2D("Hidden", 10, 10, 2, full)
+	hid, hidct := net.AddSuperCT2D("Hidden", "", 10, 10, 2, full)
 	// full > one2one -- one2one weights go to 0 -- this is key for more posterior-cortical CT
 	// hidct.Shape().SetShape([]int{10, 20}, nil, nil) // 200 == 500 == 1000 >> 100 here!
 	// note: tried 4D 6,6,2,2 with pool 1to1 -- not better
 	// also 12,12 not better than 10,10
-	net.ConnectCTSelf(hidct, full)
+	net.ConnectCTSelf(hidct, full, "")
 
 	net.ConnectLayers(in, hid, full, axon.ForwardPrjn)
-	net.ConnectToPulv(hid, hidct, inp, full, full) // inp -> hid and inp -> hidct is *essential*
+	net.ConnectToPulv(hid, hidct, inp, full, full, "") // inp -> hid and inp -> hidct is *essential*
 	// net.ConnectLayers(inp, hid, full, emer.Back).SetClass("FmPvlv")
 	// net.ConnectLayers(hidct, hid, full, emer.Back)
 

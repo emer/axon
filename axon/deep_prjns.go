@@ -7,3 +7,7 @@ package axon
 //gosl: start deep_prjns
 
 //gosl: end deep_prjns
+
+func (pj *PrjnParams) CTCtxtPrjnDefaults() {
+
+}

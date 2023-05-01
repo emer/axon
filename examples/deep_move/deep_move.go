@@ -176,10 +176,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	act := net.AddLayer2D("Action", ev.UnitsPer, len(ev.Acts), axon.InputLayer)
 
 	dpHidSz := evec.Vec2i{X: (ev.NFOVRays - (rfWidth - 1)) * nPerAng, Y: (ev.DepthSize - (rfDepth - 1)) * nPerDepth}
-	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
-	// net.ConnectCTSelf(dpHidct, full) // self definitely doesn't make sense -- no need for 2-back ct
+	dpHid, dpHidct := net.AddSuperCT2D("DepthHid", "", dpHidSz.Y, dpHidSz.X, 2*space, one2one) // one2one learn > full
+	// net.ConnectCTSelf(dpHidct, full, "") // self definitely doesn't make sense -- no need for 2-back ct
 	// net.LateralConnectLayer(dpHidct, full).SetClass("CTSelfMaint") // no diff
-	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect) // fmPulv: rect == full
+	net.ConnectToPulv(dpHid, dpHidct, dpInp, full, rect, "") // fmPulv: rect == full
 	net.ConnectLayers(act, dpHid, full, axon.ForwardPrjn)
 	net.ConnectLayers(dpIn, dpHid, rect, axon.ForwardPrjn)
 	// net.ConnectCtxtToCT(act, dpHidct, full) // ct gets direct action copy
@@ -199,10 +199,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		// _ = rect2Recip
 
 		// dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", (2*dpHidSz.Y)/rfDepth2*nPerDepth, (2*dpHidSz.X)/rfWidth2*nPerAng, 2*space, one2one) // one2one learn > full
-		dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", 10, 20, 2*space, one2one) // one2one learn > full
+		dpHid2, dpHid2ct = net.AddSuperCT2D("DepthHid2", "", 10, 20, 2*space, one2one) // one2one learn > full
 
-		net.ConnectCTSelf(dpHid2ct, full)
-		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full)
+		net.ConnectCTSelf(dpHid2ct, full, "")
+		net.ConnectToPulv(dpHid2, dpHid2ct, dpInp, full, full, "")
 		net.ConnectLayers(act, dpHid2, full, axon.ForwardPrjn)
 
 		// net.ConnectLayers(dpHid, dpHid2, rect2, axon.ForwardPrjn)
@@ -212,9 +212,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		net.ConnectLayers(dpHid2ct, dpHidct, full, axon.BackPrjn)
 	}
 
-	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", 10, 10, 2*space, one2one)
+	hdHid, hdHidct := net.AddSuperCT2D("HeadDirHid", "", 10, 10, 2*space, one2one)
 	// net.ConnectCTSelf(hdHidct, full)
-	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full) // shortcut top-down
+	net.ConnectToPulv(hdHid, hdHidct, hdp, full, full, "") // shortcut top-down
 	net.ConnectLayers(act, hdHid, full, axon.ForwardPrjn)
 	net.ConnectLayers(hd, hdHid, full, axon.ForwardPrjn)
 

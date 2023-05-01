@@ -131,7 +131,23 @@ func (nt *Network) Cycle(ctx *Context) {
 		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
 		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
 	}
-	nt.LayerMapSeq(func(ly *Layer) { ly.CyclePost(ctx) }, "CyclePost") // do not thread -- minor computation
+	var ldt, vta *Layer
+	for _, ly := range nt.Layers {
+		if ly.LayerType() == VTALayer {
+			vta = ly
+		} else if ly.LayerType() == LDTLayer {
+			ldt = ly
+		} else {
+			ly.CyclePost(ctx)
+		}
+	}
+	// ordering of these is important
+	if ldt != nil {
+		ldt.CyclePost(ctx)
+	}
+	if vta != nil {
+		vta.CyclePost(ctx)
+	}
 }
 
 // MinusPhase does updating after end of minus phase
@@ -450,7 +466,6 @@ func (nt *Network) UpdateExtFlags() {
 		ly.UpdateExtFlags()
 	}
 }
-
 
 // SynFail updates synaptic failure
 func (nt *Network) SynFail(ctx *Context) {
