@@ -31,6 +31,9 @@ var ParamSets = params.Sets{
 					"Layer.Act.AK.Gbar":                  "0.1",
 					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Act.NMDA.Voff":                "0",
+					"Layer.Act.NMDA.Gbar":                "0.006",
+					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def
+					"Layer.Learn.LrnNMDA.Gbar":           "0.006",
 					"Layer.Act.Sahp.Gbar":                "0.1",  //
 					"Layer.Act.Sahp.Off":                 "0.8",  //
 					"Layer.Act.Sahp.Slope":               "0.02", //
@@ -49,28 +52,20 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 == 2.4 > lower
-					"Layer.Inhib.Layer.FB":          "1",
-					"Layer.Act.Dend.SSGi":           "0",   // 0 > higher -- kills nmda maint!
-					"Layer.CT.GeGain":               "2.0", // for maint: 1.5 better, else 0.8 > 0.5 > 1.2
-					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0",
-					"Layer.Act.Dt.VmDendTau":        "5",
-					"Layer.Act.Dt.GeTau":            "5",
-					"Layer.Act.GABAB.Gbar":          "0.008", // 0.008 - 0.01 work..
-					"Layer.Act.NMDA.Gbar":           "0.006", // 0.006 > 0.004 -- 0.004 not active
-					"Layer.Act.MaintNMDA.Gbar":      "0.008", // ~0.008 seems best
-					"Layer.Act.MaintNMDA.Tau":       "300",
-					"Layer.Act.Noise.On":            "false", // todo?
-					"Layer.Act.Noise.Ge":            "0.005",
-					"Layer.Act.Noise.Gi":            "0.005",
-					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLRate.SigmoidMin": "0.05", // 0.05 > .1 > .02
-					"Layer.Learn.RLRate.Diff":       "true",
-					"Layer.Learn.RLRate.DiffThr":    "0.02", // 0.02 def - todo
-					"Layer.Learn.RLRate.SpkThr":     "0.1",  // 0.1 def
-					"Layer.Learn.RLRate.Min":        "0.001",
+					"Layer.Inhib.Layer.Gi":               "2.2", // 2.2 > others
+					"Layer.Inhib.Layer.FB":               "1",
+					"Layer.Act.Dend.SSGi":                "0",   // 0 > higher -- kills nmda maint!
+					"Layer.CT.GeGain":                    "2.0", // 2.0 > 1.5 for sure
+					"Layer.CT.DecayTau":                  "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Decay.Act":                "0.0",
+					"Layer.Act.Decay.Glong":              "0.0",
+					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def > 0.01
+					"Layer.Act.MaintNMDA.Gbar":           "0.007", // 0.007 best, but 0.01 > lower if reg nmda weak
+					"Layer.Act.MaintNMDA.Tau":            "200",   // 200 > 100 > 300
+					"Layer.Act.NMDA.Gbar":                "0.007", // 0.007 matching maint best
+					"Layer.Act.NMDA.Tau":                 "200",   // 200 > 100
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005", // 0.005 > 0.0002 (much worse)
+					"Layer.Learn.TrgAvgAct.SubMean":      "1",     // 1 > 0
 				}},
 			{Sel: ".PulvinarLayer", Desc: "pulvinar",
 				Params: params.Params{
@@ -117,7 +112,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 1.0?
+					"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 0.4, 0.3 > 0.8 (very bad)
 					"Prjn.Com.GType":     "MaintG",
 					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
 				}},

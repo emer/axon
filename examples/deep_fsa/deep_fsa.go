@@ -7,8 +7,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"runtime"
 
 	"github.com/emer/axon/axon"
 	"github.com/emer/emergent/ecmd"
@@ -187,6 +189,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	hidct.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden", YAlign: relpos.Front, Space: 2})
 	inp.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "Input", XAlign: relpos.Left, Space: 2})
 	trg.SetRelPos(relpos.Rel{Rel: relpos.Behind, Other: "InputP", XAlign: relpos.Left, Space: 2})
+
+	fmt.Printf("GOMAXPROCS: %d\n", runtime.GOMAXPROCS(1)) // just use 1
 
 	err := net.Build()
 	net.Defaults()
