@@ -45,21 +45,16 @@ var (
 )
 
 func main() {
-	TheSim.New()
-	TheSim.Config()
+	sim := &Sim{}
+	sim.New()
+	sim.Config()
 	if len(os.Args) > 1 {
-		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
+		sim.RunNoGUI() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
-		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-			guirun()
+		gimain.Main(func() {
+			sim.RunGUI()
 		})
 	}
-}
-
-func guirun() {
-	TheSim.Init()
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
 }
 
 // see params.go for network params
@@ -107,9 +102,6 @@ type Sim struct {
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
 }
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
@@ -380,7 +372,7 @@ func (ss *Sim) ConfigLoops() {
 		ss.Net.WtFmDWt(&ss.Context)
 	})
 
-	for m, _ := range man.Stacks {
+	for m := range man.Stacks {
 		mode := m // For closures
 		stack := man.Stacks[mode]
 		stack.Loops[etime.Trial].OnStart.Add("Env:Step", func() {
@@ -909,7 +901,7 @@ func (ss *Sim) ConfigLogItems() {
 	li = ss.Logs.AddStatAggItem("RewPred_NR", "RewPred_NR", etime.Run, etime.Epoch, etime.Trial)
 	li.FixMin = false
 
-	ev := TheSim.Envs[etime.Train.String()].(*Approach)
+	ev := ss.Envs[etime.Train.String()].(*Approach)
 	ss.Logs.AddItem(&elog.Item{
 		Name:      "ActCor",
 		Type:      etensor.FLOAT64,
@@ -978,7 +970,7 @@ func (ss *Sim) Log(mode etime.Modes, time etime.Times) {
 		// 	ss.Loops.Stop(etime.Trial)
 		// }
 
-		ev := TheSim.Envs[etime.Train.String()].(*Approach)
+		ev := ss.Envs[etime.Train.String()].(*Approach)
 		trnEpc := ss.Loops.Stacks[etime.Train].Loops[etime.Epoch].Counter.Cur
 		if ss.StopOnErr && trnEpc > 5 && ss.Stats.Float("MaintEarly") > 0 {
 			fmt.Printf("STOPPED due to early maint for US: %d\n", ev.US)
@@ -1007,7 +999,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	ss.ViewUpdt.Config(nv, etime.GammaCycle, etime.AlphaCycle)
 
 	nv.Scene().Camera.Pose.Pos.Set(0, 1.4, 2.6)
-	nv.Scene().Camera.LookAt(mat32.Vec3{0, 0, 0}, mat32.Vec3{0, 1, 0})
+	nv.Scene().Camera.LookAt(mat32.Vec3{X: 0, Y: 0, Z: 0}, mat32.Vec3{X: 0, Y: 1, Z: 0})
 
 	ss.GUI.ViewUpdt = &ss.ViewUpdt
 
@@ -1059,7 +1051,7 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	})
 	ss.GUI.FinalizeGUI(false)
 	if GPU {
-		ss.Net.ConfigGPUwithGUI(&TheSim.Context)
+		ss.Net.ConfigGPUwithGUI(&ss.Context)
 		gi.SetQuitCleanFunc(func() {
 			ss.Net.GPU.Destroy()
 		})
@@ -1076,7 +1068,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Parse() // always parse
 }
 
-func (ss *Sim) CmdArgs() {
+func (ss *Sim) RunNoGUI() {
 	ss.Args.ProcStd(&ss.Params)
 	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
@@ -1107,4 +1099,10 @@ func (ss *Sim) CmdArgs() {
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
+}
+
+func (ss *Sim) RunGUI() {
+	ss.Init()
+	win := ss.ConfigGui()
+	win.StartEventLoop()
 }
