@@ -101,6 +101,17 @@ func LogAddDiagnosticItems(lg *elog.Logs, layerNames []string, mode etime.Modes,
 				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
 					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
 				}}})
+		lg.AddItem(&elog.Item{
+			Name:  clnm + "_GiMult",
+			Type:  etensor.FLOAT64,
+			Range: minmax.F64{Max: 1},
+			Write: elog.WriteMap{
+				etime.Scope(etime.Train, times[1]): func(ctx *elog.Context) {
+					ly := ctx.Layer(clnm).(AxonLayer).AsAxon()
+					ctx.SetFloat32(1.0 - ly.Vals.ActAvg.GiMult)
+				}, etime.Scope(etime.Train, times[0]): func(ctx *elog.Context) {
+					ctx.SetAgg(ctx.Mode, times[1], agg.AggMean)
+				}}})
 	}
 }
 

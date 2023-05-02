@@ -21,7 +21,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":           "0.0", // 0 == 0.2
 					"Layer.Act.Decay.Glong":         "0.0",
 					"Layer.Act.NMDA.MgC":            "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":           "5",
+					"Layer.Act.NMDA.Voff":           "0",
+					"Layer.Act.NMDA.Gbar":           "0.006",
+					"Layer.Act.GABAB.Gbar":          "0.015", // 0.015 def
+					"Layer.Learn.LrnNMDA.Gbar":      "0.006",
 					"Layer.Act.Mahp.Gbar":           "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
 					"Layer.Act.Sahp.Gbar":           "0.1",  // 0.1 == 0.02 no real diff
 					"Layer.Act.Sahp.Off":            "0.8",  //
@@ -53,9 +56,11 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dend.SSGi":        "0",    // 0 > higher -- kills nmda maint!
 					"Layer.Act.Decay.Act":        "0.0",
 					"Layer.Act.Decay.Glong":      "0.0",
-					"Layer.Act.GABAB.Gbar":       "0.2",  // standard gaba
-					"Layer.Act.NMDA.Gbar":        "0.15", // .15 for copy mode
-					"Layer.Act.NMDA.Tau":         "100",  // 100 best here
+					"Layer.Act.GABAB.Gbar":       "0.015", // 0.015 standard gaba
+					"Layer.Act.NMDA.Gbar":        "0.006",
+					"Layer.Act.NMDA.Tau":         "100",
+					"Layer.Act.MaintNMDA.Gbar":   "0.006", // not relevant -- no CTSelf
+					"Layer.Act.MaintNMDA.Tau":    "100",
 				}},
 			{Sel: "#DepthHid", Desc: "",
 				Params: params.Params{
@@ -75,8 +80,6 @@ var ParamSets = params.Sets{
 					"Layer.Act.Decay.Act":           "0.0",
 					"Layer.Act.Decay.Glong":         "0.0", // clear long
 					"Layer.Act.Decay.AHP":           "0.0", // clear long
-					"Layer.Act.GABAB.Gbar":          "0.2",
-					"Layer.Act.NMDA.Gbar":           "0.1", // .1 was important
 					"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > .05
 				}},
 			{Sel: "#Action", Desc: "",

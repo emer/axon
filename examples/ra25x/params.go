@@ -43,7 +43,7 @@ var ParamSets = params.Sets{
 					"Layer.Act.Sahp.Off":                 "0.8",   //
 					"Layer.Act.Sahp.Slope":               "0.02",  //
 					"Layer.Act.Sahp.CaTau":               "5",     //
-					"Layer.Act.GABAB.Gbar":               "0.012", // 0.015 def
+					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 > lower
 					"Layer.Act.AK.Gbar":                  "0.1",   // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
 					"Layer.Act.VGCC.Gbar":                "0.02",  // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
 					"Layer.Act.VGCC.Ca":                  "25",    // 25 / 10tau default
@@ -81,13 +81,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".SuperLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":       "1.1",  // 0.9 > 1.0
-					"Layer.Inhib.ActAvg.Nominal": "0.05", // 0.05 more sensible, same perf
+					"Layer.Inhib.Layer.Gi":       "1.1",  // 1.1 > others
+					"Layer.Inhib.ActAvg.Nominal": "0.06", // 0.06 > 0.05
 					"Layer.Inhib.ActAvg.AdaptGi": "true",
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal":    "0.24",
+					"Layer.Inhib.ActAvg.Nominal":    "0.24", // 0.24 > 0.3
 					"Layer.Inhib.ActAvg.AdaptGi":    "true",
 					"Layer.Inhib.Layer.Gi":          "0.65", // 0.65 FB0.5 best
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
