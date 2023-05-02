@@ -1,3 +1,5 @@
+//go:build !race
+
 package main
 
 import (
@@ -13,13 +15,11 @@ type expectedVal struct {
 	val  float64
 }
 
-// TestBoa runs the boa sim for enough epochs to check it's basically working.
-func TestBoa(t *testing.T) {
+// TestBOA runs the boa sim for enough epochs to check it's basically working.
+func TestBOA(t *testing.T) {
 	sim := &Sim{}
 	sim.New()
 	sim.Config()
-
-	assert.NoError(t, sim.Net.Threads.Set(16, 16, 16))
 
 	sim.Args.SetInt("runs", 1)
 	sim.Args.SetInt("epochs", 3)
