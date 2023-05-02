@@ -3,6 +3,7 @@ module github.com/emer/axon
 go 1.18
 
 require (
+	github.com/alecthomas/assert/v2 v2.2.2
 	github.com/anthonynsimon/bild v0.13.0
 	github.com/c2h5oh/datasize v0.0.0-20220606134207-859f65c6625b
 	github.com/emer/emergent v1.3.52
@@ -33,6 +34,7 @@ require (
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b // indirect
 	github.com/akutz/sortfold v0.2.1 // indirect
 	github.com/alecthomas/chroma/v2 v2.7.0 // indirect
+	github.com/alecthomas/repr v0.2.0 // indirect
 	github.com/antonmedv/expr v1.12.5 // indirect
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
@@ -54,6 +56,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
+	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/jinzhu/copier v0.3.5 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
