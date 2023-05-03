@@ -543,7 +543,7 @@ func (ac *ActParams) Defaults() {
 	ac.NMDA.Defaults()
 	ac.NMDA.Gbar = 0.006
 	ac.MaintNMDA.Defaults()
-	ac.MaintNMDA.Gbar = 0.015
+	ac.MaintNMDA.Gbar = 0.007
 	ac.MaintNMDA.Tau = 200
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()

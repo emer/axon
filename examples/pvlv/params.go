@@ -28,9 +28,9 @@ var ParamSets = params.Sets{
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":     "1.8",
-					"Layer.Inhib.Pool.Gi":      "1.8",
+					"Layer.Inhib.Pool.Gi":      "2.2",
 					"Layer.Act.Dend.ModGain":   "1.5",
-					"Layer.Act.GABAB.Gbar":     "0.01",
+					"Layer.Act.GABAB.Gbar":     "0.015",
 					"Layer.Act.MaintNMDA.Gbar": "0.008",
 					"Layer.Act.MaintNMDA.Tau":  "300",
 				}},
@@ -62,7 +62,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "strong, high variance",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4", // key param for OFC focusing on current cs -- expt
+					"Prjn.PrjnScale.Abs": "2", // key param for OFC focusing on current cs -- expt
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
@@ -77,10 +77,6 @@ var ParamSets = params.Sets{
 			{Sel: ".BLAExtPrjn", Desc: "ext learns very fast",
 				Params: params.Params{
 					"Prjn.Learn.LRate.Base": "0.001",
-				}},
-			{Sel: ".ThalToPFCInhib", Desc: "",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0",
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{

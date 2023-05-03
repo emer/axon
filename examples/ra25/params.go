@@ -35,7 +35,7 @@ var ParamSets = params.Sets{
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":         "1.5",  // 1.0 > 0.6 >= 0.7 == 0.5
+					"Layer.Act.Clamp.Ge":         "1.0",  // 1.0 > 0.6 >= 0.7 == 0.5
 					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
 				}},
 			{Sel: "#Output", Desc: "output definitely needs lower inhib -- true for smaller layers in general",

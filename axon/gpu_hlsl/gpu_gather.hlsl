@@ -74,9 +74,6 @@ void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint 
 	GSyns[pj.Idxs.GSynSt + ni] = gSyn;	
 }
 
-void NoOp() {
-}
-
 void NeuronAvgMax(in Context ctx, in LayerParams ly, uint ni, in Neuron nrn) {
 	AtomicInhibRawIncr(Pools[nrn.SubPoolN].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
 	AtomicUpdatePoolAvgMax(Pools[nrn.SubPoolN].AvgMax, nrn);
