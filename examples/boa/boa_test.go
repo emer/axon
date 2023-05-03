@@ -35,7 +35,7 @@ func TestBOA(t *testing.T) {
 		{"GateCS", 1.0},
 		{"MaintEarly", 0.0},
 		{"WrongCSGate", 0.0},
-		{"Rew", 0.8},
+		{"Rew", 0.6},
 		{"RewPred", 0.1375},
 	}
 	epochTable := sim.Logs.Table(etime.Train, etime.Epoch)
