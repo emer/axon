@@ -24,8 +24,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.8",
-					"Layer.Act.Dend.ModGain": "10", // 10 > 1 -- key gating efficacy param
+					"Layer.Inhib.Layer.Gi":   "3.2",
+					"Layer.Act.Dend.ModGain": "1.5", // 10 > 1 -- key gating efficacy param
 				}},
 			////////////////////////////////////////////
 			// Prjns
@@ -45,9 +45,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0.1", // key gating efficacy param
 				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "4",
+				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "4.0", // if this is too strong, it gates to the wrong CS
 				}},
 		}},
 	},

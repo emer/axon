@@ -203,9 +203,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
 	net.ConnectToPFCBack(time, timeP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcVal, ofcValCT, ofcValPTp, full)
 	// note: following are needed by violate true predictive learning of time
-	net.ConnectLayers(time, ofcUSPTp, full, axon.ForwardPrjn)  // this is key for making it move
-	net.ConnectLayers(time, ofcValPTp, full, axon.ForwardPrjn) // this is key for making it move
 
 	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
 	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)

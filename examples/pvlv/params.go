@@ -27,12 +27,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "1.8",
-					"Layer.Inhib.Pool.Gi":      "2.2",
+					"Layer.Inhib.Layer.Gi":     "3.2",
+					"Layer.Inhib.Pool.Gi":      "3.2",
 					"Layer.Act.Dend.ModGain":   "1.5",
 					"Layer.Act.GABAB.Gbar":     "0.015",
-					"Layer.Act.MaintNMDA.Gbar": "0.008",
-					"Layer.Act.MaintNMDA.Tau":  "300",
+					"Layer.Act.MaintNMDA.Gbar": "0.007",
+					"Layer.Act.MaintNMDA.Tau":  "200",
 				}},
 			//////////////////////////////////////////////////
 			// required custom params for this project
@@ -81,6 +81,10 @@ var ParamSets = params.Sets{
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4", // 4 needed to sustain
+				}},
+			{Sel: ".ToPTp", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 				}},
 		}},
 	},
