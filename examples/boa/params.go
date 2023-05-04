@@ -17,10 +17,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
+					"Layer.Act.Decay.Act":    "1",
 					"Layer.Inhib.Layer.On":   "false", // todo: explore -- could be bad for gating
 					"Layer.Inhib.Pool.Gi":    "0.3",   // go lower, get more inhib from elsewhere?
 					"Layer.Inhib.Pool.FB":    "1",
 					"Layer.Act.Dend.ModGain": "1", // todo: try with lower drive
+				}},
+			{Sel: ".BGThalLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Act.Decay.Act": "1",
 				}},
 			{Sel: "#BLAPosAcqD1", Desc: "",
 				Params: params.Params{

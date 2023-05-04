@@ -116,7 +116,7 @@ func (pp *VSPatchParams) DALRate(da, modlr float32) float32 {
 //gosl: end pvlv_layers
 
 func (ly *Layer) BLADefaults() {
-	isAcq := strings.Contains(ly.Nm, "Acq")
+	isAcq := strings.Contains(ly.Nm, "Acq") || strings.Contains(ly.Nm, "Novel")
 
 	lp := ly.Params
 	lp.Act.Decay.Act = 0.2
@@ -127,6 +127,7 @@ func (ly *Layer) BLADefaults() {
 		lp.Inhib.Layer.Gi = 2.2 // acq has more input
 	} else {
 		lp.Inhib.Layer.Gi = 1.8
+		lp.Act.Gbar.L = 0.25
 	}
 	lp.Inhib.Pool.On.SetBool(true)
 	lp.Inhib.Pool.Gi = 0.9
