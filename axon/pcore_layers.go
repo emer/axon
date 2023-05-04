@@ -180,7 +180,7 @@ func (ly *Layer) AnyGated() bool {
 }
 
 func (ly *Layer) MatrixDefaults() {
-	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Act = 1
 	ly.Params.Act.Decay.Glong = 1  // prevent carryover of NMDA
 	ly.Params.Act.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
 	// ly.Params.Act.NMDA.Gbar = 0    // Matrix needs nmda
@@ -384,7 +384,7 @@ func (ly *Layer) STNDefaults() {
 func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
 	// ly.Params.Act.NMDA.Gbar = 0 // needs NMDA
-	ly.Params.Act.Decay.Act = 0
+	ly.Params.Act.Decay.Act = 1
 	ly.Params.Act.Decay.Glong = 0.6
 	ly.Params.Act.Dend.SSGi = 0
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
