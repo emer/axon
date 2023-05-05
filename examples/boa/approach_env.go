@@ -65,7 +65,7 @@ func (ev *Approach) Defaults() {
 	ev.Acts = []string{"Forward", "Left", "Right", "Consume", "None"}
 	ev.NActs = len(ev.Acts) - 1
 	ev.NDrives = 4
-	ev.CSPerDrive = 2 // doesn't work with 3
+	ev.CSPerDrive = 3 // doesn't work with 3
 	ev.Locations = 4  // <= drives always
 	ev.DistMax = 4
 	ev.TimeMax = 10

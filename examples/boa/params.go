@@ -17,7 +17,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.05", // 0.1 for 4, divide by N/4 from there
+					"Layer.Inhib.ActAvg.Nominal": "0.03", // 0.1 for 4, divide by N/4 from there
+				}},
+			{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start..",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "3", // 2 is good for .CS nominal .05, but 3 needed for .03
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
@@ -78,7 +82,7 @@ var ParamSets = params.Sets{
 			// PVLV Prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Matrix.NoGateLRate": "0.1", // todo: no making much diff -- explore more
+					"Prjn.Matrix.NoGateLRate": "1", // this is KEY for robustness when failing initially!
 				}},
 			{Sel: ".ToSC", Desc: "",
 				Params: params.Params{
@@ -129,10 +133,6 @@ var ParamSets = params.Sets{
 			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "5", // with new mod, this can be stronger
-				}},
-			{Sel: ".BLAFromNovel", Desc: "if too strong, isn't out-competed",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 3 is too strong.
 				}},
 			{Sel: "#UrgencyToVsMtxGo", Desc: "",
 				Params: params.Params{
