@@ -80,7 +80,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "ext learns very fast",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.1",
+					"Prjn.Learn.LRate.Base": "0.01",
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{

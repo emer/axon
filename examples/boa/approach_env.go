@@ -65,12 +65,12 @@ func (ev *Approach) Defaults() {
 	ev.Acts = []string{"Forward", "Left", "Right", "Consume", "None"}
 	ev.NActs = len(ev.Acts) - 1
 	ev.NDrives = 4
-	ev.CSPerDrive = 1
-	ev.Locations = 4 // <= drives always
+	ev.CSPerDrive = 2 // doesn't work with 3
+	ev.Locations = 4  // <= drives always
 	ev.DistMax = 4
 	ev.TimeMax = 10
 	ev.AlwaysLeft = true
-	ev.NewStateInt = -1
+	ev.NewStateInt = 1
 	ev.NYReps = 4
 	ev.PatSize.Set(6, 6)
 	// ev.PopCode.Defaults()
@@ -92,7 +92,7 @@ func (ev *Approach) Config() {
 	ev.States["US"] = etensor.NewFloat32([]int{1, ev.NDrives + 1, ev.NYReps, 1}, nil, nil)
 	// ev.States["CS"] = etensor.NewFloat32([]int{ev.PatSize.Y, ev.PatSize.X}, nil, nil)
 	// localist CS for testing now:
-	ev.States["CS"] = etensor.NewFloat32([]int{ev.NYReps, ev.NDrives}, nil, nil)
+	ev.States["CS"] = etensor.NewFloat32([]int{ev.NYReps, ev.CSTot}, nil, nil)
 	ev.States["Dist"] = etensor.NewFloat32([]int{ev.NYReps, ev.DistMax}, nil, nil)
 	ev.States["Time"] = etensor.NewFloat32([]int{ev.NYReps, ev.TimeMax}, nil, nil)
 	ev.States["Rew"] = etensor.NewFloat32([]int{1, 1}, nil, nil)
@@ -100,6 +100,7 @@ func (ev *Approach) Config() {
 
 	ev.ConfigPats()
 	ev.NewState()
+	ev.NewStart()
 }
 
 // ConfigPats generates patterns for CS's
@@ -138,7 +139,6 @@ func (ev *Approach) NewState() {
 		css.Values[l] = float32(pat)
 	}
 	ev.StateCtr = 0
-	ev.NewStart()
 }
 
 // PatToUS returns US no and CS no from pat no

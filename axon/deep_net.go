@@ -320,8 +320,8 @@ func (net *Network) AddPTMaintThalForSuper(super, ct *Layer, thalSuffix, prjnCla
 	pj := net.ConnectLayers(super, pt, superToPT, ForwardPrjn)
 	pj.DefParams = params.Params{
 		// one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily
-		"Prjn.PrjnScale.Rel": "1",    // keep this constant -- only self vs. this -- thal is modulatory
-		"Prjn.PrjnScale.Abs": "0.01", // monitor maint early and other maint stats with PTMaintLayer ModGain = 0 to set this so super alone is not able to drive it.
+		"Prjn.PrjnScale.Rel": "1",   // irrelevant -- only normal prjn
+		"Prjn.PrjnScale.Abs": "0.5", // BGThal modulates this so strength doesn't cause wrong CS gating
 		"Prjn.Learn.Learn":   "false",
 		"Prjn.SWt.Adapt.On":  "false",
 		"Prjn.SWt.Init.SPct": "0",

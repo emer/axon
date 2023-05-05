@@ -15,17 +15,16 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Clamp.Ge": "1.5",
 				}},
+			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.5", // 0.1 for 4, divide by N/4 from there
+				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":    "1",
 					"Layer.Inhib.Layer.On":   "false", // todo: explore -- could be bad for gating
 					"Layer.Inhib.Pool.Gi":    "0.3",   // go lower, get more inhib from elsewhere?
 					"Layer.Inhib.Pool.FB":    "1",
 					"Layer.Act.Dend.ModGain": "1", // todo: try with lower drive
-				}},
-			{Sel: ".BGThalLayer", Desc: "",
-				Params: params.Params{
-					"Layer.Act.Decay.Act": "1",
 				}},
 			{Sel: "#BLAPosAcqD1", Desc: "",
 				Params: params.Params{
