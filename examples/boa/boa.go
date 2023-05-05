@@ -579,6 +579,7 @@ func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
 	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	ctx.PVLVSetUS(ev.US != -1, true, ev.US, 1) // mag 1 for now..
 	ctx.PVLVSetDrives(1, 1, ev.Drive)
+	ctx.PVLVStepStart(&ss.Net.Rand)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -587,7 +588,7 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Context.Reset(&ss.Net.Rand)
+	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.Sim.PctCortex = 0
 	ss.InitWts(ss.Net)

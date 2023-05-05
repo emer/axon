@@ -560,7 +560,7 @@ func (ss *Sim) NewRun() {
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Sim.InCtr = 0
-	ss.Context.Reset(&ss.Net.Rand)
+	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.InitWts(ss.Net)
 	ss.InitStats()

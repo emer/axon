@@ -78,7 +78,7 @@ func (ss *DrEffPlot) EffortPlot() {
 	nv := 100
 	dt.SetNumRows(nv)
 	pp := &ss.Context.PVLV
-	pp.Effort.Reset(&ss.Rand)
+	pp.Effort.Reset()
 	for vi := 0; vi < nv; vi++ {
 		ev := pp.Effort.DiscFmEffort()
 		dt.SetCellFloat("X", vi, float64(vi))
@@ -137,7 +137,7 @@ func (ss *DrEffPlot) TimeRun() {
 	dt := ss.TimeTable
 
 	pv := &ss.Context.PVLV
-	pv.Effort.Reset(&ss.Rand)
+	pv.Effort.Reset()
 	pv.Urgency.Reset()
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)

@@ -222,7 +222,15 @@ func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
 }
 
 // Reset resets the raw effort back to zero -- at start of new gating event
-func (ef *Effort) Reset(rnd erand.Rand) {
+func (ef *Effort) Reset() {
+	ef.Raw = 0
+	ef.CurMax = ef.Max
+	ef.Disc = 1
+}
+
+// ReStart restarts restarts the raw effort back to zero
+// and sets the Max with random additional variance.
+func (ef *Effort) ReStart(rnd erand.Rand) {
 	ef.Raw = 0
 	ef.CurMax = ef.PlusVar(rnd, ef.Max)
 	ef.Disc = 1
@@ -578,9 +586,9 @@ func (pp *PVLV) Update() {
 	pp.VSMatrix.Update()
 }
 
-func (pp *PVLV) Reset(rnd erand.Rand) {
+func (pp *PVLV) Reset() {
 	pp.Drive.ToZero()
-	pp.Effort.Reset(rnd)
+	pp.Effort.Reset()
 	pp.Urgency.Reset()
 	pp.LHb.Reset()
 	pp.VTA.Reset()
@@ -762,7 +770,7 @@ func (pp *PVLV) DriveUpdt() {
 // of a new goal engaged state.
 func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
 	if !hasRew && gated {
-		pp.Effort.Reset(rnd)
+		pp.Effort.ReStart(rnd)
 		pp.LHb.DipSum = 0
 		if poolIdx == 0 { // novelty / curiosity pool
 			pp.Effort.CurMax = pp.Effort.MaxNovel
@@ -776,7 +784,7 @@ func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
 // Call this at the start of the trial, in ApplyPVLV method.
 func (pp *PVLV) EffortUpdt(rnd erand.Rand, effort float32) {
 	if pp.HasRewPrev.IsTrue() {
-		pp.Effort.Reset(rnd)
+		pp.Effort.ReStart(rnd)
 	} else {
 		pp.Effort.AddEffort(effort)
 	}

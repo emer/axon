@@ -160,7 +160,7 @@ func (ctx *Context) PVLVShouldGiveUp(rnd erand.Rand) {
 }
 
 // Reset resets the counters all back to zero
-func (ctx *Context) Reset(rnd erand.Rand) {
+func (ctx *Context) Reset() {
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
@@ -175,7 +175,7 @@ func (ctx *Context) Reset(rnd erand.Rand) {
 	}
 	ctx.RandCtr.Reset()
 	ctx.NeuroMod.Init()
-	ctx.PVLV.Reset(rnd)
+	ctx.PVLV.Reset()
 }
 
 // NewContext returns a new Time struct with default parameters

@@ -409,7 +409,7 @@ func (ss *Sim) SaveCondWeights() {
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.InitEnvRun()
-	ss.Context.Reset(&ss.Net.Rand)
+	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
 	ss.Net.InitWts()
 	ss.LoadRunWeights()
