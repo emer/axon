@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/etime"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/gosl/slrand"
@@ -105,14 +106,6 @@ func (ctx *Context) PVLVDA() float32 {
 	return ctx.PVLV.VTA.Vals.DA
 }
 
-// LHbDipResetFmSum increments DipSum and checks if should flag a reset.
-func (ctx *Context) LHbDipResetFmSum() {
-	dipReset := ctx.PVLV.LHbDipResetFmSum(ctx.NeuroMod.ACh)
-	if dipReset {
-		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
-	}
-}
-
 //gosl: end context
 
 // PVLVSetUS sets unconditioned stimulus (US) state for PVLV algorithm,
@@ -148,8 +141,26 @@ func (ctx *Context) PVLVSetDrives(curiosity, magnitude float32, drives ...int) {
 	}
 }
 
+// PVLVStepStart must be called at start of a new iteration (trial)
+// of behavior when using the PVLV framework, after applying USs,
+// Drives, and updating Effort (e.g., as last step in ApplyPVLV method).
+// Calls PVLVGiveUp (and potentially other things).
+func (ctx *Context) PVLVStepStart(rnd erand.Rand) {
+	ctx.PVLVShouldGiveUp(rnd)
+}
+
+// PVLVShouldGiveUp tests whether it is time to give up on the current goal,
+// based on sum of LHb Dip (missed expected rewards) and maximum effort.
+// called in PVLVStepStart.
+func (ctx *Context) PVLVShouldGiveUp(rnd erand.Rand) {
+	giveUp := ctx.PVLV.ShouldGiveUp(rnd, ctx.NeuroMod.HasRew.IsTrue())
+	if giveUp {
+		ctx.NeuroMod.SetRew(0, true) // sets HasRew -- drives maint reset, ACh
+	}
+}
+
 // Reset resets the counters all back to zero
-func (ctx *Context) Reset() {
+func (ctx *Context) Reset(rnd erand.Rand) {
 	ctx.Phase = 0
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
@@ -164,7 +175,7 @@ func (ctx *Context) Reset() {
 	}
 	ctx.RandCtr.Reset()
 	ctx.NeuroMod.Init()
-	ctx.PVLV.Reset()
+	ctx.PVLV.Reset(rnd)
 }
 
 // NewContext returns a new Time struct with default parameters

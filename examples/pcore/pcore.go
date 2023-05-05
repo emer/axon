@@ -511,7 +511,7 @@ func (ss *Sim) ApplyInputs(mode etime.Modes, trial int) {
 
 // ApplyPVLV applies PVLV reward inputs
 func (ss *Sim) ApplyPVLV(trial int) {
-	ss.Context.PVLV.EffortUrgencyUpdt(1)
+	ss.Context.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	if ss.Context.Mode == etime.Test {
 		ss.Context.PVLV.Urgency.Reset()
 	}
@@ -560,7 +560,7 @@ func (ss *Sim) NewRun() {
 	// ss.Envs.ByMode(etime.Train).Init(0)
 	// ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Sim.InCtr = 0
-	ss.Context.Reset()
+	ss.Context.Reset(&ss.Net.Rand)
 	ss.Context.Mode = etime.Train
 	ss.InitWts(ss.Net)
 	ss.InitStats()

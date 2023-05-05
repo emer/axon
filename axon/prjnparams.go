@@ -354,11 +354,19 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, sy *Synapse, sn, rn *Neuron, la
 func (pj *PrjnParams) DWtSynBLA(ctx *Context, sy *Synapse, sn, rn *Neuron, layPool, subPool *Pool) {
 	dwt := float32(0)
 	if ctx.NeuroMod.HasRew.IsTrue() { // reset
+		ract := rn.GeIntMax
+		lmax := layPool.AvgMax.GeIntMax.Plus.Max
+		if lmax > 0 {
+			ract /= lmax
+		}
+		if ract < pj.Learn.Trace.LearnThr {
+			ract = 0
+		}
 		delta := rn.CaSpkP - rn.SpkPrv
 		if delta < 0 { // neg delta learns slower in Acq, not Ext
 			delta *= pj.BLA.NegDeltaLRate
 		}
-		dwt = sy.Tr * delta
+		dwt = sy.Tr * delta * ract
 		sy.Tr = 0
 	} else if ctx.NeuroMod.ACh > 0.1 {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant

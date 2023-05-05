@@ -576,7 +576,7 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
-	ctx.PVLV.EffortUrgencyUpdt(1)
+	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	ctx.PVLVSetUS(ev.US != -1, true, ev.US, 1) // mag 1 for now..
 	ctx.PVLVSetDrives(1, 1, ev.Drive)
 }
@@ -587,7 +587,7 @@ func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.Envs.ByMode(etime.Train).Init(0)
 	ss.Envs.ByMode(etime.Test).Init(0)
-	ss.Context.Reset()
+	ss.Context.Reset(&ss.Net.Rand)
 	ss.Context.Mode = etime.Train
 	ss.Sim.PctCortex = 0
 	ss.InitWts(ss.Net)

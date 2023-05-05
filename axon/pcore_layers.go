@@ -139,7 +139,7 @@ func (ly *Layer) MatrixGated(ctx *Context) (bool, int) {
 	}
 
 	if ctx.PlusPhase.IsTrue() && ly.Params.Matrix.IsVS.IsTrue() {
-		ctx.PVLV.VSGated(mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
+		ctx.PVLV.VSGated(&ly.Network.Rand, mtxGated, ctx.NeuroMod.HasRew.IsTrue(), poolIdx)
 	}
 	return mtxGated, poolIdx
 }

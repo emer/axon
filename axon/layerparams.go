@@ -873,7 +873,7 @@ func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl
 	nrn.CaSpkPM = nrn.CaSpkP
 	switch ly.LayType {
 	case VTALayer:
-		ctx.LHbDipResetFmSum() // do in minus phase so ACh has time to propagate
+
 	}
 }
 

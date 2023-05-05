@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/emer/axon/axon"
+	"github.com/emer/emergent/erand"
 	"github.com/emer/etable/eplot"
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
@@ -43,6 +44,7 @@ type DrEffPlot struct {
 	TimePlot  *eplot.Plot2D `view:"-" desc:"the plot"`
 	Win       *gi.Window    `view:"-" desc:"main GUI window"`
 	ToolBar   *gi.ToolBar   `view:"-" desc:"the master toolbar"`
+	Rand      erand.SysRand `view:"-" desc:"random number generator"`
 }
 
 // Config configures all the elements using the standard functions
@@ -76,7 +78,7 @@ func (ss *DrEffPlot) EffortPlot() {
 	nv := 100
 	dt.SetNumRows(nv)
 	pp := &ss.Context.PVLV
-	pp.Effort.Reset()
+	pp.Effort.Reset(&ss.Rand)
 	for vi := 0; vi < nv; vi++ {
 		ev := pp.Effort.DiscFmEffort()
 		dt.SetCellFloat("X", vi, float64(vi))
@@ -135,7 +137,7 @@ func (ss *DrEffPlot) TimeRun() {
 	dt := ss.TimeTable
 
 	pv := &ss.Context.PVLV
-	pv.Effort.Reset()
+	pv.Effort.Reset(&ss.Rand)
 	pv.Urgency.Reset()
 	ut := ss.USTime.Min + rand.Intn(ss.USTime.Range())
 	dt.SetNumRows(ss.TimeSteps)
@@ -164,7 +166,7 @@ func (ss *DrEffPlot) TimeRun() {
 
 		pv.USpos.Set(0, usv)
 		pv.HasRewPrev.SetBool(usv > 0)
-		pv.EffortUrgencyUpdt(ei)
+		pv.EffortUrgencyUpdt(&ss.Rand, ei)
 		pv.DriveUpdt()
 	}
 	ss.TimePlot.Update()

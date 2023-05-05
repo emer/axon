@@ -439,7 +439,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.CorSimFmActs() // GPU syncs down the state
 	if ly.Params.Act.Decay.OnRew.IsTrue() {
-		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.DipReset.IsTrue() {
+		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.GiveUp.IsTrue() {
 			ly.DecayStateAHP(ctx, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 		}
 	}

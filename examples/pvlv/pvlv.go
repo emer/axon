@@ -103,7 +103,7 @@ func (ss *Sim) New() {
 	ss.Context.PVLV.Effort.Max = 8        // give up if nothing happening.
 	ss.Context.PVLV.Effort.MaxNovel = 2   // give up if nothing happening.
 	ss.Context.PVLV.Effort.MaxPostDip = 2 // give up if nothing happening.
-	// ss.Context.PVLV.LHb.DipResetThr = 0.2
+	// ss.Context.PVLV.LHb.GiveUpThr = 0.2
 	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()
 }
@@ -352,9 +352,10 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	ctx.PVLV.EffortUrgencyUpdt(1)
+	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	ctx.PVLVSetUS(trl.USOn, trl.Valence == cond.Pos, trl.US, trl.USMag)
 	ctx.PVLVSetDrives(1, 1, trl.US)
+	ctx.PVLVStepStart(&ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -408,9 +409,8 @@ func (ss *Sim) SaveCondWeights() {
 func (ss *Sim) NewRun() {
 	ss.InitRndSeed()
 	ss.InitEnvRun()
-	ss.Context.Reset()
+	ss.Context.Reset(&ss.Net.Rand)
 	ss.Context.Mode = etime.Train
-	ss.Context.PVLV.Effort.Reset()
 	ss.Net.InitWts()
 	ss.LoadRunWeights()
 	ss.InitStats()
@@ -451,7 +451,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)
 	ss.Stats.SetFloat32("LHbDip", pv.VTA.Vals.LHbDip)
 	ss.Stats.SetFloat32("DipSum", pv.LHb.DipSum)
-	ss.Stats.SetFloat32("DipReset", float32(pv.LHb.DipReset))
+	ss.Stats.SetFloat32("GiveUp", float32(pv.LHb.GiveUp))
 	ss.Stats.SetFloat32("LHbBurst", pv.VTA.Vals.LHbBurst)
 	ss.Stats.SetFloat32("PVpos", pv.VTA.Vals.PVpos)
 	ss.Stats.SetFloat32("PVneg", pv.VTA.Vals.PVneg)
@@ -507,7 +507,7 @@ func (ss *Sim) ConfigLogItems() {
 	li = ss.Logs.AddStatAggItem("LHbDip", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("DipSum", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("DipReset", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("GiveUp", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("LHbBurst", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVpos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVneg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
