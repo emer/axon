@@ -1,0 +1,450 @@
+
+Layer: VTA
+
+Layer: LHb
+
+Layer: LDT
+
+Layer: USpos
+
+Layer: USneg
+
+Layer: USposP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: USnegP
+
+Layer: PVpos
+
+Layer: PVneg
+
+Layer: PVposP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.07	Rel:  0.33
+	       OFCvalCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.33
+	      OFCvalPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.33
+
+Layer: PVnegP
+	       OFCvalCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	      OFCvalPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+
+Layer: Drives
+
+Layer: DrivesP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: Effort
+
+Layer: EffortP
+	      ACCcostCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	     ACCcostPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	       OFCusPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	       OFCvalCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	      OFCvalPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	          ALMCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	         ALMPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+
+Layer: Urgency
+
+Layer: VsGPi
+	        VsGPeIn		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.50
+	        VsMtxGo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	         VsSTNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	         VsSTNs		Abs:	  0.50	Rel:	  1.00	GScale:	  0.06	Rel:  0.50
+
+Layer: VsGPeOut
+	        VsMtxGo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+	         VsSTNp		Abs:	  0.10	Rel:	  1.00	GScale:	  0.03	Rel:  1.00
+
+Layer: VsGPeIn
+	        VsMtxNo		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	       VsGPeOut		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	         VsSTNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+
+Layer: VsGPeTA
+	        VsGPeIn		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  1.00
+	         VsSTNp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.25	Rel:  1.00
+
+Layer: VsSTNp
+	        VsGPeIn		Abs:	  0.10	Rel:	  1.00	GScale:	  0.00	Rel:  1.00
+	    BLAPosAcqD1		Abs:	  2.00	Rel:	  1.00	GScale:	  0.40	Rel:  1.00
+
+Layer: VsSTNs
+	    BLAPosAcqD1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+
+Layer: VsMtxGo
+	        VsGPeTA		Abs:	  2.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
+	        VsGPeIn		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	          USpos		Abs:	  2.00	Rel:	  0.20	GScale:	  0.08	Rel:  0.12
+	    BLAPosAcqD1		Abs:	  3.00	Rel:	  1.00	GScale:	  0.59	Rel:  0.59
+							    Abs Params: .BLAAcqToGo: 3
+							    Rel Params: .BLAAcqToGo: 1
+	         Drives		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+							    Abs Params: .DrivesToMtx: 1
+	          OFCus		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.06
+							    Rel Params: .PFCToVSMtx: 0.1
+	         OFCval		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.06
+							    Rel Params: .PFCToVSMtx: 0.1
+	        Urgency		Abs:	  0.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.06
+							    Abs Params: #UrgencyToVsMtxGo: 0
+	        ACCcost		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.06
+							    Rel Params: .PFCToVSMtx: 0.1
+	        ACCutil		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.06
+							    Rel Params: .PFCToVSMtx: 0.1
+
+Layer: VsMtxNo
+	        VsGPeTA		Abs:	  2.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.50
+	        VsGPeIn		Abs:	  0.50	Rel:	  1.00	GScale:	  0.01	Rel:  0.50
+	    BLAPosExtD2		Abs:	  0.10	Rel:	  1.00	GScale:	  0.02	Rel:  0.71
+	         Drives		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+							    Abs Params: .DrivesToMtx: 1
+	          OFCus		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.07
+							    Rel Params: .PFCToVSMtx: 0.1
+	         OFCval		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.07
+							    Rel Params: .PFCToVSMtx: 0.1
+	        ACCcost		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.07
+							    Rel Params: .PFCToVSMtx: 0.1
+	        ACCutil		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.07
+							    Rel Params: .PFCToVSMtx: 0.1
+
+Layer: VSGated
+
+Layer: VsPatch
+	         Drives		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+							    Abs Params: .DrivesToVSPatch: 1 | Base:.VSPatchPrjn: 2
+	       OFCusPTp		Abs:	  5.00	Rel:	  1.00	GScale:	  0.42	Rel:  0.25
+							    Abs Params: #OFCusPTpToVsPatch: 5 | Base:.VSPatchPrjn: 2
+	      OFCvalPTp		Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
+							    Abs Params: .VSPatchPrjn: 2
+	     ACCcostPTp		Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
+							    Abs Params: Base:.VSPatchPrjn: 2
+	     ACCutilPTp		Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
+							    Abs Params: Base:.VSPatchPrjn: 2
+
+Layer: SC
+	             CS		Abs:	  2.00	Rel:	  1.00	GScale:	  2.00	Rel:  1.00
+							    Abs Params: Base:.ToSC: 2
+
+Layer: BLAPosAcqD1
+	    BLAPosExtD2		Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
+	     BLANovelCS		Abs:	  2.00	Rel:	  0.10	GScale:	  0.12	Rel:  0.06
+							    Abs Params: Base:.BLAFromNovel: 2
+	          USpos		Abs:	  6.00	Rel:	  0.50	GScale:	  0.62	Rel:  0.31
+	             CS		Abs:	  1.50	Rel:	  1.00	GScale:	  0.94	Rel:  0.62
+
+Layer: BLAPosExtD2
+	    BLAPosAcqD1		Abs:	  2.00	Rel:	  1.00	GScale:	  1.00	Rel:  0.50
+	          USpos		Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
+	       OFCusPTp		Abs:	  0.50	Rel:	  1.00	GScale:	  0.17	Rel:  1.00
+	             CS		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+
+Layer: BLANegExtD1
+	    BLANegAcqD2		Abs:	  2.00	Rel:	  1.00	GScale:	  1.00	Rel:  0.50
+	             CS		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+
+Layer: BLANegAcqD2
+	    BLANegExtD1		Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
+	             CS		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+
+Layer: CeMPos
+	    BLAPosAcqD1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+	    BLAPosExtD2		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: CeMNeg
+	    BLANegAcqD2		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+	    BLANegExtD1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.33	Rel:  1.00
+
+Layer: BLANovelCS
+	             CS		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+
+Layer: OFCus
+	    BLAPosAcqD1		Abs:	  2.00	Rel:	  1.00	GScale:	  0.28	Rel:  0.42
+							    Abs Params: Base:#BLAPosAcqD1ToOFCus: 2
+	         Drives		Abs:	  1.00	Rel:	  0.20	GScale:	  0.08	Rel:  0.08
+	          PVpos		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	          USpos		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	        DrivesP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
+	         USposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	         PVposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	         OFCval		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	             CS		Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
+	            CSP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
+	         Effort		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	           Dist		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+
+Layer: OFCusCT
+	          OFCus		Abs:	  1.00	Rel:	  1.00	GScale:	  0.38	Rel:  0.38
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.38
+	        DrivesP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
+	         USposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	         PVposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	            CSP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.04	Rel:  0.04
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+
+Layer: OFCusPT
+	        OFCusMD		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	          OFCus		Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+							    Abs Params: Base:.SuperToPT: 0.5
+	        OFCusPT		Abs:	  4.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+							    Abs Params: Base:.PTSelfMaint: 4
+
+Layer: OFCusMD
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	          OFCus		Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
+							    Abs Params: Base:.SuperToThal: 4
+	          VsGPi		Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+							    Abs Params: Base:.GPiToBGThal: 5
+
+Layer: OFCusPTp
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.19
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.19
+	            CSP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.02
+	             CS		Abs:	  4.00	Rel:	  1.00	GScale:	  0.75	Rel:  0.19
+							    Abs Params: Base:.ToPTp: 4
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	         Effort		Abs:	  4.00	Rel:	  1.00	GScale:	  0.25	Rel:  0.19
+							    Abs Params: Base:.ToPTp: 4
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	           Dist		Abs:	  4.00	Rel:	  1.00	GScale:	  0.38	Rel:  0.19
+							    Abs Params: Base:.ToPTp: 4
+
+Layer: NotMaint
+	        OFCusPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.25
+	       OFCvalPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.25
+	      ACCcostPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.25
+	      ACCutilPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.25
+
+Layer: OFCval
+	          OFCus		Abs:	  3.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.27
+							    Abs Params: Base:#OFCusToOFCval: 3
+	          PVpos		Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:  0.27
+	         PVposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+	          PVneg		Abs:	  1.00	Rel:	  1.00	GScale:	  0.09	Rel:  0.27
+	         PVnegP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+	        ACCutil		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+	         Effort		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+	           Dist		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.03
+
+Layer: OFCvalCT
+	         OFCval		Abs:	  1.00	Rel:	  1.00	GScale:	  0.42	Rel:  0.42
+	       OFCvalPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.42
+	         PVposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	         PVnegP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+
+Layer: OFCvalPT
+	       OFCvalMD		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	         OFCval		Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+							    Abs Params: Base:.SuperToPT: 0.5
+	       OFCvalPT		Abs:	  4.00	Rel:	  1.00	GScale:	  0.36	Rel:  1.00
+							    Abs Params: Base:.PTSelfMaint: 4
+
+Layer: OFCvalMD
+	       OFCvalPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	         OFCval		Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
+							    Abs Params: Base:.SuperToThal: 4
+	          VsGPi		Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+							    Abs Params: Base:.GPiToBGThal: 5
+
+Layer: OFCvalPTp
+	       OFCvalPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.01	Rel:  0.16
+	       OFCvalCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.16
+	          PVpos		Abs:	  4.00	Rel:	  1.00	GScale:	  0.21	Rel:  0.16
+							    Abs Params: Base:.ToPTp: 4
+	         PVposP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	          PVneg		Abs:	  4.00	Rel:	  1.00	GScale:	  0.21	Rel:  0.16
+							    Abs Params: Base:.ToPTp: 4
+	         PVnegP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	         Effort		Abs:	  4.00	Rel:	  1.00	GScale:	  0.21	Rel:  0.16
+							    Abs Params: Base:.ToPTp: 4
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	           Dist		Abs:	  4.00	Rel:	  1.00	GScale:	  0.31	Rel:  0.16
+							    Abs Params: Base:.ToPTp: 4
+
+Layer: OFCvalP
+	      ACCutilCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	     ACCutilPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+
+Layer: ACCcost
+	         Effort		Abs:	  1.00	Rel:	  1.00	GScale:	  0.14	Rel:  0.43
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	        ACCutil		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	           Dist		Abs:	  1.00	Rel:	  1.00	GScale:	  0.22	Rel:  0.43
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+
+Layer: ACCcostCT
+	        ACCcost		Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
+	      ACCcostPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.45
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.05
+
+Layer: ACCcostPT
+	      ACCcostMD		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	        ACCcost		Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+							    Abs Params: Base:.SuperToPT: 0.5
+	      ACCcostPT		Abs:	  4.00	Rel:	  1.00	GScale:	  0.36	Rel:  1.00
+							    Abs Params: Base:.PTSelfMaint: 4
+
+Layer: ACCcostMD
+	      ACCcostPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	        ACCcost		Abs:	  3.00	Rel:	  1.00	GScale:	  1.50	Rel:  0.50
+							    Abs Params: #ACCcostToACCcostMD: 3 | Base:.SuperToThal: 4
+	          VsGPi		Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+							    Abs Params: Base:.GPiToBGThal: 5
+
+Layer: ACCcostPTp
+	      ACCcostPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.24
+	      ACCcostCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.24
+	         Effort		Abs:	  4.00	Rel:	  1.00	GScale:	  0.32	Rel:  0.24
+							    Abs Params: Base:.ToPTp: 4
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	           Dist		Abs:	  4.00	Rel:	  1.00	GScale:	  0.48	Rel:  0.24
+							    Abs Params: Base:.ToPTp: 4
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+
+Layer: ACCcostP
+	      ACCutilCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	     ACCutilPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+
+Layer: ACCutil
+	         OFCval		Abs:	  1.00	Rel:	  1.00	GScale:	  0.11	Rel:  0.45
+							    Abs Params: Base:#OFCvalToACCutil: 1
+	        OFCvalP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.05
+	        ACCcost		Abs:	  3.00	Rel:	  1.00	GScale:	  0.34	Rel:  0.45
+							    Abs Params: Base:#ACCcostToACCutil: 3
+	       ACCcostP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.05
+
+Layer: ACCutilCT
+	        ACCutil		Abs:	  1.00	Rel:	  1.00	GScale:	  0.45	Rel:  0.45
+	      ACCutilPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.45
+	        OFCvalP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.05
+	       ACCcostP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.05
+
+Layer: ACCutilPT
+	      ACCutilMD		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	        ACCutil		Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+							    Abs Params: Base:.SuperToPT: 0.5
+	      ACCutilPT		Abs:	  4.00	Rel:	  1.00	GScale:	  0.36	Rel:  1.00
+							    Abs Params: Base:.PTSelfMaint: 4
+
+Layer: ACCutilMD
+	      ACCutilPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	        ACCutil		Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
+							    Abs Params: Base:.SuperToThal: 4
+	          VsGPi		Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+							    Abs Params: Base:.GPiToBGThal: 5
+
+Layer: ACCutilPTp
+	      ACCutilPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.24
+	      ACCutilCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.24
+	        OFCvalP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	         OFCval		Abs:	  4.00	Rel:	  1.00	GScale:	  0.24	Rel:  0.24
+							    Abs Params: Base:.ToPTp: 4
+	       ACCcostP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	        ACCcost		Abs:	  4.00	Rel:	  1.00	GScale:	  0.24	Rel:  0.24
+							    Abs Params: Base:.ToPTp: 4
+
+Layer: CS
+
+Layer: CSP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+	       OFCusPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.50
+
+Layer: Dist
+
+Layer: DistP
+	        OFCusCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	       OFCusPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	       OFCvalCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	      OFCvalPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	      ACCcostCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	     ACCcostPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	          ALMCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	         ALMPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+
+Layer: Pos
+
+Layer: Act
+
+Layer: VL
+	           M1CT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	          ALMCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	         ALMPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	           Dist		Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.12
+	         Effort		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.12
+	      OFCvalPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	     ACCcostPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.03	Rel:  0.12
+	       NotMaint		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.12
+
+Layer: M1
+	            ALM		Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.02
+	             VL		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	           Dist		Abs:	  1.00	Rel:	  1.00	GScale:	  0.10	Rel:  0.19
+	         Effort		Abs:	  1.00	Rel:	  1.00	GScale:	  0.06	Rel:  0.19
+	      OFCvalPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.19
+	     ACCcostPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.19
+	       NotMaint		Abs:	  1.00	Rel:	  1.00	GScale:	  0.19	Rel:  0.19
+
+Layer: M1CT
+	             M1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.91	Rel:  0.91
+	             VL		Abs:	  1.00	Rel:	  0.10	GScale:	  0.05	Rel:  0.09
+
+Layer: M1P
+	          ALMCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+	         ALMPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.50
+
+Layer: ALM
+	             M1		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.16
+	            M1P		Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.02
+	             VL		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	         Effort		Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.16
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	           Dist		Abs:	  1.00	Rel:	  1.00	GScale:	  0.08	Rel:  0.16
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	      OFCvalPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.16
+	     ACCcostPTp		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.16
+	       NotMaint		Abs:	  1.00	Rel:	  1.00	GScale:	  0.16	Rel:  0.16
+
+Layer: ALMCT
+	            ALM		Abs:	  1.00	Rel:	  1.00	GScale:	  0.42	Rel:  0.42
+	          ALMPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.04	Rel:  0.42
+	            M1P		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.04
+	             VL		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.02	Rel:  0.04
+
+Layer: ALMPT
+	          ALMMD		Abs:	  1.00	Rel:	  1.00	GScale:	  1.00	Rel:  1.00
+	            ALM		Abs:	  0.50	Rel:	  1.00	GScale:	  0.50	Rel:  1.00
+							    Abs Params: Base:.SuperToPT: 0.5
+	          ALMPT		Abs:	  4.00	Rel:	  1.00	GScale:	  0.36	Rel:  1.00
+							    Abs Params: Base:.PTSelfMaint: 4
+
+Layer: ALMMD
+	          ALMPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.50	Rel:  0.50
+	            ALM		Abs:	  4.00	Rel:	  1.00	GScale:	  2.00	Rel:  0.50
+							    Abs Params: Base:.SuperToThal: 4
+	          VsGPi		Abs:	  5.00	Rel:	  1.00	GScale:	  0.20	Rel:  1.00
+							    Abs Params: Base:.GPiToBGThal: 5
+
+Layer: ALMPTp
+	          ALMPT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.02	Rel:  0.19
+	          ALMCT		Abs:	  1.00	Rel:	  1.00	GScale:	  0.05	Rel:  0.19
+	            M1P		Abs:	  1.00	Rel:	  0.10	GScale:	  0.00	Rel:  0.02
+	             M1		Abs:	  4.00	Rel:	  1.00	GScale:	  0.19	Rel:  0.19
+							    Abs Params: Base:.ToPTp: 4
+	             VL		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	         Effort		Abs:	  4.00	Rel:	  1.00	GScale:	  0.25	Rel:  0.19
+							    Abs Params: Base:.ToPTp: 4
+	        EffortP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+	           Dist		Abs:	  4.00	Rel:	  1.00	GScale:	  0.37	Rel:  0.19
+							    Abs Params: Base:.ToPTp: 4
+	          DistP		Abs:	  1.00	Rel:	  0.10	GScale:	  0.01	Rel:  0.02
+
