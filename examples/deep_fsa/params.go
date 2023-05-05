@@ -30,7 +30,10 @@ var ParamSets = params.Sets{
 					"Layer.Act.Dt.VmDendTau":             "5",   // old: 8 > 5 >> 2.81 -- big diff
 					"Layer.Act.AK.Gbar":                  "0.1",
 					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":                "5",
+					"Layer.Act.NMDA.Voff":                "0",
+					"Layer.Act.NMDA.Gbar":                "0.006",
+					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def -- makes no diff down to 0.008
+					"Layer.Learn.LrnNMDA.Gbar":           "0.006",
 					"Layer.Act.Sahp.Gbar":                "0.1",  //
 					"Layer.Act.Sahp.Off":                 "0.8",  //
 					"Layer.Act.Sahp.Slope":               "0.02", //
@@ -49,41 +52,32 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":          "2.2", // 2.2 FB1 == 2.4 > lower
-					"Layer.Inhib.Layer.FB":          "1",
-					"Layer.Act.Dend.SSGi":           "0",   // 0 > higher -- kills nmda maint!
-					"Layer.CT.GeGain":               "0.8", // 0.8 > 0.5 > 1.2
-					"Layer.CT.DecayTau":             "50",  // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0",
-					"Layer.Act.Dt.VmDendTau":        "5",
-					"Layer.Act.Dt.GeTau":            "5",
-					"Layer.Act.GABAB.Gbar":          "0.25",  //
-					"Layer.Act.NMDA.Gbar":           "0.25",  // 0.25+ > .2, .15 only at start -- others catch up
-					"Layer.Act.NMDA.Tau":            "200",   // 200 slightly better than 300 early, same later; 100 fails
-					"Layer.Act.Noise.On":            "false", // todo?
-					"Layer.Act.Noise.Ge":            "0.005",
-					"Layer.Act.Noise.Gi":            "0.005",
-					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
-					"Layer.Learn.RLRate.SigmoidMin": "0.05", // 0.05 > .1 > .02
-					"Layer.Learn.RLRate.Diff":       "true",
-					"Layer.Learn.RLRate.DiffThr":    "0.02", // 0.02 def - todo
-					"Layer.Learn.RLRate.SpkThr":     "0.1",  // 0.1 def
-					"Layer.Learn.RLRate.Min":        "0.001",
+					"Layer.Inhib.Layer.Gi":               "2.2", // 2.2 > others
+					"Layer.Inhib.Layer.FB":               "1",
+					"Layer.Act.Dend.SSGi":                "0",   // 0 > higher -- kills nmda maint!
+					"Layer.CT.GeGain":                    "2.0", // 2.0 > 1.5 for sure
+					"Layer.CT.DecayTau":                  "50",  // 50 > 30 -- 30 ok but takes a bit to get going
+					"Layer.Act.Decay.Act":                "0.0",
+					"Layer.Act.Decay.Glong":              "0.0",
+					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def > 0.01
+					"Layer.Act.MaintNMDA.Gbar":           "0.007", // 0.007 best, but 0.01 > lower if reg nmda weak
+					"Layer.Act.MaintNMDA.Tau":            "200",   // 200 > 100 > 300
+					"Layer.Act.NMDA.Gbar":                "0.007", // 0.007 matching maint best
+					"Layer.Act.NMDA.Tau":                 "200",   // 200 > 100
+					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005", // 0.005 > 0.0002 (much worse)
+					"Layer.Learn.TrgAvgAct.SubMean":      "1",     // 1 > 0
 				}},
 			{Sel: ".PulvinarLayer", Desc: "pulvinar",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > higher v1.6.1
 					"Layer.Inhib.Layer.FB":          "1",
-					"Layer.Pulv.DriveScale":         "0.1", // 1 > 0.05 > 1.5 (0.05 better cor sim)
+					"Layer.Pulv.DriveScale":         "1.0", // 1 > 0.05 > 1.5 (0.05 better cor sim)
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0",  // clear long
-					"Layer.Act.Decay.AHP":           "0.0",  // clear ahp
-					"Layer.Act.GABAB.Gbar":          "0.2",  // .2 > old: 0.005
-					"Layer.Act.NMDA.Gbar":           "0.15", // .15 > .1
-					"Layer.Learn.RLRate.SigmoidMin": "1.0",  // 1 > 0.05 with CaSpkD as var
+					"Layer.Act.Decay.Glong":         "0.0", // clear long
+					"Layer.Act.Decay.AHP":           "0.0", // clear ahp
+					"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > 0.05 with CaSpkD as var
 				}},
 			{Sel: "Prjn", Desc: "std",
 				Params: params.Params{
@@ -93,7 +87,7 @@ var ParamSets = params.Sets{
 					"Prjn.SWt.Adapt.DreamVar":  "0.0",  // 0.01 is just tolerable
 					"Prjn.SWt.Init.SPct":       "1.0",  // 1 works fine here -- .5 also ok
 					"Prjn.Com.PFail":           "0.0",
-					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1
+					"Prjn.Learn.Trace.Tau":     "2", // 2 > 1 still 1.7.19
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{
@@ -101,8 +95,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTCtxtPrjn", Desc: "all CT context prjns",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base":    "0.01", // trace: .01 > .005 > .02; .03 > .02 > .01 -- .03 std
-					"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1
+					"Prjn.Learn.LRate.Base":    "0.02", // 0.02 >= 0.03 > 0.01
+					"Prjn.Learn.Trace.Tau":     "2",    // 2 > 1  still 1.7.19
 					"Prjn.Learn.Trace.SubMean": "0",    // 0 > 1 -- 1 is especially bad
 				}},
 			{Sel: ".CTFmSuper", Desc: "full > 1to1",
@@ -118,9 +112,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CTSelfMaint", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Rel": "0.1",  // 0.1  >= 0.05 > 0.2
+					"Prjn.PrjnScale.Abs": "0.5", // 0.5 > 0.4, 0.3 > 0.8 (very bad)
+					"Prjn.Com.GType":     "MaintG",
 					"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
 				}},
+			// {Sel: ".CTSelfMaint", Desc: "",
+			// 	Params: params.Params{
+			// 		"Prjn.PrjnScale.Rel": "0.1",
+			// 		"Prjn.SWt.Init.Sym":  "true", // no effect?  not sure why
+			// 	}},
 			{Sel: ".FmPulv", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "0.1", // 0.1 > 0.2

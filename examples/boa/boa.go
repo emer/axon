@@ -166,7 +166,7 @@ func (ss *Sim) ConfigPVLV(trn *Approach) {
 	pv := &ss.Context.PVLV
 	pv.Drive.NActive = int32(trn.NDrives) + 1
 	pv.Drive.DriveMin = 0.5 // 0.5 -- should be
-	pv.Effort.Gain = 0.05
+	pv.Effort.Gain = 0.1    // faster effort
 	pv.Effort.Max = 20
 	pv.Effort.MaxNovel = 8
 	pv.Effort.MaxPostDip = 4
@@ -199,10 +199,10 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	vSgpi, effort, effortP, urgency, urgencyP, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
-	_ = accUtil
+	vSgpi, effort, effortP, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	_, _ = accUtil, urgency
 
-	cs, csP := net.AddInputPulv2D("CS", ny, ev.NDrives, space)
+	cs, csP := net.AddInputPulv2D("CS", ny, ev.CSTot, space)
 	dist, distP := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
 	pos := net.AddLayer2D("Pos", ny, nloc, axon.InputLayer) // irrelevant here
 
@@ -271,7 +271,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	//	alm predicts all effort, cost, sensory state vars
 	net.ConnectToPFC(effort, effortP, alm, almCT, almPTp, full)
-	net.ConnectToPFC(urgency, urgencyP, alm, almCT, almPTp, full)
 	net.ConnectToPFC(dist, distP, alm, almCT, almPTp, full)
 
 	///////////////////////////////////////////
@@ -326,6 +325,20 @@ func (ss *Sim) InitWts(net *axon.Network) {
 	ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
 }
 
+// ConfigParamsForEnv configures parameters that depend on environment params
+func (ss *Sim) ConfigParamsForEnv() {
+	ev := ss.Envs[etime.Train.String()].(*Approach)
+	net := ss.Net
+	cs := net.AxonLayerByName("CS")
+	cs.Params.Inhib.ActAvg.Nominal = 0.08 / float32(ev.CSPerDrive)
+	csp := net.AxonLayerByName("CSP")
+	csp.Params.Inhib.ActAvg.Nominal = 0.08 / float32(ev.CSPerDrive)
+	bla := net.AxonLayerByName("BLAPosAcqD1")
+	pji, _ := bla.SendNameTry("BLANovelCS")
+	pj := pji.(*axon.Prjn)
+	pj.Params.PrjnScale.Abs = 1.5 + (float32(ev.CSPerDrive) / 2)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Init, utils
 
@@ -338,6 +351,7 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
+	ss.ConfigParamsForEnv()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -576,9 +590,10 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
-	ctx.PVLV.EffortUrgencyUpdt(1)
+	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	ctx.PVLVSetUS(ev.US != -1, true, ev.US, 1) // mag 1 for now..
 	ctx.PVLVSetDrives(1, 1, ev.Drive)
+	ctx.PVLVStepStart(&ss.Net.Rand)
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -635,6 +650,9 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("RewPred", 0)
 	ss.Stats.SetFloat("DA_NR", 0)
 	ss.Stats.SetFloat("RewPred_NR", 0)
+	ss.Stats.SetFloat("DipSum", 0)
+	ss.Stats.SetFloat("GiveUp", 0)
+	ss.Stats.SetFloat("Urge", 0)
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
@@ -672,23 +690,27 @@ func (ss *Sim) TrialStats() {
 	ss.GatedStats()
 	ss.MaintStats()
 
+	ctx := &ss.Context
 	nan := math.NaN()
 	if ss.Context.PVLV.HasPosUS() {
-		ss.Stats.SetFloat32("DA", ss.Context.NeuroMod.DA)
-		ss.Stats.SetFloat32("RewPred", ss.Context.NeuroMod.RewPred) // gets from VSPatch or RWPred etc
+		ss.Stats.SetFloat32("DA", ctx.NeuroMod.DA)
+		ss.Stats.SetFloat32("RewPred", ctx.NeuroMod.RewPred) // gets from VSPatch or RWPred etc
 		ss.Stats.SetFloat("DA_NR", nan)
 		ss.Stats.SetFloat("RewPred_NR", nan)
-		ss.Stats.SetFloat32("Rew", ss.Context.NeuroMod.Rew)
+		ss.Stats.SetFloat32("Rew", ctx.NeuroMod.Rew)
 	} else {
-		ss.Stats.SetFloat32("DA_NR", ss.Context.NeuroMod.DA)
-		ss.Stats.SetFloat32("RewPred_NR", ss.Context.NeuroMod.RewPred)
+		ss.Stats.SetFloat32("DA_NR", ctx.NeuroMod.DA)
+		ss.Stats.SetFloat32("RewPred_NR", ctx.NeuroMod.RewPred)
 		ss.Stats.SetFloat("DA", nan)
 		ss.Stats.SetFloat("RewPred", nan)
 		ss.Stats.SetFloat("Rew", nan)
 	}
 
-	ss.Stats.SetFloat32("ACh", ss.Context.NeuroMod.ACh)
-	ss.Stats.SetFloat32("AChRaw", ss.Context.NeuroMod.AChRaw)
+	ss.Stats.SetFloat32("DipSum", ctx.PVLV.LHb.DipSum)
+	ss.Stats.SetFloat32("GiveUp", float32(ctx.PVLV.LHb.GiveUp))
+	ss.Stats.SetFloat32("Urge", float32(ctx.PVLV.Urgency.Urge))
+	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
+	ss.Stats.SetFloat32("AChRaw", ctx.NeuroMod.AChRaw)
 
 	var allGood float64
 	agN := 0
@@ -721,8 +743,8 @@ func (ss *Sim) TrialStats() {
 	}
 	ss.Stats.SetFloat("AllGood", allGood)
 
-	if ss.Context.PVLV.HasPosUS() { // got an outcome -- skip to next Sequence
-		trl := ss.Loops.GetLoop(ss.Context.Mode, etime.Trial)
+	if ctx.PVLV.HasPosUS() { // got an outcome -- skip to next Sequence
+		trl := ss.Loops.GetLoop(ctx.Mode, etime.Trial)
 		trl.SkipToMax()
 	}
 }
@@ -843,7 +865,7 @@ func (ss *Sim) ConfigLogs() {
 
 	// axon.LogAddLayerGeActAvgItems(&ss.Logs, ss.Net, etime.Test, etime.Cycle)
 
-	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "MaintEarly")
+	ss.Logs.PlotItems("ActMatch", "GateCS", "Deciding", "GateUS", "WrongCSGate", "Rew", "RewPred", "RewPred_NR", "MaintEarly")
 
 	ss.Logs.CreateTables()
 	ss.Logs.SetContext(&ss.Stats, ss.Net)
@@ -872,6 +894,9 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("WrongCSGate", "WrongCSGate", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShould", "AChShould", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("AChShouldnt", "AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("GiveUp", "GiveUp", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("DipSum", "DipSum", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Urge", "Urge", etime.Run, etime.Epoch, etime.Trial)
 
 	// Add a special debug message -- use of etime.Debug triggers
 	// inclusion

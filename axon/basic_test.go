@@ -119,15 +119,26 @@ func cmprFloats(out, cor []float32, msg string, t *testing.T) {
 	const TOLERANCE = float32(1.0e-6)
 
 	t.Helper()
+	hadErr := false
 	for i := range out {
 		if mat32.IsNaN(out[1]) {
 			t.Errorf("%v err: out: %v is NaN, index: %v\n", msg, out[i], i)
 		}
 		dif := mat32.Abs(out[i] - cor[i])
 		if dif > TOLERANCE { // allow for small numerical diffs
+			hadErr = true
 			t.Errorf("%v err: out: %v, cor: %v, dif: %v index: %v\n", msg, out[i], cor[i], dif, i)
-			t.Errorf("%v out: %v, cor: %v", msg, out, cor)
 		}
+	}
+	if hadErr {
+		fmt.Printf("\t%s := []float32{", msg)
+		for i := range out {
+			fmt.Printf("%g", out[i])
+			if i < len(out)-1 {
+				fmt.Printf(", ")
+			}
+		}
+		fmt.Printf("}\n")
 	}
 }
 
@@ -187,7 +198,7 @@ func TestNetAct(t *testing.T) {
 }
 
 func TestGPUAct(t *testing.T) {
-	if os.Getenv("TEST_GPU") == "" {
+	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	// vgpu.Debug = true
@@ -213,32 +224,32 @@ func NetActTest(t *testing.T, gpu bool) {
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.6944439, 0, 0, 0}
-	qtr0HidGes := []float32{0.31093338, 0, 0, 0}
-	qtr0HidGis := []float32{0.1547833, 0.1547833, 0.1547833, 0.1547833}
-	qtr0OutActs := []float32{0.55552065, 0, 0, 0}
-	qtr0OutGes := []float32{0.3789059, 0, 0, 0}
-	qtr0OutGis := []float32{0.20974194, 0.20974194, 0.20974194, 0.20974194}
+	qtr0HidGes := []float32{0.35385746, 0, 0, 0}
+	qtr0HidGis := []float32{0.15478331, 0.15478331, 0.15478331, 0.15478331}
+	qtr0OutActs := []float32{0.5638285, 0, 0, 0}
+	qtr0OutGes := []float32{0.38044316, 0, 0, 0}
+	qtr0OutGis := []float32{0.19012947, 0.19012947, 0.19012947, 0.19012947}
 
-	qtr3HidActs := []float32{0.53240955, 0, 0, 0}
-	qtr3HidGes := []float32{0.36792937, 0, 0, 0}
-	qtr3HidGis := []float32{0.21772972, 0.21772972, 0.21772972, 0.21772972}
-	qtr3OutActs := []float32{0.7293362, 0, 0, 0}
+	qtr3HidActs := []float32{0.56933826, 0, 0, 0}
+	qtr3HidGes := []float32{0.43080646, 0, 0, 0}
+	qtr3HidGis := []float32{0.21780373, 0.21780373, 0.21780373, 0.21780373}
+	qtr3OutActs := []float32{0.69444436, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
-	qtr3OutGis := []float32{0.42606226, 0.42606226, 0.42606226, 0.4260622}
+	qtr3OutGis := []float32{0.48472303, 0.48472303, 0.48472303, 0.48472303}
 
-	p1qtr0HidActs := []float32{1.1965988e-10, 0.50503737, 0, 0}
-	p1qtr0HidGes := []float32{0.0045430386, 0.5417977, 0, 0}
-	p1qtr0HidGis := []float32{0.3178829, 0.3178829, 0.3178829, 0.3178829}
-	p1qtr0OutActs := []float32{1.6391945e-10, 0.3799649, 0, 0}
-	p1qtr0OutGes := []float32{0.0037496479, 0.113552466, 0, 0}
-	p1qtr0OutGis := []float32{0.1000951, 0.1000951, 0.1000951, 0.1000951}
+	p1qtr0HidActs := []float32{1.2795964e-10, 0.47059, 0, 0}
+	p1qtr0HidGes := []float32{0.011436448, 0.44748923, 0, 0}
+	p1qtr0HidGis := []float32{0.19098659, 0.19098659, 0.19098659, 0.19098659}
+	p1qtr0OutActs := []float32{1.5607746e-10, 0, 0, 0}
+	p1qtr0OutGes := []float32{0.0136372205, 0.22609714, 0, 0}
+	p1qtr0OutGis := []float32{0.089633144, 0.089633144, 0.089633144, 0.089633144}
 
-	p1qtr3HidActs := []float32{2.653303e-39, 0.5264462, 0, 0}
-	p1qtr3HidGes := []float32{0.0008803774, 0.50142866, 0, 0}
-	p1qtr3HidGis := []float32{0.3444711, 0.3444711, 0.3444711, 0.3444711}
-	p1qtr3OutActs := []float32{3.6347e-39, 0.7274741, 0, 0}
+	p1qtr3HidActs := []float32{2.837341e-39, 0.5439926, 0, 0}
+	p1qtr3HidGes := []float32{0.002279978, 0.6443535, 0, 0}
+	p1qtr3HidGis := []float32{0.31420222, 0.31420222, 0.31420222, 0.31420222}
+	p1qtr3OutActs := []float32{3.460815e-39, 0.72627467, 0, 0}
 	p1qtr3OutGes := []float32{0, 0.8, 0, 0}
-	p1qtr3OutGis := []float32{0.473608, 0.473608, 0.473608, 0.473608}
+	p1qtr3OutGis := []float32{0.4725598, 0.4725598, 0.4725598, 0.4725598}
 
 	inActs := []float32{}
 	hidActs := []float32{}
@@ -309,36 +320,36 @@ func NetActTest(t *testing.T, gpu bool) {
 			}
 
 			if pi == 0 && qtr == 0 {
-				cmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
-				cmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
-				cmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
-				cmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
-				cmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
-				cmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
+				cmprFloats(hidActs, qtr0HidActs, "qtr0HidActs", t)
+				cmprFloats(hidGes, qtr0HidGes, "qtr0HidGes", t)
+				cmprFloats(hidGis, qtr0HidGis, "qtr0HidGis", t)
+				cmprFloats(outActs, qtr0OutActs, "qtr0OutActs", t)
+				cmprFloats(outGes, qtr0OutGes, "qtr0OutGes", t)
+				cmprFloats(outGis, qtr0OutGis, "qtr0OutGis", t)
 			}
 			if pi == 0 && qtr == 3 {
-				cmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
-				cmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
-				cmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
-				cmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
-				cmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
-				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
+				cmprFloats(hidActs, qtr3HidActs, "qtr3HidActs", t)
+				cmprFloats(hidGes, qtr3HidGes, "qtr3HidGes", t)
+				cmprFloats(hidGis, qtr3HidGis, "qtr3HidGis", t)
+				cmprFloats(outActs, qtr3OutActs, "qtr3OutActs", t)
+				cmprFloats(outGes, qtr3OutGes, "qtr3OutGes", t)
+				cmprFloats(outGis, qtr3OutGis, "qtr3OutGis", t)
 			}
 			if pi == 1 && qtr == 0 {
-				cmprFloats(hidActs, p1qtr0HidActs, "p1 qtr 0 hidActs", t)
-				cmprFloats(hidGes, p1qtr0HidGes, "p1 qtr 0 hidGes", t)
-				cmprFloats(hidGis, p1qtr0HidGis, "p1 qtr 0 hidGis", t)
-				cmprFloats(outActs, p1qtr0OutActs, "p1 qtr 0 outActs", t)
-				cmprFloats(outGes, p1qtr0OutGes, "p1 qtr 0 outGes", t)
-				cmprFloats(outGis, p1qtr0OutGis, "p1 qtr 0 outGis", t)
+				cmprFloats(hidActs, p1qtr0HidActs, "p1qtr0HidActs", t)
+				cmprFloats(hidGes, p1qtr0HidGes, "p1qtr0HidGes", t)
+				cmprFloats(hidGis, p1qtr0HidGis, "p1qtr0HidGis", t)
+				cmprFloats(outActs, p1qtr0OutActs, "p1qtr0OutActs", t)
+				cmprFloats(outGes, p1qtr0OutGes, "p1qtr0OutGes", t)
+				cmprFloats(outGis, p1qtr0OutGis, "p1qtr0OutGis", t)
 			}
 			if pi == 1 && qtr == 3 {
-				cmprFloats(hidActs, p1qtr3HidActs, "p1 qtr 3 hidActs", t)
-				cmprFloats(hidGes, p1qtr3HidGes, "p1 qtr 3 hidGes", t)
-				cmprFloats(hidGis, p1qtr3HidGis, "p1 qtr 3 hidGis", t)
-				cmprFloats(outActs, p1qtr3OutActs, "p1 qtr 3 outActs", t)
-				cmprFloats(outGes, p1qtr3OutGes, "p1 qtr 3 outGes", t)
-				cmprFloats(outGis, p1qtr3OutGis, "p1 qtr 3 outGis", t)
+				cmprFloats(hidActs, p1qtr3HidActs, "p1qtr3HidActs", t)
+				cmprFloats(hidGes, p1qtr3HidGes, "p1qtr3HidGes", t)
+				cmprFloats(hidGis, p1qtr3HidGis, "p1qtr3HidGis", t)
+				cmprFloats(outActs, p1qtr3OutActs, "p1qtr3OutActs", t)
+				cmprFloats(outGes, p1qtr3OutGes, "p1qtr3OutGes", t)
+				cmprFloats(outGis, p1qtr3OutGis, "p1qtr3OutGis", t)
 			}
 		}
 		testNet.PlusPhase(ctx)
@@ -356,7 +367,7 @@ func TestNetLearn(t *testing.T) {
 }
 
 func TestGPULearn(t *testing.T) {
-	if os.Getenv("TEST_GPU") == "" {
+	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	NetTestLearn(t, true)
@@ -378,40 +389,27 @@ func NetTestLearn(t *testing.T, gpu bool) {
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
-	qtr3HidCaP := []float32{0.48164067, 0.47525364, 0.4646372, 0.4758791}
-	qtr3HidCaD := []float32{0.45075783, 0.4384308, 0.43476036, 0.43747732}
-	qtr3OutCaP := []float32{0.5401089, 0.54058266, 0.5389495, 0.54185855}
-	qtr3OutCaD := []float32{0.45136902, 0.43564644, 0.4355862, 0.4358528}
+	qtr3HidCaP := []float32{0.54922855, 0.54092765, 0.5374942, 0.5424088}
+	qtr3HidCaD := []float32{0.5214639, 0.49507803, 0.4993692, 0.5030094}
+	qtr3OutCaP := []float32{0.5834704, 0.5698648, 0.5812334, 0.5744743}
+	qtr3OutCaD := []float32{0.5047723, 0.4639851, 0.48322654, 0.47419468}
 
 	q3hidCaP := make([]float32, 4*NLrnPars)
 	q3hidCaD := make([]float32, 4*NLrnPars)
 	q3outCaP := make([]float32, 4*NLrnPars)
 	q3outCaD := make([]float32, 4*NLrnPars)
 
-	hidDwts := []float32{0.0015201505, 0.0017171452, 0.00143093, 0.0017795337}
-	outDwts := []float32{0.0067295646, 0.009379843, 0.007949657, 0.009496575}
-	hidWts := []float32{0.50912, 0.51030153, 0.50858474, 0.5106757}
-	outWts := []float32{0.5402921, 0.5560492, 0.5475578, 0.55674076}
+	hidDwts := []float32{0.0015591943, 0.002412954, 0.0018998333, 0.0019943935}
+	outDwts := []float32{0.003556001, 0.008800001, 0.0067477366, 0.0069709825}
+	hidWts := []float32{0.5093542, 0.5144739, 0.51139706, 0.51196396}
+	outWts := []float32{0.5213235, 0.5526102, 0.5404005, 0.54173136}
 
 	if gpu {
-		hidDwts = []float32{0.0015176951, 0.0017110581, 0.0014290133, 0.0017731723}
-		outDwts = []float32{0.0065535065, 0.008962215, 0.007896948, 0.009082118}
-		hidWts = []float32{0.5091053, 0.510265, 0.50857323, 0.51063746}
-		outWts = []float32{0.53924257, 0.5535727, 0.5472443, 0.554284}
+		hidDwts = []float32{0.0015570135, 0.0024068723, 0.0018967497, 0.0019872298}
+		outDwts = []float32{0.003653288, 0.00884877, 0.0077866265, 0.0069478843}
+		hidWts = []float32{0.50934094, 0.5144375, 0.51137847, 0.5119211}
+		outWts = []float32{0.52190614, 0.55289966, 0.54658806, 0.5415937}
 	}
-
-	/* these are for closed-form exp SynCa, CPU
-	hidDwts := []float32{0.0019419516, 0.0021907063, 0.001831886, 0.0022705847}
-	outDwts := []float32{0.008427641, 0.010844037, 0.009319315, 0.011078155}
-	hidWts := []float32{0.51164985, 0.51314133, 0.5109896, 0.5136202}
-	outWts := []float32{0.55039877, 0.56470954, 0.55569035, 0.56609094}
-
-	// these are for closed-form exp SynCa, GPU
-	hidDwts := []float32{0.0019396556, 0.0021842457, 0.0018292944, 0.0022638545}
-	outDwts := []float32{0.008366027, 0.010467653, 0.009353173, 0.010706494}
-	hidWts := []float32{0.5116358, 0.5131027, 0.5109739, 0.51357985}
-	outWts := []float32{0.55003285, 0.56248677, 0.555891, 0.5638975}
-	*/
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -527,21 +525,21 @@ func NetTestLearn(t *testing.T, gpu bool) {
 		}
 	}
 
-	cmprFloats(q3hidCaP, qtr3HidCaP, "qtr 3 hidCaP", t)
-	cmprFloats(q3hidCaD, qtr3HidCaD, "qtr 3 hidCaD", t)
-	cmprFloats(q3outCaP, qtr3OutCaP, "qtr 3 outCaP", t)
-	cmprFloats(q3outCaD, qtr3OutCaD, "qtr 3 outCaD", t)
+	cmprFloats(q3hidCaP, qtr3HidCaP, "qtr3HidCaP", t)
+	cmprFloats(q3hidCaD, qtr3HidCaD, "qtr3HidCaD", t)
+	cmprFloats(q3outCaP, qtr3OutCaP, "qtr3OutCaP", t)
+	cmprFloats(q3outCaD, qtr3OutCaD, "qtr3OutCaD", t)
 
-	cmprFloats(hiddwt, hidDwts, "hid DWt", t)
-	cmprFloats(outdwt, outDwts, "out DWt", t)
-	cmprFloats(hidwt, hidWts, "hid Wt", t)
-	cmprFloats(outwt, outWts, "out Wt", t)
+	cmprFloats(hiddwt, hidDwts, "hidDwts", t)
+	cmprFloats(outdwt, outDwts, "outDwts", t)
+	cmprFloats(hidwt, hidWts, "hidWts", t)
+	cmprFloats(outwt, outWts, "outWts", t)
 
 	testNet.GPU.Destroy()
 }
 
 func TestGPURLRate(t *testing.T) {
-	if os.Getenv("TEST_GPU") == "" {
+	if os.Getenv("TEST_GPU") != "true" {
 		t.Skip("Set TEST_GPU env var to run GPU tests")
 	}
 	NetTestRLRate(t, true)
@@ -564,42 +562,26 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 	printCycs := false
 	printQtrs := false
 
-	patHidRLRates := []float32{0.0019666697, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05,
-		0.00016045463, 0.0039996677, 5.0000002e-05, 5.0000002e-05,
-		5.0000002e-05, 0.00017801004, 0.0018803712, 5.0000002e-05,
-		5.0000002e-05, 5.0000002e-05, 0.00018263639, 0.0041628983}
+	patHidRLRates := []float32{5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00019181852, 0.0030487436, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00016288209, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 5.0000002e-05, 0.00015015423, 0.002566926}
 
 	// these are organized by pattern within and then by test iteration (params) outer
 	// only the single active synapse is represented -- one per pattern
 	// if there are differences, they will multiply over patterns and layers..
 
-	qtr3HidCaP := []float32{0.48164067, 0.47525364, 0.4646372, 0.4758791}
-	qtr3HidCaD := []float32{0.45075783, 0.4384308, 0.43476036, 0.43747732}
-	qtr3OutCaP := []float32{0.5401089, 0.54058266, 0.5389495, 0.54185855}
-	qtr3OutCaD := []float32{0.45136902, 0.43564644, 0.4355862, 0.4358528}
+	qtr3HidCaP := []float32{0.54922855, 0.54092765, 0.5374942, 0.5424088}
+	qtr3HidCaD := []float32{0.5214639, 0.49507803, 0.4993692, 0.5030094}
+	qtr3OutCaP := []float32{0.5834704, 0.5698648, 0.5812334, 0.5744743}
+	qtr3OutCaD := []float32{0.5047723, 0.4639851, 0.48322654, 0.47419468}
 
 	q3hidCaP := make([]float32, 4*NLrnPars)
 	q3hidCaD := make([]float32, 4*NLrnPars)
 	q3outCaP := make([]float32, 4*NLrnPars)
 	q3outCaD := make([]float32, 4*NLrnPars)
 
-	hidDwts := []float32{2.989634e-06, 6.8680106e-06, 2.6906796e-06, 7.4080176e-06}
-	outDwts := []float32{0.0067295646, 0.009379843, 0.007949657, 0.009496575}
-	hidWts := []float32{0.5000179, 0.5000411, 0.5000161, 0.50004435}
-	outWts := []float32{0.5402921, 0.5560492, 0.5475578, 0.55674076}
-
-	/* these are for closed-form exp SynCa, CPU:
-	hidDwts := []float32{3.8191774e-06, 8.762097e-06, 3.4446257e-06, 9.452213e-06}
-	outDwts := []float32{0.008427641, 0.010844037, 0.009319315, 0.011078155}
-	hidWts := []float32{0.5000229, 0.5000526, 0.50002074, 0.50005686}
-	outWts := []float32{0.55039877, 0.56470954, 0.55569035, 0.56609094}
-
-	// closed-form exp SynCa GPU:
-	hidDwts := []float32{3.8191774e-06, 8.762097e-06, 3.4446257e-06, 9.452213e-06}
-	outDwts := []float32{0.008366027, 0.010467653, 0.009353173, 0.010706494}
-	hidWts := []float32{0.5000229, 0.5000526, 0.50002074, 0.50005686}
-	outWts := []float32{0.55003285, 0.56248677, 0.555891, 0.5638975}
-	*/
+	hidDwts := []float32{7.795972e-08, 7.3564784e-06, 9.499167e-08, 5.11946e-06}
+	outDwts := []float32{0.003556001, 0.008800001, 0.0067477366, 0.0069709825}
+	hidWts := []float32{0.50000036, 0.500044, 0.5000007, 0.50003076}
+	outWts := []float32{0.5213235, 0.5526102, 0.5404005, 0.54173136}
 
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
@@ -718,17 +700,17 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 		}
 	}
 
-	cmprFloats(hidrlrs, patHidRLRates, "hid RLRate", t)
+	cmprFloats(hidrlrs, patHidRLRates, "patHidRLRates", t)
 
-	cmprFloats(q3hidCaP, qtr3HidCaP, "qtr 3 hidCaP", t)
-	cmprFloats(q3hidCaD, qtr3HidCaD, "qtr 3 hidCaD", t)
-	cmprFloats(q3outCaP, qtr3OutCaP, "qtr 3 outCaP", t)
-	cmprFloats(q3outCaD, qtr3OutCaD, "qtr 3 outCaD", t)
+	cmprFloats(q3hidCaP, qtr3HidCaP, "qtr3HidCaP", t)
+	cmprFloats(q3hidCaD, qtr3HidCaD, "qtr3HidCaD", t)
+	cmprFloats(q3outCaP, qtr3OutCaP, "qtr3OutCaP", t)
+	cmprFloats(q3outCaD, qtr3OutCaD, "qtr3OutCaD", t)
 
-	cmprFloats(hiddwt, hidDwts, "hid DWt", t)
-	cmprFloats(outdwt, outDwts, "out DWt", t)
-	cmprFloats(hidwt, hidWts, "hid Wt", t)
-	cmprFloats(outwt, outWts, "out Wt", t)
+	cmprFloats(hiddwt, hidDwts, "hidDwts", t)
+	cmprFloats(outdwt, outDwts, "outDwts", t)
+	cmprFloats(hidwt, hidWts, "hidWts", t)
+	cmprFloats(outwt, outWts, "outWts", t)
 
 	testNet.GPU.Destroy()
 }
@@ -766,15 +748,15 @@ func TestInhibAct(t *testing.T) {
 	printQtrs := false
 
 	qtr0HidActs := []float32{0.8761159, 0, 0, 0}
-	qtr0HidGes := []float32{0.91799927, 0, 0, 0}
-	qtr0HidGis := []float32{0.09300988, 0, 0, 0}
+	qtr0HidGes := []float32{0.90975666, 0, 0, 0}
+	qtr0HidGis := []float32{0.0930098, 0, 0, 0}
 	qtr0OutActs := []float32{0.793471, 0, 0, 0}
-	qtr0OutGes := []float32{0.81241286, 0, 0, 0}
+	qtr0OutGes := []float32{0.74590594, 0, 0, 0}
 	qtr0OutGis := []float32{0, 0, 0, 0}
 
-	qtr3HidActs := []float32{0.91901356, 0, 0, 0}
-	qtr3HidGes := []float32{1.1383185, 0, 0, 0}
-	qtr3HidGis := []float32{0.09305171, 0, 0, 0}
+	qtr3HidActs := []float32{0.9202804, 0, 0, 0}
+	qtr3HidGes := []float32{1.1153994, 0, 0, 0}
+	qtr3HidGis := []float32{0.09305161, 0, 0, 0}
 	qtr3OutActs := []float32{0.92592585, 0, 0, 0}
 	qtr3OutGes := []float32{0.8, 0, 0, 0}
 	qtr3OutGis := []float32{0, 0, 0, 0}
@@ -842,20 +824,20 @@ func TestInhibAct(t *testing.T) {
 			}
 
 			if pi == 0 && qtr == 0 {
-				cmprFloats(hidActs, qtr0HidActs, "qtr 0 hidActs", t)
-				cmprFloats(hidGes, qtr0HidGes, "qtr 0 hidGes", t)
-				cmprFloats(hidGis, qtr0HidGis, "qtr 0 hidGis", t)
-				cmprFloats(outActs, qtr0OutActs, "qtr 0 outActs", t)
-				cmprFloats(outGes, qtr0OutGes, "qtr 0 outGes", t)
-				cmprFloats(outGis, qtr0OutGis, "qtr 0 outGis", t)
+				cmprFloats(hidActs, qtr0HidActs, "qtr0HidActs", t)
+				cmprFloats(hidGes, qtr0HidGes, "qtr0HidGes", t)
+				cmprFloats(hidGis, qtr0HidGis, "qtr0HidGis", t)
+				cmprFloats(outActs, qtr0OutActs, "qtr0OutActs", t)
+				cmprFloats(outGes, qtr0OutGes, "qtr0OutGes", t)
+				cmprFloats(outGis, qtr0OutGis, "qtr0OutGis", t)
 			}
 			if pi == 0 && qtr == 3 {
-				cmprFloats(hidActs, qtr3HidActs, "qtr 3 hidActs", t)
-				cmprFloats(hidGes, qtr3HidGes, "qtr 3 hidGes", t)
-				cmprFloats(hidGis, qtr3HidGis, "qtr 3 hidGis", t)
-				cmprFloats(outActs, qtr3OutActs, "qtr 3 outActs", t)
-				cmprFloats(outGes, qtr3OutGes, "qtr 3 outGes", t)
-				cmprFloats(outGis, qtr3OutGis, "qtr 3 outGis", t)
+				cmprFloats(hidActs, qtr3HidActs, "qtr3HidActs", t)
+				cmprFloats(hidGes, qtr3HidGes, "qtr3HidGes", t)
+				cmprFloats(hidGis, qtr3HidGis, "qtr3HidGis", t)
+				cmprFloats(outActs, qtr3OutActs, "qtr3OutActs", t)
+				cmprFloats(outGes, qtr3OutGes, "qtr3OutGes", t)
+				cmprFloats(outGis, qtr3OutGis, "qtr3OutGis", t)
 			}
 		}
 		InhibNet.PlusPhase(ctx)

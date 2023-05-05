@@ -5,6 +5,7 @@
 package axon
 
 import (
+	"github.com/emer/emergent/erand"
 	"github.com/goki/gosl/slbool"
 	"github.com/goki/mat32"
 )
@@ -190,13 +191,13 @@ func (dp *Drives) ExpStep() {
 // Effort has effort and parameters for updating it
 type Effort struct {
 	Gain       float32 `desc:"gain factor for computing effort discount factor -- larger = quicker discounting"`
-	CurMax     float32 `inactive:"-" desc:"current maximum raw effort level -- above this point, any current goal will be terminated during the LHbDipResetFmSum function, which also looks for accumulated disappointment.  See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered."`
+	CurMax     float32 `inactive:"-" desc:"current maximum raw effort level -- above this point, any current goal will be terminated during the GiveUp function, which also looks for accumulated disappointment.  See Max, MaxNovel, MaxPostDip for values depending on how the goal was triggered."`
 	Max        float32 `desc:"default maximum raw effort level, when MaxNovel and MaxPostDip don't apply."`
 	MaxNovel   float32 `desc:"maximum raw effort level when novelty / curiosity drive is engaged -- typically shorter than default Max"`
 	MaxPostDip float32 `desc:"if the LowThr amount of VSPatch expectation is triggered, as accumulated in LHb.DipSum, then CurMax is set to the current Raw effort plus this increment, which is generally low -- once an expectation has been activated, don't wait around forever.."`
+	MaxVar     float32 `desc:"variance in additional maximum effort level, applied whenever CurMax is updated"`
 	Raw        float32 `desc:"raw effort -- increments linearly upward for each additional effort step"`
 	Disc       float32 `inactive:"-" desc:"effort discount factor = 1 / (1 + gain * EffortRaw) -- goes up toward 1 -- the effect of effort is (1 - EffortDisc) multiplier"`
-	pad        float32
 }
 
 func (ef *Effort) Defaults() {
@@ -205,6 +206,7 @@ func (ef *Effort) Defaults() {
 	ef.Max = 100
 	ef.MaxNovel = 8
 	ef.MaxPostDip = 4
+	ef.MaxVar = 2
 }
 
 func (ef *Effort) Update() {
@@ -235,6 +237,14 @@ func (ef *Effort) AddEffort(inc float32) {
 	ef.DiscFmEffort()
 }
 
+// GiveUp returns true if maximum effort has been exceeded
+func (ef *Effort) GiveUp() bool {
+	if ef.CurMax > 0 && ef.Raw > ef.CurMax {
+		return true
+	}
+	return false
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //  Urgency
 
@@ -245,14 +255,18 @@ func (ef *Effort) AddEffort(inc float32) {
 // and renormalization, so urgency can be another dimension with more impact by directly biasing Go.
 type Urgency struct {
 	U50   float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
-	Power int32   `def:"4" desc:"exponent on the urgency factor -- valid numbers are 1,2,4,6"`
+	Power int32   `def:"4" desc:"exponent on the urge factor -- valid numbers are 1,2,4,6"`
+	Thr   float32 `def:"0.2" desc:"threshold for urge -- cuts off small baseline values"`
 	Raw   float32 `desc:"raw effort for urgency -- increments linearly upward in effort units"`
 	Urge  float32 `inactive:"-" desc:"urgency activity level"`
+
+	pad, pad1, pad2 float32
 }
 
 func (ur *Urgency) Defaults() {
 	ur.U50 = 20
 	ur.Power = 4
+	ur.Thr = 0.2
 	ur.Raw = 0
 	ur.Urge = 0
 }
@@ -285,6 +299,9 @@ func (ur *Urgency) UrgeFun(urgency float32) float32 {
 // UrgeFmUrgency computes Urge from Raw
 func (ur *Urgency) UrgeFmUrgency() float32 {
 	ur.Urge = ur.UrgeFun(ur.Raw)
+	if ur.Urge < ur.Thr {
+		ur.Urge = 0
+	}
 	return ur.Urge
 }
 
@@ -304,15 +321,15 @@ func (ur *Urgency) AddEffort(inc float32) {
 // e.g., when actual pos > predicted (redundant with LV / Amygdala)
 // or "relief" burst when actual neg < predicted.
 type LHb struct {
-	PosGain     float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
-	NegGain     float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
-	DipResetThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
-	DipLowThr   float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
+	PosGain   float32 `def:"1" desc:"gain multiplier on overall VSPatchPos - PosPV component"`
+	NegGain   float32 `def:"1" desc:"gain multiplier on overall PVneg component"`
+	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
+	DipLowThr float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
 
-	Dip      float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
-	Burst    float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
-	DipSum   float32     `inactive:"+" desc:"sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
-	DipReset slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
+	Dip    float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
+	Burst  float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
+	DipSum float32     `inactive:"+" desc:"sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
+	GiveUp slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
 
 	Pos float32 `inactive:"+" desc:"computed PosGain * (VSPatchPos - PVpos)"`
 	Neg float32 `inactive:"+" desc:"computed NegGain * PVneg"`
@@ -323,7 +340,7 @@ type LHb struct {
 func (lh *LHb) Defaults() {
 	lh.PosGain = 1
 	lh.NegGain = 1
-	lh.DipResetThr = 0.2
+	lh.GiveUpThr = 0.2
 	lh.DipLowThr = 0.05
 	lh.Reset()
 }
@@ -335,7 +352,7 @@ func (lh *LHb) Reset() {
 	lh.Dip = 0
 	lh.Burst = 0
 	lh.DipSum = 0
-	lh.DipReset.SetBool(false)
+	lh.GiveUp.SetBool(false)
 }
 
 // LHbFmPVVS computes the overall LHbDip and LHbBurst values from PV (primary value)
@@ -354,20 +371,15 @@ func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos float32) {
 	}
 }
 
-// DipResetFmSum increments DipSum and checks if should flag a reset
-// returns true if did reset.  resetSum resets the accumulating DipSum
-// at salient events like US input or CS-driven gating
-func (lh *LHb) DipResetFmSum(resetSum bool) bool {
+// ShouldGiveUp increments DipSum and checks if should give up if above threshold
+func (lh *LHb) ShouldGiveUp() bool {
 	lh.DipSum += lh.Dip
-	if resetSum {
+	lh.GiveUp.SetBool(false)
+	if lh.DipSum > lh.GiveUpThr {
+		lh.GiveUp.SetBool(true)
 		lh.DipSum = 0
 	}
-	lh.DipReset.SetBool(false)
-	if lh.DipSum > lh.DipResetThr {
-		lh.DipReset.SetBool(true)
-		lh.DipSum = 0
-	}
-	return lh.DipReset.IsTrue()
+	return lh.GiveUp.IsTrue()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -579,11 +591,14 @@ func (pp *PVLV) Reset() {
 	pp.HasPosUSPrev.SetBool(false)
 }
 
-// NewState is called at start of new trial
-func (pp *PVLV) NewState(hasRew bool) {
-	pp.HasRewPrev.SetBool(hasRew)
+// NewState is called at start of new state (trial) of processing.
+// hadRew indicates if there was a reward state the previous trial.
+// It calls LHGiveUpFmSum to trigger a "give up" state on this trial
+// if previous expectation of reward exceeds critical sum.
+func (pp *PVLV) NewState(hadRew bool) {
+	pp.HasRewPrev.SetBool(hadRew)
 	pp.HasPosUSPrev.SetBool(pp.HasPosUS())
-	pp.VSMatrix.NewState(hasRew)
+	pp.VSMatrix.NewState(hadRew)
 }
 
 // InitUS initializes all the USs to zero
@@ -698,7 +713,7 @@ func (pp *PVLV) PosPVFmDriveEffort(usValue, drive, effort float32) float32 {
 func (pp *PVLV) DA(ach float32, hasRew bool) float32 {
 	usPos := pp.PosPV()
 	pvNeg := pp.NegPV()
-	if pp.LHb.DipReset.IsTrue() {
+	if pp.LHb.GiveUp.IsTrue() {
 		pvNeg += 1.0 - pp.Effort.Disc // pay effort cost here..
 	}
 	pvPos := usPos * pp.Effort.Disc
@@ -709,29 +724,6 @@ func (pp *PVLV) DA(ach float32, hasRew bool) float32 {
 	return pp.VTA.Vals.DA
 }
 
-// LHbDipResetFmSum increments DipSum and checks if should flag a reset.
-// computed at end of minus phase -- so there is time for reset to have effects.
-// most other updates happen in plus phase -- some variables could be stale here.
-// The reset bool is used by Context version of this function to set HasRew flag
-// with Rew = 0 if true.
-func (pp *PVLV) LHbDipResetFmSum(ach float32) bool {
-	resetSum := false                     // reset sum at salient events: actual US, CS-gating
-	if pp.VTA.Vals.USpos > pp.VTA.PVThr { // if actual PV, reset dip sum -- can't rely on HasRew at this point
-		resetSum = true
-	}
-	// note: VSGated resets DipSum at end of plus phase when VS gating happens
-	prevSum := pp.LHb.DipSum
-	dipReset := pp.LHb.DipResetFmSum(resetSum)
-	if prevSum < pp.LHb.DipLowThr && pp.LHb.DipSum >= pp.LHb.DipLowThr {
-		pp.Effort.CurMax = pp.Effort.Raw + pp.Effort.MaxPostDip
-	}
-	if pp.Effort.CurMax > 0 && pp.Effort.Raw > pp.Effort.CurMax {
-		pp.LHb.DipReset.SetBool(true)
-		dipReset = true
-	}
-	return dipReset
-}
-
 // DriveUpdt updates the drives based on the current USs,
 // subtracting USDec * US from current Drive,
 // and calling ExpStep with the Dt and Base params.
@@ -740,32 +732,6 @@ func (pp *PVLV) DriveUpdt() {
 	for i := int32(0); i < pp.Drive.NActive; i++ {
 		us := pp.USpos.Get(i)
 		pp.Drive.Drives.Add(i, -us*pp.Drive.USDec.Get(i))
-	}
-}
-
-// VSGated updates JustGated and HasGated as function of VS
-// (ventral striatum / ventral pallidum) gating at end of the plus phase.
-// Also resets effort and LHb.DipSum counters -- starting fresh at start
-// of a new goal engaged state.
-func (pp *PVLV) VSGated(gated, hasRew bool, poolIdx int) {
-	if !hasRew && gated {
-		pp.Effort.Reset()
-		pp.LHb.DipSum = 0
-		if poolIdx == 0 { // novelty / curiosity pool
-			pp.Effort.CurMax = pp.Effort.MaxNovel
-		}
-	}
-	pp.VSMatrix.VSGated(gated)
-}
-
-// EffortUpdt updates the effort based on given effort increment,
-// resetting instead if HasRewPrev flag is true.
-// Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) EffortUpdt(effort float32) {
-	if pp.HasRewPrev.IsTrue() {
-		pp.Effort.Reset()
-	} else {
-		pp.Effort.AddEffort(effort)
 	}
 }
 
@@ -781,12 +747,74 @@ func (pp *PVLV) UrgencyUpdt(effort float32) {
 	}
 }
 
+//gosl: end pvlv
+
+// PlusVar returns value plus random variance
+func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
+	if ef.MaxVar == 0 {
+		return max
+	}
+	return max + ef.MaxVar*float32(rnd.NormFloat64(-1))
+}
+
+// ReStart restarts restarts the raw effort back to zero
+// and sets the Max with random additional variance.
+func (ef *Effort) ReStart(rnd erand.Rand) {
+	ef.Raw = 0
+	ef.CurMax = ef.PlusVar(rnd, ef.Max)
+	ef.Disc = 1
+}
+
+// VSGated updates JustGated and HasGated as function of VS
+// (ventral striatum / ventral pallidum) gating at end of the plus phase.
+// Also resets effort and LHb.DipSum counters -- starting fresh at start
+// of a new goal engaged state.
+func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
+	if !hasRew && gated {
+		pp.Effort.ReStart(rnd)
+		pp.LHb.DipSum = 0
+		if poolIdx == 0 { // novelty / curiosity pool
+			pp.Effort.CurMax = pp.Effort.MaxNovel
+		}
+	}
+	pp.VSMatrix.VSGated(gated)
+}
+
+// ShouldGiveUp tests whether it is time to give up on the current goal,
+// based on sum of LHb Dip (missed expected rewards) and maximum effort.
+func (pp *PVLV) ShouldGiveUp(rnd erand.Rand, hasRew bool) bool {
+	pp.LHb.GiveUp.SetBool(false)
+	if hasRew { // can't give up if got something now
+		pp.LHb.DipSum = 0
+		return false
+	}
+	prevSum := pp.LHb.DipSum
+	giveUp := pp.LHb.ShouldGiveUp()
+	if prevSum < pp.LHb.DipLowThr && pp.LHb.DipSum >= pp.LHb.DipLowThr {
+		pp.Effort.CurMax = pp.Effort.PlusVar(rnd, pp.Effort.Raw+pp.Effort.MaxPostDip)
+	}
+	if pp.Effort.GiveUp() {
+		pp.LHb.GiveUp.SetBool(true)
+		giveUp = true
+	}
+	return giveUp
+}
+
+// EffortUpdt updates the effort based on given effort increment,
+// resetting instead if HasRewPrev flag is true.
+// Call this at the start of the trial, in ApplyPVLV method.
+func (pp *PVLV) EffortUpdt(rnd erand.Rand, effort float32) {
+	if pp.HasRewPrev.IsTrue() {
+		pp.Effort.ReStart(rnd)
+	} else {
+		pp.Effort.AddEffort(effort)
+	}
+}
+
 // EffortUrgencyUpdt updates the Effort & Urgency based on
 // given effort increment, resetting instead if HasRewPrev flag is true.
 // Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) EffortUrgencyUpdt(effort float32) {
-	pp.EffortUpdt(effort)
+func (pp *PVLV) EffortUrgencyUpdt(rnd erand.Rand, effort float32) {
+	pp.EffortUpdt(rnd, effort)
 	pp.UrgencyUpdt(effort)
 }
-
-//gosl: end pvlv

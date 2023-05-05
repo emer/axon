@@ -345,6 +345,7 @@ func (ly *LayerParams) GatherSpikesInit(nrn *Neuron) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.GMaintRaw = 0
 	nrn.CtxtGeRaw = 0
 	nrn.GeSyn = nrn.GeBase
 	nrn.GiSyn = nrn.GiBase
@@ -500,14 +501,17 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	extraSyn := float32(0)
 	switch ly.LayType {
 	case PTMaintLayer:
-		extraRaw = ly.Act.Dend.ModGain * nrn.GModRaw
-		extraSyn = ly.Act.Dend.ModGain * nrn.GModSyn
+		mod := ly.Act.Dend.ModBase + ctx.NeuroMod.ACh*ly.Act.Dend.ModGain*nrn.GModSyn
+		nrn.GeRaw *= mod // key: excluding GModMaint here, so active maintenance can persist
+		nrn.GeSyn *= mod
+		extraRaw = ctx.NeuroMod.ACh * ly.Act.Dend.ModGain * nrn.GModRaw
+		extraSyn = mod
 	case BLALayer:
-		extraRaw = ctx.NeuroMod.ACh * nrn.GModRaw
-		extraSyn = ctx.NeuroMod.ACh * nrn.GModSyn
+		extraRaw = ctx.NeuroMod.ACh * nrn.GModRaw * ly.Act.Dend.ModGain
+		extraSyn = ctx.NeuroMod.ACh * nrn.GModSyn * ly.Act.Dend.ModGain
 	default:
 		if ly.Act.Dend.HasMod.IsTrue() {
-			mod := ly.Act.Dend.ModGain * nrn.GModSyn
+			mod := ly.Act.Dend.ModBase + ly.Act.Dend.ModGain*nrn.GModSyn
 			if mod > 1 {
 				mod = 1
 			}
@@ -519,9 +523,10 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni uint32, nrn *Neuron) {
 	geRaw := nrn.GeRaw
 	geSyn := nrn.GeSyn
 	ly.Act.NMDAFmRaw(nrn, geRaw+extraRaw)
+	ly.Act.MaintNMDAFmRaw(nrn) // uses GMaintRaw directly
 	ly.Learn.LrnNMDAFmRaw(nrn, geRaw)
 	ly.Act.GvgccFmVm(nrn)
-	ly.Act.GeFmSyn(ctx, ni, nrn, geSyn, nrn.Gnmda+nrn.Gvgcc+extraSyn) // sets nrn.GeExt too
+	ly.Act.GeFmSyn(ctx, ni, nrn, geSyn, nrn.Gnmda+nrn.GnmdaMaint+nrn.Gvgcc+extraSyn) // sets nrn.GeExt too
 	ly.Act.GkFmVm(nrn)
 	ly.Act.GSkCaFmCa(nrn)
 	nrn.GiSyn = ly.Act.GiFmSyn(ctx, ni, nrn, nrn.GiSyn)
@@ -537,7 +542,7 @@ func (ly *LayerParams) GiInteg(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, v
 	if !(ly.Act.Clamp.IsInput.IsTrue() || ly.Act.Clamp.IsTarget.IsTrue()) {
 		nrn.SSGiDend = ly.Act.Dend.SSGi * pl.Inhib.SSGi
 	}
-	ly.Act.GABAB.GABAB(nrn.GABAB, nrn.GABABx, nrn.Gi, &nrn.GABAB, &nrn.GABABx)
+	ly.Act.GABAB.GABAB(nrn.Gi, &nrn.GABAB, &nrn.GABABx)
 	nrn.GgabaB = ly.Act.GABAB.GgabaB(nrn.GABAB, nrn.VmDend)
 	nrn.Gk += nrn.GgabaB // Gk was already init
 }
@@ -706,41 +711,11 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 //  call these in layer_compute.go/CyclePost and
 //  gpu_hlsl/gpu_cyclepost.hlsl
 
-// LDTMaxLayAct returns the updated maxAct value using
-// LayVals.ActAvg.CaSpkP.Max from given layer index,
-// subject to any relevant RewThr thresholding.
-func (ly *LayerParams) LDTMaxLayAct(maxAct, layMaxAct float32) float32 {
-	act := ly.LDT.Thr(layMaxAct) // use Act -- otherwise too variable
-	if act > maxAct {
-		maxAct = act
-	}
-	return maxAct
-}
+func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
+	ach := ly.LDT.ACh(ctx, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 
-func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct float32) {
-	maxAct := float32(0)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay1MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay2MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay3MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay4MaxAct)
-
-	maint := ly.LDT.MaintFmNotMaint(1.0 - ctx.NeuroMod.NotMaint)
-	maxAct *= (1.0 - maint*ly.LDT.MaintInhib)
-
-	if ly.LDT.Rew.IsTrue() {
-		if ctx.NeuroMod.HasRew.IsTrue() {
-			maxAct = 1
-		}
-	}
-	if ly.LDT.RewPred.IsTrue() {
-		rpAct := ly.LDT.Thr(ctx.NeuroMod.RewPred)
-		if rpAct > maxAct {
-			maxAct = rpAct
-		}
-	}
-	vals.NeuroMod.AChRaw = maxAct
+	vals.NeuroMod.AChRaw = ach
 	vals.NeuroMod.AChFmRaw(ly.Act.Dt.IntDt)
-
 	ctx.NeuroMod.AChRaw = vals.NeuroMod.AChRaw
 	ctx.NeuroMod.ACh = vals.NeuroMod.ACh
 }
@@ -866,10 +841,6 @@ func (ly *LayerParams) AvgGeM(ctx *Context, lpl *Pool, vals *LayerVals) {
 func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActM = nrn.ActInt
 	nrn.CaSpkPM = nrn.CaSpkP
-	switch ly.LayType {
-	case VTALayer:
-		ctx.LHbDipResetFmSum() // do in minus phase so ACh has time to propagate
-	}
 }
 
 // PlusPhaseStartNeuron does neuron level plus-phase start:

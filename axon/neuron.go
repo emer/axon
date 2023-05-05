@@ -130,18 +130,20 @@ type Neuron struct {
 	/////////////////////////////////////////
 	// Ge, Gi integration
 
-	GeExt    float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc"`
-	GeRaw    float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
-	GeSyn    float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
-	GeBase   float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
-	GiRaw    float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
-	GiSyn    float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
-	GiBase   float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
-	GeInt    float32 `desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
-	GeIntMax float32 `desc:"maximum GeInt value across one theta cycle time window."`
-	GiInt    float32 `desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`
-	GModRaw  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
-	GModSyn  float32 `desc:"modulatory conductance, received from GType = ModulatoryG projections"`
+	GeExt     float32 `desc:"extra excitatory conductance added to Ge -- from Ext input, GeCtxt etc"`
+	GeRaw     float32 `desc:"raw excitatory conductance (net input) received from senders = current raw spiking drive"`
+	GeSyn     float32 `desc:"time-integrated total excitatory synaptic conductance, with an instantaneous rise time from each spike (in GeRaw) and exponential decay with Dt.GeTau, aggregated over projections -- does *not* include Gbar.E"`
+	GeBase    float32 `desc:"baseline level of Ge, added to GeRaw, for intrinsic excitability"`
+	GiRaw     float32 `desc:"raw inhibitory conductance (net input) received from senders  = current raw spiking drive"`
+	GiSyn     float32 `desc:"time-integrated total inhibitory synaptic conductance, with an instantaneous rise time from each spike (in GiRaw) and exponential decay with Dt.GiTau, aggregated over projections -- does *not* include Gbar.I.  This is added with computed FFFB inhibition to get the full inhibition in Gi"`
+	GiBase    float32 `desc:"baseline level of Gi, added to GiRaw, for intrinsic excitability"`
+	GeInt     float32 `desc:"integrated running-average activation value computed from Ge with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall Ge level across the ThetaCycle time scale (Ge itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall excitatory drive"`
+	GeIntMax  float32 `desc:"maximum GeInt value across one theta cycle time window."`
+	GiInt     float32 `desc:"integrated running-average activation value computed from GiSyn with time constant Act.Dt.IntTau, to produce a longer-term integrated value reflecting the overall synaptic Gi level across the ThetaCycle time scale (Gi itself fluctuates considerably) -- useful for stats to set strength of connections etc to get neurons into right range of overall inhibitory drive"`
+	GModRaw   float32 `desc:"raw modulatory conductance, received from GType = ModulatoryG projections"`
+	GModSyn   float32 `desc:"syn integrated modulatory conductance, received from GType = ModulatoryG projections"`
+	GMaintRaw float32 `desc:"raw maintenance conductance, received from GType = MaintG projections"`
+	GMaintSyn float32 `desc:"syn integrated maintenance conductance, integrated using MaintNMDA params."`
 
 	/////////////////////////////////////////
 	// SST somatostatin inhibition factors
@@ -162,12 +164,11 @@ type Neuron struct {
 	/////////////////////////////////////////
 	// AHP channels: Mahp, Sahp, Gkna
 
-	GnmdaSyn float32 `desc:"integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant"`
-	Gnmda    float32 `desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`
-	GnmdaLrn float32 `desc:"learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning"`
-	NmdaCa   float32 `desc:"NMDA calcium computed from GnmdaLrn, drives learning via CaM"`
-	SnmdaO   float32 `desc:"Sender-based number of open NMDA channels based on spiking activity and consequent glutamate release for all sending synapses -- this is the presynaptic component of NMDA activation that can be used for computing Ca levels for learning -- increases by (1-SnmdaI)*(1-SnmdaO) with spiking and decays otherwise"`
-	SnmdaI   float32 `desc:"Sender-based inhibitory factor on NMDA as a function of sending (presynaptic) spiking history, capturing the allosteric dynamics from Urakubo et al (2008) model.  Increases to 1 with every spike, and decays back to 0 with its own longer decay rate."`
+	GnmdaSyn   float32 `desc:"integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant"`
+	Gnmda      float32 `desc:"net postsynaptic (recv) NMDA conductance, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`
+	GnmdaMaint float32 `desc:"net postsynaptic maintenance NMDA conductance, computed from GMaintSyn and GMaintRaw, after Mg V-gating and Gbar -- added directly to Ge as it has the same reversal potential"`
+	GnmdaLrn   float32 `desc:"learning version of integrated NMDA recv synaptic current -- adds GeRaw and decays with time constant -- drives NmdaCa that then drives CaM for learning"`
+	NmdaCa     float32 `desc:"NMDA calcium computed from GnmdaLrn, drives learning via CaM"`
 
 	/////////////////////////////////////////
 	// NMDA channels
@@ -201,8 +202,6 @@ type Neuron struct {
 	CtxtGe     float32 `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
 	CtxtGeRaw  float32 `desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`
 	CtxtGeOrig float32 `desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`
-
-	pad float32
 }
 
 func (nrn *Neuron) HasFlag(flag NeuronFlags) bool {

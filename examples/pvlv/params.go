@@ -20,14 +20,23 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / css
 				}},
-			{Sel: "#OFCus", Desc: "",
+			// {Sel: "#OFCus", Desc: "",
+			// 	Params: params.Params{
+			// 		"Layer.Inhib.Layer.Gi": "1.8", // stronger inhibition here to knock out novelty
+			// 		"Layer.Inhib.Pool.Gi":  "1.2",
+			// 	}},
+			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi": "1.8", // stronger inhibition here to knock out novelty
-					"Layer.Inhib.Pool.Gi":  "1.2",
+					"Layer.Inhib.Layer.Gi": "1.8",
+					"Layer.Inhib.Pool.Gi":  "1.0",
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain": "10", // gating ease..
+					"Layer.Inhib.Layer.Gi":     "3.2",
+					"Layer.Inhib.Pool.Gi":      "3.2",
+					"Layer.Act.Dend.ModGain":   "1.5",
+					"Layer.Act.MaintNMDA.Gbar": "0.007",
+					"Layer.Act.MaintNMDA.Tau":  "200",
 				}},
 			//////////////////////////////////////////////////
 			// required custom params for this project
@@ -57,7 +66,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#BLAPosAcqD1ToOFCus", Desc: "strong, high variance",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "4", // key param for OFC focusing on current cs -- expt
+					"Prjn.PrjnScale.Abs": "2", // key param for OFC focusing on current cs -- expt
 				}},
 			{Sel: ".BLAExtToAcq", Desc: "fixed inhibitory",
 				Params: params.Params{
@@ -71,7 +80,15 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "ext learns very fast",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.001",
+					"Prjn.Learn.LRate.Base": "0.01",
+				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "4", // 4 needed to sustain
+				}},
+			{Sel: ".ToPTp", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2",
 				}},
 		}},
 	},

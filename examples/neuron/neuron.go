@@ -84,8 +84,8 @@ type Sim struct {
 	Noise        float32       `min:"0" step:"0.01" desc:"the variance parameter for Gaussian noise added to unit activations on every cycle"`
 	KNaAdapt     bool          `desc:"apply sodium-gated potassium adaptation mechanisms that cause the neuron to reduce spiking over time"`
 	MahpGbar     float32       `def:"0.05" desc:"strength of mAHP M-type channel -- used to be implemented by KNa but now using the more standard M-type channel mechanism"`
-	NMDAGbar     float32       `def:"0,0.15" desc:"strength of NMDA current -- 0.15 default for posterior cortex"`
-	GABABGbar    float32       `def:"0,0.2" desc:"strength of GABAB current -- 0.2 default for posterior cortex"`
+	NMDAGbar     float32       `def:"0,0.006" desc:"strength of NMDA current -- 0.006 default for posterior cortex"`
+	GABABGbar    float32       `def:"0,0.015" desc:"strength of GABAB current -- 0.015 default for posterior cortex"`
 	VGCCGbar     float32       `def:"0.02" desc:"strength of VGCC voltage gated calcium current -- only activated during spikes -- this is now an essential part of Ca-driven learning to reflect recv spiking in the Ca signal -- but if too strong leads to runaway excitatory bursting."`
 	AKGbar       float32       `def:"0.1" desc:"strength of A-type potassium channel -- this is only active at high (depolarized) membrane potentials -- only during spikes -- useful to counteract VGCC's"`
 	NCycles      int           `min:"10" def:"200" desc:"total number of cycles to run"`
@@ -137,8 +137,8 @@ func (ss *Sim) Defaults() {
 	ss.Noise = 0
 	ss.KNaAdapt = true
 	ss.MahpGbar = 0.05
-	ss.NMDAGbar = 0.15
-	ss.GABABGbar = 0.2
+	ss.NMDAGbar = 0.006
+	ss.GABABGbar = 0.015
 	ss.VGCCGbar = 0.02
 	ss.AKGbar = 0.1
 	ss.NCycles = 200

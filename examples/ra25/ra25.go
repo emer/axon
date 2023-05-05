@@ -165,8 +165,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	out := net.AddLayer2D("Output", 5, 5, axon.TargetLayer)
 
 	// use this to position layers relative to each other
-	// default is Above, YAlign = Front, XAlign = Center
-	// hid2.SetRelPos(relpos.Rel{Rel: relpos.RightOf, Other: "Hidden1", YAlign: relpos.Front, Space: 2})
+	// hid2.PlaceRightOf(hid1, 2)
 
 	// note: see emergent/prjn module for all the options on how to connect
 	// NewFull returns a new prjn.Full connectivity pattern

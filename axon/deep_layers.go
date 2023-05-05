@@ -100,9 +100,9 @@ func (ly *LayerParams) CTDefaults() {
 	ly.Inhib.Layer.Gi = 2.2 // higher inhib for more NMDA, recurrents.
 	ly.Inhib.Pool.Gi = 2.2
 	// these are for longer temporal integration:
-	// ly.Act.NMDA.Gbar = 0.3
+	// ly.Act.NMDA.Gbar = 0.003
 	// ly.Act.NMDA.Tau = 300
-	// ly.Act.GABAB.Gbar = 0.3
+	// ly.Act.GABAB.Gbar = 0.008
 }
 
 // CTDefParamsFast sets fast time-integration parameters for CTLayer.
@@ -114,8 +114,8 @@ func (ly *Layer) CTDefParamsFast() {
 		"Layer.CT.DecayTau":     "0",
 		"Layer.Inhib.Layer.Gi":  "2.0",
 		"Layer.Inhib.Pool.Gi":   "2.0",
-		"Layer.Act.GABAB.Gbar":  "0.2",
-		"Layer.Act.NMDA.Gbar":   "0.15",
+		"Layer.Act.GABAB.Gbar":  "0.006",
+		"Layer.Act.NMDA.Gbar":   "0.004",
 		"Layer.Act.NMDA.Tau":    "100",
 		"Layer.Act.Decay.Act":   "0.0",
 		"Layer.Act.Decay.Glong": "0.0",
@@ -132,8 +132,8 @@ func (ly *Layer) CTDefParamsMedium() {
 		"Layer.CT.DecayTau":     "50",
 		"Layer.Inhib.Layer.Gi":  "2.2",
 		"Layer.Inhib.Pool.Gi":   "2.2",
-		"Layer.Act.GABAB.Gbar":  "0.25",
-		"Layer.Act.NMDA.Gbar":   "0.25",
+		"Layer.Act.GABAB.Gbar":  "0.009",
+		"Layer.Act.NMDA.Gbar":   "0.008",
 		"Layer.Act.NMDA.Tau":    "200",
 		"Layer.Act.Decay.Act":   "0.0",
 		"Layer.Act.Decay.Glong": "0.0",
@@ -150,8 +150,8 @@ func (ly *Layer) CTDefParamsLong() {
 		"Layer.CT.DecayTau":     "50",
 		"Layer.Inhib.Layer.Gi":  "2.8",
 		"Layer.Inhib.Pool.Gi":   "2.8",
-		"Layer.Act.GABAB.Gbar":  "0.3",
-		"Layer.Act.NMDA.Gbar":   "0.3",
+		"Layer.Act.GABAB.Gbar":  "0.01",
+		"Layer.Act.NMDA.Gbar":   "0.01",
 		"Layer.Act.NMDA.Tau":    "300",
 		"Layer.Act.Decay.Act":   "0.0",
 		"Layer.Act.Decay.Glong": "0.0",
@@ -166,12 +166,14 @@ func (ly *Layer) PTMaintDefaults() {
 	ly.Params.Act.Decay.AHP = 0
 	ly.Params.Act.Decay.OnRew.SetBool(true)
 	ly.Params.Act.Sahp.Gbar = 0.01 // not much pressure -- long maint
-	ly.Params.Act.GABAB.Gbar = 0.3
-	ly.Params.Act.NMDA.Gbar = 0.3 // long strong maint
-	ly.Params.Act.NMDA.Tau = 300
-	ly.Params.Act.Dend.ModGain = 2 // multiplies thalamic input projections -- only briefly active so need to be stronger -- may need to be 10, 20 etc
-	ly.Params.Inhib.Layer.Gi = 2.4
-	ly.Params.Inhib.Pool.Gi = 1.8
+	ly.Params.Act.GABAB.Gbar = 0.01
+	ly.Params.Act.Dend.ModGain = 1.5
+	ly.Params.Inhib.ActAvg.Nominal = 0.3 // very active
+	if ly.Is4D() {
+		ly.Params.Inhib.ActAvg.Nominal = 0.05
+	}
+	ly.Params.Inhib.Layer.Gi = 3.2
+	ly.Params.Inhib.Pool.Gi = 3.2
 	ly.Params.Learn.TrgAvgAct.On.SetBool(false)
 
 	for _, pj := range ly.RcvPrjns {
@@ -214,9 +216,9 @@ func (ly *LayerParams) PTPredDefaults() {
 	ly.CT.DecayTau = 50
 
 	// regular:
-	ly.Act.GABAB.Gbar = 0.2
-	ly.Act.NMDA.Gbar = 0.15
-	ly.Act.NMDA.Tau = 100
+	// ly.Act.GABAB.Gbar = 0.006
+	// ly.Act.NMDA.Gbar = 0.004
+	// ly.Act.NMDA.Tau = 100
 }
 
 // called in Defaults for Pulvinar layer type

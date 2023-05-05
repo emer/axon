@@ -104,9 +104,10 @@ type DendParams struct {
 	GbarR   float32     `def:"3,6" desc:"dendrite-specific conductance of Kdr delayed rectifier currents, used to reset membrane potential for dendrite -- applied for Tr msec"`
 	SSGi    float32     `def:"0,2" desc:"SST+ somatostatin positive slow spiking inhibition level specifically affecting dendritic Vm (VmDend) -- this is important for countering a positive feedback loop from NMDA getting stronger over the course of learning -- also typically requires SubMean = 1 for TrgAvgAct and learning to fully counter this feedback loop."`
 	HasMod  slbool.Bool `inactive:"+" desc:"set automatically based on whether this layer has any recv projections that have a GType conductance type of Modulatory -- if so, then multiply GeSyn etc by GModSyn"`
-	ModGain float32     `desc:"gain factor on the total modulatory input  -- modulation can never go > 1 so increasing this gain can help ensure that full excitatory conductance comes in"`
+	ModGain float32     `desc:"multiplicative gain factor on the total modulatory input -- this can also be controlled by the PrjnScale.Abs factor on ModulatoryG inputs, but it is convenient to be able to control on the layer as well."`
+	ModBase float32     `desc:"baseline modulatory level for modulatory effects -- net modulation is ModBase + ModGain * GModSyn"`
 
-	pad, pad1, pad2 int32
+	pad, pad1 int32
 }
 
 func (dp *DendParams) Defaults() {
@@ -114,6 +115,7 @@ func (dp *DendParams) Defaults() {
 	dp.GbarExp = 0.2
 	dp.GbarR = 3
 	dp.ModGain = 1
+	dp.ModBase = 0
 }
 
 func (dp *DendParams) Update() {
@@ -213,7 +215,7 @@ type DtParams struct {
 	GiTau       float32 `def:"7" min:"1" desc:"time constant for decay of inhibitory GABAa receptor conductance."`
 	IntTau      float32 `def:"40" min:"1" desc:"time constant for integrating values over timescale of an individual input state (e.g., roughly 200 msec -- theta cycle), used in computing ActInt, GeInt from Ge, and GiInt from GiSyn -- this is used for scoring performance, not for learning, in cycles, which should be milliseconds typically (tau is roughly how long it takes for value to change significantly -- 1.4x the half-life), "`
 	LongAvgTau  float32 `def:"20" min:"1" desc:"time constant for integrating slower long-time-scale averages, such as nrn.ActAvg, Pool.ActsMAvg, ActsPAvg -- computed in NewState when a new input state is present (i.e., not msec but in units of a theta cycle) (tau is roughly how long it takes for value to change significantly) -- set lower for smaller models"`
-	MaxCycStart int32   `def:"50" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax, GeIntMax values within a theta cycle -- early cycles often reflect prior state"`
+	MaxCycStart int32   `def:"10" min:"0" desc:"cycle to start updating the SpkMaxCa, SpkMax, GeIntMax values within a theta cycle -- early cycles often reflect prior state"`
 
 	VmDt      float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
 	VmDendDt  float32 `view:"-" json:"-" xml:"-" desc:"nominal rate = Integ / tau"`
@@ -246,7 +248,7 @@ func (dp *DtParams) Defaults() {
 	dp.GiTau = 7
 	dp.IntTau = 40
 	dp.LongAvgTau = 20
-	dp.MaxCycStart = 50
+	dp.MaxCycStart = 10
 	dp.Update()
 }
 
@@ -497,26 +499,27 @@ func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
 // for basic Axon, at the neuron level .
 // This is included in axon.Layer to drive the computation.
 type ActParams struct {
-	Spike   SpikeParams       `view:"inline" desc:"Spiking function parameters"`
-	Dend    DendParams        `view:"inline" desc:"dendrite-specific parameters"`
-	Init    ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState"`
-	Decay   DecayParams       `view:"inline" desc:"amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora) "`
-	Dt      DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
-	Gbar    chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
-	Erev    chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
-	Clamp   ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
-	Noise   SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
-	VmRange minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
-	Mahp    chans.MahpParams  `view:"inline" desc:"M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
-	Sahp    chans.SahpParams  `view:"inline" desc:"slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron"`
-	KNa     chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
-	NMDA    chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
-	GABAB   chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
-	VGCC    chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
-	AK      chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
-	SKCa    chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
-	Attn    AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
-	PopCode PopCodeParams     `view:"inline" desc:"provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)"`
+	Spike     SpikeParams       `view:"inline" desc:"Spiking function parameters"`
+	Dend      DendParams        `view:"inline" desc:"dendrite-specific parameters"`
+	Init      ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState"`
+	Decay     DecayParams       `view:"inline" desc:"amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora) "`
+	Dt        DtParams          `view:"inline" desc:"time and rate constants for temporal derivatives / updating of activation state"`
+	Gbar      chans.Chans       `view:"inline" desc:"[Defaults: 1, .2, 1, 1] maximal conductances levels for channels"`
+	Erev      chans.Chans       `view:"inline" desc:"[Defaults: 1, .3, .25, .1] reversal potentials for each channel"`
+	Clamp     ClampParams       `view:"inline" desc:"how external inputs drive neural activations"`
+	Noise     SpikeNoiseParams  `view:"inline" desc:"how, where, when, and how much noise to add"`
+	VmRange   minmax.F32        `view:"inline" desc:"range for Vm membrane potential -- [0.1, 1.0] -- important to keep just at extreme range of reversal potentials to prevent numerical instability"`
+	Mahp      chans.MahpParams  `view:"inline" desc:"M-type medium time-scale afterhyperpolarization mAHP current -- this is the primary form of adaptation on the time scale of multiple sequences of spikes"`
+	Sahp      chans.SahpParams  `view:"inline" desc:"slow time-scale afterhyperpolarization sAHP current -- integrates CaSpkD at theta cycle intervals and produces a hard cutoff on sustained activity for any neuron"`
+	KNa       chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
+	NMDA      chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
+	MaintNMDA chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
+	GABAB     chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
+	VGCC      chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
+	AK        chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
+	SKCa      chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
+	Attn      AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
+	PopCode   PopCodeParams     `view:"inline" desc:"provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)"`
 }
 
 func (ac *ActParams) Defaults() {
@@ -538,7 +541,10 @@ func (ac *ActParams) Defaults() {
 	ac.KNa.Defaults()
 	ac.KNa.On.SetBool(true)
 	ac.NMDA.Defaults()
-	ac.NMDA.Gbar = 0.15 // .15 now -- was 0.3 best.
+	ac.NMDA.Gbar = 0.006
+	ac.MaintNMDA.Defaults()
+	ac.MaintNMDA.Gbar = 0.007
+	ac.MaintNMDA.Tau = 200
 	ac.GABAB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
@@ -565,6 +571,7 @@ func (ac *ActParams) Update() {
 	ac.Sahp.Update()
 	ac.KNa.Update()
 	ac.NMDA.Update()
+	ac.MaintNMDA.Update()
 	ac.GABAB.Update()
 	ac.VGCC.Update()
 	ac.AK.Update()
@@ -584,8 +591,6 @@ func (ac *ActParams) Update() {
 func (ac *ActParams) DecayLearnCa(nrn *Neuron, decay float32) {
 	nrn.GnmdaLrn -= decay * nrn.GnmdaLrn
 	nrn.NmdaCa -= decay * nrn.NmdaCa
-	nrn.SnmdaO -= decay * nrn.SnmdaO
-	nrn.SnmdaI -= decay * nrn.SnmdaI
 
 	nrn.VgccCa -= decay * nrn.VgccCa
 	nrn.VgccCaInt -= decay * nrn.VgccCaInt
@@ -655,6 +660,8 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 
 	nrn.GnmdaSyn -= glong * nrn.GnmdaSyn
 	nrn.Gnmda -= glong * nrn.Gnmda
+	nrn.GMaintSyn -= glong * nrn.GMaintSyn
+	nrn.GnmdaMaint -= glong * nrn.GnmdaMaint
 
 	nrn.Gvgcc -= glong * nrn.Gvgcc
 	nrn.VgccM -= glong * nrn.VgccM
@@ -673,6 +680,7 @@ func (ac *ActParams) DecayState(nrn *Neuron, decay, glong float32) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.GMaintRaw = 0
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
 	nrn.GeExt = 0
@@ -723,10 +731,9 @@ func (ac *ActParams) InitActs(rnd erand.Rand, nrn *Neuron) {
 
 	nrn.GnmdaSyn = 0
 	nrn.Gnmda = 0
+	nrn.GnmdaMaint = 0
 	nrn.GnmdaLrn = 0
 	nrn.NmdaCa = 0
-	nrn.SnmdaO = 0
-	nrn.SnmdaI = 0
 
 	nrn.GgabaB = 0
 	nrn.GABAB = 0
@@ -748,6 +755,8 @@ func (ac *ActParams) InitActs(rnd erand.Rand, nrn *Neuron) {
 	nrn.GiRaw = 0
 	nrn.GModRaw = 0
 	nrn.GModSyn = 0
+	nrn.GMaintRaw = 0
+	nrn.GMaintSyn = 0
 
 	nrn.SSGi = 0
 	nrn.SSGiDend = 0
@@ -794,6 +803,16 @@ func (ac *ActParams) NMDAFmRaw(nrn *Neuron, geTot float32) {
 	nrn.GnmdaSyn = ac.NMDA.NMDASyn(nrn.GnmdaSyn, geTot)
 	nrn.Gnmda = ac.NMDA.Gnmda(nrn.GnmdaSyn, nrn.VmDend)
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
+}
+
+// MaintNMDAFmRaw updates all the Maint NMDA variables from
+// GModRaw and current Vm, Spiking
+func (ac *ActParams) MaintNMDAFmRaw(nrn *Neuron) {
+	if ac.MaintNMDA.Gbar == 0 {
+		return
+	}
+	nrn.GMaintSyn = ac.MaintNMDA.NMDASyn(nrn.GMaintSyn, nrn.GMaintRaw)
+	nrn.GnmdaMaint = ac.MaintNMDA.Gnmda(nrn.GMaintSyn, nrn.VmDend)
 }
 
 // GvgccFmVm updates all the VGCC voltage-gated calcium channel variables

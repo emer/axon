@@ -29,6 +29,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.CamRun()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
 }

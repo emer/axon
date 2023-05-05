@@ -992,6 +992,7 @@ func (ly *Layer) InitGScale() {
 	totGeRel := float32(0)
 	totGiRel := float32(0)
 	totGmRel := float32(0)
+	totGmnRel := float32(0)
 	for _, pj := range ly.RcvPrjns {
 		if pj.IsOff() {
 			continue
@@ -1012,6 +1013,8 @@ func (ly *Layer) InitGScale() {
 			totGiRel += pj.Params.PrjnScale.Rel
 		case ModulatoryG:
 			totGmRel += pj.Params.PrjnScale.Rel
+		case MaintG:
+			totGmnRel += pj.Params.PrjnScale.Rel
 		default:
 			totGeRel += pj.Params.PrjnScale.Rel
 		}
@@ -1031,6 +1034,15 @@ func (ly *Layer) InitGScale() {
 			if totGmRel > 0 {
 				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGmRel
 				pj.Params.GScale.Scale /= totGmRel
+			} else {
+				pj.Params.GScale.Rel = 0
+				pj.Params.GScale.Scale = 0
+
+			}
+		case MaintG:
+			if totGmnRel > 0 {
+				pj.Params.GScale.Rel = pj.Params.PrjnScale.Rel / totGmnRel
+				pj.Params.GScale.Scale /= totGmnRel
 			} else {
 				pj.Params.GScale.Rel = 0
 				pj.Params.GScale.Scale = 0

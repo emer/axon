@@ -39,6 +39,11 @@ const (
 	// which send to GModRaw and GModSyn neuron variables.
 	ModulatoryG
 
+	// Maintenance projections drive unique set of NMDA channels that support
+	// strong active maintenance abilities.
+	// Send to GMaintRaw and GMaintSyn neuron variables.
+	MaintG
+
 	// Context projections are for inputs to CT layers, which update
 	// only at the end of the plus phase, and send to CtxtGe.
 	ContextG

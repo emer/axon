@@ -24,15 +24,13 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.8",
-					"Layer.Act.Dend.ModGain": "10", // 10 > 1 -- key gating efficacy param
+					"Layer.Inhib.Layer.Gi":   "3.2", // 3.2 def
+					"Layer.Act.Dend.ModGain": "1.5", // 1.5 def
 				}},
 			////////////////////////////////////////////
 			// Prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.SWt.Init.Mean":      "0.25",
-					"Prjn.SWt.Init.Var":       "0.25",
 					"Prjn.Matrix.NoGateLRate": "1", // 1 is good -- drives learning on nogate which is rewarded -- more closely tracks
 				}},
 			{Sel: "#UrgencyToMtxGo", Desc: "strong urgency factor",
@@ -41,13 +39,17 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs": "20",
 					"Prjn.Learn.Learn":   "false",
 				}},
-			{Sel: ".SuperToPT", Desc: "one-to-one from super -- just use fixed nonlearning prjn so can control behavior easily",
+			{Sel: ".SuperToPT", Desc: "one-to-one from super",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "0.1", // key gating efficacy param
+					"Prjn.PrjnScale.Abs": "0.5",
+				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "4",
 				}},
 			{Sel: ".SuperToThal", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2.0", // if this is too strong, it gates to the wrong CS
+					"Prjn.PrjnScale.Abs": "4.0", // if this is too strong, it gates to the wrong CS
 				}},
 		}},
 	},

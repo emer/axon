@@ -103,7 +103,7 @@ func (ss *Sim) New() {
 	ss.Context.PVLV.Effort.Max = 8        // give up if nothing happening.
 	ss.Context.PVLV.Effort.MaxNovel = 2   // give up if nothing happening.
 	ss.Context.PVLV.Effort.MaxPostDip = 2 // give up if nothing happening.
-	// ss.Context.PVLV.LHb.DipResetThr = 0.2
+	// ss.Context.PVLV.LHb.GiveUpThr = 0.2
 	ss.ConfigArgs() // do this first, has key defaults
 	// ss.Defaults()
 }
@@ -167,9 +167,9 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	stim := ev.CurStates["CS"]
 	ctxt := ev.CurStates["ContextIn"]
 
-	vSgpi, vSmtxGo, vSmtxNo, vSpatch, effort, effortP, urgency, urgencyP, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	vSgpi, vSmtxGo, vSmtxNo, vSpatch, effort, effortP, urgency, usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, ofcValMD, sc, notMaint := net.AddPVLVOFCus(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
 	// note: list all above so can copy / paste and validate correct return values
-	_, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch
+	_, _, _, _, _ = vSgpi, vSmtxGo, vSmtxNo, vSpatch, urgency
 	_, _, _, _, _, _ = usPos, pvPos, usNeg, usNegP, pvNeg, pvNegP
 	_, _, _, _, _ = ofcVal, ofcValCT, ofcValPTp, ofcValMD, notMaint
 
@@ -203,15 +203,11 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// todo: a more dynamic US rep is needed to drive predictions in OFC
 
 	net.ConnectToPFCBack(time, timeP, ofcUS, ofcUSCT, ofcUSPTp, full)
+	net.ConnectToPFCBack(time, timeP, ofcVal, ofcValCT, ofcValPTp, full)
 	// note: following are needed by violate true predictive learning of time
-	net.ConnectLayers(time, ofcUSPTp, full, axon.ForwardPrjn)  // this is key for making it move
-	net.ConnectLayers(time, ofcValPTp, full, axon.ForwardPrjn) // this is key for making it move
 
 	net.ConnectToPFCBack(effort, effortP, ofcUS, ofcUSCT, ofcUSPTp, full)
 	net.ConnectToPFCBack(effort, effortP, ofcVal, ofcValCT, ofcValPTp, full)
-
-	net.ConnectToPFCBack(urgency, urgencyP, ofcUS, ofcUSCT, ofcUSPTp, full)
-	net.ConnectToPFCBack(urgency, urgencyP, ofcVal, ofcValCT, ofcValPTp, full)
 
 	////////////////////////////////////////////////
 	// position
@@ -353,9 +349,10 @@ func (ss *Sim) ApplyInputs() {
 // ApplyPVLV applies current PVLV values to Context.PVLV,
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
-	ctx.PVLV.EffortUrgencyUpdt(1)
+	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	ctx.PVLVSetUS(trl.USOn, trl.Valence == cond.Pos, trl.US, trl.USMag)
 	ctx.PVLVSetDrives(1, 1, trl.US)
+	ctx.PVLVStepStart(&ss.Net.Rand)
 }
 
 // InitEnvRun intializes a new environment run, as when the RunName is changed
@@ -411,7 +408,6 @@ func (ss *Sim) NewRun() {
 	ss.InitEnvRun()
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
-	ss.Context.PVLV.Effort.Reset()
 	ss.Net.InitWts()
 	ss.LoadRunWeights()
 	ss.InitStats()
@@ -452,7 +448,7 @@ func (ss *Sim) TrialStats() {
 	ss.Stats.SetFloat32("VSPatch", ctx.NeuroMod.RewPred)
 	ss.Stats.SetFloat32("LHbDip", pv.VTA.Vals.LHbDip)
 	ss.Stats.SetFloat32("DipSum", pv.LHb.DipSum)
-	ss.Stats.SetFloat32("DipReset", float32(pv.LHb.DipReset))
+	ss.Stats.SetFloat32("GiveUp", float32(pv.LHb.GiveUp))
 	ss.Stats.SetFloat32("LHbBurst", pv.VTA.Vals.LHbBurst)
 	ss.Stats.SetFloat32("PVpos", pv.VTA.Vals.PVpos)
 	ss.Stats.SetFloat32("PVneg", pv.VTA.Vals.PVneg)
@@ -508,7 +504,7 @@ func (ss *Sim) ConfigLogItems() {
 	li = ss.Logs.AddStatAggItem("LHbDip", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li.FixMax = true
 	li = ss.Logs.AddStatAggItem("DipSum", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
-	li = ss.Logs.AddStatAggItem("DipReset", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
+	li = ss.Logs.AddStatAggItem("GiveUp", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("LHbBurst", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVpos", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)
 	li = ss.Logs.AddStatAggItem("PVneg", "", etime.Run, etime.Condition, etime.Block, etime.Sequence, etime.Trial)

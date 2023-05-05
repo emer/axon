@@ -253,8 +253,6 @@ func (ln *LearnNeurParams) Defaults() {
 func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
 	nrn.GnmdaLrn = 0
 	nrn.NmdaCa = 0
-	nrn.SnmdaO = 0
-	nrn.SnmdaI = 0
 
 	nrn.VgccCa = 0
 	nrn.VgccCaInt = 0
@@ -284,7 +282,6 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geTot float32) {
 	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot)
 	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
 	nrn.NmdaCa = gnmda * ln.LrnNMDA.CaFmV(nrn.VmDend)
-	ln.LrnNMDA.SnmdaFmSpike(nrn.Spike, &nrn.SnmdaO, &nrn.SnmdaI)
 }
 
 // CaFmSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.

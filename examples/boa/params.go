@@ -15,10 +15,18 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Clamp.Ge": "1.5",
 				}},
+			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
+				}},
+			{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start -- now done automatically",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "2", // 2 is good for .CS nominal .1, but 3 needed for .03
+				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
 					"Layer.Inhib.Layer.On":   "false", // todo: explore -- could be bad for gating
-					"Layer.Inhib.Pool.Gi":    "0.3",   // todo: go lower, get more inhib from elsewhere?
+					"Layer.Inhib.Pool.Gi":    "0.3",   // go lower, get more inhib from elsewhere?
 					"Layer.Inhib.Pool.FB":    "1",
 					"Layer.Act.Dend.ModGain": "1", // todo: try with lower drive
 				}},
@@ -28,8 +36,21 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Dend.ModGain":           "2", // 2 min -- reduces maint early
-					"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
+					"Layer.Inhib.Layer.Gi":             "2.4",
+					"Layer.Inhib.Pool.Gi":              "2.4",
+					"Layer.Act.Dend.ModGain":           "1.5", // 2 min -- reduces maint early
+					"Layer.Learn.NeuroMod.AChDisInhib": "0",   // todo: explore!  might be bad..
+				}},
+			// {Sel: ".PTPredLayer", Desc: "",
+			// 	Params: params.Params{
+			// 		"Layer.Learn.NeuroMod.AChDisInhib": "0", // todo: explore!  might be bad..
+			// 	}},
+			{Sel: ".VSPatchLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Inhib.Pool.Gi": "0.5", // todo: go lower, get more inhib from elsewhere?
+					"Layer.Inhib.Pool.FB": "0",
+					"Layer.PVLV.Thr":      "0.4",
+					"Layer.PVLV.Gain":     "20",
 				}},
 			////////////////////////////////////////////
 			// Cortical Prjns
@@ -49,11 +70,19 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 				}},
+			{Sel: ".PTSelfMaint", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "4",
+				}},
+			{Sel: ".ToPTp", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "4",
+				}},
 			////////////////////////////////////////////
 			// PVLV Prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Matrix.NoGateLRate": "0.01", // todo: test higher vals up to 1 -- should be better in principle
+					"Prjn.Matrix.NoGateLRate": "1", // this is KEY for robustness when failing initially!
 				}},
 			{Sel: ".ToSC", Desc: "",
 				Params: params.Params{
@@ -74,8 +103,16 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".VSPatchPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs":    "3",    // 3 orig
+					"Prjn.PrjnScale.Abs":    "2",    // 3 orig
 					"Prjn.Learn.LRate.Base": "0.01", // 0.05 def
+				}},
+			{Sel: ".DrivesToVSPatch", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "1", // 3 orig
+				}},
+			{Sel: "#OFCusPTpToVsPatch", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "5", // 3 orig
 				}},
 			{Sel: "#CSToBLAPosAcqD1", Desc: "",
 				Params: params.Params{
@@ -85,17 +122,17 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4", // 4 def
 				}},
+			{Sel: ".SuperToPT", Desc: "",
+				Params: params.Params{
+					"Prjn.PrjnScale.Abs": "0.5", // 4 def
+				}},
 			{Sel: "#ACCcostToACCcostMD", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "3", // supertothal for us stronger
 				}},
 			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3", // 4 prevents some gating, 2 leaks with supertothal 4
-				}},
-			{Sel: ".BLAFromNovel", Desc: "if too strong, isn't out-competed",
-				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 3 is too strong.
+					"Prjn.PrjnScale.Abs": "5", // with new mod, this can be stronger
 				}},
 			{Sel: "#UrgencyToVsMtxGo", Desc: "",
 				Params: params.Params{

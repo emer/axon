@@ -22,7 +22,7 @@ func TestBOA(t *testing.T) {
 	sim.Config()
 
 	sim.Args.SetInt("runs", 1)
-	sim.Args.SetInt("epochs", 3)
+	sim.Args.SetInt("epochs", 4)
 	sim.Args.SetInt("seqs", 25)
 	sim.Args.SetBool("epclog", false)
 	sim.Args.SetBool("runlog", false)
@@ -35,8 +35,8 @@ func TestBOA(t *testing.T) {
 		{"GateCS", 1.0},
 		{"MaintEarly", 0.0},
 		{"WrongCSGate", 0.0},
-		{"Rew", 0.8},
-		{"RewPred", 0.1375},
+		{"Rew", 0.6},
+		{"RewPred", 0.01},
 	}
 	epochTable := sim.Logs.Table(etime.Train, etime.Epoch)
 	for _, expected := range expectedVals {

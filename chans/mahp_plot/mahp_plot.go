@@ -28,6 +28,7 @@ func main() {
 }
 
 func guirun() {
+	TheSim.VmRun()
 	win := TheSim.ConfigGui()
 	win.StartEventLoop()
 }
