@@ -711,41 +711,11 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni uint32, nrn *Neuron, pl *Pool,
 //  call these in layer_compute.go/CyclePost and
 //  gpu_hlsl/gpu_cyclepost.hlsl
 
-// LDTMaxLayAct returns the updated maxAct value using
-// LayVals.ActAvg.CaSpkP.Max from given layer index,
-// subject to any relevant RewThr thresholding.
-func (ly *LayerParams) LDTMaxLayAct(maxAct, layMaxAct float32) float32 {
-	act := ly.LDT.Thr(layMaxAct) // use Act -- otherwise too variable
-	if act > maxAct {
-		maxAct = act
-	}
-	return maxAct
-}
+func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
+	ach := ly.LDT.ACh(ctx, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 
-func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct float32) {
-	maxAct := float32(0)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay1MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay2MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay3MaxAct)
-	maxAct = ly.LDTMaxLayAct(maxAct, lay4MaxAct)
-
-	maint := ly.LDT.MaintFmNotMaint(1.0 - ctx.NeuroMod.NotMaint)
-	maxAct *= (1.0 - maint*ly.LDT.MaintInhib)
-
-	if ly.LDT.Rew.IsTrue() {
-		if ctx.NeuroMod.HasRew.IsTrue() {
-			maxAct = 1
-		}
-	}
-	if ly.LDT.RewPred.IsTrue() {
-		rpAct := ly.LDT.Thr(ctx.NeuroMod.RewPred)
-		if rpAct > maxAct {
-			maxAct = rpAct
-		}
-	}
-	vals.NeuroMod.AChRaw = maxAct
+	vals.NeuroMod.AChRaw = ach
 	vals.NeuroMod.AChFmRaw(ly.Act.Dt.IntDt)
-
 	ctx.NeuroMod.AChRaw = vals.NeuroMod.AChRaw
 	ctx.NeuroMod.ACh = vals.NeuroMod.ACh
 }

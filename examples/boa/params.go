@@ -15,13 +15,13 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Act.Clamp.Ge": "1.5",
 				}},
-			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs",
+			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.03", // 0.1 for 4, divide by N/4 from there
+					"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
 				}},
-			{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start..",
+			{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start -- now done automatically",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "3", // 2 is good for .CS nominal .05, but 3 needed for .03
+					"Prjn.PrjnScale.Abs": "2", // 2 is good for .CS nominal .1, but 3 needed for .03
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{

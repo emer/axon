@@ -17,21 +17,18 @@ import (
 // LDTParams compute reward salience as ACh global neuromodulatory signal
 // as a function of the MAX activation of its inputs.
 type LDTParams struct {
-	RewThr      float32     `desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
+	SrcThr      float32     `def:"0.05" desc:"threshold per input source, on absolute value (magnitude), to count as a significant reward event, which then drives maximal ACh -- set to 0 to disable this nonlinear behavior"`
 	Rew         slbool.Bool `desc:"use the global Context.NeuroMod.HasRew flag -- if there is some kind of external reward being given, then ACh goes to 1, else 0 for this component"`
-	RewPred     slbool.Bool `desc:"use the global Context.NeuroMod.RewPred value"`
 	MaintInhib  float32     `desc:"extent to which active maintenance (via Context.NeuroMod.NotMaint PTNotMaintLayer activity) inhibits ACh signals -- when goal engaged, distractability is lower."`
 	NotMaintMax float32     `desc:"maximum NeuroMod.NotMaint activity for computing Maint as 1-NotMaint -- when NotMaint is >= NotMaintMax, then Maint = 0."`
 	SrcLay1Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay1Name if present -- -1 if not used"`
 	SrcLay2Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay2Name if present -- -1 if not used"`
 	SrcLay3Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay3Name if present -- -1 if not used"`
 	SrcLay4Idx  int32       `inactive:"+" desc:"idx of Layer to get max activity from -- set during Build from BuildConfig SrcLay4Name if present -- -1 if not used"`
-
-	pad, pad1, pad2 int32
 }
 
 func (lp *LDTParams) Defaults() {
-	lp.RewThr = 0.05
+	lp.SrcThr = 0.05
 	lp.Rew.SetBool(true)
 	lp.MaintInhib = 0.5
 	lp.NotMaintMax = 0.4
@@ -40,15 +37,26 @@ func (lp *LDTParams) Defaults() {
 func (lp *LDTParams) Update() {
 }
 
-// Thr applies threshold to given value
+// Thr applies SrcThr threshold to given value
 func (lp *LDTParams) Thr(val float32) float32 {
-	if lp.RewThr <= 0 {
+	val = mat32.Abs(val) // only abs makes sense -- typically positive anyway
+	if lp.SrcThr <= 0 {
 		return val
 	}
-	if mat32.Abs(val) < lp.RewThr {
+	if val < lp.SrcThr {
 		return 0
 	}
 	return 1
+}
+
+// MaxSrcAct returns the updated maxSrcAct value from given
+// source layer activity value.
+func (lp *LDTParams) MaxSrcAct(maxSrcAct, srcLayAct float32) float32 {
+	act := lp.Thr(srcLayAct)
+	if act > maxSrcAct {
+		maxSrcAct = act
+	}
+	return maxSrcAct
 }
 
 // MaintFmNotMaint returns a 0-1 value reflecting strength of active maintenance
@@ -58,6 +66,30 @@ func (lp *LDTParams) MaintFmNotMaint(notMaint float32) float32 {
 		return 0
 	}
 	return (lp.NotMaintMax - notMaint) / lp.NotMaintMax // == 1 when notMaint = 0
+}
+
+// ACh returns the computed ACh salience value based on given
+// source layer activations and key values from the ctx Context.
+func (lp *LDTParams) ACh(ctx *Context, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) float32 {
+	maxSrcAct := float32(0)
+	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay1Act)
+	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay2Act)
+	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay3Act)
+	maxSrcAct = lp.MaxSrcAct(maxSrcAct, srcLay4Act)
+
+	maint := lp.MaintFmNotMaint(ctx.NeuroMod.NotMaint)
+	maxSrcAct *= (1.0 - maint*lp.MaintInhib) // todo: should this affect everything, not just src?
+
+	ach := maxSrcAct
+
+	if lp.Rew.IsTrue() {
+		if ctx.NeuroMod.HasRew.IsTrue() {
+			ach = 1
+		}
+	} else {
+		ach = mat32.Max(ach, ctx.PVLV.Urgency.Urge)
+	}
+	return ach
 }
 
 // PVLVParams has parameters for readout of values as inputs to PVLV equations.

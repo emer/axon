@@ -199,8 +199,8 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	ny := ev.NYReps
 	nloc := ev.Locations
 
-	vSgpi, effort, effortP, urgency, urgencyP, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
-	_ = accUtil
+	vSgpi, effort, effortP, urgency, pvPos, blaPosAcq, blaPosExt, blaNegAcq, blaNegExt, blaNov, ofcUS, ofcUSCT, ofcUSPTp, ofcVal, ofcValCT, ofcValPTp, accCost, accCostCT, accCostPTp, accUtil, sc, notMaint := net.AddBOA(&ss.Context, nUSs, ny, popY, popX, nuBgY, nuBgX, nuCtxY, nuCtxX, space)
+	_, _ = accUtil, urgency
 
 	cs, csP := net.AddInputPulv2D("CS", ny, ev.CSTot, space)
 	dist, distP := net.AddInputPulv2D("Dist", ny, ev.DistMax, space)
@@ -271,7 +271,6 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 
 	//	alm predicts all effort, cost, sensory state vars
 	net.ConnectToPFC(effort, effortP, alm, almCT, almPTp, full)
-	net.ConnectToPFC(urgency, urgencyP, alm, almCT, almPTp, full)
 	net.ConnectToPFC(dist, distP, alm, almCT, almPTp, full)
 
 	///////////////////////////////////////////
@@ -326,6 +325,20 @@ func (ss *Sim) InitWts(net *axon.Network) {
 	ss.ViewUpdt.RecordSyns() // note: critical to update weights here so DWt is visible
 }
 
+// ConfigParamsForEnv configures parameters that depend on environment params
+func (ss *Sim) ConfigParamsForEnv() {
+	ev := ss.Envs[etime.Train.String()].(*Approach)
+	net := ss.Net
+	cs := net.AxonLayerByName("CS")
+	cs.Params.Inhib.ActAvg.Nominal = 0.08 / float32(ev.CSPerDrive)
+	csp := net.AxonLayerByName("CSP")
+	csp.Params.Inhib.ActAvg.Nominal = 0.08 / float32(ev.CSPerDrive)
+	bla := net.AxonLayerByName("BLAPosAcqD1")
+	pji, _ := bla.SendNameTry("BLANovelCS")
+	pj := pji.(*axon.Prjn)
+	pj.Params.PrjnScale.Abs = 1.5 + (float32(ev.CSPerDrive) / 2)
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // 	    Init, utils
 
@@ -338,6 +351,7 @@ func (ss *Sim) Init() {
 	// selected or patterns have been modified etc
 	ss.GUI.StopNow = false
 	ss.Params.SetAll()
+	ss.ConfigParamsForEnv()
 	ss.NewRun()
 	ss.ViewUpdt.Update()
 	ss.ViewUpdt.RecordSyns()
@@ -638,6 +652,7 @@ func (ss *Sim) InitStats() {
 	ss.Stats.SetFloat("RewPred_NR", 0)
 	ss.Stats.SetFloat("DipSum", 0)
 	ss.Stats.SetFloat("GiveUp", 0)
+	ss.Stats.SetFloat("Urge", 0)
 	ss.Stats.SetFloat("ActMatch", 0)
 	ss.Stats.SetFloat("AllGood", 0)
 	lays := ss.Net.LayersByType(axon.PTMaintLayer)
@@ -693,6 +708,7 @@ func (ss *Sim) TrialStats() {
 
 	ss.Stats.SetFloat32("DipSum", ctx.PVLV.LHb.DipSum)
 	ss.Stats.SetFloat32("GiveUp", float32(ctx.PVLV.LHb.GiveUp))
+	ss.Stats.SetFloat32("Urge", float32(ctx.PVLV.Urgency.Urge))
 	ss.Stats.SetFloat32("ACh", ctx.NeuroMod.ACh)
 	ss.Stats.SetFloat32("AChRaw", ctx.NeuroMod.AChRaw)
 
@@ -880,6 +896,7 @@ func (ss *Sim) ConfigLogItems() {
 	ss.Logs.AddStatAggItem("AChShouldnt", "AChShouldnt", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("GiveUp", "GiveUp", etime.Run, etime.Epoch, etime.Trial)
 	ss.Logs.AddStatAggItem("DipSum", "DipSum", etime.Run, etime.Epoch, etime.Trial)
+	ss.Logs.AddStatAggItem("Urge", "Urge", etime.Run, etime.Epoch, etime.Trial)
 
 	// Add a special debug message -- use of etime.Debug triggers
 	// inclusion

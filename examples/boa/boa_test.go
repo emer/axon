@@ -22,7 +22,7 @@ func TestBOA(t *testing.T) {
 	sim.Config()
 
 	sim.Args.SetInt("runs", 1)
-	sim.Args.SetInt("epochs", 3)
+	sim.Args.SetInt("epochs", 4)
 	sim.Args.SetInt("seqs", 25)
 	sim.Args.SetBool("epclog", false)
 	sim.Args.SetBool("runlog", false)

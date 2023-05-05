@@ -213,26 +213,10 @@ func (ef *Effort) Update() {
 
 }
 
-// PlusVar returns value plus random variance
-func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
-	if ef.MaxVar == 0 {
-		return max
-	}
-	return max + ef.MaxVar*float32(rnd.NormFloat64(-1))
-}
-
 // Reset resets the raw effort back to zero -- at start of new gating event
 func (ef *Effort) Reset() {
 	ef.Raw = 0
 	ef.CurMax = ef.Max
-	ef.Disc = 1
-}
-
-// ReStart restarts restarts the raw effort back to zero
-// and sets the Max with random additional variance.
-func (ef *Effort) ReStart(rnd erand.Rand) {
-	ef.Raw = 0
-	ef.CurMax = ef.PlusVar(rnd, ef.Max)
 	ef.Disc = 1
 }
 
@@ -271,14 +255,18 @@ func (ef *Effort) GiveUp() bool {
 // and renormalization, so urgency can be another dimension with more impact by directly biasing Go.
 type Urgency struct {
 	U50   float32 `desc:"value of raw urgency where the urgency activation level is 50%"`
-	Power int32   `def:"4" desc:"exponent on the urgency factor -- valid numbers are 1,2,4,6"`
+	Power int32   `def:"4" desc:"exponent on the urge factor -- valid numbers are 1,2,4,6"`
+	Thr   float32 `def:"0.2" desc:"threshold for urge -- cuts off small baseline values"`
 	Raw   float32 `desc:"raw effort for urgency -- increments linearly upward in effort units"`
 	Urge  float32 `inactive:"-" desc:"urgency activity level"`
+
+	pad, pad1, pad2 float32
 }
 
 func (ur *Urgency) Defaults() {
 	ur.U50 = 20
 	ur.Power = 4
+	ur.Thr = 0.2
 	ur.Raw = 0
 	ur.Urge = 0
 }
@@ -311,6 +299,9 @@ func (ur *Urgency) UrgeFun(urgency float32) float32 {
 // UrgeFmUrgency computes Urge from Raw
 func (ur *Urgency) UrgeFmUrgency() float32 {
 	ur.Urge = ur.UrgeFun(ur.Raw)
+	if ur.Urge < ur.Thr {
+		ur.Urge = 0
+	}
 	return ur.Urge
 }
 
@@ -733,6 +724,62 @@ func (pp *PVLV) DA(ach float32, hasRew bool) float32 {
 	return pp.VTA.Vals.DA
 }
 
+// DriveUpdt updates the drives based on the current USs,
+// subtracting USDec * US from current Drive,
+// and calling ExpStep with the Dt and Base params.
+func (pp *PVLV) DriveUpdt() {
+	pp.Drive.ExpStep()
+	for i := int32(0); i < pp.Drive.NActive; i++ {
+		us := pp.USpos.Get(i)
+		pp.Drive.Drives.Add(i, -us*pp.Drive.USDec.Get(i))
+	}
+}
+
+// UrgencyUpdt updates the urgency and urgency based on given effort increment,
+// resetting instead if HasRewPrev and HasPosUSPrev is true indicating receipt
+// of an actual positive US.
+// Call this at the start of the trial, in ApplyPVLV method.
+func (pp *PVLV) UrgencyUpdt(effort float32) {
+	if pp.HasRewPrev.IsTrue() && pp.HasPosUSPrev.IsTrue() {
+		pp.Urgency.Reset()
+	} else {
+		pp.Urgency.AddEffort(effort)
+	}
+}
+
+//gosl: end pvlv
+
+// PlusVar returns value plus random variance
+func (ef *Effort) PlusVar(rnd erand.Rand, max float32) float32 {
+	if ef.MaxVar == 0 {
+		return max
+	}
+	return max + ef.MaxVar*float32(rnd.NormFloat64(-1))
+}
+
+// ReStart restarts restarts the raw effort back to zero
+// and sets the Max with random additional variance.
+func (ef *Effort) ReStart(rnd erand.Rand) {
+	ef.Raw = 0
+	ef.CurMax = ef.PlusVar(rnd, ef.Max)
+	ef.Disc = 1
+}
+
+// VSGated updates JustGated and HasGated as function of VS
+// (ventral striatum / ventral pallidum) gating at end of the plus phase.
+// Also resets effort and LHb.DipSum counters -- starting fresh at start
+// of a new goal engaged state.
+func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
+	if !hasRew && gated {
+		pp.Effort.ReStart(rnd)
+		pp.LHb.DipSum = 0
+		if poolIdx == 0 { // novelty / curiosity pool
+			pp.Effort.CurMax = pp.Effort.MaxNovel
+		}
+	}
+	pp.VSMatrix.VSGated(gated)
+}
+
 // ShouldGiveUp tests whether it is time to give up on the current goal,
 // based on sum of LHb Dip (missed expected rewards) and maximum effort.
 func (pp *PVLV) ShouldGiveUp(rnd erand.Rand, hasRew bool) bool {
@@ -753,32 +800,6 @@ func (pp *PVLV) ShouldGiveUp(rnd erand.Rand, hasRew bool) bool {
 	return giveUp
 }
 
-// DriveUpdt updates the drives based on the current USs,
-// subtracting USDec * US from current Drive,
-// and calling ExpStep with the Dt and Base params.
-func (pp *PVLV) DriveUpdt() {
-	pp.Drive.ExpStep()
-	for i := int32(0); i < pp.Drive.NActive; i++ {
-		us := pp.USpos.Get(i)
-		pp.Drive.Drives.Add(i, -us*pp.Drive.USDec.Get(i))
-	}
-}
-
-// VSGated updates JustGated and HasGated as function of VS
-// (ventral striatum / ventral pallidum) gating at end of the plus phase.
-// Also resets effort and LHb.DipSum counters -- starting fresh at start
-// of a new goal engaged state.
-func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
-	if !hasRew && gated {
-		pp.Effort.ReStart(rnd)
-		pp.LHb.DipSum = 0
-		if poolIdx == 0 { // novelty / curiosity pool
-			pp.Effort.CurMax = pp.Effort.MaxNovel
-		}
-	}
-	pp.VSMatrix.VSGated(gated)
-}
-
 // EffortUpdt updates the effort based on given effort increment,
 // resetting instead if HasRewPrev flag is true.
 // Call this at the start of the trial, in ApplyPVLV method.
@@ -790,18 +811,6 @@ func (pp *PVLV) EffortUpdt(rnd erand.Rand, effort float32) {
 	}
 }
 
-// UrgencyUpdt updates the urgency and urgency based on given effort increment,
-// resetting instead if HasRewPrev and HasPosUSPrev is true indicating receipt
-// of an actual positive US.
-// Call this at the start of the trial, in ApplyPVLV method.
-func (pp *PVLV) UrgencyUpdt(effort float32) {
-	if pp.HasRewPrev.IsTrue() && pp.HasPosUSPrev.IsTrue() {
-		pp.Urgency.Reset()
-	} else {
-		pp.Urgency.AddEffort(effort)
-	}
-}
-
 // EffortUrgencyUpdt updates the Effort & Urgency based on
 // given effort increment, resetting instead if HasRewPrev flag is true.
 // Call this at the start of the trial, in ApplyPVLV method.
@@ -809,5 +818,3 @@ func (pp *PVLV) EffortUrgencyUpdt(rnd erand.Rand, effort float32) {
 	pp.EffortUpdt(rnd, effort)
 	pp.UrgencyUpdt(effort)
 }
-
-//gosl: end pvlv

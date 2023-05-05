@@ -59,19 +59,19 @@ void CyclePost(inout Context ctx, uint li, in LayerParams ly, inout LayerVals va
 	}
 }
 
-float LDTLayMaxAct(int layIdx) {
+float LDTSrcLayAct(int layIdx) {
 	if (layIdx < 0) {
 		return 0.0;
 	}
-	return Pools[Layers[layIdx].Idxs.PoolSt].AvgMax.Act.Cycle.Avg;
+	return Pools[Layers[layIdx].Idxs.PoolSt].AvgMax.CaSpkP.Cycle.Avg;
 }
 
 void CyclePostLDT(inout Context ctx, in LayerParams ly, inout LayerVals vals) {
-	float lay1MaxAct = LDTLayMaxAct(ly.LDT.SrcLay1Idx);
-	float lay2MaxAct = LDTLayMaxAct(ly.LDT.SrcLay2Idx);
-	float lay3MaxAct = LDTLayMaxAct(ly.LDT.SrcLay3Idx);
-	float lay4MaxAct = LDTLayMaxAct(ly.LDT.SrcLay4Idx);
-	ly.CyclePostLDTLayer(ctx, vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct);
+	float srcLay1Act = LDTSrcLayAct(ly.LDT.SrcLay1Idx);
+	float srcLay2Act = LDTSrcLayAct(ly.LDT.SrcLay2Idx);
+	float srcLay3Act = LDTSrcLayAct(ly.LDT.SrcLay3Idx);
+	float srcLay4Act = LDTSrcLayAct(ly.LDT.SrcLay4Idx);
+	ly.CyclePostLDTLayer(ctx, vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act);
 }
 
 void CyclePostVTA(inout Context ctx, in LayerParams ly) {

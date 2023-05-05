@@ -219,8 +219,12 @@ func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
 	}
 }
 
-// LDTLayMaxAct returns the lpl.AvgMax.CaSpkP.Cycle.Max for given layIdx
-func (ly *Layer) LDTLayMaxAct(net *Network, layIdx int32) float32 {
+// LDTSrcLayAct returns the overall activity level for given source layer
+// for purposes of computing ACh salience value.
+// Typically the input is a superior colliculus (SC) layer that rapidly
+// accommodates after the onset of a stimulus.
+// using lpl.AvgMax.CaSpkP.Cycle.Max for layer activity measure.
+func (ly *Layer) LDTSrcLayAct(net *Network, layIdx int32) float32 {
 	if layIdx < 0 {
 		return 0
 	}
@@ -240,11 +244,11 @@ func (ly *Layer) CyclePost(ctx *Context) {
 	switch ly.LayerType() {
 	case LDTLayer:
 		net := ly.Network
-		lay1MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay1Idx)
-		lay2MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay2Idx)
-		lay3MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay3Idx)
-		lay4MaxAct := ly.LDTLayMaxAct(net, ly.Params.LDT.SrcLay4Idx)
-		ly.Params.CyclePostLDTLayer(ctx, ly.Vals, lay1MaxAct, lay2MaxAct, lay3MaxAct, lay4MaxAct)
+		srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Idx)
+		srcLay2Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay2Idx)
+		srcLay3Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay3Idx)
+		srcLay4Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay4Idx)
+		ly.Params.CyclePostLDTLayer(ctx, ly.Vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 	case RWDaLayer:
 		net := ly.Network
 		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
