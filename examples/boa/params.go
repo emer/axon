@@ -17,7 +17,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.5", // 0.1 for 4, divide by N/4 from there
+					"Layer.Inhib.ActAvg.Nominal": "0.05", // 0.1 for 4, divide by N/4 from there
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
@@ -78,7 +78,7 @@ var ParamSets = params.Sets{
 			// PVLV Prjns
 			{Sel: ".MatrixPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Matrix.NoGateLRate": "0.01", // todo: test higher vals up to 1 -- should be better in principle
+					"Prjn.Matrix.NoGateLRate": "0.1", // todo: no making much diff -- explore more
 				}},
 			{Sel: ".ToSC", Desc: "",
 				Params: params.Params{
