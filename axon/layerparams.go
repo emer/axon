@@ -871,10 +871,6 @@ func (ly *LayerParams) AvgGeM(ctx *Context, lpl *Pool, vals *LayerVals) {
 func (ly *LayerParams) MinusPhaseNeuron(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.ActM = nrn.ActInt
 	nrn.CaSpkPM = nrn.CaSpkP
-	switch ly.LayType {
-	case VTALayer:
-
-	}
 }
 
 // PlusPhaseStartNeuron does neuron level plus-phase start:
