@@ -94,6 +94,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
 				}},
+			{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.02",
+				}},
 			{Sel: ".BLAAcqToGo", Desc: "must dominate",
 				Params: params.Params{
 					"Prjn.PrjnScale.Rel": "1",
@@ -139,10 +143,6 @@ var ParamSets = params.Sets{
 			{Sel: "#UrgencyToVsMtxGo", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0", // todo: not working -- no ach by time this happens!  need to drive ach too.
-				}},
-			{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01",
 				}},
 		}},
 	},

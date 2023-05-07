@@ -62,7 +62,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".BLAExtPrjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.05",
+					"Prjn.Learn.LRate.Base": "0.02", // 0.02 allows .5 CS for B50
 				}},
 			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{
