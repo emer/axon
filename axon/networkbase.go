@@ -862,6 +862,7 @@ func (nt *NetworkBase) ReadWtsJSON(r io.Reader) error {
 	if err != nil {
 		log.Println(err)
 	}
+	nt.GPU.SyncSynapsesToGPU()
 	return err
 }
 

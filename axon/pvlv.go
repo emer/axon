@@ -326,15 +326,16 @@ type LHb struct {
 	GiveUpThr float32 `def:"0.2" desc:"threshold on summed LHbDip over trials for triggering a reset of goal engaged state"`
 	DipLowThr float32 `def:"0.05" desc:"low threshold on summed LHbDip, used for triggering switch to a faster effort max timeout -- Effort.MaxPostDip"`
 
-	Dip    float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
-	Burst  float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
-	DipSum float32     `inactive:"+" desc:"sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
-	GiveUp slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
+	Dip       float32     `inactive:"+" desc:"computed LHb activity level that drives more dipping / pausing of DA firing, when VSPatch pos prediction > actual PV reward drive"`
+	Burst     float32     `inactive:"+" desc:"computed LHb activity level that drives bursts of DA firing, when actual  PV reward drive > VSPatch pos prediction"`
+	DipSumCur float32     `inactive:"+" desc:"current sum of LHbDip over trials, which is reset when there is a PV value, an above-threshold PPTg value, or when it triggers reset"`
+	DipSum    float32     `inactive:"+"copy of DipSum that is not reset -- used for driving negative dopamine dips on GiveUp trials"`
+	GiveUp    slbool.Bool `inactive:"+" desc:"true if a reset was triggered from LHbDipSum > Reset Thr"`
 
 	Pos float32 `inactive:"+" desc:"computed PosGain * (VSPatchPos - PVpos)"`
 	Neg float32 `inactive:"+" desc:"computed NegGain * PVneg"`
 
-	pad, pad1 float32
+	pad float32
 }
 
 func (lh *LHb) Defaults() {
@@ -351,6 +352,7 @@ func (lh *LHb) Update() {
 func (lh *LHb) Reset() {
 	lh.Dip = 0
 	lh.Burst = 0
+	lh.DipSumCur = 0
 	lh.DipSum = 0
 	lh.GiveUp.SetBool(false)
 }
@@ -373,11 +375,12 @@ func (lh *LHb) LHbFmPVVS(pvPos, pvNeg, vsPatchPos float32) {
 
 // ShouldGiveUp increments DipSum and checks if should give up if above threshold
 func (lh *LHb) ShouldGiveUp() bool {
-	lh.DipSum += lh.Dip
+	lh.DipSumCur += lh.Dip
+	lh.DipSum = lh.DipSumCur
 	lh.GiveUp.SetBool(false)
-	if lh.DipSum > lh.GiveUpThr {
+	if lh.DipSumCur > lh.GiveUpThr {
 		lh.GiveUp.SetBool(true)
-		lh.DipSum = 0
+		lh.DipSumCur = 0
 	}
 	return lh.GiveUp.IsTrue()
 }
@@ -476,9 +479,9 @@ func (vt *VTA) DAFmRaw(ach float32, hasRew bool) {
 	if vt.Vals.VSPatchPos < 0 {
 		vt.Vals.VSPatchPos = 0
 	}
-	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos - vt.Vals.PVneg
-	csNet := vt.Vals.CeMpos - vt.Vals.CeMneg         // todo: is this sensible?  max next with 0 so positive..
-	csDA := ach * mat32.Max(csNet, vt.Vals.LHbBurst) // - vt.Vals.LHbDip
+	pvDA := vt.Vals.PVpos - vt.Vals.VSPatchPos - vt.Vals.PVneg - vt.Vals.LHbDip
+	csNet := vt.Vals.CeMpos - vt.Vals.CeMneg                        // todo: is this sensible?  max next with 0 so positive..
+	csDA := ach*mat32.Max(csNet, vt.Vals.LHbBurst) - vt.Vals.LHbDip // restore LHbDip contribution
 	// note that ach is only on cs -- should be 1 for PV events anyway..
 	netDA := float32(0)
 	if hasRew {
@@ -767,12 +770,12 @@ func (ef *Effort) ReStart(rnd erand.Rand) {
 
 // VSGated updates JustGated and HasGated as function of VS
 // (ventral striatum / ventral pallidum) gating at end of the plus phase.
-// Also resets effort and LHb.DipSum counters -- starting fresh at start
+// Also resets effort and LHb.DipSumCur counters -- starting fresh at start
 // of a new goal engaged state.
 func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
 	if !hasRew && gated {
 		pp.Effort.ReStart(rnd)
-		pp.LHb.DipSum = 0
+		pp.LHb.DipSumCur = 0
 		if poolIdx == 0 { // novelty / curiosity pool
 			pp.Effort.CurMax = pp.Effort.MaxNovel
 		}
@@ -785,12 +788,12 @@ func (pp *PVLV) VSGated(rnd erand.Rand, gated, hasRew bool, poolIdx int) {
 func (pp *PVLV) ShouldGiveUp(rnd erand.Rand, hasRew bool) bool {
 	pp.LHb.GiveUp.SetBool(false)
 	if hasRew { // can't give up if got something now
-		pp.LHb.DipSum = 0
+		pp.LHb.DipSumCur = 0
 		return false
 	}
-	prevSum := pp.LHb.DipSum
+	prevSum := pp.LHb.DipSumCur
 	giveUp := pp.LHb.ShouldGiveUp()
-	if prevSum < pp.LHb.DipLowThr && pp.LHb.DipSum >= pp.LHb.DipLowThr {
+	if prevSum < pp.LHb.DipLowThr && pp.LHb.DipSumCur >= pp.LHb.DipLowThr {
 		pp.Effort.CurMax = pp.Effort.PlusVar(rnd, pp.Effort.Raw+pp.Effort.MaxPostDip)
 	}
 	if pp.Effort.GiveUp() {

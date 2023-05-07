@@ -141,9 +141,9 @@ func (net *Network) ConnectToBLAAcq(send, recv *Layer, pat prjn.Pattern) *Prjn {
 func (net *Network) ConnectToBLAExt(send, recv *Layer, pat prjn.Pattern) *Prjn {
 	pj := net.ConnectLayers(send, recv, pat, BLAPrjn)
 	pj.DefParams = params.Params{
-		"Prjn.Learn.LRate.Base":  "0.01", // learns relatively fast
-		"Prjn.Learn.Trace.Tau":   "1",    // increase for second order conditioning
-		"Prjn.BLA.NegDeltaLRate": "1",    // fast for extinction unlearning -- could be slower
+		"Prjn.Learn.LRate.Base":  "0.05",
+		"Prjn.Learn.Trace.Tau":   "1", // increase for second order conditioning
+		"Prjn.BLA.NegDeltaLRate": "1", // fast for extinction unlearning -- could be slower
 	}
 	pj.SetClass("BLAExtPrjn")
 	return pj

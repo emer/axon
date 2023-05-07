@@ -73,7 +73,7 @@ type SimParams struct {
 // Defaults sets default params
 func (ss *SimParams) Defaults() {
 	ss.PctCortexMax = 1.0
-	ss.PctCortexStEpc = 10
+	ss.PctCortexStEpc = 5
 	ss.PctCortexNEpc = 5
 	ss.PctCortexInterval = 1
 	ss.PCAInterval = 10
@@ -336,7 +336,7 @@ func (ss *Sim) ConfigParamsForEnv() {
 	bla := net.AxonLayerByName("BLAPosAcqD1")
 	pji, _ := bla.SendNameTry("BLANovelCS")
 	pj := pji.(*axon.Prjn)
-	pj.Params.PrjnScale.Abs = 1.5 + (float32(ev.CSPerDrive) / 2)
+	pj.Params.PrjnScale.Abs = 2.0 + (float32(ev.CSPerDrive) / 2)
 }
 
 ////////////////////////////////////////////////////////////////////////////////

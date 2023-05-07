@@ -23,34 +23,34 @@ func _() {
 	_ = x[PTMaintLayer-7]
 	_ = x[PTPredLayer-8]
 	_ = x[PTNotMaintLayer-9]
-	_ = x[RewLayer-10]
-	_ = x[RWPredLayer-11]
-	_ = x[RWDaLayer-12]
-	_ = x[TDPredLayer-13]
-	_ = x[TDIntegLayer-14]
-	_ = x[TDDaLayer-15]
-	_ = x[BLALayer-16]
-	_ = x[CeMLayer-17]
-	_ = x[LDTLayer-18]
-	_ = x[VSPatchLayer-19]
-	_ = x[VTALayer-20]
-	_ = x[LHbLayer-21]
-	_ = x[DrivesLayer-22]
-	_ = x[EffortLayer-23]
-	_ = x[UrgencyLayer-24]
-	_ = x[USLayer-25]
-	_ = x[PVLayer-26]
-	_ = x[MatrixLayer-27]
-	_ = x[STNLayer-28]
-	_ = x[GPLayer-29]
-	_ = x[BGThalLayer-30]
-	_ = x[VSGatedLayer-31]
+	_ = x[MatrixLayer-10]
+	_ = x[STNLayer-11]
+	_ = x[GPLayer-12]
+	_ = x[BGThalLayer-13]
+	_ = x[VSGatedLayer-14]
+	_ = x[BLALayer-15]
+	_ = x[CeMLayer-16]
+	_ = x[VSPatchLayer-17]
+	_ = x[LHbLayer-18]
+	_ = x[DrivesLayer-19]
+	_ = x[EffortLayer-20]
+	_ = x[UrgencyLayer-21]
+	_ = x[USLayer-22]
+	_ = x[PVLayer-23]
+	_ = x[LDTLayer-24]
+	_ = x[VTALayer-25]
+	_ = x[RewLayer-26]
+	_ = x[RWPredLayer-27]
+	_ = x[RWDaLayer-28]
+	_ = x[TDPredLayer-29]
+	_ = x[TDIntegLayer-30]
+	_ = x[TDDaLayer-31]
 	_ = x[LayerTypesN-32]
 }
 
-const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerPTMaintLayerPTPredLayerPTNotMaintLayerRewLayerRWPredLayerRWDaLayerTDPredLayerTDIntegLayerTDDaLayerBLALayerCeMLayerLDTLayerVSPatchLayerVTALayerLHbLayerDrivesLayerEffortLayerUrgencyLayerUSLayerPVLayerMatrixLayerSTNLayerGPLayerBGThalLayerVSGatedLayerLayerTypesN"
+const _LayerTypes_name = "SuperLayerInputLayerTargetLayerCompareLayerCTLayerPulvinarLayerTRNLayerPTMaintLayerPTPredLayerPTNotMaintLayerMatrixLayerSTNLayerGPLayerBGThalLayerVSGatedLayerBLALayerCeMLayerVSPatchLayerLHbLayerDrivesLayerEffortLayerUrgencyLayerUSLayerPVLayerLDTLayerVTALayerRewLayerRWPredLayerRWDaLayerTDPredLayerTDIntegLayerTDDaLayerLayerTypesN"
 
-var _LayerTypes_index = [...]uint16{0, 10, 20, 31, 43, 50, 63, 71, 83, 94, 109, 117, 128, 137, 148, 160, 169, 177, 185, 193, 205, 213, 221, 232, 243, 255, 262, 269, 280, 288, 295, 306, 318, 329}
+var _LayerTypes_index = [...]uint16{0, 10, 20, 31, 43, 50, 63, 71, 83, 94, 109, 120, 128, 135, 146, 158, 166, 174, 186, 194, 205, 216, 228, 235, 242, 250, 258, 266, 277, 286, 297, 309, 318, 329}
 
 func (i LayerTypes) String() string {
 	if i < 0 || i >= LayerTypes(len(_LayerTypes_index)-1) {

@@ -20,11 +20,16 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.05", // 1 / css
 				}},
-			// {Sel: "#OFCus", Desc: "",
-			// 	Params: params.Params{
-			// 		"Layer.Inhib.Layer.Gi": "1.8", // stronger inhibition here to knock out novelty
-			// 		"Layer.Inhib.Pool.Gi":  "1.2",
-			// 	}},
+			{Sel: "#ContextIn", Desc: "expect act",
+				Params: params.Params{
+					"Layer.Inhib.ActAvg.Nominal": "0.025", // 1 / css
+				}},
+			{Sel: ".VSPatchLayer", Desc: "",
+				Params: params.Params{
+					"Layer.Learn.NeuroMod.DipGain": "0.01", // controls extinction -- reduce to slow
+					"Layer.PVLV.Thr":               "0.4",  // key user param
+					"Layer.PVLV.Gain":              "20",   // key user param
+				}},
 			{Sel: "#BLAPosExtD2", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.8",
@@ -55,7 +60,10 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "4.0", // 4 > 2 for gating sooner
 				}},
-
+			{Sel: ".BLAExtPrjn", Desc: "",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.05",
+				}},
 			{Sel: ".GPiToBGThal", Desc: "inhibition from GPi to MD",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "2", // 4 prevents some gating, 2 leaks with supertothal 4
@@ -77,10 +85,6 @@ var ParamSets = params.Sets{
 					"Prjn.PrjnScale.Abs":        "2",
 					"Prjn.Learn.Trace.LearnThr": "0.3",
 					"Prjn.Learn.LRate.Base":     "0.05", // 0.05 def
-				}},
-			{Sel: ".BLAExtPrjn", Desc: "ext learns very fast",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01",
 				}},
 			{Sel: ".PTSelfMaint", Desc: "",
 				Params: params.Params{
@@ -151,9 +155,9 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Learn.NeuroMod.AChDisInhib": "0",    // essential: has to fire when expected but not present!
 					"Layer.Learn.NeuroMod.AChLRateMod": "0.8",
 					"Layer.Learn.NeuroMod.BurstGain":   "1",
-					"Layer.Learn.NeuroMod.DipGain":     "0.1", // controls extinction -- reduce to slow
-					"Layer.PVLV.Thr":                   "0.3", // key user param
-					"Layer.PVLV.Gain":                  "8",   // key user param
+					"Layer.Learn.NeuroMod.DipGain":     "0.01", // controls extinction -- reduce to slow
+					"Layer.PVLV.Thr":                   "0.4",  // key user param
+					"Layer.PVLV.Gain":                  "20",   // key user param
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
