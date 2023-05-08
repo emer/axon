@@ -2057,7 +2057,7 @@ Learn: {
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   TrgAvgAct: {  On: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
   RLRate: {  On: true  SigmoidMin: 1  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 0.1 }
+  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 0.01 }
 }
 VSPatch: {
   NoDALRate: 0.1 NoDAThr: 0.01
@@ -2294,7 +2294,7 @@ Com: {
   GType: ExcitatoryG Delay: 2 MaxDelay: 2 PFail: 0 PFailSWt: false DelLen: 3
 }
 PrjnScale: {
-  Rel: 0.1 Abs: 2
+  Rel: 0.1 Abs: 2.5
 }
 SWt: {
   Init: {  SPct: 0  Mean: 0.5  Var: 0.4  Sym: true }
@@ -2452,7 +2452,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -2475,7 +2475,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -2561,7 +2561,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }

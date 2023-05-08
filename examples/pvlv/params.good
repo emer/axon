@@ -1885,7 +1885,7 @@ Learn: {
   LrnNMDA: {  Gbar: 0.006  Tau: 100  ITau: 1  MgC: 1.4  Voff: 0 }
   TrgAvgAct: {  On: false  ErrLRate: 0.02  SynScaleRate: 0.005  SubMean: 1  TrgRange: {   Min: 0.5   Max: 2 }   Permute: true  Pool: true }
   RLRate: {  On: true  SigmoidMin: 1  Diff: false  SpkThr: 0.1  DiffThr: 0.02  Min: 0.001 }
-  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 0.1 }
+  NeuroMod: {  DAMod: 1  Valence: 0  DAModGain: 0.5  DALRateSign: true  DALRateMod: 0  AChLRateMod: 0.8  AChDisInhib: 0  BurstGain: 1  DipGain: 0.01 }
 }
 VSPatch: {
   NoDALRate: 0.1 NoDAThr: 0.01
@@ -2240,7 +2240,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -2263,7 +2263,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -2349,7 +2349,7 @@ SWt: {
 }
 Learn: {
   Learn: true
-  LRate: {  Base: 0.01  Sched: 1  Mod: 1  Eff: 0.01 }
+  LRate: {  Base: 0.02  Sched: 1  Mod: 1  Eff: 0.02 }
   Trace: {  Tau: 1  SubMean: 0  LearnThr: 0 }
   KinaseCa: {  SpikeG: 12  MaxISI: 100  Dt: {   MTau: 5   PTau: 39   DTau: 41   ExpAdj: true
   } }
@@ -4823,7 +4823,7 @@ Act: {
   PopCode: {  On: false  Ge: 0.1  Min: -0.1  Max: 1.1  MinAct: 1  MinSigma: 0.1  MaxSigma: 0.1  Clip: true }
 }
 Inhib: {
-  ActAvg: {  Nominal: 0.1  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
+  ActAvg: {  Nominal: 0.025  AdaptGi: false  Offset: 0  HiTol: 0  LoTol: 0.8  AdaptRate: 0.1 }
   Layer: {  On: true  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
   Pool: {  On: false  Gi: 0.9  FB: 1  FSTau: 6  SS: 30  SSfTau: 20  SSiTau: 50  FS0: 0.1  FFAvgTau: 50  FFPrv: 0 }
 }

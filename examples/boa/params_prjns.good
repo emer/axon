@@ -115,7 +115,7 @@ Layer: VsPatch
 	       OFCusPTp		Abs:	  5.00	Rel:	  1.00	GScale:	  0.42	Rel:  0.25
 							    Abs Params: #OFCusPTpToVsPatch: 5 | Base:.VSPatchPrjn: 2
 	      OFCvalPTp		Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
-							    Abs Params: .VSPatchPrjn: 2
+							    Abs Params: Base:.VSPatchPrjn: 2
 	     ACCcostPTp		Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
 							    Abs Params: Base:.VSPatchPrjn: 2
 	     ACCutilPTp		Abs:	  2.00	Rel:	  1.00	GScale:	  0.12	Rel:  0.25
@@ -127,8 +127,8 @@ Layer: SC
 
 Layer: BLAPosAcqD1
 	    BLAPosExtD2		Abs:	  2.00	Rel:	  1.00	GScale:	  0.67	Rel:  1.00
-	     BLANovelCS		Abs:	  2.00	Rel:	  0.10	GScale:	  0.12	Rel:  0.06
-							    Abs Params: Base:.BLAFromNovel: 2
+	     BLANovelCS		Abs:	  2.50	Rel:	  0.10	GScale:	  0.16	Rel:  0.06
+							    Abs Params: Base:.BLAFromNovel: 3
 	          USpos		Abs:	  6.00	Rel:	  0.50	GScale:	  0.62	Rel:  0.31
 	             CS		Abs:	  1.50	Rel:	  1.00	GScale:	  0.94	Rel:  0.62
 
