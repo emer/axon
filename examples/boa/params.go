@@ -17,11 +17,12 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 				Params: params.Params{
+					// "Layer.Inhib.Layer.Gi":  "1.0", // 1.0 for CSP, 0.9 for CS -- should be higher for CSPerDrive > 1
 					"Layer.Inhib.ActAvg.Nominal": "0.1", // 0.1 for 4, divide by N/4 from there
 				}},
 			{Sel: ".BLAFromNovel", Desc: "must be strong enough to compete with CS at start -- now done automatically",
 				Params: params.Params{
-					"Prjn.PrjnScale.Abs": "2", // 2 is good for .CS nominal .1, but 3 needed for .03
+					"Prjn.PrjnScale.Abs": "3", // 2 is good for .CS nominal .1, but 3 needed for .03
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
@@ -47,10 +48,11 @@ var ParamSets = params.Sets{
 			// 	}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.Pool.Gi": "0.5", // todo: go lower, get more inhib from elsewhere?
-					"Layer.Inhib.Pool.FB": "0",
-					"Layer.PVLV.Thr":      "0.4",
-					"Layer.PVLV.Gain":     "20",
+					"Layer.Inhib.Pool.Gi":          "0.5", // todo: go lower, get more inhib from elsewhere?
+					"Layer.Inhib.Pool.FB":          "0",
+					"Layer.Learn.NeuroMod.DipGain": "0.01", // rate of extinction -- reduce to slow
+					"Layer.PVLV.Thr":               "0.4",
+					"Layer.PVLV.Gain":              "20",
 				}},
 			////////////////////////////////////////////
 			// Cortical Prjns
@@ -91,6 +93,10 @@ var ParamSets = params.Sets{
 			{Sel: ".DrivesToMtx", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "1",
+				}},
+			{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
+				Params: params.Params{
+					"Prjn.Learn.LRate.Base": "0.02",
 				}},
 			{Sel: ".BLAAcqToGo", Desc: "must dominate",
 				Params: params.Params{
@@ -137,10 +143,6 @@ var ParamSets = params.Sets{
 			{Sel: "#UrgencyToVsMtxGo", Desc: "",
 				Params: params.Params{
 					"Prjn.PrjnScale.Abs": "0", // todo: not working -- no ach by time this happens!  need to drive ach too.
-				}},
-			{Sel: ".BLAExtPrjn", Desc: "ext learns relatively fast",
-				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.01",
 				}},
 		}},
 	},

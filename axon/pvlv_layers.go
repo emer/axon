@@ -267,7 +267,7 @@ func (ly *LayerParams) VSPatchDefaults() {
 	ly.Learn.NeuroMod.AChLRateMod = 0.8 // ACh now active for extinction, so this is ok
 	ly.Learn.NeuroMod.AChDisInhib = 0   // essential: has to fire when expected but not present!
 	ly.Learn.NeuroMod.BurstGain = 1
-	ly.Learn.NeuroMod.DipGain = 0.1 // extinction -- reduce to slow
+	ly.Learn.NeuroMod.DipGain = 0.01 // extinction -- reduce to slow
 	ly.PVLV.Thr = 0.4
 	ly.PVLV.Gain = 20
 }

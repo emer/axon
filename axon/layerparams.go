@@ -776,14 +776,14 @@ func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, lpl *Pool) {
 	ctx.NeuroMod.NotMaint = lpl.AvgMax.CaSpkD.Cycle.Max
 }
 
+func (ly *LayerParams) CyclePostVTALayer(ctx *Context) {
+	ctx.PVLVDA()
+}
+
 // note: needs to iterate over sub-pools in layer!
 func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi int32, pl *Pool) {
 	val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
 	ctx.PVLV.VSPatch.Set(pi-1, val)
-}
-
-func (ly *LayerParams) CyclePostVTALayer(ctx *Context) {
-	ctx.PVLVDA()
 }
 
 /////////////////////////////////////////////////////////////////////////

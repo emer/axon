@@ -241,28 +241,10 @@ func (ly *Layer) LDTSrcLayAct(net *Network, layIdx int32) float32 {
 // such as updating a neuromodulatory signal such as dopamine.
 // Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
 func (ly *Layer) CyclePost(ctx *Context) {
+	net := ly.Network
 	switch ly.LayerType() {
-	case LDTLayer:
-		net := ly.Network
-		srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Idx)
-		srcLay2Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay2Idx)
-		srcLay3Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay3Idx)
-		srcLay4Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay4Idx)
-		ly.Params.CyclePostLDTLayer(ctx, ly.Vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
-	case RWDaLayer:
-		net := ly.Network
-		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
-		ly.Params.CyclePostRWDaLayer(ctx, ly.Vals, pvals)
-	case TDPredLayer:
-		ly.Params.CyclePostTDPredLayer(ctx, ly.Vals)
-	case TDIntegLayer:
-		net := ly.Network
-		pvals := &net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
-		ly.Params.CyclePostTDIntegLayer(ctx, ly.Vals, pvals)
-	case TDDaLayer:
-		net := ly.Network
-		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
-		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
+	case PTNotMaintLayer:
+		ly.Params.CyclePostPTNotMaintLayer(ctx, &ly.Pools[0])
 	case CeMLayer:
 		ly.Params.CyclePostCeMLayer(ctx, &ly.Pools[0])
 	case VSPatchLayer:
@@ -270,10 +252,25 @@ func (ly *Layer) CyclePost(ctx *Context) {
 			pl := &ly.Pools[pi]
 			ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl)
 		}
-	case PTNotMaintLayer:
-		ly.Params.CyclePostPTNotMaintLayer(ctx, &ly.Pools[0])
+	case LDTLayer:
+		srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Idx)
+		srcLay2Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay2Idx)
+		srcLay3Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay3Idx)
+		srcLay4Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay4Idx)
+		ly.Params.CyclePostLDTLayer(ctx, ly.Vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 	case VTALayer:
 		ly.Params.CyclePostVTALayer(ctx)
+	case RWDaLayer:
+		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
+		ly.Params.CyclePostRWDaLayer(ctx, ly.Vals, pvals)
+	case TDPredLayer:
+		ly.Params.CyclePostTDPredLayer(ctx, ly.Vals)
+	case TDIntegLayer:
+		pvals := &net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
+		ly.Params.CyclePostTDIntegLayer(ctx, ly.Vals, pvals)
+	case TDDaLayer:
+		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
+		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
 	}
 }
 

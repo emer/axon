@@ -37,21 +37,15 @@ import (
 var Debug = false
 
 func main() {
-	TheSim.New()
+	sim := &Sim{}
+	sim.New()
 	if len(os.Args) > 1 {
-		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
+		sim.RunNoGUI() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
 		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-			guirun()
+			sim.RunGUI()
 		})
 	}
-}
-
-func guirun() {
-	TheSim.Config()
-	TheSim.Init()
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
 }
 
 // see params.go for params
@@ -594,6 +588,13 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	return ss.GUI.Win
 }
 
+func (ss *Sim) RunGUI() {
+	ss.Config()
+	ss.Init()
+	win := ss.ConfigGui()
+	win.StartEventLoop()
+}
+
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
@@ -606,14 +607,12 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Parse() // always parse
 }
 
-func (ss *Sim) CmdArgs() {
+func (ss *Sim) RunNoGUI() {
 	if ss.Args.Bool("mpi") {
 		ss.MPIInit()
 	}
-
 	// key for Config and Init to be after MPIInit
 	ss.Config()
-	ss.Init()
 
 	ss.Args.ProcStd(&ss.Params)
 	if mpi.WorldRank() == 0 {
@@ -632,6 +631,8 @@ func (ss *Sim) CmdArgs() {
 		mpi.Printf("Saving NetView data from testing\n")
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
+
+	ss.Init()
 
 	runs := ss.Args.Int("runs")
 	run := ss.Args.Int("run")

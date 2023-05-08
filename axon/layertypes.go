@@ -97,6 +97,107 @@ const (
 	// appropriate actions (e.g., exploration) when not in goal-engaged mode.
 	PTNotMaintLayer
 
+	/////////////////////////////
+	// PCORE Basal Ganglia (BG)
+
+	// MatrixLayer represents the matrisome medium spiny neurons (MSNs)
+	// that are the main Go / NoGo gating units in BG.
+	// These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.
+	MatrixLayer
+
+	// STNLayer represents subthalamic nucleus neurons, with two subtypes:
+	// STNp are more strongly driven and get over bursting threshold, driving strong,
+	// rapid activation of the KCa channels, causing a long pause in firing, which
+	// creates a window during which GPe dynamics resolve Go vs. No balance.
+	// STNs are more weakly driven and thus more slowly activate KCa, resulting in
+	// a longer period of activation, during which the GPi is inhibited to prevent
+	// premature gating based only MtxGo inhibition -- gating only occurs when
+	// GPeIn signal has had a chance to integrate its MtxNo inputs.
+	STNLayer
+
+	// GPLayer represents a globus pallidus layer in the BG, including:
+	// GPeOut, GPeIn, GPeTA (arkypallidal), and GPi.
+	// Typically just a single unit per Pool representing a given stripe.
+	GPLayer
+
+	// BGThalLayer represents a BG gated thalamic layer,
+	// which receives BG gating in the form of an
+	// inhibitory projection from GPi.  Located
+	// mainly in the Ventral thalamus: VA / VM / VL,
+	// and also parts of MD mediodorsal thalamus.
+	BGThalLayer
+
+	// VSGated represents explicit coding of VS gating status:
+	// JustGated and HasGated (since last US or failed predicted US),
+	// For visualization and / or motor action signaling.
+	VSGatedLayer
+
+	/////////////
+	// PVLV
+
+	// BLALayer represents a basolateral amygdala layer
+	// which learns to associate arbitrary stimuli (CSs)
+	// with behaviorally salient outcomes (USs)
+	BLALayer
+
+	// CeMLayer represents a central nucleus of the amygdala layer.
+	CeMLayer
+
+	// VSPatchLayer represents a ventral striatum patch layer,
+	// which learns to represent the expected amount of dopamine reward
+	// and projects both directly with shunting inhibition to the VTA
+	// and indirectly via the LHb / RMTg to cancel phasic dopamine firing
+	// to expected rewards (i.e., reward prediction error).
+	VSPatchLayer
+
+	// LHbLayer represents the lateral habenula, which drives dipping
+	// in the VTA.  It tracks the ContextPVLV.LHb values for
+	// visualization purposes -- updated by VTALayer.
+	LHbLayer
+
+	// DrivesLayer represents the Drives in PVLV framework.
+	// It tracks the ContextPVLV.Drives values for
+	// visualization and predictive learning purposes.
+	DrivesLayer
+
+	// EffortLayer represents the Effort factor in PVLV framework.
+	// It tracks the ContextPVLV.Effort.Disc value for
+	// visualization and predictive learning purposes.
+	EffortLayer
+
+	// UrgencyLayer represents the Urgency factor in PVLV framework.
+	// It tracks the ContextPVLV.Urgency.Urge value for
+	// visualization and predictive learning purposes.
+	UrgencyLayer
+
+	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
+	// It tracks the ContextPVLV.USpos or USneg, for visualization
+	// and predictive learning purposes. Actual US inputs are set in PVLV.
+	USLayer
+
+	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
+	// the total primary value as a function of US inputs, drives, and effort.
+	// It tracks the ContextPVLV.VTA.PVpos, PVneg values for
+	// visualization and predictive learning purposes.
+	PVLayer
+
+	// LDTLayer represents the laterodorsal tegmentum layer, which
+	// is the primary limbic ACh (acetylcholine) driver to other ACh:
+	// BG cholinergic interneurons (CIN) and nucleus basalis ACh areas.
+	// The phasic ACh release signals reward salient inputs from CS, US
+	// and US omssion, and it drives widespread disinhibition of BG gating
+	// and VTA DA firing.
+	// It receives excitation from superior colliculus which computes
+	// a temporal derivative (stimulus specific adaptation, SSA)
+	// of sensory inputs, and inhibitory input from OFC, ACC driving
+	// suppression of distracting inputs during goal-engaged states.
+	LDTLayer
+
+	// VTALayer represents the ventral tegmental area, which releases
+	// dopamine.  It calls the ContextPVLV.VTA methods,
+	// and tracks resulting DA for visualization purposes.
+	VTALayer
+
 	/////////////
 	// RL
 
@@ -136,107 +237,6 @@ const (
 	// between the TDIntegLayer activations in the minus and plus phase.
 	// These are retrieved from Special LayerVals.
 	TDDaLayer
-
-	/////////////
-	// PVLV
-
-	// BLALayer represents a basolateral amygdala layer
-	// which learns to associate arbitrary stimuli (CSs)
-	// with behaviorally salient outcomes (USs)
-	BLALayer
-
-	// CeMLayer represents a central nucleus of the amygdala layer.
-	CeMLayer
-
-	// LDTLayer represents the laterodorsal tegmentum layer, which
-	// is the primary limbic ACh (acetylcholine) driver to other ACh:
-	// BG cholinergic interneurons (CIN) and nucleus basalis ACh areas.
-	// The phasic ACh release signals reward salient inputs from CS, US
-	// and US omssion, and it drives widespread disinhibition of BG gating
-	// and VTA DA firing.
-	// It receives excitation from superior colliculus which computes
-	// a temporal derivative (stimulus specific adaptation, SSA)
-	// of sensory inputs, and inhibitory input from OFC, ACC driving
-	// suppression of distracting inputs during goal-engaged states.
-	LDTLayer
-
-	// VSPatchLayer represents a ventral striatum patch layer,
-	// which learns to represent the expected amount of dopamine reward
-	// and projects both directly with shunting inhibition to the VTA
-	// and indirectly via the LHb / RMTg to cancel phasic dopamine firing
-	// to expected rewards (i.e., reward prediction error).
-	VSPatchLayer
-
-	// VTALayer represents the ventral tegmental area, which releases
-	// dopamine.  It calls the ContextPVLV.VTA methods,
-	// and tracks resulting DA for visualization purposes.
-	VTALayer
-
-	// LHbLayer represents the lateral habenula, which drives dipping
-	// in the VTA.  It tracks the ContextPVLV.LHb values for
-	// visualization purposes -- updated by VTALayer.
-	LHbLayer
-
-	// DrivesLayer represents the Drives in PVLV framework.
-	// It tracks the ContextPVLV.Drives values for
-	// visualization and predictive learning purposes.
-	DrivesLayer
-
-	// EffortLayer represents the Effort factor in PVLV framework.
-	// It tracks the ContextPVLV.Effort.Disc value for
-	// visualization and predictive learning purposes.
-	EffortLayer
-
-	// UrgencyLayer represents the Urgency factor in PVLV framework.
-	// It tracks the ContextPVLV.Urgency.Urge value for
-	// visualization and predictive learning purposes.
-	UrgencyLayer
-
-	// USLayer represents a US unconditioned stimulus layer (USpos or USneg).
-	// It tracks the ContextPVLV.USpos or USneg, for visualization
-	// and predictive learning purposes. Actual US inputs are set in PVLV.
-	USLayer
-
-	// PVLayer represents a PV primary value layer (PVpos or PVneg) representing
-	// the total primary value as a function of US inputs, drives, and effort.
-	// It tracks the ContextPVLV.VTA.PVpos, PVneg values for
-	// visualization and predictive learning purposes.
-	PVLayer
-
-	/////////////////////////////
-	// PCORE Basal Ganglia (BG)
-
-	// MatrixLayer represents the matrisome medium spiny neurons (MSNs)
-	// that are the main Go / NoGo gating units in BG.
-	// These are strongly modulated by phasic dopamine: D1 = Go, D2 = NoGo.
-	MatrixLayer
-
-	// STNLayer represents subthalamic nucleus neurons, with two subtypes:
-	// STNp are more strongly driven and get over bursting threshold, driving strong,
-	// rapid activation of the KCa channels, causing a long pause in firing, which
-	// creates a window during which GPe dynamics resolve Go vs. No balance.
-	// STNs are more weakly driven and thus more slowly activate KCa, resulting in
-	// a longer period of activation, during which the GPi is inhibited to prevent
-	// premature gating based only MtxGo inhibition -- gating only occurs when
-	// GPeIn signal has had a chance to integrate its MtxNo inputs.
-	STNLayer
-
-	// GPLayer represents a globus pallidus layer in the BG, including:
-	// GPeOut, GPeIn, GPeTA (arkypallidal), and GPi.
-	// Typically just a single unit per Pool representing a given stripe.
-	GPLayer
-
-	// BGThalLayer represents a BG gated thalamic layer,
-	// which receives BG gating in the form of an
-	// inhibitory projection from GPi.  Located
-	// mainly in the Ventral thalamus: VA / VM / VL,
-	// and also parts of MD mediodorsal thalamus.
-	BGThalLayer
-
-	// VSGated represents explicit coding of VS gating status:
-	// JustGated and HasGated (since last US or failed predicted US),
-	// For visualization and / or motor action signaling.
-	VSGatedLayer
 
 	LayerTypesN
 )
