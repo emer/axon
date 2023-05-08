@@ -185,6 +185,15 @@ func (dp *Drives) ExpStep() {
 	}
 }
 
+// EffectiveDrive returns the Max of Drives at given index and DriveMin.
+// note that index 0 is the novelty / curiosity drive.
+func (dp *Drives) EffectiveDrive(i int32) float32 {
+	if i == 0 {
+		return dp.Drives.Get(0)
+	}
+	return mat32.Max(dp.Drives.Get(i), dp.DriveMin)
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 //  Effort
 
@@ -649,7 +658,7 @@ func (pp *PVLV) USStimVal(usIdx int32, valence ValenceTypes) float32 {
 func (pp *PVLV) PosPV() float32 {
 	rew := float32(0)
 	for i := int32(0); i < pp.Drive.NActive; i++ {
-		rew += pp.USpos.Get(i) * mat32.Max(pp.Drive.Drives.Get(i), pp.Drive.DriveMin)
+		rew += pp.USpos.Get(i) * pp.Drive.EffectiveDrive(i)
 	}
 	return rew
 }
