@@ -38,27 +38,27 @@ import (
 	"github.com/goki/gi/gi"
 	"github.com/goki/gi/gimain"
 	"github.com/goki/mat32"
+	"github.com/goki/vgpu/vgpu"
 )
 
-// Debug triggers various messages etc
-var Debug = false
+var (
+	// Debug triggers various messages etc
+	Debug = false
+	// GPU runs with the GPU (for demo, testing -- not useful for such a small network)
+	GPU = false
+)
 
 func main() {
-	TheSim.New()
-	TheSim.Config()
+	sim := &Sim{}
+	sim.New()
+	sim.Config()
 	if len(os.Args) > 1 {
-		TheSim.CmdArgs() // simple assumption is that any args = no gui -- could add explicit arg if you want
+		sim.RunNoGUI() // simple assumption is that any args = no gui -- could add explicit arg if you want
 	} else {
 		gimain.Main(func() { // this starts gui -- requires valid OpenGL display connection (e.g., X11)
-			guirun()
+			sim.RunGUI()
 		})
 	}
-}
-
-func guirun() {
-	TheSim.Init()
-	win := TheSim.ConfigGui()
-	win.StartEventLoop()
 }
 
 // see params.go for params
@@ -86,9 +86,6 @@ type Sim struct {
 	Args     ecmd.Args   `view:"no-inline" desc:"command line args"`
 	RndSeeds erand.Seeds `view:"-" desc:"a list of random seeds to use for each run"`
 }
-
-// TheSim is the overall state for this simulation
-var TheSim Sim
 
 // New creates new blank elements and initializes defaults
 func (ss *Sim) New() {
@@ -425,6 +422,7 @@ func (ss *Sim) ApplyInputs() {
 			ly.ApplyExt(pats)
 		}
 	}
+	net.ApplyExts(&ss.Context) // now required for GPU mode
 }
 
 // NewRun intializes a new run of the model, using the TrainEnv.Run counter
@@ -756,7 +754,20 @@ func (ss *Sim) ConfigGui() *gi.Window {
 		},
 	})
 	ss.GUI.FinalizeGUI(false)
+	if GPU {
+		vgpu.Debug = Debug
+		ss.Net.ConfigGPUwithGUI(&ss.Context) // must happen after gui or no gui
+		gi.SetQuitCleanFunc(func() {
+			ss.Net.GPU.Destroy()
+		})
+	}
 	return ss.GUI.Win
+}
+
+func (ss *Sim) RunGUI() {
+	ss.Init()
+	win := ss.ConfigGui()
+	win.StartEventLoop()
 }
 
 func (ss *Sim) ConfigArgs() {
@@ -769,7 +780,7 @@ func (ss *Sim) ConfigArgs() {
 	ss.Args.Parse() // always parse
 }
 
-func (ss *Sim) CmdArgs() {
+func (ss *Sim) RunNoGUI() {
 	ss.Args.ProcStd(&ss.Params)
 	ss.Args.ProcStdLogs(&ss.Logs, &ss.Params, ss.Net.Name())
 	ss.Args.SetBool("nogui", true)                                       // by definition if here
@@ -781,16 +792,20 @@ func (ss *Sim) CmdArgs() {
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
+	ss.Init()
+
 	runs := ss.Args.Int("runs")
 	run := ss.Args.Int("run")
 	fmt.Printf("Running %d Runs starting at %d\n", runs, run)
 	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs
-
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
 
 	ss.NewRun()
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+	}
 	ss.Loops.Run(etime.Train)
 
 	ss.Logs.CloseLogFiles()
@@ -798,4 +813,6 @@ func (ss *Sim) CmdArgs() {
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
+
+	ss.Net.GPU.Destroy()
 }

@@ -1084,6 +1084,12 @@ func (ss *Sim) ConfigGui() *gi.Window {
 	return ss.GUI.Win
 }
 
+func (ss *Sim) RunGUI() {
+	ss.Init()
+	win := ss.ConfigGui()
+	win.StartEventLoop()
+}
+
 func (ss *Sim) ConfigArgs() {
 	ss.Args.Init()
 	ss.Args.AddStd()
@@ -1105,16 +1111,19 @@ func (ss *Sim) RunNoGUI() {
 		ss.GUI.InitNetData(ss.Net, 200)
 	}
 
+	ss.Init()
+
 	runs := ss.Args.Int("runs")
 	run := ss.Args.Int("run")
 	mpi.Printf("Running %d Runs starting at %d\n", runs, run)
 	rc := &ss.Loops.GetLoop(etime.Train, etime.Run).Counter
 	rc.Set(run)
 	rc.Max = run + runs
-
 	ss.Loops.GetLoop(etime.Train, etime.Epoch).Counter.Max = ss.Args.Int("epochs")
-
 	ss.Loops.GetLoop(etime.Train, etime.Sequence).Counter.Max = ss.Args.Int("seqs")
+	if ss.Args.Bool("gpu") {
+		ss.Net.ConfigGPUnoGUI(&ss.Context) // must happen after gui or no gui
+	}
 
 	ss.NewRun()
 	ss.Loops.Run(etime.Train)
@@ -1124,10 +1133,6 @@ func (ss *Sim) RunNoGUI() {
 	if netdata {
 		ss.GUI.SaveNetData(ss.Stats.String("RunName"))
 	}
-}
 
-func (ss *Sim) RunGUI() {
-	ss.Init()
-	win := ss.ConfigGui()
-	win.StartEventLoop()
+	ss.Net.GPU.Destroy() // safe even if no GPU
 }
