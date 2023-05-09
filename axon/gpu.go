@@ -954,6 +954,7 @@ func (gp *GPU) RunMinusPhase() {
 	cmd := gp.RunMinusPhaseCmd()
 	gnm := "GPU:MinusPhase"
 	gp.Net.FunTimerStart(gnm)
+	gp.CopyContextToStaging()
 	gp.Sys.ComputeSubmitWaitCmd(cmd)
 	gp.CopyStateFmStaging()
 	gp.Net.FunTimerStop(gnm)
@@ -978,7 +979,9 @@ func (gp *GPU) RunMinusPhaseCmd() vk.CommandBuffer {
 	nrr := gp.SyncRegionStruct("Neurons")
 
 	gp.StartRunCmd(cmd)
-	gp.RunPipelineCmd(cmd, "MinusPool", len(gp.Net.Pools), "", "PoolGi")
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
+	gp.RunPipelineCmd(cmd, "MinusPool", len(gp.Net.Pools), "MemCopyTo", "PoolGi")
 	gp.RunPipelineCmd(cmd, "MinusNeuron", len(gp.Net.Neurons), "PoolGi", "MemCopyFm")
 	gp.Sys.ComputeWaitEventsCmd(cmd, "MemCopyFm")
 	gp.Sys.ComputeCmdCopyFmGPUCmd(cmd, cxr, lvr, plr, nrr)
@@ -1001,6 +1004,7 @@ func (gp *GPU) RunPlusPhase() {
 	cmd := gp.RunPlusPhaseCmd()
 	gnm := "GPU:PlusPhase"
 	gp.Net.FunTimerStart(gnm)
+	gp.CopyContextToStaging()
 	gp.Sys.ComputeSubmitWaitCmd(cmd)
 	gp.CopyStateFmStaging()
 	gp.Net.FunTimerStop(gnm)
@@ -1024,7 +1028,9 @@ func (gp *GPU) RunPlusPhaseCmd() vk.CommandBuffer {
 	nrr := gp.SyncRegionStruct("Neurons")
 
 	gp.StartRunCmd(cmd)
-	gp.RunPipelineCmd(cmd, "PlusPool", len(gp.Net.Pools), "", "PoolGi")
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, cxr) // staging -> GPU
+	gp.Sys.ComputeSetEventCmd(cmd, "MemCopyTo")
+	gp.RunPipelineCmd(cmd, "PlusPool", len(gp.Net.Pools), "MemCopyTo", "PoolGi")
 	gp.RunPipelineCmd(cmd, "PlusNeuron", len(gp.Net.Neurons), "PoolGi", "MemCopyFm")
 
 	// note: could use atomic add to accumulate CorSim stat values in LayVals tmp vars for Cosv, ssm and ssp
@@ -1051,6 +1057,7 @@ func (gp *GPU) RunWtFmDWt() {
 	cmd := gp.RunWtFmDWtCmd()
 	gnm := "GPU:WtFmDWt"
 	gp.Net.FunTimerStart(gnm)
+	gp.CopyNeuronsToStaging()
 	gp.Sys.ComputeSubmitWaitCmd(cmd)
 	gp.Net.FunTimerStop(gnm)
 }

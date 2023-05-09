@@ -145,6 +145,10 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 	am.GiInt.Cycle.UpdateVal(nrn.GiInt)
 }
 
+// note: the following is actually being used despite appearing to be
+// commented out!  it is auto-uncommented when copied to hlsl
+// MUST update whenever above UpdateVals code is updated.
+
 //gosl: end pool
 
 //gosl: hlsl pool
@@ -158,8 +162,9 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, nrn.CaSpkD); \
 	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, nrn.SpkMax); \
 	AtomicUpdateAvgMaxI32(am.Act.Cycle, nrn.Act); \
-	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, nrn.Ge); \
-	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, nrn.Gi)
+	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, nrn.GeInt); \
+	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, nrn.GeIntMax); \
+	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, nrn.GiInt)
 */
 //gosl: end pool
 

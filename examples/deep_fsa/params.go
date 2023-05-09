@@ -71,7 +71,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.75", // 0.75 > higher v1.6.1
 					"Layer.Inhib.Layer.FB":          "1",
-					"Layer.Pulv.DriveScale":         "1.0", // 1 > 0.05 > 1.5 (0.05 better cor sim)
+					"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.05 > 0.2
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
 					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
 					"Layer.Act.Decay.Act":           "0.0",
