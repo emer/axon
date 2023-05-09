@@ -404,13 +404,6 @@ func NetTestLearn(t *testing.T, gpu bool) {
 	hidWts := []float32{0.5093542, 0.5144739, 0.51139706, 0.51196396}
 	outWts := []float32{0.5213235, 0.5526102, 0.5404005, 0.54173136}
 
-	if gpu {
-		hidDwts = []float32{0.0015570135, 0.0024068723, 0.0018967497, 0.0019872298}
-		outDwts = []float32{0.003653288, 0.00884877, 0.0077866265, 0.0069478843}
-		hidWts = []float32{0.50934094, 0.5144375, 0.51137847, 0.5119211}
-		outWts = []float32{0.52190614, 0.55289966, 0.54658806, 0.5415937}
-	}
-
 	hiddwt := make([]float32, 4*NLrnPars)
 	outdwt := make([]float32, 4*NLrnPars)
 	hidwt := make([]float32, 4*NLrnPars)
