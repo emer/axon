@@ -29,38 +29,6 @@
 // Set 3: external inputs
 // [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  [In / Out Layers][Neurons]
 
-/*
-void RecvSpikeSyn(in Context ctx, in Synapse sy, in float scale, inout float gbuf) {
-	gbuf += int(Neurons[sy.SendIdx].Spike * scale * sy.Wt);
-}
-
-void RecvBurstSyn(in Context ctx, in Synapse sy, in float scale, inout float gbuf) {
-	gbuf += int(Neurons[sy.SendIdx].Burst * scale * sy.Wt);
-}
-
-void RecvSpikes(in Context ctx, in PrjnParams pj, in LayerParams ly, uint recvIdx, inout float gbuf) {
-	float scale = pj.GScale.Scale * pj.Com.FloatToIntFactor();
-	uint cni = pj.Idxs.RecvConSt + recvIdx;
-	uint synst = pj.Idxs.SynapseSt + RecvCon[cni].Start;
-	uint synn = RecvCon[cni].N;
-	if (pj.PrjnType == CTCtxtPrjn) {
-		if (ctx.Cycle != ctx.ThetaCycles-1) {
-			return;
-		}
-		for (uint ci = 0; ci < synn; ci++) {
-			RecvBurstSyn(ctx, Synapses[synst + ci], scale, gbuf);
-		}
-	} else {
-		for (uint ci = 0; ci < synn; ci++) {
-			RecvSpikeSyn(ctx, Synapses[synst + ci], scale, gbuf);
-		}
-	}
-}
-*/
-
-
-
-
 void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, inout Neuron nrn) {
 	// now doing SendSpike
 	// uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(ni, ctx.CycleTot-1); // -1 = prior time step
@@ -77,7 +45,7 @@ void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint 
 void NeuronAvgMax(in Context ctx, in LayerParams ly, uint ni, in Neuron nrn) {
 	AtomicInhibRawIncr(Pools[nrn.SubPoolN].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
 	AtomicUpdatePoolAvgMax(Pools[nrn.SubPoolN].AvgMax, nrn);
-	if (Pools[nrn.SubPoolN].IsLayPool == 0) { // also update layer pool
+	if (Pools[nrn.SubPoolN].IsLayPool == 0) { // also update layer pool if I am a subpool
 		AtomicInhibRawIncr(Pools[ly.Idxs.PoolSt].Inhib, nrn.Spike, nrn.GeRaw, nrn.GeExt);
 		AtomicUpdatePoolAvgMax(Pools[ly.Idxs.PoolSt].AvgMax, nrn);
 	}
