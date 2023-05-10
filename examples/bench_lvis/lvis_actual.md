@@ -90,8 +90,11 @@ SendSynCa = 8	  4.784
 
 ### HPC2 AMD EPYC 7532 32-Core Processor
 
+* for actual cluster runs, we get ~740 PerTrlMSec using 16 mpi nodes on this hardware
+* bench = 10,600 PerTrlMSec (106s / 10 trials) * 1000 msec, / 16 = 662 for perfectly linear 16 mpi, / 14 = 757 which matches actual which is reasonable given overhead
+
 ```
-Total Time:   106 = 10,600 PerTrlMSec
+Total Time:   106 = 10,600 PerTrlMSec.
 TimerReport: Lvis
 OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	Function Name 	   Secs	    Pct

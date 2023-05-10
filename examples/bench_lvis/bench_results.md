@@ -20,6 +20,8 @@ and performance is roughly similar:
 
 ### Macbook Pro
 
+lvis_actual is 40 secs, vs 47 here -- benchmark is accurate.
+
 ```
 Took  47.37 secs for 1 epochs, avg per epc:  47.37
 TimerReport: BenchLvisNet
@@ -39,6 +41,28 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	        Total 	 47.307
 ```
 
+### HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+lvis_actual is 106 vs. 110 here -- good match.
+
+```
+Took  109.9 secs for 1 epochs, avg per epc:  109.9
+TimerReport: BenchLvisNet
+OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 28.250	   25.7
+	          DWt 	  4.764	    4.3
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  3.132	    2.9
+	   GiFmSpikes 	 10.694	    9.7
+	PoolGiFmSpikes 	  0.086	    0.1
+	    SendSpike 	 26.415	   24.1
+	    SynCaRecv 	  7.755	    7.1
+	    SynCaSend 	 26.499	   24.1
+	      WtFmDWt 	  2.165	    2.0
+	 WtFmDWtLayer 	  0.005	    0.0
+	        Total 	109.763
+```
 
 ## GPU
 
@@ -90,5 +114,32 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	  GPU:WtFmDWt 	  0.122	    0.4
 	 WtFmDWtLayer 	  0.002	    0.0
 	        Total 	 28.204
+```
+
+### HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+The DWt performance vs. Mac is *insane*.  27.5 / 0.128 = 215!  WTF!?
+
+Even MinusPhase, PlusPhase show factors of 120, despite being very low computational load overall.
+
+It isn't just overhead because WtFmDWt is very similar -- interestingly that is purely operating on synapses without any neuron access -- this suggests that neuron memory layout is really a limiting factor.  Also ApplyExts is 0.009 on mac and 0.005 on AMD so again overhead is not the problem.
+
+Cycles is 3x of mac -- not so insane but clearly the biggest single contributor.
+
+```
+Total Secs:   91.1
+TimerReport: BenchLvisNet
+OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.005	    0.0
+	   GPU:Cycles 	 60.159	   66.1
+	      GPU:DWt 	 27.508	   30.2
+	GPU:MinusPhase 	  1.438	    1.6
+	 GPU:NewState 	  0.316	    0.3
+	GPU:PlusPhase 	  1.433	    1.6
+	GPU:PlusStart 	  0.038	    0.0
+	  GPU:WtFmDWt 	  0.130	    0.1
+	 WtFmDWtLayer 	  0.005	    0.0
+	        Total 	 91.034
 ```
 
