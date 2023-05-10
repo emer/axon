@@ -234,4 +234,6 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose, 
 		net.ThreadReport()
 		fmt.Printf("Total Secs: %6.3g\n", tmr.TotalSecs())
 	}
+
+	net.GPU.Destroy()
 }

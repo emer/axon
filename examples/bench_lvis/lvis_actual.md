@@ -4,6 +4,12 @@ Results from: `http://github.com/ccnlab/lvis/sims/lvis_cu3d100_te16deg_axon`
 
 Run: `./lvis_cu3d100_te16deg_axon -bench -epochs 1 -tag bench` -- runs 10 epochs.
 
+Default network size:
+
+```
+Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
+```
+
 # 1.7.23 Receiver-based Synapses
 
 ## CPU
@@ -11,7 +17,7 @@ Run: `./lvis_cu3d100_te16deg_axon -bench -epochs 1 -tag bench` -- runs 10 epochs
 ### Macbook Pro
 
 ```
-Total Time: 39 = 3900 PerTrlMSec
+Total Time: 39 = 3900 PerTrlMSec = 244 for perfectly linear 16 mpi
 TimerReport: Lvis
 OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	Function Name 	   Secs	    Pct
@@ -158,7 +164,7 @@ SendSynCa = 8	  7.937
 
 ### Macbook Pro
 
-2x faster than CPU
+2x faster than CPU: 20 vs. 40 msec
 
 ```
 Total Time:  20.4
@@ -177,9 +183,9 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	        Total 	 13.921
 ```
 
-### HPC2 AMD EPYC 7532 32-Core Processor
+### HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
-CPU: 106 -- GPU a tiny bit faster
+tiny bit faster than CPU: 92 vs. 106 msec
 
 ```
 Total Time:   92

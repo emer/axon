@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/emer/axon/axon"
-	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
@@ -25,39 +24,6 @@ import (
 	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 )
-
-// note: with 2 hidden layers, this simple test case converges to perfect performance:
-// ./bench -epochs 100 -pats 10 -units 100 -threads=1
-// so these params below are reasonable for actually learning (eventually)
-
-// CenterPoolIdxs returns the unit indexes for 2x2 center pools
-// if sub-pools are present, then only first such subpool is used.
-// TODO: Figure out what this is doing
-func CenterPoolIdxs(ly emer.Layer, n int) []int {
-	npy := ly.Shape().Dim(0)
-	npx := ly.Shape().Dim(1)
-	npxact := npx
-	nu := ly.Shape().Dim(2) * ly.Shape().Dim(3)
-	nsp := 1
-	cpy := (npy - n) / 2
-	cpx := (npx - n) / 2
-	nt := n * n * nu
-	idxs := make([]int, nt)
-
-	ix := 0
-	for py := 0; py < 2; py++ {
-		y := (py + cpy) * nsp
-		for px := 0; px < 2; px++ {
-			x := (px + cpx) * nsp
-			si := (y*npxact + x) * nu
-			for ni := 0; ni < nu; ni++ {
-				idxs[ix+ni] = si + ni
-			}
-			ix += nu
-		}
-	}
-	return idxs
-}
 
 var ParamSets = params.Sets{
 	{Name: "Base", Desc: "these are the best params", Sheets: params.Sheets{
@@ -92,7 +58,7 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(b *testing.B, net *axon.Network, inputNeurDimPerPool, inputPools, outputDim,
+func ConfigNet(b *testing.B, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim,
 	threadNeuron, threadSendSpike, threadSynCa int, verbose bool) {
 	net.InitName(net, "BenchLvisNet")
 
@@ -103,17 +69,10 @@ func ConfigNet(b *testing.B, net *axon.Network, inputNeurDimPerPool, inputPools,
 
 	// construct the layers
 	// in LVIS: 16 x 16 x 5 x 4
-	v1m16 := net.AddLayer4D("V1m16", inputPools, inputPools, inputNeurDimPerPool, inputNeurDimPerPool, axon.InputLayer)
-	v2m16 := net.AddLayer4D("V2m16", 8, 8, 6, 6, axon.SuperLayer)
-	v4f16 := net.AddLayer4D("V4f16", 4, 4, 8, 8, axon.SuperLayer)
-	outLay := net.AddLayer2D("Output", outputDim, outputDim, axon.TargetLayer)
 
-	v1m16.SetClass("V1m")
-	v1m16.SetRepIdxsShape(CenterPoolIdxs(v1m16, 2), emer.CenterPoolShape(v1m16, 2))
-	v2m16.SetClass("V2m V2")
-	v2m16.SetRepIdxsShape(CenterPoolIdxs(v2m16, 2), emer.CenterPoolShape(v2m16, 2))
-	v4f16.SetClass("V4")
-	v4f16.SetRepIdxsShape(CenterPoolIdxs(v4f16, 2), emer.CenterPoolShape(v4f16, 2))
+	v2Pools := inputPools / 2
+	v4Pools := v2Pools / 2
+	teNeurs := hiddenNeurs * 2
 
 	full := prjn.NewFull()
 	sparseRandom := prjn.NewUnifRnd()
@@ -128,12 +87,36 @@ func ConfigNet(b *testing.B, net *axon.Network, inputNeurDimPerPool, inputPools,
 	Prjn4x4Skp2Recip := prjn.NewPoolTileRecip(Prjn4x4Skp2)
 	_ = Prjn4x4Skp2Recip
 
-	net.ConnectLayers(v1m16, v2m16, Prjn4x4Skp2, axon.ForwardPrjn)
-	net.BidirConnectLayers(v2m16, v4f16, Prjn4x4Skp2)
-	net.ConnectLayers(v1m16, v4f16, sparseRandom, axon.ForwardPrjn).SetClass("V1SC")
-	net.BidirConnectLayers(v4f16, outLay, full)
+	var v1, v2, v4, te []*axon.Layer
 
-	net.RecFunTimes = verbose
+	v1 = make([]*axon.Layer, pathways)
+	v2 = make([]*axon.Layer, pathways)
+	v4 = make([]*axon.Layer, pathways)
+	te = make([]*axon.Layer, pathways)
+
+	outLay := net.AddLayer2D("Output", outputDim, outputDim, axon.TargetLayer)
+
+	for pi := 0; pi < pathways; pi++ {
+		pnm := fmt.Sprintf("%d", pi)
+		v1[pi] = net.AddLayer4D("V1_"+pnm, inputPools, inputPools, inputNeurs, inputNeurs, axon.InputLayer)
+
+		v2[pi] = net.AddLayer4D("V2_"+pnm, v2Pools, v2Pools, hiddenNeurs, hiddenNeurs, axon.SuperLayer)
+		v4[pi] = net.AddLayer4D("V4_"+pnm, v4Pools, v4Pools, hiddenNeurs, hiddenNeurs, axon.SuperLayer)
+		te[pi] = net.AddLayer2D("TE_"+pnm, teNeurs, teNeurs, axon.SuperLayer)
+
+		v1[pi].SetClass("V1m")
+		v2[pi].SetClass("V2m V2")
+		v4[pi].SetClass("V4")
+
+		net.ConnectLayers(v1[pi], v2[pi], Prjn4x4Skp2, axon.ForwardPrjn)
+		net.BidirConnectLayers(v2[pi], v4[pi], Prjn4x4Skp2)
+		net.ConnectLayers(v1[pi], v4[pi], sparseRandom, axon.ForwardPrjn).SetClass("V1SC")
+		net.BidirConnectLayers(v4[pi], te[pi], full)
+		net.BidirConnectLayers(te[pi], outLay, full)
+	}
+
+	net.RecFunTimes = true // verbose -- always do
+	net.GPU.RecFunTimes = verbose
 
 	// builds with default threads
 	if err := net.Build(); err != nil {
@@ -168,11 +151,11 @@ func ConfigPats(pats *etable.Table, numPats int, inputShape [2]int, outputShape 
 		{Name: "Output", Type: etensor.FLOAT32, CellShape: outputShape[:], DimNames: []string{"Y", "X"}},
 	}, numPats)
 
-	// note: actually can learn if activity is .15 instead of .25
-	nOn := (inputShape[0] * inputShape[1]) / 8
+	nOnIn := (inputShape[0] * inputShape[1]) / 16
+	nOnOut := 2
 
-	patgen.PermutedBinaryRows(pats.Cols[1], nOn, 1, 0)
-	patgen.PermutedBinaryRows(pats.Cols[2], nOn, 1, 0)
+	patgen.PermutedBinaryRows(pats.Cols[1], nOnIn, 1, 0)
+	patgen.PermutedBinaryRows(pats.Cols[2], nOnOut, 1, 0)
 }
 
 func ConfigEpcLog(dt *etable.Table) {
@@ -190,18 +173,29 @@ func ConfigEpcLog(dt *etable.Table) {
 	}, 0)
 }
 
-func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose bool) {
+func TrainNet(net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int, verbose, gpu bool) {
 	ctx := axon.NewContext()
 	net.InitWts()
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 
+	if gpu {
+		net.ConfigGPUnoGUI(ctx)
+	}
+
 	epcLog.SetNumRows(epcs)
 
-	inLay := net.LayerByName("V1m16").(*axon.Layer)
-	hid1Lay := net.LayerByName("V2m16").(*axon.Layer)
-	hid2Lay := net.LayerByName("V4f16").(*axon.Layer)
-	outLay := net.LayerByName("Output").(*axon.Layer)
+	var v1 []*axon.Layer
+	v1 = make([]*axon.Layer, pathways)
+
+	for pi := 0; pi < pathways; pi++ {
+		pnm := fmt.Sprintf("%d", pi)
+		v1[pi] = net.AxonLayerByName("V1_" + pnm)
+	}
+	v2 := net.AxonLayerByName("V2_0")
+	v4 := net.AxonLayerByName("V4_0")
+	te := net.AxonLayerByName("TE_0")
+	outLay := net.AxonLayerByName("Output")
 
 	inPats := pats.ColByName("Input").(*etensor.Float32)
 	outPats := pats.ColByName("Output").(*etensor.Float32)
@@ -220,8 +214,11 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 			inp := inPats.SubSpace([]int{ppi})
 			outp := outPats.SubSpace([]int{ppi})
 
-			inLay.ApplyExt(inp)
+			for pi := 0; pi < pathways; pi++ {
+				v1[pi].ApplyExt(inp)
+			}
 			outLay.ApplyExt(outp)
+			net.ApplyExts(ctx)
 
 			net.NewState(ctx)
 			ctx.NewState(etime.Train)
@@ -233,6 +230,7 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 				if qtr == 2 {
 					net.MinusPhase(ctx)
 					ctx.NewPhase(true)
+					net.PlusPhaseStart(ctx)
 				}
 			}
 			net.PlusPhase(ctx)
@@ -263,8 +261,9 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
 		epcLog.SetCellFloat("PctErr", epc, pctErr)
 		epcLog.SetCellFloat("PctCor", epc, pctCor)
-		epcLog.SetCellFloat("Hid1ActAvg", epc, float64(hid1Lay.Vals.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("Hid2ActAvg", epc, float64(hid2Lay.Vals.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("V2ActAvg", epc, float64(v2.Vals.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("V4ActAvg", epc, float64(v4.Vals.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("TEActAvg", epc, float64(te.Vals.ActAvg.ActMAvg))
 		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Vals.ActAvg.ActMAvg))
 	}
 	tmr.Stop()
@@ -274,5 +273,8 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, epcs int, verbose b
 	} else {
 		net.ThreadReport()
 		fmt.Printf("Total Secs: %6.3g\n", tmr.TotalSecs())
+		net.TimerReport()
 	}
+
+	net.GPU.Destroy()
 }
