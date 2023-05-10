@@ -656,7 +656,7 @@ func (nt *Network) SizeReport() string {
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
 			projMemSynapses := projNumSynapses * memSynapse
-			projMemIdxs := len(pj.RecvConIdx)*4 + len(pj.SendSynIdx)*4 + len(pj.SendConIdx)*4
+			projMemIdxs := len(pj.RecvConIdx)*4 + len(pj.RecvSynIdx)*4 + len(pj.SendConIdx)*4
 			globalMemSynapses += projMemSynapses + projMemIdxs
 			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
 				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())

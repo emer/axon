@@ -41,10 +41,10 @@ type PrjnIdxs struct {
 	SendLay    uint32 // index of the sending layer in global list of layers
 	SendNeurSt uint32 // starting index of neurons in sending layer -- so we don't need layer to get to neurons
 	SendNeurN  uint32 // number of neurons in send layer
-	SynapseSt  uint32 // start index into global Synapse array: [Layer][RecvPrjns][Synapses]
-	RecvConSt  uint32 // start index into global PrjnRecvCon array: [Layer][RecvPrjns][RecvNeurons]
-	SendSynSt  uint32 // start index into global sender-based Synapse index array: [Layer][SendPrjns][Synapses]
+	SynapseSt  uint32 // start index into global Synapse array: [Layer][SendPrjns][Synapses]
 	SendConSt  uint32 // start index into global PrjnSendCon array: [Layer][SendPrjns][SendNeurons]
+	RecvConSt  uint32 // start index into global PrjnRecvCon array: [Layer][RecvPrjns][RecvNeurons]
+	RecvSynSt  uint32 // start index into global sender-based Synapse index array: [Layer][SendPrjns][Synapses]
 	GBufSt     uint32 // start index into global PrjnGBuf global array: [Layer][RecvPrjns][RecvNeurons][MaxDelay+1]
 	GSynSt     uint32 // start index into global PrjnGSyn global array: [Layer][RecvPrjns][RecvNeurons]
 
@@ -97,7 +97,7 @@ type PrjnParams struct {
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
 	BLA    BLAPrjnParams    `viewif:"PrjnType=BLAPrjn" view:"inline" desc:"Basolateral Amygdala projection parameters."`
 
-	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
+	Idxs PrjnIdxs `desc:"recv and send neuron-level projection index array access info"`
 }
 
 func (pj *PrjnParams) Defaults() {

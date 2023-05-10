@@ -16,9 +16,9 @@
 // Set 1: effectively uniform prjn params as structured buffers in storage
 [[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
 // [[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(2, 1)]] StructuredBuffer<uint> SendPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
 [[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> SendSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
@@ -43,11 +43,11 @@ void SynCaSendPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni,
 	
 	float snCaSyn = pj.Learn.KinaseCa.SpikeG * sn.CaSyn;
 	uint cni = pj.Idxs.SendConSt + ni;
-	uint synst = pj.Idxs.SendSynSt + SendCon[cni].Start;
+	uint synst = pj.Idxs.RecvSynSt + SendCon[cni].Start;
 	uint synn = SendCon[cni].N;
 	
 	for (uint ci = 0; ci < synn; ci++) {
-		SynCaSendSyn(ctx, pj, Synapses[SendSynIdxs[synst + ci]], snCaSyn, updtThr);
+		SynCaSendSyn(ctx, pj, Synapses[RecvSynIdxs[synst + ci]], snCaSyn, updtThr);
 	}
 }
 
@@ -60,7 +60,7 @@ void SynCaSend2(in Context ctx, in LayerParams ly, uint nin, in Neuron sn) {
 	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
 	
 	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {
-		SynCaSendPrjn(ctx, Prjns[SendPrjnIdxs[ly.Idxs.SendSt + pi]], ly, ni, sn, updtThr);
+		SynCaSendPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.SendSt + pi]], ly, ni, sn, updtThr);
 	}
 }
 

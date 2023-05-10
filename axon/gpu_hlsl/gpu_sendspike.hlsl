@@ -18,9 +18,9 @@
 // Set 1: effectively uniform prjn params as structured buffers in storage
 [[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
 // [[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(2, 1)]] StructuredBuffer<uint> SendPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
 [[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> SendSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
@@ -54,10 +54,10 @@ void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron sn)
 	}
 	uint recvNeurSt = pj.Idxs.RecvNeurSt;
 	uint cni = pj.Idxs.SendConSt + sendIdx;
-	uint synst = pj.Idxs.SendSynSt + SendCon[cni].Start;
+	uint synst = pj.Idxs.RecvSynSt + SendCon[cni].Start;
 	uint synn = SendCon[cni].N;
 	for (uint ci = 0; ci < synn; ci++) {
-		SendSpikeSyn(ctx, pj, Synapses[SendSynIdxs[synst + ci]], sendVal, recvNeurSt);
+		SendSpikeSyn(ctx, pj, Synapses[RecvSynIdxs[synst + ci]], sendVal, recvNeurSt);
 	}
 }
 
@@ -74,7 +74,7 @@ void SendSpike2(in Context ctx, LayerParams ly, uint nin, inout Neuron sn) {
 	PostSpike(ctx, ly, ni, sn, Pools[sn.SubPoolN], Pools[Layers[sn.LayIdx].Idxs.PoolSt], LayVals[sn.LayIdx]);
 	
 	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {
-		SendSpikePrjn(ctx, Prjns[SendPrjnIdxs[ly.Idxs.SendSt + pi]], ni, sn);
+		SendSpikePrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.SendSt + pi]], ni, sn);
 	}
 }
 

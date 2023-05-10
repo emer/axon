@@ -52,15 +52,15 @@ type NetworkBase struct {
 	LayVals      []LayerVals   `view:"-" desc:"[Layers] array of layer values, in 1-to-1 correspondence with Layers"`
 	Pools        []Pool        `view:"-" desc:"[Layers][Pools] array of inhibitory pools for all layers."`
 	Neurons      []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
-	Prjns        []*Prjn       `view:"-" desc:"[Layers][RecvPrjns] pointers to all projections in the network"`
-	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][RecvPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns"`
-	Synapses     []Synapse     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][SendNeurons] entire network's allocation of synapses"`
-	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt."`
+	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
+	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
+	Synapses     []Synapse     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based"`
+	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][RecvPrjnIdxs][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
+	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based."`
 	PrjnGBuf     []int32       `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
 	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
-	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][SendPrjnIdxs][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the SendSynIdxs array of sender-organized indexes into synapses."`
-	SendPrjnIdxs []uint32      `view:"-" desc:"[Layers][SendPrjns] indexes into Prjns (organized by RecvPrjn) organized by sending projections -- needed for iterating through sending prjns efficiently on GPU."`
-	SendSynIdxs  []uint32      `view:"-" desc:"[Layers][SendPrjns][SendNeurons[RecvNeurons] indexes into Synapses for each sending neuron, organized into blocks according to PrjnSendCon, for sender-based access, which is slower but needed for sparse path."`
+	RecvPrjnIdxs []uint32      `view:"-" desc:"[Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU."`
+	RecvSynIdxs  []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons[SendNeurons] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
 
 	Exts []float32 `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
@@ -530,7 +530,7 @@ func (nt *NetworkBase) Build() error {
 		if ly.LayerType().IsExt() {
 			totExts += nn
 		}
-		totPrjns += ly.NRecvPrjns() // now doing recv
+		totPrjns += ly.NSendPrjns() // either way
 		cls := strings.Split(ly.Class(), " ")
 		for _, cl := range cls {
 			ll := nt.LayClassMap[cl]
@@ -554,7 +554,7 @@ func (nt *NetworkBase) Build() error {
 	totSendCon := 0
 	neurIdx := 0
 	prjnIdx := 0
-	sprjnIdx := 0
+	rprjnIdx := 0
 	poolIdx := 0
 	extIdx := 0
 	for li, ly := range nt.Layers {
@@ -597,10 +597,10 @@ func (nt *NetworkBase) Build() error {
 			ly.Exts = nil
 			ly.Params.Idxs.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
 		}
-		rprjns := *ly.RecvPrjns()
-		ly.Params.Idxs.RecvSt = uint32(prjnIdx)
-		ly.Params.Idxs.RecvN = uint32(len(rprjns))
-		for pi, pj := range rprjns {
+		sprjns := *ly.SendPrjns()
+		ly.Params.Idxs.SendSt = uint32(prjnIdx)
+		ly.Params.Idxs.SendN = uint32(len(sprjns))
+		for pi, pj := range sprjns {
 			pii := prjnIdx + pi
 			pj.Params = &nt.PrjnParams[pii]
 			nt.Prjns[pii] = pj
@@ -614,17 +614,17 @@ func (nt *NetworkBase) Build() error {
 			nrn.SubPoolN = uint32(poolIdx) + nrn.SubPool
 		}
 		// now collect total number of synapses after layer build
-		for _, pj := range rprjns {
-			totSynapses += len(pj.RecvConIdx)
-			totRecvCon += nn // sep vals for each recv neuron per prjn
+		for _, pj := range sprjns {
+			totSynapses += len(pj.SendConIdx)
+			totSendCon += nn // sep vals for each send neuron per prjn
 		}
-		sprjns := *ly.SendPrjns()
-		ly.Params.Idxs.SendSt = uint32(sprjnIdx)
-		ly.Params.Idxs.SendN = uint32(len(sprjns))
-		totSendCon += nn * len(sprjns)
-		sprjnIdx += len(sprjns)
+		rprjns := *ly.RecvPrjns()
+		ly.Params.Idxs.RecvSt = uint32(rprjnIdx)
+		ly.Params.Idxs.RecvN = uint32(len(rprjns))
+		totRecvCon += nn * len(rprjns)
+		rprjnIdx += len(rprjns)
 		neurIdx += nn
-		prjnIdx += len(rprjns)
+		prjnIdx += len(sprjns)
 		poolIdx += np
 	}
 	if totSynapses > math.MaxUint32 {
@@ -632,62 +632,69 @@ func (nt *NetworkBase) Build() error {
 	}
 
 	nt.Synapses = make([]Synapse, totSynapses)
-	nt.PrjnRecvCon = make([]StartN, totRecvCon)
 	nt.PrjnSendCon = make([]StartN, totSendCon)
-	nt.SendPrjnIdxs = make([]uint32, sprjnIdx)
-	nt.SendSynIdxs = make([]uint32, totSynapses)
+	nt.PrjnRecvCon = make([]StartN, totRecvCon)
+	nt.RecvPrjnIdxs = make([]uint32, rprjnIdx)
+	nt.RecvSynIdxs = make([]uint32, totSynapses)
 
-	// distribute synapses, recv
-	sidx := 0
+	// distribute synapses, send
+	syIdx := 0
 	pjidx := 0
-	recvConIdx := 0
+	sendConIdx := 0
 	for _, ly := range nt.Layers {
-		for _, pj := range ly.RcvPrjns {
-			slay := pj.Send
-			nsyn := len(pj.RecvConIdx)
-			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
-			pj.Params.Idxs.SynapseSt = uint32(sidx)
+		for _, pj := range ly.SndPrjns {
+			rlay := pj.Recv
+			pj.Params.Idxs.RecvLay = uint32(rlay.Idx)
+			pj.Params.Idxs.RecvNeurSt = uint32(rlay.NeurStIdx)
+			pj.Params.Idxs.RecvNeurN = uint32(len(rlay.Neurons))
+			pj.Params.Idxs.SendLay = uint32(ly.Idx)
+			pj.Params.Idxs.SendNeurSt = uint32(ly.NeurStIdx)
+			pj.Params.Idxs.SendNeurN = uint32(len(ly.Neurons))
+
+			nsyn := len(pj.SendConIdx)
+			pj.Params.Idxs.SendConSt = uint32(sendConIdx)
+			pj.Params.Idxs.SynapseSt = uint32(syIdx)
 			pj.Params.Idxs.PrjnIdx = uint32(pjidx)
-			pj.Syns = nt.Synapses[sidx : sidx+nsyn]
-			for ri := range ly.Neurons {
-				rcon := pj.RecvCon[ri]
-				nt.PrjnRecvCon[recvConIdx] = rcon
-				recvConIdx++
-				syns := pj.RecvSyns(ri)
-				for ci := range syns {
-					sy := &syns[ci]
-					sy.SynIdx = uint32(sidx)
-					sy.RecvIdx = uint32(ri + ly.NeurStIdx) // network-global idx
-					sy.SendIdx = pj.RecvConIdx[int(rcon.Start)+ci] + uint32(slay.NeurStIdx)
+			pj.Syns = nt.Synapses[syIdx : syIdx+nsyn]
+			for si := range ly.Neurons {
+				scon := pj.SendCon[si]
+				nt.PrjnSendCon[sendConIdx] = scon
+				sendConIdx++
+				syns := pj.SendSyns(si)
+				for syi := range syns {
+					sy := &syns[syi]
+					sy.SynIdx = uint32(syIdx)
+					sy.SendIdx = uint32(si + ly.NeurStIdx) // network-global idx
+					sy.RecvIdx = pj.SendConIdx[int(scon.Start)+syi] + uint32(rlay.NeurStIdx)
 					sy.PrjnIdx = uint32(pjidx)
-					sidx++
+					syIdx++
 				}
 			}
 			pjidx++
 		}
 	}
 
-	// update sending synapse / prjn info
-	sprjnIdx = 0
-	sendConIdx := 0
-	sidx = 0
+	// update recv synapse / prjn info
+	rprjnIdx = 0
+	recvConIdx := 0
+	syIdx = 0
 	for _, ly := range nt.Layers {
-		for _, pj := range ly.SndPrjns {
-			nt.SendPrjnIdxs[sprjnIdx] = pj.Params.Idxs.PrjnIdx
-			pj.Params.Idxs.SendConSt = uint32(sendConIdx)
-			pj.Params.Idxs.SendSynSt = uint32(sidx)
-			for si := range ly.Neurons {
-				scon := pj.SendCon[si]
-				nt.PrjnSendCon[sendConIdx] = scon
-				sendConIdx++
-				sidxs := pj.SendSynIdxs(si)
-				for _, ssi := range sidxs {
+		for _, pj := range ly.RcvPrjns {
+			nt.RecvPrjnIdxs[rprjnIdx] = pj.Params.Idxs.PrjnIdx
+			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
+			pj.Params.Idxs.RecvSynSt = uint32(syIdx)
+			for ri := range ly.Neurons {
+				rcon := pj.RecvCon[ri]
+				nt.PrjnRecvCon[recvConIdx] = rcon
+				recvConIdx++
+				syIdxs := pj.RecvSynIdxs(ri)
+				for _, ssi := range syIdxs {
 					sy := &pj.Syns[ssi]
-					nt.SendSynIdxs[sidx] = sy.SynIdx
-					sidx++
+					nt.RecvSynIdxs[syIdx] = sy.SynIdx
+					syIdx++
 				}
 			}
-			sprjnIdx++
+			rprjnIdx++
 		}
 	}
 
@@ -705,18 +712,9 @@ func (nt *NetworkBase) Build() error {
 func (nt *NetworkBase) BuildPrjnGBuf() {
 	nt.MaxDelay = 0
 	npjneur := uint32(0)
-	pjidx := uint32(0)
 	for _, ly := range nt.Layers {
 		nneur := uint32(len(ly.Neurons))
 		for _, pj := range ly.RcvPrjns {
-			slay := pj.Send
-			pj.Params.Idxs.PrjnIdx = pjidx
-			pj.Params.Idxs.RecvLay = uint32(ly.Idx)
-			pj.Params.Idxs.RecvNeurSt = uint32(ly.NeurStIdx)
-			pj.Params.Idxs.RecvNeurN = uint32(len(ly.Neurons))
-			pj.Params.Idxs.SendLay = uint32(slay.Idx)
-			pj.Params.Idxs.SendNeurSt = uint32(slay.NeurStIdx)
-			pj.Params.Idxs.SendNeurN = uint32(len(slay.Neurons))
 			if pj.Params.Com.MaxDelay > nt.MaxDelay {
 				nt.MaxDelay = pj.Params.Com.MaxDelay
 			}
