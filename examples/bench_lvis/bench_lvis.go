@@ -60,7 +60,7 @@ var ParamSets = params.Sets{
 }
 
 func ConfigNet(b *testing.B, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim,
-	threadNeuron, threadSendSpike, threadSynCa int, verbose bool) {
+	threads int, verbose bool) {
 	net.InitName(net, "BenchLvisNet")
 
 	/*
@@ -128,18 +128,13 @@ func ConfigNet(b *testing.B, net *axon.Network, inputNeurs, inputPools, pathways
 		panic(err)
 	}
 
-	if threadNeuron == 0 && threadSendSpike == 0 && threadSynCa == 0 {
+	if threads == 0 {
 		if verbose {
 			fmt.Print("Threading: using default values\n")
 		}
 	} else {
-		// override defaults: neurons, sendSpike, synCa
-		err := net.Threads.Set(threadNeuron, threadSendSpike, threadSynCa)
-		if err != nil {
-			panic(err)
-		}
+		net.SetNThreads(threads)
 	}
-	// override defaults: neurons, sendSpike, synCa, learn
 
 	net.InitWts()
 }
@@ -272,7 +267,6 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int,
 		fmt.Printf("Took %6.4g secs for %v epochs, avg per epc: %6.4g\n", tmr.TotalSecs(), epcs, tmr.TotalSecs()/float64(epcs))
 		net.TimerReport()
 	} else {
-		net.ThreadReport()
 		fmt.Printf("Total Secs: %6.3g\n", tmr.TotalSecs())
 		net.TimerReport()
 	}

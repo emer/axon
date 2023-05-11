@@ -4,6 +4,8 @@
 
 package axon
 
+import "sync/atomic"
+
 // prjn_compute.go has the core computational methods, for the CPU.
 // On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
 // files, which correspond to different shaders for each different function.
@@ -15,7 +17,7 @@ package axon
 // into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
+func (pj *Prjn) SendSpike(ctx *Context, sendIdx uint32, nrn *Neuron) {
 	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
 	if pj.PrjnType() == CTCtxtPrjn {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
@@ -29,13 +31,13 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 	}
 	pjcom := &pj.Params.Com
 	wrOff := pjcom.WriteOff(ctx.CyclesTotal)
-	syns := pj.SendSyns(sendIdx)
+	syns := pj.SendSyns(int(sendIdx))
 	for syi := range syns {
 		sy := &syns[syi]
 		recvIdx := pj.Params.SynRecvLayIdx(sy)
 		sv := int32(scale * sy.Wt)
 		bi := pjcom.WriteIdxOff(recvIdx, wrOff, pj.Params.Idxs.RecvNeurN)
-		pj.GBuf[bi] += sv
+		atomic.AddInt32(&pj.GBuf[bi], sv)
 	}
 
 }
@@ -48,10 +50,12 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx int, nrn *Neuron) {
 // SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
+// Sender will update even if recv neuron spiked -- recv will skip sender spike cases.
 func (pj *Prjn) SynCaSend(ctx *Context, si uint32, sn *Neuron, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
+		return
+	}
+	if !pj.Params.DoSynCa() {
 		return
 	}
 	rlay := pj.Recv
@@ -61,17 +65,19 @@ func (pj *Prjn) SynCaSend(ctx *Context, si uint32, sn *Neuron, updtThr float32) 
 		sy := &syns[syi]
 		ri := pj.Params.SynRecvLayIdx(sy)
 		rn := &rlay.Neurons[ri]
-		pj.Params.SynCaSendSyn(ctx, sy, rn, snCaSyn, updtThr)
+		pj.Params.SynCaSyn(ctx, sy, rn, snCaSyn, updtThr)
 	}
 }
 
 // SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking.
-// This pass goes through in recv order, filtering on recv spike.
-// Threading: Can be called concurrently for all prjns, since it updates synapses
-// (which are local to a single prjn).
+// This pass goes through in recv order, filtering on recv spike,
+// and skips when sender spiked, as those were already done in Send version.
 func (pj *Prjn) SynCaRecv(ctx *Context, ri uint32, rn *Neuron, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
+		return
+	}
+	if !pj.Params.DoSynCa() {
 		return
 	}
 	slay := pj.Send
@@ -81,7 +87,10 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ri uint32, rn *Neuron, updtThr float32) 
 		sy := &pj.Syns[syi]
 		si := pj.Params.SynSendLayIdx(sy)
 		sn := &slay.Neurons[si]
-		pj.Params.SynCaRecvSyn(ctx, sy, sn, rnCaSyn, updtThr)
+		if sn.Spike > 0 {
+			continue
+		}
+		pj.Params.SynCaSyn(ctx, sy, sn, rnCaSyn, updtThr)
 	}
 }
 

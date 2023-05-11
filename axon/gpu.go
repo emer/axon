@@ -29,18 +29,18 @@ var content embed.FS
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
 
 // Set 1: effectively uniform prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
-[[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+[[vk::binding(1, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
@@ -56,9 +56,9 @@ Set: 0
 Set: 1
     Role: Storage
         Var: 0:	Prjns	Struct[5]	(size: 336)	Vals: 1
-        Var: 1:	RecvCon	Struct[281]	(size: 16)	Vals: 1
+        Var: 1:	SendCon	Struct[242]	(size: 16)	Vals: 1
         Var: 2:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
-        Var: 3:	SendCon	Struct[242]	(size: 16)	Vals: 1
+        Var: 3:	RecvCon	Struct[281]	(size: 16)	Vals: 1
         Var: 4:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
 Set: 2
     Role: Storage
@@ -158,9 +158,9 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 
 	// note: prjns must be in Storage here because couldn't have both Layers and Prjns as uniform.
 	gp.Prjns.AddStruct("Prjns", int(unsafe.Sizeof(PrjnParams{})), len(gp.Net.PrjnParams), vgpu.Storage, vgpu.ComputeShader)
-	gp.Prjns.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
-	gp.Prjns.Add("RecvPrjnIdxs", vgpu.Uint32, len(gp.Net.RecvPrjnIdxs), vgpu.Storage, vgpu.ComputeShader)
 	gp.Prjns.AddStruct("SendCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnSendCon), vgpu.Storage, vgpu.ComputeShader)
+	gp.Prjns.Add("RecvPrjnIdxs", vgpu.Uint32, len(gp.Net.RecvPrjnIdxs), vgpu.Storage, vgpu.ComputeShader)
+	gp.Prjns.AddStruct("RecvCon", int(unsafe.Sizeof(StartN{})), len(gp.Net.PrjnRecvCon), vgpu.Storage, vgpu.ComputeShader)
 	gp.Prjns.Add("RecvSynIdxs", vgpu.Uint32, len(gp.Net.RecvSynIdxs), vgpu.Storage, vgpu.ComputeShader)
 
 	gp.Structs.AddStruct("Ctx", int(unsafe.Sizeof(Context{})), 1, vgpu.Storage, vgpu.ComputeShader)
@@ -187,8 +187,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewComputePipelineEmbed("CycleInc", content, "shaders/gpu_cycleinc.spv")
 	gp.Sys.NewComputePipelineEmbed("SendSpike", content, "shaders/gpu_sendspike.spv")
 	gp.Sys.NewComputePipelineEmbed("SynCa", content, "shaders/gpu_synca.spv")
-	gp.Sys.NewComputePipelineEmbed("SynCaRecv", content, "shaders/gpu_syncarecv.spv")
-	gp.Sys.NewComputePipelineEmbed("SynCaSend", content, "shaders/gpu_syncasend.spv")
 	gp.Sys.NewComputePipelineEmbed("CyclePost", content, "shaders/gpu_cyclepost.spv")
 
 	gp.Sys.NewComputePipelineEmbed("NewState", content, "shaders/gpu_newstate.spv")
@@ -213,7 +211,6 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	gp.Sys.NewEvent("Cycle")
 	gp.Sys.NewEvent("CyclePost")
 	gp.Sys.NewEvent("SendSpike")
-	gp.Sys.NewEvent("SynCaSend")
 
 	gp.Sys.Config()
 
@@ -230,9 +227,9 @@ func (gp *GPU) Config(ctx *Context, net *Network) {
 	vars.BindDynValIdx(0, "Layers", 0)
 
 	vars.BindDynValIdx(1, "Prjns", 0)
-	vars.BindDynValIdx(1, "RecvCon", 0)
-	vars.BindDynValIdx(1, "RecvPrjnIdxs", 0)
 	vars.BindDynValIdx(1, "SendCon", 0)
+	vars.BindDynValIdx(1, "RecvPrjnIdxs", 0)
+	vars.BindDynValIdx(1, "RecvCon", 0)
 	vars.BindDynValIdx(1, "RecvSynIdxs", 0)
 
 	vars.BindDynValIdx(2, "Ctx", 0)
@@ -290,14 +287,14 @@ func (gp *GPU) CopyIdxsToStaging() {
 	if !gp.On {
 		return
 	}
-	_, rconv, _ := gp.Prjns.ValByIdxTry("RecvCon", 0)
-	rconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnRecvCon[0]))
+	_, sconv, _ := gp.Prjns.ValByIdxTry("SendCon", 0)
+	sconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnSendCon[0]))
 
 	_, spiv, _ := gp.Prjns.ValByIdxTry("RecvPrjnIdxs", 0)
 	spiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvPrjnIdxs[0]))
 
-	_, sconv, _ := gp.Prjns.ValByIdxTry("SendCon", 0)
-	sconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnSendCon[0]))
+	_, rconv, _ := gp.Prjns.ValByIdxTry("RecvCon", 0)
+	rconv.CopyFromBytes(unsafe.Pointer(&gp.Net.PrjnRecvCon[0]))
 
 	_, ssiv, _ := gp.Prjns.ValByIdxTry("RecvSynIdxs", 0)
 	ssiv.CopyFromBytes(unsafe.Pointer(&gp.Net.RecvSynIdxs[0]))
@@ -830,14 +827,13 @@ func (gp *GPU) RunCycleOneCmd() vk.CommandBuffer {
 
 	gp.RunPipelineCmd(cmd, "Cycle", len(gp.Net.Neurons), "PoolGi", "Cycle")
 
+	// todo: do over SendCon instead
 	gp.RunPipelineCmd(cmd, "SendSpike", len(gp.Net.Neurons), "Cycle", "SendSpike")
 	if gp.Ctx.Testing.IsTrue() {
 		gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
 	} else {
 		gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CyclePost")
-		gp.RunPipelineCmd(cmd, "SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
-		// use send first b/c just did SendSpike -- tiny bit faster
-		gp.RunPipelineCmd(cmd, "SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
+		gp.RunPipelineCmd(cmd, "SynCa", len(gp.Net.Neurons), "CyclePost", "CycleEnd")
 	}
 
 	gp.Sys.ComputeWaitEventsCmd(cmd, "CycleEnd")
@@ -899,9 +895,7 @@ func (gp *GPU) RunCyclesCmd() vk.CommandBuffer {
 			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CycleEnd")
 		} else {
 			gp.RunPipelineCmd(cmd, "CyclePost", 1, "SendSpike", "CyclePost")
-			gp.RunPipelineCmd(cmd, "SynCaSend", len(gp.Net.Neurons), "CyclePost", "SynCaSend")
-			// use send first b/c just did SendSpike -- tiny bit faster
-			gp.RunPipelineCmd(cmd, "SynCaRecv", len(gp.Net.Neurons), "SynCaSend", "CycleEnd")
+			gp.RunPipelineCmd(cmd, "SynCa", len(gp.Net.Neurons), "CyclePost", "CycleEnd")
 		}
 		if ci < CyclesN-1 {
 			gp.RunPipelineCmd(cmd, "CycleInc", 1, "CycleEnd", "CycleInc") // we do
@@ -932,8 +926,7 @@ func (gp *GPU) RunCycleSeparateFuns() {
 	} else {
 		gp.RunPipelineWait("SendSpike", len(gp.Net.Neurons))
 		gp.RunPipelineWait("CyclePost", 1)
-		gp.RunPipelineWait("SynCaSend", len(gp.Net.Neurons))
-		gp.RunPipelineWait("SynCaRecv", len(gp.Net.Neurons))
+		gp.RunPipelineWait("SynCa", len(gp.Net.Neurons))
 	}
 	gp.SyncLayerStateFmGPU()
 }
@@ -1077,8 +1070,8 @@ func (gp *GPU) RunWtFmDWtCmd() vk.CommandBuffer {
 	nrr := gp.SyncRegionStruct("Neurons")
 
 	gp.StartRunCmd(cmd)
-	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr) // staging -> GPU
-	gp.RunPipelineCmd(cmd, "DWtSubMean", len(gp.Net.Neurons), "", "PoolGi")
+	gp.Sys.ComputeCmdCopyToGPUCmd(cmd, nrr)                                 // staging -> GPU
+	gp.RunPipelineCmd(cmd, "DWtSubMean", len(gp.Net.Neurons), "", "PoolGi") // using poolgi for kicks
 	gp.RunPipelineCmd(cmd, "WtFmDWt", len(gp.Net.Synapses), "PoolGi", "")
 	gp.Sys.ComputeCmdEndCmd(cmd)
 	return cmd

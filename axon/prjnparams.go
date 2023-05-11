@@ -34,7 +34,7 @@ type StartN struct {
 
 // PrjnIdxs contains prjn-level index information into global memory arrays
 type PrjnIdxs struct {
-	PrjnIdx    uint32 // index of the projection in global prjn list: [Layer][RecvPrjns]
+	PrjnIdx    uint32 // index of the projection in global prjn list: [Layer][SendPrjns]
 	RecvLay    uint32 // index of the receiving layer in global list of layers
 	RecvNeurSt uint32 // starting index of neurons in recv layer -- so we don't need layer to get to neurons
 	RecvNeurN  uint32 // number of neurons in recv layer
@@ -224,50 +224,16 @@ func (pj *PrjnParams) DoSynCa() bool {
 	return true
 }
 
-// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCaSyn updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking, threaded over neurons.
-// This pass updates sending projections -- all sending synapses are
-// unique to a given sending neuron, so this is threadsafe.
-// Cannot do both send and recv in same pass without potential for
-// race conditions.
-func (pj *PrjnParams) SynCaSendSyn(ctx *Context, sy *Synapse, rn *Neuron, snCaSyn, updtThr float32) {
-	if !pj.DoSynCa() {
+func (pj *PrjnParams) SynCaSyn(ctx *Context, sy *Synapse, nrn *Neuron, otherCaSyn, updtThr float32) {
+	if nrn.CaSpkP < updtThr && nrn.CaSpkD < updtThr {
 		return
 	}
-	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
-		return
-	}
-	supt := sy.CaUpT
-	if supt == ctx.CyclesTotal { // already updated in recv pass
-		return
-	}
-	sy.CaUpT = ctx.CyclesTotal
-	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
-	sy.Ca = snCaSyn * rn.CaSyn
+	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, sy.CaUpT, &sy.CaM, &sy.CaP, &sy.CaD)
+	sy.Ca = nrn.CaSyn * otherCaSyn
 	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
-}
-
-// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking, threaded over neurons.
-// This pass updates recv projections -- all recv synapses are
-// unique to a given recv neuron, so this is threadsafe.
-// Cannot do both send and recv in same pass without potential for
-// race conditions.
-func (pj *PrjnParams) SynCaRecvSyn(ctx *Context, sy *Synapse, sn *Neuron, rnCaSyn, updtThr float32) {
-	if !pj.DoSynCa() {
-		return
-	}
-	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
-		return
-	}
-	supt := sy.CaUpT
-	if supt == ctx.CyclesTotal { // already updated in sender pass
-		return
-	}
 	sy.CaUpT = ctx.CyclesTotal
-	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, supt, &sy.CaM, &sy.CaP, &sy.CaD)
-	sy.Ca = sn.CaSyn * rnCaSyn
-	pj.Learn.KinaseCa.FmCa(sy.Ca, &sy.CaM, &sy.CaP, &sy.CaD)
 }
 
 // CycleSynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.

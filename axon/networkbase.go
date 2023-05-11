@@ -55,18 +55,18 @@ type NetworkBase struct {
 	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
 	Synapses     []Synapse     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based"`
-	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][RecvPrjnIdxs][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
+	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
 	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based."`
 	PrjnGBuf     []int32       `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
 	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 	RecvPrjnIdxs []uint32      `view:"-" desc:"[Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU."`
-	RecvSynIdxs  []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons[SendNeurons] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
+	RecvSynIdxs  []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][Syns] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
 
 	Exts []float32 `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
 	Rand        erand.SysRand          `view:"-" desc:"random number generator for the network -- all random calls must use this -- set seed here for weight initialization values"`
 	RndSeed     int64                  `inactive:"+" desc:"random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights"`
-	Threads     NetThreads             `desc:"threading config and implementation for CPU"`
+	NThreads    int                    `desc:"number of threads to use for parallel processing"`
 	GPU         GPU                    `view:"inline" desc:"GPU implementation"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
@@ -545,9 +545,6 @@ func (nt *NetworkBase) Build() error {
 	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
 	nt.Exts = make([]float32, totExts)
-
-	// we can't do this in Defaults(), since we need to know the number of neurons etc.
-	nt.Threads.SetDefaults(totNeurons, totPrjns, nLayers)
 
 	totSynapses := 0
 	totRecvCon := 0

@@ -49,6 +49,7 @@ func (nt *Network) NewPrjn() emer.Prjn {
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
+	nt.SetNThreads(0) // default
 	nt.SlowInterval = 100
 	nt.SlowCtr = 0
 	for _, ly := range nt.Layers {
@@ -113,23 +114,20 @@ func (nt *Network) NewState(ctx *Context) {
 	}
 }
 
-// Cycle runs one cycle of activation updating.  It just calls the CycleImpl
-// method through the AxonNetwork interface, thereby ensuring any specialized
-// algorithm-specific version is called as needed (in general, strongly prefer
-// updating the Layer specific version).
+// Cycle runs one cycle of activation updating using threading methods.
 func (nt *Network) Cycle(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunCycle()
 		return
 	}
-	nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
 	nt.LayerMapSeq(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
 	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
-	nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
-	nt.SendSpikeFun(func(ly *Layer) { ly.SendSpike(ctx) }, "SendSpike")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.PostSpike(ctx, ni, nrn) }, "PostSpike")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SendSpike(ctx, ni, nrn) }, "SendSpike")
 	if ctx.Testing.IsFalse() {
-		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
-		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
+		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCa(ctx, ni, nrn) }, "SynCa")
 	}
 	var ldt, vta *Layer
 	for _, ly := range nt.Layers {

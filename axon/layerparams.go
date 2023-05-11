@@ -25,10 +25,6 @@ import (
 
 //gosl: start layerparams
 
-// global projection param arrays
-// var SendPrjns []PrjnParams // [Layer][SendPrjns]
-// var RecvPrjns []PrjnParams // [Layer][RecvPrjns]
-
 // LayerIdxs contains index access into network global arrays for GPU.
 type LayerIdxs struct {
 	PoolSt uint32 `inactive:"+" desc:"start of pools for this layer -- first one is always the layer-wide pool"`
@@ -575,7 +571,7 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni uint32, nrn *Neuron) {
 
 // PostSpikeSpecial does updates at neuron level after spiking has been computed.
 // This is where special layer types add extra code.
-// It also updates the CaSpkPCyc stats.
+// warning: if more than 1 layer writes to vals, gpu will fail!
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl *Pool, lpl *Pool, vals *LayerVals) {
 	nrn.Burst = nrn.CaSpkP
 	pi := int32(nrn.SubPool) - 1 // 0-n pool index
@@ -619,7 +615,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 	case RWPredLayer:
 		nrn.Act = ly.RWPred.PredRange.ClipVal(nrn.Ge) // clipped linear
 		if ni == 0 {
-			vals.Special.V1 = nrn.ActInt
+			vals.Special.V1 = nrn.ActInt // warning: if more than 1 layer writes to vals, gpu will fail!
 		} else {
 			vals.Special.V2 = nrn.ActInt
 		}
@@ -628,7 +624,7 @@ func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni uint32, nrn *Neuron, pl
 	case TDPredLayer:
 		nrn.Act = nrn.Ge // linear
 		if ni == 0 {
-			vals.Special.V1 = nrn.ActInt
+			vals.Special.V1 = nrn.ActInt // warning: if more than 1 layer writes to vals, gpu will fail!
 		} else {
 			vals.Special.V2 = nrn.ActInt
 		}

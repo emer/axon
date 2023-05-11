@@ -16,24 +16,19 @@
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
 
 // Set 1: effectively uniform prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
-// [[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-[[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+[[vk::binding(1, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
-[[vk::binding(2, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Pools]
+[[vk::binding(2, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Paools]
 [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
 [[vk::binding(4, 2)]] StructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
 [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][MaxDel+1][RecvNeurons]
 // [[vk::binding(6, 2)]] StructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
-// [[vk::binding(0, 3)]] StructuredBuffer<float> Exts;  [In / Out Layers][Neurons]
-// [[vk::binding(1, 3)]] StructuredBuffer<uint> Spikers;  // [[Neurons]] -- indexes of those that spiked
 
 void SendSpikeSyn(in Context ctx, in PrjnParams pj, in Synapse sy, in float sendVal, in uint recvNeurSt) {
 	uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(sy.RecvIdx - recvNeurSt, ctx.CyclesTotal, pj.Idxs.RecvNeurN);
@@ -54,10 +49,10 @@ void SendSpikePrjn(in Context ctx, in PrjnParams pj, uint sendIdx, in Neuron sn)
 	}
 	uint recvNeurSt = pj.Idxs.RecvNeurSt;
 	uint cni = pj.Idxs.SendConSt + sendIdx;
-	uint synst = pj.Idxs.RecvSynSt + SendCon[cni].Start;
+	uint synst = pj.Idxs.SynapseSt + SendCon[cni].Start;
 	uint synn = SendCon[cni].N;
 	for (uint ci = 0; ci < synn; ci++) {
-		SendSpikeSyn(ctx, pj, Synapses[RecvSynIdxs[synst + ci]], sendVal, recvNeurSt);
+		SendSpikeSyn(ctx, pj, Synapses[synst + ci], sendVal, recvNeurSt);
 	}
 }
 
@@ -66,15 +61,13 @@ void PostSpike(in Context ctx, in LayerParams ly, uint ni, inout Neuron nrn, in 
 	ly.PostSpike(ctx, ni, nrn, pl, vals);
 }
 
-
 void SendSpike2(in Context ctx, LayerParams ly, uint nin, inout Neuron sn) {
 	uint ni = nin - ly.Idxs.NeurSt;
-
-	// note: we can't use Spikers subset because of this call for everyone..
+	
 	PostSpike(ctx, ly, ni, sn, Pools[sn.SubPoolN], Pools[Layers[sn.LayIdx].Idxs.PoolSt], LayVals[sn.LayIdx]);
 	
 	for (uint pi = 0; pi < ly.Idxs.SendN; pi++) {
-		SendSpikePrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.SendSt + pi]], ni, sn);
+		SendSpikePrjn(ctx, Prjns[ly.Idxs.SendSt + pi], ni, sn);
 	}
 }
 

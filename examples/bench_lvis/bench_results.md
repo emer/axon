@@ -62,6 +62,55 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	        Total 	 86.643
 ```
 
+## GPU
+
+### Macbook Pro
+
+without verbose (optimized shaders) `go test -gpu -verbose=false -bench=.`
+
+About 4 sec faster than recv based, still about 2x faster than CPU.
+
+```
+Total Secs:   19.4
+TimerReport: BenchLvisNet  2 threads
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.010	    0.1
+	   GPU:Cycles 	 18.910	   97.7
+	      GPU:DWt 	  0.164	    0.8
+	GPU:MinusPhase 	  0.013	    0.1
+	 GPU:NewState 	  0.101	    0.5
+	GPU:PlusPhase 	  0.012	    0.1
+	GPU:PlusStart 	  0.004	    0.0
+	  GPU:WtFmDWt 	  0.143	    0.7
+	 WtFmDWtLayer 	  0.002	    0.0
+	        Total 	 19.359
+```
+
+with verbose, calls each shader separately `go test -gpu -bench=.`
+
+```
+Took  25.07 secs for 1 epochs, avg per epc:  25.07
+TimerReport: BenchLvisNet  2 threads
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.010	    0.0
+	GPU:BetweenGi 	  0.411	    1.7
+	    GPU:Cycle 	  0.755	    3.1
+	GPU:CyclePost 	  0.475	    2.0
+	      GPU:DWt 	  0.164	    0.7
+	GPU:GatherSpikes 	  1.716	    7.2
+	    GPU:LayGi 	  0.419	    1.7
+	GPU:MinusPhase 	  0.013	    0.1
+	 GPU:NewState 	  0.101	    0.4
+	GPU:PlusPhase 	  0.011	    0.0
+	GPU:PlusStart 	  0.003	    0.0
+	   GPU:PoolGi 	  0.439	    1.8
+	GPU:SendSpike 	  4.370	   18.2
+	    GPU:SynCa 	 14.962	   62.4
+	  GPU:WtFmDWt 	  0.142	    0.6
+	 WtFmDWtLayer 	  0.002	    0.0
+	        Total 	 23.995
+```
+
 # 1.7.23 Receiver-based Synapses
 
 ## CPU

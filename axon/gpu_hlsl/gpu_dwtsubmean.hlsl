@@ -14,23 +14,20 @@
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
 
 // Set 1: effectively uniform prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
-[[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
-// [[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][SendPrjns][SendNeurons]
-// [[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
-// [[vk::binding(4, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+// [[vk::binding(1, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(3, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 1)]] StructuredBuffer<uint> RecvSynIdxs; // [Layer][RecvPrjns][RecvNeurons][Syns]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 // [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
-// [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
-// [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 
 // Set 3: external inputs
-// [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  // [In / Out Layers][Neurons]
 
 void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, in Neuron rn) {
 	float sm = pj.Learn.Trace.SubMean;
@@ -39,13 +36,13 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni
 	}
 	float rnCaSyn = pj.Learn.KinaseCa.SpikeG * rn.CaSyn;
 	uint cni = pj.Idxs.RecvConSt + ni;
-	uint synst = pj.Idxs.SynapseSt + RecvCon[cni].Start;
+	uint synst = pj.Idxs.RecvSynSt + RecvCon[cni].Start;
 	uint synn = RecvCon[cni].N;
 
 	float sumDWt = 0;
 	int nnz = 0;
 	for (uint ci = 0; ci < synn; ci++) {
-		float dw = Synapses[synst + ci].DWt;
+		float dw = Synapses[RecvSynIdxs[synst + ci]].DWt;
 		if (dw != 0) {
 			sumDWt += dw;
 			nnz++;
@@ -56,9 +53,9 @@ void DWtSubMeanPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni
 	}
 	sumDWt /= float(nnz);
 	for (uint ci = 0; ci < synn; ci++) {
-		float dw = Synapses[synst + ci].DWt;
+		float dw = Synapses[RecvSynIdxs[synst + ci]].DWt;
 		if (dw != 0) {
-			Synapses[synst + ci].DWt -= sm * sumDWt;
+			Synapses[RecvSynIdxs[synst + ci]].DWt -= sm * sumDWt;
 		}
 	}	
 }
@@ -67,7 +64,7 @@ void DWtSubMean2(in Context ctx, in LayerParams ly, uint nin, in Neuron rn) {
 	uint ni = nin - ly.Idxs.NeurSt; // layer-based as in Go
 	
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		DWtSubMeanPrjn(ctx, Prjns[ly.Idxs.RecvSt + pi], ly, ni, rn);
+		DWtSubMeanPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ni, rn);
 	}
 }
 
