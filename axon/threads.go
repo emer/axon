@@ -80,10 +80,10 @@ func (nt *NetworkBase) NeuronMapSeq(fun func(ly *Layer, ni uint32, nrn *Neuron),
 // NeuronMapPar applies function of given name to all neurons
 // using as many go routines as configured in NetThreads.Neurons.
 func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
-	nt.FunTimerStart(funame)
 	if nt.NThreads <= 1 {
 		nt.NeuronMapSeq(fun, funame)
 	} else {
+		nt.FunTimerStart(funame)
 		ParallelRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
@@ -91,8 +91,8 @@ func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron),
 				fun(ly, uint32(ni-ly.NeurStartIdx()), nrn)
 			}
 		}, len(nt.Neurons), nt.NThreads)
+		nt.FunTimerStop(funame)
 	}
-	nt.FunTimerStop(funame)
 }
 
 //////////////////////////////////////////////////////////////

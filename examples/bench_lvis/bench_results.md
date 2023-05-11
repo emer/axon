@@ -20,7 +20,7 @@ In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on both AMD64 and A100 -
 
 ## CPU
 
-### CPU 1.7.24: Macbook Pro
+### CPU 1.7.24: Macbook Pro M1
 
 about 10 seconds faster sender-based vs. previous recv based (20%):
 
@@ -45,6 +45,8 @@ TimerReport: BenchLvisNet  2 threads
 ### CPU 1.7.24: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
 about 23 seconds faster (20%) as well here, with huge speedup in SendSpike as expected.
+
+BUT: the performance relative to v1.6.16 is terrible!
 
 ```
 Took  86.99 secs for 1 epochs, avg per epc:  86.99
@@ -108,7 +110,7 @@ TimerReport: BenchLvisNet  4 threads
 
 ## GPU
 
-### GPU 1.7.24: Macbook Pro
+### GPU 1.7.24: Macbook Pro M1
 
 without verbose (optimized shaders) `go test -gpu -verbose=false -bench=.`
 
@@ -204,7 +206,7 @@ TimerReport: BenchLvisNet  2 threads
 
 ## CPU
 
-### CPU 1.7.23: Macbook Pro
+### CPU 1.7.23: Macbook Pro M1
 
 lvis_actual is 40 secs, vs 47 here -- benchmark is accurate.
 
@@ -250,7 +252,7 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 
 ## GPU
 
-### GPU 1.7.23: Macbook Pro
+### GPU 1.7.23: Macbook Pro M1
 
 GPU = 2x as fast as CPU, as in actual LVis: 23 vs. 47 msec
 
@@ -322,5 +324,96 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	  GPU:WtFmDWt 	  0.130	    0.1
 	 WtFmDWtLayer 	  0.005	    0.0
 	        Total 	 91.034
+```
+
+
+# v1.6.16 -- 40% faster than v1.7.24 on cluster
+
+using branch `v1.6.16/bench` with bench_lvis backported.
+
+## CPU 1.6.16 Macbook Pro M1
+
+2 threads default:
+
+```
+Took  43.07 secs for 1 epochs, avg per epc:  43.07
+TimerReport: BenchLvisNet
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  6.487	   15.1
+	    CyclePost 	  0.001	    0.0
+	          DWt 	  3.323	    7.7
+	     DWtLayer 	  0.001	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	    GFmSpikes 	  0.118	    0.3
+	   GiFmSpikes 	  1.039	    2.4
+	    RecvSynCa 	 17.677	   41.1
+	    SendSpike 	  3.349	    7.8
+	    SendSynCa 	 10.427	   24.2
+	      WtFmDWt 	  0.575	    1.3
+	 WtFmDWtLayer 	  0.002	    0.0
+	        Total 	 43.000
+```
+
+One thread, for raw compute comparison:
+
+```
+Took  71.82 secs for 1 epochs, avg per epc:  71.82
+TimerReport: BenchLvisNet
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 11.359	   16.7
+	    CyclePost 	  0.001	    0.0
+	          DWt 	  5.598	    8.2
+	     DWtLayer 	  0.001	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	    GFmSpikes 	  0.147	    0.2
+	   GiFmSpikes 	  1.061	    1.6
+	    RecvSynCa 	 30.672	   45.1
+	    SendSynCa 	 18.111	   26.6
+	      WtFmDWt 	  1.102	    1.6
+	 WtFmDWtLayer 	  0.002	    0.0
+	        Total 	 68.054
+```
+
+### CPU 1.6.16: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+Two threads -- this is close to the 61 secs from [lvis_actual](lvis_actual.md):
+
+```
+Took   67.5 secs for 1 epochs, avg per epc:   67.5
+TimerReport: BenchLvisNet
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 19.997	   29.7
+	    CyclePost 	  0.001	    0.0
+	          DWt 	  3.427	    5.1
+	     DWtLayer 	  0.001	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	    GFmSpikes 	  0.265	    0.4
+	   GiFmSpikes 	  1.933	    2.9
+	    RecvSynCa 	 21.713	   32.2
+	    SendSpike 	  2.985	    4.4
+	    SendSynCa 	 16.095	   23.9
+	      WtFmDWt 	  0.937	    1.4
+	 WtFmDWtLayer 	  0.005	    0.0
+	        Total 	 67.358
+```
+
+One thread:
+
+```
+Took     89 secs for 1 epochs, avg per epc:     89
+TimerReport: BenchLvisNet
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 18.029	   21.2
+	    CyclePost 	  0.001	    0.0
+	          DWt 	  6.657	    7.8
+	     DWtLayer 	  0.001	    0.0
+	   DWtSubMean 	  0.000	    0.0
+	    GFmSpikes 	  0.264	    0.3
+	   GiFmSpikes 	  1.494	    1.8
+	    RecvSynCa 	 35.502	   41.8
+	    SendSynCa 	 21.225	   25.0
+	      WtFmDWt 	  1.737	    2.0
+	 WtFmDWtLayer 	  0.004	    0.0
+	        Total 	 84.914
 ```
 
