@@ -40,6 +40,28 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	        Total 	 38.427
 ```
 
+### HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
+
+about 23 seconds faster (20%) as well here, with huge speedup in SendSpike as expected.
+
+```
+Took  86.81 secs for 1 epochs, avg per epc:  86.81
+OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 27.565	   31.8
+	          DWt 	  4.950	    5.7
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  3.082	    3.6
+	   GiFmSpikes 	 10.681	   12.3
+	PoolGiFmSpikes 	  0.082	    0.1
+	    SendSpike 	  4.883	    5.6
+	    SynCaRecv 	 25.380	   29.3
+	    SynCaSend 	  7.853	    9.1
+	      WtFmDWt 	  2.164	    2.5
+	 WtFmDWtLayer 	  0.004	    0.0
+	        Total 	 86.643
+```
+
 # 1.7.23 Receiver-based Synapses
 
 ## CPU

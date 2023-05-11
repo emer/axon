@@ -30,9 +30,10 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Prjn", Desc: "",
 				Params: params.Params{
-					"Prjn.Learn.LRate.Base": "0.1", // 0.1 is default, 0.05 for TrSpk = .5
-					"Prjn.SWt.Adapt.LRate":  "0.1", // .1 >= .2,
-					"Prjn.SWt.Init.SPct":    "0.5", // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
+					"Prjn.Learn.LRate.Base":    "0.005", // 0.005 is lvis default
+					"Prjn.Learn.Trace.SubMean": "1",     // 1 > 0 in general
+					"Prjn.SWt.Adapt.LRate":     "0.1",   // .1 >= .2,
+					"Prjn.SWt.Init.SPct":       "0.5",   // .5 >= 1 here -- 0.5 more reliable, 1.0 faster..
 				}},
 			{Sel: "Layer", Desc: "",
 				Params: params.Params{
