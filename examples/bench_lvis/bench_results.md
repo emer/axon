@@ -14,7 +14,7 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 
 and performance is roughly similar.
 
-In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on both AMD64 and A100 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
+In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on AMD64 -- very sensitive to out-of-order processing.  It is now set to 0 for the bench case -- can twiddle and test.  Makes very little difference on the mac.
 
 # 1.7.24 Sender-based Synapses
 
@@ -73,14 +73,14 @@ Took  88.78 secs for 1 epochs, avg per epc:  88.78
 TimerReport: BenchLvisNet  2 threads
 	Function Name 	   Secs	    Pct
 	  CycleNeuron 	 28.432	   32.1  <- actually slower than 1 thread!
-	          DWt 	  4.978	    5.6
+	          DWt 	  4.978	    5.6  <- slower
 	   DWtSubMean 	  0.000	    0.0
-	 GatherSpikes 	  3.066	    3.5
-	   GiFmSpikes 	 10.523	   11.9
+	 GatherSpikes 	  3.066	    3.5 <- slower
+	   GiFmSpikes 	 10.523	   11.9 <- dramatically slower  not even threaded!
 	PoolGiFmSpikes 	  0.085	    0.1
-	    PostSpike 	  2.816	    3.2
-	    SendSpike 	  4.899	    5.5
-	        SynCa 	 31.632	   35.7
+	    PostSpike 	  2.816	    3.2 <- slower
+	    SendSpike 	  4.899	    5.5 <- faster
+	        SynCa 	 31.632	   35.7 <- much faster
 	      WtFmDWt 	  2.184	    2.5
 	 WtFmDWtLayer 	  0.004	    0.0
 	        Total 	 88.620

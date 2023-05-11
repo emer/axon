@@ -121,7 +121,7 @@ func (nt *Network) Cycle(ctx *Context) {
 		return
 	}
 	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
-	nt.LayerMapSeq(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
+	nt.LayerMapPar(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
 	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
 	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
 	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.PostSpike(ctx, ni, nrn) }, "PostSpike")

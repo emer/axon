@@ -18,6 +18,7 @@ import (
 
 // Maps the given function across the [0, total) range of items, using
 // nThreads goroutines, in bite-sized chunks for better load balancing.
+// This is significantly *slower* than the base ParallelRun.
 func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
 	wait := sync.WaitGroup{}
 	var cur atomctr.Ctr
@@ -88,6 +89,23 @@ func (nt *NetworkBase) LayerMapSeq(fun func(ly *Layer), funame string) {
 	nt.FunTimerStop(funame)
 }
 
+// LayerMapPar applies function of given name to all layers
+// using as many go routines as configured in NetThreads.Neurons.
+func (nt *NetworkBase) LayerMapPar(fun func(ly *Layer), funame string) {
+	if nt.NThreads <= 1 {
+		nt.LayerMapSeq(fun, funame)
+	} else {
+		nt.FunTimerStart(funame)
+		ParallelRun(func(st, ed int) {
+			for li := st; li < ed; li++ {
+				ly := nt.Layers[li]
+				fun(ly)
+			}
+		}, len(nt.Layers), nt.NThreads)
+		nt.FunTimerStop(funame)
+	}
+}
+
 // NeuronMapSeq applies function of given name to all neurons sequentially.
 func (nt *NetworkBase) NeuronMapSeq(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
 	nt.FunTimerStart(funame)
@@ -107,7 +125,7 @@ func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron),
 		nt.NeuronMapSeq(fun, funame)
 	} else {
 		nt.FunTimerStart(funame)
-		ParallelChunkRun(func(st, ed int) {
+		ParallelRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
 				ly := nt.Layers[nrn.LayIdx]
