@@ -179,7 +179,7 @@ func (pj *PrjnBase) Build() error {
 				break
 			}
 			pj.SendConIdx[scon.Start+sci] = uint32(ri)
-			pj.RecvSynIdx[scon.Start+sci] = rcon.Start + rci
+			pj.RecvSynIdx[rcon.Start+rci] = scon.Start + sci
 			(sconN[si])++
 			rci++
 		}

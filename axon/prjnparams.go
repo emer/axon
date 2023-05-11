@@ -97,7 +97,7 @@ type PrjnParams struct {
 	Matrix MatrixPrjnParams `viewif:"PrjnType=MatrixPrjn" view:"inline" desc:"for trace-based learning in the MatrixPrjn. A trace of synaptic co-activity is formed, and then modulated by dopamine whenever it occurs.  This bridges the temporal gap between gating activity and subsequent activity, and is based biologically on synaptic tags. Trace is reset at time of reward based on ACh level from CINs."`
 	BLA    BLAPrjnParams    `viewif:"PrjnType=BLAPrjn" view:"inline" desc:"Basolateral Amygdala projection parameters."`
 
-	Idxs PrjnIdxs `desc:"recv and send neuron-level projection index array access info"`
+	Idxs PrjnIdxs `view:"-" desc:"recv and send neuron-level projection index array access info"`
 }
 
 func (pj *PrjnParams) Defaults() {
