@@ -12,24 +12,47 @@ import (
 	"sync"
 
 	"github.com/emer/emergent/timer"
+	"github.com/goki/ki/atomctr"
 	"github.com/goki/ki/ints"
 )
+
+// Maps the given function across the [0, total) range of items, using
+// nThreads goroutines, in bite-sized chunks for better load balancing.
+func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
+	wait := sync.WaitGroup{}
+	var cur atomctr.Ctr
+	cur.Set(-1)
+	for ti := 0; ti < nThreads; ti++ {
+		wait.Add(1)
+		go func() {
+			for {
+				c := int(cur.Add(2)) // chunk size = 2
+				if c-1 >= total {
+					wait.Done()
+					return
+				}
+				fun(c-1, c+1) // end is exclusive
+			}
+		}()
+	}
+	wait.Wait()
+}
 
 // Maps the given function across the [0, total) range of items, using
 // nThreads goroutines.
 func ParallelRun(fun func(st, ed int), total int, nThreads int) {
 	itemsPerThr := int(math.Ceil(float64(total) / float64(nThreads)))
-	waitGroup := sync.WaitGroup{}
+	wait := sync.WaitGroup{}
 	for start := 0; start < total; start += itemsPerThr {
 		start := start // capture into loop-local variable for closure
 		end := ints.MinInt(start+itemsPerThr, total)
-		waitGroup.Add(1) // todo: move out of loop
+		wait.Add(1) // todo: move out of loop
 		go func() {
 			fun(start, end)
-			waitGroup.Done()
+			wait.Done()
 		}()
 	}
-	waitGroup.Wait()
+	wait.Wait()
 }
 
 // SetNThreads sets number of threads to use for CPU parallel processing.
@@ -84,7 +107,7 @@ func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron),
 		nt.NeuronMapSeq(fun, funame)
 	} else {
 		nt.FunTimerStart(funame)
-		ParallelRun(func(st, ed int) {
+		ParallelChunkRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
 				ly := nt.Layers[nrn.LayIdx]

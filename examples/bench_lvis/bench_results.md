@@ -42,28 +42,68 @@ TimerReport: BenchLvisNet  2 threads
 	        Total 	 39.850
 ```
 
+One thread gives a ~43% speedup (1 - 40/70) -- close to 50% linear.
+
+```
+Took  69.83 secs for 1 epochs, avg per epc:  69.83
+TimerReport: BenchLvisNet  1 threads
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 12.378	   17.7
+	          DWt 	  3.220	    4.6
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  3.243	    4.6
+	   GiFmSpikes 	  1.735	    2.5
+	PoolGiFmSpikes 	  0.040	    0.1
+	    PostSpike 	  0.799	    1.1
+	    SendSpike 	  4.756	    6.8
+	        SynCa 	 42.393	   60.8
+	      WtFmDWt 	  1.201	    1.7
+	 WtFmDWtLayer 	  0.002	    0.0
+	        Total 	 69.769
+```
+
 ### CPU 1.7.24: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
 about 23 seconds faster (20%) as well here, with huge speedup in SendSpike as expected.
 
-BUT: the performance relative to v1.6.16 is terrible!
+BUT: the performance relative to v1.6.16 is significantly worse, despite similar one-thread performance:
 
 ```
-Took  86.99 secs for 1 epochs, avg per epc:  86.99
+Took  88.78 secs for 1 epochs, avg per epc:  88.78
 TimerReport: BenchLvisNet  2 threads
 	Function Name 	   Secs	    Pct
-	  CycleNeuron 	 27.837	   32.1
-	          DWt 	  4.983	    5.7
+	  CycleNeuron 	 28.432	   32.1  <- actually slower than 1 thread!
+	          DWt 	  4.978	    5.6
 	   DWtSubMean 	  0.000	    0.0
-	 GatherSpikes 	  3.021	    3.5
-	   GiFmSpikes 	  9.775	   11.3
-	PoolGiFmSpikes 	  0.083	    0.1
-	    PostSpike 	  2.740	    3.2
-	    SendSpike 	  4.796	    5.5
-	        SynCa 	 31.426	   36.2
-	      WtFmDWt 	  2.168	    2.5
+	 GatherSpikes 	  3.066	    3.5
+	   GiFmSpikes 	 10.523	   11.9
+	PoolGiFmSpikes 	  0.085	    0.1
+	    PostSpike 	  2.816	    3.2
+	    SendSpike 	  4.899	    5.5
+	        SynCa 	 31.632	   35.7
+	      WtFmDWt 	  2.184	    2.5
 	 WtFmDWtLayer 	  0.004	    0.0
-	        Total 	 86.833
+	        Total 	 88.620
+```
+
+One thread -- barely getting any speedup from threading -- 6%. Performance a bit slower relative to 1.6.16 but that is dwarfed by the lack of threading speedup.
+
+```
+Took  95.35 secs for 1 epochs, avg per epc:  95.35
+TimerReport: BenchLvisNet  1 threads
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 21.077	   22.1
+	          DWt 	  4.773	    5.0
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  2.625	    2.8
+	   GiFmSpikes 	  3.696	    3.9
+	PoolGiFmSpikes 	  0.057	    0.1
+	    PostSpike 	  1.847	    1.9
+	    SendSpike 	  6.580	    6.9
+	        SynCa 	 52.404	   55.0
+	      WtFmDWt 	  2.183	    2.3
+	 WtFmDWtLayer 	  0.004	    0.0
+	        Total 	 95.248
 ```
 
 ## CPU threads = 4
@@ -333,7 +373,7 @@ using branch `v1.6.16/bench` with bench_lvis backported.
 
 ## CPU 1.6.16 Macbook Pro M1
 
-2 threads default:
+2 threads default = 40% speedup relative to 1 thread:
 
 ```
 Took  43.07 secs for 1 epochs, avg per epc:  43.07
@@ -376,7 +416,7 @@ TimerReport: BenchLvisNet
 
 ### CPU 1.6.16: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
-Two threads -- this is close to the 61 secs from [lvis_actual](lvis_actual.md):
+Two threads -- this is close to the 61 secs from [lvis_actual](lvis_actual.md), 25% speedup vs 1 thread:
 
 ```
 Took   67.5 secs for 1 epochs, avg per epc:   67.5

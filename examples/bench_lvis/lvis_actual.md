@@ -146,7 +146,7 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	GPU:ApplyExts 	  0.003	    0.0
 	   GPU:Cycles 	 54.303	   64.9
 	      GPU:DWt 	 26.237	   31.4  <- why so slow!?
-	GPU:MinusPhase 	  1.169	    1.4
+	GPU:MinusPhase 	  1.169	    1a.4
 	 GPU:NewState 	  0.621	    0.7
 	GPU:PlusPhase 	  1.172	    1.4
 	GPU:PlusStart 	  0.039	    0.0
@@ -160,7 +160,7 @@ OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 
 ## CPU 1.6.16 Macbook Pro M1
 
-2 threads:
+2 threads = 37% speedup vs. 1 thread, similar to bench:
 
 ```
 Total Time:  30.8
@@ -197,8 +197,9 @@ TimerReport: Lvis
 
 ### CPU 1.6.16: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
-Two threads (default) exactly replicates the ~450 PerTrlMSec of the models at 16 mpi nodes, which we computed as giving a 14 effective speedup:
+Two threads (default) replicates the ~450 PerTrlMSec of the models at 16 mpi nodes, which we computed as giving a 14 effective speedup:
 * (61 * 100) / 14 = 435
+* 38% speedup vs. 1 thread -- better than seen in `1.6.16/bench` version -- actual lvis does have a bit different connectivity and is a bit smaller..
 
 ```
 Total Time:    61
