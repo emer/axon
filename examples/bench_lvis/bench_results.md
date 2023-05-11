@@ -12,7 +12,33 @@ Matches default LVis size pretty well:
 Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 ```
 
-and performance is roughly similar: 
+and performance is roughly similar.
+
+# 1.7.24 Sender-based Synapses
+
+## CPU
+
+### Macbook Pro
+
+about 10 seconds faster sender-based vs. previous recv based (20%):
+
+```
+Took  38.49 secs for 1 epochs, avg per epc:  38.49
+OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  6.412	   16.7
+	          DWt 	  3.171	    8.3
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  1.470	    3.8
+	   GiFmSpikes 	  1.756	    4.6
+	PoolGiFmSpikes 	  0.040	    0.1
+	    SendSpike 	  1.683	    4.4
+	    SynCaRecv 	 17.607	   45.8
+	    SynCaSend 	  5.098	   13.3
+	      WtFmDWt 	  1.187	    3.1
+	 WtFmDWtLayer 	  0.002	    0.0
+	        Total 	 38.427
+```
 
 # 1.7.23 Receiver-based Synapses
 
@@ -24,7 +50,6 @@ lvis_actual is 40 secs, vs 47 here -- benchmark is accurate.
 
 ```
 Took  47.37 secs for 1 epochs, avg per epc:  47.37
-TimerReport: BenchLvisNet
 OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	Function Name 	   Secs	    Pct
 	  CycleNeuron 	  6.431	   13.6
@@ -47,7 +72,6 @@ lvis_actual is 106 vs. 110 here -- good match.
 
 ```
 Took  109.9 secs for 1 epochs, avg per epc:  109.9
-TimerReport: BenchLvisNet
 OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	Function Name 	   Secs	    Pct
 	  CycleNeuron 	 28.250	   25.7
@@ -74,7 +98,6 @@ without verbose (optimized shaders) `go test -gpu -verbose=false -bench=.`
 
 ```
 Total Secs:     23
-TimerReport: BenchLvisNet
 OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	Function Name 	   Secs	    Pct
 	GPU:ApplyExts 	  0.009	    0.0
@@ -93,7 +116,6 @@ with verbose, calls each shader separately `go test -gpu -bench=.`
 
 ```
 Took  29.27 secs for 1 epochs, avg per epc:  29.27
-TimerReport: BenchLvisNet
 OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	Function Name 	   Secs	    Pct
 	GPU:ApplyExts 	  0.010	    0.0
@@ -128,7 +150,6 @@ Cycles is 3x of mac -- not so insane but clearly the biggest single contributor.
 
 ```
 Total Secs:   91.1
-TimerReport: BenchLvisNet
 OS Threads (=GOMAXPROCS): 2. Gorountines: 2 (Neurons) 2 (SendSpike) 2 (SynCa)
 	Function Name 	   Secs	    Pct
 	GPU:ApplyExts 	  0.005	    0.0
