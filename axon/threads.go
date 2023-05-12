@@ -18,6 +18,7 @@ import (
 
 // Maps the given function across the [0, total) range of items, using
 // nThreads goroutines, in smaller-sized chunks for better load balancing.
+// this may be better for larger number of threads, but is not better for small N
 func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
 	chunk := total / (nThreads * 2)
 	if chunk <= 1 {
@@ -134,7 +135,7 @@ func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron),
 		nt.NeuronMapSeq(fun, funame)
 	} else {
 		nt.FunTimerStart(funame)
-		ParallelChunkRun(func(st, ed int) {
+		ParallelRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
 				ly := nt.Layers[nrn.LayIdx]

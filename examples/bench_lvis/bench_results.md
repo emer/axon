@@ -20,8 +20,6 @@ In general, Prjn.Learn.Trace.SubMean = 1 is *very slow* on AMD64 -- very sensiti
 
 Note: it was critical to do parallel threading for GiFmSpikes at the layer level -- unclear why but this made a huge difference on Linux / AMD64, but not on the Mac (usual story).  
 
-This small chunk-based threading routine, used in v1.6.16 which was faster than 1.7.24, was not faster compared to the large chunk method:
-
 ## CPU
 
 ### CPU 1.7.24: Macbook Pro M1
@@ -68,7 +66,7 @@ TimerReport: BenchLvisNet  1 threads
 
 ### CPU 1.7.24: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
-2 threads, with GiFmSpikes parallel across threads:
+2 threads, with GiFmSpikes parallel across threads -- key:
 
 ```
 Took  72.36 secs for 1 epochs, avg per epc:  72.36
@@ -88,8 +86,7 @@ TimerReport: BenchLvisNet  2 threads
 	        Total 	 72.223
 ```
 
-
-Initial result relative to 1.7.23 was about 23 seconds faster (20%), with huge speedup in SendSpike as expected.
+Initial result below relative to 1.7.23 was about 23 seconds faster (20%), with huge speedup in SendSpike as expected.
 
 BUT: the performance relative to v1.6.16 is significantly worse, despite similar one-thread performance:
 
