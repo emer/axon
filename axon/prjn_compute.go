@@ -100,74 +100,70 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ri uint32, rn *Neuron, updtThr float32) 
 // DWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) DWt(ctx *Context) {
+func (pj *Prjn) DWt(ctx *Context, si uint32, sn *Neuron) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	slay := pj.Send
 	rlay := pj.Recv
 	layPool := &rlay.Pools[0]
 	isTarget := rlay.Params.Act.Clamp.IsTarget.IsTrue()
-	for si := range slay.Neurons {
-		sn := &slay.Neurons[si]
-		// note: UpdtThr doesn't make sense here b/c Tr needs to be updated
-		syns := pj.SendSyns(si)
-		for syi := range syns {
-			sy := &syns[syi]
-			ri := pj.Params.SynRecvLayIdx(sy)
-			rn := &rlay.Neurons[ri]
-			subPool := &rlay.Pools[rn.SubPool]
-			pj.Params.DWtSyn(ctx, sy, sn, rn, layPool, subPool, isTarget)
-		}
+	syns := pj.SendSyns(int(si))
+	for syi := range syns {
+		sy := &syns[syi]
+		ri := pj.Params.SynRecvLayIdx(sy)
+		rn := &rlay.Neurons[ri]
+		subPool := &rlay.Pools[rn.SubPool]
+		pj.Params.DWtSyn(ctx, sy, sn, rn, layPool, subPool, isTarget)
 	}
 }
 
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 // This is called on *receiving* projections, prior to WtFmDwt.
-func (pj *Prjn) DWtSubMean(ctx *Context) {
-	rlay := pj.Recv
+func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
+	if pj.Params.Learn.Learn.IsFalse() {
+		return
+	}
 	sm := pj.Params.Learn.Trace.SubMean
 	if sm == 0 { // note default is now 0, so don't exclude Target layers, which should be 0
 		return
 	}
-	for ri := range rlay.Neurons {
-		syIdxs := pj.RecvSynIdxs(ri)
-		if len(syIdxs) < 1 {
-			continue
+	syIdxs := pj.RecvSynIdxs(int(ri))
+	if len(syIdxs) < 1 {
+		return
+	}
+	sumDWt := float32(0)
+	nnz := 0 // non-zero
+	for _, syi := range syIdxs {
+		sy := &pj.Syns[syi]
+		dw := sy.DWt
+		if dw != 0 {
+			sumDWt += dw
+			nnz++
 		}
-		sumDWt := float32(0)
-		nnz := 0 // non-zero
-		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			dw := sy.DWt
-			if dw != 0 {
-				sumDWt += dw
-				nnz++
-			}
-		}
-		if nnz <= 1 {
-			continue
-		}
-		sumDWt /= float32(nnz)
-		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			if sy.DWt != 0 {
-				sy.DWt -= sm * sumDWt
-			}
+	}
+	if nnz <= 1 {
+		return
+	}
+	sumDWt /= float32(nnz)
+	for _, syi := range syIdxs {
+		sy := &pj.Syns[syi]
+		if sy.DWt != 0 {
+			sy.DWt -= sm * sumDWt
 		}
 	}
 }
 
-// WtFmDWt updates the synaptic weight values from delta-weight changes.
-// called on the *receiving* projections.
-func (pj *Prjn) WtFmDWt(ctx *Context) {
-	slay := pj.Send
-	for si := range slay.Neurons {
-		syns := pj.SendSyns(si)
-		for syi := range syns {
-			sy := &syns[syi]
-			pj.Params.WtFmDWtSyn(ctx, sy)
-		}
+// WtFmDWt computes the weight change (learning), based on
+// synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+func (pj *Prjn) WtFmDWt(ctx *Context, si uint32, sn *Neuron) {
+	if pj.Params.Learn.Learn.IsFalse() {
+		return
+	}
+	syns := pj.SendSyns(int(si))
+	for syi := range syns {
+		sy := &syns[syi]
+		pj.Params.WtFmDWtSyn(ctx, sy)
 	}
 }
 

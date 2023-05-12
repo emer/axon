@@ -514,6 +514,38 @@ func (ly *Layer) CorSimFmActs() {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
 
+// DWt computes the weight change (learning), based on
+// synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+func (ly *Layer) DWt(ctx *Context, si uint32, sn *Neuron) {
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		pj.DWt(ctx, si, sn)
+	}
+}
+
+// DWtSubMean
+func (ly *Layer) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		pj.DWtSubMean(ctx, ri, rn)
+	}
+}
+
+// WtFmDWt
+func (ly *Layer) WtFmDWt(ctx *Context, si uint32, sn *Neuron) {
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		pj.WtFmDWt(ctx, si, sn)
+	}
+}
+
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
 func (ly *Layer) DTrgSubMean() {

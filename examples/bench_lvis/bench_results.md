@@ -153,21 +153,21 @@ TimerReport: BenchLvisNet  4 threads
 HPC2: about 26% faster with 4 vs. 2 -- ideally 50% -- probably not worth it vs. using procs for mpi
 
 ```
-Took  64.28 secs for 1 epochs, avg per epc:  64.28
+Took   53.2 secs for 1 epochs, avg per epc:   53.2
 TimerReport: BenchLvisNet  4 threads
 	Function Name 	   Secs	    Pct
-	  CycleNeuron 	 17.098	   26.7
-	          DWt 	  5.120	    8.0
+	  CycleNeuron 	 14.924	   28.2
+	          DWt 	  5.192	    9.8
 	   DWtSubMean 	  0.000	    0.0
-	 GatherSpikes 	  2.090	    3.3
-	   GiFmSpikes 	 12.666	   19.8
-	PoolGiFmSpikes 	  0.109	    0.2
-	    PostSpike 	  1.645	    2.6
-	    SendSpike 	  2.958	    4.6
-	        SynCa 	 20.220	   31.6
-	      WtFmDWt 	  2.169	    3.4
+	 GatherSpikes 	  2.014	    3.8
+	   GiFmSpikes 	  4.389	    8.3
+	PoolGiFmSpikes 	  0.191	    0.4
+	    PostSpike 	  1.391	    2.6
+	    SendSpike 	  2.763	    5.2
+	        SynCa 	 19.976	   37.7
+	      WtFmDWt 	  2.163	    4.1
 	 WtFmDWtLayer 	  0.005	    0.0
-	        Total 	 64.080
+	        Total 	 53.007
 ```
 
 ## GPU

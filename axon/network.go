@@ -261,7 +261,8 @@ func (nt *Network) DWt(ctx *Context) {
 		nt.GPU.RunDWt()
 		return
 	}
-	nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // todo: neuron level threaded
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.DWt(ctx, ni, nrn) }, "DWt")
+	// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // todo: neuron level threaded
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
@@ -271,8 +272,10 @@ func (nt *Network) WtFmDWt(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunWtFmDWt()
 	} else {
-		nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean") // todo: neuron level threaded
-		nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.DWtSubMean(ctx, ni, nrn) }, "DWtSubMean")
+		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.WtFmDWt(ctx, ni, nrn) }, "WtFmDWt")
+		// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean") // todo: neuron level threaded
+		// nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
 	}
 	nt.SlowAdapt(ctx)
 }
