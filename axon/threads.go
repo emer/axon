@@ -17,9 +17,14 @@ import (
 )
 
 // Maps the given function across the [0, total) range of items, using
-// nThreads goroutines, in bite-sized chunks for better load balancing.
-// This is significantly *slower* than the base ParallelRun.
+// nThreads goroutines, in smaller-sized chunks for better load balancing.
 func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
+	chunk := total / (nThreads * 2)
+	if chunk <= 1 {
+		fun(0, total)
+		return
+	}
+	chm1 := chunk - 1
 	wait := sync.WaitGroup{}
 	var cur atomctr.Ctr
 	cur.Set(-1)
@@ -27,12 +32,16 @@ func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
 		wait.Add(1)
 		go func() {
 			for {
-				c := int(cur.Add(2)) // chunk size = 2
-				if c-1 >= total {
+				c := int(cur.Add(int64(chunk)))
+				if c-chm1 >= total {
 					wait.Done()
 					return
 				}
-				fun(c-1, c+1) // end is exclusive
+				max := c + 1
+				if max > total {
+					max = total
+				}
+				fun(c-chm1, max) // end is exclusive
 			}
 		}()
 	}
@@ -125,7 +134,7 @@ func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron),
 		nt.NeuronMapSeq(fun, funame)
 	} else {
 		nt.FunTimerStart(funame)
-		ParallelRun(func(st, ed int) {
+		ParallelChunkRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
 				nrn := &nt.Neurons[ni]
 				ly := nt.Layers[nrn.LayIdx]
