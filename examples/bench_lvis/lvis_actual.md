@@ -19,21 +19,21 @@ Lvis:	 Neurons: 47,872	 NeurMem: 16.8 MB 	 Syns: 31,316,128 	 SynMem: 2.2 GB
 2 threads:
 
 ```
-Total Time:   36.5
+Total Time:   33.8
 TimerReport: Lvis  2 threads
 	Function Name 	   Secs	    Pct
-	  CycleNeuron 	  6.590	   22.2
-	          DWt 	  2.968	   10.0
-	   DWtSubMean 	  1.041	    3.5
-	 GatherSpikes 	  2.223	    7.5
-	   GiFmSpikes 	  1.899	    6.4
-	PoolGiFmSpikes 	  0.094	    0.3
-	    PostSpike 	  0.647	    2.2
-	    SendSpike 	  1.979	    6.7
-	        SynCa 	 11.123	   37.4
-	      WtFmDWt 	  1.159	    3.9
+	  CycleNeuron 	  6.485	   24.2
+	          DWt 	  1.791	    6.7
+	   DWtSubMean 	  1.002	    3.7
+	 GatherSpikes 	  2.173	    8.1
+	   GiFmSpikes 	  1.064	    4.0
+	PoolGiFmSpikes 	  0.095	    0.4
+	    PostSpike 	  0.550	    2.1
+	    SendSpike 	  1.792	    6.7
+	        SynCa 	 11.138	   41.6
+	      WtFmDWt 	  0.671	    2.5
 	 WtFmDWtLayer 	  0.004	    0.0
-	        Total 	 29.726
+	        Total 	 26.764
 ```
 
 One thread, for raw compute comparison.  Critically, this is essentially the same as v1.6.16!  Thus, the difference is in the threading algorithm, not the core compute.
@@ -58,7 +58,25 @@ TimerReport: Lvis  1 threads
 
 ### CPU 1.7.24: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
+This matches the bench results almost exactly.  It is a bit faster than what we seen on the cluster 521 predicted ((73 * 100) / 14):
 
+```
+Total Time:   72.8
+TimerReport: Lvis  2 threads
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 27.332	   42.8
+	          DWt 	  2.596	    4.1
+	   DWtSubMean 	  1.625	    2.5
+	 GatherSpikes 	  5.988	    9.4
+	   GiFmSpikes 	  4.789	    7.5
+	PoolGiFmSpikes 	  0.352	    0.6
+	    PostSpike 	  1.352	    2.1
+	    SendSpike 	  2.483	    3.9
+	        SynCa 	 16.044	   25.1
+	      WtFmDWt 	  1.247	    2.0
+	 WtFmDWtLayer 	  0.004	    0.0
+	        Total 	 63.813
+```
 
 
 # 1.7.23 Receiver-based Synapses

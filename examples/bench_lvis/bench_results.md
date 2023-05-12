@@ -66,7 +66,29 @@ TimerReport: BenchLvisNet  1 threads
 
 ### CPU 1.7.24: HPC2 ccnl-0 AMD EPYC 7502 32-Core Processor + NVIDIA A100 GPU
 
-2 threads, with GiFmSpikes parallel across threads -- key:
+2 threads, with DWt* and GiFmSpikes parallel at neuron level, which is reliably faster in the benchmark but not so much running on the actual cluster.  The benefits are perhaps due to preserving memory thread affinity or something like that, which may then be swamped by the memory bandwidth issues when it runs all the mpi procs on the same node.
+
+This is ~24% faster than the 95 secs for 1 thread -- much less speedup than on mac.
+
+```
+Took  71.92 secs for 1 epochs, avg per epc:  71.92
+TimerReport: BenchLvisNet  2 threads
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	 22.605	   31.5
+	          DWt 	  2.522	    3.5
+	   DWtSubMean 	  0.009	    0.0
+	 GatherSpikes 	  3.100	    4.3
+	   GiFmSpikes 	  5.900	    8.2
+	PoolGiFmSpikes 	  0.172	    0.2
+	    PostSpike 	  1.661	    2.3
+	    SendSpike 	  3.973	    5.5
+	        SynCa 	 30.668	   42.7
+	      WtFmDWt 	  1.160	    1.6
+	 WtFmDWtLayer 	  0.004	    0.0
+	        Total 	 71.774
+```
+
+Just GiFmSpikes:
 
 ```
 Took  72.36 secs for 1 epochs, avg per epc:  72.36
@@ -108,7 +130,7 @@ TimerReport: BenchLvisNet  2 threads
 	        Total 	 88.620
 ```
 
-One thread -- barely getting any speedup from threading -- 6%. Performance a bit slower relative to 1.6.16 but that is dwarfed by the lack of threading speedup.
+One thread -- the initial was barely getting any speedup from threading -- 6%. Performance a bit slower relative to 1.6.16 but that is dwarfed by the lack of threading speedup.
 
 ```
 Took  95.35 secs for 1 epochs, avg per epc:  95.35
@@ -150,24 +172,24 @@ TimerReport: BenchLvisNet  4 threads
 	        Total 	 25.470
 ```
 
-HPC2: about 26% faster with 4 vs. 2 -- ideally 50% -- probably not worth it vs. using procs for mpi
+HPC2: about 30% faster with 4 vs. 2 -- ideally 50% -- possibly worth it (vs. using procs for mpi).  However, in actual practice on the cluster with 16 mpi procs all running on the same node, this results in only a few % of performance improvement.  Thus, there is likely some kind of overall memory bandwidth bottleneck.
 
 ```
-Took   53.2 secs for 1 epochs, avg per epc:   53.2
+Took  48.76 secs for 1 epochs, avg per epc:  48.76
 TimerReport: BenchLvisNet  4 threads
 	Function Name 	   Secs	    Pct
-	  CycleNeuron 	 14.924	   28.2
-	          DWt 	  5.192	    9.8
-	   DWtSubMean 	  0.000	    0.0
-	 GatherSpikes 	  2.014	    3.8
-	   GiFmSpikes 	  4.389	    8.3
-	PoolGiFmSpikes 	  0.191	    0.4
-	    PostSpike 	  1.391	    2.6
-	    SendSpike 	  2.763	    5.2
-	        SynCa 	 19.976	   37.7
-	      WtFmDWt 	  2.163	    4.1
+	  CycleNeuron 	 15.285	   31.5
+	          DWt 	  1.315	    2.7
+	   DWtSubMean 	  0.005	    0.0
+	 GatherSpikes 	  2.052	    4.2
+	   GiFmSpikes 	  4.674	    9.6
+	PoolGiFmSpikes 	  0.194	    0.4
+	    PostSpike 	  1.430	    2.9
+	    SendSpike 	  2.732	    5.6
+	        SynCa 	 20.261	   41.7
+	      WtFmDWt 	  0.641	    1.3
 	 WtFmDWtLayer 	  0.005	    0.0
-	        Total 	 53.007
+	        Total 	 48.593
 ```
 
 ## GPU
