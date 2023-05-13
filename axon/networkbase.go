@@ -681,6 +681,9 @@ func (nt *NetworkBase) Build() error {
 			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
 			pj.Params.Idxs.RecvSynSt = uint32(syIdx)
 			for ri := range ly.Neurons {
+				if len(pj.RecvCon) <= ri {
+					continue
+				}
 				rcon := pj.RecvCon[ri]
 				nt.PrjnRecvCon[recvConIdx] = rcon
 				recvConIdx++
