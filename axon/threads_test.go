@@ -23,7 +23,7 @@ const (
 func TestMultithreading(t *testing.T) {
 	pats := generateRandomPatterns(100, 42)
 	// launch many goroutines to increase odds of finding race conditions
-	netS, netP := buildIdenticalNetworks(t, pats, 2)
+	netS, netP := buildIdenticalNetworks(t, pats, 16)
 
 	fun := func(net *Network, ctx *Context) {
 		net.Cycle(ctx)
