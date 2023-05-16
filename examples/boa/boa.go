@@ -592,7 +592,7 @@ func (ss *Sim) ApplyInputs() {
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, ev *Approach) {
 	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
 	ctx.PVLVSetUS(ev.US != -1, true, ev.US, 1) // mag 1 for now..
-	ctx.PVLVSetDrives(1, 1, ev.Drive)
+	ctx.PVLVSetDrives(0.5, 1, ev.Drive)
 	ctx.PVLVStepStart(&ss.Net.Rand)
 }
 

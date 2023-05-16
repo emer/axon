@@ -49,6 +49,7 @@ func (nt *Network) NewPrjn() emer.Prjn {
 
 // Defaults sets all the default parameters for all layers and projections
 func (nt *Network) Defaults() {
+	nt.SetNThreads(0) // default
 	nt.SlowInterval = 100
 	nt.SlowCtr = 0
 	for _, ly := range nt.Layers {
@@ -113,23 +114,20 @@ func (nt *Network) NewState(ctx *Context) {
 	}
 }
 
-// Cycle runs one cycle of activation updating.  It just calls the CycleImpl
-// method through the AxonNetwork interface, thereby ensuring any specialized
-// algorithm-specific version is called as needed (in general, strongly prefer
-// updating the Layer specific version).
+// Cycle runs one cycle of activation updating using threading methods.
 func (nt *Network) Cycle(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunCycle()
 		return
 	}
-	nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
-	nt.LayerMapSeq(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")
-	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes")
-	nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
-	nt.SendSpikeFun(func(ly *Layer) { ly.SendSpike(ctx) }, "SendSpike")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
+	nt.LayerMapPar(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")         // note: important to be Par for linux / amd64
+	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes") // note: Par not useful
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.PostSpike(ctx, ni, nrn) }, "PostSpike")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SendSpike(ctx, ni, nrn) }, "SendSpike")
 	if ctx.Testing.IsFalse() {
-		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaRecv(ctx, ni, nrn) }, "SynCaRecv")
-		nt.NeuronFun(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCaSend(ctx, ni, nrn) }, "SynCaSend")
+		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCa(ctx, ni, nrn) }, "SynCa")
 	}
 	var ldt, vta *Layer
 	for _, ly := range nt.Layers {
@@ -263,7 +261,8 @@ func (nt *Network) DWt(ctx *Context) {
 		nt.GPU.RunDWt()
 		return
 	}
-	nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // todo: neuron level threaded
+	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.DWt(ctx, ni, nrn) }, "DWt")
+	// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // todo: neuron level threaded
 }
 
 // WtFmDWt updates the weights from delta-weight changes.
@@ -273,8 +272,10 @@ func (nt *Network) WtFmDWt(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunWtFmDWt()
 	} else {
-		nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean") // todo: neuron level threaded
-		nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.DWtSubMean(ctx, ni, nrn) }, "DWtSubMean")
+		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.WtFmDWt(ctx, ni, nrn) }, "WtFmDWt")
+		// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean") // todo: neuron level threaded
+		// nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
 	}
 	nt.SlowAdapt(ctx)
 }
@@ -656,7 +657,7 @@ func (nt *Network) SizeReport() string {
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
 			projMemSynapses := projNumSynapses * memSynapse
-			projMemIdxs := len(pj.RecvConIdx)*4 + len(pj.SendSynIdx)*4 + len(pj.SendConIdx)*4
+			projMemIdxs := len(pj.RecvConIdx)*4 + len(pj.RecvSynIdx)*4 + len(pj.SendConIdx)*4
 			globalMemSynapses += projMemSynapses + projMemIdxs
 			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
 				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())

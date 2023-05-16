@@ -31,7 +31,7 @@ type Synapse struct {
 	SWt  float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
 	DWt  float32 `desc:"delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt."`
 	DSWt float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
-	Ca   float32 `desc:"Raw calcium singal for Kinase learning: SpikeG * (send.CaSyn * recv.CaSyn)"`
+	Ca   float32 `desc:"Raw calcium signal for Kinase learning: SpikeG * (send.CaSyn * recv.CaSyn) -- todo: not used directly in computation and can be removed (once synapse is reorganized)."`
 	CaM  float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`
 	CaP  float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
 	CaD  float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`

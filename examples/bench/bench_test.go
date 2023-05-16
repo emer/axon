@@ -22,14 +22,12 @@ func init() {
 
 const (
 	convergenceTestEpochs = 10
-	defaultNumEpochs      = 350
+	defaultNumEpochs      = 250
 )
 
 var gpu = flag.Bool("gpu", false, "whether to run gpu or not")
 var maxProcs = flag.Int("maxProcs", 0, "GOMAXPROCS value to set -- 0 = use current default")
-var threadsNeuron = flag.Int("thrNeuron", 0, "number of goroutines to launch for NeuronFun")
-var threadsSendSpike = flag.Int("thrSendSpike", 0, "number of goroutines to launch for SendSpike")
-var threadsSynCa = flag.Int("thrSynCa", 0, "number of goroutines to launch for SynCa")
+var threads = flag.Int("threads", 0, "number of goroutines for parallel processing")
 var numEpochs = flag.Int("epochs", defaultNumEpochs, "number of epochs to run")
 var numPats = flag.Int("pats", 10, "number of patterns per epoch")
 var numUnits = flag.Int("units", 100, "number of units per layer -- uses NxN where N = sqrt(units)")
@@ -42,13 +40,13 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	}
 
 	if *verbose {
-		fmt.Printf("Running bench with: %d neuronThreads, %d sendSpikeThreads, %d synCaThreads, %d epochs, %d pats, %d units\n", *threadsNeuron, *threadsSendSpike, *threadsSynCa, *numEpochs, *numPats, *numUnits)
+		fmt.Printf("Running bench with: %d Threads, %d epochs, %d pats, %d units\n", *threads, *numEpochs, *numPats, *numUnits)
 	}
 
 	rand.Seed(42)
 
 	net := &axon.Network{}
-	ConfigNet(net, *threadsNeuron, *threadsSendSpike, *threadsSynCa, *numUnits, *verbose)
+	ConfigNet(net, *threads, *numUnits, *verbose)
 	if *verbose {
 		log.Println(net.SizeReport())
 	}
@@ -115,10 +113,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 		panic(err)
 	}
 
-	// override defaults: neurons, sendSpike, synCa, learn
-	if err := net.Threads.Set(numThread, 1, 1); err != nil {
-		b.Error(err)
-	}
+	net.SetNThreads(numThread)
 
 	net.InitWts()
 	ctx := axon.NewContext()
@@ -131,7 +126,7 @@ func benchmarkNeuronFunMultiThread(numThread, numUnits int, b *testing.B) {
 	// NeuronFun and divide that by (epochs * pats * quarters * cycles)
 	for i := 0; i < b.N; i++ {
 		ctx.NewState(etime.Train)
-		net.NeuronFun(func(ly *axon.Layer, ni uint32, nrn *axon.Neuron) { ly.CycleNeuron(ctx, ni, nrn) },
+		net.NeuronMapPar(func(ly *axon.Layer, ni uint32, nrn *axon.Neuron) { ly.CycleNeuron(ctx, ni, nrn) },
 			"CycleNeuron")
 	}
 }
@@ -178,7 +173,7 @@ var fp32Result float32
 // Benchmark the cost of doing a type assert on a layer
 func BenchmarkLayerTypeAssert(b *testing.B) {
 	net := &axon.Network{}
-	ConfigNet(net, 1, 1, 1, 2048, false)
+	ConfigNet(net, 1, 2048, false)
 	tmp := float32(0.0)
 
 	b.ResetTimer()
@@ -197,7 +192,7 @@ func BenchmarkLayerTypeAssert(b *testing.B) {
 // Benchmark cost of not doing the type assertion, for comparison
 func BenchmarkLayerTypeAssertBaseline(b *testing.B) {
 	net := &axon.Network{}
-	ConfigNet(net, 1, 1, 1, 2048, false)
+	ConfigNet(net, 1, 2048, false)
 	tmp := float32(0.0)
 
 	b.ResetTimer()

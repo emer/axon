@@ -4,8 +4,6 @@ package main
 
 import (
 	"testing"
-
-	"github.com/alecthomas/assert/v2"
 )
 
 // TestRace runs the boa sim for a little bit to check for race conditions.
@@ -14,7 +12,7 @@ func TestRace(t *testing.T) {
 	sim.New()
 	sim.Config()
 
-	assert.NoError(t, sim.Net.Threads.Set(16, 16, 16))
+	sim.Net.SetNThreads(16)
 
 	sim.Args.SetInt("runs", 1)
 	sim.Args.SetInt("epochs", 1)

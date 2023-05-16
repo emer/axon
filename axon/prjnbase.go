@@ -40,13 +40,13 @@ type PrjnBase struct {
 	RecvConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of recv connections in the receiving layer"`
 	SendConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
 
-	RecvCon    []StartN  `view:"-" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the Syns array of synapses, which are organized by the receiving side, because that is needed for aggregating per-receiver conductances, and also for SubMean on DWt.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage."`
-	Syns       []Synapse `tableview:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] this projection's subset of global list of synaptic state values, ordered so that each receiving layer neuron's connections are contiguous, with RecvCon[ri].N sending connections per receiver."`
-	RecvConIdx []uint32  `view:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
+	RecvCon    []StartN `view:"-" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage."`
+	RecvSynIdx []uint32 `view:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list"`
+	RecvConIdx []uint32 `view:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
 
-	SendCon    []StartN `view:"-" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the SendSynIdx array of indexes into the Syns synapses.  Synapses are not organized by sending neuron so an extra indirection is needed."`
-	SendSynIdx []uint32 `view:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list"`
-	SendConIdx []uint32 `view:"-" desc:"[SendNeurons[[SendCon.N RecvNeurons] index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
+	SendCon    []StartN  `view:"-" desc:"[SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnSendCons slice for GPU usage."`
+	Syns       []Synapse `tableview:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] this projection's subset of global list of synaptic state values, ordered so that each sending layer neuron's connections are contiguous, with SendCon[si].N receiving connections per sender."`
+	SendConIdx []uint32  `view:"-" desc:"[SendNeurons[[SendCon.N RecvNeurons] index of other neuron that receives the sender's synaptic input, ordered by the sending layer's order of units as the outer loop, and SendCon.N receiving units within that.  It is generally preferable to use the Synapse RecvIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`
 
 	// spike aggregation values:
 	GBuf  []int32   `view:"-" desc:"[RecvNeurons][Params.Com.MaxDelay] Ge or Gi conductance ring buffer for each neuron, accessed through Params.Com.ReadIdx, WriteIdx -- scale * weight is added with Com delay offset -- a subslice from network PrjnGBuf. Uses int-encoded float values for faster GPU atomic integration"`
@@ -112,18 +112,18 @@ func (pj *PrjnBase) Validate(logmsg bool) error {
 	return nil
 }
 
-// RecvSyns returns the receiving synapses for given receiving unit index
-// within the receiving layer, to be iterated over for processing.
-func (pj *PrjnBase) RecvSyns(ri int) []Synapse {
-	rcon := pj.RecvCon[ri]
-	return pj.Syns[rcon.Start : rcon.Start+rcon.N]
+// SendSyns returns the sending synapses for given sending unit index
+// within the sending layer, to be iterated over for sender-based processing.
+func (pj *PrjnBase) SendSyns(si int) []Synapse {
+	scon := pj.SendCon[si]
+	return pj.Syns[scon.Start : scon.Start+scon.N]
 }
 
-// SendSynIdxs returns the sending synapse indexes for given sending unit index
-// within the sending layer, to be iterated over for processing.
-func (pj *PrjnBase) SendSynIdxs(si int) []uint32 {
-	scon := pj.SendCon[si]
-	return pj.SendSynIdx[scon.Start : scon.Start+scon.N]
+// RecvSynIdxs returns the receiving synapse indexes for given recv unit index
+// within the receiving layer, to be iterated over for recv-based processing.
+func (pj *PrjnBase) RecvSynIdxs(ri int) []uint32 {
+	rcon := pj.RecvCon[ri]
+	return pj.RecvSynIdx[rcon.Start : rcon.Start+rcon.N]
 }
 
 // Build constructs the full connectivity among the layers.
@@ -152,7 +152,7 @@ func (pj *PrjnBase) Build() error {
 	// these are large allocs, as number of connections tends to be ~quadratic
 	// These indexes are not used in GPU computation -- only for CPU side.
 	pj.RecvConIdx = make([]uint32, tconr)
-	pj.SendSynIdx = make([]uint32, tcons)
+	pj.RecvSynIdx = make([]uint32, tcons)
 	pj.SendConIdx = make([]uint32, tcons)
 
 	sconN := make([]uint32, slen) // temporary mem needed to tracks cur n of sending cons
@@ -179,7 +179,7 @@ func (pj *PrjnBase) Build() error {
 				break
 			}
 			pj.SendConIdx[scon.Start+sci] = uint32(ri)
-			pj.SendSynIdx[scon.Start+sci] = rcon.Start + rci
+			pj.RecvSynIdx[rcon.Start+rci] = scon.Start + sci
 			(sconN[si])++
 			rci++
 		}
@@ -284,41 +284,40 @@ func (pj *PrjnBase) SynVarProps() map[string]string {
 // (1D, flat indexes). Returns -1 if synapse not found between these two neurons.
 // Requires searching within connections for sending unit.
 func (pj *PrjnBase) SynIdx(sidx, ridx int) int {
-	if ridx >= len(pj.RecvCon) {
+	if sidx >= len(pj.SendCon) {
 		return -1
 	}
-	// todo: use proportional search as in symmetrizing function!
-	rcon := pj.RecvCon[ridx]
-	if rcon.N == 0 {
+	scon := pj.SendCon[sidx]
+	if scon.N == 0 {
 		return -1
 	}
-	firstSi := int(pj.RecvConIdx[rcon.Start])
-	lastSi := int(pj.RecvConIdx[rcon.Start+rcon.N-1])
-	if sidx < firstSi || sidx > lastSi { // fast reject -- prjns are always in order!
+	firstRi := int(pj.SendConIdx[scon.Start])
+	lastRi := int(pj.SendConIdx[scon.Start+scon.N-1])
+	if ridx < firstRi || ridx > lastRi { // fast reject -- prjns are always in order!
 		return -1
 	}
 	// start at index proportional to ri relative to rist
 	up := int32(0)
-	if lastSi > firstSi {
-		up = int32(float32(rcon.N) * float32(sidx-firstSi) / float32(lastSi-firstSi))
+	if lastRi > firstRi {
+		up = int32(float32(scon.N) * float32(ridx-firstRi) / float32(lastRi-firstRi))
 	}
 	dn := up - 1
 
 	for {
 		doing := false
-		if up < int32(rcon.N) {
+		if up < int32(scon.N) {
 			doing = true
-			rconi := int32(rcon.Start) + up
-			if int(pj.RecvConIdx[rconi]) == sidx {
-				return int(rconi)
+			sconi := int32(scon.Start) + up
+			if int(pj.SendConIdx[sconi]) == ridx {
+				return int(sconi)
 			}
 			up++
 		}
 		if dn >= 0 {
 			doing = true
-			rconi := int32(rcon.Start) + dn
-			if int(pj.RecvConIdx[rconi]) == sidx {
-				return int(rconi)
+			sconi := int32(scon.Start) + dn
+			if int(pj.SendConIdx[sconi]) == ridx {
+				return int(sconi)
 			}
 			dn--
 		}

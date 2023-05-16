@@ -4,6 +4,196 @@
 
 Results are total time for 1, 2, 4 threads, on my MacBook Pro (16-inch 2021, Apple M1 Max, max config)
 
+# Axon 1.7.23 Receiver-based Synapses
+
+`run_gpu.sh`
+
+## Macbook Pro
+
+```
+==============================================================
+HUGE Network (5 x 1024 units)
+
+Total Secs:   5.98  <- optimized GPU Cycles
+
+Took  10.47 secs for 2 epochs, avg per epc:  5.233
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.004	    0.0
+	GPU:BetweenGi 	  0.411	    4.2
+	    GPU:Cycle 	  0.521	    5.4
+	GPU:CyclePost 	  0.422	    4.4
+	      GPU:DWt 	  0.030	    0.3
+	GPU:GatherSpikes 	  0.569	    5.9
+	    GPU:LayGi 	  0.407	    4.2
+	GPU:MinusPhase 	  0.006	    0.1
+	 GPU:NewState 	  0.027	    0.3
+	GPU:PlusPhase 	  0.004	    0.0
+	GPU:PlusStart 	  0.002	    0.0
+	   GPU:PoolGi 	  0.393	    4.1
+	GPU:SendSpike 	  1.566	   16.2
+	GPU:SynCaRecv 	  2.800	   29.0
+	GPU:SynCaSend 	  2.476	   25.6
+	  GPU:WtFmDWt 	  0.029	    0.3
+	 WtFmDWtLayer 	  0.000	    0.0
+	        Total 	  9.667
+
+CPU:
+
+Took  9.235 secs for 2 epochs, avg per epc:  4.617
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  0.430	    4.7
+	          DWt 	  2.176	   23.6
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.151	    1.6
+	   GiFmSpikes 	  0.126	    1.4
+	PoolGiFmSpikes 	  0.001	    0.0
+	    SendSpike 	  1.759	   19.1
+	    SynCaRecv 	  1.080	   11.7
+	    SynCaSend 	  3.082	   33.4
+	      WtFmDWt 	  0.419	    4.5
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	  9.225
+```
+
+```
+==============================================================
+GINORMOUS Network (5 x 2048 units)
+
+Total Secs:   7.81  <- GPU optimized
+
+Took  9.969 secs for 1 epochs, avg per epc:  9.969
+
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.003	    0.0
+	GPU:BetweenGi 	  0.205	    2.1
+	    GPU:Cycle 	  0.270	    2.8
+	GPU:CyclePost 	  0.214	    2.2
+	      GPU:DWt 	  0.054	    0.6
+	GPU:GatherSpikes 	  0.339	    3.5
+	    GPU:LayGi 	  0.204	    2.1
+	GPU:MinusPhase 	  0.004	    0.0
+	 GPU:NewState 	  0.022	    0.2
+	GPU:PlusPhase 	  0.002	    0.0
+	GPU:PlusStart 	  0.001	    0.0
+	   GPU:PoolGi 	  0.193	    2.0
+	GPU:SendSpike 	  1.496	   15.7
+	GPU:SynCaRecv 	  4.106	   43.0
+	GPU:SynCaSend 	  2.393	   25.0
+	  GPU:WtFmDWt 	  0.053	    0.5
+	 WtFmDWtLayer 	  0.000	    0.0
+	        Total 	  9.557
+
+Took  16.55 secs for 1 epochs, avg per epc:  16.55
+
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  0.330	    2.0
+	          DWt 	  4.405	   26.6
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.120	    0.7
+	   GiFmSpikes 	  0.117	    0.7
+	PoolGiFmSpikes 	  0.000	    0.0
+	    SendSpike 	  2.917	   17.6
+	    SynCaRecv 	  1.876	   11.3
+	    SynCaSend 	  5.951	   36.0
+	      WtFmDWt 	  0.822	    5.0
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 16.538
+```
+
+### HPC2 AMD EPYC 7532 32-Core Processor
+
+```
+==============================================================
+HUGE Network (5 x 1024 units)
+
+Total Secs:   22.8 <- optimized GPU 
+
+Took  24.38 secs for 2 epochs, avg per epc:  12.19
+
+OS Threads (=GOMAXPROCS): 32. Gorountines: 11 (Neurons) 11 (SendSpike) 4 (SynCa)
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.002	    0.0
+	GPU:BetweenGi 	  0.444	    1.9
+	    GPU:Cycle 	  0.284	    1.2
+	GPU:CyclePost 	  0.346	    1.5
+	      GPU:DWt 	  6.826	   28.8
+	GPU:GatherSpikes 	  0.300	    1.3
+	    GPU:LayGi 	  0.390	    1.6
+	GPU:MinusPhase 	  0.170	    0.7
+	 GPU:NewState 	  0.060	    0.3
+	GPU:PlusPhase 	  0.165	    0.7
+	GPU:PlusStart 	  0.005	    0.0
+	   GPU:PoolGi 	  0.408	    1.7
+	GPU:SendSpike 	  1.197	    5.0
+	GPU:SynCaRecv 	  6.456	   27.2
+	GPU:SynCaSend 	  6.625	   28.0
+	  GPU:WtFmDWt 	  0.025	    0.1
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 23.704
+
+Took   19.6 secs for 2 epochs, avg per epc:  9.799
+
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  0.985	    5.0
+	          DWt 	  3.051	   15.6
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.297	    1.5
+	   GiFmSpikes 	  0.563	    2.9
+	PoolGiFmSpikes 	  0.001	    0.0
+	    SendSpike 	  7.271	   37.2
+	    SynCaRecv 	  1.900	    9.7
+	    SynCaSend 	  4.795	   24.5
+	      WtFmDWt 	  0.707	    3.6
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 19.571
+```
+
+```
+==============================================================
+GINORMOUS Network (5 x 2048 units)
+
+Total Secs:   27.6 <- optimized GPU
+
+Took  28.77 secs for 1 epochs, avg per epc:  28.77
+
+	Function Name 	   Secs	    Pct
+	GPU:ApplyExts 	  0.001	    0.0
+	GPU:BetweenGi 	  0.224	    0.8
+	    GPU:Cycle 	  0.160	    0.6
+	GPU:CyclePost 	  0.171	    0.6
+	      GPU:DWt 	 13.075	   46.0
+	GPU:GatherSpikes 	  0.172	    0.6
+	    GPU:LayGi 	  0.199	    0.7
+	GPU:MinusPhase 	  0.156	    0.5
+	 GPU:NewState 	  0.059	    0.2
+	GPU:PlusPhase 	  0.151	    0.5
+	GPU:PlusStart 	  0.004	    0.0
+	   GPU:PoolGi 	  0.204	    0.7
+	GPU:SendSpike 	  1.009	    3.6
+	GPU:SynCaRecv 	  6.779	   23.8
+	GPU:SynCaSend 	  6.016	   21.2
+	  GPU:WtFmDWt 	  0.045	    0.2
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 28.426
+
+Took  24.18 secs for 1 epochs, avg per epc:  24.18
+
+	Function Name 	   Secs	    Pct
+	  CycleNeuron 	  0.738	    3.1
+	          DWt 	  4.033	   16.7
+	   DWtSubMean 	  0.000	    0.0
+	 GatherSpikes 	  0.224	    0.9
+	   GiFmSpikes 	  0.624	    2.6
+	PoolGiFmSpikes 	  0.000	    0.0
+	    SendSpike 	 10.820	   44.8
+	    SynCaRecv 	  1.754	    7.3
+	    SynCaSend 	  4.633	   19.2
+	      WtFmDWt 	  1.328	    5.5
+	 WtFmDWtLayer 	  0.001	    0.0
+	        Total 	 24.155
+```
+
+
 # Axon 1.7.3x (ror/gpu2 branch): GPU first results
 
 This are very first results with no validation of the computation -- main thing is that it doesn't crash and the computational times look plausible!  SynCa is a beast and needs to be investigated!  Using ./run_gpu.sh to target HUGE and LARGE:

@@ -6,116 +6,79 @@ package axon
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"runtime"
 	"sort"
 	"sync"
 
 	"github.com/emer/emergent/timer"
+	"github.com/goki/ki/atomctr"
 	"github.com/goki/ki/ints"
 )
 
 // Maps the given function across the [0, total) range of items, using
+// nThreads goroutines, in smaller-sized chunks for better load balancing.
+// this may be better for larger number of threads, but is not better for small N
+func ParallelChunkRun(fun func(st, ed int), total int, nThreads int) {
+	chunk := total / (nThreads * 2)
+	if chunk <= 1 {
+		fun(0, total)
+		return
+	}
+	chm1 := chunk - 1
+	wait := sync.WaitGroup{}
+	var cur atomctr.Ctr
+	cur.Set(-1)
+	for ti := 0; ti < nThreads; ti++ {
+		wait.Add(1)
+		go func() {
+			for {
+				c := int(cur.Add(int64(chunk)))
+				if c-chm1 >= total {
+					wait.Done()
+					return
+				}
+				max := c + 1
+				if max > total {
+					max = total
+				}
+				fun(c-chm1, max) // end is exclusive
+			}
+		}()
+	}
+	wait.Wait()
+}
+
+// Maps the given function across the [0, total) range of items, using
 // nThreads goroutines.
-func parallelRun(fun func(st, ed int), total int, nThreads int) {
+func ParallelRun(fun func(st, ed int), total int, nThreads int) {
 	itemsPerThr := int(math.Ceil(float64(total) / float64(nThreads)))
-	waitGroup := sync.WaitGroup{}
+	wait := sync.WaitGroup{}
 	for start := 0; start < total; start += itemsPerThr {
 		start := start // capture into loop-local variable for closure
 		end := ints.MinInt(start+itemsPerThr, total)
-		waitGroup.Add(1) // todo: move out of loop
+		wait.Add(1) // todo: move out of loop
 		go func() {
 			fun(start, end)
-			waitGroup.Done()
+			wait.Done()
 		}()
 	}
-	waitGroup.Wait()
+	wait.Wait()
 }
 
-// NetThreads parameterizes how many goroutines to use for each task
-type NetThreads struct {
-	Neurons   int `desc:"for basic neuron-level computation -- highly parallel and linear in memory -- should be able to use a lot of threads"`
-	SendSpike int `desc:"for sending spikes per neuron -- very large memory footprint through synapses and is very sparse -- suffers from significant bandwidth limitations -- use fewer threads"`
-	SynCa     int `desc:"for synaptic-level calcium updating -- very large memory footprint through synapses but linear in order -- use medium number of threads"`
-}
-
-func (nt *NetThreads) String() string {
-	maxProcs := runtime.GOMAXPROCS(0)
-	return fmt.Sprintf("OS Threads (=GOMAXPROCS): %d. Gorountines: %d (Neurons) %d (SendSpike) %d (SynCa)", maxProcs, nt.Neurons, nt.SendSpike, nt.SynCa)
-}
-
-// SetDefaults uses heuristics to determine the number of goroutines to use
-// for each task: Neurons, SendSpike, SynCa.
-func (nt *NetThreads) SetDefaults(nNeurons, nPrjns, nLayers int) {
+// SetNThreads sets number of threads to use for CPU parallel processing.
+// pass 0 to use a default heuristic number based on current GOMAXPROCS
+// processors and the number of neurons in the network (call after building)
+func (nt *NetworkBase) SetNThreads(nthr int) {
 	maxProcs := runtime.GOMAXPROCS(0) // query GOMAXPROCS
-
-	// heuristics
-	prjnMinThr := ints.MinInt(ints.MaxInt(nPrjns, 1), 4)
-	synHeur := math.Ceil(float64(nNeurons) / float64(500))
-	neuronHeur := math.Ceil(float64(nNeurons) / float64(500))
-
-	if err := nt.Set(
-		ints.MinInt(maxProcs, int(neuronHeur)),
-		ints.MinInt(maxProcs, int(synHeur)),
-		ints.MinInt(maxProcs, int(prjnMinThr)),
-	); err != nil {
-		log.Fatal(err)
+	if nthr <= 0 {
+		nneur := len(nt.Neurons)
+		nthr = int(math.Ceil(float64(nneur) / float64(10000)))
+		if nthr < 1 { // shouldn't happen but justin..
+			nthr = 1
+		}
 	}
-}
-
-// Set sets number of goroutines manually for each task
-// This exists mainly for testing, just use SetDefaults in normal use,
-// and GOMAXPROCS=1 to force single-threaded operation.
-func (nt *NetThreads) Set(neurons, sendSpike, synCa int) error {
-	if neurons < 1 || sendSpike < 1 || synCa < 1 {
-		return fmt.Errorf("NetThreads: all values must be >= 1, got: %v, %v, %v", neurons, sendSpike, synCa)
-	}
-	nt.Neurons = neurons
-	nt.SendSpike = sendSpike
-	nt.SynCa = synCa
-	return nil
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Specialized parallel map functions that respect settings in NetworkBase.Threads
-
-// SynCaFun applies function of given name to all projections, using
-// NetThreads.SynCa number of goroutines.
-func (nt *NetworkBase) SynCaFun(fun func(pj *Prjn), funame string) {
-	nt.PrjnMapParallel(fun, funame, nt.Threads.SynCa)
-}
-
-// NeuronFun applies function of given name to all neurons, using
-// NetThreads.Neurons number of goroutines.
-func (nt *NetworkBase) NeuronFun(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
-	nt.NeuronMapParallel(fun, funame, nt.Threads.Neurons)
-}
-
-// SendSpikeFun applies function of given name to all layers
-// using as many goroutines as configured in NetThreads.SendSpike
-func (nt *NetworkBase) SendSpikeFun(fun func(ly *Layer), funame string) {
-	nt.LayerMapParallel(fun, funame, nt.Threads.SendSpike)
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
-//  Generic parallel map functions
-
-// PrjnMapParallel applies function of given name to all projections
-// using nThreads go routines if nThreads > 1, otherwise runs sequentially.
-func (nt *NetworkBase) PrjnMapParallel(fun func(prjn *Prjn), funame string, nThreads int) {
-	nt.FunTimerStart(funame)
-	// run single-threaded, skipping the overhead of goroutines
-	if nThreads <= 1 {
-		nt.PrjnMapSeq(fun, funame)
-	} else {
-		parallelRun(func(st, ed int) {
-			for pi := st; pi < ed; pi++ {
-				fun(nt.Prjns[pi])
-			}
-		}, len(nt.Prjns), nThreads)
-	}
-	nt.FunTimerStop(funame)
+	nt.NThreads = ints.MinInt(maxProcs, nthr)
 }
 
 // PrjnMapSeq applies function of given name to all projections sequentially.
@@ -123,22 +86,6 @@ func (nt *NetworkBase) PrjnMapSeq(fun func(pj *Prjn), funame string) {
 	nt.FunTimerStart(funame)
 	for _, pj := range nt.Prjns {
 		fun(pj)
-	}
-	nt.FunTimerStop(funame)
-}
-
-// LayerMapParallel applies function of given name to all layers
-// using nThreads go routines if nThreads > 1, otherwise runs sequentially.
-func (nt *NetworkBase) LayerMapParallel(fun func(ly *Layer), funame string, nThreads int) {
-	nt.FunTimerStart(funame)
-	if nThreads <= 1 {
-		nt.LayerMapSeq(fun, funame)
-	} else {
-		parallelRun(func(st, ed int) {
-			for li := st; li < ed; li++ {
-				fun(nt.Layers[li])
-			}
-		}, len(nt.Layers), nThreads)
 	}
 	nt.FunTimerStop(funame)
 }
@@ -152,49 +99,59 @@ func (nt *NetworkBase) LayerMapSeq(fun func(ly *Layer), funame string) {
 	nt.FunTimerStop(funame)
 }
 
-// NeuronMapParallel applies function of given name to all neurons
+// LayerMapPar applies function of given name to all layers
 // using as many go routines as configured in NetThreads.Neurons.
-func (nt *NetworkBase) NeuronMapParallel(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string, nThreads int) {
-	nt.FunTimerStart(funame)
-	if nThreads <= 1 {
-		nt.NeuronMapSequential(fun, funame)
+func (nt *NetworkBase) LayerMapPar(fun func(ly *Layer), funame string) {
+	if nt.NThreads <= 1 {
+		nt.LayerMapSeq(fun, funame)
 	} else {
-		parallelRun(func(st, ed int) {
-			for ni := st; ni < ed; ni++ {
-				nrn := &nt.Neurons[ni]
-				ly := nt.Layers[nrn.LayIdx]
-				fun(ly, uint32(ni-ly.NeurStartIdx()), nrn)
+		nt.FunTimerStart(funame)
+		ParallelRun(func(st, ed int) {
+			for li := st; li < ed; li++ {
+				ly := nt.Layers[li]
+				fun(ly)
 			}
-		}, len(nt.Neurons), nThreads)
+		}, len(nt.Layers), nt.NThreads)
+		nt.FunTimerStop(funame)
 	}
-	nt.FunTimerStop(funame)
 }
 
-// NeuronMapSequential applies function of given name to all neurons sequentially.
-func (nt *NetworkBase) NeuronMapSequential(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
+// NeuronMapSeq applies function of given name to all neurons sequentially.
+func (nt *NetworkBase) NeuronMapSeq(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
 	nt.FunTimerStart(funame)
 	for _, ly := range nt.Layers {
-		lyrNeurons := ly.Neurons
-		for nrnIdx := range lyrNeurons {
-			nrn := &lyrNeurons[nrnIdx]
-			fun(ly, uint32(nrnIdx), nrn)
+		for ni := range ly.Neurons {
+			nrn := &ly.Neurons[ni]
+			fun(ly, uint32(ni), nrn)
 		}
 	}
 	nt.FunTimerStop(funame)
 }
 
+// NeuronMapPar applies function of given name to all neurons
+// using as many go routines as configured in NetThreads.Neurons.
+func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
+	if nt.NThreads <= 1 {
+		nt.NeuronMapSeq(fun, funame)
+	} else {
+		nt.FunTimerStart(funame)
+		ParallelRun(func(st, ed int) {
+			for ni := st; ni < ed; ni++ {
+				nrn := &nt.Neurons[ni]
+				ly := nt.Layers[nrn.LayIdx]
+				fun(ly, uint32(ni-ly.NeurStartIdx()), nrn)
+			}
+		}, len(nt.Neurons), nt.NThreads)
+		nt.FunTimerStop(funame)
+	}
+}
+
 //////////////////////////////////////////////////////////////
 // Timing reports
 
-// ThreadsReport reports the number of threads used
-func (nt *NetworkBase) ThreadReport() {
-	fmt.Println(nt.Threads.String())
-}
-
 // TimerReport reports the amount of time spent in each function, and in each thread
 func (nt *NetworkBase) TimerReport() {
-	fmt.Printf("TimerReport: %v\n", nt.Nm)
-	fmt.Println(nt.Threads.String())
+	fmt.Printf("TimerReport: %v  %d threads\n", nt.Nm, nt.NThreads)
 	fmt.Printf("\t%13s \t%7s\t%7s\n", "Function Name", "Secs", "Pct")
 	nfn := len(nt.FunTimes)
 	fnms := make([]string, nfn)

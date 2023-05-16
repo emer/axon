@@ -159,63 +159,36 @@ func (ly *Layer) PostSpike(ctx *Context, ni uint32, nrn *Neuron) {
 
 // SendSpike sends spike to receivers for all neurons that spiked
 // last step in Cycle, integrated the next time around.
-func (ly *Layer) SendSpike(ctx *Context) {
-	for ni := range ly.Neurons {
-		nrn := &ly.Neurons[ni]
-		if nrn.IsOff() {
+func (ly *Layer) SendSpike(ctx *Context, ni uint32, nrn *Neuron) {
+	for _, sp := range ly.SndPrjns {
+		if sp.IsOff() {
 			continue
 		}
-		ly.PostSpike(ctx, uint32(ni), nrn)
-		for _, sp := range ly.SndPrjns {
-			if sp.IsOff() {
-				continue
-			}
-			sp.SendSpike(ctx, ni, nrn)
-		}
+		sp.SendSpike(ctx, ni, nrn)
 	}
 }
 
-// SynCaSend updates synaptic calcium based on spiking, for SynSpkTheta mode.
+// SynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking, threaded over neurons.
-// This pass updates sending projections -- all sending synapses are
-// unique to a given sending neuron, so this is threadsafe.
-// Cannot do both send and recv in same pass without potential for
-// race conditions.
-func (ly *Layer) SynCaSend(ctx *Context, ni uint32, sn *Neuron) {
-	if sn.Spike == 0 {
+func (ly *Layer) SynCa(ctx *Context, ni uint32, nrn *Neuron) {
+	if nrn.Spike == 0 {
 		return
 	}
 	updtThr := ly.Params.Learn.CaLrn.UpdtThr
-	if sn.CaSpkP < updtThr && sn.CaSpkD < updtThr {
+	if nrn.CaSpkP < updtThr && nrn.CaSpkD < updtThr {
 		return
 	}
 	for _, sp := range ly.SndPrjns {
 		if sp.IsOff() {
 			continue
 		}
-		sp.SynCaSend(ctx, ni, sn, updtThr)
-	}
-}
-
-// SynCaRecv updates synaptic calcium based on spiking, for SynSpkTheta mode.
-// Optimized version only updates at point of spiking, threaded over neurons.
-// This pass updates recv projections -- all recv synapses are
-// unique to a given recv neuron, so this is threadsafe.
-// Cannot do both send and recv in same pass without potential for
-// race conditions.
-func (ly *Layer) SynCaRecv(ctx *Context, ni uint32, rn *Neuron) {
-	if rn.Spike == 0 {
-		return
-	}
-	updtThr := ly.Params.Learn.CaLrn.UpdtThr
-	if rn.CaSpkP < updtThr && rn.CaSpkD < updtThr {
-		return
+		sp.SynCaSend(ctx, ni, nrn, updtThr)
 	}
 	for _, rp := range ly.RcvPrjns {
 		if rp.IsOff() {
 			continue
 		}
-		rp.SynCaRecv(ctx, ni, rn, updtThr)
+		rp.SynCaRecv(ctx, ni, nrn, updtThr)
 	}
 }
 
@@ -540,6 +513,38 @@ func (ly *Layer) CorSimFmActs() {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
+
+// DWt computes the weight change (learning), based on
+// synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+func (ly *Layer) DWt(ctx *Context, si uint32, sn *Neuron) {
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		pj.DWt(ctx, si, sn)
+	}
+}
+
+// DWtSubMean
+func (ly *Layer) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		pj.DWtSubMean(ctx, ri, rn)
+	}
+}
+
+// WtFmDWt
+func (ly *Layer) WtFmDWt(ctx *Context, si uint32, sn *Neuron) {
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		pj.WtFmDWt(ctx, si, sn)
+	}
+}
 
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
