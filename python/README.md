@@ -1,5 +1,7 @@
 # Python interface to emergent / Leabra
 
+**These Python interfaces are currently unused**
+
 You can run the Go version of *emergent* via Python, using the [gopy](https://github.com/go-python/gopy) tool that automatically creates Python bindings for Go packages. 
 
 See the [GoGi Python README](https://github.com/goki/gi/blob/master/python/README.md) for more details on how the python wrapper works and how to use it for GUI-level functionality.  **If you encounter any difficulties with this install, then try doing the install in GoGi first**, and read more about the different install issues there.
