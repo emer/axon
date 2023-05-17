@@ -194,6 +194,8 @@ func (ly *LayerParams) AllParams() string {
 	case VSPatchLayer:
 		b, _ = json.MarshalIndent(&ly.VSPatch, "", " ")
 		str += "VSPatch: {\n " + JsonToParams(b)
+		b, _ = json.MarshalIndent(&ly.PVLV, "", " ")
+		str += "PVLV:    {\n " + JsonToParams(b)
 
 	case MatrixLayer:
 		b, _ = json.MarshalIndent(&ly.Matrix, "", " ")
