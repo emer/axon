@@ -19,12 +19,11 @@ const (
 	shape1D = 8
 )
 
-// TestMultithreadingCycleFun tests the whole net.Cycle() function, turning on
-// multithreading for all functions.
-func TestMultithreadingCycleFun(t *testing.T) {
+// TestMultithreading
+func TestMultithreading(t *testing.T) {
 	pats := generateRandomPatterns(100, 42)
 	// launch many goroutines to increase odds of finding race conditions
-	netS, netP := buildIdenticalNetworks(t, pats, 16, 16, 16)
+	netS, netP := buildIdenticalNetworks(t, pats, 16)
 
 	fun := func(net *Network, ctx *Context) {
 		net.Cycle(ctx)
@@ -39,14 +38,6 @@ func TestMultithreadingCycleFun(t *testing.T) {
 	assert.True(t, neuronsSynsAreEqual(netS, netP))
 	runFunEpochs(pats, netS, fun, 1)
 	assert.False(t, neuronsSynsAreEqual(netS, netP))
-
-	// check that the number of threads used is correct
-	assert.Equal(t, 1, netS.Threads.Neurons)
-	assert.Equal(t, 1, netS.Threads.SendSpike)
-	assert.Equal(t, 1, netS.Threads.SynCa)
-	assert.Equal(t, 16, netP.Threads.Neurons)
-	assert.Equal(t, 16, netP.Threads.SendSpike)
-	assert.Equal(t, 16, netP.Threads.SynCa)
 }
 
 func TestCollectAndSetDWts(t *testing.T) {
@@ -58,10 +49,10 @@ func TestCollectAndSetDWts(t *testing.T) {
 	shape := []int{shape1D, shape1D}
 
 	rand.Seed(1337)
-	netA := buildNet(t, shape, 1, 1, 1)
+	netA := buildNet(t, shape, 1)
 	netA.SlowInterval = 1
 	rand.Seed(1337)
-	netB := buildNet(t, shape, 1, 1, 1)
+	netB := buildNet(t, shape, 1)
 	netB.SlowInterval = 1
 
 	runCycle := func(net *Network, ctx *Context, pats *etable.Table) {
@@ -131,7 +122,7 @@ func TestCollectAndSetDWts(t *testing.T) {
 // at the beginning of the test.
 func TestDeterministicSingleThreadedTraining(t *testing.T) {
 	pats := generateRandomPatterns(10, 42)
-	netA, netB := buildIdenticalNetworks(t, pats, 1, 1, 1)
+	netA, netB := buildIdenticalNetworks(t, pats, 1)
 
 	fun := func(net *Network, ctx *Context) {
 		net.Cycle(ctx)
@@ -155,66 +146,6 @@ func TestDeterministicSingleThreadedTraining(t *testing.T) {
 	runFunEpochs(pats, netA, fun, 1)
 	assert.False(t, neuronsSynsAreEqual(netA, netB))
 	assert.False(t, netA.WtsHash() == netB.WtsHash())
-}
-
-func TestMultithreadedSendSpike(t *testing.T) {
-	pats := generateRandomPatterns(10, 42)
-	netS, netP := buildIdenticalNetworks(t, pats, 1, 16, 1)
-
-	fun := func(net *Network, ctx *Context) {
-		net.Cycle(ctx)
-	}
-
-	runFunEpochs(pats, netP, fun, 2)
-	runFunEpochs(pats, netS, fun, 2)
-
-	// compare the resulting networks
-	assertNeuronsSynsEqual(t, netS, netP)
-
-	// sanity check, to make sure we're not accidentally sharing pointers etc.
-	assert.True(t, neuronsSynsAreEqual(netS, netP))
-	runFunEpochs(pats, netS, fun, 1)
-	assert.False(t, neuronsSynsAreEqual(netS, netP))
-}
-
-func TestMultithreadedNeuronFun(t *testing.T) {
-	pats := generateRandomPatterns(10, 42)
-	netS, netP := buildIdenticalNetworks(t, pats, 16, 1, 1)
-
-	fun := func(net *Network, ctx *Context) {
-		net.Cycle(ctx)
-	}
-
-	runFunEpochs(pats, netP, fun, 3)
-	runFunEpochs(pats, netS, fun, 3)
-
-	// compare the resulting networks
-	assertNeuronsSynsEqual(t, netS, netP)
-
-	// sanity check, to make sure we're not accidentally sharing pointers etc.
-	assert.True(t, neuronsSynsAreEqual(netS, netP))
-	runFunEpochs(pats, netS, fun, 1)
-	assert.False(t, neuronsSynsAreEqual(netS, netP))
-}
-
-func TestMultithreadedSynCa(t *testing.T) {
-	pats := generateRandomPatterns(10, 42)
-	netS, netP := buildIdenticalNetworks(t, pats, 16, 1, 16)
-
-	fun := func(net *Network, ctx *Context) {
-		net.Cycle(ctx)
-	}
-
-	runFunEpochs(pats, netP, fun, 3)
-	runFunEpochs(pats, netS, fun, 3)
-
-	// compare the resulting networks
-	assertNeuronsSynsEqual(t, netS, netP)
-
-	// sanity check, to make sure we're not accidentally sharing pointers etc.
-	assert.True(t, neuronsSynsAreEqual(netS, netP))
-	runFunEpochs(pats, netS, fun, 1)
-	assert.False(t, neuronsSynsAreEqual(netS, netP))
 }
 
 // assert that all Neuron fields and all Synapse fields are equal between
@@ -242,7 +173,7 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 				if fieldS.Kind() == reflect.Float32 {
 					// Notice: We check for full bit-equality here, because there is no reason
 					// why the trivially parallelizable functions should produce different results
-					assert.Equal(t, fieldS.Float(), fieldP.Float(),
+					require.Equal(t, fieldS.Float(), fieldP.Float(),
 						"Neuron %d, field %s, single thread: %f, multi thread: %f",
 						ni, nrnS.Type().Field(fi).Name, fieldS.Float(), fieldP.Float())
 					if math.Abs(fieldS.Float()-fieldP.Float()) > maxDiff.diff {
@@ -253,14 +184,19 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 						maxDiff.valP = fieldP.Float()
 					}
 				} else if fieldS.Kind() == reflect.Int32 {
-					assert.Equal(t, fieldS.Int(), fieldP.Int(),
+					require.Equal(t, fieldS.Int(), fieldP.Int(),
 						"Neuron %d, field %s, single thread: %d, multi thread: %d",
 						ni, nrnS.Type().Field(fi).Name, fieldS.Int(), fieldP.Int())
 				}
 			}
 		}
+	}
 
-		// check Synapse fields
+	// check Synapse fields after all neurons are validated -- neuron diffs primary
+	for li := range netS.Layers {
+		layerS := netS.Layers[li]
+		layerP := netP.Layers[li]
+
 		for pi := range layerS.SndPrjns {
 			prjnS := layerS.SndPrjns[pi]
 			prjnP := layerP.SndPrjns[pi]
@@ -271,11 +207,11 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 					fieldS := synS.Field(fi)
 					fieldP := synP.Field(fi)
 					if fieldS.Kind() == reflect.Float32 {
-						assert.Equal(t, fieldS.Float(), fieldP.Float(),
+						require.Equal(t, fieldS.Float(), fieldP.Float(),
 							"Synapse %d, field %s, single thread: %f, multi thread: %f",
 							si, synS.Type().Field(fi).Name, fieldS.Float(), fieldP.Float())
 					} else if fieldS.Kind() == reflect.Int32 {
-						assert.Equal(t, fieldS.Int(), fieldP.Int(),
+						require.Equal(t, fieldS.Int(), fieldP.Int(),
 							"Synapse %d, field %s, single thread: %d, multi thread: %d",
 							si, synS.Type().Field(fi).Name, fieldS.Int(), fieldP.Int())
 					}
@@ -336,7 +272,7 @@ func generateRandomPatterns(nPats int, seed int64) *etable.Table {
 // buildIdenticalNetworks builds two identical nets, one single-threaded and one
 // multi-threaded (parallel). They are seeded with the same RNG, so they are identical.
 // Returns two networks: (sequential, parallel)
-func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpike, tSynCa int) (*Network, *Network) {
+func buildIdenticalNetworks(t *testing.T, pats *etable.Table, nthrs int) (*Network, *Network) {
 	shape := []int{shape1D, shape1D}
 
 	// Create both networks. Ideally we'd create one network, run for a few cycles
@@ -346,10 +282,10 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 
 	// single-threaded network
 	rand.Seed(1337)
-	netS := buildNet(t, shape, 1, 1, 1)
+	netS := buildNet(t, shape, 1)
 	// multi-threaded network
 	rand.Seed(1337)
-	netM := buildNet(t, shape, tNeuron, tSendSpike, tSynCa)
+	netM := buildNet(t, shape, nthrs)
 
 	// The below code doesn't work, because we have no clean way of storing and restoring
 	// the full state of a network.
@@ -395,7 +331,7 @@ func buildIdenticalNetworks(t *testing.T, pats *etable.Table, tNeuron, tSendSpik
 	return netS, netM
 }
 
-func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa int) *Network {
+func buildNet(t *testing.T, shape []int, nthrs int) *Network {
 	net := NewNetwork("MTTest")
 
 	/*
@@ -418,10 +354,7 @@ func buildNet(t *testing.T, shape []int, tNeuron, tSendSpike, tSynCa int) *Netwo
 	}
 	net.Defaults() // Initializes threading defaults, but we override below
 	net.InitWts()
-
-	if err := net.Threads.Set(tNeuron, tSendSpike, tSynCa); err != nil {
-		t.Fatal(err)
-	}
+	net.SetNThreads(nthrs)
 	return net
 }
 

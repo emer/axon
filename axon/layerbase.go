@@ -424,10 +424,10 @@ func (ly *LayerBase) BuildPools(nu int) error {
 	return nil
 }
 
-// BuildPrjns builds the projections, recv-side
+// BuildPrjns builds the projections, send-side
 func (ly *LayerBase) BuildPrjns() error {
 	emsg := ""
-	for _, pj := range ly.RcvPrjns {
+	for _, pj := range ly.SndPrjns {
 		if pj.IsOff() {
 			continue
 		}

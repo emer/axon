@@ -180,6 +180,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 		return
 	}
 	net.Defaults()
+	net.SetNThreads(1)
 	ss.Params.SetObject("Network")
 	net.InitWts()
 }

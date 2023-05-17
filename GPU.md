@@ -73,9 +73,9 @@ Set: 1 "Prjns" -- read only
     Role: Storage
         Var: 0:	Prjns	Struct[5]	(size: 336)	Vals: 1
         Var: 1:	RecvCon	Struct[281]	(size: 16)	Vals: 1
-        Var: 2:	SendPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
+        Var: 2:	RecvPrjnIdxs	Uint32[5]	(size: 4)	Vals: 1
         Var: 3:	SendCon	Struct[242]	(size: 16)	Vals: 1
-        Var: 4:	SendSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
+        Var: 4:	RecvSynIdxs	Uint32[12992]	(size: 4)	Vals: 1
 Set: 2 "Structs" -- read-write
     Role: Storage
         Var: 0:	Ctx	Struct	(size: 112)	Vals: 1

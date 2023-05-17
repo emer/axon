@@ -14,26 +14,22 @@
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
 
 // Set 1: effectively uniform prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][RecvPrjns]
-[[vk::binding(1, 1)]] StructuredBuffer<StartN> RecvCon; // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+// [[vk::binding(1, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+[[vk::binding(2, 1)]] StructuredBuffer<uint> RecvPrjnIdxs; // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][RecvPrjns][RecvNeurons][Syns]
+[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(5, 2)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1]
 [[vk::binding(6, 2)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
 
 // Set 3: external inputs
-// [[vk::binding(0, 3)]] RWStructuredBuffer<float> Exts;  [In / Out Layers][Neurons]
 
 void GatherSpikesPrjn(in Context ctx, in PrjnParams pj, in LayerParams ly, uint ni, inout Neuron nrn) {
-	// now doing SendSpike
-	// uint bi = pj.Idxs.GBufSt + pj.Com.WriteIdx(ni, ctx.CycleTot-1); // -1 = prior time step
-	// RecvSpikes(ctx, pj, ly, ni, GBuf[bi]); // writes to gbuf
-	
 	uint bi = pj.Idxs.GBufSt + pj.Com.ReadIdx(ni, ctx.CyclesTotal, pj.Idxs.RecvNeurN);
 	float gRaw = pj.Com.FloatFromGBuf(GBuf[bi]);
 	GBuf[bi] = 0;
@@ -57,7 +53,7 @@ void GatherSpikes2(in Context ctx, LayerParams ly, uint nin, inout Neuron nrn) {
 	ly.GatherSpikesInit(nrn);
 	
 	for (uint pi = 0; pi < ly.Idxs.RecvN; pi++) {
-		GatherSpikesPrjn(ctx, Prjns[ly.Idxs.RecvSt + pi], ly, ni, nrn);
+		GatherSpikesPrjn(ctx, Prjns[RecvPrjnIdxs[ly.Idxs.RecvSt + pi]], ly, ni, nrn);
 	}
 	
 	// Note: Interlocked* methods can ONLY operate directly on the
@@ -72,7 +68,7 @@ void GatherSpikes(in Context ctx, uint nin, inout Neuron nrn) {
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Recv Neurons
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons
 	uint ns;
 	uint st;
 	Neurons.GetDimensions(ns, st);
