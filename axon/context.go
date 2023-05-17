@@ -108,24 +108,29 @@ func (ctx *Context) PVLVDA() float32 {
 
 //gosl: end context
 
-// PVLVSetUS sets unconditioned stimulus (US) state for PVLV algorithm,
-// which determines if a positive, negative, or no primary value outcome
-// has been received.  Typically set this at the start of a Trial,
-// which then drives activity of relevant PVLV-rendered inputs, and dopamine.
-// The US index is automatically adjusted for the curiosity drive / US for
-// positive US outcomes -- i.e., pass in a value with 0 starting index.
-func (ctx *Context) PVLVSetUS(hasUS, isPos bool, usIdx int, magnitude float32) {
+// PVLVInitUS initializes the US state -- call this before calling PVLVSetUS.
+func (ctx *Context) PVLVInitUS() {
 	ctx.PVLV.InitUS()
 	ctx.NeuroMod.HasRew.SetBool(false)
-	if hasUS {
-		if isPos {
-			ctx.NeuroMod.HasRew.SetBool(true)            // only for positive USs -- todo: revisit!
-			ctx.PVLV.SetPosUS(int32(usIdx)+1, magnitude) // +1 for curiosity
-		} else {
-			ctx.PVLV.SetNegUS(int32(usIdx), magnitude)
-		}
+	ctx.NeuroMod.Rew = 0
+}
+
+// PVLVSetUS sets the given unconditioned stimulus (US) state for PVLV algorithm.
+// Call PVLVInitUS before calling this, and only call this when a US has been received,
+// at the start of a Trial typically.
+// This then drives activity of relevant PVLV-rendered inputs, and dopamine.
+// The US index is automatically adjusted for the curiosity drive / US for
+// positive US outcomes -- i.e., pass in a value with 0 starting index.
+// By default, negative USs do not set the overall ctx.NeuroMod.HasRew flag,
+// which is the trigger for a full-blown US learning event. Set this yourself
+// if the negative US is more of a discrete outcome vs. something that happens
+// in the course of goal engaged approach.
+func (ctx *Context) PVLVSetUS(valence ValenceTypes, usIdx int, magnitude float32) {
+	if valence == Positive {
+		ctx.NeuroMod.HasRew.SetBool(true)            // only for positive USs
+		ctx.PVLV.SetPosUS(int32(usIdx)+1, magnitude) // +1 for curiosity
 	} else {
-		ctx.NeuroMod.Rew = 0
+		ctx.PVLV.SetNegUS(int32(usIdx), magnitude)
 	}
 }
 
