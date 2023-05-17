@@ -342,7 +342,14 @@ func (ss *Sim) ApplyInputs() {
 // from given trial data.
 func (ss *Sim) ApplyPVLV(ctx *axon.Context, trl *cond.Trial) {
 	ctx.PVLV.EffortUrgencyUpdt(&ss.Net.Rand, 1)
-	ctx.PVLVSetUS(trl.USOn, trl.Valence == cond.Pos, trl.US, trl.USMag)
+	ctx.PVLVInitUS()
+	if trl.USOn {
+		if trl.Valence == cond.Pos {
+			ctx.PVLVSetUS(axon.Positive, trl.US, trl.USMag)
+		} else {
+			ctx.PVLVSetUS(axon.Negative, trl.US, trl.USMag)
+		}
+	}
 	ctx.PVLVSetDrives(1, 1, trl.US)
 	ctx.PVLVStepStart(&ss.Net.Rand)
 }
