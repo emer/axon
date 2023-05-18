@@ -830,7 +830,7 @@ func (ly *Layer) ApplyExt(ext etensor.Tensor) {
 // ApplyExtVal applies given external value to given neuron
 // using clearMask, setMask, and toTarg from ApplyExtFlags.
 // Also saves Val in Exts for potential use by GPU.
-func (ly *Layer) ApplyExtVal(ni int, nrn *Neuron, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
+func (ly *Layer) ApplyExtVal(ctx *Context, ni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
 	if len(ly.Exts) <= ni {
 		log.Printf("Layer named: %s Type: %s does not have allocated Exts vals -- is likely not registered to receive external input in LayerTypes.IsExt() -- will not be presented to GPU", ly.Name(), ly.LayerType().String())
 	} else {
@@ -840,9 +840,9 @@ func (ly *Layer) ApplyExtVal(ni int, nrn *Neuron, val float32, clearMask, setMas
 		return
 	}
 	if toTarg {
-		nrn.Target = val
+		SetNeurVar(ctx, ni, di, Target, val)
 	} else {
-		nrn.Ext = val
+		SetNeurVar(ctx, ni, di, Ext, val)
 	}
 	nrn.ClearFlag(clearMask)
 	nrn.SetFlag(setMask)

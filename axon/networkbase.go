@@ -47,11 +47,12 @@ type NetworkBase struct {
 
 	// Implementation level code below:
 	MaxDelay     uint32        `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	MaxData      uint32        `desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
 	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals      []LayerVals   `view:"-" desc:"[Layers] array of layer values, in 1-to-1 correspondence with Layers"`
 	Pools        []Pool        `view:"-" desc:"[Layers][Pools] array of inhibitory pools for all layers."`
-	Neurons      []Neuron      `view:"-" desc:"entire network's allocation of neurons -- can be operated upon in parallel"`
+	Neurons      []float32     `view:"-" desc:"entire network's allocation of neuron variables, accessed via NeuronVar method"`
 	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
 	Synapses     []Synapse     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based"`
@@ -78,6 +79,7 @@ type NetworkBase struct {
 func (nt *NetworkBase) InitName(net emer.Network, name string) {
 	nt.EmerNet = net
 	nt.Nm = name
+	nt.MaxData = 1
 }
 
 // emer.Network interface methods:
@@ -541,7 +543,8 @@ func (nt *NetworkBase) Build() error {
 	nt.LayParams = make([]LayerParams, nLayers)
 	nt.LayVals = make([]LayerVals, nLayers)
 	nt.Pools = make([]Pool, totPools)
-	nt.Neurons = make([]Neuron, totNeurons)
+	nneur := uint32(totNeurons) * nt.MaxData * uint32(NeuronVarsN)
+	nt.Neurons = make([]float32, nneur)
 	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
 	nt.Exts = make([]float32, totExts)

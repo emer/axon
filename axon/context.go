@@ -11,6 +11,51 @@ import (
 	"github.com/goki/gosl/slrand"
 )
 
+// Networks is a global list of networks, needed for variable access
+var Networks []*Network
+
+// NeurVar is the CPU version of the neuron variable accessor
+func NeurVar(ctx *Context, ni, di uint32, nvar NeuronVars) float32 {
+	return Networks[ctx.NetIdx].Neurons[ctx.NeurVars(ni, di, nvar)]
+}
+
+// SetNeurVar is the CPU version of the neuron variable settor
+func SetNeurVar(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
+	Networks[ctx.NetIdx].Neurons[ctx.NeurVars(ni, di, nvar)] = val
+}
+
+// AddNeurVar is the CPU version of the neuron variable addor
+func AddNeurVar(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
+	Networks[ctx.NetIdx].Neurons[ctx.NeurVars(ni, di, nvar)] += val
+}
+
+// NeurIdx is the CPU version of the neuron idx accessor
+func NeurIdx(ctx *Context, ni uint32, idx NeuronIdxs) uint32 {
+	return Networks[ctx.NetIdx].NeurIdxs[ctx.NeurIdxs(ni, idx)]
+}
+
+// SetNeurIdx is the CPU version of the neuron idx settor
+func SetNeurIdx(ctx *Context, ni uint32, idx NeuronIdxs, val uint32) {
+	Networks[ctx.NetIdx].NeurIdxs[ctx.NeurIdxs(ni, idx)] = val
+}
+
+func NeurHasFlag(ctx *Context, ni uint32, flag NeuronFlags) bool {
+	return (NeuronFlags(NeurIdx(ctx, ni, NidxFlags)) & flag) > 0 // weird: != 0 does NOT work on GPU
+}
+
+func NeurSetFlag(ctx *Context, ni uint32, flag NeuronFlags) {
+	SetNeurIdx(ctx, ni, NidxFlags, NeurIdx(ctx, ni, NidxFlags)|uint32(flag))
+}
+
+func NeurClearFlag(ctx *Context, ni uint32, flag NeuronFlags) {
+	SetNeurIdx(ctx, ni, NidxFlags, NeurIdx(ctx, ni, NidxFlags)&^uint32(flag))
+}
+
+// NeurIsOff returns true if the neuron has been turned off (lesioned)
+func NeurIsOff(ctx *Context, ni int) bool {
+	return NeurHasFlag(ctx, uint32(ni), NeuronOff)
+}
+
 //gosl: hlsl context
 // #include "etime.hlsl"
 // #include "axonrand.hlsl"
@@ -28,6 +73,8 @@ import (
 // It contains timing, Testing vs. Training mode, random number context,
 // global neuromodulation, etc.
 type Context struct {
+	NetIdx       uint32      `desc:"network index in Networks list of networks -- for CPU mode"`
+	NData        uint32      `desc:"number of data parallel items to process currently"`
 	Mode         etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
 	Phase        int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
 	PlusPhase    slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
@@ -40,10 +87,11 @@ type Context struct {
 	Testing      slbool.Bool `desc:"if true, the model is being run in a testing mode, so no weight changes or other associated computations are needed.  this flag should only affect learning-related behavior"`
 	TimePerCycle float32     `def:"0.001" desc:"amount of time to increment per cycle"`
 	NLayers      int32       `view:"-" desc:"number of layers in the network -- needed for GPU mode"`
-	NSpiked      int32       `inactive:"+" desc:"number of neurons that spiked"`
 
-	pad, pad1, pad2 int32
+	pad, pad1 int32
 
+	NeurVars NeurVarStrides `desc:"stride offsets for accessing neuron variables"`
+	NeurIdxs NeurIdxStrides `desc:"stride offsets for accessing neuron indexes"`
 	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
 	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
@@ -51,6 +99,7 @@ type Context struct {
 
 // Defaults sets default values
 func (ctx *Context) Defaults() {
+	ctx.NData = 1
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
 	ctx.Mode = etime.Train
@@ -66,7 +115,6 @@ func (ctx *Context) NewState(mode etime.Modes) {
 	ctx.PlusPhase.SetBool(false)
 	ctx.PhaseCycle = 0
 	ctx.Cycle = 0
-	ctx.NSpiked = 0
 	ctx.Mode = mode
 	ctx.Testing.SetBool(mode != etime.Train)
 	ctx.NeuroMod.NewState()
@@ -88,7 +136,6 @@ func (ctx *Context) CycleInc() {
 	ctx.CyclesTotal++
 	ctx.Time += ctx.TimePerCycle
 	ctx.RandCtr.Add(uint32(RandFunIdxN))
-	ctx.NSpiked = 0
 }
 
 // PVLVDA computes the updated dopamine for PVLV algorithm from all the current state,
@@ -105,6 +152,24 @@ func (ctx *Context) PVLVDA() float32 {
 	}
 	return ctx.PVLV.VTA.Vals.DA
 }
+
+//gosl: end context
+
+// note: following is real code, uncommented by gosl
+
+//gosl: hlsl context
+// // NeuronVar is GPU version of neuron var accessor into Neurons array
+// float NeuronVar(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar) {
+//    return Neurons[ctx.NeurVars(ni, di, nvar)];
+// }
+// // SetNeuronVar is the CPU version of the neuron variable settor
+// func SetNeuronVar(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
+//  	Neurons[ctx.NeurVars(ni, di, nvar)] = val;
+// }
+// // AddNeuronVar is the CPU version of the neuron variable settor
+// func AddNeuronVar(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
+//  	Neurons[ctx.NeurVars(ni, di, nvar)] += val;
+// }
 
 //gosl: end context
 
@@ -174,7 +239,6 @@ func (ctx *Context) Reset() {
 	ctx.Time = 0
 	ctx.TrialsTotal = 0
 	ctx.Testing.SetBool(false)
-	ctx.NSpiked = 0
 	if ctx.TimePerCycle == 0 {
 		ctx.Defaults()
 	}
