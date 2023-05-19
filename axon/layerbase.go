@@ -35,12 +35,15 @@ type LayerBase struct {
 	Ps            mat32.Vec3         `tableview:"-" desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
 	Idx           int                `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
 	NeurStIdx     int                `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
+	NNeurons      int                `view:"-" desc:"number of neurons in the layer"`
+	NPools        uint32             `view:"-" desc:"number of pools based on layer shape -- at least 1 for layer pool + 4D subpools"`
+	MaxData       uint32             `view:"-" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron, Pool, Vals storage is allocated to hold this amount."`
 	RepIxs        []int              `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
 	RepShp        etensor.Shape      `view:"-" desc:"shape of representative units in the layer -- if RepIxs is empty or .Shp is nil, use overall layer shape"`
 	RcvPrjns      AxonPrjns          `desc:"list of receiving projections into this layer from other layers"`
 	SndPrjns      AxonPrjns          `desc:"list of sending projections from this layer to other layers"`
-	Pools         []Pool             `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
-	Exts          []float32          `view:"-" desc:"external input values for this layer, allocated from network global Exts slice"`
+	Pools         []Pool             `desc:"computes FS-FFFB inhibition and other pooled, aggregate state variables -- has at least 1 for entire layer (lpl = layer pool), and one for each sub-pool if shape supports that (4D) * 1 per data parallel (inner loop).  This is a sub-slice from overall Network Pools slice.  You must iterate over index and use pointer to modify values."`
+	Exts          []float32          `view:"-" desc:"[Neurons][Data] external input values for this layer, allocated from network global Exts slice"`
 	BuildConfig   map[string]string  `tableview:"-" desc:"configuration data set when the network is configured, that is used during the network Build() process via PostBuild method, after all the structure of the network has been fully constructed.  In particular, the Params is nil until Build, so setting anything specific in there (e.g., an index to another layer) must be done as a second pass.  Note that Params are all applied after Build and can set user-modifiable params, so this is for more special algorithm structural parameters set during ConfigNet() methods.,"`
 	DefParams     params.Params      `tableview:"-" desc:"default parameters that are applied prior to user-set parameters -- these are useful for specific layer functionality in specialized brain areas (e.g., PVLV, BG etc) not associated with a layer type, which otherwise is used to hard-code initial default parameters -- typically just set to a literal map."`
 	ParamsHistory params.HistoryImpl `tableview:"-" desc:"provides a history of parameters applied to the layer"`
@@ -216,18 +219,9 @@ func (ly *LayerBase) NSubPools() int {
 	return ly.Shp.Dim(0) * ly.Shp.Dim(1)
 }
 
-// Pool returns pool at given index
-func (ly *LayerBase) Pool(idx int) *Pool {
-	return &(ly.Pools[idx])
-}
-
-// PoolTry returns pool at given index, returns error if index is out of range
-func (ly *LayerBase) PoolTry(idx int) (*Pool, error) {
-	np := len(ly.Pools)
-	if idx < 0 || idx >= np {
-		return nil, fmt.Errorf("Layer Pool index: %v out of range, N = %v", idx, np)
-	}
-	return &(ly.Pools[idx]), nil
+// Pool returns pool at given pool x data index
+func (ly *LayerBase) Pool(idx, di uint32) *Pool {
+	return &(ly.Pools[idx*ly.MaxData+di])
 }
 
 // RecipToSendPrjn finds the reciprocal projection to
@@ -342,6 +336,11 @@ func (ly *LayerBase) NonDefaultParams() string {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Build
+
+// ExtIdx returns the index for accessing Exts values: [Neuron][Data]
+func (ly *LayerBase) ExtIdx(ni, di uint32) uint32 {
+	return ni*ly.MaxData + di
+}
 
 // SetBuildConfig sets named configuration parameter to given string value
 // to be used in the PostBuild stage -- mainly for layer names that need to be
@@ -465,7 +464,7 @@ func (ly *LayerBase) Build() error {
 // VarRange returns the min / max values for given variable
 // todo: support r. s. projection values
 func (ly *LayerBase) VarRange(varNm string) (min, max float32, err error) {
-	sz := len(ly.Neurons)
+	sz := ly.NNeurons
 	if sz == 0 {
 		return
 	}

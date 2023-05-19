@@ -328,7 +328,7 @@ func (pj *Prjn) InitWtsSyn(rnd erand.Rand, sy *Synapse, mean, spct float32) {
 
 // InitWts initializes weight values according to SWt params,
 // enforcing current constraints.
-func (pj *Prjn) InitWts(nt *Network) {
+func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 	if pj.Typ == InhibPrjn {
 		pj.Params.Com.GType = InhibitoryG
 	}

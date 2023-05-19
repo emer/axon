@@ -18,7 +18,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/emer/emergent/emer"
 	"github.com/emer/emergent/erand"
@@ -50,9 +49,10 @@ type NetworkBase struct {
 	MaxData      uint32        `desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
 	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
-	LayVals      []LayerVals   `view:"-" desc:"[Layers] array of layer values, in 1-to-1 correspondence with Layers"`
-	Pools        []Pool        `view:"-" desc:"[Layers][Pools] array of inhibitory pools for all layers."`
-	Neurons      []float32     `view:"-" desc:"entire network's allocation of neuron variables, accessed via NeuronVar method"`
+	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, in 1-to-1 correspondence with Layers"`
+	Pools        []Pool        `view:"-" desc:"[Layers][Pools][MaxData] array of inhibitory pools for all layers."`
+	Neurons      []float32     `view:"-" desc:"entire network's allocation of neuron variables, accessed via NeurVar method with flexible striding"`
+	NeurIdxs     []uint32      `view:"-" desc:"entire network's allocation of neuron index variables, accessed via NeurIdx method with flexible striding"`
 	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
 	Synapses     []Synapse     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based"`
@@ -62,16 +62,15 @@ type NetworkBase struct {
 	PrjnGSyns    []float32     `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] synaptic conductance integrated over time per projection per recv neurons -- spikes come in via PrjnBuf -- subslices are allocated to each projection"`
 	RecvPrjnIdxs []uint32      `view:"-" desc:"[Layers][RecvPrjns] indexes into Prjns (organized by SendPrjn) organized by recv projections -- needed for iterating through recv prjns efficiently on GPU."`
 	RecvSynIdxs  []uint32      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][Syns] indexes into Synapses for each recv neuron, organized into blocks according to PrjnRecvCon, for receiver-based access."`
+	Exts         []float32     `view:"-" desc:"[In / Targ Layers][Neurons][Data] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
 
-	Exts []float32 `view:"-" desc:"[In / Targ Layers][Neurons] external input values for all Input / Target / Compare layers in the network -- the ApplyExt methods write to this per layer, and it is then actually applied in one consistent method."`
-
+	Ctx         Context                `view:"-" desc:"context used only for accessing neurons for display"`
 	Rand        erand.SysRand          `view:"-" desc:"random number generator for the network -- all random calls must use this -- set seed here for weight initialization values"`
 	RndSeed     int64                  `inactive:"+" desc:"random seed to be set at the start of configuring the network and initializing the weights -- set this to get a different set of weights"`
 	NThreads    int                    `desc:"number of threads to use for parallel processing"`
 	GPU         GPU                    `view:"inline" desc:"GPU implementation"`
 	RecFunTimes bool                   `view:"-" desc:"record function timer information"`
 	FunTimes    map[string]*timer.Time `view:"-" desc:"timers for each major function (step of processing)"`
-	WaitGp      sync.WaitGroup         `view:"-" desc:"network-level wait group for synchronizing threaded layer calls"`
 }
 
 // InitName MUST be called to initialize the network's pointer to itself as an emer.Network
@@ -514,7 +513,6 @@ func (nt *NetworkBase) LateralConnectLayerPrjn(lay *Layer, pat prjn.Pattern, pj 
 // on final network size.
 func (nt *NetworkBase) Build() error {
 	nt.FunTimes = make(map[string]*timer.Time)
-
 	nt.LayClassMap = make(map[string][]string)
 	emsg := ""
 	totNeurons := 0
@@ -541,13 +539,15 @@ func (nt *NetworkBase) Build() error {
 		}
 	}
 	nt.LayParams = make([]LayerParams, nLayers)
-	nt.LayVals = make([]LayerVals, nLayers)
-	nt.Pools = make([]Pool, totPools)
+	nt.LayVals = make([]LayerVals, nLayers*nt.MaxData)
+	nt.Pools = make([]Pool, totPools*nt.MaxData)
 	nneur := uint32(totNeurons) * nt.MaxData * uint32(NeuronVarsN)
 	nt.Neurons = make([]float32, nneur)
 	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
-	nt.Exts = make([]float32, totExts)
+	nt.Exts = make([]float32, totExts*nt.MaxData)
+
+	nt.Ctx.NeurVars.SetNeurVarData(totNeurons, nt.MaxData) // todo: contingent on GPU
 
 	totSynapses := 0
 	totRecvCon := 0
@@ -560,16 +560,19 @@ func (nt *NetworkBase) Build() error {
 	for li, ly := range nt.Layers {
 		ly.Params = &nt.LayParams[li]
 		ly.Params.LayType = LayerTypes(ly.Typ)
-		ly.Vals = &nt.LayVals[li]
+		ly.Vals = nt.LayVals[li*nt.MaxData : (li+1)*nt.MaxData]
 		if ly.IsOff() {
 			continue
 		}
 		shp := ly.Shape()
 		nn := shp.Len()
+		ly.NNeurons = uint32(nn)
 		ly.Neurons = nt.Neurons[neurIdx : neurIdx+nn]
 		ly.NeurStIdx = neurIdx
+		ly.MaxData = int(nt.MaxData)
 		np := ly.NSubPools() + 1
-		ly.Pools = nt.Pools[poolIdx : poolIdx+np]
+		ly.NPools = uint32(np)
+		ly.Pools = nt.Pools[poolIdx : poolIdx+(np*nt.MaxData)]
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
@@ -584,15 +587,23 @@ func (nt *NetworkBase) Build() error {
 			ly.Params.Idxs.ShpUnY = int32(shp.Dim(2))
 			ly.Params.Idxs.ShpUnX = int32(shp.Dim(3))
 		}
-		for pi := range ly.Pools {
-			pl := &ly.Pools[pi]
-			pl.LayIdx = uint32(li)
-			pl.PoolIdx = uint32(poolIdx + pi)
+		for di := 0; di < np; di++ {
+			ly.Vals[di].LayIdx = uint32(li)
+			ly.Vals[di].DataIdx = uint32(di)
+		}
+		for pi := 0; pi < np; pi++ {
+			for di := 0; di < np; di++ {
+				i := pi*ly.MaxData + di
+				pl := &ly.Pools[x]
+				pl.LayIdx = uint32(li)
+				pl.DataIdx = uint32(di)
+				pl.PoolIdx = uint32(poolIdx + i)
+			}
 		}
 		if ly.LayerType().IsExt() {
-			ly.Exts = nt.Exts[extIdx : extIdx+nn]
+			ly.Exts = nt.Exts[extIdx : extIdx+nn*nt.MaxData]
 			ly.Params.Idxs.ExtsSt = uint32(extIdx)
-			extIdx += nn
+			extIdx += nn * nt.MaxData
 		} else {
 			ly.Exts = nil
 			ly.Params.Idxs.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
@@ -649,7 +660,7 @@ func (nt *NetworkBase) Build() error {
 			pj.Params.Idxs.RecvNeurN = uint32(len(rlay.Neurons))
 			pj.Params.Idxs.SendLay = uint32(ly.Idx)
 			pj.Params.Idxs.SendNeurSt = uint32(ly.NeurStIdx)
-			pj.Params.Idxs.SendNeurN = uint32(len(ly.Neurons))
+			pj.Params.Idxs.SendNeurN = uint32(ly.NNeurons)
 
 			nsyn := len(pj.SendConIdx)
 			pj.Params.Idxs.SendConSt = uint32(sendConIdx)
@@ -716,7 +727,7 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 	nt.MaxDelay = 0
 	npjneur := uint32(0)
 	for _, ly := range nt.Layers {
-		nneur := uint32(len(ly.Neurons))
+		nneur := uint32(ly.NNeurons)
 		for _, pj := range ly.RcvPrjns {
 			if pj.Params.Com.MaxDelay > nt.MaxDelay {
 				nt.MaxDelay = pj.Params.Com.MaxDelay
@@ -740,7 +751,7 @@ func (nt *NetworkBase) BuildPrjnGBuf() {
 	gbi := uint32(0)
 	gsi := uint32(0)
 	for _, ly := range nt.Layers {
-		nneur := uint32(len(ly.Neurons))
+		nneur := uint32(ly.NNeurons)
 		for _, pj := range ly.RcvPrjns {
 			gbs := nneur * mxlen
 			pj.Params.Idxs.GBufSt = gbi

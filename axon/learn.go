@@ -250,38 +250,38 @@ func (ln *LearnNeurParams) Defaults() {
 
 // InitCaLrnSpk initializes the neuron-level calcium learning and spking variables.
 // Called by InitWts (at start of learning).
-func (ln *LearnNeurParams) InitNeurCa(nrn *Neuron) {
-	nrn.GnmdaLrn = 0
-	nrn.NmdaCa = 0
+func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
+	SetNeurVar(ctx, ni, di, GnmdaLrn, 0)
+	SetNeurVar(ctx, ni, di, NmdaCa, 0)
 
-	nrn.VgccCa = 0
-	nrn.VgccCaInt = 0
+	SetNeurVar(ctx, ni, di, VgccCa, 0)
+	SetNeurVar(ctx, ni, di, VgccCaInt, 0)
 
-	nrn.CaLrn = 0
+	SetNeurVar(ctx, ni, di, CaLrn, 0)
 
-	nrn.CaSyn = 0
-	nrn.CaSpkM = 0
-	nrn.CaSpkP = 0
-	nrn.CaSpkD = 0
-	nrn.CaSpkPM = 0
+	SetNeurVar(ctx, ni, di, CaSyn, 0)
+	SetNeurVar(ctx, ni, di, CaSpkM, 0)
+	SetNeurVar(ctx, ni, di, CaSpkP, 0)
+	SetNeurVar(ctx, ni, di, CaSpkD, 0)
+	SetNeurVar(ctx, ni, di, CaSpkPM, 0)
 
-	nrn.CaM = 0
-	nrn.CaP = 0
-	nrn.CaD = 0
-	nrn.CaDiff = 0
+	SetNeurVar(ctx, ni, di, CaM, 0)
+	SetNeurVar(ctx, ni, di, CaP, 0)
+	SetNeurVar(ctx, ni, di, CaD, 0)
+	SetNeurVar(ctx, ni, di, CaDiff, 0)
 }
 
 // LrnNMDAFmRaw updates the separate NMDA conductance and calcium values
 // based on GeTot = GeRaw + external ge conductance.  These are the variables
 // that drive learning -- can be the same as activation but also can be different
 // for testing learning Ca effects independent of activation effects.
-func (ln *LearnNeurParams) LrnNMDAFmRaw(nrn *Neuron, geTot float32) {
+func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if geTot < 0 {
 		geTot = 0
 	}
-	nrn.GnmdaLrn = ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot)
+	SetNeurVar(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot))
 	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
-	nrn.NmdaCa = gnmda * ln.LrnNMDA.CaFmV(nrn.VmDend)
+	SetNeurVar(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFmV(nrn.VmDend))
 }
 
 // CaFmSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.

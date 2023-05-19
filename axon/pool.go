@@ -135,14 +135,14 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 }
 
 // UpdateVals for neuron values
-func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
-	am.CaSpkP.Cycle.UpdateVal(nrn.CaSpkP)
-	am.CaSpkD.Cycle.UpdateVal(nrn.CaSpkD)
-	am.SpkMax.Cycle.UpdateVal(nrn.SpkMax)
-	am.Act.Cycle.UpdateVal(mat32.Abs(nrn.Act)) // can be neg
-	am.GeInt.Cycle.UpdateVal(nrn.GeInt)
-	am.GeIntMax.Cycle.UpdateVal(nrn.GeIntMax)
-	am.GiInt.Cycle.UpdateVal(nrn.GiInt)
+func (am *PoolAvgMax) UpdateVals(ctx *Context, ni, di uint32) {
+	am.CaSpkP.Cycle.UpdateVal(NeurVar(ctx, ni, di, CaSpkP))
+	am.CaSpkD.Cycle.UpdateVal(NeurVar(ctx, ni, di, CaSpkD))
+	am.SpkMax.Cycle.UpdateVal(NeurVar(ctx, ni, di, SpkMax))
+	am.Act.Cycle.UpdateVal(mat32.Abs(NeurVar(ctx, ni, di, Act))) // can be neg
+	am.GeInt.Cycle.UpdateVal(NeurVar(ctx, ni, di, GeInt))
+	am.GeIntMax.Cycle.UpdateVal(NeurVar(ctx, ni, di, GeIntMax))
+	am.GiInt.Cycle.UpdateVal(NeurVar(ctx, ni, di, GiInt))
 }
 
 // note: the following is actually being used despite appearing to be
@@ -158,13 +158,13 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 // // This is a #define because it doesn't work on arg values --
 // // must be directly operating on a RWStorageBuffer entity.
 #define AtomicUpdatePoolAvgMax(am, nrn) \
-	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, nrn.CaSpkP); \
-	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, nrn.CaSpkD); \
-	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, nrn.SpkMax); \
-	AtomicUpdateAvgMaxI32(am.Act.Cycle, nrn.Act); \
-	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, nrn.GeInt); \
-	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, nrn.GeIntMax); \
-	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, nrn.GiInt)
+	AtomicUpdateAvgMaxI32(am.CaSpkP.Cycle, NeurVar(ctx, ni, di, CaSpkP); \
+	AtomicUpdateAvgMaxI32(am.CaSpkD.Cycle, NeurVar(ctx, ni, di, CaSpkD); \
+	AtomicUpdateAvgMaxI32(am.SpkMax.Cycle, NeurVar(ctx, ni, di, SpkMax); \
+	AtomicUpdateAvgMaxI32(am.Act.Cycle, NeurVar(ctx, ni, di, Act); \
+	AtomicUpdateAvgMaxI32(am.GeInt.Cycle, NeurVar(ctx, ni, di, GeInt); \
+	AtomicUpdateAvgMaxI32(am.GeIntMax.Cycle, NeurVar(ctx, ni, di, GeIntMax); \
+	AtomicUpdateAvgMaxI32(am.GiInt.Cycle, NeurVar(ctx, ni, di, GiInt)
 */
 //gosl: end pool
 
@@ -176,11 +176,12 @@ func (am *PoolAvgMax) UpdateVals(nrn *Neuron) {
 type Pool struct {
 	StIdx, EdIdx uint32      `inactive:"+" desc:"starting and ending (exlusive) layer-wise indexes for the list of neurons in this pool"`
 	LayIdx       uint32      `view:"-" desc:"layer index in global layer list"`
-	PoolIdx      uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool]"`
+	DataIdx      uint32      `view:"-" desc:"data parallel index (innermost index per layer)"`
+	PoolIdx      uint32      `view:"-" desc:"pool index in global pool list: [Layer][Pool][Data]"`
 	IsLayPool    slbool.Bool `inactive:"+" desc:"is this a layer-wide pool?  if not, it represents a sub-pool of units within a 4D layer"`
 	Gated        slbool.Bool `inactive:"+" desc:"for special types where relevant (e.g., MatrixLayer, BGThalLayer), indicates if the pool was gated"`
 
-	pad, pad1 uint32
+	pad uint32
 
 	Inhib  fsfffb.Inhib `inactive:"+" desc:"fast-slow FFFB inhibition values"`
 	AvgMax PoolAvgMax   `desc:"average and max values for relevant variables in this pool, at different time scales"`
@@ -252,8 +253,8 @@ func (ly *Layer) TopoGi(ctx *Context) {
 						tact += wt * pl.OldInhib.Act.Avg
 					} else {
 						nrn := &ly.Neurons[ti]
-						tge += wt * nrn.Ge
-						tact += wt * nrn.Act
+						tge += wt * NeurVar(ctx, ni, di, Ge)
+						tact += wt * NeurVar(ctx, ni, di, Act)
 					}
 				}
 			}
@@ -265,7 +266,7 @@ func (ly *Layer) TopoGi(ctx *Context) {
 				pl.OldInhib.Gi += gi
 				// } else {
 				// 	nrn := &ly.Neurons[pi]
-				// 	nrn.GiSelf = gi
+				// 	SetNeurVar(ctx, ni, di, GiSelf, gi)
 			}
 		}
 	}

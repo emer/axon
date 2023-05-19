@@ -151,7 +151,7 @@ func (ly *Layer) GatedFmSpkMax(thr float32) (bool, int) {
 	anyGated := false
 	poolIdx := -1
 	if ly.Is4D() {
-		for pi := 1; pi < len(ly.Pools); pi++ {
+		for pi := 1; pi < ly.NPools; pi++ {
 			pl := &ly.Pools[pi]
 			spkavg := pl.AvgMax.SpkMax.Cycle.Avg
 			gthr := spkavg > thr

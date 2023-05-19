@@ -13,14 +13,14 @@ import (
 	"github.com/goki/mat32"
 )
 
+// todo: removeme
+type Neuron struct {
+	dummy int32
+}
+
 //go:generate stringer -type=NeuronFlags
 //go:generate stringer -type=NeuronVars
 //go:generate stringer -type=NeuronIdxs
-
-var KiT_NeuronFlags = kit.Enums.AddEnum(NeuronFlagsN, kit.BitFlag, nil)
-
-func (ev NeuronFlags) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
-func (ev *NeuronFlags) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 var KiT_NeuronVars = kit.Enums.AddEnum(NeuronVarsN, kit.NotBitFlag, nil)
 
@@ -268,27 +268,27 @@ const (
 // into network uint32 array.
 type NeurIdxStrides struct {
 	Neuron uint32 `desc:"neuron level"`
-	Idx    uint32 `desc:"index value level"`
+	Index  uint32 `desc:"index value level"`
 
 	pad, pad2 uint32
 }
 
 // Idx returns the index into network uint32 array for given neuron, index value
 func (ns *NeurIdxStrides) Idx(neurIdx uint32, idx NeuronIdxs) uint32 {
-	return ns.Neuron*neurIdx + ns.Idx*uint32(idx)
+	return ns.Neuron*neurIdx + ns.Index*uint32(idx)
 }
 
 // SetNeurIdx sets strides as neurons x idxs (outer to inner),
 // which is likely to be optimal for CPU-based computation.
 func (ns *NeurIdxStrides) SetNeurIdx(nneur int) {
 	ns.Neuron = uint32(NeuronIdxsN)
-	ns.Idx = 1
+	ns.Index = 1
 }
 
 // SetIdxNeur sets strides as idxs x neurons (outer to inner),
 // which is likely to be optimal for GPU-based computation.
 func (ns *NeurIdxStrides) SetIdxNeur(nneur int) {
-	ns.Idx = uint32(nneur)
+	ns.Index = uint32(nneur)
 	ns.Neuron = 1
 }
 

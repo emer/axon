@@ -62,6 +62,10 @@ func (lv *LaySpecialVals) Init() {
 // LayerVals holds extra layer state that is updated per layer.
 // It is sync'd down from the GPU to the CPU after every Cycle.
 type LayerVals struct {
+	LayerIdx  uint32 `view:"-" desc:"layer index for these vals"`
+	DataIdx   uint32 `view:"-" desc:"data index for these vals"`
+	pad, pad2 uint32
+
 	ActAvg   ActAvgVals     `view:"inline" desc:"running-average activation levels used for Ge scaling and adaptive inhibition"`
 	CorSim   CorSimStats    `desc:"correlation (centered cosine aka normalized dot product) similarity between ActM, ActP states"`
 	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory values: global to the layer, copied from Context"`

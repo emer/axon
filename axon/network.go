@@ -546,10 +546,10 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 	if *dwts == nil {
 		nwts := 0
 		for _, ly := range nt.Layers {
-			nwts += 5               // ActAvgVals
-			nwts += len(ly.Neurons) // ActAvg
+			nwts += 5           // ActAvgVals
+			nwts += ly.NNeurons // ActAvg
 			if ly.Params.IsLearnTrgAvg() {
-				nwts += len(ly.Neurons)
+				nwts += ly.NNeurons
 			}
 			for _, pj := range ly.SndPrjns {
 				nwts += len(pj.Syns) + 3 // Scale, AvgAvg, MaxAvg
@@ -569,13 +569,13 @@ func (nt *Network) CollectDWts(dwts *[]float32) bool {
 			nrn := &ly.Neurons[ni]
 			(*dwts)[idx+ni] = nrn.ActAvg
 		}
-		idx += len(ly.Neurons)
+		idx += ly.NNeurons
 		if ly.Params.IsLearnTrgAvg() {
 			for ni := range ly.Neurons {
 				nrn := &ly.Neurons[ni]
 				(*dwts)[idx+ni] = nrn.DTrgAvg
 			}
-			idx += len(ly.Neurons)
+			idx += ly.NNeurons
 		}
 		for _, pj := range ly.SndPrjns {
 			for j := range pj.Syns {
@@ -605,13 +605,13 @@ func (nt *Network) SetDWts(dwts []float32, navg int) {
 			nrn := &ly.Neurons[ni]
 			nrn.ActAvg = davg * dwts[idx+ni]
 		}
-		idx += len(ly.Neurons)
+		idx += ly.NNeurons
 		if ly.Params.IsLearnTrgAvg() {
 			for ni := range ly.Neurons {
 				nrn := &ly.Neurons[ni]
 				nrn.DTrgAvg = dwts[idx+ni]
 			}
-			idx += len(ly.Neurons)
+			idx += ly.NNeurons
 		}
 		for _, pj := range ly.SndPrjns {
 			ns := len(pj.Syns)
@@ -640,7 +640,7 @@ func (nt *Network) SizeReport() string {
 	memSynapse := int(unsafe.Sizeof(Synapse{}))
 
 	for _, ly := range nt.Layers {
-		layerNumNeurons := len(ly.Neurons)
+		layerNumNeurons := ly.NNeurons
 		// Sizeof returns size of struct in bytes
 		layerMemNeurons := layerNumNeurons * memNeuron
 		globaNumNeurons += layerNumNeurons

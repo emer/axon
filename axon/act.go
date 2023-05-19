@@ -673,7 +673,7 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 	AddNeurVar(ctx, ni, di, Gsk, -glong*NeurVar(ctx, ni, di, Gsk))
 
 	if ac.Decay.LearnCa > 0 { // learning-based Ca values -- not usual
-		ac.DecayLearnCa(nrn, ac.Decay.LearnCa)
+		ac.DecayLearnCa(ctx, ni, di, ac.Decay.LearnCa)
 	}
 
 	SetNeurVar(ctx, ni, di, Inet, 0)
@@ -693,7 +693,7 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
 // automatically called (DecayState is used instead)
-func (ac *ActParams) InitActs(rnd erand.Rand, ctx *Context, ni, di uint32) {
+func (ac *ActParams) InitActs(ctx *Context, ni, di uint32, rnd erand.Rand) {
 	SetNeurVar(ctx, ni, di, Spike, 0)
 	SetNeurVar(ctx, ni, di, Spiked, 0)
 	SetNeurVar(ctx, ni, di, ISI, -1)
@@ -837,7 +837,11 @@ func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
 	SetNeurVar(ctx, ni, di, Gak, ac.AK.Gak(NeurVar(ctx, ni, di, VmDend)))
 	SetNeurVar(ctx, ni, di, Gk, NeurVar(ctx, ni, di, Gak)+ac.Mahp.GmAHP(NeurVar(ctx, ni, di, MahpN))+ac.Sahp.GsAHP(NeurVar(ctx, ni, di, SahpN)))
 	if ac.KNa.On.IsTrue() {
-		ac.KNa.GcFmSpike(&nrn.GknaMed, &nrn.GknaSlow, NeurVar(ctx, ni, di, Spike) > .5)
+		gknaMed := NeurVar(ctx, ni, di, GknaMed)
+		gknaSlow := NeurVar(ctx, ni, di, GknaSlow)
+		ac.KNa.GcFmSpike(&gknaMed, &gknaSlow, NeurVar(ctx, ni, di, Spike) > .5)
+		SetNeurVar(ctx, ni, di, GknaMed, gknaMed)
+		SetNeurVar(ctx, ni, di, GknaSlow, gknaSlow)
 		AddNeurVar(ctx, ni, di, Gk, NeurVar(ctx, ni, di, GknaMed)+NeurVar(ctx, ni, di, GknaSlow))
 	}
 }
@@ -854,8 +858,12 @@ func (ac *ActParams) GSkCaFmCa(ctx *Context, ni, di uint32) {
 	if ac.SKCa.Gbar == 0 {
 		return
 	}
-	SetNeurVar(ctx, ni, di, SKCaM, ac.SKCa.MFmCa(NeurVar(ctx, ni, di, SKCaR), NeurVar(ctx, ni, di, SKCaM)))
-	ac.SKCa.CaInRFmSpike(NeurVar(ctx, ni, di, Spike), NeurVar(ctx, ni, di, CaSpkD), &nrn.SKCaIn, &nrn.SKCaR)
+	skcar := NeurVar(ctx, ni, di, SKCaR)
+	skcain := NeurVar(ctx, ni, di, SKCaIn)
+	SetNeurVar(ctx, ni, di, SKCaM, ac.SKCa.MFmCa(skcar, NeurVar(ctx, ni, di, SKCaM)))
+	ac.SKCa.CaInRFmSpike(NeurVar(ctx, ni, di, Spike), NeurVar(ctx, ni, di, CaSpkD), &skcain, &skcar)
+	SetNeurVar(ctx, ni, di, SKCaR, skcar)
+	SetNeurVar(ctx, ni, di, SKCaIn, skcain)
 	SetNeurVar(ctx, ni, di, Gsk, ac.SKCa.Gbar*NeurVar(ctx, ni, di, SKCaM))
 	AddNeurVar(ctx, ni, di, Gk, NeurVar(ctx, ni, di, Gsk))
 }
@@ -864,13 +872,13 @@ func (ac *ActParams) GSkCaFmCa(ctx *Context, ni, di uint32) {
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
 	SetNeurVar(ctx, ni, di, GeExt, 0)
-	if ac.Clamp.Add.IsTrue() && nrn.HasFlag(NeuronHasExt) {
+	if ac.Clamp.Add.IsTrue() && NeurHasFlag(ctx, ni, NeuronHasExt) {
 		SetNeurVar(ctx, ni, di, GeExt, NeurVar(ctx, ni, di, Ext)*ac.Clamp.Ge)
 		geSyn += NeurVar(ctx, ni, di, GeExt)
 	}
 	geSyn = ac.Attn.ModVal(geSyn, NeurVar(ctx, ni, di, Attn))
 
-	if ac.Clamp.Add.IsFalse() && nrn.HasFlag(NeuronHasExt) { // todo: this flag check is not working
+	if ac.Clamp.Add.IsFalse() && NeurHasFlag(ctx, ni, NeuronHasExt) { // todo: this flag check is not working
 		geSyn = NeurVar(ctx, ni, di, Ext) * ac.Clamp.Ge
 		SetNeurVar(ctx, ni, di, GeExt, geSyn)
 		geExt = 0 // no extra in this case
@@ -880,7 +888,7 @@ func (ac *ActParams) GeFmSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) 
 	if NeurVar(ctx, ni, di, Ge) < 0 {
 		SetNeurVar(ctx, ni, di, Ge, 0)
 	}
-	ac.GeNoise(ctx, ni, nrn)
+	ac.GeNoise(ctx, ni, di)
 }
 
 // GeNoise updates nrn.GeNoise if active
@@ -909,7 +917,7 @@ func (ac *ActParams) GiNoise(ctx *Context, ni, di uint32) {
 // GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
 // (can add other terms to geRaw prior to calling this)
 func (ac *ActParams) GiFmSyn(ctx *Context, ni, di uint32, giSyn float32) float32 {
-	ac.GiNoise(ctx, ni, nrn)
+	ac.GiNoise(ctx, ni, di)
 	if giSyn < 0 { // negative inhib G doesn't make any sense
 		giSyn = 0
 	}
@@ -996,52 +1004,66 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 	}
 }
 
-// SpikeFmG computes Spike from Vm and ISI-based activation
-func (ac *ActParams) SpikeFmVm(ctx *Context, ni, di uint32) {
+// SpikeFmVmVars computes Spike from Vm and ISI-based activation, using pointers to variables
+func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAct *float32, nrnVm float32) {
 	var thr float32
 	if ac.Spike.Exp.IsTrue() {
 		thr = ac.Spike.ExpThr
 	} else {
 		thr = ac.Spike.Thr
 	}
-	if nrn.Vm >= thr {
-		SetNeurVar(ctx, ni, di, Spike, 1)
-		if nrn.ISIAvg == -1 {
-			SetNeurVar(ctx, ni, di, ISIAvg, -2)
-		} else if nrn.ISI > 0 { // must have spiked to update
-			SetNeurVar(ctx, ni, di, ISIAvg, ac.Spike.AvgFmISI(NeurVar(ctx, ni, di, ISIAvg), NeurVar(ctx, ni, di, ISI)+1))
+	if nrnVm >= thr {
+		*nrnSpike = 1
+		if *nrnISIAvg == -1 {
+			*nrnISIAvg = -2
+		} else if *nrnISI > 0 { // must have spiked to update
+			*nrnISIAvg = ac.Spike.AvgFmISI(*nrnISIAvg, *nrnISI+1)
 		}
-		SetNeurVar(ctx, ni, di, ISI, 0)
+		*nrnISI = 0
 	} else {
-		nrn.Spike = 0
-		if NeurVar(ctx, ni, di, ISI) >= 0 {
-			AddNeurVar(ctx, ni, di, ISI, 1)
-			if NeurVar(ctx, ni, di, ISI) < 10 {
-				SetNeurVar(ctx, ni, di, Spiked, 1)
+		*nrnSpike = 0
+		if *nrnISI >= 0 {
+			*nrnISI += 1
+			if *nrnISI < 10 {
+				*nrnSpiked = 1
 			} else {
-				SetNeurVar(ctx, ni, di, Spiked, 0)
+				*nrnSpiked = 0
 			}
-			if NeurVar(ctx, ni, di, ISI) > 200 { // keep from growing infinitely large
+			if *nrnISI > 200 { // keep from growing infinitely large
 				// used to do this arbitrarily in DecayState but that
 				// caused issues with missing refractory periods
-				SetNeurVar(ctx, ni, di, ISI, -1)
+				*nrnISI = -1
 			}
 		} else {
-			SetNeurVar(ctx, ni, di, Spiked, 0)
+			*nrnSpiked = 0
 		}
-		isiAvg := NeurVar(ctx, ni, di, ISIAvg)
-		isi := NeurVar(ctx, ni, di, ISI)
-		if isiAvg >= 0 && isi > 0 && isi > 1.2*nrn.ISIAvg {
-			SetNeurVar(ctx, ni, di, ISIAvg, ac.Spike.AvgFmISI(NeurVar(ctx, ni, di, ISIAvg), NeurVar(ctx, ni, di, ISI)))
+		if *nrnISIAvg >= 0 && *nrnISI > 0 && *nrnISI > 1.2**nrnISIAvg {
+			*nrnISIAvg = ac.Spike.AvgFmISI(*nrnISIAvg, *nrnISI)
 		}
 	}
 
-	nwAct := ac.Spike.ActFmISI(NeurVar(ctx, ni, di, ISIAvg), .001, ac.Dt.Integ)
+	nwAct := ac.Spike.ActFmISI(*nrnISIAvg, .001, ac.Dt.Integ)
 	if nwAct > 1 {
 		nwAct = 1
 	}
-	nwAct = nrn.Act + ac.Dt.VmDt*(nwAct-nrn.Act)
-	nrn.Act = nwAct
+	nwAct = *nrnAct + ac.Dt.VmDt*(nwAct-*nrnAct)
+	*nrnAct = nwAct
+}
+
+// SpikeFmVm computes Spike from Vm and ISI-based activation
+func (ac *ActParams) SpikeFmVm(ctx *Context, ni, di uint32) {
+	nrnISI := NeurVar(ctx, ni, di, ISI)
+	nrnISIAvg := NeurVar(ctx, ni, di, ISIAvg)
+	nrnSpike := NeurVar(ctx, ni, di, Spike)
+	nrnSpiked := NeurVar(ctx, ni, di, Spiked)
+	nrnAct := NeurVar(ctx, ni, di, Act)
+	nrnVm := NeurVar(ctx, ni, di, Vm)
+	ac.SpikeFmVmVars(&nrnISI, &nrnISIAvg, &nrnSpike, &nrnSpiked, &nrnAct, nrnVm)
+	SetNeurVar(ctx, ni, di, ISI, nrnISI)
+	SetNeurVar(ctx, ni, di, ISIAvg, nrnISIAvg)
+	SetNeurVar(ctx, ni, di, Spike, nrnSpike)
+	SetNeurVar(ctx, ni, di, Spiked, nrnSpiked)
+	SetNeurVar(ctx, ni, di, Act, nrnAct)
 }
 
 //gosl: end act
