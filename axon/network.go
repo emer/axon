@@ -120,14 +120,14 @@ func (nt *Network) Cycle(ctx *Context) {
 		nt.GPU.RunCycle()
 		return
 	}
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.GatherSpikes(ctx, ni, nrn) }, "GatherSpikes")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.GatherSpikes(ctx, ni) }, "GatherSpikes")
 	nt.LayerMapPar(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")         // note: important to be Par for linux / amd64
 	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes") // note: Par not useful
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.CycleNeuron(ctx, ni, nrn) }, "CycleNeuron")
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.PostSpike(ctx, ni, nrn) }, "PostSpike")
-	nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SendSpike(ctx, ni, nrn) }, "SendSpike")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
+	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
 	if ctx.Testing.IsFalse() {
-		nt.NeuronMapPar(func(ly *Layer, ni uint32, nrn *Neuron) { ly.SynCa(ctx, ni, nrn) }, "SynCa")
+		nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.SynCa(ctx, ni) }, "SynCa")
 	}
 	var ldt, vta *Layer
 	for _, ly := range nt.Layers {

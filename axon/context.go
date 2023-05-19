@@ -14,51 +14,51 @@ import (
 // Networks is a global list of networks, needed for variable access
 var Networks []*Network
 
-// NeurVar is the CPU version of the neuron variable accessor
-func NeurVar(ctx *Context, ni, di uint32, nvar NeuronVars) float32 {
-	return Networks[ctx.NetIdx].Neurons[ctx.NeurVars.Idx(ni, di, nvar)]
+// NrnV is the CPU version of the neuron variable accessor
+func NrnV(ctx *Context, ni, di uint32, nvar NeuronVars) float32 {
+	return Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
 }
 
-// SetNeurVar is the CPU version of the neuron variable settor
-func SetNeurVar(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeurVars.Idx(ni, di, nvar)] = val
+// SetNrnV is the CPU version of the neuron variable settor
+func SetNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
+	Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val
 }
 
-// AddNeurVar is the CPU version of the neuron variable addor
-func AddNeurVar(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeurVars.Idx(ni, di, nvar)] += val
+// AddNrnV is the CPU version of the neuron variable addor
+func AddNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
+	Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val
 }
 
-// MulNeurVar is the CPU version of the neuron variable multiplier
-func MulNeurVar(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeurVars.Idx(ni, di, nvar)] *= val
+// MulNrnV is the CPU version of the neuron variable multiplier
+func MulNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
+	Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val
 }
 
-// NeurIdx is the CPU version of the neuron idx accessor
-func NeurIdx(ctx *Context, ni uint32, idx NeuronIdxs) uint32 {
-	return Networks[ctx.NetIdx].NeurIdxs[ctx.NeurIdxs.Idx(ni, idx)]
+// NrnI is the CPU version of the neuron idx accessor
+func NrnI(ctx *Context, ni uint32, idx NeuronIdxs) uint32 {
+	return Networks[ctx.NetIdx].NeuronIdxs[ctx.NeuronIdxs.Idx(ni, idx)]
 }
 
-// SetNeurIdx is the CPU version of the neuron idx settor
-func SetNeurIdx(ctx *Context, ni uint32, idx NeuronIdxs, val uint32) {
-	Networks[ctx.NetIdx].NeurIdxs[ctx.NeurIdxs.Idx(ni, idx)] = val
+// SetNrnI is the CPU version of the neuron idx settor
+func SetNrnI(ctx *Context, ni uint32, idx NeuronIdxs, val uint32) {
+	Networks[ctx.NetIdx].NeuronIdxs[ctx.NeuronIdxs.Idx(ni, idx)] = val
 }
 
-func NeurHasFlag(ctx *Context, ni uint32, flag NeuronFlags) bool {
-	return (NeuronFlags(NeurIdx(ctx, ni, NidxFlags)) & flag) > 0 // weird: != 0 does NOT work on GPU
+func NrnHasFlag(ctx *Context, ni uint32, flag NeuronFlags) bool {
+	return (NeuronFlags(NrnI(ctx, ni, NidxFlags)) & flag) > 0 // weird: != 0 does NOT work on GPU
 }
 
-func NeurSetFlag(ctx *Context, ni uint32, flag NeuronFlags) {
-	SetNeurIdx(ctx, ni, NidxFlags, NeurIdx(ctx, ni, NidxFlags)|uint32(flag))
+func NrnSetFlag(ctx *Context, ni uint32, flag NeuronFlags) {
+	SetNrnI(ctx, ni, NidxFlags, NrnI(ctx, ni, NidxFlags)|uint32(flag))
 }
 
-func NeurClearFlag(ctx *Context, ni uint32, flag NeuronFlags) {
-	SetNeurIdx(ctx, ni, NidxFlags, NeurIdx(ctx, ni, NidxFlags)&^uint32(flag))
+func NrnClearFlag(ctx *Context, ni uint32, flag NeuronFlags) {
+	SetNrnI(ctx, ni, NidxFlags, NrnI(ctx, ni, NidxFlags)&^uint32(flag))
 }
 
-// NeurIsOff returns true if the neuron has been turned off (lesioned)
-func NeurIsOff(ctx *Context, ni uint32) bool {
-	return NeurHasFlag(ctx, uint32(ni), NeuronOff)
+// NrnIsOff returns true if the neuron has been turned off (lesioned)
+func NrnIsOff(ctx *Context, ni uint32) bool {
+	return NrnHasFlag(ctx, uint32(ni), NeuronOff)
 }
 
 //gosl: hlsl context
@@ -95,11 +95,11 @@ type Context struct {
 
 	pad, pad1 int32
 
-	NeurVars NeurVarStrides `desc:"stride offsets for accessing neuron variables"`
-	NeurIdxs NeurIdxStrides `desc:"stride offsets for accessing neuron indexes"`
-	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
-	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
+	NeuronVars NeuronVarStrides `desc:"stride offsets for accessing neuron variables"`
+	NeuronIdxs NeuronIdxStrides `desc:"stride offsets for accessing neuron indexes"`
+	RandCtr    slrand.Counter   `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
+	NeuroMod   NeuroModVals     `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
+	PVLV       PVLV             `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -163,21 +163,21 @@ func (ctx *Context) PVLVDA() float32 {
 // note: following is real code, uncommented by gosl
 
 //gosl: hlsl context
-// // NeurVar is GPU version of neuron var accessor into Neurons array
-// float NeurVar(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar) {
-//    return Neurons[ctx.NeurVars(ni, di, nvar)];
+// // NrnV is GPU version of neuron var accessor into Neurons array
+// float NrnV(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar) {
+//    return Neurons[ctx.NeuronVars.Idx(ni, di, nvar)];
 // }
-// // SetNeurVar is the GPU version of the neuron variable settor
-// func SetNeurVar(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
-//  	Neurons[ctx.NeurVars(ni, di, nvar)] = val;
+// // SetNrnV is the GPU version of the neuron variable settor
+// func SetNrnV(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
+//  	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val;
 // }
-// // AddNeurVar is the GPU version of the neuron variable addor
-// func AddNeurVar(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
-//  	Neurons[ctx.NeurVars(ni, di, nvar)] += val;
+// // AddNrnV is the GPU version of the neuron variable addor
+// func AddNrnV(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
+//  	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val;
 // }
-// // MulNeurVar is the GPU version of the neuron variable multor
-// func MulNeurVar(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
-//  	Neurons[ctx.NeurVars(ni, di, nvar)] *= val;
+// // MulNrnV is the GPU version of the neuron variable multor
+// func MulNrnV(in Context ctx, uint32 ni, uint32 di, NeuronVars nvar, float32 val) {
+//  	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val;
 // }
 
 //gosl: end context

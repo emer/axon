@@ -590,36 +590,36 @@ func (ac *ActParams) Update() {
 // of the decay parameter that then has impacts on learning rates etc.
 // see Act.Decay.LearnCa param controlling this
 func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
-	AddNeurVar(ctx, ni, di, GnmdaLrn, -decay*NeurVar(ctx, ni, di, GnmdaLrn))
-	AddNeurVar(ctx, ni, di, NmdaCa, -decay*NeurVar(ctx, ni, di, NmdaCa))
+	AddNrnV(ctx, ni, di, GnmdaLrn, -decay*NrnV(ctx, ni, di, GnmdaLrn))
+	AddNrnV(ctx, ni, di, NmdaCa, -decay*NrnV(ctx, ni, di, NmdaCa))
 
-	AddNeurVar(ctx, ni, di, VgccCa, -decay*NeurVar(ctx, ni, di, VgccCa))
-	AddNeurVar(ctx, ni, di, VgccCaInt, -decay*NeurVar(ctx, ni, di, VgccCaInt))
+	AddNrnV(ctx, ni, di, VgccCa, -decay*NrnV(ctx, ni, di, VgccCa))
+	AddNrnV(ctx, ni, di, VgccCaInt, -decay*NrnV(ctx, ni, di, VgccCaInt))
 
-	AddNeurVar(ctx, ni, di, CaLrn, -decay*NeurVar(ctx, ni, di, CaLrn))
+	AddNrnV(ctx, ni, di, CaLrn, -decay*NrnV(ctx, ni, di, CaLrn))
 
-	AddNeurVar(ctx, ni, di, CaSyn, -decay*NeurVar(ctx, ni, di, CaSyn))
-	AddNeurVar(ctx, ni, di, CaSpkM, -decay*NeurVar(ctx, ni, di, CaSpkM))
-	AddNeurVar(ctx, ni, di, CaSpkP, -decay*NeurVar(ctx, ni, di, CaSpkP))
-	AddNeurVar(ctx, ni, di, CaSpkD, -decay*NeurVar(ctx, ni, di, CaSpkD))
+	AddNrnV(ctx, ni, di, CaSyn, -decay*NrnV(ctx, ni, di, CaSyn))
+	AddNrnV(ctx, ni, di, CaSpkM, -decay*NrnV(ctx, ni, di, CaSpkM))
+	AddNrnV(ctx, ni, di, CaSpkP, -decay*NrnV(ctx, ni, di, CaSpkP))
+	AddNrnV(ctx, ni, di, CaSpkD, -decay*NrnV(ctx, ni, di, CaSpkD))
 
-	AddNeurVar(ctx, ni, di, CaM, -decay*NeurVar(ctx, ni, di, CaM))
-	AddNeurVar(ctx, ni, di, CaP, -decay*NeurVar(ctx, ni, di, CaP))
-	AddNeurVar(ctx, ni, di, CaD, -decay*NeurVar(ctx, ni, di, CaD))
+	AddNrnV(ctx, ni, di, CaM, -decay*NrnV(ctx, ni, di, CaM))
+	AddNrnV(ctx, ni, di, CaP, -decay*NrnV(ctx, ni, di, CaP))
+	AddNrnV(ctx, ni, di, CaD, -decay*NrnV(ctx, ni, di, CaD))
 
-	AddNeurVar(ctx, ni, di, SKCaIn, decay*(1.0-NeurVar(ctx, ni, di, SKCaIn))) // recovers
-	AddNeurVar(ctx, ni, di, SKCaR, -decay*NeurVar(ctx, ni, di, SKCaR))
-	AddNeurVar(ctx, ni, di, SKCaM, -decay*NeurVar(ctx, ni, di, SKCaM))
+	AddNrnV(ctx, ni, di, SKCaIn, decay*(1.0-NrnV(ctx, ni, di, SKCaIn))) // recovers
+	AddNrnV(ctx, ni, di, SKCaR, -decay*NrnV(ctx, ni, di, SKCaR))
+	AddNrnV(ctx, ni, di, SKCaM, -decay*NrnV(ctx, ni, di, SKCaM))
 }
 
 // DecayAHP decays after-hyperpolarization variables
 // by given factor (typically Decay.AHP)
 func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
-	AddNeurVar(ctx, ni, di, MahpN, -decay*NeurVar(ctx, ni, di, MahpN))
-	AddNeurVar(ctx, ni, di, SahpCa, -decay*NeurVar(ctx, ni, di, SahpCa))
-	AddNeurVar(ctx, ni, di, SahpN, -decay*NeurVar(ctx, ni, di, SahpN))
-	AddNeurVar(ctx, ni, di, GknaMed, -decay*NeurVar(ctx, ni, di, GknaMed))
-	AddNeurVar(ctx, ni, di, GknaSlow, -decay*NeurVar(ctx, ni, di, GknaSlow))
+	AddNrnV(ctx, ni, di, MahpN, -decay*NrnV(ctx, ni, di, MahpN))
+	AddNrnV(ctx, ni, di, SahpCa, -decay*NrnV(ctx, ni, di, SahpCa))
+	AddNrnV(ctx, ni, di, SahpN, -decay*NrnV(ctx, ni, di, SahpN))
+	AddNrnV(ctx, ni, di, GknaMed, -decay*NrnV(ctx, ni, di, GknaMed))
+	AddNrnV(ctx, ni, di, GknaSlow, -decay*NrnV(ctx, ni, di, GknaSlow))
 }
 
 // DecayState decays the activation state toward initial values
@@ -629,64 +629,64 @@ func (ac *ActParams) DecayAHP(ctx *Context, ni, di uint32, decay float32) {
 // Called with ac.Decay.Act by Layer during NewState
 func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp float32) {
 	// always reset these -- otherwise get insanely large values that take forever to update
-	SetNeurVar(ctx, ni, di, ISIAvg, -1)
-	SetNeurVar(ctx, ni, di, ActInt, ac.Init.Act) // start fresh
-	SetNeurVar(ctx, ni, di, Spiked, 0)           // always fresh
+	SetNrnV(ctx, ni, di, ISIAvg, -1)
+	SetNrnV(ctx, ni, di, ActInt, ac.Init.Act) // start fresh
+	SetNrnV(ctx, ni, di, Spiked, 0)           // always fresh
 
 	if decay > 0 { // no-op for most, but not all..
-		SetNeurVar(ctx, ni, di, Spike, 0)
-		AddNeurVar(ctx, ni, di, Act, -decay*(NeurVar(ctx, ni, di, Act)-ac.Init.Act))
-		AddNeurVar(ctx, ni, di, ActInt, -decay*(NeurVar(ctx, ni, di, ActInt)-ac.Init.Act))
-		AddNeurVar(ctx, ni, di, GeSyn, -decay*(NeurVar(ctx, ni, di, GeSyn)-NeurVar(ctx, ni, di, GeBase)))
-		AddNeurVar(ctx, ni, di, Ge, -decay*(NeurVar(ctx, ni, di, Ge)-NeurVar(ctx, ni, di, GeBase)))
-		AddNeurVar(ctx, ni, di, Gi, -decay*(NeurVar(ctx, ni, di, Gi)-NeurVar(ctx, ni, di, GiBase)))
-		AddNeurVar(ctx, ni, di, Gk, -decay*NeurVar(ctx, ni, di, Gk))
+		SetNrnV(ctx, ni, di, Spike, 0)
+		AddNrnV(ctx, ni, di, Act, -decay*(NrnV(ctx, ni, di, Act)-ac.Init.Act))
+		AddNrnV(ctx, ni, di, ActInt, -decay*(NrnV(ctx, ni, di, ActInt)-ac.Init.Act))
+		AddNrnV(ctx, ni, di, GeSyn, -decay*(NrnV(ctx, ni, di, GeSyn)-NrnV(ctx, ni, di, GeBase)))
+		AddNrnV(ctx, ni, di, Ge, -decay*(NrnV(ctx, ni, di, Ge)-NrnV(ctx, ni, di, GeBase)))
+		AddNrnV(ctx, ni, di, Gi, -decay*(NrnV(ctx, ni, di, Gi)-NrnV(ctx, ni, di, GiBase)))
+		AddNrnV(ctx, ni, di, Gk, -decay*NrnV(ctx, ni, di, Gk))
 
-		AddNeurVar(ctx, ni, di, Vm, -decay*(NeurVar(ctx, ni, di, Vm)-ac.Init.Vm))
+		AddNrnV(ctx, ni, di, Vm, -decay*(NrnV(ctx, ni, di, Vm)-ac.Init.Vm))
 
-		AddNeurVar(ctx, ni, di, GeNoise, -decay*NeurVar(ctx, ni, di, GeNoise))
-		AddNeurVar(ctx, ni, di, GiNoise, -decay*NeurVar(ctx, ni, di, GiNoise))
+		AddNrnV(ctx, ni, di, GeNoise, -decay*NrnV(ctx, ni, di, GeNoise))
+		AddNrnV(ctx, ni, di, GiNoise, -decay*NrnV(ctx, ni, di, GiNoise))
 
-		AddNeurVar(ctx, ni, di, GiSyn, -decay*NeurVar(ctx, ni, di, GiSyn))
+		AddNrnV(ctx, ni, di, GiSyn, -decay*NrnV(ctx, ni, di, GiSyn))
 	}
 
-	AddNeurVar(ctx, ni, di, VmDend, -glong*(NeurVar(ctx, ni, di, VmDend)-ac.Init.Vm))
+	AddNrnV(ctx, ni, di, VmDend, -glong*(NrnV(ctx, ni, di, VmDend)-ac.Init.Vm))
 
 	if ahp > 0 {
 		ac.DecayAHP(ctx, ni, di, ahp)
 	}
-	AddNeurVar(ctx, ni, di, GgabaB, -glong*NeurVar(ctx, ni, di, GgabaB))
-	AddNeurVar(ctx, ni, di, GABAB, -glong*NeurVar(ctx, ni, di, GABAB))
-	AddNeurVar(ctx, ni, di, GABABx, -glong*NeurVar(ctx, ni, di, GABABx))
+	AddNrnV(ctx, ni, di, GgabaB, -glong*NrnV(ctx, ni, di, GgabaB))
+	AddNrnV(ctx, ni, di, GABAB, -glong*NrnV(ctx, ni, di, GABAB))
+	AddNrnV(ctx, ni, di, GABABx, -glong*NrnV(ctx, ni, di, GABABx))
 
-	AddNeurVar(ctx, ni, di, GnmdaSyn, -glong*NeurVar(ctx, ni, di, GnmdaSyn))
-	AddNeurVar(ctx, ni, di, Gnmda, -glong*NeurVar(ctx, ni, di, Gnmda))
-	AddNeurVar(ctx, ni, di, GMaintSyn, -glong*NeurVar(ctx, ni, di, GMaintSyn))
-	AddNeurVar(ctx, ni, di, GnmdaMaint, -glong*NeurVar(ctx, ni, di, GnmdaMaint))
+	AddNrnV(ctx, ni, di, GnmdaSyn, -glong*NrnV(ctx, ni, di, GnmdaSyn))
+	AddNrnV(ctx, ni, di, Gnmda, -glong*NrnV(ctx, ni, di, Gnmda))
+	AddNrnV(ctx, ni, di, GMaintSyn, -glong*NrnV(ctx, ni, di, GMaintSyn))
+	AddNrnV(ctx, ni, di, GnmdaMaint, -glong*NrnV(ctx, ni, di, GnmdaMaint))
 
-	AddNeurVar(ctx, ni, di, Gvgcc, -glong*NeurVar(ctx, ni, di, Gvgcc))
-	AddNeurVar(ctx, ni, di, VgccM, -glong*NeurVar(ctx, ni, di, VgccM))
-	AddNeurVar(ctx, ni, di, VgccH, -glong*NeurVar(ctx, ni, di, VgccH))
-	AddNeurVar(ctx, ni, di, Gak, -glong*NeurVar(ctx, ni, di, Gak))
+	AddNrnV(ctx, ni, di, Gvgcc, -glong*NrnV(ctx, ni, di, Gvgcc))
+	AddNrnV(ctx, ni, di, VgccM, -glong*NrnV(ctx, ni, di, VgccM))
+	AddNrnV(ctx, ni, di, VgccH, -glong*NrnV(ctx, ni, di, VgccH))
+	AddNrnV(ctx, ni, di, Gak, -glong*NrnV(ctx, ni, di, Gak))
 
 	// don't mess with SKCa -- longer time scale
-	AddNeurVar(ctx, ni, di, Gsk, -glong*NeurVar(ctx, ni, di, Gsk))
+	AddNrnV(ctx, ni, di, Gsk, -glong*NrnV(ctx, ni, di, Gsk))
 
 	if ac.Decay.LearnCa > 0 { // learning-based Ca values -- not usual
 		ac.DecayLearnCa(ctx, ni, di, ac.Decay.LearnCa)
 	}
 
-	SetNeurVar(ctx, ni, di, Inet, 0)
-	SetNeurVar(ctx, ni, di, GeRaw, 0)
-	SetNeurVar(ctx, ni, di, GiRaw, 0)
-	SetNeurVar(ctx, ni, di, GModRaw, 0)
-	SetNeurVar(ctx, ni, di, GModSyn, 0)
-	SetNeurVar(ctx, ni, di, GMaintRaw, 0)
-	SetNeurVar(ctx, ni, di, SSGi, 0)
-	SetNeurVar(ctx, ni, di, SSGiDend, 0)
-	SetNeurVar(ctx, ni, di, GeExt, 0)
+	SetNrnV(ctx, ni, di, Inet, 0)
+	SetNrnV(ctx, ni, di, GeRaw, 0)
+	SetNrnV(ctx, ni, di, GiRaw, 0)
+	SetNrnV(ctx, ni, di, GModRaw, 0)
+	SetNrnV(ctx, ni, di, GModSyn, 0)
+	SetNrnV(ctx, ni, di, GMaintRaw, 0)
+	SetNrnV(ctx, ni, di, SSGi, 0)
+	SetNrnV(ctx, ni, di, SSGiDend, 0)
+	SetNrnV(ctx, ni, di, GeExt, 0)
 
-	SetNeurVar(ctx, ni, di, CtxtGeOrig, -glong*NeurVar(ctx, ni, di, CtxtGeOrig))
+	SetNrnV(ctx, ni, di, CtxtGeOrig, -glong*NrnV(ctx, ni, di, CtxtGeOrig))
 }
 
 //gosl: end act
@@ -694,80 +694,80 @@ func (ac *ActParams) DecayState(ctx *Context, ni, di uint32, decay, glong, ahp f
 // InitActs initializes activation state in neuron -- called during InitWts but otherwise not
 // automatically called (DecayState is used instead)
 func (ac *ActParams) InitActs(ctx *Context, ni, di uint32, rnd erand.Rand) {
-	SetNeurVar(ctx, ni, di, Spike, 0)
-	SetNeurVar(ctx, ni, di, Spiked, 0)
-	SetNeurVar(ctx, ni, di, ISI, -1)
-	SetNeurVar(ctx, ni, di, ISIAvg, -1)
-	SetNeurVar(ctx, ni, di, Act, ac.Init.Act)
-	SetNeurVar(ctx, ni, di, ActInt, ac.Init.Act)
-	SetNeurVar(ctx, ni, di, GeBase, ac.Init.GetGeBase(rnd))
-	SetNeurVar(ctx, ni, di, GiBase, ac.Init.GetGiBase(rnd))
-	SetNeurVar(ctx, ni, di, GeSyn, NeurVar(ctx, ni, di, GeBase))
-	SetNeurVar(ctx, ni, di, Ge, NeurVar(ctx, ni, di, GeBase))
-	SetNeurVar(ctx, ni, di, Gi, NeurVar(ctx, ni, di, GiBase))
-	SetNeurVar(ctx, ni, di, Gk, 0)
-	SetNeurVar(ctx, ni, di, Inet, 0)
-	SetNeurVar(ctx, ni, di, Vm, ac.Init.Vm)
-	SetNeurVar(ctx, ni, di, VmDend, ac.Init.Vm)
-	SetNeurVar(ctx, ni, di, Target, 0)
-	SetNeurVar(ctx, ni, di, Ext, 0)
+	SetNrnV(ctx, ni, di, Spike, 0)
+	SetNrnV(ctx, ni, di, Spiked, 0)
+	SetNrnV(ctx, ni, di, ISI, -1)
+	SetNrnV(ctx, ni, di, ISIAvg, -1)
+	SetNrnV(ctx, ni, di, Act, ac.Init.Act)
+	SetNrnV(ctx, ni, di, ActInt, ac.Init.Act)
+	SetNrnV(ctx, ni, di, GeBase, ac.Init.GetGeBase(rnd))
+	SetNrnV(ctx, ni, di, GiBase, ac.Init.GetGiBase(rnd))
+	SetNrnV(ctx, ni, di, GeSyn, NrnV(ctx, ni, di, GeBase))
+	SetNrnV(ctx, ni, di, Ge, NrnV(ctx, ni, di, GeBase))
+	SetNrnV(ctx, ni, di, Gi, NrnV(ctx, ni, di, GiBase))
+	SetNrnV(ctx, ni, di, Gk, 0)
+	SetNrnV(ctx, ni, di, Inet, 0)
+	SetNrnV(ctx, ni, di, Vm, ac.Init.Vm)
+	SetNrnV(ctx, ni, di, VmDend, ac.Init.Vm)
+	SetNrnV(ctx, ni, di, Target, 0)
+	SetNrnV(ctx, ni, di, Ext, 0)
 
-	SetNeurVar(ctx, ni, di, SpkMaxCa, 0)
-	SetNeurVar(ctx, ni, di, SpkMax, 0)
-	SetNeurVar(ctx, ni, di, Attn, 1)
-	SetNeurVar(ctx, ni, di, RLRate, 1)
+	SetNrnV(ctx, ni, di, SpkMaxCa, 0)
+	SetNrnV(ctx, ni, di, SpkMax, 0)
+	SetNrnV(ctx, ni, di, Attn, 1)
+	SetNrnV(ctx, ni, di, RLRate, 1)
 
-	SetNeurVar(ctx, ni, di, GeNoiseP, 1)
-	SetNeurVar(ctx, ni, di, GeNoise, 0)
-	SetNeurVar(ctx, ni, di, GiNoiseP, 1)
-	SetNeurVar(ctx, ni, di, GiNoise, 0)
+	SetNrnV(ctx, ni, di, GeNoiseP, 1)
+	SetNrnV(ctx, ni, di, GeNoise, 0)
+	SetNrnV(ctx, ni, di, GiNoiseP, 1)
+	SetNrnV(ctx, ni, di, GiNoise, 0)
 
-	SetNeurVar(ctx, ni, di, GiSyn, 0)
+	SetNrnV(ctx, ni, di, GiSyn, 0)
 
-	SetNeurVar(ctx, ni, di, MahpN, 0)
-	SetNeurVar(ctx, ni, di, SahpCa, 0)
-	SetNeurVar(ctx, ni, di, SahpN, 0)
-	SetNeurVar(ctx, ni, di, GknaMed, 0)
-	SetNeurVar(ctx, ni, di, GknaSlow, 0)
+	SetNrnV(ctx, ni, di, MahpN, 0)
+	SetNrnV(ctx, ni, di, SahpCa, 0)
+	SetNrnV(ctx, ni, di, SahpN, 0)
+	SetNrnV(ctx, ni, di, GknaMed, 0)
+	SetNrnV(ctx, ni, di, GknaSlow, 0)
 
-	SetNeurVar(ctx, ni, di, GnmdaSyn, 0)
-	SetNeurVar(ctx, ni, di, Gnmda, 0)
-	SetNeurVar(ctx, ni, di, GnmdaMaint, 0)
-	SetNeurVar(ctx, ni, di, GnmdaLrn, 0)
-	SetNeurVar(ctx, ni, di, NmdaCa, 0)
+	SetNrnV(ctx, ni, di, GnmdaSyn, 0)
+	SetNrnV(ctx, ni, di, Gnmda, 0)
+	SetNrnV(ctx, ni, di, GnmdaMaint, 0)
+	SetNrnV(ctx, ni, di, GnmdaLrn, 0)
+	SetNrnV(ctx, ni, di, NmdaCa, 0)
 
-	SetNeurVar(ctx, ni, di, GgabaB, 0)
-	SetNeurVar(ctx, ni, di, GABAB, 0)
-	SetNeurVar(ctx, ni, di, GABABx, 0)
+	SetNrnV(ctx, ni, di, GgabaB, 0)
+	SetNrnV(ctx, ni, di, GABAB, 0)
+	SetNrnV(ctx, ni, di, GABABx, 0)
 
-	SetNeurVar(ctx, ni, di, Gvgcc, 0)
-	SetNeurVar(ctx, ni, di, VgccM, 0)
-	SetNeurVar(ctx, ni, di, VgccH, 0)
-	SetNeurVar(ctx, ni, di, Gak, 0)
-	SetNeurVar(ctx, ni, di, VgccCaInt, 0)
+	SetNrnV(ctx, ni, di, Gvgcc, 0)
+	SetNrnV(ctx, ni, di, VgccM, 0)
+	SetNrnV(ctx, ni, di, VgccH, 0)
+	SetNrnV(ctx, ni, di, Gak, 0)
+	SetNrnV(ctx, ni, di, VgccCaInt, 0)
 
-	SetNeurVar(ctx, ni, di, SKCaIn, 1)
-	SetNeurVar(ctx, ni, di, SKCaR, 0)
-	SetNeurVar(ctx, ni, di, SKCaM, 0)
-	SetNeurVar(ctx, ni, di, Gsk, 0)
+	SetNrnV(ctx, ni, di, SKCaIn, 1)
+	SetNrnV(ctx, ni, di, SKCaR, 0)
+	SetNrnV(ctx, ni, di, SKCaM, 0)
+	SetNrnV(ctx, ni, di, Gsk, 0)
 
-	SetNeurVar(ctx, ni, di, GeExt, 0)
-	SetNeurVar(ctx, ni, di, GeRaw, 0)
-	SetNeurVar(ctx, ni, di, GiRaw, 0)
-	SetNeurVar(ctx, ni, di, GModRaw, 0)
-	SetNeurVar(ctx, ni, di, GModSyn, 0)
-	SetNeurVar(ctx, ni, di, GMaintRaw, 0)
-	SetNeurVar(ctx, ni, di, GMaintSyn, 0)
+	SetNrnV(ctx, ni, di, GeExt, 0)
+	SetNrnV(ctx, ni, di, GeRaw, 0)
+	SetNrnV(ctx, ni, di, GiRaw, 0)
+	SetNrnV(ctx, ni, di, GModRaw, 0)
+	SetNrnV(ctx, ni, di, GModSyn, 0)
+	SetNrnV(ctx, ni, di, GMaintRaw, 0)
+	SetNrnV(ctx, ni, di, GMaintSyn, 0)
 
-	SetNeurVar(ctx, ni, di, SSGi, 0)
-	SetNeurVar(ctx, ni, di, SSGiDend, 0)
+	SetNrnV(ctx, ni, di, SSGi, 0)
+	SetNrnV(ctx, ni, di, SSGiDend, 0)
 
-	SetNeurVar(ctx, ni, di, Burst, 0)
-	SetNeurVar(ctx, ni, di, BurstPrv, 0)
+	SetNrnV(ctx, ni, di, Burst, 0)
+	SetNrnV(ctx, ni, di, BurstPrv, 0)
 
-	SetNeurVar(ctx, ni, di, CtxtGe, 0)
-	SetNeurVar(ctx, ni, di, CtxtGeRaw, 0)
-	SetNeurVar(ctx, ni, di, CtxtGeOrig, 0)
+	SetNrnV(ctx, ni, di, CtxtGe, 0)
+	SetNrnV(ctx, ni, di, CtxtGeRaw, 0)
+	SetNrnV(ctx, ni, di, CtxtGeOrig, 0)
 
 	ac.InitLongActs(ctx, ni, di)
 }
@@ -778,13 +778,13 @@ func (ac *ActParams) InitActs(ctx *Context, ni, di uint32, rnd erand.Rand) {
 // but otherwise not automatically called
 // (DecayState is used instead)
 func (ac *ActParams) InitLongActs(ctx *Context, ni, di uint32) {
-	SetNeurVar(ctx, ni, di, SpkPrv, 0)
-	SetNeurVar(ctx, ni, di, SpkSt1, 0)
-	SetNeurVar(ctx, ni, di, SpkSt2, 0)
-	SetNeurVar(ctx, ni, di, ActM, 0)
-	SetNeurVar(ctx, ni, di, ActP, 0)
-	SetNeurVar(ctx, ni, di, GeInt, 0)
-	SetNeurVar(ctx, ni, di, GiInt, 0)
+	SetNrnV(ctx, ni, di, SpkPrv, 0)
+	SetNrnV(ctx, ni, di, SpkSt1, 0)
+	SetNrnV(ctx, ni, di, SpkSt2, 0)
+	SetNrnV(ctx, ni, di, ActM, 0)
+	SetNrnV(ctx, ni, di, ActP, 0)
+	SetNrnV(ctx, ni, di, GeInt, 0)
+	SetNrnV(ctx, ni, di, GiInt, 0)
 }
 
 //gosl: start act
@@ -801,8 +801,8 @@ func (ac *ActParams) NMDAFmRaw(ctx *Context, ni, di uint32, geTot float32) {
 	if geTot < 0 {
 		geTot = 0
 	}
-	SetNeurVar(ctx, ni, di, GnmdaSyn, ac.NMDA.NMDASyn(NeurVar(ctx, ni, di, GnmdaSyn), geTot))
-	SetNeurVar(ctx, ni, di, Gnmda, ac.NMDA.Gnmda(NeurVar(ctx, ni, di, GnmdaSyn), NeurVar(ctx, ni, di, VmDend)))
+	SetNrnV(ctx, ni, di, GnmdaSyn, ac.NMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaSyn), geTot))
+	SetNrnV(ctx, ni, di, Gnmda, ac.NMDA.Gnmda(NrnV(ctx, ni, di, GnmdaSyn), NrnV(ctx, ni, di, VmDend)))
 	// note: nrn.NmdaCa computed via Learn.LrnNMDA in learn.go, CaM method
 }
 
@@ -812,8 +812,8 @@ func (ac *ActParams) MaintNMDAFmRaw(ctx *Context, ni, di uint32) {
 	if ac.MaintNMDA.Gbar == 0 {
 		return
 	}
-	SetNeurVar(ctx, ni, di, GMaintSyn, ac.MaintNMDA.NMDASyn(NeurVar(ctx, ni, di, GMaintSyn), NeurVar(ctx, ni, di, GMaintRaw)))
-	SetNeurVar(ctx, ni, di, GnmdaMaint, ac.MaintNMDA.Gnmda(NeurVar(ctx, ni, di, GMaintSyn), NeurVar(ctx, ni, di, VmDend)))
+	SetNrnV(ctx, ni, di, GMaintSyn, ac.MaintNMDA.NMDASyn(NrnV(ctx, ni, di, GMaintSyn), NrnV(ctx, ni, di, GMaintRaw)))
+	SetNrnV(ctx, ni, di, GnmdaMaint, ac.MaintNMDA.Gnmda(NrnV(ctx, ni, di, GMaintSyn), NrnV(ctx, ni, di, VmDend)))
 }
 
 // GvgccFmVm updates all the VGCC voltage-gated calcium channel variables
@@ -822,34 +822,34 @@ func (ac *ActParams) GvgccFmVm(ctx *Context, ni, di uint32) {
 	if ac.VGCC.Gbar == 0 {
 		return
 	}
-	SetNeurVar(ctx, ni, di, Gvgcc, ac.VGCC.Gvgcc(NeurVar(ctx, ni, di, VmDend), NeurVar(ctx, ni, di, VgccM), NeurVar(ctx, ni, di, VgccH)))
+	SetNrnV(ctx, ni, di, Gvgcc, ac.VGCC.Gvgcc(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, VgccM), NrnV(ctx, ni, di, VgccH)))
 	var dm, dh float32
-	ac.VGCC.DMHFmV(NeurVar(ctx, ni, di, VmDend), NeurVar(ctx, ni, di, VgccM), NeurVar(ctx, ni, di, VgccH), &dm, &dh)
-	AddNeurVar(ctx, ni, di, VgccM, dm)
-	AddNeurVar(ctx, ni, di, VgccH, dh)
-	SetNeurVar(ctx, ni, di, VgccCa, ac.VGCC.CaFmG(NeurVar(ctx, ni, di, VmDend), NeurVar(ctx, ni, di, Gvgcc), NeurVar(ctx, ni, di, VgccCa))) // note: may be overwritten!
+	ac.VGCC.DMHFmV(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, VgccM), NrnV(ctx, ni, di, VgccH), &dm, &dh)
+	AddNrnV(ctx, ni, di, VgccM, dm)
+	AddNrnV(ctx, ni, di, VgccH, dh)
+	SetNrnV(ctx, ni, di, VgccCa, ac.VGCC.CaFmG(NrnV(ctx, ni, di, VmDend), NrnV(ctx, ni, di, Gvgcc), NrnV(ctx, ni, di, VgccCa))) // note: may be overwritten!
 }
 
 // GkFmVm updates all the Gk-based conductances: Mahp, KNa, Gak
 func (ac *ActParams) GkFmVm(ctx *Context, ni, di uint32) {
-	dn := ac.Mahp.DNFmV(NeurVar(ctx, ni, di, Vm), NeurVar(ctx, ni, di, MahpN))
-	AddNeurVar(ctx, ni, di, MahpN, dn)
-	SetNeurVar(ctx, ni, di, Gak, ac.AK.Gak(NeurVar(ctx, ni, di, VmDend)))
-	SetNeurVar(ctx, ni, di, Gk, NeurVar(ctx, ni, di, Gak)+ac.Mahp.GmAHP(NeurVar(ctx, ni, di, MahpN))+ac.Sahp.GsAHP(NeurVar(ctx, ni, di, SahpN)))
+	dn := ac.Mahp.DNFmV(NrnV(ctx, ni, di, Vm), NrnV(ctx, ni, di, MahpN))
+	AddNrnV(ctx, ni, di, MahpN, dn)
+	SetNrnV(ctx, ni, di, Gak, ac.AK.Gak(NrnV(ctx, ni, di, VmDend)))
+	SetNrnV(ctx, ni, di, Gk, NrnV(ctx, ni, di, Gak)+ac.Mahp.GmAHP(NrnV(ctx, ni, di, MahpN))+ac.Sahp.GsAHP(NrnV(ctx, ni, di, SahpN)))
 	if ac.KNa.On.IsTrue() {
-		gknaMed := NeurVar(ctx, ni, di, GknaMed)
-		gknaSlow := NeurVar(ctx, ni, di, GknaSlow)
-		ac.KNa.GcFmSpike(&gknaMed, &gknaSlow, NeurVar(ctx, ni, di, Spike) > .5)
-		SetNeurVar(ctx, ni, di, GknaMed, gknaMed)
-		SetNeurVar(ctx, ni, di, GknaSlow, gknaSlow)
-		AddNeurVar(ctx, ni, di, Gk, NeurVar(ctx, ni, di, GknaMed)+NeurVar(ctx, ni, di, GknaSlow))
+		gknaMed := NrnV(ctx, ni, di, GknaMed)
+		gknaSlow := NrnV(ctx, ni, di, GknaSlow)
+		ac.KNa.GcFmSpike(&gknaMed, &gknaSlow, NrnV(ctx, ni, di, Spike) > .5)
+		SetNrnV(ctx, ni, di, GknaMed, gknaMed)
+		SetNrnV(ctx, ni, di, GknaSlow, gknaSlow)
+		AddNrnV(ctx, ni, di, Gk, NrnV(ctx, ni, di, GknaMed)+NrnV(ctx, ni, di, GknaSlow))
 	}
 }
 
 // KNaNewState does TrialSlow version of KNa during NewState if option is seta
 func (ac *ActParams) KNaNewState(ctx *Context, ni, di uint32) {
 	if ac.KNa.On.IsTrue() && ac.KNa.TrialSlow.IsTrue() {
-		AddNeurVar(ctx, ni, di, GknaSlow, ac.KNa.Slow.Max*NeurVar(ctx, ni, di, SpkPrv))
+		AddNrnV(ctx, ni, di, GknaSlow, ac.KNa.Slow.Max*NrnV(ctx, ni, di, SpkPrv))
 	}
 }
 
@@ -858,35 +858,35 @@ func (ac *ActParams) GSkCaFmCa(ctx *Context, ni, di uint32) {
 	if ac.SKCa.Gbar == 0 {
 		return
 	}
-	skcar := NeurVar(ctx, ni, di, SKCaR)
-	skcain := NeurVar(ctx, ni, di, SKCaIn)
-	SetNeurVar(ctx, ni, di, SKCaM, ac.SKCa.MFmCa(skcar, NeurVar(ctx, ni, di, SKCaM)))
-	ac.SKCa.CaInRFmSpike(NeurVar(ctx, ni, di, Spike), NeurVar(ctx, ni, di, CaSpkD), &skcain, &skcar)
-	SetNeurVar(ctx, ni, di, SKCaR, skcar)
-	SetNeurVar(ctx, ni, di, SKCaIn, skcain)
-	SetNeurVar(ctx, ni, di, Gsk, ac.SKCa.Gbar*NeurVar(ctx, ni, di, SKCaM))
-	AddNeurVar(ctx, ni, di, Gk, NeurVar(ctx, ni, di, Gsk))
+	skcar := NrnV(ctx, ni, di, SKCaR)
+	skcain := NrnV(ctx, ni, di, SKCaIn)
+	SetNrnV(ctx, ni, di, SKCaM, ac.SKCa.MFmCa(skcar, NrnV(ctx, ni, di, SKCaM)))
+	ac.SKCa.CaInRFmSpike(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, CaSpkD), &skcain, &skcar)
+	SetNrnV(ctx, ni, di, SKCaR, skcar)
+	SetNrnV(ctx, ni, di, SKCaIn, skcain)
+	SetNrnV(ctx, ni, di, Gsk, ac.SKCa.Gbar*NrnV(ctx, ni, di, SKCaM))
+	AddNrnV(ctx, ni, di, Gk, NrnV(ctx, ni, di, Gsk))
 }
 
 // GeFmSyn integrates Ge excitatory conductance from GeSyn.
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
-	SetNeurVar(ctx, ni, di, GeExt, 0)
-	if ac.Clamp.Add.IsTrue() && NeurHasFlag(ctx, ni, NeuronHasExt) {
-		SetNeurVar(ctx, ni, di, GeExt, NeurVar(ctx, ni, di, Ext)*ac.Clamp.Ge)
-		geSyn += NeurVar(ctx, ni, di, GeExt)
+	SetNrnV(ctx, ni, di, GeExt, 0)
+	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ctx, ni, NeuronHasExt) {
+		SetNrnV(ctx, ni, di, GeExt, NrnV(ctx, ni, di, Ext)*ac.Clamp.Ge)
+		geSyn += NrnV(ctx, ni, di, GeExt)
 	}
-	geSyn = ac.Attn.ModVal(geSyn, NeurVar(ctx, ni, di, Attn))
+	geSyn = ac.Attn.ModVal(geSyn, NrnV(ctx, ni, di, Attn))
 
-	if ac.Clamp.Add.IsFalse() && NeurHasFlag(ctx, ni, NeuronHasExt) { // todo: this flag check is not working
-		geSyn = NeurVar(ctx, ni, di, Ext) * ac.Clamp.Ge
-		SetNeurVar(ctx, ni, di, GeExt, geSyn)
+	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ctx, ni, NeuronHasExt) { // todo: this flag check is not working
+		geSyn = NrnV(ctx, ni, di, Ext) * ac.Clamp.Ge
+		SetNrnV(ctx, ni, di, GeExt, geSyn)
 		geExt = 0 // no extra in this case
 	}
 
-	SetNeurVar(ctx, ni, di, Ge, geSyn+geExt)
-	if NeurVar(ctx, ni, di, Ge) < 0 {
-		SetNeurVar(ctx, ni, di, Ge, 0)
+	SetNrnV(ctx, ni, di, Ge, geSyn+geExt)
+	if NrnV(ctx, ni, di, Ge) < 0 {
+		SetNrnV(ctx, ni, di, Ge, 0)
 	}
 	ac.GeNoise(ctx, ni, di)
 }
@@ -896,11 +896,11 @@ func (ac *ActParams) GeNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Ge == 0 {
 		return
 	}
-	p := NeurVar(ctx, ni, di, GeNoiseP)
+	p := NrnV(ctx, ni, di, GeNoiseP)
 	ge := ac.Noise.PGe(ctx, &p, ni)
-	SetNeurVar(ctx, ni, di, GeNoiseP, p)
-	SetNeurVar(ctx, ni, di, GeNoise, ac.Dt.GeSynFmRaw(NeurVar(ctx, ni, di, GeNoise), ge))
-	AddNeurVar(ctx, ni, di, Ge, NeurVar(ctx, ni, di, GeNoise))
+	SetNrnV(ctx, ni, di, GeNoiseP, p)
+	SetNrnV(ctx, ni, di, GeNoise, ac.Dt.GeSynFmRaw(NrnV(ctx, ni, di, GeNoise), ge))
+	AddNrnV(ctx, ni, di, Ge, NrnV(ctx, ni, di, GeNoise))
 }
 
 // GiNoise updates nrn.GiNoise if active
@@ -908,10 +908,10 @@ func (ac *ActParams) GiNoise(ctx *Context, ni, di uint32) {
 	if ac.Noise.On.IsFalse() || ac.Noise.Gi == 0 {
 		return
 	}
-	p := NeurVar(ctx, ni, di, GiNoiseP)
+	p := NrnV(ctx, ni, di, GiNoiseP)
 	gi := ac.Noise.PGi(ctx, &p, ni)
-	SetNeurVar(ctx, ni, di, GiNoiseP, p)
-	SetNeurVar(ctx, ni, di, GiNoise, ac.Dt.GiSynFmRaw(NeurVar(ctx, ni, di, GiNoise), gi))
+	SetNrnV(ctx, ni, di, GiNoiseP, p)
+	SetNrnV(ctx, ni, di, GiNoise, ac.Dt.GiSynFmRaw(NrnV(ctx, ni, di, GiNoise), gi))
 }
 
 // GiFmSyn integrates GiSyn inhibitory synaptic conductance from GiRaw value
@@ -956,19 +956,19 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 	updtVm := true
 	// note: nrn.ISI has NOT yet been updated at this point: 0 right after spike, etc
 	// so it takes a full 3 time steps after spiking for Tr period
-	isi := NeurVar(ctx, ni, di, ISI)
+	isi := NrnV(ctx, ni, di, ISI)
 	if ac.Spike.Tr > 0 && isi >= 0 && isi < float32(ac.Spike.Tr) {
 		updtVm = false // don't update the spiking vm during refract
 	}
 
-	ge := NeurVar(ctx, ni, di, Ge) * ac.Gbar.E
-	gi := NeurVar(ctx, ni, di, Gi) * ac.Gbar.I
-	gk := NeurVar(ctx, ni, di, Gk) * ac.Gbar.K
+	ge := NrnV(ctx, ni, di, Ge) * ac.Gbar.E
+	gi := NrnV(ctx, ni, di, Gi) * ac.Gbar.I
+	gk := NrnV(ctx, ni, di, Gk) * ac.Gbar.K
 	var nvm, inet, expi float32
 	if updtVm {
-		ac.VmInteg(NeurVar(ctx, ni, di, Vm), ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
+		ac.VmInteg(NrnV(ctx, ni, di, Vm), ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
 		if updtVm && ac.Spike.Exp.IsTrue() { // add spike current if relevant
-			exVm := 0.5 * (nvm + NeurVar(ctx, ni, di, Vm)) // midpoint for this
+			exVm := 0.5 * (nvm + NrnV(ctx, ni, di, Vm)) // midpoint for this
 			expi = ac.Gbar.L * ac.Spike.ExpSlope *
 				mat32.FastExp((exVm-ac.Spike.Thr)/ac.Spike.ExpSlope)
 			if expi > ac.Dt.VmTau {
@@ -977,17 +977,17 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 			inet += expi
 			nvm = ac.VmFmInet(nvm, ac.Dt.VmDt, expi)
 		}
-		SetNeurVar(ctx, ni, di, Vm, nvm)
-		SetNeurVar(ctx, ni, di, Inet, inet)
+		SetNrnV(ctx, ni, di, Vm, nvm)
+		SetNrnV(ctx, ni, di, Inet, inet)
 	} else { // decay back to VmR
 		var dvm float32
 		if int32(isi) == ac.Spike.Tr-1 {
-			dvm = ac.Spike.VmR - NeurVar(ctx, ni, di, Vm)
+			dvm = ac.Spike.VmR - NrnV(ctx, ni, di, Vm)
 		} else {
-			dvm = ac.Spike.RDt * (ac.Spike.VmR - NeurVar(ctx, ni, di, Vm))
+			dvm = ac.Spike.RDt * (ac.Spike.VmR - NrnV(ctx, ni, di, Vm))
 		}
-		SetNeurVar(ctx, ni, di, Vm, NeurVar(ctx, ni, di, Vm)+dvm)
-		SetNeurVar(ctx, ni, di, Inet, dvm*ac.Dt.VmTau)
+		SetNrnV(ctx, ni, di, Vm, NrnV(ctx, ni, di, Vm)+dvm)
+		SetNrnV(ctx, ni, di, Inet, dvm*ac.Dt.VmTau)
 	}
 
 	{ // always update VmDend
@@ -995,12 +995,12 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 		if !updtVm {
 			glEff += ac.Dend.GbarR
 		}
-		giEff := gi + ac.Gbar.I*NeurVar(ctx, ni, di, SSGiDend)
-		ac.VmInteg(NeurVar(ctx, ni, di, VmDend), ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
+		giEff := gi + ac.Gbar.I*NrnV(ctx, ni, di, SSGiDend)
+		ac.VmInteg(NrnV(ctx, ni, di, VmDend), ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
 		if updtVm {
 			nvm = ac.VmFmInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
 		}
-		SetNeurVar(ctx, ni, di, VmDend, nvm)
+		SetNrnV(ctx, ni, di, VmDend, nvm)
 	}
 }
 
@@ -1052,18 +1052,18 @@ func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAc
 
 // SpikeFmVm computes Spike from Vm and ISI-based activation
 func (ac *ActParams) SpikeFmVm(ctx *Context, ni, di uint32) {
-	nrnISI := NeurVar(ctx, ni, di, ISI)
-	nrnISIAvg := NeurVar(ctx, ni, di, ISIAvg)
-	nrnSpike := NeurVar(ctx, ni, di, Spike)
-	nrnSpiked := NeurVar(ctx, ni, di, Spiked)
-	nrnAct := NeurVar(ctx, ni, di, Act)
-	nrnVm := NeurVar(ctx, ni, di, Vm)
+	nrnISI := NrnV(ctx, ni, di, ISI)
+	nrnISIAvg := NrnV(ctx, ni, di, ISIAvg)
+	nrnSpike := NrnV(ctx, ni, di, Spike)
+	nrnSpiked := NrnV(ctx, ni, di, Spiked)
+	nrnAct := NrnV(ctx, ni, di, Act)
+	nrnVm := NrnV(ctx, ni, di, Vm)
 	ac.SpikeFmVmVars(&nrnISI, &nrnISIAvg, &nrnSpike, &nrnSpiked, &nrnAct, nrnVm)
-	SetNeurVar(ctx, ni, di, ISI, nrnISI)
-	SetNeurVar(ctx, ni, di, ISIAvg, nrnISIAvg)
-	SetNeurVar(ctx, ni, di, Spike, nrnSpike)
-	SetNeurVar(ctx, ni, di, Spiked, nrnSpiked)
-	SetNeurVar(ctx, ni, di, Act, nrnAct)
+	SetNrnV(ctx, ni, di, ISI, nrnISI)
+	SetNrnV(ctx, ni, di, ISIAvg, nrnISIAvg)
+	SetNrnV(ctx, ni, di, Spike, nrnSpike)
+	SetNrnV(ctx, ni, di, Spiked, nrnSpiked)
+	SetNrnV(ctx, ni, di, Act, nrnAct)
 }
 
 //gosl: end act

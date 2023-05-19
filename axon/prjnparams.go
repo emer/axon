@@ -189,7 +189,7 @@ func (pj *PrjnParams) SynSendLayIdx(sy *Synapse) uint32 {
 // GatherSpikes integrates G*Raw and G*Syn values for given neuron
 // from the given Prjn-level GRaw value, first integrating
 // projection-level GSyn value.
-func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni uint32, nrn *Neuron, gRaw float32, gSyn *float32) {
+func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32, gRaw float32, gSyn *float32) {
 	switch pj.Com.GType {
 	case ExcitatoryG:
 		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)

@@ -51,8 +51,8 @@ type NetworkBase struct {
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, in 1-to-1 correspondence with Layers"`
 	Pools        []Pool        `view:"-" desc:"[Layers][Pools][MaxData] array of inhibitory pools for all layers."`
-	Neurons      []float32     `view:"-" desc:"entire network's allocation of neuron variables, accessed via NeurVar method with flexible striding"`
-	NeurIdxs     []uint32      `view:"-" desc:"entire network's allocation of neuron index variables, accessed via NeurIdx method with flexible striding"`
+	Neurons      []float32     `view:"-" desc:"entire network's allocation of neuron variables, accessed via NrnV method with flexible striding"`
+	NeuronIdxs   []uint32      `view:"-" desc:"entire network's allocation of neuron index variables, accessed via NrnI method with flexible striding"`
 	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
 	Synapses     []Synapse     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based"`
@@ -547,7 +547,8 @@ func (nt *NetworkBase) Build() error {
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
 	nt.Exts = make([]float32, totExts*nt.MaxData)
 
-	nt.Ctx.NeurVars.SetNeurVarData(totNeurons, nt.MaxData) // todo: contingent on GPU
+	nt.Ctx.NeuronVars.SetNeuronOuter(nt.MaxData) // default to CPU
+	nt.Ctx.NeuronIdxs.SetNeuronOuter()
 
 	totSynapses := 0
 	totRecvCon := 0

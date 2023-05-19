@@ -34,8 +34,8 @@ type LayerBase struct {
 	Rel           relpos.Rel         `tableview:"-" view:"inline" desc:"Spatial relationship to other layer, determines positioning"`
 	Ps            mat32.Vec3         `tableview:"-" desc:"position of lower-left-hand corner of layer in 3D space, computed from Rel.  Layers are in X-Y width - height planes, stacked vertically in Z axis."`
 	Idx           int                `view:"-" inactive:"-" desc:"a 0..n-1 index of the position of the layer within list of layers in the network. For Axon networks, it only has significance in determining who gets which weights for enforcing initial weight symmetry -- higher layers get weights from lower layers."`
-	NeurStIdx     int                `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
-	NNeurons      int                `view:"-" desc:"number of neurons in the layer"`
+	NNeurons      uint32             `view:"-" desc:"number of neurons in the layer"`
+	NeurStIdx     uint32             `view:"-" inactive:"-" desc:"starting index of neurons for this layer within the global Network list"`
 	NPools        uint32             `view:"-" desc:"number of pools based on layer shape -- at least 1 for layer pool + 4D subpools"`
 	MaxData       uint32             `view:"-" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron, Pool, Vals storage is allocated to hold this amount."`
 	RepIxs        []int              `view:"-" desc:"indexes of representative units in the layer, for computationally expensive stats or displays -- also set RepShp"`
@@ -101,7 +101,7 @@ func (ly *LayerBase) SendPrjns() *AxonPrjns      { return &ly.SndPrjns }
 func (ly *LayerBase) NSendPrjns() int            { return len(ly.SndPrjns) }
 func (ly *LayerBase) SendPrjn(idx int) emer.Prjn { return ly.SndPrjns[idx] }
 func (ly *LayerBase) RepIdxs() []int             { return ly.RepIxs }
-func (ly *LayerBase) NeurStartIdx() int          { return ly.NeurStIdx }
+func (ly *LayerBase) NeurStartIdx() int          { return int(ly.NeurStIdx) }
 
 func (ly *LayerBase) SendNameTry(sender string) (emer.Prjn, error) {
 	return emer.SendNameTry(ly.AxonLay, sender)
@@ -220,8 +220,14 @@ func (ly *LayerBase) NSubPools() int {
 }
 
 // Pool returns pool at given pool x data index
-func (ly *LayerBase) Pool(idx, di uint32) *Pool {
-	return &(ly.Pools[idx*ly.MaxData+di])
+func (ly *LayerBase) Pool(pi, di uint32) *Pool {
+	return &(ly.Pools[pi*ly.MaxData+di])
+}
+
+// SubPool returns subpool for given neuron, at data index
+func (ly *LayerBase) SubPool(ctx *Context, ni, di uint32) *Pool {
+	pi := NrnI(ctx, ni+ly.NeurStIdx, NidxSubPool)
+	return ly.Pool(pi, di)
 }
 
 // RecipToSendPrjn finds the reciprocal projection to

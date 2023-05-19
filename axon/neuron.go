@@ -212,35 +212,32 @@ const (
 	NeuronVarsN
 )
 
-// NeurVarStrides encodes the stride offsets for neuron variable access
-// into network float32 array.
-type NeurVarStrides struct {
+// NeuronVarStrides encodes the stride offsets for neuron variable access
+// into network float32 array.  Data is always the inner-most variable.
+type NeuronVarStrides struct {
 	Neuron uint32 `desc:"neuron level"`
 	Var    uint32 `desc:"variable level"`
-	Data   uint32 `desc:"data parallel level"`
 
-	pad uint32
+	pad, pad1 uint32
 }
 
 // Idx returns the index into network float32 array for given neuron, data, and variable
-func (ns *NeurVarStrides) Idx(neurIdx, dataIdx uint32, nvar NeuronVars) uint32 {
-	return ns.Neuron*neurIdx + ns.Var*uint32(nvar) + ns.Data*dataIdx
+func (ns *NeuronVarStrides) Idx(neurIdx, dataIdx uint32, nvar NeuronVars) uint32 {
+	return ns.Neuron*neurIdx + ns.Var*uint32(nvar) + ns.Data
 }
 
-// SetNeurVarData sets strides as neurons x vars x data (outer to inner),
-// which is likely to be optimal for CPU-based computation.
-func (ns *NeurVarStrides) SetNeurVarData(nneur, ndata int) {
+// SetNeuronOuter sets strides with neurons as outer loop:
+// [Neurons][Vars][Data], which is optimal for CPU-based computation.
+func (ns *NeuronVarStrides) SetNeuronOuter(ndata int) {
 	ns.Neuron = uint32(ndata) * uint32(NeuronVarsN)
 	ns.Var = uint32(ndata)
-	ns.Data = 1
 }
 
-// SetVarNeurData sets strides as vars x neurons x data (outer to inner),
-// which is likely to be optimal for GPU-based computation.
-func (ns *NeurVarStrides) SetVarNeurData(nneur, ndata int) {
+// SetVarOuter sets strides with vars as outer loop:
+// [Vars][Neurons][Data], which is optimal for GPU-based computation.
+func (ns *NeuronVarStrides) SetVarOuter(nneur, ndata int) {
 	ns.Var = uint32(ndata) * uint32(nneur)
 	ns.Neuron = uint32(ndata)
-	ns.Data = 1
 }
 
 ////////////////////////////////////////////////
@@ -264,9 +261,9 @@ const (
 	NeuronIdxsN
 )
 
-// NeurIdxStrides encodes the stride offsets for neuron index access
+// NeuronIdxStrides encodes the stride offsets for neuron index access
 // into network uint32 array.
-type NeurIdxStrides struct {
+type NeuronIdxStrides struct {
 	Neuron uint32 `desc:"neuron level"`
 	Index  uint32 `desc:"index value level"`
 
@@ -274,20 +271,22 @@ type NeurIdxStrides struct {
 }
 
 // Idx returns the index into network uint32 array for given neuron, index value
-func (ns *NeurIdxStrides) Idx(neurIdx uint32, idx NeuronIdxs) uint32 {
+func (ns *NeuronIdxStrides) Idx(neurIdx uint32, idx NeuronIdxs) uint32 {
 	return ns.Neuron*neurIdx + ns.Index*uint32(idx)
 }
 
-// SetNeurIdx sets strides as neurons x idxs (outer to inner),
-// which is likely to be optimal for CPU-based computation.
-func (ns *NeurIdxStrides) SetNeurIdx(nneur int) {
+// SetNeuronOuter sets strides with neurons as outer dimension:
+// [Neurons[[Idxs] (outer to inner), which is optimal for CPU-based
+// computation.
+func (ns *NeuronIdxStrides) SetNeuronOuter() {
 	ns.Neuron = uint32(NeuronIdxsN)
 	ns.Index = 1
 }
 
-// SetIdxNeur sets strides as idxs x neurons (outer to inner),
-// which is likely to be optimal for GPU-based computation.
-func (ns *NeurIdxStrides) SetIdxNeur(nneur int) {
+// SetIdxOuter sets strides with indexes as outer dimension:
+// [Idxs][Neurons] (outer to inner), which is optimal for GPU-based
+// computation.
+func (ns *NeuronIdxStrides) SetIdxOuter(nneur int) {
 	ns.Index = uint32(nneur)
 	ns.Neuron = 1
 }

@@ -11,6 +11,10 @@ import (
 	"github.com/goki/mat32"
 )
 
+// index naming:
+// lni = layer-based neuron index (0 = first neuron in layer)
+// ni  = absolute network-level neuron index
+
 // layer_compute.go has the core computational methods, for the CPU.
 // On GPU, this same functionality is implemented in corresponding gpu_*.hlsl
 // files, which correspond to different shaders for each different function.
@@ -30,7 +34,7 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni, di uint32) {
 		bi := pj.Params.Com.ReadIdx(ni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN)
 		gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
 		pj.GBuf[bi] = 0
-		pj.Params.GatherSpikes(ctx, ly.Params, ni, bi, gRaw, &pj.GSyns[ni])
+		pj.Params.GatherSpikes(ctx, ly.Params, ni, di, gRaw, &pj.GSyns[ni])
 	}
 }
 
@@ -45,19 +49,20 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni, di uint32) {
 func (ly *Layer) GiFmSpikes(ctx *Context) {
 	np := ly.NPools
 	hasSubPools := (np > 1)
-	nn := uint32(ly.NNeurons)
-	for ni := uint32(0); ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	nn := ly.NNeurons
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		subPool := NeurIdx(ctx, ni, NidxSubPool)
+		subPool := NrnI(ctx, ni, NidxSubPool)
 		for di := uint32(0); di < ctx.NData; di++ {
 			pl := ly.Pool(subPool, di)
-			pl.Inhib.RawIncr(NeurVar(ctx, ni, di, Spike), NeurVar(ctx, ni, di, GeRaw), NeurVar(ctx, ni, di, GeExt))
+			pl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt))
 			pl.AvgMax.UpdateVals(ctx, ni, di)
 			if hasSubPools { // update layer too -- otherwise pl == lpl
 				lpl := ly.Pool(0, di)
-				lpl.Inhib.RawIncr(NeurVar(ctx, ni, di, Spike), NeurVar(ctx, ni, di, GeRaw), NeurVar(ctx, ni, di, GeExt))
+				lpl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt))
 				lpl.AvgMax.UpdateVals(ctx, ni, di)
 			}
 		}
@@ -123,7 +128,7 @@ func (ly *Layer) PulvinarDriver(ctx *Context, ni, di uint32) (drvGe, nonDrvPct f
 	dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
 	drvMax := dly.Pools[0].AvgMax.CaSpkP.Cycle.Max
 	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
-	burst := NeurVar(ctx, uint32(dly.NeurStIdx)+ni, di, Burst)
+	burst := NrnV(ctx, uint32(dly.NeurStIdx)+ni, di, Burst)
 	drvGe = ly.Params.Pulv.DriveGe(burst)
 	return
 }
@@ -152,51 +157,67 @@ func (ly *Layer) SpikeFmG(ctx *Context, ni, di uint32) {
 }
 
 // CycleNeuron does one cycle (msec) of updating at the neuron level
-func (ly *Layer) CycleNeuron(ctx *Context, ni, di uint32) {
-	ly.GInteg(ctx, ni, di, &ly.Pools[nrn.SubPool], ly.Vals)
-	ly.SpikeFmG(ctx, ni, di)
+// Called directly by Network, iterates over data.
+func (ly *Layer) CycleNeuron(ctx *Context, ni uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		pl := ly.SubPool(ctx, ni, di)
+		ly.GInteg(ctx, ni, di, pl, &ly.Vals[di])
+		ly.SpikeFmG(ctx, ni, di)
+	}
 }
 
 // PostSpike does updates at neuron level after spiking has been computed.
 // This is where special layer types add extra code.
 // It also updates the CaSpkPCyc stats.
-func (ly *Layer) PostSpike(ctx *Context, ni, di uint32) {
-	ly.Params.PostSpikeSpecial(ctx, ni, di, &ly.Pools[nrn.SubPool], &ly.Pools[0], ly.Vals)
-	ly.Params.PostSpike(ctx, ni, di, &ly.Pools[nrn.SubPool], ly.Vals)
+// Called directly by Network, iterates over data.
+func (ly *Layer) PostSpike(ctx *Context, ni uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		lpl := ly.Pool(0, di)
+		pl := ly.SubPool(ctx, ni, di)
+		vals := &ly.Vals[di]
+		ly.Params.PostSpikeSpecial(ctx, ni, di, pl, lpl, vals)
+		ly.Params.PostSpike(ctx, ni, di, pl, vals)
+	}
 }
 
 // SendSpike sends spike to receivers for all neurons that spiked
 // last step in Cycle, integrated the next time around.
-func (ly *Layer) SendSpike(ctx *Context, ni, di uint32) {
+// Called directly by Network, iterates over data.
+func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
 	for _, sp := range ly.SndPrjns {
 		if sp.IsOff() {
 			continue
 		}
-		sp.SendSpike(ctx, ni, di)
+		for di := uint32(0); di < ctx.NData; di++ {
+			sp.SendSpike(ctx, ni, di)
+		}
 	}
 }
 
 // SynCa updates synaptic calcium based on spiking, for SynSpkTheta mode.
 // Optimized version only updates at point of spiking, threaded over neurons.
-func (ly *Layer) SynCa(ctx *Context, ni, di uint32) {
-	if nrn.Spike == 0 {
-		return
-	}
-	updtThr := ly.Params.Learn.CaLrn.UpdtThr
-	if nrn.CaSpkP < updtThr && nrn.CaSpkD < updtThr {
-		return
-	}
-	for _, sp := range ly.SndPrjns {
-		if sp.IsOff() {
+// Called directly by Network, iterates over data.
+func (ly *Layer) SynCa(ctx *Context, ni uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		if NrnV(ctx, ni, di, Spike) == 0 {
 			continue
 		}
-		sp.SynCaSend(ctx, ni, di, updtThr)
-	}
-	for _, rp := range ly.RcvPrjns {
-		if rp.IsOff() {
-			continue
+		updtThr := ly.Params.Learn.CaLrn.UpdtThr
+		if NrnV(ctx, ni, di, CaSpkP) < updtThr && NrnV(ctx, ni, di, CaSpkD) < updtThr {
+			return
 		}
-		rp.SynCaRecv(ctx, ni, di, updtThr)
+		for _, sp := range ly.SndPrjns {
+			if sp.IsOff() {
+				continue
+			}
+			sp.SynCaSend(ctx, ni, di, updtThr)
+		}
+		for _, rp := range ly.RcvPrjns {
+			if rp.IsOff() {
+				continue
+			}
+			rp.SynCaRecv(ctx, ni, di, updtThr)
+		}
 	}
 }
 
@@ -205,12 +226,12 @@ func (ly *Layer) SynCa(ctx *Context, ni, di uint32) {
 // Typically the input is a superior colliculus (SC) layer that rapidly
 // accommodates after the onset of a stimulus.
 // using lpl.AvgMax.CaSpkP.Cycle.Max for layer activity measure.
-func (ly *Layer) LDTSrcLayAct(net *Network, layIdx int32) float32 {
+func (ly *Layer) LDTSrcLayAct(net *Network, layIdx int32, di uint32) float32 {
 	if layIdx < 0 {
 		return 0
 	}
 	lay := net.Layers[layIdx]
-	lpl := &lay.Pools[0]
+	lpl := lay.Pool(0, di)
 	return lpl.AvgMax.CaSpkP.Cycle.Avg
 }
 
@@ -223,35 +244,38 @@ func (ly *Layer) LDTSrcLayAct(net *Network, layIdx int32) float32 {
 // Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
 func (ly *Layer) CyclePost(ctx *Context) {
 	net := ly.Network
-	switch ly.LayerType() {
-	case PTNotMaintLayer:
-		ly.Params.CyclePostPTNotMaintLayer(ctx, &ly.Pools[0])
-	case CeMLayer:
-		ly.Params.CyclePostCeMLayer(ctx, &ly.Pools[0])
-	case VSPatchLayer:
-		for pi := 1; pi < ly.NPools; pi++ {
-			pl := &ly.Pools[pi]
-			ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl)
+	for di := uint32(0); di < ctx.NData; di++ {
+		vals := &ly.Vals[di]
+		switch ly.LayerType() {
+		case PTNotMaintLayer:
+			ly.Params.CyclePostPTNotMaintLayer(ctx, ly.Pool(0, di))
+		case CeMLayer:
+			ly.Params.CyclePostCeMLayer(ctx, ly.Pool(0, di))
+		case VSPatchLayer:
+			for pi := 1; pi < ly.NPools; pi++ {
+				pl := ly.Pool(pi, di)
+				ly.Params.CyclePostVSPatchLayer(ctx, int32(pi), pl, di)
+			}
+		case LDTLayer:
+			srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Idx, di)
+			srcLay2Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay2Idx, di)
+			srcLay3Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay3Idx, di)
+			srcLay4Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay4Idx, di)
+			ly.Params.CyclePostLDTLayer(ctx, di, vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
+		case VTALayer:
+			ly.Params.CyclePostVTALayer(ctx, di)
+		case RWDaLayer:
+			pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx] // todo: need accessor
+			ly.Params.CyclePostRWDaLayer(ctx, di, vals, pvals)
+		case TDPredLayer:
+			ly.Params.CyclePostTDPredLayer(ctx, vals)
+		case TDIntegLayer:
+			pvals := &net.LayVals[ly.Params.TDInteg.TDPredLayIdx] // todo: need acdessor
+			ly.Params.CyclePostTDIntegLayer(ctx, vals, pvals)
+		case TDDaLayer:
+			ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx] // todo
+			ly.Params.CyclePostTDDaLayer(ctx, vals, ivals)
 		}
-	case LDTLayer:
-		srcLay1Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay1Idx)
-		srcLay2Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay2Idx)
-		srcLay3Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay3Idx)
-		srcLay4Act := ly.LDTSrcLayAct(net, ly.Params.LDT.SrcLay4Idx)
-		ly.Params.CyclePostLDTLayer(ctx, ly.Vals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
-	case VTALayer:
-		ly.Params.CyclePostVTALayer(ctx)
-	case RWDaLayer:
-		pvals := &net.LayVals[ly.Params.RWDa.RWPredLayIdx]
-		ly.Params.CyclePostRWDaLayer(ctx, ly.Vals, pvals)
-	case TDPredLayer:
-		ly.Params.CyclePostTDPredLayer(ctx, ly.Vals)
-	case TDIntegLayer:
-		pvals := &net.LayVals[ly.Params.TDInteg.TDPredLayIdx]
-		ly.Params.CyclePostTDIntegLayer(ctx, ly.Vals, pvals)
-	case TDDaLayer:
-		ivals := &net.LayVals[ly.Params.TDDa.TDIntegLayIdx]
-		ly.Params.CyclePostTDDaLayer(ctx, ly.Vals, ivals)
 	}
 }
 
@@ -271,12 +295,13 @@ func (ly *Layer) NewState(ctx *Context) {
 	}
 
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
 		// note: this calls the basic neuron-level DecayState
-		ly.Params.NewStateNeuron(ctx, uint32(ni), nrn, ly.Vals)
+		ly.Params.NewStateNeuron(ctx, ni, ly.Vals)
 	}
 	// if ly.Params.Act.Decay.Glong != 0 { // clear pipeline of incoming spikes, assuming time has passed
 	// always safer to do this rather than not -- sometimes layer has specifically cleared
@@ -286,36 +311,23 @@ func (ly *Layer) NewState(ctx *Context) {
 
 // DecayState decays activation state by given proportion
 // (default decay values are ly.Params.Act.Decay.Act, Glong)
-func (ly *Layer) DecayState(ctx *Context, decay, glong float32) {
+func (ly *Layer) DecayState(ctx *Context, decay, glong, ahp float32) {
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		ly.Params.Act.DecayState(nrn, decay, glong)
-		// Note: synapse-level Ca decay happens in DWt
-	}
-	ly.DecayStateLayer(ctx, decay, glong)
-}
-
-// DecayStateAHP decays activation state by given proportion
-// (default decay values are ly.Params.Act.Decay.Act, Glong)
-// including extra param for AHP decay
-func (ly *Layer) DecayStateAHP(ctx *Context, decay, glong, ahp float32) {
-	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
-			continue
+		for di := uint32(0); di < ctx.NData; di++ {
+			ly.Params.Act.DecayState(ctx, ni, di, decay, glong, ahp)
+			// Note: synapse-level Ca decay happens in DWt
 		}
-		ly.Params.Act.DecayState(nrn, decay, glong)
-		ly.Params.Act.DecayAHP(nrn, ahp)
-		// Note: synapse-level Ca decay happens in DWt
 	}
-	ly.DecayStateLayer(ctx, decay, glong)
+	ly.DecayStateLayer(ctx, decay, glong, ahp)
 }
 
 // DecayStateLayer does layer-level decay, but not neuron level
-func (ly *Layer) DecayStateLayer(ctx *Context, decay, glong float32) {
+func (ly *Layer) DecayStateLayer(ctx *Context, decay, glong, ahp float32) {
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Inhib.Decay(decay)
@@ -326,34 +338,36 @@ func (ly *Layer) DecayStateLayer(ctx *Context, decay, glong float32) {
 }
 
 // DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)
-func (ly *Layer) DecayStatePool(pool int, decay, glong float32) {
+func (ly *Layer) DecayStatePool(pool int, decay, glong, ahp float32) {
 	pi := int32(pool + 1) // 1 based
-	pl := &ly.Pools[pi]
-	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-		nrn := &ly.Neurons[ni]
-		if NeurIsOff(ctx, ni) {
-			continue
+	for di := uint32(0); di < ctx.NData; di++ {
+		pl := ly.Pool(pi, di)
+		for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
+			ni := ly.NeurStIdx + lni
+			if NrnIsOff(ctx, ni) {
+				continue
+			}
+			ly.Params.Act.DecayState(ctx, ni, di, decay, glong, ahp)
 		}
-		ly.Params.Act.DecayState(nrn, decay, glong)
+		pl.Inhib.Decay(decay)
 	}
-	pl.Inhib.Decay(decay)
 }
 
 // AvgMaxVarByPool returns the average and maximum value of given variable
 // for given pool index (0 = entire layer, 1.. are subpools for 4D only).
 // Uses fast index-based variable access.
-func (ly *Layer) AvgMaxVarByPool(varNm string, poolIdx int) minmax.AvgMax32 {
+func (ly *Layer) AvgMaxVarByPool(varNm string, poolIdx, dataIdx int) minmax.AvgMax32 {
 	var am minmax.AvgMax32
 	vidx, err := ly.UnitVarIdx(varNm)
 	if err != nil {
 		log.Printf("axon.Layer.AvgMaxVar: %s\n", err)
 		return am
 	}
-	pl := &ly.Pools[poolIdx]
+	pl := ly.Pool(uint32(poolIdx), uint32(dataIdx))
 	am.Init()
-	for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-		nrn := &ly.Neurons[ni]
-		if NeurIsOff(ctx, ni) {
+	for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
 		vl := ly.UnitVal1D(vidx, int(ni))
@@ -370,13 +384,17 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 		ly.Params.MinusPhasePool(ctx, pl)
 	}
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
-			continue
+	for di := uint32(0); di < ctx.NData; di++ {
+		lpl := ly.Pool(0, di)
+		for lni := uint32(0); lni < nn; lni++ {
+			if NrnIsOff(ctx, ni) {
+				continue
+			}
+			pl := ly.SubPool(ctx, ni, di)
+			ly.Params.MinusPhaseNeuron(ctx, ni, di, pl, lpl, &ly.Vals[di])
 		}
-		ly.Params.MinusPhaseNeuron(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], &ly.Pools[0], ly.Vals)
+		ly.Params.AvgGeM(ctx, lpl, &ly.Vals[di])
 	}
-	ly.Params.AvgGeM(ctx, &ly.Pools[0], ly.Vals)
 }
 
 // MinusPhasePost does special algorithm processing at end of minus
@@ -391,11 +409,16 @@ func (ly *Layer) MinusPhasePost(ctx *Context) {
 // applies Target inputs as External inputs.
 func (ly *Layer) PlusPhaseStart(ctx *Context) {
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		ly.Params.PlusPhaseStartNeuron(ctx, uint32(ni), nrn, &ly.Pools[nrn.SubPool], &ly.Pools[0], ly.Vals)
+		for di := uint32(0); di < ctx.NData; di++ {
+			lpl := ly.Pool(0, di)
+			pl := ly.SubPool(ctx, ni, di)
+			ly.Params.PlusPhaseStartNeuron(ctx, ni, di, pl, lpl, &ly.Vals[di])
+		}
 	}
 }
 
@@ -407,13 +430,16 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 		ly.Params.PlusPhasePool(ctx, pl)
 	}
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		pl := &ly.Pools[nrn.SubPool]
-		lpl := &ly.Pools[0]
-		ly.Params.PlusPhaseNeuron(ctx, uint32(ni), nrn, pl, lpl, ly.Vals)
+		for di := uint32(0); di < ctx.NData; di++ {
+			lpl := ly.Pool(0, di)
+			pl := ly.SubPool(ctx, ni, di)
+			ly.Params.PlusPhaseNeuron(ctx, ni, di, pl, lpl, &ly.Vals[di])
+		}
 	}
 }
 
@@ -422,7 +448,7 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.CorSimFmActs() // GPU syncs down the state
 	if ly.Params.Act.Decay.OnRew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.GiveUp.IsTrue() {
-			ly.DecayStateAHP(ctx, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
+			ly.DecayState(ctx, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 		}
 	}
 	switch ly.LayerType() {
@@ -436,15 +462,19 @@ func (ly *Layer) PlusPhasePost(ctx *Context) {
 // This can be called separately to simulate alpha cycles within theta cycles, for example.
 func (ly *Layer) TargToExt() {
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
-			nrn.Ext = nrn.Target
-			nrn.SetFlag(NeuronHasExt)
-			nrn.ISI = -1 // get fresh update on plus phase output acts
-			nrn.ISIAvg = -1
+		if !NrnHasFlag(ctx, ni, NeuronHasTarg) { // will be clamped in plus phase
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			SetNrnV(ctx, ni, di, Ext, NrnV(ctx, ni, di, Target))
+			NrnSetFlag(ctx, ni, NeuronHasExt)
+			SetNrnV(ctx, ni, di, ISI, -1) // get fresh update on plus phase output acts
+			SetNrnV(ctx, ni, di, ISIAvg, -1)
 		}
 	}
 }
@@ -453,15 +483,19 @@ func (ly *Layer) TargToExt() {
 // This can be called to simulate alpha cycles within theta cycles, for example.
 func (ly *Layer) ClearTargExt() {
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		if nrn.HasFlag(NeuronHasTarg) { // will be clamped in plus phase
-			nrn.Ext = 0
-			nrn.ClearFlag(NeuronHasExt)
-			nrn.ISI = -1 // get fresh update on plus phase output acts
-			nrn.ISIAvg = -1
+		if !NrnHasFlag(ctx, ni, NeuronHasTarg) { // will be clamped in plus phase
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
+			SetNrnV(ctx, ni, di, Ext, 0)
+			NrnClearFlag(ctx, ni, NeuronHasExt)
+			SetNrnV(ctx, ni, di, ISI, -1) // get fresh update on plus phase output acts
+			SetNrnV(ctx, ni, di, ISIAvg, -1)
 		}
 	}
 }
@@ -469,22 +503,28 @@ func (ly *Layer) ClearTargExt() {
 // SpkSt1 saves current activation state in SpkSt1 variables (using CaP)
 func (ly *Layer) SpkSt1(ctx *Context) {
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		nrn.SpkSt1 = nrn.CaSpkP
+		for di := uint32(0); di < ctx.NData; di++ {
+			SetNrnV(ctx, ni, di, SpkSt1, NrnV(ctx, ni, di, CaSpkP))
+		}
 	}
 }
 
 // SpkSt2 saves current activation state in SpkSt2 variables (using CaP)
 func (ly *Layer) SpkSt2(ctx *Context) {
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		nrn.SpkSt2 = nrn.CaSpkP
+		for di := uint32(0); di < ctx.NData; di++ {
+			SetNrnV(ctx, ni, di, SpkSt2, NrnV(ctx, ni, di, CaSpkP))
+		}
 	}
 }
 
@@ -492,67 +532,70 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 // (centered cosine aka normalized dot product)
 // in activation state between minus and plus phases.
 func (ly *Layer) CorSimFmActs() {
-	lpl := &ly.Pools[0]
-	avgM := lpl.AvgMax.Act.Minus.Avg
-	avgP := lpl.AvgMax.Act.Plus.Avg
-	cosv := float32(0)
-	ssm := float32(0)
-	ssp := float32(0)
-	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
-			continue
+	for di := uint32(0); di < ctx.NData; di++ {
+		vals := &ly.Vals[di]
+		lpl := ly.Pool(0, di)
+		avgM := lpl.AvgMax.Act.Minus.Avg
+		avgP := lpl.AvgMax.Act.Plus.Avg
+		cosv := float32(0)
+		ssm := float32(0)
+		ssp := float32(0)
+		nn := ly.NNeurons
+		for lni := uint32(0); lni < nn; lni++ {
+			ni := ly.NeurStIdx + lni
+			if NrnIsOff(ctx, ni) {
+				continue
+			}
+			ap := NrnV(ctx, ni, di, ActP) - avgP // zero mean = correl
+			am := NrnV(ctx, ni, di, ActM) - avgM
+			cosv += ap * am
+			ssm += am * am
+			ssp += ap * ap
 		}
-		ap := nrn.ActP - avgP // zero mean = correl
-		am := nrn.ActM - avgM
-		cosv += ap * am
-		ssm += am * am
-		ssp += ap * ap
-	}
+		dist := mat32.Sqrt(ssm * ssp)
+		if dist != 0 {
+			cosv /= dist
+		}
+		vals.CorSim.Cor = cosv
 
-	dist := mat32.Sqrt(ssm * ssp)
-	if dist != 0 {
-		cosv /= dist
+		ly.Params.Act.Dt.AvgVarUpdt(&vals.CorSim.Avg, &vals.CorSim.Var, vals.CorSim.Cor)
 	}
-	ly.Vals.CorSim.Cor = cosv
-
-	ly.Params.Act.Dt.AvgVarUpdt(&ly.Vals.CorSim.Avg, &ly.Vals.CorSim.Var, ly.Vals.CorSim.Cor)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
 
-// DWt computes the weight change (learning), based on
-// synaptically-integrated spiking, computed at the Theta cycle interval.
-// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (ly *Layer) DWt(ctx *Context, si uint32, sn *Neuron) {
-	for _, pj := range ly.SndPrjns {
-		if pj.IsOff() {
-			continue
-		}
-		pj.DWt(ctx, si, sn)
-	}
-}
-
-// DWtSubMean
-func (ly *Layer) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
-	for _, pj := range ly.RcvPrjns {
-		if pj.IsOff() {
-			continue
-		}
-		pj.DWtSubMean(ctx, ri, rn)
-	}
-}
-
-// WtFmDWt
-func (ly *Layer) WtFmDWt(ctx *Context, si uint32, sn *Neuron) {
-	for _, pj := range ly.SndPrjns {
-		if pj.IsOff() {
-			continue
-		}
-		pj.WtFmDWt(ctx, si, sn)
-	}
-}
+// // DWt computes the weight change (learning), based on
+// // synaptically-integrated spiking, computed at the Theta cycle interval.
+// // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+// func (ly *Layer) DWt(ctx *Context, si uint32, sn *Neuron) {
+// 	for _, pj := range ly.SndPrjns {
+// 		if pj.IsOff() {
+// 			continue
+// 		}
+// 		pj.DWt(ctx, si, sn)
+// 	}
+// }
+//
+// // DWtSubMean
+// func (ly *Layer) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
+// 	for _, pj := range ly.RcvPrjns {
+// 		if pj.IsOff() {
+// 			continue
+// 		}
+// 		pj.DWtSubMean(ctx, ri, rn)
+// 	}
+// }
+//
+// // WtFmDWt
+// func (ly *Layer) WtFmDWt(ctx *Context, si uint32, sn *Neuron) {
+// 	for _, pj := range ly.SndPrjns {
+// 		if pj.IsOff() {
+// 			continue
+// 		}
+// 		pj.WtFmDWt(ctx, si, sn)
+// 	}
+// }
 
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD
@@ -567,9 +610,9 @@ func (ly *Layer) DTrgSubMean() {
 			pl := &ly.Pools[pi]
 			nn := 0
 			avg := float32(0)
-			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 				nrn := &ly.Neurons[ni]
-				if NeurIsOff(ctx, ni) {
+				if NrnIsOff(ctx, ni) {
 					continue
 				}
 				avg += nrn.DTrgAvg
@@ -580,9 +623,9 @@ func (ly *Layer) DTrgSubMean() {
 			}
 			avg /= float32(nn)
 			avg *= submean
-			for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
+			for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 				nrn := &ly.Neurons[ni]
-				if NeurIsOff(ctx, ni) {
+				if NrnIsOff(ctx, ni) {
 					continue
 				}
 				nrn.DTrgAvg -= avg
@@ -592,8 +635,8 @@ func (ly *Layer) DTrgSubMean() {
 		nn := 0
 		avg := float32(0)
 		nn := ly.NNeurons
-		for ni := 0; ni < nn; ni++ {
-			if NeurIsOff(ctx, ni) {
+		for lni := uint32(0); lni < nn; lni++ {
+			if NrnIsOff(ctx, ni) {
 				continue
 			}
 			avg += nrn.DTrgAvg
@@ -604,8 +647,8 @@ func (ly *Layer) DTrgSubMean() {
 		}
 		avg /= float32(nn)
 		avg *= submean
-		for ni := 0; ni < nn; ni++ {
-			if NeurIsOff(ctx, ni) {
+		for lni := uint32(0); lni < nn; lni++ {
+			if NrnIsOff(ctx, ni) {
 				continue
 			}
 			nrn.DTrgAvg -= avg
@@ -621,12 +664,17 @@ func (ly *Layer) TrgAvgFmD() {
 	}
 	ly.DTrgSubMean()
 	nn := ly.NNeurons
-	for ni := 0; ni < nn; ni++ {
-		if NeurIsOff(ctx, ni) {
+	for lni := uint32(0); lni < nn; lni++ {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		nrn.TrgAvg = ly.Params.Learn.TrgAvgAct.TrgRange.ClipVal(nrn.TrgAvg + nrn.DTrgAvg)
-		nrn.DTrgAvg = 0
+		for di := uint32(0); di < ctx.NData; di++ {
+			ntrg := NrnV(ctx, ni, di, TrgAvg) + NrnV(ctx, ni, di, DTrgAvg)
+			ntrg = ly.Params.Learn.TrgAvgAct.TrgRange.ClipVal(ntrg)
+			SetNrnV(ctx, ni, di, TrgAvg, ntrg)
+			SetNrnV(ctx, ni, di, DTrgAvg, 0)
+		}
 	}
 }
 
@@ -651,7 +699,10 @@ func (ly *Layer) AdaptInhib(ctx *Context) {
 	if ly.Params.Inhib.ActAvg.AdaptGi.IsFalse() || ly.Params.IsInput() {
 		return
 	}
-	ly.Params.Inhib.ActAvg.Adapt(&ly.Vals.ActAvg.GiMult, ly.Vals.ActAvg.ActMAvg)
+	for di := uint32(0); di < ctx.NData; di++ {
+		vals := &ly.Vals[di]
+		ly.Params.Inhib.ActAvg.Adapt(&vals.ActAvg.GiMult, vals.ActAvg.ActMAvg)
+	}
 }
 
 // AvgDifFmTrgAvg updates neuron-level AvgDif values from AvgPct - TrgAvg
@@ -663,44 +714,49 @@ func (ly *Layer) AvgDifFmTrgAvg() {
 	}
 	np := ly.NPools
 	for pi := sp; pi < np; pi++ {
-		pl := &ly.Pools[pi]
-		plavg := float32(0)
-		nn := 0
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if NeurIsOff(ctx, ni) {
+		for di := uint32(0); di < ctx.NData; di++ {
+			pl := ly.Pool(pi, di)
+			plavg := float32(0)
+			nn := 0
+			for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
+				ni := ly.NeurStIdx + lni
+				if NrnIsOff(ctx, ni) {
+					continue
+				}
+				plavg += NrnV(ctx, ni, di, ActAvg)
+				nn++
+			}
+			if nn == 0 {
 				continue
 			}
-			plavg += nrn.ActAvg
-			nn++
-		}
-		if nn == 0 {
-			continue
-		}
-		plavg /= float32(nn)
-		pl.AvgDif.Init()
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if NeurIsOff(ctx, ni) {
-				continue
+			plavg /= float32(nn)
+			pl.AvgDif.Init()
+			for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
+				ni := ly.NeurStIdx + lni
+				if NrnIsOff(ctx, ni) {
+					continue
+				}
+				SetNrnV(ctx, ni, di, AvgPct, NrnV(ctx, ni, di, ActAvg)/plavg)
+				adif := NrnV(ctx, ni, di, AvgPct) - NrnV(ctx, ni, di, TrgAvg)
+				SetNrnV(ctx, ni, di, AvgDif, adif)
+				pl.AvgDif.UpdateVal(mat32.Abs(adif))
 			}
-			nrn.AvgPct = nrn.ActAvg / plavg
-			nrn.AvgDif = nrn.AvgPct - nrn.TrgAvg
-			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif))
+			pl.AvgDif.Calc(int32(ly.Idx)) // ref in case of crash
 		}
-		pl.AvgDif.Calc(int32(ly.Idx)) // ref in case of crash
 	}
 	if sp == 1 { // update stats
-		pl := &ly.Pools[0]
-		pl.AvgDif.Init()
-		for ni := pl.StIdx; ni < pl.EdIdx; ni++ {
-			nrn := &ly.Neurons[ni]
-			if NeurIsOff(ctx, ni) {
-				continue
+		for di := uint32(0); di < ctx.NData; di++ {
+			pl := ly.Pool(0, di)
+			pl.AvgDif.Init()
+			for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
+				ni := ly.NeurStIdx + lni
+				if NrnIsOff(ctx, ni) {
+					continue
+				}
+				pl.AvgDif.UpdateVal(mat32.Abs(NrnV(ctx, ni, di, AvgDif)))
 			}
-			pl.AvgDif.UpdateVal(mat32.Abs(nrn.AvgDif))
+			pl.AvgDif.Calc(int32(ly.Idx))
 		}
-		pl.AvgDif.Calc(int32(ly.Idx))
 	}
 }
 
@@ -718,24 +774,24 @@ func (ly *Layer) SynFail(ctx *Context) {
 // LRateMod sets the LRate modulation parameter for Prjns, which is
 // for dynamic modulation of learning rate (see also LRateSched).
 // Updates the effective learning rate factor accordingly.
-func (ly *Layer) LRateMod(mod float32) {
+func (ly *Layer) LRateMod(ctx *Context, mod float32) {
 	for _, pj := range ly.RcvPrjns {
 		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		pj.LRateMod(mod)
+		pj.LRateMod(ctx, mod)
 	}
 }
 
 // LRateSched sets the schedule-based learning rate multiplier.
 // See also LRateMod.
 // Updates the effective learning rate factor accordingly.
-func (ly *Layer) LRateSched(sched float32) {
+func (ly *Layer) LRateSched(ctx *Context, sched float32) {
 	for _, pj := range ly.RcvPrjns {
 		// if pj.IsOff() { // keep all sync'd
 		// 	continue
 		// }
-		pj.LRateSched(sched)
+		pj.LRateSched(ctx, sched)
 	}
 }
 

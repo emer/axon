@@ -251,24 +251,24 @@ func (ln *LearnNeurParams) Defaults() {
 // InitCaLrnSpk initializes the neuron-level calcium learning and spking variables.
 // Called by InitWts (at start of learning).
 func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
-	SetNeurVar(ctx, ni, di, GnmdaLrn, 0)
-	SetNeurVar(ctx, ni, di, NmdaCa, 0)
+	SetNrnV(ctx, ni, di, GnmdaLrn, 0)
+	SetNrnV(ctx, ni, di, NmdaCa, 0)
 
-	SetNeurVar(ctx, ni, di, VgccCa, 0)
-	SetNeurVar(ctx, ni, di, VgccCaInt, 0)
+	SetNrnV(ctx, ni, di, VgccCa, 0)
+	SetNrnV(ctx, ni, di, VgccCaInt, 0)
 
-	SetNeurVar(ctx, ni, di, CaLrn, 0)
+	SetNrnV(ctx, ni, di, CaLrn, 0)
 
-	SetNeurVar(ctx, ni, di, CaSyn, 0)
-	SetNeurVar(ctx, ni, di, CaSpkM, 0)
-	SetNeurVar(ctx, ni, di, CaSpkP, 0)
-	SetNeurVar(ctx, ni, di, CaSpkD, 0)
-	SetNeurVar(ctx, ni, di, CaSpkPM, 0)
+	SetNrnV(ctx, ni, di, CaSyn, 0)
+	SetNrnV(ctx, ni, di, CaSpkM, 0)
+	SetNrnV(ctx, ni, di, CaSpkP, 0)
+	SetNrnV(ctx, ni, di, CaSpkD, 0)
+	SetNrnV(ctx, ni, di, CaSpkPM, 0)
 
-	SetNeurVar(ctx, ni, di, CaM, 0)
-	SetNeurVar(ctx, ni, di, CaP, 0)
-	SetNeurVar(ctx, ni, di, CaD, 0)
-	SetNeurVar(ctx, ni, di, CaDiff, 0)
+	SetNrnV(ctx, ni, di, CaM, 0)
+	SetNrnV(ctx, ni, di, CaP, 0)
+	SetNrnV(ctx, ni, di, CaD, 0)
+	SetNrnV(ctx, ni, di, CaDiff, 0)
 }
 
 // LrnNMDAFmRaw updates the separate NMDA conductance and calcium values
@@ -279,9 +279,9 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float
 	if geTot < 0 {
 		geTot = 0
 	}
-	SetNeurVar(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot))
+	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot))
 	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
-	SetNeurVar(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFmV(nrn.VmDend))
+	SetNrnV(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFmV(nrn.VmDend))
 }
 
 // CaFmSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
