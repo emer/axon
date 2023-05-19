@@ -11,6 +11,9 @@ import (
 //gosl: start chans
 
 // VGCCParams control the standard L-type Ca channel
+// All functions based on Urakubo et al (2008).
+// Source code available at http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/Urakubo2008.tar.gz.
+// In particular look at the file MODEL/Poirazi_cell/CaL.g.
 type VGCCParams struct {
 	Gbar float32 `def:"0.02,0.12" desc:"strength of VGCC current -- 0.12 value is from Urakubo et al (2008) model -- best fits actual model behavior using axon equations (1.5 nominal in that model), 0.02 works better in practice for not getting stuck in high plateau firing"`
 	Ca   float32 `viewif:"Gbar>0" def:"25" desc:"calcium from conductance factor -- important for learning contribution of VGCC"`
@@ -26,34 +29,20 @@ func (np *VGCCParams) Defaults() {
 func (np *VGCCParams) Update() {
 }
 
-// note on a bug present in version prior to 4/27/2023, re
-// eliminating div 0 at 0, and numerical "fuzz" around 0:
-// Urakubo 2008 implementation in genesis
-// http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/ has this:
-// if ({ abs {v} } < 0.5)
-// max = {-1 / 0.0756 * {1 - 0.0378 * {v}}}
-// and this:
-// if (V > -0.1 & V < 0.1){
-//	  channel->Vca = -1/0.0756 + 0.5*V;
-// }
-// this was initially mis-coded as this without the minus sign:
-// if vbio > -0.1 && vbio < 0.1 {
-// 	return 1.0 / (0.0756 + 0.5*vbio)
-// }
-
 // GFmV returns the VGCC conductance as a function of normalized membrane potential
-// based on implementation in Urakubo et al (2008).
-// http://kurodalab.bs.s.u-tokyo.ac.jp/info/STDP/
+// Based on Urakubo's calculation of `max` in CaL.g in the section commented 'i gate'.
 func (np *VGCCParams) GFmV(v float32) float32 {
 	vbio := VToBio(v)
-	if vbio > -0.5 && vbio < 0.5 { // this eliminates div 0 at 0, and numerical "fuzz" around 0
+	if vbio > -0.5 && vbio < 0.5 { // this avoids divide by 0, and numerical instability around 0
 		return 1.0 / (0.0756 * (1 + 0.0378*vbio))
 	}
 	return -vbio / (1.0 - mat32.FastExp(0.0756*vbio))
 }
 
-// MFmV returns the M gate function from vbio (not normalized, must not exceed 0)
+// MFmV returns the M gate function from vbio (not normalized, must not exceed 0).
+// Based on Urakubo's calculation of `max` in CaL.g in the section commented 'm gate'.
 func (np *VGCCParams) MFmV(vbio float32) float32 {
+	// approximate values at the asymptotes for performance
 	if vbio < -60 {
 		return 0
 	}
@@ -64,7 +53,9 @@ func (np *VGCCParams) MFmV(vbio float32) float32 {
 }
 
 // HFmV returns the H gate function from vbio (not normalized, must not exceed 0)
+// Based on Urakubo's calculation of `max` in CaL.g in the section commented 'h gate'.
 func (np *VGCCParams) HFmV(vbio float32) float32 {
+	// approximate values at the asymptotes for performance
 	if vbio < -50 {
 		return 1
 	}
