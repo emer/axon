@@ -24,17 +24,18 @@ import (
 
 // GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
 // while integrating the Recv Prjn-level GSyn integrated values.
-// ni is layer-specific index of neuron within its layer.
-func (ly *Layer) GatherSpikes(ctx *Context, ni, di uint32) {
-	ly.Params.GatherSpikesInit(ctx, ni, di)
-	for _, pj := range ly.RcvPrjns {
-		if pj.IsOff() {
-			continue
+func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		ly.Params.GatherSpikesInit(ctx, ni, di)
+		for _, pj := range ly.RcvPrjns {
+			if pj.IsOff() {
+				continue
+			}
+			bi := pj.Params.Com.ReadIdx(ni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN)
+			gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
+			pj.GBuf[bi] = 0
+			pj.Params.GatherSpikes(ctx, ly.Params, ni, di, gRaw, &pj.GSyns[ni])
 		}
-		bi := pj.Params.Com.ReadIdx(ni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN)
-		gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
-		pj.GBuf[bi] = 0
-		pj.Params.GatherSpikes(ctx, ly.Params, ni, di, gRaw, &pj.GSyns[ni])
 	}
 }
 
@@ -250,9 +251,9 @@ func (ly *Layer) CyclePost(ctx *Context) {
 		vals := ly.LayerVals(di)
 		switch ly.LayerType() {
 		case PTNotMaintLayer:
-			ly.Params.CyclePostPTNotMaintLayer(ctx, ly.Pool(0, di))
+			ly.Params.CyclePostPTNotMaintLayer(ctx, ly.Pool(0, di), di)
 		case CeMLayer:
-			ly.Params.CyclePostCeMLayer(ctx, ly.Pool(0, di))
+			ly.Params.CyclePostCeMLayer(ctx, ly.Pool(0, di), di)
 		case VSPatchLayer:
 			for pi := uint32(1); pi < ly.NPools; pi++ {
 				pl := ly.Pool(pi, di)
@@ -268,15 +269,15 @@ func (ly *Layer) CyclePost(ctx *Context) {
 			ly.Params.CyclePostVTALayer(ctx, di)
 		case RWDaLayer:
 			pvals := net.LayerVals(uint32(ly.Params.RWDa.RWPredLayIdx), di)
-			ly.Params.CyclePostRWDaLayer(ctx, di, vals, pvals)
+			ly.Params.CyclePostRWDaLayer(ctx, vals, pvals, di)
 		case TDPredLayer:
-			ly.Params.CyclePostTDPredLayer(ctx, vals)
+			ly.Params.CyclePostTDPredLayer(ctx, vals, di)
 		case TDIntegLayer:
 			pvals := net.LayerVals(uint32(ly.Params.TDInteg.TDPredLayIdx), di)
-			ly.Params.CyclePostTDIntegLayer(ctx, vals, pvals)
+			ly.Params.CyclePostTDIntegLayer(ctx, vals, pvals, di)
 		case TDDaLayer:
 			ivals := net.LayerVals(uint32(ly.Params.TDDa.TDIntegLayIdx), di)
-			ly.Params.CyclePostTDDaLayer(ctx, vals, ivals)
+			ly.Params.CyclePostTDDaLayer(ctx, vals, ivals, di)
 		}
 	}
 }
@@ -571,6 +572,44 @@ func (ly *Layer) CorSimFmActs(ctx *Context) {
 
 //////////////////////////////////////////////////////////////////////////////////////
 //  Learning
+
+// DWt computes the weight change (learning), based on
+// synaptically-integrated spiking, computed at the Theta cycle interval.
+// This is the trace version for hidden units, and uses syn CaP - CaD for targets.
+func (ly *Layer) DWt(ctx *Context, si uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		for _, pj := range ly.SndPrjns {
+			if pj.IsOff() {
+				continue
+			}
+			pj.DWt(ctx, si, di)
+		}
+	}
+}
+
+// DWtSubMean computes subtractive normalization of the DWts
+func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		for _, pj := range ly.RcvPrjns {
+			if pj.IsOff() {
+				continue
+			}
+			pj.DWtSubMean(ctx, ri, di)
+		}
+	}
+}
+
+// WtFmDWt updates weight values from delta weight changes
+func (ly *Layer) WtFmDWt(ctx *Context, si uint32) {
+	for di := uint32(0); di < ctx.NData; di++ {
+		for _, pj := range ly.SndPrjns {
+			if pj.IsOff() {
+				continue
+			}
+			pj.WtFmDWt(ctx, si, di)
+		}
+	}
+}
 
 // DTrgSubMean subtracts the mean from DTrgAvg values
 // Called by TrgAvgFmD

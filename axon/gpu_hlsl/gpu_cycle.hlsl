@@ -4,6 +4,10 @@
 
 // performs the CycleNeuron function on all neurons
 
+[[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
+[[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
+[[vk::binding(3, 2)]] RWStructuredBuffer<uint> NeuronIndexes; // [Neurons][Vars]
+
 #include "context.hlsl"
 #include "layerparams.hlsl"
 #include "prjnparams.hlsl"

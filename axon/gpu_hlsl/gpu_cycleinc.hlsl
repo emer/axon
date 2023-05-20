@@ -2,6 +2,10 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+[[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
+[[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
+[[vk::binding(3, 2)]] RWStructuredBuffer<uint> NeuronIndexes; // [Neurons][Vars]
+
 #include "context.hlsl"
 
 // calls CycleInc on Context

@@ -124,7 +124,7 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 	slay := pj.Send
 	rlay := pj.Recv
-	nr := len(rlay.Neurons)
+	nr := int(rlay.NNeurons)
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("{\n"))
 	depth++
@@ -341,35 +341,35 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 		spct = 0
 	}
 	smn := pj.Params.SWt.Init.Mean
-	for ri := range rlay.Neurons {
-		nrn := &rlay.Neurons[ri]
-		if nrn.IsOff() {
+	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
+		ni := rlay.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		syIdxs := pj.RecvSynIdxs(ri)
+		syIdxs := pj.RecvSynIdxs(int(lni))
 		for _, syi := range syIdxs {
 			sy := &pj.Syns[syi]
 			pj.InitWtsSyn(&nt.Rand, sy, smn, spct)
 		}
 	}
 	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {
-		pj.SWtRescale()
+		pj.SWtRescale(ctx)
 	}
 }
 
 // SWtRescale rescales the SWt values to preserve the target overall mean value,
 // using subtractive normalization.
-func (pj *Prjn) SWtRescale() {
+func (pj *Prjn) SWtRescale(ctx *Context) {
 	rlay := pj.Recv
 	smn := pj.Params.SWt.Init.Mean
-	for ri := range rlay.Neurons {
-		nrn := &rlay.Neurons[ri]
-		if nrn.IsOff() {
+	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
+		ni := rlay.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
 		var nmin, nmax int
 		var sum float32
-		syIdxs := pj.RecvSynIdxs(ri)
+		syIdxs := pj.RecvSynIdxs(int(lni))
 		nCons := len(syIdxs)
 		if nCons <= 1 {
 			continue
@@ -434,9 +434,8 @@ func (pj *Prjn) InitWtSym(rpj *Prjn) {
 		return
 	}
 	slay := pj.Send
-	for sii := range slay.Neurons {
-		si := uint32(sii)
-		syns := pj.SendSyns(sii)
+	for lni := uint32(0); lni < slay.NNeurons; lni++ {
+		syns := pj.SendSyns(int(lni))
 		for syi := range syns {
 			sy := &syns[syi]
 			ri := pj.Params.SynRecvLayIdx(sy) // <- this sends to me, ri
@@ -449,13 +448,13 @@ func (pj *Prjn) InitWtSym(rpj *Prjn) {
 			lastSy := &rpj.Syns[recipc.Start+recipc.N-1]
 			firstRi := rpj.Params.SynRecvLayIdx(firstSy)
 			lastRi := rpj.Params.SynRecvLayIdx(lastSy)
-			if si < firstRi || si > lastRi { // fast reject -- prjns are always in order!
+			if lni < firstRi || lni > lastRi { // fast reject -- prjns are always in order!
 				continue
 			}
 			// start at index proportional to ri relative to rist
 			up := int32(0)
 			if lastRi > firstRi {
-				up = int32(float32(recipc.N) * float32(si-firstRi) / float32(lastRi-firstRi))
+				up = int32(float32(recipc.N) * float32(lni-firstRi) / float32(lastRi-firstRi))
 			}
 			dn := up - 1
 
@@ -466,7 +465,7 @@ func (pj *Prjn) InitWtSym(rpj *Prjn) {
 					recipCi := int32(recipc.Start) + up
 					recipSy := &rpj.Syns[recipCi]
 					recipRi := rpj.Params.SynRecvLayIdx(recipSy)
-					if recipRi == si {
+					if recipRi == lni {
 						recipSy.Wt = sy.Wt
 						recipSy.LWt = sy.LWt
 						recipSy.SWt = sy.SWt
@@ -480,7 +479,7 @@ func (pj *Prjn) InitWtSym(rpj *Prjn) {
 					recipCi := int32(recipc.Start) + dn
 					recipSy := &rpj.Syns[recipCi]
 					recipRi := rpj.Params.SynRecvLayIdx(recipSy)
-					if recipRi == si {
+					if recipRi == lni {
 						recipSy.Wt = sy.Wt
 						recipSy.LWt = sy.LWt
 						recipSy.SWt = sy.SWt

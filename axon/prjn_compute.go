@@ -98,7 +98,7 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 // DWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) DWt(ctx *Context, si uint32, sn *Neuron) {
+func (pj *Prjn) DWt(ctx *Context, si, di uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -117,7 +117,7 @@ func (pj *Prjn) DWt(ctx *Context, si uint32, sn *Neuron) {
 
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 // This is called on *receiving* projections, prior to WtFmDwt.
-func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
+func (pj *Prjn) DWtSubMean(ctx *Context, ri, di uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -154,7 +154,7 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32, rn *Neuron) {
 // WtFmDWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) WtFmDWt(ctx *Context, si uint32, sn *Neuron) {
+func (pj *Prjn) WtFmDWt(ctx *Context, si, di uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}

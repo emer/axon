@@ -358,7 +358,7 @@ func (ly *LayerParams) GatherSpikesInit(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) SpecialPreGs(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals, drvGe float32, nonDrvPct float32) float32 {
 	saveVal := float32(0)                  // sometimes we need to use a value computed here, for the post Gs step
 	pi := NrnI(ctx, ni, NrnIdxSubPool) - 1 // 0-n pool index
-	pni := NrnI(ctx, ni, di, NrnIdxNeurIdx) - pl.StIdx
+	pni := NrnI(ctx, ni, NrnIdxNeurIdx) - pl.StIdx
 	nrnCtxtGe := NrnV(ctx, ni, di, CtxtGe)
 	nrnGeRaw := NrnV(ctx, ni, di, GeRaw)
 	switch ly.LayType {
@@ -594,7 +594,7 @@ func (ly *LayerParams) SpikeFmG(ctx *Context, ni, di uint32) {
 func (ly *LayerParams) PostSpikeSpecial(ctx *Context, ni, di uint32, pl *Pool, lpl *Pool, vals *LayerVals) {
 	SetNrnV(ctx, ni, di, Burst, NrnV(ctx, ni, di, CaSpkP))
 	pi := NrnI(ctx, ni, NrnIdxSubPool) - 1 // 0-n pool index
-	pni := NrnI(ctx, ni, di, NrnIdxNeurIdx) - pl.StIdx
+	pni := NrnI(ctx, ni, NrnIdxNeurIdx) - pl.StIdx
 	switch ly.LayType {
 	case SuperLayer:
 		if ctx.PlusPhase.IsTrue() {
@@ -724,7 +724,7 @@ func (ly *LayerParams) PostSpike(ctx *Context, ni, di uint32, pl *Pool, vals *La
 //  call these in layer_compute.go/CyclePost and
 //  gpu_hlsl/gpu_cyclepost.hlsl
 
-func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
+func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, di uint32, vals *LayerVals, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act float32) {
 	ach := ly.LDT.ACh(ctx, srcLay1Act, srcLay2Act, srcLay3Act, srcLay4Act)
 
 	vals.NeuroMod.AChRaw = ach
@@ -733,7 +733,7 @@ func (ly *LayerParams) CyclePostLDTLayer(ctx *Context, vals *LayerVals, srcLay1A
 	ctx.NeuroMod.ACh = vals.NeuroMod.ACh
 }
 
-func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, vals *LayerVals, pvals *LayerVals) {
+func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, vals *LayerVals, pvals *LayerVals, di uint32) {
 	pred := pvals.Special.V1 - pvals.Special.V2
 	ctx.NeuroMod.RewPred = pred // record
 	da := float32(0)
@@ -744,14 +744,14 @@ func (ly *LayerParams) CyclePostRWDaLayer(ctx *Context, vals *LayerVals, pvals *
 	vals.NeuroMod.DA = da
 }
 
-func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, vals *LayerVals) {
+func (ly *LayerParams) CyclePostTDPredLayer(ctx *Context, vals *LayerVals, di uint32) {
 	if ctx.PlusPhase.IsTrue() {
 		pred := vals.Special.V1 - vals.Special.V2
 		ctx.NeuroMod.PrevPred = pred
 	}
 }
 
-func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, vals *LayerVals, pvals *LayerVals) {
+func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, vals *LayerVals, pvals *LayerVals, di uint32) {
 	rew := float32(0)
 	if ctx.NeuroMod.HasRew.IsTrue() {
 		rew = ctx.NeuroMod.Rew
@@ -768,7 +768,7 @@ func (ly *LayerParams) CyclePostTDIntegLayer(ctx *Context, vals *LayerVals, pval
 	ctx.NeuroMod.RewPred = rpval // global value will be copied to layers next cycle
 }
 
-func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *LayerVals) {
+func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *LayerVals, di uint32) {
 	da := ivals.Special.V2 - ivals.Special.V1
 	if ctx.PlusPhase.IsFalse() {
 		da = 0
@@ -777,7 +777,7 @@ func (ly *LayerParams) CyclePostTDDaLayer(ctx *Context, vals *LayerVals, ivals *
 	vals.NeuroMod.DA = da
 }
 
-func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, lpl *Pool) {
+func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, lpl *Pool, di uint32) {
 	if ly.Learn.NeuroMod.Valence == Positive {
 		ctx.PVLV.VTA.Raw.CeMpos = lpl.AvgMax.CaSpkD.Cycle.Max
 	} else {
@@ -785,16 +785,16 @@ func (ly *LayerParams) CyclePostCeMLayer(ctx *Context, lpl *Pool) {
 	}
 }
 
-func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, lpl *Pool) {
+func (ly *LayerParams) CyclePostPTNotMaintLayer(ctx *Context, lpl *Pool, di uint32) {
 	ctx.NeuroMod.NotMaint = lpl.AvgMax.CaSpkD.Cycle.Max
 }
 
-func (ly *LayerParams) CyclePostVTALayer(ctx *Context) {
+func (ly *LayerParams) CyclePostVTALayer(ctx *Context, di uint32) {
 	ctx.PVLVDA()
 }
 
 // note: needs to iterate over sub-pools in layer!
-func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi int32, pl *Pool) {
+func (ly *LayerParams) CyclePostVSPatchLayer(ctx *Context, pi int32, pl *Pool, di uint32) {
 	val := ly.PVLV.Val(pl.AvgMax.CaSpkD.Cycle.Avg)
 	ctx.PVLV.VSPatch.Set(pi-1, val)
 }

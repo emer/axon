@@ -458,7 +458,8 @@ func (ly *LayerBase) BuildPrjns(ctx *Context) error {
 }
 
 // Build constructs the layer state, including calling Build on the projections
-func (ly *LayerBase) Build(ctx *Context) error {
+func (ly *LayerBase) Build() error {
+	ctx := &ly.Network.Ctx
 	nn := uint32(ly.Shp.Len())
 	if nn == 0 {
 		return fmt.Errorf("Build Layer %v: no units specified in Shape", ly.Nm)

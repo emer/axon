@@ -63,11 +63,12 @@ func (np *CaLrnParams) Update() {
 
 // VgccCa updates the simulated VGCC calcium from spiking, if that option is selected,
 // and performs time-integration of VgccCa
-func (np *CaLrnParams) VgccCa(nrn *Neuron) {
+func (np *CaLrnParams) VgccCa(ctx *Context, ni, di uint32) {
 	if np.SpkVGCC.IsTrue() {
-		nrn.VgccCa = np.SpkVgccCa * nrn.Spike
+		SetNrnV(ctx, ni, di, VgccCa, np.SpkVgccCa*NrnV(ctx, ni, di, Spike))
 	}
-	nrn.VgccCaInt += nrn.VgccCa - np.VgccDt*nrn.VgccCaInt // Dt only affects decay, not rise time
+	AddNrnV(ctx, ni, di, VgccCaInt, NrnV(ctx, ni, di, VgccCa)-np.VgccDt*NrnV(ctx, ni, di, VgccCaInt))
+	// Dt only affects decay, not rise time
 }
 
 // CaLrn updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
@@ -279,9 +280,11 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float
 	if geTot < 0 {
 		geTot = 0
 	}
-	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(nrn.GnmdaLrn, geTot))
-	gnmda := ln.LrnNMDA.Gnmda(nrn.GnmdaLrn, nrn.VmDend)
-	SetNrnV(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFmV(nrn.VmDend))
+	vmd := NrnV(ctx, ni, di, VmDend)
+	lrn := NrnV(ctx, ni, di, GnmdaLrn)
+	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(lrn, geTot))
+	gnmda := ln.LrnNMDA.Gnmda(lrn, vmd)
+	SetNrnV(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFmV(vmd))
 }
 
 // CaFmSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.

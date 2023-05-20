@@ -62,7 +62,7 @@ func (lv *LaySpecialVals) Init() {
 // LayerVals holds extra layer state that is updated per layer.
 // It is sync'd down from the GPU to the CPU after every Cycle.
 type LayerVals struct {
-	LayerIdx  uint32 `view:"-" desc:"layer index for these vals"`
+	LayIdx    uint32 `view:"-" desc:"layer index for these vals"`
 	DataIdx   uint32 `view:"-" desc:"data index for these vals"`
 	pad, pad2 uint32
 

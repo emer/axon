@@ -90,6 +90,7 @@ func NrnIsOff(ctx *Context, ni uint32) bool {
 //gosl: hlsl context
 // #include "etime.hlsl"
 // #include "axonrand.hlsl"
+// #include "neuron.hlsl"
 // #include "neuromod.hlsl"
 // #include "pvlv.hlsl"
 //gosl: end context
@@ -231,31 +232,31 @@ func (ctx *Context) PVLVDA() float32 {
 
 // // NeuronIdxs
 //
-// // NrnI is the CPU version of the neuron idx accessor
+// // NrnI is the GPU version of the neuron idx accessor
 // uint NrnI(in Context ctx, uint ni, NeuronIdxs idx) {
-// 	return Networks[ctx.NetIdx].NeuronIdxs[ctx.NeuronIdxs.Idx(ni, idx)]
+// 	return NeuronIndexes[ctx.NeuronIdxs.Idx(ni, idx)];
 // }
 //
-// // SetNrnI is the CPU version of the neuron idx settor
-// void SetNrnI(in Context ctx, uint ni, NeuronIdxs idx, val uint) {
-// 	Networks[ctx.NetIdx].NeuronIdxs[ctx.NeuronIdxs.Idx(ni, idx)] = val
+// // SetNrnI is the GPU version of the neuron idx settor
+// void SetNrnI(in Context ctx, uint ni, NeuronIdxs idx, uint val) {
+// 	NeuronIndexes[ctx.NeuronIdxs.Idx(ni, idx)] = val;
 // }
 //
 // bool NrnHasFlag(in Context ctx, uint ni, NeuronFlags flag) {
-// 	return (NeuronFlags(NrnI(ctx, ni, NrnIdxFlags)) & flag) > 0 // weird: != 0 does NOT work on GPU
+// 	return (NeuronFlags(NrnI(ctx, ni, NrnIdxFlags)) & flag) > 0; // weird: != 0 does NOT work on GPU
 // }
 //
 // void NrnSetFlag(in Context ctx, uint ni, NeuronFlags flag) {
-// 	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags)|uint(flag))
+// 	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags)|uint(flag));
 // }
 //
 // void NrnClearFlag(in Context ctx, uint ni, NeuronFlags flag) {
-// 	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags)&^uint(flag))
+// 	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags) & ~uint(flag));
 // }
 //
 // // NrnIsOff returns true if the neuron has been turned off (lesioned)
 // bool NrnIsOff(in Context ctx, uint ni) {
-// 	return NrnHasFlag(ctx, ni, NeuronOff)
+// 	return NrnHasFlag(ctx, ni, NeuronOff);
 // }
 
 //gosl: end context

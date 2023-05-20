@@ -6,11 +6,9 @@ package axon
 
 import (
 	"fmt"
-	"unsafe"
 
 	"github.com/emer/emergent/netview"
 	"github.com/goki/ki/kit"
-	"github.com/goki/mat32"
 )
 
 // todo: removeme
@@ -495,6 +493,7 @@ var NeuronVarProps = map[string]string{
 var NeuronVarNames = []string{}
 
 var NeuronVarsMap map[string]int
+var NeuronAvgVarsMap map[string]int
 
 // NeuronLayerVars are layer-level variables displayed as neuron layers.
 var (
@@ -504,20 +503,22 @@ var (
 
 func init() {
 	netview.NVarCols = 4 // many neurons
-	NeuronVarsMap = make(map[string]int, len(NeuronVars))
+	NeuronVarsMap = make(map[string]int, NeuronVarsN)
 	for i := Spike; i < NeuronVarsN; i++ {
-		vnm := i.(String)
+		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
-		NeuronVarsMap[v] = i
+		NeuronVarsMap[vnm] = int(i)
 	}
-	for _, v := range NeuronLayerVars {
-		NeuronVarsMap[v] = len(NeuronVars)
-		NeuronVars = append(NeuronVars, v)
+	NeuronAvgVarsMap = make(map[string]int, NeuronAvgVarsN)
+	for i := ActAvg; i < NeuronAvgVarsN; i++ {
+		vnm := i.String()
+		NeuronVarNames = append(NeuronVarNames, vnm)
+		NeuronAvgVarsMap[vnm] = int(i) + int(NeuronVarsN)
 	}
-}
-
-func (nrn *Neuron) VarNames() []string {
-	return NeuronVars
+	for i, vnm := range NeuronLayerVars {
+		NeuronVarsMap[vnm] = i + +int(NeuronVarsN) + int(NeuronAvgVarsN)
+		NeuronVarNames = append(NeuronVarNames, vnm)
+	}
 }
 
 // NeuronVarIdxByName returns the index of the variable in the Neuron, or error
@@ -527,19 +528,4 @@ func NeuronVarIdxByName(varNm string) (int, error) {
 		return -1, fmt.Errorf("Neuron VarByName: variable name: %v not valid", varNm)
 	}
 	return i, nil
-}
-
-// VarByIndex returns variable using index (0 = first variable in NeuronVars list)
-func (nrn *Neuron) VarByIndex(idx int) float32 {
-	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(nrn)) + uintptr(NeuronVarStart*4+4*idx)))
-	return *fv
-}
-
-// VarByName returns variable by name, or error
-func (nrn *Neuron) VarByName(varNm string) (float32, error) {
-	i, err := NeuronVarIdxByName(varNm)
-	if err != nil {
-		return mat32.NaN(), err
-	}
-	return nrn.VarByIndex(i), nil
 }

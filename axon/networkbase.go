@@ -45,8 +45,10 @@ type NetworkBase struct {
 	MetaData    map[string]string   `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
 
 	// Implementation level code below:
-	MaxDelay     uint32        `view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
-	MaxData      uint32        `desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
+	MaxDelay     uint32        `inactive:"-" view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	MaxData      uint32        `inactive:"-" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
+	NNeurons     uint32        `inactive:"-" desc:"total number of neurons"`
+	NSyns        uint32        `inactive:"-" desc:"total number of synapses"`
 	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, with extra per data"`
@@ -519,6 +521,7 @@ func (nt *NetworkBase) LateralConnectLayerPrjn(lay *Layer, pat prjn.Pattern, pj 
 func (nt *NetworkBase) Build() error {
 	nt.FunTimes = make(map[string]*timer.Time)
 	nt.LayClassMap = make(map[string][]string)
+	maxData := int(nt.MaxData)
 	emsg := ""
 	totNeurons := 0
 	totPrjns := 0
@@ -544,15 +547,17 @@ func (nt *NetworkBase) Build() error {
 		}
 	}
 	nt.LayParams = make([]LayerParams, nLayers)
-	nt.LayVals = make([]LayerVals, nLayers*nt.MaxData)
-	nt.Pools = make([]Pool, totPools*nt.MaxData)
+	nt.LayVals = make([]LayerVals, nLayers*maxData)
+	nt.Pools = make([]Pool, totPools*maxData)
+	nt.NNeurons = uint32(totNeurons)
 	nneur := uint32(totNeurons) * nt.MaxData * uint32(NeuronVarsN)
 	nt.Neurons = make([]float32, nneur)
 	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
-	nt.Exts = make([]float32, totExts*nt.MaxData)
+	nt.Exts = make([]float32, totExts*maxData)
 
-	nt.Ctx.NeuronVars.SetNeuronOuter(nt.MaxData) // default to CPU
+	nt.Ctx.NeuronVars.SetNeuronOuter(maxData) // default to CPU
+	nt.Ctx.NeuronAvgVars.SetNeuronOuter()     // default to CPU
 	nt.Ctx.NeuronIdxs.SetNeuronOuter()
 
 	totSynapses := 0
@@ -566,19 +571,18 @@ func (nt *NetworkBase) Build() error {
 	for li, ly := range nt.Layers {
 		ly.Params = &nt.LayParams[li]
 		ly.Params.LayType = LayerTypes(ly.Typ)
-		ly.Vals = nt.LayVals[li*nt.MaxData : (li+1)*nt.MaxData]
+		ly.Vals = nt.LayVals[li*maxData : (li+1)*maxData]
 		if ly.IsOff() {
 			continue
 		}
 		shp := ly.Shape()
 		nn := shp.Len()
 		ly.NNeurons = uint32(nn)
-		ly.Neurons = nt.Neurons[neurIdx : neurIdx+nn]
-		ly.NeurStIdx = neurIdx
-		ly.MaxData = int(nt.MaxData)
+		ly.NeurStIdx = uint32(neurIdx)
+		ly.MaxData = nt.MaxData
 		np := ly.NSubPools() + 1
 		ly.NPools = uint32(np)
-		ly.Pools = nt.Pools[poolIdx : poolIdx+(np*nt.MaxData)]
+		ly.Pools = nt.Pools[poolIdx : poolIdx+(np*maxData)]
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
@@ -593,23 +597,23 @@ func (nt *NetworkBase) Build() error {
 			ly.Params.Idxs.ShpUnY = int32(shp.Dim(2))
 			ly.Params.Idxs.ShpUnX = int32(shp.Dim(3))
 		}
-		for di := 0; di < np; di++ {
+		for di := uint32(0); di < ly.MaxData; di++ {
 			ly.Vals[di].LayIdx = uint32(li)
 			ly.Vals[di].DataIdx = uint32(di)
 		}
 		for pi := 0; pi < np; pi++ {
 			for di := 0; di < np; di++ {
-				i := pi*ly.MaxData + di
-				pl := &ly.Pools[x]
+				ix := pi*int(ly.MaxData) + di
+				pl := &ly.Pools[ix]
 				pl.LayIdx = uint32(li)
 				pl.DataIdx = uint32(di)
-				pl.PoolIdx = uint32(poolIdx + i)
+				pl.PoolIdx = uint32(poolIdx + ix)
 			}
 		}
 		if ly.LayerType().IsExt() {
-			ly.Exts = nt.Exts[extIdx : extIdx+nn*nt.MaxData]
+			ly.Exts = nt.Exts[extIdx : extIdx+nn*maxData]
 			ly.Params.Idxs.ExtsSt = uint32(extIdx)
-			extIdx += nn * nt.MaxData
+			extIdx += nn * maxData
 		} else {
 			ly.Exts = nil
 			ly.Params.Idxs.ExtsSt = 0 // sticking with uint32 here -- otherwise could be -1
@@ -625,10 +629,6 @@ func (nt *NetworkBase) Build() error {
 		err := ly.Build() // also builds prjns and sets SubPool indexes
 		if err != nil {
 			emsg += err.Error() + "\n"
-		}
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			nrn.SubPoolN = uint32(poolIdx) + nrn.SubPool
 		}
 		// now collect total number of synapses after layer build
 		for _, pj := range sprjns {
@@ -648,6 +648,7 @@ func (nt *NetworkBase) Build() error {
 		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity\n")
 	}
 
+	nt.NSyns = uint32(totSynapses)
 	nt.Synapses = make([]Synapse, totSynapses)
 	nt.PrjnSendCon = make([]StartN, totSendCon)
 	nt.PrjnRecvCon = make([]StartN, totRecvCon)
@@ -663,25 +664,26 @@ func (nt *NetworkBase) Build() error {
 			rlay := pj.Recv
 			pj.Params.Idxs.RecvLay = uint32(rlay.Idx)
 			pj.Params.Idxs.RecvNeurSt = uint32(rlay.NeurStIdx)
-			pj.Params.Idxs.RecvNeurN = uint32(len(rlay.Neurons))
+			pj.Params.Idxs.RecvNeurN = rlay.NNeurons
 			pj.Params.Idxs.SendLay = uint32(ly.Idx)
 			pj.Params.Idxs.SendNeurSt = uint32(ly.NeurStIdx)
-			pj.Params.Idxs.SendNeurN = uint32(ly.NNeurons)
+			pj.Params.Idxs.SendNeurN = ly.NNeurons
 
 			nsyn := len(pj.SendConIdx)
 			pj.Params.Idxs.SendConSt = uint32(sendConIdx)
 			pj.Params.Idxs.SynapseSt = uint32(syIdx)
 			pj.Params.Idxs.PrjnIdx = uint32(pjidx)
 			pj.Syns = nt.Synapses[syIdx : syIdx+nsyn]
-			for si := range ly.Neurons {
-				scon := pj.SendCon[si]
+			for sni := uint32(0); sni < ly.NNeurons; sni++ {
+				si := ly.NeurStIdx + sni
+				scon := pj.SendCon[sni]
 				nt.PrjnSendCon[sendConIdx] = scon
 				sendConIdx++
-				syns := pj.SendSyns(si)
+				syns := pj.SendSyns(int(sni))
 				for syi := range syns {
 					sy := &syns[syi]
 					sy.SynIdx = uint32(syIdx)
-					sy.SendIdx = uint32(si + ly.NeurStIdx) // network-global idx
+					sy.SendIdx = uint32(si) // network-global idx
 					sy.RecvIdx = pj.SendConIdx[int(scon.Start)+syi] + uint32(rlay.NeurStIdx)
 					sy.PrjnIdx = uint32(pjidx)
 					syIdx++
@@ -700,14 +702,15 @@ func (nt *NetworkBase) Build() error {
 			nt.RecvPrjnIdxs[rprjnIdx] = pj.Params.Idxs.PrjnIdx
 			pj.Params.Idxs.RecvConSt = uint32(recvConIdx)
 			pj.Params.Idxs.RecvSynSt = uint32(syIdx)
-			for ri := range ly.Neurons {
-				if len(pj.RecvCon) <= ri {
+			for rni := uint32(0); rni < ly.NNeurons; rni++ {
+				// ri := ly.NeurStIdx + rni
+				if len(pj.RecvCon) <= int(rni) {
 					continue
 				}
-				rcon := pj.RecvCon[ri]
+				rcon := pj.RecvCon[rni]
 				nt.PrjnRecvCon[recvConIdx] = rcon
 				recvConIdx++
-				syIdxs := pj.RecvSynIdxs(ri)
+				syIdxs := pj.RecvSynIdxs(int(rni))
 				for _, ssi := range syIdxs {
 					sy := &pj.Syns[ssi]
 					nt.RecvSynIdxs[syIdx] = sy.SynIdx

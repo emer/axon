@@ -117,12 +117,12 @@ func (nt *NetworkBase) LayerMapPar(fun func(ly *Layer), funame string) {
 }
 
 // NeuronMapSeq applies function of given name to all neurons sequentially.
-func (nt *NetworkBase) NeuronMapSeq(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
+func (nt *NetworkBase) NeuronMapSeq(fun func(ly *Layer, ni uint32), funame string) {
 	nt.FunTimerStart(funame)
 	for _, ly := range nt.Layers {
-		for ni := range ly.Neurons {
-			nrn := &ly.Neurons[ni]
-			fun(ly, uint32(ni), nrn)
+		for lni := range ly.Neurons {
+			ni := ly.NeurStIdx + lni
+			fun(ly, uint32(ni))
 		}
 	}
 	nt.FunTimerStop(funame)
@@ -130,18 +130,18 @@ func (nt *NetworkBase) NeuronMapSeq(fun func(ly *Layer, ni uint32, nrn *Neuron),
 
 // NeuronMapPar applies function of given name to all neurons
 // using as many go routines as configured in NetThreads.Neurons.
-func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32, nrn *Neuron), funame string) {
+func (nt *NetworkBase) NeuronMapPar(fun func(ly *Layer, ni uint32), funame string) {
 	if nt.NThreads <= 1 {
 		nt.NeuronMapSeq(fun, funame)
 	} else {
 		nt.FunTimerStart(funame)
 		ParallelRun(func(st, ed int) {
 			for ni := st; ni < ed; ni++ {
-				nrn := &nt.Neurons[ni]
-				ly := nt.Layers[nrn.LayIdx]
-				fun(ly, uint32(ni-ly.NeurStartIdx()), nrn)
+				li := NrnI(ctx, ni, NrnIdxLayIdx)
+				ly := nt.Layers[li]
+				fun(ly, uint32(ni))
 			}
-		}, len(nt.Neurons), nt.NThreads)
+		}, nt.NNeurons, nt.NThreads)
 		nt.FunTimerStop(funame)
 	}
 }
