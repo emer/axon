@@ -603,9 +603,9 @@ func (ac *ActParams) DecayLearnCa(ctx *Context, ni, di uint32, decay float32) {
 	AddNrnV(ctx, ni, di, CaSpkP, -decay*NrnV(ctx, ni, di, CaSpkP))
 	AddNrnV(ctx, ni, di, CaSpkD, -decay*NrnV(ctx, ni, di, CaSpkD))
 
-	AddNrnV(ctx, ni, di, CaM, -decay*NrnV(ctx, ni, di, CaM))
-	AddNrnV(ctx, ni, di, CaP, -decay*NrnV(ctx, ni, di, CaP))
-	AddNrnV(ctx, ni, di, CaD, -decay*NrnV(ctx, ni, di, CaD))
+	AddNrnV(ctx, ni, di, NrnCaM, -decay*NrnV(ctx, ni, di, NrnCaM))
+	AddNrnV(ctx, ni, di, NrnCaP, -decay*NrnV(ctx, ni, di, NrnCaP))
+	AddNrnV(ctx, ni, di, NrnCaD, -decay*NrnV(ctx, ni, di, NrnCaD))
 
 	AddNrnV(ctx, ni, di, SKCaIn, decay*(1.0-NrnV(ctx, ni, di, SKCaIn))) // recovers
 	AddNrnV(ctx, ni, di, SKCaR, -decay*NrnV(ctx, ni, di, SKCaR))

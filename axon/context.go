@@ -40,22 +40,22 @@ func MulNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
 
 // NrnAvgV is the CPU version of the neuron variable accessor
 func NrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars) float32 {
-	return Networks[ctx.NetIdx].Neurons[ctx.NeuronAvgVars.Idx(ni, nvar)]
+	return Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
 }
 
 // SetNrnAvgV is the CPU version of the neuron variable settor
 func SetNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeuronAvgVars.Idx(ni, nvar)] = val
+	Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] = val
 }
 
 // AddNrnAvgV is the CPU version of the neuron variable addor
 func AddNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeuronAvgVars.Idx(ni, nvar)] += val
+	Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] += val
 }
 
 // MulNrnAvgV is the CPU version of the neuron variable multiplier
 func MulNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val
+	Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val
 }
 
 // NeuronIdxs
@@ -87,10 +87,67 @@ func NrnIsOff(ctx *Context, ni uint32) bool {
 	return NrnHasFlag(ctx, ni, NeuronOff)
 }
 
+// SynapseVars
+
+// SynV is the CPU version of the synapse variable accessor
+func SynV(ctx *Context, syni uint32, nvar SynapseVars) float32 {
+	return Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)]
+}
+
+// SetSynV is the CPU version of the synapse variable settor
+func SetSynV(ctx *Context, syni uint32, nvar SynapseVars, val float32) {
+	Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)] = val
+}
+
+// AddSynV is the CPU version of the synapse variable addor
+func AddSynV(ctx *Context, syni uint32, nvar SynapseVars, val float32) {
+	Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)] += val
+}
+
+// MulSynV is the CPU version of the synapse variable multiplier
+func MulSynV(ctx *Context, syni uint32, nvar SynapseVars, val float32) {
+	Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)] *= val
+}
+
+// SynapseCaVars
+
+// SynCaV is the CPU version of the synapse variable accessor
+func SynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars) float32 {
+	return Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)]
+}
+
+// SetSynCaV is the CPU version of the synapse variable settor
+func SetSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
+	Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] = val
+}
+
+// AddSynCaV is the CPU version of the synapse variable addor
+func AddSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
+	Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] += val
+}
+
+// MulSynCaV is the CPU version of the synapse variable multiplier
+func MulSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
+	Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] *= val
+}
+
+// SynapseIdxs
+
+// SynI is the CPU version of the synapse idx accessor
+func SynI(ctx *Context, ni uint32, idx SynapseIdxs) uint32 {
+	return Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(ni, idx)]
+}
+
+// SetSynI is the CPU version of the synapse idx settor
+func SetSynI(ctx *Context, ni uint32, idx SynapseIdxs, val uint32) {
+	Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(ni, idx)] = val
+}
+
 //gosl: hlsl context
 // #include "etime.hlsl"
 // #include "axonrand.hlsl"
 // #include "neuron.hlsl"
+// #include "synapse.hlsl"
 // #include "neuromod.hlsl"
 // #include "pvlv.hlsl"
 //gosl: end context
@@ -125,9 +182,13 @@ type Context struct {
 	NeuronVars    NeuronVarStrides    `desc:"stride offsets for accessing neuron variables"`
 	NeuronAvgVars NeuronAvgVarStrides `desc:"stride offsets for accessing neuron average variables"`
 	NeuronIdxs    NeuronIdxStrides    `desc:"stride offsets for accessing neuron indexes"`
-	RandCtr       slrand.Counter      `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
-	NeuroMod      NeuroModVals        `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
-	PVLV          PVLV                `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
+	SynapseVars   SynapseVarStrides   `desc:"stride offsets for accessing synapse variables"`
+	SynapseCaVars SynapseCaStrides    `desc:"stride offsets for accessing synapse Ca variables"`
+	SynapseIdxs   SynapseIdxStrides   `desc:"stride offsets for accessing synapse indexes"`
+
+	RandCtr  slrand.Counter `desc:"random counter -- incremented by maximum number of possible random numbers generated per cycle, regardless of how many are actually used -- this is shared across all layers so must encompass all possible param settings."`
+	NeuroMod NeuroModVals   `view:"inline" desc:"neuromodulatory state values -- these are computed separately on the CPU in CyclePost -- values are not cleared during running and remain until updated by a responsible layer type."`
+	PVLV     PVLV           `desc:"PVLV system for phasic dopamine signaling, including internal drives, US outcomes.  Core LHb (lateral habenula) and VTA (ventral tegmental area) dopamine are computed in equations using inputs from specialized network layers (LDTLayer driven by BLA, CeM layers, VSPatchLayer).  Renders USLayer, PVLayer, DrivesLayer representations based on state updated here."`
 }
 
 // Defaults sets default values
@@ -258,6 +319,53 @@ func (ctx *Context) PVLVDA() float32 {
 // bool NrnIsOff(in Context ctx, uint ni) {
 // 	return NrnHasFlag(ctx, ni, NeuronOff);
 // }
+
+// // SynapseVars
+
+// // SynV is GPU version of synapse var accessor into Synapses array
+// float SynV(in Context ctx, uint syni, SynapseVars nvar) {
+//    return Synapses[ctx.SynapseVars.Idx(syni, nvar)];
+// }
+// // SetSynV is the GPU version of the synapse variable settor
+// void SetSynV(in Context ctx, uint syni, SynapseVars nvar, float val) {
+//  	Synapses[ctx.SynapseVars.Idx(syni, nvar)] = val;
+// }
+// // AddSynV is the GPU version of the synapse variable addor
+// void AddSynV(in Context ctx, uint syni, SynapseVars nvar, float val) {
+//  	Synapses[ctx.SynapseVars.Idx(syni, nvar)] += val;
+// }
+// // MulSynV is the GPU version of the synapse variable multor
+// void MulSynV(in Context ctx, uint syni, SynapseVars nvar, float val) {
+//  	Synapses[ctx.SynapseVars.Idx(syni, nvar)] *= val;
+// }
+
+// // SynapseCaVars
+
+// // SynCaV is GPU version of synapse var accessor into Synapses array
+// float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar) {
+//    return SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)];
+// }
+// // SetSynCaV is the GPU version of the synapse variable settor
+// void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar, float val) {
+//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] = val;
+// }
+// // AddSynCaV is the GPU version of the synapse variable addor
+// void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar, float val) {
+//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] += val;
+// }
+// // MulSynCaV is the GPU version of the synapse variable multor
+// void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar, float val) {
+//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] *= val;
+// }
+
+// // SynapseIdxs
+//
+// // SynI is the GPU version of the synapse idx accessor
+// uint SynI(in Context ctx, uint syni, SynapseIdxs idx) {
+// 	return SynapseIndexes[ctx.SynapseIdxs.Idx(syni, idx)];
+// }
+//
+//
 
 //gosl: end context
 

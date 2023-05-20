@@ -77,10 +77,10 @@ func (np *CaLrnParams) VgccCa(ctx *Context, ni, di uint32) {
 func (np *CaLrnParams) CaLrn(ctx *Context, ni, di uint32) {
 	np.VgccCa(ctx, ni, di)
 	SetNrnV(ctx, ni, di, CaLrn, np.NormInv*(NrnV(ctx, ni, di, NmdaCa)+NrnV(ctx, ni, di, VgccCaInt)))
-	AddNrnV(ctx, ni, di, CaM, np.Dt.MDt*(NrnV(ctx, ni, di, CaLrn)-NrnV(ctx, ni, di, CaM)))
-	AddNrnV(ctx, ni, di, CaP, np.Dt.PDt*(NrnV(ctx, ni, di, CaM)-NrnV(ctx, ni, di, CaP)))
-	AddNrnV(ctx, ni, di, CaD, np.Dt.DDt*(NrnV(ctx, ni, di, CaP)-NrnV(ctx, ni, di, CaD)))
-	SetNrnV(ctx, ni, di, CaDiff, NrnV(ctx, ni, di, CaP)-NrnV(ctx, ni, di, CaD))
+	AddNrnV(ctx, ni, di, NrnCaM, np.Dt.MDt*(NrnV(ctx, ni, di, CaLrn)-NrnV(ctx, ni, di, NrnCaM)))
+	AddNrnV(ctx, ni, di, NrnCaP, np.Dt.PDt*(NrnV(ctx, ni, di, NrnCaM)-NrnV(ctx, ni, di, NrnCaP)))
+	AddNrnV(ctx, ni, di, NrnCaD, np.Dt.DDt*(NrnV(ctx, ni, di, NrnCaP)-NrnV(ctx, ni, di, NrnCaD)))
+	SetNrnV(ctx, ni, di, CaDiff, NrnV(ctx, ni, di, NrnCaP)-NrnV(ctx, ni, di, NrnCaD))
 }
 
 // CaSpkParams parameterizes the neuron-level spike-driven calcium
@@ -266,9 +266,9 @@ func (ln *LearnNeurParams) InitNeurCa(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, CaSpkD, 0)
 	SetNrnV(ctx, ni, di, CaSpkPM, 0)
 
-	SetNrnV(ctx, ni, di, CaM, 0)
-	SetNrnV(ctx, ni, di, CaP, 0)
-	SetNrnV(ctx, ni, di, CaD, 0)
+	SetNrnV(ctx, ni, di, NrnCaM, 0)
+	SetNrnV(ctx, ni, di, NrnCaP, 0)
+	SetNrnV(ctx, ni, di, NrnCaD, 0)
 	SetNrnV(ctx, ni, di, CaDiff, 0)
 }
 
@@ -520,21 +520,22 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 	*dwt = 0
 }
 
+// todo: Ca needs di
+
 // InitSynCa initializes synaptic calcium state, including CaUpT
-func InitSynCa(sy *Synapse) {
-	sy.CaUpT = 0
-	sy.Ca = 0
-	sy.CaM = 0
-	sy.CaP = 0
-	sy.CaD = 0
+func InitSynCa(ctx *Context, syni uint32) {
+	SetSynCaV(ctx, syni, CaUpT, 0)
+	SetSynCaV(ctx, syni, CaM, 0)
+	SetSynCaV(ctx, syni, CaP, 0)
+	SetSynCaV(ctx, syni, CaD, 0)
 }
 
 // DecaySynCa decays synaptic calcium by given factor (between trials)
 // Not used by default.
-func DecaySynCa(sy *Synapse, decay float32) {
-	sy.CaM -= decay * sy.CaM
-	sy.CaP -= decay * sy.CaP
-	sy.CaD -= decay * sy.CaD
+func DecaySynCa(ctx *Context, syni uint32, decay float32) {
+	AddSynCaV(ctx, syni, CaM, -decay*SynCaV(ctx, syni, CaM))
+	AddSynCaV(ctx, syni, CaP, -decay*SynCaV(ctx, syni, CaP))
+	AddSynCaV(ctx, syni, CaD, -decay*SynCaV(ctx, syni, CaD))
 }
 
 //gosl: end learn
@@ -542,17 +543,18 @@ func DecaySynCa(sy *Synapse, decay float32) {
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (sp *SWtParams) InitWtsSyn(rnd erand.Rand, sy *Synapse, mean, spct float32) {
+func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean, spct float32) {
 	wtv := sp.Init.RndVar(rnd)
-	sy.Wt = mean + wtv
-	sy.SWt = sp.ClipSWt(mean + spct*wtv)
+	wt := mean + wtv
+	SetSynV(ctx, syni, Wt, wt)
+	SetSynV(ctx, syni, SWt, sp.ClipSWt(mean+spct*wtv))
 	if spct == 0 { // this is critical for weak init wt, SPCt = 0 prjns
-		sy.SWt = 0.5
+		SetSynV(ctx, syni, SWt, 0.5)
 	}
-	sy.LWt = sp.LWtFmWts(sy.Wt, sy.SWt)
-	sy.DWt = 0
-	sy.DSWt = 0
-	InitSynCa(sy)
+	SetSynV(ctx, syni, LWt, sp.LWtFmWts(wt, SynV(ctx, syni, SWt)))
+	SetSynV(ctx, syni, DWt, 0)
+	SetSynV(ctx, syni, DSWt, 0)
+	InitSynCa(ctx, syni)
 }
 
 //gosl: start learn

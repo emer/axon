@@ -322,8 +322,8 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Prjn) InitWtsSyn(rnd erand.Rand, sy *Synapse, mean, spct float32) {
-	pj.Params.SWt.InitWtsSyn(rnd, sy, mean, spct)
+func (pj *Prjn) InitWtsSyn(rnd erand.Rand, syni uint32, mean, spct float32) {
+	pj.Params.SWt.InitWtsSyn(rnd, syni, mean, spct)
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -348,8 +348,8 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 		}
 		syIdxs := pj.RecvSynIdxs(int(lni))
 		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			pj.InitWtsSyn(&nt.Rand, sy, smn, spct)
+			syni := pj.SynStIdx + syi
+			pj.InitWtsSyn(&nt.Rand, syni, smn, spct)
 		}
 	}
 	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {

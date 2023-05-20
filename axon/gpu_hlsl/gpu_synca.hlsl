@@ -8,6 +8,10 @@
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
 [[vk::binding(3, 2)]] RWStructuredBuffer<uint> NeuronIndexes; // [Neurons][Vars]
 
+[[vk::binding(4, 2)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(5, 2)]] RWStructuredBuffer<float> SynapseCas;  // [Layer][SendPrjns][SendNeurons][Syns]
+[[vk::binding(6, 2)]] StructuredBuffer<uint> SynapseIndexes;  // [Layer][SendPrjns][SendNeurons][Syns]
+
 #include "context.hlsl"
 #include "layerparams.hlsl"
 #include "prjnparams.hlsl"
@@ -29,7 +33,6 @@
 [[vk::binding(1, 2)]] RWStructuredBuffer<Neuron> Neurons; // [Layer][Neuron]
 // [[vk::binding(2, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
 // [[vk::binding(3, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
-[[vk::binding(4, 2)]] RWStructuredBuffer<Synapse> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 
 // Set 3: external inputs
 

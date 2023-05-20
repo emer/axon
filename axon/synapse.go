@@ -6,71 +6,201 @@ package axon
 
 import (
 	"fmt"
-	"reflect"
-	"unsafe"
+
+	"github.com/goki/ki/kit"
 )
 
-// SynapseVarStart is the *byte* offset (4 per 32 bit)
-// of fields in the Synapse structure where the float32
-// named variables start.
-// Note: all non-float32 infrastructure variables must be at the start!
-const SynapseVarStart = 20
+//go:generate stringer -type=SynapseVars
+//go:generate stringer -type=SynapseCaVars
+//go:generate stringer -type=SynapseIdxs
+
+// todo: removeme
+type Synapse struct {
+	dummy int32
+}
+
+var KiT_SynapseVars = kit.Enums.AddEnum(SynapseVarsN, kit.NotBitFlag, nil)
+
+func (ev SynapseVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *SynapseVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+var KiT_SynapseCaVars = kit.Enums.AddEnum(SynapseCaVarsN, kit.NotBitFlag, nil)
+
+func (ev SynapseCaVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *SynapseCaVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+var KiT_SynapseIdxs = kit.Enums.AddEnum(SynapseIdxsN, kit.NotBitFlag, nil)
+
+func (ev SynapseIdxs) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *SynapseIdxs) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 //gosl: start synapse
 
-// axon.Synapse holds state for the synaptic connection between neurons
-type Synapse struct {
-	SynIdx  uint32 `desc:"index in network's global list of synapses"`
-	RecvIdx uint32 `desc:"receiving neuron index in network's global list of neurons"`
-	SendIdx uint32 `desc:"sending neuron index in network's global list of neurons"`
-	PrjnIdx uint32 `desc:"projection index in global list of projections organized as [Layers][RecvPrjns]"`
-	CaUpT   int32  `desc:"time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration."`
+// SynapseVars are the neuron variables representing current synaptic state,
+// specifically weights.
+type SynapseVars int32
 
-	Wt   float32 `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`
-	LWt  float32 `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`
-	SWt  float32 `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`
-	DWt  float32 `desc:"delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt."`
-	DSWt float32 `desc:"change in SWt slow synaptic weight -- accumulates DWt"`
-	Ca   float32 `desc:"Raw calcium signal for Kinase learning: SpikeG * (send.CaSyn * recv.CaSyn) -- todo: not used directly in computation and can be removed (once synapse is reorganized)."`
-	CaM  float32 `desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`
-	CaP  float32 `desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`
-	CaD  float32 `desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`
-	Tr   float32 `desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`
-	DTr  float32 `desc:"delta (change in) Tr trace of synaptic activity over time"`
+const (
+	Wt   SynapseVars = iota // effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1.
+	LWt                     // rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function.
+	SWt                     // slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
+	DWt                     // delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.
+	DSWt                    // change in SWt slow synaptic weight -- accumulates DWt
+	Tr                      // trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
+	DTr                     // delta (change in) Tr trace of synaptic activity over time
+
+	SynapseVarsN
+)
+
+// SynapseVarStrides encodes the stride offsets for synapse variable access
+// into network float32 array.
+type SynapseVarStrides struct {
+	Synapse uint32 `desc:"synapse level"`
+	Var     uint32 `desc:"variable level"`
+
+	pad, pad1 uint32
+}
+
+// Idx returns the index into network float32 array for given synapse, and variable
+func (ns *SynapseVarStrides) Idx(synIdx uint32, nvar SynapseVars) uint32 {
+	return synIdx*ns.Synapse + uint32(nvar)*ns.Var
+}
+
+// SetSynapseOuter sets strides with synapses as outer loop:
+// [Synapses][Vars], which is optimal for CPU-based computation.
+func (ns *SynapseVarStrides) SetSynapseOuter() {
+	ns.Synapse = uint32(SynapseVarsN)
+	ns.Var = 1
+}
+
+// SetVarOuter sets strides with vars as outer loop:
+// [Vars][Synapses], which is optimal for GPU-based computation.
+func (ns *SynapseVarStrides) SetVarOuter(nsyn int) {
+	ns.Var = uint32(nsyn)
+	ns.Synapse = 1
+}
+
+////////////////////////////////////////////////
+// 	SynapseCaVars
+
+// SynapseCaVars are synapse variables for calcium involved in learning,
+// which are data parallel input specific.
+type SynapseCaVars int32
+
+const (
+	CaM   SynapseCaVars = iota // first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
+	CaP                        // shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
+	CaD                        // longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
+	CaUpT                      // time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration.
+
+	SynapseCaVarsN
+)
+
+// SynapseCaStrides encodes the stride offsets for synapse variable access
+// into network float32 array.  Data is always the inner-most variable.
+type SynapseCaStrides struct {
+	Synapse uint32 `desc:"synapse level"`
+	Var     uint32 `desc:"variable level"`
+
+	pad, pad1 uint32
+}
+
+// Idx returns the index into network float32 array for given synapse, data, and variable
+func (ns *SynapseCaStrides) Idx(synIdx, dataIdx uint32, nvar SynapseCaVars) uint32 {
+	return synIdx*ns.Synapse + uint32(nvar)*ns.Var + dataIdx
+}
+
+// SetSynapseOuter sets strides with synapses as outer loop:
+// [Synapses][Vars][Data], which is optimal for CPU-based computation.
+func (ns *SynapseCaStrides) SetSynapseOuter(ndata int) {
+	ns.Synapse = uint32(ndata) * uint32(SynapseVarsN)
+	ns.Var = uint32(ndata)
+}
+
+// SetVarOuter sets strides with vars as outer loop:
+// [Vars][Synapses][Data], which is optimal for GPU-based computation.
+func (ns *SynapseCaStrides) SetVarOuter(nsyn, ndata int) {
+	ns.Var = uint32(ndata) * uint32(nsyn)
+	ns.Synapse = uint32(ndata)
+}
+
+////////////////////////////////////////////////
+// 	Idxs
+
+// SynapseIdxs are the neuron indexes and other uint32 values (flags, etc).
+// There is only one of these per neuron -- not data parallel.
+type SynapseIdxs int32
+
+const (
+	SynRecvIdx SynapseIdxs = iota // receiving neuron index in network's global list of neurons
+	SynSendIdx                    // sending neuron index in network's global list of neurons
+	SynPrjnIdx                    // projection index in global list of projections organized as [Layers][RecvPrjns]
+
+	SynapseIdxsN
+)
+
+// SynapseIdxStrides encodes the stride offsets for synapse index access
+// into network uint32 array.
+type SynapseIdxStrides struct {
+	Synapse uint32 `desc:"synapse level"`
+	Index   uint32 `desc:"index value level"`
+
+	pad, pad2 uint32
+}
+
+// Idx returns the index into network uint32 array for given synapse, index value
+func (ns *SynapseIdxStrides) Idx(synIdx uint32, idx SynapseIdxs) uint32 {
+	return synIdx*ns.Synapse + uint32(idx)*ns.Index
+}
+
+// SetSynapseOuter sets strides with synapses as outer dimension:
+// [Synapses[[Idxs] (outer to inner), which is optimal for CPU-based
+// computation.
+func (ns *SynapseIdxStrides) SetSynapseOuter() {
+	ns.Synapse = uint32(SynapseIdxsN)
+	ns.Index = 1
+}
+
+// SetIdxOuter sets strides with indexes as outer dimension:
+// [Idxs][Synapses] (outer to inner), which is optimal for GPU-based
+// computation.
+func (ns *SynapseIdxStrides) SetIdxOuter(nsyn int) {
+	ns.Index = uint32(nsyn)
+	ns.Synapse = 1
 }
 
 //gosl: end synapse
 
-func (sy *Synapse) VarNames() []string {
-	return SynapseVars
-}
-
-var SynapseVars = []string{"Wt", "LWt", "SWt", "DWt", "DSWt", "Ca", "CaM", "CaP", "CaD", "Tr", "DTr"}
-
+// SynapseVarProps has all of the display properties for synapse variables, including desc tooltips
 var SynapseVarProps = map[string]string{
-	"DWt":  `auto-scale:"+"`,
-	"DSWt": `auto-scale:"+"`,
-	"CaM":  `auto-scale:"+"`,
-	"CaP":  `auto-scale:"+"`,
-	"CaD":  `auto-scale:"+"`,
-	"Tr":   `auto-scale:"+"`,
-	"DTr":  `auto-scale:"+"`,
+	"Wt ":  `desc:"effective synaptic weight value, determining how much conductance one spike drives on the receiving neuron, representing the actual number of effective AMPA receptors in the synapse.  Wt = SWt * WtSig(LWt), where WtSig produces values between 0-2 based on LWt, centered on 1."`,
+	"LWt":  `desc:"rapidly learning, linear weight value -- learns according to the lrate specified in the connection spec.  Biologically, this represents the internal biochemical processes that drive the trafficking of AMPA receptors in the synaptic density.  Initially all LWt are .5, which gives 1 from WtSig function."`,
+	"SWt":  `desc:"slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt."`,
+	"DWt":  `auto-scale:"+" desc:"delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt."`,
+	"DSWt": `auto-scale:"+" desc:"change in SWt slow synaptic weight -- accumulates DWt"`,
+	"CaM":  `auto-scale:"+" desc:"first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP"`,
+	"CaP":  `auto-scale:"+"desc:"shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule"`,
+	"CaD":  `auto-scale:"+" desc:"longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule"`,
+	"Tr":   `auto-scale:"+" desc:"trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs."`,
+	"DTr":  `auto-scale:"+" desc:"delta (change in) Tr trace of synaptic activity over time"`,
 }
 
-var SynapseVarsMap map[string]int
+var (
+	SynapseVarNames []string
+	SynapseVarsMap  map[string]int
+)
 
 func init() {
-	SynapseVarsMap = make(map[string]int, len(SynapseVars))
-	typ := reflect.TypeOf((*Synapse)(nil)).Elem()
-	for i, v := range SynapseVars {
-		SynapseVarsMap[v] = i
-		pstr := SynapseVarProps[v]
-		if fld, has := typ.FieldByName(v); has {
-			if desc, ok := fld.Tag.Lookup("desc"); ok {
-				pstr += ` desc:"` + desc + `"`
-				SynapseVarProps[v] = pstr
-			}
-		}
+	SynapseVarsMap = make(map[string]int, int(SynapseVarsN)+int(SynapseCaVarsN))
+	for i := Wt; i < SynapseVarsN; i++ {
+		vnm := i.String()
+		SynapseVarNames = append(SynapseVarNames, vnm)
+		SynapseVarsMap[vnm] = int(i)
+	}
+	for i := CaM; i < SynapseCaVarsN; i++ {
+		vnm := i.String()
+		SynapseVarNames = append(SynapseVarNames, vnm)
+		SynapseVarsMap[vnm] = int(SynapseVarsN) + int(i)
 	}
 }
 
@@ -78,37 +208,7 @@ func init() {
 func SynapseVarByName(varNm string) (int, error) {
 	i, ok := SynapseVarsMap[varNm]
 	if !ok {
-		return -1, fmt.Errorf("Synapse VarByName: variable name: %v not valid", varNm)
+		return -1, fmt.Errorf("Synapse VarByName: variable name: %s not valid", varNm)
 	}
 	return i, nil
-}
-
-// VarByIndex returns variable using index (0 = first variable in SynapseVars list)
-func (sy *Synapse) VarByIndex(idx int) float32 {
-	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(sy)) + uintptr(SynapseVarStart+4*idx)))
-	return *fv
-}
-
-// VarByName returns variable by name, or error
-func (sy *Synapse) VarByName(varNm string) (float32, error) {
-	i, err := SynapseVarByName(varNm)
-	if err != nil {
-		return 0, err
-	}
-	return sy.VarByIndex(i), nil
-}
-
-func (sy *Synapse) SetVarByIndex(idx int, val float32) {
-	fv := (*float32)(unsafe.Pointer(uintptr(unsafe.Pointer(sy)) + uintptr(SynapseVarStart+4*idx)))
-	*fv = val
-}
-
-// SetVarByName sets synapse variable to given value
-func (sy *Synapse) SetVarByName(varNm string, val float32) error {
-	i, err := SynapseVarByName(varNm)
-	if err != nil {
-		return err
-	}
-	sy.SetVarByIndex(i, val)
-	return nil
 }

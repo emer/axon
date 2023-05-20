@@ -94,9 +94,9 @@ const (
 	CaSpkD  // continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act.
 	CaSpkPM // minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value.
 	CaLrn   // recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component).  This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales.
-	CaM     // integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning.
-	CaP     // cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.
-	CaD     // cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.
+	NrnCaM  // integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning.
+	NrnCaP  // cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule.
+	NrnCaD  // cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.
 	CaDiff  // difference between CaP - CaD -- this is the error signal that drives error-driven learning.
 	RLRate  // recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).
 	Attn    // Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge
@@ -373,9 +373,9 @@ var NeuronVarProps = map[string]string{
 	"CaSpkD":  `desc:"continuous cascaded integration CaSpkP at DTau time constant (typically 40), representing neuron-level purely spiking version of minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule. Used for specialized learning and computational functions, statistics, instead of Act."`,
 	"CaSpkPM": `desc:"minus-phase snapshot of the CaSpkP value -- similar to ActM but using a more directly spike-integrated value."`,
 	"CaLrn":   `desc:"recv neuron calcium signal used to drive temporal error difference component of standard learning rule, combining NMDA (NmdaCa) and spiking-driven VGCC (VgccCaInt) calcium sources (vs. CaSpk* which only reflects spiking component).  This is integrated into CaM, CaP, CaD, and temporal derivative is CaP - CaD (CaMKII - DAPK1).  This approximates the backprop error derivative on net input, but VGCC component adds a proportion of recv activation delta as well -- a balance of both works best.  The synaptic-level trace multiplier provides the credit assignment factor, reflecting coincident activity and potentially integrated over longer multi-trial timescales."`,
-	"CaM":     `desc:"integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning."`,
-	"CaP":     `desc:"cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule."`,
-	"CaD":     `desc:"cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule."`,
+	"NrnCaM":  `desc:"integrated CaLrn at MTau timescale (typically 5), simulating a calmodulin (CaM) like signal, which then drives CaP, CaD for delta signal driving error-driven learning."`,
+	"NrnCaP":  `desc:"cascaded integration of CaM at PTau time constant (typically 40), representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule."`,
+	"NrnCaD":  `desc:"cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule."`,
 	"CaDiff":  `desc:"difference between CaP - CaD -- this is the error signal that drives error-driven learning."`,
 	"RLRate":  `auto-scale:"+" desc:"recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD)."`,
 
@@ -490,10 +490,10 @@ var NeuronVarProps = map[string]string{
 	"CtxtGeOrig": `desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`,
 }
 
-var NeuronVarNames = []string{}
-
-var NeuronVarsMap map[string]int
-var NeuronAvgVarsMap map[string]int
+var (
+	NeuronVarNames []string
+	NeuronVarsMap  map[string]int
+)
 
 // NeuronLayerVars are layer-level variables displayed as neuron layers.
 var (
@@ -503,21 +503,20 @@ var (
 
 func init() {
 	netview.NVarCols = 4 // many neurons
-	NeuronVarsMap = make(map[string]int, NeuronVarsN)
+	NeuronVarsMap = make(map[string]int, int(NeuronVarsN)+int(NeuronAvgVarsN)+NNeuronLayerVars)
 	for i := Spike; i < NeuronVarsN; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
 		NeuronVarsMap[vnm] = int(i)
 	}
-	NeuronAvgVarsMap = make(map[string]int, NeuronAvgVarsN)
 	for i := ActAvg; i < NeuronAvgVarsN; i++ {
 		vnm := i.String()
 		NeuronVarNames = append(NeuronVarNames, vnm)
-		NeuronAvgVarsMap[vnm] = int(i) + int(NeuronVarsN)
+		NeuronVarsMap[vnm] = int(NeuronVarsN) + int(i)
 	}
 	for i, vnm := range NeuronLayerVars {
-		NeuronVarsMap[vnm] = i + +int(NeuronVarsN) + int(NeuronAvgVarsN)
 		NeuronVarNames = append(NeuronVarNames, vnm)
+		NeuronVarsMap[vnm] = i + int(NeuronVarsN) + int(NeuronAvgVarsN)
 	}
 }
 
@@ -525,7 +524,7 @@ func init() {
 func NeuronVarIdxByName(varNm string) (int, error) {
 	i, ok := NeuronVarsMap[varNm]
 	if !ok {
-		return -1, fmt.Errorf("Neuron VarByName: variable name: %v not valid", varNm)
+		return -1, fmt.Errorf("Neuron VarByName: variable name: %s not valid", varNm)
 	}
 	return i, nil
 }
