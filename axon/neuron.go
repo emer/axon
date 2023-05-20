@@ -20,12 +20,18 @@ type Neuron struct {
 
 //go:generate stringer -type=NeuronFlags
 //go:generate stringer -type=NeuronVars
+//go:generate stringer -type=NeuronAvgVars
 //go:generate stringer -type=NeuronIdxs
 
 var KiT_NeuronVars = kit.Enums.AddEnum(NeuronVarsN, kit.NotBitFlag, nil)
 
 func (ev NeuronVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
 func (ev *NeuronVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
+
+var KiT_NeuronAvgVars = kit.Enums.AddEnum(NeuronAvgVarsN, kit.NotBitFlag, nil)
+
+func (ev NeuronAvgVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }
+func (ev *NeuronAvgVars) UnmarshalJSON(b []byte) error { return kit.EnumUnmarshalJSON(ev, b) }
 
 var KiT_NeuronIdxs = kit.Enums.AddEnum(NeuronIdxsN, kit.NotBitFlag, nil)
 
@@ -53,7 +59,9 @@ const (
 	NeuronHasCmpr NeuronFlags = 8
 )
 
-// NeuronVars are the neuron variables
+// NeuronVars are the neuron variables representing current active state,
+// specific to each input data state.
+// See NeuronAvgVars for vars shared across data.
 type NeuronVars int32
 
 const (
@@ -93,6 +101,7 @@ const (
 	CaD     // cascaded integratoin of CaP at DTau time constant (typically 40), representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule.
 	CaDiff  // difference between CaP - CaD -- this is the error signal that drives error-driven learning.
 	RLRate  // recv-unit based learning rate multiplier, reflecting the sigmoid derivative computed from the CaSpkD of recv unit, and the normalized difference CaSpkP - CaSpkD / MAX(CaSpkP - CaSpkD).
+	Attn    // Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge
 
 	/////////////////////////////////////////
 	// Stats, aggregate values
@@ -102,17 +111,6 @@ const (
 	SpkPrv   // final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations.
 	SpkSt1   // the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning
 	SpkSt2   // the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning
-	DASign   // sign of dopamine-based learning effects for this neuron -- 1 = D1, -1 = D2
-
-	/////////////////////////////////////////
-	// Long-term average activation, set point for synaptic scaling
-
-	ActAvg  // average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation
-	AvgPct  // ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
-	TrgAvg  // neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
-	DTrgAvg // change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
-	AvgDif  // AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
-	Attn    // Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge
 
 	/////////////////////////////////////////
 	// ISI for computing rate-code activation
@@ -223,7 +221,7 @@ type NeuronVarStrides struct {
 
 // Idx returns the index into network float32 array for given neuron, data, and variable
 func (ns *NeuronVarStrides) Idx(neurIdx, dataIdx uint32, nvar NeuronVars) uint32 {
-	return ns.Neuron*neurIdx + ns.Var*uint32(nvar) + ns.Data
+	return neurIdx*ns.Neuron + uint32(nvar)*ns.Var + dataIdx
 }
 
 // SetNeuronOuter sets strides with neurons as outer loop:
@@ -241,22 +239,73 @@ func (ns *NeuronVarStrides) SetVarOuter(nneur, ndata int) {
 }
 
 ////////////////////////////////////////////////
-// Idxs
+// 	NeuronAvgVars
 
-// NeuronIdxs are the neuron indexes and other uint32 values (flags, etc)
+// NeuronAvgVars are neuron variables involved in longer-term average activity
+// which is aggregated over time and not specific to each input data state.
+type NeuronAvgVars int32
+
+const (
+	ActAvg  NeuronAvgVars = iota // average activation (of minus phase activation state) over long time intervals (time constant = Dt.LongAvgTau) -- useful for finding hog units and seeing overall distribution of activation
+	AvgPct                       // ActAvg as a proportion of overall layer activation -- this is used for synaptic scaling to match TrgAvg activation -- updated at SlowInterval intervals
+	TrgAvg                       // neuron's target average activation as a proportion of overall layer activation, assigned during weight initialization, driving synaptic scaling relative to AvgPct
+	DTrgAvg                      // change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors.
+	AvgDif                       // AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals
+
+	NeuronAvgVarsN
+)
+
+// NeuronAvgVarStrides encodes the stride offsets for neuron variable access
+// into network float32 array.  Data is always the inner-most variable.
+type NeuronAvgVarStrides struct {
+	Neuron uint32 `desc:"neuron level"`
+	Var    uint32 `desc:"variable level"`
+
+	pad, pad1 uint32
+}
+
+// Idx returns the index into network float32 array for given neuron and variable
+func (ns *NeuronAvgVarStrides) Idx(neurIdx uint32, nvar NeuronAvgVars) uint32 {
+	return neurIdx*ns.Neuron + uint32(nvar)*ns.Var
+}
+
+// SetNeuronOuter sets strides with neurons as outer loop:
+// [Neurons][Vars], which is optimal for CPU-based computation.
+func (ns *NeuronAvgVarStrides) SetNeuronOuter() {
+	ns.Neuron = uint32(NeuronAvgVarsN)
+	ns.Var = 1
+}
+
+// SetVarOuter sets strides with vars as outer loop:
+// [Vars][Neurons], which is optimal for GPU-based computation.
+func (ns *NeuronAvgVarStrides) SetVarOuter(nneur int) {
+	ns.Var = uint32(nneur)
+	ns.Neuron = 1
+}
+
+////////////////////////////////////////////////
+// 	Idxs
+
+// NeuronIdxs are the neuron indexes and other uint32 values (flags, etc).
+// There is only one of these per neuron -- not data parallel.
 type NeuronIdxs int32
 
 const (
-	// bit flags for binary state variables -- note that these are automatically shared across all data parallel vals!
-	NidxFlags NeuronIdxs = iota
-	// index of this neuron within its owning layer
-	NidxNeurIdx
-	// index of the layer that this neuron belongs to -- needed for neuron-level parallel code.
-	NidxLayIdx
-	// index of the sub-level inhibitory pool that this neuron is in (only for 4D shapes, the pool (unit-group / hypercolumn) structure level) -- indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).
-	NidxSubPool
-	// index in network-wide list of all pools
-	NidxSubPoolN
+	// NrnIdxFlags are bit flags for binary state variables.
+	// note that these are automatically shared across all data parallel vals!
+	NrnIdxFlags NeuronIdxs = iota
+
+	// NrnIdxNeurIdx is the index of this neuron within its owning layer
+	NrnIdxNeurIdx
+
+	// NrnIdxLayIdx is the index of the layer that this neuron belongs to,
+	// needed for neuron-level parallel code.
+	NrnIdxLayIdx
+
+	// NrnIdxSubPool is the index of the sub-level inhibitory pool for this neuron
+	// (only for 4D shapes, the pool (unit-group / hypercolumn) structure level).
+	// Indicies start at 1 -- 0 is layer-level pool (is 0 if no sub-pools).
+	NrnIdxSubPool
 
 	NeuronIdxsN
 )
@@ -272,7 +321,7 @@ type NeuronIdxStrides struct {
 
 // Idx returns the index into network uint32 array for given neuron, index value
 func (ns *NeuronIdxStrides) Idx(neurIdx uint32, idx NeuronIdxs) uint32 {
-	return ns.Neuron*neurIdx + ns.Index*uint32(idx)
+	return neurIdx*ns.Neuron + uint32(idx)*ns.Index
 }
 
 // SetNeuronOuter sets strides with neurons as outer dimension:

@@ -17,15 +17,15 @@ import "sync/atomic"
 // into the GBuf buffer on the receiver side. The buffer on the receiver side
 // is a ring buffer, which is used for modelling the time delay between
 // sending and receiving spikes.
-func (pj *Prjn) SendSpike(ctx *Context, sendIdx uint32, nrn *Neuron) {
+func (pj *Prjn) SendSpike(ctx *Context, ni, di uint32) {
 	scale := pj.Params.GScale.Scale * pj.Params.Com.FloatToIntFactor() // pre-bake in conversion to uint factor
 	if pj.PrjnType() == CTCtxtPrjn {
 		if ctx.Cycle != ctx.ThetaCycles-1-int32(pj.Params.Com.DelLen) {
 			return
 		}
-		scale *= nrn.Burst // Burst is regular CaSpkP for all non-SuperLayer neurons
+		scale *= NrnV(ctx, ni, di, Burst) // Burst is regular CaSpkP for all non-SuperLayer neurons
 	} else {
-		if nrn.Spike == 0 {
+		if NrnV(ctx, ni, di, Spike) == 0 {
 			return
 		}
 	}
@@ -51,7 +51,7 @@ func (pj *Prjn) SendSpike(ctx *Context, sendIdx uint32, nrn *Neuron) {
 // Optimized version only updates at point of spiking.
 // This pass goes through in sending order, filtering on sending spike.
 // Sender will update even if recv neuron spiked -- recv will skip sender spike cases.
-func (pj *Prjn) SynCaSend(ctx *Context, si uint32, sn *Neuron, updtThr float32) {
+func (pj *Prjn) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -59,13 +59,12 @@ func (pj *Prjn) SynCaSend(ctx *Context, si uint32, sn *Neuron, updtThr float32) 
 		return
 	}
 	rlay := pj.Recv
-	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * sn.CaSyn
+	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
 	syns := pj.SendSyns(int(si))
 	for syi := range syns {
 		sy := &syns[syi]
-		ri := pj.Params.SynRecvLayIdx(sy)
-		rn := &rlay.Neurons[ri]
-		pj.Params.SynCaSyn(ctx, sy, rn, snCaSyn, updtThr)
+		ri := pj.Params.SynRecvLayIdx(sy) // todo: global, not layer
+		pj.Params.SynCaSyn(ctx, sy, ri, di, snCaSyn, updtThr)
 	}
 }
 
@@ -73,7 +72,7 @@ func (pj *Prjn) SynCaSend(ctx *Context, si uint32, sn *Neuron, updtThr float32) 
 // Optimized version only updates at point of spiking.
 // This pass goes through in recv order, filtering on recv spike,
 // and skips when sender spiked, as those were already done in Send version.
-func (pj *Prjn) SynCaRecv(ctx *Context, ri uint32, rn *Neuron, updtThr float32) {
+func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -81,16 +80,15 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ri uint32, rn *Neuron, updtThr float32) 
 		return
 	}
 	slay := pj.Send
-	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * rn.CaSyn
+	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
 	syIdxs := pj.RecvSynIdxs(int(ri))
 	for _, syi := range syIdxs {
 		sy := &pj.Syns[syi]
-		si := pj.Params.SynSendLayIdx(sy)
-		sn := &slay.Neurons[si]
-		if sn.Spike > 0 {
+		si := pj.Params.SynSendLayIdx(sy) // todo: global, not layer
+		if NrnV(ctx, si, di, Spike) > 0 {
 			continue
 		}
-		pj.Params.SynCaSyn(ctx, sy, sn, rnCaSyn, updtThr)
+		pj.Params.SynCaSyn(ctx, sy, si, di, rnCaSyn, updtThr)
 	}
 }
 

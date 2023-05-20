@@ -49,7 +49,7 @@ type NetworkBase struct {
 	MaxData      uint32        `desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
 	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
-	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, in 1-to-1 correspondence with Layers"`
+	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, with extra per data"`
 	Pools        []Pool        `view:"-" desc:"[Layers][Pools][MaxData] array of inhibitory pools for all layers."`
 	Neurons      []float32     `view:"-" desc:"entire network's allocation of neuron variables, accessed via NrnV method with flexible striding"`
 	NeuronIdxs   []uint32      `view:"-" desc:"entire network's allocation of neuron index variables, accessed via NrnI method with flexible striding"`
@@ -170,6 +170,11 @@ func (nt *NetworkBase) LayersByClass(classes ...string) []string {
 		panic(fmt.Sprintf("No Layers found for query: %#v. Basic layer types have been renamed since v1.7, use LayersByType for forward compatibility.", classes))
 	}
 	return layers
+}
+
+// LayerVal returns LayerVals for given layer and data parallel indexes
+func (nt *NetworkBase) LayerVals(li, di uint32) *LayerVals {
+	return &nt.LayVals[li*nt.MaxData+di]
 }
 
 // StdVertLayout arranges layers in a standard vertical (z axis stack) layout, by setting

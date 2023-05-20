@@ -151,6 +151,8 @@ func (am *PoolAvgMax) UpdateVals(ctx *Context, ni, di uint32) {
 
 //gosl: end pool
 
+// note: the following is real code uncommented by gosl
+
 //gosl: hlsl pool
 /*
 // // AtomicUpdatePoolAvgMax provides an atomic update using atomic ints
@@ -183,9 +185,10 @@ type Pool struct {
 
 	pad uint32
 
-	Inhib  fsfffb.Inhib `inactive:"+" desc:"fast-slow FFFB inhibition values"`
-	AvgMax PoolAvgMax   `desc:"average and max values for relevant variables in this pool, at different time scales"`
-	AvgDif AvgMaxI32    `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
+	Inhib fsfffb.Inhib `inactive:"+" desc:"fast-slow FFFB inhibition values"`
+	// note: these last two have elements that are shared across data parallel -- not worth separating though?
+	AvgMax PoolAvgMax `desc:"average and max values for relevant variables in this pool, at different time scales"`
+	AvgDif AvgMaxI32  `inactive:"+" view:"inline" desc:"absolute value of AvgDif differences from actual neuron ActPct relative to TrgAvg"`
 }
 
 // Init is callled during InitActs
@@ -204,71 +207,3 @@ func (pl *Pool) NNeurons() int {
 }
 
 //gosl: end pool
-
-/* todo: fixme below -- dumping this here so layer is clean
-
-// TopoGi computes topographic Gi inhibition
-// todo: this does not work for 2D layers, and in general needs more testing
-func (ly *Layer) TopoGi(ctx *Context) {
-	if !ly.Params.Inhib.Topo.On {
-		return
-	}
-	pyn := ly.Shp.Dim(0)
-	pxn := ly.Shp.Dim(1)
-	wd := ly.Params.Inhib.Topo.Width
-	wrap := ly.Params.Inhib.Topo.Wrap
-
-	ssq := ly.Params.Inhib.Topo.Sigma * float32(wd)
-	ssq *= ssq
-	ff0 := ly.Params.Inhib.Topo.FF0
-
-	l4d := ly.Is4D()
-
-	var clip bool
-	for py := 0; py < pyn; py++ {
-		for px := 0; px < pxn; px++ {
-			var tge, tact, twt float32
-			for iy := -wd; iy <= wd; iy++ {
-				ty := py + iy
-				if ty, clip = edge.Edge(ty, pyn, wrap); clip {
-					continue
-				}
-				for ix := -wd; ix <= wd; ix++ {
-					tx := px + ix
-					if tx, clip = edge.Edge(tx, pxn, wrap); clip {
-						continue
-					}
-					ds := float32(iy*iy + ix*ix)
-					df := mat32.Sqrt(ds)
-					di := int(mat32.Round(df))
-					if di > wd {
-						continue
-					}
-					wt := mat32.FastExp(-0.5 * ds / ssq)
-					twt += wt
-					ti := ty*pxn + tx
-					if l4d {
-						pl := &ly.Pools[ti+1]
-						tge += wt * pl.OldInhib.GeInt.Avg
-						tact += wt * pl.OldInhib.Act.Avg
-					} else {
-						nrn := &ly.Neurons[ti]
-						tge += wt * NrnV(ctx, ni, di, Ge)
-						tact += wt * NrnV(ctx, ni, di, Act)
-					}
-				}
-			}
-
-			gi := ly.Params.Inhib.Topo.GiFmGeAct(tge, tact, ff0*twt)
-			pi := py*pxn + px
-			if l4d {
-				pl := &ly.Pools[pi+1]
-				pl.OldInhib.Gi += gi
-				// } else {
-				// 	nrn := &ly.Neurons[pi]
-				// 	SetNrnV(ctx, ni, di, GiSelf, gi)
-			}
-		}
-	}
-}
-*/

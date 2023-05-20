@@ -313,7 +313,6 @@ The [`axon.Neuron`](axon/neuron.go) struct contains all the neuron (unit) level 
 * `SpkPrv` = final `CaSpkD` activation state at end of previous theta cycle.  Used for specialized learning mechanisms that operate on delayed sending activations.
 * `SpkSt1` = the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by `SpkSt1()` function.  Used for example in hippocampus for CA3, CA1 learning.
 * `SpkSt2` = the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by `SpkSt2()` function.  Used for example in hippocampus for CA3, CA1 learning.
-* `DASign` = sign of dopamine-based learning effects for this neuron -- 1 = D1, -1 = D2.
 
 #### Long-term average activation, set point for synaptic scaling
 

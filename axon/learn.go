@@ -73,13 +73,13 @@ func (np *CaLrnParams) VgccCa(nrn *Neuron) {
 // CaLrn updates the CaLrn value and its cascaded values, based on NMDA, VGCC Ca
 // it first calls VgccCa to update the spike-driven version of that variable, and
 // perform its time-integration.
-func (np *CaLrnParams) CaLrn(nrn *Neuron) {
-	np.VgccCa(nrn)
-	nrn.CaLrn = np.NormInv * (nrn.NmdaCa + nrn.VgccCaInt)
-	nrn.CaM += np.Dt.MDt * (nrn.CaLrn - nrn.CaM)
-	nrn.CaP += np.Dt.PDt * (nrn.CaM - nrn.CaP)
-	nrn.CaD += np.Dt.DDt * (nrn.CaP - nrn.CaD)
-	nrn.CaDiff = nrn.CaP - nrn.CaD
+func (np *CaLrnParams) CaLrn(ctx *Context, ni, di uint32) {
+	np.VgccCa(ctx, ni, di)
+	SetNrnV(ctx, ni, di, CaLrn, np.NormInv*(NrnV(ctx, ni, di, NmdaCa)+NrnV(ctx, ni, di, VgccCaInt)))
+	AddNrnV(ctx, ni, di, CaM, np.Dt.MDt*(NrnV(ctx, ni, di, CaLrn)-NrnV(ctx, ni, di, CaM)))
+	AddNrnV(ctx, ni, di, CaP, np.Dt.PDt*(NrnV(ctx, ni, di, CaM)-NrnV(ctx, ni, di, CaP)))
+	AddNrnV(ctx, ni, di, CaD, np.Dt.DDt*(NrnV(ctx, ni, di, CaP)-NrnV(ctx, ni, di, CaD)))
+	SetNrnV(ctx, ni, di, CaDiff, NrnV(ctx, ni, di, CaP)-NrnV(ctx, ni, di, CaD))
 }
 
 // CaSpkParams parameterizes the neuron-level spike-driven calcium
@@ -112,12 +112,12 @@ func (np *CaSpkParams) Update() {
 }
 
 // CaFmSpike computes CaSpk* and CaSyn calcium signals based on current spike.
-func (np *CaSpkParams) CaFmSpike(nrn *Neuron) {
-	nsp := np.SpikeG * nrn.Spike
-	nrn.CaSyn += np.SynDt * (nsp - nrn.CaSyn)
-	nrn.CaSpkM += np.Dt.MDt * (nsp - nrn.CaSpkM)
-	nrn.CaSpkP += np.Dt.PDt * (nrn.CaSpkM - nrn.CaSpkP)
-	nrn.CaSpkD += np.Dt.DDt * (nrn.CaSpkP - nrn.CaSpkD)
+func (np *CaSpkParams) CaFmSpike(ctx *Context, ni, di uint32) {
+	nsp := np.SpikeG * NrnV(ctx, ni, di, Spike)
+	AddNrnV(ctx, ni, di, CaSyn, np.SynDt*(nsp-NrnV(ctx, ni, di, CaSyn)))
+	AddNrnV(ctx, ni, di, CaSpkM, np.Dt.MDt*(nsp-NrnV(ctx, ni, di, CaSpkM)))
+	AddNrnV(ctx, ni, di, CaSpkP, np.Dt.PDt*(NrnV(ctx, ni, di, CaSpkM)-NrnV(ctx, ni, di, CaSpkP)))
+	AddNrnV(ctx, ni, di, CaSpkD, np.Dt.DDt*(NrnV(ctx, ni, di, CaSpkP)-NrnV(ctx, ni, di, CaSpkD)))
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -286,9 +286,9 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float
 
 // CaFmSpike updates all spike-driven calcium variables, including CaLrn and CaSpk.
 // Computed after new activation for current cycle is updated.
-func (ln *LearnNeurParams) CaFmSpike(nrn *Neuron) {
-	ln.CaSpk.CaFmSpike(nrn)
-	ln.CaLrn.CaLrn(nrn)
+func (ln *LearnNeurParams) CaFmSpike(ctx *Context, ni, di uint32) {
+	ln.CaSpk.CaFmSpike(ctx, ni, di)
+	ln.CaLrn.CaLrn(ctx, ni, di)
 }
 
 //gosl: end learn_neur
