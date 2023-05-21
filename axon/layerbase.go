@@ -529,8 +529,8 @@ func (ly *LayerBase) UnitVal1D(varIdx int, idx int) float32 {
 			pl := ly.SubPool(ctx, uint32(idx), 0) // display uses data 0
 			return float32(pl.Gated)
 		}
-	} else if varIdx >= NeuronVarsN {
-		return NrnAvgV(ctx, ni, 0, NeuronAvgVars(varIdx-NeuronVarsN))
+	} else if varIdx >= int(NeuronVarsN) {
+		return NrnAvgV(ctx, ni, NeuronAvgVars(varIdx-int(NeuronVarsN)))
 	} else {
 		return NrnV(ctx, ni, 0, NeuronVars(varIdx))
 	}
@@ -840,7 +840,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write([]byte(fmt.Sprintf("\"Prjns\": [\n")))
 		depth++
 		for pi, pj := range onps {
-			pj.WriteWtsJSON(ctx, w, depth) // this leaves prjn unterminated
+			pj.WriteWtsJSON(w, depth) // this leaves prjn unterminated
 			if pi == np-1 {
 				w.Write([]byte("\n"))
 			} else {
@@ -861,19 +861,19 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 // and is not used for the network-level ReadWtsJSON, which reads into a separate
 // structure -- see SetWts method.
 func (ly *Layer) ReadWtsJSON(r io.Reader) error {
-	ctx := &ly.Network.Ctx
 	lw, err := weights.LayReadJSON(r)
 	if err != nil {
 		return err // note: already logged
 	}
-	return ly.SetWts(ctx, lw)
+	return ly.SetWts(lw)
 }
 
 // SetWts sets the weights for this layer from weights.Layer decoded values
-func (ly *Layer) SetWts(ctx *Context, lw *weights.Layer) error {
+func (ly *Layer) SetWts(lw *weights.Layer) error {
 	if ly.IsOff() {
 		return nil
 	}
+	ctx := &ly.Network.Ctx
 	if lw.MetaData != nil {
 		for di := uint32(0); di < ctx.NData; di++ {
 			vals := &ly.Vals[di]
@@ -916,7 +916,7 @@ func (ly *Layer) SetWts(ctx *Context, lw *weights.Layer) error {
 		for pi := range lw.Prjns {
 			pw := &lw.Prjns[pi]
 			pj := ly.RcvPrjns[pi]
-			er := pj.SetWts(ctx, pw)
+			er := pj.SetWts(pw)
 			if er != nil {
 				err = er
 			}
@@ -926,7 +926,7 @@ func (ly *Layer) SetWts(ctx *Context, lw *weights.Layer) error {
 			pw := &lw.Prjns[pi]
 			pj, _ := ly.SendNameTry(pw.From)
 			if pj != nil {
-				er := pj.SetWts(ctx, pw)
+				er := pj.SetWts(pw)
 				if er != nil {
 					err = er
 				}

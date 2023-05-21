@@ -26,6 +26,17 @@ type Network struct {
 
 var KiT_Network = kit.Types.AddType(&Network{}, NetworkProps)
 
+// InitName MUST be called to initialize the network's pointer to itself as an emer.Network
+// which enables the proper interface methods to be called.  Also sets the name,
+// and initializes NetIdx in global list of Network
+func (nt *Network) InitName(net emer.Network, name string) {
+	nt.EmerNet = net
+	nt.Nm = name
+	nt.MaxData = 1
+	nt.NetIdx = uint32(len(Networks))
+	Networks = append(Networks, nt)
+}
+
 // NewNetwork returns a new axon Network
 func NewNetwork(name string) *Network {
 	net := &Network{}
@@ -94,14 +105,14 @@ func (nt *Network) Cycle(ctx *Context) {
 		nt.GPU.RunCycle()
 		return
 	}
-	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.GatherSpikes(ctx, ni) }, "GatherSpikes")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.GatherSpikes(ctx, ni) }, "GatherSpikes")
 	nt.LayerMapPar(func(ly *Layer) { ly.GiFmSpikes(ctx) }, "GiFmSpikes")         // note: important to be Par for linux / amd64
 	nt.LayerMapSeq(func(ly *Layer) { ly.PoolGiFmSpikes(ctx) }, "PoolGiFmSpikes") // note: Par not useful
-	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
-	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
-	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.CycleNeuron(ctx, ni) }, "CycleNeuron")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.PostSpike(ctx, ni) }, "PostSpike")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SendSpike(ctx, ni) }, "SendSpike")
 	if ctx.Testing.IsFalse() {
-		nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.SynCa(ctx, ni) }, "SynCa")
+		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.SynCa(ctx, ni) }, "SynCa")
 	}
 	var ldt, vta *Layer
 	for _, ly := range nt.Layers {
@@ -235,7 +246,7 @@ func (nt *Network) DWt(ctx *Context) {
 		nt.GPU.RunDWt()
 		return
 	}
-	nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
+	nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWt(ctx, ni) }, "DWt")
 	// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWt(ctx) }, "DWt") // todo: neuron level threaded
 }
 
@@ -246,10 +257,8 @@ func (nt *Network) WtFmDWt(ctx *Context) {
 	if nt.GPU.On {
 		nt.GPU.RunWtFmDWt()
 	} else {
-		nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
-		nt.NeuronMapPar(func(ly *Layer, ni uint32) { ly.WtFmDWt(ctx, ni) }, "WtFmDWt")
-		// nt.PrjnMapSeq(func(pj *Prjn) { pj.DWtSubMean(ctx) }, "DWtSubMean") // todo: neuron level threaded
-		// nt.PrjnMapSeq(func(pj *Prjn) { pj.WtFmDWt(ctx) }, "WtFmDWt")
+		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.DWtSubMean(ctx, ni) }, "DWtSubMean")
+		nt.NeuronMapPar(ctx, func(ly *Layer, ni uint32) { ly.WtFmDWt(ctx, ni) }, "WtFmDWt")
 	}
 	nt.SlowAdapt(ctx)
 }
@@ -527,7 +536,7 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 				nwts += int(ly.NNeurons)
 			}
 			for _, pj := range ly.SndPrjns {
-				nwts += len(pj.Syns) + 3 // Scale, AvgAvg, MaxAvg
+				nwts += int(pj.NSyns) + 3 // Scale, AvgAvg, MaxAvg
 			}
 		}
 		*dwts = make([]float32, nwts)
@@ -554,11 +563,14 @@ func (nt *Network) CollectDWts(ctx *Context, dwts *[]float32) bool {
 			idx += int(nn)
 		}
 		for _, pj := range ly.SndPrjns {
-			for j := range pj.Syns {
-				sy := &(pj.Syns[j])
-				(*dwts)[idx+j] = sy.DWt
+			for lni := range pj.SendCon {
+				scon := pj.SendCon[lni]
+				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+					syni := pj.SynStIdx + syi
+					(*dwts)[idx+int(syi)] = SynV(ctx, syni, DWt)
+				}
 			}
-			idx += len(pj.Syns)
+			idx += int(pj.NSyns)
 		}
 	}
 	return made
@@ -591,12 +603,14 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 			idx += int(nn)
 		}
 		for _, pj := range ly.SndPrjns {
-			ns := len(pj.Syns)
-			for j := range pj.Syns {
-				sy := &(pj.Syns[j])
-				sy.DWt = dwts[idx+j]
+			for lni := range pj.SendCon {
+				scon := pj.SendCon[lni]
+				for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+					syni := pj.SynStIdx + syi
+					SetSynV(ctx, syni, DWt, dwts[idx+int(syi)])
+				}
 			}
-			idx += ns
+			idx += int(pj.NSyns)
 		}
 	}
 }
@@ -625,7 +639,7 @@ func (nt *Network) SizeReport() string {
 		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, layerNumNeurons,
 			(datasize.ByteSize)(layerMemNeurons).HumanReadable())
 		for _, pj := range ly.SndPrjns {
-			projNumSynapses := len(pj.Syns)
+			projNumSynapses := int(pj.NSyns)
 			globalNumSynapses += projNumSynapses
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)

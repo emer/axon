@@ -396,7 +396,7 @@ func (ly *Layer) InitWtSym(ctx *Context) {
 		if rpj.Params.SWt.Init.Sym.IsFalse() {
 			continue
 		}
-		pj.InitWtSym(rpj)
+		pj.InitWtSym(ctx, rpj)
 	}
 }
 
@@ -688,8 +688,7 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 	neur = int(ly.NNeurons) * perNeur
 	syn = 0
 	for _, pj := range ly.SndPrjns {
-		ns := len(pj.Syns)
-		syn += ns
+		syn += int(pj.NSyns)
 	}
 	tot = neur + syn
 	return

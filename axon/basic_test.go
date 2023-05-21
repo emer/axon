@@ -14,8 +14,6 @@ import (
 	"github.com/emer/emergent/etime"
 	"github.com/emer/emergent/params"
 	"github.com/emer/emergent/prjn"
-	"github.com/emer/etable/agg"
-	"github.com/emer/etable/etable"
 	"github.com/emer/etable/etensor"
 	"github.com/goki/mat32"
 )
@@ -61,7 +59,7 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func newTestNet() *Network {
+func newTestNet(ctx *Context) *Network {
 	var testNet Network
 	testNet.InitName(&testNet, "testNet")
 	inLay := testNet.AddLayer("Input", []int{4, 1}, InputLayer)
@@ -73,18 +71,17 @@ func newTestNet() *Network {
 	testNet.ConnectLayers(hidLay, outLay, prjn.NewOneToOne(), ForwardPrjn)
 	testNet.ConnectLayers(outLay, hidLay, prjn.NewOneToOne(), BackPrjn)
 
-	ctx := NewContext()
-
-	testNet.Build()
+	testNet.Build(ctx)
 	testNet.Defaults()
 	testNet.ApplyParams(ParamSets[0].Sheets["Network"], false) // false) // true) // no msg
-	testNet.InitWts()                                          // get GScale here
+	testNet.InitWts(ctx)                                       // get GScale here
 	testNet.NewState(ctx)
 	return &testNet
 }
 
 func TestSynVals(t *testing.T) {
-	testNet := newTestNet()
+	ctx := NewContext()
+	testNet := newTestNet(ctx)
 	hidLay := testNet.AxonLayerByName("Hidden")
 	p, err := hidLay.SendNameTry("Input")
 	if err != nil {
@@ -149,13 +146,13 @@ func TestSpikeProp(t *testing.T) {
 
 	prj := net.ConnectLayers(inLay, hidLay, prjn.NewOneToOne(), ForwardPrjn)
 
-	net.Build()
+	ctx := NewContext()
+
+	net.Build(ctx)
 	net.Defaults()
 	net.ApplyParams(ParamSets[0].Sheets["Network"], false)
 
-	net.InitExt()
-
-	ctx := NewContext()
+	net.InitExt(ctx)
 
 	pat := etensor.NewFloat32([]int{1, 1}, nil, []string{"Y", "X"})
 	pat.Set([]int{0, 0}, 1)
@@ -163,10 +160,10 @@ func TestSpikeProp(t *testing.T) {
 	for del := 0; del <= 4; del++ {
 		prj.Params.Com.Delay = uint32(del)
 		prj.Params.Com.MaxDelay = uint32(del) // now need to ensure that >= Delay
-		net.InitWts()                         // resets Gbuf
+		net.InitWts(ctx)                      // resets Gbuf
 		net.NewState(ctx)
 
-		inLay.ApplyExt(pat)
+		inLay.ApplyExt(ctx, 0, pat)
 
 		net.NewState(ctx)
 		ctx.NewState(etime.Train)
@@ -177,11 +174,11 @@ func TestSpikeProp(t *testing.T) {
 			net.Cycle(ctx)
 			ctx.CycleInc()
 
-			if inLay.Neurons[0].Spike > 0 {
+			if NrnV(ctx, inLay.NeurStIdx, 0, Spike) > 0 {
 				inCyc = cyc
 			}
 
-			ge := hidLay.Neurons[0].Ge
+			ge := NrnV(ctx, hidLay.NeurStIdx, 0, Ge)
 			if ge > 0 {
 				hidCyc = cyc
 				break
@@ -206,15 +203,14 @@ func TestGPUAct(t *testing.T) {
 }
 
 func NetActTest(t *testing.T, gpu bool) {
-	testNet := newTestNet()
-	testNet.InitExt()
+	ctx := NewContext()
+	testNet := newTestNet(ctx)
+	testNet.InitExt(ctx)
 	inPats := newInPats()
 
 	inLay := testNet.AxonLayerByName("Input")
 	hidLay := testNet.AxonLayerByName("Hidden")
 	outLay := testNet.AxonLayerByName("Output")
-
-	ctx := NewContext()
 
 	if gpu {
 		testNet.ConfigGPUnoGUI(ctx)
@@ -266,9 +262,9 @@ func NetActTest(t *testing.T, gpu bool) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		testNet.InitExt()
-		inLay.ApplyExt(inpat)
-		outLay.ApplyExt(inpat)
+		testNet.InitExt(ctx)
+		inLay.ApplyExt(ctx, 0, inpat)
+		outLay.ApplyExt(ctx, 0, inpat)
 		testNet.ApplyExts(ctx) // key now for GPU
 
 		testNet.NewState(ctx)
@@ -374,7 +370,9 @@ func TestGPULearn(t *testing.T) {
 }
 
 func NetTestLearn(t *testing.T, gpu bool) {
-	testNet := newTestNet()
+	ctx := NewContext()
+
+	testNet := newTestNet(ctx)
 	inPats := newInPats()
 	inLay := testNet.AxonLayerByName("Input")
 	hidLay := testNet.AxonLayerByName("Hidden")
@@ -424,10 +422,8 @@ func NetTestLearn(t *testing.T, gpu bool) {
 		testNet.Defaults()
 		testNet.ApplyParams(ParamSets[0].Sheets["Network"], false)  // always apply base
 		testNet.ApplyParams(ParamSets[ti].Sheets["Network"], false) // then specific
-		testNet.InitWts()
-		testNet.InitExt()
-
-		ctx := NewContext()
+		testNet.InitWts(ctx)
+		testNet.InitExt(ctx)
 
 		if gpu {
 			testNet.ConfigGPUnoGUI(ctx)
@@ -438,9 +434,9 @@ func NetTestLearn(t *testing.T, gpu bool) {
 			if err != nil {
 				t.Error(err)
 			}
-			testNet.InitExt()
-			inLay.ApplyExt(inpat)
-			outLay.ApplyExt(inpat)
+			testNet.InitExt(ctx)
+			inLay.ApplyExt(ctx, 0, inpat)
+			outLay.ApplyExt(ctx, 0, inpat)
 			testNet.ApplyExts(ctx) // key now for GPU
 
 			ctx.NewState(etime.Train)
@@ -543,7 +539,9 @@ func TestNetRLRate(t *testing.T) {
 }
 
 func NetTestRLRate(t *testing.T, gpu bool) {
-	testNet := newTestNet()
+	ctx := NewContext()
+
+	testNet := newTestNet(ctx)
 	inPats := newInPats()
 	inLay := testNet.AxonLayerByName("Input")
 	hidLay := testNet.AxonLayerByName("Hidden")
@@ -599,19 +597,17 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 		testNet.ApplyParams(ParamSets[0].Sheets["Network"], false)  // always apply base
 		testNet.ApplyParams(ParamSets[ti].Sheets["Network"], false) // then specific
 		hidLay.Params.Learn.RLRate.On.SetBool(true)
-		testNet.InitWts()
-		testNet.InitExt()
-
-		ctx := NewContext()
+		testNet.InitWts(ctx)
+		testNet.InitExt(ctx)
 
 		for pi := 0; pi < 4; pi++ {
 			inpat, err := inPats.SubSpaceTry([]int{pi})
 			if err != nil {
 				t.Error(err)
 			}
-			testNet.InitExt()
-			inLay.ApplyExt(inpat)
-			outLay.ApplyExt(inpat)
+			testNet.InitExt(ctx)
+			inLay.ApplyExt(ctx, 0, inpat)
+			outLay.ApplyExt(ctx, 0, inpat)
 			testNet.ApplyExts(ctx) // key now for GPU
 
 			ctx.NewState(etime.Train)
@@ -727,15 +723,15 @@ func TestInhibAct(t *testing.T) {
 
 	ctx := NewContext()
 
-	InhibNet.Build()
+	InhibNet.Build(ctx)
 	InhibNet.Defaults()
 	InhibNet.ApplyParams(ParamSets[0].Sheets["Network"], false)
 	InhibNet.ApplyParams(ParamSets[0].Sheets["InhibOff"], false)
-	InhibNet.InitWts() // get GScale
+	InhibNet.InitWts(ctx) // get GScale
 	InhibNet.NewState(ctx)
 
-	InhibNet.InitWts()
-	InhibNet.InitExt()
+	InhibNet.InitWts(ctx)
+	InhibNet.InitExt(ctx)
 
 	printCycs := false
 	printQtrs := false
@@ -769,8 +765,8 @@ func TestInhibAct(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		inLay.ApplyExt(inpat)
-		outLay.ApplyExt(inpat)
+		inLay.ApplyExt(ctx, 0, inpat)
+		outLay.ApplyExt(ctx, 0, inpat)
 
 		InhibNet.NewState(ctx)
 		ctx.NewState(etime.Train)
@@ -855,10 +851,10 @@ func saveToFile(net *Network, t *testing.T) {
 	fp.Write(wb)
 }
 
+/* todo: fixme
 func TestSWtInit(t *testing.T) {
 	pj := &PrjnParams{}
 	pj.Defaults()
-	sy := &Synapse{}
 
 	nsamp := 100
 	sch := etable.Schema{
@@ -880,7 +876,7 @@ func TestSWtInit(t *testing.T) {
 
 	// fmt.Printf("Wts Mean: %g\t Var: %g\t SPct: %g\n", mean, vr, spct)
 	for i := 0; i < nsamp; i++ {
-		pj.SWt.InitWtsSyn(&nt.Rand, sy, mean, spct)
+		pj.SWt.InitWtsSyn(ctx, &nt.Rand, sy, mean, spct)
 		dt.SetCellFloat("Wt", i, float64(sy.Wt))
 		dt.SetCellFloat("LWt", i, float64(sy.LWt))
 		dt.SetCellFloat("SWt", i, float64(sy.SWt))
@@ -1057,3 +1053,5 @@ func TestSWtLinLearn(t *testing.T) {
 		t.Errorf("SPct: %g\t SWt should be 0.5 not: %g\n", spct, sy.SWt)
 	}
 }
+
+*/

@@ -18,14 +18,15 @@ func TestLayer(t *testing.T) {
 	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
 	outputLayer := net.AddLayer("Output", shape, TargetLayer)
 
-	assert.NoError(t, net.Build())
+	ctx := NewContext()
+	assert.NoError(t, net.Build(ctx))
 
 	assert.True(t, inputLayer.Params.IsInput())
 	assert.False(t, outputLayer.Params.IsInput())
 	assert.True(t, outputLayer.Params.IsTarget())
 
 	// the layer.Neuron struct is empty before Build(), which may be surprising to the user?
-	assert.Equal(t, 4, len(hiddenLayer.Neurons))
+	assert.Equal(t, 4, hiddenLayer.NNeurons)
 
 	// query the 'Spike' variable for all neurons of the layer
 	tensor := etensor.NewFloat32([]int{2}, nil, nil)
@@ -109,17 +110,18 @@ func TestLayer_SendSpike(t *testing.T) {
 
 func TestLayerToJson(t *testing.T) {
 	shape := []int{2, 2}
+	ctx := NewContext()
+	ctxC := NewContext()
 
 	// create network has internal calls to Random number generators.
 	// We test the JSON import and export by creating two networks (initally different)
 	// and syncing them by dumping the weights from net A and loading the weights
 	// from net B. TODO: Would be better if we ran a cycle first, to get more variance.
-	net := createNetwork(shape, t)
+	net := createNetwork(ctx, shape, t)
 	hiddenLayer := net.AxonLayerByName("Hidden")
-	ctx := NewContext()
 	net.Cycle(ctx) // run one cycle to make the weights more different
 
-	netC := createNetwork(shape, t)
+	netC := createNetwork(ctxC, shape, t)
 	hiddenLayerC := netC.AxonLayerByName("Hidden")
 
 	// save to JSON
@@ -149,16 +151,22 @@ func TestLayerToJson(t *testing.T) {
 		assert.InDelta(t, origWeight, copyWeight, 0.001)
 	}
 
-	nrns := hiddenLayer.Neurons
-	nrnsC := hiddenLayerC.Neurons
-	// right now only two of the Neuron variables are exported
-	for i := range nrns {
-		assert.Equal(t, nrns[i].TrgAvg, nrnsC[i].TrgAvg)
-		assert.Equal(t, nrns[i].ActAvg, nrnsC[i].ActAvg)
+	trgavgs := []float32{}
+	actavgs := []float32{}
+	trgavgsC := []float32{}
+	actavgsC := []float32{}
+	hiddenLayer.UnitVals(&trgavgs, "TrgAvg")
+	hiddenLayer.UnitVals(&actavgs, "ActAvg")
+	hiddenLayerC.UnitVals(&trgavgsC, "TrgAvg")
+	hiddenLayerC.UnitVals(&actavgsC, "ActAvg")
+
+	for i := range trgavgs {
+		assert.Equal(t, trgavgs[i], trgavgsC[i])
+		assert.Equal(t, actavgs[i], actavgsC[i])
 	}
 }
 
-func createNetwork(shape []int, t *testing.T) *Network {
+func createNetwork(ctx *Context, shape []int, t *testing.T) *Network {
 	net := NewNetwork("LayerTest")
 	inputLayer := net.AddLayer("Input", shape, InputLayer)
 	hiddenLayer := net.AddLayer("Hidden", shape, SuperLayer)
@@ -166,9 +174,9 @@ func createNetwork(shape []int, t *testing.T) *Network {
 	full := prjn.NewFull()
 	net.ConnectLayers(inputLayer, hiddenLayer, full, ForwardPrjn)
 	net.BidirConnectLayers(hiddenLayer, outputLayer, full)
-	assert.NoError(t, net.Build())
+	assert.NoError(t, net.Build(ctx))
 	net.Defaults()
-	net.InitWts()
+	net.InitWts(ctx)
 	return net
 }
 
@@ -185,7 +193,9 @@ func TestLayerBase_IsOff(t *testing.T) {
 	in2ToHid := net.ConnectLayers(inputLayer2, hiddenLayer, full, ForwardPrjn)
 	hidToOut, outToHid := net.BidirConnectLayers(hiddenLayer, outputLayer, full)
 
-	assert.NoError(t, net.Build())
+	ctx := NewContext()
+
+	assert.NoError(t, net.Build(ctx))
 	net.Defaults()
 
 	assert.False(t, inputLayer.IsOff())

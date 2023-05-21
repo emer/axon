@@ -174,7 +174,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	// that would mean that the output layer doesn't reflect target values in plus phase
 	// and thus removes error-driven learning -- but stats are still computed.
 
-	err := net.Build()
+	err := net.Build(&ss.Context)
 	if err != nil {
 		log.Println(err)
 		return
@@ -182,7 +182,7 @@ func (ss *Sim) ConfigNet(net *axon.Network) {
 	net.Defaults()
 	net.SetNThreads(1)
 	ss.Params.SetObject("Network")
-	net.InitWts()
+	net.InitWts(&ss.Context)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -320,14 +320,14 @@ func (ss *Sim) ConfigLoops() {
 func (ss *Sim) ApplyInputs() {
 	net := ss.Net
 	ev := ss.Envs[ss.Context.Mode.String()]
-	net.InitExt() // clear any existing inputs -- not strictly necessary if always
+	net.InitExt(&ss.Context) // clear any existing inputs -- not strictly necessary if always
 	// going to the same layers, but good practice and cheap anyway
 	lays := net.LayersByType(axon.InputLayer, axon.TargetLayer)
 	for _, lnm := range lays {
 		ly := ss.Net.AxonLayerByName(lnm)
 		pats := ev.State(ly.Nm)
 		if pats != nil {
-			ly.ApplyExt(pats)
+			ly.ApplyExt(&ss.Context, 0, pats)
 		}
 	}
 	net.ApplyExts(&ss.Context) // now required for GPU mode
@@ -341,7 +341,7 @@ func (ss *Sim) NewRun() {
 	ss.Envs.ByMode(etime.Test).Init(0)
 	ss.Context.Reset()
 	ss.Context.Mode = etime.Train
-	ss.Net.InitWts()
+	ss.Net.InitWts(&ss.Context)
 	ss.InitStats()
 	ss.StatCounters()
 	ss.Logs.ResetLog(etime.Train, etime.Epoch)
@@ -414,8 +414,9 @@ func (ss *Sim) StatCounters() {
 func (ss *Sim) TrialStats() {
 	out := ss.Net.AxonLayerByName("Output")
 
-	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
-	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr())
+	// todo:
+	// ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
+	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr(&ss.Context)[0])
 
 	if ss.Stats.Float("TrlUnitErr") > 0 {
 		ss.Stats.SetFloat("TrlErr", 1)

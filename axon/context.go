@@ -13,7 +13,9 @@ import (
 	"github.com/goki/gosl/slrand"
 )
 
-// Networks is a global list of networks, needed for variable access
+// Networks is a global list of networks, needed for GPU shader kernel
+// compatible variable access in CPU mode.
+// This is updated in Network.InitName, which sets NetIdx.
 var Networks []*Network
 
 // NeuronVars
@@ -134,13 +136,13 @@ func MulSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
 }
 
 // SynCaUpT is the CPU version of the CaUpT synapse variable accessor
-func SynCaUpT(ctx *Context, syni, di uint32) uint32 {
-	return math.Float32bits(SynCaV(ctx, syni, di, CaUpT))
+func SynCaUpT(ctx *Context, syni, di uint32) int32 {
+	return int32(math.Float32bits(SynCaV(ctx, syni, di, CaUpT)))
 }
 
 // SetSynCaUpT is the CPU version of the CaUpT synapse variable settor
-func SetSynCaUpT(ctx *Context, syni, di uint32, nvar SynapseCaVars, val uint32) {
-	SetSynCaV(ctx, syni, di, CaUpT, math.Float32frombits(val))
+func SetSynCaUpT(ctx *Context, syni, di uint32, val int32) {
+	SetSynCaV(ctx, syni, di, CaUpT, math.Float32frombits(uint32(val)))
 }
 
 // SynapseIdxs
@@ -153,6 +155,20 @@ func SynI(ctx *Context, syni uint32, idx SynapseIdxs) uint32 {
 // SetSynI is the CPU version of the synapse idx settor
 func SetSynI(ctx *Context, syni uint32, idx SynapseIdxs, val uint32) {
 	Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(syni, idx)] = val
+}
+
+// CopyNetStridesFrom copies strides and NetIdx for accessing
+// variables on a Network -- these must be set properly for
+// the Network in question (from its Ctx field) before calling
+// any compute methods with the context.  See SetCtxStrides on Network.
+func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
+	ctx.NetIdx = srcCtx.NetIdx
+	ctx.NeuronVars = srcCtx.NeuronVars
+	ctx.NeuronAvgVars = srcCtx.NeuronAvgVars
+	ctx.NeuronIdxs = srcCtx.NeuronIdxs
+	ctx.SynapseVars = srcCtx.SynapseVars
+	ctx.SynapseCaVars = srcCtx.SynapseCaVars
+	ctx.SynapseIdxs = srcCtx.SynapseIdxs
 }
 
 //gosl: hlsl context
@@ -174,7 +190,7 @@ func SetSynI(ctx *Context, syni uint32, idx SynapseIdxs, val uint32) {
 // It contains timing, Testing vs. Training mode, random number context,
 // global neuromodulation, etc.
 type Context struct {
-	NetIdx       uint32      `desc:"network index in Networks list of networks -- for CPU mode"`
+	NetIdx       uint32      `desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
 	NData        uint32      `desc:"number of data parallel items to process currently"`
 	Mode         etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
 	Phase        int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`

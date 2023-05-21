@@ -31,10 +31,11 @@ func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
 			if pj.IsOff() {
 				continue
 			}
-			bi := pj.Params.Com.ReadIdx(ni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN)
+			bi := pj.Params.Com.ReadIdx(ni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN, ly.MaxData)
 			gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
 			pj.GBuf[bi] = 0
-			pj.Params.GatherSpikes(ctx, ly.Params, ni, di, gRaw, &pj.GSyns[ni])
+			gsi := ni*ly.MaxData + di
+			pj.Params.GatherSpikes(ctx, ly.Params, ni, di, gRaw, &pj.GSyns[gsi])
 		}
 	}
 }
@@ -192,7 +193,7 @@ func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
 			continue
 		}
 		for di := uint32(0); di < ctx.NData; di++ {
-			sp.SendSpike(ctx, ni, di)
+			sp.SendSpike(ctx, ni, di, ly.MaxData)
 		}
 	}
 }

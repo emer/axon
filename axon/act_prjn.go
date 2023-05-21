@@ -108,17 +108,17 @@ func (sc *SynComParams) WriteOff(cycTot int32) uint32 {
 }
 
 // WriteIdx returns actual index for writing new spikes into the GBuf buffer,
-// based on the layer-based recv neuron index and the
+// based on the layer-based recv neuron index, data parallel idx, and the
 // WriteOff offset computed from the CyclesTotal.
-func (sc *SynComParams) WriteIdx(rnIdx uint32, cycTot int32, nRecvNeurs uint32) uint32 {
-	return sc.WriteIdxOff(rnIdx, sc.WriteOff(cycTot), nRecvNeurs)
+func (sc *SynComParams) WriteIdx(rnIdx, di uint32, cycTot int32, nRecvNeurs, maxData uint32) uint32 {
+	return sc.WriteIdxOff(rnIdx, di, sc.WriteOff(cycTot), maxData, nRecvNeurs)
 }
 
 // WriteIdxOff returns actual index for writing new spikes into the GBuf buffer,
 // based on the layer-based recv neuron index and the given WriteOff offset.
-func (sc *SynComParams) WriteIdxOff(rnIdx, wrOff uint32, nRecvNeurs uint32) uint32 {
+func (sc *SynComParams) WriteIdxOff(rnIdx, di, wrOff uint32, nRecvNeurs, maxData uint32) uint32 {
 	// return rnIdx*sc.DelLen + wrOff
-	return wrOff*nRecvNeurs + rnIdx
+	return (wrOff*nRecvNeurs+rnIdx)*maxData + di
 }
 
 // ReadOff returns offset for reading existing spikes from the GBuf buffer,
@@ -129,11 +129,12 @@ func (sc *SynComParams) ReadOff(cycTot int32) uint32 {
 }
 
 // ReadIdx returns index for reading existing spikes from the GBuf buffer,
-// based on the layer-based recv neuron index and the
+// based on the layer-based recv neuron index, data parallel idx, and the
 // ReadOff offset from the CyclesTotal.
-func (sc *SynComParams) ReadIdx(rnIdx uint32, cycTot int32, nRecvNeurs uint32) uint32 {
+func (sc *SynComParams) ReadIdx(rnIdx, di uint32, cycTot int32, nRecvNeurs, maxData uint32) uint32 {
 	// return rnIdx*sc.DelLen + sc.ReadOff(cycTot)
-	return sc.ReadOff(cycTot)*nRecvNeurs + rnIdx // delay is outer, neurs are inner -- should be faster?
+	// delay is outer, neurs are inner -- should be faster?
+	return (sc.ReadOff(cycTot)*nRecvNeurs+rnIdx)*maxData + di
 }
 
 // FloatToIntFactor returns the factor used for converting float32

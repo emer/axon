@@ -26,9 +26,10 @@ func TestDefaults(t *testing.T) {
 	net.ConnectLayers(input, hidden, full, ForwardPrjn)
 	net.BidirConnectLayers(hidden, output, full)
 
-	assert.Nil(t, net.Build())
+	ctx := NewContext()
+	assert.Nil(t, net.Build(ctx))
 	net.Defaults()
-	net.InitWts()
+	net.InitWts(ctx)
 
 	assert.Equal(t, 100, net.SlowInterval)
 	assert.Equal(t, 0, net.SlowCtr)
@@ -48,10 +49,11 @@ func TestDefaults(t *testing.T) {
 
 	for layerIdx, lyr := range net.Layers {
 		assert.Equal(t, layerIdx, lyr.Index())
-		assert.Equal(t, 4, len(lyr.Neurons))
-		for neuronIdx := range lyr.Neurons {
-			neuron := &lyr.Neurons[neuronIdx]
-			assert.Equal(t, uint32(lyr.Index()), neuron.LayIdx)
+		assert.Equal(t, 4, lyr.NNeurons)
+		for lni := uint32(0); lni < lyr.NNeurons; lni++ {
+			ni := lyr.NeurStIdx + lni
+			li := NrnI(ctx, ni, NrnIdxLayIdx)
+			assert.Equal(t, uint32(lyr.Index()), li)
 		}
 	}
 }

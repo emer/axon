@@ -377,13 +377,10 @@ func (sp *SWtInitParams) Update() {
 
 // SWtAdaptParams manages adaptation of SWt values
 type SWtAdaptParams struct {
-	On       slbool.Bool `desc:"if true, adaptation is active -- if false, SWt values are not updated, in which case it is generally good to have Init.SPct=0 too."`
-	LRate    float32     `viewif:"On" def:"0.1,0.01,0.001,0.0002" desc:"learning rate multiplier on the accumulated DWt values (which already have fast LRate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
-	SubMean  float32     `viewif:"On" def:"1" desc:"amount of mean to subtract from SWt delta when updating -- generally best to set to 1"`
-	SigGain  float32     `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
-	DreamVar float32     `viewif:"On" def:"0,0.01,0.02" desc:"extra random variability to add to LWts after every SWt update, which theoretically happens at night -- hence the association with dreaming.  0.01 is max for a small network that still allows learning, 0.02 works well for larger networks that can benefit more.  generally avoid adding to projections to output layers."`
-
-	pad, pad1, pad2 int32
+	On      slbool.Bool `desc:"if true, adaptation is active -- if false, SWt values are not updated, in which case it is generally good to have Init.SPct=0 too."`
+	LRate   float32     `viewif:"On" def:"0.1,0.01,0.001,0.0002" desc:"learning rate multiplier on the accumulated DWt values (which already have fast LRate applied) to incorporate into SWt during slow outer loop updating -- lower values impose stronger constraints, for larger networks that need more structural support, e.g., 0.001 is better after 1,000 epochs in large models.  0.1 is fine for smaller models."`
+	SubMean float32     `viewif:"On" def:"1" desc:"amount of mean to subtract from SWt delta when updating -- generally best to set to 1"`
+	SigGain float32     `viewif:"On" def:"6" desc:"gain of sigmoidal constrast enhancement function used to transform learned, linear LWt values into Wt values"`
 }
 
 func (sp *SWtAdaptParams) Defaults() {
@@ -391,7 +388,6 @@ func (sp *SWtAdaptParams) Defaults() {
 	sp.LRate = 0.1
 	sp.SubMean = 1
 	sp.SigGain = 6
-	sp.DreamVar = 0.0
 	sp.Update()
 }
 
@@ -405,10 +401,10 @@ func (sp *SWtInitParams) RndVar(rnd erand.Rand) float32 {
 	return sp.Var * 2.0 * (rnd.Float32(-1) - 0.5)
 }
 
-// RndVar returns the random variance (zero mean) based on DreamVar param
-func (sp *SWtAdaptParams) RndVar(rnd erand.Rand) float32 {
-	return sp.DreamVar * 2.0 * (rnd.Float32(-1) - 0.5)
-}
+// // RndVar returns the random variance (zero mean) based on DreamVar param
+// func (sp *SWtAdaptParams) RndVar(rnd erand.Rand) float32 {
+// 	return sp.DreamVar * 2.0 * (rnd.Float32(-1) - 0.5)
+// }
 
 //gosl: start learn
 

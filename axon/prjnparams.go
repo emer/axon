@@ -172,14 +172,14 @@ func (pj *PrjnParams) SetFixedWts() {
 // SynRecvLayIdx converts the Synapse RecvIdx of recv neuron's index
 // in network level global list of all neurons to receiving
 // layer-specific index.
-func (pj *PrjnParams) SynRecvLayIdx(ctx, syni uint32) uint32 {
+func (pj *PrjnParams) SynRecvLayIdx(ctx *Context, syni uint32) uint32 {
 	return pj.Idxs.RecvNIdxToLayIdx(SynI(ctx, syni, SynRecvIdx))
 }
 
 // SynSendLayIdx converts the Synapse SendIdx of sending neuron's index
 // in network level global list of all neurons to sending
 // layer-specific index.
-func (pj *PrjnParams) SynSendLayIdx(ctx, syni uint32) uint32 {
+func (pj *PrjnParams) SynSendLayIdx(ctx *Context, syni uint32) uint32 {
 	return pj.Idxs.SendNIdxToLayIdx(SynI(ctx, syni, SynSendIdx))
 }
 
@@ -193,22 +193,22 @@ func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32,
 	switch pj.Com.GType {
 	case ExcitatoryG:
 		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
-		nrn.GeRaw += gRaw
-		nrn.GeSyn += *gSyn
+		AddNrnV(ctx, ni, di, GeRaw, gRaw)
+		AddNrnV(ctx, ni, di, GeSyn, *gSyn)
 	case InhibitoryG:
 		*gSyn = ly.Act.Dt.GiSynFmRaw(*gSyn, gRaw)
-		nrn.GiRaw += gRaw
-		nrn.GiSyn += *gSyn
+		AddNrnV(ctx, ni, di, GiRaw, gRaw)
+		AddNrnV(ctx, ni, di, GiSyn, *gSyn)
 	case ModulatoryG:
 		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
-		nrn.GModRaw += gRaw
-		nrn.GModSyn += *gSyn
+		AddNrnV(ctx, ni, di, GModRaw, gRaw)
+		AddNrnV(ctx, ni, di, GModSyn, *gSyn)
 	case MaintG:
 		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
-		nrn.GMaintRaw += gRaw
+		AddNrnV(ctx, ni, di, GMaintRaw, gRaw)
 		// note: Syn happens via NMDA in Act
 	case ContextG:
-		nrn.CtxtGeRaw += gRaw
+		AddNrnV(ctx, ni, di, CtxtGeRaw, gRaw)
 	}
 }
 
@@ -234,7 +234,7 @@ func (pj *PrjnParams) SynCaSyn(ctx *Context, syni uint32, ni, di uint32, otherCa
 	syCaM := SynCaV(ctx, syni, di, CaM)
 	syCaP := SynCaV(ctx, syni, di, CaP)
 	syCaD := SynCaV(ctx, syni, di, CaD)
-	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, caUpT, &syCaM, &syCaP, &syCaD)
+	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, int32(caUpT), &syCaM, &syCaP, &syCaD)
 	ca := NrnV(ctx, ni, di, CaSyn) * otherCaSyn
 	pj.Learn.KinaseCa.FmCa(ca, &syCaM, &syCaP, &syCaD)
 	SetSynCaV(ctx, syni, di, CaM, syCaM)
@@ -251,34 +251,34 @@ func (pj *PrjnParams) SynCaSyn(ctx *Context, syni uint32, ni, di uint32, otherCa
 // DWtSyn is the overall entry point for weight change (learning) at given synapse.
 // It selects appropriate function based on projection type.
 // rpl is the receiving layer SubPool
-func (pj *PrjnParams) DWtSyn(ctx *Context, syni, sni, rni, di uint32, layPool, subPool *Pool, isTarget bool) {
+func (pj *PrjnParams) DWtSyn(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
 	switch pj.PrjnType {
 	case RWPrjn:
-		pj.DWtSynRWPred(ctx, syni, sni, rni, layPool, subPool)
+		pj.DWtSynRWPred(ctx, syni, si, ri, di, layPool, subPool)
 	case TDPredPrjn:
-		pj.DWtSynTDPred(ctx, syni, sni, rni, layPool, subPool)
+		pj.DWtSynTDPred(ctx, syni, si, ri, di, layPool, subPool)
 	case MatrixPrjn:
-		pj.DWtSynMatrix(ctx, syni, sni, rni, layPool, subPool)
+		pj.DWtSynMatrix(ctx, syni, si, ri, di, layPool, subPool)
 	case VSPatchPrjn:
-		pj.DWtSynVSPatch(ctx, syni, sni, rni, layPool, subPool)
+		pj.DWtSynVSPatch(ctx, syni, si, ri, di, layPool, subPool)
 	case BLAPrjn:
-		pj.DWtSynBLA(ctx, syni, sni, rni, layPool, subPool)
+		pj.DWtSynBLA(ctx, syni, si, ri, di, layPool, subPool)
 	default:
-		pj.DWtSynCortex(ctx, syni, sni, rni, layPool, subPool, isTarget)
+		pj.DWtSynCortex(ctx, syni, si, ri, di, layPool, subPool, isTarget)
 	}
 }
 
 // DWtSynCortex computes the weight change (learning) at given synapse for cortex.
 // Uses synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, sni, rni, di uint32, layPool, subPool *Pool, isTarget bool) {
+func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool, isTarget bool) {
 	caUpT := SynCaUpT(ctx, syni, di)
 	syCaM := SynCaV(ctx, syni, di, CaM)
 	syCaP := SynCaV(ctx, syni, di, CaP)
 	syCaD := SynCaV(ctx, syni, di, CaD)
 	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal, caUpT, &syCaM, &syCaP, &syCaD) // always update
 	if pj.PrjnType == CTCtxtPrjn {
-		SetSynCaV(ctx, syni, di, DTr, NrnV(ctx, sni, di, BurstPrv))
+		SetSynCaV(ctx, syni, di, DTr, NrnV(ctx, si, di, BurstPrv))
 	} else {
 		SetSynCaV(ctx, syni, di, DTr, syCaD) // caD reflects entire window
 	}
@@ -291,19 +291,20 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, sni, rni, di uint32, layP
 	if isTarget {
 		err = syCaP - syCaD // for target layers, syn Ca drives error signal directly
 	} else {
-		err = tr * (NrnV(ctx, rni, di, NrnCaP) - NrnV(ctx, rni, di, NrnCaD)) // hiddens: recv Ca drives error signal w/ trace credit
+		err = tr * (NrnV(ctx, ri, di, NrnCaP) - NrnV(ctx, ri, di, NrnCaD)) // hiddens: recv Ca drives error signal w/ trace credit
 	}
 	// note: trace ensures that nothing changes for inactive synapses..
 	// sb immediately -- enters into zero sum
+	lwt := SynV(ctx, syni, LWt)
 	if err > 0 {
-		err *= (1 - SynV(ctx, syni, LWt))
+		err *= (1 - lwt)
 	} else {
-		err *= SynV(ctx, syni, LWt)
+		err *= lwt
 	}
 	if pj.PrjnType == CTCtxtPrjn { // rn.RLRate IS needed for other projections, just not the context one
 		AddSynV(ctx, syni, DWt, pj.Learn.LRate.Eff*err)
 	} else {
-		AddSynV(ctx, syni, DWt, NrnV(ctx, rni, di, RLRate)*pj.Learn.LRate.Eff*err)
+		AddSynV(ctx, syni, DWt, NrnV(ctx, ri, di, RLRate)*pj.Learn.LRate.Eff*err)
 	}
 }
 
@@ -311,10 +312,10 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, sni, rni, di uint32, layP
 // Like the BG Matrix learning rule, a synaptic tag "trace" is established at CS onset (ACh)
 // and learning at US / extinction is a function of trace * delta from US activity
 // (temporal difference), which limits learning.
-func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, sni, rni, di uint32, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	dwt := float32(0)
 	if ctx.NeuroMod.HasRew.IsTrue() { // reset
-		ract := NrnV(ctx, rni, di, GeIntMax)
+		ract := NrnV(ctx, ri, di, GeIntMax)
 		lmax := layPool.AvgMax.GeIntMax.Plus.Max
 		if lmax > 0 {
 			ract /= lmax
@@ -322,52 +323,53 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, sni, rni, di uint32, layPool
 		if ract < pj.Learn.Trace.LearnThr {
 			ract = 0
 		}
-		delta := NrnV(ctx, rni, di, CaSpkP) - NrnV(ctx, rni, di, SpkPrv)
+		delta := NrnV(ctx, ri, di, CaSpkP) - NrnV(ctx, ri, di, SpkPrv)
 		if delta < 0 { // neg delta learns slower in Acq, not Ext
 			delta *= pj.BLA.NegDeltaLRate
 		}
 		dwt = SynCaV(ctx, syni, di, Tr) * delta * ract
-		SynCaV(ctx, syni, di, Tr, 0)
+		SetSynCaV(ctx, syni, di, Tr, 0)
 	} else if ctx.NeuroMod.ACh > 0.1 {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
-		SetSynCaV(ctx, syni, di, DTr, ctx.NeuroMod.ACh*NrnV(ctx, sni, di, Burst))
+		SetSynCaV(ctx, syni, di, DTr, ctx.NeuroMod.ACh*NrnV(ctx, si, di, Burst))
 		tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), SynCaV(ctx, syni, di, DTr))
 		SetSynCaV(ctx, syni, di, Tr, tr)
 	} else {
 		SetSynCaV(ctx, syni, di, DTr, 0)
 	}
+	lwt := SynV(ctx, syni, LWt)
 	if dwt > 0 {
-		dwt *= (1 - SynV(ctx, syni, LWt))
+		dwt *= (1 - lwt)
 	} else {
-		dwt *= SynV(ctx, syni, LWt)
+		dwt *= lwt
 	}
-	AddSynV(ctx, syni, DWt, NrnV(ctx, rni, di, RLRate)*pj.Learn.LRate.Eff*dwt)
+	AddSynV(ctx, syni, DWt, NrnV(ctx, ri, di, RLRate)*pj.Learn.LRate.Eff*dwt)
 }
 
 // DWtSynRWPred computes the weight change (learning) at given synapse,
 // for the RWPredPrjn type
-func (pj *PrjnParams) DWtSynRWPred(ctx *Context, syni, sni, rni, di uint32, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynRWPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// todo: move all of this into rn.RLRate
 	lda := ctx.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, rni, NeurIdx) == 0 {
-		if NrnV(ctx, rni, di, Ge) > NrnV(ctx, rni, di, Act) && da > 0 { // clipped at top, saturate up
+	if NrnI(ctx, ri, NrnIdxNeurIdx) == 0 {
+		if NrnV(ctx, ri, di, Ge) > NrnV(ctx, ri, di, Act) && da > 0 { // clipped at top, saturate up
 			da = 0
 		}
-		if NrnV(ctx, rni, di, Ge) < NrnV(ctx, rni, di, Act) && da < 0 { // clipped at bottom, saturate down
+		if NrnV(ctx, ri, di, Ge) < NrnV(ctx, ri, di, Act) && da < 0 { // clipped at bottom, saturate down
 			da = 0
 		}
 		if da < 0 {
 			eff_lr *= pj.RLPred.OppSignLRate
 		}
 	} else {
-		eff_lr = -eff_lr                                                // negative case
-		if NrnV(ctx, rni, di, Ge) > NrnV(ctx, rni, di, Act) && da < 0 { // clipped at top, saturate up
+		eff_lr = -eff_lr                                              // negative case
+		if NrnV(ctx, ri, di, Ge) > NrnV(ctx, ri, di, Act) && da < 0 { // clipped at top, saturate up
 			da = 0
 		}
-		if NrnV(ctx, rni, di, Ge) < NrnV(ctx, rni, di, Act) && da > 0 { // clipped at bottom, saturate down
+		if NrnV(ctx, ri, di, Ge) < NrnV(ctx, ri, di, Act) && da > 0 { // clipped at bottom, saturate down
 			da = 0
 		}
 		if da >= 0 {
@@ -375,19 +377,19 @@ func (pj *PrjnParams) DWtSynRWPred(ctx *Context, syni, sni, rni, di uint32, layP
 		}
 	}
 
-	dwt := da * NrnV(ctx, sni, di, CaSpkP) // no recv unit activation
+	dwt := da * NrnV(ctx, si, di, CaSpkP) // no recv unit activation
 	AddSynV(ctx, syni, DWt, eff_lr*dwt)
 }
 
 // DWtSynTDPred computes the weight change (learning) at given synapse,
 // for the TDRewPredPrjn type
-func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, sni, rni, di uint32, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// todo: move all of this into rn.RLRate
 	lda := ctx.NeuroMod.DA
 	da := lda
 	lr := pj.Learn.LRate.Eff
 	eff_lr := lr
-	if NrnI(ctx, rni, NeurIdx) == 0 {
+	if NrnI(ctx, ri, NrnIdxNeurIdx) == 0 {
 		if da < 0 {
 			eff_lr *= pj.RLPred.OppSignLRate
 		}
@@ -398,16 +400,16 @@ func (pj *PrjnParams) DWtSynTDPred(ctx *Context, syni, sni, rni, di uint32, layP
 		}
 	}
 
-	dwt := da * sn.SpkPrv // no recv unit activation, prior trial act
+	dwt := da * NrnV(ctx, si, di, SpkPrv) // no recv unit activation, prior trial act
 	AddSynV(ctx, syni, DWt, eff_lr*dwt)
 }
 
 // DWtSynMatrix computes the weight change (learning) at given synapse,
 // for the MatrixPrjn type.
-func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, sni, rni, di uint32, layPool, subPool *Pool) {
+func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 
-	ract := NrnV(ctx, rni, di, GeIntMax)
+	ract := NrnV(ctx, ri, di, GeIntMax)
 	lmax := layPool.AvgMax.GeIntMax.Plus.Max
 	if lmax > 0 {
 		ract /= lmax
@@ -418,15 +420,15 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, sni, rni, di uint32, layP
 
 	ach := ctx.NeuroMod.ACh
 	if ctx.NeuroMod.HasRew.IsTrue() { // US time -- use DA and current recv activity
-		dwt := NrnV(ctx, rni, di, RLRate) * pj.Learn.LRate.Eff * SynV(ctx, syni, Tr) * ract
+		dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * SynCaV(ctx, syni, di, Tr) * ract
 		AddSynV(ctx, syni, DWt, dwt)
 		SetSynCaV(ctx, syni, di, Tr, 0)
 		SetSynCaV(ctx, syni, di, DTr, 0)
 	} else if ach > 0.1 {
 		if layPool.Gated.IsTrue() { // our layer gated
-			SetSynCaV(ctx, syni, di, DTr, ach*NrnV(ctx, sni, di, CaSpkD)*ract)
+			SetSynCaV(ctx, syni, di, DTr, ach*NrnV(ctx, si, di, CaSpkD)*ract)
 		} else {
-			SetSynCaV(ctx, syni, di, DTr, -pj.Matrix.NoGateLRate*ach*NrnV(ctx, sni, di, CaSpkD)*ract)
+			SetSynCaV(ctx, syni, di, DTr, -pj.Matrix.NoGateLRate*ach*NrnV(ctx, si, di, CaSpkD)*ract)
 		}
 		AddSynCaV(ctx, syni, di, Tr, SynCaV(ctx, syni, di, DTr))
 	} else {
@@ -436,8 +438,8 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, sni, rni, di uint32, layP
 
 // DWtSynVSPatch computes the weight change (learning) at given synapse,
 // for the VSPatchPrjn type.  Currently only supporting the Pos D1 type.
-func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, sni, rni, di uint32, layPool, subPool *Pool) {
-	ract := NrnV(ctx, rni, di, GeIntMax)
+func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, si, ri, di uint32, layPool, subPool *Pool) {
+	ract := NrnV(ctx, ri, di, GeIntMax)
 	lmax := layPool.AvgMax.GeIntMax.Plus.Max
 	if lmax > 0 {
 		ract /= lmax
@@ -447,7 +449,7 @@ func (pj *PrjnParams) DWtSynVSPatch(ctx *Context, syni, sni, rni, di uint32, lay
 	}
 	// note: rn.RLRate already has ACh * DA * (D1 vs. D2 sign reversal) factored in.
 	// and also the logic that non-positive DA leads to weight decreases.
-	dwt := NrnV(ctx, rni, di, RLRate) * pj.Learn.LRate.Eff * NrnV(ctx, sni, di, CaSpkD) * ract
+	dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * NrnV(ctx, si, di, CaSpkD) * ract
 	AddSynV(ctx, syni, DWt, dwt)
 }
 
@@ -481,7 +483,7 @@ func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, syni uint32) {
 
 // WtFmDWtSynNoLimits -- weight update without limits
 func (pj *PrjnParams) WtFmDWtSynNoLimits(ctx *Context, syni uint32) {
-	if sy.DWt == 0 {
+	if SynV(ctx, syni, DWt) == 0 {
 		return
 	}
 	AddSynV(ctx, syni, Wt, SynV(ctx, syni, DWt))
