@@ -29,17 +29,16 @@ func (pj *Prjn) SendSpike(ctx *Context, ni, di uint32) {
 			return
 		}
 	}
-	pjcom := &pj.Params.Com
-	wrOff := pjcom.WriteOff(ctx.CyclesTotal)
-	syns := pj.SendSyns(int(sendIdx))
-	for syi := range syns {
-		sy := &syns[syi]
-		recvIdx := pj.Params.SynRecvLayIdx(sy)
-		sv := int32(scale * sy.Wt)
+	pjcom := &pj.Params.Comn
+	wrOff := pjcom.WriteOff(ctx.CyclesTotal) // todo: these require di offset!
+	scon := pj.SendCon[sendIdx]
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		recvIdx := pj.Params.SynRecvLayIdx(ctx, syni)
+		sv := int32(scale * SynV(ctx, syni, Wt))
 		bi := pjcom.WriteIdxOff(recvIdx, wrOff, pj.Params.Idxs.RecvNeurN)
 		atomic.AddInt32(&pj.GBuf[bi], sv)
 	}
-
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -60,11 +59,11 @@ func (pj *Prjn) SynCaSend(ctx *Context, ni, di uint32, updtThr float32) {
 	}
 	rlay := pj.Recv
 	snCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
-	syns := pj.SendSyns(int(si))
-	for syi := range syns {
-		sy := &syns[syi]
-		ri := pj.Params.SynRecvLayIdx(sy) // todo: global, not layer
-		pj.Params.SynCaSyn(ctx, sy, ri, di, snCaSyn, updtThr)
+	scon := pj.SendCon[si]
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		ri := pj.Params.SynRecvLayIdx(ctx, syni)
+		pj.Params.SynCaSyn(ctx, syni, ri, di, snCaSyn, updtThr)
 	}
 }
 
@@ -83,8 +82,8 @@ func (pj *Prjn) SynCaRecv(ctx *Context, ni, di uint32, updtThr float32) {
 	rnCaSyn := pj.Params.Learn.KinaseCa.SpikeG * NrnV(ctx, ni, di, CaSyn)
 	syIdxs := pj.RecvSynIdxs(int(ri))
 	for _, syi := range syIdxs {
-		sy := &pj.Syns[syi]
-		si := pj.Params.SynSendLayIdx(sy) // todo: global, not layer
+		syni := pj.SynStIdx + syi
+		si := pj.Params.SynSendLayIdx(ctx, syni)
 		if NrnV(ctx, si, di, Spike) > 0 {
 			continue
 		}
@@ -105,9 +104,8 @@ func (pj *Prjn) DWt(ctx *Context, si, di uint32) {
 	rlay := pj.Recv
 	layPool := &rlay.Pools[0]
 	isTarget := rlay.Params.Act.Clamp.IsTarget.IsTrue()
-	syns := pj.SendSyns(int(si))
-	for syi := range syns {
-		sy := &syns[syi]
+	scon := pj.SendCon[si]
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		ri := pj.Params.SynRecvLayIdx(sy)
 		rn := &rlay.Neurons[ri]
 		subPool := &rlay.Pools[rn.SubPool]
@@ -158,10 +156,10 @@ func (pj *Prjn) WtFmDWt(ctx *Context, si, di uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
-	syns := pj.SendSyns(int(si))
-	for syi := range syns {
-		sy := &syns[syi]
-		pj.Params.WtFmDWtSyn(ctx, sy)
+	scon := pj.SendCon[si]
+	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+		syni := pj.SynStIdx + syi
+		pj.Params.WtFmDWtSyn(ctx, syni)
 	}
 }
 
@@ -266,13 +264,13 @@ func (pj *Prjn) SynScale() {
 func (pj *Prjn) SynFail(ctx *Context) {
 	slay := pj.Send
 	for si := range slay.Neurons {
-		syns := pj.SendSyns(si)
-		for syi := range syns {
-			sy := &syns[syi]
-			if sy.Wt == 0 { // restore failed wts
-				sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
+		scon := pj.SendCon[si]
+		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+			syni := pj.SynStIdx + syi
+			if SynV(ctx, syni, Wt) == 0 { // restore failed wts
+				SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(SynV(ctx, syni, SWt), SynV(ctx, syni, LWt)))
 			}
-			pj.Params.Com.Fail(ctx, &sy.Wt, sy.SWt)
+			pj.Params.Com.Fail(ctx, syni, sy.SWt)
 		}
 	}
 }

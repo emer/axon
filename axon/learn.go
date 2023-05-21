@@ -520,22 +520,20 @@ func (sp *SWtParams) WtFmDWt(dwt, wt, lwt *float32, swt float32) {
 	*dwt = 0
 }
 
-// todo: Ca needs di
-
 // InitSynCa initializes synaptic calcium state, including CaUpT
-func InitSynCa(ctx *Context, syni uint32) {
-	SetSynCaV(ctx, syni, CaUpT, 0)
-	SetSynCaV(ctx, syni, CaM, 0)
-	SetSynCaV(ctx, syni, CaP, 0)
-	SetSynCaV(ctx, syni, CaD, 0)
+func InitSynCa(ctx *Context, syni, di uint32) {
+	SetSynCaV(ctx, syni, di, CaUpT, 0)
+	SetSynCaV(ctx, syni, di, CaM, 0)
+	SetSynCaV(ctx, syni, di, CaP, 0)
+	SetSynCaV(ctx, syni, di, CaD, 0)
 }
 
 // DecaySynCa decays synaptic calcium by given factor (between trials)
 // Not used by default.
-func DecaySynCa(ctx *Context, syni uint32, decay float32) {
-	AddSynCaV(ctx, syni, CaM, -decay*SynCaV(ctx, syni, CaM))
-	AddSynCaV(ctx, syni, CaP, -decay*SynCaV(ctx, syni, CaP))
-	AddSynCaV(ctx, syni, CaD, -decay*SynCaV(ctx, syni, CaD))
+func DecaySynCa(ctx *Context, syni, di uint32, decay float32) {
+	AddSynCaV(ctx, syni, di, CaM, -decay*SynCaV(ctx, syni, di, CaM))
+	AddSynCaV(ctx, syni, di, CaP, -decay*SynCaV(ctx, syni, di, CaP))
+	AddSynCaV(ctx, syni, di, CaD, -decay*SynCaV(ctx, syni, di, CaD))
 }
 
 //gosl: end learn
@@ -554,7 +552,6 @@ func (sp *SWtParams) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean,
 	SetSynV(ctx, syni, LWt, sp.LWtFmWts(wt, SynV(ctx, syni, SWt)))
 	SetSynV(ctx, syni, DWt, 0)
 	SetSynV(ctx, syni, DSWt, 0)
-	InitSynCa(ctx, syni)
 }
 
 //gosl: start learn

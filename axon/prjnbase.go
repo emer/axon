@@ -17,6 +17,10 @@ import (
 	"github.com/goki/mat32"
 )
 
+// index naming:
+// syi =  prjn-relative synapse index (per existing usage)
+// syni = network-relative synapse index -- add SynStIdx to syi
+
 // PrjnBase contains the basic structural information for specifying a projection of synaptic
 // connections between two layers, and maintaining all the synaptic connection-level data.
 // The same struct token is added to the Recv and Send layer prjn lists, and it manages everything
@@ -41,6 +45,7 @@ type PrjnBase struct {
 	SendConNAvgMax minmax.AvgMax32 `tableview:"-" inactive:"+" view:"inline" desc:"average and maximum number of sending connections in the sending layer"`
 
 	SynStIdx   uint32   `view:"-" desc:"start index into global Synapse array: [Layer][SendPrjns][Synapses]"`
+	NSyns      uint32   `view:"-" desc:"number of synapses in this projection"`
 	RecvCon    []StartN `view:"-" desc:"[RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based.  This is locally-managed during build process, but also copied to network global PrjnRecvCons slice for GPU usage."`
 	RecvSynIdx []uint32 `view:"-" desc:"[SendNeurons][SendCon.N RecvNeurons] index into Syns synaptic state for each sending unit and connection within that, for the sending projection which does not own the synapses, and instead indexes into recv-ordered list"`
 	RecvConIdx []uint32 `view:"-" desc:"[RecvNeurons][RecvCon.N SendingNeurons] for each recv synapse, this is index of *sending* neuron  It is generally preferable to use the Synapse SendIdx where needed, instead of this slice, because then the memory access will be close by other values on the synapse."`

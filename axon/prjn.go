@@ -19,6 +19,10 @@ import (
 
 // https://github.com/kisvegabor/abbreviations-in-code suggests Buf instead of Buff
 
+// index naming:
+// syi =  prjn-relative synapse index (per existing usage)
+// syni = network-relative synapse index -- add SynStIdx to syi
+
 // axon.Prjn is a basic Axon projection with synaptic learning parameters
 type Prjn struct {
 	PrjnBase
@@ -95,22 +99,28 @@ func (pj *Prjn) AllParams() string {
 // SetSynVal sets value of given variable name on the synapse
 // between given send, recv unit indexes (1D, flat indexes)
 // returns error for access errors.
-func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
-	vidx, err := pj.AxonPrj.SynVarIdx(varNm)
+func (pj *Prjn) SetSynVal(ctx *Context, varNm string, sidx, ridx int, val float32) error {
+	vidx, err := pj.SynVarIdx(varNm)
 	if err != nil {
 		return err
 	}
-	synIdx := pj.SynIdx(sidx, ridx)
-	if synIdx < 0 || synIdx >= len(pj.Syns) {
+	syi := pj.SynIdx(sidx, ridx)
+	if syi < 0 || syi >= pj.NSyns {
 		return err
 	}
-	sy := &pj.Syns[synIdx]
-	sy.SetVarByIndex(vidx, val)
-	if varNm == "Wt" {
-		if sy.SWt == 0 {
-			sy.SWt = sy.Wt
+	syni := pj.SynStIdx + syi
+	if vidx < SynapseVarsN {
+		SetSynV(ctx, syni, SynapseVars(vidx), val)
+	} else {
+		for di := uint32(0); di < ctx.NData; di++ {
+			SetSynCaV(ctx, syni, di, SynapseCaVars(vidx-int(SynapseVarsN)), val)
 		}
-		sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
+	}
+	if varNm == "Wt" {
+		if SynV(ctx, syni, SWt) == 0 {
+			SetSynV(ctx, syni, SWt, SynV(ctx, syni, Wt))
+		}
+		SetSynV(ctx, syni, LWt, pj.Params.SWt.LWtFmWts(SetSynV(ctx, syni, Wt), SetSynV(ctx, syni, SWt)))
 	}
 	return nil
 }
@@ -121,7 +131,7 @@ func (pj *Prjn) SetSynVal(varNm string, sidx, ridx int, val float32) error {
 // WriteWtsJSON writes the weights from this projection from the receiver-side perspective
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
-func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
+func (pj *Prjn) WriteWtsJSON(ctx *Context, w io.Writer, depth int) {
 	slay := pj.Send
 	rlay := pj.Recv
 	nr := int(rlay.NNeurons)
@@ -146,8 +156,9 @@ func (pj *Prjn) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write(indent.TabBytes(depth))
 		w.Write([]byte("\"Si\": [ "))
 		for ci, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			si := pj.Params.SynSendLayIdx(sy)
+			ni := ly.NeurStIdx + lni
+			syni := pj.SynStIdx + syi
+			si := pj.Params.SynSendLayIdx(ctx, syni)
 			w.Write([]byte(fmt.Sprintf("%v", si)))
 			if ci == int(rc.N-1) {
 				w.Write([]byte(" "))
@@ -205,23 +216,24 @@ func (pj *Prjn) ReadWtsJSON(r io.Reader) error {
 	if err != nil {
 		return err // note: already logged
 	}
-	return pj.SetWts(pw)
+	ctx := &pj.RcvLayer.Network.Ctx
+	return pj.SetWts(ctx, pw)
 }
 
 // SetWts sets the weights for this projection from weights.Prjn decoded values
-func (pj *Prjn) SetWts(pw *weights.Prjn) error {
+func (pj *Prjn) SetWts(ctx *Context, pw *weights.Prjn) error {
 	var err error
 	for i := range pw.Rs {
 		pr := &pw.Rs[i]
 		hasWt1 := len(pr.Wt1) >= len(pr.Si)
 		for si := range pr.Si {
 			if hasWt1 {
-				er := pj.SetSynVal("SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
+				er := pj.SetSynVal(ctx, "SWt", pr.Si[si], pr.Ri, pr.Wt1[si])
 				if er != nil {
 					err = er
 				}
 			}
-			er := pj.SetSynVal("Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
+			er := pj.SetSynVal(ctx, "Wt", pr.Si[si], pr.Ri, pr.Wt[si]) // updates lin wt
 			if er != nil {
 				err = er
 			}
@@ -235,7 +247,7 @@ func (pj *Prjn) SetWts(pw *weights.Prjn) error {
 
 // SetSWtsRPool initializes SWt structural weight values using given tensor
 // of values which has unique values for each recv neuron within a given pool.
-func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
+func (pj *Prjn) SetSWtsRPool(ctx *Context, swts etensor.Tensor) {
 	rNuY := swts.Dim(0)
 	rNuX := swts.Dim(1)
 	rNu := rNuY * rNuX
@@ -266,11 +278,12 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 					scst := (ruy*rNuX + rux) * rfsz
 					syIdxs := pj.RecvSynIdxs(ri)
 					for ci, syi := range syIdxs {
-						sy := &pj.Syns[syi]
+						syni := pj.SynStIdx + syi
 						swt := swts.FloatVal1D((scst + ci) % wsz)
-						sy.SWt = float32(swt)
-						sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
-						sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
+						SetSynV(ctx, syni, SWt, float32(swt))
+						wt := pj.Params.SWt.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWt.Init.Mean))
+						SetSynV(ctx, syni, Wt, wt)
+						SetSynV(ctx, syni, LWt, pj.Params.SWt.LWtFmWts(wt, swt))
 					}
 				}
 			}
@@ -281,7 +294,7 @@ func (pj *Prjn) SetSWtsRPool(swts etensor.Tensor) {
 // SetWtsFunc initializes synaptic Wt value using given function
 // based on receiving and sending unit indexes.
 // Strongly suggest calling SWtRescale after.
-func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) float32) {
+func (pj *Prjn) SetWtsFunc(ctx *Context, wtFun func(si, ri int, send, recv *etensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
 	ssh := pj.Send.Shape()
@@ -289,19 +302,19 @@ func (pj *Prjn) SetWtsFunc(wtFun func(si, ri int, send, recv *etensor.Shape) flo
 	for ri := 0; ri < rn; ri++ {
 		syIdxs := pj.RecvSynIdxs(ri)
 		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			si := pj.Params.SynSendLayIdx(sy)
+			syni := pj.SynStIdx + syi
+			si := pj.Params.SynSendLayIdx(ctx, syni)
 			wt := wtFun(int(si), ri, ssh, rsh)
-			sy.SWt = wt
-			sy.Wt = wt
-			sy.LWt = 0.5
+			SetSynV(ctx, syni, SWt, wt)
+			SetSynV(ctx, syni, Wt, wt)
+			SetSynV(ctx, syni, LWt, 0.5)
 		}
 	}
 }
 
 // SetSWtsFunc initializes structural SWt values using given function
 // based on receiving and sending unit indexes.
-func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) float32) {
+func (pj *Prjn) SetSWtsFunc(ctx *Context, swtFun func(si, ri int, send, recv *etensor.Shape) float32) {
 	rsh := pj.Recv.Shape()
 	rn := rsh.Len()
 	ssh := pj.Send.Shape()
@@ -309,12 +322,13 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 	for ri := 0; ri < rn; ri++ {
 		syIdxs := pj.RecvSynIdxs(ri)
 		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			si := int(pj.Params.SynSendLayIdx(sy))
+			syni := pj.SynStIdx + syi
+			si := int(pj.Params.SynSendLayIdx(ctx, syni))
 			swt := swtFun(si, ri, ssh, rsh)
-			sy.SWt = swt
-			sy.Wt = pj.Params.SWt.ClipWt(sy.SWt + (sy.Wt - pj.Params.SWt.Init.Mean))
-			sy.LWt = pj.Params.SWt.LWtFmWts(sy.Wt, sy.SWt)
+			SetSynV(ctx, syni, SWt, swt)
+			wt := pj.Params.SWt.ClipWt(swt + (SynV(ctx, syni, Wt) - pj.Params.SWt.Init.Mean))
+			SetSynV(ctx, syni, Wt, wt)
+			SetSynV(ctx, syni, LWt, pj.Params.SWt.LWtFmWts(wt, swt))
 		}
 	}
 }
@@ -322,8 +336,13 @@ func (pj *Prjn) SetSWtsFunc(swtFun func(si, ri int, send, recv *etensor.Shape) f
 // InitWtsSyn initializes weight values based on WtInit randomness parameters
 // for an individual synapse.
 // It also updates the linear weight value based on the sigmoidal weight value.
-func (pj *Prjn) InitWtsSyn(rnd erand.Rand, syni uint32, mean, spct float32) {
-	pj.Params.SWt.InitWtsSyn(rnd, syni, mean, spct)
+func (pj *Prjn) InitWtsSyn(ctx *Context, syni uint32, rnd erand.Rand, mean, spct float32) {
+	pj.Params.SWt.InitWtsSyn(ctx, syni, rnd, mean, spct)
+}
+
+// InitSynCa initializes synaptic calcium variables
+func (pj *Prjn) InitSynCa(ctx *Context, syni, di uint32) {
+	InitSynCa(ctx, syni, di)
 }
 
 // InitWts initializes weight values according to SWt params,
@@ -341,6 +360,7 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 		spct = 0
 	}
 	smn := pj.Params.SWt.Init.Mean
+	// todo: why is this recv based?  prob important to keep for consistency
 	for lni := uint32(0); lni < rlay.NNeurons; lni++ {
 		ni := rlay.NeurStIdx + lni
 		if NrnIsOff(ctx, ni) {
@@ -349,7 +369,10 @@ func (pj *Prjn) InitWts(ctx *Context, nt *Network) {
 		syIdxs := pj.RecvSynIdxs(int(lni))
 		for _, syi := range syIdxs {
 			syni := pj.SynStIdx + syi
-			pj.InitWtsSyn(&nt.Rand, syni, smn, spct)
+			pj.InitWtsSyn(ctx, syni, &nt.Rand, smn, spct)
+			for di := uint32(0); di < ctx.NData; di++ {
+				pj.InitSynCa(ctx, syni, di)
+			}
 		}
 	}
 	if pj.Params.SWt.Adapt.On.IsTrue() && !rlay.Params.IsTarget() {
@@ -375,8 +398,8 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 			continue
 		}
 		for _, syi := range syIdxs {
-			sy := &pj.Syns[syi]
-			swt := sy.SWt
+			syni := pj.SynStIdx + syi
+			swt := SynV(ctx, syni, SWt)
 			sum += swt
 			if swt <= pj.Params.SWt.Limit.Min {
 				nmin++
@@ -395,10 +418,11 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 				mdf = smn - amn
 			}
 			for _, syi := range syIdxs {
-				sy := &pj.Syns[syi]
-				if sy.SWt <= pj.Params.SWt.Limit.Max {
-					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
-					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
+				syni := pj.SynStIdx + syi
+				if SynV(ctx, syni, SWt) <= pj.Params.SWt.Limit.Max {
+					swt := pj.Params.SWt.ClipSWt(SynV(ctx, syni, SWt) + mdf)
+					SetSynV(ctx, syni, SWt, swt)
+					SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt)))
 				}
 			}
 		} else {
@@ -407,10 +431,11 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 				mdf = smn - amn
 			}
 			for _, syi := range syIdxs {
-				sy := &pj.Syns[syi]
-				if sy.SWt >= pj.Params.SWt.Limit.Min {
-					sy.SWt = pj.Params.SWt.ClipSWt(sy.SWt + mdf)
-					sy.Wt = pj.Params.SWt.WtVal(sy.SWt, sy.LWt)
+				syni := pj.SynStIdx + syi
+				if SynV(ctx, syni, SWt) >= pj.Params.SWt.Limit.Min {
+					swt := pj.Params.SWt.ClipSWt(SynV(ctx, syni, SWt) + mdf)
+					SetSynV(ctx, syni, SWt, swt)
+					SetSynV(ctx, syni, Wt, pj.Params.SWt.WtVal(swt, SynV(ctx, syni, LWt)))
 				}
 			}
 		}
@@ -429,25 +454,25 @@ func (pj *Prjn) SWtRescale(ctx *Context) {
 // Is given the reciprocal projection where
 // the Send and Recv layers are reversed
 // (see LayerBase RecipToRecvPrjn)
-func (pj *Prjn) InitWtSym(rpj *Prjn) {
+func (pj *Prjn) InitWtSym(ctx *Context, rpj *Prjn) {
 	if len(rpj.SendCon) == 0 {
 		return
 	}
 	slay := pj.Send
 	for lni := uint32(0); lni < slay.NNeurons; lni++ {
-		syns := pj.SendSyns(int(lni))
-		for syi := range syns {
-			sy := &syns[syi]
-			ri := pj.Params.SynRecvLayIdx(sy) // <- this sends to me, ri
-			recipSi := ri                     // reciprocal case is si is now receiver
+		scon := pj.SendCon[lni]
+		for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
+			syni := pj.SynStIdx + syi
+			ri := pj.Params.SynRecvLayIdx(ctx, syni) // <- this sends to me, ri
+			recipSi := ri                            // reciprocal case is si is now receiver
 			recipc := rpj.SendCon[recipSi]
 			if recipc.N == 0 {
 				continue
 			}
-			firstSy := &rpj.Syns[recipc.Start]
-			lastSy := &rpj.Syns[recipc.Start+recipc.N-1]
-			firstRi := rpj.Params.SynRecvLayIdx(firstSy)
-			lastRi := rpj.Params.SynRecvLayIdx(lastSy)
+			firstSyni := rpj.SynStIdx + recipc.Start
+			lastSyni := rpj.SynStIdx + recipc.Start + recipc.N - 1
+			firstRi := rpj.Params.SynRecvLayIdx(ctx, firstSyni)
+			lastRi := rpj.Params.SynRecvLayIdx(ctx, lastSyni)
 			if lni < firstRi || lni > lastRi { // fast reject -- prjns are always in order!
 				continue
 			}
@@ -463,12 +488,12 @@ func (pj *Prjn) InitWtSym(rpj *Prjn) {
 				if up < int32(recipc.N) {
 					doing = true
 					recipCi := int32(recipc.Start) + up
-					recipSy := &rpj.Syns[recipCi]
-					recipRi := rpj.Params.SynRecvLayIdx(recipSy)
+					recipSyni := rpj.SynStIdx + recipCi
+					recipRi := rpj.Params.SynRecvLayIdx(ctx, recipSyni)
 					if recipRi == lni {
-						recipSy.Wt = sy.Wt
-						recipSy.LWt = sy.LWt
-						recipSy.SWt = sy.SWt
+						SetSynV(ctx, recipSyni, Wt, SynV(ctx, syni, Wt))
+						SetSynV(ctx, recipSyni, LWt, SynV(ctx, syni, LWt))
+						SetSynV(ctx, recipSyni, SWt, SynV(ctx, syni, SWt))
 						// note: if we support SymFmTop then can have option to go other way
 						break
 					}
@@ -477,12 +502,12 @@ func (pj *Prjn) InitWtSym(rpj *Prjn) {
 				if dn >= 0 {
 					doing = true
 					recipCi := int32(recipc.Start) + dn
-					recipSy := &rpj.Syns[recipCi]
-					recipRi := rpj.Params.SynRecvLayIdx(recipSy)
+					recipSyni := &rpj.SynStIdx + recipCi
+					recipRi := rpj.Params.SynRecvLayIdx(ctx, recipSyni)
 					if recipRi == lni {
-						recipSy.Wt = sy.Wt
-						recipSy.LWt = sy.LWt
-						recipSy.SWt = sy.SWt
+						SetSynV(ctx, recipSyni, Wt, SynV(ctx, syni, Wt))
+						SetSynV(ctx, recipSyni, LWt, SynV(ctx, syni, LWt))
+						SetSynV(ctx, recipSyni, SWt, SynV(ctx, syni, SWt))
 						// note: if we support SymFmTop then can have option to go other way
 						break
 					}

@@ -511,8 +511,10 @@ func (ly *LayerBase) UnitVal1D(varIdx int, idx int) float32 {
 	if varIdx < 0 || varIdx >= ly.UnitVarNum() {
 		return mat32.NaN()
 	}
+	ni := ly.NeurStIdx + uint32(idx)
 	ctx := &ly.Network.Ctx
-	if varIdx >= ly.UnitVarNum()-NNeuronLayerVars {
+	nvars := ly.UnitVarNum()
+	if varIdx >= nvars-NNeuronLayerVars {
 		lvi := varIdx - (ly.UnitVarNum() - NNeuronLayerVars)
 		switch lvi {
 		case 0:
@@ -527,8 +529,10 @@ func (ly *LayerBase) UnitVal1D(varIdx int, idx int) float32 {
 			pl := ly.SubPool(ctx, uint32(idx), 0) // display uses data 0
 			return float32(pl.Gated)
 		}
+	} else if varIdx >= NeuronVarsN {
+		return NrnAvgV(ctx, ni, 0, NeuronAvgVars(varIdx-NeuronVarsN))
 	} else {
-		return NrnV(ctx, uint32(idx)+ly.NeurStIdx, 0, NeuronVars(varIdx))
+		return NrnV(ctx, ni, 0, NeuronVars(varIdx))
 	}
 	return mat32.NaN()
 }
@@ -769,6 +773,7 @@ func (ly *LayerBase) VarRange(varNm string) (min, max float32, err error) {
 // in a JSON text format.  We build in the indentation logic to make it much faster and
 // more efficient.
 func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
+	ctx := &ly.Network.Ctx
 	w.Write(indent.TabBytes(depth))
 	w.Write([]byte("{\n"))
 	depth++
@@ -796,7 +801,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 		nn := ly.NNeurons
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
-			nrnActAvg := NrnAvgV(&ly.Network.Ctx, ni, ActAvg)
+			nrnActAvg := NrnAvgV(ctx, ni, ActAvg)
 			w.Write([]byte(fmt.Sprintf("%g", nrnActAvg)))
 			if lni < nn-1 {
 				w.Write([]byte(", "))
@@ -808,7 +813,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write([]byte(fmt.Sprintf("\"TrgAvg\": [ ")))
 		for lni := uint32(0); lni < nn; lni++ {
 			ni := ly.NeurStIdx + lni
-			nrnTrgAvg := NrnAvgV(&ly.Network.Ctx, ni, TrgAvg)
+			nrnTrgAvg := NrnAvgV(ctx, ni, TrgAvg)
 			w.Write([]byte(fmt.Sprintf("%g", nrnTrgAvg)))
 			if lni < nn-1 {
 				w.Write([]byte(", "))
@@ -835,7 +840,7 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 		w.Write([]byte(fmt.Sprintf("\"Prjns\": [\n")))
 		depth++
 		for pi, pj := range onps {
-			pj.WriteWtsJSON(w, depth) // this leaves prjn unterminated
+			pj.WriteWtsJSON(ctx, w, depth) // this leaves prjn unterminated
 			if pi == np-1 {
 				w.Write([]byte("\n"))
 			} else {
@@ -856,19 +861,19 @@ func (ly *Layer) WriteWtsJSON(w io.Writer, depth int) {
 // and is not used for the network-level ReadWtsJSON, which reads into a separate
 // structure -- see SetWts method.
 func (ly *Layer) ReadWtsJSON(r io.Reader) error {
+	ctx := &ly.Network.Ctx
 	lw, err := weights.LayReadJSON(r)
 	if err != nil {
 		return err // note: already logged
 	}
-	return ly.SetWts(lw)
+	return ly.SetWts(ctx, lw)
 }
 
 // SetWts sets the weights for this layer from weights.Layer decoded values
-func (ly *Layer) SetWts(lw *weights.Layer) error {
+func (ly *Layer) SetWts(ctx *Context, lw *weights.Layer) error {
 	if ly.IsOff() {
 		return nil
 	}
-	ctx := &ly.Network.Ctx
 	if lw.MetaData != nil {
 		for di := uint32(0); di < ctx.NData; di++ {
 			vals := &ly.Vals[di]
@@ -911,7 +916,7 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 		for pi := range lw.Prjns {
 			pw := &lw.Prjns[pi]
 			pj := ly.RcvPrjns[pi]
-			er := pj.SetWts(pw)
+			er := pj.SetWts(ctx, pw)
 			if er != nil {
 				err = er
 			}
@@ -921,7 +926,7 @@ func (ly *Layer) SetWts(lw *weights.Layer) error {
 			pw := &lw.Prjns[pi]
 			pj, _ := ly.SendNameTry(pw.From)
 			if pj != nil {
-				er := pj.SetWts(pw)
+				er := pj.SetWts(ctx, pw)
 				if er != nil {
 					err = er
 				}

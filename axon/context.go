@@ -5,6 +5,8 @@
 package axon
 
 import (
+	"math"
+
 	"github.com/emer/emergent/erand"
 	"github.com/emer/emergent/etime"
 	"github.com/goki/gosl/slbool"
@@ -131,16 +133,26 @@ func MulSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
 	Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] *= val
 }
 
+// SynCaUpT is the CPU version of the CaUpT synapse variable accessor
+func SynCaUpT(ctx *Context, syni, di uint32) uint32 {
+	return math.Float32bits(SynCaV(ctx, syni, di, CaUpT))
+}
+
+// SetSynCaUpT is the CPU version of the CaUpT synapse variable settor
+func SetSynCaUpT(ctx *Context, syni, di uint32, nvar SynapseCaVars, val uint32) {
+	SetSynCaV(ctx, syni, di, CaUpT, math.Float32frombits(val))
+}
+
 // SynapseIdxs
 
 // SynI is the CPU version of the synapse idx accessor
-func SynI(ctx *Context, ni uint32, idx SynapseIdxs) uint32 {
-	return Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(ni, idx)]
+func SynI(ctx *Context, syni uint32, idx SynapseIdxs) uint32 {
+	return Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(syni, idx)]
 }
 
 // SetSynI is the CPU version of the synapse idx settor
-func SetSynI(ctx *Context, ni uint32, idx SynapseIdxs, val uint32) {
-	Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(ni, idx)] = val
+func SetSynI(ctx *Context, syni uint32, idx SynapseIdxs, val uint32) {
+	Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(syni, idx)] = val
 }
 
 //gosl: hlsl context

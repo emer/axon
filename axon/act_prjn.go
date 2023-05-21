@@ -190,10 +190,10 @@ func (sc *SynComParams) WtFail(ctx *Context, swt float32) bool {
 }
 
 // Fail updates failure status of given weight, given SWt value
-func (sc *SynComParams) Fail(ctx *Context, wt *float32, swt float32) {
+func (sc *SynComParams) Fail(ctx *Context, syni uint32, swt float32) {
 	if sc.PFail > 0 {
 		if sc.WtFail(ctx, swt) {
-			*wt = 0
+			SetSynV(ctx, syni, Wt, 0)
 		}
 	}
 }

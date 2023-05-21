@@ -46,8 +46,6 @@ const (
 	SWt                     // slowly adapting structural weight value, which acts as a multiplicative scaling factor on synaptic efficacy: biologically represents the physical size and efficacy of the dendritic spine.  SWt values adapt in an outer loop along with synaptic scaling, with constraints to prevent runaway positive feedback loops and maintain variance and further capacity to learn.  Initial variance is all in SWt, with LWt set to .5, and scaling absorbs some of LWt into SWt.
 	DWt                     // delta (change in) synaptic weight, from learning -- updates LWt which then updates Wt.
 	DSWt                    // change in SWt slow synaptic weight -- accumulates DWt
-	Tr                      // trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
-	DTr                     // delta (change in) Tr trace of synaptic activity over time
 
 	SynapseVarsN
 )
@@ -91,7 +89,9 @@ const (
 	CaM   SynapseCaVars = iota // first stage running average (mean) Ca calcium level (like CaM = calmodulin), feeds into CaP
 	CaP                        // shorter timescale integrated CaM value, representing the plus, LTP direction of weight change and capturing the function of CaMKII in the Kinase learning rule
 	CaD                        // longer timescale integrated CaP value, representing the minus, LTD direction of weight change and capturing the function of DAPK1 in the Kinase learning rule
-	CaUpT                      // time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration.
+	CaUpT                      // time in CyclesTotal of last updating of Ca values at the synapse level, for optimized synaptic-level Ca integration -- converted to / from uint32
+	Tr                         // trace of synaptic activity over time -- used for credit assignment in learning.  In MatrixPrjn this is a tag that is then updated later when US occurs.
+	DTr                        // delta (change in) Tr trace of synaptic activity over time
 
 	SynapseCaVarsN
 )

@@ -182,6 +182,32 @@ func (nt *NetworkBase) LayerVals(li, di uint32) *LayerVals {
 	return &nt.LayVals[li*nt.MaxData+di]
 }
 
+// UnitVarNames returns a list of variable names available on the units in this network.
+// Not all layers need to support all variables, but must safely return 0's for
+// unsupported ones.  The order of this list determines NetView variable display order.
+// This is typically a global list so do not modify!
+func (nt *NetworkBase) UnitVarNames() []string {
+	return NeuronVarNames
+}
+
+// UnitVarProps returns properties for variables
+func (nt *NetworkBase) UnitVarProps() map[string]string {
+	return NeuronVarProps
+}
+
+// SynVarNames returns the names of all the variables on the synapses in this network.
+// Not all projections need to support all variables, but must safely return 0's for
+// unsupported ones.  The order of this list determines NetView variable display order.
+// This is typically a global list so do not modify!
+func (nt *NetworkBase) SynVarNames() []string {
+	return SynapseVars
+}
+
+// SynVarProps returns properties for variables
+func (nt *NetworkBase) SynVarProps() map[string]string {
+	return SynapseVarProps
+}
+
 // StdVertLayout arranges layers in a standard vertical (z axis stack) layout, by setting
 // the Rel settings
 func (nt *NetworkBase) StdVertLayout() {
@@ -888,7 +914,8 @@ func (nt *NetworkBase) ReadWtsJSON(r io.Reader) error {
 	if err != nil {
 		return err // note: already logged
 	}
-	err = nt.SetWts(nw)
+	ctx := &nt.Ctx
+	err = nt.SetWts(ctx, nw)
 	if err != nil {
 		log.Println(err)
 	}
@@ -897,7 +924,7 @@ func (nt *NetworkBase) ReadWtsJSON(r io.Reader) error {
 }
 
 // SetWts sets the weights for this network from weights.Network decoded values
-func (nt *NetworkBase) SetWts(nw *weights.Network) error {
+func (nt *NetworkBase) SetWts(ctx *Context, nw *weights.Network) error {
 	var err error
 	if nw.Network != "" {
 		nt.Nm = nw.Network
@@ -918,7 +945,7 @@ func (nt *NetworkBase) SetWts(nw *weights.Network) error {
 			err = er
 			continue
 		}
-		ly.SetWts(lw)
+		ly.SetWts(ctx, lw)
 	}
 	return err
 }
