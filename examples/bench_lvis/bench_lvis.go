@@ -59,7 +59,7 @@ var ParamSets = params.Sets{
 	}},
 }
 
-func ConfigNet(b *testing.B, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim,
+func ConfigNet(b *testing.B, ctx *axon.Context, net *axon.Network, inputNeurs, inputPools, pathways, hiddenNeurs, outputDim,
 	threads int, verbose bool) {
 	net.InitName(net, "BenchLvisNet")
 
@@ -119,8 +119,10 @@ func ConfigNet(b *testing.B, net *axon.Network, inputNeurs, inputPools, pathways
 	net.RecFunTimes = true // verbose -- always do
 	net.GPU.RecFunTimes = verbose
 
+	net.UseGPUOrder = true // might be best with synapses one way and neurons the other..
+
 	// builds with default threads
-	if err := net.Build(); err != nil {
+	if err := net.Build(ctx); err != nil {
 		panic(err)
 	}
 	net.Defaults()
@@ -136,7 +138,7 @@ func ConfigNet(b *testing.B, net *axon.Network, inputNeurs, inputPools, pathways
 		net.SetNThreads(threads)
 	}
 
-	net.InitWts()
+	net.InitWts(ctx)
 }
 
 func ConfigPats(pats *etable.Table, numPats int, inputShape [2]int, outputShape [2]int) {
@@ -169,9 +171,8 @@ func ConfigEpcLog(dt *etable.Table) {
 	}, 0)
 }
 
-func TrainNet(net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int, verbose, gpu bool) {
-	ctx := axon.NewContext()
-	net.InitWts()
+func TrainNet(ctx *axon.Context, net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int, verbose, gpu bool) {
+	net.InitWts(ctx)
 	np := pats.NumRows()
 	porder := rand.Perm(np) // randomly permuted order of ints
 
@@ -211,9 +212,9 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int,
 			outp := outPats.SubSpace([]int{ppi})
 
 			for pi := 0; pi < pathways; pi++ {
-				v1[pi].ApplyExt(inp)
+				v1[pi].ApplyExt(ctx, 0, inp)
 			}
-			outLay.ApplyExt(outp)
+			outLay.ApplyExt(ctx, 0, outp)
 			net.ApplyExts(ctx)
 
 			net.NewState(ctx)
@@ -232,8 +233,8 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int,
 			net.PlusPhase(ctx)
 			net.DWt(ctx)
 			net.WtFmDWt(ctx)
-			outCorSim += outLay.Vals.CorSim.Cor
-			pSSE := outLay.PctUnitErr()
+			outCorSim += outLay.Vals[0].CorSim.Cor
+			pSSE := outLay.PctUnitErr(ctx)[0]
 			sse += pSSE
 			if pSSE != 0 {
 				cntErr++
@@ -247,20 +248,20 @@ func TrainNet(net *axon.Network, pats, epcLog *etable.Table, pathways, epcs int,
 		t := tmr.Stop()
 		tmr.Start()
 		if verbose {
-			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Vals.CorSim.Avg, t)
+			fmt.Printf("epc: %v  \tCorSim: %v \tAvgCorSim: %v \tTime:%v\n", epc, outCorSim, outLay.Vals[0].CorSim.Avg, t)
 		}
 
 		epcLog.SetCellFloat("Epoch", epc, float64(epc))
 		epcLog.SetCellFloat("CorSim", epc, float64(outCorSim))
-		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Vals.CorSim.Avg))
+		epcLog.SetCellFloat("AvgCorSim", epc, float64(outLay.Vals[0].CorSim.Avg))
 		epcLog.SetCellFloat("SSE", epc, sse)
 		epcLog.SetCellFloat("CountErr", epc, float64(cntErr))
 		epcLog.SetCellFloat("PctErr", epc, pctErr)
 		epcLog.SetCellFloat("PctCor", epc, pctCor)
-		epcLog.SetCellFloat("V2ActAvg", epc, float64(v2.Vals.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("V4ActAvg", epc, float64(v4.Vals.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("TEActAvg", epc, float64(te.Vals.ActAvg.ActMAvg))
-		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Vals.ActAvg.ActMAvg))
+		epcLog.SetCellFloat("V2ActAvg", epc, float64(v2.Vals[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("V4ActAvg", epc, float64(v4.Vals[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("TEActAvg", epc, float64(te.Vals[0].ActAvg.ActMAvg))
+		epcLog.SetCellFloat("OutActAvg", epc, float64(outLay.Vals[0].ActAvg.ActMAvg))
 	}
 	tmr.Stop()
 	if verbose {

@@ -40,8 +40,9 @@ func BenchmarkBenchNetFull(b *testing.B) {
 
 	rand.Seed(42)
 
+	ctx := axon.NewContext()
 	net := &axon.Network{}
-	ConfigNet(b, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *verbose)
+	ConfigNet(b, ctx, net, *inputNeurs, *inputPools, *pathways, *hiddenNeurs, *outputDim, *threads, *verbose)
 	// if *verbose {
 	// 	log.Println(net.SizeReport())
 	// }
@@ -62,5 +63,5 @@ func BenchmarkBenchNetFull(b *testing.B) {
 	epcLog := &etable.Table{}
 	ConfigEpcLog(epcLog)
 
-	TrainNet(net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)
+	TrainNet(ctx, net, pats, epcLog, *pathways, *numEpochs, *verbose, *gpu)
 }
