@@ -26,7 +26,7 @@ func TestLayer(t *testing.T) {
 	assert.True(t, outputLayer.Params.IsTarget())
 
 	// the layer.Neuron struct is empty before Build(), which may be surprising to the user?
-	assert.Equal(t, 4, hiddenLayer.NNeurons)
+	assert.Equal(t, uint32(4), hiddenLayer.NNeurons)
 
 	// query the 'Spike' variable for all neurons of the layer
 	tensor := etensor.NewFloat32([]int{2}, nil, nil)

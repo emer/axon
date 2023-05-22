@@ -43,14 +43,14 @@ type NetworkBase struct {
 	MinPos      mat32.Vec3          `view:"-" desc:"minimum display position in network"`
 	MaxPos      mat32.Vec3          `view:"-" desc:"maximum display position in network"`
 	MetaData    map[string]string   `desc:"optional metadata that is saved in network weights files -- e.g., can indicate number of epochs that were trained, or any other information about this network that would be useful to save"`
-	UseGPUOrder bool                `desc:"if true, the neuron and synapse variables will be organized into a gpu-optimized memory order, otherwise cpu-optimized. This must be set before network Build() is called."`
+	UseGPUOrder bool                `inactive:"+" desc:"if true, the neuron and synapse variables will be organized into a gpu-optimized memory order, otherwise cpu-optimized. This must be set before network Build() is called."`
 
 	// Implementation level code below:
-	NetIdx       uint32        `desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	MaxDelay     uint32        `inactive:"-" view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
-	MaxData      uint32        `inactive:"-" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
-	NNeurons     uint32        `inactive:"-" desc:"total number of neurons"`
-	NSyns        uint32        `inactive:"-" desc:"total number of synapses"`
+	NetIdx       uint32        `view:"-" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	MaxDelay     uint32        `inactive:"+" view:"-" desc:"maximum synaptic delay across any projection in the network -- used for sizing the GBuf accumulation buffer."`
+	MaxData      uint32        `inactive:"+" desc:"maximum amount of input data that can be processed in parallel in one pass of the network. Neuron storage is allocated to hold this amount."`
+	NNeurons     uint32        `inactive:"+" desc:"total number of neurons"`
+	NSyns        uint32        `inactive:"+" desc:"total number of synapses"`
 	Layers       []*Layer      `desc:"array of layers"`
 	LayParams    []LayerParams `view:"-" desc:"[Layers] array of layer parameters, in 1-to-1 correspondence with Layers"`
 	LayVals      []LayerVals   `view:"-" desc:"[Layers][MaxData] array of layer values, with extra per data"`
@@ -553,6 +553,7 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx := &nt.Ctx
 	ctx.Defaults()
+	ctx.NetIdx = nt.NetIdx
 	nt.FunTimes = make(map[string]*timer.Time)
 	nt.LayClassMap = make(map[string][]string)
 	maxData := int(nt.MaxData)
@@ -1026,7 +1027,7 @@ func (nt *Network) WtsSlice(wts *[]float32) {
 	i := 0
 	for _, ly := range nt.Layers {
 		for _, pj := range ly.RcvPrjns {
-			for ni := range pj.RecvSynIdx {
+			for ni := uint32(0); ni < ly.NNeurons; ni++ {
 				syIdxs := pj.RecvSynIdxs(uint32(ni))
 				for _, syi := range syIdxs {
 					syni := pj.SynStIdx + syi
@@ -1042,6 +1043,7 @@ func (nt *Network) WtsSlice(wts *[]float32) {
 func (nt *Network) WtsHash() string {
 	var wts []float32
 	nt.WtsSlice(&wts)
+	fmt.Printf("wts: %v\n", wts)
 	return HashEncodeSlice(wts)
 }
 

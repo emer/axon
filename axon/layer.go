@@ -451,6 +451,9 @@ func (ly *Layer) ApplyExt(ctx *Context, di uint32, ext etensor.Tensor) {
 // Also saves Val in Exts for potential use by GPU.
 func (ly *Layer) ApplyExtVal(ctx *Context, lni, di uint32, val float32, clearMask, setMask NeuronFlags, toTarg bool) {
 	ni := ly.NeurStIdx + lni
+	if NrnIsOff(ctx, ni) {
+		return
+	}
 	ei := ly.ExtIdx(lni, di)
 	if uint32(len(ly.Exts)) <= ei {
 		log.Printf("Layer named: %s Type: %s does not have allocated Exts vals -- is likely not registered to receive external input in LayerTypes.IsExt() -- will not be presented to GPU", ly.Name(), ly.LayerType().String())
@@ -486,9 +489,6 @@ func (ly *Layer) ApplyExt2D(ctx *Context, di uint32, ext etensor.Tensor) {
 			idx := []int{y, x}
 			val := float32(ext.FloatVal(idx))
 			lni := uint32(ly.Shp.Offset(idx))
-			if NrnIsOff(ctx, lni) {
-				continue
-			}
 			ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
@@ -506,9 +506,6 @@ func (ly *Layer) ApplyExt2Dto4D(ctx *Context, di uint32, ext etensor.Tensor) {
 			idx := []int{y, x}
 			val := float32(ext.FloatVal(idx))
 			lni := uint32(etensor.Prjn2DIdx(&ly.Shp, false, y, x))
-			if NrnIsOff(ctx, lni) {
-				continue
-			}
 			ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
 		}
 	}
@@ -528,9 +525,6 @@ func (ly *Layer) ApplyExt4D(ctx *Context, di uint32, ext etensor.Tensor) {
 					idx := []int{yp, xp, yn, xn}
 					val := float32(ext.FloatVal(idx))
 					lni := uint32(ly.Shp.Offset(idx))
-					if NrnIsOff(ctx, lni) {
-						continue
-					}
 					ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
 				}
 			}
@@ -545,9 +539,6 @@ func (ly *Layer) ApplyExt1DTsr(ctx *Context, di uint32, ext etensor.Tensor) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := uint32(ints.MinInt(ext.Len(), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
-		if NrnIsOff(ctx, lni) {
-			continue
-		}
 		val := float32(ext.FloatVal1D(int(lni)))
 		ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
 	}
@@ -560,9 +551,6 @@ func (ly *Layer) ApplyExt1D(ctx *Context, di uint32, ext []float64) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := uint32(ints.MinInt(len(ext), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
-		if NrnIsOff(ctx, lni) {
-			continue
-		}
 		val := float32(ext[lni])
 		ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
 	}
@@ -575,9 +563,6 @@ func (ly *Layer) ApplyExt1D32(ctx *Context, di uint32, ext []float32) {
 	clearMask, setMask, toTarg := ly.ApplyExtFlags()
 	mx := uint32(ints.MinInt(len(ext), int(ly.NNeurons)))
 	for lni := uint32(0); lni < mx; lni++ {
-		if NrnIsOff(ctx, lni) {
-			continue
-		}
 		val := ext[lni]
 		ly.ApplyExtVal(ctx, lni, di, val, clearMask, setMask, toTarg)
 	}
@@ -590,11 +575,12 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 	clearMask, setMask, _ := ly.ApplyExtFlags()
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
-		if NrnIsOff(ctx, lni) {
+		ni := ly.NeurStIdx + lni
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		NrnClearFlag(ctx, lni, clearMask)
-		NrnSetFlag(ctx, lni, setMask)
+		NrnClearFlag(ctx, ni, clearMask)
+		NrnSetFlag(ctx, ni, setMask)
 	}
 }
 
@@ -716,20 +702,21 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 		wrong := 0
 		n := 0
 		for lni := uint32(0); lni < nn; lni++ {
-			if NrnIsOff(ctx, lni) {
+			ni := ly.NeurStIdx + lni
+			if NrnIsOff(ctx, ni) {
 				continue
 			}
 			trg := false
 			if ly.Typ == CompareLayer || ly.Typ == TargetLayer {
-				if NrnV(ctx, lni, di, Target) > thr {
+				if NrnV(ctx, ni, di, Target) > thr {
 					trg = true
 				}
 			} else {
-				if NrnV(ctx, lni, di, ActP) > thr {
+				if NrnV(ctx, ni, di, ActP) > thr {
 					trg = true
 				}
 			}
-			if NrnV(ctx, lni, di, ActM) > thr {
+			if NrnV(ctx, ni, di, ActM) > thr {
 				if !trg {
 					wrong++
 				}
@@ -764,8 +751,9 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIdx, plusIdx []in
 			var sumP, sumM float32
 			for yi := 0; yi < ydim; yi++ {
 				lni := uint32(yi*xdim + xi)
-				sumM += NrnV(ctx, lni, di, ActM)
-				sumP += NrnV(ctx, lni, di, ActP)
+				ni := ly.NeurStIdx + lni
+				sumM += NrnV(ctx, ni, di, ActM)
+				sumP += NrnV(ctx, ni, di, ActP)
 			}
 			if sumM > maxM {
 				mIdx = xi
@@ -800,8 +788,9 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIdx, plusIdx []in
 			var sumP, sumM float32
 			for yi := 0; yi < nun; yi++ {
 				lni := uint32(xi*nun + yi)
-				sumM += NrnV(ctx, lni, di, ActM)
-				sumP += NrnV(ctx, lni, di, ActP)
+				ni := ly.NeurStIdx + lni
+				sumM += NrnV(ctx, ni, di, ActM)
+				sumP += NrnV(ctx, ni, di, ActP)
 			}
 			if sumM > maxM {
 				mIdx = xi
@@ -827,7 +816,8 @@ func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIdx, plusIdx []in
 func (ly *Layer) UnLesionNeurons(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
-		NrnClearFlag(ctx, lni, NeuronOff)
+		ni := ly.NeurStIdx + lni
+		NrnClearFlag(ctx, ni, NeuronOff)
 	}
 }
 
@@ -848,10 +838,11 @@ func (ly *Layer) LesionNeurons(ctx *Context, prop float32) int {
 	nl := int(prop * float32(nn))
 	for lni := uint32(0); lni < nn; lni++ {
 		nip := uint32(p[lni])
-		if NrnIsOff(ctx, nip) {
+		ni := ly.NeurStIdx + nip
+		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		NrnSetFlag(ctx, nip, NeuronOff)
+		NrnSetFlag(ctx, ni, NeuronOff)
 	}
 	return nl
 }

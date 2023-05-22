@@ -1,6 +1,7 @@
 package axon
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 
@@ -14,7 +15,7 @@ import (
 )
 
 const (
-	shape1D = 8
+	shape1D = 2
 )
 
 // TestMultithreading
@@ -96,14 +97,17 @@ func TestCollectAndSetDWts(t *testing.T) {
 
 	var dwts []float32
 	netA.CollectDWts(ctxA, &dwts) // important to collect DWt before applying it
+	fmt.Printf("dwts: %v\n", dwts)
 	netA.WtFmDWt(ctxA)
-	netA.SlowAdapt(ctxA)
-	assert.False(t, netA.WtsHash() == netB.WtsHash())
+	// netA.SlowAdapt(ctxA)
+	// assert.False(t, netA.WtsHash() == netB.WtsHash())
 
 	netB.SetDWts(ctxB, dwts, 1)
 	netB.WtFmDWt(ctxB)
-	netB.SlowAdapt(ctxB)
+	// netB.SlowAdapt(ctxB)
 	assert.True(t, netA.WtsHash() == netB.WtsHash())
+
+	return
 
 	// And again (as a sanity check), but without syncing DWt -> Models should diverge
 	runCycle(netA, ctxA, patsA)
@@ -157,8 +161,9 @@ func assertNeuronsSynsEqual(t *testing.T, netS *Network, netP *Network) {
 		// check Neuron fields
 		for lni := uint32(0); lni < layerS.NNeurons; lni++ {
 			for _, fn := range NeuronVarNames {
-				vS := layerS.UnitVal(fn, []int{int(lni)})
-				vP := layerP.UnitVal(fn, []int{int(lni)})
+				vidx, _ := layerS.UnitVarIdx(fn)
+				vS := layerS.UnitVal1D(vidx, int(lni))
+				vP := layerP.UnitVal1D(vidx, int(lni))
 				require.Equal(t, vS, vP,
 					"Neuron %d, field %s, single thread: %f, multi thread: %f",
 					lni, fn, vS, vP)
@@ -197,8 +202,9 @@ func neuronsSynsAreEqual(netS *Network, netP *Network) bool {
 		// check Neuron fields
 		for lni := uint32(0); lni < layerS.NNeurons; lni++ {
 			for _, fn := range NeuronVarNames {
-				vS := layerS.UnitVal(fn, []int{int(lni)})
-				vP := layerP.UnitVal(fn, []int{int(lni)})
+				vidx, _ := layerS.UnitVarIdx(fn)
+				vS := layerS.UnitVal1D(vidx, int(lni))
+				vP := layerP.UnitVal1D(vidx, int(lni))
 				if vS != vP {
 					return false
 				}

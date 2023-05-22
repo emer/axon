@@ -415,7 +415,7 @@ func (ss *Sim) TrialStats() {
 	out := ss.Net.AxonLayerByName("Output")
 
 	// todo:
-	// ss.Stats.SetFloat("TrlCorSim", float64(out.Vals.CorSim.Cor))
+	ss.Stats.SetFloat("TrlCorSim", float64(out.Vals[0].CorSim.Cor))
 	ss.Stats.SetFloat("TrlUnitErr", out.PctUnitErr(&ss.Context)[0])
 
 	if ss.Stats.Float("TrlUnitErr") > 0 {

@@ -154,7 +154,7 @@ func (ns *SynapseIdxStrides) Idx(synIdx uint32, idx SynapseIdxs) uint32 {
 }
 
 // SetSynapseOuter sets strides with synapses as outer dimension:
-// [Synapses[[Idxs] (outer to inner), which is optimal for CPU-based
+// [Synapses][Idxs] (outer to inner), which is optimal for CPU-based
 // computation.
 func (ns *SynapseIdxStrides) SetSynapseOuter() {
 	ns.Synapse = uint32(SynapseIdxsN)
