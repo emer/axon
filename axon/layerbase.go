@@ -474,6 +474,7 @@ func (ly *LayerBase) Build() error {
 		return err
 	}
 	err = ly.BuildPrjns(ctx)
+	ly.AxonLay.PostBuild()
 	return err
 }
 

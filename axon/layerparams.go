@@ -318,6 +318,7 @@ func (ly *LayerParams) LayPoolGiFmSpikes(ctx *Context, lpl *Pool, vals *LayerVal
 	vals.NeuroMod = ctx.NeuroMod
 	lpl.Inhib.SpikesFmRaw(lpl.NNeurons())
 	ly.Inhib.Layer.Inhib(&lpl.Inhib, vals.ActAvg.GiMult)
+	// fmt.Printf("plly: %d  plpl: %d  gi: %g\n", lpl.LayIdx, lpl.PoolIdx, lpl.Inhib.Gi)
 }
 
 // SubPoolGiFmSpikes computes inhibition Gi from Spikes within a sub-pool
@@ -538,13 +539,13 @@ func (ly *LayerParams) GFmRawSyn(ctx *Context, ni, di uint32) {
 	SetNrnV(ctx, ni, di, GiSyn, ly.Act.GiFmSyn(ctx, ni, di, NrnV(ctx, ni, di, GiSyn)))
 }
 
-// todo: here
-
 // GiInteg adds Gi values from all sources including SubPool computed inhib
 // and updates GABAB as well
 func (ly *LayerParams) GiInteg(ctx *Context, ni, di uint32, pl *Pool, vals *LayerVals) {
-	// pl := &ly.Pools[nrn.SubPool]
 	gi := vals.ActAvg.GiMult*pl.Inhib.Gi + NrnV(ctx, ni, di, GiSyn) + NrnV(ctx, ni, di, GiNoise) + ly.Learn.NeuroMod.GiFmACh(vals.NeuroMod.ACh)
+	// if ni == ly.Idxs.NeurSt {
+	// 	fmt.Printf("plly: %d  plpl: %d  gi: %g\n", pl.LayIdx, pl.PoolIdx, pl.Inhib.Gi)
+	// }
 	SetNrnV(ctx, ni, di, Gi, gi)
 	SetNrnV(ctx, ni, di, SSGi, pl.Inhib.SSGi)
 	SetNrnV(ctx, ni, di, SSGiDend, 0)

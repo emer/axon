@@ -280,12 +280,12 @@ func NetActTest(t *testing.T, gpu bool) {
 
 				if printCycs {
 					inLay.UnitVals(&inActs, "Act")
-					hidLay.UnitVals(&hidActs, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
 					hidLay.UnitVals(&hidGis, "Gi")
-					outLay.UnitVals(&outActs, "Act")
+					hidLay.UnitVals(&hidActs, "Act")
 					outLay.UnitVals(&outGes, "Ge")
 					outLay.UnitVals(&outGis, "Gi")
+					outLay.UnitVals(&outActs, "Act")
 					fmt.Printf("pat: %v qtr: %v cyc: %v\nin acts: %v\nhid acts: %v ges: %v gis: %v\nout acts: %v ges: %v gis: %v\n", pi, qtr, cyc, inActs, hidActs, hidGes, hidGis, outActs, outGes, outGis)
 				}
 			}

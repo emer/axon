@@ -84,6 +84,8 @@ const (
 	Inet   // net current produced by all channels -- drives update of Vm
 	Vm     // membrane potential -- integrates Inet current over time
 	VmDend // dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking
+	ISI    // current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized.
+	ISIAvg // average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization.
 
 	/////////////////////////////////////////
 	// Calcium for learning
@@ -109,12 +111,6 @@ const (
 	SpkPrv   // final CaSpkD activation state at end of previous theta cycle.  used for specialized learning mechanisms that operate on delayed sending activations.
 	SpkSt1   // the activation state at specific time point within current state processing window (e.g., 50 msec for beta cycle within standard theta cycle), as saved by SpkSt1() function.  Used for example in hippocampus for CA3, CA1 learning
 	SpkSt2   // the activation state at specific time point within current state processing window (e.g., 100 msec for beta cycle within standard theta cycle), as saved by SpkSt2() function.  Used for example in hippocampus for CA3, CA1 learning
-
-	/////////////////////////////////////////
-	// ISI for computing rate-code activation
-
-	ISI    // current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized.
-	ISIAvg // average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization.
 
 	/////////////////////////////////////////
 	// Noise

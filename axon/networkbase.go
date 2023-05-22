@@ -625,8 +625,9 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 		ly.NeurStIdx = uint32(neurIdx)
 		ly.MaxData = nt.MaxData
 		np := ly.NSubPools() + 1
+		npd := np * maxData
 		ly.NPools = uint32(np)
-		ly.Pools = nt.Pools[poolIdx : poolIdx+(np*maxData)]
+		ly.Pools = nt.Pools[poolIdx : poolIdx+npd]
 		ly.Params.Idxs.PoolSt = uint32(poolIdx)
 		ly.Params.Idxs.NeurSt = uint32(neurIdx)
 		ly.Params.Idxs.NeurN = uint32(nn)
@@ -646,7 +647,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 			ly.Vals[di].DataIdx = uint32(di)
 		}
 		for pi := 0; pi < np; pi++ {
-			for di := 0; di < np; di++ {
+			for di := 0; di < maxData; di++ {
 				ix := pi*int(ly.MaxData) + di
 				pl := &ly.Pools[ix]
 				pl.LayIdx = uint32(li)
@@ -686,7 +687,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 		rprjnIdx += len(rprjns)
 		neurIdx += nn
 		prjnIdx += len(sprjns)
-		poolIdx += np
+		poolIdx += npd
 	}
 	if totSynapses > math.MaxUint32 {
 		log.Fatalf("ERROR: total number of synapses is greater than uint32 capacity\n")

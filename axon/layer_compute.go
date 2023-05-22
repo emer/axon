@@ -25,16 +25,17 @@ import (
 // GatherSpikes integrates G*Raw and G*Syn values for given recv neuron
 // while integrating the Recv Prjn-level GSyn integrated values.
 func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
+	lni := ni - ly.NeurStIdx
 	for di := uint32(0); di < ctx.NData; di++ {
 		ly.Params.GatherSpikesInit(ctx, ni, di)
 		for _, pj := range ly.RcvPrjns {
 			if pj.IsOff() {
 				continue
 			}
-			bi := pj.Params.Com.ReadIdx(ni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN, ly.MaxData)
+			bi := pj.Params.Com.ReadIdx(lni, di, ctx.CyclesTotal, pj.Params.Idxs.RecvNeurN, ly.MaxData)
 			gRaw := pj.Params.Com.FloatFromGBuf(pj.GBuf[bi])
 			pj.GBuf[bi] = 0
-			gsi := ni*ly.MaxData + di
+			gsi := lni*ly.MaxData + di
 			pj.Params.GatherSpikes(ctx, ly.Params, ni, di, gRaw, &pj.GSyns[gsi])
 		}
 	}
@@ -104,24 +105,26 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 
 // BetweenLayerGi computes inhibition Gi between layers
 func (ly *Layer) BetweenLayerGi(ctx *Context) {
-	lpl := &ly.Pools[0]
-	maxGi := lpl.Inhib.Gi
 	net := ly.Network
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx1)
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx2)
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx3)
-	maxGi = ly.BetweenLayerGiMax(maxGi, net, ly.Params.LayInhib.Idx4)
-	lpl.Inhib.Gi = maxGi // our inhib is max of us and everyone in the layer pool
+	for di := uint32(0); di < ctx.NData; di++ {
+		lpl := ly.Pool(0, di)
+		maxGi := lpl.Inhib.Gi
+		maxGi = ly.BetweenLayerGiMax(net, di, maxGi, ly.Params.LayInhib.Idx1)
+		maxGi = ly.BetweenLayerGiMax(net, di, maxGi, ly.Params.LayInhib.Idx2)
+		maxGi = ly.BetweenLayerGiMax(net, di, maxGi, ly.Params.LayInhib.Idx3)
+		maxGi = ly.BetweenLayerGiMax(net, di, maxGi, ly.Params.LayInhib.Idx4)
+		lpl.Inhib.Gi = maxGi // our inhib is max of us and everyone in the layer pool
+	}
 }
 
 // BetweenLayerGiMax returns max gi value for input maxGi vs
 // the given layIdx layer
-func (ly *Layer) BetweenLayerGiMax(maxGi float32, net *Network, layIdx int32) float32 {
+func (ly *Layer) BetweenLayerGiMax(net *Network, di uint32, maxGi float32, layIdx int32) float32 {
 	if layIdx < 0 {
 		return maxGi
 	}
 	lay := net.Layers[layIdx]
-	lpl := &lay.Pools[0]
+	lpl := lay.Pool(0, di)
 	if lpl.Inhib.Gi > maxGi {
 		maxGi = lpl.Inhib.Gi
 	}
