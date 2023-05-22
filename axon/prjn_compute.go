@@ -113,7 +113,7 @@ func (pj *Prjn) DWt(ctx *Context, si, di uint32) {
 
 // DWtSubMean subtracts the mean from any projections that have SubMean > 0.
 // This is called on *receiving* projections, prior to WtFmDwt.
-func (pj *Prjn) DWtSubMean(ctx *Context, ri, di uint32) {
+func (pj *Prjn) DWtSubMean(ctx *Context, ri uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}
@@ -150,7 +150,7 @@ func (pj *Prjn) DWtSubMean(ctx *Context, ri, di uint32) {
 // WtFmDWt computes the weight change (learning), based on
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
-func (pj *Prjn) WtFmDWt(ctx *Context, ni, di uint32) {
+func (pj *Prjn) WtFmDWt(ctx *Context, ni uint32) {
 	if pj.Params.Learn.Learn.IsFalse() {
 		return
 	}

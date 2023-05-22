@@ -409,14 +409,17 @@ func (ly *LayerBase) BuildSubPools(ctx *Context) {
 	sh := ly.Shp.Shapes()
 	spy := sh[0]
 	spx := sh[1]
-	pi := 1
+	pi := uint32(1)
 	for py := 0; py < spy; py++ {
 		for px := 0; px < spx; px++ {
 			soff := uint32(ly.Shp.Offset([]int{py, px, 0, 0}))
 			eoff := uint32(ly.Shp.Offset([]int{py, px, sh[2] - 1, sh[3] - 1}) + 1)
-			pl := &ly.Pools[pi]
-			pl.StIdx = soff
-			pl.EdIdx = eoff
+			for di := uint32(0); di < ctx.NData; di++ {
+				pl := ly.Pool(pi, di)
+				pl.StIdx = soff
+				pl.EdIdx = eoff
+			}
+			pl := ly.Pool(pi, 0)
 			for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 				ni := ly.NeurStIdx + lni
 				SetNrnI(ctx, ni, NrnIdxSubPool, uint32(pi))
@@ -429,10 +432,12 @@ func (ly *LayerBase) BuildSubPools(ctx *Context) {
 // BuildPools builds the inhibitory pools structures -- nu = number of units in layer
 func (ly *LayerBase) BuildPools(ctx *Context, nn uint32) error {
 	np := 1 + ly.NSubPools()
-	lpl := &ly.Pools[0]
-	lpl.StIdx = 0
-	lpl.EdIdx = nn
-	lpl.IsLayPool.SetBool(true)
+	for di := uint32(0); di < ctx.NData; di++ {
+		lpl := ly.Pool(0, di)
+		lpl.StIdx = 0
+		lpl.EdIdx = nn
+		lpl.IsLayPool.SetBool(true)
+	}
 	if np > 1 {
 		ly.BuildSubPools(ctx)
 	}

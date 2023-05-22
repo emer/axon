@@ -113,7 +113,7 @@ func (ns *SynapseCaStrides) Idx(synIdx, dataIdx uint32, nvar SynapseCaVars) uint
 // SetSynapseOuter sets strides with synapses as outer loop:
 // [Synapses][Vars][Data], which is optimal for CPU-based computation.
 func (ns *SynapseCaStrides) SetSynapseOuter(ndata int) {
-	ns.Synapse = uint32(ndata) * uint32(SynapseVarsN)
+	ns.Synapse = uint32(ndata) * uint32(SynapseCaVarsN)
 	ns.Var = uint32(ndata)
 }
 

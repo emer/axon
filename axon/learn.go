@@ -281,9 +281,8 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float
 		geTot = 0
 	}
 	vmd := NrnV(ctx, ni, di, VmDend)
-	lrn := NrnV(ctx, ni, di, GnmdaLrn)
-	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(lrn, geTot))
-	gnmda := ln.LrnNMDA.Gnmda(lrn, vmd)
+	SetNrnV(ctx, ni, di, GnmdaLrn, ln.LrnNMDA.NMDASyn(NrnV(ctx, ni, di, GnmdaLrn), geTot))
+	gnmda := ln.LrnNMDA.Gnmda(NrnV(ctx, ni, di, GnmdaLrn), vmd)
 	SetNrnV(ctx, ni, di, NmdaCa, gnmda*ln.LrnNMDA.CaFmV(vmd))
 }
 

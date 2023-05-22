@@ -234,7 +234,7 @@ func (pj *PrjnParams) SynCaSyn(ctx *Context, syni uint32, ni, di uint32, otherCa
 	syCaM := SynCaV(ctx, syni, di, CaM)
 	syCaP := SynCaV(ctx, syni, di, CaP)
 	syCaD := SynCaV(ctx, syni, di, CaD)
-	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, int32(caUpT), &syCaM, &syCaP, &syCaD)
+	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal-1, caUpT, &syCaM, &syCaP, &syCaD)
 	ca := NrnV(ctx, ni, di, CaSyn) * otherCaSyn
 	pj.Learn.KinaseCa.FmCa(ca, &syCaM, &syCaP, &syCaD)
 	SetSynCaV(ctx, syni, di, CaM, syCaM)
@@ -277,12 +277,12 @@ func (pj *PrjnParams) DWtSynCortex(ctx *Context, syni, si, ri, di uint32, layPoo
 	syCaP := SynCaV(ctx, syni, di, CaP)
 	syCaD := SynCaV(ctx, syni, di, CaD)
 	pj.Learn.KinaseCa.CurCa(ctx.CyclesTotal, caUpT, &syCaM, &syCaP, &syCaD) // always update
+	dtr := syCaD                                                            // caD reflects entire window
 	if pj.PrjnType == CTCtxtPrjn {
-		SetSynCaV(ctx, syni, di, DTr, NrnV(ctx, si, di, BurstPrv))
-	} else {
-		SetSynCaV(ctx, syni, di, DTr, syCaD) // caD reflects entire window
+		dtr = NrnV(ctx, si, di, BurstPrv)
 	}
-	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), SynCaV(ctx, syni, di, DTr))
+	SetSynCaV(ctx, syni, di, DTr, dtr)
+	tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), dtr)
 	SetSynCaV(ctx, syni, di, Tr, tr)
 	if SynV(ctx, syni, Wt) == 0 { // failed con, no learn
 		return
@@ -478,6 +478,9 @@ func (pj *PrjnParams) WtFmDWtSynCortex(ctx *Context, syni uint32) {
 	lwt := SynV(ctx, syni, LWt)
 
 	pj.SWt.WtFmDWt(&dwt, &wt, &lwt, SynV(ctx, syni, SWt))
+	SetSynV(ctx, syni, DWt, dwt)
+	SetSynV(ctx, syni, Wt, wt)
+	SetSynV(ctx, syni, LWt, lwt)
 	// pj.Com.Fail(&sy.Wt, sy.SWt) // skipping for now -- not useful actually
 }
 

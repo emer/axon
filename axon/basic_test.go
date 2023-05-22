@@ -452,12 +452,12 @@ func NetTestLearn(t *testing.T, gpu bool) {
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
 					hidLay.UnitVals(&hidGis, "Gi")
-					hidLay.UnitVals(&hidCaM, "CaM")
-					hidLay.UnitVals(&hidCaP, "CaP")
-					hidLay.UnitVals(&hidCaD, "CaD")
+					hidLay.UnitVals(&hidCaM, "NrnCaM")
+					hidLay.UnitVals(&hidCaP, "NrnCaP")
+					hidLay.UnitVals(&hidCaD, "NrnCaD")
 
-					outLay.UnitVals(&outCaP, "CaP")
-					outLay.UnitVals(&outCaD, "CaD")
+					outLay.UnitVals(&outCaP, "NrnCaP")
+					outLay.UnitVals(&outCaD, "NrnCaD")
 
 					if printCycs {
 						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -469,11 +469,11 @@ func NetTestLearn(t *testing.T, gpu bool) {
 					testNet.PlusPhaseStart(ctx)
 				}
 
-				hidLay.UnitVals(&hidCaP, "CaP")
-				hidLay.UnitVals(&hidCaD, "CaD")
+				hidLay.UnitVals(&hidCaP, "NrnCaP")
+				hidLay.UnitVals(&hidCaD, "NrnCaD")
 
-				outLay.UnitVals(&outCaP, "CaP")
-				outLay.UnitVals(&outCaD, "CaD")
+				outLay.UnitVals(&outCaP, "NrnCaP")
+				outLay.UnitVals(&outCaD, "NrnCaD")
 
 				if qtr == 3 {
 					didx := ti*4 + pi
@@ -621,12 +621,12 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 					hidLay.UnitVals(&hidAct, "Act")
 					hidLay.UnitVals(&hidGes, "Ge")
 					hidLay.UnitVals(&hidGis, "Gi")
-					hidLay.UnitVals(&hidCaM, "CaM")
-					hidLay.UnitVals(&hidCaP, "CaP")
-					hidLay.UnitVals(&hidCaD, "CaD")
+					hidLay.UnitVals(&hidCaM, "NrnCaM")
+					hidLay.UnitVals(&hidCaP, "NrnCaP")
+					hidLay.UnitVals(&hidCaD, "NrnCaD")
 
-					outLay.UnitVals(&outCaP, "CaP")
-					outLay.UnitVals(&outCaD, "CaD")
+					outLay.UnitVals(&outCaP, "NrnCaP")
+					outLay.UnitVals(&outCaD, "NrnCaD")
 
 					if printCycs {
 						fmt.Printf("pat: %v qtr: %v cyc: %v\nhid act: %v ges: %v gis: %v\nhid avgss: %v avgs: %v avgm: %v\nout avgs: %v avgm: %v\n", pi, qtr, ctx.Cycle, hidAct, hidGes, hidGis, hidCaM, hidCaP, hidCaD, outCaP, outCaD)
@@ -638,11 +638,11 @@ func NetTestRLRate(t *testing.T, gpu bool) {
 					testNet.PlusPhaseStart(ctx)
 				}
 
-				hidLay.UnitVals(&hidCaP, "CaP")
-				hidLay.UnitVals(&hidCaD, "CaD")
+				hidLay.UnitVals(&hidCaP, "NrnCaP")
+				hidLay.UnitVals(&hidCaD, "NrnCaD")
 
-				outLay.UnitVals(&outCaP, "CaP")
-				outLay.UnitVals(&outCaD, "CaD")
+				outLay.UnitVals(&outCaP, "NrnCaP")
+				outLay.UnitVals(&outCaD, "NrnCaD")
 
 				if qtr == 3 {
 					didx := ti*4 + pi

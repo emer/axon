@@ -133,7 +133,7 @@ func (ly *Layer) BetweenLayerGiMax(net *Network, di uint32, maxGi float32, layId
 
 func (ly *Layer) PulvinarDriver(ctx *Context, ni, di uint32) (drvGe, nonDrvPct float32) {
 	dly := ly.Network.Layers[int(ly.Params.Pulv.DriveLayIdx)]
-	drvMax := dly.Pools[0].AvgMax.CaSpkP.Cycle.Max
+	drvMax := dly.Pool(0, di).AvgMax.CaSpkP.Cycle.Max
 	nonDrvPct = ly.Params.Pulv.NonDrivePct(drvMax) // how much non-driver to keep
 	burst := NrnV(ctx, uint32(dly.NeurStIdx)+ni, di, Burst)
 	drvGe = ly.Params.Pulv.DriveGe(burst)
@@ -211,7 +211,7 @@ func (ly *Layer) SynCa(ctx *Context, ni uint32) {
 		}
 		updtThr := ly.Params.Learn.CaLrn.UpdtThr
 		if NrnV(ctx, ni, di, CaSpkP) < updtThr && NrnV(ctx, ni, di, CaSpkD) < updtThr {
-			return
+			continue
 		}
 		for _, sp := range ly.SndPrjns {
 			if sp.IsOff() {
@@ -581,11 +581,11 @@ func (ly *Layer) CorSimFmActs(ctx *Context) {
 // synaptically-integrated spiking, computed at the Theta cycle interval.
 // This is the trace version for hidden units, and uses syn CaP - CaD for targets.
 func (ly *Layer) DWt(ctx *Context, si uint32) {
-	for di := uint32(0); di < ctx.NData; di++ {
-		for _, pj := range ly.SndPrjns {
-			if pj.IsOff() {
-				continue
-			}
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
+			continue
+		}
+		for di := uint32(0); di < ctx.NData; di++ {
 			pj.DWt(ctx, si, di)
 		}
 	}
@@ -593,25 +593,21 @@ func (ly *Layer) DWt(ctx *Context, si uint32) {
 
 // DWtSubMean computes subtractive normalization of the DWts
 func (ly *Layer) DWtSubMean(ctx *Context, ri uint32) {
-	for di := uint32(0); di < ctx.NData; di++ {
-		for _, pj := range ly.RcvPrjns {
-			if pj.IsOff() {
-				continue
-			}
-			pj.DWtSubMean(ctx, ri, di)
+	for _, pj := range ly.RcvPrjns {
+		if pj.IsOff() {
+			continue
 		}
+		pj.DWtSubMean(ctx, ri)
 	}
 }
 
 // WtFmDWt updates weight values from delta weight changes
 func (ly *Layer) WtFmDWt(ctx *Context, si uint32) {
-	for di := uint32(0); di < ctx.NData; di++ {
-		for _, pj := range ly.SndPrjns {
-			if pj.IsOff() {
-				continue
-			}
-			pj.WtFmDWt(ctx, si, di)
+	for _, pj := range ly.SndPrjns {
+		if pj.IsOff() {
+			continue
 		}
+		pj.WtFmDWt(ctx, si)
 	}
 }
 

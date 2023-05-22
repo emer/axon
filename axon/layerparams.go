@@ -882,7 +882,7 @@ func (ly *LayerParams) PlusPhaseNeuron(ctx *Context, ni, di uint32, pl *Pool, lp
 	SetNrnV(ctx, ni, di, ActP, NrnV(ctx, ni, di, ActInt))
 	nrnCaSpkP := NrnV(ctx, ni, di, CaSpkP)
 	nrnCaSpkD := NrnV(ctx, ni, di, CaSpkD)
-	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaSpkP, lpl.AvgMax.CaSpkD.Cycle.Max)
+	mlr := ly.Learn.RLRate.RLRateSigDeriv(nrnCaSpkD, lpl.AvgMax.CaSpkD.Cycle.Max)
 	modlr := ly.Learn.NeuroMod.LRMod(vals.NeuroMod.DA, vals.NeuroMod.ACh)
 	dlr := float32(0)
 	switch ly.LayType {
