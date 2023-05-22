@@ -13,8 +13,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: ".InputLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":   "1.0",
-					"Layer.Act.Decay.Glong": "1.0",
+					"Layer.Acts.Decay.Act":   "1.0",
+					"Layer.Acts.Decay.Glong": "1.0",
 				}},
 			{Sel: "#CS", Desc: "expect act",
 				Params: params.Params{
@@ -37,11 +37,11 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":     "3.2",
-					"Layer.Inhib.Pool.Gi":      "3.2",
-					"Layer.Act.Dend.ModGain":   "1.5",
-					"Layer.Act.MaintNMDA.Gbar": "0.007",
-					"Layer.Act.MaintNMDA.Tau":  "200",
+					"Layer.Inhib.Layer.Gi":      "3.2",
+					"Layer.Inhib.Pool.Gi":       "3.2",
+					"Layer.Acts.Dend.ModGain":   "1.5",
+					"Layer.Acts.MaintNMDA.Gbar": "0.007",
+					"Layer.Acts.MaintNMDA.Tau":  "200",
 				}},
 			//////////////////////////////////////////////////
 			// required custom params for this project
@@ -110,7 +110,7 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Learn.NeuroMod.DALRateSign": "true", // critical
 					"Layer.Learn.NeuroMod.DALRateMod":  "1",
 					"Layer.Learn.NeuroMod.AChLRateMod": "1",
-					"Layer.Act.Dend.ModGain":           "5", // key for drive modulation
+					"Layer.Acts.Dend.ModGain":          "5", // key for drive modulation
 					"Layer.Inhib.ActAvg.Nominal":       "0.25",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.FB":             "0", // pure FF
@@ -121,7 +121,7 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Dend.SSGi":              "0",
+					"Layer.Acts.Dend.SSGi":             "0",
 					"Layer.Inhib.ActAvg.Nominal":       "0.1",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.6",
@@ -139,9 +139,9 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".VSPatchLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":              "1",
-					"Layer.Act.Decay.Glong":            "1",
-					"Layer.Act.Decay.LearnCa":          "1", // uses CaSpkD as readout
+					"Layer.Acts.Decay.Act":             "1",
+					"Layer.Acts.Decay.Glong":           "1",
+					"Layer.Acts.Decay.LearnCa":         "1", // uses CaSpkD as readout
 					"Layer.Inhib.ActAvg.Nominal":       "0.2",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.5",
@@ -161,11 +161,11 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":        "0",
-					"Layer.Act.Decay.Glong":      "0",
-					"Layer.Act.Init.GeBase":      "0.3",
-					"Layer.Act.Init.GeVar":       "0.1",
-					"Layer.Act.Init.GiVar":       "0.1",
+					"Layer.Acts.Decay.Act":       "0",
+					"Layer.Acts.Decay.Glong":     "0",
+					"Layer.Acts.Init.GeBase":     "0.3",
+					"Layer.Acts.Init.GeVar":      "0.1",
+					"Layer.Acts.Init.GiVar":      "0.1",
 					"Layer.Inhib.ActAvg.Nominal": "1",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.On":        "false",
@@ -176,7 +176,7 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Inhib.Layer.On":             "true", // this is critical, else too active
 					"Layer.Inhib.Layer.Gi":             "0.5",
 					"Layer.Learn.NeuroMod.AChDisInhib": "2",
-					"Layer.Act.SKCa.Gbar":              "3",
+					"Layer.Acts.SKCa.Gbar":             "3",
 				}},
 			{Sel: ".STNs", Desc: "Sustained STN",
 				Params: params.Params{
@@ -184,10 +184,10 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.5",
 					"Layer.Learn.NeuroMod.AChDisInhib": "2",
-					"Layer.Act.SKCa.Gbar":              "3",
-					"Layer.Act.SKCa.C50":               "0.4",
-					"Layer.Act.SKCa.KCaR":              "0.4",
-					"Layer.Act.SKCa.CaRDecayTau":       "200",
+					"Layer.Acts.SKCa.Gbar":             "3",
+					"Layer.Acts.SKCa.C50":              "0.4",
+					"Layer.Acts.SKCa.KCaR":             "0.4",
+					"Layer.Acts.SKCa.CaRDecayTau":      "200",
 				}},
 			{Sel: ".USLayer", Desc: "",
 				Params: params.Params{
@@ -205,18 +205,18 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".DrivesLayer", Desc: "",
 				Params: params.Params{
-					"Layer.Inhib.ActAvg.Nominal": "0.01",
-					"Layer.Inhib.Layer.On":       "false",
-					"Layer.Inhib.Layer.Gi":       "0.5",
-					"Layer.Inhib.Pool.On":        "true",
-					"Layer.Inhib.Pool.Gi":        "0.5",
-					"Layer.Act.PopCode.On":       "true",
-					"Layer.Act.PopCode.MinAct":   "0.2", // low activity for low drive -- also has special 0 case = nothing
-					"Layer.Act.PopCode.MinSigma": "0.08",
-					"Layer.Act.PopCode.MaxSigma": "0.12",
-					"Layer.Act.Decay.Act":        "1",
-					"Layer.Act.Decay.Glong":      "1",
-					"Layer.Learn.TrgAvgAct.On":   "false",
+					"Layer.Inhib.ActAvg.Nominal":  "0.01",
+					"Layer.Inhib.Layer.On":        "false",
+					"Layer.Inhib.Layer.Gi":        "0.5",
+					"Layer.Inhib.Pool.On":         "true",
+					"Layer.Inhib.Pool.Gi":         "0.5",
+					"Layer.Acts.PopCode.On":       "true",
+					"Layer.Acts.PopCode.MinAct":   "0.2", // low activity for low drive -- also has special 0 case = nothing
+					"Layer.Acts.PopCode.MinSigma": "0.08",
+					"Layer.Acts.PopCode.MaxSigma": "0.12",
+					"Layer.Acts.Decay.Act":        "1",
+					"Layer.Acts.Decay.Glong":      "1",
+					"Layer.Learn.TrgAvgAct.On":    "false",
 				}},
 			{Sel: ".LDTLayer", Desc: "",
 				Params: params.Params{
@@ -224,17 +224,17 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Inhib.Layer.Gi":       "1.0",
 					"Layer.Inhib.Pool.On":        "false",
 					"Layer.LDT.RewThr":           "0.2",
-					"Layer.Act.Decay.Act":        "1",
-					"Layer.Act.Decay.Glong":      "1",
-					"Layer.Act.Decay.LearnCa":    "1", // uses CaSpkD as a readout!
+					"Layer.Acts.Decay.Act":       "1",
+					"Layer.Acts.Decay.Glong":     "1",
+					"Layer.Acts.Decay.LearnCa":   "1", // uses CaSpkD as a readout!
 					"Layer.Learn.TrgAvgAct.On":   "false",
 					"Layer.PVLV.Thr":             "0.2",
 					"Layer.PVLV.Gain":            "2",
 				}},
 			{Sel: ".BLALayer", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":              "0",
-					"Layer.Act.Decay.Glong":            "0",
+					"Layer.Acts.Decay.Act":             "0",
+					"Layer.Acts.Decay.Glong":           "0",
 					"Layer.CT.GeGain":                  "0.1", // 0.1 has sig effect -- can go a bit lower if need
 					"Layer.Inhib.ActAvg.Nominal":       "0.025",
 					"Layer.Inhib.Layer.Gi":             "2.2",
@@ -257,7 +257,7 @@ var ParamSetsDefs = params.Sets{
 			{Sel: ".CeMLayer", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Act.Dend.SSGi":        "0",
+					"Layer.Acts.Dend.SSGi":       "0",
 					"Layer.Inhib.Layer.Gi":       "0.5",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "0.3",
@@ -270,15 +270,15 @@ var ParamSetsDefs = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":      "0",
-					"Layer.Act.Decay.Glong":    "0",
-					"Layer.Act.Decay.AHP":      "0",
-					"Layer.Act.Decay.OnRew":    "true", // everything clears
-					"Layer.Act.GABAB.Gbar":     "0.3",
-					"Layer.Act.NMDA.Gbar":      "0.3", // 0.3 enough..
-					"Layer.Act.NMDA.Tau":       "300",
-					"Layer.Act.Sahp.Gbar":      "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain":   "20",   // 10?
+					"Layer.Acts.Decay.Act":     "0",
+					"Layer.Acts.Decay.Glong":   "0",
+					"Layer.Acts.Decay.AHP":     "0",
+					"Layer.Acts.Decay.OnRew":   "true", // everything clears
+					"Layer.Acts.GABAB.Gbar":    "0.3",
+					"Layer.Acts.NMDA.Gbar":     "0.3", // 0.3 enough..
+					"Layer.Acts.NMDA.Tau":      "300",
+					"Layer.Acts.Sahp.Gbar":     "0.01", // not much pressure -- long maint
+					"Layer.Acts.Dend.ModGain":  "20",   // 10?
 					"Layer.Inhib.Layer.Gi":     "1.8",
 					"Layer.Inhib.Pool.Gi":      "1.8",
 					"Layer.Learn.TrgAvgAct.On": "false",
@@ -288,26 +288,26 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.12",
 					"Layer.Inhib.Layer.Gi":       "0.8",
 					"Layer.Inhib.Pool.Gi":        "0.8",
-					"Layer.Act.GABAB.Gbar":       "0.2", // regular
-					"Layer.Act.NMDA.Gbar":        "0.15",
-					"Layer.Act.NMDA.Tau":         "100",
-					"Layer.Act.Decay.Act":        "0.2",
-					"Layer.Act.Decay.Glong":      "0.6",
-					"Layer.Act.Sahp.Gbar":        "0.1",
-					"Layer.Act.KNa.Slow.Max":     "0.2", // maybe too random if higher?
+					"Layer.Acts.GABAB.Gbar":      "0.2", // regular
+					"Layer.Acts.NMDA.Gbar":       "0.15",
+					"Layer.Acts.NMDA.Tau":        "100",
+					"Layer.Acts.Decay.Act":       "0.2",
+					"Layer.Acts.Decay.Glong":     "0.6",
+					"Layer.Acts.Sahp.Gbar":       "0.1",
+					"Layer.Acts.KNa.Slow.Max":    "0.2", // maybe too random if higher?
 					"Layer.CT.GeGain":            "0.01",
 					"Layer.CT.DecayTau":          "50",
 				}},
 			{Sel: ".OFCus", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":        "0",
-					"Layer.Act.Decay.Glong":      "0",
-					"Layer.Act.Decay.OnRew":      "true", // everything clears
+					"Layer.Acts.Decay.Act":       "0",
+					"Layer.Acts.Decay.Glong":     "0",
+					"Layer.Acts.Decay.OnRew":     "true", // everything clears
 					"Layer.Inhib.ActAvg.Nominal": "0.025",
 					"Layer.Inhib.Layer.Gi":       "2.2",
 					"Layer.Inhib.Pool.On":        "true",
 					"Layer.Inhib.Pool.Gi":        "1.2",
-					"Layer.Act.Dend.SSGi":        "0",
+					"Layer.Acts.Dend.SSGi":       "0",
 				}},
 			{Sel: "#OFCusCT", Desc: "",
 				Params: params.Params{

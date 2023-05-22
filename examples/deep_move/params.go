@@ -16,20 +16,20 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal":    "0.1", // 0.05 needed to get hidden2 high to .1, 0.1 keeps it too low!
 					"Layer.Inhib.Layer.Gi":          "1.0", // 1.0 > 1.1  trace
 					"Layer.Learn.TrgAvgAct.SubMean": "1",   // 1 > 0
-					"Layer.Act.Dend.SSGi":           "2",   //
-					"Layer.Act.Gbar.L":              "0.2", // std
-					"Layer.Act.Decay.Act":           "0.0", // 0 == 0.2
-					"Layer.Act.Decay.Glong":         "0.0",
-					"Layer.Act.NMDA.MgC":            "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":           "0",
-					"Layer.Act.NMDA.Gbar":           "0.006",
-					"Layer.Act.GABAB.Gbar":          "0.015", // 0.015 def
+					"Layer.Acts.Dend.SSGi":          "2",   //
+					"Layer.Acts.Gbar.L":             "0.2", // std
+					"Layer.Acts.Decay.Act":          "0.0", // 0 == 0.2
+					"Layer.Acts.Decay.Glong":        "0.0",
+					"Layer.Acts.NMDA.MgC":           "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Acts.NMDA.Voff":          "0",
+					"Layer.Acts.NMDA.Gbar":          "0.006",
+					"Layer.Acts.GABAB.Gbar":         "0.015", // 0.015 def
 					"Layer.Learn.LrnNMDA.Gbar":      "0.006",
-					"Layer.Act.Mahp.Gbar":           "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
-					"Layer.Act.Sahp.Gbar":           "0.1",  // 0.1 == 0.02 no real diff
-					"Layer.Act.Sahp.Off":            "0.8",  //
-					"Layer.Act.Sahp.Slope":          "0.02", //
-					"Layer.Act.Sahp.CaTau":          "5",    // 5 > 10
+					"Layer.Acts.Mahp.Gbar":          "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
+					"Layer.Acts.Sahp.Gbar":          "0.1",  // 0.1 == 0.02 no real diff
+					"Layer.Acts.Sahp.Off":           "0.8",  //
+					"Layer.Acts.Sahp.Slope":         "0.02", //
+					"Layer.Acts.Sahp.CaTau":         "5",    // 5 > 10
 				}},
 			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -53,14 +53,14 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":       "2.0",  // 2.0 is fine -- was 1.4
 					"Layer.CT.GeGain":            "1.5",  // 1
 					"Layer.CT.DecayTau":          "0",    // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.Dend.SSGi":        "0",    // 0 > higher -- kills nmda maint!
-					"Layer.Act.Decay.Act":        "0.0",
-					"Layer.Act.Decay.Glong":      "0.0",
-					"Layer.Act.GABAB.Gbar":       "0.015", // 0.015 standard gaba
-					"Layer.Act.NMDA.Gbar":        "0.006",
-					"Layer.Act.NMDA.Tau":         "100",
-					"Layer.Act.MaintNMDA.Gbar":   "0.006", // not relevant -- no CTSelf
-					"Layer.Act.MaintNMDA.Tau":    "100",
+					"Layer.Acts.Dend.SSGi":       "0",    // 0 > higher -- kills nmda maint!
+					"Layer.Acts.Decay.Act":       "0.0",
+					"Layer.Acts.Decay.Glong":     "0.0",
+					"Layer.Acts.GABAB.Gbar":      "0.015", // 0.015 standard gaba
+					"Layer.Acts.NMDA.Gbar":       "0.006",
+					"Layer.Acts.NMDA.Tau":        "100",
+					"Layer.Acts.MaintNMDA.Gbar":  "0.006", // not relevant -- no CTSelf
+					"Layer.Acts.MaintNMDA.Tau":   "100",
 				}},
 			{Sel: "#DepthHid", Desc: "",
 				Params: params.Params{
@@ -77,9 +77,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":          "0.8", // 0.8 good -- was 0.9
 					"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.15 -- does not work with 0.05
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
-					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0", // clear long
-					"Layer.Act.Decay.AHP":           "0.0", // clear long
+					"Layer.Acts.Decay.Act":          "0.0",
+					"Layer.Acts.Decay.Glong":        "0.0", // clear long
+					"Layer.Acts.Decay.AHP":          "0.0", // clear long
 					"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > .05
 				}},
 			{Sel: "#Action", Desc: "",
@@ -158,7 +158,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":  "0.9", // 0.9 > 0.8 > 1
 					"Layer.Pulv.DriveScale": "0.1", // 0.05 > .1
-					"Layer.Act.NMDA.Gbar":   "0.1",
+					"Layer.Acts.NMDA.Gbar":  "0.1",
 				}},
 			{Sel: "#DepthHid2CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
@@ -166,10 +166,10 @@ var ParamSets = params.Sets{
 					"Layer.CT.DecayTau":          "50",   // 50 > 0
 					"Layer.Inhib.ActAvg.Nominal": "0.12", // 2 even more active -- maybe try higher inhib
 					"Layer.Inhib.Layer.Gi":       "1.4",  // todo
-					"Layer.Act.GABAB.Gbar":       "0.3",
-					"Layer.Act.NMDA.Gbar":        "0.3", // higher layer has more nmda..
-					"Layer.Act.NMDA.Tau":         "300", // 300 > 200
-					"Layer.Act.Sahp.CaTau":       "10",  // todo
+					"Layer.Acts.GABAB.Gbar":      "0.3",
+					"Layer.Acts.NMDA.Gbar":       "0.3", // higher layer has more nmda..
+					"Layer.Acts.NMDA.Tau":        "300", // 300 > 200
+					"Layer.Acts.Sahp.CaTau":      "10",  // todo
 				}},
 		},
 	}},

@@ -13,14 +13,13 @@ require (
 	github.com/emer/leabra v1.2.7
 	github.com/emer/vision v1.1.18
 	github.com/goki/gi v1.3.18
-	github.com/goki/gosl v1.0.13
+	github.com/goki/gosl v1.0.14
 	github.com/goki/ki v1.1.11
 	github.com/goki/kigen v1.0.2
 	github.com/goki/mat32 v1.0.15
 	github.com/goki/vgpu v1.0.22
 	github.com/goki/vulkan v1.0.6
 	github.com/stretchr/testify v1.8.0
-	gitlab.com/gomidi/midi/v2 v2.0.25
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 )
 

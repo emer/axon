@@ -69,16 +69,16 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Act.KNa.On":         "false", // on > off
+					"Layer.Acts.KNa.On":        "false", // on > off
 					"Layer.Learn.TrgAvgAct.On": "true",  // true > false?
 					"Layer.Learn.RLRate.On":    "true",  // true is key so far..
-					"Layer.Act.Gbar.L":         "0.1",
-					"Layer.Act.Decay.Act":      "0.2", // lvis best = .2, .6 good here too
-					"Layer.Act.Decay.Glong":    "0.6",
+					"Layer.Acts.Gbar.L":        "0.1",
+					"Layer.Acts.Decay.Act":     "0.2", // lvis best = .2, .6 good here too
+					"Layer.Acts.Decay.Glong":   "0.6",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
-					"Layer.Act.KNa.On":           "false", // on > off
+					"Layer.Acts.KNa.On":          "false", // on > off
 					"Layer.Learn.TrgAvgAct.On":   "true",  // def true, not rel?
 					"Layer.Learn.RLRate.On":      "false", // def true, too slow?
 					"Layer.Inhib.ActAvg.Nominal": "0.05",
@@ -89,11 +89,11 @@ var ParamSets = params.Sets{
 			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":  "1.2",
+					"Layer.Acts.Clamp.Ge": "1.2",
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{
-					"Layer.Act.KNa.On":           "false", // on > off
+					"Layer.Acts.KNa.On":          "false", // on > off
 					"Layer.Learn.TrgAvgAct.On":   "false", // def true, not rel?
 					"Layer.Learn.RLRate.On":      "false", // def true, too slow?
 					"Layer.Inhib.ActAvg.Nominal": "0.1",
@@ -110,7 +110,7 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: "#CA3", Desc: "sparse = high inibhition",
 				Params: params.Params{
-					"Layer.Act.KNa.On":           "false", // on > off
+					"Layer.Acts.KNa.On":          "false", // on > off
 					"Layer.Inhib.ActAvg.Nominal": "0.02",
 					"Layer.Inhib.Layer.Gi":       "1.4",
 				}},

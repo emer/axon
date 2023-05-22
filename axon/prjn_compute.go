@@ -101,7 +101,7 @@ func (pj *Prjn) DWt(ctx *Context, si, di uint32) {
 	}
 	rlay := pj.Recv
 	layPool := &rlay.Pools[0]
-	isTarget := rlay.Params.Act.Clamp.IsTarget.IsTrue()
+	isTarget := rlay.Params.Acts.Clamp.IsTarget.IsTrue()
 	scon := pj.SendCon[si-pj.Send.NeurStIdx]
 	for syi := scon.Start; syi < scon.Start+scon.N; syi++ {
 		syni := pj.SynStIdx + syi

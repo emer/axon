@@ -134,24 +134,11 @@ func (am *PoolAvgMax) Calc(refIdx int32) {
 	am.GiInt.Calc(refIdx)
 }
 
-// UpdateVals for neuron values
-func (am *PoolAvgMax) UpdateVals(ctx *Context, ni, di uint32) {
-	am.CaSpkP.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkP))
-	am.CaSpkD.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkD))
-	am.SpkMax.Cycle.UpdateVal(NrnV(ctx, ni, di, SpkMax))
-	am.Act.Cycle.UpdateVal(mat32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
-	am.GeInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GeInt))
-	am.GeIntMax.Cycle.UpdateVal(NrnV(ctx, ni, di, GeIntMax))
-	am.GiInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GiInt))
-}
+//gosl: end pool
 
 // note: the following is actually being used despite appearing to be
 // commented out!  it is auto-uncommented when copied to hlsl
 // MUST update whenever above UpdateVals code is updated.
-
-//gosl: end pool
-
-// note: the following is real code uncommented by gosl
 
 //gosl: hlsl pool
 /*
@@ -207,3 +194,14 @@ func (pl *Pool) NNeurons() int {
 }
 
 //gosl: end pool
+
+// AvgMaxUpdate updates the AvgMax values based on current neuron values
+func (pl *Pool) AvgMaxUpdate(ctx *Context, ni, di uint32) {
+	pl.AvgMax.CaSpkP.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkP))
+	pl.AvgMax.CaSpkD.Cycle.UpdateVal(NrnV(ctx, ni, di, CaSpkD))
+	pl.AvgMax.SpkMax.Cycle.UpdateVal(NrnV(ctx, ni, di, SpkMax))
+	pl.AvgMax.Act.Cycle.UpdateVal(mat32.Abs(NrnV(ctx, ni, di, Act))) // can be neg
+	pl.AvgMax.GeInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GeInt))
+	pl.AvgMax.GeIntMax.Cycle.UpdateVal(NrnV(ctx, ni, di, GeIntMax))
+	pl.AvgMax.GiInt.Cycle.UpdateVal(NrnV(ctx, ni, di, GiInt))
+}

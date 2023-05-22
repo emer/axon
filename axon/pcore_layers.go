@@ -86,14 +86,14 @@ func (ly *Layer) MatrixGated(ctx *Context) {
 	if ly.Params.Learn.NeuroMod.DAMod != D1Mod {
 		oly := ly.Network.Layers[int(ly.Params.Matrix.OtherMatrixIdx)]
 		// note: NoGo layers don't track gating at the sub-pool level!
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			ly.Pool(0, di).Gated = oly.Pool(0, di).Gated
 		}
 		return
 	}
 	// todo: Context requires data parallel state!
 
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		mtxGated, poolIdx := ly.GatedFmSpkMax(di, ly.Params.Matrix.GateThr)
 
 		thalGated := false
@@ -185,10 +185,10 @@ func (ly *Layer) AnyGated() bool {
 }
 
 func (ly *Layer) MatrixDefaults() {
-	ly.Params.Act.Decay.Act = 1
-	ly.Params.Act.Decay.Glong = 1  // prevent carryover of NMDA
-	ly.Params.Act.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
-	// ly.Params.Act.NMDA.Gbar = 0    // Matrix needs nmda
+	ly.Params.Acts.Decay.Act = 1
+	ly.Params.Acts.Decay.Glong = 1  // prevent carryover of NMDA
+	ly.Params.Acts.Dend.ModGain = 2 // for VS case -- otherwise irrelevant
+	// ly.Params.Acts.NMDA.Gbar = 0    // Matrix needs nmda
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.FB = 1 // pure FF
 	ly.Params.Inhib.Layer.Gi = 0.3
@@ -252,13 +252,13 @@ func (ly *Layer) MatrixPostBuild() {
 
 func (ly *Layer) GPDefaults() {
 	// GP is tonically self-active and has no FFFB inhibition
-	ly.Params.Act.Init.GeBase = 0.3
-	ly.Params.Act.Init.GeVar = 0.1
-	ly.Params.Act.Init.GiVar = 0.1
-	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 1
-	ly.Params.Act.NMDA.Gbar = 0 // carryover of NMDA was causing issues!
-	ly.Params.Act.GABAB.Gbar = 0
+	ly.Params.Acts.Init.GeBase = 0.3
+	ly.Params.Acts.Init.GeVar = 0.1
+	ly.Params.Acts.Init.GiVar = 0.1
+	ly.Params.Acts.Decay.Act = 0
+	ly.Params.Acts.Decay.Glong = 1
+	ly.Params.Acts.NMDA.Gbar = 0 // carryover of NMDA was causing issues!
+	ly.Params.Acts.GabaB.Gbar = 0
 	ly.Params.Inhib.ActAvg.Nominal = 1 // very active!
 	ly.Params.Inhib.Layer.On.SetBool(false)
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -299,7 +299,7 @@ func (ly *Layer) GPDefaults() {
 }
 
 func (ly *Layer) GPiDefaults() {
-	ly.Params.Act.Init.GeBase = 0.5
+	ly.Params.Acts.Init.GeBase = 0.5
 	// note: GPLayer took care of STN input prjns
 
 	for _, pj := range ly.RcvPrjns {
@@ -340,13 +340,13 @@ func (ly *Layer) GPPostBuild() {
 
 func (ly *Layer) STNDefaults() {
 	// STN is tonically self-active and has no FFFB inhibition
-	ly.Params.Act.SKCa.Gbar = 2
-	ly.Params.Act.Decay.Act = 0
-	ly.Params.Act.Decay.Glong = 0
-	ly.Params.Act.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
-	ly.Params.Act.Dend.SSGi = 0
-	ly.Params.Act.NMDA.Gbar = 0 // fine with 0
-	ly.Params.Act.GABAB.Gbar = 0
+	ly.Params.Acts.SKCa.Gbar = 2
+	ly.Params.Acts.Decay.Act = 0
+	ly.Params.Acts.Decay.Glong = 0
+	ly.Params.Acts.Decay.LearnCa = 1 // key for non-spaced trials, to refresh immediately
+	ly.Params.Acts.Dend.SSGi = 0
+	ly.Params.Acts.NMDA.Gbar = 0 // fine with 0
+	ly.Params.Acts.GabaB.Gbar = 0
 	ly.Params.Inhib.Layer.On.SetBool(true) // true = important for real-world cases
 	ly.Params.Inhib.Layer.Gi = 0.5
 	ly.Params.Inhib.Pool.On.SetBool(false)
@@ -354,13 +354,13 @@ func (ly *Layer) STNDefaults() {
 	ly.Params.Learn.NeuroMod.AChDisInhib = 2
 
 	if strings.HasSuffix(ly.Nm, "STNp") {
-		ly.Params.Act.SKCa.Gbar = 3
+		ly.Params.Acts.SKCa.Gbar = 3
 		// otherwise defaults are set to STNp
 	} else {
-		ly.Params.Act.SKCa.Gbar = 3
-		ly.Params.Act.SKCa.C50 = 0.4
-		ly.Params.Act.SKCa.KCaR = 0.4
-		ly.Params.Act.SKCa.CaRDecayTau = 200
+		ly.Params.Acts.SKCa.Gbar = 3
+		ly.Params.Acts.SKCa.C50 = 0.4
+		ly.Params.Acts.SKCa.KCaR = 0.4
+		ly.Params.Acts.SKCa.CaRDecayTau = 200
 	}
 
 	for _, pj := range ly.RcvPrjns {
@@ -388,10 +388,10 @@ func (ly *Layer) STNDefaults() {
 
 func (ly *Layer) BGThalDefaults() {
 	// note: not tonically active
-	// ly.Params.Act.NMDA.Gbar = 0 // needs NMDA
-	ly.Params.Act.Decay.Act = 1
-	ly.Params.Act.Decay.Glong = 0.6
-	ly.Params.Act.Dend.SSGi = 0
+	// ly.Params.Acts.NMDA.Gbar = 0 // needs NMDA
+	ly.Params.Acts.Decay.Act = 1
+	ly.Params.Acts.Decay.Glong = 0.6
+	ly.Params.Acts.Dend.SSGi = 0
 	ly.Params.Inhib.ActAvg.Nominal = 0.1
 	ly.Params.Inhib.Layer.On.SetBool(true)
 	ly.Params.Inhib.Layer.Gi = 0.6
@@ -420,6 +420,6 @@ func (ly *LayerParams) VSGatedDefaults() {
 	ly.Inhib.Layer.Gi = 1
 	ly.Inhib.Pool.On.SetBool(false)
 	ly.Inhib.Pool.Gi = 1
-	ly.Act.Decay.Act = 1
-	ly.Act.Decay.Glong = 1
+	ly.Acts.Decay.Act = 1
+	ly.Acts.Decay.Glong = 1
 }

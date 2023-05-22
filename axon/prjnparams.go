@@ -192,19 +192,19 @@ func (pj *PrjnParams) SynSendLayIdx(ctx *Context, syni uint32) uint32 {
 func (pj *PrjnParams) GatherSpikes(ctx *Context, ly *LayerParams, ni, di uint32, gRaw float32, gSyn *float32) {
 	switch pj.Com.GType {
 	case ExcitatoryG:
-		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GeSynFmRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GeRaw, gRaw)
 		AddNrnV(ctx, ni, di, GeSyn, *gSyn)
 	case InhibitoryG:
-		*gSyn = ly.Act.Dt.GiSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GiSynFmRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GiRaw, gRaw)
 		AddNrnV(ctx, ni, di, GiSyn, *gSyn)
 	case ModulatoryG:
-		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GeSynFmRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GModRaw, gRaw)
 		AddNrnV(ctx, ni, di, GModSyn, *gSyn)
 	case MaintG:
-		*gSyn = ly.Act.Dt.GeSynFmRaw(*gSyn, gRaw)
+		*gSyn = ly.Acts.Dt.GeSynFmRaw(*gSyn, gRaw)
 		AddNrnV(ctx, ni, di, GMaintRaw, gRaw)
 		// note: Syn happens via NMDA in Act
 	case ContextG:
@@ -328,14 +328,14 @@ func (pj *PrjnParams) DWtSynBLA(ctx *Context, syni, si, ri, di uint32, layPool, 
 			delta *= pj.BLA.NegDeltaLRate
 		}
 		dwt = SynCaV(ctx, syni, di, Tr) * delta * ract
-		SetSynCaV(ctx, syni, di, Tr, 0)
+		SetSynCaV(ctx, syni, di, Tr, 0.0)
 	} else if ctx.NeuroMod.ACh > 0.1 {
 		// note: the former NonUSLRate parameter is not used -- Trace update Tau replaces it..  elegant
 		SetSynCaV(ctx, syni, di, DTr, ctx.NeuroMod.ACh*NrnV(ctx, si, di, Burst))
 		tr := pj.Learn.Trace.TrFmCa(SynCaV(ctx, syni, di, Tr), SynCaV(ctx, syni, di, DTr))
 		SetSynCaV(ctx, syni, di, Tr, tr)
 	} else {
-		SetSynCaV(ctx, syni, di, DTr, 0)
+		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	}
 	lwt := SynV(ctx, syni, LWt)
 	if dwt > 0 {
@@ -422,8 +422,8 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, si, ri, di uint32, layPoo
 	if ctx.NeuroMod.HasRew.IsTrue() { // US time -- use DA and current recv activity
 		dwt := NrnV(ctx, ri, di, RLRate) * pj.Learn.LRate.Eff * SynCaV(ctx, syni, di, Tr) * ract
 		AddSynV(ctx, syni, DWt, dwt)
-		SetSynCaV(ctx, syni, di, Tr, 0)
-		SetSynCaV(ctx, syni, di, DTr, 0)
+		SetSynCaV(ctx, syni, di, Tr, 0.0)
+		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	} else if ach > 0.1 {
 		if layPool.Gated.IsTrue() { // our layer gated
 			SetSynCaV(ctx, syni, di, DTr, ach*NrnV(ctx, si, di, CaSpkD)*ract)
@@ -432,7 +432,7 @@ func (pj *PrjnParams) DWtSynMatrix(ctx *Context, syni, si, ri, di uint32, layPoo
 		}
 		AddSynCaV(ctx, syni, di, Tr, SynCaV(ctx, syni, di, DTr))
 	} else {
-		SetSynCaV(ctx, syni, di, DTr, 0)
+		SetSynCaV(ctx, syni, di, DTr, 0.0)
 	}
 }
 
@@ -491,10 +491,10 @@ func (pj *PrjnParams) WtFmDWtSynNoLimits(ctx *Context, syni uint32) {
 	}
 	AddSynV(ctx, syni, Wt, SynV(ctx, syni, DWt))
 	if SynV(ctx, syni, Wt) < 0 {
-		SetSynV(ctx, syni, Wt, 0)
+		SetSynV(ctx, syni, Wt, 0.0)
 	}
 	SetSynV(ctx, syni, LWt, SynV(ctx, syni, Wt))
-	SetSynV(ctx, syni, DWt, 0)
+	SetSynV(ctx, syni, DWt, 0.0)
 }
 
 //gosl: end prjnparams

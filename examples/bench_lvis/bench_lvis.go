@@ -39,17 +39,17 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.08",
 					"Layer.Inhib.Layer.Gi":       "1.05",
-					"Layer.Act.Gbar.L":           "0.2",
+					"Layer.Acts.Gbar.L":          "0.2",
 				}},
 			{Sel: "#Input", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.9", // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":   "1.5",
+					"Layer.Acts.Clamp.Ge":  "1.5",
 				}},
 			{Sel: "#Output", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "0.70",
-					"Layer.Act.Clamp.Ge":   "0.8",
+					"Layer.Acts.Clamp.Ge":  "0.8",
 				}},
 			{Sel: ".BackPrjn", Desc: "top-down back-projections MUST have lower relative weight scale, otherwise network hallucinates",
 				Params: params.Params{

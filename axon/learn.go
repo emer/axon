@@ -221,7 +221,7 @@ func (rl *RLRateParams) RLRateDiff(scap, scad float32) float32 {
 // axon.LearnNeurParams manages learning-related parameters at the neuron-level.
 // This is mainly the running average activations that drive learning
 type LearnNeurParams struct {
-	CaLrn     CaLrnParams      `view:"inline" desc:"parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase)."`
+	CaLearn   CaLrnParams      `view:"inline" desc:"parameterizes the neuron-level calcium signals driving learning: CaLrn = NMDA + VGCC Ca sources, where VGCC can be simulated from spiking or use the more complex and dynamic VGCC channel directly.  CaLrn is then integrated in a cascading manner at multiple time scales: CaM (as in calmodulin), CaP (ltP, CaMKII, plus phase), CaD (ltD, DAPK1, minus phase)."`
 	CaSpk     CaSpkParams      `view:"inline" desc:"parameterizes the neuron-level spike-driven calcium signals, starting with CaSyn that is integrated at the neuron level, and drives synapse-level, pre * post Ca integration, which provides the Tr trace that multiplies error signals, and drives learning directly for Target layers. CaSpk* values are integrated separately at the Neuron level and used for UpdtThr and RLRate as a proxy for the activation (spiking) based learning signal."`
 	LrnNMDA   chans.NMDAParams `view:"inline" desc:"NMDA channel parameters used for learning, vs. the ones driving activation -- allows exploration of learning parameters independent of their effects on active maintenance contributions of NMDA, and may be supported by different receptor subtypes"`
 	TrgAvgAct TrgAvgActParams  `view:"inline" desc:"synaptic scaling parameters for regulating overall average activity compared to neuron's own target level"`
@@ -230,7 +230,7 @@ type LearnNeurParams struct {
 }
 
 func (ln *LearnNeurParams) Update() {
-	ln.CaLrn.Update()
+	ln.CaLearn.Update()
 	ln.CaSpk.Update()
 	ln.LrnNMDA.Update()
 	ln.TrgAvgAct.Update()
@@ -239,7 +239,7 @@ func (ln *LearnNeurParams) Update() {
 }
 
 func (ln *LearnNeurParams) Defaults() {
-	ln.CaLrn.Defaults()
+	ln.CaLearn.Defaults()
 	ln.CaSpk.Defaults()
 	ln.LrnNMDA.Defaults()
 	ln.LrnNMDA.ITau = 1
@@ -290,7 +290,7 @@ func (ln *LearnNeurParams) LrnNMDAFmRaw(ctx *Context, ni, di uint32, geTot float
 // Computed after new activation for current cycle is updated.
 func (ln *LearnNeurParams) CaFmSpike(ctx *Context, ni, di uint32) {
 	ln.CaSpk.CaFmSpike(ctx, ni, di)
-	ln.CaLrn.CaLrn(ctx, ni, di)
+	ln.CaLearn.CaLrn(ctx, ni, di)
 }
 
 //gosl: end learn_neur

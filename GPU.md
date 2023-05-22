@@ -151,6 +151,14 @@ Each class of special algorithms has its own set of mostly GPU-side code:
 
 * `rl` reinforcement learning (TD and Rescorla Wagner): `rl_layers.go, rl_prjns.go, rl_net.go`
 
+# GPU Quirks
+
+* `gosl` cannot (currently) do proper type inference on variables initialized by `NrnV` function call: https://github.com/goki/gosl/issues/3
+
+* cannot have a struct field with the same name as a NeuronVar enum in the same method context -- results in: `error: 'NrnV' : no matching overloaded function found`
+    + Can rename the field where appropriate (e.g., Spike -> Spikes, GABAB -> GabaB to avoid conflicts).  
+    + Can also call method at a higher or lower level to avoid the name conflict (e.g., get the variable value at the outer calling level, then pass it in as an arg) -- this is preferable if name changes are not easy (e.g., Pool.AvgMaxUpdate)
+
 # TODO:
 
 * HebbPrjn type

@@ -13,8 +13,8 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "#Input", Desc: "input fixed act",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":        "1",
-					"Layer.Act.Decay.Glong":      "1",
+					"Layer.Acts.Decay.Act":       "1",
+					"Layer.Acts.Decay.Glong":     "1",
 					"Layer.Inhib.ActAvg.Nominal": "0.05",
 				}},
 			{Sel: "#Rew", Desc: "",
@@ -34,7 +34,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":       "0.2",
 					"Layer.Inhib.ActAvg.Nominal": "1",
-					"Layer.Act.Dt.GeTau":         "40",
+					"Layer.Acts.Dt.GeTau":        "40",
 				}},
 			{Sel: ".RWPrjn", Desc: "RW pred",
 				Params: params.Params{
@@ -53,7 +53,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":       "0.2",
 					"Layer.Inhib.ActAvg.Nominal": "1",
-					"Layer.Act.Dt.GeTau":         "40",
+					"Layer.Acts.Dt.GeTau":        "40",
 				}},
 			{Sel: ".TDIntegLayer", Desc: "",
 				Params: params.Params{

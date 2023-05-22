@@ -500,7 +500,7 @@ func (pc *PopCodeParams) EncodeGe(i, n uint32, val float32) float32 {
 // for basic Axon, at the neuron level .
 // This is included in axon.Layer to drive the computation.
 type ActParams struct {
-	Spike     SpikeParams       `view:"inline" desc:"Spiking function parameters"`
+	Spikes    SpikeParams       `view:"inline" desc:"Spiking function parameters"`
 	Dend      DendParams        `view:"inline" desc:"dendrite-specific parameters"`
 	Init      ActInitParams     `view:"inline" desc:"initial values for key network state variables -- initialized in InitActs called by InitWts, and provides target values for DecayState"`
 	Decay     DecayParams       `view:"inline" desc:"amount to decay between AlphaCycles, simulating passage of time and effects of saccades etc, especially important for environments with random temporal structure (e.g., most standard neural net training corpora) "`
@@ -515,16 +515,16 @@ type ActParams struct {
 	KNa       chans.KNaMedSlow  `view:"inline" desc:"sodium-gated potassium channel adaptation parameters -- activates a leak-like current as a function of neural activity (firing = Na influx) at two different time-scales (Slick = medium, Slack = slow)"`
 	NMDA      chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
 	MaintNMDA chans.NMDAParams  `view:"inline" desc:"NMDA channel parameters used in computing Gnmda conductance for bistability, and postsynaptic calcium flux used in learning.  Note that Learn.Snmda has distinct parameters used in computing sending NMDA parameters used in learning."`
-	GABAB     chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
+	GabaB     chans.GABABParams `view:"inline" desc:"GABA-B / GIRK channel parameters"`
 	VGCC      chans.VGCCParams  `view:"inline" desc:"voltage gated calcium channels -- provide a key additional source of Ca for learning and positive-feedback loop upstate for active neurons"`
 	AK        chans.AKsParams   `view:"inline" desc:"A-type potassium (K) channel that is particularly important for limiting the runaway excitation from VGCC channels"`
 	SKCa      chans.SKCaParams  `view:"inline" desc:"small-conductance calcium-activated potassium channel produces the pausing function as a consequence of rapid bursting."`
-	Attn      AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
+	AttnMod   AttnParams        `view:"inline" desc:"Attentional modulation parameters: how Attn modulates Ge"`
 	PopCode   PopCodeParams     `view:"inline" desc:"provides encoding population codes, used to represent a single continuous (scalar) value, across a population of units / neurons (1 dimensional)"`
 }
 
 func (ac *ActParams) Defaults() {
-	ac.Spike.Defaults()
+	ac.Spikes.Defaults()
 	ac.Dend.Defaults()
 	ac.Init.Defaults()
 	ac.Decay.Defaults()
@@ -546,7 +546,7 @@ func (ac *ActParams) Defaults() {
 	ac.MaintNMDA.Defaults()
 	ac.MaintNMDA.Gbar = 0.007
 	ac.MaintNMDA.Tau = 200
-	ac.GABAB.Defaults()
+	ac.GabaB.Defaults()
 	ac.VGCC.Defaults()
 	ac.VGCC.Gbar = 0.02
 	ac.VGCC.Ca = 25
@@ -554,14 +554,14 @@ func (ac *ActParams) Defaults() {
 	ac.AK.Gbar = 0.1
 	ac.SKCa.Defaults()
 	ac.SKCa.Gbar = 0
-	ac.Attn.Defaults()
+	ac.AttnMod.Defaults()
 	ac.PopCode.Defaults()
 	ac.Update()
 }
 
 // Update must be called after any changes to parameters
 func (ac *ActParams) Update() {
-	ac.Spike.Update()
+	ac.Spikes.Update()
 	ac.Dend.Update()
 	ac.Init.Update()
 	ac.Decay.Update()
@@ -573,11 +573,11 @@ func (ac *ActParams) Update() {
 	ac.KNa.Update()
 	ac.NMDA.Update()
 	ac.MaintNMDA.Update()
-	ac.GABAB.Update()
+	ac.GabaB.Update()
 	ac.VGCC.Update()
 	ac.AK.Update()
 	ac.SKCa.Update()
-	ac.Attn.Update()
+	ac.AttnMod.Update()
 	ac.PopCode.Update()
 }
 
@@ -872,20 +872,20 @@ func (ac *ActParams) GSkCaFmCa(ctx *Context, ni, di uint32) {
 // geExt is extra conductance to add to the final Ge value
 func (ac *ActParams) GeFmSyn(ctx *Context, ni, di uint32, geSyn, geExt float32) {
 	SetNrnV(ctx, ni, di, GeExt, 0)
-	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ctx, ni, NeuronHasExt) {
+	if ac.Clamp.Add.IsTrue() && NrnHasFlag(ctx, ni, di, NeuronHasExt) {
 		SetNrnV(ctx, ni, di, GeExt, NrnV(ctx, ni, di, Ext)*ac.Clamp.Ge)
 		geSyn += NrnV(ctx, ni, di, GeExt)
 	}
-	geSyn = ac.Attn.ModVal(geSyn, NrnV(ctx, ni, di, Attn))
+	geSyn = ac.AttnMod.ModVal(geSyn, NrnV(ctx, ni, di, Attn))
 
-	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ctx, ni, NeuronHasExt) { // todo: this flag check is not working
+	if ac.Clamp.Add.IsFalse() && NrnHasFlag(ctx, ni, di, NeuronHasExt) { // todo: this flag check is not working
 		geSyn = NrnV(ctx, ni, di, Ext) * ac.Clamp.Ge
 		SetNrnV(ctx, ni, di, GeExt, geSyn)
 		geExt = 0 // no extra in this case
 	}
 
 	SetNrnV(ctx, ni, di, Ge, geSyn+geExt)
-	if NrnV(ctx, ni, di, Ge) < 0 {
+	if NrnV(ctx, ni, di, Ge) < 0.0 {
 		SetNrnV(ctx, ni, di, Ge, 0)
 	}
 	ac.GeNoise(ctx, ni, di)
@@ -957,7 +957,7 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 	// note: nrn.ISI has NOT yet been updated at this point: 0 right after spike, etc
 	// so it takes a full 3 time steps after spiking for Tr period
 	isi := NrnV(ctx, ni, di, ISI)
-	if ac.Spike.Tr > 0 && isi >= 0 && isi < float32(ac.Spike.Tr) {
+	if ac.Spikes.Tr > 0 && isi >= 0 && isi < float32(ac.Spikes.Tr) {
 		updtVm = false // don't update the spiking vm during refract
 	}
 
@@ -967,10 +967,11 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 	var nvm, inet, expi float32
 	if updtVm {
 		ac.VmInteg(NrnV(ctx, ni, di, Vm), ac.Dt.VmDt, ge, 1, gi, gk, &nvm, &inet)
-		if updtVm && ac.Spike.Exp.IsTrue() { // add spike current if relevant
-			exVm := 0.5 * (nvm + NrnV(ctx, ni, di, Vm)) // midpoint for this
-			expi = ac.Gbar.L * ac.Spike.ExpSlope *
-				mat32.FastExp((exVm-ac.Spike.Thr)/ac.Spike.ExpSlope)
+		if updtVm && ac.Spikes.Exp.IsTrue() { // add spike current if relevant
+			var exVm float32
+			exVm = 0.5 * (nvm + NrnV(ctx, ni, di, Vm)) // midpoint for this
+			expi = ac.Gbar.L * ac.Spikes.ExpSlope *
+				mat32.FastExp((exVm-ac.Spikes.Thr)/ac.Spikes.ExpSlope)
 			if expi > ac.Dt.VmTau {
 				expi = ac.Dt.VmTau
 			}
@@ -981,10 +982,10 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 		SetNrnV(ctx, ni, di, Inet, inet)
 	} else { // decay back to VmR
 		var dvm float32
-		if int32(isi) == ac.Spike.Tr-1 {
-			dvm = ac.Spike.VmR - NrnV(ctx, ni, di, Vm)
+		if int32(isi) == ac.Spikes.Tr-1 {
+			dvm = ac.Spikes.VmR - NrnV(ctx, ni, di, Vm)
 		} else {
-			dvm = ac.Spike.RDt * (ac.Spike.VmR - NrnV(ctx, ni, di, Vm))
+			dvm = ac.Spikes.RDt * (ac.Spikes.VmR - NrnV(ctx, ni, di, Vm))
 		}
 		SetNrnV(ctx, ni, di, Vm, NrnV(ctx, ni, di, Vm)+dvm)
 		SetNrnV(ctx, ni, di, Inet, dvm*ac.Dt.VmTau)
@@ -995,7 +996,8 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 		if !updtVm {
 			glEff += ac.Dend.GbarR
 		}
-		giEff := gi + ac.Gbar.I*NrnV(ctx, ni, di, SSGiDend)
+		var giEff float32
+		giEff = gi + ac.Gbar.I*NrnV(ctx, ni, di, SSGiDend)
 		ac.VmInteg(NrnV(ctx, ni, di, VmDend), ac.Dt.VmDendDt, ge, glEff, giEff, gk, &nvm, &inet)
 		if updtVm {
 			nvm = ac.VmFmInet(nvm, ac.Dt.VmDendDt, ac.Dend.GbarExp*expi)
@@ -1007,17 +1009,17 @@ func (ac *ActParams) VmFmG(ctx *Context, ni, di uint32) {
 // SpikeFmVmVars computes Spike from Vm and ISI-based activation, using pointers to variables
 func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAct *float32, nrnVm float32) {
 	var thr float32
-	if ac.Spike.Exp.IsTrue() {
-		thr = ac.Spike.ExpThr
+	if ac.Spikes.Exp.IsTrue() {
+		thr = ac.Spikes.ExpThr
 	} else {
-		thr = ac.Spike.Thr
+		thr = ac.Spikes.Thr
 	}
 	if nrnVm >= thr {
 		*nrnSpike = 1
 		if *nrnISIAvg == -1 {
 			*nrnISIAvg = -2
 		} else if *nrnISI > 0 { // must have spiked to update
-			*nrnISIAvg = ac.Spike.AvgFmISI(*nrnISIAvg, *nrnISI+1)
+			*nrnISIAvg = ac.Spikes.AvgFmISI(*nrnISIAvg, *nrnISI+1)
 		}
 		*nrnISI = 0
 	} else {
@@ -1038,11 +1040,11 @@ func (ac *ActParams) SpikeFmVmVars(nrnISI, nrnISIAvg, nrnSpike, nrnSpiked, nrnAc
 			*nrnSpiked = 0
 		}
 		if *nrnISIAvg >= 0 && *nrnISI > 0 && *nrnISI > 1.2**nrnISIAvg {
-			*nrnISIAvg = ac.Spike.AvgFmISI(*nrnISIAvg, *nrnISI)
+			*nrnISIAvg = ac.Spikes.AvgFmISI(*nrnISIAvg, *nrnISI)
 		}
 	}
 
-	nwAct := ac.Spike.ActFmISI(*nrnISIAvg, .001, ac.Dt.Integ)
+	nwAct := ac.Spikes.ActFmISI(*nrnISIAvg, .001, ac.Dt.Integ)
 	if nwAct > 1 {
 		nwAct = 1
 	}

@@ -26,7 +26,7 @@ import (
 // while integrating the Recv Prjn-level GSyn integrated values.
 func (ly *Layer) GatherSpikes(ctx *Context, ni uint32) {
 	lni := ni - ly.NeurStIdx
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		ly.Params.GatherSpikesInit(ctx, ni, di)
 		for _, pj := range ly.RcvPrjns {
 			if pj.IsOff() {
@@ -59,14 +59,14 @@ func (ly *Layer) GiFmSpikes(ctx *Context) {
 			continue
 		}
 		subPool := NrnI(ctx, ni, NrnIdxSubPool)
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			pl := ly.Pool(subPool, di)
 			pl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt))
-			pl.AvgMax.UpdateVals(ctx, ni, di)
+			pl.AvgMaxUpdate(ctx, ni, di)
 			if hasSubPools { // update layer too -- otherwise pl == lpl
 				lpl := ly.Pool(0, di)
 				lpl.Inhib.RawIncr(NrnV(ctx, ni, di, Spike), NrnV(ctx, ni, di, GeRaw), NrnV(ctx, ni, di, GeExt))
-				lpl.AvgMax.UpdateVals(ctx, ni, di)
+				lpl.AvgMaxUpdate(ctx, ni, di)
 			}
 		}
 	}
@@ -94,7 +94,7 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 		return
 	}
 	lyInhib := ly.Params.Inhib.Layer.On.IsTrue()
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		lpl := ly.Pool(0, di)
 		for pi := uint32(1); pi < np; pi++ {
 			pl := ly.Pool(pi, di)
@@ -106,7 +106,7 @@ func (ly *Layer) PoolGiFmSpikes(ctx *Context) {
 // BetweenLayerGi computes inhibition Gi between layers
 func (ly *Layer) BetweenLayerGi(ctx *Context) {
 	net := ly.Network
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		lpl := ly.Pool(0, di)
 		maxGi := lpl.Inhib.Gi
 		maxGi = ly.BetweenLayerGiMax(net, di, maxGi, ly.Params.LayInhib.Idx1)
@@ -166,7 +166,7 @@ func (ly *Layer) SpikeFmG(ctx *Context, ni, di uint32) {
 // CycleNeuron does one cycle (msec) of updating at the neuron level
 // Called directly by Network, iterates over data.
 func (ly *Layer) CycleNeuron(ctx *Context, ni uint32) {
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		pl := ly.SubPool(ctx, ni, di)
 		ly.GInteg(ctx, ni, di, pl, ly.LayerVals(di))
 		ly.SpikeFmG(ctx, ni, di)
@@ -178,7 +178,7 @@ func (ly *Layer) CycleNeuron(ctx *Context, ni uint32) {
 // It also updates the CaSpkPCyc stats.
 // Called directly by Network, iterates over data.
 func (ly *Layer) PostSpike(ctx *Context, ni uint32) {
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		lpl := ly.Pool(0, di)
 		pl := ly.SubPool(ctx, ni, di)
 		vals := ly.LayerVals(di)
@@ -195,7 +195,7 @@ func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
 		if sp.IsOff() {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			sp.SendSpike(ctx, ni, di, ly.MaxData)
 		}
 	}
@@ -205,11 +205,11 @@ func (ly *Layer) SendSpike(ctx *Context, ni uint32) {
 // Optimized version only updates at point of spiking, threaded over neurons.
 // Called directly by Network, iterates over data.
 func (ly *Layer) SynCa(ctx *Context, ni uint32) {
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		if NrnV(ctx, ni, di, Spike) == 0 {
 			continue
 		}
-		updtThr := ly.Params.Learn.CaLrn.UpdtThr
+		updtThr := ly.Params.Learn.CaLearn.UpdtThr
 		if NrnV(ctx, ni, di, CaSpkP) < updtThr && NrnV(ctx, ni, di, CaSpkD) < updtThr {
 			continue
 		}
@@ -251,7 +251,7 @@ func (ly *Layer) LDTSrcLayAct(net *Network, layIdx int32, di uint32) float32 {
 // Any updates here must also be done in gpu_hlsl/gpu_cyclepost.hlsl
 func (ly *Layer) CyclePost(ctx *Context) {
 	net := ly.Network
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		vals := ly.LayerVals(di)
 		switch ly.LayerType() {
 		case PTNotMaintLayer:
@@ -295,7 +295,7 @@ func (ly *Layer) CyclePost(ctx *Context) {
 func (ly *Layer) NewState(ctx *Context) {
 	nn := ly.NNeurons
 	np := ly.NPools
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		lpl := ly.Pool(0, di)
 		vals := ly.LayerVals(di)
 		ly.Params.NewStateLayer(ctx, lpl, vals)
@@ -320,7 +320,7 @@ func (ly *Layer) NewState(ctx *Context) {
 }
 
 // DecayState decays activation state by given proportion
-// (default decay values are ly.Params.Act.Decay.Act, Glong)
+// (default decay values are ly.Params.Acts.Decay.Act, Glong)
 func (ly *Layer) DecayState(ctx *Context, decay, glong, ahp float32) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
@@ -328,8 +328,8 @@ func (ly *Layer) DecayState(ctx *Context, decay, glong, ahp float32) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
-			ly.Params.Act.DecayState(ctx, ni, di, decay, glong, ahp)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 			// Note: synapse-level Ca decay happens in DWt
 		}
 	}
@@ -350,14 +350,14 @@ func (ly *Layer) DecayStateLayer(ctx *Context, decay, glong, ahp float32) {
 // DecayStatePool decays activation state by given proportion in given sub-pool index (0 based)
 func (ly *Layer) DecayStatePool(ctx *Context, pool int, decay, glong, ahp float32) {
 	pi := uint32(pool + 1) // 1 based
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		pl := ly.Pool(pi, di)
 		for lni := pl.StIdx; lni < pl.EdIdx; lni++ {
 			ni := ly.NeurStIdx + lni
 			if NrnIsOff(ctx, ni) {
 				continue
 			}
-			ly.Params.Act.DecayState(ctx, ni, di, decay, glong, ahp)
+			ly.Params.Acts.DecayState(ctx, ni, di, decay, glong, ahp)
 		}
 		pl.Inhib.Decay(decay)
 	}
@@ -394,7 +394,7 @@ func (ly *Layer) MinusPhase(ctx *Context) {
 		ly.Params.MinusPhasePool(ctx, pl)
 	}
 	nn := ly.NNeurons
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		vals := ly.LayerVals(di)
 		lpl := ly.Pool(0, di)
 		for lni := uint32(0); lni < nn; lni++ {
@@ -426,7 +426,7 @@ func (ly *Layer) PlusPhaseStart(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			lpl := ly.Pool(0, di)
 			pl := ly.SubPool(ctx, ni, di)
 			ly.Params.PlusPhaseStartNeuron(ctx, ni, di, pl, lpl, ly.LayerVals(di))
@@ -447,7 +447,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			lpl := ly.Pool(0, di)
 			pl := ly.SubPool(ctx, ni, di)
 			ly.Params.PlusPhaseNeuron(ctx, ni, di, pl, lpl, ly.LayerVals(di))
@@ -458,7 +458,7 @@ func (ly *Layer) PlusPhase(ctx *Context) {
 // PlusPhasePost does special algorithm processing at end of plus
 func (ly *Layer) PlusPhasePost(ctx *Context) {
 	ly.CorSimFmActs(ctx) // GPU syncs down the state before this
-	if ly.Params.Act.Decay.OnRew.IsTrue() {
+	if ly.Params.Acts.Decay.OnRew.IsTrue() {
 		if ctx.NeuroMod.HasRew.IsTrue() || ctx.PVLV.LHb.GiveUp.IsTrue() {
 			ly.DecayState(ctx, 1, 1, 1) // note: GPU will get, and GBuf are auto-cleared in NewState
 		}
@@ -479,12 +479,12 @@ func (ly *Layer) TargToExt(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		if !NrnHasFlag(ctx, ni, NeuronHasTarg) { // will be clamped in plus phase
-			continue
-		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			if !NrnHasFlag(ctx, ni, di, NeuronHasTarg) { // will be clamped in plus phase
+				continue
+			}
 			SetNrnV(ctx, ni, di, Ext, NrnV(ctx, ni, di, Target))
-			NrnSetFlag(ctx, ni, NeuronHasExt)
+			NrnSetFlag(ctx, ni, di, NeuronHasExt)
 			SetNrnV(ctx, ni, di, ISI, -1) // get fresh update on plus phase output acts
 			SetNrnV(ctx, ni, di, ISIAvg, -1)
 		}
@@ -500,12 +500,12 @@ func (ly *Layer) ClearTargExt(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		if !NrnHasFlag(ctx, ni, NeuronHasTarg) { // will be clamped in plus phase
-			continue
-		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			if !NrnHasFlag(ctx, ni, di, NeuronHasTarg) { // will be clamped in plus phase
+				continue
+			}
 			SetNrnV(ctx, ni, di, Ext, 0)
-			NrnClearFlag(ctx, ni, NeuronHasExt)
+			NrnClearFlag(ctx, ni, di, NeuronHasExt)
 			SetNrnV(ctx, ni, di, ISI, -1) // get fresh update on plus phase output acts
 			SetNrnV(ctx, ni, di, ISIAvg, -1)
 		}
@@ -520,7 +520,7 @@ func (ly *Layer) SpkSt1(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			SetNrnV(ctx, ni, di, SpkSt1, NrnV(ctx, ni, di, CaSpkP))
 		}
 	}
@@ -534,7 +534,7 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			SetNrnV(ctx, ni, di, SpkSt2, NrnV(ctx, ni, di, CaSpkP))
 		}
 	}
@@ -544,7 +544,7 @@ func (ly *Layer) SpkSt2(ctx *Context) {
 // (centered cosine aka normalized dot product)
 // in activation state between minus and plus phases.
 func (ly *Layer) CorSimFmActs(ctx *Context) {
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		vals := ly.LayerVals(di)
 		lpl := ly.Pool(0, di)
 		avgM := lpl.AvgMax.Act.Minus.Avg
@@ -570,7 +570,7 @@ func (ly *Layer) CorSimFmActs(ctx *Context) {
 		}
 		vals.CorSim.Cor = cosv
 
-		ly.Params.Act.Dt.AvgVarUpdt(&vals.CorSim.Avg, &vals.CorSim.Var, vals.CorSim.Cor)
+		ly.Params.Acts.Dt.AvgVarUpdt(&vals.CorSim.Avg, &vals.CorSim.Var, vals.CorSim.Cor)
 	}
 }
 
@@ -585,7 +585,7 @@ func (ly *Layer) DWt(ctx *Context, si uint32) {
 		if pj.IsOff() {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			pj.DWt(ctx, si, di)
 		}
 	}
@@ -712,7 +712,7 @@ func (ly *Layer) AdaptInhib(ctx *Context) {
 	if ly.Params.Inhib.ActAvg.AdaptGi.IsFalse() || ly.Params.IsInput() {
 		return
 	}
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		vals := ly.LayerVals(di)
 		ly.Params.Inhib.ActAvg.Adapt(&vals.ActAvg.GiMult, vals.ActAvg.ActMAvg)
 	}
@@ -754,8 +754,8 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 			SetNrnAvgV(ctx, ni, AvgDif, adif)
 			pl.AvgDif.UpdateVal(mat32.Abs(adif))
 		}
-		pl.AvgDif.Calc(int32(ly.Idx))               // ref in case of crash
-		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
+		pl.AvgDif.Calc(int32(ly.Idx))                       // ref in case of crash
+		for di := uint32(1); di < ctx.NetIdxs.NData; di++ { // copy to other datas
 			pld := ly.Pool(pi, di)
 			pld.AvgDif = pl.AvgDif
 		}
@@ -772,7 +772,7 @@ func (ly *Layer) AvgDifFmTrgAvg(ctx *Context) {
 		}
 		lpl.AvgDif.Calc(int32(ly.Idx))
 
-		for di := uint32(1); di < ctx.NData; di++ { // copy to other datas
+		for di := uint32(1); di < ctx.NetIdxs.NData; di++ { // copy to other datas
 			lpld := ly.Pool(0, di)
 			lpld.AvgDif = lpl.AvgDif
 		}

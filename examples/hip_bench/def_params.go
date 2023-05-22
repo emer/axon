@@ -15,12 +15,12 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic layer params",
 				Params: params.Params{
-					"Layer.Act.KNa.On":         "false", // false > true
+					"Layer.Acts.KNa.On":        "false", // false > true
 					"Layer.Learn.TrgAvgAct.On": "false", // true > false?
 					"Layer.Learn.RLRate.On":    "false", // no diff..
-					"Layer.Act.Gbar.L":         "0.2",   // .2 > .1
-					"Layer.Act.Decay.Act":      "1.0",   // 1.0 both is best by far!
-					"Layer.Act.Decay.Glong":    "1.0",
+					"Layer.Acts.Gbar.L":        "0.2",   // .2 > .1
+					"Layer.Acts.Decay.Act":     "1.0",   // 1.0 both is best by far!
+					"Layer.Acts.Decay.Glong":   "1.0",
 					"Layer.Inhib.Pool.Bg":      "0.0",
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
@@ -36,7 +36,7 @@ var ParamSets = params.Sets{
 			{Sel: "#ECout", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
 					"Layer.Inhib.Pool.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":  "0.6",
+					"Layer.Acts.Clamp.Ge": "0.6",
 				}},
 			{Sel: "#CA1", Desc: "CA1 only Pools",
 				Params: params.Params{

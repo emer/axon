@@ -13,7 +13,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "clamp gain makes big diff on overall excitation, gating propensity",
 				Params: params.Params{
-					"Layer.Act.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
+					"Layer.Acts.Clamp.Ge": "1.0", // 1.5 is def, was 0.6 (too low)
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
@@ -24,8 +24,8 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "3.2", // 3.2 def
-					"Layer.Act.Dend.ModGain": "1.5", // 1.5 def
+					"Layer.Inhib.Layer.Gi":    "3.2", // 3.2 def
+					"Layer.Acts.Dend.ModGain": "1.5", // 1.5 def
 				}},
 			////////////////////////////////////////////
 			// Prjns
@@ -62,9 +62,9 @@ var ParamSetsDefs = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
-					"Layer.Act.Decay.Act":   "0.0",
-					"Layer.Act.Decay.Glong": "0.0",
-					"Layer.Act.Clamp.Ge":    "0.8", // 1.5 is def, was 0.6 (too low) -- makes big diff on gating
+					"Layer.Acts.Decay.Act":   "0.0",
+					"Layer.Acts.Decay.Glong": "0.0",
+					"Layer.Acts.Clamp.Ge":    "0.8", // 1.5 is def, was 0.6 (too low) -- makes big diff on gating
 				}},
 			{Sel: "#PFC", Desc: "",
 				Params: params.Params{
@@ -73,12 +73,12 @@ var ParamSetsDefs = params.Sets{
 			{Sel: "#ACCNeg", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":   "0.6",
+					"Layer.Acts.Clamp.Ge":  "0.6",
 				}},
 			{Sel: "#ACCPos", Desc: "",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi": "1.1",
-					"Layer.Act.Clamp.Ge":   "0.6",
+					"Layer.Acts.Clamp.Ge":  "0.6",
 				}},
 			// {Sel: "#PFCo", Desc: "slower FB inhib for smoother dynamics",
 			// 	Params: params.Params{}},
@@ -87,41 +87,41 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.5",
-					"Layer.Act.Decay.LearnCa":          "1.0", // key
-					"Layer.Act.SKCa.Gbar":              "3",
-					"Layer.Act.SKCa.C50":               "0.5",
-					"Layer.Act.SKCa.KCaR":              "0.8",
-					"Layer.Act.SKCa.CaRDecayTau":       "150",
-					"Layer.Act.SKCa.CaInThr":           "0.01",
-					"Layer.Act.SKCa.CaInTau":           "50",
+					"Layer.Acts.Decay.LearnCa":         "1.0", // key
+					"Layer.Acts.SKCa.Gbar":             "3",
+					"Layer.Acts.SKCa.C50":              "0.5",
+					"Layer.Acts.SKCa.KCaR":             "0.8",
+					"Layer.Acts.SKCa.CaRDecayTau":      "150",
+					"Layer.Acts.SKCa.CaInThr":          "0.01",
+					"Layer.Acts.SKCa.CaInTau":          "50",
 					"Layer.Learn.NeuroMod.AChDisInhib": "2",
 				}},
 			{Sel: "#STNs", Desc: "Sustained STN",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":            "0.0",
-					"Layer.Act.Init.GeVar":             "0.0",
-					"Layer.Act.Decay.LearnCa":          "1.0", // key
+					"Layer.Acts.Init.GeBase":           "0.0",
+					"Layer.Acts.Init.GeVar":            "0.0",
+					"Layer.Acts.Decay.LearnCa":         "1.0", // key
 					"Layer.Inhib.ActAvg.Nominal":       "0.15",
 					"Layer.Inhib.Layer.On":             "true",
 					"Layer.Inhib.Layer.Gi":             "0.8", // was 0.8 - todo: 0.5?  lower?
-					"Layer.Act.SKCa.Gbar":              "3",
-					"Layer.Act.SKCa.C50":               "0.4",
-					"Layer.Act.SKCa.KCaR":              "0.4",
-					"Layer.Act.SKCa.CaRDecayTau":       "200",
-					"Layer.Act.SKCa.CaInThr":           "0.01",
-					"Layer.Act.SKCa.CaInTau":           "50",
+					"Layer.Acts.SKCa.Gbar":             "3",
+					"Layer.Acts.SKCa.C50":              "0.4",
+					"Layer.Acts.SKCa.KCaR":             "0.4",
+					"Layer.Acts.SKCa.CaRDecayTau":      "200",
+					"Layer.Acts.SKCa.CaInThr":          "0.01",
+					"Layer.Acts.SKCa.CaInTau":          "50",
 					"Layer.Learn.NeuroMod.AChDisInhib": "2", // 2 is plenty to turn off, 1 sometimes not
 				}},
 			{Sel: ".GPLayer", Desc: "all gp",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase":      "0.3",
-					"Layer.Act.Init.GeVar":       "0.1",
-					"Layer.Act.Init.GiVar":       "0.1",
+					"Layer.Acts.Init.GeBase":     "0.3",
+					"Layer.Acts.Init.GeVar":      "0.1",
+					"Layer.Acts.Init.GiVar":      "0.1",
 					"Layer.Inhib.ActAvg.Nominal": "1",
 				}},
 			{Sel: "#GPi", Desc: "",
 				Params: params.Params{
-					"Layer.Act.Init.GeBase": "0.5", // todo: 0.6 in params
+					"Layer.Acts.Init.GeBase": "0.5", // todo: 0.6 in params
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
@@ -138,24 +138,24 @@ var ParamSetsDefs = params.Sets{
 					"Layer.CT.DecayTau":          "50",
 					"Layer.Inhib.Layer.Gi":       "2.2",
 					"Layer.Inhib.Pool.Gi":        "2.2",
-					"Layer.Act.GABAB.Gbar":       "0.25",
-					"Layer.Act.NMDA.Gbar":        "0.25",
-					"Layer.Act.NMDA.Tau":         "200",
-					"Layer.Act.Decay.Act":        "0.0",
-					"Layer.Act.Decay.Glong":      "0.0",
-					"Layer.Act.Sahp.Gbar":        "1.0",
+					"Layer.Acts.GABAB.Gbar":      "0.25",
+					"Layer.Acts.NMDA.Gbar":       "0.25",
+					"Layer.Acts.NMDA.Tau":        "200",
+					"Layer.Acts.Decay.Act":       "0.0",
+					"Layer.Acts.Decay.Glong":     "0.0",
+					"Layer.Acts.Sahp.Gbar":       "1.0",
 				}},
 			{Sel: ".PTMaintLayer", Desc: "time integration params",
 				Params: params.Params{
-					"Layer.Inhib.Layer.Gi":   "1.8", // was 1.0
-					"Layer.Inhib.Pool.Gi":    "1.8", // was 1.8
-					"Layer.Act.GABAB.Gbar":   "0.3",
-					"Layer.Act.NMDA.Gbar":    "0.3", // 0.3 enough..
-					"Layer.Act.NMDA.Tau":     "300",
-					"Layer.Act.Decay.Act":    "0.0",
-					"Layer.Act.Decay.Glong":  "0.0",
-					"Layer.Act.Sahp.Gbar":    "0.01", // not much pressure -- long maint
-					"Layer.Act.Dend.ModGain": "10",   // 10?
+					"Layer.Inhib.Layer.Gi":    "1.8", // was 1.0
+					"Layer.Inhib.Pool.Gi":     "1.8", // was 1.8
+					"Layer.Acts.GABAB.Gbar":   "0.3",
+					"Layer.Acts.NMDA.Gbar":    "0.3", // 0.3 enough..
+					"Layer.Acts.NMDA.Tau":     "300",
+					"Layer.Acts.Decay.Act":    "0.0",
+					"Layer.Acts.Decay.Glong":  "0.0",
+					"Layer.Acts.Sahp.Gbar":    "0.01", // not much pressure -- long maint
+					"Layer.Acts.Dend.ModGain": "10",   // 10?
 				}},
 			{Sel: ".BGThalLayer", Desc: "",
 				Params: params.Params{

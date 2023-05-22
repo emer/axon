@@ -332,12 +332,12 @@ func (net *Network) AddSCLayer2D(prefix string, nNeurY, nNeurX int) *Layer {
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "1.2",
 		"Layer.Inhib.Pool.On":        "false",
-		"Layer.Act.Decay.Act":        "1", // key for rapid updating
-		"Layer.Act.Decay.Glong":      "0.0",
-		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
-		"Layer.Act.Decay.OnRew":      "true",
-		"Layer.Act.KNa.TrialSlow":    "true",
-		"Layer.Act.KNa.Slow.Max":     "2", // 1 not strong enough!
+		"Layer.Acts.Decay.Act":       "1", // key for rapid updating
+		"Layer.Acts.Decay.Glong":     "0.0",
+		"Layer.Acts.Decay.LearnCa":   "1.0", // uses CaSpkD as a readout -- clear
+		"Layer.Acts.Decay.OnRew":     "true",
+		"Layer.Acts.KNa.TrialSlow":   "true",
+		"Layer.Acts.KNa.Slow.Max":    "2", // 1 not strong enough!
 	}
 	sc.SetClass("SC")
 	return sc
@@ -356,12 +356,12 @@ func (net *Network) AddSCLayer4D(prefix string, nPoolsY, nPoolsX, nNeurY, nNeurX
 		"Layer.Inhib.Layer.Gi":       "1.2",
 		"Layer.Inhib.Pool.On":        "true",
 		"Layer.Inhib.Pool.Gi":        "1.2",
-		"Layer.Act.Decay.Act":        "1", // key for rapid updating
-		"Layer.Act.Decay.Glong":      "0.0",
-		"Layer.Act.Decay.LearnCa":    "1.0", // uses CaSpkD as a readout -- clear
-		"Layer.Act.Decay.OnRew":      "true",
-		"Layer.Act.KNa.TrialSlow":    "true",
-		"Layer.Act.KNa.Slow.Max":     "1",
+		"Layer.Acts.Decay.Act":       "1", // key for rapid updating
+		"Layer.Acts.Decay.Glong":     "0.0",
+		"Layer.Acts.Decay.LearnCa":   "1.0", // uses CaSpkD as a readout -- clear
+		"Layer.Acts.Decay.OnRew":     "true",
+		"Layer.Acts.KNa.TrialSlow":   "true",
+		"Layer.Acts.KNa.Slow.Max":    "1",
 	}
 	sc.SetClass("SC")
 	return sc

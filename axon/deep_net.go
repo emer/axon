@@ -434,15 +434,15 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
 	pfcParams := params.Params{
-		"Layer.Act.Decay.Act":        "0",
-		"Layer.Act.Decay.Glong":      "0",
-		"Layer.Act.Decay.OnRew":      onRew,
+		"Layer.Acts.Decay.Act":       "0",
+		"Layer.Acts.Decay.Glong":     "0",
+		"Layer.Acts.Decay.OnRew":     onRew,
 		"Layer.Inhib.ActAvg.Nominal": "0.025",
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "2.2",
 		"Layer.Inhib.Pool.On":        "true",
 		"Layer.Inhib.Pool.Gi":        "0.8",
-		"Layer.Act.Dend.SSGi":        "0",
+		"Layer.Acts.Dend.SSGi":       "0",
 	}
 	pfc.DefParams = pfcParams
 
@@ -451,7 +451,7 @@ func (net *Network) AddPFC4D(name, thalSuffix string, nPoolsY, nPoolsX, nNeurY, 
 	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "4" // 4?  2.8 orig
 	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "true"
 	pfcCT.DefParams["Layer.Inhib.Pool.Gi"] = "1.2"
-	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
+	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
 	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.05" // more active
@@ -498,14 +498,14 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	onRew := fmt.Sprintf("%v", decayOnRew)
 
 	pfcParams := params.Params{
-		"Layer.Act.Decay.Act":        "0",
-		"Layer.Act.Decay.Glong":      "0",
-		"Layer.Act.Decay.OnRew":      onRew,
+		"Layer.Acts.Decay.Act":       "0",
+		"Layer.Acts.Decay.Glong":     "0",
+		"Layer.Acts.Decay.OnRew":     onRew,
 		"Layer.Inhib.ActAvg.Nominal": "0.1",
 		"Layer.Inhib.Layer.On":       "true",
 		"Layer.Inhib.Layer.Gi":       "0.9",
 		"Layer.Inhib.Pool.On":        "false",
-		"Layer.Act.Dend.SSGi":        "0",
+		"Layer.Acts.Dend.SSGi":       "0",
 	}
 	pfc.DefParams = pfcParams
 
@@ -514,7 +514,7 @@ func (net *Network) AddPFC2D(name, thalSuffix string, nNeurY, nNeurX int, decayO
 	pfcCT.DefParams["Layer.Inhib.Layer.On"] = "true"
 	pfcCT.DefParams["Layer.Inhib.Layer.Gi"] = "1.4"
 	pfcCT.DefParams["Layer.Inhib.Pool.On"] = "false"
-	pfcCT.DefParams["Layer.Act.Decay.OnRew"] = onRew
+	pfcCT.DefParams["Layer.Acts.Decay.OnRew"] = onRew
 
 	pfcPT.DefParams = maps.Clone(pfcParams)
 	pfcPT.DefParams["Layer.Inhib.ActAvg.Nominal"] = "0.3" // more active

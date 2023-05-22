@@ -11,11 +11,6 @@ import (
 	"github.com/goki/ki/kit"
 )
 
-// todo: removeme
-type Neuron struct {
-	dummy int32
-}
-
 //go:generate stringer -type=NeuronFlags
 //go:generate stringer -type=NeuronVars
 //go:generate stringer -type=NeuronAvgVars
@@ -201,6 +196,11 @@ const (
 	CtxtGeRaw  // raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers.
 	CtxtGeOrig // original CtxtGe value prior to any decay factor -- updates at end of plus phase.
 
+	// NrnFlags are bit flags for binary state variables, which are converted to / from uint32.
+	// These need to be in Vars because they can be differential per data (for ext inputs)
+	// and are writable (indexes are read only).
+	NrnFlags
+
 	NeuronVarsN
 )
 
@@ -280,17 +280,15 @@ func (ns *NeuronAvgVarStrides) SetVarOuter(nneur int) {
 ////////////////////////////////////////////////
 // 	Idxs
 
-// NeuronIdxs are the neuron indexes and other uint32 values (flags, etc).
+// NeuronIdxs are the neuron indexes and other uint32 values.
 // There is only one of these per neuron -- not data parallel.
+// note: Flags are encoded in Vars because they are data parallel and
+// writable, whereas indexes are read-only.
 type NeuronIdxs int32
 
 const (
-	// NrnIdxFlags are bit flags for binary state variables.
-	// note that these are automatically shared across all data parallel vals!
-	NrnIdxFlags NeuronIdxs = iota
-
 	// NrnIdxNeurIdx is the index of this neuron within its owning layer
-	NrnIdxNeurIdx
+	NrnIdxNeurIdx NeuronIdxs = iota
 
 	// NrnIdxLayIdx is the index of the layer that this neuron belongs to,
 	// needed for neuron-level parallel code.
@@ -359,6 +357,8 @@ var NeuronVarProps = map[string]string{
 	"Inet":   `desc:"net current produced by all channels -- drives update of Vm"`,
 	"Vm":     `min:"0" max:"1" desc:"membrane potential -- integrates Inet current over time"`,
 	"VmDend": `min:"0" max:"1" desc:"dendritic membrane potential -- has a slower time constant, is not subject to the VmR reset after spiking"`,
+	"ISI":    `auto-scale:"+" desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`,
+	"ISIAvg": `auto-scale:"+" desc:"average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`,
 
 	/////////////////////////////////////////
 	// Calcium for learning
@@ -394,12 +394,6 @@ var NeuronVarProps = map[string]string{
 	"DTrgAvg": `auto-scale:"+" desc:"change in neuron's target average activation as a result of unit-wise error gradient -- acts like a bias weight.  MPI needs to share these across processors."`,
 	"AvgDif":  `desc:"AvgPct - TrgAvg -- i.e., the error in overall activity level relative to set point for this neuron, which drives synaptic scaling -- updated at SlowInterval intervals"`,
 	"Attn":    `desc:"Attentional modulation factor, which can be set by special layers such as the TRC -- multiplies Ge"`,
-
-	/////////////////////////////////////////
-	// ISI for computing rate-code activation
-
-	"ISI":    `auto-scale:"+" desc:"current inter-spike-interval -- counts up since last spike.  Starts at -1 when initialized."`,
-	"ISIAvg": `auto-scale:"+" desc:"average inter-spike-interval -- average time interval between spikes, integrated with ISITau rate constant (relatively fast) to capture something close to an instantaneous spiking rate.  Starts at -1 when initialized, and goes to -2 after first spike, and is only valid after the second spike post-initialization."`,
 
 	/////////////////////////////////////////
 	// Noise
@@ -484,6 +478,8 @@ var NeuronVarProps = map[string]string{
 	"CtxtGe":     `desc:"context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`,
 	"CtxtGeRawa": `desc:"raw update of context (temporally delayed) excitatory conductance, driven by deep bursting at end of the plus phase, for CT layers."`,
 	"CtxtGeOrig": `desc:"original CtxtGe value prior to any decay factor -- updates at end of plus phase."`,
+
+	"NrnFlags": `view:"-" desc:"bit flags for external input and other neuron status state"`,
 }
 
 var (

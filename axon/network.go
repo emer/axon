@@ -7,7 +7,6 @@ package axon
 import (
 	"fmt"
 	"strings"
-	"unsafe"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/emer/emergent/emer"
@@ -620,43 +619,49 @@ func (nt *Network) SetDWts(ctx *Context, dwts []float32, navg int) {
 
 // SizeReport returns a string reporting the size of each layer and projection
 // in the network, and total memory footprint.
-func (nt *Network) SizeReport() string {
+// If detail flag is true, details per layer, projection is included.
+func (nt *Network) SizeReport(detail bool) string {
 	var b strings.Builder
-	globaNumNeurons := 0
-	globalMemNeurons := 0
-	globalNumSynapses := 0
-	globalMemSynapses := 0
 
-	memNeuron := int(unsafe.Sizeof(Neuron{}))
-	memSynapse := int(unsafe.Sizeof(Synapse{}))
+	varBytes := 4
+	maxData := int(nt.MaxData)
+	memNeuron := int(NeuronVarsN)*maxData*varBytes + int(NeuronAvgVarsN)*varBytes + int(NeuronIdxsN)*varBytes
+	memSynapse := int(SynapseVarsN)*varBytes + int(SynapseCaVarsN)*maxData*varBytes + int(SynapseIdxsN)*varBytes
+
+	globalProjIdxs := 0
 
 	for _, ly := range nt.Layers {
-		layerNumNeurons := int(ly.NNeurons)
-		// Sizeof returns size of struct in bytes
-		layerMemNeurons := layerNumNeurons * memNeuron
-		globaNumNeurons += layerNumNeurons
-		globalMemNeurons += layerMemNeurons
-		fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, layerNumNeurons,
-			(datasize.ByteSize)(layerMemNeurons).HumanReadable())
+		if detail {
+			nn := int(ly.NNeurons)
+			// Sizeof returns size of struct in bytes
+			nrnMem := nn * memNeuron
+			fmt.Fprintf(&b, "%14s:\t Neurons: %d\t NeurMem: %v \t Sends To:\n", ly.Nm, nn,
+				(datasize.ByteSize)(nrnMem).HumanReadable())
+		}
 		for _, pj := range ly.SndPrjns {
-			projNumSynapses := int(pj.NSyns)
-			globalNumSynapses += projNumSynapses
 			// We only calculate the size of the important parts of the proj struct:
 			//  1. Synapse slice (consists of Synapse struct)
 			//  2. RecvConIdx + RecvSynIdx + SendConIdx (consists of int32 indices = 4B)
 			// Everything else (like eg the GBuf) is not included in the size calculation, as their size
 			// doesn't grow quadratically with the number of neurons, and hence pales when compared to the synapses
 			// It's also useful to run a -memprofile=mem.prof to validate actual memory usage
-			projMemSynapses := projNumSynapses * memSynapse
-			projMemIdxs := len(pj.RecvConIdx)*4 + len(pj.RecvSynIdx)*4 + len(pj.SendConIdx)*4
-			globalMemSynapses += projMemSynapses + projMemIdxs
-			fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
-				projNumSynapses, (datasize.ByteSize)(projMemSynapses).HumanReadable())
+			projMemIdxs := len(pj.RecvConIdx)*varBytes + len(pj.RecvSynIdx)*varBytes + len(pj.SendConIdx)*varBytes
+			globalProjIdxs += projMemIdxs
+			if detail {
+				nSyn := int(pj.NSyns)
+				synMem := nSyn*memSynapse + projMemIdxs
+				fmt.Fprintf(&b, "\t%14s:\t Syns: %d\t SynnMem: %v\n", pj.Recv.Name(),
+					nSyn, (datasize.ByteSize)(synMem).HumanReadable())
+			}
 		}
 	}
+
+	nrnMem := (len(nt.Neurons) + len(nt.NeuronAvgs) + len(nt.NeuronIxs)) * varBytes
+	synMem := (len(nt.Synapses) + len(nt.SynapseCas) + len(nt.SynapseIxs)) * varBytes
+
 	fmt.Fprintf(&b, "\n\n%14s:\t Neurons: %d\t NeurMem: %v \t Syns: %d \t SynMem: %v\n",
-		nt.Nm, globaNumNeurons, (datasize.ByteSize)(globalMemNeurons).HumanReadable(), globalNumSynapses,
-		(datasize.ByteSize)(globalMemSynapses).HumanReadable())
+		nt.Nm, nt.NNeurons, (datasize.ByteSize)(nrnMem).HumanReadable(), nt.NSyns,
+		(datasize.ByteSize)(synMem).HumanReadable())
 	return b.String()
 }
 

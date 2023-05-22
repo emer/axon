@@ -54,7 +54,7 @@ var ParamSets = params.Sets{
 			{Sel: "Layer", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Inhib.Layer.On": "false",
-					"Layer.Act.Init.Vm":    "0.3",
+					"Layer.Acts.Init.Vm":   "0.3",
 				}},
 		},
 	}},

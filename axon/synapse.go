@@ -14,11 +14,6 @@ import (
 //go:generate stringer -type=SynapseCaVars
 //go:generate stringer -type=SynapseIdxs
 
-// todo: removeme
-type Synapse struct {
-	dummy int32
-}
-
 var KiT_SynapseVars = kit.Enums.AddEnum(SynapseVarsN, kit.NotBitFlag, nil)
 
 func (ev SynapseVars) MarshalJSON() ([]byte, error)  { return kit.EnumMarshalJSON(ev) }

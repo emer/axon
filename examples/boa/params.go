@@ -13,7 +13,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "generic params for all layers",
 				Params: params.Params{
-					"Layer.Act.Clamp.Ge": "1.5",
+					"Layer.Acts.Clamp.Ge": "1.5",
 				}},
 			{Sel: ".CS", Desc: "need to adjust Nominal for number of CSs -- now down automatically",
 				Params: params.Params{
@@ -26,10 +26,10 @@ var ParamSets = params.Sets{
 				}},
 			{Sel: ".MatrixLayer", Desc: "all mtx",
 				Params: params.Params{
-					"Layer.Inhib.Layer.On":   "false", // todo: explore -- could be bad for gating
-					"Layer.Inhib.Pool.Gi":    "0.3",   // go lower, get more inhib from elsewhere?
-					"Layer.Inhib.Pool.FB":    "1",
-					"Layer.Act.Dend.ModGain": "1", // todo: try with lower drive
+					"Layer.Inhib.Layer.On":    "false", // todo: explore -- could be bad for gating
+					"Layer.Inhib.Pool.Gi":     "0.3",   // go lower, get more inhib from elsewhere?
+					"Layer.Inhib.Pool.FB":     "1",
+					"Layer.Acts.Dend.ModGain": "1", // todo: try with lower drive
 				}},
 			{Sel: "#BLAPosAcqD1", Desc: "",
 				Params: params.Params{
@@ -39,7 +39,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":             "2.4",
 					"Layer.Inhib.Pool.Gi":              "2.4",
-					"Layer.Act.Dend.ModGain":           "1.5", // 2 min -- reduces maint early
+					"Layer.Acts.Dend.ModGain":          "1.5", // 2 min -- reduces maint early
 					"Layer.Learn.NeuroMod.AChDisInhib": "0",   // todo: explore!  might be bad..
 				}},
 			// {Sel: ".PTPredLayer", Desc: "",

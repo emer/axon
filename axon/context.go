@@ -18,121 +18,129 @@ import (
 // This is updated in Network.InitName, which sets NetIdx.
 var Networks []*Network
 
+// note: the following nohlsl is included for the Go type inference processing
+// but is then excluded from the final .hlsl file.
+// this is key for cases where there are alternative versions of functions
+// in GPU vs. CPU.
+
+//gosl: nohlsl context
+
 // NeuronVars
 
 // NrnV is the CPU version of the neuron variable accessor
 func NrnV(ctx *Context, ni, di uint32, nvar NeuronVars) float32 {
-	return Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
+	return Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)]
 }
 
 // SetNrnV is the CPU version of the neuron variable settor
 func SetNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val
+	Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] = val
 }
 
 // AddNrnV is the CPU version of the neuron variable addor
 func AddNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val
+	Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] += val
 }
 
 // MulNrnV is the CPU version of the neuron variable multiplier
 func MulNrnV(ctx *Context, ni, di uint32, nvar NeuronVars, val float32) {
-	Networks[ctx.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val
+	Networks[ctx.NetIdxs.NetIdx].Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val
+}
+
+func NrnHasFlag(ctx *Context, ni, di uint32, flag NeuronFlags) bool {
+	return (NeuronFlags(math.Float32bits(NrnV(ctx, ni, di, NrnFlags))) & flag) > 0 // weird: != 0 does NOT work on GPU
+}
+
+func NrnSetFlag(ctx *Context, ni, di uint32, flag NeuronFlags) {
+	SetNrnV(ctx, ni, di, NrnFlags, math.Float32frombits(math.Float32bits(NrnV(ctx, ni, di, NrnFlags))|uint32(flag)))
+}
+
+func NrnClearFlag(ctx *Context, ni, di uint32, flag NeuronFlags) {
+	SetNrnV(ctx, ni, di, NrnFlags, math.Float32frombits(math.Float32bits(NrnV(ctx, ni, di, NrnFlags))&^uint32(flag)))
+}
+
+// NrnIsOff returns true if the neuron has been turned off (lesioned)
+// Only checks the first data item -- all should be consistent.
+func NrnIsOff(ctx *Context, ni uint32) bool {
+	return NrnHasFlag(ctx, ni, 0, NeuronOff)
 }
 
 // NeuronAvgVars
 
 // NrnAvgV is the CPU version of the neuron variable accessor
 func NrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars) float32 {
-	return Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
+	return Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)]
 }
 
 // SetNrnAvgV is the CPU version of the neuron variable settor
 func SetNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] = val
+	Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] = val
 }
 
 // AddNrnAvgV is the CPU version of the neuron variable addor
 func AddNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] += val
+	Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] += val
 }
 
 // MulNrnAvgV is the CPU version of the neuron variable multiplier
 func MulNrnAvgV(ctx *Context, ni uint32, nvar NeuronAvgVars, val float32) {
-	Networks[ctx.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val
+	Networks[ctx.NetIdxs.NetIdx].NeuronAvgs[ctx.NeuronAvgVars.Idx(ni, nvar)] *= val
 }
 
 // NeuronIdxs
 
 // NrnI is the CPU version of the neuron idx accessor
 func NrnI(ctx *Context, ni uint32, idx NeuronIdxs) uint32 {
-	return Networks[ctx.NetIdx].NeuronIdxs[ctx.NeuronIdxs.Idx(ni, idx)]
+	return Networks[ctx.NetIdxs.NetIdx].NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)]
 }
 
 // SetNrnI is the CPU version of the neuron idx settor
 func SetNrnI(ctx *Context, ni uint32, idx NeuronIdxs, val uint32) {
-	Networks[ctx.NetIdx].NeuronIdxs[ctx.NeuronIdxs.Idx(ni, idx)] = val
-}
-
-func NrnHasFlag(ctx *Context, ni uint32, flag NeuronFlags) bool {
-	return (NeuronFlags(NrnI(ctx, ni, NrnIdxFlags)) & flag) > 0 // weird: != 0 does NOT work on GPU
-}
-
-func NrnSetFlag(ctx *Context, ni uint32, flag NeuronFlags) {
-	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags)|uint32(flag))
-}
-
-func NrnClearFlag(ctx *Context, ni uint32, flag NeuronFlags) {
-	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags)&^uint32(flag))
-}
-
-// NrnIsOff returns true if the neuron has been turned off (lesioned)
-func NrnIsOff(ctx *Context, ni uint32) bool {
-	return NrnHasFlag(ctx, ni, NeuronOff)
+	Networks[ctx.NetIdxs.NetIdx].NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)] = val
 }
 
 // SynapseVars
 
 // SynV is the CPU version of the synapse variable accessor
-func SynV(ctx *Context, syni uint32, nvar SynapseVars) float32 {
-	return Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)]
+func SynV(ctx *Context, syni uint32, svar SynapseVars) float32 {
+	return Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)]
 }
 
 // SetSynV is the CPU version of the synapse variable settor
-func SetSynV(ctx *Context, syni uint32, nvar SynapseVars, val float32) {
-	Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)] = val
+func SetSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)] = val
 }
 
 // AddSynV is the CPU version of the synapse variable addor
-func AddSynV(ctx *Context, syni uint32, nvar SynapseVars, val float32) {
-	Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)] += val
+func AddSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)] += val
 }
 
 // MulSynV is the CPU version of the synapse variable multiplier
-func MulSynV(ctx *Context, syni uint32, nvar SynapseVars, val float32) {
-	Networks[ctx.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, nvar)] *= val
+func MulSynV(ctx *Context, syni uint32, svar SynapseVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].Synapses[ctx.SynapseVars.Idx(syni, svar)] *= val
 }
 
 // SynapseCaVars
 
 // SynCaV is the CPU version of the synapse variable accessor
-func SynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars) float32 {
-	return Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)]
+func SynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars) float32 {
+	return Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)]
 }
 
 // SetSynCaV is the CPU version of the synapse variable settor
-func SetSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
-	Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] = val
+func SetSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] = val
 }
 
 // AddSynCaV is the CPU version of the synapse variable addor
-func AddSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
-	Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] += val
+func AddSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] += val
 }
 
 // MulSynCaV is the CPU version of the synapse variable multiplier
-func MulSynCaV(ctx *Context, syni, di uint32, nvar SynapseCaVars, val float32) {
-	Networks[ctx.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] *= val
+func MulSynCaV(ctx *Context, syni, di uint32, svar SynapseCaVars, val float32) {
+	Networks[ctx.NetIdxs.NetIdx].SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] *= val
 }
 
 // SynCaUpT is the CPU version of the CaUpT synapse variable accessor
@@ -149,20 +157,20 @@ func SetSynCaUpT(ctx *Context, syni, di uint32, val int32) {
 
 // SynI is the CPU version of the synapse idx accessor
 func SynI(ctx *Context, syni uint32, idx SynapseIdxs) uint32 {
-	return Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(syni, idx)]
+	return Networks[ctx.NetIdxs.NetIdx].SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)]
 }
 
 // SetSynI is the CPU version of the synapse idx settor
 func SetSynI(ctx *Context, syni uint32, idx SynapseIdxs, val uint32) {
-	Networks[ctx.NetIdx].SynapseIdxs[ctx.SynapseIdxs.Idx(syni, idx)] = val
+	Networks[ctx.NetIdxs.NetIdx].SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)] = val
 }
 
-// CopyNetStridesFrom copies strides and NetIdx for accessing
+// CopyNetStridesFrom copies strides and NetIdxs for accessing
 // variables on a Network -- these must be set properly for
 // the Network in question (from its Ctx field) before calling
 // any compute methods with the context.  See SetCtxStrides on Network.
 func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
-	ctx.NetIdx = srcCtx.NetIdx
+	ctx.NetIdxs = srcCtx.NetIdxs
 	ctx.NeuronVars = srcCtx.NeuronVars
 	ctx.NeuronAvgVars = srcCtx.NeuronAvgVars
 	ctx.NeuronIdxs = srcCtx.NeuronIdxs
@@ -170,6 +178,8 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 	ctx.SynapseCaVars = srcCtx.SynapseCaVars
 	ctx.SynapseIdxs = srcCtx.SynapseIdxs
 }
+
+//gosl: end context
 
 //gosl: hlsl context
 // #include "etime.hlsl"
@@ -182,6 +192,29 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 
 //gosl: start context
 
+// NetIdxs are indexes and sizes for processing network
+type NetIdxs struct {
+	NData    uint32 `min:"1" desc:"number of data parallel items to process currently"`
+	NetIdx   uint32 `inactive:"+" desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
+	NNeurons uint32 `inactive:"+" desc:"total number of neurons"`
+	NSyns    uint32 `inactive:"+" desc:"total number of synapses"`
+}
+
+// NeurIdx returns the neuron index from an overall index over NNeurons * NData
+func (ctx *NetIdxs) NeurIdx(idx uint32) uint32 {
+	return idx / ctx.NData
+}
+
+// NeurIdxIsValid returns true if the neuron index is valid (< NNeurons)
+func (ctx *NetIdxs) NeurIdxIsValid(ni uint32) bool {
+	return (ni < ctx.NNeurons)
+}
+
+// DataIdx returns the data index from an overall index over NNeurons * NData
+func (ctx *NetIdxs) DataIdx(idx uint32) uint32 {
+	return idx % ctx.NData
+}
+
 // Context contains all of the global context state info
 // that is shared across every step of the computation.
 // It is passed around to all relevant computational functions,
@@ -190,8 +223,6 @@ func (ctx *Context) CopyNetStridesFrom(srcCtx *Context) {
 // It contains timing, Testing vs. Training mode, random number context,
 // global neuromodulation, etc.
 type Context struct {
-	NetIdx       uint32      `desc:"network index in global Networks list of networks -- needed for GPU shader kernel compatible network variable access functions (e.g., NrnV, SynV etc) in CPU mode"`
-	NData        uint32      `desc:"number of data parallel items to process currently"`
 	Mode         etime.Modes `desc:"current evaluation mode, e.g., Train, Test, etc"`
 	Phase        int32       `desc:"phase counter: typicaly 0-1 for minus-plus but can be more phases for other algorithms"`
 	PlusPhase    slbool.Bool `desc:"true if this is the plus phase, when the outcome / bursting is occurring, driving positive learning -- else minus phase"`
@@ -205,8 +236,7 @@ type Context struct {
 	TimePerCycle float32     `def:"0.001" desc:"amount of time to increment per cycle"`
 	NLayers      int32       `view:"-" desc:"number of layers in the network -- needed for GPU mode"`
 
-	pad, pad1 int32
-
+	NetIdxs       NetIdxs             `view:"inline" desc:"indexes and sizes of current network"`
 	NeuronVars    NeuronVarStrides    `desc:"stride offsets for accessing neuron variables"`
 	NeuronAvgVars NeuronAvgVarStrides `desc:"stride offsets for accessing neuron average variables"`
 	NeuronIdxs    NeuronIdxStrides    `desc:"stride offsets for accessing neuron indexes"`
@@ -221,7 +251,7 @@ type Context struct {
 
 // Defaults sets default values
 func (ctx *Context) Defaults() {
-	ctx.NData = 1
+	ctx.NetIdxs.NData = 1
 	ctx.TimePerCycle = 0.001
 	ctx.ThetaCycles = 200
 	ctx.Mode = etime.Train
@@ -299,6 +329,24 @@ func (ctx *Context) PVLVDA() float32 {
 // void MulNrnV(in Context ctx, uint ni, uint di, NeuronVars nvar, float val) {
 //  	Neurons[ctx.NeuronVars.Idx(ni, di, nvar)] *= val;
 // }
+//
+// bool NrnHasFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
+// 	return (NeuronFlags(asuint(NrnV(ctx, ni, di, NrnFlags))) & flag) > 0; // weird: != 0 does NOT work on GPU
+// }
+//
+// void NrnSetFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
+// 	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))|uint(flag)));
+// }
+//
+// void NrnClearFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
+// 	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))& ~uint(flag)));
+// }
+//
+// // NrnIsOff returns true if the neuron has been turned off (lesioned)
+// // Only checks the first data item -- all should be consistent.
+// bool NrnIsOff(in Context ctx, uint ni) {
+// 	return NrnHasFlag(ctx, ni, 0, NeuronOff);
+// }
 
 // // NeuronAvgVars
 
@@ -323,75 +371,56 @@ func (ctx *Context) PVLVDA() float32 {
 //
 // // NrnI is the GPU version of the neuron idx accessor
 // uint NrnI(in Context ctx, uint ni, NeuronIdxs idx) {
-// 	return NeuronIndexes[ctx.NeuronIdxs.Idx(ni, idx)];
+// 	return NeuronIxs[ctx.NeuronIdxs.Idx(ni, idx)];
 // }
+// // note: no SetNrnI in GPU mode -- all init done in CPU
 //
-// // SetNrnI is the GPU version of the neuron idx settor
-// void SetNrnI(in Context ctx, uint ni, NeuronIdxs idx, uint val) {
-// 	NeuronIndexes[ctx.NeuronIdxs.Idx(ni, idx)] = val;
-// }
-//
-// bool NrnHasFlag(in Context ctx, uint ni, NeuronFlags flag) {
-// 	return (NeuronFlags(NrnI(ctx, ni, NrnIdxFlags)) & flag) > 0; // weird: != 0 does NOT work on GPU
-// }
-//
-// void NrnSetFlag(in Context ctx, uint ni, NeuronFlags flag) {
-// 	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags)|uint(flag));
-// }
-//
-// void NrnClearFlag(in Context ctx, uint ni, NeuronFlags flag) {
-// 	SetNrnI(ctx, ni, NrnIdxFlags, NrnI(ctx, ni, NrnIdxFlags) & ~uint(flag));
-// }
-//
-// // NrnIsOff returns true if the neuron has been turned off (lesioned)
-// bool NrnIsOff(in Context ctx, uint ni) {
-// 	return NrnHasFlag(ctx, ni, NeuronOff);
-// }
 
 // // SynapseVars
 
 // // SynV is GPU version of synapse var accessor into Synapses array
-// float SynV(in Context ctx, uint syni, SynapseVars nvar) {
-//    return Synapses[ctx.SynapseVars.Idx(syni, nvar)];
+// float SynV(in Context ctx, uint syni, SynapseVars svar) {
+//    return Synapses[ctx.SynapseVars.Idx(syni, svar)];
 // }
 // // SetSynV is the GPU version of the synapse variable settor
-// void SetSynV(in Context ctx, uint syni, SynapseVars nvar, float val) {
-//  	Synapses[ctx.SynapseVars.Idx(syni, nvar)] = val;
+// void SetSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
+//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] = val;
 // }
 // // AddSynV is the GPU version of the synapse variable addor
-// void AddSynV(in Context ctx, uint syni, SynapseVars nvar, float val) {
-//  	Synapses[ctx.SynapseVars.Idx(syni, nvar)] += val;
+// void AddSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
+//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] += val;
 // }
 // // MulSynV is the GPU version of the synapse variable multor
-// void MulSynV(in Context ctx, uint syni, SynapseVars nvar, float val) {
-//  	Synapses[ctx.SynapseVars.Idx(syni, nvar)] *= val;
+// void MulSynV(in Context ctx, uint syni, SynapseVars svar, float val) {
+//  	Synapses[ctx.SynapseVars.Idx(syni, svar)] *= val;
 // }
 
 // // SynapseCaVars
 
 // // SynCaV is GPU version of synapse var accessor into Synapses array
-// float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar) {
-//    return SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)];
+// float SynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar) {
+//    return SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)];
 // }
 // // SetSynCaV is the GPU version of the synapse variable settor
-// void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar, float val) {
-//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] = val;
+// void SetSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
+//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] = val;
 // }
 // // AddSynCaV is the GPU version of the synapse variable addor
-// void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar, float val) {
-//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] += val;
+// void AddSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
+//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] += val;
 // }
 // // MulSynCaV is the GPU version of the synapse variable multor
-// void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars nvar, float val) {
-//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, nvar)] *= val;
+// void MulSynCaV(in Context ctx, uint syni, uint di, SynapseCaVars svar, float val) {
+//  	SynapseCas[ctx.SynapseCaVars.Idx(syni, di, svar)] *= val;
 // }
 
 // // SynapseIdxs
 //
 // // SynI is the GPU version of the synapse idx accessor
 // uint SynI(in Context ctx, uint syni, SynapseIdxs idx) {
-// 	return SynapseIndexes[ctx.SynapseIdxs.Idx(syni, idx)];
+// 	return SynapseIxs[ctx.SynapseIdxs.Idx(syni, idx)];
 // }
+// // note: no SetSynI in GPU mode -- all init done in CPU
 //
 //
 

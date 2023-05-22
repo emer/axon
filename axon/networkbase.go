@@ -57,12 +57,12 @@ type NetworkBase struct {
 	Pools        []Pool        `view:"-" desc:"[Layers][Pools][MaxData] array of inhibitory pools for all layers."`
 	Neurons      []float32     `view:"-" desc:"[Layers][Neurons][MaxData] entire network's allocation of neuron variables, accessed via NrnV function with flexible striding"`
 	NeuronAvgs   []float32     `view:"-" desc:"[Layers][Neurons][MaxData]] entire network's allocation of neuron average avariables, accessed via NrnAvgV function with flexible striding"`
-	NeuronIdxs   []uint32      `view:"-" desc:"[Layers][Neurons] entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding"`
+	NeuronIxs    []uint32      `view:"-" desc:"[Layers][Neurons] entire network's allocation of neuron index variables, accessed via NrnI function with flexible striding"`
 	Prjns        []*Prjn       `view:"-" desc:"[Layers][SendPrjns] pointers to all projections in the network, sender-based"`
 	PrjnParams   []PrjnParams  `view:"-" desc:"[Layers][SendPrjns] array of projection parameters, in 1-to-1 correspondence with Prjns, sender-based"`
 	Synapses     []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapses, organized sender-based, with flexible striding, accessed via SynV function"`
 	SynapseCas   []float32     `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons][MaxData] entire network's allocation of synapse Ca vars, organized sender-based, with flexible striding, accessed via SynCaV function"`
-	SynapseIdxs  []uint32      `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function"`
+	SynapseIxs   []uint32      `view:"-" desc:"[Layers][SendPrjns][SendNeurons][RecvNeurons] entire network's allocation of synapse idx vars, organized sender-based, with flexible striding, accessed via SynI function"`
 	PrjnSendCon  []StartN      `view:"-" desc:"[Layers][SendPrjns][SendNeurons] starting offset and N cons for each sending neuron, for indexing into the Syns synapses, which are organized sender-based."`
 	PrjnRecvCon  []StartN      `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons] starting offset and N cons for each recv neuron, for indexing into the RecvSynIdx array of indexes into the Syns synapses, which are organized sender-based."`
 	PrjnGBuf     []int32       `view:"-" desc:"[Layers][RecvPrjns][RecvNeurons][MaxDelay][MaxData] conductance buffer for accumulating spikes -- subslices are allocated to each projection -- uses int-encoded float values for faster GPU atomic integration"`
@@ -553,7 +553,7 @@ func (nt *NetworkBase) SetCtxStrides(simCtx *Context) {
 func (nt *NetworkBase) Build(simCtx *Context) error {
 	ctx := &nt.Ctx
 	ctx.Defaults()
-	ctx.NetIdx = nt.NetIdx
+	ctx.NetIdxs.NetIdx = nt.NetIdx
 	nt.FunTimes = make(map[string]*timer.Time)
 	nt.LayClassMap = make(map[string][]string)
 	maxData := int(nt.MaxData)
@@ -590,7 +590,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	nneurav := uint32(totNeurons) * uint32(NeuronAvgVarsN)
 	nt.NeuronAvgs = make([]float32, nneurav)
 	nneuri := uint32(totNeurons) * uint32(NeuronIdxsN)
-	nt.NeuronIdxs = make([]uint32, nneuri)
+	nt.NeuronIxs = make([]uint32, nneuri)
 	nt.Prjns = make([]*Prjn, totPrjns)
 	nt.PrjnParams = make([]PrjnParams, totPrjns)
 	nt.Exts = make([]float32, totExts*maxData)
@@ -697,7 +697,7 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 	nt.NSyns = uint32(totSynapses)
 	nt.Synapses = make([]float32, totSynapses*int(SynapseVarsN))
 	nt.SynapseCas = make([]float32, totSynapses*int(SynapseCaVarsN)*int(nt.MaxData))
-	nt.SynapseIdxs = make([]uint32, totSynapses*int(SynapseIdxsN))
+	nt.SynapseIxs = make([]uint32, totSynapses*int(SynapseIdxsN))
 	nt.PrjnSendCon = make([]StartN, totSendCon)
 	nt.PrjnRecvCon = make([]StartN, totRecvCon)
 	nt.RecvPrjnIdxs = make([]uint32, rprjnIdx)
@@ -775,6 +775,9 @@ func (nt *NetworkBase) Build(simCtx *Context) error {
 			rprjnIdx++
 		}
 	}
+
+	ctx.NetIdxs.NNeurons = nt.NNeurons
+	ctx.NetIdxs.NSyns = nt.NSyns
 
 	nt.SetCtxStrides(simCtx)
 

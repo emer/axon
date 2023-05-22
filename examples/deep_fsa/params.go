@@ -20,24 +20,24 @@ var ParamSets = params.Sets{
 					"Layer.Learn.TrgAvgAct.SubMean":      "1",     // 1 > 0
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005", // 0.005 > others
 					"Layer.Learn.TrgAvgAct.ErrLRate":     "0.02",  // 0.02 def
-					"Layer.Act.Gbar.L":                   "0.2",   // std
-					"Layer.Act.Decay.Act":                "0.0",   // 0 == 0.2
-					"Layer.Act.Decay.Glong":              "0.0",
-					"Layer.Act.Dt.LongAvgTau":            "20",  // 20 > higher for objrec, lvis
-					"Layer.Act.Dend.GbarExp":             "0.2", // 0.2 > 0.5 > 0.1 > 0
-					"Layer.Act.Dend.GbarR":               "3",   // 3 / 0.2 > 6 / 0.5
-					"Layer.Act.Dend.SSGi":                "2",   // 2 > 3
-					"Layer.Act.Dt.VmDendTau":             "5",   // old: 8 > 5 >> 2.81 -- big diff
-					"Layer.Act.AK.Gbar":                  "0.1",
-					"Layer.Act.NMDA.MgC":                 "1.4", // 1.4, 5 > 1.2, 0 ?
-					"Layer.Act.NMDA.Voff":                "0",
-					"Layer.Act.NMDA.Gbar":                "0.006",
-					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def -- makes no diff down to 0.008
+					"Layer.Acts.Gbar.L":                  "0.2",   // std
+					"Layer.Acts.Decay.Act":               "0.0",   // 0 == 0.2
+					"Layer.Acts.Decay.Glong":             "0.0",
+					"Layer.Acts.Dt.LongAvgTau":           "20",  // 20 > higher for objrec, lvis
+					"Layer.Acts.Dend.GbarExp":            "0.2", // 0.2 > 0.5 > 0.1 > 0
+					"Layer.Acts.Dend.GbarR":              "3",   // 3 / 0.2 > 6 / 0.5
+					"Layer.Acts.Dend.SSGi":               "2",   // 2 > 3
+					"Layer.Acts.Dt.VmDendTau":            "5",   // old: 8 > 5 >> 2.81 -- big diff
+					"Layer.Acts.AK.Gbar":                 "0.1",
+					"Layer.Acts.NMDA.MgC":                "1.4", // 1.4, 5 > 1.2, 0 ?
+					"Layer.Acts.NMDA.Voff":               "0",
+					"Layer.Acts.NMDA.Gbar":               "0.006",
+					"Layer.Acts.GABAB.Gbar":              "0.015", // 0.015 def -- makes no diff down to 0.008
 					"Layer.Learn.LrnNMDA.Gbar":           "0.006",
-					"Layer.Act.Sahp.Gbar":                "0.1",  //
-					"Layer.Act.Sahp.Off":                 "0.8",  //
-					"Layer.Act.Sahp.Slope":               "0.02", //
-					"Layer.Act.Sahp.CaTau":               "10",   //
+					"Layer.Acts.Sahp.Gbar":               "0.1",  //
+					"Layer.Acts.Sahp.Off":                "0.8",  //
+					"Layer.Acts.Sahp.Slope":              "0.02", //
+					"Layer.Acts.Sahp.CaTau":              "10",   //
 				}},
 			{Sel: ".SuperLayer", Desc: "super layer params",
 				Params: params.Params{
@@ -48,22 +48,22 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":       "0.9", // makes no diff
 					"Layer.Inhib.ActAvg.Nominal": "0.15",
-					"Layer.Act.Clamp.Ge":         "1.5",
+					"Layer.Acts.Clamp.Ge":        "1.5",
 				}},
 			{Sel: ".CTLayer", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":               "2.2", // 2.2 > others
 					"Layer.Inhib.Layer.FB":               "1",
-					"Layer.Act.Dend.SSGi":                "0",   // 0 > higher -- kills nmda maint!
+					"Layer.Acts.Dend.SSGi":               "0",   // 0 > higher -- kills nmda maint!
 					"Layer.CT.GeGain":                    "2.0", // 2.0 > 1.5 for sure
 					"Layer.CT.DecayTau":                  "50",  // 50 > 30 -- 30 ok but takes a bit to get going
-					"Layer.Act.Decay.Act":                "0.0",
-					"Layer.Act.Decay.Glong":              "0.0",
-					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 def > 0.01
-					"Layer.Act.MaintNMDA.Gbar":           "0.007", // 0.007 best, but 0.01 > lower if reg nmda weak
-					"Layer.Act.MaintNMDA.Tau":            "200",   // 200 > 100 > 300
-					"Layer.Act.NMDA.Gbar":                "0.007", // 0.007 matching maint best
-					"Layer.Act.NMDA.Tau":                 "200",   // 200 > 100
+					"Layer.Acts.Decay.Act":               "0.0",
+					"Layer.Acts.Decay.Glong":             "0.0",
+					"Layer.Acts.GABAB.Gbar":              "0.015", // 0.015 def > 0.01
+					"Layer.Acts.MaintNMDA.Gbar":          "0.007", // 0.007 best, but 0.01 > lower if reg nmda weak
+					"Layer.Acts.MaintNMDA.Tau":           "200",   // 200 > 100 > 300
+					"Layer.Acts.NMDA.Gbar":               "0.007", // 0.007 matching maint best
+					"Layer.Acts.NMDA.Tau":                "200",   // 200 > 100
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.005", // 0.005 > 0.0002 (much worse)
 					"Layer.Learn.TrgAvgAct.SubMean":      "1",     // 1 > 0
 				}},
@@ -73,10 +73,10 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.FB":          "1",
 					"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.05 > 0.2
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
-					"Layer.Act.Spike.Tr":            "3",   // 1 is best for ra25..
-					"Layer.Act.Decay.Act":           "0.0",
-					"Layer.Act.Decay.Glong":         "0.0", // clear long
-					"Layer.Act.Decay.AHP":           "0.0", // clear ahp
+					"Layer.Acts.Spike.Tr":           "3",   // 1 is best for ra25..
+					"Layer.Acts.Decay.Act":          "0.0",
+					"Layer.Acts.Decay.Glong":        "0.0", // clear long
+					"Layer.Acts.Decay.AHP":          "0.0", // clear ahp
 					"Layer.Learn.RLRate.SigmoidMin": "1.0", // 1 > 0.05 with CaSpkD as var
 				}},
 			{Sel: "Prjn", Desc: "std",

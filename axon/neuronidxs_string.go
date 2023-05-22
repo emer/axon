@@ -13,16 +13,15 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[NrnIdxFlags-0]
-	_ = x[NrnIdxNeurIdx-1]
-	_ = x[NrnIdxLayIdx-2]
-	_ = x[NrnIdxSubPool-3]
-	_ = x[NeuronIdxsN-4]
+	_ = x[NrnIdxNeurIdx-0]
+	_ = x[NrnIdxLayIdx-1]
+	_ = x[NrnIdxSubPool-2]
+	_ = x[NeuronIdxsN-3]
 }
 
-const _NeuronIdxs_name = "NrnIdxFlagsNrnIdxNeurIdxNrnIdxLayIdxNrnIdxSubPoolNeuronIdxsN"
+const _NeuronIdxs_name = "NrnIdxNeurIdxNrnIdxLayIdxNrnIdxSubPoolNeuronIdxsN"
 
-var _NeuronIdxs_index = [...]uint8{0, 11, 24, 36, 49, 60}
+var _NeuronIdxs_index = [...]uint8{0, 13, 25, 38, 49}
 
 func (i NeuronIdxs) String() string {
 	if i < 0 || i >= NeuronIdxs(len(_NeuronIdxs_index)-1) {

@@ -32,7 +32,7 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":      "0.2",
+					"Layer.Acts.Gbar.L":     "0.2",
 					"Layer.Learn.RLRate.On": "false",
 					"Layer.Inhib.Layer.FB":  "0.5",
 				}},
@@ -48,7 +48,7 @@ var ParamSets = params.Sets{
 		"InhibOff": &params.Sheet{
 			{Sel: "Layer", Desc: "layer defaults",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":     "0.2",
+					"Layer.Acts.Gbar.L":    "0.2",
 					"Layer.Inhib.Layer.On": "false",
 				}},
 			{Sel: ".InhibPrjn", Desc: "weaker inhib",

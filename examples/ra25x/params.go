@@ -31,22 +31,22 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.ActAvg.AdaptRate":       "0.1", // 0.1 seems good
 					"Layer.Inhib.ActAvg.LoTol":           "0.8",
 					"Layer.Inhib.ActAvg.HiTol":           "0.0",
-					"Layer.Act.Dend.SSGi":                "2.0",   // 2.0 > 1.5 more reliable
-					"Layer.Act.Decay.Act":                "0.2",   // 0.2 def
-					"Layer.Act.Decay.Glong":              "0.6",   // 0.6 def
-					"Layer.Act.NMDA.Gbar":                "0.006", // 0.006 def
-					"Layer.Act.NMDA.MgC":                 "1.4",
-					"Layer.Act.NMDA.Voff":                "0",     // 5 == 0 for trace
-					"Layer.Act.NMDA.Tau":                 "100",   // 100 def -- 50 is sig worse
-					"Layer.Act.Mahp.Gbar":                "0.02",  // 0.05 works..
-					"Layer.Act.Sahp.Gbar":                "0.05",  //
-					"Layer.Act.Sahp.Off":                 "0.8",   //
-					"Layer.Act.Sahp.Slope":               "0.02",  //
-					"Layer.Act.Sahp.CaTau":               "5",     //
-					"Layer.Act.GABAB.Gbar":               "0.015", // 0.015 > lower
-					"Layer.Act.AK.Gbar":                  "0.1",   // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
-					"Layer.Act.VGCC.Gbar":                "0.02",  // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
-					"Layer.Act.VGCC.Ca":                  "25",    // 25 / 10tau default
+					"Layer.Acts.Dend.SSGi":               "2.0",   // 2.0 > 1.5 more reliable
+					"Layer.Acts.Decay.Act":               "0.2",   // 0.2 def
+					"Layer.Acts.Decay.Glong":             "0.6",   // 0.6 def
+					"Layer.Acts.NMDA.Gbar":               "0.006", // 0.006 def
+					"Layer.Acts.NMDA.MgC":                "1.4",
+					"Layer.Acts.NMDA.Voff":               "0",     // 5 == 0 for trace
+					"Layer.Acts.NMDA.Tau":                "100",   // 100 def -- 50 is sig worse
+					"Layer.Acts.Mahp.Gbar":               "0.02",  // 0.05 works..
+					"Layer.Acts.Sahp.Gbar":               "0.05",  //
+					"Layer.Acts.Sahp.Off":                "0.8",   //
+					"Layer.Acts.Sahp.Slope":              "0.02",  //
+					"Layer.Acts.Sahp.CaTau":              "5",     //
+					"Layer.Acts.GABAB.Gbar":              "0.015", // 0.015 > lower
+					"Layer.Acts.AK.Gbar":                 "0.1",   // 0.05 to 0.1 likely good per urakubo, but 1.0 needed to prevent vgcc blowup
+					"Layer.Acts.VGCC.Gbar":               "0.02",  // 0.12 per urakubo / etc models, but produces too much high-burst plateau -- even 0.05 with AK = .1 blows up
+					"Layer.Acts.VGCC.Ca":                 "25",    // 25 / 10tau default
 					"Layer.Learn.CaLrn.Norm":             "80",    // 80 works
 					"Layer.Learn.CaLrn.SpkVGCC":          "true",  // sig better..
 					"Layer.Learn.CaLrn.SpkVgccCa":        "35",    // 70 / 5 or 35 / 10 both work
@@ -73,11 +73,11 @@ var ParamSets = params.Sets{
 			{Sel: "#Input", Desc: "critical now to specify the activity level",
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":       "0.9",  // 0.9 > 1.0
-					"Layer.Act.Clamp.Ge":         "1.5",  // 1.5 matches old fffb for gex (v13)
+					"Layer.Acts.Clamp.Ge":        "1.5",  // 1.5 matches old fffb for gex (v13)
 					"Layer.Inhib.ActAvg.Nominal": "0.15", // .24 nominal, lower to give higher excitation
-					"Layer.Act.VGCC.Ca":          "1",    // otherwise dominates display
-					"Layer.Act.Decay.Act":        "1",    // this is subtly beneficial
-					"Layer.Act.Decay.Glong":      "1",
+					"Layer.Acts.VGCC.Ca":         "1",    // otherwise dominates display
+					"Layer.Acts.Decay.Act":       "1",    // this is subtly beneficial
+					"Layer.Acts.Decay.Glong":     "1",
 				}},
 			{Sel: ".SuperLayer", Desc: "",
 				Params: params.Params{
@@ -92,9 +92,9 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.Gi":          "0.65", // 0.65 FB0.5 best
 					"Layer.Inhib.Layer.SS":          "30",   // 30 > others
 					"Layer.Inhib.Layer.FB":          "0.5",  // 0 > 1 here in output
-					"Layer.Act.Spike.Tr":            "1",    // 1 is new minimum.. > 3
-					"Layer.Act.Clamp.Ge":            "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
-					"Layer.Act.VGCC.Ca":             "1",    // otherwise dominates display
+					"Layer.Acts.Spike.Tr":           "1",    // 1 is new minimum.. > 3
+					"Layer.Acts.Clamp.Ge":           "0.8",  // 0.8 > 0.7 > 1.0 > 0.6
+					"Layer.Acts.VGCC.Ca":            "1",    // otherwise dominates display
 					"Layer.Learn.RLRate.On":         "true", // beneficial for trace
 					"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},

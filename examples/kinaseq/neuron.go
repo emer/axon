@@ -27,22 +27,22 @@ var ParamSets = params.Sets{
 		"Network": &params.Sheet{
 			{Sel: "Layer", Desc: "all defaults",
 				Params: params.Params{
-					"Layer.Act.Decay.Glong":  "0.6",  // 0.6
-					"Layer.Act.Dend.GbarExp": "0.5",  // 0.5 best
-					"Layer.Act.Dend.GbarR":   "6",    // 6 best
-					"Layer.Act.Dt.VmDendTau": "5",    // 5 > 2.81 here but small effect
-					"Layer.Act.NMDA.Gbar":    "0.15", // 0.15
-					"Layer.Act.NMDA.ITau":    "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
-					"Layer.Act.NMDA.Tau":     "100",  // 30 not good
-					"Layer.Act.NMDA.MgC":     "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
-					"Layer.Act.NMDA.Voff":    "5",    // 5 > 0 but need to reduce gbar -- too much
-					"Layer.Act.Noise.On":     "true",
-					"Layer.Act.Noise.Ge":     "0.02", // induces significant variability in Rn Ge clamp firing
-					"Layer.Act.Noise.Gi":     "0.05",
-					"Layer.Act.VGCC.Gbar":    "0.02",
-					"Layer.Act.AK.Gbar":      "2",
-					// "Layer.Act.AK.Hf":           "5.5",
-					// "Layer.Act.AK.Mf":           "0.2",
+					"Layer.Acts.Decay.Glong":  "0.6",  // 0.6
+					"Layer.Acts.Dend.GbarExp": "0.5",  // 0.5 best
+					"Layer.Acts.Dend.GbarR":   "6",    // 6 best
+					"Layer.Acts.Dt.VmDendTau": "5",    // 5 > 2.81 here but small effect
+					"Layer.Acts.NMDA.Gbar":    "0.15", // 0.15
+					"Layer.Acts.NMDA.ITau":    "100",  // 1 = get rid of I -- 100, 100 1.5, 1.2 kinda works
+					"Layer.Acts.NMDA.Tau":     "100",  // 30 not good
+					"Layer.Acts.NMDA.MgC":     "1.4",  // 1.2 > for Snmda, no Snmda = 1.0 > 1.2
+					"Layer.Acts.NMDA.Voff":    "5",    // 5 > 0 but need to reduce gbar -- too much
+					"Layer.Acts.Noise.On":     "true",
+					"Layer.Acts.Noise.Ge":     "0.02", // induces significant variability in Rn Ge clamp firing
+					"Layer.Acts.Noise.Gi":     "0.05",
+					"Layer.Acts.VGCC.Gbar":    "0.02",
+					"Layer.Acts.AK.Gbar":      "2",
+					// "Layer.Acts.AK.Hf":           "5.5",
+					// "Layer.Acts.AK.Mf":           "0.2",
 					"Layer.Learn.NeurCa.SpikeG": "8",
 					"Layer.Learn.NeurCa.SynTau": "40", // 40 best in larger models
 					"Layer.Learn.NeurCa.MTau":   "10",

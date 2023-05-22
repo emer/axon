@@ -60,7 +60,7 @@ var SavedParamsSets = params.Sets{
 				}},
 			{Sel: ".EC", Desc: "all EC layers: only pools, no layer-level",
 				Params: params.Params{
-					"Layer.Act.Gbar.L":           ".1",
+					"Layer.Acts.Gbar.L":          ".1",
 					"Layer.Inhib.ActAvg.Nominal": "0.2",
 					"Layer.Inhib.Layer.On":       "false",
 					"Layer.Inhib.Pool.Gi":        "2.0",

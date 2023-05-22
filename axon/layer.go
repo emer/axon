@@ -50,12 +50,12 @@ func (ly *Layer) Defaults() {
 	}
 	switch ly.LayerType() {
 	case InputLayer:
-		ly.Params.Act.Clamp.Ge = 1.5
+		ly.Params.Acts.Clamp.Ge = 1.5
 		ly.Params.Inhib.Layer.Gi = 0.9
 		ly.Params.Inhib.Pool.Gi = 0.9
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
 	case TargetLayer:
-		ly.Params.Act.Clamp.Ge = 0.8
+		ly.Params.Acts.Clamp.Ge = 0.8
 		ly.Params.Learn.TrgAvgAct.SubMean = 0
 		// ly.Params.Learn.RLRate.SigmoidMin = 1
 
@@ -223,8 +223,8 @@ func (ly *Layer) AllParams() string {
 // Also calls InitActs
 func (ly *Layer) InitWts(ctx *Context, nt *Network) {
 	ly.UpdateParams()
-	ly.Params.Act.Dend.HasMod.SetBool(false)
-	for di := uint32(0); di < ctx.NData; di++ {
+	ly.Params.Acts.Dend.HasMod.SetBool(false)
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		vals := &ly.Vals[di]
 		vals.Init()
 		vals.ActAvg.ActMAvg = ly.Params.Inhib.ActAvg.Nominal
@@ -244,7 +244,7 @@ func (ly *Layer) InitWts(ctx *Context, nt *Network) {
 			continue
 		}
 		if pj.Params.Com.GType == ModulatoryG {
-			ly.Params.Act.Dend.HasMod.SetBool(true)
+			ly.Params.Acts.Dend.HasMod.SetBool(true)
 			break
 		}
 	}
@@ -257,7 +257,7 @@ func (ly *Layer) InitActAvg(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			ly.Params.Learn.InitNeurCa(ctx, ni, di)
 		}
 	}
@@ -342,22 +342,22 @@ func (ly *Layer) InitActAvgPools(ctx *Context) {
 
 // InitActs fully initializes activation state -- only called automatically during InitWts
 func (ly *Layer) InitActs(ctx *Context) {
-	ly.Params.Act.Clamp.IsInput.SetBool(ly.Params.IsInput())
-	ly.Params.Act.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
+	ly.Params.Acts.Clamp.IsInput.SetBool(ly.Params.IsInput())
+	ly.Params.Acts.Clamp.IsTarget.SetBool(ly.Params.IsTarget())
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
-			ly.Params.Act.InitActs(ctx, ni, di, &ly.Network.Rand)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			ly.Params.Acts.InitActs(ctx, ni, di, &ly.Network.Rand)
 		}
 	}
 	for pi := range ly.Pools {
 		pl := &ly.Pools[pi]
 		pl.Init()
-		if ly.Params.Act.Clamp.Add.IsFalse() && ly.Params.Act.Clamp.IsInput.IsTrue() {
+		if ly.Params.Acts.Clamp.Add.IsFalse() && ly.Params.Acts.Clamp.IsInput.IsTrue() {
 			pl.Inhib.Clamped.SetBool(true)
 		}
 		// Target layers are dynamically updated
@@ -414,7 +414,7 @@ func (ly *Layer) InitExt(ctx *Context) {
 		if NrnIsOff(ctx, lni) {
 			continue
 		}
-		for di := uint32(0); di < ctx.NData; di++ {
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 			ly.Params.InitExt(ctx, lni, di)
 			ly.Exts[ly.ExtIdx(lni, di)] = -1 // missing by default
 		}
@@ -468,8 +468,8 @@ func (ly *Layer) ApplyExtVal(ctx *Context, lni, di uint32, val float32, clearMas
 	} else {
 		SetNrnV(ctx, ni, di, Ext, val)
 	}
-	NrnClearFlag(ctx, ni, clearMask)
-	NrnSetFlag(ctx, ni, setMask)
+	NrnClearFlag(ctx, ni, di, clearMask)
+	NrnSetFlag(ctx, ni, di, setMask)
 }
 
 // ApplyExtFlags gets the clear mask and set mask for updating neuron flags
@@ -579,8 +579,10 @@ func (ly *Layer) UpdateExtFlags(ctx *Context) {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		NrnClearFlag(ctx, ni, clearMask)
-		NrnSetFlag(ctx, ni, setMask)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			NrnClearFlag(ctx, ni, di, clearMask)
+			NrnSetFlag(ctx, ni, di, setMask)
+		}
 	}
 }
 
@@ -688,17 +690,17 @@ func (ly *Layer) CostEst() (neur, syn, tot int) {
 
 // PctUnitErr returns the proportion of units where the thresholded value of
 // Target (Target or Compare types) or ActP does not match that of ActM.
-// If Act > ly.Params.Act.Clamp.ErrThr, effective activity = 1 else 0
+// If Act > ly.Params.Acts.Clamp.ErrThr, effective activity = 1 else 0
 // robust to noisy activations.
-// returns one result per data parallel index ([ctx.NData])
+// returns one result per data parallel index ([ctx.NetIdxs.NData])
 func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 	nn := ly.NNeurons
 	if nn == 0 {
 		return nil
 	}
-	errs := make([]float64, ctx.NData)
-	thr := ly.Params.Act.Clamp.ErrThr
-	for di := uint32(0); di < ctx.NData; di++ {
+	errs := make([]float64, ctx.NetIdxs.NData)
+	thr := ly.Params.Acts.Clamp.ErrThr
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		wrong := 0
 		n := 0
 		for lni := uint32(0); lni < nn; lni++ {
@@ -737,14 +739,14 @@ func (ly *Layer) PctUnitErr(ctx *Context) []float64 {
 // LocalistErr2D decodes a 2D layer with Y axis = redundant units, X = localist units
 // returning the indexes of the max activated localist value in the minus and plus phase
 // activities, and whether these are the same or different (err = different)
-// returns one result per data parallel index ([ctx.NData])
+// returns one result per data parallel index ([ctx.NetIdxs.NData])
 func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIdx, plusIdx []int) {
-	err = make([]bool, ctx.NData)
-	minusIdx = make([]int, ctx.NData)
-	plusIdx = make([]int, ctx.NData)
+	err = make([]bool, ctx.NetIdxs.NData)
+	minusIdx = make([]int, ctx.NetIdxs.NData)
+	plusIdx = make([]int, ctx.NetIdxs.NData)
 	ydim := ly.Shp.Dim(0)
 	xdim := ly.Shp.Dim(1)
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		var maxM, maxP float32
 		var mIdx, pIdx int
 		for xi := 0; xi < xdim; xi++ {
@@ -776,12 +778,12 @@ func (ly *Layer) LocalistErr2D(ctx *Context) (err []bool, minusIdx, plusIdx []in
 // Returns the flat 1D indexes of the max activated localist value in the minus and plus phase
 // activities, and whether these are the same or different (err = different)
 func (ly *Layer) LocalistErr4D(ctx *Context) (err []bool, minusIdx, plusIdx []int) {
-	err = make([]bool, ctx.NData)
-	minusIdx = make([]int, ctx.NData)
-	plusIdx = make([]int, ctx.NData)
+	err = make([]bool, ctx.NetIdxs.NData)
+	minusIdx = make([]int, ctx.NetIdxs.NData)
+	plusIdx = make([]int, ctx.NetIdxs.NData)
 	npool := ly.Shp.Dim(0) * ly.Shp.Dim(1)
 	nun := ly.Shp.Dim(2) * ly.Shp.Dim(3)
-	for di := uint32(0); di < ctx.NData; di++ {
+	for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
 		var maxM, maxP float32
 		var mIdx, pIdx int
 		for xi := 0; xi < npool; xi++ {
@@ -817,7 +819,9 @@ func (ly *Layer) UnLesionNeurons(ctx *Context) {
 	nn := ly.NNeurons
 	for lni := uint32(0); lni < nn; lni++ {
 		ni := ly.NeurStIdx + lni
-		NrnClearFlag(ctx, ni, NeuronOff)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			NrnClearFlag(ctx, ni, di, NeuronOff)
+		}
 	}
 }
 
@@ -842,7 +846,9 @@ func (ly *Layer) LesionNeurons(ctx *Context, prop float32) int {
 		if NrnIsOff(ctx, ni) {
 			continue
 		}
-		NrnSetFlag(ctx, ni, NeuronOff)
+		for di := uint32(0); di < ctx.NetIdxs.NData; di++ {
+			NrnSetFlag(ctx, ni, di, NeuronOff)
+		}
 	}
 	return nl
 }
