@@ -23,7 +23,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.NMDA.MgC":           "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Acts.NMDA.Voff":          "0",
 					"Layer.Acts.NMDA.Gbar":          "0.006",
-					"Layer.Acts.GABAB.Gbar":         "0.015", // 0.015 def
+					"Layer.Acts.GabaB.Gbar":         "0.015", // 0.015 def
 					"Layer.Learn.LrnNMDA.Gbar":      "0.006",
 					"Layer.Acts.Mahp.Gbar":          "0.04", // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
 					"Layer.Acts.Sahp.Gbar":          "0.1",  // 0.1 == 0.02 no real diff
@@ -56,7 +56,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.Dend.SSGi":       "0",    // 0 > higher -- kills nmda maint!
 					"Layer.Acts.Decay.Act":       "0.0",
 					"Layer.Acts.Decay.Glong":     "0.0",
-					"Layer.Acts.GABAB.Gbar":      "0.015", // 0.015 standard gaba
+					"Layer.Acts.GabaB.Gbar":      "0.015", // 0.015 standard gaba
 					"Layer.Acts.NMDA.Gbar":       "0.006",
 					"Layer.Acts.NMDA.Tau":        "100",
 					"Layer.Acts.MaintNMDA.Gbar":  "0.006", // not relevant -- no CTSelf
@@ -166,7 +166,7 @@ var ParamSets = params.Sets{
 					"Layer.CT.DecayTau":          "50",   // 50 > 0
 					"Layer.Inhib.ActAvg.Nominal": "0.12", // 2 even more active -- maybe try higher inhib
 					"Layer.Inhib.Layer.Gi":       "1.4",  // todo
-					"Layer.Acts.GABAB.Gbar":      "0.3",
+					"Layer.Acts.GabaB.Gbar":      "0.3",
 					"Layer.Acts.NMDA.Gbar":       "0.3", // higher layer has more nmda..
 					"Layer.Acts.NMDA.Tau":        "300", // 300 > 200
 					"Layer.Acts.Sahp.CaTau":      "10",  // todo

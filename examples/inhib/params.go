@@ -26,7 +26,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.Dt.GiTau":        "7",
 					"Layer.Acts.Gbar.I":          "1.0",
 					"Layer.Acts.Gbar.L":          "0.2",
-					"Layer.Acts.GABAB.Gbar":      "0.2",
+					"Layer.Acts.GabaB.Gbar":      "0.2",
 					"Layer.Acts.NMDA.Gbar":       "0.15",
 					"Layer.Acts.Decay.Act":       "0.0", // 0.2 def
 					"Layer.Acts.Decay.Glong":     "0.0", // 0.6 def
@@ -39,14 +39,14 @@ var ParamSets = params.Sets{
 			{Sel: ".InhibLay", Desc: "generic params for all layers: lower gain, slower, soft clamp",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.5",
-					"Layer.Acts.Spike.Thr":       "0.5",
-					"Layer.Acts.Spike.Tr":        "1",   // 3 def
-					"Layer.Acts.Spike.VmR":       "0.4", // key for firing early, plus noise
+					"Layer.Acts.Spikes.Thr":      "0.5",
+					"Layer.Acts.Spikes.Tr":       "1",   // 3 def
+					"Layer.Acts.Spikes.VmR":      "0.4", // key for firing early, plus noise
 					"Layer.Acts.Init.Vm":         "0.4", // key for firing early, plus noise
 					"Layer.Acts.Erev.L":          "0.4", // more excitable
 					"Layer.Acts.Gbar.L":          "0.2", // smaller, less leaky..
 					"Layer.Acts.KNa.On":          "false",
-					"Layer.Acts.GABAB.Gbar":      "0", // no gabab
+					"Layer.Acts.GabaB.Gbar":      "0", // no gabab
 					"Layer.Acts.NMDA.Gbar":       "0", // no nmda
 					"Layer.Acts.Noise.On":        "false",
 					"Layer.Acts.Noise.Ge":        "0.01", // 0.001 min

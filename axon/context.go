@@ -366,15 +366,12 @@ func (ctx *Context) PVLVDA() float32 {
 // bool NrnHasFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
 // 	return (NeuronFlags(asuint(NrnV(ctx, ni, di, NrnFlags))) & flag) > 0; // weird: != 0 does NOT work on GPU
 // }
-//
 // void NrnSetFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
 // 	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))|uint(flag)));
 // }
-//
 // void NrnClearFlag(in Context ctx, uint ni, uint di, NeuronFlags flag) {
 // 	SetNrnV(ctx, ni, di, NrnFlags, asfloat(asuint(NrnV(ctx, ni, di, NrnFlags))& ~uint(flag)));
 // }
-//
 // // NrnIsOff returns true if the neuron has been turned off (lesioned)
 // // Only checks the first data item -- all should be consistent.
 // bool NrnIsOff(in Context ctx, uint ni) {

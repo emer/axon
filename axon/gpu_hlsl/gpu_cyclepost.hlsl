@@ -5,12 +5,12 @@
 // does CyclePost: iterates over data parallel -- handles all special context updates
 
 // note: all must be visible always because accessor methods refer to them
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
-[[vk::binding(3, 2)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
 [[vk::binding(0, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 3)]] RWStructuredBuffer<float> SynapseCas;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(2, 3)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
@@ -20,12 +20,12 @@
 // Set 0: uniform layer params -- could not have prjns also be uniform..
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
 
-// Set 1: effectively uniform prjn params as structured buffers in storage
+// Set 1: effectively uniform indexes and prjn params as structured buffers in storage
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] RWStructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(4, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools]
-[[vk::binding(5, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(3, 2)]] RWStructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
 
 
 void CyclePostVSPatch(inout Context ctx, in LayerParams ly, uint li, uint di, int pi, in Pool pl) {
@@ -87,7 +87,7 @@ void CyclePost(inout Context ctx, in LayerParams ly, int li, uint di) {
 }
 
 [numthreads(1, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // todo: iterate over Data parallel
+void main(uint3 idx : SV_DispatchThreadID) { // todo: iterate over global Data parallel
 	if (idx.x >= Ctx[0].NetIdxs.NData) {
 		return;
 	}

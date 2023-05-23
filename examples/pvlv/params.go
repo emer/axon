@@ -274,7 +274,7 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Acts.Decay.Glong":   "0",
 					"Layer.Acts.Decay.AHP":     "0",
 					"Layer.Acts.Decay.OnRew":   "true", // everything clears
-					"Layer.Acts.GABAB.Gbar":    "0.3",
+					"Layer.Acts.GabaB.Gbar":    "0.3",
 					"Layer.Acts.NMDA.Gbar":     "0.3", // 0.3 enough..
 					"Layer.Acts.NMDA.Tau":      "300",
 					"Layer.Acts.Sahp.Gbar":     "0.01", // not much pressure -- long maint
@@ -288,7 +288,7 @@ var ParamSetsDefs = params.Sets{
 					"Layer.Inhib.ActAvg.Nominal": "0.12",
 					"Layer.Inhib.Layer.Gi":       "0.8",
 					"Layer.Inhib.Pool.Gi":        "0.8",
-					"Layer.Acts.GABAB.Gbar":      "0.2", // regular
+					"Layer.Acts.GabaB.Gbar":      "0.2", // regular
 					"Layer.Acts.NMDA.Gbar":       "0.15",
 					"Layer.Acts.NMDA.Tau":        "100",
 					"Layer.Acts.Decay.Act":       "0.2",

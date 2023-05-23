@@ -32,7 +32,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.NMDA.MgC":                "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Acts.NMDA.Voff":               "0",
 					"Layer.Acts.NMDA.Gbar":               "0.006",
-					"Layer.Acts.GABAB.Gbar":              "0.015", // 0.015 def -- makes no diff down to 0.008
+					"Layer.Acts.GabaB.Gbar":              "0.015", // 0.015 def -- makes no diff down to 0.008
 					"Layer.Learn.LrnNMDA.Gbar":           "0.006",
 					"Layer.Acts.Sahp.Gbar":               "0.1",  //
 					"Layer.Acts.Sahp.Off":                "0.8",  //
@@ -59,7 +59,7 @@ var ParamSets = params.Sets{
 					"Layer.CT.DecayTau":                  "50",  // 50 > 30 -- 30 ok but takes a bit to get going
 					"Layer.Acts.Decay.Act":               "0.0",
 					"Layer.Acts.Decay.Glong":             "0.0",
-					"Layer.Acts.GABAB.Gbar":              "0.015", // 0.015 def > 0.01
+					"Layer.Acts.GabaB.Gbar":              "0.015", // 0.015 def > 0.01
 					"Layer.Acts.MaintNMDA.Gbar":          "0.007", // 0.007 best, but 0.01 > lower if reg nmda weak
 					"Layer.Acts.MaintNMDA.Tau":           "200",   // 200 > 100 > 300
 					"Layer.Acts.NMDA.Gbar":               "0.007", // 0.007 matching maint best
@@ -73,7 +73,7 @@ var ParamSets = params.Sets{
 					"Layer.Inhib.Layer.FB":          "1",
 					"Layer.Pulv.DriveScale":         "0.1", // 0.1 > 0.05 > 0.2
 					"Layer.Pulv.FullDriveAct":       "0.6", // 0.6 def
-					"Layer.Acts.Spike.Tr":           "3",   // 1 is best for ra25..
+					"Layer.Acts.Spikes.Tr":          "3",   // 1 is best for ra25..
 					"Layer.Acts.Decay.Act":          "0.0",
 					"Layer.Acts.Decay.Glong":        "0.0", // clear long
 					"Layer.Acts.Decay.AHP":          "0.0", // clear ahp

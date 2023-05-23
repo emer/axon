@@ -354,11 +354,6 @@ func (ly *LayerBase) NonDefaultParams() string {
 //////////////////////////////////////////////////////////////////////////////////////
 //  Build
 
-// ExtIdx returns the index for accessing Exts values: [Neuron][Data]
-func (ly *LayerBase) ExtIdx(ni, di uint32) uint32 {
-	return ni*ly.MaxData + di
-}
-
 // SetBuildConfig sets named configuration parameter to given string value
 // to be used in the PostBuild stage -- mainly for layer names that need to be
 // looked up and turned into indexes, after entire network is built.

@@ -57,6 +57,12 @@ func (lx *LayerIdxs) ValsIdx(di uint32) uint32 {
 	return lx.LayIdx*lx.MaxData + di
 }
 
+// ExtIdx returns the index for accessing Exts values: [Neuron][Data]
+// Neuron is *layer-relative* lni index -- add the ExtsSt for network level access.
+func (lx *LayerIdxs) ExtIdx(ni, di uint32) uint32 {
+	return ni*lx.MaxData + di
+}
+
 // LayerInhibIdxs contains indexes of layers for between-layer inhibition
 type LayerInhibIdxs struct {
 	Idx1 int32 `inactive:"+" desc:"idx of Layer to get layer-level inhibition from -- set during Build from BuildConfig LayInhib1Name if present -- -1 if not used"`

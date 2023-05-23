@@ -24,7 +24,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.NMDA.MgC":                "1.4", // 1.4, 5 > 1.2, 0 ?
 					"Layer.Acts.NMDA.Voff":               "0",
 					"Layer.Acts.NMDA.Gbar":               "0.006",
-					"Layer.Acts.GABAB.Gbar":              "0.015", // 0.015 > 0.012 lower
+					"Layer.Acts.GabaB.Gbar":              "0.015", // 0.015 > 0.012 lower
 					"Layer.Acts.Mahp.Gbar":               "0.04",  // 0.04 == 0.05+ > 0.02 -- reduces hidden activity
 					"Layer.Acts.Sahp.Gbar":               "0.1",   // 0.1 == 0.02 no real diff
 					"Layer.Acts.Sahp.Off":                "0.8",   //
@@ -55,7 +55,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.MaintNMDA.Tau":   "300",   // 300 > 200
 					"Layer.Acts.NMDA.Gbar":       "0.007", // 0.007?
 					"Layer.Acts.NMDA.Tau":        "300",   // 300 > 200
-					"Layer.Acts.GABAB.Gbar":      "0.015", // 0.015 def
+					"Layer.Acts.GabaB.Gbar":      "0.015", // 0.015 def
 					"Layer.Acts.Noise.On":        "false", // todo?
 					"Layer.Acts.Noise.Ge":        "0.005",
 					"Layer.Acts.Noise.Gi":        "0.005",
@@ -125,7 +125,7 @@ var ParamSets = params.Sets{
 			{Sel: "#Hidden2CT", Desc: "CT NMDA gbar factor is key",
 				Params: params.Params{
 					"Layer.Inhib.ActAvg.Nominal": "0.12", // 2 even more active -- maybe try higher inhib
-					"Layer.Acts.GABAB.Gbar":      "0.3",
+					"Layer.Acts.GabaB.Gbar":      "0.3",
 					"Layer.Acts.NMDA.Gbar":       "0.3", // higher layer has more nmda..
 					"Layer.Acts.NMDA.Tau":        "300", // 300 > 200
 					"Layer.Acts.Sahp.CaTau":      "10",  // todo

@@ -138,7 +138,7 @@ var ParamSetsDefs = params.Sets{
 					"Layer.CT.DecayTau":          "50",
 					"Layer.Inhib.Layer.Gi":       "2.2",
 					"Layer.Inhib.Pool.Gi":        "2.2",
-					"Layer.Acts.GABAB.Gbar":      "0.25",
+					"Layer.Acts.GabaB.Gbar":      "0.25",
 					"Layer.Acts.NMDA.Gbar":       "0.25",
 					"Layer.Acts.NMDA.Tau":        "200",
 					"Layer.Acts.Decay.Act":       "0.0",
@@ -149,7 +149,7 @@ var ParamSetsDefs = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":    "1.8", // was 1.0
 					"Layer.Inhib.Pool.Gi":     "1.8", // was 1.8
-					"Layer.Acts.GABAB.Gbar":   "0.3",
+					"Layer.Acts.GabaB.Gbar":   "0.3",
 					"Layer.Acts.NMDA.Gbar":    "0.3", // 0.3 enough..
 					"Layer.Acts.NMDA.Tau":     "300",
 					"Layer.Acts.Decay.Act":    "0.0",

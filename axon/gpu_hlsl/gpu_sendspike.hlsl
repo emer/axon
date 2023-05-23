@@ -5,12 +5,12 @@
 // performs the SendSpike function on all sending neurons
 
 // note: all must be visible always because accessor methods refer to them
+[[vk::binding(0, 1)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
+[[vk::binding(1, 1)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 2)]] RWStructuredBuffer<float> Neurons; // [Neurons][Vars][Data]
 [[vk::binding(2, 2)]] RWStructuredBuffer<float> NeuronAvgs; // [Neurons][Vars]
-[[vk::binding(3, 2)]] StructuredBuffer<uint> NeuronIxs; // [Neurons][Idxs]
 [[vk::binding(0, 3)]] RWStructuredBuffer<float> Synapses;  // [Layer][SendPrjns][SendNeurons][Syns]
 [[vk::binding(1, 3)]] RWStructuredBuffer<float> SynapseCas;  // [Layer][SendPrjns][SendNeurons][Syns][Data]
-[[vk::binding(2, 3)]] StructuredBuffer<uint> SynapseIxs;  // [Layer][SendPrjns][SendNeurons][Syns]
 
 #include "context.hlsl"
 #include "layerparams.hlsl"
@@ -21,19 +21,18 @@
 // Set 0: uniform layer params -- could not have prjns also be uniform..
 [[vk::binding(0, 0)]] uniform LayerParams Layers[]; // [Layer]
 
-// Set 1: effectively uniform prjn params as structured buffers in storage
-[[vk::binding(0, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
-[[vk::binding(1, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
+// Set 1: effectively uniform indexes and prjn params as structured buffers in storage
+[[vk::binding(2, 1)]] StructuredBuffer<PrjnParams> Prjns; // [Layer][SendPrjns]
+[[vk::binding(3, 1)]] StructuredBuffer<StartN> SendCon; // [Layer][SendPrjns][SendNeurons]
 
 // Set 2: main network structs and vals -- all are writable
 [[vk::binding(0, 2)]] StructuredBuffer<Context> Ctx; // [0]
-[[vk::binding(4, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Paools]
-[[vk::binding(5, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer]
+[[vk::binding(3, 2)]] StructuredBuffer<Pool> Pools; // [Layer][Pools][Data]
+[[vk::binding(4, 2)]] RWStructuredBuffer<LayerVals> LayVals; // [Layer][Data]
 
-[[vk::binding(3, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][MaxDel+1][RecvNeurons]
-// [[vk::binding(4, 3)]] StructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons]
+[[vk::binding(2, 3)]] RWStructuredBuffer<int> GBuf;  // [Layer][RecvPrjns][RecvNeurons][MaxDel+1][Data]
+// [[vk::binding(3, 3)]] RWStructuredBuffer<float> GSyns;  // [Layer][RecvPrjns][RecvNeurons][Data]
 
-// Set 3: external inputs
 
 void SendSpikeSyn(in Context ctx, in PrjnParams pj, uint syni, uint di, in float sendVal, in uint recvNeurSt) {
 	uint ri = SynI(ctx, syni, SynRecvIdx);
@@ -84,7 +83,7 @@ void SendSpike(in Context ctx, uint ni, uint di) {
 }
 
 [numthreads(64, 1, 1)]
-void main(uint3 idx : SV_DispatchThreadID) { // over Send Neurons * Data
+void main(uint3 idx : SV_DispatchThreadID) { // over Neurons * Data
 	uint ni = Ctx[0].NetIdxs.ItemIdx(idx.x);
 	if (!Ctx[0].NetIdxs.NeurIdxIsValid(ni)) {
 		return;

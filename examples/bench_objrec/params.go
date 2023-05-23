@@ -14,7 +14,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.NMDA.MgC":                "1.4",    // 1.4, 5 > 1.2, 0
 					"Layer.Acts.NMDA.Voff":               "0",      // see above
 					"Layer.Acts.NMDA.Gbar":               "0.006",  // 0.006 > 7 or higher
-					"Layer.Acts.GABAB.Gbar":              "0.015",  // 0.015 > lower; higher not better
+					"Layer.Acts.GabaB.Gbar":              "0.015",  // 0.015 > lower; higher not better
 					"Layer.Learn.CaSpk.SpikeG":           "12",     // 12 > 8 > 15 (too high) -- 12 makes everything work!
 					"Layer.Learn.TrgAvgAct.SynScaleRate": "0.0002", // 0.0002 > others -- 0.005 sig worse
 					"Layer.Learn.LrnNMDA.MgC":            "1.4",    // 1.4, 5 > 1.2, 0

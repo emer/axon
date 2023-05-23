@@ -26,7 +26,7 @@ var ParamSets = params.Sets{
 					"Layer.Acts.NMDA.MgC":        "1.4",   // 1.2 > 1.4 for SynSpkTheta
 					"Layer.Acts.NMDA.Gbar":       "0.006", // 0.006 def
 					"Layer.Learn.LrnNMDA.Gbar":   "0.006",
-					"Layer.Acts.GABAB.Gbar":      "0.015", // 0.015 > lower -- learns faster, lasts longer
+					"Layer.Acts.GabaB.Gbar":      "0.015", // 0.015 > lower -- learns faster, lasts longer
 				},
 				Hypers: params.Hypers{
 					"Layer.Inhib.Layer.Gi":       {"StdDev": "0.1", "Min": "0.5"},
@@ -42,7 +42,7 @@ var ParamSets = params.Sets{
 				Params: params.Params{
 					"Layer.Inhib.Layer.Gi":          "0.65", // 0.65
 					"Layer.Inhib.ActAvg.Nominal":    "0.24",
-					"Layer.Acts.Spike.Tr":           "1",    // 1 is new minimum.. > 3
+					"Layer.Acts.Spikes.Tr":          "1",    // 1 is new minimum.. > 3
 					"Layer.Acts.Clamp.Ge":           "0.8",  // 0.8 > 0.6
 					"Layer.Learn.RLRate.SigmoidMin": "0.05", // sigmoid derivative actually useful here!
 				}},
